@@ -1,0 +1,46 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Run Integration Tests",
+      "type": "haxe-eval",
+      "request": "launch",
+      "program": "test/integration/CompilationPipelineTest.hx",
+      "cwd": "${workspaceFolder}",
+      "args": [
+        "-cp", "src",
+        "-cp", "test", 
+        "-main", "integration.CompilationPipelineTest",
+        "-D", "reflaxe_runtime",
+        "--interp"
+      ]
+    },
+    {
+      "name": "Run Performance Benchmarks",
+      "type": "haxe-eval", 
+      "request": "launch",
+      "program": "test/performance/PerformanceBenchmarks.hx",
+      "cwd": "${workspaceFolder}",
+      "args": [
+        "-cp", "src",
+        "-cp", "test",
+        "-main", "performance.PerformanceBenchmarks", 
+        "-D", "reflaxe_runtime",
+        "--interp"
+      ]
+    },
+    {
+      "name": "Debug Haxe Compilation",
+      "type": "haxe-eval",
+      "request": "launch",
+      "program": "src/reflaxe/elixir/ElixirCompiler.hx",
+      "cwd": "${workspaceFolder}",
+      "args": [
+        "-cp", "src",
+        "-D", "reflaxe_runtime",
+        "--macro", "CompilerInit.init()",
+        "-v"
+      ]
+    }
+  ]
+}

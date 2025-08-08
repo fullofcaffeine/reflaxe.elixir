@@ -1,0 +1,5 @@
+-cp ../src
+-cp /REDACTED_LOCAL_PATH
+-D reflaxe_runtime
+--no-output
+reflaxe.elixir.ElixirCompiler

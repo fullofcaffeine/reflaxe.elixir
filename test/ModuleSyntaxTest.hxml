@@ -1,0 +1,5 @@
+-cp src
+-cp test
+-main ModuleSyntaxTest
+-D reflaxe_runtime
+--no-output

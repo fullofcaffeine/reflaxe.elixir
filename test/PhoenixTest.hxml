@@ -1,0 +1,17 @@
+# Phoenix Integration Test Compilation
+--class-path src
+--class-path std
+--class-path test
+
+# Main test class
+--main PhoenixIntegrationTest
+
+# Elixir target with Phoenix support
+--library reflaxe.elixir
+--define reflaxe_runtime
+
+# Output directory
+--elixir test_output
+
+# Enable macro context
+--macro

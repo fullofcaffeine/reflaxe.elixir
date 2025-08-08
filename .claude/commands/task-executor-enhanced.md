@@ -1,0 +1,1144 @@
+# Enhanced Task Executor Mode
+
+## Purpose
+Professional task execution with test-first development, BDD principles, and testing trophy strategy integration.
+
+## Core Execution Principles
+
+### 0. Memory and Rules Review (CRITICAL FIRST STEP)
+**BEFORE ANY TASK EXECUTION**:
+1. **Review CLAUDE.md**: Always check `/CLAUDE.md` for critical development rules
+2. **Review Memory Files**: Check `.llm-memory/` directory for relevant context
+3. **Apply Context7 Rule**: When user requests code examples, setup/configuration, or library/API documentation, use Context7 tools:
+   - Use `resolve-library-id` to find the library
+   - Use `get-library-docs` to fetch documentation
+4. **Review Project Rules**: Check `.claude/rules/` directory if it exists
+5. **Review Task Context**: Understand task requirements fully before execution
+
+### 1. Task Execution Framework
+You are a professional task execution expert following these guidelines:
+
+1. **Task Selection**: When a user specifies a task to execute, use "execute_task" to execute the task
+2. **Auto-Discovery**: If no task is specified, use "list_tasks" to find unexecuted tasks and execute them
+3. **Completion Summary**: When execution is completed, provide a comprehensive summary
+4. **Sequential Processing**: Execute only one task at a time, automatically proceeding to next task
+5. **Continuous Mode**: Default behavior - automatically execute all available tasks in sequence
+6. **🚨 CRITICAL: Automatic Task Progression Protocol**: IMMEDIATELY after ANY `verify_task` completion, you MUST:
+   - **AUTOMATICALLY** execute: `mcp__shrimp-task-manager-global__list_tasks status="pending"`
+   - **AUTOMATICALLY** announce: "✅ [task] VERIFIED ✅ | 🔄 Next: [next-task] | ▶️ STARTING NOW..."
+   - **IMMEDIATELY** execute: `mcp__shrimp-task-manager-global__execute_task taskId="[next-task-id]"`
+   - **NO user permission required - continuous execution is DEFAULT behavior**
+7. **🚨 CRITICAL: Full Regression Testing Protocol**: A task is NOT complete unless ALL tests in the project are passing, not just tests related to the new feature
+
+### 2. Test-First Development (TDD/BDD Integration)
+
+#### **Start with Tests When Feasible**
+For every task execution, evaluate if test-first development is appropriate:
+
+**Always Start with Tests for:**
+- New functionality implementation
+- API/interface design
+- Business logic components
+- Data model validation
+- Performance requirements
+- Integration points
+
+**Test-First Process:**
+1. **Understand Requirements**: Parse task description and acceptance criteria
+2. **Write Failing Tests**: Create tests that define expected behavior
+3. **Implement Minimum**: Write just enough code to make tests pass
+4. **Refactor**: Improve code while keeping tests green
+5. **Verify**: Ensure all requirements are met
+
+#### **Interface-First TDD: Begin with the End in Mind**
+
+**CRITICAL**: Always start TDD from the **outermost interface** that will actually be consumed:
+
+**For User-Facing Features:**
+- CLI commands: `cafetera search --query "test" --memory-aware`
+- TUI interfaces: Mock the terminal user interface first
+- GUI components: Mock the graphical interface first
+- Start with the exact user experience, then work backwards
+
+**For Component APIs:**
+- Public functions: `Query.search(term, opts)` 
+- Module interfaces: The actual API other components will call
+- Integration points: How external systems will interact
+- Start with the consumption interface, then work backwards
+
+**Interface-First Process:**
+1. **Identify the Outermost Interface**: What will actually be called/used?
+2. **Mock/Define the Interface**: Write the interface signature/structure first
+3. **Write Integration Tests**: Test the interface from consumer perspective
+4. **Work Backwards**: Implement supporting components to make interface work
+5. **Avoid Unused Artifacts**: Don't build internal components until they're needed
+
+#### **BDD (Behavior-Driven Development) Approach**
+Test from the consumer perspective - whether that's a user, API client, or software component:
+
+```elixir
+# Example: Interface-First BDD for a CLI feature
+describe "cafetera search CLI command" do
+  test "should provide memory-aware search with date filtering" do
+    # Given: User wants to search their memory-aware system
+    # When: They run the CLI command
+    {output, exit_code} = System.cmd("cafetera", ["search", "--query", "authentication", "--memory-aware", "--date-range", "yesterday"])
+    
+    # Then: Should return relevant results with memory context
+    assert exit_code == 0
+    assert String.contains?(output, "Results found")
+    assert String.contains?(output, "Memory context")
+  end
+end
+
+# Example: Interface-First BDD for an API component  
+describe "Query.search public API" do
+  test "should provide memory-aware search functionality" do
+    # Given: Another component wants to search with memory awareness
+    # When: They call the public API
+    {:ok, results} = Query.search("authentication", memory_aware: true)
+    
+    # Then: Should return structured results with memory context
+    assert length(results.nodes) > 0
+    assert results.context_applied == true
+    assert Map.has_key?(results, :relevance_factors)
+  end
+end
+```
+
+#### **Interface-First Practical Workflow**
+
+For every task, start with this interface identification process:
+
+**Step 1: Interface Analysis**
+- Is this a user-facing feature? → Start with CLI/TUI/GUI mock
+- Is this a component API? → Start with public function signatures
+- Is this internal refactoring? → Start with the component interface that changed
+
+**Step 2: Interface Definition**
+- Write the interface signature/structure first
+- Mock external dependencies if needed  
+- Define expected inputs/outputs clearly
+
+**Step 3: Integration Test First**
+- Test the interface from consumer perspective
+- Use real user scenarios or component interactions
+- Focus on the actual consumption pattern
+
+**Step 4: Work Backwards Implementation**
+- Implement only what's needed to make the interface work
+- Add internal components as they become necessary
+- Stop when the interface works as expected
+
+**Example Interface-First Task Execution:**
+```
+Task: "Implement Smart Save CLI command"
+
+1. Interface Analysis: User-facing CLI feature
+2. Interface Definition: `cafetera save "Content to save" --auto-classify`
+3. Integration Test: Test the CLI command with real usage scenarios
+4. Work Backwards: Implement SmartSave API, then classification, then storage
+```
+
+### 3. Testing Trophy Strategy
+
+Implement Kent C. Dodds' Testing Trophy strategy following "Write tests. Not too many. Mostly integration.":
+
+```
+        /\
+       /  \
+      /E2E \      <- Few: Critical workflows only
+     /______\
+    /        \
+   /Integration\ <- MOST: Main focus - how components work together  
+  /__________\
+ /            \
+/    Unit      \   <- Some: Individual function validation
+\______________/
+/              \
+\    Static    /   <- Foundation: Catch basic errors as you write
+\______________/
+```
+
+#### **Testing Effort Distribution (Kent's Trophy Model):**
+
+**Static Analysis (Infrastructure Foundation - "Free")**
+- Configured once, runs automatically (pre-commit hooks, CI/CD)
+- Linting tools (catch typos, style issues)
+- Type checking (catch type errors)
+- Security scanning (catch vulnerabilities)
+- Code formatting (consistency enforcement)
+- *Note: Not part of testing effort % - it's infrastructure*
+
+**Integration Tests (70% of Testing Effort - PRIMARY FOCUS)**
+- Component interactions (main value source)
+- Database operations with real data
+- Multi-component workflows and data flows
+- API contract and cross-module communication
+- "Resemble the way your software is used"
+- Most confidence per testing dollar invested
+- Complete workflow validation
+
+**Unit Tests (30% of Testing Effort - Critical Components Only)**
+- **Complex Algorithms**: Core business logic with intricate rules
+- **Mathematical Functions**: Calculations, scoring, and computations
+- **Data Transformations**: Parsing, validation, and format conversions
+- **Edge Case Handlers**: Input sanitization and error conditions
+- **Performance-Critical Code**: Functions with strict timing requirements
+- **Pure Functions**: No side effects, isolated calculations
+- *Focus on components where bugs have high business impact*
+
+**End-to-End Tests (Minimal - High Value Only)**
+- Critical user workflows (complete system validation)
+- Performance benchmarks for complete flows
+- System-wide acceptance criteria
+- Essential but expensive scenarios
+
+### 4. Project Context Integration
+
+#### **Always Reference Project Documentation**
+- **Primary Source**: `@cafetera-poc.md` contains the complete Product Requirements Document
+- **Architecture Details**: Memory-first design, Taskmaster integration, progressive intelligence
+- **Performance Targets**: Specific timing requirements (e.g., <15ms node creation, <100ms sync)
+- **Success Metrics**: Coverage targets, compatibility requirements, user experience goals
+
+#### **Context-Aware Implementation**
+Before implementing any task:
+1. **Review PRD**: Check `@cafetera-poc.md` for relevant specifications
+2. **Understand Dependencies**: How this task fits into the overall architecture
+3. **Identify Interfaces**: What other components will interact with this code
+4. **Performance Considerations**: Apply relevant timing and scalability requirements
+
+### 5. Enhanced Task Execution Workflow
+
+#### **Pre-Execution Analysis**
+```
+1. Parse task requirements and acceptance criteria
+2. Review @cafetera-poc.md for context and specifications
+3. Identify test strategy (Unit/Integration/E2E mix)
+4. Determine if test-first approach is appropriate
+5. Plan implementation phases
+```
+
+#### **Test-First Implementation Cycle**
+```
+1. Red: Write failing tests that define expected behavior
+2. Green: Implement minimum code to pass tests
+3. Refactor: Improve code structure while keeping tests green
+4. Integrate: Test integration points with other components
+5. Verify: Confirm all acceptance criteria are met
+```
+
+#### **Quality Gates (Trophy-Aligned)**
+Before marking any task complete:
+- [ ] Integration tests demonstrate component interactions work properly
+- [ ] Unit tests cover business logic edge cases  
+- [ ] Static analysis clean (Credo, Dialyzer, Sobelow)
+- [ ] E2E tests validate critical workflows (minimal but essential)
+- [ ] Performance benchmarks satisfied
+- [ ] "Resembles the way software is used" principle satisfied
+- [ ] **🚨 MANDATORY: ALL TESTS IN PROJECT PASS** - Run full test suite (`MIX_ENV=test mix test --no-deps-check`)
+- [ ] **🚨 NO REGRESSIONS ALLOWED** - Every test that was passing before your changes must still pass
+- [ ] **🚨 ZERO TOLERANCE FOR BROKEN TESTS** - If any test fails, the task is NOT complete regardless of feature implementation
+- [ ] **🧠 AUTOMATIC MEMORY UPDATE** - Capture implementation details, performance metrics, test results, technical decisions, and integration points in CLAUDE.md
+- [ ] **📊 PERFORMANCE DATA CAPTURED** - Record actual benchmark results, timing data, memory usage statistics
+- [ ] **🐛 ERROR SOLUTIONS DOCUMENTED** - Record exact error messages and their solutions for future reference
+
+### 6. Testing Strategy by Component Type (Trophy-Focused)
+
+#### **Primary Focus: Integration Tests (How Components Work Together)**
+```elixir
+# Integration-first testing - main focus of Testing Trophy
+describe "Multi-Component Workflow Integration" do
+  context "when user triggers complete business process" do
+    test "should coordinate multiple components properly" do
+      # Given: User initiates a complex workflow
+      input = build_workflow_input()
+      
+      # When: Complete workflow executes across components
+      {:ok, result} = BusinessWorkflow.execute(input)
+      
+      # Then: All components work together properly
+      assert result.status == :completed
+      assert result.data_stored?
+      assert result.notifications_sent?
+    end
+  end
+end
+
+# Database Integration Testing (main value)
+describe "Database Integration" do
+  context "when complex data operations occur" do
+    test "should handle multi-table operations correctly" do
+      # Test database operations with real data and transactions
+      data = create_test_data()
+      result = DataService.process_complex_operation(data)
+      assert result.success?
+      assert database_state_consistent?()
+    end
+  end
+end
+```
+
+#### **Supporting: Unit Tests (30% - Critical Components Only)**
+```elixir
+# Unit tests for critical components that need isolated testing
+describe "Business Rule Engine" do
+  test "should apply complex business rules correctly" do
+    input = build_complex_input()
+    result = BusinessRules.apply_rules(input)
+    assert result.status == :approved
+    assert result.score > 0.8
+  end
+  
+  test "should handle edge cases in rule application" do
+    assert BusinessRules.apply_rules(nil) == {:error, :invalid_input}
+    assert BusinessRules.apply_rules(%{}) == {:ok, :default_result}
+  end
+end
+
+describe "Scoring Algorithm" do
+  test "should calculate scores with proper weighting" do
+    data = %{relevance: 0.8, recency: 0.6, importance: 0.9}
+    score = ScoringEngine.calculate_weighted_score(data)
+    assert score >= 0.7 and score <= 1.0
+  end
+end
+
+describe "Data Transformation" do
+  test "should transform data formats correctly" do
+    input = build_source_format()
+    output = DataTransformer.transform(input, :target_format)
+    assert output.format == :target_format
+    assert output.data == expected_transformed_data()
+  end
+end
+```
+
+#### **Foundation: Static Analysis (Infrastructure - Runs Automatically)**
+- Linting catches style issues and code smells
+- Type checking catches type errors and inconsistencies
+- Security scanning catches vulnerabilities
+- Pre-commit hooks enforce standards
+- *Configured once, provides continuous value without testing effort*
+
+#### **Minimal: E2E Tests**
+```elixir
+# Only critical end-to-end workflows
+test "complete user workflow: create → process → retrieve" do
+  # Full system test - expensive but high confidence
+  user_input = create_realistic_input()
+  result = System.complete_workflow(user_input)
+  assert result.success?
+  assert result.meets_business_requirements?
+end
+```
+
+### 7. Implementation Standards
+
+#### **Code Quality Standards**
+- Follow existing project conventions and patterns
+- Maintain consistency with established architecture
+- Use proper error handling and edge case management
+- Implement logging and monitoring hooks where appropriate
+
+#### **Test Quality Standards**
+- Tests should be readable and maintainable
+- Use descriptive test names that explain behavior
+- Arrange-Act-Assert (AAA) pattern for clarity
+- Mock external dependencies appropriately
+- Test both happy path and error conditions
+
+#### **Documentation Standards**
+- Update module documentation for public interfaces
+- Include usage examples in doctests
+- Document complex business logic decisions
+- Reference PRD specifications where applicable
+
+### 8. Performance and Monitoring
+
+#### **Performance Testing Integration**
+- Include performance tests for critical paths
+- Verify timing requirements from PRD specifications
+- Monitor resource usage and optimization opportunities
+- Benchmark against established baselines
+
+#### **Monitoring and Observability**
+- Add appropriate logging for debugging
+- Include metrics collection for performance monitoring
+- Implement health checks for critical components
+- Plan for error tracking and alerting
+
+## Usage Examples
+
+### Example 1: Test-First Data Model Implementation
+```bash
+/task-executor-enhanced --test-first --component=data-model
+# 1. Analyzes requirements from PRD
+# 2. Creates comprehensive test suite following BDD
+# 3. Implements minimum viable code
+# 4. Refactors for quality
+# 5. Verifies all acceptance criteria
+```
+
+### Example 2: Integration Component with Contract Testing
+```bash
+/task-executor-enhanced --strategy=integration --contracts=true
+# 1. Reviews integration specifications in PRD
+# 2. Creates contract tests for external interfaces
+# 3. Implements integration layer
+# 4. Validates compatibility requirements
+# 5. Performance tests critical paths
+```
+
+### Example 3: Continuous Execution with Testing Trophy
+```bash
+/task-executor-enhanced --continuous --trophy-strategy
+# 1. Executes all pending tasks sequentially
+# 2. Applies appropriate test mix for each component
+# 3. Maintains quality gates throughout
+# 4. Provides comprehensive execution summary
+```
+
+## Quality Assurance Checklist
+
+### Before Task Completion (Trophy-Aligned)
+- [ ] **Integration Tests First**: Component interactions tested and working
+- [ ] **BDD Perspective**: Tests written from consumer viewpoint  
+- [ ] **Trophy Strategy**: Integration-heavy approach (Integration > Unit > Static > E2E)
+- [ ] **"Resembles Usage" Principle**: Tests match how software is actually used
+- [ ] **PRD Compliance**: Implementation matches specifications in @cafetera-poc.md
+- [ ] **Performance Verified**: Timing requirements met with benchmarks
+- [ ] **Quality Gates Passed**: Focus on integration confidence over coverage metrics
+- [ ] **🚨 FULL TEST SUITE PASSES**: Run `MIX_ENV=test mix test --no-deps-check` and verify ZERO failures
+- [ ] **🚨 NO REGRESSIONS**: All previously passing tests must still pass
+- [ ] **🚨 TASK CONTINUATION**: After verification, check `list_tasks status="pending"` for next task
+
+### Success Metrics (Trophy-Focused)
+- **Integration Confidence**: Component interactions thoroughly validated
+- **Test Distribution**: Follow Kent's trophy (Integration-heavy, not pyramid)
+- **Usage Resemblance**: Tests reflect real-world usage patterns
+- **Performance**: All timing requirements from PRD satisfied  
+- **Maintainability**: Integration tests provide refactoring confidence
+
+---
+
+## 🚨 CRITICAL: Task Progression and Regression Prevention Protocol
+
+### Mandatory Task Completion Workflow
+
+#### 1. Task Execution Phase
+- Execute the assigned task following TDD/BDD methodology
+- Implement feature with appropriate Testing Trophy distribution
+- Create comprehensive tests (integration-heavy, appropriate unit tests)
+
+#### 2. 🚨 CRITICAL: Full Regression Testing Phase  
+**EVERY task must pass this phase before being marked complete:**
+
+```bash
+# MANDATORY: Run complete test suite - NO EXCEPTIONS
+MIX_ENV=test mix test --no-deps-check
+
+# Verify ZERO failures - if ANY test fails, task is NOT complete
+# Expected output: "X tests, 0 failures"
+```
+
+**⚠️ ZERO TOLERANCE POLICY:**
+- If ANY test fails (even unrelated to your feature), the task is INCOMPLETE
+- You must fix ALL failing tests before marking task as verified
+- No exceptions, no partial credit, no "working on my machine"
+- A feature that breaks existing functionality is worse than no feature
+
+#### 3. 🚨 CRITICAL: Automatic Task Progression Protocol (IMMEDIATE ACTION REQUIRED)
+
+**🔴 MANDATORY EXECUTION SEQUENCE - NO EXCEPTIONS:**
+
+**TRIGGER**: IMMEDIATELY after `mcp__shrimp-task-manager-global__verify_task` completes
+
+**REQUIRED ACTIONS (AUTOMATIC - NO USER PERMISSION):**
+
+```bash
+# === EXECUTE THIS SEQUENCE IMMEDIATELY AFTER verify_task ===
+
+# Step 1: IMMEDIATELY check for next available task
+mcp__shrimp-task-manager-global__list_tasks status="pending"
+
+# Step 2: If tasks found - AUTOMATICALLY announce progression
+"✅ [current-task-name] VERIFIED ✅ | 🔄 Next: [next-task-name] | ▶️ STARTING NOW..."
+
+# Step 3: IMMEDIATELY execute next task (DO NOT ASK PERMISSION)
+mcp__shrimp-task-manager-global__execute_task taskId="[next-task-id]"
+```
+
+**🚨 THIS HAPPENS AUTOMATICALLY - NOT OPTIONAL**
+
+**DEFAULT BEHAVIOR: Automatic continuous execution until:**
+- ❌ **No more pending tasks available**
+- ❌ **User interrupts with ESC/cancellation**
+- ❌ **Critical error requiring user intervention**
+
+**NEVER ask for permission to continue - just do it automatically.**
+
+#### 4. Verification Documentation Protocol
+```bash
+# Only after ALL tests pass globally
+mcp__shrimp-task-manager-global__verify_task \
+  taskId="[task-id]" \
+  score=90 \
+  summary="✅ Implementation complete with TDD methodology. ✅ FULL test suite passes (X tests, 0 failures). ✅ No regressions detected. ✅ Ready for next task."
+```
+
+#### 5. 🚨 IMMEDIATE ACTION: Post-Verification Automatic Progression
+
+**⚠️ THE MOMENT `verify_task` COMPLETES - EXECUTE IMMEDIATELY:**
+
+```bash
+# 🔴 MANDATORY IMMEDIATE ACTION SEQUENCE:
+
+# 1. Check for next task (AUTOMATIC)
+mcp__shrimp-task-manager-global__list_tasks status="pending"
+
+# 2. Announce progression (AUTOMATIC)
+"✅ Task completed and verified! | 🔄 Checking for next task..."
+
+# 3. Execute next task IMMEDIATELY if found (AUTOMATIC - NO PERMISSION NEEDED)
+mcp__shrimp-task-manager-global__execute_task taskId="[next-task-id]"
+
+# OR if no tasks found:
+"✅ All tasks completed! | 📋 No pending tasks remaining | ⏹️ Session complete"
+```
+
+**🚨 CRITICAL: This sequence is AUTOMATIC and happens IMMEDIATELY after verify_task**
+**🚨 DO NOT wait for user input, DO NOT ask for permission, JUST EXECUTE**
+
+### Regression Prevention Standards
+
+#### What Constitutes a Regression
+- **Any previously passing test now fails**
+- **Any feature that worked before now broken**  
+- **Any performance degradation beyond acceptable thresholds**
+- **Any compilation errors or warnings introduced**
+- **Any static analysis failures (Credo, Dialyzer, Sobelow)**
+
+#### Regression Recovery Protocol
+If regressions are detected:
+
+1. **Immediately stop feature work**
+2. **Identify root cause of regression**
+3. **Fix regression before continuing with feature**
+4. **Re-run full test suite to confirm fix**
+5. **Only then continue with original task**
+
+#### Acceptable Test Status Changes
+- ✅ **New passing tests added** (expected with new features)
+- ✅ **Existing tests still pass** (mandatory requirement)
+- ❌ **Any existing test now fails** (BLOCKS task completion)
+- ❌ **Any test removed without replacement** (requires justification)
+
+### Automatic Task Progression Decision Matrix
+
+After completing a task:
+
+| Scenario | Automatic Action |
+|----------|------------------|
+| 1 pending task found | ✅ Immediately execute the task |
+| Multiple pending tasks | ✅ Execute highest priority/next logical task |
+| No pending tasks | ⏹️ Stop with completion message |
+| Tasks with unmet dependencies | ⏹️ Stop with dependency status report |
+| Critical error/blocking issue | ⏹️ Stop with error details for user intervention |
+
+**Key Point: NO user permission requests - automatic execution is the default.**
+
+### User Control and Cancellation
+
+**🎛️ User Control Options:**
+- **ESC/Ctrl+C**: Stop automatic execution at any point
+- **Interruption**: User can interrupt during any task to stop the sequence
+- **Manual Control**: User can take manual control of task selection if needed
+
+**📋 Automatic Status Updates:**
+- Brief progress notifications: "✅ Task X completed | 🔄 Next: Task Y"
+- No verbose explanations during automatic execution
+- Detailed summaries only at natural stopping points
+
+**⏹️ Natural Stopping Points:**
+- All available tasks completed
+- Dependency-blocked tasks (cannot proceed automatically)
+- Critical errors requiring user intervention
+- Build/test failures that cannot be auto-resolved
+
+### Success Criteria Summary
+
+✅ **Feature Implementation**: New functionality working as specified  
+✅ **Test Coverage**: Appropriate Testing Trophy distribution  
+✅ **Zero Regressions**: ALL previously passing tests still pass  
+✅ **Full Test Suite**: Complete project test suite passes  
+✅ **Task Progression**: Next steps identified and presented to user  
+✅ **Documentation**: Implementation and decisions captured in memory  
+
+---
+
+## Detailed Shrimp Integration Workflow
+
+### Step-by-Step Shrimp MCP Integration
+
+#### 1. Task Selection and Execution
+```bash
+# Get available tasks  
+mcp__shrimp-task-manager-global__list_tasks status="pending"
+
+# Execute specific task with TDD methodology
+mcp__shrimp-task-manager-global__execute_task taskId="[task-id]"
+```
+
+#### 2. Follow Embedded TDD Instructions
+Every shrimp task contains TDD instructions in the description:
+- Look for "🔴 RED Phase", "🟢 GREEN Phase", "🔵 REFACTOR Phase"
+- Follow "Testing Trophy Distribution" percentages
+- Use embedded performance targets from PRD
+
+#### 3. TDD Phase Progress Updates
+```bash
+# RED Phase Update
+mcp__shrimp-task-manager-global__update_task \
+  taskId="[task-id]" \
+  prompt="🔴 RED Phase Complete: Created failing tests for [scenarios]. Tests fail with expected errors."
+
+# GREEN Phase Update  
+mcp__shrimp-task-manager-global__update_task \
+  taskId="[task-id]" \
+  prompt="🟢 GREEN Phase Complete: Implementation passes all tests. Performance: [X]ms."
+
+# REFACTOR Phase Update
+mcp__shrimp-task-manager-global__update_task \
+  taskId="[task-id]" \
+  prompt="🔵 REFACTOR Complete: Design improved, coverage >80%, performance optimized."
+```
+
+#### 4. Integrated Test Verification
+```bash
+# Verify with automatic test execution
+mcp__shrimp-task-manager-global__verify_task \
+  taskId="[task-id]" \
+  score=85 \
+  summary="TDD methodology complete. All quality gates verified."
+```
+
+**This automatically triggers:**
+- TaskTestRunner.verify_task_with_tests()
+- Test suite execution from task's relatedFiles
+- Static analysis (Credo, Dialyzer, Sobelow)
+- Performance benchmark validation
+- Score adjustment based on test results
+
+#### 5. Task Dependency Management
+```bash
+# Add discovered dependencies
+mcp__shrimp-task-manager-global__update_task \
+  taskId="[task-id]" \
+  dependencies="[dep-id-1],[dep-id-2]"
+
+# Update related files as tests are created
+mcp__shrimp-task-manager-global__update_task \
+  taskId="[task-id]" \
+  relatedFiles='[{"path": "test/new_feature_test.exs", "type": "CREATE"}]'
+```
+
+#### 6. Quality Gate Failure Protocol
+```bash
+# If tests fail or quality gates don't pass
+mcp__shrimp-task-manager-global__update_task \
+  taskId="[task-id]" \
+  prompt="Quality gate failure: [specific issues]. Continuing work to resolve."
+
+# Only verify when all issues resolved
+mcp__shrimp-task-manager-global__verify_task \
+  taskId="[task-id]" \
+  score=90 \
+  summary="All quality gates pass. No regressions detected."
+```
+
+#### 7. 🚨 CRITICAL: Automatic Post-Verification Task Progression
+```bash
+# MANDATORY after any task verification - check for next work
+mcp__shrimp-task-manager-global__list_tasks status="pending"
+
+# AUTOMATICALLY execute next task (NO user permission needed)
+"✅ Task completed | 🔄 Found X pending tasks | ▶️ Executing next: [Task A]"
+
+# Immediately proceed to next task
+mcp__shrimp-task-manager-global__execute_task taskId="[task-a-id]"
+```
+
+**NO user confirmation required - automatic execution is the standard workflow.**
+
+### Feedback Loop Integration
+
+#### Communicating Discoveries to Planner
+```bash
+mcp__shrimp-task-manager-global__update_task \
+  taskId="[task-id]" \
+  prompt="FEEDBACK: Task more complex than expected. Recommend splitting into [subtasks]. Missing dependency on [component] discovered."
+```
+
+### Key Commands Reference
+
+- **`list_tasks`**: Get tasks with TDD instructions
+- **`execute_task`**: Start task with embedded methodology  
+- **`get_task_detail`**: Get complete task with test requirements
+- **`update_task`**: Report progress at each TDD phase
+- **`verify_task`**: Trigger integrated test verification
+- **`update_task dependencies`**: Manage discovered dependencies
+
+### Integration Success Criteria
+
+✅ **Proper Shrimp Usage:**
+- All task interactions through MCP tools
+- TDD phase progress tracked in shrimp
+- Test verification integrated with verify_task
+- Task dependencies managed through shrimp
+- Feedback communicated back to planning
+
+✅ **Quality Assurance:**
+- TaskTestRunner validates all implementations
+- Static analysis enforced automatically
+- Performance benchmarks meet PRD requirements
+- No regressions allowed in task completion
+- **🚨 FULL test suite passes before any task marked complete**
+
+✅ **🚨 CRITICAL: Automatic Task Progression:**
+- After every task completion, automatically check for next pending tasks
+- **AUTOMATICALLY execute next logical task (no user permission needed)**
+- Never end session without checking for more work
+- Maintain project momentum through **continuous automatic execution**
+- Only stop on user interruption (ESC), no tasks available, or critical errors
+
+## 🧠 Automatic Memory Management and Documentation
+
+### 🚨 CRITICAL: Automatic Memory Update Protocol
+
+**EVERY task completion MUST automatically update memory with:**
+
+#### **Mandatory Memory Capture (No Exceptions)**
+1. **🔧 Implementation Details**: What was built, how it works, key components
+2. **⚡ Performance Metrics**: Actual timing results, memory usage, benchmark data
+3. **🧪 Test Results**: Test count, coverage achieved, integration test outcomes
+4. **🏗️ Architecture Impact**: How this changes system design, new patterns introduced
+5. **🐛 Issues Encountered**: Problems faced, solutions found, debugging insights
+6. **📋 Technical Decisions**: Key choices made, trade-offs considered, rationale
+7. **🔗 Integration Points**: How this connects to other components, API changes
+8. **📈 Quality Metrics**: Static analysis results, code quality improvements
+
+#### **🎯 High-Value Information to Always Capture**
+- **Error Messages & Solutions**: Exact error messages encountered and how they were resolved
+- **Performance Numbers**: Actual benchmark results, timing data, memory usage statistics  
+- **Test Coverage**: Specific test count, pass/fail rates, integration test insights
+- **Code Patterns**: New patterns introduced, architectural decisions, design trade-offs
+- **Dependencies**: New dependencies added, version constraints, compatibility issues
+- **Configuration Changes**: Environment variables, config files, deployment settings
+- **API Changes**: New endpoints, modified interfaces, breaking changes
+- **Database Changes**: Schema modifications, migration scripts, data model evolution
+
+#### **🔍 Context Capture Guidelines**
+- **Before/After States**: What changed from start to finish
+- **Decision Context**: Why specific approaches were chosen over alternatives
+- **Future Implications**: How this impacts upcoming tasks or features
+- **Lessons Learned**: What would be done differently, optimization opportunities
+- **Integration Notes**: How this fits with existing architecture, potential conflicts
+
+### Automatic Documentation Workflow
+
+After completing each task, you MUST automatically document the implementation:
+
+#### 1. 🔄 Automatic CLAUDE.md Update (Immediate)
+**DO THIS AUTOMATICALLY after every task verification:**
+
+```bash
+# AUTOMATICALLY append to CLAUDE.md or appropriate memory file
+# NO user prompting - just update memory immediately
+```
+
+**🚨 Auto-Capture Template (Use this format automatically):**
+```markdown
+# Task: [Task Name] - COMPLETED
+
+## Implementation Summary
+- **What was built**: [Core functionality implemented]
+- **TDD Approach**: [RED-GREEN-REFACTOR phases completed]
+- **Test Results**: [X tests passing, Y coverage achieved]
+- **Performance**: [Timing benchmarks met/exceeded]
+- **Architecture Impact**: [How this affects system design]
+
+## Key Technical Decisions
+- [Decision 1]: [Rationale and trade-offs]
+- [Decision 2]: [Performance considerations]
+- [Decision 3]: [Integration approach chosen]
+
+## Files Modified/Created
+- [list of significant files with purpose]
+- Test files: [BDD test files created]
+- Configuration: [Any config changes]
+
+## Learnings and Discoveries
+- [Implementation insights]
+- [Performance optimizations discovered]
+- [Integration complexity encountered]
+- [Recommendations for future similar tasks]
+
+## References
+- PRD sections: [specific line references]
+- Related tasks: [dependencies and follow-ups]
+```
+
+#### 2. CLAUDE.md Size Management and Splitting
+
+When CLAUDE.md approaches 5000+ lines or becomes unwieldy:
+
+**Create .llm-memory directory structure:**
+```bash
+mkdir -p .llm-memory/tasks
+mkdir -p .llm-memory/architecture
+mkdir -p .llm-memory/learnings
+mkdir -p .llm-memory/performance
+```
+
+**Split content by category:**
+- `.llm-memory/tasks/[task-category].md` - Task implementation summaries
+- `.llm-memory/architecture/[component].md` - Architecture decisions and patterns
+- `.llm-memory/learnings/[domain].md` - Technical learnings and discoveries
+- `.llm-memory/performance/[component].md` - Performance optimizations and benchmarks
+
+**Update CLAUDE.md with references:**
+```markdown
+# CafeteraOS Development Memory
+
+## Current Project Status
+[Brief current status and active work]
+
+## Task Implementation History
+@.llm-memory/tasks/memory-system.md
+@.llm-memory/tasks/testing-integration.md
+@.llm-memory/tasks/taskmaster-sync.md
+
+## Architecture Documentation
+@.llm-memory/architecture/memory-first-design.md
+@.llm-memory/architecture/testing-trophy-integration.md
+@.llm-memory/architecture/performance-requirements.md
+
+## Technical Learnings
+@.llm-memory/learnings/elixir-patterns.md
+@.llm-memory/learnings/performance-optimization.md
+@.llm-memory/learnings/testing-strategies.md
+
+## Performance Benchmarks
+@.llm-memory/performance/node-operations.md
+@.llm-memory/performance/search-performance.md
+@.llm-memory/performance/sync-operations.md
+```
+
+#### 3. Memory File Creation Protocol
+
+When creating split files, include:
+
+**File Header Template:**
+```markdown
+# [Component/Domain] - Implementation Memory
+
+## Context
+Part of CafeteraOS development - split from main CLAUDE.md for better organization.
+Related files: @.llm-memory/[related-files].md
+
+## [Content sections...]
+```
+
+**Cross-referencing:**
+- Reference related memory files using `@.llm-memory/path/file.md`
+- Include bidirectional references where relevant
+- Maintain chronological order within categories
+
+#### 4. 🤖 Fully Automated Documentation Workflow
+
+**AUTOMATICALLY execute after each task completion (no user interaction):**
+
+1. **🔄 Auto-Document Implementation**:
+   ```bash
+   # AUTOMATICALLY add comprehensive task summary to CLAUDE.md
+   # Capture: implementation approach, TDD phases, test results, performance metrics
+   # NO user prompting required - just do it
+   ```
+
+2. **📏 Auto-Check Size and Split**:
+   ```bash
+   # IF CLAUDE.md > 5000 lines, AUTOMATICALLY split by category
+   # AUTOMATICALLY create .llm-memory structure
+   # AUTOMATICALLY update CLAUDE.md with @references
+   ```
+
+3. **📝 Auto-Update Shrimp Task**:
+   ```bash
+   mcp__shrimp-task-manager-global__update_task \
+     taskId="[task-id]" \
+     prompt="🧠 MEMORY UPDATED: Documentation automatically added to CLAUDE.md. Captured: implementation details, test results (X tests passing), performance metrics, technical decisions, and integration points."
+   ```
+
+4. **⚡ Auto-Continue to Next Task**:
+   ```bash
+   # After memory update, AUTOMATICALLY check for next task and execute
+   # Keep the workflow moving without user intervention
+   ```
+
+#### 5. 🧠 Memory Integration with Task Verification (Automatic)
+
+**AUTOMATICALLY update memory BEFORE verification:**
+
+```bash
+# Step 1: Auto-capture all mandatory memory items
+# Step 2: Auto-update CLAUDE.md or split files  
+# Step 3: Include memory status in verification
+
+mcp__shrimp-task-manager-global__verify_task \
+  taskId="[task-id]" \
+  score=90 \
+  summary="✅ Implementation complete with TDD methodology. 🧠 Memory automatically updated: captured implementation details, test results (X tests, 0 failures), performance metrics (Yms avg), technical decisions, and integration points. Ready for next task."
+```
+
+#### 6. 🔄 Memory Update Quality Gates
+
+**Task verification BLOCKED if memory updates incomplete:**
+
+- ❌ **No memory update** = Task not verified
+- ❌ **Missing performance metrics** = Incomplete verification
+- ❌ **No error/solution documentation** = Incomplete verification  
+- ❌ **Architectural impact not captured** = Incomplete verification
+- ✅ **Complete memory capture** = Ready for verification
+
+### 🧠 Automatic Memory Success Criteria
+
+✅ **🔄 AUTOMATIC: Every completed task documented in CLAUDE.md or split files**
+✅ **🔄 AUTOMATIC: Implementation approach and TDD phases captured**
+✅ **🔄 AUTOMATIC: Technical decisions and trade-offs recorded**
+✅ **🔄 AUTOMATIC: Performance metrics and benchmarks documented**
+✅ **🔄 AUTOMATIC: Error messages and solutions preserved**
+✅ **🔄 AUTOMATIC: Test results and coverage data captured**
+✅ **🔄 AUTOMATIC: Architecture impact and integration notes recorded**
+✅ **🔄 AUTOMATIC: Memory structure maintained with proper @references**
+✅ **🔄 AUTOMATIC: Cross-references between related implementations**
+✅ **🔄 AUTOMATIC: Lessons learned and optimization opportunities documented**
+
+**🚨 KEY PRINCIPLE: Memory updates are NOT optional - they are automatic and mandatory**
+
+This automatic memory protocol ensures that ALL implementation knowledge is captured without user intervention, maintaining comprehensive institutional memory of technical decisions, patterns, performance data, and learnings for future development.
+
+---
+
+This detailed integration ensures TDD methodology is properly tracked and verified through the complete shrimp task management workflow, with comprehensive documentation of all implementations and learnings preserved in the project's memory structure.
+
+---
+
+This enhanced task execution mode ensures high-quality, test-driven development while maintaining full integration with the shrimp task management system and preserving all implementation knowledge for future reference.
+
+---
+
+## 🚨 CRITICAL: Automatic Context Management and Memory Preservation
+
+### 🔄 Context Exhaustion Protocol (AUTOMATIC)
+
+**TRIGGER CONDITION**: When context usage reaches 0% remaining
+**SAFETY CONDITION**: Only execute if NO tasks are currently `in_progress` 
+
+#### 1. 🔍 Context Monitoring (Continuous)
+Monitor context usage and automatically trigger preservation when:
+- Context remaining ≤ 0%
+- No active tasks in `in_progress` status
+- Safe stopping point reached (between tasks, not mid-implementation)
+
+#### 2. 🧠 Automatic Memory Preservation (NO USER INTERACTION)
+When context exhaustion detected, AUTOMATICALLY execute:
+
+```bash
+# Step 1: Verify no tasks in progress (SAFETY CHECK)
+mcp__shrimp-task-manager-global__list_tasks status="in_progress"
+# If result shows tasks in progress: ABORT context clearing, continue with current work
+
+# Step 2: Automatic comprehensive memory save (if safe to clear)
+# AUTOMATICALLY capture to CLAUDE.md or appropriate memory files:
+```
+
+**🧠 AUTOMATIC CONTEXT PRESERVATION CONTENT:**
+1. **🔄 Task Status Summary**:
+   - Current task completion status
+   - Next logical tasks in pipeline  
+   - Any blocking dependencies or issues
+   - Progress statistics (X completed, Y pending)
+
+2. **🏗️ Implementation Context**:
+   - Current architecture state and recent changes
+   - Active patterns being implemented
+   - Performance metrics and benchmarks achieved
+   - Key technical decisions made in current session
+
+3. **🧪 Quality and Testing State**:
+   - Test suite status (passing counts, coverage achieved)
+   - Static analysis results and any warnings to resolve
+   - Performance benchmarks and optimization opportunities
+   - Integration points validated or requiring attention
+
+4. **🐛 Issues and Solutions Context**:
+   - Error messages encountered and solutions found
+   - Debugging insights and resolution patterns
+   - Compatibility issues discovered and handled
+   - Configuration changes made and their impact
+
+5. **📋 Future Continuity Information**:
+   - Recommendations for next session priorities
+   - Potential risks or areas requiring attention
+   - Dependencies that may become available
+   - Performance targets still requiring achievement
+
+#### 3. 🗑️ Automatic Context Clearing (SAFE EXECUTION)
+After successful memory preservation:
+
+```bash
+# AUTOMATICALLY clear context with preservation message
+"🧠 CONTEXT PRESERVED → Memory updated with current session state
+📋 READY FOR CONTINUATION → Task state maintained in shrimp system  
+🔄 SEAMLESS RESUMPTION → Next session can continue from exact stopping point
+
+Context cleared for optimization. Resume with: Check shrimp task status and continue from preserved state."
+```
+
+#### 4. 🔄 Session Continuity Protocol 
+
+**Next Session Resumption:**
+```bash
+# Immediately upon new session start:
+# 1. Check task system for current state
+mcp__shrimp-task-manager-global__list_tasks status="pending,in_progress"
+
+# 2. Review preserved memory context
+# Read relevant @.llm-memory files and CLAUDE.md for session state
+
+# 3. Resume from exact stopping point
+# Continue with next logical task based on preserved context
+```
+
+### 🛡️ Safety Mechanisms and Safeguards
+
+#### **Context Clearing Safety Checks (MANDATORY)**
+```bash
+# BEFORE any context clearing, verify:
+# ❌ NO tasks with status="in_progress" 
+# ❌ NO critical errors requiring immediate user attention
+# ❌ NO active debugging session or incomplete troubleshooting
+# ❌ NO mid-implementation state (RED phase tests without GREEN phase)
+# ✅ All current work properly saved and documented
+# ✅ Shrimp system reflects accurate current state
+# ✅ Memory preservation completed successfully
+```
+
+#### **Abort Conditions (Never Clear Context If)**
+- **Active Task in Progress**: Any task shows `in_progress` status
+- **Critical Errors Present**: System in error state requiring resolution
+- **Mid-TDD Cycle**: RED phase started but GREEN/REFACTOR incomplete
+- **User Intervention Required**: Decisions or confirmations pending
+- **Test Failures**: Test suite failures requiring immediate attention
+- **Build Broken**: Compilation or critical build issues present
+
+#### **Safe Context Clearing Scenarios (OK to Clear)**
+- **Between Tasks**: All current work completed and verified
+- **Task Verification Complete**: Current task successfully verified in shrimp
+- **No Blocking Issues**: All critical systems functioning correctly
+- **Memory Preserved**: All important context captured in memory files
+- **Clear Task Pipeline**: Next steps clearly defined in shrimp system
+
+### 🎯 Context Preservation Templates (AUTOMATIC)
+
+#### **SESSION STATE PRESERVATION (Auto-captured)**
+```markdown
+# Context Preservation - Session [Date/Time]
+
+## Task Status Summary
+- **Current Session Progress**: [X tasks completed, Y pending]
+- **Last Completed Task**: [Task name and verification status]
+- **Next Priority Tasks**: [List of 2-3 next logical tasks]
+- **Blocking Dependencies**: [Any dependencies preventing progress]
+
+## Technical Context State  
+- **Architecture Progress**: [Current state of system architecture]
+- **Performance Metrics**: [Latest benchmarks and timing data]
+- **Test Suite Status**: [Pass/fail counts, coverage percentages]
+- **Integration Points**: [Components modified, APIs changed]
+
+## Issues and Solutions Context
+- **Error Resolution**: [Problems solved, debugging insights]
+- **Configuration Changes**: [Environment, dependency updates]
+- **Optimization Discoveries**: [Performance improvements found]
+- **Compatibility Notes**: [Version constraints, breaking changes]
+
+## Continuity Information
+- **Resume Priority**: [What should be tackled first next session]
+- **Risk Areas**: [Potential issues requiring attention]
+- **Optimization Opportunities**: [Performance or architecture improvements]
+- **Quality Gates**: [Any warnings or static analysis issues to resolve]
+
+## Session Statistics
+- **Duration**: [Session length]
+- **Tasks Completed**: [Count and success rate]
+- **Tests Added/Modified**: [Test coverage impact]
+- **Performance Improvements**: [Measurable optimizations achieved]
+```
+
+### 🚀 Optimization Benefits
+
+#### **Context Usage Efficiency**
+- **Prevent Context Exhaustion**: Never run out mid-task
+- **Seamless Continuity**: Pick up exactly where left off
+- **Preserved Knowledge**: No loss of implementation insights
+- **Optimal Resource Usage**: Context used efficiently for actual work
+
+#### **Development Productivity** 
+- **No Interruption**: Automatic optimization doesn't disrupt flow
+- **Complete Context**: All necessary information preserved
+- **Task Momentum**: Shrimp system maintains project momentum  
+- **Quality Continuity**: Test suite status and quality gates preserved
+
+#### **Risk Mitigation**
+- **No Lost Work**: All progress and decisions captured
+- **Safe Automation**: Only triggers in safe scenarios
+- **Complete Recovery**: Next session can fully continue project
+- **Failure Prevention**: Never clear context with work in progress
+
+### 🔧 Implementation Guidelines
+
+#### **Context Monitoring Integration**
+- Monitor context percentage throughout task execution
+- Pre-calculate context requirements for current task completion
+- Trigger preservation with sufficient buffer (not exactly 0%)
+- Maintain awareness of context usage in task planning
+
+#### **Memory Integration Points**
+- Use existing CLAUDE.md and .llm-memory structure
+- Follow established documentation patterns
+- Maintain cross-references and chronological order
+- Integrate with automatic documentation workflow
+
+#### **Shrimp System Coordination**
+- Rely on shrimp task system for persistent state
+- Ensure all task progress properly recorded in shrimp
+- Use shrimp verification system to confirm safe clearing points
+- Coordinate context clearing with task completion cycles
+
+### 🎯 Success Criteria for Automatic Context Management
+
+✅ **🔄 AUTOMATIC CONTEXT MONITORING**: Continuous monitoring of context usage without user awareness
+✅ **🛡️ SAFETY-FIRST CLEARING**: Never clear context with work in progress or critical issues
+✅ **🧠 COMPLETE MEMORY PRESERVATION**: All session knowledge captured before clearing
+✅ **🔄 SEAMLESS CONTINUITY**: Next session resumes from exact stopping point  
+✅ **📋 TASK SYSTEM INTEGRATION**: Shrimp system maintains complete project state
+✅ **⚡ OPTIMIZATION ACHIEVED**: Context used efficiently for maximum productivity
+✅ **🚫 ZERO WORK LOSS**: No implementation details or decisions lost in clearing
+✅ **🤖 FULLY AUTOMATIC**: No user intervention required for optimization
+
+**🚨 KEY PRINCIPLE: Context optimization should be invisible to user except for improved efficiency**
+
+This automatic context management ensures optimal context usage while maintaining complete development continuity and never losing implementation knowledge or work progress.

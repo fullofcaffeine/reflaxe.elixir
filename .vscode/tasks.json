@@ -1,0 +1,145 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Compile Haxe",
+      "type": "shell",
+      "command": "haxe",
+      "args": ["--run", "CompilerInit"],
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared",
+        "showReuseMessage": true,
+        "clear": false
+      },
+      "problemMatcher": {
+        "owner": "haxe",
+        "fileLocation": "absolute",
+        "pattern": {
+          "regexp": "^(.*):(\\d+):\\s+(characters\\s+\\d+-\\d+\\s+:\\s+)?(.*)",
+          "file": 1,
+          "line": 2,
+          "message": 4
+        }
+      }
+    },
+    {
+      "label": "Run Integration Tests",
+      "type": "shell", 
+      "command": "haxe",
+      "args": ["-cp", "src", "-cp", "test", "-main", "integration.CompilationPipelineTest", "-D", "reflaxe_runtime", "--interp"],
+      "group": "test",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "Run Performance Benchmarks",
+      "type": "shell",
+      "command": "haxe", 
+      "args": ["-cp", "src", "-cp", "test", "-main", "performance.PerformanceBenchmarks", "-D", "reflaxe_runtime", "--interp"],
+      "group": "test",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "Mix Test",
+      "type": "shell",
+      "command": "mix",
+      "args": ["test"],
+      "group": "test",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      },
+      "problemMatcher": {
+        "owner": "elixir",
+        "fileLocation": "relative",
+        "pattern": [
+          {
+            "regexp": "^\\s*(\\d+)\\)\\s+test\\s+(.*)\\s+\\((.*)\\)$",
+            "message": 2,
+            "file": 3
+          },
+          {
+            "regexp": "^\\s+(.*):(\\d+)$",
+            "file": 1,
+            "line": 2
+          }
+        ]
+      }
+    },
+    {
+      "label": "Mix Compile",
+      "type": "shell",
+      "command": "mix",
+      "args": ["compile"],
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "Full Test Suite",
+      "type": "shell",
+      "command": "sh",
+      "args": ["-c", "mix test && haxe test/integration/CompilationPipelineTest.hxml && haxe test/performance/PerformanceBenchmarks.hxml"],
+      "group": "test",
+      "presentation": {
+        "echo": true,
+        "reveal": "always", 
+        "focus": false,
+        "panel": "shared"
+      },
+      "dependsOrder": "sequence"
+    },
+    {
+      "label": "Start Phoenix Server",
+      "type": "shell",
+      "command": "mix",
+      "args": ["phx.server"],
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "dedicated"
+      },
+      "isBackground": true,
+      "problemMatcher": {
+        "owner": "phoenix",
+        "pattern": [
+          {
+            "regexp": ".*",
+            "file": 1,
+            "location": 2,
+            "message": 3
+          }
+        ],
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": ".*Compiling.*",
+          "endsPattern": ".*Running.*on.*"
+        }
+      }
+    }
+  ]
+}
