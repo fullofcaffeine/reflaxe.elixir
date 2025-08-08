@@ -5,6 +5,8 @@ package test;
 import haxe.macro.Expr;
 import reflaxe.elixir.macro.EctoQueryMacros;
 
+using StringTools;
+
 /**
  * Test complete Ecto query compilation to proper Elixir syntax
  */
