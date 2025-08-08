@@ -320,13 +320,31 @@ class EctoQueryMacros {
         }
     }
     
-    static function generateWhereQuery(condition: ConditionInfo): String {
-        var field = condition.fields[0];
-        var op = condition.operators[0];
-        var value = condition.values[0];
-        var binding = condition.binding;
-        
-        return 'where(${binding}, [${field}], ${binding}.${field} ${op} ^${value})';
+    public static function generateWhereQuery(condition: ConditionInfo): String {
+        if (condition.fields.length == 1) {
+            // Simple condition
+            var field = condition.fields[0];
+            var op = condition.operators[0];
+            var value = condition.values[0];
+            var binding = condition.binding;
+            
+            return '|> where([${binding}], ${binding}.${field} ${op} ^${value})';
+        } else {
+            // Complex condition with multiple fields - combine with AND
+            var binding = condition.binding;
+            var conditions = [];
+            
+            for (i in 0...condition.fields.length) {
+                var field = condition.fields[i];
+                var op = i < condition.operators.length ? condition.operators[i] : "==";
+                var value = i < condition.values.length ? condition.values[i] : "null";
+                
+                conditions.push('${binding}.${field} ${op} ^${value}');
+            }
+            
+            var combinedConditions = conditions.join(' and ');
+            return '|> where([${binding}], ${combinedConditions})';
+        }
     }
     
     public static function analyzeSelectExpression(expr: Expr): SelectInfo {
@@ -371,15 +389,15 @@ class EctoQueryMacros {
         }
     }
     
-    static function generateSelectQuery(select: SelectInfo): String {
+    public static function generateSelectQuery(select: SelectInfo): String {
         if (select.isMap) {
             var fieldMappings = select.fields.map(f -> '${f}: ${select.binding}.${f}').join(", ");
-            return 'select([${select.binding}], %{${fieldMappings}})';
+            return '|> select([${select.binding}], %{${fieldMappings}})';
         } else if (select.fields.length == 1) {
-            return 'select([${select.binding}], ${select.binding}.${select.fields[0]})';
+            return '|> select([${select.binding}], ${select.binding}.${select.fields[0]})';
         } else {
             var fieldList = select.fields.map(f -> '${select.binding}.${f}').join(", ");
-            return 'select([${select.binding}], [${fieldList}])';
+            return '|> select([${select.binding}], [${fieldList}])';
         }
     }
     
@@ -409,9 +427,9 @@ class EctoQueryMacros {
         }
     }
     
-    static function generateJoinQuery(join: JoinInfo): String {
+    public static function generateJoinQuery(join: JoinInfo): String {
         var joinTypeStr = join.type == "inner" ? "join" : '${join.type}_join';
-        return '${joinTypeStr}(${join.alias}, as: :${join.alias})';
+        return '|> ${joinTypeStr}(:${join.type}, [u], p in assoc(u, :${join.alias}), as: :p)';
     }
     
     static function analyzeOrderExpression(expr: Expr): OrderInfo {
@@ -434,10 +452,10 @@ class EctoQueryMacros {
     static function generateOrderQuery(order: OrderInfo): String {
         if (order.fields.length == 1) {
             var field = order.fields[0];
-            return 'order_by([${order.binding}], ${field.direction}: ${order.binding}.${field.field})';
+            return '|> order_by([${order.binding}], ${field.direction}: ${order.binding}.${field.field})';
         } else {
             var orderList = order.fields.map(f -> '${f.direction}: ${order.binding}.${f.field}').join(", ");
-            return 'order_by([${order.binding}], [${orderList}])';
+            return '|> order_by([${order.binding}], [${orderList}])';
         }
     }
     
@@ -460,10 +478,10 @@ class EctoQueryMacros {
     
     static function generateGroupQuery(group: GroupInfo): String {
         if (group.fields.length == 1) {
-            return 'group_by([${group.binding}], ${group.binding}.${group.fields[0]})';
+            return '|> group_by([${group.binding}], ${group.binding}.${group.fields[0]})';
         } else {
             var fieldList = group.fields.map(f -> '${group.binding}.${f}').join(", ");
-            return 'group_by([${group.binding}], [${fieldList}])';
+            return '|> group_by([${group.binding}], [${fieldList}])';
         }
     }
     
@@ -474,11 +492,11 @@ class EctoQueryMacros {
     
     static function generateFinalQuery(context: QueryContext): String {
         // Generate complete Ecto query from context
-        var query = 'from ${context.schema.toLowerCase()} in ${context.schema}';
+        var query = 'from ${context.schema.toLowerCase()}, as: :${context.bindings[0]}';
         
-        // Add joins
+        // Add joins with pipe syntax
         for (join in context.joins) {
-            query += ', ${join.type}_join: ${join.alias} in assoc(${context.bindings[0]}, :${join.alias})';
+            query += '\n|> join(:${join.type}, [${context.bindings[0]}], ${join.alias} in assoc(${context.bindings[0]}, :${join.alias}), as: :${join.alias})';
         }
         
         return query;
