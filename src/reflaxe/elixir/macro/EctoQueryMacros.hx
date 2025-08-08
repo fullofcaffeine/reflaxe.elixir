@@ -265,23 +265,52 @@ class EctoQueryMacros {
         return null;
     }
     
-    static function analyzeCondition(expr: Expr): ConditionInfo {
-        // Simplified condition analysis
+    public static function analyzeCondition(expr: Expr): ConditionInfo {
+        // Real expression parsing implementation
+        var fields = [];
+        var operators = [];
+        var values = [];
+        var binding = "u"; // Default, will be extracted from lambda
+        
+        // Parse lambda expression: u -> u.age > 18
+        switch (expr) {
+            case {expr: EFunction(name, f)} if (f.args.length == 1):
+                // Extract binding variable name from lambda argument
+                binding = f.args[0].name;
+                
+                // Parse the function body for conditions
+                parseConditionExpression(f.expr, fields, operators, values, binding);
+                
+            case _:
+                // Fallback for non-lambda expressions
+                parseConditionExpression(expr, fields, operators, values, binding);
+        }
+        
         return {
-            fields: ["age"], // Would extract from actual expression
-            operators: [">"],
-            values: ["18"],
-            binding: "u"
+            fields: fields,
+            operators: operators,
+            values: values,
+            binding: binding
         };
     }
     
     
     static function validateConditionFields(condition: ConditionInfo): Void {
+        var currentSchema = getCurrentSchema();
+        
         // Validate fields exist in current schema context
-        for (field in condition.fields) {
-            if (!SchemaIntrospection.hasField(getCurrentSchema(), field)) {
-                Context.error('Field "${field}" does not exist in schema', Context.currentPos());
+        for (i in 0...condition.fields.length) {
+            var field = condition.fields[i];
+            var op = i < condition.operators.length ? condition.operators[i] : "=";
+            
+            // Check field existence
+            if (!SchemaIntrospection.hasField(currentSchema, field)) {
+                var availableFields = getAvailableFields(currentSchema);
+                Context.error('Field "${field}" does not exist in schema "${currentSchema}". Available fields: ${availableFields.join(", ")}', Context.currentPos());
             }
+            
+            // Validate field type matches operator usage
+            validateOperatorTypeCompatibility(currentSchema, field, op);
         }
     }
     
@@ -300,20 +329,44 @@ class EctoQueryMacros {
         return 'where(${binding}, [${field}], ${binding}.${field} ${op} ^${value})';
     }
     
-    static function analyzeSelectExpression(expr: Expr): SelectInfo {
-        // Simplified select analysis
+    public static function analyzeSelectExpression(expr: Expr): SelectInfo {
+        // Real select expression parsing implementation
+        var fields = [];
+        var binding = "u"; // Default, will be extracted from lambda
+        var isMap = false;
+        
+        // Parse lambda expression: u -> u.name or u -> {name: u.name, email: u.email}
+        switch (expr) {
+            case {expr: EFunction(name, f)} if (f.args.length == 1):
+                // Extract binding variable name from lambda argument
+                binding = f.args[0].name;
+                
+                // Parse the function body for select fields
+                parseSelectExpression(f.expr, fields, binding);
+                
+                // Check if it's a map construction by recursively checking for EObjectDecl
+                isMap = isMapConstruction(f.expr);
+                
+            case _:
+                // Fallback for non-lambda expressions
+                parseSelectExpression(expr, fields, binding);
+        }
+        
         return {
-            fields: ["name"], // Would extract from actual expression
-            binding: "u",
-            isMap: false
+            fields: fields,
+            binding: binding,
+            isMap: isMap
         };
     }
     
     
     static function validateSelectFields(select: SelectInfo): Void {
+        var currentSchema = getCurrentSchema();
+        
         for (field in select.fields) {
-            if (!SchemaIntrospection.hasField(getCurrentSchema(), field)) {
-                Context.error('Field "${field}" does not exist in schema', Context.currentPos());
+            if (!SchemaIntrospection.hasField(currentSchema, field)) {
+                var availableFields = getAvailableFields(currentSchema);
+                Context.error('Field "${field}" does not exist in schema "${currentSchema}". Available fields: ${availableFields.join(", ")}', Context.currentPos());
             }
         }
     }
@@ -341,10 +394,18 @@ class EctoQueryMacros {
     }
     
     static function validateJoinAssociation(join: JoinInfo): Void {
-        // Validate association exists in schema
         var currentSchema = getCurrentSchema();
+        
+        // Validate association exists in schema
         if (!SchemaIntrospection.hasAssociation(currentSchema, join.alias)) {
-            Context.error('Association "${join.alias}" does not exist in schema', Context.currentPos());
+            var availableAssociations = getAvailableAssociations(currentSchema);
+            Context.error('Association "${join.alias}" does not exist in schema "${currentSchema}". Available associations: ${availableAssociations.join(", ")}', Context.currentPos());
+        }
+        
+        // Validate association type and target schema
+        var association = SchemaIntrospection.getAssociation(currentSchema, join.alias);
+        if (!SchemaIntrospection.schemaExists(association.schema)) {
+            Context.error('Target schema "${association.schema}" for association "${join.alias}" does not exist', Context.currentPos());
         }
     }
     
@@ -479,9 +540,17 @@ class EctoQueryMacros {
     
     // Helper functions for aggregates
     
-    static function extractFieldName(expr: Expr): String {
-        // Simplified field extraction - would parse actual expression
-        return "age";
+    public static function extractFieldName(expr: Expr): String {
+        // Real field name extraction from expressions
+        return switch (expr) {
+            case {expr: EFunction(name, f)} if (f.args.length == 1):
+                // Handle lambda: u -> u.field_name
+                extractFieldFromExpression(f.expr);
+                
+            case _:
+                // Handle direct field access
+                extractFieldFromExpression(expr);
+        };
     }
     
     static function validateNumericField(field: String, pos: haxe.macro.Expr.Position): Void {
@@ -495,12 +564,208 @@ class EctoQueryMacros {
         }
     }
     
+    /**
+     * Real expression parsing helper functions
+     */
+    
+    /**
+     * Parse condition expressions recursively (AND, OR, comparisons)
+     */
+    static function parseConditionExpression(expr: Expr, fields: Array<String>, operators: Array<String>, values: Array<String>, binding: String): Void {
+        if (expr == null) return;
+        
+        switch (expr.expr) {
+            case EMeta(m, e):
+                // Handle macro metadata like :implicitReturn
+                parseConditionExpression(e, fields, operators, values, binding);
+                
+            case EReturn(e):
+                // Handle return statements in macro functions
+                parseConditionExpression(e, fields, operators, values, binding);
+                
+            case EBinop(op, e1, e2):
+                switch (op) {
+                    case OpBoolAnd:
+                        // Handle AND: u.age > 18 && u.active == true
+                        parseConditionExpression(e1, fields, operators, values, binding);
+                        parseConditionExpression(e2, fields, operators, values, binding);
+                        
+                    case OpBoolOr:
+                        // Handle OR: u.role == "admin" || u.role == "moderator"
+                        parseConditionExpression(e1, fields, operators, values, binding);
+                        parseConditionExpression(e2, fields, operators, values, binding);
+                        
+                    case OpEq:
+                        // Handle ==: u.name == "John"
+                        extractFieldAndValue(e1, e2, "==", fields, operators, values, binding);
+                        
+                    case OpNotEq:
+                        // Handle !=: u.status != "deleted"
+                        extractFieldAndValue(e1, e2, "!=", fields, operators, values, binding);
+                        
+                    case OpGt:
+                        // Handle >: u.age > 18
+                        extractFieldAndValue(e1, e2, ">", fields, operators, values, binding);
+                        
+                    case OpGte:
+                        // Handle >=: u.age >= 18
+                        extractFieldAndValue(e1, e2, ">=", fields, operators, values, binding);
+                        
+                    case OpLt:
+                        // Handle <: u.count < 5
+                        extractFieldAndValue(e1, e2, "<", fields, operators, values, binding);
+                        
+                    case OpLte:
+                        // Handle <=: u.attempts <= 3
+                        extractFieldAndValue(e1, e2, "<=", fields, operators, values, binding);
+                        
+                    case _:
+                        // Other binary operations not yet supported
+                }
+                
+            case EField(e, field):
+                // Direct field access - might be part of a larger expression
+                fields.push(field);
+                
+            case _:
+                // Other expression types not yet supported
+        }
+    }
+    
+    /**
+     * Extract field and value from comparison expressions
+     */
+    static function extractFieldAndValue(e1: Expr, e2: Expr, op: String, fields: Array<String>, operators: Array<String>, values: Array<String>, binding: String): Void {
+        var field = extractFieldFromExpression(e1);
+        var value = extractValueFromExpression(e2);
+        
+        if (field != null && value != null) {
+            fields.push(field);
+            operators.push(op);
+            values.push(value);
+        }
+    }
+    
+    /**
+     * Extract field name from field access expressions
+     */
+    static function extractFieldFromExpression(expr: Expr): String {
+        if (expr == null) return null;
+        
+        return switch (expr.expr) {
+            case EMeta(m, e):
+                // Handle macro metadata
+                extractFieldFromExpression(e);
+                
+            case EReturn(e):
+                // Handle return statements
+                extractFieldFromExpression(e);
+                
+            case EField(e, field):
+                // Handle: binding.field_name
+                field;
+                
+            case EConst(CIdent(name)):
+                // Handle direct field references
+                name;
+                
+            case _:
+                null;
+        };
+    }
+    
+    /**
+     * Extract value from literal expressions
+     */
+    static function extractValueFromExpression(expr: Expr): String {
+        if (expr == null) return null;
+        
+        return switch (expr.expr) {
+            case EConst(CInt(v)):
+                v;
+            case EConst(CFloat(f)):
+                f;
+            case EConst(CString(s)):
+                s;
+            case EConst(CIdent("true")):
+                "true";
+            case EConst(CIdent("false")):
+                "false";
+            case EConst(CIdent("null")):
+                "null";
+            case EConst(CIdent(v)):
+                v; // Handle other identifiers
+            case _:
+                null; // Return null instead of "unknown" for proper error handling
+        };
+    }
+    
+    /**
+     * Parse select expressions for field extraction
+     */
+    static function parseSelectExpression(expr: Expr, fields: Array<String>, binding: String): Void {
+        if (expr == null) return;
+        
+        switch (expr.expr) {
+            case EReturn(e):
+                // Handle return statements in macro functions
+                parseSelectExpression(e, fields, binding);
+                
+            case EMeta(m, e):
+                // Handle macro metadata
+                parseSelectExpression(e, fields, binding);
+                
+            case EField(e, field):
+                // Single field: u.name
+                fields.push(field);
+                
+            case EObjectDecl(objFields):
+                // Map construction: {name: u.name, email: u.email}
+                for (objField in objFields) {
+                    var fieldName = extractFieldFromExpression(objField.expr);
+                    if (fieldName != null) {
+                        fields.push(fieldName);
+                    }
+                }
+                
+            case EConst(CIdent(name)):
+                // Handle direct field references
+                fields.push(name);
+                
+            case _:
+                // Other select patterns not yet supported
+                // Try to extract field from any other expression type
+                var fieldName = extractFieldFromExpression(expr);
+                if (fieldName != null) {
+                    fields.push(fieldName);
+                }
+        }
+    }
+
     static function isNumericType(type: String): Bool {
         return ["integer", "float", "decimal", "number", "Int", "Float"].contains(type);
     }
     
     static function getCurrentBinding(): String {
         return "u"; // Simplified - would get from context
+    }
+    
+    /**
+     * Recursively check if expression contains map construction
+     */
+    static function isMapConstruction(expr: Expr): Bool {
+        if (expr == null) return false;
+        
+        return switch (expr.expr) {
+            case EObjectDecl(_):
+                true;
+            case EMeta(m, e):
+                isMapConstruction(e);
+            case EReturn(e):
+                isMapConstruction(e);
+            case _:
+                false;
+        };
     }
     
     /**
@@ -550,6 +815,74 @@ class EctoQueryMacros {
     static function addPreloadHints(query: String): String {
         // Simplified preload suggestions
         return query + " |> Repo.preload([:associations])";
+    }
+    
+    // Enhanced validation helper functions
+    
+    /**
+     * Get list of available fields for error messages
+     */
+    public static function getAvailableFields(schemaName: String): Array<String> {
+        var fields = SchemaIntrospection.getSchemaFields(schemaName);
+        var fieldNames = [];
+        for (fieldName in fields.keys()) {
+            fieldNames.push(fieldName);
+        }
+        fieldNames.sort(function(a, b) return a < b ? -1 : 1);
+        return fieldNames;
+    }
+    
+    /**
+     * Get list of available associations for error messages
+     */
+    public static function getAvailableAssociations(schemaName: String): Array<String> {
+        var schema = SchemaIntrospection.getSchemaInfo(schemaName);
+        if (schema == null) return [];
+        
+        var associationNames = [];
+        for (assocName in schema.associations.keys()) {
+            associationNames.push(assocName);
+        }
+        associationNames.sort(function(a, b) return a < b ? -1 : 1);
+        return associationNames;
+    }
+    
+    /**
+     * Validate operator type compatibility
+     */
+    static function validateOperatorTypeCompatibility(schemaName: String, fieldName: String, op: String): Void {
+        var fieldType = SchemaIntrospection.getFieldType(schemaName, fieldName);
+        
+        // Check numeric operators on non-numeric fields
+        if (isNumericOperator(op) && !isNumericType(fieldType)) {
+            Context.error('Cannot use numeric operator "${op}" on non-numeric field "${fieldName}" of type "${fieldType}"', Context.currentPos());
+        }
+        
+        // Check string operators on non-string fields
+        if (isStringOperator(op) && !isStringType(fieldType)) {
+            Context.error('Cannot use string operator "${op}" on non-string field "${fieldName}" of type "${fieldType}"', Context.currentPos());
+        }
+    }
+    
+    /**
+     * Check if operator is numeric
+     */
+    public static function isNumericOperator(op: String): Bool {
+        return [">" , "<", ">=", "<="].contains(op);
+    }
+    
+    /**
+     * Check if operator is string-specific
+     */
+    public static function isStringOperator(op: String): Bool {
+        return ["like", "ilike", "=~"].contains(op);
+    }
+    
+    /**
+     * Check if field type is string
+     */
+    public static function isStringType(type: String): Bool {
+        return ["String", "string", "text", "varchar"].contains(type);
     }
 }
 

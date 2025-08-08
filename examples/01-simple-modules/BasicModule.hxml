@@ -1,0 +1,11 @@
+# Basic Module Compilation
+# Compiles BasicModule.hx to demonstrate @:module syntax
+
+-cp ../../src
+-cp ../../std
+-cp ../../test
+-cp ../../../haxe.elixir.reference/reflaxe/src
+-cp .
+-main BasicModule
+-D reflaxe_runtime
+--no-output
