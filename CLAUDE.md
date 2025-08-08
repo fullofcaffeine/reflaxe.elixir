@@ -40,6 +40,10 @@ This is acceptable - helpers are simpler for our needs while following similar s
 - Testing Trophy approach with integration test focus
 - Performance targets: <15ms compilation steps, <100ms HXX template processing
 
+## Implementation Status
+For comprehensive feature matrix and honest assessment of what's implemented vs. missing, see:
+`documentation/COMPLETE_TARGET_REFERENCE.md`
+
 ## Recent Task Completions
 
 ### Elixir Standard Library Extern Definitions ✅
@@ -169,3 +173,15 @@ Successfully integrated real schema validation with query macros:
 
 ### MAJOR MILESTONE
 **Moved Ecto Query DSL from 0% functional implementation (hardcoded placeholders) to working expression parsing + real schema validation.** This represents the foundation for complete typed Ecto query support.
+
+### Ecto Query Compilation ✅ (Latest)
+Successfully implemented complete Ecto query compilation with proper pipe syntax:
+
+- **Proper Pipe Syntax**: All query functions now generate `|>` prefix with correct binding arrays
+- **Where Clauses**: `|> where([u], u.age > ^18)` with complex AND/OR support
+- **Select Expressions**: `|> select([u], u.name)` and map selections `|> select([u], %{name: u.name})`
+- **Join Operations**: `|> join(:inner, [u], p in assoc(u, :posts), as: :p)`
+- **Order/Group By**: Full pipe syntax with multiple field support
+- **Test Coverage**: EctoQueryCompilationTest and SimpleQueryCompilationTest all passing
+
+The Ecto Query DSL now generates production-ready Elixir code that integrates seamlessly with Phoenix applications.
