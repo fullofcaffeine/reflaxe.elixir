@@ -1,0 +1,11 @@
+# User Util Compilation
+# Compiles UserUtil.hx to demonstrate public/private functions
+
+-cp ../../src
+-cp ../../std
+-cp ../../test
+-cp ../../../haxe.elixir.reference/reflaxe/src
+-cp .
+-main UserUtil
+-D reflaxe_runtime
+--no-output

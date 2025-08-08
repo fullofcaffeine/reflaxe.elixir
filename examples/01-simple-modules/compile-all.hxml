@@ -1,0 +1,24 @@
+# Compile All Simple Module Examples
+# This file compiles all three examples in the 01-simple-modules directory
+
+# Shared configuration
+-cp ../../src
+-cp ../../std
+-cp ../../test
+-cp ../../../haxe.elixir.reference/reflaxe/src
+-cp .
+-D reflaxe_runtime
+--no-output
+
+# Compile BasicModule
+-main BasicModule
+
+--next
+
+# Compile MathHelper  
+-main MathHelper
+
+--next
+
+# Compile UserUtil
+-main UserUtil

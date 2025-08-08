@@ -1,0 +1,655 @@
+# Creating Extern Definitions for Elixir Libraries
+
+A comprehensive guide for creating Haxe extern definitions to use any Elixir library with type safety and IDE support.
+
+## Quick Reference
+
+```haxe
+// Basic extern structure
+@:native("ElixirModule")  // Elixir module name
+extern class HaxeClassName {
+    @:native("elixir_function")  // Elixir function name
+    public static function haxeFunction(param: Type): ReturnType;
+}
+```
+
+## Table of Contents
+
+- [Understanding Externs](#understanding-externs)
+- [Basic Patterns](#basic-patterns)
+- [Advanced Patterns](#advanced-patterns)
+- [Common Libraries](#common-libraries)
+- [Testing Strategy](#testing-strategy)
+- [Best Practices](#best-practices)
+- [Troubleshooting](#troubleshooting)
+
+## Understanding Externs
+
+### What Are Extern Definitions?
+
+Extern definitions are Haxe's way of declaring external functions and types without implementing them. For Reflaxe.Elixir, they provide:
+
+1. **Type Safety**: Compile-time type checking for Elixir library calls
+2. **IDE Support**: Auto-completion and documentation
+3. **API Documentation**: Self-documenting code
+4. **Refactoring Support**: Safe renaming and refactoring
+
+### How They Work
+
+```haxe
+// Your Haxe code
+var result = HTTPoison.get("https://api.github.com/users/octocat");
+
+// Compiles to Elixir
+result = HTTPoison.get("https://api.github.com/users/octocat")
+```
+
+## Basic Patterns
+
+### 1. Simple Module Functions
+
+**Elixir Code:**
+```elixir
+defmodule Math do
+  def add(a, b), do: a + b
+  def multiply(a, b), do: a * b
+end
+```
+
+**Haxe Extern:**
+```haxe
+@:native("Math")
+extern class Math {
+    @:native("add")
+    public static function add(a: Float, b: Float): Float;
+    
+    @:native("multiply")
+    public static function multiply(a: Float, b: Float): Float;
+}
+```
+
+### 2. Functions with Optional Parameters
+
+**Elixir Code:**
+```elixir
+defmodule HTTPoison do
+  def get(url, headers \\\\ [], options \\\\ []), do: # implementation
+end
+```
+
+**Haxe Extern:**
+```haxe
+@:native("HTTPoison")
+extern class HTTPoison {
+    @:native("get")
+    public static function get(url: String, ?headers: Dynamic, ?options: Dynamic): Dynamic;
+}
+```
+
+### 3. Functions Returning Tuples
+
+**Elixir Code:**
+```elixir
+defmodule File do
+  def read(path) do
+    case File.read(path) do
+      {:ok, content} -> {:ok, content}
+      {:error, reason} -> {:error, reason}
+    end
+  end
+end
+```
+
+**Haxe Extern:**
+```haxe
+// Option 1: Use Dynamic for flexibility
+@:native("File")
+extern class File {
+    @:native("read")
+    public static function read(path: String): Dynamic; // {:ok, content} | {:error, reason}
+}
+
+// Option 2: Use typed objects for safety
+typedef FileResult = {
+    var status: String; // "ok" or "error"
+    var data: Dynamic;  // content or error reason
+}
+
+@:native("File")
+extern class File {
+    @:native("read")
+    public static function read(path: String): FileResult;
+}
+```
+
+## Advanced Patterns
+
+### 1. GenServer Integration
+
+**Elixir GenServer:**
+```elixir
+defmodule Counter do
+  use GenServer
+  
+  def start_link(initial_value) do
+    GenServer.start_link(__MODULE__, initial_value, name: __MODULE__)
+  end
+  
+  def increment do
+    GenServer.call(__MODULE__, :increment)
+  end
+  
+  def get_value do
+    GenServer.call(__MODULE__, :get)
+  end
+end
+```
+
+**Haxe Extern:**
+```haxe
+@:native("Counter")
+extern class Counter {
+    @:native("start_link")
+    public static function startLink(initialValue: Int): Dynamic;
+    
+    @:native("increment")
+    public static function increment(): Int;
+    
+    @:native("get_value")  
+    public static function getValue(): Int;
+}
+
+// Usage
+class CounterService {
+    public static function main() {
+        Counter.startLink(0);
+        trace("Current value: " + Counter.getValue()); // 0
+        Counter.increment();
+        trace("After increment: " + Counter.getValue()); // 1
+    }
+}
+```
+
+### 2. Complex Data Structures
+
+**Elixir Ecto Schema:**
+```elixir
+defmodule User do
+  use Ecto.Schema
+  
+  schema "users" do
+    field :name, :string
+    field :email, :string
+    field :age, :integer
+    timestamps()
+  end
+  
+  def changeset(user, attrs) do
+    user
+    |> cast(attrs, [:name, :email, :age])
+    |> validate_required([:name, :email])
+  end
+end
+```
+
+**Haxe Extern with Typed Objects:**
+```haxe
+typedef UserData = {
+    var id: Null<Int>;
+    var name: String;
+    var email: String;
+    var age: Null<Int>;
+    var inserted_at: Null<String>;
+    var updated_at: Null<String>;
+}
+
+typedef UserChangeset = {
+    var valid: Bool;
+    var errors: Dynamic;
+    var changes: Dynamic;
+}
+
+@:native("User")
+extern class User {
+    @:native("changeset")
+    public static function changeset(user: UserData, attrs: Dynamic): UserChangeset;
+}
+```
+
+### 3. Macro-Generated Functions
+
+Some Elixir libraries generate functions via macros. Handle them as regular functions:
+
+**Phoenix Router (generated routes):**
+```elixir
+# Generated by Phoenix
+defmodule MyAppWeb.Router do
+  get "/users", UserController, :index
+  # This generates MyAppWeb.Router.user_path/2, user_url/2, etc.
+end
+```
+
+**Haxe Extern:**
+```haxe
+@:native("MyAppWeb.Router.Helpers")
+extern class RouterHelpers {
+    @:native("user_path")
+    public static function userPath(conn: Dynamic, action: String): String;
+    
+    @:native("user_url") 
+    public static function userUrl(conn: Dynamic, action: String): String;
+}
+```
+
+## Common Libraries
+
+### HTTPoison (HTTP Client)
+
+```haxe
+package httpoison;
+
+typedef HTTPResponse = {
+    var status_code: Int;
+    var body: String;
+    var headers: Dynamic;
+}
+
+@:native("HTTPoison")
+extern class HTTPoison {
+    @:native("get")
+    public static function get(url: String, ?headers: Dynamic, ?options: Dynamic): Dynamic;
+    
+    @:native("post")
+    public static function post(url: String, body: String, ?headers: Dynamic, ?options: Dynamic): Dynamic;
+    
+    @:native("put")
+    public static function put(url: String, body: String, ?headers: Dynamic, ?options: Dynamic): Dynamic;
+    
+    @:native("delete")
+    public static function delete(url: String, ?headers: Dynamic, ?options: Dynamic): Dynamic;
+}
+
+// Usage example
+@:module
+class ApiClient {
+    function fetchUser(id: Int): Dynamic {
+        var url = 'https://jsonplaceholder.typicode.com/users/${id}';
+        return HTTPoison.get(url);
+    }
+}
+```
+
+### Jason (JSON Library)
+
+```haxe
+package jason;
+
+@:native("Jason")
+extern class Jason {
+    @:native("encode")
+    public static function encode(data: Dynamic): Dynamic; // {:ok, json} | {:error, reason}
+    
+    @:native("encode!")
+    public static function encodeUnsafe(data: Dynamic): String; // Throws on error
+    
+    @:native("decode")
+    public static function decode(json: String): Dynamic; // {:ok, data} | {:error, reason}
+    
+    @:native("decode!")
+    public static function decodeUnsafe(json: String): Dynamic; // Throws on error
+}
+
+// Usage
+@:module
+class JsonUtils {
+    function parseApiResponse(jsonString: String): Dynamic {
+        try {
+            return Jason.decodeUnsafe(jsonString);
+        } catch (e: Dynamic) {
+            return {error: "Invalid JSON: " + e};
+        }
+    }
+}
+```
+
+### Ecto (Database ORM)
+
+```haxe
+package ecto;
+
+// Basic Repo operations
+@:native("MyApp.Repo")
+extern class Repo {
+    @:native("get")
+    public static function get(schema: Dynamic, id: Int): Dynamic;
+    
+    @:native("insert")
+    public static function insert(changeset: Dynamic): Dynamic;
+    
+    @:native("update")
+    public static function update(changeset: Dynamic): Dynamic;
+    
+    @:native("delete")
+    public static function delete(struct: Dynamic): Dynamic;
+    
+    @:native("all")
+    public static function all(query: Dynamic): Array<Dynamic>;
+}
+
+// Simple query builder (for basic cases)
+@:native("Ecto.Query")
+extern class Query {
+    @:native("from")
+    public static function from(schema: Dynamic): Dynamic;
+    
+    @:native("where")
+    public static function where(query: Dynamic, conditions: Dynamic): Dynamic;
+    
+    @:native("select")
+    public static function select(query: Dynamic, fields: Dynamic): Dynamic;
+}
+
+// Usage
+@:module  
+class UserRepository {
+    function findUser(id: Int): Dynamic {
+        return Repo.get(User, id);
+    }
+    
+    function createUser(userData: Dynamic): Dynamic {
+        var changeset = User.changeset(userData);
+        return Repo.insert(changeset);
+    }
+}
+```
+
+### Phoenix LiveView
+
+```haxe
+package phoenix;
+
+typedef LiveViewSocket = {
+    var assigns: Dynamic;
+    var connected: Bool;
+    var transport_pid: Dynamic;
+}
+
+@:native("Phoenix.LiveView")
+extern class LiveView {
+    @:native("assign")
+    public static function assign(socket: LiveViewSocket, key: String, value: Dynamic): LiveViewSocket;
+    
+    @:native("push_redirect")
+    public static function pushRedirect(socket: LiveViewSocket, to: String): LiveViewSocket;
+    
+    @:native("put_flash")
+    public static function putFlash(socket: LiveViewSocket, type: String, message: String): LiveViewSocket;
+}
+
+// Usage in LiveView modules
+@:liveview
+class UserLiveView extends Phoenix.LiveView {
+    function mount(params: Dynamic, session: Dynamic, socket: LiveViewSocket): Dynamic {
+        socket = Phoenix.LiveView.assign(socket, "users", []);
+        return {ok: socket};
+    }
+    
+    function handleEvent(event: String, params: Dynamic, socket: LiveViewSocket): Dynamic {
+        return switch (event) {
+            case "load_users":
+                var users = UserRepository.getAllUsers();
+                socket = Phoenix.LiveView.assign(socket, "users", users);
+                {noreply: socket};
+            case _:
+                {noreply: socket};
+        };
+    }
+}
+```
+
+## Testing Strategy
+
+### 1. Compilation Tests
+
+Always create tests that verify your externs compile correctly:
+
+```haxe
+class TestHTTPoisonExterns {
+    public static function main() {
+        // These should compile without runtime execution
+        var getResult = HTTPoison.get("http://example.com");
+        var postResult = HTTPoison.post("http://example.com", "data");
+        
+        trace("HTTPoison externs compile successfully!");
+    }
+}
+```
+
+```bash
+# Compile test
+haxe -cp src -main TestHTTPoisonExterns --no-output -D reflaxe_runtime
+```
+
+### 2. Integration Tests
+
+Test the actual library integration in your Mix project:
+
+```elixir
+# test/extern_integration_test.exs
+defmodule ExternIntegrationTest do
+  use ExUnit.Case
+  
+  test "HTTPoison extern works correctly" do
+    # This tests the actual compiled Haxe code calling HTTPoison
+    result = MyHaxeModule.fetch_github_user("octocat")
+    assert {:ok, _response} = result
+  end
+end
+```
+
+### 3. Type Safety Tests
+
+Verify that your type definitions catch errors:
+
+```haxe
+class TypeSafetyTest {
+    function testTypes() {
+        // This should cause compilation errors if types are wrong
+        var result: HTTPResponse = HTTPoison.get("http://example.com");
+        var statusCode: Int = result.status_code; // Should work
+        var invalidField: String = result.nonexistent; // Should error
+    }
+}
+```
+
+## Best Practices
+
+### 1. Naming Conventions
+
+**Elixir → Haxe Mapping:**
+- `snake_case` functions → `camelCase` in Haxe
+- Module names stay the same
+- Preserve Elixir naming in `@:native` annotations
+
+```haxe
+@:native("SomeModule")
+extern class SomeModule {
+    // Elixir: some_long_function_name/2
+    @:native("some_long_function_name")
+    public static function someLongFunctionName(a: Int, b: String): Dynamic;
+}
+```
+
+### 2. Type Safety vs Flexibility
+
+**Use Dynamic for:**
+- Complex return types you don't want to model
+- Rapidly changing APIs
+- Prototyping
+
+**Use Specific Types for:**
+- Core business logic
+- Well-established APIs  
+- Functions you call frequently
+
+```haxe
+// Flexible approach
+@:native("get_user")
+public static function getUser(id: Int): Dynamic;
+
+// Type-safe approach
+typedef User = {name: String, email: String, id: Int};
+typedef UserResult = {status: String, user: Null<User>, error: Null<String>};
+
+@:native("get_user")
+public static function getUser(id: Int): UserResult;
+```
+
+### 3. Documentation
+
+Always document your externs:
+
+```haxe
+/**
+ * HTTPoison HTTP client library bindings
+ * 
+ * @see https://hexdocs.pm/httpoison/HTTPoison.html
+ */
+@:native("HTTPoison")
+extern class HTTPoison {
+    /**
+     * Performs a GET request to the given URL
+     * 
+     * @param url The URL to request
+     * @param headers Optional HTTP headers map
+     * @param options Optional request options
+     * @return {:ok, %HTTPoison.Response{}} | {:error, %HTTPoison.Error{}}
+     */
+    @:native("get")
+    public static function get(url: String, ?headers: Dynamic, ?options: Dynamic): Dynamic;
+}
+```
+
+### 4. Gradual Typing
+
+Start with `Dynamic` and gradually add specific types:
+
+```haxe
+// Phase 1: Get it working
+@:native("complex_function")
+public static function complexFunction(data: Dynamic): Dynamic;
+
+// Phase 2: Add input types
+@:native("complex_function")  
+public static function complexFunction(data: UserData): Dynamic;
+
+// Phase 3: Add output types
+@:native("complex_function")
+public static function complexFunction(data: UserData): ProcessingResult;
+```
+
+### 5. Error Handling Patterns
+
+Model common Elixir error patterns:
+
+```haxe
+// Option 1: Result-like types
+typedef Result<T> = {
+    var success: Bool;
+    var data: Null<T>;
+    var error: Null<String>;
+}
+
+// Option 2: Union types with enums
+enum APIResult<T> {
+    Ok(data: T);
+    Error(reason: String);
+}
+
+// Option 3: Exception-throwing variants
+@:native("dangerous_operation!")
+public static function dangerousOperationUnsafe(): String; // Throws on error
+
+@:native("dangerous_operation")
+public static function dangerousOperation(): Dynamic; // Returns {:ok, result} | {:error, reason}
+```
+
+## Troubleshooting
+
+### Common Issues
+
+**1. "Type not found" Errors**
+```bash
+# Make sure your extern file is in the classpath
+haxe -cp std -cp src -main YourMain --no-output
+```
+
+**2. Function Name Conflicts**
+```haxe
+// Use different Haxe names if needed
+@:native("list")  // Elixir function name
+public static function listItems(): Array<Dynamic>; // Different Haxe name
+```
+
+**3. Complex Return Types**
+```haxe
+// Start simple, then iterate
+@:native("complex_function")
+public static function complexFunction(): Dynamic; // First version
+
+// Later, model the actual structure
+typedef ComplexResult = {
+    var status: String;
+    var data: {
+        var items: Array<Dynamic>;
+        var metadata: {total: Int, page: Int};
+    };
+}
+```
+
+**4. Macro-Generated Code**
+```haxe
+// For Phoenix routes, LiveView helpers, etc.
+// Check the generated module name in iex:
+// iex> MyAppWeb.Router.Helpers.__info__(:functions)
+
+@:native("MyAppWeb.Router.Helpers")  // Generated module
+extern class RouterHelpers {
+    // Functions are generated, not hand-written
+}
+```
+
+### Debugging Tips
+
+**1. Check Compilation Output**
+```bash
+# Enable verbose output to see what's being generated
+haxe -cp src -main YourMain --no-output -D reflaxe_runtime -v
+```
+
+**2. Test in IEx First**
+```elixir
+# Verify the Elixir API works as expected
+iex> HTTPoison.get("http://httpbin.org/get")
+```
+
+**3. Use Simple Types Initially**
+```haxe
+// Start with this:
+public static function test(): Dynamic;
+
+// Once working, refine to:
+public static function test(): SpecificType;
+```
+
+## Conclusion
+
+Creating extern definitions is the key to leveraging the full Elixir ecosystem from Haxe. The process is:
+
+1. **Understand the Elixir API** - Read docs, test in IEx
+2. **Start Simple** - Use `Dynamic` types initially  
+3. **Test Early** - Create compilation tests
+4. **Iterate** - Add specific types as needed
+5. **Document** - Make it maintainable
+
+With good extern definitions, you can use virtually any Elixir library while maintaining Haxe's type safety and development experience.
