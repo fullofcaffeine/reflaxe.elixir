@@ -1,0 +1,11 @@
+# Math Helper Compilation
+# Compiles MathHelper.hx to demonstrate pipe operators
+
+-cp ../../src
+-cp ../../std
+-cp ../../test
+-cp ../../../haxe.elixir.reference/reflaxe/src
+-cp .
+-main MathHelper
+-D reflaxe_runtime
+--no-output
