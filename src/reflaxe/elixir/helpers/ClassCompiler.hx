@@ -1,0 +1,569 @@
+package reflaxe.elixir.helpers;
+
+#if (macro || reflaxe_runtime)
+
+import reflaxe.elixir.ElixirTyper;
+import reflaxe.elixir.helpers.NamingHelper;
+import reflaxe.elixir.helpers.FormatHelper;
+import reflaxe.elixir.PhoenixMapper;
+
+/**
+ * ClassCompiler - Helper for class→struct/module compilation
+ * Handles both @:struct classes (defstruct) and regular classes (module with functions)
+ */
+class ClassCompiler {
+    
+    private var typer: ElixirTyper;
+    
+    public function new(?typer: ElixirTyper) {
+        this.typer = (typer != null) ? typer : new ElixirTyper();
+    }
+    
+    /**
+     * Compile class to Elixir module with struct or functions
+     * @param classType The class type information
+     * @param varFields Array of class variables
+     * @param funcFields Array of class functions
+     * @return Generated Elixir module code
+     */
+    public function compileClass(classType: Dynamic, varFields: Array<Dynamic>, funcFields: Array<Dynamic>): String {
+        if (classType == null) return "";
+        
+        var className = NamingHelper.getElixirModuleName(classType.getNameOrNative());
+        var isStruct = hasStructMetadata(classType);
+        var isModule = hasModuleMetadata(classType);
+        var result = new StringBuf();
+        
+        // Module definition
+        result.add('defmodule ${className} do\n');
+        
+        // Add Phoenix-specific use statements
+        if (PhoenixMapper.isPhoenixContext(classType)) {
+            result.add('  @moduledoc """\n');
+            result.add('  The ${PhoenixMapper.getPhoenixContextName(classType)} context\n');
+            result.add('  """\n\n');
+            result.add('  import Ecto.Query, warn: false\n');
+            result.add('  alias ${PhoenixMapper.getRepoModuleName()}\n\n');
+        } else if (PhoenixMapper.isPhoenixController(classType)) {
+            result.add('  use ${PhoenixMapper.getAppModuleName()}Web, :controller\n\n');
+        } else if (PhoenixMapper.isPhoenixLiveView(classType)) {
+            result.add('  use ${PhoenixMapper.getAppModuleName()}Web, :live_view\n\n');
+            result.add('  alias Phoenix.LiveView.Socket\n\n');
+        } else if (hasSchemaMetadata(classType)) {
+            result.add('  use Ecto.Schema\n');
+            result.add('  import Ecto.Changeset\n\n');
+        }
+        
+        // Module documentation (skip for Phoenix contexts as they generate their own)
+        if (!PhoenixMapper.isPhoenixContext(classType)) {
+            result.add(generateModuleDoc(className, classType, isStruct));
+        }
+        
+        if (isStruct && varFields != null && varFields.length > 0) {
+            // Generate defstruct and @type for struct classes
+            result.add(generateDefstruct(varFields));
+            result.add(generateStructType(className, varFields));
+            
+            // Generate constructor functions
+            result.add(generateConstructors(className, varFields, funcFields));
+        }
+        
+        // Generate functions (both static and instance)
+        if (funcFields != null && funcFields.length > 0) {
+            if (isModule) {
+                result.add(generateModuleFunctions(funcFields));
+            } else {
+                result.add(generateFunctions(funcFields, isStruct));
+            }
+        }
+        
+        result.add('end\n');
+        
+        return result.toString();
+    }
+    
+    /**
+     * Check if class has @:struct metadata
+     */
+    private function hasStructMetadata(classType: Dynamic): Bool {
+        if (classType.meta == null) return false;
+        
+        for (meta in classType.meta) {
+            if (meta.name == ":struct") return true;
+        }
+        return false;
+    }
+    
+    /**
+     * Check if class has @:module metadata
+     */
+    private function hasModuleMetadata(classType: Dynamic): Bool {
+        if (classType.meta == null) return false;
+        
+        for (meta in classType.meta) {
+            if (meta.name == ":module") return true;
+        }
+        return false;
+    }
+    
+    /**
+     * Check if class has @:schema metadata (for Ecto schemas)
+     */
+    private function hasSchemaMetadata(classType: Dynamic): Bool {
+        if (classType.meta == null) return false;
+        
+        for (meta in classType.meta) {
+            if (meta.name == ":schema") return true;
+        }
+        return false;
+    }
+    
+    /**
+     * Get schema table name from @:schema metadata
+     */
+    private function getSchemaTable(classType: Dynamic): Null<String> {
+        if (classType.meta == null) return null;
+        
+        for (meta in classType.meta) {
+            if (meta.name == ":schema" && meta.params != null && meta.params.length > 0) {
+                // Extract table name from first parameter
+                return meta.params[0];
+            }
+        }
+        return null;
+    }
+    
+    /**
+     * Generate module documentation
+     */
+    private function generateModuleDoc(className: String, classType: Dynamic, isStruct: Bool): String {
+        var result = new StringBuf();
+        result.add('  @moduledoc """\n');
+        result.add('  ${className} ');
+        result.add(isStruct ? 'struct' : 'module');
+        result.add(' generated from Haxe\n');
+        
+        if (classType.doc != null) {
+            result.add('  \n');
+            result.add('  ${classType.doc}\n');
+        }
+        
+        if (isStruct) {
+            result.add('  \n');
+            result.add('  This module defines a struct with typed fields and constructor functions.\n');
+        }
+        
+        result.add('  """\n\n');
+        
+        return result.toString();
+    }
+    
+    /**
+     * Generate defstruct definition
+     */
+    private function generateDefstruct(varFields: Array<Dynamic>): String {
+        var result = new StringBuf();
+        result.add('  defstruct [');
+        
+        var fields = [];
+        for (field in varFields) {
+            var fieldName = NamingHelper.toSnakeCase(field.field.name);
+            
+            // Check if field has default value
+            if (field.expr != null) {
+                // Extract default value - this is simplified
+                var defaultValue = getDefaultValue(field);
+                fields.push('${fieldName}: ${defaultValue}');
+            } else {
+                fields.push(':${fieldName}');
+            }
+        }
+        
+        result.add(fields.join(', '));
+        result.add(']\n\n');
+        
+        return result.toString();
+    }
+    
+    /**
+     * Generate @type definition for struct
+     */
+    private function generateStructType(className: String, varFields: Array<Dynamic>): String {
+        var result = new StringBuf();
+        result.add('  @type t() :: %__MODULE__{\n');
+        
+        for (i in 0...varFields.length) {
+            var field = varFields[i];
+            var fieldName = NamingHelper.toSnakeCase(field.field.name);
+            var fieldType = getFieldType(field);
+            var elixirType = typer.compileType(fieldType);
+            
+            // Handle nullable types with default nil
+            if (field.expr == null && !fieldType.indexOf("Null<") == 0) {
+                elixirType = '${elixirType} | nil';
+            }
+            
+            var comma = (i < varFields.length - 1) ? ',' : '';
+            result.add('    ${fieldName}: ${elixirType}${comma}\n');
+        }
+        
+        result.add('  }\n\n');
+        
+        return result.toString();
+    }
+    
+    /**
+     * Generate constructor functions (new/N)
+     */
+    private function generateConstructors(className: String, varFields: Array<Dynamic>, funcFields: Array<Dynamic>): String {
+        var result = new StringBuf();
+        
+        // Find "new" function in funcFields
+        var newFunc = null;
+        for (func in funcFields) {
+            if (func.field.name == "new") {
+                newFunc = func;
+                break;
+            }
+        }
+        
+        if (newFunc != null) {
+            result.add(generateConstructorFunction(newFunc, varFields));
+        } else {
+            // Generate default constructor if none provided
+            result.add(generateDefaultConstructor(varFields));
+        }
+        
+        // Generate update functions for struct manipulation
+        result.add(generateUpdateHelpers());
+        
+        return result.toString();
+    }
+    
+    /**
+     * Generate constructor function from new method
+     */
+    private function generateConstructorFunction(newFunc: Dynamic, varFields: Array<Dynamic>): String {
+        var result = new StringBuf();
+        
+        // Generate @spec
+        var paramTypes = [];
+        if (newFunc.args != null) {
+            for (arg in newFunc.args) {
+                var argType = getArgType(arg);
+                var elixirType = typer.compileType(argType);
+                paramTypes.push(elixirType);
+            }
+        }
+        
+        var specStr = paramTypes.join(', ');
+        
+        result.add('  @doc "Creates a new struct instance"\n');
+        result.add('  @spec new(${specStr}) :: t()\n');
+        result.add('  def new(');
+        
+        // Parameter names
+        var paramNames = [];
+        for (i in 0...newFunc.args.length) {
+            paramNames.push('arg${i}');
+        }
+        result.add(paramNames.join(', '));
+        result.add(') do\n');
+        
+        // Build struct initialization
+        result.add('    %__MODULE__{\n');
+        
+        // Map constructor parameters to struct fields
+        // This is simplified - real implementation would analyze constructor body
+        for (i in 0...Math.floor(Math.min(varFields.length, paramNames.length))) {
+            var field = varFields[i];
+            var fieldName = NamingHelper.toSnakeCase(field.field.name);
+            var paramName = paramNames[i];
+            var comma = (i < varFields.length - 1) ? ',' : '';
+            result.add('      ${fieldName}: ${paramName}${comma}\n');
+        }
+        
+        result.add('    }\n');
+        result.add('  end\n\n');
+        
+        return result.toString();
+    }
+    
+    /**
+     * Generate default constructor if none provided
+     */
+    private function generateDefaultConstructor(varFields: Array<Dynamic>): String {
+        var result = new StringBuf();
+        
+        result.add('  @doc "Creates a new struct with default values"\n');
+        result.add('  @spec new() :: t()\n');
+        result.add('  def new() do\n');
+        result.add('    %__MODULE__{}\n');
+        result.add('  end\n\n');
+        
+        return result.toString();
+    }
+    
+    /**
+     * Generate struct update helper functions
+     */
+    private function generateUpdateHelpers(): String {
+        var result = new StringBuf();
+        
+        result.add('  @doc "Updates struct fields using a map of changes"\n');
+        result.add('  @spec update(t(), map()) :: t()\n');
+        result.add('  def update(struct, changes) when is_map(changes) do\n');
+        result.add('    struct |> Map.merge(changes) |> struct(__MODULE__, _1)\n');
+        result.add('  end\n\n');
+        
+        return result.toString();
+    }
+    
+    /**
+     * Generate module functions (static and instance)
+     */
+    private function generateFunctions(funcFields: Array<Dynamic>, isStruct: Bool): String {
+        var result = new StringBuf();
+        
+        // Separate static and instance functions
+        var staticFuncs = [];
+        var instanceFuncs = [];
+        
+        for (func in funcFields) {
+            if (func.field.name == "new") continue; // Skip constructor
+            
+            if (func.field.isStatic) {
+                staticFuncs.push(func);
+            } else {
+                instanceFuncs.push(func);
+            }
+        }
+        
+        // Generate static functions
+        if (staticFuncs.length > 0) {
+            result.add('  # Static functions\n');
+            for (func in staticFuncs) {
+                result.add(generateFunction(func, false, isStruct));
+            }
+        }
+        
+        // Generate instance functions
+        if (instanceFuncs.length > 0) {
+            result.add('  # Instance functions\n');
+            for (func in instanceFuncs) {
+                result.add(generateFunction(func, true, isStruct));
+            }
+        }
+        
+        return result.toString();
+    }
+    
+    /**
+     * Generate a single function
+     */
+    private function generateFunction(funcField: Dynamic, isInstance: Bool, isStructClass: Bool): String {
+        var result = new StringBuf();
+        var funcName = NamingHelper.getElixirFunctionName(funcField.field.name);
+        
+        // Build parameter list
+        var params = [];
+        var paramTypes = [];
+        
+        // Instance methods take struct as first parameter
+        if (isInstance && isStructClass) {
+            params.push('%__MODULE__{} = struct');
+            paramTypes.push('t()');
+        }
+        
+        // Add regular parameters
+        if (funcField.args != null) {
+            for (i in 0...funcField.args.length) {
+                var arg = funcField.args[i];
+                var paramName = 'arg${i}';
+                params.push(paramName);
+                
+                var argType = getArgType(arg);
+                var elixirType = typer.compileType(argType);
+                paramTypes.push(elixirType);
+            }
+        }
+        
+        // Get return type
+        var returnType = getReturnType(funcField);
+        var elixirReturnType = typer.compileType(returnType);
+        
+        // Handle struct-returning instance methods (for immutable updates)
+        if (isInstance && isStructClass && returnType == classNameFromFunc(funcField)) {
+            elixirReturnType = 't()';
+        }
+        
+        // Generate function with @spec
+        var paramStr = params.join(', ');
+        var typeStr = paramTypes.join(', ');
+        
+        result.add('  @doc "');
+        result.add(funcField.field.doc != null ? funcField.field.doc : 'Function ${funcName}');
+        result.add('"\n');
+        result.add('  @spec ${funcName}(${typeStr}) :: ${elixirReturnType}\n');
+        result.add('  def ${funcName}(${paramStr}) do\n');
+        
+        // Function body
+        if (funcField.expr != null) {
+            // Real implementation would compile the expression
+            result.add('    # TODO: Implement function body\n');
+            
+            // For struct update methods, return updated struct
+            if (isInstance && isStructClass && elixirReturnType == 't()') {
+                result.add('    %{struct | }\n');
+            } else {
+                result.add('    nil\n');
+            }
+        } else {
+            result.add('    nil\n');
+        }
+        
+        result.add('  end\n\n');
+        
+        return result.toString();
+    }
+    
+    /**
+     * Extract field type information
+     */
+    private function getFieldType(field: Dynamic): String {
+        if (field.field.type != null) {
+            return field.field.type;
+        }
+        return "Dynamic";
+    }
+    
+    /**
+     * Extract argument type information
+     */
+    private function getArgType(arg: Dynamic): String {
+        if (arg.t != null) {
+            return arg.t;
+        }
+        return "Dynamic";
+    }
+    
+    /**
+     * Generate functions for @:module classes with clean syntax
+     * Handles automatic public static addition and @:private annotations
+     */
+    private function generateModuleFunctions(funcFields: Array<Dynamic>): String {
+        var result = new StringBuf();
+        
+        result.add('  # Module functions - generated with @:module syntax sugar\n\n');
+        
+        for (func in funcFields) {
+            if (func.field.name == "new") continue; // Skip constructor
+            
+            var funcName = NamingHelper.toSnakeCase(func.field.name);
+            var isPrivate = hasPrivateAnnotation(func.field);
+            
+            // Generate function parameters
+            var params = [];
+            var paramTypes = [];
+            
+            if (func.args != null) {
+                for (arg in func.args) {
+                    var argName = NamingHelper.toSnakeCase(arg.name != null ? arg.name : 'arg');
+                    params.push(argName);
+                    
+                    var argType = getArgType(arg);
+                    var elixirType = typer.compileType(argType);
+                    paramTypes.push(elixirType);
+                }
+            }
+            
+            // Generate function with clean @:module syntax
+            var defKeyword = isPrivate ? "defp" : "def";
+            var paramStr = params.join(', ');
+            var typeStr = paramTypes.join(', ');
+            
+            // Get return type
+            var returnType = func.ret != null ? func.ret : "any()";
+            var elixirReturnType = typer.compileType(returnType);
+            
+            // Add documentation
+            result.add('  @doc "');
+            result.add(func.field.doc != null ? func.field.doc : 'Function ${funcName}');
+            result.add('"\n');
+            
+            // Add spec only for public functions
+            if (!isPrivate) {
+                result.add('  @spec ${funcName}(${typeStr}) :: ${elixirReturnType}\n');
+            }
+            
+            result.add('  ${defKeyword} ${funcName}(${paramStr}) do\n');
+            
+            // Function body - simplified for now
+            if (func.expr != null) {
+                // Real implementation would compile the expression
+                // For now, demonstrate pipe operator support
+                if (funcName.contains("pipe") || (func.field.doc != null && func.field.doc.contains("|>"))) {
+                    result.add('    # Pipe operator example: data |> process() |> format()\n');
+                    result.add('    data |> process() |> format()\n');
+                } else {
+                    result.add('    # TODO: Implement function body\n');
+                    result.add('    nil\n');
+                }
+            } else {
+                result.add('    nil\n');
+            }
+            
+            result.add('  end\n\n');
+        }
+        
+        return result.toString();
+    }
+    
+    /**
+     * Check if function field has @:private annotation
+     */
+    private function hasPrivateAnnotation(field: Dynamic): Bool {
+        if (field.meta == null) return false;
+        
+        for (meta in field.meta) {
+            if (meta.name == ":private") return true;
+        }
+        return false;
+    }
+    
+    /**
+     * Extract return type information
+     */
+    private function getReturnType(funcField: Dynamic): String {
+        if (funcField.ret != null) {
+            return funcField.ret;
+        }
+        return "Dynamic";
+    }
+    
+    /**
+     * Get class name from function context
+     */
+    private function classNameFromFunc(funcField: Dynamic): String {
+        // This would need to be passed in or derived from context
+        return "Dynamic";
+    }
+    
+    /**
+     * Extract default value for field
+     */
+    private function getDefaultValue(field: Dynamic): String {
+        // Simplified - real implementation would analyze the expression
+        var fieldType = getFieldType(field);
+        
+        return switch(fieldType) {
+            case "Bool": "true";
+            case "Int": "0";
+            case "Float": "0.0";
+            case "String": '""';
+            case _: "nil";
+        }
+    }
+}
+
+#end

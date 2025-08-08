@@ -1,0 +1,29 @@
+# Reflaxe.Elixir compilation parameters
+
+# Core class paths
+-cp src
+-cp std
+
+# Library dependencies
+-lib reflaxe
+-lib tink_macro
+-lib tink_parse
+
+# Reflaxe target configuration
+-D reflaxe-target=elixir
+-D reflaxe-output-dir=lib
+
+# Elixir-specific defines
+-D elixir-phoenix-support
+-D elixir-ecto-support
+-D elixir-hxx-macros
+
+# Development flags
+-D reflaxe-trace-calls
+-D reflaxe-debug-output
+
+# Target code injection support
+-D reflaxe-target-code-injection=elixir
+
+# Macro context
+-D macro-times

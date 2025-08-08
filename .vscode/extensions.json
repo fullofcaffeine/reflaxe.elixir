@@ -1,0 +1,16 @@
+{
+  "recommendations": [
+    "vshaxe.haxe-support",
+    "elixir-lsp.elixir-ls",
+    "phoenixframework.phoenix",
+    "gruntfuggly.todo-tree",
+    "bradlc.vscode-tailwindcss",
+    "ms-vscode.vscode-json",
+    "redhat.vscode-xml",
+    "ms-vscode.test-adapter-converter",
+    "hbenl.vscode-test-explorer"
+  ],
+  "unwantedRecommendations": [
+    "ms-vscode.vscode-typescript-next"
+  ]
+}

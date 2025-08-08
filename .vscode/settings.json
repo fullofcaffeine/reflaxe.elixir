@@ -1,0 +1,96 @@
+{
+  "files.associations": {
+    "*.hx": "haxe",
+    "*.hxml": "xml"
+  },
+  "haxe.configurations": [
+    ["src/reflaxe/elixir/ElixirCompiler.hx"],
+    ["test/integration/CompilationPipelineTest.hxml"],
+    ["test/performance/PerformanceBenchmarks.hxml"]
+  ],
+  "haxe.enableCompilationServer": true,
+  "haxe.enableServerView": true,
+  "haxe.enableMethodsView": true,
+  "haxe.displayConfigurations": [
+    "src"
+  ],
+  "editor.formatOnSave": true,
+  "editor.codeActionsOnSave": {
+    "source.fixAll": true,
+    "source.organizeImports": true
+  },
+  "files.exclude": {
+    "**/_build": true,
+    "**/deps": true,
+    "**/.elixir_ls": true
+  },
+  "search.exclude": {
+    "**/_build": true,
+    "**/deps": true
+  },
+  "emmet.includeLanguages": {
+    "haxe": "html"
+  },
+  "editor.quickSuggestions": {
+    "other": true,
+    "comments": false,
+    "strings": true
+  },
+  "[haxe]": {
+    "editor.defaultFormatter": "vshaxe.haxe-support",
+    "editor.tabSize": 4,
+    "editor.insertSpaces": true,
+    "editor.rulers": [100],
+    "editor.wordWrap": "wordWrapColumn",
+    "editor.wordWrapColumn": 100
+  },
+  "[elixir]": {
+    "editor.defaultFormatter": "elixir-lsp.elixir-ls",
+    "editor.tabSize": 2,
+    "editor.insertSpaces": true,
+    "editor.rulers": [98],
+    "editor.formatOnSave": true
+  },
+  "elixirLS.dialyzerEnabled": true,
+  "elixirLS.fetchDeps": false,
+  "elixirLS.mixEnv": "dev",
+  "elixirLS.projectDir": "",
+  "todo-tree.general.tags": [
+    "BUG",
+    "HACK",
+    "FIXME",
+    "TODO",
+    "XXX",
+    "[ ]",
+    "[x]",
+    "NOTE",
+    "WARNING",
+    "PERFORMANCE"
+  ],
+  "todo-tree.highlights.customHighlight": {
+    "TODO": {
+      "icon": "check",
+      "type": "line",
+      "iconColour": "blue",
+      "foreground": "blue"
+    },
+    "PERFORMANCE": {
+      "icon": "zap",
+      "type": "line", 
+      "iconColour": "yellow",
+      "foreground": "yellow"
+    },
+    "NOTE": {
+      "icon": "note",
+      "type": "line",
+      "iconColour": "green",
+      "foreground": "green"
+    }
+  },
+  "workbench.colorCustomizations": {
+    "editorRuler.foreground": "#373832",
+    "editor.lineHighlightBackground": "#2a2a24",
+    "editor.selectionBackground": "#49483e"
+  },
+  "bracketPairColorizer.depreciation-notice": false
+}

@@ -1,0 +1,183 @@
+{
+  "@:module class": {
+    "prefix": ["module", "@module"],
+    "body": [
+      "@:module",
+      "class ${1:ClassName} {",
+      "    ",
+      "    /**",
+      "     * ${2:Function description}",
+      "     */",
+      "    function ${3:functionName}(${4:args}): ${5:ReturnType} {",
+      "        return ${6:implementation};",
+      "    }",
+      "    ",
+      "    @:private",
+      "    function ${7:privateFunctionName}(${8:args}): ${9:ReturnType} {",
+      "        return ${10:implementation};",
+      "    }",
+      "}"
+    ],
+    "description": "@:module class with public and private functions"
+  },
+  
+  "Phoenix Controller": {
+    "prefix": ["controller", "phoenix-controller"],
+    "body": [
+      "package ${1:lib.my_app_web.controllers};",
+      "",
+      "@:module",
+      "class ${2:Controller} {",
+      "    ",
+      "    /**",
+      "     * ${3:Action description}",
+      "     */",
+      "    function ${4:index}(conn: Dynamic, params: Dynamic): Dynamic {",
+      "        return conn",
+      "               |> assign(\"${5:key}\", ${6:value})",
+      "               |> render(\"${7:template}\");",
+      "    }",
+      "    ",
+      "    @:private", 
+      "    function ${8:privateHelper}(${9:args}): ${10:ReturnType} {",
+      "        return ${11:implementation};",
+      "    }",
+      "}"
+    ],
+    "description": "Phoenix Controller with @:module syntax"
+  },
+  
+  "LiveView Module": {
+    "prefix": ["liveview", "phoenix-liveview"],
+    "body": [
+      "package ${1:lib.my_app_web.live};",
+      "",
+      "@:liveview",
+      "class ${2:LiveView} {",
+      "    ",
+      "    function mount(params: Dynamic, session: Dynamic, socket: Dynamic): Dynamic {",
+      "        return socket",
+      "               |> assign(\"${3:key}\", ${4:value})",
+      "               |> assign(\"${5:loading}\", false);",
+      "    }",
+      "    ",
+      "    function handleEvent(event: String, params: Dynamic, socket: Dynamic): Dynamic {",
+      "        return switch (event) {",
+      "            case \"${6:event_name}\":",
+      "                socket |> assign(\"${7:key}\", ${8:value});",
+      "            case _:",
+      "                socket;",
+      "        };",
+      "    }",
+      "    ",
+      "    function render(): String {",
+      "        return hxx('${9:<div>{content}</div>}');",
+      "    }",
+      "}"
+    ],
+    "description": "Phoenix LiveView with @:liveview syntax"
+  },
+  
+  "Service Module": {
+    "prefix": ["service", "business-logic"],
+    "body": [
+      "package ${1:lib.my_app};",
+      "",
+      "@:module",
+      "class ${2:Service} {",
+      "    ",
+      "    /**",
+      "     * ${3:Main service function description}",
+      "     */",
+      "    function ${4:process}(${5:input}: ${6:InputType}): ${7:OutputType} {",
+      "        return ${5:input}",
+      "               |> ${8:validate}()",
+      "               |> ${9:transform}()",
+      "               |> ${10:save}();",
+      "    }",
+      "    ",
+      "    @:private",
+      "    function ${8:validate}(data: ${6:InputType}): ${6:InputType} {",
+      "        // Validation logic",
+      "        return data;",
+      "    }",
+      "    ",
+      "    @:private", 
+      "    function ${9:transform}(data: ${6:InputType}): ${11:TransformedType} {",
+      "        // Transformation logic",
+      "        return data;",
+      "    }",
+      "    ",
+      "    @:private",
+      "    function ${10:save}(data: ${11:TransformedType}): ${7:OutputType} {",
+      "        // Persistence logic",
+      "        return data;",
+      "    }",
+      "}"
+    ],
+    "description": "Business logic service with pipe operator pipeline"
+  },
+  
+  "Pipe Operator Chain": {
+    "prefix": ["pipe", "|>"],
+    "body": [
+      "return ${1:input}",
+      "       |> ${2:function1}()",
+      "       |> ${3:function2}()",
+      "       |> ${4:function3}();"
+    ],
+    "description": "Pipe operator chain for functional composition"
+  },
+  
+  "Private Function": {
+    "prefix": ["private", "@private"],
+    "body": [
+      "@:private",
+      "function ${1:functionName}(${2:args}): ${3:ReturnType} {",
+      "    ${4:// Private function implementation}",
+      "    return ${5:result};",
+      "}"
+    ],
+    "description": "@:private function that generates defp in Elixir"
+  },
+  
+  "HXX Template": {
+    "prefix": ["hxx", "template"],
+    "body": [
+      "hxx('${1:<div className=\"${2:class-name}\">",
+      "  ${3:<h1>{${4:title}}</h1>}",
+      "  ${5:<p>{${6:content}}</p>}",
+      "</div>}')"
+    ],
+    "description": "HXX template with JSX-like syntax"
+  },
+  
+  "LiveView Directive": {
+    "prefix": ["lv:if", "liveview-directive"],
+    "body": [
+      "<${1:div} lv:if=\"${2:condition}\" className=\"${3:class-name}\">",
+      "  ${4:content}",
+      "</${1:div}>"
+    ],
+    "description": "LiveView directive (lv:if, lv:for, etc.)"
+  },
+  
+  "Test Function": {
+    "prefix": ["test", "test-function"],
+    "body": [
+      "public static function ${1:testFunctionName}(): Bool {",
+      "    try {",
+      "        ${2:// Test setup}",
+      "        var ${3:result} = ${4:functionToTest}(${5:args});",
+      "        ",
+      "        ${6:// Assertions}",
+      "        return ${7:result} == ${8:expected};",
+      "    } catch (e: Dynamic) {",
+      "        trace(\"${1:testFunctionName} error: \" + e);",
+      "        return false;",
+      "    }",
+      "}"
+    ],
+    "description": "Test function template with error handling"
+  }
+}

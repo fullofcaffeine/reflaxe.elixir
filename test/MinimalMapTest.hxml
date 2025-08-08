@@ -1,0 +1,6 @@
+-cp /Users/fullofcaffeine/workspace/code/haxe.elixir/std
+-cp /Users/fullofcaffeine/workspace/code/haxe.elixir/test
+-cp /Users/fullofcaffeine/workspace/code/haxe.elixir.reference/reflaxe/src
+-D reflaxe_runtime
+-main test.MinimalMapTest
+--interp
