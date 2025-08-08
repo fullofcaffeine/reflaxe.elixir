@@ -1,0 +1,17 @@
+{
+  "name": "reflaxe.elixir",
+  "url": "https://github.com/fullofcaffeine/reflaxe.elixir",
+  "license": "MIT",
+  "tags": ["cross", "elixir", "phoenix", "reflaxe", "macro"],
+  "description": "A Haxe compilation target for Elixir/BEAM enabling gradual typing in Phoenix applications with compile-time type-safe Ecto queries and HXX→HEEx template transformation.",
+  "version": "0.1.0",
+  "classPath": "src",
+  "releasenote": "Initial release with core compiler structure and Phoenix integration foundation.",
+  "contributors": ["fullofcaffeine"],
+  "dependencies": {
+    "reflaxe": "^4.0.0",
+    "tink_macro": "",
+    "tink_parse": ""
+  },
+  "main": "reflaxe.elixir.ElixirCompiler"
+}

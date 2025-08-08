@@ -1,0 +1,5 @@
+-cp ../src
+-cp .
+-D reflaxe_runtime
+-main test.EnumCompilationTest
+--interp
