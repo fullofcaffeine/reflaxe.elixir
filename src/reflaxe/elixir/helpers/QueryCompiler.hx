@@ -27,7 +27,10 @@ class QueryCompiler {
      * Compile join operations for Ecto queries
      */
     public static function compileJoin(type: String, binding: String, schema: String, onCondition: String): String {
-        var joinType = switch(type.toLowerCase()) {
+        // Handle null or empty type gracefully
+        var safeType = type != null ? type : "inner";
+        
+        var joinType = switch(safeType.toLowerCase()) {
             case "inner": "join";
             case "left": "left_join";
             case "right": "right_join";
@@ -37,7 +40,7 @@ class QueryCompiler {
             default: "join";
         };
         
-        return '|> ${joinType}(:${type.toLowerCase()}, ${binding}, ${schema}, on: ${onCondition})';
+        return '|> ${joinType}(:${safeType.toLowerCase()}, ${binding}, ${schema}, on: ${onCondition})';
     }
     
     /**
@@ -64,7 +67,10 @@ class QueryCompiler {
      * Compile aggregation functions
      */
     public static function compileAggregation(func: String, field: String, binding: String = "q"): String {
-        return switch(func.toLowerCase()) {
+        // Handle null function gracefully
+        var safeFunc = func != null ? func : "count";
+        
+        return switch(safeFunc.toLowerCase()) {
             case "count": 'count(${binding}.${field})';
             case "sum": 'sum(${binding}.${field})';
             case "avg": 'avg(${binding}.${field})';
@@ -112,7 +118,9 @@ class QueryCompiler {
      */
     public static function compileWindowFunction(func: String, partitionBy: Null<String> = null, orderBy: Null<String> = null): String {
         var output = new StringBuf();
-        output.add('over(${func}()');
+        // Handle null or empty function gracefully
+        var safeFunc = (func != null && func != "") ? func : "row_number";
+        output.add('over(${safeFunc}()');
         
         var options = [];
         if (partitionBy != null) {
@@ -139,22 +147,29 @@ class QueryCompiler {
         output.add('Multi.new()');
         
         for (op in operations) {
-            output.add('\n|> ');
-            switch(op.type) {
+            var opResult = switch(op.type) {
                 case "insert":
-                    output.add('Multi.insert(:${op.name}, ${op.changeset})');
+                    'Multi.insert(:${op.name}, ${op.changeset})';
                 case "update":
-                    output.add('Multi.update(:${op.name}, ${op.changeset})');
+                    'Multi.update(:${op.name}, ${op.changeset})';
                 case "delete":
-                    output.add('Multi.delete(:${op.name}, ${op.record})');
+                    'Multi.delete(:${op.name}, ${op.record})';
                 case "run":
-                    output.add('Multi.run(:${op.name}, fn repo, changes -> ${op.funcStr} end)');
+                    'Multi.run(:${op.name}, fn repo, changes -> ${op.funcStr} end)';
                 case "merge":
-                    output.add('Multi.merge(fn changes -> ${op.funcStr} end)');
+                    'Multi.merge(fn changes -> ${op.funcStr} end)';
                 case "update_all":
-                    output.add('Multi.update_all(:${op.name}, ${op.query}, ${op.updates})');
+                    'Multi.update_all(:${op.name}, ${op.query}, ${op.updates})';
                 case "delete_all":
-                    output.add('Multi.delete_all(:${op.name}, ${op.query})');
+                    'Multi.delete_all(:${op.name}, ${op.query})';
+                default:
+                    null; // Skip invalid operations
+            };
+            
+            // Only add valid operations
+            if (opResult != null) {
+                output.add('\n|> ');
+                output.add(opResult);
             }
         }
         

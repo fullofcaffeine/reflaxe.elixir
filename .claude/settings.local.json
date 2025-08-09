@@ -77,7 +77,8 @@
       "Bash(/opt/homebrew/bin/haxe build.hxml)",
       "Bash(cat:*)",
       "Bash(mv:*)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(npm run test:*)"
     ],
     "deny": []
   }
