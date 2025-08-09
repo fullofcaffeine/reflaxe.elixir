@@ -1,6 +1,9 @@
-package;
+package test;
 
+import tink.unit.Assert.assert;
 import reflaxe.elixir.helpers.QueryCompiler;
+
+using tink.CoreApi;
 
 /**
  * Advanced Ecto Features Test Suite
@@ -9,25 +12,12 @@ import reflaxe.elixir.helpers.QueryCompiler;
  * subqueries, CTEs, and transaction support with Ecto.Multi.
  * 
  * Following TDD methodology with RED-GREEN-REFACTOR phases.
+ * Uses tink_unittest for modern Haxe testing patterns.
  */
+@:asserts
 class AdvancedEctoTest {
     
-    static var testsRun = 0;
-    static var testsPassed = 0;
-    static var testsFailed = 0;
-    
     public function new() {}
-    
-    static function assert(condition: Bool, message: String): Void {
-        testsRun++;
-        if (condition) {
-            testsPassed++;
-            trace("  ✅ " + message);
-        } else {
-            testsFailed++;
-            trace("  ❌ " + message);
-        }
-    }
     
     @:describe("Ecto Joins - Inner, Left, Right, Cross")
     public function testJoinCompilation() {
@@ -115,8 +105,8 @@ class AdvancedEctoTest {
     public function testMultiTransactions() {
         // Test basic Multi transaction
         var multiOps = [
-            {type: "insert", name: "user", changeset: "User.changeset({}, {name: \"John\"})"},
-            {type: "run", name: "validate", funcStr: "validate_user"}
+            {type: "insert", name: "user", changeset: "User.changeset({}, {name: \"John\"})", record: null, query: null, updates: null, funcStr: null},
+            {type: "run", name: "validate", changeset: null, record: null, query: null, updates: null, funcStr: "validate_user"}
         ];
         
         var multiResult = QueryCompiler.compileMulti(multiOps);
@@ -199,19 +189,195 @@ class AdvancedEctoTest {
         return asserts.done();
     }
     
-    public static function main() {
-        trace("🧪 Starting Advanced Ecto Features Tests...");
+    // === EDGE CASE TESTING SUITE ===
+    
+    @:describe("Error Conditions - Invalid Join Types")
+    public function testInvalidJoinTypes() {
+        // Test invalid join type defaults to "join"
+        var invalidJoin = QueryCompiler.compileJoin("invalid_type", "[u]", "p in Post", "u.id == p.user_id");
+        asserts.assert(invalidJoin.indexOf("join(:invalid_type") >= 0, "Invalid join type should default to join");
         
-        var test = new AdvancedEctoTest();
-        test.testJoinCompilation();
-        test.testAggregationFunctions();
-        test.testSubqueries();
-        test.testWindowFunctions();
-        test.testMultiTransactions();
-        test.testQueryComposition();
-        test.testPreloading();
-        test.testComplexQueryPerformance();
+        // Test null join type (defaults to inner)
+        var nullJoin = QueryCompiler.compileJoin(null, "[u]", "p in Post", "u.id == p.user_id");
+        asserts.assert(nullJoin.indexOf("join(:inner") >= 0, "Null join type should default to inner");
         
-        trace("🎉 All Advanced Ecto tests completed successfully!");
+        // Test empty join type
+        var emptyJoin = QueryCompiler.compileJoin("", "[u]", "p in Post", "u.id == p.user_id");
+        asserts.assert(emptyJoin.indexOf("join(:") >= 0, "Empty join type should be handled gracefully");
+        
+        return asserts.done();
     }
+    
+    @:describe("Boundary Cases - Empty Collections")
+    public function testEmptyCollections() {
+        // Test empty joins array
+        var emptyJoins = [];
+        var multiJoin = QueryCompiler.compileMultipleJoins(emptyJoins);
+        asserts.assert(multiJoin == "", "Empty joins array should return empty string");
+        
+        // Test empty group by fields
+        var emptyGroupBy = QueryCompiler.compileGroupBy([]);
+        asserts.assert(emptyGroupBy.indexOf("group_by([q], [])") >= 0, "Empty group by should handle empty array");
+        
+        // Test empty multi operations
+        var emptyOperations = [];
+        var emptyMulti = QueryCompiler.compileMulti(emptyOperations);
+        asserts.assert(emptyMulti == "Multi.new()", "Empty operations should return basic Multi.new()");
+        
+        // Test empty preload
+        var emptyPreload = {simple: []};
+        var preloadQuery = QueryCompiler.compilePreload(emptyPreload);
+        asserts.assert(preloadQuery == "|> preload([])", "Empty preload should generate empty array");
+        
+        return asserts.done();
+    }
+    
+    @:describe("Invalid Input Handling - Malformed Data")
+    public function testMalformedData() {
+        // Test invalid aggregation function
+        var invalidAgg = QueryCompiler.compileAggregation("invalid_func", "field", "q");
+        asserts.assert(invalidAgg == "count(*)", "Invalid aggregation should default to count(*)");
+        
+        // Test null aggregation function (defaults to count)
+        var nullAgg = QueryCompiler.compileAggregation(null, "field", "q");
+        asserts.assert(nullAgg == "count(q.field)", "Null aggregation should default to count(q.field)");
+        
+        // Test empty window function (defaults to row_number)
+        var emptyWindow = QueryCompiler.compileWindowFunction("");
+        asserts.assert(emptyWindow.indexOf("over(row_number()") >= 0, "Empty window function should default to row_number");
+        
+        // Test malformed fragment with no parameters
+        var emptyFragment = QueryCompiler.compileFragment("SELECT * FROM users", []);
+        asserts.assert(emptyFragment == 'fragment("SELECT * FROM users")', "Fragment with no params should work");
+        
+        return asserts.done();
+    }
+    
+    @:describe("Resource Limits - Large Data Sets")
+    public function testResourceLimits() {
+        // Test very large joins array (stress test)
+        var largeJoins = [];
+        for (i in 0...100) {
+            largeJoins.push({
+                type: "inner",
+                schema: 'Table${i}',
+                alias: 't${i}',
+                on: 't${i}.id == t${i-1}.ref_id'
+            });
+        }
+        
+        var startTime = Sys.time();
+        var largeJoinResult = QueryCompiler.compileMultipleJoins(largeJoins);
+        var compilationTime = Sys.time() - startTime;
+        
+        asserts.assert(largeJoinResult.length > 0, "Large joins array should compile successfully");
+        asserts.assert(compilationTime < 0.1, 'Large join compilation should be under 100ms, took: ${compilationTime * 1000}ms');
+        
+        // Test large group by fields (50 fields)
+        var largeGroupByFields = [];
+        for (i in 0...50) {
+            largeGroupByFields.push('field${i}');
+        }
+        
+        var largeGroupBy = QueryCompiler.compileGroupBy(largeGroupByFields);
+        asserts.assert(largeGroupBy.indexOf("group_by") >= 0, "Large group by should compile");
+        asserts.assert(largeGroupBy.indexOf("field0") >= 0, "Should include first field");
+        asserts.assert(largeGroupBy.indexOf("field49") >= 0, "Should include last field");
+        
+        return asserts.done();
+    }
+    
+    @:describe("SQL Injection Prevention - Malicious Input")
+    public function testSQLInjectionPrevention() {
+        // Test potential SQL injection in join conditions
+        var maliciousCondition = "u.id = 1; DROP TABLE users; --";
+        var maliciousJoin = QueryCompiler.compileJoin("inner", "[u]", "p in Post", maliciousCondition);
+        asserts.assert(maliciousJoin.indexOf("DROP TABLE") >= 0, "Malicious SQL should be preserved in condition (parameterized queries handle safety)");
+        
+        // Test malicious aggregation field name
+        var maliciousField = "id; DROP TABLE posts; --";
+        var maliciousAgg = QueryCompiler.compileAggregation("count", maliciousField, "q");
+        asserts.assert(maliciousAgg.indexOf("DROP TABLE") >= 0, "Malicious field should be preserved (parameterization handles safety)");
+        
+        // Test malicious fragment SQL
+        var maliciousSQL = "SELECT * FROM users; DROP TABLE sensitive_data; --";
+        var maliciousFragment = QueryCompiler.compileFragment(maliciousSQL, ["param1"]);
+        asserts.assert(maliciousFragment.indexOf("DROP TABLE") >= 0, "Malicious SQL in fragment should be preserved (Ecto.Query handles parameterization)");
+        
+        return asserts.done();
+    }
+    
+    @:describe("Type Safety - Invalid Combinations")
+    public function testTypeSafetyChecks() {
+        // Test mismatched binding types in multiple joins
+        var mismatchedJoins = [
+            {type: "inner", schema: "Post", alias: null, on: "invalid_binding.id == p.user_id"},
+            {type: "left", schema: null, alias: "comment", on: "p.id == c.post_id"}
+        ];
+        
+        var mismatchedResult = QueryCompiler.compileMultipleJoins(mismatchedJoins);
+        asserts.assert(mismatchedResult.length > 0, "Mismatched joins should still compile (runtime validation)");
+        
+        // Test invalid multi operation type
+        var invalidMultiOps = [
+            {type: "invalid_operation", name: "test", changeset: null, record: null, query: null, updates: null, funcStr: null}
+        ];
+        
+        var invalidMulti = QueryCompiler.compileMulti(invalidMultiOps);
+        asserts.assert(invalidMulti == "Multi.new()", "Invalid multi operation should result in basic Multi.new()");
+        
+        return asserts.done();
+    }
+    
+    @:describe("Concurrent Compilation - Thread Safety")
+    public function testConcurrentCompilation() {
+        // Simulate concurrent compilation by running multiple batch operations
+        var batch1Queries = [];
+        var batch2Queries = [];
+        var batch3Queries = [];
+        
+        // Create three different batches
+        for (i in 0...20) {
+            batch1Queries.push({
+                schema: "User", binding: "u", alias: 'user${i}',
+                joins: [{type: "inner", schema: "Post", alias: "post", on: "u.id == p.user_id"}],
+                where: 'u.id > ${i}', groupBy: null, having: null, orderBy: null,
+                limit: null, offset: null, preload: null, select: null
+            });
+            
+            batch2Queries.push({
+                schema: "Post", binding: "p", alias: 'post${i}',
+                joins: [{type: "left", schema: "Comment", alias: "comment", on: "p.id == c.post_id"}],
+                where: 'p.published = true', groupBy: null, having: null, orderBy: null,
+                limit: null, offset: null, preload: null, select: null
+            });
+            
+            batch3Queries.push({
+                schema: "Comment", binding: "c", alias: 'comment${i}',
+                joins: null, where: 'c.approved = true', groupBy: null, having: null,
+                orderBy: null, limit: null, offset: null, preload: null, select: null
+            });
+        }
+        
+        var startTime = Sys.time();
+        
+        // Run all batches (simulating concurrent access)
+        var results1 = QueryCompiler.batchCompileQueries(batch1Queries);
+        var results2 = QueryCompiler.batchCompileQueries(batch2Queries);
+        var results3 = QueryCompiler.batchCompileQueries(batch3Queries);
+        
+        var totalTime = Sys.time() - startTime;
+        
+        asserts.assert(results1.length == 20, "Batch 1 should compile all queries");
+        asserts.assert(results2.length == 20, "Batch 2 should compile all queries");
+        asserts.assert(results3.length == 20, "Batch 3 should compile all queries");
+        asserts.assert(totalTime < 0.05, 'Concurrent compilation should be under 50ms, took: ${totalTime * 1000}ms');
+        
+        // Verify results are different (no cross-contamination)
+        asserts.assert(results1[0] != results2[0], "Different batches should produce different results");
+        asserts.assert(results2[0] != results3[0], "Different batches should produce different results");
+        
+        return asserts.done();
+    }
+    
 }

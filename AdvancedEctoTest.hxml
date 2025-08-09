@@ -1,6 +1,0 @@
-# Advanced Ecto Features Test Configuration
--cp src
--cp test
--D reflaxe_runtime
--main AdvancedEctoTest
---interp
