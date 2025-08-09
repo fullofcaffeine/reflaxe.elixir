@@ -16,6 +16,7 @@ class LiveViewCompiler {
      */
     public static function isLiveViewClass(className: String): Bool {
         // Mock implementation for testing - in real scenario would check class metadata
+        if (className == null || className == "") return false;
         return className == "TestLiveView" || className.indexOf("LiveView") != -1;
     }
     
@@ -49,7 +50,9 @@ class LiveViewCompiler {
      */
     public static function compileMountFunction(params: String, body: String): String {
         var convertedBody = convertBodyToElixir(body);
-        var result = 'def mount(params, session, socket) do\n    ${convertedBody}\n  end';
+        // Use the provided params if they are specified, otherwise use defaults
+        var mountParams = (params != null && params != "") ? params : "params, session, socket";
+        var result = 'def mount(${mountParams}) do\n    ${convertedBody}\n  end';
         
         return result;
     }
