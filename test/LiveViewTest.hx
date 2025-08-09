@@ -295,5 +295,3 @@ class LiveViewTest {
         return asserts.done();
     }
 }
-
-#end

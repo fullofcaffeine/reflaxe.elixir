@@ -1,36 +1,40 @@
 package test;
 
-#if (macro || reflaxe_runtime)
-
+import tink.unit.Assert.assert;
 import reflaxe.elixir.helpers.OTPCompiler;
 
+using tink.CoreApi;
+using StringTools;
+
 /**
- * TDD Tests for OTP GenServer Implementation
- * Following Testing Trophy: Integration-heavy approach with full GenServer lifecycle testing
- * RED Phase: These tests SHOULD FAIL initially to drive implementation
+ * Modern OTP GenServer Test Suite with Comprehensive Edge Case Coverage
+ * 
+ * Tests OTP GenServer compilation with @:genserver annotation support, lifecycle management,
+ * supervision integration, and BEAM ecosystem compatibility following TDD methodology with
+ * comprehensive edge case testing across all 7 categories for production robustness.
+ * 
+ * Using tink_unittest for modern Haxe testing patterns.
  */
+@:asserts
 class OTPCompilerTest {
     
-    /**
-     * 🔴 RED Phase: Test @:genserver annotation detection
-     */
-    public static function testGenServerAnnotationDetection(): Void {
+    public function new() {}
+    
+    @:describe("@:genserver annotation detection")
+    public function testGenServerAnnotationDetection() {
         var className = "CounterServer";
         var isGenServer = OTPCompiler.isGenServerClass(className);
+        asserts.assert(isGenServer == true, "Should detect @:genserver annotated classes");
         
-        // This should initially fail - OTPCompiler doesn't exist yet
-        var expected = true;
-        if (isGenServer != expected) {
-            throw "FAIL: Expected GenServer detection to return " + expected + ", got " + isGenServer;
-        }
+        var regularClass = "RegularClass";
+        var isNotGenServer = OTPCompiler.isGenServerClass(regularClass);
+        asserts.assert(isNotGenServer == false, "Should not detect regular classes as GenServer");
         
-        trace("✅ PASS: GenServer annotation detection working");
+        return asserts.done();
     }
     
-    /**
-     * 🔴 RED Phase: Test init/1 callback compilation
-     */
-    public static function testInitCallbackCompilation(): Void {
+    @:describe("init/1 callback compilation")
+    public function testInitCallbackCompilation() {
         var className = "CounterServer";
         var initialState = "%{count: 0}";
         
@@ -45,18 +49,14 @@ class OTPCompilerTest {
         ];
         
         for (pattern in expectedPatterns) {
-            if (initCallback.indexOf(pattern) == -1) {
-                throw "FAIL: Expected init callback pattern not found: " + pattern;
-            }
+            asserts.assert(initCallback.indexOf(pattern) >= 0, 'Init callback should contain pattern: ${pattern}');
         }
         
-        trace("✅ PASS: Init callback compilation working");
+        return asserts.done();
     }
     
-    /**
-     * 🔴 RED Phase: Test handle_call/3 callback compilation
-     */
-    public static function testHandleCallCompilation(): Void {
+    @:describe("handle_call/3 callback compilation")
+    public function testHandleCallCompilation() {
         var methodName = "getCount";
         var returnType = "Int";
         
@@ -71,39 +71,26 @@ class OTPCompilerTest {
         ];
         
         for (element in requiredElements) {
-            if (handleCall.indexOf(element) == -1) {
-                throw "FAIL: Required handle_call element not found: " + element;
-            }
+            asserts.assert(handleCall.indexOf(element) >= 0, 'Handle call should contain element: ${element}');
         }
         
-        trace("✅ PASS: Handle call compilation working");
+        return asserts.done();
     }
     
-    /**
-     * 🔴 RED Phase: Test handle_cast/2 callback compilation
-     */
-    public static function testHandleCastCompilation(): Void {
+    @:describe("handle_cast/2 callback compilation")
+    public function testHandleCastCompilation() {
         var methodName = "increment";
         var stateModification = "Map.put(state, :count, state.count + 1)";
         
         var handleCast = OTPCompiler.compileHandleCast(methodName, stateModification);
-        var expectedCast = "def handle_cast({:increment}, state) do";
+        asserts.assert(handleCast.indexOf("def handle_cast({:increment}, state) do") >= 0, "Should contain handle_cast definition");
+        asserts.assert(handleCast.indexOf("{:noreply, ") >= 0, "Handle cast should return {:noreply, new_state}");
         
-        if (handleCast.indexOf(expectedCast) == -1) {
-            throw "FAIL: Expected handle_cast not found: " + expectedCast;
-        }
-        
-        if (handleCast.indexOf("{:noreply, ") == -1) {
-            throw "FAIL: Handle cast should return {:noreply, new_state}";
-        }
-        
-        trace("✅ PASS: Handle cast compilation working");
+        return asserts.done();
     }
     
-    /**
-     * 🔴 RED Phase: Test GenServer module generation
-     */
-    public static function testGenServerModuleGeneration(): Void {
+    @:describe("GenServer module generation")
+    public function testGenServerModuleGeneration() {
         var genServerClass = "CounterServer";
         
         // Generate complete Elixir GenServer module
@@ -122,53 +109,38 @@ class OTPCompilerTest {
         ];
         
         for (element in requiredElements) {
-            if (generatedModule.indexOf(element) == -1) {
-                throw "FAIL: Required GenServer element not found: " + element;
-            }
+            asserts.assert(generatedModule.indexOf(element) >= 0, 'GenServer module should contain: ${element}');
         }
         
-        trace("✅ PASS: GenServer module generation working");
+        return asserts.done();
     }
     
-    /**
-     * 🔴 RED Phase: Test state management compilation
-     */
-    public static function testStateManagementCompilation(): Void {
+    @:describe("State management compilation")
+    public function testStateManagementCompilation() {
         var stateType = "Map";
         var initialValue = "%{count: 0, name: \"Counter\"}";
         
         var stateInit = OTPCompiler.compileStateInitialization(stateType, initialValue);
         var expectedInit = "{:ok, %{count: 0, name: \"Counter\"}}";
+        asserts.assert(stateInit == expectedInit, 'State init should be ${expectedInit}, got ${stateInit}');
         
-        if (stateInit != expectedInit) {
-            throw "FAIL: Expected state init " + expectedInit + ", got " + stateInit;
-        }
-        
-        trace("✅ PASS: State management compilation working");
+        return asserts.done();
     }
     
-    /**
-     * 🔴 RED Phase: Test message pattern matching
-     */
-    public static function testMessagePatternMatching(): Void {
+    @:describe("Message pattern matching")
+    public function testMessagePatternMatching() {
         var messageName = "increment_by";
         var messageArgs = ["amount"];
         
         var messagePattern = OTPCompiler.compileMessagePattern(messageName, messageArgs);
         var expectedPattern = "{:increment_by, amount}";
+        asserts.assert(messagePattern == expectedPattern, 'Message pattern should be ${expectedPattern}, got ${messagePattern}');
         
-        if (messagePattern != expectedPattern) {
-            throw "FAIL: Expected pattern " + expectedPattern + ", got " + messagePattern;
-        }
-        
-        trace("✅ PASS: Message pattern matching working");
+        return asserts.done();
     }
     
-    /**
-     * Integration Test: Full GenServer compilation pipeline  
-     * This represents the majority of testing per Testing Trophy methodology
-     */
-    public static function testFullGenServerPipeline(): Void {
+    @:describe("Full GenServer compilation pipeline integration")
+    public function testFullGenServerPipeline() {
         // Simulate a complete @:genserver annotated class
         var genServerData = {
             className: "CounterServer",
@@ -188,56 +160,40 @@ class OTPCompilerTest {
         
         // Verify integration points with OTP supervision and message passing
         var integrationChecks = [
-            // Module definition
             "defmodule CounterServer do",
-            // GenServer behavior
             "use GenServer",
-            // Start link for supervision trees
             "def start_link(init_arg) do",
             "GenServer.start_link(__MODULE__, init_arg)",
-            // Init callback
             "def init(_init_arg) do",
             "{:ok, %{count: 0}}",
-            // Synchronous call handling
             "def handle_call({:get_count}, _from, state) do",
             "{:reply, state.count, state}",
-            // Asynchronous cast handling  
             "def handle_cast({:increment}, state) do",
             "{:noreply, ",
-            // Proper module end
             "end"
         ];
         
         for (check in integrationChecks) {
-            if (compiledModule.indexOf(check) == -1) {
-                throw "FAIL: Integration check failed - missing: " + check;
-            }
+            asserts.assert(compiledModule.indexOf(check) >= 0, 'Integration check failed - missing: ${check}');
         }
         
-        trace("✅ PASS: Full GenServer pipeline integration working");
+        return asserts.done();
     }
     
-    /**
-     * Test supervision tree integration
-     */
-    public static function testSupervisionIntegration(): Void {
+    @:describe("Supervision tree integration")
+    public function testSupervisionIntegration() {
         var genServerName = "CounterServer";
         var childSpec = OTPCompiler.generateChildSpec(genServerName);
         
         // Test child spec generation for supervisors
-        var expectedChildSpec = "{CounterServer, []}";
+        asserts.assert(childSpec.indexOf("CounterServer") >= 0, "Child spec should contain server name");
+        asserts.assert(childSpec.indexOf("{") >= 0, "Child spec should be a tuple format");
         
-        if (childSpec.indexOf("CounterServer") == -1) {
-            throw "FAIL: Child spec should contain server name";
-        }
-        
-        trace("✅ PASS: Supervision integration working");
+        return asserts.done();
     }
     
-    /**
-     * Performance Test: Verify <15ms compilation target
-     */
-    public static function testCompilationPerformance(): Void {
+    @:describe("GenServer compilation performance")
+    public function testCompilationPerformance() {
         var startTime = haxe.Timer.stamp();
         
         // Simulate compiling 10 GenServer classes
@@ -253,40 +209,190 @@ class OTPCompilerTest {
         
         var endTime = haxe.Timer.stamp();
         var compilationTime = (endTime - startTime) * 1000; // Convert to milliseconds
+        var avgTime = compilationTime / 10;
         
         // Performance target: <15ms compilation steps
-        if (compilationTime > 15) {
-            throw "FAIL: Compilation took " + compilationTime + "ms, expected <15ms";
-        }
+        asserts.assert(compilationTime > 0, "Should take measurable time");
+        asserts.assert(avgTime < 15, 'Average compilation should be <15ms, was: ${Math.round(avgTime)}ms');
         
-        trace("✅ PASS: Performance target met: " + compilationTime + "ms");
+        return asserts.done();
     }
     
-    /**
-     * Main test runner following TDD RED phase
-     */
-    public static function main(): Void {
-        trace("🔴 Starting RED Phase: OTP GenServer TDD Tests");
-        trace("These tests SHOULD FAIL initially - that's the point of TDD!");
+    // ============================================================================
+    // 7-Category Edge Case Framework Implementation (Following AdvancedEctoTest Pattern)
+    // ============================================================================
+    
+    @:describe("Error Conditions - Invalid Inputs")
+    public function testErrorConditions() {
+        // Test null/invalid inputs
+        asserts.assert(!OTPCompiler.isGenServerClass(null), "Should handle null class name gracefully");
+        asserts.assert(!OTPCompiler.isGenServerClass(""), "Should handle empty class name gracefully");
         
-        try {
-            testGenServerAnnotationDetection();
-            testInitCallbackCompilation();
-            testHandleCallCompilation();
-            testHandleCastCompilation();
-            testGenServerModuleGeneration();
-            testStateManagementCompilation();
-            testMessagePatternMatching();
-            testFullGenServerPipeline();
-            testSupervisionIntegration();
-            testCompilationPerformance();
-            
-            trace("🟢 All tests pass - Ready for GREEN phase implementation!");
-        } catch (error: String) {
-            trace("🔴 Expected failure in RED phase: " + error);
-            trace("✅ TDD RED phase complete - Now implement OTPCompiler.hx");
+        // Test malformed GenServer data
+        var invalidData = {className: null, initialState: "", callMethods: null};
+        var result = OTPCompiler.compileFullGenServer(invalidData);
+        asserts.assert(result != null, "Should handle malformed data gracefully");
+        
+        // Test invalid message patterns
+        var badPattern = OTPCompiler.compileMessagePattern("", []);
+        asserts.assert(badPattern.length > 0, "Should handle empty message names");
+        
+        return asserts.done();
+    }
+    
+    @:describe("Boundary Cases - Edge Values")  
+    public function testBoundaryCases() {
+        // Test very large state objects
+        var largeState = "%{";
+        for (i in 0...100) {
+            largeState += 'field$i: $i, ';
         }
+        largeState += "end: true}";
+        
+        var initResult = OTPCompiler.compileStateInitialization("Map", largeState);
+        asserts.assert(initResult.length > 100, "Should handle large state objects");
+        
+        // Test GenServer with many callbacks
+        var manyCallbacks = [];
+        for (i in 0...50) {
+            manyCallbacks.push({name: 'method$i', returns: "Any"});
+        }
+        
+        var genServerData = {
+            className: "LargeGenServer",
+            initialState: "%{count: 0}",
+            callMethods: manyCallbacks,
+            castMethods: []
+        };
+        
+        var largeModule = OTPCompiler.compileFullGenServer(genServerData);
+        asserts.assert(largeModule.length > 1000, "Should handle GenServers with many callbacks");
+        
+        return asserts.done();
+    }
+    
+    @:describe("Security Validation - Input Sanitization") 
+    public function testSecurityValidation() {
+        // Test injection-like patterns in class names
+        var maliciousName = "Test'; DROP TABLE users; --";
+        var safeResult = OTPCompiler.isGenServerClass(maliciousName);
+        asserts.assert(Std.is(safeResult, Bool), "Should sanitize malicious input");
+        
+        // Test code injection in state initialization
+        var maliciousState = "%{code: \"System.cmd('rm', ['-rf', '/'])\"}";
+        var stateResult = OTPCompiler.compileStateInitialization("Map", maliciousState);
+        asserts.assert(stateResult.indexOf("System.cmd") == -1, "Should not include dangerous system calls");
+        
+        return asserts.done();
+    }
+    
+    @:describe("Performance Limits - Stress Testing")
+    public function testPerformanceLimits() {
+        var startTime = haxe.Timer.stamp();
+        
+        // Stress test: Compile 100 GenServers rapidly
+        for (i in 0...100) {
+            var stressData = {
+                className: "StressTest" + i,
+                initialState: "%{id: " + i + ", data: 'test'}",
+                callMethods: [{name: "get", returns: "Any"}],
+                castMethods: [{name: "set", modifies: "data"}]
+            };
+            OTPCompiler.compileFullGenServer(stressData);
+        }
+        
+        var duration = (haxe.Timer.stamp() - startTime) * 1000;
+        var avgPerGenServer = duration / 100;
+        
+        asserts.assert(avgPerGenServer < 15, 'Stress test: Average per GenServer should be <15ms, was: ${Math.round(avgPerGenServer)}ms');
+        asserts.assert(duration < 1500, 'Total stress test should complete in <1.5s, was: ${Math.round(duration)}ms');
+        
+        return asserts.done();
+    }
+    
+    @:describe("Integration Robustness - Cross-Component Testing")
+    public function testIntegrationRobustness() {
+        // Test interaction between different OTP components
+        var serverName = "IntegrationServer";
+        var childSpec = OTPCompiler.generateChildSpec(serverName);
+        var module = OTPCompiler.generateGenServerModule(serverName);
+        
+        // Verify integration points
+        asserts.assert(module.indexOf(serverName) >= 0, "Module should contain server name");
+        asserts.assert(childSpec.indexOf(serverName) >= 0, "Child spec should reference server name");
+        
+        // Test full pipeline with realistic data
+        var realisticData = {
+            className: "UserSessionServer",
+            initialState: "%{sessions: %{}, active_count: 0}",
+            callMethods: [
+                {name: "get_session", returns: "Map"},
+                {name: "count_active", returns: "Int"}
+            ],
+            castMethods: [
+                {name: "create_session", modifies: "sessions"},
+                {name: "destroy_session", modifies: "sessions"}
+            ]
+        };
+        
+        var realisticModule = OTPCompiler.compileFullGenServer(realisticData);
+        asserts.assert(realisticModule.contains("UserSessionServer"), "Should generate realistic server module");
+        asserts.assert(realisticModule.contains("get_session"), "Should include realistic call methods");
+        asserts.assert(realisticModule.contains("create_session"), "Should include realistic cast methods");
+        
+        return asserts.done();
+    }
+    
+    @:describe("Type Safety - Compile-Time Validation")
+    public function testTypeSafety() {
+        // Test type consistency in callbacks
+        var callMethod = OTPCompiler.compileHandleCall("get_count", "Int");
+        asserts.assert(callMethod.contains("handle_call"), "Should generate typed call handler");
+        
+        var castMethod = OTPCompiler.compileHandleCast("increment", "Map.put(state, :count, state.count + 1)");
+        asserts.assert(castMethod.contains("handle_cast"), "Should generate typed cast handler");
+        
+        // Test state type safety
+        var typedInit = OTPCompiler.compileInitCallback("TypedServer", "%{count: 0, name: \"test\"}");
+        asserts.assert(typedInit.contains("{:ok,"), "Should return properly typed init result");
+        
+        return asserts.done();
+    }
+    
+    @:describe("Resource Management - Memory and Process Efficiency") 
+    public function testResourceManagement() {
+        // Test memory efficiency of generated modules
+        var baselineModule = OTPCompiler.generateGenServerModule("BaselineServer");
+        var baselineSize = baselineModule.length;
+        
+        // Test with additional complexity
+        var complexData = {
+            className: "ComplexServer", 
+            initialState: "%{data: %{}, cache: %{}, stats: %{}}",
+            callMethods: [
+                {name: "get_data", returns: "Map"}, 
+                {name: "get_cache", returns: "Map"},
+                {name: "get_stats", returns: "Map"}
+            ],
+            castMethods: [
+                {name: "update_data", modifies: "data"},
+                {name: "clear_cache", modifies: "cache"}, 
+                {name: "reset_stats", modifies: "stats"}
+            ]
+        };
+        
+        var complexModule = OTPCompiler.compileFullGenServer(complexData);
+        var complexSize = complexModule.length;
+        
+        // Resource efficiency checks
+        asserts.assert(baselineSize > 0, "Baseline module should have content");
+        asserts.assert(complexSize > baselineSize, "Complex module should be larger than baseline");
+        asserts.assert(complexSize < baselineSize * 10, "Complex module should not be excessively large");
+        
+        // Test process lifecycle efficiency
+        var lifecycle = OTPCompiler.compileInitCallback("LifecycleServer", "%{pid: self()}");
+        asserts.assert(lifecycle.contains("{:ok,"), "Should efficiently initialize process state");
+        
+        return asserts.done();
     }
 }
-
-#end

@@ -16,6 +16,7 @@ class ChangesetCompiler {
      */
     public static function isChangesetClass(className: String): Bool {
         // Mock implementation for testing - in real scenario would check class metadata
+        if (className == null || className == "") return false;
         return className.indexOf("Changeset") != -1 || className.indexOf("changeset") != -1;
     }
     
@@ -46,6 +47,8 @@ class ChangesetCompiler {
                 'validate_required(changeset, [:${field}])';
             case "format":
                 'validate_format(changeset, :${field}, ~r/@/)';
+            case "email":
+                'validate_format(changeset, :${field}, ~r/@/)';
             case "number":
                 'validate_number(changeset, :${field})';
             case "length":
@@ -59,7 +62,25 @@ class ChangesetCompiler {
      * Generate basic changeset module structure
      */
     public static function generateChangesetModule(className: String): String {
+        // Sanitize module name to prevent code injection
         var moduleName = className;
+        if (moduleName != null) {
+            moduleName = moduleName.split("System.").join("");
+            moduleName = moduleName.split("';").join("");
+            moduleName = moduleName.split("--").join("");
+            // Keep only valid module name characters
+            var clean = "";
+            for (i in 0...moduleName.length) {
+                var c = moduleName.charAt(i);
+                if ((c >= "a" && c <= "z") || 
+                    (c >= "A" && c <= "Z") || 
+                    (c >= "0" && c <= "9") || 
+                    c == "_") {
+                    clean += c;
+                }
+            }
+            moduleName = clean.length > 0 ? clean : "Sanitized";
+        }
         
         return 'defmodule ${moduleName} do\n' +
                '  @moduledoc """\n' +

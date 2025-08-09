@@ -16,6 +16,7 @@ class OTPCompiler {
      */
     public static function isGenServerClass(className: String): Bool {
         // Mock implementation for testing - in real scenario would check class metadata
+        if (className == null || className == "") return false;
         return className.indexOf("Server") != -1 || 
                className.indexOf("GenServer") != -1 ||
                className.indexOf("Worker") != -1;
@@ -129,7 +130,17 @@ class OTPCompiler {
      * Compile state initialization with type safety
      */
     public static function compileStateInitialization(stateType: String, initialValue: String): String {
-        return '{:ok, ${initialValue}}';
+        // Sanitize the initial value to prevent code injection
+        var safeValue = initialValue;
+        if (safeValue != null) {
+            // Remove dangerous patterns
+            safeValue = safeValue.split("System.").join("");
+            safeValue = safeValue.split("File.").join("");
+            safeValue = safeValue.split("Process.").join("");
+            safeValue = safeValue.split("Code.").join("");
+            safeValue = safeValue.split("eval(").join("");
+        }
+        return '{:ok, ${safeValue}}';
     }
     
     /**
