@@ -43,7 +43,7 @@ class SimpleTest {
     @:describe("Async test with timeout")
     @:timeout(5000)
     public function testAsync() {
-        return Future.async(function(cb) {
+        return Future.irreversible(function(cb) {
             haxe.Timer.delay(function() {
                 asserts.assert(true, "Async test completed");
                 cb(asserts.done());
