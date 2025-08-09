@@ -1,0 +1,9 @@
+# TDD RED Phase Test for MigrationDSL  
+# This test SHOULD FAIL initially - that's the RED phase!
+-cp /REDACTED_LOCAL_PATH
+-cp /REDACTED_LOCAL_PATH
+-cp /REDACTED_LOCAL_PATH
+-cp /REDACTED_LOCAL_PATH
+-D reflaxe_runtime
+-main test.MigrationDSLTest
+--interp

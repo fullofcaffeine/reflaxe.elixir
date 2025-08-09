@@ -75,6 +75,26 @@ class ElixirCompiler extends DirectToStringCompiler {
     public function compileClassImpl(classType: ClassType, varFields: Array<ClassVarData>, funcFields: Array<ClassFuncData>): Null<String> {
         if (classType == null) return null;
         
+        // Check for @:genserver annotation - prioritize GenServer compilation
+        if (reflaxe.elixir.helpers.OTPCompiler.isGenServerClassType(classType)) {
+            return compileGenServerClass(classType, varFields, funcFields);
+        }
+        
+        // Check for @:migration annotation - prioritize migration compilation
+        if (reflaxe.elixir.helpers.MigrationDSL.isMigrationClassType(classType)) {
+            return compileMigrationClass(classType, varFields, funcFields);
+        }
+        
+        // Check for @:changeset annotation - prioritize changeset compilation
+        if (reflaxe.elixir.helpers.ChangesetCompiler.isChangesetClassType(classType)) {
+            return compileChangesetClass(classType, varFields, funcFields);
+        }
+        
+        // Check for @:liveview annotation (existing functionality)  
+        if (reflaxe.elixir.LiveViewCompiler.isLiveViewClassType(classType)) {
+            return compileLiveViewClass(classType, varFields, funcFields);
+        }
+        
         // Use the enhanced ClassCompiler for proper struct/module generation
         var classCompiler = new reflaxe.elixir.helpers.ClassCompiler(this.typer);
         
@@ -89,6 +109,185 @@ class ElixirCompiler extends DirectToStringCompiler {
         }
         
         return classCompiler.compileClass(classType, varFields, funcFields);
+    }
+    
+    /**
+     * Compile @:migration annotated class to Ecto migration module
+     */
+    private function compileMigrationClass(classType: ClassType, varFields: Array<ClassVarData>, funcFields: Array<ClassFuncData>): String {
+        var className = classType.name;
+        var config = reflaxe.elixir.helpers.MigrationDSL.getMigrationConfig(classType);
+        var tableName = config.table != null ? config.table : extractTableNameFromClassName(className);
+        
+        // Extract table operations from class variables and functions
+        var columns = varFields.map(field -> '${field.name}:${mapHaxeTypeToElixir(field.type)}');
+        
+        // Create migration data structure
+        var migrationData = {
+            className: className,
+            timestamp: reflaxe.elixir.helpers.MigrationDSL.generateTimestamp(),
+            tableName: tableName,
+            columns: columns
+        };
+        
+        // Generate comprehensive migration with table operations
+        var migrationModule = reflaxe.elixir.helpers.MigrationDSL.compileFullMigration(migrationData);
+        
+        // Add custom migration functions if present in funcFields
+        var customOperations = new Array<String>();
+        for (func in funcFields) {
+            if (func.name.indexOf("migrate") == 0) {
+                var operationName = func.name.substring(7); // Remove "migrate" prefix
+                var customOperation = generateCustomMigrationOperation(operationName, tableName);
+                customOperations.push(customOperation);
+            }
+        }
+        
+        // Append custom operations to the migration if any exist
+        if (customOperations.length > 0) {
+            migrationModule += "\n\n  # Custom migration operations\n" + customOperations.join("\n");
+        }
+        
+        return migrationModule;
+    }
+    
+    /**
+     * Extract table name from migration class name
+     */
+    private function extractTableNameFromClassName(className: String): String {
+        // Convert CreateUsersTable -> users, AlterPostsTable -> posts, etc.
+        var tableName = className;
+        
+        // Remove common prefixes
+        if (tableName.indexOf("Create") == 0) {
+            tableName = tableName.substring(6);
+        } else if (tableName.indexOf("Alter") == 0) {
+            tableName = tableName.substring(5);
+        } else if (tableName.indexOf("Drop") == 0) {
+            tableName = tableName.substring(4);
+        }
+        
+        // Remove Table suffix
+        if (tableName.endsWith("Table")) {
+            tableName = tableName.substring(0, tableName.length - 5);
+        }
+        
+        // Convert to snake_case
+        return reflaxe.elixir.helpers.MigrationDSL.camelCaseToSnakeCase(tableName);
+    }
+    
+    /**
+     * Map Haxe types to Elixir migration types
+     */
+    private function mapHaxeTypeToElixir(haxeType: Dynamic): String {
+        // Simplified type mapping - would use ElixirTyper for full implementation
+        return "string"; // Default to string for now
+    }
+    
+    /**
+     * Generate custom migration operation
+     */
+    private function generateCustomMigrationOperation(operationName: String, tableName: String): String {
+        return '  # Custom operation: ${operationName}\n' +
+               '  # Add custom migration logic for ${tableName} table';
+    }
+    
+    /**
+     * Compile @:changeset annotated class to Ecto changeset module
+     */
+    private function compileChangesetClass(classType: ClassType, varFields: Array<ClassVarData>, funcFields: Array<ClassFuncData>): String {
+        var className = classType.name;
+        var config = reflaxe.elixir.helpers.ChangesetCompiler.getChangesetConfig(classType);
+        var schemaName = config.schema != null ? config.schema : "DefaultSchema";
+        
+        // Extract field information from class variables for validation
+        var fieldNames = varFields.map(field -> field.name);
+        
+        // Generate comprehensive changeset with schema integration
+        var changesetModule = reflaxe.elixir.helpers.ChangesetCompiler.compileFullChangeset(className, schemaName);
+        
+        // Add custom validation functions if present in funcFields
+        var customValidations = new Array<String>();
+        for (func in funcFields) {
+            if (func.name.indexOf("validate") == 0) {
+                var validationName = func.name.substring(8); // Remove "validate" prefix
+                var customValidation = reflaxe.elixir.helpers.ChangesetCompiler.generateCustomValidation(
+                    validationName, 
+                    "field", 
+                    "true" // Simplified condition
+                );
+                customValidations.push(customValidation);
+            }
+        }
+        
+        // Append custom validations to the module
+        if (customValidations.length > 0) {
+            changesetModule += "\n\n" + customValidations.join("\n");
+        }
+        
+        return changesetModule;
+    }
+    
+    /**
+     * Compile @:genserver annotated class to OTP GenServer module
+     */
+    private function compileGenServerClass(classType: ClassType, varFields: Array<ClassVarData>, funcFields: Array<ClassFuncData>): String {
+        var className = classType.name;
+        var config = reflaxe.elixir.helpers.OTPCompiler.getGenServerConfig(classType);
+        
+        // Extract state from class variables
+        var initialState = "%{";
+        var stateFields = [];
+        for (field in varFields) {
+            var fieldName = field.name;
+            var defaultValue = switch(field.type.toString()) {
+                case "Int": "0";
+                case "String": '""';
+                case "Bool": "false";
+                default: "nil";
+            };
+            stateFields.push('${fieldName}: ${defaultValue}');
+        }
+        initialState += stateFields.join(", ") + "}";
+        
+        // Extract methods and categorize into calls vs casts
+        var callMethods = [];
+        var castMethods = [];
+        
+        for (func in funcFields) {
+            var methodName = func.field.name;
+            
+            // Methods starting with "get" or returning values are synchronous calls
+            if (methodName.indexOf("get") == 0 || methodName.indexOf("is") == 0) {
+                callMethods.push({name: methodName, returns: "Dynamic"});
+            }
+            // Methods that modify state are asynchronous casts
+            else if (methodName.indexOf("set") == 0 || methodName.indexOf("update") == 0 || methodName.indexOf("increment") == 0) {
+                castMethods.push({name: methodName, modifies: "value"});
+            }
+        }
+        
+        // Create GenServer data structure
+        var genServerData = {
+            className: className,
+            initialState: initialState,
+            callMethods: callMethods,
+            castMethods: castMethods
+        };
+        
+        // Generate comprehensive GenServer with all callbacks
+        return reflaxe.elixir.helpers.OTPCompiler.compileFullGenServer(genServerData);
+    }
+    
+    /**
+     * Compile @:liveview annotated class to Phoenix LiveView module  
+     */
+    private function compileLiveViewClass(classType: ClassType, varFields: Array<ClassVarData>, funcFields: Array<ClassFuncData>): String {
+        var className = classType.name;
+        var config = reflaxe.elixir.LiveViewCompiler.getLiveViewConfig(classType);
+        
+        // Generate LiveView module using existing LiveViewCompiler
+        return reflaxe.elixir.LiveViewCompiler.compileFullLiveView(className, config);
     }
     
     /**

@@ -1,0 +1,8 @@
+# Integration test for full changeset compilation pipeline
+-cp /REDACTED_LOCAL_PATH
+-cp /REDACTED_LOCAL_PATH
+-cp /REDACTED_LOCAL_PATH
+-cp /REDACTED_LOCAL_PATH
+-D reflaxe_runtime
+-main test.ChangesetIntegrationTest
+--interp

@@ -1,0 +1,8 @@
+# REFACTOR Phase test for enhanced ChangesetCompiler
+-cp /REDACTED_LOCAL_PATH
+-cp /REDACTED_LOCAL_PATH
+-cp /REDACTED_LOCAL_PATH
+-cp /REDACTED_LOCAL_PATH
+-D reflaxe_runtime
+-main test.ChangesetRefactorTest
+--interp

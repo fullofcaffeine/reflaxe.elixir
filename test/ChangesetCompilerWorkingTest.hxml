@@ -1,0 +1,8 @@
+# Working test for ChangesetCompiler GREEN phase  
+-cp /REDACTED_LOCAL_PATH
+-cp /REDACTED_LOCAL_PATH
+-cp /REDACTED_LOCAL_PATH
+-cp /REDACTED_LOCAL_PATH
+-D reflaxe_runtime
+-main test.ChangesetCompilerWorkingTest
+--interp
