@@ -162,8 +162,13 @@ class OTPCompiler {
      * Compile full GenServer with all callbacks and boilerplate
      */
     public static function compileFullGenServer(genServerData: Dynamic): String {
-        var className = genServerData.className;
-        var initialState = genServerData.initialState;
+        // Add null safety for edge case testing
+        if (genServerData == null) {
+            return "defmodule NullGenServer do\n  use GenServer\nend";
+        }
+        
+        var className = genServerData.className != null ? genServerData.className : "DefaultGenServer";
+        var initialState = genServerData.initialState != null ? genServerData.initialState : "%{}";
         var callMethods = genServerData.callMethods;
         var castMethods = genServerData.castMethods;
         
@@ -173,7 +178,7 @@ class OTPCompiler {
         // Module definition and boilerplate
         result.add('defmodule ${moduleName} do\n');
         result.add('  @moduledoc """\n');
-        result.add('  Generated GenServer for ${className}\n');
+        result.add('  Generated GenServer for ${moduleName}\n');
         result.add('  \n');
         result.add('  Provides type-safe concurrent programming with the BEAM actor model\n');
         result.add('  following OTP GenServer patterns with compile-time validation.\n');
@@ -203,14 +208,14 @@ class OTPCompiler {
         // Handle call methods
         if (callMethods != null) {
             for (method in (callMethods: Array<Dynamic>)) {
-                var methodName = method.name;
+                var methodName = method != null && method.name != null ? method.name : "default_method";
                 var atomicName = camelCaseToAtomCase(methodName);
                 
                 // Handle specific method patterns for state access
                 var stateAccess = switch(methodName) {
                     case "get_count": "state.count";
                     case "get_state": "state";
-                    default: 'state.${methodName.split("_").join("").toLowerCase()}';
+                    default: 'state.${methodName != null ? methodName.split("_").join("").toLowerCase() : "default"}';
                 };
                 
                 result.add('  @doc """\n');
@@ -226,14 +231,14 @@ class OTPCompiler {
         // Handle cast methods
         if (castMethods != null) {
             for (method in (castMethods: Array<Dynamic>)) {
-                var methodName = method.name;
+                var methodName = method != null && method.name != null ? method.name : "default_cast";
                 var atomicName = camelCaseToAtomCase(methodName);
                 
                 result.add('  @doc """\n');
                 result.add('  Handle asynchronous cast: ${methodName}\n');
                 result.add('  """\n');
                 result.add('  def handle_cast({:${atomicName}}, state) do\n');
-                result.add('    new_state = %{state | ${methodName.split("_").join("").toLowerCase()}: ${method.modifies}}\n');
+                result.add('    new_state = %{state | ${methodName != null ? methodName.split("_").join("").toLowerCase() : "default"}: ${method != null && method.modifies != null ? method.modifies : "nil"}}\n');
                 result.add('    {:noreply, new_state}\n');
                 result.add('  end\n');
                 result.add('  \n');
@@ -287,6 +292,11 @@ class OTPCompiler {
      * Convert CamelCase to atom_case for Elixir conventions
      */
     public static function camelCaseToAtomCase(input: String): String {
+        // Add null safety for edge case testing
+        if (input == null || input == "") {
+            return "default_atom";
+        }
+        
         var result = "";
         
         for (i in 0...input.length) {
