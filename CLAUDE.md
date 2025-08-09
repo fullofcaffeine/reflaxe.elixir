@@ -55,6 +55,12 @@ This is acceptable - helpers are simpler for our needs while following similar s
 - Testing Trophy approach with integration test focus
 - Performance targets: <15ms compilation steps, <100ms HXX template processing
 
+## Development Resources & Reference Strategy
+- **Reference Codebase**: `/Users/fullofcaffeine/workspace/code/haxe.elixir.reference/` - Contains Reflaxe patterns, Phoenix examples, tink_testrunner source
+- **Haxe API Documentation**: https://api.haxe.org/ - For type system, standard library, and language features
+- **Web Resources**: Use WebSearch and WebFetch for current documentation, API references, and best practices
+- **Principle**: Always reference existing working code and official documentation rather than guessing or assuming implementation details
+
 ## Implementation Status
 For comprehensive feature status and production readiness, see [`documentation/FEATURES.md`](documentation/FEATURES.md)
 
@@ -594,6 +600,188 @@ public function testSecurityValidation() {
 3. **Test both happy paths AND failure scenarios** - Both are equally important
 4. **Include performance validation** in edge case tests (<15ms requirement)
 5. **Document attack vectors tested** for security audit compliance
+
+## Testing Infrastructure Memory Files ✅
+
+### Comprehensive Testing Modernization Status
+- **Main Memory**: [`.llm-memory/testing-infrastructure-modernization.md`](.llm-memory/testing-infrastructure-modernization.md) - Complete modernization status, test preservation strategy, and phase-by-phase progress
+- **Audit Report**: [`test/TESTING_INFRASTRUCTURE_AUDIT.md`](test/TESTING_INFRASTRUCTURE_AUDIT.md) - Detailed analysis of all 84 test files with categorization and priority matrix
+- **Enhanced Runner**: [`test/ComprehensiveTestRunner.hx`](test/ComprehensiveTestRunner.hx) - Modern test orchestrator with categorization, filtering, and comprehensive reporting
+
+## tink_unittest Reference Patterns ✅
+
+### Simple Pattern (SimpleTest.hx) - Basic 3-Assertion Model ✅
+**When to use**: Simple feature testing, basic compilation validation, performance checks
+
+```haxe
+package test;
+
+import tink.unit.Assert.assert;
+using tink.CoreApi;
+
+@:asserts
+class SimpleTest {
+    public function new() {}
+    
+    @:before 
+    public function setup() {
+        return Noise;
+    }
+    
+    @:after
+    public function teardown() {
+        return Noise;
+    }
+    
+    @:describe("Test description")
+    public function testBasicFeature() {
+        asserts.assert(condition, "Error message");
+        return asserts.done();
+    }
+    
+    @:describe("Performance validation")
+    @:timeout(5000)
+    public function testPerformance() {
+        var startTime = haxe.Timer.stamp();
+        performOperation();
+        var duration = (haxe.Timer.stamp() - startTime) * 1000;
+        asserts.assert(duration < 15.0, 'Should be <15ms, was ${duration}ms');
+        return asserts.done();
+    }
+}
+```
+
+### Comprehensive Pattern (AdvancedEctoTest.hx) - 63-Assertion Model ✅
+**When to use**: Critical features requiring production robustness, security validation, comprehensive edge cases
+
+```haxe
+@:asserts
+class AdvancedFeatureTest {
+    public function new() {}
+    
+    // === CORE FUNCTIONALITY TESTING ===
+    @:describe("Primary feature functionality")
+    public function testCoreFeature() {
+        // Multiple assertions testing different aspects
+        asserts.assert(condition1, "Core function works");
+        asserts.assert(condition2, "Integration works");
+        return asserts.done();
+    }
+    
+    // === EDGE CASE TESTING SUITE ===
+    // MANDATORY for production features
+    
+    @:describe("Error Conditions - Invalid Inputs")
+    public function testErrorConditions() {
+        // Test null inputs, invalid parameters, malformed data
+        var result = processInvalidInput(null);
+        asserts.assert(result != null, "Should handle null gracefully");
+        return asserts.done();
+    }
+    
+    @:describe("Boundary Cases - Empty Collections") 
+    public function testBoundaryCases() {
+        // Test empty arrays, zero values, limits
+        var emptyResult = processEmptyArray([]);
+        asserts.assert(emptyResult.length == 0, "Empty input should return empty result");
+        return asserts.done();
+    }
+    
+    @:describe("Security Validation - Malicious Input")
+    public function testSecurityValidation() {
+        // Test injection attempts, malicious data
+        var maliciousInput = "'; DROP TABLE users; --";
+        var result = processSafelyParameterized(maliciousInput);
+        asserts.assert(result.indexOf("DROP TABLE") >= 0, "Should preserve input (parameterization handles safety)");
+        return asserts.done();
+    }
+    
+    @:describe("Performance Limits - Large Data Sets")
+    public function testPerformanceLimits() {
+        var startTime = Sys.time();
+        var largeDataSet = createLargeDataSet(1000);
+        var result = processLargeDataSet(largeDataSet);
+        var duration = Sys.time() - startTime;
+        
+        asserts.assert(result.length > 0, "Should process large data successfully");
+        asserts.assert(duration < 0.1, 'Should process <100ms, took: ${duration * 1000}ms');
+        return asserts.done();
+    }
+    
+    @:describe("Integration Robustness - Type Safety")
+    public function testIntegrationRobustness() {
+        // Test cross-component compatibility, dependency failures
+        var invalidCombination = createInvalidCombination();
+        var result = processWithValidation(invalidCombination);
+        asserts.assert(result != null, "Should handle invalid combinations gracefully");
+        return asserts.done();
+    }
+    
+    @:describe("Resource Management - Concurrent Access")
+    public function testResourceManagement() {
+        // Test memory limits, concurrent access, cleanup
+        var startTime = Sys.time();
+        var results = [];
+        
+        // Simulate concurrent operations
+        for (i in 0...10) {
+            results.push(processInParallel(i));
+        }
+        
+        var duration = Sys.time() - startTime;
+        asserts.assert(results.length == 10, "All concurrent operations should complete");
+        asserts.assert(duration < 0.05, 'Concurrent ops should be <50ms, took: ${duration * 1000}ms');
+        return asserts.done();
+    }
+}
+```
+
+### 7-Category Edge Case Framework (Extracted from AdvancedEctoTest.hx) ✅
+**MANDATORY for all production feature tests**
+
+1. **🚨 Error Conditions** - Invalid inputs, null handling, malformed data, type mismatches
+2. **🔍 Boundary Cases** - Empty collections, zero values, maximum limits, edge boundaries  
+3. **🔒 Security Validation** - Injection attempts, malicious input, bypass attempts
+4. **⚡ Performance Limits** - Large datasets, timeout validation, resource consumption, stress testing
+5. **🔗 Integration Robustness** - Cross-system compatibility, dependency failures, module interactions
+6. **🛡️ Type Safety** - Invalid type combinations, casting errors, dynamic type issues  
+7. **💾 Resource Management** - Memory limits, concurrent access, cleanup, performance degradation
+
+### Legacy Test Conversion Checklist ✅
+**Step-by-step guide for converting legacy tests to tink_unittest**
+
+**Phase 1: Basic Structure Conversion**
+- [ ] Add `import tink.unit.Assert.assert;` 
+- [ ] Add `using tink.CoreApi;`
+- [ ] Add `@:asserts` class annotation
+- [ ] Convert `static main()` to `public function new() {}`
+- [ ] Replace `trace()` with `asserts.assert()`
+- [ ] Remove custom assertion methods (use `asserts.assert()`)
+
+**Phase 2: Test Method Conversion** 
+- [ ] Add `@:describe("description")` to each test method
+- [ ] Convert assertions to `asserts.assert(condition, "message")`
+- [ ] Add `return asserts.done();` at end of each method
+- [ ] Add setup/teardown methods if needed (`@:before`, `@:after`)
+- [ ] Convert async tests with `@:timeout(milliseconds)`
+
+**Phase 3: Edge Case Integration (Required for Production Features)**
+- [ ] Add `// === EDGE CASE TESTING SUITE ===` section
+- [ ] Implement all 7 categories of edge case tests (use AdvancedEctoTest.hx as template)
+- [ ] Add performance validation with `Sys.time()` measurements  
+- [ ] Add security validation tests for malicious inputs
+- [ ] Add concurrent access/resource management testing
+- [ ] Ensure minimum 30+ assertions for comprehensive coverage
+
+**Phase 4: ComprehensiveTestRunner Integration**
+- [ ] Add test class to `test/ComprehensiveTestRunner.hx` in TestBatch.make([...])
+- [ ] Test via `npm run test:haxe` to verify integration
+- [ ] Remove standalone .hxml files (use central Test.hxml)
+- [ ] Verify test appears in categorized reporting output
+
+### Proven Implementation Examples ✅
+- **SimpleTest.hx**: Basic pattern (3 assertions) - ✅ WORKING  
+- **AdvancedEctoTest.hx**: Comprehensive pattern (63 assertions) - ✅ WORKING
 
 ## Agent Testing Instructions ✅
 
