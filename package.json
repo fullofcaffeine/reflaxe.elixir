@@ -1,0 +1,47 @@
+{
+  "name": "reflaxe-elixir",
+  "version": "1.0.0",
+  "description": "Haxe to Elixir compilation target using Reflaxe with Mix integration. Uses npm/lix for Haxe compiler development, mix for Elixir runtime testing.",
+  "main": "src/reflaxe/elixir/ElixirCompiler.hx",
+  "keywords": [
+    "haxe",
+    "elixir",
+    "beam",
+    "phoenix",
+    "otp",
+    "ecto",
+    "liveview",
+    "compiler",
+    "reflaxe"
+  ],
+  "author": "Claude Code",
+  "license": "MIT",
+  "devDependencies": {
+    "lix": "^15.12.4"
+  },
+  "scripts": {
+    "postinstall": "lix download",
+    "test": "echo '🧪 === COMPREHENSIVE REFLAXE.ELIXIR TEST SUITE ===' && npm run test:haxe && npm run test:examples && npm run test:mix && echo '🎉 ALL TESTS PASSING!'",
+    "test:haxe": "echo '📋 Testing Haxe→Elixir Compiler...' && npx haxe Test.hxml",
+    "test:examples": "echo '📋 Testing All 8 Examples Compilation...' && npx haxe SimpleExampleTest.hxml",
+    "test:mix": "echo '📋 Testing Generated Elixir Code & Mix Tasks...' && MIX_ENV=test mix test --no-deps-check",
+    "test:core": "echo '📋 Core extern tests...' && npx haxe test/FinalExternTest.hxml && npx haxe test/CompilationOnlyTest.hxml && npx haxe test/TestWorkingExterns.hxml",
+    "test:modern": "echo '📋 Modern tink_unittest infrastructure...' && npx haxe SimpleTest.hxml",
+    "test:comprehensive": "echo '📋 Comprehensive Testing with Examples...' && npx haxe ExampleTest.hxml",
+    "test:protocols": "echo '🔄 Testing Protocol System...' && npx haxe ProtocolTest.hxml",
+    "test:performance": "echo '⚡ Performance Benchmarking Examples...' && npx haxe ExamplePerformanceTest.hxml",
+    "examples:validate": "npm run test:examples",
+    "examples:benchmark": "npm run test:performance",
+    "compile": "npx haxe build.hxml",
+    "clean": "rm -rf _build && rm -rf out && find examples -name 'output' -type d -exec rm -rf {} + 2>/dev/null || true",
+    "setup": "lix scope create && lix install haxelib:reflaxe && lix install haxelib:tink_unittest && lix install haxelib:tink_testrunner && npm run postinstall",
+    "dev": "npm run test:modern"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/your-org/reflaxe.elixir.git"
+  }
+}

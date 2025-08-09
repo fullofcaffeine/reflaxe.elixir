@@ -1,5 +1,6 @@
 -cp src_haxe
+-cp ../../src
+-cp ../../std
 -lib reflaxe
--D reflaxe_runtime  
---elixir lib
-test.integration.TestModule
+-D reflaxe_runtime
+-main test.integration.TestModule

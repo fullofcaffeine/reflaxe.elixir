@@ -1,0 +1,12 @@
+-cp src_haxe
+-cp ../../src
+-cp ../../std
+-lib reflaxe
+-D reflaxe_runtime
+
+# Compile all template classes together  
+templates.UserProfile
+templates.FormComponents
+HXX
+
+--no-output

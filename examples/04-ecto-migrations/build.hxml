@@ -1,0 +1,12 @@
+-cp src_haxe
+-cp ../../src
+-cp ../../std
+-lib reflaxe
+-D reflaxe_runtime
+
+# Compile all migration classes together
+migrations.CreateUsers
+migrations.CreatePosts
+migrations.TestMigrationDSL
+
+--no-output

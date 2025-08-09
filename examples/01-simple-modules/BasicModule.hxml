@@ -3,8 +3,7 @@
 
 -cp ../../src
 -cp ../../std
--cp ../../test
--cp ../../../haxe.elixir.reference/reflaxe/src
+-lib reflaxe
 -cp .
 -main BasicModule
 -D reflaxe_runtime

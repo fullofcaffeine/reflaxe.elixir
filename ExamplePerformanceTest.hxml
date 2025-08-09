@@ -1,0 +1,6 @@
+# Example Performance Benchmark Test
+# Monitors compilation times to ensure performance targets are met
+
+-cp test
+-main ExamplePerformanceTest
+--interp

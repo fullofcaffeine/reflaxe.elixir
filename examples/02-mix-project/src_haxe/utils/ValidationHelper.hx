@@ -15,7 +15,7 @@ class ValidationHelper {
      * Validates user input data comprehensively
      * Returns validation result with detailed error information
      */
-    function validateUserInput(data: Dynamic): Dynamic {
+    public static function validateUserInput(data: Dynamic): Dynamic {
         var errors = [];
         
         // Validate name
@@ -51,7 +51,7 @@ class ValidationHelper {
     /**
      * Validates email address format and domain
      */
-    function validateEmail(email: Dynamic): Dynamic {
+    public static function validateEmail(email: Dynamic): Dynamic {
         if (email == null) {
             return {valid: false, error: "Email is required"};
         }
@@ -87,7 +87,7 @@ class ValidationHelper {
     /**
      * Validates age input
      */
-    function validateAge(age: Dynamic): Dynamic {
+    public static function validateAge(age: Dynamic): Dynamic {
         if (age == null) {
             return {valid: false, error: "Age is required"};
         }
@@ -118,7 +118,7 @@ class ValidationHelper {
     /**
      * Validates password strength
      */
-    function validatePassword(password: String): Dynamic {
+    public static function validatePassword(password: String): Dynamic {
         if (password == null) {
             return {valid: false, error: "Password is required", strength: 0};
         }
@@ -148,7 +148,7 @@ class ValidationHelper {
     /**
      * Validates and sanitizes text input
      */
-    function validateAndSanitizeText(text: String, minLength: Int = 0, maxLength: Int = 1000): Dynamic {
+    public static function validateAndSanitizeText(text: String, minLength: Int = 0, maxLength: Int = 1000): Dynamic {
         if (text == null) {
             return {
                 valid: minLength == 0,
@@ -185,7 +185,7 @@ class ValidationHelper {
     /**
      * Validates URL format
      */
-    function validateUrl(url: String): Dynamic {
+    public static function validateUrl(url: String): Dynamic {
         if (url == null || url.trim().length == 0) {
             return {valid: false, error: "URL is required"};
         }
@@ -208,27 +208,27 @@ class ValidationHelper {
     // Private helper functions
     
     @:private
-    function isValidEmailFormat(email: String): Bool {
+    static function isValidEmailFormat(email: String): Bool {
         // Basic email regex pattern
         var pattern = new EReg("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$", "");
         return pattern.match(email);
     }
     
     @:private
-    function extractDomain(email: String): String {
+    static function extractDomain(email: String): String {
         var atIndex = email.indexOf("@");
         return atIndex > 0 ? email.substr(atIndex + 1) : "";
     }
     
     @:private
-    function isValidDomain(domain: String): Bool {
+    static function isValidDomain(domain: String): Bool {
         if (domain.length < 4) return false; // Minimum: a.co
         if (domain.indexOf(".") == -1) return false;
         return true;
     }
     
     @:private
-    function categorizeAge(age: Int): String {
+    static function categorizeAge(age: Int): String {
         if (age < 13) return "child";
         if (age < 20) return "teenager";
         if (age < 65) return "adult";
@@ -236,7 +236,7 @@ class ValidationHelper {
     }
     
     @:private
-    function calculatePasswordStrength(password: String): Dynamic {
+    static function calculatePasswordStrength(password: String): Dynamic {
         var hasLowercase = new EReg("[a-z]", "").match(password);
         var hasUppercase = new EReg("[A-Z]", "").match(password);
         var hasNumbers = new EReg("[0-9]", "").match(password);
@@ -260,7 +260,7 @@ class ValidationHelper {
     }
     
     @:private
-    function sanitizeText(text: String): String {
+    static function sanitizeText(text: String): String {
         // Basic text sanitization - remove potentially dangerous characters
         var sanitized = text.trim();
         sanitized = StringTools.replace(sanitized, "<", "&lt;");
@@ -271,7 +271,7 @@ class ValidationHelper {
     }
     
     @:private
-    function sanitizeUserData(data: Dynamic): Dynamic {
+    static function sanitizeUserData(data: Dynamic): Dynamic {
         return {
             name: data.name != null ? sanitizeText(Std.string(data.name)) : null,
             email: data.email != null ? Std.string(data.email).trim().toLowerCase() : null,
@@ -280,19 +280,19 @@ class ValidationHelper {
     }
     
     @:private
-    function isValidUrlFormat(url: String): Bool {
+    static function isValidUrlFormat(url: String): Bool {
         var pattern = new EReg("^https?://[^\\s/$.?#].[^\\s]*$", "i");
         return pattern.match(url);
     }
     
     @:private
-    function extractProtocol(url: String): String {
+    static function extractProtocol(url: String): String {
         var colonIndex = url.indexOf("://");
         return colonIndex > 0 ? url.substr(0, colonIndex) : "";
     }
     
     @:private
-    function extractUrlDomain(url: String): String {
+    static function extractUrlDomain(url: String): String {
         var protocolEnd = url.indexOf("://") + 3;
         var pathStart = url.indexOf("/", protocolEnd);
         var domain = pathStart > 0 ? url.substr(protocolEnd, pathStart - protocolEnd) : url.substr(protocolEnd);

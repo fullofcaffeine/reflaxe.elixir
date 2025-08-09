@@ -13,7 +13,7 @@ class MathHelper {
      * Processes a number through a series of transformations
      * Demonstrates functional composition in a Mix context
      */
-    function processNumber(x: Float): Float {
+    public static function processNumber(x: Float): Float {
         var step1 = multiplyByFactor(x, 2.0);
         var step2 = addOffset(step1, 10.0);
         var step3 = applyBounds(step2, 0.0, 100.0);
@@ -24,7 +24,7 @@ class MathHelper {
      * Calculates years until retirement age (65)
      * Useful for user profile calculations
      */
-    function calculateYearsToRetirement(currentAge: Int): Int {
+    public static function calculateYearsToRetirement(currentAge: Int): Int {
         var retirementAge = 65;
         var yearsLeft = retirementAge - currentAge;
         return Std.int(Math.max(0, yearsLeft));
@@ -34,7 +34,7 @@ class MathHelper {
      * Calculates discount based on various factors
      * Demonstrates business logic calculations
      */
-    function calculateDiscount(basePrice: Float, customerType: String, quantity: Int): Dynamic {
+    public static function calculateDiscount(basePrice: Float, customerType: String, quantity: Int): Dynamic {
         var discount = 0.0;
         
         // Base discount by customer type
@@ -69,7 +69,7 @@ class MathHelper {
      * Calculates compound interest
      * Useful for financial calculations in applications
      */
-    function calculateCompoundInterest(principal: Float, rate: Float, time: Int, compound: Int = 1): Dynamic {
+    public static function calculateCompoundInterest(principal: Float, rate: Float, time: Int, compound: Int = 1): Dynamic {
         if (principal <= 0 || rate <= 0 || time <= 0 || compound <= 0) {
             return {error: "Invalid parameters for compound interest calculation"};
         }
@@ -91,7 +91,7 @@ class MathHelper {
     /**
      * Validates numerical input and provides error information
      */
-    function validateNumber(input: Dynamic): Dynamic {
+    public static function validateNumber(input: Dynamic): Dynamic {
         if (input == null) {
             return {valid: false, error: "Input is null"};
         }
@@ -125,7 +125,7 @@ class MathHelper {
     /**
      * Performs statistical calculations on an array of numbers
      */
-    function calculateStats(numbers: Array<Float>): Dynamic {
+    public static function calculateStats(numbers: Array<Float>): Dynamic {
         if (numbers == null || numbers.length == 0) {
             return {error: "Empty or null array provided"};
         }
@@ -167,18 +167,15 @@ class MathHelper {
     
     // Private helper functions
     
-    @:private
-    function multiplyByFactor(value: Float, factor: Float): Float {
+    static function multiplyByFactor(value: Float, factor: Float): Float {
         return value * factor;
     }
     
-    @:private
-    function addOffset(value: Float, offset: Float): Float {
+    static function addOffset(value: Float, offset: Float): Float {
         return value + offset;
     }
     
-    @:private
-    function applyBounds(value: Float, min: Float, max: Float): Float {
+    static function applyBounds(value: Float, min: Float, max: Float): Float {
         if (value < min) return min;
         if (value > max) return max;
         return value;

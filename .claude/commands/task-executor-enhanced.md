@@ -243,6 +243,8 @@ Before marking any task complete:
 - [ ] **🧠 AUTOMATIC MEMORY UPDATE** - Capture implementation details, performance metrics, test results, technical decisions, and integration points in CLAUDE.md
 - [ ] **📊 PERFORMANCE DATA CAPTURED** - Record actual benchmark results, timing data, memory usage statistics
 - [ ] **🐛 ERROR SOLUTIONS DOCUMENTED** - Record exact error messages and their solutions for future reference
+- [ ] **📚 USER DOCUMENTATION ASSESSMENT** - Evaluate if task creates user-facing functionality requiring documentation updates
+- [ ] **🎯 DRY PRINCIPLE APPLIED** - Ensure CLAUDE.md references user docs instead of duplicating content
 
 ### 6. Testing Strategy by Component Type (Trophy-Focused)
 
@@ -355,6 +357,35 @@ end
 - Document complex business logic decisions
 - Reference PRD specifications where applicable
 
+#### **End-User Documentation Requirements (CRITICAL)**
+After completing each task, **evaluate documentation needs**:
+
+**📚 CLAUDE.md vs User Documentation Distinction:**
+- **CLAUDE.md**: AI/Agent development context, implementation details, technical decisions
+- **User Documentation**: End-user guides, setup instructions, feature usage, examples
+
+**🎯 DRY Principle Enforcement:**
+- **Single Source of Truth**: Each piece of information documented in ONE place only
+- **Cross-References**: Use clear references between CLAUDE.md and user docs
+- **No Duplication**: CLAUDE.md references user docs, doesn't repeat content
+
+**📖 Post-Task Documentation Protocol:**
+1. **Assess User Impact**: Does this task create user-facing functionality?
+2. **Update User Docs**: If YES, update appropriate user documentation files:
+   - `documentation/FEATURES.md` - Production readiness status
+   - `documentation/EXAMPLES.md` - Working example walkthroughs
+   - `documentation/ANNOTATIONS.md` - Annotation usage reference
+   - `documentation/GETTING_STARTED.md` - Setup and first steps
+3. **Reference in CLAUDE.md**: Point to user docs instead of duplicating content
+4. **Maintain Separation**: Keep AI context separate from user guidance
+
+**🚨 MANDATORY: End-User Documentation Quality Gates**
+- [ ] **User-Facing Features**: All new features documented in user guides
+- [ ] **DRY Compliance**: No duplicate information between CLAUDE.md and user docs
+- [ ] **Clear References**: CLAUDE.md properly references user documentation
+- [ ] **Comprehensive Coverage**: Setup, usage, examples, and troubleshooting documented
+- [ ] **Consistent Updates**: User docs updated immediately after feature completion
+
 ### 8. Performance and Monitoring
 
 #### **Performance Testing Integration**
@@ -412,6 +443,8 @@ end
 - [ ] **Quality Gates Passed**: Focus on integration confidence over coverage metrics
 - [ ] **🚨 FULL TEST SUITE PASSES**: Run `MIX_ENV=test mix test --no-deps-check` and verify ZERO failures
 - [ ] **🚨 NO REGRESSIONS**: All previously passing tests must still pass
+- [ ] **📚 END-USER DOCS UPDATED**: User-facing features documented in appropriate user guides
+- [ ] **🎯 DRY COMPLIANCE**: No duplicate content between CLAUDE.md and user documentation
 - [ ] **🚨 TASK CONTINUATION**: After verification, check `list_tasks status="pending"` for next task
 
 ### Success Metrics (Trophy-Focused)
@@ -573,6 +606,8 @@ After completing a task:
 ✅ **Test Coverage**: Appropriate Testing Trophy distribution  
 ✅ **Zero Regressions**: ALL previously passing tests still pass  
 ✅ **Full Test Suite**: Complete project test suite passes  
+✅ **User Documentation**: End-user features properly documented in user guides  
+✅ **DRY Compliance**: No duplicate content between CLAUDE.md and user docs  
 ✅ **Task Progression**: Next steps identified and presented to user  
 ✅ **Documentation**: Implementation and decisions captured in memory  
 
@@ -728,6 +763,8 @@ mcp__shrimp-task-manager-global__update_task \
 6. **📋 Technical Decisions**: Key choices made, trade-offs considered, rationale
 7. **🔗 Integration Points**: How this connects to other components, API changes
 8. **📈 Quality Metrics**: Static analysis results, code quality improvements
+9. **📚 User Documentation Impact**: What user-facing features were added/changed
+10. **🎯 Documentation Updates**: Which user docs were updated following DRY principle
 
 #### **🎯 High-Value Information to Always Capture**
 - **Error Messages & Solutions**: Exact error messages encountered and how they were resolved
@@ -769,6 +806,11 @@ After completing each task, you MUST automatically document the implementation:
 - **Performance**: [Timing benchmarks met/exceeded]
 - **Architecture Impact**: [How this affects system design]
 
+## User Documentation Impact
+- **User-Facing Features**: [New features requiring user documentation]
+- **Documentation Updated**: [Which user docs were updated: FEATURES.md, EXAMPLES.md, ANNOTATIONS.md, GETTING_STARTED.md]
+- **DRY Compliance**: [How CLAUDE.md now references user docs instead of duplicating]
+
 ## Key Technical Decisions
 - [Decision 1]: [Rationale and trade-offs]
 - [Decision 2]: [Performance considerations]
@@ -778,6 +820,7 @@ After completing each task, you MUST automatically document the implementation:
 - [list of significant files with purpose]
 - Test files: [BDD test files created]
 - Configuration: [Any config changes]
+- Documentation: [User docs updated]
 
 ## Learnings and Discoveries
 - [Implementation insights]
@@ -788,6 +831,7 @@ After completing each task, you MUST automatically document the implementation:
 ## References
 - PRD sections: [specific line references]
 - Related tasks: [dependencies and follow-ups]
+- User Documentation: [References to updated user guides]
 ```
 
 #### 2. CLAUDE.md Size Management and Splitting

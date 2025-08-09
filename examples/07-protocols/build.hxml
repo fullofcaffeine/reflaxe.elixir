@@ -1,0 +1,12 @@
+-cp src_haxe
+-cp ../../src
+-cp ../../std
+-lib reflaxe
+-D reflaxe_runtime
+
+# Compile all protocol and implementation classes together
+protocols.Drawable
+implementations.StringDrawable
+implementations.NumberDrawable
+
+--no-output
