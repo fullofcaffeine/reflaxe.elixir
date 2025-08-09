@@ -1,49 +1,35 @@
 package test;
 
-#if (macro || reflaxe_runtime)
-
+import tink.unit.Assert.assert;
 import reflaxe.elixir.LiveViewCompiler;
 
+using tink.CoreApi;
 using StringTools;
 
 /**
- * End-to-end LiveView compilation demonstration
- * Shows complete workflow from Haxe class to Elixir LiveView module
+ * Modern LiveView End-to-End Test Suite
+ * 
+ * Tests complete workflow from Haxe @:liveview classes to generated Elixir
+ * LiveView modules, ensuring Phoenix ecosystem compatibility and production
+ * performance standards. Demonstrates full compilation pipeline validation.
+ * 
+ * Using tink_unittest for modern Haxe testing patterns.
  */
+@:asserts
 class LiveViewEndToEndTest {
-    public static function main() {
-        trace("Running LiveView End-to-End Demonstration...");
-        
-        demonstrateCompleteWorkflow();
-        validateGeneratedCode();
-        testPhoenixCompatibility();
-        measurePerformance();
-        
-        trace("✅ LiveView End-to-End demonstration complete!");
-    }
     
-    /**
-     * Demonstrate the complete compilation workflow
-     */
-    static function demonstrateCompleteWorkflow() {
-        trace("DEMO: Complete LiveView compilation workflow");
-        
-        // Step 1: Define Haxe LiveView class (simulated)
-        trace("Step 1: Input Haxe @:liveview class");
-        var haxeClass = "@:liveview\nclass CounterLiveView extends Phoenix.LiveView {\n    public function mount(params, session, socket) {\n        socket = assign(socket, \"counter\", 0);\n        return {ok: socket};\n    }\n    \n    public function handle_event(\"increment\", params, socket) {\n        socket = assign(socket, \"counter\", socket.assigns.counter + 1);\n        return {noreply: socket};\n    }\n    \n    public function handle_event(\"decrement\", params, socket) {\n        socket = assign(socket, \"counter\", socket.assigns.counter - 1);\n        return {noreply: socket};\n    }\n}";
-        
-        trace("  ✓ Input: Haxe class with @:liveview annotation");
-        
-        // Step 2: Compile mount function
-        trace("Step 2: Compile mount function");
+    public function new() {}
+    
+    @:describe("Complete LiveView compilation workflow")
+    public function testCompleteWorkflow() {
+        // Step 1: Compile mount function
         var mountCode = LiveViewCompiler.compileMountFunction(
             "params, session, socket",
             "socket = assign(socket, \"counter\", 0); {:ok, socket}"
         );
-        trace("  ✓ Mount function compiled successfully");
+        asserts.assert(mountCode.contains("def mount"), "Mount function should compile successfully");
         
-        // Step 3: Compile event handlers
-        trace("Step 3: Compile event handlers");
+        // Step 2: Compile event handlers  
         var incrementHandler = LiveViewCompiler.compileHandleEvent(
             "increment", 
             "params, socket",
@@ -54,22 +40,20 @@ class LiveViewEndToEndTest {
             "params, socket", 
             "socket = assign(socket, \"counter\", socket.assigns.counter - 1); {:noreply, socket}"
         );
-        trace("  ✓ Event handlers compiled successfully");
+        asserts.assert(incrementHandler.contains("def handle_event"), "Increment handler should compile");
+        asserts.assert(decrementHandler.contains("def handle_event"), "Decrement handler should compile");
         
-        // Step 4: Generate complete module
-        trace("Step 4: Generate complete Elixir module");
+        // Step 3: Generate complete module
         var completeModule = LiveViewCompiler.compileToLiveView(
             "CounterLiveView",
             mountCode + "\n\n  " + incrementHandler + "\n\n  " + decrementHandler
         );
         
-        trace("  ✓ Complete LiveView module generated");
-        trace("Generated Elixir module preview:");
-        var previewLength = Math.floor(Math.min(200, completeModule.length));
-        var preview = completeModule.substring(0, previewLength);
-        trace("    " + preview.replace("\n", "\n    ") + "...");
+        asserts.assert(completeModule.contains("defmodule CounterLiveView"), "Should generate complete module");
+        asserts.assert(completeModule.contains("use Phoenix.LiveView"), "Should use LiveView behaviour");
+        asserts.assert(completeModule.length > 200, "Generated module should be substantial");
         
-        trace("✅ Complete workflow demonstration passed");
+        return asserts.done();
     }
     
     /**

@@ -1,127 +1,101 @@
 package test;
 
-#if (macro || reflaxe_runtime)
-
+import tink.unit.Assert.assert;
 import reflaxe.elixir.LiveViewCompiler;
 
+using tink.CoreApi;
 using StringTools;
 
 /**
- * Simplified LiveView test that avoids Haxe API compatibility issues
- * Tests the core LiveView compilation functionality
+ * Modern Simple LiveView Test Suite with Core Functionality Focus
+ * 
+ * Tests essential LiveView compilation functionality with simplified approach,
+ * complementing the comprehensive LiveViewTest.hx with basic functionality
+ * validation and compatibility testing.
+ * 
+ * Using tink_unittest for modern Haxe testing patterns.
  */
+@:asserts
 class SimpleLiveViewTest {
-    public static function main() {
-        trace("Running Simplified LiveView Tests...");
+    
+    public function new() {}
+    
+    @:describe("LiveView class detection")
+    public function testLiveViewDetection() {
+        asserts.assert(LiveViewCompiler.isLiveViewClass("TestLiveView"), "Should detect TestLiveView");
+        asserts.assert(LiveViewCompiler.isLiveViewClass("UserLiveView"), "Should detect UserLiveView");
+        asserts.assert(!LiveViewCompiler.isLiveViewClass("RegularClass"), "Should not detect regular class");
         
-        testLiveViewDetection();
-        testSocketTypes();
-        testMountCompilation();
-        testEventHandling();
-        testAssigns();
-        testBoilerplate();
-        testCompleteModule();
-        
-        trace("✅ All simplified LiveView tests passed!");
+        return asserts.done();
     }
     
-    static function testLiveViewDetection() {
-        trace("TEST: LiveView class detection");
-        
-        assertTrue(LiveViewCompiler.isLiveViewClass("TestLiveView"), "Should detect TestLiveView");
-        assertTrue(LiveViewCompiler.isLiveViewClass("UserLiveView"), "Should detect UserLiveView");
-        assertFalse(LiveViewCompiler.isLiveViewClass("RegularClass"), "Should not detect regular class");
-        
-        trace("✅ LiveView detection test passed");
-    }
-    
-    static function testSocketTypes() {
-        trace("TEST: Socket type generation");
-        
+    @:describe("Socket type generation")
+    public function testSocketTypes() {
         var socketType = LiveViewCompiler.generateSocketType();
-        assertTrue(socketType.contains("Phoenix.LiveView.Socket"), "Should reference Phoenix Socket");
-        assertTrue(socketType.contains("assigns"), "Should include assigns");
+        asserts.assert(socketType.contains("Phoenix.LiveView.Socket"), "Should reference Phoenix Socket");
+        asserts.assert(socketType.contains("assigns"), "Should include assigns");
         
-        trace("✅ Socket type test passed");
+        return asserts.done();
     }
     
-    static function testMountCompilation() {
-        trace("TEST: Mount function compilation");
-        
+    @:describe("Mount function compilation")
+    public function testMountCompilation() {
         var mountFn = LiveViewCompiler.compileMountFunction(
             "params, session, socket",
             "socket = Phoenix.LiveView.assign(socket, \"users\", []); return {ok: socket};"
         );
         
-        assertTrue(mountFn.contains("def mount"), "Should generate mount function");
-        assertTrue(mountFn.contains("params, session, socket"), "Should have correct parameters");
-        assertTrue(mountFn.contains("{:ok, socket}"), "Should return {:ok, socket} tuple");
+        asserts.assert(mountFn.contains("def mount"), "Should generate mount function");
+        asserts.assert(mountFn.contains("params, session, socket"), "Should have correct parameters");
+        asserts.assert(mountFn.contains("{:ok, socket}"), "Should return {:ok, socket} tuple");
         
-        trace("✅ Mount compilation test passed");
+        return asserts.done();
     }
     
-    static function testEventHandling() {
-        trace("TEST: Event handler compilation");
-        
+    @:describe("Event handler compilation")
+    public function testEventHandling() {
         var eventFn = LiveViewCompiler.compileHandleEvent(
             "increment",
             "params, socket", 
             "counter = socket.assigns.counter + 1; socket = assign(socket, \"counter\", counter); return {noreply: socket};"
         );
         
-        assertTrue(eventFn.contains("def handle_event"), "Should generate handle_event");
-        assertTrue(eventFn.contains("\"increment\""), "Should include event name");
-        assertTrue(eventFn.contains("{:noreply, socket}"), "Should return noreply tuple");
+        asserts.assert(eventFn.contains("def handle_event"), "Should generate handle_event");
+        asserts.assert(eventFn.contains("\"increment\""), "Should include event name");
+        asserts.assert(eventFn.contains("{:noreply, socket}"), "Should return noreply tuple");
         
-        trace("✅ Event handling test passed");
+        return asserts.done();
     }
     
-    static function testAssigns() {
-        trace("TEST: Assign compilation");
-        
+    @:describe("Assign compilation")
+    public function testAssigns() {
         var assign = LiveViewCompiler.compileAssign("socket", "counter", "0");
-        assertTrue(assign.contains("assign(socket"), "Should call assign function");
-        assertTrue(assign.contains(":counter"), "Should use atom key");
-        assertTrue(assign.contains("0"), "Should include value");
+        asserts.assert(assign.contains("assign(socket"), "Should call assign function");
+        asserts.assert(assign.contains(":counter"), "Should use atom key");
+        asserts.assert(assign.contains("0"), "Should include value");
         
-        trace("✅ Assign test passed");
+        return asserts.done();
     }
     
-    static function testBoilerplate() {
-        trace("TEST: Module boilerplate");
-        
+    @:describe("Module boilerplate")
+    public function testBoilerplate() {
         var boilerplate = LiveViewCompiler.generateLiveViewBoilerplate("TestLiveView");
-        assertTrue(boilerplate.contains("defmodule TestLiveView"), "Should create module");
-        assertTrue(boilerplate.contains("use Phoenix.LiveView"), "Should use LiveView");
-        assertTrue(boilerplate.contains("import Phoenix.LiveView.Helpers"), "Should import helpers");
+        asserts.assert(boilerplate.contains("defmodule TestLiveView"), "Should create module");
+        asserts.assert(boilerplate.contains("use Phoenix.LiveView"), "Should use LiveView");
+        asserts.assert(boilerplate.contains("import Phoenix.LiveView.Helpers"), "Should import helpers");
         
-        trace("✅ Boilerplate test passed");
+        return asserts.done();
     }
     
-    static function testCompleteModule() {
-        trace("TEST: Complete module generation");
-        
+    @:describe("Complete module generation")
+    public function testCompleteModule() {
         var module = LiveViewCompiler.compileToLiveView("TestLiveView", "  def test, do: :ok");
-        assertTrue(module.contains("defmodule TestLiveView"), "Should have module declaration");
-        assertTrue(module.contains("use Phoenix.LiveView"), "Should use LiveView");
-        assertTrue(module.contains("def test, do: :ok"), "Should include custom content");
-        assertTrue(module.contains("end"), "Should close module");
+        asserts.assert(module.contains("defmodule TestLiveView"), "Should have module declaration");
+        asserts.assert(module.contains("use Phoenix.LiveView"), "Should use LiveView");
+        asserts.assert(module.contains("def test, do: :ok"), "Should include custom content");
+        asserts.assert(module.contains("end"), "Should close module");
         
-        trace("✅ Complete module test passed");
-    }
-    
-    static function assertTrue(condition: Bool, message: String) {
-        if (!condition) {
-            var error = '❌ ASSERTION FAILED: ${message}';
-            trace(error);
-            throw error;
-        } else {
-            trace('  ✓ ${message}');
-        }
-    }
-    
-    static function assertFalse(condition: Bool, message: String) {
-        assertTrue(!condition, message);
+        return asserts.done();
     }
 }
 
