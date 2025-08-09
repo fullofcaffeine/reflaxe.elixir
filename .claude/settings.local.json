@@ -59,7 +59,25 @@
       "Bash(MIX_ENV=test mix test test/cafetera/shrimp_integration_test.exs --no-deps-check)",
       "Bash(MIX_ENV=test mix test test/cafetera/shrimp_integration_test.exs:265 --no-deps-check)",
       "Bash(MIX_ENV=test mix test test/cafetera/shrimp_integration_test.exs:73 --no-deps-check)",
-      "Bash(MIX_ENV=test mix test test/cafetera/memory/ test/cafetera/core/ --no-deps-check)"
+      "Bash(MIX_ENV=test mix test test/cafetera/memory/ test/cafetera/core/ --no-deps-check)",
+      "WebFetch(domain:github.com)",
+      "Bash(npm install:*)",
+      "Bash(lix scope:*)",
+      "Bash(lix install:*)",
+      "WebFetch(domain:haxetink.github.io)",
+      "Bash(haxe:*)",
+      "Bash(/opt/homebrew/bin/haxe Test.hxml)",
+      "Bash(/opt/homebrew/bin/haxe SimpleTest.hxml)",
+      "Bash(./run_all_tests.sh)",
+      "Bash(./test_runner.sh)",
+      "Bash(rm:*)",
+      "Bash(npm test)",
+      "Bash(npx haxe:*)",
+      "Bash(/dev/null)",
+      "Bash(/opt/homebrew/bin/haxe build.hxml)",
+      "Bash(cat:*)",
+      "Bash(mv:*)",
+      "Bash(grep:*)"
     ],
     "deny": []
   }

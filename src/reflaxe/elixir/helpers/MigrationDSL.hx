@@ -287,6 +287,261 @@ class MigrationDSL {
         
         return '${year}${month}${day}${hour}${minute}${second}';
     }
+    
+    /**
+     * Real table creation DSL function used by migration examples
+     * Creates Ecto migration table with proper column definitions
+     */
+    public static function createTable(tableName: String, callback: TableBuilder -> Void): String {
+        var builder = new TableBuilder(tableName);
+        callback(builder);
+        
+        var columnDefs = builder.getColumnDefinitions();
+        var indexDefs = builder.getIndexDefinitions();
+        var constraintDefs = builder.getConstraintDefinitions();
+        
+        var result = 'create table(:${tableName}) do\n';
+        
+        // Add ID column automatically if not specified
+        if (!builder.hasIdColumn) {
+            result += '      add :id, :serial, primary_key: true\n';
+        }
+        
+        // Add all columns
+        for (columnDef in columnDefs) {
+            result += '      ${columnDef}\n';
+        }
+        
+        // Add timestamps if not present
+        if (!builder.hasTimestamps) {
+            result += '      timestamps()\n';
+        }
+        
+        result += '    end';
+        
+        // Add indexes after table creation
+        if (indexDefs.length > 0) {
+            result += '\n\n';
+            for (indexDef in indexDefs) {
+                result += '    ${indexDef}\n';
+            }
+        }
+        
+        // Add constraints after table creation
+        if (constraintDefs.length > 0) {
+            result += '\n\n';
+            for (constraintDef in constraintDefs) {
+                result += '    ${constraintDef}\n';
+            }
+        }
+        
+        return result;
+    }
+    
+    /**
+     * Real table drop DSL function used by migration examples
+     * Generates proper Ecto migration drop table statement
+     */
+    public static function dropTable(tableName: String): String {
+        return 'drop table(:${tableName})';
+    }
+    
+    /**
+     * Real add column function for table alterations
+     * Generates proper Ecto migration add column statement
+     */
+    public static function addColumn(tableName: String, columnName: String, dataType: String, ?options: Dynamic): String {
+        var optionsStr = "";
+        
+        if (options != null) {
+            var opts = [];
+            
+            var fields = Reflect.fields(options);
+            for (field in fields) {
+                var value = Reflect.field(options, field);
+                if (Std.isOfType(value, String)) {
+                    opts.push('${field}: "${value}"');
+                } else if (Std.isOfType(value, Bool)) {
+                    opts.push('${field}: ${value}');
+                } else {
+                    opts.push('${field}: ${value}');
+                }
+            }
+            
+            if (opts.length > 0) {
+                optionsStr = ', ${opts.join(", ")}';
+            }
+        }
+        
+        return 'alter table(:${tableName}) do\n      add :${columnName}, :${dataType}${optionsStr}\n    end';
+    }
+    
+    /**
+     * Real add index function for performance optimization
+     * Generates proper Ecto migration index creation
+     */
+    public static function addIndex(tableName: String, columns: Array<String>, ?options: Dynamic): String {
+        var columnList = columns.map(col -> ':${col}').join(', ');
+        
+        if (options != null && Reflect.hasField(options, "unique") && Reflect.field(options, "unique") == true) {
+            return 'create unique_index(:${tableName}, [${columnList}])';
+        } else {
+            return 'create index(:${tableName}, [${columnList}])';
+        }
+    }
+    
+    /**
+     * Real add foreign key function for referential integrity
+     * Generates proper Ecto migration foreign key constraint
+     */
+    public static function addForeignKey(tableName: String, columnName: String, referencedTable: String, referencedColumn: String = "id"): String {
+        return 'alter table(:${tableName}) do\n      modify :${columnName}, references(:${referencedTable}, column: :${referencedColumn})\n    end';
+    }
+    
+    /**
+     * Real add check constraint function for data validation
+     * Generates proper Ecto migration check constraint
+     */
+    public static function addCheckConstraint(tableName: String, condition: String, constraintName: String): String {
+        return 'create constraint(:${tableName}, :${constraintName}, check: "${condition}")';
+    }
+}
+
+/**
+ * Table builder class for DSL-style migration creation
+ * Provides fluent interface for defining table structure
+ */
+class TableBuilder {
+    public var tableName(default, null): String;
+    public var hasIdColumn(default, null): Bool = false;
+    public var hasTimestamps(default, null): Bool = false;
+    
+    private var columns: Array<String> = [];
+    private var indexes: Array<String> = [];
+    private var constraints: Array<String> = [];
+    
+    public function new(tableName: String) {
+        this.tableName = tableName;
+    }
+    
+    /**
+     * Add a column to the table
+     */
+    public function addColumn(name: String, dataType: String, ?options: Dynamic): TableBuilder {
+        // Check for special columns
+        if (name == "id") {
+            hasIdColumn = true;
+        }
+        
+        if (name == "inserted_at" || name == "updated_at") {
+            hasTimestamps = true;
+        }
+        
+        var optionsStr = "";
+        
+        if (options != null) {
+            var opts = [];
+            var fields = Reflect.fields(options);
+            
+            for (field in fields) {
+                var value = Reflect.field(options, field);
+                
+                // Handle special option names
+                var optName = switch (field) {
+                    case "null": "null";
+                    case "default": "default";
+                    case "primaryKey": "primary_key";
+                    default: field;
+                };
+                
+                if (Std.isOfType(value, String)) {
+                    opts.push('${optName}: "${value}"');
+                } else if (Std.isOfType(value, Bool)) {
+                    opts.push('${optName}: ${value}');
+                } else {
+                    opts.push('${optName}: ${value}');
+                }
+            }
+            
+            if (opts.length > 0) {
+                optionsStr = ', ${opts.join(", ")}';
+            }
+        }
+        
+        columns.push('add :${name}, :${dataType}${optionsStr}');
+        return this;
+    }
+    
+    /**
+     * Add an index to the table
+     */
+    public function addIndex(columnNames: Array<String>, ?options: Dynamic): TableBuilder {
+        var columnList = columnNames.map(col -> ':${col}').join(', ');
+        
+        if (options != null && Reflect.hasField(options, "unique") && Reflect.field(options, "unique") == true) {
+            indexes.push('create unique_index(:${tableName}, [${columnList}])');
+        } else {
+            indexes.push('create index(:${tableName}, [${columnList}])');
+        }
+        
+        return this;
+    }
+    
+    /**
+     * Add a foreign key constraint
+     */
+    public function addForeignKey(columnName: String, referencedTable: String, referencedColumn: String = "id"): TableBuilder {
+        // Replace the column definition to include the reference
+        var newColumns = [];
+        var found = false;
+        
+        for (column in columns) {
+            if (column.indexOf(':${columnName},') != -1) {
+                // Replace the column with foreign key reference
+                newColumns.push('add :${columnName}, references(:${referencedTable}, column: :${referencedColumn})');
+                found = true;
+            } else {
+                newColumns.push(column);
+            }
+        }
+        
+        // If column wasn't found, add it as a new foreign key column
+        if (!found) {
+            newColumns.push('add :${columnName}, references(:${referencedTable}, column: :${referencedColumn})');
+        }
+        
+        columns = newColumns;
+        return this;
+    }
+    
+    /**
+     * Add a check constraint
+     */
+    public function addCheckConstraint(condition: String, constraintName: String): TableBuilder {
+        constraints.push('create constraint(:${tableName}, :${constraintName}, check: "${condition}")');
+        return this;
+    }
+    
+    /**
+     * Get all column definitions
+     */
+    public function getColumnDefinitions(): Array<String> {
+        return columns.copy();
+    }
+    
+    /**
+     * Get all index definitions
+     */
+    public function getIndexDefinitions(): Array<String> {
+        return indexes.copy();
+    }
+    
+    /**
+     * Get all constraint definitions
+     */
+    public function getConstraintDefinitions(): Array<String> {
+        return constraints.copy();
+    }
 }
 
 #end

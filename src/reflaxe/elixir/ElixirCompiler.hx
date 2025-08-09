@@ -17,6 +17,10 @@ import reflaxe.elixir.helpers.EnumCompiler;
 import reflaxe.elixir.helpers.ClassCompiler;
 import reflaxe.elixir.helpers.PatternMatcher;
 import reflaxe.elixir.helpers.GuardCompiler;
+import reflaxe.elixir.helpers.TemplateCompiler;
+import reflaxe.elixir.helpers.SchemaCompiler;
+import reflaxe.elixir.helpers.ProtocolCompiler;
+import reflaxe.elixir.helpers.AnnotationSystem;
 import reflaxe.elixir.ElixirTyper;
 import reflaxe.elixir.PhoenixMapper;
 
@@ -75,24 +79,10 @@ class ElixirCompiler extends DirectToStringCompiler {
     public function compileClassImpl(classType: ClassType, varFields: Array<ClassVarData>, funcFields: Array<ClassFuncData>): Null<String> {
         if (classType == null) return null;
         
-        // Check for @:genserver annotation - prioritize GenServer compilation
-        if (reflaxe.elixir.helpers.OTPCompiler.isGenServerClassType(classType)) {
-            return compileGenServerClass(classType, varFields, funcFields);
-        }
-        
-        // Check for @:migration annotation - prioritize migration compilation
-        if (reflaxe.elixir.helpers.MigrationDSL.isMigrationClassType(classType)) {
-            return compileMigrationClass(classType, varFields, funcFields);
-        }
-        
-        // Check for @:changeset annotation - prioritize changeset compilation
-        if (reflaxe.elixir.helpers.ChangesetCompiler.isChangesetClassType(classType)) {
-            return compileChangesetClass(classType, varFields, funcFields);
-        }
-        
-        // Check for @:liveview annotation (existing functionality)  
-        if (reflaxe.elixir.LiveViewCompiler.isLiveViewClassType(classType)) {
-            return compileLiveViewClass(classType, varFields, funcFields);
+        // Use unified annotation system for detection, validation, and routing
+        var annotationResult = reflaxe.elixir.helpers.AnnotationSystem.routeCompilation(classType, varFields, funcFields);
+        if (annotationResult != null) {
+            return annotationResult;
         }
         
         // Use the enhanced ClassCompiler for proper struct/module generation
@@ -190,6 +180,28 @@ class ElixirCompiler extends DirectToStringCompiler {
     private function generateCustomMigrationOperation(operationName: String, tableName: String): String {
         return '  # Custom operation: ${operationName}\n' +
                '  # Add custom migration logic for ${tableName} table';
+    }
+    
+    /**
+     * Compile @:template annotated class to Phoenix template module
+     */
+    private function compileTemplateClass(classType: ClassType, varFields: Array<ClassVarData>, funcFields: Array<ClassFuncData>): String {
+        var className = classType.name;
+        var config = reflaxe.elixir.helpers.TemplateCompiler.getTemplateConfig(classType);
+        
+        // Generate comprehensive template module with Phoenix.Component integration
+        return reflaxe.elixir.helpers.TemplateCompiler.compileFullTemplate(className, config);
+    }
+    
+    /**
+     * Compile @:schema annotated class to Ecto.Schema module
+     */
+    private function compileSchemaClass(classType: ClassType, varFields: Array<ClassVarData>, funcFields: Array<ClassFuncData>): String {
+        var className = classType.name;
+        var config = reflaxe.elixir.helpers.SchemaCompiler.getSchemaConfig(classType);
+        
+        // Generate comprehensive Ecto.Schema module with schema/2 macro and associations
+        return reflaxe.elixir.helpers.SchemaCompiler.compileFullSchema(className, config, varFields);
     }
     
     /**

@@ -1,0 +1,5 @@
+# @install: lix --silent download "haxelib:/reflaxe#3.0.0" into reflaxe/3.0.0/haxelib
+-cp ${HAXE_LIBCACHE}/reflaxe/3.0.0/haxelib/src/
+-D reflaxe=3.0.0
+--macro nullSafety("reflaxe")
+--macro reflaxe.ReflectCompiler.Start()

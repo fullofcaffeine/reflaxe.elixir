@@ -15,7 +15,7 @@ class UserService {
      * Creates a new user with validation
      * Returns {:ok, user} or {:error, reason} tuple
      */
-    function createUser(userData: Dynamic): Dynamic {
+    public static function createUser(userData: Dynamic): Dynamic {
         // Validate required fields
         if (!isValidUserData(userData)) {
             return {error: "Invalid user data provided"};
@@ -37,7 +37,7 @@ class UserService {
     /**
      * Updates user information with validation
      */
-    function updateUser(userId: String, updates: Dynamic): Dynamic {
+    public static function updateUser(userId: String, updates: Dynamic): Dynamic {
         if (userId == null || userId.trim().length == 0) {
             return {error: "User ID is required"};
         }
@@ -56,7 +56,7 @@ class UserService {
     /**
      * Retrieves user by ID (simulated for example)
      */
-    function getUserById(userId: String): Dynamic {
+    public static function getUserById(userId: String): Dynamic {
         if (userId == null) return null;
         
         // In real implementation, this would query the database
@@ -74,7 +74,7 @@ class UserService {
     /**
      * Lists users with pagination (simulated)
      */
-    function listUsers(page: Int = 1, perPage: Int = 10): Dynamic {
+    public static function listUsers(page: Int = 1, perPage: Int = 10): Dynamic {
         // Simulate pagination logic
         var users = [];
         for (i in 0...Std.int(Math.min(perPage, 5))) {
@@ -99,7 +99,7 @@ class UserService {
     // Private helper functions
     
     @:private
-    function isValidUserData(data: Dynamic): Bool {
+    static function isValidUserData(data: Dynamic): Bool {
         if (data == null) return false;
         if (data.name == null || data.name.trim().length == 0) return false;
         if (data.email == null || !isValidEmail(data.email)) return false;
@@ -107,14 +107,14 @@ class UserService {
     }
     
     @:private
-    function isValidEmail(email: String): Bool {
+    static function isValidEmail(email: String): Bool {
         if (email == null) return false;
         var trimmed = email.trim();
         return trimmed.indexOf("@") > 0 && trimmed.indexOf(".") > 0;
     }
     
     @:private
-    function formatName(name: String): String {
+    static function formatName(name: String): String {
         if (name == null) return "";
         return name.trim().split(" ")
             .map(function(word) return word.charAt(0).toUpperCase() + word.substr(1).toLowerCase())
@@ -122,23 +122,23 @@ class UserService {
     }
     
     @:private
-    function normalizeEmail(email: String): String {
+    static function normalizeEmail(email: String): String {
         if (email == null) return "";
         return email.trim().toLowerCase();
     }
     
     @:private
-    function generateUserId(): String {
+    static function generateUserId(): String {
         return "usr_" + Std.int(Math.random() * 1000000);
     }
     
     @:private
-    function getCurrentTimestamp(): String {
+    static function getCurrentTimestamp(): String {
         return "2024-01-01T00:00:00Z"; // Mock timestamp
     }
     
     @:private
-    function applyUserUpdates(user: Dynamic, updates: Dynamic): Dynamic {
+    static function applyUserUpdates(user: Dynamic, updates: Dynamic): Dynamic {
         var updated = {
             id: user.id,
             name: updates.name != null ? formatName(updates.name) : user.name,

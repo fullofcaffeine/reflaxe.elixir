@@ -1,0 +1,6 @@
+# Simple Example Test Runner
+# Tests all 7 examples for successful compilation
+
+-cp test
+-main SimpleExampleTest
+--interp

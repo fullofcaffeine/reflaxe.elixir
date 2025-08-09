@@ -1,106 +1,159 @@
 # Reflaxe.Elixir Examples
 
-This directory contains comprehensive examples demonstrating practical usage patterns, migration strategies, and best practices for Reflaxe.Elixir.
+This directory contains progressive examples demonstrating Haxe→Elixir compilation using Reflaxe.Elixir.
 
 ## 📁 Example Projects
 
-### 1. [Basic Phoenix Integration](./basic-phoenix/)
+### 1. [01-simple-modules](./01-simple-modules/)
 **Difficulty**: Beginner  
-**Features**: @:module syntax, basic Phoenix controller, simple templates  
-**Use Case**: Getting started with Reflaxe.Elixir in a new Phoenix project
+**Features**: Basic module compilation, type mapping, simple functions  
+**Use Case**: Getting started with Reflaxe.Elixir basics
 
-### 2. [User Management System](./user-management/)  
+### 2. [02-mix-project](./02-mix-project/)  
+**Difficulty**: Beginner  
+**Features**: Mix integration, multiple modules, ExUnit testing  
+**Use Case**: Understanding Mix build pipeline integration
+
+### 3. [03-phoenix-app](./03-phoenix-app/)
 **Difficulty**: Intermediate  
-**Features**: CRUD operations, LiveView, HXX templates, Ecto integration  
-**Use Case**: Typical Phoenix application with user authentication
+**Features**: Phoenix LiveView, @:liveview annotation, real-time updates  
+**Use Case**: Building Phoenix applications with Haxe
 
-### 3. [Real-time Chat Application](./realtime-chat/)
+### 4. [04-ecto-migrations](./04-ecto-migrations/)
+**Difficulty**: Intermediate  
+**Features**: @:migration annotation, database schemas, foreign keys  
+**Use Case**: Database migration management with type safety
+
+### 5. [05-heex-templates](./05-heex-templates/)
+**Difficulty**: Intermediate  
+**Features**: @:template annotation, HEEx syntax, form components  
+**Use Case**: Type-safe Phoenix templates and components
+
+### 6. [06-user-management](./06-user-management/)
 **Difficulty**: Advanced  
-**Features**: LiveView, PubSub, channels, complex state management  
-**Use Case**: Real-time features with Phoenix Channels and LiveView
+**Features**: Complete CRUD, LiveView, GenServer, Ecto schemas, changesets  
+**Use Case**: Full-featured Phoenix application example
 
-### 4. [E-commerce Platform](./ecommerce/)
-**Difficulty**: Advanced  
-**Features**: Complex business logic, payment integration, inventory management  
-**Use Case**: Large-scale Phoenix application with multiple contexts
+### 7. [07-protocols](./07-protocols/)
+**Difficulty**: Intermediate  
+**Features**: @:protocol, @:impl annotations, polymorphic dispatch  
+**Use Case**: Type-safe polymorphic behavior with compile-time validation
 
-### 5. [Migration Examples](./migration/)
-**Difficulty**: Varies  
-**Features**: Step-by-step migration from existing Elixir code  
-**Use Case**: Gradual adoption in existing Phoenix applications
+### 8. [test-integration](./test-integration/)
+**Difficulty**: Intermediate  
+**Features**: Mix compiler task testing, build pipeline validation  
+**Use Case**: Testing Haxe→Elixir compilation in Mix projects
 
 ## 🚀 Quick Start
 
-Choose an example based on your experience level and use case:
+Choose an example based on your experience level:
 
 ### For Beginners
-Start with [Basic Phoenix Integration](./basic-phoenix/):
+Start with [01-simple-modules](./01-simple-modules/):
 ```bash
-cd examples/basic-phoenix
+cd examples/01-simple-modules
+npx haxe compile-all.hxml
+```
+
+### For Mix Integration
+Try [02-mix-project](./02-mix-project/):
+```bash
+cd examples/02-mix-project
 mix deps.get
 mix compile
-mix phx.server
+mix test
 ```
 
-### For Migration
-Check out [Migration Examples](./migration/):
+### For Phoenix Development  
+Explore [03-phoenix-app](./03-phoenix-app/):
 ```bash
-cd examples/migration
-# Follow step-by-step guides for different migration scenarios
-```
-
-### For Advanced Features  
-Try [Real-time Chat](./realtime-chat/):
-```bash
-cd examples/realtime-chat
+cd examples/03-phoenix-app
 mix deps.get
-mix ecto.create && mix ecto.migrate
+npx haxe build.hxml
 mix phx.server
 ```
 
 ## 📚 Learning Path
 
-1. **Start**: Basic Phoenix Integration
-2. **Practice**: User Management System  
-3. **Apply**: Choose between Chat or E-commerce based on your needs
-4. **Migrate**: Use Migration Examples for existing projects
+1. **Start**: 01-simple-modules - Basic compilation
+2. **Learn**: 02-mix-project - Mix integration  
+3. **Build**: 03-phoenix-app - Phoenix LiveView
+4. **Extend**: 04-ecto-migrations, 05-heex-templates
+5. **Master**: 06-user-management - Everything integrated
 
 ## 🧪 Running Examples
 
-Each example includes:
-- Complete Phoenix application
-- Comprehensive test suite
-- Performance benchmarks
-- Documentation and README
+Each example can be compiled independently:
 
 ```bash
-# Standard commands for all examples
-mix deps.get          # Install dependencies
-mix compile           # Compile Haxe and Elixir code
-mix test              # Run test suite
-mix phx.server        # Start development server (if Phoenix app)
+# For simple Haxe compilation
+npx haxe build.hxml
 
-# Additional commands
-haxe test/integration/CompilationTest.hxml  # Run Haxe integration tests
-haxe test/performance/Benchmarks.hxml      # Run performance benchmarks
+# For Mix-integrated projects  
+mix deps.get
+mix compile
+mix test
+mix phx.server  # If Phoenix app
 ```
 
-## 📖 Example Documentation
+### Automated Testing
 
-Each example contains:
-- **README.md** - Overview and setup instructions
-- **ARCHITECTURE.md** - Code organization and patterns
-- **MIGRATION.md** - If applicable, migration notes
-- **PERFORMANCE.md** - Performance characteristics and benchmarks
+All examples are automatically tested for compilation health:
 
-## 🤝 Contributing
+```bash
+# Test all 8 examples at once
+npm run test:examples
 
-Want to add an example? Please:
-1. Follow the [Example Template](./template/)
-2. Include comprehensive documentation
-3. Add integration tests
-4. Submit a pull request
+# Run comprehensive test suite (includes examples)  
+npm test
+
+# Validate specific example
+cd examples/[example-name]
+npx haxe build.hxml
+```
+
+### Continuous Integration
+
+Examples are tested in CI/CD on every commit to ensure:
+- ✅ All 7 examples compile successfully
+- ✅ Generated Elixir code is syntactically valid
+- ✅ No compilation warnings or errors
+- ✅ Documentation consistency maintained
+- ✅ Build configurations are correct
+
+## 📖 Common Patterns
+
+### Annotations
+- `@:schema` - Define Ecto schemas
+- `@:changeset` - Create changeset functions  
+- `@:liveview` - Generate Phoenix LiveView modules
+- `@:genserver` - Create OTP GenServer modules
+- `@:migration` - Define database migrations
+- `@:template` - Compile HEEx templates
+- `@:query` - Build type-safe Ecto queries
+
+### Compilation
+All examples use project lix dependencies:
+```hxml
+-lib reflaxe.elixir
+-lib reflaxe
+-D reflaxe_runtime
+```
+
+## 🛠 Requirements
+
+- **Haxe**: 4.3.6+ (managed by lix, no global install needed)
+- **Elixir**: 1.14+
+- **Phoenix**: 1.7+ (for Phoenix examples)
+- **PostgreSQL**: For Ecto examples
+
+## 💡 Development Workflow
+
+1. **Edit** Haxe source in `src_haxe/` directories
+2. **Compile** with `npx haxe build.hxml`  
+3. **Generated** Elixir appears in `lib/` directories
+4. **Test** with standard Elixir/Phoenix tools
 
 ---
 
-**Next Steps**: Choose an example that matches your needs and dive into the code!
+**Next Steps**: Start with [01-simple-modules](./01-simple-modules/) and work your way through the examples!
