@@ -4,26 +4,16 @@
 # Source paths - where to find Haxe code and dependencies
 -cp src_haxe
 -cp ../../src
--cp ../../std  
--cp ../../test
--cp ../../../haxe.elixir.reference/reflaxe/src
+-cp ../../std
+-lib reflaxe
 
 # Compilation flags
 -D reflaxe_runtime
 --no-output
 
-# Define classes to compile - Reflaxe will handle the Elixir target
-# Using main approach since that's what works in our simple examples
--main services.UserService
-
---next
-
--main utils.StringUtils  
-
---next
-
--main utils.MathHelper
-
---next
-
--main utils.ValidationHelper
+# Define all classes to compile - Reflaxe will handle the Elixir target
+# Compiling all modules in a single build for better dependency resolution
+services.UserService
+utils.StringUtils
+utils.MathHelper
+utils.ValidationHelper

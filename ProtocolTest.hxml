@@ -1,0 +1,15 @@
+# Protocol System Test Suite
+# Tests @:protocol and @:impl annotation compilation
+
+-cp test
+-cp src
+-lib reflaxe
+-lib tink_unittest
+-lib tink_testrunner
+-D reflaxe_runtime
+
+# Main test class
+-main ProtocolCompilerTest
+
+# Output for debugging
+--interp

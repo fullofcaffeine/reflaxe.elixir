@@ -1,0 +1,13 @@
+-cp src_haxe
+-cp ../../src
+-cp ../../std
+-lib reflaxe
+-D reflaxe_runtime
+
+# Compile all user management components together
+contexts.Users
+live.UserLive
+services.UserGenServer
+HXX
+
+--no-output
