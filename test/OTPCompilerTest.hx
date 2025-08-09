@@ -276,7 +276,7 @@ class OTPCompilerTest {
         // Test injection-like patterns in class names
         var maliciousName = "Test'; DROP TABLE users; --";
         var safeResult = OTPCompiler.isGenServerClass(maliciousName);
-        asserts.assert(Std.is(safeResult, Bool), "Should sanitize malicious input");
+        asserts.assert(Std.isOfType(safeResult, Bool), "Should sanitize malicious input");
         
         // Test code injection in state initialization
         var maliciousState = "%{code: \"System.cmd('rm', ['-rf', '/'])\"}";
