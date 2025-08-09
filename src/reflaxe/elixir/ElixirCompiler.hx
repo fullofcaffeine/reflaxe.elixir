@@ -20,6 +20,8 @@ import reflaxe.elixir.helpers.GuardCompiler;
 import reflaxe.elixir.helpers.TemplateCompiler;
 import reflaxe.elixir.helpers.SchemaCompiler;
 import reflaxe.elixir.helpers.ProtocolCompiler;
+import reflaxe.elixir.helpers.BehaviorCompiler;
+import reflaxe.elixir.helpers.RouterCompiler;
 import reflaxe.elixir.helpers.AnnotationSystem;
 import reflaxe.elixir.ElixirTyper;
 import reflaxe.elixir.PhoenixMapper;

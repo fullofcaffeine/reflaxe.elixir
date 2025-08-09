@@ -201,6 +201,61 @@ All examples include proper testing setup:
 - **Annotation conflicts**: Use annotation system to detect incompatible combinations
 - **Build failures**: Check classpath configuration and dependencies
 
+### 07-protocols  
+**Status**: Production Ready  
+**Purpose**: Elixir protocol definitions and implementations for polymorphic dispatch
+
+**Key Features Demonstrated**:
+- `@:protocol` annotation for defining protocols
+- `@:impl` annotation for protocol implementations  
+- Multiple implementations per protocol (String, Int, Float)
+- Type-safe polymorphic dispatch
+- Fallback implementations with `Any` type
+
+**Files Included**:
+- `protocols/Drawable.hx` - Protocol definition with draw() and area() methods
+- `implementations/NumberDrawable.hx` - Int and Float implementations
+- `implementations/StringDrawable.hx` - String implementation
+
+**How to Run**:
+```bash
+cd examples/07-protocols
+npx haxe build.hxml
+```
+
+**Generated Elixir**:
+- `Drawable` protocol with proper @spec definitions
+- `defimpl Drawable, for: String/Integer/Float` implementations
+- Type-safe dispatch resolution
+
+### 08-behaviors
+**Status**: Production Ready  
+**Purpose**: OTP behavior definitions with callback contracts and GenServer integration
+
+**Key Features Demonstrated**:
+- `@:behaviour` annotation for defining behaviors
+- `@:callback` and `@:optional_callback` specifications
+- `@:use` annotation for behavior adoption
+- Compile-time validation of required callbacks
+- Integration with GenServer and OTP patterns
+
+**Files Included**:
+- `behaviors/DataProcessor.hx` - Behavior definition with processing contract
+- `implementations/StreamProcessor.hx` - GenServer + behavior implementation
+- `implementations/BatchProcessor.hx` - Alternative implementation strategy
+
+**How to Run**:
+```bash
+cd examples/08-behaviors
+npx haxe build.hxml
+```
+
+**Generated Elixir**:
+- `DataProcessor` behavior module with @callback specifications
+- `@optional_callbacks` directives for flexible contracts
+- `StreamProcessor` and `BatchProcessor` modules with @behaviour directives
+- Complete OTP integration with GenServer callbacks
+
 ### Performance Tips
 - Use unified compilation instead of `--next` approach
 - All modules compile in <1ms typically

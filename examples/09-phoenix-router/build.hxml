@@ -1,0 +1,13 @@
+# Phoenix Router DSL Example Build Configuration
+-cp ../../src
+-cp src_haxe
+-D reflaxe_runtime
+
+# Compile all Phoenix router examples
+controllers.UserController
+controllers.ProductController  
+AppRouter
+
+-D display-times
+-main controllers.UserController
+--interp

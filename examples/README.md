@@ -39,7 +39,12 @@ This directory contains progressive examples demonstrating Haxe→Elixir compila
 **Features**: @:protocol, @:impl annotations, polymorphic dispatch  
 **Use Case**: Type-safe polymorphic behavior with compile-time validation
 
-### 8. [test-integration](./test-integration/)
+### 8. [08-behaviors](./08-behaviors/)
+**Difficulty**: Advanced  
+**Features**: @:behaviour, @:use annotations, callback contracts, GenServer integration  
+**Use Case**: Compile-time behavior contracts with OTP integration and optional callbacks
+
+### 9. [test-integration](./test-integration/)
 **Difficulty**: Intermediate  
 **Features**: Mix compiler task testing, build pipeline validation  
 **Use Case**: Testing Haxe→Elixir compilation in Mix projects
@@ -115,7 +120,7 @@ npx haxe build.hxml
 ### Continuous Integration
 
 Examples are tested in CI/CD on every commit to ensure:
-- ✅ All 7 examples compile successfully
+- ✅ All 9 examples compile successfully
 - ✅ Generated Elixir code is syntactically valid
 - ✅ No compilation warnings or errors
 - ✅ Documentation consistency maintained
