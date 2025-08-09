@@ -142,8 +142,10 @@ defmodule MixIntegrationTest do
       assert {:error, "Source directory not found: missing_dir"} = 
         HaxeCompiler.compile(source_dir: "missing_dir")
       
-      # Test needs_recompilation?/1 function
-      assert HaxeCompiler.needs_recompilation?(source_dir: "src_haxe", target_dir: "lib") == true
+      # Test needs_recompilation?/1 function  
+      # After compilation, targets are newer than sources, so no recompilation needed
+      assert HaxeCompiler.needs_recompilation?(source_dir: "src_haxe", target_dir: "lib") == false
+      # But force flag should always return true
       assert HaxeCompiler.needs_recompilation?(force: true) == true
       
       # Test source_files/1 function  
