@@ -40,6 +40,9 @@ class ComprehensiveTestRunner {
             // Core compilation framework
             new SimpleTest(),
             
+            // Advanced Ecto Features (TDD implementation)
+            new AdvancedEctoTest(),
+            
             // Future: Add converted test classes here
             // new TestCore(),
             // new TestExterns(), 
