@@ -23,6 +23,7 @@ class SimpleExampleTest {
             {name: "05-heex-templates", file: "build.hxml"},
             {name: "06-user-management", file: "build.hxml"},
             {name: "07-protocols", file: "build.hxml"},
+            {name: "08-behaviors", file: "build.hxml"},
             {name: "test-integration", file: "build.hxml"}
         ];
         

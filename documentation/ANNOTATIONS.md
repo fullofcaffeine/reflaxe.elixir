@@ -8,6 +8,102 @@ Reflaxe.Elixir uses Haxe metadata annotations to control code generation. Annota
 
 ## Supported Annotations
 
+### @:controller - Phoenix Controller
+
+Marks a class as a Phoenix controller for handling HTTP requests.
+
+**Basic Usage**:
+```haxe
+@:controller
+class UserController {
+    @:route({method: "GET", path: "/users"})
+    public function index(): String {
+        return "List all users";
+    }
+    
+    @:route({method: "GET", path: "/users/:id"})
+    public function show(id: Int): String {
+        return "Show user " + id;
+    }
+    
+    @:route({method: "POST", path: "/users"})
+    public function create(user: Dynamic): String {
+        return "Create user";
+    }
+}
+```
+
+**Generated Elixir**:
+```elixir
+defmodule UserController do
+  use Phoenix.Controller
+  
+  def index(conn) do
+    conn
+    |> put_status(200)
+    |> json(%{message: "Action index executed"})
+  end
+  
+  def show(conn, id) do
+    conn
+    |> put_status(200)
+    |> json(%{message: "Action show executed"})
+  end
+  
+  def create(conn, user) do
+    conn
+    |> put_status(200)
+    |> json(%{message: "Action create executed"})
+  end
+end
+```
+
+**Route Annotations**:
+- `@:route({method: "GET", path: "/path"})` - Define route with HTTP method and path
+- `@:resources("resource_name")` - Generate RESTful resource routes
+- `@:pipe_through([pipelines])` - Specify pipeline for authorization/plugs
+
+### @:router - Phoenix Router Configuration
+
+Marks a class as a Phoenix router for request routing.
+
+**Basic Usage**:
+```haxe
+@:router
+class AppRouter {
+    @:pipeline("browser", ["fetch_session", "protect_from_forgery"])
+    @:pipeline("api", ["accept_json"])
+    
+    @:include_controller("UserController")
+    @:include_controller("ProductController")
+}
+```
+
+**Generated Elixir**:
+```elixir
+defmodule AppRouter do
+  use Phoenix.Router
+  
+  pipeline :browser do
+    plug :accepts, ["html"]
+    plug :fetch_session
+    plug :protect_from_forgery
+    plug :put_secure_browser_headers
+  end
+  
+  pipeline :api do
+    plug :accepts, ["json"]
+  end
+  
+  scope "/", AppRouter do
+    pipe_through :browser
+    
+    resources "/users", UserController
+    resources "/products", ProductController
+  end
+end
+```
+
 ### @:schema - Ecto Schema Generation
 
 Generates Ecto.Schema modules for database models.
@@ -78,242 +174,284 @@ class UserChangeset {
 - `@:validate_format(field, pattern)` - Format validation
 - `@:validate_length(field, {min, max})` - Length validation
 - `@:validate_number(field, {greater_than, less_than})` - Number validation
+- `@:unique_constraint(field)` - Unique constraint validation
 
-### @:liveview - Phoenix LiveView Components
+### @:liveview - Phoenix LiveView
 
-Generates Phoenix LiveView modules for real-time web components.
+Generates Phoenix LiveView modules for real-time UI.
 
 **Basic Usage**:
 ```haxe
 @:liveview
 class UserLive {
-    var users: Array<User> = [];
-    var selectedUser: Null<User> = null;
-    
-    function mount(params: Dynamic, session: Dynamic, socket: Dynamic): {status: String, socket: Dynamic} {
-        return {
-            status: "ok",
-            socket: assign_multiple(socket, {
-                users: Users.list_users(),
-                selectedUser: null
-            })
-        };
+    public function mount(params: Dynamic, session: Dynamic, socket: Dynamic): Dynamic {
+        return {ok: socket};
     }
     
-    function handle_event(event: String, params: Dynamic, socket: Dynamic): {status: String, socket: Dynamic} {
-        return switch(event) {
-            case "new_user":
-                handleNewUser(params, socket);
-            default:
-                {status: "noreply", socket: socket};
-        }
+    public function handle_event(event: String, params: Dynamic, socket: Dynamic): Dynamic {
+        return {noreply: socket};
     }
     
-    function render(assigns: Dynamic): String {
-        return hxx('<div>LiveView content</div>');
+    public function render(assigns: Dynamic): String {
+        return "<div>User LiveView</div>";
     }
 }
 ```
 
-**LiveView Functions**:
-- `mount()` - Component initialization
-- `handle_event()` - Event handling with pattern matching
-- `render()` - Template rendering
-- `assign()` / `assign_multiple()` - Socket state management
+**Generated Elixir**:
+```elixir
+defmodule UserLive do
+  use Phoenix.LiveView
+  
+  @impl true
+  def mount(_params, _session, socket) do
+    {:ok, socket}
+  end
+  
+  @impl true
+  def handle_event(event, params, socket) do
+    {:noreply, socket}
+  end
+  
+  @impl true
+  def render(assigns) do
+    ~H"""
+    <div>User LiveView</div>
+    """
+  end
+end
+```
 
-### @:genserver - OTP GenServer Processes
+### @:genserver - OTP GenServer
 
-Generates OTP GenServer modules for background processes and state management.
+Generates OTP GenServer modules for stateful processes.
 
 **Basic Usage**:
 ```haxe
 @:genserver
-class UserGenServer {
-    var userCache: Map<Int, User> = new Map();
+class Counter {
+    private var count: Int = 0;
     
-    function init(initialState: Dynamic): {status: String, state: Dynamic} {
-        return {
-            status: "ok",
-            state: {userCache: userCache}
-        };
+    public function init(args: Dynamic): Dynamic {
+        return {ok: 0};
     }
     
-    function handle_call(request: String, from: Dynamic, state: Dynamic): CallResponse {
-        return switch(request) {
-            case "get_user":
-                handleGetUser(from, state);
-            default:
-                {status: "reply", response: "unknown_request", state: state};
+    public function handle_call(msg: String, from: Dynamic, state: Int): Dynamic {
+        switch(msg) {
+            case "get": return {reply: state, state};
+            case "increment": return {reply: state + 1, state + 1};
+            default: return {reply: "unknown", state};
         }
-    }
-    
-    function handle_cast(message: String, state: Dynamic): {status: String, state: Dynamic} {
-        return {status: "noreply", state: state};
     }
 }
 ```
 
-**GenServer Callbacks**:
-- `init()` - Server initialization
-- `handle_call()` - Synchronous requests
-- `handle_cast()` - Asynchronous messages
-- `handle_info()` - System messages
+**Generated Elixir**:
+```elixir
+defmodule Counter do
+  use GenServer
+  
+  def init(_args) do
+    {:ok, 0}
+  end
+  
+  def handle_call("get", _from, state) do
+    {:reply, state, state}
+  end
+  
+  def handle_call("increment", _from, state) do
+    {:reply, state + 1, state + 1}
+  end
+  
+  def handle_call(_, _from, state) do
+    {:reply, "unknown", state}
+  end
+end
+```
 
-### @:migration - Ecto Migration DSL
+### @:migration - Ecto Migration
 
-Generates Ecto migration modules with table operations.
+Generates Ecto migration modules for database schema changes.
 
 **Basic Usage**:
 ```haxe
 @:migration
-class CreateUsers {
-    public static function up(): String {
-        return MigrationDSL.createTable("users", function(t) {
-            t.addColumn("name", "string", {"null": false});
-            t.addColumn("email", "string", {"null": false});
-            t.addColumn("age", "integer");
-            
-            t.addIndex(["email"], {unique: true});
-            t.addIndex(["name", "active"]);
-        });
+class CreateUsersTable {
+    public function up(): Void {
+        createTable("users")
+            .addColumn("name", "string", {null: false})
+            .addColumn("email", "string", {null: false})
+            .addColumn("age", "integer")
+            .addIndex(["email"], {unique: true});
     }
     
-    public static function down(): String {
-        return MigrationDSL.dropTable("users");
+    public function down(): Void {
+        dropTable("users");
     }
 }
 ```
 
-**Migration Operations**:
-- `createTable(name, callback)` - Create new table
-- `dropTable(name)` - Drop existing table
-- `addColumn(name, type, options)` - Add table column
-- `addIndex(columns, options)` - Add index
-- `addForeignKey(column, table, reference)` - Add foreign key constraint
-- `addCheckConstraint(condition, name)` - Add check constraint
+**Generated Elixir**:
+```elixir
+defmodule CreateUsersTable do
+  use Ecto.Migration
+  
+  def up do
+    create table(:users) do
+      add :name, :string, null: false
+      add :email, :string, null: false
+      add :age, :integer
+      timestamps()
+    end
+    
+    create unique_index(:users, [:email])
+  end
+  
+  def down do
+    drop table(:users)
+  end
+end
+```
 
-### @:template - HEEx Template Processing
+### @:template - Phoenix Template
 
-Generates Phoenix templates with component integration.
+Generates Phoenix HEEx template modules.
 
 **Basic Usage**:
 ```haxe
 @:template
-class FormComponents {
-    public static function user_form(assigns: Dynamic): String {
-        return hxx('
-        <.form for={@changeset} phx-submit="save_user">
-            <.input field={@changeset[:name]} type="text" label="Name" />
-            <.input field={@changeset[:email]} type="email" label="Email" />
-            <.button type="submit">Save User</.button>
-        </.form>
-        ');
+class UserTemplate {
+    public function user_card(user: Dynamic): String {
+        return """
+        <div class="user-card">
+            <h3>{user.name}</h3>
+            <p>{user.email}</p>
+        </div>
+        """;
     }
 }
 ```
 
-### @:query - Ecto Query DSL (Future)
-
-**Status**: Planned for future release
-**Purpose**: Type-safe Ecto query compilation
-
-## Annotation Validation
-
-### Exclusive Groups
-
-Some annotations cannot be used together on the same class:
-
-**Behavior vs Component**:
-- `@:genserver` and `@:liveview` are mutually exclusive
-
-**Data vs Validation**:
-- `@:schema` and `@:changeset` are mutually exclusive
-
-**Migration vs Runtime**:
-- `@:migration` cannot be used with `@:schema` or `@:changeset`
-
-### Compatible Combinations
-
-These annotation combinations are supported:
-
-- `@:liveview + @:template` - LiveView with custom templates
-- `@:schema + @:query` - Schema with custom queries (future)
-- `@:changeset + @:query` - Changeset with custom queries (future)
-
-### Error Handling
-
-The annotation system provides helpful error messages:
-
-```
-Error: Annotations [:genserver, :liveview] cannot be used together - they are mutually exclusive
+**Generated Elixir**:
+```elixir
+defmodule UserTemplate do
+  use Phoenix.Component
+  
+  def user_card(assigns) do
+    ~H"""
+    <div class="user-card">
+      <h3><%= @user.name %></h3>
+      <p><%= @user.email %></p>
+    </div>
+    """
+  end
+end
 ```
 
-## Best Practices
+### @:protocol - Elixir Protocol
 
-### 1. Use Appropriate Annotations
-- `@:schema` for database models
-- `@:changeset` for validation logic
-- `@:liveview` for real-time UI components
-- `@:genserver` for background processes
-- `@:migration` for database schema changes
+Defines polymorphic behavior through protocols.
 
-### 2. Follow Naming Conventions
-- Use snake_case for table names in `@:schema("table_name")`
-- Use PascalCase for class names
-- Use snake_case for field names
-
-### 3. Organize Code Structure
-```
-src_haxe/
-├── contexts/          # @:schema and @:changeset classes
-├── live/             # @:liveview classes  
-├── services/         # @:genserver classes
-├── migrations/       # @:migration classes
-└── templates/        # @:template classes
-```
-
-### 4. Import Required Dependencies
-Always import the necessary helpers:
+**Basic Usage**:
 ```haxe
-import reflaxe.elixir.helpers.MigrationDSL;
-import reflaxe.elixir.helpers.MigrationDSL.TableBuilder;
+@:protocol
+class Stringable {
+    @:callback
+    public function toString(data: Dynamic): String {
+        throw "Protocol function must be implemented";
+    }
+}
 ```
 
-### 5. Test Generated Code
-- Compile individual modules to test annotation processing
-- Use `npm test` for comprehensive validation
-- Check generated Elixir code for correctness
-
-## Troubleshooting
-
-### Common Issues
-
-**Invalid Annotation Combinations**:
-```
-Solution: Check annotation compatibility in FEATURES.md
+**Generated Elixir**:
+```elixir
+defprotocol Stringable do
+  @doc "Convert data to string representation"
+  def to_string(data)
+end
 ```
 
-**Missing Dependencies**:
-```
-Solution: Add proper imports for helper functions
-```
+### @:impl - Protocol Implementation
 
-**Keyword Conflicts**:
+Implements a protocol for a specific type.
+
+**Basic Usage**:
 ```haxe
-// Wrong
-{null: false}
-
-// Correct
-{"null": false}
+@:impl("Stringable", "User")
+class UserStringable {
+    public function toString(user: User): String {
+        return 'User: ${user.name}';
+    }
+}
 ```
 
-**Function Visibility**:
+**Generated Elixir**:
+```elixir
+defimpl Stringable, for: User do
+  def to_string(user) do
+    "User: #{user.name}"
+  end
+end
+```
+
+### @:behaviour - Elixir Behavior
+
+Defines callback contracts for modules.
+
+**Basic Usage**:
 ```haxe
-// Wrong
-function myUtility() {}
-
-// Correct  
-public static function myUtility() {}
+@:behaviour
+class DataProcessor {
+    @:callback
+    public function init(config: Dynamic): {ok: Dynamic, error: String} {
+        throw "Callback must be implemented";
+    }
+    
+    @:callback
+    public function process(data: Dynamic): Dynamic {
+        throw "Callback must be implemented";
+    }
+    
+    @:optional_callback
+    public function cleanup(): Void {
+        // Optional cleanup
+    }
+}
 ```
 
-For implementation details and development context, see CLAUDE.md.
+**Generated Elixir**:
+```elixir
+defmodule DataProcessor do
+  @callback init(config :: any()) :: {:ok, any()} | {:error, String.t()}
+  @callback process(data :: any()) :: any()
+  
+  @optional_callbacks cleanup: 0
+  @callback cleanup() :: :ok
+end
+```
+
+## Annotation Combinations
+
+Some annotations can be used together:
+
+- `@:schema` + `@:changeset` - Data model with validation
+- `@:liveview` + `@:template` - LiveView with template rendering
+- `@:controller` + `@:route` - Controller with route definitions
+- `@:behaviour` + `@:genserver` - GenServer implementing behavior
+
+## Annotation Conflicts
+
+The following combinations are mutually exclusive:
+
+- `@:genserver` and `@:liveview` - Choose one behavior type
+- `@:schema` and `@:migration` - Schema is runtime, migration is compile-time
+- `@:protocol` and `@:behaviour` - Different polymorphism approaches
+
+## Usage Guidelines
+
+1. **One primary annotation per class** - Choose the main purpose of your class
+2. **Use compatible combinations** - Leverage synergistic annotations together
+3. **Avoid conflicts** - The compiler will error on incompatible combinations
+4. **Follow conventions** - Use standard Phoenix/Ecto patterns for better integration
+
+For more examples, see the `examples/` directory in the project repository.
