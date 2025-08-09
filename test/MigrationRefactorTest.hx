@@ -262,6 +262,7 @@ class MigrationRefactorTest {
     }
     
     @:describe("Performance Limits - Stress Testing")
+    @:timeout(15000)  // 15 seconds for stress testing
     public function testPerformanceLimits() {
         var startTime = haxe.Timer.stamp();
         
