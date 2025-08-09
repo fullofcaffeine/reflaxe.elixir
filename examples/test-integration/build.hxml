@@ -1,0 +1,5 @@
+-cp src_haxe
+-lib reflaxe
+-D reflaxe_runtime  
+--elixir lib
+test.integration.TestModule

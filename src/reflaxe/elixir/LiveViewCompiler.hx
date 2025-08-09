@@ -114,6 +114,29 @@ class LiveViewCompiler {
         
         return boilerplate + '\n  \n  # Generated LiveView functions\n  ${classContent}\nend';
     }
+    
+    /**
+     * Compile full LiveView module with configuration
+     */
+    public static function compileFullLiveView(className: String, config: Dynamic): String {
+        var moduleName = className;
+        
+        return 'defmodule ${moduleName} do\n' +
+               '  use Phoenix.LiveView\n' +
+               '  \n' +
+               '  @impl true\n' +
+               '  def mount(_params, _session, socket) do\n' +
+               '    {:ok, socket}\n' +
+               '  end\n' +
+               '  \n' +
+               '  @impl true\n' +
+               '  def render(assigns) do\n' +
+               '    ~H"""\n' +
+               '    <div>LiveView generated from ${className}</div>\n' +
+               '    """\n' +
+               '  end\n' +
+               'end';
+    }
 }
 
 #end
