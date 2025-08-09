@@ -98,5 +98,3 @@ class SimpleLiveViewTest {
         return asserts.done();
     }
 }
-
-#end

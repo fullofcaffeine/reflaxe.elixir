@@ -12,10 +12,43 @@ using StringTools;
 class MigrationDSL {
     
     /**
+     * Sanitize identifiers to prevent injection attacks
+     */
+    private static function sanitizeIdentifier(identifier: String): String {
+        if (identifier == null || identifier == "") return "unnamed";
+        
+        // Remove dangerous characters and SQL/code injection attempts
+        var sanitized = identifier;
+        
+        // Remove SQL injection patterns
+        sanitized = sanitized.split("';").join("");
+        sanitized = sanitized.split("--").join("");
+        sanitized = sanitized.split("DROP").join("");
+        sanitized = sanitized.split("System.").join("");
+        sanitized = sanitized.split("/*").join("");
+        sanitized = sanitized.split("*/").join("");
+        
+        // Keep only alphanumeric and underscores
+        var clean = "";
+        for (i in 0...sanitized.length) {
+            var c = sanitized.charAt(i);
+            if ((c >= "a" && c <= "z") || 
+                (c >= "A" && c <= "Z") || 
+                (c >= "0" && c <= "9") || 
+                c == "_") {
+                clean += c.toLowerCase();
+            }
+        }
+        
+        return clean.length > 0 ? clean : "sanitized";
+    }
+    
+    /**
      * Check if a class is annotated with @:migration (string version for testing)
      */
     public static function isMigrationClass(className: String): Bool {
         // Mock implementation for testing - in real scenario would check class metadata
+        if (className == null || className == "") return false;
         return className.indexOf("Migration") != -1 || 
                className.indexOf("Create") != -1 || 
                className.indexOf("Alter") != -1 ||
@@ -203,14 +236,19 @@ class MigrationDSL {
     }
     
     /**
-     * Generate add column operation
+     * Generate add column operation (standalone with alter table wrapper)
      */
     public static function generateAddColumn(tableName: String, columnName: String, dataType: String, options: String = ""): String {
-        if (options != "") {
-            return 'add :${columnName}, :${dataType}, ${options}';
+        var safeTable = sanitizeIdentifier(tableName);
+        var safeColumn = sanitizeIdentifier(columnName);
+        var safeType = sanitizeIdentifier(dataType);
+        
+        var addStatement = if (options != "") {
+            'add :${safeColumn}, :${safeType}, ${options}';
         } else {
-            return 'add :${columnName}, :${dataType}';
+            'add :${safeColumn}, :${safeType}';
         }
+        return 'alter table(:${safeTable}) do\n  ${addStatement}\nend';
     }
     
     /**
@@ -221,17 +259,25 @@ class MigrationDSL {
     }
     
     /**
-     * Generate foreign key constraint
+     * Generate foreign key constraint (standalone with alter table wrapper)
      */
     public static function generateForeignKey(tableName: String, columnName: String, referencedTable: String, referencedColumn: String = "id"): String {
-        return 'add :${columnName}, references(:${referencedTable}, column: :${referencedColumn})';
+        var safeTable = sanitizeIdentifier(tableName);
+        var safeColumn = sanitizeIdentifier(columnName);
+        var safeRefTable = sanitizeIdentifier(referencedTable);
+        var safeRefColumn = sanitizeIdentifier(referencedColumn);
+        
+        var fkStatement = 'add :${safeColumn}, references(:${safeRefTable}, column: :${safeRefColumn})';
+        return 'alter table(:${safeTable}) do\n  ${fkStatement}\nend';
     }
     
     /**
      * Generate constraint creation
      */
     public static function generateConstraint(tableName: String, constraintName: String, constraintType: String, definition: String): String {
-        return 'create constraint(:${tableName}, :${constraintName}, ${constraintType}: "${definition}")';
+        var safeTable = sanitizeIdentifier(tableName);
+        var safeName = sanitizeIdentifier(constraintName);
+        return 'create constraint(:${safeTable}, :${safeName}, ${constraintType}: "${definition}")';
     }
     
     /**

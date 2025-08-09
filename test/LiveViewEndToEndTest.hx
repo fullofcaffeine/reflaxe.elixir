@@ -56,12 +56,8 @@ class LiveViewEndToEndTest {
         return asserts.done();
     }
     
-    /**
-     * Validate the structure of generated Elixir code
-     */
-    static function validateGeneratedCode() {
-        trace("VALIDATION: Generated Elixir code structure");
-        
+    @:describe("Generated Elixir code structure validation")
+    public function testGeneratedCodeStructure() {
         var className = "UserLiveView";
         var content = "def mount(params, session, socket) do\n    {:ok, assign(socket, :users, [])}\n  end\n\n  def handle_event(\"create_user\", params, socket) do\n    # User creation logic here\n    {:noreply, socket}\n  end";
         
@@ -79,23 +75,14 @@ class LiveViewEndToEndTest {
         ];
         
         for (check in validationChecks) {
-            if (module.contains(check.pattern)) {
-                trace('  ✓ ${check.name}: Found "${check.pattern}"');
-            } else {
-                trace('  ❌ ${check.name}: Missing "${check.pattern}"');
-                throw 'Validation failed: ${check.name}';
-            }
+            asserts.assert(module.contains(check.pattern), '${check.name}: Should contain "${check.pattern}"');
         }
         
-        trace("✅ Generated code structure validation passed");
+        return asserts.done();
     }
     
-    /**
-     * Test Phoenix ecosystem compatibility
-     */
-    static function testPhoenixCompatibility() {
-        trace("COMPATIBILITY: Phoenix ecosystem integration");
-        
+    @:describe("Phoenix ecosystem integration compatibility")
+    public function testPhoenixCompatibility() {
         // Test that generated code follows Phoenix conventions
         var boilerplate = LiveViewCompiler.generateLiveViewBoilerplate("TestLiveView");
         
@@ -108,31 +95,18 @@ class LiveViewEndToEndTest {
         ];
         
         for (check in phoenixChecks) {
-            if (check.check) {
-                trace('  ✓ ${check.name}: Compatible');
-            } else {
-                trace('  ❌ ${check.name}: Not compatible');
-                throw 'Compatibility failed: ${check.name}';
-            }
+            asserts.assert(check.check, '${check.name}: Should be Phoenix compatible');
         }
         
         // Test assign compilation produces valid Elixir
         var assignTest = LiveViewCompiler.compileAssign("socket", "current_user", "get_current_user()");
-        if (assignTest.contains("assign(socket, :current_user, get_current_user())")) {
-            trace("  ✓ Assign compilation: Phoenix compatible");
-        } else {
-            throw "Assign compilation not Phoenix compatible";
-        }
+        asserts.assert(assignTest.contains("assign(socket, :current_user, get_current_user())"), "Assign compilation should be Phoenix compatible");
         
-        trace("✅ Phoenix ecosystem compatibility passed");
+        return asserts.done();
     }
     
-    /**
-     * Measure basic compilation performance
-     */
-    static function measurePerformance() {
-        trace("PERFORMANCE: Basic compilation timing");
-        
+    @:describe("LiveView compilation performance benchmarking")
+    public function testCompilationPerformance() {
         var startTime = Sys.time();
         
         // Simulate compilation of a medium-complexity LiveView
@@ -146,19 +120,11 @@ class LiveViewEndToEndTest {
         
         var endTime = Sys.time();
         var duration = (endTime - startTime) * 1000; // Convert to milliseconds
+        var avgDuration = duration / 100;
         
-        trace('  📊 Compiled 100 LiveView modules in ${Math.round(duration)}ms');
-        trace('  📊 Average per module: ${Math.round(duration/100)}ms');
+        asserts.assert(duration > 0, "Should take measurable time for 100 compilations");
+        asserts.assert(avgDuration < 15, 'Average compilation should be <15ms per module, was: ${Math.round(avgDuration)}ms');
         
-        // Performance target from PRD: <15ms compilation steps
-        if (duration / 100 < 15) {
-            trace("  ✅ Performance target met: <15ms per compilation");
-        } else {
-            trace("  ⚠️ Performance target missed: >" + Math.round(duration/100) + "ms per compilation");
-        }
-        
-        trace("✅ Performance measurement complete");
+        return asserts.done();
     }
 }
-
-#end
