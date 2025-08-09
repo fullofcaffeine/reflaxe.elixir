@@ -1,0 +1,9 @@
+-cp ../../src
+-cp ../../std
+-cp src_haxe
+-lib reflaxe
+-D reflaxe_runtime
+
+behaviors.DataProcessor
+implementations.StreamProcessor
+implementations.BatchProcessor

@@ -1,5 +1,13 @@
 # AI/Agent Development Context for Haxe→Elixir Compiler
 
+## IMPORTANT: Agent Execution Instructions
+1. **ALWAYS verify CLAUDE.md first** - This file contains the project truth
+2. **Check referenced documentation** - See documentation/*.md files for feature details
+3. **Consult Haxe documentation** when needed:
+   - https://api.haxe.org/ - Latest API reference
+   - https://haxe.org/documentation/introduction/ - Language documentation
+4. **Use modern Haxe 4.3+ patterns** - No legacy idioms
+
 ## User Documentation References
 - **Setup & Installation**: See [`documentation/GETTING_STARTED.md`](documentation/GETTING_STARTED.md)
 - **Feature Status & Capabilities**: See [`documentation/FEATURES.md`](documentation/FEATURES.md)
@@ -63,12 +71,29 @@ Successfully implemented comprehensive extern definitions for Elixir stdlib modu
 Working implementation in `std/elixir/WorkingExterns.hx` with full test coverage.
 
 ## Development Environment Setup
-- **Haxe Version**: 4.3.6 (available at `/opt/homebrew/bin/haxe`)
-- **Haxe API Reference**: https://api.haxe.org/v/4.3.6/
-- **Test Execution**: Use `haxe TestName.hxml` to run tests
+- **Haxe Version**: 4.3.6+ (available at `/opt/homebrew/bin/haxe`)
+- **Haxe API Reference**: https://api.haxe.org/ (latest version docs)
+- **Haxe Documentation**: https://haxe.org/documentation/introduction/
+- **Test Execution**: Use `haxe TestName.hxml` or `npm test` for full suite
 - **Compilation Flags**: Always use `-D reflaxe_runtime` for test compilation
 - **Test Structure**: All tests in `test/` directory with matching .hxml files
 - **Reflaxe Base Classes**: Located at `/Users/fullofcaffeine/workspace/code/haxe.elixir.reference/reflaxe/src`
+
+## Compiler Architecture & Modern Haxe Features
+- **Output Model**: One `.ex` file per `.hx` file (1:1 mapping maintained)
+- **Modern Haxe 4.3+ Features Used**:
+  - Pattern matching with exhaustive checks
+  - Null safety with `Null<T>` types
+  - Abstract types for type-safe wrappers
+  - Inline metadata for optimization
+  - Expression macros for compile-time code generation
+  - `using` for static extensions
+  - Arrow functions in expressions
+- **Avoided Legacy Patterns**:
+  - No `Std.is()` (use `Std.isOfType()`)
+  - No untyped code blocks
+  - No Dynamic where generics suffice
+  - Proper null handling instead of implicit nulls
 
 ## Test Status Summary
 - **Elixir Tests**: ✅ ALL PASSING (13 tests, 0 failures, 1 skipped)

@@ -27,6 +27,9 @@ class AnnotationSystem {
      */
     public static var SUPPORTED_ANNOTATIONS = [
         ":genserver",    // OTP GenServer - highest priority for behavior classes
+        ":controller",   // Phoenix Controller with routing
+        ":router",       // Phoenix Router configuration
+        ":behaviour",    // Elixir Behavior definitions
         ":protocol",     // Elixir Protocol definitions
         ":impl",         // Elixir Protocol implementations
         ":migration",    // Ecto Migration - database schema changes
@@ -199,6 +202,30 @@ class AnnotationSystem {
                     null;
                 }
                 
+            case ":controller":
+                if (reflaxe.elixir.helpers.RouterCompiler.isControllerClassType(classType)) {
+                    compileControllerClass(classType, varFields, funcFields);
+                } else {
+                    Context.error("@:controller annotation detected but RouterCompiler validation failed", classType.pos);
+                    null;
+                }
+                
+            case ":router":
+                if (reflaxe.elixir.helpers.RouterCompiler.isRouterClassType(classType)) {
+                    compileRouterClass(classType, varFields, funcFields);
+                } else {
+                    Context.error("@:router annotation detected but RouterCompiler validation failed", classType.pos);
+                    null;
+                }
+                
+            case ":behaviour":
+                if (reflaxe.elixir.helpers.BehaviorCompiler.isBehaviorClassType(classType)) {
+                    compileBehaviorClass(classType, varFields, funcFields);
+                } else {
+                    Context.error("@:behaviour annotation detected but BehaviorCompiler validation failed", classType.pos);
+                    null;
+                }
+                
             case ":protocol":
                 if (reflaxe.elixir.helpers.ProtocolCompiler.isProtocolClassType(classType)) {
                     compileProtocolClass(classType, varFields, funcFields);
@@ -322,6 +349,18 @@ class AnnotationSystem {
             callMethods: [],
             castMethods: []
         });
+    }
+    
+    static function compileControllerClass(classType: ClassType, varFields: Array<ClassVarData>, funcFields: Array<ClassFuncData>): String {
+        return reflaxe.elixir.helpers.RouterCompiler.compileController(classType);
+    }
+    
+    static function compileRouterClass(classType: ClassType, varFields: Array<ClassVarData>, funcFields: Array<ClassFuncData>): String {
+        return reflaxe.elixir.helpers.RouterCompiler.compileRouter(classType);
+    }
+    
+    static function compileBehaviorClass(classType: ClassType, varFields: Array<ClassVarData>, funcFields: Array<ClassFuncData>): String {
+        return reflaxe.elixir.helpers.BehaviorCompiler.compileBehavior(classType);
     }
     
     static function compileProtocolClass(classType: ClassType, varFields: Array<ClassVarData>, funcFields: Array<ClassFuncData>): String {

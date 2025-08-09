@@ -8,6 +8,8 @@ A modern Haxe compilation target for Elixir/BEAM with native Phoenix integration
 ✅ **Phoenix LiveView Support** - Native `@:liveview` compilation with socket management  
 ✅ **Ecto Integration** - `@:changeset` and `@:migration` DSL support  
 ✅ **OTP GenServer Support** - `@:genserver` with full lifecycle callbacks  
+✅ **Protocol System** - `@:protocol` and `@:impl` for polymorphic dispatch  
+✅ **Behavior Contracts** - `@:behaviour` with compile-time callback validation  
 ✅ **Type-Safe Compilation** - Complete Haxe→Elixir type mapping  
 ✅ **Performance Optimized** - Sub-millisecond compilation targets  
 
@@ -31,7 +33,7 @@ npx lix download  # Downloads project-specific Haxe libraries
 mix deps.get      # Installs Elixir dependencies
 
 # Run comprehensive tests
-npm test          # Tests compiler + generated code (19 tests)
+npm test          # Tests compiler + generated code (22 tests)
 ```
 
 📖 **New to lix or Haxe?** See [INSTALLATION.md](INSTALLATION.md) for complete setup guide with troubleshooting.
