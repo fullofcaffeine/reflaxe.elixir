@@ -84,7 +84,7 @@ class ChangesetCompiler {
         
         return 'defmodule ${moduleName} do\n' +
                '  @moduledoc """\n' +
-               '  Generated from Haxe @:changeset class: ${className}\n' +
+               '  Generated from Haxe @:changeset class: ${moduleName}\n' +
                '  \n' +
                '  This changeset module was automatically generated from a Haxe source file\n' +
                '  as part of the Reflaxe.Elixir compilation pipeline.\n' +
