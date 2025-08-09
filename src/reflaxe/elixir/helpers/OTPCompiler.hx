@@ -215,7 +215,7 @@ class OTPCompiler {
                 var stateAccess = switch(methodName) {
                     case "get_count": "state.count";
                     case "get_state": "state";
-                    default: 'state.${methodName != null ? methodName.split("_").join("").toLowerCase() : "default"}';
+                    default: 'state.value';
                 };
                 
                 result.add('  @doc """\n');
@@ -238,7 +238,7 @@ class OTPCompiler {
                 result.add('  Handle asynchronous cast: ${methodName}\n');
                 result.add('  """\n');
                 result.add('  def handle_cast({:${atomicName}}, state) do\n');
-                result.add('    new_state = %{state | ${methodName != null ? methodName.split("_").join("").toLowerCase() : "default"}: ${method != null && method.modifies != null ? method.modifies : "nil"}}\n');
+                result.add('    new_state = %{state | value: ${method != null && method.modifies != null ? method.modifies : "nil"}}\n');
                 result.add('    {:noreply, new_state}\n');
                 result.add('  end\n');
                 result.add('  \n');
