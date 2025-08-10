@@ -258,7 +258,7 @@ class EctoQueryMacros {
         return 'from(${schemaName}, as: :${aliasStr})';
     }
     
-    static function extractAlias(options: Expr): String {
+    static function extractAlias(options: Expr): Null<String> {
         if (options == null) return null;
         
         // Simplified alias extraction - in real implementation would parse Expr
@@ -279,7 +279,9 @@ class EctoQueryMacros {
                 binding = f.args[0].name;
                 
                 // Parse the function body for conditions
-                parseConditionExpression(f.expr, fields, operators, values, binding);
+                if (f.expr != null) {
+                    parseConditionExpression(f.expr, fields, operators, values, binding);
+                }
                 
             case _:
                 // Fallback for non-lambda expressions
@@ -360,10 +362,12 @@ class EctoQueryMacros {
                 binding = f.args[0].name;
                 
                 // Parse the function body for select fields
-                parseSelectExpression(f.expr, fields, binding);
-                
-                // Check if it's a map construction by recursively checking for EObjectDecl
-                isMap = isMapConstruction(f.expr);
+                if (f.expr != null) {
+                    parseSelectExpression(f.expr, fields, binding);
+                    
+                    // Check if it's a map construction by recursively checking for EObjectDecl
+                    isMap = isMapConstruction(f.expr);
+                }
                 
             case _:
                 // Fallback for non-lambda expressions
@@ -599,7 +603,9 @@ class EctoQueryMacros {
                 
             case EReturn(e):
                 // Handle return statements in macro functions
-                parseConditionExpression(e, fields, operators, values, binding);
+                if (e != null) {
+                    parseConditionExpression(e, fields, operators, values, binding);
+                }
                 
             case EBinop(op, e1, e2):
                 switch (op) {
@@ -667,7 +673,7 @@ class EctoQueryMacros {
     /**
      * Extract field name from field access expressions
      */
-    static function extractFieldFromExpression(expr: Expr): String {
+    static function extractFieldFromExpression(expr: Expr): Null<String> {
         if (expr == null) return null;
         
         return switch (expr.expr) {
@@ -677,7 +683,7 @@ class EctoQueryMacros {
                 
             case EReturn(e):
                 // Handle return statements
-                extractFieldFromExpression(e);
+                e != null ? extractFieldFromExpression(e) : null;
                 
             case EField(e, field):
                 // Handle: binding.field_name
@@ -695,7 +701,7 @@ class EctoQueryMacros {
     /**
      * Extract value from literal expressions
      */
-    static function extractValueFromExpression(expr: Expr): String {
+    static function extractValueFromExpression(expr: Expr): Null<String> {
         if (expr == null) return null;
         
         return switch (expr.expr) {
