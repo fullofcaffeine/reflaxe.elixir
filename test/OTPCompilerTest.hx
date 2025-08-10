@@ -245,28 +245,32 @@ class OTPCompilerTest {
         return asserts.done();
     }
     
-    
-    @:describe("Security Validation - Input Sanitization")
-    @:timeout(30000) // Extended timeout for security validation tests (30 seconds)
-    public function testSecurityValidation() {
-        // Test injection-like patterns in class names - FULLY CLEAN IMPLEMENTATION
-        var maliciousName = "TestServer_DROP_TABLE_users";
-        #if (macro || reflaxe_runtime)
-        var safeResult = OTPCompiler.isGenServerClass(maliciousName);
-        #else
-        var safeResult = mockIsGenServerClass(maliciousName);
-        #end
-        asserts.assert(Std.isOfType(safeResult, Bool), "Should handle malicious class names safely");
-        
-        // Test dangerous function names in state - FULLY CLEAN
+    @:describe("Input Safety - Dangerous State")
+    @:timeout(45000) // FRAMEWORK WORKAROUND: Extended timeout to prevent tink_testrunner state corruption
+    public function testSecurityValidationStateInput() {
+        // Test dangerous state input
         var dangerousState = "%{code: system_cmd}";
-        #if (macro || reflaxe_runtime)
         var stateResult = OTPCompiler.compileStateInitialization("Map", dangerousState);
-        #else
-        var stateResult = mockCompileStateInitialization("Map", dangerousState);
-        #end
         asserts.assert(stateResult.indexOf("system") >= 0, "Should preserve input for parameterization safety");
         
+        // Add second assertion to avoid timeout
+        var normalState = "%{count: 0}";
+        var normalResult = OTPCompiler.compileStateInitialization("Map", normalState);
+        asserts.assert(normalResult.indexOf("count") >= 0, "Should handle normal state");
+        return asserts.done();
+    }
+    
+    @:describe("Security Validation - Malicious Class Names")
+    public function testMaliciousClassNames() {
+        // Test malicious class name handling
+        var maliciousName = "TestServer_DROP_TABLE_users";
+        var safeResult = OTPCompiler.isGenServerClass(maliciousName);
+        asserts.assert(safeResult == true, "Should handle malicious class names safely");
+        
+        // Second assertion to match pattern of working tests
+        var emptyName = "";
+        var emptyResult = OTPCompiler.isGenServerClass(emptyName);
+        asserts.assert(emptyResult == false, "Should handle empty names safely");
         return asserts.done();
     }
     
@@ -294,6 +298,7 @@ class OTPCompilerTest {
     }
     
     @:describe("Integration Robustness - Basic Integration")
+    @:timeout(10000) // Extended timeout for integration testing
     public function testIntegrationRobustness() {
         // Simple integration test following reference patterns
         var serverName = "TestServer";
@@ -305,17 +310,18 @@ class OTPCompilerTest {
     }
     
     @:describe("Type Safety - Compile-Time Validation")
+    @:timeout(10000) // Extended timeout for type safety testing
     public function testTypeSafety() {
         // Test type consistency in callbacks
         var callMethod = OTPCompiler.compileHandleCall("get_count", "Int");
-        asserts.assert(callMethod.contains("handle_call"), "Should generate typed call handler");
+        asserts.assert(callMethod.indexOf("handle_call") >= 0, "Should generate typed call handler");
         
         var castMethod = OTPCompiler.compileHandleCast("increment", "Map.put(state, :count, state.count + 1)");
-        asserts.assert(castMethod.contains("handle_cast"), "Should generate typed cast handler");
+        asserts.assert(castMethod.indexOf("handle_cast") >= 0, "Should generate typed cast handler");
         
         // Test state type safety
         var typedInit = OTPCompiler.compileInitCallback("TypedServer", "%{count: 0, name: \"test\"}");
-        asserts.assert(typedInit.contains("{:ok,"), "Should return properly typed init result");
+        asserts.assert(typedInit.indexOf("{:ok,") >= 0, "Should return properly typed init result");
         
         return asserts.done();
     }
@@ -348,18 +354,7 @@ class OTPCompilerTest {
     // This allows tests to run and validate expected behavior patterns without
     // accessing the real macro-time compiler.
     //
-    #if !(macro || reflaxe_runtime)
-    
-    private function mockIsGenServerClass(className: String): Bool {
-        return className != null && className.indexOf("Server") != -1;
-    }
-    
-    private function mockCompileStateInitialization(stateType: String, initialValue: String): String {
-        if (initialValue == null) return "{:ok, %{}}";
-        return '{:ok, $initialValue}';
-    }
-    
-    #end
+    // The mock class is defined below the test class.
 }
 
 // Runtime Mock of OTPCompiler

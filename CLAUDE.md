@@ -703,6 +703,18 @@ mix deps.get       # Installs Elixir deps
 npm test           # Verifies complete setup
 ```
 
+## Testing Framework Consideration
+
+For detailed analysis of why utest may be more suitable than tink_unittest for this compiler project, see [`documentation/UTEST_ANALYSIS.md`](documentation/UTEST_ANALYSIS.md).
+
+**Key Points**:
+- tink_testrunner has architectural stream corruption issues with performance tests
+- utest provides simpler, more reliable architecture for compiler testing  
+- Haxe compiler itself uses utest for stability
+- Migration would eliminate current timeout workarounds and enable reliable performance benchmarking
+
+**Current Status**: Using tink_unittest with workarounds. Migration to utest recommended for long-term stability.
+
 ## Critical Testing Standards: Comprehensive Edge Case Coverage ✅
 
 ### MANDATORY Edge Case Testing Requirements

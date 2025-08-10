@@ -2,7 +2,56 @@
 
 ## Overview
 
-Testing a macro-based transpiler presents unique challenges since the transpiler code only exists during compilation, not at runtime when tests execute. This document explains our dual-ecosystem testing approach and best practices.
+Testing a macro-based transpiler presents unique challenges since the transpiler code only exists during compilation, not at runtime when tests execute. This document explains our dual-ecosystem testing approach, test categories, and framework capabilities.
+
+## Test Categories
+
+Reflaxe.Elixir uses three distinct testing approaches:
+
+### 1. Macro-Time Tests (Direct Compiler Testing)
+**Location**: Tests like `SimpleCompilationTest.hx`, `TestElixirCompiler.hx`  
+**Execution**: Run with `--interp` flag during Haxe compilation  
+**Framework**: None - use simple trace/try-catch  
+**Purpose**: Test the REAL `ElixirCompiler` during compilation  
+
+Example `.hxml`:
+```hxml
+-cp src
+-cp test  
+-D reflaxe_runtime
+-main test.SimpleCompilationTest
+--interp
+```
+
+These tests:
+- Instantiate the actual `ElixirCompiler` class
+- Test real AST transformation logic
+- Run as Haxe macros during compilation phase
+- Don't use ANY testing framework
+
+### 2. Runtime Mock Tests (Framework Testing)
+**Location**: Tests like `OTPCompilerTest.hx`, `SimpleTest.hx`  
+**Execution**: Compile then run after compilation  
+**Framework**: tink_unittest + tink_testrunner (currently)  
+**Purpose**: Test mock implementations and expected patterns  
+
+These tests:
+- Cannot access the real compiler (doesn't exist at runtime)
+- Use mock classes to simulate compiler behavior
+- Validate our understanding of compilation patterns
+- Could use ANY runtime testing framework
+
+### 3. Mix Integration Tests (Generated Code Validation)
+**Location**: `test/` directory in Elixir project  
+**Execution**: `npm run test:mix`  
+**Framework**: ExUnit (Elixir's native test framework)  
+**Purpose**: Validate that generated Elixir code actually works  
+
+These tests:
+- Create `.hx` source files
+- Invoke the Haxe compiler (runs real ElixirCompiler)
+- Validate generated `.ex` files compile and run correctly
+- Test Phoenix/Ecto/OTP integration
 
 ## The Macro-Time vs Runtime Challenge
 
@@ -281,8 +330,69 @@ trace("Running at runtime");
 #end
 ```
 
+## Testing Framework Comparison
+
+### Framework Capabilities
+
+| Feature | tink_unittest | utest | Notes |
+|---------|--------------|-------|-------|
+| **--interp support** | ✅ Yes | ✅ Yes | Both work with Haxe interpreter |
+| **Macro-time testing** | ❌ Not used | ❌ Not used | Neither provides special macro features we use |
+| **Async support** | ✅ Yes | ✅ Yes | Both support async/Future |
+| **Colored output** | ✅ Yes | ✅ Yes | Both have nice reporting |
+| **@:timeout control** | ✅ Yes | ❌ No | tink_unittest allows per-test timeouts |
+| **Assertion style** | `asserts.assert()` | `Assert.equals()` | Different API patterns |
+| **Setup/teardown** | `@:before/@:after` | `setup/teardown` | Both support test lifecycle |
+
+### Current Usage Analysis
+
+**What we're actually using from tink_unittest:**
+- Basic assertion framework (`@:asserts`, `asserts.assert()`)
+- Test runner with colored output
+- `@:timeout` annotations for edge case tests
+- `@:describe` for test documentation
+
+**What we're NOT using:**
+- Macro-time testing capabilities (don't exist)
+- Special compiler integration features
+- Advanced async testing (beyond basic Future support)
+
+### Framework Selection Considerations
+
+#### Why tink_unittest was chosen:
+- Modern annotation-based API (`@:asserts`, `@:describe`)
+- Built-in timeout control via `@:timeout`
+- Clean integration with modern Haxe patterns
+- Already working and integrated
+
+#### Why utest would also work:
+- Mature, well-established framework
+- Supports all targets including `--interp`
+- Simpler API might be easier to understand
+- Used by many Haxe projects
+
+#### Conclusion:
+**Either framework would work equally well for our needs.** We're not using any unique features of tink_unittest that utest lacks. The choice is primarily about API preference and the fact that tink_unittest is already integrated and working.
+
+## Important Discoveries
+
+### 1. No Special Macro Testing Features Exist
+Neither tink_unittest nor utest provide special macro-time testing capabilities. Tests that need to access the real `ElixirCompiler` must:
+- Use `-D reflaxe_runtime` to make compiler code available
+- Run with `--interp` to execute during compilation
+- Use basic trace/try-catch instead of a framework
+
+### 2. Mock Testing Limitations
+Runtime tests (using either framework) can ONLY test mock implementations. The real compiler validation happens through:
+- Macro-time tests that instantiate the real compiler
+- Mix integration tests that compile actual code
+
+### 3. Framework Independence
+The project's testing architecture doesn't depend on any specific framework features. Migration between frameworks would be straightforward since we only use basic assertion and runner capabilities.
+
 ## References
 
 - [Architecture Documentation](ARCHITECTURE.md)
 - [tink_unittest Documentation](https://github.com/haxetink/tink_unittest)
+- [utest Documentation](https://github.com/haxe-utest/utest)
 - [Haxe Macro Documentation](https://haxe.org/manual/macro.html)

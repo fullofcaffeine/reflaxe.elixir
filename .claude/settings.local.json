@@ -80,7 +80,8 @@
       "Bash(grep:*)",
       "Bash(npm run test:*)",
       "mcp__shrimp-task-manager-global__delete_task",
-      "Bash(touch:*)"
+      "Bash(touch:*)",
+      "Bash(npx lix install:*)"
     ],
     "deny": []
   }
