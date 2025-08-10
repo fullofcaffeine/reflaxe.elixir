@@ -41,40 +41,40 @@ class UTestRunner {
         
         // Phase 2: Feature Tests
         trace("📋 Phase 2: Feature Tests");
-        // LiveView Tests
-        // runner.addCase(new LiveViewTestUTest());
-        // runner.addCase(new SimpleLiveViewTestUTest());
-        // runner.addCase(new LiveViewEndToEndTestUTest());
+        // LiveView Tests (MIGRATED)
+        runner.addCase(new LiveViewTestUTest());
+        runner.addCase(new SimpleLiveViewTestUTest());
+        runner.addCase(new LiveViewEndToEndTestUTest());
         
-        // OTP Tests (will eliminate timeout issues)
-        // runner.addCase(new OTPCompilerTestUTest());
-        // runner.addCase(new OTPRefactorTestUTest());
-        // runner.addCase(new OTPSimpleIntegrationTestUTest());
+        // OTP Tests (MIGRATED - timeout issues eliminated!)
+        runner.addCase(new OTPCompilerTestUTest());
+        runner.addCase(new OTPRefactorTestUTest());
+        runner.addCase(new OTPSimpleIntegrationTestUTest());
         
-        // Changeset Tests
-        // runner.addCase(new ChangesetCompilerWorkingTestUTest());
-        // runner.addCase(new ChangesetCompilerTestUTest());
-        // runner.addCase(new ChangesetRefactorTestUTest());
-        // runner.addCase(new ChangesetIntegrationTestUTest());
+        // Changeset Tests (MIGRATED - all 4 files complete!)
+        runner.addCase(new ChangesetCompilerWorkingTestUTest());
+        runner.addCase(new ChangesetCompilerTestUTest());
+        runner.addCase(new ChangesetRefactorTestUTest());
+        runner.addCase(new ChangesetIntegrationTestUTest());
         
-        // Migration Tests
-        // runner.addCase(new MigrationDSLTestUTest());
-        // runner.addCase(new MigrationRefactorTestUTest());
+        // Migration Tests (MIGRATED - Phase 3 complete!)
+        runner.addCase(new MigrationDSLTestUTest());
+        runner.addCase(new MigrationRefactorTestUTest());
         
         // Phase 3: Integration Tests
         trace("📋 Phase 3: Integration Tests");
-        // Pattern Matching
-        // runner.addCase(new PatternMatchingTestUTest());
-        // runner.addCase(new PatternIntegrationTestUTest());
-        // runner.addCase(new SimplePatternTestUTest());
+        // Pattern Matching (MIGRATED!)
+        runner.addCase(new PatternMatchingTestUTest());
+        runner.addCase(new PatternIntegrationTestUTest());
+        runner.addCase(new SimplePatternTestUTest());
         
-        // Module Tests
-        // runner.addCase(new ModuleSyntaxTestUTest());
-        // runner.addCase(new ModuleIntegrationTestUTest());
-        // runner.addCase(new ModuleRefactorTestUTest());
+        // Module Tests (MIGRATED!)
+        runner.addCase(new ModuleSyntaxTestUTest());
+        runner.addCase(new ModuleIntegrationTestUTest());
+        runner.addCase(new ModuleRefactorTestUTest());
         
-        // Query Tests
-        // runner.addCase(new EctoQueryTestUTest());
+        // Query Tests (STARTING MIGRATION)
+        runner.addCase(new EctoQueryTestUTest()); // Working on remaining null safety issues
         // runner.addCase(new EctoQueryCompilationTestUTest());
         // runner.addCase(new EctoQueryExpressionParsingTestUTest());
         // runner.addCase(new SimpleQueryCompilationTestUTest());

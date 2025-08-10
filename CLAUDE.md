@@ -183,7 +183,8 @@ cp -r reference/tink_unittest/* vendor/tink_unittest/
 
 ## Understanding Reflaxe.Elixir's Compilation Architecture ✅
 
-**For complete architectural details, see [`documentation/ARCHITECTURE.md`](documentation/ARCHITECTURE.md)**
+**For complete architectural details, see [`documentation/ARCHITECTURE.md`](documentation/ARCHITECTURE.md)**  
+**For testing architecture and why we use runtime mocks, see [`documentation/TESTING_ARCHITECTURE_COMPLETE.md`](documentation/TESTING_ARCHITECTURE_COMPLETE.md)**
 
 ### How Reflaxe.Elixir Actually Works
 

@@ -186,6 +186,16 @@ Implement Kent C. Dodds' Testing Trophy strategy following "Write tests. Not too
 - **Edge Case Handlers**: Input sanitization and error conditions
 - **Performance-Critical Code**: Functions with strict timing requirements
 - **Pure Functions**: No side effects, isolated calculations
+- **Compiler Components (SPECIAL CASE)**: For transpilers/compilers, increase to 40-50%
+  - Type mapping functions (Haxe types → target language types)
+  - AST transformation logic (pattern matching, expression compilation)
+  - Code generation templates (output formatting, syntax generation)
+  - Symbol resolution and scoping rules
+  - Optimization passes and transformations
+  - **Module DSL Components**: @:module syntax sugar validation (ModuleSyntaxTest, ModuleIntegrationTest, ModuleRefactorTest)
+  - **Pattern Matching**: Haxe switch/case → Elixir case expressions
+  - **Query DSL**: Ecto query compilation with schema integration
+  - *Compilers need more unit tests due to the complexity of transformations*
 - *Focus on components where bugs have high business impact*
 
 **End-to-End Tests (Minimal - High Value Only)**
@@ -237,7 +247,10 @@ Before marking any task complete:
 - [ ] E2E tests validate critical workflows (minimal but essential)
 - [ ] Performance benchmarks satisfied
 - [ ] "Resembles the way software is used" principle satisfied
-- [ ] **🚨 MANDATORY: ALL TESTS IN PROJECT PASS** - Run full test suite (`MIX_ENV=test mix test --no-deps-check`)
+- [ ] **🚨 MANDATORY: ALL TESTS IN PROJECT PASS** - Run dual-ecosystem test suite:
+  - **Haxe Tests**: `npx haxe TestUTest.hxml` (utest framework - 740+ tests)
+  - **Mix Tests**: `MIX_ENV=test mix test --no-deps-check` (Elixir runtime validation)
+  - **Example Tests**: `npm run test:examples` (all 9 examples compile)
 - [ ] **🚨 NO REGRESSIONS ALLOWED** - Every test that was passing before your changes must still pass
 - [ ] **🚨 ZERO TOLERANCE FOR BROKEN TESTS** - If any test fails, the task is NOT complete regardless of feature implementation
 - [ ] **🧠 AUTOMATIC MEMORY UPDATE** - Capture implementation details, performance metrics, test results, technical decisions, and integration points in CLAUDE.md
@@ -343,6 +356,13 @@ end
 - Maintain consistency with established architecture
 - Use proper error handling and edge case management
 - Implement logging and monitoring hooks where appropriate
+
+#### **Testing Framework Standards (Updated)**
+- **Haxe Compiler Tests**: Use `utest` framework (migrated from tink_unittest for better stability)
+- **Test Structure**: `extends Test` class pattern with `Assert.isTrue()`, `Assert.equals()` 
+- **Runtime Mocks**: For macro-time components (ElixirCompiler, helpers), use runtime mocks to simulate expected output
+- **Edge Case Coverage**: Implement 7-category edge case framework (error conditions, boundaries, security, performance, integration, type safety, resource management)
+- **Comprehensive Validation**: Each test group should justify its existence through risk mitigation and business impact prevention
 
 #### **Test Quality Standards**
 - Tests should be readable and maintainable
