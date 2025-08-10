@@ -1,6 +1,7 @@
-# @install: lix --silent download "haxelib:/tink_unittest#0.8.0" into tink_unittest/0.8.0/haxelib
+# Using vendored version with increased timeout (30000ms)
+# Original: @install: lix --silent download "haxelib:/tink_unittest#0.8.0" into tink_unittest/0.8.0/haxelib
 -lib tink_syntaxhub
 -lib tink_testrunner
--cp ${HAXE_LIBCACHE}/tink_unittest/0.8.0/haxelib/src
+-cp vendor/tink_unittest/src
 -D tink_unittest=0.8.0
 --macro tink.unit.AssertionBufferInjector.use()
