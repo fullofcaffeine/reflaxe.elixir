@@ -1,0 +1,1 @@
+--macro addGlobalMetadata('ANSI.Attribute', "@:native('ANSIAttribute')", false)
