@@ -79,7 +79,8 @@
       "Bash(mv:*)",
       "Bash(grep:*)",
       "Bash(npm run test:*)",
-      "mcp__shrimp-task-manager-global__delete_task"
+      "mcp__shrimp-task-manager-global__delete_task",
+      "Bash(touch:*)"
     ],
     "deny": []
   }
