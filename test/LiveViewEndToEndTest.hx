@@ -125,6 +125,9 @@ class LiveViewEndToEndTest {
         asserts.assert(duration > 0, "Should take measurable time for 100 compilations");
         asserts.assert(avgDuration < 15, 'Average compilation should be <15ms per module, was: ${Math.round(avgDuration)}ms');
         
+        // Add third assertion to avoid cross-test stream corruption bug
+        asserts.assert(true, "Framework workaround assertion");
+        
         return asserts.done();
     }
 }
