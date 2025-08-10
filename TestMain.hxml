@@ -4,5 +4,5 @@
 -lib utest
 -D reflaxe_runtime
 -D analyzer-optimize
--main test.UTestRunner
+-main test.TestRunner
 --interp

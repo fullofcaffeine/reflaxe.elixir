@@ -1,5 +1,8 @@
 package reflaxe.elixir.helpers;
 
+import haxe.macro.Expr;
+import haxe.macro.Expr.Constant;
+
 #if (macro || reflaxe_runtime)
 
 import reflaxe.elixir.helpers.NamingHelper;
@@ -106,12 +109,12 @@ class GuardCompiler {
     private function compileConstantGuard(guardExpr: Dynamic): String {
         var const = guardExpr.expr;
         
-        return switch (const.c) {
-            case CInt(v): Std.string(v);
-            case CFloat(f): Std.string(f);
-            case CString(s): '"${s}"';
-            case CBool(b): b ? "true" : "false";
-            case CNull: "nil";
+        return switch (const) {
+            case CInt(v, _): v;
+            case CFloat(f, _): f;
+            case CString(s, _): '"${s}"';
+            case CIdent(s): s;
+            case CRegexp(r, opt): '~r/${r}/${opt}';
             case _: "nil";
         }
     }

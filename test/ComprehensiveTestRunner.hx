@@ -25,9 +25,9 @@ using tink.CoreApi;
  * Usage:
  * - `npm test` - Run complete dual-ecosystem test suite (Haxe compiler + Elixir Mix tests)
  * - `npm run test:haxe` - Run only Haxe compiler tests (this runner)
- * - `npx haxe Test.hxml` - Direct execution (lix manages Haxe version)
- * - `npx haxe Test.hxml -D test-category=Features` - Filter by category  
- * - `npx haxe Test.hxml -D test-filter=LiveView` - Filter by specific feature
+ * - `npx haxe TestMain.hxml` - Direct execution (lix manages Haxe version)
+ * - `npx haxe TestMain.hxml -D test-category=Features` - Filter by category  
+ * - `npx haxe TestMain.hxml -D test-filter=LiveView` - Filter by specific feature
  */
 class ComprehensiveTestRunner {
     

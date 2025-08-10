@@ -6,9 +6,10 @@ import haxe.macro.Context;
 import haxe.macro.Type;
 import haxe.macro.Expr.Binop;
 import haxe.macro.Expr.Unop;
-import haxe.macro.Expr.Constant as TConstant;
+import haxe.macro.Expr;
+import haxe.macro.Expr.Constant;
 
-import reflaxe.DirectToStringCompiler;
+import reflaxe.BaseCompiler;
 import reflaxe.data.ClassFuncData;
 import reflaxe.data.ClassVarData;  
 import reflaxe.data.EnumOptionData;
@@ -35,7 +36,7 @@ using reflaxe.helpers.TypeHelper;
  * Reflaxe.Elixir compiler for generating Elixir code from Haxe
  * Supports Phoenix applications with gradual typing
  */
-class ElixirCompiler extends DirectToStringCompiler {
+class ElixirCompiler extends BaseCompiler {
     
     // File extension for generated Elixir files
     public var fileExtension: String = ".ex";
@@ -112,7 +113,7 @@ class ElixirCompiler extends DirectToStringCompiler {
         var tableName = config.table != null ? config.table : extractTableNameFromClassName(className);
         
         // Extract table operations from class variables and functions
-        var columns = varFields.map(field -> '${field.name}:${mapHaxeTypeToElixir(field.type)}');
+        var columns = varFields.map(field -> '${field.field.name}:${mapHaxeTypeToElixir(field.field.type)}');
         
         // Create migration data structure
         var migrationData = {
@@ -128,8 +129,8 @@ class ElixirCompiler extends DirectToStringCompiler {
         // Add custom migration functions if present in funcFields
         var customOperations = new Array<String>();
         for (func in funcFields) {
-            if (func.name.indexOf("migrate") == 0) {
-                var operationName = func.name.substring(7); // Remove "migrate" prefix
+            if (func.field.name.indexOf("migrate") == 0) {
+                var operationName = func.field.name.substring(7); // Remove "migrate" prefix
                 var customOperation = generateCustomMigrationOperation(operationName, tableName);
                 customOperations.push(customOperation);
             }
@@ -215,7 +216,7 @@ class ElixirCompiler extends DirectToStringCompiler {
         var schemaName = config.schema != null ? config.schema : "DefaultSchema";
         
         // Extract field information from class variables for validation
-        var fieldNames = varFields.map(field -> field.name);
+        var fieldNames = varFields.map(field -> field.field.name);
         
         // Generate comprehensive changeset with schema integration
         var changesetModule = reflaxe.elixir.helpers.ChangesetCompiler.compileFullChangeset(className, schemaName);
@@ -223,8 +224,8 @@ class ElixirCompiler extends DirectToStringCompiler {
         // Add custom validation functions if present in funcFields
         var customValidations = new Array<String>();
         for (func in funcFields) {
-            if (func.name.indexOf("validate") == 0) {
-                var validationName = func.name.substring(8); // Remove "validate" prefix
+            if (func.field.name.indexOf("validate") == 0) {
+                var validationName = func.field.name.substring(8); // Remove "validate" prefix
                 var customValidation = reflaxe.elixir.helpers.ChangesetCompiler.generateCustomValidation(
                     validationName, 
                     "field", 
@@ -253,8 +254,8 @@ class ElixirCompiler extends DirectToStringCompiler {
         var initialState = "%{";
         var stateFields = [];
         for (field in varFields) {
-            var fieldName = field.name;
-            var defaultValue = switch(field.type.toString()) {
+            var fieldName = field.field.name;
+            var defaultValue = switch(field.field.type.toString()) {
                 case "Int": "0";
                 case "String": '""';
                 case "Bool": "false";
@@ -437,9 +438,9 @@ class ElixirCompiler extends DirectToStringCompiler {
                 var fieldName = NamingHelper.toSnakeCase(enumField.name);
                 ':${fieldName}';
                 
-            case TCall(TField(_, FEnum(enumType, enumField)), args):
+            case TCall(e, args) if (isEnumFieldAccess(e)):
                 // Parameterized enum pattern: SomeEnum.Option(value) → {:option, value}
-                var fieldName = NamingHelper.toSnakeCase(enumField.name);
+                var fieldName = extractEnumFieldName(e);
                 if (args.length == 0) {
                     ':${fieldName}';
                 } else if (args.length == 1) {
@@ -535,17 +536,35 @@ class ElixirCompiler extends DirectToStringCompiler {
     }
     
     /**
+     * Helper: Check if expression is enum field access
+     */
+    private function isEnumFieldAccess(expr: TypedExpr): Bool {
+        return switch (expr.expr) {
+            case TField(_, FEnum(_, _)): true;
+            case _: false;
+        }
+    }
+    
+    /**
+     * Helper: Extract enum field name from TField expression
+     */
+    private function extractEnumFieldName(expr: TypedExpr): String {
+        return switch (expr.expr) {
+            case TField(_, FEnum(_, enumField)): NamingHelper.toSnakeCase(enumField.name);
+            case _: "unknown";
+        }
+    }
+    
+    /**
      * Helper: Compile constants to Elixir literals
      */
-    private function compileConstant(constant: TConstant): String {
+    private function compileConstant(constant: Constant): String {
         return switch (constant) {
-            case TInt(i): Std.string(i);
-            case TFloat(s): s;
-            case TString(s): '"${s}"';
-            case TBool(b): b ? "true" : "false";
-            case TNull: "nil";
-            case TThis: "self()"; // Will need context-specific handling
-            case TSuper: "super()"; // Will need context-specific handling
+            case CInt(i, _): i;
+            case CFloat(s, _): s;
+            case CString(s, _): '"${s}"';
+            case CIdent(s): s;
+            case CRegexp(r, opt): '~r/${r}/${opt}';
             case _: "nil";
         }
     }

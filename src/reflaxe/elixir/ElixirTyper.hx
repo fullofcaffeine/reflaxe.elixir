@@ -337,13 +337,13 @@ class ElixirTyper {
         }
         
         // Handle custom types - convert to module reference
-        if (haxeType.match(~/^[A-Z]/)) {
+        if (~/^[A-Z]/.match(haxeType)) {
             var moduleName = NamingHelper.getElixirModuleName(haxeType);
             return '${moduleName}.t()';
         }
         
         // Handle lowercase custom types (might be atoms or variables)
-        if (haxeType.match(~/^[a-z]/)) {
+        if (~/^[a-z]/.match(haxeType)) {
             return ':${haxeType}'; // Convert to atom
         }
         

@@ -1,47 +1,46 @@
 package test;
 
-import tink.unit.Assert.assert;
+import utest.Test;
+import utest.Assert;
 #if (macro || reflaxe_runtime)
 import reflaxe.elixir.helpers.OTPCompiler;
 #end
 
-using tink.CoreApi;
 using StringTools;
 
 /**
- * Modern OTP GenServer Test Suite with Comprehensive Edge Case Coverage
+ * Modern OTP GenServer Test Suite with Comprehensive Edge Case Coverage - Migrated to utest
  * 
  * Tests OTP GenServer compilation with @:genserver annotation support, lifecycle management,
  * supervision integration, and BEAM ecosystem compatibility following TDD methodology with
  * comprehensive edge case testing across all 7 categories for production robustness.
  * 
- * Using tink_unittest for modern Haxe testing patterns.
+ * Migration patterns applied:
+ * - @:asserts class → extends Test
+ * - asserts.assert() → Assert.isTrue() / Assert.equals()
+ * - return asserts.done() → (removed)
+ * - @:describe("name") → function testName() with descriptive names
+ * - @:timeout(ms) → @:timeout(ms) (kept same)
+ * - Preserved conditional compilation and runtime mocks
  */
-@:asserts
-class OTPCompilerTest {
+class OTPCompilerTest extends Test {
     
-    public function new() {}
-    
-    @:describe("@:genserver annotation detection")
-    public function testGenServerAnnotationDetection() {
+    function testGenServerAnnotationDetection() {
         #if !(macro || reflaxe_runtime)
         // Skip at runtime - OTPCompiler only exists at macro time
-        return asserts.done();
+        return;
         #end
         
         var className = "CounterServer";
         var isGenServer = OTPCompiler.isGenServerClass(className);
-        asserts.assert(isGenServer == true, "Should detect @:genserver annotated classes");
+        Assert.equals(true, isGenServer, "Should detect @:genserver annotated classes");
         
         var regularClass = "RegularClass";
         var isNotGenServer = OTPCompiler.isGenServerClass(regularClass);
-        asserts.assert(isNotGenServer == false, "Should not detect regular classes as GenServer");
-        
-        return asserts.done();
+        Assert.equals(false, isNotGenServer, "Should not detect regular classes as GenServer");
     }
     
-    @:describe("init/1 callback compilation")
-    public function testInitCallbackCompilation() {
+    function testInitCallbackCompilation() {
         var className = "CounterServer";
         var initialState = "%{count: 0}";
         
@@ -56,14 +55,11 @@ class OTPCompilerTest {
         ];
         
         for (pattern in expectedPatterns) {
-            asserts.assert(initCallback.indexOf(pattern) >= 0, 'Init callback should contain pattern: ${pattern}');
+            Assert.isTrue(initCallback.indexOf(pattern) >= 0, 'Init callback should contain pattern: ${pattern}');
         }
-        
-        return asserts.done();
     }
     
-    @:describe("handle_call/3 callback compilation")
-    public function testHandleCallCompilation() {
+    function testHandleCallCallbackCompilation() {
         var methodName = "getCount";
         var returnType = "Int";
         
@@ -78,26 +74,20 @@ class OTPCompilerTest {
         ];
         
         for (element in requiredElements) {
-            asserts.assert(handleCall.indexOf(element) >= 0, 'Handle call should contain element: ${element}');
+            Assert.isTrue(handleCall.indexOf(element) >= 0, 'Handle call should contain element: ${element}');
         }
-        
-        return asserts.done();
     }
     
-    @:describe("handle_cast/2 callback compilation")
-    public function testHandleCastCompilation() {
+    function testHandleCastCallbackCompilation() {
         var methodName = "increment";
         var stateModification = "Map.put(state, :count, state.count + 1)";
         
         var handleCast = OTPCompiler.compileHandleCast(methodName, stateModification);
-        asserts.assert(handleCast.indexOf("def handle_cast({:increment}, state) do") >= 0, "Should contain handle_cast definition");
-        asserts.assert(handleCast.indexOf("{:noreply, ") >= 0, "Handle cast should return {:noreply, new_state}");
-        
-        return asserts.done();
+        Assert.isTrue(handleCast.indexOf("def handle_cast({:increment}, state) do") >= 0, "Should contain handle_cast definition");
+        Assert.isTrue(handleCast.indexOf("{:noreply, ") >= 0, "Handle cast should return {:noreply, new_state}");
     }
     
-    @:describe("GenServer module generation")
-    public function testGenServerModuleGeneration() {
+    function testGenServerModuleGeneration() {
         var genServerClass = "CounterServer";
         
         // Generate complete Elixir GenServer module
@@ -116,38 +106,29 @@ class OTPCompilerTest {
         ];
         
         for (element in requiredElements) {
-            asserts.assert(generatedModule.indexOf(element) >= 0, 'GenServer module should contain: ${element}');
+            Assert.isTrue(generatedModule.indexOf(element) >= 0, 'GenServer module should contain: ${element}');
         }
-        
-        return asserts.done();
     }
     
-    @:describe("State management compilation")
-    public function testStateManagementCompilation() {
+    function testStateManagementCompilation() {
         var stateType = "Map";
         var initialValue = "%{count: 0, name: \"Counter\"}";
         
         var stateInit = OTPCompiler.compileStateInitialization(stateType, initialValue);
         var expectedInit = "{:ok, %{count: 0, name: \"Counter\"}}";
-        asserts.assert(stateInit == expectedInit, 'State init should be ${expectedInit}, got ${stateInit}');
-        
-        return asserts.done();
+        Assert.equals(expectedInit, stateInit, 'State init should be ${expectedInit}, got ${stateInit}');
     }
     
-    @:describe("Message pattern matching")
-    public function testMessagePatternMatching() {
+    function testMessagePatternMatching() {
         var messageName = "increment_by";
         var messageArgs = ["amount"];
         
         var messagePattern = OTPCompiler.compileMessagePattern(messageName, messageArgs);
         var expectedPattern = "{:increment_by, amount}";
-        asserts.assert(messagePattern == expectedPattern, 'Message pattern should be ${expectedPattern}, got ${messagePattern}');
-        
-        return asserts.done();
+        Assert.equals(expectedPattern, messagePattern, 'Message pattern should be ${expectedPattern}, got ${messagePattern}');
     }
     
-    @:describe("Full GenServer compilation pipeline integration")
-    public function testFullGenServerPipeline() {
+    function testFullGenServerCompilationPipelineIntegration() {
         // Simulate a complete @:genserver annotated class
         var genServerData = {
             className: "CounterServer",
@@ -181,26 +162,20 @@ class OTPCompilerTest {
         ];
         
         for (check in integrationChecks) {
-            asserts.assert(compiledModule.indexOf(check) >= 0, 'Integration check failed - missing: ${check}');
+            Assert.isTrue(compiledModule.indexOf(check) >= 0, 'Integration check failed - missing: ${check}');
         }
-        
-        return asserts.done();
     }
     
-    @:describe("Supervision tree integration")
-    public function testSupervisionIntegration() {
+    function testSupervisionTreeIntegration() {
         var genServerName = "CounterServer";
         var childSpec = OTPCompiler.generateChildSpec(genServerName);
         
         // Test child spec generation for supervisors
-        asserts.assert(childSpec.indexOf("CounterServer") >= 0, "Child spec should contain server name");
-        asserts.assert(childSpec.indexOf("{") >= 0, "Child spec should be a tuple format");
-        
-        return asserts.done();
+        Assert.isTrue(childSpec.indexOf("CounterServer") >= 0, "Child spec should contain server name");
+        Assert.isTrue(childSpec.indexOf("{") >= 0, "Child spec should be a tuple format");
     }
     
-    @:describe("GenServer compilation performance")
-    public function testCompilationPerformance() {
+    function testGenServerCompilationPerformance() {
         var startTime = haxe.Timer.stamp();
         
         // Simulate compiling 10 GenServer classes
@@ -219,64 +194,56 @@ class OTPCompilerTest {
         var avgTime = compilationTime / 10;
         
         // Performance target: <15ms compilation steps
-        asserts.assert(compilationTime > 0, "Should take measurable time");
-        asserts.assert(avgTime < 15, 'Average compilation should be <15ms, was: ${Math.round(avgTime)}ms');
-        
-        return asserts.done();
+        Assert.isTrue(compilationTime > 0, "Should take measurable time");
+        Assert.isTrue(avgTime < 15, 'Average compilation should be <15ms, was: ${Math.round(avgTime)}ms');
     }
     
     // ============================================================================
     // 7-Category Edge Case Framework Implementation (Following AdvancedEctoTest Pattern)
     // ============================================================================
     
-    @:describe("Error Conditions - Invalid GenServer Parameters")
-    public function testErrorConditions() {
+    function testErrorConditionsInvalidGenServerParameters() {
         // Test null/invalid inputs with proper error handling - CLEAN IMPLEMENTATION
         var nullResult = OTPCompiler.isGenServerClass(null);
-        asserts.assert(nullResult == false, "Should handle null class name gracefully");
+        Assert.equals(false, nullResult, "Should handle null class name gracefully");
         
         var emptyResult = OTPCompiler.isGenServerClass("");
-        asserts.assert(emptyResult == false, "Should handle empty class name gracefully");
+        Assert.equals(false, emptyResult, "Should handle empty class name gracefully");
         
         // Test malformed compilation data with safe defaults
         var safeInit = OTPCompiler.compileStateInitialization("Map", null);
-        asserts.assert(safeInit != null, "Should provide safe defaults for null state");
-        
-        return asserts.done();
+        Assert.notNull(safeInit, "Should provide safe defaults for null state");
     }
     
-    @:describe("Input Safety - Dangerous State")
-    @:timeout(45000) // FRAMEWORK WORKAROUND: Extended timeout to prevent tink_testrunner state corruption
-    public function testSecurityValidationStateInput() {
+    // NOTE: Removed @:timeout from these methods as utest handles timeouts differently
+    // and the tink_testrunner state corruption issue doesn't exist in utest
+    
+    function testInputSafetyDangerousState() {
         // Test dangerous state input
         var dangerousState = "%{code: system_cmd}";
         var stateResult = OTPCompiler.compileStateInitialization("Map", dangerousState);
-        asserts.assert(stateResult.indexOf("system") >= 0, "Should preserve input for parameterization safety");
+        Assert.isTrue(stateResult.indexOf("system") >= 0, "Should preserve input for parameterization safety");
         
         // Add second assertion to avoid timeout
         var normalState = "%{count: 0}";
         var normalResult = OTPCompiler.compileStateInitialization("Map", normalState);
-        asserts.assert(normalResult.indexOf("count") >= 0, "Should handle normal state");
-        return asserts.done();
+        Assert.isTrue(normalResult.indexOf("count") >= 0, "Should handle normal state");
     }
     
-    @:describe("Security Validation - Malicious Class Names")
-    public function testMaliciousClassNames() {
+    function testSecurityValidationMaliciousClassNames() {
         // Test malicious class name handling
         var maliciousName = "TestServer_DROP_TABLE_users";
         var safeResult = OTPCompiler.isGenServerClass(maliciousName);
-        asserts.assert(safeResult == true, "Should handle malicious class names safely");
+        Assert.equals(true, safeResult, "Should handle malicious class names safely");
         
         // Second assertion to match pattern of working tests
         var emptyName = "";
         var emptyResult = OTPCompiler.isGenServerClass(emptyName);
-        asserts.assert(emptyResult == false, "Should handle empty names safely");
-        return asserts.done();
+        Assert.equals(false, emptyResult, "Should handle empty names safely");
     }
     
-    @:describe("Performance Limits - Basic Compilation")
     @:timeout(15000) // Extended timeout for performance testing
-    public function testPerformanceLimits() {
+    function testPerformanceLimitsBasicCompilation() {
         // Simplified performance test to avoid computational complexity
         var startTime = haxe.Timer.stamp();
         
@@ -291,73 +258,60 @@ class OTPCompilerTest {
         var result = OTPCompiler.compileFullGenServer(genServerData);
         var duration = (haxe.Timer.stamp() - startTime) * 1000;
         
-        asserts.assert(result.indexOf("defmodule PerfTestGenServer") >= 0, "Should generate valid GenServer");
-        asserts.assert(duration < 50, 'Single compilation should be <50ms, was: ${Math.round(duration)}ms');
-        
-        return asserts.done();
+        Assert.isTrue(result.indexOf("defmodule PerfTestGenServer") >= 0, "Should generate valid GenServer");
+        Assert.isTrue(duration < 50, 'Single compilation should be <50ms, was: ${Math.round(duration)}ms');
     }
     
-    @:describe("Integration Robustness - Basic Integration")
-    @:timeout(10000) // Extended timeout for integration testing
-    public function testIntegrationRobustness() {
+    function testIntegrationRobustnessBasicIntegration() {
         // Simple integration test following reference patterns
         var serverName = "TestServer";
         var childSpec = OTPCompiler.generateChildSpec(serverName);
         
-        asserts.assert(childSpec.indexOf(serverName) >= 0, "Child spec should reference server name");
-        
-        return asserts.done();
+        Assert.isTrue(childSpec.indexOf(serverName) >= 0, "Child spec should reference server name");
     }
     
-    @:describe("Type Safety - Compile-Time Validation")
-    @:timeout(10000) // Extended timeout for type safety testing
-    public function testTypeSafety() {
+    function testTypeSafetyCompileTimeValidation() {
         // Test type consistency in callbacks
         var callMethod = OTPCompiler.compileHandleCall("get_count", "Int");
-        asserts.assert(callMethod.indexOf("handle_call") >= 0, "Should generate typed call handler");
+        Assert.isTrue(callMethod.indexOf("handle_call") >= 0, "Should generate typed call handler");
         
         var castMethod = OTPCompiler.compileHandleCast("increment", "Map.put(state, :count, state.count + 1)");
-        asserts.assert(castMethod.indexOf("handle_cast") >= 0, "Should generate typed cast handler");
+        Assert.isTrue(castMethod.indexOf("handle_cast") >= 0, "Should generate typed cast handler");
         
         // Test state type safety
         var typedInit = OTPCompiler.compileInitCallback("TypedServer", "%{count: 0, name: \"test\"}");
-        asserts.assert(typedInit.indexOf("{:ok,") >= 0, "Should return properly typed init result");
-        
-        return asserts.done();
+        Assert.isTrue(typedInit.indexOf("{:ok,") >= 0, "Should return properly typed init result");
     }
     
-    @:describe("Resource Management - Basic Efficiency")
-    public function testResourceManagement() {
+    function testResourceManagementBasicEfficiency() {
         // Simple resource test following reference patterns
         var module = OTPCompiler.generateGenServerModule("TestServer");
         
-        asserts.assert(module.length > 50, "Generated module should have reasonable content");
-        
-        return asserts.done();
+        Assert.isTrue(module.length > 50, "Generated module should have reasonable content");
     }
     
-    // REMOVED METHOD: Testing what happens when we eliminate the problematic method entirely
-    // to see if the timeout moves to the next method in execution order
-    
-    // === Mock OTPCompiler for Runtime Testing ===
-    // 
-    // IMPORTANT: Runtime vs Macro Time Dynamics
-    // 
-    // The real OTPCompiler class is wrapped in #if (macro || reflaxe_runtime) which means
-    // it only exists during compilation (macro time) when the actual Haxe→Elixir compilation happens.
-    // 
-    // However, tink_unittest tests run at RUNTIME after compilation is complete.
-    // This creates a problem: the test needs to verify OTPCompiler behavior, but OTPCompiler
-    // doesn't exist at runtime.
-    // 
-    // Solution: We create a complete mock OTPCompiler class for runtime testing
-    // This allows tests to run and validate expected behavior patterns without
-    // accessing the real macro-time compiler.
-    //
-    // The mock class is defined below the test class.
+    // NOTE: The original test had a comment about removing a problematic method entirely
+    // to see if the timeout moves to the next method. This is not needed in utest
+    // as it doesn't have the stream corruption issue that tink_testrunner had.
 }
 
 // Runtime Mock of OTPCompiler
+// 
+// IMPORTANT: Runtime vs Macro Time Dynamics
+// 
+// The real OTPCompiler class is wrapped in #if (macro || reflaxe_runtime) which means
+// it only exists during compilation (macro time) when the actual Haxe→Elixir compilation happens.
+// 
+// However, utest tests run at RUNTIME after compilation is complete.
+// This creates a problem: the test needs to verify OTPCompiler behavior, but OTPCompiler
+// doesn't exist at runtime.
+// 
+// Solution: We create a complete mock OTPCompiler class for runtime testing
+// This allows tests to run and validate expected behavior patterns without
+// accessing the real macro-time compiler.
+//
+// The mock class is defined below the test class.
+
 #if !(macro || reflaxe_runtime)
 class OTPCompiler {
     public static function isGenServerClass(className: String): Bool {
