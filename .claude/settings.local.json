@@ -85,7 +85,9 @@
       "Bash(sed:*)",
       "Bash(chmod:*)",
       "Bash(./rename_tests.sh)",
-      "WebFetch(domain:api.haxe.org)"
+      "WebFetch(domain:api.haxe.org)",
+      "Bash(./test/verify-elixir-output.sh:*)",
+      "Bash(./test/validate-compiler-output.sh:*)"
     ],
     "deny": []
   }

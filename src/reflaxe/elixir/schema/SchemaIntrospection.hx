@@ -4,6 +4,7 @@ package reflaxe.elixir.schema;
 
 import haxe.macro.Context;
 import haxe.macro.Type;
+import haxe.macro.Expr.ComplexType;
 import sys.FileSystem;
 import sys.io.File;
 
@@ -405,7 +406,11 @@ class SchemaIntrospection {
     
     static function getHaxeSchemaType(schemaName: String): Null<Type> {
         try {
-            return Context.getType(schemaName);
+            #if macro
+            return Context.resolveType(TPath({name: schemaName, pack: []}), Context.currentPos());
+            #else
+            return null;
+            #end
         } catch (e: Dynamic) {
             return null;
         }

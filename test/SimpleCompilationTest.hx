@@ -27,11 +27,11 @@ class SimpleCompilationTest {
             // Test 4: Test basic method calls (with null inputs - should handle gracefully)
             var classResult = compiler.compileClassImpl(null, [], []);
             var enumResult = compiler.compileEnumImpl(null, []);
-            var exprResult = compiler.compileExpressionImpl(null, false);
+            var exprResult = compiler.compileExpression(null, false);
             
             trace("compileClassImpl(null): " + (classResult == null ? "null (expected)" : "returned value"));
             trace("compileEnumImpl(null): " + (enumResult == null ? "null (expected)" : "returned value"));
-            trace("compileExpressionImpl(null): " + (exprResult == null ? "null (expected)" : "returned value"));
+            trace("compileExpression(null): " + (exprResult == null ? "null (expected)" : "returned value"));
             
             trace("✅ All basic tests passed!");
             

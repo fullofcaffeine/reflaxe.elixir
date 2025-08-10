@@ -2,6 +2,7 @@ package reflaxe.elixir.helpers;
 
 #if (macro || reflaxe_runtime)
 
+import haxe.macro.Type;
 import reflaxe.data.EnumOptionData;
 import reflaxe.elixir.ElixirTyper;
 import reflaxe.elixir.helpers.NamingHelper;
@@ -25,10 +26,10 @@ class EnumCompiler {
      * @param options Array of enum options/constructors
      * @return Generated Elixir module code
      */
-    public function compileEnum(enumType: Dynamic, options: Array<EnumOptionData>): String {
+    public function compileEnum(enumType: EnumType, options: Array<EnumOptionData>): String {
         if (enumType == null || options == null) return "";
         
-        var enumName = NamingHelper.getElixirModuleName(enumType.getNameOrNative());
+        var enumName = NamingHelper.getElixirModuleName(enumType.name);
         var result = new StringBuf();
         
         // Module definition with documentation
@@ -54,12 +55,13 @@ class EnumCompiler {
     /**
      * Generate module documentation
      */
-    private function generateModuleDoc(enumName: String, enumType: Dynamic): String {
+    private function generateModuleDoc(enumName: String, enumType: EnumType): String {
         var result = new StringBuf();
         result.add('  @moduledoc """\n');
         result.add('  ${enumName} enum generated from Haxe\n');
         
-        if (enumType.doc != null) {
+        // EnumType.doc field access
+        if (enumType.doc != null && enumType.doc.length > 0) {
             result.add('  \n');
             result.add('  ${enumType.doc}\n');
         }

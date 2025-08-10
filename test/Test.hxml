@@ -1,7 +1,11 @@
--cp src
+# Reflaxe.Elixir Test Runner Configuration
+# Based on Reflaxe.CPP and Reflaxe.CSharp testing patterns
+#
+# Usage:
+#   haxe test/Test.hxml                    # Run all tests
+#   haxe test/Test.hxml test=liveview      # Run specific test
+#   haxe test/Test.hxml update-intended    # Update expected output
+#   haxe test/Test.hxml help               # Show help
+
 -cp test
--lib reflaxe
--lib utest
--D reflaxe_runtime
--main test.IntegrationTest
---interp
+--run test.TestRunner

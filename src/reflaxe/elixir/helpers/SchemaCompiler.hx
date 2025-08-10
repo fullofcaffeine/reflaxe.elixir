@@ -23,6 +23,7 @@ using reflaxe.helpers.NameMetaHelper;
  * - Integration with SchemaIntrospection for compile-time validation
  * - Complete Ecto.Schema module generation with schema/2 macro calls
  */
+@:nullSafety(Off)
 class SchemaCompiler {
     
     /**

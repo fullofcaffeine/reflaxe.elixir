@@ -35,8 +35,7 @@ class CompilerInit {
             fileOutputType: FilePerModule,
             ignoreTypes: [],
             targetCodeInjectionName: "__elixir__",
-            ignoreBodilessFunctions: false,
-            manualDCE: true
+            ignoreBodilessFunctions: false
         });
     }
 }

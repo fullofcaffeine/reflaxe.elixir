@@ -5,4 +5,5 @@
 -D reflaxe_runtime
 -D analyzer-optimize
 -main test.TestRunner
---interp
+--python test-output/tests.py
+--cmd python3 test-output/tests.py

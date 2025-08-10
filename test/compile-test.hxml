@@ -1,0 +1,17 @@
+# Proper test configuration for ElixirCompiler
+# This compiles test Haxe files to Elixir using the compiler as a macro
+
+-cp test/fixtures
+-cp src
+
+# Include reflaxe library
+-lib reflaxe
+
+# Use the ElixirCompiler as a macro (correct approach)
+--macro reflaxe.elixir.CompilerInit.Start()
+
+# Output directory for generated Elixir files
+-D elixir_output=test-output/elixir
+
+# Compile a simple test class
+SimpleTestClass
