@@ -115,7 +115,7 @@ class PhoenixMapper {
      */
     public static function getPhoenixContextName(classType: ClassType): String {
         // Check for custom context name in metadata
-        var contextMeta = classType.getMeta(":context");
+        var contextMeta = classType.meta.extract(":context");
         if (contextMeta.length > 0 && contextMeta[0].params != null && contextMeta[0].params.length > 0) {
             switch (contextMeta[0].params[0].expr) {
                 case EConst(CString(s, _)): return s;

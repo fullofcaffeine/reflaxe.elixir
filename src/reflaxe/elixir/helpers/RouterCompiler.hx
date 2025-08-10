@@ -8,6 +8,8 @@ import haxe.macro.Type;
 import reflaxe.helpers.SyntaxHelper;
 import reflaxe.compiler.TargetCodeInjection;
 
+using StringTools;
+
 using reflaxe.helpers.NullableMetaAccessHelper;
 using reflaxe.helpers.TypeHelper;
 using reflaxe.helpers.NameMetaHelper;

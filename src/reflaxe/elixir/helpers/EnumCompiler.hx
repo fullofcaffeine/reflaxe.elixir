@@ -2,6 +2,7 @@ package reflaxe.elixir.helpers;
 
 #if (macro || reflaxe_runtime)
 
+import reflaxe.data.EnumOptionData;
 import reflaxe.elixir.ElixirTyper;
 import reflaxe.elixir.helpers.NamingHelper;
 import reflaxe.elixir.helpers.FormatHelper;
@@ -24,7 +25,7 @@ class EnumCompiler {
      * @param options Array of enum options/constructors
      * @return Generated Elixir module code
      */
-    public function compileEnum(enumType: Dynamic, options: Array<Dynamic>): String {
+    public function compileEnum(enumType: Dynamic, options: Array<EnumOptionData>): String {
         if (enumType == null || options == null) return "";
         
         var enumName = NamingHelper.getElixirModuleName(enumType.getNameOrNative());
@@ -37,7 +38,7 @@ class EnumCompiler {
         // Generate @type definition with proper types
         result.add(generateTypeDefinition(options));
         
-        // Generate constructor functions
+        // Generate constructor functions  
         for (option in options) {
             result.add(generateConstructorFunction(option));
         }
@@ -73,7 +74,7 @@ class EnumCompiler {
     /**
      * Generate @type definition with proper ElixirTyper integration
      */
-    private function generateTypeDefinition(options: Array<Dynamic>): String {
+    private function generateTypeDefinition(options: Array<EnumOptionData>): String {
         var result = new StringBuf();
         result.add('  @type t() ::\n');
         
@@ -154,7 +155,7 @@ class EnumCompiler {
     /**
      * Generate utility functions for pattern matching and introspection
      */
-    private function generateUtilityFunctions(options: Array<Dynamic>): String {
+    private function generateUtilityFunctions(options: Array<EnumOptionData>): String {
         var result = new StringBuf();
         
         // is_* predicate functions for each variant

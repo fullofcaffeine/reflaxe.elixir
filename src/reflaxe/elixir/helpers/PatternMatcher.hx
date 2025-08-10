@@ -2,6 +2,9 @@ package reflaxe.elixir.helpers;
 
 #if (macro || reflaxe_runtime)
 
+import haxe.macro.Expr;
+import haxe.macro.Expr.Constant;
+import haxe.macro.Type;
 import reflaxe.elixir.helpers.NamingHelper;
 import reflaxe.elixir.helpers.FormatHelper;
 
@@ -222,13 +225,13 @@ class PatternMatcher {
     private function compileConstantPattern(patternExpr: Dynamic): String {
         var const = patternExpr.expr;
         
-        return switch (const.c) {
-            case CInt(v): Std.string(v);
-            case CFloat(f): Std.string(f);
-            case CString(s): '"${s}"';
-            case CBool(b): b ? "true" : "false";
-            case CNull: "nil";
-            case _: "nil";
+        return switch (const) {
+            case CInt(v, _): v;
+            case CFloat(f, _): f;
+            case CString(s, _): '"${s}"';
+            case CIdent(s): s;
+            case CRegexp(r, opt): '~r/${r}/${opt}';
+            case _: "nil"; // Handle other constants later
         }
     }
     

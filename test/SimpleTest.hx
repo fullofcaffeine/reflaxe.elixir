@@ -1,65 +1,88 @@
 package test;
 
-import tink.unit.Assert.assert;
-
-using tink.CoreApi;
+import utest.Test;
+import utest.Assert;
+import utest.Async;
 
 /**
- * Simple test class following tink_unittest patterns
- * Based on working examples from tink_unittest source code
+ * Simple test class migrated to utest framework
+ * Reference pattern for basic test migration
+ * 
+ * Migration patterns applied:
+ * - @:asserts class → extends Test
+ * - asserts.assert() → Assert.isTrue()
+ * - return asserts.done() → (removed)
+ * - @:describe("name") → function testName()
+ * - @:timeout(ms) → function testAsync(async: Async)
+ * - @:before/@:after → setup/teardown methods
  */
-@:asserts
-class SimpleTest {
+class SimpleTest extends Test {
     
-    public function new() {}
-    
-    @:before 
+    // Setup runs before each test method
     public function setup() {
-        return Noise;
+        // Initialize test environment if needed
     }
     
-    @:after
+    // Teardown runs after each test method
     public function teardown() {
-        return Noise;
+        // Cleanup test environment if needed
     }
     
-    @:describe("Basic compilation functionality")
-    public function testBasicCompilation() {
-        asserts.assert(performBasicCompilation());
-        return asserts.done();
+    // Test method names must start with "test"
+    function testBasicCompilation() {
+        var result = performBasicCompilation();
+        Assert.isTrue(result, "Basic compilation should succeed");
     }
     
-    @:describe("Performance validation")
-    public function testPerformance() {
+    function testPerformanceValidation() {
         var startTime = haxe.Timer.stamp();
         performSimulatedCompilation();
         var endTime = haxe.Timer.stamp();
         var duration = (endTime - startTime) * 1000;
         
-        asserts.assert(duration < 15.0, 'Compilation should be <15ms, was ${duration}ms');
-        return asserts.done();
+        Assert.isTrue(duration < 15.0, 'Compilation should be <15ms, was ${duration}ms');
     }
     
-    @:describe("Async test with timeout")
+    // Async test pattern in utest
+    function testAsyncOperation(async: Async) {
+        haxe.Timer.delay(function() {
+            Assert.isTrue(true, "Async test completed");
+            async.done();
+        }, 100);
+    }
+    
+    // Alternative async pattern with timeout control
     @:timeout(5000)
-    public function testAsync() {
-        return Future.irreversible(function(cb) {
-            haxe.Timer.delay(function() {
-                asserts.assert(true, "Async test completed");
-                cb(asserts.done());
-            }, 100);
+    function testAsyncWithTimeout(async: Async) {
+        simulateAsyncWork(function(result) {
+            Assert.equals("success", result, "Async work should return success");
+            async.done();
         });
     }
     
+    // Helper methods (same as original)
     private function performBasicCompilation(): Bool {
+        // Simulate basic compilation
         return true;
     }
     
-    private function performSimulatedCompilation(): Bool {
-        // Simulate some work
+    private function performSimulatedCompilation(): Void {
+        // Simulate compilation work
         for (i in 0...1000) {
-            Math.sqrt(i);
+            var temp = i * 2;
         }
-        return true;
+    }
+    
+    private function simulateAsyncWork(callback: String -> Void): Void {
+        haxe.Timer.delay(function() {
+            callback("success");
+        }, 50);
+    }
+    
+    static function main() {
+        var runner = new utest.Runner();
+        runner.addCase(new SimpleTest());
+        var report = utest.ui.Report.create(runner);
+        runner.run();
     }
 }

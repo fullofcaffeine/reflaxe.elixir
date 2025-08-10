@@ -22,11 +22,11 @@
   "scripts": {
     "postinstall": "lix download",
     "test": "echo '🧪 === COMPREHENSIVE REFLAXE.ELIXIR TEST SUITE ===' && npm run test:haxe && npm run test:examples && npm run test:mix && echo '🎉 ALL TESTS PASSING!'",
-    "test:haxe": "echo '📋 Testing Haxe→Elixir Compiler...' && npx haxe Test.hxml",
+    "test:haxe": "echo '📋 Testing Haxe→Elixir Compiler...' && npx haxe TestMain.hxml",
     "test:examples": "echo '📋 Testing All 9 Examples Compilation...' && npx haxe SimpleExampleTest.hxml",
     "test:mix": "echo '📋 Testing Generated Elixir Code & Mix Tasks...' && MIX_ENV=test mix test --no-deps-check",
     "test:core": "echo '📋 Core extern tests...' && npx haxe test/FinalExternTest.hxml && npx haxe test/CompilationOnlyTest.hxml && npx haxe test/TestWorkingExterns.hxml",
-    "test:modern": "echo '📋 Modern tink_unittest infrastructure...' && npx haxe SimpleTest.hxml",
+    "test:modern": "echo '📋 Modern test infrastructure...' && npx haxe TestMain.hxml",
     "test:comprehensive": "echo '📋 Comprehensive Testing with Examples...' && npx haxe ExampleTest.hxml",
     "test:protocols": "echo '🔄 Testing Protocol System...' && npx haxe ProtocolTest.hxml",
     "test:performance": "echo '⚡ Performance Benchmarking Examples...' && npx haxe ExamplePerformanceTest.hxml",
@@ -34,7 +34,7 @@
     "examples:benchmark": "npm run test:performance",
     "compile": "npx haxe build.hxml",
     "clean": "rm -rf _build && rm -rf out && find examples -name 'output' -type d -exec rm -rf {} + 2>/dev/null || true",
-    "setup": "lix scope create && lix install haxelib:reflaxe && lix install haxelib:tink_unittest && lix install haxelib:tink_testrunner && npm run postinstall",
+    "setup": "lix scope create && lix install haxelib:reflaxe && lix install haxelib:utest && npm run postinstall",
     "dev": "npm run test:modern"
   },
   "engines": {
