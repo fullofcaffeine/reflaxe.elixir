@@ -42,19 +42,23 @@ class ChangesetCompiler {
      * Compile single validation rule to Ecto.Changeset function call
      */
     public static function compileValidation(field: String, rule: String): String {
-        return switch (rule) {
+        // Sanitize field name to prevent injection
+        var safeField = sanitizeFieldName(field);
+        var safeRule = sanitizeRuleName(rule);
+        
+        return switch (safeRule) {
             case "required":
-                'validate_required(changeset, [:${field}])';
+                'validate_required(changeset, [:${safeField}])';
             case "format":
-                'validate_format(changeset, :${field}, ~r/@/)';
+                'validate_format(changeset, :${safeField}, ~r/@/)';
             case "email":
-                'validate_format(changeset, :${field}, ~r/@/)';
+                'validate_format(changeset, :${safeField}, ~r/@/)';
             case "number":
-                'validate_number(changeset, :${field})';
+                'validate_number(changeset, :${safeField})';
             case "length":
-                'validate_length(changeset, :${field}, min: 2, max: 100)';
+                'validate_length(changeset, :${safeField}, min: 2, max: 100)';
             default:
-                'validate_${rule}(changeset, :${field})';
+                'validate_${safeRule}(changeset, :${safeField})';
         }
     }
     
@@ -107,7 +111,14 @@ class ChangesetCompiler {
      * Compile cast fields list into Elixir atom list syntax
      */
     public static function compileCastFields(fieldNames: Array<String>): String {
-        var atoms = fieldNames.map(name -> ':$name');
+        // Handle null/empty arrays gracefully
+        if (fieldNames == null || fieldNames.length == 0) {
+            return "[]";
+        }
+        
+        // Sanitize field names to prevent injection attacks
+        var sanitizedFields = fieldNames.map(name -> sanitizeFieldName(name));
+        var atoms = sanitizedFields.map(name -> ':$name');
         return '[${atoms.join(", ")}]';
     }
     
@@ -208,6 +219,85 @@ class ChangesetCompiler {
             "|> validate_format(:email, ~r/@/)",
             '|> validate_format(:email, ~r/@/)\n    |> ${associationCasts}'
         );
+    }
+    
+    // ============================================================================
+    // Security Sanitization Utilities
+    // ============================================================================
+    
+    /**
+     * Sanitize field names to prevent injection attacks while preserving valid identifiers
+     */
+    private static function sanitizeFieldName(fieldName: String): String {
+        if (fieldName == null || fieldName == "") {
+            return "safe_field";
+        }
+        
+        // Remove dangerous patterns
+        var clean = fieldName;
+        
+        // Remove SQL injection patterns
+        clean = clean.split("';").join("");
+        clean = clean.split("--").join("");
+        clean = clean.split("DROP TABLE").join("");
+        clean = clean.split("DELETE FROM").join("");
+        clean = clean.split("INSERT INTO").join("");
+        clean = clean.split("UPDATE SET").join("");
+        
+        // Remove script injection patterns  
+        clean = clean.split("<script>").join("");
+        clean = clean.split("</script>").join("");
+        clean = clean.split("alert(").join("");
+        clean = clean.split("System.cmd").join("");
+        clean = clean.split("rm -rf").join("");
+        
+        // Keep only valid Elixir atom characters: letters, numbers, underscore
+        var safe = "";
+        for (i in 0...clean.length) {
+            var c = clean.charAt(i);
+            if ((c >= "a" && c <= "z") || 
+                (c >= "A" && c <= "Z") || 
+                (c >= "0" && c <= "9") || 
+                c == "_") {
+                safe += c;
+            }
+        }
+        
+        // Ensure we have a valid identifier
+        if (safe.length == 0 || (safe.charAt(0) >= "0" && safe.charAt(0) <= "9")) {
+            return "safe_field";
+        }
+        
+        return safe;
+    }
+    
+    /**
+     * Sanitize validation rule names
+     */
+    private static function sanitizeRuleName(ruleName: String): String {
+        if (ruleName == null || ruleName == "") {
+            return "required";
+        }
+        
+        // Remove dangerous patterns
+        var clean = ruleName;
+        clean = clean.split("';").join("");
+        clean = clean.split("--").join("");
+        clean = clean.split("System.").join("");
+        
+        // Keep only valid rule name characters
+        var safe = "";
+        for (i in 0...clean.length) {
+            var c = clean.charAt(i);
+            if ((c >= "a" && c <= "z") || 
+                (c >= "A" && c <= "Z") || 
+                (c >= "0" && c <= "9") || 
+                c == "_") {
+                safe += c;
+            }
+        }
+        
+        return safe.length > 0 ? safe : "required";
     }
 }
 
