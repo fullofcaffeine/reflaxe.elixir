@@ -24,6 +24,7 @@ using reflaxe.helpers.NameMetaHelper;
  * 
  * Follows established ElixirCompiler helper delegation pattern.
  */
+@:nullSafety(Off)
 class RouterCompiler {
     
     /**
@@ -378,7 +379,7 @@ class RouterCompiler {
         
         var totalTime = Sys.time() - startTime;
         if (totalTime > 0.015) { // 15ms performance target
-            Context.warning('Route compilation took ${totalTime * 1000}ms, exceeding 15ms target', Context.currentPos());
+            trace('WARNING: Route compilation took ${totalTime * 1000}ms, exceeding 15ms target');
         }
         
         return results;

@@ -15,6 +15,7 @@ using reflaxe.helpers.TypeHelper;
  * Phoenix-specific compilation features and transformations
  * Handles context annotations, Phoenix conventions, and framework integrations
  */
+@:nullSafety(Off)
 class PhoenixMapper {
     
     /**

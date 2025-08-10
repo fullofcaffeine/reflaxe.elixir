@@ -13,6 +13,7 @@
 
 **MUST READ BEFORE WRITING CODE**:
 - [Understanding Reflaxe.Elixir's Compilation Architecture](#understanding-reflaxeelixirs-compilation-architecture-) - How the transpiler actually works
+- [Critical: Macro-Time vs Runtime](#critical-macro-time-vs-runtime-) - THE MOST IMPORTANT CONCEPT TO UNDERSTAND
 - [tink_unittest/tink_testrunner Timeout Management](#tink_unittesttink_testrunner-timeout-management-guidelines-) - Avoiding test timeouts
 - [Architecture Summary for Future Development](#architecture-summary-for-future-development) - Testing strategy and best practices
 
@@ -243,6 +244,110 @@ Haxe Source (.hx)
 - **ElixirCompiler receives TypedExpr** as input (fully typed AST)
 - **Transpilation happens at macro-time** via Context.onAfterTyping
 - **No runtime component exists** - the transpiler disappears after compilation
+
+## Critical: Macro-Time vs Runtime ⚠️
+
+### THE FUNDAMENTAL DISTINCTION
+
+**This is the #1 cause of confusion when working with Reflaxe compilers:**
+
+```haxe
+// MACRO-TIME: During Haxe compilation
+#if macro
+class ElixirCompiler extends BaseCompiler {
+    // This class ONLY exists while Haxe is compiling
+    // It transforms AST → Elixir code
+    // Then it DISAPPEARS
+}
+#end
+
+// RUNTIME: After compilation, when tests/code runs
+class MyTest {
+    function test() {
+        // ElixirCompiler DOES NOT EXIST HERE
+        // It already did its job and vanished
+        var compiler = new ElixirCompiler(); // ❌ ERROR: Type not found
+    }
+}
+```
+
+### The Two Phases Explained
+
+#### Phase 1: MACRO-TIME (Compilation)
+```
+When: While running `haxe build.hxml`
+What exists: ElixirCompiler, all macro classes
+What happens: 
+  1. Haxe parses your .hx files
+  2. Haxe creates TypedExpr AST
+  3. ElixirCompiler receives AST
+  4. ElixirCompiler generates .ex files
+  5. Compilation ends, ElixirCompiler disappears
+```
+
+#### Phase 2: RUNTIME (Execution)
+```
+When: While running tests or compiled code
+What exists: Your regular classes, NOT compiler classes
+What happens:
+  1. Test framework starts
+  2. Tests execute
+  3. ElixirCompiler is GONE - it doesn't exist
+  4. Any attempt to use it fails
+```
+
+### Common Error: TypeTools.iter
+
+**If you see this error:**
+```
+Class<haxe.macro.TypeTools> has no field iter
+```
+
+**It means:** You're trying to run macro-time code at runtime!
+
+**The cause:** Test configuration using `--interp` to run tests that try to instantiate the compiler
+
+**The fix:** 
+1. Don't use `--interp` for compiler testing
+2. Use `--macro` to invoke the compiler during compilation
+3. Test the generated output, not the compiler itself
+
+### Correct Test Approaches
+
+#### ❌ WRONG: Runtime instantiation
+```hxml
+# test.hxml - WRONG
+-cp src
+-cp test
+-lib reflaxe
+-main TestClass
+--interp  # ← Runs at runtime, compiler doesn't exist!
+```
+
+#### ✅ RIGHT: Compilation testing
+```hxml
+# compile-test.hxml - RIGHT
+-cp test-src
+-lib reflaxe.elixir
+--macro reflaxe.elixir.CompilerInit.Start()  # ← Runs at macro-time
+-D elixir_output=test-output
+TestClass  # ← Compiles to Elixir, doesn't run
+```
+
+### Why This Architecture is Correct
+
+1. **Separation of Concerns**: Transpiler transforms code, tests validate output
+2. **Performance**: Compiler runs once during build, not repeatedly during tests
+3. **Correctness**: Tests validate actual generated Elixir code, not mocks
+4. **Standard Practice**: All Reflaxe targets work this way
+
+### Key Takeaways for Development
+
+1. **Never try to instantiate ElixirCompiler in tests** - it doesn't exist at runtime
+2. **Test the OUTPUT** - compile Haxe to Elixir, then validate the .ex files
+3. **Use Mix tests** - they test that generated Elixir actually works
+4. **Runtime mocks are OK** - they simulate expected compiler behavior for unit tests
+5. **The TypeTools.iter error** = wrong test configuration, not API incompatibility
 
 ### Testing Architecture
 

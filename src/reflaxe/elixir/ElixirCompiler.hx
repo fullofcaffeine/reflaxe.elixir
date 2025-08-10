@@ -4,6 +4,9 @@ package reflaxe.elixir;
 
 import haxe.macro.Context;
 import haxe.macro.Type;
+import haxe.macro.Type.TConstant;
+import haxe.macro.Type.AbstractType;
+import haxe.macro.Type.DefType;
 import haxe.macro.Expr.Binop;
 import haxe.macro.Expr.Unop;
 import haxe.macro.Expr;
@@ -255,7 +258,7 @@ class ElixirCompiler extends BaseCompiler {
         var stateFields = [];
         for (field in varFields) {
             var fieldName = field.field.name;
-            var defaultValue = switch(field.field.type.toString()) {
+            var defaultValue = switch(Std.string(field.field.type)) {
                 case "Int": "0";
                 case "String": '""';
                 case "Bool": "false";
@@ -317,18 +320,44 @@ class ElixirCompiler extends BaseCompiler {
     }
     
     /**
-     * Compile Haxe expressions to Elixir expressions
+     * Compile expression - required by BaseCompiler (implements abstract method)
      */
     public function compileExpressionImpl(expr: TypedExpr, topLevel: Bool): Null<String> {
+        return compileExpression(expr, topLevel);
+    }
+    
+    /**
+     * Compile abstract types - currently not fully supported
+     */
+    public override function compileAbstract(classType: AbstractType): Null<String> {
+        // TODO: Implement abstract type compilation
+        trace('# Abstract type ${classType.name} not yet fully supported');
+        return null;
+    }
+    
+    /**
+     * Compile typedef - map to Elixir type aliases
+     */
+    public override function compileTypedef(defType: DefType): Null<String> {
+        // TODO: Implement typedef compilation
+        trace('# Typedef ${defType.name} not yet fully supported');
+        return null;
+    }
+    
+    
+    /**
+     * Compile Haxe expressions to Elixir expressions
+     */
+    public override function compileExpression(expr: TypedExpr, topLevel: Bool = false): Null<String> {
         if (expr == null) return null;
         
         // Comprehensive expression compilation
         return switch (expr.expr) {
             case TConst(constant):
-                compileConstant(constant);
+                compileTConstant(constant);
                 
             case TLocal(v):
-                NamingHelper.toSnakeCase(v.getNameOrNative());
+                NamingHelper.toSnakeCase(v.name);
                 
             case TBinop(op, e1, e2):
                 compileExpression(e1) + " " + compileBinop(op) + " " + compileExpression(e2);
@@ -348,10 +377,10 @@ class ElixirCompiler extends BaseCompiler {
                 compileFieldAccess(e, fa);
                 
             case TCall(e, el):
-                compileExpression(e) + "(" + el.map(compileExpression).join(", ") + ")";
+                compileExpression(e) + "(" + el.map(expr -> compileExpression(expr)).join(", ") + ")";
                 
             case TArrayDecl(el):
-                "[" + el.map(compileExpression).join(", ") + "]";
+                "[" + el.map(expr -> compileExpression(expr)).join(", ") + "]";
                 
             case TObjectDecl(fields):
                 "%{" + fields.map(f -> f.name + ": " + compileExpression(f.expr)).join(", ") + "}";
@@ -453,7 +482,7 @@ class ElixirCompiler extends BaseCompiler {
                 
             case TConst(constant):
                 // Literal constants in switch
-                compileConstant(constant);
+                compileTConstant(constant);
                 
             case _:
                 // Fallback - compile as regular expression
@@ -468,11 +497,11 @@ class ElixirCompiler extends BaseCompiler {
         return switch (expr.expr) {
             case TLocal(v):
                 // Variable binding in pattern
-                NamingHelper.toSnakeCase(v.getNameOrNative());
+                NamingHelper.toSnakeCase(v.name);
                 
             case TConst(constant):
                 // Literal in pattern
-                compileConstant(constant);
+                compileTConstant(constant);
                 
             case _:
                 // Wildcard or complex pattern
@@ -507,7 +536,7 @@ class ElixirCompiler extends BaseCompiler {
         // Build parameter list
         var params = [];
         for (arg in funcField.args) {
-            params.push(NamingHelper.toSnakeCase(arg.name));
+            params.push(NamingHelper.toSnakeCase(arg.name != null ? arg.name : "arg"));
         }
         
         var paramStr = params.join(", ");
@@ -516,7 +545,7 @@ class ElixirCompiler extends BaseCompiler {
         
         if (funcField.expr != null) {
             result += '    # TODO: Compile function body\n';
-            result += '    # ${funcField.expr.toString()}\n';
+            result += '    # ${Std.string(funcField.expr)}\n';
         }
         
         result += '    :ok\n';
@@ -565,6 +594,22 @@ class ElixirCompiler extends BaseCompiler {
             case CString(s, _): '"${s}"';
             case CIdent(s): s;
             case CRegexp(r, opt): '~r/${r}/${opt}';
+            case _: "nil";
+        }
+    }
+    
+    /**
+     * Helper: Compile TConstant (typed constants) to Elixir literals
+     */
+    private function compileTConstant(constant: TConstant): String {
+        return switch (constant) {
+            case TInt(i): Std.string(i);
+            case TFloat(s): s;
+            case TString(s): '"${s}"';
+            case TBool(b): b ? "true" : "false";
+            case TNull: "nil";
+            case TThis: "self()"; // Will need context-specific handling
+            case TSuper: "super()"; // Will need context-specific handling
             case _: "nil";
         }
     }
@@ -638,9 +683,9 @@ class ElixirCompiler extends BaseCompiler {
     }
     
     /**
-     * Override formatExpressionLine for Elixir syntax requirements
+     * Format expression line for Elixir syntax requirements
      */
-    override function formatExpressionLine(expr: String): String {
+    public override function formatExpressionLine(expr: String): String {
         // Elixir doesn't need semicolons, but we might want other formatting
         return expr;
     }

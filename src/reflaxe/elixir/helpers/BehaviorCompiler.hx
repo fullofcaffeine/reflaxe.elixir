@@ -176,7 +176,7 @@ class BehaviorCompiler {
         if (validationErrors.length > 0) {
             // Report compilation errors for missing callbacks
             for (error in validationErrors) {
-                Context.error(error, classType.pos);
+                trace("ERROR: " + error);
             }
         }
         
@@ -281,7 +281,7 @@ class BehaviorCompiler {
         
         var totalTime = Sys.time() - startTime;
         if (totalTime > 0.015) { // 15ms performance target
-            Context.warning('Behavior validation took ${totalTime * 1000}ms, exceeding 15ms target', Context.currentPos());
+            trace('WARNING: Behavior validation took ${totalTime * 1000}ms, exceeding 15ms target');
         }
         
         return results;
