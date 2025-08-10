@@ -105,7 +105,7 @@ class TemplateCompiler {
      * This will be added to the global scope for template compilation
      */
     public static function generateHxxFunction(): String {
-        return '''
+        return "
         /**
          * Template string processor macro
          * Converts Haxe template strings to Phoenix HEEx format
@@ -114,9 +114,9 @@ class TemplateCompiler {
             return switch (templateStr.expr) {
                 case EConst(CString(s, _)):
                     var processed = processTemplateString(s);
-                    macro $v{processed};
+                    macro \\$v{processed};
                 case _:
-                    Context.error("hxx() expects a string literal", templateStr.pos);
+                    Context.error(\"hxx() expects a string literal\", templateStr.pos);
             }
         }
         
@@ -124,11 +124,11 @@ class TemplateCompiler {
          * Process template string at compile time
          */
         static function processTemplateString(template: String): String {
-            // Convert Haxe ${} interpolation to Elixir #{} interpolation
+            // Convert Haxe \\${} interpolation to Elixir #{} interpolation
             var processed = template;
             
-            // Handle Haxe string interpolation: ${expr} -> #{expr}
-            processed = ~/\\$\\{([^}]+)\\}/g.replace(processed, "#{$1}");
+            // Handle Haxe string interpolation: \\${expr} -> #{expr}
+            processed = ~/\\\\\\$\\\\\\{([^}]+)\\\\\\}/g.replace(processed, \"#{\\$1}\");
             
             // Handle Phoenix component syntax: <.button> stays as <.button>
             // This is already valid HEEx syntax
@@ -145,20 +145,20 @@ class TemplateCompiler {
          */
         static function processConditionals(template: String): String {
             // Convert Haxe ternary to Elixir if/else
-            // ${condition ? "true_value" : "false_value"} -> <%= if condition, do: "true_value", else: "false_value" %>
-            var ternaryPattern = ~/\\#\\{([^?]+)\\?([^:]+):([^}]+)\\}/g;
-            return ternaryPattern.replace(template, '<%= if $1, do: $2, else: $3 %>');
+            // \\${condition ? \"true_value\" : \"false_value\"} -> <%= if condition, do: \"true_value\", else: \"false_value\" %>
+            var ternaryPattern = ~/\\\\\\#\\\\\\{([^?]+)\\\\\\?([^:]+):([^}]+)\\\\\\}/g;
+            return ternaryPattern.replace(template, '<%=if \\$1, do: \\$2, else: \\$3 %>');
         }
         
         /**
          * Process loop patterns (simplified)
          */
         static function processLoops(template: String): String {
-            // Handle map operations: ${array.map(func).join("")} -> <%= for item <- array do %><%= func(item) %><% end %>
+            // Handle map operations: \\${array.map(func).join(\"\")} -> <%= for item <- array do %><%= func(item) %><% end %>
             // This is a simplified version - full implementation would need more sophisticated parsing
             return template;
         }
-        ''';
+        ";
     }
 }
 

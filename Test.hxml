@@ -4,14 +4,14 @@
 
 -cp src
 -cp test
+-cp std
 -lib reflaxe
--lib tink_unittest 
--lib tink_testrunner
+-lib utest
 -D reflaxe_runtime
 
-# Run comprehensive test runner that includes:
+# Run utest-based test runner that includes:
 # - Core extern definition tests
-# - Modern tink_unittest tests with performance validation
+# - Modern utest framework with timeout elimination
 # - Feature-based test organization
---main test.ComprehensiveTestRunner
+--main test.TestRunner
 --interp

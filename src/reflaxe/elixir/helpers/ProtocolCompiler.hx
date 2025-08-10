@@ -11,6 +11,7 @@ import reflaxe.compiler.TargetCodeInjection;
 using reflaxe.helpers.NullableMetaAccessHelper;
 using reflaxe.helpers.TypeHelper;
 using reflaxe.helpers.NameMetaHelper;
+using StringTools;
 
 /**
  * Compiler helper for Elixir protocol definitions and implementations.
