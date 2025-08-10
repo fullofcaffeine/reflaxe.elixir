@@ -4,9 +4,18 @@
 
 Testing a macro-based transpiler presents unique challenges since the transpiler code only exists during compilation, not at runtime when tests execute. This document explains our dual-ecosystem testing approach, test categories, and framework capabilities.
 
+**Important**: For a detailed analysis of why we use runtime mocks instead of macro-time testing, see [`MACRO_TIME_TESTING_ANALYSIS.md`](MACRO_TIME_TESTING_ANALYSIS.md)
+
 ## Test Categories
 
 Reflaxe.Elixir uses three distinct testing approaches:
+
+### Test Suite Documentation
+
+For detailed documentation on specific test suites, see:
+- **Module Tests**: [`MODULE_TEST_DOCUMENTATION.md`](MODULE_TEST_DOCUMENTATION.md) - @:module syntax sugar validation
+- **Pattern Tests**: [`PATTERN_TESTS_MIGRATION.md`](PATTERN_TESTS_MIGRATION.md) - Pattern matching compilation
+- **Migration Summary**: [`UTEST_MIGRATION_SUMMARY.md`](UTEST_MIGRATION_SUMMARY.md) - Overall migration status
 
 ### 1. Macro-Time Tests (Direct Compiler Testing)
 **Location**: Tests like `SimpleCompilationTest.hx`, `TestElixirCompiler.hx`  
@@ -265,15 +274,51 @@ vendor/
 3. **Minimize changes** - Only patch what's broken
 4. **Consider upstream** - Submit fixes back
 
+## Specific Test Suites
+
+### Module Tests (@:module Syntax Sugar)
+
+**Purpose**: Validates @:module annotation processing for simplified Elixir module generation
+
+**Files**:
+- `ModuleSyntaxTestUTest.hx` - Basic functionality (10 tests)
+- `ModuleIntegrationTestUTest.hx` - Integration scenarios (8 tests)  
+- `ModuleRefactorTestUTest.hx` - Advanced validation (15 tests)
+
+**Key Validations**:
+- Module name generation (`defmodule UserService`)
+- Function compilation (`def`/`defp` syntax)
+- Import handling (`alias Elixir.String`)
+- Pipe operator preservation (`data |> process()`)
+- Error handling (invalid names, malformed expressions)
+
+**Business Justification**: @:module syntax reduces Haxe→Elixir boilerplate by ~70%, making gradual Phoenix migration feasible. Tests ensure generated Elixir integrates seamlessly with existing applications.
+
+**Documentation**: See [`MODULE_TEST_DOCUMENTATION.md`](MODULE_TEST_DOCUMENTATION.md) for complete analysis.
+
+### Pattern Tests (Pattern Matching Compilation)
+
+**Purpose**: Validates Haxe switch/match compilation to Elixir case expressions
+
+**Documentation**: See [`PATTERN_TESTS_MIGRATION.md`](PATTERN_TESTS_MIGRATION.md) for details.
+
+### Query Tests (Ecto Query DSL)
+
+**Purpose**: Validates Ecto query compilation with type-safe schema integration
+
+**Status**: Migration pending (5 files)
+
 ## Best Practices
 
 ### 1. Test Organization
 
 ```
 test/
-├── ComprehensiveTestRunner.hx  # Main test orchestrator
-├── *Test.hx                    # Individual test classes
-└── fixtures/                    # Test data files
+├── UTestRunner.hx              # Main test orchestrator (utest)
+├── ComprehensiveTestRunner.hx  # Legacy tink_unittest runner
+├── *TestUTest.hx              # Migrated utest files
+├── *Test.hx                   # Legacy tink_unittest files  
+└── fixtures/                   # Test data files
 ```
 
 ### 2. Edge Case Coverage
