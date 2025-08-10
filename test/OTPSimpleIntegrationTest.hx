@@ -1,29 +1,31 @@
 package test;
 
+import utest.Test;
+import utest.Assert;
 #if (macro || reflaxe_runtime)
-
 import reflaxe.elixir.helpers.OTPCompiler;
+#end
 
 /**
- * Simple OTP GenServer integration test focusing on core functionality
+ * Simple OTP GenServer integration test focusing on core functionality - Migrated to utest
  * Verifies that OTPCompiler produces working GenServer modules
+ * 
+ * Migration patterns applied:
+ * - static main() → extends Test with test methods
+ * - throw statements → Assert.isTrue() with proper conditions
+ * - trace() statements → removed (utest handles output)
+ * - Preserved conditional compilation and all test logic
  */
-class OTPSimpleIntegrationTest {
-    public static function main(): Void {
-        trace("🔵 Starting Simple OTP GenServer Integration Test");
-        
-        // Test realistic Phoenix application GenServers
-        testPhoenixGenServerCompilation();
-        
-        trace("🎉 All OTP GenServer integration tests passed!");
-        trace("✅ Ready for production GenServer compilation");
-    }
+class OTPSimpleIntegrationTest extends Test {
     
     /**
      * Test compiling realistic Phoenix application GenServers
      */
-    private static function testPhoenixGenServerCompilation(): Void {
-        trace("📋 Testing Phoenix GenServer compilation");
+    function testPhoenixGenServerCompilation() {
+        #if !(macro || reflaxe_runtime)
+        // Skip at runtime - OTPCompiler only exists at macro time
+        return;
+        #end
         
         var startTime = haxe.Timer.stamp();
         
@@ -58,9 +60,8 @@ class OTPSimpleIntegrationTest {
         ];
         
         for (check in sessionChecks) {
-            if (sessionModule.indexOf(check) == -1) {
-                throw "FAIL: Session GenServer missing: " + check;
-            }
+            Assert.isTrue(sessionModule.indexOf(check) >= 0, 
+                'Session GenServer missing: ${check}');
         }
         
         // Cache management GenServer (performance critical)
@@ -80,33 +81,27 @@ class OTPSimpleIntegrationTest {
         var cacheModule = OTPCompiler.compileFullGenServer(cacheServer);
         
         // Verify cache GenServer has proper performance patterns
-        if (cacheModule.indexOf("def handle_call({:get_cached}, _from, state) do") == -1) {
-            throw "FAIL: Cache GenServer should handle synchronous reads";
-        }
+        Assert.isTrue(cacheModule.indexOf("def handle_call({:get_cached}, _from, state) do") >= 0,
+            "Cache GenServer should handle synchronous reads");
         
-        if (cacheModule.indexOf("def handle_cast({:put_cache}, state) do") == -1) {
-            throw "FAIL: Cache GenServer should handle asynchronous writes";
-        }
+        Assert.isTrue(cacheModule.indexOf("def handle_cast({:put_cache}, state) do") >= 0,
+            "Cache GenServer should handle asynchronous writes");
         
         var endTime = haxe.Timer.stamp();
         var compilationTime = (endTime - startTime) * 1000;
         
         // Performance should be excellent for production use
-        if (compilationTime > 15) {
-            throw "FAIL: GenServer compilation took " + compilationTime + "ms, expected <15ms";
-        }
-        
-        trace("✅ Phoenix GenServers compiled successfully in " + compilationTime + "ms");
-        
-        // Test advanced GenServer features
-        testAdvancedGenServerFeatures();
+        Assert.isTrue(compilationTime < 15, 
+            'GenServer compilation took ${compilationTime}ms, expected <15ms');
     }
     
     /**
      * Test advanced GenServer features for production use
      */
-    private static function testAdvancedGenServerFeatures(): Void {
-        trace("📋 Testing advanced GenServer features");
+    function testAdvancedGenServerFeatures() {
+        #if !(macro || reflaxe_runtime)
+        return;
+        #end
         
         // Test supervision tree integration
         var supervisionTree = {
@@ -120,17 +115,14 @@ class OTPSimpleIntegrationTest {
         
         var supervisorModule = OTPCompiler.generateSupervisorModule(supervisionTree);
         
-        if (supervisorModule.indexOf("defmodule PhoenixAppSupervisor do") == -1) {
-            throw "FAIL: Should generate supervisor module";
-        }
+        Assert.isTrue(supervisorModule.indexOf("defmodule PhoenixAppSupervisor do") >= 0,
+            "Should generate supervisor module");
         
-        if (supervisorModule.indexOf("use Supervisor") == -1) {
-            throw "FAIL: Should use Supervisor behavior";
-        }
+        Assert.isTrue(supervisorModule.indexOf("use Supervisor") >= 0,
+            "Should use Supervisor behavior");
         
-        if (supervisorModule.indexOf("strategy: :one_for_one") == -1) {
-            throw "FAIL: Should configure supervision strategy";
-        }
+        Assert.isTrue(supervisorModule.indexOf("strategy: :one_for_one") >= 0,
+            "Should configure supervision strategy");
         
         // Test named GenServer for singleton services
         var namedServer = {
@@ -140,9 +132,8 @@ class OTPSimpleIntegrationTest {
         };
         
         var namedModule = OTPCompiler.generateNamedGenServer(namedServer);
-        if (namedModule.indexOf("name: :my_service") == -1) {
-            throw "FAIL: Should support named registration";
-        }
+        Assert.isTrue(namedModule.indexOf("name: :my_service") >= 0,
+            "Should support named registration");
         
         // Test lifecycle callbacks for proper cleanup
         var lifecycleServer = {
@@ -152,16 +143,14 @@ class OTPSimpleIntegrationTest {
         
         var lifecycleModule = OTPCompiler.compileGenServerWithLifecycle(lifecycleServer);
         
-        if (lifecycleModule.indexOf("def terminate(reason, state) do") == -1) {
-            throw "FAIL: Should implement terminate callback";
-        }
+        Assert.isTrue(lifecycleModule.indexOf("def terminate(reason, state) do") >= 0,
+            "Should implement terminate callback");
         
-        if (lifecycleModule.indexOf("def code_change(old_vsn, state, extra) do") == -1) {
-            throw "FAIL: Should implement code_change callback";
-        }
-        
-        trace("✅ Advanced GenServer features working");
+        Assert.isTrue(lifecycleModule.indexOf("def code_change(old_vsn, state, extra) do") >= 0,
+            "Should implement code_change callback");
     }
 }
 
-#end
+// Runtime Mock of OTPCompiler already defined in OTPRefactorTestUTest.hx
+// We can reuse it since both tests are in the same package
+// If needed, we could extend it here with any missing methods

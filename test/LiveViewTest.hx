@@ -1,66 +1,58 @@
 package test;
 
-import tink.unit.Assert.assert;
+import utest.Test;
+import utest.Assert;
 import reflaxe.elixir.LiveViewCompiler;
 
-using tink.CoreApi;
 using StringTools;
 
 /**
- * Modern LiveView Test Suite with Comprehensive Edge Case Coverage
+ * Modern LiveView Test Suite with Comprehensive Edge Case Coverage - Migrated to utest
  * 
  * Tests LiveView compilation with @:liveview annotation support, socket handling,
  * and Phoenix integration following TDD methodology with comprehensive edge case
  * testing across all 7 categories for production robustness.
  * 
- * Using tink_unittest for modern Haxe testing patterns.
+ * Migration patterns applied:
+ * - @:asserts class → extends Test
+ * - asserts.assert() → Assert.isTrue() / Assert.equals()
+ * - return asserts.done() → (removed)
+ * - @:describe("name") → function testName() with descriptive names
+ * - All test logic preserved exactly as in original
  */
-@:asserts
-class LiveViewTest {
+class LiveViewTest extends Test {
     
-    public function new() {}
-    
-    @:describe("@:liveview annotation detection and class validation")
-    public function testLiveViewAnnotationDetection() {
+    function testLiveViewAnnotationDetectionAndClassValidation() {
         // Test that LiveViewCompiler can identify @:liveview classes
         var isLiveView = LiveViewCompiler.isLiveViewClass("TestLiveView");
-        asserts.assert(isLiveView, "Should detect @:liveview annotated classes");
+        Assert.isTrue(isLiveView, "Should detect @:liveview annotated classes");
         
         var isNotLiveView = LiveViewCompiler.isLiveViewClass("RegularClass");
-        asserts.assert(!isNotLiveView, "Should not detect regular classes as LiveView");
-        
-        return asserts.done();
+        Assert.isTrue(!isNotLiveView, "Should not detect regular classes as LiveView");
     }
     
-    @:describe("Socket typing and assigns management")
-    public function testSocketTypingGeneration() {
+    function testSocketTypingAndAssignsManagement() {
         // Test socket type generation
         var socketType = LiveViewCompiler.generateSocketType();
-        asserts.assert(socketType.contains("Phoenix.LiveView.Socket"), "Should generate proper socket type");
-        asserts.assert(socketType.contains("assigns"), "Socket should have assigns field");
-        
-        return asserts.done();
+        Assert.isTrue(socketType.contains("Phoenix.LiveView.Socket"), "Should generate proper socket type");
+        Assert.isTrue(socketType.contains("assigns"), "Socket should have assigns field");
     }
     
-    @:describe("Mount function compilation with proper signature")
-    public function testMountFunctionCompilation() {
+    function testMountFunctionCompilationWithProperSignature() {
         // Test mount function generation
         var mountCode = LiveViewCompiler.compileMountFunction(
             "params: Dynamic, session: Dynamic, socket: Phoenix.Socket",
             "socket = Phoenix.LiveView.assign(socket, \"users\", []); return {ok: socket};"
         );
         
-        asserts.assert(mountCode.contains("def mount"), "Should generate mount function");
-        asserts.assert(mountCode.contains("params"), "Mount should accept params");
-        asserts.assert(mountCode.contains("session"), "Mount should accept session");
-        asserts.assert(mountCode.contains("socket"), "Mount should accept socket");
-        asserts.assert(mountCode.contains("{:ok, socket}"), "Mount should return {:ok, socket} tuple");
-        
-        return asserts.done();
+        Assert.isTrue(mountCode.contains("def mount"), "Should generate mount function");
+        Assert.isTrue(mountCode.contains("params"), "Mount should accept params");
+        Assert.isTrue(mountCode.contains("session"), "Mount should accept session");
+        Assert.isTrue(mountCode.contains("socket"), "Mount should accept socket");
+        Assert.isTrue(mountCode.contains("{:ok, socket}"), "Mount should return {:ok, socket} tuple");
     }
     
-    @:describe("Event handler compilation with proper pattern matching")
-    public function testHandleEventCompilation() {
+    function testHandleEventCompilationWithProperPatternMatching() {
         // Test handle_event function generation
         var eventCode = LiveViewCompiler.compileHandleEvent(
             "save_user",
@@ -68,76 +60,61 @@ class LiveViewTest {
             "return {noreply: socket};"
         );
         
-        asserts.assert(eventCode.contains("def handle_event"), "Should generate handle_event function");
-        asserts.assert(eventCode.contains("\"save_user\""), "Should include event name");
-        asserts.assert(eventCode.contains("params"), "Should accept params");
-        asserts.assert(eventCode.contains("{:noreply, socket}"), "Should return {:noreply, socket} tuple");
-        
-        return asserts.done();
+        Assert.isTrue(eventCode.contains("def handle_event"), "Should generate handle_event function");
+        Assert.isTrue(eventCode.contains("\"save_user\""), "Should include event name");
+        Assert.isTrue(eventCode.contains("params"), "Should accept params");
+        Assert.isTrue(eventCode.contains("{:noreply, socket}"), "Should return {:noreply, socket} tuple");
     }
     
-    @:describe("Assign tracking and validation")
-    public function testAssignManagement() {
+    function testAssignTrackingAndValidation() {
         // Test assign compilation
         var assignCode = LiveViewCompiler.compileAssign("socket", "users", "UserContext.list_users()");
-        asserts.assert(assignCode.contains("assign(socket"), "Should generate assign call");
-        asserts.assert(assignCode.contains(":users"), "Should use atom key");
-        asserts.assert(assignCode.contains("UserContext.list_users()"), "Should preserve value expression");
-        
-        return asserts.done();
+        Assert.isTrue(assignCode.contains("assign(socket"), "Should generate assign call");
+        Assert.isTrue(assignCode.contains(":users"), "Should use atom key");
+        Assert.isTrue(assignCode.contains("UserContext.list_users()"), "Should preserve value expression");
     }
     
-    @:describe("LiveView boilerplate generation")
-    public function testBoilerplateGeneration() {
+    function testLiveViewBoilerplateGeneration() {
         // Test module boilerplate
         var boilerplate = LiveViewCompiler.generateLiveViewBoilerplate("TestLiveView");
         
-        asserts.assert(boilerplate.contains("defmodule TestLiveView"), "Should create proper module");
-        asserts.assert(boilerplate.contains("use Phoenix.LiveView"), "Should use Phoenix.LiveView");
-        asserts.assert(boilerplate.contains("import Phoenix.LiveView.Helpers"), "Should import helpers");
-        
-        return asserts.done();
+        Assert.isTrue(boilerplate.contains("defmodule TestLiveView"), "Should create proper module");
+        Assert.isTrue(boilerplate.contains("use Phoenix.LiveView"), "Should use Phoenix.LiveView");
+        Assert.isTrue(boilerplate.contains("import Phoenix.LiveView.Helpers"), "Should import helpers");
     }
     
     // === EDGE CASE TESTING SUITE ===
     // MANDATORY for production LiveView robustness
     
-    @:describe("Error Conditions - Invalid LiveView Classes")
-    public function testInvalidLiveViewClasses() {
+    function testErrorConditionsInvalidLiveViewClasses() {
         // Test null class name
         var nullClass = LiveViewCompiler.isLiveViewClass(null);
-        asserts.assert(nullClass == false, "Null class name should return false");
+        Assert.equals(false, nullClass, "Null class name should return false");
         
         // Test empty class name
         var emptyClass = LiveViewCompiler.isLiveViewClass("");
-        asserts.assert(emptyClass == false, "Empty class name should return false");
+        Assert.equals(false, emptyClass, "Empty class name should return false");
         
         // Test malformed class name
         var malformedClass = LiveViewCompiler.isLiveViewClass("Invalid.Class.Name");
-        asserts.assert(malformedClass == false, "Malformed class name should return false");
-        
-        return asserts.done();
+        Assert.equals(false, malformedClass, "Malformed class name should return false");
     }
     
-    @:describe("Boundary Cases - Empty Mount Functions")
-    public function testEmptyMountFunctions() {
+    function testBoundaryCasesEmptyMountFunctions() {
         // Test empty parameters
         var emptyParams = LiveViewCompiler.compileMountFunction("", "socket");
-        asserts.assert(emptyParams.contains("def mount"), "Should generate mount with empty params");
+        Assert.isTrue(emptyParams.contains("def mount"), "Should generate mount with empty params");
         
         // Test empty body
         var emptyBody = LiveViewCompiler.compileMountFunction("params, session, socket", "");
-        asserts.assert(emptyBody.contains("def mount"), "Should handle empty mount body");
+        Assert.isTrue(emptyBody.contains("def mount"), "Should handle empty mount body");
         
         // Test minimal mount function
         var minimal = LiveViewCompiler.compileMountFunction("_, _, socket", "{:ok, socket}");
-        asserts.assert(minimal.contains("def mount(_, _, socket)"), "Should handle minimal parameters");
-        
-        return asserts.done();
+        Assert.isTrue(minimal.contains("def mount(_, _, socket)"), "Should handle minimal parameters");
     }
     
-    @:describe("Security Validation - Template Injection Prevention")
-    public function testTemplateInjectionPrevention() {
+    function testSecurityValidationTemplateInjectionPrevention() {
         // Test malicious event name
         var maliciousEvent = "'; System.cmd('rm', ['-rf', '/']); '";
         var eventCode = LiveViewCompiler.compileHandleEvent(
@@ -145,18 +122,15 @@ class LiveViewTest {
             "params, socket",
             "{:noreply, socket}"
         );
-        asserts.assert(eventCode.contains(maliciousEvent), "Should preserve malicious event name (Phoenix handles escaping)");
+        Assert.isTrue(eventCode.contains(maliciousEvent), "Should preserve malicious event name (Phoenix handles escaping)");
         
         // Test malicious assign key
         var maliciousKey = "<script>alert('xss')</script>";
         var assignCode = LiveViewCompiler.compileAssign("socket", maliciousKey, "value");
-        asserts.assert(assignCode.contains(maliciousKey), "Should preserve malicious key (Elixir atoms are safe)");
-        
-        return asserts.done();
+        Assert.isTrue(assignCode.contains(maliciousKey), "Should preserve malicious key (Elixir atoms are safe)");
     }
     
-    @:describe("Performance Limits - Large LiveView Modules")
-    public function testLargeModulePerformance() {
+    function testPerformanceLimitsLargeLiveViewModules() {
         var startTime = Sys.time();
         
         // Generate large LiveView module with many event handlers
@@ -177,14 +151,11 @@ class LiveViewTest {
         
         var duration = Sys.time() - startTime;
         
-        asserts.assert(largeModule.length > 0, "Should compile large module successfully");
-        asserts.assert(duration < 0.1, 'Large module compilation should be <100ms, took: ${duration * 1000}ms');
-        
-        return asserts.done();
+        Assert.isTrue(largeModule.length > 0, "Should compile large module successfully");
+        Assert.isTrue(duration < 0.1, 'Large module compilation should be <100ms, took: ${duration * 1000}ms');
     }
     
-    @:describe("Integration Robustness - Phoenix Ecosystem Compatibility")
-    public function testPhoenixEcosystemCompatibility() {
+    function testIntegrationRobustnessPhoenixEcosystemCompatibility() {
         // Test LiveView boilerplate includes all required Phoenix imports
         var boilerplate = LiveViewCompiler.generateLiveViewBoilerplate("TestLiveView");
         
@@ -196,25 +167,22 @@ class LiveViewTest {
         ];
         
         for (requirement in phoenixRequirements) {
-            asserts.assert(boilerplate.contains(requirement), 'Should include Phoenix requirement: ${requirement}');
+            Assert.isTrue(boilerplate.contains(requirement), 'Should include Phoenix requirement: ${requirement}');
         }
         
         // Test that generated modules follow Phoenix naming conventions
         var moduleNames = ["UserLiveView", "PostLiveView", "AdminDashboardLiveView"];
         for (name in moduleNames) {
             var module = LiveViewCompiler.generateLiveViewBoilerplate(name);
-            asserts.assert(module.contains('defmodule ${name}'), 'Should create module: ${name}');
+            Assert.isTrue(module.contains('defmodule ${name}'), 'Should create module: ${name}');
         }
-        
-        return asserts.done();
     }
     
-    @:describe("Type Safety - Socket Type Validation")
-    public function testSocketTypeValidation() {
+    function testTypeSafetySocketTypeValidation() {
         // Test socket type generation consistency
         var socketType1 = LiveViewCompiler.generateSocketType();
         var socketType2 = LiveViewCompiler.generateSocketType();
-        asserts.assert(socketType1 == socketType2, "Socket type should be consistent across calls");
+        Assert.equals(socketType1, socketType2, "Socket type should be consistent across calls");
         
         // Test assigns handling in different contexts
         var assignTests = [
@@ -225,15 +193,12 @@ class LiveViewTest {
         
         for (test in assignTests) {
             var assignCode = LiveViewCompiler.compileAssign("socket", test.key, test.value);
-            asserts.assert(assignCode.contains(':${test.key}'), 'Should convert key "${test.key}" to atom');
-            asserts.assert(assignCode.contains(test.value), 'Should preserve value "${test.value}"');
+            Assert.isTrue(assignCode.contains(':${test.key}'), 'Should convert key "${test.key}" to atom');
+            Assert.isTrue(assignCode.contains(test.value), 'Should preserve value "${test.value}"');
         }
-        
-        return asserts.done();
     }
     
-    @:describe("Resource Management - Concurrent LiveView Compilation")
-    public function testConcurrentCompilation() {
+    function testResourceManagementConcurrentLiveViewCompilation() {
         var startTime = Sys.time();
         
         // Simulate concurrent LiveView compilation
@@ -249,20 +214,17 @@ class LiveViewTest {
         
         var duration = Sys.time() - startTime;
         
-        asserts.assert(results.length == 20, "Should compile all 20 concurrent modules");
-        asserts.assert(duration < 0.05, 'Concurrent compilation should be <50ms, took: ${duration * 1000}ms');
+        Assert.equals(20, results.length, "Should compile all 20 concurrent modules");
+        Assert.isTrue(duration < 0.05, 'Concurrent compilation should be <50ms, took: ${duration * 1000}ms');
         
         // Verify no cross-contamination between modules
         for (i in 0...results.length) {
             var result = results[i];
-            asserts.assert(result.contains('ConcurrentLiveView${i}'), 'Module ${i} should contain correct name');
+            Assert.isTrue(result.contains('ConcurrentLiveView${i}'), 'Module ${i} should contain correct name');
         }
-        
-        return asserts.done();
     }
     
-    @:describe("LiveView Performance Benchmarking")
-    public function testLiveViewPerformance() {
+    function testLiveViewPerformanceBenchmarking() {
         var startTime = Sys.time();
         
         // Benchmark comprehensive LiveView compilation
@@ -289,9 +251,7 @@ class LiveViewTest {
         var totalTime = Sys.time() - startTime;
         var avgTime = (totalTime * 1000) / 50; // Convert to milliseconds per module
         
-        asserts.assert(totalTime > 0, "Should take measurable time");
-        asserts.assert(avgTime < 15, 'Average compilation should be <15ms per module, was: ${Math.round(avgTime)}ms');
-        
-        return asserts.done();
+        Assert.isTrue(totalTime > 0, "Should take measurable time");
+        Assert.isTrue(avgTime < 15, 'Average compilation should be <15ms per module, was: ${Math.round(avgTime)}ms');
     }
 }

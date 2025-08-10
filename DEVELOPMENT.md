@@ -9,7 +9,7 @@ Reflaxe.Elixir uses a **dual-ecosystem architecture** that cleanly separates con
 
 - **Package Manager**: `lix` (modern Haxe package manager)
 - **Runtime**: `npm` scripts orchestrate the workflow  
-- **Dependencies**: Reflaxe framework, tink_unittest, tink_testrunner
+- **Dependencies**: Reflaxe framework, utest
 - **Output**: Generated Elixir source code files
 
 ### ⚡ Elixir Runtime Side (mix)  
@@ -46,14 +46,14 @@ npm test
 
 ### npm + lix: Haxe Ecosystem
 ```bash
-npm install          # Installs lix package manager locally
-lix download         # Downloads Haxe dependencies (project-specific versions)
-npx haxe Test.hxml   # Uses project-specific Haxe binary (no global conflicts)
+npm install             # Installs lix package manager locally
+lix download            # Downloads Haxe dependencies (project-specific versions)
+npx haxe TestMain.hxml  # Uses project-specific Haxe binary (no global conflicts)
 ```
 
 **Why lix?**
 - ✅ **Project-specific Haxe versions** (avoids "works on my machine")
-- ✅ **GitHub + haxelib sources** (always latest tink_unittest, etc.)  
+- ✅ **GitHub + haxelib sources** (always latest utest, etc.)  
 - ✅ **Locked dependency versions** (zero software erosion)
 - ✅ **Local binary management** (`npx haxe` uses `.haxerc` version)
 
@@ -82,7 +82,7 @@ npm run test:haxe
 # Test just the generated Elixir code
 npm run test:mix
 
-# Test modern tink_unittest infrastructure  
+# Test modern utest infrastructure  
 npm run test:modern
 
 # Test legacy extern definitions
@@ -102,11 +102,11 @@ Running BEAM Application
 
 ## Testing Infrastructure
 
-### Modern Stack (tink_unittest + tink_testrunner)
-- **Rich annotations**: `@:describe`, `@:before`, `@:after`, `@:timeout`
-- **Async testing**: `Future<Assertion>` support with timeouts
+### Modern Stack (utest)
+- **Synchronous testing**: Deterministic test execution
 - **Performance validation**: Built-in benchmarking, <15ms targets
-- **Beautiful output**: Colored console with detailed test hierarchy
+- **Clean output**: Clear success/failure reporting
+- **Framework-agnostic**: Easy to switch between test frameworks
 
 ### Dual Test Coverage
 1. **Haxe Compiler Tests**: Validate the compilation engine itself
@@ -117,13 +117,13 @@ Running BEAM Application
 ### Configuration
 - `package.json`: npm scripts, lix dependency  
 - `.haxerc`: Project-specific Haxe version
-- `haxe_libraries/`: lix-managed dependencies (tink_unittest, reflaxe)
+- `haxe_libraries/`: lix-managed dependencies (utest, reflaxe)
 - `mix.exs`: Elixir dependencies (Phoenix, Ecto)
 
 ### Testing  
-- `Test.hxml`: Comprehensive test runner configuration
-- `test/ComprehensiveTestRunner.hx`: Combines legacy + modern tests
-- `test/SimpleTest.hx`: Modern tink_unittest example
+- `TestMain.hxml`: Modern test runner configuration
+- `test/TestRunner.hx`: Framework-agnostic test runner
+- `test/SimpleTest.hx`: Modern utest example
 - Individual `.hxml` files: Legacy extern definition tests
 
 ### Source Code
@@ -144,21 +144,16 @@ All compilation features meet <15ms performance requirements:
 ### Adding New Features
 1. Create helper compiler in `src/reflaxe/elixir/helpers/`
 2. Add annotation support to main `ElixirCompiler.hx`  
-3. Write tests using tink_unittest in `test/`
-4. Update `Test.hxml` to include new test classes
+3. Write tests using utest in `test/`
+4. Update `test/TestRunner.hx` to include new test classes
 5. Run `npm test` to validate
 
 ### Adding Tests  
 ```haxe
-// Modern tink_unittest pattern
-@:asserts 
-class TestNewFeature {
-    public function new() {}
-    
-    @:describe("Feature description")
+// Modern utest pattern
+class TestNewFeature extends utest.Test {
     public function testFeature() {
-        asserts.assert(performTest());
-        return asserts.done();
+        Assert.isTrue(performTest(), "Feature description");
     }
 }
 ```
@@ -194,7 +189,7 @@ mix deps.clean --all && mix deps.get
 ```bash
 # Run individual test suites
 npm run test:core     # Legacy extern tests
-npm run test:modern   # Modern tink_unittest tests  
+npm run test:modern   # Modern utest tests  
 npm run test:mix      # Elixir/Mix tests
 
 # Check specific .hxml file
@@ -203,7 +198,7 @@ npx haxe test/SpecificTest.hxml
 
 ## Architecture Benefits
 
-✅ **Modern Haxe tooling** (lix + tink_unittest)  
+✅ **Modern Haxe tooling** (lix + utest)  
 ✅ **Native Elixir integration** (mix + Phoenix ecosystem)
 ✅ **End-to-end validation** (compiler + generated code)  
 ✅ **Single command simplicity** (`npm test`)

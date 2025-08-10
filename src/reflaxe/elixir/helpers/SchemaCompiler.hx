@@ -137,7 +137,7 @@ class SchemaCompiler {
         // Handle regular field annotation
         if (fieldMeta.has(":field")) {
             var fieldConfig = extractFieldConfig(fieldMeta);
-            var elixirType = fieldConfig.type != null ? fieldConfig.type : mapHaxeTypeToElixir(field.type);
+            var elixirType = fieldConfig.type != null ? fieldConfig.type : mapHaxeTypeToElixir(field.field.type);
             
             var fieldDef = 'field :${fieldName}, :${elixirType}';
             
@@ -174,7 +174,7 @@ class SchemaCompiler {
         }
         
         // Default field compilation
-        var elixirType = mapHaxeTypeToElixir(field.type);
+        var elixirType = mapHaxeTypeToElixir(field.field.type);
         return 'field :${fieldName}, :${elixirType}';
     }
     
@@ -329,7 +329,7 @@ class SchemaCompiler {
             
             if (field.field.meta.has(":field")) {
                 var fieldConfig = extractFieldConfig(field.field.meta);
-                var elixirType = fieldConfig.type != null ? fieldConfig.type : mapHaxeTypeToElixir(field.type);
+                var elixirType = fieldConfig.type != null ? fieldConfig.type : mapHaxeTypeToElixir(field.field.type);
                 
                 fields.set(fieldName, {
                     name: fieldName,

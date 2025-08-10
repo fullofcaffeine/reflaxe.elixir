@@ -2,6 +2,8 @@ package test;
 
 #if (macro || reflaxe_runtime)
 
+import utest.Test;
+import utest.Assert;
 import reflaxe.elixir.ElixirCompiler;
 import reflaxe.elixir.ElixirTyper;
 
@@ -9,26 +11,12 @@ import reflaxe.elixir.ElixirTyper;
  * Integration tests for class→struct/module compilation
  * Testing Trophy focused - verifies complete class compilation system
  */
-class ClassIntegrationTest {
-    public static function main() {
-        trace("Running Class Compilation Integration Tests...");
-        
-        testCompleteStructCompilation();
-        testPhoenixContextCompilation();
-        testEctoSchemaCompilation();
-        testStructUpdatePatterns();
-        testConstructorIntegration();
-        testMethodChaining();
-        
-        trace("✅ All Class Integration tests passed!");
-    }
+class ClassIntegrationTest extends Test {
     
     /**
      * Test complete @:struct class compilation with all features
      */
-    static function testCompleteStructCompilation() {
-        trace("TEST: Complete struct compilation");
-        
+    public function testCompleteStructCompilation() {
         var compiler = new ElixirCompiler();
         
         // Mock complete User struct
@@ -53,40 +41,35 @@ class ClassIntegrationTest {
         var result = compiler.compileClassImpl(classType, varFields, funcFields);
         
         // Verify complete module structure
-        assertTrue(result.indexOf("defmodule User do") >= 0, "Should create User module");
-        assertTrue(result.indexOf("@moduledoc") >= 0, "Should have module documentation");
+        Assert.isTrue(result.indexOf("defmodule User do") >= 0, "Should create User module");
+        Assert.isTrue(result.indexOf("@moduledoc") >= 0, "Should have module documentation");
         
         // Verify defstruct with all fields
-        assertTrue(result.indexOf("defstruct [") >= 0, "Should have defstruct");
-        assertTrue(result.indexOf(":id") >= 0, "Should have id field");
-        assertTrue(result.indexOf(":created_at") >= 0, "Should convert camelCase to snake_case");
-        assertTrue(result.indexOf("active: true") >= 0, "Should have default values");
+        Assert.isTrue(result.indexOf("defstruct [") >= 0, "Should have defstruct");
+        Assert.isTrue(result.indexOf(":id") >= 0, "Should have id field");
+        Assert.isTrue(result.indexOf(":created_at") >= 0, "Should convert camelCase to snake_case");
+        Assert.isTrue(result.indexOf("active: true") >= 0, "Should have default values");
         
         // Verify @type definition
-        assertTrue(result.indexOf("@type t() :: %__MODULE__{") >= 0, "Should have type definition");
-        assertTrue(result.indexOf("id: integer()") >= 0, "Should have typed fields");
-        assertTrue(result.indexOf("metadata: %{String.t() => String.t()}") >= 0, "Should handle Map types");
+        Assert.isTrue(result.indexOf("@type t() :: %__MODULE__{") >= 0, "Should have type definition");
+        Assert.isTrue(result.indexOf("id: integer()") >= 0, "Should have typed fields");
+        Assert.isTrue(result.indexOf("metadata: %{String.t() => String.t()}") >= 0, "Should handle Map types");
         
         // Verify constructor
-        assertTrue(result.indexOf("def new(") >= 0, "Should have constructor");
-        assertTrue(result.indexOf("@spec new(integer(), String.t(), String.t()) :: t()") >= 0,
-                  "Constructor should have proper spec");
+        Assert.isTrue(result.indexOf("def new(") >= 0, "Should have constructor");
+        Assert.isTrue(result.indexOf("@spec new(integer(), String.t(), String.t()) :: t()") >= 0, "Constructor should have proper spec");
         
         // Verify instance method
-        assertTrue(result.indexOf("def update_email(") >= 0, "Should have instance method");
+        Assert.isTrue(result.indexOf("def update_email(") >= 0, "Should have instance method");
         
         // Verify static method
-        assertTrue(result.indexOf("def find_active()") >= 0, "Should have static method");
-        
-        trace("✅ Complete struct compilation test passed");
+        Assert.isTrue(result.indexOf("def find_active()") >= 0, "Should have static method");
     }
     
     /**
      * Test Phoenix context-style class compilation
      */
-    static function testPhoenixContextCompilation() {
-        trace("TEST: Phoenix context compilation");
-        
+    public function testPhoenixContextCompilation() {
         var compiler = new ElixirCompiler();
         
         // Mock Accounts context (no @:struct)
@@ -104,26 +87,23 @@ class ClassIntegrationTest {
         var result = compiler.compileClassImpl(classType, [], funcFields);
         
         // Should NOT have defstruct
-        assertFalse(result.indexOf("defstruct") >= 0, "Context should not have defstruct");
+        Assert.isFalse(result.indexOf("defstruct") >= 0, "Context should not have defstruct");
         
         // Should have Phoenix-style functions
-        assertTrue(result.indexOf("def get_user(") >= 0, "Should have get_user");
-        assertTrue(result.indexOf("def list_users()") >= 0, "Should have list_users");
-        assertTrue(result.indexOf("def create_user(") >= 0, "Should have create_user");
-        assertTrue(result.indexOf("def update_user(") >= 0, "Should have update_user");
-        assertTrue(result.indexOf("def delete_user(") >= 0, "Should have delete_user");
+        Assert.isTrue(result.indexOf("def get_user(") >= 0, "Should have get_user");
+        Assert.isTrue(result.indexOf("def list_users()") >= 0, "Should have list_users");
+        Assert.isTrue(result.indexOf("def create_user(") >= 0, "Should have create_user");
+        Assert.isTrue(result.indexOf("def update_user(") >= 0, "Should have update_user");
+        Assert.isTrue(result.indexOf("def delete_user(") >= 0, "Should have delete_user");
         
         // Should have proper specs
-        assertTrue(result.indexOf("@spec") >= 0, "Should have type specs");
-        
-        trace("✅ Phoenix context compilation test passed");
+        Assert.isTrue(result.indexOf("@spec") >= 0, "Should have type specs");
     }
     
     /**
      * Test Ecto schema-style struct compilation
      */
-    static function testEctoSchemaCompilation() {
-        trace("TEST: Ecto schema compilation");
+    public function testEctoSchemaCompilation() {
         
         var compiler = new ElixirCompiler();
         
@@ -150,26 +130,23 @@ class ClassIntegrationTest {
         var result = compiler.compileClassImpl(classType, varFields, funcFields);
         
         // Should have Ecto-style schema
-        assertTrue(result.indexOf("defmodule UserSchema") >= 0, "Should create schema module");
-        assertTrue(result.indexOf("use Ecto.Schema") >= 0 || 
-                  result.indexOf("# @:schema(\"users\")") >= 0,
-                  "Should indicate schema usage");
+        Assert.isTrue(result.indexOf("defmodule UserSchema") >= 0, "Should create schema module");
+        Assert.isTrue(result.indexOf("use Ecto.Schema") >= 0 || 
+                  result.indexOf("# @:schema(\"users\")") >= 0, "Should indicate schema usage");
         
         // Should have defstruct with Ecto fields
-        assertTrue(result.indexOf(":password_hash") >= 0, "Should have password_hash field");
-        assertTrue(result.indexOf(":inserted_at") >= 0, "Should have timestamps");
+        Assert.isTrue(result.indexOf(":password_hash") >= 0, "Should have password_hash field");
+        Assert.isTrue(result.indexOf(":inserted_at") >= 0, "Should have timestamps");
         
         // Should have changeset function
-        assertTrue(result.indexOf("def changeset(") >= 0, "Should have changeset function");
+        Assert.isTrue(result.indexOf("def changeset(") >= 0, "Should have changeset function");
         
-        trace("✅ Ecto schema compilation test passed");
     }
     
     /**
      * Test struct update pattern generation
      */
-    static function testStructUpdatePatterns() {
-        trace("TEST: Struct update patterns");
+    public function testStructUpdatePatterns() {
         
         var compiler = new ElixirCompiler();
         
@@ -189,20 +166,17 @@ class ClassIntegrationTest {
         var result = compiler.compileClassImpl(classType, varFields, funcFields);
         
         // Update functions should use Elixir struct update syntax
-        assertTrue(result.indexOf("def set_value(") >= 0, "Should have setter function");
+        Assert.isTrue(result.indexOf("def set_value(") >= 0, "Should have setter function");
         
         // Should generate struct update pattern like:
         // %{struct | value: new_value}
         // or Map.put(struct, :value, new_value)
-        
-        trace("✅ Struct update patterns test passed");
     }
     
     /**
      * Test constructor function integration
      */
-    static function testConstructorIntegration() {
-        trace("TEST: Constructor integration");
+    public function testConstructorIntegration() {
         
         var compiler = new ElixirCompiler();
         
@@ -224,20 +198,18 @@ class ClassIntegrationTest {
         var result = compiler.compileClassImpl(classType, varFields, funcFields);
         
         // Should have both constructors
-        assertTrue(result.indexOf("def new(") >= 0, "Should have new constructor");
-        assertTrue(result.indexOf("def create(") >= 0, "Should have factory method");
+        Assert.isTrue(result.indexOf("def new(") >= 0, "Should have new constructor");
+        Assert.isTrue(result.indexOf("def create(") >= 0, "Should have factory method");
         
         // Constructor should create struct properly
-        assertTrue(result.indexOf("%__MODULE__{") >= 0, "Should use %__MODULE__{} syntax");
+        Assert.isTrue(result.indexOf("%__MODULE__{") >= 0, "Should use %__MODULE__{} syntax");
         
-        trace("✅ Constructor integration test passed");
     }
     
     /**
      * Test method chaining patterns for immutable updates
      */
-    static function testMethodChaining() {
-        trace("TEST: Method chaining for immutable updates");
+    public function testMethodChaining() {
         
         var compiler = new ElixirCompiler();
         
@@ -253,17 +225,16 @@ class ClassIntegrationTest {
         var result = compiler.compileClassImpl(classType, [], funcFields);
         
         // Each method should return updated struct for chaining
-        assertTrue(result.indexOf("def with_name(") >= 0, "Should have with_name");
-        assertTrue(result.indexOf("def with_value(") >= 0, "Should have with_value");
+        Assert.isTrue(result.indexOf("def with_name(") >= 0, "Should have with_name");
+        Assert.isTrue(result.indexOf("def with_value(") >= 0, "Should have with_value");
         
         // Methods should return t() for chaining
-        assertTrue(result.indexOf(":: t()") >= 0, "Methods should return struct type");
+        Assert.isTrue(result.indexOf(":: t()") >= 0, "Methods should return struct type");
         
-        trace("✅ Method chaining test passed");
     }
     
     // Mock helper functions
-    static function createMockClassType(name: String, doc: String) {
+    function createMockClassType(name: String, doc: String) {
         return {
             getNameOrNative: function() return name,
             doc: doc,
@@ -273,7 +244,7 @@ class ClassIntegrationTest {
         };
     }
     
-    static function createMockVarField(name: String, type: String, hasDefault: Bool, ?isFinal: Bool = false) {
+    function createMockVarField(name: String, type: String, hasDefault: Bool, ?isFinal: Bool = false) {
         return {
             field: {
                 name: name,
@@ -284,7 +255,7 @@ class ClassIntegrationTest {
         };
     }
     
-    static function createMockFuncField(name: String, paramTypes: Array<String>, returnType: String) {
+    function createMockFuncField(name: String, paramTypes: Array<String>, returnType: String) {
         return {
             field: {
                 name: name,
@@ -296,7 +267,7 @@ class ClassIntegrationTest {
         };
     }
     
-    static function createMockStaticFuncField(name: String, paramTypes: Array<String>, returnType: String) {
+    function createMockStaticFuncField(name: String, paramTypes: Array<String>, returnType: String) {
         return {
             field: {
                 name: name,
@@ -306,27 +277,6 @@ class ClassIntegrationTest {
             ret: returnType,
             expr: null
         };
-    }
-    
-    // Test helper functions
-    static function assertTrue(condition: Bool, message: String) {
-        if (!condition) {
-            var error = '❌ ASSERTION FAILED: ${message}';
-            trace(error);
-            throw error;
-        } else {
-            trace('  ✓ ${message}');
-        }
-    }
-    
-    static function assertFalse(condition: Bool, message: String) {
-        if (condition) {
-            var error = '❌ ASSERTION FAILED: ${message}';
-            trace(error);
-            throw error;
-        } else {
-            trace('  ✓ ${message}');
-        }
     }
 }
 

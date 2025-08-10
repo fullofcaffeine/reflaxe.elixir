@@ -30,7 +30,7 @@ typedef AssociationInfo = {
     type: String,
     schema: String,
     foreignKey: String,
-    throughAssociation: String
+    throughAssociation: Null<String>
 };
 
 /**
@@ -73,7 +73,10 @@ class SchemaIntrospection {
     public static function getFieldType(schemaName: String, fieldName: String): String {
         var schema = getSchemaInfo(schemaName);
         if (schema != null && schema.fields.exists(fieldName)) {
-            return schema.fields.get(fieldName).type;
+            var field = schema.fields.get(fieldName);
+            if (field != null) {
+                return field.type;
+            }
         }
         return "unknown";
     }
@@ -89,7 +92,7 @@ class SchemaIntrospection {
     /**
      * Get association information
      */
-    public static function getAssociation(schemaName: String, associationName: String): AssociationInfo {
+    public static function getAssociation(schemaName: String, associationName: String): Null<AssociationInfo> {
         var schema = getSchemaInfo(schemaName);
         if (schema != null && schema.associations.exists(associationName)) {
             return schema.associations.get(associationName);
@@ -100,7 +103,7 @@ class SchemaIntrospection {
     /**
      * Get complete schema information
      */
-    public static function getSchemaInfo(schemaName: String): SchemaInfo {
+    public static function getSchemaInfo(schemaName: String): Null<SchemaInfo> {
         if (schemaCache.exists(schemaName)) {
             return schemaCache.get(schemaName);
         }
@@ -116,7 +119,7 @@ class SchemaIntrospection {
     /**
      * Parse schema from Elixir source files or annotations
      */
-    static function parseSchemaFromSource(schemaName: String): SchemaInfo {
+    static function parseSchemaFromSource(schemaName: String): Null<SchemaInfo> {
         // Try parsing from Haxe schema annotations first
         var haxeSchema = parseHaxeSchemaAnnotations(schemaName);
         if (haxeSchema != null) {
@@ -136,7 +139,7 @@ class SchemaIntrospection {
     /**
      * Parse schema from Haxe @:schema annotations
      */
-    static function parseHaxeSchemaAnnotations(schemaName: String): SchemaInfo {
+    static function parseHaxeSchemaAnnotations(schemaName: String): Null<SchemaInfo> {
         // Check if we have a Haxe type with @:schema annotation
         var type = getHaxeSchemaType(schemaName);
         if (type == null) return null;
@@ -174,7 +177,7 @@ class SchemaIntrospection {
     /**
      * Parse schema from Elixir schema files
      */
-    static function parseElixirSchemaFile(schemaName: String): SchemaInfo {
+    static function parseElixirSchemaFile(schemaName: String): Null<SchemaInfo> {
         var schemaPath = findElixirSchemaFile(schemaName);
         if (schemaPath == null || !FileSystem.exists(schemaPath)) {
             return null;
@@ -187,7 +190,7 @@ class SchemaIntrospection {
     /**
      * Find Elixir schema file in common locations
      */
-    static function findElixirSchemaFile(schemaName: String): String {
+    static function findElixirSchemaFile(schemaName: String): Null<String> {
         var possiblePaths = [
             'lib/myapp/schemas/${schemaName.toLowerCase()}.ex',
             'lib/schemas/${schemaName.toLowerCase()}.ex',
@@ -207,7 +210,7 @@ class SchemaIntrospection {
     /**
      * Parse Elixir schema content
      */
-    static function parseElixirSchemaContent(content: String, schemaName: String): SchemaInfo {
+    static function parseElixirSchemaContent(content: String, schemaName: String): Null<SchemaInfo> {
         var fields = new Map<String, FieldInfo>();
         var associations = new Map<String, AssociationInfo>();
         var tableName = schemaName.toLowerCase() + "s";
@@ -296,7 +299,7 @@ class SchemaIntrospection {
     /**
      * Get predefined schema definitions for common patterns
      */
-    static function getPredefinedSchema(schemaName: String): SchemaInfo {
+    static function getPredefinedSchema(schemaName: String): Null<SchemaInfo> {
         return switch (schemaName) {
             case "User":
                 createUserSchema();
@@ -377,7 +380,7 @@ class SchemaIntrospection {
         };
     }
     
-    static function createGenericSchema(schemaName: String): SchemaInfo {
+    static function createGenericSchema(schemaName: String): Null<SchemaInfo> {
         // Only create generic schemas for known patterns
         if (!["User", "Post", "Comment"].contains(schemaName)) {
             return null;
@@ -400,7 +403,7 @@ class SchemaIntrospection {
     
     // Helper functions
     
-    static function getHaxeSchemaType(schemaName: String): Type {
+    static function getHaxeSchemaType(schemaName: String): Null<Type> {
         try {
             return Context.getType(schemaName);
         } catch (e: Dynamic) {
@@ -408,7 +411,7 @@ class SchemaIntrospection {
         }
     }
     
-    static function parseFieldFromHaxe(field: haxe.macro.Type.ClassField): FieldInfo {
+    static function parseFieldFromHaxe(field: haxe.macro.Type.ClassField): Null<FieldInfo> {
         // Simplified field parsing from Haxe class field
         return {
             name: field.name,
@@ -460,7 +463,7 @@ class SchemaIntrospection {
         };
     }
     
-    static function extractThroughAssociation(options: String): String {
+    static function extractThroughAssociation(options: String): Null<String> {
         if (options != null && options.contains("through:")) {
             var throughPattern = ~/through:\s*:([a-z_]+)/;
             if (throughPattern.match(options)) {

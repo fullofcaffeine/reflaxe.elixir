@@ -426,7 +426,7 @@ class EctoQueryMacros {
         
         // Validate association type and target schema
         var association = SchemaIntrospection.getAssociation(currentSchema, join.alias);
-        if (!SchemaIntrospection.schemaExists(association.schema)) {
+        if (association != null && !SchemaIntrospection.schemaExists(association.schema)) {
             Context.error('Target schema "${association.schema}" for association "${join.alias}" does not exist', Context.currentPos());
         }
     }
@@ -562,12 +562,12 @@ class EctoQueryMacros {
     
     // Helper functions for aggregates
     
-    public static function extractFieldName(expr: Expr): String {
+    public static function extractFieldName(expr: Expr): Null<String> {
         // Real field name extraction from expressions
         return switch (expr) {
             case {expr: EFunction(name, f)} if (f.args.length == 1):
                 // Handle lambda: u -> u.field_name
-                extractFieldFromExpression(f.expr);
+                f.expr != null ? extractFieldFromExpression(f.expr) : null;
                 
             case _:
                 // Handle direct field access
@@ -733,7 +733,9 @@ class EctoQueryMacros {
         switch (expr.expr) {
             case EReturn(e):
                 // Handle return statements in macro functions
-                parseSelectExpression(e, fields, binding);
+                if (e != null) {
+                    parseSelectExpression(e, fields, binding);
+                }
                 
             case EMeta(m, e):
                 // Handle macro metadata
@@ -784,9 +786,9 @@ class EctoQueryMacros {
             case EObjectDecl(_):
                 true;
             case EMeta(m, e):
-                isMapConstruction(e);
+                e != null ? isMapConstruction(e) : false;
             case EReturn(e):
-                isMapConstruction(e);
+                e != null ? isMapConstruction(e) : false;
             case _:
                 false;
         };
@@ -800,12 +802,14 @@ class EctoQueryMacros {
         
         for (fieldName in schemaFields.keys()) {
             var schemaField = schemaFields.get(fieldName);
-            queryFields.set(fieldName, {
-                name: schemaField.name,
-                type: schemaField.type,
-                nullable: schemaField.nullable,
-                association: false // Simplified - would check associations
-            });
+            if (schemaField != null) {
+                queryFields.set(fieldName, {
+                    name: schemaField.name,
+                    type: schemaField.type,
+                    nullable: schemaField.nullable,
+                    association: false // Simplified - would check associations
+                });
+            }
         }
         
         return queryFields;

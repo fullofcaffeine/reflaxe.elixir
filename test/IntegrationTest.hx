@@ -2,114 +2,87 @@ package test;
 
 // Integration test for ElixirCompiler - Testing Trophy focused
 
+import utest.Test;
+import utest.Assert;
 import reflaxe.elixir.ElixirCompiler;
 import reflaxe.elixir.helpers.NamingHelper;
 
-class IntegrationTest {
-    public static function main() {
-        trace("Running ElixirCompiler Integration Tests...");
-        
-        testNamingConventions();
-        testBasicCompilerSetup();
-        testFileExtensionAndDirectory();
-        testElixirCodeGeneration();
-        
-        trace("✅ All integration tests passed!");
-    }
+class IntegrationTest extends Test {
     
     /**
      * Test naming convention utilities work as expected
      */
-    static function testNamingConventions() {
-        trace("TEST: Naming conventions work correctly");
-        
+    public function testNamingConventions() {
         // Test snake_case conversion
-        assertEqual(NamingHelper.toSnakeCase("MyClass"), "my_class", "MyClass -> my_class");
-        assertEqual(NamingHelper.toSnakeCase("someMethod"), "some_method", "someMethod -> some_method");
-        assertEqual(NamingHelper.toSnakeCase("HTTPClient"), "h_t_t_p_client", "HTTPClient -> h_t_t_p_client");
+        Assert.equals("my_class", NamingHelper.toSnakeCase("MyClass"), "MyClass -> my_class");
+        Assert.equals("some_method", NamingHelper.toSnakeCase("someMethod"), "someMethod -> some_method");
+        Assert.equals("h_t_t_p_client", NamingHelper.toSnakeCase("HTTPClient"), "HTTPClient -> h_t_t_p_client");
         
         // Test CamelCase conversion
-        assertEqual(NamingHelper.toCamelCase("my_class"), "MyClass", "my_class -> MyClass");
-        assertEqual(NamingHelper.toCamelCase("some_method"), "SomeMethod", "some_method -> SomeMethod");
+        Assert.equals("MyClass", NamingHelper.toCamelCase("my_class"), "my_class -> MyClass");
+        Assert.equals("SomeMethod", NamingHelper.toCamelCase("some_method"), "some_method -> SomeMethod");
         
         // Test Elixir module names
-        assertEqual(NamingHelper.getElixirModuleName("MyClass"), "MyClass", "Simple module name");
-        assertEqual(NamingHelper.getElixirModuleName("com.example.MyClass"), "Com.Example.MyClass", "Nested module name");
+        Assert.equals("MyClass", NamingHelper.getElixirModuleName("MyClass"), "Simple module name");
+        Assert.equals("Com.Example.MyClass", NamingHelper.getElixirModuleName("com.example.MyClass"), "Nested module name");
         
         // Test Elixir function names
-        assertEqual(NamingHelper.getElixirFunctionName("someMethod"), "some_method", "Function name conversion");
-        assertEqual(NamingHelper.getElixirFunctionName("new"), "__struct__", "Constructor mapping");
-        
-        trace("✅ Naming conventions test passed");
+        Assert.equals("some_method", NamingHelper.getElixirFunctionName("someMethod"), "Function name conversion");
+        Assert.equals("__struct__", NamingHelper.getElixirFunctionName("new"), "Constructor mapping");
     }
     
     /**
      * Test basic compiler instantiation and configuration
      */
-    static function testBasicCompilerSetup() {
-        trace("TEST: Basic compiler setup");
-        
+    public function testBasicCompilerSetup() {
         var compiler = new ElixirCompiler();
         
         // Test configuration
-        assertEqual(compiler.fileExtension, ".ex", "File extension should be .ex");
-        assertEqual(compiler.outputDirectory, "lib/", "Output directory should be lib/");
+        Assert.equals(".ex", compiler.fileExtension, "File extension should be .ex");
+        Assert.equals("lib/", compiler.outputDirectory, "Output directory should be lib/");
         
         // Test naming utility integration
-        assertEqual(compiler.toElixirName("MyClass"), "my_class", "Compiler naming utility works");
-        
-        trace("✅ Basic compiler setup test passed");
+        Assert.equals("my_class", compiler.toElixirName("MyClass"), "Compiler naming utility works");
     }
     
     /**
      * Test file extension and output directory configuration
      */
-    static function testFileExtensionAndDirectory() {
-        trace("TEST: File extension and directory configuration");
-        
+    public function testFileExtensionAndDirectory() {
         var compiler = new ElixirCompiler();
         
         // These should be properly configured for Elixir
-        assertEqual(compiler.fileExtension, ".ex", "Should use .ex extension");
-        assertEqual(compiler.outputDirectory, "lib/", "Should output to lib/ directory");
-        
-        trace("✅ File extension and directory test passed");
+        Assert.equals(".ex", compiler.fileExtension, "Should use .ex extension");
+        Assert.equals("lib/", compiler.outputDirectory, "Should output to lib/ directory");
     }
     
     /**
      * Test actual Elixir code generation from method calls
      */
-    static function testElixirCodeGeneration() {
-        trace("TEST: Elixir code generation");
-        
+    public function testElixirCodeGeneration() {
         var compiler = new ElixirCompiler();
         
-        // Test null handling
+        // Test null handling - these methods should gracefully handle null inputs
         var nullClassResult = compiler.compileClassImpl(null, [], []);
-        assertEqual(nullClassResult, null, "Should return null for null class");
+        Assert.equals(null, nullClassResult, "Should return null for null class");
         
         var nullEnumResult = compiler.compileEnumImpl(null, []);
-        assertEqual(nullEnumResult, null, "Should return null for null enum");
+        Assert.equals(null, nullEnumResult, "Should return null for null enum");
         
         var nullExprResult = compiler.compileExpressionImpl(null, false);
-        assertEqual(nullExprResult, null, "Should return null for null expression");
+        Assert.equals(null, nullExprResult, "Should return null for null expression");
         
-        // Test constant compilation
-        // Note: We'll need to create mock constants since we can't easily create TConstant instances
+        // Test that compiler instance is properly initialized
+        Assert.notNull(compiler, "Compiler should be instantiated");
         
-        trace("✅ Elixir code generation test passed");
+        // Note: More detailed code generation tests would require creating TypedExpr instances
+        // which are complex and are better tested through integration with the full compilation pipeline
     }
     
-    /**
-     * Helper: Assert equality with descriptive messages
-     */
-    static function assertEqual<T>(actual: T, expected: T, message: String) {
-        if (actual != expected) {
-            var error = '❌ ASSERTION FAILED: ${message}\n  Expected: ${expected}\n  Actual: ${actual}';
-            trace(error);
-            throw error;
-        } else {
-            trace('  ✓ ${message}: ${actual}');
-        }
+    static function main() {
+        var runner = new utest.Runner();
+        runner.addCase(new IntegrationTest());
+        var report = utest.ui.Report.create(runner);
+        runner.run();
     }
 }
