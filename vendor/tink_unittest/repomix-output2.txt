@@ -1,0 +1,1792 @@
+This file is a merged representation of the entire codebase, combined into a single document by Repomix.
+
+================================================================
+File Summary
+================================================================
+
+Purpose:
+--------
+This file contains a packed representation of the entire repository's contents.
+It is designed to be easily consumable by AI systems for analysis, code review,
+or other automated processes.
+
+File Format:
+------------
+The content is organized as follows:
+1. This summary section
+2. Repository information
+3. Directory structure
+4. Multiple file entries, each consisting of:
+  a. A separator line (================)
+  b. The file path (File: path/to/file)
+  c. Another separator line
+  d. The full contents of the file
+  e. A blank line
+
+Usage Guidelines:
+-----------------
+- This file should be treated as read-only. Any changes should be made to the
+  original repository files, not this packed version.
+- When processing this file, use the file path to distinguish
+  between different files in the repository.
+- Be aware that this file may contain sensitive information. Handle it with
+  the same level of security as you would the original repository.
+
+Notes:
+------
+- Some files may have been excluded based on .gitignore rules and Repomix's configuration
+- Binary files are not included in this packed representation. Please refer to the Repository Structure section for a complete list of file paths, including binary files
+- Files matching patterns in .gitignore are excluded
+- Files matching default ignore patterns are excluded
+
+Additional Info:
+----------------
+
+================================================================
+Directory Structure
+================================================================
+.github/
+  workflows/
+    ci.yml
+haxe_libraries/
+  ansi.hxml
+  hxcpp.hxml
+  hxnodejs.hxml
+  tink_await.hxml
+  tink_chunk.hxml
+  tink_cli.hxml
+  tink_core.hxml
+  tink_io.hxml
+  tink_macro.hxml
+  tink_priority.hxml
+  tink_streams.hxml
+  tink_stringly.hxml
+  tink_syntaxhub.hxml
+  tink_testrunner.hxml
+  tink_unittest.hxml
+  travix.hxml
+src/
+  tink/
+    unit/
+      Assert.hx
+      AssertionBuffer.hx
+      AssertionBufferInjector.hx
+      Benchmark.hx
+      Helper.hx
+      TestBatch.hx
+      TestBuilder.hx
+      TestCase.hx
+      TestSuite.hx
+tests/
+  issues/
+    Issue24.hx
+  RunTests.hx
+.gitignore
+.haxerc
+.travis.yml.disabled
+dev.hxml
+extraParams.hxml
+haxelib.json
+README.md
+tests.hxml
+
+================================================================
+Files
+================================================================
+
+================
+File: .github/workflows/ci.yml
+================
+name: CI
+
+on:
+  push:
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  test:
+
+    runs-on: ubuntu-latest
+    continue-on-error: ${{ matrix.haxe-version == 'nightly' }}
+    strategy:
+      matrix:
+        haxe-version:
+          - stable
+          - nightly
+        tink_core:
+          - v1
+          - master
+        target: 
+          - interp
+          - neko
+          - python
+          - node
+          - js
+          # - flash
+          # - java
+          # - cs
+          - cpp
+          - php
+          - lua
+
+    steps:
+    - name: Check out repo
+      uses: actions/checkout@v2
+    
+    - name: Get yarn cache directory path
+      id: yarn-cache-dir-path
+      run: echo "::set-output name=dir::$(yarn cache dir)"
+
+    - name: Cache Yarn
+      uses: actions/cache@v1
+      with:
+        path: ${{ steps.yarn-cache-dir-path.outputs.dir }}
+        key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-yarn-
+        
+    - name: Cache Haxe
+      uses: actions/cache@v1
+      with:
+        path: ${{ startsWith(runner.os, 'windows') && '%AppData%' || '~/haxe' }}
+        key: ${{ runner.os }}-haxe
+        
+    - name: Install Lix
+      uses: lix-pm/setup-lix@master
+      
+    - name: Install Haxe
+      run: lix install haxe ${{ matrix.haxe-version }}
+    
+    - name: Install Haxe Libraries
+      run: lix download
+      
+    - run: lix +tink 'core#${{ matrix.tink_core }}'
+      
+    - name: Run Test
+      run: lix run travix ${{ matrix.target }}
+
+  release:
+    runs-on: ubuntu-latest
+    needs: test
+    if: startsWith(github.ref, 'refs/tags/') # consider using the "release" event. see: https://docs.github.com/en/actions/reference/events-that-trigger-workflows#release
+    
+    steps:
+    - name: Check out repo
+      uses: actions/checkout@v2
+    
+    - name: Get yarn cache directory path
+      id: yarn-cache-dir-path
+      run: echo "::set-output name=dir::$(yarn cache dir)"
+
+    - name: Cache Yarn
+      uses: actions/cache@v1
+      with:
+        path: ${{ steps.yarn-cache-dir-path.outputs.dir }}
+        key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-yarn-
+        
+    - name: Cache Haxe
+      uses: actions/cache@v1
+      with:
+        path: ${{ startsWith(runner.os, 'windows') && '%AppData%' || '~/haxe' }}
+        key: ${{ runner.os }}-haxe
+        
+    - name: Install Lix
+      uses: lix-pm/setup-lix@master
+      
+    - name: Install Haxe
+      run: lix install haxe stable
+    
+    - name: Install Haxe Libraries
+      run: lix download
+      
+    - name: Release to Haxelib
+      run: lix run travix release
+      env:
+        HAXELIB_AUTH: ${{ secrets.HAXELIB_AUTH }}
+
+================
+File: haxe_libraries/ansi.hxml
+================
+# @install: lix --silent download haxelib:ansi#1.0.0 into ansi/1.0.0/haxelib
+-D ansi=1.0.0
+-cp ${HAXESHIM_LIBCACHE}/ansi/1.0.0/haxelib/src
+
+================
+File: haxe_libraries/hxcpp.hxml
+================
+# @install: lix --silent download "haxelib:/hxcpp#4.2.1" into hxcpp/4.2.1/haxelib
+# @run: haxelib run-dir hxcpp ${HAXE_LIBCACHE}/hxcpp/4.2.1/haxelib
+-cp ${HAXE_LIBCACHE}/hxcpp/4.2.1/haxelib/
+-D hxcpp=4.2.1
+
+================
+File: haxe_libraries/hxnodejs.hxml
+================
+# @install: lix --silent download "haxelib:/hxnodejs#12.1.0" into hxnodejs/12.1.0/haxelib
+-cp ${HAXE_LIBCACHE}/hxnodejs/12.1.0/haxelib/src
+-D hxnodejs=12.1.0
+--macro allowPackage('sys')
+# should behave like other target defines and not be defined in macro context
+--macro define('nodejs')
+--macro _internal.SuppressDeprecated.run()
+
+================
+File: haxe_libraries/tink_await.hxml
+================
+# @install: lix --silent download "gh://github.com/haxetink/tink_await#ae8cdf033ed3e1c735c37d1e8b79eb6d4512821e" into tink_await/0.6.0/github/ae8cdf033ed3e1c735c37d1e8b79eb6d4512821e
+-lib tink_core
+-lib tink_macro
+-lib tink_syntaxhub
+-cp ${HAXE_LIBCACHE}/tink_await/0.6.0/github/ae8cdf033ed3e1c735c37d1e8b79eb6d4512821e/src
+-D tink_await=0.6.0
+--macro tink.await.Await.use()
+
+================
+File: haxe_libraries/tink_chunk.hxml
+================
+# @install: lix --silent download "gh://github.com/haxetink/tink_chunk#d58e35ce6985a9e40e76a9771e8eee30c6efa5aa" into tink_chunk/0.4.0/github/d58e35ce6985a9e40e76a9771e8eee30c6efa5aa
+-cp ${HAXE_LIBCACHE}/tink_chunk/0.4.0/github/d58e35ce6985a9e40e76a9771e8eee30c6efa5aa/src
+-D tink_chunk=0.4.0
+
+================
+File: haxe_libraries/tink_cli.hxml
+================
+# @install: lix --silent download "gh://github.com/haxetink/tink_cli#1278ad2a34fd5e2403e414aefe09bb938d0c8825" into tink_cli/0.5.1/github/1278ad2a34fd5e2403e414aefe09bb938d0c8825
+-lib tink_io
+-lib tink_macro
+-lib tink_stringly
+-cp ${HAXE_LIBCACHE}/tink_cli/0.5.1/github/1278ad2a34fd5e2403e414aefe09bb938d0c8825/src
+-D tink_cli=0.5.1
+# Make sure docs are generated
+-D use-rtti-doc
+
+================
+File: haxe_libraries/tink_core.hxml
+================
+# @install: lix --silent download "gh://github.com/haxetink/tink_core#abee932c4e724517090238b6527eac28874c0354" into tink_core/1.27.1/github/abee932c4e724517090238b6527eac28874c0354
+-cp ${HAXE_LIBCACHE}/tink_core/1.27.1/github/abee932c4e724517090238b6527eac28874c0354/src
+-D tink_core=1.27.1
+
+================
+File: haxe_libraries/tink_io.hxml
+================
+# @install: lix --silent download "gh://github.com/haxetink/tink_io#ea6c6eec70f480082c6d8c4deed1cda4ae805fcf" into tink_io/0.8.0/github/ea6c6eec70f480082c6d8c4deed1cda4ae805fcf
+-lib tink_chunk
+-lib tink_streams
+-cp ${HAXE_LIBCACHE}/tink_io/0.8.0/github/ea6c6eec70f480082c6d8c4deed1cda4ae805fcf/src
+-D tink_io=0.8.0
+
+================
+File: haxe_libraries/tink_macro.hxml
+================
+# @install: lix --silent download "gh://github.com/haxetink/tink_macro#f1010a518fdefb484eaff8727ff022ba51658e53" into tink_macro/0.23.0/github/f1010a518fdefb484eaff8727ff022ba51658e53
+-lib tink_core
+-cp ${HAXE_LIBCACHE}/tink_macro/0.23.0/github/f1010a518fdefb484eaff8727ff022ba51658e53/src
+-D tink_macro=0.23.0
+
+================
+File: haxe_libraries/tink_priority.hxml
+================
+# @install: lix --silent download haxelib:tink_priority#0.1.3 into tink_priority/0.1.3/haxelib
+-D tink_priority=0.1.3
+-cp ${HAXESHIM_LIBCACHE}/tink_priority/0.1.3/haxelib/src
+
+================
+File: haxe_libraries/tink_streams.hxml
+================
+# @install: lix --silent download "gh://github.com/haxetink/tink_streams#5066a96c4a8b483479b6a8df8893eaf8922d3bea" into tink_streams/0.4.0/github/5066a96c4a8b483479b6a8df8893eaf8922d3bea
+-lib tink_core
+-cp ${HAXE_LIBCACHE}/tink_streams/0.4.0/github/5066a96c4a8b483479b6a8df8893eaf8922d3bea/src
+-D tink_streams=0.4.0
+# temp for development, delete this file when pure branch merged
+-D pure
+
+================
+File: haxe_libraries/tink_stringly.hxml
+================
+# @install: lix --silent download "haxelib:tink_stringly#0.2.0" into tink_stringly/0.2.0/haxelib
+-D tink_stringly=0.2.0
+-cp ${HAXE_LIBCACHE}/tink_stringly/0.2.0/haxelib/src
+
+-lib tink_core
+
+================
+File: haxe_libraries/tink_syntaxhub.hxml
+================
+# @install: lix --silent download https://github.com/haxetink/tink_syntaxhub/archive/b8a7e51a48c002cbeedb873f6cec177dbec9b8fd.tar.gz into tink_syntaxhub/0.3.6/github/b8a7e51a48c002cbeedb873f6cec177dbec9b8fd
+-D tink_syntaxhub=0.3.6
+-cp ${HAXESHIM_LIBCACHE}/tink_syntaxhub/0.3.6/github/b8a7e51a48c002cbeedb873f6cec177dbec9b8fd/src
+--macro tink.SyntaxHub.use()
+-lib tink_priority
+-lib tink_macro
+
+================
+File: haxe_libraries/tink_testrunner.hxml
+================
+# @install: lix --silent download "gh://github.com/haxetink/tink_testrunner#e8dbb790838544c66f92538da039e7027e8f1cf8" into tink_testrunner/0.9.0/github/e8dbb790838544c66f92538da039e7027e8f1cf8
+-lib ansi
+-lib tink_macro
+-lib tink_streams
+-cp ${HAXE_LIBCACHE}/tink_testrunner/0.9.0/github/e8dbb790838544c66f92538da039e7027e8f1cf8/src
+-D tink_testrunner=0.9.0
+
+================
+File: haxe_libraries/tink_unittest.hxml
+================
+-D tink_unittest
+-cp src
+
+-lib tink_testrunner
+-lib tink_syntaxhub
+
+--macro tink.unit.AssertionBufferInjector.use()
+
+================
+File: haxe_libraries/travix.hxml
+================
+# @install: lix --silent download "gh://github.com/back2dos/travix#354c2b2a82cc3b03e2f87cc1b6f0ddc0a6a5c133" into travix/0.15.0/github/354c2b2a82cc3b03e2f87cc1b6f0ddc0a6a5c133
+# @post-install: cd ${HAXE_LIBCACHE}/travix/0.15.0/github/354c2b2a82cc3b03e2f87cc1b6f0ddc0a6a5c133 && haxe -cp src --run travix.PostDownload
+# @run: haxelib run-dir travix ${HAXE_LIBCACHE}/travix/0.15.0/github/354c2b2a82cc3b03e2f87cc1b6f0ddc0a6a5c133
+-lib tink_cli
+-cp ${HAXE_LIBCACHE}/travix/0.15.0/github/354c2b2a82cc3b03e2f87cc1b6f0ddc0a6a5c133/src
+-D travix=0.15.0
+--macro travix.Macro.setup()
+
+================
+File: src/tink/unit/Assert.hx
+================
+package tink.unit;
+
+import tink.testrunner.Assertion;
+import tink.testrunner.Assertions;
+import tink.streams.Stream;
+
+using Lambda;
+#if macro
+import haxe.macro.*;
+import haxe.macro.Expr;
+using tink.MacroApi;
+#end
+
+class Assert {
+	static var printer = new haxe.macro.Printer();
+
+	public static macro function expectCompilerError(expr:Expr, ?pattern:ExprOf<EReg>, ?description:ExprOf<String>, ?pos:ExprOf<haxe.PosInfos>):ExprOf<Assertion> {
+		var error = null;
+		try Context.typeof(expr)
+		catch (e:Dynamic) {
+			error = Std.string(e);
+		}
+
+		var ereg = switch pattern {
+			case null | macro null: null;
+			case { expr: EConst(CString(s)) }: new EReg(s, '');
+			case { expr: EConst(CRegexp(r, opt)) }: new EReg(r, opt);
+			default: pattern.reject('expected string or regex literal');
+		}
+
+		switch description {
+			case null | macro null:
+				var error = switch error {
+					case null: 'no error';
+					case v: v;
+				}
+
+				description = (
+					if (ereg == null) '`${expr.toString()}` should not to compile ($error)';
+					else '`${expr.toString()}` should produce error matching ${pattern.toString()} ($error)'
+				).toExpr();
+			default:
+		}
+
+		var ok = error != null && (ereg == null || ereg.match(error));
+		
+		var args = [macro @:pos(expr.pos) $v{ok}, description];
+		switch pos {
+			case macro null: // skip
+			case v: args.push(v);
+		}
+
+		return macro tink.unit.Assert.assert($a{args});
+	}
+
+	public static macro function assert(expr:ExprOf<Bool>, ?description:ExprOf<String>, ?pos:ExprOf<haxe.PosInfos>):ExprOf<Assertion> {
+		var pre = macro {};
+		var assertion = expr;
+
+		switch description {
+			case macro null:
+			default:
+				if(Context.unify(Context.typeof(description), Context.getType('haxe.PosInfos'))) {
+					pos = description;
+					description = macro null;
+				}
+		}
+
+		switch description {
+			case macro null:
+				description = macro $v{expr.toString()};
+
+				// TODO: we can actually do a recursive breakdown: e.g. `a == 1 && b == 2`
+				switch expr {
+					case {expr: EBinop(op, e1, e2), pos: pos}:
+						switch Context.typeExpr(expr) { // type it as a whole to preserve top-down inference
+							case t_expr = {expr: TBinop(t_op, t_e1, t_e2) | TCast({expr: TBinop(t_op, t_e1, t_e2)}, _)}:
+								var stored = Context.storeTypedExpr(t_expr);
+								var lstored = Context.storeTypedExpr(t_e1);
+								var rstored = Context.storeTypedExpr(t_e2);
+
+								var lct = t_e1.t.toComplex();
+								var rct = t_e2.t.toComplex();
+
+								pre = macro {
+									// store the values to avoid evaluating the expressions twice
+									var lh:$lct = $lstored;
+									var rh:$rct = $rstored;
+								}
+
+								assertion = EBinop(op, macro @:pos(e1.pos) lh, macro @:pos(e2.pos) rh).at(pos);
+								description = macro $description + ' (' + ${stringify(macro lh, t_e1.t)} + ' ' + $v{printer.printBinop(op)} + ' ' + ${stringify(macro rh, t_e2.t)} + ')';
+							case v:
+								var lt = Context.typeof(e1);
+								var rt = Context.typeof(e2);
+
+								function isAbstract(t:Type)
+									return t.reduce().match(TAbstract(_));
+
+								if (!(isAbstract(lt) || isAbstract(rt)))
+									expr.pos.warning('Please report this to tink_unittest: Unhandled TypedExpr: $v');
+
+								var lct = lt.toComplex();
+								var rct = rt.toComplex();
+
+								pre = macro {
+									// store the values to avoid evaluating the expressions twice
+									var lh = $e1;
+									var rh = $e2;
+								}
+
+								assertion = EBinop(op, macro @:pos(e1.pos) (lh:$lct), macro @:pos(e2.pos) (rh:$rct)).at(expr.pos);
+								description = macro $description + ' (' + ${stringify(macro lh, lt)} + ' ' + $v{printer.printBinop(op)} + ' ' + ${stringify(macro rh, rt)} + ')';
+						}
+
+					case macro $e1.match($e2):
+						pre = macro {
+							var value = $e1;
+						}
+						assertion = macro @:pos(expr.pos) value.match($e2);
+						description = macro $description + ' (' + $v{e1.toString()} + ' => ' + ${stringify(macro value, Context.typeof(e1))} + ')';
+					default:
+				}
+			default:
+		}
+
+		var args = [assertion, description];
+		switch pos {
+			case macro null: // skip
+			case v: args.push(v);
+		}
+		return pre.concat(macro @:pos(expr.pos) new tink.testrunner.Assertion($a{args}));
+	}
+
+	#if deep_equal
+
+	public static macro function compare(expected:Expr, actual:Expr, ?description:ExprOf<String>, ?pos:ExprOf<haxe.PosInfos>):ExprOf<Assertion> {
+
+		var pre = macro {
+			@:pos(expected.pos) var expected:Dynamic = $expected;
+			@:pos(actual.pos) var actual:Dynamic = $actual;
+		}
+
+		var args = [
+			macro deepequal.DeepEqual.compare(expected, actual),
+			switch description {
+				case macro null: macro '\nExpected : ' + expected + '\nActual   : ' + actual;
+				case v: v;
+			}
+		];
+		switch pos {
+			case macro null:
+			case _: args.push(pos);
+		}
+
+		var pos = Context.currentPos();
+		return pre.concat(macro @:pos(pos) new tink.testrunner.Assertion($a{args}));
+	}
+
+	#end
+
+	public static macro function benchmark(iterations:ExprOf<Int>, body:Expr):ExprOf<tink.testrunner.Assertion> {
+		return macro @:pos(body.pos) {
+			var __iter = $iterations;
+			var __start = haxe.Timer.stamp();
+			for(_ in 0...__iter) $body;
+			var __dt = haxe.Timer.stamp() - __start;
+			var __str = Std.string(__dt * 1000);
+			if(__str == '0') __str = '0.000001';
+			else switch __str.indexOf('.') {
+				case -1: // ok
+				case index: __str = __str.substr(0, index + 7);
+			}
+			new tink.testrunner.Assertion(true, 'Benchmark: ' + __iter + ' iterations = ' + __str + ' ms');
+		}
+	}
+	
+	#if macro
+	static function stringify(e:Expr, t:haxe.macro.Type) {
+		return switch t {
+			case _.getID() => 'String':
+				macro '"' + ($e:String) + '"';
+			case TAbstract(_.get() => {name: name, to: to}, _) if(to.exists(function(v) return v.t.getID() == 'String' && v.field == null)): // "to String"
+				macro '"' + ($e:String) + '"';
+			case TAbstract(_.get() => {name: name, to: to}, _) if(to.exists(function(v) return v.t.getID() == 'String' && v.field != null)):  // "@:to String"
+				macro ($e:String);
+			case _:
+				macro Std.string($e);
+		}
+	}
+	#end
+	
+	#if !macro
+	public static inline function fail(e:tink.core.Error, ?pos:haxe.PosInfos):Assertions
+		return Stream.ofError(e);
+	#end
+}
+
+================
+File: src/tink/unit/AssertionBuffer.hx
+================
+package tink.unit;
+
+import tink.testrunner.*;
+import tink.streams.Stream;
+import haxe.macro.Expr;
+
+#if macro
+using tink.MacroApi;
+#end
+using tink.CoreApi;
+
+private class Impl extends SignalStream<Assertion, Error> {
+	var trigger:SignalTrigger<Yield<Assertion, Error>>;
+	public function new() {
+		var trigger = Signal.trigger();
+		super(trigger.asSignal());
+		this.trigger = trigger;
+	}
+	public inline function yield(data)
+		trigger.trigger(data);
+}
+
+
+@:transitive
+abstract AssertionBuffer(Impl) from Impl to Assertions {
+	
+	public macro function expectCompilerError(ethis:Expr, expr:Expr, ?pattern:ExprOf<EReg>, ?description:ExprOf<String>, ?pos:ExprOf<haxe.PosInfos>):ExprOf<Assertion> {
+		var args = [expr, pattern, description];
+		switch pos {
+			case macro null:
+			case _: args.push(pos);
+		}
+		return macro @:pos(ethis.pos) {
+			var assertion = tink.unit.Assert.expectCompilerError($a{args});
+			$ethis.emit(assertion);
+			assertion;
+		};
+	}
+	
+	public macro function assert(ethis:Expr, result:ExprOf<Bool>, ?description:ExprOf<String>, ?pos:ExprOf<haxe.PosInfos>):ExprOf<Assertion> {
+		var args = [result, description];
+		switch pos {
+			case macro null:
+			case _: args.push(pos);
+		}
+		return macro @:pos(ethis.pos) {
+			var assertion = tink.unit.Assert.assert($a{args});
+			$ethis.emit(assertion);
+			assertion;
+		}
+	}
+	
+	#if deep_equal
+	
+	public macro function compare(ethis:Expr, expected:Expr, actual:Expr, ?description:ExprOf<String>, ?pos:ExprOf<haxe.PosInfos>) {
+		var args = [expected, actual, description];
+		switch pos {
+			case macro null:
+			case _: args.push(pos);
+		}
+		return macro @:pos(ethis.pos) $ethis.emit(tink.unit.Assert.compare($a{args}));
+	}
+		
+	#end
+		
+	#if !macro
+	public inline function new()
+		this = new Impl();
+		
+	public inline function emit(assertion:Assertion)
+		this.yield(Data(assertion));
+		
+	public inline function fail(reason:FailingReason, ?pos:haxe.PosInfos):AssertionBuffer {
+		this.yield(Fail(reason));
+		return this;
+	}
+	
+	public function defer(f:Void->Void):AssertionBuffer {
+		Callback.defer(f);
+		return this;
+	}
+	
+	public inline function done():AssertionBuffer {
+		this.yield(End);
+		return this;
+	}
+	
+	public function handle<T>(outcome:Outcome<T, Error>)
+		switch outcome {
+			case Success(_): done();
+			case Failure(e): fail(e);
+		}
+	#end
+}
+
+@:forward
+abstract FailingReason(Error) from Error to Error {
+	@:from
+	public static inline function ofString(e:String):FailingReason
+		return new Error(e);
+}
+
+================
+File: src/tink/unit/AssertionBufferInjector.hx
+================
+package tink.unit;
+
+
+using haxe.macro.Expr;
+using haxe.macro.Type;
+using tink.MacroApi;
+using Lambda;
+
+class AssertionBufferInjector {
+	public static function use() {
+		function appliesTo(m:MetaAccess) return m.has(':asserts');
+		SyntaxHub.classLevel.before(
+			function (_) return true,
+			function (c: ClassBuilder) {
+				if (c.target.isInterface && !appliesTo(c.target.meta))
+					return false;
+				
+				if (!appliesTo(c.target.meta)) {
+					for (i in c.target.interfaces)
+						if (appliesTo(i.t.get().meta)) {
+							applyTo(c);
+							return true;
+						}
+					var s = c.target.superClass;
+					while(s != null) {
+						var sc = s.t.get();
+						if(appliesTo(sc.meta)) {
+							applyTo(c);
+							return true;
+						}
+						s = sc.superClass;
+					}
+					return false;
+				}
+				else {
+					applyTo(c);
+					return true;
+				}
+			}
+		);
+	}
+	
+	static function applyTo(builder:ClassBuilder) {
+		for(member in builder) {
+			
+			function isTest(member:Member) {
+				var meta = member.asField().meta;
+				return !meta.exists(function(m) return 
+					m.name == ':setup' || 
+					m.name == ':startup' || // TODO: deprecated
+					m.name == ':teardown' || 
+					m.name == ':shutdown' || // TODO: deprecated
+					m.name == ':before' || 
+					m.name == ':after'
+				);
+			}
+			
+			if(member.isPublic && !member.isStatic && isTest(member))
+				switch member.getFunction() {
+					case Success(func):
+						if(func.args.exists(function(a) return a.name == 'asserts'))
+							haxe.macro.Context.warning('Skip injecting AssertionBuffer because there is already an argument named "asserts"', member.pos);
+						else
+							func.args.push({
+								name: 'asserts',
+								type: macro:tink.unit.AssertionBuffer,
+							});
+					case Failure(_): // skip
+				}
+		}
+	}
+}
+
+================
+File: src/tink/unit/Benchmark.hx
+================
+package tink.unit;
+
+#if !macro
+
+@:autoBuild(tink.unit.Benchmark.build())
+interface Benchmark {}
+
+#else
+
+using tink.MacroApi;
+
+class Benchmark {
+	public static function build() {
+		var builder = new ClassBuilder();
+		
+		for(field in builder) {
+			switch [field.kind, field.metaNamed(':benchmark')] {
+				case [_, []]: // skip
+				case [FFun(func), [meta = {pos: pos, params: [{expr: EConst(CInt(Std.parseInt(_) => i))}]}]]:
+					field.meta.remove(meta);
+					func.expr = macro return tink.unit.Assert.benchmark($v{i}, ${func.expr});
+				case _: field.pos.error('Invalid use of @:benchmark. Only one @:benchmark is supported on each field and it should has exactly one Int parameter');
+			}
+		}
+		
+		return builder.export();
+	}
+}
+
+#end
+
+================
+File: src/tink/unit/Helper.hx
+================
+package tink.unit;
+
+import haxe.Timer;
+
+using tink.CoreApi;
+
+class Helper {
+	public static inline function seq(arr)
+		return Promise.inSequence(arr);
+	
+	public static function lazy<T>(gen:Void->Promise<T>, ?handler:T->Void):Promise<Noise>
+		return Promise.lazy(gen).next(function(v) {
+			if(handler != null) handler(v);
+			return Noise;
+		});
+	
+	public static function delay(ms:Int):Future<Noise>
+		return Future.async(function(cb) Timer.delay(cb.bind(Noise), ms));
+	
+}
+
+================
+File: src/tink/unit/TestBatch.hx
+================
+package tink.unit;
+
+#if macro
+import haxe.macro.Context;
+import haxe.macro.Expr;
+using tink.MacroApi;
+#end
+
+class TestBatch {
+	public static macro function make(values:Array<Expr>) {
+		switch values {
+			case [{ expr: EArrayDecl(exprs) }]:
+				values = exprs;
+			default:
+		}
+
+		var suites = EArrayDecl(values.map(function(v) return macro tink.unit.TestSuite.make($v))).at();
+		return macro new tink.testrunner.Batch($suites);
+	}
+}
+
+================
+File: src/tink/unit/TestBuilder.hx
+================
+package tink.unit;
+
+import haxe.macro.Context;
+import haxe.macro.Type;
+import haxe.macro.Expr;
+
+using Lambda;
+using StringTools;
+using tink.CoreApi;
+#if macro
+import tink.macro.BuildCache;
+using tink.MacroApi;
+#end
+
+class TestBuilder {
+	
+	static var cache = new TypeMap();
+	static var infos = new TypeMap();
+	static var counter = 0;
+	
+	public static function build() {
+		return BuildCache.getType('tink.unit.TestSuiteBuilder', function(ctx) {
+			var type = ctx.type;
+			var clsname = ctx.name;
+			var info = process(type);
+			var cases = [];
+			var fields = [];
+			var includeMode = false;
+			var runnables = [
+				Setup => [],
+				Teardown => [],
+				Before => [],
+				After => [],
+			];
+			
+			for(field in info.fields) {
+				var fname = field.field.name;
+				var cname = switch info.type {
+					case TInst(_.get() => {name: name}, _): name;
+					default: null;
+				}
+				
+				switch [field.kind, field.variants] {
+					case [Test, []]:
+						var args = field.bufferIndex == -1 ? [] : [macro new tink.unit.AssertionBuffer()];
+						cases.push({
+							name: field.description,
+							description: null,
+							timeout: field.timeout,
+							exclude: field.exclude,
+							include: field.include,
+							pos: transformPos(field.field.pos, {methodName: fname, className: cname}),
+							runnable: macro @:pos(field.field.pos) function():tink.testrunner.Assertions return target.$fname($a{args}),
+						});
+						
+					case [Test, variants]:
+						for(v in variants) {
+							var args = v.args.copy();
+							if(field.bufferIndex != -1) args.insert(field.bufferIndex, macro new tink.unit.AssertionBuffer());
+							cases.push({
+								name: field.description,
+								description: v.description,
+								timeout: field.timeout,
+								exclude: field.exclude,
+								include: field.include,
+								pos: transformPos(v.pos, {methodName: fname, className: cname}),
+								runnable: macro @:pos(field.field.pos) function():tink.testrunner.Assertions return target.$fname($a{args}),
+							});
+							
+						}
+					
+					default:
+						var name = 'run_$fname';
+						fields.push({
+							name: name,
+							access: [APublic],
+							kind: FFun({
+								args: [],
+								ret: macro:tink.core.Promise<tink.core.Noise>,
+								expr: macro @:pos(field.field.pos) return target.$fname(),
+							}),
+							pos: field.field.pos,
+						});
+						runnables[field.kind].push(macro $i{name});
+				}
+			}
+			
+			cases = cases.filter(function(c) return !c.exclude && (!includeMode || c.include));
+			var tinkCases = [];
+			for(i in 0...cases.length) {
+				var caze = cases[i];
+				if(!includeMode && caze.include) includeMode = true;
+				var info = macro {
+					name: $v{caze.name},
+					description: $v{caze.description},
+					pos: {
+						lineNumber: $v{caze.pos.lineNumber},
+						fileName: $v{caze.pos.fileName},
+						methodName: $v{caze.pos.methodName},
+						className: $v{caze.pos.className},
+					}
+				}
+				tinkCases.push(macro {
+					var pos = {
+						lineNumber: $v{caze.pos.lineNumber},
+						fileName: $v{caze.pos.fileName},
+						methodName: $v{caze.pos.methodName},
+						className: $v{caze.pos.className},
+					}
+					new tink.unit.TestCase($info, ${caze.runnable}, $v{caze.timeout}, $v{caze.include}, $v{caze.exclude}, pos);
+				});
+			}
+			
+			var noiseExpr = macro tink.core.Promise.NOISE;
+			function makeServiceLoop(f:Array<Expr>) {
+				if(f.length == 0) return noiseExpr;
+				var fields = f.copy();
+				fields.reverse(); // because the call tree is inside-out
+				var expr = fields.fold(function(f, expr) return macro $f().handle(function(o) switch o {
+					case Success(_): $expr;
+					case Failure(e): cb(tink.core.Outcome.Failure(e));
+				}), macro cb(tink.core.Outcome.Success(tink.core.Noise.Noise.Noise)));
+				return macro tink.core.Future #if (tink_core >= "2") .irreversible #else .async #end(function(cb) $expr);
+			}
+			
+			var ct = type.toComplex();
+			var pos = transformPos(type.getPosition().sure(), {className: type.getID()});
+			var def = macro class $clsname extends tink.unit.TestSuite.TestSuiteBase<$ct> {
+				
+				public function new(target:$ct, ?name:String) {
+					super({
+						name: name == null ? $v{info.name} : name,
+						pos: {
+							lineNumber: $v{pos.lineNumber},
+							fileName: $v{pos.fileName},
+							methodName: $v{pos.methodName},
+							className: $v{pos.className},
+						}
+					} , $a{tinkCases});
+					this.target = target;
+				}
+			}
+			
+			// override service functions
+			for(kind in [Setup, Before, After, Teardown])
+				switch makeServiceLoop(runnables[kind]) {
+					case e if (e != noiseExpr):
+						var func = kind.getName().toLowerCase();
+						def.fields.push((macro class {override function $func() return $e; }).fields[0]);
+					case _:
+				}
+			
+			def.fields = def.fields.concat(fields); 
+			def.pack = ['tink', 'unit'];
+			
+			return def;
+		});
+	}
+	
+	static function process(type:Type):TestInfo {
+		if(!infos.exists(type)) {
+			
+			var cls = switch type {
+				case TInst(_.get() => cls, _): cls;
+				default: throw 'assert';
+			}
+			
+			var suiteName = switch cls.meta.extract(':name') {
+				case []: cls.name;
+				case [{params: [p]}]: p.getString().sure();
+				case v: v[0].pos.error('Expected only one @:name metadata with exactly one parameter');
+			}
+			
+			var fields = [];
+			var clstimeout = 5000;
+			
+			if(cls.superClass != null) {
+				var s = cls.superClass.t.get();
+				var sinfo = process(Context.getType('${s.module}.${s.name}'));
+				clstimeout = sinfo.timeout;
+				fields = sinfo.fields.copy();
+			}
+			
+			clstimeout = getTimeout(cls.meta, clstimeout);
+					
+			for(field in cls.fields.get()) if(field.isPublic && field.kind.match(FMethod(_))) {
+				var fname = field.name;
+				
+				var kind:Kind = null;
+				function checkKind(meta:String, k:Kind, ?alt:String) switch field.meta.extract(meta) {
+					case []: // ok
+					case v if(kind == null):
+						kind = k;
+						if(alt != null) Context.warning('@$meta is depcreated, use @$alt instead', v[0].pos);
+					case v if(kind == k): 
+						// duplicate, but ok
+						if(alt != null) Context.warning('@$meta is depcreated, use @$alt instead', v[0].pos);
+					case v:
+						v[0].pos.error('Cannot declare @$meta and @:${Std.string(kind).toLowerCase()} on the same function');
+				}
+				checkKind(':setup', Setup);
+				checkKind(':startup', Setup, ':setup');
+				checkKind(':teardown', Teardown);
+				checkKind(':shutdown', Teardown, ':teardown');
+				checkKind(':before', Before);
+				checkKind(':after', After);
+				if(kind == null) kind = Test;
+				
+				switch field.meta.extract(':benchmark') {
+					case []: // ok
+					case _: field.pos.warning('Did you forget to implement tink.unit.Benchmark, which enables the @:benchmark metadata?');
+				}
+				
+				var description = switch field.meta.extract(':describe') {
+					case []: fname;
+					case v: [for(v in v) v.params[0].getString().sure()].join('\n');
+				}
+				var timeout = getTimeout(field.meta, clstimeout);
+				var variants = switch field.meta.extract(':variant') {
+					case []: [];
+					case v: 
+						function subst(e:Expr)
+							return switch e {
+								case macro this.$field: 
+									macro @:pos(e.pos) @:privateAccess this.target.$field;
+								case macro this: 
+									macro @:pos(e.pos) @:privateAccess this.target;
+								default:
+									e.map(subst);
+							}
+						
+						var ret = [];
+						for(v in v) {
+							var desc, args;
+							switch v.params {
+								case [{expr: ECall({expr: EConst(CString(str))}, params)}]: 
+									desc = str;
+									args = params.map(subst);
+								case p: 
+									desc = [for(e in p) e.toString()].join(', ');
+									args = p.map(subst);
+							}
+							ret.push({description: desc, pos: v.pos, args: args});
+						}
+						ret;
+				}
+				
+				var exclude = field.meta.extract(':exclude').length > 0;
+				var include = field.meta.extract(':include').length > 0;
+				
+				// inject AssertionBuffer
+				var bufferIndex = -1;
+				function prepareBuffer(type) {
+					switch type {
+						case TFun(args, ret):
+							for(i in 0...args.length)
+								switch args[i].t.reduce() {
+									case TDynamic(null) | TAbstract(_.get() => {name: 'Any', pack: []}, _): // ignore
+									case t if(Context.unify(t, Context.getType('tink.unit.AssertionBuffer'))):
+										bufferIndex = i;
+										break;
+									default:
+								}
+						case TLazy(f): prepareBuffer(f());
+						default:
+					}
+				}
+				prepareBuffer(field.type);
+				
+				fields.push({
+					field: field,
+					kind: kind,
+					include: include,
+					exclude: exclude,
+					variants: variants,
+					bufferIndex: bufferIndex,
+					description: description,
+					timeout: timeout,
+				});
+			}
+			
+			infos.set(type, {
+				type: type,
+				name: suiteName,
+				timeout: clstimeout,
+				fields: fields,
+			});
+		}
+		
+		return infos.get(type);
+	}
+	
+	static function getTimeout(meta:MetaAccess, def:Int)
+		return switch meta.extract(':timeout') {
+			case []: def;
+			case [v]: switch v.params {
+					case [{expr: EConst(CInt(i))}]: Std.parseInt(i.replace("_", ""));
+					case [{pos: pos}]: pos.error('Expected integer parameter for @:timeout');
+					default: v.pos.error('Expected exactly one parameter for @:timeout');
+				}
+			case p: p[0].pos.error('Multiple @:timeout meta');
+		} 
+	
+	static function transformPos(p:Position, ?overrides:PosInfoOverrides):haxe.PosInfos 
+		return 
+			switch Context.getTypedExpr(Context.typeExpr(macro @:pos(p) (function (?pos:haxe.PosInfos) return pos.lineNumber)())) {
+				case macro $_({ fileName: $f, lineNumber: $l, className: $c, methodName: $m }):
+					if(overrides == null) overrides = {}
+					inline function get<T>(overridden:T, base:T) return overridden == null ? base : overridden;
+					{ 
+						fileName: get(overrides.fileName, f.getString().sure()), 
+						lineNumber: get(overrides.lineNumber, l.getInt().sure()), 
+						className: get(overrides.className, null), // FIXME: c.getString().sure() points to the macro callsite (i.e. what haxe.macro.Context refers to)
+						methodName: get(overrides.methodName, null), // FIXME: m.getString().sure() points to the macro callsite (i.e. what haxe.macro.Context refers to)
+					}
+				default: null;
+			}
+
+}
+
+private typedef PosInfoOverrides = {
+	?fileName:String,
+	?lineNumber:Int,
+	?className:String,
+	?methodName:String,
+}
+
+private typedef TestInfo = {
+	type:Type,
+	name:String,
+	timeout:Int,
+	fields:Array<{
+		field:ClassField,
+		kind:Kind,
+		include:Bool,
+		exclude:Bool,
+		variants:Array<{description:String, pos:Position, args:Array<Expr>}>,
+		bufferIndex:Int,
+		description:String,
+		timeout:Int,
+	}>,
+}
+
+private enum Kind {
+	Setup;
+	Teardown;
+	Before;
+	After;
+	Test;
+}
+
+================
+File: src/tink/unit/TestCase.hx
+================
+package tink.unit;
+
+import tink.testrunner.Assertions;
+import tink.testrunner.Case;
+import tink.testrunner.Suite;
+import haxe.PosInfos;
+
+using tink.CoreApi;
+
+class TestCase implements CaseObject {
+	public var suite:Suite;
+	public var info:CaseInfo;
+	public var timeout:Int;
+	public var include:Bool;
+	public var exclude:Bool;
+	public var pos:PosInfos;
+	
+	var test:Void->Assertions;
+	
+	public function new(info, test, timeout, include, exclude, ?pos:haxe.PosInfos) {
+		this.info = info;
+		this.test = test;
+		this.timeout = timeout;
+		this.include = include;
+		this.exclude = exclude;
+		this.pos = pos;
+	}
+	
+	public function execute():Assertions {
+		return test();
+	}
+	
+	
+}
+
+================
+File: src/tink/unit/TestSuite.hx
+================
+package tink.unit;
+
+#if !macro
+import tink.testrunner.Suite;
+
+@:genericBuild(tink.unit.TestBuilder.build())
+class TestSuiteBuilder<T> {}
+
+
+class TestSuiteBase<T> extends BasicSuite {
+	var target:T;
+}
+#end
+
+class TestSuite {
+	public static macro function make(e:haxe.macro.Expr, ?name:haxe.macro.Expr) {
+		var ct = haxe.macro.Context.toComplexType(haxe.macro.Context.typeof(e));
+		return macro new tink.unit.TestSuite.TestSuiteBuilder<$ct>($e, $name);
+	}
+}
+
+================
+File: tests/issues/Issue24.hx
+================
+package issues;
+
+#if macro
+import haxe.macro.Context;
+using StringTools;
+#else
+@:build(issues.Issue24.build())
+#end
+class Issue24 {
+  private var x:Int;
+  private var y:Int;
+  #if macro
+  static function build() {
+    for (field in Context.getBuildFields())
+      if (field.name.startsWith('x'))
+        Context.error('I HaTe vAriAblEs wHaT stARt WitH X', Context.currentPos());
+    return null;
+  }
+  #end
+}
+
+================
+File: tests/RunTests.hx
+================
+package;
+
+import tink.testrunner.Runner;
+import tink.testrunner.Assertion;
+import tink.unit.Assert.assert;
+import tink.unit.TestBatch;
+import travix.Logger.*;
+
+using tink.CoreApi;
+
+class RunTests {
+	static function main() {
+		
+		var code = 0;
+		
+		#if (cs || java) // https://github.com/HaxeFoundation/haxe/issues/6106
+		function assertEquals(expected:Dynamic, actual:Dynamic, ?pos:haxe.PosInfos) {
+		#else
+		function assertEquals<T>(expected:T, actual:T, ?pos:haxe.PosInfos) {
+		#end
+			if(expected != actual) {
+				println('${pos.fileName}:${pos.lineNumber}: Expected $expected but got $actual ');
+				code++;
+			}
+		}
+		
+		var futures = [];
+		
+		// Test: basic
+		var normal = new NormalTest();
+		var _await = new AwaitTest();
+		var exclude = new ExcludeTest();
+		var grandParent = new GrandParentTest();
+		var parent = new ParentTest();
+		var child = new ChildTest();
+		var abs = new AbstractCastTest();
+		var benchmark = new BenchmarkTest();
+		futures.push(
+			function() return Runner.run(TestBatch.make([
+				normal,
+				_await,
+				exclude,
+				grandParent,
+				parent,
+				child,
+				abs,
+				benchmark,
+				new StringificationTest(),
+			])).map(function(result) {
+				assertEquals(0, result.summary().failures.length);
+				assertEquals('ss2bb2issue24aa2bb2syncaa2bb2syncAssertaa2bb2asyncaa2bb2asyncAssertaa2bb2timeoutaa2bb2nestedDescriptionsaa2bb2multiAssertaa2bb2variant1aa2bb2variant2aa2bb2variant3aa2bb2variant21aa2dd2', normal.result);
+				assertEquals('ss2bb2asyncaa2dd2', _await.result);
+				assertEquals('ss2bb2includeaa2dd2', exclude.result);
+				assertEquals('ss2grandParentdd2', grandParent.result);
+				assertEquals('ss2bb2grandParentaa2bb2parentaa2dd2', parent.result);
+				assertEquals('ss2bb2grandParentaa2bb2parentaa2bb2childaa2dd2', child.result);
+				return Noise;
+			})
+		);
+		
+		// Test: include
+		var normal = new NormalTest();
+		var _await = new AwaitTest();
+		var include = new IncludeTest();
+		futures.push(
+			function() return Runner.run(TestBatch.make([
+				normal, 
+				_await, 
+				include,
+			])).map(function(result) {
+				assertEquals(0, result.summary().failures.length);
+				assertEquals('', normal.result);
+				assertEquals('', _await.result);
+				assertEquals('ss2bb2includeaa2dd2', include.result);
+				return Noise;
+			})
+		);
+		
+		var iter = futures.iterator();
+		function next() {
+			if(iter.hasNext()) iter.next()().handle(next);
+			else {
+				trace('Exiting with code: $code');
+				exit(code);
+			}
+		}
+		next();
+	}
+}
+
+@:asserts
+@:name('Custom Test Name')
+class NormalTest implements tink.unit.Benchmark {
+	public var myInt = 3;
+	public var result:String;
+	
+	public function new() {
+		result = '';
+	}
+
+	public function issue24() {
+		debug('issue24');
+		return tink.unit.Assert.expectCompilerError(issues.Issue24, ~/start with x/i);
+	}
+
+	function debug(msg:String) {
+		result += msg;
+		return Noise;
+	}
+	
+	@:before public function before() return debug('b');
+	@:before public function before2() return debug('b2');
+	@:after public function after() return debug('a');
+	@:after public function after2() return debug('a2');
+	@:setup public function setup() return debug('s');
+	@:setup public function setup2() return debug('s2');
+	@:teardown public function teardown() return debug('d');
+	@:teardown public function teardown2() return debug('d2');
+		
+	@:describe("Sync test")
+	public function sync() {
+		debug('sync');
+		return new Assertion(true, 'Always true');
+	}
+
+	@:describe('Sync test using Assert')
+	public function syncAssert() {
+		debug('syncAssert');
+		return assert(true);
+	}
+		
+	@:describe('Async test')
+	public function async() {
+		debug('async');
+		return Future.sync(new Assertion(true, 'Always true'));
+	}
+		
+	@:describe('Async test using Assert')
+	public function asyncAssert() {
+		debug('asyncAssert');
+		return Future.sync(assert(true));
+	}
+		
+	@:timeout(1500) // in ms
+	@:describe('Timeout test')
+	public function timeout() {
+		debug('timeout');
+		return Future.async(function(cb) haxe.Timer.delay(function() cb(assert(true)), 1000));
+	}
+		
+	@:describe('Nest')
+	@:describe('  your')
+	@:describe('    descriptions')
+	public function nestedDescriptions() {
+		debug('nestedDescriptions');
+		return assert(true);
+	}
+    
+	@:describe('Multiple assertions')
+	public function multiAssert() {
+		debug('multiAssert');
+		
+		var timer = new haxe.Timer(500);
+		var i = 0;
+		timer.run = function()
+			if(i++ < 3) asserts.assert(true);
+			else {
+				asserts.done();
+				timer.stop();
+			}
+		return asserts;
+	}
+	
+	@:describe('Variants')
+	@:variant("One and One"(1, 1))
+	@:variant(2, 2)
+	@:variant("Access this"(target.myInt, 3))
+	public function variant(a:Int, b:Int) {
+		debug('variant$a');
+		return assert(a == b);
+	}
+	
+	@:variant(this.int())
+	public function variant2(a:Int) {
+		debug('variant2$a');
+		return assert(a == a);
+	}
+	
+	function int() return 1;
+}
+
+class BenchmarkTest implements tink.unit.Benchmark {
+	
+	var result:Float = 0;
+	
+	public function new() {}
+	
+	@:describe('Benchmark Math.sqrt() with build macro')
+	@:benchmark(10000)
+	public function benchmark()
+		for(i in 0...10000) result += Math.sqrt(i);
+	
+	@:describe('Benchmark Math.sqrt() with expression macro')
+	public function benchmark2() {
+		result = 0;
+		return tink.unit.Assert.benchmark(10000, for(i in 0...10000) result += Math.sqrt(i));
+	}
+		
+}
+
+@:await
+class AwaitTest {
+	public var result:String;
+	
+	public function new() {
+		result = '';
+	}
+	
+	function debug(msg:String) {
+		result += msg;
+		return Noise;
+	}
+	
+	@:before public function before() return debug('b');
+	@:before public function before2() return debug('b2');
+	@:after public function after() return debug('a');
+	@:after public function after2() return debug('a2');
+	@:setup public function setup() return debug('s');
+	@:setup public function setup2() return debug('s2');
+	@:teardown public function teardown() return debug('d');
+	@:teardown public function teardown2() return debug('d2');
+	
+	@:describe('Async test powered by tink_await')
+	@:async public function async() {
+		debug('async');
+		var actual = @:await someAsyncValue();
+		return assert(actual == 'actual');
+	}
+  
+  function someAsyncValue() 
+    return Future.async(function(cb) haxe.Timer.delay(function() cb('actual'), 1000));
+}
+
+class IncludeTest {
+	public var result:String;
+	
+	public function new() {
+		result = '';
+	}
+	
+	function debug(msg:String) {
+		result += msg;
+		return Noise;
+	}
+	
+	@:before public function before() return debug('b');
+	@:before public function before2() return debug('b2');
+	@:after public function after() return debug('a');
+	@:after public function after2() return debug('a2');
+	@:setup public function setup() return debug('s');
+	@:setup public function setup2() return debug('s2');
+	@:teardown public function teardown() return debug('d');
+	@:teardown public function teardown2() return debug('d2');
+		
+	@:include
+	public function include() {
+		debug('include');
+		var value = 1;
+		return assert(value == 1);
+	}
+
+	public function skip() {
+		debug('skip');
+		return assert(true);
+	}
+}
+
+class ExcludeTest {
+	public var result:String;
+	
+	public function new() {
+		result = '';
+	}
+	
+	function debug(msg:String) {
+		result += msg;
+		return Noise;
+	}
+	
+	@:before public function before() return debug('b');
+	@:before public function before2() return debug('b2');
+	@:after public function after() return debug('a');
+	@:after public function after2() return debug('a2');
+	@:setup public function setup() return debug('s');
+	@:setup public function setup2() return debug('s2');
+	@:teardown public function teardown() return debug('d');
+	@:teardown public function teardown2() return debug('d2');
+		
+	@:exclude
+	public function exclude() {
+		debug('exclude');
+		return assert(true);
+	}
+
+	public function include() {
+		debug('include');
+		return assert(true, 'Included');
+	}
+}
+
+class GrandParentTest {
+	public var result:String;
+	
+	public function new() {
+		result = '';
+	}
+	
+	function debug(msg:String) {
+		result += msg;
+		return Noise;
+	}
+	@:setup public function setup() return debug('s');
+	@:setup public function setup2() return debug('s2');
+	@:teardown public function teardown() return debug('d');
+	@:teardown public function teardown2() return debug('d2');
+		
+	
+	public function grandParent() {
+		debug('grandParent');
+		return assert(true);
+	}
+}
+
+class ParentTest extends GrandParentTest {
+	
+	@:before public function before() return debug('b');
+	@:before public function before2() return debug('b2');
+	@:after public function after() return debug('a');
+	@:after public function after2() return debug('a2');
+		
+	
+	public function parent() {
+		debug('parent');
+		return assert(true);
+	}
+}
+
+class ChildTest extends ParentTest {
+	public function child() {
+		debug('child');
+		return assert(true);
+	}
+}
+
+class AbstractCastTest {
+	public function new() {}
+	public function eq() {
+		var a = new Abs(1);
+		var b = new Abs(1);
+		return assert(a == b);
+	}
+}
+
+@:asserts
+class StringificationTest {
+	public function new() {}
+	public function eq() {
+		var i = 2;
+		asserts.assert(i == 2);
+		var b = true;
+		asserts.assert(b);
+		var u = new UnderlyingString('foo');
+		asserts.assert(u == 'foo');
+		var c = new CastableToString(1);
+		asserts.assert(c == 'Value=1');
+		asserts.assert(c == 1);
+		return asserts.done();
+	}
+}
+
+abstract Abs(Int) {
+	public inline function new(v) this = v;
+	@:op(A==B) static function eq(a:Abs, b:Abs):Bool;
+}
+
+abstract UnderlyingString(String) to String {
+	public inline function new(v) this = v;
+}
+abstract CastableToString(Int) to Int {
+	public inline function new(v) this = v;
+	@:to public inline function stringify():String return 'Value=$this';
+}
+
+================
+File: .gitignore
+================
+bin/
+node_modules
+
+================
+File: .haxerc
+================
+{
+  "version": "4.1.3",
+  "resolveLibs": "scoped"
+}
+
+================
+File: .travis.yml.disabled
+================
+sudo: required
+dist: xenial
+
+stages:
+  - test
+  - deploy
+
+language: node_js
+node_js: 8
+
+cache:
+  directories:
+    - $HOME/haxe
+
+os:
+  - linux
+  # - osx
+
+env:
+  - HAXE_VERSION=3.4.7
+  - HAXE_VERSION=latest
+  
+install:
+  - npm i -g lix
+  - lix install haxe $HAXE_VERSION
+  - lix download
+  
+script:
+  - lix run travix interp
+  - lix run travix neko
+  - lix run travix python
+  - lix run travix node
+  - lix run travix js
+  # - lix run travix flash
+  # - lix run travix java
+  # - lix run travix cs
+  - lix run travix cpp
+  - lix run travix php
+  - lix run travix lua
+
+jobs:
+  include:
+    # - stage: test # should uncomment this when there is no matrix above (e.g. only one os, one env, etc)
+    - stage: deploy
+      os: linux
+      install:
+        - npm i -g lix
+        - lix download
+      script: skip
+      env:
+        secure: eft/zq63mlE8D4PbutphuJwOHmORi7Hf4lCGax/7wy60OeAd2YQc67fsN5iz4BhWFTzSohJamNdOgPYp3/bJcpclw8fCQhn8xTMlcvZpBAx8R7e5gDx/JCBf1O+Rswi9wIgOkJBnXK1JEZyIk7wqGHhQfEK4fPZibWxubXGg+Hj4vl/s9iWoH/yX7feBCEX1NNRJLrcCo0W1RYHhjlWdf07pjjsCnclgvVGCoJgX6q03VLsxgjrdQ/H11DSYSkZg9C7ipBbfxVL3NEm2nYjY5k7Vfb3uM3tCYKM+SCO7KAWNjZ/IOS5JVatIKDcacbBNgU0RDrJFEU4Ri7UwBzSBWfV675MR5FZy2RJJznIMHMKxcuIkip8Es3TO8HdCiwSdsjSCozrIEZyg3SvovSD4TpYQpAR/0I80sOznZR0KHO26V9+F0SUxCa6ZpCv0GctL0zdypqujOqLYbVy/NqE0foj5SNeXLBVaIGfCoBuzvYyVGWIy28Q2itdo0IObH4pf1ClQkMhFX5XYlyAB7kMNMss0oTYc2HN2SA6E1S44cP5yNxX2AEr2l2LEzWhavgGwTYe3RfqGG/EWCrE6535zuAqTB6kcesrAmIkJ7EXxfxsxkQup6hRnsbDdr52nUitzyc8u0xR1IXePxoh+yoJ/8Mhj7VHlxX8TNlz8CfRidow=
+      after_success:
+        - lix run travix install
+        - lix run travix release
+
+================
+File: dev.hxml
+================
+tests.hxml
+
+-lib tink_unittest
+-lib travix
+
+================
+File: extraParams.hxml
+================
+--macro tink.unit.AssertionBufferInjector.use()
+
+================
+File: haxelib.json
+================
+{
+	"name": "tink_unittest",
+	"classPath": "src",
+	"dependencies": {
+		"tink_syntaxhub": "",
+		"tink_testrunner": ""
+	},
+	"url": "https://github.com/haxetink/tink_unittest/",
+	"contributors": [
+		"kevinresol",
+		"back2dos"
+	],
+	"version": "0.8.0",
+	"releasenote": "Add compiler error assertion and various bugs",
+	"tags": [],
+	"license": "MIT"
+}
+
+================
+File: README.md
+================
+# Tinkerbell Unit Testing
+
+[![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/haxetink/public)
+
+Documentation: https://haxetink.github.io/tink_unittest
+
+## Quick Look
+
+![Quick Look](https://haxetink.github.io/tink_unittest/images/quicklook.png)
+
+================
+File: tests.hxml
+================
+-cp tests
+-main RunTests
+
+-dce full
+
+ # TODO: re-enable this and remove dep from haxelib.json - https://github.com/haxetink/tink_syntaxhub/issues/5
+-lib tink_await
+
+
+
+================================================================
+End of Codebase
+================================================================

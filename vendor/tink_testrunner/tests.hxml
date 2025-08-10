@@ -1,0 +1,7 @@
+-cp tests
+-main RunTests
+
+-dce full
+# -lib tink_await
+
+-D no-deprecation-warnings

@@ -1,6 +1,7 @@
-# @install: lix --silent download "haxelib:/tink_testrunner#0.9.0" into tink_testrunner/0.9.0/haxelib
+# Using vendored version with increased timeout (30000ms)
+# Original: @install: lix --silent download "haxelib:/tink_testrunner#0.9.0" into tink_testrunner/0.9.0/haxelib
 -lib ansi
 -lib tink_macro
 -lib tink_streams
--cp ${HAXE_LIBCACHE}/tink_testrunner/0.9.0/haxelib/src
+-cp vendor/tink_testrunner/src
 -D tink_testrunner=0.9.0

@@ -1,0 +1,17 @@
+{
+	"name": "tink_testrunner",
+	"license": "MIT",
+	"tags": [],
+	"classPath": "src",
+	"contributors": [
+		"kevinresol"
+	],
+	"releasenote": "Various bug fixes and drop haxe3 support",
+	"version": "0.9.0",
+	"url": "https://github.com/haxetink/tink_testrunner/",
+	"dependencies": {
+		"ansi": "",
+		"tink_macro": "",
+		"tink_streams": ""
+	}
+}
