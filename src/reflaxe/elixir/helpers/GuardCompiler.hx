@@ -21,7 +21,7 @@ class GuardCompiler {
      * @return Compiled when clause string
      */
     public function compileGuard(guardExpr: Dynamic): String {
-        if (guardExpr == null) return null;
+        if (guardExpr == null) return "";
         
         return switch (getExprType(guardExpr)) {
             case "TBinop":
@@ -82,7 +82,7 @@ class GuardCompiler {
         var args = [];
         
         if (call.el != null) {
-            for (arg in call.el) {
+            for (arg in (call.el : Array<Dynamic>)) {
                 args.push(compileGuardOperand(arg));
             }
         }
@@ -273,7 +273,7 @@ class GuardCompiler {
      * @return Combined guard clause
      */
     public function compileMultipleGuards(guards: Array<Dynamic>, op: String = "and"): String {
-        if (guards == null || guards.length == 0) return null;
+        if (guards == null || guards.length == 0) return "";
         if (guards.length == 1) return compileGuard(guards[0]);
         
         var compiledGuards = [];
@@ -284,7 +284,7 @@ class GuardCompiler {
             }
         }
         
-        if (compiledGuards.length == 0) return null;
+        if (compiledGuards.length == 0) return "";
         if (compiledGuards.length == 1) return compiledGuards[0];
         
         var elixirOp = convertGuardOperator(op);

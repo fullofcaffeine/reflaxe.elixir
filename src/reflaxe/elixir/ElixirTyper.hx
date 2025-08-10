@@ -69,7 +69,8 @@ class ElixirTyper {
         
         // Check cache first for performance
         if (typeCache.exists(haxeType)) {
-            return typeCache.get(haxeType);
+            var cached = typeCache.get(haxeType);
+            return cached != null ? cached : "any()";
         }
         
         var result = compileTypeInternal(haxeType, context);
@@ -108,12 +109,14 @@ class ElixirTyper {
         
         // Handle Phoenix-specific types
         if (phoenixTypes.exists(haxeType)) {
-            return phoenixTypes.get(haxeType);
+            var phoenixType = phoenixTypes.get(haxeType);
+            return phoenixType != null ? phoenixType : "any()";
         }
         
         // Handle Ecto-specific types
         if (ectoTypes.exists(haxeType)) {
-            return ectoTypes.get(haxeType);
+            var ectoType = ectoTypes.get(haxeType);
+            return ectoType != null ? ectoType : "any()";
         }
         
         // Handle basic primitive types

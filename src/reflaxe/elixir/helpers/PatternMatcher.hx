@@ -30,9 +30,9 @@ class PatternMatcher {
         result.add('case ${switchValue} do\n');
         
         // Process each case with proper indentation
-        for (caseItem in cases) {
+        for (caseItem in (cases : Array<Dynamic>)) {
             if (caseItem.values != null) {
-                for (value in caseItem.values) {
+                for (value in (caseItem.values : Array<Dynamic>)) {
                     var pattern = compilePattern(value);
                     var guard = compileGuard(caseItem.guard);
                     var caseExpr = compileExpression(caseItem.expr);
@@ -120,7 +120,7 @@ class PatternMatcher {
                 if (call.el != null && call.el.length > 0) {
                     // Parameterized enum: {:tag, args...}
                     var args = [];
-                    for (arg in call.el) {
+                    for (arg in (call.el : Array<Dynamic>)) {
                         args.push(compilePattern(arg));
                     }
                     return '{:${fieldName}, ${args.join(', ')}}';
@@ -158,7 +158,7 @@ class PatternMatcher {
             var elements = [];
             var restElement = null;
             
-            for (element in arr.el) {
+            for (element in (arr.el : Array<Dynamic>)) {
                 if (isRestPattern(element)) {
                     restElement = compilePattern(element);
                 } else {
@@ -185,7 +185,7 @@ class PatternMatcher {
         if (obj.fields != null) {
             var fields = [];
             
-            for (field in obj.fields) {
+            for (field in (obj.fields : Array<Dynamic>)) {
                 var fieldName = field.name;
                 var fieldValue = compilePattern(field.expr);
                 
@@ -243,7 +243,7 @@ class PatternMatcher {
         
         if (tuple.el != null) {
             var elements = [];
-            for (element in tuple.el) {
+            for (element in (tuple.el : Array<Dynamic>)) {
                 elements.push(compilePattern(element));
             }
             return '{${elements.join(', ')}}';
@@ -258,7 +258,7 @@ class PatternMatcher {
      * @return Guard clause string or null
      */
     public function compileGuard(guardExpr: Dynamic): String {
-        if (guardExpr == null) return null;
+        if (guardExpr == null) return "";
         
         return switch (getExprType(guardExpr)) {
             case "TBinop":
@@ -293,7 +293,7 @@ class PatternMatcher {
         var args = [];
         
         if (call.el != null) {
-            for (arg in call.el) {
+            for (arg in (call.el : Array<Dynamic>)) {
                 args.push(compileExpression(arg));
             }
         }
@@ -343,7 +343,7 @@ class PatternMatcher {
         return "func"; // Simplified
     }
     
-    private var compiler: reflaxe.elixir.ElixirCompiler;
+    private var compiler: Null<reflaxe.elixir.ElixirCompiler> = null;
     
     public function setCompiler(compiler: reflaxe.elixir.ElixirCompiler) {
         this.compiler = compiler;
@@ -352,7 +352,8 @@ class PatternMatcher {
     private function compileExpression(expr: Dynamic): String {
         if (expr == null) return "nil";
         if (compiler != null) {
-            return compiler.compileExpression(expr);
+            var result = compiler.compileExpression(expr);
+            return result != null ? result : "nil";
         }
         return "expr"; // Fallback
     }

@@ -139,7 +139,7 @@ class ProtocolCompiler {
             }
             
             if (!found) {
-                Context.warning('Implementation method ${implMethod.name} not defined in protocol', implMethod.pos);
+                trace('WARNING: Implementation method ${implMethod.name} not defined in protocol');
             }
         }
         

@@ -23,7 +23,7 @@ class TestLiveView extends Phoenix.LiveView {
     /**
      * Handle increment button click
      */
-    public function handle_event("increment", params: Dynamic, socket: Phoenix.Socket): Dynamic {
+    public function handle_event_increment(params: Dynamic, socket: Phoenix.Socket): Dynamic {
         var counter = socket.assigns.counter;
         socket = Phoenix.LiveView.assign(socket, "counter", counter + 1);
         
@@ -33,7 +33,7 @@ class TestLiveView extends Phoenix.LiveView {
     /**
      * Handle decrement button click
      */
-    public function handle_event("decrement", params: Dynamic, socket: Phoenix.Socket): Dynamic {
+    public function handle_event_decrement(params: Dynamic, socket: Phoenix.Socket): Dynamic {
         var counter = socket.assigns.counter;
         socket = Phoenix.LiveView.assign(socket, "counter", counter - 1);
         
@@ -43,7 +43,7 @@ class TestLiveView extends Phoenix.LiveView {
     /**
      * Handle message update
      */
-    public function handle_event("update_message", params: Dynamic, socket: Phoenix.Socket): Dynamic {
+    public function handle_event_update_message(params: Dynamic, socket: Phoenix.Socket): Dynamic {
         var newMessage = params.message != null ? params.message : "Default message";
         socket = Phoenix.LiveView.assign(socket, "message", newMessage);
         
