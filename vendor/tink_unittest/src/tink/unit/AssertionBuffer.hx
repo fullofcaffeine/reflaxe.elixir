@@ -18,6 +18,22 @@ private class Impl extends SignalStream<Assertion, Error> {
 	}
 	public inline function yield(data)
 		trigger.trigger(data);
+	
+	// CRITICAL FIX: Add explicit cleanup to prevent cross-suite state corruption
+	public function reset():Void {
+		try {
+			// Terminate current stream cleanly
+			trigger.trigger(End);
+			// Create new trigger to ensure clean state
+			var newTrigger = Signal.trigger();
+			this.trigger = newTrigger;
+			// Note: Cannot reset super class easily, so we rely on End termination
+		} catch (e:Dynamic) {
+			// Defensive: ensure we always have a working trigger
+			var safeTrigger = Signal.trigger();
+			this.trigger = safeTrigger;
+		}
+	}
 }
 
 
@@ -77,6 +93,27 @@ abstract AssertionBuffer(Impl) from Impl to Assertions {
 	
 	public function defer(f:Void->Void):AssertionBuffer {
 		Callback.defer(f);
+		return this;
+	}
+	
+	// CRITICAL FIX: Add explicit cleanup method to prevent cross-suite corruption
+	public function cleanup():AssertionBuffer {
+		// Force stream termination to prevent state leakage
+		try {
+			// Use the new reset method for thorough cleanup
+			this.reset();
+			// Additional cleanup for performance test scenarios
+			#if (haxe_ver >= 4)
+				// Force trigger cleanup in interpreter mode
+				if (Sys.systemName() == "Interp") {
+					// Additional defensive reset
+					this.reset();
+				}
+			#end
+		} catch (e:Dynamic) {
+			// Defensive: if cleanup fails, still terminate stream
+			this.yield(End);
+		}
 		return this;
 	}
 	

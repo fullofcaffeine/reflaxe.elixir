@@ -241,13 +241,59 @@ end
 
 ## Testing Architecture
 
+### Three-Layer Testing Strategy
+
+The project employs three distinct testing approaches to validate different aspects of the transpiler:
+
+#### Layer 1: Macro-Time Compiler Tests
+**Purpose**: Direct testing of the real `ElixirCompiler` during compilation  
+**Examples**: `SimpleCompilationTest.hx`, `TestElixirCompiler.hx`  
+**Execution**: `haxe test.hxml --interp` with `-D reflaxe_runtime`  
+**Framework**: None (use trace/try-catch)  
+
+These tests instantiate the actual compiler and test AST transformation logic:
+```haxe
+// Runs during compilation, tests REAL compiler
+var compiler = new ElixirCompiler();
+var result = compiler.compileClassImpl(classType, vars, funcs);
+trace(result);
+```
+
+#### Layer 2: Runtime Mock Tests  
+**Purpose**: Validate expected compilation patterns using mocks  
+**Examples**: `OTPCompilerTest.hx`, `SimpleTest.hx`, `AdvancedEctoTest.hx`  
+**Execution**: Compile then run with tink_unittest  
+**Framework**: tink_unittest + tink_testrunner  
+
+These tests cannot access the real compiler (doesn't exist at runtime):
+```haxe
+// Runtime mock simulates what compiler would generate
+class MockOTPCompiler {
+    public static function compileGenServer(name: String): String {
+        return 'defmodule $name do\n  use GenServer\nend';
+    }
+}
+```
+
+#### Layer 3: Mix Integration Tests
+**Purpose**: End-to-end validation of generated Elixir code  
+**Location**: Elixir project `test/` directory  
+**Execution**: `npm run test:mix`  
+**Framework**: ExUnit  
+
+These provide the ultimate validation:
+1. Create `.hx` source files
+2. Run Haxe compiler (invokes real ElixirCompiler)
+3. Validate generated `.ex` files compile and run
+4. Test Phoenix/Ecto/OTP integration
+
 ### Dual-Ecosystem Approach
 
 1. **Haxe Tests** (`npm run test:haxe`)
-   - Tests the compilation process
-   - Validates AST transformation
+   - Combines macro-time and runtime tests
+   - Tests compilation logic and patterns
    - Uses mocks for runtime testing
-   - Framework: tink_unittest
+   - Framework: tink_unittest (for runtime tests only)
 
 2. **Elixir Tests** (`npm run test:mix`)
    - Tests the generated Elixir code

@@ -1,0 +1,8 @@
+-cp src
+-cp test
+-lib reflaxe
+-lib utest
+-D reflaxe_runtime
+-D analyzer-optimize
+-main test.UTestRunner
+--interp
