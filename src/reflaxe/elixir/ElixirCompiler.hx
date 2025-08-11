@@ -29,6 +29,7 @@ import reflaxe.elixir.helpers.RouterCompiler;
 import reflaxe.elixir.helpers.AnnotationSystem;
 import reflaxe.elixir.ElixirTyper;
 import reflaxe.elixir.PhoenixMapper;
+import reflaxe.elixir.SourceMapWriter;
 
 using StringTools;
 using reflaxe.helpers.NameMetaHelper;
@@ -54,6 +55,10 @@ class ElixirCompiler extends BaseCompiler {
     private var patternMatcher: reflaxe.elixir.helpers.PatternMatcher;
     private var guardCompiler: reflaxe.elixir.helpers.GuardCompiler;
     
+    // Source mapping support for debugging and LLM workflows
+    private var currentSourceMapWriter: Null<SourceMapWriter> = null;
+    private var sourceMapOutputEnabled: Bool = false;
+    
     /**
      * Constructor - Initialize the compiler with type mapping and pattern matching systems
      */
@@ -65,6 +70,29 @@ class ElixirCompiler extends BaseCompiler {
         
         // Set compiler reference for delegation
         this.patternMatcher.setCompiler(this);
+        
+        // Enable source mapping if requested
+        this.sourceMapOutputEnabled = Context.defined("source-map") || Context.defined("debug");
+    }
+    
+    /**
+     * Initialize source map writer for a specific output file
+     */
+    private function initSourceMapWriter(outputPath: String): Void {
+        if (!sourceMapOutputEnabled) return;
+        
+        currentSourceMapWriter = new SourceMapWriter(outputPath);
+    }
+    
+    /**
+     * Finalize source map writer and generate .ex.map file
+     */
+    private function finalizeSourceMapWriter(): Null<String> {
+        if (!sourceMapOutputEnabled || currentSourceMapWriter == null) return null;
+        
+        var sourceMapPath = currentSourceMapWriter.generateSourceMap();
+        currentSourceMapWriter = null;
+        return sourceMapPath;
     }
     
     /**
@@ -85,9 +113,20 @@ class ElixirCompiler extends BaseCompiler {
     public function compileClassImpl(classType: ClassType, varFields: Array<ClassVarData>, funcFields: Array<ClassFuncData>): Null<String> {
         if (classType == null) return null;
         
+        // Initialize source mapping for this class
+        if (sourceMapOutputEnabled) {
+            var className = classType.name;
+            var outputPath = outputDirectory + className + fileExtension;
+            initSourceMapWriter(outputPath);
+        }
+        
         // Use unified annotation system for detection, validation, and routing
         var annotationResult = reflaxe.elixir.helpers.AnnotationSystem.routeCompilation(classType, varFields, funcFields);
         if (annotationResult != null) {
+            // Generate source map for annotated compilation
+            if (sourceMapOutputEnabled) {
+                finalizeSourceMapWriter();
+            }
             return annotationResult;
         }
         
@@ -105,7 +144,14 @@ class ElixirCompiler extends BaseCompiler {
             addModuleTypeForCompilation(TClassDecl(iface.t));
         }
         
-        return classCompiler.compileClass(classType, varFields, funcFields);
+        var result = classCompiler.compileClass(classType, varFields, funcFields);
+        
+        // Finalize source mapping for this class
+        if (sourceMapOutputEnabled) {
+            finalizeSourceMapWriter();
+        }
+        
+        return result;
     }
     
     /**
@@ -324,7 +370,7 @@ class ElixirCompiler extends BaseCompiler {
      * Compile expression - required by BaseCompiler (implements abstract method)
      */
     public function compileExpressionImpl(expr: TypedExpr, topLevel: Bool): Null<String> {
-        return compileExpression(expr, topLevel);
+        return compileElixirExpressionInternal(expr, topLevel);
     }
     
     /**
@@ -347,10 +393,30 @@ class ElixirCompiler extends BaseCompiler {
     
     
     /**
-     * Compile Haxe expressions to Elixir expressions
+     * Compile Haxe expressions to Elixir expressions with source mapping support
      */
     public override function compileExpression(expr: TypedExpr, topLevel: Bool = false): Null<String> {
         if (expr == null) return null;
+        
+        // Add source mapping before compiling expression
+        if (sourceMapOutputEnabled && currentSourceMapWriter != null && expr.pos != null) {
+            currentSourceMapWriter.mapPosition(expr.pos);
+        }
+        
+        var result = compileElixirExpressionInternal(expr, topLevel);
+        
+        // Track generated code length for accurate column positioning  
+        if (sourceMapOutputEnabled && currentSourceMapWriter != null && result != null) {
+            currentSourceMapWriter.stringWritten(result);
+        }
+        
+        return result;
+    }
+    
+    /**
+     * Internal Elixir expression compilation
+     */
+    private function compileElixirExpressionInternal(expr: TypedExpr, topLevel: Bool = false): Null<String> {
         
         // Comprehensive expression compilation
         return switch (expr.expr) {
