@@ -1,0 +1,9 @@
+# Source mapping test compilation configuration
+-cp ../../../std
+-cp ../../../src
+-cp .
+-lib reflaxe
+--macro reflaxe.elixir.CompilerInit.Start()
+-D elixir_output=out
+-D source-map
+SourceMapTest
