@@ -1,0 +1,12 @@
+# Advanced Ecto Features Snapshot Test
+# Demonstrates complex query compilation capabilities
+
+-cp ../../../std
+-cp ../../../src
+-cp .
+
+-lib reflaxe
+--macro reflaxe.elixir.CompilerInit.Start()
+-D elixir_output=out
+
+AdvancedQueries
