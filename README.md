@@ -3,7 +3,7 @@
 [![Version](https://img.shields.io/github/v/release/fullofcaffeine/reflaxe.elixir?include_prereleases)](https://github.com/fullofcaffeine/reflaxe.elixir/releases)
 [![License: GPL-3.0](https://img.shields.io/badge/License-GPL%20v3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 [![CI Status](https://github.com/fullofcaffeine/reflaxe.elixir/workflows/CI/badge.svg)](https://github.com/fullofcaffeine/reflaxe.elixir/actions)
-[![Tests](https://img.shields.io/badge/tests-23%2F23%20passing-brightgreen)](https://github.com/fullofcaffeine/reflaxe.elixir/actions)
+[![Tests](https://img.shields.io/badge/tests-25%2F25%20passing-brightgreen)](https://github.com/fullofcaffeine/reflaxe.elixir/actions)
 [![Haxe](https://img.shields.io/badge/Haxe-4.3.6+-orange)](https://haxe.org)
 [![Elixir](https://img.shields.io/badge/Elixir-1.14+-purple)](https://elixir-lang.org)
 
@@ -83,7 +83,7 @@ npx lix download  # Downloads project-specific Haxe libraries
 mix deps.get      # Installs Elixir dependencies
 
 # Run tests
-npm test          # Snapshot tests (23 tests)
+npm test          # Snapshot tests (25 tests including source maps)
 npm run test:all  # Full test suite (Haxe + Mix)
 ```
 
@@ -188,7 +188,7 @@ class CounterServer {
 
 ### Testing
 ```bash
-npm test              # Run snapshot tests (22 tests)
+npm test              # Run snapshot tests (25 tests)
 npm run test:mix      # Test generated Elixir code
 npm run test:all      # Run both (comprehensive)
 npm run test:update   # Update expected test output
@@ -241,9 +241,12 @@ All compilation targets exceed performance requirements:
 
 ## Test Results
 
-**19/19 tests passing** across both ecosystems:
+**25/25 snapshot tests + 13 Mix tests passing**:
 
-### Haxe Compiler Tests (6/6 ✅)
+### Haxe Snapshot Tests (25/25 ✅)
+- Source mapping tests (source_map_basic, source_map_validation)
+- LiveView, OTP, Ecto compilation tests
+- Example compilation tests
 - Legacy extern definitions (FinalExternTest, CompilationOnlyTest, TestWorkingExterns)
 - Modern tink_unittest (async tests, performance validation, rich assertions)
 

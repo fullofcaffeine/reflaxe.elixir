@@ -6,6 +6,20 @@ Testing a macro-based transpiler presents unique challenges since the transpiler
 
 **Important**: For a detailed analysis of why we use runtime mocks instead of macro-time testing, see [`MACRO_TIME_TESTING_ANALYSIS.md`](MACRO_TIME_TESTING_ANALYSIS.md)
 
+## Test Suite Overview
+
+The Reflaxe.Elixir test suite consists of **25 snapshot tests** that validate compiler output:
+
+### Snapshot Tests (25 tests total)
+- **Source Mapping Tests** (2 tests) 🎯
+  - `source_map_basic`: Validates `.ex.map` file generation with VLQ encoding
+  - `source_map_validation`: Tests Source Map v3 specification compliance
+- **Feature Tests** (10 tests): LiveView, OTP, Ecto, Changeset, Migration, etc.
+- **Example Tests** (6 tests): Real-world compilation scenarios
+- **Core Tests** (7 tests): Basic syntax, classes, enums, arrays, etc.
+
+All tests run automatically via `npm test` using the TestRunner framework.
+
 ## Test Categories
 
 Reflaxe.Elixir uses three distinct testing approaches:
