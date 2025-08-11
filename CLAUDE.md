@@ -719,7 +719,7 @@ Successfully implemented comprehensive Ecto Changeset compiler following TDD met
 **Haxe Side (npm + lix)**:
 - Purpose: Develop and test the COMPILER itself
 - Tools: lix, tink_unittest, tink_testrunner, reflaxe
-- Command: `npm run test:haxe`
+- Command: `npm test`
 
 **Elixir Side (mix)**:
 - Purpose: Test the GENERATED code and native integration  
@@ -776,11 +776,11 @@ class TestClass {
 
 ```bash
 npm test
-├── npm run test:haxe  # Tests Haxe→Elixir compiler (6 tests)
+├── npm test  # Tests Haxe→Elixir compiler (6 tests)
 └── npm run test:mix   # Tests generated Elixir code (13 tests)
 ```
 
-### Step 1: npm run test:haxe (Compiler Testing)
+### Step 1: npm test (Compiler Testing)
 **Purpose**: Validate the Haxe→Elixir compilation engine itself
 **Framework**: tink_unittest + tink_testrunner via lix
 **Duration**: ~50ms
@@ -815,7 +815,7 @@ npm test
 ### Test Suite Interaction Flow
 ```
 npm test
-├── test:haxe → Tests Haxe compiler components
+├── test → Tests Haxe compiler components
 │   ├── ComprehensiveTestRunner.hx (orchestrates tests)
 │   ├── SimpleTest.hx (modern tink_unittest)
 │   └── Legacy extern tests (FinalExternTest, etc.)
@@ -1156,7 +1156,7 @@ class AdvancedFeatureTest {
 
 **Phase 4: ComprehensiveTestRunner Integration**
 - [ ] Add test class to `test/ComprehensiveTestRunner.hx` in TestBatch.make([...])
-- [ ] Test via `npm run test:haxe` to verify integration
+- [ ] Test via `npm test` to verify integration
 - [x] Remove standalone .hxml files (use central TestMain.hxml)
 - [ ] Verify test appears in categorized reporting output
 
@@ -1170,7 +1170,7 @@ class AdvancedFeatureTest {
 **Always use `npm test` for comprehensive validation** - Currently runs 890+ assertions across dual ecosystems with modern utest framework
 
 ### Test Architecture: Dual-Ecosystem Validation
-1. **Haxe Compiler Tests** (`npm run test:haxe`): Tests compilation engine itself - **890 assertions**
+1. **Haxe Compiler Tests** (`npm test`): Tests compilation engine itself - **890 assertions**
 2. **Example Tests** (`npm run test:examples`): Validates all 9 examples compile 
 3. **Mix Tests** (`npm run test:mix`): Tests generated Elixir code in BEAM runtime - **13 tests**
 

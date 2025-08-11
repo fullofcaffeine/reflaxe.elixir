@@ -98,7 +98,8 @@
       "Bash(done)",
       "Bash(if [[ ! \"$file\" =~ example_ ]])",
       "Bash(for:*)",
-      "Bash(echo:*)"
+      "Bash(echo:*)",
+      "Bash(npm run clean:*)"
     ],
     "deny": []
   }

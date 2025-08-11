@@ -21,23 +21,12 @@
   },
   "scripts": {
     "postinstall": "lix download",
-    "test": "echo '🧪 === COMPREHENSIVE REFLAXE.ELIXIR TEST SUITE ===' && npm run test:snapshots && npm run test:examples && npm run test:mix && echo '🎉 ALL TESTS PASSING!'",
-    "test:snapshots": "echo '📋 Testing Haxe→Elixir Compiler (Snapshot Tests)...' && npx haxe test/Test.hxml",
-    "test:haxe": "echo '📋 Testing Haxe→Elixir Compiler...' && npx haxe test/Test.hxml",
-    "test:examples": "echo '📋 Testing All 9 Examples Compilation...' && npx haxe SimpleExampleTest.hxml",
-    "test:mix": "echo '📋 Testing Generated Elixir Code & Mix Tasks...' && MIX_ENV=test mix test --no-deps-check",
-    "test:core": "echo '📋 Core extern tests...' && npx haxe test/FinalExternTest.hxml && npx haxe test/CompilationOnlyTest.hxml && npx haxe test/TestWorkingExterns.hxml",
-    "test:modern": "echo '📋 Modern test infrastructure...' && npx haxe test/Test.hxml",
-    "test:update": "echo '📋 Updating snapshot test output...' && npx haxe test/Test.hxml update-intended",
-    "test:comprehensive": "echo '📋 Comprehensive Testing with Examples...' && npx haxe ExampleTest.hxml",
-    "test:protocols": "echo '🔄 Testing Protocol System...' && npx haxe ProtocolTest.hxml",
-    "test:performance": "echo '⚡ Performance Benchmarking Examples...' && npx haxe ExamplePerformanceTest.hxml",
-    "examples:validate": "npm run test:examples",
-    "examples:benchmark": "npm run test:performance",
-    "compile": "npx haxe build.hxml",
-    "clean": "rm -rf _build && rm -rf out && find examples -name 'output' -type d -exec rm -rf {} + 2>/dev/null || true",
-    "setup": "lix scope create && lix install haxelib:reflaxe && lix install haxelib:utest && npm run postinstall",
-    "dev": "npm run test:modern"
+    "test": "npx haxe test/Test.hxml",
+    "test:mix": "MIX_ENV=test mix test --no-deps-check",
+    "test:all": "npm test && npm run test:mix",
+    "test:update": "npx haxe test/Test.hxml update-intended",
+    "clean": "rm -rf out && find test/tests -name 'out' -type d -exec rm -rf {} +",
+    "setup": "lix scope create && lix install haxelib:reflaxe"
   },
   "engines": {
     "node": ">=14.0.0"
