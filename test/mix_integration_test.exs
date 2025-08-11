@@ -67,6 +67,9 @@ defmodule MixIntegrationTest do
       
       File.write!("#{@test_project_dir}/build.hxml", hxml_content)
       
+      # Set up haxe_libraries for the test project
+      HaxeTestHelper.setup_haxe_libraries(@test_project_dir)
+      
       # Switch to test project directory for Mix operations
       original_cwd = File.cwd!()
       File.cd!(@test_project_dir)
@@ -214,6 +217,9 @@ defmodule MixIntegrationTest do
       
       File.write!("#{@test_project_dir}/build.hxml", hxml_content)
       
+      # Set up haxe_libraries for the test project
+      HaxeTestHelper.setup_haxe_libraries(@test_project_dir)
+      
       # Switch to test project directory for Mix operations
       original_cwd = File.cwd!()
       File.cd!(@test_project_dir)
@@ -356,6 +362,9 @@ defmodule MixIntegrationTest do
       --elixir lib
       phoenix.PhoenixComponent
       """)
+      
+      # Set up haxe_libraries for the test project
+      HaxeTestHelper.setup_haxe_libraries(@test_project_dir)
       
       original_cwd = File.cwd!()
       File.cd!(@test_project_dir)
