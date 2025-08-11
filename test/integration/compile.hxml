@@ -1,0 +1,17 @@
+# Comprehensive debugging infrastructure integration test
+# Tests all three phases of source mapping and debugging implementation
+
+-cp ../..
+-cp ../../src 
+
+# Main test class
+-main test.integration.DebugInfrastructureTest
+
+# Compilation target - just compile to verify all components are accessible
+--interp
+
+# Enable debug information for testing
+-debug
+
+# Reflaxe runtime flag for testing
+-D reflaxe_runtime
