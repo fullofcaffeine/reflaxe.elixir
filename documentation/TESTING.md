@@ -15,7 +15,6 @@ This document covers:
 - What the 9 example tests validate (real-world usage patterns)
 - Detailed breakdown of testing philosophy and debugging subsystems
 
-**Important**: For a detailed analysis of why we use runtime mocks instead of macro-time testing, see [`MACRO_TIME_TESTING_ANALYSIS.md`](MACRO_TIME_TESTING_ANALYSIS.md)
 
 ## Self-Referential Library Configuration
 
@@ -82,9 +81,9 @@ end
 
 ## Test Suite Overview
 
-The Reflaxe.Elixir test suite consists of **25 snapshot tests** that validate compiler output:
+The Reflaxe.Elixir test suite consists of **30 snapshot tests** that validate compiler output:
 
-### Snapshot Tests (25 tests total)
+### Snapshot Tests (30 tests total)
 - **Source Mapping Tests** (2 tests) 🎯
   - `source_map_basic`: Validates `.ex.map` file generation with VLQ encoding
   - `source_map_validation`: Tests Source Map v3 specification compliance
@@ -93,21 +92,20 @@ The Reflaxe.Elixir test suite consists of **25 snapshot tests** that validate co
 - **Core Tests** (7 tests): Basic syntax, classes, enums, arrays, etc.
 
 All tests run automatically via `npm test` which executes BOTH:
-- **Haxe Compiler Tests**: 25 snapshot tests via TestRunner.hx
+- **Haxe Compiler Tests**: 30 snapshot tests via TestRunner.hx
 - **Mix Runtime Tests**: 130 Elixir tests via ExUnit
 
 This ensures complete end-to-end validation of the entire compilation pipeline.
 
 ## Test Categories
 
-Reflaxe.Elixir uses three distinct testing approaches:
+Reflaxe.Elixir uses multiple testing approaches:
 
 ### Test Suite Documentation
 
 For detailed documentation on specific test suites, see:
 - **Module Tests**: [`MODULE_TEST_DOCUMENTATION.md`](MODULE_TEST_DOCUMENTATION.md) - @:module syntax sugar validation
 - **Pattern Tests**: [`PATTERN_TESTS_MIGRATION.md`](PATTERN_TESTS_MIGRATION.md) - Pattern matching compilation
-- **Migration Summary**: [`UTEST_MIGRATION_SUMMARY.md`](UTEST_MIGRATION_SUMMARY.md) - Overall migration status
 
 ### 1. Macro-Time Tests (Direct Compiler Testing)
 **Location**: Tests like `SimpleCompilationTest.hx`, `TestElixirCompiler.hx`  
@@ -130,17 +128,6 @@ These tests:
 - Run as Haxe macros during compilation phase
 - Don't use ANY testing framework
 
-### 2. Runtime Mock Tests (Framework Testing)
-**Location**: Tests like `OTPCompilerTest.hx`, `SimpleTest.hx`  
-**Execution**: Compile then run after compilation  
-**Framework**: tink_unittest + tink_testrunner (currently)  
-**Purpose**: Test mock implementations and expected patterns  
-
-These tests:
-- Cannot access the real compiler (doesn't exist at runtime)
-- Use mock classes to simulate compiler behavior
-- Validate our understanding of compilation patterns
-- Could use ANY runtime testing framework
 
 ### 3. Mix Integration Tests (Generated Code Validation)
 **Location**: `test/` directory in Elixir project  
@@ -188,40 +175,36 @@ class CompilerTest {
 npm test  # Runs both Haxe and Mix tests
 
 # Run individual test suites
-npm run test:haxe  # Only Haxe compiler tests (25 tests)
+npm run test:haxe  # Only Haxe compiler tests (30 tests)
 npm run test:mix   # Only Mix/Elixir tests (130 tests)
 ```
 
 ### 1. Haxe Compiler Tests (`npm run test:haxe`)
 
-**Purpose**: Test the compilation engine and AST transformation logic
+**Purpose**: Test the compilation engine and AST transformation logic via snapshot testing
 
-**Framework**: tink_unittest + tink_testrunner
+**Framework**: TestRunner.hx (following Reflaxe.CPP patterns)
 
 **What We Test**:
-- Compilation logic (using mocks)
-- AST transformation patterns
-- Type mapping correctness
-- Annotation detection
+- AST transformation correctness by comparing generated Elixir output
+- Syntax generation for all language features
+- Annotation processing (@:liveview, @:genserver, @:schema, etc.)
+- Type mapping and code generation patterns
 
-**Example**:
-```haxe
-@:asserts
-class OTPCompilerTest {
-    @:describe("GenServer compilation")
-    public function testGenServerCompilation() {
-        #if !(macro || reflaxe_runtime)
-        // Runtime mock
-        var result = MockOTPCompiler.compileFullGenServer(data);
-        #else
-        // Real compiler (macro-time only)
-        var result = OTPCompiler.compileFullGenServer(data);
-        #end
-        
-        asserts.assert(result.contains("use GenServer"));
-        return asserts.done();
-    }
-}
+**How It Works**:
+1. **Compilation Phase**: TestRunner.hx invokes Haxe compiler with test cases
+2. **Generation Phase**: ElixirCompiler transforms AST to .ex files
+3. **Comparison Phase**: Generated output compared with "intended" reference files
+4. **Validation**: Ensures output matches expected Elixir code
+
+**Example Test Structure**:
+```
+test/tests/liveview_basic/
+├── compile.hxml          # Test compilation config
+├── CounterLive.hx       # Test Haxe source
+├── intended/            # Expected Elixir output
+│   └── CounterLive.ex   # Reference file for comparison
+└── out/                 # Generated output (for comparison)
 ```
 
 ### 2. Elixir Runtime Tests (`npm run test:mix`)
@@ -252,72 +235,7 @@ defmodule MixIntegrationTest do
 end
 ```
 
-## Runtime Mock Pattern
 
-### When to Use Mocks
-
-- Testing compiler helper functions
-- Validating compilation patterns
-- Unit testing individual components
-
-### Mock Implementation Pattern
-
-```haxe
-// In test file
-#if (macro || reflaxe_runtime)
-import reflaxe.elixir.helpers.OTPCompiler;  // Real
-#end
-
-#if !(macro || reflaxe_runtime)
-// Runtime mock for testing
-class OTPCompiler {
-    public static function compileFullGenServer(data: Dynamic): String {
-        // Simplified mock implementation
-        return 'defmodule ${data.className} do
-  use GenServer
-  
-  def init(_), do: {:ok, %{}}
-end';
-    }
-}
-#end
-```
-
-### Mock Best Practices
-
-1. **Keep mocks simple** - Test behavior, not implementation
-2. **Match signatures** - Mock should have same API as real class
-3. **Document why** - Explain the macro/runtime split
-4. **Test both paths** - Ensure mocks align with real behavior
-
-## tink_unittest Integration
-
-### Framework Features
-
-- **@:asserts** - Modern assertion pattern
-- **@:timeout** - Prevent framework timeouts
-- **@:describe** - Test documentation
-- **@:before/@:after** - Setup/teardown
-
-### Timeout Management
-
-```haxe
-@:describe("Complex edge case testing")
-@:timeout(10000)  // Prevent 5-second default timeout
-public function testEdgeCases() {
-    // Complex test logic
-    return asserts.done();
-}
-```
-
-### Timeout Guidelines
-
-| Test Type | Timeout | Use Case |
-|-----------|---------|----------|
-| Basic | 5000ms (default) | Simple assertions |
-| Edge Cases | 10000ms | Error/boundary testing |
-| Performance | 15000ms | Timing validation |
-| Integration | 25000ms | Cross-system tests |
 
 ## Test Execution Flow
 
@@ -327,9 +245,9 @@ public function testEdgeCases() {
 npm test
     │
     ├── npm run test:haxe
-    │   ├── Compile tests with Haxe
-    │   ├── Run tink_unittest suite
-    │   └── Validate mock behavior
+    │   ├── Run TestRunner.hx snapshot tests
+    │   ├── Compile test cases with Haxe+Reflaxe.Elixir
+    │   └── Compare generated .ex files with intended output
     │
     └── npm run test:mix
         ├── Create Phoenix project
@@ -347,35 +265,10 @@ npm run test:haxe
 # Test only Elixir output
 npm run test:mix
 
-# Run specific test file
-npx haxe test/OTPCompilerTest.hxml
+# Run specific snapshot test
+haxe test/Test.hxml test=liveview_basic
 ```
 
-## Vendoring for Testing
-
-### When to Vendor
-
-We vendor tink_testrunner and tink_unittest to:
-- Debug framework issues quickly
-- Apply patches if absolutely necessary
-- Understand test execution flow
-
-### Vendoring Structure
-
-```
-vendor/
-├── tink_testrunner/   # Test execution framework
-│   └── src/
-└── tink_unittest/      # Assertion framework
-    └── src/
-```
-
-### Patching Guidelines
-
-1. **Try configuration first** - Use @:timeout, etc.
-2. **Document patches** - Explain why and what
-3. **Minimize changes** - Only patch what's broken
-4. **Consider upstream** - Submit fixes back
 
 ## Specific Test Suites
 
@@ -384,9 +277,9 @@ vendor/
 **Purpose**: Validates @:module annotation processing for simplified Elixir module generation
 
 **Files**:
-- `ModuleSyntaxTestUTest.hx` - Basic functionality (10 tests)
-- `ModuleIntegrationTestUTest.hx` - Integration scenarios (8 tests)  
-- `ModuleRefactorTestUTest.hx` - Advanced validation (15 tests)
+- `ModuleSyntaxTest.hx` - Basic functionality (10 tests)
+- `ModuleIntegrationTest.hx` - Integration scenarios (8 tests)  
+- `ModuleRefactorTest.hx` - Advanced validation (15 tests)
 
 **Key Validations**:
 - Module name generation (`defmodule UserService`)
@@ -417,10 +310,12 @@ vendor/
 
 ```
 test/
-├── UTestRunner.hx              # Main test orchestrator (utest)
-├── ComprehensiveTestRunner.hx  # Legacy tink_unittest runner
-├── *TestUTest.hx              # Migrated utest files
-├── *Test.hx                   # Legacy tink_unittest files  
+├── TestRunner.hx               # Main snapshot test runner
+├── Test.hxml                   # Test configuration
+├── tests/                      # Snapshot test cases
+│   ├── liveview_basic/        # Individual test directories
+│   ├── otp_genserver/         
+│   └── ...                    
 └── fixtures/                   # Test data files
 ```
 
@@ -435,18 +330,6 @@ Always test these 7 categories:
 6. Type safety
 7. Resource management
 
-### 3. Mock Alignment
-
-```haxe
-// Periodically validate mocks match real implementation
-@:describe("Mock validation")
-public function testMockAccuracy() {
-    var mockResult = MockCompiler.compile(data);
-    var expectedPattern = "defmodule.*do.*end";
-    asserts.assert(~/expectedPattern/.match(mockResult));
-    return asserts.done();
-}
-```
 
 ## Troubleshooting
 
@@ -521,65 +404,7 @@ trace("Running at runtime");
 #end
 ```
 
-## Testing Framework Comparison
 
-### Framework Capabilities
-
-| Feature | tink_unittest | utest | Notes |
-|---------|--------------|-------|-------|
-| **--interp support** | ✅ Yes | ✅ Yes | Both work with Haxe interpreter |
-| **Macro-time testing** | ❌ Not used | ❌ Not used | Neither provides special macro features we use |
-| **Async support** | ✅ Yes | ✅ Yes | Both support async/Future |
-| **Colored output** | ✅ Yes | ✅ Yes | Both have nice reporting |
-| **@:timeout control** | ✅ Yes | ❌ No | tink_unittest allows per-test timeouts |
-| **Assertion style** | `asserts.assert()` | `Assert.equals()` | Different API patterns |
-| **Setup/teardown** | `@:before/@:after` | `setup/teardown` | Both support test lifecycle |
-
-### Current Usage Analysis
-
-**What we're actually using from tink_unittest:**
-- Basic assertion framework (`@:asserts`, `asserts.assert()`)
-- Test runner with colored output
-- `@:timeout` annotations for edge case tests
-- `@:describe` for test documentation
-
-**What we're NOT using:**
-- Macro-time testing capabilities (don't exist)
-- Special compiler integration features
-- Advanced async testing (beyond basic Future support)
-
-### Framework Selection Considerations
-
-#### Why tink_unittest was chosen:
-- Modern annotation-based API (`@:asserts`, `@:describe`)
-- Built-in timeout control via `@:timeout`
-- Clean integration with modern Haxe patterns
-- Already working and integrated
-
-#### Why utest would also work:
-- Mature, well-established framework
-- Supports all targets including `--interp`
-- Simpler API might be easier to understand
-- Used by many Haxe projects
-
-#### Conclusion:
-**Either framework would work equally well for our needs.** We're not using any unique features of tink_unittest that utest lacks. The choice is primarily about API preference and the fact that tink_unittest is already integrated and working.
-
-## Important Discoveries
-
-### 1. No Special Macro Testing Features Exist
-Neither tink_unittest nor utest provide special macro-time testing capabilities. Tests that need to access the real `ElixirCompiler` must:
-- Use `-D reflaxe_runtime` to make compiler code available
-- Run with `--interp` to execute during compilation
-- Use basic trace/try-catch instead of a framework
-
-### 2. Mock Testing Limitations
-Runtime tests (using either framework) can ONLY test mock implementations. The real compiler validation happens through:
-- Macro-time tests that instantiate the real compiler
-- Mix integration tests that compile actual code
-
-### 3. Framework Independence
-The project's testing architecture doesn't depend on any specific framework features. Migration between frameworks would be straightforward since we only use basic assertion and runner capabilities.
 
 ## References
 
