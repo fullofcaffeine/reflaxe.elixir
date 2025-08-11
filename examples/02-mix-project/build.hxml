@@ -9,6 +9,7 @@
 
 # Compilation flags
 -D reflaxe_runtime
+-D source-map    # Enable source mapping for debugging
 --no-output
 
 # Define all classes to compile - Reflaxe will handle the Elixir target
