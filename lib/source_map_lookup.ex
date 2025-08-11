@@ -288,9 +288,12 @@ defmodule SourceMapLookup do
   end
   
   defp find_source_map_for_error(error) do
-    file = Map.get(error, :file, "")
+    file = Map.get(error, :file)
     
     cond do
+      is_nil(file) ->
+        {:error, "No file information in error"}
+        
       String.ends_with?(file, ".hx") ->
         # Haxe source file - look for corresponding .ex.map
         elixir_file = String.replace(file, ".hx", ".ex")
