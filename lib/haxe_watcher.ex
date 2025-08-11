@@ -318,14 +318,11 @@ defmodule HaxeWatcher do
         
       false ->
         # Fall back to direct compilation
-        # Change to the directory containing the build file for relative paths to work
-        compile_opts = case Path.dirname(build_file_path) do
-          "." -> [stderr_to_stdout: true]
-          dir -> [cd: dir, stderr_to_stdout: true]
-        end
+        # Run with the full path to the build file instead of changing directory
+        # This preserves access to haxe_libraries in the current directory
+        compile_opts = [stderr_to_stdout: true]
         
-        build_file_name = Path.basename(build_file_path)
-        case System.cmd("npx", ["haxe", build_file_name], compile_opts) do
+        case System.cmd("npx", ["haxe", build_file_path], compile_opts) do
           {output, 0} ->
             {:ok, output}
           {output, exit_code} ->
