@@ -316,7 +316,7 @@ defmodule Mix.Tasks.Haxe.SourceMap do
     display_debug_recommendations(direction, input_file, mapped_position.file)
   end
   
-  defp display_table_result(input_file, input_line, input_column, mapped_position, source_map, opts, direction) do
+  defp display_table_result(input_file, input_line, input_column, mapped_position, _source_map, _opts, direction) do
     Mix.shell().info("Source Mapping Lookup")
     Mix.shell().info("-" |> String.duplicate(30))
     
@@ -368,7 +368,7 @@ defmodule Mix.Tasks.Haxe.SourceMap do
     Mix.shell().info("")
   end
   
-  defp display_debug_recommendations(direction, input_file, output_file) do
+  defp display_debug_recommendations(direction, _input_file, output_file) do
     Mix.shell().info("🤖 LLM Agent Debug Recommendations:")
     
     case direction do
@@ -470,7 +470,7 @@ defmodule Mix.Tasks.Haxe.SourceMap do
     end
   end
   
-  defp suggest_alternatives(file, line, column, opts) do
+  defp suggest_alternatives(file, line, column, _opts) do
     Mix.shell().info("")
     Mix.shell().info("💡 Suggestions:")
     Mix.shell().info("   • Check if source maps are generated: mix haxe.source_map --list-maps")

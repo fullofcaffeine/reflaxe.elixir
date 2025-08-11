@@ -82,6 +82,8 @@ addColumn("users", "id", "serial", true, null); // primary_key param
 - **Feature Status & Capabilities**: See [`documentation/FEATURES.md`](documentation/FEATURES.md)
 - **Annotation Usage Guide**: See [`documentation/ANNOTATIONS.md`](documentation/ANNOTATIONS.md)
 - **Example Walkthroughs**: See [`documentation/EXAMPLES.md`](documentation/EXAMPLES.md)
+- **Debugging Guide**: See [`documentation/DEBUGGING.md`](documentation/DEBUGGING.md) - Source mapping, transformation patterns, Mix tasks
+- **LLM Debugging Strategy**: See [`documentation/LLM_STACKTRACE_DEBUGGING_COMPLETE.md`](documentation/LLM_STACKTRACE_DEBUGGING_COMPLETE.md)
 
 ## Reference Code Location
 Reference examples for architectural patterns are located at:

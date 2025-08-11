@@ -259,7 +259,7 @@ defmodule Mix.Tasks.Haxe.Stacktrace do
     end
   end
 
-  defp display_debugging_recommendations(error, opts) do
+  defp display_debugging_recommendations(error, _opts) do
     Mix.shell().info("🤖 LLM Agent Debugging Recommendations:")
     Mix.shell().info("")
     

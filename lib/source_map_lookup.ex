@@ -249,7 +249,7 @@ defmodule SourceMapLookup do
     end
   end
   
-  defp decode_vlq_segment(segment, sources, state) do
+  defp decode_vlq_segment(_segment, sources, state) do
     # Simplified VLQ decoding - decode the deltas and update state
     # In a full implementation, you would properly decode VLQ Base64 values
     
