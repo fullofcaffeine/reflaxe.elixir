@@ -1,8 +1,0 @@
-# Simple test to validate modern testing infrastructure
--cp src
--cp test
--lib tink_unittest
--lib tink_testrunner
--D reflaxe_runtime
---main test.SimpleTestRunner
---interp

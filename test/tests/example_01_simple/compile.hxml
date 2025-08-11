@@ -1,0 +1,7 @@
+# Compilation configuration for example 01 simple modules
+-cp ../../../std
+-cp ../../../src
+-cp .
+-lib reflaxe
+--macro reflaxe.elixir.CompilerInit.Start()
+BasicModule

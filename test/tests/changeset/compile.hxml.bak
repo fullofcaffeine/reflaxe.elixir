@@ -1,0 +1,7 @@
+# Compilation configuration for changeset test
+-cp std
+-cp src
+-cp test/tests/changeset
+-lib reflaxe
+--macro reflaxe.elixir.CompilerInit.Start()
+User

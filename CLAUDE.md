@@ -19,6 +19,35 @@
 
 **Key Insight**: Reflaxe.Elixir is a **macro-time transpiler**, not a runtime library. All transpilation happens during Haxe compilation, not at test runtime. This affects how you write and test compiler features.
 
+## Critical Testing Rules ⚠️
+
+### NEVER Remove Test Code to Fix Failures
+**ABSOLUTE RULE**: Never remove or simplify test code just to make tests pass. This destroys test coverage and defeats the purpose of testing.
+
+When a test fails:
+1. **Fix the underlying compiler/implementation issue** - The test is revealing a real problem
+2. **Fix syntax errors properly** - Don't remove functionality, fix the syntax
+3. **Enhance the compiler if needed** - If the test reveals missing features, implement them
+4. **Document limitations** - If something truly can't be supported, document it clearly
+
+Example of WRONG approach:
+```haxe
+// BAD: Removing test functionality to avoid syntax errors
+// Before: Testing important migration features
+t.addColumn("id", "serial", {primary_key: true});
+// After: Gutted test that doesn't test anything
+// Table columns defined via comments
+```
+
+Example of RIGHT approach:
+```haxe
+// GOOD: Fix the syntax issue while preserving test coverage
+// Use alternative syntax that Haxe can parse
+addColumn("users", "id", "serial", true, null); // primary_key param
+```
+
+**Remember**: Tests exist to ensure quality. Reducing test coverage to achieve "passing tests" is self-defeating.
+
 ## User Documentation References
 - **Setup & Installation**: See [`documentation/GETTING_STARTED.md`](documentation/GETTING_STARTED.md)
 - **Feature Status & Capabilities**: See [`documentation/FEATURES.md`](documentation/FEATURES.md)
@@ -78,35 +107,42 @@ For comprehensive feature status and production readiness, see [`documentation/F
 
 ## Recent Task Completions
 
-### Complete utest Migration with Framework-Agnostic Architecture ✅
-Successfully completed comprehensive migration from tink_unittest to utest framework with framework-agnostic naming and architecture:
+### Snapshot Testing Migration ✅
+Successfully migrated to snapshot testing following Reflaxe.CPP and Reflaxe.CSharp patterns:
 
 **Migration Results**:
-- **890 total assertions** (up from 740 with tink_unittest)
-- **100% success rate** (890 successes, 0 errors, 0 failures, 0 warnings)
-- **Framework-agnostic architecture** - all UTest/tink naming removed from 21 test files
-- **Query testing integrated** - EctoQueryTest added with 61 comprehensive assertions
-- **Performance excellence** - 0.177s execution time for all 890 assertions
+- **Pure snapshot testing** - No runtime framework dependencies
+- **Reference-aligned** - Matches Reflaxe.CPP and Reflaxe.CSharp patterns
+- **TestRunner.hx** - Orchestrates compilation and output comparison
+- **3 snapshot tests** - LiveView, OTP GenServer, Ecto Schema
+- **update-intended workflow** - Simple acceptance of new output
 
-**Technical Achievements**:
-1. **Complete Framework Migration**: Converted all 21 test files from tink_unittest to utest
-2. **Framework-Agnostic Naming**: Removed all framework-specific naming (UTest*, *TestUTest) 
-3. **Comprehensive Query Testing**: Successfully integrated EctoQueryTest using runtime mocks (superior to macro-time testing)
-4. **Dual-Ecosystem Validation**: 890 Haxe + 9 Examples + 13 Mix tests = 912 total validations
-5. **Production-Ready Architecture**: Modern test framework with deterministic, reliable execution
+**Technical Architecture**:
+1. **Compile-time testing**: Tests run the actual Reflaxe.Elixir compiler
+2. **Output comparison**: Compare generated .ex files with intended output
+3. **No mocking needed**: Tests the real compiler, not simulations
+4. **Visual diffs**: Easy to see what changed in generated code
+5. **Reference pattern**: Same approach as proven Reflaxe targets
 
-**Files Modified**:
-- Renamed 21 test files: `*UTest.hx` → `*.hx` with updated class names
-- `TestUTest.hxml` → `TestMain.hxml` with framework-agnostic runner
-- `test/TestRunner.hx` (renamed from UTestRunner) - framework-agnostic test orchestrator
-- Fixed MigrationRefactorTest conditional compilation issues (72 additional assertions)
-- Integrated EctoQueryTest query testing (61 additional assertions)
+**Directory Structure**:
+```
+test/
+├── TestRunner.hx           # Orchestrator
+├── Test.hxml              # Configuration
+└── tests/
+    ├── liveview_basic/    # Each test in its own directory
+    │   ├── compile.hxml   # Self-contained compilation
+    │   ├── CounterLive.hx # Test source
+    │   └── intended/      # Expected output
+    └── otp_genserver/
+        └── ...
+```
 
-**Key Insights Discovered**:
-- **Runtime Mock Testing**: More practical than macro-time testing for query validation
-- **Framework-Agnostic Design**: Enables easy framework switching without file renaming
-- **Comprehensive Coverage**: 890 assertions provide production-ready robustness validation
-- **utest Reliability**: Zero framework timeout issues, deterministic execution, proven stability
+**Key Insights**:
+- **Test what matters**: The generated Elixir code, not internal compiler state
+- **Macro-time reality**: Compiler only exists during Haxe compilation
+- **No runtime complications**: Avoids macro-time vs runtime issues
+- **Proven pattern**: Used by successful Reflaxe compilers
 
 This completes the modern test infrastructure with comprehensive coverage and production-ready reliability.
 
