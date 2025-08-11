@@ -55,7 +55,6 @@
           "prepareCmd": "node scripts/sync-version.js ${nextRelease.version}"
         }
       ],
-      "@semantic-release/npm",
       [
         "@semantic-release/github",
         {
