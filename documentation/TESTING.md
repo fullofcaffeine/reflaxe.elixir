@@ -81,7 +81,11 @@ The Reflaxe.Elixir test suite consists of **25 snapshot tests** that validate co
 - **Example Tests** (6 tests): Real-world compilation scenarios
 - **Core Tests** (7 tests): Basic syntax, classes, enums, arrays, etc.
 
-All tests run automatically via `npm test` using the TestRunner framework.
+All tests run automatically via `npm test` which executes BOTH:
+- **Haxe Compiler Tests**: 25 snapshot tests via TestRunner.hx
+- **Mix Runtime Tests**: 130 Elixir tests via ExUnit
+
+This ensures complete end-to-end validation of the entire compilation pipeline.
 
 ## Test Categories
 
@@ -165,6 +169,17 @@ class CompilerTest {
 3. **The Gap**: We can't directly test the transpiler at runtime
 
 ## Dual-Ecosystem Testing Strategy
+
+### Running All Tests
+
+```bash
+# Run complete test suite (recommended)
+npm test  # Runs both Haxe and Mix tests
+
+# Run individual test suites
+npm run test:haxe  # Only Haxe compiler tests (25 tests)
+npm run test:mix   # Only Mix/Elixir tests (130 tests)
+```
 
 ### 1. Haxe Compiler Tests (`npm run test:haxe`)
 

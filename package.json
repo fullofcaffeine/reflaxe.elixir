@@ -29,9 +29,9 @@
   },
   "scripts": {
     "postinstall": "lix download",
-    "test": "npx haxe test/Test.hxml",
+    "test": "npx haxe test/Test.hxml && MIX_ENV=test mix test --no-deps-check",
+    "test:haxe": "npx haxe test/Test.hxml",
     "test:mix": "MIX_ENV=test mix test --no-deps-check",
-    "test:all": "npm test && npm run test:mix",
     "test:update": "npx haxe test/Test.hxml update-intended",
     "clean": "rm -rf out && find test/tests -name 'out' -type d -exec rm -rf {} +",
     "setup": "lix scope create && lix install haxelib:reflaxe"
