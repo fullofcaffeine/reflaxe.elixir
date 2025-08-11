@@ -5,7 +5,7 @@ A collection of practical recipes showing how to implement common Elixir/Phoenix
 ## Table of Contents
 
 ### Core Elixir Patterns
-- [Pipeline Operations with Type Safety](#pipeline-operations-with-type-safety)
+- [Pipeline Operations with Type Safety](#pipeline-operations-with-type-safety) ⭐ *Method chaining → Elixir pipes*
 - [Pattern Matching with Exhaustive Checks](#pattern-matching-with-exhaustive-checks)
 - [With Expressions and Error Handling](#with-expressions-and-error-handling)
 - [Process Communication with Types](#process-communication-with-types)
