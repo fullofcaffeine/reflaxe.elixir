@@ -15,6 +15,10 @@ defmodule HaxeWatcherTest do
     test_dir = Path.join([System.tmp_dir!(), "haxe_watcher_test_#{:rand.uniform(10000)}"])
     File.mkdir_p!(test_dir)
     
+    # Set up a valid Haxe project for compilation to work
+    HaxeTestHelper.setup_test_project(dir: test_dir)
+    HaxeTestHelper.create_test_haxe_file(test_dir)
+    
     on_exit(fn ->
       File.rm_rf(test_dir)
     end)
