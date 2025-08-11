@@ -71,7 +71,8 @@ defmodule HaxeTestHelper do
         raise "Failed to link haxe_libraries: #{inspect(reason)}"
     end
     
-    # Also symlink src/ and std/ directories to make relative paths work
+    # We need to symlink src/ and std/ for the haxe_libraries/reflaxe.elixir.hxml to work
+    # This may cause the "35-file phenomenon" where standard library files get compiled
     source_src = Path.join(project_root, "src")
     target_src = Path.join(project_dir, "src")
     unless File.exists?(target_src) do

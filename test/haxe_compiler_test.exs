@@ -5,6 +5,16 @@ defmodule HaxeCompilerTest do
   alias HaxeCompiler
   
   setup do
+    # Stop any running Haxe server to avoid port conflicts
+    if Process.whereis(HaxeServer) do
+      try do
+        HaxeServer.stop()
+        Process.sleep(100)
+      catch
+        _, _ -> :ok
+      end
+    end
+    
     # Create temporary test directories
     test_dir = Path.join([System.tmp_dir!(), "haxe_compiler_test_#{:rand.uniform(10000)}"])
     source_dir = Path.join(test_dir, "src_haxe")
@@ -13,7 +23,18 @@ defmodule HaxeCompilerTest do
     File.mkdir_p!(source_dir)
     File.mkdir_p!(target_dir)
     
+    # Setup haxe_libraries for compilation to work
+    HaxeTestHelper.setup_haxe_libraries(test_dir)
+    
     on_exit(fn ->
+      # Clean up Haxe server if started
+      if Process.whereis(HaxeServer) do
+        try do
+          HaxeServer.stop()
+        catch
+          _, _ -> :ok
+        end
+      end
       File.rm_rf(test_dir)
     end)
     
@@ -26,8 +47,10 @@ defmodule HaxeCompilerTest do
       build_hxml = Path.join(Path.dirname(source_dir), "build.hxml")
       File.write!(build_hxml, """
       -cp #{source_dir}
-      --elixir #{target_dir}
-      --main Main
+      -lib reflaxe.elixir
+      -D reflaxe_runtime
+      -D elixir_output=#{target_dir}
+      Main
       """)
       
       # Create a simple Haxe file
