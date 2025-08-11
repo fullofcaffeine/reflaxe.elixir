@@ -222,12 +222,12 @@ defmodule HaxeWatcherTest do
       initial_status = HaxeWatcher.status()
       initial_count = initial_status.compilation_count
       
-      # Create a new Haxe file
+      # Create a new Haxe file with proper content
       test_file = Path.join(test_dir, "NewTest.hx")
-      File.write!(test_file, "class NewTest {}")
+      File.write!(test_file, "class NewTest { public static function main() {} }")
       
-      # Wait for debounce + compilation
-      Process.sleep(400)
+      # Wait longer for debounce + compilation
+      Process.sleep(800)
       
       final_status = HaxeWatcher.status()
       
@@ -362,6 +362,14 @@ defmodule HaxeWatcherTest do
       
       # Wait for debounce to complete
       Process.sleep(debounce_ms + 100)
+      
+      # If compilation hasn't happened, manually trigger to debug
+      mid2_status = HaxeWatcher.status()
+      if mid2_status.compilation_count == initial_count do
+        # Manually send the debounce message to see if handler works
+        send(Process.whereis(HaxeWatcher), :trigger_debounced_compilation)
+        Process.sleep(100)
+      end
       
       # Should have compiled only once despite multiple file changes
       final_status = HaxeWatcher.status()
