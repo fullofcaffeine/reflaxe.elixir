@@ -29,6 +29,8 @@ This file must stay under 40k characters for optimal performance.
 
 **Key Insight**: Reflaxe.Elixir is a **macro-time transpiler**, not a runtime library. All transpilation happens during Haxe compilation, not at test runtime. This affects how you write and test compiler features.
 
+**Key Point**: The function body compilation fix was a legitimate use case - we went from empty function bodies (`# TODO: Implement function body`) to real compiled Elixir code. This required updating all intended outputs to reflect the improved compiler behavior.
+
 ## Critical Testing Rules ⚠️
 
 ### Snapshot Testing: Update-Intended Mechanism ✅
@@ -66,6 +68,22 @@ When a test fails:
 2. **Fix syntax errors properly** - Don't remove functionality, fix the syntax
 3. **Enhance the compiler if needed** - If the test reveals missing features, implement them
 4. **Document limitations** - If something truly can't be supported, document it clearly
+
+Example of WRONG approach:
+```haxe
+// BAD: Removing test functionality to avoid syntax errors
+// Before: Testing important migration features
+t.addColumn("id", "serial", {primary_key: true});
+// After: Gutted test that doesn't test anything
+// Table columns defined via comments
+```
+
+Example of RIGHT approach:
+```haxe
+// GOOD: Fix the syntax issue while preserving test coverage
+// Use alternative syntax that Haxe can parse
+addColumn("users", "id", "serial", true, null); // primary_key param
+```
 
 **Remember**: Tests exist to ensure quality. Reducing test coverage to achieve "passing tests" is self-defeating.
 
@@ -119,7 +137,7 @@ Currently using helper pattern instead of sub-compiler pattern:
 This is acceptable - helpers are simpler for our needs while following similar separation of concerns.
 
 ## Quality Standards
-- Zero compilation warnings policy
+- Zero compilation warnings policy (from .claude/rules/elixir-best-practices.md)
 - CafeteraOS memory-first architecture patterns
 - Testing Trophy approach with integration test focus
 - Performance targets: <15ms compilation steps, <100ms HXX template processing
