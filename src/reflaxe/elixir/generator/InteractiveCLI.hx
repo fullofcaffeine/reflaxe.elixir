@@ -2,6 +2,7 @@ package reflaxe.elixir.generator;
 
 import sys.io.File;
 import haxe.io.Input;
+using StringTools;
 
 /**
  * Interactive CLI for project configuration
@@ -148,7 +149,7 @@ class InteractiveCLI {
 		
 		// Check if they typed the value directly
 		for (choice in choices) {
-			if (choice.value == answer) {
+			if (Std.string(choice.value) == answer) {
 				return choice.value;
 			}
 		}

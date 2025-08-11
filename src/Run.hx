@@ -5,6 +5,7 @@ import sys.io.File;
 import haxe.io.Path;
 import reflaxe.elixir.generator.ProjectGenerator;
 import reflaxe.elixir.generator.InteractiveCLI;
+using StringTools;
 
 /**
  * Entry point for haxelib/lix run command

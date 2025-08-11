@@ -1,6 +1,7 @@
 package reflaxe.elixir.generator;
 
 import haxe.Template;
+using StringTools;
 
 /**
  * Template engine for processing project templates
@@ -160,10 +161,22 @@ class TemplateEngine {
 		
 		// Check for truthy values
 		if (value == null) return false;
-		if (value == false) return false;
-		if (value == 0) return false;
-		if (value == "") return false;
-		if (Std.isOfType(value, Array) && (cast value: Array<Dynamic>).length == 0) return false;
+		if (Std.isOfType(value, Bool)) {
+			var boolVal: Bool = cast value;
+			if (boolVal == false) return false;
+		}
+		if (Std.isOfType(value, Float)) {  // Int is treated as Float in Haxe
+			var numVal: Float = cast value;
+			if (numVal == 0) return false;
+		}
+		if (Std.isOfType(value, String)) {
+			var strVal: String = cast value;
+			if (strVal == "") return false;
+		}
+		if (Std.isOfType(value, Array)) {
+			var arrVal: Array<Dynamic> = cast value;
+			if (arrVal.length == 0) return false;
+		}
 		
 		return true;
 	}
