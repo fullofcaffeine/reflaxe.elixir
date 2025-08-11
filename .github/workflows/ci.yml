@@ -1,0 +1,150 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test-haxe:
+    name: Haxe Compiler Tests
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+
+    - name: Install npm dependencies
+      run: npm ci
+
+    - name: Download Haxe libraries
+      run: npx lix download
+
+    - name: Run Haxe compiler tests
+      run: npm test
+
+    - name: Upload test artifacts on failure
+      if: failure()
+      uses: actions/upload-artifact@v4
+      with:
+        name: test-output-${{ matrix.os }}
+        path: |
+          test/tests/*/out/
+          test-output/
+        retention-days: 7
+
+  test-elixir:
+    name: Elixir Runtime Tests
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Elixir
+      uses: erlef/setup-beam@v1
+      with:
+        elixir-version: '1.16'
+        otp-version: '26'
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+
+    - name: Cache Elixir dependencies
+      uses: actions/cache@v4
+      with:
+        path: |
+          deps
+          _build
+        key: ${{ runner.os }}-mix-${{ hashFiles('**/mix.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-mix-
+
+    - name: Install npm dependencies
+      run: npm ci
+
+    - name: Download Haxe libraries
+      run: npx lix download
+
+    - name: Install Elixir dependencies
+      run: mix deps.get
+
+    - name: Run Mix tests
+      run: npm run test:mix
+      env:
+        MIX_ENV: test
+
+  test-examples:
+    name: Example Compilation Tests
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+
+    - name: Install npm dependencies
+      run: npm ci
+
+    - name: Download Haxe libraries
+      run: npx lix download
+
+    - name: Test example compilation
+      run: |
+        for dir in examples/*/; do
+          if [ -f "$dir/build.hxml" ] || [ -f "$dir/compile-all.hxml" ]; then
+            echo "Testing $dir"
+            cd "$dir"
+            if [ -f "compile-all.hxml" ]; then
+              npx haxe compile-all.hxml
+            elif [ -f "build.hxml" ]; then
+              npx haxe build.hxml
+            fi
+            cd ../..
+          fi
+        done
+
+  lint-and-format:
+    name: Code Quality Checks
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Check Haxe formatting
+      run: |
+        # Add Haxe formatting check when formatter is configured
+        echo "Haxe formatting check placeholder"
+
+    - name: Check documentation
+      run: |
+        # Verify all examples in docs compile
+        echo "Documentation validation placeholder"

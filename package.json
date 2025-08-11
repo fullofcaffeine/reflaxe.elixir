@@ -1,6 +1,6 @@
 {
   "name": "reflaxe-elixir",
-  "version": "1.0.0",
+  "version": "0.1.0",
   "description": "Haxe to Elixir compilation target using Reflaxe with Mix integration. Uses npm/lix for Haxe compiler development, mix for Elixir runtime testing.",
   "main": "src/reflaxe/elixir/ElixirCompiler.hx",
   "keywords": [
@@ -17,7 +17,15 @@
   "author": "Claude Code",
   "license": "MIT",
   "devDependencies": {
-    "lix": "^15.12.4"
+    "lix": "^15.12.4",
+    "@semantic-release/changelog": "^6.0.3",
+    "@semantic-release/commit-analyzer": "^11.1.0",
+    "@semantic-release/exec": "^6.0.3",
+    "@semantic-release/git": "^10.0.1",
+    "@semantic-release/github": "^9.2.6",
+    "@semantic-release/npm": "^11.0.2",
+    "@semantic-release/release-notes-generator": "^12.1.0",
+    "semantic-release": "^22.0.12"
   },
   "scripts": {
     "postinstall": "lix download",
@@ -33,6 +41,44 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/your-org/reflaxe.elixir.git"
+    "url": "git+https://github.com/fullofcaffeine/reflaxe.elixir.git"
+  },
+  "release": {
+    "branches": ["main"],
+    "plugins": [
+      "@semantic-release/commit-analyzer",
+      "@semantic-release/release-notes-generator",
+      "@semantic-release/changelog",
+      [
+        "@semantic-release/exec",
+        {
+          "prepareCmd": "node scripts/sync-version.js ${nextRelease.version}"
+        }
+      ],
+      "@semantic-release/npm",
+      [
+        "@semantic-release/github",
+        {
+          "assets": [
+            {
+              "path": "reflaxe-elixir-*.zip",
+              "label": "Reflaxe.Elixir v${nextRelease.version}"
+            }
+          ]
+        }
+      ],
+      [
+        "@semantic-release/git",
+        {
+          "assets": [
+            "package.json",
+            "package-lock.json",
+            "haxelib.json",
+            "CHANGELOG.md"
+          ],
+          "message": "chore(release): ${nextRelease.version} [skip ci]\n\n${nextRelease.notes}"
+        }
+      ]
+    ]
   }
 }

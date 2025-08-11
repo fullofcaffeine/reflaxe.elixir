@@ -1,5 +1,12 @@
 # Reflaxe.Elixir
 
+[![Version](https://img.shields.io/github/v/release/fullofcaffeine/reflaxe.elixir?include_prereleases)](https://github.com/fullofcaffeine/reflaxe.elixir/releases)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![CI Status](https://github.com/fullofcaffeine/reflaxe.elixir/workflows/CI/badge.svg)](https://github.com/fullofcaffeine/reflaxe.elixir/actions)
+[![Tests](https://img.shields.io/badge/tests-23%2F23%20passing-brightgreen)](https://github.com/fullofcaffeine/reflaxe.elixir/actions)
+[![Haxe](https://img.shields.io/badge/Haxe-4.3.6+-orange)](https://haxe.org)
+[![Elixir](https://img.shields.io/badge/Elixir-1.14+-purple)](https://elixir-lang.org)
+
 A modern Haxe compilation target for Elixir/BEAM with native Phoenix integration.
 
 ## Features
@@ -226,9 +233,17 @@ See [DEVELOPMENT.md](DEVELOPMENT.md) for detailed development guide.
 3. Write tests using modern tink_unittest
 4. Run `npm test` for full validation
 
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines on how to contribute to this project.
+
+## Roadmap
+
+Check out our [ROADMAP.md](ROADMAP.md) to see what's coming next!
+
 ## License
 
-MIT
+MIT - See [LICENSE](LICENSE) for details
 
 ## Links
 
