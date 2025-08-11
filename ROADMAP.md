@@ -2,10 +2,16 @@
 
 This document outlines the future development plans for Reflaxe.Elixir, organized by release targets and priorities.
 
-## Version 0.2.0 (Q1 2024)
-*Focus: Enhanced Phoenix Integration*
+## Version 0.2.0 (Q1 2025)
+*Focus: LLM Development Experience*
 
-### Features
+### Features  
+- [ ] **LLM Workflow Integration** ✨
+  - JSON status output for programmatic queries (`mix haxe.status --format json`)
+  - Status file generation (`.haxe_status.json`) for continuous monitoring
+  - Enhanced error messages with file/line/column context
+  - Silent watch mode for LLM-friendly development (`--llm-mode`)
+
 - [ ] **Live Components Support**
   - Full `@:live_component` annotation
   - Slot support with type safety
@@ -17,14 +23,15 @@ This document outlines the future development plans for Reflaxe.Elixir, organize
   - Advanced pipeline integration
   - WebSocket route support
 
-- [ ] **Form Builder DSL**
-  - Type-safe form generation
-  - Phoenix.HTML.Form integration
-  - Custom input components
-
 ### Improvements
+- [x] **File Watching & Incremental Compilation** ✅
+  - HaxeWatcher for automatic file change detection
+  - HaxeServer for incremental compilation via `haxe --wait`
+  - Mix integration with `mix compile.haxe --watch` 
+  - Sub-second compilation times optimized for LLM iteration cycles
+
 - [ ] Performance optimizations for large codebases
-- [ ] Better error messages with source location
+- [ ] Better error messages with source location  
 - [ ] IDE integration improvements
 
 ## Version 0.3.0 (Q2 2024)
@@ -119,6 +126,11 @@ This document outlines the future development plans for Reflaxe.Elixir, organize
 ## Long-term Vision (Beyond 1.0)
 
 ### Advanced Features
+- **Self-Hosting Improvements**
+  - Convert HaxeWatcher (file watching) from Elixir to Haxe→Elixir
+  - Convert HaxeServer (compiler server management) from Elixir to Haxe→Elixir
+  - Full build pipeline written in Haxe for consistency
+
 - **Machine Learning Integration**
   - Nx (Numerical Elixir) support
   - Tensor typing
