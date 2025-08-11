@@ -31,7 +31,7 @@ jobs:
       run: npx lix download
 
     - name: Run Haxe compiler tests
-      run: npm test
+      run: npm run test:haxe
 
     - name: Upload test artifacts on failure
       if: failure()
