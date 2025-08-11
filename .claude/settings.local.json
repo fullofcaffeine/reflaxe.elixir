@@ -105,7 +105,9 @@
       "Bash(cmp:*)",
       "Bash(do echo \"Testing $test for TODO placeholders:\")",
       "Bash(git remote add:*)",
-      "Bash(git branch:*)"
+      "Bash(git branch:*)",
+      "Bash(git push:*)",
+      "Bash(git add:*)"
     ],
     "deny": []
   }
