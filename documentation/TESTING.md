@@ -10,7 +10,7 @@ Testing a macro-based transpiler presents unique challenges since the transpiler
 **[`TEST_SUITE_DEEP_DIVE.md`](TEST_SUITE_DEEP_DIVE.md)** - Complete analysis of all 155+ tests across the three-layer architecture
 
 This document covers:
-- What the 25 Haxe snapshot tests validate (AST transformation layer)
+- What the 28 Haxe snapshot tests validate (AST transformation layer)
 - What the 130 Mix tests validate (build system and runtime validation)
 - What the 9 example tests validate (real-world usage patterns)
 - Detailed breakdown of testing philosophy and debugging subsystems
@@ -81,9 +81,9 @@ end
 
 ## Test Suite Overview
 
-The Reflaxe.Elixir test suite consists of **33 snapshot tests** that validate compiler output:
+The Reflaxe.Elixir test suite consists of **28 snapshot tests** that validate compiler output:
 
-### Snapshot Tests (33 tests total)
+### Snapshot Tests (28 tests total)
 - **Source Mapping Tests** (2 tests) 🎯
   - `source_map_basic`: Validates `.ex.map` file generation with VLQ encoding
   - `source_map_validation`: Tests Source Map v3 specification compliance
@@ -93,7 +93,7 @@ The Reflaxe.Elixir test suite consists of **33 snapshot tests** that validate co
 - **New Tests** (3 tests): Module syntax sugar, pattern matching, template compilation
 
 All tests run automatically via `npm test` which executes BOTH:
-- **Haxe Compiler Tests**: 33 snapshot tests via TestRunner.hx
+- **Haxe Compiler Tests**: 28 snapshot tests via TestRunner.hx
 - **Mix Runtime Tests**: 130 Elixir tests via ExUnit
 
 This ensures complete end-to-end validation of the entire compilation pipeline.
@@ -176,7 +176,7 @@ class CompilerTest {
 npm test  # Runs both Haxe and Mix tests
 
 # Run individual test suites
-npm run test:haxe  # Only Haxe compiler tests (33 tests)
+npm run test:haxe  # Only Haxe compiler tests (28 tests)
 npm run test:mix   # Only Mix/Elixir tests (130 tests)
 ```
 

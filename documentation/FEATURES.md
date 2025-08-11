@@ -115,11 +115,11 @@ All production features meet or exceed the following performance requirements:
 - **Compilation Speed**: <15ms per compilation step (typically <1ms achieved)
 - **Template Processing**: <100ms for HXX template processing
 - **Memory Usage**: Minimal memory footprint with efficient compilation
-- **Test Coverage**: 23/23 snapshot tests passing with deterministic output
+- **Test Coverage**: 28/28 snapshot tests passing with deterministic output
 
 ## Testing Status
 
-- **Snapshot Tests**: 23/23 passing (complete expression type coverage)
+- **Snapshot Tests**: 28/28 passing (complete expression type coverage)
 - **Haxe Compiler Tests**: 6/6 passing (3 legacy + 3 modern)
 - **Elixir/Mix Tests**: 13/13 passing (Mix tasks, Ecto integration, OTP workflows)
 - **Performance Validation**: All features well below performance targets

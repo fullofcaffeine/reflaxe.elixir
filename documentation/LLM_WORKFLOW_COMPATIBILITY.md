@@ -8,7 +8,7 @@
 - **Mix integration**: Mix.Tasks.Compile.Haxe supports `--watch` mode for development
 - **Source mapping support**: First Reflaxe target with `.ex.map` generation for precise debugging
 - **Performance**: Sub-second compilation times ideal for LLM iteration cycles
-- **Test coverage**: 25/25 tests passing including source map validation
+- **Test coverage**: 28/28 tests passing including source map validation
 
 ### LLM Workflow Analysis: Current Challenges
 

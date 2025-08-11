@@ -285,7 +285,7 @@ The compiler handles **50+ expression types** including:
 - **Compilation Speed**: <15ms per module (target achieved)
 - **Deterministic Output**: Identical output across multiple compilation runs
 - **Zero TODO Placeholders**: All expression types fully implemented
-- **Test Coverage**: 23/23 snapshot tests passing
+- **Test Coverage**: 28/28 snapshot tests passing
 
 ### Implementation Location
 

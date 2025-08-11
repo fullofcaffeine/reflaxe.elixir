@@ -15,7 +15,7 @@ Comprehensive guide for optimizing Reflaxe.Elixir compilation and runtime perfor
 | Migration DSL | <15ms | 6.5μs | **2300x faster** |
 | OTP GenServer | <15ms | 0.07ms | **214x faster** |
 | Query Compilation | <15ms | 0.087ms | **172x faster** |
-| Snapshot Tests | - | 23/23 passing | **100% deterministic** |
+| Snapshot Tests | - | 28/28 passing | **100% deterministic** |
 
 ## Compilation Performance
 

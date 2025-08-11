@@ -83,7 +83,7 @@ npx lix download  # Downloads project-specific Haxe libraries
 mix deps.get      # Installs Elixir dependencies
 
 # Run tests
-npm test          # Snapshot tests (25 tests including source maps)
+npm test          # Snapshot tests (28 tests including source maps)
 npm run test:all  # Full test suite (Haxe + Mix)
 ```
 
@@ -191,15 +191,15 @@ class CounterServer {
 The project uses a dual-ecosystem testing approach with self-referential library configuration:
 
 ```bash
-npm test              # Run ALL tests (155 total: 25 Haxe + 130 Mix)
-npm run test:haxe     # Run Haxe compiler tests only (25 snapshot tests)
+npm test              # Run ALL tests (158 total: 28 Haxe + 130 Mix)
+npm run test:haxe     # Run Haxe compiler tests only (28 snapshot tests)
 npm run test:mix      # Run Mix/Elixir tests only (130 runtime tests)
 npm run test:update   # Update expected snapshot test output
 ```
 
 **Test Infrastructure:**
 - **Complete Coverage**: `npm test` runs both Haxe compiler tests AND Mix runtime tests
-- **Snapshot Testing**: Validates compiler output against expected Elixir code (25 tests)
+- **Snapshot Testing**: Validates compiler output against expected Elixir code (28 tests)
 - **Runtime Validation**: Tests generated Elixir code execution in BEAM VM (130 tests)
 - **Self-Referential Library**: Tests use `-lib reflaxe.elixir` via `haxe_libraries/reflaxe.elixir.hxml`
 - **Mix Integration**: Tests real compilation in Phoenix projects
@@ -256,9 +256,9 @@ All compilation targets exceed performance requirements:
 
 ## Test Results
 
-**25/25 snapshot tests + 13 Mix tests passing**:
+**28/28 snapshot tests + 13 Mix tests passing**:
 
-### Haxe Snapshot Tests (25/25 ✅)
+### Haxe Snapshot Tests (28/28 ✅)
 - Source mapping tests (source_map_basic, source_map_validation)
 - LiveView, OTP, Ecto compilation tests
 - Example compilation tests
