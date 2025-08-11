@@ -35,7 +35,7 @@ Deep dives into specific features:
 ### Architecture & Internals
 For contributors and advanced users:
 - **[ARCHITECTURE.md](ARCHITECTURE.md)** - Compiler architecture deep dive
-- **[TESTING.md](TESTING.md)** - Dual-ecosystem testing with tink_unittest + tink_testrunner
+- **[TESTING.md](TESTING.md)** - Snapshot testing with Reflaxe patterns (TestRunner.hx)
 - **[TESTING_ARCHITECTURE_COMPLETE.md](TESTING_ARCHITECTURE_COMPLETE.md)** - Complete testing strategy guide
 
 ### Reference Documentation
