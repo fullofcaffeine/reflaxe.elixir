@@ -45,7 +45,7 @@ class ElixirCompiler extends BaseCompiler {
     // File extension for generated Elixir files
     public var fileExtension: String = ".ex";
     
-    // Output directory for generated files
+    // Output directory for generated files (dynamically set by Reflaxe)
     public var outputDirectory: String = "lib/";
     
     // Type mapping system for enhanced enum compilation
@@ -116,7 +116,8 @@ class ElixirCompiler extends BaseCompiler {
         // Initialize source mapping for this class
         if (sourceMapOutputEnabled) {
             var className = classType.name;
-            var outputPath = outputDirectory + className + fileExtension;
+            var actualOutputDir = this.output.outputDir != null ? this.output.outputDir : outputDirectory;
+            var outputPath = haxe.io.Path.join([actualOutputDir, className + fileExtension]);
             initSourceMapWriter(outputPath);
         }
         
