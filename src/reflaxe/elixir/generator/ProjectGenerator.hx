@@ -4,6 +4,7 @@ import sys.FileSystem;
 import sys.io.File;
 import haxe.io.Path;
 import reflaxe.elixir.generator.TemplateEngine;
+using StringTools;
 
 /**
  * Core project generator for Reflaxe.Elixir
@@ -436,8 +437,8 @@ npm-debug.log*
  */
 @:module
 class HelloWorld {
-	public static function greet(name: String): String {
-		return \'Hello, $name from Haxe!\';
+	public static function greet(person: String): String {
+		return \'Hello, \' + person + \' from Haxe!\';
 	}
 	
 	public static function main(): Void {
@@ -528,9 +529,11 @@ class HelloWorld {
 	}
 	
 	function toPascalCase(str: String): String {
-		return str.split(/[-_\s]/)
-			.map(word -> word.charAt(0).toUpperCase() + word.substr(1).toLowerCase())
-			.join("");
+		var words = ~/[-_\s]+/g.split(str);
+		return words.map(function(word) {
+			if (word.length == 0) return "";
+			return word.charAt(0).toUpperCase() + word.substr(1).toLowerCase();
+		}).join("");
 	}
 }
 
