@@ -41,7 +41,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/fullofcaffeine/reflaxe.elixir.git"
+    "url": "git@github.com:fullofcaffeine/reflaxe.elixir.git"
   },
   "release": {
     "branches": ["main"],
