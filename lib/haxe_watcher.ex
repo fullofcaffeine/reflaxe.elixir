@@ -257,13 +257,19 @@ defmodule HaxeWatcher do
       Logger.warning("No valid directories to watch: #{inspect(state.dirs)}")
       {:error, :no_valid_directories}
     else
-      case FileSystem.start_link(dirs: existing_dirs) do
-        {:ok, pid} ->
-          FileSystem.subscribe(pid)
-          {:ok, pid}
-          
-        {:error, reason} ->
-          {:error, reason}
+      # Check if FileSystem module is available
+      if Code.ensure_loaded?(FileSystem) do
+        case FileSystem.start_link(dirs: existing_dirs) do
+          {:ok, pid} ->
+            FileSystem.subscribe(pid)
+            {:ok, pid}
+            
+          {:error, reason} ->
+            {:error, reason}
+        end
+      else
+        Logger.warning("FileSystem module not available, file watching disabled")
+        {:error, :filesystem_not_available}
       end
     end
   end

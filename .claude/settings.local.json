@@ -117,7 +117,9 @@
       "Bash(if [ ! -f \"$example/README.md\" ])",
       "Bash(else)",
       "Bash(if [ ! -f \"$example/build.hxml\" ])",
-      "Bash([ ! -f \"$example/compile-all.hxml\" ])"
+      "Bash([ ! -f \"$example/compile-all.hxml\" ])",
+      "Bash(MIX_ENV=test mix deps.get)",
+      "Bash(MIX_ENV=test mix compile --force)"
     ],
     "deny": []
   }
