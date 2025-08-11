@@ -1,125 +1,117 @@
 defmodule UserQueries do
   @moduledoc """
-  Query compiler test case
-  Tests Ecto query DSL compilation
+  UserQueries module generated from Haxe
+  
+  
+ * Query compiler test case
+ * Tests Ecto query DSL compilation
+ 
   """
-  
-  import Ecto.Query
-  
-  @doc "Get all users"
+
+  # Static functions
+  @doc "Function get_all_users"
+  @spec get_all_users() :: TDynamic(null).t()
   def get_all_users() do
-    from(u in "users",
-      select: u)
+    # TODO: Implement function body
+    nil
   end
-  
-  @doc "Get active users"
+
+  @doc "Function get_active_users"
+  @spec get_active_users() :: TDynamic(null).t()
   def get_active_users() do
-    from(u in "users",
-      where: u.active == true,
-      select: u)
+    # TODO: Implement function body
+    nil
   end
-  
-  @doc "Get users by age range"
-  def get_users_by_age(min_age, max_age) do
-    from(u in "users",
-      where: u.age >= ^min_age and u.age <= ^max_age,
-      select: u)
+
+  @doc "Function get_users_by_age"
+  @spec get_users_by_age(TAbstract(Int,[]).t(), TAbstract(Int,[]).t()) :: TDynamic(null).t()
+  def get_users_by_age(arg0, arg1) do
+    # TODO: Implement function body
+    nil
   end
-  
-  @doc "Get recent users with limit"
-  def get_recent_users(limit) do
-    from(u in "users",
-      order_by: [desc: u.created_at],
-      limit: ^limit,
-      select: u)
+
+  @doc "Function get_recent_users"
+  @spec get_recent_users(TAbstract(Int,[]).t()) :: TDynamic(null).t()
+  def get_recent_users(arg0) do
+    # TODO: Implement function body
+    nil
   end
-  
-  @doc "Get users with posts"
+
+  @doc "Function get_users_with_posts"
+  @spec get_users_with_posts() :: TDynamic(null).t()
   def get_users_with_posts() do
-    from(u in "users",
-      join: p in "posts", on: p.user_id == u.id,
-      select: %{user: u, posts: p})
+    # TODO: Implement function body
+    nil
   end
-  
-  @doc "Get users with optional profile"
+
+  @doc "Function get_users_with_optional_profile"
+  @spec get_users_with_optional_profile() :: TDynamic(null).t()
   def get_users_with_optional_profile() do
-    from(u in "users",
-      left_join: pr in "profiles", on: pr.user_id == u.id,
-      select: %{user: u, profile: pr})
+    # TODO: Implement function body
+    nil
   end
-  
-  @doc "Get user post counts"
+
+  @doc "Function get_user_post_counts"
+  @spec get_user_post_counts() :: TDynamic(null).t()
   def get_user_post_counts() do
-    from(u in "users",
-      left_join: p in "posts", on: p.user_id == u.id,
-      group_by: u.id,
-      select: %{user: u, post_count: count(p.id)})
+    # TODO: Implement function body
+    nil
   end
-  
-  @doc "Get active posters"
-  def get_active_posters(min_posts) do
-    from(u in "users",
-      left_join: p in "posts", on: p.user_id == u.id,
-      group_by: u.id,
-      having: count(p.id) >= ^min_posts,
-      select: %{user: u, post_count: count(p.id)})
+
+  @doc "Function get_active_posters"
+  @spec get_active_posters(TAbstract(Int,[]).t()) :: TDynamic(null).t()
+  def get_active_posters(arg0) do
+    # TODO: Implement function body
+    nil
   end
-  
-  @doc "Get top users using subquery"
+
+  @doc "Function get_top_users"
+  @spec get_top_users() :: TDynamic(null).t()
   def get_top_users() do
-    subquery = from(p in "posts",
-      group_by: p.user_id,
-      select: %{user_id: p.user_id, count: count(p.id)})
-    
-    from(u in "users",
-      join: s in subquery(subquery), on: s.user_id == u.id,
-      where: s.count > 10,
-      select: u)
+    # TODO: Implement function body
+    nil
   end
-  
-  @doc "Get users with associations"
+
+  @doc "Function get_users_with_associations"
+  @spec get_users_with_associations() :: TDynamic(null).t()
   def get_users_with_associations() do
-    from(u in "users",
-      preload: [:posts, :profile, :comments],
-      select: u)
+    # TODO: Implement function body
+    nil
   end
-  
-  @doc "Deactivate old users"
-  def deactivate_old_users(days) do
-    from(u in "users",
-      where: u.last_login < ago(^days, "day"),
-      update: [set: [active: false]])
+
+  @doc "Function deactivate_old_users"
+  @spec deactivate_old_users(TAbstract(Int,[]).t()) :: TDynamic(null).t()
+  def deactivate_old_users(arg0) do
+    # TODO: Implement function body
+    nil
   end
-  
-  @doc "Delete inactive users"
+
+  @doc "Function delete_inactive_users"
+  @spec delete_inactive_users() :: TDynamic(null).t()
   def delete_inactive_users() do
-    from(u in "users",
-      where: u.active == false)
-    |> Repo.delete_all()
+    # TODO: Implement function body
+    nil
   end
-  
-  @doc "Search users with dynamic filters"
-  def search_users(filters) do
-    query = from(u in "users", select: u)
-    
-    query = if filters[:name] do
-      where(query, [u], ilike(u.name, ^filters[:name]))
-    else
-      query
-    end
-    
-    query = if filters[:email] do
-      where(query, [u], u.email == ^filters[:email])
-    else
-      query
-    end
-    
-    query = if filters[:min_age] do
-      where(query, [u], u.age >= ^filters[:min_age])
-    else
-      query
-    end
-    
-    query
+
+  @doc "Function search_users"
+  @spec search_users(TDynamic(null).t()) :: TDynamic(null).t()
+  def search_users(arg0) do
+    # TODO: Implement function body
+    nil
   end
+
+  @doc "Function from"
+  @spec from(TInst(String,[]).t(), TInst(String,[]).t(), TDynamic(null).t()) :: TDynamic(null).t()
+  def from(arg0, arg1, arg2) do
+    # TODO: Implement function body
+    nil
+  end
+
+  @doc "Function where"
+  @spec where(TDynamic(null).t(), TInst(String,[]).t(), TDynamic(null).t()) :: TDynamic(null).t()
+  def where(arg0, arg1, arg2) do
+    # TODO: Implement function body
+    nil
+  end
+
 end

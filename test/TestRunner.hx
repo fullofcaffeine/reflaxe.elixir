@@ -44,6 +44,9 @@ class TestRunner {
 			if (StringTools.startsWith(arg, "test=")) {
 				final testName = arg.substr(5);
 				SpecificTests.push(testName);
+			} else if (arg.indexOf("-") == -1 && arg != "help" && sys.FileSystem.exists(haxe.io.Path.join([TEST_DIR, arg]))) {
+				// Also accept test names without "test=" prefix
+				SpecificTests.push(arg);
 			}
 		}
 		
@@ -194,6 +197,8 @@ Examples:
 		// If updating intended, we're done
 		if (UpdateIntended) {
 			Sys.println('  ✅ Updated intended output');
+			// Restore directory before returning
+			Sys.setCwd(originalCwd);
 			return true;
 		}
 		

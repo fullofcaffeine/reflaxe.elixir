@@ -1,0 +1,170 @@
+defmodule User do
+  @moduledoc """
+  Ecto schema module generated from Haxe @:schema class
+  Table: users
+  """
+
+  use Ecto.Schema
+  import Ecto.Changeset
+
+  @primary_key {:id, :id, autogenerate: true}
+  @derive {Phoenix.Param, key: :id}
+
+  schema "users" do
+    field :name, :string, null: false
+    field :email, :string, null: false
+    field :age, :integer
+    field :active, :boolean, default: true
+    timestamps()
+    field :updated_at, :string
+    has_many :posts, Post
+  end
+
+  @doc """
+  Changeset function for User schema
+  """
+  def changeset(%User{} = user, attrs \\ %{}) do
+    user
+    |> cast(attrs, changeable_fields())
+    |> validate_required(required_fields())
+  end
+
+  defp changeable_fields do
+    [:name, :email, :age, :active, :updated_at]
+  end
+
+  defp required_fields do
+    [:name, :email]
+  end
+
+end
+
+
+defmodule UserChangeset do
+  @moduledoc """
+  Generated changeset for DefaultSchema schema
+  
+  Provides validation and casting for DefaultSchema data structures
+  following Ecto changeset patterns with compile-time type safety.
+  """
+  
+  import Ecto.Changeset
+  alias DefaultSchema
+  
+  @doc """
+  Primary changeset function with comprehensive validation
+  """
+  def changeset(%DefaultSchema{} = struct, attrs) do
+    struct
+    |> cast(attrs, [:name, :email, :age])
+    |> validate_required([:name, :email])
+    |> validate_format(:email, ~r/@/)
+  end
+end
+
+defmodule Users do
+  @moduledoc """
+  Users module generated from Haxe
+  """
+
+  # Static functions
+  @doc "
+     * Get all users with optional filtering
+     "
+  @spec list_users(TAbstract(Null,[TType(contexts.UserFilter,[])]).t()) :: TInst(Array,[TInst(contexts.User,[])]).t()
+  def list_users(arg0) do
+    # TODO: Implement function body
+    nil
+  end
+
+  @doc "
+     * Create changeset for user (required by LiveView example)
+     "
+  @spec change_user(TAbstract(Null,[TInst(contexts.User,[])]).t()) :: TDynamic(null).t()
+  def change_user(arg0) do
+    # TODO: Implement function body
+    nil
+  end
+
+  @doc "
+     * Main function for compilation testing
+     "
+  @spec main() :: TAbstract(Void,[]).t()
+  def main() do
+    # TODO: Implement function body
+    nil
+  end
+
+  @doc "
+     * Get user by ID with error handling
+     "
+  @spec get_user(TAbstract(Int,[]).t()) :: TInst(contexts.User,[]).t()
+  def get_user(arg0) do
+    # TODO: Implement function body
+    nil
+  end
+
+  @doc "
+     * Get user by ID, returns null if not found
+     "
+  @spec get_user_safe(TAbstract(Int,[]).t()) :: TAbstract(Null,[TInst(contexts.User,[])]).t()
+  def get_user_safe(arg0) do
+    # TODO: Implement function body
+    nil
+  end
+
+  @doc "
+     * Create a new user
+     "
+  @spec create_user(TDynamic(null).t()) :: TAnonymous(.t(:anonymous)
+  def create_user(arg0) do
+    # TODO: Implement function body
+    nil
+  end
+
+  @doc "
+     * Update existing user
+     "
+  @spec update_user(TInst(contexts.User,[]).t(), TDynamic(null).t()) :: TAnonymous(.t(:anonymous)
+  def update_user(arg0, arg1) do
+    # TODO: Implement function body
+    nil
+  end
+
+  @doc "
+     * Delete user (soft delete by setting active: false)
+     "
+  @spec delete_user(TInst(contexts.User,[]).t()) :: TAnonymous(.t(:anonymous)
+  def delete_user(arg0) do
+    # TODO: Implement function body
+    nil
+  end
+
+  @doc "
+     * Search users by name or email
+     "
+  @spec search_users(TInst(String,[]).t()) :: TInst(Array,[TInst(contexts.User,[])]).t()
+  def search_users(arg0) do
+    # TODO: Implement function body
+    nil
+  end
+
+  @doc "
+     * Get users with their posts (preload association)
+     "
+  @spec users_with_posts() :: TInst(Array,[TInst(contexts.User,[])]).t()
+  def users_with_posts() do
+    # TODO: Implement function body
+    nil
+  end
+
+  @doc "
+     * Get user statistics
+     "
+  @spec user_stats() :: TType(contexts.UserStats,[]).t()
+  def user_stats() do
+    # TODO: Implement function body
+    nil
+  end
+
+end
