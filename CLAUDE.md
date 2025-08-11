@@ -180,6 +180,13 @@ Mark breaking changes with `BREAKING CHANGE:` in the footer or `!` after the typ
 feat!: change default compilation directory structure
 ```
 
+### No Co-authorship or Generation Attribution
+Do NOT add co-authorship lines or generation notes in commit messages. This includes:
+- No `Co-Authored-By: Claude` lines
+- No `🤖 Generated with Claude Code` or similar attribution
+- No references to AI/agent assistance in commit messages
+Commits should appear as direct contributions without attribution notes.
+
 ## Development Resources & Reference Strategy
 - **Reference Codebase**: `/Users/fullofcaffeine/workspace/code/haxe.elixir.reference/` - Contains Reflaxe patterns, Phoenix examples, Haxe source
 - **Haxe API Documentation**: https://api.haxe.org/ - For type system, standard library, and language features
