@@ -5,4 +5,5 @@
 -lib reflaxe
 -D reflaxe_runtime
 --macro reflaxe.elixir.CompilerInit.Start()
+-D elixir_output=out
 migrations.CreateUsers

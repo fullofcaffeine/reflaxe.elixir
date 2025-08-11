@@ -21,8 +21,13 @@ defmodule StringTools do
 	"
   @spec hex(TAbstract(Int,[]).t(), TAbstract(Null,[TAbstract(Int,[])]).t()) :: TInst(String,[]).t()
   def hex(arg0, arg1) do
-    # TODO: Implement function body
-    nil
+    (
+  s = ""
+  hex_chars = "0123456789ABCDEF"
+  # TODO: Implement expression type: TWhile
+  if (digits != nil), do: # TODO: Implement expression type: TWhile, else: nil
+  s
+)
   end
 
 end
