@@ -12,6 +12,8 @@ A modern Haxe compilation target for Elixir/BEAM with native Phoenix integration
 ## Features
 
 ✅ **Mix-First Development** - Seamless integration with Elixir build pipeline  
+✅ **File Watching & Incremental Compilation** - `mix compile.haxe --watch` with sub-second rebuild times  
+✅ **LLM-Optimized Workflows** - Perfect for AI-assisted development with fast iteration cycles  
 ✅ **Phoenix LiveView Support** - Native `@:liveview` compilation with socket management  
 ✅ **Ecto Integration** - `@:changeset` and `@:migration` DSL support  
 ✅ **OTP GenServer Support** - `@:genserver` with full lifecycle callbacks  
@@ -57,6 +59,7 @@ npx lix run reflaxe.elixir create my-phoenix-app --type phoenix
 
 ### Reference
 - **[API Reference](documentation/API_REFERENCE.md)** - Complete API documentation
+- **[LLM Workflow Compatibility](documentation/LLM_WORKFLOW_COMPATIBILITY.md)** - Using Reflaxe.Elixir with AI assistants
 - **[Troubleshooting](documentation/TROUBLESHOOTING.md)** - Common issues and solutions
 - **[Examples](examples/)** - Working code examples
 
@@ -174,17 +177,25 @@ npm run test:update   # Update expected test output
 
 ### Development Workflow
 ```bash
-# Make changes to compiler
+# Start file watching for instant feedback
+mix compile.haxe --watch
+
+# In another terminal, make changes
+vim src_haxe/MyModule.hx  # Files auto-compile on save
+
+# Or for compiler development:
 vim src/reflaxe/elixir/ElixirCompiler.hx
+npm test  # Test compiler changes
+```
 
-# Test your changes
-npm test
+### LLM Development  
+Perfect for AI-assisted development with fast feedback loops:
+```bash
+# Start watching with LLM-friendly output
+mix compile.haxe --watch --verbose
 
-# Test generated Elixir integration  
-npm run test:mix
-
-# Full validation
-npm test
+# LLM creates/modifies .hx files → automatic compilation
+# Sub-second feedback enables rapid iteration
 ```
 
 ## Package Management

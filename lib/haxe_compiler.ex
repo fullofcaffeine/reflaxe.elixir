@@ -95,9 +95,8 @@ defmodule HaxeCompiler do
     if Enum.empty?(source_files) do
       {:ok, []}
     else
-      # For Mix integration, we'll use a direct compilation approach
-      # This generates Elixir files directly without relying on complex Reflaxe macros
-      case compile_haxe_files_with_error_check(source_files, source_dir, target_dir, verbose) do
+      # Use real Haxe compilation with Reflaxe.Elixir target
+      case compile_with_real_haxe(hxml_file, source_dir, target_dir, verbose) do
         {:ok, compiled_files} ->
           if verbose do
             Mix.shell().info("Successfully compiled #{length(compiled_files)} file(s)")
@@ -137,131 +136,76 @@ defmodule HaxeCompiler do
   end
   
   
-  defp compile_haxe_files_directly(source_files, source_dir, target_dir, verbose) do
-    # For Mix integration, we create simple Elixir module stubs based on Haxe files
-    # This provides immediate value for developers while we work on full Reflaxe integration
-    
-    File.mkdir_p!(target_dir)
-    
-    compiled_files = 
-      source_files
-      |> Enum.map(fn haxe_file ->
-        # Generate corresponding Elixir file
-        relative_path = Path.relative_to(haxe_file, source_dir)
-        elixir_file = Path.join(target_dir, String.replace(relative_path, ".hx", ".ex"))
-        
-        # Ensure directory exists
-        File.mkdir_p!(Path.dirname(elixir_file))
-        
-        # Generate basic Elixir module from Haxe file
-        elixir_content = generate_elixir_module(haxe_file, verbose)
-        File.write!(elixir_file, elixir_content)
-        
+  defp compile_with_real_haxe(hxml_file, _source_dir, target_dir, verbose) do
+    # First, try to use HaxeServer for incremental compilation if available
+    compilation_result = case HaxeServer.running?() do
+      true ->
         if verbose do
-          Mix.shell().info("Generated #{elixir_file} from #{haxe_file}")
+          Mix.shell().info("Using Haxe server for incremental compilation")
         end
+        HaxeServer.compile([hxml_file])
         
-        elixir_file
-      end)
+      false ->
+        if verbose do
+          Mix.shell().info("Using direct Haxe compilation")
+        end
+        compile_with_direct_haxe(hxml_file, verbose)
+    end
     
-    {:ok, compiled_files}
+    case compilation_result do
+      {:ok, _output} ->
+        # Compilation succeeded, find generated .ex files
+        compiled_files = find_generated_elixir_files(target_dir)
+        {:ok, compiled_files}
+        
+      {:error, reason} ->
+        {:error, reason}
+    end
   rescue
     error ->
-      {:error, "Direct compilation failed: #{Exception.message(error)}"}
+      {:error, "Haxe compilation failed: #{Exception.message(error)}"}
   end
   
-  defp generate_elixir_module(haxe_file, verbose) do
-    # Read Haxe file and generate basic Elixir module
-    content = File.read!(haxe_file)
-    
-    # Extract basic information from Haxe file
-    module_name = extract_module_name(haxe_file, content)
-    class_name = extract_class_name(content) || Path.basename(haxe_file, ".hx")
+  defp compile_with_direct_haxe(hxml_file, verbose) do
+    haxe_cmd = get_haxe_command()
+    args = [hxml_file]
     
     if verbose do
-      Mix.shell().info("Extracting from Haxe: module=#{module_name}, class=#{class_name}")
+      Mix.shell().info("Running: #{haxe_cmd} #{Enum.join(args, " ")}")
     end
     
-    # Generate basic Elixir module structure
-    """
-    # Generated from Haxe source: #{Path.basename(haxe_file)}
-    # This is a basic stub - full Reflaxe.Elixir compilation coming soon!
-    
-    defmodule #{module_name} do
-      @moduledoc \"\"\"
-      Generated from Haxe class: #{class_name}
-      
-      This module was automatically generated from a Haxe source file
-      as part of the Mix.Tasks.Compile.Haxe integration.
-      \"\"\"
-      
-      # TODO: Add actual compiled functions from Haxe source
-      def __haxe_source__, do: "#{Path.basename(haxe_file)}"
-      
-      def __generated_at__, do: "#{DateTime.utc_now()}"
+    case System.cmd(haxe_cmd, args, stderr_to_stdout: true) do
+      {output, 0} ->
+        {:ok, output}
+      {output, exit_code} ->
+        {:error, "Haxe compilation failed (exit #{exit_code}): #{output}"}
     end
-    """
+  rescue
+    error ->
+      {:error, "Failed to execute Haxe: #{Exception.message(error)}"}
   end
   
-  defp extract_module_name(haxe_file, content) do
-    # Try to extract package and class name for module name
-    package = case Regex.run(~r/package\s+([^;]+);/, content) do
-      [_, pkg] -> String.trim(pkg)
-      nil -> nil
-    end
-    
-    class_name = extract_class_name(content) || 
-      haxe_file |> Path.basename(".hx") |> Macro.camelize()
-    
-    if package && package != "" do
-      # Convert package.Class to Package.Class
-      package_parts = String.split(package, ".")
-      package_module = package_parts |> Enum.map(&Macro.camelize/1) |> Enum.join(".")
-      "#{package_module}.#{class_name}"
+  defp find_generated_elixir_files(target_dir) do
+    if File.exists?(target_dir) do
+      target_dir
+      |> Path.join("**/*.ex")
+      |> Path.wildcard()
+      |> Enum.sort()
     else
-      class_name
+      []
     end
   end
   
-  defp extract_class_name(content) do
-    case Regex.run(~r/class\s+(\w+)/, content) do
-      [_, class_name] -> Macro.camelize(class_name)
-      nil -> nil
+  defp get_haxe_command() do
+    # Try to use npx haxe first (for project-specific versions)
+    case System.cmd("npx", ["--version"], stderr_to_stdout: true) do
+      {_output, 0} -> "npx haxe"
+      {_output, _} -> 
+        # Fall back to global haxe
+        "haxe"
     end
+  rescue
+    _ -> "haxe"  # Final fallback
   end
   
-  defp compile_haxe_files_with_error_check(source_files, source_dir, target_dir, verbose) do
-    # Check for compilation errors in source files first
-    case check_source_files_for_errors(source_files) do
-      {:error, error_message} ->
-        {:error, error_message}
-      :ok ->
-        compile_haxe_files_directly(source_files, source_dir, target_dir, verbose)
-    end
-  end
-  
-  defp check_source_files_for_errors(source_files) do
-    # Check for obvious syntax errors that would cause compilation failures
-    Enum.reduce_while(source_files, :ok, fn file, _acc ->
-      content = File.read!(file)
-      
-      cond do
-        # Check for unclosed strings
-        String.contains?(content, "\"unclosed string") ->
-          {:halt, {:error, "Syntax error in #{Path.basename(file)}: Unclosed string literal"}}
-        
-        # Check for missing semicolons in simple cases
-        String.contains?(content, "var x = \"unclosed string\n") ->
-          {:halt, {:error, "Syntax error in #{Path.basename(file)}: Unterminated string literal"}}
-        
-        # Check for invalid class definitions
-        String.match?(content, ~r/class\s+\w+\s*\{[^}]*\Z/) and String.contains?(content, "// Syntax error") ->
-          {:halt, {:error, "Syntax error in #{Path.basename(file)}: Invalid class definition"}}
-        
-        # File appears to be valid
-        true ->
-          {:cont, :ok}
-      end
-    end)
-  end
 end

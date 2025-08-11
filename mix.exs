@@ -22,7 +22,8 @@ defmodule ReflaxeElixir.MixProject do
 
   defp deps do
     [
-      {:ex_doc, "~> 0.32", only: :dev, runtime: false}
+      {:ex_doc, "~> 0.32", only: :dev, runtime: false},
+      {:file_system, "~> 0.2", only: :dev}
     ]
   end
 
@@ -35,7 +36,7 @@ defmodule ReflaxeElixir.MixProject do
 
   defp package do
     [
-      licenses: ["MIT"],
+      licenses: ["GPL-3.0"],
       links: %{"GitHub" => "https://github.com/fullofcaffeine/reflaxe.elixir"},
       files: ~w(lib mix.exs README* LICENSE*)
     ]

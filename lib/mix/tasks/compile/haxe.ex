@@ -17,12 +17,14 @@ defmodule Mix.Tasks.Compile.Haxe do
   
     * `--verbose` - Enable verbose output
     * `--force` - Force recompilation of all files
+    * `--watch` - Start file watching for automatic recompilation (dev mode only)
     
   ## Example Usage
   
       mix compile.haxe
       mix compile.haxe --verbose
       mix compile.haxe --force
+      mix compile.haxe --watch --verbose
   """
   
   use Mix.Task.Compiler
@@ -33,8 +35,8 @@ defmodule Mix.Tasks.Compile.Haxe do
   @impl Mix.Task.Compiler
   def run(args) do
     {opts, _} = OptionParser.parse!(args, 
-      strict: [verbose: :boolean, force: :boolean],
-      aliases: [v: :verbose, f: :force]
+      strict: [verbose: :boolean, force: :boolean, watch: :boolean],
+      aliases: [v: :verbose, f: :force, w: :watch]
     )
     
     config = get_compiler_config()
@@ -42,6 +44,11 @@ defmodule Mix.Tasks.Compile.Haxe do
     
     if compile_opts[:verbose] do
       Mix.shell().info("Starting Haxe compilation...")
+    end
+    
+    # Start file watching if requested and in development
+    if Keyword.get(compile_opts, :watch, false) and Mix.env() == :dev do
+      start_file_watching(compile_opts)
     end
     
     case HaxeCompiler.needs_recompilation?(compile_opts) do
@@ -52,6 +59,21 @@ defmodule Mix.Tasks.Compile.Haxe do
         {:noop, []}
       
       true ->
+        # Try to start HaxeServer for incremental compilation
+        if Mix.env() == :dev and not HaxeServer.running?() do
+          try do
+            {:ok, _pid} = HaxeServer.start_link([])
+            if compile_opts[:verbose] do
+              Mix.shell().info("Started Haxe server for incremental compilation")
+            end
+          catch
+            _, _ -> 
+              if compile_opts[:verbose] do
+                Mix.shell().info("Could not start Haxe server, using direct compilation")
+              end
+          end
+        end
+        
         case HaxeCompiler.compile(compile_opts) do
           {:ok, []} ->
             if compile_opts[:verbose] do
@@ -101,6 +123,33 @@ defmodule Mix.Tasks.Compile.Haxe do
     # Merge with project-specific config if available
     haxe_config = Keyword.get(project_config, :haxe_compiler, [])
     Keyword.merge(defaults, haxe_config)
+  end
+  
+  defp start_file_watching(opts) do
+    source_dir = opts[:source_dir] || "src_haxe"
+    
+    if File.exists?(source_dir) do
+      try do
+        if not GenServer.whereis(HaxeWatcher) do
+          {:ok, _pid} = HaxeWatcher.start_link([
+            dirs: [source_dir],
+            auto_compile: true,
+            debounce_ms: 100
+          ])
+          
+          Mix.shell().info("🔍 Started file watching on #{source_dir}")
+        else
+          Mix.shell().info("🔍 File watching already active")
+        end
+      catch
+        _, error -> 
+          Mix.shell().info("⚠️  Could not start file watching: #{inspect(error)}")
+      end
+    else
+      if opts[:verbose] do
+        Mix.shell().info("⚠️  Source directory #{source_dir} not found, skipping file watching")
+      end
+    end
   end
   
   defp update_manifest(compiled_files) do

@@ -1,5 +1,6 @@
 {application,reflaxe_elixir,
-             [{modules,['Elixir.HaxeCompiler','Elixir.Mix.Tasks.Compile.Haxe',
+             [{modules,['Elixir.HaxeCompiler','Elixir.HaxeServer',
+                        'Elixir.HaxeWatcher','Elixir.Mix.Tasks.Compile.Haxe',
                         'Elixir.Mix.Tasks.Haxe.Gen.Migration']},
               {optional_applications,[]},
               {applications,[kernel,stdlib,elixir,logger]},
