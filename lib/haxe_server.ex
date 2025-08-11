@@ -95,9 +95,18 @@ defmodule HaxeServer do
     port = Keyword.get(opts, :port, @default_port)
     haxe_cmd = Keyword.get(opts, :haxe_cmd, @default_haxe_cmd)
     
+    # Parse the haxe command if it's a string
+    {cmd, args} = case haxe_cmd do
+      {cmd, args} when is_binary(cmd) and is_list(args) -> {cmd, args}
+      cmd when is_binary(cmd) -> 
+        parts = String.split(cmd, " ")
+        {hd(parts), tl(parts)}
+    end
+    
     state = %{
       port: port,
-      haxe_cmd: haxe_cmd,
+      haxe_cmd: cmd,
+      haxe_args: args,
       server_pid: nil,
       status: :stopped,
       compile_count: 0,
@@ -185,7 +194,7 @@ defmodule HaxeServer do
   # Private Functions
 
   defp start_haxe_server(state) do
-    cmd_args = ["--wait", to_string(state.port)]
+    cmd_args = state.haxe_args ++ ["--wait", to_string(state.port)]
     
     case System.cmd(state.haxe_cmd, cmd_args, stderr_to_stdout: true) do
       {_output, 0} ->
@@ -211,7 +220,7 @@ defmodule HaxeServer do
 
   defp compile_with_server(args, state) do
     # Connect to the running Haxe server and send compilation request
-    connect_args = ["--connect", to_string(state.port)] ++ args
+    connect_args = state.haxe_args ++ ["--connect", to_string(state.port)] ++ args
     
     case System.cmd(state.haxe_cmd, connect_args, stderr_to_stdout: true) do
       {output, 0} ->

@@ -167,8 +167,8 @@ defmodule HaxeCompiler do
   end
   
   defp compile_with_direct_haxe(hxml_file, verbose) do
-    haxe_cmd = get_haxe_command()
-    args = [hxml_file]
+    {haxe_cmd, cmd_args} = get_haxe_command()
+    args = cmd_args ++ [hxml_file]
     
     if verbose do
       Mix.shell().info("Running: #{haxe_cmd} #{Enum.join(args, " ")}")
@@ -430,14 +430,26 @@ defmodule HaxeCompiler do
   
   defp get_haxe_command() do
     # Try to use npx haxe first (for project-specific versions)
-    case System.cmd("npx", ["--version"], stderr_to_stdout: true) do
-      {_output, 0} -> "npx haxe"
-      {_output, _} -> 
-        # Fall back to global haxe
-        "haxe"
+    cond do
+      # Check if npx is available
+      System.find_executable("npx") != nil ->
+        {"npx", ["haxe"]}
+      
+      # Check if haxe is directly available
+      System.find_executable("haxe") != nil ->
+        {"haxe", []}
+      
+      # Try common installation paths
+      File.exists?("/opt/homebrew/bin/haxe") ->
+        {"/opt/homebrew/bin/haxe", []}
+      
+      File.exists?("/usr/local/bin/haxe") ->
+        {"/usr/local/bin/haxe", []}
+        
+      true ->
+        # Final fallback - will likely fail but provides clear error
+        {"haxe", []}
     end
-  rescue
-    _ -> "haxe"  # Final fallback
   end
   
 end
