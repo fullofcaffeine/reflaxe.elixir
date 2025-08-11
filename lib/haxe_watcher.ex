@@ -39,6 +39,7 @@ defmodule HaxeWatcher do
   @default_patterns ["**/*.hx"]
   @default_debounce_ms 100
   @default_auto_compile true
+  @default_build_file "build.hxml"
 
   # Client API
 
@@ -50,6 +51,7 @@ defmodule HaxeWatcher do
   - `:patterns` - File patterns to match  
   - `:debounce_ms` - Debounce period to prevent excessive compilation
   - `:auto_compile` - Whether to auto-compile on file changes
+  - `:build_file` - Path to the build.hxml file (default: "build.hxml")
   """
   def start_link(opts \\ []) do
     GenServer.start_link(__MODULE__, opts, name: __MODULE__)
@@ -98,12 +100,14 @@ defmodule HaxeWatcher do
     patterns = Keyword.get(opts, :patterns, @default_patterns)
     debounce_ms = Keyword.get(opts, :debounce_ms, @default_debounce_ms)
     auto_compile = Keyword.get(opts, :auto_compile, @default_auto_compile)
+    build_file = Keyword.get(opts, :build_file, @default_build_file)
     
     state = %{
       dirs: dirs,
       patterns: patterns,
       debounce_ms: debounce_ms,
       auto_compile: auto_compile,
+      build_file: build_file,
       watcher_pid: nil,
       debounce_timer: nil,
       file_count: 0,
@@ -183,6 +187,7 @@ defmodule HaxeWatcher do
       patterns: state.patterns,
       auto_compile: state.auto_compile,
       debounce_ms: state.debounce_ms,
+      build_file: state.build_file,
       file_count: count_haxe_files(state),
       last_change: state.last_change,
       compilation_count: state.compilation_count,
@@ -302,15 +307,25 @@ defmodule HaxeWatcher do
   defp trigger_compilation_now(state) do
     Logger.info("Triggering Haxe compilation...")
     
+    # Find the build file in the watched directories
+    build_file_path = find_build_file(state)
+    
     # Attempt compilation through HaxeServer if available
     result = case HaxeServer.running?() do
       true ->
         # Use incremental compilation through server
-        HaxeServer.compile(["build.hxml"])
+        HaxeServer.compile([build_file_path])
         
       false ->
         # Fall back to direct compilation
-        case System.cmd("npx", ["haxe", "build.hxml"], stderr_to_stdout: true) do
+        # Change to the directory containing the build file for relative paths to work
+        compile_opts = case Path.dirname(build_file_path) do
+          "." -> [stderr_to_stdout: true]
+          dir -> [cd: dir, stderr_to_stdout: true]
+        end
+        
+        build_file_name = Path.basename(build_file_path)
+        case System.cmd("npx", ["haxe", build_file_name], compile_opts) do
           {output, 0} ->
             {:ok, output}
           {output, exit_code} ->
@@ -367,6 +382,24 @@ defmodule HaxeWatcher do
     end)
     |> Enum.uniq()
     |> length()
+  end
+  
+  defp find_build_file(state) do
+    # First, check if build_file is an absolute path
+    if Path.type(state.build_file) == :absolute and File.exists?(state.build_file) do
+      state.build_file
+    else
+      # Look for the build file in watched directories
+      build_file_name = Path.basename(state.build_file)
+      
+      found_path = state.dirs
+      |> Enum.filter(&File.exists?/1)
+      |> Enum.map(fn dir -> Path.join(dir, build_file_name) end)
+      |> Enum.find(&File.exists?/1)
+      
+      # Fall back to the original path if not found in watched dirs
+      found_path || state.build_file
+    end
   end
 
   defp event_to_string(:created), do: "created"

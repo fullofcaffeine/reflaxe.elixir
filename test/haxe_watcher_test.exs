@@ -197,10 +197,12 @@ defmodule HaxeWatcherTest do
   describe "file watching behavior" do
     @tag :file_watching
     test "detects when Haxe files are created", %{test_dir: test_dir} do
+      build_file_path = Path.join(test_dir, "build.hxml")
       {:ok, _pid} = HaxeWatcher.start_link([
         dirs: [test_dir], 
         debounce_ms: 50,
-        auto_compile: true
+        auto_compile: true,
+        build_file: build_file_path
       ])
       
       # Give it time to start watching
@@ -229,10 +231,12 @@ defmodule HaxeWatcherTest do
       test_file = Path.join(test_dir, "ModifyTest.hx")
       File.write!(test_file, "class ModifyTest {}")
       
+      build_file_path = Path.join(test_dir, "build.hxml")
       {:ok, _pid} = HaxeWatcher.start_link([
         dirs: [test_dir], 
         debounce_ms: 50,
-        auto_compile: true
+        auto_compile: true,
+        build_file: build_file_path
       ])
       
       # Give it time to start watching
@@ -255,10 +259,12 @@ defmodule HaxeWatcherTest do
 
     @tag :file_watching  
     test "ignores non-Haxe files", %{test_dir: test_dir} do
+      build_file_path = Path.join(test_dir, "build.hxml")
       {:ok, _pid} = HaxeWatcher.start_link([
         dirs: [test_dir], 
         debounce_ms: 50,
-        auto_compile: true
+        auto_compile: true,
+        build_file: build_file_path
       ])
       
       # Give it time to start watching
@@ -284,10 +290,12 @@ defmodule HaxeWatcherTest do
     test "respects debounce period", %{test_dir: test_dir} do
       debounce_ms = 200
       
+      build_file_path = Path.join(test_dir, "build.hxml")
       {:ok, _pid} = HaxeWatcher.start_link([
         dirs: [test_dir], 
         debounce_ms: debounce_ms,
-        auto_compile: true
+        auto_compile: true,
+        build_file: build_file_path
       ])
       
       # Give it time to start watching
@@ -318,10 +326,12 @@ defmodule HaxeWatcherTest do
     end
 
     test "doesn't auto-compile when auto_compile is false", %{test_dir: test_dir} do
+      build_file_path = Path.join(test_dir, "build.hxml")
       {:ok, _pid} = HaxeWatcher.start_link([
         dirs: [test_dir], 
         debounce_ms: 50,
-        auto_compile: false
+        auto_compile: false,
+        build_file: build_file_path
       ])
       
       # Give it time to start watching
