@@ -93,6 +93,7 @@ class ElixirCompiler extends BaseCompiler {
         
         // Use the enhanced ClassCompiler for proper struct/module generation
         var classCompiler = new reflaxe.elixir.helpers.ClassCompiler(this.typer);
+        classCompiler.setCompiler(this);
         
         // Handle inheritance tracking
         if (classType.superClass != null) {
@@ -544,11 +545,18 @@ class ElixirCompiler extends BaseCompiler {
         result += '  def ${funcName}(${paramStr}) do\n';
         
         if (funcField.expr != null) {
-            result += '    # TODO: Compile function body\n';
-            result += '    # ${Std.string(funcField.expr)}\n';
+            // Compile the actual function body
+            var compiledBody = compileExpression(funcField.expr);
+            if (compiledBody != null && compiledBody != "") {
+                result += '    ${compiledBody}\n';
+            } else {
+                result += '    # TODO: Implement function body\n';
+                result += '    nil\n';
+            }
+        } else {
+            result += '    # TODO: Implement function body\n';
+            result += '    nil\n';
         }
-        
-        result += '    :ok\n';
         result += '  end\n\n';
         
         return result;
