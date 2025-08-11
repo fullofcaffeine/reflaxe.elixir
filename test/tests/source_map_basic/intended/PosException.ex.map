@@ -1,0 +1,10 @@
+{
+  "sourceRoot": "",
+  "names": [],
+  "mappings": "AAwBG,AAAA,AAAQ,AAAA,AAAA,AAAA,AAAA,AAAA,AAAA,AAAA,AAAA,AAAA,EAAE,AAAA,AAAA,mEAAiB,uCAAM,AAAA,AAAA,gHAAmB,wEAAG,AAAA,AAAA,sJAAoB,mHAAM,AAAA,AAAA,0LAAkB,mJAAG,AAAA,AAAA",
+  "version": 3,
+  "file": "PosException.ex",
+  "sources": [
+    "/Users/fullofcaffeine/haxe/versions/4.3.7/std/haxe/exceptions/PosException.hx"
+  ]
+}

@@ -11,6 +11,7 @@ A modern Haxe compilation target for Elixir/BEAM with native Phoenix integration
 
 ## Features
 
+✅ **Source Mapping Support** 🎯 - **First Reflaxe target with `.ex.map` generation** for seamless debugging  
 ✅ **Mix-First Development** - Seamless integration with Elixir build pipeline  
 ✅ **File Watching & Incremental Compilation** - `mix compile.haxe --watch` with sub-second rebuild times  
 ✅ **LLM-Optimized Workflows** - Perfect for AI-assisted development with fast iteration cycles  
@@ -58,6 +59,7 @@ npx lix run reflaxe.elixir create my-phoenix-app --type phoenix
 - **[Cookbook](documentation/COOKBOOK.md)** - Practical recipes for common tasks
 
 ### Reference
+- **[Source Mapping Guide](documentation/SOURCE_MAPPING.md)** 🎯 - Complete guide to our pioneering source mapping feature
 - **[API Reference](documentation/API_REFERENCE.md)** - Complete API documentation
 - **[LLM Workflow Compatibility](documentation/LLM_WORKFLOW_COMPATIBILITY.md)** - Using Reflaxe.Elixir with AI assistants
 - **[Troubleshooting](documentation/TROUBLESHOOTING.md)** - Common issues and solutions
@@ -102,6 +104,23 @@ Reflaxe.Elixir uses a **dual-ecosystem architecture**:
 - **Native tooling**: Standard mix tasks and BEAM ecosystem
 
 ## Usage
+
+### Enable Source Mapping (New!)
+```hxml
+# In your compile.hxml or build.hxml
+-cp src_haxe
+-lib reflaxe
+-main Main
+-D elixir_output=lib
+-D source-map  # Enable source mapping for debugging
+```
+
+Now compilation generates `.ex.map` files alongside `.ex` files, enabling:
+- Precise error locations mapped back to Haxe source
+- Debugging at the Haxe level while running Elixir
+- LLM agents can use source positions for accurate fixes
+
+See [documentation/SOURCE_MAPPING.md](documentation/SOURCE_MAPPING.md) for complete guide.
 
 ### Phoenix LiveView
 ```haxe
