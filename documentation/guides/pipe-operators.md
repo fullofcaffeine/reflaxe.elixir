@@ -4,6 +4,7 @@ The pipe operator (`|>`) is one of Elixir's most distinctive features, enabling 
 
 ## Table of Contents
 - [Overview](#overview)
+- [Why No `|>` Syntax in Haxe?](#why-no--syntax-in-haxe)
 - [Basic Usage](#basic-usage)
 - [Method Chaining to Pipes](#method-chaining-to-pipes)
 - [Anonymous Functions in Pipes](#anonymous-functions-in-pipes)
@@ -23,6 +24,253 @@ Haxe.Elixir automatically transforms Haxe method chaining into Elixir pipe opera
 - ✅ **Idiomatic Output**: Generate clean Elixir pipe operators
 - ✅ **Type Safety**: Maintain compile-time type checking
 - ✅ **Zero Runtime Cost**: Transformation happens at compile time
+
+## Why No `|>` Syntax in Haxe?
+
+### The Architectural Decision
+
+You might wonder: **"Why doesn't Haxe.Elixir support `|>` syntax directly in Haxe code?"**
+
+This is a **deliberate design choice** based on the principle: **"Write idiomatic Haxe, generate idiomatic Elixir"**
+
+### Method Chaining vs Direct Pipe Operator
+
+#### What We Could Have Done (But Didn't)
+
+We *could* have added `|>` syntax via macros:
+
+```haxe
+// Hypothetical direct pipe operator in Haxe (NOT IMPLEMENTED)
+var result = data 
+    |> filter(_, x -> x > 0)
+    |> map(_, x -> x * 2)
+    |> reduce(_, (a, b) -> a + b, 0);
+```
+
+#### Why This Would Be Problematic
+
+1. **Non-Standard Haxe Syntax**
+   - Breaks compatibility with existing Haxe code
+   - Other Haxe targets wouldn't understand it
+   - Fragments the Haxe ecosystem
+
+2. **IDE and Tooling Issues**
+   - Most Haxe IDEs wouldn't recognize `|>`
+   - No autocomplete after pipe operators
+   - Formatters and linters would fail
+   - Syntax highlighting would break
+
+3. **Type Inference Challenges**
+   - Harder for the compiler to track types through pipes
+   - Less helpful error messages
+   - Reduced compile-time safety
+
+4. **Learning Curve**
+   - Haxe developers need to learn non-standard syntax
+   - Documentation becomes more complex
+   - Onboarding is harder
+
+### The Better Approach: Method Chaining
+
+Instead, Haxe.Elixir uses **standard method chaining** that transforms to pipes:
+
+```haxe
+// Idiomatic Haxe (what you write)
+var result = data
+    .filter(x -> x > 0)      // ← IDE shows available methods
+    .map(x -> x * 2)          // ← Full type inference
+    .reduce((a, b) -> a + b, 0); // ← Compile-time validation
+```
+
+```elixir
+# Idiomatic Elixir (what gets generated)
+result = data
+  |> Enum.filter(&(&1 > 0))
+  |> Enum.map(&(&1 * 2))
+  |> Enum.reduce(0, &(&1 + &2))
+```
+
+### Benefits of This Design
+
+| Aspect | Direct `\|>` in Haxe | Method Chaining (Current) |
+|--------|---------------------|---------------------------|
+| **Haxe Compatibility** | ❌ Non-standard | ✅ Standard Haxe |
+| **IDE Support** | ❌ Limited | ✅ Full autocomplete |
+| **Type Safety** | ⚠️ Partial | ✅ Complete |
+| **Learning Curve** | ❌ New syntax | ✅ Familiar |
+| **Tooling** | ❌ Breaks tools | ✅ All tools work |
+| **Code Sharing** | ❌ Target-specific | ✅ Cross-target |
+| **Elixir Output** | ✅ Pipes | ✅ Pipes |
+
+### The Philosophy
+
+```
+┌─────────────┐          ┌──────────────┐          ┌─────────────┐
+│   Haxe      │          │  Compiler    │          │   Elixir    │
+│ Developers  │  write   │ Transforms   │  read    │ Developers  │
+│             │ ──────►  │              │ ──────►  │             │
+│  Natural    │          │  Method      │          │  Natural    │
+│   Haxe      │          │  Chains →    │          │   Elixir    │
+│   Code      │          │  Pipes       │          │    Code     │
+└─────────────┘          └──────────────┘          └─────────────┘
+```
+
+### Best of Both Worlds
+
+This design gives you:
+
+1. **For Haxe Developers**:
+   - Write normal Haxe code
+   - Use familiar patterns
+   - Get full IDE support
+   - Maintain type safety
+
+2. **For Elixir Developers**:
+   - Read idiomatic Elixir
+   - See familiar pipe operators
+   - Maintain code normally
+   - Use standard tools
+
+3. **For Teams**:
+   - No learning curve
+   - Easy onboarding
+   - Standard tooling works
+   - Clean separation of concerns
+
+### When You Need Direct Pipes
+
+For complex Elixir-specific patterns, use escape hatches:
+
+```haxe
+// When you need specific Elixir pipe patterns
+var result = untyped __elixir__('
+    data
+    |> Stream.map(&process/1)
+    |> Task.async_stream(&heavy_work/1)
+    |> Enum.to_list()
+');
+```
+
+But for 99% of cases, method chaining gives you everything you need with better developer experience!
+
+### Custom Constructs for Elixir Idioms
+
+While the philosophy is "idiomatic Haxe → idiomatic Elixir", some Elixir patterns have no natural Haxe equivalent. For these, Haxe.Elixir provides **custom constructs** that feel natural in Haxe while generating idiomatic Elixir:
+
+#### Example 1: Pattern Matching with Guards
+
+```haxe
+// Custom @:guard annotation (Haxe doesn't have guards natively)
+@:guard("is_binary(input) and byte_size(input) > 0")
+public function processString(input: String): String {
+    return input.toUpperCase();
+}
+```
+
+```elixir
+# Generates idiomatic Elixir guards
+def process_string(input) when is_binary(input) and byte_size(input) > 0 do
+  String.upcase(input)
+end
+```
+
+#### Example 2: With Expressions
+
+```haxe
+// Custom with() construct (Haxe doesn't have with-expressions)
+public function processFile(path: String): Result<Data> {
+    return with(
+        file <- File.read(path),
+        json <- Json.decode(file),
+        validated <- validate(json)
+    ) {
+        return {:ok, validated};
+    } else {
+        {:error, reason} -> logError(reason);
+    };
+}
+```
+
+```elixir
+# Generates idiomatic Elixir with-expression
+def process_file(path) do
+  with {:ok, file} <- File.read(path),
+       {:ok, json} <- Jason.decode(file),
+       {:ok, validated} <- validate(json) do
+    {:ok, validated}
+  else
+    {:error, reason} -> log_error(reason)
+  end
+end
+```
+
+#### Example 3: Comprehensions with Filters
+
+```haxe
+// Custom for-comprehension syntax extensions
+var result = for (x in list, x > 0, y in x.items, y.active) {
+    yield {x: x.id, y: y.value};
+} into %{};
+```
+
+```elixir
+# Generates idiomatic Elixir comprehension
+result = for x <- list, x > 0, y <- x.items, y.active, into: %{} do
+  {x.id, y.value}
+end
+```
+
+#### Example 4: Process Communication
+
+```haxe
+// Custom receive construct (Haxe doesn't have actor model)
+public function handleMessages(): Void {
+    receive {
+        {:data, payload} -> processData(payload);
+        {:stop} -> shutdown();
+        after 5000 -> handleTimeout();
+    };
+}
+```
+
+```elixir
+# Generates idiomatic Elixir receive
+def handle_messages do
+  receive do
+    {:data, payload} -> process_data(payload)
+    {:stop} -> shutdown()
+  after
+    5000 -> handle_timeout()
+  end
+end
+```
+
+### The Complete Picture
+
+```
+┌──────────────────────────────────────────────────────────┐
+│                   Haxe.Elixir Strategy                    │
+├──────────────────────────────────────────────────────────┤
+│                                                           │
+│  1. Natural Mapping (90% of cases)                       │
+│     Haxe method chaining → Elixir pipes                  │
+│     Haxe classes → Elixir modules                        │
+│     Haxe switch → Elixir case                           │
+│                                                           │
+│  2. Custom Constructs (9% of cases)                      │
+│     @:guard → when guards                                │
+│     with() → with expressions                            │
+│     receive → receive blocks                             │
+│     @:genserver → GenServer callbacks                    │
+│                                                           │
+│  3. Escape Hatches (1% of cases)                         │
+│     untyped __elixir__() → Raw Elixir                   │
+│     @:native → Direct module mapping                     │
+│                                                           │
+└──────────────────────────────────────────────────────────┘
+```
+
+The key insight: **Custom constructs are still idiomatic Haxe** - they use familiar Haxe patterns (annotations, method calls) rather than introducing foreign syntax like `|>`.
 
 ## Basic Usage
 
