@@ -3,5 +3,6 @@
 -cp ../../../src
 -cp .
 -lib reflaxe
+-D reflaxe_runtime
 --macro reflaxe.elixir.CompilerInit.Start()
-CreateUsers
+migrations.CreateUsers
