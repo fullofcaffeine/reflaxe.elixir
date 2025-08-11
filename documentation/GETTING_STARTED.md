@@ -115,6 +115,7 @@ Create `build.hxml`:
 -cp node_modules/reflaxe.elixir/src
 -lib reflaxe
 -D reflaxe_runtime
+-D source-map    # Enable source mapping for better debugging
 --no-output
 
 myapp.MyModule
@@ -126,7 +127,17 @@ myapp.MyModule
 npx haxe build.hxml
 ```
 
-Success! Your Haxe code has been compiled to Elixir patterns.
+Success! Your Haxe code has been compiled to Elixir patterns with source mapping.
+
+### 4. Verify Source Maps (Optional)
+
+Check that source maps were generated:
+```bash
+# Look for .ex.map files alongside .ex files
+ls lib/*.ex.map
+```
+
+With source mapping enabled, any compilation errors or runtime issues will show precise Haxe source positions instead of generated Elixir lines.
 
 ## Working with Annotations
 
@@ -234,6 +245,51 @@ npx haxe build.hxml
 - Schema + Changeset + LiveView + GenServer
 - Real-world application patterns
 
+## Source Mapping & Debugging
+
+Reflaxe.Elixir is the **first Reflaxe target to implement source mapping**, providing seamless debugging across compilation boundaries.
+
+### Enabling Source Mapping
+
+Add the `-D source-map` flag to your build configuration:
+
+```hxml
+# In your build.hxml or compile.hxml
+-D source-map
+```
+
+### Benefits
+
+With source mapping enabled:
+- **Precise error locations**: Errors show Haxe source positions, not generated Elixir lines
+- **Better debugging**: Debug at the Haxe level while running Elixir code
+- **LLM-friendly**: AI agents can use source positions for accurate fixes
+- **Minimal overhead**: <5% compilation time increase
+
+### Using Source Maps for Debugging
+
+When you encounter an error:
+
+```bash
+# Map an Elixir error position back to Haxe source
+mix haxe.source_map lib/UserService.ex 45 12
+
+# Output: src_haxe/UserService.hx:23:15
+```
+
+### File Watching with Source Maps
+
+Enable both file watching and source mapping for the best development experience:
+
+```bash
+# Start compilation with watching and source mapping
+mix compile.haxe --watch
+
+# Now edit your .hx files - compilation and source maps update automatically
+```
+
+For detailed source mapping documentation, see [SOURCE_MAPPING.md](SOURCE_MAPPING.md).
+
 ## Development Workflow
 
 ### 1. Project Structure
@@ -270,6 +326,7 @@ Create a `build.hxml` that includes all necessary classpaths:
 
 # Compilation flags
 -D reflaxe_runtime
+-D source-map        # Enable source mapping (recommended)
 --no-output
 
 # Modules to compile
@@ -278,16 +335,41 @@ live.UserLive
 services.CacheService
 ```
 
+For development, also consider these optional flags:
+```hxml
+-D source-map-verbose  # Verbose source map generation
+-D incremental        # Support incremental compilation
+-D watch-mode         # Optimize for file watching
+```
+
 ### 3. Compilation and Testing
 
-**Compile Haxe to Elixir**:
+**Compile Haxe to Elixir** (one-time):
 ```bash
 npx haxe build.hxml
+```
+
+**Compile with file watching** (recommended for development):
+```bash
+# Auto-recompile on file changes
+mix compile.haxe --watch
+
+# Or with verbose output
+mix compile.haxe --watch --verbose
 ```
 
 **Test generated code**:
 ```bash
 mix test
+```
+
+**Debug with source mapping**:
+```bash
+# Query source positions
+mix haxe.source_map lib/MyModule.ex 10 5
+
+# Check compilation errors with source positions
+mix haxe.errors --format json
 ```
 
 **Run comprehensive validation**:

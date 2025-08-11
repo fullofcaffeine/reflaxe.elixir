@@ -3,4 +3,5 @@
 -cp ../../std
 -lib reflaxe
 -D reflaxe_runtime
+-D source-map    # Enable source mapping for debugging
 -main phoenix.Application
