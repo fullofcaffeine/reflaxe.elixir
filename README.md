@@ -43,6 +43,8 @@ npx lix run reflaxe.elixir create my-phoenix-app --type phoenix
 
 ### Integration Guides  
 - **[Phoenix Integration](documentation/PHOENIX_INTEGRATION_GUIDE.md)** - Controllers, LiveView, Ecto, Channels
+- **[Idiomatic Syntax](documentation/IDIOMATIC_SYNTAX.md)** - Type-safe Elixir patterns and transformations
+- **[Pipe Operators](documentation/guides/pipe-operators.md)** - Complete guide to pipe operator support
 - **[Escape Hatches](documentation/ESCAPE_HATCHES.md)** - Using Elixir code from Haxe
 - **[Cookbook](documentation/COOKBOOK.md)** - Practical recipes for common tasks
 

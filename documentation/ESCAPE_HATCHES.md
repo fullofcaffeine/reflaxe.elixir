@@ -593,7 +593,21 @@ class TupleHandler {
 
 ### Pattern 2: Pipeline Operations
 
+**Note**: Haxe.Elixir has native pipe operator support! See [Pipe Operators Guide](guides/pipe-operators.md) for type-safe pipe operations. Use escape hatches only for complex Elixir-specific pipe patterns.
+
 ```haxe
+// Preferred: Native pipe support (type-safe)
+class TypedPipeline {
+    public function processData(data: Array<Int>): Int {
+        return data
+            .filter(x -> x > 0)
+            .map(x -> x * 2)
+            .reduce((a, b) -> a + b, 0);
+        // Compiles to Elixir pipes automatically!
+    }
+}
+
+// Escape hatch: For Elixir-specific patterns
 class Pipeline {
     public function processPipeline(data: Array<Int>): Int {
         return untyped __elixir__('
