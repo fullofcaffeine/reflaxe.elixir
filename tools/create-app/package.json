@@ -1,0 +1,43 @@
+{
+  "name": "@reflaxe/create-elixir-app",
+  "version": "0.1.0",
+  "description": "Create Reflaxe.Elixir projects with zero configuration",
+  "type": "module",
+  "main": "index.js",
+  "bin": {
+    "@reflaxe/create-elixir-app": "./index.js",
+    "create-reflaxe-elixir": "./index.js"
+  },
+  "scripts": {
+    "test": "node test.js"
+  },
+  "keywords": [
+    "haxe",
+    "elixir",
+    "reflaxe",
+    "scaffold",
+    "generator",
+    "phoenix",
+    "create-app"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "commander": "^11.0.0",
+    "inquirer": "^9.2.0",
+    "chalk": "^5.3.0",
+    "fs-extra": "^11.1.0",
+    "ora": "^7.0.0"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/YourOrg/haxe.elixir",
+    "directory": "tools/create-app"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}
