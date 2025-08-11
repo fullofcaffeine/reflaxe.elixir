@@ -5,7 +5,7 @@
 Reflaxe.Elixir employs a sophisticated **three-layer testing architecture** that validates the complete transpilation pipeline from Haxe source code to running Elixir applications. This document provides a comprehensive analysis of what each test suite validates, why it exists, and how the layers work together to ensure compiler correctness.
 
 **Total Test Coverage**: 172+ tests across 3 layers
-- **Layer 1**: 33 Haxe snapshot tests (AST transformation validation)
+- **Layer 1**: 28 Haxe snapshot tests (AST transformation validation)
 - **Layer 2**: 130 Mix integration tests (build system and runtime validation)  
 - **Layer 3**: 9 example compilation tests (real-world usage validation)
 
@@ -47,7 +47,7 @@ This necessitates a multi-layer approach:
 └─────────────────────────────────────────────────────────────┘
 ```
 
-## Layer 1: Haxe Snapshot Tests (33 tests)
+## Layer 1: Haxe Snapshot Tests (28 tests)
 
 ### What They Test
 
@@ -361,7 +361,7 @@ haxe test/Test.hxml update-intended
 
 ### Execution Time
 - **Total suite**: ~4-5 seconds for all 172+ tests
-- **Snapshot tests**: ~2 seconds for 33 tests
+- **Snapshot tests**: ~2 seconds for 28 tests
 - **Mix tests**: ~2 seconds for 130 tests
 - **Examples**: ~1 second for 9 examples
 
