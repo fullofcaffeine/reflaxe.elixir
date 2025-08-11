@@ -203,6 +203,8 @@ npm run test:update   # Update expected test output
 - **Mix Integration**: Tests real compilation in Phoenix projects
 - **Test Helper**: `test/support/haxe_test_helper.ex` handles project setup
 
+**⚠️ Critical**: For self-referential library configuration issues, see [documentation/SELF_REFERENTIAL_LIBRARY_TROUBLESHOOTING.md](documentation/SELF_REFERENTIAL_LIBRARY_TROUBLESHOOTING.md)
+
 For detailed testing documentation, see [documentation/TESTING.md](documentation/TESTING.md)
 
 ### Development Workflow

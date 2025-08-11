@@ -10,6 +10,8 @@ Testing a macro-based transpiler presents unique challenges since the transpiler
 
 The most critical aspect of our testing infrastructure is the **self-referential library configuration** that allows tests to use `-lib reflaxe.elixir` to reference the library being developed.
 
+**⚠️ For detailed troubleshooting and critical learnings, see [`SELF_REFERENTIAL_LIBRARY_TROUBLESHOOTING.md`](SELF_REFERENTIAL_LIBRARY_TROUBLESHOOTING.md)**
+
 ### The Challenge
 
 When tests use `-lib reflaxe.elixir`, Haxe needs to find a library configuration. However, during development, this library isn't installed via haxelib - it's the project we're developing!
@@ -424,17 +426,30 @@ public function testMockAccuracy() {
 
 ### Common Issues
 
-1. **"Type not found" at runtime**
+1. **"Library reflaxe.elixir is not installed"**
+   - Missing `haxe_libraries/reflaxe.elixir.hxml`
+   - See [Self-Referential Library Troubleshooting](SELF_REFERENTIAL_LIBRARY_TROUBLESHOOTING.md)
+
+2. **"Type not found" at runtime**
    - The type is macro-only
    - Create a runtime mock
 
-2. **Framework timeout errors**
+3. **"classpath src/ is not a directory"**
+   - Path resolution issue
+   - Check symlinks in test directory
+   - See [Path Resolution section](SELF_REFERENTIAL_LIBRARY_TROUBLESHOOTING.md#path-resolution-the-1-source-of-confusion)
+
+4. **Framework timeout errors**
    - Add @:timeout annotation
    - Break test into smaller parts
 
-3. **Mock/reality mismatch**
+5. **Mock/reality mismatch**
    - Update mock to match current implementation
    - Add validation tests
+
+6. **Tests expect 1 file, get 35 files**
+   - The "35-file phenomenon" from symlinked src/
+   - See [troubleshooting guide](SELF_REFERENTIAL_LIBRARY_TROUBLESHOOTING.md#the-35-file-phenomenon)
 
 ### Debug Techniques
 
