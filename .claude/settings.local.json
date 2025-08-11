@@ -113,7 +113,11 @@
       "Bash(mix haxe.source_map:*)",
       "Bash(mix haxe.inspect:*)",
       "Bash(MIX_QUIET=1 mix haxe.source_map test/tests/source_map_basic/out/SourceMapTest.ex 10 5 --format detailed)",
-      "Bash(./test.sh)"
+      "Bash(./test.sh)",
+      "Bash(if [ ! -f \"$example/README.md\" ])",
+      "Bash(else)",
+      "Bash(if [ ! -f \"$example/build.hxml\" ])",
+      "Bash([ ! -f \"$example/compile-all.hxml\" ])"
     ],
     "deny": []
   }

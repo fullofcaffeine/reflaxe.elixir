@@ -331,17 +331,22 @@ defmodule HaxeWatcher do
   end
 
   defp haxe_file?(path, patterns) do
-    filename = Path.basename(path)
-    
-    Enum.any?(patterns, fn pattern ->
-      # Simple pattern matching - could be enhanced with proper glob matching
-      case pattern do
-        "**/*.hx" -> String.ends_with?(filename, ".hx")
-        "*.hx" -> String.ends_with?(filename, ".hx")
-        ^filename -> true
-        _ -> false
-      end
-    end)
+    # Guard against nil path
+    case path do
+      nil -> false
+      _ ->
+        filename = Path.basename(path)
+        
+        Enum.any?(patterns, fn pattern ->
+          # Simple pattern matching - could be enhanced with proper glob matching
+          case pattern do
+            "**/*.hx" -> String.ends_with?(filename, ".hx")
+            "*.hx" -> String.ends_with?(filename, ".hx")
+            ^filename -> true
+            _ -> false
+          end
+        end)
+    end
   end
 
   defp count_haxe_files(state) do
