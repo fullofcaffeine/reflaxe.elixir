@@ -22,6 +22,7 @@ defmodule ReflaxeElixir.MixProject do
 
   defp deps do
     [
+      {:jason, "~> 1.4"},
       {:ex_doc, "~> 0.32", only: :dev, runtime: false},
       {:file_system, "~> 0.2", only: :dev}
     ]

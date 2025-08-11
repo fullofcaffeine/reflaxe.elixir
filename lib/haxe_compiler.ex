@@ -178,6 +178,10 @@ defmodule HaxeCompiler do
       {output, 0} ->
         {:ok, output}
       {output, exit_code} ->
+        # Parse structured error information from Haxe output
+        structured_errors = parse_haxe_errors(output)
+        store_compilation_errors(structured_errors)
+        
         {:error, "Haxe compilation failed (exit #{exit_code}): #{output}"}
     end
   rescue
@@ -194,6 +198,192 @@ defmodule HaxeCompiler do
     else
       []
     end
+  end
+  
+  @doc """
+  Parses Haxe compiler error output into structured format for LLM agents.
+  
+  Returns list of structured error maps with file, line, column, error type, 
+  message, and stacktrace information.
+  """
+  def parse_haxe_errors(output) when is_binary(output) do
+    output
+    |> String.split("\n")
+    |> Enum.reduce([], fn line, acc ->
+      case parse_error_line(line) do
+        nil -> acc
+        error -> [error | acc]
+      end
+    end)
+    |> Enum.reverse()
+    |> add_error_ids()
+  end
+  
+  @doc """
+  Returns stored compilation errors in structured format.
+  """
+  def get_compilation_errors(format \\ :map) do
+    case :ets.lookup(:haxe_errors, :current_errors) do
+      [{:current_errors, errors}] ->
+        case format do
+          :json -> Jason.encode!(errors)
+          :map -> errors
+        end
+      [] -> 
+        case format do
+          :json -> "[]"
+          :map -> []
+        end
+    end
+  end
+  
+  @doc """
+  Clears stored compilation errors.
+  """
+  def clear_compilation_errors() do
+    case :ets.whereis(:haxe_errors) do
+      :undefined -> :ok  # Table doesn't exist, nothing to clear
+      _ -> :ets.delete_all_objects(:haxe_errors)
+    end
+  end
+  
+  # Private error parsing functions
+  
+  defp parse_error_line(line) do
+    cond do
+      # Haxe error format: "src/Main.hx:10: characters 5-12 : Type not found : UnknownType"
+      String.match?(line, ~r/\.hx:\d+:/) ->
+        parse_standard_error(line)
+      
+      # Stack trace lines: "    at Main.main (src/Main.hx line 10)"  
+      String.match?(line, ~r/\s+at\s+.*\.hx\s+line\s+\d+/) ->
+        parse_stacktrace_line(line)
+      
+      # Warning format: "Warning : ..."
+      String.starts_with?(line, "Warning :") ->
+        parse_warning(line)
+        
+      true ->
+        nil
+    end
+  end
+  
+  defp parse_standard_error(line) do
+    # Try pattern with character positions first
+    case Regex.run(~r/(.+\.hx):(\d+):\s+characters\s+(\d+)-(\d+)\s*:\s*(.*?)\s*:\s*(.*)/, line) do
+      [_, file, line_str, col_start, col_end, error_type, message] ->
+        %{
+          type: :compilation_error,
+          level: :haxe,
+          file: Path.relative_to_cwd(file),
+          line: String.to_integer(line_str),
+          column_start: parse_column(col_start),
+          column_end: parse_column(col_end),
+          error_type: String.trim(error_type),
+          message: String.trim(message),
+          raw_line: line,
+          timestamp: DateTime.utc_now(),
+          stacktrace: []
+        }
+      
+      _ ->
+        # Try simpler pattern without character positions
+        case Regex.run(~r/(.+\.hx):(\d+):\s*(.*)/, line) do
+          [_, file, line_str, rest] ->
+            # Try to split the rest into error_type : message
+            case String.split(rest, ":", parts: 2) do
+              [error_type, message] ->
+                %{
+                  type: :compilation_error,
+                  level: :haxe,
+                  file: Path.relative_to_cwd(file),
+                  line: String.to_integer(line_str),
+                  column_start: nil,
+                  column_end: nil,
+                  error_type: String.trim(error_type),
+                  message: String.trim(message),
+                  raw_line: line,
+                  timestamp: DateTime.utc_now(),
+                  stacktrace: []
+                }
+              [message] ->
+                %{
+                  type: :compilation_error,
+                  level: :haxe,
+                  file: Path.relative_to_cwd(file),
+                  line: String.to_integer(line_str),
+                  column_start: nil,
+                  column_end: nil,
+                  error_type: "Compilation Error",
+                  message: String.trim(message),
+                  raw_line: line,
+                  timestamp: DateTime.utc_now(),
+                  stacktrace: []
+                }
+            end
+            
+          _ -> nil
+        end
+    end
+  end
+  
+  defp parse_stacktrace_line(line) do
+    # Parse pattern: "    at Main.main (src/Main.hx line 10)"
+    case Regex.run(~r/\s+at\s+(.*?)\s+\((.+\.hx)\s+line\s+(\d+)\)/, line) do
+      [_, function_call, file, line_str] ->
+        %{
+          type: :stacktrace,
+          level: :haxe,
+          function_call: String.trim(function_call),
+          file: Path.relative_to_cwd(file),
+          line: String.to_integer(line_str),
+          raw_line: line,
+          timestamp: DateTime.utc_now()
+        }
+      
+      _ -> nil
+    end
+  end
+  
+  defp parse_warning(line) do
+    %{
+      type: :warning,
+      level: :haxe,
+      message: String.trim(String.replace_prefix(line, "Warning :", "")),
+      raw_line: line,
+      timestamp: DateTime.utc_now()
+    }
+  end
+  
+  defp parse_column(nil), do: nil
+  defp parse_column(""), do: nil
+  defp parse_column(col_str), do: String.to_integer(col_str)
+  
+  defp add_error_ids(errors) do
+    errors
+    |> Enum.with_index()
+    |> Enum.map(fn {error, index} ->
+      Map.put(error, :error_id, "haxe_error_#{System.system_time(:microsecond)}_#{index}")
+    end)
+  end
+  
+  @doc """
+  Stores compilation errors in ETS table for later retrieval by Mix tasks.
+  """
+  def store_compilation_errors(errors) do
+    # Initialize ETS table if it doesn't exist
+    case :ets.whereis(:haxe_errors) do
+      :undefined ->
+        :ets.new(:haxe_errors, [:named_table, :set, :public])
+      _ -> :ok
+    end
+    
+    # Store errors
+    :ets.insert(:haxe_errors, {:current_errors, errors})
+    
+    # Also store with timestamp for history
+    timestamp = System.system_time(:microsecond)
+    :ets.insert(:haxe_errors, {{:errors_at, timestamp}, errors})
   end
   
   defp get_haxe_command() do

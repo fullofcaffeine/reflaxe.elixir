@@ -218,6 +218,10 @@ defmodule HaxeServer do
         {:ok, output}
       
       {output, exit_code} ->
+        # Parse and store structured error information from server compilation
+        structured_errors = HaxeCompiler.parse_haxe_errors(output)
+        HaxeCompiler.store_compilation_errors(structured_errors)
+        
         {:error, "Compilation failed (exit #{exit_code}): #{output}"}
     end
   rescue
