@@ -1,0 +1,10 @@
+{
+  "sourceRoot": "",
+  "names": [],
+  "mappings": "AAwES,AAAA,AAAA,AAAA,YAAO,AAAA,kCAAiC,AAAA,iEAAxC,AAAA,4BAAA,EAAA,WAAA",
+  "version": 3,
+  "file": "TestClass.ex",
+  "sources": [
+    "SourceMapValidationTest.hx"
+  ]
+}
