@@ -24,8 +24,10 @@ defmodule StringTools do
 	"
   @spec is_space(TInst(String,[]).t(), TAbstract(Int,[]).t()) :: TAbstract(Bool,[]).t()
   def is_space(arg0, arg1) do
-    # TODO: Implement function body
-    nil
+    (
+  c = s.char_code_at(pos)
+  c > 8 && c < 14 || c == 32
+)
   end
 
   @doc "
@@ -39,8 +41,14 @@ defmodule StringTools do
 	"
   @spec ltrim(TInst(String,[]).t()) :: TInst(String,[]).t()
   def ltrim(arg0) do
-    # TODO: Implement function body
-    nil
+    (
+  l = s.length
+  r = 0
+  while (r < l && StringTools.is_space(s, r)) do
+  r + 1
+end
+  if (r > 0), do: s.substr(r, l - r), else: s
+)
   end
 
   @doc "
@@ -54,8 +62,14 @@ defmodule StringTools do
 	"
   @spec rtrim(TInst(String,[]).t()) :: TInst(String,[]).t()
   def rtrim(arg0) do
-    # TODO: Implement function body
-    nil
+    (
+  l = s.length
+  r = 0
+  while (r < l && StringTools.is_space(s, l - r - 1)) do
+  r + 1
+end
+  if (r > 0), do: s.substr(0, l - r), else: s
+)
   end
 
   @doc "
@@ -65,8 +79,7 @@ defmodule StringTools do
 	"
   @spec trim(TInst(String,[]).t()) :: TInst(String,[]).t()
   def trim(arg0) do
-    # TODO: Implement function body
-    nil
+    StringTools.ltrim(StringTools.rtrim(s))
   end
 
   @doc "
@@ -83,8 +96,17 @@ defmodule StringTools do
 	"
   @spec lpad(TInst(String,[]).t(), TInst(String,[]).t(), TAbstract(Int,[]).t()) :: TInst(String,[]).t()
   def lpad(arg0, arg1, arg2) do
-    # TODO: Implement function body
-    nil
+    (
+  if (c.length <= 0), do: s, else: nil
+  buf_b = nil
+  buf_b = ""
+  l -= s.length
+  while (buf_b.length < l) do
+  buf_b += Std.string(c)
+end
+  buf_b += Std.string(s)
+  buf_b
+)
   end
 
   @doc "
@@ -101,8 +123,16 @@ defmodule StringTools do
 	"
   @spec rpad(TInst(String,[]).t(), TInst(String,[]).t(), TAbstract(Int,[]).t()) :: TInst(String,[]).t()
   def rpad(arg0, arg1, arg2) do
-    # TODO: Implement function body
-    nil
+    (
+  if (c.length <= 0), do: s, else: nil
+  buf_b = nil
+  buf_b = ""
+  buf_b += Std.string(s)
+  while (buf_b.length < l) do
+  buf_b += Std.string(c)
+end
+  buf_b
+)
   end
 
   @doc "
@@ -117,8 +147,7 @@ defmodule StringTools do
 	"
   @spec replace(TInst(String,[]).t(), TInst(String,[]).t(), TInst(String,[]).t()) :: TInst(String,[]).t()
   def replace(arg0, arg1, arg2) do
-    # TODO: Implement function body
-    nil
+    s.split(sub).join(by)
   end
 
   @doc "
@@ -129,8 +158,20 @@ defmodule StringTools do
 	"
   @spec hex(TAbstract(Int,[]).t(), TAbstract(Null,[TAbstract(Int,[])]).t()) :: TInst(String,[]).t()
   def hex(arg0, arg1) do
-    # TODO: Implement function body
-    nil
+    (
+  s = ""
+  hex_chars = "0123456789ABCDEF"
+  until !(n > 0) do
+  (
+  s = hex_chars.char_at(n and 15) + s
+  n >>>= 4
+)
+end
+  if (digits != nil), do: while (s.length < digits) do
+  s = "0" + s
+end, else: nil
+  s
+)
   end
 
 end

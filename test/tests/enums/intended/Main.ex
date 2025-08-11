@@ -7,43 +7,172 @@ defmodule Main do
   @doc "Function color_to_string"
   @spec color_to_string(TEnum(Color,[]).t()) :: TInst(String,[]).t()
   def color_to_string(arg0) do
-    # TODO: Implement function body
-    nil
+    (
+  temp_result = nil
+  case (# TODO: Implement expression type: TEnumIndex) do
+  0 ->
+    temp_result = "red"
+  1 ->
+    temp_result = "green"
+  2 ->
+    temp_result = "blue"
+  3 ->
+    (
+  _g = # TODO: Implement expression type: TEnumParameter
+  _g1 = # TODO: Implement expression type: TEnumParameter
+  _g2 = # TODO: Implement expression type: TEnumParameter
+  (
+  r = _g
+  g = _g1
+  b = _g2
+  temp_result = "rgb(" + r + ", " + g + ", " + b + ")"
+)
+)
+end
+  temp_result
+)
   end
 
   @doc "Function get_value"
   @spec get_value(TEnum(Option,[TInst(getValue.T,[])]).t(), TInst(getValue.T,[]).t()) :: TInst(getValue.T,[]).t()
   def get_value(arg0, arg1) do
-    # TODO: Implement function body
-    nil
+    (
+  temp_result = nil
+  case (# TODO: Implement expression type: TEnumIndex) do
+  0 ->
+    (
+  _g = # TODO: Implement expression type: TEnumParameter
+  (
+  v = _g
+  temp_result = v
+)
+)
+  1 ->
+    temp_result = default_value
+end
+  temp_result
+)
   end
 
   @doc "Function tree_sum"
   @spec tree_sum(TEnum(Tree,[TAbstract(Int,[])]).t()) :: TAbstract(Int,[]).t()
   def tree_sum(arg0) do
-    # TODO: Implement function body
-    nil
+    (
+  temp_result = nil
+  case (# TODO: Implement expression type: TEnumIndex) do
+  0 ->
+    (
+  _g = # TODO: Implement expression type: TEnumParameter
+  (
+  value = _g
+  temp_result = value
+)
+)
+  1 ->
+    (
+  _g = # TODO: Implement expression type: TEnumParameter
+  _g1 = # TODO: Implement expression type: TEnumParameter
+  (
+  left = _g
+  right = _g1
+  temp_result = Main.tree_sum(left) + Main.tree_sum(right)
+)
+)
+end
+  temp_result
+)
   end
 
   @doc "Function describe_r_g_b"
   @spec describe_r_g_b(TEnum(Color,[]).t()) :: TInst(String,[]).t()
   def describe_r_g_b(arg0) do
-    # TODO: Implement function body
-    nil
+    (
+  temp_result = nil
+  if (# TODO: Implement expression type: TEnumIndex == 3), do: (
+  _g = # TODO: Implement expression type: TEnumParameter
+  _g1 = # TODO: Implement expression type: TEnumParameter
+  _g2 = # TODO: Implement expression type: TEnumParameter
+  (
+  r = _g
+  g = _g1
+  b = _g2
+  if (r > 200 && g < 50 && b < 50), do: temp_result = "mostly red", else: (
+  r2 = _g
+  g2 = _g1
+  b2 = _g2
+  if (g2 > 200 && r2 < 50 && b2 < 50), do: temp_result = "mostly green", else: (
+  r3 = _g
+  g3 = _g1
+  b3 = _g2
+  if (b3 > 200 && r3 < 50 && g3 < 50), do: temp_result = "mostly blue", else: (
+  r4 = _g
+  g4 = _g1
+  b4 = _g2
+  temp_result = "mixed color"
+)
+)
+)
+)
+), else: temp_result = "not RGB"
+  temp_result
+)
   end
 
   @doc "Function compare_trees"
   @spec compare_trees(TEnum(Tree,[TInst(compareTrees.T,[])]).t(), TEnum(Tree,[TInst(compareTrees.T,[])]).t()) :: TAbstract(Bool,[]).t()
   def compare_trees(arg0, arg1) do
-    # TODO: Implement function body
-    nil
+    (
+  temp_result = nil
+  case (# TODO: Implement expression type: TEnumIndex) do
+  0 ->
+    (
+  _g = # TODO: Implement expression type: TEnumParameter
+  if (# TODO: Implement expression type: TEnumIndex == 0), do: (
+  _g1 = # TODO: Implement expression type: TEnumParameter
+  (
+  v2 = _g1
+  v1 = _g
+  temp_result = v1 == v2
+)
+), else: temp_result = false
+)
+  1 ->
+    (
+  _g = # TODO: Implement expression type: TEnumParameter
+  _g1 = # TODO: Implement expression type: TEnumParameter
+  if (# TODO: Implement expression type: TEnumIndex == 1), do: (
+  _g2 = # TODO: Implement expression type: TEnumParameter
+  _g3 = # TODO: Implement expression type: TEnumParameter
+  (
+  l2 = _g2
+  r2 = _g3
+  r1 = _g1
+  l1 = _g
+  temp_result = Main.compare_trees(l1, l2) && Main.compare_trees(r1, r2)
+)
+), else: temp_result = false
+)
+end
+  temp_result
+)
   end
 
   @doc "Function main"
   @spec main() :: TAbstract(Void,[]).t()
   def main() do
-    # TODO: Implement function body
-    nil
+    (
+  color = Color.r_g_b()(255, 128, 0)
+  Log.trace(Main.color_to_string(color), %{fileName: "Main.hx", lineNumber: 79, className: "Main", methodName: "main"})
+  some = Option.some()("Hello")
+  none = Option.none()
+  Log.trace(Main.get_value(some, "default"), %{fileName: "Main.hx", lineNumber: 84, className: "Main", methodName: "main"})
+  Log.trace(Main.get_value(none, "default"), %{fileName: "Main.hx", lineNumber: 85, className: "Main", methodName: "main"})
+  tree = Tree.node()(Tree.leaf()(1), Tree.node()(Tree.leaf()(2), Tree.leaf()(3)))
+  Log.trace(Main.tree_sum(tree), %{fileName: "Main.hx", lineNumber: 92, className: "Main", methodName: "main"})
+  Log.trace(Main.describe_r_g_b(Color.r_g_b()(250, 10, 10)), %{fileName: "Main.hx", lineNumber: 95, className: "Main", methodName: "main"})
+  tree2 = Tree.node()(Tree.leaf()(1), Tree.node()(Tree.leaf()(2), Tree.leaf()(3)))
+  Log.trace(Main.compare_trees(tree, tree2), %{fileName: "Main.hx", lineNumber: 99, className: "Main", methodName: "main"})
+)
   end
 
 end

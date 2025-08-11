@@ -19,7 +19,7 @@ defmodule Main do
   @spec main() :: TAbstract(Void,[]).t()
   def main() do
     (
-  instance = # TODO: Implement expression type: TNew
+  instance = Main.new(10)
   Log.trace(Main.greet("World"), %{fileName: "Main.hx", lineNumber: 76, className: "Main", methodName: "main"})
   Log.trace(instance.calculate(5, 3), %{fileName: "Main.hx", lineNumber: 77, className: "Main", methodName: "main"})
   Log.trace(instance.check_value(-5), %{fileName: "Main.hx", lineNumber: 78, className: "Main", methodName: "main"})
@@ -50,7 +50,12 @@ defmodule Main do
   (
   _g = start
   _g1 = end
-  # TODO: Implement expression type: TWhile
+  while (_g < _g1) do
+  (
+  i = _g + 1
+  sum += i
+)
+end
 )
   sum
 )
@@ -62,7 +67,12 @@ defmodule Main do
     (
   result = 1
   i = n
-  # TODO: Implement expression type: TWhile
+  while (i > 1) do
+  (
+  result *= i
+  i - 1
+)
+end
   result
 )
   end
@@ -72,7 +82,24 @@ defmodule Main do
   def day_name(arg0) do
     (
   temp_result = nil
-  # TODO: Implement expression type: TMeta
+  case ((day)) do
+  1 ->
+    temp_result = "Monday"
+  2 ->
+    temp_result = "Tuesday"
+  3 ->
+    temp_result = "Wednesday"
+  4 ->
+    temp_result = "Thursday"
+  5 ->
+    temp_result = "Friday"
+  6 ->
+    temp_result = "Saturday"
+  7 ->
+    temp_result = "Sunday"
+  _ ->
+    temp_result = "Invalid"
+end
   temp_result
 )
   end

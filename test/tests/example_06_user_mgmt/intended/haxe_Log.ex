@@ -14,8 +14,23 @@ defmodule Log do
 	"
   @spec format_output(TDynamic(null).t(), TType(haxe.PosInfos,[]).t()) :: TInst(String,[]).t()
   def format_output(arg0, arg1) do
-    # TODO: Implement function body
-    nil
+    (
+  str = Std.string(v)
+  if (infos == nil), do: str, else: nil
+  pstr = infos.file_name + ":" + infos.line_number
+  if (infos.custom_params != nil), do: (
+  _g = 0
+  _g1 = infos.custom_params
+  while (_g < _g1.length) do
+  (
+  v2 = Enum.at(_g1, _g)
+  _g + 1
+  str += ", " + Std.string(v2)
+)
+end
+), else: nil
+  pstr + ": " + str
+)
   end
 
   @doc "
@@ -38,8 +53,10 @@ defmodule Log do
 	"
   @spec trace(TDynamic(null).t(), TAbstract(Null,[TType(haxe.PosInfos,[])]).t()) :: TAbstract(Void,[]).t()
   def trace(arg0, arg1) do
-    # TODO: Implement function body
-    nil
+    (
+  str = Log.format_output(v, infos)
+  Sys.println(str)
+)
   end
 
 end

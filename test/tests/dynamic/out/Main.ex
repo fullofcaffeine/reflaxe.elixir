@@ -21,7 +21,7 @@ defmodule Main do
   Log.trace(dyn, %{fileName: "Main.hx", lineNumber: 17, className: "Main", methodName: "dynamicVars"})
   dyn = %{name: "John", age: 30}
   Log.trace(dyn, %{fileName: "Main.hx", lineNumber: 20, className: "Main", methodName: "dynamicVars"})
-  dyn = # TODO: Implement expression type: TFunction
+  dyn = fn x -> x * 2 end
   Log.trace(dyn(5), %{fileName: "Main.hx", lineNumber: 23, className: "Main", methodName: "dynamicVars"})
 )
   end
@@ -30,7 +30,7 @@ defmodule Main do
   @spec dynamic_field_access() :: TAbstract(Void,[]).t()
   def dynamic_field_access() do
     (
-  obj = %{name: "Alice", age: 25, greet: # TODO: Implement expression type: TFunction}
+  obj = %{name: "Alice", age: 25, greet: fn  -> "Hello!" end}
   Log.trace(obj.name, %{fileName: "Main.hx", lineNumber: 34, className: "Main", methodName: "dynamicFieldAccess"})
   Log.trace(obj.age, %{fileName: "Main.hx", lineNumber: 35, className: "Main", methodName: "dynamicFieldAccess"})
   Log.trace(obj.greet(), %{fileName: "Main.hx", lineNumber: 36, className: "Main", methodName: "dynamicFieldAccess"})
@@ -44,11 +44,24 @@ defmodule Main do
   @spec dynamic_functions() :: TAbstract(Void,[]).t()
   def dynamic_functions() do
     (
-  fn = # TODO: Implement expression type: TFunction
+  fn = fn a, b -> a + b end
   Log.trace(fn(10, 20), %{fileName: "Main.hx", lineNumber: 49, className: "Main", methodName: "dynamicFunctions"})
-  fn = # TODO: Implement expression type: TFunction
+  fn = fn s -> s.to_upper_case() end
   Log.trace(fn("hello"), %{fileName: "Main.hx", lineNumber: 52, className: "Main", methodName: "dynamicFunctions"})
-  var_args = # TODO: Implement expression type: TFunction
+  var_args = fn args -> (
+  sum = 0
+  (
+  _g = 0
+  while (_g < args.length) do
+  (
+  arg = Enum.at(args, _g)
+  _g + 1
+  sum += arg
+)
+end
+)
+  sum
+) end
   Log.trace(var_args([1, 2, 3, 4, 5]), %{fileName: "Main.hx", lineNumber: 62, className: "Main", methodName: "dynamicFunctions"})
 )
   end
@@ -58,11 +71,11 @@ defmodule Main do
   def type_checking() do
     (
   value = 42
-  if (Std.is_of_type(value, # TODO: Implement expression type: TTypeExpr)), do: Log.trace("It's an Int: " + Std.string(value), %{fileName: "Main.hx", lineNumber: 71, className: "Main", methodName: "typeChecking"}), else: nil
+  if (Std.is_of_type(value, Int)), do: Log.trace("It's an Int: " + Std.string(value), %{fileName: "Main.hx", lineNumber: 71, className: "Main", methodName: "typeChecking"}), else: nil
   value = "Hello"
-  if (Std.is_of_type(value, # TODO: Implement expression type: TTypeExpr)), do: Log.trace("It's a String: " + Std.string(value), %{fileName: "Main.hx", lineNumber: 76, className: "Main", methodName: "typeChecking"}), else: nil
+  if (Std.is_of_type(value, String)), do: Log.trace("It's a String: " + Std.string(value), %{fileName: "Main.hx", lineNumber: 76, className: "Main", methodName: "typeChecking"}), else: nil
   value = [1, 2, 3]
-  if (Std.is_of_type(value, # TODO: Implement expression type: TTypeExpr)), do: Log.trace("It's an Array with length: " + Std.string(value.length), %{fileName: "Main.hx", lineNumber: 81, className: "Main", methodName: "typeChecking"}), else: nil
+  if (Std.is_of_type(value, Array)), do: Log.trace("It's an Array with length: " + Std.string(value.length), %{fileName: "Main.hx", lineNumber: 81, className: "Main", methodName: "typeChecking"}), else: nil
   num = "123"
   int_value = Std.parse_int(num)
   Log.trace("Parsed int: " + int_value, %{fileName: "Main.hx", lineNumber: 87, className: "Main", methodName: "typeChecking"})
@@ -74,7 +87,7 @@ defmodule Main do
   @doc "Function dynamic_generics"
   @spec dynamic_generics(TDynamic(null).t()) :: TInst(dynamicGenerics.T,[]).t()
   def dynamic_generics(arg0) do
-    # TODO: Implement expression type: TCast
+    value
   end
 
   @doc "Function dynamic_collections"
@@ -84,7 +97,13 @@ defmodule Main do
   dyn_array = [1, "two", 3.0, true, %{x: 10}]
   (
   _g = 0
-  # TODO: Implement expression type: TWhile
+  while (_g < dyn_array.length) do
+  (
+  item = Enum.at(dyn_array, _g)
+  _g + 1
+  Log.trace("Item: " + Std.string(item), %{fileName: "Main.hx", lineNumber: 103, className: "Main", methodName: "dynamicCollections"})
+)
+end
 )
   dyn_obj = %{}
   dyn_obj.field1 = "value1"
@@ -97,7 +116,7 @@ defmodule Main do
   @doc "Function process_dynamic"
   @spec process_dynamic(TDynamic(null).t()) :: TInst(String,[]).t()
   def process_dynamic(arg0) do
-    if (value == nil), do: "null", else: if (Std.is_of_type(value, # TODO: Implement expression type: TTypeExpr)), do: "Bool: " + Std.string(value), else: if (Std.is_of_type(value, # TODO: Implement expression type: TTypeExpr)), do: "Int: " + Std.string(value), else: if (Std.is_of_type(value, # TODO: Implement expression type: TTypeExpr)), do: "Float: " + Std.string(value), else: if (Std.is_of_type(value, # TODO: Implement expression type: TTypeExpr)), do: "String: " + Std.string(value), else: if (Std.is_of_type(value, # TODO: Implement expression type: TTypeExpr)), do: "Array of length: " + Std.string(value.length), else: "Unknown type"
+    if (value == nil), do: "null", else: if (Std.is_of_type(value, Bool)), do: "Bool: " + Std.string(value), else: if (Std.is_of_type(value, Int)), do: "Int: " + Std.string(value), else: if (Std.is_of_type(value, Float)), do: "Float: " + Std.string(value), else: if (Std.is_of_type(value, String)), do: "String: " + Std.string(value), else: if (Std.is_of_type(value, Array)), do: "Array of length: " + Std.string(value.length), else: "Unknown type"
   end
 
   @doc "Function dynamic_method_calls"
@@ -106,8 +125,8 @@ defmodule Main do
     (
   obj = %{}
   obj.value = 10
-  obj.increment = # TODO: Implement expression type: TFunction
-  obj.get_value = # TODO: Implement expression type: TFunction
+  obj.increment = fn  -> obj.value + 1 end
+  obj.get_value = fn  -> obj.value end
   Log.trace("Initial value: " + Std.string(obj.get_value()), %{fileName: "Main.hx", lineNumber: 146, className: "Main", methodName: "dynamicMethodCalls"})
   obj.increment()
   Log.trace("After increment: " + Std.string(obj.get_value()), %{fileName: "Main.hx", lineNumber: 148, className: "Main", methodName: "dynamicMethodCalls"})

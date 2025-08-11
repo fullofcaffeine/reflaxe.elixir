@@ -30,8 +30,7 @@ defmodule EReg do
 	"
   @spec match(TInst(String,[]).t()) :: TAbstract(Bool,[]).t()
   def match(arg0) do
-    # TODO: Implement function body
-    nil
+    false
   end
 
   @doc "
@@ -47,7 +46,6 @@ defmodule EReg do
 	"
   @spec matched(TAbstract(Int,[]).t()) :: TInst(String,[]).t()
   def matched(arg0) do
-    # TODO: Implement function body
     nil
   end
 
@@ -64,7 +62,6 @@ defmodule EReg do
 	"
   @spec matched_right() :: TInst(String,[]).t()
   def matched_right() do
-    # TODO: Implement function body
     nil
   end
 
@@ -84,7 +81,6 @@ defmodule EReg do
 	"
   @spec replace(TInst(String,[]).t(), TInst(String,[]).t()) :: TInst(String,[]).t()
   def replace(arg0, arg1) do
-    # TODO: Implement function body
     nil
   end
 

@@ -73,8 +73,7 @@ defmodule Users do
      "
   @spec list_users(TAbstract(Null,[TType(contexts.UserFilter,[])]).t()) :: TInst(Array,[TInst(contexts.User,[])]).t()
   def list_users(arg0) do
-    # TODO: Implement function body
-    nil
+    []
   end
 
   @doc "
@@ -82,8 +81,7 @@ defmodule Users do
      "
   @spec change_user(TAbstract(Null,[TInst(contexts.User,[])]).t()) :: TDynamic(null).t()
   def change_user(arg0) do
-    # TODO: Implement function body
-    nil
+    %{valid: true}
   end
 
   @doc "
@@ -91,8 +89,7 @@ defmodule Users do
      "
   @spec main() :: TAbstract(Void,[]).t()
   def main() do
-    # TODO: Implement function body
-    nil
+    Log.trace("Users context with User schema compiled successfully!", %{fileName: "./contexts/Users.hx", lineNumber: 66, className: "contexts.Users", methodName: "main"})
   end
 
   @doc "
@@ -100,7 +97,6 @@ defmodule Users do
      "
   @spec get_user(TAbstract(Int,[]).t()) :: TInst(contexts.User,[]).t()
   def get_user(arg0) do
-    # TODO: Implement function body
     nil
   end
 
@@ -109,7 +105,6 @@ defmodule Users do
      "
   @spec get_user_safe(TAbstract(Int,[]).t()) :: TAbstract(Null,[TInst(contexts.User,[])]).t()
   def get_user_safe(arg0) do
-    # TODO: Implement function body
     nil
   end
 
@@ -118,8 +113,10 @@ defmodule Users do
      "
   @spec create_user(TDynamic(null).t()) :: TAnonymous(.t(:anonymous)
   def create_user(arg0) do
-    # TODO: Implement function body
-    nil
+    (
+  changeset = UserChangeset.changeset(nil, attrs)
+  if (changeset != nil), do: %{status: "ok", user: nil}, else: %{status: "error", changeset: changeset}
+)
   end
 
   @doc "
@@ -127,8 +124,10 @@ defmodule Users do
      "
   @spec update_user(TInst(contexts.User,[]).t(), TDynamic(null).t()) :: TAnonymous(.t(:anonymous)
   def update_user(arg0, arg1) do
-    # TODO: Implement function body
-    nil
+    (
+  changeset = UserChangeset.changeset(user, attrs)
+  if (changeset != nil), do: %{status: "ok", user: user}, else: %{status: "error", changeset: changeset}
+)
   end
 
   @doc "
@@ -136,8 +135,7 @@ defmodule Users do
      "
   @spec delete_user(TInst(contexts.User,[]).t()) :: TAnonymous(.t(:anonymous)
   def delete_user(arg0) do
-    # TODO: Implement function body
-    nil
+    Users.update_user(user, %{active: false})
   end
 
   @doc "
@@ -145,8 +143,7 @@ defmodule Users do
      "
   @spec search_users(TInst(String,[]).t()) :: TInst(Array,[TInst(contexts.User,[])]).t()
   def search_users(arg0) do
-    # TODO: Implement function body
-    nil
+    []
   end
 
   @doc "
@@ -154,8 +151,7 @@ defmodule Users do
      "
   @spec users_with_posts() :: TInst(Array,[TInst(contexts.User,[])]).t()
   def users_with_posts() do
-    # TODO: Implement function body
-    nil
+    []
   end
 
   @doc "
@@ -163,8 +159,7 @@ defmodule Users do
      "
   @spec user_stats() :: TType(contexts.UserStats,[]).t()
   def user_stats() do
-    # TODO: Implement function body
-    nil
+    %{total: 0, active: 0, inactive: 0}
   end
 
 end

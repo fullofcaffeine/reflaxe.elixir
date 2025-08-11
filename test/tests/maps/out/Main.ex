@@ -13,7 +13,7 @@ defmodule Main do
   @spec string_map() :: TAbstract(Void,[]).t()
   def string_map() do
     (
-  map = # TODO: Implement expression type: TNew
+  map = Haxe.Ds.StringMap.new()
   map.set("one", 1)
   map.set("two", 2)
   map.set("three", 3)
@@ -26,7 +26,12 @@ defmodule Main do
   Log.trace("Iterating string map:", %{fileName: "Main.hx", lineNumber: 30, className: "Main", methodName: "stringMap"})
   (
   key = map.keys()
-  # TODO: Implement expression type: TWhile
+  while (key.has_next()) do
+  (
+  key2 = key.next()
+  Log.trace("  " + key2 + " => " + map.get(key2), %{fileName: "Main.hx", lineNumber: 32, className: "Main", methodName: "stringMap"})
+)
+end
 )
   map.clear()
   temp_array = nil
@@ -34,7 +39,12 @@ defmodule Main do
   _g = []
   (
   k = map.keys()
-  # TODO: Implement expression type: TWhile
+  while (k.has_next()) do
+  (
+  k2 = k.next()
+  _g.push(k2)
+)
+end
 )
   temp_array = _g
 )
@@ -46,7 +56,7 @@ defmodule Main do
   @spec int_map() :: TAbstract(Void,[]).t()
   def int_map() do
     (
-  map = # TODO: Implement expression type: TNew
+  map = Haxe.Ds.IntMap.new()
   map.set(1, "first")
   map.set(2, "second")
   map.set(10, "tenth")
@@ -54,14 +64,24 @@ defmodule Main do
   Log.trace("Int map values:", %{fileName: "Main.hx", lineNumber: 49, className: "Main", methodName: "intMap"})
   (
   key = map.keys()
-  # TODO: Implement expression type: TWhile
+  while (key.has_next()) do
+  (
+  key2 = key.next()
+  Log.trace("  " + key2 + " => " + map.get(key2), %{fileName: "Main.hx", lineNumber: 51, className: "Main", methodName: "intMap"})
+)
+end
 )
   temp_array = nil
   (
   _g = []
   (
   k = map.keys()
-  # TODO: Implement expression type: TWhile
+  while (k.has_next()) do
+  (
+  k2 = k.next()
+  _g.push(k2)
+)
+end
 )
   temp_array = _g
 )
@@ -71,7 +91,12 @@ defmodule Main do
   _g = []
   (
   k = map.keys()
-  # TODO: Implement expression type: TWhile
+  while (k.has_next()) do
+  (
+  k2 = k.next()
+  _g.push(map.get(k2))
+)
+end
 )
   temp_array1 = _g
 )
@@ -85,7 +110,7 @@ defmodule Main do
   @spec object_map() :: TAbstract(Void,[]).t()
   def object_map() do
     (
-  map = # TODO: Implement expression type: TNew
+  map = Haxe.Ds.ObjectMap.new()
   obj1 = %{id: 1}
   obj2 = %{id: 2}
   map.set(obj1, "Object 1")
@@ -103,7 +128,7 @@ defmodule Main do
     (
   temp_map = nil
   (
-  _g = # TODO: Implement expression type: TNew
+  _g = Haxe.Ds.StringMap.new()
   _g.set("red", 16711680)
   _g.set("green", 65280)
   _g.set("blue", 255)
@@ -113,11 +138,17 @@ defmodule Main do
   Log.trace("Color values:", %{fileName: "Main.hx", lineNumber: 88, className: "Main", methodName: "mapLiterals"})
   (
   color = colors.keys()
-  # TODO: Implement expression type: TWhile
+  while (color.has_next()) do
+  (
+  color2 = color.next()
+  hex = StringTools.hex(colors.get(color2), 6)
+  Log.trace("  " + color2 + " => #" + hex, %{fileName: "Main.hx", lineNumber: 91, className: "Main", methodName: "mapLiterals"})
+)
+end
 )
   temp_map1 = nil
   (
-  _g = # TODO: Implement expression type: TNew
+  _g = Haxe.Ds.IntMap.new()
   _g.set(1, 1)
   _g.set(2, 4)
   _g.set(3, 9)
@@ -129,7 +160,12 @@ defmodule Main do
   Log.trace("Squares:", %{fileName: "Main.hx", lineNumber: 103, className: "Main", methodName: "mapLiterals"})
   (
   n = squares.keys()
-  # TODO: Implement expression type: TWhile
+  while (n.has_next()) do
+  (
+  n2 = n.next()
+  Log.trace("  " + n2 + "² = " + squares.get(n2), %{fileName: "Main.hx", lineNumber: 105, className: "Main", methodName: "mapLiterals"})
+)
+end
 )
 )
   end
@@ -138,21 +174,36 @@ defmodule Main do
   @spec nested_maps() :: TAbstract(Void,[]).t()
   def nested_maps() do
     (
-  users = # TODO: Implement expression type: TNew
-  alice = # TODO: Implement expression type: TNew
-  alice.set("age", # TODO: Implement expression type: TCast)
-  alice.set("email", # TODO: Implement expression type: TCast)
-  alice.set("active", # TODO: Implement expression type: TCast)
-  bob = # TODO: Implement expression type: TNew
-  bob.set("age", # TODO: Implement expression type: TCast)
-  bob.set("email", # TODO: Implement expression type: TCast)
-  bob.set("active", # TODO: Implement expression type: TCast)
+  users = Haxe.Ds.StringMap.new()
+  alice = Haxe.Ds.StringMap.new()
+  alice.set("age", 30)
+  alice.set("email", "alice@example.com")
+  alice.set("active", true)
+  bob = Haxe.Ds.StringMap.new()
+  bob.set("age", 25)
+  bob.set("email", "bob@example.com")
+  bob.set("active", false)
   users.set("alice", alice)
   users.set("bob", bob)
   Log.trace("User data:", %{fileName: "Main.hx", lineNumber: 128, className: "Main", methodName: "nestedMaps"})
   (
   username = users.keys()
-  # TODO: Implement expression type: TWhile
+  while (username.has_next()) do
+  (
+  username2 = username.next()
+  user_data = users.get(username2)
+  Log.trace("  " + username2 + ":", %{fileName: "Main.hx", lineNumber: 131, className: "Main", methodName: "nestedMaps"})
+  (
+  field = user_data.keys()
+  while (field.has_next()) do
+  (
+  field2 = field.next()
+  Log.trace("    " + field2 + ": " + Std.string(user_data.get(field2)), %{fileName: "Main.hx", lineNumber: 133, className: "Main", methodName: "nestedMaps"})
+)
+end
+)
+)
+end
 )
 )
   end
@@ -163,7 +214,7 @@ defmodule Main do
     (
   temp_map = nil
   (
-  _g = # TODO: Implement expression type: TNew
+  _g = Haxe.Ds.StringMap.new()
   _g.set("a", 1)
   _g.set("b", 2)
   _g.set("c", 3)
@@ -171,29 +222,53 @@ defmodule Main do
   temp_map = _g
 )
   original = temp_map
-  doubled = # TODO: Implement expression type: TNew
+  doubled = Haxe.Ds.StringMap.new()
   (
   key = original.keys()
-  # TODO: Implement expression type: TWhile
+  while (key.has_next()) do
+  (
+  key2 = key.next()
+  (
+  value = original.get(key2) * 2
+  doubled.set(key2, value)
+)
+)
+end
 )
   Log.trace("Doubled values:", %{fileName: "Main.hx", lineNumber: 153, className: "Main", methodName: "mapTransformations"})
   (
   key = doubled.keys()
-  # TODO: Implement expression type: TWhile
+  while (key.has_next()) do
+  (
+  key2 = key.next()
+  Log.trace("  " + key2 + " => " + doubled.get(key2), %{fileName: "Main.hx", lineNumber: 155, className: "Main", methodName: "mapTransformations"})
 )
-  filtered = # TODO: Implement expression type: TNew
+end
+)
+  filtered = Haxe.Ds.StringMap.new()
   (
   key = original.keys()
-  # TODO: Implement expression type: TWhile
+  while (key.has_next()) do
+  (
+  key2 = key.next()
+  value = original.get(key2)
+  if (value > 2), do: filtered.set(key2, value), else: nil
+)
+end
 )
   Log.trace("Filtered (value > 2):", %{fileName: "Main.hx", lineNumber: 167, className: "Main", methodName: "mapTransformations"})
   (
   key = filtered.keys()
-  # TODO: Implement expression type: TWhile
+  while (key.has_next()) do
+  (
+  key2 = key.next()
+  Log.trace("  " + key2 + " => " + filtered.get(key2), %{fileName: "Main.hx", lineNumber: 169, className: "Main", methodName: "mapTransformations"})
+)
+end
 )
   temp_map1 = nil
   (
-  _g = # TODO: Implement expression type: TNew
+  _g = Haxe.Ds.StringMap.new()
   _g.set("a", 1)
   _g.set("b", 2)
   temp_map1 = _g
@@ -201,26 +276,47 @@ defmodule Main do
   map1 = temp_map1
   temp_map2 = nil
   (
-  _g = # TODO: Implement expression type: TNew
+  _g = Haxe.Ds.StringMap.new()
   _g.set("c", 3)
   _g.set("d", 4)
   _g.set("a", 10)
   temp_map2 = _g
 )
   map2 = temp_map2
-  merged = # TODO: Implement expression type: TNew
+  merged = Haxe.Ds.StringMap.new()
   (
   key = map1.keys()
-  # TODO: Implement expression type: TWhile
+  while (key.has_next()) do
+  (
+  key2 = key.next()
+  (
+  value = map1.get(key2)
+  merged.set(key2, value)
+)
+)
+end
 )
   (
   key = map2.keys()
-  # TODO: Implement expression type: TWhile
+  while (key.has_next()) do
+  (
+  key2 = key.next()
+  (
+  value = map2.get(key2)
+  merged.set(key2, value)
+)
+)
+end
 )
   Log.trace("Merged maps:", %{fileName: "Main.hx", lineNumber: 184, className: "Main", methodName: "mapTransformations"})
   (
   key = merged.keys()
-  # TODO: Implement expression type: TWhile
+  while (key.has_next()) do
+  (
+  key2 = key.next()
+  Log.trace("  " + key2 + " => " + merged.get(key2), %{fileName: "Main.hx", lineNumber: 186, className: "Main", methodName: "mapTransformations"})
+)
+end
 )
 )
   end
@@ -229,14 +325,19 @@ defmodule Main do
   @spec enum_map() :: TAbstract(Void,[]).t()
   def enum_map() do
     (
-  map = # TODO: Implement expression type: TNew
+  map = Haxe.Ds.EnumValueMap.new()
   map.set(Color.red(), "FF0000")
   map.set(Color.green(), "00FF00")
   map.set(Color.blue(), "0000FF")
   Log.trace("Enum map:", %{fileName: "Main.hx", lineNumber: 198, className: "Main", methodName: "enumMap"})
   (
   color = map.keys()
-  # TODO: Implement expression type: TWhile
+  while (color.has_next()) do
+  (
+  color2 = color.next()
+  Log.trace("  " + Std.string(color2) + " => #" + map.get(color2), %{fileName: "Main.hx", lineNumber: 200, className: "Main", methodName: "enumMap"})
+)
+end
 )
   if (map.exists(Color.red())), do: Log.trace("Red color code: #" + map.get(Color.red()), %{fileName: "Main.hx", lineNumber: 205, className: "Main", methodName: "enumMap"}), else: nil
 )
@@ -246,10 +347,16 @@ defmodule Main do
   @spec process_map(TType(Map,[TInst(String,[]),TAbstract(Int,[])]).t()) :: TType(Map,[TInst(String,[]),TInst(String,[])]).t()
   def process_map(arg0) do
     (
-  result = # TODO: Implement expression type: TNew
+  result = Haxe.Ds.StringMap.new()
   (
   key = input.keys()
-  # TODO: Implement expression type: TWhile
+  while (key.has_next()) do
+  (
+  key2 = key.next()
+  value = input.get(key2)
+  result.set(key2, "Value: " + value)
+)
+end
 )
   result
 )
@@ -283,7 +390,7 @@ defmodule Main do
 === Map Functions ===", %{fileName: "Main.hx", lineNumber: 241, className: "Main", methodName: "main"})
   temp_map = nil
   (
-  _g = # TODO: Implement expression type: TNew
+  _g = Haxe.Ds.StringMap.new()
   _g.set("x", 10)
   _g.set("y", 20)
   _g.set("z", 30)
@@ -293,7 +400,12 @@ defmodule Main do
   output = Main.process_map(input)
   (
   key = output.keys()
-  # TODO: Implement expression type: TWhile
+  while (key.has_next()) do
+  (
+  key2 = key.next()
+  Log.trace("" + key2 + ": " + output.get(key2), %{fileName: "Main.hx", lineNumber: 245, className: "Main", methodName: "main"})
+)
+end
 )
 )
   end

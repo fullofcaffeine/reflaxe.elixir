@@ -32,7 +32,7 @@ defmodule MemoryStorage do
   temp_result = nil
   (
   this1 = self().data
-  temp_result = # TODO: Implement expression type: TCast.get(key)
+  temp_result = this1.get(key)
 )
   temp_result
 )
@@ -44,7 +44,7 @@ defmodule MemoryStorage do
     (
   (
   this1 = self().data
-  # TODO: Implement expression type: TCast.set(key, value)
+  this1.set(key, value)
 )
   true
 )
@@ -57,7 +57,7 @@ defmodule MemoryStorage do
   temp_result = nil
   (
   this1 = self().data
-  temp_result = # TODO: Implement expression type: TCast.remove(key)
+  temp_result = this1.remove(key)
 )
   temp_result
 )
@@ -74,10 +74,15 @@ defmodule MemoryStorage do
   temp_iterator = nil
   (
   this1 = self().data
-  temp_iterator = # TODO: Implement expression type: TCast.keys()
+  temp_iterator = this1.keys()
 )
   k = temp_iterator
-  # TODO: Implement expression type: TWhile
+  while (k.has_next()) do
+  (
+  k2 = k.next()
+  _g.push(k2)
+)
+end
 )
   temp_result = _g
 )

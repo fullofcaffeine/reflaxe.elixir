@@ -24,8 +24,10 @@ defmodule StringTools do
 	"
   @spec is_space(TInst(String,[]).t(), TAbstract(Int,[]).t()) :: TAbstract(Bool,[]).t()
   def is_space(arg0, arg1) do
-    # TODO: Implement function body
-    nil
+    (
+  c = s.char_code_at(pos)
+  c > 8 && c < 14 || c == 32
+)
   end
 
   @doc "
@@ -39,8 +41,14 @@ defmodule StringTools do
 	"
   @spec ltrim(TInst(String,[]).t()) :: TInst(String,[]).t()
   def ltrim(arg0) do
-    # TODO: Implement function body
-    nil
+    (
+  l = s.length
+  r = 0
+  while (r < l && StringTools.is_space(s, r)) do
+  r + 1
+end
+  if (r > 0), do: s.substr(r, l - r), else: s
+)
   end
 
   @doc "
@@ -54,8 +62,14 @@ defmodule StringTools do
 	"
   @spec rtrim(TInst(String,[]).t()) :: TInst(String,[]).t()
   def rtrim(arg0) do
-    # TODO: Implement function body
-    nil
+    (
+  l = s.length
+  r = 0
+  while (r < l && StringTools.is_space(s, l - r - 1)) do
+  r + 1
+end
+  if (r > 0), do: s.substr(0, l - r), else: s
+)
   end
 
   @doc "
@@ -65,8 +79,7 @@ defmodule StringTools do
 	"
   @spec trim(TInst(String,[]).t()) :: TInst(String,[]).t()
   def trim(arg0) do
-    # TODO: Implement function body
-    nil
+    StringTools.ltrim(StringTools.rtrim(s))
   end
 
 end

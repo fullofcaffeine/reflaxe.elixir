@@ -43,7 +43,7 @@ string"
   Log.trace("Person: " + person_name + " is " + person_age + " years old", %{fileName: "Main.hx", lineNumber: 43, className: "Main", methodName: "stringInterpolation"})
   items = ["apple", "banana", "orange"]
   Log.trace("Items: " + items.join(", "), %{fileName: "Main.hx", lineNumber: 47, className: "Main", methodName: "stringInterpolation"})
-  Log.trace("First item: " + # TODO: Implement expression type: TArray.to_upper_case(), %{fileName: "Main.hx", lineNumber: 48, className: "Main", methodName: "stringInterpolation"})
+  Log.trace("First item: " + Enum.at(items, 0).to_upper_case(), %{fileName: "Main.hx", lineNumber: 48, className: "Main", methodName: "stringInterpolation"})
 )
   end
 
@@ -121,17 +121,22 @@ string"
   def regex_operations() do
     (
   text = "The year is 2024 and the time is 15:30"
-  digit_regex = # TODO: Implement expression type: TNew
+  digit_regex = EReg.new("\d+", "")
   if (digit_regex.match(text)), do: Log.trace("First number found: " + digit_regex.matched(0), %{fileName: "Main.hx", lineNumber: 140, className: "Main", methodName: "regexOperations"}), else: nil
-  all_numbers = # TODO: Implement expression type: TNew
+  all_numbers = EReg.new("\d+", "g")
   numbers = []
   temp = text
-  # TODO: Implement expression type: TWhile
+  while (all_numbers.match(temp)) do
+  (
+  numbers.push(all_numbers.matched(0))
+  temp = all_numbers.matched_right()
+)
+end
   Log.trace("All numbers: " + Std.string(numbers), %{fileName: "Main.hx", lineNumber: 151, className: "Main", methodName: "regexOperations"})
-  replaced = # TODO: Implement expression type: TNew.replace(text, "XXX")
+  replaced = EReg.new("\d+", "").replace(text, "XXX")
   Log.trace("Numbers replaced: " + replaced, %{fileName: "Main.hx", lineNumber: 155, className: "Main", methodName: "regexOperations"})
   email = "user@example.com"
-  email_regex = # TODO: Implement expression type: TNew
+  email_regex = EReg.new("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$", "")
   Log.trace("Is valid email: " + Std.string(email_regex.match(email)), %{fileName: "Main.hx", lineNumber: 160, className: "Main", methodName: "regexOperations"})
 )
   end

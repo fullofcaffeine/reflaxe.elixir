@@ -28,7 +28,13 @@ defmodule MigrationDSL do
   (
   _g = 0
   _g1 = sanitized.length
-  # TODO: Implement expression type: TWhile
+  while (_g < _g1) do
+  (
+  i = _g + 1
+  c = sanitized.char_at(i)
+  if (c >= "a" && c <= "z" || c >= "A" && c <= "Z" || c >= "0" && c <= "9" || c == "_"), do: clean += c.to_lower_case(), else: nil
+)
+end
 )
   temp_result = nil
   if (clean.length > 0), do: temp_result = clean, else: temp_result = "sanitized"
@@ -71,10 +77,21 @@ defmodule MigrationDSL do
   @spec compile_table_creation(TInst(String,[]).t(), TInst(Array,[TInst(String,[])]).t()) :: TInst(String,[]).t()
   def compile_table_creation(arg0, arg1) do
     (
-  column_defs = # TODO: Implement expression type: TNew
+  column_defs = Array.new()
   (
   _g = 0
-  # TODO: Implement expression type: TWhile
+  while (_g < columns.length) do
+  (
+  column = Enum.at(columns, _g)
+  _g + 1
+  parts = column.split(":")
+  name = Enum.at(parts, 0)
+  temp_string = nil
+  if (parts.length > 1), do: temp_string = Enum.at(parts, 1), else: temp_string = "string"
+  type = temp_string
+  column_defs.push("      add :" + name + ", :" + type)
+)
+end
 )
   "create table(:" + table_name + ") do
 " + column_defs.join("
@@ -137,7 +154,13 @@ defmodule MigrationDSL do
   (
   _g1 = 0
   _g2 = fields
-  # TODO: Implement expression type: TWhile
+  while (_g1 < _g2.length) do
+  (
+  v = Enum.at(_g2, _g1)
+  _g1 + 1
+  _g.push(":" + v)
+)
+end
 )
   temp_array = _g
 ))
@@ -237,7 +260,14 @@ defmodule MigrationDSL do
   (
   _g = 0
   _g1 = input.length
-  # TODO: Implement expression type: TWhile
+  while (_g < _g1) do
+  (
+  i = _g + 1
+  char = input.char_at(i)
+  if (i > 0 && char >= "A" && char <= "Z"), do: result += "_", else: nil
+  result += char.to_lower_case()
+)
+end
 )
   result
 )
@@ -304,10 +334,16 @@ end"
   @spec compile_batch_migrations(TInst(Array,[TDynamic(null)]).t()) :: TInst(String,[]).t()
   def compile_batch_migrations(arg0) do
     (
-  compiled_migrations = # TODO: Implement expression type: TNew
+  compiled_migrations = Array.new()
   (
   _g = 0
-  # TODO: Implement expression type: TWhile
+  while (_g < migrations.length) do
+  (
+  migration = Enum.at(migrations, _g)
+  _g + 1
+  compiled_migrations.push(MigrationDSL.compile_full_migration(migration))
+)
+end
 )
   compiled_migrations.join("
 
@@ -365,7 +401,7 @@ end"
   @spec create_table(TInst(String,[]).t(), TFun([{name: , t: TInst(reflaxe.Elixir.Helpers.TableBuilder,[]), opt: false}],TAbstract(Void,[])).t()) :: TInst(String,[]).t()
   def create_table(arg0, arg1) do
     (
-  builder = # TODO: Implement expression type: TNew
+  builder = Reflaxe.Elixir.Helpers.TableBuilder.new(table_name)
   callback(builder)
   column_defs = builder.get_column_definitions()
   index_defs = builder.get_index_definitions()
@@ -376,7 +412,14 @@ end"
 ", else: nil
   (
   _g = 0
-  # TODO: Implement expression type: TWhile
+  while (_g < column_defs.length) do
+  (
+  column_def = Enum.at(column_defs, _g)
+  _g + 1
+  result += "      " + column_def + "
+"
+)
+end
 )
   if (!builder.has_timestamps), do: result += "      timestamps()
 ", else: nil
@@ -387,7 +430,14 @@ end"
 "
   (
   _g = 0
-  # TODO: Implement expression type: TWhile
+  while (_g < index_defs.length) do
+  (
+  index_def = Enum.at(index_defs, _g)
+  _g + 1
+  result += "    " + index_def + "
+"
+)
+end
 )
 ), else: nil
   if (constraint_defs.length > 0), do: (
@@ -396,7 +446,14 @@ end"
 "
   (
   _g = 0
-  # TODO: Implement expression type: TWhile
+  while (_g < constraint_defs.length) do
+  (
+  constraint_def = Enum.at(constraint_defs, _g)
+  _g + 1
+  result += "    " + constraint_def + "
+"
+)
+end
 )
 ), else: nil
   result
@@ -425,7 +482,14 @@ end"
   fields = Reflect.fields(options)
   (
   _g = 0
-  # TODO: Implement expression type: TWhile
+  while (_g < fields.length) do
+  (
+  field = Enum.at(fields, _g)
+  _g + 1
+  value = Reflect.field(options, field)
+  if (Std.is_of_type(value, String)), do: opts.push("" + field + ": "" + value + """), else: if (Std.is_of_type(value, Bool)), do: opts.push("" + field + ": " + value), else: opts.push("" + field + ": " + value)
+)
+end
 )
   if (opts.length > 0), do: options_str = ", " + opts.join(", "), else: nil
 ), else: nil
@@ -448,7 +512,13 @@ end"
   (
   _g1 = 0
   _g2 = columns
-  # TODO: Implement expression type: TWhile
+  while (_g1 < _g2.length) do
+  (
+  v = Enum.at(_g2, _g1)
+  _g1 + 1
+  _g.push(":" + v)
+)
+end
 )
   temp_array = _g
 ))
@@ -505,7 +575,26 @@ defmodule TableBuilder do
   fields = Reflect.fields(options)
   (
   _g = 0
-  # TODO: Implement expression type: TWhile
+  while (_g < fields.length) do
+  (
+  field = Enum.at(fields, _g)
+  _g + 1
+  value = Reflect.field(options, field)
+  temp_string = nil
+  case ((field)) do
+  "default" ->
+    temp_string = "default"
+  "null" ->
+    temp_string = "null"
+  "primaryKey" ->
+    temp_string = "primary_key"
+  _ ->
+    temp_string = field
+end
+  opt_name = temp_string
+  if (Std.is_of_type(value, String)), do: opts.push("" + opt_name + ": "" + value + """), else: if (Std.is_of_type(value, Bool)), do: opts.push("" + opt_name + ": " + value), else: opts.push("" + opt_name + ": " + value)
+)
+end
 )
   if (opts.length > 0), do: options_str = ", " + opts.join(", "), else: nil
 ), else: nil
@@ -526,7 +615,13 @@ defmodule TableBuilder do
   (
   _g1 = 0
   _g2 = column_names
-  # TODO: Implement expression type: TWhile
+  while (_g1 < _g2.length) do
+  (
+  v = Enum.at(_g2, _g1)
+  _g1 + 1
+  _g.push(":" + v)
+)
+end
 )
   temp_array = _g
 ))
@@ -547,7 +642,16 @@ defmodule TableBuilder do
   (
   _g = 0
   _g1 = self().columns
-  # TODO: Implement expression type: TWhile
+  while (_g < _g1.length) do
+  (
+  column = Enum.at(_g1, _g)
+  _g + 1
+  if (column.index_of(":" + column_name + ",") != -1), do: (
+  new_columns.push("add :" + column_name + ", references(:" + referenced_table + ", column: :" + referenced_column + ")")
+  found = true
+), else: new_columns.push(column)
+)
+end
 )
   if (!found), do: new_columns.push("add :" + column_name + ", references(:" + referenced_table + ", column: :" + referenced_column + ")"), else: nil
   self().columns = new_columns

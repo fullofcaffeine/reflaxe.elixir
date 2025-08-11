@@ -108,7 +108,7 @@ defmodule Circle do
   @doc "Function create_unit"
   @spec create_unit() :: TInst(Circle,[]).t()
   def create_unit() do
-    # TODO: Implement expression type: TNew
+    Circle.new(0, 0, 1)
   end
 
   # Instance functions
@@ -145,7 +145,7 @@ defmodule Vehicle do
   @doc "Function accelerate"
   @spec accelerate() :: TAbstract(Void,[]).t()
   def accelerate() do
-    # TODO: Implement expression type: TThrow
+    throw("Abstract method")
   end
 
 end
@@ -166,7 +166,7 @@ defmodule Container do
   @doc "Function get"
   @spec get(TAbstract(Int,[]).t()) :: TInst(Container.T,[]).t()
   def get(arg0) do
-    # TODO: Implement expression type: TArray
+    Enum.at(self().items, index)
   end
 
   @doc "Function size"
@@ -179,11 +179,17 @@ defmodule Container do
   @spec map(TFun([{name: , t: TInst(Container.T,[]), opt: false}],TInst(map.U,[])).t()) :: TInst(Container,[TInst(map.U,[])]).t()
   def map(arg0) do
     (
-  result = # TODO: Implement expression type: TNew
+  result = Container.new()
   (
   _g = 0
   _g1 = self().items
-  # TODO: Implement expression type: TWhile
+  while (_g < _g1.length) do
+  (
+  item = Enum.at(_g1, _g)
+  _g + 1
+  result.add(fn(item))
+)
+end
 )
   result
 )
@@ -202,26 +208,26 @@ defmodule Main do
   @spec main() :: TAbstract(Void,[]).t()
   def main() do
     (
-  p1 = # TODO: Implement expression type: TNew
-  p2 = # TODO: Implement expression type: TNew
+  p1 = Point.new(3, 4)
+  p2 = Point.new(0, 0)
   Log.trace(p1.distance(p2), %{fileName: "Main.hx", lineNumber: 143, className: "Main", methodName: "main"})
-  shape = # TODO: Implement expression type: TNew
+  shape = Shape.new(10, 20, "Rectangle")
   Log.trace(shape.draw(), %{fileName: "Main.hx", lineNumber: 147, className: "Main", methodName: "main"})
   shape.move(5, 5)
   Log.trace(shape.draw(), %{fileName: "Main.hx", lineNumber: 149, className: "Main", methodName: "main"})
-  circle = # TODO: Implement expression type: TNew
+  circle = Circle.new(0, 0, 10)
   Log.trace(circle.draw(), %{fileName: "Main.hx", lineNumber: 153, className: "Main", methodName: "main"})
   circle.set_velocity(1, 2)
   circle.update(1.5)
   Log.trace(circle.draw(), %{fileName: "Main.hx", lineNumber: 156, className: "Main", methodName: "main"})
   unit_circle = Circle.create_unit()
   Log.trace(unit_circle.draw(), %{fileName: "Main.hx", lineNumber: 160, className: "Main", methodName: "main"})
-  container = # TODO: Implement expression type: TNew
+  container = Container.new()
   container.add("Hello")
   container.add("World")
   Log.trace(container.get(0), %{fileName: "Main.hx", lineNumber: 166, className: "Main", methodName: "main"})
   Log.trace(container.size(), %{fileName: "Main.hx", lineNumber: 167, className: "Main", methodName: "main"})
-  lengths = container.map(# TODO: Implement expression type: TFunction)
+  lengths = container.map(fn s -> s.length end)
   Log.trace(lengths.get(0), %{fileName: "Main.hx", lineNumber: 171, className: "Main", methodName: "main"})
 )
   end

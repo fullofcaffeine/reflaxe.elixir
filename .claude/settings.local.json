@@ -101,7 +101,9 @@
       "Bash(echo:*)",
       "Bash(npm run clean:*)",
       "Bash(./update_intended_outputs.sh:*)",
-      "Bash(true)"
+      "Bash(true)",
+      "Bash(cmp:*)",
+      "Bash(do echo \"Testing $test for TODO placeholders:\")"
     ],
     "deny": []
   }

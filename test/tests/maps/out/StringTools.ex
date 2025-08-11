@@ -24,8 +24,15 @@ defmodule StringTools do
     (
   s = ""
   hex_chars = "0123456789ABCDEF"
-  # TODO: Implement expression type: TWhile
-  if (digits != nil), do: # TODO: Implement expression type: TWhile, else: nil
+  until !(n > 0) do
+  (
+  s = hex_chars.char_at(n and 15) + s
+  n >>>= 4
+)
+end
+  if (digits != nil), do: while (s.length < digits) do
+  s = "0" + s
+end, else: nil
   s
 )
   end

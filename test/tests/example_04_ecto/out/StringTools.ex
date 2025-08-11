@@ -32,7 +32,9 @@ defmodule StringTools do
   buf_b = nil
   buf_b = ""
   l -= s.length
-  # TODO: Implement expression type: TWhile
+  while (buf_b.length < l) do
+  buf_b += Std.string(c)
+end
   buf_b += Std.string(s)
   buf_b
 )

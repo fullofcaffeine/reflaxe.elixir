@@ -21,8 +21,20 @@ defmodule StringTools do
 	"
   @spec hex(TAbstract(Int,[]).t(), TAbstract(Null,[TAbstract(Int,[])]).t()) :: TInst(String,[]).t()
   def hex(arg0, arg1) do
-    # TODO: Implement function body
-    nil
+    (
+  s = ""
+  hex_chars = "0123456789ABCDEF"
+  until !(n > 0) do
+  (
+  s = hex_chars.char_at(n and 15) + s
+  n >>>= 4
+)
+end
+  if (digits != nil), do: while (s.length < digits) do
+  s = "0" + s
+end, else: nil
+  s
+)
   end
 
 end

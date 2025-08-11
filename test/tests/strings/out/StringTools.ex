@@ -44,7 +44,9 @@ defmodule StringTools do
     (
   l = s.length
   r = 0
-  # TODO: Implement expression type: TWhile
+  while (r < l && StringTools.is_space(s, r)) do
+  r + 1
+end
   if (r > 0), do: s.substr(r, l - r), else: s
 )
   end
@@ -63,7 +65,9 @@ defmodule StringTools do
     (
   l = s.length
   r = 0
-  # TODO: Implement expression type: TWhile
+  while (r < l && StringTools.is_space(s, l - r - 1)) do
+  r + 1
+end
   if (r > 0), do: s.substr(0, l - r), else: s
 )
   end
@@ -97,7 +101,9 @@ defmodule StringTools do
   buf_b = nil
   buf_b = ""
   l -= s.length
-  # TODO: Implement expression type: TWhile
+  while (buf_b.length < l) do
+  buf_b += Std.string(c)
+end
   buf_b += Std.string(s)
   buf_b
 )
@@ -122,7 +128,9 @@ defmodule StringTools do
   buf_b = nil
   buf_b = ""
   buf_b += Std.string(s)
-  # TODO: Implement expression type: TWhile
+  while (buf_b.length < l) do
+  buf_b += Std.string(c)
+end
   buf_b
 )
   end
@@ -153,8 +161,15 @@ defmodule StringTools do
     (
   s = ""
   hex_chars = "0123456789ABCDEF"
-  # TODO: Implement expression type: TWhile
-  if (digits != nil), do: # TODO: Implement expression type: TWhile, else: nil
+  until !(n > 0) do
+  (
+  s = hex_chars.char_at(n and 15) + s
+  n >>>= 4
+)
+end
+  if (digits != nil), do: while (s.length < digits) do
+  s = "0" + s
+end, else: nil
   s
 )
   end

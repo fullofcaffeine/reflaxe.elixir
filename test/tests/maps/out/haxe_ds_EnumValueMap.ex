@@ -33,7 +33,13 @@ defmodule EnumValueMap do
   (
   _g = 0
   _g1 = a1.length
-  # TODO: Implement expression type: TWhile
+  while (_g < _g1) do
+  (
+  i = _g + 1
+  d = self().compare_arg(Enum.at(a1, i), Enum.at(a2, i))
+  if (d != 0), do: d, else: nil
+)
+end
 )
   0
 )
@@ -44,7 +50,7 @@ defmodule EnumValueMap do
   def compare_arg(arg0, arg1) do
     (
   temp_result = nil
-  if (Reflect.is_enum_value(v1) && Reflect.is_enum_value(v2)), do: temp_result = self().compare(v1, v2), else: if (Std.is_of_type(v1, # TODO: Implement expression type: TTypeExpr) && Std.is_of_type(v2, # TODO: Implement expression type: TTypeExpr)), do: temp_result = self().compare_args(v1, v2), else: temp_result = Reflect.compare(v1, v2)
+  if (Reflect.is_enum_value(v1) && Reflect.is_enum_value(v2)), do: temp_result = self().compare(v1, v2), else: if (Std.is_of_type(v1, Array) && Std.is_of_type(v2, Array)), do: temp_result = self().compare_args(v1, v2), else: temp_result = Reflect.compare(v1, v2)
   temp_result
 )
   end

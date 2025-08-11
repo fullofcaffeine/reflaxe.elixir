@@ -37,7 +37,6 @@ defmodule EReg do
 	"
   @spec replace(TInst(String,[]).t(), TInst(String,[]).t()) :: TInst(String,[]).t()
   def replace(arg0, arg1) do
-    # TODO: Implement function body
     nil
   end
 
