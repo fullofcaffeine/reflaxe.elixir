@@ -1,0 +1,7 @@
+# Compilation configuration for router test
+-cp ../../../std
+-cp ../../../src
+-cp .
+-lib reflaxe
+--macro reflaxe.elixir.CompilerInit.Start()
+MyAppRouter

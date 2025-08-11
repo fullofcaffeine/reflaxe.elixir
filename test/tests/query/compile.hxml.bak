@@ -1,0 +1,7 @@
+# Compilation configuration for query test
+-cp std
+-cp src
+-cp test/tests/query
+-lib reflaxe
+--macro reflaxe.elixir.CompilerInit.Start()
+UserQueries

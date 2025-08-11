@@ -1,0 +1,7 @@
+# Compilation configuration for ecto_schema test
+-cp std
+-cp src
+-cp test/tests/ecto_schema
+-lib reflaxe
+--macro reflaxe.elixir.CompilerInit.Start()
+User

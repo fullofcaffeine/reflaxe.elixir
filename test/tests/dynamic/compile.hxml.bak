@@ -1,0 +1,7 @@
+# Compilation configuration for dynamic test
+-cp std
+-cp src
+-cp test/tests/dynamic
+-lib reflaxe
+--macro reflaxe.elixir.CompilerInit.Start()
+Main
