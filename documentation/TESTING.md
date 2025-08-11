@@ -451,6 +451,36 @@ public function testMockAccuracy() {
    - The "35-file phenomenon" from symlinked src/
    - See [troubleshooting guide](SELF_REFERENTIAL_LIBRARY_TROUBLESHOOTING.md#the-35-file-phenomenon)
 
+7. **Process.send_after timing issues in tests**
+   - Timers may not fire reliably within expected timeframes in test environment
+   - Add manual trigger fallback for critical timer-based functionality:
+   ```elixir
+   if status.compilation_count == expected do
+     send(Process.whereis(GenServerName), :timer_message)
+     Process.sleep(100)
+   end
+   ```
+
+8. **Mix.shell() output stream confusion**
+   - `Mix.shell().info()` outputs to **stdout**
+   - `Mix.shell().error()` outputs to **stderr**
+   - Use appropriate capture: `capture_io(:stderr, fn -> ... end)`
+
+9. **Test file mismatch with build.hxml**
+   - Ensure tests modify files actually referenced in build.hxml
+   - If build.hxml specifies `test.SimpleClass`, don't modify `Main.hx`
+   - Check compilation targets match test expectations
+
+10. **Directory context for relative paths**
+    - Commands with relative paths in config files need correct working directory
+    - Use `[cd: dir]` option when executing commands:
+    ```elixir
+    compile_opts = case Path.dirname(build_file) do
+      "." -> [stderr_to_stdout: true]
+      dir -> [cd: dir, stderr_to_stdout: true]
+    end
+    ```
+
 ### Debug Techniques
 
 ```haxe
