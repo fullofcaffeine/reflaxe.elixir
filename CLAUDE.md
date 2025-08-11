@@ -265,67 +265,34 @@ Working implementation in `std/elixir/WorkingExterns.hx` with full test coverage
   - ✅ PASSING: CompilationOnlyTest, TestWorkingExterns, TestElixirMapOnly, CompileAllExterns, TestSimpleMapTest
   - ❌ FAILING: Integration, Simple, Pattern, Enum tests due to Haxe 4.3.6 API changes
 
-## tink_unittest/tink_testrunner Timeout Management Guidelines ✅
+## Reflaxe Snapshot Testing Architecture ✅
 
-### Problem
-- **Default timeout**: tink_testrunner has a hardcoded 5000ms default timeout
-- **Issue location**: `BasicCase.timeout = 5000` in tink_testrunner/src/tink/testrunner/Case.hx
-- **Symptoms**: Tests fail with "Error#500: Timed out after X ms @ tink.testrunner.Runner.runCase:102"
+### Testing Approach
+Reflaxe.Elixir uses **snapshot testing** following Reflaxe.CPP patterns:
 
-### Solution Strategy (In Order of Preference)
+- **TestRunner.hx**: Main test orchestrator that compiles Haxe files and compares output
+- **test/tests/** directory structure with `compile.hxml` and `intended/` folders per test
+- **Snapshot comparison**: Generated Elixir code compared against expected output files
+- **Dual ecosystem**: Haxe compiler tests + separate Mix tests for runtime validation
 
-#### 1. Use @:timeout Annotations (Preferred)
-Add timeout annotations to specific test methods that need more time:
-```haxe
-@:describe("Security Validation")
-@:timeout(30000)  // 30 seconds for complex tests
-public function testSecurityValidation() {
-    // Test code
-}
+### Test Structure
+```
+test/
+├── TestRunner.hx          # Main test runner (Reflaxe snapshot pattern)
+├── Test.hxml             # Entry point configuration
+└── tests/
+    ├── test_name/
+    │   ├── compile.hxml  # Test compilation config
+    │   ├── Main.hx       # Test source
+    │   ├── intended/     # Expected Elixir output
+    │   └── out/          # Generated output (for comparison)
 ```
 
-**Recommended timeout values:**
-- Simple tests: Default 5000ms (no annotation needed)
-- Edge case tests: `@:timeout(10000)` 
-- Performance/stress tests: `@:timeout(15000)`
-- Complex integration tests: `@:timeout(30000)`
-
-#### 2. Vendor and Patch (When Necessary)
-If widespread timeout issues occur, vendor the libraries:
-
-1. **Vendor the libraries**:
-```bash
-mkdir -p vendor/tink_testrunner vendor/tink_unittest
-cp -r reference/tink_testrunner/* vendor/tink_testrunner/
-cp -r reference/tink_unittest/* vendor/tink_unittest/
-```
-
-2. **Update haxe_libraries files**:
-```hxml
-# tink_testrunner.hxml
--cp vendor/tink_testrunner/src  # Instead of ${HAXE_LIBCACHE}/...
-
-# tink_unittest.hxml  
--cp vendor/tink_unittest/src     # Instead of ${HAXE_LIBCACHE}/...
-```
-
-3. **Patch defaults** (only if absolutely necessary):
-- `vendor/tink_testrunner/src/tink/testrunner/Case.hx`: Line 32
-- `vendor/tink_unittest/src/tink/unit/TestBuilder.hx`: Line 175
-
-### Benefits of Vendoring
-- Quick access to source code for debugging
-- Full control over framework behavior
-- Ability to patch when no other solution exists
-- Independence from external package updates
-
-### Key Principle
-**Only patch if you cannot change the behavior without patching.** Always prefer:
-1. @:timeout annotations on specific tests
-2. Test optimization to reduce execution time
-3. Breaking complex tests into smaller ones
-4. Vendoring for access/debugging (without patching)
-5. Patching as last resort
+### Key Commands
+- `npm test` - Run all tests via TestRunner.hx
+- `haxe test/Test.hxml test=name` - Run specific test
+- `haxe test/Test.hxml update-intended` - Update expected output files
+- `haxe test/Test.hxml show-output` - Show compilation details
 
 ## Understanding Reflaxe.Elixir's Compilation Architecture ✅
 
@@ -466,44 +433,20 @@ TestClass  # ← Compiles to Elixir, doesn't run
 
 **For complete testing details, see [`documentation/TESTING.md`](documentation/TESTING.md)**
 
-**The Challenge**: Testing macro-time code at runtime
-- Transpiler only exists during compilation (`#if macro`)
-- Tests run after compilation when transpiler is gone
-- Solution: Runtime mocks and dual-ecosystem testing
+**Snapshot Testing Approach**: 
+- Reflaxe.Elixir uses snapshot testing like Reflaxe.CPP
+- Compiles Haxe source files to Elixir and compares output against expected files
+- No runtime test execution needed - pure compilation output validation
+- Dual-ecosystem: TestRunner.hx for compiler + Mix tests for generated code
 
 ```haxe
-// Test file structure for compiler testing:
-package test;
-
-import tink.unit.Assert.assert;
-#if (macro || reflaxe_runtime)
-import reflaxe.elixir.helpers.OTPCompiler;  // Real compiler (macro time only)
-#end
-
-@:asserts
-class OTPCompilerTest {
-    public function testFeature() {
-        #if (macro || reflaxe_runtime)
-        // During compilation: This code path would test the REAL compiler
-        // But tink_unittest doesn't run tests at macro time
-        var result = OTPCompiler.compile(data);
-        #else
-        // At runtime: Use mock to simulate expected transpiler output
-        var result = mockCompile(data);
-        #end
-        
-        // Verify the output matches expectations
-        asserts.assert(result.contains("expected"), "Should generate expected code");
-        return asserts.done();
-    }
-    
-    #if !(macro || reflaxe_runtime)
-    // Runtime mock that simulates what the transpiler WOULD generate
-    private function mockCompile(data): String {
-        return "expected Elixir code output";
-    }
-    #end
-}
+// Test structure for compiler testing:
+test/tests/feature_name/
+├── compile.hxml     # Compilation configuration
+├── Main.hx          # Test source code
+├── intended/        # Expected Elixir output files
+│   └── Main.ex      # Expected generated Elixir
+└── out/             # Actual generated output (for comparison)
 ```
 
 ### Key Insights for Writing Compiler Tests
@@ -562,13 +505,12 @@ class OTPCompilerTest {
 - **Pattern Matching Implementation**: Core logic completed but needs type system integration
 - **Integration Tests**: Require mock/stub system for TypedExpr structures
 
-## Task Progress - tink_testrunner Framework Timeout Issue ✅ RESOLVED
-- ✅ Root cause identified: tink_testrunner's Promise/Future chain state corruption
-- ✅ Definitive proof: Manual execution of same logic passes all tests (18/18, 0ms, zero timeouts)
-- ✅ Framework architecture analysis: Complex async execution model causes state corruption in NEXT method
-- ✅ Prevention strategies documented: Manual execution for critical validation
-- ✅ Position-based timeout pattern confirmed: Issue occurs in method FOLLOWING problematic code
-- 📋 Key finding: "Error#500: Timed out after 5000 ms @ tink.testrunner.Runner.runCase:102" is framework infrastructure issue, not test logic issue
+## Task Progress - Reflaxe Snapshot Testing Implementation ✅ COMPLETED
+- ✅ Implemented Reflaxe.CPP-style snapshot testing with TestRunner.hx
+- ✅ All 23 tests passing with proper output comparison
+- ✅ Test structure: compile.hxml + intended/ directories per test
+- ✅ Dual ecosystem: Haxe compiler tests + Mix tests for runtime validation
+- ✅ Commands: npm test, update-intended, show-output, test filtering
 
 ## Task Completion - LiveView Base Support ✅
 Successfully implemented comprehensive LiveView compilation support with TDD methodology:
