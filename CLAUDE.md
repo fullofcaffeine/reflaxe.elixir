@@ -2,12 +2,14 @@
 
 ## IMPORTANT: Agent Execution Instructions
 1. **ALWAYS verify CLAUDE.md first** - This file contains the project truth
-2. **UNDERSTAND THE ARCHITECTURE** - See [Understanding Reflaxe.Elixir's Compilation Architecture](#understanding-reflaxeelixirs-compilation-architecture-) section below
-3. **Check referenced documentation** - See documentation/*.md files for feature details
-4. **Consult Haxe documentation** when needed:
+2. **FOLLOW DOCUMENTATION GUIDE** - See [`documentation/LLM_DOCUMENTATION_GUIDE.md`](documentation/LLM_DOCUMENTATION_GUIDE.md) for how to document
+3. **UNDERSTAND THE ARCHITECTURE** - See [Understanding Reflaxe.Elixir's Compilation Architecture](#understanding-reflaxeelixirs-compilation-architecture-) section below
+4. **Check referenced documentation** - See documentation/*.md files for feature details
+5. **Consult Haxe documentation** when needed:
    - https://api.haxe.org/ - Latest API reference
    - https://haxe.org/documentation/introduction/ - Language documentation
-5. **Use modern Haxe 4.3+ patterns** - No legacy idioms
+6. **Use modern Haxe 4.3+ patterns** - No legacy idioms
+7. **KEEP DOCS UPDATED** - Documentation is part of implementation, not separate
 
 ## Critical Architecture Knowledge for Development
 
@@ -78,13 +80,20 @@ addColumn("users", "id", "serial", true, null); // primary_key param
 **Remember**: Tests exist to ensure quality. Reducing test coverage to achieve "passing tests" is self-defeating.
 
 ## User Documentation References
+
+### Core Documentation
+- **LLM Documentation Guide**: See [`documentation/LLM_DOCUMENTATION_GUIDE.md`](documentation/LLM_DOCUMENTATION_GUIDE.md) 📚 - **How to document features properly**
 - **Setup & Installation**: See [`documentation/GETTING_STARTED.md`](documentation/GETTING_STARTED.md)
 - **Feature Status & Capabilities**: See [`documentation/FEATURES.md`](documentation/FEATURES.md)
 - **Annotation Usage Guide**: See [`documentation/ANNOTATIONS.md`](documentation/ANNOTATIONS.md)
 - **Example Walkthroughs**: See [`documentation/EXAMPLES.md`](documentation/EXAMPLES.md)
+
+### Feature Documentation
 - **Source Mapping Guide**: See [`documentation/SOURCE_MAPPING.md`](documentation/SOURCE_MAPPING.md) 🎯 - **First Reflaxe target with source mapping**
 - **File Watching & Incremental Compilation**: See [`documentation/WATCHER_WORKFLOW.md`](documentation/WATCHER_WORKFLOW.md)
 - **Mix Tasks Reference**: See [`documentation/MIX_TASKS.md`](documentation/MIX_TASKS.md) - Complete Mix task documentation
+
+### Development & Debugging
 - **Debugging Guide**: See [`documentation/DEBUGGING.md`](documentation/DEBUGGING.md) - Source mapping, transformation patterns, Mix tasks
 - **LLM Workflow Compatibility**: See [`documentation/LLM_WORKFLOW_COMPATIBILITY.md`](documentation/LLM_WORKFLOW_COMPATIBILITY.md)
 - **LLM Debugging Strategy**: See [`documentation/LLM_STACKTRACE_DEBUGGING_COMPLETE.md`](documentation/LLM_STACKTRACE_DEBUGGING_COMPLETE.md)
