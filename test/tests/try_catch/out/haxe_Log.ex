@@ -21,7 +21,13 @@ defmodule Log do
   if (infos.custom_params != nil), do: (
   _g = 0
   _g1 = infos.custom_params
-  # TODO: Implement expression type: TWhile
+  while (_g < _g1.length) do
+  (
+  v2 = Enum.at(_g1, _g)
+  _g + 1
+  str += ", " + Std.string(v2)
+)
+end
 ), else: nil
   pstr + ": " + str
 )

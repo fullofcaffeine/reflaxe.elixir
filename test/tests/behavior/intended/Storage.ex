@@ -22,36 +22,72 @@ defmodule MemoryStorage do
   @doc "Function init"
   @spec init(TDynamic(null).t()) :: TDynamic(null).t()
   def init(arg0) do
-    # TODO: Implement function body
-    nil
+    %{ok: self()}
   end
 
   @doc "Function get"
   @spec get(TInst(String,[]).t()) :: TDynamic(null).t()
   def get(arg0) do
-    # TODO: Implement function body
-    nil
+    (
+  temp_result = nil
+  (
+  this1 = self().data
+  temp_result = this1.get(key)
+)
+  temp_result
+)
   end
 
   @doc "Function put"
   @spec put(TInst(String,[]).t(), TDynamic(null).t()) :: TAbstract(Bool,[]).t()
   def put(arg0, arg1) do
-    # TODO: Implement function body
-    nil
+    (
+  (
+  this1 = self().data
+  this1.set(key, value)
+)
+  true
+)
   end
 
   @doc "Function delete"
   @spec delete(TInst(String,[]).t()) :: TAbstract(Bool,[]).t()
   def delete(arg0) do
-    # TODO: Implement function body
-    nil
+    (
+  temp_result = nil
+  (
+  this1 = self().data
+  temp_result = this1.remove(key)
+)
+  temp_result
+)
   end
 
   @doc "Function list"
   @spec list() :: TInst(Array,[TInst(String,[])]).t()
   def list() do
-    # TODO: Implement function body
-    nil
+    (
+  temp_result = nil
+  (
+  _g = []
+  (
+  temp_iterator = nil
+  (
+  this1 = self().data
+  temp_iterator = this1.keys()
+)
+  k = temp_iterator
+  while (k.has_next()) do
+  (
+  k2 = k.next()
+  _g.push(k2)
+)
+end
+)
+  temp_result = _g
+)
+  temp_result
+)
   end
 
 end
@@ -66,36 +102,34 @@ defmodule FileStorage do
   @doc "Function init"
   @spec init(TDynamic(null).t()) :: TDynamic(null).t()
   def init(arg0) do
-    # TODO: Implement function body
-    nil
+    (
+  if (config.path != nil), do: self().base_path = config.path, else: nil
+  %{ok: self()}
+)
   end
 
   @doc "Function get"
   @spec get(TInst(String,[]).t()) :: TDynamic(null).t()
   def get(arg0) do
-    # TODO: Implement function body
     nil
   end
 
   @doc "Function put"
   @spec put(TInst(String,[]).t(), TDynamic(null).t()) :: TAbstract(Bool,[]).t()
   def put(arg0, arg1) do
-    # TODO: Implement function body
-    nil
+    true
   end
 
   @doc "Function delete"
   @spec delete(TInst(String,[]).t()) :: TAbstract(Bool,[]).t()
   def delete(arg0) do
-    # TODO: Implement function body
-    nil
+    true
   end
 
   @doc "Function list"
   @spec list() :: TInst(Array,[TInst(String,[])]).t()
   def list() do
-    # TODO: Implement function body
-    nil
+    []
   end
 
 end
@@ -123,15 +157,13 @@ defmodule ConsoleLogger do
   @doc "Function log"
   @spec log(TInst(String,[]).t()) :: TAbstract(Void,[]).t()
   def log(arg0) do
-    # TODO: Implement function body
-    nil
+    Log.trace("[LOG] " + message, %{fileName: "Storage.hx", lineNumber: 103, className: "ConsoleLogger", methodName: "log"})
   end
 
   @doc "Function debug"
   @spec debug(TInst(String,[]).t()) :: TAbstract(Void,[]).t()
   def debug(arg0) do
-    # TODO: Implement function body
-    nil
+    Log.trace("[DEBUG] " + message, %{fileName: "Storage.hx", lineNumber: 108, className: "ConsoleLogger", methodName: "debug"})
   end
 
 end
