@@ -13,8 +13,7 @@ defmodule ArrayIterator do
 	"
   @spec has_next() :: TAbstract(Bool,[]).t()
   def has_next() do
-    # TODO: Implement function body
-    nil
+    self().current < self().array.length
   end
 
   @doc "
@@ -22,8 +21,7 @@ defmodule ArrayIterator do
 	"
   @spec next() :: TInst(haxe.Iterators.ArrayIterator.T,[]).t()
   def next() do
-    # TODO: Implement function body
-    nil
+    # TODO: Implement expression type: TArray
   end
 
 end

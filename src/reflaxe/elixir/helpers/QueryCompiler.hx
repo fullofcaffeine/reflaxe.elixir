@@ -9,26 +9,90 @@ import haxe.macro.Type;
 using StringTools;
 
 /**
- * Advanced Ecto Query Compiler
+ * Advanced Ecto Query Compiler (Optimized with Performance Monitoring)
  * 
  * Handles complex query compilation including:
- * - Joins (inner, left, right, cross)
- * - Aggregations (sum, avg, count, min, max)
- * - Subqueries and CTEs
- * - Window functions
- * - Fragments for raw SQL
- * - Preloading and associations
+ * - Joins (inner, left, right, cross, lateral)
+ * - Aggregations (sum, avg, count, min, max, distinct)
+ * - Subqueries and CTEs (including recursive)
+ * - Window functions (row_number, rank, dense_rank)
+ * - Fragments for raw SQL with parameter binding
+ * - Preloading and associations (simple and nested)
+ * - Union operations and advanced PostgreSQL features
+ * 
+ * Performance Optimizations:
+ * - Cached string buffers for repeated operations
+ * - Compilation time monitoring with 15ms target
+ * - Memory-efficient type definitions
+ * - Null-safe input validation throughout
  * 
  * Follows established ElixirCompiler helper delegation pattern.
  */
 class QueryCompiler {
     
+    // Performance monitoring constants
+    private static inline var PERFORMANCE_TARGET_MS = 15;
+    private static inline var PERFORMANCE_WARNING_THRESHOLD = 10;
+    
+    // Cache for string buffers to reduce memory allocation
+    private static var stringBufferCache: Array<StringBuf> = [];
+    
     /**
-     * Compile join operations for Ecto queries
+     * Get a cached string buffer or create new one
+     */
+    private static function getStringBuffer(): StringBuf {
+        if (stringBufferCache.length > 0) {
+            return stringBufferCache.pop();
+        }
+        return new StringBuf();
+    }
+    
+    /**
+     * Return string buffer to cache after use
+     */
+    private static function releaseStringBuffer(buf: StringBuf): Void {
+        // Clear the buffer and return to cache
+        #if (haxe_ver >= 4.2)
+        // Use modern clear method if available
+        buf.length = 0;
+        #else
+        // Fallback for older Haxe versions
+        var content = buf.toString();
+        if (content.length > 0) {
+            buf = new StringBuf();
+        }
+        #end
+        
+        // Only cache up to 5 buffers to prevent memory leaks
+        if (stringBufferCache.length < 5) {
+            stringBufferCache.push(buf);
+        }
+    }
+    
+    /**
+     * Validate input parameters with detailed error messages
+     */
+    private static function validateInput(paramName: String, value: Dynamic, required: Bool = true): Bool {
+        if (required && (value == null || (Std.isOfType(value, String) && (value : String).length == 0))) {
+            trace('QueryCompiler Error: Required parameter "${paramName}" is null or empty');
+            return false;
+        }
+        return true;
+    }
+    
+    /**
+     * Compile join operations for Ecto queries (Optimized with Error Handling)
      */
     public static function compileJoin(type: String, binding: String, schema: String, onCondition: String): String {
-        // Handle null or empty type gracefully
-        var safeType = type != null ? type : "inner";
+        var startTime = Sys.time();
+        
+        // Comprehensive input validation
+        if (!validateInput("type", type, false)) type = "inner";
+        if (!validateInput("binding", binding)) return "";
+        if (!validateInput("schema", schema)) return "";
+        if (!validateInput("onCondition", onCondition)) return "";
+        
+        var safeType = type != null ? type.trim() : "inner";
         
         var joinType = switch(safeType.toLowerCase()) {
             case "inner": "join";
@@ -37,10 +101,25 @@ class QueryCompiler {
             case "cross": "cross_join";
             case "inner_lateral": "join_lateral";
             case "left_lateral": "left_join_lateral";
-            default: "join";
+            case "full": "full_join";
+            default: 
+                trace('QueryCompiler Warning: Unknown join type "${safeType}", defaulting to "join"');
+                "join";
         };
         
-        return '|> ${joinType}(:${safeType.toLowerCase()}, ${binding}, ${schema}, on: ${onCondition})';
+        // Use string buffer for performance
+        var buf = getStringBuffer();
+        buf.add('|> ${joinType}(:${safeType.toLowerCase()}, ${binding}, ${schema}, on: ${onCondition})');
+        var result = buf.toString();
+        releaseStringBuffer(buf);
+        
+        // Performance monitoring
+        var duration = (Sys.time() - startTime) * 1000;
+        if (duration > PERFORMANCE_WARNING_THRESHOLD) {
+            trace('QueryCompiler Performance Warning: compileJoin took ${duration}ms');
+        }
+        
+        return result;
     }
     
     /**
@@ -294,19 +373,62 @@ class QueryCompiler {
     }
     
     /**
-     * Performance optimization: batch compile multiple queries
+     * Performance optimization: batch compile multiple queries with enhanced monitoring
      */
     public static function batchCompileQueries(queries: Array<ComplexQueryDefinition>): Array<String> {
-        var startTime = Sys.time();
-        var results = [];
-        
-        for (query in queries) {
-            results.push(compileComplexQuery(query));
+        if (queries == null || queries.length == 0) {
+            trace('QueryCompiler Warning: batchCompileQueries called with empty or null queries array');
+            return [];
         }
         
-        var totalTime = Sys.time() - startTime;
-        if (totalTime > 0.015) { // 15ms performance target
-            trace('Warning: Query compilation took ${totalTime * 1000}ms, exceeding 15ms target');
+        var startTime = Sys.time();
+        var results = [];
+        var failedQueries = 0;
+        var totalMemoryUsed = 0;
+        
+        trace('QueryCompiler: Starting batch compilation of ${queries.length} queries');
+        
+        for (i in 0...queries.length) {
+            var query = queries[i];
+            var queryStartTime = Sys.time();
+            
+            try {
+                var result = compileComplexQuery(query);
+                if (result != null && result.length > 0) {
+                    results.push(result);
+                    totalMemoryUsed += result.length;
+                } else {
+                    failedQueries++;
+                    trace('QueryCompiler Warning: Query ${i} produced empty result');
+                    results.push("");
+                }
+            } catch (e: Dynamic) {
+                failedQueries++;
+                trace('QueryCompiler Error: Query ${i} failed with: ${e}');
+                results.push("");
+            }
+            
+            var queryDuration = (Sys.time() - queryStartTime) * 1000;
+            if (queryDuration > PERFORMANCE_WARNING_THRESHOLD) {
+                trace('QueryCompiler Performance Warning: Query ${i} took ${queryDuration}ms');
+            }
+        }
+        
+        var totalTime = (Sys.time() - startTime) * 1000;
+        var averageTime = totalTime / queries.length;
+        
+        // Enhanced performance reporting
+        trace('QueryCompiler Batch Results: ${queries.length} queries, ${totalTime}ms total, ${averageTime}ms average');
+        trace('QueryCompiler Memory: ${totalMemoryUsed} bytes total, ${Math.round(totalMemoryUsed / queries.length)} bytes average');
+        
+        if (failedQueries > 0) {
+            trace('QueryCompiler Warning: ${failedQueries} queries failed out of ${queries.length}');
+        }
+        
+        if (totalTime > PERFORMANCE_TARGET_MS) {
+            trace('QueryCompiler Performance Alert: Batch compilation took ${totalTime}ms, exceeding ${PERFORMANCE_TARGET_MS}ms target');
+        } else {
+            trace('QueryCompiler Performance: ✅ Batch compilation within ${PERFORMANCE_TARGET_MS}ms target');
         }
         
         return results;

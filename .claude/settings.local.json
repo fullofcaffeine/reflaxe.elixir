@@ -99,7 +99,9 @@
       "Bash(if [[ ! \"$file\" =~ example_ ]])",
       "Bash(for:*)",
       "Bash(echo:*)",
-      "Bash(npm run clean:*)"
+      "Bash(npm run clean:*)",
+      "Bash(./update_intended_outputs.sh:*)",
+      "Bash(true)"
     ],
     "deny": []
   }
