@@ -13,5 +13,6 @@
     "tink_macro": "",
     "tink_parse": ""
   },
-  "main": "reflaxe.elixir.ElixirCompiler"
+  "main": "reflaxe.elixir.ElixirCompiler",
+  "run": "Run"
 }

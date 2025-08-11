@@ -18,9 +18,23 @@ A modern Haxe compilation target for Elixir/BEAM with native Phoenix integration
 ### Prerequisites
 - Node.js 16+ (for lix package management)
 - Elixir 1.14+ (for Phoenix/Ecto ecosystem)
-- Git (for dependency management)
 
-### Installation
+### Create a New Project (Recommended)
+
+```bash
+# Install Reflaxe.Elixir
+npx lix install github:YourOrg/reflaxe.elixir
+
+# Create a new project
+npx lix run reflaxe.elixir create my-app
+
+# Or create a Phoenix project
+npx lix run reflaxe.elixir create my-phoenix-app --type phoenix
+```
+
+🚀 **Get started in 5 minutes!** See [documentation/QUICKSTART.md](documentation/QUICKSTART.md)
+
+### Manual Installation (For Contributors)
 
 ```bash
 # Clone and setup
@@ -33,7 +47,7 @@ npx lix download  # Downloads project-specific Haxe libraries
 mix deps.get      # Installs Elixir dependencies
 
 # Run tests
-npm test          # Snapshot tests (22 tests)
+npm test          # Snapshot tests (23 tests)
 npm run test:all  # Full test suite (Haxe + Mix)
 ```
 

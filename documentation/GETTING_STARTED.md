@@ -11,7 +11,44 @@ Before you begin, ensure you have:
 - **Phoenix** (1.7+ recommended) if using Phoenix features
 - **PostgreSQL** (optional, for database examples)
 
-## Installation
+## Quick Start: Create a New Project
+
+The fastest way to get started is using the built-in project generator:
+
+### Using lix (local installation)
+```bash
+# Install Reflaxe.Elixir via lix
+npx lix install github:YourUsername/reflaxe.elixir
+
+# Create a new project
+npx lix run reflaxe.elixir create my-app
+
+# Or create a Phoenix project
+npx lix run reflaxe.elixir create my-phoenix-app --type phoenix
+```
+
+### Using haxelib (global installation)
+```bash
+# Install Reflaxe.Elixir globally
+haxelib install reflaxe.elixir
+
+# Create a new project
+haxelib run reflaxe.elixir create my-app
+
+# Or create a Phoenix project
+haxelib run reflaxe.elixir create my-phoenix-app --type phoenix
+```
+
+### Project Types
+
+- **basic** - Standard Mix project with utilities (default)
+- **phoenix** - Full Phoenix web application
+- **liveview** - Phoenix with LiveView components
+- **add-to-existing** - Add Haxe to existing Elixir project
+
+## Manual Installation
+
+If you prefer to set up manually or contribute to the compiler:
 
 ### 1. Clone the Repository
 
