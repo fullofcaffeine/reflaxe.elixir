@@ -163,8 +163,10 @@ Examples:
 		
 		// Build compilation arguments
 		// The compile.hxml should be self-contained, we just add the output directory
+		// Since we changed to the test directory, use relative path
+		final relativeOutPath = UpdateIntended ? INTENDED_DIR : OUT_DIR;
 		final args = [
-			"-D", 'elixir_output=$outPath',
+			"-D", 'elixir_output=$relativeOutPath',
 			"compile.hxml"
 		];
 		
