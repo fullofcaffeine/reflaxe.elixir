@@ -4,6 +4,17 @@
 
 Testing a macro-based transpiler presents unique challenges since the transpiler code only exists during compilation, not at runtime when tests execute. This document explains our dual-ecosystem testing approach, self-referential library configuration, and test infrastructure.
 
+## 📚 Complete Test Suite Documentation
+
+**For a comprehensive deep dive into what each test suite validates and how the testing architecture works, see:**
+**[`TEST_SUITE_DEEP_DIVE.md`](TEST_SUITE_DEEP_DIVE.md)** - Complete analysis of all 155+ tests across the three-layer architecture
+
+This document covers:
+- What the 25 Haxe snapshot tests validate (AST transformation layer)
+- What the 130 Mix tests validate (build system and runtime validation)
+- What the 9 example tests validate (real-world usage patterns)
+- Detailed breakdown of testing philosophy and debugging subsystems
+
 **Important**: For a detailed analysis of why we use runtime mocks instead of macro-time testing, see [`MACRO_TIME_TESTING_ANALYSIS.md`](MACRO_TIME_TESTING_ANALYSIS.md)
 
 ## Self-Referential Library Configuration
