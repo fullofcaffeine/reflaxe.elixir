@@ -306,10 +306,76 @@ class QueryCompiler {
         
         var totalTime = Sys.time() - startTime;
         if (totalTime > 0.015) { // 15ms performance target
-            Context.warning('Query compilation took ${totalTime * 1000}ms, exceeding 15ms target', Context.currentPos());
+            trace('Warning: Query compilation took ${totalTime * 1000}ms, exceeding 15ms target');
         }
         
         return results;
+    }
+    
+    /**
+     * Compile lateral join for advanced join scenarios
+     */
+    public static function compileLateralJoin(binding: String, schema: String, onCondition: String): String {
+        return '|> join_lateral(:inner, ${binding}, ${schema}, on: ${onCondition})';
+    }
+    
+    /**
+     * Compile union/union_all operations for combining queries
+     */
+    public static function compileUnion(query1: String, query2: String, unionAll: Bool = false): String {
+        var unionType = unionAll ? "union_all" : "union";
+        return '${query1}\n|> ${unionType}(${query2})';
+    }
+    
+    /**
+     * Compile with_recursive for recursive CTEs
+     */
+    public static function compileRecursiveCTE(name: String, baseQuery: String, recursiveQuery: String): String {
+        return 'with_recursive(\"${name}\", as: ^(${baseQuery} |> union_all(${recursiveQuery})))';
+    }
+    
+    /**
+     * Compile advanced CASE expressions
+     */
+    public static function compileCaseExpression(conditions: Array<{condition: String, result: String}>, elseResult: String = "nil"): String {
+        var output = new StringBuf();
+        output.add('case do\n');
+        
+        for (cond in conditions) {
+            output.add('  ${cond.condition} -> ${cond.result}\n');
+        }
+        
+        output.add('  true -> ${elseResult}\n');
+        output.add('end');
+        
+        return output.toString();
+    }
+    
+    /**
+     * Compile COALESCE function for null handling
+     */
+    public static function compileCoalesce(fields: Array<String>): String {
+        return 'coalesce(${fields.join(", ")})';
+    }
+    
+    /**
+     * Compile JSON operations for PostgreSQL
+     */
+    public static function compileJsonPath(field: String, path: String): String {
+        return 'json_extract_path(${field}, ${path})';
+    }
+    
+    /**
+     * Compile array operations
+     */
+    public static function compileArrayOperation(field: String, operation: String, value: String): String {
+        return switch(operation.toLowerCase()) {
+            case "contains": '${value} = any(${field})';
+            case "contained_by": '${field} <@ array[${value}]';
+            case "overlap": '${field} && array[${value}]';
+            case "length": 'array_length(${field}, 1)';
+            default: '${field} ${operation} ${value}';
+        };
     }
 }
 

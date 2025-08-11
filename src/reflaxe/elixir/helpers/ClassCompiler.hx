@@ -21,9 +21,14 @@ using StringTools;
 class ClassCompiler {
     
     private var typer: ElixirTyper;
+    private var compiler: Null<reflaxe.elixir.ElixirCompiler> = null;
     
     public function new(?typer: ElixirTyper) {
         this.typer = (typer != null) ? typer : new ElixirTyper();
+    }
+    
+    public function setCompiler(compiler: reflaxe.elixir.ElixirCompiler) {
+        this.compiler = compiler;
     }
     
     /**
@@ -412,16 +417,22 @@ class ClassCompiler {
         
         // Function body
         if (funcField.expr != null) {
-            // Real implementation would compile the expression
-            result.add('    # TODO: Implement function body\n');
-            
-            // For struct update methods, return updated struct
-            if (isInstance && isStructClass && elixirReturnType == 't()') {
-                result.add('    %{struct | }\n');
+            // Compile the actual function expression
+            var compiledBody = compileExpressionForFunction(funcField.expr);
+            if (compiledBody != null && compiledBody != "") {
+                result.add('    ${compiledBody}\n');
             } else {
-                result.add('    nil\n');
+                result.add('    # TODO: Implement function body\n');
+                
+                // For struct update methods, return updated struct
+                if (isInstance && isStructClass && elixirReturnType == 't()') {
+                    result.add('    %{struct | }\n');
+                } else {
+                    result.add('    nil\n');
+                }
             }
         } else {
+            result.add('    # TODO: Implement function body\n');
             result.add('    nil\n');
         }
         
@@ -564,6 +575,17 @@ class ClassCompiler {
             case "String": '""';
             case _: "nil";
         }
+    }
+    
+    /**
+     * Compile expression for function body (delegates to main compiler)
+     */
+    private function compileExpressionForFunction(expr: Dynamic): Null<String> {
+        if (compiler != null) {
+            var result = compiler.compileExpression(expr);
+            return result;
+        }
+        return null;
     }
 }
 
