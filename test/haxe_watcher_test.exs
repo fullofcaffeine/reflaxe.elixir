@@ -197,7 +197,16 @@ defmodule HaxeWatcherTest do
   describe "file watching behavior" do
     @tag :file_watching
     test "detects when Haxe files are created", %{test_dir: test_dir} do
+      # Create a build file for compilation
       build_file_path = Path.join(test_dir, "build.hxml")
+      File.write!(build_file_path, """
+      -cp .
+      -lib reflaxe.elixir
+      -D reflaxe_runtime
+      -D elixir_output=out
+      NewTest
+      """)
+      
       {:ok, _pid} = HaxeWatcher.start_link([
         dirs: [test_dir], 
         debounce_ms: 50,
@@ -231,7 +240,16 @@ defmodule HaxeWatcherTest do
       test_file = Path.join(test_dir, "ModifyTest.hx")
       File.write!(test_file, "class ModifyTest {}")
       
+      # Create a build file for compilation
       build_file_path = Path.join(test_dir, "build.hxml")
+      File.write!(build_file_path, """
+      -cp .
+      -lib reflaxe.elixir
+      -D reflaxe_runtime
+      -D elixir_output=out
+      ModifyTest
+      """)
+      
       {:ok, _pid} = HaxeWatcher.start_link([
         dirs: [test_dir], 
         debounce_ms: 50,
@@ -259,7 +277,16 @@ defmodule HaxeWatcherTest do
 
     @tag :file_watching  
     test "ignores non-Haxe files", %{test_dir: test_dir} do
+      # Create a build file for compilation
       build_file_path = Path.join(test_dir, "build.hxml")
+      File.write!(build_file_path, """
+      -cp .
+      -lib reflaxe.elixir
+      -D reflaxe_runtime
+      -D elixir_output=out
+      Main
+      """)
+      
       {:ok, _pid} = HaxeWatcher.start_link([
         dirs: [test_dir], 
         debounce_ms: 50,
@@ -290,7 +317,16 @@ defmodule HaxeWatcherTest do
     test "respects debounce period", %{test_dir: test_dir} do
       debounce_ms = 200
       
+      # Create a build file for compilation
       build_file_path = Path.join(test_dir, "build.hxml")
+      File.write!(build_file_path, """
+      -cp .
+      -lib reflaxe.elixir
+      -D reflaxe_runtime
+      -D elixir_output=out
+      Main
+      """)
+      
       {:ok, _pid} = HaxeWatcher.start_link([
         dirs: [test_dir], 
         debounce_ms: debounce_ms,
