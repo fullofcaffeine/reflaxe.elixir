@@ -207,7 +207,7 @@ defmodule HaxeCompiler do
   message, and stacktrace information.
   """
   def parse_haxe_errors(output) when is_binary(output) do
-    output
+    errors = output
     |> String.split("\n")
     |> Enum.reduce([], fn line, acc ->
       case parse_error_line(line) do
@@ -217,6 +217,11 @@ defmodule HaxeCompiler do
     end)
     |> Enum.reverse()
     |> add_error_ids()
+    
+    # Automatically store errors for retrieval by Mix tasks
+    store_compilation_errors(errors)
+    
+    errors
   end
   
   @doc """
@@ -269,9 +274,12 @@ defmodule HaxeCompiler do
   end
   
   defp parse_standard_error(line) do
-    # Try pattern with character positions first
-    case Regex.run(~r/(.+\.hx):(\d+):\s+characters\s+(\d+)-(\d+)\s*:\s*(.*?)\s*:\s*(.*)/, line) do
-      [_, file, line_str, col_start, col_end, error_type, message] ->
+    # Try pattern with character positions first: "file.hx:line: characters start-end : message"
+    case Regex.run(~r/(.+\.hx):(\d+):\s+characters\s+(\d+)-(\d+)\s*:\s*(.*)/, line) do
+      [_, file, line_str, col_start, col_end, full_message] ->
+        # For real Haxe errors, try to extract error type from the message
+        {error_type, message} = extract_error_type_from_message(full_message)
+        
         %{
           type: :compilation_error,
           level: :haxe,
@@ -279,48 +287,32 @@ defmodule HaxeCompiler do
           line: String.to_integer(line_str),
           column_start: parse_column(col_start),
           column_end: parse_column(col_end),
-          error_type: String.trim(error_type),
-          message: String.trim(message),
+          error_type: error_type,
+          message: message,
           raw_line: line,
           timestamp: DateTime.utc_now(),
           stacktrace: []
         }
       
       _ ->
-        # Try simpler pattern without character positions
+        # Try simpler pattern without character positions: "file.hx:line: message"
         case Regex.run(~r/(.+\.hx):(\d+):\s*(.*)/, line) do
-          [_, file, line_str, rest] ->
-            # Try to split the rest into error_type : message
-            case String.split(rest, ":", parts: 2) do
-              [error_type, message] ->
-                %{
-                  type: :compilation_error,
-                  level: :haxe,
-                  file: Path.relative_to_cwd(file),
-                  line: String.to_integer(line_str),
-                  column_start: nil,
-                  column_end: nil,
-                  error_type: String.trim(error_type),
-                  message: String.trim(message),
-                  raw_line: line,
-                  timestamp: DateTime.utc_now(),
-                  stacktrace: []
-                }
-              [message] ->
-                %{
-                  type: :compilation_error,
-                  level: :haxe,
-                  file: Path.relative_to_cwd(file),
-                  line: String.to_integer(line_str),
-                  column_start: nil,
-                  column_end: nil,
-                  error_type: "Compilation Error",
-                  message: String.trim(message),
-                  raw_line: line,
-                  timestamp: DateTime.utc_now(),
-                  stacktrace: []
-                }
-            end
+          [_, file, line_str, full_message] ->
+            {error_type, message} = extract_error_type_from_message(full_message)
+            
+            %{
+              type: :compilation_error,
+              level: :haxe,
+              file: Path.relative_to_cwd(file),
+              line: String.to_integer(line_str),
+              column_start: nil,
+              column_end: nil,
+              error_type: error_type,
+              message: message,
+              raw_line: line,
+              timestamp: DateTime.utc_now(),
+              stacktrace: []
+            }
             
           _ -> nil
         end
@@ -346,10 +338,22 @@ defmodule HaxeCompiler do
   end
   
   defp parse_warning(line) do
+    message = String.trim(String.replace_prefix(line, "Warning :", ""))
+    
+    # Try to extract file information from warning message
+    {file, clean_message} = case Regex.run(~r/in\s+(.+\.hx)/, message) do
+      [_, file_path] ->
+        clean_msg = message |> String.replace(~r/\s+in\s+.+\.hx/, "")
+        {Path.relative_to_cwd(file_path), clean_msg}
+      _ ->
+        {nil, message}
+    end
+    
     %{
       type: :warning,
       level: :haxe,
-      message: String.trim(String.replace_prefix(line, "Warning :", "")),
+      file: file,
+      message: String.trim(clean_message),
       raw_line: line,
       timestamp: DateTime.utc_now()
     }
@@ -358,6 +362,41 @@ defmodule HaxeCompiler do
   defp parse_column(nil), do: nil
   defp parse_column(""), do: nil
   defp parse_column(col_str), do: String.to_integer(col_str)
+  
+  defp extract_error_type_from_message(full_message) do
+    full_message = String.trim(full_message)
+    
+    cond do
+      # "Type not found : SomeType"
+      String.starts_with?(full_message, "Type not found") ->
+        case String.split(full_message, ":", parts: 2) do
+          [type_part, message_part] ->
+            {String.trim(type_part), String.trim(message_part)}
+          _ ->
+            {"Type not found", full_message}
+        end
+      
+      # "has no field fieldName"  
+      String.contains?(full_message, "has no field") ->
+        {"Field not found", full_message}
+      
+      # "Missing ;" or other syntax errors
+      String.match?(full_message, ~r/Missing|Expected|Unexpected/) ->
+        {"Syntax Error", full_message}
+        
+      # Default: try to split on first colon, otherwise use full message
+      String.contains?(full_message, ":") ->
+        case String.split(full_message, ":", parts: 2) do
+          [type_part, message_part] when byte_size(type_part) < 50 ->
+            {String.trim(type_part), String.trim(message_part)}
+          _ ->
+            {"Compilation Error", full_message}
+        end
+        
+      true ->
+        {"Compilation Error", full_message}
+    end
+  end
   
   defp add_error_ids(errors) do
     errors
