@@ -243,16 +243,28 @@ defmodule HaxeCompiler do
   Returns stored compilation errors in structured format.
   """
   def get_compilation_errors(format \\ :map) do
-    case :ets.lookup(:haxe_errors, :current_errors) do
-      [{:current_errors, errors}] ->
-        case format do
-          :json -> Jason.encode!(errors)
-          :map -> errors
-        end
-      [] -> 
+    # Ensure ETS table exists
+    case :ets.whereis(:haxe_errors) do
+      :undefined ->
+        # Table doesn't exist, return empty
         case format do
           :json -> "[]"
           :map -> []
+        end
+      
+      _table ->
+        # Table exists, try to get errors
+        case :ets.lookup(:haxe_errors, :current_errors) do
+          [{:current_errors, errors}] ->
+            case format do
+              :json -> Jason.encode!(errors)
+              :map -> errors
+            end
+          [] -> 
+            case format do
+              :json -> "[]"
+              :map -> []
+            end
         end
     end
   end
