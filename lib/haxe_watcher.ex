@@ -156,6 +156,7 @@ defmodule HaxeWatcher do
 
   @impl GenServer
   def handle_info(:trigger_debounced_compilation, state) do
+    Logger.debug("Received :trigger_debounced_compilation, auto_compile: #{state.auto_compile}")
     if state.auto_compile do
       trigger_compilation_now(state)
     else
@@ -280,6 +281,8 @@ defmodule HaxeWatcher do
   end
 
   defp handle_file_change(events, path, state) do
+    Logger.debug("handle_file_change called, debounce_ms: #{state.debounce_ms}, auto_compile: #{state.auto_compile}")
+    
     # Update last change time
     new_state = %{state | 
       last_change: DateTime.utc_now(),
@@ -288,10 +291,12 @@ defmodule HaxeWatcher do
     
     # Cancel existing debounce timer
     if state.debounce_timer do
+      Logger.debug("Cancelling existing timer")
       Process.cancel_timer(state.debounce_timer)
     end
     
     # Set new debounce timer
+    Logger.debug("Setting new debounce timer for #{state.debounce_ms}ms")
     timer = Process.send_after(self(), :trigger_debounced_compilation, state.debounce_ms)
     
     # Log the change
@@ -318,11 +323,23 @@ defmodule HaxeWatcher do
         
       false ->
         # Fall back to direct compilation
-        # Run with the full path to the build file instead of changing directory
-        # This preserves access to haxe_libraries in the current directory
-        compile_opts = [stderr_to_stdout: true]
+        # Change to the directory containing the build file so relative paths work correctly
+        build_dir = Path.dirname(build_file_path)
+        build_file_name = Path.basename(build_file_path)
         
-        case System.cmd("npx", ["haxe", build_file_path], compile_opts) do
+        compile_opts = case build_dir do
+          "." -> [stderr_to_stdout: true]
+          dir -> [cd: dir, stderr_to_stdout: true]
+        end
+        
+        # Use just the filename if we're changing directory
+        final_build_file = if Keyword.has_key?(compile_opts, :cd) do
+          build_file_name
+        else
+          build_file_path
+        end
+        
+        case System.cmd("npx", ["haxe", final_build_file], compile_opts) do
           {output, 0} ->
             {:ok, output}
           {output, exit_code} ->
