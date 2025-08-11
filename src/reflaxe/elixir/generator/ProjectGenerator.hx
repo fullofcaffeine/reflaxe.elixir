@@ -492,14 +492,14 @@ class HelloWorld {
       "name": "mix phx.server",
       "request": "launch",
       "task": "phx.server",
-      "projectDir": "\${workspaceRoot}"
+      "projectDir": "$${workspaceRoot}"
     },
     {
       "type": "mix_task",
       "name": "mix test",
       "request": "launch",
       "task": "test",
-      "projectDir": "\${workspaceRoot}"
+      "projectDir": "$${workspaceRoot}"
     }
   ]
 }
