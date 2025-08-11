@@ -14,7 +14,7 @@ defmodule Main do
   def basic_array_ops() do
     (
   numbers = [1, 2, 3, 4, 5]
-  Log.trace(# TODO: Implement expression type: TArray, %{fileName: "Main.hx", lineNumber: 12, className: "Main", methodName: "basicArrayOps"})
+  Log.trace(Enum.at(numbers, 0), %{fileName: "Main.hx", lineNumber: 12, className: "Main", methodName: "basicArrayOps"})
   Log.trace(numbers.length, %{fileName: "Main.hx", lineNumber: 13, className: "Main", methodName: "basicArrayOps"})
   numbers.push(6)
   numbers.unshift(0)
@@ -33,15 +33,31 @@ defmodule Main do
   fruits = ["apple", "banana", "orange", "grape"]
   (
   _g = 0
-  # TODO: Implement expression type: TWhile
+  while (_g < fruits.length) do
+  (
+  fruit = Enum.at(fruits, _g)
+  _g + 1
+  Log.trace("Fruit: " + fruit, %{fileName: "Main.hx", lineNumber: 33, className: "Main", methodName: "arrayIteration"})
+)
+end
 )
   (
   _g = 0
   _g1 = fruits.length
-  # TODO: Implement expression type: TWhile
+  while (_g < _g1) do
+  (
+  i = _g + 1
+  Log.trace("" + i + ": " + Enum.at(fruits, i), %{fileName: "Main.hx", lineNumber: 38, className: "Main", methodName: "arrayIteration"})
+)
+end
 )
   i = 0
-  # TODO: Implement expression type: TWhile
+  while (i < fruits.length) do
+  (
+  Log.trace("While: " + Enum.at(fruits, i), %{fileName: "Main.hx", lineNumber: 44, className: "Main", methodName: "arrayIteration"})
+  i + 1
+)
+end
 )
   end
 
@@ -56,7 +72,13 @@ defmodule Main do
   (
   _g1 = 0
   _g2 = numbers
-  # TODO: Implement expression type: TWhile
+  while (_g1 < _g2.length) do
+  (
+  v = Enum.at(_g2, _g1)
+  _g1 + 1
+  _g.push(v * 2)
+)
+end
 )
   temp_array = _g
 )
@@ -68,7 +90,13 @@ defmodule Main do
   (
   _g1 = 0
   _g2 = numbers
-  # TODO: Implement expression type: TWhile
+  while (_g1 < _g2.length) do
+  (
+  v = Enum.at(_g2, _g1)
+  _g1 + 1
+  if (v rem 2 == 0), do: _g.push(v), else: nil
+)
+end
 )
   temp_array1 = _g
 )
@@ -84,7 +112,7 @@ defmodule Main do
   reversed.reverse()
   Log.trace("Reversed: " + Std.string(reversed), %{fileName: "Main.hx", lineNumber: 74, className: "Main", methodName: "arrayMethods"})
   unsorted = [3, 1, 4, 1, 5, 9, 2, 6]
-  unsorted.sort(# TODO: Implement expression type: TFunction)
+  unsorted.sort(fn a, b -> a - b end)
   Log.trace("Sorted: " + Std.string(unsorted), %{fileName: "Main.hx", lineNumber: 79, className: "Main", methodName: "arrayMethods"})
 )
   end
@@ -155,10 +183,25 @@ defmodule Main do
   def multi_dimensional() do
     (
   matrix = [[1, 2, 3], [4, 5, 6], [7, 8, 9]]
-  Log.trace("Matrix element [1][2]: " + # TODO: Implement expression type: TArray, %{fileName: "Main.hx", lineNumber: 106, className: "Main", methodName: "multiDimensional"})
+  Log.trace("Matrix element [1][2]: " + Enum.at(Enum.at(matrix, 1), 2), %{fileName: "Main.hx", lineNumber: 106, className: "Main", methodName: "multiDimensional"})
   (
   _g = 0
-  # TODO: Implement expression type: TWhile
+  while (_g < matrix.length) do
+  (
+  row = Enum.at(matrix, _g)
+  _g + 1
+  (
+  _g2 = 0
+  while (_g2 < row.length) do
+  (
+  elem = Enum.at(row, _g2)
+  _g2 + 1
+  Log.trace("Element: " + elem, %{fileName: "Main.hx", lineNumber: 111, className: "Main", methodName: "multiDimensional"})
+)
+end
+)
+)
+end
 )
   temp_array = nil
   (
@@ -217,7 +260,13 @@ defmodule Main do
   (
   _g1 = 0
   _g2 = arr
-  # TODO: Implement expression type: TWhile
+  while (_g1 < _g2.length) do
+  (
+  v = Enum.at(_g2, _g1)
+  _g1 + 1
+  _g.push(v * v)
+)
+end
 )
   temp_array = _g
 )
@@ -227,7 +276,13 @@ defmodule Main do
   (
   _g1 = 0
   _g2 = _this
-  # TODO: Implement expression type: TWhile
+  while (_g1 < _g2.length) do
+  (
+  v = Enum.at(_g2, _g1)
+  _g1 + 1
+  if (v > 10), do: _g.push(v), else: nil
+)
+end
 )
   temp_result = _g
 )
@@ -246,7 +301,12 @@ defmodule Main do
   (
   _g1 = 0
   _g2 = Std.int(Math.min(n, arr.length))
-  # TODO: Implement expression type: TWhile
+  while (_g1 < _g2) do
+  (
+  i = _g1 + 1
+  _g.push(Enum.at(arr, i))
+)
+end
 )
   temp_result = _g
 )

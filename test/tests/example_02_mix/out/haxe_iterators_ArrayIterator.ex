@@ -21,7 +21,7 @@ defmodule ArrayIterator do
 	"
   @spec next() :: TInst(haxe.Iterators.ArrayIterator.T,[]).t()
   def next() do
-    # TODO: Implement expression type: TArray
+    Enum.at(self().array, self().current + 1)
   end
 
 end

@@ -28,8 +28,8 @@ haxe_CallStack.ex
 Type.ex
 StringTools.ex
 StringBuf.ex
-PerformanceTest.ex
 IntIterator.ex
 EnumValue.ex
 EReg.ex
 Any.ex
+AdvancedQueries.ex

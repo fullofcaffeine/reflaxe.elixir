@@ -44,7 +44,9 @@ defmodule StringTools do
     (
   l = s.length
   r = 0
-  # TODO: Implement expression type: TWhile
+  while (r < l && StringTools.is_space(s, r)) do
+  r + 1
+end
   if (r > 0), do: s.substr(r, l - r), else: s
 )
   end
@@ -63,7 +65,9 @@ defmodule StringTools do
     (
   l = s.length
   r = 0
-  # TODO: Implement expression type: TWhile
+  while (r < l && StringTools.is_space(s, l - r - 1)) do
+  r + 1
+end
   if (r > 0), do: s.substr(0, l - r), else: s
 )
   end

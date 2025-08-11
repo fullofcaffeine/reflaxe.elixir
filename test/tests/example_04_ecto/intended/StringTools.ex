@@ -27,8 +27,17 @@ defmodule StringTools do
 	"
   @spec lpad(TInst(String,[]).t(), TInst(String,[]).t(), TAbstract(Int,[]).t()) :: TInst(String,[]).t()
   def lpad(arg0, arg1, arg2) do
-    # TODO: Implement function body
-    nil
+    (
+  if (c.length <= 0), do: s, else: nil
+  buf_b = nil
+  buf_b = ""
+  l -= s.length
+  while (buf_b.length < l) do
+  buf_b += Std.string(c)
+end
+  buf_b += Std.string(s)
+  buf_b
+)
   end
 
 end

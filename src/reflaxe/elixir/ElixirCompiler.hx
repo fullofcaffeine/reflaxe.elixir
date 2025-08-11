@@ -422,6 +422,64 @@ class ElixirCompiler extends BaseCompiler {
             case TSwitch(e, cases, edef):
                 compileSwitchExpression(e, cases, edef);
                 
+            case TWhile(econd, ebody, normalWhile):
+                var condition = compileExpression(econd);
+                var body = compileExpression(ebody);
+                normalWhile ? 
+                    'while ${condition} do\n  ${body}\nend' :
+                    'until !${condition} do\n  ${body}\nend';
+                
+            case TArray(e1, e2):
+                var arrayExpr = compileExpression(e1);
+                var indexExpr = compileExpression(e2);
+                'Enum.at(${arrayExpr}, ${indexExpr})';
+                
+            case TNew(c, _, el):
+                var className = NamingHelper.getElixirModuleName(c.toString());
+                var args = el.map(expr -> compileExpression(expr)).join(", ");
+                args.length > 0 ? 
+                    '${className}.new(${args})' :
+                    '${className}.new()';
+                
+            case TFunction(func):
+                var args = func.args.map(arg -> NamingHelper.toSnakeCase(arg.v.name)).join(", ");
+                var body = compileExpression(func.expr);
+                'fn ${args} -> ${body} end';
+                
+            case TMeta(metadata, expr):
+                // Compile metadata wrapper - just compile the inner expression
+                compileExpression(expr);
+                
+            case TTry(tryExpr, catches):
+                var tryBody = compileExpression(tryExpr);
+                var result = 'try do\n  ${tryBody}\n';
+                
+                for (catchItem in catches) {
+                    var catchVar = NamingHelper.toSnakeCase(catchItem.v.name);
+                    var catchBody = compileExpression(catchItem.expr);
+                    result += 'rescue\n  ${catchVar} ->\n    ${catchBody}\n';
+                }
+                
+                result + 'end';
+                
+            case TThrow(expr):
+                var throwExpr = compileExpression(expr);
+                'throw(${throwExpr})';
+                
+            case TCast(expr, moduleType):
+                // Simple cast - just compile the expression
+                // In Elixir, we rely on pattern matching for type safety
+                compileExpression(expr);
+                
+            case TTypeExpr(moduleType):
+                // Type expression - convert to Elixir module name
+                switch (moduleType) {
+                    case TClassDecl(c): NamingHelper.getElixirModuleName(c.get().name);
+                    case TEnumDecl(e): NamingHelper.getElixirModuleName(e.get().name);
+                    case TAbstract(a): NamingHelper.getElixirModuleName(a.get().name);
+                    case _: "Dynamic";
+                }
+                
             case _:
                 "# TODO: Implement expression type: " + expr.expr.getName();
         }

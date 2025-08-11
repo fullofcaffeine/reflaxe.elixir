@@ -38,7 +38,13 @@ defmodule BalancedTree do
   def get(arg0) do
     (
   node = self().root
-  # TODO: Implement expression type: TWhile
+  while (node != nil) do
+  (
+  c = self().compare(key, node.key)
+  if (c == 0), do: node.value, else: nil
+  if (c < 0), do: node = node.left, else: node = node.right
+)
+end
   nil
 )
   end
@@ -54,7 +60,12 @@ defmodule BalancedTree do
   def exists(arg0) do
     (
   node = self().root
-  # TODO: Implement expression type: TWhile
+  while (node != nil) do
+  (
+  c = self().compare(key, node.key)
+  if (c == 0), do: true, else: if (c < 0), do: node = node.left, else: node = node.right
+)
+end
   false
 )
   end
@@ -69,7 +80,7 @@ defmodule BalancedTree do
     (
   ret = []
   self().keys_loop(self().root, ret)
-  # TODO: Implement expression type: TNew
+  Haxe.Iterators.ArrayIterator.new(ret)
 )
   end
 
@@ -77,13 +88,13 @@ defmodule BalancedTree do
   @spec set_loop(TInst(haxe.Ds.BalancedTree.K,[]).t(), TInst(haxe.Ds.BalancedTree.V,[]).t(), TInst(haxe.Ds.TreeNode,[TInst(haxe.Ds.BalancedTree.K,[]),TInst(haxe.Ds.BalancedTree.V,[])]).t()) :: TInst(haxe.Ds.TreeNode,[TInst(haxe.Ds.BalancedTree.K,[]),TInst(haxe.Ds.BalancedTree.V,[])]).t()
   def set_loop(arg0, arg1, arg2) do
     (
-  if (node == nil), do: # TODO: Implement expression type: TNew, else: nil
+  if (node == nil), do: Haxe.Ds.TreeNode.new(nil, k, v, nil), else: nil
   c = self().compare(k, node.key)
   temp_result = nil
   if (c == 0), do: (
   temp_number = nil
   if (node == nil), do: temp_number = 0, else: temp_number = node._height
-  temp_result = # TODO: Implement expression type: TNew
+  temp_result = Haxe.Ds.TreeNode.new(node.left, k, v, node.right, temp_number)
 ), else: if (c < 0), do: (
   nl = self().set_loop(k, v, node.left)
   temp_result = self().balance(nl, node.key, node.value, node.right)
@@ -127,7 +138,7 @@ defmodule BalancedTree do
   _this = l.right
   if (_this == nil), do: temp_right = 0, else: temp_right = _this._height
 )
-  if (temp_left >= temp_right), do: temp_result = # TODO: Implement expression type: TNew, else: temp_result = # TODO: Implement expression type: TNew
+  if (temp_left >= temp_right), do: temp_result = Haxe.Ds.TreeNode.new(l.left, l.key, l.value, Haxe.Ds.TreeNode.new(l.right, k, v, r)), else: temp_result = Haxe.Ds.TreeNode.new(Haxe.Ds.TreeNode.new(l.left, l.key, l.value, l.right.left), l.right.key, l.right.value, Haxe.Ds.TreeNode.new(l.right.right, k, v, r))
 ), else: if (hr > hl + 2), do: (
   temp_left1 = nil
   (
@@ -139,11 +150,11 @@ defmodule BalancedTree do
   _this = r.left
   if (_this == nil), do: temp_right1 = 0, else: temp_right1 = _this._height
 )
-  if (temp_left1 > temp_right1), do: temp_result = # TODO: Implement expression type: TNew, else: temp_result = # TODO: Implement expression type: TNew
+  if (temp_left1 > temp_right1), do: temp_result = Haxe.Ds.TreeNode.new(Haxe.Ds.TreeNode.new(l, k, v, r.left), r.key, r.value, r.right), else: temp_result = Haxe.Ds.TreeNode.new(Haxe.Ds.TreeNode.new(l, k, v, r.left.left), r.left.key, r.left.value, Haxe.Ds.TreeNode.new(r.left.right, r.key, r.value, r.right))
 ), else: (
   temp_left2 = nil
   (if (hl > hr), do: temp_left2 = hl, else: temp_left2 = hr)
-  temp_result = # TODO: Implement expression type: TNew
+  temp_result = Haxe.Ds.TreeNode.new(l, k, v, r, temp_left2 + 1)
 )
   temp_result
 )
