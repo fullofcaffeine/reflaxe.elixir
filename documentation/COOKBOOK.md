@@ -1,8 +1,26 @@
 # Reflaxe.Elixir Cookbook
 
-A collection of practical recipes for common tasks in Reflaxe.Elixir development. Each recipe provides a complete, working solution you can adapt to your needs.
+A collection of practical recipes showing how to implement common Elixir/Phoenix patterns with Haxe's type safety. Each recipe demonstrates idiomatic Elixir code with compile-time guarantees.
 
 ## Table of Contents
+
+### Core Elixir Patterns
+- [Pipeline Operations with Type Safety](#pipeline-operations-with-type-safety)
+- [Pattern Matching with Exhaustive Checks](#pattern-matching-with-exhaustive-checks)
+- [With Expressions and Error Handling](#with-expressions-and-error-handling)
+- [Process Communication with Types](#process-communication-with-types)
+
+### Phoenix Contexts & Architecture
+- [Bounded Contexts with Type Contracts](#bounded-contexts-with-type-contracts)
+- [Action Fallback Pattern](#action-fallback-pattern)
+- [Plugs with Type-Safe Middleware](#plugs-with-type-safe-middleware)
+- [Phoenix Components with Props](#phoenix-components-with-props)
+
+### OTP Patterns
+- [Supervisors and Supervision Trees](#supervisors-and-supervision-trees)
+- [GenServer with Typed State](#genserver-with-typed-state)
+- [Task.async/await with Type Safety](#task-async-await-with-type-safety)
+- [Agent State Management](#agent-state-management)
 
 ### Web Development
 - [Building a REST API](#building-a-rest-api)
@@ -23,6 +41,7 @@ A collection of practical recipes for common tasks in Reflaxe.Elixir development
 - [Real-time Notifications](#real-time-notifications)
 - [Collaborative Editor](#collaborative-editor)
 - [Live Form Validation](#live-form-validation)
+- [Phoenix Presence with Types](#phoenix-presence-with-types)
 
 ### Background Jobs
 - [Email Queue](#email-queue)
@@ -36,6 +55,562 @@ A collection of practical recipes for common tasks in Reflaxe.Elixir development
 - [API Client Testing](#api-client-testing)
 
 ---
+
+## Core Elixir Patterns
+
+### Pipeline Operations with Type Safety
+
+Type-safe pipeline operations that compile to idiomatic Elixir:
+
+```haxe
+// src_haxe/DataPipeline.hx
+package pipelines;
+
+@:module
+class DataPipeline {
+    /**
+     * Type-safe pipeline that ensures each step has correct input/output types
+     */
+    public static function processUserData(rawData: String): Result<User, String> {
+        // Haxe ensures type safety at each step
+        return rawData
+            |> parseJson()
+            |> validateSchema()
+            |> enrichWithDefaults()
+            |> createUser();
+    }
+    
+    static function parseJson(data: String): Result<Dynamic, String> {
+        try {
+            return Ok(Jason.decode(data));
+        } catch (e: Dynamic) {
+            return Error("Invalid JSON: " + e);
+        }
+    }
+    
+    static function validateSchema(data: Result<Dynamic, String>): Result<UserData, String> {
+        return data.flatMap(d -> {
+            if (d.name == null || d.email == null) {
+                return Error("Missing required fields");
+            }
+            return Ok(cast d);
+        });
+    }
+    
+    static function enrichWithDefaults(data: Result<UserData, String>): Result<UserData, String> {
+        return data.map(d -> {
+            d.role = d.role ?? "user";
+            d.active = d.active ?? true;
+            return d;
+        });
+    }
+    
+    static function createUser(data: Result<UserData, String>): Result<User, String> {
+        return data.flatMap(d -> {
+            var changeset = User.changeset(%User{}, d);
+            return Repo.insert(changeset);
+        });
+    }
+}
+```
+
+### Pattern Matching with Exhaustive Checks
+
+Haxe ensures all cases are handled at compile time:
+
+```haxe
+// src_haxe/EventHandler.hx
+@:module
+class EventHandler {
+    /**
+     * Compile-time exhaustive pattern matching
+     */
+    public static function handleEvent(event: Event): Response {
+        // Haxe compiler ensures all Event variants are handled
+        return switch (event) {
+            case UserJoined(user):
+                broadcastUserJoined(user);
+                Response.ok("User joined: " + user.name);
+                
+            case MessageSent(user, message):
+                saveMessage(user, message);
+                broadcastMessage(user, message);
+                Response.ok("Message sent");
+                
+            case UserLeft(userId):
+                markUserOffline(userId);
+                Response.ok("User left");
+                
+            case Error(code, message):
+                Logger.error("Event error: " + code + " - " + message);
+                Response.error(code, message);
+                
+            // Compiler error if any Event case is missing!
+        };
+    }
+}
+
+enum Event {
+    UserJoined(user: User);
+    MessageSent(user: User, message: String);
+    UserLeft(userId: String);
+    Error(code: Int, message: String);
+}
+
+enum Response {
+    ok(message: String);
+    error(code: Int, message: String);
+}
+```
+
+### With Expressions and Error Handling
+
+Type-safe error handling that compiles to Elixir's `with`:
+
+```haxe
+// src_haxe/OrderService.hx
+@:module
+class OrderService {
+    /**
+     * Type-safe with expression for complex operations
+     */
+    public static function placeOrder(userId: String, items: Array<Item>): Result<Order, OrderError> {
+        // Each step is type-checked
+        return with(
+            user <- getUserById(userId),
+            _ <- validateUserCanOrder(user),
+            inventory <- checkInventory(items),
+            _ <- reserveItems(inventory, items),
+            payment <- processPayment(user, calculateTotal(items)),
+            order <- createOrder(user, items, payment)
+        ) {
+            // Success path with all types verified
+            notifyOrderSuccess(order);
+            Ok(order);
+        } else {
+            // Type-safe error handling
+            case Error(UserNotFound): Error(InvalidUser);
+            case Error(InsufficientFunds): Error(PaymentFailed);
+            case Error(OutOfStock(item)): Error(ItemUnavailable(item));
+            case Error(e): Error(UnknownError(e));
+        }
+    }
+}
+
+enum OrderError {
+    InvalidUser;
+    PaymentFailed;
+    ItemUnavailable(item: String);
+    UnknownError(message: String);
+}
+```
+
+### Process Communication with Types
+
+Type-safe message passing between processes:
+
+```haxe
+// src_haxe/TypedProcess.hx
+@:module
+class ChatRoom {
+    /**
+     * Type-safe process communication
+     */
+    public static function start(): Pid<ChatMessage> {
+        return spawn(function() {
+            loop(initialState());
+        });
+    }
+    
+    static function loop(state: RoomState): Void {
+        // Receive with typed messages
+        receive {
+            case Join(user, replyTo):
+                var newState = addUser(state, user);
+                send(replyTo, JoinResponse(true, state.users.length));
+                loop(newState);
+                
+            case Message(from, text, replyTo):
+                broadcastMessage(state.users, from, text);
+                send(replyTo, MessageSent);
+                loop(state);
+                
+            case Leave(userId):
+                var newState = removeUser(state, userId);
+                loop(newState);
+        }
+    }
+}
+
+// Typed messages
+enum ChatMessage {
+    Join(user: User, replyTo: Pid<JoinResponse>);
+    Message(from: String, text: String, replyTo: Pid<MessageStatus>);
+    Leave(userId: String);
+}
+
+enum JoinResponse {
+    JoinResponse(success: Bool, userCount: Int);
+}
+
+enum MessageStatus {
+    MessageSent;
+    MessageFailed(reason: String);
+}
+```
+
+## Phoenix Contexts & Architecture
+
+### Bounded Contexts with Type Contracts
+
+Phoenix contexts with clear type boundaries:
+
+```haxe
+// src_haxe/contexts/Accounts.hx
+package contexts;
+
+/**
+ * Accounts context with type-safe public API
+ */
+@:context
+class Accounts {
+    // Public API with clear type contracts
+    
+    public static function getUser(id: String): Option<User> {
+        return Repo.get(User, id);
+    }
+    
+    public static function getUserBy(attrs: UserQuery): Option<User> {
+        return Repo.getBy(User, attrs);
+    }
+    
+    public static function registerUser(attrs: RegistrationParams): Result<User, Changeset> {
+        var changeset = User.registrationChangeset(%User{}, attrs);
+        return Repo.insert(changeset);
+    }
+    
+    public static function authenticateUser(email: String, password: String): Result<User, AuthError> {
+        return getUserBy({email: email})
+            .toResult(InvalidCredentials)
+            .flatMap(user -> {
+                if (Bcrypt.verify(password, user.hashedPassword)) {
+                    return Ok(user);
+                } else {
+                    return Error(InvalidCredentials);
+                }
+            });
+    }
+    
+    // Internal functions (not exposed to other contexts)
+    private static function hashPassword(password: String): String {
+        return Bcrypt.hashPwdSalt(password);
+    }
+}
+
+// Clear type definitions for the context's API
+typedef RegistrationParams = {
+    email: String,
+    password: String,
+    passwordConfirmation: String,
+    ?name: String
+}
+
+typedef UserQuery = {
+    ?email: String,
+    ?id: String,
+    ?active: Bool
+}
+
+enum AuthError {
+    InvalidCredentials;
+    AccountLocked;
+    EmailNotVerified;
+}
+```
+
+### Action Fallback Pattern
+
+Type-safe action fallback for controllers:
+
+```haxe
+// src_haxe/controllers/FallbackController.hx
+@:controller
+class UserController {
+    use FallbackController;  // Action fallback
+    
+    public function show(conn: Conn, params: {id: String}): ConnOrError {
+        // Return either Conn or Error - fallback handles errors
+        return Accounts.getUser(params.id)
+            .map(user -> render(conn, "show.json", user))
+            .toResult(NotFound);
+    }
+    
+    public function create(conn: Conn, params: {user: UserParams}): ConnOrError {
+        // Fallback automatically handles the Error case
+        return Accounts.createUser(params.user)
+            .map(user -> conn
+                .putStatus(201)
+                .render("show.json", user));
+    }
+}
+
+@:fallback_controller
+class FallbackController {
+    public function call(conn: Conn, error: ControllerError): Conn {
+        return switch (error) {
+            case NotFound:
+                conn.putStatus(404).json({error: "Not found"});
+            case Unauthorized:
+                conn.putStatus(401).json({error: "Unauthorized"});
+            case ValidationError(changeset):
+                conn.putStatus(422).json({errors: translateErrors(changeset)});
+            case ServerError(message):
+                conn.putStatus(500).json({error: "Internal server error"});
+        };
+    }
+}
+
+typedef ConnOrError = Result<Conn, ControllerError>;
+
+enum ControllerError {
+    NotFound;
+    Unauthorized;
+    ValidationError(changeset: Changeset);
+    ServerError(message: String);
+}
+```
+
+## OTP Patterns
+
+### Supervisors and Supervision Trees
+
+Type-safe supervisor specifications:
+
+```haxe
+// src_haxe/ApplicationSupervisor.hx
+@:supervisor
+class ApplicationSupervisor {
+    public function init(args: Dynamic): SupervisorSpec {
+        var children: Array<ChildSpec> = [
+            // Each child has typed configuration
+            {
+                id: "cache",
+                start: {CacheServer, startLink, [%{size: 1000}]},
+                restart: permanent,
+                shutdown: 5000,
+                type: worker
+            },
+            {
+                id: "session_supervisor",
+                start: {SessionSupervisor, startLink, []},
+                restart: permanent,
+                shutdown: infinity,
+                type: supervisor
+            },
+            {
+                id: "task_supervisor",
+                start: {Task.Supervisor, startLink, [[name: TaskSupervisor]]},
+                restart: permanent,
+                type: supervisor
+            }
+        ];
+        
+        return {
+            strategy: oneForOne,
+            maxRestarts: 3,
+            maxSeconds: 5,
+            children: children
+        };
+    }
+}
+
+typedef SupervisorSpec = {
+    strategy: SupervisorStrategy,
+    maxRestarts: Int,
+    maxSeconds: Int,
+    children: Array<ChildSpec>
+}
+
+typedef ChildSpec = {
+    id: String,
+    start: {module: Dynamic, function: String, args: Array<Dynamic>},
+    restart: RestartStrategy,
+    shutdown: ShutdownStrategy,
+    type: WorkerType
+}
+
+enum SupervisorStrategy {
+    oneForOne;
+    oneForAll;
+    restForOne;
+}
+
+enum RestartStrategy {
+    permanent;
+    temporary;
+    transient;
+}
+```
+
+### GenServer with Typed State
+
+Type-safe GenServer with compile-time state validation:
+
+```haxe
+// src_haxe/CacheServer.hx
+@:genserver
+class CacheServer {
+    // Typed state
+    typedef State = {
+        cache: Map<String, CacheEntry>,
+        maxSize: Int,
+        currentSize: Int,
+        hits: Int,
+        misses: Int
+    }
+    
+    typedef CacheEntry = {
+        value: Dynamic,
+        expiry: Date,
+        size: Int
+    }
+    
+    public function init(args: {maxSize: Int}): InitResult<State> {
+        var state: State = {
+            cache: new Map(),
+            maxSize: args.maxSize,
+            currentSize: 0,
+            hits: 0,
+            misses: 0
+        };
+        
+        // Schedule cleanup
+        Process.sendAfter(self(), :cleanup, 60000);
+        
+        return {:ok, state};
+    }
+    
+    public function handleCall(request: CacheRequest, from: From, state: State): CallResult<State> {
+        return switch (request) {
+            case Get(key):
+                var entry = state.cache.get(key);
+                if (entry != null && entry.expiry > Date.now()) {
+                    state.hits++;
+                    {:reply, {:ok, entry.value}, state};
+                } else {
+                    state.misses++;
+                    {:reply, {:error, :not_found}, state};
+                }
+                
+            case Put(key, value, ttl):
+                var entry: CacheEntry = {
+                    value: value,
+                    expiry: Date.now().addSeconds(ttl),
+                    size: calculateSize(value)
+                };
+                
+                var newState = ensureSpace(state, entry.size);
+                newState.cache.set(key, entry);
+                newState.currentSize += entry.size;
+                
+                {:reply, :ok, newState};
+                
+            case Stats:
+                var stats = {
+                    size: state.currentSize,
+                    maxSize: state.maxSize,
+                    entries: state.cache.size(),
+                    hitRate: state.hits / (state.hits + state.misses)
+                };
+                {:reply, stats, state};
+        };
+    }
+    
+    public function handleInfo(msg: InfoMessage, state: State): InfoResult<State> {
+        return switch (msg) {
+            case :cleanup:
+                var newState = removeExpiredEntries(state);
+                Process.sendAfter(self(), :cleanup, 60000);
+                {:noreply, newState};
+                
+            case _:
+                {:noreply, state};
+        };
+    }
+}
+
+// Typed messages
+enum CacheRequest {
+    Get(key: String);
+    Put(key: String, value: Dynamic, ttl: Int);
+    Stats;
+}
+```
+
+### Task.async/await with Type Safety
+
+Type-safe concurrent operations:
+
+```haxe
+// src_haxe/DataAggregator.hx
+@:module
+class DataAggregator {
+    /**
+     * Type-safe parallel data fetching
+     */
+    public static function fetchDashboardData(userId: String): DashboardData {
+        // Start parallel tasks with type safety
+        var userTask: Task<User> = Task.async(() -> fetchUser(userId));
+        var statsTask: Task<UserStats> = Task.async(() -> fetchUserStats(userId));
+        var notificationsTask: Task<Array<Notification>> = Task.async(() -> 
+            fetchNotifications(userId)
+        );
+        
+        // Await with timeout and type preservation
+        var user = Task.await(userTask, 5000);
+        var stats = Task.await(statsTask, 5000);
+        var notifications = Task.await(notificationsTask, 5000);
+        
+        return {
+            user: user,
+            stats: stats,
+            notifications: notifications,
+            generatedAt: Date.now()
+        };
+    }
+    
+    /**
+     * Type-safe error handling with Task
+     */
+    public static function fetchWithFallback<T>(
+        primary: () -> T,
+        fallback: () -> T,
+        timeout: Int = 5000
+    ): T {
+        var task = Task.async(primary);
+        
+        return try {
+            Task.await(task, timeout);
+        } catch (e: TaskError) {
+            Logger.warn("Primary fetch failed, using fallback: " + e);
+            fallback();
+        }
+    }
+}
+
+typedef DashboardData = {
+    user: User,
+    stats: UserStats,
+    notifications: Array<Notification>,
+    generatedAt: Date
+}
+
+enum TaskError {
+    Timeout;
+    Exit(reason: Dynamic);
+    Throw(error: Dynamic);
+}
+```
 
 ## Web Development
 
