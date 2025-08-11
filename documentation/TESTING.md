@@ -81,18 +81,19 @@ end
 
 ## Test Suite Overview
 
-The Reflaxe.Elixir test suite consists of **30 snapshot tests** that validate compiler output:
+The Reflaxe.Elixir test suite consists of **33 snapshot tests** that validate compiler output:
 
-### Snapshot Tests (30 tests total)
+### Snapshot Tests (33 tests total)
 - **Source Mapping Tests** (2 tests) 🎯
   - `source_map_basic`: Validates `.ex.map` file generation with VLQ encoding
   - `source_map_validation`: Tests Source Map v3 specification compliance
 - **Feature Tests** (10 tests): LiveView, OTP, Ecto, Changeset, Migration, etc.
 - **Example Tests** (6 tests): Real-world compilation scenarios
 - **Core Tests** (7 tests): Basic syntax, classes, enums, arrays, etc.
+- **New Tests** (3 tests): Module syntax sugar, pattern matching, template compilation
 
 All tests run automatically via `npm test` which executes BOTH:
-- **Haxe Compiler Tests**: 30 snapshot tests via TestRunner.hx
+- **Haxe Compiler Tests**: 33 snapshot tests via TestRunner.hx
 - **Mix Runtime Tests**: 130 Elixir tests via ExUnit
 
 This ensures complete end-to-end validation of the entire compilation pipeline.
@@ -175,7 +176,7 @@ class CompilerTest {
 npm test  # Runs both Haxe and Mix tests
 
 # Run individual test suites
-npm run test:haxe  # Only Haxe compiler tests (30 tests)
+npm run test:haxe  # Only Haxe compiler tests (33 tests)
 npm run test:mix   # Only Mix/Elixir tests (130 tests)
 ```
 
@@ -304,6 +305,214 @@ haxe test/Test.hxml test=liveview_basic
 
 **Status**: Migration pending (5 files)
 
+## LLM Testing Guidance: How to Write/Update Tests ⚠️
+
+**For AI agents working on this codebase**: This section provides clear instructions for writing and updating tests for different parts of the system. Follow these patterns exactly to avoid confusion about testing architecture.
+
+### Quick Reference for Test Types
+
+| What You're Testing | Test Type | Where to Add | Example |
+|-------------------|-----------|-------------|---------|
+| **New compiler feature** | Snapshot test | `test/tests/feature_name/` | LiveView, OTP, Ecto compilation |
+| **Build system integration** | Mix test | `test/` (Elixir) | Mix.Tasks.Compile.Haxe behavior |
+| **Documentation example** | Example compilation | `examples/XX-feature/` | Real-world usage patterns |
+
+### 1. Adding New Compiler Features (Snapshot Tests)
+
+**When**: You add a new annotation (@:myfeature), expression type, or compiler helper
+
+**Steps**:
+```bash
+# 1. Create test directory
+mkdir test/tests/my_feature
+
+# 2. Create Haxe source file
+# test/tests/my_feature/Main.hx
+@:myfeature  
+class TestMyFeature {
+    public function new() {}
+    public function testMethod(): String {
+        return "test";
+    }
+}
+
+# 3. Create compilation config
+# test/tests/my_feature/compile.hxml
+-cp ../../../std
+-cp ../../../src  
+-cp .
+-lib reflaxe
+--macro reflaxe.elixir.CompilerInit.Start()
+-D elixir_output=out
+Main
+
+# 4. Generate expected output
+haxe test/Test.hxml update-intended
+
+# 5. Verify test passes
+haxe test/Test.hxml test=my_feature
+```
+
+**Key Points**:
+- ✅ Use descriptive directory names (`liveview_basic`, not `test1`)
+- ✅ Always use relative paths in compile.hxml (`../../../src`)
+- ✅ Test real functionality, not placeholder code
+- ❌ Don't manually write intended output files
+- ❌ Don't test internal compiler state
+
+### 2. Adding Build System Tests (Mix Tests)
+
+**When**: You modify Mix.Tasks.Compile.Haxe, file watching, or build pipeline
+
+**Location**: `test/` directory (Elixir files)
+
+**Pattern**:
+```elixir
+defmodule MyFeatureTest do
+  use ExUnit.Case
+  import TestSupport.ProjectHelpers
+
+  test "my feature integrates with build system" do
+    # 1. Create temporary project
+    project_dir = create_temp_project()
+    
+    # 2. Write test Haxe files
+    File.write!(Path.join(project_dir, "src_haxe/Test.hx"), """
+    @:myfeature
+    class Test {}
+    """)
+    
+    # 3. Run compiler
+    {:ok, compiled} = Mix.Tasks.Compile.Haxe.run([])
+    
+    # 4. Verify results
+    assert File.exists?(Path.join(project_dir, "lib/test.ex"))
+    output = File.read!(Path.join(project_dir, "lib/test.ex"))
+    assert output =~ "defmodule Test do"
+  end
+end
+```
+
+**Key Points**:
+- ✅ Test integration, not implementation details
+- ✅ Use temporary directories for isolation
+- ✅ Verify generated Elixir compiles correctly
+- ❌ Don't test internal ElixirCompiler methods (they don't exist at runtime)
+
+### 3. Adding Documentation Examples
+
+**When**: You want to show real-world usage of a feature
+
+**Location**: `examples/XX-feature-name/`
+
+**Structure**:
+```
+examples/10-my-feature/
+├── README.md          # Usage instructions
+├── build.hxml         # Compilation config
+├── Main.hx           # Example source
+└── out/              # Generated output (after compilation)
+```
+
+**Pattern**:
+```haxe
+// examples/10-my-feature/Main.hx
+@:myfeature
+class MyFeatureExample {
+    static function main() {
+        // Real-world usage example
+        var result = useMyFeature();
+        trace('Feature result: $result');
+    }
+}
+```
+
+### 4. Updating Existing Tests
+
+**Snapshot Test Changes**:
+```bash
+# If compiler output changes legitimately:
+haxe test/Test.hxml update-intended
+
+# If you need to fix the test itself:
+# 1. Edit test/tests/test_name/Main.hx
+# 2. Run: haxe test/Test.hxml test=test_name  
+# 3. If output is correct: haxe test/Test.hxml update-intended
+```
+
+**Mix Test Changes**:
+```elixir
+# Update test expectations to match new behavior
+assert output =~ "new expected pattern"
+
+# Or add new test cases for new functionality
+test "new behavior works correctly" do
+  # Test the new behavior
+end
+```
+
+### 5. Common Mistakes to Avoid
+
+❌ **DON'T**: Try to instantiate ElixirCompiler in tests
+```haxe
+// WRONG - Compiler doesn't exist at runtime
+var compiler = new ElixirCompiler();
+```
+
+❌ **DON'T**: Manually write intended output files
+```
+# WRONG - Always use update-intended
+echo "defmodule Test do" > intended/Test.ex
+```
+
+❌ **DON'T**: Test implementation details
+```elixir
+# WRONG - Testing internal compiler state
+assert compiler.internal_state == expected
+```
+
+✅ **DO**: Test the transformation output
+```bash
+# RIGHT - Test what the compiler generates
+haxe test/Test.hxml test=my_feature
+```
+
+✅ **DO**: Test build system integration  
+```elixir
+# RIGHT - Test that generated code works
+assert File.exists?(output_file)
+assert Code.compile_string(generated_code)
+```
+
+✅ **DO**: Test real-world usage patterns
+```haxe
+// RIGHT - Example that users would actually write
+@:schema
+class User {
+    public var name: String;
+    public var email: String;
+}
+```
+
+### 6. Test Debugging Commands
+
+```bash
+# Show what compiler generates
+haxe test/Test.hxml show-output test=feature_name
+
+# Run specific Mix test with trace
+MIX_ENV=test mix test test/my_test.exs:42 --trace
+
+# Run all tests
+npm test
+
+# Run only snapshot tests  
+npm run test:haxe
+
+# Run only Mix tests
+npm run test:mix
+```
+
 ## Best Practices
 
 ### 1. Test Organization
@@ -409,6 +618,4 @@ trace("Running at runtime");
 ## References
 
 - [Architecture Documentation](ARCHITECTURE.md)
-- [tink_unittest Documentation](https://github.com/haxetink/tink_unittest)
-- [utest Documentation](https://github.com/haxe-utest/utest)
 - [Haxe Macro Documentation](https://haxe.org/manual/macro.html)

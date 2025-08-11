@@ -1,4 +1,0 @@
--cp ../src
--cp .
--main test.ElixirPrinterIntegrationTest
---interp

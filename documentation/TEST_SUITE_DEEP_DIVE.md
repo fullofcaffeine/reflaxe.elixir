@@ -4,8 +4,8 @@
 
 Reflaxe.Elixir employs a sophisticated **three-layer testing architecture** that validates the complete transpilation pipeline from Haxe source code to running Elixir applications. This document provides a comprehensive analysis of what each test suite validates, why it exists, and how the layers work together to ensure compiler correctness.
 
-**Total Test Coverage**: 155+ tests across 3 layers
-- **Layer 1**: 25 Haxe snapshot tests (AST transformation validation)
+**Total Test Coverage**: 172+ tests across 3 layers
+- **Layer 1**: 33 Haxe snapshot tests (AST transformation validation)
 - **Layer 2**: 130 Mix integration tests (build system and runtime validation)  
 - **Layer 3**: 9 example compilation tests (real-world usage validation)
 
@@ -47,7 +47,7 @@ This necessitates a multi-layer approach:
 └─────────────────────────────────────────────────────────────┘
 ```
 
-## Layer 1: Haxe Snapshot Tests (25 tests)
+## Layer 1: Haxe Snapshot Tests (33 tests)
 
 ### What They Test
 
@@ -91,6 +91,9 @@ The snapshot test runner implements the Reflaxe testing pattern used by Reflaxe.
 | `conditionals` | Control flow | - If/else chains<br>- Ternary → if expressions<br>- Switch expressions |
 | `collections` | Data structure mapping | - Array → List<br>- Map → Map<br>- Set operations |
 | `comments_docs` | Documentation preservation | - Doc comments → @doc<br>- @moduledoc generation<br>- Inline comment preservation |
+| `module_syntax` | @:module annotation compilation | - @:module syntax sugar<br>- Simplified module generation<br>- Function visibility handling<br>- Static vs instance method compilation |
+| `pattern_matching` | Enhanced pattern matching | - Complex enum matching<br>- Guard clause integration<br>- Array/tuple destructuring<br>- Nested pattern compilation |
+| `hxx_template` | Template compilation | - @:template annotation<br>- String template processing<br>- Template interpolation<br>- Dynamic content generation |
 
 ### Snapshot Test Workflow
 
@@ -325,7 +328,7 @@ When tests fail, the layer tells you what's wrong:
 
 ### Run Everything (Recommended)
 ```bash
-npm test  # Runs all 155+ tests across all layers
+npm test  # Runs all 172+ tests across all layers
 ```
 
 ### Run Specific Layers
@@ -357,8 +360,8 @@ haxe test/Test.hxml update-intended
 ## Test Metrics and Performance
 
 ### Execution Time
-- **Total suite**: ~3-4 seconds for all 155+ tests
-- **Snapshot tests**: ~1.5 seconds for 25 tests
+- **Total suite**: ~4-5 seconds for all 172+ tests
+- **Snapshot tests**: ~2 seconds for 33 tests
 - **Mix tests**: ~2 seconds for 130 tests
 - **Examples**: ~1 second for 9 examples
 
@@ -478,6 +481,6 @@ Reflaxe.Elixir's three-layer testing architecture ensures comprehensive validati
 - **Layer 2 (Mix)**: Ensures ecosystem integration
 - **Layer 3 (Examples)**: Confirms real-world usability
 
-Together, these 155+ tests provide confidence that Haxe code will correctly transform into working Elixir applications that integrate seamlessly with the Phoenix ecosystem.
+Together, these 172+ tests provide confidence that Haxe code will correctly transform into working Elixir applications that integrate seamlessly with the Phoenix ecosystem.
 
 The architecture recognizes that testing a transpiler requires validating not just the transformation logic, but also the integration points, runtime behavior, and developer experience. This comprehensive approach ensures Reflaxe.Elixir produces production-ready code.

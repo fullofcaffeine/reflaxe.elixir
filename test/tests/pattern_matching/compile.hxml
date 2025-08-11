@@ -1,8 +1,10 @@
 # Pattern Matching Compilation Test
 # Tests Haxe switch/match expressions → Elixir case statements
 
+-cp ../../../std
+-cp ../../../src
 -cp .
--lib reflaxe.elixir
--D reflaxe_runtime
+-lib reflaxe
+--macro reflaxe.elixir.CompilerInit.Start()
 -D elixir_output=out
 Main
