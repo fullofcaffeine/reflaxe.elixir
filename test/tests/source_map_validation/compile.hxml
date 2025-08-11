@@ -1,13 +1,9 @@
+# Source map validation test compilation configuration
+-cp ../../../std
+-cp ../../../src
 -cp .
 -lib reflaxe
--main SourceMapValidationTest
---macro exclude('Sys')
---macro exclude('Type')
---no-opt
---class-path /Users/fullofcaffeine/workspace/code/haxe.elixir/src
---class-path /Users/fullofcaffeine/workspace/code/haxe.elixir/std
---dce no
---custom-target reflaxe.elixir 0.1.0 out
--D reflaxe_elixir_stdout
+--macro reflaxe.elixir.CompilerInit.Start()
+-D elixir_output=out
 -D source-map
--D reflaxe_runtime
+SourceMapValidationTest
