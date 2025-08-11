@@ -34,6 +34,28 @@ npx lix run reflaxe.elixir create my-phoenix-app --type phoenix
 
 🚀 **Get started in 5 minutes!** See [documentation/QUICKSTART.md](documentation/QUICKSTART.md)
 
+## 📚 Documentation
+
+### Getting Started
+- **[Tutorial: First Project](documentation/TUTORIAL_FIRST_PROJECT.md)** - Step-by-step guide to build your first app
+- **[Installation Guide](INSTALLATION.md)** - Complete setup with troubleshooting
+- **[Project Generator](documentation/GENERATOR.md)** - Using `haxelib run` to create projects
+
+### Integration Guides  
+- **[Phoenix Integration](documentation/PHOENIX_INTEGRATION_GUIDE.md)** - Controllers, LiveView, Ecto, Channels
+- **[Escape Hatches](documentation/ESCAPE_HATCHES.md)** - Using Elixir code from Haxe
+- **[Cookbook](documentation/COOKBOOK.md)** - Practical recipes for common tasks
+
+### Reference
+- **[API Reference](documentation/API_REFERENCE.md)** - Complete API documentation
+- **[Troubleshooting](documentation/TROUBLESHOOTING.md)** - Common issues and solutions
+- **[Examples](examples/)** - Working code examples
+
+### Architecture
+- **[Architecture Overview](documentation/ARCHITECTURE.md)** - Compiler internals
+- **[Testing Guide](documentation/TESTING.md)** - Test infrastructure and patterns
+- **[Development Guide](DEVELOPMENT.md)** - Contributing and extending
+
 ### Manual Installation (For Contributors)
 
 ```bash
