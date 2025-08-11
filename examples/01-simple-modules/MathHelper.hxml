@@ -4,7 +4,7 @@
 -cp ../../src
 -cp ../../std
 -lib reflaxe
--cp .
+-cp src_haxe
 -main MathHelper
 -D reflaxe_runtime
 --no-output

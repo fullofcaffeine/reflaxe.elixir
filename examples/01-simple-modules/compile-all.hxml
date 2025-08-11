@@ -1,24 +1,36 @@
 # Compile All Simple Module Examples
 # This file compiles all three examples in the 01-simple-modules directory
 
-# Shared configuration
+# Compile BasicModule
 -cp ../../src
 -cp ../../std
 -lib reflaxe
--cp .
+-cp src_haxe
 -D reflaxe_runtime
--D source-map    # Enable source mapping for debugging
+-D source-map
 --no-output
-
-# Compile BasicModule
 -main BasicModule
 
 --next
 
-# Compile MathHelper  
+# Compile MathHelper
+-cp ../../src
+-cp ../../std
+-lib reflaxe
+-cp src_haxe
+-D reflaxe_runtime
+-D source-map
+--no-output
 -main MathHelper
 
 --next
 
 # Compile UserUtil
+-cp ../../src
+-cp ../../std
+-lib reflaxe
+-cp src_haxe
+-D reflaxe_runtime
+-D source-map
+--no-output
 -main UserUtil
