@@ -1,3 +1,21 @@
+# 1.0.0 (2025-08-11)
+
+
+### Bug Fixes
+
+* remove npm publishing from semantic-release to resolve token issue ([e58efba](https://github.com/fullofcaffeine/reflaxe.elixir/commit/e58efba3c140dfd0f7520f5da0d9898c3a1120db)), closes [#1](https://github.com/fullofcaffeine/reflaxe.elixir/issues/1)
+* update package-lock.json for semantic-release dependencies ([32dfac6](https://github.com/fullofcaffeine/reflaxe.elixir/commit/32dfac60120068e30d3e277ee1b44f10c0a48916))
+
+
+### Features
+
+* change license from MIT to GPL-3.0 and update repository configuration ([100d9ef](https://github.com/fullofcaffeine/reflaxe.elixir/commit/100d9ef4ecf02015f71c859304f992f670552091))
+
+
+### BREAKING CHANGES
+
+* License changed from MIT to GPL-3.0 for copyleft protection. All configuration files (package.json, haxelib.json, README badge) updated consistently.
+
 # Changelog
 
 All notable changes to Reflaxe.Elixir will be documented in this file.
