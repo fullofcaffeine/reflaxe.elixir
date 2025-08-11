@@ -1,0 +1,10 @@
+# Module Syntax Sugar Test
+# Tests @:module annotation for simplified Elixir module generation
+
+-cp ../../../std
+-cp ../../../src
+-cp .
+-lib reflaxe
+--macro reflaxe.elixir.CompilerInit.Start()
+-D elixir_output=out
+Main
