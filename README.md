@@ -32,8 +32,9 @@ npm install       # Installs lix + Haxe dependencies
 npx lix download  # Downloads project-specific Haxe libraries
 mix deps.get      # Installs Elixir dependencies
 
-# Run comprehensive tests
-npm test          # Tests compiler + generated code (22 tests)
+# Run tests
+npm test          # Snapshot tests (22 tests)
+npm run test:all  # Full test suite (Haxe + Mix)
 ```
 
 📖 **New to lix or Haxe?** See [INSTALLATION.md](INSTALLATION.md) for complete setup guide with troubleshooting.
@@ -120,10 +121,10 @@ class CounterServer {
 
 ### Testing
 ```bash
-npm test              # Run all tests (Haxe + Elixir)
-npm run test:haxe     # Test Haxe→Elixir compiler  
+npm test              # Run snapshot tests (22 tests)
 npm run test:mix      # Test generated Elixir code
-npm run test:modern   # Modern tink_unittest tests
+npm run test:all      # Run both (comprehensive)
+npm run test:update   # Update expected test output
 ```
 
 ### Development Workflow
@@ -132,7 +133,7 @@ npm run test:modern   # Modern tink_unittest tests
 vim src/reflaxe/elixir/ElixirCompiler.hx
 
 # Test your changes
-npm run test:haxe
+npm test
 
 # Test generated Elixir integration  
 npm run test:mix

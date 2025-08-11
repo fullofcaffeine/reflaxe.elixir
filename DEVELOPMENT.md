@@ -77,7 +77,7 @@ mix ecto.migrate     # Runs database migrations
 npm test
 
 # Test just the Haxe compiler
-npm run test:haxe  
+npm test  
 
 # Test just the generated Elixir code
 npm run test:mix
