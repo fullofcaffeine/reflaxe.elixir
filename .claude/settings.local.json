@@ -109,7 +109,9 @@
       "Bash(git push:*)",
       "Bash(git add:*)",
       "WebFetch(domain:hexdocs.pm)",
-      "Bash(npm run:*)"
+      "Bash(npm run:*)",
+      "Bash(mix haxe.source_map:*)",
+      "Bash(mix haxe.inspect:*)"
     ],
     "deny": []
   }
