@@ -70,16 +70,34 @@ mix deps.get
 
 ### 5. Verify Complete Installation
 ```bash
-# Run comprehensive test suite (should show 19/19 passing)
+# Run comprehensive test suite (should show 25/25 passing)
 npm test
 ```
 
 **Expected Output:**
 ```
-Haxe Compiler Tests: 6/6 ✅
+Haxe Compiler Tests: 25/25 ✅
 Elixir Integration Tests: 13/13 ✅
-Total: 19/19 tests passing
+Source Map Tests: 2/2 ✅
+Total tests passing
 ```
+
+### 6. Enable Source Mapping (Recommended)
+
+Source mapping enables debugging at the Haxe source level:
+
+```bash
+# Test source map generation
+cd test/tests/source_map_basic
+npx haxe compile.hxml -D source-map
+
+# Verify .ex.map files were created
+ls out/*.ex.map
+```
+
+**Expected files:**
+- `out/SourceMapTest.ex.map`
+- `out/Any_Impl_.ex.map`
 
 ## Understanding the Setup
 
@@ -142,15 +160,48 @@ haxe build.hxml
 cd examples/01-simple-modules
 npx haxe BasicModule.hxml
 
-# Compile Phoenix LiveView
+# Compile with source mapping (recommended for development)
+npx haxe BasicModule.hxml -D source-map
+
+# Compile Phoenix LiveView with source maps
 cd examples/03-phoenix-app  
-npx haxe build.hxml
+npx haxe build.hxml -D source-map
 
 # Run comprehensive tests
 npm test
 ```
 
+### Source Mapping Features
+
+Reflaxe.Elixir is the **first Reflaxe target with source mapping**:
+
+```bash
+# Enable in any compilation
+npx haxe build.hxml -D source-map
+
+# Generates .ex.map files alongside .ex files
+ls lib/*.ex.map
+
+# Use Mix tasks to query source positions
+mix haxe.source_map lib/MyModule.ex 10 5
+```
+
 ### Development Workflow
+
+#### With File Watching (Recommended)
+```bash
+# 1. Start file watcher with source mapping
+mix compile.haxe --watch
+
+# 2. Make changes to Haxe files
+vim src_haxe/MyModule.hx
+# Files automatically recompile with source maps
+
+# 3. Debug with source positions
+mix haxe.errors --format json
+```
+
+#### Manual Compilation
 ```bash
 # 1. Make changes to compiler
 vim src/reflaxe/elixir/ElixirCompiler.hx
@@ -201,6 +252,32 @@ npm test
 # Check you're in the right directory
 ls .haxerc          # Should exist
 pwd                 # Should end with /reflaxe.elixir
+```
+
+#### Issue: No source maps generated
+**Solution:** Ensure `-D source-map` flag is included
+```bash
+# ❌ This won't generate source maps
+npx haxe build.hxml
+
+# ✅ This will generate source maps
+npx haxe build.hxml -D source-map
+
+# Verify .ex.map files exist
+ls lib/*.ex.map
+```
+
+#### Issue: Source map positions incorrect
+**Solution:** Clean and rebuild with source mapping
+```bash
+# Clean generated files
+rm -rf lib/*.ex lib/*.ex.map
+
+# Rebuild with source mapping
+npx haxe build.hxml -D source-map
+
+# Test mapping
+mix haxe.source_map lib/MyModule.ex 10 5
 ```
 
 ### Getting Help

@@ -3,6 +3,7 @@
 -cp ../../std
 -lib reflaxe
 -D reflaxe_runtime
+-D source-map    # Enable source mapping for debugging
 
 # Compile all migration classes together
 migrations.CreateUsers
