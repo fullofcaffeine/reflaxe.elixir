@@ -417,8 +417,11 @@ defmodule HaxeCompiler do
       _ -> :ok
     end
     
-    # Store errors
-    :ets.insert(:haxe_errors, {:current_errors, errors})
+    # Enhance errors with source mapping information before storing
+    enhanced_errors = SourceMapLookup.enhance_errors_with_source_mapping(errors)
+    
+    # Store enhanced errors
+    :ets.insert(:haxe_errors, {:current_errors, enhanced_errors})
     
     # Also store with timestamp for history
     timestamp = System.system_time(:microsecond)
