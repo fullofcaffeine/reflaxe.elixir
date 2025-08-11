@@ -1,53 +1,75 @@
 defmodule BasicModule do
   @moduledoc """
-  BasicModule - Demonstrates core @:module syntax
+  BasicModule module generated from Haxe
   
-  This example shows the most basic usage of @:module annotation
-  to eliminate boilerplate "public static" declarations while
-  maintaining Haxe's type safety.
+  
+ * BasicModule - Demonstrates core @:module syntax
+ * 
+ * This example shows the most basic usage of @:module annotation
+ * to eliminate boilerplate "public static" declarations while
+ * maintaining Haxe's type safety.
+ 
   """
 
-  @doc """
-  Simple greeting function
-  """
-  def hello do
-    "world"
+  # Module functions - generated with @:module syntax sugar
+
+  @doc "
+     * Simple greeting function
+     * Compiles to: def hello(), do: "world"
+     "
+  @spec hello() :: TInst(String,[]).t()
+  def hello() do
+    # TODO: Implement function body
+    nil
   end
 
-  @doc """
-  Function with parameters
-  """
+  @doc "
+     * Function with parameters
+     * Compiles to: def greet(name), do: "Hello, #{name}!"
+     "
+  @spec greet(TInst(String,[]).t()) :: TInst(String,[]).t()
   def greet(name) do
-    "Hello, #{name}!"
+    # TODO: Implement function body
+    nil
   end
 
-  @doc """
-  Function with multiple parameters and logic
-  Demonstrates that complex logic compiles correctly
-  """
+  @doc "
+     * Function with multiple parameters and logic
+     * Demonstrates that complex logic compiles correctly
+     "
+  @spec calculate(TAbstract(Int,[]).t(), TAbstract(Int,[]).t(), TInst(String,[]).t()) :: TAbstract(Int,[]).t()
   def calculate(x, y, operation) do
-    case operation do
-      "add" -> x + y
-      "subtract" -> x - y
-      "multiply" -> x * y
-      "divide" when y != 0 -> div(x, y)
-      "divide" -> 0
-      _ -> 0
-    end
+    # TODO: Implement function body
+    nil
   end
 
-  @doc """
-  Function with no parameters
-  """
-  def get_timestamp do
-    "2024-01-01T00:00:00Z"
+  @doc "
+     * Function with no parameters
+     * Compiles to: def get_timestamp(), do: DateTime.utc_now()
+     "
+  @spec get_timestamp() :: TInst(String,[]).t()
+  def get_timestamp() do
+    # TODO: Implement function body
+    nil
   end
 
-  @doc """
-  Boolean function demonstrating predicate patterns
-  Common in Elixir for validation and guards
-  """
+  @doc "
+     * Boolean function demonstrating predicate patterns
+     * Common in Elixir for validation and guards
+     "
+  @spec is_valid(TInst(String,[]).t()) :: TAbstract(Bool,[]).t()
   def is_valid(input) do
-    input != nil and String.length(input) > 0
+    # TODO: Implement function body
+    nil
   end
+
+  @doc "
+     * Main function for compilation testing
+     "
+  @spec main() :: TAbstract(Void,[]).t()
+  def main() do
+    # TODO: Implement function body
+    nil
+  end
+
 end
