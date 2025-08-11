@@ -4,4 +4,5 @@
 -cp .
 -lib reflaxe
 --macro reflaxe.elixir.CompilerInit.Start()
+-D elixir_output=out
 User
