@@ -1,0 +1,7 @@
+# Compilation configuration for example 04 ecto migrations
+-cp ../../../std
+-cp ../../../src
+-cp .
+-lib reflaxe
+--macro reflaxe.elixir.CompilerInit.Start()
+CreateUsers

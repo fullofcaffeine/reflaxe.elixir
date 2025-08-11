@@ -87,7 +87,16 @@
       "Bash(./rename_tests.sh)",
       "WebFetch(domain:api.haxe.org)",
       "Bash(./test/verify-elixir-output.sh:*)",
-      "Bash(./test/validate-compiler-output.sh:*)"
+      "Bash(./test/validate-compiler-output.sh:*)",
+      "Bash(cp:*)",
+      "Bash(for file in test/tests/*/compile.hxml)",
+      "Bash(do)",
+      "Bash(if [[ \"$file\" != test/tests/example_*/compile.hxml ]])",
+      "Bash(then)",
+      "Bash(echo \"Updating $file\")",
+      "Bash(fi)",
+      "Bash(done)",
+      "Bash(if [[ ! \"$file\" =~ example_ ]])"
     ],
     "deny": []
   }

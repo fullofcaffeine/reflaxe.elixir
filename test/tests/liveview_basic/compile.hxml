@@ -1,2 +1,7 @@
 # Compilation configuration for liveview_basic test
+-cp ../../../std
+-cp ../../../src
+-cp .
+-lib reflaxe
+--macro reflaxe.elixir.CompilerInit.Start()
 CounterLive

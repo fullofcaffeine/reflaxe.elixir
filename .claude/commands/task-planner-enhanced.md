@@ -17,7 +17,7 @@ You are a professional task planning expert with these enhanced capabilities:
 
 1. **Initial Task Analysis**: Analyze user needs and create comprehensive task breakdowns
 2. **PRD Integration**: Always reference `@haxe.elixir.md` for detailed specifications
-3. **Testing Strategy Planning**: Incorporate testing trophy strategy from the start
+3. **Testing Strategy Planning**: Incorporate snapshot testing strategy from the start
 4. **Execution Feedback Integration**: Refine plans based on implementation discoveries
 5. **Continuous Task Refinement**: Update tasks when execution reveals gaps or complexities
 
@@ -32,41 +32,23 @@ Every task plan must:
 - **Validate against acceptance criteria** specified in PRD
 
 ### 2. Testing-Aware Task Creation
-Plan tasks with Kent's Testing Trophy strategy: "Write tests. Not too many. Mostly integration."
+Plan compiler development tasks with snapshot testing in mind:
 
-#### **Testing Effort Distribution (Kent's Trophy Model):**
+#### **Snapshot Testing Strategy (Following Reflaxe Patterns):**
 
-**Static Analysis Tasks (Infrastructure Foundation - "Free")**
-- Configured once, runs automatically (pre-commit hooks, CI/CD)
-- Linting setup (catch typos, style issues)
-- Type checking configuration (catch type errors)
-- Security scanning setup (catch vulnerabilities)
-- Code formatting rules (consistency enforcement)
-- *Note: Not part of testing effort % - it's infrastructure*
+Every new compiler feature needs snapshot tests:
+- **Test Structure**: Create `test/tests/[feature-name]/` directory
+- **Input**: Haxe source demonstrating the feature
+- **Output**: Expected Elixir code in `intended/` directory
+- **Verification**: TestRunner.hx compiles and compares output
+- **No Runtime**: Tests only verify compilation, never execute generated code
 
-**Integration Testing Tasks (70% of Testing Effort - PRIMARY FOCUS)**
-- Component interaction testing (main value source)
-- Database operations with real data
-- Multi-component workflows and data flows
-- API contract and cross-module communication
-- "How components work together" validation
-- Complete business process testing
-- Most confidence per testing dollar invested
-
-**Unit Testing Tasks (30% of Testing Effort - Critical Components Only)**
-- **Complex Algorithms**: Core business logic with intricate rules
-- **Mathematical Functions**: Calculations, scoring, and computations
-- **Data Transformations**: Parsing, validation, and format conversions
-- **Edge Case Handlers**: Input sanitization and error conditions
-- **Performance-Critical Code**: Functions with strict timing requirements
-- **Pure Functions**: No side effects, isolated calculations
-- *Focus on components where bugs have high business impact*
-
-**E2E Testing Tasks (Minimal - High Value Only)**
-- Critical user workflows (complete system validation)
-- System-wide performance benchmarks
-- End-to-end acceptance criteria
-- Essential but expensive scenarios
+**Test Planning for Features:**
+- **Core Language**: Plan tests for each Haxe construct being supported
+- **Annotations**: Each @:annotation needs its own test directory
+- **Edge Cases**: Plan tests for complex/nested/unusual syntax
+- **Error Cases**: Plan tests for invalid input handling
+- **Regression**: Ensure existing tests continue passing
 
 ### 3. BDD-Informed Task Planning
 Plan tasks from consumer perspective:
@@ -184,7 +166,7 @@ PLANNER ACTION:
 INPUT: User requirements and project context
 PROCESS:
 1. Analyze requirements against @haxe.elixir.md
-2. Identify testing strategy requirements (trophy approach)
+2. Identify testing strategy requirements (snapshot testing)
 3. Plan from consumer perspective (BDD)
 4. Create task breakdown with proper dependencies
 5. Include verification criteria with testing requirements
@@ -229,13 +211,13 @@ Each planned task must have:
 - [ ] **Dependency Clarity**: Well-defined relationships with other tasks
 - [ ] **Implementation Guidance**: Sufficient detail for executor to begin
 
-### 2. Testing Integration Standards (Trophy-Aligned)
-- [ ] **Integration Tests Emphasized**: Component interactions planned as primary focus
-- [ ] **Usage Resemblance**: Tests planned to match how software is actually used
-- [ ] **Integration Points**: Cross-component collaboration thoroughly planned
-- [ ] **Performance Benchmarks**: Timing requirements with integration scenarios  
-- [ ] **BDD Test Structure**: Given-When-Then from consumer perspective
-- [ ] **Minimal E2E**: Only critical workflows planned for end-to-end testing
+### 2. Testing Integration Standards (Snapshot Testing)
+- [ ] **Snapshot Tests Created**: Each feature has corresponding test/tests/[feature]/ directory
+- [ ] **Intended Output Defined**: Expected Elixir code in intended/ subdirectory
+- [ ] **Compilation Verified**: Tests confirm Haxe→Elixir compilation produces expected output
+- [ ] **Edge Cases Covered**: Complex/nested/unusual syntax patterns tested
+- [ ] **Error Handling**: Invalid input handling tested where applicable
+- [ ] **No Runtime Testing**: Tests only verify compilation, never execute generated code
 
 ### 3. PRD Compliance Standards
 - [ ] **Requirements Traceability**: Every task maps to PRD requirements
@@ -324,7 +306,7 @@ The enhanced task planner works in concert with the enhanced task executor:
 
 ### **Shared Responsibilities**:
 - Reference `@haxe.elixir.md` for all requirements
-- Maintain testing trophy strategy throughout development
+- Maintain snapshot testing strategy throughout development
 - Ensure BDD consumer perspective in all work
 - Validate performance targets and acceptance criteria
 
@@ -355,29 +337,29 @@ mcp__shrimp-task-manager-global__split_tasks \
 #### 2. Embed TDD Instructions in Task Descriptions
 Every created task must include:
 ```markdown
-## TDD Testing Trophy Implementation
+## Snapshot Testing Implementation
 
-**🔴 RED Phase - Write Failing Tests First:**
-- Focus PRIMARILY on integration tests (how components work together)
-- Create [specific BDD scenarios] with Given-When-Then structure
-- Emphasize [consumer perspective] testing that "resembles usage"
-- Target [component interactions] with failing assertions
+**🔴 RED Phase - Create Snapshot Tests:**
+- Write Haxe source code that demonstrates the feature
+- Define expected Elixir output in intended/ directory
+- Run TestRunner.hx to verify compilation fails initially
+- Focus on testing complete compilation pipeline
 
 **🟢 GREEN Phase - Make Tests Pass:**
-- Implement functionality that makes integration tests pass
-- Validate [specific requirements] from PRD lines [X-Y] 
-- Ensure components work together properly
+- Implement compiler functionality to generate correct output
+- Validate [specific requirements] from PRD lines [X-Y]
+- Ensure generated Elixir matches intended output exactly
 
-**🔵 REFACTOR Phase - Improve Design:**
-- Optimize for [performance requirement] (<Xms target)
-- Maintain integration test confidence during refactoring
-- Use integration tests as refactoring safety net
+**🔵 REFACTOR Phase - Improve Compiler:**
+- Optimize for [performance requirement] (<Xms compilation target)
+- Maintain snapshot test accuracy during refactoring
+- Use snapshot tests as refactoring safety net
 
-**🏆 Testing Trophy Distribution (Kent's Model):**
-- Static (Small): Credo, Dialyzer, Sobelow - catch basic errors
-- Unit (Some): Pure business logic and edge cases
-- Integration (MOST): Component interactions - primary focus  
-- E2E (Few): Critical workflows only - high value scenarios
+**📸 Snapshot Testing Coverage:**
+- Core Language Features: Each Haxe construct needs snapshots
+- Annotations: Each @:annotation needs dedicated test directory
+- Edge Cases: Complex/nested/unusual syntax patterns
+- Error Handling: Invalid input rejection and error messages
 ```
 
 #### 3. Monitor Execution Feedback
@@ -436,7 +418,7 @@ mcp__shrimp-task-manager-global__update_task \
 #### Pre-Creation Checklist
 - [ ] Task includes embedded TDD methodology instructions
 - [ ] PRD requirements referenced with specific line numbers  
-- [ ] Testing trophy distribution specified
+- [ ] Snapshot test structure specified
 - [ ] Performance targets from PRD included
 - [ ] BDD scenarios written from consumer perspective
 - [ ] Related test files specified in relatedFiles
@@ -464,7 +446,7 @@ mcp__shrimp-task-manager-global__update_task \
 
 ✅ **TDD Planning Integration:**
 - All tasks contain embedded TDD methodology
-- Testing trophy strategy defined for each task
+- Snapshot testing approach defined for each task
 - BDD scenarios planned from consumer perspective
 - Performance targets extracted from PRD
 

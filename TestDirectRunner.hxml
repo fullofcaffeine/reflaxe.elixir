@@ -1,9 +1,0 @@
--cp src
--cp test
--cp std
--lib reflaxe
--lib tink_unittest
--lib tink_testrunner
--D reflaxe_runtime
---main test.TestDirectRunner
---interp

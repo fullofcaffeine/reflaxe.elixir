@@ -154,15 +154,15 @@ Examples:
 			return false;
 		}
 		
+		// Save current directory and change to test directory
+		final originalCwd = Sys.getCwd();
+		Sys.setCwd(testPath);
+		
 		// Build compilation arguments
+		// The compile.hxml should be self-contained, we just add the output directory
 		final args = [
-			"-cp", "src",
-			"-cp", "std",
-			"-cp", testPath,
-			"-lib", "reflaxe",
-			"--macro", "reflaxe.elixir.CompilerInit.Start()",
 			"-D", 'elixir_output=$outPath',
-			hxmlPath
+			"compile.hxml"
 		];
 		
 		// Run Haxe compiler
@@ -175,6 +175,9 @@ Examples:
 		final stderr = process.stderr.readAll().toString();
 		final exitCode = process.exitCode();
 		process.close();
+		
+		// Restore original directory
+		Sys.setCwd(originalCwd);
 		
 		// Check compilation result
 		if (exitCode != 0) {

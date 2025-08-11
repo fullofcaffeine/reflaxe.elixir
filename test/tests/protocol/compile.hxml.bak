@@ -1,0 +1,7 @@
+# Compilation configuration for protocol test
+-cp std
+-cp src
+-cp test/tests/protocol
+-lib reflaxe
+--macro reflaxe.elixir.CompilerInit.Start()
+Displayable

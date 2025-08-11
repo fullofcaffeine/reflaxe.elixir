@@ -1,9 +1,0 @@
--cp src
--cp test
--lib reflaxe
--lib utest
--D reflaxe_runtime
--D analyzer-optimize
--main test.TestRunner
---python test-output/tests.py
---cmd python3 test-output/tests.py

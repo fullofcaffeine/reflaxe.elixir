@@ -30,179 +30,43 @@ You are a professional task execution expert following these guidelines:
    - **NO user permission required - continuous execution is DEFAULT behavior**
 7. **🚨 CRITICAL: Full Regression Testing Protocol**: A task is NOT complete unless ALL tests in the project are passing, not just tests related to the new feature
 
-### 2. Test-First Development (TDD/BDD Integration)
+### 2. Testing Approach (Following Reference Reflaxe Compilers)
 
-#### **Start with Tests When Feasible**
-For every task execution, evaluate if test-first development is appropriate:
+We use **integration-level snapshot testing** exactly like Reflaxe.CPP and Reflaxe.CSharp:
 
-**Always Start with Tests for:**
-- New functionality implementation
-- API/interface design
-- Business logic components
-- Data model validation
-- Performance requirements
-- Integration points
+#### **How It Works**
+1. **Write Haxe code** that uses compiler features
+2. **Compile it** through our Haxe→Elixir compiler  
+3. **Compare output** with expected Elixir code
+4. **Pass/Fail** based on whether output matches expected
 
-**Test-First Process:**
-1. **Understand Requirements**: Parse task description and acceptance criteria
-2. **Write Failing Tests**: Create tests that define expected behavior
-3. **Implement Minimum**: Write just enough code to make tests pass
-4. **Refactor**: Improve code while keeping tests green
-5. **Verify**: Ensure all requirements are met
-
-#### **Interface-First TDD: Begin with the End in Mind**
-
-**CRITICAL**: Always start TDD from the **outermost interface** that will actually be consumed:
-
-**For User-Facing Features:**
-- CLI commands: `cafetera search --query "test" --memory-aware`
-- TUI interfaces: Mock the terminal user interface first
-- GUI components: Mock the graphical interface first
-- Start with the exact user experience, then work backwards
-
-**For Component APIs:**
-- Public functions: `Query.search(term, opts)` 
-- Module interfaces: The actual API other components will call
-- Integration points: How external systems will interact
-- Start with the consumption interface, then work backwards
-
-**Interface-First Process:**
-1. **Identify the Outermost Interface**: What will actually be called/used?
-2. **Mock/Define the Interface**: Write the interface signature/structure first
-3. **Write Integration Tests**: Test the interface from consumer perspective
-4. **Work Backwards**: Implement supporting components to make interface work
-5. **Avoid Unused Artifacts**: Don't build internal components until they're needed
-
-#### **BDD (Behavior-Driven Development) Approach**
-Test from the consumer perspective - whether that's a user, API client, or software component:
-
-```elixir
-# Example: Interface-First BDD for a CLI feature
-describe "cafetera search CLI command" do
-  test "should provide memory-aware search with date filtering" do
-    # Given: User wants to search their memory-aware system
-    # When: They run the CLI command
-    {output, exit_code} = System.cmd("cafetera", ["search", "--query", "authentication", "--memory-aware", "--date-range", "yesterday"])
-    
-    # Then: Should return relevant results with memory context
-    assert exit_code == 0
-    assert String.contains?(output, "Results found")
-    assert String.contains?(output, "Memory context")
-  end
-end
-
-# Example: Interface-First BDD for an API component  
-describe "Query.search public API" do
-  test "should provide memory-aware search functionality" do
-    # Given: Another component wants to search with memory awareness
-    # When: They call the public API
-    {:ok, results} = Query.search("authentication", memory_aware: true)
-    
-    # Then: Should return structured results with memory context
-    assert length(results.nodes) > 0
-    assert results.context_applied == true
-    assert Map.has_key?(results, :relevance_factors)
-  end
-end
+#### **Test Structure**
+```
+test/tests/[feature-name]/
+├── Main.hx          # Haxe input
+├── compile.hxml     # How to compile it
+├── intended/        # Expected Elixir output
+└── out/            # Actual output (git-ignored)
 ```
 
-#### **Interface-First Practical Workflow**
+#### **Integration-Level Testing**
+- Tests the **entire compiler pipeline** (not individual functions)
+- Each test compiles **complete Haxe programs** into Elixir
+- Verifies **real-world transformations** work correctly
+- No mocking, no unit tests - just **real compilation**
 
-For every task, start with this interface identification process:
-
-**Step 1: Interface Analysis**
-- Is this a user-facing feature? → Start with CLI/TUI/GUI mock
-- Is this a component API? → Start with public function signatures
-- Is this internal refactoring? → Start with the component interface that changed
-
-**Step 2: Interface Definition**
-- Write the interface signature/structure first
-- Mock external dependencies if needed  
-- Define expected inputs/outputs clearly
-
-**Step 3: Integration Test First**
-- Test the interface from consumer perspective
-- Use real user scenarios or component interactions
-- Focus on the actual consumption pattern
-
-**Step 4: Work Backwards Implementation**
-- Implement only what's needed to make the interface work
-- Add internal components as they become necessary
-- Stop when the interface works as expected
-
-**Example Interface-First Task Execution:**
-```
-Task: "Implement Smart Save CLI command"
-
-1. Interface Analysis: User-facing CLI feature
-2. Interface Definition: `cafetera save "Content to save" --auto-classify`
-3. Integration Test: Test the CLI command with real usage scenarios
-4. Work Backwards: Implement SmartSave API, then classification, then storage
+#### **Running Tests**
+```bash
+npm test                    # Run everything
+npx haxe test/Test.hxml    # Just snapshot tests
 ```
 
-### 3. Testing Trophy Strategy
-
-Implement Kent C. Dodds' Testing Trophy strategy following "Write tests. Not too many. Mostly integration.":
-
-```
-        /\
-       /  \
-      /E2E \      <- Few: Critical workflows only
-     /______\
-    /        \
-   /Integration\ <- MOST: Main focus - how components work together  
-  /__________\
- /            \
-/    Unit      \   <- Some: Individual function validation
-\______________/
-/              \
-\    Static    /   <- Foundation: Catch basic errors as you write
-\______________/
-```
-
-#### **Testing Effort Distribution (Kent's Trophy Model):**
-
-**Static Analysis (Infrastructure Foundation - "Free")**
-- Configured once, runs automatically (pre-commit hooks, CI/CD)
-- Linting tools (catch typos, style issues)
-- Type checking (catch type errors)
-- Security scanning (catch vulnerabilities)
-- Code formatting (consistency enforcement)
-- *Note: Not part of testing effort % - it's infrastructure*
-
-**Integration Tests (70% of Testing Effort - PRIMARY FOCUS)**
-- Component interactions (main value source)
-- Database operations with real data
-- Multi-component workflows and data flows
-- API contract and cross-module communication
-- "Resemble the way your software is used"
-- Most confidence per testing dollar invested
-- Complete workflow validation
-
-**Unit Tests (30% of Testing Effort - Critical Components Only)**
-- **Complex Algorithms**: Core business logic with intricate rules
-- **Mathematical Functions**: Calculations, scoring, and computations
-- **Data Transformations**: Parsing, validation, and format conversions
-- **Edge Case Handlers**: Input sanitization and error conditions
-- **Performance-Critical Code**: Functions with strict timing requirements
-- **Pure Functions**: No side effects, isolated calculations
-- **Compiler Components (SPECIAL CASE)**: For transpilers/compilers, increase to 40-50%
-  - Type mapping functions (Haxe types → target language types)
-  - AST transformation logic (pattern matching, expression compilation)
-  - Code generation templates (output formatting, syntax generation)
-  - Symbol resolution and scoping rules
-  - Optimization passes and transformations
-  - **Module DSL Components**: @:module syntax sugar validation (ModuleSyntaxTest, ModuleIntegrationTest, ModuleRefactorTest)
-  - **Pattern Matching**: Haxe switch/case → Elixir case expressions
-  - **Query DSL**: Ecto query compilation with schema integration
-  - *Compilers need more unit tests due to the complexity of transformations*
-- *Focus on components where bugs have high business impact*
-
-**End-to-End Tests (Minimal - High Value Only)**
-- Critical user workflows (complete system validation)
-- Performance benchmarks for complete flows
-- System-wide acceptance criteria
-- Essential but expensive scenarios
+#### **Current Coverage: 22 Integration Tests**
+Each test represents a complete feature transformation:
+- Core language constructs (8 tests)
+- Phoenix/Ecto annotations (7 tests)  
+- Framework integrations (3 tests)
+- Real examples (4 tests)
 
 ### 4. Project Context Integration
 
@@ -248,9 +112,9 @@ Before marking any task complete:
 - [ ] Performance benchmarks satisfied
 - [ ] "Resembles the way software is used" principle satisfied
 - [ ] **🚨 MANDATORY: ALL TESTS IN PROJECT PASS** - Run dual-ecosystem test suite:
-  - **Haxe Tests**: `npx haxe TestUTest.hxml` (utest framework - 740+ tests)
+  - **Snapshot Tests**: `npx haxe test/Test.hxml` (22 snapshot tests comparing compiler output)
   - **Mix Tests**: `MIX_ENV=test mix test --no-deps-check` (Elixir runtime validation)
-  - **Example Tests**: `npm run test:examples` (all 9 examples compile)
+  - **NPM Test**: `npm test` (runs both snapshot tests and Mix tests)
 - [ ] **🚨 NO REGRESSIONS ALLOWED** - Every test that was passing before your changes must still pass
 - [ ] **🚨 ZERO TOLERANCE FOR BROKEN TESTS** - If any test fails, the task is NOT complete regardless of feature implementation
 - [ ] **🧠 AUTOMATIC MEMORY UPDATE** - Capture implementation details, performance metrics, test results, technical decisions, and integration points in CLAUDE.md
@@ -357,12 +221,12 @@ end
 - Use proper error handling and edge case management
 - Implement logging and monitoring hooks where appropriate
 
-#### **Testing Framework Standards (Updated)**
-- **Haxe Compiler Tests**: Use `utest` framework (migrated from tink_unittest for better stability)
-- **Test Structure**: `extends Test` class pattern with `Assert.isTrue()`, `Assert.equals()` 
-- **Runtime Mocks**: For macro-time components (ElixirCompiler, helpers), use runtime mocks to simulate expected output
-- **Edge Case Coverage**: Implement 7-category edge case framework (error conditions, boundaries, security, performance, integration, type safety, resource management)
-- **Comprehensive Validation**: Each test group should justify its existence through risk mitigation and business impact prevention
+#### **Testing Framework Standards (Snapshot Testing)**
+- **Haxe Compiler Tests**: Use **snapshot testing** pattern following Reflaxe.CPP/CSharp approach
+- **Test Structure**: Custom `TestRunner.hx` that compiles Haxe and compares with "intended" output files
+- **No Testing Framework**: Pure Haxe implementation without utest/tink_unittest dependencies
+- **Snapshot Pattern**: Each test in `test/tests/[test-name]/` with `Main.hx`, `compile.hxml`, `intended/` output
+- **Compilation Verification**: Tests verify that Haxe→Elixir compilation produces expected output
 
 #### **Test Quality Standards**
 - Tests should be readable and maintainable
@@ -461,7 +325,7 @@ After completing each task, **evaluate documentation needs**:
 - [ ] **PRD Compliance**: Implementation matches specifications in @cafetera-poc.md
 - [ ] **Performance Verified**: Timing requirements met with benchmarks
 - [ ] **Quality Gates Passed**: Focus on integration confidence over coverage metrics
-- [ ] **🚨 FULL TEST SUITE PASSES**: Run `MIX_ENV=test mix test --no-deps-check` and verify ZERO failures
+- [ ] **🚨 FULL TEST SUITE PASSES**: Run `npm test` and verify both snapshot tests and Mix tests pass
 - [ ] **🚨 NO REGRESSIONS**: All previously passing tests must still pass
 - [ ] **📚 END-USER DOCS UPDATED**: User-facing features documented in appropriate user guides
 - [ ] **🎯 DRY COMPLIANCE**: No duplicate content between CLAUDE.md and user documentation
@@ -490,10 +354,14 @@ After completing each task, **evaluate documentation needs**:
 
 ```bash
 # MANDATORY: Run complete test suite - NO EXCEPTIONS
-MIX_ENV=test mix test --no-deps-check
+npm test  # Runs both snapshot tests and Mix tests
 
-# Verify ZERO failures - if ANY test fails, task is NOT complete
-# Expected output: "X tests, 0 failures"
+# Or run individually:
+npx haxe test/Test.hxml  # Snapshot tests (22 tests)
+MIX_ENV=test mix test --no-deps-check  # Mix tests
+
+# Verify passing tests - if ANY test fails, task is NOT complete
+# Expected output: "Test Results: X/22 passed" for snapshot tests
 ```
 
 **⚠️ ZERO TOLERANCE POLICY:**

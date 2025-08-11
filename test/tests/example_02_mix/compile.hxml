@@ -1,0 +1,7 @@
+# Compilation configuration for example 02 mix project
+-cp ../../../std
+-cp ../../../src
+-cp .
+-lib reflaxe
+--macro reflaxe.elixir.CompilerInit.Start()
+utils.StringUtils

@@ -1,0 +1,7 @@
+# Compilation configuration for arrays test
+-cp ../../../std
+-cp ../../../src
+-cp .
+-lib reflaxe
+--macro reflaxe.elixir.CompilerInit.Start()
+Main

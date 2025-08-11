@@ -1,0 +1,7 @@
+# Compilation configuration for otp_genserver test
+-cp ../../../std
+-cp ../../../src
+-cp .
+-lib reflaxe
+--macro reflaxe.elixir.CompilerInit.Start()
+CounterServer
