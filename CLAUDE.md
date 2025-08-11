@@ -1186,45 +1186,43 @@ class AdvancedFeatureTest {
 ## Agent Testing Instructions ✅
 
 ### Primary Command
-**Always use `npm test` for comprehensive validation** - Currently runs 890+ assertions across dual ecosystems with modern utest framework
+**Always use `npm test` for comprehensive validation** - Currently runs 23 snapshot tests using TestRunner.hx
 
-### Test Architecture: Dual-Ecosystem Validation
-1. **Haxe Compiler Tests** (`npm test`): Tests compilation engine itself - **890 assertions**
-2. **Example Tests** (`npm run test:examples`): Validates all 9 examples compile 
-3. **Mix Tests** (`npm run test:mix`): Tests generated Elixir code in BEAM runtime - **13 tests**
+### Test Architecture: Reflaxe Snapshot Testing
+1. **Snapshot Tests** (`npm test`): Compiles Haxe and compares Elixir output - **23 tests**
+2. **Mix Tests** (separate): Tests generated Elixir code runs in BEAM (`mix test`)
 
-### Modern utest Framework Requirements for New Tests
+### Creating New Snapshot Tests
 
-**✅ ALWAYS follow this framework-agnostic pattern:**
+**✅ ALWAYS follow Reflaxe snapshot testing pattern:**
 
-```haxe
-package test;                           // Must be in test package
+1. **Create test directory**: `test/tests/feature_name/`
+2. **Write Haxe source**: `Main.hx` with feature to test
+3. **Create compile config**: `compile.hxml` with compilation settings  
+4. **Generate expected output**: `haxe test/Test.hxml update-intended`
+5. **Verify output**: Check generated Elixir is correct
 
-import utest.Test;                      // Modern framework import
-import utest.Assert;                    // Assertion library
-
-/**
- * Test description and purpose
- */
-class MyTest extends Test {             // Extend utest.Test
-    
-    public function testMethod() {
-        Assert.isTrue(condition, "message");    // Use Assert.isTrue/equals/etc
-        Assert.equals(expected, actual, "message");
-    }
-}
+**Example test structure:**
+```
+test/tests/my_feature/
+├── compile.hxml    # Haxe compilation config
+├── Main.hx         # Test source code
+├── intended/       # Expected Elixir output
+│   └── Main.ex     # Expected generated file
+└── out/            # Actual output (for comparison)
 ```
 
-**✅ Integration with TestRunner:**
-1. Add test class to `test/TestRunner.hx` in the runner.addCase() calls
-2. No standalone .hxml files needed (uses TestMain.hxml with proper -lib dependencies)  
-3. Run via `npm test` (not standalone compilation)
+**✅ Test Commands:**
+- `npm test` - Run all 23 snapshot tests
+- `haxe test/Test.hxml test=feature_name` - Run specific test  
+- `haxe test/Test.hxml update-intended` - Accept current output
+- `haxe test/Test.hxml show-output` - Show compilation details
 
-**❌ NEVER do these common mistakes:**
-- Don't create standalone .hxml test files (missing -lib utest dependencies)
-- Don't use framework-specific naming (UTest*, TestUTest*, etc.)
-- Don't use custom main() functions (TestRunner handles orchestration)
-- Don't mix test frameworks (consistently use utest.Test patterns)
+**❌ NEVER do these mistakes:**
+- Don't create tests without intended/ directories  
+- Don't manually write expected Elixir output (use update-intended)
+- Don't ignore test failures (they indicate compilation changes)
+- Don't mix testing approaches (use consistent snapshot pattern)
 
 ### Type Safety for Test Data
 When using complex objects in tests, ensure consistent typing:

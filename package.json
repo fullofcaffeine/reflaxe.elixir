@@ -15,7 +15,7 @@
     "reflaxe"
   ],
   "author": "Claude Code",
-  "license": "MIT",
+  "license": "GPL-3.0",
   "devDependencies": {
     "lix": "^15.12.4",
     "@semantic-release/changelog": "^6.0.3",
