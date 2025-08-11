@@ -2,9 +2,70 @@
 
 ## Overview
 
-Testing a macro-based transpiler presents unique challenges since the transpiler code only exists during compilation, not at runtime when tests execute. This document explains our dual-ecosystem testing approach, test categories, and framework capabilities.
+Testing a macro-based transpiler presents unique challenges since the transpiler code only exists during compilation, not at runtime when tests execute. This document explains our dual-ecosystem testing approach, self-referential library configuration, and test infrastructure.
 
 **Important**: For a detailed analysis of why we use runtime mocks instead of macro-time testing, see [`MACRO_TIME_TESTING_ANALYSIS.md`](MACRO_TIME_TESTING_ANALYSIS.md)
+
+## Self-Referential Library Configuration
+
+The most critical aspect of our testing infrastructure is the **self-referential library configuration** that allows tests to use `-lib reflaxe.elixir` to reference the library being developed.
+
+### The Challenge
+
+When tests use `-lib reflaxe.elixir`, Haxe needs to find a library configuration. However, during development, this library isn't installed via haxelib - it's the project we're developing!
+
+### The Solution: haxe_libraries/reflaxe.elixir.hxml
+
+We create a self-referential configuration file that points back to the project's source:
+
+```hxml
+# haxe_libraries/reflaxe.elixir.hxml
+# Include the compiler source code
+-cp src/
+
+# Include the Elixir standard library definitions  
+-cp std/
+
+# Depend on the base Reflaxe framework
+-lib reflaxe
+
+# Define the library version
+-D reflaxe.elixir=0.1.0
+
+# Initialize the Elixir compiler
+--macro reflaxe.elixir.CompilerInit.Start()
+```
+
+### Path Resolution Strategy
+
+The paths in `reflaxe.elixir.hxml` are relative to the current working directory when Haxe executes. To handle this:
+
+1. **Production**: Paths work when run from project root
+2. **Testing**: `HaxeTestHelper` creates symlinks to ensure paths resolve:
+   - Symlinks `haxe_libraries` directory
+   - Symlinks `src/` and `std/` directories in test directories
+   - Ensures compilation happens in the correct directory context
+
+### Test Helper Infrastructure
+
+The `test/support/haxe_test_helper.ex` module handles the complexity:
+
+```elixir
+def setup_haxe_libraries(project_dir) do
+  # Find project root dynamically
+  project_root = find_project_root()
+  
+  # Create symlinks for library resolution
+  symlink_or_copy(
+    Path.join(project_root, "haxe_libraries"),
+    Path.join(project_dir, "haxe_libraries")
+  )
+  
+  # Ensure src/ and std/ are accessible
+  symlink(Path.join(project_root, "src"), Path.join(project_dir, "src"))
+  symlink(Path.join(project_root, "std"), Path.join(project_dir, "std"))
+end
+```
 
 ## Test Suite Overview
 

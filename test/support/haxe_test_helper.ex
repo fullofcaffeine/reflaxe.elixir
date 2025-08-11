@@ -47,7 +47,9 @@ defmodule HaxeTestHelper do
   Creates or links haxe_libraries directory in the test project.
   """
   def setup_haxe_libraries(project_dir) do
-    source_libraries = Path.expand("haxe_libraries")
+    # Find the project root by looking for mix.exs
+    project_root = find_project_root()
+    source_libraries = Path.join(project_root, "haxe_libraries")
     target_libraries = Path.join(project_dir, "haxe_libraries")
     
     # Remove existing link/directory if it exists
@@ -68,6 +70,21 @@ defmodule HaxeTestHelper do
       {:error, reason} ->
         raise "Failed to link haxe_libraries: #{inspect(reason)}"
     end
+    
+    # Also symlink src/ and std/ directories to make relative paths work
+    source_src = Path.join(project_root, "src")
+    target_src = Path.join(project_dir, "src")
+    unless File.exists?(target_src) do
+      :file.make_symlink(String.to_charlist(source_src), String.to_charlist(target_src))
+    end
+    
+    source_std = Path.join(project_root, "std")
+    target_std = Path.join(project_dir, "std")
+    unless File.exists?(target_std) do
+      :file.make_symlink(String.to_charlist(source_std), String.to_charlist(target_std))
+    end
+    
+    :ok
   end
   
   @doc """
@@ -196,6 +213,20 @@ defmodule HaxeTestHelper do
   def cleanup_test_project(dir) do
     if File.exists?(dir) do
       File.rm_rf!(dir)
+    end
+  end
+  
+  defp find_project_root(path \\ File.cwd!()) do
+    if File.exists?(Path.join(path, "mix.exs")) do
+      path
+    else
+      parent = Path.dirname(path)
+      if parent == path do
+        # Reached root without finding mix.exs
+        raise "Could not find project root (mix.exs not found)"
+      else
+        find_project_root(parent)
+      end
     end
   end
 end

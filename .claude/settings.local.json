@@ -119,7 +119,8 @@
       "Bash(if [ ! -f \"$example/build.hxml\" ])",
       "Bash([ ! -f \"$example/compile-all.hxml\" ])",
       "Bash(MIX_ENV=test mix deps.get)",
-      "Bash(MIX_ENV=test mix compile --force)"
+      "Bash(MIX_ENV=test mix compile --force)",
+      "Bash(MIX_ENV=test mix test test/mix_integration_test.exs --only line:85)"
     ],
     "deny": []
   }

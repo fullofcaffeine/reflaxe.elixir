@@ -54,14 +54,16 @@ defmodule MixIntegrationTest do
       }
       """
       
-      File.write!("#{@haxe_source_dir}/SimpleClass.hx", haxe_source_content)
+      # Create the package directory structure
+      File.mkdir_p!("#{@haxe_source_dir}/test")
+      File.write!("#{@haxe_source_dir}/test/SimpleClass.hx", haxe_source_content)
       
       # Create build.hxml configuration
       hxml_content = """
       -cp src_haxe
       -lib reflaxe.elixir
       -D reflaxe_runtime
-      --elixir lib
+      -D elixir_output=lib
       test.SimpleClass
       """
       
@@ -118,7 +120,8 @@ defmodule MixIntegrationTest do
       }
       """
       
-      File.write!("src_haxe/ErrorClass.hx", invalid_haxe)
+      File.mkdir_p!("src_haxe/test")
+      File.write!("src_haxe/test/ErrorClass.hx", invalid_haxe)
       
       output = capture_io(:stderr, fn ->
         result = Mix.Tasks.Compile.Haxe.run([])
@@ -204,14 +207,16 @@ defmodule MixIntegrationTest do
       }
       """
       
-      File.write!("#{@haxe_source_dir}/SimpleClass.hx", haxe_source_content)
+      # Create the package directory structure
+      File.mkdir_p!("#{@haxe_source_dir}/test")
+      File.write!("#{@haxe_source_dir}/test/SimpleClass.hx", haxe_source_content)
       
       # Create build.hxml configuration
       hxml_content = """
       -cp src_haxe
       -lib reflaxe.elixir
       -D reflaxe_runtime
-      --elixir lib
+      -D elixir_output=lib
       test.SimpleClass
       """
       
@@ -282,7 +287,8 @@ defmodule MixIntegrationTest do
       }
       """
       
-      File.write!("src_haxe/InvalidClass.hx", invalid_haxe)
+      File.mkdir_p!("src_haxe/test")
+      File.write!("src_haxe/test/InvalidClass.hx", invalid_haxe)
       
       assert {:error, error_message} = HaxeCompiler.compile(
         source_dir: "src_haxe", 
@@ -339,8 +345,9 @@ defmodule MixIntegrationTest do
       
       File.write!("#{@test_project_dir}/mix.exs", mix_exs_content)
       
-      # Create a Haxe source file
-      File.write!("#{@haxe_source_dir}/PhoenixComponent.hx", """
+      # Create a Haxe source file with proper package structure
+      File.mkdir_p!("#{@haxe_source_dir}/phoenix")
+      File.write!("#{@haxe_source_dir}/phoenix/PhoenixComponent.hx", """
       package phoenix;
       
       class PhoenixComponent {
@@ -359,7 +366,7 @@ defmodule MixIntegrationTest do
       -cp src_haxe
       -lib reflaxe.elixir
       -D reflaxe_runtime
-      --elixir lib
+      -D elixir_output=lib
       phoenix.PhoenixComponent
       """)
       
@@ -437,7 +444,7 @@ defmodule MixIntegrationTest do
       :timer.sleep(1000)
       
       # Modify source file
-      File.write!("src_haxe/PhoenixComponent.hx", """
+      File.write!("src_haxe/phoenix/PhoenixComponent.hx", """
       package phoenix;
       
       class PhoenixComponent {

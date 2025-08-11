@@ -187,12 +187,23 @@ class CounterServer {
 ## Development
 
 ### Testing
+
+The project uses a dual-ecosystem testing approach with self-referential library configuration:
+
 ```bash
 npm test              # Run snapshot tests (25 tests)
 npm run test:mix      # Test generated Elixir code
 npm run test:all      # Run both (comprehensive)
 npm run test:update   # Update expected test output
 ```
+
+**Test Infrastructure:**
+- **Snapshot Testing**: Validates compiler output against expected Elixir code
+- **Self-Referential Library**: Tests use `-lib reflaxe.elixir` via `haxe_libraries/reflaxe.elixir.hxml`
+- **Mix Integration**: Tests real compilation in Phoenix projects
+- **Test Helper**: `test/support/haxe_test_helper.ex` handles project setup
+
+For detailed testing documentation, see [documentation/TESTING.md](documentation/TESTING.md)
 
 ### Development Workflow
 ```bash

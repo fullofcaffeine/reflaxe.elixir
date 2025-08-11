@@ -174,7 +174,22 @@ defmodule HaxeCompiler do
       Mix.shell().info("Running: #{haxe_cmd} #{Enum.join(args, " ")}")
     end
     
-    case System.cmd(haxe_cmd, args, stderr_to_stdout: true) do
+    # Change to the directory containing the hxml file so relative paths work
+    cmd_opts = case Path.dirname(hxml_file) do
+      "." -> [stderr_to_stdout: true]
+      dir -> [cd: dir, stderr_to_stdout: true]
+    end
+    
+    # Use just the filename if we're changing directory
+    final_hxml = if Keyword.has_key?(cmd_opts, :cd) do
+      Path.basename(hxml_file)
+    else
+      hxml_file
+    end
+    
+    args = cmd_args ++ [final_hxml]
+    
+    case System.cmd(haxe_cmd, args, cmd_opts) do
       {output, 0} ->
         {:ok, output}
       {output, exit_code} ->
