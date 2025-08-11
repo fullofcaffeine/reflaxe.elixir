@@ -2,6 +2,15 @@
 
 This guide covers the idiomatic syntax patterns and transformations that Haxe.Elixir provides to write type-safe code that compiles to clean, idiomatic Elixir.
 
+## Core Philosophy
+
+**"Write idiomatic Haxe → Get idiomatic Elixir"**
+
+This is achieved through three strategies:
+1. **Natural Mappings** (90%): Direct transformations (method chains → pipes)
+2. **Custom Constructs** (9%): Haxe-friendly syntax for Elixir-specific patterns
+3. **Escape Hatches** (1%): Direct Elixir when needed
+
 ## Table of Contents
 - [Pipe Operators](#pipe-operators)
 - [Pattern Matching](#pattern-matching)
