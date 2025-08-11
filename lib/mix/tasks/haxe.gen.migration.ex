@@ -48,9 +48,7 @@ defmodule Mix.Tasks.Haxe.Gen.Migration do
     generate_migration(migration_name, opts)
   end
 
-  @doc """
-  Generate both Haxe source file and compiled Elixir migration
-  """
+  # Generate both Haxe source file and compiled Elixir migration
   defp generate_migration(migration_name, opts) do
     # Configuration
     haxe_dir = Keyword.get(opts, :haxe_dir, "src_haxe/migrations")
@@ -89,9 +87,7 @@ defmodule Mix.Tasks.Haxe.Gen.Migration do
     :ok
   end
 
-  @doc """
-  Generate Haxe migration source file content
-  """
+  # Generate Haxe migration source file content
   defp generate_haxe_migration_content(migration_name, table_name, columns, opts) do
     index_field = Keyword.get(opts, :index)
     unique = Keyword.get(opts, :unique, false)
@@ -142,10 +138,8 @@ defmodule Mix.Tasks.Haxe.Gen.Migration do
     """
   end
 
-  @doc """
-  Generate Elixir migration content (immediate compilation)
-  """
-  defp generate_elixir_migration_content(migration_name, table_name, columns, opts, timestamp) do
+  # Generate Elixir migration content (immediate compilation)
+  defp generate_elixir_migration_content(migration_name, table_name, columns, opts, _timestamp) do
     index_field = Keyword.get(opts, :index)
     unique = Keyword.get(opts, :unique, false)
     
@@ -165,7 +159,9 @@ defmodule Mix.Tasks.Haxe.Gen.Migration do
       ""
     end
 
-    module_name = "#{Mix.Phoenix.base()}.Repo.Migrations.#{migration_name}"
+    # Get the application module name from config or use a default
+    app_module = Mix.Project.config()[:app] |> to_string() |> Macro.camelize()
+    module_name = "#{app_module}.Repo.Migrations.#{migration_name}"
 
     """
     defmodule #{module_name} do
@@ -201,9 +197,7 @@ defmodule Mix.Tasks.Haxe.Gen.Migration do
     """
   end
 
-  @doc """
-  Infer table name from migration class name
-  """
+  # Infer table name from migration class name
   defp infer_table_name(migration_name) do
     migration_name
     |> String.replace(~r/^Create/, "")
@@ -213,9 +207,7 @@ defmodule Mix.Tasks.Haxe.Gen.Migration do
     |> Macro.underscore()
   end
 
-  @doc """
-  Parse column specifications from command line
-  """
+  # Parse column specifications from command line
   defp parse_columns(""), do: [{"name", "string"}, {"description", "text"}]
   defp parse_columns(columns_string) do
     columns_string
@@ -228,9 +220,7 @@ defmodule Mix.Tasks.Haxe.Gen.Migration do
     end)
   end
 
-  @doc """
-  Map Elixir migration types to Haxe types
-  """
+  # Map Elixir migration types to Haxe types
   defp haxe_type_from_elixir("string"), do: "String"
   defp haxe_type_from_elixir("text"), do: "String"
   defp haxe_type_from_elixir("integer"), do: "Int" 
@@ -240,9 +230,7 @@ defmodule Mix.Tasks.Haxe.Gen.Migration do
   defp haxe_type_from_elixir("naive_datetime"), do: "Date"
   defp haxe_type_from_elixir(_), do: "Dynamic"
 
-  @doc """
-  Generate timestamp for migration filename
-  """
+  # Generate timestamp for migration filename
   defp generate_timestamp do
     {{year, month, day}, {hour, minute, second}} = :calendar.universal_time()
     

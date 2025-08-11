@@ -37,16 +37,37 @@ This document outlines the future development plans for Reflaxe.Elixir, organize
 ## Version 0.3.0 (Q2 2024)
 *Focus: Testing & Developer Experience*
 
+### 🎯 Source Mapping Achievement
+**Reflaxe.Elixir is the FIRST Reflaxe target to implement source mapping!** While other targets (C++, C#, Go, GDScript) don't provide source maps, we've pioneered this feature for superior debugging experience. Current status:
+- ✅ Generating valid Source Map v3 files with real VLQ data
+- ✅ Proper sources array tracking Haxe files
+- ✅ Mix task infrastructure for querying source maps
+- ⚠️ VLQ decoder needs completion for position lookups to work
+
 ### Features
 - [ ] **Test DSL**
   - `@:test` annotation for ExUnit tests
   - Property-based testing support
   - Mock generation for behaviors
 
-- [ ] **Debugging Support**
-  - Source maps for better debugging
-  - IEx integration helpers
-  - Runtime inspection tools
+- [ ] **Debugging Support** 🚀 *First Reflaxe target with source mapping!*
+  - [x] Source map generation (.ex.map files with VLQ encoding)
+  - [ ] Complete VLQ Base64 decoder implementation
+    - Current: Mock implementation returns placeholder mappings
+    - Needed: Proper VLQ decoding following Source Map v3 spec
+    - Reference: Haxe's `context/sourcemaps.ml` implementation
+  - [ ] Enhanced position tracking
+    - Track all expression types during compilation
+    - Accurate column position tracking
+    - Support for multi-line expressions
+  - [ ] Source map validation tests
+    - Verify VLQ encoding correctness
+    - Test bidirectional position lookups
+    - Performance benchmarks for large files
+  - [x] Mix tasks for source map queries (`mix haxe.source_map`)
+  - [x] Phoenix error handler integration scaffolding
+  - [ ] IEx integration helpers
+  - [ ] Runtime inspection tools
 
 - [ ] **Documentation Generation**
   - ExDoc integration

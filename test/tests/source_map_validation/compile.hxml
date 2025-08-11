@@ -1,0 +1,13 @@
+-cp .
+-lib reflaxe
+-main SourceMapValidationTest
+--macro exclude('Sys')
+--macro exclude('Type')
+--no-opt
+--class-path /REDACTED_LOCAL_PATH
+--class-path /REDACTED_LOCAL_PATH
+--dce no
+--custom-target reflaxe.elixir 0.1.0 out
+-D reflaxe_elixir_stdout
+-D source-map
+-D reflaxe_runtime

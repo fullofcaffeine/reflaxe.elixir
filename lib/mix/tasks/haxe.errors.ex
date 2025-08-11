@@ -215,7 +215,7 @@ defmodule Mix.Tasks.Haxe.Errors do
     Mix.shell().info("")
   end
 
-  defp display_error_field(label, nil), do: :ok
+  defp display_error_field(_label, nil), do: :ok
   defp display_error_field(label, value) do
     Mix.shell().info("#{String.pad_trailing(label <> ":", 12)} #{value}")
   end

@@ -330,8 +330,8 @@ defmodule Mix.Tasks.Haxe.Inspect do
     end
   end
   
-  defp display_side_by_side_comparison(haxe_file, elixir_file, opts) do
-    context_lines = opts[:context] || 3
+  defp display_side_by_side_comparison(haxe_file, elixir_file, _opts) do
+    # context_lines = opts[:context] || 3  # Reserved for future use
     
     Mix.shell().info("🔀 Side-by-Side Comparison:")
     Mix.shell().info("")
@@ -615,7 +615,7 @@ defmodule Mix.Tasks.Haxe.Inspect do
     end
   end
   
-  defp build_cross_reference_data(haxe_content, elixir_content, source_map, _opts) do
+  defp build_cross_reference_data(_haxe_content, _elixir_content, source_map, _opts) do
     %{
       bidirectional_available: source_map != nil,
       haxe_to_elixir: if(source_map, do: "Available via source mapping", else: "Estimated only"),
