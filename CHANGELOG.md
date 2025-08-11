@@ -1,3 +1,11 @@
+## [1.0.1](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v1.0.0...v1.0.1) (2025-08-11)
+
+
+### Bug Fixes
+
+* add .gitignore file ([4f4ea23](https://github.com/fullofcaffeine/reflaxe.elixir/commit/4f4ea23e0aa4a0863501d300a5d60678d97294a1))
+* update deprecated GitHub Actions to v4 ([9008140](https://github.com/fullofcaffeine/reflaxe.elixir/commit/9008140e947dbd19ede5ef9662ac3073fbdbfee5))
+
 # 1.0.0 (2025-08-11)
 
 
