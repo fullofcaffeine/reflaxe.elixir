@@ -409,6 +409,66 @@ mcp__shrimp-task-manager-global__verify_task \
   summary="✅ Implementation complete with TDD methodology. ✅ FULL test suite passes (X tests, 0 failures). ✅ No regressions detected. ✅ Ready for next task."
 ```
 
+#### 4.1. 🚨 CRITICAL: Automatic Git Commit Protocol (IMMEDIATE POST-VERIFICATION)
+
+**TRIGGER**: IMMEDIATELY after `verify_task` completes successfully (score ≥ 80)
+**EXECUTION**: AUTOMATIC - No user permission required
+
+```bash
+# === MANDATORY POST-VERIFICATION COMMIT SEQUENCE ===
+
+# Step 1: AUTOMATICALLY stage relevant changes
+git add [modified-files] [new-files] [documentation-updates]
+
+# Step 2: AUTOMATICALLY commit with descriptive message
+git commit -m "$(cat <<'EOF'
+[type]([scope]): [concise description of changes]
+
+[detailed explanation of what was implemented]
+[key features added or issues resolved]
+[testing and verification status]
+
+🤖 Generated with [Claude Code](https://claude.ai/code)
+
+Co-Authored-By: Claude <noreply@anthropic.com>
+EOF
+)"
+
+# Step 3: AUTOMATICALLY announce commit completion
+"✅ COMMITTED: Task changes automatically saved to git history"
+```
+
+**🚨 COMMIT AUTOMATION RULES:**
+- ✅ **AUTOMATIC**: Commit happens immediately after successful task verification
+- ✅ **SELECTIVE STAGING**: Only stage files relevant to the completed task
+- ✅ **CONVENTIONAL COMMITS**: Follow established commit message format
+- ✅ **NO PUSH**: Never automatically push to remote (user controls when to push)
+- ✅ **DESCRIPTIVE**: Commit message describes what was implemented and tested
+- ✅ **ATTRIBUTION**: Include AI attribution as per project standards
+
+**COMMIT MESSAGE TEMPLATE (AUTOMATIC):**
+```
+feat(component): implement [feature-name] with TDD methodology
+
+- Add [key-functionality] with comprehensive test coverage
+- Implement [architecture-pattern] following project standards  
+- Achieve [performance-metric] meeting requirements
+- Update documentation in [user-docs-updated]
+- All tests passing: [X] snapshot tests, [Y] Mix tests
+
+🤖 Generated with [Claude Code](https://claude.ai/code)
+
+Co-Authored-By: Claude <noreply@anthropic.com>
+```
+
+**COMMIT TYPES TO USE:**
+- `feat`: New features or capabilities
+- `fix`: Bug fixes and issue resolutions  
+- `docs`: Documentation updates only
+- `refactor`: Code improvements without functional changes
+- `test`: Test additions or improvements
+- `perf`: Performance optimizations
+
 #### 5. 🚨 IMMEDIATE ACTION: Post-Verification Automatic Progression
 
 **⚠️ THE MOMENT `verify_task` COMPLETES - EXECUTE IMMEDIATELY:**
