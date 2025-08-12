@@ -15,10 +15,8 @@ defmodule ReflaxeElixir.MixProject do
   end
 
   def application do
-    extra_apps = [:logger, :jason]  # Jason always available for Mix tasks
-    extra_apps = if Mix.env() in [:dev, :test], do: [:file_system | extra_apps], else: extra_apps  # FileSystem only for file watching
     [
-      extra_applications: extra_apps
+      extra_applications: [:logger, :jason]  # Only auto-start essential apps, FileSystem loaded on-demand
     ]
   end
 
