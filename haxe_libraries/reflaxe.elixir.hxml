@@ -10,10 +10,13 @@
 # Note: Paths are relative to the project root (where haxe commands are run)
 
 # Include the compiler source code
-# Paths relative to project root (use absolute path resolution)
+# Dual-path resolution: works from project root AND examples subdirectories
+-cp src/
 -cp ../../src/
 
 # Include the Elixir standard library definitions
+# Dual-path resolution: works from project root AND examples subdirectories  
+-cp std/
 -cp ../../std/
 
 # Depend on the base Reflaxe framework
