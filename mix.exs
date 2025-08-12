@@ -15,14 +15,16 @@ defmodule ReflaxeElixir.MixProject do
   end
 
   def application do
+    extra_apps = [:logger]
+    extra_apps = if Mix.env() in [:dev, :test], do: [:jason, :file_system | extra_apps], else: extra_apps
     [
-      extra_applications: [:logger]
+      extra_applications: extra_apps
     ]
   end
 
   defp deps do
     [
-      {:jason, "~> 1.4", runtime: false},
+      {:jason, "~> 1.4"},
       {:ex_doc, "~> 0.32", only: :dev, runtime: false},
       {:file_system, "~> 0.2", only: [:dev, :test]}
     ]
