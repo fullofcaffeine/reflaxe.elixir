@@ -48,10 +48,12 @@ jobs:
         run: npx lix download
 
       - name: Install Elixir dependencies
-        run: mix deps.get
+        run: |
+          mix deps.get
+          MIX_ENV=test mix deps.compile
 
-      - name: Build compiler
-        run: npm run build || npm test
+      - name: Build
+        run: npm run build
 
       - name: Release
         env:
