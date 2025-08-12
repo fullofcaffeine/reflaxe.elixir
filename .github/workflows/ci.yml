@@ -79,8 +79,35 @@ jobs:
     - name: Download Haxe libraries
       run: npx lix download
 
+    - name: Debug - Show environment
+      run: |
+        echo "=== System Info ==="
+        uname -a
+        echo "=== Haxe Version ==="
+        npx haxe --version
+        echo "=== Node Version ==="
+        node --version
+        echo "=== NPM Version ==="
+        npm --version
+        echo "=== Elixir Version ==="
+        elixir --version
+        echo "=== Working Directory ==="
+        pwd
+        echo "=== Haxe Libraries ==="
+        ls -la haxe_libraries/ | head -10
+        echo "=== NPX Haxe Location ==="
+        which npx
+        npx which haxe || echo "npx haxe not found via which"
+
     - name: Install system dependencies
-      run: sudo apt-get update && sudo apt-get install -y inotify-tools
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y \
+          inotify-tools \
+          build-essential \
+          git \
+          curl \
+          wget
       
     - name: Install Elixir dependencies
       run: mix deps.get
