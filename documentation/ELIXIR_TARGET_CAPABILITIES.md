@@ -1,6 +1,6 @@
 # Elixir Target Capabilities and Limitations
 
-> **Updated January 2025**: Major implementation improvements! Ecto Query DSL is now working with real compilation.
+> **Updated August 2025**: Major implementation improvements! Ecto Query DSL is now working with real compilation.
 
 This document provides a comprehensive analysis of the Reflaxe.Elixir target's capabilities, limitations, and practical solutions for real-world usage.
 
@@ -503,7 +503,7 @@ haxe -cp src -cp test -D reflaxe_runtime --run test.LiveViewTest
 
 ## Conclusion
 
-**January 2025 Reality**: The Reflaxe.Elixir target provides **good coverage** of Elixir's core capabilities with significant implementation progress. You can:
+**August 2025 Reality**: The Reflaxe.Elixir target provides **good coverage** of Elixir's core capabilities with significant implementation progress. You can:
 
 - **✅ Write native Ecto queries** with type safety and compile-time validation
 - **✅ Build Phoenix LiveView applications** with full socket and event handling
@@ -521,4 +521,4 @@ haxe -cp src -cp test -D reflaxe_runtime --run test.LiveViewTest
 - **For production**: Wait for changeset support (Q2 2025) or use hybrid approach
 - **For exploration**: Excellent for understanding Elixir through familiar Haxe syntax
 
-*Last Updated: January 2025 - Reflects actual working implementations with test evidence*
+*Last Updated: August 2025 - Reflects actual working implementations with test evidence*
