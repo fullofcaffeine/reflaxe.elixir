@@ -5,6 +5,6 @@
   "version": 3,
   "file": "ArrayIterator.ex",
   "sources": [
-    "/Users/fullofcaffeine/haxe/versions/4.3.7/std/haxe/iterators/ArrayIterator.hx"
+    "std/haxe/iterators/ArrayIterator.hx"
   ]
 }

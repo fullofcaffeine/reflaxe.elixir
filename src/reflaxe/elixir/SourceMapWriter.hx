@@ -177,14 +177,43 @@ class SourceMapWriter {
      * Get or create source file index for VLQ encoding
      */
     private function getOrCreateSourceIndex(sourceFile: String): Int {
-        if (sourceIndexes.exists(sourceFile)) {
-            return sourceIndexes.get(sourceFile);
+        // Normalize the source file path to be environment-independent
+        var normalizedPath = normalizeSourcePath(sourceFile);
+        
+        if (sourceIndexes.exists(normalizedPath)) {
+            return sourceIndexes.get(normalizedPath);
         }
         
         var index = sources.length;
-        sources.push(sourceFile);
-        sourceIndexes.set(sourceFile, index);
+        sources.push(normalizedPath);
+        sourceIndexes.set(normalizedPath, index);
         return index;
+    }
+    
+    /**
+     * Normalize source file paths to be environment-independent.
+     * Converts absolute paths to relative paths from a common base.
+     */
+    private function normalizeSourcePath(sourceFile: String): String {
+        // If it's a standard library file, make it relative to std/
+        if (sourceFile.indexOf('/std/') >= 0) {
+            var stdIndex = sourceFile.indexOf('/std/');
+            return sourceFile.substring(stdIndex + 1); // Keep "std/" prefix
+        }
+        
+        // For non-std files, try to make relative to common project patterns
+        if (sourceFile.indexOf('/src/') >= 0) {
+            var srcIndex = sourceFile.indexOf('/src/');
+            return sourceFile.substring(srcIndex + 1); // Keep "src/" prefix
+        }
+        
+        // As fallback, just use the filename if we can't determine a good base
+        var lastSlash = sourceFile.lastIndexOf('/');
+        if (lastSlash >= 0) {
+            return sourceFile.substring(lastSlash + 1);
+        }
+        
+        return sourceFile;
     }
     
     /**
