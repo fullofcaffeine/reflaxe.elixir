@@ -272,6 +272,11 @@ defmodule HaxeWatcher do
             
           {:error, reason} ->
             {:error, reason}
+            
+          :ignore ->
+            # FileSystem returns :ignore when dependencies like inotify-tools are missing
+            Logger.warning("FileSystem cannot start (missing inotify-tools on Linux?), file watching disabled")
+            {:error, :filesystem_cannot_start}
         end
       else
         Logger.warning("FileSystem module not available, file watching disabled")
