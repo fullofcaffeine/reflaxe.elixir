@@ -1,0 +1,26 @@
+# Reflaxe.Elixir Library Configuration
+# 
+# This is a self-referential configuration that points to the compiler
+# being developed in this repository. This allows tests and examples
+# to use `-lib reflaxe.elixir` to reference this compiler.
+#
+# During development: Uses the local source code
+# After publication: Users would get a similar file pointing to installed version
+#
+# Note: Paths are relative to the project root (where haxe commands are run)
+
+# Include the compiler source code
+# Paths relative to the project root (where haxe commands are typically run)
+-cp src/
+
+# Include the Elixir standard library definitions
+-cp std/
+
+# Depend on the base Reflaxe framework
+-lib reflaxe
+
+# Define the library version
+-D reflaxe.elixir=0.1.0
+
+# Initialize the Elixir compiler
+--macro reflaxe.elixir.CompilerInit.Start()
