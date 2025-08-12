@@ -2,7 +2,7 @@
 
 ## Current Implementation Status 🎯
 
-> **Important Update (January 2025)**: The Ecto Query DSL is now **IMPLEMENTED** in Reflaxe.Elixir! 
+> **Important Update (August 2025)**: The Ecto Query DSL is now **IMPLEMENTED** in Reflaxe.Elixir! 
 > This document has been updated to reflect the current reality where typed Ecto queries work natively,
 > with escape hatches only needed for missing features like changesets and migrations.
 
@@ -273,7 +273,7 @@ end
 
 ## Recommended Architecture
 
-### Current Best Practice (January 2025)
+### Current Best Practice (August 2025)
 
 ```
 ┌─────────────────┐       ┌──────────────────┐      ┌─────────────┐
@@ -364,7 +364,7 @@ function createUser(data: UserData): User {
 
 ## Conclusion
 
-**January 2025 Reality**: Reflaxe.Elixir now has working Ecto query compilation! While changesets and migrations still need escape hatches, the core query DSL is functional and generates proper Elixir code.
+**August 2025 Reality**: Reflaxe.Elixir now has working Ecto query compilation! While changesets and migrations still need escape hatches, the core query DSL is functional and generates proper Elixir code.
 
 **What This Means**:
 - ✅ You can write type-safe queries in Haxe today
@@ -377,4 +377,4 @@ function createUser(data: UserData): User {
 
 ---
 
-*Last Updated: January 2025 - Reflects actual working implementation with test coverage*
+*Last Updated: August 2025 - Reflects actual working implementation with test coverage*

@@ -157,7 +157,7 @@ mix haxe.errors --file UserService.hx
       "column": 15,
       "message": "Type not found: UserModel",
       "suggestion": "Did you mean 'User'?",
-      "timestamp": "2025-01-15T10:30:45Z"
+      "timestamp": "2025-08-11T10:30:45Z"
     }
   ],
   "total": 1,
@@ -210,7 +210,7 @@ mix haxe.status --detailed
 ```json
 {
   "watching": true,
-  "last_compilation": "2025-01-15T10:30:45Z",
+  "last_compilation": "2025-08-11T10:30:45Z",
   "files_compiled": 3,
   "errors": [],
   "warnings": 0,
