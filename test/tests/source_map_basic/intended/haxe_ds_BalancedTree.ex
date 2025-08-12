@@ -1,4 +1,6 @@
 defmodule BalancedTree do
+  @behaviour IMap
+
   @moduledoc """
   BalancedTree module generated from Haxe
   
