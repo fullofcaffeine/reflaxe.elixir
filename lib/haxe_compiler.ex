@@ -168,7 +168,14 @@ defmodule HaxeCompiler do
   
   defp compile_with_direct_haxe(hxml_file, verbose) do
     {haxe_cmd, cmd_args} = get_haxe_command()
-    args = cmd_args ++ [hxml_file]
+    
+    # Add HAXELIB_PATH if set (for test environments)
+    extra_args = case System.get_env("HAXELIB_PATH") do
+      nil -> []
+      path -> ["--library-path", path]
+    end
+    
+    args = cmd_args ++ extra_args ++ [hxml_file]
     
     if verbose do
       Mix.shell().info("Running: #{haxe_cmd} #{Enum.join(args, " ")}")
@@ -187,7 +194,7 @@ defmodule HaxeCompiler do
       hxml_file
     end
     
-    args = cmd_args ++ [final_hxml]
+    args = cmd_args ++ extra_args ++ [final_hxml]
     
     case System.cmd(haxe_cmd, args, cmd_opts) do
       {output, 0} ->
