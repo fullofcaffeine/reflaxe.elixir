@@ -31,7 +31,7 @@
     "postinstall": "lix download",
     "test": "npx haxe test/Test.hxml && MIX_ENV=test mix test --no-deps-check",
     "test:haxe": "npx haxe test/Test.hxml",
-    "test:mix": "MIX_ENV=test mix test --no-deps-check",
+    "test:mix": "MIX_ENV=test mix deps.compile && MIX_ENV=test mix test --no-deps-check",
     "test:examples": "for dir in examples/*/; do echo \"Testing $dir\"; if [ -f \"$dir/compile-all.hxml\" ]; then (cd \"$dir\" && npx haxe compile-all.hxml) || exit 1; elif [ -f \"$dir/build.hxml\" ]; then (cd \"$dir\" && npx haxe build.hxml) || exit 1; fi; done",
     "test:update": "npx haxe test/Test.hxml update-intended",
     "clean": "rm -rf out && find test/tests -name 'out' -type d -exec rm -rf {} +",
