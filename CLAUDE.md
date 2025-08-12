@@ -351,6 +351,8 @@ What happens:
 - **Integration Tests**: Require mock/stub system for TypedExpr structures
 
 ## Testing Quick Reference
+
+→ **CRITICAL: Test code modification rules**: See [`documentation/TESTING_PRINCIPLES.md`](documentation/TESTING_PRINCIPLES.md#never-remove-test-code-to-fix-failures)
 → **All testing rules and patterns**: See [`documentation/TESTING_PRINCIPLES.md`](documentation/TESTING_PRINCIPLES.md)
 → **Primary command**: `npm test` - runs all validation
 → **Architecture details**: [`documentation/architecture/TESTING.md`](documentation/architecture/TESTING.md)

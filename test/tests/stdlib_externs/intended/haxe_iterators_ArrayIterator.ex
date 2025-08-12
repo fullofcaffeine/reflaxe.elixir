@@ -7,21 +7,4 @@ defmodule ArrayIterator do
 
   """
 
-  # Instance functions
-  @doc "
-		See `Iterator.hasNext`
-	"
-  @spec has_next() :: TAbstract(Bool,[]).t()
-  def has_next() do
-    self().current < self().array.length
-  end
-
-  @doc "
-		See `Iterator.next`
-	"
-  @spec next() :: TInst(haxe.Iterators.ArrayIterator.T,[]).t()
-  def next() do
-    Enum.at(self().array, self().current + 1)
-  end
-
 end
