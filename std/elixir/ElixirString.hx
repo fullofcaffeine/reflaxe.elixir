@@ -191,6 +191,23 @@ extern class ElixirString {
     // Bag distance for approximate matching
     @:native("String.bag_distance")
     public static function bagDistance(string1: String, string2: String): Float;
+    
+    // Helper functions for common operations
+    public static inline function isEmpty(string: String): Bool {
+        return length(string) == 0;
+    }
+    
+    public static inline function isBlank(string: String): Bool {
+        return isEmpty(trim(string));
+    }
+    
+    public static inline function leftPad(string: String, totalLength: Int, padWith: String = " "): String {
+        return length(string) >= totalLength ? string : padLeadingWith(string, totalLength, padWith);
+    }
+    
+    public static inline function repeat(string: String, times: Int): String {
+        return duplicate(string, times);
+    }
 }
 
 #end
