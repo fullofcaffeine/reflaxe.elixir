@@ -169,7 +169,7 @@ File Change → HaxeWatcher (debounce) → HaxeServer → Incremental Compilatio
 
 ## LLM Agent Integration
 
-> 🤖 **Using Claude Code or other AI assistants?** See the comprehensive [Claude Code CLI Integration](guides/WATCHER_DEVELOPMENT_GUIDE.md#claude-code-cli-integration) section for:
+> 🤖 **Using Claude CLI or other AI assistants?** See the comprehensive [Claude CLI Integration](guides/WATCHER_DEVELOPMENT_GUIDE.md#claude-cli-integration-agentic-development) section for:
 > - Auto-fix error workflows
 > - Iterative feature development patterns
 > - Safe refactoring with continuous validation
