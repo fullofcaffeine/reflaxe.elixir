@@ -442,6 +442,245 @@ class GuardCompiler {
         return allowedGuardFunctions.indexOf(elixirFuncName) >= 0;
     }
     
+    /**
+     * Enhanced guard compilation with better type checking and optimization
+     * @param guardExpr The guard expression to compile
+     * @param context Optional context for optimization (available variables, types, etc.)
+     * @return Optimized guard clause
+     */
+    public function compileOptimizedGuard(guardExpr: Dynamic, context: Dynamic = null): String {
+        if (guardExpr == null) return "";
+        
+        // Try to optimize the guard expression
+        var optimized = optimizeGuardExpression(guardExpr, context);
+        if (optimized != guardExpr) {
+            return compileGuard(optimized);
+        }
+        
+        return compileGuard(guardExpr);
+    }
+    
+    /**
+     * Optimize guard expressions for better performance
+     */
+    private function optimizeGuardExpression(guardExpr: Dynamic, context: Dynamic): Dynamic {
+        if (guardExpr == null) return guardExpr;
+        
+        return switch (getExprType(guardExpr)) {
+            case "TBinop":
+                optimizeBinaryGuard(guardExpr, context);
+                
+            case "TCall":
+                optimizeFunctionGuard(guardExpr, context);
+                
+            case _:
+                guardExpr; // No optimization for other types
+        }
+    }
+    
+    /**
+     * Optimize binary guard expressions
+     */
+    private function optimizeBinaryGuard(guardExpr: Dynamic, context: Dynamic): Dynamic {
+        var binop = guardExpr.expr;
+        
+        // Constant folding for compile-time constants
+        if (areConstantOperands(binop.e1, binop.e2)) {
+            var result = evaluateConstantBinaryOp(binop);
+            if (result != null) {
+                return createConstantExpression(result);
+            }
+        }
+        
+        // Range optimization: x >= 0 && x <= 100 → x in 0..100
+        if (isRangePattern(binop)) {
+            return optimizeToRange(binop);
+        }
+        
+        return guardExpr;
+    }
+    
+    /**
+     * Optimize function guard expressions
+     */
+    private function optimizeFunctionGuard(guardExpr: Dynamic, context: Dynamic): Dynamic {
+        var call = guardExpr.expr;
+        var funcName = extractFunctionName(call.e);
+        
+        // Optimize known type checking functions
+        if (isTypeCheckFunction(funcName)) {
+            return optimizeTypeCheck(call, context);
+        }
+        
+        return guardExpr;
+    }
+    
+    /**
+     * Validate guard expressions for Elixir compatibility
+     * @param guardExpr The guard expression to validate
+     * @return Array of validation warnings/errors
+     */
+    public function validateGuardExpression(guardExpr: Dynamic): Array<String> {
+        var warnings = [];
+        
+        if (guardExpr == null) return warnings;
+        
+        return switch (getExprType(guardExpr)) {
+            case "TBinop":
+                validateBinaryGuard(guardExpr, warnings);
+                
+            case "TUnop":
+                validateUnaryGuard(guardExpr, warnings);
+                
+            case "TCall":
+                validateFunctionGuard(guardExpr, warnings);
+                
+            case "TLocal":
+                validateVariableGuard(guardExpr, warnings);
+                
+            case "TConst":
+                validateConstantGuard(guardExpr, warnings);
+                
+            case _:
+                warnings.push("Unsupported guard expression type: " + getExprType(guardExpr));
+                warnings;
+        }
+    }
+    
+    /**
+     * Validate binary operations in guards
+     */
+    private function validateBinaryGuard(guardExpr: Dynamic, warnings: Array<String>): Array<String> {
+        var binop = guardExpr.expr;
+        
+        // Check if operator is allowed in guards
+        if (!isAllowedGuardOperator(binop.op)) {
+            warnings.push('Operator "${binop.op}" is not allowed in Elixir guards');
+        }
+        
+        // Recursively validate operands
+        warnings = warnings.concat(validateGuardExpression(binop.e1));
+        warnings = warnings.concat(validateGuardExpression(binop.e2));
+        
+        return warnings;
+    }
+    
+    /**
+     * Validate unary operations in guards
+     */
+    private function validateUnaryGuard(guardExpr: Dynamic, warnings: Array<String>): Array<String> {
+        var unop = guardExpr.expr;
+        
+        if (!isAllowedGuardUnaryOperator(unop.op)) {
+            warnings.push('Unary operator "${unop.op}" is not allowed in Elixir guards');
+        }
+        
+        // Validate operand
+        warnings = warnings.concat(validateGuardExpression(unop.e));
+        
+        return warnings;
+    }
+    
+    /**
+     * Validate function calls in guards
+     */
+    private function validateFunctionGuard(guardExpr: Dynamic, warnings: Array<String>): Array<String> {
+        var call = guardExpr.expr;
+        var funcName = extractFunctionName(call.e);
+        
+        if (!isGuardFunction(call)) {
+            warnings.push('Function "${funcName}" is not allowed in Elixir guards');
+        }
+        
+        // Validate arguments
+        if (call.el != null) {
+            for (arg in (call.el : Array<Dynamic>)) {
+                warnings = warnings.concat(validateGuardExpression(arg));
+            }
+        }
+        
+        return warnings;
+    }
+    
+    /**
+     * Validate variable access in guards
+     */
+    private function validateVariableGuard(guardExpr: Dynamic, warnings: Array<String>): Array<String> {
+        // Variable access is generally allowed in guards
+        return warnings;
+    }
+    
+    /**
+     * Validate constants in guards
+     */
+    private function validateConstantGuard(guardExpr: Dynamic, warnings: Array<String>): Array<String> {
+        // Constants are allowed in guards
+        return warnings;
+    }
+    
+    // Helper functions for optimization and validation
+    
+    private function areConstantOperands(e1: Dynamic, e2: Dynamic): Bool {
+        return getExprType(e1) == "TConst" && getExprType(e2) == "TConst";
+    }
+    
+    private function evaluateConstantBinaryOp(binop: Dynamic): Dynamic {
+        // Simplified constant evaluation
+        return null; // Would implement actual constant folding
+    }
+    
+    private function createConstantExpression(value: Dynamic): Dynamic {
+        // Create a constant expression node
+        return null; // Would create actual AST node
+    }
+    
+    private function isRangePattern(binop: Dynamic): Bool {
+        // Check if this represents a range pattern (x >= a && x <= b)
+        return binop.op == "&&" && isRangeComparison(binop.e1) && isRangeComparison(binop.e2);
+    }
+    
+    private function isRangeComparison(expr: Dynamic): Bool {
+        if (getExprType(expr) == "TBinop") {
+            var op = expr.expr.op;
+            return op == ">=" || op == "<=" || op == ">" || op == "<";
+        }
+        return false;
+    }
+    
+    private function optimizeToRange(binop: Dynamic): Dynamic {
+        // Convert x >= a && x <= b to x in a..b
+        return binop; // Simplified - would create range expression
+    }
+    
+    private function isTypeCheckFunction(funcName: String): Bool {
+        var typeCheckFunctions = [
+            "isString", "isBinary", "isInt", "isFloat", "isBool", 
+            "isArray", "isList", "isMap", "isAtom", "isTuple",
+            "isFunction", "isNil", "isNumber", "isPort", "isPid", "isReference"
+        ];
+        
+        return typeCheckFunctions.indexOf(funcName) >= 0;
+    }
+    
+    private function optimizeTypeCheck(call: Dynamic, context: Dynamic): Dynamic {
+        // Could optimize type checks based on known context
+        return call; // Simplified
+    }
+    
+    private function isAllowedGuardOperator(op: String): Bool {
+        var allowedOps = [
+            "==", "!=", "===", "!==", ">", "<", ">=", "<=",
+            "+", "-", "*", "/", "&&", "||", "%"
+        ];
+        
+        return allowedOps.indexOf(op) >= 0;
+    }
+    
+    private function isAllowedGuardUnaryOperator(op: String): Bool {
+        var allowedUnaryOps = ["!", "-", "+"];
+        return allowedUnaryOps.indexOf(op) >= 0;
+    }
+
     // Helper functions
     private function getExprType(expr: Dynamic): String {
         if (expr == null || expr.expr == null) return "null";

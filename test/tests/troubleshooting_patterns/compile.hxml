@@ -1,0 +1,9 @@
+# Troubleshooting Pattern Matching Test Configuration  
+# Tests the 4 specific issues documented in TROUBLESHOOTING.md
+
+-cp ../../../src
+-lib reflaxe
+-D reflaxe_runtime
+-D elixir_output=out
+
+--main Main

@@ -9,6 +9,8 @@
 
 **Write your business logic once, deploy it anywhere.** A modern Haxe compilation target for Elixir/BEAM that brings type safety without vendor lock-in.
 
+> **Current Status**: Pre-v1.0 (Phoenix/Ecto complete, OTP supervision patterns in progress)
+
 ## Why Reflaxe.Elixir?
 
 ### 🎯 The Strategic Choice for Type-Safe Elixir
@@ -58,19 +60,26 @@ Write validation logic once in Haxe, use it in:
 - **Elixir/BEAM**: Powers WhatsApp (2B users), Discord, Pinterest, and other massive-scale systems
 - **Reflaxe**: Modern compiler framework making Haxe more powerful than ever
 
-## Features
+## Current Status (Pre-v1.0)
 
-✅ **Source Mapping Support** 🎯 - **First Reflaxe target with `.ex.map` generation** for seamless debugging  
-✅ **Mix-First Development** - Seamless integration with Elixir build pipeline  
-✅ **File Watching & Incremental Compilation** - `mix compile.haxe --watch` with sub-second rebuild times  
-✅ **LLM-Optimized Workflows** - Perfect for AI-assisted development with fast iteration cycles  
-✅ **Phoenix LiveView Support** - Native `@:liveview` compilation with socket management  
-✅ **Ecto Integration** - `@:changeset` and `@:migration` DSL support  
-✅ **OTP GenServer Support** - `@:genserver` with full lifecycle callbacks  
-✅ **Protocol System** - `@:protocol` and `@:impl` for polymorphic dispatch  
-✅ **Behavior Contracts** - `@:behaviour` with compile-time callback validation  
-✅ **Type-Safe Compilation** - Complete Haxe→Elixir type mapping  
-✅ **Performance Optimized** - Sub-millisecond compilation targets  
+### ✅ Production-Ready Features
+- **Phoenix Integration** - LiveView, controllers, templates, routers 100% supported
+- **Ecto Complete** - Schemas, changesets, queries, migrations with full DSL support  
+- **Mix Integration** - Seamless build pipeline with file watching and incremental compilation
+- **Source Maps** - First Reflaxe target with `.ex.map` generation for debugging
+- **Basic GenServer** - `@:genserver` compilation with lifecycle callbacks
+- **Type Safety** - Complete Haxe→Elixir type mapping and compile-time validation
+
+### ⏳ In Development (Required for v1.0)
+- **OTP Supervision** - Supervisors, Registry, Task supervision (essential for production)
+- **Standard Library** - Process, IO, File, Enum extern definitions  
+- **Protocol Support** - Enumerable, String.Chars, Inspect (fundamental in Elixir)
+- **Type Aliases** - Typedef compilation for better code documentation
+
+### 🎯 Post-v1.0 (Polish & Optimization)
+- Enhanced error messages and IDE support
+- Performance optimization and caching
+- Advanced metaprogramming features  
 
 ## Installation
 
