@@ -90,6 +90,7 @@ addColumn("users", "id", "serial", true, null); // primary_key param
 ## User Documentation References
 
 ### Core Documentation
+- **Project Overview**: See [README.md](README.md) for project introduction and public interface
 - **LLM Documentation Guide**: [`documentation/LLM_DOCUMENTATION_GUIDE.md`](documentation/LLM_DOCUMENTATION_GUIDE.md) 📚
 - **Setup & Installation**: [`documentation/GETTING_STARTED.md`](documentation/GETTING_STARTED.md)
 - **Feature Status**: [`documentation/FEATURES.md`](documentation/FEATURES.md)
@@ -138,7 +139,6 @@ This is acceptable - helpers are simpler for our needs while following similar s
 
 ## Quality Standards
 - Zero compilation warnings policy (from .claude/rules/elixir-best-practices.md)
-- CafeteraOS memory-first architecture patterns
 - Testing Trophy approach with integration test focus
 - Performance targets: <15ms compilation steps, <100ms HXX template processing
 
@@ -228,6 +228,35 @@ For comprehensive feature status and production readiness, see [`documentation/F
 - **Elixir Tests**: ✅ ALL PASSING (13 tests in Mix/ExUnit)
 - **Haxe Tests**: ✅ ALL PASSING (28 snapshot tests via TestRunner.hx)
 - **CI Status**: ✅ All GitHub Actions checks passing
+
+## Reflaxe Snapshot Testing Architecture ✅
+
+### Testing Approach
+Reflaxe.Elixir uses **snapshot testing** following Reflaxe.CPP patterns:
+
+- **TestRunner.hx**: Main test orchestrator that compiles Haxe files and compares output
+- **test/tests/** directory structure with `compile.hxml` and `intended/` folders per test
+- **Snapshot comparison**: Generated Elixir code compared against expected output files
+- **Dual ecosystem**: Haxe compiler tests + separate Mix tests for runtime validation
+
+### Test Structure
+```
+test/
+├── TestRunner.hx          # Main test runner (Reflaxe snapshot pattern)
+├── Test.hxml             # Entry point configuration
+└── tests/
+    ├── test_name/
+    │   ├── compile.hxml  # Test compilation config
+    │   ├── Main.hx       # Test source
+    │   ├── intended/     # Expected Elixir output
+    │   └── out/          # Generated output (for comparison)
+```
+
+### Key Commands
+- `npm test` - Run all tests via TestRunner.hx
+- `haxe test/Test.hxml test=name` - Run specific test
+- `haxe test/Test.hxml update-intended` - Update expected output files
+- `haxe test/Test.hxml show-output` - Show compilation details
 
 ## Understanding Reflaxe.Elixir's Compilation Architecture ✅
 
@@ -366,6 +395,22 @@ test/tests/my_feature/
 - Don't manually write expected Elixir output (use update-intended)
 - Don't ignore test failures (they indicate compilation changes)
 - Don't mix testing approaches (use consistent snapshot pattern)
+
+## Critical Testing Standards: Edge Case Coverage ✅
+
+### MANDATORY Edge Case Testing Requirements
+All test suites implementing TDD methodology MUST include comprehensive edge case testing covering these 7 categories:
+
+1. **Error Conditions** 🔴 - Invalid inputs, unsupported operations, type mismatches
+2. **Boundary Cases** 🔶 - Empty collections, large datasets, edge values
+3. **Security Validation** 🛡️ - Input sanitization, escape handling
+4. **Performance Limits** 🚀 - <15ms compilation target, memory monitoring
+5. **Integration Robustness** 🔗 - Cross-component compatibility, error propagation
+6. **Type Safety** 🎯 - Invalid combinations, null handling, default fallbacks
+7. **Resource Management** 💾 - Memory cleanup, resource limits, disposal validation
+
+### Implementation Pattern
+Every test class following TDD methodology MUST include dedicated edge case methods. See documentation for detailed patterns and examples.
 
 ## Current Implementation Status Summary
 
