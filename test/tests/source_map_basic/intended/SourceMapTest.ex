@@ -9,8 +9,8 @@ defmodule SourceMapTest do
   def main() do
     (
   test = SourceMapTest.new()
-  result = test.simple_method()
-  condition = test.conditional_method(42)
+  result = test.simpleMethod()
+  condition = test.conditionalMethod(42)
   Log.trace("Source mapping test: " + result + " " + Std.string(condition), %{fileName: "SourceMapTest.hx", lineNumber: 23, className: "SourceMapTest", methodName: "main"})
 )
   end

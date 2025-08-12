@@ -75,7 +75,7 @@ end
   (
   left = _g
   right = _g1
-  temp_result = Main.tree_sum(left) + Main.tree_sum(right)
+  temp_result = Main.treeSum(left) + Main.treeSum(right)
 )
 )
 end
@@ -148,7 +148,7 @@ end
   r2 = _g3
   r1 = _g1
   l1 = _g
-  temp_result = Main.compare_trees(l1, l2) && Main.compare_trees(r1, r2)
+  temp_result = Main.compareTrees(l1, l2) && Main.compareTrees(r1, r2)
 )
 ), else: temp_result = false
 )
@@ -161,17 +161,17 @@ end
   @spec main() :: TAbstract(Void,[]).t()
   def main() do
     (
-  color = Color.r_g_b()(255, 128, 0)
-  Log.trace(Main.color_to_string(color), %{fileName: "Main.hx", lineNumber: 79, className: "Main", methodName: "main"})
-  some = Option.some()("Hello")
+  color = Color.RGB(255, 128, 0)
+  Log.trace(Main.colorToString(color), %{fileName: "Main.hx", lineNumber: 79, className: "Main", methodName: "main"})
+  some = Option.Some("Hello")
   none = Option.none()
-  Log.trace(Main.get_value(some, "default"), %{fileName: "Main.hx", lineNumber: 84, className: "Main", methodName: "main"})
-  Log.trace(Main.get_value(none, "default"), %{fileName: "Main.hx", lineNumber: 85, className: "Main", methodName: "main"})
-  tree = Tree.node()(Tree.leaf()(1), Tree.node()(Tree.leaf()(2), Tree.leaf()(3)))
-  Log.trace(Main.tree_sum(tree), %{fileName: "Main.hx", lineNumber: 92, className: "Main", methodName: "main"})
-  Log.trace(Main.describe_r_g_b(Color.r_g_b()(250, 10, 10)), %{fileName: "Main.hx", lineNumber: 95, className: "Main", methodName: "main"})
-  tree2 = Tree.node()(Tree.leaf()(1), Tree.node()(Tree.leaf()(2), Tree.leaf()(3)))
-  Log.trace(Main.compare_trees(tree, tree2), %{fileName: "Main.hx", lineNumber: 99, className: "Main", methodName: "main"})
+  Log.trace(Main.getValue(some, "default"), %{fileName: "Main.hx", lineNumber: 84, className: "Main", methodName: "main"})
+  Log.trace(Main.getValue(none, "default"), %{fileName: "Main.hx", lineNumber: 85, className: "Main", methodName: "main"})
+  tree = Tree.Node(Tree.Leaf(1), Tree.Node(Tree.Leaf(2), Tree.Leaf(3)))
+  Log.trace(Main.treeSum(tree), %{fileName: "Main.hx", lineNumber: 92, className: "Main", methodName: "main"})
+  Log.trace(Main.describeRGB(Color.RGB(250, 10, 10)), %{fileName: "Main.hx", lineNumber: 95, className: "Main", methodName: "main"})
+  tree2 = Tree.Node(Tree.Leaf(1), Tree.Node(Tree.Leaf(2), Tree.Leaf(3)))
+  Log.trace(Main.compareTrees(tree, tree2), %{fileName: "Main.hx", lineNumber: 99, className: "Main", methodName: "main"})
 )
   end
 

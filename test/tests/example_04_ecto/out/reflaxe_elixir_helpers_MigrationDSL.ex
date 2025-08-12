@@ -31,8 +31,8 @@ defmodule MigrationDSL do
   while (_g < _g1) do
   (
   i = _g + 1
-  c = sanitized.char_at(i)
-  if (c >= "a" && c <= "z" || c >= "A" && c <= "Z" || c >= "0" && c <= "9" || c == "_"), do: clean += c.to_lower_case(), else: nil
+  c = sanitized.charAt(i)
+  if (c >= "a" && c <= "z" || c >= "A" && c <= "Z" || c >= "0" && c <= "9" || c == "_"), do: clean += c.toLowerCase(), else: nil
 )
 end
 )
@@ -49,7 +49,7 @@ end
   def is_migration_class(arg0) do
     (
   if (class_name == nil || class_name == ""), do: false, else: nil
-  class_name.index_of("Migration") != -1 || class_name.index_of("Create") != -1 || class_name.index_of("Alter") != -1 || class_name.index_of("Drop") != -1
+  class_name.indexOf("Migration") != -1 || class_name.indexOf("Create") != -1 || class_name.indexOf("Alter") != -1 || class_name.indexOf("Drop") != -1
 )
   end
 
@@ -64,11 +64,48 @@ end
 
   @doc "
      * Get migration configuration from @:migration annotation
-     * Note: Temporarily simplified due to Haxe 4.3.6 API compatibility
+     * Extracts table name from @:migration("table_name") annotation
      "
-  @spec get_migration_config(TDynamic(null).t()) :: TDynamic(null).t()
+  @spec get_migration_config(TType(haxe.Macro.ClassType,[]).t()) :: TDynamic(null).t()
   def get_migration_config(arg0) do
-    %{table: "default_table", timestamp: "20250808000000"}
+    (
+  if (!class_type.meta.has(":migration")), do: %{table: "default_table", timestamp: MigrationDSL.generateTimestamp()}, else: nil
+  meta = Enum.at(class_type.meta.extract(":migration"), 0)
+  table_name = "default_table"
+  if (meta.params != nil && meta.params.length > 0), do: (
+  _g = Enum.at(meta.params, 0).expr
+  if (# TODO: Implement expression type: TEnumIndex == 0), do: (
+  _g2 = # TODO: Implement expression type: TEnumParameter
+  if (# TODO: Implement expression type: TEnumIndex == 2), do: (
+  _g1 = # TODO: Implement expression type: TEnumParameter
+  _g3 = # TODO: Implement expression type: TEnumParameter
+  (
+  s = _g1
+  table_name = s
+)
+), else: table_name = MigrationDSL.extractTableNameFromClassName(class_type.name)
+), else: table_name = MigrationDSL.extractTableNameFromClassName(class_type.name)
+), else: table_name = MigrationDSL.extractTableNameFromClassName(class_type.name)
+  %{table: table_name, timestamp: MigrationDSL.generateTimestamp()}
+)
+  end
+
+  @doc "
+     * Extract table name from class name (CreateUsers -> users)
+     "
+  @spec extract_table_name_from_class_name(TInst(String,[]).t()) :: TInst(String,[]).t()
+  def extract_table_name_from_class_name(arg0) do
+    (
+  table_name = class_name
+  table_name = StringTools.replace(table_name, "Create", "")
+  table_name = StringTools.replace(table_name, "Alter", "")
+  table_name = StringTools.replace(table_name, "Drop", "")
+  table_name = StringTools.replace(table_name, "Add", "")
+  table_name = StringTools.replace(table_name, "Remove", "")
+  table_name = StringTools.replace(table_name, "Table", "")
+  table_name = StringTools.replace(table_name, "Migration", "")
+  MigrationDSL.camelCaseToSnakeCase(table_name)
+)
   end
 
   @doc "
@@ -165,7 +202,7 @@ end
   temp_array = _g
 ))
   field_list = temp_array.join(", ")
-  if (options.index_of("unique") != -1), do: "create unique_index(:" + table_name + ", [" + field_list + "])", else: "create index(:" + table_name + ", [" + field_list + "])"
+  if (options.indexOf("unique") != -1), do: "create unique_index(:" + table_name + ", [" + field_list + "])", else: "create index(:" + table_name + ", [" + field_list + "])"
 )
   end
 
@@ -197,8 +234,8 @@ end
   table_name = migration_data.table_name
   columns = migration_data.columns
   module_name = "Repo.Migrations." + class_name
-  table_creation = MigrationDSL.compile_table_creation(table_name, columns)
-  index_creation = MigrationDSL.compile_index_creation(table_name, ["email"], "unique: true")
+  table_creation = MigrationDSL.compileTableCreation(table_name, columns)
+  index_creation = MigrationDSL.compileIndexCreation(table_name, ["email"], "unique: true")
   "defmodule " + module_name + " do
 " + "  @moduledoc """
 " + ("  Generated migration for " + table_name + " table
@@ -234,7 +271,7 @@ end
   @spec generate_migration_filename(TInst(String,[]).t(), TInst(String,[]).t()) :: TInst(String,[]).t()
   def generate_migration_filename(arg0, arg1) do
     (
-  snake_case_name = MigrationDSL.camel_case_to_snake_case(migration_name)
+  snake_case_name = MigrationDSL.camelCaseToSnakeCase(migration_name)
   "" + timestamp + "_" + snake_case_name + ".exs"
 )
   end
@@ -245,7 +282,7 @@ end
   @spec generate_migration_file_path(TInst(String,[]).t(), TInst(String,[]).t()) :: TInst(String,[]).t()
   def generate_migration_file_path(arg0, arg1) do
     (
-  filename = MigrationDSL.generate_migration_filename(migration_name, timestamp)
+  filename = MigrationDSL.generateMigrationFilename(migration_name, timestamp)
   "priv/repo/migrations/" + filename
 )
   end
@@ -263,9 +300,9 @@ end
   while (_g < _g1) do
   (
   i = _g + 1
-  char = input.char_at(i)
+  char = input.charAt(i)
   if (i > 0 && char >= "A" && char <= "Z"), do: result += "_", else: nil
-  result += char.to_lower_case()
+  result += char.toLowerCase()
 )
 end
 )
@@ -279,9 +316,9 @@ end
   @spec generate_add_column(TInst(String,[]).t(), TInst(String,[]).t(), TInst(String,[]).t(), TInst(String,[]).t()) :: TInst(String,[]).t()
   def generate_add_column(arg0, arg1, arg2, arg3) do
     (
-  safe_table = MigrationDSL.sanitize_identifier(table_name)
-  safe_column = MigrationDSL.sanitize_identifier(column_name)
-  safe_type = MigrationDSL.sanitize_identifier(data_type)
+  safe_table = MigrationDSL.sanitizeIdentifier(table_name)
+  safe_column = MigrationDSL.sanitizeIdentifier(column_name)
+  safe_type = MigrationDSL.sanitizeIdentifier(data_type)
   temp_string = nil
   if (options != ""), do: temp_string = "add :" + safe_column + ", :" + safe_type + ", " + options, else: temp_string = "add :" + safe_column + ", :" + safe_type
   add_statement = temp_string
@@ -305,10 +342,10 @@ end"
   @spec generate_foreign_key(TInst(String,[]).t(), TInst(String,[]).t(), TInst(String,[]).t(), TInst(String,[]).t()) :: TInst(String,[]).t()
   def generate_foreign_key(arg0, arg1, arg2, arg3) do
     (
-  safe_table = MigrationDSL.sanitize_identifier(table_name)
-  safe_column = MigrationDSL.sanitize_identifier(column_name)
-  safe_ref_table = MigrationDSL.sanitize_identifier(referenced_table)
-  safe_ref_column = MigrationDSL.sanitize_identifier(referenced_column)
+  safe_table = MigrationDSL.sanitizeIdentifier(table_name)
+  safe_column = MigrationDSL.sanitizeIdentifier(column_name)
+  safe_ref_table = MigrationDSL.sanitizeIdentifier(referenced_table)
+  safe_ref_column = MigrationDSL.sanitizeIdentifier(referenced_column)
   fk_statement = "add :" + safe_column + ", references(:" + safe_ref_table + ", column: :" + safe_ref_column + ")"
   "alter table(:" + safe_table + ") do
   " + fk_statement + "
@@ -322,8 +359,8 @@ end"
   @spec generate_constraint(TInst(String,[]).t(), TInst(String,[]).t(), TInst(String,[]).t(), TInst(String,[]).t()) :: TInst(String,[]).t()
   def generate_constraint(arg0, arg1, arg2, arg3) do
     (
-  safe_table = MigrationDSL.sanitize_identifier(table_name)
-  safe_name = MigrationDSL.sanitize_identifier(constraint_name)
+  safe_table = MigrationDSL.sanitizeIdentifier(table_name)
+  safe_name = MigrationDSL.sanitizeIdentifier(constraint_name)
   "create constraint(:" + safe_table + ", :" + safe_name + ", " + constraint_type + ": "" + definition + "")"
 )
   end
@@ -341,7 +378,7 @@ end"
   (
   migration = Enum.at(migrations, _g)
   _g + 1
-  compiled_migrations.push(MigrationDSL.compile_full_migration(migration))
+  compiled_migrations.push(MigrationDSL.compileFullMigration(migration))
 )
 end
 )
@@ -384,12 +421,12 @@ end
   def generate_timestamp() do
     (
   date = Date.now()
-  year = Std.string(date.get_full_year())
-  month = StringTools.lpad(Std.string(date.get_month() + 1), "0", 2)
-  day = StringTools.lpad(Std.string(date.get_date()), "0", 2)
-  hour = StringTools.lpad(Std.string(date.get_hours()), "0", 2)
-  minute = StringTools.lpad(Std.string(date.get_minutes()), "0", 2)
-  second = StringTools.lpad(Std.string(date.get_seconds()), "0", 2)
+  year = Std.string(date.getFullYear())
+  month = StringTools.lpad(Std.string(date.getMonth() + 1), "0", 2)
+  day = StringTools.lpad(Std.string(date.getDate()), "0", 2)
+  hour = StringTools.lpad(Std.string(date.getHours()), "0", 2)
+  minute = StringTools.lpad(Std.string(date.getMinutes()), "0", 2)
+  second = StringTools.lpad(Std.string(date.getSeconds()), "0", 2)
   "" + year + month + day + hour + minute + second
 )
   end
@@ -403,9 +440,9 @@ end
     (
   builder = Reflaxe.Elixir.Helpers.TableBuilder.new(table_name)
   callback(builder)
-  column_defs = builder.get_column_definitions()
-  index_defs = builder.get_index_definitions()
-  constraint_defs = builder.get_constraint_definitions()
+  column_defs = builder.getColumnDefinitions()
+  index_defs = builder.getIndexDefinitions()
+  constraint_defs = builder.getConstraintDefinitions()
   result = "create table(:" + table_name + ") do
 "
   if (!builder.has_id_column), do: result += "      add :id, :serial, primary_key: true
@@ -487,7 +524,7 @@ end
   field = Enum.at(fields, _g)
   _g + 1
   value = Reflect.field(options, field)
-  if (Std.is_of_type(value, String)), do: opts.push("" + field + ": "" + value + """), else: if (Std.is_of_type(value, Bool)), do: opts.push("" + field + ": " + value), else: opts.push("" + field + ": " + value)
+  if (Std.isOfType(value, String)), do: opts.push("" + field + ": "" + value + """), else: if (Std.isOfType(value, Bool)), do: opts.push("" + field + ": " + value), else: opts.push("" + field + ": " + value)
 )
 end
 )
@@ -523,7 +560,7 @@ end
   temp_array = _g
 ))
   column_list = temp_array.join(", ")
-  if (options != nil && Reflect.has_field(options, "unique") && Reflect.field(options, "unique") == true), do: "create unique_index(:" + table_name + ", [" + column_list + "])", else: "create index(:" + table_name + ", [" + column_list + "])"
+  if (options != nil && Reflect.hasField(options, "unique") && Reflect.field(options, "unique") == true), do: "create unique_index(:" + table_name + ", [" + column_list + "])", else: "create index(:" + table_name + ", [" + column_list + "])"
 )
   end
 
@@ -592,7 +629,7 @@ defmodule TableBuilder do
     temp_string = field
 end
   opt_name = temp_string
-  if (Std.is_of_type(value, String)), do: opts.push("" + opt_name + ": "" + value + """), else: if (Std.is_of_type(value, Bool)), do: opts.push("" + opt_name + ": " + value), else: opts.push("" + opt_name + ": " + value)
+  if (Std.isOfType(value, String)), do: opts.push("" + opt_name + ": "" + value + """), else: if (Std.isOfType(value, Bool)), do: opts.push("" + opt_name + ": " + value), else: opts.push("" + opt_name + ": " + value)
 )
 end
 )
@@ -626,7 +663,7 @@ end
   temp_array = _g
 ))
   column_list = temp_array.join(", ")
-  if (options != nil && Reflect.has_field(options, "unique") && Reflect.field(options, "unique") == true), do: self().indexes.push("create unique_index(:" + self().table_name + ", [" + column_list + "])"), else: self().indexes.push("create index(:" + self().table_name + ", [" + column_list + "])")
+  if (options != nil && Reflect.hasField(options, "unique") && Reflect.field(options, "unique") == true), do: self().indexes.push("create unique_index(:" + self().table_name + ", [" + column_list + "])"), else: self().indexes.push("create index(:" + self().table_name + ", [" + column_list + "])")
   self()
 )
   end
@@ -646,7 +683,7 @@ end
   (
   column = Enum.at(_g1, _g)
   _g + 1
-  if (column.index_of(":" + column_name + ",") != -1), do: (
+  if (column.indexOf(":" + column_name + ",") != -1), do: (
   new_columns.push("add :" + column_name + ", references(:" + referenced_table + ", column: :" + referenced_column + ")")
   found = true
 ), else: new_columns.push(column)

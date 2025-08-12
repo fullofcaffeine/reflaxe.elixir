@@ -76,7 +76,7 @@ defmodule Shape do
   @doc "Function draw"
   @spec draw() :: TInst(String,[]).t()
   def draw() do
-    "" + self().name + " at " + self().position.to_string()
+    "" + self().name + " at " + self().position.toString()
   end
 
   @doc "Function get_position"
@@ -217,10 +217,10 @@ defmodule Main do
   Log.trace(shape.draw(), %{fileName: "Main.hx", lineNumber: 149, className: "Main", methodName: "main"})
   circle = Circle.new(0, 0, 10)
   Log.trace(circle.draw(), %{fileName: "Main.hx", lineNumber: 153, className: "Main", methodName: "main"})
-  circle.set_velocity(1, 2)
+  circle.setVelocity(1, 2)
   circle.update(1.5)
   Log.trace(circle.draw(), %{fileName: "Main.hx", lineNumber: 156, className: "Main", methodName: "main"})
-  unit_circle = Circle.create_unit()
+  unit_circle = Circle.createUnit()
   Log.trace(unit_circle.draw(), %{fileName: "Main.hx", lineNumber: 160, className: "Main", methodName: "main"})
   container = Container.new()
   container.add("Hello")

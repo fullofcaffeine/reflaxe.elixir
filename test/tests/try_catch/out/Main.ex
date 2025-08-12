@@ -203,7 +203,7 @@ end
     (
   temp_maybe_number = nil
   try do
-  temp_maybe_number = Std.parse_int("123")
+  temp_maybe_number = Std.parseInt("123")
 rescue
   e ->
     temp_maybe_number = 0
@@ -212,7 +212,7 @@ end
   Log.trace("Parsed value: " + value, %{fileName: "Main.hx", lineNumber: 169, className: "Main", methodName: "tryAsExpression"})
   temp_maybe_number1 = nil
   try do
-  temp_maybe_number1 = Std.parse_int("not a number")
+  temp_maybe_number1 = Std.parseInt("not a number")
 rescue
   e ->
     temp_maybe_number1 = -1
@@ -227,31 +227,31 @@ end
   def main() do
     (
   Log.trace("=== Basic Try-Catch ===", %{fileName: "Main.hx", lineNumber: 180, className: "Main", methodName: "main"})
-  Main.basic_try_catch()
+  Main.basicTryCatch()
   Log.trace("
 === Multiple Catch ===", %{fileName: "Main.hx", lineNumber: 183, className: "Main", methodName: "main"})
-  Main.multiple_catch()
+  Main.multipleCatch()
   Log.trace("
 === Try-Catch-Finally ===", %{fileName: "Main.hx", lineNumber: 186, className: "Main", methodName: "main"})
-  Main.try_catch_finally()
+  Main.tryCatchFinally()
   Log.trace("
 === Nested Try-Catch ===", %{fileName: "Main.hx", lineNumber: 189, className: "Main", methodName: "main"})
-  Main.nested_try_catch()
+  Main.nestedTryCatch()
   Log.trace("
 === Custom Exception ===", %{fileName: "Main.hx", lineNumber: 192, className: "Main", methodName: "main"})
-  Main.custom_exception()
+  Main.customException()
   Log.trace("
 === Division Test ===", %{fileName: "Main.hx", lineNumber: 195, className: "Main", methodName: "main"})
-  Main.test_division()
+  Main.testDivision()
   Log.trace("
 === Rethrow Example ===", %{fileName: "Main.hx", lineNumber: 198, className: "Main", methodName: "main"})
-  Main.rethrow_example()
+  Main.rethrowExample()
   Log.trace("
 === Stack Trace Example ===", %{fileName: "Main.hx", lineNumber: 201, className: "Main", methodName: "main"})
-  Main.stack_trace_example()
+  Main.stackTraceExample()
   Log.trace("
 === Try as Expression ===", %{fileName: "Main.hx", lineNumber: 204, className: "Main", methodName: "main"})
-  Main.try_as_expression()
+  Main.tryAsExpression()
 )
   end
 

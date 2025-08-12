@@ -39,6 +39,9 @@ class ProjectGenerator {
 			case "add-to-existing":
 				addToExistingProject(options);
 			default:
+				if (templatePath == null) {
+					throw 'Invalid project type: ${options.type}';
+				}
 				createNewProject(options, templatePath);
 		}
 		
@@ -290,7 +293,7 @@ class ProjectGenerator {
 		Sys.setCwd(originalCwd);
 	}
 	
-	function getTemplatePath(type: String): String {
+	function getTemplatePath(type: String): Null<String> {
 		// Get the library path (where haxelib/lix installed reflaxe.elixir)
 		var libPath = getLibraryPath();
 		

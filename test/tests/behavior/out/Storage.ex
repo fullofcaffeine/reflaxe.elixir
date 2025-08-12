@@ -77,7 +77,7 @@ defmodule MemoryStorage do
   temp_iterator = this1.keys()
 )
   k = temp_iterator
-  while (k.has_next()) do
+  while (k.hasNext()) do
   (
   k2 = k.next()
   _g.push(k2)

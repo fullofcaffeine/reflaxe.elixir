@@ -22,6 +22,7 @@ class ClassCompiler {
     
     private var typer: ElixirTyper;
     private var compiler: Null<reflaxe.elixir.ElixirCompiler> = null;
+    private var currentClassName: Null<String> = null;
     
     public function new(?typer: ElixirTyper) {
         this.typer = (typer != null) ? typer : new ElixirTyper();
@@ -42,6 +43,7 @@ class ClassCompiler {
         if (classType == null) return "";
         
         var className = NamingHelper.getElixirModuleName(classType.name);
+        this.currentClassName = className;
         var isStruct = hasStructMetadata(classType);
         var isModule = hasModuleMetadata(classType);
         var result = new StringBuf();
@@ -418,7 +420,7 @@ class ClassCompiler {
         // Function body
         if (funcField.expr != null) {
             // Compile the actual function expression
-            var compiledBody = compileExpressionForFunction(funcField.expr);
+            var compiledBody = compileExpressionForFunction(funcField.expr, funcField.args);
             if (compiledBody != null && compiledBody != "") {
                 result.add('    ${compiledBody}\n');
             } else {
@@ -578,14 +580,42 @@ class ClassCompiler {
     }
     
     /**
-     * Compile expression for function body (delegates to main compiler)
+     * Compile expression for function body with parameter mapping
      */
-    private function compileExpressionForFunction(expr: Dynamic): Null<String> {
+    private function compileExpressionForFunction(expr: Dynamic, args: Array<ClassFuncArg>): Null<String> {
         if (compiler != null) {
+            // Set up parameter mapping for standardized arg names
+            var isAbstractImpl = checkIfAbstractImplementationClass();
+            if (isAbstractImpl && args != null) {
+                compiler.setFunctionParameterMapping(args);
+            }
+            
             var result = compiler.compileExpression(expr);
+            
+            // Clear parameter mapping
+            if (isAbstractImpl) {
+                compiler.clearFunctionParameterMapping();
+            }
+            
             return result;
         }
         return null;
+    }
+    
+    /**
+     * Check if we're currently compiling an abstract implementation class
+     */
+    private function checkIfAbstractImplementationClass(): Bool {
+        // Abstract implementation classes have names ending with "_Impl_"
+        // We need to track the current class context for this determination
+        return currentClassName != null && currentClassName.endsWith("_Impl_");
+    }
+    
+    /**
+     * Check if this is an abstract type implementation method (deprecated)
+     */
+    private function checkIfAbstractImplementationMethod(expr: Dynamic): Bool {
+        return false; // Deprecated - use checkIfAbstractImplementationClass instead
     }
 }
 

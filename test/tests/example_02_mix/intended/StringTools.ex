@@ -25,7 +25,7 @@ defmodule StringTools do
   @spec is_space(TInst(String,[]).t(), TAbstract(Int,[]).t()) :: TAbstract(Bool,[]).t()
   def is_space(arg0, arg1) do
     (
-  c = s.char_code_at(pos)
+  c = s.charCodeAt(pos)
   c > 8 && c < 14 || c == 32
 )
   end
@@ -44,7 +44,7 @@ defmodule StringTools do
     (
   l = s.length
   r = 0
-  while (r < l && StringTools.is_space(s, r)) do
+  while (r < l && StringTools.isSpace(s, r)) do
   r + 1
 end
   if (r > 0), do: s.substr(r, l - r), else: s
@@ -65,7 +65,7 @@ end
     (
   l = s.length
   r = 0
-  while (r < l && StringTools.is_space(s, l - r - 1)) do
+  while (r < l && StringTools.isSpace(s, l - r - 1)) do
   r + 1
 end
   if (r > 0), do: s.substr(0, l - r), else: s

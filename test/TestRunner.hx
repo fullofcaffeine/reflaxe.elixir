@@ -149,7 +149,7 @@ Examples:
 		
 		final testPath = haxe.io.Path.join([TEST_DIR, testName]);
 		final hxmlPath = haxe.io.Path.join([testPath, "compile.hxml"]);
-		final outPath = haxe.io.Path.join([testPath, UpdateIntended ? INTENDED_DIR : OUT_DIR]);
+		final outPath = haxe.io.Path.join([testPath, OUT_DIR]);
 		
 		// Check if compile.hxml exists
 		if (!sys.FileSystem.exists(hxmlPath)) {
@@ -196,8 +196,18 @@ Examples:
 			Sys.println('  Output: $stdout');
 		}
 		
-		// If updating intended, we're done
+		// If updating intended, copy out to intended
 		if (UpdateIntended) {
+			final intendedPath = haxe.io.Path.join([testPath, INTENDED_DIR]);
+			
+			// Create intended directory if it doesn't exist
+			if (!sys.FileSystem.exists(intendedPath)) {
+				sys.FileSystem.createDirectory(intendedPath);
+			}
+			
+			// Copy all files from out to intended
+			copyDirectory(outPath, intendedPath);
+			
 			Sys.println('  ✅ Updated intended output');
 			return true;
 		}
@@ -227,6 +237,32 @@ Examples:
 		
 		Sys.println('  ✅ Output matches intended');
 		return true;
+	}
+	
+	/**
+	 * Copy all files from source directory to destination directory
+	 */
+	static function copyDirectory(sourcePath: String, destPath: String): Void {
+		if (!sys.FileSystem.exists(sourcePath)) return;
+		
+		// Ensure destination directory exists
+		if (!sys.FileSystem.exists(destPath)) {
+			sys.FileSystem.createDirectory(destPath);
+		}
+		
+		// Copy all files from source to destination
+		for (file in sys.FileSystem.readDirectory(sourcePath)) {
+			final sourceFile = haxe.io.Path.join([sourcePath, file]);
+			final destFile = haxe.io.Path.join([destPath, file]);
+			
+			if (sys.FileSystem.isDirectory(sourceFile)) {
+				// Recursively copy subdirectories
+				copyDirectory(sourceFile, destFile);
+			} else {
+				// Copy regular file
+				sys.io.File.copy(sourceFile, destFile);
+			}
+		}
 	}
 	
 	static function compareDirectories(actualDir: String, intendedDir: String): Array<String> {

@@ -15,12 +15,12 @@ defmodule EnumValueMap do
   @spec compare(TAbstract(EnumValue,[]).t(), TAbstract(EnumValue,[]).t()) :: TAbstract(Int,[]).t()
   def compare(arg0, arg1) do
     (
-  d = Type.enum_index(k1) - Type.enum_index(k2)
+  d = Type.enumIndex(k1) - Type.enumIndex(k2)
   if (d != 0), do: d, else: nil
-  p1 = Type.enum_parameters(k1)
-  p2 = Type.enum_parameters(k2)
+  p1 = Type.enumParameters(k1)
+  p2 = Type.enumParameters(k2)
   if (p1.length == 0 && p2.length == 0), do: 0, else: nil
-  self().compare_args(p1, p2)
+  self().compareArgs(p1, p2)
 )
   end
 
@@ -36,7 +36,7 @@ defmodule EnumValueMap do
   while (_g < _g1) do
   (
   i = _g + 1
-  d = self().compare_arg(Enum.at(a1, i), Enum.at(a2, i))
+  d = self().compareArg(Enum.at(a1, i), Enum.at(a2, i))
   if (d != 0), do: d, else: nil
 )
 end
@@ -50,7 +50,7 @@ end
   def compare_arg(arg0, arg1) do
     (
   temp_result = nil
-  if (Reflect.is_enum_value(v1) && Reflect.is_enum_value(v2)), do: temp_result = self().compare(v1, v2), else: if (Std.is_of_type(v1, Array) && Std.is_of_type(v2, Array)), do: temp_result = self().compare_args(v1, v2), else: temp_result = Reflect.compare(v1, v2)
+  if (Reflect.isEnumValue(v1) && Reflect.isEnumValue(v2)), do: temp_result = self().compare(v1, v2), else: if (Std.isOfType(v1, Array) && Std.isOfType(v2, Array)), do: temp_result = self().compareArgs(v1, v2), else: temp_result = Reflect.compare(v1, v2)
   temp_result
 )
   end

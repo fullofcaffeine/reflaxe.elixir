@@ -18,14 +18,14 @@ class InteractiveCLI {
 		Sys.println("");
 		
 		// Project name
-		var name = if (defaultName != null && defaultName != "") {
+		var name: String = if (defaultName != null && defaultName != "") {
 			defaultName;
 		} else {
 			prompt("Project name", "my-app");
 		};
 		
 		// Project type
-		var type = if (defaultType != null && defaultType != "") {
+		var type: String = if (defaultType != null && defaultType != "") {
 			defaultType;
 		} else {
 			promptChoice(
@@ -47,7 +47,7 @@ class InteractiveCLI {
 			skipInstall: false,
 			includeExamples: true,
 			database: null,
-			authentication: false
+			authentication: null
 		};
 		
 		// Phoenix-specific options
@@ -83,7 +83,7 @@ class InteractiveCLI {
 		if (options.database != null) {
 			Sys.println('  Database: ${options.database}');
 		}
-		if (options.authentication) {
+		if (options.authentication == true) {
 			Sys.println('  Authentication: Yes');
 		}
 		Sys.println('  Install dependencies: ${options.skipInstall ? "No" : "Yes"}');

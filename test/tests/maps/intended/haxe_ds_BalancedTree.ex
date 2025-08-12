@@ -24,7 +24,7 @@ defmodule BalancedTree do
 	"
   @spec set(TInst(haxe.Ds.BalancedTree.K,[]).t(), TInst(haxe.Ds.BalancedTree.V,[]).t()) :: TAbstract(Void,[]).t()
   def set(arg0, arg1) do
-    self().root = self().set_loop(key, value, self().root)
+    self().root = self().setLoop(key, value, self().root)
   end
 
   @doc "
@@ -79,7 +79,7 @@ end
   def keys() do
     (
   ret = []
-  self().keys_loop(self().root, ret)
+  self().keysLoop(self().root, ret)
   Haxe.Iterators.ArrayIterator.new(ret)
 )
   end
@@ -96,10 +96,10 @@ end
   if (node == nil), do: temp_number = 0, else: temp_number = node._height
   temp_result = Haxe.Ds.TreeNode.new(node.left, k, v, node.right, temp_number)
 ), else: if (c < 0), do: (
-  nl = self().set_loop(k, v, node.left)
+  nl = self().setLoop(k, v, node.left)
   temp_result = self().balance(nl, node.key, node.value, node.right)
 ), else: (
-  nr = self().set_loop(k, v, node.right)
+  nr = self().setLoop(k, v, node.right)
   temp_result = self().balance(node.left, node.key, node.value, nr)
 )
   temp_result
@@ -110,9 +110,9 @@ end
   @spec keys_loop(TInst(haxe.Ds.TreeNode,[TInst(haxe.Ds.BalancedTree.K,[]),TInst(haxe.Ds.BalancedTree.V,[])]).t(), TInst(Array,[TInst(haxe.Ds.BalancedTree.K,[])]).t()) :: TAbstract(Void,[]).t()
   def keys_loop(arg0, arg1) do
     if (node != nil), do: (
-  self().keys_loop(node.left, acc)
+  self().keysLoop(node.left, acc)
   acc.push(node.key)
-  self().keys_loop(node.right, acc)
+  self().keysLoop(node.right, acc)
 ), else: nil
   end
 

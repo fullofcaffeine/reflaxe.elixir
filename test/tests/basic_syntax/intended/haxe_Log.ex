@@ -54,7 +54,7 @@ end
   @spec trace(TDynamic(null).t(), TAbstract(Null,[TType(haxe.PosInfos,[])]).t()) :: TAbstract(Void,[]).t()
   def trace(arg0, arg1) do
     (
-  str = Log.format_output(v, infos)
+  str = Log.formatOutput(v, infos)
   Sys.println(str)
 )
   end
