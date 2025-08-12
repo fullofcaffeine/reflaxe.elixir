@@ -131,7 +131,12 @@ defmodule HaxeWatcher do
         {:noreply, %{state | watcher_pid: watcher_pid, file_count: file_count}}
       
       {:error, reason} ->
-        Logger.error("Failed to start file watching: #{inspect(reason)}")
+        # In tests, this is often expected when testing error conditions
+        if Mix.env() == :test do
+          Logger.debug("Failed to start file watching: #{inspect(reason)} (may be expected in tests)")
+        else
+          Logger.error("Failed to start file watching: #{inspect(reason)}")
+        end
         # Retry in 5 seconds
         Process.send_after(self(), :start_watching, 5000)
         {:noreply, state}
@@ -260,7 +265,12 @@ defmodule HaxeWatcher do
     existing_dirs = Enum.filter(state.dirs, &File.exists?/1)
     
     if Enum.empty?(existing_dirs) do
-      Logger.warning("No valid directories to watch: #{inspect(state.dirs)}")
+      # In tests, this is often expected behavior
+      if Mix.env() == :test do
+        Logger.debug("No valid directories to watch: #{inspect(state.dirs)} (may be expected in tests)")
+      else
+        Logger.warning("No valid directories to watch: #{inspect(state.dirs)}")
+      end
       {:error, :no_valid_directories}
     else
       # Check if FileSystem module is available
@@ -369,7 +379,12 @@ defmodule HaxeWatcher do
         Logger.info("✅ Haxe compilation successful")
         
       {:error, error} ->
-        Logger.error("❌ Haxe compilation failed: #{error}")
+        # In test environment, use less alarming output for expected failures
+        if Mix.env() == :test do
+          Logger.debug("Haxe compilation failed (may be expected in tests): #{error}")
+        else
+          Logger.error("❌ Haxe compilation failed: #{error}")
+        end
     end
     
     new_state = %{state | 

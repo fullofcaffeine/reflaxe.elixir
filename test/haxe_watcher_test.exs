@@ -174,8 +174,14 @@ defmodule HaxeWatcherTest do
   end
 
   describe "trigger_compilation/0" do
-    test "can manually trigger compilation" do
-      {:ok, _pid} = HaxeWatcher.start_link([])
+    test "can manually trigger compilation", %{test_dir: test_dir} do
+      # Use the test directory and build file that was set up
+      build_file_path = Path.join(test_dir, "build.hxml")
+      
+      {:ok, _pid} = HaxeWatcher.start_link([
+        dirs: [test_dir],
+        build_file: build_file_path
+      ])
       
       initial_status = HaxeWatcher.status()
       initial_count = initial_status.compilation_count
