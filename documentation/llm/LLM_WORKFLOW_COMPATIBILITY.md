@@ -66,11 +66,11 @@ end
     duration_ms: 247,
     files_compiled: ["User.ex", "Post.ex"],
     errors: [],
-    timestamp: ~U[2025-01-13 10:30:45Z]
+    timestamp: ~U[2025-08-11 10:30:45Z]
   },
   project_health: %{
     total_files: 15,
-    last_successful_build: ~U[2025-01-13 10:30:45Z],
+    last_successful_build: ~U[2025-08-11 10:30:45Z],
     consecutive_failures: 0
   }
 }
@@ -117,8 +117,8 @@ def project_files_summary() do
     haxe_files: ["User.hx", "Post.hx", "Auth.hx"],
     generated_files: ["User.ex", "Post.ex", "Auth.ex"],  
     last_modified: %{
-      "User.hx" => ~U[2025-01-13 10:29:12Z],
-      "Post.hx" => ~U[2025-01-13 10:30:45Z]
+      "User.hx" => ~U[2025-08-11 10:29:12Z],
+      "Post.hx" => ~U[2025-08-11 10:30:45Z]
     },
     compilation_needed: false
   }

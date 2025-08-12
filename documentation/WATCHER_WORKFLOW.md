@@ -204,7 +204,7 @@ File Change → HaxeWatcher (debounce) → HaxeServer → Incremental Compilatio
    # Response
    {
      "watching": true,
-     "last_compilation": "2024-01-15T10:30:45Z",
+     "last_compilation": "2025-08-11T10:30:45Z",
      "files_compiled": 3,
      "errors": []
    }
@@ -494,7 +494,7 @@ IO.inspect(status)
 #   watching: true,
 #   directories: ["src_haxe"],
 #   patterns: ["**/*.hx"],
-#   last_change: ~U[2024-01-15 10:30:45Z],
+#   last_change: ~U[2025-08-11 10:30:45Z],
 #   pending_compilation: false,
 #   total_compilations: 42
 # }

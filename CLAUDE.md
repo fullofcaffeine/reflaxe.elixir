@@ -142,6 +142,15 @@ This is acceptable - helpers are simpler for our needs while following similar s
 - Testing Trophy approach with integration test focus
 - Performance targets: <15ms compilation steps, <100ms HXX template processing
 
+## Date and Timestamp Rule 📅
+**ALWAYS check current date before writing timestamps**:
+```bash
+date  # Get current date/time before writing any timestamps
+```
+- Never assume dates - always verify with `date` command
+- Use consistent format: "August 2025" or "2025-08-11"
+- Update "Last Updated" timestamps when modifying documentation
+
 ## Commit Message Standards (Conventional Commits)
 All commits must follow [Conventional Commits](https://www.conventionalcommits.org/) specification:
 
@@ -153,6 +162,12 @@ All commits must follow [Conventional Commits](https://www.conventionalcommits.o
 
 <footer>
 ```
+
+### Important: No AI Attribution in Commits
+**NEVER add AI attribution lines to commit messages**:
+- ❌ Don't add "Generated with Claude Code"
+- ❌ Don't add "Co-Authored-By: Claude"
+- ✅ Write clean, professional commit messages without AI references
 
 ### Types
 - `feat`: New feature

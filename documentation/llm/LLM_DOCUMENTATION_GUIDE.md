@@ -357,8 +357,8 @@ Test coverage in `test/tests/source_map_basic/`
 4. **Version documentation changes**:
    ```markdown
    ## Recent Updates
-   - 2025-01-15: Added source mapping support
-   - 2025-01-14: Enhanced error handling
+   - 2025-08-11: Added source mapping support
+   - 2025-08-10: Enhanced error handling
    ```
 
 5. **Maintain cross-references**:

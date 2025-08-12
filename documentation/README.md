@@ -122,4 +122,4 @@ This documentation is actively maintained. If you find issues or have suggestion
 ---
 
 *For the main project README, see [../README.md](../README.md)*
-*Last updated: January 2024 | Total documentation files: 30+*
+*Last updated: August 2025 | Total documentation files: 30+*

@@ -323,5 +323,5 @@ haxe test/TestWorkingExterns.hxml
 
 ---
 
-Last Updated: January 2025
+Last Updated: August 2025
 Based on: Reflaxe.Elixir v0.1.0 (pre-release)
