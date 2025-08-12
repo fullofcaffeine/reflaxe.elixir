@@ -4,6 +4,8 @@ Get a Reflaxe.Elixir project running in under 5 minutes!
 
 ## 🚀 Installation & Project Creation
 
+### Option 1: New Standalone Project
+
 ```bash
 # Install Reflaxe.Elixir
 npx lix install github:fullofcaffeine/reflaxe.elixir
@@ -13,6 +15,19 @@ npx lix run reflaxe.elixir create hello-world
 
 # Navigate to your project
 cd hello-world
+```
+
+### Option 2: Add to Existing Elixir Project
+
+```bash
+# Navigate to your existing Elixir project
+cd existing-elixir-project
+
+# Add Haxe support using Mix task
+mix haxe.gen.project --basic-modules
+
+# Or interactively
+npx lix run reflaxe.elixir create --type add-to-existing
 ```
 
 ## 📁 What Was Created?
@@ -94,6 +109,11 @@ mix phx.server
 ### Add to Existing Elixir Project
 ```bash
 cd existing-elixir-project
+
+# Method 1: Using Mix task (recommended for Elixir developers)
+mix haxe.gen.project --basic-modules
+
+# Method 2: Using Haxe generator
 npx lix run reflaxe.elixir create --type add-to-existing
 # Follow the prompts to add Haxe support
 ```
@@ -155,13 +175,30 @@ npm install -g lix
 
 ### "Module reflaxe.elixir not found"
 ```bash
-npx lix install github:fullofcaffeine/reflaxe.elixir
+# Reinstall with explicit GitHub URL
+npx lix install github:fullofcaffeine/reflaxe.elixir --force
+
+# Or using haxelib
+haxelib git reflaxe.elixir https://github.com/fullofcaffeine/reflaxe.elixir
 ```
 
 ### "Type not found" errors
 Make sure you have the latest version:
 ```bash
+# With lix
 npx lix reinstall reflaxe.elixir
+
+# With haxelib
+haxelib update reflaxe.elixir
+```
+
+### Mix task not found
+```bash
+# Ensure you're in an Elixir project with mix.exs
+mix compile
+
+# Then try the generator task
+mix haxe.gen.project
 ```
 
 ### Phoenix won't start
