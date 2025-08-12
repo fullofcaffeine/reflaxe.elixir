@@ -5,6 +5,6 @@
   "version": 3,
   "file": "Log.ex",
   "sources": [
-    "/Users/fullofcaffeine/haxe/versions/4.3.7/std/haxe/Log.hx"
+    "std/haxe/Log.hx"
   ]
 }
