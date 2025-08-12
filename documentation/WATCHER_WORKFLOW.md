@@ -4,6 +4,8 @@
 
 Reflaxe.Elixir provides a powerful development workflow with automatic file watching and incremental compilation, enabling sub-second rebuild times for rapid development iteration. This guide covers both manual development and LLM-assisted workflows.
 
+> 📚 **For comprehensive tutorials and project-specific examples, see the [Watcher Development Guide](guides/WATCHER_DEVELOPMENT_GUIDE.md)** which includes step-by-step setups for Phoenix, LiveView, and Umbrella applications.
+
 ## Table of Contents
 1. [Quick Start](#quick-start)
 2. [Architecture](#architecture)
@@ -14,6 +16,8 @@ Reflaxe.Elixir provides a powerful development workflow with automatic file watc
 7. [Troubleshooting](#troubleshooting)
 
 ## Quick Start
+
+> **New to the watcher?** Check out the [Quick Start section](guides/WATCHER_DEVELOPMENT_GUIDE.md#quick-start) in the development guide for a 30-second setup!
 
 ### Basic File Watching
 
@@ -68,6 +72,12 @@ File Change → HaxeWatcher (debounce) → HaxeServer → Incremental Compilatio
 ```
 
 ## Development Workflows
+
+> 🎯 **Looking for specific project examples?** The [Development Guide](guides/WATCHER_DEVELOPMENT_GUIDE.md#project-specific-setups) has detailed setups for:
+> - Basic Mix projects
+> - Phoenix web applications  
+> - Phoenix LiveView apps
+> - Umbrella applications
 
 ### Workflow 1: Traditional Development
 
@@ -158,6 +168,12 @@ File Change → HaxeWatcher (debounce) → HaxeServer → Incremental Compilatio
    ```
 
 ## LLM Agent Integration
+
+> 🤖 **Using Claude Code or other AI assistants?** See the comprehensive [Claude Code CLI Integration](guides/WATCHER_DEVELOPMENT_GUIDE.md#claude-code-cli-integration) section for:
+> - Auto-fix error workflows
+> - Iterative feature development patterns
+> - Safe refactoring with continuous validation
+> - Multi-file coordination examples
 
 ### Setup for LLM Development
 
@@ -309,6 +325,8 @@ end
 
 ## Performance Optimization
 
+> 📊 **Want real-world benchmarks?** Check out the [Performance & Benchmarks](guides/WATCHER_DEVELOPMENT_GUIDE.md#performance--benchmarks) section for metrics from actual projects.
+
 ### Incremental Compilation Performance
 
 | Scenario | Cold Compile | Incremental | Improvement |
@@ -349,6 +367,12 @@ end
    ```
 
 ## Troubleshooting
+
+> 🔧 **Need platform-specific help?** The [Troubleshooting Guide](guides/WATCHER_DEVELOPMENT_GUIDE.md#troubleshooting) covers:
+> - macOS FSEvents configuration
+> - Linux inotify limits
+> - Windows polling setup
+> - Docker/container considerations
 
 ### Issue: Watcher not detecting changes
 
@@ -546,3 +570,10 @@ The file watching and incremental compilation workflow provides:
 - 🚀 **Production-ready** performance optimizations
 
 Combined with source mapping, this creates a powerful development experience that rivals or exceeds native Elixir development while maintaining Haxe's type safety benefits.
+
+## Related Documentation
+
+- 📚 [Watcher Development Guide](guides/WATCHER_DEVELOPMENT_GUIDE.md) - Comprehensive tutorials and examples
+- 🗺️ [Source Mapping Guide](SOURCE_MAPPING.md) - Debugging with source maps
+- 🚀 [Getting Started](guides/GETTING_STARTED.md) - First steps with Reflaxe.Elixir
+- 📖 [Tutorial: First Project](guides/TUTORIAL_FIRST_PROJECT.md) - Step-by-step project creation
