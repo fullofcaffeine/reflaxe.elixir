@@ -5,6 +5,6 @@
   "version": 3,
   "file": "Log.ex",
   "sources": [
-    "/REDACTED_LOCAL_PATH"
+    "std/haxe/Log.hx"
   ]
 }
