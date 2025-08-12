@@ -12,6 +12,7 @@ _build/
 *.so
 .haxerc
 haxe_libraries/
+!haxe_libraries/reflaxe.elixir.hxml
 
 # Test outputs
 test/*/out/
