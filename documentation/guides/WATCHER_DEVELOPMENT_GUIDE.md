@@ -301,12 +301,12 @@ Finished in 0.04 seconds
 1 test, 0 failures
 ```
 
-## Claude Code CLI Integration
+## Claude CLI Integration (Agentic Development)
 
-### Setup for Claude Code
+### Setup for Claude CLI
 
 ```bash
-# 1. Install Claude Code CLI
+# 1. Install Claude CLI
 npm install -g @anthropic/claude-code
 
 # 2. Configure project
@@ -325,13 +325,13 @@ cat > .claude/config.json << 'EOF'
 EOF
 ```
 
-### Claude Code Workflows
+### Basic Claude Workflows (Outdated - See Agentic Session Below)
 
 #### 1. Auto-Fix Errors Workflow
 
 ```bash
-# Start Claude Code with watcher
-claude-code --watch
+# Start Claude CLI (no --watch flag)
+claude
 
 # Claude detects compilation error
 > [Claude] Detected error in User.hx:45
@@ -345,7 +345,7 @@ claude-code --watch
 
 ```bash
 # Human request
-claude-code "Add authentication to the UserController"
+claude  # Then request: "Add authentication to the UserController"
 
 # Claude Code process:
 > [Claude] Analyzing current UserController...
@@ -364,7 +364,7 @@ claude-code "Add authentication to the UserController"
 
 ```bash
 # Request refactoring
-claude-code "Refactor User model to use Repository pattern"
+claude  # Then request: "Refactor User model to use Repository pattern"
 
 # Claude's safe refactoring process:
 > [Claude] Creating UserRepository.hx...
@@ -378,41 +378,352 @@ claude-code "Refactor User model to use Repository pattern"
 > [Claude] ✅ Refactoring complete, all tests green
 ```
 
-### LLM Development Patterns
+### Real Agentic Development Session
 
-#### Pattern 1: Continuous Validation
+Here's a complete illustrated session showing a developer using Claude CLI with Reflaxe.Elixir's automatic watcher to build a todo application with Phoenix LiveView:
 
-```javascript
-// Claude's internal loop
-async function developFeature(spec) {
-    const watcher = await startWatcher();
+```bash
+# Developer starts Claude in their Phoenix project directory
+$ cd todo-app
+$ claude
+
+Claude: I'm ready to help with your todo-app project. I can see this is a Reflaxe.Elixir 
+project with Phoenix. How can I assist you today?
+
+Developer: Create a todo item schema with title, description, and completed status
+
+Claude: I'll create a Todo schema with those fields. Let me start the watcher first to get 
+real-time compilation feedback, then create the schema.
+
+Starting the watcher for continuous compilation...
+
+$ mix compile.haxe --watch
+
+[10:30:45] Starting HaxeWatcher...
+[10:30:45] Watching directories: ["src_haxe"]
+[10:30:45] Ready for changes. Press Ctrl+C to stop.
+
+Now I'll create the Todo schema with Ecto integration:
+
+Creating src_haxe/schemas/Todo.hx...
+
+[10:30:52] File changed: src_haxe/schemas/Todo.hx
+[10:30:52] Compiling...
+[10:30:52] ✅ Compiled 1 file in 0.127s
+
+The schema has been created successfully. Here's what I generated:
+
+```haxe
+@:schema("todos")
+class Todo {
+    @:primary_key
+    public var id: Int;
     
-    while (!isComplete(spec)) {
-        const changes = planNextChange(spec);
-        await applyChanges(changes);
+    @:field({type: "string", nullable: false})
+    public var title: String;
+    
+    @:field({type: "text"})
+    public var description: String;
+    
+    @:field({type: "boolean", default: false})
+    public var completed: Bool;
+    
+    @:timestamps
+    public var insertedAt: Date;
+    public var updatedAt: Date;
+}
+```
+
+The file compiled successfully and generated lib/todo_app/schemas/todo.ex. Would you like
+me to add a changeset for validation?
+
+Developer: Yes, add validation requiring title and limiting description to 500 chars
+
+Claude: I'll add a changeset with those validation rules. Let me update the Todo class:
+
+[10:31:15] File changed: src_haxe/schemas/Todo.hx
+[10:31:15] Compiling...
+[10:31:15] ✅ Compiled 1 file in 0.089s
+
+I've added the changeset annotation with validation rules:
+
+```haxe
+@:schema("todos")
+@:changeset({
+    required: ["title"],
+    validations: [
+        {field: "title", type: "length", min: 1, max: 200},
+        {field: "description", type: "length", max: 500}
+    ]
+})
+class Todo {
+    // ... fields remain the same
+}
+```
+
+The validation is now in place. Shall I create a LiveView interface for managing todos?
+
+Developer: Create a LiveView with a form to add todos and list existing ones
+
+Claude: I'll create a TodoLive module with a form and todo list. Creating the LiveView now:
+
+Creating src_haxe/live/TodoLive.hx...
+
+[10:31:42] File changed: src_haxe/live/TodoLive.hx
+[10:31:42] Compiling...
+[10:31:42] ❌ Compilation failed
+
+Let me check the error:
+
+$ mix haxe.errors --format json
+
+{
+  "errors": [{
+    "file": "src_haxe/live/TodoLive.hx",
+    "line": 15,
+    "column": 20,
+    "message": "Type not found: Form",
+    "source_file": "src_haxe/live/TodoLive.hx"
+  }]
+}
+
+I need to import the Phoenix.HTML.Form type. Let me fix that:
+
+[10:31:55] File changed: src_haxe/live/TodoLive.hx
+[10:31:55] Compiling...
+[10:31:55] ✅ Compiled 1 file in 0.134s
+
+Great! The LiveView is now compiling. Here's what I created:
+
+```haxe
+@:liveview
+class TodoLive {
+    var todos: Array<Todo> = [];
+    var changeset: Dynamic;
+    
+    function mount(_params, _session, socket) {
+        var todos = Repo.all(Todo);
+        var changeset = Todo.changeset(new Todo(), {});
         
-        // Wait for watcher
-        const result = await watcher.waitForCompilation();
+        return socket
+            .assign("todos", todos)
+            .assign("changeset", changeset);
+    }
+    
+    function handle_event("save", params, socket) {
+        var todo_params = params.todo;
         
-        if (result.errors.length > 0) {
-            const fixes = analyzeErrors(result.errors);
-            await applyFixes(fixes);
+        switch (Repo.insert(Todo.changeset(new Todo(), todo_params))) {
+            case {ok: todo}:
+                var todos = [todo].concat(socket.assigns.todos);
+                return socket
+                    .assign("todos", todos)
+                    .assign("changeset", Todo.changeset(new Todo(), {}))
+                    .put_flash("info", "Todo created successfully");
+                    
+            case {error: changeset}:
+                return socket.assign("changeset", changeset);
         }
+    }
+    
+    function handle_event("toggle", %{"id" => id}, socket) {
+        var todo = Repo.get(Todo, id);
+        Repo.update(Todo.changeset(todo, {completed: !todo.completed}));
         
-        // Verify with tests
-        const tests = await runTests();
-        if (!tests.allPassing) {
-            await fixTests(tests.failures);
-        }
+        var todos = Repo.all(Todo);
+        return socket.assign("todos", todos);
+    }
+    
+    function render(assigns) {
+        return hxx('
+            <div class="max-w-4xl mx-auto p-6">
+                <h1 class="text-3xl font-bold mb-6">Todo List</h1>
+                
+                <.form let={f} for={@changeset} phx-submit="save">
+                    <div class="mb-4">
+                        <%= text_input f, :title, placeholder: "Enter todo title",
+                            class: "w-full px-3 py-2 border rounded" %>
+                        <%= error_tag f, :title %>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <%= textarea f, :description, placeholder: "Description (optional)",
+                            rows: 3, class: "w-full px-3 py-2 border rounded" %>
+                        <%= error_tag f, :description %>
+                    </div>
+                    
+                    <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded">
+                        Add Todo
+                    </button>
+                </.form>
+                
+                <div class="mt-8">
+                    <%= for todo <- @todos do %>
+                        <div class="border p-4 mb-2 rounded">
+                            <div class="flex items-center">
+                                <input type="checkbox" 
+                                    phx-click="toggle" 
+                                    phx-value-id={todo.id}
+                                    checked={todo.completed}
+                                    class="mr-3" />
+                                <div class={if todo.completed, do: "line-through opacity-50"}>
+                                    <h3 class="font-semibold"><%= todo.title %></h3>
+                                    <%= if todo.description do %>
+                                        <p class="text-gray-600"><%= todo.description %></p>
+                                    <% end %>
+                                </div>
+                            </div>
+                        </div>
+                    <% end %>
+                </div>
+            </div>
+        ');
     }
 }
 ```
 
-#### Pattern 2: Multi-File Coordination
+All files are compiling successfully! The watcher has been incredibly helpful - it caught 
+the import issue immediately and confirmed the fix worked. 
+
+Now let me create the migration for the database:
+
+Creating src_haxe/migrations/CreateTodos.hx...
+
+[10:32:28] File changed: src_haxe/migrations/CreateTodos.hx
+[10:32:28] Compiling...
+[10:32:28] ✅ Compiled 1 file in 0.098s
+
+Perfect! The migration compiled. You can now:
+
+1. Run the migration: `mix ecto.migrate`
+2. Add the LiveView to your router: `live "/todos", TodoLive`
+3. Start Phoenix: `mix phx.server`
+
+The watcher will continue monitoring changes. As you develop, I'll see compilation results
+in real-time and can fix any issues immediately. Would you like me to add any additional
+features like todo deletion or due dates?
+
+Developer: Let's add a delete button for each todo
+
+Claude: I'll add a delete button to each todo item. Let me update the LiveView:
+
+Updating the render function and adding a delete handler...
+
+[10:33:05] File changed: src_haxe/live/TodoLive.hx
+[10:33:05] Compiling...
+[10:33:05] ✅ Compiled 1 file in 0.112s
+
+Great! I've added the delete functionality. Here's what changed:
+
+1. Added a delete event handler:
+```haxe
+function handle_event("delete", %{"id" => id}, socket) {
+    Repo.get!(Todo, id) |> Repo.delete!();
+    var todos = Repo.all(Todo);
+    return socket
+        .assign("todos", todos)
+        .put_flash("info", "Todo deleted");
+}
+```
+
+2. Updated the render with a delete button:
+```haxe
+<button phx-click="delete" 
+        phx-value-id={todo.id}
+        class="ml-auto text-red-500 hover:text-red-700">
+    Delete
+</button>
+```
+
+The watcher confirmed everything compiled successfully. Your todo app now has full CRUD
+operations! The compilation took only 112ms thanks to incremental compilation.
+
+Developer: Looks great! Can you add keyboard shortcuts - Enter to submit, Escape to clear?
+
+Claude: I'll add keyboard event handling for better UX. Updating the LiveView:
+
+[10:33:38] File changed: src_haxe/live/TodoLive.hx
+[10:33:38] Compiling...
+[10:33:39] ❌ Compilation failed
+
+Let me check what happened:
+
+$ mix haxe.source_map lib/todo_app/live/todo_live.ex 72 15
+
+Source position: src_haxe/live/TodoLive.hx:44:8
+
+The error is at line 44. Let me check the error details:
+
+$ mix haxe.errors --format json
+
+{
+  "errors": [{
+    "message": "Invalid event binding syntax",
+    "line": 44,
+    "suggestion": "Use phx-keydown and phx-key attributes"
+  }]
+}
+
+I see - I need to use the correct Phoenix LiveView keyboard event syntax. Fixing now:
+
+[10:33:52] File changed: src_haxe/live/TodoLive.hx
+[10:33:52] Compiling...
+[10:33:52] ✅ Compiled 1 file in 0.095s
+
+Perfect! I've added the keyboard shortcuts:
+
+```haxe
+function handle_event("clear_form", _params, socket) {
+    return socket.assign("changeset", Todo.changeset(new Todo(), {}));
+}
+
+// In the render function:
+<.form let={f} for={@changeset} 
+       phx-submit="save"
+       phx-keydown="clear_form" 
+       phx-key="Escape">
+    
+    <%= text_input f, :title, 
+        placeholder: "Enter todo title (ESC to clear)",
+        class: "w-full px-3 py-2 border rounded",
+        autofocus: true %>
+```
+
+The keyboard shortcuts are now working:
+- **Enter**: Submits the form (default behavior)
+- **Escape**: Clears the form
+
+The watcher's instant feedback made fixing the event binding syntax quick and easy. The
+source mapping showed me exactly where the error was in the Haxe source, not the generated
+Elixir, which made debugging much faster.
+
+Is there anything else you'd like me to add to the todo app?
+
+Developer: This is perfect! The watcher made development so smooth. Thanks!
+
+Claude: You're welcome! The watcher really does make a huge difference - we went from idea
+to fully functional todo app with validations, CRUD operations, and keyboard shortcuts in
+just a few minutes. Each change compiled in around 100ms, and the immediate error feedback
+helped me fix issues right away.
+
+The key benefits we experienced:
+- **Instant compilation** (0.089-0.134s per change)
+- **Immediate error detection** with precise source positions
+- **Source mapping** pointing to exact Haxe lines, not generated Elixir
+- **Continuous validation** ensuring code always compiles
+
+The watcher will keep running in the background. Happy coding with your new todo app!
+
+[Watcher continues running, ready for more changes...]
+```
+
+### Advanced Patterns with Claude CLI
+
+#### Pattern 1: Multi-File Coordination
 
 ```bash
 # Claude handles related changes
-claude-code "Rename User.age to User.birthDate"
+claude  # Then request: "Rename User.age to User.birthDate"
 
 > [Claude] This will affect multiple files. Analyzing...
 > [Claude] Found 7 files to update:
