@@ -7,6 +7,9 @@ yarn-error.log*
 # Build outputs
 out/
 _build/
+*.beam
+*.o
+*.so
 .haxerc
 haxe_libraries/
 
@@ -43,6 +46,12 @@ erl_crash.dump
 *.ez
 .elixir_ls/
 .mix/
+# Mix compilation artifacts
+compile.lock
+compile.app_cache
+compile.elixir_scm
+compile.protocols
+*.app
 
 # Temporary files
 *.tmp
