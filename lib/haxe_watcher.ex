@@ -339,7 +339,11 @@ defmodule HaxeWatcher do
           build_file_path
         end
         
-        case System.cmd("npx", ["haxe", final_build_file], compile_opts) do
+        # Use the project's lix-managed haxe if available
+        {haxe_cmd, haxe_args} = get_haxe_command()
+        final_args = haxe_args ++ [final_build_file]
+        
+        case System.cmd(haxe_cmd, final_args, compile_opts) do
           {output, 0} ->
             {:ok, output}
           {output, exit_code} ->
@@ -421,4 +425,53 @@ defmodule HaxeWatcher do
   defp event_to_string(:removed), do: "removed"
   defp event_to_string(:renamed), do: "renamed"
   defp event_to_string(other), do: to_string(other)
+  
+  defp get_haxe_command() do
+    # First try to find the project's lix-managed haxe binary
+    # This ensures we use the correct version even when running from temp directories
+    project_root = find_project_root()
+    project_haxe = Path.join([project_root, "node_modules", ".bin", "haxe"])
+    
+    cond do
+      # Check for project's lix-managed haxe first
+      File.exists?(project_haxe) ->
+        {project_haxe, []}
+      
+      # Fallback to npx haxe
+      System.find_executable("npx") != nil ->
+        {"npx", ["haxe"]}
+      
+      # Check if haxe is directly available
+      System.find_executable("haxe") != nil ->
+        {"haxe", []}
+        
+      true ->
+        # Final fallback - will likely fail but provides clear error
+        {"haxe", []}
+    end
+  end
+  
+  defp find_project_root() do
+    # Try to find the project root by looking for mix.exs or package.json
+    # Start from current directory and walk up
+    find_project_root_from(File.cwd!())
+  end
+  
+  defp find_project_root_from(dir) do
+    cond do
+      # Found project markers
+      File.exists?(Path.join(dir, "mix.exs")) or 
+      File.exists?(Path.join(dir, "package.json")) ->
+        dir
+      
+      # Reached root directory
+      dir == "/" or dir == Path.dirname(dir) ->
+        # Default to current directory if we can't find project root
+        File.cwd!()
+      
+      # Keep searching up
+      true ->
+        find_project_root_from(Path.dirname(dir))
+    end
+  end
 end

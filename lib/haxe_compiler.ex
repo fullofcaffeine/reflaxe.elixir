@@ -461,9 +461,17 @@ defmodule HaxeCompiler do
   end
   
   defp get_haxe_command() do
-    # Try to use npx haxe first (for project-specific versions)
+    # First try to find the project's lix-managed haxe binary
+    # This ensures we use the correct version even when running from temp directories
+    project_root = find_project_root()
+    project_haxe = Path.join([project_root, "node_modules", ".bin", "haxe"])
+    
     cond do
-      # Check if npx is available
+      # Check for project's lix-managed haxe first
+      File.exists?(project_haxe) ->
+        {project_haxe, []}
+      
+      # Check if npx is available (fallback)
       System.find_executable("npx") != nil ->
         {"npx", ["haxe"]}
       
@@ -481,6 +489,30 @@ defmodule HaxeCompiler do
       true ->
         # Final fallback - will likely fail but provides clear error
         {"haxe", []}
+    end
+  end
+  
+  defp find_project_root() do
+    # Try to find the project root by looking for mix.exs or package.json
+    # Start from current directory and walk up
+    find_project_root_from(File.cwd!())
+  end
+  
+  defp find_project_root_from(dir) do
+    cond do
+      # Found project markers
+      File.exists?(Path.join(dir, "mix.exs")) or 
+      File.exists?(Path.join(dir, "package.json")) ->
+        dir
+      
+      # Reached root directory
+      dir == "/" or dir == Path.dirname(dir) ->
+        # Default to current directory if we can't find project root
+        File.cwd!()
+      
+      # Keep searching up
+      true ->
+        find_project_root_from(Path.dirname(dir))
     end
   end
   
