@@ -1,7 +1,23 @@
--cp src_haxe
+# Example build configuration for Reflaxe.Elixir
+# This shows the minimal setup needed to compile Haxe to Elixir
+
+# Include Reflaxe.Elixir source directly (for examples running from subdirectories)
 -cp ../../src
 -cp ../../std
 -lib reflaxe
+
+# Source directory containing your .hx files
+-cp src_haxe
+
+# Output directory for generated .ex files
+-D elixir_output=lib
+
+# Required for Reflaxe targets
 -D reflaxe_runtime
--D source-map    # Enable source mapping for debugging
--main phoenix.Application
+
+# Define library version and initialize compiler
+-D reflaxe.elixir=0.1.0
+--macro reflaxe.elixir.CompilerInit.Start()
+
+# Main class to compile (entry point)
+phoenix.Application
