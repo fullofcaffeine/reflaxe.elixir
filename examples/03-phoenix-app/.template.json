@@ -1,0 +1,32 @@
+{
+  "name": "Phoenix Web Application",
+  "description": "Full Phoenix web application with Reflaxe.Elixir compilation",
+  "type": "phoenix",
+  "features": [
+    "Phoenix web framework",
+    "Phoenix LiveView support",
+    "Haxe compilation pipeline",
+    "Application module structure",
+    "Phoenix router and controllers",
+    "Asset pipeline (esbuild)",
+    "Development tools and live reload"
+  ],
+  "requirements": {
+    "haxe": "4.3+",
+    "elixir": "1.14+", 
+    "phoenix": "1.7+",
+    "node": "16+"
+  },
+  "placeholders": {
+    "__PROJECT_NAME__": "Project name in snake_case",
+    "__PROJECT_MODULE__": "Main module name in PascalCase",
+    "__PROJECT_VERSION__": "Project version (default: 0.1.0)",
+    "__YEAR__": "Current year for copyright"
+  },
+  "dependencies": {
+    "phoenix": "~> 1.7.0",
+    "phoenix_live_view": "~> 0.20.0",
+    "phoenix_html": "~> 3.3",
+    "phoenix_live_dashboard": "~> 0.8.0"
+  }
+}

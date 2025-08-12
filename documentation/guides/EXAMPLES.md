@@ -2,6 +2,15 @@
 
 This guide provides walkthroughs for all example projects, showing how to use Reflaxe.Elixir features in practice.
 
+## Template System Integration
+
+**Important**: Many of these examples serve as **project generator templates**:
+- `examples/02-mix-project` → Basic project template
+- `examples/03-phoenix-app` → Phoenix project template  
+- `examples/06-user-management` → LiveView project template
+
+Each template includes a `.template.json` configuration file describing features, requirements, and placeholders. See [PROJECT_GENERATOR_GUIDE.md](../PROJECT_GENERATOR_GUIDE.md#template-system) for complete details.
+
 ## ✅ Working Examples
 
 ### 01-simple-modules
@@ -255,6 +264,69 @@ npx haxe build.hxml
 - `@optional_callbacks` directives for flexible contracts
 - `StreamProcessor` and `BatchProcessor` modules with @behaviour directives
 - Complete OTP integration with GenServer callbacks
+
+### Abstract Types Example
+**Status**: Production Ready ✨ NEW  
+**Purpose**: Type-safe wrappers with operator overloading
+
+**Key Features Demonstrated**:
+- Abstract type compilation to `_Impl_` modules
+- Operator overloading with @:op metadata
+- Constructor and conversion functions
+- Type-safe arithmetic operations
+- Implicit casting with from/to declarations
+
+**Example Usage**:
+```haxe
+// Simple abstract type wrapping Int
+abstract UserId(Int) from Int to Int {
+    public function new(id: Int) {
+        this = id;
+    }
+    
+    @:op(A + B) public static function add(a: UserId, b: UserId): UserId {
+        return new UserId(a.toInt() + b.toInt());
+    }
+    
+    public function toInt(): Int {
+        return this;
+    }
+}
+
+// Complex abstract with multiple operators
+abstract Money(Int) from Int {
+    @:op(A + B) public static function add(a: Money, b: Money): Money;
+    @:op(A * B) public static function multiply(a: Money, multiplier: Int): Money;
+    @:to public function toDollars(): Float;
+}
+```
+
+**Generated Elixir**:
+```elixir
+defmodule UserId_Impl_ do
+  def _new(arg0) do
+    arg0
+  end
+  
+  def add(arg0, arg1) do
+    UserId_Impl_._new(UserId_Impl_.to_int(arg0) + UserId_Impl_.to_int(arg1))
+  end
+  
+  def to_int(arg0) do
+    arg0
+  end
+end
+```
+
+**Usage in Main Code**:
+```haxe
+var user1 = new UserId(100);
+var user2 = new UserId(200);
+var combined = user1 + user2;  // Uses add operator
+trace("Combined: " + combined.toString());
+```
+
+**Test Location**: `test/tests/abstract_types/`
 
 ### Performance Tips
 - Use unified compilation instead of `--next` approach
