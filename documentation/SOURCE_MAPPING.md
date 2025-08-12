@@ -142,6 +142,40 @@ public function stringWritten(str: String): Void {
 }
 ```
 
+#### Source Path Normalization
+
+To ensure cross-platform compatibility and reliable CI testing, SourceMapWriter normalizes source file paths to environment-independent relative paths:
+
+```haxe
+// In SourceMapWriter.hx
+private function normalizeSourcePath(sourceFile: String): String {
+    // Standard library files: /path/to/haxe/std/haxe/Log.hx → std/haxe/Log.hx
+    if (sourceFile.indexOf('/std/') >= 0) {
+        var stdIndex = sourceFile.indexOf('/std/');
+        return sourceFile.substring(stdIndex + 1); // Keep "std/" prefix
+    }
+    
+    // Project files: /path/to/project/src/Main.hx → src/Main.hx  
+    if (sourceFile.indexOf('/src/') >= 0) {
+        var srcIndex = sourceFile.indexOf('/src/');
+        return sourceFile.substring(srcIndex + 1); // Keep "src/" prefix
+    }
+    
+    // Fallback: use filename only
+    var lastSlash = sourceFile.lastIndexOf('/');
+    if (lastSlash >= 0) {
+        return sourceFile.substring(lastSlash + 1);
+    }
+    return sourceFile;
+}
+```
+
+**Benefits**:
+- **Cross-Platform Compatibility**: Source maps work identically on macOS development and Ubuntu CI environments
+- **Environment Independence**: No absolute path dependencies that vary by system
+- **Consistent Testing**: Snapshot tests produce identical results across all environments
+- **Standard Compliance**: Relative paths are preferred practice for portable source maps
+
 #### Compilation Pipeline Integration
 
 Source mapping is integrated at multiple points in the compilation process:
@@ -1220,7 +1254,7 @@ The test validates multiple aspects:
    {
      "version": 3,
      "mappings": "AAwBG,AAAA,AAAQ,AAAA...",  // Must be valid VLQ Base64
-     "sources": ["/path/to/SourceMapTest.hx"]   // Must reference correct Haxe file
+     "sources": ["std/haxe/SourceMapTest.hx"]   // Environment-independent relative path
    }
    ```
 
