@@ -1,6 +1,6 @@
 defmodule Drawable do
   @moduledoc """
-  Drawable module generated from Haxe
+  Drawable behavior generated from Haxe interface
   
   
  * Classes test case
@@ -8,37 +8,17 @@ defmodule Drawable do
  
   """
 
-  # Instance functions
-  @doc "Function draw"
-  @spec draw() :: TInst(String,[]).t()
-  def draw() do
-    # TODO: Implement function body
-    nil
-  end
-
-  @doc "Function get_position"
-  @spec get_position() :: TInst(Point,[]).t()
-  def get_position() do
-    # TODO: Implement function body
-    nil
-  end
-
+  @callback draw() :: TInst(String,[]).t()
+  @callback get_position() :: TInst(Point,[]).t()
 end
 
 
 defmodule Updatable do
   @moduledoc """
-  Updatable module generated from Haxe
+  Updatable behavior generated from Haxe interface
   """
 
-  # Instance functions
-  @doc "Function update"
-  @spec update(TAbstract(Float,[]).t()) :: TAbstract(Void,[]).t()
-  def update(arg0) do
-    # TODO: Implement function body
-    nil
-  end
-
+  @callback update(TAbstract(Float,[]).t()) :: TAbstract(Void,[]).t()
 end
 
 
@@ -68,6 +48,8 @@ end
 
 
 defmodule Shape do
+  @behaviour Drawable
+
   @moduledoc """
   Shape module generated from Haxe
   """
@@ -100,6 +82,8 @@ end
 
 
 defmodule Circle do
+  @behaviour Updatable
+
   @moduledoc """
   Circle module generated from Haxe
   """

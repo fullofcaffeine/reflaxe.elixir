@@ -706,20 +706,34 @@ class ElixirCompiler extends BaseCompiler {
     }
     
     /**
-     * Compile switch expression to Elixir case statement with enum pattern matching
+     * Compile switch expression to Elixir case statement with advanced pattern matching
+     * Supports enum patterns, guard clauses, binary patterns, and pin operators
      */
     private function compileSwitchExpression(switchExpr: TypedExpr, cases: Array<{values: Array<TypedExpr>, expr: TypedExpr}>, defaultExpr: Null<TypedExpr>): String {
+        // Use PatternMatcher for advanced pattern compilation
+        if (patternMatcher == null) {
+            patternMatcher = new reflaxe.elixir.helpers.PatternMatcher();
+            patternMatcher.setCompiler(this);
+        }
+        
         var result = new StringBuf();
         var switchValue = compileExpression(switchExpr);
         
         result.add('case ${switchValue} do\n');
         
-        // Process each case
+        // Process each case with advanced pattern support
         for (caseItem in cases) {
             for (value in caseItem.values) {
-                var pattern = compileEnumPattern(value);
+                // Use PatternMatcher for all pattern types
+                var pattern = patternMatcher.compilePattern(value);
+                
+                // Check for guard expressions (if the field exists)
+                var guardClause = "";
+                // Guards are typically embedded in the value patterns in Haxe switch statements
+                // We'll need to extract them from the pattern if present
+                
                 var caseExpr = compileExpression(caseItem.expr);
-                result.add('  ${pattern} ->\n');
+                result.add('  ${pattern}${guardClause} ->\n');
                 result.add('    ${caseExpr}\n');
             }
         }

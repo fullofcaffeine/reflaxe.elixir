@@ -1,4 +1,6 @@
 defmodule EnumValueMap do
+  @behaviour IMap
+
   @moduledoc """
   EnumValueMap module generated from Haxe
   

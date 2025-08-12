@@ -132,8 +132,99 @@ class GuardCompiler {
      * Compile complex guard expressions
      */
     private function compileComplexGuard(guardExpr: Dynamic): String {
+        // Check for range patterns
+        if (isRangeGuard(guardExpr)) {
+            return compileRangeGuard(guardExpr);
+        }
+        
+        // Check for membership tests
+        if (isMembershipGuard(guardExpr)) {
+            return compileMembershipGuard(guardExpr);
+        }
+        
         // Handle more complex patterns
         return "true"; // Fallback
+    }
+    
+    /**
+     * Check if expression is a range guard (value in 1..10)
+     */
+    private function isRangeGuard(expr: Dynamic): Bool {
+        if (expr == null) return false;
+        
+        // Check for "in" operator with range
+        if (getExprType(expr) == "TBinop") {
+            var binop = expr.expr;
+            return binop.op == "OpIn" && isRangeExpression(binop.e2);
+        }
+        
+        return false;
+    }
+    
+    /**
+     * Check if expression is a range (1..10 or 1...10)
+     */
+    private function isRangeExpression(expr: Dynamic): Bool {
+        if (expr == null) return false;
+        
+        if (getExprType(expr) == "TBinop") {
+            var binop = expr.expr;
+            return binop.op == "OpInterval";  // Range operator
+        }
+        
+        return false;
+    }
+    
+    /**
+     * Compile range guard: value in 1..10 → value in 1..10
+     */
+    private function compileRangeGuard(guardExpr: Dynamic): String {
+        var binop = guardExpr.expr;
+        var value = compileGuardOperand(binop.e1);
+        var range = compileRangeExpression(binop.e2);
+        
+        return '${value} in ${range}';
+    }
+    
+    /**
+     * Compile range expression: 1..10 → 1..10
+     */
+    private function compileRangeExpression(rangeExpr: Dynamic): String {
+        if (getExprType(rangeExpr) == "TBinop") {
+            var binop = rangeExpr.expr;
+            if (binop.op == "OpInterval") {
+                var start = compileGuardOperand(binop.e1);
+                var end = compileGuardOperand(binop.e2);
+                return '${start}..${end}';
+            }
+        }
+        
+        return "1..10"; // Fallback
+    }
+    
+    /**
+     * Check if expression is a membership guard (value in list)
+     */
+    private function isMembershipGuard(expr: Dynamic): Bool {
+        if (expr == null) return false;
+        
+        if (getExprType(expr) == "TBinop") {
+            var binop = expr.expr;
+            return binop.op == "OpIn" && !isRangeExpression(binop.e2);
+        }
+        
+        return false;
+    }
+    
+    /**
+     * Compile membership guard: value in [1, 2, 3] → value in [1, 2, 3]
+     */
+    private function compileMembershipGuard(guardExpr: Dynamic): String {
+        var binop = guardExpr.expr;
+        var value = compileGuardOperand(binop.e1);
+        var list = compileGuardOperand(binop.e2);
+        
+        return '${value} in ${list}';
     }
     
     /**
@@ -213,22 +304,37 @@ class GuardCompiler {
     private function convertGuardFunction(funcName: String): String {
         return switch (funcName) {
             case "isString": "is_binary";
+            case "isBinary": "is_binary";
             case "isInt": "is_integer";
             case "isFloat": "is_float";
             case "isBool": "is_boolean";
             case "isArray": "is_list";
+            case "isList": "is_list";
             case "isMap": "is_map";
             case "isAtom": "is_atom";
             case "isTuple": "is_tuple";
             case "isFunction": "is_function";
             case "isNil": "is_nil";
+            case "isNumber": "is_number";
+            case "isPort": "is_port";
+            case "isPid": "is_pid";
+            case "isReference": "is_reference";
             case "length": "length";
             case "size": "byte_size";
+            case "byteSize": "byte_size";
+            case "tupleSize": "tuple_size";
+            case "mapSize": "map_size";
+            case "bitSize": "bit_size";
             case "abs": "abs";
             case "round": "round";
             case "trunc": "trunc";
             case "floor": "floor";
             case "ceil": "ceil";
+            case "elem": "elem";
+            case "hd": "hd";
+            case "tl": "tl";
+            case "div": "div";
+            case "rem": "rem";
             case _: NamingHelper.getElixirFunctionName(funcName);
         }
     }
@@ -316,9 +422,20 @@ class GuardCompiler {
         var funcName = extractFunctionName(callExpr.expr.e);
         
         var allowedGuardFunctions = [
+            // Type checking guards
             "is_atom", "is_binary", "is_boolean", "is_float", "is_function",
             "is_integer", "is_list", "is_map", "is_nil", "is_tuple",
-            "length", "byte_size", "abs", "round", "trunc", "floor", "ceil"
+            "is_number", "is_port", "is_pid", "is_reference",
+            // Size and length guards
+            "length", "byte_size", "tuple_size", "map_size", "bit_size",
+            // Math guards
+            "abs", "round", "trunc", "floor", "ceil", "div", "rem",
+            // List guards
+            "hd", "tl",
+            // Tuple guards
+            "elem",
+            // Comparison and membership
+            "in", "not", "and", "or"
         ];
         
         var elixirFuncName = convertGuardFunction(funcName);

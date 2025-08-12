@@ -65,6 +65,15 @@ class PatternMatcher {
     public function compilePattern(patternExpr: Dynamic): String {
         if (patternExpr == null) return "_";
         
+        // Check for special pattern types first
+        if (isBinaryPattern(patternExpr)) {
+            return compileBinaryPattern(patternExpr);
+        }
+        
+        if (isPinPattern(patternExpr)) {
+            return compilePinPattern(patternExpr);
+        }
+        
         return switch (getExprType(patternExpr)) {
             // Enum constructor patterns: Some(value) → {:some, value}
             case "TCall":
@@ -150,6 +159,7 @@ class PatternMatcher {
     
     /**
      * Compile array pattern: [1, x, ...rest] → [1, x | rest]
+     * Supports advanced list patterns including head|tail syntax
      */
     private function compileArrayPattern(patternExpr: Dynamic): String {
         var arr = patternExpr.expr;
@@ -157,19 +167,39 @@ class PatternMatcher {
         if (arr.el != null) {
             var elements = [];
             var restElement = null;
+            var hasRestPattern = false;
             
-            for (element in (arr.el : Array<Dynamic>)) {
-                if (isRestPattern(element)) {
-                    restElement = compilePattern(element);
-                } else {
+            // Check for rest patterns and separate elements
+            for (i in 0...(arr.el : Array<Dynamic>).length) {
+                var element = (arr.el : Array<Dynamic>)[i];
+                
+                // Check if this is a rest/tail pattern
+                if (isRestPattern(element) || isTailPattern(element)) {
+                    hasRestPattern = true;
+                    // In Elixir, rest pattern is the tail of the list
+                    restElement = compilePattern(extractRestVariable(element));
+                } else if (!hasRestPattern) {
+                    // Only add elements before the rest pattern
                     elements.push(compilePattern(element));
+                } else {
+                    // Elements after rest pattern in Haxe need special handling
+                    // This is not typically supported in Elixir pattern matching
+                    trace("Warning: Elements after rest pattern are not supported in Elixir");
                 }
             }
             
+            // Generate the appropriate Elixir list pattern
             if (restElement != null) {
-                return '[${elements.join(', ')} | ${restElement}]';
-            } else {
-                return '[${elements.join(', ')}]';
+                if (elements.length > 0) {
+                    // [head, elements | tail] pattern
+                    return '[${elements.join(", ")} | ${restElement}]';
+                } else {
+                    // Just the tail variable
+                    return restElement;
+                }
+            } else if (elements.length > 0) {
+                // Simple list pattern without rest
+                return '[${elements.join(", ")}]';
             }
         }
         
@@ -337,10 +367,150 @@ class PatternMatcher {
         return expr != null && expr.isRest == true;
     }
     
+    private function isTailPattern(expr: Dynamic): Bool {
+        // Check if this represents a tail pattern in list matching
+        return expr != null && (expr.isTail == true || expr.isRest == true);
+    }
+    
+    private function extractRestVariable(expr: Dynamic): Dynamic {
+        // Extract the actual variable from a rest pattern
+        if (expr != null && expr.restVar != null) {
+            return expr.restVar;
+        }
+        return expr;
+    }
+    
     private function getFunctionName(expr: Dynamic): String {
         if (expr == null) return "unknown";
         // Extract function name from TField or similar
         return "func"; // Simplified
+    }
+    
+    /**
+     * Check if expression is a binary pattern
+     */
+    private function isBinaryPattern(expr: Dynamic): Bool {
+        if (expr == null) return false;
+        
+        // Check for binary pattern metadata or special syntax
+        if (expr.isBinary == true) return true;
+        
+        // Check if it's a call to binary construction
+        if (getExprType(expr) == "TCall") {
+            var call = expr.expr;
+            if (call.e != null) {
+                var funcExpr = call.e;
+                // Check for binary constructor patterns
+                if (funcExpr.isBinaryConstructor == true) {
+                    return true;
+                }
+            }
+        }
+        
+        return false;
+    }
+    
+    /**
+     * Compile binary pattern: <<a::8, b::binary>> → <<a::8, b::binary>>
+     */
+    private function compileBinaryPattern(patternExpr: Dynamic): String {
+        var result = new StringBuf();
+        result.add("<<");
+        
+        // Extract binary segments
+        var segments = [];
+        if (patternExpr.segments != null) {
+            for (segment in (patternExpr.segments : Array<Dynamic>)) {
+                segments.push(compileBinarySegment(segment));
+            }
+        } else {
+            // Fallback for simple binary patterns
+            segments.push("_::binary");
+        }
+        
+        result.add(segments.join(", "));
+        result.add(">>");
+        
+        return result.toString();
+    }
+    
+    /**
+     * Compile a single binary segment with size and type specifications
+     */
+    private function compileBinarySegment(segment: Dynamic): String {
+        if (segment == null) return "_";
+        
+        var varName = "_";
+        var size = "";
+        var type = "integer";
+        
+        // Extract variable name
+        if (segment.variable != null) {
+            varName = compilePattern(segment.variable);
+        }
+        
+        // Extract size specification
+        if (segment.size != null) {
+            size = "::" + Std.string(segment.size);
+        }
+        
+        // Extract type specification
+        if (segment.type != null) {
+            type = segment.type;
+        }
+        
+        // Build segment pattern
+        if (size != "") {
+            return '${varName}${size}';
+        } else if (type == "binary") {
+            return '${varName}::binary';
+        } else {
+            return '${varName}::${type}';
+        }
+    }
+    
+    /**
+     * Check if expression is a pin pattern (^variable)
+     */
+    private function isPinPattern(expr: Dynamic): Bool {
+        if (expr == null) return false;
+        
+        // Check for pin pattern metadata
+        if (expr.isPin == true) return true;
+        
+        // Check for ^ prefix in variable names (special handling)
+        if (getExprType(expr) == "TLocal") {
+            var local = expr.expr;
+            if (local.v != null && local.v.name != null) {
+                var name = local.v.name;
+                return name.charAt(0) == "^";
+            }
+        }
+        
+        return false;
+    }
+    
+    /**
+     * Compile pin pattern: ^existing_var → ^existing_var
+     */
+    private function compilePinPattern(patternExpr: Dynamic): String {
+        var varName = "";
+        
+        if (getExprType(patternExpr) == "TLocal") {
+            var local = patternExpr.expr;
+            if (local.v != null && local.v.name != null) {
+                varName = NamingHelper.toSnakeCase(local.v.name);
+                // Remove ^ if it's already in the name
+                if (varName.charAt(0) == "^") {
+                    varName = varName.substr(1);
+                }
+            }
+        } else {
+            // Try to extract variable name from pattern
+            varName = compileVariablePattern(patternExpr);
+        }
+        
+        return '^${varName}';
     }
     
     private var compiler: Null<reflaxe.elixir.ElixirCompiler> = null;

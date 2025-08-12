@@ -46,10 +46,25 @@ class ClassCompiler {
         this.currentClassName = className;
         var isStruct = hasStructMetadata(classType);
         var isModule = hasModuleMetadata(classType);
+        var isInterface = classType.isInterface;
         var result = new StringBuf();
+        
+        // For interfaces, compile as behavior definition
+        if (isInterface) {
+            return compileInterface(classType, funcFields);
+        }
         
         // Module definition
         result.add('defmodule ${className} do\n');
+        
+        // Add @behaviour annotations for implemented interfaces
+        if (classType.interfaces != null && classType.interfaces.length > 0) {
+            for (interfaceRef in classType.interfaces) {
+                var interfaceName = NamingHelper.getElixirModuleName(interfaceRef.t.get().name);
+                result.add('  @behaviour ${interfaceName}\n');
+            }
+            result.add('\n');
+        }
         
         // Add Phoenix-specific use statements
         if (PhoenixMapper.isPhoenixContext(classType)) {
@@ -616,6 +631,58 @@ class ClassCompiler {
      */
     private function checkIfAbstractImplementationMethod(expr: Dynamic): Bool {
         return false; // Deprecated - use checkIfAbstractImplementationClass instead
+    }
+    
+    /**
+     * Compile interface to Elixir behavior
+     */
+    private function compileInterface(classType: ClassType, funcFields: Array<ClassFuncData>): String {
+        var className = NamingHelper.getElixirModuleName(classType.name);
+        var result = new StringBuf();
+        
+        result.add('defmodule ${className} do\n');
+        result.add('  @moduledoc """\n');
+        result.add('  ${className} behavior generated from Haxe interface\n');
+        if (classType.doc != null) {
+            result.add('  \n');
+            result.add('  ${classType.doc}\n');
+        }
+        result.add('  """\n\n');
+        
+        // Generate @callback specifications for each interface method
+        for (func in funcFields) {
+            var funcName = NamingHelper.getElixirFunctionName(func.field.name);
+            var params = [];
+            var paramTypes = [];
+            
+            // Generate parameter list and types
+            if (func.args != null) {
+                for (i in 0...func.args.length) {
+                    var arg = func.args[i];
+                    params.push('arg${i}');
+                    
+                    // Get parameter type using ElixirTyper
+                    var argType = arg.type != null ? Std.string(arg.type) : "Dynamic";
+                    var elixirType = typer.compileType(argType);
+                    paramTypes.push(elixirType);
+                }
+            }
+            
+            // Get return type using ElixirTyper
+            var returnType = func.ret != null ? Std.string(func.ret) : "Dynamic";
+            var elixirReturnType = typer.compileType(returnType);
+            
+            // Generate @callback
+            if (paramTypes.length > 0) {
+                result.add('  @callback ${funcName}(${paramTypes.join(", ")}) :: ${elixirReturnType}\n');
+            } else {
+                result.add('  @callback ${funcName}() :: ${elixirReturnType}\n');
+            }
+        }
+        
+        result.add('end\n');
+        
+        return result.toString();
     }
 }
 

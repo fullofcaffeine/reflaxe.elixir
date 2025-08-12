@@ -32,7 +32,7 @@ end
 
 defmodule IMap do
   @moduledoc """
-  IMap module generated from Haxe
+  IMap behavior generated from Haxe interface
   """
 
 end

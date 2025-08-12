@@ -1,0 +1,236 @@
+/**
+ * Advanced Pattern Matching Test
+ * Tests binary patterns, pin operators, advanced guards, and complex matching scenarios
+ */
+
+class AdvancedPatternsTest {
+    
+    /**
+     * Binary pattern matching - packet parsing
+     */
+    public static function parsePacket(packet: Dynamic): String {
+        // Simulating binary patterns - would need special syntax support
+        return switch (packet) {
+            case {type: "binary", segments: [{variable: "version", size: 8}, {variable: "flags", size: 16}, {variable: "data", type: "binary"}]}:
+                'packet v${version} flags=${flags}';
+            case {type: "binary", segments: [{variable: "header", size: 32}, {variable: "payload", type: "binary"}]}:
+                'header=${header}';
+            case _:
+                "unknown packet";
+        };
+    }
+    
+    /**
+     * Pin operator pattern matching
+     */
+    public static function matchWithPin(value: Int, expected: Int): String {
+        // Pin pattern would be: case ^expected:
+        // Simulating with metadata
+        return switch (value) {
+            case v if (v == expected):  // Simulating pin with guard
+                "matched expected";
+            case other:
+                'got ${other} instead';
+        };
+    }
+    
+    /**
+     * Advanced list patterns with head|tail
+     */
+    public static function processListAdvanced(list: Array<Int>): String {
+        return switch (list) {
+            case []:
+                "empty";
+            case [x]:
+                'single: ${x}';
+            case [first, second]:
+                'pair: ${first},${second}';
+            case [head, ...tail] if (head > 0):
+                'positive head ${head} with tail';
+            case [...init, last]:
+                'last element is ${last}';
+            case _:
+                "complex list";
+        };
+    }
+    
+    /**
+     * Range guards in pattern matching
+     */
+    public static function classifyNumber(n: Int): String {
+        return switch (n) {
+            case 0:
+                "zero";
+            case x if (x >= 1 && x <= 10):  // Range: x in 1..10
+                "small";
+            case x if (x >= 11 && x <= 100):  // Range: x in 11..100
+                "medium";
+            case x if (x >= 101 && x <= 1000):  // Range: x in 101..1000
+                "large";
+            case x if (x < 0):
+                "negative";
+            case _:
+                "huge";
+        };
+    }
+    
+    /**
+     * Complex guard functions
+     */
+    public static function validateInput(input: Dynamic): String {
+        return switch (input) {
+            case s if (Std.isOfType(s, String) && s.length > 0):  // is_binary && byte_size > 0
+                "valid string";
+            case n if (Std.isOfType(n, Int) && n >= 0 && n <= 255):  // is_integer && in range
+                "valid byte";
+            case arr if (Std.isOfType(arr, Array) && arr.length == 3):  // is_list && length == 3
+                "rgb triple";
+            case m if (Std.isOfType(m, haxe.ds.StringMap)):  // is_map
+                "map value";
+            case _:
+                "invalid";
+        };
+    }
+    
+    /**
+     * Membership guards (in operator)
+     */
+    public static function checkMembership(value: String): String {
+        var validValues = ["red", "green", "blue"];
+        var specialValues = ["alpha", "beta", "gamma"];
+        
+        return switch (value) {
+            case v if (validValues.indexOf(v) >= 0):  // v in validValues
+                "valid color";
+            case v if (specialValues.indexOf(v) >= 0):  // v in specialValues
+                "special value";
+            case "black" | "white":
+                "monochrome";
+            case _:
+                "unknown";
+        };
+    }
+    
+    /**
+     * Tuple pattern matching with guards
+     */
+    public static function matchTuple(tuple: Dynamic): String {
+        return switch (tuple) {
+            case {ok: true, value: v} if (v != null):
+                'success: ${v}';
+            case {error: true, reason: r}:
+                'error: ${r}';
+            case {status: s, code: c} if (c >= 200 && c < 300):
+                'http success ${c}';
+            case {status: s, code: c} if (c >= 400 && c < 500):
+                'client error ${c}';
+            case {status: s, code: c} if (c >= 500):
+                'server error ${c}';
+            case _:
+                "unknown tuple";
+        };
+    }
+    
+    /**
+     * Nested pattern with complex guards
+     */
+    public static function processMessage(msg: Dynamic): String {
+        return switch (msg) {
+            case {type: "user", data: {id: id, name: name}} if (id > 0):
+                'user ${name} with id ${id}';
+            case {type: "system", priority: p, message: m} if (p > 5):
+                'high priority: ${m}';
+            case {type: "batch", items: items} if (items.length > 10):
+                'large batch of ${items.length}';
+            case {type: "command", cmd: "shutdown", confirmed: true}:
+                "shutdown confirmed";
+            case _:
+                "unhandled message";
+        };
+    }
+    
+    /**
+     * Binary size guards
+     */
+    public static function checkBinarySize(data: Dynamic): String {
+        // Simulating byte_size, bit_size guards
+        return switch (data) {
+            case {binary: b, size: s} if (s == 8):
+                "single byte";
+            case {binary: b, size: s} if (s == 16):
+                "word";
+            case {binary: b, size: s} if (s == 32):
+                "dword";
+            case {binary: b, size: s} if (s == 64):
+                "qword";
+            case {binary: b, size: s} if (s % 8 == 0):
+                'byte-aligned: ${Std.int(s/8)} bytes';
+            case _:
+                "unaligned or unknown";
+        };
+    }
+    
+    /**
+     * Map size guards
+     */
+    public static function classifyMap(map: haxe.ds.StringMap<Dynamic>): String {
+        var size = Lambda.count(map);
+        return switch (size) {
+            case 0:
+                "empty map";
+            case 1:
+                "singleton map";
+            case s if (s >= 2 && s <= 5):
+                "small map";
+            case s if (s >= 6 && s <= 20):
+                "medium map";
+            case s if (s > 20):
+                "large map";
+            case _:
+                "invalid";
+        };
+    }
+    
+    /**
+     * Combined patterns with multiple guards
+     */
+    public static function validateRequest(req: Dynamic): String {
+        return switch (req) {
+            case {method: "GET", path: p} if (p.charAt(0) == "/"):
+                "valid GET";
+            case {method: "POST", body: b, contentType: "application/json"} if (b != null):
+                "valid POST with JSON";
+            case {method: "PUT", id: id, body: b} if (id > 0 && b != null):
+                'valid PUT for id ${id}';
+            case {method: "DELETE", id: id} if (id > 0):
+                'valid DELETE for id ${id}';
+            case {method: m} if (["OPTIONS", "HEAD", "PATCH"].indexOf(m) >= 0):
+                'other method: ${m}';
+            case _:
+                "invalid request";
+        };
+    }
+    
+    public static function main() {
+        trace("Advanced pattern matching test");
+        
+        // Test various patterns
+        trace(parsePacket({type: "binary", segments: [{variable: "version", size: 8}, {variable: "flags", size: 16}, {variable: "data", type: "binary"}]}));
+        trace(matchWithPin(42, 42));
+        trace(processListAdvanced([1, 2, 3]));
+        trace(classifyNumber(50));
+        trace(validateInput("hello"));
+        trace(checkMembership("blue"));
+        trace(matchTuple({ok: true, value: "data"}));
+        trace(processMessage({type: "user", data: {id: 123, name: "Alice"}}));
+        trace(checkBinarySize({binary: "data", size: 32}));
+        
+        var testMap = new haxe.ds.StringMap<Dynamic>();
+        testMap.set("a", 1);
+        testMap.set("b", 2);
+        testMap.set("c", 3);
+        trace(classifyMap(testMap));
+        
+        trace(validateRequest({method: "POST", body: "{}", contentType: "application/json"}));
+    }
+}
