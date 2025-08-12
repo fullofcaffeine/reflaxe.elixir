@@ -2,6 +2,8 @@ package reflaxe.elixir.helpers;
 
 #if (macro || reflaxe_runtime)
 
+import haxe.macro.Expr;
+
 using StringTools;
 
 /**
@@ -66,11 +68,51 @@ class MigrationDSL {
     
     /**
      * Get migration configuration from @:migration annotation
-     * Note: Temporarily simplified due to Haxe 4.3.6 API compatibility
+     * Extracts table name from @:migration("table_name") annotation
      */
-    public static function getMigrationConfig(classType: Dynamic): Dynamic {
-        // Simplified implementation - would extract from metadata in proper setup
-        return {table: "default_table", timestamp: "20250808000000"};
+    public static function getMigrationConfig(classType: haxe.macro.Type.ClassType): Dynamic {
+        if (!classType.meta.has(":migration")) {
+            return {table: "default_table", timestamp: generateTimestamp()};
+        }
+        
+        var meta = classType.meta.extract(":migration")[0];
+        var tableName = "default_table";
+        
+        if (meta.params != null && meta.params.length > 0) {
+            switch (meta.params[0].expr) {
+                case EConst(CString(s, _)):
+                    tableName = s;
+                case _:
+                    // Try to extract from class name if no string parameter
+                    tableName = extractTableNameFromClassName(classType.name);
+            }
+        } else {
+            // No parameters, extract from class name
+            tableName = extractTableNameFromClassName(classType.name);
+        }
+        
+        return {table: tableName, timestamp: generateTimestamp()};
+    }
+    
+    /**
+     * Extract table name from class name (CreateUsers -> users)
+     */
+    private static function extractTableNameFromClassName(className: String): String {
+        var tableName = className;
+        
+        // Remove common migration prefixes
+        tableName = tableName.replace("Create", "");
+        tableName = tableName.replace("Alter", "");
+        tableName = tableName.replace("Drop", "");
+        tableName = tableName.replace("Add", "");
+        tableName = tableName.replace("Remove", "");
+        
+        // Remove common suffixes
+        tableName = tableName.replace("Table", "");
+        tableName = tableName.replace("Migration", "");
+        
+        // Convert to snake_case
+        return camelCaseToSnakeCase(tableName);
     }
     
     /**
