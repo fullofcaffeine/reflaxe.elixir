@@ -14,64 +14,63 @@ This document explains the documentation architecture, the purpose of each docum
 - **What doesn't belong**: Historical task completions, duplicated content from other docs
 
 ### 2. Feature Documentation
-**Location**: `documentation/*.md`
+**Location**: `documentation/` organized in subdirectories
 - **Purpose**: Comprehensive guides for specific features and capabilities
-- **Pattern**: Follow SOURCE_MAPPING.md structure - thorough, example-rich, user-focused
-- **Examples**:
-  - `SOURCE_MAPPING.md` - Complete source mapping implementation guide
-  - `WATCHER_WORKFLOW.md` - File watching and incremental compilation
-  - `MIX_TASKS.md` - Mix task reference documentation
-  - `FEATURES.md` - Production readiness and capability status
-  - `ANNOTATIONS.md` - Annotation usage and reference guide
+- **Organization**:
+  - `architecture/` - System design, compilation flow, testing architecture
+  - `guides/` - User guides and tutorials
+  - `reference/` - API references, annotations, feature status
+  - `llm/` - LLM-specific documentation
+  - `history/` - Historical records and learnings
 
 ### 3. Architecture Documentation
-**Location**: `documentation/ARCHITECTURE.md`, `documentation/TESTING.md`
+**Location**: `documentation/architecture/`
 - **Purpose**: Explain system design, compilation flow, and architectural decisions
-- **Content**: 
-  - Macro-time vs runtime distinction
-  - Compilation pipeline
-  - Helper system architecture
-  - Testing philosophy and infrastructure
+- **Key Files**:
+  - `ARCHITECTURE.md` - Complete system architecture
+  - `TESTING.md` - Testing philosophy and infrastructure
+  - `TESTING_ARCHITECTURE_COMPLETE.md` - Comprehensive testing details
 
 ### 4. User Documentation
-**Location**: Project root and `documentation/`
+**Location**: `documentation/guides/`
 - **Purpose**: Help users get started and use the project effectively
 - **Key Files**:
-  - `README.md` - Project overview and quick start
-  - `INSTALLATION.md` - Detailed setup instructions
   - `GETTING_STARTED.md` - First steps with Reflaxe.Elixir
   - `EXAMPLES.md` - Working example walkthroughs
+  - `COOKBOOK.md` - Common patterns and recipes
   - `QUICKSTART.md` - Rapid onboarding guide
+  - `TUTORIAL_FIRST_PROJECT.md` - Step-by-step tutorial
 
-### 5. Development Documentation
-**Location**: `documentation/` and root
-- **Purpose**: Guide contributors and developers working on the compiler
+### 5. Reference Documentation
+**Location**: `documentation/reference/`
+- **Purpose**: API references and feature specifications
 - **Key Files**:
-  - `DEVELOPMENT.md` - Developer workflow and contribution guide
-  - `DEVELOPMENT_TOOLS.md` - Toolchain and infrastructure details
-  - `DEBUGGING.md` - Debugging strategies and tools
-  - `TROUBLESHOOTING.md` - Common issues and solutions
+  - `ANNOTATIONS.md` - Annotation usage and reference
+  - `FEATURES.md` - Production readiness and capability status
+  - `MIX_TASKS.md` - Mix task reference documentation
+  - `EXTERN_CREATION_GUIDE.md` - Creating extern definitions
 
 ### 6. Historical Documentation
-**Location**: `documentation/TASK_HISTORY.md`
-- **Purpose**: Preserve record of completed tasks and architectural decisions
-- **Content**: Task completions moved from CLAUDE.md to reduce size
-- **Value**: Reference for understanding implementation evolution
+**Location**: `documentation/history/`
+- **Purpose**: Preserve record of completed tasks and learnings
+- **Key Files**:
+  - `TASK_HISTORY.md` - Completed tasks and architectural decisions
+  - `LEARNINGS.md` - Consolidated implementation learnings and patterns
 
-### 7. Memory Files
-**Location**: `.llm-memory/`
-- **Purpose**: Implementation learnings and patterns discovered during development
-- **Content**: Specific lessons learned, patterns, and insights
-- **Management**: Archive redundant files when content is consolidated into main docs
-
-### 8. LLM-Specific Guides
-**Location**: `documentation/LLM_*.md`
+### 7. LLM-Specific Guides
+**Location**: `documentation/llm/`
 - **Purpose**: Guide AI agents in specific tasks
-- **Examples**:
+- **Key Files**:
   - `LLM_DOCUMENTATION_GUIDE.md` - How to write and maintain documentation
   - `LLM_WORKFLOW_COMPATIBILITY.md` - AI agent workflow patterns
   - `LLM_DEBUGGING_STRATEGY.md` - Debugging approach for agents
   - `LLM_STACKTRACE_DEBUGGING_COMPLETE.md` - Complete debugging methodology
+
+### 8. Special Directories
+**Location**: `.claude/`
+- **Purpose**: Claude-specific configuration and rules
+- **Content**: Project-specific rules and commands for AI agents
+- **Note**: Keep separate from main documentation
 
 ## Documentation Maintenance Rules
 
