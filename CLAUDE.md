@@ -76,6 +76,9 @@ This directory contains:
 - **Phoenix projects** - Phoenix/LiveView architectural patterns and Mix task organization
 - **Haxe macro projects** - Compile-time transformation macro examples for HXX processing reference
 - **Haxe source code** - The Haxe compiler source at `/Users/fullofcaffeine/workspace/code/haxe.elixir.reference/haxe` for API reference
+- **Reflaxe source** - The Reflaxe framework source for understanding compiler patterns
+- **Reference implementations** - Working Reflaxe targets for comparison and pattern reference
+- **Haxe API documentation** - Can check API at `/Users/fullofcaffeine/workspace/code/haxe.elixir.reference/haxe/std/` for standard library
 
 ## Project Context
 Implementing Reflaxe.Elixir - a Haxe compilation target for Elixir/BEAM with gradual typing support for Phoenix applications.
