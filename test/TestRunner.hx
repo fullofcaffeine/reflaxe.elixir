@@ -199,8 +199,6 @@ Examples:
 		// If updating intended, we're done
 		if (UpdateIntended) {
 			Sys.println('  ✅ Updated intended output');
-			// Restore directory before returning
-			Sys.setCwd(originalCwd);
 			return true;
 		}
 		

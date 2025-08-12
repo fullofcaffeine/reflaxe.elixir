@@ -257,7 +257,12 @@ defmodule HaxeCompiler do
         case :ets.lookup(:haxe_errors, :current_errors) do
           [{:current_errors, errors}] ->
             case format do
-              :json -> Jason.encode!(errors)
+              :json -> 
+                if Code.ensure_loaded?(Jason) do
+                  Jason.encode!(errors)
+                else
+                  inspect(errors)
+                end
               :map -> errors
             end
           [] -> 
