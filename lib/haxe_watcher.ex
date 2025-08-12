@@ -131,12 +131,7 @@ defmodule HaxeWatcher do
         {:noreply, %{state | watcher_pid: watcher_pid, file_count: file_count}}
       
       {:error, reason} ->
-        # In tests, this is often expected when testing error conditions
-        if Mix.env() == :test do
-          Logger.debug("Failed to start file watching: #{inspect(reason)} (may be expected in tests)")
-        else
-          Logger.error("Failed to start file watching: #{inspect(reason)}")
-        end
+        Logger.error("Failed to start file watching: #{inspect(reason)}")
         # Retry in 5 seconds
         Process.send_after(self(), :start_watching, 5000)
         {:noreply, state}
@@ -265,12 +260,7 @@ defmodule HaxeWatcher do
     existing_dirs = Enum.filter(state.dirs, &File.exists?/1)
     
     if Enum.empty?(existing_dirs) do
-      # In tests, this is often expected behavior
-      if Mix.env() == :test do
-        Logger.debug("No valid directories to watch: #{inspect(state.dirs)} (may be expected in tests)")
-      else
-        Logger.warning("No valid directories to watch: #{inspect(state.dirs)}")
-      end
+      Logger.warning("No valid directories to watch: #{inspect(state.dirs)}")
       {:error, :no_valid_directories}
     else
       # Check if FileSystem module is available
@@ -379,10 +369,12 @@ defmodule HaxeWatcher do
         Logger.info("✅ Haxe compilation successful")
         
       {:error, error} ->
-        # In test environment, use less alarming output for expected failures
-        if Mix.env() == :test do
-          Logger.debug("Haxe compilation failed (may be expected in tests): #{error}")
+        # Check if this is an expected error in test environment
+        if Mix.env() == :test and String.contains?(error, "Library reflaxe.elixir is not installed") do
+          # Use warning level without emoji for expected test errors
+          Logger.warning("Haxe compilation failed (expected in test): #{error}")
         else
+          # Use error level with emoji for real errors
           Logger.error("❌ Haxe compilation failed: #{error}")
         end
     end
