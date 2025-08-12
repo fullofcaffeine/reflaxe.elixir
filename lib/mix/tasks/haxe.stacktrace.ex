@@ -104,14 +104,19 @@ defmodule Mix.Tasks.Haxe.Stacktrace do
   end
 
   defp display_json_stacktrace(error, opts) do
-    stacktrace_data = build_stacktrace_data(error, opts)
-    
-    case Jason.encode(stacktrace_data, pretty: true) do
-      {:ok, json} ->
-        IO.puts(json)
-        
-      {:error, reason} ->
-        Mix.shell().error("Failed to encode stacktrace as JSON: #{inspect(reason)}")
+    if Code.ensure_loaded?(Jason) do
+      stacktrace_data = build_stacktrace_data(error, opts)
+      
+      case Jason.encode(stacktrace_data, pretty: true) do
+        {:ok, json} ->
+          IO.puts(json)
+          
+        {:error, reason} ->
+          Mix.shell().error("Failed to encode stacktrace as JSON: #{inspect(reason)}")
+      end
+    else
+      Mix.shell().error("Jason library not available. Cannot output JSON format.")
+      Mix.shell().info("Install Jason with: mix deps.get")
     end
   end
 

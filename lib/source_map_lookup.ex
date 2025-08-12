@@ -41,12 +41,16 @@ defmodule SourceMapLookup do
     if File.exists?(source_map_path) do
       case File.read(source_map_path) do
         {:ok, content} ->
-          case Jason.decode(content) do
-            {:ok, source_map_data} ->
-              process_source_map(source_map_data, source_map_path)
-              
-            {:error, decode_error} ->
-              {:error, "Failed to decode source map JSON: #{inspect(decode_error)}"}
+          if Code.ensure_loaded?(Jason) do
+            case Jason.decode(content) do
+              {:ok, source_map_data} ->
+                process_source_map(source_map_data, source_map_path)
+                
+              {:error, decode_error} ->
+                {:error, "Failed to decode source map JSON: #{inspect(decode_error)}"}
+            end
+          else
+            {:error, "Jason library not available. Cannot parse JSON source maps."}
           end
           
         {:error, read_error} ->

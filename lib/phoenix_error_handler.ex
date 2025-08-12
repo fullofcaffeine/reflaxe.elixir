@@ -37,7 +37,9 @@ defmodule PhoenixErrorHandler do
         max_cached_source_maps: 100
   """
   
-  @behaviour Plug
+  if Code.ensure_loaded?(Plug) do
+    @behaviour Plug
+  end
   
   require Logger
   
@@ -141,7 +143,7 @@ defmodule PhoenixErrorHandler do
       module: socket.view,
       assigns: sanitize_assigns(socket.assigns),
       event: event,
-      connected?: Phoenix.LiveView.connected?(socket),
+      connected?: safe_phoenix_liveview_connected(socket),
       transport_pid: socket.transport_pid
     }
     
@@ -342,7 +344,7 @@ defmodule PhoenixErrorHandler do
       path_info: Map.get(conn, :path_info),
       query_string: Map.get(conn, :query_string),
       remote_ip: Map.get(conn, :remote_ip),
-      request_id: Phoenix.Logger.correlation_id()
+      request_id: safe_phoenix_logger_correlation_id()
     }
   rescue
     _ -> %{type: :unknown_context}
@@ -454,5 +456,22 @@ defmodule PhoenixErrorHandler do
   
   defp get_config do
     Application.get_env(:reflaxe_elixir, PhoenixErrorHandler, @default_config)
+  end
+  
+  # Helper functions to avoid compile-time warnings for optional dependencies
+  defp safe_phoenix_liveview_connected(socket) do
+    if Code.ensure_loaded?(Phoenix.LiveView) do
+      apply(Phoenix.LiveView, :connected?, [socket])
+    else
+      false
+    end
+  end
+  
+  defp safe_phoenix_logger_correlation_id do
+    if Code.ensure_loaded?(Phoenix.Logger) do
+      apply(Phoenix.Logger, :correlation_id, [])
+    else
+      nil
+    end
   end
 end

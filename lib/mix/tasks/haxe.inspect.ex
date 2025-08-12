@@ -257,12 +257,17 @@ defmodule Mix.Tasks.Haxe.Inspect do
       cross_reference: data.cross_reference
     }
     
-    case Jason.encode(json_data, pretty: true) do
-      {:ok, json} ->
-        IO.puts(json)
-        
-      {:error, reason} ->
-        Mix.shell().error("Failed to encode inspection data as JSON: #{inspect(reason)}")
+    if Code.ensure_loaded?(Jason) do
+      case Jason.encode(json_data, pretty: true) do
+        {:ok, json} ->
+          IO.puts(json)
+          
+        {:error, reason} ->
+          Mix.shell().error("Failed to encode inspection data as JSON: #{inspect(reason)}")
+      end
+    else
+      Mix.shell().error("Jason library not available. Cannot output JSON format.")
+      Mix.shell().info("Install Jason with: mix deps.get")
     end
   end
   
