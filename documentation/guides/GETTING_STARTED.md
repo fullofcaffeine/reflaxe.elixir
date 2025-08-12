@@ -15,10 +15,10 @@ Before you begin, ensure you have:
 
 The fastest way to get started is using the built-in project generator:
 
-### Using lix (local installation)
+### Using lix (recommended)
 ```bash
 # Install Reflaxe.Elixir via lix
-npx lix install github:YourUsername/reflaxe.elixir
+npx lix install github:fullofcaffeine/reflaxe.elixir
 
 # Create a new project
 npx lix run reflaxe.elixir create my-app
@@ -27,16 +27,26 @@ npx lix run reflaxe.elixir create my-app
 npx lix run reflaxe.elixir create my-phoenix-app --type phoenix
 ```
 
-### Using haxelib (global installation)
+### Using haxelib (alternative)
 ```bash
 # Install Reflaxe.Elixir globally
-haxelib install reflaxe.elixir
+haxelib git reflaxe.elixir https://github.com/fullofcaffeine/reflaxe.elixir
 
 # Create a new project
 haxelib run reflaxe.elixir create my-app
 
 # Or create a Phoenix project
 haxelib run reflaxe.elixir create my-phoenix-app --type phoenix
+```
+
+### Using Mix task (for existing Elixir projects)
+```bash
+# If you already have an Elixir project
+cd existing-elixir-project
+mix haxe.gen.project
+
+# Or with options
+mix haxe.gen.project --basic-modules --phoenix
 ```
 
 ### Project Types
@@ -48,6 +58,29 @@ haxelib run reflaxe.elixir create my-phoenix-app --type phoenix
 
 All project types include **CLAUDE.md** with AI development instructions for using the watcher and source mapping.
 
+### Generator Options Reference
+
+The project generator supports these command-line options:
+
+```bash
+# Interactive mode (recommended for beginners)
+npx lix run reflaxe.elixir create my-app
+
+# Specify project type
+npx lix run reflaxe.elixir create my-app --type basic|phoenix|liveview|add-to-existing
+
+# Skip interactive prompts
+npx lix run reflaxe.elixir create my-app --no-interactive
+
+# Skip dependency installation
+npx lix run reflaxe.elixir create my-app --skip-install
+
+# Verbose output for debugging
+npx lix run reflaxe.elixir create my-app --verbose
+```
+
+**For complete generator documentation**, see [PROJECT_GENERATOR_GUIDE.md](../PROJECT_GENERATOR_GUIDE.md).
+
 ## Manual Installation
 
 If you prefer to set up manually or contribute to the compiler:
@@ -55,8 +88,8 @@ If you prefer to set up manually or contribute to the compiler:
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/YourUsername/haxe.elixir
-cd haxe.elixir
+git clone https://github.com/fullofcaffeine/reflaxe.elixir
+cd reflaxe.elixir
 ```
 
 ### 2. Install Dependencies
@@ -584,19 +617,62 @@ function handle_event(event: String, params: Dynamic, socket: Dynamic) {
 
 ## Troubleshooting
 
-### "Type not found" Error
+### Generator Issues
+
+#### "Command not found: lix"
+**Problem**: lix package manager not installed
+**Solution**: Install lix globally:
+```bash
+npm install -g lix
+```
+
+#### "Module reflaxe.elixir not found"
+**Problem**: Reflaxe.Elixir not properly installed
+**Solution**: Reinstall with explicit GitHub reference:
+```bash
+# Using lix
+npx lix install github:fullofcaffeine/reflaxe.elixir --force
+
+# Using haxelib
+haxelib remove reflaxe.elixir
+haxelib git reflaxe.elixir https://github.com/fullofcaffeine/reflaxe.elixir
+```
+
+#### Generator fails with "Permission denied"
+**Problem**: Insufficient permissions to create project directory
+**Solution**: Either use sudo or create project in a directory you own:
+```bash
+# Create in home directory
+cd ~
+npx lix run reflaxe.elixir create my-app
+```
+
+#### Phoenix projects won't start
+**Problem**: Missing database or dependencies
+**Solution**: Complete the setup process:
+```bash
+cd my-phoenix-app
+mix deps.get
+mix ecto.create
+mix ecto.migrate
+mix phx.server
+```
+
+### Compilation Issues
+
+#### "Type not found" Error
 **Problem**: Package structure doesn't match directory structure
 **Solution**: Ensure directory structure matches package declarations
 
-### Function Visibility Issues  
+#### Function Visibility Issues  
 **Problem**: Functions not accessible from other modules
 **Solution**: Use `public static` for utility functions
 
-### Annotation Conflicts
+#### Annotation Conflicts
 **Problem**: Incompatible annotations on same class
 **Solution**: Check annotation compatibility in [ANNOTATIONS.md](ANNOTATIONS.md)
 
-### Build Configuration Issues
+#### Build Configuration Issues
 **Problem**: Classpath errors or missing dependencies
 **Solution**: Verify all `-cp` paths and library installations
 
