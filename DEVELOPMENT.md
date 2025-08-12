@@ -158,6 +158,52 @@ class TestNewFeature extends utest.Test {
 }
 ```
 
+## Test Error Interpretation
+
+### Understanding Test Output Behavior
+
+Reflaxe.Elixir uses intelligent error handling to distinguish between expected test behavior and real errors:
+
+#### Expected Test Warnings ⚠️
+Some errors are **expected** during testing and appear as warnings without ❌ symbols:
+
+```bash
+# Expected in test environment - shows as warning
+[warning] Haxe compilation failed (expected in test): Library reflaxe.elixir is not installed
+```
+
+**Why this happens:**
+- Tests run in isolated environments without full library installation
+- Test framework validates compilation behavior, not successful execution
+- These warnings indicate the test is working correctly
+
+#### Real Errors ❌
+Actual compilation problems show with error symbols:
+
+```bash
+# Real error - shows with ❌ symbol
+[error] ❌ Haxe compilation failed: src_haxe/Main.hx:5: Type not found : MyClass
+```
+
+#### Implementation Details
+The differentiation happens in `HaxeWatcher`:
+
+```elixir
+# Check if this is an expected error in test environment
+if Mix.env() == :test and String.contains?(error, "Library reflaxe.elixir is not installed") do
+  # Use warning level without emoji for expected test errors
+  Logger.warning("Haxe compilation failed (expected in test): #{error}")
+else
+  # Use error level with emoji for real errors
+  Logger.error("❌ Haxe compilation failed: #{error}")
+end
+```
+
+#### For Contributors
+- **Don't worry about test warnings** - they're expected behavior
+- **Pay attention to ❌ errors** - these indicate real issues that need fixing
+- **Test output validation** - The test framework uses these outputs for assertions
+
 ## Troubleshooting
 
 ### Haxe Version Issues

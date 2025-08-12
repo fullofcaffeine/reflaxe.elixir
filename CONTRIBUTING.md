@@ -153,6 +153,42 @@ npm run test:update
 npx haxe test/SpecificTest.hxml
 ```
 
+### Understanding Test Output
+
+#### Expected vs Unexpected Errors
+
+Reflaxe.Elixir's test suite distinguishes between expected test behavior and real errors:
+
+**✅ Expected Test Warnings (Normal)**
+```bash
+[warning] Haxe compilation failed (expected in test): Library reflaxe.elixir is not installed
+```
+- **These are normal** - tests run in isolated environments
+- **No ❌ symbol** - indicates expected behavior  
+- **Don't fix these** - they're part of the test design
+
+**❌ Real Errors (Need Attention)**
+```bash
+[error] ❌ Haxe compilation failed: src_haxe/Main.hx:5: Type not found : MyClass
+```
+- **These need fixing** - indicate actual compilation problems
+- **Show ❌ symbol** - signals real issues
+- **Should cause test failure** - if tests pass with these, that's a bug
+
+#### CI Behavior
+
+When running in GitHub Actions:
+- **Green checkmarks** mean all tests passed (warnings are OK)
+- **Red X marks** mean tests failed (real errors occurred)
+- **Expected warnings don't fail CI** - only real errors do
+
+#### For Pull Requests
+
+Your PR should:
+- ✅ Pass all tests (green CI status)
+- ✅ May show expected warnings (that's normal)
+- ❌ Should not introduce new real errors (❌ symbols)
+
 ### Writing Tests
 
 1. **Unit Tests**: Test individual compiler components

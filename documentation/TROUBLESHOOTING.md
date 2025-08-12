@@ -493,6 +493,81 @@ lix install formatter
 haxelib run formatter -s src_haxe
 ```
 
+## Test Environment Error Handling
+
+### Understanding Test vs Production Errors
+
+Reflaxe.Elixir includes intelligent error handling that differentiates between expected test behavior and real errors.
+
+#### Expected Test Behavior
+
+**Symptom:**
+```bash
+[warning] Haxe compilation failed (expected in test): Library reflaxe.elixir is not installed
+```
+
+**This is NORMAL** ✅
+- Tests run in isolated environments without full library installation
+- The test framework validates compilation behavior, not successful execution
+- No ❌ symbol appears because this is expected behavior
+
+**Why this happens:**
+- Test environments use minimal setups to avoid dependency conflicts
+- Tests focus on validating compiler logic, not runtime execution
+- This warning confirms the test isolation is working correctly
+
+#### Real Compilation Errors
+
+**Symptom:**
+```bash
+[error] ❌ Haxe compilation failed: src_haxe/Main.hx:5: Type not found : MyClass
+```
+
+**This needs fixing** ❌
+- Shows ❌ symbol indicating a real problem
+- Should cause test failures if encountered
+- Indicates actual compilation issues in your code
+
+#### Implementation Details
+
+The logic is implemented in `HaxeWatcher.ex`:
+
+```elixir
+# Check if this is an expected error in test environment
+if Mix.env() == :test and String.contains?(error, "Library reflaxe.elixir is not installed") do
+  # Use warning level without emoji for expected test errors
+  Logger.warning("Haxe compilation failed (expected in test): #{error}")
+else
+  # Use error level with emoji for real errors
+  Logger.error("❌ Haxe compilation failed: #{error}")
+end
+```
+
+#### When to Worry
+
+**Don't worry about:**
+- ⚠️ Warnings without ❌ symbols during tests
+- "Library not installed" messages in test environment
+- Expected compilation failures that tests are designed to handle
+
+**Do investigate:**
+- ❌ Error messages with red X symbols
+- Test failures in CI/CD
+- Compilation errors in development environment
+- Any unexpected error patterns
+
+#### Testing Best Practices
+
+**For Contributors:**
+- Expected warnings are part of the test design - don't try to "fix" them
+- Focus on ❌ symbols as indicators of real problems
+- Understand that test isolation creates some expected failures
+
+**For CI/CD:**
+- Green checkmarks = all tests passed (warnings are OK)
+- Red X marks = real test failures occurred
+- Expected warnings don't break the build
+
 ## Common Error Messages
 
 ### "Type not found : ElixirCompiler"
