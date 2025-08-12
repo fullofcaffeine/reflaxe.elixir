@@ -5,6 +5,7 @@ package reflaxe.elixir.helpers;
 import haxe.macro.Context;
 import haxe.macro.Expr;
 import haxe.macro.Type;
+import reflaxe.elixir.helpers.EctoErrorReporter;
 
 using StringTools;
 
@@ -285,13 +286,24 @@ class QueryCompiler {
      * Compile a complete complex query
      */
     public static function compileComplexQuery(query: ComplexQueryDefinition): String {
-        var output = new StringBuf();
-        
-        // FROM clause
-        output.add('from ${query.binding} in ${query.schema}');
-        if (query.alias != null) {
-            output.add(', as: :${query.alias}');
-        }
+        try {
+            var output = new StringBuf();
+            
+            // Validate query structure
+            if (query.schema == null || query.schema == "") {
+                EctoErrorReporter.reportQueryError(
+                    "from query",
+                    "Query must specify a schema",
+                    Context.currentPos()
+                );
+                return "";
+            }
+            
+            // FROM clause
+            output.add('from ${query.binding} in ${query.schema}');
+            if (query.alias != null) {
+                output.add(', as: :${query.alias}');
+            }
         
         // JOINs
         if (query.joins != null && query.joins.length > 0) {
@@ -333,6 +345,15 @@ class QueryCompiler {
         }
         
         return output.toString();
+        } catch (e: Dynamic) {
+            // Dynamic used here because query compilation can throw various error types
+            EctoErrorReporter.reportQueryError(
+                query.schema != null ? 'from ${query.binding} in ${query.schema}' : "complex query",
+                Std.string(e),
+                Context.currentPos()
+            );
+            return "";
+        }
     }
     
     // Helper functions

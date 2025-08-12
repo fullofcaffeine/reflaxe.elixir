@@ -29,6 +29,7 @@ import reflaxe.elixir.helpers.RouterCompiler;
 import reflaxe.elixir.helpers.AnnotationSystem;
 import reflaxe.elixir.helpers.EctoQueryAdvancedCompiler;
 import reflaxe.elixir.helpers.RepositoryCompiler;
+import reflaxe.elixir.helpers.EctoErrorReporter;
 import reflaxe.elixir.ElixirTyper;
 import reflaxe.elixir.PhoenixMapper;
 import reflaxe.elixir.SourceMapWriter;
@@ -165,23 +166,33 @@ class ElixirCompiler extends BaseCompiler {
      * Compile @:migration annotated class to Ecto migration module
      */
     private function compileMigrationClass(classType: ClassType, varFields: Array<ClassVarData>, funcFields: Array<ClassFuncData>): String {
-        var className = classType.name;
-        var config = reflaxe.elixir.helpers.MigrationDSL.getMigrationConfig(classType);
-        var tableName = config.table != null ? config.table : "default_table";
-        
-        // Extract table operations from class variables and functions
-        var columns = varFields.map(field -> '${field.field.name}:${mapHaxeTypeToElixir(field.field.type)}');
-        
-        // Create migration data structure
-        var migrationData = {
-            className: className,
-            timestamp: reflaxe.elixir.helpers.MigrationDSL.generateTimestamp(),
-            tableName: tableName,
-            columns: columns
-        };
-        
-        // Generate comprehensive migration with table operations
-        var migrationModule = reflaxe.elixir.helpers.MigrationDSL.compileFullMigration(migrationData);
+        try {
+            var className = classType.name;
+            var config = reflaxe.elixir.helpers.MigrationDSL.getMigrationConfig(classType);
+            var tableName = config.table != null ? config.table : "default_table";
+            
+            // Validate table name
+            if (tableName == "default_table") {
+                reflaxe.elixir.helpers.EctoErrorReporter.warnAboutPattern(
+                    "Migration using default table name",
+                    "Specify a table name with @:migration({table: \"your_table\"})",
+                    classType.pos
+                );
+            }
+            
+            // Extract table operations from class variables and functions
+            var columns = varFields.map(field -> '${field.field.name}:${mapHaxeTypeToElixir(field.field.type)}');
+            
+            // Create migration data structure
+            var migrationData = {
+                className: className,
+                timestamp: reflaxe.elixir.helpers.MigrationDSL.generateTimestamp(),
+                tableName: tableName,
+                columns: columns
+            };
+            
+            // Generate comprehensive migration with table operations
+            var migrationModule = reflaxe.elixir.helpers.MigrationDSL.compileFullMigration(migrationData);
         
         // Add custom migration functions if present in funcFields
         var customOperations = new Array<String>();
@@ -199,6 +210,15 @@ class ElixirCompiler extends BaseCompiler {
         }
         
         return migrationModule;
+        } catch (e: Dynamic) {
+            // Dynamic used here because migration compilation can throw various error types
+            reflaxe.elixir.helpers.EctoErrorReporter.reportMigrationError(
+                "create_table",
+                Std.string(e),
+                classType.pos
+            );
+            return "";
+        }
     }
     
     /**
@@ -254,50 +274,97 @@ class ElixirCompiler extends BaseCompiler {
     }
     
     /**
-     * Compile @:schema annotated class to Ecto.Schema module
+     * Compile @:schema annotated class to Ecto.Schema module with enhanced error reporting
      */
     private function compileSchemaClass(classType: ClassType, varFields: Array<ClassVarData>, funcFields: Array<ClassFuncData>): String {
         var className = classType.name;
-        var config = reflaxe.elixir.helpers.SchemaCompiler.getSchemaConfig(classType);
+        var pos = classType.pos;
         
-        // Generate comprehensive Ecto.Schema module with schema/2 macro and associations
-        return reflaxe.elixir.helpers.SchemaCompiler.compileFullSchema(className, config, varFields);
+        try {
+            var config = reflaxe.elixir.helpers.SchemaCompiler.getSchemaConfig(classType);
+            
+            // Validate schema fields before compilation
+            var fields = varFields.map(function(field) {
+                var meta = field.field.meta.get();
+                var fieldMeta = null;
+                
+                // Extract field metadata
+                for (m in meta) {
+                    if (m.name == ":field") {
+                        fieldMeta = m.params.length > 0 ? m.params[0] : null;
+                    }
+                }
+                
+                return {
+                    name: field.field.name,
+                    type: mapHaxeTypeToElixir(field.field.type),
+                    meta: fieldMeta
+                };
+            });
+            
+            // Validate fields using error reporter
+            if (!EctoErrorReporter.validateSchemaFields(fields, pos)) {
+                return ""; // Error already reported
+            }
+            
+            // Generate comprehensive Ecto.Schema module with schema/2 macro and associations
+            return reflaxe.elixir.helpers.SchemaCompiler.compileFullSchema(className, config, varFields);
+        } catch (e: Dynamic) {
+            // Dynamic used here because Haxe's catch can throw various error types
+            // Converting to String for error reporting
+            EctoErrorReporter.reportSchemaError(className, Std.string(e), pos);
+            return "";
+        }
     }
     
     /**
-     * Compile @:changeset annotated class to Ecto changeset module
+     * Compile @:changeset annotated class to Ecto changeset module with enhanced error reporting
      */
     private function compileChangesetClass(classType: ClassType, varFields: Array<ClassVarData>, funcFields: Array<ClassFuncData>): String {
         var className = classType.name;
-        var config = reflaxe.elixir.helpers.ChangesetCompiler.getChangesetConfig(classType);
-        var schemaName = config.schema != null ? config.schema : "DefaultSchema";
+        var pos = classType.pos;
         
-        // Extract field information from class variables for validation
-        var fieldNames = varFields.map(field -> field.field.name);
-        
-        // Generate comprehensive changeset with schema integration
-        var changesetModule = reflaxe.elixir.helpers.ChangesetCompiler.compileFullChangeset(className, schemaName);
-        
-        // Add custom validation functions if present in funcFields
-        var customValidations = new Array<String>();
-        for (func in funcFields) {
-            if (func.field.name.indexOf("validate") == 0) {
-                var validationName = func.field.name.substring(8); // Remove "validate" prefix
-                var customValidation = reflaxe.elixir.helpers.ChangesetCompiler.generateCustomValidation(
-                    validationName, 
-                    "field", 
-                    "true" // Simplified condition
-                );
-                customValidations.push(customValidation);
+        try {
+            var config = reflaxe.elixir.helpers.ChangesetCompiler.getChangesetConfig(classType);
+            var schemaName = config.schema != null ? config.schema : "DefaultSchema";
+            
+            // Validate changeset configuration
+            if (!EctoErrorReporter.validateChangesetConfig(className, config, pos)) {
+                return ""; // Error already reported
             }
+            
+            // Extract field information from class variables for validation
+            var fieldNames = varFields.map(field -> field.field.name);
+            
+            // Generate comprehensive changeset with schema integration
+            var changesetModule = reflaxe.elixir.helpers.ChangesetCompiler.compileFullChangeset(className, schemaName);
+            
+            // Add custom validation functions if present in funcFields
+            var customValidations = new Array<String>();
+            for (func in funcFields) {
+                if (func.field.name.indexOf("validate") == 0) {
+                    var validationName = func.field.name.substring(8); // Remove "validate" prefix
+                    var customValidation = reflaxe.elixir.helpers.ChangesetCompiler.generateCustomValidation(
+                        validationName, 
+                        "field", 
+                        "true" // Simplified condition
+                    );
+                    customValidations.push(customValidation);
+                }
+            }
+            
+            // Append custom validations to the module
+            if (customValidations.length > 0) {
+                changesetModule += "\n\n" + customValidations.join("\n");
+            }
+            
+            return changesetModule;
+        } catch (e: Dynamic) {
+            // Dynamic used here because Haxe's catch can throw various error types
+            // Converting to String for error reporting
+            EctoErrorReporter.reportChangesetError(className, Std.string(e), pos);
+            return "";
         }
-        
-        // Append custom validations to the module
-        if (customValidations.length > 0) {
-            changesetModule += "\n\n" + customValidations.join("\n");
-        }
-        
-        return changesetModule;
     }
     
     /**
