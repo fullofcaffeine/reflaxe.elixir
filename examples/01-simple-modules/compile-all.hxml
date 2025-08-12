@@ -6,10 +6,11 @@
 -cp ../../std
 -lib reflaxe
 -cp src_haxe
+-D elixir_output=lib
 -D reflaxe_runtime
--D source-map
---no-output
--main BasicModule
+-D reflaxe.elixir=0.1.0
+--macro reflaxe.elixir.CompilerInit.Start()
+BasicModule
 
 --next
 
@@ -18,10 +19,11 @@
 -cp ../../std
 -lib reflaxe
 -cp src_haxe
+-D elixir_output=lib
 -D reflaxe_runtime
--D source-map
---no-output
--main MathHelper
+-D reflaxe.elixir=0.1.0
+--macro reflaxe.elixir.CompilerInit.Start()
+MathHelper
 
 --next
 
@@ -30,7 +32,8 @@
 -cp ../../std
 -lib reflaxe
 -cp src_haxe
+-D elixir_output=lib
 -D reflaxe_runtime
--D source-map
---no-output
--main UserUtil
+-D reflaxe.elixir=0.1.0
+--macro reflaxe.elixir.CompilerInit.Start()
+UserUtil
