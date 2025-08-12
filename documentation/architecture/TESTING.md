@@ -540,6 +540,55 @@ Always test these 7 categories:
 7. Resource management
 
 
+## Error Handling Architecture
+
+### Test vs Production Error Display
+
+Reflaxe.Elixir implements intelligent error handling that differentiates between expected test behavior and real compilation errors. This prevents test warnings from appearing as alarming error messages during development.
+
+#### HaxeWatcher Error Logic
+
+The error classification is implemented in `lib/haxe_watcher.ex`:
+
+```elixir
+# Check if this is an expected error in test environment
+if Mix.env() == :test and String.contains?(error, "Library reflaxe.elixir is not installed") do
+  # Use warning level without emoji for expected test errors
+  Logger.warning("Haxe compilation failed (expected in test): #{error}")
+else
+  # Use error level with emoji for real errors
+  Logger.error("❌ Haxe compilation failed: #{error}")
+end
+```
+
+#### Error Categories
+
+**Expected Test Warnings** ⚠️
+- Library installation errors during isolated testing
+- Compilation failures that tests are designed to trigger
+- No ❌ emoji (indicates expected behavior)
+- Logged at warning level to avoid alarm
+
+**Real Compilation Errors** ❌
+- Syntax errors in source code
+- Type resolution failures
+- Missing dependencies in development
+- Logged at error level with ❌ emoji
+
+#### Benefits for Testing Architecture
+
+1. **Developer Experience**: Contributors don't panic over expected test warnings
+2. **CI/CD Clarity**: Automated systems can distinguish real failures from test isolation effects
+3. **Test Integrity**: Tests can validate error conditions without triggering false alarms
+4. **Error Visibility**: Real errors remain highly visible with clear visual indicators
+
+#### Integration with Test Infrastructure
+
+This error handling integrates with our dual-ecosystem testing:
+- **Snapshot Tests**: May trigger expected warnings during compilation validation
+- **Mix Tests**: Run in isolated environments where library dependencies aren't fully resolved
+- **Example Tests**: Real compilation environments show actual error state
+
 ## Troubleshooting
 
 ### Common Issues
