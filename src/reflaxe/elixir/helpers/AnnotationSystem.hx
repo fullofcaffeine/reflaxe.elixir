@@ -375,11 +375,16 @@ class AnnotationSystem {
     static function compileMigrationClass(classType: ClassType, varFields: Array<ClassVarData>, funcFields: Array<ClassFuncData>): String {
         var className = classType.name;
         var config = reflaxe.elixir.helpers.MigrationDSL.getMigrationConfig(classType);
+        var tableName = config.table != null ? config.table : "default_table";
+        
+        // Extract columns from class variables
+        var columns = varFields.map(field -> '${field.field.name}:string');
+        
         return reflaxe.elixir.helpers.MigrationDSL.compileFullMigration({
             className: className,
-            timestamp: reflaxe.elixir.helpers.MigrationDSL.generateTimestamp(),
-            tableName: "default_table",
-            columns: []
+            timestamp: config.timestamp,
+            tableName: tableName,
+            columns: columns
         });
     }
     

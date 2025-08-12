@@ -1,0 +1,10 @@
+{
+  "sourceRoot": "",
+  "names": [],
+  "mappings": "AAwBG,AAAA,AAAQ,AAAA,AAAA,AAAA,AAAA,AAAA,AAAA,AAAA,AAAA,AAAA,EAAE,AAAA,gDAAiB,sCAAM,AAAA,AAAA,+GAAmB,uEAAG,AAAA,AAAA,qJAAoB,kHAAM,AAAA,AAAA,yLAAkB,kJAAG,AAAA,AAAA",
+  "version": 3,
+  "file": "PosException.ex",
+  "sources": [
+    "std/haxe/exceptions/PosException.hx"
+  ]
+}
