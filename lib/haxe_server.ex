@@ -90,7 +90,7 @@ defmodule HaxeServer do
   Stops the Haxe server gracefully.
   """
   def stop() do
-    GenServer.stop(__MODULE__, :normal)
+    GenServer.stop(__MODULE__, :normal, 5000)
   end
 
   @doc """
@@ -106,15 +106,11 @@ defmodule HaxeServer do
   def init(opts) do
     # In test environment, use a random port to avoid conflicts
     # unless explicitly specified
-    default_port = if Mix.env() == :test and not Keyword.has_key?(opts, :port) do
-      # Generate random port between 7000-9000
-      :rand.seed(:exsplus, :os.timestamp())
-      7000 + :rand.uniform(2000)
+    port = if Mix.env() == :test and not Keyword.has_key?(opts, :port) do
+      find_available_port()
     else
-      @default_port
+      Keyword.get(opts, :port, @default_port)
     end
-    
-    port = Keyword.get(opts, :port, default_port)
     haxe_cmd = Keyword.get(opts, :haxe_cmd, default_haxe_cmd())
     
     # Parse the haxe command if it's a string
@@ -216,27 +212,39 @@ defmodule HaxeServer do
   # Private Functions
 
   defp start_haxe_server(state) do
-    cmd_args = state.haxe_args ++ ["--wait", to_string(state.port)]
+    # Use Port.open to properly manage the Haxe server process
+    cmd = state.haxe_cmd
+    args = state.haxe_args ++ ["--wait", to_string(state.port)]
     
-    case System.cmd(state.haxe_cmd, cmd_args, stderr_to_stdout: true) do
-      {_output, 0} ->
-        # Server started successfully, but we need to get the PID
-        # For now, we'll use a placeholder - in real implementation,
-        # we'd need to track the server process properly
-        {:ok, :server_started}
+    try do
+      port = Port.open(
+        {:spawn_executable, System.find_executable(cmd) || cmd},
+        [:binary, :exit_status, :stderr_to_stdout, args: args]
+      )
       
-      {output, exit_code} ->
-        {:error, "Exit code #{exit_code}: #{output}"}
+      # Give the server a moment to start
+      Process.sleep(500)
+      
+      # Check if port is still alive
+      if Port.info(port) do
+        {:ok, port}
+      else
+        {:error, "Haxe server process exited immediately"}
+      end
+    rescue
+      error ->
+        {:error, "Failed to start Haxe server: #{Exception.message(error)}"}
     end
-  rescue
-    error ->
-      {:error, "Failed to execute haxe command: #{Exception.message(error)}"}
   end
 
   defp stop_haxe_server(%{server_pid: nil}), do: :ok
+  defp stop_haxe_server(%{server_pid: port}) when is_port(port) do
+    # Close the port to stop the Haxe server
+    Port.close(port)
+    :ok
+  end
   defp stop_haxe_server(_state) do
-    # Send shutdown signal to Haxe server
-    # This would normally involve sending a specific command to the server
+    # No server to stop
     :ok
   end
 
@@ -258,6 +266,22 @@ defmodule HaxeServer do
   rescue
     error ->
       {:error, "Failed to connect to Haxe server: #{Exception.message(error)}"}
+  end
+  
+  defp find_available_port() do
+    # Try to find an available port between 7000-9000
+    :rand.seed(:exsplus, :os.timestamp())
+    
+    Enum.reduce_while(1..10, nil, fn _, acc ->
+      port = 7000 + :rand.uniform(2000)
+      case :gen_tcp.listen(port, [:binary, packet: :line, active: false, reuseaddr: true]) do
+        {:ok, socket} ->
+          :gen_tcp.close(socket)
+          {:halt, port}
+        {:error, _} ->
+          {:cont, acc}
+      end
+    end) || 8000  # Fallback to 8000 if no port found
   end
   
   defp find_project_root() do
