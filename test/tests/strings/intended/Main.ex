@@ -43,7 +43,7 @@ string"
   Log.trace("Person: " + person_name + " is " + person_age + " years old", %{fileName: "Main.hx", lineNumber: 43, className: "Main", methodName: "stringInterpolation"})
   items = ["apple", "banana", "orange"]
   Log.trace("Items: " + items.join(", "), %{fileName: "Main.hx", lineNumber: 47, className: "Main", methodName: "stringInterpolation"})
-  Log.trace("First item: " + Enum.at(items, 0).to_upper_case(), %{fileName: "Main.hx", lineNumber: 48, className: "Main", methodName: "stringInterpolation"})
+  Log.trace("First item: " + Enum.at(items, 0).toUpperCase(), %{fileName: "Main.hx", lineNumber: 48, className: "Main", methodName: "stringInterpolation"})
 )
   end
 
@@ -53,15 +53,15 @@ string"
     (
   str = "  Hello, World!  "
   Log.trace("Trimmed: "" + StringTools.trim(str) + """, %{fileName: "Main.hx", lineNumber: 56, className: "Main", methodName: "stringMethods"})
-  Log.trace("Upper: " + str.to_upper_case(), %{fileName: "Main.hx", lineNumber: 59, className: "Main", methodName: "stringMethods"})
-  Log.trace("Lower: " + str.to_lower_case(), %{fileName: "Main.hx", lineNumber: 60, className: "Main", methodName: "stringMethods"})
+  Log.trace("Upper: " + str.toUpperCase(), %{fileName: "Main.hx", lineNumber: 59, className: "Main", methodName: "stringMethods"})
+  Log.trace("Lower: " + str.toLowerCase(), %{fileName: "Main.hx", lineNumber: 60, className: "Main", methodName: "stringMethods"})
   text = "Hello, World!"
   Log.trace("Substring(0, 5): " + text.substring(0, 5), %{fileName: "Main.hx", lineNumber: 64, className: "Main", methodName: "stringMethods"})
   Log.trace("Substr(7, 5): " + text.substr(7, 5), %{fileName: "Main.hx", lineNumber: 65, className: "Main", methodName: "stringMethods"})
-  Log.trace("Char at 0: " + text.char_at(0), %{fileName: "Main.hx", lineNumber: 68, className: "Main", methodName: "stringMethods"})
-  Log.trace("Char code at 0: " + text.char_code_at(0), %{fileName: "Main.hx", lineNumber: 69, className: "Main", methodName: "stringMethods"})
-  Log.trace("Index of "World": " + text.index_of("World"), %{fileName: "Main.hx", lineNumber: 72, className: "Main", methodName: "stringMethods"})
-  Log.trace("Last index of "o": " + text.last_index_of("o"), %{fileName: "Main.hx", lineNumber: 73, className: "Main", methodName: "stringMethods"})
+  Log.trace("Char at 0: " + text.charAt(0), %{fileName: "Main.hx", lineNumber: 68, className: "Main", methodName: "stringMethods"})
+  Log.trace("Char code at 0: " + text.charCodeAt(0), %{fileName: "Main.hx", lineNumber: 69, className: "Main", methodName: "stringMethods"})
+  Log.trace("Index of "World": " + text.indexOf("World"), %{fileName: "Main.hx", lineNumber: 72, className: "Main", methodName: "stringMethods"})
+  Log.trace("Last index of "o": " + text.lastIndexOf("o"), %{fileName: "Main.hx", lineNumber: 73, className: "Main", methodName: "stringMethods"})
   parts = text.split(", ")
   Log.trace("Split parts: " + Std.string(parts), %{fileName: "Main.hx", lineNumber: 77, className: "Main", methodName: "stringMethods"})
   joined = parts.join(" - ")
@@ -82,7 +82,7 @@ string"
   Log.trace("str1 == str3: " + Std.string(str1 == str3), %{fileName: "Main.hx", lineNumber: 94, className: "Main", methodName: "stringComparison"})
   Log.trace("str1 == str2: " + Std.string(str1 == str2), %{fileName: "Main.hx", lineNumber: 95, className: "Main", methodName: "stringComparison"})
   if (str1 < str4), do: Log.trace("" + str1 + " comes before " + str4, %{fileName: "Main.hx", lineNumber: 99, className: "Main", methodName: "stringComparison"}), else: nil
-  if (str1.to_lower_case() == str2.to_lower_case()), do: Log.trace("" + str1 + " and " + str2 + " are equal (case-insensitive)", %{fileName: "Main.hx", lineNumber: 104, className: "Main", methodName: "stringComparison"}), else: nil
+  if (str1.toLowerCase() == str2.toLowerCase()), do: Log.trace("" + str1 + " and " + str2 + " are equal (case-insensitive)", %{fileName: "Main.hx", lineNumber: 104, className: "Main", methodName: "stringComparison"}), else: nil
 )
   end
 
@@ -129,7 +129,7 @@ string"
   while (all_numbers.match(temp)) do
   (
   numbers.push(all_numbers.matched(0))
-  temp = all_numbers.matched_right()
+  temp = all_numbers.matchedRight()
 )
 end
   Log.trace("All numbers: " + Std.string(numbers), %{fileName: "Main.hx", lineNumber: 151, className: "Main", methodName: "regexOperations"})
@@ -184,28 +184,28 @@ Line 3"
   def main() do
     (
   Log.trace("=== String Basics ===", %{fileName: "Main.hx", lineNumber: 204, className: "Main", methodName: "main"})
-  Main.string_basics()
+  Main.stringBasics()
   Log.trace("
 === String Interpolation ===", %{fileName: "Main.hx", lineNumber: 207, className: "Main", methodName: "main"})
-  Main.string_interpolation()
+  Main.stringInterpolation()
   Log.trace("
 === String Methods ===", %{fileName: "Main.hx", lineNumber: 210, className: "Main", methodName: "main"})
-  Main.string_methods()
+  Main.stringMethods()
   Log.trace("
 === String Comparison ===", %{fileName: "Main.hx", lineNumber: 213, className: "Main", methodName: "main"})
-  Main.string_comparison()
+  Main.stringComparison()
   Log.trace("
 === String Building ===", %{fileName: "Main.hx", lineNumber: 216, className: "Main", methodName: "main"})
-  Main.string_building()
+  Main.stringBuilding()
   Log.trace("
 === Regex Operations ===", %{fileName: "Main.hx", lineNumber: 219, className: "Main", methodName: "main"})
-  Main.regex_operations()
+  Main.regexOperations()
   Log.trace("
 === String Formatting ===", %{fileName: "Main.hx", lineNumber: 222, className: "Main", methodName: "main"})
-  Main.string_formatting()
+  Main.stringFormatting()
   Log.trace("
 === Unicode Strings ===", %{fileName: "Main.hx", lineNumber: 225, className: "Main", methodName: "main"})
-  Main.unicode_strings()
+  Main.unicodeStrings()
 )
   end
 

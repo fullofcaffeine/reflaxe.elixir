@@ -26,7 +26,7 @@ defmodule Main do
   Log.trace("Iterating string map:", %{fileName: "Main.hx", lineNumber: 30, className: "Main", methodName: "stringMap"})
   (
   key = map.keys()
-  while (key.has_next()) do
+  while (key.hasNext()) do
   (
   key2 = key.next()
   Log.trace("  " + key2 + " => " + map.get(key2), %{fileName: "Main.hx", lineNumber: 32, className: "Main", methodName: "stringMap"})
@@ -39,7 +39,7 @@ end
   _g = []
   (
   k = map.keys()
-  while (k.has_next()) do
+  while (k.hasNext()) do
   (
   k2 = k.next()
   _g.push(k2)
@@ -64,7 +64,7 @@ end
   Log.trace("Int map values:", %{fileName: "Main.hx", lineNumber: 49, className: "Main", methodName: "intMap"})
   (
   key = map.keys()
-  while (key.has_next()) do
+  while (key.hasNext()) do
   (
   key2 = key.next()
   Log.trace("  " + key2 + " => " + map.get(key2), %{fileName: "Main.hx", lineNumber: 51, className: "Main", methodName: "intMap"})
@@ -76,7 +76,7 @@ end
   _g = []
   (
   k = map.keys()
-  while (k.has_next()) do
+  while (k.hasNext()) do
   (
   k2 = k.next()
   _g.push(k2)
@@ -91,7 +91,7 @@ end
   _g = []
   (
   k = map.keys()
-  while (k.has_next()) do
+  while (k.hasNext()) do
   (
   k2 = k.next()
   _g.push(map.get(k2))
@@ -138,7 +138,7 @@ end
   Log.trace("Color values:", %{fileName: "Main.hx", lineNumber: 88, className: "Main", methodName: "mapLiterals"})
   (
   color = colors.keys()
-  while (color.has_next()) do
+  while (color.hasNext()) do
   (
   color2 = color.next()
   hex = StringTools.hex(colors.get(color2), 6)
@@ -160,7 +160,7 @@ end
   Log.trace("Squares:", %{fileName: "Main.hx", lineNumber: 103, className: "Main", methodName: "mapLiterals"})
   (
   n = squares.keys()
-  while (n.has_next()) do
+  while (n.hasNext()) do
   (
   n2 = n.next()
   Log.trace("  " + n2 + "² = " + squares.get(n2), %{fileName: "Main.hx", lineNumber: 105, className: "Main", methodName: "mapLiterals"})
@@ -188,14 +188,14 @@ end
   Log.trace("User data:", %{fileName: "Main.hx", lineNumber: 128, className: "Main", methodName: "nestedMaps"})
   (
   username = users.keys()
-  while (username.has_next()) do
+  while (username.hasNext()) do
   (
   username2 = username.next()
   user_data = users.get(username2)
   Log.trace("  " + username2 + ":", %{fileName: "Main.hx", lineNumber: 131, className: "Main", methodName: "nestedMaps"})
   (
   field = user_data.keys()
-  while (field.has_next()) do
+  while (field.hasNext()) do
   (
   field2 = field.next()
   Log.trace("    " + field2 + ": " + Std.string(user_data.get(field2)), %{fileName: "Main.hx", lineNumber: 133, className: "Main", methodName: "nestedMaps"})
@@ -225,7 +225,7 @@ end
   doubled = Haxe.Ds.StringMap.new()
   (
   key = original.keys()
-  while (key.has_next()) do
+  while (key.hasNext()) do
   (
   key2 = key.next()
   (
@@ -238,7 +238,7 @@ end
   Log.trace("Doubled values:", %{fileName: "Main.hx", lineNumber: 153, className: "Main", methodName: "mapTransformations"})
   (
   key = doubled.keys()
-  while (key.has_next()) do
+  while (key.hasNext()) do
   (
   key2 = key.next()
   Log.trace("  " + key2 + " => " + doubled.get(key2), %{fileName: "Main.hx", lineNumber: 155, className: "Main", methodName: "mapTransformations"})
@@ -248,7 +248,7 @@ end
   filtered = Haxe.Ds.StringMap.new()
   (
   key = original.keys()
-  while (key.has_next()) do
+  while (key.hasNext()) do
   (
   key2 = key.next()
   value = original.get(key2)
@@ -259,7 +259,7 @@ end
   Log.trace("Filtered (value > 2):", %{fileName: "Main.hx", lineNumber: 167, className: "Main", methodName: "mapTransformations"})
   (
   key = filtered.keys()
-  while (key.has_next()) do
+  while (key.hasNext()) do
   (
   key2 = key.next()
   Log.trace("  " + key2 + " => " + filtered.get(key2), %{fileName: "Main.hx", lineNumber: 169, className: "Main", methodName: "mapTransformations"})
@@ -286,7 +286,7 @@ end
   merged = Haxe.Ds.StringMap.new()
   (
   key = map1.keys()
-  while (key.has_next()) do
+  while (key.hasNext()) do
   (
   key2 = key.next()
   (
@@ -298,7 +298,7 @@ end
 )
   (
   key = map2.keys()
-  while (key.has_next()) do
+  while (key.hasNext()) do
   (
   key2 = key.next()
   (
@@ -311,7 +311,7 @@ end
   Log.trace("Merged maps:", %{fileName: "Main.hx", lineNumber: 184, className: "Main", methodName: "mapTransformations"})
   (
   key = merged.keys()
-  while (key.has_next()) do
+  while (key.hasNext()) do
   (
   key2 = key.next()
   Log.trace("  " + key2 + " => " + merged.get(key2), %{fileName: "Main.hx", lineNumber: 186, className: "Main", methodName: "mapTransformations"})
@@ -332,7 +332,7 @@ end
   Log.trace("Enum map:", %{fileName: "Main.hx", lineNumber: 198, className: "Main", methodName: "enumMap"})
   (
   color = map.keys()
-  while (color.has_next()) do
+  while (color.hasNext()) do
   (
   color2 = color.next()
   Log.trace("  " + Std.string(color2) + " => #" + map.get(color2), %{fileName: "Main.hx", lineNumber: 200, className: "Main", methodName: "enumMap"})
@@ -350,7 +350,7 @@ end
   result = Haxe.Ds.StringMap.new()
   (
   key = input.keys()
-  while (key.has_next()) do
+  while (key.hasNext()) do
   (
   key2 = key.next()
   value = input.get(key2)
@@ -367,25 +367,25 @@ end
   def main() do
     (
   Log.trace("=== String Map ===", %{fileName: "Main.hx", lineNumber: 220, className: "Main", methodName: "main"})
-  Main.string_map()
+  Main.stringMap()
   Log.trace("
 === Int Map ===", %{fileName: "Main.hx", lineNumber: 223, className: "Main", methodName: "main"})
-  Main.int_map()
+  Main.intMap()
   Log.trace("
 === Object Map ===", %{fileName: "Main.hx", lineNumber: 226, className: "Main", methodName: "main"})
-  Main.object_map()
+  Main.objectMap()
   Log.trace("
 === Map Literals ===", %{fileName: "Main.hx", lineNumber: 229, className: "Main", methodName: "main"})
-  Main.map_literals()
+  Main.mapLiterals()
   Log.trace("
 === Nested Maps ===", %{fileName: "Main.hx", lineNumber: 232, className: "Main", methodName: "main"})
-  Main.nested_maps()
+  Main.nestedMaps()
   Log.trace("
 === Map Transformations ===", %{fileName: "Main.hx", lineNumber: 235, className: "Main", methodName: "main"})
-  Main.map_transformations()
+  Main.mapTransformations()
   Log.trace("
 === Enum Map ===", %{fileName: "Main.hx", lineNumber: 238, className: "Main", methodName: "main"})
-  Main.enum_map()
+  Main.enumMap()
   Log.trace("
 === Map Functions ===", %{fileName: "Main.hx", lineNumber: 241, className: "Main", methodName: "main"})
   temp_map = nil
@@ -397,10 +397,10 @@ end
   temp_map = _g
 )
   input = temp_map
-  output = Main.process_map(input)
+  output = Main.processMap(input)
   (
   key = output.keys()
-  while (key.has_next()) do
+  while (key.hasNext()) do
   (
   key2 = key.next()
   Log.trace("" + key2 + ": " + output.get(key2), %{fileName: "Main.hx", lineNumber: 245, className: "Main", methodName: "main"})
