@@ -2,25 +2,134 @@
 
 Complete walkthroughs of all example projects showing real-world usage patterns.
 
+## 🎯 Learning Path
+
+**Recommended Order**: Start with simple modules and progress through increasing complexity.
+
+```
+01-simple-modules → 02-mix-project → 03-phoenix-app
+                                          ↓
+09-phoenix-router ← 08-behaviors ← 07-protocols ← 04-ecto-migrations
+        ↓                                              ↓
+    06-user-management ← 05-heex-templates ← [Database Ready]
+```
+
 ## 📚 Example Projects Overview
 
-| Example | Description | Key Concepts |
-|---------|-------------|--------------|
-| [01-simple-modules](#01-simple-modules) | Basic module compilation | @:module, functions, types |
-| [02-mix-project](#02-mix-project) | Full Mix project structure | Project organization, utilities |
-| [03-phoenix-app](#03-phoenix-app) | Phoenix application setup | Phoenix integration |
-| [04-ecto-migrations](#04-ecto-migrations) | Database migrations | @:migration, DSL |
-| [05-heex-templates](#05-heex-templates) | Template compilation | HXX syntax, components |
-| [06-user-management](#06-user-management) | Complete CRUD system | LiveView, GenServer, Ecto |
-| [07-protocols](#07-protocols) | Protocol definitions | @:protocol, @:impl |
-| [08-behaviors](#08-behaviors) | Behavior contracts | @:behaviour, callbacks |
-| [09-phoenix-router](#09-phoenix-router) | Router configuration | @:router, controllers |
+| Example | Description | Key Concepts | Prerequisites | Difficulty |
+|---------|-------------|--------------|---------------|------------|
+| [01-simple-modules](#01-simple-modules) | Basic module compilation | @:module, functions, types | Haxe basics | 🟢 Beginner |
+| [02-mix-project](#02-mix-project) | Full Mix project structure | Project organization, utilities | Example 01 | 🟢 Beginner |
+| [03-phoenix-app](#03-phoenix-app) | Phoenix application setup | Phoenix integration | Example 02 | 🟡 Intermediate |
+| [04-ecto-migrations](#04-ecto-migrations) | Database migrations | @:migration, DSL | Example 03 | 🟡 Intermediate |
+| [05-heex-templates](#05-heex-templates) | Template compilation | HXX syntax, components | Example 04 | 🟡 Intermediate |
+| [06-user-management](#06-user-management) | Complete CRUD system | LiveView, GenServer, Ecto | Examples 04, 05 | 🔴 Advanced |
+| [07-protocols](#07-protocols) | Protocol definitions | @:protocol, @:impl | Example 02 | 🟡 Intermediate |
+| [08-behaviors](#08-behaviors) | Behavior contracts | @:behaviour, callbacks | Example 07 | 🟡 Intermediate |
+| [09-phoenix-router](#09-phoenix-router) | Router configuration | @:router, controllers | Examples 03, 08 | 🔴 Advanced |
+
+## 🛠️ Quick Setup
+
+### System Requirements
+- **Haxe 4.3.6+**: Latest version with modern features
+- **Elixir 1.14+**: For running generated code
+- **Phoenix 1.7+** (for web examples): Modern LiveView support
+- **PostgreSQL** (for database examples): Default database
+
+### Environment Setup
+```bash
+# Install dependencies for all examples
+cd examples/
+npm install -g haxe   # or use your preferred package manager
+mix local.hex --force
+mix local.rebar --force
+
+# For Phoenix examples
+mix archive.install hex phx_new
+
+# For database examples  
+createdb reflaxe_dev  # PostgreSQL
+```
+
+## 🔧 Common Troubleshooting
+
+### Compilation Errors
+
+#### "Type not found: reflaxe.elixir"
+```bash
+# Solution: Install Reflaxe.Elixir via Lix
+lix install github:SomeRanDev/reflaxe.elixir
+```
+
+#### "Cannot resolve class path"
+```bash
+# Ensure your .hxml includes the right classpath
+-cp src_haxe
+--macro reflaxe.elixir.ElixirCompiler.build()
+```
+
+#### "Missing @:module annotation"
+- **Problem**: Functions not generating properly
+- **Solution**: Add `@:module` annotation to your classes
+
+### Runtime Errors
+
+#### "Module 'SomeModule' not found"
+```bash
+# Solution: Check that Elixir files are in the correct lib/ directory
+ls lib/generated/  # Should show your compiled .ex files
+```
+
+#### "Function clauses don't match"
+- **Problem**: Pattern matching compilation issue
+- **Solution**: Check pattern syntax, ensure exhaustive cases
+
+### Phoenix Integration Issues
+
+#### "LiveView not mounting"
+```elixir
+# Check your router.ex has the live routes:
+live "/path", YourLiveView, :action
+```
+
+#### "Template compilation errors"
+- **Problem**: HXX syntax issues
+- **Solution**: Validate template syntax, check string escaping
+
+### Database Issues
+
+#### "Migration failed"
+```bash
+# Reset database and retry
+mix ecto.drop
+mix ecto.create
+mix ecto.migrate
+```
+
+### Performance Issues
+
+#### "Slow compilation times"
+- **Problem**: Large codebases taking too long
+- **Solution**: Use incremental compilation, split into smaller modules
 
 ## 01-simple-modules
 
-**Purpose**: Learn the basics of compiling Haxe modules to Elixir.
+**Purpose**: Learn the basics of compiling Haxe modules to Elixir.  
+**Prerequisites**: Basic Haxe knowledge  
+**Difficulty**: 🟢 Beginner  
+**Time**: 15 minutes
 
-### Basic Module
+### What You'll Learn
+- Basic `@:module` annotation usage
+- Function parameter and return type handling
+- String interpolation transformation
+- Static function compilation patterns
+
+### Basic Module Compilation
+
+<table>
+<tr><th>Haxe Input</th><th>Elixir Output</th></tr>
+<tr><td>
 
 ```haxe
 // BasicModule.hx
@@ -38,7 +147,7 @@ class BasicModule {
 }
 ```
 
-**Compiles to:**
+</td><td>
 
 ```elixir
 # BasicModule.ex
@@ -53,7 +162,20 @@ defmodule BasicModule do
 end
 ```
 
-### Math Helper
+</td></tr>
+</table>
+
+### 🎯 Key Transformations
+1. **Class → Module**: `class BasicModule` becomes `defmodule BasicModule`
+2. **Static Functions**: `public static function` becomes `def`
+3. **String Interpolation**: `'Hello, $name!'` becomes `"Hello, #{name}!"`
+4. **Type Erasure**: Haxe types (`String`, `Int`) are removed in Elixir output
+
+### Math Helper with Recursion
+
+<table>
+<tr><th>Haxe Input</th><th>Elixir Output</th></tr>
+<tr><td>
 
 ```haxe
 // MathHelper.hx
@@ -74,12 +196,78 @@ class MathHelper {
 }
 ```
 
-**Usage in Elixir:**
+</td><td>
+
+```elixir
+# MathHelper.ex
+defmodule MathHelper do
+  def factorial(n) do
+    if n <= 1 do
+      1
+    else
+      n * factorial(n - 1)
+    end
+  end
+  
+  def is_prime(n) do
+    if n <= 1 do
+      false
+    else
+      # Loop compilation with range check
+      check_prime_divisors(n, 2, trunc(:math.sqrt(n)) + 1)
+    end
+  end
+  
+  defp check_prime_divisors(n, i, limit) when i > limit, do: true
+  defp check_prime_divisors(n, i, limit) do
+    if rem(n, i) == 0 do
+      false
+    else
+      check_prime_divisors(n, i + 1, limit)
+    end
+  end
+end
+```
+
+</td></tr>
+</table>
+
+### 🎯 Advanced Transformations
+1. **Recursion Preserved**: Recursive calls work identically in both languages
+2. **Loop → Tail Recursion**: `for` loops become tail-recursive helper functions  
+3. **Math Functions**: `Math.sqrt()` becomes `:math.sqrt()` (Erlang module)
+4. **CamelCase → snake_case**: `isPrime` becomes `is_prime`
+
+### Testing the Generated Code
 ```elixir
 iex> MathHelper.factorial(5)
 120
 iex> MathHelper.is_prime(17)
 true
+iex> MathHelper.is_prime(18)
+false
+```
+
+### 📋 Running This Example
+
+```bash
+cd examples/01-simple-modules
+
+# Compile all modules
+npx haxe compile-all.hxml
+
+# Or compile individual modules
+npx haxe BasicModule.hxml
+npx haxe MathHelper.hxml
+npx haxe UserUtil.hxml
+
+# Test the generated code
+cd lib/
+iex
+iex> BasicModule.hello("World")
+"Hello, World!"
+iex> MathHelper.factorial(5)
+120
 ```
 
 ### Key Learnings
@@ -87,10 +275,26 @@ true
 - Static functions become module functions
 - Haxe types map to Elixir types automatically
 - CamelCase converts to snake_case
+- Recursion works identically in both languages
+- Loops become tail-recursive helper functions
+
+### 🔗 Next Steps
+- **Continue to**: [02-mix-project](#02-mix-project) - Learn Mix project integration
+- **Related concepts**: See [USER_GUIDE.md](./USER_GUIDE.md#annotations-reference) for complete annotation reference
+- **Troubleshooting**: Check the [Common Issues](#common-troubleshooting) section above
 
 ## 02-mix-project
 
-**Purpose**: Structure a complete Mix project with Haxe source files.
+**Purpose**: Structure a complete Mix project with Haxe source files.  
+**Prerequisites**: [01-simple-modules](#01-simple-modules) completed  
+**Difficulty**: 🟢 Beginner  
+**Time**: 30 minutes
+
+### What You'll Learn
+- Mix project structure with Haxe integration
+- Package organization and module namespacing
+- Cross-ecosystem testing (Haxe compilation + ExUnit tests)
+- Build pipeline configuration
 
 ### Project Structure
 ```
@@ -103,9 +307,49 @@ true
 │   └── services/
 │       └── UserService.hx
 ├── lib/                   # Generated Elixir
-│   └── generated/
-├── test/                  # ExUnit tests
-└── mix.exs               # Mix configuration
+│   └── (generated .ex files)
+├── test/                  # ExUnit tests  
+│   ├── string_utils_test.exs
+│   ├── user_service_test.exs
+│   └── test_helper.exs
+├── mix.exs               # Mix configuration
+├── build.hxml            # Haxe build config
+└── README.md
+```
+
+### 🔧 Build Configuration
+
+**build.hxml** (Haxe compilation setup):
+```hxml
+-cp src_haxe
+-D reflaxe_runtime
+--macro reflaxe.elixir.ElixirCompiler.build()
+--no-output
+```
+
+**mix.exs** (Elixir project configuration):
+```elixir
+defmodule MixProjectExample.MixProject do
+  use Mix.Project
+
+  def project do
+    [
+      app: :mix_project_example,
+      version: "0.1.0",
+      elixir: "~> 1.14",
+      # Add compilation step for Haxe
+      compilers: [:haxe] ++ Mix.compilers(),
+      start_permanent: Mix.env() == :prod,
+      deps: deps()
+    ]
+  end
+
+  # Custom compiler task for Haxe
+  def compile(:haxe) do
+    System.cmd("npx", ["haxe", "build.hxml"], cd: __DIR__)
+    :ok
+  end
+end
 ```
 
 ### String Utilities
