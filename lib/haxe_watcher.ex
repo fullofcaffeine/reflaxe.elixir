@@ -442,19 +442,10 @@ defmodule HaxeWatcher do
     # Try to find the project's lix-managed haxe binary
     # This ensures we use the correct version even when running from temp directories
     project_root = find_project_root()
-    
-    # IMPORTANT: Use lix to run Haxe, not the Haxe binary directly
-    # This ensures proper library resolution through haxe_libraries
-    lix_path = Path.join([project_root, "node_modules", ".bin", "lix"])
     project_haxe = Path.join([project_root, "node_modules", ".bin", "haxe"])
     
     cond do
-      # Prefer using lix to run haxe (this properly resolves libraries)
-      File.exists?(lix_path) && File.exists?(project_haxe) ->
-        # Use lix run haxe for proper library resolution
-        {lix_path, ["run", "haxe"]}
-      
-      # Fallback to direct haxe binary if lix isn't available
+      # Check for project's lix-managed haxe
       File.exists?(project_haxe) ->
         {project_haxe, []}
       
