@@ -328,7 +328,7 @@ The project uses a dual-ecosystem testing approach with self-referential library
 
 ```bash
 npm test              # Run ALL tests (158 total: 28 Haxe + 130 Mix)
-npm run test:haxe     # Run Haxe compiler tests only (28 snapshot tests)
+npm run test:haxe     # Run Haxe compiler tests only (snapshot tests)
 npm run test:mix      # Run Mix/Elixir tests only (130 runtime tests)
 npm run test:update   # Update expected snapshot test output
 ```
@@ -392,7 +392,7 @@ All compilation targets exceed performance requirements:
 
 ## Test Results
 
-**28/28 snapshot tests + 13 Mix tests passing**:
+**All snapshot tests + Mix tests passing**:
 
 ### Haxe Snapshot Tests (28/28 ✅)
 - Source mapping tests (source_map_basic, source_map_validation)

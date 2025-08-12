@@ -112,16 +112,22 @@ Before marking any task complete:
 - [ ] Performance benchmarks satisfied
 - [ ] "Resembles the way software is used" principle satisfied
 - [ ] **🚨 MANDATORY: ALL TESTS IN PROJECT PASS** - Run dual-ecosystem test suite:
-  - **Snapshot Tests**: `npx haxe test/Test.hxml` (22 snapshot tests comparing compiler output)
+  - **Snapshot Tests**: `npx haxe test/Test.hxml` (snapshot tests comparing compiler output)
   - **Mix Tests**: `MIX_ENV=test mix test --no-deps-check` (Elixir runtime validation)
   - **NPM Test**: `npm test` (runs both snapshot tests and Mix tests)
 - [ ] **🚨 NO REGRESSIONS ALLOWED** - Every test that was passing before your changes must still pass
 - [ ] **🚨 ZERO TOLERANCE FOR BROKEN TESTS** - If any test fails, the task is NOT complete regardless of feature implementation
+- [ ] **📖 DOCUMENTATION COMPLETE** - Documentation is NOT optional, it's part of task completion:
+  - **User Documentation Updated**: Feature guides, API references, examples added/updated
+  - **Task History Documented**: TASK_HISTORY.md updated with comprehensive session summary
+  - **Technical Documentation**: Architecture changes, patterns, and decisions captured
+  - **Migration/Upgrade Guides**: Breaking changes documented with migration paths
 - [ ] **🧠 AUTOMATIC MEMORY UPDATE** - Capture implementation details, performance metrics, test results, technical decisions, and integration points in CLAUDE.md
 - [ ] **📊 PERFORMANCE DATA CAPTURED** - Record actual benchmark results, timing data, memory usage statistics
 - [ ] **🐛 ERROR SOLUTIONS DOCUMENTED** - Record exact error messages and their solutions for future reference
 - [ ] **📚 USER DOCUMENTATION ASSESSMENT** - Evaluate if task creates user-facing functionality requiring documentation updates
 - [ ] **🎯 DRY PRINCIPLE APPLIED** - Ensure CLAUDE.md references user docs instead of duplicating content
+- [ ] **🧹 DOCUMENTATION CLEANUP** - Remove outdated docs, consolidate duplicates, maintain structure
 
 ### 6. Testing Strategy by Component Type (Trophy-Focused)
 
@@ -270,7 +276,109 @@ After completing each task, **evaluate documentation needs**:
 - [ ] **Comprehensive Coverage**: Setup, usage, examples, and troubleshooting documented
 - [ ] **Consistent Updates**: User docs updated immediately after feature completion
 
-### 8. Performance and Monitoring
+### 8. 📖 Documentation as Core Task Component
+
+#### **Documentation is NOT Optional - It's Part of Task Definition**
+
+Every task has THREE mandatory components:
+1. **Implementation** - The code/feature being built
+2. **Testing** - Verification that it works correctly  
+3. **Documentation** - Making it usable and maintainable
+
+**A task is NOT complete without all three components.**
+
+#### **Documentation Workflow During Task Execution**
+
+```markdown
+1. START OF TASK:
+   - Review existing documentation to understand context
+   - Identify documentation that will need updates
+   - Plan documentation structure alongside implementation
+
+2. DURING IMPLEMENTATION:
+   - Document decisions and trade-offs as they're made
+   - Capture error messages and solutions immediately
+   - Update examples and code snippets in real-time
+
+3. AFTER IMPLEMENTATION:
+   - Update user-facing documentation (guides, examples, API refs)
+   - Document in TASK_HISTORY.md with comprehensive summary
+   - Clean up outdated or conflicting documentation
+   - Ensure all references and cross-links are valid
+```
+
+#### **Documentation Quality Standards**
+
+**User Documentation Requirements:**
+- **Feature Documentation**: Every new feature MUST have user documentation
+- **Example Code**: Working examples that users can copy and adapt
+- **API Reference**: Complete function signatures, parameters, return values
+- **Migration Guides**: Breaking changes require migration documentation
+- **Troubleshooting**: Common errors and their solutions
+
+**Technical Documentation Requirements:**
+- **Architecture Updates**: System design changes documented
+- **Pattern Documentation**: New patterns with usage examples
+- **Performance Notes**: Benchmarks, optimization opportunities
+- **Integration Points**: How components connect and communicate
+- **Decision Rationale**: Why specific approaches were chosen
+
+#### **Documentation File Organization**
+
+```
+documentation/
+├── USER GUIDES (End-User Focused)
+│   ├── GETTING_STARTED.md     # Setup and first steps
+│   ├── FEATURES.md            # Feature list and status
+│   ├── EXAMPLES.md            # Working code examples
+│   ├── ANNOTATIONS.md         # Annotation reference
+│   └── MIX_TASK_GENERATORS.md # Generator documentation
+│
+├── TECHNICAL DOCS (Developer Focused)
+│   ├── ARCHITECTURE.md        # System design
+│   ├── TESTING.md            # Testing approach
+│   ├── DEVELOPMENT_TOOLS.md  # Dev environment
+│   └── TROUBLESHOOTING.md    # Problem solutions
+│
+└── HISTORY (Progress Tracking)
+    ├── TASK_HISTORY.md        # Completed tasks log
+    └── CHANGELOG.md          # Version changes
+```
+
+#### **Documentation During Task Verification**
+
+```bash
+# Task verification MUST include documentation check
+mcp__shrimp-task-manager-global__verify_task \
+  taskId="[task-id]" \
+  score=95 \
+  summary="✅ Implementation complete. ✅ All tests passing (30/30). 
+           📖 Documentation updated: 
+           - Created MIX_TASK_GENERATORS.md with comprehensive guide
+           - Updated TASK_HISTORY.md with session summary  
+           - Added examples to EXAMPLES.md
+           - Cleaned up outdated references in 3 files"
+```
+
+#### **Documentation Cleanup Protocol**
+
+After completing each task:
+1. **Remove Outdated Content**: Delete obsolete documentation
+2. **Consolidate Duplicates**: Merge duplicate information
+3. **Fix Broken Links**: Update all cross-references
+4. **Verify Examples**: Ensure all code examples still work
+5. **Update TOCs**: Refresh tables of contents
+
+#### **Documentation Success Metrics**
+
+✅ **Complete Coverage**: Every feature has user documentation
+✅ **Working Examples**: All code samples execute successfully
+✅ **No Dead Links**: All cross-references are valid
+✅ **Current Information**: No outdated or conflicting docs
+✅ **Clear Organization**: Logical structure, easy navigation
+✅ **Search-Friendly**: Proper headings, keywords, indexing
+
+### 9. Performance and Monitoring
 
 #### **Performance Testing Integration**
 - Include performance tests for critical paths
