@@ -10,7 +10,7 @@ package elixir;
  * Essential for list processing, data transformation, and functional programming patterns
  */
 @:native("Enum")
-extern class Enum {
+extern class ElixirEnum {
     
     // Basic enumeration operations
     @:native("Enum.count")
