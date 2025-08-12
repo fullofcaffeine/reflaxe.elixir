@@ -160,7 +160,7 @@ class Run {
 		
 		Sys.println("");
 		Sys.println("📚 Documentation:");
-		Sys.println("  https://github.com/YourOrg/reflaxe.elixir/blob/main/documentation/GETTING_STARTED.md");
+		Sys.println("  https://github.com/fullofcaffeine/reflaxe.elixir/blob/main/documentation/GETTING_STARTED.md");
 		Sys.println("");
 		Sys.println("Happy coding! 🎉");
 	}
@@ -183,7 +183,7 @@ class Run {
 		Sys.println("  npx lix run reflaxe.elixir create my-app --no-interactive");
 		Sys.println("");
 		Sys.println("For more information, visit:");
-		Sys.println("  https://github.com/YourOrg/reflaxe.elixir");
+		Sys.println("  https://github.com/fullofcaffeine/reflaxe.elixir");
 	}
 	
 	static function showCreateHelp() {

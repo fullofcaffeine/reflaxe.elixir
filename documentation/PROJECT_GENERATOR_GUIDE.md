@@ -31,7 +31,7 @@ Before using the generator, ensure you have:
 npm install -g lix
 
 # Install Reflaxe.Elixir from GitHub
-npx lix install github:YourOrg/reflaxe.elixir
+npx lix install github:fullofcaffeine/reflaxe.elixir
 ```
 
 #### Option 2: Using haxelib
@@ -41,7 +41,7 @@ npx lix install github:YourOrg/reflaxe.elixir
 haxelib install reflaxe.elixir
 
 # Or install from GitHub
-haxelib git reflaxe.elixir https://github.com/YourOrg/reflaxe.elixir
+haxelib git reflaxe.elixir https://github.com/fullofcaffeine/reflaxe.elixir
 ```
 
 ### Verifying Installation
@@ -538,7 +538,7 @@ haxelib install reflaxe.elixir
 
 Make sure you have the latest version:
 ```bash
-npx lix install github:YourOrg/reflaxe.elixir --force
+npx lix install github:fullofcaffeine/reflaxe.elixir --force
 ```
 
 #### Phoenix won't start

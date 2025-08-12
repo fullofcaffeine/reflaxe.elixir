@@ -1,6 +1,6 @@
 # Troubleshooting Guide
 
-This guide helps you resolve common issues when working with Reflaxe.Elixir. If you can't find your issue here, please [open an issue](https://github.com/YourOrg/reflaxe.elixir/issues) on GitHub.
+This guide helps you resolve common issues when working with Reflaxe.Elixir. If you can't find your issue here, please [open an issue](https://github.com/fullofcaffeine/reflaxe.elixir/issues) on GitHub.
 
 ## Table of Contents
 - [Installation Issues](#installation-issues)
@@ -26,7 +26,7 @@ Error: Library reflaxe.elixir is not installed
 **Solution:**
 ```bash
 # Install via lix (recommended)
-lix install github:YourOrg/reflaxe.elixir
+lix install github:fullofcaffeine/reflaxe.elixir
 
 # Or install via haxelib
 haxelib install reflaxe.elixir
@@ -501,7 +501,7 @@ haxelib run formatter -s src_haxe
 
 **Fix:**
 ```bash
-lix install github:YourOrg/reflaxe.elixir
+lix install github:fullofcaffeine/reflaxe.elixir
 lix download
 ```
 
@@ -622,14 +622,14 @@ If you can't resolve your issue:
    - [Examples](../examples/)
 
 2. **Search existing issues:**
-   - [GitHub Issues](https://github.com/YourOrg/reflaxe.elixir/issues)
+   - [GitHub Issues](https://github.com/fullofcaffeine/reflaxe.elixir/issues)
 
 3. **Ask the community:**
    - [Discord Server](#)
    - [Forum](#)
 
 4. **Report a bug:**
-   - [Create an issue](https://github.com/YourOrg/reflaxe.elixir/issues/new)
+   - [Create an issue](https://github.com/fullofcaffeine/reflaxe.elixir/issues/new)
    - Include:
      - Haxe version (`haxe --version`)
      - Elixir version (`elixir --version`)

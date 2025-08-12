@@ -19,7 +19,7 @@ First, let's install lix (the Haxe package manager) and Reflaxe.Elixir:
 npm install -g lix
 
 # Install Reflaxe.Elixir
-lix install github:YourOrg/reflaxe.elixir
+lix install github:fullofcaffeine/reflaxe.elixir
 ```
 
 Verify the installation:

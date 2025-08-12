@@ -82,7 +82,7 @@ Write validation logic once in Haxe, use it in:
 
 ```bash
 # Install Reflaxe.Elixir
-npx lix install github:YourOrg/reflaxe.elixir
+npx lix install github:fullofcaffeine/reflaxe.elixir
 
 # Create a new project
 npx lix run reflaxe.elixir create my-app
@@ -123,7 +123,7 @@ npx lix run reflaxe.elixir create my-phoenix-app --type phoenix
 
 ```bash
 # Clone and setup
-git clone <repository>
+git clone https://github.com/fullofcaffeine/reflaxe.elixir
 cd reflaxe.elixir
 
 # Install dependencies (both ecosystems)
