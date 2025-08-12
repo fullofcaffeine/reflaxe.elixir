@@ -727,13 +727,43 @@ When encountering issues, go through this checklist:
 - [ ] Imports correct (not mixing std libs)?
 - [ ] Types match between Haxe and Elixir?
 
+## Issue Count Summary
+
+**Coverage Status**: ✅ **35+ Common Issues Documented**
+
+### Issue Categories Covered:
+
+- **Installation Issues** (5 issues): Haxelib setup, Lix installation, version compatibility
+- **Compilation Errors** (8 issues): Type not found, missing annotations, abstract types, imports
+- **Runtime Errors** (6 issues): Undefined functions, pattern matches, argument errors
+- **Type System Issues** (4 issues): Type mismatches, null safety, array operations
+- **Phoenix Integration** (4 issues): LiveView updates, route generation, assigns
+- **Mix Integration** (6 issues): Compiler setup, build configuration, file generation
+- **HXX Templates** (4 issues): Template syntax, rendering, function imports
+- **Pattern Matching** (4 issues): Exhaustive patterns, guards, binary patterns
+- **Performance Issues** (3 issues): Compilation speed, memory usage, optimization
+- **IDE/Tooling** (3 issues): VS Code setup, autocompletion, formatting
+- **Test Environment** (3 issues): Expected warnings, test isolation, mix vs npm
+- **Common Error Messages** (4 issues): Specific error patterns and fixes
+- **FAQ** (16 questions): Migration, debugging, OTP patterns, best practices
+
 ## Summary
 
 Most issues fall into these categories:
 - ✅ **Installation**: Ensure all tools are properly installed
-- ✅ **Configuration**: Check build.hxml and mix.exs settings
+- ✅ **Configuration**: Check build.hxml and mix.exs settings  
 - ✅ **Type mismatches**: Verify type conversions
-- ✅ **Missing annotations**: Add required annotations
+- ✅ **Missing annotations**: Add required annotations (@:module, @:liveview, etc.)
 - ✅ **Compilation order**: Ensure files are compiled before use
+- ✅ **Template issues**: Check HXX syntax and imports
+- ✅ **Mix integration**: Verify compiler setup and file generation
+- ✅ **Pattern matching**: Use proper switch syntax, handle exhaustive cases
+
+**Quick Debugging Steps**:
+1. Check error level (⚠️ warning vs ❌ error)
+2. Verify all required annotations present
+3. Confirm build.hxml configuration
+4. Test Haxe compilation separately (`npx haxe build.hxml`)
+5. Check generated Elixir files exist
 
 Remember: The compiler is your friend! Read error messages carefully—they usually point directly to the problem.
