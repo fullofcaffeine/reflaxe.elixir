@@ -9,7 +9,7 @@
                         'Elixir.PhoenixErrorHandler',
                         'Elixir.SourceMapLookup']},
               {optional_applications,[]},
-              {applications,[kernel,stdlib,elixir,logger,jason,file_system]},
+              {applications,[kernel,stdlib,elixir,logger,file_system]},
               {description,[65,32,72,97,120,101,32,99,111,109,112,105,108,97,
                             116,105,111,110,32,116,97,114,103,101,116,32,102,
                             111,114,32,69,108,105,120,105,114,47,66,69,65,77,
