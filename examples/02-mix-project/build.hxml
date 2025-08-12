@@ -1,20 +1,26 @@
-# Haxe Build Configuration for Mix Project Integration
-# This file defines how Haxe source files are compiled to Elixir modules
+# Example build configuration for Reflaxe.Elixir
+# This shows the minimal setup needed to compile Haxe to Elixir
 
-# Source paths - where to find Haxe code and dependencies
--cp src_haxe
+# Include Reflaxe.Elixir source directly (for examples running from subdirectories)
 -cp ../../src
 -cp ../../std
 -lib reflaxe
 
-# Compilation flags
--D reflaxe_runtime
--D source-map    # Enable source mapping for debugging
---no-output
+# Source directory containing your .hx files
+-cp src_haxe
 
-# Define all classes to compile - Reflaxe will handle the Elixir target
-# Compiling all modules in a single build for better dependency resolution
+# Output directory for generated .ex files
+-D elixir_output=lib
+
+# Required for Reflaxe targets
+-D reflaxe_runtime
+
+# Define library version and initialize compiler
+-D reflaxe.elixir=0.1.0
+--macro reflaxe.elixir.CompilerInit.Start()
+
+# Main classes to compile (no single entry point for this example)
 services.UserService
-utils.StringUtils
 utils.MathHelper
+utils.StringUtils
 utils.ValidationHelper
