@@ -22,5 +22,10 @@
     "tink_parse": ""
   },
   "main": "reflaxe.elixir.ElixirCompiler",
-  "run": "Run"
+  "run": "Run",
+  "reflaxe": {
+    "name": "Elixir",
+    "abbv": "ex",
+    "stdPaths": ["std", "std/elixir"]
+  }
 }

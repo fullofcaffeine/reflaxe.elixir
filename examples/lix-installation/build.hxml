@@ -1,0 +1,17 @@
+# Example build configuration for Reflaxe.Elixir
+# This shows the minimal setup needed to compile Haxe to Elixir
+
+# Include the Reflaxe.Elixir library
+-lib reflaxe.elixir
+
+# Source directory containing your .hx files
+-cp src_haxe
+
+# Output directory for generated .ex files
+-D elixir_output=lib
+
+# Required for Reflaxe targets
+-D reflaxe_runtime
+
+# Main class to compile (entry point)
+Main
