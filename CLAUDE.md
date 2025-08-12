@@ -25,67 +25,33 @@ This file must stay under 40k characters for optimal performance.
 - [Understanding Reflaxe.Elixir's Compilation Architecture](#understanding-reflaxeelixirs-compilation-architecture-) - How the transpiler actually works
 - [Critical: Macro-Time vs Runtime](#critical-macro-time-vs-runtime-) - THE MOST IMPORTANT CONCEPT TO UNDERSTAND
 - [`documentation/ARCHITECTURE.md`](documentation/ARCHITECTURE.md) - Complete architectural details
-- [`documentation/TESTING.md`](documentation/TESTING.md) - Testing philosophy and infrastructure
+- [`documentation/architecture/TESTING.md`](documentation/architecture/TESTING.md) - Testing philosophy and infrastructure
 
 **Key Insight**: Reflaxe.Elixir is a **macro-time transpiler**, not a runtime library. All transpilation happens during Haxe compilation, not at test runtime. This affects how you write and test compiler features.
 
 **Key Point**: The function body compilation fix was a legitimate use case - we went from empty function bodies (`# TODO: Implement function body`) to real compiled Elixir code. This required updating all intended outputs to reflect the improved compiler behavior.
 
-## Critical Testing Rules ⚠️
+## 📍 Agent Navigation Guide
 
-### Snapshot Testing: Update-Intended Mechanism ✅
-**CRITICAL WORKFLOW TOOL**: The `update-intended` mechanism is used to accept new compiler output as the baseline for snapshot tests.
+### When Writing or Fixing Tests
+→ **MUST READ**: [`documentation/TESTING_PRINCIPLES.md`](documentation/TESTING_PRINCIPLES.md) - Critical testing rules, snapshot testing, simplification principles
+→ **Architecture**: [`documentation/architecture/TESTING.md`](documentation/architecture/TESTING.md) - Technical testing infrastructure
+→ **Deep Dive**: [`documentation/TEST_SUITE_DEEP_DIVE.md`](documentation/TEST_SUITE_DEEP_DIVE.md) - What each test validates
 
-**When to use `npx haxe test/Test.hxml update-intended`:**
-- ✅ **Legitimate compiler improvements** - Function body compilation fix, new features working correctly
-- ✅ **Architectural changes** - Core compiler changes that improve output quality  
-- ✅ **Standard library updates** - New Haxe standard library files being generated correctly
-- ✅ **Expression compiler enhancements** - Better code generation producing more complete output
+### When Implementing New Features  
+→ **Process**: Follow TDD methodology (RED-GREEN-REFACTOR)
+→ **Testing**: Create snapshot tests following patterns in TESTING_PRINCIPLES.md
+→ **Documentation**: Update relevant guides in `documentation/`
 
-**When NOT to use update-intended:**
-- ❌ **Test failures due to bugs** - Fix the bug, don't accept broken output
-- ❌ **Compilation errors** - Resolve errors, don't accept error output as intended
-- ❌ **Regression issues** - Fix regressions, don't accept degraded output
-- ❌ **Non-deterministic output** - Fix consistency issues, don't accept random output
+### When Refactoring Code
+→ **Safety**: Ensure all tests pass before and after changes
+→ **Simplification**: Apply "as simple as needed" principle (see TESTING_PRINCIPLES.md)
+→ **Documentation**: Update if behavior or API changes
 
-**Workflow:**
-```bash
-# 1. Verify new output is actually correct and improved
-npx haxe test/Test.hxml show-output  # Review what changed
-
-# 2. Accept new output as baseline if improvements are legitimate  
-npx haxe test/Test.hxml update-intended
-
-# 3. Verify consistency by running tests again
-npx haxe test/Test.hxml  # Should show 28/28 passing
-```
-
-### NEVER Remove Test Code to Fix Failures
-**ABSOLUTE RULE**: Never remove or simplify test code just to make tests pass. This destroys test coverage and defeats the purpose of testing.
-
-When a test fails:
-1. **Fix the underlying compiler/implementation issue** - The test is revealing a real problem
-2. **Fix syntax errors properly** - Don't remove functionality, fix the syntax
-3. **Enhance the compiler if needed** - If the test reveals missing features, implement them
-4. **Document limitations** - If something truly can't be supported, document it clearly
-
-Example of WRONG approach:
-```haxe
-// BAD: Removing test functionality to avoid syntax errors
-// Before: Testing important migration features
-t.addColumn("id", "serial", {primary_key: true});
-// After: Gutted test that doesn't test anything
-// Table columns defined via comments
-```
-
-Example of RIGHT approach:
-```haxe
-// GOOD: Fix the syntax issue while preserving test coverage
-// Use alternative syntax that Haxe can parse
-addColumn("users", "id", "serial", true, null); // primary_key param
-```
-
-**Remember**: Tests exist to ensure quality. Reducing test coverage to achieve "passing tests" is self-defeating.
+### When Debugging Compilation Issues
+→ **Source Maps**: See [`documentation/SOURCE_MAPPING.md`](documentation/SOURCE_MAPPING.md)
+→ **Architecture**: Understand macro-time vs runtime (see sections below)
+→ **Examples**: Check `test/tests/` for similar patterns
 
 ## User Documentation References
 
@@ -97,7 +63,7 @@ addColumn("users", "id", "serial", true, null); // primary_key param
 - **Annotations**: [`documentation/ANNOTATIONS.md`](documentation/ANNOTATIONS.md)
 - **Examples**: [`documentation/EXAMPLES.md`](documentation/EXAMPLES.md)
 - **Architecture**: [`documentation/ARCHITECTURE.md`](documentation/ARCHITECTURE.md)
-- **Testing**: [`documentation/TESTING.md`](documentation/TESTING.md)
+- **Testing**: [`documentation/architecture/TESTING.md`](documentation/architecture/TESTING.md)
 - **Development Tools**: [`documentation/DEVELOPMENT_TOOLS.md`](documentation/DEVELOPMENT_TOOLS.md)
 - **Task History**: [`documentation/TASK_HISTORY.md`](documentation/TASK_HISTORY.md)
 
@@ -239,9 +205,9 @@ For comprehensive feature status and production readiness, see [`documentation/F
   - Proper null handling instead of implicit nulls
 
 ## Test Status Summary
-- **Full Test Suite**: ✅ ALL PASSING (28 snapshot tests + 130 Mix tests)
+- **Full Test Suite**: ✅ ALL PASSING (snapshot tests + Mix tests)
 - **Elixir Tests**: ✅ ALL PASSING (13 tests in Mix/ExUnit)
-- **Haxe Tests**: ✅ ALL PASSING (28 snapshot tests via TestRunner.hx)
+- **Haxe Tests**: ✅ ALL PASSING (snapshot tests via TestRunner.hx)
 - **CI Status**: ✅ All GitHub Actions checks passing
 
 ## Reflaxe Snapshot Testing Architecture ✅
@@ -370,62 +336,10 @@ What happens:
 - **Pattern Matching Implementation**: Core logic completed but needs type system integration
 - **Integration Tests**: Require mock/stub system for TypedExpr structures
 
-## Agent Testing Instructions ✅
-
-### Primary Command
-**Always use `npm test` for comprehensive validation** - Currently runs 28 snapshot tests using TestRunner.hx
-
-### Test Architecture: Reflaxe Snapshot Testing
-1. **Snapshot Tests** (`npm test`): Compiles Haxe and compares Elixir output - **28 tests**
-2. **Mix Tests** (separate): Tests generated Elixir code runs in BEAM (`mix test`)
-
-### Creating New Snapshot Tests
-
-**✅ ALWAYS follow Reflaxe snapshot testing pattern:**
-
-1. **Create test directory**: `test/tests/feature_name/`
-2. **Write Haxe source**: `Main.hx` with feature to test
-3. **Create compile config**: `compile.hxml` with compilation settings  
-4. **Generate expected output**: `haxe test/Test.hxml update-intended`
-5. **Verify output**: Check generated Elixir is correct
-
-**Example test structure:**
-```
-test/tests/my_feature/
-├── compile.hxml    # Haxe compilation config
-├── Main.hx         # Test source code
-├── intended/       # Expected Elixir output
-│   └── Main.ex     # Expected generated file
-└── out/            # Actual output (for comparison)
-```
-
-**✅ Test Commands:**
-- `npm test` - Run all 28 snapshot tests
-- `haxe test/Test.hxml test=feature_name` - Run specific test  
-- `haxe test/Test.hxml update-intended` - Accept current output
-- `haxe test/Test.hxml show-output` - Show compilation details
-
-**❌ NEVER do these mistakes:**
-- Don't create tests without intended/ directories  
-- Don't manually write expected Elixir output (use update-intended)
-- Don't ignore test failures (they indicate compilation changes)
-- Don't mix testing approaches (use consistent snapshot pattern)
-
-## Critical Testing Standards: Edge Case Coverage ✅
-
-### MANDATORY Edge Case Testing Requirements
-All test suites implementing TDD methodology MUST include comprehensive edge case testing covering these 7 categories:
-
-1. **Error Conditions** 🔴 - Invalid inputs, unsupported operations, type mismatches
-2. **Boundary Cases** 🔶 - Empty collections, large datasets, edge values
-3. **Security Validation** 🛡️ - Input sanitization, escape handling
-4. **Performance Limits** 🚀 - <15ms compilation target, memory monitoring
-5. **Integration Robustness** 🔗 - Cross-component compatibility, error propagation
-6. **Type Safety** 🎯 - Invalid combinations, null handling, default fallbacks
-7. **Resource Management** 💾 - Memory cleanup, resource limits, disposal validation
-
-### Implementation Pattern
-Every test class following TDD methodology MUST include dedicated edge case methods. See documentation for detailed patterns and examples.
+## Testing Quick Reference
+→ **All testing rules and patterns**: See [`documentation/TESTING_PRINCIPLES.md`](documentation/TESTING_PRINCIPLES.md)
+→ **Primary command**: `npm test` - runs all validation
+→ **Architecture details**: [`documentation/architecture/TESTING.md`](documentation/architecture/TESTING.md)
 
 ## Current Implementation Status Summary
 
@@ -434,7 +348,7 @@ Every test class following TDD methodology MUST include dedicated edge case meth
 - [`documentation/EXAMPLES.md`](documentation/EXAMPLES.md) - Working example walkthroughs  
 - [`documentation/ANNOTATIONS.md`](documentation/ANNOTATIONS.md) - Annotation usage guide
 
-**Quick Status**: 11/11 core features production-ready, all 9 examples working, 28/28 snapshot tests + comprehensive test suites passing.
+**Quick Status**: 11/11 core features production-ready, all 9 examples working, all snapshot tests + comprehensive test suites passing.
 
 ## Task Completion and Documentation Protocol
 
