@@ -31,45 +31,36 @@ Every task plan must:
 - **Map user stories** to technical implementation tasks
 - **Validate against acceptance criteria** specified in PRD
 
-### 2. Testing-Aware Task Creation
-Plan compiler development tasks with snapshot testing in mind:
+### 2. Compiler-Aware Task Planning
+Plan tasks using the proven Reflaxe testing architecture:
 
-#### **Snapshot Testing Strategy (Following Reflaxe Patterns):**
+#### **Three-Layer Testing Planning:**
 
-Every new compiler feature needs snapshot tests:
-- **Test Structure**: Create `test/tests/[feature-name]/` directory
-- **Input**: Haxe source demonstrating the feature
+Every compiler feature must be planned with all three layers:
+
+**Layer 1: Snapshot Testing (Primary)**
+- **Test Structure**: Plan `test/tests/[feature-name]/` directory structure
+- **Input**: Haxe source code demonstrating the feature
 - **Output**: Expected Elixir code in `intended/` directory
-- **Verification**: TestRunner.hx compiles and compares output
-- **No Runtime**: Tests only verify compilation, never execute generated code
+- **Verification**: TestRunner.hx compilation and output comparison
+- **Coverage**: Core language, annotations, edge cases, error handling
 
-**Test Planning for Features:**
-- **Core Language**: Plan tests for each Haxe construct being supported
-- **Annotations**: Each @:annotation needs its own test directory
-- **Edge Cases**: Plan tests for complex/nested/unusual syntax
-- **Error Cases**: Plan tests for invalid input handling
-- **Regression**: Ensure existing tests continue passing
+**Layer 2: Mix Integration Testing (Validation)**
+- **Build Integration**: Plan Mix.Tasks.Compile.Haxe tests
+- **Runtime Verification**: Generated Elixir compiles and runs
+- **Phoenix Integration**: LiveView, Ecto, OTP patterns work
+- **Error Handling**: Build failures and compilation errors
 
-### 3. BDD-Informed Task Planning
-Plan tasks from consumer perspective:
+**Layer 3: Example Testing (Documentation)**
+- **Real-World Usage**: Complete working examples
+- **Documentation Validation**: README accuracy
+- **User Workflows**: End-to-end compilation scenarios
 
-#### **User-Centric Tasks**
-- Plan from end-user workflow perspective
-- Include user story acceptance criteria
-- Consider user experience and performance
-- Plan for accessibility and usability testing
-
-#### **Component-Centric Tasks**
-- Plan from consuming component perspective
-- Define clear interfaces and contracts
-- Plan for API compatibility and versioning
-- Include integration testing requirements
-
-#### **System-Centric Tasks**
-- Plan from external system perspective (e.g., Taskmaster)
-- Ensure 100% compatibility requirements
-- Plan for migration and upgrade scenarios
-- Include system integration testing
+#### **Compiler Development Perspective Planning**
+- Plan from **compiler user perspective** (Haxe developers)
+- Define clear **AST transformation requirements**
+- Plan for **compilation performance** (<15ms targets)
+- Include **generated code quality** validation
 
 ## Execution Feedback Integration
 
@@ -97,15 +88,15 @@ PLANNER ACTION:
 - Maintain overall task objective
 ```
 
-#### **Testing Requirements Insufficient**
+#### **Testing Coverage Insufficient**
 When executor discovers testing gaps:
 ```
-FEEDBACK: "Task X needs additional integration tests for component Y"
+FEEDBACK: "Task X needs additional snapshot tests for edge case Y"
 PLANNER ACTION:
-- Add specific integration testing subtask
-- Update verification criteria with testing requirements
-- Plan for test data and mock setup
-- Include performance testing if applicable
+- Add specific snapshot test for the edge case
+- Plan additional test/tests/[feature-edge-case]/ directory
+- Update verification criteria with snapshot testing requirements
+- Include Mix integration tests if generated code is complex
 ```
 
 #### **Performance Considerations Missing**
@@ -201,23 +192,24 @@ OUTPUT: Improved planning methodology and templates
 
 ## Planning Quality Standards
 
-### 1. Task Quality Criteria
-Each planned task must have:
+### 1. Task Quality Criteria (Compiler-Focused)
+Each planned compiler task must have:
 - [ ] **Clear PRD Reference**: Specific lines from `@haxe.elixir.md`
-- [ ] **Consumer Perspective**: Planned from user/component/system viewpoint
-- [ ] **Testing Strategy**: Appropriate mix of static/unit/integration/e2e tests
-- [ ] **Performance Targets**: Specific timing requirements from PRD
-- [ ] **Verification Criteria**: Clear success measures including testing
-- [ ] **Dependency Clarity**: Well-defined relationships with other tasks
-- [ ] **Implementation Guidance**: Sufficient detail for executor to begin
+- [ ] **Compiler User Perspective**: Planned from Haxe developer viewpoint
+- [ ] **Three-Layer Testing**: Snapshot → Mix → Example test coverage planned
+- [ ] **Compilation Performance**: Specific timing requirements (<15ms targets)
+- [ ] **AST Transformation**: Clear TypedExpr → Elixir mapping defined
+- [ ] **Dependency Clarity**: Well-defined relationships with other compiler features
+- [ ] **Implementation Guidance**: Sufficient detail for compiler development
 
-### 2. Testing Integration Standards (Snapshot Testing)
-- [ ] **Snapshot Tests Created**: Each feature has corresponding test/tests/[feature]/ directory
-- [ ] **Intended Output Defined**: Expected Elixir code in intended/ subdirectory
-- [ ] **Compilation Verified**: Tests confirm Haxe→Elixir compilation produces expected output
-- [ ] **Edge Cases Covered**: Complex/nested/unusual syntax patterns tested
-- [ ] **Error Handling**: Invalid input handling tested where applicable
-- [ ] **No Runtime Testing**: Tests only verify compilation, never execute generated code
+### 2. Compiler Testing Standards (Three-Layer Architecture)
+- [ ] **Snapshot Tests Planned**: Each feature has test/tests/[feature]/ directory structure
+- [ ] **Expected Output Defined**: Detailed Elixir code in intended/ subdirectory
+- [ ] **Compilation Pipeline Tested**: TestRunner.hx verification planned
+- [ ] **Mix Integration Planned**: Generated code compilation and runtime validation
+- [ ] **Example Documentation**: Real-world usage examples planned
+- [ ] **Edge Case Coverage**: Complex/nested/unusual Haxe syntax patterns planned
+- [ ] **No Unit Testing**: Avoid unit tests of compiler internals (they don't exist at runtime)
 
 ### 3. PRD Compliance Standards
 - [ ] **Requirements Traceability**: Every task maps to PRD requirements
@@ -334,32 +326,33 @@ mcp__shrimp-task-manager-global__split_tasks \
   }]'
 ```
 
-#### 2. Embed TDD Instructions in Task Descriptions
+#### 2. Embed Three-Layer Testing Instructions in Task Descriptions
 Every created task must include:
 ```markdown
-## Snapshot Testing Implementation
+## Three-Layer Compiler Testing Implementation
 
-**🔴 RED Phase - Create Snapshot Tests:**
-- Write Haxe source code that demonstrates the feature
-- Define expected Elixir output in intended/ directory
-- Run TestRunner.hx to verify compilation fails initially
-- Focus on testing complete compilation pipeline
+**📸 SNAPSHOT Phase - Create Compiler Tests:**
+- Create test/tests/[feature]/ directory with Main.hx and compile.hxml
+- Write Haxe source demonstrating the compiler feature
+- Run `haxe test/Test.hxml update-intended` to generate expected output
+- Verify TestRunner.hx compilation and comparison works
 
-**🟢 GREEN Phase - Make Tests Pass:**
-- Implement compiler functionality to generate correct output
-- Validate [specific requirements] from PRD lines [X-Y]
-- Ensure generated Elixir matches intended output exactly
+**⚙️ IMPLEMENTATION Phase - Build Compiler Feature:**
+- Implement AST transformation in src/reflaxe/elixir/
+- Generate correct Elixir code matching intended output
+- Ensure compilation performance meets <15ms targets
+- Validate against PRD requirements from lines [X-Y]
 
-**🔵 REFACTOR Phase - Improve Compiler:**
-- Optimize for [performance requirement] (<Xms compilation target)
-- Maintain snapshot test accuracy during refactoring
-- Use snapshot tests as refactoring safety net
+**🧪 VALIDATION Phase - Mix Integration Testing:**
+- Create Mix test to verify generated Elixir compiles and runs
+- Test that generated code integrates properly with Phoenix/Ecto
+- Validate no regressions in existing snapshot tests
+- Ensure example compilation works for documentation
 
-**📸 Snapshot Testing Coverage:**
-- Core Language Features: Each Haxe construct needs snapshots
-- Annotations: Each @:annotation needs dedicated test directory
-- Edge Cases: Complex/nested/unusual syntax patterns
-- Error Handling: Invalid input rejection and error messages
+**🏗️ Three-Layer Coverage:**
+- Layer 1: Snapshot tests for AST transformation correctness
+- Layer 2: Mix tests for generated code runtime validation
+- Layer 3: Example compilation for real-world usage patterns
 ```
 
 #### 3. Monitor Execution Feedback
@@ -444,11 +437,11 @@ mcp__shrimp-task-manager-global__update_task \
 
 ### Integration Success Criteria
 
-✅ **TDD Planning Integration:**
-- All tasks contain embedded TDD methodology
-- Snapshot testing approach defined for each task
-- BDD scenarios planned from consumer perspective
-- Performance targets extracted from PRD
+✅ **Three-Layer Testing Planning:**
+- All tasks contain embedded three-layer testing methodology
+- Snapshot testing structure defined for each compiler feature
+- Compilation validation scenarios planned from Haxe developer perspective
+- Performance targets extracted from PRD (<15ms compilation)
 
 ✅ **Feedback Loop Implementation:**
 - Executor feedback monitored systematically
