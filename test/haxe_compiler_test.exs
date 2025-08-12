@@ -371,7 +371,7 @@ defmodule HaxeCompilerTest do
       assert is_boolean(needs_recompile)
     end
 
-    test "handles relative and absolute paths", %{source_dir: source_dir, target_dir: target_dir} do
+    test "handles relative and absolute paths", %{source_dir: source_dir, target_dir: _target_dir} do
       File.write!(Path.join(source_dir, "PathTest.hx"), "class PathTest {}")
       
       # Test with relative path
