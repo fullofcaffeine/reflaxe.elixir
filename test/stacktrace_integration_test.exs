@@ -100,7 +100,7 @@ defmodule StacktraceIntegrationTest do
     end
 
     test "retrieves errors in JSON format" do
-      parsed_errors = HaxeCompiler.parse_haxe_errors("src_haxe/Test.hx:1: Type not found : BadType")
+      _parsed_errors = HaxeCompiler.parse_haxe_errors("src_haxe/Test.hx:1: Type not found : BadType")
       
       json_errors = HaxeCompiler.get_compilation_errors(:json)
       
