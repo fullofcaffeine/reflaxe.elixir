@@ -72,19 +72,61 @@ Write validation logic once in Haxe, use it in:
 ✅ **Type-Safe Compilation** - Complete Haxe→Elixir type mapping  
 ✅ **Performance Optimized** - Sub-millisecond compilation targets  
 
-## Quick Start
+## Installation
 
 ### Prerequisites
 - Node.js 16+ (for lix package management)
 - Elixir 1.14+ (for Phoenix/Ecto ecosystem)
 
-### Create a New Project (Recommended)
+### Method 1: Install via Lix (Recommended)
 
 ```bash
-# Install Reflaxe.Elixir
+# Install latest version from GitHub
 npx lix install github:fullofcaffeine/reflaxe.elixir
 
-# Create a new project
+# Or install a specific version/tag
+npx lix install github:fullofcaffeine/reflaxe.elixir#v1.0.1
+
+# Add to existing project
+npx lix use
+```
+
+### Method 2: Vendoring (Copy source directly)
+
+For projects that want to vendor the compiler source:
+
+```bash
+# Clone or download the repository
+git clone https://github.com/fullofcaffeine/reflaxe.elixir.git
+
+# Copy necessary files to your project
+cp -r reflaxe.elixir/src/ your-project/vendor/reflaxe.elixir/src/
+cp -r reflaxe.elixir/std/ your-project/vendor/reflaxe.elixir/std/
+cp reflaxe.elixir/haxelib.json your-project/vendor/reflaxe.elixir/
+
+# In your build.hxml, add:
+# -cp vendor/reflaxe.elixir/src
+# -cp vendor/reflaxe.elixir/std
+```
+
+### Usage in Your Project
+
+Once installed, add to your `build.hxml`:
+
+```hxml
+-lib reflaxe.elixir
+-cp src_haxe
+-D elixir_output=lib
+-D reflaxe_runtime
+Main
+```
+
+## Quick Start
+
+### Create a New Project
+
+```bash
+# Using the project generator (after installation)
 npx lix run reflaxe.elixir create my-app
 
 # Or create a Phoenix project
@@ -92,6 +134,51 @@ npx lix run reflaxe.elixir create my-phoenix-app --type phoenix
 ```
 
 🚀 **Get started in 5 minutes!** See [documentation/guides/QUICKSTART.md](documentation/guides/QUICKSTART.md)
+
+## Development Workflow
+
+### Basic Compilation
+
+```bash
+# Compile once
+npx haxe build.hxml
+
+# Watch for changes (requires file watching setup)
+mix compile.haxe --watch
+```
+
+### Phoenix Integration
+
+```bash
+# Add to your Phoenix project's mix.exs
+defp deps do
+  [
+    # ... other deps
+    {:reflaxe_elixir, "~> 1.0", only: [:dev]}
+  ]
+end
+
+# Compile Haxe as part of your build
+mix compile.haxe
+
+# Start Phoenix with Haxe compilation
+mix phx.server
+```
+
+### File Organization
+
+```
+your-project/
+├── src_haxe/              # Your Haxe source files
+│   ├── controllers/       # Phoenix controllers
+│   ├── live/             # LiveView modules  
+│   ├── contexts/         # Business logic
+│   └── schemas/          # Ecto schemas
+├── lib/                  # Generated Elixir files
+│   └── (compiled output)
+├── build.hxml            # Haxe build configuration
+└── mix.exs              # Phoenix/Elixir dependencies
+```
 
 ## 📚 Documentation
 

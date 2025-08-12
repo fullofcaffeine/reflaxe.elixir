@@ -60,12 +60,7 @@
       [
         "@semantic-release/github",
         {
-          "assets": [
-            {
-              "path": "reflaxe-elixir-*.zip",
-              "label": "Reflaxe.Elixir v${nextRelease.version}"
-            }
-          ]
+          "assets": false
         }
       ],
       [
