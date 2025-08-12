@@ -182,6 +182,115 @@ npx lix run reflaxe.elixir create --type add-to-existing
 
 **Use when:** Gradually migrating existing Elixir code to Haxe.
 
+## Template System
+
+The Reflaxe.Elixir project generator uses a sophisticated template system based on working example projects. Each project type is backed by a real, functional example that serves as the template source.
+
+### Template Architecture
+
+Templates are stored in the `examples/` directory and work as follows:
+
+```
+examples/
+├── 02-mix-project/          # Basic template source
+│   ├── .template.json       # Template configuration
+│   ├── mix.exs             # Template files (will be processed)
+│   ├── build.hxml
+│   ├── src_haxe/
+│   └── test/
+├── 03-phoenix-app/          # Phoenix template source  
+│   ├── .template.json
+│   └── ... (Phoenix structure)
+└── 06-user-management/      # LiveView template source
+    ├── .template.json
+    └── ... (LiveView structure)
+```
+
+### Template Configuration (.template.json)
+
+Each template directory contains a `.template.json` file that describes the template:
+
+#### Basic Template Configuration
+```json
+{
+  "name": "Basic Mix Project",
+  "description": "Standard Elixir Mix project with Reflaxe.Elixir integration",
+  "type": "basic",
+  "features": [
+    "Mix project structure",
+    "Haxe compilation pipeline",
+    "Utility modules (StringUtils, MathHelper, ValidationHelper)", 
+    "Service layer (UserService)",
+    "ExUnit test suite",
+    "Development tools (Credo, ExCoveralls)"
+  ],
+  "requirements": {
+    "haxe": "4.3+",
+    "elixir": "1.14+",
+    "node": "16+"
+  },
+  "placeholders": {
+    "__PROJECT_NAME__": "Project name in snake_case",
+    "__PROJECT_MODULE__": "Main module name in PascalCase", 
+    "__PROJECT_VERSION__": "Project version (default: 0.1.0)",
+    "__YEAR__": "Current year for copyright"
+  }
+}
+```
+
+#### Phoenix Template Configuration
+```json
+{
+  "name": "Phoenix Web Application",
+  "description": "Full Phoenix web application with Reflaxe.Elixir compilation",
+  "type": "phoenix",
+  "features": [
+    "Phoenix web framework",
+    "Phoenix LiveView support",
+    "Haxe compilation pipeline",
+    "Application module structure",
+    "Phoenix router and controllers",
+    "Asset pipeline (esbuild)",
+    "Development tools and live reload"
+  ],
+  "dependencies": {
+    "phoenix": "~> 1.7.0",
+    "phoenix_live_view": "~> 0.20.0",
+    "phoenix_html": "~> 3.3",
+    "phoenix_live_dashboard": "~> 0.8.0"
+  }
+}
+```
+
+### Template Processing
+
+When you create a project:
+
+1. **Template Selection**: ProjectGenerator maps your project type to a template directory
+2. **File Copying**: All files (except `.template.json`) are copied to the new project
+3. **Dynamic Generation**: Core files like `mix.exs`, `package.json`, `README.md` are generated dynamically with your project name
+4. **Placeholder Processing**: Any `__PLACEHOLDER__` markers in template files are replaced
+5. **Permission Preservation**: File permissions and binary files are preserved correctly
+
+### Template Mapping
+
+The generator uses this mapping:
+
+| Project Type | Template Source | Description |
+|--------------|----------------|-------------|
+| `basic` | `examples/02-mix-project` | Standard Mix project with utilities |
+| `phoenix` | `examples/03-phoenix-app` | Phoenix web application |
+| `liveview` | `examples/06-user-management` | Phoenix + LiveView with advanced features |
+| `add-to-existing` | Dynamic generation | Adds Haxe support to existing projects |
+
+### Working Examples as Templates
+
+A key advantage of this approach is that **all templates are working examples**:
+- You can `cd examples/02-mix-project && mix test` to run tests
+- Templates are maintained and tested as part of the project
+- No risk of templates becoming outdated or broken
+- Easy to understand what each template provides by examining working code
+
 ## What Gets Generated
 
 ### Directory Structure
