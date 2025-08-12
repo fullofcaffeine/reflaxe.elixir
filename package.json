@@ -29,6 +29,7 @@
   },
   "scripts": {
     "postinstall": "lix download",
+    "build": "echo 'Reflaxe.Elixir is a compiler - no build step needed'",
     "test": "npx haxe test/Test.hxml && MIX_ENV=test mix test --no-deps-check",
     "test:haxe": "npx haxe test/Test.hxml",
     "test:mix": "MIX_ENV=test mix deps.compile && MIX_ENV=test mix test --max-cases 1",
