@@ -204,6 +204,20 @@ For comprehensive feature status and production readiness, see [`documentation/F
   - No Dynamic where generics suffice
   - Proper null handling instead of implicit nulls
 
+## Dynamic Type Usage Guidelines ⚠️
+**Dynamic should be used with caution** and only when necessary:
+- ✅ **When to use Dynamic**: Catch blocks (error types vary), reflection operations, external API integration
+- ✅ **Always add justification comment** when using Dynamic to explain why it's necessary
+- ❌ **Avoid Dynamic when generics or specific types work** - prefer type safety
+- 📝 **Example of proper Dynamic usage**:
+  ```haxe
+  } catch (e: Dynamic) {
+      // Dynamic used here because Haxe's catch can throw various error types
+      // Converting to String for error reporting
+      EctoErrorReporter.reportSchemaError(className, Std.string(e), pos);
+  }
+  ```
+
 ## Test Status Summary
 - **Full Test Suite**: ✅ ALL PASSING (snapshot tests + Mix tests)
 - **Elixir Tests**: ✅ ALL PASSING (13 tests in Mix/ExUnit)
