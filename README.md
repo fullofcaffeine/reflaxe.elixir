@@ -7,7 +7,56 @@
 [![Haxe](https://img.shields.io/badge/Haxe-4.3.6+-orange)](https://haxe.org)
 [![Elixir](https://img.shields.io/badge/Elixir-1.14+-purple)](https://elixir-lang.org)
 
-A modern Haxe compilation target for Elixir/BEAM with native Phoenix integration.
+**Write your business logic once, deploy it anywhere.** A modern Haxe compilation target for Elixir/BEAM that brings type safety without vendor lock-in.
+
+## Why Reflaxe.Elixir?
+
+### 🎯 The Strategic Choice for Type-Safe Elixir
+
+**The Problem**: You want the power of BEAM (massive concurrency, fault tolerance, hot code reloading) with compile-time type safety. But existing solutions lock you into a single runtime.
+
+**The Solution**: Reflaxe.Elixir gives you:
+- **Type safety today** - Catch errors at compile time, not in production
+- **Freedom tomorrow** - Your code can target JS, C++, Python, Java, C#, or any other Haxe target
+- **Phoenix ecosystem now** - Deep integration with LiveView, Ecto, OTP patterns
+
+### 💡 Real-World Scenarios
+
+#### Share Code Across Your Stack
+Write validation logic once in Haxe, use it in:
+- Your Phoenix backend (compiled to Elixir)
+- Your React frontend (compiled to JavaScript)  
+- Your mobile app (compiled to C++ or Java)
+- Your CLI tools (compiled to Python or native)
+
+#### Future-Proof Your Architecture
+- Start with Elixir/BEAM for its excellent concurrency
+- Move performance-critical paths to C++ without rewriting
+- Deploy microservices to different runtimes as needed
+- Pivot to new platforms as requirements change
+
+#### Unite Your Team's Knowledge
+- Frontend developers can understand backend code
+- Backend developers can contribute to frontend
+- One language to learn, maintain, and master
+- TypeScript-like syntax familiar to most developers
+
+### 🚀 How It Compares
+
+| | Reflaxe.Elixir | Gleam | Pure Elixir | TypeScript |
+|---|---|---|---|---|
+| **Type Safety** | ✅ Compile-time | ✅ Compile-time | ❌ Runtime | ✅ Compile-time |
+| **Target Runtimes** | ✅ Multiple | ❌ BEAM only | ❌ BEAM only | ❌ JS only |
+| **Phoenix Integration** | ✅ Native | ⚠️ Via FFI | ✅ Native | ❌ None |
+| **Ecosystem Maturity** | ✅ Since 2005 | ⚠️ New | ✅ Mature | ✅ Mature |
+| **Metaprogramming** | ✅ Powerful macros | ❌ None | ✅ Macros | ⚠️ Limited |
+| **Learning Curve** | ✅ TypeScript-like | ⚠️ Rust-like | ⚠️ Ruby-like | ✅ Familiar |
+
+### 🎪 Built on Proven Technology
+
+- **Haxe** (2005): Battle-tested cross-platform toolkit used in production by companies like Netflix, Disney, BBC, Toyota, and more
+- **Elixir/BEAM**: Powers WhatsApp (2B users), Discord, Pinterest, and other massive-scale systems
+- **Reflaxe**: Modern compiler framework making Haxe more powerful than ever
 
 ## Features
 
@@ -42,32 +91,32 @@ npx lix run reflaxe.elixir create my-app
 npx lix run reflaxe.elixir create my-phoenix-app --type phoenix
 ```
 
-🚀 **Get started in 5 minutes!** See [documentation/QUICKSTART.md](documentation/QUICKSTART.md)
+🚀 **Get started in 5 minutes!** See [documentation/guides/QUICKSTART.md](documentation/guides/QUICKSTART.md)
 
 ## 📚 Documentation
 
 ### Getting Started
-- **[Tutorial: First Project](documentation/TUTORIAL_FIRST_PROJECT.md)** - Step-by-step guide to build your first app
+- **[Tutorial: First Project](documentation/guides/TUTORIAL_FIRST_PROJECT.md)** - Step-by-step guide to build your first app
 - **[Installation Guide](INSTALLATION.md)** - Complete setup with troubleshooting
-- **[Project Generator](documentation/GENERATOR.md)** - Using `haxelib run` to create projects
+- **[Getting Started](documentation/guides/GETTING_STARTED.md)** - Installation and setup guide
 
 ### Integration Guides  
 - **[Phoenix Integration](documentation/PHOENIX_INTEGRATION_GUIDE.md)** - Controllers, LiveView, Ecto, Channels
 - **[Idiomatic Syntax](documentation/IDIOMATIC_SYNTAX.md)** - Type-safe Elixir patterns and transformations
 - **[Pipe Operators](documentation/guides/pipe-operators.md)** - Complete guide to pipe operator support
 - **[Escape Hatches](documentation/ESCAPE_HATCHES.md)** - Using Elixir code from Haxe
-- **[Cookbook](documentation/COOKBOOK.md)** - Practical recipes for common tasks
+- **[Cookbook](documentation/guides/COOKBOOK.md)** - Practical recipes for common tasks
 
 ### Reference
 - **[Source Mapping Guide](documentation/SOURCE_MAPPING.md)** 🎯 - Complete guide to our pioneering source mapping feature
-- **[API Reference](documentation/API_REFERENCE.md)** - Complete API documentation
-- **[LLM Workflow Compatibility](documentation/LLM_WORKFLOW_COMPATIBILITY.md)** - Using Reflaxe.Elixir with AI assistants
+- **[Annotations](documentation/reference/ANNOTATIONS.md)** - Complete annotation reference
+- **[LLM Workflow Compatibility](documentation/llm/LLM_WORKFLOW_COMPATIBILITY.md)** - Using Reflaxe.Elixir with AI assistants
 - **[Troubleshooting](documentation/TROUBLESHOOTING.md)** - Common issues and solutions
 - **[Examples](examples/)** - Working code examples
 
 ### Architecture
-- **[Architecture Overview](documentation/ARCHITECTURE.md)** - Compiler internals
-- **[Testing Guide](documentation/TESTING.md)** - Test infrastructure and patterns
+- **[Architecture Overview](documentation/architecture/ARCHITECTURE.md)** - Compiler internals
+- **[Testing Guide](documentation/architecture/TESTING.md)** - Test infrastructure and patterns
 - **[Development Guide](DEVELOPMENT.md)** - Contributing and extending
 
 ### Manual Installation (For Contributors)
@@ -207,7 +256,7 @@ npm run test:update   # Update expected snapshot test output
 
 **⚠️ Critical**: For self-referential library configuration issues, see [documentation/SELF_REFERENTIAL_LIBRARY_TROUBLESHOOTING.md](documentation/SELF_REFERENTIAL_LIBRARY_TROUBLESHOOTING.md)
 
-For detailed testing documentation, see [documentation/TESTING.md](documentation/TESTING.md)
+For detailed testing documentation, see [documentation/architecture/TESTING.md](documentation/architecture/TESTING.md)
 
 ### Development Workflow
 ```bash
