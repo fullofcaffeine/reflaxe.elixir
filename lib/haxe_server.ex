@@ -33,7 +33,19 @@ defmodule HaxeServer do
 
   @default_port 6000
   @default_timeout 30_000
-  @default_haxe_cmd "npx haxe"
+  
+  # Don't set a default here, will determine at runtime
+  defp default_haxe_cmd() do
+    # Find the project's lix-managed haxe if available
+    project_root = find_project_root()
+    project_haxe = Path.join([project_root, "node_modules", ".bin", "haxe"])
+    
+    if File.exists?(project_haxe) do
+      project_haxe
+    else
+      "npx haxe"
+    end
+  end
 
   # Client API
 
@@ -93,7 +105,7 @@ defmodule HaxeServer do
   @impl GenServer
   def init(opts) do
     port = Keyword.get(opts, :port, @default_port)
-    haxe_cmd = Keyword.get(opts, :haxe_cmd, @default_haxe_cmd)
+    haxe_cmd = Keyword.get(opts, :haxe_cmd, default_haxe_cmd())
     
     # Parse the haxe command if it's a string
     {cmd, args} = case haxe_cmd do
@@ -236,5 +248,29 @@ defmodule HaxeServer do
   rescue
     error ->
       {:error, "Failed to connect to Haxe server: #{Exception.message(error)}"}
+  end
+  
+  defp find_project_root() do
+    # Try to find the project root by looking for mix.exs or package.json
+    # Start from current directory and walk up
+    find_project_root_from(File.cwd!())
+  end
+  
+  defp find_project_root_from(dir) do
+    cond do
+      # Found project markers
+      File.exists?(Path.join(dir, "mix.exs")) or 
+      File.exists?(Path.join(dir, "package.json")) ->
+        dir
+      
+      # Reached root directory
+      dir == "/" or dir == Path.dirname(dir) ->
+        # Default to current directory if we can't find project root
+        File.cwd!()
+      
+      # Keep searching up
+      true ->
+        find_project_root_from(Path.dirname(dir))
+    end
   end
 end
