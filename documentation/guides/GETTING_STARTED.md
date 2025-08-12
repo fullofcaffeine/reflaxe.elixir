@@ -46,6 +46,8 @@ haxelib run reflaxe.elixir create my-phoenix-app --type phoenix
 - **liveview** - Phoenix with LiveView components
 - **add-to-existing** - Add Haxe to existing Elixir project
 
+All project types include **CLAUDE.md** with AI development instructions for using the watcher and source mapping.
+
 ## Manual Installation
 
 If you prefer to set up manually or contribute to the compiler:

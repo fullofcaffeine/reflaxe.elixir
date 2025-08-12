@@ -33,6 +33,11 @@ This document outlines the future development plans for Reflaxe.Elixir, organize
 - [ ] Performance optimizations for large codebases
 - [ ] Better error messages with source location  
 - [ ] IDE integration improvements
+- [ ] **Mix.Generator API Integration** 🔧
+  - Convert ProjectGenerator.hx to use native Mix.Generator utilities
+  - Leverage Mix's template system for more flexible project generation
+  - Support for Mix.Generator.copy_template, Mix.Generator.create_file, Mix.Generator.copy_from
+  - Better integration with Mix ecosystem conventions
 
 ## Version 0.3.0 (Q2 2024)
 *Focus: Testing & Developer Experience*
