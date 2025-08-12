@@ -49,8 +49,11 @@ defmodule HaxeTestHelper do
   def setup_haxe_libraries(project_dir) do
     # Find the project root by looking for mix.exs
     project_root = find_project_root()
-    source_libraries = Path.join(project_root, "haxe_libraries")
-    target_libraries = Path.join(project_dir, "haxe_libraries")
+    source_libraries = Path.expand(Path.join(project_root, "haxe_libraries"))
+    target_libraries = Path.expand(Path.join(project_dir, "haxe_libraries"))
+    
+    # Set HAXELIB_PATH environment variable for test processes
+    System.put_env("HAXELIB_PATH", source_libraries)
     
     # Remove existing link/directory if it exists
     if File.exists?(target_libraries) do
@@ -73,14 +76,14 @@ defmodule HaxeTestHelper do
     
     # We need to symlink src/ and std/ for the haxe_libraries/reflaxe.elixir.hxml to work
     # This may cause the "35-file phenomenon" where standard library files get compiled
-    source_src = Path.join(project_root, "src")
-    target_src = Path.join(project_dir, "src")
+    source_src = Path.expand(Path.join(project_root, "src"))
+    target_src = Path.expand(Path.join(project_dir, "src"))
     unless File.exists?(target_src) do
       :file.make_symlink(String.to_charlist(source_src), String.to_charlist(target_src))
     end
     
-    source_std = Path.join(project_root, "std")
-    target_std = Path.join(project_dir, "std")
+    source_std = Path.expand(Path.join(project_root, "std"))
+    target_std = Path.expand(Path.join(project_dir, "std"))
     unless File.exists?(target_std) do
       :file.make_symlink(String.to_charlist(source_std), String.to_charlist(target_std))
     end

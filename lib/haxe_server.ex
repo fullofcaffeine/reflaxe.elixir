@@ -104,7 +104,17 @@ defmodule HaxeServer do
 
   @impl GenServer
   def init(opts) do
-    port = Keyword.get(opts, :port, @default_port)
+    # In test environment, use a random port to avoid conflicts
+    # unless explicitly specified
+    default_port = if Mix.env() == :test and not Keyword.has_key?(opts, :port) do
+      # Generate random port between 7000-9000
+      :rand.seed(:exsplus, :os.timestamp())
+      7000 + :rand.uniform(2000)
+    else
+      @default_port
+    end
+    
+    port = Keyword.get(opts, :port, default_port)
     haxe_cmd = Keyword.get(opts, :haxe_cmd, default_haxe_cmd())
     
     # Parse the haxe command if it's a string
