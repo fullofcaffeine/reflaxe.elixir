@@ -30,43 +30,55 @@ You are a professional task execution expert following these guidelines:
    - **NO user permission required - continuous execution is DEFAULT behavior**
 7. **🚨 CRITICAL: Full Regression Testing Protocol**: A task is NOT complete unless ALL tests in the project are passing, not just tests related to the new feature
 
-### 2. Testing Approach (Following Reference Reflaxe Compilers)
+### 2. Reflaxe Compiler Testing Strategy
 
-We use **integration-level snapshot testing** exactly like Reflaxe.CPP and Reflaxe.CSharp:
+We follow the **three-layer testing architecture** proven by mature Reflaxe compilers:
 
-#### **How It Works**
-1. **Write Haxe code** that uses compiler features
-2. **Compile it** through our Haxe→Elixir compiler  
-3. **Compare output** with expected Elixir code
-4. **Pass/Fail** based on whether output matches expected
+#### **Three-Layer Architecture**
+```
+Layer 1: Snapshot Tests (28 tests)
+├── Purpose: Validate AST→Elixir transformation correctness
+├── Method: TestRunner.hx compiles Haxe and compares output
+└── Coverage: All compiler features, annotations, edge cases
 
-#### **Test Structure**
+Layer 2: Mix Integration Tests (130 tests)
+├── Purpose: Validate generated Elixir actually works
+├── Method: ExUnit tests that compile and run generated code
+└── Coverage: Build system, runtime behavior, Phoenix integration
+
+Layer 3: Example Tests (9 tests)  
+├── Purpose: Real-world usage validation
+├── Method: Complete example compilation
+└── Coverage: Documentation accuracy, user workflows
+```
+
+#### **Snapshot Testing (Primary Validation)**
 ```
 test/tests/[feature-name]/
-├── Main.hx          # Haxe input
-├── compile.hxml     # How to compile it
+├── Main.hx          # Haxe input demonstrating feature
+├── compile.hxml     # Compilation configuration  
 ├── intended/        # Expected Elixir output
-└── out/            # Actual output (git-ignored)
+└── out/            # Actual output (comparison target)
 ```
 
-#### **Integration-Level Testing**
-- Tests the **entire compiler pipeline** (not individual functions)
-- Each test compiles **complete Haxe programs** into Elixir
-- Verifies **real-world transformations** work correctly
-- No mocking, no unit tests - just **real compilation**
+#### **How Snapshot Testing Works**
+1. **Write Haxe source** that demonstrates compiler feature
+2. **Compile via TestRunner.hx** (invokes real compiler)
+3. **Compare generated .ex files** with intended output
+4. **Pass/Fail** based on exact output match
 
-#### **Running Tests**
+#### **Running the Test Suite**
 ```bash
-npm test                    # Run everything
-npx haxe test/Test.hxml    # Just snapshot tests
+npm test                    # All layers: 28 + 130 + 9 = 167 tests
+npm run test:haxe          # Layer 1: Snapshot tests only
+npm run test:mix           # Layer 2: Mix tests only
 ```
 
-#### **Current Coverage: 22 Integration Tests**
-Each test represents a complete feature transformation:
-- Core language constructs (8 tests)
-- Phoenix/Ecto annotations (7 tests)  
-- Framework integrations (3 tests)
-- Real examples (4 tests)
+#### **Why This Architecture Works for Compilers**
+- **No Unit Testing**: Compiler exists only during compilation, not at runtime
+- **Integration Focus**: Tests entire compilation pipeline, not individual functions
+- **Real Output**: Validates actual generated code matches expectations
+- **No Mocking**: Uses real Haxe compiler and real AST transformation
 
 ### 4. Project Context Integration
 
@@ -94,23 +106,22 @@ Before implementing any task:
 5. Plan implementation phases
 ```
 
-#### **Test-First Implementation Cycle**
+#### **Snapshot-First Implementation Cycle**
 ```
-1. Red: Write failing tests that define expected behavior
-2. Green: Implement minimum code to pass tests
-3. Refactor: Improve code structure while keeping tests green
-4. Integrate: Test integration points with other components
-5. Verify: Confirm all acceptance criteria are met
+1. RED: Create snapshot test with expected Elixir output
+2. GREEN: Implement compiler feature to generate expected output  
+3. REFACTOR: Optimize compiler while keeping tests green
+4. VALIDATE: Ensure Mix tests pass with generated code
+5. VERIFY: Confirm all acceptance criteria are met
 ```
 
-#### **Quality Gates (Trophy-Aligned)**
+#### **Quality Gates (Compiler-Focused)**
 Before marking any task complete:
-- [ ] Integration tests demonstrate component interactions work properly
-- [ ] Unit tests cover business logic edge cases  
-- [ ] Static analysis clean (Credo, Dialyzer, Sobelow)
-- [ ] E2E tests validate critical workflows (minimal but essential)
+- [ ] Snapshot tests validate compiler output correctness
+- [ ] Mix tests confirm generated Elixir actually works
+- [ ] Generated code compiles and runs in BEAM VM
+- [ ] No regressions in existing snapshot tests  
 - [ ] Performance benchmarks satisfied
-- [ ] "Resembles the way software is used" principle satisfied
 - [ ] **🚨 MANDATORY: ALL TESTS IN PROJECT PASS** - Run dual-ecosystem test suite:
   - **Snapshot Tests**: `npx haxe test/Test.hxml` (snapshot tests comparing compiler output)
   - **Mix Tests**: `MIX_ENV=test mix test --no-deps-check` (Elixir runtime validation)
@@ -129,94 +140,69 @@ Before marking any task complete:
 - [ ] **🎯 DRY PRINCIPLE APPLIED** - Ensure CLAUDE.md references user docs instead of duplicating content
 - [ ] **🧹 DOCUMENTATION CLEANUP** - Remove outdated docs, consolidate duplicates, maintain structure
 
-### 6. Testing Strategy by Component Type (Trophy-Focused)
+### 6. Compiler Testing Implementation Strategy
 
-#### **Primary Focus: Integration Tests (How Components Work Together)**
-```elixir
-# Integration-first testing - main focus of Testing Trophy
-describe "Multi-Component Workflow Integration" do
-  context "when user triggers complete business process" do
-    test "should coordinate multiple components properly" do
-      # Given: User initiates a complex workflow
-      input = build_workflow_input()
-      
-      # When: Complete workflow executes across components
-      {:ok, result} = BusinessWorkflow.execute(input)
-      
-      # Then: All components work together properly
-      assert result.status == :completed
-      assert result.data_stored?
-      assert result.notifications_sent?
-    end
-  end
-end
-
-# Database Integration Testing (main value)
-describe "Database Integration" do
-  context "when complex data operations occur" do
-    test "should handle multi-table operations correctly" do
-      # Test database operations with real data and transactions
-      data = create_test_data()
-      result = DataService.process_complex_operation(data)
-      assert result.success?
-      assert database_state_consistent?()
-    end
-  end
-end
+#### **Snapshot Testing (Primary Validation - 70%)**
+```bash
+# Create snapshot test for new compiler feature
+test/tests/my_feature/
+├── Main.hx              # Haxe source demonstrating feature
+├── compile.hxml         # Compilation configuration
+└── intended/            # Expected Elixir output
+    └── Main.ex          # Generated by: haxe test/Test.hxml update-intended
 ```
 
-#### **Supporting: Unit Tests (30% - Critical Components Only)**
+```haxe
+// test/tests/my_feature/Main.hx
+@:myfeature
+class TestFeature {
+    public function new() {}
+    
+    public function testMethod(): String {
+        return "test output";
+    }
+}
+```
+
+#### **Mix Integration Testing (Runtime Validation - 25%)**
 ```elixir
-# Unit tests for critical components that need isolated testing
-describe "Business Rule Engine" do
-  test "should apply complex business rules correctly" do
-    input = build_complex_input()
-    result = BusinessRules.apply_rules(input)
-    assert result.status == :approved
-    assert result.score > 0.8
-  end
+# test/my_feature_test.exs
+defmodule MyFeatureTest do
+  use ExUnit.Case
+  import TestSupport.ProjectHelpers
   
-  test "should handle edge cases in rule application" do
-    assert BusinessRules.apply_rules(nil) == {:error, :invalid_input}
-    assert BusinessRules.apply_rules(%{}) == {:ok, :default_result}
-  end
-end
-
-describe "Scoring Algorithm" do
-  test "should calculate scores with proper weighting" do
-    data = %{relevance: 0.8, recency: 0.6, importance: 0.9}
-    score = ScoringEngine.calculate_weighted_score(data)
-    assert score >= 0.7 and score <= 1.0
-  end
-end
-
-describe "Data Transformation" do
-  test "should transform data formats correctly" do
-    input = build_source_format()
-    output = DataTransformer.transform(input, :target_format)
-    assert output.format == :target_format
-    assert output.data == expected_transformed_data()
+  test "compiler generates valid Elixir that compiles and runs" do
+    # Create temporary project with Haxe source
+    project_dir = create_temp_project()
+    
+    # Write Haxe source using new feature
+    File.write!(Path.join([project_dir, "src_haxe/Test.hx"]), """
+    @:myfeature
+    class Test {
+      public static function main() {}
+    }
+    """)
+    
+    # Compile through Mix.Tasks.Compile.Haxe
+    {:ok, compiled} = Mix.Tasks.Compile.Haxe.run([])
+    
+    # Verify generated Elixir compiles and is valid
+    assert File.exists?(Path.join([project_dir, "lib/test.ex"]))
+    output = File.read!(Path.join([project_dir, "lib/test.ex"]))
+    assert output =~ "defmodule Test do"
+    
+    # Verify Elixir compiler accepts generated code
+    assert {:ok, _} = Code.compile_file("lib/test.ex")
   end
 end
 ```
 
-#### **Foundation: Static Analysis (Infrastructure - Runs Automatically)**
-- Linting catches style issues and code smells
-- Type checking catches type errors and inconsistencies
-- Security scanning catches vulnerabilities
-- Pre-commit hooks enforce standards
-- *Configured once, provides continuous value without testing effort*
-
-#### **Minimal: E2E Tests**
-```elixir
-# Only critical end-to-end workflows
-test "complete user workflow: create → process → retrieve" do
-  # Full system test - expensive but high confidence
-  user_input = create_realistic_input()
-  result = System.complete_workflow(user_input)
-  assert result.success?
-  assert result.meets_business_requirements?
-end
+#### **Example Compilation (Documentation Validation - 5%)**
+```bash
+# examples/10-my-feature/
+├── README.md            # Usage documentation
+├── build.hxml           # Real compilation example  
+└── Main.hx             # Complete working example
 ```
 
 ### 7. Implementation Standards
@@ -227,12 +213,12 @@ end
 - Use proper error handling and edge case management
 - Implement logging and monitoring hooks where appropriate
 
-#### **Testing Framework Standards (Snapshot Testing)**
-- **Haxe Compiler Tests**: Use **snapshot testing** pattern following Reflaxe.CPP/CSharp approach
-- **Test Structure**: Custom `TestRunner.hx` that compiles Haxe and compares with "intended" output files
-- **No Testing Framework**: Pure Haxe implementation without utest/tink_unittest dependencies
-- **Snapshot Pattern**: Each test in `test/tests/[test-name]/` with `Main.hx`, `compile.hxml`, `intended/` output
-- **Compilation Verification**: Tests verify that Haxe→Elixir compilation produces expected output
+#### **Compiler Testing Framework Standards**
+- **Snapshot Testing**: Primary validation using TestRunner.hx following proven Reflaxe patterns
+- **Three-Layer Architecture**: Snapshot → Mix → Example testing for comprehensive coverage
+- **No Unit Testing**: Compiler components don't exist at runtime, can't be unit tested
+- **Integration Focus**: Test complete Haxe→Elixir compilation pipeline, not individual functions
+- **Real Compilation**: Use actual Haxe compiler and TypedExpr AST, no mocking
 
 #### **Test Quality Standards**
 - Tests should be readable and maintainable
@@ -425,11 +411,11 @@ After completing each task:
 
 ## Quality Assurance Checklist
 
-### Before Task Completion (Trophy-Aligned)
-- [ ] **Integration Tests First**: Component interactions tested and working
-- [ ] **BDD Perspective**: Tests written from consumer viewpoint  
-- [ ] **Trophy Strategy**: Integration-heavy approach (Integration > Unit > Static > E2E)
-- [ ] **"Resembles Usage" Principle**: Tests match how software is actually used
+### Before Task Completion (Compiler-Focused)
+- [ ] **Snapshot Tests First**: Haxe→Elixir transformation tested and working
+- [ ] **Compilation Verification**: Generated code compiles correctly in BEAM VM
+- [ ] **Three-Layer Validation**: Snapshot → Mix → Example tests all pass
+- [ ] **Real-World Usage**: Tests demonstrate actual compiler features working
 - [ ] **PRD Compliance**: Implementation matches specifications in @cafetera-poc.md
 - [ ] **Performance Verified**: Timing requirements met with benchmarks
 - [ ] **Quality Gates Passed**: Focus on integration confidence over coverage metrics
@@ -439,12 +425,12 @@ After completing each task:
 - [ ] **🎯 DRY COMPLIANCE**: No duplicate content between CLAUDE.md and user documentation
 - [ ] **🚨 TASK CONTINUATION**: After verification, check `list_tasks status="pending"` for next task
 
-### Success Metrics (Trophy-Focused)
-- **Integration Confidence**: Component interactions thoroughly validated
-- **Test Distribution**: Follow Kent's trophy (Integration-heavy, not pyramid)
-- **Usage Resemblance**: Tests reflect real-world usage patterns
-- **Performance**: All timing requirements from PRD satisfied  
-- **Maintainability**: Integration tests provide refactoring confidence
+### Success Metrics (Compiler-Focused)
+- **Compilation Confidence**: Haxe→Elixir transformation thoroughly validated
+- **Test Architecture**: Three-layer validation (Snapshot → Mix → Example)
+- **Real-World Validation**: Tests demonstrate actual compiler usage patterns
+- **Performance**: All compilation timing requirements satisfied
+- **Maintainability**: Snapshot tests provide refactoring safety net
 
 ---
 
