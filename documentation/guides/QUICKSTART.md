@@ -6,7 +6,7 @@ Get a Reflaxe.Elixir project running in under 5 minutes!
 
 ```bash
 # Install Reflaxe.Elixir
-npx lix install github:YourOrg/reflaxe.elixir
+npx lix install github:fullofcaffeine/reflaxe.elixir
 
 # Create your first project
 npx lix run reflaxe.elixir create hello-world
@@ -155,7 +155,7 @@ npm install -g lix
 
 ### "Module reflaxe.elixir not found"
 ```bash
-npx lix install github:YourOrg/reflaxe.elixir
+npx lix install github:fullofcaffeine/reflaxe.elixir
 ```
 
 ### "Type not found" errors
