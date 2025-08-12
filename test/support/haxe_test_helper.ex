@@ -53,7 +53,8 @@ defmodule HaxeTestHelper do
     target_libraries = Path.expand(Path.join(project_dir, "haxe_libraries"))
     
     # Set HAXELIB_PATH environment variable for test processes
-    System.put_env("HAXELIB_PATH", source_libraries)
+    # This is critical for Haxe to find the libraries when using -lib directive
+    System.put_env("HAXELIB_PATH", target_libraries)
     
     # Remove existing link/directory if it exists
     if File.exists?(target_libraries) do
@@ -65,10 +66,14 @@ defmodule HaxeTestHelper do
       String.to_charlist(source_libraries),
       String.to_charlist(target_libraries)
     ) do
-      :ok -> :ok
+      :ok -> 
+        # Also set the environment variable to point to the symlinked directory
+        System.put_env("HAXELIB_PATH", target_libraries)
+        :ok
       {:error, :enotsup} ->
         # Fallback to copying if symlinks not supported
         File.cp_r!(source_libraries, target_libraries)
+        System.put_env("HAXELIB_PATH", target_libraries)
         :ok
       {:error, reason} ->
         raise "Failed to link haxe_libraries: #{inspect(reason)}"

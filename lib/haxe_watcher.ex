@@ -332,9 +332,16 @@ defmodule HaxeWatcher do
         build_dir = Path.dirname(build_file_path)
         build_file_name = Path.basename(build_file_path)
         
+        # Build environment for Haxe command
+        # Include HAXELIB_PATH if set (important for tests)
+        env = case System.get_env("HAXELIB_PATH") do
+          nil -> System.get_env() |> Enum.into([])
+          path -> System.get_env() |> Map.put("HAXELIB_PATH", path) |> Enum.into([])
+        end
+        
         compile_opts = case build_dir do
-          "." -> [stderr_to_stdout: true]
-          dir -> [cd: dir, stderr_to_stdout: true]
+          "." -> [stderr_to_stdout: true, env: env]
+          dir -> [cd: dir, stderr_to_stdout: true, env: env]
         end
         
         # Use just the filename if we're changing directory
@@ -432,13 +439,22 @@ defmodule HaxeWatcher do
   defp event_to_string(other), do: to_string(other)
   
   defp get_haxe_command() do
-    # First try to find the project's lix-managed haxe binary
+    # Try to find the project's lix-managed haxe binary
     # This ensures we use the correct version even when running from temp directories
     project_root = find_project_root()
+    
+    # IMPORTANT: Use lix to run Haxe, not the Haxe binary directly
+    # This ensures proper library resolution through haxe_libraries
+    lix_path = Path.join([project_root, "node_modules", ".bin", "lix"])
     project_haxe = Path.join([project_root, "node_modules", ".bin", "haxe"])
     
     cond do
-      # Check for project's lix-managed haxe first
+      # Prefer using lix to run haxe (this properly resolves libraries)
+      File.exists?(lix_path) && File.exists?(project_haxe) ->
+        # Use lix run haxe for proper library resolution
+        {lix_path, ["run", "haxe"]}
+      
+      # Fallback to direct haxe binary if lix isn't available
       File.exists?(project_haxe) ->
         {project_haxe, []}
       
