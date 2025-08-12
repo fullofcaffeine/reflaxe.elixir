@@ -1,29 +1,29 @@
 defmodule Repo.Migrations.CreateUsers do
   @moduledoc """
-  Generated migration for default_table table
+  Generated migration for users table
   
-  Creates default_table table with proper schema and indexes
+  Creates users table with proper schema and indexes
   following Ecto migration patterns with compile-time validation.
   """
   
   use Ecto.Migration
   
   @doc """
-  Run the migration - creates default_table table
+  Run the migration - creates users table
   """
   def change do
-    create table(:default_table) do
+    create table(:users) do
 
       timestamps()
     end
     
-    create unique_index(:default_table, [:email])
+    create unique_index(:users, [:email])
   end
   
   @doc """
-  Rollback migration - drops default_table table
+  Rollback migration - drops users table
   """
   def down do
-    drop table(:default_table)
+    drop table(:users)
   end
 end

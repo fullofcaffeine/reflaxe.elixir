@@ -20,7 +20,7 @@ defmodule SourceMapValidationTest do
   Log.trace("=== Source Map Validation Test ===", %{fileName: "SourceMapValidationTest.hx", lineNumber: 13, className: "SourceMapValidationTest", methodName: "main"})
   simple_var = "test"
   number = 42
-  SourceMapValidationTest.test_function(simple_var, number)
+  SourceMapValidationTest.testFunction(simple_var, number)
   if (number > 0), do: Log.trace("Positive number", %{fileName: "SourceMapValidationTest.hx", lineNumber: 24, className: "SourceMapValidationTest", methodName: "main"}), else: Log.trace("Non-positive number", %{fileName: "SourceMapValidationTest.hx", lineNumber: 26, className: "SourceMapValidationTest", methodName: "main"})
   (
   Log.trace("Loop iteration: " + 0, %{fileName: "SourceMapValidationTest.hx", lineNumber: 31, className: "SourceMapValidationTest", methodName: "main"})
@@ -36,7 +36,7 @@ defmodule SourceMapValidationTest do
   (
   item = Enum.at(array, _g)
   _g + 1
-  SourceMapValidationTest.process_item(item)
+  SourceMapValidationTest.processItem(item)
 )
 end
 )
@@ -47,7 +47,7 @@ end
   obj_value = 100
   obj_nested_field = "nested value"
   instance = TestClass.new("example")
-  instance.do_something()
+  instance.doSomething()
   Log.trace("=== Test Complete ===", %{fileName: "SourceMapValidationTest.hx", lineNumber: 53, className: "SourceMapValidationTest", methodName: "main"})
 )
   end

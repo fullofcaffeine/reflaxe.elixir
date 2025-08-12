@@ -40,4 +40,19 @@ end
 )
   end
 
+  @doc "
+		Replace all occurrences of the String `sub` in the String `s` by the
+		String `by`.
+
+		If `sub` is the empty String `""`, `by` is inserted after each character
+		of `s` except the last one. If `by` is also the empty String `""`, `s`
+		remains unchanged.
+
+		If `sub` or `by` are null, the result is unspecified.
+	"
+  @spec replace(TInst(String,[]).t(), TInst(String,[]).t(), TInst(String,[]).t()) :: TInst(String,[]).t()
+  def replace(arg0, arg1, arg2) do
+    s.split(sub).join(by)
+  end
+
 end

@@ -13,7 +13,7 @@ defmodule PosException do
 	"
   @spec to_string() :: TInst(String,[]).t()
   def to_string() do
-    "" + super().to_string() + " in " + self().pos_infos.class_name + "." + self().pos_infos.method_name + " at " + self().pos_infos.file_name + ":" + self().pos_infos.line_number
+    "" + super().toString() + " in " + self().pos_infos.class_name + "." + self().pos_infos.method_name + " at " + self().pos_infos.file_name + ":" + self().pos_infos.line_number
   end
 
 end

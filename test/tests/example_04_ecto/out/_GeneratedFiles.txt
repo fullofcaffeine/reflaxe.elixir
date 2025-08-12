@@ -1,5 +1,7 @@
 reflaxe_elixir_helpers_MigrationDSL.ex
 migrations_CreateUsers.ex
+haxe_macro_Type.ex
+haxe_macro_Expr.ex
 haxe_iterators_StringKeyValueIterator.ex
 haxe_iterators_StringIteratorUnicode.ex
 haxe_iterators_StringIterator.ex

@@ -26,7 +26,7 @@ defmodule StringTools do
   hex_chars = "0123456789ABCDEF"
   until !(n > 0) do
   (
-  s = hex_chars.char_at(n and 15) + s
+  s = hex_chars.charAt(n and 15) + s
   n >>>= 4
 )
 end

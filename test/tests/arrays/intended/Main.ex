@@ -319,24 +319,24 @@ end
   def main() do
     (
   Log.trace("=== Basic Array Operations ===", %{fileName: "Main.hx", lineNumber: 131, className: "Main", methodName: "main"})
-  Main.basic_array_ops()
+  Main.basicArrayOps()
   Log.trace("
 === Array Iteration ===", %{fileName: "Main.hx", lineNumber: 134, className: "Main", methodName: "main"})
-  Main.array_iteration()
+  Main.arrayIteration()
   Log.trace("
 === Array Methods ===", %{fileName: "Main.hx", lineNumber: 137, className: "Main", methodName: "main"})
-  Main.array_methods()
+  Main.arrayMethods()
   Log.trace("
 === Array Comprehensions ===", %{fileName: "Main.hx", lineNumber: 140, className: "Main", methodName: "main"})
-  Main.array_comprehensions()
+  Main.arrayComprehensions()
   Log.trace("
 === Multi-dimensional Arrays ===", %{fileName: "Main.hx", lineNumber: 143, className: "Main", methodName: "main"})
-  Main.multi_dimensional()
+  Main.multiDimensional()
   Log.trace("
 === Array Functions ===", %{fileName: "Main.hx", lineNumber: 146, className: "Main", methodName: "main"})
-  result = Main.process_array([1, 2, 3, 4, 5])
+  result = Main.processArray([1, 2, 3, 4, 5])
   Log.trace("Processed: " + Std.string(result), %{fileName: "Main.hx", lineNumber: 148, className: "Main", methodName: "main"})
-  first3 = Main.first_n(["a", "b", "c", "d", "e"], 3)
+  first3 = Main.firstN(["a", "b", "c", "d", "e"], 3)
   Log.trace("First 3: " + Std.string(first3), %{fileName: "Main.hx", lineNumber: 151, className: "Main", methodName: "main"})
 )
   end
