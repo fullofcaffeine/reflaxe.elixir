@@ -1,6 +1,17 @@
-# Ecto Migrations from Haxe
+# Ecto Database Migrations with Haxe
 
 This example demonstrates how to write Ecto database migrations using Haxe with the `@:migration` annotation.
+
+**Prerequisites**: [03-phoenix-app](../03-phoenix-app/) completed  
+**Difficulty**: 🟡 Intermediate  
+**Time**: 30 minutes
+
+## What You'll Learn
+
+- Define database schemas using `@:migration` annotation
+- Create tables, columns, indexes, and foreign keys type-safely
+- Integrate with Elixir's migration workflow
+- Handle up/down migration patterns
 
 ## Features
 

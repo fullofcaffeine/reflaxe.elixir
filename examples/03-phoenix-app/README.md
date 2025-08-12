@@ -1,13 +1,24 @@
-# Phoenix + Haxe Integration Example
+# Phoenix Application Integration
 
 This example demonstrates how to create a Phoenix application with Haxe→Elixir compilation using Reflaxe.Elixir.
 
+**Prerequisites**: [02-mix-project](../02-mix-project/) completed  
+**Difficulty**: 🟡 Intermediate  
+**Time**: 45 minutes
+
+## What You'll Learn
+
+- Phoenix application structure with Haxe integration
+- Application supervision tree setup from Haxe
+- Phoenix configuration management
+- Production deployment considerations
+
 ## Features
 
-- **Phoenix LiveView**: Counter component with real-time updates
+- **Phoenix Application**: Full application supervision tree
 - **Mix Integration**: Haxe compiler integrated into Phoenix build pipeline  
-- **Live Reload**: Changes to `.hx` files trigger automatic recompilation
-- **Production Ready**: Full Phoenix app structure with config, supervision, etc.
+- **Supervision Tree**: OTP application structure generated from Haxe
+- **Production Ready**: Complete Phoenix app with config, telemetry, etc.
 
 ## Quick Start
 

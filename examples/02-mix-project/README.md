@@ -2,12 +2,17 @@
 
 This directory demonstrates how to integrate Haxe→Elixir compilation into a Mix project with proper directory structure, dependencies, and build workflows.
 
+**Prerequisites**: [01-simple-modules](../01-simple-modules/) completed  
+**Difficulty**: 🟢 Beginner  
+**Time**: 30 minutes
+
 ## Learning Objectives
 
 - Understand Mix project structure for Haxe→Elixir integration
 - Learn how to configure `mix.exs` for Haxe compilation
 - Master the build workflow combining Haxe and Elixir code
 - See testing patterns for mixed Haxe/Elixir projects
+- Configure professional development workflows
 
 ## Project Structure
 
