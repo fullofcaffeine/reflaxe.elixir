@@ -1,0 +1,34 @@
+{
+  "name": "Phoenix LiveView Application", 
+  "description": "Phoenix application with LiveView components and user management features",
+  "type": "liveview",
+  "features": [
+    "Phoenix LiveView real-time components",
+    "User management system",
+    "Ecto schema and changesets (@:schema, @:changeset)",
+    "GenServer background processes (@:genserver)",
+    "Multi-annotation integration",
+    "HXX template processing",
+    "Advanced Phoenix patterns"
+  ],
+  "requirements": {
+    "haxe": "4.3+",
+    "elixir": "1.14+",
+    "phoenix": "1.7+", 
+    "phoenix_live_view": "0.20+",
+    "node": "16+"
+  },
+  "placeholders": {
+    "__PROJECT_NAME__": "Project name in snake_case",
+    "__PROJECT_MODULE__": "Main module name in PascalCase",
+    "__PROJECT_VERSION__": "Project version (default: 0.1.0)",
+    "__YEAR__": "Current year for copyright"
+  },
+  "annotations": [
+    "@:schema",
+    "@:changeset", 
+    "@:liveview",
+    "@:genserver",
+    "@:template"
+  ]
+}

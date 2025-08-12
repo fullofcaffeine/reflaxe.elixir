@@ -1,0 +1,24 @@
+{
+  "name": "Basic Mix Project",
+  "description": "Standard Elixir Mix project with Reflaxe.Elixir integration",
+  "type": "basic",
+  "features": [
+    "Mix project structure",
+    "Haxe compilation pipeline",
+    "Utility modules (StringUtils, MathHelper, ValidationHelper)", 
+    "Service layer (UserService)",
+    "ExUnit test suite",
+    "Development tools (Credo, ExCoveralls)"
+  ],
+  "requirements": {
+    "haxe": "4.3+",
+    "elixir": "1.14+",
+    "node": "16+"
+  },
+  "placeholders": {
+    "__PROJECT_NAME__": "Project name in snake_case",
+    "__PROJECT_MODULE__": "Main module name in PascalCase", 
+    "__PROJECT_VERSION__": "Project version (default: 0.1.0)",
+    "__YEAR__": "Current year for copyright"
+  }
+}
