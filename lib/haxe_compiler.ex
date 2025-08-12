@@ -174,10 +174,13 @@ defmodule HaxeCompiler do
       Mix.shell().info("Running: #{haxe_cmd} #{Enum.join(args, " ")}")
     end
     
+    # Build environment for Haxe command
+    env = build_haxe_env()
+    
     # Change to the directory containing the hxml file so relative paths work
     cmd_opts = case Path.dirname(hxml_file) do
-      "." -> [stderr_to_stdout: true]
-      dir -> [cd: dir, stderr_to_stdout: true]
+      "." -> [stderr_to_stdout: true, env: env]
+      dir -> [cd: dir, stderr_to_stdout: true, env: env]
     end
     
     # Use just the filename if we're changing directory
@@ -461,13 +464,30 @@ defmodule HaxeCompiler do
   end
   
   defp get_haxe_command() do
-    # First try to find the project's lix-managed haxe binary
+    # First check if HAXE_PATH environment variable is set (used in tests)
+    # This allows tests to explicitly control which Haxe binary to use
+    env_haxe = System.get_env("HAXE_PATH")
+    
+    # Try to find the project's lix-managed haxe binary
     # This ensures we use the correct version even when running from temp directories
     project_root = find_project_root()
+    
+    # IMPORTANT: Use lix to run Haxe, not the Haxe binary directly
+    # This ensures proper library resolution through haxe_libraries
+    lix_path = Path.join([project_root, "node_modules", ".bin", "lix"])
     project_haxe = Path.join([project_root, "node_modules", ".bin", "haxe"])
     
     cond do
-      # Check for project's lix-managed haxe first
+      # Respect HAXE_PATH environment variable if set (highest priority)
+      env_haxe && File.exists?(env_haxe) ->
+        {env_haxe, []}
+      
+      # Prefer using lix to run haxe (this properly resolves libraries)
+      File.exists?(lix_path) && File.exists?(project_haxe) ->
+        # Use lix run haxe for proper library resolution
+        {lix_path, ["run", "haxe"]}
+      
+      # Fallback to direct haxe binary if lix isn't available
       File.exists?(project_haxe) ->
         {project_haxe, []}
       
@@ -514,6 +534,25 @@ defmodule HaxeCompiler do
       true ->
         find_project_root_from(Path.dirname(dir))
     end
+  end
+  
+  defp build_haxe_env() do
+    # Start with current environment
+    base_env = System.get_env() |> Enum.into([])
+    
+    # Add or override specific Haxe environment variables
+    haxe_env = [
+      # If HAXELIB_PATH is set (by tests), include it
+      {"HAXELIB_PATH", System.get_env("HAXELIB_PATH")},
+      # Include the project's haxe_libraries path as fallback
+      {"HAXEPATH", Path.join(find_project_root(), "haxe_libraries")}
+    ]
+    |> Enum.filter(fn {_key, value} -> value != nil end)
+    |> Enum.into(%{})
+    
+    # Merge with base environment
+    Map.merge(base_env |> Enum.into(%{}), haxe_env)
+    |> Enum.into([])
   end
   
 end
