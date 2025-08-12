@@ -187,6 +187,8 @@ defmodule HaxeWatcherTest do
       initial_count = initial_status.compilation_count
       
       # Manually trigger compilation
+      # Note: This may fail with "Library reflaxe.elixir is not installed" which is expected
+      # in test environment. We're testing that compilation is triggered, not that it succeeds.
       :ok = HaxeWatcher.trigger_compilation()
       
       # Give it time to process
@@ -194,7 +196,7 @@ defmodule HaxeWatcherTest do
       
       final_status = HaxeWatcher.status()
       
-      # Compilation count should increment
+      # Compilation count should increment regardless of success/failure
       assert final_status.compilation_count == initial_count + 1
       
       # Last compilation timestamp should be set
@@ -233,11 +235,12 @@ defmodule HaxeWatcherTest do
       File.write!(test_file, "class NewTest { public static function main() {} }")
       
       # Wait longer for debounce + compilation
+      # Note: Compilation may fail with "Library reflaxe.elixir is not installed" which is expected
       Process.sleep(800)
       
       final_status = HaxeWatcher.status()
       
-      # Should have triggered compilation
+      # Should have triggered compilation (even if it failed)
       assert final_status.compilation_count > initial_count
       assert is_struct(final_status.last_change, DateTime)
     end
@@ -277,11 +280,12 @@ defmodule HaxeWatcherTest do
       File.touch!(test_file)
       
       # Wait longer for debounce + compilation
+      # Note: Compilation may fail with "Library reflaxe.elixir is not installed" which is expected
       Process.sleep(600)
       
       final_status = HaxeWatcher.status()
       
-      # Should have triggered compilation
+      # Should have triggered compilation (even if it failed)
       assert final_status.compilation_count > initial_count
     end
 
