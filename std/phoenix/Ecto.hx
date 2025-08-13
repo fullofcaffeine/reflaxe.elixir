@@ -212,12 +212,5 @@ extern class EctoQuery {
         static function preload(query: Dynamic, associations: Dynamic): Dynamic;
 }
 
-/**
- * Compatibility namespace for accessing Ecto classes
- */
-class Ecto {
-    public static var Repo = EctoRepo;
-    public static var Schema = EctoSchema;
-    public static var Changeset = EctoChangeset;
-    public static var Query = EctoQuery;
-}
+// Ecto namespace class removed - use extern classes directly
+// Access via: phoenix.Ecto.EctoRepo, phoenix.Ecto.EctoChangeset, etc.

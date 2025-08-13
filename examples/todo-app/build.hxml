@@ -24,10 +24,11 @@
 
 # Main classes to compile
 TodoApp
-TodoAppRouter
-TodoAppRouterNew
-TodoAppRouterTypeSafe
+# Disabled routers that generate conflicting modules
+# TodoAppRouter
+# TodoAppRouterNew  
+# TodoAppRouterTypeSafe
 live.TodoLive
 schemas.Todo
 migrations.CreateTodos
-controllers.UserController
+# controllers.UserController

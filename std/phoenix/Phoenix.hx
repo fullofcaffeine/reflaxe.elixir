@@ -264,9 +264,4 @@ extern class PubSub {
 	static function local_broadcast(topic: String, message: Dynamic): Dynamic;
 }
 
-/**
- * Namespace class for Phoenix framework - just for compatibility
- */
-class Phoenix {
-	// Empty - just provides namespace
-}
+// Phoenix namespace class removed - use extern classes directly

@@ -6,6 +6,7 @@ defmodule TodoAppWeb.CoreComponents do
   todo app to function. These are typically shared UI patterns.
   """
   use Phoenix.Component
+  alias Phoenix.LiveView.JS
 
   @doc """
   Renders a modal dialog.
@@ -184,6 +185,4 @@ defmodule TodoAppWeb.CoreComponents do
     end
   end
 
-  # Import Phoenix LiveView JS commands
-  alias Phoenix.LiveView.JS
 end
