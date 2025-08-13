@@ -31,6 +31,7 @@ import reflaxe.elixir.helpers.EctoQueryAdvancedCompiler;
 import reflaxe.elixir.helpers.RepositoryCompiler;
 import reflaxe.elixir.helpers.EctoErrorReporter;
 import reflaxe.elixir.helpers.TypedefCompiler;
+import reflaxe.elixir.helpers.LLMDocsGenerator;
 import reflaxe.elixir.ElixirTyper;
 import reflaxe.elixir.PhoenixMapper;
 import reflaxe.elixir.SourceMapWriter;
@@ -81,6 +82,11 @@ class ElixirCompiler extends BaseCompiler {
         
         // Enable source mapping if requested
         this.sourceMapOutputEnabled = Context.defined("source-map") || Context.defined("debug");
+        
+        // Initialize LLM documentation generator (optional)
+        if (Context.defined("generate-llm-docs")) {
+            LLMDocsGenerator.initialize();
+        }
     }
     
     /**
