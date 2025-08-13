@@ -1,0 +1,26 @@
+# Test configuration for RouterBuildMacro with MULTIPLE invalid references
+# Should produce multiple warnings for both invalid controller and invalid action
+
+# Include Reflaxe.Elixir source
+-cp ../../../src
+-cp ../../../std  
+-lib reflaxe
+
+# Source files to compile
+-cp .
+
+# Output directory
+-D elixir_output=out
+
+# Required for Reflaxe targets
+-D reflaxe_runtime
+
+# Elixir platform configuration
+-D no-utf16
+
+# Define library version and initialize compiler
+-D reflaxe.elixir=0.1.0
+--macro reflaxe.elixir.CompilerInit.Start()
+
+# Main class
+Main

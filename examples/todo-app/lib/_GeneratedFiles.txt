@@ -1,6 +1,9 @@
 todo_web/live/todo_live.ex
 todo_app_web/router.ex
+todo_app_type_safe_web/router.ex
+todo_app_new_web/router.ex
 todo/schemas/todo.ex
+reflaxe_elixir_macros_HttpMethod.ex
 phoenix_Phoenix.ex
 phoenix_Ecto.ex
 migrations_CreateTodos.ex
@@ -15,6 +18,7 @@ haxe_ds_BalancedTree.ex
 haxe_Constraints.ex
 haxe_CallStack.ex
 elixir_Supervisor.ex
+controllers_UserController.ex
 Type.ex
 TodoApp.ex
 StringTools.ex

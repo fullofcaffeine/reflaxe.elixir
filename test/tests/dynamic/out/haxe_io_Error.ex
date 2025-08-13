@@ -12,7 +12,7 @@ defmodule Error do
   @type t() ::
     :overflow |
     :outside_bounds |
-    {:custom, :term()} |
+    {:custom, term()} |
     :blocked
 
   @doc "Creates overflow enum value"
@@ -27,9 +27,9 @@ defmodule Error do
   Creates custom enum value with parameters
   
   ## Parameters
-    - `arg0`: :term()
+    - `arg0`: term()
   """
-  @spec custom(:term()) :: {:custom, :term()}
+  @spec custom(term()) :: {:custom, term()}
   def custom(arg0) do
     {:custom, arg0}
   end
@@ -60,7 +60,7 @@ defmodule Error do
   def is_blocked(_), do: false
 
   @doc "Extracts value from custom variant, returns {:ok, value} or :error"
-  @spec get_custom_value(t()) :: {:ok, :term()} | :error
+  @spec get_custom_value(t()) :: {:ok, term()} | :error
   def get_custom_value({:custom, value}), do: {:ok, value}
   def get_custom_value(_), do: :error
 

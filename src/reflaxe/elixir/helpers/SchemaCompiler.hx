@@ -39,7 +39,7 @@ class SchemaCompiler {
      */
     public static function getSchemaConfig(classType: ClassType): SchemaConfig {
         if (!classType.meta.has(":schema")) {
-            return {tableName: null};
+            return {tableName: null, hasTimestamps: false};
         }
         
         var meta = classType.meta.extract(":schema")[0];
@@ -53,7 +53,10 @@ class SchemaCompiler {
             }
         }
         
-        return {tableName: tableName};
+        // Check for class-level @:timestamps annotation
+        var hasTimestamps = classType.meta.has(":timestamps");
+        
+        return {tableName: tableName, hasTimestamps: hasTimestamps};
     }
     
     /**
@@ -81,10 +84,25 @@ class SchemaCompiler {
         
         // Process field definitions
         for (field in varFields) {
+            // Skip id field (it's already defined as primary key)
+            if (field.field.name == "id") {
+                continue;
+            }
+            
+            // Skip timestamp fields if class has @:timestamps
+            if (config.hasTimestamps && (field.field.name == "inserted_at" || field.field.name == "updated_at")) {
+                continue;
+            }
+            
             var fieldDef = compileSchemaField(field);
             if (fieldDef != null && fieldDef.length > 0) {
                 result += '    ${fieldDef}\n';
             }
+        }
+        
+        // Add timestamps if class has @:timestamps annotation
+        if (config.hasTimestamps) {
+            result += '    timestamps()\n';
         }
         
         result += '  end\n\n';
@@ -130,9 +148,10 @@ class SchemaCompiler {
             return "";
         }
         
-        // Handle timestamps annotation
+        // Timestamps should be handled at class level, not field level
         if (fieldMeta.has(":timestamps")) {
-            return "timestamps()";
+            // This shouldn't happen with proper class-level @:timestamps
+            return "";
         }
         
         // Handle regular field annotation
@@ -426,7 +445,8 @@ class SchemaCompiler {
  * Schema configuration extracted from @:schema annotation
  */
 typedef SchemaConfig = {
-    tableName: Null<String>
+    tableName: Null<String>,
+    ?hasTimestamps: Bool
 }
 
 /**

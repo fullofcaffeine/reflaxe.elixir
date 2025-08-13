@@ -1,4 +1,5 @@
 defmodule IntIterator do
+  use Bitwise
   @moduledoc """
   IntIterator module generated from Haxe
   
