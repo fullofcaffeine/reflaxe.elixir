@@ -30,8 +30,9 @@
   "scripts": {
     "postinstall": "lix download",
     "build": "echo 'Reflaxe.Elixir is a compiler - no build step needed'",
-    "test": "npx haxe test/Test.hxml && MIX_ENV=test mix test --no-deps-check",
+    "test": "npx haxe test/Test.hxml && npx haxe test/TestProjectGeneratorTemplates.hxml && MIX_ENV=test mix test --no-deps-check",
     "test:haxe": "npx haxe test/Test.hxml",
+    "test:generator": "npx haxe test/TestProjectGeneratorTemplates.hxml",
     "test:mix": "MIX_ENV=test mix deps.compile && MIX_ENV=test mix test --max-cases 1",
     "test:examples": "for dir in examples/*/; do echo \"Testing $dir\"; if [ -f \"$dir/compile-all.hxml\" ]; then (cd \"$dir\" && npx haxe compile-all.hxml) || exit 1; elif [ -f \"$dir/build.hxml\" ]; then (cd \"$dir\" && npx haxe build.hxml) || exit 1; fi; done",
     "test:update": "npx haxe test/Test.hxml update-intended",
