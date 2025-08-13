@@ -143,7 +143,11 @@ extern class LiveViewHook {
 	/**
 	 * The DOM element the hook is attached to
 	 */
+	#if js
 	var el: js.html.Element;
+	#else
+	var el: Dynamic;
+	#end
 	
 	/**
 	 * Push an event to the LiveView process

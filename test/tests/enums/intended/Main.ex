@@ -5,7 +5,7 @@ defmodule Main do
 
   # Static functions
   @doc "Function color_to_string"
-  @spec color_to_string(TEnum(Color,[]).t()) :: TInst(String,[]).t()
+  @spec color_to_string(Color.t()) :: String.t()
   def color_to_string(arg0) do
     (
   temp_result = nil
@@ -34,7 +34,7 @@ end
   end
 
   @doc "Function get_value"
-  @spec get_value(TEnum(Option,[TInst(getValue.T,[])]).t(), TInst(getValue.T,[]).t()) :: TInst(getValue.T,[]).t()
+  @spec get_value(Option.t(), T.t()) :: T.t()
   def get_value(arg0, arg1) do
     (
   temp_result = nil
@@ -55,7 +55,7 @@ end
   end
 
   @doc "Function tree_sum"
-  @spec tree_sum(TEnum(Tree,[TAbstract(Int,[])]).t()) :: TAbstract(Int,[]).t()
+  @spec tree_sum(Tree.t()) :: integer()
   def tree_sum(arg0) do
     (
   temp_result = nil
@@ -84,7 +84,7 @@ end
   end
 
   @doc "Function describe_r_g_b"
-  @spec describe_r_g_b(TEnum(Color,[]).t()) :: TInst(String,[]).t()
+  @spec describe_r_g_b(Color.t()) :: String.t()
   def describe_r_g_b(arg0) do
     (
   temp_result = nil
@@ -119,7 +119,7 @@ end
   end
 
   @doc "Function compare_trees"
-  @spec compare_trees(TEnum(Tree,[TInst(compareTrees.T,[])]).t(), TEnum(Tree,[TInst(compareTrees.T,[])]).t()) :: TAbstract(Bool,[]).t()
+  @spec compare_trees(Tree.t(), Tree.t()) :: boolean()
   def compare_trees(arg0, arg1) do
     (
   temp_result = nil
@@ -158,7 +158,7 @@ end
   end
 
   @doc "Function main"
-  @spec main() :: TAbstract(Void,[]).t()
+  @spec main() :: nil
   def main() do
     (
   color = Color.RGB(255, 128, 0)

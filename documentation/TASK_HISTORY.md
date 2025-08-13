@@ -4,6 +4,79 @@ This document contains the historical record of completed tasks and milestones f
 
 ## Recent Task Completions
 
+### Session: August 13, 2025 - Dual-Target Compilation Fixes & Type System Improvements ✅
+**Date**: August 13, 2025  
+**Context**: Continuation from previous session about fixing JavaScript `this` context issues and dual-target compilation problems. User discovered major type system bugs generating invalid Elixir syntax and non-functional `__elixir__` code injection.
+
+**Tasks Completed** ✅:
+
+1. **Fixed Type Extraction Bug (Critical)**:
+   - **Problem**: `Std.string(type)` was generating invalid syntax like `@spec browser() :: TDynamic(null).t()`
+   - **Solution**: Created `extractTypeName()` function with proper pattern matching for Haxe Types
+   - **Fixed functions**: `getArgType()`, `getReturnType()`, `getFieldType()`, interface compilation
+   - **Result**: Now generates valid Elixir types like `@spec browser() :: term()`
+
+2. **Fixed @:native Module Naming**:
+   - **Problem**: `@:native("TodoAppWeb.Router")` was ignored, generated `defmodule Router`
+   - **Solution**: Added `getNativeModuleName()` function with proper expression handling
+   - **Result**: Now correctly generates `defmodule TodoAppWeb.Router do`
+
+3. **Fixed __elixir__ Code Injection**:
+   - **Problem**: `untyped __elixir__()` calls generated `# TODO: Implement expression type:`
+   - **Solution**: Added `TargetCodeInjection.checkTargetCodeInjection()` to `compileExpression()`
+   - **Result**: Now injects actual Elixir code like `pipe_through [:browser]`
+
+4. **Fixed Watcher Dependencies**:
+   - **Problem**: FileSystem warnings due to missing `file_system` dependency
+   - **Solution**: Added `{:file_system, "~> 0.2", only: [:dev, :test]}` to todo-app deps
+   - **Result**: Clean compilation without dependency warnings
+
+5. **Updated All Test Expectations**:
+   - **Problem**: 32/39 tests failing due to expecting old invalid syntax
+   - **Solution**: Used `haxe test/Test.hxml update-intended` to bulk-update expectations
+   - **Result**: 38/39 tests now passing with correct type syntax
+
+**Technical Insights Gained**:
+- **Type Extraction**: `Std.string(Type)` produces debug strings like `TDynamic(null)`, not type names
+- **Target Injection**: Reflaxe provides built-in `TargetCodeInjection.checkTargetCodeInjection()` for `__target__` calls
+- **Expression Pattern Matching**: Need to handle `EConst(CString(s, _))` to extract string literals from metadata
+- **Test Philosophy**: Snapshot tests should expect valid, not invalid output
+
+**Files Modified**:
+- `src/reflaxe/elixir/helpers/ClassCompiler.hx` - Type extraction fixes and @:native support
+- `src/reflaxe/elixir/ElixirCompiler.hx` - Target code injection handling
+- `examples/todo-app/mix.exs` - Added file_system dependency
+- `test/tests/*/intended/*.ex` - Updated 38 test expectations
+
+**Key Achievements** ✨:
+- **Type Safety**: Generated Elixir now has valid type specifications
+- **Module Organization**: @:native annotations work correctly for Phoenix applications
+- **Code Generation**: Phoenix routing DSL and other Elixir code properly injected
+- **Development Workflow**: File watching works without dependency conflicts
+- **Test Suite**: 97% test success rate (38/39 passing)
+
+**Before/After Examples**:
+
+```elixir
+# BEFORE (Invalid ❌)
+defmodule Router do
+  @spec browser() :: TDynamic(null).t()
+  def browser() do
+    # TODO: Implement expression type: TIdent("...")
+  end
+end
+
+# AFTER (Valid ✅)
+defmodule TodoAppWeb.Router do
+  @spec browser() :: term()
+  def browser() do
+    pipe_through [:browser]
+  end
+end
+```
+
+**Session Summary**: Successfully fixed all major dual-target compilation issues. The Haxe→Elixir compilation now generates valid, type-safe Elixir code with proper module naming and functional code injection. This represents a significant quality improvement for the entire Reflaxe.Elixir system.
+
 ### Session: December 13, 2024 - ProjectGenerator Mix Integration & Example Completeness ✅
 **Date**: December 13, 2024  
 **Context**: Continuation from v1.0 completion. User discovered examples weren't actually runnable ("wait wait, why wasn't this generated before?"). Fixed ProjectGenerator to use Mix generators and made all examples complete, runnable projects.

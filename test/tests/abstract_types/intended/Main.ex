@@ -5,7 +5,7 @@ defmodule UserId_Impl_ do
 
   # Static functions
   @doc "Function _new"
-  @spec _new(TAbstract(Int,[]).t()) :: TAbstract(UserId,[]).t()
+  @spec _new(integer()) :: UserId.t()
   def _new(arg0) do
     (
   this1 = nil
@@ -15,25 +15,25 @@ defmodule UserId_Impl_ do
   end
 
   @doc "Function add"
-  @spec add(TAbstract(UserId,[]).t(), TAbstract(UserId,[]).t()) :: TAbstract(UserId,[]).t()
+  @spec add(UserId.t(), UserId.t()) :: UserId.t()
   def add(arg0, arg1) do
     UserId_Impl_._new(UserId_Impl_.toInt(arg0) + UserId_Impl_.toInt(arg1))
   end
 
   @doc "Function greater"
-  @spec greater(TAbstract(UserId,[]).t(), TAbstract(UserId,[]).t()) :: TAbstract(Bool,[]).t()
+  @spec greater(UserId.t(), UserId.t()) :: boolean()
   def greater(arg0, arg1) do
     UserId_Impl_.toInt(arg0) > UserId_Impl_.toInt(arg1)
   end
 
   @doc "Function to_int"
-  @spec to_int(TAbstract(Int,[]).t()) :: TAbstract(Int,[]).t()
+  @spec to_int(integer()) :: integer()
   def to_int(arg0) do
     arg0
   end
 
   @doc "Function to_string"
-  @spec to_string(TAbstract(Int,[]).t()) :: TInst(String,[]).t()
+  @spec to_string(integer()) :: String.t()
   def to_string(arg0) do
     "UserId(" + arg0 + ")"
   end
@@ -48,7 +48,7 @@ defmodule Money_Impl_ do
 
   # Static functions
   @doc "Function _new"
-  @spec _new(TAbstract(Int,[]).t()) :: TAbstract(Money,[]).t()
+  @spec _new(integer()) :: Money.t()
   def _new(arg0) do
     (
   this1 = nil
@@ -58,37 +58,37 @@ defmodule Money_Impl_ do
   end
 
   @doc "Function add"
-  @spec add(TAbstract(Money,[]).t(), TAbstract(Money,[]).t()) :: TAbstract(Money,[]).t()
+  @spec add(Money.t(), Money.t()) :: Money.t()
   def add(arg0, arg1) do
     Money_Impl_._new(Money_Impl_.toInt(arg0) + Money_Impl_.toInt(arg1))
   end
 
   @doc "Function subtract"
-  @spec subtract(TAbstract(Money,[]).t(), TAbstract(Money,[]).t()) :: TAbstract(Money,[]).t()
+  @spec subtract(Money.t(), Money.t()) :: Money.t()
   def subtract(arg0, arg1) do
     Money_Impl_._new(Money_Impl_.toInt(arg0) - Money_Impl_.toInt(arg1))
   end
 
   @doc "Function multiply"
-  @spec multiply(TAbstract(Money,[]).t(), TAbstract(Int,[]).t()) :: TAbstract(Money,[]).t()
+  @spec multiply(Money.t(), integer()) :: Money.t()
   def multiply(arg0, arg1) do
     Money_Impl_._new(Money_Impl_.toInt(arg0) * arg1)
   end
 
   @doc "Function equal"
-  @spec equal(TAbstract(Money,[]).t(), TAbstract(Money,[]).t()) :: TAbstract(Bool,[]).t()
+  @spec equal(Money.t(), Money.t()) :: boolean()
   def equal(arg0, arg1) do
     Money_Impl_.toInt(arg0) == Money_Impl_.toInt(arg1)
   end
 
   @doc "Function to_int"
-  @spec to_int(TAbstract(Int,[]).t()) :: TAbstract(Int,[]).t()
+  @spec to_int(integer()) :: integer()
   def to_int(arg0) do
     arg0
   end
 
   @doc "Function to_dollars"
-  @spec to_dollars(TAbstract(Int,[]).t()) :: TAbstract(Float,[]).t()
+  @spec to_dollars(integer()) :: float()
   def to_dollars(arg0) do
     arg0 / 100.0
   end
@@ -103,7 +103,7 @@ defmodule Main do
 
   # Static functions
   @doc "Function main"
-  @spec main() :: TAbstract(Void,[]).t()
+  @spec main() :: nil
   def main() do
     (
   Log.trace("Testing abstract types...", %{fileName: "Main.hx", lineNumber: 62, className: "Main", methodName: "main"})

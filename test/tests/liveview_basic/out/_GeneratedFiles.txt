@@ -1,3 +1,5 @@
+phoenix_Socket.ex
+phoenix_LiveView.ex
 haxe_iterators_ArrayKeyValueIterator.ex
 haxe_iterators_ArrayIterator.ex
 haxe_CallStack.ex

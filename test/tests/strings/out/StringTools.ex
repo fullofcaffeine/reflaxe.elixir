@@ -22,7 +22,7 @@ defmodule StringTools do
 		If `s` is the empty String `""`, or if pos is not a valid position within
 		`s`, the result is false.
 	"
-  @spec is_space(TInst(String,[]).t(), TAbstract(Int,[]).t()) :: TAbstract(Bool,[]).t()
+  @spec is_space(String.t(), integer()) :: boolean()
   def is_space(arg0, arg1) do
     (
   c = s.charCodeAt(pos)
@@ -39,7 +39,7 @@ defmodule StringTools do
 		If `s` is the empty String `""` or consists only of space characters, the
 		result is the empty String `""`.
 	"
-  @spec ltrim(TInst(String,[]).t()) :: TInst(String,[]).t()
+  @spec ltrim(String.t()) :: String.t()
   def ltrim(arg0) do
     (
   l = s.length
@@ -60,7 +60,7 @@ end
 		If `s` is the empty String `""` or consists only of space characters, the
 		result is the empty String `""`.
 	"
-  @spec rtrim(TInst(String,[]).t()) :: TInst(String,[]).t()
+  @spec rtrim(String.t()) :: String.t()
   def rtrim(arg0) do
     (
   l = s.length
@@ -77,7 +77,7 @@ end
 
 		This is a convenience function for `ltrim(rtrim(s))`.
 	"
-  @spec trim(TInst(String,[]).t()) :: TInst(String,[]).t()
+  @spec trim(String.t()) :: String.t()
   def trim(arg0) do
     StringTools.ltrim(StringTools.rtrim(s))
   end
@@ -94,7 +94,7 @@ end
 
 		If `c` is null, the result is unspecified.
 	"
-  @spec lpad(TInst(String,[]).t(), TInst(String,[]).t(), TAbstract(Int,[]).t()) :: TInst(String,[]).t()
+  @spec lpad(String.t(), String.t(), integer()) :: String.t()
   def lpad(arg0, arg1, arg2) do
     (
   if (c.length <= 0), do: s, else: nil
@@ -121,7 +121,7 @@ end
 
 		If `c` is null, the result is unspecified.
 	"
-  @spec rpad(TInst(String,[]).t(), TInst(String,[]).t(), TAbstract(Int,[]).t()) :: TInst(String,[]).t()
+  @spec rpad(String.t(), String.t(), integer()) :: String.t()
   def rpad(arg0, arg1, arg2) do
     (
   if (c.length <= 0), do: s, else: nil
@@ -145,7 +145,7 @@ end
 
 		If `sub` or `by` are null, the result is unspecified.
 	"
-  @spec replace(TInst(String,[]).t(), TInst(String,[]).t(), TInst(String,[]).t()) :: TInst(String,[]).t()
+  @spec replace(String.t(), String.t(), String.t()) :: String.t()
   def replace(arg0, arg1, arg2) do
     s.split(sub).join(by)
   end
@@ -156,7 +156,7 @@ end
 		If `digits` is specified, the resulting String is padded with "0" until
 		its `length` equals `digits`.
 	"
-  @spec hex(TAbstract(Int,[]).t(), TAbstract(Null,[TAbstract(Int,[])]).t()) :: TInst(String,[]).t()
+  @spec hex(integer(), Null.t()) :: String.t()
   def hex(arg0, arg1) do
     (
   s = ""

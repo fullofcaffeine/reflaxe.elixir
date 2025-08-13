@@ -11,7 +11,7 @@ defmodule ArrayIterator do
   @doc "
 		See `Iterator.hasNext`
 	"
-  @spec has_next() :: TAbstract(Bool,[]).t()
+  @spec has_next() :: boolean()
   def has_next() do
     self().current < self().array.length
   end
@@ -19,7 +19,7 @@ defmodule ArrayIterator do
   @doc "
 		See `Iterator.next`
 	"
-  @spec next() :: TInst(haxe.Iterators.ArrayIterator.T,[]).t()
+  @spec next() :: T.t()
   def next() do
     Enum.at(self().array, self().current + 1)
   end

@@ -19,7 +19,7 @@ defmodule StringTools do
 		If `digits` is specified, the resulting String is padded with "0" until
 		its `length` equals `digits`.
 	"
-  @spec hex(TAbstract(Int,[]).t(), TAbstract(Null,[TAbstract(Int,[])]).t()) :: TInst(String,[]).t()
+  @spec hex(integer(), Null.t()) :: String.t()
   def hex(arg0, arg1) do
     (
   s = ""
