@@ -42,4 +42,4 @@ config :logger, :console, format: "[$level] $message\n"
 config :phoenix, :stacktrace_depth, 20
 
 # Initialize plugs at runtime for faster development compilation
-config :phoenix, :plug_init_mode, :runtime
+# config :phoenix, :plug_init_mode, :runtime  # Deprecated in Phoenix 1.7
