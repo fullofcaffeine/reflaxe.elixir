@@ -231,19 +231,19 @@ defmodule UserQueries do
 
   # Static functions
   @doc "Function active_users"
-  @spec active_users() :: TDynamic(null).t()
+  @spec active_users() :: term()
   def active_users() do
     nil
   end
 
   @doc "Function users_with_posts"
-  @spec users_with_posts() :: TDynamic(null).t()
+  @spec users_with_posts() :: term()
   def users_with_posts() do
     nil
   end
 
   @doc "Function users_by_organization"
-  @spec users_by_organization(TAbstract(Int,[]).t()) :: TDynamic(null).t()
+  @spec users_by_organization(integer()) :: term()
   def users_by_organization(arg0) do
     nil
   end
@@ -258,37 +258,37 @@ defmodule Repo do
 
   # Static functions
   @doc "Function all"
-  @spec all(TDynamic(null).t()) :: TInst(Array,[TDynamic(null)]).t()
+  @spec all(term()) :: Array.t()
   def all(arg0) do
     []
   end
 
   @doc "Function get"
-  @spec get(TDynamic(null).t(), TAbstract(Int,[]).t()) :: TDynamic(null).t()
+  @spec get(term(), integer()) :: term()
   def get(arg0, arg1) do
     nil
   end
 
   @doc "Function insert"
-  @spec insert(TDynamic(null).t()) :: TDynamic(null).t()
+  @spec insert(term()) :: term()
   def insert(arg0) do
     nil
   end
 
   @doc "Function update"
-  @spec update(TDynamic(null).t()) :: TDynamic(null).t()
+  @spec update(term()) :: term()
   def update(arg0) do
     nil
   end
 
   @doc "Function delete"
-  @spec delete(TDynamic(null).t()) :: TDynamic(null).t()
+  @spec delete(term()) :: term()
   def delete(arg0) do
     nil
   end
 
   @doc "Function preload"
-  @spec preload(TDynamic(null).t(), TInst(Array,[TInst(String,[])]).t()) :: TDynamic(null).t()
+  @spec preload(term(), Array.t()) :: term()
   def preload(arg0, arg1) do
     entity
   end
@@ -306,19 +306,19 @@ defmodule Accounts do
 
   # Static functions
   @doc "Function list_users"
-  @spec list_users() :: TInst(Array,[TDynamic(null)]).t()
+  @spec list_users() :: Array.t()
   def list_users() do
     Repo.all(User)
   end
 
   @doc "Function get_user"
-  @spec get_user(TAbstract(Int,[]).t()) :: TDynamic(null).t()
+  @spec get_user(integer()) :: term()
   def get_user(arg0) do
     Repo.get(User, id)
   end
 
   @doc "Function create_user"
-  @spec create_user(TDynamic(null).t()) :: TDynamic(null).t()
+  @spec create_user(term()) :: term()
   def create_user(arg0) do
     (
   user = User.new()
@@ -328,7 +328,7 @@ defmodule Accounts do
   end
 
   @doc "Function update_user"
-  @spec update_user(TInst(User,[]).t(), TDynamic(null).t()) :: TDynamic(null).t()
+  @spec update_user(User.t(), term()) :: term()
   def update_user(arg0, arg1) do
     (
   changeset = UserChangeset.changeset(user, attrs)
@@ -337,7 +337,7 @@ defmodule Accounts do
   end
 
   @doc "Function delete_user"
-  @spec delete_user(TInst(User,[]).t()) :: TDynamic(null).t()
+  @spec delete_user(User.t()) :: term()
   def delete_user(arg0) do
     Repo.delete(user)
   end
@@ -368,7 +368,7 @@ defmodule EctoIntegrationSimple do
 
   # Static functions
   @doc "Function main"
-  @spec main() :: TAbstract(Void,[]).t()
+  @spec main() :: nil
   def main() do
     (
   Log.trace("=== Ecto Integration Test Suite ===", %{fileName: "EctoIntegrationSimple.hx", lineNumber: 218, className: "EctoIntegrationSimple", methodName: "main"})

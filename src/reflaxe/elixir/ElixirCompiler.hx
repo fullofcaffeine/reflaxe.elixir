@@ -13,6 +13,7 @@ import haxe.macro.Expr;
 import haxe.macro.Expr.Constant;
 
 import reflaxe.BaseCompiler;
+import reflaxe.compiler.TargetCodeInjection;
 import reflaxe.data.ClassFuncData;
 import reflaxe.data.ClassVarData;  
 import reflaxe.data.EnumOptionData;
@@ -559,6 +560,14 @@ class ElixirCompiler extends BaseCompiler {
      */
     public override function compileExpression(expr: TypedExpr, topLevel: Bool = false): Null<String> {
         if (expr == null) return null;
+        
+        // Check for target code injection (__elixir__ calls)
+        if (options.targetCodeInjectionName != null) {
+            final result = TargetCodeInjection.checkTargetCodeInjection(options.targetCodeInjectionName, expr, this);
+            if (result != null) {
+                return result;
+            }
+        }
         
         // Add source mapping before compiling expression
         if (sourceMapOutputEnabled && currentSourceMapWriter != null && expr.pos != null) {

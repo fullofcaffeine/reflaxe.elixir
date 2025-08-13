@@ -28,7 +28,7 @@ defmodule EReg do
 
 		If `s` is `null`, the result is unspecified.
 	"
-  @spec match(TInst(String,[]).t()) :: TAbstract(Bool,[]).t()
+  @spec match(String.t()) :: boolean()
   def match(arg0) do
     false
   end
@@ -44,7 +44,7 @@ defmodule EReg do
 
 		If `n` equals 0, the whole matched substring is returned.
 	"
-  @spec matched(TAbstract(Int,[]).t()) :: TInst(String,[]).t()
+  @spec matched(integer()) :: String.t()
   def matched(arg0) do
     nil
   end
@@ -60,7 +60,7 @@ defmodule EReg do
 
 		The result does not include the matched part.
 	"
-  @spec matched_right() :: TInst(String,[]).t()
+  @spec matched_right() :: String.t()
   def matched_right() do
     nil
   end
@@ -79,7 +79,7 @@ defmodule EReg do
 
 		If `s` or `by` are null, the result is unspecified.
 	"
-  @spec replace(TInst(String,[]).t(), TInst(String,[]).t()) :: TInst(String,[]).t()
+  @spec replace(String.t(), String.t()) :: String.t()
   def replace(arg0, arg1) do
     nil
   end

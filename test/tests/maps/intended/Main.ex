@@ -10,7 +10,7 @@ defmodule Main do
 
   # Static functions
   @doc "Function string_map"
-  @spec string_map() :: TAbstract(Void,[]).t()
+  @spec string_map() :: nil
   def string_map() do
     (
   map = Haxe.Ds.StringMap.new()
@@ -53,7 +53,7 @@ end
   end
 
   @doc "Function int_map"
-  @spec int_map() :: TAbstract(Void,[]).t()
+  @spec int_map() :: nil
   def int_map() do
     (
   map = Haxe.Ds.IntMap.new()
@@ -107,7 +107,7 @@ end
   end
 
   @doc "Function object_map"
-  @spec object_map() :: TAbstract(Void,[]).t()
+  @spec object_map() :: nil
   def object_map() do
     (
   map = Haxe.Ds.ObjectMap.new()
@@ -123,7 +123,7 @@ end
   end
 
   @doc "Function map_literals"
-  @spec map_literals() :: TAbstract(Void,[]).t()
+  @spec map_literals() :: nil
   def map_literals() do
     (
   temp_map = nil
@@ -171,7 +171,7 @@ end
   end
 
   @doc "Function nested_maps"
-  @spec nested_maps() :: TAbstract(Void,[]).t()
+  @spec nested_maps() :: nil
   def nested_maps() do
     (
   users = Haxe.Ds.StringMap.new()
@@ -209,7 +209,7 @@ end
   end
 
   @doc "Function map_transformations"
-  @spec map_transformations() :: TAbstract(Void,[]).t()
+  @spec map_transformations() :: nil
   def map_transformations() do
     (
   temp_map = nil
@@ -322,7 +322,7 @@ end
   end
 
   @doc "Function enum_map"
-  @spec enum_map() :: TAbstract(Void,[]).t()
+  @spec enum_map() :: nil
   def enum_map() do
     (
   map = Haxe.Ds.EnumValueMap.new()
@@ -344,7 +344,7 @@ end
   end
 
   @doc "Function process_map"
-  @spec process_map(TType(Map,[TInst(String,[]),TAbstract(Int,[])]).t()) :: TType(Map,[TInst(String,[]),TInst(String,[])]).t()
+  @spec process_map(Map.t()) :: Map.t()
   def process_map(arg0) do
     (
   result = Haxe.Ds.StringMap.new()
@@ -363,7 +363,7 @@ end
   end
 
   @doc "Function main"
-  @spec main() :: TAbstract(Void,[]).t()
+  @spec main() :: nil
   def main() do
     (
   Log.trace("=== String Map ===", %{fileName: "Main.hx", lineNumber: 220, className: "Main", methodName: "main"})

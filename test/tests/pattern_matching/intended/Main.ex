@@ -7,7 +7,7 @@ defmodule PatternMatchingTest do
   @doc "
      * Basic enum pattern matching
      "
-  @spec match_color(TEnum(Color,[]).t()) :: TInst(String,[]).t()
+  @spec match_color(Color.t()) :: String.t()
   def match_color(arg0) do
     (
   temp_result = nil
@@ -38,7 +38,7 @@ end
   @doc "
      * Option type pattern matching
      "
-  @spec match_option(TEnum(Option,[TInst(matchOption.T,[])]).t()) :: TInst(String,[]).t()
+  @spec match_option(Option.t()) :: String.t()
   def match_option(arg0) do
     (
   temp_result = nil
@@ -61,7 +61,7 @@ end
   @doc "
      * Integer pattern matching with guards
      "
-  @spec match_int(TAbstract(Int,[]).t()) :: TInst(String,[]).t()
+  @spec match_int(integer()) :: String.t()
   def match_int(arg0) do
     (
   temp_result = nil
@@ -86,7 +86,7 @@ end
   @doc "
      * String pattern matching
      "
-  @spec match_string(TInst(String,[]).t()) :: TInst(String,[]).t()
+  @spec match_string(String.t()) :: String.t()
   def match_string(arg0) do
     (
   temp_result = nil
@@ -108,7 +108,7 @@ end
   @doc "
      * Array pattern matching
      "
-  @spec match_array(TInst(Array,[TAbstract(Int,[])]).t()) :: TInst(String,[]).t()
+  @spec match_array(Array.t()) :: String.t()
   def match_array(arg0) do
     (
   temp_result = nil
@@ -155,7 +155,7 @@ end
   @doc "
      * Nested pattern matching
      "
-  @spec match_nested(TEnum(Option,[TEnum(Color,[])]).t()) :: TInst(String,[]).t()
+  @spec match_nested(Option.t()) :: String.t()
   def match_nested(arg0) do
     (
   temp_result = nil
@@ -199,7 +199,7 @@ end
   @doc "
      * Boolean pattern matching
      "
-  @spec match_bool(TAbstract(Bool,[]).t(), TAbstract(Int,[]).t()) :: TInst(String,[]).t()
+  @spec match_bool(boolean(), integer()) :: String.t()
   def match_bool(arg0, arg1) do
     (
   temp_result = nil
@@ -215,7 +215,7 @@ end
   end
 
   @doc "Function main"
-  @spec main() :: TAbstract(Void,[]).t()
+  @spec main() :: nil
   def main() do
     Log.trace("Pattern matching compilation test", %{fileName: "Main.hx", lineNumber: 110, className: "PatternMatchingTest", methodName: "main"})
   end

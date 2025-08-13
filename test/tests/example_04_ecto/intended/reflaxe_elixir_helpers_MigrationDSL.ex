@@ -13,7 +13,7 @@ defmodule MigrationDSL do
   @doc "
      * Sanitize identifiers to prevent injection attacks
      "
-  @spec sanitize_identifier(TInst(String,[]).t()) :: TInst(String,[]).t()
+  @spec sanitize_identifier(String.t()) :: String.t()
   def sanitize_identifier(arg0) do
     (
   if (identifier == nil || identifier == ""), do: "unnamed", else: nil
@@ -45,7 +45,7 @@ end
   @doc "
      * Check if a class is annotated with @:migration (string version for testing)
      "
-  @spec is_migration_class(TInst(String,[]).t()) :: TAbstract(Bool,[]).t()
+  @spec is_migration_class(String.t()) :: boolean()
   def is_migration_class(arg0) do
     (
   if (class_name == nil || class_name == ""), do: false, else: nil
@@ -57,7 +57,7 @@ end
      * Check if ClassType has @:migration annotation (real implementation)
      * Note: Temporarily simplified due to Haxe 4.3.6 API compatibility
      "
-  @spec is_migration_class_type(TDynamic(null).t()) :: TAbstract(Bool,[]).t()
+  @spec is_migration_class_type(term()) :: boolean()
   def is_migration_class_type(arg0) do
     true
   end
@@ -66,7 +66,7 @@ end
      * Get migration configuration from @:migration annotation
      * Extracts table name from @:migration("table_name") annotation
      "
-  @spec get_migration_config(TType(haxe.Macro.ClassType,[]).t()) :: TDynamic(null).t()
+  @spec get_migration_config(ClassType.t()) :: term()
   def get_migration_config(arg0) do
     (
   if (!class_type.meta.has(":migration")), do: %{table: "default_table", timestamp: MigrationDSL.generateTimestamp()}, else: nil
@@ -93,7 +93,7 @@ end
   @doc "
      * Extract table name from class name (CreateUsers -> users)
      "
-  @spec extract_table_name_from_class_name(TInst(String,[]).t()) :: TInst(String,[]).t()
+  @spec extract_table_name_from_class_name(String.t()) :: String.t()
   def extract_table_name_from_class_name(arg0) do
     (
   table_name = class_name
@@ -111,7 +111,7 @@ end
   @doc "
      * Compile table creation with columns
      "
-  @spec compile_table_creation(TInst(String,[]).t(), TInst(Array,[TInst(String,[])]).t()) :: TInst(String,[]).t()
+  @spec compile_table_creation(String.t(), Array.t()) :: String.t()
   def compile_table_creation(arg0, arg1) do
     (
   column_defs = Array.new()
@@ -141,7 +141,7 @@ end
   @doc "
      * Generate basic migration module structure
      "
-  @spec generate_migration_module(TInst(String,[]).t()) :: TInst(String,[]).t()
+  @spec generate_migration_module(String.t()) :: String.t()
   def generate_migration_module(arg0) do
     (
   module_name = class_name
@@ -182,7 +182,7 @@ end
   @doc "
      * Compile index creation
      "
-  @spec compile_index_creation(TInst(String,[]).t(), TInst(Array,[TInst(String,[])]).t(), TInst(String,[]).t()) :: TInst(String,[]).t()
+  @spec compile_index_creation(String.t(), Array.t(), String.t()) :: String.t()
   def compile_index_creation(arg0, arg1, arg2) do
     (
   temp_array = nil
@@ -209,7 +209,7 @@ end
   @doc "
      * Compile table drop for rollback
      "
-  @spec compile_table_drop(TInst(String,[]).t()) :: TInst(String,[]).t()
+  @spec compile_table_drop(String.t()) :: String.t()
   def compile_table_drop(arg0) do
     "drop table(:" + table_name + ")"
   end
@@ -217,7 +217,7 @@ end
   @doc "
      * Compile column modification
      "
-  @spec compile_column_modification(TInst(String,[]).t(), TInst(String,[]).t(), TInst(String,[]).t()) :: TInst(String,[]).t()
+  @spec compile_column_modification(String.t(), String.t(), String.t()) :: String.t()
   def compile_column_modification(arg0, arg1, arg2) do
     "alter table(:" + table_name + ") do
 " + ("  modify :" + column_name + ", :string, " + modification + "
@@ -227,7 +227,7 @@ end
   @doc "
      * Compile full migration with all operations
      "
-  @spec compile_full_migration(TDynamic(null).t()) :: TInst(String,[]).t()
+  @spec compile_full_migration(term()) :: String.t()
   def compile_full_migration(arg0) do
     (
   class_name = migration_data.class_name
@@ -268,7 +268,7 @@ end
   @doc "
      * Generate migration filename following Mix conventions
      "
-  @spec generate_migration_filename(TInst(String,[]).t(), TInst(String,[]).t()) :: TInst(String,[]).t()
+  @spec generate_migration_filename(String.t(), String.t()) :: String.t()
   def generate_migration_filename(arg0, arg1) do
     (
   snake_case_name = MigrationDSL.camelCaseToSnakeCase(migration_name)
@@ -279,7 +279,7 @@ end
   @doc "
      * Generate migration file path for Mix tasks
      "
-  @spec generate_migration_file_path(TInst(String,[]).t(), TInst(String,[]).t()) :: TInst(String,[]).t()
+  @spec generate_migration_file_path(String.t(), String.t()) :: String.t()
   def generate_migration_file_path(arg0, arg1) do
     (
   filename = MigrationDSL.generateMigrationFilename(migration_name, timestamp)
@@ -290,7 +290,7 @@ end
   @doc "
      * Convert CamelCase to snake_case for Elixir conventions
      "
-  @spec camel_case_to_snake_case(TInst(String,[]).t()) :: TInst(String,[]).t()
+  @spec camel_case_to_snake_case(String.t()) :: String.t()
   def camel_case_to_snake_case(arg0) do
     (
   result = ""
@@ -313,7 +313,7 @@ end
   @doc "
      * Generate add column operation (standalone with alter table wrapper)
      "
-  @spec generate_add_column(TInst(String,[]).t(), TInst(String,[]).t(), TInst(String,[]).t(), TInst(String,[]).t()) :: TInst(String,[]).t()
+  @spec generate_add_column(String.t(), String.t(), String.t(), String.t()) :: String.t()
   def generate_add_column(arg0, arg1, arg2, arg3) do
     (
   safe_table = MigrationDSL.sanitizeIdentifier(table_name)
@@ -331,7 +331,7 @@ end"
   @doc "
      * Generate drop column operation
      "
-  @spec generate_drop_column(TInst(String,[]).t(), TInst(String,[]).t()) :: TInst(String,[]).t()
+  @spec generate_drop_column(String.t(), String.t()) :: String.t()
   def generate_drop_column(arg0, arg1) do
     "remove :" + column_name
   end
@@ -339,7 +339,7 @@ end"
   @doc "
      * Generate foreign key constraint (standalone with alter table wrapper)
      "
-  @spec generate_foreign_key(TInst(String,[]).t(), TInst(String,[]).t(), TInst(String,[]).t(), TInst(String,[]).t()) :: TInst(String,[]).t()
+  @spec generate_foreign_key(String.t(), String.t(), String.t(), String.t()) :: String.t()
   def generate_foreign_key(arg0, arg1, arg2, arg3) do
     (
   safe_table = MigrationDSL.sanitizeIdentifier(table_name)
@@ -356,7 +356,7 @@ end"
   @doc "
      * Generate constraint creation
      "
-  @spec generate_constraint(TInst(String,[]).t(), TInst(String,[]).t(), TInst(String,[]).t(), TInst(String,[]).t()) :: TInst(String,[]).t()
+  @spec generate_constraint(String.t(), String.t(), String.t(), String.t()) :: String.t()
   def generate_constraint(arg0, arg1, arg2, arg3) do
     (
   safe_table = MigrationDSL.sanitizeIdentifier(table_name)
@@ -368,7 +368,7 @@ end"
   @doc "
      * Performance-optimized compilation for multiple migrations
      "
-  @spec compile_batch_migrations(TInst(Array,[TDynamic(null)]).t()) :: TInst(String,[]).t()
+  @spec compile_batch_migrations(Array.t()) :: String.t()
   def compile_batch_migrations(arg0) do
     (
   compiled_migrations = Array.new()
@@ -391,7 +391,7 @@ end
   @doc "
      * Generate data migration (for complex schema changes)
      "
-  @spec generate_data_migration(TInst(String,[]).t(), TInst(String,[]).t(), TInst(String,[]).t()) :: TInst(String,[]).t()
+  @spec generate_data_migration(String.t(), String.t(), String.t()) :: String.t()
   def generate_data_migration(arg0, arg1, arg2) do
     "defmodule Repo.Migrations." + migration_name + " do
 " + "  use Ecto.Migration
@@ -409,7 +409,7 @@ end
   @doc "
      * Validate migration against existing schema (integration with SchemaIntrospection)
      "
-  @spec validate_migration_against_schema(TDynamic(null).t(), TInst(Array,[TInst(String,[])]).t()) :: TAbstract(Bool,[]).t()
+  @spec validate_migration_against_schema(term(), Array.t()) :: boolean()
   def validate_migration_against_schema(arg0, arg1) do
     true
   end
@@ -417,7 +417,7 @@ end
   @doc "
      * Generate timestamp for migration
      "
-  @spec generate_timestamp() :: TInst(String,[]).t()
+  @spec generate_timestamp() :: String.t()
   def generate_timestamp() do
     (
   date = Date.now()
@@ -435,7 +435,7 @@ end
      * Real table creation DSL function used by migration examples
      * Creates Ecto migration table with proper column definitions
      "
-  @spec create_table(TInst(String,[]).t(), TFun([{name: , t: TInst(reflaxe.Elixir.Helpers.TableBuilder,[]), opt: false}],TAbstract(Void,[])).t()) :: TInst(String,[]).t()
+  @spec create_table(String.t(), Function.t()) :: String.t()
   def create_table(arg0, arg1) do
     (
   builder = Reflaxe.Elixir.Helpers.TableBuilder.new(table_name)
@@ -501,7 +501,7 @@ end
      * Real table drop DSL function used by migration examples
      * Generates proper Ecto migration drop table statement
      "
-  @spec drop_table(TInst(String,[]).t()) :: TInst(String,[]).t()
+  @spec drop_table(String.t()) :: String.t()
   def drop_table(arg0) do
     "drop table(:" + table_name + ")"
   end
@@ -510,7 +510,7 @@ end
      * Real add column function for table alterations
      * Generates proper Ecto migration add column statement
      "
-  @spec add_column(TInst(String,[]).t(), TInst(String,[]).t(), TInst(String,[]).t(), TAbstract(Null,[TDynamic(null)]).t()) :: TInst(String,[]).t()
+  @spec add_column(String.t(), String.t(), String.t(), Null.t()) :: String.t()
   def add_column(arg0, arg1, arg2, arg3) do
     (
   options_str = ""
@@ -540,7 +540,7 @@ end
      * Real add index function for performance optimization
      * Generates proper Ecto migration index creation
      "
-  @spec add_index(TInst(String,[]).t(), TInst(Array,[TInst(String,[])]).t(), TAbstract(Null,[TDynamic(null)]).t()) :: TInst(String,[]).t()
+  @spec add_index(String.t(), Array.t(), Null.t()) :: String.t()
   def add_index(arg0, arg1, arg2) do
     (
   temp_array = nil
@@ -568,7 +568,7 @@ end
      * Real add foreign key function for referential integrity
      * Generates proper Ecto migration foreign key constraint
      "
-  @spec add_foreign_key(TInst(String,[]).t(), TInst(String,[]).t(), TInst(String,[]).t(), TInst(String,[]).t()) :: TInst(String,[]).t()
+  @spec add_foreign_key(String.t(), String.t(), String.t(), String.t()) :: String.t()
   def add_foreign_key(arg0, arg1, arg2, arg3) do
     "alter table(:" + table_name + ") do
       modify :" + column_name + ", references(:" + referenced_table + ", column: :" + referenced_column + ")
@@ -579,7 +579,7 @@ end
      * Real add check constraint function for data validation
      * Generates proper Ecto migration check constraint
      "
-  @spec add_check_constraint(TInst(String,[]).t(), TInst(String,[]).t(), TInst(String,[]).t()) :: TInst(String,[]).t()
+  @spec add_check_constraint(String.t(), String.t(), String.t()) :: String.t()
   def add_check_constraint(arg0, arg1, arg2) do
     "create constraint(:" + table_name + ", :" + constraint_name + ", check: "" + condition + "")"
   end
@@ -601,7 +601,7 @@ defmodule TableBuilder do
   @doc "
      * Add a column to the table
      "
-  @spec add_column(TInst(String,[]).t(), TInst(String,[]).t(), TAbstract(Null,[TDynamic(null)]).t()) :: TInst(reflaxe.Elixir.Helpers.TableBuilder,[]).t()
+  @spec add_column(String.t(), String.t(), Null.t()) :: TableBuilder.t()
   def add_column(arg0, arg1, arg2) do
     (
   if (name == "id"), do: self().has_id_column = true, else: nil
@@ -643,7 +643,7 @@ end
   @doc "
      * Add an index to the table
      "
-  @spec add_index(TInst(Array,[TInst(String,[])]).t(), TAbstract(Null,[TDynamic(null)]).t()) :: TInst(reflaxe.Elixir.Helpers.TableBuilder,[]).t()
+  @spec add_index(Array.t(), Null.t()) :: TableBuilder.t()
   def add_index(arg0, arg1) do
     (
   temp_array = nil
@@ -671,7 +671,7 @@ end
   @doc "
      * Add a foreign key constraint
      "
-  @spec add_foreign_key(TInst(String,[]).t(), TInst(String,[]).t(), TInst(String,[]).t()) :: TInst(reflaxe.Elixir.Helpers.TableBuilder,[]).t()
+  @spec add_foreign_key(String.t(), String.t(), String.t()) :: TableBuilder.t()
   def add_foreign_key(arg0, arg1, arg2) do
     (
   new_columns = []
@@ -699,7 +699,7 @@ end
   @doc "
      * Add a check constraint
      "
-  @spec add_check_constraint(TInst(String,[]).t(), TInst(String,[]).t()) :: TInst(reflaxe.Elixir.Helpers.TableBuilder,[]).t()
+  @spec add_check_constraint(String.t(), String.t()) :: TableBuilder.t()
   def add_check_constraint(arg0, arg1) do
     (
   self().constraints.push("create constraint(:" + self().table_name + ", :" + constraint_name + ", check: "" + condition + "")")
@@ -710,7 +710,7 @@ end
   @doc "
      * Get all column definitions
      "
-  @spec get_column_definitions() :: TInst(Array,[TInst(String,[])]).t()
+  @spec get_column_definitions() :: Array.t()
   def get_column_definitions() do
     self().columns.copy()
   end
@@ -718,7 +718,7 @@ end
   @doc "
      * Get all index definitions
      "
-  @spec get_index_definitions() :: TInst(Array,[TInst(String,[])]).t()
+  @spec get_index_definitions() :: Array.t()
   def get_index_definitions() do
     self().indexes.copy()
   end
@@ -726,7 +726,7 @@ end
   @doc "
      * Get all constraint definitions
      "
-  @spec get_constraint_definitions() :: TInst(Array,[TInst(String,[])]).t()
+  @spec get_constraint_definitions() :: Array.t()
   def get_constraint_definitions() do
     self().constraints.copy()
   end

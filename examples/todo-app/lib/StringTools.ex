@@ -22,7 +22,7 @@ defmodule StringTools do
 		If `s` is the empty String `""`, or if pos is not a valid position within
 		`s`, the result is false.
 	"
-  @spec is_space(TInst(String,[]).t(), TAbstract(Int,[]).t()) :: TAbstract(Bool,[]).t()
+  @spec is_space(String.t(), integer()) :: boolean()
   def is_space(arg0, arg1) do
     (
   c = s.charCodeAt(pos)
@@ -39,7 +39,7 @@ defmodule StringTools do
 		If `s` is the empty String `""` or consists only of space characters, the
 		result is the empty String `""`.
 	"
-  @spec ltrim(TInst(String,[]).t()) :: TInst(String,[]).t()
+  @spec ltrim(String.t()) :: String.t()
   def ltrim(arg0) do
     (
   l = s.length
@@ -60,7 +60,7 @@ end
 		If `s` is the empty String `""` or consists only of space characters, the
 		result is the empty String `""`.
 	"
-  @spec rtrim(TInst(String,[]).t()) :: TInst(String,[]).t()
+  @spec rtrim(String.t()) :: String.t()
   def rtrim(arg0) do
     (
   l = s.length
@@ -77,7 +77,7 @@ end
 
 		This is a convenience function for `ltrim(rtrim(s))`.
 	"
-  @spec trim(TInst(String,[]).t()) :: TInst(String,[]).t()
+  @spec trim(String.t()) :: String.t()
   def trim(arg0) do
     StringTools.ltrim(StringTools.rtrim(s))
   end

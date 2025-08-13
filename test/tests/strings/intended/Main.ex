@@ -10,7 +10,7 @@ defmodule Main do
 
   # Static functions
   @doc "Function string_basics"
-  @spec string_basics() :: TAbstract(Void,[]).t()
+  @spec string_basics() :: nil
   def string_basics() do
     (
   str1 = "Hello"
@@ -26,7 +26,7 @@ string"
   end
 
   @doc "Function string_interpolation"
-  @spec string_interpolation() :: TAbstract(Void,[]).t()
+  @spec string_interpolation() :: nil
   def string_interpolation() do
     (
   name = "Alice"
@@ -48,7 +48,7 @@ string"
   end
 
   @doc "Function string_methods"
-  @spec string_methods() :: TAbstract(Void,[]).t()
+  @spec string_methods() :: nil
   def string_methods() do
     (
   str = "  Hello, World!  "
@@ -72,7 +72,7 @@ string"
   end
 
   @doc "Function string_comparison"
-  @spec string_comparison() :: TAbstract(Void,[]).t()
+  @spec string_comparison() :: nil
   def string_comparison() do
     (
   str1 = "apple"
@@ -87,7 +87,7 @@ string"
   end
 
   @doc "Function string_building"
-  @spec string_building() :: TAbstract(Void,[]).t()
+  @spec string_building() :: nil
   def string_building() do
     (
   buf_b = nil
@@ -117,7 +117,7 @@ string"
   end
 
   @doc "Function regex_operations"
-  @spec regex_operations() :: TAbstract(Void,[]).t()
+  @spec regex_operations() :: nil
   def regex_operations() do
     (
   text = "The year is 2024 and the time is 15:30"
@@ -142,7 +142,7 @@ end
   end
 
   @doc "Function string_formatting"
-  @spec string_formatting() :: TAbstract(Void,[]).t()
+  @spec string_formatting() :: nil
   def string_formatting() do
     (
   num = 42
@@ -162,7 +162,7 @@ end
   end
 
   @doc "Function unicode_strings"
-  @spec unicode_strings() :: TAbstract(Void,[]).t()
+  @spec unicode_strings() :: nil
   def unicode_strings() do
     (
   unicode = "Hello 世界 🌍"
@@ -180,7 +180,7 @@ Line 3"
   end
 
   @doc "Function main"
-  @spec main() :: TAbstract(Void,[]).t()
+  @spec main() :: nil
   def main() do
     (
   Log.trace("=== String Basics ===", %{fileName: "Main.hx", lineNumber: 204, className: "Main", methodName: "main"})
