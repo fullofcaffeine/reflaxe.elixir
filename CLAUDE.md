@@ -31,6 +31,36 @@ This file must stay under 40k characters for optimal performance.
 
 **Key Point**: The function body compilation fix was a legitimate use case - we went from empty function bodies (`# TODO: Implement function body`) to real compiled Elixir code. This required updating all intended outputs to reflect the improved compiler behavior.
 
+## 🔄 Compiler-Example Development Feedback Loop
+
+**CRITICAL UNDERSTANDING**: Working on examples (todo-app, etc.) is simultaneously **compiler development**. Examples are not just demos - they are **living compiler tests** that reveal bugs and drive improvements.
+
+### The Feedback Loop
+```
+Example Development → Discovers Compiler Limitations
+        ↓
+Compiler Bug Identified → Fix Transpiler Source Code  
+        ↓
+Enhanced Compiler → Examples Compile Better
+        ↓
+More Complex Examples → Push Compiler Further
+        ↓
+Repeat → Continuous Quality Improvement
+```
+
+### Development Rules
+- ✅ **Example fails to compile**: This is compiler feedback, not user error
+- ✅ **Generated .ex files invalid**: Fix the transpiler, don't patch files
+- ✅ **Type system errors**: Improve type generation logic in compiler
+- ❌ **Never manually edit generated files**: They get overwritten on recompilation
+- ❌ **Don't work around compiler bugs**: Fix the root cause in transpiler source
+
+### Examples as Compiler Quality Gates
+- **todo-app**: Tests dual-target compilation, LiveView, Ecto integration
+- **Test suite**: Validates basic language features and edge cases  
+- **Real-world patterns**: Drive compiler to handle complex scenarios
+- **Production readiness**: Examples must compile cleanly for v1.0 quality
+
 ## 📍 Agent Navigation Guide
 
 ### When Writing or Fixing Tests
@@ -52,6 +82,12 @@ This file must stay under 40k characters for optimal performance.
 → **Source Maps**: See [`documentation/SOURCE_MAPPING.md`](documentation/SOURCE_MAPPING.md)
 → **Architecture**: Understand macro-time vs runtime (see sections below)
 → **Examples**: Check `test/tests/` for similar patterns
+
+### When Working on Examples (todo-app, etc.)
+→ **Remember**: Examples are **compiler testing grounds** - failures reveal compiler bugs
+→ **Don't Patch Generated Files**: Never manually fix .ex files - fix the compiler source instead
+→ **Feedback Loop**: Example development IS compiler development - they improve each other
+→ **Workflow**: Example fails → Find compiler bug → Fix compiler → Example works better
 
 ## User Documentation References
 
@@ -140,11 +176,13 @@ This is acceptable - helpers are simpler for our needs while following similar s
 - ❌ **HXX.ex runtime modules** are unnecessary and should be removed
 - 🎯 **Pattern**: Template compilation happens during Haxe transpilation, not at runtime
 
-### Standard Library Duplication Issue 🔍
-**Investigation needed**: Standard library files (Type.ex, StringBuf.ex, etc.) are duplicated across examples.
-- Should be centralized in main library
-- Examples should import, not duplicate
-- See other Reflaxe compilers for @:coreApi patterns
+### Standard Library Architecture ✅
+**Implemented**: StringTools uses **Extern + Runtime Library** pattern
+- **Pattern**: Extern definitions + native Elixir runtime implementations
+- **Benefits**: Predictable, performant, idiomatic code generation
+- **Documentation**: See [`documentation/STRINGTOOLS_STRATEGY.md`](documentation/STRINGTOOLS_STRATEGY.md)
+- **Comparison**: Analyzed vs GDScript (full compilation), CPP (native binding), Go (cross files)
+- **Decision**: Extern pattern is default for standard library unless compelling reason otherwise
 
 ## Experimental Roadmap 🧪
 
@@ -416,6 +454,10 @@ What happens:
 4. **The TypeTools.iter error** = wrong test configuration, not API incompatibility
 
 ## Known Issues (Updated)
+- **Compiler Architecture**: ElixirCompiler extends BaseCompiler instead of DirectToStringCompiler
+  - Causes StdTypes.ex generation bugs (typedefs outside modules)
+  - Missing string compilation helpers and target code injection
+  - See [`documentation/architecture/COMPILER_INHERITANCE.md`](documentation/architecture/COMPILER_INHERITANCE.md) for refactor justification
 - **Test Environment**: While Haxe 4.3.6 is available and basic compilation works, there are compatibility issues with our current implementation:
   - Missing `using StringTools` declarations causing trim/match method errors
   - Type system mismatches between macro types and expected Reflaxe types
