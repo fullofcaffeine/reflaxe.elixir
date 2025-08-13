@@ -217,6 +217,9 @@ class ProjectGenerator {
 			}
 		}
 		
+		// Create LLM documentation directory structure
+		createLLMDocumentation(projectPath, options);
+		
 		// Ensure build.hxml exists
 		var buildHxmlPath = Path.join([projectPath, "build.hxml"]);
 		if (!FileSystem.exists(buildHxmlPath)) {
@@ -361,14 +364,10 @@ class ProjectGenerator {
 ';
 	}
 	
-	function generateReadme(options: GeneratorOptions): String {
+	// Keep the old methods for backward compatibility but mark as deprecated
+	function generateReadmeOld(options: GeneratorOptions): String {
 		var title = options.name;
-		var description = switch (options.type) {
-			case "phoenix": "A Phoenix web application built with Reflaxe.Elixir";
-			case "liveview": "A Phoenix LiveView application built with Reflaxe.Elixir";
-			case "basic": "A Mix project built with Reflaxe.Elixir";
-			default: "A Reflaxe.Elixir project";
-		};
+		var description = getProjectDescription(options.type);
 		
 		return '# $title
 
@@ -422,7 +421,7 @@ mix test
 - [Haxe Documentation](https://haxe.org)
 - [Elixir Documentation](https://elixir-lang.org)
 ';
-	}
+		return ""; // Deprecated
 	
 	function generateGitignore(): String {
 		return '# Dependencies
@@ -530,7 +529,193 @@ class HelloWorld {
 ';
 	}
 	
+	function createLLMDocumentation(projectPath: String, options: GeneratorOptions): Void {
+		// Create .taskmaster/docs structure for LLM documentation
+		var taskmasterPath = Path.join([projectPath, ".taskmaster"]);
+		var docsPath = Path.join([taskmasterPath, "docs"]);
+		var llmPath = Path.join([docsPath, "llm"]);
+		
+		if (!FileSystem.exists(taskmasterPath)) {
+			FileSystem.createDirectory(taskmasterPath);
+		}
+		if (!FileSystem.exists(docsPath)) {
+			FileSystem.createDirectory(docsPath);
+		}
+		if (!FileSystem.exists(llmPath)) {
+			FileSystem.createDirectory(llmPath);
+		}
+		
+		// Copy foundation documentation from library
+		var libPath = getLibraryPath();
+		var sourceLLMPath = Path.join([libPath, "documentation", "llm"]);
+		
+		if (FileSystem.exists(sourceLLMPath)) {
+			// Copy foundation docs
+			var foundationFiles = [
+				"HAXE_FUNDAMENTALS.md",
+				"REFLAXE_ELIXIR_BASICS.md",
+				"QUICK_START_PATTERNS.md"
+			];
+			
+			for (file in foundationFiles) {
+				var srcFile = Path.join([sourceLLMPath, file]);
+				var destFile = Path.join([llmPath, file]);
+				if (FileSystem.exists(srcFile) && !FileSystem.exists(destFile)) {
+					File.copy(srcFile, destFile);
+					if (options.verbose) {
+						Sys.println('  Copied LLM documentation: $file');
+					}
+				}
+			}
+		}
+		
+		// Create API reference skeleton
+		var apiRefPath = Path.join([llmPath, "API_REFERENCE_SKELETON.md"]);
+		if (!FileSystem.exists(apiRefPath)) {
+			var content = generateAPIReferenceSkeleton(options);
+			File.saveContent(apiRefPath, content);
+			if (options.verbose) {
+				Sys.println('  Created API_REFERENCE_SKELETON.md');
+			}
+		}
+		
+		// Create patterns directory
+		var patternsPath = Path.join([docsPath, "patterns"]);
+		if (!FileSystem.exists(patternsPath)) {
+			FileSystem.createDirectory(patternsPath);
+		}
+		
+		// Create empty PATTERNS.md that will be populated when code is written
+		var patternsFile = Path.join([patternsPath, "PATTERNS.md"]);
+		if (!FileSystem.exists(patternsFile)) {
+			var content = generateEmptyPatternsFile(options);
+			File.saveContent(patternsFile, content);
+			if (options.verbose) {
+				Sys.println('  Created PATTERNS.md (will be populated as you code)');
+			}
+		}
+		
+		// Create template-specific documentation
+		var templateDocPath = Path.join([llmPath, "PROJECT_SPECIFICS.md"]);
+		if (!FileSystem.exists(templateDocPath)) {
+			var content = generateTemplateSpecificDocs(options);
+			File.saveContent(templateDocPath, content);
+			if (options.verbose) {
+				Sys.println('  Created PROJECT_SPECIFICS.md for ${options.type} template');
+			}
+		}
+	}
+	
+	// Deprecated old inline methods - kept for backward compatibility 
+	function generateAPIReferenceSkeletonOld(options: GeneratorOptions): String {
+		return ""; // Deprecated
+	}
+	
+	function generateEmptyPatternsFileOld(options: GeneratorOptions): String {
+		return ""; // Deprecated
+	}
+	
+	function generateTemplateSpecificDocsOld(options: GeneratorOptions): String {
+		return ""; // Deprecated
+	}
+	
+	function loadTemplate(templateName: String): String {
+		var libPath = getLibraryPath();
+		var templatePath = Path.join([libPath, "templates", "project", templateName]);
+		
+		if (!FileSystem.exists(templatePath)) {
+			// Fall back to embedded default if template file missing
+			throw 'Template not found: $templatePath';
+		}
+		
+		return File.getContent(templatePath);
+	}
+	
+	function processTemplate(templateName: String, context: Dynamic): String {
+		var template = loadTemplate(templateName);
+		var engine = new TemplateEngine();
+		return engine.processContent(template, context);
+	}
+	
 	function generateClaudeInstructions(options: GeneratorOptions): String {
+		var context = createTemplateContext(options);
+		return processTemplate("claude.md.tpl", context);
+	}
+	
+	function generateReadme(options: GeneratorOptions): String {
+		var context = createTemplateContext(options);
+		return processTemplate("readme.md.tpl", context);
+	}
+	
+	function generateAPIReferenceSkeleton(options: GeneratorOptions): String {
+		var context = createTemplateContext(options);
+		context.BUILD_CONFIG = generateBuildHxml(options.name);
+		return processTemplate("api_reference.md.tpl", context);
+	}
+	
+	function generateEmptyPatternsFile(options: GeneratorOptions): String {
+		var context = createTemplateContext(options);
+		return processTemplate("patterns.md.tpl", context);
+	}
+	
+	function generateTemplateSpecificDocs(options: GeneratorOptions): String {
+		var context = createTemplateContext(options);
+		return processTemplate("project_specifics.md.tpl", context);
+	}
+	
+	function createTemplateContext(options: GeneratorOptions): Dynamic {
+		var projectName = options.name;
+		var projectType = options.type;
+		
+		var projectNameSnake = projectName.toLowerCase().replace(" ", "_").replace("-", "_");
+		var projectModule = toPascalCase(projectName);
+		
+		// Determine project type flags
+		var isPhoenix = projectType == "phoenix";
+		var isLiveView = projectType == "liveview";
+		var isBasic = projectType == "basic" || projectType == "add-to-existing";
+		
+		// Create template context object
+		return {
+			PROJECT_NAME: projectName,
+			PROJECT_NAME_SNAKE: projectNameSnake,
+			PROJECT_MODULE: projectModule,
+			PROJECT_TYPE: projectType,
+			PROJECT_TYPE_DISPLAY: getProjectTypeDisplay(projectType),
+			PROJECT_DESCRIPTION: getProjectDescription(projectType),
+			GENERATED_DATE: Date.now().toString(),
+			YEAR: Std.string(Date.now().getFullYear()),
+			
+			// Boolean flags for conditionals
+			IS_PHOENIX: isPhoenix,
+			IS_LIVEVIEW: isLiveView || isPhoenix, // Phoenix includes LiveView
+			IS_BASIC: isBasic,
+			HAS_ECTO: isPhoenix || isLiveView,
+			HAS_PATTERNS: false // Will be true after first extraction
+		};
+	}
+	
+	function getProjectTypeDisplay(type: String): String {
+		return switch(type) {
+			case "phoenix": "Phoenix Web Application";
+			case "liveview": "Phoenix LiveView Application";
+			case "basic": "Mix Project";
+			case "add-to-existing": "Existing Elixir Project with Haxe";
+			default: "Reflaxe.Elixir Project";
+		};
+	}
+	
+	function getProjectDescription(type: String): String {
+		return switch(type) {
+			case "phoenix": "A Phoenix web application built with Reflaxe.Elixir";
+			case "liveview": "A Phoenix LiveView application built with Reflaxe.Elixir";
+			case "basic": "A Mix project built with Reflaxe.Elixir";
+			default: "A Reflaxe.Elixir project";
+		};
+	}
+	
+	// Remove the old inline template generation methods
+	function generateOldClaudeInstructions(options: GeneratorOptions): String {
 		var projectName = options.name;
 		var projectType = options.type;
 		
@@ -711,6 +896,29 @@ mix haxe.errors --format json
 
 # Check source mapping
 mix haxe.source_map <generated_file> <line> <column>
+```
+
+## 📚 LLM-Optimized Documentation
+
+This project includes comprehensive documentation specifically designed for AI assistants:
+
+### Foundation Documentation (in .taskmaster/docs/llm/)
+- **HAXE_FUNDAMENTALS.md** - Essential Haxe language knowledge
+- **REFLAXE_ELIXIR_BASICS.md** - Core Reflaxe.Elixir concepts and patterns
+- **QUICK_START_PATTERNS.md** - Copy-paste ready code patterns
+- **PROJECT_SPECIFICS.md** - Template-specific guidance for this project
+- **API_REFERENCE_SKELETON.md** - API documentation (grows as you code)
+
+### Pattern Extraction (in .taskmaster/docs/patterns/)
+- **PATTERNS.md** - Auto-extracted patterns from your code
+
+### Generating Enhanced Documentation
+```bash
+# Generate full API documentation
+npx haxe build.hxml -D generate-llm-docs
+
+# Extract patterns from your code
+npx haxe build.hxml -D extract-patterns
 ```
 
 ## 📚 Additional Resources
