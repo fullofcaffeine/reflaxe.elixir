@@ -17,10 +17,11 @@ defmodule TodoAppWeb.Router do
   scope "/", TodoAppWeb do
     pipe_through :browser
 
-    live "/", TodoLive, :root
-    live "/todos", TodoLive, :todosIndex
-    live "/todos/:id", TodoLive, :todosShow
-    live "/todos/:id/edit", TodoLive, :todosEdit
+    # Simple route to test the app
+    get "/", PageController, :home
+    
+    # LiveView route for Todo app
+    live "/todos", TodoLive, :index
   end
 
   # Enable LiveDashboard in development
@@ -30,7 +31,7 @@ defmodule TodoAppWeb.Router do
     scope "/dev" do
       pipe_through :browser
 
-      live_dashboard "/dev/dashboard", metrics: TodoAppWeb.Telemetry
+      live_dashboard "/dashboard", metrics: TodoAppWeb.Telemetry
     end
   end
 end
