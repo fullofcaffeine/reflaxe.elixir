@@ -122,14 +122,12 @@ class ProjectGenerator {
 			}
 		}
 		
-		// Create CLAUDE.md with AI development instructions
+		// Always regenerate CLAUDE.md from template to ensure correct project name
 		var claudePath = Path.join([projectPath, "CLAUDE.md"]);
-		if (!FileSystem.exists(claudePath)) {
-			var content = generateClaudeInstructions(options);
-			File.saveContent(claudePath, content);
-			if (options.verbose) {
-				Sys.println('Created CLAUDE.md with AI development instructions');
-			}
+		var content = generateClaudeInstructions(options);
+		File.saveContent(claudePath, content);
+		if (options.verbose) {
+			Sys.println('Created CLAUDE.md with AI development instructions');
 		}
 		
 		// Update mix.exs compiler configuration
@@ -193,12 +191,10 @@ class ProjectGenerator {
 	}
 	
 	function createProjectFiles(projectPath: String, options: GeneratorOptions): Void {
-		// Create README.md if it doesn't exist
+		// Always regenerate README.md from template to ensure correct project name
 		var readmePath = Path.join([projectPath, "README.md"]);
-		if (!FileSystem.exists(readmePath)) {
-			var content = generateReadme(options);
-			File.saveContent(readmePath, content);
-		}
+		var content = generateReadme(options);
+		File.saveContent(readmePath, content);
 		
 		// Create .gitignore if it doesn't exist
 		var gitignorePath = Path.join([projectPath, ".gitignore"]);
@@ -207,14 +203,12 @@ class ProjectGenerator {
 			File.saveContent(gitignorePath, content);
 		}
 		
-		// Create CLAUDE.md with AI development instructions
+		// Always regenerate CLAUDE.md from template to ensure correct project name
 		var claudePath = Path.join([projectPath, "CLAUDE.md"]);
-		if (!FileSystem.exists(claudePath)) {
-			var content = generateClaudeInstructions(options);
-			File.saveContent(claudePath, content);
-			if (options.verbose) {
-				Sys.println('Created CLAUDE.md with AI development instructions');
-			}
+		var content = generateClaudeInstructions(options);
+		File.saveContent(claudePath, content);
+		if (options.verbose) {
+			Sys.println('Created CLAUDE.md with AI development instructions');
 		}
 		
 		// Create LLM documentation directory structure
@@ -422,6 +416,7 @@ mix test
 - [Elixir Documentation](https://elixir-lang.org)
 ';
 		return ""; // Deprecated
+	}
 	
 	function generateGitignore(): String {
 		return '# Dependencies

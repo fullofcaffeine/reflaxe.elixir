@@ -9,8 +9,9 @@ using StringTools;
  */
 class TemplateEngine {
 	
-	// Placeholder pattern: __PLACEHOLDER__
+	// Placeholder patterns: __PLACEHOLDER__ and {{PLACEHOLDER}}
 	static final PLACEHOLDER_PATTERN = ~/__([A-Z_]+)__/g;
+	static final MUSTACHE_PATTERN = ~/\{\{([A-Z_]+)\}\}/g;
 	
 	// Conditional block patterns
 	static final IF_PATTERN = ~/\{\{#if\s+(\w+)\}\}(.*?)\{\{\/if\}\}/gs;
@@ -45,10 +46,11 @@ class TemplateEngine {
 	}
 	
 	/**
-	 * Replace simple placeholders like __PROJECT_NAME__
+	 * Replace simple placeholders like __PROJECT_NAME__ and {{PROJECT_NAME}}
 	 */
 	function processPlaceholders(content: String, replacements: Dynamic): String {
-		return PLACEHOLDER_PATTERN.map(content, function(r) {
+		// Process __PLACEHOLDER__ style
+		content = PLACEHOLDER_PATTERN.map(content, function(r) {
 			var key = r.matched(1);
 			var value = Reflect.field(replacements, key);
 			
@@ -65,6 +67,27 @@ class TemplateEngine {
 			// Keep original if no replacement found
 			return r.matched(0);
 		});
+		
+		// Process {{PLACEHOLDER}} style
+		content = MUSTACHE_PATTERN.map(content, function(r) {
+			var key = r.matched(1);
+			var value = Reflect.field(replacements, key);
+			
+			if (value != null) {
+				return Std.string(value);
+			}
+			
+			// Try lowercase version
+			value = Reflect.field(replacements, key.toLowerCase());
+			if (value != null) {
+				return Std.string(value);
+			}
+			
+			// Keep original if no replacement found
+			return r.matched(0);
+		});
+		
+		return content;
 	}
 	
 	/**
