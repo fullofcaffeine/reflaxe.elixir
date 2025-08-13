@@ -1,5 +1,15 @@
 import Config
 
+# Configure the database
+config :todo_app, TodoApp.Repo,
+  username: "postgres",
+  password: "postgres",
+  hostname: "localhost",
+  database: "todo_app_dev",
+  stacktrace: true,
+  show_sensitive_data_on_connection_error: true,
+  pool_size: 10
+
 # For development, we disable any cache and enable
 # debugging and code reloading.
 config :todo_app, TodoAppWeb.Endpoint,

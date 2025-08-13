@@ -26,7 +26,7 @@ defmodule TodoApp.Application do
      "
   @spec prep_stop(term()) :: term()
   def prep_stop(arg0) do
-    state
+    arg0
   end
 
 end

@@ -13,5 +13,3 @@ defmodule TodoLive do
     """
   end
 end
-
-@type repo :: Repo.t()
