@@ -447,6 +447,74 @@ The following combinations are mutually exclusive:
 - `@:schema` and `@:migration` - Schema is runtime, migration is compile-time
 - `@:protocol` and `@:behaviour` - Different polymorphism approaches
 
+### @:application - OTP Application Module
+
+Marks a class as an OTP Application module that defines a supervision tree.
+
+**Basic Usage**:
+```haxe
+@:application
+@:native("MyApp.Application")
+class MyApp {
+    public static function start(type: Dynamic, args: Dynamic): Dynamic {
+        // Define children for supervision tree
+        var children = [
+            "MyApp.Repo",                              // Simple module reference
+            {module: "Phoenix.PubSub", name: "MyApp.PubSub"}, // Tuple with options
+            "MyAppWeb.Endpoint"                        // Simple module reference
+        ];
+        
+        // Start supervisor with children
+        var opts = {strategy: "one_for_one", name: "MyApp.Supervisor"};
+        return Supervisor.startLink(children, opts);
+    }
+    
+    public static function config_change(changed: Dynamic, new_config: Dynamic, removed: Dynamic): String {
+        // Handle configuration changes
+        return "ok";
+    }
+}
+```
+
+**Generated Elixir**:
+```elixir
+defmodule MyApp.Application do
+  @moduledoc false
+  
+  use Application
+  
+  @impl true
+  def start(_type, _args) do
+    children = [
+      MyApp.Repo,
+      {Phoenix.PubSub, name: MyApp.PubSub},
+      MyAppWeb.Endpoint
+    ]
+    
+    opts = [strategy: :one_for_one, name: MyApp.Supervisor]
+    Supervisor.start_link(children, opts)
+  end
+  
+  @impl true
+  def config_change(changed, _new, removed) do
+    MyAppWeb.Endpoint.config_change(changed, removed)
+    :ok
+  end
+end
+```
+
+**Key Features**:
+- Automatically adds `use Application` directive
+- Transforms child specifications into proper OTP format
+- Handles Phoenix-specific modules (Repo, PubSub, Endpoint, Telemetry)
+- Adds `@impl true` annotations for callbacks
+- Supports config_change callback for hot reloading
+
+**Child Specification Formats**:
+- String module names become atoms: `"MyApp.Repo"` → `MyApp.Repo`
+- Objects with module/name become tuples: `{module: "Phoenix.PubSub", name: "MyApp.PubSub"}` → `{Phoenix.PubSub, name: MyApp.PubSub}`
+- Supervisor options converted to keyword lists
+
 ## Usage Guidelines
 
 1. **One primary annotation per class** - Choose the main purpose of your class

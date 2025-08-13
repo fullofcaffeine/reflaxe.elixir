@@ -24,8 +24,5 @@
 
 # Main classes to compile
 TodoApp
-TodoAppWeb
-Router
-Endpoint
 live.TodoLive
 schemas.Todo

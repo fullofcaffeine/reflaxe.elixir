@@ -19,9 +19,6 @@ class Todo {
 	@:timestamps public var inserted_at: Dynamic;
 	@:timestamps public var updated_at: Dynamic;
 	
-	@:belongs_to("schemas.User") 
-	public var user: Dynamic;
-	
 	public function new() {
 		this.tags = [];
 		this.completed = false;
