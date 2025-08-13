@@ -2,6 +2,8 @@
 
 This guide provides walkthroughs for all example projects, showing how to use Reflaxe.Elixir features in practice.
 
+**✅ All Examples Now Runnable**: Every example directory now includes a complete `mix.exs` file and can be run as a standalone Mix project.
+
 ## Template System Integration
 
 **Important**: Many of these examples serve as **project generator templates**:
@@ -26,7 +28,9 @@ Each template includes a `.template.json` configuration file describing features
 **How to Run**:
 ```bash
 cd examples/01-simple-modules
-npx haxe compile-all.hxml
+mix deps.get              # Install dependencies
+npx haxe compile-all.hxml # Compile Haxe to Elixir
+mix compile               # Compile Elixir project
 ```
 
 **Files Generated**:

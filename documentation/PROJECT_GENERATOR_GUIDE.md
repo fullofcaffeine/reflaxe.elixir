@@ -1,17 +1,18 @@
 # Project Generator Guide
 
-Complete guide to using the Reflaxe.Elixir project generator to bootstrap new projects.
+Complete guide to using the Reflaxe.Elixir project generator to bootstrap new projects with Mix integration.
 
 ## Table of Contents
 
 1. [Installation](#installation)
 2. [Using the Generator](#using-the-generator)
 3. [Project Types](#project-types)
-4. [What Gets Generated](#what-gets-generated)
-5. [Post-Generation Workflow](#post-generation-workflow)
-6. [Development Tools](#development-tools)
-7. [Customization](#customization)
-8. [Troubleshooting](#troubleshooting)
+4. [Mix Generator Integration](#mix-generator-integration)
+5. [What Gets Generated](#what-gets-generated)
+6. [Post-Generation Workflow](#post-generation-workflow)
+7. [Development Tools](#development-tools)
+8. [Customization](#customization)
+9. [Troubleshooting](#troubleshooting)
 
 ## Installation
 
@@ -181,6 +182,32 @@ npx lix run reflaxe.elixir create --type add-to-existing
 - CLAUDE.md with AI development instructions
 
 **Use when:** Gradually migrating existing Elixir code to Haxe.
+
+## Mix Generator Integration
+
+The ProjectGenerator now leverages Mix generators (`mix new`, `mix phx.new`) to create complete, runnable projects:
+
+### How It Works
+
+1. **Mix Generator First**: For supported project types, the generator first attempts to use the appropriate Mix generator:
+   - `basic` → `mix new`
+   - `phoenix` → `mix phx.new --no-ecto --no-html --no-gettext`
+   - `liveview` → `mix phx.new --live`
+
+2. **Haxe Integration**: After Mix creates the project structure, the generator adds:
+   - `:haxe` compiler to `mix.exs`
+   - `src_haxe/` directory for Haxe source files
+   - `build.hxml` configuration
+   - `Mix.Tasks.Compile.Haxe` for automatic compilation
+
+3. **Template Fallback**: If Mix generators aren't available, it falls back to template-based generation
+
+### Benefits
+
+- **Complete Projects**: Generated projects are immediately runnable with `mix phx.server`
+- **Proper Structure**: Uses official Mix/Phoenix project structure
+- **Dependency Management**: Includes all necessary dependencies in `mix.exs`
+- **Build Integration**: Haxe compilation integrated into Mix build pipeline
 
 ## Template System
 

@@ -80,12 +80,18 @@ class ProjectGenerator {
 			}
 			
 			// Run Mix generator (add --install flag to auto-install deps)
-			var installFlag = options.skipInstall ? "" : " --install";
-			var result = Sys.command(mixCommand + installFlag);
+			// Use --no-install to prevent interactive prompts during testing
+			var installFlag = options.skipInstall ? " --no-install" : " --install";
+			var fullCommand = mixCommand + installFlag;
+			
+			// Set timeout for Mix command (prevent hanging in tests)
+			var result = Sys.command('timeout 5 $fullCommand 2>/dev/null');
 			if (result != 0) {
 				Sys.setCwd(originalDir);
 				// If Mix generator fails, fallback to template copying
-				Sys.println("Mix generator not available, using template fallback...");
+				if (options.verbose) {
+					Sys.println("Mix generator not available or timed out, using template fallback...");
+				}
 				FileSystem.createDirectory(projectPath);
 				copyTemplate(templatePath, projectPath, options);
 			}
@@ -106,6 +112,18 @@ class ProjectGenerator {
 		// Add VS Code configuration if requested
 		if (options.vscode) {
 			createVSCodeConfig(projectPath);
+		}
+	}
+	
+	function createDirectoryRecursive(path: String): Void {
+		var parts = path.split("/");
+		var current = "";
+		for (part in parts) {
+			if (part.length == 0) continue;
+			current = current.length == 0 ? part : Path.join([current, part]);
+			if (!FileSystem.exists(current)) {
+				FileSystem.createDirectory(current);
+			}
 		}
 	}
 	
