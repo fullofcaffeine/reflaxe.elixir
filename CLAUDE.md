@@ -172,6 +172,12 @@ This is acceptable - helpers are simpler for our needs while following similar s
 - ✅ **IDE intellisense support** - Functions provide autocomplete and navigation
 - ✅ **Automatic Phoenix code generation** - Generates proper router.ex with scopes and pipelines
 
+**⚠️ RULE: Minimize String Dependencies in Router DSL**
+- **Problem**: Current @:routes uses raw strings for controllers/actions - no compile-time validation
+- **Goal**: Leverage Haxe's type system for controller references, method enums, action validation
+- **Priority**: HIGH - Type safety is core to Haxe's value proposition
+- **Implementation**: RouterBuildMacro should support class references, not just string literals
+
 **See**: [`documentation/ROUTER_DSL.md`](documentation/ROUTER_DSL.md) - Complete syntax guide and migration from manual functions
 
 ## Phoenix LiveView Asset Pipeline Rules ⚡

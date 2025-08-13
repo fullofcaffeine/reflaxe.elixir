@@ -26,6 +26,8 @@
 TodoApp
 TodoAppRouter
 TodoAppRouterNew
+TodoAppRouterTypeSafe
 live.TodoLive
 schemas.Todo
 migrations.CreateTodos
+controllers.UserController
