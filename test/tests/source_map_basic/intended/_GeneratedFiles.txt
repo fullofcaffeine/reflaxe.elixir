@@ -10,6 +10,7 @@ haxe_io_FPHelper.ex
 haxe_io_Error.ex
 haxe_io_Eof.ex
 haxe_io_Encoding.ex
+haxe_io_BytesData.ex
 haxe_io_BytesBuffer.ex
 haxe_io_Bytes.ex
 haxe_exceptions_PosException.ex
@@ -19,6 +20,7 @@ haxe_ds_Map.ex
 haxe_ds_EnumValueMap.ex
 haxe_ds_BalancedTree.ex
 haxe_SysTools.ex
+haxe_PosInfos.ex
 haxe_Log.ex
 haxe_Int64Helper.ex
 haxe_Int64.ex
@@ -28,7 +30,9 @@ haxe_CallStack.ex
 Type.ex
 StringTools.ex
 StringBuf.ex
+StdTypes.ex
 SourceMapTest.ex
+Map.ex
 IntIterator.ex
 EnumValue.ex
 EReg.ex

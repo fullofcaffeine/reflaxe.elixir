@@ -12,3 +12,13 @@ defmodule ___Int64 do
   """
 
 end
+
+
+@typedoc """
+
+	This typedef will fool `@:coreApi` into thinking that we are using
+	the same underlying type, even though it might be different on
+	specific platforms.
+
+"""
+@type ___int_6_4 :: ___Int64.t()

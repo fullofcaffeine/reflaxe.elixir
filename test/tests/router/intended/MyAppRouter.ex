@@ -143,3 +143,6 @@ defmodule MyAppWeb do
   """
 
 end
+
+
+@type route :: any()
