@@ -24,6 +24,7 @@ class TestRunner {
 	static var ShowAllOutput = false;
 	static var NoDetails = false;
 	static var SpecificTests: Array<String> = [];
+	static var FlexiblePositions = false;
 	
 	public static function main() {
 		// Parse command line arguments
@@ -38,6 +39,7 @@ class TestRunner {
 		UpdateIntended = args.contains("update-intended");
 		ShowAllOutput = args.contains("show-output");
 		NoDetails = args.contains("no-details");
+		FlexiblePositions = args.contains("flexible-positions");
 		
 		// Parse specific tests
 		for (arg in args) {
@@ -63,11 +65,12 @@ class TestRunner {
 Usage: haxe Test.hxml [options]
 
 Options:
-  help              Show this help message
-  test=NAME         Run only the specified test (can be used multiple times)
-  update-intended   Update the intended output files with current output
-  show-output       Show compilation output even when successful
-  no-details        Don't show detailed differences when output doesn't match
+  help                Show this help message
+  test=NAME           Run only the specified test (can be used multiple times)
+  update-intended     Update the intended output files with current output
+  show-output         Show compilation output even when successful
+  no-details          Don't show detailed differences when output doesn't match
+  flexible-positions  Strip position info from stderr comparison (less brittle tests)
 
 Examples:
   haxe Test.hxml                           # Run all tests
@@ -194,6 +197,11 @@ Examples:
 		
 		if (ShowAllOutput && stdout.length > 0) {
 			Sys.println('  Output: $stdout');
+		}
+		
+		// Check stderr validation (for compile-time warning/error tests)
+		if (!validateStderr(testPath, stderr)) {
+			return false;
 		}
 		
 		// If updating intended, copy out to intended
@@ -353,5 +361,112 @@ Examples:
 		if (maxLines > 10) {
 			Sys.println('      ... and ${maxLines - 10} more lines');
 		}
+	}
+	
+	/**
+	 * Validate stderr output against expected_stderr.txt file
+	 * Returns true if validation passes, false otherwise
+	 */
+	static function validateStderr(testPath: String, actualStderr: String): Bool {
+		// Choose expected stderr file based on flexible positions flag
+		var expectedStderrPath = haxe.io.Path.join([testPath, "expected_stderr.txt"]);
+		if (FlexiblePositions) {
+			final flexiblePath = haxe.io.Path.join([testPath, "expected_stderr_flexible.txt"]);
+			if (sys.FileSystem.exists(flexiblePath)) {
+				expectedStderrPath = flexiblePath;
+			}
+		}
+		
+		// If no expected_stderr.txt file exists, skip validation
+		if (!sys.FileSystem.exists(expectedStderrPath)) {
+			return true;
+		}
+		
+		final expectedStderr = normalizeStderr(sys.io.File.getContent(expectedStderrPath));
+		final normalizedActualStderr = normalizeStderr(actualStderr);
+		
+		if (expectedStderr != normalizedActualStderr) {
+			Sys.println('  ❌ Stderr output does not match expected:');
+			if (!NoDetails) {
+				Sys.println('    Expected stderr:');
+				if (expectedStderr.length == 0) {
+					Sys.println('      (no warnings/errors expected)');
+				} else {
+					for (line in expectedStderr.split('\n')) {
+						if (StringTools.trim(line).length > 0) {
+							Sys.println('      $line');
+						}
+					}
+				}
+				Sys.println('    Actual stderr:');
+				if (normalizedActualStderr.length == 0) {
+					Sys.println('      (no warnings/errors)');
+				} else {
+					for (line in normalizedActualStderr.split('\n')) {
+						if (StringTools.trim(line).length > 0) {
+							Sys.println('      $line');
+						}
+					}
+				}
+			}
+			return false;
+		}
+		
+		if (ShowAllOutput) {
+			if (expectedStderr.length > 0) {
+				Sys.println('  ✅ Stderr validation passed (expected warnings found)');
+			} else {
+				Sys.println('  ✅ Stderr validation passed (no warnings as expected)');
+			}
+		}
+		
+		return true;
+	}
+	
+	/**
+	 * Normalize stderr content for comparison
+	 * Removes empty lines, comments, and trims whitespace
+	 * With flexible positions, also strips file position information
+	 */
+	static function normalizeStderr(content: String): String {
+		final lines = content.split('\n');
+		final normalizedLines = [];
+		
+		for (line in lines) {
+			final trimmed = StringTools.trim(line);
+			// Skip empty lines and comment lines (starting with #)
+			if (trimmed.length > 0 && !StringTools.startsWith(trimmed, '#')) {
+				var processedLine = trimmed;
+				
+				// If flexible positions is enabled, strip position information
+				if (FlexiblePositions) {
+					processedLine = stripPositionInfo(processedLine);
+				}
+				
+				normalizedLines.push(processedLine);
+			}
+		}
+		
+		return normalizedLines.join('\n');
+	}
+	
+	/**
+	 * Strip position information from compiler output line
+	 * Converts: "Main.hx:39: lines 39-41 : Warning : Message"
+	 * To: "Warning : Message"
+	 */
+	static function stripPositionInfo(line: String): String {
+		// Pattern to match: filename:line: lines start-end : Level : Message
+		// We want to extract just "Level : Message"
+		final warningPattern = ~/^.*?:\s*lines?\s*\d+(-\d+)?\s*:\s*(Warning|Error|Info)\s*:\s*(.*)$/;
+		
+		if (warningPattern.match(line)) {
+			final level = warningPattern.matched(2);
+			final message = warningPattern.matched(3);
+			return '$level : $message';
+		}
+		
+		// If pattern doesn't match, return the line as-is
+		return line;
 	}
 }

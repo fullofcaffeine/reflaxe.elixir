@@ -241,12 +241,12 @@ class RouterBuildMacro {
             
             // Validate controller exists (if specified)
             if (route.controller != null && route.controller != "") {
-                validateControllerExists(route.controller, pos);
+                validateControllerExists(route.controller, route.name, route.path, pos);
             }
             
             // Validate action method exists on controller (if both specified)
             if (route.controller != null && route.action != null && route.controller != "" && route.action != "") {
-                validateActionExists(route.controller, route.action, pos);
+                validateActionExists(route.controller, route.action, route.name, pos);
             }
         }
     }
@@ -334,21 +334,21 @@ class RouterBuildMacro {
     /**
      * Validate that a controller class exists
      */
-    private static function validateControllerExists(controllerName: String, pos: Position): Void {
+    private static function validateControllerExists(controllerName: String, routeName: String, routePath: String, pos: Position): Void {
         try {
             // Try to resolve the controller as a type
             var controllerType = Context.getType(controllerName);
             trace('RouterBuildMacro: Controller ${controllerName} exists and is valid');
         } catch (e: Dynamic) {
             // Controller doesn't exist or can't be resolved
-            Context.warning('Controller "${controllerName}" not found. Ensure the class exists and is in the classpath.', pos);
+            Context.warning('Controller "${controllerName}" not found in route "${routeName}" (path: "${routePath}"). Ensure the class exists and is in the classpath.', pos);
         }
     }
     
     /**
      * Validate that an action method exists on the controller
      */
-    private static function validateActionExists(controllerName: String, actionName: String, pos: Position): Void {
+    private static function validateActionExists(controllerName: String, actionName: String, routeName: String, pos: Position): Void {
         try {
             // Get the controller type
             var controllerType = Context.getType(controllerName);
@@ -379,7 +379,7 @@ class RouterBuildMacro {
                     if (methodExists) {
                         trace('RouterBuildMacro: Action ${controllerName}.${actionName} exists and is valid');
                     } else {
-                        Context.warning('Action "${actionName}" not found on controller "${controllerName}".', pos);
+                        Context.warning('Action "${actionName}" not found on controller "${controllerName}" in route "${routeName}". Check that the method exists and is public static.', pos);
                     }
                     
                 case _:

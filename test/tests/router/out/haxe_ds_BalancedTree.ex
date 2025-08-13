@@ -1,4 +1,5 @@
 defmodule BalancedTree do
+  use Bitwise
   @behaviour IMap
 
   @moduledoc """
@@ -20,6 +21,7 @@ end
 
 
 defmodule TreeNode do
+  use Bitwise
   @moduledoc """
   TreeNode module generated from Haxe
   

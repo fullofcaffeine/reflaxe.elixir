@@ -513,6 +513,385 @@ npm run test:haxe
 npm run test:mix
 ```
 
+### 7. Creating Compile-Time Validation Tests (New) ⚠️
+
+**When**: You're testing build macros, DSL validation, or compile-time warnings/errors
+
+**Purpose**: Validate that macro-time validation logic produces appropriate warnings and errors during compilation, not just successful code generation.
+
+#### Quick Decision Guide
+| Testing Scenario | Test Type | Use Flexible Positions? |
+|-------------------|-----------|------------------------|
+| New macro warning messages | Compile-time validation | ✅ Yes |
+| DSL constraint checking | Compile-time validation | ✅ Yes |
+| Exact line number validation | Compile-time validation | ❌ No |
+| Code generation only | Snapshot test | N/A |
+
+#### Step-by-Step Workflow
+
+**1. Create Test Structure**
+```bash
+# Create test directory (use descriptive name indicating what's being validated)
+mkdir test/tests/MyMacro_InvalidInput
+
+# Navigate to test directory
+cd test/tests/MyMacro_InvalidInput
+```
+
+**2. Create Haxe Source with Invalid Usage**
+```haxe
+// Main.hx - Include invalid usage that should trigger warnings
+@:myMacro([
+    {name: "valid", value: "test"},
+    {name: "", value: "invalid_empty_name"},  // Should trigger warning
+    {name: "missing", /* no value */}         // Should trigger warning  
+])
+class TestInvalidInput {
+    public function new() {}
+}
+```
+
+**3. Create Compilation Config**
+```hxml
+// compile.hxml
+-cp ../../../std
+-cp ../../../src  
+-cp .
+-lib reflaxe
+--macro reflaxe.elixir.CompilerInit.Start()
+-D elixir_output=out
+Main
+```
+
+**4. Run Test to See Actual Warning Format**
+```bash
+# Run test from project root to see actual stderr output
+haxe test/Test.hxml test=MyMacro_InvalidInput show-output
+```
+
+**5. Create Expected Stderr Files**
+
+**Option A: Standard Mode (Exact Position Matching)**
+```bash
+# expected_stderr.txt - Include exact line positions
+Main.hx:15: lines 15-17 : Warning : Empty name field not allowed in MyMacro definition
+Main.hx:16: lines 16-18 : Warning : Missing value field in MyMacro entry "missing"
+```
+
+**Option B: Flexible Mode (Position-Independent)**
+```bash
+# expected_stderr_flexible.txt - Only warning content
+Warning : Empty name field not allowed in MyMacro definition
+Warning : Missing value field in MyMacro entry "missing"
+```
+
+**6. Generate Intended Output**
+```bash
+# Generate expected Elixir output (even for validation tests)
+haxe test/Test.hxml test=MyMacro_InvalidInput update-intended
+```
+
+**7. Verify Both Modes Work**
+```bash
+# Test standard mode (exact positions)
+haxe test/Test.hxml test=MyMacro_InvalidInput
+
+# Test flexible mode (position-independent) 
+haxe test/Test.hxml test=MyMacro_InvalidInput flexible-positions
+```
+
+#### Test Naming Conventions
+
+Use this pattern: `MacroName_ValidationScenario`
+
+✅ **Good Examples**:
+- `RouterBuildMacro_InvalidController`
+- `RouterBuildMacro_ValidController` 
+- `RouterBuildMacro_MultipleInvalid`
+- `SchemaValidator_MissingFields`
+- `LiveViewMacro_InvalidEvents`
+
+❌ **Avoid**:
+- `test1`, `macro_test` (not descriptive)
+- `RouterTest` (too generic)
+- `invalid_test` (doesn't indicate what macro/feature)
+
+#### When to Use Flexible Positions
+
+✅ **Use `flexible-positions` for**:
+- Warning message content validation
+- CI/CD environments 
+- Refactoring-resistant tests
+- Focus on macro logic, not exact positions
+
+❌ **Use standard mode for**:
+- Debugging specific line number issues
+- Position-critical validations
+- Ensuring warnings appear at exact locations
+
+#### Complete Example Test Cases
+
+**Valid Case Test** (`MyMacro_ValidInput`):
+```haxe
+// Should produce no warnings
+@:myMacro([{name: "valid", value: "test"}])
+class ValidTest {}
+```
+```bash
+# expected_stderr.txt - Empty file or comments only
+# No warnings expected for valid macro usage
+```
+
+**Invalid Case Test** (`MyMacro_InvalidInput`):
+```haxe
+// Should produce specific warnings
+@:myMacro([{name: "", value: "test"}])  // Empty name warning
+class InvalidTest {}
+```
+```bash
+# expected_stderr_flexible.txt
+Warning : Empty name field not allowed in MyMacro definition
+```
+
+#### Integration with TestRunner
+
+The TestRunner automatically:
+- ✅ Validates both generated code AND stderr output
+- ✅ Chooses appropriate expected file based on `flexible-positions` flag
+- ✅ Provides detailed diff output when validation fails
+- ✅ Normalizes stderr content (removes comments, trims whitespace)
+- ✅ Strips position information when using flexible mode
+
+### 8. Complete LLM Testing Workflows ⚡
+
+**For future LLM agents**: These are complete, end-to-end examples of different testing scenarios you'll encounter.
+
+#### Scenario 1: Testing a New Build Macro with Validation
+
+**Context**: You've created a new `@:mySchema` build macro that validates field types and generates Elixir structs.
+
+**Complete Workflow**:
+```bash
+# 1. Create the test structure
+mkdir test/tests/MySchema_ValidStruct
+mkdir test/tests/MySchema_InvalidFields  
+mkdir test/tests/MySchema_MultipleErrors
+
+# 2. Create valid case test (MySchema_ValidStruct)
+cat > test/tests/MySchema_ValidStruct/Main.hx << 'EOF'
+@:mySchema({
+    name: "User",
+    fields: [
+        {name: "id", type: "Int"},
+        {name: "email", type: "String"}
+    ]
+})
+class ValidUserSchema {}
+EOF
+
+# 3. Create invalid case test (MySchema_InvalidFields)
+cat > test/tests/MySchema_InvalidFields/Main.hx << 'EOF'
+@:mySchema({
+    name: "User", 
+    fields: [
+        {name: "", type: "Int"},        // Invalid: empty name
+        {name: "email", type: "Unknown"} // Invalid: unknown type
+    ]
+})
+class InvalidUserSchema {}
+EOF
+
+# 4. Create compilation configs (same for all)
+for test in MySchema_ValidStruct MySchema_InvalidFields MySchema_MultipleErrors; do
+    cat > test/tests/$test/compile.hxml << 'EOF'
+-cp ../../../std
+-cp ../../../src
+-cp .
+-lib reflaxe
+--macro reflaxe.elixir.CompilerInit.Start()
+-D elixir_output=out
+Main
+EOF
+done
+
+# 5. Run tests to see actual warning format
+haxe test/Test.hxml test=MySchema_InvalidFields show-output
+
+# 6. Create expected stderr files based on actual output
+cat > test/tests/MySchema_ValidStruct/expected_stderr.txt << 'EOF'
+# No warnings expected for valid schema
+EOF
+
+cat > test/tests/MySchema_InvalidFields/expected_stderr_flexible.txt << 'EOF'
+Warning : Empty field name not allowed in MySchema definition
+Warning : Unknown field type "Unknown" in MySchema. Valid types: Int, String, Bool, Float
+EOF
+
+# 7. Generate intended output
+haxe test/Test.hxml test=MySchema_ValidStruct update-intended
+haxe test/Test.hxml test=MySchema_InvalidFields update-intended
+
+# 8. Verify all tests pass
+haxe test/Test.hxml test=MySchema_ValidStruct
+haxe test/Test.hxml test=MySchema_InvalidFields flexible-positions
+
+# 9. Run full suite to ensure no regressions
+npm test
+```
+
+#### Scenario 2: Testing a New Compiler Feature
+
+**Context**: You've added support for Elixir `with` statements via `@:with` annotation.
+
+**Complete Workflow**:
+```bash
+# 1. Create snapshot test
+mkdir test/tests/with_statement_basic
+
+# 2. Create test source demonstrating the feature
+cat > test/tests/with_statement_basic/Main.hx << 'EOF'
+@:with
+class WithStatementExample {
+    public function processUser(): String {
+        return @:elixir('
+            with {:ok, user} <- User.fetch(),
+                 {:ok, profile} <- Profile.fetch(user.id),
+                 {:ok, settings} <- Settings.fetch(profile.id) do
+                "#{user.name} - #{profile.bio}"
+            else
+                {:error, reason} -> "Error: #{reason}"
+                _ -> "Unknown error"
+            end
+        ');
+    }
+}
+EOF
+
+# 3. Create compilation config
+cat > test/tests/with_statement_basic/compile.hxml << 'EOF'
+-cp ../../../std
+-cp ../../../src
+-cp .
+-lib reflaxe
+--macro reflaxe.elixir.CompilerInit.Start()
+-D elixir_output=out
+Main
+EOF
+
+# 4. Generate intended output
+haxe test/Test.hxml test=with_statement_basic update-intended
+
+# 5. Verify generated Elixir looks correct
+cat test/tests/with_statement_basic/intended/Main.ex
+
+# 6. Test the feature
+haxe test/Test.hxml test=with_statement_basic
+
+# 7. Create additional edge case tests
+mkdir test/tests/with_statement_nested
+mkdir test/tests/with_statement_errors
+# ... repeat process for edge cases
+```
+
+#### Scenario 3: Testing Framework Integration
+
+**Context**: You've enhanced Phoenix LiveView support and need to test real-world integration.
+
+**Complete Workflow**:
+```bash
+# 1. Create example project (if doesn't exist)
+mkdir examples/09-enhanced-liveview
+cd examples/09-enhanced-liveview
+
+# 2. Initialize Phoenix project structure
+mix phx.new . --no-ecto --no-gettext --binary-id
+
+# 3. Create Haxe LiveView source
+mkdir src_haxe
+cat > src_haxe/EnhancedLive.hx << 'EOF'
+@:liveView("enhanced")
+class EnhancedLive {
+    @:mount
+    public function mount(params: Dynamic, session: Dynamic, socket: Socket): Socket {
+        return Socket.assign(socket, "count", 0);
+    }
+    
+    @:handle_event("increment")
+    public function handleIncrement(event: Dynamic, socket: Socket): Socket {
+        return Socket.assign(socket, "count", socket.assigns.count + 1);
+    }
+}
+EOF
+
+# 4. Create build configuration
+cat > build.hxml << 'EOF'
+-cp src_haxe
+-cp ../../std
+-cp ../../src
+-lib reflaxe
+--macro reflaxe.elixir.CompilerInit.Start()
+-D elixir_output=lib
+EnhancedLive
+EOF
+
+# 5. Test compilation
+npx haxe build.hxml
+
+# 6. Verify generated Phoenix code
+cat lib/enhanced_live.ex
+
+# 7. Create Phoenix integration test
+cat > test/enhanced_live_test.exs << 'EOF'
+defmodule EnhancedLiveTest do
+  use ExUnit.Case
+  import Phoenix.LiveViewTest
+  
+  test "enhanced live view compiles and mounts" do
+    assert {:ok, view, html} = live(build_conn(), "/enhanced")
+    assert html =~ "count"
+  end
+end
+EOF
+
+# 8. Test Phoenix integration
+mix test
+
+# 9. Add to CI if successful
+cd ../..
+echo "Enhanced LiveView integration verified" >> documentation/EXAMPLES.md
+```
+
+#### Common Patterns for All Scenarios
+
+**Before Starting Any Test**:
+```bash
+# Always check current status first
+npm test                    # Verify no existing failures
+git status                  # Ensure clean working tree
+```
+
+**After Creating Tests**:
+```bash
+# Verify your test works in isolation
+haxe test/Test.hxml test=YourTestName
+
+# Test flexible position matching if applicable
+haxe test/Test.hxml test=YourTestName flexible-positions
+
+# Run full suite to check for regressions  
+npm test
+
+# If tests pass, document what you've added
+echo "Added YourFeature testing" >> documentation/TASK_HISTORY.md
+```
+
+**Testing Philosophy**:
+- ✅ **Test the behavior, not the implementation**
+- ✅ **Create both valid and invalid cases**
+- ✅ **Use realistic examples users would actually write**
+- ✅ **Verify generated code compiles and runs**
+- ✅ **Document what each test validates**
+
 ## Best Practices
 
 ### 1. Test Organization

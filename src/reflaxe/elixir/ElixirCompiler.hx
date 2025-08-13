@@ -111,11 +111,194 @@ class ElixirCompiler extends BaseCompiler {
     }
     
     /**
+     * Generate annotation-aware output path for framework convention adherence.
+     * 
+     * Uses framework-specific paths for annotated classes:
+     * - @:router → /lib/app_web/router.ex
+     * - @:liveview → /lib/app_web/live/class_name.ex  
+     * - @:controller → /lib/app_web/controllers/class_name.ex
+     * - @:schema → /lib/app/schemas/class_name.ex
+     * - No annotation → /lib/ClassName.ex (default 1:1 mapping)
+     */
+    private function generateAnnotationAwareOutputPath(classType: ClassType, outputDir: String): String {
+        var className = classType.name;
+        
+        // Detect framework annotations using existing AnnotationSystem
+        var annotationInfo = reflaxe.elixir.helpers.AnnotationSystem.detectAnnotations(classType);
+        
+        if (annotationInfo.primaryAnnotation == null) {
+            // No framework annotation - use default 1:1 mapping
+            return haxe.io.Path.join([outputDir, className + fileExtension]);
+        }
+        
+        // Generate framework-specific paths based on annotation
+        return switch (annotationInfo.primaryAnnotation) {
+            case ":router":
+                generatePhoenixRouterPath(className, outputDir);
+            case ":liveview":
+                generatePhoenixLiveViewPath(className, outputDir);
+            case ":controller":
+                generatePhoenixControllerPath(className, outputDir);
+            case ":schema":
+                generatePhoenixSchemaPath(className, outputDir);
+            case _:
+                // Unknown annotation - use default 1:1 mapping
+                haxe.io.Path.join([outputDir, className + fileExtension]);
+        }
+    }
+    
+    /**
+     * Generate Phoenix router path: TodoAppRouter → /lib/todo_app_web/router.ex
+     */
+    private function generatePhoenixRouterPath(className: String, outputDir: String): String {
+        var appName = extractAppName(className);
+        var phoenixPath = '${appName}_web/router${fileExtension}';
+        return haxe.io.Path.join([outputDir, phoenixPath]);
+    }
+    
+    /**
+     * Generate Phoenix LiveView path: UserLive → /lib/app_web/live/user_live.ex
+     */
+    private function generatePhoenixLiveViewPath(className: String, outputDir: String): String {
+        var appName = extractAppName(className);
+        var liveViewName = toSnakeCase(className.replace("Live", ""));
+        var phoenixPath = '${appName}_web/live/${liveViewName}_live${fileExtension}';
+        return haxe.io.Path.join([outputDir, phoenixPath]);
+    }
+    
+    /**
+     * Generate Phoenix controller path: UserController → /lib/app_web/controllers/user_controller.ex
+     */
+    private function generatePhoenixControllerPath(className: String, outputDir: String): String {
+        var appName = extractAppName(className);
+        var controllerName = toSnakeCase(className);
+        var phoenixPath = '${appName}_web/controllers/${controllerName}${fileExtension}';
+        return haxe.io.Path.join([outputDir, phoenixPath]);
+    }
+    
+    /**
+     * Generate Phoenix schema path: User → /lib/app/schemas/user.ex
+     */
+    private function generatePhoenixSchemaPath(className: String, outputDir: String): String {
+        var appName = extractAppName(className);
+        var schemaName = toSnakeCase(className);
+        var phoenixPath = '${appName}/schemas/${schemaName}${fileExtension}';
+        return haxe.io.Path.join([outputDir, phoenixPath]);
+    }
+    
+    /**
+     * Extract app name from class name for Phoenix convention transformation.
+     * Examples: TodoAppRouter → todo_app, MyAppLive → my_app
+     */
+    private function extractAppName(className: String): String {
+        // Remove common Phoenix suffixes and convert to snake_case
+        var appPart = className.replace("Router", "")
+                               .replace("Live", "")
+                               .replace("Controller", "");
+        
+        // Handle special case where class name is just the suffix (e.g., "Router")
+        if (appPart == "") {
+            appPart = "app"; // Default fallback
+        }
+        
+        return toSnakeCase(appPart);
+    }
+    
+    /**
+     * Convert PascalCase to snake_case for Elixir file naming conventions.
+     * Examples: TodoApp → todo_app, UserController → user_controller
+     */
+    private function toSnakeCase(name: String): String {
+        if (name == null || name == "") return "";
+        
+        var result = "";
+        for (i in 0...name.length) {
+            var char = name.charAt(i);
+            if (char >= "A" && char <= "Z" && i > 0) {
+                result += "_";
+            }
+            result += char.toLowerCase();
+        }
+        
+        return result;
+    }
+    
+    /**
+     * DEPRECATED: Framework-aware file relocation is now handled using Reflaxe's built-in system
+     * 
+     * Files are now placed in correct Phoenix locations during compilation using:
+     * - setOutputFileName() for custom file names 
+     * - setOutputFileDir() for custom directory paths
+     * 
+     * This approach is better because:
+     * 1. No post-compilation file moves needed
+     * 2. Integrates properly with Reflaxe's OutputManager
+     * 3. Respects Reflaxe's file tracking and cleanup
+     * 4. Works with all Reflaxe features (source maps, etc.)
+     * 
+     * See setFrameworkAwareOutputPath() for the new implementation.
+     */
+    
+    /**
      * Convert Haxe names to Elixir naming conventions
      * Delegates to NamingHelper for consistency
      */
     public function toElixirName(haxeName: String): String {
         return NamingHelper.toSnakeCase(haxeName);
+    }
+    
+    /**
+     * Set framework-aware output path using Reflaxe's built-in file placement system.
+     * 
+     * This method detects framework annotations and uses setOutputFileDir() and setOutputFileName()
+     * to place files in Phoenix-expected locations BEFORE compilation occurs.
+     */
+    private function setFrameworkAwareOutputPath(classType: ClassType): Void {
+        var className = classType.name;
+        var annotationInfo = reflaxe.elixir.helpers.AnnotationSystem.detectAnnotations(classType);
+        
+        if (annotationInfo.primaryAnnotation == null) {
+            // No framework annotation - use default 1:1 mapping
+            return;
+        }
+        
+        // Calculate framework-aware file path components
+        var appName = extractAppName(className);
+        var fileName: String = "";
+        var dirPath: String = "";
+        
+        switch (annotationInfo.primaryAnnotation) {
+            case ":router":
+                // TodoAppRouter → router.ex in todo_app_web/
+                fileName = "router";
+                dirPath = appName + "_web";
+                
+            case ":liveview":
+                // UserLive → user_live.ex in app_web/live/
+                var liveViewName = toSnakeCase(className.replace("Live", ""));
+                fileName = liveViewName + "_live";
+                dirPath = appName + "_web/live";
+                
+            case ":controller":
+                // UserController → user_controller.ex in app_web/controllers/
+                var controllerName = toSnakeCase(className);
+                fileName = controllerName;
+                dirPath = appName + "_web/controllers";
+                
+            case ":schema":
+                // User → user.ex in app/schemas/
+                var schemaName = toSnakeCase(className);
+                fileName = schemaName;
+                dirPath = appName + "/schemas";
+                
+            default:
+                // Other annotations use default behavior
+                return;
+        }
+        
+        // Set the file output overrides using Reflaxe's built-in system
+        setOutputFileName(fileName);
+        setOutputFileDir(dirPath);
     }
     
     /**
@@ -128,11 +311,16 @@ class ElixirCompiler extends BaseCompiler {
     public function compileClassImpl(classType: ClassType, varFields: Array<ClassVarData>, funcFields: Array<ClassFuncData>): Null<String> {
         if (classType == null) return null;
         
+        // Set framework-aware file path BEFORE compilation using Reflaxe's built-in system
+        setFrameworkAwareOutputPath(classType);
+        
         // Initialize source mapping for this class
         if (sourceMapOutputEnabled) {
             var className = classType.name;
             var actualOutputDir = this.output.outputDir != null ? this.output.outputDir : outputDirectory;
-            var outputPath = haxe.io.Path.join([actualOutputDir, className + fileExtension]);
+            
+            // Annotation-aware file path generation for framework convention adherence
+            var outputPath = generateAnnotationAwareOutputPath(classType, actualOutputDir);
             initSourceMapWriter(outputPath);
         }
         

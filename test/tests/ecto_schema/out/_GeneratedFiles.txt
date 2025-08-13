@@ -1,10 +1,9 @@
+user/schemas/user.ex
 haxe_iterators_ArrayKeyValueIterator.ex
 haxe_iterators_ArrayIterator.ex
 haxe_CallStack.ex
-User.ex
 Type.ex
 StringBuf.ex
-StdTypes.ex
 IntIterator.ex
 EnumValue.ex
 Any.ex

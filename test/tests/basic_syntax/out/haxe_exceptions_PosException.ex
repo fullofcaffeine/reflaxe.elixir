@@ -1,4 +1,5 @@
 defmodule PosException do
+  use Bitwise
   @moduledoc """
   PosException module generated from Haxe
   
@@ -13,7 +14,7 @@ defmodule PosException do
 	"
   @spec to_string() :: String.t()
   def to_string() do
-    "" + super().toString() + " in " + self().pos_infos.class_name + "." + self().pos_infos.method_name + " at " + self().pos_infos.file_name + ":" + self().pos_infos.line_number
+    "" <> super().toString() <> " in " <> self().pos_infos.class_name <> "." <> self().pos_infos.method_name <> " at " <> self().pos_infos.file_name <> ":" <> self().pos_infos.line_number
   end
 
 end

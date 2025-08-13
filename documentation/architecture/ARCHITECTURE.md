@@ -520,6 +520,7 @@ helpers/
 ├── EnumCompiler.hx        # Enum to tagged tuple compilation
 ├── PatternMatcher.hx      # Pattern matching compilation
 ├── GuardCompiler.hx       # Guard clause compilation
+├── RouterCompiler.hx      # Phoenix.Router generation with @:router/@:route DSL
 ├── SchemaCompiler.hx      # Ecto.Schema generation
 ├── ChangesetCompiler.hx   # Ecto.Changeset generation
 ├── LiveViewCompiler.hx    # Phoenix.LiveView generation
@@ -554,6 +555,108 @@ defmodule CounterLive do
   end
 end
 ```
+
+## Framework Convention Adherence and File Location Logic
+
+### Critical Design Principle
+
+**Generated code MUST follow target framework conventions exactly, not just be syntactically correct Elixir.**
+
+This principle was discovered during RouterCompiler debugging when `Phoenix.plug_init_mode/0` errors were caused by incorrect file placement, not language compatibility issues.
+
+### File Location Mapping System
+
+#### Phoenix Framework Requirements
+Phoenix 1.7 expects specific file locations and module structures:
+
+```
+Phoenix Expectation          | Haxe Source              | Generated Output
+---------------------------- | ------------------------ | --------------------------
+/lib/app_web/router.ex      | Router.hx (various)     | /lib/app_web/router.ex
+/lib/app_web/live/*.ex      | live/*.hx                | /lib/app_web/live/*.ex
+/lib/app_web/controllers/*.ex| controllers/*.hx         | /lib/app_web/controllers/*.ex
+/lib/app/schemas/*.ex       | schemas/*.hx             | /lib/app/schemas/*.ex
+/priv/repo/migrations/*.exs | migrations/*.hx          | /priv/repo/migrations/*.exs
+```
+
+#### RouterCompiler File Location Logic
+
+**Current Issue**: RouterCompiler generates files based on Haxe class names without considering Phoenix conventions:
+
+```haxe
+// Problem: Direct class name mapping
+var outputFile = '${className}.ex';  // → TodoAppRouter.ex
+
+// Solution: Framework-aware mapping  
+var webModuleName = className.replace("Router", "Web.Router");
+var outputPath = generatePhoenixPath(webModuleName);  // → /lib/todo_app_web/router.ex
+```
+
+**Required Fix**: RouterCompiler needs framework-aware file location logic:
+
+```haxe
+private static function generatePhoenixOutputPath(className: String, classType: ClassType): String {
+    if (RouterCompiler.isRouterClassType(classType)) {
+        // Phoenix expects: /lib/app_web/router.ex
+        var appName = extractAppName(className);  // TodoAppRouter → todo_app
+        return '/lib/${appName}_web/router.ex';
+    }
+    
+    // Other Phoenix conventions...
+    return defaultElixirPath(className);
+}
+```
+
+### Framework Integration Debugging Pattern
+
+**Symptom**: Framework compilation errors (`Phoenix.plug_init_mode/0`, module loading issues)  
+**Root Cause**: Usually file location/structure problems, not language compatibility  
+**Debug Process**:
+1. **Check file locations first** - are files where framework expects them?
+2. **Verify module names** - do they match framework conventions?
+3. **Check directory structure** - follows framework layout?
+4. **Only then check** language syntax/compatibility
+
+### Convention Mapping Rules
+
+#### Directory Structure Transformations
+```haxe
+// Input: Haxe package structure
+package controllers;
+class UserController { }
+
+// Output: Phoenix convention
+// File: /lib/app_web/controllers/user_controller.ex
+// Module: AppWeb.UserController
+```
+
+#### Naming Convention Transformations
+```haxe
+// Class Name → File Name
+TodoAppRouter    → todo_app_web/router.ex
+UserController   → user_controller.ex  
+TodoSchema       → todo.ex
+CreateTodos      → [timestamp]_create_todos.exs
+```
+
+#### Module Name Transformations
+```haxe
+// Haxe Class → Elixir Module
+TodoAppRouter    → TodoAppWeb.Router
+UserController   → AppWeb.UserController
+TodoSchema       → App.Schemas.Todo
+```
+
+### Implementation Requirements
+
+All helper compilers MUST implement framework-aware file location logic:
+
+1. **Detect target framework** (Phoenix, plain OTP, etc.)
+2. **Apply framework conventions** for file placement
+3. **Transform naming** according to framework standards  
+4. **Generate directory structure** that framework expects
+
+This ensures generated code integrates seamlessly with target framework expectations.
 
 ## Testing Architecture
 

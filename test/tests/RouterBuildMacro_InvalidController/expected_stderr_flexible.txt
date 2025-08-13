@@ -1,0 +1,1 @@
+Warning : Controller "NonExistentController" not found in route "invalidRoute" (path: "/invalid"). Ensure the class exists and is in the classpath.

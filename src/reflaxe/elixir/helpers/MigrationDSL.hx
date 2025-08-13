@@ -81,9 +81,22 @@ class MigrationDSL {
         if (meta.params != null && meta.params.length > 0) {
             switch (meta.params[0].expr) {
                 case EConst(CString(s, _)):
+                    // Simple string: @:migration("todos")
                     tableName = s;
+                case EObjectDecl(fields):
+                    // Object literal: @:migration({table: "todos"})
+                    for (field in fields) {
+                        if (field.field == "table") {
+                            switch (field.expr.expr) {
+                                case EConst(CString(s, _)):
+                                    tableName = s;
+                                case _:
+                                    // Invalid table value
+                            }
+                        }
+                    }
                 case _:
-                    // Try to extract from class name if no string parameter
+                    // Try to extract from class name if no recognized parameter format
                     tableName = extractTableNameFromClassName(classType.name);
             }
         } else {

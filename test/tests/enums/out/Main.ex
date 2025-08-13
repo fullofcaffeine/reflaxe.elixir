@@ -1,4 +1,5 @@
 defmodule Main do
+  use Bitwise
   @moduledoc """
   Main module generated from Haxe
   """
@@ -25,7 +26,7 @@ defmodule Main do
   r = _g
   g = _g1
   b = _g2
-  temp_result = "rgb(" + r + ", " + g + ", " + b + ")"
+  temp_result = "rgb(" <> r <> ", " <> g <> ", " <> b <> ")"
 )
 )
 end
@@ -48,7 +49,7 @@ end
 )
 )
   1 ->
-    temp_result = default_value
+    temp_result = arg1
 end
   temp_result
 )
@@ -192,7 +193,7 @@ defmodule Color do
 
   @type t() ::
     :red |
-    {:r_g_b, :term(), :term(), :term()} |
+    {:r_g_b, term(), term(), term()} |
     :green |
     :blue
 
@@ -204,11 +205,11 @@ defmodule Color do
   Creates r_g_b enum value with parameters
   
   ## Parameters
-    - `arg0`: :term()
-    - `arg1`: :term()
-    - `arg2`: :term()
+    - `arg0`: term()
+    - `arg1`: term()
+    - `arg2`: term()
   """
-  @spec r_g_b(:term(), :term(), :term()) :: {:r_g_b, :term(), :term(), :term()}
+  @spec r_g_b(term(), term(), term()) :: {:r_g_b, term(), term(), term()}
   def r_g_b(arg0, arg1, arg2) do
     {:r_g_b, arg0, arg1, arg2}
   end
@@ -243,7 +244,7 @@ defmodule Color do
   def is_blue(_), do: false
 
   @doc "Extracts value from r_g_b variant, returns {:ok, value} or :error"
-  @spec get_r_g_b_value(t()) :: {:ok, {:term(), :term(), :term()}} | :error
+  @spec get_r_g_b_value(t()) :: {:ok, {term(), term(), term()}} | :error
   def get_r_g_b_value({:r_g_b, arg0, arg1, arg2}), do: {:ok, {arg0, arg1, arg2}}
   def get_r_g_b_value(_), do: :error
 
@@ -258,16 +259,16 @@ defmodule Option do
   """
 
   @type t() ::
-    {:some, :term()} |
+    {:some, term()} |
     :none
 
   @doc """
   Creates some enum value with parameters
   
   ## Parameters
-    - `arg0`: :term()
+    - `arg0`: term()
   """
-  @spec some(:term()) :: {:some, :term()}
+  @spec some(term()) :: {:some, term()}
   def some(arg0) do
     {:some, arg0}
   end
@@ -288,7 +289,7 @@ defmodule Option do
   def is_none(_), do: false
 
   @doc "Extracts value from some variant, returns {:ok, value} or :error"
-  @spec get_some_value(t()) :: {:ok, :term()} | :error
+  @spec get_some_value(t()) :: {:ok, term()} | :error
   def get_some_value({:some, value}), do: {:ok, value}
   def get_some_value(_), do: :error
 
@@ -303,17 +304,17 @@ defmodule Tree do
   """
 
   @type t() ::
-    {:node, :term(), :term()} |
-    {:leaf, :term()}
+    {:node, term(), term()} |
+    {:leaf, term()}
 
   @doc """
   Creates node enum value with parameters
   
   ## Parameters
-    - `arg0`: :term()
-    - `arg1`: :term()
+    - `arg0`: term()
+    - `arg1`: term()
   """
-  @spec node(:term(), :term()) :: {:node, :term(), :term()}
+  @spec node(term(), term()) :: {:node, term(), term()}
   def node(arg0, arg1) do
     {:node, arg0, arg1}
   end
@@ -322,9 +323,9 @@ defmodule Tree do
   Creates leaf enum value with parameters
   
   ## Parameters
-    - `arg0`: :term()
+    - `arg0`: term()
   """
-  @spec leaf(:term()) :: {:leaf, :term()}
+  @spec leaf(term()) :: {:leaf, term()}
   def leaf(arg0) do
     {:leaf, arg0}
   end
@@ -341,12 +342,12 @@ defmodule Tree do
   def is_leaf(_), do: false
 
   @doc "Extracts value from node variant, returns {:ok, value} or :error"
-  @spec get_node_value(t()) :: {:ok, {:term(), :term()}} | :error
+  @spec get_node_value(t()) :: {:ok, {term(), term()}} | :error
   def get_node_value({:node, arg0, arg1}), do: {:ok, {arg0, arg1}}
   def get_node_value(_), do: :error
 
   @doc "Extracts value from leaf variant, returns {:ok, value} or :error"
-  @spec get_leaf_value(t()) :: {:ok, :term()} | :error
+  @spec get_leaf_value(t()) :: {:ok, term()} | :error
   def get_leaf_value({:leaf, value}), do: {:ok, value}
   def get_leaf_value(_), do: :error
 

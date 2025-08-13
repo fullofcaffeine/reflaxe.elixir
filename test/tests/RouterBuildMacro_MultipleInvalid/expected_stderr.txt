@@ -1,0 +1,3 @@
+Main.hx:67: lines 67-69 : Warning : Controller "NonExistentController" not found in route "invalidControllerRoute" (path: "/invalid-controller"). Ensure the class exists and is in the classpath.
+Main.hx:67: lines 67-69 : Warning : Action "create" not found on controller "PartialController" in route "invalidActionRoute". Check that the method exists and is public static.
+Main.hx:67: lines 67-69 : Warning : Controller "AnotherMissingController" not found in route "anotherInvalidRoute" (path: "/another-invalid"). Ensure the class exists and is in the classpath.

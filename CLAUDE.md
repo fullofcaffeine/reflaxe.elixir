@@ -510,9 +510,63 @@ What happens:
 
 ## Testing Quick Reference
 
+### Test Type Decision Matrix
+| What You're Testing | Test Type | Location | Commands |
+|-------------------|-----------|----------|----------|
+| **New compiler feature** | Snapshot test | `test/tests/feature_name/` | `haxe test/Test.hxml test=feature_name` |
+| **Build macro validation** | Compile-time validation | `test/tests/MacroName_InvalidInput/` | `haxe test/Test.hxml test=MacroName_InvalidInput flexible-positions` |
+| **Build system integration** | Mix test | `test/` (Elixir) | `MIX_ENV=test mix test` |
+| **Framework integration** | Example | `examples/XX-feature/` | `cd examples/XX-feature && mix test` |
+
+### Core Commands
+```bash
+# Run all tests (snapshot + Mix)
+npm test
+
+# Run only snapshot tests  
+npm run test:haxe
+
+# Run specific test
+haxe test/Test.hxml test=feature_name
+
+# Test with flexible position matching (for macro warnings)
+haxe test/Test.hxml test=RouterBuildMacro_InvalidController flexible-positions
+
+# Update expected output
+haxe test/Test.hxml test=feature_name update-intended
+
+# Show detailed output
+haxe test/Test.hxml test=feature_name show-output
+```
+
+### Compile-Time Validation Testing (NEW) ⚠️
+**For testing build macros, DSL validation, and warning messages**:
+
+**Quick Workflow**:
+```bash
+# 1. Create test with invalid usage that should trigger warnings
+mkdir test/tests/MyMacro_InvalidInput
+
+# 2. Run to see actual warning format  
+haxe test/Test.hxml test=MyMacro_InvalidInput show-output
+
+# 3. Create expected_stderr_flexible.txt with warning content only
+echo "Warning : Expected warning message here" > test/tests/MyMacro_InvalidInput/expected_stderr_flexible.txt
+
+# 4. Test flexible position matching
+haxe test/Test.hxml test=MyMacro_InvalidInput flexible-positions
+```
+
+**Use flexible-positions for**:
+- ✅ Warning message content validation
+- ✅ CI/CD environments
+- ✅ Refactoring-resistant tests
+
+**Documentation Links**:
 → **CRITICAL: Test code modification rules**: See [`documentation/TESTING_PRINCIPLES.md`](documentation/TESTING_PRINCIPLES.md#never-remove-test-code-to-fix-failures)
 → **All testing rules and patterns**: See [`documentation/TESTING_PRINCIPLES.md`](documentation/TESTING_PRINCIPLES.md)
-→ **Primary command**: `npm test` - runs all validation
+→ **Compile-time validation guide**: See [`documentation/architecture/TESTING.md`](documentation/architecture/TESTING.md#7-creating-compile-time-validation-tests-new-)
+→ **Test type documentation**: [`documentation/TEST_TYPES.md`](documentation/TEST_TYPES.md)
 → **Architecture details**: [`documentation/architecture/TESTING.md`](documentation/architecture/TESTING.md)
 
 ## Current Implementation Status Summary
