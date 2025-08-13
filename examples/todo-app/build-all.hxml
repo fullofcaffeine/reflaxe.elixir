@@ -1,0 +1,21 @@
+# Build both Elixir backend and JavaScript frontend
+
+# Elixir backend compilation
+--next
+-cp src_haxe
+-lib reflaxe.elixir
+-D reflaxe.output=lib
+-D reflaxe_runtime
+--main Main
+--cmd echo "✅ Elixir compilation complete!"
+
+# JavaScript frontend compilation  
+--next
+-cp src_haxe/client
+-main TodoApp
+-js priv/static/js/todo-app.js
+-dce full
+-D analyzer-optimize
+--cmd echo "✅ JavaScript compilation complete!"
+
+--cmd echo "🚀 Full compilation complete! Both Elixir and JavaScript targets built."
