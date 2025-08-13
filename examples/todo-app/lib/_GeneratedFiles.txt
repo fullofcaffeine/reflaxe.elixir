@@ -3,6 +3,7 @@ haxe_iterators_ArrayIterator.ex
 haxe_CallStack.ex
 Type.ex
 StringBuf.ex
+StdTypes.ex
 IntIterator.ex
 HXX.ex
 EnumValue.ex
