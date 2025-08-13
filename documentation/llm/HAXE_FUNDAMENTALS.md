@@ -370,6 +370,95 @@ var userData:Dynamic = {
 - **Try Haxe**: https://try.haxe.org/ (online Haxe playground)
 - **Code Cookbook**: https://code.haxe.org/ (practical examples)
 
+## Source Code References (Available Locally)
+
+### Haxe Standard Library Source
+When working with Reflaxe.Elixir, you have access to Haxe source code:
+
+```bash
+# Haxe standard library source (available in most setups)
+/opt/homebrew/Cellar/haxe/*/share/haxe/std/
+# Or check with: haxe -v (shows std path)
+
+# Also available in reference directory
+/Users/fullofcaffeine/workspace/code/haxe.elixir.reference/haxe/std/
+```
+
+**Essential Standard Library Files to Reference**:
+- `std/haxe/` - Core Haxe APIs (Json, Http, Timer, etc.)
+- `std/sys/` - System APIs (FileSystem, io, etc.)  
+- `std/StringTools.hx` - String manipulation utilities
+- `std/Lambda.hx` - Functional programming utilities
+- `std/Type.hx` - Runtime type utilities
+- `std/Std.hx` - Standard conversion functions
+
+### Reflaxe Base Classes Source
+```bash
+# Reflaxe base implementation (for understanding compiler architecture)
+/Users/fullofcaffeine/workspace/code/haxe.elixir.reference/reflaxe/src/
+```
+
+**Key Reflaxe Files**:
+- `BaseCompiler.hx` - Core compiler interface
+- `ClassVarData.hx` - Variable compilation data
+- `ClassFuncData.hx` - Function compilation data  
+- `EnumOptionData.hx` - Enum option data structures
+
+### Reference Examples and Patterns
+```bash
+# Working example projects (great for pattern learning)
+/Users/fullofcaffeine/workspace/code/haxe.elixir.reference/
+
+# Key directories:
+# - Phoenix projects showing real-world usage
+# - Reflaxe projects demonstrating DirectToStringCompiler patterns
+# - Haxe macro projects for compile-time transformation examples
+```
+
+### When to Reference Source Code
+
+1. **Understanding Standard Library APIs**:
+   ```haxe
+   // Need to understand how StringTools.trim() works?
+   // Check: std/StringTools.hx source
+   var result = StringTools.trim("  hello  ");
+   ```
+
+2. **Implementing Complex Type Mappings**:
+   ```haxe
+   // Understanding how Haxe handles Map<K,V>?
+   // Check: std/haxe/ds/Map.hx source
+   var map:Map<String, Int> = new Map();
+   ```
+
+3. **Learning Reflaxe Patterns**:
+   ```haxe
+   // Want to understand how BaseCompiler works?
+   // Check: reference/reflaxe/src/BaseCompiler.hx
+   ```
+
+4. **Debugging Compilation Issues**:
+   ```haxe
+   // Strange behavior with abstract types?
+   // Check how similar abstracts are implemented in std/
+   ```
+
+### Quick Source Lookup Commands
+
+```bash
+# Find standard library file
+find /opt/homebrew/Cellar/haxe/*/share/haxe/std/ -name "StringTools.hx"
+
+# Or in reference directory  
+find /Users/fullofcaffeine/workspace/code/haxe.elixir.reference/ -name "*.hx" | grep StringTools
+
+# Search for specific function in std lib
+grep -r "function trim" /opt/homebrew/Cellar/haxe/*/share/haxe/std/
+
+# Find Reflaxe base classes
+ls /Users/fullofcaffeine/workspace/code/haxe.elixir.reference/reflaxe/src/
+```
+
 ## Quick Debugging Tips
 
 ### 1. **Compilation Issues**
