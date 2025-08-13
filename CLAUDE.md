@@ -8,6 +8,19 @@ This file must stay under 40k characters for optimal performance.
 - Review size after major updates: `wc -c CLAUDE.md`
 - See [`documentation/DOCUMENTATION_PHILOSOPHY.md`](documentation/DOCUMENTATION_PHILOSOPHY.md) for documentation structure
 
+### ❌ NEVER Add Detailed Technical Content to CLAUDE.md
+When documenting new features or fixes:
+1. **Create or update appropriate docs** in `documentation/` directory
+2. **Add only a brief reference** in CLAUDE.md with link to full documentation
+3. **Check character count** before and after: `wc -c CLAUDE.md`
+4. **If over 40k**, identify and move non-essential content out
+
+Example of correct approach:
+```markdown
+## New Feature Name
+**See**: [`documentation/FEATURE_DETAILS.md`](documentation/FEATURE_DETAILS.md) - Full implementation details
+```
+
 ## IMPORTANT: Agent Execution Instructions
 1. **ALWAYS verify CLAUDE.md first** - This file contains the project truth
 2. **FOLLOW DOCUMENTATION GUIDE** - See [`documentation/LLM_DOCUMENTATION_GUIDE.md`](documentation/LLM_DOCUMENTATION_GUIDE.md) for how to document
@@ -508,6 +521,9 @@ What happens:
 - [`documentation/ANNOTATIONS.md`](documentation/ANNOTATIONS.md) - Annotation usage guide
 
 **Quick Status**: 15 production-ready features, 9 working examples, 38/38 tests passing.
+
+## Functional Programming Transformations
+**See**: [`documentation/FUNCTIONAL_PATTERNS.md`](documentation/FUNCTIONAL_PATTERNS.md) - How imperative Haxe transforms to functional Elixir
 
 ## Task Completion and Documentation Protocol
 
