@@ -11,7 +11,6 @@ defmodule Todo do
   @derive {Phoenix.Param, key: :id}
 
   schema "todos" do
-    field :id, :integer
     field :title, :string
     field :description, :string
     field :completed, :boolean
@@ -19,7 +18,6 @@ defmodule Todo do
     field :due_date, :string
     field :tags, :string
     field :user_id, :integer
-    timestamps()
     timestamps()
   end
 

@@ -17,11 +17,10 @@ defmodule TodoAppWeb.Router do
   scope "/", TodoAppWeb do
     pipe_through :browser
 
-    # Main todo app LiveView
-    live "/", TodoLive, :index
-    live "/todos", TodoLive, :index
-    live "/todos/:id", TodoLive, :show
-    live "/todos/:id/edit", TodoLive, :edit
+    live "/", TodoLive, :root
+    live "/todos", TodoLive, :todosIndex
+    live "/todos/:id", TodoLive, :todosShow
+    live "/todos/:id/edit", TodoLive, :todosEdit
   end
 
   # Enable LiveDashboard in development
@@ -31,7 +30,7 @@ defmodule TodoAppWeb.Router do
     scope "/dev" do
       pipe_through :browser
 
-      live_dashboard "/dashboard", metrics: TodoAppWeb.Telemetry
+      live_dashboard "/dev/dashboard", metrics: TodoAppWeb.Telemetry
     end
   end
 end
