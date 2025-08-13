@@ -25,6 +25,7 @@
 # Main classes to compile
 TodoApp
 TodoAppRouter
+TodoAppRouterNew
 live.TodoLive
 schemas.Todo
 migrations.CreateTodos
