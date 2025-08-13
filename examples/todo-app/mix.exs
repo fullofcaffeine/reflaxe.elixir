@@ -55,7 +55,7 @@ defmodule TodoApp.MixProject do
       test: ["ecto.create --quiet", "ecto.migrate --quiet", "test"],
       "assets.setup": ["esbuild.install --if-missing"],
       "assets.build": ["esbuild todo_app"],
-      "assets.deploy": ["esbuild todo_app --minify", "phx.digest"]
+      "assets.deploy": ["esbuild todo_app --minify --tree-shaking=true --drop:debugger --drop:console", "phx.digest"]
     ]
   end
 end
