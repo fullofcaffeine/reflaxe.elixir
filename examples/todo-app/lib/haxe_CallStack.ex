@@ -1,4 +1,5 @@
 defmodule CallStack_Impl_ do
+  use Bitwise
   @moduledoc """
   CallStack_Impl_ module generated from Haxe
   """

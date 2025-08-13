@@ -1,4 +1,5 @@
 defmodule TodoAppWeb.Endpoint do
+  use Bitwise
   @moduledoc """
   TodoAppWeb.Endpoint module generated from Haxe
   

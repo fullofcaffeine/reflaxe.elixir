@@ -454,12 +454,16 @@ What happens:
 4. **The TypeTools.iter error** = wrong test configuration, not API incompatibility
 
 ## Known Issues (Updated)
+- **Elixir Code Generation Issues** (Critical for todo-app):
+  - **While loops**: Currently generates `while` which doesn't exist in Elixir - needs recursion or Stream/Enum
+  - **Mutable operations**: `+=`, `-=` operators don't exist in Elixir (immutable variables)
+  - **String concatenation**: Using `+` instead of `<>` for string concatenation
+  - **Variable reassignment**: Elixir variables are immutable, need to use recursion or pipelines
 - **Compiler Architecture**: ElixirCompiler extends BaseCompiler instead of DirectToStringCompiler
-  - Causes StdTypes.ex generation bugs (typedefs outside modules)
+  - Causes StdTypes.ex generation bugs (typedefs outside modules) - FIXED by returning null
   - Missing string compilation helpers and target code injection
   - See [`documentation/architecture/COMPILER_INHERITANCE.md`](documentation/architecture/COMPILER_INHERITANCE.md) for refactor justification
-- **Test Environment**: While Haxe 4.3.6 is available and basic compilation works, there are compatibility issues with our current implementation:
-  - Missing `using StringTools` declarations causing trim/match method errors
+- **Test Environment**: While Haxe 4.3.6 is available and basic compilation works, there are compatibility issues:
   - Type system mismatches between macro types and expected Reflaxe types
   - Some Dynamic iteration issues that need proper typing
   - Keyword conflicts with parameter names (`interface`, `operator`, `overload`)

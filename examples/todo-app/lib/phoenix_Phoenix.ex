@@ -1,4 +1,5 @@
 defmodule Phoenix do
+  use Bitwise
   @moduledoc """
   Phoenix module generated from Haxe
   

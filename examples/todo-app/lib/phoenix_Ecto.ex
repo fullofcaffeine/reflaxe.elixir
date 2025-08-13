@@ -1,4 +1,5 @@
 defmodule Ecto do
+  use Bitwise
   @moduledoc """
   Ecto module generated from Haxe
   

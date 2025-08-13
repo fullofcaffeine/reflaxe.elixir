@@ -1,4 +1,5 @@
 defmodule TodoAppWeb.Router do
+  use Bitwise
   @moduledoc """
   TodoAppWeb.Router module generated from Haxe
   

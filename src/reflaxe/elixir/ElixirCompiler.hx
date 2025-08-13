@@ -604,7 +604,78 @@ class ElixirCompiler extends BaseCompiler {
                 }
                 
             case TBinop(op, e1, e2):
-                compileExpression(e1) + " " + compileBinop(op) + " " + compileExpression(e2);
+                // Special handling for string concatenation and assignment operators
+                switch (op) {
+                    case OpAdd:
+                        // Check if this is string concatenation
+                        var isStringConcat = switch (e1.t) {
+                            case TInst(t, _) if (t.get().name == "String"): true;
+                            case _: switch (e2.t) {
+                                case TInst(t, _) if (t.get().name == "String"): true;
+                                case _: false;
+                            }
+                        };
+                        
+                        if (isStringConcat) {
+                            // Use <> for string concatenation in Elixir
+                            compileExpression(e1) + " <> " + compileExpression(e2);
+                        } else {
+                            compileExpression(e1) + " + " + compileExpression(e2);
+                        }
+                        
+                    case OpAssignOp(innerOp):
+                        // Handle compound assignment operators (+=, -=, etc.)
+                        // These need special handling since Elixir variables are immutable
+                        var left = compileExpression(e1);
+                        var right = compileExpression(e2);
+                        
+                        switch (innerOp) {
+                            case OpAdd:
+                                // Check if string concatenation
+                                var isStringOp = switch (e1.t) {
+                                    case TInst(t, _) if (t.get().name == "String"): true;
+                                    case _: false;
+                                };
+                                
+                                if (isStringOp) {
+                                    '${left} = ${left} <> ${right}';
+                                } else {
+                                    '${left} = ${left} + ${right}';
+                                }
+                                
+                            case OpSub:
+                                '${left} = ${left} - ${right}';
+                                
+                            case OpMult:
+                                '${left} = ${left} * ${right}';
+                                
+                            case OpDiv:
+                                '${left} = ${left} / ${right}';
+                                
+                            case _:
+                                // For other operators, use the standard pattern
+                                '${left} = ${left} ${compileBinop(innerOp)} ${right}';
+                        }
+                        
+                    case OpShl | OpShr | OpUShr:
+                        // Bitwise shift operators need to use Bitwise module
+                        var left = compileExpression(e1);
+                        var right = compileExpression(e2);
+                        switch (op) {
+                            case OpShl:
+                                'Bitwise.<<<(${left}, ${right})';
+                            case OpShr:
+                                'Bitwise.>>>(${left}, ${right})';
+                            case OpUShr:
+                                'Bitwise.>>>(${left}, ${right})'; // Elixir doesn't distinguish signed/unsigned
+                            case _:
+                                '${left} ${compileBinop(op)} ${right}';
+                        }
+                        
+                    case _:
+                        // For all other binary operators, use standard compilation
+                        compileExpression(e1) + " " + compileBinop(op) + " " + compileExpression(e2);
+                }
                 
             case TUnop(op, postFix, e):
                 var expr_str = compileExpression(e);
@@ -666,11 +737,30 @@ class ElixirCompiler extends BaseCompiler {
                 compileSwitchExpression(e, cases, edef);
                 
             case TWhile(econd, ebody, normalWhile):
+                // Elixir doesn't have while loops, so we generate a recursive function
+                // Using an immediately-invoked anonymous function to maintain scope
                 var condition = compileExpression(econd);
                 var body = compileExpression(ebody);
-                normalWhile ? 
-                    'while ${condition} do\n  ${body}\nend' :
-                    'until !${condition} do\n  ${body}\nend';
+                
+                if (normalWhile) {
+                    // while (condition) { body }
+                    // Generate: recursive function that checks condition before executing
+                    '(fn loop_fn ->\n' +
+                    '  if ${condition} do\n' +
+                    '    ${body}\n' +
+                    '    loop_fn.(loop_fn)\n' +
+                    '  end\n' +
+                    'end).(fn f -> f.(f) end)';
+                } else {
+                    // do { body } while (condition)
+                    // Generate: recursive function that executes body first
+                    '(fn loop_fn ->\n' +
+                    '  ${body}\n' +
+                    '  if ${condition} do\n' +
+                    '    loop_fn.(loop_fn)\n' +
+                    '  end\n' +
+                    'end).(fn f -> f.(f) end)';
+                }
                 
             case TArray(e1, e2):
                 var arrayExpr = compileExpression(e1);
@@ -962,14 +1052,14 @@ class ElixirCompiler extends BaseCompiler {
             case OpGte: ">=";
             case OpLt: "<";
             case OpLte: "<=";
-            case OpAnd: "and";
-            case OpOr: "or";
-            case OpXor: "xor"; // Elixir has xor
-            case OpBoolAnd: "&&";
-            case OpBoolOr: "||";
-            case OpShl: "<<<"; // Bitwise shift left in Elixir
-            case OpShr: ">>>"; // Bitwise shift right in Elixir
-            case OpUShr: ">>>"; // Unsigned right shift -> regular right shift
+            case OpAnd: "&&&"; // Bitwise AND in Elixir uses &&&
+            case OpOr: "|||"; // Bitwise OR in Elixir uses |||
+            case OpXor: "^^^"; // Bitwise XOR in Elixir uses ^^^
+            case OpBoolAnd: "&&"; // Boolean AND
+            case OpBoolOr: "||"; // Boolean OR
+            case OpShl: "<<<"; // Bitwise shift left - needs special handling
+            case OpShr: ">>>"; // Bitwise shift right - needs special handling
+            case OpUShr: ">>>"; // Unsigned right shift - needs special handling
             case OpMod: "rem"; // Remainder in Elixir
             case OpAssignOp(op): compileBinop(op) + "=";
             case OpInterval: ".."; // Range operator in Elixir

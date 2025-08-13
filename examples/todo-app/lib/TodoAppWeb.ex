@@ -1,4 +1,5 @@
 defmodule TodoAppWeb do
+  use Bitwise
   @moduledoc """
   TodoAppWeb module generated from Haxe
   
@@ -126,7 +127,7 @@ defmodule TodoAppWeb do
   "router" ->
     temp_result = TodoAppWeb.router()
   _ ->
-    throw("Unknown use: " + Std.string(arg0))
+    throw("Unknown use: " <> Std.string(arg0))
 end
   temp_result
 )
