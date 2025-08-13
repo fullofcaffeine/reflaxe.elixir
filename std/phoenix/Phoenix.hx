@@ -214,6 +214,57 @@ extern class Socket {
 }
 
 /**
+ * Phoenix.PubSub for real-time messaging and subscriptions
+ */
+@:native("Phoenix.PubSub")
+extern class PubSub {
+	/**
+	 * Subscribe to a topic for real-time updates
+	 */
+	static function subscribe(topic: String, ?opts: Dynamic): Dynamic;
+	
+	/**
+	 * Subscribe with specific PubSub name
+	 */
+	static function subscribe_to(pubsub: Dynamic, topic: String, ?opts: Dynamic): Dynamic;
+	
+	/**
+	 * Broadcast a message to all subscribers of a topic
+	 */
+	static function broadcast(topic: String, message: Dynamic): Dynamic;
+	
+	/**
+	 * Broadcast with specific PubSub name
+	 */
+	static function broadcast_to(pubsub: Dynamic, topic: String, message: Dynamic): Dynamic;
+	
+	/**
+	 * Broadcast from a specific process
+	 */
+	static function broadcast_from(from: Dynamic, topic: String, message: Dynamic): Dynamic;
+	
+	/**
+	 * Unsubscribe from a topic
+	 */
+	static function unsubscribe(topic: String): Dynamic;
+	
+	/**
+	 * Unsubscribe with specific PubSub name
+	 */
+	static function unsubscribe_from(pubsub: Dynamic, topic: String): Dynamic;
+	
+	/**
+	 * Get subscribers for a topic
+	 */
+	static function subscribers(topic: String): Array<Dynamic>;
+	
+	/**
+	 * Get local subscribers for a topic
+	 */
+	static function local_broadcast(topic: String, message: Dynamic): Dynamic;
+}
+
+/**
  * Namespace class for Phoenix framework - just for compatibility
  */
 class Phoenix {
