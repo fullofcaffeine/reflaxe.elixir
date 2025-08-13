@@ -481,3 +481,56 @@ end
   end
 
 end
+
+
+@typedoc """
+
+ * Advanced Pattern Matching Test
+ * Tests binary patterns, pin operators, advanced guards, and complex matching scenarios
+ 
+"""
+@type packet_segment :: %{
+  optional(:size) => integer() | nil,
+  optional(:type) => String.t() | nil,
+  variable: String.t()
+}
+
+@type packet :: %{
+  segments: list(packet_segment()),
+  type: String.t()
+}
+
+@type tuple_result :: %{
+  optional(:code) => integer() | nil,
+  optional(:error) => boolean() | nil,
+  optional(:ok) => boolean() | nil,
+  optional(:reason) => String.t() | nil,
+  optional(:status) => String.t() | nil,
+  optional(:value) => any() | nil
+}
+
+@type message :: %{
+  optional(:cmd) => String.t() | nil,
+  optional(:confirmed) => boolean() | nil,
+  optional(:data) => %{
+  id: integer(),
+  name: String.t()
+} | nil,
+  optional(:items) => list(any()) | nil,
+  optional(:message) => String.t() | nil,
+  optional(:priority) => integer() | nil,
+  type: String.t()
+}
+
+@type binary_data :: %{
+  binary: String.t(),
+  size: integer()
+}
+
+@type request :: %{
+  optional(:body) => String.t() | nil,
+  optional(:content_type) => String.t() | nil,
+  optional(:id) => integer() | nil,
+  method: String.t(),
+  optional(:path) => String.t() | nil
+}

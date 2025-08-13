@@ -4,6 +4,7 @@ haxe_CallStack.ex
 UserQueries.ex
 Type.ex
 StringBuf.ex
+StdTypes.ex
 IntIterator.ex
 EnumValue.ex
 Any.ex

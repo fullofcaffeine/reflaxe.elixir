@@ -30,6 +30,7 @@ import reflaxe.elixir.helpers.AnnotationSystem;
 import reflaxe.elixir.helpers.EctoQueryAdvancedCompiler;
 import reflaxe.elixir.helpers.RepositoryCompiler;
 import reflaxe.elixir.helpers.EctoErrorReporter;
+import reflaxe.elixir.helpers.TypedefCompiler;
 import reflaxe.elixir.ElixirTyper;
 import reflaxe.elixir.PhoenixMapper;
 import reflaxe.elixir.SourceMapWriter;
@@ -534,8 +535,15 @@ class ElixirCompiler extends BaseCompiler {
      * Compile typedef - map to Elixir type aliases
      */
     public override function compileTypedef(defType: DefType): Null<String> {
-        // TODO: Implement typedef compilation
-        trace('# Typedef ${defType.name} not yet fully supported');
+        // Delegate to TypedefCompiler helper
+        var typedefOutput = TypedefCompiler.compileTypedef(defType);
+        
+        if (typedefOutput != null && typedefOutput.length > 0) {
+            // For now, return the typedef output directly
+            // In a full implementation, this would be integrated with the module system
+            return typedefOutput;
+        }
+        
         return null;
     }
     
@@ -1086,6 +1094,7 @@ class ElixirCompiler extends BaseCompiler {
         // Elixir doesn't need semicolons, but we might want other formatting
         return expr;
     }
+    
 }
 
 #end
