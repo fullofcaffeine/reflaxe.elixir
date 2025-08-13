@@ -2132,3 +2132,198 @@ defmodule ImportMode do
   def get_i_as_name_value(_), do: :error
 
 end
+
+
+@typedoc """
+
+	Represents a position in a file.
+
+"""
+@type position :: %{
+  file: String.t(),
+  max: integer(),
+  min: integer()
+}
+
+@typedoc """
+
+	Represents a node in the AST.
+	@see https://haxe.org/manual/macro-reification-expression.html
+
+"""
+@type expr :: %{
+  expr: any(),
+  pos: position()
+}
+
+@typedoc """
+
+	Represents a AST node identical to `Expr`, but it allows constraining the
+	type of accepted expressions.
+	@see https://haxe.org/manual/macro-ExprOf.html
+
+"""
+@type expr_of(t) :: expr()
+
+@typedoc """
+
+	Represents a switch case.
+	@see https://haxe.org/manual/expression-switch.html
+
+"""
+@type case :: %{
+  optional(:expr) => any(),
+  optional(:guard) => any(),
+  values: list(expr())
+}
+
+@typedoc """
+
+	Represents a variable in the AST.
+	@see https://haxe.org/manual/expression-var.html
+
+"""
+@type var :: %{
+  optional(:expr) => any(),
+  optional(:is_final) => boolean() | nil,
+  optional(:is_static) => boolean() | nil,
+  optional(:meta) => metadata() | nil,
+  name: String.t(),
+  optional(:name_pos) => any(),
+  optional(:type) => any() | nil
+}
+
+@typedoc """
+
+	Represents a catch in the AST.
+	@see https://haxe.org/manual/expression-try-catch.html
+
+"""
+@type catch :: %{
+  expr: expr(),
+  name: String.t(),
+  optional(:type) => any() | nil
+}
+
+@typedoc """
+
+	Represents the field of an object declaration.
+
+"""
+@type object_field :: %{
+  expr: expr(),
+  field: String.t(),
+  optional(:quotes) => any() | nil
+}
+
+@typedoc """
+
+	Represents a type path in the AST.
+
+"""
+@type type_path :: %{
+  name: String.t(),
+  pack: list(String.t()),
+  optional(:params) => list(any()) | nil,
+  optional(:sub) => String.t() | nil
+}
+
+@typedoc """
+
+	Represents a type parameter declaration in the AST.
+
+"""
+@type type_param_decl :: %{
+  optional(:constraints) => list(any()) | nil,
+  optional(:default_type) => any() | nil,
+  optional(:meta) => metadata() | nil,
+  name: String.t(),
+  optional(:params) => list(type_param_decl()) | nil
+}
+
+@typedoc """
+
+	Represents a function in the AST.
+
+"""
+@type function :: %{
+  args: list(function_arg()),
+  optional(:expr) => any(),
+  optional(:params) => list(type_param_decl()) | nil,
+  optional(:ret) => any() | nil
+}
+
+@typedoc """
+
+	Represents a function argument in the AST.
+
+"""
+@type function_arg :: %{
+  optional(:meta) => metadata() | nil,
+  name: String.t(),
+  optional(:opt) => boolean() | nil,
+  optional(:type) => any() | nil,
+  optional(:value) => any()
+}
+
+@typedoc """
+
+	Represents a metadata entry in the AST.
+
+"""
+@type metadata_entry :: %{
+  name: String.t(),
+  optional(:params) => list(expr()) | nil,
+  pos: position()
+}
+
+@typedoc """
+
+	Represents metadata in the AST.
+
+"""
+@type metadata :: list(metadata_entry())
+
+@typedoc """
+
+	Represents a field in the AST.
+
+"""
+@type field :: %{
+  optional(:access) => list(any()) | nil,
+  optional(:doc) => String.t() | nil,
+  kind: any(),
+  optional(:meta) => any(),
+  name: String.t(),
+  pos: position()
+}
+
+@typedoc """
+
+	Represents a type definition.
+
+"""
+@type type_definition :: %{
+  optional(:doc) => String.t() | nil,
+  fields: list(field()),
+  optional(:is_extern) => boolean() | nil,
+  kind: any(),
+  optional(:meta) => any(),
+  name: String.t(),
+  pack: list(String.t()),
+  optional(:params) => list(type_param_decl()) | nil,
+  pos: position()
+}
+
+@typedoc """
+
+	Represents the import expression.
+
+"""
+@type import_expr :: %{
+  mode: any(),
+  path: list(%{
+  name: String.t(),
+  pos: position()
+})
+}

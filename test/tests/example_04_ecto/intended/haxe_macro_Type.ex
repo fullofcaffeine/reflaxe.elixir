@@ -1797,3 +1797,265 @@ defmodule TypedExprDef do
   def get_t_array_value(_), do: :error
 
 end
+
+
+@typedoc """
+
+	Represents a reference to internal compiler structure. It exists to avoid
+	expensive encoding if it is not required and to ensure that physical
+	equality remains intact.
+
+	A structure is only encoded when user requests it through `ref.get()`.
+ 
+"""
+@type ref(t) :: %{
+  get: (() -> t),
+  to_string: (() -> String.t())
+}
+
+@typedoc """
+
+	Represents information for anonymous structure types.
+ 
+"""
+@type anon_type :: %{
+  fields: list(class_field()),
+  status: any()
+}
+
+@typedoc """
+
+	Represents the declaration of type parameters.
+ 
+"""
+@type type_parameter :: %{
+  optional(:default_type) => any() | nil,
+  name: String.t(),
+  t: any()
+}
+
+@typedoc """
+
+	Represents a class field.
+ 
+"""
+@type class_field :: %{
+  optional(:doc) => String.t() | nil,
+  expr: (() -> typed_expr() | nil),
+  is_abstract: boolean(),
+  is_extern: boolean(),
+  is_final: boolean(),
+  is_public: boolean(),
+  kind: any(),
+  meta: meta_access(),
+  name: String.t(),
+  overloads: ref(list(class_field())),
+  params: list(type_parameter()),
+  pos: position(),
+  type: any()
+}
+
+@typedoc """
+
+	Represents an enum constructor.
+ 
+"""
+@type enum_field :: %{
+  optional(:doc) => String.t() | nil,
+  index: integer(),
+  meta: meta_access(),
+  name: String.t(),
+  params: list(type_parameter()),
+  pos: position(),
+  type: any()
+}
+
+@typedoc """
+
+	The information that all types (`ClassType`, `EnumType`, `DefType`,
+	`AbstractType`) have in common.
+
+"""
+@type base_type :: %{
+  optional(:doc) => String.t() | nil,
+  exclude: (() -> :ok),
+  is_extern: boolean(),
+  is_private: boolean(),
+  meta: meta_access(),
+  module: String.t(),
+  name: String.t(),
+  pack: list(String.t()),
+  params: list(type_parameter()),
+  pos: position()
+}
+
+@typedoc """
+
+	Represents a class type.
+ 
+"""
+@type class_type :: %{
+  optional(:constructor) => ref(class_field()) | nil,
+  optional(:doc) => String.t() | nil,
+  exclude: (() -> :ok),
+  fields: ref(list(class_field())),
+  optional(:init) => typed_expr() | nil,
+  interfaces: list(%{
+  params: list(any()),
+  t: ref(class_type())
+}),
+  is_abstract: boolean(),
+  is_extern: boolean(),
+  is_final: boolean(),
+  is_interface: boolean(),
+  is_private: boolean(),
+  kind: any(),
+  meta: meta_access(),
+  module: String.t(),
+  name: String.t(),
+  overrides: list(ref(class_field())),
+  pack: list(String.t()),
+  params: list(type_parameter()),
+  pos: position(),
+  statics: ref(list(class_field())),
+  optional(:super_class) => %{
+  params: list(any()),
+  t: ref(class_type())
+} | nil
+}
+
+@typedoc """
+
+	Represents an enum type.
+ 
+"""
+@type enum_type :: %{
+  constructs: map(String.t(), enum_field()),
+  optional(:doc) => String.t() | nil,
+  exclude: (() -> :ok),
+  is_extern: boolean(),
+  is_private: boolean(),
+  meta: meta_access(),
+  module: String.t(),
+  name: String.t(),
+  names: list(String.t()),
+  pack: list(String.t()),
+  params: list(type_parameter()),
+  pos: position()
+}
+
+@typedoc """
+
+	Represents a typedef.
+ 
+"""
+@type def_type :: %{
+  optional(:doc) => String.t() | nil,
+  exclude: (() -> :ok),
+  is_extern: boolean(),
+  is_private: boolean(),
+  meta: meta_access(),
+  module: String.t(),
+  name: String.t(),
+  pack: list(String.t()),
+  params: list(type_parameter()),
+  pos: position(),
+  type: any()
+}
+
+@typedoc """
+
+	Represents an abstract type.
+ 
+"""
+@type abstract_type :: %{
+  array: list(class_field()),
+  binops: list(%{
+  field: class_field(),
+  op: any()
+}),
+  optional(:doc) => String.t() | nil,
+  exclude: (() -> :ok),
+  from: list(%{
+  optional(:field) => class_field() | nil,
+  t: any()
+}),
+  optional(:impl) => ref(class_type()) | nil,
+  is_extern: boolean(),
+  is_private: boolean(),
+  meta: meta_access(),
+  module: String.t(),
+  name: String.t(),
+  pack: list(String.t()),
+  params: list(type_parameter()),
+  pos: position(),
+  optional(:resolve) => class_field() | nil,
+  optional(:resolve_write) => class_field() | nil,
+  to: list(%{
+  optional(:field) => class_field() | nil,
+  t: any()
+}),
+  type: any(),
+  unops: list(%{
+  field: class_field(),
+  op: any(),
+  post_fix: boolean()
+})
+}
+
+@typedoc """
+
+	MetaAccess is a wrapper for the `Metadata` array. It can be used to add
+	metadata to and remove metadata from its origin.
+
+"""
+@type meta_access :: %{
+  add: (String.t(), list(expr()), position() -> :ok),
+  extract: (String.t() -> list(metadata_entry())),
+  get: (() -> metadata()),
+  has: (String.t() -> boolean()),
+  remove: (String.t() -> :ok)
+}
+
+@typedoc """
+
+	Represents a variable in the typed AST.
+ 
+"""
+@type t_var :: %{
+  capture: boolean(),
+  optional(:extra) => %{
+  optional(:expr) => typed_expr() | nil,
+  params: list(type_parameter())
+} | nil,
+  id: integer(),
+  is_static: boolean(),
+  optional(:meta) => meta_access() | nil,
+  name: String.t(),
+  t: any()
+}
+
+@typedoc """
+
+	Represents a function in the typed AST.
+ 
+"""
+@type t_func :: %{
+  args: list(%{
+  v: t_var(),
+  optional(:value) => typed_expr() | nil
+}),
+  expr: typed_expr(),
+  t: any()
+}
+
+@typedoc """
+
+	Represents a typed AST node.
+ 
+"""
+@type typed_expr :: %{
+  expr: any(),
+  pos: position(),
+  t: any()
+}

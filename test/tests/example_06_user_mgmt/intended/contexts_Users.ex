@@ -163,3 +163,22 @@ defmodule Users do
   end
 
 end
+
+
+@type user_filter :: %{
+  optional(:active) => boolean() | nil,
+  optional(:max_age) => integer() | nil,
+  optional(:min_age) => integer() | nil
+}
+
+@type user_stats :: %{
+  active: integer(),
+  inactive: integer(),
+  total: integer()
+}
+
+@type post :: %{
+  id: integer(),
+  title: String.t(),
+  user_id: integer()
+}
