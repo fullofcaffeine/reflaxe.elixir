@@ -2,6 +2,23 @@
 
 This file contains instructions for AI assistants (Claude, ChatGPT, etc.) working on this Reflaxe.Elixir project.
 
+## ⚠️ CRITICAL: Never Edit Generated Files
+
+**The `lib/*.ex` files are GENERATED OUTPUT from the Haxe→Elixir compiler.**
+
+### DO NOT:
+- ❌ Edit any `.ex` files in the `lib/` directory directly
+- ❌ Try to fix compilation errors by modifying generated files
+- ❌ Make "quick fixes" to generated Elixir code
+
+### INSTEAD:
+- ✅ Fix issues in the compiler source at `/src/reflaxe/elixir/`
+- ✅ Edit Haxe source files in `src_haxe/`
+- ✅ Regenerate with `npx haxe build.hxml` after fixing the compiler
+
+### Why This Matters:
+Generated files are overwritten every time you compile. Any manual edits will be lost. All fixes must be made at the source - either in the Haxe code (`src_haxe/`) or in the compiler itself (`/src/reflaxe/elixir/`).
+
 ## 📋 Project Overview
 
 - **Project**: todo-app

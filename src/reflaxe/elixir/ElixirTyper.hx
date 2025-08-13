@@ -346,7 +346,12 @@ class ElixirTyper {
         }
         
         // Handle lowercase custom types (might be atoms or variables)
+        // But don't add colon if it's already an Elixir type spec (contains parentheses)
         if (~/^[a-z]/.match(haxeType)) {
+            // Check if it's already an Elixir type spec like "term()" or "atom()"
+            if (haxeType.indexOf("(") > -1) {
+                return haxeType; // Already a valid Elixir type spec
+            }
             return ':${haxeType}'; // Convert to atom
         }
         
