@@ -22,6 +22,20 @@ using reflaxe.helpers.NameMetaHelper;
  * - @:route methods generate proper Phoenix router entries
  * - @:resources annotations create RESTful resource routes
  * 
+ * CRITICAL FILE LOCATION ISSUE:
+ * Current RouterCompiler generates files based on Haxe class names without considering 
+ * Phoenix conventions. This causes `Phoenix.plug_init_mode/0` and module loading errors.
+ * 
+ * REQUIRED FIX:
+ * - Current: TodoAppRouter.hx → /lib/TodoAppRouter.ex
+ * - Required: TodoAppRouter.hx → /lib/todo_app_web/router.ex
+ * 
+ * Phoenix expects router files at /lib/app_web/router.ex for proper module loading.
+ * The RouterCompiler needs framework-aware file location logic to generate files
+ * where Phoenix expects them, not just use Haxe class names directly.
+ * 
+ * See documentation/FRAMEWORK_CONVENTIONS.md for complete Phoenix requirements.
+ * 
  * Follows established ElixirCompiler helper delegation pattern.
  */
 @:nullSafety(Off)
@@ -76,15 +90,19 @@ class RouterCompiler {
         var className = classType.name;
         var fields = classType.fields.get();
         
-        var output = new StringBuf();
-        output.add('defmodule ${className} do\n');
-        output.add('  use Phoenix.Router\n\n');
+        // Generate proper Phoenix web module name (TodoAppRouter -> TodoAppWeb.Router)
+        var webModuleName = className.replace("Router", "Web.Router");
+        var webModuleScope = webModuleName.replace(".Router", "");
         
-        // Generate pipeline definitions from annotations or defaults
+        var output = new StringBuf();
+        output.add('defmodule ${webModuleName} do\n');
+        output.add('  use ${webModuleScope}, :router\n\n');
+        
+        // Generate pipeline definitions from annotations or defaults  
         output.add(generatePipelineDefinitions(classType));
         
         // Generate route scopes and definitions
-        output.add(generateRouteScopes(classType, fields));
+        output.add(generateRouteScopes(classType, fields, webModuleScope));
         
         output.add('end\n');
         
@@ -97,10 +115,12 @@ class RouterCompiler {
     private static function generatePipelineDefinitions(classType: ClassType): String {
         var output = new StringBuf();
         
-        // Default pipelines
+        // Default pipelines for Phoenix 1.7+
         output.add('  pipeline :browser do\n');
         output.add('    plug :accepts, ["html"]\n');
         output.add('    plug :fetch_session\n');
+        output.add('    plug :fetch_live_flash\n');
+        output.add('    plug :put_root_layout, html: {TodoAppWeb.Layouts, :root}\n');
         output.add('    plug :protect_from_forgery\n');
         output.add('    plug :put_secure_browser_headers\n');
         output.add('  end\n\n');
@@ -120,25 +140,53 @@ class RouterCompiler {
     /**
      * Generate route scopes and route definitions
      */
-    private static function generateRouteScopes(classType: ClassType, fields: Array<ClassField>): String {
+    private static function generateRouteScopes(classType: ClassType, fields: Array<ClassField>, webModuleScope: String): String {
         var output = new StringBuf();
         
-        // Browser scope (default)
-        output.add('  scope "/", ${classType.name} do\n');
-        output.add('    pipe_through :browser\n\n');
+        // Parse actual routes from @:route annotations
+        var routes = generateRoutes(classType);
+        var browserRoutes = [];
+        var apiRoutes = [];
+        var devRoutes = [];
         
-        // Generate routes for included controllers
-        output.add(generateIncludedControllerRoutes(classType));
+        // Categorize routes by pipeline type
+        for (route in routes) {
+            if (route.indexOf("live_dashboard") >= 0) {
+                devRoutes.push(route);
+            } else if (route.indexOf("live ") >= 0 || route.indexOf("get ") >= 0) {
+                browserRoutes.push(route);
+            } else {
+                apiRoutes.push(route);
+            }
+        }
         
-        output.add('  end\n\n');
+        // Browser scope with actual routes
+        if (browserRoutes.length > 0) {
+            output.add('  scope "/", ${webModuleScope} do\n');
+            output.add('    pipe_through :browser\n\n');
+            
+            for (route in browserRoutes) {
+                output.add('    ${route}\n');
+            }
+            
+            output.add('  end\n\n');
+        }
         
-        // API scope
-        output.add('  scope "/api", ${classType.name} do\n');
-        output.add('    pipe_through :api\n\n');
-        
-        output.add('    # API routes will be generated here\n');
-        
-        output.add('  end\n');
+        // Development routes with conditional compilation
+        if (devRoutes.length > 0) {
+            output.add('  # Enable LiveDashboard in development\n');
+            output.add('  if Application.compile_env(:todo_app, :dev_routes) do\n');
+            output.add('    import Phoenix.LiveDashboard.Router\n\n');
+            output.add('    scope "/dev" do\n');
+            output.add('      pipe_through :browser\n\n');
+            
+            for (route in devRoutes) {
+                output.add('      ${route}\n');
+            }
+            
+            output.add('    end\n');
+            output.add('  end\n');
+        }
         
         return output.toString();
     }
@@ -165,12 +213,21 @@ class RouterCompiler {
     public static function generateRoutes(classType: ClassType): Array<String> {
         var routes = [];
         var fields = classType.fields.get();
+        var statics = classType.statics.get();
         
-        for (field in fields) {
+        // Check both instance fields and static fields
+        var allFields = fields.concat(statics);
+        
+        for (field in allFields) {
             if (field.kind.match(FMethod(_))) {
                 var routeAnnotation = extractRouteAnnotation(field);
                 if (routeAnnotation != null) {
-                    var route = generateRouteFromAnnotation(classType.name, field.name, routeAnnotation);
+                    // Use controller from annotation, fallback to inferred name
+                    var controllerName = routeAnnotation.controller != null ? 
+                        routeAnnotation.controller : 
+                        "DefaultController";
+                    
+                    var route = generateRouteFromAnnotation(controllerName, field.name, routeAnnotation);
                     routes.push(route);
                 }
             }
@@ -280,8 +337,10 @@ class RouterCompiler {
                     return {
                         method: routeData.method,
                         path: routeData.path,
+                        controller: routeData.controller,
                         action: field.name,
-                        as: routeData.as
+                        as: routeData.as,
+                        metrics: routeData.metrics
                     };
                 }
             }
@@ -302,16 +361,28 @@ class RouterCompiler {
             return {
                 method: method,
                 path: path,
+                controller: null,
                 action: field.name,
-                as: null
+                as: null,
+                metrics: null
             };
         }
         return null;
     }
     
     private static function generateRouteFromAnnotation(controllerName: String, actionName: String, route: RouteInfo): String {
-        var method = route.method.toLowerCase();
-        return '${method} "${route.path}", ${controllerName}, :${actionName}';
+        var controller = route.controller != null ? route.controller : controllerName;
+        
+        return switch(route.method) {
+            case "LIVE":
+                'live "${route.path}", ${controller}, :${route.action}';
+            case "LIVE_DASHBOARD":
+                var metricsParam = route.metrics != null ? ', metrics: ${route.metrics}' : '';
+                'live_dashboard "${route.path}"${metricsParam}';
+            default:
+                var method = route.method.toLowerCase();
+                '${method} "${route.path}", ${controller}, :${route.action}';
+        }
     }
     
     private static function extractResourceName(classType: ClassType): String {
@@ -394,6 +465,8 @@ class RouterCompiler {
                 var method = "GET";
                 var path = "/";
                 var as = null;
+                var controller = null;
+                var metrics = null;
                 
                 for (field in fields) {
                     switch(field.field) {
@@ -405,9 +478,17 @@ class RouterCompiler {
                             if (field.expr.expr.match(EConst(CString(_)))) {
                                 path = extractStringFromExpr(field.expr);
                             }
+                        case "controller":
+                            if (field.expr.expr.match(EConst(CString(_)))) {
+                                controller = extractStringFromExpr(field.expr);
+                            }
                         case "as":
                             if (field.expr.expr.match(EConst(CString(_)))) {
                                 as = extractStringFromExpr(field.expr);
+                            }
+                        case "metrics":
+                            if (field.expr.expr.match(EConst(CString(_)))) {
+                                metrics = extractStringFromExpr(field.expr);
                             }
                     }
                 }
@@ -415,8 +496,10 @@ class RouterCompiler {
                 {
                     method: method,
                     path: path,
+                    controller: controller,
                     action: "", // Will be filled from field name
-                    as: as
+                    as: as,
+                    metrics: metrics
                 };
                 
             default: null;
@@ -437,8 +520,10 @@ class RouterCompiler {
 typedef RouteInfo = {
     method: String,
     path: String,
+    controller: Null<String>,
     action: String,
-    as: Null<String>
+    as: Null<String>,
+    metrics: Null<String>
 }
 
 #end

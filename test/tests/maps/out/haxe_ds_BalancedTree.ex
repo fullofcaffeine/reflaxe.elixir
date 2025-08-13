@@ -1,4 +1,5 @@
 defmodule BalancedTree do
+  use Bitwise
   @behaviour IMap
 
   @moduledoc """
@@ -26,7 +27,7 @@ defmodule BalancedTree do
 	"
   @spec set(K.t(), V.t()) :: nil
   def set(arg0, arg1) do
-    self().root = self().setLoop(key, value, self().root)
+    self().root = self().setLoop(arg0, arg1, self().root)
   end
 
   @doc "
@@ -40,13 +41,16 @@ defmodule BalancedTree do
   def get(arg0) do
     (
   node = self().root
-  while (node != nil) do
-  (
-  c = self().compare(key, node.key)
+  (fn loop_fn ->
+  if (node != nil) do
+    (
+  c = self().compare(arg0, node.key)
   if (c == 0), do: node.value, else: nil
   if (c < 0), do: node = node.left, else: node = node.right
 )
-end
+    loop_fn.(loop_fn)
+  end
+end).(fn f -> f.(f) end)
   nil
 )
   end
@@ -62,12 +66,15 @@ end
   def exists(arg0) do
     (
   node = self().root
-  while (node != nil) do
-  (
-  c = self().compare(key, node.key)
+  (fn loop_fn ->
+  if (node != nil) do
+    (
+  c = self().compare(arg0, node.key)
   if (c == 0), do: true, else: if (c < 0), do: node = node.left, else: node = node.right
 )
-end
+    loop_fn.(loop_fn)
+  end
+end).(fn f -> f.(f) end)
   false
 )
   end
@@ -90,19 +97,19 @@ end
   @spec set_loop(K.t(), V.t(), TreeNode.t()) :: TreeNode.t()
   def set_loop(arg0, arg1, arg2) do
     (
-  if (node == nil), do: Haxe.Ds.TreeNode.new(nil, k, v, nil), else: nil
-  c = self().compare(k, node.key)
+  if (arg2 == nil), do: Haxe.Ds.TreeNode.new(nil, arg0, arg1, nil), else: nil
+  c = self().compare(arg0, arg2.key)
   temp_result = nil
   if (c == 0), do: (
   temp_number = nil
-  if (node == nil), do: temp_number = 0, else: temp_number = node._height
-  temp_result = Haxe.Ds.TreeNode.new(node.left, k, v, node.right, temp_number)
+  if (arg2 == nil), do: temp_number = 0, else: temp_number = arg2._height
+  temp_result = Haxe.Ds.TreeNode.new(arg2.left, arg0, arg1, arg2.right, temp_number)
 ), else: if (c < 0), do: (
-  nl = self().setLoop(k, v, node.left)
-  temp_result = self().balance(nl, node.key, node.value, node.right)
+  nl = self().setLoop(arg0, arg1, arg2.left)
+  temp_result = self().balance(nl, arg2.key, arg2.value, arg2.right)
 ), else: (
-  nr = self().setLoop(k, v, node.right)
-  temp_result = self().balance(node.left, node.key, node.value, nr)
+  nr = self().setLoop(arg0, arg1, arg2.right)
+  temp_result = self().balance(arg2.left, arg2.key, arg2.value, nr)
 )
   temp_result
 )
@@ -111,10 +118,10 @@ end
   @doc "Function keys_loop"
   @spec keys_loop(TreeNode.t(), Array.t()) :: nil
   def keys_loop(arg0, arg1) do
-    if (node != nil), do: (
-  self().keysLoop(node.left, acc)
-  acc.push(node.key)
-  self().keysLoop(node.right, acc)
+    if (arg0 != nil), do: (
+  self().keysLoop(arg0.left, arg1)
+  arg1 ++ [arg0.key]
+  self().keysLoop(arg0.right, arg1)
 ), else: nil
   end
 
@@ -123,40 +130,40 @@ end
   def balance(arg0, arg1, arg2, arg3) do
     (
   temp_number = nil
-  if (l == nil), do: temp_number = 0, else: temp_number = l._height
+  if (arg0 == nil), do: temp_number = 0, else: temp_number = arg0._height
   hl = temp_number
   temp_number1 = nil
-  if (r == nil), do: temp_number1 = 0, else: temp_number1 = r._height
+  if (arg3 == nil), do: temp_number1 = 0, else: temp_number1 = arg3._height
   hr = temp_number1
   temp_result = nil
   if (hl > hr + 2), do: (
   temp_left = nil
   (
-  _this = l.left
+  _this = arg0.left
   if (_this == nil), do: temp_left = 0, else: temp_left = _this._height
 )
   temp_right = nil
   (
-  _this = l.right
+  _this = arg0.right
   if (_this == nil), do: temp_right = 0, else: temp_right = _this._height
 )
-  if (temp_left >= temp_right), do: temp_result = Haxe.Ds.TreeNode.new(l.left, l.key, l.value, Haxe.Ds.TreeNode.new(l.right, k, v, r)), else: temp_result = Haxe.Ds.TreeNode.new(Haxe.Ds.TreeNode.new(l.left, l.key, l.value, l.right.left), l.right.key, l.right.value, Haxe.Ds.TreeNode.new(l.right.right, k, v, r))
+  if (temp_left >= temp_right), do: temp_result = Haxe.Ds.TreeNode.new(arg0.left, arg0.key, arg0.value, Haxe.Ds.TreeNode.new(arg0.right, arg1, arg2, arg3)), else: temp_result = Haxe.Ds.TreeNode.new(Haxe.Ds.TreeNode.new(arg0.left, arg0.key, arg0.value, arg0.right.left), arg0.right.key, arg0.right.value, Haxe.Ds.TreeNode.new(arg0.right.right, arg1, arg2, arg3))
 ), else: if (hr > hl + 2), do: (
   temp_left1 = nil
   (
-  _this = r.right
+  _this = arg3.right
   if (_this == nil), do: temp_left1 = 0, else: temp_left1 = _this._height
 )
   temp_right1 = nil
   (
-  _this = r.left
+  _this = arg3.left
   if (_this == nil), do: temp_right1 = 0, else: temp_right1 = _this._height
 )
-  if (temp_left1 > temp_right1), do: temp_result = Haxe.Ds.TreeNode.new(Haxe.Ds.TreeNode.new(l, k, v, r.left), r.key, r.value, r.right), else: temp_result = Haxe.Ds.TreeNode.new(Haxe.Ds.TreeNode.new(l, k, v, r.left.left), r.left.key, r.left.value, Haxe.Ds.TreeNode.new(r.left.right, r.key, r.value, r.right))
+  if (temp_left1 > temp_right1), do: temp_result = Haxe.Ds.TreeNode.new(Haxe.Ds.TreeNode.new(arg0, arg1, arg2, arg3.left), arg3.key, arg3.value, arg3.right), else: temp_result = Haxe.Ds.TreeNode.new(Haxe.Ds.TreeNode.new(arg0, arg1, arg2, arg3.left.left), arg3.left.key, arg3.left.value, Haxe.Ds.TreeNode.new(arg3.left.right, arg3.key, arg3.value, arg3.right))
 ), else: (
   temp_left2 = nil
   (if (hl > hr), do: temp_left2 = hl, else: temp_left2 = hr)
-  temp_result = Haxe.Ds.TreeNode.new(l, k, v, r, temp_left2 + 1)
+  temp_result = Haxe.Ds.TreeNode.new(arg0, arg1, arg2, arg3, temp_left2 + 1)
 )
   temp_result
 )
@@ -165,13 +172,14 @@ end
   @doc "Function compare"
   @spec compare(K.t(), K.t()) :: integer()
   def compare(arg0, arg1) do
-    Reflect.compare(k1, k2)
+    Reflect.compare(arg0, arg1)
   end
 
 end
 
 
 defmodule TreeNode do
+  use Bitwise
   @moduledoc """
   TreeNode module generated from Haxe
   

@@ -1,4 +1,5 @@
 defmodule Log do
+  use Bitwise
   @moduledoc """
   Log module generated from Haxe
   
@@ -15,21 +16,24 @@ defmodule Log do
   @spec format_output(term(), PosInfos.t()) :: String.t()
   def format_output(arg0, arg1) do
     (
-  str = Std.string(v)
-  if (infos == nil), do: str, else: nil
-  pstr = infos.file_name + ":" + infos.line_number
-  if (infos.custom_params != nil), do: (
+  str = Std.string(arg0)
+  if (arg1 == nil), do: str, else: nil
+  pstr = arg1.file_name <> ":" <> arg1.line_number
+  if (arg1.custom_params != nil), do: (
   _g = 0
-  _g1 = infos.custom_params
-  while (_g < _g1.length) do
-  (
+  _g1 = arg1.custom_params
+  (fn loop_fn ->
+  if (_g < _g1.length) do
+    (
   v2 = Enum.at(_g1, _g)
   _g + 1
-  str += ", " + Std.string(v2)
+  str = str <> ", " <> Std.string(v2)
 )
-end
+    loop_fn.(loop_fn)
+  end
+end).(fn f -> f.(f) end)
 ), else: nil
-  pstr + ": " + str
+  pstr <> ": " <> str
 )
   end
 
@@ -54,7 +58,7 @@ end
   @spec trace(term(), Null.t()) :: nil
   def trace(arg0, arg1) do
     (
-  str = Log.formatOutput(v, infos)
+  str = Log.formatOutput(arg0, arg1)
   Sys.println(str)
 )
   end

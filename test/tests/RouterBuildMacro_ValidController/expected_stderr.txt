@@ -1,0 +1,2 @@
+# Expected stderr output for valid controller/action test
+# Should be empty - no warnings expected

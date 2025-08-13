@@ -1,4 +1,5 @@
 defmodule EnumValueMap do
+  use Bitwise
   @behaviour IMap
 
   @moduledoc """
@@ -17,10 +18,10 @@ defmodule EnumValueMap do
   @spec compare(EnumValue.t(), EnumValue.t()) :: integer()
   def compare(arg0, arg1) do
     (
-  d = Type.enumIndex(k1) - Type.enumIndex(k2)
+  d = Type.enumIndex(arg0) - Type.enumIndex(arg1)
   if (d != 0), do: d, else: nil
-  p1 = Type.enumParameters(k1)
-  p2 = Type.enumParameters(k2)
+  p1 = Type.enumParameters(arg0)
+  p2 = Type.enumParameters(arg1)
   if (p1.length == 0 && p2.length == 0), do: 0, else: nil
   self().compareArgs(p1, p2)
 )
@@ -30,18 +31,21 @@ defmodule EnumValueMap do
   @spec compare_args(Array.t(), Array.t()) :: integer()
   def compare_args(arg0, arg1) do
     (
-  ld = a1.length - a2.length
+  ld = arg0.length - arg1.length
   if (ld != 0), do: ld, else: nil
   (
   _g = 0
-  _g1 = a1.length
-  while (_g < _g1) do
-  (
+  _g1 = arg0.length
+  (fn loop_fn ->
+  if (_g < _g1) do
+    (
   i = _g + 1
-  d = self().compareArg(Enum.at(a1, i), Enum.at(a2, i))
+  d = self().compareArg(Enum.at(arg0, i), Enum.at(arg1, i))
   if (d != 0), do: d, else: nil
 )
-end
+    loop_fn.(loop_fn)
+  end
+end).(fn f -> f.(f) end)
 )
   0
 )
@@ -52,7 +56,7 @@ end
   def compare_arg(arg0, arg1) do
     (
   temp_result = nil
-  if (Reflect.isEnumValue(v1) && Reflect.isEnumValue(v2)), do: temp_result = self().compare(v1, v2), else: if (Std.isOfType(v1, Array) && Std.isOfType(v2, Array)), do: temp_result = self().compareArgs(v1, v2), else: temp_result = Reflect.compare(v1, v2)
+  if (Reflect.isEnumValue(arg0) && Reflect.isEnumValue(arg1)), do: temp_result = self().compare(arg0, arg1), else: if (Std.isOfType(arg0, Array) && Std.isOfType(arg1, Array)), do: temp_result = self().compareArgs(arg0, arg1), else: temp_result = Reflect.compare(arg0, arg1)
   temp_result
 )
   end

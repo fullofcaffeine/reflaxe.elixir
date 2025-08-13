@@ -1,4 +1,5 @@
 defmodule MapKeyValueIterator do
+  use Bitwise
   @moduledoc """
   MapKeyValueIterator module generated from Haxe
   

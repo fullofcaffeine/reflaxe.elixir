@@ -14,6 +14,7 @@ end
 
 
 defmodule MemoryStorage do
+  use Bitwise
   @moduledoc """
   MemoryStorage module generated from Haxe
   """
@@ -32,7 +33,7 @@ defmodule MemoryStorage do
   temp_result = nil
   (
   this1 = self().data
-  temp_result = this1.get(key)
+  temp_result = this1.get(arg0)
 )
   temp_result
 )
@@ -44,7 +45,7 @@ defmodule MemoryStorage do
     (
   (
   this1 = self().data
-  this1.set(key, value)
+  this1.set(arg0, arg1)
 )
   true
 )
@@ -57,7 +58,7 @@ defmodule MemoryStorage do
   temp_result = nil
   (
   this1 = self().data
-  temp_result = this1.remove(key)
+  temp_result = this1.remove(arg0)
 )
   temp_result
 )
@@ -77,12 +78,15 @@ defmodule MemoryStorage do
   temp_iterator = this1.keys()
 )
   k = temp_iterator
-  while (k.hasNext()) do
-  (
+  (fn loop_fn ->
+  if (k.hasNext()) do
+    (
   k2 = k.next()
-  _g.push(k2)
+  _g ++ [k2]
 )
-end
+    loop_fn.(loop_fn)
+  end
+end).(fn f -> f.(f) end)
 )
   temp_result = _g
 )
@@ -94,6 +98,7 @@ end
 
 
 defmodule FileStorage do
+  use Bitwise
   @moduledoc """
   FileStorage module generated from Haxe
   """
@@ -103,7 +108,7 @@ defmodule FileStorage do
   @spec init(term()) :: term()
   def init(arg0) do
     (
-  if (config.path != nil), do: self().base_path = config.path, else: nil
+  if (arg0.path != nil), do: self().base_path = arg0.path, else: nil
   %{ok: self()}
 )
   end
@@ -149,6 +154,7 @@ end
 
 
 defmodule ConsoleLogger do
+  use Bitwise
   @moduledoc """
   ConsoleLogger module generated from Haxe
   """
@@ -157,13 +163,13 @@ defmodule ConsoleLogger do
   @doc "Function log"
   @spec log(String.t()) :: nil
   def log(arg0) do
-    Log.trace("[LOG] " + message, %{fileName: "Storage.hx", lineNumber: 103, className: "ConsoleLogger", methodName: "log"})
+    Log.trace("[LOG] " <> arg0, %{fileName: "Storage.hx", lineNumber: 103, className: "ConsoleLogger", methodName: "log"})
   end
 
   @doc "Function debug"
   @spec debug(String.t()) :: nil
   def debug(arg0) do
-    Log.trace("[DEBUG] " + message, %{fileName: "Storage.hx", lineNumber: 108, className: "ConsoleLogger", methodName: "debug"})
+    Log.trace("[DEBUG] " <> arg0, %{fileName: "Storage.hx", lineNumber: 108, className: "ConsoleLogger", methodName: "debug"})
   end
 
 end
