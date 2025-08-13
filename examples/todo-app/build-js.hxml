@@ -1,12 +1,15 @@
 # Haxe to JavaScript compilation for client-side code
--cp src_haxe/client
--main TodoApp
--js priv/static/js/todo-app.js
+-cp src_haxe
+-main client.SimpleTodoApp
+-js assets/js/todo-app-haxe.js
 -dce full
 -D analyzer-optimize
+-D js-es=6
+-D no-traces
 
-# JavaScript standard library
--lib hxnodejs
+# Optimize for production
+-D production
+-D dead-code-elimination
 
-# Browser APIs
---cmd echo "✅ JavaScript compilation complete!"
+# Browser target (no Node.js)
+--cmd echo "✅ Haxe JavaScript compilation complete!"

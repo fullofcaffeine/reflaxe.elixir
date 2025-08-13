@@ -1,7 +1,13 @@
 package live;
 
 import schemas.Todo;
-import schemas.User;
+import phoenix.Phoenix;
+import phoenix.Ecto;
+
+using StringTools;
+
+// For convenience, alias Ecto.Repo
+typedef Repo = phoenix.Ecto.EctoRepo;
 
 /**
  * LiveView component for todo management with real-time updates
@@ -25,7 +31,7 @@ class TodoLive {
 	
 	public static function mount(_params: Dynamic, session: Dynamic, socket: Dynamic): Dynamic {
 		// Subscribe to todo updates for real-time sync
-		Phoenix.PubSub.subscribe("todo:updates");
+		phoenix.Phoenix.PubSub.subscribe("todo:updates");
 		
 		var current_user = get_user_from_session(session);
 		var todos = load_todos(current_user.id);
@@ -117,7 +123,8 @@ class TodoLive {
 		var todo_params = {
 			title: params.title,
 			description: params.description,
-			priority: params.priority || "medium",
+			completed: false,
+			priority: params.priority != null ? params.priority : "medium",
 			due_date: params.due_date,
 			tags: parse_tags(params.tags),
 			user_id: socket.assigns.current_user.id
@@ -125,26 +132,26 @@ class TodoLive {
 		
 		var changeset = Todo.changeset(new Todo(), todo_params);
 		
-		return switch (Repo.insert(changeset)) {
-			case {:ok, todo}:
-				// Broadcast to other users
-				Phoenix.PubSub.broadcast("todo:updates", {
-					type: "todo_created",
-					todo: todo
-				});
-				
-				var todos = [todo].concat(socket.assigns.todos);
-				socket
-					.assign({
-						todos: todos,
-						show_form: false,
-						total_todos: todos.length,
-						pending_todos: socket.assigns.pending_todos + 1
-					})
-					.put_flash("info", "Todo created successfully!");
+		var result = Repo.insert(changeset);
+		if (result.success) {
+			var todo = result.data;
+			// Broadcast to other users
+			phoenix.Phoenix.PubSub.broadcast("todo:updates", {
+				type: "todo_created",
+				todo: todo
+			});
 			
-			case {:error, changeset}:
-				socket.put_flash("error", "Failed to create todo");
+			var todos = [todo].concat(socket.assigns.todos);
+			return socket
+				.assign({
+					todos: todos,
+					show_form: false,
+					total_todos: todos.length,
+					pending_todos: socket.assigns.pending_todos + 1
+				})
+				.put_flash("info", "Todo created successfully!");
+		} else {
+			return socket.put_flash("error", "Failed to create todo");
 		}
 	}
 	
@@ -154,17 +161,17 @@ class TodoLive {
 		
 		var updated_todo = Todo.toggle_completed(todo);
 		
-		return switch (Repo.update(updated_todo)) {
-			case {:ok, todo}:
-				Phoenix.PubSub.broadcast("todo:updates", {
-					type: "todo_updated",
-					todo: todo
-				});
-				
-				update_todo_in_list(todo, socket);
+		var result = Repo.update(updated_todo);
+		if (result.success) {
+			var todo = result.data;
+			phoenix.Phoenix.PubSub.broadcast("todo:updates", {
+				type: "todo_updated",
+				todo: todo
+			});
 			
-			case {:error, _}:
-				socket.put_flash("error", "Failed to update todo");
+			return update_todo_in_list(todo, socket);
+		} else {
+			return socket.put_flash("error", "Failed to update todo");
 		}
 	}
 	
@@ -172,17 +179,16 @@ class TodoLive {
 		var todo = find_todo(id, socket.assigns.todos);
 		if (todo == null) return socket;
 		
-		return switch (Repo.delete(todo)) {
-			case {:ok, _}:
-				Phoenix.PubSub.broadcast("todo:updates", {
-					type: "todo_deleted",
-					id: id
-				});
-				
-				remove_todo_from_list(id, socket);
+		var result = Repo.delete(todo);
+		if (result.success) {
+			phoenix.Phoenix.PubSub.broadcast("todo:updates", {
+				type: "todo_deleted",
+				id: id
+			});
 			
-			case {:error, _}:
-				socket.put_flash("error", "Failed to delete todo");
+			return remove_todo_from_list(id, socket);
+		} else {
+			return socket.put_flash("error", "Failed to delete todo");
 		}
 	}
 	
@@ -192,17 +198,17 @@ class TodoLive {
 		
 		var updated_todo = Todo.update_priority(todo, priority);
 		
-		return switch (Repo.update(updated_todo)) {
-			case {:ok, todo}:
-				Phoenix.PubSub.broadcast("todo:updates", {
-					type: "todo_updated",
-					todo: todo
-				});
-				
-				update_todo_in_list(todo, socket);
+		var result = Repo.update(updated_todo);
+		if (result.success) {
+			var todo = result.data;
+			phoenix.Phoenix.PubSub.broadcast("todo:updates", {
+				type: "todo_updated",
+				todo: todo
+			});
 			
-			case {:error, _}:
-				socket.put_flash("error", "Failed to update priority");
+			return update_todo_in_list(todo, socket);
+		} else {
+			return socket.put_flash("error", "Failed to update priority");
 		}
 	}
 	
@@ -249,12 +255,11 @@ class TodoLive {
 	
 	// Utility functions
 	static function load_todos(user_id: Int): Array<Dynamic> {
-		return Repo.all(
-			from(t in Todo)
-				.where(t.user_id == user_id)
-				.order_by(desc: t.inserted_at)
-				.preload(:user)
-		);
+		// Simplified query for initial compilation - use EctoQuery
+		var query = EctoQuery.from(Todo);
+		query = EctoQuery.where(query, {user_id: user_id});
+		query = EctoQuery.order_by(query, "inserted_at");
+		return Repo.all(query);
 	}
 	
 	static function find_todo(id: Int, todos: Array<Dynamic>): Dynamic {
@@ -292,14 +297,14 @@ class TodoLive {
 	
 	// Bulk operations
 	static function complete_all_todos(socket: Dynamic): Dynamic {
-		var pending = socket.assigns.todos.filter(function(t) return !t.completed);
+		var pending: Array<Dynamic> = cast socket.assigns.todos.filter(function(t) return !t.completed);
 		
 		for (todo in pending) {
 			var updated = Todo.toggle_completed(todo);
 			Repo.update(updated);
 		}
 		
-		Phoenix.PubSub.broadcast("todo:updates", {
+		phoenix.Phoenix.PubSub.broadcast("todo:updates", {
 			type: "bulk_update",
 			action: "complete_all"
 		});
@@ -314,13 +319,13 @@ class TodoLive {
 	}
 	
 	static function delete_completed_todos(socket: Dynamic): Dynamic {
-		var completed = socket.assigns.todos.filter(function(t) return t.completed);
+		var completed: Array<Dynamic> = cast socket.assigns.todos.filter(function(t) return t.completed);
 		
 		for (todo in completed) {
 			Repo.delete(todo);
 		}
 		
-		Phoenix.PubSub.broadcast("todo:updates", {
+		phoenix.Phoenix.PubSub.broadcast("todo:updates", {
 			type: "bulk_delete",
 			action: "delete_completed"
 		});
@@ -335,5 +340,37 @@ class TodoLive {
 				pending_todos: remaining.length
 			})
 			.put_flash("info", "Completed todos deleted!");
+	}
+	
+	// Missing helper functions (placeholder implementations)
+	static function start_editing(id: Int, socket: Dynamic): Dynamic {
+		var todo = find_todo(id, socket.assigns.todos);
+		return socket.assign({editing_todo: todo});
+	}
+	
+	static function save_edited_todo(params: Dynamic, socket: Dynamic): Dynamic {
+		var todo = socket.assigns.editing_todo;
+		if (todo == null) return socket;
+		
+		var changeset = Todo.changeset(todo, params);
+		var result = Repo.update(changeset);
+		if (result.success) {
+			var updated_todo = result.data;
+			phoenix.Phoenix.PubSub.broadcast("todo:updates", {
+				type: "todo_updated",
+				todo: updated_todo
+			});
+			return update_todo_in_list(updated_todo, socket).assign({editing_todo: null});
+		} else {
+			return socket.put_flash("error", "Failed to save todo");
+		}
+	}
+	
+	static function toggle_tag_filter(tag: String, socket: Dynamic): Dynamic {
+		var selected_tags: Array<String> = socket.assigns.selected_tags;
+		var updated_tags = selected_tags.contains(tag) ? 
+			selected_tags.filter(function(t) return t != tag) :
+			selected_tags.concat([tag]);
+		return socket.assign({selected_tags: updated_tags});
 	}
 }

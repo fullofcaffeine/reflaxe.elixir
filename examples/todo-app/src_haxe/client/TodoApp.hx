@@ -2,6 +2,8 @@ package client;
 
 import js.Browser;
 import js.html.*;
+import js.html.Storage;
+import haxe.Json;
 
 /**
  * Client-side Haxe application for enhanced todo interactions
@@ -30,62 +32,62 @@ class TodoApp {
 	
 	static function setupHooks(): Void {
 		// Hook for drag and drop reordering
-		hooks.TodoDragDrop = {
+		untyped hooks.TodoDragDrop = {
 			mounted: function() {
-				var container = this.el;
+				var container = untyped this.el;
 				setupSortable(container);
 			},
 			updated: function() {
 				// Re-initialize after LiveView updates
-				var container = this.el;
+				var container = untyped this.el;
 				setupSortable(container);
 			}
 		};
 		
 		// Hook for local storage sync
-		hooks.LocalStorage = {
+		untyped hooks.LocalStorage = {
 			mounted: function() {
 				// Load cached todos on mount
-				var cached = localStorage.getItem("todos_cache");
-				if (cached != null && !navigator.onLine) {
-					this.pushEvent("load_cached", {todos: JSON.parse(cached)});
+				var cached = Browser.getLocalStorage().getItem("todos_cache");
+				if (cached != null && !untyped navigator.onLine) {
+					untyped this.pushEvent("load_cached", {todos: Json.parse(cached)});
 				}
 			},
 			updated: function() {
 				// Cache todos on every update
-				var todos = this.el.dataset.todos;
+				var todos = untyped this.el.dataset.todos;
 				if (todos != null) {
-					localStorage.setItem("todos_cache", todos);
-					localStorage.setItem("todos_cache_time", Date.now().toString());
+					Browser.getLocalStorage().setItem("todos_cache", todos);
+					Browser.getLocalStorage().setItem("todos_cache_time", Std.string(Date.now().getTime()));
 				}
 			}
 		};
 		
 		// Hook for notifications
-		hooks.Notifications = {
+		untyped hooks.Notifications = {
 			mounted: function() {
 				// Request notification permission
-				if ("Notification" in Browser.window && Notification.permission == "default") {
-					Notification.requestPermission();
+				if (untyped Notification != null && untyped Notification.permission == "default") {
+					untyped Notification.requestPermission();
 				}
 				
 				// Listen for notification events from server
-				this.handleEvent("notify", function(payload) {
+				untyped this.handleEvent("notify", function(payload) {
 					showNotification(payload.title, payload.body, payload.icon);
 				});
 			}
 		};
 		
 		// Hook for keyboard shortcuts
-		hooks.KeyboardShortcuts = {
+		untyped hooks.KeyboardShortcuts = {
 			mounted: function() {
-				var component = this;
+				var component = untyped this;
 				
 				Browser.document.addEventListener("keydown", function(e: KeyboardEvent) {
 					// Ctrl/Cmd + N: New todo
 					if ((e.ctrlKey || e.metaKey) && e.key == "n") {
 						e.preventDefault();
-						component.pushEvent("toggle_form", {});
+						untyped component.pushEvent("toggle_form", {});
 					}
 					
 					// Ctrl/Cmd + F: Focus search
@@ -97,16 +99,16 @@ class TodoApp {
 					
 					// Escape: Close forms/modals
 					if (e.key == "Escape") {
-						component.pushEvent("cancel_edit", {});
-						component.pushEvent("toggle_form", {show: false});
+						untyped component.pushEvent("cancel_edit", {});
+						untyped component.pushEvent("toggle_form", {show: false});
 					}
 					
 					// Alt + 1/2/3: Filter views
 					if (e.altKey) {
 						switch (e.key) {
-							case "1": component.pushEvent("filter_todos", {filter: "all"});
-							case "2": component.pushEvent("filter_todos", {filter: "active"});
-							case "3": component.pushEvent("filter_todos", {filter: "completed"});
+							case "1": untyped component.pushEvent("filter_todos", {filter: "all"});
+							case "2": untyped component.pushEvent("filter_todos", {filter: "active"});
+							case "3": untyped component.pushEvent("filter_todos", {filter: "completed"});
 						}
 					}
 				});

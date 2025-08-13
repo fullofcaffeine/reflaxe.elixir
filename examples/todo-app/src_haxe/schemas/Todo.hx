@@ -1,5 +1,7 @@
 package schemas;
 
+import phoenix.Ecto;
+
 /**
  * Todo schema for managing tasks
  */
@@ -20,16 +22,22 @@ class Todo {
 	@:belongs_to("schemas.User") 
 	public var user: Dynamic;
 	
+	public function new() {
+		this.tags = [];
+		this.completed = false;
+		this.priority = "medium";
+	}
+	
 	@:changeset
 	public static function changeset(todo: Dynamic, params: Dynamic): Dynamic {
-		// Validation pipeline
-		return todo
-			.cast(params, ["title", "description", "completed", "priority", "due_date", "tags", "user_id"])
-			.validate_required(["title", "user_id"])
-			.validate_length("title", {min: 3, max: 200})
-			.validate_length("description", {max: 1000})
-			.validate_inclusion("priority", ["low", "medium", "high"])
-			.foreign_key_constraint("user_id");
+		// Validation pipeline using Haxe syntax (avoiding 'cast' keyword)
+		var changeset = phoenix.Ecto.EctoChangeset.changeset_cast(todo, params, ["title", "description", "completed", "priority", "due_date", "tags", "user_id"]);
+		changeset = phoenix.Ecto.EctoChangeset.validate_required(changeset, ["title", "user_id"]);
+		changeset = phoenix.Ecto.EctoChangeset.validate_length(changeset, "title", {min: 3, max: 200});
+		changeset = phoenix.Ecto.EctoChangeset.validate_length(changeset, "description", {max: 1000});
+		changeset = phoenix.Ecto.EctoChangeset.validate_inclusion(changeset, "priority", ["low", "medium", "high"]);
+		changeset = phoenix.Ecto.EctoChangeset.foreign_key_constraint(changeset, "user_id");
+		return changeset;
 	}
 	
 	// Helper functions for business logic
@@ -42,7 +50,7 @@ class Todo {
 	}
 	
 	public static function add_tag(todo: Dynamic, tag: String): Dynamic {
-		var tags = todo.tags || [];
+		var tags: Array<String> = todo.tags != null ? todo.tags : [];
 		tags.push(tag);
 		return changeset(todo, {tags: tags});
 	}
