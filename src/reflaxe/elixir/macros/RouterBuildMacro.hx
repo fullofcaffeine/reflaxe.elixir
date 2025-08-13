@@ -145,14 +145,58 @@ class RouterBuildMacro {
     }
     
     /**
-     * Extract string value from expression
+     * Extract string value from expression (supports both strings and enums)
      */
     private static function extractStringValue(expr: Expr, fieldName: String): String {
         switch (expr.expr) {
             case EConst(CString(s, _)):
                 return s;
+            case EField(e, field):
+                // Handle enum values like HttpMethod.GET
+                switch (e.expr) {
+                    case EConst(CIdent("HttpMethod")):
+                        return field; // Return the enum field name as string
+                    case _:
+                        // Could be a class reference - extract class name
+                        return extractTypeReference(expr, fieldName);
+                }
+            case EConst(CIdent(ident)):
+                // Handle direct identifiers (class names)
+                return ident;
             case _:
-                Context.error('${fieldName} must be a string literal', expr.pos);
+                Context.error('${fieldName} must be a string literal, enum value, or class reference', expr.pos);
+                return null;
+        }
+    }
+    
+    /**
+     * Extract type reference for controller/action validation
+     */
+    private static function extractTypeReference(expr: Expr, fieldName: String): String {
+        switch (expr.expr) {
+            case EField(e, field):
+                // Handle Class.method references
+                var className = extractClassName(e);
+                return className != null ? className : field;
+            case EConst(CIdent(ident)):
+                // Handle simple class names
+                return ident;
+            case _:
+                return null;
+        }
+    }
+    
+    /**
+     * Extract class name from expression
+     */
+    private static function extractClassName(expr: Expr): String {
+        switch (expr.expr) {
+            case EConst(CIdent(ident)):
+                return ident;
+            case EField(e, field):
+                var base = extractClassName(e);
+                return base != null ? '${base}.${field}' : field;
+            case _:
                 return null;
         }
     }
@@ -193,6 +237,16 @@ class RouterBuildMacro {
             var validMethods = ["GET", "POST", "PUT", "DELETE", "PATCH", "LIVE", "LIVE_DASHBOARD"];
             if (!validMethods.contains(route.method)) {
                 Context.warning('Unknown HTTP method: ${route.method}. Valid: ${validMethods.join(", ")}', pos);
+            }
+            
+            // Validate controller exists (if specified)
+            if (route.controller != null && route.controller != "") {
+                validateControllerExists(route.controller, pos);
+            }
+            
+            // Validate action method exists on controller (if both specified)
+            if (route.controller != null && route.action != null && route.controller != "" && route.action != "") {
+                validateActionExists(route.controller, route.action, pos);
             }
         }
     }
@@ -275,6 +329,66 @@ class RouterBuildMacro {
             expr: EObjectDecl(objectFields),
             pos: pos
         };
+    }
+    
+    /**
+     * Validate that a controller class exists
+     */
+    private static function validateControllerExists(controllerName: String, pos: Position): Void {
+        try {
+            // Try to resolve the controller as a type
+            var controllerType = Context.getType(controllerName);
+            trace('RouterBuildMacro: Controller ${controllerName} exists and is valid');
+        } catch (e: Dynamic) {
+            // Controller doesn't exist or can't be resolved
+            Context.warning('Controller "${controllerName}" not found. Ensure the class exists and is in the classpath.', pos);
+        }
+    }
+    
+    /**
+     * Validate that an action method exists on the controller
+     */
+    private static function validateActionExists(controllerName: String, actionName: String, pos: Position): Void {
+        try {
+            // Get the controller type
+            var controllerType = Context.getType(controllerName);
+            
+            switch (controllerType) {
+                case TInst(ref, _):
+                    var classType = ref.get();
+                    
+                    // Check if the action method exists
+                    var methodExists = false;
+                    for (field in classType.fields.get()) {
+                        if (field.name == actionName) {
+                            methodExists = true;
+                            break;
+                        }
+                    }
+                    
+                    // Also check static fields
+                    if (!methodExists) {
+                        for (field in classType.statics.get()) {
+                            if (field.name == actionName) {
+                                methodExists = true;
+                                break;
+                            }
+                        }
+                    }
+                    
+                    if (methodExists) {
+                        trace('RouterBuildMacro: Action ${controllerName}.${actionName} exists and is valid');
+                    } else {
+                        Context.warning('Action "${actionName}" not found on controller "${controllerName}".', pos);
+                    }
+                    
+                case _:
+                    Context.warning('Controller "${controllerName}" is not a class. Actions can only be validated on class types.', pos);
+            }
+        } catch (e: Dynamic) {
+            // Controller doesn't exist, but we already warned about this in validateControllerExists
+            // So just silently skip action validation
+        }
     }
 }
 
