@@ -55,21 +55,119 @@ class ProjectGenerator {
 		var projectPath = Path.join([options.workingDir, options.name]);
 		
 		if (options.verbose) {
-			Sys.println('Creating project directory: $projectPath');
+			Sys.println('Creating project using Mix generator...');
 		}
 		
-		// Create project directory
-		FileSystem.createDirectory(projectPath);
+		// Use Mix generators to create proper project structure
+		var mixCommand = switch (options.type) {
+			case "basic":
+				'mix new ${options.name} --module ${toPascalCase(options.name)}';
+			case "phoenix":
+				'mix phx.new ${options.name} --module ${toPascalCase(options.name)} --no-ecto --no-html --no-gettext --no-dashboard';
+			case "liveview":
+				'mix phx.new ${options.name} --module ${toPascalCase(options.name)} --live --no-dashboard';
+			default:
+				null;
+		}
 		
-		// Copy template files
-		copyTemplate(templatePath, projectPath, options);
+		if (mixCommand != null) {
+			// Change to working directory and run Mix generator
+			var originalDir = Sys.getCwd();
+			Sys.setCwd(options.workingDir);
+			
+			if (options.verbose) {
+				Sys.println('Running: $mixCommand');
+			}
+			
+			// Run Mix generator (add --install flag to auto-install deps)
+			var installFlag = options.skipInstall ? "" : " --install";
+			var result = Sys.command(mixCommand + installFlag);
+			if (result != 0) {
+				Sys.setCwd(originalDir);
+				// If Mix generator fails, fallback to template copying
+				Sys.println("Mix generator not available, using template fallback...");
+				FileSystem.createDirectory(projectPath);
+				copyTemplate(templatePath, projectPath, options);
+			}
+			
+			Sys.setCwd(originalDir);
+		} else {
+			// Fallback to template copying for unknown types
+			FileSystem.createDirectory(projectPath);
+			copyTemplate(templatePath, projectPath, options);
+		}
 		
-		// Create additional files
+		// Add Haxe integration to the project
+		addHaxeIntegration(projectPath, options);
+		
+		// Create additional Haxe-specific files
 		createProjectFiles(projectPath, options);
 		
 		// Add VS Code configuration if requested
 		if (options.vscode) {
 			createVSCodeConfig(projectPath);
+		}
+	}
+	
+	function addHaxeIntegration(projectPath: String, options: GeneratorOptions): Void {
+		// 1. Update mix.exs to include :haxe compiler
+		var mixPath = Path.join([projectPath, "mix.exs"]);
+		if (FileSystem.exists(mixPath)) {
+			var mixContent = File.getContent(mixPath);
+			
+			// Add :haxe to compilers list if not already there
+			if (mixContent.indexOf("compilers: [:haxe]") == -1 && mixContent.indexOf("[:haxe") == -1) {
+				// Find the compilers line and add :haxe
+				var compilerPattern = ~/compilers:\s*\[([^\]]*)\]/;
+				if (compilerPattern.match(mixContent)) {
+					var existingCompilers = compilerPattern.matched(1);
+					var newCompilers = existingCompilers.length > 0 ? ':haxe, $existingCompilers' : ':haxe';
+					mixContent = compilerPattern.replace(mixContent, 'compilers: [$newCompilers]');
+				} else {
+					// No compilers line found, add it to project config
+					var projectPattern = ~/def project do\s*\[/;
+					if (projectPattern.match(mixContent)) {
+						mixContent = projectPattern.replace(mixContent, 'def project do\n    [\n      compilers: [:haxe] ++ Mix.compilers(),');
+					}
+				}
+				
+				File.saveContent(mixPath, mixContent);
+			}
+		}
+		
+		// 2. Create src_haxe directory if it doesn't exist
+		var srcHaxePath = Path.join([projectPath, "src_haxe"]);
+		if (!FileSystem.exists(srcHaxePath)) {
+			FileSystem.createDirectory(srcHaxePath);
+		}
+		
+		// 3. Copy Mix.Tasks.Compile.Haxe to the project
+		var mixTaskDir = Path.join([projectPath, "lib", "mix", "tasks"]);
+		if (!FileSystem.exists(mixTaskDir)) {
+			createDirectoryRecursive(mixTaskDir);
+		}
+		
+		var compileTaskPath = Path.join([mixTaskDir, "compile.haxe.ex"]);
+		if (!FileSystem.exists(compileTaskPath)) {
+			// Copy from our lib directory
+			var sourceTaskPath = "lib/mix/tasks/compile.haxe.ex";
+			if (FileSystem.exists(sourceTaskPath)) {
+				File.copy(sourceTaskPath, compileTaskPath);
+			}
+		}
+		
+		// 4. Create build.hxml if it doesn't exist
+		var buildHxmlPath = Path.join([projectPath, "build.hxml"]);
+		if (!FileSystem.exists(buildHxmlPath)) {
+			var buildContent = generateBuildHxml(options.name);
+			File.saveContent(buildHxmlPath, buildContent);
+		}
+		
+		// 5. Update package.json to include Haxe dependencies
+		var packagePath = Path.join([projectPath, "package.json"]);
+		if (!FileSystem.exists(packagePath)) {
+			var packageContent = generatePackageJson(options.name);
+			File.saveContent(packagePath, packageContent);
 		}
 	}
 	
