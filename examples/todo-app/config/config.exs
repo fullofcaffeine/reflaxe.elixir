@@ -1,5 +1,9 @@
 import Config
 
+# Configure Ecto repositories
+config :todo_app,
+  ecto_repos: [TodoApp.Repo]
+
 # Configures the endpoint
 config :todo_app, TodoAppWeb.Endpoint,
   url: [host: "localhost"],

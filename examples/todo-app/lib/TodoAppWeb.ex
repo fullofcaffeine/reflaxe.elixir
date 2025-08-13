@@ -116,7 +116,7 @@ defmodule TodoAppWeb do
   def __using__(arg0) do
     (
   temp_result = nil
-  case ((which)) do
+  case ((arg0)) do
   "controller" ->
     temp_result = TodoAppWeb.controller()
   "html" ->
@@ -126,7 +126,7 @@ defmodule TodoAppWeb do
   "router" ->
     temp_result = TodoAppWeb.router()
   _ ->
-    throw("Unknown use: " + Std.string(which))
+    throw("Unknown use: " + Std.string(arg0))
 end
   temp_result
 )
