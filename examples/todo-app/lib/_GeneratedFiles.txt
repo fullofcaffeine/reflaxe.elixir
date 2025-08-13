@@ -14,12 +14,9 @@ haxe_Constraints.ex
 haxe_CallStack.ex
 elixir_Supervisor.ex
 Type.ex
-TodoAppWeb.ex
 TodoApp.ex
 StringTools.ex
 StringBuf.ex
-Router.ex
 IntIterator.ex
 EnumValue.ex
-Endpoint.ex
 Any.ex

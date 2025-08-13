@@ -8,6 +8,7 @@ import elixir.Supervisor;
  * Defines the OTP application supervision tree
  */
 @:native("TodoApp.Application")
+@:application
 class TodoApp {
     /**
      * Start the application

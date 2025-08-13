@@ -21,7 +21,6 @@ defmodule Todo do
     field :user_id, :integer
     timestamps()
     timestamps()
-    belongs_to :user, null
   end
 
   @doc """
