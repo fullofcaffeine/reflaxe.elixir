@@ -62,10 +62,11 @@ The compiler could automatically include runtime files in output, but this coupl
 
 ## Implementation Status
 
-### Current (Temporary)
+### Current Implementation ✅
 - StringTools defined as extern in `/std/StringTools.hx`
 - Implementation in `/std/elixir/StringTools.ex`
-- Manual inclusion required (needs fix)
+- Compiler maps method names at compile-time
+- See [STRINGTOOLS_STRATEGY.md](./STRINGTOOLS_STRATEGY.md) for detailed architectural decisions
 
 ### Target Architecture
 ```
@@ -107,3 +108,14 @@ String.length(s)
 2. Move all runtime implementations there
 3. Update compiler to reference runtime properly
 4. Document dependency setup for users
+
+## Architectural Decision
+
+After comparing with other Reflaxe implementations (GDScript, CPP, Go), we chose the **Extern + Runtime Library** pattern for StringTools. This provides:
+
+- **Predictable code generation** - No surprises from transpiling Haxe idioms
+- **Native performance** - Direct Elixir implementations
+- **Idiomatic code** - Following Elixir naming conventions
+- **Clear debugging** - Regular Elixir code in stacktraces
+
+See [STRINGTOOLS_STRATEGY.md](./STRINGTOOLS_STRATEGY.md) for the complete analysis and comparison with other approaches.
