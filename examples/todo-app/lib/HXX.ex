@@ -10,8 +10,8 @@ defmodule HXX do
 
   # Static functions
   @doc "Function hxx"
-  @spec hxx(TInst(String,[]).t()) :: TInst(String,[]).t()
-  def hxx(arg0) do
+  @spec hxx(String.t()) :: String.t()
+  def hxx(template_str) do
     template_str
   end
 

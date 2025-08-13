@@ -19,5 +19,6 @@
 -D reflaxe.elixir=0.1.0
 --macro reflaxe.elixir.CompilerInit.Start()
 
-# Main class to compile (entry point)
-HXX
+# Main classes to compile
+live.TodoLive
+schemas.Todo

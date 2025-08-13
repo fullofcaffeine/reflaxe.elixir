@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8"/>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <meta name="csrf-token" content={get_csrf_token()}>
+    <title>Todo App - Haxe Elixir</title>
+    <style>
+      body { font-family: system-ui; margin: 0; padding: 20px; background: #f5f5f5; }
+      .container { max-width: 800px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; }
+      h1 { color: #333; }
+      .todo-item { padding: 10px; border-bottom: 1px solid #eee; display: flex; align-items: center; }
+      .todo-item:hover { background: #f9f9f9; }
+      .todo-checkbox { margin-right: 10px; }
+      .todo-text { flex: 1; }
+      .todo-completed { text-decoration: line-through; color: #999; }
+      .todo-form { margin: 20px 0; padding: 20px; background: #f9f9f9; border-radius: 4px; }
+      input[type="text"] { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; }
+      button { background: #4CAF50; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; }
+      button:hover { background: #45a049; }
+      .delete-btn { background: #f44336; margin-left: 10px; }
+      .delete-btn:hover { background: #da190b; }
+    </style>
+    <script defer phx-track-static type="text/javascript" src="/assets/app.js"></script>
+  </head>
+  <body>
+    <%= @inner_content %>
+  </body>
+</html>

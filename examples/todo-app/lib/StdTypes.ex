@@ -1,6 +1,10 @@
-@typedoc """
+defmodule StdTypes do
+  @moduledoc """
+  Standard type definitions for Haxe standard library types in Elixir.
+  """
 
-	An `Iterator` is a structure that permits iteration over elements of type `T`.
+  @typedoc """
+  An `Iterator` is a structure that permits iteration over elements of type `T`.
 
 	Any class with matching `hasNext()` and `next()` fields is considered an `Iterator`
 	and can then be used e.g. in `for`-loops. This makes it easy to implement
@@ -45,3 +49,4 @@
 @type key_value_iterable(k, v) :: %{
   key_value_iterator: (() -> key_value_iterator(k, v))
 }
+end
