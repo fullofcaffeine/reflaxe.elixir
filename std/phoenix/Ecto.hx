@@ -4,21 +4,22 @@ package phoenix;
  * Basic Ecto operations extern definitions for type-safe database interactions
  * Provides essential CRUD operations and query building interfaces
  */
-extern class Ecto {
-    
-    /**
-     * Ecto.Repo interface for database operations
-     */
-    extern class Repo {
+
+/**
+ * Ecto.Repo interface for database operations
+ */
+@:native("Ecto.Repo")
+extern class EctoRepo {
         /**
          * Insert a struct or changeset into the database
          */
-        static function insert<T>(struct_or_changeset: T): {ok: T} | {error: Dynamic};
+        static function insert<T>(struct_or_changeset: T): Dynamic;
         
         /**
          * Insert a struct or changeset, raising on error
          */
-        static function insert!<T>(struct_or_changeset: T): T;
+        @:native("insert!")
+        static function insertBang<T>(struct_or_changeset: T): T;
         
         /**
          * Get a single record by ID
@@ -28,7 +29,8 @@ extern class Ecto {
         /**
          * Get a single record by ID, raising if not found
          */
-        static function get!<T>(queryable: Class<T>, id: Dynamic): T;
+        @:native("get!")
+        static function getBang<T>(queryable: Class<T>, id: Dynamic): T;
         
         /**
          * Get a single record by query conditions
@@ -38,22 +40,24 @@ extern class Ecto {
         /**
          * Update a record with changes
          */
-        static function update<T>(changeset: T): {ok: T} | {error: Dynamic};
+        static function update<T>(changeset: T): Dynamic;
         
         /**
          * Update a record with changes, raising on error
          */
-        static function update!<T>(changeset: T): T;
+        @:native("update!")
+        static function updateBang<T>(changeset: T): T;
         
         /**
          * Delete a record
          */
-        static function delete<T>(struct_or_changeset: T): {ok: T} | {error: Dynamic};
+        static function delete<T>(struct_or_changeset: T): Dynamic;
         
         /**
          * Delete a record, raising on error
          */
-        static function delete!<T>(struct_or_changeset: T): T;
+        @:native("delete!")
+        static function deleteBang<T>(struct_or_changeset: T): T;
         
         /**
          * Execute a query and return all results
@@ -68,13 +72,15 @@ extern class Ecto {
         /**
          * Execute a query and return one result, raising if not found
          */
-        static function one!<T>(query: Dynamic): T;
-    }
-    
-    /**
-     * Ecto.Schema for defining database schemas
-     */
-    extern class Schema {
+        @:native("one!")
+        static function oneBang<T>(query: Dynamic): T;
+}
+
+/**
+ * Ecto.Schema for defining database schemas
+ */
+@:native("Ecto.Schema")
+extern class EctoSchema {
         /**
          * Define a schema with the given table name and fields
          */
@@ -97,16 +103,18 @@ extern class Ecto {
          * Timestamp fields (inserted_at, updated_at)
          */
         static function timestamps(?opts: Dynamic): Dynamic;
-    }
-    
-    /**
-     * Ecto.Changeset for data validation and casting
-     */
-    extern class Changeset {
+}
+
+/**
+ * Ecto.Changeset for data validation and casting
+ */
+@:native("Ecto.Changeset")
+extern class EctoChangeset {
         /**
-         * Create a changeset for the given struct and params
+         * Create a changeset for the given struct and params (renamed to avoid 'cast' keyword)
          */
-        static function cast<T>(struct: T, params: Dynamic, permitted: Array<String>): Dynamic;
+        @:native("Ecto.Changeset.cast")
+        static function changeset_cast<T>(struct: T, params: Dynamic, permitted: Array<String>): Dynamic;
         
         /**
          * Validate required fields
@@ -134,20 +142,35 @@ extern class Ecto {
         static function validate_change(changeset: Dynamic, field: String, validator: Dynamic): Dynamic;
         
         /**
+         * Validates that a field value is in a list of options
+         */
+        static function validate_inclusion(changeset: Dynamic, field: String, list: Array<String>): Dynamic;
+        
+        /**
+         * Adds a foreign key constraint validation
+         * @param changeset The changeset to add constraint to
+         * @param field The field name containing the foreign key
+         * @param opts Optional configuration (name, message)
+         */
+        static function foreign_key_constraint(changeset: Dynamic, field: String, ?opts: Dynamic): Dynamic;
+        
+        /**
          * Check if changeset is valid
          */
-        static function valid?(changeset: Dynamic): Bool;
+        @:native("valid?")
+        static function isValid(changeset: Dynamic): Bool;
         
         /**
          * Apply changes from a changeset to a struct
          */
         static function apply_changes<T>(changeset: Dynamic): T;
-    }
-    
-    /**
-     * Ecto.Query for building database queries
-     */
-    extern class Query {
+}
+
+/**
+ * Ecto.Query for building database queries
+ */
+@:native("Ecto.Query")
+extern class EctoQuery {
         /**
          * Create a query from a schema
          */
@@ -187,5 +210,14 @@ extern class Ecto {
          * Preload associations
          */
         static function preload(query: Dynamic, associations: Dynamic): Dynamic;
-    }
+}
+
+/**
+ * Compatibility namespace for accessing Ecto classes
+ */
+class Ecto {
+    public static var Repo = EctoRepo;
+    public static var Schema = EctoSchema;
+    public static var Changeset = EctoChangeset;
+    public static var Query = EctoQuery;
 }

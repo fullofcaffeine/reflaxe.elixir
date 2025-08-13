@@ -107,10 +107,70 @@ Currently using helper pattern instead of sub-compiler pattern:
 
 This is acceptable - helpers are simpler for our needs while following similar separation of concerns.
 
+## Phoenix LiveView Asset Pipeline Rules ⚡
+
+### CRITICAL: JavaScript Bundle Optimization
+**Always optimize JavaScript for Phoenix LiveView applications**:
+
+1. **External Source Maps** (NOT inline):
+   ```elixir
+   # config/dev.exs - Development
+   watchers: [
+     esbuild: {Esbuild, :install_and_run, [:todo_app, ~w(--sourcemap=external --watch)]}
+   ]
+   ```
+
+2. **Production Minification**:
+   ```elixir
+   # mix.exs - Production assets 
+   "assets.deploy": ["esbuild todo_app --minify --tree-shaking=true --drop:debugger --drop:console", "phx.digest"]
+   ```
+
+3. **Tree-shaking Configuration**:
+   ```elixir
+   # config/config.exs - Base config
+   args: ~w(js/app.js --bundle --target=es2017 --outdir=../priv/static/assets --external:/fonts/* --external:/images/* --tree-shaking=true)
+   ```
+
+**Results**: 760KB → 107KB (86% reduction) with external sourcemaps and proper minification.
+
+### HXX Compile-Time Architecture ✅
+**HXX is compile-time only** - never create runtime HXX.ex modules:
+- ✅ **HXX templates** compile to HEEx at build time
+- ❌ **HXX.ex runtime modules** are unnecessary and should be removed
+- 🎯 **Pattern**: Template compilation happens during Haxe transpilation, not at runtime
+
+### Standard Library Duplication Issue 🔍
+**Investigation needed**: Standard library files (Type.ex, StringBuf.ex, etc.) are duplicated across examples.
+- Should be centralized in main library
+- Examples should import, not duplicate
+- See other Reflaxe compilers for @:coreApi patterns
+
+## Experimental Roadmap 🧪
+
+### 1. Modern Haxe-to-JS with Genes Compiler
+**Replace standard Haxe JS compilation with [genes](https://github.com/benmerckx/genes)**:
+- **Why**: Modern JavaScript output, better optimization, smaller bundles
+- **Current Issue**: Todo app client (TodoApp.hx) has compilation errors with standard Haxe JS
+- **Goals**: 
+  - Fix browser API compatibility issues
+  - Generate smaller, more efficient client-side code
+  - Better integration with Phoenix LiveView hooks
+- **Status**: Experimental - needs investigation and testing
+- **Impact**: Could significantly reduce client-side JavaScript bundle sizes
+
+### Asset Pipeline Integration
+**Phoenix Projects MUST**:
+1. Use esbuild for JavaScript bundling (not CDN)
+2. Configure proper package.json with file: dependencies
+3. Implement external sourcemaps for development
+4. Enable minification + tree-shaking for production
+
 ## Quality Standards
 - Zero compilation warnings policy (from .claude/rules/elixir-best-practices.md)
 - Testing Trophy approach with integration test focus
 - Performance targets: <15ms compilation steps, <100ms HXX template processing
+- JavaScript bundles: <150KB minified for LiveView apps
 
 ## Date and Timestamp Rule 📅
 **ALWAYS check current date before writing timestamps**:
