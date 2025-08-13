@@ -10,14 +10,59 @@ This file contains instructions for AI assistants (Claude, ChatGPT, etc.) workin
 - ❌ Edit any `.ex` files in the `lib/` directory directly
 - ❌ Try to fix compilation errors by modifying generated files
 - ❌ Make "quick fixes" to generated Elixir code
+- ❌ Write Elixir migration files manually in `priv/repo/migrations/`
 
 ### INSTEAD:
 - ✅ Fix issues in the compiler source at `/src/reflaxe/elixir/`
 - ✅ Edit Haxe source files in `src_haxe/`
+- ✅ Write migrations in Haxe using @:migration annotation
 - ✅ Regenerate with `npx haxe build.hxml` after fixing the compiler
 
 ### Why This Matters:
 Generated files are overwritten every time you compile. Any manual edits will be lost. All fixes must be made at the source - either in the Haxe code (`src_haxe/`) or in the compiler itself (`/src/reflaxe/elixir/`).
+
+## 📝 IMPORTANT: Migrations Must Be Written in Haxe
+
+**ALL database migrations should be written in Haxe and compiled to Elixir.**
+
+### The Correct Approach:
+1. **Write migrations in Haxe** using the `@:migration` annotation
+2. **Place them in `src_haxe/migrations/`**
+3. **Compile to generate Elixir migrations** in `priv/repo/migrations/`
+4. **Never manually write `.exs` migration files**
+
+### Example Migration in Haxe:
+```haxe
+package migrations;
+
+@:migration("todos")
+class CreateTodos {
+    public function up(): Void {
+        createTable("todos")
+            .addColumn("title", "string", {null: false})
+            .addColumn("description", "text")
+            .addColumn("completed", "boolean", {default: false})
+            .timestamps();
+    }
+    
+    public function down(): Void {
+        dropTable("todos");
+    }
+}
+```
+
+### Using the Mix Task:
+```bash
+# Generate a new migration from Haxe
+mix haxe.gen.migration CreateTodos --table todos --columns "title:string,description:text"
+
+# This creates:
+# - src_haxe/migrations/CreateTodos.hx (Haxe source)
+# - priv/repo/migrations/[timestamp]_create_todos.exs (compiled Elixir)
+```
+
+### Why This Matters:
+The entire point of Reflaxe.Elixir is to write everything in Haxe. Writing manual Elixir migrations defeats the purpose and breaks the single-language paradigm. The compiler has full @:migration support - use it!
 
 ## 📋 Project Overview
 
@@ -195,6 +240,55 @@ npx haxe build.hxml -D generate-llm-docs
 # Extract patterns from your code
 npx haxe build.hxml -D extract-patterns
 ```
+
+## 🏗️ Architecture Decision: Haxe vs Manual Elixir Files
+
+### What Should Be Written in Haxe (Application Logic)
+✅ **Write in Haxe** - Frequently modified application code:
+- **LiveView modules** - Your interactive UI components (`TodoLive.hx`)
+- **Schemas** - Database models with `@:schema` annotation (`Todo.hx`)
+- **Migrations** - Database changes with `@:migration` annotation (`CreateTodos.hx`)
+- **Contexts** - Business logic modules (e.g., `Todos.hx` context)
+- **GenServers/Agents** - Your OTP behaviors and state management
+- **Application module** - With `@:application` annotation for supervision tree
+- **Any custom business logic** - Domain-specific code you'll iterate on
+
+### What Should Remain as Manual Elixir (Phoenix Infrastructure)
+📦 **Keep as Elixir** - Phoenix framework scaffolding:
+- **Router** (`router.ex`) - Uses Phoenix-specific macros and DSL
+- **Endpoint** (`endpoint.ex`) - Phoenix configuration with compile-time setup
+- **CoreComponents** (`core_components.ex`) - Reusable UI components with ~H sigils
+- **TodoAppWeb** (`todo_app_web.ex`) - Phoenix macro definitions
+- **Layouts** (`layouts.ex`, `layouts/*.heex`) - HTML templates
+- **ErrorHTML/ErrorJSON** - Error handling pages
+- **Telemetry** - Metrics and monitoring setup
+- **Repo** (`repo.ex`) - Simple Ecto configuration
+
+### The Principle
+**Infrastructure that rarely changes** → Manual Elixir files
+**Application logic you actively develop** → Haxe source files
+
+### Integration Pattern
+When Haxe code needs to use Phoenix infrastructure:
+1. Create extern definitions for the Elixir modules
+2. Import and use them naturally from Haxe
+3. The compiler handles the integration seamlessly
+
+Example:
+```haxe
+// In Haxe - using Phoenix infrastructure via externs
+@:native("TodoAppWeb.CoreComponents")
+extern class CoreComponents {
+    static function button(assigns: Dynamic): Dynamic;
+    static function modal(assigns: Dynamic): Dynamic;
+}
+```
+
+This architecture gives you:
+- Type-safe application development in Haxe
+- Full access to Phoenix ecosystem and patterns
+- Clear separation of concerns
+- Best of both worlds: Haxe's type system + Phoenix's maturity
 
 ## 📚 Additional Resources
 

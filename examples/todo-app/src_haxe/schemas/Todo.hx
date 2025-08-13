@@ -6,6 +6,7 @@ import phoenix.Ecto;
  * Todo schema for managing tasks
  */
 @:schema
+@:timestamps
 class Todo {
 	@:field public var id: Int;
 	@:field public var title: String;
@@ -15,9 +16,6 @@ class Todo {
 	@:field public var due_date: Dynamic; // Date type
 	@:field public var tags: Array<String> = [];
 	@:field public var user_id: Int;
-	
-	@:timestamps public var inserted_at: Dynamic;
-	@:timestamps public var updated_at: Dynamic;
 	
 	public function new() {
 		this.tags = [];
