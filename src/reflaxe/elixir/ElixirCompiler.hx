@@ -539,18 +539,18 @@ class ElixirCompiler extends BaseCompiler {
     }
     
     /**
-     * Compile typedef - map to Elixir type aliases
+     * Compile typedef - Returns null to ignore typedefs as BaseCompiler recommends.
+     * This prevents generating invalid StdTypes.ex files with @typedoc/@type outside modules.
      */
     public override function compileTypedef(defType: DefType): Null<String> {
-        // Delegate to TypedefCompiler helper
-        var typedefOutput = TypedefCompiler.compileTypedef(defType);
-        
-        if (typedefOutput != null && typedefOutput.length > 0) {
-            // For now, return the typedef output directly
-            // In a full implementation, this would be integrated with the module system
-            return typedefOutput;
-        }
-        
+        // Following BaseCompiler recommendation: ignore typedefs since
+        // "Haxe redirects all types automatically" - no standalone typedef files needed
+        // 
+        // Returning null prevents generating invalid StdTypes.ex files with 
+        // @typedoc/@type directives outside modules.
+        // 
+        // TODO: Future refactor should extend DirectToStringCompiler instead of BaseCompiler
+        // to properly support typedef compilation with module wrapping if needed.
         return null;
     }
     
@@ -982,8 +982,36 @@ class ElixirCompiler extends BaseCompiler {
                 '${expr}.${fieldName}'; // Map access syntax
                 
             case FStatic(classType, classFieldRef):
-                var className = NamingHelper.getElixirModuleName(classType.get().getNameOrNative());
-                var fieldName = NamingHelper.getElixirFunctionName(classFieldRef.get().name);
+                var cls = classType.get();
+                var className = NamingHelper.getElixirModuleName(cls.getNameOrNative());
+                var fieldName = classFieldRef.get().name;
+                
+                // Special handling for StringTools extern
+                if (cls.name == "StringTools" && cls.isExtern) {
+                    className = "StringTools";
+                    // Map Haxe method names to Elixir function names
+                    fieldName = switch(fieldName) {
+                        case "isSpace": "is_space";
+                        case "urlEncode": "url_encode";
+                        case "urlDecode": "url_decode";
+                        case "htmlEscape": "html_escape";
+                        case "htmlUnescape": "html_unescape";
+                        case "startsWith": "starts_with?";
+                        case "endsWith": "ends_with?";
+                        case "fastCodeAt": "fast_code_at";
+                        case "unsafeCodeAt": "unsafe_code_at";
+                        case "isEof": "is_eof";
+                        case "utf16CodePointAt": "utf16_code_point_at";
+                        case "keyValueIterator": "key_value_iterator";
+                        case "quoteUnixArg": "quote_unix_arg";
+                        case "quoteWinArg": "quote_win_arg";
+                        case "winMetaCharacters": "win_meta_characters";
+                        case other: NamingHelper.toSnakeCase(other);
+                    };
+                } else {
+                    fieldName = NamingHelper.getElixirFunctionName(fieldName);
+                }
+                
                 '${className}.${fieldName}'; // Module function call
                 
             case FAnon(classFieldRef):
@@ -1058,6 +1086,14 @@ class ElixirCompiler extends BaseCompiler {
                     return RepositoryCompiler.compileRepoCall(methodName, compiledArgs, schemaName);
                 }
                 
+                // Check if this is a String method call
+                switch (obj.t) {
+                    case TInst(t, _) if (t.get().name == "String"):
+                        return compileStringMethod(objStr, methodName, args);
+                    case _:
+                        // Continue with normal method call handling
+                }
+                
                 // Handle other method calls normally
                 var compiledArgs = args.map(arg -> compileExpression(arg));
                 return '${objStr}.${methodName}(${compiledArgs.join(", ")})';
@@ -1067,6 +1103,63 @@ class ElixirCompiler extends BaseCompiler {
                 var compiledArgs = args.map(arg -> compileExpression(arg));
                 return compileExpression(e) + "(" + compiledArgs.join(", ") + ")";
         }
+    }
+    
+    /**
+     * Compile String method calls to Elixir equivalents
+     */
+    private function compileStringMethod(objStr: String, methodName: String, args: Array<TypedExpr>): String {
+        var compiledArgs = args.map(arg -> compileExpression(arg));
+        
+        return switch (methodName) {
+            case "charCodeAt":
+                // s.charCodeAt(pos) → String.to_charlist(s) |> Enum.at(pos) 
+                if (compiledArgs.length > 0) {
+                    'case String.at(${objStr}, ${compiledArgs[0]}) do nil -> nil; c -> :binary.first(c) end';
+                } else {
+                    'nil';
+                }
+            case "charAt":
+                // s.charAt(pos) → String.at(s, pos)
+                if (compiledArgs.length > 0) {
+                    'String.at(${objStr}, ${compiledArgs[0]})';
+                } else {
+                    '""';
+                }
+            case "toLowerCase":
+                'String.downcase(${objStr})';
+            case "toUpperCase":
+                'String.upcase(${objStr})';
+            case "substr" | "substring":
+                // Handle substr/substring with Elixir's String.slice
+                if (compiledArgs.length >= 2) {
+                    'String.slice(${objStr}, ${compiledArgs[0]}, ${compiledArgs[1]})';
+                } else if (compiledArgs.length == 1) {
+                    'String.slice(${objStr}, ${compiledArgs[0]}..-1)';
+                } else {
+                    objStr;
+                }
+            case "indexOf":
+                // s.indexOf(substr) → find index or -1
+                if (compiledArgs.length > 0) {
+                    'case :binary.match(${objStr}, ${compiledArgs[0]}) do {pos, _} -> pos; :nomatch -> -1 end';
+                } else {
+                    '-1';
+                }
+            case "split":
+                if (compiledArgs.length > 0) {
+                    'String.split(${objStr}, ${compiledArgs[0]})';
+                } else {
+                    '[${objStr}]';
+                }
+            case "trim":
+                'String.trim(${objStr})';
+            case "length":
+                'String.length(${objStr})';
+            case _:
+                // Default: try to call as a regular method (might fail at runtime)
+                '${objStr}.${methodName}(${compiledArgs.join(", ")})';
+        };
     }
     
     /**
