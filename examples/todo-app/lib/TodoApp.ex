@@ -1,33 +1,19 @@
 defmodule TodoApp.Application do
-  use Bitwise
-  @moduledoc """
-  TodoApp.Application module generated from Haxe
-  
-  
- * Main TodoApp application module
- * Defines the OTP application supervision tree
- 
-  """
+  @moduledoc false
 
-  # Static functions
-  @doc "
-     * Start the application
-     "
-  @spec start(term(), term()) :: term()
-  def start(arg0, arg1) do
-    (
-  children = [%{id: "TodoApp.Repo", start: %{module: "TodoApp.Repo", function: "start_link", args: []}}, %{id: "Phoenix.PubSub", start: %{module: "Phoenix.PubSub", function: "start_link", args: [%{name: "TodoApp.PubSub"}]}}, %{id: "TodoAppWeb.Telemetry", start: %{module: "TodoAppWeb.Telemetry", function: "start_link", args: []}}, %{id: "TodoAppWeb.Endpoint", start: %{module: "TodoAppWeb.Endpoint", function: "start_link", args: []}}]
-  opts = %{strategy: "one_for_one", name: "TodoApp.Supervisor"}
-  Supervisor.Supervisor.start_link(children, opts)
-)
+  use Application
+
+  @impl true
+  def start(_type, _args) do
+    # NOTE: This is a placeholder - proper compilation needs TypedExpr
+    children = [
+      TodoApp.Repo,
+      TodoAppWeb.Telemetry,
+      {Phoenix.PubSub, name: TodoApp.PubSub},
+      TodoAppWeb.Endpoint
+    ]
+
+    opts = [strategy: :one_for_one, name: TodoApp.Supervisor]
+    Supervisor.start_link(children, opts)
   end
-
-  @doc "
-     * Called when application is preparing to shut down
-     "
-  @spec prep_stop(term()) :: term()
-  def prep_stop(arg0) do
-    arg0
-  end
-
 end
