@@ -1,4 +1,5 @@
 defmodule StringTools do
+  use Bitwise
   @moduledoc """
   StringTools module generated from Haxe
   
@@ -27,9 +28,12 @@ defmodule StringTools do
     (
   l = String.length(arg0)
   r = 0
-  while (r < l && StringTools.isSpace(arg0, r)) do
-  r + 1
-end
+  (fn loop_fn ->
+  if (r < l && StringTools.isSpace(arg0, r)) do
+    r + 1
+    loop_fn.(loop_fn)
+  end
+end).(fn f -> f.(f) end)
   if (r > 0), do: String.slice(arg0, r, l - r), else: arg0
 )
   end
@@ -40,9 +44,12 @@ end
     (
   l = String.length(arg0)
   r = 0
-  while (r < l && StringTools.isSpace(arg0, l - r - 1)) do
-  r + 1
-end
+  (fn loop_fn ->
+  if (r < l && StringTools.isSpace(arg0, l - r - 1)) do
+    r + 1
+    loop_fn.(loop_fn)
+  end
+end).(fn f -> f.(f) end)
   if (r > 0), do: String.slice(arg0, 0, l - r), else: arg0
 )
   end
@@ -114,11 +121,14 @@ end
     (
   if (String.length(arg1) <= 0), do: arg0, else: nil
   buf = ""
-  arg2 -= String.length(arg0)
-  while (String.length(buf) < arg2) do
-  buf += arg1
-end
-  buf + arg0
+  arg2 = arg2 - String.length(arg0)
+  (fn loop_fn ->
+  if (String.length(buf) < arg2) do
+    buf = buf <> arg1
+    loop_fn.(loop_fn)
+  end
+end).(fn f -> f.(f) end)
+  buf <> arg0
 )
   end
 
@@ -128,9 +138,12 @@ end
     (
   if (String.length(arg1) <= 0), do: arg0, else: nil
   buf = arg0
-  while (String.length(buf) < arg2) do
-  buf += arg1
-end
+  (fn loop_fn ->
+  if (String.length(buf) < arg2) do
+    buf = buf <> arg1
+    loop_fn.(loop_fn)
+  end
+end).(fn f -> f.(f) end)
   buf
 )
   end
@@ -171,17 +184,23 @@ end
 ), else: nil
   if (arg0 == 0), do: s = "0", else: (
   result = ""
-  while (arg0 > 0) do
-  (
-  result = String.at(hex_chars, arg0 and 15) + result
-  arg0 = arg0 >>> 4
+  (fn loop_fn ->
+  if (arg0 > 0) do
+    (
+  result = String.at(hex_chars, arg0 &&& 15) <> result
+  arg0 = Bitwise.>>>(arg0, 4)
 )
-end
-  s += result
+    loop_fn.(loop_fn)
+  end
+end).(fn f -> f.(f) end)
+  s = s <> result
 )
-  if (arg1 != nil), do: while (String.length(s) < arg1) do
-  s = "0" + s
-end, else: nil
+  if (arg1 != nil), do: (fn loop_fn ->
+  if (String.length(s) < arg1) do
+    s = "0" <> s
+    loop_fn.(loop_fn)
+  end
+end).(fn f -> f.(f) end), else: nil
   s
 )
   end
@@ -203,7 +222,7 @@ end, else: nil
   def quote_unix_arg(arg0) do
     (
   if (arg0 == ""), do: "''", else: nil
-  "'" + StringTools.replace(arg0, "'", "'\"'\"'") + "'"
+  "'" <> StringTools.replace(arg0, "'", "'\"'\"'") <> "'"
 )
   end
 
@@ -211,7 +230,7 @@ end, else: nil
   @spec quote_win_arg(String.t(), boolean()) :: String.t()
   def quote_win_arg(arg0, arg1) do
     (
-  if (case :binary.match(arg0, " ") do {pos, _} -> pos; :nomatch -> -1 end != -1 || arg0 == ""), do: arg0 = "\"" + StringTools.replace(arg0, "\"", "\\\"") + "\"", else: nil
+  if (case :binary.match(arg0, " ") do {pos, _} -> pos; :nomatch -> -1 end != -1 || arg0 == ""), do: arg0 = "\"" <> StringTools.replace(arg0, "\"", "\\\"") <> "\"", else: nil
   arg0
 )
   end
@@ -221,7 +240,7 @@ end, else: nil
   def utf16_code_point_at(arg0, arg1) do
     (
   c = StringTools.fastCodeAt(arg0, arg1)
-  if (c >= 55296 && c <= 56319), do: c = c - 55296 <<< 10 or StringTools.fastCodeAt(arg0, arg1 + 1) and 1023 or 65536, else: nil
+  if (c >= 55296 && c <= 56319), do: c = Bitwise.<<<(c - 55296, 10) ||| StringTools.fastCodeAt(arg0, arg1 + 1) &&& 1023 ||| 65536, else: nil
   c
 )
   end
