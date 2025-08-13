@@ -269,8 +269,38 @@ When you create a project:
 1. **Template Selection**: ProjectGenerator maps your project type to a template directory
 2. **File Copying**: All files (except `.template.json`) are copied to the new project
 3. **Dynamic Generation**: Core files like `mix.exs`, `package.json`, `README.md` are generated dynamically with your project name
-4. **Placeholder Processing**: Any `__PLACEHOLDER__` markers in template files are replaced
+4. **Placeholder Processing**: Both `__PLACEHOLDER__` and `{{PLACEHOLDER}}` markers in template files are replaced
 5. **Permission Preservation**: File permissions and binary files are preserved correctly
+6. **LLM Documentation**: AI-optimized documentation is automatically generated using templates
+
+### Template System
+
+The ProjectGenerator uses a flexible template system with:
+
+#### Placeholder Syntax
+- `{{PROJECT_NAME}}` - Mustache-style placeholders (preferred for documentation)
+- `__PROJECT_NAME__` - Underscore-style placeholders (legacy support)
+
+#### Conditional Blocks
+- `{{#if IS_PHOENIX}}...{{/if}}` - Include content conditionally
+- `{{#unless HAS_ECTO}}...{{/unless}}` - Exclude content conditionally
+
+#### Template Files
+Located in `templates/project/`:
+- `claude.md.tpl` - AI assistant instructions template
+- `readme.md.tpl` - Project README template  
+- `api_reference.md.tpl` - API documentation skeleton
+- `patterns.md.tpl` - Pattern extraction template
+- `project_specifics.md.tpl` - Project-type specific docs
+
+#### Available Variables
+Common variables available in templates:
+- `PROJECT_NAME` - The project name
+- `PROJECT_MODULE` - PascalCase module name
+- `PROJECT_TYPE` - Type of project (basic, phoenix, liveview)
+- `IS_PHOENIX`, `IS_LIVEVIEW`, `IS_BASIC` - Boolean flags
+- `GENERATED_DATE` - Current date/time
+- `BUILD_CONFIG` - Generated build.hxml content
 
 ### Template Mapping
 
