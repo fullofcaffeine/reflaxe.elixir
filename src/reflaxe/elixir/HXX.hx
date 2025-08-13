@@ -36,7 +36,8 @@ class HXX {
         var processed = template;
         
         // Handle Haxe string interpolation: ${expr} -> #{expr}
-        processed = ~/\\$\\{([^}]+)\\}/g.replace(processed, "#{$1}");
+        // Fix: Use proper regex escaping - single backslash in Haxe regex literals
+        processed = ~/\$\{([^}]+)\}/g.replace(processed, "#{$1}");
         
         // Handle Phoenix component syntax: <.button> stays as <.button>
         // This is already valid HEEx syntax
@@ -54,7 +55,8 @@ class HXX {
     static function processConditionals(template: String): String {
         // Convert Haxe ternary to Elixir if/else
         // #{condition ? "true_value" : "false_value"} -> <%= if condition, do: "true_value", else: "false_value" %>
-        var ternaryPattern = ~/\\#\\{([^?]+)\\?([^:]+):([^}]+)\\}/g;
+        // Fix: Use proper regex escaping - single backslash in Haxe regex literals
+        var ternaryPattern = ~/\#\{([^?]+)\?([^:]+):([^}]+)\}/g;
         return ternaryPattern.replace(template, '<%= if $1, do: $2, else: $3 %>');
     }
     
@@ -66,7 +68,8 @@ class HXX {
         // This is a simplified version - full implementation would need more sophisticated parsing
         
         // Handle basic map/join patterns
-        var mapJoinPattern = ~/\\#\\{([^.]+)\\.map\\(([^)]+)\\)\\.join\\("([^"]*)"\\)\\}/g;
+        // Fix: Use proper regex escaping - single backslash in Haxe regex literals
+        var mapJoinPattern = ~/\#\{([^.]+)\.map\(([^)]+)\)\.join\("([^"]*)"\)\}/g;
         return mapJoinPattern.replace(template, '<%= for item <- $1 do %><%= $2(item) %><% end %>');
     }
     #end
