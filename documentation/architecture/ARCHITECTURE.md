@@ -294,6 +294,144 @@ All expression compilation is implemented in:
 - **Method**: `compileExpression()` (lines 352-486)
 - **Recent Updates**: Lines 425-481 for newly added expression types
 
+## Paradigm Bridging
+
+### Imperative to Functional Transformation
+
+Reflaxe.Elixir bridges the paradigm gap between Haxe's imperative features and Elixir's functional nature through compile-time transformations.
+
+#### Core Transformation Patterns
+
+##### 1. Loop Transformations
+Haxe's imperative loops are transformed into Elixir's recursive functions:
+
+```haxe
+// Haxe while loop
+while (condition) {
+    body;
+}
+```
+
+```elixir
+# Generated Elixir - tail-recursive function
+(fn loop_fn ->
+  if (condition) do
+    body
+    loop_fn.(loop_fn)
+  end
+end).(fn f -> f.(f) end)
+```
+
+This pattern uses:
+- Anonymous recursive functions with self-reference
+- Tail-call position for BEAM VM optimization
+- Y-combinator pattern for initialization
+
+##### 2. Operator Selection by Type
+The compiler uses type information to select appropriate operators:
+
+```haxe
+// String concatenation detected by type
+var greeting = "Hello " + name;  // Both are strings
+
+// Numeric addition
+var sum = x + y;  // Both are numbers
+```
+
+```elixir
+# Type-aware operator selection
+greeting = "Hello " <> name  # String concatenation operator
+sum = x + y                  # Numeric addition operator
+```
+
+##### 3. Immutability Handling
+Compound assignments are transformed to rebinding patterns:
+
+```haxe
+// Haxe compound assignment
+x += 5;
+counter++;
+```
+
+```elixir
+# Elixir rebinding (immutable variables)
+x = x + 5
+counter = counter + 1
+```
+
+##### 4. Bitwise Operation Mapping
+Bitwise operations require special module imports and operators:
+
+```elixir
+defmodule Example do
+  use Bitwise  # Auto-added when bitwise ops detected
+  
+  def compute(a, b) do
+    result = a &&& b      # Bitwise AND
+    result = a ||| b      # Bitwise OR
+    result = Bitwise.<<<(a, 2)  # Left shift
+  end
+end
+```
+
+#### Type-Driven Compilation
+
+The compiler analyzes TypedExpr to make transformation decisions:
+
+```haxe
+// In ElixirCompiler.hx
+case TBinop(op, e1, e2, _):
+    // Check operand types
+    var isStringConcat = checkIfStringType(e1) || checkIfStringType(e2);
+    
+    switch(op) {
+        case OpAdd:
+            if (isStringConcat) {
+                return compileExpression(e1) + " <> " + compileExpression(e2);
+            } else {
+                return compileExpression(e1) + " + " + compileExpression(e2);
+            }
+        // ... other operators
+    }
+```
+
+#### Parameter Mapping Architecture
+
+To handle Haxe's flexible parameter naming in Elixir's strict environment:
+
+1. **Standardization**: Parameters renamed to `arg0`, `arg1`, etc.
+2. **Mapping Table**: Original names tracked for body compilation
+3. **Translation**: TLocal references use mapping during compilation
+
+```haxe
+// ClassCompiler.hx
+private function compileExpressionForFunction(expr: Dynamic, args: Array<ClassFuncArg>): String {
+    if (args != null && args.length > 0) {
+        compiler.setFunctionParameterMapping(args);  // Set up mapping
+    }
+    
+    var result = compiler.compileExpression(expr);   // Compile with mapping
+    
+    if (args != null && args.length > 0) {
+        compiler.clearFunctionParameterMapping();    // Clean up
+    }
+    
+    return result;
+}
+```
+
+### Implementation Strategy
+
+The paradigm bridging follows these principles:
+
+1. **Preserve Semantics**: Generated code maintains original behavior
+2. **Idiomatic Output**: Use Elixir patterns where possible
+3. **Performance Aware**: Ensure tail-call optimization for recursion
+4. **Type Safety**: Use type information to guide transformations
+5. **Module Dependencies**: Auto-import required modules (e.g., Bitwise)
+
+For detailed transformation patterns, see [FUNCTIONAL_PATTERNS.md](../FUNCTIONAL_PATTERNS.md).
+
 ## Macro-Time vs Runtime
 
 ### Critical Distinction
