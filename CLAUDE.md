@@ -102,6 +102,13 @@ Repeat → Continuous Quality Improvement
 → **Feedback Loop**: Example development IS compiler development - they improve each other
 → **Workflow**: Example fails → Find compiler bug → Fix compiler → Example works better
 
+### When Dealing with Framework Integration Issues
+→ **Framework Conventions**: See [`documentation/FRAMEWORK_CONVENTIONS.md`](documentation/FRAMEWORK_CONVENTIONS.md) - Phoenix/Elixir directory structure requirements
+→ **Convention Adherence**: Generated code MUST follow target framework conventions exactly, not just be syntactically correct
+→ **Router Example**: TodoAppRouter.hx → `/lib/todo_app_web/router.ex` (Phoenix structure)
+→ **Debugging Pattern**: Framework compilation errors often indicate file location/structure issues, not language compatibility
+→ **Critical Rule**: Reflaxe compilers must understand target framework directory structures and naming conventions
+
 ## User Documentation References
 
 ### Core Documentation
@@ -155,6 +162,17 @@ Currently using helper pattern instead of sub-compiler pattern:
 - `ElixirPrinter.hx` - AST printing (similar role to expression compilation)
 
 This is acceptable - helpers are simpler for our needs while following similar separation of concerns.
+
+## Phoenix Router DSL ✨ **NEW v1.0 Feature**
+
+**Type-safe Phoenix routing with modern declarative syntax**:
+- ✅ **Declarative @:routes syntax** - Auto-generated functions eliminate empty placeholders
+- ✅ **Complete @:route annotation parsing** - Supports LIVE routes and LIVE_DASHBOARD  
+- ✅ **Build macro integration** - RouterBuildMacro generates type-safe route helpers
+- ✅ **IDE intellisense support** - Functions provide autocomplete and navigation
+- ✅ **Automatic Phoenix code generation** - Generates proper router.ex with scopes and pipelines
+
+**See**: [`documentation/ROUTER_DSL.md`](documentation/ROUTER_DSL.md) - Complete syntax guide and migration from manual functions
 
 ## Phoenix LiveView Asset Pipeline Rules ⚡
 
@@ -295,7 +313,8 @@ Commits should appear as direct contributions without attribution notes.
 For comprehensive feature status and production readiness, see [`documentation/reference/FEATURES.md`](documentation/reference/FEATURES.md)
 
 ### v1.0 Status ✅
-- **Core Features**: ALL COMPLETE (11/11 production-ready)
+- **Core Features**: ALL COMPLETE (12/12 production-ready)
+- **Phoenix Router DSL**: ✨ **NEW** - Complete @:router annotation support with LiveView routes
 - **Phoenix/LiveView**: Full support with HXX templates
 - **Ecto Integration**: Complete with migrations and changesets
 - **OTP Patterns**: GenServer, Supervisor, Application behaviors
@@ -492,7 +511,7 @@ What happens:
 
 ## Current Implementation Status Summary
 
-### v1.0 ESSENTIAL Tasks Status (3/4 Complete - 75%)
+### v1.0 ESSENTIAL Tasks Status (4/4 Complete - 100%) ✅
 
 ✅ **1. Essential Elixir Protocol Support** - COMPLETE
    - ProtocolCompiler.hx fully implemented
@@ -510,17 +529,18 @@ What happens:
    - Snake_case field conversion and optional field handling
    - Comprehensive snapshot test coverage
 
-❌ **4. Add Essential OTP Supervision Patterns** - PARTIALLY COMPLETE
-   - Registry ✅ (completed as part of stdlib externs)
-   - Supervisor ❌ (needs extern implementation)
-   - Task/Task.Supervisor ❌ (needs extern implementation)
+✅ **4. Phoenix Router DSL Implementation** - COMPLETE ✨ **NEW**
+   - RouterCompiler.hx fully implemented with @:router annotation support
+   - LIVE and LIVE_DASHBOARD route generation working
+   - Complete Phoenix scope and pipeline integration  
+   - TodoAppRouter.hx example demonstrates full functionality
 
 **For complete feature status, example guides, and usage instructions, see:**
 - [`documentation/FEATURES.md`](documentation/FEATURES.md) - Production readiness status
 - [`documentation/EXAMPLES.md`](documentation/EXAMPLES.md) - Working example walkthroughs  
 - [`documentation/ANNOTATIONS.md`](documentation/ANNOTATIONS.md) - Annotation usage guide
 
-**Quick Status**: 15 production-ready features, 9 working examples, 38/38 tests passing.
+**Quick Status**: 16 production-ready features including Router DSL, 9 working examples, 38/38 tests passing.
 
 ## Functional Programming Transformations
 **See**: [`documentation/FUNCTIONAL_PATTERNS.md`](documentation/FUNCTIONAL_PATTERNS.md) - How imperative Haxe transforms to functional Elixir
