@@ -24,10 +24,18 @@ import "phoenix_html"
 import {Socket} from "phoenix"
 import {LiveSocket} from "phoenix_live_view"
 
+// Import Haxe-compiled client-side enhancements
+import "./todo-app-haxe.js"
+
 let csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute("content")
+
+// Get Haxe-compiled hooks (available after todo-app-haxe.js loads)
+const haxeHooks = window.HaxeTodoHooks || {}
+
 let liveSocket = new LiveSocket("/live", Socket, {
   longPollFallbackMs: 2500,
-  params: {_csrf_token: csrfToken}
+  params: {_csrf_token: csrfToken},
+  hooks: haxeHooks  // Use Haxe-compiled hooks
 })
 
 // Show progress bar on live navigation and form submits (optional)

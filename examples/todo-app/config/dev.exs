@@ -9,7 +9,7 @@ config :todo_app, TodoAppWeb.Endpoint,
   debug_errors: true,
   secret_key_base: "HFnRr3hEFYrcH3i7y3b7Z1234567890abcdefghijklmnopqrstuvwxyz1234567",
   watchers: [
-    esbuild: {Esbuild, :install_and_run, [:todo_app, ~w(--sourcemap=inline --watch)]}
+    esbuild: {Esbuild, :install_and_run, [:todo_app, ~w(--sourcemap=external --watch)]}
   ]
 
 # Watch static and templates for browser reloading.
