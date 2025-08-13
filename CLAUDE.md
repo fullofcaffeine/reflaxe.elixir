@@ -59,6 +59,7 @@ This file must stay under 40k characters for optimal performance.
 - **Project Overview**: See [README.md](README.md) for project introduction and public interface
 - **LLM Documentation Guide**: [`documentation/LLM_DOCUMENTATION_GUIDE.md`](documentation/LLM_DOCUMENTATION_GUIDE.md) 📚
 - **Setup & Installation**: [`documentation/GETTING_STARTED.md`](documentation/GETTING_STARTED.md)
+- **Mix Integration**: [`documentation/MIX_INTEGRATION.md`](documentation/MIX_INTEGRATION.md) ⚡ **NEW**
 - **Feature Status**: [`documentation/FEATURES.md`](documentation/FEATURES.md)
 - **Annotations**: [`documentation/ANNOTATIONS.md`](documentation/ANNOTATIONS.md)
 - **Examples**: [`documentation/EXAMPLES.md`](documentation/EXAMPLES.md)
