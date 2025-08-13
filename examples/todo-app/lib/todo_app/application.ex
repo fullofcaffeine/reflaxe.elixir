@@ -10,22 +10,11 @@ defmodule TodoApp.Application do
     children = [
       # Start the Telemetry supervisor
       TodoAppWeb.Telemetry,
-      # Start the Ecto repository
-      TodoApp.Repo,
       # Start the PubSub system
       {Phoenix.PubSub, name: TodoApp.PubSub},
       # Start the Endpoint (http/https)
-      TodoAppWeb.Endpoint,
-      # Start the Haxe compiler watcher in dev mode
-      if Mix.env() == :dev do
-        {HaxeWatcher, [
-          source_dir: "src_haxe",
-          target_dir: "lib",
-          build_file: "build.hxml",
-          auto_compile: true
-        ]}
-      end
-    ] |> Enum.filter(& &1)
+      TodoAppWeb.Endpoint
+    ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html
     # for other strategies and supported options

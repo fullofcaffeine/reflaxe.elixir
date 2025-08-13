@@ -123,7 +123,7 @@ class TodoLive {
 			user_id: socket.assigns.current_user.id
 		};
 		
-		var changeset = Todo.changeset(%Todo{}, todo_params);
+		var changeset = Todo.changeset(new Todo(), todo_params);
 		
 		return switch (Repo.insert(changeset)) {
 			case {:ok, todo}:
