@@ -23,7 +23,7 @@ defmodule AdvancedQueries do
   @doc "
      * Demonstrates subquery compilation
      "
-  @spec demonstrate_subquery() :: TInst(String,[]).t()
+  @spec demonstrate_subquery() :: String.t()
   def demonstrate_subquery() do
     (
   active_users_subquery = "subquery(from u in (from u in User, where: u.active == true), select: u)"
@@ -36,7 +36,7 @@ defmodule AdvancedQueries do
   @doc "
      * Demonstrates CTE compilation
      "
-  @spec demonstrate_c_t_e() :: TInst(String,[]).t()
+  @spec demonstrate_c_t_e() :: String.t()
   def demonstrate_c_t_e() do
     (
   popular_posts_c_t_e = "with_cte("popular_posts", as: ^popular_posts_query)"
@@ -51,7 +51,7 @@ defmodule AdvancedQueries do
   @doc "
      * Demonstrates window function compilation
      "
-  @spec demonstrate_window_functions() :: TInst(String,[]).t()
+  @spec demonstrate_window_functions() :: String.t()
   def demonstrate_window_functions() do
     (
   row_number = "over(row_number(), partition_by: u.department_id, order_by: [desc: u.salary])"
@@ -65,7 +65,7 @@ defmodule AdvancedQueries do
   @doc "
      * Demonstrates complex join compilation
      "
-  @spec demonstrate_complex_joins() :: TInst(String,[]).t()
+  @spec demonstrate_complex_joins() :: String.t()
   def demonstrate_complex_joins() do
     (
   complex_join = "
@@ -82,7 +82,7 @@ defmodule AdvancedQueries do
   @doc "
      * Demonstrates Ecto.Multi transaction compilation
      "
-  @spec demonstrate_multi_transactions() :: TInst(String,[]).t()
+  @spec demonstrate_multi_transactions() :: String.t()
   def demonstrate_multi_transactions() do
     (
   multi_transaction = "Multi.new()
@@ -96,7 +96,7 @@ defmodule AdvancedQueries do
   @doc "
      * Demonstrates advanced aggregation compilation
      "
-  @spec demonstrate_advanced_aggregations() :: TInst(String,[]).t()
+  @spec demonstrate_advanced_aggregations() :: String.t()
   def demonstrate_advanced_aggregations() do
     (
   group_by_with_having = "|> group_by([q], [q.department_id, q.role])
@@ -115,7 +115,7 @@ defmodule AdvancedQueries do
   @doc "
      * Demonstrates fragment and raw SQL compilation
      "
-  @spec demonstrate_fragments() :: TInst(String,[]).t()
+  @spec demonstrate_fragments() :: String.t()
   def demonstrate_fragments() do
     (
   fragment = "fragment("EXTRACT(year FROM ?) = ?", u.created_at, 2024)"
@@ -130,7 +130,7 @@ defmodule AdvancedQueries do
   @doc "
      * Demonstrates preload compilation with nested associations
      "
-  @spec demonstrate_preloading() :: TInst(String,[]).t()
+  @spec demonstrate_preloading() :: String.t()
   def demonstrate_preloading() do
     (
   simple_preload = "|> preload([:posts, :profile, :comments])"
@@ -145,7 +145,7 @@ defmodule AdvancedQueries do
   @doc "
      * Demonstrates complete complex query compilation
      "
-  @spec demonstrate_complex_query() :: TInst(String,[]).t()
+  @spec demonstrate_complex_query() :: String.t()
   def demonstrate_complex_query() do
     (
   compiled_query = "from u in User, as: :user
@@ -166,7 +166,7 @@ defmodule AdvancedQueries do
   @doc "
      * Main function that calls all demonstrations
      "
-  @spec main() :: TAbstract(Void,[]).t()
+  @spec main() :: nil
   def main() do
     (
   Log.trace("=== Advanced Ecto Features Demonstration ===", %{fileName: "AdvancedQueries.hx", lineNumber: 138, className: "AdvancedQueries", methodName: "main"})

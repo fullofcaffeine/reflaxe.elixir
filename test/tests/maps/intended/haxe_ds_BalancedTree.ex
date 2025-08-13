@@ -24,7 +24,7 @@ defmodule BalancedTree do
 
 		If `key` is null, the result is unspecified.
 	"
-  @spec set(TInst(haxe.Ds.BalancedTree.K,[]).t(), TInst(haxe.Ds.BalancedTree.V,[]).t()) :: TAbstract(Void,[]).t()
+  @spec set(K.t(), V.t()) :: nil
   def set(arg0, arg1) do
     self().root = self().setLoop(key, value, self().root)
   end
@@ -36,7 +36,7 @@ defmodule BalancedTree do
 
 		If `key` is null, the result is unspecified.
 	"
-  @spec get(TInst(haxe.Ds.BalancedTree.K,[]).t()) :: TAbstract(Null,[TInst(haxe.Ds.BalancedTree.V,[])]).t()
+  @spec get(K.t()) :: Null.t()
   def get(arg0) do
     (
   node = self().root
@@ -58,7 +58,7 @@ end
 
 		If `key` is null, the result is unspecified.
 	"
-  @spec exists(TInst(haxe.Ds.BalancedTree.K,[]).t()) :: TAbstract(Bool,[]).t()
+  @spec exists(K.t()) :: boolean()
   def exists(arg0) do
     (
   node = self().root
@@ -77,7 +77,7 @@ end
 
 		This operation is performed in-order.
 	"
-  @spec keys() :: TType(Iterator,[TInst(haxe.Ds.BalancedTree.K,[])]).t()
+  @spec keys() :: Iterator.t()
   def keys() do
     (
   ret = []
@@ -87,7 +87,7 @@ end
   end
 
   @doc "Function set_loop"
-  @spec set_loop(TInst(haxe.Ds.BalancedTree.K,[]).t(), TInst(haxe.Ds.BalancedTree.V,[]).t(), TInst(haxe.Ds.TreeNode,[TInst(haxe.Ds.BalancedTree.K,[]),TInst(haxe.Ds.BalancedTree.V,[])]).t()) :: TInst(haxe.Ds.TreeNode,[TInst(haxe.Ds.BalancedTree.K,[]),TInst(haxe.Ds.BalancedTree.V,[])]).t()
+  @spec set_loop(K.t(), V.t(), TreeNode.t()) :: TreeNode.t()
   def set_loop(arg0, arg1, arg2) do
     (
   if (node == nil), do: Haxe.Ds.TreeNode.new(nil, k, v, nil), else: nil
@@ -109,7 +109,7 @@ end
   end
 
   @doc "Function keys_loop"
-  @spec keys_loop(TInst(haxe.Ds.TreeNode,[TInst(haxe.Ds.BalancedTree.K,[]),TInst(haxe.Ds.BalancedTree.V,[])]).t(), TInst(Array,[TInst(haxe.Ds.BalancedTree.K,[])]).t()) :: TAbstract(Void,[]).t()
+  @spec keys_loop(TreeNode.t(), Array.t()) :: nil
   def keys_loop(arg0, arg1) do
     if (node != nil), do: (
   self().keysLoop(node.left, acc)
@@ -119,7 +119,7 @@ end
   end
 
   @doc "Function balance"
-  @spec balance(TInst(haxe.Ds.TreeNode,[TInst(haxe.Ds.BalancedTree.K,[]),TInst(haxe.Ds.BalancedTree.V,[])]).t(), TInst(haxe.Ds.BalancedTree.K,[]).t(), TInst(haxe.Ds.BalancedTree.V,[]).t(), TInst(haxe.Ds.TreeNode,[TInst(haxe.Ds.BalancedTree.K,[]),TInst(haxe.Ds.BalancedTree.V,[])]).t()) :: TInst(haxe.Ds.TreeNode,[TInst(haxe.Ds.BalancedTree.K,[]),TInst(haxe.Ds.BalancedTree.V,[])]).t()
+  @spec balance(TreeNode.t(), K.t(), V.t(), TreeNode.t()) :: TreeNode.t()
   def balance(arg0, arg1, arg2, arg3) do
     (
   temp_number = nil
@@ -163,7 +163,7 @@ end
   end
 
   @doc "Function compare"
-  @spec compare(TInst(haxe.Ds.BalancedTree.K,[]).t(), TInst(haxe.Ds.BalancedTree.K,[]).t()) :: TAbstract(Int,[]).t()
+  @spec compare(K.t(), K.t()) :: integer()
   def compare(arg0, arg1) do
     Reflect.compare(k1, k2)
   end

@@ -71,7 +71,7 @@ defmodule Users do
   @doc "
      * Get all users with optional filtering
      "
-  @spec list_users(TAbstract(Null,[TType(contexts.UserFilter,[])]).t()) :: TInst(Array,[TInst(contexts.User,[])]).t()
+  @spec list_users(Null.t()) :: Array.t()
   def list_users(arg0) do
     []
   end
@@ -79,7 +79,7 @@ defmodule Users do
   @doc "
      * Create changeset for user (required by LiveView example)
      "
-  @spec change_user(TAbstract(Null,[TInst(contexts.User,[])]).t()) :: TDynamic(null).t()
+  @spec change_user(Null.t()) :: term()
   def change_user(arg0) do
     %{valid: true}
   end
@@ -87,7 +87,7 @@ defmodule Users do
   @doc "
      * Main function for compilation testing
      "
-  @spec main() :: TAbstract(Void,[]).t()
+  @spec main() :: nil
   def main() do
     Log.trace("Users context with User schema compiled successfully!", %{fileName: "./contexts/Users.hx", lineNumber: 66, className: "contexts.Users", methodName: "main"})
   end
@@ -95,7 +95,7 @@ defmodule Users do
   @doc "
      * Get user by ID with error handling
      "
-  @spec get_user(TAbstract(Int,[]).t()) :: TInst(contexts.User,[]).t()
+  @spec get_user(integer()) :: User.t()
   def get_user(arg0) do
     nil
   end
@@ -103,7 +103,7 @@ defmodule Users do
   @doc "
      * Get user by ID, returns null if not found
      "
-  @spec get_user_safe(TAbstract(Int,[]).t()) :: TAbstract(Null,[TInst(contexts.User,[])]).t()
+  @spec get_user_safe(integer()) :: Null.t()
   def get_user_safe(arg0) do
     nil
   end
@@ -111,7 +111,7 @@ defmodule Users do
   @doc "
      * Create a new user
      "
-  @spec create_user(TDynamic(null).t()) :: TAnonymous(.t(:anonymous)
+  @spec create_user(term()) :: term()
   def create_user(arg0) do
     (
   changeset = UserChangeset.changeset(nil, attrs)
@@ -122,7 +122,7 @@ defmodule Users do
   @doc "
      * Update existing user
      "
-  @spec update_user(TInst(contexts.User,[]).t(), TDynamic(null).t()) :: TAnonymous(.t(:anonymous)
+  @spec update_user(User.t(), term()) :: term()
   def update_user(arg0, arg1) do
     (
   changeset = UserChangeset.changeset(user, attrs)
@@ -133,7 +133,7 @@ defmodule Users do
   @doc "
      * Delete user (soft delete by setting active: false)
      "
-  @spec delete_user(TInst(contexts.User,[]).t()) :: TAnonymous(.t(:anonymous)
+  @spec delete_user(User.t()) :: term()
   def delete_user(arg0) do
     Users.update_user(user, %{active: false})
   end
@@ -141,7 +141,7 @@ defmodule Users do
   @doc "
      * Search users by name or email
      "
-  @spec search_users(TInst(String,[]).t()) :: TInst(Array,[TInst(contexts.User,[])]).t()
+  @spec search_users(String.t()) :: Array.t()
   def search_users(arg0) do
     []
   end
@@ -149,7 +149,7 @@ defmodule Users do
   @doc "
      * Get users with their posts (preload association)
      "
-  @spec users_with_posts() :: TInst(Array,[TInst(contexts.User,[])]).t()
+  @spec users_with_posts() :: Array.t()
   def users_with_posts() do
     []
   end
@@ -157,7 +157,7 @@ defmodule Users do
   @doc "
      * Get user statistics
      "
-  @spec user_stats() :: TType(contexts.UserStats,[]).t()
+  @spec user_stats() :: UserStats.t()
   def user_stats() do
     %{total: 0, active: 0, inactive: 0}
   end

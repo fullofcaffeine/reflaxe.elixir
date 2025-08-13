@@ -5,7 +5,7 @@ defmodule Main do
 
   # Static functions
   @doc "Function main"
-  @spec main() :: TAbstract(Void,[]).t()
+  @spec main() :: nil
   def main() do
     (
   user_id = 123

@@ -5,7 +5,7 @@ defmodule SourceMapTest do
 
   # Static functions
   @doc "Function main"
-  @spec main() :: TAbstract(Void,[]).t()
+  @spec main() :: nil
   def main() do
     (
   test = SourceMapTest.new()
@@ -17,13 +17,13 @@ defmodule SourceMapTest do
 
   # Instance functions
   @doc "Function simple_method"
-  @spec simple_method() :: TInst(String,[]).t()
+  @spec simple_method() :: String.t()
   def simple_method() do
     "test"
   end
 
   @doc "Function conditional_method"
-  @spec conditional_method(TAbstract(Int,[]).t()) :: TAbstract(Bool,[]).t()
+  @spec conditional_method(integer()) :: boolean()
   def conditional_method(arg0) do
     if (value > 0), do: true, else: false
   end

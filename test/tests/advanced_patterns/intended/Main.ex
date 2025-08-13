@@ -7,7 +7,7 @@ defmodule Main do
   @doc "
      * Simple enum-like pattern matching
      "
-  @spec match_simple_value(TAbstract(Int,[]).t()) :: TInst(String,[]).t()
+  @spec match_simple_value(integer()) :: String.t()
   def match_simple_value(arg0) do
     (
   temp_result = nil
@@ -34,7 +34,7 @@ end
   @doc "
      * Array pattern matching with guards
      "
-  @spec process_array(TInst(Array,[TAbstract(Int,[])]).t()) :: TInst(String,[]).t()
+  @spec process_array(Array.t()) :: String.t()
   def process_array(arg0) do
     (
   temp_result = nil
@@ -98,7 +98,7 @@ end
   @doc "
      * String pattern matching with guards
      "
-  @spec classify_string(TInst(String,[]).t()) :: TInst(String,[]).t()
+  @spec classify_string(String.t()) :: String.t()
   def classify_string(arg0) do
     (
   temp_result = nil
@@ -128,7 +128,7 @@ end
   @doc "
      * Complex number range guards
      "
-  @spec classify_number(TAbstract(Float,[]).t()) :: TInst(String,[]).t()
+  @spec classify_number(float()) :: String.t()
   def classify_number(arg0) do
     (
   temp_result = nil
@@ -161,7 +161,7 @@ end
   @doc "
      * Boolean combinations with tuples
      "
-  @spec match_flags(TAbstract(Bool,[]).t(), TAbstract(Bool,[]).t(), TAbstract(Bool,[]).t()) :: TInst(String,[]).t()
+  @spec match_flags(boolean(), boolean(), boolean()) :: String.t()
   def match_flags(arg0, arg1, arg2) do
     (
   temp_result = nil
@@ -173,7 +173,7 @@ end
   @doc "
      * Nested array patterns
      "
-  @spec match_matrix(TInst(Array,[TInst(Array,[TAbstract(.t(term())) :: TInst(String,[]).t()
+  @spec match_matrix(Array.t()) :: String.t()
   def match_matrix(arg0) do
     (
   temp_result = nil
@@ -275,7 +275,7 @@ end
   @doc "
      * Multiple guard conditions
      "
-  @spec validate_age(TAbstract(Int,[]).t(), TAbstract(Bool,[]).t()) :: TInst(String,[]).t()
+  @spec validate_age(integer(), boolean()) :: String.t()
   def validate_age(arg0, arg1) do
     (
   temp_result = nil
@@ -333,7 +333,7 @@ end
   @doc "
      * Type checking guards (simulating is_binary, is_integer, etc.)
      "
-  @spec classify_value(TDynamic(null).t()) :: TInst(String,[]).t()
+  @spec classify_value(term()) :: String.t()
   def classify_value(arg0) do
     (
   temp_result = nil
@@ -360,7 +360,7 @@ end
   @doc "
      * List membership simulation
      "
-  @spec check_color(TInst(String,[]).t()) :: TInst(String,[]).t()
+  @spec check_color(String.t()) :: String.t()
   def check_color(arg0) do
     (
   primary_colors = ["red", "green", "blue"]
@@ -389,7 +389,7 @@ end
   @doc "
      * Combined patterns with OR
      "
-  @spec match_status(TInst(String,[]).t()) :: TInst(String,[]).t()
+  @spec match_status(String.t()) :: String.t()
   def match_status(arg0) do
     (
   temp_result = nil
@@ -426,7 +426,7 @@ end
   end
 
   @doc "Function main"
-  @spec main() :: TAbstract(Void,[]).t()
+  @spec main() :: nil
   def main() do
     (
   Log.trace("Advanced pattern matching test", %{fileName: "Main.hx", lineNumber: 201, className: "Main", methodName: "main"})

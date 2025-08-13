@@ -10,7 +10,7 @@ defmodule Main do
 
   # Static functions
   @doc "Function basic_array_ops"
-  @spec basic_array_ops() :: TAbstract(Void,[]).t()
+  @spec basic_array_ops() :: nil
   def basic_array_ops() do
     (
   numbers = [1, 2, 3, 4, 5]
@@ -27,7 +27,7 @@ defmodule Main do
   end
 
   @doc "Function array_iteration"
-  @spec array_iteration() :: TAbstract(Void,[]).t()
+  @spec array_iteration() :: nil
   def array_iteration() do
     (
   fruits = ["apple", "banana", "orange", "grape"]
@@ -62,7 +62,7 @@ end
   end
 
   @doc "Function array_methods"
-  @spec array_methods() :: TAbstract(Void,[]).t()
+  @spec array_methods() :: nil
   def array_methods() do
     (
   numbers = [1, 2, 3, 4, 5]
@@ -118,7 +118,7 @@ end
   end
 
   @doc "Function array_comprehensions"
-  @spec array_comprehensions() :: TAbstract(Void,[]).t()
+  @spec array_comprehensions() :: nil
   def array_comprehensions() do
     (
   temp_array = nil
@@ -179,7 +179,7 @@ end
   end
 
   @doc "Function multi_dimensional"
-  @spec multi_dimensional() :: TAbstract(Void,[]).t()
+  @spec multi_dimensional() :: nil
   def multi_dimensional() do
     (
   matrix = [[1, 2, 3], [4, 5, 6], [7, 8, 9]]
@@ -249,7 +249,7 @@ end
   end
 
   @doc "Function process_array"
-  @spec process_array(TInst(Array,[TAbstract(Int,[])]).t()) :: TInst(Array,[TAbstract(Int,[])]).t()
+  @spec process_array(Array.t()) :: Array.t()
   def process_array(arg0) do
     (
   temp_result = nil
@@ -292,7 +292,7 @@ end
   end
 
   @doc "Function first_n"
-  @spec first_n(TInst(Array,[TInst(firstN.T,[])]).t(), TAbstract(Int,[]).t()) :: TInst(Array,[TInst(firstN.T,[])]).t()
+  @spec first_n(Array.t(), integer()) :: Array.t()
   def first_n(arg0, arg1) do
     (
   temp_result = nil
@@ -315,7 +315,7 @@ end
   end
 
   @doc "Function main"
-  @spec main() :: TAbstract(Void,[]).t()
+  @spec main() :: nil
   def main() do
     (
   Log.trace("=== Basic Array Operations ===", %{fileName: "Main.hx", lineNumber: 131, className: "Main", methodName: "main"})

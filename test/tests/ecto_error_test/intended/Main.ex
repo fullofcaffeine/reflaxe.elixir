@@ -64,7 +64,7 @@ defmodule Main do
 
   # Static functions
   @doc "Function main"
-  @spec main() :: TAbstract(Void,[]).t()
+  @spec main() :: nil
   def main() do
     Log.trace("Ecto error validation test", %{fileName: "Main.hx", lineNumber: 27, className: "Main", methodName: "main"})
   end

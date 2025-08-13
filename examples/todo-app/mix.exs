@@ -7,10 +7,17 @@ defmodule TodoApp.MixProject do
       version: "0.1.0",
       elixir: "~> 1.14",
       elixirc_paths: elixirc_paths(Mix.env()),
-      compilers: Mix.compilers(),
+      compilers: [:haxe] ++ Mix.compilers(),
       start_permanent: Mix.env() == :prod,
       aliases: aliases(),
-      deps: deps()
+      deps: deps(),
+      haxe: [
+        hxml_file: "build.hxml",
+        source_dir: "src_haxe",
+        target_dir: "lib",
+        watch: false,  # Disable watcher to avoid process conflicts
+        verbose: false
+      ]
     ]
   end
 
@@ -23,12 +30,14 @@ defmodule TodoApp.MixProject do
   end
 
   # Specifies which paths to compile per environment.
-  defp elixirc_paths(:test), do: ["lib", "test/support"]
-  defp elixirc_paths(_), do: ["lib"]
+  defp elixirc_paths(:test), do: ["lib", "test/support", "../../lib"]
+  defp elixirc_paths(_), do: ["lib", "../../lib"]
 
   # Specifies your project dependencies.
   defp deps do
     [
+      # Add parent project as dependency for Haxe compilation functionality
+      {:reflaxe_elixir, path: "../..", only: [:dev, :test]},
       {:phoenix, "~> 1.7.0"},
       {:phoenix_ecto, "~> 4.4"},
       {:ecto_sql, "~> 3.10"},
@@ -42,7 +51,8 @@ defmodule TodoApp.MixProject do
       {:telemetry_poller, "~> 1.0"},
       {:gettext, "~> 0.20"},
       {:jason, "~> 1.2"},
-      {:plug_cowboy, "~> 2.5"}
+      {:plug_cowboy, "~> 2.5"},
+      {:file_system, "~> 0.2", only: [:dev, :test]}
     ]
   end
 

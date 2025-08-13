@@ -10,7 +10,7 @@ defmodule Main do
 
   # Static functions
   @doc "Function basic_try_catch"
-  @spec basic_try_catch() :: TAbstract(Void,[]).t()
+  @spec basic_try_catch() :: nil
   def basic_try_catch() do
     (
   try do
@@ -33,7 +33,7 @@ end
   end
 
   @doc "Function multiple_catch"
-  @spec multiple_catch() :: TAbstract(Void,[]).t()
+  @spec multiple_catch() :: nil
   def multiple_catch() do
     (
   test_error = fn type -> try do
@@ -71,7 +71,7 @@ end end
   end
 
   @doc "Function try_catch_finally"
-  @spec try_catch_finally() :: TAbstract(Void,[]).t()
+  @spec try_catch_finally() :: nil
   def try_catch_finally() do
     (
   resource = "resource"
@@ -95,7 +95,7 @@ end
   end
 
   @doc "Function nested_try_catch"
-  @spec nested_try_catch() :: TAbstract(Void,[]).t()
+  @spec nested_try_catch() :: nil
   def nested_try_catch() do
     try do
   (
@@ -120,7 +120,7 @@ end
   end
 
   @doc "Function custom_exception"
-  @spec custom_exception() :: TAbstract(Void,[]).t()
+  @spec custom_exception() :: nil
   def custom_exception() do
     try do
   throw(CustomException.new("Custom error", 404))
@@ -131,7 +131,7 @@ end
   end
 
   @doc "Function divide"
-  @spec divide(TAbstract(Float,[]).t(), TAbstract(Float,[]).t()) :: TAbstract(Float,[]).t()
+  @spec divide(float(), float()) :: float()
   def divide(arg0, arg1) do
     (
   if (b == 0), do: throw(Haxe.Exception.new("Division by zero")), else: nil
@@ -140,7 +140,7 @@ end
   end
 
   @doc "Function test_division"
-  @spec test_division() :: TAbstract(Void,[]).t()
+  @spec test_division() :: nil
   def test_division() do
     try do
   (
@@ -156,7 +156,7 @@ end
   end
 
   @doc "Function rethrow_example"
-  @spec rethrow_example() :: TAbstract(Void,[]).t()
+  @spec rethrow_example() :: nil
   def rethrow_example() do
     (
   inner_function = fn  -> throw(Haxe.Exception.new("Original error")) end
@@ -179,7 +179,7 @@ end
   end
 
   @doc "Function stack_trace_example"
-  @spec stack_trace_example() :: TAbstract(Void,[]).t()
+  @spec stack_trace_example() :: nil
   def stack_trace_example() do
     try do
   (
@@ -198,7 +198,7 @@ end
   end
 
   @doc "Function try_as_expression"
-  @spec try_as_expression() :: TAbstract(Void,[]).t()
+  @spec try_as_expression() :: nil
   def try_as_expression() do
     (
   temp_maybe_number = nil
@@ -223,7 +223,7 @@ end
   end
 
   @doc "Function main"
-  @spec main() :: TAbstract(Void,[]).t()
+  @spec main() :: nil
   def main() do
     (
   Log.trace("=== Basic Try-Catch ===", %{fileName: "Main.hx", lineNumber: 180, className: "Main", methodName: "main"})

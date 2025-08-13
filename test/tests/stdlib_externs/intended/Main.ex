@@ -10,7 +10,7 @@ defmodule Main do
 
   # Static functions
   @doc "Function main"
-  @spec main() :: TAbstract(Void,[]).t()
+  @spec main() :: nil
   def main() do
     (
   Main.testProcessExterns()
@@ -26,7 +26,7 @@ defmodule Main do
   end
 
   @doc "Function test_process_externs"
-  @spec test_process_externs() :: TAbstract(Void,[]).t()
+  @spec test_process_externs() :: nil
   def test_process_externs() do
     (
   pid = Process.Process.self()
@@ -41,7 +41,7 @@ defmodule Main do
   end
 
   @doc "Function test_registry_externs"
-  @spec test_registry_externs() :: TAbstract(Void,[]).t()
+  @spec test_registry_externs() :: nil
   def test_registry_externs() do
     (
   registry_spec = Registry.Registry.start_link("unique", "MyRegistry")
@@ -67,7 +67,7 @@ defmodule Main do
   end
 
   @doc "Function test_agent_externs"
-  @spec test_agent_externs() :: TAbstract(Void,[]).t()
+  @spec test_agent_externs() :: nil
   def test_agent_externs() do
     (
   agent_result = Agent.Agent.start_link(fn  -> 0 end)
@@ -100,7 +100,7 @@ defmodule Main do
   end
 
   @doc "Function test_i_o_externs"
-  @spec test_i_o_externs() :: TAbstract(Void,[]).t()
+  @spec test_i_o_externs() :: nil
   def test_i_o_externs() do
     (
   IO.IO.puts("Hello, World!")
@@ -140,7 +140,7 @@ defmodule Main do
   end
 
   @doc "Function test_file_externs"
-  @spec test_file_externs() :: TAbstract(Void,[]).t()
+  @spec test_file_externs() :: nil
   def test_file_externs() do
     (
   read_result = File.File.read("test.txt")
@@ -189,7 +189,7 @@ defmodule Main do
   end
 
   @doc "Function test_path_externs"
-  @spec test_path_externs() :: TAbstract(Void,[]).t()
+  @spec test_path_externs() :: nil
   def test_path_externs() do
     (
   joined = Path.Path.join(["home", "user", "documents"])
@@ -216,7 +216,7 @@ defmodule Main do
   end
 
   @doc "Function test_enum_externs"
-  @spec test_enum_externs() :: TAbstract(Void,[]).t()
+  @spec test_enum_externs() :: nil
   def test_enum_externs() do
     (
   test_array = [1, 2, 3, 4, 5]
@@ -243,7 +243,7 @@ defmodule Main do
   end
 
   @doc "Function test_string_externs"
-  @spec test_string_externs() :: TAbstract(Void,[]).t()
+  @spec test_string_externs() :: nil
   def test_string_externs() do
     (
   test_string = "  Hello, World!  "
@@ -289,7 +289,7 @@ defmodule Main do
   end
 
   @doc "Function test_gen_server_externs"
-  @spec test_gen_server_externs() :: TAbstract(Void,[]).t()
+  @spec test_gen_server_externs() :: nil
   def test_gen_server_externs() do
     (
   start_result = GenServer.GenServer.start_link("MyGenServer", "init_arg")

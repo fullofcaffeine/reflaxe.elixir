@@ -20,13 +20,13 @@ defmodule MemoryStorage do
 
   # Instance functions
   @doc "Function init"
-  @spec init(TDynamic(null).t()) :: TDynamic(null).t()
+  @spec init(term()) :: term()
   def init(arg0) do
     %{ok: self()}
   end
 
   @doc "Function get"
-  @spec get(TInst(String,[]).t()) :: TDynamic(null).t()
+  @spec get(String.t()) :: term()
   def get(arg0) do
     (
   temp_result = nil
@@ -39,7 +39,7 @@ defmodule MemoryStorage do
   end
 
   @doc "Function put"
-  @spec put(TInst(String,[]).t(), TDynamic(null).t()) :: TAbstract(Bool,[]).t()
+  @spec put(String.t(), term()) :: boolean()
   def put(arg0, arg1) do
     (
   (
@@ -51,7 +51,7 @@ defmodule MemoryStorage do
   end
 
   @doc "Function delete"
-  @spec delete(TInst(String,[]).t()) :: TAbstract(Bool,[]).t()
+  @spec delete(String.t()) :: boolean()
   def delete(arg0) do
     (
   temp_result = nil
@@ -64,7 +64,7 @@ defmodule MemoryStorage do
   end
 
   @doc "Function list"
-  @spec list() :: TInst(Array,[TInst(String,[])]).t()
+  @spec list() :: Array.t()
   def list() do
     (
   temp_result = nil
@@ -100,7 +100,7 @@ defmodule FileStorage do
 
   # Instance functions
   @doc "Function init"
-  @spec init(TDynamic(null).t()) :: TDynamic(null).t()
+  @spec init(term()) :: term()
   def init(arg0) do
     (
   if (config.path != nil), do: self().base_path = config.path, else: nil
@@ -109,25 +109,25 @@ defmodule FileStorage do
   end
 
   @doc "Function get"
-  @spec get(TInst(String,[]).t()) :: TDynamic(null).t()
+  @spec get(String.t()) :: term()
   def get(arg0) do
     nil
   end
 
   @doc "Function put"
-  @spec put(TInst(String,[]).t(), TDynamic(null).t()) :: TAbstract(Bool,[]).t()
+  @spec put(String.t(), term()) :: boolean()
   def put(arg0, arg1) do
     true
   end
 
   @doc "Function delete"
-  @spec delete(TInst(String,[]).t()) :: TAbstract(Bool,[]).t()
+  @spec delete(String.t()) :: boolean()
   def delete(arg0) do
     true
   end
 
   @doc "Function list"
-  @spec list() :: TInst(Array,[TInst(String,[])]).t()
+  @spec list() :: Array.t()
   def list() do
     []
   end
@@ -155,13 +155,13 @@ defmodule ConsoleLogger do
 
   # Instance functions
   @doc "Function log"
-  @spec log(TInst(String,[]).t()) :: TAbstract(Void,[]).t()
+  @spec log(String.t()) :: nil
   def log(arg0) do
     Log.trace("[LOG] " + message, %{fileName: "Storage.hx", lineNumber: 103, className: "ConsoleLogger", methodName: "log"})
   end
 
   @doc "Function debug"
-  @spec debug(TInst(String,[]).t()) :: TAbstract(Void,[]).t()
+  @spec debug(String.t()) :: nil
   def debug(arg0) do
     Log.trace("[DEBUG] " + message, %{fileName: "Storage.hx", lineNumber: 108, className: "ConsoleLogger", methodName: "debug"})
   end

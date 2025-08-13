@@ -1,5 +1,7 @@
 package;
 
+import phoenix.Socket.LiveViewSocket;
+
 /**
  * Basic LiveView test case
  * Tests @:liveview annotation compilation
@@ -7,18 +9,18 @@ package;
 @:liveview
 class CounterLive {
 	
-	public function mount(params: Dynamic, session: Dynamic, socket: phoenix.Socket): Dynamic {
+	public function mount(params: Dynamic, session: Dynamic, socket: LiveViewSocket): Dynamic {
 		socket = phoenix.LiveView.assign(socket, "count", 0);
 		return {ok: socket};
 	}
 	
-	public function handle_event_increment(params: Dynamic, socket: phoenix.Socket): Dynamic {
+	public function handle_event_increment(params: Dynamic, socket: LiveViewSocket): Dynamic {
 		var count = socket.assigns.count;
 		socket = phoenix.LiveView.assign(socket, "count", count + 1);
 		return {noreply: socket};
 	}
 	
-	public function handle_event_decrement(params: Dynamic, socket: phoenix.Socket): Dynamic {
+	public function handle_event_decrement(params: Dynamic, socket: LiveViewSocket): Dynamic {
 		var count = socket.assigns.count;
 		socket = phoenix.LiveView.assign(socket, "count", count - 1);
 		return {noreply: socket};

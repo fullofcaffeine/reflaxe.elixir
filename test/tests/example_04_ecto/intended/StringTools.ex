@@ -25,7 +25,7 @@ defmodule StringTools do
 
 		If `c` is null, the result is unspecified.
 	"
-  @spec lpad(TInst(String,[]).t(), TInst(String,[]).t(), TAbstract(Int,[]).t()) :: TInst(String,[]).t()
+  @spec lpad(String.t(), String.t(), integer()) :: String.t()
   def lpad(arg0, arg1, arg2) do
     (
   if (c.length <= 0), do: s, else: nil
@@ -50,7 +50,7 @@ end
 
 		If `sub` or `by` are null, the result is unspecified.
 	"
-  @spec replace(TInst(String,[]).t(), TInst(String,[]).t(), TInst(String,[]).t()) :: TInst(String,[]).t()
+  @spec replace(String.t(), String.t(), String.t()) :: String.t()
   def replace(arg0, arg1, arg2) do
     s.split(sub).join(by)
   end

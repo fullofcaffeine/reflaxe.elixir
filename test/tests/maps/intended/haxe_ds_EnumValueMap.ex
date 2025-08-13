@@ -14,7 +14,7 @@ defmodule EnumValueMap do
 
   # Instance functions
   @doc "Function compare"
-  @spec compare(TAbstract(EnumValue,[]).t(), TAbstract(EnumValue,[]).t()) :: TAbstract(Int,[]).t()
+  @spec compare(EnumValue.t(), EnumValue.t()) :: integer()
   def compare(arg0, arg1) do
     (
   d = Type.enumIndex(k1) - Type.enumIndex(k2)
@@ -27,7 +27,7 @@ defmodule EnumValueMap do
   end
 
   @doc "Function compare_args"
-  @spec compare_args(TInst(Array,[TDynamic(null)]).t(), TInst(Array,[TDynamic(null)]).t()) :: TAbstract(Int,[]).t()
+  @spec compare_args(Array.t(), Array.t()) :: integer()
   def compare_args(arg0, arg1) do
     (
   ld = a1.length - a2.length
@@ -48,7 +48,7 @@ end
   end
 
   @doc "Function compare_arg"
-  @spec compare_arg(TDynamic(null).t(), TDynamic(null).t()) :: TAbstract(Int,[]).t()
+  @spec compare_arg(term(), term()) :: integer()
   def compare_arg(arg0, arg1) do
     (
   temp_result = nil

@@ -10,7 +10,7 @@ defmodule Main do
 
   # Static functions
   @doc "Function main"
-  @spec main() :: TAbstract(Void,[]).t()
+  @spec main() :: nil
   def main() do
     (
   Main.testSupervisor()
@@ -23,7 +23,7 @@ defmodule Main do
   @doc "
      * Test Supervisor extern functions
      "
-  @spec test_supervisor() :: TAbstract(Void,[]).t()
+  @spec test_supervisor() :: nil
   def test_supervisor() do
     (
   temp_map = nil
@@ -138,7 +138,7 @@ defmodule Main do
   @doc "
      * Test Task extern functions
      "
-  @spec test_task() :: TAbstract(Void,[]).t()
+  @spec test_task() :: nil
   def test_task() do
     (
   task = Task.Task.async(fn  -> (
@@ -232,7 +232,7 @@ end
   @doc "
      * Test Task.Supervisor extern functions
      "
-  @spec test_task_supervisor() :: TAbstract(Void,[]).t()
+  @spec test_task_supervisor() :: nil
   def test_task_supervisor() do
     (
   supervisor_result = Supervisor.Task.Supervisor.start_link()
@@ -297,7 +297,7 @@ end
   @doc "
      * Test complete supervision tree
      "
-  @spec test_supervision_tree() :: TAbstract(Void,[]).t()
+  @spec test_supervision_tree() :: nil
   def test_supervision_tree() do
     (
   temp_map = nil

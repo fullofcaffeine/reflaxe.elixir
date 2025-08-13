@@ -12,7 +12,7 @@ defmodule Log do
   @doc "
 		Format the output of `trace` before printing it.
 	"
-  @spec format_output(TDynamic(null).t(), TType(haxe.PosInfos,[]).t()) :: TInst(String,[]).t()
+  @spec format_output(term(), PosInfos.t()) :: String.t()
   def format_output(arg0, arg1) do
     (
   str = Std.string(v)
@@ -51,7 +51,7 @@ end
 		If it is bound to null, subsequent calls to `trace()` will cause an
 		exception.
 	"
-  @spec trace(TDynamic(null).t(), TAbstract(Null,[TType(haxe.PosInfos,[])]).t()) :: TAbstract(Void,[]).t()
+  @spec trace(term(), Null.t()) :: nil
   def trace(arg0, arg1) do
     (
   str = Log.formatOutput(v, infos)

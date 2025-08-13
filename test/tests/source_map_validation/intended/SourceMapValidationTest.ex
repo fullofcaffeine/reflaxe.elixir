@@ -14,7 +14,7 @@ defmodule SourceMapValidationTest do
 
   # Static functions
   @doc "Function main"
-  @spec main() :: TAbstract(Void,[]).t()
+  @spec main() :: nil
   def main() do
     (
   Log.trace("=== Source Map Validation Test ===", %{fileName: "SourceMapValidationTest.hx", lineNumber: 13, className: "SourceMapValidationTest", methodName: "main"})
@@ -53,13 +53,13 @@ end
   end
 
   @doc "Function test_function"
-  @spec test_function(TInst(String,[]).t(), TAbstract(Int,[]).t()) :: TAbstract(Void,[]).t()
+  @spec test_function(String.t(), integer()) :: nil
   def test_function(arg0, arg1) do
     Log.trace("Testing with: " + str + " and " + num, %{fileName: "SourceMapValidationTest.hx", lineNumber: 57, className: "SourceMapValidationTest", methodName: "testFunction"})
   end
 
   @doc "Function process_item"
-  @spec process_item(TAbstract(Int,[]).t()) :: TAbstract(Void,[]).t()
+  @spec process_item(integer()) :: nil
   def process_item(arg0) do
     Log.trace("Processing item: " + item, %{fileName: "SourceMapValidationTest.hx", lineNumber: 61, className: "SourceMapValidationTest", methodName: "processItem"})
   end
@@ -74,7 +74,7 @@ defmodule TestClass do
 
   # Instance functions
   @doc "Function do_something"
-  @spec do_something() :: TAbstract(Void,[]).t()
+  @spec do_something() :: nil
   def do_something() do
     Log.trace("TestClass doing something with: " + self().name, %{fileName: "SourceMapValidationTest.hx", lineNumber: 73, className: "TestClass", methodName: "doSomething"})
   end

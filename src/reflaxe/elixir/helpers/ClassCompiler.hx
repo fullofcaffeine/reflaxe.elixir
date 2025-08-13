@@ -4,6 +4,8 @@ package reflaxe.elixir.helpers;
 
 import haxe.macro.Type.ClassType;
 import haxe.macro.Type.ClassField;
+import haxe.macro.Type;
+import haxe.macro.Expr;
 import reflaxe.data.ClassFuncData;
 import reflaxe.data.ClassFuncArg;
 import reflaxe.data.ClassVarData;
@@ -42,7 +44,11 @@ class ClassCompiler {
     public function compileClass(classType: ClassType, varFields: Array<ClassVarData>, funcFields: Array<ClassFuncData>): String {
         if (classType == null) return "";
         
-        var className = NamingHelper.getElixirModuleName(classType.name);
+        // Check for @:native annotation to override module name
+        var className = getNativeModuleName(classType);
+        if (className == null) {
+            className = NamingHelper.getElixirModuleName(classType.name);
+        }
         this.currentClassName = className;
         var isStruct = hasStructMetadata(classType);
         var isModule = hasModuleMetadata(classType);
@@ -139,6 +145,37 @@ class ClassCompiler {
         
         var metaEntries = classType.meta.extract(":schema");
         return metaEntries.length > 0;
+    }
+    
+    /**
+     * Get native module name from @:native annotation
+     */
+    private function getNativeModuleName(classType: ClassType): Null<String> {
+        if (classType.meta == null) return null;
+        
+        var metaEntries = classType.meta.extract(":native");
+        if (metaEntries.length > 0) {
+            var meta = metaEntries[0];
+            if (meta.params != null && meta.params.length > 0) {
+                // Extract module name from first parameter
+                var param = meta.params[0];
+                
+                // Handle Haxe expression types to extract string values
+                return switch(param.expr) {
+                    case EConst(CString(s, _)): s; // String literal like "TodoAppWeb.Router"
+                    case EConst(CIdent(s)): s;     // Identifier
+                    case _: 
+                        // Fallback - use Std.string but remove quotes
+                        var str = Std.string(param);
+                        if (str.indexOf('"') == 0 && str.lastIndexOf('"') == str.length - 1) {
+                            str.substring(1, str.length - 1);
+                        } else {
+                            str;
+                        }
+                }
+            }
+        }
+        return null;
     }
     
     /**
@@ -459,23 +496,42 @@ class ClassCompiler {
     }
     
     /**
-     * Extract field type information
+     * Extract field type information with proper type name extraction
      */
     private function getFieldType(field: ClassVarData): String {
         if (field.field.type != null) {
-            return Std.string(field.field.type);
+            return extractTypeName(field.field.type);
         }
         return "Dynamic";
     }
     
     /**
-     * Extract argument type information
+     * Extract argument type information with proper type name extraction
      */
     private function getArgType(arg: ClassFuncArg): String {
         if (arg.type != null) {
-            return Std.string(arg.type);
+            return extractTypeName(arg.type);
         }
         return "Dynamic";
+    }
+    
+    /**
+     * Extract the actual type name from a Haxe Type for use with ElixirTyper
+     * Fixes bug where Std.string(type) produces "TDynamic(null)" instead of "Dynamic"
+     */
+    private function extractTypeName(type: Type): String {
+        return switch(type) {
+            case TDynamic(_): "Dynamic";
+            case TInst(_.get() => c, params): c.name;
+            case TAbstract(_.get() => a, params): a.name;
+            case TEnum(_.get() => e, params): e.name;
+            case TType(_.get() => t, params): t.name;
+            case TFun(args, ret): "Function"; // Could be improved to generate proper function types
+            case TMono(_.get() => t): t != null ? extractTypeName(t) : "Dynamic";
+            case TLazy(f): extractTypeName(f());
+            case TAnonymous(_): "Dynamic"; // Anonymous objects  
+            case _: "Dynamic"; // Fallback for any other types
+        }
     }
     
     /**
@@ -514,7 +570,7 @@ class ClassCompiler {
             var typeStr = paramTypes.join(', ');
             
             // Get return type
-            var returnType = func.ret != null ? Std.string(func.ret) : "any()";
+            var returnType = func.ret != null ? extractTypeName(func.ret) : "any()";
             var elixirReturnType = typer.compileType(returnType);
             
             // Add documentation
@@ -561,11 +617,11 @@ class ClassCompiler {
     }
     
     /**
-     * Extract return type information
+     * Extract return type information with proper type name extraction
      */
     private function getReturnType(funcField: ClassFuncData): String {
         if (funcField.ret != null) {
-            return Std.string(funcField.ret);
+            return extractTypeName(funcField.ret);
         }
         return "Dynamic";
     }
@@ -662,14 +718,14 @@ class ClassCompiler {
                     params.push('arg${i}');
                     
                     // Get parameter type using ElixirTyper
-                    var argType = arg.type != null ? Std.string(arg.type) : "Dynamic";
+                    var argType = arg.type != null ? extractTypeName(arg.type) : "Dynamic";
                     var elixirType = typer.compileType(argType);
                     paramTypes.push(elixirType);
                 }
             }
             
             // Get return type using ElixirTyper
-            var returnType = func.ret != null ? Std.string(func.ret) : "Dynamic";
+            var returnType = func.ret != null ? extractTypeName(func.ret) : "Dynamic";
             var elixirReturnType = typer.compileType(returnType);
             
             // Generate @callback

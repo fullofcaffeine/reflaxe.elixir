@@ -10,13 +10,13 @@ defmodule Main do
 
   # Static functions
   @doc "Function greet"
-  @spec greet(TInst(String,[]).t()) :: TInst(String,[]).t()
+  @spec greet(String.t()) :: String.t()
   def greet(arg0) do
     "Hello, " + name + "!"
   end
 
   @doc "Function main"
-  @spec main() :: TAbstract(Void,[]).t()
+  @spec main() :: nil
   def main() do
     (
   instance = Main.new(10)
@@ -31,19 +31,19 @@ defmodule Main do
 
   # Instance functions
   @doc "Function calculate"
-  @spec calculate(TAbstract(Int,[]).t(), TAbstract(Int,[]).t()) :: TAbstract(Int,[]).t()
+  @spec calculate(integer(), integer()) :: integer()
   def calculate(arg0, arg1) do
     x + y * self().instance_var
   end
 
   @doc "Function check_value"
-  @spec check_value(TAbstract(Int,[]).t()) :: TInst(String,[]).t()
+  @spec check_value(integer()) :: String.t()
   def check_value(arg0) do
     if (n < 0), do: "negative", else: if (n == 0), do: "zero", else: "positive"
   end
 
   @doc "Function sum_range"
-  @spec sum_range(TAbstract(Int,[]).t(), TAbstract(Int,[]).t()) :: TAbstract(Int,[]).t()
+  @spec sum_range(integer(), integer()) :: integer()
   def sum_range(arg0, arg1) do
     (
   sum = 0
@@ -62,7 +62,7 @@ end
   end
 
   @doc "Function factorial"
-  @spec factorial(TAbstract(Int,[]).t()) :: TAbstract(Int,[]).t()
+  @spec factorial(integer()) :: integer()
   def factorial(arg0) do
     (
   result = 1
@@ -78,7 +78,7 @@ end
   end
 
   @doc "Function day_name"
-  @spec day_name(TAbstract(Int,[]).t()) :: TInst(String,[]).t()
+  @spec day_name(integer()) :: String.t()
   def day_name(arg0) do
     (
   temp_result = nil

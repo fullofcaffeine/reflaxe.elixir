@@ -70,7 +70,7 @@ defmodule Main do
   @doc "
      * Main function for compilation testing
      "
-  @spec main() :: TAbstract(Void,[]).t()
+  @spec main() :: nil
   def main() do
     Log.trace("Repository pattern compilation test complete!", %{fileName: "Main.hx", lineNumber: 45, className: "Main", methodName: "main"})
   end
@@ -87,7 +87,7 @@ defmodule UserRepository do
   @doc "
      * List all users - compiles to Repo.all(User)
      "
-  @spec get_all_users() :: TInst(Array,[TInst(User,[])]).t()
+  @spec get_all_users() :: Array.t()
   def get_all_users() do
     Repo.all(User)
   end
@@ -95,7 +95,7 @@ defmodule UserRepository do
   @doc "
      * Get user by ID - compiles to Repo.get!(User, id)
      "
-  @spec get_user(TAbstract(Int,[]).t()) :: TInst(User,[]).t()
+  @spec get_user(integer()) :: User.t()
   def get_user(arg0) do
     Repo.get(User, id)
   end
@@ -103,7 +103,7 @@ defmodule UserRepository do
   @doc "
      * Get user by ID (raises if not found) - compiles to Repo.get!(User, id)
      "
-  @spec get_user_bang(TAbstract(Int,[]).t()) :: TInst(User,[]).t()
+  @spec get_user_bang(integer()) :: User.t()
   def get_user_bang(arg0) do
     Repo.get!(User, id)
   end
@@ -111,7 +111,7 @@ defmodule UserRepository do
   @doc "
      * Create user - compiles to Repo.insert(changeset) with error tuple handling
      "
-  @spec create_user(TDynamic(null).t()) :: TDynamic(null).t()
+  @spec create_user(term()) :: term()
   def create_user(arg0) do
     (
   changeset = UserChangeset.changeset(nil, attrs)
@@ -122,7 +122,7 @@ defmodule UserRepository do
   @doc "
      * Update user - compiles to Repo.update(changeset) with error tuple handling
      "
-  @spec update_user(TInst(User,[]).t(), TDynamic(null).t()) :: TDynamic(null).t()
+  @spec update_user(User.t(), term()) :: term()
   def update_user(arg0, arg1) do
     (
   changeset = UserChangeset.changeset(user, attrs)
@@ -133,7 +133,7 @@ defmodule UserRepository do
   @doc "
      * Delete user - compiles to Repo.delete(user) with error tuple handling
      "
-  @spec delete_user(TInst(User,[]).t()) :: TDynamic(null).t()
+  @spec delete_user(User.t()) :: term()
   def delete_user(arg0) do
     Repo.delete(user)
   end
@@ -141,7 +141,7 @@ defmodule UserRepository do
   @doc "
      * Preload associations - compiles to Repo.preload(user, [:posts])
      "
-  @spec preload_posts(TInst(User,[]).t()) :: TInst(User,[]).t()
+  @spec preload_posts(User.t()) :: User.t()
   def preload_posts(arg0) do
     Repo.preload(user, ["posts"])
   end
@@ -149,7 +149,7 @@ defmodule UserRepository do
   @doc "
      * Count users - compiles to Repo.aggregate(User, :count)
      "
-  @spec count_users() :: TAbstract(Int,[]).t()
+  @spec count_users() :: integer()
   def count_users() do
     Repo.aggregate(User, "count")
   end
@@ -157,7 +157,7 @@ defmodule UserRepository do
   @doc "
      * Get first user - compiles to Repo.one(query)
      "
-  @spec get_first_user() :: TInst(User,[]).t()
+  @spec get_first_user() :: User.t()
   def get_first_user() do
     Repo.one(User)
   end

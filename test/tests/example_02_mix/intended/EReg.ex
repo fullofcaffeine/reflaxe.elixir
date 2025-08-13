@@ -35,7 +35,7 @@ defmodule EReg do
 
 		If `s` or `by` are null, the result is unspecified.
 	"
-  @spec replace(TInst(String,[]).t(), TInst(String,[]).t()) :: TInst(String,[]).t()
+  @spec replace(String.t(), String.t()) :: String.t()
   def replace(arg0, arg1) do
     nil
   end

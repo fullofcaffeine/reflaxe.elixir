@@ -17,7 +17,7 @@ defmodule BasicModule do
      * Simple greeting function
      * Compiles to: def hello(), do: "world"
      "
-  @spec hello() :: TInst(String,[]).t()
+  @spec hello() :: String.t()
   def hello() do
     # TODO: Implement function body
     nil
@@ -27,7 +27,7 @@ defmodule BasicModule do
      * Function with parameters
      * Compiles to: def greet(name), do: "Hello, #{name}!"
      "
-  @spec greet(TInst(String,[]).t()) :: TInst(String,[]).t()
+  @spec greet(String.t()) :: String.t()
   def greet(name) do
     # TODO: Implement function body
     nil
@@ -37,7 +37,7 @@ defmodule BasicModule do
      * Function with multiple parameters and logic
      * Demonstrates that complex logic compiles correctly
      "
-  @spec calculate(TAbstract(Int,[]).t(), TAbstract(Int,[]).t(), TInst(String,[]).t()) :: TAbstract(Int,[]).t()
+  @spec calculate(integer(), integer(), String.t()) :: integer()
   def calculate(x, y, operation) do
     # TODO: Implement function body
     nil
@@ -47,7 +47,7 @@ defmodule BasicModule do
      * Function with no parameters
      * Compiles to: def get_timestamp(), do: DateTime.utc_now()
      "
-  @spec get_timestamp() :: TInst(String,[]).t()
+  @spec get_timestamp() :: String.t()
   def get_timestamp() do
     # TODO: Implement function body
     nil
@@ -57,7 +57,7 @@ defmodule BasicModule do
      * Boolean function demonstrating predicate patterns
      * Common in Elixir for validation and guards
      "
-  @spec is_valid(TInst(String,[]).t()) :: TAbstract(Bool,[]).t()
+  @spec is_valid(String.t()) :: boolean()
   def is_valid(input) do
     # TODO: Implement function body
     nil
@@ -66,7 +66,7 @@ defmodule BasicModule do
   @doc "
      * Main function for compilation testing
      "
-  @spec main() :: TAbstract(Void,[]).t()
+  @spec main() :: nil
   def main() do
     # TODO: Implement function body
     nil

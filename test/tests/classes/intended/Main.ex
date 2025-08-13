@@ -8,8 +8,8 @@ defmodule Drawable do
  
   """
 
-  @callback draw() :: TInst(String,[]).t()
-  @callback get_position() :: TInst(Point,[]).t()
+  @callback draw() :: String.t()
+  @callback get_position() :: Point.t()
 end
 
 
@@ -18,7 +18,7 @@ defmodule Updatable do
   Updatable behavior generated from Haxe interface
   """
 
-  @callback update(TAbstract(Float,[]).t()) :: TAbstract(Void,[]).t()
+  @callback update(float()) :: nil
 end
 
 
@@ -29,7 +29,7 @@ defmodule Point do
 
   # Instance functions
   @doc "Function distance"
-  @spec distance(TInst(Point,[]).t()) :: TAbstract(Float,[]).t()
+  @spec distance(Point.t()) :: float()
   def distance(arg0) do
     (
   dx = self().x - other.x
@@ -39,7 +39,7 @@ defmodule Point do
   end
 
   @doc "Function to_string"
-  @spec to_string() :: TInst(String,[]).t()
+  @spec to_string() :: String.t()
   def to_string() do
     "Point(" + self().x + ", " + self().y + ")"
   end
@@ -56,19 +56,19 @@ defmodule Shape do
 
   # Instance functions
   @doc "Function draw"
-  @spec draw() :: TInst(String,[]).t()
+  @spec draw() :: String.t()
   def draw() do
     "" + self().name + " at " + self().position.toString()
   end
 
   @doc "Function get_position"
-  @spec get_position() :: TInst(Point,[]).t()
+  @spec get_position() :: Point.t()
   def get_position() do
     self().position
   end
 
   @doc "Function move"
-  @spec move(TAbstract(Float,[]).t(), TAbstract(Float,[]).t()) :: TAbstract(Void,[]).t()
+  @spec move(float(), float()) :: nil
   def move(arg0, arg1) do
     (
   fh = self().position
@@ -90,26 +90,26 @@ defmodule Circle do
 
   # Static functions
   @doc "Function create_unit"
-  @spec create_unit() :: TInst(Circle,[]).t()
+  @spec create_unit() :: Circle.t()
   def create_unit() do
     Circle.new(0, 0, 1)
   end
 
   # Instance functions
   @doc "Function draw"
-  @spec draw() :: TInst(String,[]).t()
+  @spec draw() :: String.t()
   def draw() do
     "" + super().draw() + " with radius " + self().radius
   end
 
   @doc "Function update"
-  @spec update(TAbstract(Float,[]).t()) :: TAbstract(Void,[]).t()
+  @spec update(float()) :: nil
   def update(arg0) do
     self().move(self().velocity.x * dt, self().velocity.y * dt)
   end
 
   @doc "Function set_velocity"
-  @spec set_velocity(TAbstract(Float,[]).t(), TAbstract(Float,[]).t()) :: TAbstract(Void,[]).t()
+  @spec set_velocity(float(), float()) :: nil
   def set_velocity(arg0, arg1) do
     (
   self().velocity.x = vx
@@ -127,7 +127,7 @@ defmodule Vehicle do
 
   # Instance functions
   @doc "Function accelerate"
-  @spec accelerate() :: TAbstract(Void,[]).t()
+  @spec accelerate() :: nil
   def accelerate() do
     throw("Abstract method")
   end
@@ -142,25 +142,25 @@ defmodule Container do
 
   # Instance functions
   @doc "Function add"
-  @spec add(TInst(Container.T,[]).t()) :: TAbstract(Void,[]).t()
+  @spec add(T.t()) :: nil
   def add(arg0) do
     self().items.push(item)
   end
 
   @doc "Function get"
-  @spec get(TAbstract(Int,[]).t()) :: TInst(Container.T,[]).t()
+  @spec get(integer()) :: T.t()
   def get(arg0) do
     Enum.at(self().items, index)
   end
 
   @doc "Function size"
-  @spec size() :: TAbstract(Int,[]).t()
+  @spec size() :: integer()
   def size() do
     self().items.length
   end
 
   @doc "Function map"
-  @spec map(TFun([{name: , t: TInst(Container.T,[]), opt: false}],TInst(map.U,[])).t()) :: TInst(Container,[TInst(map.U,[])]).t()
+  @spec map(Function.t()) :: Container.t()
   def map(arg0) do
     (
   result = Container.new()
@@ -189,7 +189,7 @@ defmodule Main do
 
   # Static functions
   @doc "Function main"
-  @spec main() :: TAbstract(Void,[]).t()
+  @spec main() :: nil
   def main() do
     (
   p1 = Point.new(3, 4)

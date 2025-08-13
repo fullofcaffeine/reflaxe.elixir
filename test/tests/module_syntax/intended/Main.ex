@@ -14,7 +14,7 @@ defmodule UserService do
   @doc "
      * Public function - should generate def syntax
      "
-  @spec create_user(TInst(String,[]).t(), TAbstract(Int,[]).t()) :: TInst(String,[]).t()
+  @spec create_user(String.t(), integer()) :: String.t()
   def create_user(name, age) do
     # TODO: Implement function body
     nil
@@ -23,7 +23,7 @@ defmodule UserService do
   @doc "
      * Private function - should generate defp syntax
      "
-  @spec validate_age(TAbstract(Int,[]).t()) :: TAbstract(Bool,[]).t()
+  @spec validate_age(integer()) :: boolean()
   def validate_age(age) do
     # TODO: Implement function body
     nil
@@ -32,7 +32,7 @@ defmodule UserService do
   @doc "
      * Function with pipe operator - should preserve pipe syntax
      "
-  @spec process_data(TInst(String,[]).t()) :: TInst(String,[]).t()
+  @spec process_data(String.t()) :: String.t()
   def process_data(data) do
     # TODO: Implement function body
     nil
@@ -41,7 +41,7 @@ defmodule UserService do
   @doc "
      * Function with multiple parameters
      "
-  @spec complex_function(TInst(String,[]).t(), TAbstract(Int,[]).t(), TAbstract(Bool,[]).t(), TInst(Array,[TInst(String,[])]).t()) :: TInst(String,[]).t()
+  @spec complex_function(String.t(), integer(), boolean(), Array.t()) :: String.t()
   def complex_function(arg1, arg2, arg3, arg4) do
     # TODO: Implement function body
     nil
@@ -62,14 +62,14 @@ defmodule StringUtils do
   # Module functions - generated with @:module syntax sugar
 
   @doc "Function is_empty"
-  @spec is_empty(TInst(String,[]).t()) :: TAbstract(Bool,[]).t()
+  @spec is_empty(String.t()) :: boolean()
   def is_empty(str) do
     # TODO: Implement function body
     nil
   end
 
   @doc "Function sanitize"
-  @spec sanitize(TInst(String,[]).t()) :: TInst(String,[]).t()
+  @spec sanitize(String.t()) :: String.t()
   def sanitize(str) do
     # TODO: Implement function body
     nil
@@ -91,7 +91,7 @@ defmodule UserHelper do
   # Module functions - generated with @:module syntax sugar
 
   @doc "Function format_name"
-  @spec format_name(TInst(String,[]).t(), TInst(String,[]).t()) :: TInst(String,[]).t()
+  @spec format_name(String.t(), String.t()) :: String.t()
   def format_name(first_name, last_name) do
     # TODO: Implement function body
     nil

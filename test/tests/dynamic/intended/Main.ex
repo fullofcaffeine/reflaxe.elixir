@@ -10,7 +10,7 @@ defmodule Main do
 
   # Static functions
   @doc "Function dynamic_vars"
-  @spec dynamic_vars() :: TAbstract(Void,[]).t()
+  @spec dynamic_vars() :: nil
   def dynamic_vars() do
     (
   dyn = 42
@@ -27,7 +27,7 @@ defmodule Main do
   end
 
   @doc "Function dynamic_field_access"
-  @spec dynamic_field_access() :: TAbstract(Void,[]).t()
+  @spec dynamic_field_access() :: nil
   def dynamic_field_access() do
     (
   obj = %{name: "Alice", age: 25, greet: fn  -> "Hello!" end}
@@ -41,7 +41,7 @@ defmodule Main do
   end
 
   @doc "Function dynamic_functions"
-  @spec dynamic_functions() :: TAbstract(Void,[]).t()
+  @spec dynamic_functions() :: nil
   def dynamic_functions() do
     (
   fn = fn a, b -> a + b end
@@ -67,7 +67,7 @@ end
   end
 
   @doc "Function type_checking"
-  @spec type_checking() :: TAbstract(Void,[]).t()
+  @spec type_checking() :: nil
   def type_checking() do
     (
   value = 42
@@ -85,13 +85,13 @@ end
   end
 
   @doc "Function dynamic_generics"
-  @spec dynamic_generics(TDynamic(null).t()) :: TInst(dynamicGenerics.T,[]).t()
+  @spec dynamic_generics(term()) :: T.t()
   def dynamic_generics(arg0) do
     value
   end
 
   @doc "Function dynamic_collections"
-  @spec dynamic_collections() :: TAbstract(Void,[]).t()
+  @spec dynamic_collections() :: nil
   def dynamic_collections() do
     (
   dyn_array = [1, "two", 3.0, true, %{x: 10}]
@@ -114,13 +114,13 @@ end
   end
 
   @doc "Function process_dynamic"
-  @spec process_dynamic(TDynamic(null).t()) :: TInst(String,[]).t()
+  @spec process_dynamic(term()) :: String.t()
   def process_dynamic(arg0) do
     if (value == nil), do: "null", else: if (Std.isOfType(value, Bool)), do: "Bool: " + Std.string(value), else: if (Std.isOfType(value, Int)), do: "Int: " + Std.string(value), else: if (Std.isOfType(value, Float)), do: "Float: " + Std.string(value), else: if (Std.isOfType(value, String)), do: "String: " + Std.string(value), else: if (Std.isOfType(value, Array)), do: "Array of length: " + Std.string(value.length), else: "Unknown type"
   end
 
   @doc "Function dynamic_method_calls"
-  @spec dynamic_method_calls() :: TAbstract(Void,[]).t()
+  @spec dynamic_method_calls() :: nil
   def dynamic_method_calls() do
     (
   obj = %{}
@@ -137,7 +137,7 @@ end
   end
 
   @doc "Function main"
-  @spec main() :: TAbstract(Void,[]).t()
+  @spec main() :: nil
   def main() do
     (
   Log.trace("=== Dynamic Variables ===", %{fileName: "Main.hx", lineNumber: 157, className: "Main", methodName: "main"})
