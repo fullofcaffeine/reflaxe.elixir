@@ -595,9 +595,9 @@ class ElixirCompiler extends BaseCompiler {
                 compileTConstant(constant);
                 
             case TLocal(v):
-                // Use parameter mapping if we're compiling an abstract method
+                // Use parameter mapping if available (for both abstract methods and regular functions with standardized arg names)
                 var varName = v.name;
-                if (isCompilingAbstractMethod && currentFunctionParameterMap.exists(varName)) {
+                if (currentFunctionParameterMap.exists(varName)) {
                     currentFunctionParameterMap.get(varName);
                 } else {
                     NamingHelper.toSnakeCase(varName);
@@ -851,8 +851,10 @@ class ElixirCompiler extends BaseCompiler {
         
         // Build parameter list
         var params = [];
-        for (arg in funcField.args) {
-            params.push(NamingHelper.toSnakeCase(arg.name != null ? arg.name : "arg"));
+        for (i in 0...funcField.args.length) {
+            var arg = funcField.args[i];
+            // Generate standardized arg names (arg0, arg1, etc.)
+            params.push('arg${i}');
         }
         
         var paramStr = params.join(", ");
@@ -928,7 +930,14 @@ class ElixirCompiler extends BaseCompiler {
         return switch (constant) {
             case TInt(i): Std.string(i);
             case TFloat(s): s;
-            case TString(s): '"${s}"';
+            case TString(s): 
+                // Properly escape string content for Elixir
+                var escaped = StringTools.replace(s, '\\', '\\\\'); // Escape backslashes first
+                escaped = StringTools.replace(escaped, '"', '\\"');  // Escape double quotes
+                escaped = StringTools.replace(escaped, '\n', '\\n'); // Escape newlines
+                escaped = StringTools.replace(escaped, '\r', '\\r'); // Escape carriage returns
+                escaped = StringTools.replace(escaped, '\t', '\\t'); // Escape tabs
+                '"${escaped}"';
             case TBool(b): b ? "true" : "false";
             case TNull: "nil";
             case TThis: "self()"; // Will need context-specific handling
@@ -978,7 +987,16 @@ class ElixirCompiler extends BaseCompiler {
         
         return switch (fa) {
             case FInstance(classType, _, classFieldRef):
-                var fieldName = NamingHelper.toSnakeCase(classFieldRef.get().name);
+                var fieldName = classFieldRef.get().name;
+                
+                // Special handling for String properties
+                var classTypeName = classType.get().name;
+                if (classTypeName == "String" && fieldName == "length") {
+                    return 'String.length(${expr})';
+                }
+                
+                // Default field access
+                fieldName = NamingHelper.toSnakeCase(fieldName);
                 '${expr}.${fieldName}'; // Map access syntax
                 
             case FStatic(classType, classFieldRef):
@@ -1043,13 +1061,19 @@ class ElixirCompiler extends BaseCompiler {
         if (args != null) {
             for (i in 0...args.length) {
                 var arg = args[i];
-                if (arg.name != null) {
-                    currentFunctionParameterMap.set(arg.name, 'arg${i}');
-                    
-                    // Also handle common abstract type parameter patterns
-                    if (arg.name == "this") {
-                        currentFunctionParameterMap.set("this1", 'arg${i}');
-                    }
+                // Try to get the name from tvar if available
+                var argName = if (arg.tvar != null) {
+                    arg.tvar.name;
+                } else {
+                    // Fallback to a generated name
+                    'param${i}';
+                }
+                
+                currentFunctionParameterMap.set(argName, 'arg${i}');
+                
+                // Also handle common abstract type parameter patterns
+                if (argName == "this") {
+                    currentFunctionParameterMap.set("this1", 'arg${i}');
                 }
             }
         }
@@ -1094,6 +1118,14 @@ class ElixirCompiler extends BaseCompiler {
                         // Continue with normal method call handling
                 }
                 
+                // Check if this is an Array method call
+                switch (obj.t) {
+                    case TInst(t, _) if (t.get().name == "Array"):
+                        return compileArrayMethod(objStr, methodName, args);
+                    case _:
+                        // Continue with normal method call handling
+                }
+                
                 // Handle other method calls normally
                 var compiledArgs = args.map(arg -> compileExpression(arg));
                 return '${objStr}.${methodName}(${compiledArgs.join(", ")})';
@@ -1103,6 +1135,53 @@ class ElixirCompiler extends BaseCompiler {
                 var compiledArgs = args.map(arg -> compileExpression(arg));
                 return compileExpression(e) + "(" + compiledArgs.join(", ") + ")";
         }
+    }
+    
+    /**
+     * Compile Array method calls to Elixir equivalents
+     */
+    private function compileArrayMethod(objStr: String, methodName: String, args: Array<TypedExpr>): String {
+        var compiledArgs = args.map(arg -> compileExpression(arg));
+        
+        return switch (methodName) {
+            case "join":
+                // array.join(separator) → Enum.join(array, separator)
+                if (compiledArgs.length > 0) {
+                    'Enum.join(${objStr}, ${compiledArgs[0]})';
+                } else {
+                    'Enum.join(${objStr}, "")';
+                }
+            case "push":
+                // array.push(item) → array ++ [item]
+                if (compiledArgs.length > 0) {
+                    '${objStr} ++ [${compiledArgs[0]}]';
+                } else {
+                    objStr;
+                }
+            case "pop":
+                // array.pop() → List.last(array) (note: doesn't modify original)
+                'List.last(${objStr})';
+            case "length":
+                // array.length → length(array)
+                'length(${objStr})';
+            case "map":
+                // array.map(fn) → Enum.map(array, fn)
+                if (compiledArgs.length > 0) {
+                    'Enum.map(${objStr}, ${compiledArgs[0]})';
+                } else {
+                    objStr;
+                }
+            case "filter":
+                // array.filter(fn) → Enum.filter(array, fn)
+                if (compiledArgs.length > 0) {
+                    'Enum.filter(${objStr}, ${compiledArgs[0]})';
+                } else {
+                    objStr;
+                }
+            case _:
+                // Default: try to call as a regular method
+                '${objStr}.${methodName}(${compiledArgs.join(", ")})';
+        };
     }
     
     /**

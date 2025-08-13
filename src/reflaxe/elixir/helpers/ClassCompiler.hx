@@ -655,16 +655,16 @@ class ClassCompiler {
      */
     private function compileExpressionForFunction(expr: Dynamic, args: Array<ClassFuncArg>): Null<String> {
         if (compiler != null) {
-            // Set up parameter mapping for standardized arg names
-            var isAbstractImpl = checkIfAbstractImplementationClass();
-            if (isAbstractImpl && args != null) {
+            // Always set up parameter mapping when we generate standardized arg names
+            // This ensures TLocal variables in the function body use the correct parameter names
+            if (args != null && args.length > 0) {
                 compiler.setFunctionParameterMapping(args);
             }
             
             var result = compiler.compileExpression(expr);
             
             // Clear parameter mapping
-            if (isAbstractImpl) {
+            if (args != null && args.length > 0) {
                 compiler.clearFunctionParameterMapping();
             }
             
