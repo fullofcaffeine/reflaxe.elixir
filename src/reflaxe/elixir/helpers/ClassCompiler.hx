@@ -63,6 +63,10 @@ class ClassCompiler {
         // Module definition
         result.add('defmodule ${className} do\n');
         
+        // Add use Bitwise for bitwise operators if needed
+        // TODO: Only add this if the module actually uses bitwise operations
+        result.add('  use Bitwise\n');
+        
         // Add @behaviour annotations for implemented interfaces
         if (classType.interfaces != null && classType.interfaces.length > 0) {
             for (interfaceRef in classType.interfaces) {

@@ -1,4 +1,5 @@
 defmodule TodoApp.Application do
+  use Bitwise
   @moduledoc """
   TodoApp.Application module generated from Haxe
   
