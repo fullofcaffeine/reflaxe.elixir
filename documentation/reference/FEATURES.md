@@ -116,11 +116,13 @@ This document provides the current status of all major features in Reflaxe.Elixi
 
 ### 16. Project Generator
 - **Status**: Production Ready ✨ NEW
-- **Template-Based**: Clean template system with mustache-style placeholders
+- **Mix Generator Integration**: Uses official Mix generators (`mix new`, `mix phx.new`) for complete projects
 - **Multiple Templates**: Basic, Phoenix, LiveView, and add-to-existing project types
+- **Haxe Integration**: Automatic `:haxe` compiler addition to Mix build pipeline
 - **LLM Documentation**: Automatic generation of AI-optimized documentation
 - **Test Coverage**: Automated tests ensure correct artifact generation
-- **Mix Integration**: Full Mix project setup with proper compilation pipeline
+- **Template Fallback**: Falls back to template-based generation when Mix unavailable
+- **Complete Projects**: Generated projects are immediately runnable with `mix phx.server`
 
 ### 14. Standard Library Extern Definitions
 - **Status**: Production Ready ✨ NEW

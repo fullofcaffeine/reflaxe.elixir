@@ -55,7 +55,7 @@ class TestProjectGeneratorTemplates {
         
         var generator = new ProjectGenerator();
         var options = {
-            name: "test-basic",
+            name: "test_basic",  // Mix requires underscores, not hyphens
             type: "basic",
             skipInstall: true,
             verbose: false,
@@ -65,7 +65,7 @@ class TestProjectGeneratorTemplates {
         
         generator.generate(options);
         
-        var projectPath = Path.join([testDir, "test-basic"]);
+        var projectPath = Path.join([testDir, "test_basic"]);
         
         // Check critical files exist
         assert(FileSystem.exists(projectPath), "Project directory created");
@@ -80,7 +80,7 @@ class TestProjectGeneratorTemplates {
         
         var generator = new ProjectGenerator();
         var options = {
-            name: "test-llm-docs",
+            name: "test_llm_docs",  // Mix requires underscores, not hyphens
             type: "basic",
             skipInstall: true,
             verbose: false,
@@ -90,7 +90,7 @@ class TestProjectGeneratorTemplates {
         
         generator.generate(options);
         
-        var projectPath = Path.join([testDir, "test-llm-docs"]);
+        var projectPath = Path.join([testDir, "test_llm_docs"]);
         var llmDocsPath = Path.join([projectPath, ".taskmaster", "docs", "llm"]);
         
         // Check LLM documentation structure
@@ -134,7 +134,7 @@ class TestProjectGeneratorTemplates {
         
         var generator = new ProjectGenerator();
         var options = {
-            name: "test-template-vars",
+            name: "test_template_vars",  // Mix requires underscores, not hyphens
             type: "phoenix",
             skipInstall: true,
             verbose: false,
@@ -144,16 +144,16 @@ class TestProjectGeneratorTemplates {
         
         generator.generate(options);
         
-        var projectPath = Path.join([testDir, "test-template-vars"]);
+        var projectPath = Path.join([testDir, "test_template_vars"]);
         
         // Check CLAUDE.md has correct placeholders replaced
         var claudeContent = File.getContent(Path.join([projectPath, "CLAUDE.md"]));
-        assert(claudeContent.indexOf("test-template-vars") > -1, "Project name replaced in CLAUDE.md");
+        assert(claudeContent.indexOf("test_template_vars") > -1, "Project name replaced in CLAUDE.md");
         assert(claudeContent.indexOf("{{PROJECT_NAME}}") == -1, "No unreplaced placeholders in CLAUDE.md");
         
         // Check README.md processing
         var readmeContent = File.getContent(Path.join([projectPath, "README.md"]));
-        assert(readmeContent.indexOf("test-template-vars") > -1, "Project name replaced in README.md");
+        assert(readmeContent.indexOf("test_template_vars") > -1, "Project name replaced in README.md");
         assert(readmeContent.indexOf("{{PROJECT_NAME}}") == -1, "No unreplaced placeholders in README.md");
         
         // Check Phoenix-specific content is included
