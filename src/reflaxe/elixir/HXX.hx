@@ -10,6 +10,13 @@ import haxe.macro.Expr;
  * 
  * Provides the hxx() macro function for converting Haxe template strings
  * to Phoenix HEEx format with proper interpolation and component syntax.
+ * 
+ * Features:
+ * - String interpolation: ${expr} -> #{expr}
+ * - Conditional rendering: ternary -> if/else
+ * - Loop transformations: map/join -> for comprehensions
+ * - Component syntax preservation: <.button> stays as-is
+ * - LiveView event handlers: phx-click, phx-change, etc.
  */
 class HXX {
     
@@ -30,6 +37,7 @@ class HXX {
     
     /**
      * Process template string at compile time
+     * Handles all transformations from Haxe syntax to HEEx format
      */
     static function processTemplateString(template: String): String {
         // Convert Haxe ${} interpolation to Elixir #{} interpolation
@@ -45,6 +53,8 @@ class HXX {
         // Handle conditional rendering and loops
         processed = processConditionals(processed);
         processed = processLoops(processed);
+        processed = processComponents(processed);
+        processed = processLiveViewEvents(processed);
         
         return processed;
     }
@@ -71,6 +81,56 @@ class HXX {
         // Fix: Use proper regex escaping - single backslash in Haxe regex literals
         var mapJoinPattern = ~/\#\{([^.]+)\.map\(([^)]+)\)\.join\("([^"]*)"\)\}/g;
         return mapJoinPattern.replace(template, '<%= for item <- $1 do %><%= $2(item) %><% end %>');
+    }
+    #end
+    
+    /**
+     * Process Phoenix component syntax
+     * Preserves <.component> syntax and handles attributes
+     */
+    static function processComponents(template: String): String {
+        // Phoenix components with dot prefix are already valid HEEx
+        // Just ensure attributes are properly formatted
+        var componentPattern = ~/<\.([a-zA-Z_][a-zA-Z0-9_]*)(\s+[^>]*)?\/>/g;
+        return componentPattern.replace(template, function(match) {
+            // Keep components as-is, they're valid HEEx
+            return match;
+        });
+    }
+    
+    /**
+     * Process LiveView event handlers
+     * Ensures phx-* attributes are preserved
+     */
+    static function processLiveViewEvents(template: String): String {
+        // LiveView events (phx-click, phx-change, etc.) are already valid
+        // This is a placeholder for future enhancements
+        return template;
+    }
+    
+    /**
+     * Helper to validate template syntax at compile time
+     */
+    static function validateTemplate(template: String): Bool {
+        // Basic validation to catch common errors early
+        var openTags = ~/<([a-zA-Z][a-zA-Z0-9]*)\b[^>]*(?<!\/)>/g;
+        var closeTags = ~/<\/([a-zA-Z][a-zA-Z0-9]*)>/g;
+        
+        // Count open and close tags (simplified)
+        var opens = [];
+        openTags.map(template, function(r) {
+            opens.push(r.matched(1));
+            return "";
+        });
+        
+        var closes = [];
+        closeTags.map(template, function(r) {
+            closes.push(r.matched(1));
+            return "";
+        });
+        
+        // Basic balance check
+        return opens.length == closes.length;
     }
     #end
     
