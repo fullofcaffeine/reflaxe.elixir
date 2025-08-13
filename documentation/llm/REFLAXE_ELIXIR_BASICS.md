@@ -599,6 +599,73 @@ class UserService {
 - **LiveView Guide**: https://hexdocs.pm/phoenix_live_view/
 - **GenServer Guide**: https://elixir-lang.org/getting-started/genserver.html
 
+### Source Code References (Available Locally)
+
+When implementing Reflaxe.Elixir features, reference these local sources:
+
+**Reflaxe.Elixir Compiler Source**:
+```bash
+# Current project source (for understanding implementation)
+/REDACTED_LOCAL_PATH
+
+# Key files to reference:
+# - ElixirCompiler.hx - Main compiler implementation
+# - helpers/ - All helper compilers (ClassCompiler, EnumCompiler, etc.)
+# - ElixirTyper.hx - Type mapping system
+# - PhoenixMapper.hx - Phoenix-specific mappings
+```
+
+**Working Examples**:
+```bash
+# Live examples showing all patterns in action
+/REDACTED_LOCAL_PATH
+
+# Each example has complete implementation:
+# - 02-mix-project: Basic Haxe→Elixir compilation
+# - 03-phoenix-app: Phoenix application structure  
+# - 06-user-management: LiveView components with Ecto
+# - 07-protocols: Protocol implementation patterns
+```
+
+**Reference Implementations**:
+```bash
+# Other Reflaxe compilers for architecture patterns
+/REDACTED_LOCAL_PATH
+/REDACTED_LOCAL_PATH
+
+# Phoenix applications for Elixir patterns
+/REDACTED_LOCAL_PATH (Phoenix projects)
+
+# HXX template processing reference
+/REDACTED_LOCAL_PATH
+```
+
+**When to Check Source Code**:
+
+1. **Understanding Annotation Implementation**:
+   ```bash
+   # How does @:liveview work?
+   grep -r "liveview" src/reflaxe/elixir/helpers/
+   ```
+
+2. **Learning Type Mapping**:
+   ```bash
+   # How are Haxe types converted to Elixir?
+   cat src/reflaxe/elixir/ElixirTyper.hx
+   ```
+
+3. **Studying Working Examples**:
+   ```bash
+   # See complete LiveView implementation
+   cat examples/06-user-management/src_haxe/live/UserLive.hx
+   ```
+
+4. **Understanding Helper Compilers**:
+   ```bash
+   # How does schema compilation work?
+   cat src/reflaxe/elixir/helpers/SchemaCompiler.hx
+   ```
+
 ## Summary for LLM Agents
 
 When working with Reflaxe.Elixir:
