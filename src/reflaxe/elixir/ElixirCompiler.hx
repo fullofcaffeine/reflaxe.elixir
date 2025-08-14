@@ -1704,6 +1704,7 @@ class ElixirCompiler extends BaseCompiler {
         var conditionStr = compileExpression(econd);
         if (conditionStr == null) return null;
         
+        
         // Look for pattern: _g < _g1 (range iteration) - account for parentheses
         var rangePattern = ~/^\(?_g\s*<\s*_g1\)?$/;
         if (rangePattern.match(conditionStr)) {
@@ -1712,13 +1713,19 @@ class ElixirCompiler extends BaseCompiler {
         }
         
         // Look for array iteration pattern: _g < array.length or _g < length(array)
-        var arrayPattern1 = ~/^\(?_g\s*<\s*(.+)\.length\)?$/;
-        var arrayPattern2 = ~/^\(?_g\s*<\s*length\((.+)\)\)?$/;
+        // Handle optional parentheses around the entire condition
+        var arrayPattern1 = ~/^\(?_g\s*<\s*(.+?)\.length\)?$/;
+        var arrayPattern2 = ~/^\(?_g\s*<\s*length\(([^)]+)\)\)?$/;
+        var arrayPattern3 = ~/^\(?_g\d*\s*<\s*length\(([^)]+)\)\)?$/; // Handle _g1, _g2 etc
+        
         if (arrayPattern1.match(conditionStr)) {
             var arrayExpr = arrayPattern1.matched(1);
             return optimizeArrayLoop(arrayExpr, ebody);
         } else if (arrayPattern2.match(conditionStr)) {
             var arrayExpr = arrayPattern2.matched(1);
+            return optimizeArrayLoop(arrayExpr, ebody);
+        } else if (arrayPattern3.match(conditionStr)) {
+            var arrayExpr = arrayPattern3.matched(1);
             return optimizeArrayLoop(arrayExpr, ebody);
         }
         return null;
@@ -1753,25 +1760,59 @@ class ElixirCompiler extends BaseCompiler {
     }
     
     /**
-     * Optimize array-based loops to use Enum.with_index
+     * Optimize array-based loops to use appropriate Enum functions
      */
     private function optimizeArrayLoop(arrayExpr: String, ebody: TypedExpr): String {
         var bodyAnalysis = analyzeLoopBody(ebody);
         
+        // Extract actual loop variable name from the AST
+        var loopVar = extractLoopVariableFromBody(ebody);
+        if (loopVar == null) loopVar = "item"; // Default fallback
+        
+        // For counting patterns, try to extract the variable used in condition
+        if (bodyAnalysis.hasCountPattern && bodyAnalysis.condition != null) {
+            var conditionVar = extractVariableFromCondition(bodyAnalysis.condition);
+            if (conditionVar != null) loopVar = conditionVar;
+        }
+        
+        // Dispatch to appropriate pattern generator based on analysis
+        
+        // 1. Check if this is a find pattern (early return)
+        if (bodyAnalysis.hasEarlyReturn) {
+            return generateEnumFindPattern(arrayExpr, loopVar, ebody);
+        }
+        
+        // 2. Check for counting pattern
+        if (bodyAnalysis.hasCountPattern) {
+            return generateEnumCountPattern(arrayExpr, loopVar, bodyAnalysis.condition);
+        }
+        
+        // 3. Check for filtering pattern (array building with conditions)
+        if (bodyAnalysis.hasFilterPattern) {
+            return generateEnumFilterPattern(arrayExpr, loopVar, bodyAnalysis.condition);
+        }
+        
+        // 4. Check for mapping pattern (array transformation)
+        if (bodyAnalysis.hasMapPattern) {
+            return generateEnumMapPattern(arrayExpr, loopVar, ebody);
+        }
+        
+        // 5. Check for simple numeric accumulation
         if (bodyAnalysis.hasSimpleAccumulator) {
             return '(\n' +
-                   '  {${bodyAnalysis.accumulator}} = Enum.reduce(${arrayExpr}, ${bodyAnalysis.accumulator}, fn ${bodyAnalysis.loopVar}, acc ->\n' +
-                   '    acc + ${bodyAnalysis.loopVar}\n' +
+                   '  {${bodyAnalysis.accumulator}} = Enum.reduce(${arrayExpr}, ${bodyAnalysis.accumulator}, fn ${loopVar}, acc ->\n' +
+                   '    acc + ${loopVar}\n' +
                    '  end)\n' +
                    ')';
-        } else {
-            var transformedBody = transformComplexLoopBody(ebody);
-            return '(\n' +
-                   '  Enum.each(${arrayExpr}, fn ${bodyAnalysis.loopVar} ->\n' +
-                   '    ${transformedBody}\n' +
-                   '  end)\n' +
-                   ')';
-        }
+        } 
+        
+        // 6. Default to Enum.each for side effects
+        var transformedBody = transformComplexLoopBody(ebody);
+        return '(\n' +
+               '  Enum.each(${arrayExpr}, fn ${loopVar} ->\n' +
+               '    ${transformedBody}\n' +
+               '  end)\n' +
+               ')';
     }
     
     /**
@@ -1779,23 +1820,39 @@ class ElixirCompiler extends BaseCompiler {
      */
     private function analyzeLoopBody(ebody: TypedExpr): {
         hasSimpleAccumulator: Bool,
+        hasEarlyReturn: Bool,
+        hasCountPattern: Bool,
+        hasFilterPattern: Bool,
+        hasMapPattern: Bool,
         accumulator: String,
         loopVar: String,
-        isAddition: Bool
+        isAddition: Bool,
+        condition: String
     } {
         // Default analysis result
         var result = {
             hasSimpleAccumulator: false,
+            hasEarlyReturn: false,
+            hasCountPattern: false,
+            hasFilterPattern: false,
+            hasMapPattern: false,
             accumulator: "sum",
-            loopVar: "i", 
-            isAddition: false
+            loopVar: "item", 
+            isAddition: false,
+            condition: ""
         };
         
-        // Look for simple accumulation patterns in the body
+        // Look for early returns (find patterns)
+        result.hasEarlyReturn = hasReturnStatement(ebody);
+        
+        // Analyze AST structure for different patterns
+        analyzeLoopBodyAST(ebody, result);
+        
+        // Look for simple accumulation patterns in the body (fallback)
         var bodyStr = compileExpression(ebody);
         if (bodyStr == null) return result;
         
-        // Check for += pattern: sum += i
+        // Check for += pattern: sum += i (numeric accumulation)
         var addPattern = ~/(\w+)\s*=\s*\1\s*\+\s*(\w+)/;
         if (addPattern.match(bodyStr)) {
             result.hasSimpleAccumulator = true;
@@ -1807,6 +1864,297 @@ class ElixirCompiler extends BaseCompiler {
         return result;
     }
     
+    /**
+     * Analyze loop body AST to detect specific patterns
+     */
+    private function analyzeLoopBodyAST(expr: TypedExpr, result: Dynamic): Void {
+        switch (expr.expr) {
+            case TBlock(exprs):
+                for (e in exprs) {
+                    analyzeLoopBodyAST(e, result);
+                }
+                
+            case TIf(econd, eif, _):
+                // Check for counting pattern: if (condition) count++
+                var condition = compileExpression(econd);
+                switch (eif.expr) {
+                    case TUnop(OpIncrement, _, {expr: TLocal(v)}):
+                        // Found count++ pattern (direct)
+                        result.hasCountPattern = true;
+                        result.accumulator = v.name;
+                        result.condition = condition;
+                    case TBlock(blockExprs):
+                        // Check for count++ inside block
+                        for (blockExpr in blockExprs) {
+                            switch (blockExpr.expr) {
+                                case TUnop(OpIncrement, _, {expr: TLocal(v)}):
+                                    // Found count++ pattern in block
+                                    result.hasCountPattern = true;
+                                    result.accumulator = v.name;
+                                    result.condition = condition;
+                                case TBinop(OpAssign, {expr: TLocal(v)}, {expr: TBinop(OpAdd, _, _)}):
+                                    // Found count = count + 1 pattern in block
+                                    result.hasCountPattern = true;
+                                    result.accumulator = v.name;
+                                    result.condition = condition;
+                                case _:
+                            }
+                        }
+                    case TBinop(OpAssign, {expr: TLocal(v)}, {expr: TBinop(OpAdd, _, _)}):
+                        // Found count = count + 1 pattern (direct)
+                        result.hasCountPattern = true;
+                        result.accumulator = v.name;
+                        result.condition = condition;
+                    case _:
+                }
+                
+            case TVar(v, init):
+                // Check for new variable declarations (potential filtering/mapping)
+                if (init != null) {
+                    switch (init.expr) {
+                        case TArray(e1, e2):
+                            // Array access - potential mapping
+                            result.hasMapPattern = true;
+                        case _:
+                    }
+                }
+                
+            case TUnop(OpIncrement, false, {expr: TLocal(v)}):
+                // Direct increment outside condition - simple counting
+                result.hasCountPattern = true;
+                result.accumulator = v.name;
+                
+            case _:
+        }
+    }
+    
+    /**
+     * Extract loop variable name from AST by finding TLocal references
+     */
+    private function extractLoopVariableFromBody(expr: TypedExpr): Null<String> {
+        switch (expr.expr) {
+            case TLocal(v):
+                // Check if this is an array access pattern indicating iteration variable
+                if (v.name != "_g" && v.name != "_g1" && v.name != "_g2") {
+                    return v.name;
+                }
+                
+            case TBlock(exprs):
+                // Look through block for variable references
+                for (e in exprs) {
+                    var result = extractLoopVariableFromBody(e);
+                    if (result != null) return result;
+                }
+                
+            case TIf(econd, eif, eelse):
+                // Check condition and branches
+                var result = extractLoopVariableFromBody(econd);
+                if (result != null) return result;
+                result = extractLoopVariableFromBody(eif);
+                if (result != null) return result;
+                if (eelse != null) {
+                    result = extractLoopVariableFromBody(eelse);
+                    if (result != null) return result;
+                }
+                
+            case TReturn(e) if (e != null):
+                return extractLoopVariableFromBody(e);
+                
+            case TField(e, fa):
+                // Look for patterns like todo.id
+                return extractLoopVariableFromBody(e);
+                
+            case TBinop(op, e1, e2):
+                // Check both operands
+                var result = extractLoopVariableFromBody(e1);
+                if (result != null) return result;
+                return extractLoopVariableFromBody(e2);
+                
+            case _:
+                // Continue searching in nested expressions
+        }
+        return null;
+    }
+    
+    /**
+     * Check if expression contains return statements
+     */
+    private function hasReturnStatement(expr: TypedExpr): Bool {
+        switch (expr.expr) {
+            case TReturn(_):
+                return true;
+            case TBlock(exprs):
+                for (e in exprs) {
+                    if (hasReturnStatement(e)) return true;
+                }
+            case TIf(_, eif, eelse):
+                if (hasReturnStatement(eif)) return true;
+                if (eelse != null && hasReturnStatement(eelse)) return true;
+            case _:
+        }
+        return false;
+    }
+    
+    /**
+     * Generate Enum.find pattern for early return loops
+     */
+    private function generateEnumFindPattern(arrayExpr: String, loopVar: String, ebody: TypedExpr): String {
+        // Extract the condition from the if statement
+        var condition = extractConditionFromReturn(ebody);
+        if (condition != null) {
+            // Generate Enum.find for simple cases
+            return 'Enum.find(${arrayExpr}, fn ${loopVar} -> ${condition} end)';
+        }
+        
+        // Fallback to reduce_while for complex cases
+        return '(\n' +
+               '  Enum.reduce_while(${arrayExpr}, nil, fn ${loopVar}, _acc ->\n' +
+               '    ${transformFindLoopBody(ebody, loopVar)}\n' +
+               '  end)\n' +
+               ')';
+    }
+    
+    /**
+     * Extract condition from return statement in loop body
+     */
+    private function extractConditionFromReturn(expr: TypedExpr): Null<String> {
+        switch (expr.expr) {
+            case TBlock(exprs):
+                for (e in exprs) {
+                    var result = extractConditionFromReturn(e);
+                    if (result != null) return result;
+                }
+            case TIf(econd, eif, _):
+                switch (eif.expr) {
+                    case TReturn(_):
+                        return compileExpression(econd);
+                    case _:
+                }
+            case _:
+        }
+        return null;
+    }
+    
+    /**
+     * Transform loop body for find patterns with reduce_while
+     */
+    private function transformFindLoopBody(expr: TypedExpr, loopVar: String): String {
+        switch (expr.expr) {
+            case TBlock(exprs):
+                var result = "";
+                for (e in exprs) {
+                    switch (e.expr) {
+                        case TIf(econd, eif, _):
+                            var condition = compileExpression(econd);
+                            // Check what's inside the eif (then branch)
+                            switch (eif.expr) {
+                                case TReturn(retExpr):
+                                    var returnValue = retExpr != null ? compileExpression(retExpr) : loopVar;
+                                    result += 'if ${condition} do\n' +
+                                             '      {:halt, ${returnValue}}\n' +
+                                             '    else\n' +
+                                             '      {:cont, nil}\n' +
+                                             '    end';
+                                case TBlock(blockExprs):
+                                    // Handle block containing return
+                                    for (blockExpr in blockExprs) {
+                                        switch (blockExpr.expr) {
+                                            case TReturn(retExpr):
+                                                var returnValue = retExpr != null ? compileExpression(retExpr) : loopVar;
+                                                result += 'if ${condition} do\n' +
+                                                         '      {:halt, ${returnValue}}\n' +
+                                                         '    else\n' +
+                                                         '      {:cont, nil}\n' +
+                                                         '    end';
+                                            case _:
+                                        }
+                                    }
+                                case _:
+                            }
+                        case _:
+                    }
+                }
+                return result;
+            case TIf(econd, eif, _):
+                // Handle direct if statement (not wrapped in block)
+                var condition = compileExpression(econd);
+                switch (eif.expr) {
+                    case TReturn(retExpr):
+                        var returnValue = retExpr != null ? compileExpression(retExpr) : loopVar;
+                        return 'if ${condition} do\n' +
+                               '      {:halt, ${returnValue}}\n' +
+                               '    else\n' +
+                               '      {:cont, nil}\n' +
+                               '    end';
+                    case _:
+                }
+            case _:
+        }
+        return '# Complex loop body transformation needed';
+    }
+    
+    /**
+     * Generate Enum.count pattern for conditional counting
+     */
+    private function generateEnumCountPattern(arrayExpr: String, loopVar: String, condition: String): String {
+        // Return the count directly as the function result
+        return 'Enum.count(${arrayExpr}, fn ${loopVar} -> ${condition} end)';
+    }
+    
+    /**
+     * Generate Enum.filter pattern for filtering arrays
+     */
+    private function generateEnumFilterPattern(arrayExpr: String, loopVar: String, condition: String): String {
+        return 'Enum.filter(${arrayExpr}, fn ${loopVar} -> ${condition} end)';
+    }
+    
+    /**
+     * Generate Enum.map pattern for transforming arrays
+     */
+    private function generateEnumMapPattern(arrayExpr: String, loopVar: String, ebody: TypedExpr): String {
+        // Extract transformation logic
+        var transformation = extractTransformationFromBody(ebody, loopVar);
+        return 'Enum.map(${arrayExpr}, fn ${loopVar} -> ${transformation} end)';
+    }
+    
+    /**
+     * Extract transformation logic from mapping body
+     */
+    private function extractTransformationFromBody(expr: TypedExpr, loopVar: String): String {
+        switch (expr.expr) {
+            case TBlock(exprs):
+                for (e in exprs) {
+                    switch (e.expr) {
+                        case TIf(econd, eif, eelse):
+                            var condition = compileExpression(econd);
+                            var thenValue = compileExpression(eif);
+                            var elseValue = eelse != null ? compileExpression(eelse) : loopVar;
+                            return 'if ${condition}, do: ${thenValue}, else: ${elseValue}';
+                        case _:
+                    }
+                }
+            case TIf(econd, eif, eelse):
+                var condition = compileExpression(econd);
+                var thenValue = compileExpression(eif);
+                var elseValue = eelse != null ? compileExpression(eelse) : loopVar;
+                return 'if ${condition}, do: ${thenValue}, else: ${elseValue}';
+            case _:
+        }
+        return loopVar; // Default: no transformation
+    }
+    
+    /**
+     * Extract variable name from condition string
+     */
+    private function extractVariableFromCondition(condition: String): Null<String> {
+        // Look for patterns like "todo.completed", "!todo.completed", "todo.id == id" etc.
+        var varPattern = ~/\(?(\w+)\./; // Match variable before dot
+        if (varPattern.match(condition)) {
+            return varPattern.matched(1);
+        }
+        return null;
+    }
+
     /**
      * Analyze range-based loop body to detect accumulation patterns
      */
