@@ -69,6 +69,9 @@ class ElixirCompiler extends BaseCompiler {
     private var currentFunctionParameterMap: Map<String, String> = new Map();
     private var isCompilingAbstractMethod: Bool = false;
     
+    // Current class context for app name resolution and other class-specific operations
+    private var currentClassType: Null<ClassType> = null;
+    
     /**
      * Constructor - Initialize the compiler with type mapping and pattern matching systems
      */
@@ -88,6 +91,43 @@ class ElixirCompiler extends BaseCompiler {
         if (Context.defined("generate-llm-docs")) {
             LLMDocsGenerator.initialize();
         }
+    }
+    
+    /**
+     * Get the current app name from the class being compiled
+     * 
+     * @:appName annotation is crucial for Phoenix applications because:
+     * 1. **PubSub Module Names**: Phoenix.PubSub requires app-specific module names (e.g., "TodoApp.PubSub")
+     * 2. **Telemetry Modules**: Applications need telemetry modules like "TodoAppWeb.Telemetry"
+     * 3. **Endpoint Modules**: Web endpoints are named like "TodoAppWeb.Endpoint"
+     * 4. **Supervisor Names**: OTP supervisors use app-specific names like "TodoApp.Supervisor"
+     * 
+     * Without configurable app names, all generated applications would hardcode "TodoApp"
+     * making it impossible to create multiple Phoenix apps or rename projects.
+     * 
+     * Usage: @:appName("MyApp") - generates MyApp.PubSub, MyAppWeb.Telemetry, etc.
+     */
+    private function getCurrentAppName(): String {
+        if (this.currentClassType != null) {
+            return AnnotationSystem.getEffectiveAppName(this.currentClassType);
+        }
+        return "App"; // Fallback if no class context
+    }
+    
+    /**
+     * Replace getAppName() calls with the actual app name from the annotation
+     * This post-processing step enables dynamic app name injection in generated code
+     */
+    private function replaceAppNameCalls(code: String, classType: ClassType): String {
+        var appName = AnnotationSystem.getEffectiveAppName(classType);
+        
+        // Replace direct getAppName() calls - these become simple string literals
+        code = code.replace('getAppName()', '"${appName}"');
+        
+        // Replace method calls like MyClass.getAppName() 
+        code = ~/([A-Za-z0-9_]+)\.getAppName\(\)/g.replace(code, '"${appName}"');
+        
+        return code;
     }
     
     /**
@@ -323,6 +363,9 @@ class ElixirCompiler extends BaseCompiler {
     public function compileClassImpl(classType: ClassType, varFields: Array<ClassVarData>, funcFields: Array<ClassFuncData>): Null<String> {
         if (classType == null) return null;
         
+        // Store current class context for use in expression compilation
+        this.currentClassType = classType;
+        
         // Set framework-aware file path BEFORE compilation using Reflaxe's built-in system
         setFrameworkAwareOutputPath(classType);
         
@@ -371,6 +414,11 @@ class ElixirCompiler extends BaseCompiler {
         }
         
         var result = classCompiler.compileClass(classType, varFields, funcFields);
+        
+        // Post-process to replace getAppName() calls with actual app name
+        if (result != null) {
+            result = replaceAppNameCalls(result, classType);
+        }
         
         // Finalize source mapping for this class
         if (sourceMapOutputEnabled) {
@@ -1513,8 +1561,8 @@ class ElixirCompiler extends BaseCompiler {
                     var compiledArgs = args.map(arg -> compileExpression(arg));
                     
                     // PubSub methods need the app's PubSub module as first argument
-                    // We need to determine the app name - for now use TodoApp.PubSub
-                    var pubsubModule = "TodoApp.PubSub";  // TODO: Make this configurable
+                    var appName = getCurrentAppName();
+                    var pubsubModule = '${appName}.PubSub';
                     
                     switch (methodName) {
                         case "subscribe":
@@ -1569,7 +1617,15 @@ class ElixirCompiler extends BaseCompiler {
                 
                 // Handle other method calls normally
                 var compiledArgs = args.map(arg -> compileExpression(arg));
-                return '${objStr}.${methodName}(${compiledArgs.join(", ")})';
+                
+                // Check if methodName already contains a module path (from @:native annotation)
+                if (methodName.indexOf(".") >= 0) {
+                    // Native method with full path - use it directly
+                    return '${methodName}(${compiledArgs.join(", ")})';
+                } else {
+                    // Regular method call - concatenate with object
+                    return '${objStr}.${methodName}(${compiledArgs.join(", ")})';
+                }
                 
             case _:
                 // Regular function call
@@ -1759,11 +1815,39 @@ class ElixirCompiler extends BaseCompiler {
     
     /**
      * Get field name from field access
+     * Handles @:native annotations on extern methods
      */
     private function getFieldName(fa: FieldAccess): String {
         return switch (fa) {
-            case FInstance(_, _, cf) | FStatic(_, cf) | FClosure(_, cf): cf.get().name;
-            case FAnon(cf): cf.get().name;
+            case FInstance(_, _, cf) | FStatic(_, cf) | FClosure(_, cf): 
+                var field = cf.get();
+                // Check for @:native annotation on the method
+                if (field.meta != null && field.meta.has(":native")) {
+                    var nativeMeta = field.meta.extract(":native");
+                    if (nativeMeta.length > 0 && nativeMeta[0].params != null && nativeMeta[0].params.length > 0) {
+                        // Extract the native name from the annotation
+                        var nativeName = switch(nativeMeta[0].params[0].expr) {
+                            case EConst(CString(s, _)): s;
+                            default: field.name;
+                        };
+                        return nativeName;
+                    }
+                }
+                return field.name;
+            case FAnon(cf): 
+                var field = cf.get();
+                // Check for @:native annotation on anonymous fields too
+                if (field.meta != null && field.meta.has(":native")) {
+                    var nativeMeta = field.meta.extract(":native");
+                    if (nativeMeta.length > 0 && nativeMeta[0].params != null && nativeMeta[0].params.length > 0) {
+                        var nativeName = switch(nativeMeta[0].params[0].expr) {
+                            case EConst(CString(s, _)): s;
+                            default: field.name;
+                        };
+                        return nativeName;
+                    }
+                }
+                return field.name;
             case FDynamic(s): s;
             case FEnum(_, ef): ef.name;
         };
