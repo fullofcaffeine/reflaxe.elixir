@@ -1240,7 +1240,8 @@ class ElixirCompiler extends DirectToStringCompiler {
                     '${className}.new()';
                 
             case TFunction(func):
-                var args = func.args.map(arg -> NamingHelper.toSnakeCase(arg.v.name)).join(", ");
+                // Get original parameter names (before Haxe's renaming)
+                var args = func.args.map(arg -> NamingHelper.toSnakeCase(getOriginalVarName(arg.v))).join(", ");
                 // Compile the body with proper type awareness for string concatenation
                 var body = compileExpressionWithTypeAwareness(func.expr);
                 'fn ${args} -> ${body} end';
@@ -1254,7 +1255,7 @@ class ElixirCompiler extends DirectToStringCompiler {
                 var result = 'try do\n  ${tryBody}\n';
                 
                 for (catchItem in catches) {
-                    var catchVar = NamingHelper.toSnakeCase(catchItem.v.name);
+                    var catchVar = NamingHelper.toSnakeCase(getOriginalVarName(catchItem.v));
                     var catchBody = compileExpression(catchItem.expr);
                     result += 'rescue\n  ${catchVar} ->\n    ${catchBody}\n';
                 }
@@ -2255,7 +2256,7 @@ class ElixirCompiler extends DirectToStringCompiler {
                         case TBinop(OpAssign, {expr: TLocal(v)}, {expr: TBinop(OpAdd, _, _)}):
                             // Found count = count + 1 pattern (direct)
                             result.hasCountPattern = true;
-                            result.accumulator = v.name;
+                            result.accumulator = getOriginalVarName(v);
                             result.condition = condition;
                             result.conditionExpr = econd;
                         case _:
@@ -2471,34 +2472,34 @@ class ElixirCompiler extends DirectToStringCompiler {
         var sourceVar = findLoopVariable(conditionExpr);
         
         // Use "item" as the target variable for the lambda parameter
-        var actualLoopVar = "item";
+        var targetVar = "item";
         
         // Apply variable substitution to the condition
-        var condition = compileExpressionWithVarMapping(conditionExpr, sourceVar, actualLoopVar);
+        var condition = compileExpressionWithVarMapping(conditionExpr, sourceVar, targetVar);
         
-        return 'Enum.filter(${arrayExpr}, fn ${actualLoopVar} -> ${condition} end)';
+        return 'Enum.filter(${arrayExpr}, fn ${targetVar} -> ${condition} end)';
     }
     
     /**
      * Generate Enum.map pattern for transforming arrays
      */
     private function generateEnumMapPattern(arrayExpr: String, loopVar: String, ebody: TypedExpr): String {
-        // Extract the actual loop variable name from the body to maintain consistency
-        var actualLoopVar = extractLoopVariableFromBody(ebody);
-        if (actualLoopVar == null) actualLoopVar = "item"; // Fallback
+        // Find the source variable that needs to be replaced
+        var sourceVar = findLoopVariable(ebody);
+        
+        // Use consistent target variable name for lambda parameter
+        var targetVar = "item";
         
         // Extract transformation with proper variable substitution
-        var transformation = extractTransformationFromBody(ebody, actualLoopVar);
+        var transformation = extractTransformationFromBody(ebody, sourceVar, targetVar);
         
-        return 'Enum.map(${arrayExpr}, fn ${actualLoopVar} -> ${transformation} end)';
+        return 'Enum.map(${arrayExpr}, fn ${targetVar} -> ${transformation} end)';
     }
     
     /**
      * Extract transformation logic from mapping body
      */
-    private function extractTransformationFromBody(expr: TypedExpr, loopVar: String): String {
-        // Find the source variable in the entire expression first
-        var sourceVar = findLoopVariable(expr);
+    private function extractTransformationFromBody(expr: TypedExpr, sourceVar: String, targetVar: String): String {
         
         switch (expr.expr) {
             case TBlock(exprs):
@@ -2511,7 +2512,7 @@ class ElixirCompiler extends DirectToStringCompiler {
                             switch (eobj.expr) {
                                 case TField(_, fa):
                                     // Extract and compile the transformation with variable mapping
-                                    return compileExpressionWithVarMapping(args[0], sourceVar, loopVar);
+                                    return compileExpressionWithVarMapping(args[0], sourceVar, targetVar);
                                 case _:
                             }
                         case TBinop(OpAssign, eleft, eright):
@@ -2520,15 +2521,15 @@ class ElixirCompiler extends DirectToStringCompiler {
                             switch (eright.expr) {
                                 case TBinop(OpAdd, _, etransform):
                                     // _g = _g ++ [transformation] pattern
-                                    return compileExpressionWithVarMapping(etransform, sourceVar, loopVar);
+                                    return compileExpressionWithVarMapping(etransform, sourceVar, targetVar);
                                 case _:
-                                    return compileExpressionWithVarMapping(eright, sourceVar, loopVar);
+                                    return compileExpressionWithVarMapping(eright, sourceVar, targetVar);
                             }
                         case TIf(econd, eif, eelse):
                             // Conditional transformation
-                            var condition = compileExpressionWithVarMapping(econd, sourceVar, loopVar);
-                            var thenValue = compileExpressionWithVarMapping(eif, sourceVar, loopVar);
-                            var elseValue = eelse != null ? compileExpressionWithVarMapping(eelse, sourceVar, loopVar) : loopVar;
+                            var condition = compileExpressionWithVarMapping(econd, sourceVar, targetVar);
+                            var thenValue = compileExpressionWithVarMapping(eif, sourceVar, targetVar);
+                            var elseValue = eelse != null ? compileExpressionWithVarMapping(eelse, sourceVar, targetVar) : targetVar;
                             return 'if ${condition}, do: ${thenValue}, else: ${elseValue}';
                         case _:
                             // Keep looking through other expressions
@@ -2536,15 +2537,15 @@ class ElixirCompiler extends DirectToStringCompiler {
                 }
             case TIf(econd, eif, eelse):
                 // Direct conditional transformation
-                var condition = compileExpressionWithVarMapping(econd, sourceVar, loopVar);
-                var thenValue = compileExpressionWithVarMapping(eif, sourceVar, loopVar);
-                var elseValue = eelse != null ? compileExpressionWithVarMapping(eelse, sourceVar, loopVar) : loopVar;
+                var condition = compileExpressionWithVarMapping(econd, sourceVar, targetVar);
+                var thenValue = compileExpressionWithVarMapping(eif, sourceVar, targetVar);
+                var elseValue = eelse != null ? compileExpressionWithVarMapping(eelse, sourceVar, targetVar) : targetVar;
                 return 'if ${condition}, do: ${thenValue}, else: ${elseValue}';
             case _:
                 // Try to compile the expression directly with variable mapping
-                return compileExpressionWithVarMapping(expr, sourceVar, loopVar);
+                return compileExpressionWithVarMapping(expr, sourceVar, targetVar);
         }
-        return loopVar; // Fallback: no transformation
+        return targetVar; // Fallback: no transformation
     }
     
     /**
@@ -2641,7 +2642,7 @@ class ElixirCompiler extends DirectToStringCompiler {
      */
     private function compileExpressionWithSubstitution(expr: TypedExpr, sourceVar: String, targetVar: String): String {
         switch (expr.expr) {
-            case TLocal(v) if (v.name == sourceVar):
+            case TLocal(v) if (getOriginalVarName(v) == sourceVar):
                 // Replace the source variable with target
                 return targetVar;
             case TBinop(op, e1, e2):
@@ -3083,7 +3084,7 @@ class ElixirCompiler extends DirectToStringCompiler {
                         switch (args[0].expr) {
                             case TFunction(func):
                                 // Handle lambda with proper variable substitution
-                                var paramName = func.args.length > 0 ? NamingHelper.toSnakeCase(func.args[0].v.name) : "item";
+                                var paramName = func.args.length > 0 ? NamingHelper.toSnakeCase(getOriginalVarName(func.args[0].v)) : "item";
                                 var sourceVar = findLoopVariable(func.expr);
                                 var body = compileExpressionWithVarMapping(func.expr, sourceVar, paramName);
                                 return 'Enum.filter(${objStr}, fn ${paramName} -> ${body} end)';
