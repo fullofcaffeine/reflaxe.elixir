@@ -164,7 +164,7 @@ defmodule Container do
     result = Container.new()
 _g = 0
 _g1 = __MODULE__.items
-Enum.count(_g1, fn item ->  end)
+Enum.map(_g1, fn item -> item end)
 result
   end
 
