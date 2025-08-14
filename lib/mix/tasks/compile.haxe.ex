@@ -63,7 +63,7 @@ defmodule Mix.Tasks.Compile.Haxe do
       if config[:verbose] do
         Mix.shell().info("Haxe files are up to date")
       end
-      {:noreply, []}
+      {:ok, []}
     end
   end
   
@@ -100,7 +100,7 @@ defmodule Mix.Tasks.Compile.Haxe do
     Mix.Project.config()
     |> Keyword.get(:haxe, [])
     |> Keyword.put_new(:hxml_file, "build.hxml")
-    |> Keyword.put_new(:source_dir, "src")
+    |> Keyword.put_new(:source_dir, "src_haxe")
     |> Keyword.put_new(:target_dir, "lib")
     |> Keyword.put_new(:watch, Mix.env() == :dev)
     |> Keyword.put_new(:verbose, false)
@@ -167,7 +167,7 @@ defmodule Mix.Tasks.Compile.Haxe do
         # Return diagnostics if there were warnings
         diagnostics = get_compilation_diagnostics()
         if Enum.empty?(diagnostics) do
-          {:ok, []}
+          {:ok, compiled_files}
         else
           {:ok, diagnostics}
         end
