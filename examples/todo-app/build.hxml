@@ -35,3 +35,4 @@ live.TodoLive
 schemas.Todo
 migrations.CreateTodos
 # controllers.UserController
+live.UserLive

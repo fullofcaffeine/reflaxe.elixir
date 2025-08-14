@@ -66,7 +66,7 @@ class HXX {
         // Convert Haxe ternary to Elixir if/else
         // #{condition ? "true_value" : "false_value"} -> <%= if condition, do: "true_value", else: "false_value" %>
         // Fix: Use proper regex escaping - single backslash in Haxe regex literals
-        var ternaryPattern = ~/\#\{([^?]+)\?([^:]+):([^}]+)\}/g;
+        var ternaryPattern = ~/#\{([^?]+)\?([^:]+):([^}]+)\}/g;
         return ternaryPattern.replace(template, '<%= if $1, do: $2, else: $3 %>');
     }
     
@@ -79,7 +79,7 @@ class HXX {
         
         // Handle basic map/join patterns
         // Fix: Use proper regex escaping - single backslash in Haxe regex literals
-        var mapJoinPattern = ~/\#\{([^.]+)\.map\(([^)]+)\)\.join\("([^"]*)"\)\}/g;
+        var mapJoinPattern = ~/#\{([^.]+)\.map\(([^)]+)\)\.join\("([^"]*)"\)\}/g;
         return mapJoinPattern.replace(template, '<%= for item <- $1 do %><%= $2(item) %><% end %>');
     }
     #end
@@ -92,10 +92,7 @@ class HXX {
         // Phoenix components with dot prefix are already valid HEEx
         // Just ensure attributes are properly formatted
         var componentPattern = ~/<\.([a-zA-Z_][a-zA-Z0-9_]*)(\s+[^>]*)?\/>/g;
-        return componentPattern.replace(template, function(match) {
-            // Keep components as-is, they're valid HEEx
-            return match;
-        });
+        return componentPattern.replace(template, "$0");
     }
     
     /**
@@ -113,7 +110,7 @@ class HXX {
      */
     static function validateTemplate(template: String): Bool {
         // Basic validation to catch common errors early
-        var openTags = ~/<([a-zA-Z][a-zA-Z0-9]*)\b[^>]*(?<!\/)>/g;
+        var openTags = ~/<([a-zA-Z][a-zA-Z0-9]*)\b[^>]*>/g;
         var closeTags = ~/<\/([a-zA-Z][a-zA-Z0-9]*)>/g;
         
         // Count open and close tags (simplified)
@@ -132,7 +129,6 @@ class HXX {
         // Basic balance check
         return opens.length == closes.length;
     }
-    #end
     
     /**
      * Runtime helper for template processing (if needed)

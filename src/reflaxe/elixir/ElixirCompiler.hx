@@ -1810,6 +1810,24 @@ class ElixirCompiler extends DirectToStringCompiler {
                     }
                 }
                 
+                // Detect HXX template function calls
+                if (objStr == "HXX" && methodName == "hxx") {
+                    return compileHxxCall(args);
+                }
+                
+                // Also handle direct hxx() calls (via import HXX.*)
+                if (methodName == "hxx" && args.length == 1) {
+                    // Check if this is likely an HXX call based on context
+                    switch (obj.expr) {
+                        case TField({expr: TTypeExpr(_)}, FStatic(c, _)):
+                            var className = c.get().name;
+                            if (className == "HXX") {
+                                return compileHxxCall(args);
+                            }
+                        case _:
+                    }
+                }
+                
                 // Detect Repo operations
                 if (objStr == "Repo") {
                     var compiledArgs = args.map(arg -> compileExpression(arg));
@@ -1858,6 +1876,12 @@ class ElixirCompiler extends DirectToStringCompiler {
                 }
                 
             case _:
+                // Check for direct hxx() calls (via import HXX.*)
+                var functionName = compileExpression(e);
+                if (functionName == "hxx") {
+                    return compileHxxCall(args);
+                }
+                
                 // Regular function call
                 var compiledArgs = args.map(arg -> compileExpression(arg));
                 return compileExpression(e) + "(" + compiledArgs.join(", ") + ")";
@@ -3543,6 +3567,93 @@ class ElixirCompiler extends DirectToStringCompiler {
                 // Default: try to call as a regular method
                 '${objStr}.${methodName}(${compiledArgs.join(", ")})';
         };
+    }
+    
+    /**
+     * Compile HXX template function calls
+     * Processes hxx() calls to transform JSX-like syntax to HEEx templates
+     */
+    private function compileHxxCall(args: Array<TypedExpr>): String {
+        if (args.length != 1) {
+            Context.error("hxx() expects exactly one string argument", Context.currentPos());
+        }
+        
+        // Extract the string literal from the argument
+        switch (args[0].expr) {
+            case TConst(TString(s)):
+                // Apply HXX transformations to the string
+                var processed = processHxxTemplate(s);
+                return '"${processed}"';
+                
+            case TBinop(OpAdd, _, _):
+                // Handle string concatenation (multiline strings with interpolation)
+                var compiled = compileExpression(args[0]);
+                if (compiled.charAt(0) == '"' && compiled.charAt(compiled.length - 1) == '"') {
+                    // It's a string literal, extract the content  
+                    var stringContent = compiled.substring(1, compiled.length - 1);
+                    var processed = processHxxTemplate(stringContent);
+                    return '"${processed}"';
+                }
+                // If it's a more complex expression, return it as-is for now
+                return compiled;
+                
+            case _:
+                // For other cases, try to compile and check if it results in a string
+                var compiled = compileExpression(args[0]);
+                if (compiled.charAt(0) == '"' && compiled.charAt(compiled.length - 1) == '"') {
+                    // It's a string literal, extract the content
+                    var stringContent = compiled.substring(1, compiled.length - 1);
+                    var processed = processHxxTemplate(stringContent);
+                    return '"${processed}"';
+                }
+                
+                Context.error("hxx() expects a string literal, got: " + args[0].expr.getName(), args[0].pos);
+        }
+        
+        return '""';  // Fallback
+    }
+    
+    /**
+     * Process HXX template string - convert JSX-like syntax to HEEx
+     */
+    private function processHxxTemplate(template: String): String {
+        var processed = template;
+        
+        // The template already has Elixir-style string concatenation (<>) and expressions
+        // We need to convert the template format to proper HEEx syntax
+        
+        // Convert Haxe ${} interpolation to Elixir <%= %> interpolation (if any remain)
+        processed = ~/\$\{([^}]+)\}/g.replace(processed, '<%= $1 %>');
+        
+        // Convert string concatenation patterns to HEEx interpolation
+        // " <> expr <> " -> <%= expr %>
+        processed = ~/" <> ([^<>]+) <> "/g.replace(processed, '<%= $1 %>');
+        
+        // Handle the specific patterns we see in the debug output:
+        // Convert __MODULE__.methodName(assigns) patterns to proper HEEx function calls
+        processed = ~/(<%= )?__MODULE__\.([a-zA-Z_][a-zA-Z0-9_]*)\(([^)]*)\)( %>)?/g.replace(processed, '<%= $2($3) %>');
+        
+        // Convert Std.string() calls to simple interpolation
+        processed = ~/Std\.string\(([^)]+)\)/g.replace(processed, '$1');
+        
+        // Convert Integer.to_string() calls to simple interpolation  
+        processed = ~/Integer\.to_string\(([^)]+)\)/g.replace(processed, '$1');
+        
+        // Convert Enum.join(Enum.map(...)) patterns to for comprehensions
+        processed = ~/Enum\.join\(Enum\.map\(([^,]+),\s*([^)]+)\),\s*"([^"]*)"\)/g.replace(processed, '<%= for item <- $1 do %>$2<% end %>');
+        
+        // Handle conditional rendering (ternary operator)
+        // <%= condition ? "true_value" : "false_value" %> -> <%= if condition, do: "true_value", else: "false_value" %>
+        var ternaryPattern = ~/<%= ([^?]+)\?([^:]+):([^%]+) %>/g;
+        processed = ternaryPattern.replace(processed, '<%= if $1, do: $2, else: $3 %>');
+        
+        // Clean up any remaining temp_string variables (keep as-is for now)
+        // processed = ~/temp_string[0-9]*/g.replace(processed, "temp_var");
+        
+        // Preserve Phoenix component syntax (<.button> stays as-is)
+        // LiveView events (phx-click, etc.) are already valid HEEx
+        
+        return processed;
     }
     
     /**
