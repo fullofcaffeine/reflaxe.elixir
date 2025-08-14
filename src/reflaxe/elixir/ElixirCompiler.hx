@@ -1819,13 +1819,13 @@ class ElixirCompiler extends BaseCompiler {
         }
         
         // 3. Check for filtering pattern (array building with conditions)
-        if (bodyAnalysis.hasFilterPattern) {
-            return generateEnumFilterPattern(arrayExpr, loopVar, bodyAnalysis.condition);
+        if (bodyAnalysis.hasFilterPattern && bodyAnalysis.conditionExpr != null) {
+            return generateEnumFilterPattern(arrayExpr, loopVar, bodyAnalysis.conditionExpr);
         }
         
         // 4. Check for counting pattern (lower priority since loops may have increments)
-        if (bodyAnalysis.hasCountPattern) {
-            return generateEnumCountPattern(arrayExpr, loopVar, bodyAnalysis.condition);
+        if (bodyAnalysis.hasCountPattern && bodyAnalysis.conditionExpr != null) {
+            return generateEnumCountPattern(arrayExpr, loopVar, bodyAnalysis.conditionExpr);
         }
         
         // 5. Check for simple numeric accumulation
@@ -1858,7 +1858,8 @@ class ElixirCompiler extends BaseCompiler {
         accumulator: String,
         loopVar: String,
         isAddition: Bool,
-        condition: String
+        condition: String,
+        conditionExpr: Null<TypedExpr>
     } {
         // Default analysis result
         var result = {
@@ -1870,7 +1871,8 @@ class ElixirCompiler extends BaseCompiler {
             accumulator: "sum",
             loopVar: "item", 
             isAddition: false,
-            condition: ""
+            condition: "",
+            conditionExpr: null
         };
         
         // Look for early returns (find patterns)
@@ -1914,6 +1916,7 @@ class ElixirCompiler extends BaseCompiler {
                         result.hasCountPattern = true;
                         result.accumulator = v.name;
                         result.condition = condition;
+                        result.conditionExpr = econd;
                     case TBlock(blockExprs):
                         // Check for count++ inside block
                         for (blockExpr in blockExprs) {
@@ -1923,11 +1926,13 @@ class ElixirCompiler extends BaseCompiler {
                                     result.hasCountPattern = true;
                                     result.accumulator = v.name;
                                     result.condition = condition;
+                                    result.conditionExpr = econd;
                                 case TBinop(OpAssign, {expr: TLocal(v)}, {expr: TBinop(OpAdd, _, _)}):
                                     // Found count = count + 1 pattern in block
                                     result.hasCountPattern = true;
                                     result.accumulator = v.name;
                                     result.condition = condition;
+                                    result.conditionExpr = econd;
                                 case _:
                             }
                         }
@@ -1936,6 +1941,7 @@ class ElixirCompiler extends BaseCompiler {
                         result.hasCountPattern = true;
                         result.accumulator = v.name;
                         result.condition = condition;
+                        result.conditionExpr = econd;
                     case _:
                 }
                 
@@ -2127,25 +2133,41 @@ class ElixirCompiler extends BaseCompiler {
     /**
      * Generate Enum.count pattern for conditional counting
      */
-    private function generateEnumCountPattern(arrayExpr: String, loopVar: String, condition: String): String {
-        // Return the count directly as the function result
-        return 'Enum.count(${arrayExpr}, fn ${loopVar} -> ${condition} end)';
+    private function generateEnumCountPattern(arrayExpr: String, loopVar: String, conditionExpr: TypedExpr): String {
+        // Extract the actual loop variable name to maintain consistency
+        var actualLoopVar = findLoopVariable(conditionExpr);
+        if (actualLoopVar == null) actualLoopVar = "item"; // Fallback
+        
+        // Apply variable substitution to the condition
+        var condition = compileExpressionWithVarMapping(conditionExpr, actualLoopVar);
+        return 'Enum.count(${arrayExpr}, fn ${actualLoopVar} -> ${condition} end)';
     }
     
     /**
      * Generate Enum.filter pattern for filtering arrays
      */
-    private function generateEnumFilterPattern(arrayExpr: String, loopVar: String, condition: String): String {
-        return 'Enum.filter(${arrayExpr}, fn ${loopVar} -> ${condition} end)';
+    private function generateEnumFilterPattern(arrayExpr: String, loopVar: String, conditionExpr: TypedExpr): String {
+        // Extract the actual loop variable name to maintain consistency
+        var actualLoopVar = findLoopVariable(conditionExpr);
+        if (actualLoopVar == null) actualLoopVar = "item"; // Fallback
+        
+        // Apply variable substitution to the condition
+        var condition = compileExpressionWithVarMapping(conditionExpr, actualLoopVar);
+        return 'Enum.filter(${arrayExpr}, fn ${actualLoopVar} -> ${condition} end)';
     }
     
     /**
      * Generate Enum.map pattern for transforming arrays
      */
     private function generateEnumMapPattern(arrayExpr: String, loopVar: String, ebody: TypedExpr): String {
-        // Extract transformation logic
-        var transformation = extractTransformationFromBody(ebody, loopVar);
-        return 'Enum.map(${arrayExpr}, fn ${loopVar} -> ${transformation} end)';
+        // Extract the actual loop variable name from the body to maintain consistency
+        var actualLoopVar = extractLoopVariableFromBody(ebody);
+        if (actualLoopVar == null) actualLoopVar = "item"; // Fallback
+        
+        // Extract transformation with proper variable substitution
+        var transformation = extractTransformationFromBody(ebody, actualLoopVar);
+        
+        return 'Enum.map(${arrayExpr}, fn ${actualLoopVar} -> ${transformation} end)';
     }
     
     /**
@@ -2154,24 +2176,148 @@ class ElixirCompiler extends BaseCompiler {
     private function extractTransformationFromBody(expr: TypedExpr, loopVar: String): String {
         switch (expr.expr) {
             case TBlock(exprs):
+                // Look for the actual transformation in the loop body
                 for (e in exprs) {
                     switch (e.expr) {
+                        case TCall(eobj, args) if (args.length > 0):
+                            // This is likely _g.push(transformation) or similar
+                            // Check if it's an array push operation
+                            switch (eobj.expr) {
+                                case TField(_, fa):
+                                    // Extract and compile the transformation with variable mapping
+                                    return compileExpressionWithVarMapping(args[0], loopVar);
+                                case _:
+                            }
+                        case TBinop(OpAssign, eleft, eright):
+                            // Assignment pattern like _g = _g ++ [transformation]
+                            // Look for list concatenation patterns
+                            switch (eright.expr) {
+                                case TBinop(OpAdd, _, etransform):
+                                    // _g = _g ++ [transformation] pattern
+                                    return compileExpressionWithVarMapping(etransform, loopVar);
+                                case _:
+                                    return compileExpressionWithVarMapping(eright, loopVar);
+                            }
                         case TIf(econd, eif, eelse):
-                            var condition = compileExpression(econd);
-                            var thenValue = compileExpression(eif);
-                            var elseValue = eelse != null ? compileExpression(eelse) : loopVar;
+                            // Conditional transformation
+                            var condition = compileExpressionWithVarMapping(econd, loopVar);
+                            var thenValue = compileExpressionWithVarMapping(eif, loopVar);
+                            var elseValue = eelse != null ? compileExpressionWithVarMapping(eelse, loopVar) : loopVar;
                             return 'if ${condition}, do: ${thenValue}, else: ${elseValue}';
                         case _:
+                            // Keep looking through other expressions
                     }
                 }
             case TIf(econd, eif, eelse):
-                var condition = compileExpression(econd);
-                var thenValue = compileExpression(eif);
-                var elseValue = eelse != null ? compileExpression(eelse) : loopVar;
+                // Direct conditional transformation
+                var condition = compileExpressionWithVarMapping(econd, loopVar);
+                var thenValue = compileExpressionWithVarMapping(eif, loopVar);
+                var elseValue = eelse != null ? compileExpressionWithVarMapping(eelse, loopVar) : loopVar;
                 return 'if ${condition}, do: ${thenValue}, else: ${elseValue}';
             case _:
+                // Try to compile the expression directly with variable mapping
+                return compileExpressionWithVarMapping(expr, loopVar);
         }
-        return loopVar; // Default: no transformation
+        return loopVar; // Fallback: no transformation
+    }
+    
+    /**
+     * Compile expression with variable mapping for loop variable substitution
+     */
+    private function compileExpressionWithVarMapping(expr: TypedExpr, targetVar: String): String {
+        // Find the actual loop variable in the expression
+        var sourceVar = findLoopVariable(expr);
+        if (sourceVar == null) {
+            return compileExpression(expr);
+        }
+        
+        // Compile with variable substitution
+        return compileExpressionWithSubstitution(expr, sourceVar, targetVar);
+    }
+    
+    /**
+     * Find the loop variable being used in an expression
+     */
+    private function findLoopVariable(expr: TypedExpr): Null<String> {
+        switch (expr.expr) {
+            case TLocal(v):
+                // Skip compiler-generated variables
+                if (v.name != "_g" && v.name != "_g1" && v.name != "_g2" && !v.name.startsWith("temp_")) {
+                    return v.name;
+                }
+            case TBinop(_, e1, e2):
+                var result = findLoopVariable(e1);
+                if (result != null) return result;
+                return findLoopVariable(e2);
+            case TField(e, _):
+                return findLoopVariable(e);
+            case TCall(e, args):
+                var result = findLoopVariable(e);
+                if (result != null) return result;
+                for (arg in args) {
+                    result = findLoopVariable(arg);
+                    if (result != null) return result;
+                }
+            case TArray(e1, e2):
+                var result = findLoopVariable(e1);
+                if (result != null) return result;
+                return findLoopVariable(e2);
+            case TBlock(exprs):
+                for (e in exprs) {
+                    var result = findLoopVariable(e);
+                    if (result != null) return result;
+                }
+            case _:
+                // Other expression types
+        }
+        return null;
+    }
+    
+    /**
+     * Compile expression with variable substitution
+     */
+    private function compileExpressionWithSubstitution(expr: TypedExpr, sourceVar: String, targetVar: String): String {
+        switch (expr.expr) {
+            case TLocal(v) if (v.name == sourceVar):
+                // Replace the source variable with target
+                return targetVar;
+            case TBinop(op, e1, e2):
+                // Recursively substitute in binary operations
+                var left = compileExpressionWithSubstitution(e1, sourceVar, targetVar);
+                var right = compileExpressionWithSubstitution(e2, sourceVar, targetVar);
+                return '${left} ${compileBinop(op)} ${right}';
+            case TField(e, fa):
+                // Handle field access on substituted variables
+                var obj = compileExpressionWithSubstitution(e, sourceVar, targetVar);
+                var fieldName = getFieldName(fa);
+                return '${obj}.${fieldName}';
+            case TCall(e, args):
+                // Handle method calls with substitution
+                var obj = compileExpressionWithSubstitution(e, sourceVar, targetVar);
+                var compiledArgs = args.map(arg -> compileExpressionWithSubstitution(arg, sourceVar, targetVar));
+                return '${obj}(${compiledArgs.join(", ")})';
+            case TArray(e1, e2):
+                // Handle array access with substitution
+                var arr = compileExpressionWithSubstitution(e1, sourceVar, targetVar);
+                var index = compileExpressionWithSubstitution(e2, sourceVar, targetVar);
+                return 'Enum.at(${arr}, ${index})';
+            case TConst(c):
+                // Constants don't need substitution
+                return compileTConstant(c);
+            case TIf(econd, eif, eelse):
+                // Handle conditionals with substitution
+                var condition = compileExpressionWithSubstitution(econd, sourceVar, targetVar);
+                var thenValue = compileExpressionWithSubstitution(eif, sourceVar, targetVar);
+                var elseValue = eelse != null ? compileExpressionWithSubstitution(eelse, sourceVar, targetVar) : targetVar;
+                return 'if ${condition}, do: ${thenValue}, else: ${elseValue}';
+            case TBlock(exprs):
+                // Handle blocks with substitution
+                var compiledExprs = exprs.map(e -> compileExpressionWithSubstitution(e, sourceVar, targetVar));
+                return compiledExprs.join('\n');
+            case _:
+                // For other cases, fall back to regular compilation
+                return compileExpression(expr);
+        }
     }
     
     /**
