@@ -2484,20 +2484,79 @@ class ElixirCompiler extends DirectToStringCompiler {
      * Generate Enum.map pattern for transforming arrays
      */
     private function generateEnumMapPattern(arrayExpr: String, loopVar: String, ebody: TypedExpr): String {
-        // Find the source variable that needs to be replaced
-        var sourceVar = findLoopVariable(ebody);
+        // Try to find the lambda parameter directly from the body
+        var lambdaParam = getLambdaParameterFromBody(ebody);
         
         // Use consistent target variable name for lambda parameter
         var targetVar = "item";
         
         // Extract transformation with proper variable substitution
-        var transformation = extractTransformationFromBody(ebody, sourceVar, targetVar);
+        var transformation: String;
+        if (lambdaParam != null) {
+            // Use TVar-based substitution for more accurate variable matching
+            transformation = extractTransformationFromBodyWithTVar(ebody, lambdaParam, targetVar);
+        } else {
+            // Fallback to string-based approach
+            var sourceVar = findLoopVariable(ebody);
+            transformation = extractTransformationFromBody(ebody, sourceVar, targetVar);
+        }
         
         return 'Enum.map(${arrayExpr}, fn ${targetVar} -> ${transformation} end)';
     }
     
     /**
-     * Extract transformation logic from mapping body
+     * Extract transformation logic from mapping body (TVar-based version)
+     */
+    private function extractTransformationFromBodyWithTVar(expr: TypedExpr, sourceTVar: TVar, targetVarName: String): String {
+        switch (expr.expr) {
+            case TBlock(exprs):
+                // Look for the actual transformation in the loop body
+                for (e in exprs) {
+                    switch (e.expr) {
+                        case TCall(eobj, args) if (args.length > 0):
+                            // This is likely _g.push(transformation) or similar
+                            // Check if it's an array push operation
+                            switch (eobj.expr) {
+                                case TField(_, fa):
+                                    // Extract and compile the transformation with variable mapping
+                                    return compileExpressionWithTVarSubstitution(args[0], sourceTVar, targetVarName);
+                                case _:
+                            }
+                        case TBinop(OpAssign, eleft, eright):
+                            // Assignment pattern like _g = _g ++ [transformation]
+                            // Look for list concatenation patterns
+                            switch (eright.expr) {
+                                case TBinop(OpAdd, _, etransform):
+                                    // _g = _g ++ [transformation] pattern
+                                    return compileExpressionWithTVarSubstitution(etransform, sourceTVar, targetVarName);
+                                case _:
+                                    return compileExpressionWithTVarSubstitution(eright, sourceTVar, targetVarName);
+                            }
+                        case TIf(econd, eif, eelse):
+                            // Conditional transformation
+                            var condition = compileExpressionWithTVarSubstitution(econd, sourceTVar, targetVarName);
+                            var thenValue = compileExpressionWithTVarSubstitution(eif, sourceTVar, targetVarName);
+                            var elseValue = eelse != null ? compileExpressionWithTVarSubstitution(eelse, sourceTVar, targetVarName) : targetVarName;
+                            return 'if ${condition}, do: ${thenValue}, else: ${elseValue}';
+                        case _:
+                            // Keep looking through other expressions
+                    }
+                }
+            case TIf(econd, eif, eelse):
+                // Direct conditional transformation
+                var condition = compileExpressionWithTVarSubstitution(econd, sourceTVar, targetVarName);
+                var thenValue = compileExpressionWithTVarSubstitution(eif, sourceTVar, targetVarName);
+                var elseValue = eelse != null ? compileExpressionWithTVarSubstitution(eelse, sourceTVar, targetVarName) : targetVarName;
+                return 'if ${condition}, do: ${thenValue}, else: ${elseValue}';
+            case _:
+                // Try to compile the expression directly with variable mapping
+                return compileExpressionWithTVarSubstitution(expr, sourceTVar, targetVarName);
+        }
+        return targetVarName; // Fallback: no transformation
+    }
+
+    /**
+     * Extract transformation logic from mapping body (string-based version)
      */
     private function extractTransformationFromBody(expr: TypedExpr, sourceVar: String, targetVar: String): String {
         
@@ -2548,6 +2607,54 @@ class ElixirCompiler extends DirectToStringCompiler {
         return targetVar; // Fallback: no transformation
     }
     
+    /**
+     * Extract the lambda parameter variable from a loop body that contains a TFunction
+     * 
+     * This is used for array method transformations (map, filter) where we need to 
+     * identify the lambda parameter to substitute it with the target variable name.
+     */
+    private function getLambdaParameterFromBody(expr: TypedExpr): Null<TVar> {
+        switch (expr.expr) {
+            case TFunction(func):
+                // Found the lambda function - return its first parameter
+                if (func.args.length > 0) {
+                    return func.args[0].v;
+                }
+            case TBlock(exprs):
+                // Look through block for lambda function
+                for (e in exprs) {
+                    var result = getLambdaParameterFromBody(e);
+                    if (result != null) return result;
+                }
+            case TBinop(_, e1, e2):
+                // Check both operands
+                var result = getLambdaParameterFromBody(e1);
+                if (result != null) return result;
+                return getLambdaParameterFromBody(e2);
+            case TCall(e, args):
+                // Check function and arguments
+                var result = getLambdaParameterFromBody(e);
+                if (result != null) return result;
+                for (arg in args) {
+                    result = getLambdaParameterFromBody(arg);
+                    if (result != null) return result;
+                }
+            case TIf(econd, eif, eelse):
+                // Check condition and branches
+                var result = getLambdaParameterFromBody(econd);
+                if (result != null) return result;
+                result = getLambdaParameterFromBody(eif);
+                if (result != null) return result;
+                if (eelse != null) {
+                    result = getLambdaParameterFromBody(eelse);
+                    if (result != null) return result;
+                }
+            case _:
+                // Other expression types don't contain lambda functions
+        }
+        return null;
+    }
+
     /**
      * Compile expression with variable mapping for loop variable substitution.
      * 
@@ -2638,7 +2745,79 @@ class ElixirCompiler extends DirectToStringCompiler {
     }
     
     /**
-     * Compile expression with variable substitution
+     * Compile expression with variable substitution using TVar object comparison
+     */
+    private function compileExpressionWithTVarSubstitution(expr: TypedExpr, sourceTVar: TVar, targetVarName: String): String {
+        switch (expr.expr) {
+            case TLocal(v) if (v == sourceTVar):
+                // Replace the source variable with target
+                return targetVarName;
+            case TBinop(op, e1, e2):
+                // Recursively substitute in binary operations with type awareness
+                if (op == OpAdd) {
+                    // Check if this is string concatenation
+                    var e1IsString = isStringType(e1.t);
+                    var e2IsString = isStringType(e2.t);
+                    var isStringConcat = e1IsString || e2IsString;
+                    
+                    if (isStringConcat) {
+                        var left = compileExpressionWithTVarSubstitution(e1, sourceTVar, targetVarName);
+                        var right = compileExpressionWithTVarSubstitution(e2, sourceTVar, targetVarName);
+                        
+                        // Convert non-string operands to strings
+                        if (!e1IsString && e2IsString) {
+                            left = convertToString(e1, left);
+                        } else if (e1IsString && !e2IsString) {
+                            right = convertToString(e2, right);
+                        }
+                        
+                        return '${left} <> ${right}';
+                    }
+                }
+                
+                // For non-string addition or other operators
+                var left = compileExpressionWithTVarSubstitution(e1, sourceTVar, targetVarName);
+                var right = compileExpressionWithTVarSubstitution(e2, sourceTVar, targetVarName);
+                return '${left} ${compileBinop(op)} ${right}';
+            case TField(e, fa):
+                // Handle field access on substituted variables
+                var obj = compileExpressionWithTVarSubstitution(e, sourceTVar, targetVarName);
+                var fieldName = getFieldName(fa);
+                return '${obj}.${fieldName}';
+            case TCall(e, args):
+                // Handle method calls with substitution
+                var obj = compileExpressionWithTVarSubstitution(e, sourceTVar, targetVarName);
+                var compiledArgs = args.map(arg -> compileExpressionWithTVarSubstitution(arg, sourceTVar, targetVarName));
+                return '${obj}(${compiledArgs.join(", ")})';
+            case TArray(e1, e2):
+                // Handle array access with substitution
+                var arr = compileExpressionWithTVarSubstitution(e1, sourceTVar, targetVarName);
+                var index = compileExpressionWithTVarSubstitution(e2, sourceTVar, targetVarName);
+                return 'Enum.at(${arr}, ${index})';
+            case TConst(c):
+                // Constants don't need substitution
+                return compileTConstant(c);
+            case TIf(econd, eif, eelse):
+                // Handle conditionals with substitution
+                var condition = compileExpressionWithTVarSubstitution(econd, sourceTVar, targetVarName);
+                var thenValue = compileExpressionWithTVarSubstitution(eif, sourceTVar, targetVarName);
+                var elseValue = eelse != null ? compileExpressionWithTVarSubstitution(eelse, sourceTVar, targetVarName) : targetVarName;
+                return 'if ${condition}, do: ${thenValue}, else: ${elseValue}';
+            case TBlock(exprs):
+                // Handle blocks with substitution
+                var compiledExprs = exprs.map(e -> compileExpressionWithTVarSubstitution(e, sourceTVar, targetVarName));
+                return compiledExprs.join('\n');
+            case TParenthesis(e):
+                // Handle parenthesized expressions with substitution
+                return "(" + compileExpressionWithTVarSubstitution(e, sourceTVar, targetVarName) + ")";
+            case _:
+                // For other cases, fall back to regular compilation
+                return compileExpression(expr);
+        }
+    }
+
+    /**
+     * Compile expression with variable substitution (string-based version)
      */
     private function compileExpressionWithSubstitution(expr: TypedExpr, sourceVar: String, targetVar: String): String {
         switch (expr.expr) {
