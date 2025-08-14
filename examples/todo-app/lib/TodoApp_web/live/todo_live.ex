@@ -8,7 +8,7 @@ defmodule TodoLive do
   @impl true
   @doc "Generated from Haxe mount"
   def mount(_params, _session, socket) do
-    Phoenix.PubSub.subscribe(App.PubSub, "todo:updates")
+    Phoenix.PubSub.subscribe(TodoApp.PubSub, "todo:updates")
     current_user2 = TodoLive.get_user_from_session(session)
     todos2 = TodoLive.load_todos(current_user2.id)
     socket.assign(%{todos: todos2, filter: "all", sort_by: "created", current_user: current_user2, editing_todo: nil, show_form: false, search_query: "", selected_tags: [], total_todos: length(todos2), completed_todos: TodoLive.count_completed(todos2), pending_todos: TodoLive.count_pending(todos2)})
@@ -80,7 +80,7 @@ defmodule TodoLive do
     result = Repo.insert(changeset)
     if (result.success) do
       todo = result.data
-      Phoenix.PubSub.broadcast(App.PubSub, "todo:updates", %{type: "todo_created", todo: todo})
+      Phoenix.PubSub.broadcast(TodoApp.PubSub, "todo:updates", %{type: "todo_created", todo: todo})
       todos2 = [todo] ++ socket.assigns.todos
       socket.assign(%{todos: todos2, show_form: false, total_todos: length(todos2), pending_todos: socket.assigns.pending_todos + 1}).put_flash("info", "Todo created successfully!")
     else
@@ -96,7 +96,7 @@ defmodule TodoLive do
     result = Repo.update(updated_todo)
     if (result.success) do
       todo2 = result.data
-      Phoenix.PubSub.broadcast(App.PubSub, "todo:updates", %{type: "todo_updated", todo: todo2})
+      Phoenix.PubSub.broadcast(TodoApp.PubSub, "todo:updates", %{type: "todo_updated", todo: todo2})
       TodoLive.update_todo_in_list(todo2, socket)
     else
       socket.put_flash("error", "Failed to update todo")
@@ -109,7 +109,7 @@ defmodule TodoLive do
     if (todo == nil), do: socket, else: nil
     result = Repo.delete(todo)
     if (result.success) do
-      Phoenix.PubSub.broadcast(App.PubSub, "todo:updates", %{type: "todo_deleted", id: id})
+      Phoenix.PubSub.broadcast(TodoApp.PubSub, "todo:updates", %{type: "todo_deleted", id: id})
       TodoLive.remove_todo_from_list(id, socket)
     else
       socket.put_flash("error", "Failed to delete todo")
@@ -124,7 +124,7 @@ defmodule TodoLive do
     result = Repo.update(updated_todo)
     if (result.success) do
       todo2 = result.data
-      Phoenix.PubSub.broadcast(App.PubSub, "todo:updates", %{type: "todo_updated", todo: todo2})
+      Phoenix.PubSub.broadcast(TodoApp.PubSub, "todo:updates", %{type: "todo_updated", todo: todo2})
       TodoLive.update_todo_in_list(todo2, socket)
     else
       socket.put_flash("error", "Failed to update priority")
@@ -145,7 +145,7 @@ defmodule TodoLive do
     _g = []
     _g1 = 0
     _g2 = _this
-    Enum.count(_g2, fn tempTodo ->  end)
+    Enum.map(_g2, fn tempTodo -> tempTodo end)
     temp_array = _g
     todos2 = temp_array
     socket.assign(%{todos: todos2, completed_todos: TodoLive.count_completed(todos2), pending_todos: TodoLive.count_pending(todos2)})
@@ -158,7 +158,7 @@ defmodule TodoLive do
     _g = []
     _g1 = 0
     _g2 = _this
-    Enum.count(_g2, fn item ->  end)
+    Enum.map(_g2, fn item -> if (v.id != id), do: _g ++ [v], else: item end)
     temp_array = _g
     todos2 = temp_array
     socket.assign(%{todos: todos2, total_todos: length(todos2), completed_todos: TodoLive.count_completed(todos2), pending_todos: TodoLive.count_pending(todos2)})
@@ -191,7 +191,7 @@ defmodule TodoLive do
   def count_completed(todos) do
     count = 0
     _g = 0
-    Enum.count(todos, fn todo -> (todo.completed) end)
+    Enum.map(todos, fn todo -> if (todo.completed), do: count = count + 1, else: todo end)
     count
   end
 
@@ -199,7 +199,7 @@ defmodule TodoLive do
   def count_pending(todos) do
     count = 0
     _g = 0
-    Enum.count(todos, fn todo -> (!todo.completed) end)
+    Enum.map(todos, fn todo -> if (!todo.completed), do: count = count + 1, else: todo end)
     count
   end
 
@@ -211,7 +211,7 @@ defmodule TodoLive do
     _g = []
     _g1 = 0
     _g2 = _this
-    Enum.count(_g2, fn item ->  end)
+    Enum.map(_g2, fn item -> item end)
     temp_result = _g
     temp_result
   end
@@ -228,12 +228,12 @@ defmodule TodoLive do
     _g = []
     _g1 = 0
     _g2 = _this
-    Enum.count(_g2, fn item ->  end)
+    Enum.map(_g2, fn item -> if (!v.completed), do: _g ++ [v], else: item end)
     temp_array = _g
     pending = temp_array
     _g = 0
-    Enum.count(pending, fn item ->  end)
-    Phoenix.PubSub.broadcast(App.PubSub, "todo:updates", %{type: "bulk_update", action: "complete_all"})
+    Enum.map(pending, fn item -> item end)
+    Phoenix.PubSub.broadcast(TodoApp.PubSub, "todo:updates", %{type: "bulk_update", action: "complete_all"})
     socket.assign(%{todos: TodoLive.load_todos(socket.assigns.current_user.id), completed_todos: socket.assigns.total_todos, pending_todos: 0}).put_flash("info", "All todos marked as completed!")
   end
 
@@ -244,18 +244,18 @@ defmodule TodoLive do
     _g = []
     _g1 = 0
     _g2 = _this
-    Enum.count(_g2, fn item ->  end)
+    Enum.map(_g2, fn item -> if (v.completed), do: _g ++ [v], else: item end)
     temp_array = _g
     completed = temp_array
     _g = 0
-    Enum.count(completed, fn item ->  end)
-    Phoenix.PubSub.broadcast(App.PubSub, "todo:updates", %{type: "bulk_delete", action: "delete_completed"})
+    Enum.map(completed, fn item -> item end)
+    Phoenix.PubSub.broadcast(TodoApp.PubSub, "todo:updates", %{type: "bulk_delete", action: "delete_completed"})
     temp_array1 = nil
     _this = socket.assigns.todos
     _g = []
     _g1 = 0
     _g2 = _this
-    Enum.count(_g2, fn item ->  end)
+    Enum.map(_g2, fn item -> if (!v.completed), do: _g ++ [v], else: item end)
     temp_array1 = _g
     remaining = temp_array1
     socket.assign(%{todos: remaining, total_todos: length(remaining), completed_todos: 0, pending_todos: length(remaining)}).put_flash("info", "Completed todos deleted!")
@@ -275,7 +275,7 @@ defmodule TodoLive do
     result = Repo.update(changeset)
     if (result.success) do
       updated_todo = result.data
-      Phoenix.PubSub.broadcast(App.PubSub, "todo:updates", %{type: "todo_updated", todo: updated_todo})
+      Phoenix.PubSub.broadcast(TodoApp.PubSub, "todo:updates", %{type: "todo_updated", todo: updated_todo})
       TodoLive.update_todo_in_list(updated_todo, socket).assign(%{editing_todo: nil})
     else
       socket.put_flash("error", "Failed to save todo")
@@ -290,7 +290,7 @@ defmodule TodoLive do
       _g = []
       _g1 = 0
       _g2 = selected_tags2
-      Enum.count(_g2, fn item ->  end)
+      Enum.map(_g2, fn item -> if (v != tag), do: _g ++ [v], else: item end)
       temp_array = _g
     else
       temp_array = selected_tags2 ++ [tag]

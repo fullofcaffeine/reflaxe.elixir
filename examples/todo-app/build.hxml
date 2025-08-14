@@ -18,6 +18,9 @@
 # Elixir is not a UTF-16 platform
 -D no-utf16
 
+# Application-specific configuration
+-D app_name=TodoApp
+
 # Define library version and initialize compiler
 -D reflaxe.elixir=0.1.0
 --macro reflaxe.elixir.CompilerInit.Start()

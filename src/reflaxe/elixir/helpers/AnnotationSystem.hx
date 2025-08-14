@@ -23,6 +23,12 @@ using reflaxe.helpers.NameMetaHelper;
 class AnnotationSystem {
     
     /**
+     * Global registry for app name discovered during compilation
+     * This allows any class to contribute the app name for the entire project
+     */
+    private static var globalAppNameRegistry: Null<String> = null;
+    
+    /**
      * All supported annotations in priority order (first match wins)
      */
     public static var SUPPORTED_ANNOTATIONS = [
@@ -324,6 +330,8 @@ class AnnotationSystem {
                 if (params != null && params.length > 0) {
                     switch (params[0].expr) {
                         case EConst(CString(s, _)):
+                            // Register this app name globally for other classes to use
+                            globalAppNameRegistry = s;
                             return s;
                         default:
                             trace("WARNING: @:appName annotation must contain a string value. Example: @:appName('MyApp')");
@@ -347,6 +355,12 @@ class AnnotationSystem {
             return annotatedName;
         }
         
+        // Search for @:appName across all classes in the compilation context
+        var globalAppName = getGlobalAppName();
+        if (globalAppName != null) {
+            return globalAppName;
+        }
+        
         // Fallback: extract app name from class name (e.g., "TodoApp" from "TodoApp")
         // or use "App" as default
         var className = classType.name;
@@ -355,6 +369,14 @@ class AnnotationSystem {
         }
         
         return "App"; // Ultimate fallback
+    }
+    
+    /**
+     * Get the globally registered app name
+     * This returns the app name that was discovered when any class with @:appName was processed
+     */
+    public static function getGlobalAppName(): Null<String> {
+        return globalAppNameRegistry;
     }
     
     /**

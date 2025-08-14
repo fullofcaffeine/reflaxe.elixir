@@ -125,7 +125,7 @@ linked_result = Task.start_link(fn  -> Log.trace("Linked task running", %{fileNa
 tasks = [Task.async(fn  -> 1 end), Task.async(fn  -> 2 end), Task.async(fn  -> 3 end)]
 results = Task.yield_many(tasks)
 _g = 0
-Enum.count(results, fn item ->  end)
+Enum.map(results, fn item -> if (task_result._1 != nil && task_result._1._0 == "ok"), do: Log.trace("Task result: " <> Std.string(task_result._1._1), %{fileName: "Main.hx", lineNumber: 117, className: "Main", methodName: "testTask"}), else: item end)
 temp_var = nil
 task2 = Task.async(fn  -> "quick" end)
 temp_var = Task.await(task2)
@@ -135,12 +135,12 @@ funs = [fn  -> "a" end, fn  -> "b" end, fn  -> "c" end]
 temp_array1 = nil
 _g = []
 _g1 = 0
-Enum.count(funs, fn item ->  end)
+Enum.map(funs, fn item -> item end)
 temp_array1 = _g
 tasks2 = temp_array1
 _g = []
 _g1 = 0
-Enum.count(tasks2, fn item ->  end)
+Enum.map(tasks2, fn item -> item end)
 temp_array = _g
 concurrent_results = temp_array
 temp_maybe_maybe_string = nil
@@ -185,12 +185,12 @@ if (supervisor_result._0 == "ok") do
   temp_array1 = nil
   _g = []
   _g1 = 0
-  Enum.count(funs, fn item ->  end)
+  Enum.map(funs, fn item -> item end)
   temp_array1 = _g
   tasks = temp_array1
   _g = []
   _g1 = 0
-  Enum.count(tasks, fn item ->  end)
+  Enum.map(tasks, fn item -> item end)
   temp_array = _g
   concurrent_results = temp_array
   Task.Supervisor.start_child(supervisor, fn  -> Log.trace("Background supervised task", %{fileName: "Main.hx", lineNumber: 197, className: "Main", methodName: "testTaskSupervisor"}) end)
@@ -259,7 +259,7 @@ if (result._0 == "ok") do
   Log.trace("Supervisor - Workers: " <> stats.workers <> ", Supervisors: " <> stats.supervisors, %{fileName: "Main.hx", lineNumber: 225, className: "Main", methodName: "testSupervisionTree"})
   children_list = Supervisor.which_children(supervisor)
   _g = 0
-  Enum.count(children_list, fn item ->  end)
+  Enum.map(children_list, fn item -> item end)
   Supervisor.restart_child(supervisor, "worker1")
   Supervisor.stop(supervisor, "normal")
 end

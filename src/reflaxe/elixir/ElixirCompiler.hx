@@ -108,10 +108,40 @@ class ElixirCompiler extends BaseCompiler {
      * Usage: @:appName("MyApp") - generates MyApp.PubSub, MyAppWeb.Telemetry, etc.
      */
     private function getCurrentAppName(): String {
-        if (this.currentClassType != null) {
-            return AnnotationSystem.getEffectiveAppName(this.currentClassType);
+        // Priority 1: Check compiler define (most explicit and single-source-of-truth)
+        // IMPORTANT: Use Context.definedValue() in macro context, NOT Compiler.getDefine()
+        // Compiler.getDefine() is a macro function meant for regular code generation
+        #if app_name
+        var defineValue = haxe.macro.Context.definedValue("app_name");
+        if (defineValue != null && defineValue.length > 0) {
+            return defineValue;
         }
-        return "App"; // Fallback if no class context
+        #end
+        
+        // Priority 2: Check current class annotation
+        if (this.currentClassType != null) {
+            var annotatedName = AnnotationSystem.getAppName(this.currentClassType);
+            if (annotatedName != null) {
+                return annotatedName;
+            }
+        }
+        
+        // Priority 3: Check global registry (if any class had @:appName)
+        var globalName = AnnotationSystem.getGlobalAppName();
+        if (globalName != null) {
+            return globalName;
+        }
+        
+        // Priority 4: Try to infer from class name
+        if (this.currentClassType != null) {
+            var className = this.currentClassType.name;
+            if (className.endsWith("App")) {
+                return className;
+            }
+        }
+        
+        // Priority 5: Ultimate fallback
+        return "App";
     }
     
     /**
@@ -1776,15 +1806,16 @@ class ElixirCompiler extends BaseCompiler {
         }
         
         // Dispatch to appropriate pattern generator based on analysis
+        // Higher priority patterns checked first
         
         // 1. Check if this is a find pattern (early return)
         if (bodyAnalysis.hasEarlyReturn) {
             return generateEnumFindPattern(arrayExpr, loopVar, ebody);
         }
         
-        // 2. Check for counting pattern
-        if (bodyAnalysis.hasCountPattern) {
-            return generateEnumCountPattern(arrayExpr, loopVar, bodyAnalysis.condition);
+        // 2. Check for mapping pattern (array transformation) - Higher priority than counting
+        if (bodyAnalysis.hasMapPattern) {
+            return generateEnumMapPattern(arrayExpr, loopVar, ebody);
         }
         
         // 3. Check for filtering pattern (array building with conditions)
@@ -1792,9 +1823,9 @@ class ElixirCompiler extends BaseCompiler {
             return generateEnumFilterPattern(arrayExpr, loopVar, bodyAnalysis.condition);
         }
         
-        // 4. Check for mapping pattern (array transformation)
-        if (bodyAnalysis.hasMapPattern) {
-            return generateEnumMapPattern(arrayExpr, loopVar, ebody);
+        // 4. Check for counting pattern (lower priority since loops may have increments)
+        if (bodyAnalysis.hasCountPattern) {
+            return generateEnumCountPattern(arrayExpr, loopVar, bodyAnalysis.condition);
         }
         
         // 5. Check for simple numeric accumulation
