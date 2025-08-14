@@ -32,8 +32,6 @@ Log.trace("Hello, " <> name <> "!", %{fileName: "Main.hx", lineNumber: 34, class
 Log.trace("Age: " <> age, %{fileName: "Main.hx", lineNumber: 35, className: "Main", methodName: "stringInterpolation"})
 Log.trace("Next year, " <> name <> " will be " <> (age + 1), %{fileName: "Main.hx", lineNumber: 38, className: "Main", methodName: "stringInterpolation"})
 Log.trace("Pi rounded: " <> Math.round(pi * 100) / 100, %{fileName: "Main.hx", lineNumber: 39, className: "Main", methodName: "stringInterpolation"})
-person_name = nil
-person_age = nil
 person_name = "Bob"
 person_age = 25
 Log.trace("Person: " <> person_name <> " is " <> person_age <> " years old", %{fileName: "Main.hx", lineNumber: 43, className: "Main", methodName: "stringInterpolation"})
@@ -80,8 +78,7 @@ if (String.downcase(str1) == String.downcase(str2)), do: Log.trace("" <> str1 <>
   @doc "Function string_building"
   @spec string_building() :: nil
   def string_building() do
-    buf_b = nil
-buf_b = ""
+    buf_b = ""
 buf_b = buf_b <> "Building "
 buf_b = buf_b <> "a "
 buf_b = buf_b <> "string "
@@ -89,8 +86,7 @@ buf_b = buf_b <> "efficiently"
 buf_b = buf_b <> "!"
 buf_b = buf_b <> "!"
 buf_b = buf_b <> "!"
-result = buf_b
-Log.trace("Built string: " <> result, %{fileName: "Main.hx", lineNumber: 122, className: "Main", methodName: "stringBuilding"})
+Log.trace("Built string: " <> buf_b, %{fileName: "Main.hx", lineNumber: 122, className: "Main", methodName: "stringBuilding"})
 parts = []
 parts ++ ["Item " <> 1]
 parts ++ ["Item " <> 2]
@@ -109,26 +105,25 @@ digit_regex = EReg.new("\\d+", "")
 if (digit_regex.match(text)), do: Log.trace("First number found: " <> digit_regex.matched(0), %{fileName: "Main.hx", lineNumber: 140, className: "Main", methodName: "regexOperations"}), else: nil
 all_numbers = EReg.new("\\d+", "g")
 numbers = []
-temp = text
 (
   try do
-    loop_fn = fn {temp} ->
-      if (all_numbers.match(temp)) do
+    loop_fn = fn {text} ->
+      if (all_numbers.match(text)) do
         try do
           numbers ++ [all_numbers.matched(0)]
-      # temp updated to all_numbers.matchedRight()
+      # text updated to all_numbers.matchedRight()
       loop_fn.({all_numbers.matchedRight()})
         catch
-          :break -> {temp}
-          :continue -> loop_fn.({temp})
+          :break -> {text}
+          :continue -> loop_fn.({text})
         end
       else
-        {temp}
+        {text}
       end
     end
-    loop_fn.({temp})
+    loop_fn.({text})
   catch
-    :break -> {temp}
+    :break -> {text}
   end
 )
 Log.trace("All numbers: " <> Std.string(numbers), %{fileName: "Main.hx", lineNumber: 151, className: "Main", methodName: "regexOperations"})

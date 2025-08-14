@@ -570,7 +570,7 @@ class ClassCompiler {
             
             if (func.args != null) {
                 for (arg in func.args) {
-                    var argName = NamingHelper.toSnakeCase(arg.name != null ? arg.name : "arg");
+                    var argName = NamingHelper.toSnakeCase(arg.originalName != null ? arg.originalName : "arg");
                     params.push(argName);
                     
                     var argType = getArgType(arg);

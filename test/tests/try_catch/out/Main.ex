@@ -33,7 +33,7 @@ end
   @spec multiple_catch() :: nil
   def multiple_catch() do
     test_error = fn type -> try do
-  case ((type)) do
+  case (type) do
   1 ->
     throw("String error")
   2 ->
@@ -68,7 +68,7 @@ test_error(0)
   @doc "Function try_catch_finally"
   @spec try_catch_finally() :: nil
   def try_catch_finally() do
-    resource = "resource"
+    "resource"
 try do
   Log.trace("Acquiring resource", %{fileName: "Main.hx", lineNumber: 61, className: "Main", methodName: "tryCatchFinally"})
 throw("Error during operation")
