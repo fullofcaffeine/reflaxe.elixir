@@ -46,7 +46,7 @@ fn = fn s -> String.upcase(s) end
 Log.trace(fn("hello"), %{fileName: "Main.hx", lineNumber: 52, className: "Main", methodName: "dynamicFunctions"})
 var_args = fn args -> sum = 0
 _g = 0
-Enum.map(args, fn sum -> sum end)
+Enum.map(args, fn item -> item end)
 sum end
 Log.trace(var_args([1, 2, 3, 4, 5]), %{fileName: "Main.hx", lineNumber: 62, className: "Main", methodName: "dynamicFunctions"})
   end

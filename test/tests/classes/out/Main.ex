@@ -72,8 +72,8 @@ defmodule Shape do
   def move(arg0, arg1) do
     fh = __MODULE__.position
 fh.x = fh.x + arg0
-fh2 = __MODULE__.position
-fh2.y = fh2.y + arg1
+fh = __MODULE__.position
+fh.y = fh.y + arg1
   end
 
 end
@@ -163,8 +163,8 @@ defmodule Container do
   def map(arg0) do
     result = Container.new()
 _g = 0
-_g1 = __MODULE__.items
-Enum.map(_g1, fn item -> arg0(item) end)
+_g = __MODULE__.items
+Enum.map(_g, fn item -> arg0(item) end)
 result
   end
 

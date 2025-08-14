@@ -94,8 +94,8 @@ if (result._0 == "ok") do
   new_child = temp_map7
   Supervisor.start_child(supervisor, new_child)
   temp_struct = nil
-  counts2 = Supervisor.count_children(supervisor)
-  temp_struct = %{specs: counts2.get("specs"), active: counts2.get("active"), supervisors: counts2.get("supervisors"), workers: counts2.get("workers")}
+  counts = Supervisor.count_children(supervisor)
+  temp_struct = %{specs: counts.get("specs"), active: counts.get("active"), supervisors: counts.get("supervisors"), workers: counts.get("workers")}
   stats = temp_struct
   Log.trace("Active workers: " <> Integer.to_string(stats.workers) <> ", Supervisors: " <> Integer.to_string(stats.supervisors), %{fileName: "Main.hx", lineNumber: 59, className: "Main", methodName: "testSupervisor"})
   if (Process.alive?(supervisor)), do: Log.trace("Supervisor is running", %{fileName: "Main.hx", lineNumber: 63, className: "Main", methodName: "testSupervisor"}), else: nil
@@ -126,29 +126,29 @@ results = Task.yield_many(tasks)
 _g = 0
 Enum.map(results, fn item -> if (item._1 != nil && item._1._0 == "ok"), do: Log.trace("Task result: " <> Std.string(item._1._1), %{fileName: "Main.hx", lineNumber: 117, className: "Main", methodName: "testTask"}), else: item end)
 temp_var = nil
-task2 = Task.async(fn  -> "quick" end)
-temp_var = Task.await(task2)
+task = Task.async(fn  -> "quick" end)
+temp_var = Task.await(task)
 temp_var
 temp_array = nil
 funs = [fn  -> "a" end, fn  -> "b" end, fn  -> "c" end]
 temp_array1 = nil
 _g = []
-_g1 = 0
+_g = 0
 Enum.map(funs, fn item -> Task.Task.async(item) end)
 temp_array1 = _g
-tasks2 = temp_array1
+tasks = temp_array1
 _g = []
-_g1 = 0
-Enum.map(tasks2, fn item -> Task.Task.await(item) end)
+_g = 0
+Enum.map(tasks, fn item -> Task.Task.await(item) end)
 temp_array = _g
 temp_maybe_maybe_string = nil
-task2 = Task.async(fn  -> Process.sleep(50)
+task = Task.async(fn  -> Process.sleep(50)
 "timed" end)
-result2 = Task.yield(task2, 100)
-if (result2 != nil && result2._0 == "ok") do
-  temp_maybe_maybe_string = result2._1
+result = Task.yield(task, 100)
+if (result != nil && result._0 == "ok") do
+  temp_maybe_maybe_string = result._1
 else
-  Task.shutdown(task2)
+  Task.shutdown(task)
   temp_maybe_maybe_string = nil
 end
 temp_maybe_maybe_string
@@ -174,20 +174,20 @@ if (supervisor_result._0 == "ok") do
   Log.trace("Supervised tasks count: " <> Integer.to_string(length(children)), %{fileName: "Main.hx", lineNumber: 176, className: "Main", methodName: "testTaskSupervisor"})
   Task.Supervisor.async_stream(supervisor, [10, 20, 30], fn x -> x + 1 end)
   temp_var = nil
-  task2 = Task.Supervisor.async(supervisor, fn  -> "helper result" end)
-  temp_var = Task.await(task2)
+  task = Task.Supervisor.async(supervisor, fn  -> "helper result" end)
+  temp_var = Task.await(task)
   temp_var
   temp_array = nil
-  supervisor2 = supervisor
+  supervisor = supervisor
   funs = [fn  -> 100 end, fn  -> 200 end, fn  -> 300 end]
   temp_array1 = nil
   _g = []
-  _g1 = 0
+  _g = 0
   Enum.map(funs, fn item -> Supervisor.Task.Supervisor.async(item, fun) end)
   temp_array1 = _g
   tasks = temp_array1
   _g = []
-  _g1 = 0
+  _g = 0
   Enum.map(tasks, fn item -> Task.Task.await(item) end)
   temp_array = _g
   temp_array

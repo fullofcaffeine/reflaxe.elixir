@@ -1,1 +1,0 @@
-@type readonlyarray_t() :: list()

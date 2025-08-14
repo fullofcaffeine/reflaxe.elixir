@@ -20,11 +20,11 @@ case (# TODO: Implement expression type: TEnumIndex) do
     temp_result = "blue"
   3 ->
     _g = # TODO: Implement expression type: TEnumParameter
-_g1 = # TODO: Implement expression type: TEnumParameter
-_g2 = # TODO: Implement expression type: TEnumParameter
+_g = # TODO: Implement expression type: TEnumParameter
+_g = # TODO: Implement expression type: TEnumParameter
 r = _g
-g = _g1
-b = _g2
+g = _g
+b = _g
 temp_result = "rgb(" <> Integer.to_string(r) <> "," <> Integer.to_string(g) <> "," <> Integer.to_string(b) <> ")"
 end
 temp_result
@@ -63,8 +63,8 @@ case (arg0) do
 if (n < 0) do
   temp_result = "negative"
 else
-  n2 = arg0
-  if (n2 > 100), do: temp_result = "large", else: temp_result = "other"
+  n = arg0
+  if (n > 100), do: temp_result = "large", else: temp_result = "other"
 end
 end
 temp_result
@@ -103,17 +103,17 @@ x = _g
 temp_result = "single(" <> Integer.to_string(x) <> ")"
   2 ->
     _g = Enum.at(arg0, 0)
-_g1 = Enum.at(arg0, 1)
+_g = Enum.at(arg0, 1)
 x = _g
-y = _g1
+y = _g
 temp_result = "pair(" <> Integer.to_string(x) <> "," <> Integer.to_string(y) <> ")"
   3 ->
     _g = Enum.at(arg0, 0)
-_g1 = Enum.at(arg0, 1)
-_g2 = Enum.at(arg0, 2)
+_g = Enum.at(arg0, 1)
+_g = Enum.at(arg0, 2)
 x = _g
-y = _g1
-z = _g2
+y = _g
+z = _g
 temp_result = "triple(" <> Integer.to_string(x) <> "," <> Integer.to_string(y) <> "," <> Integer.to_string(z) <> ")"
   _ ->
     temp_result = "many"
@@ -140,18 +140,18 @@ case (# TODO: Implement expression type: TEnumIndex) do
   2 ->
     temp_result = "blue color"
   3 ->
-    _g1 = # TODO: Implement expression type: TEnumParameter
+    _g = # TODO: Implement expression type: TEnumParameter
 # TODO: Implement expression type: TEnumParameter
 # TODO: Implement expression type: TEnumParameter
-r = _g1
-_g2
-_g3
+r = _g
+_g
+_g
 if (r > 128) do
   temp_result = "bright rgb"
 else
-  _g1
-  _g2
-  _g3
+  _g
+  _g
+  _g
   temp_result = "dark rgb"
 end
 end

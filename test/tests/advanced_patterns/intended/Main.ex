@@ -23,8 +23,8 @@ case (arg0) do
 if (n < 0) do
   temp_result = "negative"
 else
-  n2 = arg0
-  if (n2 > 100), do: temp_result = "large", else: temp_result = "other"
+  n = arg0
+  if (n > 100), do: temp_result = "large", else: temp_result = "other"
 end
 end
 temp_result
@@ -45,27 +45,27 @@ x = _g
 temp_result = "single: " <> Integer.to_string(x)
   2 ->
     _g = Enum.at(arg0, 0)
-_g1 = Enum.at(arg0, 1)
+_g = Enum.at(arg0, 1)
 x = _g
-y = _g1
+y = _g
 temp_result = "pair: " <> Integer.to_string(x) <> "," <> Integer.to_string(y)
   3 ->
     _g = Enum.at(arg0, 0)
-_g1 = Enum.at(arg0, 1)
-_g2 = Enum.at(arg0, 2)
+_g = Enum.at(arg0, 1)
+_g = Enum.at(arg0, 2)
 x = _g
-y = _g1
-z = _g2
+y = _g
+z = _g
 temp_result = "triple: " <> Integer.to_string(x) <> "," <> Integer.to_string(y) <> "," <> Integer.to_string(z)
   4 ->
     _g = Enum.at(arg0, 0)
-_g1 = Enum.at(arg0, 1)
-_g2 = Enum.at(arg0, 2)
-_g3 = Enum.at(arg0, 3)
+_g = Enum.at(arg0, 1)
+_g = Enum.at(arg0, 2)
+_g = Enum.at(arg0, 3)
 first = _g
-second = _g1
-third = _g2
-fourth = _g3
+second = _g
+third = _g
+fourth = _g
 temp_result = "quad: " <> Integer.to_string(first) <> "," <> Integer.to_string(second) <> "," <> Integer.to_string(third) <> "," <> Integer.to_string(fourth)
   _ ->
     a = arg0
@@ -92,12 +92,12 @@ case (arg0) do
 if (String.length(s) == 1) do
   temp_result = "single char"
 else
-  s2 = arg0
-  if (String.length(s2) > 10 && String.length(s2) <= 20) do
+  s = arg0
+  if (String.length(s) > 10 && String.length(s) <= 20) do
     temp_result = "medium"
   else
-    s3 = arg0
-    if (String.length(s3) > 20), do: temp_result = "long", else: temp_result = "other"
+    s = arg0
+    if (String.length(s) > 20), do: temp_result = "long", else: temp_result = "other"
   end
 end
 end
@@ -117,28 +117,28 @@ else
   if (x > 0 && x <= 1) do
     temp_result = "tiny"
   else
-    x2 = arg0
-    if (x2 > 1 && x2 <= 10) do
+    x = arg0
+    if (x > 1 && x <= 10) do
       temp_result = "small"
     else
-      x3 = arg0
-      if (x3 > 10 && x3 <= 100) do
+      x = arg0
+      if (x > 10 && x <= 100) do
         temp_result = "medium"
       else
-        x4 = arg0
-        if (x4 > 100 && x4 <= 1000) do
+        x = arg0
+        if (x > 100 && x <= 1000) do
           temp_result = "large"
         else
-          x5 = arg0
-          if (x5 > 1000) do
+          x = arg0
+          if (x > 1000) do
             temp_result = "huge"
           else
-            x6 = arg0
-            if (x6 < 0 && x6 >= -10) do
+            x = arg0
+            if (x < 0 && x >= -10) do
               temp_result = "small negative"
             else
-              x7 = arg0
-              if (x7 < -10), do: temp_result = "large negative", else: temp_result = "unknown"
+              x = arg0
+              if (x < -10), do: temp_result = "large negative", else: temp_result = "unknown"
             end
           end
         end
@@ -171,8 +171,8 @@ case (length(arg0)) do
   1 ->
     _g = Enum.at(arg0, 0)
 if (length(_g) == 1) do
-  _g2 = Enum.at(_g, 0)
-  x = _g2
+  _g = Enum.at(_g, 0)
+  x = _g
   temp_result = "single element: " <> Integer.to_string(x)
 else
   m = arg0
@@ -180,17 +180,17 @@ else
 end
   2 ->
     _g = Enum.at(arg0, 0)
-_g1 = Enum.at(arg0, 1)
+_g = Enum.at(arg0, 1)
 if (length(_g) == 2) do
-  _g2 = Enum.at(_g, 0)
-  _g3 = Enum.at(_g, 1)
-  if (length(_g1) == 2) do
-    _g4 = Enum.at(_g1, 0)
-    _g5 = Enum.at(_g1, 1)
-    c = _g4
-    d = _g5
-    b = _g3
-    a = _g2
+  _g = Enum.at(_g, 0)
+  _g = Enum.at(_g, 1)
+  if (length(_g) == 2) do
+    _g = Enum.at(_g, 0)
+    _g = Enum.at(_g, 1)
+    c = _g
+    d = _g
+    b = _g
+    a = _g
     temp_result = "2x2 matrix: [[" <> Integer.to_string(a) <> "," <> Integer.to_string(b) <> "],[" <> Integer.to_string(c) <> "," <> Integer.to_string(d) <> "]]"
   else
     m = arg0
@@ -202,29 +202,29 @@ else
 end
   3 ->
     _g = Enum.at(arg0, 0)
-_g1 = Enum.at(arg0, 1)
-_g2 = Enum.at(arg0, 2)
+_g = Enum.at(arg0, 1)
+_g = Enum.at(arg0, 2)
 if (length(_g) == 3) do
   Enum.at(_g, 0)
   Enum.at(_g, 1)
   Enum.at(_g, 2)
-  if (length(_g1) == 3) do
-    Enum.at(_g1, 0)
-    Enum.at(_g1, 1)
-    Enum.at(_g1, 2)
-    if (length(_g2) == 3) do
-      Enum.at(_g2, 0)
-      Enum.at(_g2, 1)
-      Enum.at(_g2, 2)
-      _g9
-      _g10
-      _g11
-      _g3
-      _g4
-      _g5
-      _g8
-      _g7
-      _g6
+  if (length(_g) == 3) do
+    Enum.at(_g, 0)
+    Enum.at(_g, 1)
+    Enum.at(_g, 2)
+    if (length(_g) == 3) do
+      Enum.at(_g, 0)
+      Enum.at(_g, 1)
+      Enum.at(_g, 2)
+      _g
+      _g
+      _g
+      _g
+      _g
+      _g
+      _g
+      _g
+      _g
       temp_result = "3x3 matrix"
     else
       m = arg0
@@ -255,58 +255,58 @@ a = arg0
 if (a < 0) do
   temp_result = "invalid age"
 else
-  a2 = arg0
-  if (a2 >= 0 && a2 < 13) do
+  a = arg0
+  if (a >= 0 && a < 13) do
     temp_result = "child"
   else
     case (arg1) do
       false ->
-        a3 = arg0
-    if (a3 >= 13 && a3 < 18) do
+        a = arg0
+    if (a >= 13 && a < 18) do
       temp_result = "teen without permission"
     else
-      a4 = arg0
-      if (a4 >= 18 && a4 < 21) do
+      a = arg0
+      if (a >= 18 && a < 21) do
         temp_result = "young adult"
       else
-        a5 = arg0
-        if (a5 >= 21 && a5 < 65) do
+        a = arg0
+        if (a >= 21 && a < 65) do
           temp_result = "adult"
         else
-          a6 = arg0
-          if (a6 >= 65), do: temp_result = "senior", else: temp_result = "unknown"
+          a = arg0
+          if (a >= 65), do: temp_result = "senior", else: temp_result = "unknown"
         end
       end
     end
       true ->
-        a3 = arg0
-    if (a3 >= 13 && a3 < 18) do
+        a = arg0
+    if (a >= 13 && a < 18) do
       temp_result = "teen with permission"
     else
-      a4 = arg0
-      if (a4 >= 18 && a4 < 21) do
+      a = arg0
+      if (a >= 18 && a < 21) do
         temp_result = "young adult"
       else
-        a5 = arg0
-        if (a5 >= 21 && a5 < 65) do
+        a = arg0
+        if (a >= 21 && a < 65) do
           temp_result = "adult"
         else
-          a6 = arg0
-          if (a6 >= 65), do: temp_result = "senior", else: temp_result = "unknown"
+          a = arg0
+          if (a >= 65), do: temp_result = "senior", else: temp_result = "unknown"
         end
       end
     end
       _ ->
-        a3 = arg0
-    if (a3 >= 18 && a3 < 21) do
+        a = arg0
+    if (a >= 18 && a < 21) do
       temp_result = "young adult"
     else
-      a4 = arg0
-      if (a4 >= 21 && a4 < 65) do
+      a = arg0
+      if (a >= 21 && a < 65) do
         temp_result = "adult"
       else
-        a5 = arg0
-        if (a5 >= 65), do: temp_result = "senior", else: temp_result = "unknown"
+        a = arg0
+        if (a >= 65), do: temp_result = "senior", else: temp_result = "unknown"
       end
     end
     end
@@ -325,20 +325,20 @@ v = arg0
 if (Std.isOfType(v, String)) do
   temp_result = "string: \"" <> Std.string(v) <> "\""
 else
-  v2 = arg0
-  if (Std.isOfType(v2, Int)) do
-    temp_result = "integer: " <> Std.string(v2)
+  v = arg0
+  if (Std.isOfType(v, Int)) do
+    temp_result = "integer: " <> Std.string(v)
   else
-    v3 = arg0
-    if (Std.isOfType(v3, Float)) do
-      temp_result = "float: " <> Std.string(v3)
+    v = arg0
+    if (Std.isOfType(v, Float)) do
+      temp_result = "float: " <> Std.string(v)
     else
-      v4 = arg0
-      if (Std.isOfType(v4, Bool)) do
-        temp_result = "boolean: " <> Std.string(v4)
+      v = arg0
+      if (Std.isOfType(v, Bool)) do
+        temp_result = "boolean: " <> Std.string(v)
       else
-        v5 = arg0
-        if (Std.isOfType(v5, Array)), do: temp_result = "array of length " <> Std.string(length(v5)), else: if (arg0 == nil), do: temp_result = "null value", else: temp_result = "unknown type"
+        v = arg0
+        if (Std.isOfType(v, Array)), do: temp_result = "array of length " <> Std.string(length(v)), else: if (arg0 == nil), do: temp_result = "null value", else: temp_result = "unknown type"
       end
     end
   end
@@ -358,8 +358,8 @@ c = arg0
 if (Enum.find_index(primary_colors, &(&1 == c)) >= 0) do
   temp_result = "primary color"
 else
-  c2 = arg0
-  if (Enum.find_index(secondary_colors, &(&1 == c2)) >= 0) do
+  c = arg0
+  if (Enum.find_index(secondary_colors, &(&1 == c)) >= 0) do
     temp_result = "secondary color"
   else
     case (arg0) do

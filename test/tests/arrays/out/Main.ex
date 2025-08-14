@@ -32,11 +32,25 @@ Log.trace(mixed, %{fileName: "Main.hx", lineNumber: 24, className: "Main", metho
 _g = 0
 Enum.map(fruits, fn item -> "Fruit: " <> item end)
 _g = 0
-_g1 = length(fruits)
+_g = length(fruits)
 (
-  {sum} = Enum.reduce(_g.._g1, sum, fn i, acc ->
-    acc + i
-  end)
+  try do
+    loop_fn = fn ->
+      if (_g < _g) do
+        try do
+          i = _g = _g + 1
+Log.trace("" <> Integer.to_string(i) <> ": " <> Enum.at(fruits, i), %{fileName: "Main.hx", lineNumber: 38, className: "Main", methodName: "arrayIteration"})
+          loop_fn.()
+        catch
+          :break -> nil
+          :continue -> loop_fn.()
+        end
+      end
+    end
+    loop_fn.()
+  catch
+    :break -> nil
+  end
 )
 i = 0
 (
@@ -68,13 +82,13 @@ i = 0
     numbers = [1, 2, 3, 4, 5]
 temp_array = nil
 _g = []
-_g1 = 0
+_g = 0
 Enum.map(numbers, fn item -> item * 2 end)
 temp_array = _g
 Log.trace("Doubled: " <> Std.string(temp_array), %{fileName: "Main.hx", lineNumber: 55, className: "Main", methodName: "arrayMethods"})
 temp_array1 = nil
 _g = []
-_g1 = 0
+_g = 0
 Enum.filter(numbers, fn item -> (item rem 2 == 0) end)
 temp_array1 = _g
 Log.trace("Evens: " <> Std.string(temp_array1), %{fileName: "Main.hx", lineNumber: 59, className: "Main", methodName: "arrayMethods"})
@@ -140,25 +154,25 @@ Enum.map(matrix, fn item -> item end)
 temp_array = nil
 _g = []
 temp_array1 = nil
-_g2 = []
-_g2 ++ [0]
-_g2 ++ [1]
-_g2 ++ [2]
-temp_array1 = _g2
+_g = []
+_g ++ [0]
+_g ++ [1]
+_g ++ [2]
+temp_array1 = _g
 _g ++ [temp_array1]
 temp_array2 = nil
-_g2 = []
-_g2 ++ [3]
-_g2 ++ [4]
-_g2 ++ [5]
-temp_array2 = _g2
+_g = []
+_g ++ [3]
+_g ++ [4]
+_g ++ [5]
+temp_array2 = _g
 _g ++ [temp_array2]
 temp_array3 = nil
-_g2 = []
-_g2 ++ [6]
-_g2 ++ [7]
-_g2 ++ [8]
-temp_array3 = _g2
+_g = []
+_g ++ [6]
+_g ++ [7]
+_g ++ [8]
+temp_array3 = _g
 _g ++ [temp_array3]
 temp_array = _g
 Log.trace("Grid: " <> Std.string(temp_array), %{fileName: "Main.hx", lineNumber: 117, className: "Main", methodName: "multiDimensional"})
@@ -170,11 +184,11 @@ Log.trace("Grid: " <> Std.string(temp_array), %{fileName: "Main.hx", lineNumber:
     temp_result = nil
 temp_array = nil
 _g = []
-_g1 = 0
+_g = 0
 Enum.map(arg0, fn item -> item * item end)
 temp_array = _g
 _g = []
-_g1 = 0
+_g = 0
 Enum.filter(temp_array, fn item -> (item > 10) end)
 temp_result = _g
 temp_result
@@ -184,14 +198,14 @@ temp_result
   @spec first_n(Array.t(), integer()) :: Array.t()
   def first_n(arg0, arg1) do
     _g = []
-_g1 = 0
-_g2 = Std.int(Math.min(arg1, length(arg0)))
+_g = 0
+_g = Std.int(Math.min(arg1, length(arg0)))
 (
   try do
     loop_fn = fn ->
-      if (_g1 < _g2) do
+      if (_g < _g) do
         try do
-          i = _g1 = _g1 + 1
+          i = _g = _g + 1
 _g ++ [Enum.at(arg0, i)]
           loop_fn.()
         catch
