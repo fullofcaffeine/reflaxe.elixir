@@ -25,24 +25,48 @@ map.remove("two")
 Log.trace("After remove, has \"two\": " <> Std.string(map.exists("two")), %{fileName: "Main.hx", lineNumber: 27, className: "Main", methodName: "stringMap"})
 Log.trace("Iterating string map:", %{fileName: "Main.hx", lineNumber: 30, className: "Main", methodName: "stringMap"})
 key = map.keys()
-(fn loop_fn ->
-  if (key.hasNext()) do
-    key2 = key.next()
+(
+  try do
+    loop_fn = fn ->
+      if (key.hasNext()) do
+        try do
+          key2 = key.next()
 Log.trace("  " <> key2 <> " => " <> map.get(key2), %{fileName: "Main.hx", lineNumber: 32, className: "Main", methodName: "stringMap"})
-    loop_fn.(loop_fn)
+          loop_fn.()
+        catch
+          :break -> nil
+          :continue -> loop_fn.()
+        end
+      end
+    end
+    loop_fn.()
+  catch
+    :break -> nil
   end
-end).(fn f -> f.(f) end)
+)
 map.clear()
 temp_array = nil
 _g = []
 k = map.keys()
-(fn loop_fn ->
-  if (k.hasNext()) do
-    k2 = k.next()
+(
+  try do
+    loop_fn = fn ->
+      if (k.hasNext()) do
+        try do
+          k2 = k.next()
 _g ++ [k2]
-    loop_fn.(loop_fn)
+          loop_fn.()
+        catch
+          :break -> nil
+          :continue -> loop_fn.()
+        end
+      end
+    end
+    loop_fn.()
+  catch
+    :break -> nil
   end
-end).(fn f -> f.(f) end)
+)
 temp_array = _g
 Log.trace("After clear, keys: " <> Std.string(temp_array), %{fileName: "Main.hx", lineNumber: 37, className: "Main", methodName: "stringMap"})
   end
@@ -57,35 +81,71 @@ map.set(10, "tenth")
 map.set(100, "hundredth")
 Log.trace("Int map values:", %{fileName: "Main.hx", lineNumber: 49, className: "Main", methodName: "intMap"})
 key = map.keys()
-(fn loop_fn ->
-  if (key.hasNext()) do
-    key2 = key.next()
+(
+  try do
+    loop_fn = fn ->
+      if (key.hasNext()) do
+        try do
+          key2 = key.next()
 Log.trace("  " <> key2 <> " => " <> map.get(key2), %{fileName: "Main.hx", lineNumber: 51, className: "Main", methodName: "intMap"})
-    loop_fn.(loop_fn)
+          loop_fn.()
+        catch
+          :break -> nil
+          :continue -> loop_fn.()
+        end
+      end
+    end
+    loop_fn.()
+  catch
+    :break -> nil
   end
-end).(fn f -> f.(f) end)
+)
 temp_array = nil
 _g = []
 k = map.keys()
-(fn loop_fn ->
-  if (k.hasNext()) do
-    k2 = k.next()
+(
+  try do
+    loop_fn = fn ->
+      if (k.hasNext()) do
+        try do
+          k2 = k.next()
 _g ++ [k2]
-    loop_fn.(loop_fn)
+          loop_fn.()
+        catch
+          :break -> nil
+          :continue -> loop_fn.()
+        end
+      end
+    end
+    loop_fn.()
+  catch
+    :break -> nil
   end
-end).(fn f -> f.(f) end)
+)
 temp_array = _g
 keys = temp_array
 temp_array1 = nil
 _g = []
 k = map.keys()
-(fn loop_fn ->
-  if (k.hasNext()) do
-    k2 = k.next()
+(
+  try do
+    loop_fn = fn ->
+      if (k.hasNext()) do
+        try do
+          k2 = k.next()
 _g ++ [map.get(k2)]
-    loop_fn.(loop_fn)
+          loop_fn.()
+        catch
+          :break -> nil
+          :continue -> loop_fn.()
+        end
+      end
+    end
+    loop_fn.()
+  catch
+    :break -> nil
   end
-end).(fn f -> f.(f) end)
+)
 temp_array1 = _g
 values = temp_array1
 Log.trace("Keys: " <> Std.string(keys), %{fileName: "Main.hx", lineNumber: 57, className: "Main", methodName: "intMap"})
@@ -118,14 +178,26 @@ temp_map = _g
 colors = temp_map
 Log.trace("Color values:", %{fileName: "Main.hx", lineNumber: 88, className: "Main", methodName: "mapLiterals"})
 color = colors.keys()
-(fn loop_fn ->
-  if (color.hasNext()) do
-    color2 = color.next()
+(
+  try do
+    loop_fn = fn ->
+      if (color.hasNext()) do
+        try do
+          color2 = color.next()
 hex = StringTools.hex(colors.get(color2), 6)
 Log.trace("  " <> color2 <> " => #" <> hex, %{fileName: "Main.hx", lineNumber: 91, className: "Main", methodName: "mapLiterals"})
-    loop_fn.(loop_fn)
+          loop_fn.()
+        catch
+          :break -> nil
+          :continue -> loop_fn.()
+        end
+      end
+    end
+    loop_fn.()
+  catch
+    :break -> nil
   end
-end).(fn f -> f.(f) end)
+)
 temp_map1 = nil
 _g = Haxe.Ds.IntMap.new()
 _g.set(1, 1)
@@ -137,13 +209,25 @@ temp_map1 = _g
 squares = temp_map1
 Log.trace("Squares:", %{fileName: "Main.hx", lineNumber: 103, className: "Main", methodName: "mapLiterals"})
 n = squares.keys()
-(fn loop_fn ->
-  if (n.hasNext()) do
-    n2 = n.next()
+(
+  try do
+    loop_fn = fn ->
+      if (n.hasNext()) do
+        try do
+          n2 = n.next()
 Log.trace("  " <> n2 <> "² = " <> squares.get(n2), %{fileName: "Main.hx", lineNumber: 105, className: "Main", methodName: "mapLiterals"})
-    loop_fn.(loop_fn)
+          loop_fn.()
+        catch
+          :break -> nil
+          :continue -> loop_fn.()
+        end
+      end
+    end
+    loop_fn.()
+  catch
+    :break -> nil
   end
-end).(fn f -> f.(f) end)
+)
   end
 
   @doc "Function nested_maps"
@@ -162,22 +246,46 @@ users.set("alice", alice)
 users.set("bob", bob)
 Log.trace("User data:", %{fileName: "Main.hx", lineNumber: 128, className: "Main", methodName: "nestedMaps"})
 username = users.keys()
-(fn loop_fn ->
-  if (username.hasNext()) do
-    username2 = username.next()
+(
+  try do
+    loop_fn = fn ->
+      if (username.hasNext()) do
+        try do
+          username2 = username.next()
 user_data = users.get(username2)
 Log.trace("  " <> username2 <> ":", %{fileName: "Main.hx", lineNumber: 131, className: "Main", methodName: "nestedMaps"})
 field = user_data.keys()
-(fn loop_fn ->
-  if (field.hasNext()) do
-    field2 = field.next()
+(
+  try do
+    loop_fn = fn ->
+      if (field.hasNext()) do
+        try do
+          field2 = field.next()
 Log.trace("    " <> field2 <> ": " <> Std.string(user_data.get(field2)), %{fileName: "Main.hx", lineNumber: 133, className: "Main", methodName: "nestedMaps"})
-    loop_fn.(loop_fn)
+          loop_fn.()
+        catch
+          :break -> nil
+          :continue -> loop_fn.()
+        end
+      end
+    end
+    loop_fn.()
+  catch
+    :break -> nil
   end
-end).(fn f -> f.(f) end)
-    loop_fn.(loop_fn)
+)
+          loop_fn.()
+        catch
+          :break -> nil
+          :continue -> loop_fn.()
+        end
+      end
+    end
+    loop_fn.()
+  catch
+    :break -> nil
   end
-end).(fn f -> f.(f) end)
+)
   end
 
   @doc "Function map_transformations"
@@ -193,42 +301,90 @@ temp_map = _g
 original = temp_map
 doubled = Haxe.Ds.StringMap.new()
 key = original.keys()
-(fn loop_fn ->
-  if (key.hasNext()) do
-    key2 = key.next()
+(
+  try do
+    loop_fn = fn ->
+      if (key.hasNext()) do
+        try do
+          key2 = key.next()
 value = original.get(key2) * 2
 doubled.set(key2, value)
-    loop_fn.(loop_fn)
+          loop_fn.()
+        catch
+          :break -> nil
+          :continue -> loop_fn.()
+        end
+      end
+    end
+    loop_fn.()
+  catch
+    :break -> nil
   end
-end).(fn f -> f.(f) end)
+)
 Log.trace("Doubled values:", %{fileName: "Main.hx", lineNumber: 153, className: "Main", methodName: "mapTransformations"})
 key = doubled.keys()
-(fn loop_fn ->
-  if (key.hasNext()) do
-    key2 = key.next()
+(
+  try do
+    loop_fn = fn ->
+      if (key.hasNext()) do
+        try do
+          key2 = key.next()
 Log.trace("  " <> key2 <> " => " <> doubled.get(key2), %{fileName: "Main.hx", lineNumber: 155, className: "Main", methodName: "mapTransformations"})
-    loop_fn.(loop_fn)
+          loop_fn.()
+        catch
+          :break -> nil
+          :continue -> loop_fn.()
+        end
+      end
+    end
+    loop_fn.()
+  catch
+    :break -> nil
   end
-end).(fn f -> f.(f) end)
+)
 filtered = Haxe.Ds.StringMap.new()
 key = original.keys()
-(fn loop_fn ->
-  if (key.hasNext()) do
-    key2 = key.next()
+(
+  try do
+    loop_fn = fn ->
+      if (key.hasNext()) do
+        try do
+          key2 = key.next()
 value = original.get(key2)
 if (value > 2), do: filtered.set(key2, value), else: nil
-    loop_fn.(loop_fn)
+          loop_fn.()
+        catch
+          :break -> nil
+          :continue -> loop_fn.()
+        end
+      end
+    end
+    loop_fn.()
+  catch
+    :break -> nil
   end
-end).(fn f -> f.(f) end)
+)
 Log.trace("Filtered (value > 2):", %{fileName: "Main.hx", lineNumber: 167, className: "Main", methodName: "mapTransformations"})
 key = filtered.keys()
-(fn loop_fn ->
-  if (key.hasNext()) do
-    key2 = key.next()
+(
+  try do
+    loop_fn = fn ->
+      if (key.hasNext()) do
+        try do
+          key2 = key.next()
 Log.trace("  " <> key2 <> " => " <> filtered.get(key2), %{fileName: "Main.hx", lineNumber: 169, className: "Main", methodName: "mapTransformations"})
-    loop_fn.(loop_fn)
+          loop_fn.()
+        catch
+          :break -> nil
+          :continue -> loop_fn.()
+        end
+      end
+    end
+    loop_fn.()
+  catch
+    :break -> nil
   end
-end).(fn f -> f.(f) end)
+)
 temp_map1 = nil
 _g = Haxe.Ds.StringMap.new()
 _g.set("a", 1)
@@ -244,32 +400,68 @@ temp_map2 = _g
 map2 = temp_map2
 merged = Haxe.Ds.StringMap.new()
 key = map1.keys()
-(fn loop_fn ->
-  if (key.hasNext()) do
-    key2 = key.next()
+(
+  try do
+    loop_fn = fn ->
+      if (key.hasNext()) do
+        try do
+          key2 = key.next()
 value = map1.get(key2)
 merged.set(key2, value)
-    loop_fn.(loop_fn)
+          loop_fn.()
+        catch
+          :break -> nil
+          :continue -> loop_fn.()
+        end
+      end
+    end
+    loop_fn.()
+  catch
+    :break -> nil
   end
-end).(fn f -> f.(f) end)
+)
 key = map2.keys()
-(fn loop_fn ->
-  if (key.hasNext()) do
-    key2 = key.next()
+(
+  try do
+    loop_fn = fn ->
+      if (key.hasNext()) do
+        try do
+          key2 = key.next()
 value = map2.get(key2)
 merged.set(key2, value)
-    loop_fn.(loop_fn)
+          loop_fn.()
+        catch
+          :break -> nil
+          :continue -> loop_fn.()
+        end
+      end
+    end
+    loop_fn.()
+  catch
+    :break -> nil
   end
-end).(fn f -> f.(f) end)
+)
 Log.trace("Merged maps:", %{fileName: "Main.hx", lineNumber: 184, className: "Main", methodName: "mapTransformations"})
 key = merged.keys()
-(fn loop_fn ->
-  if (key.hasNext()) do
-    key2 = key.next()
+(
+  try do
+    loop_fn = fn ->
+      if (key.hasNext()) do
+        try do
+          key2 = key.next()
 Log.trace("  " <> key2 <> " => " <> merged.get(key2), %{fileName: "Main.hx", lineNumber: 186, className: "Main", methodName: "mapTransformations"})
-    loop_fn.(loop_fn)
+          loop_fn.()
+        catch
+          :break -> nil
+          :continue -> loop_fn.()
+        end
+      end
+    end
+    loop_fn.()
+  catch
+    :break -> nil
   end
-end).(fn f -> f.(f) end)
+)
   end
 
   @doc "Function enum_map"
@@ -281,13 +473,25 @@ map.set(Color.green(), "00FF00")
 map.set(Color.blue(), "0000FF")
 Log.trace("Enum map:", %{fileName: "Main.hx", lineNumber: 198, className: "Main", methodName: "enumMap"})
 color = map.keys()
-(fn loop_fn ->
-  if (color.hasNext()) do
-    color2 = color.next()
+(
+  try do
+    loop_fn = fn ->
+      if (color.hasNext()) do
+        try do
+          color2 = color.next()
 Log.trace("  " <> Std.string(color2) <> " => #" <> map.get(color2), %{fileName: "Main.hx", lineNumber: 200, className: "Main", methodName: "enumMap"})
-    loop_fn.(loop_fn)
+          loop_fn.()
+        catch
+          :break -> nil
+          :continue -> loop_fn.()
+        end
+      end
+    end
+    loop_fn.()
+  catch
+    :break -> nil
   end
-end).(fn f -> f.(f) end)
+)
 if (map.exists(Color.red())), do: Log.trace("Red color code: #" <> map.get(Color.red()), %{fileName: "Main.hx", lineNumber: 205, className: "Main", methodName: "enumMap"}), else: nil
   end
 
@@ -296,14 +500,26 @@ if (map.exists(Color.red())), do: Log.trace("Red color code: #" <> map.get(Color
   def process_map(arg0) do
     result = Haxe.Ds.StringMap.new()
 key = arg0.keys()
-(fn loop_fn ->
-  if (key.hasNext()) do
-    key2 = key.next()
+(
+  try do
+    loop_fn = fn ->
+      if (key.hasNext()) do
+        try do
+          key2 = key.next()
 value = arg0.get(key2)
 result.set(key2, "Value: " <> value)
-    loop_fn.(loop_fn)
+          loop_fn.()
+        catch
+          :break -> nil
+          :continue -> loop_fn.()
+        end
+      end
+    end
+    loop_fn.()
+  catch
+    :break -> nil
   end
-end).(fn f -> f.(f) end)
+)
 result
   end
 
@@ -334,13 +550,25 @@ temp_map = _g
 input = temp_map
 output = Main.processMap(input)
 key = output.keys()
-(fn loop_fn ->
-  if (key.hasNext()) do
-    key2 = key.next()
+(
+  try do
+    loop_fn = fn ->
+      if (key.hasNext()) do
+        try do
+          key2 = key.next()
 Log.trace("" <> key2 <> ": " <> output.get(key2), %{fileName: "Main.hx", lineNumber: 245, className: "Main", methodName: "main"})
-    loop_fn.(loop_fn)
+          loop_fn.()
+        catch
+          :break -> nil
+          :continue -> loop_fn.()
+        end
+      end
+    end
+    loop_fn.()
+  catch
+    :break -> nil
   end
-end).(fn f -> f.(f) end)
+)
   end
 
 end

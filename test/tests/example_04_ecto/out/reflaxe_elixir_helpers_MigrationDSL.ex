@@ -21,20 +21,34 @@ sanitized = arg0
 sanitized = Enum.join(String.split(sanitized, "';"), "")
 sanitized = Enum.join(String.split(sanitized, "--"), "")
 sanitized = Enum.join(String.split(sanitized, "DROP"), "")
-sanitized = Enum.join(String.split(sanitized, "System."), "")
+sanitized = Enum.join(String.split(sanitized, ""), "")
 sanitized = Enum.join(String.split(sanitized, "/*"), "")
 sanitized = Enum.join(String.split(sanitized, "*/"), "")
 clean = ""
 _g = 0
 _g1 = String.length(sanitized)
-(fn loop_fn ->
-  if (_g < _g1) do
-    i = _g = _g + 1
-c = String.at(sanitized, i)
-if (c >= "a" && c <= "z" || c >= "A" && c <= "Z" || c >= "0" && c <= "9" || c == "_"), do: clean = clean <> String.downcase(c), else: nil
-    loop_fn.(loop_fn)
+(
+  try do
+    loop_fn = fn {clean} ->
+      if (_g < _g1) do
+        try do
+          i = _g = _g + 1
+      c = String.at(sanitized, i)
+      if (c >= "a" && c <= "z" || c >= "A" && c <= "Z" || c >= "0" && c <= "9" || c == "_"), do: clean = clean <> String.downcase(c), else: nil
+      loop_fn.({clean})
+        catch
+          :break -> {clean}
+          :continue -> loop_fn.({clean})
+        end
+      else
+        {clean}
+      end
+    end
+    loop_fn.({clean})
+  catch
+    :break -> {clean}
   end
-end).(fn f -> f.(f) end)
+)
 temp_result = nil
 if (String.length(clean) > 0), do: temp_result = clean, else: temp_result = "sanitized"
 temp_result
@@ -84,11 +98,14 @@ if (meta.params != nil && length(meta.params) > 0) do
       _g2 = # TODO: Implement expression type: TEnumParameter
   fields = _g2
   _g3 = 0
-  (fn loop_fn ->
-    if (_g3 < length(fields)) do
-      field = Enum.at(fields, _g3)
-  _g3 = _g3 + 1
-  if (field.field == "table") do
+  (
+    try do
+      loop_fn = fn {_g3} ->
+        if (_g3 < length(fields)) do
+          try do
+            field = Enum.at(fields, _g3)
+        # _g3 incremented
+        if (field.field == "table") do
     _g4 = field.expr.expr
     if (# TODO: Implement expression type: TEnumIndex == 0) do
       _g5 = # TODO: Implement expression type: TEnumParameter
@@ -104,9 +121,20 @@ if (meta.params != nil && length(meta.params) > 0) do
       nil
     end
   end
-      loop_fn.(loop_fn)
+        loop_fn.({_g3 + 1})
+          catch
+            :break -> {_g3}
+            :continue -> loop_fn.({_g3})
+          end
+        else
+          {_g3}
+        end
+      end
+      loop_fn.({_g3})
+    catch
+      :break -> {_g3}
     end
-  end).(fn f -> f.(f) end)
+  )
     _ ->
       table_name = MigrationDSL.extractTableNameFromClassName(arg0.name)
   end
@@ -139,19 +167,33 @@ MigrationDSL.camelCaseToSnakeCase(table_name)
   def compile_table_creation(arg0, arg1) do
     column_defs = Array.new()
 _g = 0
-(fn loop_fn ->
-  if (_g < length(arg1)) do
-    column = Enum.at(arg1, _g)
-_g = _g + 1
-parts = String.split(column, ":")
-name = Enum.at(parts, 0)
-temp_string = nil
-if (length(parts) > 1), do: temp_string = Enum.at(parts, 1), else: temp_string = "string"
-type = temp_string
-column_defs ++ ["      add :" <> name <> ", :" <> type]
-    loop_fn.(loop_fn)
+(
+  try do
+    loop_fn = fn {_g, tempString} ->
+      if (_g < length(arg1)) do
+        try do
+          column = Enum.at(arg1, _g)
+      # _g incremented
+      parts = String.split(column, ":")
+      name = Enum.at(parts, 0)
+      temp_string = nil
+      if (length(parts) > 1), do: temp_string = Enum.at(parts, 1), else: temp_string = "string"
+      type = temp_string
+      column_defs ++ ["      add :" <> name <> ", :" <> type]
+      loop_fn.({_g + 1, tempString})
+        catch
+          :break -> {_g, tempString}
+          :continue -> loop_fn.({_g, tempString})
+        end
+      else
+        {_g, tempString}
+      end
+    end
+    loop_fn.({_g, tempString})
+  catch
+    :break -> {_g, tempString}
   end
-end).(fn f -> f.(f) end)
+)
 "create table(:" <> arg0 <> ") do\n" <> Enum.join(column_defs, "\n") <> "\n" <> "      timestamps()\n" <> "    end"
   end
 
@@ -173,14 +215,28 @@ end).(fn f -> f.(f) end)
 (_g = []
 _g1 = 0
 _g2 = arg1
-(fn loop_fn ->
-  if (_g1 < length(_g2)) do
-    v = Enum.at(_g2, _g1)
-_g1 = _g1 + 1
-_g ++ [":" <> v]
-    loop_fn.(loop_fn)
+(
+  try do
+    loop_fn = fn {_g1} ->
+      if (_g1 < length(_g2)) do
+        try do
+          v = Enum.at(_g2, _g1)
+      # _g1 incremented
+      _g ++ [":" <> v]
+      loop_fn.({_g1 + 1})
+        catch
+          :break -> {_g1}
+          :continue -> loop_fn.({_g1})
+        end
+      else
+        {_g1}
+      end
+    end
+    loop_fn.({_g1})
+  catch
+    :break -> {_g1}
   end
-end).(fn f -> f.(f) end)
+)
 temp_array = _g)
 field_list = Enum.join(temp_array, ", ")
 if (case :binary.match(arg2, "unique") do {pos, _} -> pos; :nomatch -> -1 end != -1), do: "create unique_index(:" <> arg0 <> ", [" <> field_list <> "])", else: "create index(:" <> arg0 <> ", [" <> field_list <> "])"
@@ -210,7 +266,7 @@ if (case :binary.match(arg2, "unique") do {pos, _} -> pos; :nomatch -> -1 end !=
     class_name = arg0.class_name
 table_name = arg0.table_name
 columns = arg0.columns
-module_name = "Repo.Migrations." <> class_name
+module_name = "Repo." <> class_name
 table_creation = MigrationDSL.compileTableCreation(table_name, columns)
 index_creation = MigrationDSL.compileIndexCreation(table_name, ["email"], "unique: true")
 "defmodule " <> module_name <> " do\n" <> "  @moduledoc \"\"\"\n" <> ("  Generated migration for " <> table_name <> " table\n") <> "  \n" <> ("  Creates " <> table_name <> " table with proper schema and indexes\n") <> "  following Ecto migration patterns with compile-time validation.\n" <> "  \"\"\"\n" <> "  \n" <> "  use Ecto.Migration\n" <> "  \n" <> "  @doc \"\"\"\n" <> ("  Run the migration - creates " <> table_name <> " table\n") <> "  \"\"\"\n" <> "  def change do\n" <> ("    " <> table_creation <> "\n") <> "    \n" <> ("    " <> index_creation <> "\n") <> "  end\n" <> "  \n" <> "  @doc \"\"\"\n" <> ("  Rollback migration - drops " <> table_name <> " table\n") <> "  \"\"\"\n" <> "  def down do\n" <> ("    drop table(:" <> table_name <> ")\n") <> "  end\n" <> "end"
@@ -242,15 +298,29 @@ index_creation = MigrationDSL.compileIndexCreation(table_name, ["email"], "uniqu
     result = ""
 _g = 0
 _g1 = String.length(arg0)
-(fn loop_fn ->
-  if (_g < _g1) do
-    i = _g = _g + 1
-char = String.at(arg0, i)
-if (i > 0 && char >= "A" && char <= "Z"), do: result = result <> "_", else: nil
-result = result <> String.downcase(char)
-    loop_fn.(loop_fn)
+(
+  try do
+    loop_fn = fn {result} ->
+      if (_g < _g1) do
+        try do
+          i = _g = _g + 1
+      char = String.at(arg0, i)
+      if (i > 0 && char >= "A" && char <= "Z"), do: result = result <> "_", else: nil
+      # result updated with <> String.downcase(char)
+      loop_fn.({result <> String.downcase(char)})
+        catch
+          :break -> {result}
+          :continue -> loop_fn.({result})
+        end
+      else
+        {result}
+      end
+    end
+    loop_fn.({result})
+  catch
+    :break -> {result}
   end
-end).(fn f -> f.(f) end)
+)
 result
   end
 
@@ -306,14 +376,28 @@ safe_name = MigrationDSL.sanitizeIdentifier(arg1)
   def compile_batch_migrations(arg0) do
     compiled_migrations = Array.new()
 _g = 0
-(fn loop_fn ->
-  if (_g < length(arg0)) do
-    migration = Enum.at(arg0, _g)
-_g = _g + 1
-compiled_migrations ++ [MigrationDSL.compileFullMigration(migration)]
-    loop_fn.(loop_fn)
+(
+  try do
+    loop_fn = fn {_g} ->
+      if (_g < length(arg0)) do
+        try do
+          migration = Enum.at(arg0, _g)
+      # _g incremented
+      compiled_migrations ++ [MigrationDSL.compileFullMigration(migration)]
+      loop_fn.({_g + 1})
+        catch
+          :break -> {_g}
+          :continue -> loop_fn.({_g})
+        end
+      else
+        {_g}
+      end
+    end
+    loop_fn.({_g})
+  catch
+    :break -> {_g}
   end
-end).(fn f -> f.(f) end)
+)
 Enum.join(compiled_migrations, "\n\n")
   end
 
@@ -322,7 +406,7 @@ Enum.join(compiled_migrations, "\n\n")
      "
   @spec generate_data_migration(String.t(), String.t(), String.t()) :: String.t()
   def generate_data_migration(arg0, arg1, arg2) do
-    "defmodule Repo.Migrations." <> arg0 <> " do\n" <> "  use Ecto.Migration\n" <> "  \n" <> "  def up do\n" <> ("    " <> arg1 <> "\n") <> "  end\n" <> "  \n" <> "  def down do\n" <> ("    " <> arg2 <> "\n") <> "  end\n" <> "end"
+    "defmodule Repo." <> arg0 <> " do\n" <> "  use Ecto.Migration\n" <> "  \n" <> "  def up do\n" <> ("    " <> arg1 <> "\n") <> "  end\n" <> "  \n" <> "  def down do\n" <> ("    " <> arg2 <> "\n") <> "  end\n" <> "end"
   end
 
   @doc "
@@ -362,39 +446,81 @@ constraint_defs = builder.getConstraintDefinitions()
 result = "create table(:" <> arg0 <> ") do\n"
 if (!builder.has_id_column), do: result = result <> "      add :id, :serial, primary_key: true\n", else: nil
 _g = 0
-(fn loop_fn ->
-  if (_g < length(column_defs)) do
-    column_def = Enum.at(column_defs, _g)
-_g = _g + 1
-result = result <> "      " <> column_def <> "\n"
-    loop_fn.(loop_fn)
+(
+  try do
+    loop_fn = fn {_g, result} ->
+      if (_g < length(column_defs)) do
+        try do
+          column_def = Enum.at(column_defs, _g)
+      # _g incremented
+      # result updated with <> "      " <> column_def <> "\n"
+      loop_fn.({_g + 1, result <> "      " <> column_def <> "\n"})
+        catch
+          :break -> {_g, result}
+          :continue -> loop_fn.({_g, result})
+        end
+      else
+        {_g, result}
+      end
+    end
+    loop_fn.({_g, result})
+  catch
+    :break -> {_g, result}
   end
-end).(fn f -> f.(f) end)
+)
 if (!builder.has_timestamps), do: result = result <> "      timestamps()\n", else: nil
 result = result <> "    end"
 if (length(index_defs) > 0) do
   result = result <> "\n\n"
   _g = 0
-  (fn loop_fn ->
-    if (_g < length(index_defs)) do
-      index_def = Enum.at(index_defs, _g)
-  _g = _g + 1
-  result = result <> "    " <> index_def <> "\n"
-      loop_fn.(loop_fn)
+  (
+    try do
+      loop_fn = fn {_g, result} ->
+        if (_g < length(index_defs)) do
+          try do
+            index_def = Enum.at(index_defs, _g)
+        # _g incremented
+        # result updated with <> "    " <> index_def <> "\n"
+        loop_fn.({_g + 1, result <> "    " <> index_def <> "\n"})
+          catch
+            :break -> {_g, result}
+            :continue -> loop_fn.({_g, result})
+          end
+        else
+          {_g, result}
+        end
+      end
+      loop_fn.({_g, result})
+    catch
+      :break -> {_g, result}
     end
-  end).(fn f -> f.(f) end)
+  )
 end
 if (length(constraint_defs) > 0) do
   result = result <> "\n\n"
   _g = 0
-  (fn loop_fn ->
-    if (_g < length(constraint_defs)) do
-      constraint_def = Enum.at(constraint_defs, _g)
-  _g = _g + 1
-  result = result <> "    " <> constraint_def <> "\n"
-      loop_fn.(loop_fn)
+  (
+    try do
+      loop_fn = fn {_g, result} ->
+        if (_g < length(constraint_defs)) do
+          try do
+            constraint_def = Enum.at(constraint_defs, _g)
+        # _g incremented
+        # result updated with <> "    " <> constraint_def <> "\n"
+        loop_fn.({_g + 1, result <> "    " <> constraint_def <> "\n"})
+          catch
+            :break -> {_g, result}
+            :continue -> loop_fn.({_g, result})
+          end
+        else
+          {_g, result}
+        end
+      end
+      loop_fn.({_g, result})
+    catch
+      :break -> {_g, result}
     end
-  end).(fn f -> f.(f) end)
+  )
 end
 result
   end
@@ -419,15 +545,29 @@ if (arg3 != nil) do
   opts = []
   fields = Reflect.fields(arg3)
   _g = 0
-  (fn loop_fn ->
-    if (_g < length(fields)) do
-      field = Enum.at(fields, _g)
-  _g = _g + 1
-  value = Reflect.field(arg3, field)
-  if (Std.isOfType(value, String)), do: opts ++ ["" <> field <> ": \"" <> value <> "\""], else: if (Std.isOfType(value, Bool)), do: opts ++ ["" <> field <> ": " <> value], else: opts ++ ["" <> field <> ": " <> value]
-      loop_fn.(loop_fn)
+  (
+    try do
+      loop_fn = fn {_g} ->
+        if (_g < length(fields)) do
+          try do
+            field = Enum.at(fields, _g)
+        # _g incremented
+        value = Reflect.field(arg3, field)
+        if (Std.isOfType(value, String)), do: opts ++ ["" <> field <> ": \"" <> value <> "\""], else: if (Std.isOfType(value, Bool)), do: opts ++ ["" <> field <> ": " <> value], else: opts ++ ["" <> field <> ": " <> value]
+        loop_fn.({_g + 1})
+          catch
+            :break -> {_g}
+            :continue -> loop_fn.({_g})
+          end
+        else
+          {_g}
+        end
+      end
+      loop_fn.({_g})
+    catch
+      :break -> {_g}
     end
-  end).(fn f -> f.(f) end)
+  )
   if (length(opts) > 0), do: options_str = ", " <> Enum.join(opts, ", "), else: nil
 end
 "alter table(:" <> arg0 <> ") do\n      add :" <> arg1 <> ", :" <> arg2 <> options_str <> "\n    end"
@@ -443,14 +583,28 @@ end
 (_g = []
 _g1 = 0
 _g2 = arg1
-(fn loop_fn ->
-  if (_g1 < length(_g2)) do
-    v = Enum.at(_g2, _g1)
-_g1 = _g1 + 1
-_g ++ [":" <> v]
-    loop_fn.(loop_fn)
+(
+  try do
+    loop_fn = fn {_g1} ->
+      if (_g1 < length(_g2)) do
+        try do
+          v = Enum.at(_g2, _g1)
+      # _g1 incremented
+      _g ++ [":" <> v]
+      loop_fn.({_g1 + 1})
+        catch
+          :break -> {_g1}
+          :continue -> loop_fn.({_g1})
+        end
+      else
+        {_g1}
+      end
+    end
+    loop_fn.({_g1})
+  catch
+    :break -> {_g1}
   end
-end).(fn f -> f.(f) end)
+)
 temp_array = _g)
 column_list = Enum.join(temp_array, ", ")
 if (arg2 != nil && Reflect.hasField(arg2, "unique") && Reflect.field(arg2, "unique") == true), do: "create unique_index(:" <> arg0 <> ", [" <> column_list <> "])", else: "create index(:" <> arg0 <> ", [" <> column_list <> "])"
@@ -501,13 +655,16 @@ if (arg2 != nil) do
   opts = []
   fields = Reflect.fields(arg2)
   _g = 0
-  (fn loop_fn ->
-    if (_g < length(fields)) do
-      field = Enum.at(fields, _g)
-  _g = _g + 1
-  value = Reflect.field(arg2, field)
-  temp_string = nil
-  case ((field)) do
+  (
+    try do
+      loop_fn = fn {_g} ->
+        if (_g < length(fields)) do
+          try do
+            field = Enum.at(fields, _g)
+        # _g incremented
+        value = Reflect.field(arg2, field)
+        temp_string = nil
+        case ((field)) do
     "default" ->
       temp_string = "default"
     "null" ->
@@ -517,11 +674,22 @@ if (arg2 != nil) do
     _ ->
       temp_string = field
   end
-  opt_name = temp_string
-  if (Std.isOfType(value, String)), do: opts ++ ["" <> opt_name <> ": \"" <> value <> "\""], else: if (Std.isOfType(value, Bool)), do: opts ++ ["" <> opt_name <> ": " <> value], else: opts ++ ["" <> opt_name <> ": " <> value]
-      loop_fn.(loop_fn)
+        opt_name = temp_string
+        if (Std.isOfType(value, String)), do: opts ++ ["" <> opt_name <> ": \"" <> value <> "\""], else: if (Std.isOfType(value, Bool)), do: opts ++ ["" <> opt_name <> ": " <> value], else: opts ++ ["" <> opt_name <> ": " <> value]
+        loop_fn.({_g + 1})
+          catch
+            :break -> {_g}
+            :continue -> loop_fn.({_g})
+          end
+        else
+          {_g}
+        end
+      end
+      loop_fn.({_g})
+    catch
+      :break -> {_g}
     end
-  end).(fn f -> f.(f) end)
+  )
   if (length(opts) > 0), do: options_str = ", " <> Enum.join(opts, ", "), else: nil
 end
 __MODULE__.columns ++ ["add :" <> arg0 <> ", :" <> arg1 <> options_str]
@@ -537,14 +705,28 @@ __MODULE__
 (_g = []
 _g1 = 0
 _g2 = arg0
-(fn loop_fn ->
-  if (_g1 < length(_g2)) do
-    v = Enum.at(_g2, _g1)
-_g1 = _g1 + 1
-_g ++ [":" <> v]
-    loop_fn.(loop_fn)
+(
+  try do
+    loop_fn = fn {_g1} ->
+      if (_g1 < length(_g2)) do
+        try do
+          v = Enum.at(_g2, _g1)
+      # _g1 incremented
+      _g ++ [":" <> v]
+      loop_fn.({_g1 + 1})
+        catch
+          :break -> {_g1}
+          :continue -> loop_fn.({_g1})
+        end
+      else
+        {_g1}
+      end
+    end
+    loop_fn.({_g1})
+  catch
+    :break -> {_g1}
   end
-end).(fn f -> f.(f) end)
+)
 temp_array = _g)
 column_list = Enum.join(temp_array, ", ")
 if (arg1 != nil && Reflect.hasField(arg1, "unique") && Reflect.field(arg1, "unique") == true), do: __MODULE__.indexes ++ ["create unique_index(:" <> __MODULE__.table_name <> ", [" <> column_list <> "])"], else: __MODULE__.indexes ++ ["create index(:" <> __MODULE__.table_name <> ", [" <> column_list <> "])"]
@@ -560,19 +742,33 @@ __MODULE__
 found = false
 _g = 0
 _g1 = __MODULE__.columns
-(fn loop_fn ->
-  if (_g < length(_g1)) do
-    column = Enum.at(_g1, _g)
-_g = _g + 1
-if (case :binary.match(column, ":" <> arg0 <> ",") do {pos, _} -> pos; :nomatch -> -1 end != -1) do
+(
+  try do
+    loop_fn = fn {_g, found} ->
+      if (_g < length(_g1)) do
+        try do
+          column = Enum.at(_g1, _g)
+      # _g incremented
+      if (case :binary.match(column, ":" <> arg0 <> ",") do {pos, _} -> pos; :nomatch -> -1 end != -1) do
   new_columns ++ ["add :" <> arg0 <> ", references(:" <> arg1 <> ", column: :" <> arg2 <> ")"]
   found = true
 else
   new_columns ++ [column]
 end
-    loop_fn.(loop_fn)
+      loop_fn.({_g + 1, found})
+        catch
+          :break -> {_g, found}
+          :continue -> loop_fn.({_g, found})
+        end
+      else
+        {_g, found}
+      end
+    end
+    loop_fn.({_g, found})
+  catch
+    :break -> {_g, found}
   end
-end).(fn f -> f.(f) end)
+)
 if (!found), do: new_columns ++ ["add :" <> arg0 <> ", references(:" <> arg1 <> ", column: :" <> arg2 <> ")"], else: nil
 __MODULE__.columns = new_columns
 __MODULE__

@@ -47,13 +47,27 @@ Log.trace(instance.dayName(3), %{fileName: "Main.hx", lineNumber: 81, className:
     sum = 0
 _g = arg0
 _g1 = arg1
-(fn loop_fn ->
-  if (_g < _g1) do
-    i = _g = _g + 1
-sum = sum + i
-    loop_fn.(loop_fn)
+(
+  try do
+    loop_fn = fn {sum} ->
+      if (_g < _g1) do
+        try do
+          i = _g = _g + 1
+      # sum updated with + i
+      loop_fn.({sum + i})
+        catch
+          :break -> {sum}
+          :continue -> loop_fn.({sum})
+        end
+      else
+        {sum}
+      end
+    end
+    loop_fn.({sum})
+  catch
+    :break -> {sum}
   end
-end).(fn f -> f.(f) end)
+)
 sum
   end
 
@@ -62,13 +76,27 @@ sum
   def factorial(arg0) do
     result = 1
 i = arg0
-(fn loop_fn ->
-  if (i > 1) do
-    result = result * i
-i = i - 1
-    loop_fn.(loop_fn)
+(
+  try do
+    loop_fn = fn {result, i} ->
+      if (i > 1) do
+        try do
+          # result updated with * i
+      # i decremented
+      loop_fn.({result * i, i - 1})
+        catch
+          :break -> {result, i}
+          :continue -> loop_fn.({result, i})
+        end
+      else
+        {result, i}
+      end
+    end
+    loop_fn.({result, i})
+  catch
+    :break -> {result, i}
   end
-end).(fn f -> f.(f) end)
+)
 result
   end
 

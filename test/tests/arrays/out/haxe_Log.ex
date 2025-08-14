@@ -21,14 +21,28 @@ pstr = arg1.file_name <> ":" <> arg1.line_number
 if (arg1.custom_params != nil) do
   _g = 0
   _g1 = arg1.custom_params
-  (fn loop_fn ->
-    if (_g < length(_g1)) do
-      v2 = Enum.at(_g1, _g)
-  _g = _g + 1
-  str = str <> ", " <> Std.string(v2)
-      loop_fn.(loop_fn)
+  (
+    try do
+      loop_fn = fn {_g, str} ->
+        if (_g < length(_g1)) do
+          try do
+            v2 = Enum.at(_g1, _g)
+        # _g incremented
+        # str updated with <> ", " <> Std.string(v2)
+        loop_fn.({_g + 1, str <> ", " <> Std.string(v2)})
+          catch
+            :break -> {_g, str}
+            :continue -> loop_fn.({_g, str})
+          end
+        else
+          {_g, str}
+        end
+      end
+      loop_fn.({_g, str})
+    catch
+      :break -> {_g, str}
     end
-  end).(fn f -> f.(f) end)
+  )
 end
 pstr <> ": " <> str
   end

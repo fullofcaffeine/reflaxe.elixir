@@ -30,31 +30,71 @@ Log.trace(mixed, %{fileName: "Main.hx", lineNumber: 24, className: "Main", metho
   def array_iteration() do
     fruits = ["apple", "banana", "orange", "grape"]
 _g = 0
-(fn loop_fn ->
-  if (_g < length(fruits)) do
-    fruit = Enum.at(fruits, _g)
-_g = _g + 1
-Log.trace("Fruit: " <> fruit, %{fileName: "Main.hx", lineNumber: 33, className: "Main", methodName: "arrayIteration"})
-    loop_fn.(loop_fn)
+(
+  try do
+    loop_fn = fn {_g} ->
+      if (_g < length(fruits)) do
+        try do
+          fruit = Enum.at(fruits, _g)
+      # _g incremented
+      Log.trace("Fruit: " <> fruit, %{fileName: "Main.hx", lineNumber: 33, className: "Main", methodName: "arrayIteration"})
+      loop_fn.({_g + 1})
+        catch
+          :break -> {_g}
+          :continue -> loop_fn.({_g})
+        end
+      else
+        {_g}
+      end
+    end
+    loop_fn.({_g})
+  catch
+    :break -> {_g}
   end
-end).(fn f -> f.(f) end)
+)
 _g = 0
 _g1 = length(fruits)
-(fn loop_fn ->
-  if (_g < _g1) do
-    i = _g = _g + 1
+(
+  try do
+    loop_fn = fn ->
+      if (_g < _g1) do
+        try do
+          i = _g = _g + 1
 Log.trace("" <> i <> ": " <> Enum.at(fruits, i), %{fileName: "Main.hx", lineNumber: 38, className: "Main", methodName: "arrayIteration"})
-    loop_fn.(loop_fn)
+          loop_fn.()
+        catch
+          :break -> nil
+          :continue -> loop_fn.()
+        end
+      end
+    end
+    loop_fn.()
+  catch
+    :break -> nil
   end
-end).(fn f -> f.(f) end)
+)
 i = 0
-(fn loop_fn ->
-  if (i < length(fruits)) do
-    Log.trace("While: " <> Enum.at(fruits, i), %{fileName: "Main.hx", lineNumber: 44, className: "Main", methodName: "arrayIteration"})
-i = i + 1
-    loop_fn.(loop_fn)
+(
+  try do
+    loop_fn = fn {i} ->
+      if (i < length(fruits)) do
+        try do
+          Log.trace("While: " <> Enum.at(fruits, i), %{fileName: "Main.hx", lineNumber: 44, className: "Main", methodName: "arrayIteration"})
+      # i incremented
+      loop_fn.({i + 1})
+        catch
+          :break -> {i}
+          :continue -> loop_fn.({i})
+        end
+      else
+        {i}
+      end
+    end
+    loop_fn.({i})
+  catch
+    :break -> {i}
   end
-end).(fn f -> f.(f) end)
+)
   end
 
   @doc "Function array_methods"
@@ -65,14 +105,28 @@ temp_array = nil
 _g = []
 _g1 = 0
 _g2 = numbers
-(fn loop_fn ->
-  if (_g1 < length(_g2)) do
-    v = Enum.at(_g2, _g1)
-_g1 = _g1 + 1
-_g ++ [v * 2]
-    loop_fn.(loop_fn)
+(
+  try do
+    loop_fn = fn {_g1} ->
+      if (_g1 < length(_g2)) do
+        try do
+          v = Enum.at(_g2, _g1)
+      # _g1 incremented
+      _g ++ [v * 2]
+      loop_fn.({_g1 + 1})
+        catch
+          :break -> {_g1}
+          :continue -> loop_fn.({_g1})
+        end
+      else
+        {_g1}
+      end
+    end
+    loop_fn.({_g1})
+  catch
+    :break -> {_g1}
   end
-end).(fn f -> f.(f) end)
+)
 temp_array = _g
 doubled = temp_array
 Log.trace("Doubled: " <> Std.string(doubled), %{fileName: "Main.hx", lineNumber: 55, className: "Main", methodName: "arrayMethods"})
@@ -80,14 +134,28 @@ temp_array1 = nil
 _g = []
 _g1 = 0
 _g2 = numbers
-(fn loop_fn ->
-  if (_g1 < length(_g2)) do
-    v = Enum.at(_g2, _g1)
-_g1 = _g1 + 1
-if (v rem 2 == 0), do: _g ++ [v], else: nil
-    loop_fn.(loop_fn)
+(
+  try do
+    loop_fn = fn {_g1} ->
+      if (_g1 < length(_g2)) do
+        try do
+          v = Enum.at(_g2, _g1)
+      # _g1 incremented
+      if (v rem 2 == 0), do: _g ++ [v], else: nil
+      loop_fn.({_g1 + 1})
+        catch
+          :break -> {_g1}
+          :continue -> loop_fn.({_g1})
+        end
+      else
+        {_g1}
+      end
+    end
+    loop_fn.({_g1})
+  catch
+    :break -> {_g1}
   end
-end).(fn f -> f.(f) end)
+)
 temp_array1 = _g
 evens = temp_array1
 Log.trace("Evens: " <> Std.string(evens), %{fileName: "Main.hx", lineNumber: 59, className: "Main", methodName: "arrayMethods"})
@@ -152,22 +220,50 @@ Log.trace("Pairs: " <> Std.string(pairs), %{fileName: "Main.hx", lineNumber: 94,
     matrix = [[1, 2, 3], [4, 5, 6], [7, 8, 9]]
 Log.trace("Matrix element [1][2]: " <> Enum.at(Enum.at(matrix, 1), 2), %{fileName: "Main.hx", lineNumber: 106, className: "Main", methodName: "multiDimensional"})
 _g = 0
-(fn loop_fn ->
-  if (_g < length(matrix)) do
-    row = Enum.at(matrix, _g)
-_g = _g + 1
-_g2 = 0
-(fn loop_fn ->
-  if (_g2 < length(row)) do
-    elem = Enum.at(row, _g2)
-_g2 = _g2 + 1
-Log.trace("Element: " <> elem, %{fileName: "Main.hx", lineNumber: 111, className: "Main", methodName: "multiDimensional"})
-    loop_fn.(loop_fn)
+(
+  try do
+    loop_fn = fn {_g} ->
+      if (_g < length(matrix)) do
+        try do
+          row = Enum.at(matrix, _g)
+      # _g incremented
+      _g2 = 0
+      (
+  try do
+    loop_fn = fn {_g2} ->
+      if (_g2 < length(row)) do
+        try do
+          elem = Enum.at(row, _g2)
+      # _g2 incremented
+      Log.trace("Element: " <> elem, %{fileName: "Main.hx", lineNumber: 111, className: "Main", methodName: "multiDimensional"})
+      loop_fn.({_g2 + 1})
+        catch
+          :break -> {_g2}
+          :continue -> loop_fn.({_g2})
+        end
+      else
+        {_g2}
+      end
+    end
+    loop_fn.({_g2})
+  catch
+    :break -> {_g2}
   end
-end).(fn f -> f.(f) end)
-    loop_fn.(loop_fn)
+)
+      loop_fn.({_g + 1})
+        catch
+          :break -> {_g}
+          :continue -> loop_fn.({_g})
+        end
+      else
+        {_g}
+      end
+    end
+    loop_fn.({_g})
+  catch
+    :break -> {_g}
   end
-end).(fn f -> f.(f) end)
+)
 temp_array = nil
 _g = []
 temp_array1 = nil
@@ -204,27 +300,55 @@ temp_array = nil
 _g = []
 _g1 = 0
 _g2 = arg0
-(fn loop_fn ->
-  if (_g1 < length(_g2)) do
-    v = Enum.at(_g2, _g1)
-_g1 = _g1 + 1
-_g ++ [v * v]
-    loop_fn.(loop_fn)
+(
+  try do
+    loop_fn = fn {_g1} ->
+      if (_g1 < length(_g2)) do
+        try do
+          v = Enum.at(_g2, _g1)
+      # _g1 incremented
+      _g ++ [v * v]
+      loop_fn.({_g1 + 1})
+        catch
+          :break -> {_g1}
+          :continue -> loop_fn.({_g1})
+        end
+      else
+        {_g1}
+      end
+    end
+    loop_fn.({_g1})
+  catch
+    :break -> {_g1}
   end
-end).(fn f -> f.(f) end)
+)
 temp_array = _g
 _this = temp_array
 _g = []
 _g1 = 0
 _g2 = _this
-(fn loop_fn ->
-  if (_g1 < length(_g2)) do
-    v = Enum.at(_g2, _g1)
-_g1 = _g1 + 1
-if (v > 10), do: _g ++ [v], else: nil
-    loop_fn.(loop_fn)
+(
+  try do
+    loop_fn = fn {_g1} ->
+      if (_g1 < length(_g2)) do
+        try do
+          v = Enum.at(_g2, _g1)
+      # _g1 incremented
+      if (v > 10), do: _g ++ [v], else: nil
+      loop_fn.({_g1 + 1})
+        catch
+          :break -> {_g1}
+          :continue -> loop_fn.({_g1})
+        end
+      else
+        {_g1}
+      end
+    end
+    loop_fn.({_g1})
+  catch
+    :break -> {_g1}
   end
-end).(fn f -> f.(f) end)
+)
 temp_result = _g
 temp_result
   end
@@ -236,13 +360,25 @@ temp_result
 _g = []
 _g1 = 0
 _g2 = Std.int(Math.min(arg1, length(arg0)))
-(fn loop_fn ->
-  if (_g1 < _g2) do
-    i = _g1 = _g1 + 1
+(
+  try do
+    loop_fn = fn ->
+      if (_g1 < _g2) do
+        try do
+          i = _g1 = _g1 + 1
 _g ++ [Enum.at(arg0, i)]
-    loop_fn.(loop_fn)
+          loop_fn.()
+        catch
+          :break -> nil
+          :continue -> loop_fn.()
+        end
+      end
+    end
+    loop_fn.()
+  catch
+    :break -> nil
   end
-end).(fn f -> f.(f) end)
+)
 temp_result = _g
 temp_result
   end

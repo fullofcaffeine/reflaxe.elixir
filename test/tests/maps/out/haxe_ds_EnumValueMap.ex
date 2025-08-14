@@ -32,14 +32,26 @@ __MODULE__.compareArgs(p1, p2)
 if (ld != 0), do: ld, else: nil
 _g = 0
 _g1 = length(arg0)
-(fn loop_fn ->
-  if (_g < _g1) do
-    i = _g = _g + 1
+(
+  try do
+    loop_fn = fn ->
+      if (_g < _g1) do
+        try do
+          i = _g = _g + 1
 d = __MODULE__.compareArg(Enum.at(arg0, i), Enum.at(arg1, i))
 if (d != 0), do: d, else: nil
-    loop_fn.(loop_fn)
+          loop_fn.()
+        catch
+          :break -> nil
+          :continue -> loop_fn.()
+        end
+      end
+    end
+    loop_fn.()
+  catch
+    :break -> nil
   end
-end).(fn f -> f.(f) end)
+)
 0
   end
 

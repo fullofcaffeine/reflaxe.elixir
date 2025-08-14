@@ -110,13 +110,27 @@ if (digit_regex.match(text)), do: Log.trace("First number found: " <> digit_rege
 all_numbers = EReg.new("\\d+", "g")
 numbers = []
 temp = text
-(fn loop_fn ->
-  if (all_numbers.match(temp)) do
-    numbers ++ [all_numbers.matched(0)]
-temp = all_numbers.matchedRight()
-    loop_fn.(loop_fn)
+(
+  try do
+    loop_fn = fn {temp} ->
+      if (all_numbers.match(temp)) do
+        try do
+          numbers ++ [all_numbers.matched(0)]
+      # temp updated to all_numbers.matchedRight()
+      loop_fn.({all_numbers.matchedRight()})
+        catch
+          :break -> {temp}
+          :continue -> loop_fn.({temp})
+        end
+      else
+        {temp}
+      end
+    end
+    loop_fn.({temp})
+  catch
+    :break -> {temp}
   end
-end).(fn f -> f.(f) end)
+)
 Log.trace("All numbers: " <> Std.string(numbers), %{fileName: "Main.hx", lineNumber: 151, className: "Main", methodName: "regexOperations"})
 replaced = EReg.new("\\d+", "").replace(text, "XXX")
 Log.trace("Numbers replaced: " <> replaced, %{fileName: "Main.hx", lineNumber: 155, className: "Main", methodName: "regexOperations"})

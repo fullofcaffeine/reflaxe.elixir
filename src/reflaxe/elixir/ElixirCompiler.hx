@@ -370,6 +370,14 @@ class ElixirCompiler extends BaseCompiler {
     public function compileClassImpl(classType: ClassType, varFields: Array<ClassVarData>, funcFields: Array<ClassFuncData>): Null<String> {
         if (classType == null) return null;
         
+        // Skip standard library classes that shouldn't generate Elixir modules
+        if (isStandardLibraryClass(classType.name)) {
+            #if debug
+            trace('Skipping standard library class: ${classType.name}');
+            #end
+            return null;
+        }
+        
         // Store current class context for use in expression compilation
         this.currentClassType = classType;
         
@@ -775,18 +783,77 @@ class ElixirCompiler extends BaseCompiler {
     }
     
     /**
-     * Check if this is a built-in Haxe abstract type that should be handled by core type system
+     * Check if this is a built-in Haxe type that should NOT generate an Elixir module
+     * This includes standard library types that are either built-in or handled elsewhere
      */
     private function isBuiltinAbstractType(name: String): Bool {
         return switch (name) {
+            // Core Haxe types
             case "Int" | "Float" | "Bool" | "String" | "Dynamic" | "Void" | "Any" | "Null" | 
-                 "Function" | "Class" | "Enum" | "EnumValue" | "Int32" | "Int64" | "Map" | "CallStack":
+                 "Function" | "Class" | "Enum" | "EnumValue" | "Int32" | "Int64":
                 true;
+            
+            // Standard library containers and collections  
+            case "Array" | "Map" | "List" | "Vector" | "Stack" | "GenericStack":
+                true;
+                
+            // Standard library iterators (handled by Elixir's Enum/Stream)
+            case "IntIterator" | "ArrayIterator" | "StringIterator" | "MapIterator" |
+                 "ArrayKeyValueIterator" | "StringKeyValueIterator" | "MapKeyValueIterator":
+                true;
+                
+            // Standard library utility types (handled internally)
+            case "StringBuf" | "StringTools" | "Math" | "Reflect" | "Type" | "Std":
+                true;
+                
+            // Error/debugging types (handled by Elixir's error system)
+            case "CallStack" | "Exception" | "Error":
+                true;
+                
+            // Abstract implementation types (compiler-generated)
+            case name if (name.endsWith("_Impl_")):
+                true;
+                
+            // Haxe package types (handled separately if needed)
+            case name if (name.startsWith("haxe.")):
+                true;
+                
             default:
                 false;
         };
     }
     
+    /**
+     * Check if this is a standard library class type that should NOT generate an Elixir module
+     */
+    private function isStandardLibraryClass(name: String): Bool {
+        return switch (name) {
+            // Haxe standard library classes that should be skipped
+            case name if (name.startsWith("haxe.") || name.startsWith("sys.") || name.startsWith("js.") || name.startsWith("flash.")):
+                true;
+                
+            // Iterator implementation classes
+            case "ArrayIterator" | "StringIterator" | "IntIterator" | "MapIterator" |
+                 "ArrayKeyValueIterator" | "StringKeyValueIterator" | "MapKeyValueIterator":
+                true;
+                
+            // Data structure implementation classes
+            case "StringBuf" | "StringTools" | "List" | "GenericStack" | "BalancedTree" | "TreeNode":
+                true;
+                
+            // Abstract implementation classes (compiler-generated)
+            case name if (name.endsWith("_Impl_")):
+                true;
+                
+            // Built-in type classes
+            case "Class" | "Enum" | "Type" | "Reflect" | "Std" | "Math":
+                true;
+                
+            default:
+                false;
+        };
+    }
+
     /**
      * Get Elixir type representation from Haxe type
      */
@@ -1078,30 +1145,8 @@ class ElixirCompiler extends BaseCompiler {
                     return optimized;
                 }
                 
-                // Elixir doesn't have while loops, so we generate a recursive function
-                // Using an immediately-invoked anonymous function to maintain scope
-                var condition = compileExpression(econd);
-                var body = compileExpression(ebody);
-                
-                if (normalWhile) {
-                    // while (condition) { body }
-                    // Generate: recursive function that checks condition before executing
-                    '(fn loop_fn ->\n' +
-                    '  if ${condition} do\n' +
-                    '    ${body}\n' +
-                    '    loop_fn.(loop_fn)\n' +
-                    '  end\n' +
-                    'end).(fn f -> f.(f) end)';
-                } else {
-                    // do { body } while (condition)
-                    // Generate: recursive function that executes body first
-                    '(fn loop_fn ->\n' +
-                    '  ${body}\n' +
-                    '  if ${condition} do\n' +
-                    '    loop_fn.(loop_fn)\n' +
-                    '  end\n' +
-                    'end).(fn f -> f.(f) end)';
-                }
+                // Generate idiomatic Elixir recursive loop
+                compileWhileLoop(econd, ebody, normalWhile);
                 
             case TArray(e1, e2):
                 var arrayExpr = compileExpression(e1);
@@ -1153,6 +1198,14 @@ class ElixirCompiler extends BaseCompiler {
                     case TAbstract(a): NamingHelper.getElixirModuleName(a.get().name);
                     case _: "Dynamic";
                 }
+                
+            case TBreak:
+                // Break statement - in Elixir, we use a throw/catch pattern or early return
+                "throw(:break)";
+                
+            case TContinue:
+                // Continue statement - in Elixir, we use a throw/catch pattern or skip to next iteration
+                "throw(:continue)";
                 
             case _:
                 "# TODO: Implement expression type: " + expr.expr.getName();
@@ -1657,6 +1710,237 @@ class ElixirCompiler extends BaseCompiler {
         
         // TODO: Implement pattern detection and transformation
         return null;
+    }
+    
+    /**
+     * Compile a while loop to idiomatic Elixir recursive function
+     * Generates proper tail-recursive patterns that handle mutable state correctly
+     */
+    private function compileWhileLoop(econd: TypedExpr, ebody: TypedExpr, normalWhile: Bool): String {
+        // Extract variables that are modified in the loop
+        var modifiedVars = extractModifiedVariables(ebody);
+        var condition = compileExpression(econd);
+        
+        // Transform the loop body to handle mutations functionally
+        var transformedBody = transformLoopBodyMutations(ebody, modifiedVars, normalWhile, condition);
+        
+        if (normalWhile) {
+            // while (condition) { body }
+            if (modifiedVars.length > 0) {
+                var stateVars = modifiedVars.map(v -> v.name).join(", ");
+                return '(\n' +
+                       '  try do\n' +
+                       '    loop_fn = fn {${stateVars}} ->\n' +
+                       '      if ${condition} do\n' +
+                       '        try do\n' +
+                       '          ${transformedBody}\n' +
+                       '        catch\n' +
+                       '          :break -> {${stateVars}}\n' +
+                       '          :continue -> loop_fn.({${stateVars}})\n' +
+                       '        end\n' +
+                       '      else\n' +
+                       '        {${stateVars}}\n' +
+                       '      end\n' +
+                       '    end\n' +
+                       '    loop_fn.({${stateVars}})\n' +
+                       '  catch\n' +
+                       '    :break -> {${stateVars}}\n' +
+                       '  end\n' +
+                       ')';
+            } else {
+                // Simple loop without state - compile normally but use tail recursion
+                var body = compileExpression(ebody);
+                return '(\n' +
+                       '  try do\n' +
+                       '    loop_fn = fn ->\n' +
+                       '      if ${condition} do\n' +
+                       '        try do\n' +
+                       '          ${body}\n' +
+                       '          loop_fn.()\n' +
+                       '        catch\n' +
+                       '          :break -> nil\n' +
+                       '          :continue -> loop_fn.()\n' +
+                       '        end\n' +
+                       '      end\n' +
+                       '    end\n' +
+                       '    loop_fn.()\n' +
+                       '  catch\n' +
+                       '    :break -> nil\n' +
+                       '  end\n' +
+                       ')';
+            }
+        } else {
+            // do { body } while (condition)
+            if (modifiedVars.length > 0) {
+                var stateVars = modifiedVars.map(v -> v.name).join(", ");
+                return '(\n' +
+                       '  loop_fn = fn {${stateVars}} ->\n' +
+                       '    ${transformedBody}\n' +
+                       '  end\n' +
+                       '  {${stateVars}} = loop_fn.({${stateVars}})\n' +
+                       ')';
+            } else {
+                var body = compileExpression(ebody);
+                return '(\n' +
+                       '  loop_fn = fn ->\n' +
+                       '    ${body}\n' +
+                       '    if ${condition}, do: loop_fn.(), else: nil\n' +
+                       '  end\n' +
+                       '  loop_fn.()\n' +
+                       ')';
+            }
+        }
+    }
+    
+    /**
+     * Extract variables that are modified within a loop body
+     */
+    private function extractModifiedVariables(expr: TypedExpr): Array<{name: String, type: String}> {
+        var modifiedVars: Array<{name: String, type: String}> = [];
+        
+        function analyzeExpr(e: TypedExpr): Void {
+            switch (e.expr) {
+                case TBinop(OpAssign, e1, e2):
+                    // Variable assignment: x = value
+                    switch (e1.expr) {
+                        case TLocal(v):
+                            modifiedVars.push({name: v.name, type: "local"});
+                        case _:
+                    }
+                case TBinop(OpAssignOp(_), e1, e2):
+                    // Compound assignment: x += value, x *= value, etc.
+                    switch (e1.expr) {
+                        case TLocal(v):
+                            modifiedVars.push({name: v.name, type: "local"});
+                        case _:
+                    }
+                case TUnop(OpIncrement | OpDecrement, _, e1):
+                    // Increment/decrement: x++, ++x, x--, --x
+                    switch (e1.expr) {
+                        case TLocal(v):
+                            modifiedVars.push({name: v.name, type: "local"});
+                        case _:
+                    }
+                case TBlock(exprs):
+                    for (expr in exprs) analyzeExpr(expr);
+                case TIf(_, ifExpr, elseExpr):
+                    analyzeExpr(ifExpr);
+                    if (elseExpr != null) analyzeExpr(elseExpr);
+                case _:
+                    // Recursively analyze nested expressions if needed
+            }
+        }
+        
+        analyzeExpr(expr);
+        
+        // Remove duplicates
+        var uniqueVars: Array<{name: String, type: String}> = [];
+        var seen = new Map<String, Bool>();
+        for (v in modifiedVars) {
+            if (!seen.exists(v.name)) {
+                uniqueVars.push(v);
+                seen.set(v.name, true);
+            }
+        }
+        
+        return uniqueVars;
+    }
+    
+    /**
+     * Transform loop body to handle mutations functionally by returning updated state
+     */
+    private function transformLoopBodyMutations(expr: TypedExpr, modifiedVars: Array<{name: String, type: String}>, normalWhile: Bool, condition: String): String {
+        // We need to transform the body so that mutations become value updates
+        // and the function returns the new state tuple
+        
+        if (modifiedVars.length == 0) {
+            return compileExpression(expr);
+        }
+        
+        // Track variable updates as we compile the expression
+        var updates = new Map<String, String>();
+        var compiledBody = compileExpressionWithMutationTracking(expr, updates);
+        
+        // Generate the return statement with updated values
+        var stateVars = modifiedVars.map(v -> {
+            return updates.exists(v.name) ? updates.get(v.name) : v.name;
+        }).join(", ");
+        
+        if (normalWhile) {
+            // For while loops, just call recursively with updated state
+            return '${compiledBody}\n      loop_fn.({${stateVars}})';
+        } else {
+            // For do-while loops, check condition after executing body
+            return '${compiledBody}\n    if ${condition}, do: loop_fn.({${stateVars}}), else: {${stateVars}}';
+        }
+    }
+    
+    /**
+     * Compile expression while tracking variable mutations
+     */
+    private function compileExpressionWithMutationTracking(expr: TypedExpr, updates: Map<String, String>): String {
+        return switch (expr.expr) {
+            case TBlock(exprs):
+                var results = [];
+                for (e in exprs) {
+                    results.push(compileExpressionWithMutationTracking(e, updates));
+                }
+                results.join("\n      ");
+                
+            case TBinop(OpAssign, e1, e2):
+                // Handle variable assignment
+                switch (e1.expr) {
+                    case TLocal(v):
+                        var rightSide = compileExpression(e2);
+                        updates.set(v.name, rightSide);
+                        '# ${v.name} updated to ${rightSide}';
+                    case _:
+                        compileExpression(expr);
+                }
+                
+            case TBinop(OpAssignOp(innerOp), e1, e2):
+                // Handle compound assignment
+                switch (e1.expr) {
+                    case TLocal(v):
+                        var rightSide = compileExpression(e2);
+                        var opStr = compileBinop(innerOp);
+                        
+                        // Handle string concatenation special case
+                        if (innerOp == OpAdd) {
+                            var isStringOp = switch (e1.t) {
+                                case TInst(t, _) if (t.get().name == "String"): true;
+                                case _: false;
+                            };
+                            opStr = isStringOp ? "<>" : "+";
+                        }
+                        
+                        var newValue = '${v.name} ${opStr} ${rightSide}';
+                        updates.set(v.name, newValue);
+                        '# ${v.name} updated with ${opStr} ${rightSide}';
+                    case _:
+                        compileExpression(expr);
+                }
+                
+            case TUnop(OpIncrement | OpDecrement, postFix, e1):
+                // Handle increment/decrement
+                switch (e1.expr) {
+                    case TLocal(v):
+                        var op = switch (expr.expr) {
+                            case TUnop(OpIncrement, _, _): "+";
+                            case TUnop(OpDecrement, _, _): "-";
+                            case _: "+";
+                        };
+                        var newValue = '${v.name} ${op} 1';
+                        updates.set(v.name, newValue);
+                        '# ${v.name} ${op == "+" ? "incremented" : "decremented"}';
+                    case _:
+                        compileExpression(expr);
+                }
+                
+            case _:
+                // For other expressions, compile normally
+                compileExpression(expr);
+        };
     }
     
     /**
