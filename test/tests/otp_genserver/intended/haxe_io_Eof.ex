@@ -1,4 +1,5 @@
 defmodule Eof do
+  use Bitwise
   @moduledoc """
   Eof module generated from Haxe
   

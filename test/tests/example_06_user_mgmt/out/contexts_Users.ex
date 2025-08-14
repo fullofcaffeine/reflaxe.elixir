@@ -72,10 +72,8 @@ defmodule Users do
      "
   @spec create_user(term()) :: term()
   def create_user(arg0) do
-    (
-  changeset = UserChangeset.changeset(nil, arg0)
-  if (changeset != nil), do: %{status: "ok", user: nil}, else: %{status: "error", changeset: changeset}
-)
+    changeset = UserChangeset.changeset(nil, arg0)
+if (changeset != nil), do: %{status: "ok", user: nil}, else: %{status: "error", changeset: changeset}
   end
 
   @doc "
@@ -83,10 +81,8 @@ defmodule Users do
      "
   @spec update_user(User.t(), term()) :: term()
   def update_user(arg0, arg1) do
-    (
-  changeset = UserChangeset.changeset(arg0, arg1)
-  if (changeset != nil), do: %{status: "ok", user: arg0}, else: %{status: "error", changeset: changeset}
-)
+    changeset = UserChangeset.changeset(arg0, arg1)
+if (changeset != nil), do: %{status: "ok", user: arg0}, else: %{status: "error", changeset: changeset}
   end
 
   @doc "

@@ -1,4 +1,5 @@
 defmodule ArrayIterator do
+  use Bitwise
   @moduledoc """
   ArrayIterator module generated from Haxe
   

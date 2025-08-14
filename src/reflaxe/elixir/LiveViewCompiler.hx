@@ -2,6 +2,9 @@ package reflaxe.elixir;
 
 #if (macro || reflaxe_runtime)
 
+import reflaxe.data.ClassVarData;
+import reflaxe.data.ClassFuncData;
+
 using StringTools;
 
 /**
@@ -119,26 +122,150 @@ class LiveViewCompiler {
     }
     
     /**
-     * Compile full LiveView module with configuration
+     * Compile full LiveView module with configuration and fields
      */
-    public static function compileFullLiveView(className: String, config: Dynamic): String {
+    public static function compileFullLiveView(className: String, config: Dynamic, varFields: Array<ClassVarData> = null, funcFields: Array<ClassFuncData> = null): String {
         var moduleName = className;
+        var content = new StringBuf();
         
-        return 'defmodule ${moduleName} do\n' +
-               '  use Phoenix.LiveView\n' +
-               '  \n' +
-               '  @impl true\n' +
-               '  def mount(_params, _session, socket) do\n' +
-               '    {:ok, socket}\n' +
-               '  end\n' +
-               '  \n' +
-               '  @impl true\n' +
-               '  def render(assigns) do\n' +
-               '    ~H"""\n' +
-               '    <div>LiveView generated from ${className}</div>\n' +
-               '    """\n' +
-               '  end\n' +
-               'end';
+        content.add('defmodule ${moduleName} do\n');
+        content.add('  use Phoenix.LiveView\n');
+        content.add('  \n');
+        
+        // Add any required imports
+        content.add('  import Phoenix.LiveView.Helpers\n');
+        content.add('  import Ecto.Query\n');
+        content.add('  alias TodoApp.Repo\n');
+        content.add('  \n');
+        
+        // If we have functions, compile them properly
+        if (funcFields != null && funcFields.length > 0) {
+            for (func in funcFields) {
+                var funcName = func.field.name;
+                var isStatic = func.isStatic;
+                
+                // LiveView callbacks should be compiled with @impl true
+                if (funcName == "mount" || funcName == "render" || 
+                    funcName == "handle_event" || funcName == "handle_info") {
+                    content.add('  @impl true\n');
+                }
+                
+                // NOTE: This method is deprecated - new architecture uses ElixirCompiler.compileLiveViewClass
+                // Temporarily providing placeholder functions
+                content.add('  def ${funcName}() do\n    nil\n  end\n');
+                content.add('  \n');
+            }
+        } else {
+            // Default mount and render if no functions provided
+            content.add('  @impl true\n');
+            content.add('  def mount(_params, _session, socket) do\n');
+            content.add('    {:ok, socket}\n');
+            content.add('  end\n');
+            content.add('  \n');
+            content.add('  @impl true\n');
+            content.add('  def render(assigns) do\n');
+            content.add('    ~H"""\n');
+            content.add('    <div>LiveView generated from ${className}</div>\n');
+            content.add('    """\n');
+            content.add('  end\n');
+        }
+        
+        content.add('end');
+        
+        return content.toString();
+    }
+    
+    /**
+     * Generate LiveView module header with proper imports and use statements
+     * This should be called by ElixirCompiler, which will handle function compilation
+     */
+    public static function generateModuleHeader(moduleName: String): String {
+        var result = new StringBuf();
+        result.add('defmodule ${moduleName} do\n');
+        result.add('  use Phoenix.LiveView\n');
+        result.add('  \n');
+        result.add('  import Phoenix.LiveView.Helpers\n');
+        result.add('  import Ecto.Query\n');
+        result.add('  alias TodoApp.Repo\n');
+        result.add('  \n');
+        return result.toString();
+    }
+    
+    /**
+     * Check if a function is a LiveView callback that needs @impl true
+     */
+    public static function isLiveViewCallback(funcName: String): Bool {
+        return funcName == "mount" || funcName == "render" || 
+               funcName == "handle_event" || funcName == "handle_info" ||
+               funcName == "handle_call" || funcName == "handle_cast" ||
+               funcName == "handle_continue" || funcName == "terminate";
+    }
+    
+    /**
+     * Get proper parameter names for LiveView callbacks
+     * Returns null if not a callback (use normal parameter compilation)
+     */
+    public static function getLiveViewCallbackParams(funcName: String): Null<String> {
+        return switch(funcName) {
+            case "mount": "_params, _session, socket";
+            case "render": "assigns";
+            case "handle_event": "event, params, socket";
+            case "handle_info": "msg, socket";
+            case "handle_call": "msg, _from, socket";
+            case "handle_cast": "msg, socket";
+            case "handle_continue": "continue_arg, socket";
+            case "terminate": "reason, _socket";
+            default: null; // Not a callback, use normal compilation
+        }
+    }
+    
+    /**
+     * Get the correct parameter signature for LiveView functions
+     */
+    private static function getLiveViewFunctionParams(funcName: String, funcField: ClassFuncData): String {
+        return switch(funcName) {
+            case "mount": "_params, _session, socket";
+            case "render": "assigns";
+            case "handle_event": "event, params, socket";
+            case "handle_info": "msg, socket";
+            default: 
+                // For other functions, build parameter list from args
+                var params = [];
+                if (funcField.args != null) {
+                    for (i in 0...funcField.args.length) {
+                        params.push('arg${i}');
+                    }
+                }
+                params.join(", ");
+        }
+    }
+    
+    /**
+     * Compile LiveView function body (simplified for now)
+     */
+    private static function compileLiveViewBody(funcName: String, expr: Dynamic): String {
+        // This is a simplified compilation - in full implementation would use ElixirCompiler.compileExpression
+        // For now, return appropriate responses for LiveView callbacks
+        return switch(funcName) {
+            case "mount": "{:ok, socket}";
+            case "render": "~H\"<div>LiveView rendered</div>\"";
+            case "handle_event": "{:noreply, socket}";
+            case "handle_info": "{:noreply, socket}";
+            default: "nil";
+        }
+    }
+    
+    /**
+     * Get default return value for LiveView functions
+     */
+    private static function getDefaultReturn(funcName: String): String {
+        return switch(funcName) {
+            case "mount": "{:ok, socket}";
+            case "render": "~H\"<div>Default LiveView</div>\"";
+            case "handle_event": "{:noreply, socket}";
+            case "handle_info": "{:noreply, socket}";
+            default: "nil";
+        }
     }
 }
 

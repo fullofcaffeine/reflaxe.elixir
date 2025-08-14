@@ -1,4 +1,5 @@
 defmodule StringKeyValueIterator do
+  use Bitwise
   @moduledoc """
   StringKeyValueIterator module generated from Haxe
   

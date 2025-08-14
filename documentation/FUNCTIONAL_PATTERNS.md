@@ -297,6 +297,80 @@ When testing compiler output:
 3. **Test Edge Cases**: Empty collections, single elements, boundary conditions
 4. **Validate Performance**: Ensure tail-call optimization is preserved
 
+## Array/List Operations
+
+### Design Rationale
+
+Haxe uses object-oriented array methods, while Elixir uses functional programming with the `Enum` module. Our translations preserve the intent while producing idiomatic Elixir that looks hand-written.
+
+### Translation Patterns
+
+#### `array.length` → `length(array)`
+**Why**: `length/1` is a Kernel function in Elixir, making it the most idiomatic and performant way to get list length.
+```haxe
+// Haxe
+var count = todos.length;
+```
+```elixir
+# Elixir (generated)
+count = length(todos)
+```
+
+#### `array.concat(other)` → `array ++ other`
+**Why**: The `++` operator is Elixir's idiomatic list concatenation operator. It's more readable and performant than `Enum.concat/2`.
+```haxe
+// Haxe
+var allItems = todos.concat(newTodos);
+```
+```elixir
+# Elixir (generated)
+all_items = todos ++ new_todos
+```
+
+#### `array.filter(fn)` → `Enum.filter(array, fn)`
+**Why**: `Enum.filter/2` is the standard functional approach in Elixir.
+```haxe
+// Haxe
+var completed = todos.filter(t -> t.completed);
+```
+```elixir
+# Elixir (generated)
+completed = Enum.filter(todos, fn t -> t.completed end)
+```
+
+#### `array.map(fn)` → `Enum.map(array, fn)`
+**Why**: `Enum.map/2` is the functional transformation pattern in Elixir.
+```haxe
+// Haxe
+var titles = todos.map(t -> t.title);
+```
+```elixir
+# Elixir (generated)
+titles = Enum.map(todos, fn t -> t.title end)
+```
+
+#### `array.contains(elem)` → `Enum.member?(array, elem)`
+**Why**: `Enum.member?/2` follows Elixir's convention of using `?` suffix for boolean functions.
+```haxe
+// Haxe
+if (tags.contains("urgent")) { ... }
+```
+```elixir
+# Elixir (generated)
+if Enum.member?(tags, "urgent"), do: ...
+```
+
+#### `array.indexOf(elem)` → `Enum.find_index(array, &(&1 == elem))`
+**Why**: `Enum.find_index/2` with a comparison function is the Elixir way to find element position.
+```haxe
+// Haxe
+var position = items.indexOf(target);
+```
+```elixir
+# Elixir (generated)
+position = Enum.find_index(items, &(&1 == target))
+```
+
 ## Future Enhancements
 
 Potential improvements to the transformation system:
@@ -306,6 +380,7 @@ Potential improvements to the transformation system:
 3. **Pattern Matching**: Transform switch statements to pattern matching
 4. **Pipeline Operator**: Detect chainable operations for |> usage
 5. **With Expressions**: Transform nested error handling to `with` expressions
+6. **More Array Methods**: Support slice, take, drop, reverse, sort operations
 
 ## References
 

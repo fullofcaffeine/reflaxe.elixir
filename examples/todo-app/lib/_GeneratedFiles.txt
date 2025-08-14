@@ -1,5 +1,5 @@
-todo_web/live/todo_live.ex
-todo/schemas/todo.ex
+todo_app_web/live/todo_live.ex
+todo_app/schemas/todo.ex
 migrations_CreateTodos.ex
 haxe_iterators_StringKeyValueIterator.ex
 haxe_iterators_StringIterator.ex

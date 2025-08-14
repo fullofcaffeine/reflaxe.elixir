@@ -1,4 +1,5 @@
 defmodule UserService do
+  use Bitwise
   @moduledoc """
   UserService module generated from Haxe
   
@@ -51,6 +52,7 @@ end
 
 
 defmodule StringUtils do
+  use Bitwise
   @moduledoc """
   StringUtils module generated from Haxe
   
@@ -79,6 +81,7 @@ end
 
 
 defmodule UserHelper do
+  use Bitwise
   @moduledoc """
   UserHelper module generated from Haxe
   
