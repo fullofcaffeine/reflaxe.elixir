@@ -268,6 +268,45 @@ This is acceptable - helpers are simpler for our needs while following similar s
 - **CRITICAL: Idiomatic Elixir Code Generation** - The compiler MUST generate idiomatic, high-quality Elixir code that follows BEAM functional programming patterns, not just syntactically correct code
 - **Architecture Validation Rule** - Occasionally reference the Reflaxe source code and reference implementations in `/Users/fullofcaffeine/workspace/code/haxe.elixir.reference/` to ensure our architecture follows established Reflaxe patterns and isn't diverging too far from proven approaches
 
+## Documentation Standards 📝
+
+**Haxe uses JavaDoc-style documentation comments** - Follow Haxe standard library conventions:
+
+### Required Documentation Format
+```haxe
+/**
+ * Brief description of the method/class functionality.
+ * 
+ * Detailed explanation including:
+ * - What the method does
+ * - How it fits into the overall architecture
+ * - Important patterns or algorithms used
+ * - Examples of transformations (for compiler methods)
+ * 
+ * @param paramName Description of parameter purpose and type
+ * @param anotherParam Description with examples if complex
+ * @return Description of return value and possible null cases
+ * @see RelatedClass or documentation/FILE.md for related information
+ */
+```
+
+### Documentation Requirements
+- **ALL public methods** MUST have comprehensive documentation
+- **Complex private methods** (especially pattern matching, transformations) MUST be documented
+- **Class-level documentation** MUST explain the purpose and key features
+- **Parameter documentation** MUST include purpose, expected format, and edge cases
+- **Return value documentation** MUST specify type and null conditions
+- **Cross-references** MUST link to related documentation files
+
+### Examples from Standard Library
+Haxe's standard library uses this style extensively. See `String.hx`, `Array.hx` for reference patterns.
+
+### Desugaring Documentation
+When documenting compiler methods that handle **desugaring reversal**, always include:
+- What Haxe pattern is being detected
+- What the generated Elixir should look like  
+- Example transformation showing before/after code
+
 ## Development Principles
 
 ### ⚠️ CRITICAL: No Simplifications or Workarounds for Testing

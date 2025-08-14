@@ -12,11 +12,14 @@ import haxe.macro.Expr.Unop;
 import haxe.macro.Expr;
 import haxe.macro.Expr.Constant;
 
-import reflaxe.BaseCompiler;
+import reflaxe.DirectToStringCompiler;
 import reflaxe.compiler.TargetCodeInjection;
 import reflaxe.data.ClassFuncData;
 import reflaxe.data.ClassVarData;  
 import reflaxe.data.EnumOptionData;
+import reflaxe.preprocessors.ExpressionPreprocessor;
+import reflaxe.preprocessors.ExpressionPreprocessor.*;
+import reflaxe.preprocessors.implementations.RemoveTemporaryVariablesImpl.RemoveTemporaryVariablesMode;
 import reflaxe.elixir.helpers.NamingHelper;
 import reflaxe.elixir.helpers.EnumCompiler;
 import reflaxe.elixir.helpers.ClassCompiler;
@@ -43,10 +46,29 @@ using reflaxe.helpers.TypedExprHelper;
 using reflaxe.helpers.TypeHelper;
 
 /**
- * Reflaxe.Elixir compiler for generating Elixir code from Haxe
- * Supports Phoenix applications with gradual typing
+ * Reflaxe.Elixir compiler for generating idiomatic Elixir code from Haxe.
+ * 
+ * This compiler extends BaseCompiler to provide comprehensive Haxe-to-Elixir transpilation
+ * with support for Phoenix applications, OTP patterns, and gradual typing.
+ * 
+ * Key Features:
+ * - Phoenix LiveView compilation (@:liveview annotation)
+ * - Ecto schema generation (@:schema annotation) 
+ * - Router DSL compilation (@:router annotation)
+ * - Pattern matching and guard compilation
+ * - Array method optimization (transforms to Enum functions)
+ * - While loop optimization (detects and converts for-in patterns)
+ * - Protocol and behavior support
+ * - Type-safe repository operations
+ * 
+ * The compiler performs macro-time transpilation, transforming Haxe's TypedExpr AST
+ * into idiomatic Elixir code. It handles desugaring reversal - detecting patterns
+ * that Haxe has desugared and converting them back to idiomatic target constructs.
+ * 
+ * @see documentation/ARCHITECTURE.md Complete architectural overview
+ * @see documentation/TESTING.md Testing methodology and patterns
  */
-class ElixirCompiler extends BaseCompiler {
+class ElixirCompiler extends DirectToStringCompiler {
     
     // File extension for generated Elixir files
     public var fileExtension: String = ".ex";
@@ -86,6 +108,20 @@ class ElixirCompiler extends BaseCompiler {
         
         // Enable source mapping if requested
         this.sourceMapOutputEnabled = Context.defined("source-map") || Context.defined("debug");
+        
+        // Configure Reflaxe 4.0 preprocessors for optimized code generation
+        // These preprocessors clean up the AST before we compile it to Elixir
+        options.expressionPreprocessors = [
+            SanitizeEverythingIsExpression({}),                      // Convert "everything is expression" to imperative
+            RemoveTemporaryVariables(RemoveTemporaryVariablesMode.AllVariables), // Remove ALL temporary variables aggressively  
+            PreventRepeatVariables({}),                              // Ensure unique variable names
+            RemoveSingleExpressionBlocks,                            // Simplify single-expression blocks
+            RemoveConstantBoolIfs,                                   // Remove constant conditional checks
+            RemoveUnnecessaryBlocks,                                 // Remove redundant blocks
+            RemoveReassignedVariableDeclarations,                    // Optimize variable declarations
+            RemoveLocalVariableAliases,                              // Remove unnecessary aliases
+            MarkUnusedVariables                                      // Mark unused variables for removal
+        ];
         
         // Initialize LLM documentation generator (optional)
         if (Context.defined("generate-llm-docs")) {
@@ -391,7 +427,7 @@ class ElixirCompiler extends BaseCompiler {
     }
     
     /**
-     * Compile Haxe class to Elixir module using enhanced ClassCompiler
+     * Required override for GenericCompiler - implements class compilation
      * @param classType The Haxe class type
      * @param varFields Class variables
      * @param funcFields Class functions
@@ -765,7 +801,7 @@ class ElixirCompiler extends BaseCompiler {
     }
     
     /**
-     * Compile Haxe enum to Elixir tagged tuples using enhanced EnumCompiler
+     * Required override for GenericCompiler - implements enum compilation
      */
     public function compileEnumImpl(enumType: EnumType, options: Array<EnumOptionData>): Null<String> {
         if (enumType == null) return null;
@@ -786,10 +822,10 @@ class ElixirCompiler extends BaseCompiler {
      * Compile abstract types - generates proper Elixir type aliases and implementation modules
      * Abstract types in Haxe become type aliases in Elixir with implementation modules for operators
      */
-    public override function compileAbstract(abstractType: AbstractType): Null<String> {
+    public override function compileAbstractImpl(abstractType: AbstractType): Null<String> {
         // Skip core Haxe types that are handled elsewhere
         if (isBuiltinAbstractType(abstractType.name)) {
-            return null;
+            return "";
         }
         
         // Generate Elixir type alias for the abstract
@@ -808,8 +844,8 @@ class ElixirCompiler extends BaseCompiler {
         
         trace('Generated Elixir type alias for abstract ${typeName}: ${typeAlias}');
         
-        // Return null to indicate we handled this through side effects
-        return null;
+        // Return the type alias definition
+        return typeAlias;
     }
     
     /**
@@ -928,47 +964,17 @@ class ElixirCompiler extends BaseCompiler {
      * Compile typedef - Returns null to ignore typedefs as BaseCompiler recommends.
      * This prevents generating invalid StdTypes.ex files with @typedoc/@type outside modules.
      */
-    public override function compileTypedef(defType: DefType): Null<String> {
+    public override function compileTypedefImpl(defType: DefType): Null<String> {
         // Following BaseCompiler recommendation: ignore typedefs since
         // "Haxe redirects all types automatically" - no standalone typedef files needed
         // 
         // Returning null prevents generating invalid StdTypes.ex files with 
         // @typedoc/@type directives outside modules.
         // 
-        // TODO: Future refactor should extend DirectToStringCompiler instead of BaseCompiler
-        // to properly support typedef compilation with module wrapping if needed.
+        // Now using DirectToStringCompiler - typedefs still not needed for Elixir
         return null;
     }
     
-    
-    /**
-     * Compile Haxe expressions to Elixir expressions with source mapping support
-     */
-    public override function compileExpression(expr: TypedExpr, topLevel: Bool = false): Null<String> {
-        if (expr == null) return null;
-        
-        // Check for target code injection (__elixir__ calls)
-        if (options.targetCodeInjectionName != null) {
-            final result = TargetCodeInjection.checkTargetCodeInjection(options.targetCodeInjectionName, expr, this);
-            if (result != null) {
-                return result;
-            }
-        }
-        
-        // Add source mapping before compiling expression
-        if (sourceMapOutputEnabled && currentSourceMapWriter != null && expr.pos != null) {
-            currentSourceMapWriter.mapPosition(expr.pos);
-        }
-        
-        var result = compileElixirExpressionInternal(expr, topLevel);
-        
-        // Track generated code length for accurate column positioning  
-        if (sourceMapOutputEnabled && currentSourceMapWriter != null && result != null) {
-            currentSourceMapWriter.stringWritten(result);
-        }
-        
-        return result;
-    }
     
     /**
      * Internal Elixir expression compilation
@@ -1109,6 +1115,16 @@ class ElixirCompiler extends BaseCompiler {
                 "%{" + fields.map(f -> f.name + ": " + compileExpression(f.expr)).join(", ") + "}";
                 
             case TVar(tvar, expr):
+                // Check if variable is marked as unused by optimizer
+                if (tvar.meta != null && tvar.meta.has("-reflaxe.unused")) {
+                    // Skip generating unused variables, but still evaluate expression if it has side effects
+                    if (expr != null) {
+                        return compileExpression(expr);
+                    } else {
+                        return "";  // Don't generate anything for unused variables without init
+                    }
+                }
+                
                 var varName = NamingHelper.toSnakeCase(tvar.getNameOrNative());
                 if (expr != null) {
                     '${varName} = ${compileExpression(expr)}';
@@ -1375,7 +1391,7 @@ class ElixirCompiler extends BaseCompiler {
             var params = [];
             for (i in 0...funcField.args.length) {
                 var arg = funcField.args[i];
-                var paramName = NamingHelper.toSnakeCase(arg.name);
+                var paramName = NamingHelper.toSnakeCase(arg.originalName);
                 params.push(paramName);
             }
             paramStr = params.join(", ");
@@ -1384,7 +1400,7 @@ class ElixirCompiler extends BaseCompiler {
         result += '  def ${funcName}(${paramStr}) do\n';
         
         if (funcField.expr != null) {
-            // Compile the actual function body
+            // Compile the actual function body  
             var compiledBody = compileExpression(funcField.expr);
             if (compiledBody != null && compiledBody.trim() != "") {
                 // Indent the function body properly
@@ -1725,9 +1741,21 @@ class ElixirCompiler extends BaseCompiler {
     }
     
     /**
-     * Try to optimize for-in loop patterns that have been desugared to while loops
-     * Detects patterns like: _g = 0; while (_g < array.length) { var item = array[_g]; _g++; ... }
-     * And transforms them to: Enum.each(array, fn item -> ... end)
+     * Try to optimize for-in loop patterns that have been desugared to while loops.
+     * 
+     * This is a key desugaring reversal function. Haxe transforms convenient for-in
+     * loops into verbose while loops with index tracking. We detect these patterns
+     * and convert them back to idiomatic Elixir Enum functions.
+     * 
+     * Detected patterns:
+     * - `_g = 0; while (_g < array.length)` → `Enum.each(array, fn item -> ... end)`
+     * - `_g = 0; while (_g < _g1)` → `Enum.reduce(start..end, acc, fn i, acc -> ... end)`
+     * - Array mapping patterns → `Enum.map(array, fn item -> ... end)`
+     * - Array filtering patterns → `Enum.filter(array, fn item -> ... end)`
+     * 
+     * @param econd The while loop condition expression
+     * @param ebody The while loop body expression
+     * @return Optimized Elixir code string, or null if no pattern detected
      */
     private function tryOptimizeForInPattern(econd: TypedExpr, ebody: TypedExpr): Null<String> {
         // Try to detect range-based for loop pattern: _g < _gX where _g and _gX are range bounds
@@ -2134,12 +2162,14 @@ class ElixirCompiler extends BaseCompiler {
      * Generate Enum.count pattern for conditional counting
      */
     private function generateEnumCountPattern(arrayExpr: String, loopVar: String, conditionExpr: TypedExpr): String {
-        // Extract the actual loop variable name to maintain consistency
-        var actualLoopVar = findLoopVariable(conditionExpr);
-        if (actualLoopVar == null) actualLoopVar = "item"; // Fallback
+        // Find the source variable in the condition
+        var sourceVar = findLoopVariable(conditionExpr);
+        
+        // Use "item" as the target variable for the lambda parameter
+        var actualLoopVar = "item";
         
         // Apply variable substitution to the condition
-        var condition = compileExpressionWithVarMapping(conditionExpr, actualLoopVar);
+        var condition = compileExpressionWithVarMapping(conditionExpr, sourceVar, actualLoopVar);
         return 'Enum.count(${arrayExpr}, fn ${actualLoopVar} -> ${condition} end)';
     }
     
@@ -2147,12 +2177,14 @@ class ElixirCompiler extends BaseCompiler {
      * Generate Enum.filter pattern for filtering arrays
      */
     private function generateEnumFilterPattern(arrayExpr: String, loopVar: String, conditionExpr: TypedExpr): String {
-        // Extract the actual loop variable name to maintain consistency
-        var actualLoopVar = findLoopVariable(conditionExpr);
-        if (actualLoopVar == null) actualLoopVar = "item"; // Fallback
+        // Find the source variable in the condition
+        var sourceVar = findLoopVariable(conditionExpr);
+        
+        // Use "item" as the target variable for the lambda parameter
+        var actualLoopVar = "item";
         
         // Apply variable substitution to the condition
-        var condition = compileExpressionWithVarMapping(conditionExpr, actualLoopVar);
+        var condition = compileExpressionWithVarMapping(conditionExpr, sourceVar, actualLoopVar);
         return 'Enum.filter(${arrayExpr}, fn ${actualLoopVar} -> ${condition} end)';
     }
     
@@ -2174,6 +2206,9 @@ class ElixirCompiler extends BaseCompiler {
      * Extract transformation logic from mapping body
      */
     private function extractTransformationFromBody(expr: TypedExpr, loopVar: String): String {
+        // Find the source variable in the entire expression first
+        var sourceVar = findLoopVariable(expr);
+        
         switch (expr.expr) {
             case TBlock(exprs):
                 // Look for the actual transformation in the loop body
@@ -2185,7 +2220,7 @@ class ElixirCompiler extends BaseCompiler {
                             switch (eobj.expr) {
                                 case TField(_, fa):
                                     // Extract and compile the transformation with variable mapping
-                                    return compileExpressionWithVarMapping(args[0], loopVar);
+                                    return compileExpressionWithVarMapping(args[0], sourceVar, loopVar);
                                 case _:
                             }
                         case TBinop(OpAssign, eleft, eright):
@@ -2194,15 +2229,15 @@ class ElixirCompiler extends BaseCompiler {
                             switch (eright.expr) {
                                 case TBinop(OpAdd, _, etransform):
                                     // _g = _g ++ [transformation] pattern
-                                    return compileExpressionWithVarMapping(etransform, loopVar);
+                                    return compileExpressionWithVarMapping(etransform, sourceVar, loopVar);
                                 case _:
-                                    return compileExpressionWithVarMapping(eright, loopVar);
+                                    return compileExpressionWithVarMapping(eright, sourceVar, loopVar);
                             }
                         case TIf(econd, eif, eelse):
                             // Conditional transformation
-                            var condition = compileExpressionWithVarMapping(econd, loopVar);
-                            var thenValue = compileExpressionWithVarMapping(eif, loopVar);
-                            var elseValue = eelse != null ? compileExpressionWithVarMapping(eelse, loopVar) : loopVar;
+                            var condition = compileExpressionWithVarMapping(econd, sourceVar, loopVar);
+                            var thenValue = compileExpressionWithVarMapping(eif, sourceVar, loopVar);
+                            var elseValue = eelse != null ? compileExpressionWithVarMapping(eelse, sourceVar, loopVar) : loopVar;
                             return 'if ${condition}, do: ${thenValue}, else: ${elseValue}';
                         case _:
                             // Keep looking through other expressions
@@ -2210,26 +2245,38 @@ class ElixirCompiler extends BaseCompiler {
                 }
             case TIf(econd, eif, eelse):
                 // Direct conditional transformation
-                var condition = compileExpressionWithVarMapping(econd, loopVar);
-                var thenValue = compileExpressionWithVarMapping(eif, loopVar);
-                var elseValue = eelse != null ? compileExpressionWithVarMapping(eelse, loopVar) : loopVar;
+                var condition = compileExpressionWithVarMapping(econd, sourceVar, loopVar);
+                var thenValue = compileExpressionWithVarMapping(eif, sourceVar, loopVar);
+                var elseValue = eelse != null ? compileExpressionWithVarMapping(eelse, sourceVar, loopVar) : loopVar;
                 return 'if ${condition}, do: ${thenValue}, else: ${elseValue}';
             case _:
                 // Try to compile the expression directly with variable mapping
-                return compileExpressionWithVarMapping(expr, loopVar);
+                return compileExpressionWithVarMapping(expr, sourceVar, loopVar);
         }
         return loopVar; // Fallback: no transformation
     }
     
     /**
-     * Compile expression with variable mapping for loop variable substitution
+     * Compile expression with variable mapping for loop variable substitution.
+     * 
+     * This method is crucial for handling desugared Haxe code where the original
+     * lambda parameter names have been replaced with compiler-generated variables.
+     * It enables proper variable substitution to generate idiomatic Elixir lambdas.
+     * 
+     * Example: When Haxe desugars `numbers.filter(n -> n % 2 == 0)` into a complex
+     * loop using variable `v`, this method substitutes `v` with `item` to produce
+     * `Enum.filter(numbers, fn item -> item rem 2 == 0 end)`.
+     * 
+     * @param expr The expression to compile with variable substitution
+     * @param sourceVar The original variable name to replace (e.g., "v")
+     * @param targetVar The target variable name to use (e.g., "item")
+     * @return The compiled expression with variables substituted
      */
-    private function compileExpressionWithVarMapping(expr: TypedExpr, targetVar: String): String {
-        // Find the actual loop variable in the expression
-        var sourceVar = findLoopVariable(expr);
+    private function compileExpressionWithVarMapping(expr: TypedExpr, sourceVar: String, targetVar: String): String {
         if (sourceVar == null) {
             return compileExpression(expr);
         }
+        
         
         // Compile with variable substitution
         return compileExpressionWithSubstitution(expr, sourceVar, targetVar);
@@ -2239,38 +2286,59 @@ class ElixirCompiler extends BaseCompiler {
      * Find the loop variable being used in an expression
      */
     private function findLoopVariable(expr: TypedExpr): Null<String> {
+        var variables = new Map<String, Int>();
+        collectVariables(expr, variables);
+        
+        // Find the most frequently used non-compiler variable
+        var bestVar: String = null;
+        var bestCount = 0;
+        
+        for (varName => count in variables) {
+            // Skip compiler-generated variables
+            if (varName != "_g" && varName != "_g1" && varName != "_g2" && 
+                !varName.startsWith("temp_") && !varName.startsWith("_this")) {
+                if (count > bestCount) {
+                    bestVar = varName;
+                    bestCount = count;
+                }
+            }
+        }
+        
+        return bestVar;
+    }
+    
+    /**
+     * Collect all variable names and their usage counts from an expression
+     */
+    private function collectVariables(expr: TypedExpr, variables: Map<String, Int>): Void {
         switch (expr.expr) {
             case TLocal(v):
-                // Skip compiler-generated variables
-                if (v.name != "_g" && v.name != "_g1" && v.name != "_g2" && !v.name.startsWith("temp_")) {
-                    return v.name;
-                }
+                var currentCount = variables.exists(v.name) ? variables.get(v.name) : 0;
+                variables.set(v.name, currentCount + 1);
             case TBinop(_, e1, e2):
-                var result = findLoopVariable(e1);
-                if (result != null) return result;
-                return findLoopVariable(e2);
+                collectVariables(e1, variables);
+                collectVariables(e2, variables);
             case TField(e, _):
-                return findLoopVariable(e);
+                collectVariables(e, variables);
             case TCall(e, args):
-                var result = findLoopVariable(e);
-                if (result != null) return result;
+                collectVariables(e, variables);
                 for (arg in args) {
-                    result = findLoopVariable(arg);
-                    if (result != null) return result;
+                    collectVariables(arg, variables);
                 }
             case TArray(e1, e2):
-                var result = findLoopVariable(e1);
-                if (result != null) return result;
-                return findLoopVariable(e2);
+                collectVariables(e1, variables);
+                collectVariables(e2, variables);
+            case TIf(econd, eif, eelse):
+                collectVariables(econd, variables);
+                collectVariables(eif, variables);
+                if (eelse != null) collectVariables(eelse, variables);
             case TBlock(exprs):
                 for (e in exprs) {
-                    var result = findLoopVariable(e);
-                    if (result != null) return result;
+                    collectVariables(e, variables);
                 }
             case _:
-                // Other expression types
+                // Other expression types don't contain variables
         }
-        return null;
     }
     
     /**
@@ -2614,7 +2682,21 @@ class ElixirCompiler extends BaseCompiler {
     }
     
     /**
-     * Compile Array method calls to Elixir equivalents
+     * Compile Haxe array method calls to idiomatic Elixir Enum functions.
+     * 
+     * Transforms common array operations to their Elixir equivalents:
+     * - `array.map(fn)` → `Enum.map(array, fn)`
+     * - `array.filter(fn)` → `Enum.filter(array, fn)` (with variable substitution)
+     * - `array.join(sep)` → `Enum.join(array, sep)`
+     * - `array.push(item)` → `array ++ [item]`
+     * 
+     * Special handling for lambda expressions includes variable substitution to
+     * ensure proper parameter naming in generated Elixir functions.
+     * 
+     * @param objStr The compiled array object expression
+     * @param methodName The method being called (e.g., "filter", "map")
+     * @param args The method arguments as TypedExpr array
+     * @return The compiled Elixir method call
      */
     private function compileArrayMethod(objStr: String, methodName: String, args: Array<TypedExpr>): String {
         var compiledArgs = args.map(arg -> compileExpression(arg));
@@ -2650,7 +2732,22 @@ class ElixirCompiler extends BaseCompiler {
             case "filter":
                 // array.filter(fn) → Enum.filter(array, fn)
                 if (compiledArgs.length > 0) {
-                    'Enum.filter(${objStr}, ${compiledArgs[0]})';
+                    // Check if the argument is a lambda that needs variable substitution
+                    if (args.length > 0) {
+                        switch (args[0].expr) {
+                            case TFunction(func):
+                                // Handle lambda with proper variable substitution
+                                var paramName = func.args.length > 0 ? NamingHelper.toSnakeCase(func.args[0].v.name) : "item";
+                                var sourceVar = findLoopVariable(func.expr);
+                                var body = compileExpressionWithVarMapping(func.expr, sourceVar, paramName);
+                                return 'Enum.filter(${objStr}, fn ${paramName} -> ${body} end)';
+                            case _:
+                                // Not a simple lambda, use regular compilation
+                                return 'Enum.filter(${objStr}, ${compiledArgs[0]})';
+                        }
+                    } else {
+                        return 'Enum.filter(${objStr}, ${compiledArgs[0]})';
+                    }
                 } else {
                     objStr;
                 }
@@ -2797,14 +2894,6 @@ class ElixirCompiler extends BaseCompiler {
             case FDynamic(s): s;
             case FEnum(_, ef): ef.name;
         };
-    }
-    
-    /**
-     * Format expression line for Elixir syntax requirements
-     */
-    public override function formatExpressionLine(expr: String): String {
-        // Elixir doesn't need semicolons, but we might want other formatting
-        return expr;
     }
     
 }
