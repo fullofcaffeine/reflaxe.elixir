@@ -263,6 +263,47 @@ var text: String = Std.string(number);
 var message: String = 'The number is $number';
 ```
 
+### Problem: Dynamic array methods not transforming
+
+**Symptom:**
+```elixir
+# Generated invalid Elixir
+todos.filter(fn t -> t.completed end)  # Error: undefined function filter/2
+```
+
+**Solution:**
+This is now automatically handled by the compiler. If you see this issue:
+1. Ensure you're using the latest compiler version
+2. The compiler detects common array methods on Dynamic types
+3. Consider adding explicit types for better IDE support:
+
+```haxe
+// Instead of Dynamic
+var todos: Dynamic = socket.assigns.todos;
+
+// Use explicit typing when possible
+var todos: Array<Todo> = cast socket.assigns.todos;
+```
+
+### Problem: ".length on Dynamic generates invalid code"
+
+**Symptom:**
+```elixir
+# Generated invalid Elixir
+count = todos.length  # Error: attempting to access key "length" on a list
+```
+
+**Solution:**
+This is now automatically fixed. The compiler transforms `.length` to `length()`:
+```haxe
+// Haxe
+var count = todos.length;
+```
+```elixir
+# Generated Elixir (fixed)
+count = length(todos)
+```
+
 ### Problem: "Array<T> has no field map"
 
 **Symptom:**
