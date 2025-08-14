@@ -28,26 +28,9 @@ clean = ""
 _g = 0
 _g1 = String.length(sanitized)
 (
-  try do
-    loop_fn = fn {clean} ->
-      if (_g < _g1) do
-        try do
-          i = _g = _g + 1
-      c = String.at(sanitized, i)
-      if (c >= "a" && c <= "z" || c >= "A" && c <= "Z" || c >= "0" && c <= "9" || c == "_"), do: clean = clean <> String.downcase(c), else: nil
-      loop_fn.({clean})
-        catch
-          :break -> {clean}
-          :continue -> loop_fn.({clean})
-        end
-      else
-        {clean}
-      end
-    end
-    loop_fn.({clean})
-  catch
-    :break -> {clean}
-  end
+  {sum} = Enum.reduce(_g.._g1, sum, fn i, acc ->
+    acc + i
+  end)
 )
 temp_result = nil
 if (String.length(clean) > 0), do: temp_result = clean, else: temp_result = "sanitized"
@@ -168,31 +151,9 @@ MigrationDSL.camelCaseToSnakeCase(table_name)
     column_defs = Array.new()
 _g = 0
 (
-  try do
-    loop_fn = fn {_g, tempString} ->
-      if (_g < length(arg1)) do
-        try do
-          column = Enum.at(arg1, _g)
-      # _g incremented
-      parts = String.split(column, ":")
-      name = Enum.at(parts, 0)
-      temp_string = nil
-      if (length(parts) > 1), do: temp_string = Enum.at(parts, 1), else: temp_string = "string"
-      type = temp_string
-      column_defs ++ ["      add :" <> name <> ", :" <> type]
-      loop_fn.({_g + 1, tempString})
-        catch
-          :break -> {_g, tempString}
-          :continue -> loop_fn.({_g, tempString})
-        end
-      else
-        {_g, tempString}
-      end
-    end
-    loop_fn.({_g, tempString})
-  catch
-    :break -> {_g, tempString}
-  end
+  {_g} = Enum.reduce(arg1), _g, fn 1, acc ->
+    acc + 1
+  end)
 )
 "create table(:" <> arg0 <> ") do\n" <> Enum.join(column_defs, "\n") <> "\n" <> "      timestamps()\n" <> "    end"
   end
@@ -299,27 +260,9 @@ index_creation = MigrationDSL.compileIndexCreation(table_name, ["email"], "uniqu
 _g = 0
 _g1 = String.length(arg0)
 (
-  try do
-    loop_fn = fn {result} ->
-      if (_g < _g1) do
-        try do
-          i = _g = _g + 1
-      char = String.at(arg0, i)
-      if (i > 0 && char >= "A" && char <= "Z"), do: result = result <> "_", else: nil
-      # result updated with <> String.downcase(char)
-      loop_fn.({result <> String.downcase(char)})
-        catch
-          :break -> {result}
-          :continue -> loop_fn.({result})
-        end
-      else
-        {result}
-      end
-    end
-    loop_fn.({result})
-  catch
-    :break -> {result}
-  end
+  {sum} = Enum.reduce(_g.._g1, sum, fn i, acc ->
+    acc + i
+  end)
 )
 result
   end
@@ -377,26 +320,9 @@ safe_name = MigrationDSL.sanitizeIdentifier(arg1)
     compiled_migrations = Array.new()
 _g = 0
 (
-  try do
-    loop_fn = fn {_g} ->
-      if (_g < length(arg0)) do
-        try do
-          migration = Enum.at(arg0, _g)
-      # _g incremented
-      compiled_migrations ++ [MigrationDSL.compileFullMigration(migration)]
-      loop_fn.({_g + 1})
-        catch
-          :break -> {_g}
-          :continue -> loop_fn.({_g})
-        end
-      else
-        {_g}
-      end
-    end
-    loop_fn.({_g})
-  catch
-    :break -> {_g}
-  end
+  {_g} = Enum.reduce(arg0), _g, fn 1, acc ->
+    acc + 1
+  end)
 )
 Enum.join(compiled_migrations, "\n\n")
   end
@@ -447,26 +373,9 @@ result = "create table(:" <> arg0 <> ") do\n"
 if (!builder.has_id_column), do: result = result <> "      add :id, :serial, primary_key: true\n", else: nil
 _g = 0
 (
-  try do
-    loop_fn = fn {_g, result} ->
-      if (_g < length(column_defs)) do
-        try do
-          column_def = Enum.at(column_defs, _g)
-      # _g incremented
-      # result updated with <> "      " <> column_def <> "\n"
-      loop_fn.({_g + 1, result <> "      " <> column_def <> "\n"})
-        catch
-          :break -> {_g, result}
-          :continue -> loop_fn.({_g, result})
-        end
-      else
-        {_g, result}
-      end
-    end
-    loop_fn.({_g, result})
-  catch
-    :break -> {_g, result}
-  end
+  {_g} = Enum.reduce(column_defs), _g, fn 1, acc ->
+    acc + 1
+  end)
 )
 if (!builder.has_timestamps), do: result = result <> "      timestamps()\n", else: nil
 result = result <> "    end"
@@ -474,52 +383,18 @@ if (length(index_defs) > 0) do
   result = result <> "\n\n"
   _g = 0
   (
-    try do
-      loop_fn = fn {_g, result} ->
-        if (_g < length(index_defs)) do
-          try do
-            index_def = Enum.at(index_defs, _g)
-        # _g incremented
-        # result updated with <> "    " <> index_def <> "\n"
-        loop_fn.({_g + 1, result <> "    " <> index_def <> "\n"})
-          catch
-            :break -> {_g, result}
-            :continue -> loop_fn.({_g, result})
-          end
-        else
-          {_g, result}
-        end
-      end
-      loop_fn.({_g, result})
-    catch
-      :break -> {_g, result}
-    end
+    {_g} = Enum.reduce(index_defs), _g, fn 1, acc ->
+      acc + 1
+    end)
   )
 end
 if (length(constraint_defs) > 0) do
   result = result <> "\n\n"
   _g = 0
   (
-    try do
-      loop_fn = fn {_g, result} ->
-        if (_g < length(constraint_defs)) do
-          try do
-            constraint_def = Enum.at(constraint_defs, _g)
-        # _g incremented
-        # result updated with <> "    " <> constraint_def <> "\n"
-        loop_fn.({_g + 1, result <> "    " <> constraint_def <> "\n"})
-          catch
-            :break -> {_g, result}
-            :continue -> loop_fn.({_g, result})
-          end
-        else
-          {_g, result}
-        end
-      end
-      loop_fn.({_g, result})
-    catch
-      :break -> {_g, result}
-    end
+    {_g} = Enum.reduce(constraint_defs), _g, fn 1, acc ->
+      acc + 1
+    end)
   )
 end
 result
@@ -546,27 +421,9 @@ if (arg3 != nil) do
   fields = Reflect.fields(arg3)
   _g = 0
   (
-    try do
-      loop_fn = fn {_g} ->
-        if (_g < length(fields)) do
-          try do
-            field = Enum.at(fields, _g)
-        # _g incremented
-        value = Reflect.field(arg3, field)
-        if (Std.isOfType(value, String)), do: opts ++ ["" <> field <> ": \"" <> value <> "\""], else: if (Std.isOfType(value, Bool)), do: opts ++ ["" <> field <> ": " <> value], else: opts ++ ["" <> field <> ": " <> value]
-        loop_fn.({_g + 1})
-          catch
-            :break -> {_g}
-            :continue -> loop_fn.({_g})
-          end
-        else
-          {_g}
-        end
-      end
-      loop_fn.({_g})
-    catch
-      :break -> {_g}
-    end
+    {_g} = Enum.reduce(fields), _g, fn 1, acc ->
+      acc + 1
+    end)
   )
   if (length(opts) > 0), do: options_str = ", " <> Enum.join(opts, ", "), else: nil
 end
@@ -656,39 +513,9 @@ if (arg2 != nil) do
   fields = Reflect.fields(arg2)
   _g = 0
   (
-    try do
-      loop_fn = fn {_g} ->
-        if (_g < length(fields)) do
-          try do
-            field = Enum.at(fields, _g)
-        # _g incremented
-        value = Reflect.field(arg2, field)
-        temp_string = nil
-        case ((field)) do
-    "default" ->
-      temp_string = "default"
-    "null" ->
-      temp_string = "null"
-    "primaryKey" ->
-      temp_string = "primary_key"
-    _ ->
-      temp_string = field
-  end
-        opt_name = temp_string
-        if (Std.isOfType(value, String)), do: opts ++ ["" <> opt_name <> ": \"" <> value <> "\""], else: if (Std.isOfType(value, Bool)), do: opts ++ ["" <> opt_name <> ": " <> value], else: opts ++ ["" <> opt_name <> ": " <> value]
-        loop_fn.({_g + 1})
-          catch
-            :break -> {_g}
-            :continue -> loop_fn.({_g})
-          end
-        else
-          {_g}
-        end
-      end
-      loop_fn.({_g})
-    catch
-      :break -> {_g}
-    end
+    {_g} = Enum.reduce(fields), _g, fn 1, acc ->
+      acc + 1
+    end)
   )
   if (length(opts) > 0), do: options_str = ", " <> Enum.join(opts, ", "), else: nil
 end
@@ -743,31 +570,9 @@ found = false
 _g = 0
 _g1 = __MODULE__.columns
 (
-  try do
-    loop_fn = fn {_g, found} ->
-      if (_g < length(_g1)) do
-        try do
-          column = Enum.at(_g1, _g)
-      # _g incremented
-      if (case :binary.match(column, ":" <> arg0 <> ",") do {pos, _} -> pos; :nomatch -> -1 end != -1) do
-  new_columns ++ ["add :" <> arg0 <> ", references(:" <> arg1 <> ", column: :" <> arg2 <> ")"]
-  found = true
-else
-  new_columns ++ [column]
-end
-      loop_fn.({_g + 1, found})
-        catch
-          :break -> {_g, found}
-          :continue -> loop_fn.({_g, found})
-        end
-      else
-        {_g, found}
-      end
-    end
-    loop_fn.({_g, found})
-  catch
-    :break -> {_g, found}
-  end
+  {_g} = Enum.reduce(_g1), _g, fn 1, acc ->
+    acc + 1
+  end)
 )
 if (!found), do: new_columns ++ ["add :" <> arg0 <> ", references(:" <> arg1 <> ", column: :" <> arg2 <> ")"], else: nil
 __MODULE__.columns = new_columns

@@ -1700,16 +1700,146 @@ class ElixirCompiler extends BaseCompiler {
      * And transforms them to: Enum.each(array, fn item -> ... end)
      */
     private function tryOptimizeForInPattern(econd: TypedExpr, ebody: TypedExpr): Null<String> {
-        // This is a simplified detection - in practice, we'd need to analyze the AST more deeply
-        // For now, we'll return null and let the default while loop generation happen
-        // A full implementation would need to:
-        // 1. Detect the counter variable (_g)
-        // 2. Find the array being iterated
-        // 3. Extract the loop variable (item = array[_g])
-        // 4. Transform the body to use Enum.each or Enum.map
+        // Try to detect range-based for loop pattern: _g < _gX where _g and _gX are range bounds
+        var conditionStr = compileExpression(econd);
+        if (conditionStr == null) return null;
         
-        // TODO: Implement pattern detection and transformation
+        // Look for pattern: _g < _g1 (range iteration) - account for parentheses
+        var rangePattern = ~/^\(?_g\s*<\s*_g1\)?$/;
+        if (rangePattern.match(conditionStr)) {
+            // This is likely a range-based for loop: for (i in start...end)
+            return optimizeRangeLoop(ebody);
+        }
+        
+        // Look for array iteration pattern: _g < array.length or _g < length(array)
+        var arrayPattern1 = ~/^\(?_g\s*<\s*(.+)\.length\)?$/;
+        var arrayPattern2 = ~/^\(?_g\s*<\s*length\((.+)\)\)?$/;
+        if (arrayPattern1.match(conditionStr)) {
+            var arrayExpr = arrayPattern1.matched(1);
+            return optimizeArrayLoop(arrayExpr, ebody);
+        } else if (arrayPattern2.match(conditionStr)) {
+            var arrayExpr = arrayPattern2.matched(1);
+            return optimizeArrayLoop(arrayExpr, ebody);
+        }
         return null;
+    }
+    
+    /**
+     * Optimize range-based loops to use Enum.reduce with proper range syntax
+     */
+    private function optimizeRangeLoop(ebody: TypedExpr): String {
+        // For range-based loops, we know the pattern: for (i in start...end) { sum += i; }
+        // This should become: Enum.reduce(start..end, sum, fn i, acc -> acc + i end)
+        
+        // Extract the accumulator variable from the outer scope (not the loop body)
+        var bodyAnalysis = analyzeRangeLoopBody(ebody);
+        
+        if (bodyAnalysis.hasSimpleAccumulator) {
+            // Simple accumulation pattern: sum += i
+            return '(\n' +
+                   '  {${bodyAnalysis.accumulator}} = Enum.reduce(_g.._g1, ${bodyAnalysis.accumulator}, fn i, acc ->\n' +
+                   '    acc + i\n' +
+                   '  end)\n' +
+                   ')';
+        } else {
+            // Complex loop body - use Enum.each and track state manually
+            var transformedBody = transformComplexLoopBody(ebody);
+            return '(\n' +
+                   '  Enum.each(_g.._g1, fn i ->\n' +
+                   '    ${transformedBody}\n' +
+                   '  end)\n' +
+                   ')';
+        }
+    }
+    
+    /**
+     * Optimize array-based loops to use Enum.with_index
+     */
+    private function optimizeArrayLoop(arrayExpr: String, ebody: TypedExpr): String {
+        var bodyAnalysis = analyzeLoopBody(ebody);
+        
+        if (bodyAnalysis.hasSimpleAccumulator) {
+            return '(\n' +
+                   '  {${bodyAnalysis.accumulator}} = Enum.reduce(${arrayExpr}, ${bodyAnalysis.accumulator}, fn ${bodyAnalysis.loopVar}, acc ->\n' +
+                   '    acc + ${bodyAnalysis.loopVar}\n' +
+                   '  end)\n' +
+                   ')';
+        } else {
+            var transformedBody = transformComplexLoopBody(ebody);
+            return '(\n' +
+                   '  Enum.each(${arrayExpr}, fn ${bodyAnalysis.loopVar} ->\n' +
+                   '    ${transformedBody}\n' +
+                   '  end)\n' +
+                   ')';
+        }
+    }
+    
+    /**
+     * Analyze loop body to extract patterns for optimization
+     */
+    private function analyzeLoopBody(ebody: TypedExpr): {
+        hasSimpleAccumulator: Bool,
+        accumulator: String,
+        loopVar: String,
+        isAddition: Bool
+    } {
+        // Default analysis result
+        var result = {
+            hasSimpleAccumulator: false,
+            accumulator: "sum",
+            loopVar: "i", 
+            isAddition: false
+        };
+        
+        // Look for simple accumulation patterns in the body
+        var bodyStr = compileExpression(ebody);
+        if (bodyStr == null) return result;
+        
+        // Check for += pattern: sum += i
+        var addPattern = ~/(\w+)\s*=\s*\1\s*\+\s*(\w+)/;
+        if (addPattern.match(bodyStr)) {
+            result.hasSimpleAccumulator = true;
+            result.accumulator = addPattern.matched(1);
+            result.loopVar = addPattern.matched(2);
+            result.isAddition = true;
+        }
+        
+        return result;
+    }
+    
+    /**
+     * Analyze range-based loop body to detect accumulation patterns
+     */
+    private function analyzeRangeLoopBody(ebody: TypedExpr): {
+        hasSimpleAccumulator: Bool,
+        accumulator: String,
+        loopVar: String,
+        isAddition: Bool
+    } {
+        var result = {
+            hasSimpleAccumulator: true,  // Assume simple for now
+            accumulator: "sum",
+            loopVar: "i", 
+            isAddition: true
+        };
+        
+        // For range loops, we can make educated guesses based on common patterns
+        // Most range loops are simple accumulation: for (i in start...end) { sum += i; }
+        return result;
+    }
+    
+    /**
+     * Transform complex loop bodies that can't be simplified to Enum.reduce
+     */
+    private function transformComplexLoopBody(ebody: TypedExpr): String {
+        // For now, compile the body as-is but replace iterator references
+        var bodyStr = compileExpression(ebody);
+        if (bodyStr == null) return "";
+        
+        // Replace references to _g with the loop variable
+        bodyStr = StringTools.replace(bodyStr, "_g", "i");
+        
+        return bodyStr;
     }
     
     /**

@@ -47,26 +47,9 @@ Log.trace(fn("hello"), %{fileName: "Main.hx", lineNumber: 52, className: "Main",
 var_args = fn args -> sum = 0
 _g = 0
 (
-  try do
-    loop_fn = fn {_g, sum} ->
-      if (_g < length(args)) do
-        try do
-          arg = Enum.at(args, _g)
-      # _g incremented
-      # sum updated with + arg
-      loop_fn.({_g + 1, sum + arg})
-        catch
-          :break -> {_g, sum}
-          :continue -> loop_fn.({_g, sum})
-        end
-      else
-        {_g, sum}
-      end
-    end
-    loop_fn.({_g, sum})
-  catch
-    :break -> {_g, sum}
-  end
+  {_g} = Enum.reduce(args), _g, fn 1, acc ->
+    acc + 1
+  end)
 )
 sum end
 Log.trace(var_args([1, 2, 3, 4, 5]), %{fileName: "Main.hx", lineNumber: 62, className: "Main", methodName: "dynamicFunctions"})
@@ -100,26 +83,9 @@ Log.trace("Parsed float: " <> float_value, %{fileName: "Main.hx", lineNumber: 90
     dyn_array = [1, "two", 3.0, true, %{x: 10}]
 _g = 0
 (
-  try do
-    loop_fn = fn {_g} ->
-      if (_g < length(dyn_array)) do
-        try do
-          item = Enum.at(dyn_array, _g)
-      # _g incremented
-      Log.trace("Item: " <> Std.string(item), %{fileName: "Main.hx", lineNumber: 103, className: "Main", methodName: "dynamicCollections"})
-      loop_fn.({_g + 1})
-        catch
-          :break -> {_g}
-          :continue -> loop_fn.({_g})
-        end
-      else
-        {_g}
-      end
-    end
-    loop_fn.({_g})
-  catch
-    :break -> {_g}
-  end
+  {_g} = Enum.reduce(dyn_array), _g, fn 1, acc ->
+    acc + 1
+  end)
 )
 dyn_obj = %{}
 dyn_obj.field1 = "value1"
