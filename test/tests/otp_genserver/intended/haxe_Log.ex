@@ -21,7 +21,7 @@ pstr = arg1.file_name <> ":" <> arg1.line_number
 if (arg1.custom_params != nil) do
   _g = 0
   _g1 = arg1.custom_params
-  Enum.count(_g1, fn str ->  end)
+  Enum.map(_g1, fn str -> str end)
 end
 pstr <> ": " <> str
   end

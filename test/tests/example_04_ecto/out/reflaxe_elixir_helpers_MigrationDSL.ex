@@ -81,7 +81,20 @@ if (meta.params != nil && length(meta.params) > 0) do
       _g2 = # TODO: Implement expression type: TEnumParameter
   fields = _g2
   _g3 = 0
-  Enum.count(fields, fn item ->  end)
+  Enum.map(fields, fn item -> if (field.field == "table"), do: _g4 = field.expr.expr
+  if (# TODO: Implement expression type: TEnumIndex == 0) do
+    _g5 = # TODO: Implement expression type: TEnumParameter
+    if (# TODO: Implement expression type: TEnumIndex == 2) do
+      _g1 = # TODO: Implement expression type: TEnumParameter
+      _g6 = # TODO: Implement expression type: TEnumParameter
+      s = _g1
+      table_name = s
+    else
+      nil
+    end
+  else
+    nil
+  end, else: item end)
     _ ->
       table_name = MigrationDSL.extractTableNameFromClassName(arg0.name)
   end
@@ -114,7 +127,7 @@ MigrationDSL.camelCaseToSnakeCase(table_name)
   def compile_table_creation(arg0, arg1) do
     column_defs = Array.new()
 _g = 0
-Enum.count(arg1, fn tempString ->  end)
+Enum.map(arg1, fn tempString -> tempString end)
 "create table(:" <> arg0 <> ") do\n" <> Enum.join(column_defs, "\n") <> "\n" <> "      timestamps()\n" <> "    end"
   end
 
@@ -136,7 +149,7 @@ Enum.count(arg1, fn tempString ->  end)
 (_g = []
 _g1 = 0
 _g2 = arg1
-Enum.count(_g2, fn item ->  end)
+Enum.map(_g2, fn item -> item end)
 temp_array = _g)
 field_list = Enum.join(temp_array, ", ")
 if (case :binary.match(arg2, "unique") do {pos, _} -> pos; :nomatch -> -1 end != -1), do: "create unique_index(:" <> arg0 <> ", [" <> field_list <> "])", else: "create index(:" <> arg0 <> ", [" <> field_list <> "])"
@@ -258,7 +271,7 @@ safe_name = MigrationDSL.sanitizeIdentifier(arg1)
   def compile_batch_migrations(arg0) do
     compiled_migrations = Array.new()
 _g = 0
-Enum.count(arg0, fn item ->  end)
+Enum.map(arg0, fn item -> item end)
 Enum.join(compiled_migrations, "\n\n")
   end
 
@@ -307,18 +320,18 @@ constraint_defs = builder.getConstraintDefinitions()
 result = "create table(:" <> arg0 <> ") do\n"
 if (!builder.has_id_column), do: result = result <> "      add :id, :serial, primary_key: true\n", else: nil
 _g = 0
-Enum.count(column_defs, fn result ->  end)
+Enum.map(column_defs, fn result -> result end)
 if (!builder.has_timestamps), do: result = result <> "      timestamps()\n", else: nil
 result = result <> "    end"
 if (length(index_defs) > 0) do
   result = result <> "\n\n"
   _g = 0
-  Enum.count(index_defs, fn result ->  end)
+  Enum.map(index_defs, fn result -> result end)
 end
 if (length(constraint_defs) > 0) do
   result = result <> "\n\n"
   _g = 0
-  Enum.count(constraint_defs, fn result ->  end)
+  Enum.map(constraint_defs, fn result -> result end)
 end
 result
   end
@@ -343,7 +356,7 @@ if (arg3 != nil) do
   opts = []
   fields = Reflect.fields(arg3)
   _g = 0
-  Enum.count(fields, fn item ->  end)
+  Enum.map(fields, fn item -> if (Std.isOfType(value, String)), do: opts ++ ["" <> field <> ": \"" <> value <> "\""], else: if (Std.isOfType(value, Bool)), do: opts ++ ["" <> field <> ": " <> value], else: opts ++ ["" <> field <> ": " <> value] end)
   if (length(opts) > 0), do: options_str = ", " <> Enum.join(opts, ", "), else: nil
 end
 "alter table(:" <> arg0 <> ") do\n      add :" <> arg1 <> ", :" <> arg2 <> options_str <> "\n    end"
@@ -359,7 +372,7 @@ end
 (_g = []
 _g1 = 0
 _g2 = arg1
-Enum.count(_g2, fn item ->  end)
+Enum.map(_g2, fn item -> item end)
 temp_array = _g)
 column_list = Enum.join(temp_array, ", ")
 if (arg2 != nil && Reflect.hasField(arg2, "unique") && Reflect.field(arg2, "unique") == true), do: "create unique_index(:" <> arg0 <> ", [" <> column_list <> "])", else: "create index(:" <> arg0 <> ", [" <> column_list <> "])"
@@ -410,7 +423,7 @@ if (arg2 != nil) do
   opts = []
   fields = Reflect.fields(arg2)
   _g = 0
-  Enum.count(fields, fn item ->  end)
+  Enum.map(fields, fn item -> if (Std.isOfType(value, String)), do: opts ++ ["" <> opt_name <> ": \"" <> value <> "\""], else: if (Std.isOfType(value, Bool)), do: opts ++ ["" <> opt_name <> ": " <> value], else: opts ++ ["" <> opt_name <> ": " <> value] end)
   if (length(opts) > 0), do: options_str = ", " <> Enum.join(opts, ", "), else: nil
 end
 __MODULE__.columns ++ ["add :" <> arg0 <> ", :" <> arg1 <> options_str]
@@ -426,7 +439,7 @@ __MODULE__
 (_g = []
 _g1 = 0
 _g2 = arg0
-Enum.count(_g2, fn item ->  end)
+Enum.map(_g2, fn item -> item end)
 temp_array = _g)
 column_list = Enum.join(temp_array, ", ")
 if (arg1 != nil && Reflect.hasField(arg1, "unique") && Reflect.field(arg1, "unique") == true), do: __MODULE__.indexes ++ ["create unique_index(:" <> __MODULE__.table_name <> ", [" <> column_list <> "])"], else: __MODULE__.indexes ++ ["create index(:" <> __MODULE__.table_name <> ", [" <> column_list <> "])"]
@@ -442,7 +455,8 @@ __MODULE__
 found = false
 _g = 0
 _g1 = __MODULE__.columns
-Enum.count(_g1, fn found ->  end)
+Enum.map(_g1, fn found -> if (case :binary.match(column, ":" <> arg0 <> ",") do {pos, _} -> pos; :nomatch -> -1 end != -1), do: new_columns ++ ["add :" <> arg0 <> ", references(:" <> arg1 <> ", column: :" <> arg2 <> ")"]
+found = true, else: new_columns ++ [column] end)
 if (!found), do: new_columns ++ ["add :" <> arg0 <> ", references(:" <> arg1 <> ", column: :" <> arg2 <> ")"], else: nil
 __MODULE__.columns = new_columns
 __MODULE__

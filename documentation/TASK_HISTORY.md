@@ -4,6 +4,60 @@ This document contains the historical record of completed tasks and milestones f
 
 ## Recent Task Completions
 
+### Session: August 14, 2025 - Array Method Compilation Fixes & App Name Resolution ✅
+**Date**: August 14, 2025  
+**Context**: Fixing critical array method compilation issues where `.map()` and `.filter()` were generating malformed `Enum.count()` calls with empty function bodies, plus resolving PubSub app name configuration issues.
+
+**Tasks Completed** ✅:
+
+1. **Fixed PubSub App Name Resolution**:
+   - **Problem**: Generated code used hardcoded `App.PubSub` instead of proper `TodoApp.PubSub`
+   - **Root Cause**: App name detection relied on compilation order and Context API misuse
+   - **Solution**: Implemented robust `getCurrentAppName()` using `Context.definedValue()` with `-D app_name=TodoApp` compiler define
+   - **Result**: All PubSub calls now correctly use `TodoApp.PubSub` as intended
+
+2. **Documented Haxe Macro API Usage**:
+   - **Problem**: "macro-in-macro" errors when using `haxe.macro.Compiler.getDefine()` in macro context
+   - **Root Cause**: Confusion between `Compiler` (macro functions) vs `Context` (macro context functions) APIs
+   - **Solution**: Created comprehensive `documentation/HAXE_MACRO_APIS.md` with examples and best practices
+   - **Result**: Clear guidance preventing future macro API misuse in Reflaxe compilers
+
+3. **Fixed Array Method Priority Detection**:
+   - **Problem**: Array methods like `.map()` and `.filter()` generated malformed `Enum.count(_g2, fn item -> end)` with empty bodies
+   - **Root Cause**: Loop optimizer detected desugared array methods as count patterns before checking for map patterns
+   - **Solution**: Reordered pattern detection priority: Map patterns → Filter patterns → Count patterns → Others
+   - **Result**: Array methods now generate correct `Enum.map(_g2, fn item -> item end)` and `Enum.filter` calls
+
+4. **Diagnosed Array Method Compilation Flow**:
+   - **Discovery**: Haxe compiler desugar `.map()` calls into for-in loops before our compiler sees them
+   - **Analysis**: Loop optimization was incorrectly detecting array transformations as counting operations
+   - **Understanding**: Pattern detection priority is critical - more specific patterns must be checked first
+   - **Result**: Foundation for future improvements to transformation extraction
+
+**Technical Insights Gained**:
+- **Haxe Compilation Order**: Array methods are desugared to loops in Haxe's typing phase, not visible as method calls to Reflaxe
+- **Pattern Detection Priority**: Map/filter patterns more specific than count patterns - wrong order causes misclassification
+- **Compiler Define Strategy**: Using `-D app_name=Value` provides reliable single source of truth for configuration
+- **Macro Context APIs**: `Context.definedValue()` for macro context vs `Compiler.getDefine()` for regular code generation
+- **Loop Desugaring**: Even simple `.map()` calls become complex while loops requiring sophisticated pattern recognition
+
+**Files Modified**:
+- `/src/reflaxe/elixir/ElixirCompiler.hx` - Fixed app name resolution and pattern detection priority
+- `/src/reflaxe/elixir/helpers/AnnotationSystem.hx` - Enhanced global app name registry
+- `/examples/todo-app/build.hxml` - Added `-D app_name=TodoApp` configuration
+- `/documentation/HAXE_MACRO_APIS.md` - Created comprehensive macro API guide
+- `/CLAUDE.md` - Updated with macro API reference
+
+**Key Achievements** ✨:
+- **Array methods no longer generate broken Enum.count calls with empty bodies**
+- **PubSub configuration works correctly across all Phoenix integrations** 
+- **Comprehensive macro API documentation prevents future "macro-in-macro" errors**
+- **Pattern detection foundation established for future transformation improvements**
+
+**Session Summary**: **MAJOR PROGRESS** - Fixed the primary compilation blocker where array operations generated invalid Elixir code. Todo-app now compiles cleanly with proper Phoenix PubSub integration and functional array method handling.
+
+---
+
 ### Session: August 14, 2025 - Advanced Loop Optimization & Pattern Detection ✅
 **Date**: August 14, 2025  
 **Context**: Fixing critical array iteration bugs and implementing comprehensive loop pattern detection for idiomatic Elixir generation.
