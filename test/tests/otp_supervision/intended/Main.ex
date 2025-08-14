@@ -125,11 +125,7 @@ linked_result = Task.start_link(fn  -> Log.trace("Linked task running", %{fileNa
 tasks = [Task.async(fn  -> 1 end), Task.async(fn  -> 2 end), Task.async(fn  -> 3 end)]
 results = Task.yield_many(tasks)
 _g = 0
-(
-  {_g} = Enum.reduce(results), _g, fn 1, acc ->
-    acc + 1
-  end)
-)
+Enum.count(results, fn item ->  end)
 temp_var = nil
 task2 = Task.async(fn  -> "quick" end)
 temp_var = Task.await(task2)
@@ -139,54 +135,12 @@ funs = [fn  -> "a" end, fn  -> "b" end, fn  -> "c" end]
 temp_array1 = nil
 _g = []
 _g1 = 0
-(
-  try do
-    loop_fn = fn {_g1} ->
-      if (_g1 < length(funs)) do
-        try do
-          fun = Enum.at(funs, _g1)
-      # _g1 incremented
-      _g ++ [Task.async(fun)]
-      loop_fn.({_g1 + 1})
-        catch
-          :break -> {_g1}
-          :continue -> loop_fn.({_g1})
-        end
-      else
-        {_g1}
-      end
-    end
-    loop_fn.({_g1})
-  catch
-    :break -> {_g1}
-  end
-)
+Enum.count(funs, fn item ->  end)
 temp_array1 = _g
 tasks2 = temp_array1
 _g = []
 _g1 = 0
-(
-  try do
-    loop_fn = fn {_g1} ->
-      if (_g1 < length(tasks2)) do
-        try do
-          task2 = Enum.at(tasks2, _g1)
-      # _g1 incremented
-      _g ++ [Task.await(task2)]
-      loop_fn.({_g1 + 1})
-        catch
-          :break -> {_g1}
-          :continue -> loop_fn.({_g1})
-        end
-      else
-        {_g1}
-      end
-    end
-    loop_fn.({_g1})
-  catch
-    :break -> {_g1}
-  end
-)
+Enum.count(tasks2, fn item ->  end)
 temp_array = _g
 concurrent_results = temp_array
 temp_maybe_maybe_string = nil
@@ -231,54 +185,12 @@ if (supervisor_result._0 == "ok") do
   temp_array1 = nil
   _g = []
   _g1 = 0
-  (
-    try do
-      loop_fn = fn {_g1} ->
-        if (_g1 < length(funs)) do
-          try do
-            fun = Enum.at(funs, _g1)
-        # _g1 incremented
-        _g ++ [Task.Supervisor.async(supervisor2, fun)]
-        loop_fn.({_g1 + 1})
-          catch
-            :break -> {_g1}
-            :continue -> loop_fn.({_g1})
-          end
-        else
-          {_g1}
-        end
-      end
-      loop_fn.({_g1})
-    catch
-      :break -> {_g1}
-    end
-  )
+  Enum.count(funs, fn item ->  end)
   temp_array1 = _g
   tasks = temp_array1
   _g = []
   _g1 = 0
-  (
-    try do
-      loop_fn = fn {_g1} ->
-        if (_g1 < length(tasks)) do
-          try do
-            task2 = Enum.at(tasks, _g1)
-        # _g1 incremented
-        _g ++ [Task.await(task2)]
-        loop_fn.({_g1 + 1})
-          catch
-            :break -> {_g1}
-            :continue -> loop_fn.({_g1})
-          end
-        else
-          {_g1}
-        end
-      end
-      loop_fn.({_g1})
-    catch
-      :break -> {_g1}
-    end
-  )
+  Enum.count(tasks, fn item ->  end)
   temp_array = _g
   concurrent_results = temp_array
   Task.Supervisor.start_child(supervisor, fn  -> Log.trace("Background supervised task", %{fileName: "Main.hx", lineNumber: 197, className: "Main", methodName: "testTaskSupervisor"}) end)
@@ -347,11 +259,7 @@ if (result._0 == "ok") do
   Log.trace("Supervisor - Workers: " <> stats.workers <> ", Supervisors: " <> stats.supervisors, %{fileName: "Main.hx", lineNumber: 225, className: "Main", methodName: "testSupervisionTree"})
   children_list = Supervisor.which_children(supervisor)
   _g = 0
-  (
-    {_g} = Enum.reduce(children_list), _g, fn 1, acc ->
-      acc + 1
-    end)
-  )
+  Enum.count(children_list, fn item ->  end)
   Supervisor.restart_child(supervisor, "worker1")
   Supervisor.stop(supervisor, "normal")
 end

@@ -46,11 +46,7 @@ fn = fn s -> String.upcase(s) end
 Log.trace(fn("hello"), %{fileName: "Main.hx", lineNumber: 52, className: "Main", methodName: "dynamicFunctions"})
 var_args = fn args -> sum = 0
 _g = 0
-(
-  {_g} = Enum.reduce(args), _g, fn 1, acc ->
-    acc + 1
-  end)
-)
+Enum.count(args, fn sum ->  end)
 sum end
 Log.trace(var_args([1, 2, 3, 4, 5]), %{fileName: "Main.hx", lineNumber: 62, className: "Main", methodName: "dynamicFunctions"})
   end
@@ -82,11 +78,7 @@ Log.trace("Parsed float: " <> float_value, %{fileName: "Main.hx", lineNumber: 90
   def dynamic_collections() do
     dyn_array = [1, "two", 3.0, true, %{x: 10}]
 _g = 0
-(
-  {_g} = Enum.reduce(dyn_array), _g, fn 1, acc ->
-    acc + 1
-  end)
-)
+Enum.count(dyn_array, fn item ->  end)
 dyn_obj = %{}
 dyn_obj.field1 = "value1"
 dyn_obj.field2 = 42

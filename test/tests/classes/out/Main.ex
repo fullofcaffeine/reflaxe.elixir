@@ -164,11 +164,7 @@ defmodule Container do
     result = Container.new()
 _g = 0
 _g1 = __MODULE__.items
-(
-  {_g} = Enum.reduce(_g1), _g, fn 1, acc ->
-    acc + 1
-  end)
-)
+Enum.count(_g1, fn item ->  end)
 result
   end
 

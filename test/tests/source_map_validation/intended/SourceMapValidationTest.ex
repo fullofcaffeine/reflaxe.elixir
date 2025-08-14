@@ -29,11 +29,7 @@ Log.trace("Loop iteration: " <> 3, %{fileName: "SourceMapValidationTest.hx", lin
 Log.trace("Loop iteration: " <> 4, %{fileName: "SourceMapValidationTest.hx", lineNumber: 31, className: "SourceMapValidationTest", methodName: "main"})
 array = [1, 2, 3, 4, 5]
 _g = 0
-(
-  {_g} = Enum.reduce(array), _g, fn 1, acc ->
-    acc + 1
-  end)
-)
+Enum.count(array, fn item ->  end)
 obj_value = nil
 obj_nested_field = nil
 obj_name = nil
