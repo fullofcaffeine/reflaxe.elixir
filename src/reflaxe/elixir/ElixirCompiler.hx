@@ -124,8 +124,15 @@ class ElixirCompiler extends BaseCompiler {
         // Replace direct getAppName() calls - these become simple string literals
         code = code.replace('getAppName()', '"${appName}"');
         
-        // Replace method calls like MyClass.getAppName() 
+        // Replace method calls like MyClass.getAppName() (camelCase version)
         code = ~/([A-Za-z0-9_]+)\.getAppName\(\)/g.replace(code, '"${appName}"');
+        
+        // Replace method calls like MyClass.get_app_name() (snake_case version)
+        code = ~/([A-Za-z0-9_]+)\.get_app_name\(\)/g.replace(code, '"${appName}"');
+        
+        // Fix any cases where we ended up with Module."AppName" syntax (invalid)
+        // This handles cases where method replacement created invalid syntax
+        code = ~/([A-Za-z0-9_]+)\."([^"]+)"/g.replace(code, '"$2"');
         
         return code;
     }

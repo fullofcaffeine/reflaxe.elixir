@@ -151,6 +151,25 @@ This document provides the current status of all major features in Reflaxe.Elixi
 - **Documentation**: @typedoc generation from Haxe documentation comments
 - **Test Coverage**: Comprehensive snapshot test demonstrating all typedef patterns
 
+### 16. @:native Method Annotation Support
+- **Status**: Production Ready ✨ NEW
+- **Full Module Path Support**: Proper handling of @:native annotations with complete module paths
+- **Compilation Fix**: Resolved double module name issues (e.g., "Supervisor.Supervisor.start_link" → "Supervisor.start_link")
+- **Extern Integration**: Seamless compilation of all extern method calls with @:native annotations
+- **Standard Library**: All standard library externs now compile correctly with proper method mapping
+- **Type Safety**: Maintains compile-time type checking while ensuring correct runtime method calls
+- **Universal Fix**: Affects all extern method calls throughout the system for improved reliability
+
+### 17. Configurable Application Names (@:appName)
+- **Status**: Production Ready ✨ NEW
+- **Dynamic Module Names**: Use @:appName("MyApp") to configure app-specific module references
+- **Phoenix Integration**: Automatic PubSub, Supervisor, Endpoint, and Telemetry module naming
+- **String Interpolation**: Support for `${appName}` patterns in supervision trees and child specs
+- **Framework Compatibility**: Works with any Phoenix application naming convention
+- **Reusable Code**: Write once, deploy with different app names across projects
+- **Zero Hardcoding**: Eliminates hardcoded "TodoApp" references in generated code
+- **Universal Compatibility**: @:appName annotation works with all other annotation types
+
 ## 🚧 In Development
 
 ### Advanced Router Features
