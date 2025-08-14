@@ -291,8 +291,8 @@ Examples:
 			}
 			
 			// Compare file contents
-			final intendedContent = normalizeContent(sys.io.File.getContent(intendedPath));
-			final actualContent = normalizeContent(sys.io.File.getContent(actualPath));
+			final intendedContent = normalizeContent(sys.io.File.getContent(intendedPath), file);
+			final actualContent = normalizeContent(sys.io.File.getContent(actualPath), file);
 			
 			if (intendedContent != actualContent) {
 				differences.push('Content differs: $file');
@@ -334,9 +334,38 @@ Examples:
 		return files;
 	}
 	
-	static function normalizeContent(content: String): String {
+	static function normalizeContent(content: String, fileName: String = ""): String {
 		// Normalize line endings and trim whitespace
-		return StringTools.trim(StringTools.replace(content, "\r\n", "\n"));
+		var normalized = StringTools.trim(StringTools.replace(content, "\r\n", "\n"));
+		
+		// Special handling for _GeneratedFiles.json - ignore the id field which increments on each build
+		if (fileName == "_GeneratedFiles.json") {
+			if (ShowAllOutput) {
+				Sys.println('    [DEBUG] Processing _GeneratedFiles.json - removing id field');
+			}
+			// Parse as JSON and remove the id field for comparison
+			try {
+				var lines = normalized.split("\n");
+				var filteredLines = [];
+				var idRegex = ~/^\s*"id"\s*:\s*\d+,?$/;
+				for (line in lines) {
+					// Skip the id line (with or without trailing comma)
+					if (!idRegex.match(line)) {
+						filteredLines.push(line);
+					} else if (ShowAllOutput) {
+						Sys.println('    [DEBUG] Skipping id line: $line');
+					}
+				}
+				normalized = filteredLines.join("\n");
+			} catch (e: Dynamic) {
+				// If parsing fails, use original normalized content
+				if (ShowAllOutput) {
+					Sys.println('    [DEBUG] Failed to process _GeneratedFiles.json: $e');
+				}
+			}
+		}
+		
+		return normalized;
 	}
 	
 	static function showDiff(file: String, intended: String, actual: String) {
