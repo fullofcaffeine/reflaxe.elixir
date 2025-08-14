@@ -180,6 +180,17 @@ This is acceptable - helpers are simpler for our needs while following similar s
 
 **See**: [`documentation/ROUTER_DSL.md`](documentation/ROUTER_DSL.md) - Complete syntax guide and migration from manual functions
 
+## Phoenix Framework Integration ⚡ **NEW**
+
+**Comprehensive Phoenix Framework support with type-safe extern definitions**:
+- ✅ **Channel extern definitions** - Complete Phoenix.Channel API with broadcast, push, reply functions
+- ✅ **@:channel annotation** - Compiles Haxe classes to Phoenix Channel modules with proper callbacks  
+- ✅ **Presence, Token, Endpoint** - Full extern definitions for real-time features
+- ✅ **Type-safe message payloads** - Structured types for channel communication
+- ✅ **Callback generation** - Automatic join, handle_in, handle_out, handle_info implementations
+
+**Pattern**: All Phoenix features use **Extern + Compiler Helper** architecture for optimal type safety and code generation.
+
 ## Phoenix LiveView Asset Pipeline Rules ⚡
 
 ### CRITICAL: JavaScript Bundle Optimization
@@ -244,6 +255,8 @@ This is acceptable - helpers are simpler for our needs while following similar s
 ## Quality Standards
 - Zero compilation warnings, Reflaxe snapshot testing approach, Performance targets: <15ms compilation, <150KB JS bundles
 - **Date Rule**: Always run `date` command before writing timestamps - never assume dates
+- **CRITICAL: Idiomatic Elixir Code Generation** - The compiler MUST generate idiomatic, high-quality Elixir code that follows BEAM functional programming patterns, not just syntactically correct code
+- **Architecture Validation Rule** - Occasionally reference the Reflaxe source code and reference implementations in `/Users/fullofcaffeine/workspace/code/haxe.elixir.reference/` to ensure our architecture follows established Reflaxe patterns and isn't diverging too far from proven approaches
 
 ## Development Principles
 
@@ -449,7 +462,6 @@ What happens:
 4. **The TypeTools.iter error** = wrong test configuration, not API incompatibility
 
 ## Known Issues
-- **While loops**: Currently generates recursive functions - functional but could be more idiomatic (use Enum.reduce/each patterns)
 - **App name is hardcoded** - "TodoApp.PubSub" should be configurable via metadata or build config
 - **Compiler Architecture**: ElixirCompiler extends BaseCompiler instead of DirectToStringCompiler
   - Causes StdTypes.ex generation bugs (typedefs outside modules) - FIXED by returning null
@@ -462,6 +474,12 @@ What happens:
 - **Integration Tests**: Require mock/stub system for TypedExpr structures
 
 ## Recently Fixed Issues ✅ (2025-08-14)
+- **While/do-while loops** now generate idiomatic tail-recursive functions with proper state tuples and break/continue support using throw/catch pattern
+- **For-in loops** now optimize to `Enum.reduce()` with proper range syntax (`start..end`) for simple accumulation patterns
+- **Loop code generation** follows functional programming principles instead of generating invalid variable reassignments
+- **Standard library cleanup** prevents generation of empty Haxe built-in type modules (Array, String, etc.)
+- **Phoenix Framework support** with comprehensive extern definitions for Channel, Presence, Token, Endpoint modules
+- **@:channel annotation** support for compiling Phoenix Channel classes with proper callback generation
 - **Mutable operations** (`+=`, `-=`, `*=`, `%=`) now correctly compile to reassignment (`x = x + 5`)
 - **Increment/decrement operators** (`++`, `--`) now properly generate variable reassignment
 - **Variable reassignment** properly handled in immutable Elixir context

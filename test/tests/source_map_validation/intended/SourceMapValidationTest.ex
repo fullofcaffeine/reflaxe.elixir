@@ -30,26 +30,9 @@ Log.trace("Loop iteration: " <> 4, %{fileName: "SourceMapValidationTest.hx", lin
 array = [1, 2, 3, 4, 5]
 _g = 0
 (
-  try do
-    loop_fn = fn {_g} ->
-      if (_g < length(array)) do
-        try do
-          item = Enum.at(array, _g)
-      # _g incremented
-      SourceMapValidationTest.processItem(item)
-      loop_fn.({_g + 1})
-        catch
-          :break -> {_g}
-          :continue -> loop_fn.({_g})
-        end
-      else
-        {_g}
-      end
-    end
-    loop_fn.({_g})
-  catch
-    :break -> {_g}
-  end
+  {_g} = Enum.reduce(array), _g, fn 1, acc ->
+    acc + 1
+  end)
 )
 obj_value = nil
 obj_nested_field = nil
