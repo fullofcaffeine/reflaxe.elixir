@@ -2496,14 +2496,139 @@ class ElixirCompiler extends DirectToStringCompiler {
             // Use TVar-based substitution for more accurate variable matching
             transformation = extractTransformationFromBodyWithTVar(ebody, lambdaParam, targetVar);
         } else {
-            // Fallback to string-based approach
-            var sourceVar = findLoopVariable(ebody);
-            transformation = extractTransformationFromBody(ebody, sourceVar, targetVar);
+            // Alternative approach: Find the first TLocal variable in the transformation
+            var loopTVar = findFirstTLocalInExpression(ebody);
+            if (loopTVar != null) {
+                transformation = extractTransformationFromBodyWithTVar(ebody, loopTVar, targetVar);
+            } else {
+                // Last resort: fallback to string-based approach
+                var sourceVar = findLoopVariable(ebody);
+                transformation = extractTransformationFromBody(ebody, sourceVar, targetVar);
+            }
         }
         
         return 'Enum.map(${arrayExpr}, fn ${targetVar} -> ${transformation} end)';
     }
     
+    /**
+     * Find the loop variable by looking for patterns like "v.field" where v is the loop variable
+     */
+    private function findFirstTLocalInExpression(expr: TypedExpr): Null<TVar> {
+        // Look for TField patterns first (like v.id, v.completed) which indicate loop variables
+        var fieldVar = findTLocalFromFieldAccess(expr);
+        if (fieldVar != null) return fieldVar;
+        
+        // Fallback to first TLocal found
+        return findFirstTLocalInExpressionRecursive(expr);
+    }
+
+    /**
+     * Find TLocal from field access patterns (e.g., v.id -> return v)
+     */
+    private function findTLocalFromFieldAccess(expr: TypedExpr): Null<TVar> {
+        switch (expr.expr) {
+            case TField(e, fa):
+                switch (e.expr) {
+                    case TLocal(v):
+                        var varName = getOriginalVarName(v);
+                        if (varName != "_g" && varName != "_g1" && varName != "_g2" && 
+                            !varName.startsWith("temp_") && !varName.startsWith("_this")) {
+                            return v;
+                        }
+                    case _:
+                        // Not a TLocal field access
+                }
+            case TBlock(exprs):
+                for (e in exprs) {
+                    var result = findTLocalFromFieldAccess(e);
+                    if (result != null) return result;
+                }
+            case TBinop(_, e1, e2):
+                var result = findTLocalFromFieldAccess(e1);
+                if (result != null) return result;
+                return findTLocalFromFieldAccess(e2);
+            case TIf(econd, eif, eelse):
+                var result = findTLocalFromFieldAccess(econd);
+                if (result != null) return result;
+                result = findTLocalFromFieldAccess(eif);
+                if (result != null) return result;
+                if (eelse != null) {
+                    result = findTLocalFromFieldAccess(eelse);
+                    if (result != null) return result;
+                }
+            case TCall(e, args):
+                var result = findTLocalFromFieldAccess(e);
+                if (result != null) return result;
+                for (arg in args) {
+                    result = findTLocalFromFieldAccess(arg);
+                    if (result != null) return result;
+                }
+            case TParenthesis(e):
+                return findTLocalFromFieldAccess(e);
+            case _:
+                // Other expression types
+        }
+        return null;
+    }
+
+    /**
+     * Find the first TLocal variable in an expression recursively
+     */
+    private function findFirstTLocalInExpressionRecursive(expr: TypedExpr): Null<TVar> {
+        switch (expr.expr) {
+            case TLocal(v):
+                // Skip compiler-generated variables
+                var varName = getOriginalVarName(v);
+                if (varName != "_g" && varName != "_g1" && varName != "_g2" && 
+                    !varName.startsWith("temp_") && !varName.startsWith("_this")) {
+                    return v;
+                }
+            case TBlock(exprs):
+                // Look through block expressions
+                for (e in exprs) {
+                    var result = findFirstTLocalInExpressionRecursive(e);
+                    if (result != null) return result;
+                }
+            case TBinop(_, e1, e2):
+                // Check both operands
+                var result = findFirstTLocalInExpressionRecursive(e1);
+                if (result != null) return result;
+                return findFirstTLocalInExpressionRecursive(e2);
+            case TField(e, fa):
+                // Look in the base expression (e.g., for "v.id", check "v")
+                return findFirstTLocalInExpressionRecursive(e);
+            case TCall(e, args):
+                // Check function and arguments
+                var result = findFirstTLocalInExpressionRecursive(e);
+                if (result != null) return result;
+                for (arg in args) {
+                    result = findFirstTLocalInExpressionRecursive(arg);
+                    if (result != null) return result;
+                }
+            case TIf(econd, eif, eelse):
+                // Check condition and branches
+                var result = findFirstTLocalInExpressionRecursive(econd);
+                if (result != null) return result;
+                result = findFirstTLocalInExpressionRecursive(eif);
+                if (result != null) return result;
+                if (eelse != null) {
+                    result = findFirstTLocalInExpressionRecursive(eelse);
+                    if (result != null) return result;
+                }
+            case TArray(e1, e2):
+                // Check array and index
+                var result = findFirstTLocalInExpressionRecursive(e1);
+                if (result != null) return result;
+                return findFirstTLocalInExpressionRecursive(e2);
+            case TParenthesis(e):
+                // Look inside parentheses
+                return findFirstTLocalInExpressionRecursive(e);
+            case _:
+                // Other expression types don't contain variables
+        }
+        return null;
+    }
+
     /**
      * Extract transformation logic from mapping body (TVar-based version)
      */
@@ -2753,6 +2878,12 @@ class ElixirCompiler extends DirectToStringCompiler {
                 // Replace the source variable with target
                 return targetVarName;
             case TBinop(op, e1, e2):
+                // Handle assignment operations specially - we want the right-hand side value, not the assignment
+                if (op == OpAssign) {
+                    // For assignments in ternary contexts, return just the right-hand side value
+                    return compileExpressionWithTVarSubstitution(e2, sourceTVar, targetVarName);
+                }
+                
                 // Recursively substitute in binary operations with type awareness
                 if (op == OpAdd) {
                     // Check if this is string concatenation
@@ -2825,6 +2956,12 @@ class ElixirCompiler extends DirectToStringCompiler {
                 // Replace the source variable with target
                 return targetVar;
             case TBinop(op, e1, e2):
+                // Handle assignment operations specially - we want the right-hand side value, not the assignment
+                if (op == OpAssign) {
+                    // For assignments in ternary contexts, return just the right-hand side value
+                    return compileExpressionWithSubstitution(e2, sourceVar, targetVar);
+                }
+                
                 // Recursively substitute in binary operations with type awareness
                 if (op == OpAdd) {
                     // Check if this is string concatenation
