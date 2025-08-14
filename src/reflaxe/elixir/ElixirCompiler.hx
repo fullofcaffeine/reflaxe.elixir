@@ -1000,17 +1000,25 @@ class ElixirCompiler extends DirectToStringCompiler {
                 switch (op) {
                     case OpAdd:
                         // Check if this is string concatenation
-                        var isStringConcat = switch (e1.t) {
-                            case TInst(t, _) if (t.get().name == "String"): true;
-                            case _: switch (e2.t) {
-                                case TInst(t, _) if (t.get().name == "String"): true;
-                                case _: false;
-                            }
-                        };
+                        var e1IsString = isStringType(e1.t);
+                        var e2IsString = isStringType(e2.t);
+                        var isStringConcat = e1IsString || e2IsString;
                         
                         if (isStringConcat) {
                             // Use <> for string concatenation in Elixir
-                            compileExpression(e1) + " <> " + compileExpression(e2);
+                            var left = compileExpression(e1);
+                            var right = compileExpression(e2);
+                            
+                            // Convert non-string operands to strings
+                            if (!e1IsString && e2IsString) {
+                                // Left side needs conversion
+                                left = convertToString(e1, left);
+                            } else if (e1IsString && !e2IsString) {
+                                // Right side needs conversion
+                                right = convertToString(e2, right);
+                            }
+                            
+                            '${left} <> ${right}';
                         } else {
                             compileExpression(e1) + " + " + compileExpression(e2);
                         }
@@ -1208,7 +1216,8 @@ class ElixirCompiler extends DirectToStringCompiler {
                 
             case TFunction(func):
                 var args = func.args.map(arg -> NamingHelper.toSnakeCase(arg.v.name)).join(", ");
-                var body = compileExpression(func.expr);
+                // Compile the body with proper type awareness for string concatenation
+                var body = compileExpressionWithTypeAwareness(func.expr);
                 'fn ${args} -> ${body} end';
                 
             case TMeta(metadata, expr):
@@ -1484,6 +1493,94 @@ class ElixirCompiler extends DirectToStringCompiler {
             case TSuper: "super"; // Elixir doesn't have super() - would need delegation
             case _: "nil";
         }
+    }
+    
+    /**
+     * Compile expression with proper type awareness for operators.
+     * This ensures string concatenation uses <> and not +.
+     */
+    private function compileExpressionWithTypeAwareness(expr: TypedExpr): String {
+        if (expr == null) return "nil";
+        
+        // For binary operations, check if we need special handling
+        switch (expr.expr) {
+            case TBinop(OpAdd, e1, e2):
+                // Check if either operand is a string type
+                var e1IsString = isStringType(e1.t);
+                var e2IsString = isStringType(e2.t);
+                var isStringConcat = e1IsString || e2IsString;
+                
+                if (isStringConcat) {
+                    var left = compileExpressionWithTypeAwareness(e1);
+                    var right = compileExpressionWithTypeAwareness(e2);
+                    
+                    // Convert non-string operands to strings
+                    if (!e1IsString && e2IsString) {
+                        left = convertToString(e1, left);
+                    } else if (e1IsString && !e2IsString) {
+                        right = convertToString(e2, right);
+                    }
+                    
+                    return '${left} <> ${right}';
+                } else {
+                    var left = compileExpressionWithTypeAwareness(e1);
+                    var right = compileExpressionWithTypeAwareness(e2);
+                    return '${left} + ${right}';
+                }
+                
+            case TBinop(op, e1, e2):
+                var left = compileExpressionWithTypeAwareness(e1);
+                var right = compileExpressionWithTypeAwareness(e2);
+                return '${left} ${compileBinop(op)} ${right}';
+                
+            case _:
+                // For all other cases, use regular compilation
+                return compileExpression(expr);
+        }
+    }
+    
+    /**
+     * Check if a Type is a string type
+     */
+    private function isStringType(type: Type): Bool {
+        if (type == null) return false;
+        
+        return switch (type) {
+            case TInst(t, _):
+                t.get().name == "String";
+            case TAbstract(t, _):
+                t.get().name == "String";
+            case _:
+                false;
+        };
+    }
+    
+    /**
+     * Convert a non-string expression to a string in Elixir
+     */
+    private function convertToString(expr: TypedExpr, compiledExpr: String): String {
+        // Check the type and use the appropriate conversion function
+        return switch (expr.t) {
+            case TAbstract(t, _):
+                var typeName = t.get().name;
+                switch (typeName) {
+                    case "Int":
+                        'Integer.to_string(${compiledExpr})';
+                    case "Float":
+                        'Float.to_string(${compiledExpr})';
+                    case "Bool":
+                        'Atom.to_string(${compiledExpr})';
+                    case _:
+                        // For other types, use Kernel.inspect for a safe conversion
+                        'Kernel.inspect(${compiledExpr})';
+                }
+            case TInst(t, _):
+                // For class instances, use inspect
+                'Kernel.inspect(${compiledExpr})';
+            case _:
+                // Default: use inspect for safety
+                'Kernel.inspect(${compiledExpr})';
+        };
     }
     
     /**
@@ -2350,7 +2447,29 @@ class ElixirCompiler extends DirectToStringCompiler {
                 // Replace the source variable with target
                 return targetVar;
             case TBinop(op, e1, e2):
-                // Recursively substitute in binary operations
+                // Recursively substitute in binary operations with type awareness
+                if (op == OpAdd) {
+                    // Check if this is string concatenation
+                    var e1IsString = isStringType(e1.t);
+                    var e2IsString = isStringType(e2.t);
+                    var isStringConcat = e1IsString || e2IsString;
+                    
+                    if (isStringConcat) {
+                        var left = compileExpressionWithSubstitution(e1, sourceVar, targetVar);
+                        var right = compileExpressionWithSubstitution(e2, sourceVar, targetVar);
+                        
+                        // Convert non-string operands to strings
+                        if (!e1IsString && e2IsString) {
+                            left = convertToString(e1, left);
+                        } else if (e1IsString && !e2IsString) {
+                            right = convertToString(e2, right);
+                        }
+                        
+                        return '${left} <> ${right}';
+                    }
+                }
+                
+                // For non-string addition or other operators
                 var left = compileExpressionWithSubstitution(e1, sourceVar, targetVar);
                 var right = compileExpressionWithSubstitution(e2, sourceVar, targetVar);
                 return '${left} ${compileBinop(op)} ${right}';
