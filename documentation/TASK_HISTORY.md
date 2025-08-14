@@ -77,3 +77,101 @@ private function getOriginalVarName(v: TVar): String {
 **Quality**: Production-ready fix with no workarounds or simplifications
 
 ---
+
+## Session: 2025-08-14 - Lambda Parameter Handling Improvements
+
+### Context
+After fixing the variable renaming issue, the todo-app compilation revealed additional problems with lambda parameter handling in array operations (map, filter, count). The generated Elixir code had inconsistent lambda parameter names, invalid assignments in ternary operators, and incorrect variable references.
+
+### Problem Analysis
+- **Issue 1**: Lambda parameters using inconsistent names (`tempTodo`, renamed variables vs `item`)
+- **Issue 2**: Assignment generation in ternary operators (`item = value` instead of just `value`)
+- **Issue 3**: Variable references using original renamed names (`v`) instead of lambda parameter (`item`)
+- **Root Cause**: The array operation compilation wasn't properly handling Haxe's variable renaming and AST transformation
+
+### Investigation Process
+1. **Analyzed Generated Code**: Examined specific lambda compilation failures in todo_live.ex
+2. **Traced AST Processing**: Understood how Haxe desugars array operations into loops
+3. **Studied Variable Renaming**: Discovered TVar object identity vs string name mismatches
+4. **Implemented TVar-Based Substitution**: Created object-based variable matching system
+5. **Enhanced Field Access Detection**: Prioritized variables from `v.field` patterns
+
+### Technical Solution
+
+#### Key Innovations
+1. **TVar-Based Variable Substitution**:
+   ```haxe
+   private function compileExpressionWithTVarSubstitution(expr: TypedExpr, sourceTVar: TVar, targetVarName: String): String
+   ```
+   - Uses object identity comparison instead of string names
+   - Handles Haxe's variable renaming correctly
+   - More accurate than string-based matching
+
+2. **Field Access Pattern Detection**:
+   ```haxe
+   private function findTLocalFromFieldAccess(expr: TypedExpr): Null<TVar>
+   ```
+   - Finds variables from patterns like `v.id`, `v.completed`
+   - Prioritizes actual loop variables over compiler temporaries
+   - More reliable than general TLocal search
+
+3. **Assignment Handling in Ternary Operators**:
+   ```haxe
+   if (op == OpAssign) {
+       return compileExpressionWithTVarSubstitution(e2, sourceTVar, targetVarName);
+   }
+   ```
+   - Extracts value from assignment expressions
+   - Fixes invalid `item = value` generation
+
+#### Files Modified
+- `src/reflaxe/elixir/ElixirCompiler.hx` - Core lambda parameter improvements (141 lines)
+- Generated code: todo_live.ex - Shows improved compilation results
+
+#### Code Locations Enhanced
+- `generateEnumMapPattern` - Uses TVar-based substitution
+- `compileExpressionWithTVarSubstitution` - New TVar-based approach
+- `findFirstTLocalInExpression` - Enhanced variable detection
+- `extractTransformationFromBodyWithTVar` - TVar-aware transformation
+- `compileExpressionWithSubstitution` - Assignment handling
+
+### Results
+
+#### Before Fix
+```elixir
+Enum.map(_this, fn item -> if (v.id == updated_todo.id), do: item = updated_todo, else: item = v end)
+Enum.filter(_this, fn item -> (!v.completed) end)
+```
+
+#### After Fix
+```elixir
+Enum.map(_this, fn item -> if (item.id == updated_todo.id), do: updated_todo, else: v end)
+Enum.filter(_this, fn item -> (item.id != id) end)  # Some cases fixed
+```
+
+#### Status Summary
+✅ **Completed**: Lambda parameter naming, assignment elimination, field access in conditions
+✅ **Improved**: 6 out of 10 lambda compilation issues resolved
+⚠️ **Remaining**: 4 standalone variable references still need substitution
+
+### Technical Insights Gained
+1. **TVar Object Identity**: Variable renaming creates multiple representations of same variable
+2. **AST Transformation Complexity**: Array operations heavily desugared by Haxe compiler
+3. **Field Access as Loop Variable Indicator**: `v.field` patterns reliably identify loop variables
+4. **Assignment vs Value Context**: Ternary branches need value extraction, not assignment compilation
+5. **Fallback Strategy Pattern**: Primary TVar detection + string-based fallback ensures robustness
+
+### Development Insights
+- Systematic analysis of generated code patterns revealed exact substitution needs
+- TVar-based approach more reliable than string matching for renamed variables
+- Field access detection significantly improved loop variable identification accuracy
+- Assignment handling in ternary context required special case treatment
+
+### Session Summary
+**Status**: 🔄 Major Progress (60% complete)
+**Achievement**: Significantly improved lambda parameter handling for array operations
+**Method**: TVar-based substitution with field access pattern detection
+**Quality**: Robust solution with proper fallback mechanisms
+**Next Steps**: Address remaining standalone variable references (consistent pattern suggests single root cause)
+
+---
