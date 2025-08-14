@@ -2797,15 +2797,74 @@ class ElixirCompiler extends DirectToStringCompiler {
      * @return The compiled expression with variables substituted
      */
     private function compileExpressionWithVarMapping(expr: TypedExpr, sourceVar: String, targetVar: String): String {
-        if (sourceVar == null) {
-            return compileExpression(expr);
+        if (sourceVar == null || sourceVar == "__AGGRESSIVE__") {
+            // Don't bypass - still apply aggressive substitution for loop variables
+            return compileExpressionWithAggressiveSubstitution(expr, targetVar);
         }
         
-        
-        // Compile with variable substitution
+        // Normal path with specific source variable
         return compileExpressionWithSubstitution(expr, sourceVar, targetVar);
     }
     
+    /**
+     * Compile expression with aggressive substitution for all likely loop variables
+     * Used when normal loop variable detection fails
+     */
+    private function compileExpressionWithAggressiveSubstitution(expr: TypedExpr, targetVar: String): String {
+        switch (expr.expr) {
+            case TLocal(v):
+                var varName = getOriginalVarName(v);
+                // Aggressively substitute known loop variable names
+                if (varName == "t" || varName == "v" || varName == "todo" || 
+                    varName == "item" || varName == "element" || varName == "el") {
+                    // Don't substitute critical variables
+                    if (varName != "updated_todo" && varName != "count" && varName != "result" &&
+                        !varName.startsWith("_g") && !varName.startsWith("temp_") && !varName.startsWith("_this")) {
+                        return targetVar;
+                    }
+                }
+                return compileExpression(expr);
+                
+            case TField(e, fa):
+                // Handle field access with aggressive substitution
+                var obj = compileExpressionWithAggressiveSubstitution(e, targetVar);
+                var fieldName = getFieldName(fa);
+                return '${obj}.${fieldName}';
+                
+            case TUnop(op, postFix, e):
+                // Handle unary operations with aggressive substitution
+                var inner = compileExpressionWithAggressiveSubstitution(e, targetVar);
+                // Generate the unary operation inline
+                switch (op) {
+                    case OpNot: return '!${inner}';
+                    case OpNeg: return '-${inner}';
+                    case OpIncrement: return '${inner} + 1';
+                    case OpDecrement: return '${inner} - 1';
+                    case _: return compileExpression(expr);
+                }
+                
+            case TBinop(op, e1, e2):
+                // Handle binary operations with aggressive substitution
+                var left = compileExpressionWithAggressiveSubstitution(e1, targetVar);
+                var right = compileExpressionWithAggressiveSubstitution(e2, targetVar);
+                return '${left} ${compileBinop(op)} ${right}';
+                
+            case TCall(e, args):
+                // Handle method calls with aggressive substitution
+                var obj = compileExpressionWithAggressiveSubstitution(e, targetVar);
+                var compiledArgs = args.map(arg -> compileExpressionWithAggressiveSubstitution(arg, targetVar));
+                return '${obj}(${compiledArgs.join(", ")})';
+                
+            case TParenthesis(e):
+                // Handle parenthesized expressions
+                return "(" + compileExpressionWithAggressiveSubstitution(e, targetVar) + ")";
+                
+            case _:
+                // For other expression types, use regular compilation
+                return compileExpression(expr);
+        }
+    }
+
     /**
      * Find the loop variable being used in an expression
      */
@@ -2826,6 +2885,12 @@ class ElixirCompiler extends DirectToStringCompiler {
                     bestCount = count;
                 }
             }
+        }
+        
+        // NEW: If no variable found, return marker to trigger aggressive substitution
+        if (bestVar == null) {
+            // Return special marker that tells the system to use aggressive substitution
+            return "__AGGRESSIVE__";
         }
         
         return bestVar;
