@@ -15,6 +15,7 @@ end
 
 
 defmodule User do
+  use Bitwise
   @moduledoc """
   User module generated from Haxe
   """

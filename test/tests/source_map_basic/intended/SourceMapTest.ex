@@ -1,4 +1,5 @@
 defmodule SourceMapTest do
+  use Bitwise
   @moduledoc """
   SourceMapTest module generated from Haxe
   """
@@ -7,12 +8,10 @@ defmodule SourceMapTest do
   @doc "Function main"
   @spec main() :: nil
   def main() do
-    (
-  test = SourceMapTest.new()
-  result = test.simpleMethod()
-  condition = test.conditionalMethod(42)
-  Log.trace("Source mapping test: " + result + " " + Std.string(condition), %{fileName: "SourceMapTest.hx", lineNumber: 23, className: "SourceMapTest", methodName: "main"})
-)
+    test = SourceMapTest.new()
+result = test.simpleMethod()
+condition = test.conditionalMethod(42)
+Log.trace("Source mapping test: " <> result <> " " <> Std.string(condition), %{fileName: "SourceMapTest.hx", lineNumber: 23, className: "SourceMapTest", methodName: "main"})
   end
 
   # Instance functions
@@ -25,7 +24,7 @@ defmodule SourceMapTest do
   @doc "Function conditional_method"
   @spec conditional_method(integer()) :: boolean()
   def conditional_method(arg0) do
-    if (value > 0), do: true, else: false
+    if (arg0 > 0), do: true, else: false
   end
 
 end

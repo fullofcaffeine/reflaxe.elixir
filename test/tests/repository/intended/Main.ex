@@ -1,44 +1,3 @@
-defmodule User do
-  @moduledoc """
-  Ecto schema module generated from Haxe @:schema class
-  Table: users
-  """
-
-  use Ecto.Schema
-  import Ecto.Changeset
-
-  @primary_key {:id, :id, autogenerate: true}
-  @derive {Phoenix.Param, key: :id}
-
-  schema "users" do
-    field :name, :string, null: false
-    field :email, :string, null: false
-    field :age, :integer
-    field :active, :boolean, default: true
-    timestamps()
-    field :updated_at, :string
-  end
-
-  @doc """
-  Changeset function for User schema
-  """
-  def changeset(%User{} = user, attrs \\ %{}) do
-    user
-    |> cast(attrs, changeable_fields())
-    |> validate_required(required_fields())
-  end
-
-  defp changeable_fields do
-    [:name, :email, :age, :active, :updated_at]
-  end
-
-  defp required_fields do
-    [:name, :email]
-  end
-
-end
-
-
 defmodule UserChangeset do
   @moduledoc """
   Generated changeset for DefaultSchema schema
@@ -62,6 +21,7 @@ defmodule UserChangeset do
 end
 
 defmodule Main do
+  use Bitwise
   @moduledoc """
   Main module generated from Haxe
   """
@@ -79,6 +39,7 @@ end
 
 
 defmodule UserRepository do
+  use Bitwise
   @moduledoc """
   UserRepository module generated from Haxe
   """
@@ -97,7 +58,7 @@ defmodule UserRepository do
      "
   @spec get_user(integer()) :: User.t()
   def get_user(arg0) do
-    Repo.get(User, id)
+    Repo.get(User, arg0)
   end
 
   @doc "
@@ -105,7 +66,7 @@ defmodule UserRepository do
      "
   @spec get_user_bang(integer()) :: User.t()
   def get_user_bang(arg0) do
-    Repo.get!(User, id)
+    Repo.get!(User, arg0)
   end
 
   @doc "
@@ -113,10 +74,8 @@ defmodule UserRepository do
      "
   @spec create_user(term()) :: term()
   def create_user(arg0) do
-    (
-  changeset = UserChangeset.changeset(nil, attrs)
-  Repo.insert(changeset)
-)
+    changeset = UserChangeset.changeset(nil, arg0)
+Repo.insert(changeset)
   end
 
   @doc "
@@ -124,10 +83,8 @@ defmodule UserRepository do
      "
   @spec update_user(User.t(), term()) :: term()
   def update_user(arg0, arg1) do
-    (
-  changeset = UserChangeset.changeset(user, attrs)
-  Repo.update(changeset)
-)
+    changeset = UserChangeset.changeset(arg0, arg1)
+Repo.update(changeset)
   end
 
   @doc "
@@ -135,7 +92,7 @@ defmodule UserRepository do
      "
   @spec delete_user(User.t()) :: term()
   def delete_user(arg0) do
-    Repo.delete(user)
+    Repo.delete(arg0)
   end
 
   @doc "
@@ -143,7 +100,7 @@ defmodule UserRepository do
      "
   @spec preload_posts(User.t()) :: User.t()
   def preload_posts(arg0) do
-    Repo.preload(user, ["posts"])
+    Repo.preload(arg0, ["posts"])
   end
 
   @doc "

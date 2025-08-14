@@ -1,4 +1,5 @@
 defmodule NotImplementedException do
+  use Bitwise
   @moduledoc """
   NotImplementedException module generated from Haxe
   

@@ -10,24 +10,24 @@ defmodule Type do
   """
 
   @type t() ::
-    {:t_type, :term(), :term()} |
-    {:t_mono, :term()} |
-    {:t_lazy, :term()} |
-    {:t_inst, :term(), :term()} |
-    {:t_fun, :term(), :term()} |
-    {:t_enum, :term(), :term()} |
-    {:t_dynamic, :term()} |
-    {:t_anonymous, :term()} |
-    {:t_abstract, :term(), :term()}
+    {:t_type, term(), term()} |
+    {:t_mono, term()} |
+    {:t_lazy, term()} |
+    {:t_inst, term(), term()} |
+    {:t_fun, term(), term()} |
+    {:t_enum, term(), term()} |
+    {:t_dynamic, term()} |
+    {:t_anonymous, term()} |
+    {:t_abstract, term(), term()}
 
   @doc """
   Creates t_type enum value with parameters
   
   ## Parameters
-    - `arg0`: :term()
-    - `arg1`: :term()
+    - `arg0`: term()
+    - `arg1`: term()
   """
-  @spec t_type(:term(), :term()) :: {:t_type, :term(), :term()}
+  @spec t_type(term(), term()) :: {:t_type, term(), term()}
   def t_type(arg0, arg1) do
     {:t_type, arg0, arg1}
   end
@@ -36,9 +36,9 @@ defmodule Type do
   Creates t_mono enum value with parameters
   
   ## Parameters
-    - `arg0`: :term()
+    - `arg0`: term()
   """
-  @spec t_mono(:term()) :: {:t_mono, :term()}
+  @spec t_mono(term()) :: {:t_mono, term()}
   def t_mono(arg0) do
     {:t_mono, arg0}
   end
@@ -47,9 +47,9 @@ defmodule Type do
   Creates t_lazy enum value with parameters
   
   ## Parameters
-    - `arg0`: :term()
+    - `arg0`: term()
   """
-  @spec t_lazy(:term()) :: {:t_lazy, :term()}
+  @spec t_lazy(term()) :: {:t_lazy, term()}
   def t_lazy(arg0) do
     {:t_lazy, arg0}
   end
@@ -58,10 +58,10 @@ defmodule Type do
   Creates t_inst enum value with parameters
   
   ## Parameters
-    - `arg0`: :term()
-    - `arg1`: :term()
+    - `arg0`: term()
+    - `arg1`: term()
   """
-  @spec t_inst(:term(), :term()) :: {:t_inst, :term(), :term()}
+  @spec t_inst(term(), term()) :: {:t_inst, term(), term()}
   def t_inst(arg0, arg1) do
     {:t_inst, arg0, arg1}
   end
@@ -70,10 +70,10 @@ defmodule Type do
   Creates t_fun enum value with parameters
   
   ## Parameters
-    - `arg0`: :term()
-    - `arg1`: :term()
+    - `arg0`: term()
+    - `arg1`: term()
   """
-  @spec t_fun(:term(), :term()) :: {:t_fun, :term(), :term()}
+  @spec t_fun(term(), term()) :: {:t_fun, term(), term()}
   def t_fun(arg0, arg1) do
     {:t_fun, arg0, arg1}
   end
@@ -82,10 +82,10 @@ defmodule Type do
   Creates t_enum enum value with parameters
   
   ## Parameters
-    - `arg0`: :term()
-    - `arg1`: :term()
+    - `arg0`: term()
+    - `arg1`: term()
   """
-  @spec t_enum(:term(), :term()) :: {:t_enum, :term(), :term()}
+  @spec t_enum(term(), term()) :: {:t_enum, term(), term()}
   def t_enum(arg0, arg1) do
     {:t_enum, arg0, arg1}
   end
@@ -94,9 +94,9 @@ defmodule Type do
   Creates t_dynamic enum value with parameters
   
   ## Parameters
-    - `arg0`: :term()
+    - `arg0`: term()
   """
-  @spec t_dynamic(:term()) :: {:t_dynamic, :term()}
+  @spec t_dynamic(term()) :: {:t_dynamic, term()}
   def t_dynamic(arg0) do
     {:t_dynamic, arg0}
   end
@@ -105,9 +105,9 @@ defmodule Type do
   Creates t_anonymous enum value with parameters
   
   ## Parameters
-    - `arg0`: :term()
+    - `arg0`: term()
   """
-  @spec t_anonymous(:term()) :: {:t_anonymous, :term()}
+  @spec t_anonymous(term()) :: {:t_anonymous, term()}
   def t_anonymous(arg0) do
     {:t_anonymous, arg0}
   end
@@ -116,10 +116,10 @@ defmodule Type do
   Creates t_abstract enum value with parameters
   
   ## Parameters
-    - `arg0`: :term()
-    - `arg1`: :term()
+    - `arg0`: term()
+    - `arg1`: term()
   """
-  @spec t_abstract(:term(), :term()) :: {:t_abstract, :term(), :term()}
+  @spec t_abstract(term(), term()) :: {:t_abstract, term(), term()}
   def t_abstract(arg0, arg1) do
     {:t_abstract, arg0, arg1}
   end
@@ -171,47 +171,47 @@ defmodule Type do
   def is_t_abstract(_), do: false
 
   @doc "Extracts value from t_type variant, returns {:ok, value} or :error"
-  @spec get_t_type_value(t()) :: {:ok, {:term(), :term()}} | :error
+  @spec get_t_type_value(t()) :: {:ok, {term(), term()}} | :error
   def get_t_type_value({:t_type, arg0, arg1}), do: {:ok, {arg0, arg1}}
   def get_t_type_value(_), do: :error
 
   @doc "Extracts value from t_mono variant, returns {:ok, value} or :error"
-  @spec get_t_mono_value(t()) :: {:ok, :term()} | :error
+  @spec get_t_mono_value(t()) :: {:ok, term()} | :error
   def get_t_mono_value({:t_mono, value}), do: {:ok, value}
   def get_t_mono_value(_), do: :error
 
   @doc "Extracts value from t_lazy variant, returns {:ok, value} or :error"
-  @spec get_t_lazy_value(t()) :: {:ok, :term()} | :error
+  @spec get_t_lazy_value(t()) :: {:ok, term()} | :error
   def get_t_lazy_value({:t_lazy, value}), do: {:ok, value}
   def get_t_lazy_value(_), do: :error
 
   @doc "Extracts value from t_inst variant, returns {:ok, value} or :error"
-  @spec get_t_inst_value(t()) :: {:ok, {:term(), :term()}} | :error
+  @spec get_t_inst_value(t()) :: {:ok, {term(), term()}} | :error
   def get_t_inst_value({:t_inst, arg0, arg1}), do: {:ok, {arg0, arg1}}
   def get_t_inst_value(_), do: :error
 
   @doc "Extracts value from t_fun variant, returns {:ok, value} or :error"
-  @spec get_t_fun_value(t()) :: {:ok, {:term(), :term()}} | :error
+  @spec get_t_fun_value(t()) :: {:ok, {term(), term()}} | :error
   def get_t_fun_value({:t_fun, arg0, arg1}), do: {:ok, {arg0, arg1}}
   def get_t_fun_value(_), do: :error
 
   @doc "Extracts value from t_enum variant, returns {:ok, value} or :error"
-  @spec get_t_enum_value(t()) :: {:ok, {:term(), :term()}} | :error
+  @spec get_t_enum_value(t()) :: {:ok, {term(), term()}} | :error
   def get_t_enum_value({:t_enum, arg0, arg1}), do: {:ok, {arg0, arg1}}
   def get_t_enum_value(_), do: :error
 
   @doc "Extracts value from t_dynamic variant, returns {:ok, value} or :error"
-  @spec get_t_dynamic_value(t()) :: {:ok, :term()} | :error
+  @spec get_t_dynamic_value(t()) :: {:ok, term()} | :error
   def get_t_dynamic_value({:t_dynamic, value}), do: {:ok, value}
   def get_t_dynamic_value(_), do: :error
 
   @doc "Extracts value from t_anonymous variant, returns {:ok, value} or :error"
-  @spec get_t_anonymous_value(t()) :: {:ok, :term()} | :error
+  @spec get_t_anonymous_value(t()) :: {:ok, term()} | :error
   def get_t_anonymous_value({:t_anonymous, value}), do: {:ok, value}
   def get_t_anonymous_value(_), do: :error
 
   @doc "Extracts value from t_abstract variant, returns {:ok, value} or :error"
-  @spec get_t_abstract_value(t()) :: {:ok, {:term(), :term()}} | :error
+  @spec get_t_abstract_value(t()) :: {:ok, {term(), term()}} | :error
   def get_t_abstract_value({:t_abstract, arg0, arg1}), do: {:ok, {arg0, arg1}}
   def get_t_abstract_value(_), do: :error
 
@@ -231,12 +231,12 @@ defmodule AnonStatus do
 
   @type t() ::
     :a_opened |
-    {:a_extend, :term()} |
-    {:a_enum_statics, :term()} |
+    {:a_extend, term()} |
+    {:a_enum_statics, term()} |
     :a_const |
     :a_closed |
-    {:a_class_statics, :term()} |
-    {:a_abstract_statics, :term()}
+    {:a_class_statics, term()} |
+    {:a_abstract_statics, term()}
 
   @doc "Creates a_opened enum value"
   @spec a_opened() :: :a_opened
@@ -246,9 +246,9 @@ defmodule AnonStatus do
   Creates a_extend enum value with parameters
   
   ## Parameters
-    - `arg0`: :term()
+    - `arg0`: term()
   """
-  @spec a_extend(:term()) :: {:a_extend, :term()}
+  @spec a_extend(term()) :: {:a_extend, term()}
   def a_extend(arg0) do
     {:a_extend, arg0}
   end
@@ -257,9 +257,9 @@ defmodule AnonStatus do
   Creates a_enum_statics enum value with parameters
   
   ## Parameters
-    - `arg0`: :term()
+    - `arg0`: term()
   """
-  @spec a_enum_statics(:term()) :: {:a_enum_statics, :term()}
+  @spec a_enum_statics(term()) :: {:a_enum_statics, term()}
   def a_enum_statics(arg0) do
     {:a_enum_statics, arg0}
   end
@@ -276,9 +276,9 @@ defmodule AnonStatus do
   Creates a_class_statics enum value with parameters
   
   ## Parameters
-    - `arg0`: :term()
+    - `arg0`: term()
   """
-  @spec a_class_statics(:term()) :: {:a_class_statics, :term()}
+  @spec a_class_statics(term()) :: {:a_class_statics, term()}
   def a_class_statics(arg0) do
     {:a_class_statics, arg0}
   end
@@ -287,9 +287,9 @@ defmodule AnonStatus do
   Creates a_abstract_statics enum value with parameters
   
   ## Parameters
-    - `arg0`: :term()
+    - `arg0`: term()
   """
-  @spec a_abstract_statics(:term()) :: {:a_abstract_statics, :term()}
+  @spec a_abstract_statics(term()) :: {:a_abstract_statics, term()}
   def a_abstract_statics(arg0) do
     {:a_abstract_statics, arg0}
   end
@@ -331,22 +331,22 @@ defmodule AnonStatus do
   def is_a_abstract_statics(_), do: false
 
   @doc "Extracts value from a_extend variant, returns {:ok, value} or :error"
-  @spec get_a_extend_value(t()) :: {:ok, :term()} | :error
+  @spec get_a_extend_value(t()) :: {:ok, term()} | :error
   def get_a_extend_value({:a_extend, value}), do: {:ok, value}
   def get_a_extend_value(_), do: :error
 
   @doc "Extracts value from a_enum_statics variant, returns {:ok, value} or :error"
-  @spec get_a_enum_statics_value(t()) :: {:ok, :term()} | :error
+  @spec get_a_enum_statics_value(t()) :: {:ok, term()} | :error
   def get_a_enum_statics_value({:a_enum_statics, value}), do: {:ok, value}
   def get_a_enum_statics_value(_), do: :error
 
   @doc "Extracts value from a_class_statics variant, returns {:ok, value} or :error"
-  @spec get_a_class_statics_value(t()) :: {:ok, :term()} | :error
+  @spec get_a_class_statics_value(t()) :: {:ok, term()} | :error
   def get_a_class_statics_value({:a_class_statics, value}), do: {:ok, value}
   def get_a_class_statics_value(_), do: :error
 
   @doc "Extracts value from a_abstract_statics variant, returns {:ok, value} or :error"
-  @spec get_a_abstract_statics_value(t()) :: {:ok, :term()} | :error
+  @spec get_a_abstract_statics_value(t()) :: {:ok, term()} | :error
   def get_a_abstract_statics_value({:a_abstract_statics, value}), do: {:ok, value}
   def get_a_abstract_statics_value(_), do: :error
 
@@ -365,23 +365,23 @@ defmodule ClassKind do
   """
 
   @type t() ::
-    {:k_type_parameter, :term()} |
+    {:k_type_parameter, term()} |
     :k_normal |
-    {:k_module_fields, :term()} |
+    {:k_module_fields, term()} |
     :k_macro_type |
-    {:k_generic_instance, :term(), :term()} |
+    {:k_generic_instance, term(), term()} |
     :k_generic_build |
     :k_generic |
-    {:k_expr, :term()} |
-    {:k_abstract_impl, :term()}
+    {:k_expr, term()} |
+    {:k_abstract_impl, term()}
 
   @doc """
   Creates k_type_parameter enum value with parameters
   
   ## Parameters
-    - `arg0`: :term()
+    - `arg0`: term()
   """
-  @spec k_type_parameter(:term()) :: {:k_type_parameter, :term()}
+  @spec k_type_parameter(term()) :: {:k_type_parameter, term()}
   def k_type_parameter(arg0) do
     {:k_type_parameter, arg0}
   end
@@ -394,9 +394,9 @@ defmodule ClassKind do
   Creates k_module_fields enum value with parameters
   
   ## Parameters
-    - `arg0`: :term()
+    - `arg0`: term()
   """
-  @spec k_module_fields(:term()) :: {:k_module_fields, :term()}
+  @spec k_module_fields(term()) :: {:k_module_fields, term()}
   def k_module_fields(arg0) do
     {:k_module_fields, arg0}
   end
@@ -409,10 +409,10 @@ defmodule ClassKind do
   Creates k_generic_instance enum value with parameters
   
   ## Parameters
-    - `arg0`: :term()
-    - `arg1`: :term()
+    - `arg0`: term()
+    - `arg1`: term()
   """
-  @spec k_generic_instance(:term(), :term()) :: {:k_generic_instance, :term(), :term()}
+  @spec k_generic_instance(term(), term()) :: {:k_generic_instance, term(), term()}
   def k_generic_instance(arg0, arg1) do
     {:k_generic_instance, arg0, arg1}
   end
@@ -429,9 +429,9 @@ defmodule ClassKind do
   Creates k_expr enum value with parameters
   
   ## Parameters
-    - `arg0`: :term()
+    - `arg0`: term()
   """
-  @spec k_expr(:term()) :: {:k_expr, :term()}
+  @spec k_expr(term()) :: {:k_expr, term()}
   def k_expr(arg0) do
     {:k_expr, arg0}
   end
@@ -440,9 +440,9 @@ defmodule ClassKind do
   Creates k_abstract_impl enum value with parameters
   
   ## Parameters
-    - `arg0`: :term()
+    - `arg0`: term()
   """
-  @spec k_abstract_impl(:term()) :: {:k_abstract_impl, :term()}
+  @spec k_abstract_impl(term()) :: {:k_abstract_impl, term()}
   def k_abstract_impl(arg0) do
     {:k_abstract_impl, arg0}
   end
@@ -494,27 +494,27 @@ defmodule ClassKind do
   def is_k_abstract_impl(_), do: false
 
   @doc "Extracts value from k_type_parameter variant, returns {:ok, value} or :error"
-  @spec get_k_type_parameter_value(t()) :: {:ok, :term()} | :error
+  @spec get_k_type_parameter_value(t()) :: {:ok, term()} | :error
   def get_k_type_parameter_value({:k_type_parameter, value}), do: {:ok, value}
   def get_k_type_parameter_value(_), do: :error
 
   @doc "Extracts value from k_module_fields variant, returns {:ok, value} or :error"
-  @spec get_k_module_fields_value(t()) :: {:ok, :term()} | :error
+  @spec get_k_module_fields_value(t()) :: {:ok, term()} | :error
   def get_k_module_fields_value({:k_module_fields, value}), do: {:ok, value}
   def get_k_module_fields_value(_), do: :error
 
   @doc "Extracts value from k_generic_instance variant, returns {:ok, value} or :error"
-  @spec get_k_generic_instance_value(t()) :: {:ok, {:term(), :term()}} | :error
+  @spec get_k_generic_instance_value(t()) :: {:ok, {term(), term()}} | :error
   def get_k_generic_instance_value({:k_generic_instance, arg0, arg1}), do: {:ok, {arg0, arg1}}
   def get_k_generic_instance_value(_), do: :error
 
   @doc "Extracts value from k_expr variant, returns {:ok, value} or :error"
-  @spec get_k_expr_value(t()) :: {:ok, :term()} | :error
+  @spec get_k_expr_value(t()) :: {:ok, term()} | :error
   def get_k_expr_value({:k_expr, value}), do: {:ok, value}
   def get_k_expr_value(_), do: :error
 
   @doc "Extracts value from k_abstract_impl variant, returns {:ok, value} or :error"
-  @spec get_k_abstract_impl_value(t()) :: {:ok, :term()} | :error
+  @spec get_k_abstract_impl_value(t()) :: {:ok, term()} | :error
   def get_k_abstract_impl_value({:k_abstract_impl, value}), do: {:ok, value}
   def get_k_abstract_impl_value(_), do: :error
 
@@ -533,17 +533,17 @@ defmodule FieldKind do
   """
 
   @type t() ::
-    {:f_var, :term(), :term()} |
-    {:f_method, :term()}
+    {:f_var, term(), term()} |
+    {:f_method, term()}
 
   @doc """
   Creates f_var enum value with parameters
   
   ## Parameters
-    - `arg0`: :term()
-    - `arg1`: :term()
+    - `arg0`: term()
+    - `arg1`: term()
   """
-  @spec f_var(:term(), :term()) :: {:f_var, :term(), :term()}
+  @spec f_var(term(), term()) :: {:f_var, term(), term()}
   def f_var(arg0, arg1) do
     {:f_var, arg0, arg1}
   end
@@ -552,9 +552,9 @@ defmodule FieldKind do
   Creates f_method enum value with parameters
   
   ## Parameters
-    - `arg0`: :term()
+    - `arg0`: term()
   """
-  @spec f_method(:term()) :: {:f_method, :term()}
+  @spec f_method(term()) :: {:f_method, term()}
   def f_method(arg0) do
     {:f_method, arg0}
   end
@@ -571,12 +571,12 @@ defmodule FieldKind do
   def is_f_method(_), do: false
 
   @doc "Extracts value from f_var variant, returns {:ok, value} or :error"
-  @spec get_f_var_value(t()) :: {:ok, {:term(), :term()}} | :error
+  @spec get_f_var_value(t()) :: {:ok, {term(), term()}} | :error
   def get_f_var_value({:f_var, arg0, arg1}), do: {:ok, {arg0, arg1}}
   def get_f_var_value(_), do: :error
 
   @doc "Extracts value from f_method variant, returns {:ok, value} or :error"
-  @spec get_f_method_value(t()) :: {:ok, :term()} | :error
+  @spec get_f_method_value(t()) :: {:ok, term()} | :error
   def get_f_method_value({:f_method, value}), do: {:ok, value}
   def get_f_method_value(_), do: :error
 
@@ -596,7 +596,7 @@ defmodule VarAccess do
 
   @type t() ::
     :acc_resolve |
-    {:acc_require, :term(), :term()} |
+    {:acc_require, term(), term()} |
     :acc_normal |
     :acc_no |
     :acc_never |
@@ -612,10 +612,10 @@ defmodule VarAccess do
   Creates acc_require enum value with parameters
   
   ## Parameters
-    - `arg0`: :term()
-    - `arg1`: :term()
+    - `arg0`: term()
+    - `arg1`: term()
   """
-  @spec acc_require(:term(), :term()) :: {:acc_require, :term(), :term()}
+  @spec acc_require(term(), term()) :: {:acc_require, term(), term()}
   def acc_require(arg0, arg1) do
     {:acc_require, arg0, arg1}
   end
@@ -686,7 +686,7 @@ defmodule VarAccess do
   def is_acc_call(_), do: false
 
   @doc "Extracts value from acc_require variant, returns {:ok, value} or :error"
-  @spec get_acc_require_value(t()) :: {:ok, {:term(), :term()}} | :error
+  @spec get_acc_require_value(t()) :: {:ok, {term(), term()}} | :error
   def get_acc_require_value({:acc_require, arg0, arg1}), do: {:ok, {arg0, arg1}}
   def get_acc_require_value(_), do: :error
 
@@ -764,11 +764,11 @@ defmodule TConstant do
   @type t() ::
     :t_this |
     :t_super |
-    {:t_string, :term()} |
+    {:t_string, term()} |
     :t_null |
-    {:t_int, :term()} |
-    {:t_float, :term()} |
-    {:t_bool, :term()}
+    {:t_int, term()} |
+    {:t_float, term()} |
+    {:t_bool, term()}
 
   @doc "Creates t_this enum value"
   @spec t_this() :: :t_this
@@ -782,9 +782,9 @@ defmodule TConstant do
   Creates t_string enum value with parameters
   
   ## Parameters
-    - `arg0`: :term()
+    - `arg0`: term()
   """
-  @spec t_string(:term()) :: {:t_string, :term()}
+  @spec t_string(term()) :: {:t_string, term()}
   def t_string(arg0) do
     {:t_string, arg0}
   end
@@ -797,9 +797,9 @@ defmodule TConstant do
   Creates t_int enum value with parameters
   
   ## Parameters
-    - `arg0`: :term()
+    - `arg0`: term()
   """
-  @spec t_int(:term()) :: {:t_int, :term()}
+  @spec t_int(term()) :: {:t_int, term()}
   def t_int(arg0) do
     {:t_int, arg0}
   end
@@ -808,9 +808,9 @@ defmodule TConstant do
   Creates t_float enum value with parameters
   
   ## Parameters
-    - `arg0`: :term()
+    - `arg0`: term()
   """
-  @spec t_float(:term()) :: {:t_float, :term()}
+  @spec t_float(term()) :: {:t_float, term()}
   def t_float(arg0) do
     {:t_float, arg0}
   end
@@ -819,9 +819,9 @@ defmodule TConstant do
   Creates t_bool enum value with parameters
   
   ## Parameters
-    - `arg0`: :term()
+    - `arg0`: term()
   """
-  @spec t_bool(:term()) :: {:t_bool, :term()}
+  @spec t_bool(term()) :: {:t_bool, term()}
   def t_bool(arg0) do
     {:t_bool, arg0}
   end
@@ -863,22 +863,22 @@ defmodule TConstant do
   def is_t_bool(_), do: false
 
   @doc "Extracts value from t_string variant, returns {:ok, value} or :error"
-  @spec get_t_string_value(t()) :: {:ok, :term()} | :error
+  @spec get_t_string_value(t()) :: {:ok, term()} | :error
   def get_t_string_value({:t_string, value}), do: {:ok, value}
   def get_t_string_value(_), do: :error
 
   @doc "Extracts value from t_int variant, returns {:ok, value} or :error"
-  @spec get_t_int_value(t()) :: {:ok, :term()} | :error
+  @spec get_t_int_value(t()) :: {:ok, term()} | :error
   def get_t_int_value({:t_int, value}), do: {:ok, value}
   def get_t_int_value(_), do: :error
 
   @doc "Extracts value from t_float variant, returns {:ok, value} or :error"
-  @spec get_t_float_value(t()) :: {:ok, :term()} | :error
+  @spec get_t_float_value(t()) :: {:ok, term()} | :error
   def get_t_float_value({:t_float, value}), do: {:ok, value}
   def get_t_float_value(_), do: :error
 
   @doc "Extracts value from t_bool variant, returns {:ok, value} or :error"
-  @spec get_t_bool_value(t()) :: {:ok, :term()} | :error
+  @spec get_t_bool_value(t()) :: {:ok, term()} | :error
   def get_t_bool_value({:t_bool, value}), do: {:ok, value}
   def get_t_bool_value(_), do: :error
 
@@ -898,18 +898,18 @@ defmodule ModuleType do
   """
 
   @type t() ::
-    {:t_type_decl, :term()} |
-    {:t_enum_decl, :term()} |
-    {:t_class_decl, :term()} |
-    {:t_abstract, :term()}
+    {:t_type_decl, term()} |
+    {:t_enum_decl, term()} |
+    {:t_class_decl, term()} |
+    {:t_abstract, term()}
 
   @doc """
   Creates t_type_decl enum value with parameters
   
   ## Parameters
-    - `arg0`: :term()
+    - `arg0`: term()
   """
-  @spec t_type_decl(:term()) :: {:t_type_decl, :term()}
+  @spec t_type_decl(term()) :: {:t_type_decl, term()}
   def t_type_decl(arg0) do
     {:t_type_decl, arg0}
   end
@@ -918,9 +918,9 @@ defmodule ModuleType do
   Creates t_enum_decl enum value with parameters
   
   ## Parameters
-    - `arg0`: :term()
+    - `arg0`: term()
   """
-  @spec t_enum_decl(:term()) :: {:t_enum_decl, :term()}
+  @spec t_enum_decl(term()) :: {:t_enum_decl, term()}
   def t_enum_decl(arg0) do
     {:t_enum_decl, arg0}
   end
@@ -929,9 +929,9 @@ defmodule ModuleType do
   Creates t_class_decl enum value with parameters
   
   ## Parameters
-    - `arg0`: :term()
+    - `arg0`: term()
   """
-  @spec t_class_decl(:term()) :: {:t_class_decl, :term()}
+  @spec t_class_decl(term()) :: {:t_class_decl, term()}
   def t_class_decl(arg0) do
     {:t_class_decl, arg0}
   end
@@ -940,9 +940,9 @@ defmodule ModuleType do
   Creates t_abstract enum value with parameters
   
   ## Parameters
-    - `arg0`: :term()
+    - `arg0`: term()
   """
-  @spec t_abstract(:term()) :: {:t_abstract, :term()}
+  @spec t_abstract(term()) :: {:t_abstract, term()}
   def t_abstract(arg0) do
     {:t_abstract, arg0}
   end
@@ -969,22 +969,22 @@ defmodule ModuleType do
   def is_t_abstract(_), do: false
 
   @doc "Extracts value from t_type_decl variant, returns {:ok, value} or :error"
-  @spec get_t_type_decl_value(t()) :: {:ok, :term()} | :error
+  @spec get_t_type_decl_value(t()) :: {:ok, term()} | :error
   def get_t_type_decl_value({:t_type_decl, value}), do: {:ok, value}
   def get_t_type_decl_value(_), do: :error
 
   @doc "Extracts value from t_enum_decl variant, returns {:ok, value} or :error"
-  @spec get_t_enum_decl_value(t()) :: {:ok, :term()} | :error
+  @spec get_t_enum_decl_value(t()) :: {:ok, term()} | :error
   def get_t_enum_decl_value({:t_enum_decl, value}), do: {:ok, value}
   def get_t_enum_decl_value(_), do: :error
 
   @doc "Extracts value from t_class_decl variant, returns {:ok, value} or :error"
-  @spec get_t_class_decl_value(t()) :: {:ok, :term()} | :error
+  @spec get_t_class_decl_value(t()) :: {:ok, term()} | :error
   def get_t_class_decl_value({:t_class_decl, value}), do: {:ok, value}
   def get_t_class_decl_value(_), do: :error
 
   @doc "Extracts value from t_abstract variant, returns {:ok, value} or :error"
-  @spec get_t_abstract_value(t()) :: {:ok, :term()} | :error
+  @spec get_t_abstract_value(t()) :: {:ok, term()} | :error
   def get_t_abstract_value({:t_abstract, value}), do: {:ok, value}
   def get_t_abstract_value(_), do: :error
 
@@ -1003,21 +1003,21 @@ defmodule FieldAccess do
   """
 
   @type t() ::
-    {:f_static, :term(), :term()} |
-    {:f_instance, :term(), :term(), :term()} |
-    {:f_enum, :term(), :term()} |
-    {:f_dynamic, :term()} |
-    {:f_closure, :term(), :term()} |
-    {:f_anon, :term()}
+    {:f_static, term(), term()} |
+    {:f_instance, term(), term(), term()} |
+    {:f_enum, term(), term()} |
+    {:f_dynamic, term()} |
+    {:f_closure, term(), term()} |
+    {:f_anon, term()}
 
   @doc """
   Creates f_static enum value with parameters
   
   ## Parameters
-    - `arg0`: :term()
-    - `arg1`: :term()
+    - `arg0`: term()
+    - `arg1`: term()
   """
-  @spec f_static(:term(), :term()) :: {:f_static, :term(), :term()}
+  @spec f_static(term(), term()) :: {:f_static, term(), term()}
   def f_static(arg0, arg1) do
     {:f_static, arg0, arg1}
   end
@@ -1026,11 +1026,11 @@ defmodule FieldAccess do
   Creates f_instance enum value with parameters
   
   ## Parameters
-    - `arg0`: :term()
-    - `arg1`: :term()
-    - `arg2`: :term()
+    - `arg0`: term()
+    - `arg1`: term()
+    - `arg2`: term()
   """
-  @spec f_instance(:term(), :term(), :term()) :: {:f_instance, :term(), :term(), :term()}
+  @spec f_instance(term(), term(), term()) :: {:f_instance, term(), term(), term()}
   def f_instance(arg0, arg1, arg2) do
     {:f_instance, arg0, arg1, arg2}
   end
@@ -1039,10 +1039,10 @@ defmodule FieldAccess do
   Creates f_enum enum value with parameters
   
   ## Parameters
-    - `arg0`: :term()
-    - `arg1`: :term()
+    - `arg0`: term()
+    - `arg1`: term()
   """
-  @spec f_enum(:term(), :term()) :: {:f_enum, :term(), :term()}
+  @spec f_enum(term(), term()) :: {:f_enum, term(), term()}
   def f_enum(arg0, arg1) do
     {:f_enum, arg0, arg1}
   end
@@ -1051,9 +1051,9 @@ defmodule FieldAccess do
   Creates f_dynamic enum value with parameters
   
   ## Parameters
-    - `arg0`: :term()
+    - `arg0`: term()
   """
-  @spec f_dynamic(:term()) :: {:f_dynamic, :term()}
+  @spec f_dynamic(term()) :: {:f_dynamic, term()}
   def f_dynamic(arg0) do
     {:f_dynamic, arg0}
   end
@@ -1062,10 +1062,10 @@ defmodule FieldAccess do
   Creates f_closure enum value with parameters
   
   ## Parameters
-    - `arg0`: :term()
-    - `arg1`: :term()
+    - `arg0`: term()
+    - `arg1`: term()
   """
-  @spec f_closure(:term(), :term()) :: {:f_closure, :term(), :term()}
+  @spec f_closure(term(), term()) :: {:f_closure, term(), term()}
   def f_closure(arg0, arg1) do
     {:f_closure, arg0, arg1}
   end
@@ -1074,9 +1074,9 @@ defmodule FieldAccess do
   Creates f_anon enum value with parameters
   
   ## Parameters
-    - `arg0`: :term()
+    - `arg0`: term()
   """
-  @spec f_anon(:term()) :: {:f_anon, :term()}
+  @spec f_anon(term()) :: {:f_anon, term()}
   def f_anon(arg0) do
     {:f_anon, arg0}
   end
@@ -1113,32 +1113,32 @@ defmodule FieldAccess do
   def is_f_anon(_), do: false
 
   @doc "Extracts value from f_static variant, returns {:ok, value} or :error"
-  @spec get_f_static_value(t()) :: {:ok, {:term(), :term()}} | :error
+  @spec get_f_static_value(t()) :: {:ok, {term(), term()}} | :error
   def get_f_static_value({:f_static, arg0, arg1}), do: {:ok, {arg0, arg1}}
   def get_f_static_value(_), do: :error
 
   @doc "Extracts value from f_instance variant, returns {:ok, value} or :error"
-  @spec get_f_instance_value(t()) :: {:ok, {:term(), :term(), :term()}} | :error
+  @spec get_f_instance_value(t()) :: {:ok, {term(), term(), term()}} | :error
   def get_f_instance_value({:f_instance, arg0, arg1, arg2}), do: {:ok, {arg0, arg1, arg2}}
   def get_f_instance_value(_), do: :error
 
   @doc "Extracts value from f_enum variant, returns {:ok, value} or :error"
-  @spec get_f_enum_value(t()) :: {:ok, {:term(), :term()}} | :error
+  @spec get_f_enum_value(t()) :: {:ok, {term(), term()}} | :error
   def get_f_enum_value({:f_enum, arg0, arg1}), do: {:ok, {arg0, arg1}}
   def get_f_enum_value(_), do: :error
 
   @doc "Extracts value from f_dynamic variant, returns {:ok, value} or :error"
-  @spec get_f_dynamic_value(t()) :: {:ok, :term()} | :error
+  @spec get_f_dynamic_value(t()) :: {:ok, term()} | :error
   def get_f_dynamic_value({:f_dynamic, value}), do: {:ok, value}
   def get_f_dynamic_value(_), do: :error
 
   @doc "Extracts value from f_closure variant, returns {:ok, value} or :error"
-  @spec get_f_closure_value(t()) :: {:ok, {:term(), :term()}} | :error
+  @spec get_f_closure_value(t()) :: {:ok, {term(), term()}} | :error
   def get_f_closure_value({:f_closure, arg0, arg1}), do: {:ok, {arg0, arg1}}
   def get_f_closure_value(_), do: :error
 
   @doc "Extracts value from f_anon variant, returns {:ok, value} or :error"
-  @spec get_f_anon_value(t()) :: {:ok, :term()} | :error
+  @spec get_f_anon_value(t()) :: {:ok, term()} | :error
   def get_f_anon_value({:f_anon, value}), do: {:ok, value}
   def get_f_anon_value(_), do: :error
 
@@ -1157,45 +1157,45 @@ defmodule TypedExprDef do
   """
 
   @type t() ::
-    {:t_while, :term(), :term(), :term()} |
-    {:t_var, :term(), :term()} |
-    {:t_unop, :term(), :term(), :term()} |
-    {:t_type_expr, :term()} |
-    {:t_try, :term(), :term()} |
-    {:t_throw, :term()} |
-    {:t_switch, :term(), :term(), :term()} |
-    {:t_return, :term()} |
-    {:t_parenthesis, :term()} |
-    {:t_object_decl, :term()} |
-    {:t_new, :term(), :term(), :term()} |
-    {:t_meta, :term(), :term()} |
-    {:t_local, :term()} |
-    {:t_if, :term(), :term(), :term()} |
-    {:t_ident, :term()} |
-    {:t_function, :term()} |
-    {:t_for, :term(), :term(), :term()} |
-    {:t_field, :term(), :term()} |
-    {:t_enum_parameter, :term(), :term(), :term()} |
-    {:t_enum_index, :term()} |
+    {:t_while, term(), term(), term()} |
+    {:t_var, term(), term()} |
+    {:t_unop, term(), term(), term()} |
+    {:t_type_expr, term()} |
+    {:t_try, term(), term()} |
+    {:t_throw, term()} |
+    {:t_switch, term(), term(), term()} |
+    {:t_return, term()} |
+    {:t_parenthesis, term()} |
+    {:t_object_decl, term()} |
+    {:t_new, term(), term(), term()} |
+    {:t_meta, term(), term()} |
+    {:t_local, term()} |
+    {:t_if, term(), term(), term()} |
+    {:t_ident, term()} |
+    {:t_function, term()} |
+    {:t_for, term(), term(), term()} |
+    {:t_field, term(), term()} |
+    {:t_enum_parameter, term(), term(), term()} |
+    {:t_enum_index, term()} |
     :t_continue |
-    {:t_const, :term()} |
-    {:t_cast, :term(), :term()} |
-    {:t_call, :term(), :term()} |
+    {:t_const, term()} |
+    {:t_cast, term(), term()} |
+    {:t_call, term(), term()} |
     :t_break |
-    {:t_block, :term()} |
-    {:t_binop, :term(), :term(), :term()} |
-    {:t_array_decl, :term()} |
-    {:t_array, :term(), :term()}
+    {:t_block, term()} |
+    {:t_binop, term(), term(), term()} |
+    {:t_array_decl, term()} |
+    {:t_array, term(), term()}
 
   @doc """
   Creates t_while enum value with parameters
   
   ## Parameters
-    - `arg0`: :term()
-    - `arg1`: :term()
-    - `arg2`: :term()
+    - `arg0`: term()
+    - `arg1`: term()
+    - `arg2`: term()
   """
-  @spec t_while(:term(), :term(), :term()) :: {:t_while, :term(), :term(), :term()}
+  @spec t_while(term(), term(), term()) :: {:t_while, term(), term(), term()}
   def t_while(arg0, arg1, arg2) do
     {:t_while, arg0, arg1, arg2}
   end
@@ -1204,10 +1204,10 @@ defmodule TypedExprDef do
   Creates t_var enum value with parameters
   
   ## Parameters
-    - `arg0`: :term()
-    - `arg1`: :term()
+    - `arg0`: term()
+    - `arg1`: term()
   """
-  @spec t_var(:term(), :term()) :: {:t_var, :term(), :term()}
+  @spec t_var(term(), term()) :: {:t_var, term(), term()}
   def t_var(arg0, arg1) do
     {:t_var, arg0, arg1}
   end
@@ -1216,11 +1216,11 @@ defmodule TypedExprDef do
   Creates t_unop enum value with parameters
   
   ## Parameters
-    - `arg0`: :term()
-    - `arg1`: :term()
-    - `arg2`: :term()
+    - `arg0`: term()
+    - `arg1`: term()
+    - `arg2`: term()
   """
-  @spec t_unop(:term(), :term(), :term()) :: {:t_unop, :term(), :term(), :term()}
+  @spec t_unop(term(), term(), term()) :: {:t_unop, term(), term(), term()}
   def t_unop(arg0, arg1, arg2) do
     {:t_unop, arg0, arg1, arg2}
   end
@@ -1229,9 +1229,9 @@ defmodule TypedExprDef do
   Creates t_type_expr enum value with parameters
   
   ## Parameters
-    - `arg0`: :term()
+    - `arg0`: term()
   """
-  @spec t_type_expr(:term()) :: {:t_type_expr, :term()}
+  @spec t_type_expr(term()) :: {:t_type_expr, term()}
   def t_type_expr(arg0) do
     {:t_type_expr, arg0}
   end
@@ -1240,10 +1240,10 @@ defmodule TypedExprDef do
   Creates t_try enum value with parameters
   
   ## Parameters
-    - `arg0`: :term()
-    - `arg1`: :term()
+    - `arg0`: term()
+    - `arg1`: term()
   """
-  @spec t_try(:term(), :term()) :: {:t_try, :term(), :term()}
+  @spec t_try(term(), term()) :: {:t_try, term(), term()}
   def t_try(arg0, arg1) do
     {:t_try, arg0, arg1}
   end
@@ -1252,9 +1252,9 @@ defmodule TypedExprDef do
   Creates t_throw enum value with parameters
   
   ## Parameters
-    - `arg0`: :term()
+    - `arg0`: term()
   """
-  @spec t_throw(:term()) :: {:t_throw, :term()}
+  @spec t_throw(term()) :: {:t_throw, term()}
   def t_throw(arg0) do
     {:t_throw, arg0}
   end
@@ -1263,11 +1263,11 @@ defmodule TypedExprDef do
   Creates t_switch enum value with parameters
   
   ## Parameters
-    - `arg0`: :term()
-    - `arg1`: :term()
-    - `arg2`: :term()
+    - `arg0`: term()
+    - `arg1`: term()
+    - `arg2`: term()
   """
-  @spec t_switch(:term(), :term(), :term()) :: {:t_switch, :term(), :term(), :term()}
+  @spec t_switch(term(), term(), term()) :: {:t_switch, term(), term(), term()}
   def t_switch(arg0, arg1, arg2) do
     {:t_switch, arg0, arg1, arg2}
   end
@@ -1276,9 +1276,9 @@ defmodule TypedExprDef do
   Creates t_return enum value with parameters
   
   ## Parameters
-    - `arg0`: :term()
+    - `arg0`: term()
   """
-  @spec t_return(:term()) :: {:t_return, :term()}
+  @spec t_return(term()) :: {:t_return, term()}
   def t_return(arg0) do
     {:t_return, arg0}
   end
@@ -1287,9 +1287,9 @@ defmodule TypedExprDef do
   Creates t_parenthesis enum value with parameters
   
   ## Parameters
-    - `arg0`: :term()
+    - `arg0`: term()
   """
-  @spec t_parenthesis(:term()) :: {:t_parenthesis, :term()}
+  @spec t_parenthesis(term()) :: {:t_parenthesis, term()}
   def t_parenthesis(arg0) do
     {:t_parenthesis, arg0}
   end
@@ -1298,9 +1298,9 @@ defmodule TypedExprDef do
   Creates t_object_decl enum value with parameters
   
   ## Parameters
-    - `arg0`: :term()
+    - `arg0`: term()
   """
-  @spec t_object_decl(:term()) :: {:t_object_decl, :term()}
+  @spec t_object_decl(term()) :: {:t_object_decl, term()}
   def t_object_decl(arg0) do
     {:t_object_decl, arg0}
   end
@@ -1309,11 +1309,11 @@ defmodule TypedExprDef do
   Creates t_new enum value with parameters
   
   ## Parameters
-    - `arg0`: :term()
-    - `arg1`: :term()
-    - `arg2`: :term()
+    - `arg0`: term()
+    - `arg1`: term()
+    - `arg2`: term()
   """
-  @spec t_new(:term(), :term(), :term()) :: {:t_new, :term(), :term(), :term()}
+  @spec t_new(term(), term(), term()) :: {:t_new, term(), term(), term()}
   def t_new(arg0, arg1, arg2) do
     {:t_new, arg0, arg1, arg2}
   end
@@ -1322,10 +1322,10 @@ defmodule TypedExprDef do
   Creates t_meta enum value with parameters
   
   ## Parameters
-    - `arg0`: :term()
-    - `arg1`: :term()
+    - `arg0`: term()
+    - `arg1`: term()
   """
-  @spec t_meta(:term(), :term()) :: {:t_meta, :term(), :term()}
+  @spec t_meta(term(), term()) :: {:t_meta, term(), term()}
   def t_meta(arg0, arg1) do
     {:t_meta, arg0, arg1}
   end
@@ -1334,9 +1334,9 @@ defmodule TypedExprDef do
   Creates t_local enum value with parameters
   
   ## Parameters
-    - `arg0`: :term()
+    - `arg0`: term()
   """
-  @spec t_local(:term()) :: {:t_local, :term()}
+  @spec t_local(term()) :: {:t_local, term()}
   def t_local(arg0) do
     {:t_local, arg0}
   end
@@ -1345,11 +1345,11 @@ defmodule TypedExprDef do
   Creates t_if enum value with parameters
   
   ## Parameters
-    - `arg0`: :term()
-    - `arg1`: :term()
-    - `arg2`: :term()
+    - `arg0`: term()
+    - `arg1`: term()
+    - `arg2`: term()
   """
-  @spec t_if(:term(), :term(), :term()) :: {:t_if, :term(), :term(), :term()}
+  @spec t_if(term(), term(), term()) :: {:t_if, term(), term(), term()}
   def t_if(arg0, arg1, arg2) do
     {:t_if, arg0, arg1, arg2}
   end
@@ -1358,9 +1358,9 @@ defmodule TypedExprDef do
   Creates t_ident enum value with parameters
   
   ## Parameters
-    - `arg0`: :term()
+    - `arg0`: term()
   """
-  @spec t_ident(:term()) :: {:t_ident, :term()}
+  @spec t_ident(term()) :: {:t_ident, term()}
   def t_ident(arg0) do
     {:t_ident, arg0}
   end
@@ -1369,9 +1369,9 @@ defmodule TypedExprDef do
   Creates t_function enum value with parameters
   
   ## Parameters
-    - `arg0`: :term()
+    - `arg0`: term()
   """
-  @spec t_function(:term()) :: {:t_function, :term()}
+  @spec t_function(term()) :: {:t_function, term()}
   def t_function(arg0) do
     {:t_function, arg0}
   end
@@ -1380,11 +1380,11 @@ defmodule TypedExprDef do
   Creates t_for enum value with parameters
   
   ## Parameters
-    - `arg0`: :term()
-    - `arg1`: :term()
-    - `arg2`: :term()
+    - `arg0`: term()
+    - `arg1`: term()
+    - `arg2`: term()
   """
-  @spec t_for(:term(), :term(), :term()) :: {:t_for, :term(), :term(), :term()}
+  @spec t_for(term(), term(), term()) :: {:t_for, term(), term(), term()}
   def t_for(arg0, arg1, arg2) do
     {:t_for, arg0, arg1, arg2}
   end
@@ -1393,10 +1393,10 @@ defmodule TypedExprDef do
   Creates t_field enum value with parameters
   
   ## Parameters
-    - `arg0`: :term()
-    - `arg1`: :term()
+    - `arg0`: term()
+    - `arg1`: term()
   """
-  @spec t_field(:term(), :term()) :: {:t_field, :term(), :term()}
+  @spec t_field(term(), term()) :: {:t_field, term(), term()}
   def t_field(arg0, arg1) do
     {:t_field, arg0, arg1}
   end
@@ -1405,11 +1405,11 @@ defmodule TypedExprDef do
   Creates t_enum_parameter enum value with parameters
   
   ## Parameters
-    - `arg0`: :term()
-    - `arg1`: :term()
-    - `arg2`: :term()
+    - `arg0`: term()
+    - `arg1`: term()
+    - `arg2`: term()
   """
-  @spec t_enum_parameter(:term(), :term(), :term()) :: {:t_enum_parameter, :term(), :term(), :term()}
+  @spec t_enum_parameter(term(), term(), term()) :: {:t_enum_parameter, term(), term(), term()}
   def t_enum_parameter(arg0, arg1, arg2) do
     {:t_enum_parameter, arg0, arg1, arg2}
   end
@@ -1418,9 +1418,9 @@ defmodule TypedExprDef do
   Creates t_enum_index enum value with parameters
   
   ## Parameters
-    - `arg0`: :term()
+    - `arg0`: term()
   """
-  @spec t_enum_index(:term()) :: {:t_enum_index, :term()}
+  @spec t_enum_index(term()) :: {:t_enum_index, term()}
   def t_enum_index(arg0) do
     {:t_enum_index, arg0}
   end
@@ -1433,9 +1433,9 @@ defmodule TypedExprDef do
   Creates t_const enum value with parameters
   
   ## Parameters
-    - `arg0`: :term()
+    - `arg0`: term()
   """
-  @spec t_const(:term()) :: {:t_const, :term()}
+  @spec t_const(term()) :: {:t_const, term()}
   def t_const(arg0) do
     {:t_const, arg0}
   end
@@ -1444,10 +1444,10 @@ defmodule TypedExprDef do
   Creates t_cast enum value with parameters
   
   ## Parameters
-    - `arg0`: :term()
-    - `arg1`: :term()
+    - `arg0`: term()
+    - `arg1`: term()
   """
-  @spec t_cast(:term(), :term()) :: {:t_cast, :term(), :term()}
+  @spec t_cast(term(), term()) :: {:t_cast, term(), term()}
   def t_cast(arg0, arg1) do
     {:t_cast, arg0, arg1}
   end
@@ -1456,10 +1456,10 @@ defmodule TypedExprDef do
   Creates t_call enum value with parameters
   
   ## Parameters
-    - `arg0`: :term()
-    - `arg1`: :term()
+    - `arg0`: term()
+    - `arg1`: term()
   """
-  @spec t_call(:term(), :term()) :: {:t_call, :term(), :term()}
+  @spec t_call(term(), term()) :: {:t_call, term(), term()}
   def t_call(arg0, arg1) do
     {:t_call, arg0, arg1}
   end
@@ -1472,9 +1472,9 @@ defmodule TypedExprDef do
   Creates t_block enum value with parameters
   
   ## Parameters
-    - `arg0`: :term()
+    - `arg0`: term()
   """
-  @spec t_block(:term()) :: {:t_block, :term()}
+  @spec t_block(term()) :: {:t_block, term()}
   def t_block(arg0) do
     {:t_block, arg0}
   end
@@ -1483,11 +1483,11 @@ defmodule TypedExprDef do
   Creates t_binop enum value with parameters
   
   ## Parameters
-    - `arg0`: :term()
-    - `arg1`: :term()
-    - `arg2`: :term()
+    - `arg0`: term()
+    - `arg1`: term()
+    - `arg2`: term()
   """
-  @spec t_binop(:term(), :term(), :term()) :: {:t_binop, :term(), :term(), :term()}
+  @spec t_binop(term(), term(), term()) :: {:t_binop, term(), term(), term()}
   def t_binop(arg0, arg1, arg2) do
     {:t_binop, arg0, arg1, arg2}
   end
@@ -1496,9 +1496,9 @@ defmodule TypedExprDef do
   Creates t_array_decl enum value with parameters
   
   ## Parameters
-    - `arg0`: :term()
+    - `arg0`: term()
   """
-  @spec t_array_decl(:term()) :: {:t_array_decl, :term()}
+  @spec t_array_decl(term()) :: {:t_array_decl, term()}
   def t_array_decl(arg0) do
     {:t_array_decl, arg0}
   end
@@ -1507,10 +1507,10 @@ defmodule TypedExprDef do
   Creates t_array enum value with parameters
   
   ## Parameters
-    - `arg0`: :term()
-    - `arg1`: :term()
+    - `arg0`: term()
+    - `arg1`: term()
   """
-  @spec t_array(:term(), :term()) :: {:t_array, :term(), :term()}
+  @spec t_array(term(), term()) :: {:t_array, term(), term()}
   def t_array(arg0, arg1) do
     {:t_array, arg0, arg1}
   end
@@ -1662,400 +1662,138 @@ defmodule TypedExprDef do
   def is_t_array(_), do: false
 
   @doc "Extracts value from t_while variant, returns {:ok, value} or :error"
-  @spec get_t_while_value(t()) :: {:ok, {:term(), :term(), :term()}} | :error
+  @spec get_t_while_value(t()) :: {:ok, {term(), term(), term()}} | :error
   def get_t_while_value({:t_while, arg0, arg1, arg2}), do: {:ok, {arg0, arg1, arg2}}
   def get_t_while_value(_), do: :error
 
   @doc "Extracts value from t_var variant, returns {:ok, value} or :error"
-  @spec get_t_var_value(t()) :: {:ok, {:term(), :term()}} | :error
+  @spec get_t_var_value(t()) :: {:ok, {term(), term()}} | :error
   def get_t_var_value({:t_var, arg0, arg1}), do: {:ok, {arg0, arg1}}
   def get_t_var_value(_), do: :error
 
   @doc "Extracts value from t_unop variant, returns {:ok, value} or :error"
-  @spec get_t_unop_value(t()) :: {:ok, {:term(), :term(), :term()}} | :error
+  @spec get_t_unop_value(t()) :: {:ok, {term(), term(), term()}} | :error
   def get_t_unop_value({:t_unop, arg0, arg1, arg2}), do: {:ok, {arg0, arg1, arg2}}
   def get_t_unop_value(_), do: :error
 
   @doc "Extracts value from t_type_expr variant, returns {:ok, value} or :error"
-  @spec get_t_type_expr_value(t()) :: {:ok, :term()} | :error
+  @spec get_t_type_expr_value(t()) :: {:ok, term()} | :error
   def get_t_type_expr_value({:t_type_expr, value}), do: {:ok, value}
   def get_t_type_expr_value(_), do: :error
 
   @doc "Extracts value from t_try variant, returns {:ok, value} or :error"
-  @spec get_t_try_value(t()) :: {:ok, {:term(), :term()}} | :error
+  @spec get_t_try_value(t()) :: {:ok, {term(), term()}} | :error
   def get_t_try_value({:t_try, arg0, arg1}), do: {:ok, {arg0, arg1}}
   def get_t_try_value(_), do: :error
 
   @doc "Extracts value from t_throw variant, returns {:ok, value} or :error"
-  @spec get_t_throw_value(t()) :: {:ok, :term()} | :error
+  @spec get_t_throw_value(t()) :: {:ok, term()} | :error
   def get_t_throw_value({:t_throw, value}), do: {:ok, value}
   def get_t_throw_value(_), do: :error
 
   @doc "Extracts value from t_switch variant, returns {:ok, value} or :error"
-  @spec get_t_switch_value(t()) :: {:ok, {:term(), :term(), :term()}} | :error
+  @spec get_t_switch_value(t()) :: {:ok, {term(), term(), term()}} | :error
   def get_t_switch_value({:t_switch, arg0, arg1, arg2}), do: {:ok, {arg0, arg1, arg2}}
   def get_t_switch_value(_), do: :error
 
   @doc "Extracts value from t_return variant, returns {:ok, value} or :error"
-  @spec get_t_return_value(t()) :: {:ok, :term()} | :error
+  @spec get_t_return_value(t()) :: {:ok, term()} | :error
   def get_t_return_value({:t_return, value}), do: {:ok, value}
   def get_t_return_value(_), do: :error
 
   @doc "Extracts value from t_parenthesis variant, returns {:ok, value} or :error"
-  @spec get_t_parenthesis_value(t()) :: {:ok, :term()} | :error
+  @spec get_t_parenthesis_value(t()) :: {:ok, term()} | :error
   def get_t_parenthesis_value({:t_parenthesis, value}), do: {:ok, value}
   def get_t_parenthesis_value(_), do: :error
 
   @doc "Extracts value from t_object_decl variant, returns {:ok, value} or :error"
-  @spec get_t_object_decl_value(t()) :: {:ok, :term()} | :error
+  @spec get_t_object_decl_value(t()) :: {:ok, term()} | :error
   def get_t_object_decl_value({:t_object_decl, value}), do: {:ok, value}
   def get_t_object_decl_value(_), do: :error
 
   @doc "Extracts value from t_new variant, returns {:ok, value} or :error"
-  @spec get_t_new_value(t()) :: {:ok, {:term(), :term(), :term()}} | :error
+  @spec get_t_new_value(t()) :: {:ok, {term(), term(), term()}} | :error
   def get_t_new_value({:t_new, arg0, arg1, arg2}), do: {:ok, {arg0, arg1, arg2}}
   def get_t_new_value(_), do: :error
 
   @doc "Extracts value from t_meta variant, returns {:ok, value} or :error"
-  @spec get_t_meta_value(t()) :: {:ok, {:term(), :term()}} | :error
+  @spec get_t_meta_value(t()) :: {:ok, {term(), term()}} | :error
   def get_t_meta_value({:t_meta, arg0, arg1}), do: {:ok, {arg0, arg1}}
   def get_t_meta_value(_), do: :error
 
   @doc "Extracts value from t_local variant, returns {:ok, value} or :error"
-  @spec get_t_local_value(t()) :: {:ok, :term()} | :error
+  @spec get_t_local_value(t()) :: {:ok, term()} | :error
   def get_t_local_value({:t_local, value}), do: {:ok, value}
   def get_t_local_value(_), do: :error
 
   @doc "Extracts value from t_if variant, returns {:ok, value} or :error"
-  @spec get_t_if_value(t()) :: {:ok, {:term(), :term(), :term()}} | :error
+  @spec get_t_if_value(t()) :: {:ok, {term(), term(), term()}} | :error
   def get_t_if_value({:t_if, arg0, arg1, arg2}), do: {:ok, {arg0, arg1, arg2}}
   def get_t_if_value(_), do: :error
 
   @doc "Extracts value from t_ident variant, returns {:ok, value} or :error"
-  @spec get_t_ident_value(t()) :: {:ok, :term()} | :error
+  @spec get_t_ident_value(t()) :: {:ok, term()} | :error
   def get_t_ident_value({:t_ident, value}), do: {:ok, value}
   def get_t_ident_value(_), do: :error
 
   @doc "Extracts value from t_function variant, returns {:ok, value} or :error"
-  @spec get_t_function_value(t()) :: {:ok, :term()} | :error
+  @spec get_t_function_value(t()) :: {:ok, term()} | :error
   def get_t_function_value({:t_function, value}), do: {:ok, value}
   def get_t_function_value(_), do: :error
 
   @doc "Extracts value from t_for variant, returns {:ok, value} or :error"
-  @spec get_t_for_value(t()) :: {:ok, {:term(), :term(), :term()}} | :error
+  @spec get_t_for_value(t()) :: {:ok, {term(), term(), term()}} | :error
   def get_t_for_value({:t_for, arg0, arg1, arg2}), do: {:ok, {arg0, arg1, arg2}}
   def get_t_for_value(_), do: :error
 
   @doc "Extracts value from t_field variant, returns {:ok, value} or :error"
-  @spec get_t_field_value(t()) :: {:ok, {:term(), :term()}} | :error
+  @spec get_t_field_value(t()) :: {:ok, {term(), term()}} | :error
   def get_t_field_value({:t_field, arg0, arg1}), do: {:ok, {arg0, arg1}}
   def get_t_field_value(_), do: :error
 
   @doc "Extracts value from t_enum_parameter variant, returns {:ok, value} or :error"
-  @spec get_t_enum_parameter_value(t()) :: {:ok, {:term(), :term(), :term()}} | :error
+  @spec get_t_enum_parameter_value(t()) :: {:ok, {term(), term(), term()}} | :error
   def get_t_enum_parameter_value({:t_enum_parameter, arg0, arg1, arg2}), do: {:ok, {arg0, arg1, arg2}}
   def get_t_enum_parameter_value(_), do: :error
 
   @doc "Extracts value from t_enum_index variant, returns {:ok, value} or :error"
-  @spec get_t_enum_index_value(t()) :: {:ok, :term()} | :error
+  @spec get_t_enum_index_value(t()) :: {:ok, term()} | :error
   def get_t_enum_index_value({:t_enum_index, value}), do: {:ok, value}
   def get_t_enum_index_value(_), do: :error
 
   @doc "Extracts value from t_const variant, returns {:ok, value} or :error"
-  @spec get_t_const_value(t()) :: {:ok, :term()} | :error
+  @spec get_t_const_value(t()) :: {:ok, term()} | :error
   def get_t_const_value({:t_const, value}), do: {:ok, value}
   def get_t_const_value(_), do: :error
 
   @doc "Extracts value from t_cast variant, returns {:ok, value} or :error"
-  @spec get_t_cast_value(t()) :: {:ok, {:term(), :term()}} | :error
+  @spec get_t_cast_value(t()) :: {:ok, {term(), term()}} | :error
   def get_t_cast_value({:t_cast, arg0, arg1}), do: {:ok, {arg0, arg1}}
   def get_t_cast_value(_), do: :error
 
   @doc "Extracts value from t_call variant, returns {:ok, value} or :error"
-  @spec get_t_call_value(t()) :: {:ok, {:term(), :term()}} | :error
+  @spec get_t_call_value(t()) :: {:ok, {term(), term()}} | :error
   def get_t_call_value({:t_call, arg0, arg1}), do: {:ok, {arg0, arg1}}
   def get_t_call_value(_), do: :error
 
   @doc "Extracts value from t_block variant, returns {:ok, value} or :error"
-  @spec get_t_block_value(t()) :: {:ok, :term()} | :error
+  @spec get_t_block_value(t()) :: {:ok, term()} | :error
   def get_t_block_value({:t_block, value}), do: {:ok, value}
   def get_t_block_value(_), do: :error
 
   @doc "Extracts value from t_binop variant, returns {:ok, value} or :error"
-  @spec get_t_binop_value(t()) :: {:ok, {:term(), :term(), :term()}} | :error
+  @spec get_t_binop_value(t()) :: {:ok, {term(), term(), term()}} | :error
   def get_t_binop_value({:t_binop, arg0, arg1, arg2}), do: {:ok, {arg0, arg1, arg2}}
   def get_t_binop_value(_), do: :error
 
   @doc "Extracts value from t_array_decl variant, returns {:ok, value} or :error"
-  @spec get_t_array_decl_value(t()) :: {:ok, :term()} | :error
+  @spec get_t_array_decl_value(t()) :: {:ok, term()} | :error
   def get_t_array_decl_value({:t_array_decl, value}), do: {:ok, value}
   def get_t_array_decl_value(_), do: :error
 
   @doc "Extracts value from t_array variant, returns {:ok, value} or :error"
-  @spec get_t_array_value(t()) :: {:ok, {:term(), :term()}} | :error
+  @spec get_t_array_value(t()) :: {:ok, {term(), term()}} | :error
   def get_t_array_value({:t_array, arg0, arg1}), do: {:ok, {arg0, arg1}}
   def get_t_array_value(_), do: :error
 
 end
-
-
-@typedoc """
-
-	Represents a reference to internal compiler structure. It exists to avoid
-	expensive encoding if it is not required and to ensure that physical
-	equality remains intact.
-
-	A structure is only encoded when user requests it through `ref.get()`.
- 
-"""
-@type ref(t) :: %{
-  get: (() -> t),
-  to_string: (() -> String.t())
-}
-
-@typedoc """
-
-	Represents information for anonymous structure types.
- 
-"""
-@type anon_type :: %{
-  fields: list(class_field()),
-  status: any()
-}
-
-@typedoc """
-
-	Represents the declaration of type parameters.
- 
-"""
-@type type_parameter :: %{
-  optional(:default_type) => any() | nil,
-  name: String.t(),
-  t: any()
-}
-
-@typedoc """
-
-	Represents a class field.
- 
-"""
-@type class_field :: %{
-  optional(:doc) => String.t() | nil,
-  expr: (() -> typed_expr() | nil),
-  is_abstract: boolean(),
-  is_extern: boolean(),
-  is_final: boolean(),
-  is_public: boolean(),
-  kind: any(),
-  meta: meta_access(),
-  name: String.t(),
-  overloads: ref(list(class_field())),
-  params: list(type_parameter()),
-  pos: position(),
-  type: any()
-}
-
-@typedoc """
-
-	Represents an enum constructor.
- 
-"""
-@type enum_field :: %{
-  optional(:doc) => String.t() | nil,
-  index: integer(),
-  meta: meta_access(),
-  name: String.t(),
-  params: list(type_parameter()),
-  pos: position(),
-  type: any()
-}
-
-@typedoc """
-
-	The information that all types (`ClassType`, `EnumType`, `DefType`,
-	`AbstractType`) have in common.
-
-"""
-@type base_type :: %{
-  optional(:doc) => String.t() | nil,
-  exclude: (() -> :ok),
-  is_extern: boolean(),
-  is_private: boolean(),
-  meta: meta_access(),
-  module: String.t(),
-  name: String.t(),
-  pack: list(String.t()),
-  params: list(type_parameter()),
-  pos: position()
-}
-
-@typedoc """
-
-	Represents a class type.
- 
-"""
-@type class_type :: %{
-  optional(:constructor) => ref(class_field()) | nil,
-  optional(:doc) => String.t() | nil,
-  exclude: (() -> :ok),
-  fields: ref(list(class_field())),
-  optional(:init) => typed_expr() | nil,
-  interfaces: list(%{
-  params: list(any()),
-  t: ref(class_type())
-}),
-  is_abstract: boolean(),
-  is_extern: boolean(),
-  is_final: boolean(),
-  is_interface: boolean(),
-  is_private: boolean(),
-  kind: any(),
-  meta: meta_access(),
-  module: String.t(),
-  name: String.t(),
-  overrides: list(ref(class_field())),
-  pack: list(String.t()),
-  params: list(type_parameter()),
-  pos: position(),
-  statics: ref(list(class_field())),
-  optional(:super_class) => %{
-  params: list(any()),
-  t: ref(class_type())
-} | nil
-}
-
-@typedoc """
-
-	Represents an enum type.
- 
-"""
-@type enum_type :: %{
-  constructs: map(String.t(), enum_field()),
-  optional(:doc) => String.t() | nil,
-  exclude: (() -> :ok),
-  is_extern: boolean(),
-  is_private: boolean(),
-  meta: meta_access(),
-  module: String.t(),
-  name: String.t(),
-  names: list(String.t()),
-  pack: list(String.t()),
-  params: list(type_parameter()),
-  pos: position()
-}
-
-@typedoc """
-
-	Represents a typedef.
- 
-"""
-@type def_type :: %{
-  optional(:doc) => String.t() | nil,
-  exclude: (() -> :ok),
-  is_extern: boolean(),
-  is_private: boolean(),
-  meta: meta_access(),
-  module: String.t(),
-  name: String.t(),
-  pack: list(String.t()),
-  params: list(type_parameter()),
-  pos: position(),
-  type: any()
-}
-
-@typedoc """
-
-	Represents an abstract type.
- 
-"""
-@type abstract_type :: %{
-  array: list(class_field()),
-  binops: list(%{
-  field: class_field(),
-  op: any()
-}),
-  optional(:doc) => String.t() | nil,
-  exclude: (() -> :ok),
-  from: list(%{
-  optional(:field) => class_field() | nil,
-  t: any()
-}),
-  optional(:impl) => ref(class_type()) | nil,
-  is_extern: boolean(),
-  is_private: boolean(),
-  meta: meta_access(),
-  module: String.t(),
-  name: String.t(),
-  pack: list(String.t()),
-  params: list(type_parameter()),
-  pos: position(),
-  optional(:resolve) => class_field() | nil,
-  optional(:resolve_write) => class_field() | nil,
-  to: list(%{
-  optional(:field) => class_field() | nil,
-  t: any()
-}),
-  type: any(),
-  unops: list(%{
-  field: class_field(),
-  op: any(),
-  post_fix: boolean()
-})
-}
-
-@typedoc """
-
-	MetaAccess is a wrapper for the `Metadata` array. It can be used to add
-	metadata to and remove metadata from its origin.
-
-"""
-@type meta_access :: %{
-  add: (String.t(), list(expr()), position() -> :ok),
-  extract: (String.t() -> list(metadata_entry())),
-  get: (() -> metadata()),
-  has: (String.t() -> boolean()),
-  remove: (String.t() -> :ok)
-}
-
-@typedoc """
-
-	Represents a variable in the typed AST.
- 
-"""
-@type t_var :: %{
-  capture: boolean(),
-  optional(:extra) => %{
-  optional(:expr) => typed_expr() | nil,
-  params: list(type_parameter())
-} | nil,
-  id: integer(),
-  is_static: boolean(),
-  optional(:meta) => meta_access() | nil,
-  name: String.t(),
-  t: any()
-}
-
-@typedoc """
-
-	Represents a function in the typed AST.
- 
-"""
-@type t_func :: %{
-  args: list(%{
-  v: t_var(),
-  optional(:value) => typed_expr() | nil
-}),
-  expr: typed_expr(),
-  t: any()
-}
-
-@typedoc """
-
-	Represents a typed AST node.
- 
-"""
-@type typed_expr :: %{
-  expr: any(),
-  pos: position(),
-  t: any()
-}

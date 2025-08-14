@@ -1,4 +1,5 @@
 defmodule PatternMatchingTest do
+  use Bitwise
   @moduledoc """
   PatternMatchingTest module generated from Haxe
   """
@@ -9,9 +10,8 @@ defmodule PatternMatchingTest do
      "
   @spec match_color(Color.t()) :: String.t()
   def match_color(arg0) do
-    (
-  temp_result = nil
-  case (# TODO: Implement expression type: TEnumIndex) do
+    temp_result = nil
+case (# TODO: Implement expression type: TEnumIndex) do
   0 ->
     temp_result = "red"
   1 ->
@@ -19,20 +19,15 @@ defmodule PatternMatchingTest do
   2 ->
     temp_result = "blue"
   3 ->
-    (
-  _g = # TODO: Implement expression type: TEnumParameter
-  _g1 = # TODO: Implement expression type: TEnumParameter
-  _g2 = # TODO: Implement expression type: TEnumParameter
-  (
-  r = _g
-  g = _g1
-  b = _g2
-  temp_result = "rgb(" + r + "," + g + "," + b + ")"
-)
-)
+    _g = # TODO: Implement expression type: TEnumParameter
+_g1 = # TODO: Implement expression type: TEnumParameter
+_g2 = # TODO: Implement expression type: TEnumParameter
+r = _g
+g = _g1
+b = _g2
+temp_result = "rgb(" <> r <> "," <> g <> "," <> b <> ")"
 end
-  temp_result
-)
+temp_result
   end
 
   @doc "
@@ -40,22 +35,16 @@ end
      "
   @spec match_option(Option.t()) :: String.t()
   def match_option(arg0) do
-    (
-  temp_result = nil
-  case (# TODO: Implement expression type: TEnumIndex) do
+    temp_result = nil
+case (# TODO: Implement expression type: TEnumIndex) do
   0 ->
     temp_result = "none"
   1 ->
-    (
-  _g = # TODO: Implement expression type: TEnumParameter
-  (
-  value = _g
-  temp_result = "some(" + Std.string(value) + ")"
-)
-)
+    _g = # TODO: Implement expression type: TEnumParameter
+value = _g
+temp_result = "some(" <> Std.string(value) <> ")"
 end
-  temp_result
-)
+temp_result
   end
 
   @doc "
@@ -63,24 +52,22 @@ end
      "
   @spec match_int(integer()) :: String.t()
   def match_int(arg0) do
-    (
-  temp_result = nil
-  case ((value)) do
+    temp_result = nil
+case ((arg0)) do
   0 ->
     temp_result = "zero"
   1 ->
     temp_result = "one"
   _ ->
-    (
-  n = value
-  if (n < 0), do: temp_result = "negative", else: (
-  n2 = value
+    n = arg0
+if (n < 0) do
+  temp_result = "negative"
+else
+  n2 = arg0
   if (n2 > 100), do: temp_result = "large", else: temp_result = "other"
-)
-)
 end
-  temp_result
-)
+end
+temp_result
   end
 
   @doc "
@@ -88,21 +75,17 @@ end
      "
   @spec match_string(String.t()) :: String.t()
   def match_string(arg0) do
-    (
-  temp_result = nil
-  case ((str)) do
+    temp_result = nil
+case ((arg0)) do
   "" ->
     temp_result = "empty"
   "hello" ->
     temp_result = "greeting"
   _ ->
-    (
-  s = str
-  if (s.length > 10), do: temp_result = "long", else: temp_result = "other"
-)
+    s = arg0
+if (String.length(s) > 10), do: temp_result = "long", else: temp_result = "other"
 end
-  temp_result
-)
+temp_result
   end
 
   @doc "
@@ -110,46 +93,32 @@ end
      "
   @spec match_array(Array.t()) :: String.t()
   def match_array(arg0) do
-    (
-  temp_result = nil
-  case (arr.length) do
+    temp_result = nil
+case (length(arg0)) do
   0 ->
     temp_result = "empty"
   1 ->
-    (
-  _g = Enum.at(arr, 0)
-  (
-  x = _g
-  temp_result = "single(" + x + ")"
-)
-)
+    _g = Enum.at(arg0, 0)
+x = _g
+temp_result = "single(" <> x <> ")"
   2 ->
-    (
-  _g = Enum.at(arr, 0)
-  _g1 = Enum.at(arr, 1)
-  (
-  x = _g
-  y = _g1
-  temp_result = "pair(" + x + "," + y + ")"
-)
-)
+    _g = Enum.at(arg0, 0)
+_g1 = Enum.at(arg0, 1)
+x = _g
+y = _g1
+temp_result = "pair(" <> x <> "," <> y <> ")"
   3 ->
-    (
-  _g = Enum.at(arr, 0)
-  _g1 = Enum.at(arr, 1)
-  _g2 = Enum.at(arr, 2)
-  (
-  x = _g
-  y = _g1
-  z = _g2
-  temp_result = "triple(" + x + "," + y + "," + z + ")"
-)
-)
+    _g = Enum.at(arg0, 0)
+_g1 = Enum.at(arg0, 1)
+_g2 = Enum.at(arg0, 2)
+x = _g
+y = _g1
+z = _g2
+temp_result = "triple(" <> x <> "," <> y <> "," <> z <> ")"
   _ ->
     temp_result = "many"
 end
-  temp_result
-)
+temp_result
   end
 
   @doc "
@@ -157,15 +126,13 @@ end
      "
   @spec match_nested(Option.t()) :: String.t()
   def match_nested(arg0) do
-    (
-  temp_result = nil
-  case (# TODO: Implement expression type: TEnumIndex) do
+    temp_result = nil
+case (# TODO: Implement expression type: TEnumIndex) do
   0 ->
     temp_result = "no color"
   1 ->
-    (
-  _g = # TODO: Implement expression type: TEnumParameter
-  case (# TODO: Implement expression type: TEnumIndex) do
+    _g = # TODO: Implement expression type: TEnumParameter
+case (# TODO: Implement expression type: TEnumIndex) do
   0 ->
     temp_result = "red color"
   1 ->
@@ -173,27 +140,23 @@ end
   2 ->
     temp_result = "blue color"
   3 ->
-    (
-  _g1 = # TODO: Implement expression type: TEnumParameter
-  _g2 = # TODO: Implement expression type: TEnumParameter
-  _g3 = # TODO: Implement expression type: TEnumParameter
-  (
-  r = _g1
-  g = _g2
-  b = _g3
-  if (r > 128), do: temp_result = "bright rgb", else: (
+    _g1 = # TODO: Implement expression type: TEnumParameter
+_g2 = # TODO: Implement expression type: TEnumParameter
+_g3 = # TODO: Implement expression type: TEnumParameter
+r = _g1
+g = _g2
+b = _g3
+if (r > 128) do
+  temp_result = "bright rgb"
+else
   r2 = _g1
   g2 = _g2
   b2 = _g
   temp_result = "dark rgb"
-)
-)
-)
 end
-)
 end
-  temp_result
-)
+end
+temp_result
   end
 
   @doc "
@@ -201,17 +164,23 @@ end
      "
   @spec match_bool(boolean(), integer()) :: String.t()
   def match_bool(arg0, arg1) do
-    (
-  temp_result = nil
-  if ((flag)), do: if (count == 0), do: temp_result = "true zero", else: (
-  n = count
-  if (n > 0), do: temp_result = "true positive", else: temp_result = "other combination"
-), else: if (count == 0), do: temp_result = "false zero", else: (
-  n = count
-  if (n > 0), do: temp_result = "false positive", else: temp_result = "other combination"
-)
-  temp_result
-)
+    temp_result = nil
+if ((arg0)) do
+  if (arg1 == 0) do
+    temp_result = "true zero"
+  else
+    n = arg1
+    if (n > 0), do: temp_result = "true positive", else: temp_result = "other combination"
+  end
+else
+  if (arg1 == 0) do
+    temp_result = "false zero"
+  else
+    n = arg1
+    if (n > 0), do: temp_result = "false positive", else: temp_result = "other combination"
+  end
+end
+temp_result
   end
 
   @doc "Function main"
@@ -238,7 +207,7 @@ defmodule Color do
 
   @type t() ::
     :red |
-    {:r_g_b, :term(), :term(), :term()} |
+    {:r_g_b, term(), term(), term()} |
     :green |
     :blue
 
@@ -250,11 +219,11 @@ defmodule Color do
   Creates r_g_b enum value with parameters
   
   ## Parameters
-    - `arg0`: :term()
-    - `arg1`: :term()
-    - `arg2`: :term()
+    - `arg0`: term()
+    - `arg1`: term()
+    - `arg2`: term()
   """
-  @spec r_g_b(:term(), :term(), :term()) :: {:r_g_b, :term(), :term(), :term()}
+  @spec r_g_b(term(), term(), term()) :: {:r_g_b, term(), term(), term()}
   def r_g_b(arg0, arg1, arg2) do
     {:r_g_b, arg0, arg1, arg2}
   end
@@ -289,7 +258,7 @@ defmodule Color do
   def is_blue(_), do: false
 
   @doc "Extracts value from r_g_b variant, returns {:ok, value} or :error"
-  @spec get_r_g_b_value(t()) :: {:ok, {:term(), :term(), :term()}} | :error
+  @spec get_r_g_b_value(t()) :: {:ok, {term(), term(), term()}} | :error
   def get_r_g_b_value({:r_g_b, arg0, arg1, arg2}), do: {:ok, {arg0, arg1, arg2}}
   def get_r_g_b_value(_), do: :error
 
@@ -304,16 +273,16 @@ defmodule Option do
   """
 
   @type t() ::
-    {:some, :term()} |
+    {:some, term()} |
     :none
 
   @doc """
   Creates some enum value with parameters
   
   ## Parameters
-    - `arg0`: :term()
+    - `arg0`: term()
   """
-  @spec some(:term()) :: {:some, :term()}
+  @spec some(term()) :: {:some, term()}
   def some(arg0) do
     {:some, arg0}
   end
@@ -334,7 +303,7 @@ defmodule Option do
   def is_none(_), do: false
 
   @doc "Extracts value from some variant, returns {:ok, value} or :error"
-  @spec get_some_value(t()) :: {:ok, :term()} | :error
+  @spec get_some_value(t()) :: {:ok, term()} | :error
   def get_some_value({:some, value}), do: {:ok, value}
   def get_some_value(_), do: :error
 

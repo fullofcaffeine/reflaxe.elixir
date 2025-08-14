@@ -6,10 +6,24 @@ This guide covers the idiomatic syntax patterns and transformations that Haxe.El
 
 **"Write idiomatic Haxe → Get idiomatic Elixir"**
 
+### Translation Principles
+
+1. **Look Hand-Written**: Generated code should be indistinguishable from manual Elixir
+2. **Performance**: Use efficient Elixir patterns (++ for concat, not Enum.concat)
+3. **Predictability**: Developers can reason about the output
+4. **Interoperability**: Seamless integration with Phoenix/Ecto/OTP
+
 This is achieved through three strategies:
 1. **Natural Mappings** (90%): Direct transformations (method chains → pipes)
 2. **Custom Constructs** (9%): Haxe-friendly syntax for Elixir-specific patterns
 3. **Escape Hatches** (1%): Direct Elixir when needed
+
+### Why These Design Decisions?
+
+Every translation decision prioritizes **idiomatic output**. For example:
+- We use `++` for list concatenation because that's what Elixir developers write
+- We use `length/1` not `Enum.count/1` for lists because it's more idiomatic
+- We generate `Enum.member?/2` with the `?` suffix to follow Elixir conventions
 
 ## Table of Contents
 - [Pipe Operators](#pipe-operators)

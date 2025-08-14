@@ -1,4 +1,5 @@
 defmodule StringBuf do
+  use Bitwise
   @moduledoc """
   StringBuf module generated from Haxe
   
