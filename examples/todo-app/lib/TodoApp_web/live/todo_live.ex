@@ -18,7 +18,7 @@ defmodule TodoLive do
   @doc "Generated from Haxe handle_event"
   def handle_event(event, params, socket) do
     temp_result = nil
-    case ((event)) do
+    case (event) do
       "bulk_complete" ->
         temp_result = TodoLive.complete_all_todos(socket)
       "bulk_delete_completed" ->
@@ -58,7 +58,7 @@ defmodule TodoLive do
   def handle_info(msg, socket) do
     temp_result = nil
     _g = msg.type
-    case ((_g)) do
+    case (_g) do
       "todo_created" ->
         temp_result = TodoLive.add_todo_to_list(msg.todo, socket)
       "todo_deleted" ->
@@ -140,28 +140,20 @@ defmodule TodoLive do
 
   @doc "Generated from Haxe update_todo_in_list"
   def update_todo_in_list(updated_todo, socket) do
-    temp_array = nil
     _this = socket.assigns.todos
     _g = []
     _g1 = 0
-    _g2 = _this
-    Enum.map(_g2, fn tempTodo -> tempTodo end)
-    temp_array = _g
-    todos2 = temp_array
-    socket.assign(%{todos: todos2, completed_todos: TodoLive.count_completed(todos2), pending_todos: TodoLive.count_pending(todos2)})
+    Enum.map(_this, fn tempTodo -> if (v.id == updated_todo.id), do: tempTodo = updated_todo, else: tempTodo = v end)
+    socket.assign(%{todos: _g, completed_todos: TodoLive.count_completed(_g), pending_todos: TodoLive.count_pending(_g)})
   end
 
   @doc "Generated from Haxe remove_todo_from_list"
   def remove_todo_from_list(id, socket) do
-    temp_array = nil
     _this = socket.assigns.todos
     _g = []
     _g1 = 0
-    _g2 = _this
-    Enum.map(_g2, fn item -> if (v.id != id), do: _g ++ [v], else: item end)
-    temp_array = _g
-    todos2 = temp_array
-    socket.assign(%{todos: todos2, total_todos: length(todos2), completed_todos: TodoLive.count_completed(todos2), pending_todos: TodoLive.count_pending(todos2)})
+    Enum.filter(_this, fn item -> (item.id != id) end)
+    socket.assign(%{todos: _g, total_todos: length(_g), completed_todos: TodoLive.count_completed(_g), pending_todos: TodoLive.count_pending(_g)})
   end
 
   @doc "Generated from Haxe load_todos"
@@ -175,15 +167,7 @@ defmodule TodoLive do
   @doc "Generated from Haxe find_todo"
   def find_todo(id, todos) do
     _g = 0
-    (
-      Enum.reduce_while(todos, nil, fn todo, _acc ->
-        if (todo.id == id) do
-          {:halt, todo}
-        else
-          {:cont, nil}
-        end
-      end)
-    )
+    Enum.find(todos2, fn todo -> (todo.id == id) end)
     nil
   end
 
@@ -191,7 +175,7 @@ defmodule TodoLive do
   def count_completed(todos) do
     count = 0
     _g = 0
-    Enum.map(todos, fn todo -> if (todo.completed), do: count = count + 1, else: todo end)
+    Enum.map(todos2, fn item -> if (item.completed), do: count = count + 1, else: item end)
     count
   end
 
@@ -199,21 +183,18 @@ defmodule TodoLive do
   def count_pending(todos) do
     count = 0
     _g = 0
-    Enum.map(todos, fn todo -> if (!todo.completed), do: count = count + 1, else: todo end)
+    Enum.map(todos2, fn item -> if (!todo.completed), do: count = count + 1, else: item end)
     count
   end
 
   @doc "Generated from Haxe parse_tags"
   def parse_tags(tags_string) do
     if (tags_string == nil || tags_string == ""), do: [], else: nil
-    temp_result = nil
     _this = String.split(tags_string, ",")
     _g = []
     _g1 = 0
-    _g2 = _this
-    Enum.map(_g2, fn item -> item end)
-    temp_result = _g
-    temp_result
+    Enum.map(_this, fn item -> StringTools.trim(item) end)
+    _g
   end
 
   @doc "Generated from Haxe get_user_from_session"
@@ -227,12 +208,10 @@ defmodule TodoLive do
     _this = socket.assigns.todos
     _g = []
     _g1 = 0
-    _g2 = _this
-    Enum.map(_g2, fn item -> if (!v.completed), do: _g ++ [v], else: item end)
+    Enum.filter(_this, fn item -> (!v.completed) end)
     temp_array = _g
-    pending = temp_array
     _g = 0
-    Enum.map(pending, fn item -> item end)
+    Enum.map(temp_array, fn item -> item end)
     Phoenix.PubSub.broadcast(TodoApp.PubSub, "todo:updates", %{type: "bulk_update", action: "complete_all"})
     socket.assign(%{todos: TodoLive.load_todos(socket.assigns.current_user.id), completed_todos: socket.assigns.total_todos, pending_todos: 0}).put_flash("info", "All todos marked as completed!")
   end
@@ -243,22 +222,18 @@ defmodule TodoLive do
     _this = socket.assigns.todos
     _g = []
     _g1 = 0
-    _g2 = _this
-    Enum.map(_g2, fn item -> if (v.completed), do: _g ++ [v], else: item end)
+    Enum.filter(_this, fn item -> (item.completed) end)
     temp_array = _g
-    completed = temp_array
     _g = 0
-    Enum.map(completed, fn item -> item end)
+    Enum.map(temp_array, fn item -> item end)
     Phoenix.PubSub.broadcast(TodoApp.PubSub, "todo:updates", %{type: "bulk_delete", action: "delete_completed"})
     temp_array1 = nil
     _this = socket.assigns.todos
     _g = []
     _g1 = 0
-    _g2 = _this
-    Enum.map(_g2, fn item -> if (!v.completed), do: _g ++ [v], else: item end)
+    Enum.filter(_this, fn item -> (!v.completed) end)
     temp_array1 = _g
-    remaining = temp_array1
-    socket.assign(%{todos: remaining, total_todos: length(remaining), completed_todos: 0, pending_todos: length(remaining)}).put_flash("info", "Completed todos deleted!")
+    socket.assign(%{todos: temp_array1, total_todos: length(temp_array1), completed_todos: 0, pending_todos: length(temp_array1)}).put_flash("info", "Completed todos deleted!")
   end
 
   @doc "Generated from Haxe start_editing"
@@ -290,13 +265,12 @@ defmodule TodoLive do
       _g = []
       _g1 = 0
       _g2 = selected_tags2
-      Enum.map(_g2, fn item -> if (v != tag), do: _g ++ [v], else: item end)
+      Enum.filter(_g2, fn item -> (item != tag) end)
       temp_array = _g
     else
       temp_array = selected_tags2 ++ [tag]
     end
-    updated_tags = temp_array
-    socket.assign(%{selected_tags: updated_tags})
+    socket.assign(%{selected_tags: temp_array})
   end
 
 end
