@@ -167,7 +167,7 @@ _g1 = __MODULE__.items
 (fn loop_fn ->
   if (_g < length(_g1)) do
     item = Enum.at(_g1, _g)
-_g + 1
+_g = _g + 1
 result.add(arg0(item))
     loop_fn.(loop_fn)
   end

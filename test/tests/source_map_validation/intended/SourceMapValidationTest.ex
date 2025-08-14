@@ -32,7 +32,7 @@ _g = 0
 (fn loop_fn ->
   if (_g < length(array)) do
     item = Enum.at(array, _g)
-_g + 1
+_g = _g + 1
 SourceMapValidationTest.processItem(item)
     loop_fn.(loop_fn)
   end

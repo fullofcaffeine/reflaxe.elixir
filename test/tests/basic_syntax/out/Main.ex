@@ -49,7 +49,7 @@ _g = arg0
 _g1 = arg1
 (fn loop_fn ->
   if (_g < _g1) do
-    i = _g + 1
+    i = _g = _g + 1
 sum = sum + i
     loop_fn.(loop_fn)
   end
@@ -65,7 +65,7 @@ i = arg0
 (fn loop_fn ->
   if (i > 1) do
     result = result * i
-i - 1
+i = i - 1
     loop_fn.(loop_fn)
   end
 end).(fn f -> f.(f) end)

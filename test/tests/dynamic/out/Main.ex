@@ -49,7 +49,7 @@ _g = 0
 (fn loop_fn ->
   if (_g < length(args)) do
     arg = Enum.at(args, _g)
-_g + 1
+_g = _g + 1
 sum = sum + arg
     loop_fn.(loop_fn)
   end
@@ -88,7 +88,7 @@ _g = 0
 (fn loop_fn ->
   if (_g < length(dyn_array)) do
     item = Enum.at(dyn_array, _g)
-_g + 1
+_g = _g + 1
 Log.trace("Item: " <> Std.string(item), %{fileName: "Main.hx", lineNumber: 103, className: "Main", methodName: "dynamicCollections"})
     loop_fn.(loop_fn)
   end

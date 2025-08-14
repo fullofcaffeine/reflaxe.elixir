@@ -128,7 +128,7 @@ _g = 0
 (fn loop_fn ->
   if (_g < length(results)) do
     task_result = Enum.at(results, _g)
-_g + 1
+_g = _g + 1
 if (task_result._1 != nil && task_result._1._0 == "ok"), do: Log.trace("Task result: " <> Std.string(task_result._1._1), %{fileName: "Main.hx", lineNumber: 117, className: "Main", methodName: "testTask"}), else: nil
     loop_fn.(loop_fn)
   end
@@ -145,7 +145,7 @@ _g1 = 0
 (fn loop_fn ->
   if (_g1 < length(funs)) do
     fun = Enum.at(funs, _g1)
-_g1 + 1
+_g1 = _g1 + 1
 _g ++ [Task.Task.async(fun)]
     loop_fn.(loop_fn)
   end
@@ -157,7 +157,7 @@ _g1 = 0
 (fn loop_fn ->
   if (_g1 < length(tasks2)) do
     task2 = Enum.at(tasks2, _g1)
-_g1 + 1
+_g1 = _g1 + 1
 _g ++ [Task.Task.await(task2)]
     loop_fn.(loop_fn)
   end
@@ -209,7 +209,7 @@ if (supervisor_result._0 == "ok") do
   (fn loop_fn ->
     if (_g1 < length(funs)) do
       fun = Enum.at(funs, _g1)
-  _g1 + 1
+  _g1 = _g1 + 1
   _g ++ [Supervisor.Task.Supervisor.async(supervisor2, fun)]
       loop_fn.(loop_fn)
     end
@@ -221,7 +221,7 @@ if (supervisor_result._0 == "ok") do
   (fn loop_fn ->
     if (_g1 < length(tasks)) do
       task2 = Enum.at(tasks, _g1)
-  _g1 + 1
+  _g1 = _g1 + 1
   _g ++ [Task.Task.await(task2)]
       loop_fn.(loop_fn)
     end
@@ -297,7 +297,7 @@ if (result._0 == "ok") do
   (fn loop_fn ->
     if (_g < length(children_list)) do
       child = Enum.at(children_list, _g)
-  _g + 1
+  _g = _g + 1
   Log.trace("Child: " <> Std.string(child._0) <> ", Type: " <> child._2, %{fileName: "Main.hx", lineNumber: 230, className: "Main", methodName: "testSupervisionTree"})
       loop_fn.(loop_fn)
     end

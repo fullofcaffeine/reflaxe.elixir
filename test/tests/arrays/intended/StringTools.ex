@@ -27,7 +27,7 @@ c > 8 && c < 14 || c == 32
 r = 0
 (fn loop_fn ->
   if (r < l && StringTools.isSpace(arg0, r)) do
-    r + 1
+    r = r + 1
     loop_fn.(loop_fn)
   end
 end).(fn f -> f.(f) end)
@@ -41,7 +41,7 @@ if (r > 0), do: String.slice(arg0, r, l - r), else: arg0
 r = 0
 (fn loop_fn ->
   if (r < l && StringTools.isSpace(arg0, l - r - 1)) do
-    r + 1
+    r = r + 1
     loop_fn.(loop_fn)
   end
 end).(fn f -> f.(f) end)

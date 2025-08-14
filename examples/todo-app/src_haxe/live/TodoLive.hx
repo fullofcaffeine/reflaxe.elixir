@@ -3,6 +3,7 @@ package live;
 import schemas.Todo;
 import phoenix.Phoenix;
 import phoenix.Ecto;
+import types.Types;
 
 using StringTools;
 
@@ -16,11 +17,11 @@ typedef EctoQuery = phoenix.Ecto.EctoQuery;
 @:liveview
 class TodoLive {
 	// Socket assigns
-	var todos: Array<Dynamic> = [];
+	var todos: Array<schemas.Todo> = [];
 	var filter: String = "all"; // all, active, completed
 	var sort_by: String = "created"; // created, priority, due_date
-	var current_user: Dynamic;
-	var editing_todo: Dynamic = null;
+	var current_user: User;
+	var editing_todo: Null<schemas.Todo> = null;
 	var show_form: Bool = false;
 	var search_query: String = "";
 	var selected_tags: Array<String> = [];
@@ -30,7 +31,7 @@ class TodoLive {
 	var completed_todos: Int = 0;
 	var pending_todos: Int = 0;
 	
-	public static function mount(_params: Dynamic, session: Dynamic, socket: Dynamic): Dynamic {
+	public static function mount(_params: MountParams, session: Session, socket: Socket): Socket {
 		// Subscribe to todo updates for real-time sync
 		phoenix.Phoenix.PubSub.subscribe("todo:updates");
 		
@@ -53,7 +54,7 @@ class TodoLive {
 	}
 	
 	// Handle events
-	public static function handle_event(event: String, params: Dynamic, socket: Dynamic): Dynamic {
+	public static function handle_event(event: String, params: EventParams, socket: Socket): Socket {
 		return switch (event) {
 			case "create_todo":
 				create_new_todo(params, socket);
@@ -103,7 +104,7 @@ class TodoLive {
 	}
 	
 	// Handle real-time updates from other users
-	public static function handle_info(msg: Dynamic, socket: Dynamic): Dynamic {
+	public static function handle_info(msg: PubSubMessage, socket: Socket): Socket {
 		return switch (msg.type) {
 			case "todo_created":
 				add_todo_to_list(msg.todo, socket);
@@ -120,7 +121,7 @@ class TodoLive {
 	}
 	
 	// Helper functions
-	static function create_new_todo(params: Dynamic, socket: Dynamic): Dynamic {
+	static function create_new_todo(params: EventParams, socket: Socket): Socket {
 		var todo_params = {
 			title: params.title,
 			description: params.description,
@@ -156,7 +157,7 @@ class TodoLive {
 		}
 	}
 	
-	static function toggle_todo_status(id: Int, socket: Dynamic): Dynamic {
+	static function toggle_todo_status(id: Int, socket: Socket): Socket {
 		var todo = find_todo(id, socket.assigns.todos);
 		if (todo == null) return socket;
 		
@@ -176,7 +177,7 @@ class TodoLive {
 		}
 	}
 	
-	static function delete_todo(id: Int, socket: Dynamic): Dynamic {
+	static function delete_todo(id: Int, socket: Socket): Socket {
 		var todo = find_todo(id, socket.assigns.todos);
 		if (todo == null) return socket;
 		
@@ -193,7 +194,7 @@ class TodoLive {
 		}
 	}
 	
-	static function update_todo_priority(id: Int, priority: String, socket: Dynamic): Dynamic {
+	static function update_todo_priority(id: Int, priority: String, socket: Socket): Socket {
 		var todo = find_todo(id, socket.assigns.todos);
 		if (todo == null) return socket;
 		
@@ -214,7 +215,7 @@ class TodoLive {
 	}
 	
 	// List management helpers
-	static function add_todo_to_list(todo: Dynamic, socket: Dynamic): Dynamic {
+	static function add_todo_to_list(todo: schemas.Todo, socket: Socket): Socket {
 		// Don't add if it's our own todo (already added)
 		if (todo.user_id == socket.assigns.current_user.id) {
 			return socket;
@@ -229,7 +230,7 @@ class TodoLive {
 		});
 	}
 	
-	static function update_todo_in_list(updated_todo: Dynamic, socket: Dynamic): Dynamic {
+	static function update_todo_in_list(updated_todo: schemas.Todo, socket: Socket): Socket {
 		var todos = socket.assigns.todos.map(function(t) {
 			return t.id == updated_todo.id ? updated_todo : t;
 		});
@@ -241,7 +242,7 @@ class TodoLive {
 		});
 	}
 	
-	static function remove_todo_from_list(id: Int, socket: Dynamic): Dynamic {
+	static function remove_todo_from_list(id: Int, socket: Socket): Socket {
 		var todos = socket.assigns.todos.filter(function(t) {
 			return t.id != id;
 		});
@@ -255,7 +256,7 @@ class TodoLive {
 	}
 	
 	// Utility functions
-	static function load_todos(user_id: Int): Array<Dynamic> {
+	static function load_todos(user_id: Int): Array<schemas.Todo> {
 		// Simplified query for initial compilation - use EctoQuery
 		var query = EctoQuery.from(Todo);
 		query = EctoQuery.where(query, {user_id: user_id});
@@ -263,14 +264,14 @@ class TodoLive {
 		return Repo.all(query);
 	}
 	
-	static function find_todo(id: Int, todos: Array<Dynamic>): Dynamic {
+	static function find_todo(id: Int, todos: Array<schemas.Todo>): Null<schemas.Todo> {
 		for (todo in todos) {
 			if (todo.id == id) return todo;
 		}
 		return null;
 	}
 	
-	static function count_completed(todos: Array<Dynamic>): Int {
+	static function count_completed(todos: Array<schemas.Todo>): Int {
 		var count = 0;
 		for (todo in todos) {
 			if (todo.completed) count++;
@@ -278,7 +279,7 @@ class TodoLive {
 		return count;
 	}
 	
-	static function count_pending(todos: Array<Dynamic>): Int {
+	static function count_pending(todos: Array<schemas.Todo>): Int {
 		var count = 0;
 		for (todo in todos) {
 			if (!todo.completed) count++;
@@ -291,14 +292,14 @@ class TodoLive {
 		return tags_string.split(",").map(function(t) return t.trim());
 	}
 	
-	static function get_user_from_session(session: Dynamic): Dynamic {
+	static function get_user_from_session(session: Session): User {
 		// In real app, would fetch from session/token
 		return {id: 1, name: "Demo User", email: "demo@example.com"};
 	}
 	
 	// Bulk operations
-	static function complete_all_todos(socket: Dynamic): Dynamic {
-		var pending: Array<Dynamic> = cast socket.assigns.todos.filter(function(t) return !t.completed);
+	static function complete_all_todos(socket: Socket): Socket {
+		var pending: Array<schemas.Todo> = socket.assigns.todos.filter(function(t) return !t.completed);
 		
 		for (todo in pending) {
 			var updated = Todo.toggle_completed(todo);
@@ -319,8 +320,8 @@ class TodoLive {
 			.put_flash("info", "All todos marked as completed!");
 	}
 	
-	static function delete_completed_todos(socket: Dynamic): Dynamic {
-		var completed: Array<Dynamic> = cast socket.assigns.todos.filter(function(t) return t.completed);
+	static function delete_completed_todos(socket: Socket): Socket {
+		var completed: Array<schemas.Todo> = socket.assigns.todos.filter(function(t) return t.completed);
 		
 		for (todo in completed) {
 			Repo.delete(todo);
@@ -344,12 +345,12 @@ class TodoLive {
 	}
 	
 	// Missing helper functions (placeholder implementations)
-	static function start_editing(id: Int, socket: Dynamic): Dynamic {
+	static function start_editing(id: Int, socket: Socket): Socket {
 		var todo = find_todo(id, socket.assigns.todos);
 		return socket.assign({editing_todo: todo});
 	}
 	
-	static function save_edited_todo(params: Dynamic, socket: Dynamic): Dynamic {
+	static function save_edited_todo(params: EventParams, socket: Socket): Socket {
 		var todo = socket.assigns.editing_todo;
 		if (todo == null) return socket;
 		
@@ -367,7 +368,7 @@ class TodoLive {
 		}
 	}
 	
-	static function toggle_tag_filter(tag: String, socket: Dynamic): Dynamic {
+	static function toggle_tag_filter(tag: String, socket: Socket): Socket {
 		var selected_tags: Array<String> = socket.assigns.selected_tags;
 		var updated_tags = selected_tags.contains(tag) ? 
 			selected_tags.filter(function(t) return t != tag) :
