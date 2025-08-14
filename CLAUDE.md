@@ -476,6 +476,11 @@ What happens:
 ## Recently Fixed Issues ✅ (2025-08-14)
 - **While/do-while loops** now generate idiomatic tail-recursive functions with proper state tuples and break/continue support using throw/catch pattern
 - **For-in loops** now optimize to `Enum.reduce()` with proper range syntax (`start..end`) for simple accumulation patterns
+- **Array iteration patterns** now generate idiomatic Elixir using appropriate Enum functions:
+  - Find patterns → `Enum.reduce_while` with `:halt/:cont` tuples
+  - Counting patterns → `Enum.count(array, fn item -> condition end)`
+  - Loop variable extraction from AST → Correct variable names (todo vs item/1)
+  - **See**: [`documentation/LOOP_OPTIMIZATION_LESSONS.md`](documentation/LOOP_OPTIMIZATION_LESSONS.md)
 - **Loop code generation** follows functional programming principles instead of generating invalid variable reassignments
 - **Standard library cleanup** prevents generation of empty Haxe built-in type modules (Array, String, etc.)
 - **Phoenix Framework support** with comprehensive extern definitions for Channel, Presence, Token, Endpoint modules
