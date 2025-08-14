@@ -183,7 +183,7 @@ defmodule TodoLive do
   def count_pending(todos) do
     count = 0
     _g = 0
-    Enum.map(todos, fn item -> if (!todo.completed), do: count = count + 1, else: item end)
+    Enum.map(todos, fn item -> if (!item.completed), do: count + 1, else: item end)
     count
   end
 
@@ -208,7 +208,7 @@ defmodule TodoLive do
     _this = socket.assigns.todos
     _g = []
     _g = 0
-    Enum.filter(_this, fn item -> (!v.completed) end)
+    Enum.filter(_this, fn item -> (!item.completed) end)
     temp_array = _g
     _g = 0
     Enum.map(temp_array, fn item -> item end)
@@ -231,7 +231,7 @@ defmodule TodoLive do
     _this = socket.assigns.todos
     _g = []
     _g = 0
-    Enum.filter(_this, fn item -> (!v.completed) end)
+    Enum.filter(_this, fn item -> (!item.completed) end)
     temp_array1 = _g
     socket.assign(%{todos: temp_array1, total_todos: length(temp_array1), completed_todos: 0, pending_todos: length(temp_array1)}).put_flash("info", "Completed todos deleted!")
   end
