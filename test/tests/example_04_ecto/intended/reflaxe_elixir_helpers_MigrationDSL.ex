@@ -462,7 +462,7 @@ __MODULE__
      "
   @spec get_column_definitions() :: Array.t()
   def get_column_definitions() do
-    __MODULE__.columns.copy()
+    __MODULE__.columns
   end
 
   @doc "
@@ -470,7 +470,7 @@ __MODULE__
      "
   @spec get_index_definitions() :: Array.t()
   def get_index_definitions() do
-    __MODULE__.indexes.copy()
+    __MODULE__.indexes
   end
 
   @doc "
@@ -478,7 +478,7 @@ __MODULE__
      "
   @spec get_constraint_definitions() :: Array.t()
   def get_constraint_definitions() do
-    __MODULE__.constraints.copy()
+    __MODULE__.constraints
   end
 
 end
