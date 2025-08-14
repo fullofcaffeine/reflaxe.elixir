@@ -58,12 +58,17 @@ defmodule MixIntegrationTest do
       File.mkdir_p!("#{@haxe_source_dir}/test")
       File.write!("#{@haxe_source_dir}/test/SimpleClass.hx", haxe_source_content)
       
-      # Create build.hxml configuration
+      # Create build.hxml configuration with explicit classpath
+      project_root = HaxeTestHelper.find_project_root()
       hxml_content = """
       -cp src_haxe
-      -lib reflaxe.elixir
+      -cp #{project_root}/src
+      -cp #{project_root}/std
+      -lib reflaxe
       -D reflaxe_runtime
+      -D reflaxe.elixir=0.1.0
       -D elixir_output=lib
+      --macro reflaxe.elixir.CompilerInit.Start()
       test.SimpleClass
       """
       
@@ -126,10 +131,15 @@ defmodule MixIntegrationTest do
       
       output = capture_io(:stderr, fn ->
         result = Mix.Tasks.Compile.Haxe.run(["--force"])
-        assert {:error, []} = result
+        assert {:error, diagnostics} = result
+        assert length(diagnostics) > 0
+        diagnostic = List.first(diagnostics)
+        assert %Mix.Task.Compiler.Diagnostic{} = diagnostic
+        assert diagnostic.severity == :error
+        assert diagnostic.compiler_name == "haxe"
       end)
       
-      assert String.contains?(output, "Haxe compilation failed:")
+      assert String.contains?(output, "Haxe compilation failed")
       assert String.contains?(output, "Unterminated string")
     end
     
@@ -214,12 +224,17 @@ defmodule MixIntegrationTest do
       File.mkdir_p!("#{@haxe_source_dir}/test")
       File.write!("#{@haxe_source_dir}/test/SimpleClass.hx", haxe_source_content)
       
-      # Create build.hxml configuration
+      # Create build.hxml configuration with explicit classpath
+      project_root = HaxeTestHelper.find_project_root()
       hxml_content = """
       -cp src_haxe
-      -lib reflaxe.elixir
+      -cp #{project_root}/src
+      -cp #{project_root}/std
+      -lib reflaxe
       -D reflaxe_runtime
+      -D reflaxe.elixir=0.1.0
       -D elixir_output=lib
+      --macro reflaxe.elixir.CompilerInit.Start()
       test.SimpleClass
       """
       
@@ -382,12 +397,17 @@ defmodule MixIntegrationTest do
       }
       """)
       
-      # Create build.hxml
+      # Create build.hxml with explicit classpath
+      project_root = HaxeTestHelper.find_project_root()
       File.write!("#{@test_project_dir}/build.hxml", """
       -cp src_haxe
-      -lib reflaxe.elixir
+      -cp #{project_root}/src
+      -cp #{project_root}/std
+      -lib reflaxe
       -D reflaxe_runtime
+      -D reflaxe.elixir=0.1.0
       -D elixir_output=lib
+      --macro reflaxe.elixir.CompilerInit.Start()
       phoenix.PhoenixComponent
       """)
       
@@ -426,7 +446,7 @@ defmodule MixIntegrationTest do
         assert length(compiled_files) > 0
       end)
       
-      assert String.contains?(output, "Starting Haxe compilation...")
+      assert String.contains?(output, "Compiling Haxe files...")
       assert String.contains?(output, "Compiling Haxe files from src_haxe to lib")
       assert String.contains?(output, "Using build file: build.hxml")
       assert String.contains?(output, "Successfully compiled") && String.contains?(output, "file(s)")

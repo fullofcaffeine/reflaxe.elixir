@@ -236,7 +236,22 @@ defmodule Mix.Tasks.Compile.Haxe do
   
   defp parse_compilation_errors(reason) when is_binary(reason) do
     # Use HaxeCompiler's error parser
-    HaxeCompiler.parse_haxe_errors(reason)
+    parsed_errors = HaxeCompiler.parse_haxe_errors(reason)
+    
+    # If no errors were parsed but we have a reason, create a generic error
+    if Enum.empty?(parsed_errors) and String.trim(reason) != "" do
+      [%{
+        file: nil,
+        line: nil,
+        column_start: nil,
+        column_end: nil,
+        type: :compilation_error,
+        message: reason,
+        raw_line: reason
+      }]
+    else
+      parsed_errors
+    end
   end
   
   defp parse_compilation_errors(_), do: []
