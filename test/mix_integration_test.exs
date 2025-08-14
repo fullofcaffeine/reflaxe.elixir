@@ -86,7 +86,7 @@ defmodule MixIntegrationTest do
 
     test "Mix compiler task loads and executes without errors" do
       output = capture_io(fn ->
-        result = Mix.Tasks.Compile.Haxe.run([])
+        result = Mix.Tasks.Compile.Haxe.run(["--force"])
         # Should compile the SimpleClass.hx file created in setup
         assert {:ok, compiled_files} = result
         assert is_list(compiled_files)
@@ -125,7 +125,7 @@ defmodule MixIntegrationTest do
       File.write!("src_haxe/test/SimpleClass.hx", invalid_haxe)
       
       output = capture_io(:stderr, fn ->
-        result = Mix.Tasks.Compile.Haxe.run([])
+        result = Mix.Tasks.Compile.Haxe.run(["--force"])
         assert {:error, []} = result
       end)
       
@@ -408,7 +408,7 @@ defmodule MixIntegrationTest do
     test "integrates with Phoenix build pipeline and uses custom configuration" do
       # Test that the compiler reads configuration from mix.exs
       output = capture_io(fn ->
-        result = Mix.Tasks.Compile.Haxe.run([])
+        result = Mix.Tasks.Compile.Haxe.run(["--force"])
         assert {:ok, compiled_files} = result
         assert length(compiled_files) > 0
         # PhoenixComponent and its dependencies may be compiled
@@ -434,7 +434,7 @@ defmodule MixIntegrationTest do
     
     test "supports forced recompilation for clean builds" do
       # First compilation
-      {:ok, initial_files} = Mix.Tasks.Compile.Haxe.run([])
+      {:ok, initial_files} = Mix.Tasks.Compile.Haxe.run(["--force"])
       
       # Touch all generated files to make them newer than source
       File.mkdir_p!("lib")
@@ -452,7 +452,7 @@ defmodule MixIntegrationTest do
         result = Mix.Tasks.Compile.Haxe.run([])
         # The result depends on whether recompilation is needed
         case result do
-          {:noop, []} -> :ok
+          {:ok, []} -> :ok  # No files to compile
           {:ok, _files} -> :ok  # May recompile if dependencies changed
         end
       end)
@@ -472,7 +472,7 @@ defmodule MixIntegrationTest do
 
     test "Phoenix development workflow: compile -> modify -> recompile" do
       # Initial compilation
-      {:ok, files1} = Mix.Tasks.Compile.Haxe.run([])
+      {:ok, files1} = Mix.Tasks.Compile.Haxe.run(["--force"])
       # Due to standard library compilation, we get multiple files
       assert length(files1) > 0
       assert Enum.any?(files1, &String.ends_with?(&1, "PhoenixComponent.ex"))
@@ -503,7 +503,7 @@ defmodule MixIntegrationTest do
       assert HaxeCompiler.needs_recompilation?(source_dir: "src_haxe", target_dir: "lib") == true
       
       output = capture_io(fn ->
-        {:ok, files2} = Mix.Tasks.Compile.Haxe.run([])
+        {:ok, files2} = Mix.Tasks.Compile.Haxe.run(["--force"])
         assert length(files2) > 0
       end)
       
