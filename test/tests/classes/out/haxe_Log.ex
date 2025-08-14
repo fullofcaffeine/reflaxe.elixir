@@ -20,8 +20,8 @@ if (arg1 == nil), do: str, else: nil
 pstr = arg1.file_name <> ":" <> Integer.to_string(arg1.line_number)
 if (arg1.custom_params != nil) do
   _g = 0
-  _g1 = arg1.custom_params
-  Enum.map(_g1, fn str -> str end)
+  _g = arg1.custom_params
+  Enum.map(_g, fn item -> item end)
 end
 pstr <> ": " <> str
   end

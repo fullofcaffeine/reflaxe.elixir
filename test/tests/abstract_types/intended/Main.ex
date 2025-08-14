@@ -38,8 +38,3 @@ Log.trace("Money from int: $" <> Float.to_string(Money_Impl_.toDollars(money_fro
   end
 
 end
-
-
-@type userid_t() :: integer()
-
-@type money_t() :: integer()

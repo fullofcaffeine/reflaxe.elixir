@@ -18,11 +18,11 @@ case (# TODO: Implement expression type: TEnumIndex) do
     temp_result = "blue"
   3 ->
     _g = # TODO: Implement expression type: TEnumParameter
-_g1 = # TODO: Implement expression type: TEnumParameter
-_g2 = # TODO: Implement expression type: TEnumParameter
+_g = # TODO: Implement expression type: TEnumParameter
+_g = # TODO: Implement expression type: TEnumParameter
 r = _g
-g = _g1
-b = _g2
+g = _g
+b = _g
 temp_result = "rgb(" <> Integer.to_string(r) <> ", " <> Integer.to_string(g) <> ", " <> Integer.to_string(b) <> ")"
 end
 temp_result
@@ -54,9 +54,9 @@ value = _g
 temp_result = value
   1 ->
     _g = # TODO: Implement expression type: TEnumParameter
-_g1 = # TODO: Implement expression type: TEnumParameter
+_g = # TODO: Implement expression type: TEnumParameter
 left = _g
-right = _g1
+right = _g
 temp_result = Main.treeSum(left) + Main.treeSum(right)
 end
 temp_result
@@ -68,29 +68,29 @@ temp_result
     temp_result = nil
 if (# TODO: Implement expression type: TEnumIndex == 3) do
   _g = # TODO: Implement expression type: TEnumParameter
-  _g1 = # TODO: Implement expression type: TEnumParameter
-  _g2 = # TODO: Implement expression type: TEnumParameter
+  _g = # TODO: Implement expression type: TEnumParameter
+  _g = # TODO: Implement expression type: TEnumParameter
   r = _g
-  g = _g1
-  b = _g2
+  g = _g
+  b = _g
   if (r > 200 && g < 50 && b < 50) do
     temp_result = "mostly red"
   else
-    r2 = _g
-    g2 = _g1
-    b2 = _g2
-    if (g2 > 200 && r2 < 50 && b2 < 50) do
+    r = _g
+    g = _g
+    b = _g
+    if (g > 200 && r < 50 && b < 50) do
       temp_result = "mostly green"
     else
-      r3 = _g
-      g3 = _g1
-      b3 = _g2
-      if (b3 > 200 && r3 < 50 && g3 < 50) do
+      r = _g
+      g = _g
+      b = _g
+      if (b > 200 && r < 50 && g < 50) do
         temp_result = "mostly blue"
       else
         _g
-        _g1
-        _g2
+        _g
+        _g
         temp_result = "mixed color"
       end
     end
@@ -109,8 +109,8 @@ case (# TODO: Implement expression type: TEnumIndex) do
   0 ->
     _g = # TODO: Implement expression type: TEnumParameter
 if (# TODO: Implement expression type: TEnumIndex == 0) do
-  _g1 = # TODO: Implement expression type: TEnumParameter
-  v2 = _g1
+  _g = # TODO: Implement expression type: TEnumParameter
+  v2 = _g
   v1 = _g
   temp_result = v1 == v2
 else
@@ -118,13 +118,13 @@ else
 end
   1 ->
     _g = # TODO: Implement expression type: TEnumParameter
-_g1 = # TODO: Implement expression type: TEnumParameter
+_g = # TODO: Implement expression type: TEnumParameter
 if (# TODO: Implement expression type: TEnumIndex == 1) do
-  _g2 = # TODO: Implement expression type: TEnumParameter
-  _g3 = # TODO: Implement expression type: TEnumParameter
-  l2 = _g2
-  r2 = _g3
-  r1 = _g1
+  _g = # TODO: Implement expression type: TEnumParameter
+  _g = # TODO: Implement expression type: TEnumParameter
+  l2 = _g
+  r2 = _g
+  r1 = _g
   l1 = _g
   temp_result = Main.compareTrees(l1, l2) && Main.compareTrees(r1, r2)
 else
