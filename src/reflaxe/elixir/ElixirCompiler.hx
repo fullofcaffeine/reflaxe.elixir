@@ -224,6 +224,22 @@ class ElixirCompiler extends DirectToStringCompiler {
     }
     
     /**
+     * Get the original variable name before Haxe's renaming.
+     * 
+     * When Haxe renames variables to avoid shadowing (e.g., todos → todos2),
+     * the original name is preserved in Meta.RealPath metadata.
+     * This function retrieves the original name if available.
+     * 
+     * @param v The TVar to get the name from
+     * @return The original variable name or the current name if no metadata exists
+     */
+    private function getOriginalVarName(v: TVar): String {
+        // Check if the variable has :realPath metadata
+        // TVar has both name and meta properties, so we can use the helper
+        return v.getNameOrMeta(":realPath");
+    }
+    
+    /**
      * Generate annotation-aware output path for framework convention adherence.
      * 
      * Uses framework-specific paths for annotated classes:
@@ -828,24 +844,23 @@ class ElixirCompiler extends DirectToStringCompiler {
             return "";
         }
         
+        // Skip Haxe constraint abstracts that don't need generation
+        // These are internal Haxe types used for type constraints
+        if (abstractType.name == "FlatEnum" || abstractType.name == "NotVoid" || 
+            abstractType.name == "Constructible" || abstractType.pack.join(".") == "haxe.Constraints") {
+            return null; // Return null to prevent file generation
+        }
+        
         // Generate Elixir type alias for the abstract
         final typeName = abstractType.name;
         final underlyingType = getElixirTypeFromHaxeType(abstractType.type);
         
-        // Create type alias definition
-        final typeAlias = '@type ${typeName.toLowerCase()}_t() :: ${underlyingType}';
+        // For now, don't generate standalone type alias files - they cause compilation errors
+        // Type aliases should be defined within modules that use them
+        trace('Skipping standalone type alias generation for abstract ${typeName}');
         
-        // Add type alias to current module output
-        var currentModuleContent = getCurrentModuleContent(abstractType);
-        if (currentModuleContent != null) {
-            currentModuleContent = addTypeDefinition(currentModuleContent, typeAlias);
-            updateCurrentModuleContent(abstractType, currentModuleContent);
-        }
-        
-        trace('Generated Elixir type alias for abstract ${typeName}: ${typeAlias}');
-        
-        // Return the type alias definition
-        return typeAlias;
+        // Return null to prevent generating a standalone file for type-only abstracts
+        return null;
     }
     
     /**
@@ -987,12 +1002,14 @@ class ElixirCompiler extends DirectToStringCompiler {
                 compileTConstant(constant);
                 
             case TLocal(v):
+                // Get the original variable name (before Haxe's renaming for shadowing avoidance)
+                var originalName = getOriginalVarName(v);
+                
                 // Use parameter mapping if available (for both abstract methods and regular functions with standardized arg names)
-                var varName = v.name;
-                if (currentFunctionParameterMap.exists(varName)) {
-                    currentFunctionParameterMap.get(varName);
+                if (currentFunctionParameterMap.exists(originalName)) {
+                    currentFunctionParameterMap.get(originalName);
                 } else {
-                    NamingHelper.toSnakeCase(varName);
+                    NamingHelper.toSnakeCase(originalName);
                 }
                 
             case TBinop(op, e1, e2):
@@ -1088,7 +1105,8 @@ class ElixirCompiler extends DirectToStringCompiler {
                         switch (e.expr) {
                             case TLocal(v):
                                 // If it's a local variable, generate assignment
-                                var varName = NamingHelper.toSnakeCase(v.name);
+                                var originalName = getOriginalVarName(v);
+                                var varName = NamingHelper.toSnakeCase(originalName);
                                 '${varName} = ${varName} + 1';
                             case _:
                                 // For other expressions, just generate the increment expression
@@ -1098,7 +1116,8 @@ class ElixirCompiler extends DirectToStringCompiler {
                         switch (e.expr) {
                             case TLocal(v):
                                 // If it's a local variable, generate assignment
-                                var varName = NamingHelper.toSnakeCase(v.name);
+                                var originalName = getOriginalVarName(v);
+                                var varName = NamingHelper.toSnakeCase(originalName);
                                 '${varName} = ${varName} - 1';
                             case _:
                                 // For other expressions, just generate the decrement expression
@@ -1133,7 +1152,9 @@ class ElixirCompiler extends DirectToStringCompiler {
                     }
                 }
                 
-                var varName = NamingHelper.toSnakeCase(tvar.getNameOrNative());
+                // Get the original variable name (before Haxe's renaming)
+                var originalName = getOriginalVarName(tvar);
+                var varName = NamingHelper.toSnakeCase(originalName);
                 if (expr != null) {
                     '${varName} = ${compileExpression(expr)}';
                 } else {
@@ -1191,6 +1212,10 @@ class ElixirCompiler extends DirectToStringCompiler {
                 
             case TSwitch(e, cases, edef):
                 compileSwitchExpression(e, cases, edef);
+                
+            case TFor(tvar, iterExpr, blockExpr):
+                // Compile for-in loops to idiomatic Elixir Enum operations
+                compileForLoop(tvar, iterExpr, blockExpr);
                 
             case TWhile(econd, ebody, normalWhile):
                 // Try to detect and optimize common for-in loop patterns
@@ -1352,7 +1377,8 @@ class ElixirCompiler extends DirectToStringCompiler {
         return switch (expr.expr) {
             case TLocal(v):
                 // Variable binding in pattern
-                NamingHelper.toSnakeCase(v.name);
+                var originalName = getOriginalVarName(v);
+                NamingHelper.toSnakeCase(originalName);
                 
             case TConst(constant):
                 // Literal in pattern
@@ -1838,6 +1864,147 @@ class ElixirCompiler extends DirectToStringCompiler {
     }
     
     /**
+     * Compile for-in loops to idiomatic Elixir Enum operations
+     * 
+     * Transforms Haxe for loops into appropriate Elixir patterns.
+     * Since Elixir is functional, we need to transform mutable operations
+     * into functional equivalents.
+     * 
+     * @param tvar The loop variable
+     * @param iterExpr The iterable expression (array, range, etc.)
+     * @param blockExpr The loop body
+     * @return Compiled Elixir code
+     */
+    private function compileForLoop(tvar: TVar, iterExpr: TypedExpr, blockExpr: TypedExpr): String {
+        // Get the original variable name before Haxe's renaming
+        var originalName = getOriginalVarName(tvar);
+        var loopVar = NamingHelper.toSnakeCase(originalName);
+        var iterableExpr = compileExpression(iterExpr);
+        
+        // Check if this is a find pattern (early return) - highest priority
+        if (hasReturnStatement(blockExpr)) {
+            var body = compileExpressionWithSubstitution(blockExpr, originalName, loopVar);
+            // Extract just the condition from the return statement
+            var returnPattern = ~/return\s+(.+);?/;
+            if (returnPattern.match(body)) {
+                var condition = returnPattern.matched(1);
+                return 'Enum.find(${iterableExpr}, fn ${loopVar} -> ${condition} end)';
+            }
+        }
+        
+        // Check if this is a counting pattern (count++ in loop)
+        if (hasCountingPattern(blockExpr)) {
+            // For counting patterns, we need to handle the mutation differently
+            // Count elements that match a condition
+            var condition = extractCountingCondition(blockExpr, loopVar);
+            if (condition != null) {
+                return 'Enum.count(${iterableExpr}, fn ${loopVar} -> ${condition} end)';
+            } else {
+                // Simple counting without condition - just return length
+                return 'length(${iterableExpr})';
+            }
+        }
+        
+        // Default: compile as Enum.each for side effects or Enum.map for transformations
+        var body = compileExpressionWithSubstitution(blockExpr, originalName, loopVar);
+        
+        // Check if the body has side effects only
+        if (body.contains("Phoenix.PubSub") || body.contains("Repo.") || body.contains("IO.")) {
+            return 'Enum.each(${iterableExpr}, fn ${loopVar} -> ${body} end)';
+        } else {
+            // Otherwise use map for potential transformations
+            return 'Enum.map(${iterableExpr}, fn ${loopVar} -> ${body} end)';
+        }
+    }
+    
+    /**
+     * Check if the expression has a counting pattern
+     */
+    private function hasCountingPattern(expr: TypedExpr): Bool {
+        switch (expr.expr) {
+            case TBlock(exprs):
+                for (e in exprs) {
+                    if (hasCountingPattern(e)) return true;
+                }
+            case TIf(_, eif, _):
+                // Check if the if branch has count++
+                switch (eif.expr) {
+                    case TUnop(OpIncrement, _, {expr: TLocal(_)}):
+                        return true;
+                    case TBlock(exprs):
+                        for (e in exprs) {
+                            if (hasCountingPattern(e)) return true;
+                        }
+                    case _:
+                }
+            case TUnop(OpIncrement, _, {expr: TLocal(_)}):
+                return true;
+            case _:
+        }
+        return false;
+    }
+    
+    /**
+     * Extract the condition from a counting pattern
+     */
+    private function extractCountingCondition(expr: TypedExpr, loopVar: String): Null<String> {
+        switch (expr.expr) {
+            case TBlock(exprs):
+                for (e in exprs) {
+                    var result = extractCountingCondition(e, loopVar);
+                    if (result != null) return result;
+                }
+            case TIf(econd, eif, _):
+                // Check if the if branch has count++
+                switch (eif.expr) {
+                    case TUnop(OpIncrement, _, {expr: TLocal(_)}):
+                        return compileExpression(econd);
+                    case TBlock(exprs):
+                        for (e in exprs) {
+                            switch (e.expr) {
+                                case TUnop(OpIncrement, _, {expr: TLocal(_)}):
+                                    return compileExpression(econd);
+                                case _:
+                            }
+                        }
+                    case _:
+                }
+            case _:
+        }
+        return null;
+    }
+    
+    /**
+     * Extract the condition from a find pattern
+     */
+    private function extractFindCondition(expr: TypedExpr, loopVar: String): Null<String> {
+        switch (expr.expr) {
+            case TBlock(exprs):
+                for (e in exprs) {
+                    var result = extractFindCondition(e, loopVar);
+                    if (result != null) return result;
+                }
+            case TIf(econd, eif, _):
+                // Check if the if branch has a return
+                switch (eif.expr) {
+                    case TReturn(_):
+                        return compileExpression(econd);
+                    case TBlock(exprs):
+                        for (e in exprs) {
+                            switch (e.expr) {
+                                case TReturn(_):
+                                    return compileExpression(econd);
+                                case _:
+                            }
+                        }
+                    case _:
+                }
+            case _:
+        }
+        return null;
+    }
+    
+    /**
      * Try to optimize for-in loop patterns that have been desugared to while loops.
      * 
      * This is a key desugaring reversal function. Haxe transforms convenient for-in
@@ -2063,7 +2230,7 @@ class ElixirCompiler extends DirectToStringCompiler {
                         case TUnop(OpIncrement, _, {expr: TLocal(v)}):
                             // Found count++ pattern (direct)
                             result.hasCountPattern = true;
-                            result.accumulator = v.name;
+                            result.accumulator = getOriginalVarName(v);
                             result.condition = condition;
                             result.conditionExpr = econd;
                         case TBlock(blockExprs):
@@ -2073,13 +2240,13 @@ class ElixirCompiler extends DirectToStringCompiler {
                                     case TUnop(OpIncrement, _, {expr: TLocal(v)}):
                                         // Found count++ pattern in block
                                         result.hasCountPattern = true;
-                                        result.accumulator = v.name;
+                                        result.accumulator = getOriginalVarName(v);
                                         result.condition = condition;
                                         result.conditionExpr = econd;
                                     case TBinop(OpAssign, {expr: TLocal(v)}, {expr: TBinop(OpAdd, _, _)}):
                                         // Found count = count + 1 pattern in block
                                         result.hasCountPattern = true;
-                                        result.accumulator = v.name;
+                                        result.accumulator = getOriginalVarName(v);
                                         result.condition = condition;
                                         result.conditionExpr = econd;
                                     case _:
@@ -2109,7 +2276,7 @@ class ElixirCompiler extends DirectToStringCompiler {
             case TUnop(OpIncrement, false, {expr: TLocal(v)}):
                 // Direct increment outside condition - simple counting
                 result.hasCountPattern = true;
-                result.accumulator = v.name;
+                result.accumulator = getOriginalVarName(v);
                 
             case _:
         }
@@ -2122,8 +2289,9 @@ class ElixirCompiler extends DirectToStringCompiler {
         switch (expr.expr) {
             case TLocal(v):
                 // Check if this is an array access pattern indicating iteration variable
-                if (v.name != "_g" && v.name != "_g1" && v.name != "_g2") {
-                    return v.name;
+                var originalName = getOriginalVarName(v);
+                if (originalName != "_g" && originalName != "_g1" && originalName != "_g2") {
+                    return originalName;
                 }
                 
             case TBlock(exprs):
@@ -2436,8 +2604,9 @@ class ElixirCompiler extends DirectToStringCompiler {
     private function collectVariables(expr: TypedExpr, variables: Map<String, Int>): Void {
         switch (expr.expr) {
             case TLocal(v):
-                var currentCount = variables.exists(v.name) ? variables.get(v.name) : 0;
-                variables.set(v.name, currentCount + 1);
+                var originalName = getOriginalVarName(v);
+                var currentCount = variables.exists(originalName) ? variables.get(originalName) : 0;
+                variables.set(originalName, currentCount + 1);
             case TBinop(_, e1, e2):
                 collectVariables(e1, variables);
                 collectVariables(e2, variables);
@@ -2678,21 +2847,21 @@ class ElixirCompiler extends DirectToStringCompiler {
                     // Variable assignment: x = value
                     switch (e1.expr) {
                         case TLocal(v):
-                            modifiedVars.push({name: v.name, type: "local"});
+                            modifiedVars.push({name: getOriginalVarName(v), type: "local"});
                         case _:
                     }
                 case TBinop(OpAssignOp(_), e1, e2):
                     // Compound assignment: x += value, x *= value, etc.
                     switch (e1.expr) {
                         case TLocal(v):
-                            modifiedVars.push({name: v.name, type: "local"});
+                            modifiedVars.push({name: getOriginalVarName(v), type: "local"});
                         case _:
                     }
                 case TUnop(OpIncrement | OpDecrement, _, e1):
                     // Increment/decrement: x++, ++x, x--, --x
                     switch (e1.expr) {
                         case TLocal(v):
-                            modifiedVars.push({name: v.name, type: "local"});
+                            modifiedVars.push({name: getOriginalVarName(v), type: "local"});
                         case _:
                     }
                 case TBlock(exprs):
@@ -2765,9 +2934,10 @@ class ElixirCompiler extends DirectToStringCompiler {
                 // Handle variable assignment
                 switch (e1.expr) {
                     case TLocal(v):
+                        var originalName = getOriginalVarName(v);
                         var rightSide = compileExpression(e2);
-                        updates.set(v.name, rightSide);
-                        '# ${v.name} updated to ${rightSide}';
+                        updates.set(originalName, rightSide);
+                        '# ${originalName} updated to ${rightSide}';
                     case _:
                         compileExpression(expr);
                 }
@@ -2776,6 +2946,7 @@ class ElixirCompiler extends DirectToStringCompiler {
                 // Handle compound assignment
                 switch (e1.expr) {
                     case TLocal(v):
+                        var originalName = getOriginalVarName(v);
                         var rightSide = compileExpression(e2);
                         var opStr = compileBinop(innerOp);
                         
@@ -2788,9 +2959,9 @@ class ElixirCompiler extends DirectToStringCompiler {
                             opStr = isStringOp ? "<>" : "+";
                         }
                         
-                        var newValue = '${v.name} ${opStr} ${rightSide}';
-                        updates.set(v.name, newValue);
-                        '# ${v.name} updated with ${opStr} ${rightSide}';
+                        var newValue = '${originalName} ${opStr} ${rightSide}';
+                        updates.set(originalName, newValue);
+                        '# ${originalName} updated with ${opStr} ${rightSide}';
                     case _:
                         compileExpression(expr);
                 }
@@ -2799,14 +2970,15 @@ class ElixirCompiler extends DirectToStringCompiler {
                 // Handle increment/decrement
                 switch (e1.expr) {
                     case TLocal(v):
+                        var originalName = getOriginalVarName(v);
                         var op = switch (expr.expr) {
                             case TUnop(OpIncrement, _, _): "+";
                             case TUnop(OpDecrement, _, _): "-";
                             case _: "+";
                         };
-                        var newValue = '${v.name} ${op} 1';
-                        updates.set(v.name, newValue);
-                        '# ${v.name} ${op == "+" ? "incremented" : "decremented"}';
+                        var newValue = '${originalName} ${op} 1';
+                        updates.set(originalName, newValue);
+                        '# ${originalName} ${op == "+" ? "incremented" : "decremented"}';
                     case _:
                         compileExpression(expr);
                 }

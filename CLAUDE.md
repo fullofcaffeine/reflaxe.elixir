@@ -254,7 +254,21 @@ This is acceptable - helpers are simpler for our needs while following similar s
 
 ## Experimental Roadmap 🧪
 
-### 1. Modern Haxe-to-JS with Genes Compiler
+### 1. Comprehensive Loop Pattern Analysis 🔄 **PRIORITY**
+**Enhance loop compilation with intelligent pattern detection**:
+- **Why**: Transform imperative Haxe loops into idiomatic functional Elixir code
+- **Patterns to detect**:
+  - **Counting patterns** → `Enum.count/2`
+  - **Filtering patterns** → `Enum.filter/2`
+  - **Mapping patterns** → `Enum.map/2`
+  - **Accumulation patterns** → `Enum.reduce/3`
+  - **Find patterns** → `Enum.find/3`
+  - **All/Any patterns** → `Enum.all?/2`, `Enum.any?/2`
+- **Implementation**: Analyze loop body AST for mutation patterns and transform accordingly
+- **Status**: Critical for todo-app and general usability
+- **Impact**: Eliminates invalid Elixir code generation, produces idiomatic functional code
+
+### 2. Modern Haxe-to-JS with Genes Compiler
 **Replace standard Haxe JS compilation with [genes](https://github.com/benmerckx/genes)**:
 - **Why**: Modern JavaScript output, better optimization, smaller bundles
 - **Current Issue**: Todo app client (TodoApp.hx) has compilation errors with standard Haxe JS
@@ -522,6 +536,10 @@ What happens:
 4. **The TypeTools.iter error** = wrong test configuration, not API incompatibility
 
 ## Known Issues  
+- **Loop Variable Generation**: For loops may generate incorrect variable names (`todos2` instead of `todos`, `v` instead of loop variable)
+  - **Root Cause**: Variable renaming logic in compiler needs refinement
+  - **Impact**: Generated Elixir code doesn't compile correctly
+  - **Workaround**: Awaiting comprehensive loop pattern analysis implementation
 - **Array Mutability**: Methods like `reverse()` and `sort()` don't mutate in place (Elixir lists are immutable)
   - Workaround: Use assignment like `reversed = reversed.reverse()` instead of just `reversed.reverse()`
 - **Pattern Matching Implementation**: Core logic completed but needs type system integration

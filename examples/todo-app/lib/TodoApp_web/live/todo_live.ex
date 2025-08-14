@@ -9,9 +9,9 @@ defmodule TodoLive do
   @doc "Generated from Haxe mount"
   def mount(_params, _session, socket) do
     Phoenix.PubSub.subscribe(TodoApp.PubSub, "todo:updates")
-    current_user2 = TodoLive.get_user_from_session(session)
-    todos2 = TodoLive.load_todos(current_user2.id)
-    socket.assign(%{todos: todos2, filter: "all", sort_by: "created", current_user: current_user2, editing_todo: nil, show_form: false, search_query: "", selected_tags: [], total_todos: length(todos2), completed_todos: TodoLive.count_completed(todos2), pending_todos: TodoLive.count_pending(todos2)})
+    current_user = TodoLive.get_user_from_session(session)
+    todos = TodoLive.load_todos(current_user.id)
+    socket.assign(%{todos: todos, filter: "all", sort_by: "created", current_user: current_user, editing_todo: nil, show_form: false, search_query: "", selected_tags: [], total_todos: length(todos), completed_todos: TodoLive.count_completed(todos), pending_todos: TodoLive.count_pending(todos)})
   end
 
   @impl true
@@ -81,8 +81,8 @@ defmodule TodoLive do
     if (result.success) do
       todo = result.data
       Phoenix.PubSub.broadcast(TodoApp.PubSub, "todo:updates", %{type: "todo_created", todo: todo})
-      todos2 = [todo] ++ socket.assigns.todos
-      socket.assign(%{todos: todos2, show_form: false, total_todos: length(todos2), pending_todos: socket.assigns.pending_todos + 1}).put_flash("info", "Todo created successfully!")
+      todos = [todo] ++ socket.assigns.todos
+      socket.assign(%{todos: todos, show_form: false, total_todos: length(todos), pending_todos: socket.assigns.pending_todos + 1}).put_flash("info", "Todo created successfully!")
     else
       socket.put_flash("error", "Failed to create todo")
     end
@@ -95,9 +95,9 @@ defmodule TodoLive do
     updated_todo = Todo.toggle_completed(todo)
     result = Repo.update(updated_todo)
     if (result.success) do
-      todo2 = result.data
-      Phoenix.PubSub.broadcast(TodoApp.PubSub, "todo:updates", %{type: "todo_updated", todo: todo2})
-      TodoLive.update_todo_in_list(todo2, socket)
+      todo = result.data
+      Phoenix.PubSub.broadcast(TodoApp.PubSub, "todo:updates", %{type: "todo_updated", todo: todo})
+      TodoLive.update_todo_in_list(todo, socket)
     else
       socket.put_flash("error", "Failed to update todo")
     end
@@ -123,9 +123,9 @@ defmodule TodoLive do
     updated_todo = Todo.update_priority(todo, priority)
     result = Repo.update(updated_todo)
     if (result.success) do
-      todo2 = result.data
-      Phoenix.PubSub.broadcast(TodoApp.PubSub, "todo:updates", %{type: "todo_updated", todo: todo2})
-      TodoLive.update_todo_in_list(todo2, socket)
+      todo = result.data
+      Phoenix.PubSub.broadcast(TodoApp.PubSub, "todo:updates", %{type: "todo_updated", todo: todo})
+      TodoLive.update_todo_in_list(todo, socket)
     else
       socket.put_flash("error", "Failed to update priority")
     end
@@ -134,15 +134,15 @@ defmodule TodoLive do
   @doc "Generated from Haxe add_todo_to_list"
   def add_todo_to_list(todo, socket) do
     if (todo.user_id == socket.assigns.current_user.id), do: socket, else: nil
-    todos2 = [todo] ++ socket.assigns.todos
-    socket.assign(%{todos: todos2, total_todos: length(todos2), pending_todos: TodoLive.count_pending(todos2), completed_todos: TodoLive.count_completed(todos2)})
+    todos = [todo] ++ socket.assigns.todos
+    socket.assign(%{todos: todos, total_todos: length(todos), pending_todos: TodoLive.count_pending(todos), completed_todos: TodoLive.count_completed(todos)})
   end
 
   @doc "Generated from Haxe update_todo_in_list"
   def update_todo_in_list(updated_todo, socket) do
     _this = socket.assigns.todos
     _g = []
-    _g1 = 0
+    _g = 0
     Enum.map(_this, fn tempTodo -> if (v.id == updated_todo.id), do: tempTodo = updated_todo, else: tempTodo = v end)
     socket.assign(%{todos: _g, completed_todos: TodoLive.count_completed(_g), pending_todos: TodoLive.count_pending(_g)})
   end
@@ -151,7 +151,7 @@ defmodule TodoLive do
   def remove_todo_from_list(id, socket) do
     _this = socket.assigns.todos
     _g = []
-    _g1 = 0
+    _g = 0
     Enum.filter(_this, fn item -> (item.id != id) end)
     socket.assign(%{todos: _g, total_todos: length(_g), completed_todos: TodoLive.count_completed(_g), pending_todos: TodoLive.count_pending(_g)})
   end
@@ -167,7 +167,7 @@ defmodule TodoLive do
   @doc "Generated from Haxe find_todo"
   def find_todo(id, todos) do
     _g = 0
-    Enum.find(todos2, fn todo -> (todo.id == id) end)
+    Enum.find(todos, fn todo -> (todo.id == id) end)
     nil
   end
 
@@ -175,7 +175,7 @@ defmodule TodoLive do
   def count_completed(todos) do
     count = 0
     _g = 0
-    Enum.map(todos2, fn item -> if (item.completed), do: count = count + 1, else: item end)
+    Enum.map(todos, fn item -> if (item.completed), do: count = count + 1, else: item end)
     count
   end
 
@@ -183,7 +183,7 @@ defmodule TodoLive do
   def count_pending(todos) do
     count = 0
     _g = 0
-    Enum.map(todos2, fn item -> if (!todo.completed), do: count = count + 1, else: item end)
+    Enum.map(todos, fn item -> if (!todo.completed), do: count = count + 1, else: item end)
     count
   end
 
@@ -192,7 +192,7 @@ defmodule TodoLive do
     if (tags_string == nil || tags_string == ""), do: [], else: nil
     _this = String.split(tags_string, ",")
     _g = []
-    _g1 = 0
+    _g = 0
     Enum.map(_this, fn item -> StringTools.trim(item) end)
     _g
   end
@@ -207,7 +207,7 @@ defmodule TodoLive do
     temp_array = nil
     _this = socket.assigns.todos
     _g = []
-    _g1 = 0
+    _g = 0
     Enum.filter(_this, fn item -> (!v.completed) end)
     temp_array = _g
     _g = 0
@@ -221,7 +221,7 @@ defmodule TodoLive do
     temp_array = nil
     _this = socket.assigns.todos
     _g = []
-    _g1 = 0
+    _g = 0
     Enum.filter(_this, fn item -> (item.completed) end)
     temp_array = _g
     _g = 0
@@ -230,7 +230,7 @@ defmodule TodoLive do
     temp_array1 = nil
     _this = socket.assigns.todos
     _g = []
-    _g1 = 0
+    _g = 0
     Enum.filter(_this, fn item -> (!v.completed) end)
     temp_array1 = _g
     socket.assign(%{todos: temp_array1, total_todos: length(temp_array1), completed_todos: 0, pending_todos: length(temp_array1)}).put_flash("info", "Completed todos deleted!")
@@ -259,16 +259,16 @@ defmodule TodoLive do
 
   @doc "Generated from Haxe toggle_tag_filter"
   def toggle_tag_filter(tag, socket) do
-    selected_tags2 = socket.assigns.selected_tags
+    selected_tags = socket.assigns.selected_tags
     temp_array = nil
-    if (Enum.member?(selected_tags2, tag)) do
+    if (Enum.member?(selected_tags, tag)) do
       _g = []
-      _g1 = 0
-      _g2 = selected_tags2
-      Enum.filter(_g2, fn item -> (item != tag) end)
+      _g = 0
+      _g = selected_tags
+      Enum.filter(_g, fn item -> (item != tag) end)
       temp_array = _g
     else
-      temp_array = selected_tags2 ++ [tag]
+      temp_array = selected_tags ++ [tag]
     end
     socket.assign(%{selected_tags: temp_array})
   end
