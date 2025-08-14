@@ -25,7 +25,7 @@ _g2 = # TODO: Implement expression type: TEnumParameter
 r = _g
 g = _g1
 b = _g2
-temp_result = "rgb(" <> r <> "," <> g <> "," <> b <> ")"
+temp_result = "rgb(" <> Integer.to_string(r) <> "," <> Integer.to_string(g) <> "," <> Integer.to_string(b) <> ")"
 end
 temp_result
   end
@@ -53,7 +53,7 @@ temp_result
   @spec match_int(integer()) :: String.t()
   def match_int(arg0) do
     temp_result = nil
-case ((arg0)) do
+case (arg0) do
   0 ->
     temp_result = "zero"
   1 ->
@@ -76,7 +76,7 @@ temp_result
   @spec match_string(String.t()) :: String.t()
   def match_string(arg0) do
     temp_result = nil
-case ((arg0)) do
+case (arg0) do
   "" ->
     temp_result = "empty"
   "hello" ->
@@ -100,13 +100,13 @@ case (length(arg0)) do
   1 ->
     _g = Enum.at(arg0, 0)
 x = _g
-temp_result = "single(" <> x <> ")"
+temp_result = "single(" <> Integer.to_string(x) <> ")"
   2 ->
     _g = Enum.at(arg0, 0)
 _g1 = Enum.at(arg0, 1)
 x = _g
 y = _g1
-temp_result = "pair(" <> x <> "," <> y <> ")"
+temp_result = "pair(" <> Integer.to_string(x) <> "," <> Integer.to_string(y) <> ")"
   3 ->
     _g = Enum.at(arg0, 0)
 _g1 = Enum.at(arg0, 1)
@@ -114,7 +114,7 @@ _g2 = Enum.at(arg0, 2)
 x = _g
 y = _g1
 z = _g2
-temp_result = "triple(" <> x <> "," <> y <> "," <> z <> ")"
+temp_result = "triple(" <> Integer.to_string(x) <> "," <> Integer.to_string(y) <> "," <> Integer.to_string(z) <> ")"
   _ ->
     temp_result = "many"
 end
@@ -141,17 +141,17 @@ case (# TODO: Implement expression type: TEnumIndex) do
     temp_result = "blue color"
   3 ->
     _g1 = # TODO: Implement expression type: TEnumParameter
-_g2 = # TODO: Implement expression type: TEnumParameter
-_g3 = # TODO: Implement expression type: TEnumParameter
+# TODO: Implement expression type: TEnumParameter
+# TODO: Implement expression type: TEnumParameter
 r = _g1
-g = _g2
-b = _g3
+_g2
+_g3
 if (r > 128) do
   temp_result = "bright rgb"
 else
-  r2 = _g1
-  g2 = _g2
-  b2 = _g
+  _g1
+  _g2
+  _g3
   temp_result = "dark rgb"
 end
 end
@@ -165,7 +165,7 @@ temp_result
   @spec match_bool(boolean(), integer()) :: String.t()
   def match_bool(arg0, arg1) do
     temp_result = nil
-if ((arg0)) do
+if (arg0) do
   if (arg1 == 0) do
     temp_result = "true zero"
   else
@@ -207,13 +207,21 @@ defmodule Color do
 
   @type t() ::
     :red |
-    {:r_g_b, term(), term(), term()} |
     :green |
-    :blue
+    :blue |
+    {:r_g_b, term(), term(), term()}
 
   @doc "Creates red enum value"
   @spec red() :: :red
   def red(), do: :red
+
+  @doc "Creates green enum value"
+  @spec green() :: :green
+  def green(), do: :green
+
+  @doc "Creates blue enum value"
+  @spec blue() :: :blue
+  def blue(), do: :blue
 
   @doc """
   Creates r_g_b enum value with parameters
@@ -228,24 +236,11 @@ defmodule Color do
     {:r_g_b, arg0, arg1, arg2}
   end
 
-  @doc "Creates green enum value"
-  @spec green() :: :green
-  def green(), do: :green
-
-  @doc "Creates blue enum value"
-  @spec blue() :: :blue
-  def blue(), do: :blue
-
   # Predicate functions for pattern matching
   @doc "Returns true if value is red variant"
   @spec is_red(t()) :: boolean()
   def is_red(:red), do: true
   def is_red(_), do: false
-
-  @doc "Returns true if value is r_g_b variant"
-  @spec is_r_g_b(t()) :: boolean()
-  def is_r_g_b({:r_g_b, _}), do: true
-  def is_r_g_b(_), do: false
 
   @doc "Returns true if value is green variant"
   @spec is_green(t()) :: boolean()
@@ -256,6 +251,11 @@ defmodule Color do
   @spec is_blue(t()) :: boolean()
   def is_blue(:blue), do: true
   def is_blue(_), do: false
+
+  @doc "Returns true if value is r_g_b variant"
+  @spec is_r_g_b(t()) :: boolean()
+  def is_r_g_b({:r_g_b, _}), do: true
+  def is_r_g_b(_), do: false
 
   @doc "Extracts value from r_g_b variant, returns {:ok, value} or :error"
   @spec get_r_g_b_value(t()) :: {:ok, {term(), term(), term()}} | :error
@@ -273,8 +273,12 @@ defmodule Option do
   """
 
   @type t() ::
-    {:some, term()} |
-    :none
+    :none |
+    {:some, term()}
+
+  @doc "Creates none enum value"
+  @spec none() :: :none
+  def none(), do: :none
 
   @doc """
   Creates some enum value with parameters
@@ -287,20 +291,16 @@ defmodule Option do
     {:some, arg0}
   end
 
-  @doc "Creates none enum value"
-  @spec none() :: :none
-  def none(), do: :none
-
   # Predicate functions for pattern matching
-  @doc "Returns true if value is some variant"
-  @spec is_some(t()) :: boolean()
-  def is_some({:some, _}), do: true
-  def is_some(_), do: false
-
   @doc "Returns true if value is none variant"
   @spec is_none(t()) :: boolean()
   def is_none(:none), do: true
   def is_none(_), do: false
+
+  @doc "Returns true if value is some variant"
+  @spec is_some(t()) :: boolean()
+  def is_some({:some, _}), do: true
+  def is_some(_), do: false
 
   @doc "Extracts value from some variant, returns {:ok, value} or :error"
   @spec get_some_value(t()) :: {:ok, term()} | :error

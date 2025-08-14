@@ -27,7 +27,7 @@ defmodule AdvancedQueries do
   @spec demonstrate_subquery() :: String.t()
   def demonstrate_subquery() do
     active_users_subquery = "subquery(from u in (from u in User, where: u.active == true), select: u)"
-popular_posts_subquery = "subquery(from p in (from p in Post, where: p.likes > 100 and p.published == true), select: p)"
+"subquery(from p in (from p in Post, where: p.likes > 100 and p.published == true), select: p)"
 "from u in User\n|> where([u], u.id in ^(" <> active_users_subquery <> "))"
   end
 

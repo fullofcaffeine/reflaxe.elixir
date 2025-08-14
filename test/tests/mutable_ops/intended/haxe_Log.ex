@@ -17,7 +17,7 @@ defmodule Log do
   def format_output(arg0, arg1) do
     str = Std.string(arg0)
 if (arg1 == nil), do: str, else: nil
-pstr = arg1.file_name <> ":" <> arg1.line_number
+pstr = arg1.file_name <> ":" <> Integer.to_string(arg1.line_number)
 if (arg1.custom_params != nil) do
   _g = 0
   _g1 = arg1.custom_params

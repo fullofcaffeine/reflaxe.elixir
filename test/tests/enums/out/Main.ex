@@ -23,7 +23,7 @@ _g2 = # TODO: Implement expression type: TEnumParameter
 r = _g
 g = _g1
 b = _g2
-temp_result = "rgb(" <> r <> ", " <> g <> ", " <> b <> ")"
+temp_result = "rgb(" <> Integer.to_string(r) <> ", " <> Integer.to_string(g) <> ", " <> Integer.to_string(b) <> ")"
 end
 temp_result
   end

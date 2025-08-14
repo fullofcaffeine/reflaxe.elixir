@@ -1938,14 +1938,14 @@ class ElixirCompiler extends DirectToStringCompiler {
             return generateEnumFindPattern(arrayExpr, loopVar, ebody);
         }
         
-        // 2. Check for mapping pattern (array transformation) - Higher priority than counting
-        if (bodyAnalysis.hasMapPattern) {
-            return generateEnumMapPattern(arrayExpr, loopVar, ebody);
-        }
-        
-        // 3. Check for filtering pattern (array building with conditions)
+        // 2. Check for filtering pattern BEFORE mapping (filter has higher priority!)
         if (bodyAnalysis.hasFilterPattern && bodyAnalysis.conditionExpr != null) {
             return generateEnumFilterPattern(arrayExpr, loopVar, bodyAnalysis.conditionExpr);
+        }
+        
+        // 3. Check for mapping pattern (array transformation) - Lower priority than filtering
+        if (bodyAnalysis.hasMapPattern) {
+            return generateEnumMapPattern(arrayExpr, loopVar, ebody);
         }
         
         // 4. Check for counting pattern (lower priority since loops may have increments)
@@ -2033,41 +2033,66 @@ class ElixirCompiler extends DirectToStringCompiler {
                 }
                 
             case TIf(econd, eif, _):
-                // Check for counting pattern: if (condition) count++
+                // Check for filtering pattern: if (condition) array.push(item)
+                // or counting pattern: if (condition) count++
                 var condition = compileExpression(econd);
-                switch (eif.expr) {
-                    case TUnop(OpIncrement, _, {expr: TLocal(v)}):
-                        // Found count++ pattern (direct)
-                        result.hasCountPattern = true;
-                        result.accumulator = v.name;
-                        result.condition = condition;
-                        result.conditionExpr = econd;
-                    case TBlock(blockExprs):
-                        // Check for count++ inside block
-                        for (blockExpr in blockExprs) {
-                            switch (blockExpr.expr) {
-                                case TUnop(OpIncrement, _, {expr: TLocal(v)}):
-                                    // Found count++ pattern in block
-                                    result.hasCountPattern = true;
-                                    result.accumulator = v.name;
-                                    result.condition = condition;
-                                    result.conditionExpr = econd;
-                                case TBinop(OpAssign, {expr: TLocal(v)}, {expr: TBinop(OpAdd, _, _)}):
-                                    // Found count = count + 1 pattern in block
-                                    result.hasCountPattern = true;
-                                    result.accumulator = v.name;
-                                    result.condition = condition;
-                                    result.conditionExpr = econd;
-                                case _:
+                
+                // Helper function to check for push pattern
+                function checkForPush(e: TypedExpr): Bool {
+                    switch (e.expr) {
+                        case TCall({expr: TField(_, FInstance(_, _, cf))}, _):
+                            if (cf.get().name == "push") {
+                                return true;
                             }
-                        }
-                    case TBinop(OpAssign, {expr: TLocal(v)}, {expr: TBinop(OpAdd, _, _)}):
-                        // Found count = count + 1 pattern (direct)
-                        result.hasCountPattern = true;
-                        result.accumulator = v.name;
-                        result.condition = condition;
-                        result.conditionExpr = econd;
-                    case _:
+                        case TBlock(exprs):
+                            for (expr in exprs) {
+                                if (checkForPush(expr)) return true;
+                            }
+                        case _:
+                    }
+                    return false;
+                }
+                
+                // Check if this is a filter pattern (has push call)
+                if (checkForPush(eif)) {
+                    result.hasFilterPattern = true;
+                    result.conditionExpr = econd;
+                } else {
+                    // Check for counting patterns
+                    switch (eif.expr) {
+                        case TUnop(OpIncrement, _, {expr: TLocal(v)}):
+                            // Found count++ pattern (direct)
+                            result.hasCountPattern = true;
+                            result.accumulator = v.name;
+                            result.condition = condition;
+                            result.conditionExpr = econd;
+                        case TBlock(blockExprs):
+                            // Check for count++ inside block
+                            for (blockExpr in blockExprs) {
+                                switch (blockExpr.expr) {
+                                    case TUnop(OpIncrement, _, {expr: TLocal(v)}):
+                                        // Found count++ pattern in block
+                                        result.hasCountPattern = true;
+                                        result.accumulator = v.name;
+                                        result.condition = condition;
+                                        result.conditionExpr = econd;
+                                    case TBinop(OpAssign, {expr: TLocal(v)}, {expr: TBinop(OpAdd, _, _)}):
+                                        // Found count = count + 1 pattern in block
+                                        result.hasCountPattern = true;
+                                        result.accumulator = v.name;
+                                        result.condition = condition;
+                                        result.conditionExpr = econd;
+                                    case _:
+                                }
+                            }
+                        case TBinop(OpAssign, {expr: TLocal(v)}, {expr: TBinop(OpAdd, _, _)}):
+                            // Found count = count + 1 pattern (direct)
+                            result.hasCountPattern = true;
+                            result.accumulator = v.name;
+                            result.condition = condition;
+                            result.conditionExpr = econd;
+                        case _:
+                    }
                 }
                 
             case TVar(v, init):
@@ -2282,6 +2307,7 @@ class ElixirCompiler extends DirectToStringCompiler {
         
         // Apply variable substitution to the condition
         var condition = compileExpressionWithVarMapping(conditionExpr, sourceVar, actualLoopVar);
+        
         return 'Enum.filter(${arrayExpr}, fn ${actualLoopVar} -> ${condition} end)';
     }
     
@@ -2433,6 +2459,9 @@ class ElixirCompiler extends DirectToStringCompiler {
                 for (e in exprs) {
                     collectVariables(e, variables);
                 }
+            case TParenthesis(e):
+                // Handle parenthesized expressions
+                collectVariables(e, variables);
             case _:
                 // Other expression types don't contain variables
         }
@@ -2501,6 +2530,9 @@ class ElixirCompiler extends DirectToStringCompiler {
                 // Handle blocks with substitution
                 var compiledExprs = exprs.map(e -> compileExpressionWithSubstitution(e, sourceVar, targetVar));
                 return compiledExprs.join('\n');
+            case TParenthesis(e):
+                // Handle parenthesized expressions with substitution
+                return "(" + compileExpressionWithSubstitution(e, sourceVar, targetVar) + ")";
             case _:
                 // For other cases, fall back to regular compilation
                 return compileExpression(expr);

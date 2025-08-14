@@ -62,9 +62,9 @@ value = [1, 2, 3]
 if (Std.isOfType(value, Array)), do: Log.trace("It's an Array with length: " <> Std.string(length(value)), %{fileName: "Main.hx", lineNumber: 81, className: "Main", methodName: "typeChecking"}), else: nil
 num = "123"
 int_value = Std.parseInt(num)
-Log.trace("Parsed int: " <> int_value, %{fileName: "Main.hx", lineNumber: 87, className: "Main", methodName: "typeChecking"})
+Log.trace("Parsed int: " <> Kernel.inspect(int_value), %{fileName: "Main.hx", lineNumber: 87, className: "Main", methodName: "typeChecking"})
 float_value = Std.parseFloat("3.14")
-Log.trace("Parsed float: " <> float_value, %{fileName: "Main.hx", lineNumber: 90, className: "Main", methodName: "typeChecking"})
+Log.trace("Parsed float: " <> Float.to_string(float_value), %{fileName: "Main.hx", lineNumber: 90, className: "Main", methodName: "typeChecking"})
   end
 
   @doc "Function dynamic_generics"
@@ -78,7 +78,7 @@ Log.trace("Parsed float: " <> float_value, %{fileName: "Main.hx", lineNumber: 90
   def dynamic_collections() do
     dyn_array = [1, "two", 3.0, true, %{x: 10}]
 _g = 0
-Enum.map(dyn_array, fn item -> "Item: " + Std.string(item) end)
+Enum.map(dyn_array, fn item -> "Item: " <> Std.string(item) end)
 dyn_obj = %{}
 dyn_obj.field1 = "value1"
 dyn_obj.field2 = 42

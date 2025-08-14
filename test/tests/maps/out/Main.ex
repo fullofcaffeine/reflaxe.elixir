@@ -17,8 +17,8 @@ defmodule Main do
 map.set("one", 1)
 map.set("two", 2)
 map.set("three", 3)
-Log.trace("Value of \"two\": " <> map.get("two"), %{fileName: "Main.hx", lineNumber: 18, className: "Main", methodName: "stringMap"})
-Log.trace("Value of \"four\": " <> map.get("four"), %{fileName: "Main.hx", lineNumber: 19, className: "Main", methodName: "stringMap"})
+Log.trace("Value of \"two\": " <> Kernel.inspect(map.get("two")), %{fileName: "Main.hx", lineNumber: 18, className: "Main", methodName: "stringMap"})
+Log.trace("Value of \"four\": " <> Kernel.inspect(map.get("four")), %{fileName: "Main.hx", lineNumber: 19, className: "Main", methodName: "stringMap"})
 Log.trace("Has \"one\": " <> Std.string(map.exists("one")), %{fileName: "Main.hx", lineNumber: 22, className: "Main", methodName: "stringMap"})
 Log.trace("Has \"four\": " <> Std.string(map.exists("four")), %{fileName: "Main.hx", lineNumber: 23, className: "Main", methodName: "stringMap"})
 map.remove("two")
@@ -31,7 +31,7 @@ key = map.keys()
       if (key.hasNext()) do
         try do
           key2 = key.next()
-Log.trace("  " <> key2 <> " => " <> map.get(key2), %{fileName: "Main.hx", lineNumber: 32, className: "Main", methodName: "stringMap"})
+Log.trace("  " <> key2 <> " => " <> Kernel.inspect(map.get(key2)), %{fileName: "Main.hx", lineNumber: 32, className: "Main", methodName: "stringMap"})
           loop_fn.()
         catch
           :break -> nil
@@ -85,7 +85,7 @@ key = map.keys()
       if (key.hasNext()) do
         try do
           key2 = key.next()
-Log.trace("  " <> key2 <> " => " <> map.get(key2), %{fileName: "Main.hx", lineNumber: 51, className: "Main", methodName: "intMap"})
+Log.trace("  " <> Integer.to_string(key2) <> " => " <> Kernel.inspect(map.get(key2)), %{fileName: "Main.hx", lineNumber: 51, className: "Main", methodName: "intMap"})
           loop_fn.()
         catch
           :break -> nil
@@ -156,10 +156,10 @@ obj1 = %{id: 1}
 obj2 = %{id: 2}
 map.set(obj1, "Object 1")
 map.set(obj2, "Object 2")
-Log.trace("Object 1 value: " <> map.get(obj1), %{fileName: "Main.hx", lineNumber: 71, className: "Main", methodName: "objectMap"})
-Log.trace("Object 2 value: " <> map.get(obj2), %{fileName: "Main.hx", lineNumber: 72, className: "Main", methodName: "objectMap"})
+Log.trace("Object 1 value: " <> Kernel.inspect(map.get(obj1)), %{fileName: "Main.hx", lineNumber: 71, className: "Main", methodName: "objectMap"})
+Log.trace("Object 2 value: " <> Kernel.inspect(map.get(obj2)), %{fileName: "Main.hx", lineNumber: 72, className: "Main", methodName: "objectMap"})
 obj3 = %{id: 1}
-Log.trace("New {id: 1} value: " <> map.get(obj3), %{fileName: "Main.hx", lineNumber: 76, className: "Main", methodName: "objectMap"})
+Log.trace("New {id: 1} value: " <> Kernel.inspect(map.get(obj3)), %{fileName: "Main.hx", lineNumber: 76, className: "Main", methodName: "objectMap"})
   end
 
   @doc "Function map_literals"
@@ -209,7 +209,7 @@ n = temp_map1.keys()
       if (n.hasNext()) do
         try do
           n2 = n.next()
-Log.trace("  " <> n2 <> "² = " <> temp_map1.get(n2), %{fileName: "Main.hx", lineNumber: 105, className: "Main", methodName: "mapLiterals"})
+Log.trace("  " <> Integer.to_string(n2) <> "² = " <> Kernel.inspect(temp_map1.get(n2)), %{fileName: "Main.hx", lineNumber: 105, className: "Main", methodName: "mapLiterals"})
           loop_fn.()
         catch
           :break -> nil
@@ -322,7 +322,7 @@ key = doubled.keys()
       if (key.hasNext()) do
         try do
           key2 = key.next()
-Log.trace("  " <> key2 <> " => " <> doubled.get(key2), %{fileName: "Main.hx", lineNumber: 155, className: "Main", methodName: "mapTransformations"})
+Log.trace("  " <> key2 <> " => " <> Kernel.inspect(doubled.get(key2)), %{fileName: "Main.hx", lineNumber: 155, className: "Main", methodName: "mapTransformations"})
           loop_fn.()
         catch
           :break -> nil
@@ -365,7 +365,7 @@ key = filtered.keys()
       if (key.hasNext()) do
         try do
           key2 = key.next()
-Log.trace("  " <> key2 <> " => " <> filtered.get(key2), %{fileName: "Main.hx", lineNumber: 169, className: "Main", methodName: "mapTransformations"})
+Log.trace("  " <> key2 <> " => " <> Kernel.inspect(filtered.get(key2)), %{fileName: "Main.hx", lineNumber: 169, className: "Main", methodName: "mapTransformations"})
           loop_fn.()
         catch
           :break -> nil
@@ -440,7 +440,7 @@ key = merged.keys()
       if (key.hasNext()) do
         try do
           key2 = key.next()
-Log.trace("  " <> key2 <> " => " <> merged.get(key2), %{fileName: "Main.hx", lineNumber: 186, className: "Main", methodName: "mapTransformations"})
+Log.trace("  " <> key2 <> " => " <> Kernel.inspect(merged.get(key2)), %{fileName: "Main.hx", lineNumber: 186, className: "Main", methodName: "mapTransformations"})
           loop_fn.()
         catch
           :break -> nil
@@ -470,7 +470,7 @@ color = map.keys()
       if (color.hasNext()) do
         try do
           color2 = color.next()
-Log.trace("  " <> Std.string(color2) <> " => #" <> map.get(color2), %{fileName: "Main.hx", lineNumber: 200, className: "Main", methodName: "enumMap"})
+Log.trace("  " <> Std.string(color2) <> " => #" <> Kernel.inspect(map.get(color2)), %{fileName: "Main.hx", lineNumber: 200, className: "Main", methodName: "enumMap"})
           loop_fn.()
         catch
           :break -> nil
@@ -483,7 +483,7 @@ Log.trace("  " <> Std.string(color2) <> " => #" <> map.get(color2), %{fileName: 
     :break -> nil
   end
 )
-if (map.exists(Color.red())), do: Log.trace("Red color code: #" <> map.get(Color.red()), %{fileName: "Main.hx", lineNumber: 205, className: "Main", methodName: "enumMap"}), else: nil
+if (map.exists(Color.red())), do: Log.trace("Red color code: #" <> Kernel.inspect(map.get(Color.red())), %{fileName: "Main.hx", lineNumber: 205, className: "Main", methodName: "enumMap"}), else: nil
   end
 
   @doc "Function process_map"
@@ -498,7 +498,7 @@ key = arg0.keys()
         try do
           key2 = key.next()
 value = arg0.get(key2)
-result.set(key2, "Value: " <> value)
+result.set(key2, "Value: " <> Kernel.inspect(value))
           loop_fn.()
         catch
           :break -> nil
@@ -544,7 +544,7 @@ key = output.keys()
       if (key.hasNext()) do
         try do
           key2 = key.next()
-Log.trace("" <> key2 <> ": " <> output.get(key2), %{fileName: "Main.hx", lineNumber: 245, className: "Main", methodName: "main"})
+Log.trace("" <> key2 <> ": " <> Kernel.inspect(output.get(key2)), %{fileName: "Main.hx", lineNumber: 245, className: "Main", methodName: "main"})
           loop_fn.()
         catch
           :break -> nil

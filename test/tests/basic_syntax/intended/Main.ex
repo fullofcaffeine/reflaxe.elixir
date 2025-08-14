@@ -88,7 +88,7 @@ result
   @spec day_name(integer()) :: String.t()
   def day_name(arg0) do
     temp_result = nil
-case ((arg0)) do
+case (arg0) do
   1 ->
     temp_result = "Monday"
   2 ->

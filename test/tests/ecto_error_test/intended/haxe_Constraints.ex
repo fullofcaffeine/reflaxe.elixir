@@ -4,3 +4,12 @@ defmodule IMap do
   """
 
 end
+
+
+
+
+@type flatenum_t() :: term()
+
+@type notvoid_t() :: term()
+
+@type constructible_t() :: term()

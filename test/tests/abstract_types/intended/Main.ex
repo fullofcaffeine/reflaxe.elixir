@@ -23,18 +23,23 @@ total = Money_Impl_.add(price1, price2)
 discount = Money_Impl_.subtract(price1, Money_Impl_._new(150))
 doubled = Money_Impl_.multiply(price1, 2)
 is_equal = Money_Impl_.equal(price1, price2)
-Log.trace("Price1: $" <> Money_Impl_.toDollars(price1), %{fileName: "Main.hx", lineNumber: 83, className: "Main", methodName: "main"})
-Log.trace("Price2: $" <> Money_Impl_.toDollars(price2), %{fileName: "Main.hx", lineNumber: 84, className: "Main", methodName: "main"})
-Log.trace("Total: $" <> Money_Impl_.toDollars(total), %{fileName: "Main.hx", lineNumber: 85, className: "Main", methodName: "main"})
-Log.trace("Discounted: $" <> Money_Impl_.toDollars(discount), %{fileName: "Main.hx", lineNumber: 86, className: "Main", methodName: "main"})
-Log.trace("Doubled: $" <> Money_Impl_.toDollars(doubled), %{fileName: "Main.hx", lineNumber: 87, className: "Main", methodName: "main"})
+Log.trace("Price1: $" <> Float.to_string(Money_Impl_.toDollars(price1)), %{fileName: "Main.hx", lineNumber: 83, className: "Main", methodName: "main"})
+Log.trace("Price2: $" <> Float.to_string(Money_Impl_.toDollars(price2)), %{fileName: "Main.hx", lineNumber: 84, className: "Main", methodName: "main"})
+Log.trace("Total: $" <> Float.to_string(Money_Impl_.toDollars(total)), %{fileName: "Main.hx", lineNumber: 85, className: "Main", methodName: "main"})
+Log.trace("Discounted: $" <> Float.to_string(Money_Impl_.toDollars(discount)), %{fileName: "Main.hx", lineNumber: 86, className: "Main", methodName: "main"})
+Log.trace("Doubled: $" <> Float.to_string(Money_Impl_.toDollars(doubled)), %{fileName: "Main.hx", lineNumber: 87, className: "Main", methodName: "main"})
 Log.trace("Equal: " <> Std.string(is_equal), %{fileName: "Main.hx", lineNumber: 88, className: "Main", methodName: "main"})
 user_from_int = 42
 int_from_user = user_from_int
 Log.trace("From int: " <> UserId_Impl_.toString(user_from_int), %{fileName: "Main.hx", lineNumber: 93, className: "Main", methodName: "main"})
-Log.trace("To int: " <> int_from_user, %{fileName: "Main.hx", lineNumber: 94, className: "Main", methodName: "main"})
+Log.trace("To int: " <> Integer.to_string(int_from_user), %{fileName: "Main.hx", lineNumber: 94, className: "Main", methodName: "main"})
 money_from_int = 500
-Log.trace("Money from int: $" <> Money_Impl_.toDollars(money_from_int), %{fileName: "Main.hx", lineNumber: 97, className: "Main", methodName: "main"})
+Log.trace("Money from int: $" <> Float.to_string(Money_Impl_.toDollars(money_from_int)), %{fileName: "Main.hx", lineNumber: 97, className: "Main", methodName: "main"})
   end
 
 end
+
+
+@type userid_t() :: integer()
+
+@type money_t() :: integer()
