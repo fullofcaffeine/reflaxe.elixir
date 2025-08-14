@@ -79,19 +79,13 @@ defmodule HaxeTestHelper do
         raise "Failed to link haxe_libraries: #{inspect(reason)}"
     end
     
-    # We need to symlink src/ and std/ for the haxe_libraries/reflaxe.elixir.hxml to work
-    # This may cause the "35-file phenomenon" where standard library files get compiled
-    source_src = Path.expand(Path.join(project_root, "src"))
-    target_src = Path.expand(Path.join(project_dir, "src"))
-    unless File.exists?(target_src) do
-      :file.make_symlink(String.to_charlist(source_src), String.to_charlist(target_src))
-    end
-    
-    source_std = Path.expand(Path.join(project_root, "std"))
-    target_std = Path.expand(Path.join(project_dir, "std"))
-    unless File.exists?(target_std) do
-      :file.make_symlink(String.to_charlist(source_std), String.to_charlist(target_std))
-    end
+    # NOTE: We avoid symlinking src/ and std/ directories as it causes the "35-file phenomenon"
+    # where standard library files get compiled unintentionally. The haxe_libraries symlink
+    # should be sufficient for most test scenarios. If specific tests need these directories,
+    # they should set them up explicitly.
+    #
+    # The reflaxe.elixir.hxml library file should handle compilation properly without
+    # requiring direct access to src/ and std/ directories in test environments.
     
     :ok
   end
