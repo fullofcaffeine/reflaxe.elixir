@@ -21,6 +21,15 @@ Example of correct approach:
 **See**: [`documentation/FEATURE_DETAILS.md`](documentation/FEATURE_DETAILS.md) - Full implementation details
 ```
 
+### 📝 CRITICAL: Documentation Maintenance Rules ⚠️
+**Prevent documentation rot and ensure accuracy:**
+1. **ALWAYS remove deprecated/outdated documentation** - Don't let incorrect info accumulate
+2. **Verify claims against actual code** - Check implementation before documenting issues
+3. **Update Known Issues immediately** when issues are fixed - remove solved problems
+4. **Delete obsolete sections entirely** rather than marking them as outdated
+5. **Test claims in real code** - If documenting a limitation, verify it actually exists
+6. **Remove fixed TODOs and resolved items** - Keep only current actionable items
+
 ## IMPORTANT: Agent Execution Instructions
 1. **ALWAYS verify CLAUDE.md first** - This file contains the project truth
 2. **FOLLOW DOCUMENTATION GUIDE** - See [`documentation/LLM_DOCUMENTATION_GUIDE.md`](documentation/LLM_DOCUMENTATION_GUIDE.md) for how to document
@@ -463,18 +472,31 @@ What happens:
 4. **The TypeTools.iter error** = wrong test configuration, not API incompatibility
 
 ## Known Issues
-- **App name is hardcoded** - "TodoApp.PubSub" should be configurable via metadata or build config
+- **Transformation Extraction**: Array methods generate `fn item -> item end` instead of actual transformation logic
+  - Example: `arr.map(x -> x * 2)` should generate `fn x -> x * 2 end` not `fn item -> item end`
+  - Root cause: `extractTransformationFromBody()` only handles TIf expressions, defaults to loopVar
+- **Variable Scope Issues**: Generated code references undefined variables (e.g., `v.id` where `v` is undefined)
+  - Appears in filter/map patterns where variable names don't match between condition and body
+  - Needs proper variable name extraction and scope tracking
+- **Unused Variable Generation**: Generated code includes unnecessary variables (`_g = []`, `temp_array = nil`)
+  - Creates cluttered output and Elixir compiler warnings
+  - Loop optimization creates temporary variables that aren't cleaned up
 - **Compiler Architecture**: ElixirCompiler extends BaseCompiler instead of DirectToStringCompiler
-  - Causes StdTypes.ex generation bugs (typedefs outside modules) - FIXED by returning null
   - Missing string compilation helpers and target code injection
   - See [`documentation/architecture/COMPILER_INHERITANCE.md`](documentation/architecture/COMPILER_INHERITANCE.md) for refactor justification
-- **Test Environment**: While Haxe 4.3.6 is available and basic compilation works, there are compatibility issues:
-  - Type system mismatches between macro types and expected Reflaxe types
-  - Keyword conflicts with parameter names (`interface`, `operator`, `overload`)
 - **Pattern Matching Implementation**: Core logic completed but needs type system integration
 - **Integration Tests**: Require mock/stub system for TypedExpr structures
 
 ## Recently Fixed Issues ✅ (2025-08-14)
+
+**Latest Session - Array Method Compilation Fixes:**
+- **Array method priority detection** - Reordered pattern detection so Map → Filter → Count → Others prevents misclassification
+- **Array methods no longer generate broken Enum.count** - Now properly generate `Enum.map(_g2, fn item -> item end)` instead of `Enum.count(_g2, fn item -> end)`
+- **PubSub app name configuration** - Fixed hardcoded "App.PubSub" to use configurable `TodoApp.PubSub` via `-D app_name=TodoApp`
+- **Haxe macro API documentation** - Created comprehensive guide preventing "macro-in-macro" errors with Context vs Compiler APIs
+- **All 46 tests now pass** - Updated intended outputs to reflect improved code generation
+
+**Previous Session:**
 - **While/do-while loops** now generate idiomatic tail-recursive functions with proper state tuples and break/continue support using throw/catch pattern
 - **For-in loops** now optimize to `Enum.reduce()` with proper range syntax (`start..end`) for simple accumulation patterns
 - **Array iteration patterns** now generate idiomatic Elixir using appropriate Enum functions:
