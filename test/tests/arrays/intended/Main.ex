@@ -30,11 +30,7 @@ Log.trace(mixed, %{fileName: "Main.hx", lineNumber: 24, className: "Main", metho
   def array_iteration() do
     fruits = ["apple", "banana", "orange", "grape"]
 _g = 0
-(
-  {_g} = Enum.reduce(fruits), _g, fn 1, acc ->
-    acc + 1
-  end)
-)
+Enum.count(fruits, fn item ->  end)
 _g = 0
 _g1 = length(fruits)
 (
@@ -74,28 +70,7 @@ temp_array = nil
 _g = []
 _g1 = 0
 _g2 = numbers
-(
-  try do
-    loop_fn = fn {_g1} ->
-      if (_g1 < length(_g2)) do
-        try do
-          v = Enum.at(_g2, _g1)
-      # _g1 incremented
-      _g ++ [v * 2]
-      loop_fn.({_g1 + 1})
-        catch
-          :break -> {_g1}
-          :continue -> loop_fn.({_g1})
-        end
-      else
-        {_g1}
-      end
-    end
-    loop_fn.({_g1})
-  catch
-    :break -> {_g1}
-  end
-)
+Enum.count(_g2, fn item ->  end)
 temp_array = _g
 doubled = temp_array
 Log.trace("Doubled: " <> Std.string(doubled), %{fileName: "Main.hx", lineNumber: 55, className: "Main", methodName: "arrayMethods"})
@@ -103,28 +78,7 @@ temp_array1 = nil
 _g = []
 _g1 = 0
 _g2 = numbers
-(
-  try do
-    loop_fn = fn {_g1} ->
-      if (_g1 < length(_g2)) do
-        try do
-          v = Enum.at(_g2, _g1)
-      # _g1 incremented
-      if (v rem 2 == 0), do: _g ++ [v], else: nil
-      loop_fn.({_g1 + 1})
-        catch
-          :break -> {_g1}
-          :continue -> loop_fn.({_g1})
-        end
-      else
-        {_g1}
-      end
-    end
-    loop_fn.({_g1})
-  catch
-    :break -> {_g1}
-  end
-)
+Enum.count(_g2, fn item ->  end)
 temp_array1 = _g
 evens = temp_array1
 Log.trace("Evens: " <> Std.string(evens), %{fileName: "Main.hx", lineNumber: 59, className: "Main", methodName: "arrayMethods"})
@@ -189,11 +143,7 @@ Log.trace("Pairs: " <> Std.string(pairs), %{fileName: "Main.hx", lineNumber: 94,
     matrix = [[1, 2, 3], [4, 5, 6], [7, 8, 9]]
 Log.trace("Matrix element [1][2]: " <> Enum.at(Enum.at(matrix, 1), 2), %{fileName: "Main.hx", lineNumber: 106, className: "Main", methodName: "multiDimensional"})
 _g = 0
-(
-  {_g} = Enum.reduce(matrix), _g, fn 1, acc ->
-    acc + 1
-  end)
-)
+Enum.count(matrix, fn item ->  end)
 temp_array = nil
 _g = []
 temp_array1 = nil
@@ -230,55 +180,13 @@ temp_array = nil
 _g = []
 _g1 = 0
 _g2 = arg0
-(
-  try do
-    loop_fn = fn {_g1} ->
-      if (_g1 < length(_g2)) do
-        try do
-          v = Enum.at(_g2, _g1)
-      # _g1 incremented
-      _g ++ [v * v]
-      loop_fn.({_g1 + 1})
-        catch
-          :break -> {_g1}
-          :continue -> loop_fn.({_g1})
-        end
-      else
-        {_g1}
-      end
-    end
-    loop_fn.({_g1})
-  catch
-    :break -> {_g1}
-  end
-)
+Enum.count(_g2, fn item ->  end)
 temp_array = _g
 _this = temp_array
 _g = []
 _g1 = 0
 _g2 = _this
-(
-  try do
-    loop_fn = fn {_g1} ->
-      if (_g1 < length(_g2)) do
-        try do
-          v = Enum.at(_g2, _g1)
-      # _g1 incremented
-      if (v > 10), do: _g ++ [v], else: nil
-      loop_fn.({_g1 + 1})
-        catch
-          :break -> {_g1}
-          :continue -> loop_fn.({_g1})
-        end
-      else
-        {_g1}
-      end
-    end
-    loop_fn.({_g1})
-  catch
-    :break -> {_g1}
-  end
-)
+Enum.count(_g2, fn item ->  end)
 temp_result = _g
 temp_result
   end
