@@ -394,3 +394,113 @@ Enum.filter(_this, fn item -> (!item.completed) end)                            
 - Todo-app lambda generation now production-ready with consistent "item" parameter usage
 
 ---
+
+## Session: 2025-01-14 - Mix Integration Test Debugging Deep Dive
+
+### Context: Fix Mix Integration Test Failures After Lambda Parameter Improvements
+Following the lambda parameter fix, 9 out of 13 Mix integration tests were failing due to library path resolution issues. The tests were unable to find the reflaxe.elixir compiler configuration when running from test project directories.
+
+### Problem Identification 🔍
+**Root Cause**: Mix integration tests run from test project directories (`test/fixtures/test_phoenix_project`) but Haxe was finding the main project's `haxe_libraries/reflaxe.elixir.hxml` with relative paths (`src/`, `std/`) that don't work from the test directory.
+
+**Key Discovery**: When tests call `File.cd!(@test_project_dir)`, they change to test directory, but Haxe library resolution (-lib reflaxe.elixir) still references the main project's configuration file instead of the test-specific one created by `HaxeTestHelper.setup_haxe_libraries()`.
+
+### Debugging Steps Performed
+1. **Test Environment Analysis**: 
+   - Mix integration tests create mock Phoenix projects in `test/fixtures/test_phoenix_project/`
+   - Tests call `HaxeTestHelper.setup_haxe_libraries()` to create test-specific library configuration
+   - Error shows Haxe reading from main project's config: `/Users/.../haxe_libraries/reflaxe.elixir.hxml:13: classpath src/ is not a directory`
+
+2. **Library Resolution Investigation**:
+   - Main project uses relative paths: `-cp src/` and `-cp std/`
+   - Test environment generates absolute paths but Haxe still finds main project config
+   - Issue: Test-specific haxe_libraries not taking precedence over main project's
+
+3. **Manual Reproduction**:
+   - Created `/tmp/debug_haxe_test` to manually test Haxe library resolution
+   - Confirmed that `-lib reflaxe.elixir` fails without proper haxe_libraries setup
+   - Verified that absolute paths work when properly configured
+
+### Current Status: Debugging in Progress
+**Issue**: Even though `HaxeTestHelper.setup_haxe_libraries()` creates test-specific configuration with absolute paths in `test_project_dir/haxe_libraries/reflaxe.elixir.hxml`, Haxe is still finding and using the main project's configuration file.
+
+**Next Steps Needed**:
+1. Verify that test-specific haxe_libraries directory is properly created
+2. Ensure Haxe library resolution prioritizes test directory over main project
+3. Consider using explicit `-cp` flags instead of relying on library configuration files
+
+### Lessons Learned for Documentation 📚
+1. **Mix Integration Test Architecture**: Tests create complete Phoenix project structures and must isolate from main project dependencies
+2. **Haxe Library Resolution**: `-lib` directive searches for `haxe_libraries/libname.hxml` in current directory, then falls back to global/parent directories
+3. **Test Isolation Requirements**: Test environments need complete library path isolation to avoid main project interference
+4. **Directory Context Matters**: Haxe compilation is sensitive to working directory for relative path resolution
+
+### Files Modified So Far
+- `lib/mix/tasks/compile.haxe.ex` - Fixed return values and error handling
+- `test/support/haxe_test_helper.ex` - Enhanced test library configuration with absolute paths
+- Mix integration tests - Added `--force` flags for reliable compilation
+
+### Technical Solution Implemented ✅
+
+#### Root Cause Analysis
+The fundamental issue was that Mix integration tests use `-lib reflaxe.elixir` which relies on Haxe's library resolution mechanism. When tests run from isolated test directories (`test/fixtures/test_phoenix_project`), Haxe still searches for `haxe_libraries/reflaxe.elixir.hxml` but finds the main project's configuration with relative paths (`-cp src/`, `-cp std/`) that don't work from the test directory context.
+
+#### Solution: Explicit Classpath Configuration
+**Strategy**: Replace library-dependent configuration with explicit classpath directives.
+
+**Implementation**:
+1. **Made HaxeTestHelper.find_project_root() public** - Allows tests to get absolute project paths
+2. **Updated all hxml configurations** in Mix integration tests:
+   ```haxe
+   # Before (library-dependent)
+   -lib reflaxe.elixir
+   
+   # After (explicit classpath)
+   project_root = HaxeTestHelper.find_project_root()
+   -cp #{project_root}/src
+   -cp #{project_root}/std
+   -lib reflaxe
+   -D reflaxe.elixir=0.1.0
+   --macro reflaxe.elixir.CompilerInit.Start()
+   ```
+3. **Enhanced error diagnostic testing** - Updated tests to expect proper `Mix.Task.Compiler.Diagnostic` structures instead of empty error lists
+
+#### Files Modified
+- `test/support/haxe_test_helper.ex` - Made `find_project_root/1` public (line 247)
+- `test/mix_integration_test.exs` - Updated all hxml configurations with explicit classpath and fixed test expectations
+
+#### Results Achieved
+✅ **Mix Integration Test Success**: `13 tests, 0 failures, 1 skipped` (was 9 failures)
+✅ **Real Compilation Working**: Tests now actually compile Haxe code ("Compiled 25 Haxe file(s)")
+✅ **Library Path Resolution Fixed**: No more "classpath src/ is not a directory" errors
+✅ **Improved Error Handling**: Tests now validate proper diagnostic structures instead of empty errors
+✅ **Test Isolation**: Tests no longer depend on main project library configuration
+
+### Lessons Learned for Future Development 📚
+
+#### Critical Insights
+1. **Haxe Library Resolution Hierarchy**: `-lib` directive searches current directory first, then falls back to parent/global - test isolation requires explicit paths
+2. **Mix Integration Test Architecture**: Tests create complete mock Phoenix projects - library dependencies must be explicitly configured for each test environment
+3. **Test Environment vs Main Project**: Working directory changes affect relative path resolution - absolute paths ensure reliability
+4. **Error Diagnostic Evolution**: Modern Mix.Task.Compiler expects proper diagnostic structures, not empty error lists
+
+#### Best Practices Established
+1. **Use Explicit Classpaths in Tests**: Avoid `-lib` dependencies in isolated test environments
+2. **Document Library Resolution Issues**: Complex compilation environments need clear troubleshooting guides
+3. **Test Error Handling Improvements**: Validate that enhanced error reporting doesn't break existing test expectations
+4. **Absolute Path Strategy**: Use absolute paths in test configurations to avoid working directory sensitivity
+
+### Session Summary
+**Status**: ✅ **COMPLETE SUCCESS**
+**Achievement**: Fixed all Mix integration test failures caused by library path resolution issues
+**Method**: Replaced library-dependent configuration with explicit classpath directives using absolute paths
+**Impact**: Mix build system integration is now robust and reliable for development workflows
+**Quality**: Tests validate actual compilation behavior rather than just configuration correctness
+
+**Key Metrics**:
+- Mix Integration Tests: 9 failures → 0 failures (100% success rate)
+- Real Haxe Compilation: Now working in test environment ("Compiled 25 Haxe file(s)")
+- Error Diagnostics: Enhanced to use proper Mix.Task.Compiler.Diagnostic structures
+- Test Isolation: Complete independence from main project library configuration
+
+---

@@ -45,6 +45,9 @@ defmodule HaxeTestHelper do
   
   @doc """
   Creates or links haxe_libraries directory in the test project.
+  
+  Uses a test-specific reflaxe.elixir.hxml configuration to avoid
+  symlink issues while ensuring proper library resolution.
   """
   def setup_haxe_libraries(project_dir) do
     # Find the project root by looking for mix.exs
@@ -52,8 +55,8 @@ defmodule HaxeTestHelper do
     source_libraries = Path.expand(Path.join(project_root, "haxe_libraries"))
     target_libraries = Path.expand(Path.join(project_dir, "haxe_libraries"))
     
-    # Set HAXELIB_PATH environment variable for test processes
-    # This is critical for Haxe to find the libraries when using -lib directive
+    # Set environment variable for test-specific configuration
+    System.put_env("REFLAXE_ELIXIR_PROJECT_ROOT", project_root)
     System.put_env("HAXELIB_PATH", target_libraries)
     
     # Remove existing link/directory if it exists
@@ -61,31 +64,53 @@ defmodule HaxeTestHelper do
       File.rm_rf!(target_libraries)
     end
     
-    # Create symlink to the main haxe_libraries
-    case :file.make_symlink(
-      String.to_charlist(source_libraries),
-      String.to_charlist(target_libraries)
-    ) do
-      :ok -> 
-        # Also set the environment variable to point to the symlinked directory
-        System.put_env("HAXELIB_PATH", target_libraries)
-        :ok
-      {:error, :enotsup} ->
-        # Fallback to copying if symlinks not supported
-        File.cp_r!(source_libraries, target_libraries)
-        System.put_env("HAXELIB_PATH", target_libraries)
-        :ok
-      {:error, reason} ->
-        raise "Failed to link haxe_libraries: #{inspect(reason)}"
+    # Create the haxe_libraries directory structure
+    File.mkdir_p!(target_libraries)
+    
+    # Copy the reflaxe directory (needed for -lib reflaxe)
+    source_reflaxe = Path.join(source_libraries, "reflaxe")
+    target_reflaxe = Path.join(target_libraries, "reflaxe")
+    if File.exists?(source_reflaxe) do
+      File.cp_r!(source_reflaxe, target_reflaxe)
     end
     
-    # NOTE: We avoid symlinking src/ and std/ directories as it causes the "35-file phenomenon"
-    # where standard library files get compiled unintentionally. The haxe_libraries symlink
-    # should be sufficient for most test scenarios. If specific tests need these directories,
-    # they should set them up explicitly.
-    #
-    # The reflaxe.elixir.hxml library file should handle compilation properly without
-    # requiring direct access to src/ and std/ directories in test environments.
+    # Create test-specific reflaxe.elixir.hxml with absolute paths
+    test_config_target = Path.join(target_libraries, "reflaxe.elixir.hxml")
+    
+    # Generate the configuration content with absolute paths
+    test_config_content = """
+    # Test-specific Reflaxe.Elixir Library Configuration
+    # Generated dynamically with absolute paths to avoid symlink issues
+    
+    # Include the compiler source code using absolute path
+    -cp #{project_root}/src/
+    
+    # Include the Elixir standard library definitions using absolute path  
+    -cp #{project_root}/std/
+    
+    # Depend on the base Reflaxe framework
+    -lib reflaxe
+    
+    # Define the library version
+    -D reflaxe.elixir=0.1.0
+    
+    # Initialize the Elixir compiler
+    --macro reflaxe.elixir.CompilerInit.Start()
+    """
+    
+    File.write!(test_config_target, test_config_content)
+    
+    # Validate that required paths exist
+    src_path = Path.join(project_root, "src")
+    std_path = Path.join(project_root, "std")
+    
+    unless File.exists?(src_path) do
+      raise "Required src/ directory not found at #{src_path}"
+    end
+    
+    unless File.exists?(std_path) do
+      raise "Required std/ directory not found at #{std_path}"
+    end
     
     :ok
   end
@@ -219,7 +244,7 @@ defmodule HaxeTestHelper do
     end
   end
   
-  defp find_project_root(path \\ File.cwd!()) do
+  def find_project_root(path \\ File.cwd!()) do
     if File.exists?(Path.join(path, "mix.exs")) do
       path
     else
