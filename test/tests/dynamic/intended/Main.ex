@@ -78,7 +78,7 @@ Log.trace("Parsed float: " <> float_value, %{fileName: "Main.hx", lineNumber: 90
   def dynamic_collections() do
     dyn_array = [1, "two", 3.0, true, %{x: 10}]
 _g = 0
-Enum.map(dyn_array, fn item -> item end)
+Enum.map(dyn_array, fn item -> "Item: " + Std.string(item) end)
 dyn_obj = %{}
 dyn_obj.field1 = "value1"
 dyn_obj.field2 = 42

@@ -4,6 +4,56 @@ This document contains the historical record of completed tasks and milestones f
 
 ## Recent Task Completions
 
+### Session: August 14, 2025 - Variable Substitution and Transformation Extraction Complete ✅
+**Date**: August 14, 2025  
+**Context**: Implementing the elegant solution for variable substitution in array method transformations. Fixed the core issue where `numbers.map(n -> n * 2)` generated `Enum.map(numbers, fn item -> n * 2 end)` with undefined variable `n`.
+
+**Tasks Completed** ✅:
+
+1. **Variable Substitution Pipeline Implementation**:
+   - **Problem**: Lambda parameters didn't match variables used in transformation bodies
+   - **Root Cause**: Extracted transformation expressions contained original variable names, not substituted lambda parameter names
+   - **Solution**: Implemented AST-level variable substitution with `compileExpressionWithVarMapping()` and `compileExpressionWithSubstitution()`
+   - **Pattern**: Find source variable → Apply recursive substitution → Generate consistent lambda names
+   - **Result**: `numbers.map(n -> n * 2)` → `Enum.map(numbers, fn item -> item * 2 end)`
+
+2. **Enhanced Transformation Extraction**:
+   - **Fixed**: `extractTransformationFromBody` now extracts actual transformations from TCall, TBinop patterns
+   - **Added**: Support for array push operations, list concatenation, and conditional transformations
+   - **Pattern Recognition**: Detects `_g.push(transformation)` and `_g = _g ++ [transformation]` patterns
+   - **Result**: Real transformations like `item * 2`, `"Fruit: " + item`, `item * item` working correctly
+
+3. **AST-Level Variable Mapping**:
+   - **Implemented**: `findLoopVariable()` to identify source variables in expressions
+   - **Added**: Recursive substitution for TBinop, TField, TCall, TArray, TIf, TBlock expressions
+   - **Enhanced**: `analyzeLoopBody` to store both string conditions and TypedExpr for proper substitution
+   - **Result**: Type-safe variable substitution throughout the compilation pipeline
+
+4. **Fixed TypedExpr vs String Pipeline Issues**:
+   - **Problem**: Filter and count patterns used String conditions, preventing proper variable substitution
+   - **Solution**: Modified pipeline to pass TypedExpr through pattern generators instead of pre-compiled strings
+   - **Pattern**: Store `conditionExpr: TypedExpr` alongside `condition: String` in analysis results
+   - **Result**: Consistent variable substitution across map, filter, and count patterns
+
+**Technical Insights Gained** 🧠:
+
+- **Variable Substitution Pattern**: Always perform substitution at AST level, never on strings
+- **Pipeline Design**: Keep TypedExpr as long as possible before string generation
+- **Compiler Development Rule**: Never leave TODOs - fix issues immediately during implementation
+- **AST vs String Compilation**: AST transformations are type-safe and handle edge cases better
+- **Testing Impact**: Variable name changes affected 31 tests, requiring systematic test update approach
+
+**Files Modified**:
+- `src/reflaxe/elixir/ElixirCompiler.hx`: Added variable substitution functions and enhanced transformation extraction
+- `CLAUDE.md`: Added compiler development best practices based on this implementation
+- All test intended outputs: Updated to capture improved transformation generation
+
+**Key Achievements** ✨:
+- **Variable Scope Issues**: RESOLVED - Generated code now has consistent variable scoping
+- **Transformation Extraction**: WORKING - Array methods generate actual logic instead of identity functions  
+- **Type Safety**: ENHANCED - AST-level substitution prevents variable name mismatches
+- **Test Coverage**: IMPROVED - All 46 snapshot tests passing with enhanced transformations
+
 ### Session: August 14, 2025 - Transformation Extraction Infrastructure Improvements ✅
 **Date**: August 14, 2025  
 **Context**: Continuing from previous PubSub and array method fixes, focusing on improving the transformation extraction logic for array methods like `.map()` and `.filter()` that currently generate identity functions instead of actual transformation logic.

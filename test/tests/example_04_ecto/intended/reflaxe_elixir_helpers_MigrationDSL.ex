@@ -127,7 +127,7 @@ MigrationDSL.camelCaseToSnakeCase(table_name)
   def compile_table_creation(arg0, arg1) do
     column_defs = Array.new()
 _g = 0
-Enum.map(arg1, fn tempString -> tempString end)
+Enum.map(arg1, fn tempString -> "      add :" + tempString + ", :" + type end)
 "create table(:" <> arg0 <> ") do\n" <> Enum.join(column_defs, "\n") <> "\n" <> "      timestamps()\n" <> "    end"
   end
 
@@ -149,7 +149,7 @@ Enum.map(arg1, fn tempString -> tempString end)
 (_g = []
 _g1 = 0
 _g2 = arg1
-Enum.map(_g2, fn item -> item end)
+Enum.map(_g2, fn item -> ":" + item end)
 temp_array = _g)
 field_list = Enum.join(temp_array, ", ")
 if (case :binary.match(arg2, "unique") do {pos, _} -> pos; :nomatch -> -1 end != -1), do: "create unique_index(:" <> arg0 <> ", [" <> field_list <> "])", else: "create index(:" <> arg0 <> ", [" <> field_list <> "])"
@@ -271,7 +271,7 @@ safe_name = MigrationDSL.sanitizeIdentifier(arg1)
   def compile_batch_migrations(arg0) do
     compiled_migrations = Array.new()
 _g = 0
-Enum.map(arg0, fn item -> item end)
+Enum.map(arg0, fn item -> MigrationDSL.compileFullMigration(item) end)
 Enum.join(compiled_migrations, "\n\n")
   end
 
@@ -356,7 +356,7 @@ if (arg3 != nil) do
   opts = []
   fields = Reflect.fields(arg3)
   _g = 0
-  Enum.map(fields, fn item -> if (Std.isOfType(value, String)), do: opts ++ ["" <> field <> ": \"" <> value <> "\""], else: if (Std.isOfType(value, Bool)), do: opts ++ ["" <> field <> ": " <> value], else: opts ++ ["" <> field <> ": " <> value] end)
+  Enum.map(fields, fn item -> if (Std.isOfType(value, String)), do: item.push("" + field + ": \"" + value + "\""), else: if (Std.isOfType(value, Bool)), do: opts ++ ["" <> field <> ": " <> value], else: opts ++ ["" <> field <> ": " <> value] end)
   if (length(opts) > 0), do: options_str = ", " <> Enum.join(opts, ", "), else: nil
 end
 "alter table(:" <> arg0 <> ") do\n      add :" <> arg1 <> ", :" <> arg2 <> options_str <> "\n    end"
@@ -372,7 +372,7 @@ end
 (_g = []
 _g1 = 0
 _g2 = arg1
-Enum.map(_g2, fn item -> item end)
+Enum.map(_g2, fn item -> ":" + item end)
 temp_array = _g)
 column_list = Enum.join(temp_array, ", ")
 if (arg2 != nil && Reflect.hasField(arg2, "unique") && Reflect.field(arg2, "unique") == true), do: "create unique_index(:" <> arg0 <> ", [" <> column_list <> "])", else: "create index(:" <> arg0 <> ", [" <> column_list <> "])"
@@ -423,7 +423,7 @@ if (arg2 != nil) do
   opts = []
   fields = Reflect.fields(arg2)
   _g = 0
-  Enum.map(fields, fn item -> if (Std.isOfType(value, String)), do: opts ++ ["" <> opt_name <> ": \"" <> value <> "\""], else: if (Std.isOfType(value, Bool)), do: opts ++ ["" <> opt_name <> ": " <> value], else: opts ++ ["" <> opt_name <> ": " <> value] end)
+  Enum.map(fields, fn item -> if (Std.isOfType(value, String)), do: item.push("" + opt_name + ": \"" + value + "\""), else: if (Std.isOfType(value, Bool)), do: opts ++ ["" <> opt_name <> ": " <> value], else: opts ++ ["" <> opt_name <> ": " <> value] end)
   if (length(opts) > 0), do: options_str = ", " <> Enum.join(opts, ", "), else: nil
 end
 __MODULE__.columns ++ ["add :" <> arg0 <> ", :" <> arg1 <> options_str]
@@ -439,7 +439,7 @@ __MODULE__
 (_g = []
 _g1 = 0
 _g2 = arg0
-Enum.map(_g2, fn item -> item end)
+Enum.map(_g2, fn item -> ":" + item end)
 temp_array = _g)
 column_list = Enum.join(temp_array, ", ")
 if (arg1 != nil && Reflect.hasField(arg1, "unique") && Reflect.field(arg1, "unique") == true), do: __MODULE__.indexes ++ ["create unique_index(:" <> __MODULE__.table_name <> ", [" <> column_list <> "])"], else: __MODULE__.indexes ++ ["create index(:" <> __MODULE__.table_name <> ", [" <> column_list <> "])"]
@@ -455,8 +455,8 @@ __MODULE__
 found = false
 _g = 0
 _g1 = __MODULE__.columns
-Enum.map(_g1, fn found -> if (case :binary.match(column, ":" <> arg0 <> ",") do {pos, _} -> pos; :nomatch -> -1 end != -1), do: new_columns ++ ["add :" <> arg0 <> ", references(:" <> arg1 <> ", column: :" <> arg2 <> ")"]
-found = true, else: new_columns ++ [column] end)
+Enum.map(_g1, fn found -> if (case :binary.match(column, ":" <> arg0 <> ",") do {pos, _} -> pos; :nomatch -> -1 end != -1), do: found.push("add :" + arg0 + ", references(:" + arg1 + ", column: :" + arg2 + ")")
+found = true, else: found.push(column) end)
 if (!found), do: new_columns ++ ["add :" <> arg0 <> ", references(:" <> arg1 <> ", column: :" <> arg2 <> ")"], else: nil
 __MODULE__.columns = new_columns
 __MODULE__

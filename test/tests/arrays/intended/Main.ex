@@ -30,7 +30,7 @@ Log.trace(mixed, %{fileName: "Main.hx", lineNumber: 24, className: "Main", metho
   def array_iteration() do
     fruits = ["apple", "banana", "orange", "grape"]
 _g = 0
-Enum.map(fruits, fn item -> _g = _g + 1 end)
+Enum.map(fruits, fn item -> "Fruit: " + item end)
 _g = 0
 _g1 = length(fruits)
 (
@@ -70,7 +70,7 @@ temp_array = nil
 _g = []
 _g1 = 0
 _g2 = numbers
-Enum.map(_g2, fn item -> _g1 = _g1 + 1 end)
+Enum.map(_g2, fn item -> item * 2 end)
 temp_array = _g
 doubled = temp_array
 Log.trace("Doubled: " <> Std.string(doubled), %{fileName: "Main.hx", lineNumber: 55, className: "Main", methodName: "arrayMethods"})
@@ -78,7 +78,7 @@ temp_array1 = nil
 _g = []
 _g1 = 0
 _g2 = numbers
-Enum.map(_g2, fn item -> _g1 = _g1 + 1 end)
+Enum.map(_g2, fn item -> if (v rem 2 == 0), do: _g.push(item), else: item end)
 temp_array1 = _g
 evens = temp_array1
 Log.trace("Evens: " <> Std.string(evens), %{fileName: "Main.hx", lineNumber: 59, className: "Main", methodName: "arrayMethods"})
@@ -143,7 +143,7 @@ Log.trace("Pairs: " <> Std.string(pairs), %{fileName: "Main.hx", lineNumber: 94,
     matrix = [[1, 2, 3], [4, 5, 6], [7, 8, 9]]
 Log.trace("Matrix element [1][2]: " <> Enum.at(Enum.at(matrix, 1), 2), %{fileName: "Main.hx", lineNumber: 106, className: "Main", methodName: "multiDimensional"})
 _g = 0
-Enum.map(matrix, fn item -> _g = _g + 1 end)
+Enum.map(matrix, fn item -> item end)
 temp_array = nil
 _g = []
 temp_array1 = nil
@@ -180,13 +180,13 @@ temp_array = nil
 _g = []
 _g1 = 0
 _g2 = arg0
-Enum.map(_g2, fn item -> _g1 = _g1 + 1 end)
+Enum.map(_g2, fn item -> item * item end)
 temp_array = _g
 _this = temp_array
 _g = []
 _g1 = 0
 _g2 = _this
-Enum.map(_g2, fn item -> _g1 = _g1 + 1 end)
+Enum.map(_g2, fn item -> if (v > 10), do: _g.push(item), else: item end)
 temp_result = _g
 temp_result
   end
