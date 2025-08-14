@@ -25,11 +25,28 @@ arg0 = Enum.join(String.split(arg0, "/*"), "")
 arg0 = Enum.join(String.split(arg0, "*/"), "")
 clean = ""
 _g = 0
-_g1 = String.length(arg0)
+_g = String.length(arg0)
 (
-  {sum} = Enum.reduce(_g.._g1, sum, fn i, acc ->
-    acc + i
-  end)
+  try do
+    loop_fn = fn {clean} ->
+      if (_g < _g) do
+        try do
+          i = _g = _g + 1
+      c = String.at(arg0, i)
+      if (c >= "a" && c <= "z" || c >= "A" && c <= "Z" || c >= "0" && c <= "9" || c == "_"), do: clean = clean <> String.downcase(c), else: nil
+      loop_fn.({clean})
+        catch
+          :break -> {clean}
+          :continue -> loop_fn.({clean})
+        end
+      else
+        {clean}
+      end
+    end
+    loop_fn.({clean})
+  catch
+    :break -> {clean}
+  end
 )
 temp_result = nil
 if (String.length(clean) > 0), do: temp_result = clean, else: temp_result = "sanitized"
@@ -67,26 +84,26 @@ if (meta.params != nil && length(meta.params) > 0) do
   _g = Enum.at(meta.params, 0).expr
   case (# TODO: Implement expression type: TEnumIndex) do
     0 ->
-      _g2 = # TODO: Implement expression type: TEnumParameter
+      _g = # TODO: Implement expression type: TEnumParameter
   if (# TODO: Implement expression type: TEnumIndex == 2) do
-    _g1 = # TODO: Implement expression type: TEnumParameter
+    _g = # TODO: Implement expression type: TEnumParameter
     # TODO: Implement expression type: TEnumParameter
-    s = _g1
+    s = _g
     table_name = s
   else
     table_name = MigrationDSL.extractTableNameFromClassName(arg0.name)
   end
     5 ->
-      _g2 = # TODO: Implement expression type: TEnumParameter
-  fields = _g2
-  _g3 = 0
-  Enum.map(fields, fn item -> if (item.field == "table"), do: _g4 = field.expr.expr
+      _g = # TODO: Implement expression type: TEnumParameter
+  fields = _g
+  _g = 0
+  Enum.map(fields, fn item -> if (item.field == "table"), do: _g = field.expr.expr
   if (# TODO: Implement expression type: TEnumIndex == 0) do
-    _g5 = # TODO: Implement expression type: TEnumParameter
+    _g = # TODO: Implement expression type: TEnumParameter
     if (# TODO: Implement expression type: TEnumIndex == 2) do
-      _g1 = # TODO: Implement expression type: TEnumParameter
+      _g = # TODO: Implement expression type: TEnumParameter
       # TODO: Implement expression type: TEnumParameter
-      s = _g1
+      s = _g
       table_name = s
     else
       nil
@@ -125,7 +142,7 @@ MigrationDSL.camelCaseToSnakeCase(arg0)
   def compile_table_creation(arg0, arg1) do
     column_defs = Array.new()
 _g = 0
-Enum.map(arg1, fn tempString -> if (parts.length > 1), do: tempString = Enum.at(parts, 1), else: tempString = "string" end)
+Enum.map(arg1, fn item -> if (item.length > 1), do: Enum.at(item, 1), else: "string" end)
 "create table(:" <> arg0 <> ") do\n" <> Enum.join(column_defs, "\n") <> "\n" <> "      timestamps()\n" <> "    end"
   end
 
@@ -143,7 +160,7 @@ Enum.map(arg1, fn tempString -> if (parts.length > 1), do: tempString = Enum.at(
   @spec compile_index_creation(String.t(), Array.t(), String.t()) :: String.t()
   def compile_index_creation(arg0, arg1, arg2) do
     _g = []
-_g1 = 0
+_g = 0
 Enum.map(arg1, fn item -> ":" <> item end)
 field_list = Enum.join((_g), ", ")
 if (case :binary.match(arg2, "unique") do {pos, _} -> pos; :nomatch -> -1 end != -1), do: "create unique_index(:" <> arg0 <> ", [" <> field_list <> "])", else: "create index(:" <> arg0 <> ", [" <> field_list <> "])"
@@ -204,11 +221,29 @@ index_creation = MigrationDSL.compileIndexCreation(table_name, ["email"], "uniqu
   def camel_case_to_snake_case(arg0) do
     result = ""
 _g = 0
-_g1 = String.length(arg0)
+_g = String.length(arg0)
 (
-  {sum} = Enum.reduce(_g.._g1, sum, fn i, acc ->
-    acc + i
-  end)
+  try do
+    loop_fn = fn {result} ->
+      if (_g < _g) do
+        try do
+          i = _g = _g + 1
+      char = String.at(arg0, i)
+      if (i > 0 && char >= "A" && char <= "Z"), do: result = result <> "_", else: nil
+      # result updated with <> String.downcase(char)
+      loop_fn.({result <> String.downcase(char)})
+        catch
+          :break -> {result}
+          :continue -> loop_fn.({result})
+        end
+      else
+        {result}
+      end
+    end
+    loop_fn.({result})
+  catch
+    :break -> {result}
+  end
 )
 result
   end
@@ -264,7 +299,7 @@ safe_name = MigrationDSL.sanitizeIdentifier(arg1)
   def compile_batch_migrations(arg0) do
     compiled_migrations = Array.new()
 _g = 0
-Enum.map(arg0, fn item -> MigrationDSL.compileFullMigration(item) end)
+Enum.map(arg0, fn item -> MigrationDSL.compileFullMigration(migration) end)
 Enum.join(compiled_migrations, "\n\n")
   end
 
@@ -313,18 +348,18 @@ constraint_defs = builder.getConstraintDefinitions()
 result = "create table(:" <> arg0 <> ") do\n"
 if (!builder.has_id_column), do: result = result <> "      add :id, :serial, primary_key: true\n", else: nil
 _g = 0
-Enum.map(column_defs, fn result -> result end)
+Enum.map(column_defs, fn item -> item end)
 if (!builder.has_timestamps), do: result = result <> "      timestamps()\n", else: nil
 result = result <> "    end"
 if (length(index_defs) > 0) do
   result = result <> "\n\n"
   _g = 0
-  Enum.map(index_defs, fn result -> result end)
+  Enum.map(index_defs, fn item -> item end)
 end
 if (length(constraint_defs) > 0) do
   result = result <> "\n\n"
   _g = 0
-  Enum.map(constraint_defs, fn result -> result end)
+  Enum.map(constraint_defs, fn item -> item end)
 end
 result
   end
@@ -362,7 +397,7 @@ end
   @spec add_index(String.t(), Array.t(), Null.t()) :: String.t()
   def add_index(arg0, arg1, arg2) do
     _g = []
-_g1 = 0
+_g = 0
 Enum.map(arg1, fn item -> ":" <> item end)
 column_list = Enum.join((_g), ", ")
 if (arg2 != nil && Reflect.hasField(arg2, "unique") && Reflect.field(arg2, "unique") == true), do: "create unique_index(:" <> arg0 <> ", [" <> column_list <> "])", else: "create index(:" <> arg0 <> ", [" <> column_list <> "])"
@@ -426,7 +461,7 @@ __MODULE__
   @spec add_index(Array.t(), Null.t()) :: TableBuilder.t()
   def add_index(arg0, arg1) do
     _g = []
-_g1 = 0
+_g = 0
 Enum.map(arg0, fn item -> ":" <> item end)
 column_list = Enum.join((_g), ", ")
 if (arg1 != nil && Reflect.hasField(arg1, "unique") && Reflect.field(arg1, "unique") == true), do: __MODULE__.indexes ++ ["create unique_index(:" <> __MODULE__.table_name <> ", [" <> column_list <> "])"], else: __MODULE__.indexes ++ ["create index(:" <> __MODULE__.table_name <> ", [" <> column_list <> "])"]
@@ -441,8 +476,8 @@ __MODULE__
     new_columns = []
 found = false
 _g = 0
-_g1 = __MODULE__.columns
-Enum.filter(_g1, fn item -> (column.indexOf(":" <> item <> ",") != -1) end)
+_g = __MODULE__.columns
+Enum.filter(_g, fn item -> (column.indexOf(":" <> item <> ",") != -1) end)
 if (!found), do: new_columns ++ ["add :" <> arg0 <> ", references(:" <> arg1 <> ", column: :" <> arg2 <> ")"], else: nil
 __MODULE__.columns = new_columns
 __MODULE__
