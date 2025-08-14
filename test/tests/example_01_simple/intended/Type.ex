@@ -16,8 +16,8 @@ defmodule ValueType do
     :t_int |
     :t_function |
     :t_float |
-    {:t_enum, :term()} |
-    {:t_class, :term()} |
+    {:t_enum, term()} |
+    {:t_class, term()} |
     :t_bool
 
   @doc "Creates t_unknown enum value"
@@ -48,9 +48,9 @@ defmodule ValueType do
   Creates t_enum enum value with parameters
   
   ## Parameters
-    - `arg0`: :term()
+    - `arg0`: term()
   """
-  @spec t_enum(:term()) :: {:t_enum, :term()}
+  @spec t_enum(term()) :: {:t_enum, term()}
   def t_enum(arg0) do
     {:t_enum, arg0}
   end
@@ -59,9 +59,9 @@ defmodule ValueType do
   Creates t_class enum value with parameters
   
   ## Parameters
-    - `arg0`: :term()
+    - `arg0`: term()
   """
-  @spec t_class(:term()) :: {:t_class, :term()}
+  @spec t_class(term()) :: {:t_class, term()}
   def t_class(arg0) do
     {:t_class, arg0}
   end
@@ -117,12 +117,12 @@ defmodule ValueType do
   def is_t_bool(_), do: false
 
   @doc "Extracts value from t_enum variant, returns {:ok, value} or :error"
-  @spec get_t_enum_value(t()) :: {:ok, :term()} | :error
+  @spec get_t_enum_value(t()) :: {:ok, term()} | :error
   def get_t_enum_value({:t_enum, value}), do: {:ok, value}
   def get_t_enum_value(_), do: :error
 
   @doc "Extracts value from t_class variant, returns {:ok, value} or :error"
-  @spec get_t_class_value(t()) :: {:ok, :term()} | :error
+  @spec get_t_class_value(t()) :: {:ok, term()} | :error
   def get_t_class_value({:t_class, value}), do: {:ok, value}
   def get_t_class_value(_), do: :error
 

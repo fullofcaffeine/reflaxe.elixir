@@ -16,34 +16,28 @@ defmodule MigrationDSL do
      "
   @spec sanitize_identifier(String.t()) :: String.t()
   def sanitize_identifier(arg0) do
-    (
-  if (arg0 == nil || arg0 == ""), do: "unnamed", else: nil
-  sanitized = arg0
-  sanitized = Enum.join(String.split(sanitized, "';"), "")
-  sanitized = Enum.join(String.split(sanitized, "--"), "")
-  sanitized = Enum.join(String.split(sanitized, "DROP"), "")
-  sanitized = Enum.join(String.split(sanitized, "System."), "")
-  sanitized = Enum.join(String.split(sanitized, "/*"), "")
-  sanitized = Enum.join(String.split(sanitized, "*/"), "")
-  clean = ""
-  (
-  _g = 0
-  _g1 = String.length(sanitized)
-  (fn loop_fn ->
+    if (arg0 == nil || arg0 == ""), do: "unnamed", else: nil
+sanitized = arg0
+sanitized = Enum.join(String.split(sanitized, "';"), "")
+sanitized = Enum.join(String.split(sanitized, "--"), "")
+sanitized = Enum.join(String.split(sanitized, "DROP"), "")
+sanitized = Enum.join(String.split(sanitized, "System."), "")
+sanitized = Enum.join(String.split(sanitized, "/*"), "")
+sanitized = Enum.join(String.split(sanitized, "*/"), "")
+clean = ""
+_g = 0
+_g1 = String.length(sanitized)
+(fn loop_fn ->
   if (_g < _g1) do
-    (
-  i = _g + 1
-  c = String.at(sanitized, i)
-  if (c >= "a" && c <= "z" || c >= "A" && c <= "Z" || c >= "0" && c <= "9" || c == "_"), do: clean = clean <> String.downcase(c), else: nil
-)
+    i = _g + 1
+c = String.at(sanitized, i)
+if (c >= "a" && c <= "z" || c >= "A" && c <= "Z" || c >= "0" && c <= "9" || c == "_"), do: clean = clean <> String.downcase(c), else: nil
     loop_fn.(loop_fn)
   end
 end).(fn f -> f.(f) end)
-)
-  temp_result = nil
-  if (String.length(clean) > 0), do: temp_result = clean, else: temp_result = "sanitized"
-  temp_result
-)
+temp_result = nil
+if (String.length(clean) > 0), do: temp_result = clean, else: temp_result = "sanitized"
+temp_result
   end
 
   @doc "
@@ -51,10 +45,8 @@ end).(fn f -> f.(f) end)
      "
   @spec is_migration_class(String.t()) :: boolean()
   def is_migration_class(arg0) do
-    (
-  if (arg0 == nil || arg0 == ""), do: false, else: nil
-  case :binary.match(arg0, "Migration") do {pos, _} -> pos; :nomatch -> -1 end != -1 || case :binary.match(arg0, "Create") do {pos, _} -> pos; :nomatch -> -1 end != -1 || case :binary.match(arg0, "Alter") do {pos, _} -> pos; :nomatch -> -1 end != -1 || case :binary.match(arg0, "Drop") do {pos, _} -> pos; :nomatch -> -1 end != -1
-)
+    if (arg0 == nil || arg0 == ""), do: false, else: nil
+case :binary.match(arg0, "Migration") do {pos, _} -> pos; :nomatch -> -1 end != -1 || case :binary.match(arg0, "Create") do {pos, _} -> pos; :nomatch -> -1 end != -1 || case :binary.match(arg0, "Alter") do {pos, _} -> pos; :nomatch -> -1 end != -1 || case :binary.match(arg0, "Drop") do {pos, _} -> pos; :nomatch -> -1 end != -1
   end
 
   @doc "
@@ -72,64 +64,56 @@ end).(fn f -> f.(f) end)
      "
   @spec get_migration_config(ClassType.t()) :: term()
   def get_migration_config(arg0) do
-    (
-  if (!arg0.meta.has(":migration")), do: %{table: "default_table", timestamp: MigrationDSL.generateTimestamp()}, else: nil
-  meta = Enum.at(arg0.meta.extract(":migration"), 0)
-  table_name = "default_table"
-  if (meta.params != nil && meta.params.length > 0), do: (
+    if (!arg0.meta.has(":migration")), do: %{table: "default_table", timestamp: MigrationDSL.generateTimestamp()}, else: nil
+meta = Enum.at(arg0.meta.extract(":migration"), 0)
+table_name = "default_table"
+if (meta.params != nil && length(meta.params) > 0) do
   _g = Enum.at(meta.params, 0).expr
   case (# TODO: Implement expression type: TEnumIndex) do
-  0 ->
-    (
-  _g2 = # TODO: Implement expression type: TEnumParameter
-  if (# TODO: Implement expression type: TEnumIndex == 2), do: (
-  _g1 = # TODO: Implement expression type: TEnumParameter
-  _g3 = # TODO: Implement expression type: TEnumParameter
-  (
-  s = _g1
-  table_name = s
-)
-), else: table_name = MigrationDSL.extractTableNameFromClassName(arg0.name)
-)
-  5 ->
-    (
-  _g2 = # TODO: Implement expression type: TEnumParameter
-  (
+    0 ->
+      _g2 = # TODO: Implement expression type: TEnumParameter
+  if (# TODO: Implement expression type: TEnumIndex == 2) do
+    _g1 = # TODO: Implement expression type: TEnumParameter
+    _g3 = # TODO: Implement expression type: TEnumParameter
+    s = _g1
+    table_name = s
+  else
+    table_name = MigrationDSL.extractTableNameFromClassName(arg0.name)
+  end
+    5 ->
+      _g2 = # TODO: Implement expression type: TEnumParameter
   fields = _g2
-  (
   _g3 = 0
   (fn loop_fn ->
-  if (_g3 < fields.length) do
-    (
-  field = Enum.at(fields, _g3)
+    if (_g3 < length(fields)) do
+      field = Enum.at(fields, _g3)
   _g3 + 1
-  if (field.field == "table"), do: (
-  _g4 = field.expr.expr
-  if (# TODO: Implement expression type: TEnumIndex == 0), do: (
-  _g5 = # TODO: Implement expression type: TEnumParameter
-  if (# TODO: Implement expression type: TEnumIndex == 2), do: (
-  _g1 = # TODO: Implement expression type: TEnumParameter
-  _g6 = # TODO: Implement expression type: TEnumParameter
-  (
-  s = _g1
-  table_name = s
-)
-), else: nil
-), else: nil
-), else: nil
-)
-    loop_fn.(loop_fn)
+  if (field.field == "table") do
+    _g4 = field.expr.expr
+    if (# TODO: Implement expression type: TEnumIndex == 0) do
+      _g5 = # TODO: Implement expression type: TEnumParameter
+      if (# TODO: Implement expression type: TEnumIndex == 2) do
+        _g1 = # TODO: Implement expression type: TEnumParameter
+        _g6 = # TODO: Implement expression type: TEnumParameter
+        s = _g1
+        table_name = s
+      else
+        nil
+      end
+    else
+      nil
+    end
   end
-end).(fn f -> f.(f) end)
-)
-)
-)
-  _ ->
-    table_name = MigrationDSL.extractTableNameFromClassName(arg0.name)
+      loop_fn.(loop_fn)
+    end
+  end).(fn f -> f.(f) end)
+    _ ->
+      table_name = MigrationDSL.extractTableNameFromClassName(arg0.name)
+  end
+else
+  table_name = MigrationDSL.extractTableNameFromClassName(arg0.name)
 end
-), else: table_name = MigrationDSL.extractTableNameFromClassName(arg0.name)
-  %{table: table_name, timestamp: MigrationDSL.generateTimestamp()}
-)
+%{table: table_name, timestamp: MigrationDSL.generateTimestamp()}
   end
 
   @doc "
@@ -137,17 +121,15 @@ end
      "
   @spec extract_table_name_from_class_name(String.t()) :: String.t()
   def extract_table_name_from_class_name(arg0) do
-    (
-  table_name = arg0
-  table_name = StringTools.replace(table_name, "Create", "")
-  table_name = StringTools.replace(table_name, "Alter", "")
-  table_name = StringTools.replace(table_name, "Drop", "")
-  table_name = StringTools.replace(table_name, "Add", "")
-  table_name = StringTools.replace(table_name, "Remove", "")
-  table_name = StringTools.replace(table_name, "Table", "")
-  table_name = StringTools.replace(table_name, "Migration", "")
-  MigrationDSL.camelCaseToSnakeCase(table_name)
-)
+    table_name = arg0
+table_name = StringTools.replace(table_name, "Create", "")
+table_name = StringTools.replace(table_name, "Alter", "")
+table_name = StringTools.replace(table_name, "Drop", "")
+table_name = StringTools.replace(table_name, "Add", "")
+table_name = StringTools.replace(table_name, "Remove", "")
+table_name = StringTools.replace(table_name, "Table", "")
+table_name = StringTools.replace(table_name, "Migration", "")
+MigrationDSL.camelCaseToSnakeCase(table_name)
   end
 
   @doc "
@@ -155,28 +137,22 @@ end
      "
   @spec compile_table_creation(String.t(), Array.t()) :: String.t()
   def compile_table_creation(arg0, arg1) do
-    (
-  column_defs = Array.new()
-  (
-  _g = 0
-  (fn loop_fn ->
-  if (_g < arg1.length) do
-    (
-  column = Enum.at(arg1, _g)
-  _g + 1
-  parts = String.split(column, ":")
-  name = Enum.at(parts, 0)
-  temp_string = nil
-  if (parts.length > 1), do: temp_string = Enum.at(parts, 1), else: temp_string = "string"
-  type = temp_string
-  column_defs ++ ["      add :" <> name <> ", :" <> type]
-)
+    column_defs = Array.new()
+_g = 0
+(fn loop_fn ->
+  if (_g < length(arg1)) do
+    column = Enum.at(arg1, _g)
+_g + 1
+parts = String.split(column, ":")
+name = Enum.at(parts, 0)
+temp_string = nil
+if (length(parts) > 1), do: temp_string = Enum.at(parts, 1), else: temp_string = "string"
+type = temp_string
+column_defs ++ ["      add :" <> name <> ", :" <> type]
     loop_fn.(loop_fn)
   end
 end).(fn f -> f.(f) end)
-)
-  "create table(:" <> arg0 <> ") do\n" <> Enum.join(column_defs, "\n") <> "\n" <> "      timestamps()\n" <> "    end"
-)
+"create table(:" <> arg0 <> ") do\n" <> Enum.join(column_defs, "\n") <> "\n" <> "      timestamps()\n" <> "    end"
   end
 
   @doc "
@@ -184,10 +160,8 @@ end).(fn f -> f.(f) end)
      "
   @spec generate_migration_module(String.t()) :: String.t()
   def generate_migration_module(arg0) do
-    (
-  module_name = arg0
-  "defmodule " <> module_name <> " do\n" <> "  @moduledoc \"\"\"\n" <> ("  Generated from Haxe @:migration class: " <> arg0 <> "\n") <> "  \n" <> "  This migration module was automatically generated from a Haxe source file\n" <> "  as part of the Reflaxe.Elixir compilation pipeline.\n" <> "  \"\"\"\n" <> "  \n" <> "  use Ecto.Migration\n" <> "  \n" <> "  @doc \"\"\"\n" <> "  Run the migration\n" <> "  \"\"\"\n" <> "  def change do\n" <> "    # Migration operations go here\n" <> "  end\n" <> "  \n" <> "  @doc \"\"\"\n" <> "  Run the migration up\n" <> "  \"\"\"\n" <> "  def up do\n" <> "    # Up migration operations\n" <> "  end\n" <> "  \n" <> "  @doc \"\"\"\n" <> "  Run the migration down (rollback)\n" <> "  \"\"\"\n" <> "  def down do\n" <> "    # Down migration operations\n" <> "  end\n" <> "end"
-)
+    module_name = arg0
+"defmodule " <> module_name <> " do\n" <> "  @moduledoc \"\"\"\n" <> ("  Generated from Haxe @:migration class: " <> arg0 <> "\n") <> "  \n" <> "  This migration module was automatically generated from a Haxe source file\n" <> "  as part of the Reflaxe.Elixir compilation pipeline.\n" <> "  \"\"\"\n" <> "  \n" <> "  use Ecto.Migration\n" <> "  \n" <> "  @doc \"\"\"\n" <> "  Run the migration\n" <> "  \"\"\"\n" <> "  def change do\n" <> "    # Migration operations go here\n" <> "  end\n" <> "  \n" <> "  @doc \"\"\"\n" <> "  Run the migration up\n" <> "  \"\"\"\n" <> "  def up do\n" <> "    # Up migration operations\n" <> "  end\n" <> "  \n" <> "  @doc \"\"\"\n" <> "  Run the migration down (rollback)\n" <> "  \"\"\"\n" <> "  def down do\n" <> "    # Down migration operations\n" <> "  end\n" <> "end"
   end
 
   @doc "
@@ -195,29 +169,21 @@ end).(fn f -> f.(f) end)
      "
   @spec compile_index_creation(String.t(), Array.t(), String.t()) :: String.t()
   def compile_index_creation(arg0, arg1, arg2) do
-    (
-  temp_array = nil
-  ((
-  _g = []
-  (
-  _g1 = 0
-  _g2 = arg1
-  (fn loop_fn ->
-  if (_g1 < _g2.length) do
-    (
-  v = Enum.at(_g2, _g1)
-  _g1 + 1
-  _g ++ [":" <> v]
-)
+    temp_array = nil
+(_g = []
+_g1 = 0
+_g2 = arg1
+(fn loop_fn ->
+  if (_g1 < length(_g2)) do
+    v = Enum.at(_g2, _g1)
+_g1 + 1
+_g ++ [":" <> v]
     loop_fn.(loop_fn)
   end
 end).(fn f -> f.(f) end)
-)
-  temp_array = _g
-))
-  field_list = Enum.join(temp_array, ", ")
-  if (case :binary.match(arg2, "unique") do {pos, _} -> pos; :nomatch -> -1 end != -1), do: "create unique_index(:" <> arg0 <> ", [" <> field_list <> "])", else: "create index(:" <> arg0 <> ", [" <> field_list <> "])"
-)
+temp_array = _g)
+field_list = Enum.join(temp_array, ", ")
+if (case :binary.match(arg2, "unique") do {pos, _} -> pos; :nomatch -> -1 end != -1), do: "create unique_index(:" <> arg0 <> ", [" <> field_list <> "])", else: "create index(:" <> arg0 <> ", [" <> field_list <> "])"
   end
 
   @doc "
@@ -241,15 +207,13 @@ end).(fn f -> f.(f) end)
      "
   @spec compile_full_migration(term()) :: String.t()
   def compile_full_migration(arg0) do
-    (
-  class_name = arg0.class_name
-  table_name = arg0.table_name
-  columns = arg0.columns
-  module_name = "Repo.Migrations." <> class_name
-  table_creation = MigrationDSL.compileTableCreation(table_name, columns)
-  index_creation = MigrationDSL.compileIndexCreation(table_name, ["email"], "unique: true")
-  "defmodule " <> module_name <> " do\n" <> "  @moduledoc \"\"\"\n" <> ("  Generated migration for " <> table_name <> " table\n") <> "  \n" <> ("  Creates " <> table_name <> " table with proper schema and indexes\n") <> "  following Ecto migration patterns with compile-time validation.\n" <> "  \"\"\"\n" <> "  \n" <> "  use Ecto.Migration\n" <> "  \n" <> "  @doc \"\"\"\n" <> ("  Run the migration - creates " <> table_name <> " table\n") <> "  \"\"\"\n" <> "  def change do\n" <> ("    " <> table_creation <> "\n") <> "    \n" <> ("    " <> index_creation <> "\n") <> "  end\n" <> "  \n" <> "  @doc \"\"\"\n" <> ("  Rollback migration - drops " <> table_name <> " table\n") <> "  \"\"\"\n" <> "  def down do\n" <> ("    drop table(:" <> table_name <> ")\n") <> "  end\n" <> "end"
-)
+    class_name = arg0.class_name
+table_name = arg0.table_name
+columns = arg0.columns
+module_name = "Repo.Migrations." <> class_name
+table_creation = MigrationDSL.compileTableCreation(table_name, columns)
+index_creation = MigrationDSL.compileIndexCreation(table_name, ["email"], "unique: true")
+"defmodule " <> module_name <> " do\n" <> "  @moduledoc \"\"\"\n" <> ("  Generated migration for " <> table_name <> " table\n") <> "  \n" <> ("  Creates " <> table_name <> " table with proper schema and indexes\n") <> "  following Ecto migration patterns with compile-time validation.\n" <> "  \"\"\"\n" <> "  \n" <> "  use Ecto.Migration\n" <> "  \n" <> "  @doc \"\"\"\n" <> ("  Run the migration - creates " <> table_name <> " table\n") <> "  \"\"\"\n" <> "  def change do\n" <> ("    " <> table_creation <> "\n") <> "    \n" <> ("    " <> index_creation <> "\n") <> "  end\n" <> "  \n" <> "  @doc \"\"\"\n" <> ("  Rollback migration - drops " <> table_name <> " table\n") <> "  \"\"\"\n" <> "  def down do\n" <> ("    drop table(:" <> table_name <> ")\n") <> "  end\n" <> "end"
   end
 
   @doc "
@@ -257,10 +221,8 @@ end).(fn f -> f.(f) end)
      "
   @spec generate_migration_filename(String.t(), String.t()) :: String.t()
   def generate_migration_filename(arg0, arg1) do
-    (
-  snake_case_name = MigrationDSL.camelCaseToSnakeCase(arg0)
-  "" <> arg1 <> "_" <> snake_case_name <> ".exs"
-)
+    snake_case_name = MigrationDSL.camelCaseToSnakeCase(arg0)
+"" <> arg1 <> "_" <> snake_case_name <> ".exs"
   end
 
   @doc "
@@ -268,10 +230,8 @@ end).(fn f -> f.(f) end)
      "
   @spec generate_migration_file_path(String.t(), String.t()) :: String.t()
   def generate_migration_file_path(arg0, arg1) do
-    (
-  filename = MigrationDSL.generateMigrationFilename(arg0, arg1)
-  "priv/repo/migrations/" <> filename
-)
+    filename = MigrationDSL.generateMigrationFilename(arg0, arg1)
+"priv/repo/migrations/" <> filename
   end
 
   @doc "
@@ -279,25 +239,19 @@ end).(fn f -> f.(f) end)
      "
   @spec camel_case_to_snake_case(String.t()) :: String.t()
   def camel_case_to_snake_case(arg0) do
-    (
-  result = ""
-  (
-  _g = 0
-  _g1 = String.length(arg0)
-  (fn loop_fn ->
+    result = ""
+_g = 0
+_g1 = String.length(arg0)
+(fn loop_fn ->
   if (_g < _g1) do
-    (
-  i = _g + 1
-  char = String.at(arg0, i)
-  if (i > 0 && char >= "A" && char <= "Z"), do: result = result <> "_", else: nil
-  result = result <> String.downcase(char)
-)
+    i = _g + 1
+char = String.at(arg0, i)
+if (i > 0 && char >= "A" && char <= "Z"), do: result = result <> "_", else: nil
+result = result <> String.downcase(char)
     loop_fn.(loop_fn)
   end
 end).(fn f -> f.(f) end)
-)
-  result
-)
+result
   end
 
   @doc "
@@ -305,15 +259,13 @@ end).(fn f -> f.(f) end)
      "
   @spec generate_add_column(String.t(), String.t(), String.t(), String.t()) :: String.t()
   def generate_add_column(arg0, arg1, arg2, arg3) do
-    (
-  safe_table = MigrationDSL.sanitizeIdentifier(arg0)
-  safe_column = MigrationDSL.sanitizeIdentifier(arg1)
-  safe_type = MigrationDSL.sanitizeIdentifier(arg2)
-  temp_string = nil
-  if (arg3 != ""), do: temp_string = "add :" <> safe_column <> ", :" <> safe_type <> ", " <> arg3, else: temp_string = "add :" <> safe_column <> ", :" <> safe_type
-  add_statement = temp_string
-  "alter table(:" <> safe_table <> ") do\n  " <> add_statement <> "\nend"
-)
+    safe_table = MigrationDSL.sanitizeIdentifier(arg0)
+safe_column = MigrationDSL.sanitizeIdentifier(arg1)
+safe_type = MigrationDSL.sanitizeIdentifier(arg2)
+temp_string = nil
+if (arg3 != ""), do: temp_string = "add :" <> safe_column <> ", :" <> safe_type <> ", " <> arg3, else: temp_string = "add :" <> safe_column <> ", :" <> safe_type
+add_statement = temp_string
+"alter table(:" <> safe_table <> ") do\n  " <> add_statement <> "\nend"
   end
 
   @doc "
@@ -329,14 +281,12 @@ end).(fn f -> f.(f) end)
      "
   @spec generate_foreign_key(String.t(), String.t(), String.t(), String.t()) :: String.t()
   def generate_foreign_key(arg0, arg1, arg2, arg3) do
-    (
-  safe_table = MigrationDSL.sanitizeIdentifier(arg0)
-  safe_column = MigrationDSL.sanitizeIdentifier(arg1)
-  safe_ref_table = MigrationDSL.sanitizeIdentifier(arg2)
-  safe_ref_column = MigrationDSL.sanitizeIdentifier(arg3)
-  fk_statement = "add :" <> safe_column <> ", references(:" <> safe_ref_table <> ", column: :" <> safe_ref_column <> ")"
-  "alter table(:" <> safe_table <> ") do\n  " <> fk_statement <> "\nend"
-)
+    safe_table = MigrationDSL.sanitizeIdentifier(arg0)
+safe_column = MigrationDSL.sanitizeIdentifier(arg1)
+safe_ref_table = MigrationDSL.sanitizeIdentifier(arg2)
+safe_ref_column = MigrationDSL.sanitizeIdentifier(arg3)
+fk_statement = "add :" <> safe_column <> ", references(:" <> safe_ref_table <> ", column: :" <> safe_ref_column <> ")"
+"alter table(:" <> safe_table <> ") do\n  " <> fk_statement <> "\nend"
   end
 
   @doc "
@@ -344,11 +294,9 @@ end).(fn f -> f.(f) end)
      "
   @spec generate_constraint(String.t(), String.t(), String.t(), String.t()) :: String.t()
   def generate_constraint(arg0, arg1, arg2, arg3) do
-    (
-  safe_table = MigrationDSL.sanitizeIdentifier(arg0)
-  safe_name = MigrationDSL.sanitizeIdentifier(arg1)
-  "create constraint(:" <> safe_table <> ", :" <> safe_name <> ", " <> arg2 <> ": \"" <> arg3 <> "\")"
-)
+    safe_table = MigrationDSL.sanitizeIdentifier(arg0)
+safe_name = MigrationDSL.sanitizeIdentifier(arg1)
+"create constraint(:" <> safe_table <> ", :" <> safe_name <> ", " <> arg2 <> ": \"" <> arg3 <> "\")"
   end
 
   @doc "
@@ -356,23 +304,17 @@ end).(fn f -> f.(f) end)
      "
   @spec compile_batch_migrations(Array.t()) :: String.t()
   def compile_batch_migrations(arg0) do
-    (
-  compiled_migrations = Array.new()
-  (
-  _g = 0
-  (fn loop_fn ->
-  if (_g < arg0.length) do
-    (
-  migration = Enum.at(arg0, _g)
-  _g + 1
-  compiled_migrations ++ [MigrationDSL.compileFullMigration(migration)]
-)
+    compiled_migrations = Array.new()
+_g = 0
+(fn loop_fn ->
+  if (_g < length(arg0)) do
+    migration = Enum.at(arg0, _g)
+_g + 1
+compiled_migrations ++ [MigrationDSL.compileFullMigration(migration)]
     loop_fn.(loop_fn)
   end
 end).(fn f -> f.(f) end)
-)
-  Enum.join(compiled_migrations, "\n\n")
-)
+Enum.join(compiled_migrations, "\n\n")
   end
 
   @doc "
@@ -396,16 +338,14 @@ end).(fn f -> f.(f) end)
      "
   @spec generate_timestamp() :: String.t()
   def generate_timestamp() do
-    (
-  date = Date.now()
-  year = Std.string(date.getFullYear())
-  month = StringTools.lpad(Std.string(date.getMonth() + 1), "0", 2)
-  day = StringTools.lpad(Std.string(date.getDate()), "0", 2)
-  hour = StringTools.lpad(Std.string(date.getHours()), "0", 2)
-  minute = StringTools.lpad(Std.string(date.getMinutes()), "0", 2)
-  second = StringTools.lpad(Std.string(date.getSeconds()), "0", 2)
-  "" <> year <> month <> day <> hour <> minute <> second
-)
+    date = Date.now()
+year = Std.string(date.getFullYear())
+month = StringTools.lpad(Std.string(date.getMonth() + 1), "0", 2)
+day = StringTools.lpad(Std.string(date.getDate()), "0", 2)
+hour = StringTools.lpad(Std.string(date.getHours()), "0", 2)
+minute = StringTools.lpad(Std.string(date.getMinutes()), "0", 2)
+second = StringTools.lpad(Std.string(date.getSeconds()), "0", 2)
+"" <> year <> month <> day <> hour <> minute <> second
   end
 
   @doc "
@@ -414,63 +354,49 @@ end).(fn f -> f.(f) end)
      "
   @spec create_table(String.t(), Function.t()) :: String.t()
   def create_table(arg0, arg1) do
-    (
-  builder = Reflaxe.Elixir.Helpers.TableBuilder.new(arg0)
-  arg1(builder)
-  column_defs = builder.getColumnDefinitions()
-  index_defs = builder.getIndexDefinitions()
-  constraint_defs = builder.getConstraintDefinitions()
-  result = "create table(:" <> arg0 <> ") do\n"
-  if (!builder.has_id_column), do: result = result <> "      add :id, :serial, primary_key: true\n", else: nil
-  (
-  _g = 0
-  (fn loop_fn ->
-  if (_g < column_defs.length) do
-    (
-  column_def = Enum.at(column_defs, _g)
-  _g + 1
-  result = result <> "      " <> column_def <> "\n"
-)
+    builder = Reflaxe.Elixir.Helpers.TableBuilder.new(arg0)
+arg1(builder)
+column_defs = builder.getColumnDefinitions()
+index_defs = builder.getIndexDefinitions()
+constraint_defs = builder.getConstraintDefinitions()
+result = "create table(:" <> arg0 <> ") do\n"
+if (!builder.has_id_column), do: result = result <> "      add :id, :serial, primary_key: true\n", else: nil
+_g = 0
+(fn loop_fn ->
+  if (_g < length(column_defs)) do
+    column_def = Enum.at(column_defs, _g)
+_g + 1
+result = result <> "      " <> column_def <> "\n"
     loop_fn.(loop_fn)
   end
 end).(fn f -> f.(f) end)
-)
-  if (!builder.has_timestamps), do: result = result <> "      timestamps()\n", else: nil
-  result = result <> "    end"
-  if (index_defs.length > 0), do: (
+if (!builder.has_timestamps), do: result = result <> "      timestamps()\n", else: nil
+result = result <> "    end"
+if (length(index_defs) > 0) do
   result = result <> "\n\n"
-  (
   _g = 0
   (fn loop_fn ->
-  if (_g < index_defs.length) do
-    (
-  index_def = Enum.at(index_defs, _g)
+    if (_g < length(index_defs)) do
+      index_def = Enum.at(index_defs, _g)
   _g + 1
   result = result <> "    " <> index_def <> "\n"
-)
-    loop_fn.(loop_fn)
-  end
-end).(fn f -> f.(f) end)
-)
-), else: nil
-  if (constraint_defs.length > 0), do: (
+      loop_fn.(loop_fn)
+    end
+  end).(fn f -> f.(f) end)
+end
+if (length(constraint_defs) > 0) do
   result = result <> "\n\n"
-  (
   _g = 0
   (fn loop_fn ->
-  if (_g < constraint_defs.length) do
-    (
-  constraint_def = Enum.at(constraint_defs, _g)
+    if (_g < length(constraint_defs)) do
+      constraint_def = Enum.at(constraint_defs, _g)
   _g + 1
   result = result <> "    " <> constraint_def <> "\n"
-)
-    loop_fn.(loop_fn)
-  end
-end).(fn f -> f.(f) end)
-)
-), else: nil
-  result
-)
+      loop_fn.(loop_fn)
+    end
+  end).(fn f -> f.(f) end)
+end
+result
   end
 
   @doc "
@@ -488,29 +414,23 @@ end).(fn f -> f.(f) end)
      "
   @spec add_column(String.t(), String.t(), String.t(), Null.t()) :: String.t()
   def add_column(arg0, arg1, arg2, arg3) do
-    (
-  options_str = ""
-  if (arg3 != nil), do: (
+    options_str = ""
+if (arg3 != nil) do
   opts = []
   fields = Reflect.fields(arg3)
-  (
   _g = 0
   (fn loop_fn ->
-  if (_g < fields.length) do
-    (
-  field = Enum.at(fields, _g)
+    if (_g < length(fields)) do
+      field = Enum.at(fields, _g)
   _g + 1
   value = Reflect.field(arg3, field)
   if (Std.isOfType(value, String)), do: opts ++ ["" <> field <> ": \"" <> value <> "\""], else: if (Std.isOfType(value, Bool)), do: opts ++ ["" <> field <> ": " <> value], else: opts ++ ["" <> field <> ": " <> value]
-)
-    loop_fn.(loop_fn)
-  end
-end).(fn f -> f.(f) end)
-)
-  if (opts.length > 0), do: options_str = ", " <> Enum.join(opts, ", "), else: nil
-), else: nil
-  "alter table(:" <> arg0 <> ") do\n      add :" <> arg1 <> ", :" <> arg2 <> options_str <> "\n    end"
-)
+      loop_fn.(loop_fn)
+    end
+  end).(fn f -> f.(f) end)
+  if (length(opts) > 0), do: options_str = ", " <> Enum.join(opts, ", "), else: nil
+end
+"alter table(:" <> arg0 <> ") do\n      add :" <> arg1 <> ", :" <> arg2 <> options_str <> "\n    end"
   end
 
   @doc "
@@ -519,29 +439,21 @@ end).(fn f -> f.(f) end)
      "
   @spec add_index(String.t(), Array.t(), Null.t()) :: String.t()
   def add_index(arg0, arg1, arg2) do
-    (
-  temp_array = nil
-  ((
-  _g = []
-  (
-  _g1 = 0
-  _g2 = arg1
-  (fn loop_fn ->
-  if (_g1 < _g2.length) do
-    (
-  v = Enum.at(_g2, _g1)
-  _g1 + 1
-  _g ++ [":" <> v]
-)
+    temp_array = nil
+(_g = []
+_g1 = 0
+_g2 = arg1
+(fn loop_fn ->
+  if (_g1 < length(_g2)) do
+    v = Enum.at(_g2, _g1)
+_g1 + 1
+_g ++ [":" <> v]
     loop_fn.(loop_fn)
   end
 end).(fn f -> f.(f) end)
-)
-  temp_array = _g
-))
-  column_list = Enum.join(temp_array, ", ")
-  if (arg2 != nil && Reflect.hasField(arg2, "unique") && Reflect.field(arg2, "unique") == true), do: "create unique_index(:" <> arg0 <> ", [" <> column_list <> "])", else: "create index(:" <> arg0 <> ", [" <> column_list <> "])"
-)
+temp_array = _g)
+column_list = Enum.join(temp_array, ", ")
+if (arg2 != nil && Reflect.hasField(arg2, "unique") && Reflect.field(arg2, "unique") == true), do: "create unique_index(:" <> arg0 <> ", [" <> column_list <> "])", else: "create index(:" <> arg0 <> ", [" <> column_list <> "])"
   end
 
   @doc "
@@ -582,44 +494,38 @@ defmodule TableBuilder do
      "
   @spec add_column(String.t(), String.t(), Null.t()) :: TableBuilder.t()
   def add_column(arg0, arg1, arg2) do
-    (
-  if (arg0 == "id"), do: self().has_id_column = true, else: nil
-  if (arg0 == "inserted_at" || arg0 == "updated_at"), do: self().has_timestamps = true, else: nil
-  options_str = ""
-  if (arg2 != nil), do: (
+    if (arg0 == "id"), do: __MODULE__.has_id_column = true, else: nil
+if (arg0 == "inserted_at" || arg0 == "updated_at"), do: __MODULE__.has_timestamps = true, else: nil
+options_str = ""
+if (arg2 != nil) do
   opts = []
   fields = Reflect.fields(arg2)
-  (
   _g = 0
   (fn loop_fn ->
-  if (_g < fields.length) do
-    (
-  field = Enum.at(fields, _g)
+    if (_g < length(fields)) do
+      field = Enum.at(fields, _g)
   _g + 1
   value = Reflect.field(arg2, field)
   temp_string = nil
   case ((field)) do
-  "default" ->
-    temp_string = "default"
-  "null" ->
-    temp_string = "null"
-  "primaryKey" ->
-    temp_string = "primary_key"
-  _ ->
-    temp_string = field
-end
+    "default" ->
+      temp_string = "default"
+    "null" ->
+      temp_string = "null"
+    "primaryKey" ->
+      temp_string = "primary_key"
+    _ ->
+      temp_string = field
+  end
   opt_name = temp_string
   if (Std.isOfType(value, String)), do: opts ++ ["" <> opt_name <> ": \"" <> value <> "\""], else: if (Std.isOfType(value, Bool)), do: opts ++ ["" <> opt_name <> ": " <> value], else: opts ++ ["" <> opt_name <> ": " <> value]
-)
-    loop_fn.(loop_fn)
-  end
-end).(fn f -> f.(f) end)
-)
-  if (opts.length > 0), do: options_str = ", " <> Enum.join(opts, ", "), else: nil
-), else: nil
-  self().columns ++ ["add :" <> arg0 <> ", :" <> arg1 <> options_str]
-  self()
-)
+      loop_fn.(loop_fn)
+    end
+  end).(fn f -> f.(f) end)
+  if (length(opts) > 0), do: options_str = ", " <> Enum.join(opts, ", "), else: nil
+end
+__MODULE__.columns ++ ["add :" <> arg0 <> ", :" <> arg1 <> options_str]
+__MODULE__
   end
 
   @doc "
@@ -627,30 +533,22 @@ end).(fn f -> f.(f) end)
      "
   @spec add_index(Array.t(), Null.t()) :: TableBuilder.t()
   def add_index(arg0, arg1) do
-    (
-  temp_array = nil
-  ((
-  _g = []
-  (
-  _g1 = 0
-  _g2 = arg0
-  (fn loop_fn ->
-  if (_g1 < _g2.length) do
-    (
-  v = Enum.at(_g2, _g1)
-  _g1 + 1
-  _g ++ [":" <> v]
-)
+    temp_array = nil
+(_g = []
+_g1 = 0
+_g2 = arg0
+(fn loop_fn ->
+  if (_g1 < length(_g2)) do
+    v = Enum.at(_g2, _g1)
+_g1 + 1
+_g ++ [":" <> v]
     loop_fn.(loop_fn)
   end
 end).(fn f -> f.(f) end)
-)
-  temp_array = _g
-))
-  column_list = Enum.join(temp_array, ", ")
-  if (arg1 != nil && Reflect.hasField(arg1, "unique") && Reflect.field(arg1, "unique") == true), do: self().indexes ++ ["create unique_index(:" <> self().table_name <> ", [" <> column_list <> "])"], else: self().indexes ++ ["create index(:" <> self().table_name <> ", [" <> column_list <> "])"]
-  self()
-)
+temp_array = _g)
+column_list = Enum.join(temp_array, ", ")
+if (arg1 != nil && Reflect.hasField(arg1, "unique") && Reflect.field(arg1, "unique") == true), do: __MODULE__.indexes ++ ["create unique_index(:" <> __MODULE__.table_name <> ", [" <> column_list <> "])"], else: __MODULE__.indexes ++ ["create index(:" <> __MODULE__.table_name <> ", [" <> column_list <> "])"]
+__MODULE__
   end
 
   @doc "
@@ -658,30 +556,26 @@ end).(fn f -> f.(f) end)
      "
   @spec add_foreign_key(String.t(), String.t(), String.t()) :: TableBuilder.t()
   def add_foreign_key(arg0, arg1, arg2) do
-    (
-  new_columns = []
-  found = false
-  (
-  _g = 0
-  _g1 = self().columns
-  (fn loop_fn ->
-  if (_g < _g1.length) do
-    (
-  column = Enum.at(_g1, _g)
-  _g + 1
-  if (case :binary.match(column, ":" <> arg0 <> ",") do {pos, _} -> pos; :nomatch -> -1 end != -1), do: (
+    new_columns = []
+found = false
+_g = 0
+_g1 = __MODULE__.columns
+(fn loop_fn ->
+  if (_g < length(_g1)) do
+    column = Enum.at(_g1, _g)
+_g + 1
+if (case :binary.match(column, ":" <> arg0 <> ",") do {pos, _} -> pos; :nomatch -> -1 end != -1) do
   new_columns ++ ["add :" <> arg0 <> ", references(:" <> arg1 <> ", column: :" <> arg2 <> ")"]
   found = true
-), else: new_columns ++ [column]
-)
+else
+  new_columns ++ [column]
+end
     loop_fn.(loop_fn)
   end
 end).(fn f -> f.(f) end)
-)
-  if (!found), do: new_columns ++ ["add :" <> arg0 <> ", references(:" <> arg1 <> ", column: :" <> arg2 <> ")"], else: nil
-  self().columns = new_columns
-  self()
-)
+if (!found), do: new_columns ++ ["add :" <> arg0 <> ", references(:" <> arg1 <> ", column: :" <> arg2 <> ")"], else: nil
+__MODULE__.columns = new_columns
+__MODULE__
   end
 
   @doc "
@@ -689,10 +583,8 @@ end).(fn f -> f.(f) end)
      "
   @spec add_check_constraint(String.t(), String.t()) :: TableBuilder.t()
   def add_check_constraint(arg0, arg1) do
-    (
-  self().constraints ++ ["create constraint(:" <> self().table_name <> ", :" <> arg1 <> ", check: \"" <> arg0 <> "\")"]
-  self()
-)
+    __MODULE__.constraints ++ ["create constraint(:" <> __MODULE__.table_name <> ", :" <> arg1 <> ", check: \"" <> arg0 <> "\")"]
+__MODULE__
   end
 
   @doc "
@@ -700,7 +592,7 @@ end).(fn f -> f.(f) end)
      "
   @spec get_column_definitions() :: Array.t()
   def get_column_definitions() do
-    self().columns.copy()
+    __MODULE__.columns.copy()
   end
 
   @doc "
@@ -708,7 +600,7 @@ end).(fn f -> f.(f) end)
      "
   @spec get_index_definitions() :: Array.t()
   def get_index_definitions() do
-    self().indexes.copy()
+    __MODULE__.indexes.copy()
   end
 
   @doc "
@@ -716,7 +608,7 @@ end).(fn f -> f.(f) end)
      "
   @spec get_constraint_definitions() :: Array.t()
   def get_constraint_definitions() do
-    self().constraints.copy()
+    __MODULE__.constraints.copy()
   end
 
 end

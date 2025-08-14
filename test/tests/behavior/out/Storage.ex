@@ -23,75 +23,53 @@ defmodule MemoryStorage do
   @doc "Function init"
   @spec init(term()) :: term()
   def init(arg0) do
-    %{ok: self()}
+    %{ok: __MODULE__}
   end
 
   @doc "Function get"
   @spec get(String.t()) :: term()
   def get(arg0) do
-    (
-  temp_result = nil
-  (
-  this1 = self().data
-  temp_result = this1.get(arg0)
-)
-  temp_result
-)
+    temp_result = nil
+this1 = __MODULE__.data
+temp_result = this1.get(arg0)
+temp_result
   end
 
   @doc "Function put"
   @spec put(String.t(), term()) :: boolean()
   def put(arg0, arg1) do
-    (
-  (
-  this1 = self().data
-  this1.set(arg0, arg1)
-)
-  true
-)
+    this1 = __MODULE__.data
+this1.set(arg0, arg1)
+true
   end
 
   @doc "Function delete"
   @spec delete(String.t()) :: boolean()
   def delete(arg0) do
-    (
-  temp_result = nil
-  (
-  this1 = self().data
-  temp_result = this1.remove(arg0)
-)
-  temp_result
-)
+    temp_result = nil
+this1 = __MODULE__.data
+temp_result = this1.remove(arg0)
+temp_result
   end
 
   @doc "Function list"
   @spec list() :: Array.t()
   def list() do
-    (
-  temp_result = nil
-  (
-  _g = []
-  (
-  temp_iterator = nil
-  (
-  this1 = self().data
-  temp_iterator = this1.keys()
-)
-  k = temp_iterator
-  (fn loop_fn ->
+    temp_result = nil
+_g = []
+temp_iterator = nil
+this1 = __MODULE__.data
+temp_iterator = this1.keys()
+k = temp_iterator
+(fn loop_fn ->
   if (k.hasNext()) do
-    (
-  k2 = k.next()
-  _g ++ [k2]
-)
+    k2 = k.next()
+_g ++ [k2]
     loop_fn.(loop_fn)
   end
 end).(fn f -> f.(f) end)
-)
-  temp_result = _g
-)
-  temp_result
-)
+temp_result = _g
+temp_result
   end
 
 end
@@ -107,10 +85,8 @@ defmodule FileStorage do
   @doc "Function init"
   @spec init(term()) :: term()
   def init(arg0) do
-    (
-  if (arg0.path != nil), do: self().base_path = arg0.path, else: nil
-  %{ok: self()}
-)
+    if (arg0.path != nil), do: __MODULE__.base_path = arg0.path, else: nil
+%{ok: __MODULE__}
   end
 
   @doc "Function get"

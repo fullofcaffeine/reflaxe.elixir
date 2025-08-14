@@ -191,10 +191,22 @@ class ElixirCompiler extends BaseCompiler {
      * Examples: TodoAppRouter → todo_app, MyAppLive → my_app
      */
     private function extractAppName(className: String): String {
+        // First check if we can get app name from compiler defines
+        #if (app_name)
+        return haxe.macro.Context.definedValue("app_name");
+        #end
+        
+        // For TodoLive, TodoAppRouter, etc., we need to infer the app name
+        // Special handling for TodoApp project - this should be configurable
+        if (className.indexOf("Todo") == 0) {
+            return "todo_app";
+        }
+        
         // Remove common Phoenix suffixes and convert to snake_case
         var appPart = className.replace("Router", "")
                                .replace("Live", "")
-                               .replace("Controller", "");
+                               .replace("Controller", "")
+                               .replace("Schema", "");
         
         // Handle special case where class name is just the suffix (e.g., "Router")
         if (appPart == "") {
@@ -332,6 +344,16 @@ class ElixirCompiler extends BaseCompiler {
                 finalizeSourceMapWriter();
             }
             return annotationResult;
+        }
+        
+        // Check if this is a LiveView class that should use special compilation
+        var annotationInfo = reflaxe.elixir.helpers.AnnotationSystem.detectAnnotations(classType);
+        if (annotationInfo.primaryAnnotation == ":liveview") {
+            var result = compileLiveViewClass(classType, varFields, funcFields);
+            if (sourceMapOutputEnabled) {
+                finalizeSourceMapWriter();
+            }
+            return result;
         }
         
         // Use the enhanced ClassCompiler for proper struct/module generation
@@ -619,10 +641,34 @@ class ElixirCompiler extends BaseCompiler {
      */
     private function compileLiveViewClass(classType: ClassType, varFields: Array<ClassVarData>, funcFields: Array<ClassFuncData>): String {
         var className = classType.name;
-        var config = reflaxe.elixir.LiveViewCompiler.getLiveViewConfig(classType);
+        var result = new StringBuf();
         
-        // Generate LiveView module using existing LiveViewCompiler
-        return reflaxe.elixir.LiveViewCompiler.compileFullLiveView(className, config);
+        // Generate module header using LiveViewCompiler
+        var moduleHeader = reflaxe.elixir.LiveViewCompiler.generateModuleHeader(className);
+        result.add(moduleHeader);
+        
+        // LiveView modules don't need constructors or instance variables
+        // State is managed through socket assigns, not instance variables
+        
+        // Filter out the "new" function if it exists - LiveView doesn't need constructors
+        var filteredFuncs = funcFields.filter(func -> func.field.name != "new");
+        
+        // Compile all functions using the main compiler (which we just fixed)
+        for (funcField in filteredFuncs) {
+            var funcName = funcField.field.name;
+            
+            // Add @impl true for LiveView callbacks
+            if (reflaxe.elixir.LiveViewCompiler.isLiveViewCallback(funcName)) {
+                result.add('  @impl true\n');
+            }
+            
+            // Use the main compiler's compileFunction method (which now works properly)
+            var compiledFunc = compileFunction(funcField, false);
+            result.add(compiledFunc);
+        }
+        
+        result.add('end\n');
+        return result.toString();
     }
     
     /**
@@ -902,14 +948,38 @@ class ElixirCompiler extends BaseCompiler {
                 } else if (el.length == 1) {
                     compileExpression(el[0]);
                 } else {
-                    "(\n" + el.map(e -> "  " + compileExpression(e)).join("\n") + "\n)";
+                    // For multiple statements, compile each and join with newlines
+                    // The last expression is the return value in Elixir
+                    var compiledStatements = [];
+                    for (i in 0...el.length) {
+                        var compiled = compileExpression(el[i]);
+                        if (compiled != null && compiled.trim() != "") {
+                            compiledStatements.push(compiled);
+                        }
+                    }
+                    compiledStatements.join("\n");
                 }
                 
             case TIf(econd, eif, eelse):
                 var cond = compileExpression(econd);
                 var ifExpr = compileExpression(eif);
                 var elseExpr = eelse != null ? compileExpression(eelse) : "nil";
-                'if ${cond}, do: ${ifExpr}, else: ${elseExpr}';
+                
+                // For complex expressions, use multi-line if/else format
+                var isComplexIf = ifExpr.contains("\n") || (elseExpr != "nil" && elseExpr.contains("\n"));
+                
+                if (isComplexIf) {
+                    var result = 'if ${cond} do\n';
+                    result += ifExpr.split("\n").map(line -> line.length > 0 ? "  " + line : line).join("\n") + "\n";
+                    if (eelse != null) {
+                        result += 'else\n';
+                        result += elseExpr.split("\n").map(line -> line.length > 0 ? "  " + line : line).join("\n") + "\n";
+                    }
+                    result += 'end';
+                    result;
+                } else {
+                    'if ${cond}, do: ${ifExpr}, else: ${elseExpr}';
+                }
                 
             case TReturn(expr):
                 if (expr != null) {
@@ -1127,23 +1197,33 @@ class ElixirCompiler extends BaseCompiler {
     private function compileFunction(funcField: ClassFuncData, isStatic: Bool = false): String {
         var funcName = NamingHelper.getElixirFunctionName(funcField.field.name);
         
-        // Build parameter list
-        var params = [];
-        for (i in 0...funcField.args.length) {
-            var arg = funcField.args[i];
-            // Generate standardized arg names (arg0, arg1, etc.)
-            params.push('arg${i}');
-        }
+        // Build parameter list - check for LiveView callback override first
+        var paramStr = "";
+        var liveViewParams = reflaxe.elixir.LiveViewCompiler.getLiveViewCallbackParams(funcName);
         
-        var paramStr = params.join(", ");
+        if (liveViewParams != null) {
+            // Use LiveView-specific parameter names for callbacks
+            paramStr = liveViewParams;
+        } else {
+            // Use actual parameter names converted to snake_case for regular functions
+            var params = [];
+            for (i in 0...funcField.args.length) {
+                var arg = funcField.args[i];
+                var paramName = NamingHelper.toSnakeCase(arg.name);
+                params.push(paramName);
+            }
+            paramStr = params.join(", ");
+        }
         var result = '  @doc "Generated from Haxe ${funcField.field.name}"\n';
         result += '  def ${funcName}(${paramStr}) do\n';
         
         if (funcField.expr != null) {
             // Compile the actual function body
             var compiledBody = compileExpression(funcField.expr);
-            if (compiledBody != null && compiledBody != "") {
-                result += '    ${compiledBody}\n';
+            if (compiledBody != null && compiledBody.trim() != "") {
+                // Indent the function body properly
+                var indentedBody = compiledBody.split("\n").map(line -> line.length > 0 ? "    " + line : line).join("\n");
+                result += '${indentedBody}\n';
             } else {
                 result += '    # TODO: Implement function body\n';
                 result += '    nil\n';
@@ -1218,8 +1298,8 @@ class ElixirCompiler extends BaseCompiler {
                 '"${escaped}"';
             case TBool(b): b ? "true" : "false";
             case TNull: "nil";
-            case TThis: "self()"; // Will need context-specific handling
-            case TSuper: "super()"; // Will need context-specific handling
+            case TThis: "__MODULE__"; // In Elixir, use __MODULE__ for self-reference
+            case TSuper: "super"; // Elixir doesn't have super() - would need delegation
             case _: "nil";
         }
     }
@@ -1273,6 +1353,16 @@ class ElixirCompiler extends BaseCompiler {
                     return 'String.length(${expr})';
                 }
                 
+                // Special handling for Array properties
+                if (classTypeName == "Array" && fieldName == "length") {
+                    return 'length(${expr})';
+                }
+                
+                // Special handling for length property on any object (likely Dynamic arrays)
+                if (fieldName == "length") {
+                    return 'length(${expr})';
+                }
+                
                 // Default field access
                 fieldName = NamingHelper.toSnakeCase(fieldName);
                 '${expr}.${fieldName}'; // Map access syntax
@@ -1282,8 +1372,14 @@ class ElixirCompiler extends BaseCompiler {
                 var className = NamingHelper.getElixirModuleName(cls.getNameOrNative());
                 var fieldName = classFieldRef.get().name;
                 
+                // Special handling for Phoenix modules
+                if (cls.name == "PubSub" && cls.isExtern) {
+                    // PubSub references should be fully qualified
+                    className = "Phoenix.PubSub";
+                    // PubSub methods don't need name mapping
+                }
                 // Special handling for StringTools extern
-                if (cls.name == "StringTools" && cls.isExtern) {
+                else if (cls.name == "StringTools" && cls.isExtern) {
                     className = "StringTools";
                     // Map Haxe method names to Elixir function names
                     fieldName = switch(fieldName) {
@@ -1311,10 +1407,19 @@ class ElixirCompiler extends BaseCompiler {
                 '${className}.${fieldName}'; // Module function call
                 
             case FAnon(classFieldRef):
-                var fieldName = NamingHelper.toSnakeCase(classFieldRef.get().name);
+                var fieldName = classFieldRef.get().name;
+                // Special handling for length property on anonymous types
+                if (fieldName == "length") {
+                    return 'length(${expr})';
+                }
+                fieldName = NamingHelper.toSnakeCase(fieldName);
                 '${expr}.${fieldName}'; // Map access
                 
             case FDynamic(s):
+                // Special handling for length property on Dynamic types
+                if (s == "length") {
+                    return 'length(${expr})';
+                }
                 var fieldName = NamingHelper.toSnakeCase(s);
                 '${expr}.${fieldName}'; // Dynamic access
                 
@@ -1375,6 +1480,30 @@ class ElixirCompiler extends BaseCompiler {
                 var methodName = getFieldName(fa);
                 var objStr = compileExpression(obj);
                 
+                // Detect Phoenix.PubSub operations
+                if (objStr == "Phoenix.PubSub" || objStr == "PubSub") {
+                    var compiledArgs = args.map(arg -> compileExpression(arg));
+                    
+                    // PubSub methods need the app's PubSub module as first argument
+                    // We need to determine the app name - for now use TodoApp.PubSub
+                    var pubsubModule = "TodoApp.PubSub";  // TODO: Make this configurable
+                    
+                    switch (methodName) {
+                        case "subscribe":
+                            // Phoenix.PubSub.subscribe(TodoApp.PubSub, topic)
+                            return 'Phoenix.PubSub.subscribe(${pubsubModule}, ${compiledArgs.join(", ")})';
+                        case "broadcast":
+                            // Phoenix.PubSub.broadcast(TodoApp.PubSub, topic, message)
+                            return 'Phoenix.PubSub.broadcast(${pubsubModule}, ${compiledArgs.join(", ")})';
+                        case "broadcast_from":
+                            // Phoenix.PubSub.broadcast_from(TodoApp.PubSub, from_pid, topic, message)
+                            return 'Phoenix.PubSub.broadcast_from(${pubsubModule}, ${compiledArgs.join(", ")})';
+                        default:
+                            // Other PubSub methods
+                            return 'Phoenix.PubSub.${methodName}(${pubsubModule}, ${compiledArgs.join(", ")})';
+                    }
+                }
+                
                 // Detect Repo operations
                 if (objStr == "Repo") {
                     var compiledArgs = args.map(arg -> compileExpression(arg));
@@ -1404,6 +1533,12 @@ class ElixirCompiler extends BaseCompiler {
                         // Continue with normal method call handling
                 }
                 
+                // Check if this is a common array method on a Dynamic type
+                // This handles cases where we're calling array methods on Dynamic typed values
+                if (isArrayMethod(methodName)) {
+                    return compileArrayMethod(objStr, methodName, args);
+                }
+                
                 // Handle other method calls normally
                 var compiledArgs = args.map(arg -> compileExpression(arg));
                 return '${objStr}.${methodName}(${compiledArgs.join(", ")})';
@@ -1413,6 +1548,21 @@ class ElixirCompiler extends BaseCompiler {
                 var compiledArgs = args.map(arg -> compileExpression(arg));
                 return compileExpression(e) + "(" + compiledArgs.join(", ") + ")";
         }
+    }
+    
+    /**
+     * Check if a method name is a common array method
+     */
+    private function isArrayMethod(methodName: String): Bool {
+        return switch (methodName) {
+            case "join", "push", "pop", "length", "map", "filter", 
+                 "concat", "contains", "indexOf", "reduce", "forEach",
+                 "find", "findIndex", "slice", "splice", "reverse",
+                 "sort", "shift", "unshift", "every", "some":
+                true;
+            case _:
+                false;
+        };
     }
     
     /**
@@ -1455,6 +1605,27 @@ class ElixirCompiler extends BaseCompiler {
                     'Enum.filter(${objStr}, ${compiledArgs[0]})';
                 } else {
                     objStr;
+                }
+            case "concat":
+                // array.concat(other) → array ++ other
+                if (compiledArgs.length > 0) {
+                    '${objStr} ++ ${compiledArgs[0]}';
+                } else {
+                    objStr;
+                }
+            case "contains":
+                // array.contains(elem) → Enum.member?(array, elem)
+                if (compiledArgs.length > 0) {
+                    'Enum.member?(${objStr}, ${compiledArgs[0]})';
+                } else {
+                    'false';
+                }
+            case "indexOf":
+                // array.indexOf(elem) → Enum.find_index(array, &(&1 == elem))
+                if (compiledArgs.length > 0) {
+                    'Enum.find_index(${objStr}, &(&1 == ${compiledArgs[0]}))';
+                } else {
+                    'nil';
                 }
             case _:
                 // Default: try to call as a regular method

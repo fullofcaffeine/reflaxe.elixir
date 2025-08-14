@@ -1,4 +1,5 @@
 defmodule StringTools do
+  use Bitwise
   @moduledoc """
   StringTools module generated from Haxe
   

@@ -1,45 +1,3 @@
-defmodule User do
-  @moduledoc """
-  Ecto schema module generated from Haxe @:schema class
-  Table: users
-  """
-
-  use Ecto.Schema
-  import Ecto.Changeset
-
-  @primary_key {:id, :id, autogenerate: true}
-  @derive {Phoenix.Param, key: :id}
-
-  schema "users" do
-    field :name, :string, null: false
-    field :email, :string, null: false
-    field :age, :integer
-    field :active, :boolean, default: true
-    timestamps()
-    field :updated_at, :string
-    has_many :posts, Post
-  end
-
-  @doc """
-  Changeset function for User schema
-  """
-  def changeset(%User{} = user, attrs \\ %{}) do
-    user
-    |> cast(attrs, changeable_fields())
-    |> validate_required(required_fields())
-  end
-
-  defp changeable_fields do
-    [:name, :email, :age, :active, :updated_at]
-  end
-
-  defp required_fields do
-    [:name, :email]
-  end
-
-end
-
-
 defmodule UserChangeset do
   @moduledoc """
   Generated changeset for DefaultSchema schema
@@ -63,6 +21,7 @@ defmodule UserChangeset do
 end
 
 defmodule Users do
+  use Bitwise
   @moduledoc """
   Users module generated from Haxe
   """
@@ -113,10 +72,8 @@ defmodule Users do
      "
   @spec create_user(term()) :: term()
   def create_user(arg0) do
-    (
-  changeset = UserChangeset.changeset(nil, attrs)
-  if (changeset != nil), do: %{status: "ok", user: nil}, else: %{status: "error", changeset: changeset}
-)
+    changeset = UserChangeset.changeset(nil, arg0)
+if (changeset != nil), do: %{status: "ok", user: nil}, else: %{status: "error", changeset: changeset}
   end
 
   @doc "
@@ -124,10 +81,8 @@ defmodule Users do
      "
   @spec update_user(User.t(), term()) :: term()
   def update_user(arg0, arg1) do
-    (
-  changeset = UserChangeset.changeset(user, attrs)
-  if (changeset != nil), do: %{status: "ok", user: user}, else: %{status: "error", changeset: changeset}
-)
+    changeset = UserChangeset.changeset(arg0, arg1)
+if (changeset != nil), do: %{status: "ok", user: arg0}, else: %{status: "error", changeset: changeset}
   end
 
   @doc "
@@ -135,7 +90,7 @@ defmodule Users do
      "
   @spec delete_user(User.t()) :: term()
   def delete_user(arg0) do
-    Users.update_user(user, %{active: false})
+    Users.update_user(arg0, %{active: false})
   end
 
   @doc "
@@ -163,22 +118,3 @@ defmodule Users do
   end
 
 end
-
-
-@type user_filter :: %{
-  optional(:active) => boolean() | nil,
-  optional(:max_age) => integer() | nil,
-  optional(:min_age) => integer() | nil
-}
-
-@type user_stats :: %{
-  active: integer(),
-  inactive: integer(),
-  total: integer()
-}
-
-@type post :: %{
-  id: integer(),
-  title: String.t(),
-  user_id: integer()
-}

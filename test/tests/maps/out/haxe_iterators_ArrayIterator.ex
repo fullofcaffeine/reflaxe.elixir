@@ -14,7 +14,7 @@ defmodule ArrayIterator do
 	"
   @spec has_next() :: boolean()
   def has_next() do
-    self().current < self().array.length
+    __MODULE__.current < length(__MODULE__.array)
   end
 
   @doc "
@@ -22,7 +22,7 @@ defmodule ArrayIterator do
 	"
   @spec next() :: T.t()
   def next() do
-    Enum.at(self().array, self().current + 1)
+    Enum.at(__MODULE__.array, __MODULE__.current + 1)
   end
 
 end

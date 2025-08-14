@@ -1,177 +1,3 @@
-defmodule User do
-  @moduledoc """
-  Ecto schema module generated from Haxe @:schema class
-  Table: users
-  """
-
-  use Ecto.Schema
-  import Ecto.Changeset
-
-  @primary_key {:id, :id, autogenerate: true}
-  @derive {Phoenix.Param, key: :id}
-
-  schema "users" do
-    field :id, :integer
-    field :name, :string
-    field :email, :string
-    field :age, :integer
-    field :active, :boolean
-    has_many :posts, Post
-    belongs_to :organization, Organization
-    field :organization_id, :integer
-    timestamps()
-    field :updated_at, :string
-  end
-
-  @doc """
-  Changeset function for User schema
-  """
-  def changeset(%User{} = user, attrs \\ %{}) do
-    user
-    |> cast(attrs, changeable_fields())
-    |> validate_required(required_fields())
-  end
-
-  defp changeable_fields do
-    [:id, :name, :email, :age, :active, :organization_id, :updated_at]
-  end
-
-  defp required_fields do
-    []
-  end
-
-end
-
-
-defmodule Post do
-  @moduledoc """
-  Ecto schema module generated from Haxe @:schema class
-  Table: posts
-  """
-
-  use Ecto.Schema
-  import Ecto.Changeset
-
-  @primary_key {:id, :id, autogenerate: true}
-  @derive {Phoenix.Param, key: :id}
-
-  schema "posts" do
-    field :id, :integer
-    field :title, :string
-    field :content, :string
-    field :published, :boolean
-    field :view_count, :integer
-    belongs_to :user, User
-    field :user_id, :integer
-    has_many :comments, Comment
-    timestamps()
-    field :updated_at, :string
-  end
-
-  @doc """
-  Changeset function for Post schema
-  """
-  def changeset(%Post{} = post, attrs \\ %{}) do
-    post
-    |> cast(attrs, changeable_fields())
-    |> validate_required(required_fields())
-  end
-
-  defp changeable_fields do
-    [:id, :title, :content, :published, :view_count, :user_id, :updated_at]
-  end
-
-  defp required_fields do
-    []
-  end
-
-end
-
-
-defmodule Comment do
-  @moduledoc """
-  Ecto schema module generated from Haxe @:schema class
-  Table: comments
-  """
-
-  use Ecto.Schema
-  import Ecto.Changeset
-
-  @primary_key {:id, :id, autogenerate: true}
-  @derive {Phoenix.Param, key: :id}
-
-  schema "comments" do
-    field :id, :integer
-    field :body, :string
-    belongs_to :post, Post
-    field :post_id, :integer
-    belongs_to :user, User
-    field :user_id, :integer
-    timestamps()
-    field :updated_at, :string
-  end
-
-  @doc """
-  Changeset function for Comment schema
-  """
-  def changeset(%Comment{} = comment, attrs \\ %{}) do
-    comment
-    |> cast(attrs, changeable_fields())
-    |> validate_required(required_fields())
-  end
-
-  defp changeable_fields do
-    [:id, :body, :post_id, :user_id, :updated_at]
-  end
-
-  defp required_fields do
-    []
-  end
-
-end
-
-
-defmodule Organization do
-  @moduledoc """
-  Ecto schema module generated from Haxe @:schema class
-  Table: organizations
-  """
-
-  use Ecto.Schema
-  import Ecto.Changeset
-
-  @primary_key {:id, :id, autogenerate: true}
-  @derive {Phoenix.Param, key: :id}
-
-  schema "organizations" do
-    field :id, :integer
-    field :name, :string
-    field :domain, :string
-    has_many :users, User
-    timestamps()
-    field :updated_at, :string
-  end
-
-  @doc """
-  Changeset function for Organization schema
-  """
-  def changeset(%Organization{} = organization, attrs \\ %{}) do
-    organization
-    |> cast(attrs, changeable_fields())
-    |> validate_required(required_fields())
-  end
-
-  defp changeable_fields do
-    [:id, :name, :domain, :updated_at]
-  end
-
-  defp required_fields do
-    []
-  end
-
-end
-
-
 defmodule UserChangeset do
   @moduledoc """
   Generated changeset for DefaultSchema schema
@@ -225,6 +51,7 @@ defmodule Repo.Migrations.CreateUsersTable do
 end
 
 defmodule UserQueries do
+  use Bitwise
   @moduledoc """
   UserQueries module generated from Haxe
   """
@@ -252,6 +79,7 @@ end
 
 
 defmodule Repo do
+  use Bitwise
   @moduledoc """
   Repo module generated from Haxe
   """
@@ -290,13 +118,14 @@ defmodule Repo do
   @doc "Function preload"
   @spec preload(term(), Array.t()) :: term()
   def preload(arg0, arg1) do
-    entity
+    arg0
   end
 
 end
 
 
 defmodule Accounts do
+  use Bitwise
   @moduledoc """
   The Accounts context
   """
@@ -314,54 +143,35 @@ defmodule Accounts do
   @doc "Function get_user"
   @spec get_user(integer()) :: term()
   def get_user(arg0) do
-    Repo.get(User, id)
+    Repo.get(User, arg0)
   end
 
   @doc "Function create_user"
   @spec create_user(term()) :: term()
   def create_user(arg0) do
-    (
-  user = User.new()
-  changeset = UserChangeset.changeset(user, attrs)
-  Repo.insert(changeset)
-)
+    user = User.new()
+changeset = UserChangeset.changeset(user, arg0)
+Repo.insert(changeset)
   end
 
   @doc "Function update_user"
   @spec update_user(User.t(), term()) :: term()
   def update_user(arg0, arg1) do
-    (
-  changeset = UserChangeset.changeset(user, attrs)
-  Repo.update(changeset)
-)
+    changeset = UserChangeset.changeset(arg0, arg1)
+Repo.update(changeset)
   end
 
   @doc "Function delete_user"
   @spec delete_user(User.t()) :: term()
   def delete_user(arg0) do
-    Repo.delete(user)
+    Repo.delete(arg0)
   end
 
 end
 
-
-defmodule UserLive do
-  use Phoenix.LiveView
-  
-  @impl true
-  def mount(_params, _session, socket) do
-    {:ok, socket}
-  end
-  
-  @impl true
-  def render(assigns) do
-    ~H"""
-    <div>LiveView generated from UserLive</div>
-    """
-  end
-end
 
 defmodule EctoIntegrationSimple do
+  use Bitwise
   @moduledoc """
   EctoIntegrationSimple module generated from Haxe
   """
@@ -370,33 +180,31 @@ defmodule EctoIntegrationSimple do
   @doc "Function main"
   @spec main() :: nil
   def main() do
-    (
-  Log.trace("=== Ecto Integration Test Suite ===", %{fileName: "EctoIntegrationSimple.hx", lineNumber: 218, className: "EctoIntegrationSimple", methodName: "main"})
-  Log.trace("Testing @:schema annotation...", %{fileName: "EctoIntegrationSimple.hx", lineNumber: 221, className: "EctoIntegrationSimple", methodName: "main"})
-  user = User.new()
-  user.name = "Test User"
-  user.email = "test@example.com"
-  Log.trace("Testing @:changeset annotation...", %{fileName: "EctoIntegrationSimple.hx", lineNumber: 227, className: "EctoIntegrationSimple", methodName: "main"})
-  changeset = UserChangeset.changeset(user, %{name: "Updated", email: "new@example.com"})
-  Log.trace("Testing @:migration annotation...", %{fileName: "EctoIntegrationSimple.hx", lineNumber: 231, className: "EctoIntegrationSimple", methodName: "main"})
-  CreateUsersTable.up()
-  Log.trace("Testing query functions...", %{fileName: "EctoIntegrationSimple.hx", lineNumber: 235, className: "EctoIntegrationSimple", methodName: "main"})
-  active_users = UserQueries.activeUsers()
-  Log.trace("Testing @:repository annotation...", %{fileName: "EctoIntegrationSimple.hx", lineNumber: 239, className: "EctoIntegrationSimple", methodName: "main"})
-  users = Repo.all(User)
-  Log.trace("Testing @:context annotation...", %{fileName: "EctoIntegrationSimple.hx", lineNumber: 243, className: "EctoIntegrationSimple", methodName: "main"})
-  account_users = Accounts.list_users()
-  Log.trace("Testing @:liveview with Ecto integration...", %{fileName: "EctoIntegrationSimple.hx", lineNumber: 247, className: "EctoIntegrationSimple", methodName: "main"})
-  live_view = UserLive.new()
-  Log.trace("Testing associations...", %{fileName: "EctoIntegrationSimple.hx", lineNumber: 251, className: "EctoIntegrationSimple", methodName: "main"})
-  org = Organization.new()
-  org.name = "Test Org"
-  post = Post.new()
-  post.title = "Test Post"
-  comment = Comment.new()
-  comment.body = "Test Comment"
-  Log.trace("=== All Ecto Integration Tests Completed ===", %{fileName: "EctoIntegrationSimple.hx", lineNumber: 261, className: "EctoIntegrationSimple", methodName: "main"})
-)
+    Log.trace("=== Ecto Integration Test Suite ===", %{fileName: "EctoIntegrationSimple.hx", lineNumber: 218, className: "EctoIntegrationSimple", methodName: "main"})
+Log.trace("Testing @:schema annotation...", %{fileName: "EctoIntegrationSimple.hx", lineNumber: 221, className: "EctoIntegrationSimple", methodName: "main"})
+user = User.new()
+user.name = "Test User"
+user.email = "test@example.com"
+Log.trace("Testing @:changeset annotation...", %{fileName: "EctoIntegrationSimple.hx", lineNumber: 227, className: "EctoIntegrationSimple", methodName: "main"})
+changeset = UserChangeset.changeset(user, %{name: "Updated", email: "new@example.com"})
+Log.trace("Testing @:migration annotation...", %{fileName: "EctoIntegrationSimple.hx", lineNumber: 231, className: "EctoIntegrationSimple", methodName: "main"})
+CreateUsersTable.up()
+Log.trace("Testing query functions...", %{fileName: "EctoIntegrationSimple.hx", lineNumber: 235, className: "EctoIntegrationSimple", methodName: "main"})
+active_users = UserQueries.activeUsers()
+Log.trace("Testing @:repository annotation...", %{fileName: "EctoIntegrationSimple.hx", lineNumber: 239, className: "EctoIntegrationSimple", methodName: "main"})
+users = Repo.all(User)
+Log.trace("Testing @:context annotation...", %{fileName: "EctoIntegrationSimple.hx", lineNumber: 243, className: "EctoIntegrationSimple", methodName: "main"})
+account_users = Accounts.list_users()
+Log.trace("Testing @:liveview with Ecto integration...", %{fileName: "EctoIntegrationSimple.hx", lineNumber: 247, className: "EctoIntegrationSimple", methodName: "main"})
+live_view = UserLive.new()
+Log.trace("Testing associations...", %{fileName: "EctoIntegrationSimple.hx", lineNumber: 251, className: "EctoIntegrationSimple", methodName: "main"})
+org = Organization.new()
+org.name = "Test Org"
+post = Post.new()
+post.title = "Test Post"
+comment = Comment.new()
+comment.body = "Test Comment"
+Log.trace("=== All Ecto Integration Tests Completed ===", %{fileName: "EctoIntegrationSimple.hx", lineNumber: 261, className: "EctoIntegrationSimple", methodName: "main"})
   end
 
 end

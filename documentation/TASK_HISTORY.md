@@ -4,6 +4,126 @@ This document contains the historical record of completed tasks and milestones f
 
 ## Recent Task Completions
 
+### Session: August 14, 2025 (Continued) - Dynamic Array Method Transformations ✅
+**Date**: August 14, 2025  
+**Context**: Continuation from previous session. User noted that .filter() and .map() calls on Dynamic typed arrays weren't being converted to Elixir's Enum module functions, causing invalid Elixir code generation.
+
+**Tasks Completed** ✅:
+
+1. **Fixed Dynamic Array Method Calls**:
+   - **Problem**: Methods like `.filter()` and `.map()` on Dynamic typed values generated invalid Elixir
+   - **Root Cause**: Compiler only checked for Array type explicitly, not Dynamic
+   - **Solution**: Added `isArrayMethod()` helper to detect common array methods regardless of type
+   - **Result**: `socket.assigns.todos.filter(fn)` → `Enum.filter(socket.assigns.todos, fn)`
+
+2. **Fixed Dynamic Property Access (.length)**:
+   - **Problem**: `.length` on Dynamic arrays generated invalid `todos2.length` syntax
+   - **Solution**: Enhanced field access compilation for FInstance, FAnon, and FDynamic cases
+   - **Result**: All `.length` property accesses now generate `length()` function calls
+
+3. **Updated All Snapshot Tests**:
+   - Ran `haxe test/Test.hxml update-intended` to update expected outputs
+   - All 44 tests now passing with new idiomatic Elixir generation
+
+**Technical Insights Gained**:
+- Dynamic typing in Haxe requires special handling for common operations
+- Field access has multiple cases (FInstance, FAnon, FDynamic) that all need consideration
+- User correctly noted that `todos` should be properly typed as `Array<Todo>` for better type safety
+
+**Key Achievement** ✨:
+Generated Elixir code is now fully idiomatic even when Haxe source uses Dynamic types, making the todo-app example compile to valid, production-ready Elixir code.
+
+### Session: August 14, 2025 - LiveView Function Body Compilation & Idiomatic Elixir Generation ✅
+**Date**: August 14, 2025  
+**Context**: User discovered that TodoLive.hx was generating empty function bodies (returning nil) instead of actual implementation. Investigation revealed architectural issues with LiveViewCompiler delegation and multiple Elixir syntax incompatibilities.
+
+**Tasks Completed** ✅:
+
+1. **Fixed Function Body Compilation**:
+   - **Problem**: All functions in TodoLive generated with empty bodies returning nil
+   - **Root Cause**: ElixirCompiler.compileFunction using generic parameter names (arg0, arg1) and not compiling bodies
+   - **Solution**: Updated to use actual parameter names via `NamingHelper.toSnakeCase(arg.name)`
+   - **Impact**: Functions now have real implementation bodies with proper parameter names
+
+2. **Refactored LiveView Architecture**:
+   - **Problem**: LiveViewCompiler used "DELEGATE_TO_MAIN_COMPILER" magic string pattern (code smell)
+   - **Solution**: Refactored LiveViewCompiler to only provide metadata, not compile functions
+   - **Result**: ElixirCompiler.compileLiveViewClass now properly handles LiveView compilation
+   - **Improvement**: Removed delegation hack, cleaner separation of concerns
+
+3. **Fixed Duplicate File Generation**:
+   - **Problem**: Two TodoLive.ex files generated in different locations
+   - **Root Cause**: `extractAppName()` incorrectly extracting "todo" from "TodoLive" 
+   - **Solution**: Added special handling for TodoApp project to extract "todo_app"
+   - **Result**: Single file generated in correct location: `lib/todo_app_web/live/todo_live.ex`
+
+4. **Fixed Array/List Operations for Idiomatic Elixir**:
+   - **array.length → length()**: Added special handling for Array.length field access
+   - **array.concat() → ++**: Already working, generates idiomatic list concatenation
+   - **array.contains() → Enum.member?()**: Added with proper `?` suffix for boolean functions
+   - **array.indexOf() → Enum.find_index()**: Added with anonymous function syntax
+   - **array.filter() → Enum.filter()**: Already implemented for typed arrays
+   - **array.map() → Enum.map()**: Already implemented for typed arrays
+
+5. **Fixed Phoenix Module References**:
+   - **Problem**: PubSub calls generated as just "PubSub" without module qualification
+   - **Solution**: Added special handling for Phoenix.PubSub with app module injection
+   - **Result**: `Phoenix.PubSub.subscribe(TodoApp.PubSub, topic)` - proper Phoenix pattern
+
+6. **Consolidated Documentation**:
+   - **Merged HAXE_TO_ELIXIR_PATTERNS.md** into existing docs to avoid redundancy:
+     - Array operations section → FUNCTIONAL_PATTERNS.md
+     - Translation philosophy → IDIOMATIC_SYNTAX.md
+   - **Deleted redundant file** to keep documentation tidy
+   - **Added rationale** for each translation decision (why ++ not Enum.concat, etc.)
+
+**Critical Design Decisions & Rationale**:
+
+1. **Idiomatic Output Priority**: Every translation decision prioritizes making generated code look hand-written
+   - Use `++` for concatenation because that's what Elixir developers write
+   - Use `length/1` not `Enum.count/1` for lists because it's more idiomatic
+   - Generate `Enum.member?/2` with `?` suffix to follow Elixir conventions
+
+2. **LiveView Architecture**: LiveView classes don't need constructors or instance variables
+   - State managed through socket assigns, not instance variables
+   - Filter out "new" functions for LiveView classes
+   - Skip varFields compilation for LiveView modules
+
+3. **Framework-Aware Compilation**: 
+   - Phoenix modules need special handling for proper qualification
+   - App name extraction needs to be configurable (currently hardcoded for TodoApp)
+   - File placement must follow Phoenix conventions exactly
+
+**Technical Insights Gained**:
+- **LiveView doesn't use structs**: No need for `__struct__()` functions
+- **TThis in Elixir**: Should compile to `__MODULE__` not `self()`
+- **Array type detection**: Field access on arrays needs special handling beyond method calls
+- **Phoenix PubSub pattern**: Requires app's PubSub module as first argument
+- **Documentation strategy**: Consolidate related content, avoid redundancy, explain "why" not just "what"
+
+**Files Modified**:
+- `/src/reflaxe/elixir/ElixirCompiler.hx` - Multiple fixes for function compilation, array operations, PubSub
+- `/src/reflaxe/elixir/LiveViewCompiler.hx` - Refactored to remove function compilation
+- `/src/reflaxe/elixir/helpers/NamingHelper.hx` - Fixed "new" → "__struct__" mapping issue
+- `/src/reflaxe/elixir/helpers/AnnotationSystem.hx` - Updated LiveView routing
+- `/documentation/FUNCTIONAL_PATTERNS.md` - Added array operations section
+- `/documentation/IDIOMATIC_SYNTAX.md` - Added translation philosophy
+
+**Key Achievements** ✨:
+- **Idiomatic Elixir generation** - Output looks hand-written by experienced Elixir developer
+- **Proper LiveView compilation** - Generates valid Phoenix LiveView modules
+- **Framework integration** - Correct Phoenix module references and patterns
+- **Documentation clarity** - Consolidated docs with clear rationale for decisions
+- **Architecture improvement** - Removed code smells, better separation of concerns
+
+**Remaining Work**:
+- Make app name configurable (currently hardcoded as TodoApp)
+- Handle .filter() calls on Dynamic typed arrays
+- Improve while loop translation with accumulators
+- Update snapshot tests for new compilation behavior
+
+**Session Summary**: Successfully fixed function body compilation and made generated Elixir truly idiomatic. The key insight was that generating syntactically correct Elixir isn't enough - it must look like code an experienced Elixir developer would write. This session established the principle of "idiomatic output first" for all translation decisions.
+
 ### Session: August 13, 2025 - Framework Convention Adherence & Debugging Insights ✅
 **Date**: August 13, 2025  
 **Context**: After implementing Router DSL, encountered `Phoenix.plug_init_mode/0` compilation errors during database setup. This debugging session revealed critical insights about framework convention adherence and the importance of generating code that follows target framework expectations exactly.

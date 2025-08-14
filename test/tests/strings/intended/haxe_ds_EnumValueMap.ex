@@ -1,4 +1,5 @@
 defmodule EnumValueMap do
+  use Bitwise
   @behaviour IMap
 
   @moduledoc """

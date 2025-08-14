@@ -277,7 +277,8 @@ class AnnotationSystem {
                 
             case ":liveview":
                 if (reflaxe.elixir.LiveViewCompiler.isLiveViewClassType(classType)) {
-                    compileLiveViewClass(classType, varFields, funcFields);
+                    // Return null to let ElixirCompiler handle LiveView compilation with new architecture
+                    null;
                 } else {
                     trace("ERROR: " +"@:liveview annotation detected but LiveViewCompiler validation failed");
                     null;
@@ -409,7 +410,7 @@ class AnnotationSystem {
     static function compileLiveViewClass(classType: ClassType, varFields: Array<ClassVarData>, funcFields: Array<ClassFuncData>): String {
         var className = classType.name;
         var config = reflaxe.elixir.LiveViewCompiler.getLiveViewConfig(classType);
-        return reflaxe.elixir.LiveViewCompiler.compileFullLiveView(className, config);
+        return reflaxe.elixir.LiveViewCompiler.compileFullLiveView(className, config, varFields, funcFields);
     }
 }
 

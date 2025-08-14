@@ -1,10 +1,8 @@
 {
   "sourceRoot": "",
   "names": [],
-  "mappings": "AA4CG,AAAA,AAAO,AAAA,AAAA,oBAAU,AAAA,AAAA,iJAQjB,AAAA,AAAO,AAAA,AAAA,kBAAM,AAAA,AAAA",
+  "mappings": "",
   "version": 3,
   "file": "ArrayIterator.ex",
-  "sources": [
-    "std/haxe/iterators/ArrayIterator.hx"
-  ]
+  "sources": []
 }

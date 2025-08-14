@@ -6,8 +6,9 @@ import phoenix.Ecto;
 
 using StringTools;
 
-// For convenience, alias Ecto.Repo
+// For convenience, alias Ecto types
 typedef Repo = phoenix.Ecto.EctoRepo;
+typedef EctoQuery = phoenix.Ecto.EctoQuery;
 
 /**
  * LiveView component for todo management with real-time updates
