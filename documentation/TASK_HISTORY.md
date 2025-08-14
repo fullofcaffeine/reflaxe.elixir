@@ -4,6 +4,35 @@ This document contains the historical record of completed tasks and milestones f
 
 ## Recent Task Completions
 
+### Session: August 14, 2025 - Filter Pattern Detection and Variable Substitution Fix Complete ✅
+**Date**: August 14, 2025  
+**Context**: Fixed critical bug where `array.filter(n -> n % 2 == 0)` was generating `Enum.map` with undefined variable `v` instead of `Enum.filter` with proper variable substitution.
+
+**Tasks Completed** ✅:
+
+1. **Filter Pattern Detection Implementation**:
+   - **Problem**: Filter operations were never detected, falling through to map pattern generation
+   - **Root Cause**: `hasFilterPattern` was never set to true in `analyzeLoopBodyAST`
+   - **Solution**: Added detection for array.push() calls within conditionals
+   - **Pattern**: `if (condition) array.push(item)` now correctly identified as filter
+   - **Result**: Filter operations now generate `Enum.filter` instead of `Enum.map`
+
+2. **TParenthesis Support in Variable Collection**:
+   - **Problem**: Variables inside parenthesized expressions weren't being found
+   - **Root Cause**: `collectVariables` and `compileExpressionWithSubstitution` didn't handle `TParenthesis`
+   - **Solution**: Added `TParenthesis` case to both functions for recursive traversal
+   - **Result**: Variable `v` in `(v rem 2 == 0)` now correctly found and substituted
+
+3. **Pattern Priority Reordering**:
+   - **Fixed**: Filter pattern now checked BEFORE map pattern in `transformForLoopToEnumCall`
+   - **Reason**: Filter operations might also set hasMapPattern due to array operations
+   - **Result**: Correct pattern selection for filter operations
+
+4. **Test Suite Results**:
+   - **Updated**: Arrays test and 3 other tests with filter operations
+   - **Status**: 45/46 tests passing (repository test has unrelated metadata issue)
+   - **Generated Code**: `Enum.filter(numbers, fn item -> (item rem 2 == 0) end)` ✅
+
 ### Session: August 14, 2025 - Variable Substitution and Transformation Extraction Complete ✅
 **Date**: August 14, 2025  
 **Context**: Implementing the elegant solution for variable substitution in array method transformations. Fixed the core issue where `numbers.map(n -> n * 2)` generated `Enum.map(numbers, fn item -> n * 2 end)` with undefined variable `n`.

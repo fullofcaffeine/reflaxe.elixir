@@ -55,7 +55,7 @@ defmodule UserQueries do
   @doc "Function get_active_posters"
   @spec get_active_posters(integer()) :: term()
   def get_active_posters(arg0) do
-    UserQueries.from("users", "u", %{left_join: %{table: "posts", alias: "p", on: "p.user_id == u.id"}, group_by: "u.id", having: "count(p.id) >= " <> arg0, select: %{user: "u", post_count: "count(p.id)"}})
+    UserQueries.from("users", "u", %{left_join: %{table: "posts", alias: "p", on: "p.user_id == u.id"}, group_by: "u.id", having: "count(p.id) >= " <> Integer.to_string(arg0), select: %{user: "u", post_count: "count(p.id)"}})
   end
 
   @doc "Function get_top_users"
@@ -74,7 +74,7 @@ UserQueries.from("users", "u", %{join: %{table: subquery, alias: "s", on: "s.use
   @doc "Function deactivate_old_users"
   @spec deactivate_old_users(integer()) :: term()
   def deactivate_old_users(arg0) do
-    UserQueries.from("users", "u", %{where: %{last_login_lt: "ago(" <> arg0 <> ", \"day\")"}, update: %{active: false}})
+    UserQueries.from("users", "u", %{where: %{last_login_lt: "ago(" <> Integer.to_string(arg0) <> ", \"day\")"}, update: %{active: false}})
   end
 
   @doc "Function delete_inactive_users"

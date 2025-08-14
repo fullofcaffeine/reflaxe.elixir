@@ -40,7 +40,7 @@ Math.sqrt(dx * dx + dy * dy)
   @doc "Function to_string"
   @spec to_string() :: String.t()
   def to_string() do
-    "Point(" <> __MODULE__.x <> ", " <> __MODULE__.y <> ")"
+    "Point(" <> Float.to_string(__MODULE__.x) <> ", " <> Float.to_string(__MODULE__.y) <> ")"
   end
 
 end
@@ -98,7 +98,7 @@ defmodule Circle do
   @doc "Function draw"
   @spec draw() :: String.t()
   def draw() do
-    "" <> super.draw() <> " with radius " <> __MODULE__.radius
+    "" <> super.draw() <> " with radius " <> Float.to_string(__MODULE__.radius)
   end
 
   @doc "Function update"
@@ -164,7 +164,7 @@ defmodule Container do
     result = Container.new()
 _g = 0
 _g1 = __MODULE__.items
-Enum.map(_g1, fn item -> item(item) end)
+Enum.map(_g1, fn item -> arg0(item) end)
 result
   end
 
