@@ -472,15 +472,17 @@ What happens:
 4. **The TypeTools.iter error** = wrong test configuration, not API incompatibility
 
 ## Known Issues
-- **Transformation Extraction**: Array methods generate `fn item -> item end` instead of actual transformation logic
-  - Example: `arr.map(x -> x * 2)` should generate `fn x -> x * 2 end` not `fn item -> item end`
-  - Root cause: `extractTransformationFromBody()` only handles TIf expressions, defaults to loopVar
 - **Variable Scope Issues**: Generated code references undefined variables (e.g., `v.id` where `v` is undefined)
   - Appears in filter/map patterns where variable names don't match between condition and body
   - Needs proper variable name extraction and scope tracking
+  - **PRIORITY: CRITICAL** - Prevents generated code from compiling in Elixir
 - **Unused Variable Generation**: Generated code includes unnecessary variables (`_g = []`, `temp_array = nil`)
   - Creates cluttered output and Elixir compiler warnings
   - Loop optimization creates temporary variables that aren't cleaned up
+- **Transformation Extraction**: Array methods generate `fn item -> item end` instead of actual transformation logic
+  - Example: `arr.map(x -> x * 2)` should generate `fn x -> x * 2 end` not `fn item -> item end`
+  - Infrastructure for extraction improved but deep pattern recognition still needed
+  - Challenge: Haxe desugar transforms simple `.map()` calls into complex loop structures
 - **Compiler Architecture**: ElixirCompiler extends BaseCompiler instead of DirectToStringCompiler
   - Missing string compilation helpers and target code injection
   - See [`documentation/architecture/COMPILER_INHERITANCE.md`](documentation/architecture/COMPILER_INHERITANCE.md) for refactor justification
@@ -489,7 +491,13 @@ What happens:
 
 ## Recently Fixed Issues ✅ (2025-08-14)
 
-**Latest Session - Array Method Compilation Fixes:**
+**Latest Session - Transformation Extraction Infrastructure:**
+- **Enhanced transformation extraction framework** - Added TBinop, TCall, TField, TLocal, TConst expression support to extractTransformationFromBody
+- **Improved array building pattern detection** - Extended recognition for TArrayDecl, push operations, and array concatenation patterns
+- **Fixed technical implementation issues** - Resolved keyword conflicts, binary operator compilation, and field access handling
+- **Maintained system stability** - Preserved all test compatibility while building infrastructure for future improvements
+
+**Previous Session - Array Method Compilation Fixes:**
 - **Array method priority detection** - Reordered pattern detection so Map → Filter → Count → Others prevents misclassification
 - **Array methods no longer generate broken Enum.count** - Now properly generate `Enum.map(_g2, fn item -> item end)` instead of `Enum.count(_g2, fn item -> end)`
 - **PubSub app name configuration** - Fixed hardcoded "App.PubSub" to use configurable `TodoApp.PubSub` via `-D app_name=TodoApp`
