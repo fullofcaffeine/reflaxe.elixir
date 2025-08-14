@@ -341,24 +341,16 @@ def sync_with_taskmaster(node) do
 end
 ```
 
-### **Testing Trophy Integration**
+### **Integration Testing Patterns**
 
-#### **Integration-First Testing**
+#### **Component Integration Testing**
 ```elixir
-# GOOD: Integration test focusing on component interactions
-describe "Memory System Integration" do
-  test "should coordinate Working → Episodic → Consolidation flow" do
-    # Given: User creates content with memory context
-    content = create_test_content()
-    
-    # When: Complete memory workflow executes
-    {:ok, result} = MemorySystem.process_complete_workflow(content)
-    
-    # Then: All memory components should coordinate properly
-    assert result.working_memory_updated?
-    assert result.episodic_memory_recorded?
-    assert result.consolidation_triggered?
-    assert result.memory_context.session_preserved?
+# GOOD: Testing component interactions
+defmodule ComponentIntegrationTest do
+  test "modules work together correctly" do
+    # Test real integration between modules
+    {:ok, result} = ModuleA.process(ModuleB.prepare(data))
+    assert result.status == :success
   end
 end
 ```
