@@ -618,6 +618,48 @@ class CustomSigil {
 }
 ```
 
+## Dynamic Type Considerations
+
+### When to Use Dynamic
+
+While Haxe's type system is a core strength, Dynamic types are sometimes necessary:
+
+```haxe
+// Acceptable Dynamic usage - External API integration
+var apiResponse: Dynamic = Json.parse(responseText);
+var items = apiResponse.data.items;
+
+// Better - Progressive typing as API stabilizes
+typedef ApiResponse = {
+    data: {
+        items: Array<Item>
+    }
+}
+var apiResponse: ApiResponse = Json.parse(responseText);
+```
+
+### Dynamic Transformations
+
+The compiler intelligently handles Dynamic types:
+
+```haxe
+// Haxe with Dynamic
+var data: Dynamic = getData();
+var filtered = data.items.filter(x -> x.active);
+var count = data.items.length;
+```
+
+```elixir
+# Generated Elixir - Still idiomatic!
+data = get_data()
+filtered = Enum.filter(data.items, fn x -> x.active end)
+count = length(data.items)
+```
+
+**Key Point**: Even with Dynamic types, generated code remains idiomatic through intelligent method detection.
+
+**See**: [`documentation/DYNAMIC_HANDLING.md`](DYNAMIC_HANDLING.md) for detailed Dynamic handling patterns.
+
 ## Best Practices
 
 1. **Use Native Syntax**: Prefer Haxe.Elixir's idiomatic transformations over escape hatches
@@ -625,6 +667,7 @@ class CustomSigil {
 3. **Pattern Consistency**: Use consistent patterns throughout your codebase
 4. **Documentation**: Document any non-obvious syntax transformations
 5. **Gradual Adoption**: Mix idiomatic Haxe.Elixir with escape hatches during migration
+6. **Progressive Typing**: Start with Dynamic for prototypes, add types as APIs stabilize
 
 ## Summary
 

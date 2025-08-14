@@ -382,6 +382,66 @@ Potential improvements to the transformation system:
 5. **With Expressions**: Transform nested error handling to `with` expressions
 6. **More Array Methods**: Support slice, take, drop, reverse, sort operations
 
+## Dynamic Type Handling
+
+### Overview
+When working with Dynamic types (common in LiveView socket assigns, JSON parsing, etc.), the compiler provides intelligent transformations to ensure idiomatic Elixir output.
+
+### Dynamic Array Operations
+
+```haxe
+// Haxe - Dynamic typed socket assigns
+var socket: Dynamic = getSocket();
+var todos = socket.assigns.todos;
+var completed = todos.filter(t -> t.completed);
+var titles = todos.map(t -> t.title);
+var count = todos.length;
+```
+
+```elixir
+# Generated Elixir - Proper Enum functions
+socket = get_socket()
+todos = socket.assigns.todos
+completed = Enum.filter(todos, fn t -> t.completed end)
+titles = Enum.map(todos, fn t -> t.title end)  
+count = length(todos)
+```
+
+### How It Works
+The compiler uses `isArrayMethod()` to detect common array operations regardless of type:
+- Typed Arrays get optimal transformations
+- Dynamic values with array-like methods get Enum transformations
+- Property access like `.length` becomes function calls
+
+### Best Practice: Progressive Typing
+
+```haxe
+// Phase 1: Prototype with Dynamic
+function processItems(data: Dynamic): Dynamic {
+    return data.items.filter(item -> item.active);
+}
+
+// Phase 2: Add types as API stabilizes
+typedef Data = {
+    items: Array<Item>
+}
+
+function processItems(data: Data): Array<Item> {
+    return data.items.filter(item -> item.active);
+}
+```
+
+**See**: [`documentation/DYNAMIC_HANDLING.md`](DYNAMIC_HANDLING.md) for comprehensive Dynamic type handling guide.
+
+## Future Improvements
+
+1. **Accumulator Pattern**: Detect and transform loops to use accumulators
+2. **Recursive Pattern Detection**: Identify recursive patterns for optimization
+3. **Pattern Matching**: Transform switch statements to pattern matching
+4. **Pipeline Operator**: Detect chainable operations for |> usage
+5. **With Expressions**: Transform nested error handling to `with` expressions
+6. **More Array Methods**: Support slice, take, drop, reverse, sort operations
+
 ## References
 
 - [Elixir Recursion Guide](https://elixir-lang.org/getting-started/recursion.html)
