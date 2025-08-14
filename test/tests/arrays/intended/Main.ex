@@ -31,47 +31,16 @@ Log.trace(mixed, %{fileName: "Main.hx", lineNumber: 24, className: "Main", metho
     fruits = ["apple", "banana", "orange", "grape"]
 _g = 0
 (
-  try do
-    loop_fn = fn {_g} ->
-      if (_g < length(fruits)) do
-        try do
-          fruit = Enum.at(fruits, _g)
-      # _g incremented
-      Log.trace("Fruit: " <> fruit, %{fileName: "Main.hx", lineNumber: 33, className: "Main", methodName: "arrayIteration"})
-      loop_fn.({_g + 1})
-        catch
-          :break -> {_g}
-          :continue -> loop_fn.({_g})
-        end
-      else
-        {_g}
-      end
-    end
-    loop_fn.({_g})
-  catch
-    :break -> {_g}
-  end
+  {_g} = Enum.reduce(fruits), _g, fn 1, acc ->
+    acc + 1
+  end)
 )
 _g = 0
 _g1 = length(fruits)
 (
-  try do
-    loop_fn = fn ->
-      if (_g < _g1) do
-        try do
-          i = _g = _g + 1
-Log.trace("" <> i <> ": " <> Enum.at(fruits, i), %{fileName: "Main.hx", lineNumber: 38, className: "Main", methodName: "arrayIteration"})
-          loop_fn.()
-        catch
-          :break -> nil
-          :continue -> loop_fn.()
-        end
-      end
-    end
-    loop_fn.()
-  catch
-    :break -> nil
-  end
+  {sum} = Enum.reduce(_g.._g1, sum, fn i, acc ->
+    acc + i
+  end)
 )
 i = 0
 (
@@ -221,48 +190,9 @@ Log.trace("Pairs: " <> Std.string(pairs), %{fileName: "Main.hx", lineNumber: 94,
 Log.trace("Matrix element [1][2]: " <> Enum.at(Enum.at(matrix, 1), 2), %{fileName: "Main.hx", lineNumber: 106, className: "Main", methodName: "multiDimensional"})
 _g = 0
 (
-  try do
-    loop_fn = fn {_g} ->
-      if (_g < length(matrix)) do
-        try do
-          row = Enum.at(matrix, _g)
-      # _g incremented
-      _g2 = 0
-      (
-  try do
-    loop_fn = fn {_g2} ->
-      if (_g2 < length(row)) do
-        try do
-          elem = Enum.at(row, _g2)
-      # _g2 incremented
-      Log.trace("Element: " <> elem, %{fileName: "Main.hx", lineNumber: 111, className: "Main", methodName: "multiDimensional"})
-      loop_fn.({_g2 + 1})
-        catch
-          :break -> {_g2}
-          :continue -> loop_fn.({_g2})
-        end
-      else
-        {_g2}
-      end
-    end
-    loop_fn.({_g2})
-  catch
-    :break -> {_g2}
-  end
-)
-      loop_fn.({_g + 1})
-        catch
-          :break -> {_g}
-          :continue -> loop_fn.({_g})
-        end
-      else
-        {_g}
-      end
-    end
-    loop_fn.({_g})
-  catch
-    :break -> {_g}
-  end
+  {_g} = Enum.reduce(matrix), _g, fn 1, acc ->
+    acc + 1
+  end)
 )
 temp_array = nil
 _g = []

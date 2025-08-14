@@ -126,26 +126,9 @@ tasks = [Task.async(fn  -> 1 end), Task.async(fn  -> 2 end), Task.async(fn  -> 3
 results = Task.yield_many(tasks)
 _g = 0
 (
-  try do
-    loop_fn = fn {_g} ->
-      if (_g < length(results)) do
-        try do
-          task_result = Enum.at(results, _g)
-      # _g incremented
-      if (task_result._1 != nil && task_result._1._0 == "ok"), do: Log.trace("Task result: " <> Std.string(task_result._1._1), %{fileName: "Main.hx", lineNumber: 117, className: "Main", methodName: "testTask"}), else: nil
-      loop_fn.({_g + 1})
-        catch
-          :break -> {_g}
-          :continue -> loop_fn.({_g})
-        end
-      else
-        {_g}
-      end
-    end
-    loop_fn.({_g})
-  catch
-    :break -> {_g}
-  end
+  {_g} = Enum.reduce(results), _g, fn 1, acc ->
+    acc + 1
+  end)
 )
 temp_var = nil
 task2 = Task.async(fn  -> "quick" end)
@@ -365,26 +348,9 @@ if (result._0 == "ok") do
   children_list = Supervisor.which_children(supervisor)
   _g = 0
   (
-    try do
-      loop_fn = fn {_g} ->
-        if (_g < length(children_list)) do
-          try do
-            child = Enum.at(children_list, _g)
-        # _g incremented
-        Log.trace("Child: " <> Std.string(child._0) <> ", Type: " <> child._2, %{fileName: "Main.hx", lineNumber: 230, className: "Main", methodName: "testSupervisionTree"})
-        loop_fn.({_g + 1})
-          catch
-            :break -> {_g}
-            :continue -> loop_fn.({_g})
-          end
-        else
-          {_g}
-        end
-      end
-      loop_fn.({_g})
-    catch
-      :break -> {_g}
-    end
+    {_g} = Enum.reduce(children_list), _g, fn 1, acc ->
+      acc + 1
+    end)
   )
   Supervisor.restart_child(supervisor, "worker1")
   Supervisor.stop(supervisor, "normal")

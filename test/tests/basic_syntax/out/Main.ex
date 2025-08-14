@@ -48,25 +48,9 @@ Log.trace(instance.dayName(3), %{fileName: "Main.hx", lineNumber: 81, className:
 _g = arg0
 _g1 = arg1
 (
-  try do
-    loop_fn = fn {sum} ->
-      if (_g < _g1) do
-        try do
-          i = _g = _g + 1
-      # sum updated with + i
-      loop_fn.({sum + i})
-        catch
-          :break -> {sum}
-          :continue -> loop_fn.({sum})
-        end
-      else
-        {sum}
-      end
-    end
-    loop_fn.({sum})
-  catch
-    :break -> {sum}
-  end
+  {sum} = Enum.reduce(_g.._g1, sum, fn i, acc ->
+    acc + i
+  end)
 )
 sum
   end

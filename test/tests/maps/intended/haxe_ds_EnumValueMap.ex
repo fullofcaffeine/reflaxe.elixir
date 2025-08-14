@@ -33,24 +33,9 @@ if (ld != 0), do: ld, else: nil
 _g = 0
 _g1 = length(arg0)
 (
-  try do
-    loop_fn = fn ->
-      if (_g < _g1) do
-        try do
-          i = _g = _g + 1
-d = __MODULE__.compareArg(Enum.at(arg0, i), Enum.at(arg1, i))
-if (d != 0), do: d, else: nil
-          loop_fn.()
-        catch
-          :break -> nil
-          :continue -> loop_fn.()
-        end
-      end
-    end
-    loop_fn.()
-  catch
-    :break -> nil
-  end
+  {sum} = Enum.reduce(_g.._g1, sum, fn i, acc ->
+    acc + i
+  end)
 )
 0
   end
