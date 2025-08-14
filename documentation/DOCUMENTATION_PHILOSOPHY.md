@@ -74,7 +74,17 @@ This document explains the documentation architecture, the purpose of each docum
 
 ## Documentation Maintenance Rules
 
-### 1. CLAUDE.md Maintenance
+### 1. Documentation Accuracy Rules ⚠️
+**Prevent documentation rot and ensure accuracy:**
+- **ALWAYS remove deprecated/outdated documentation** - Don't let incorrect info accumulate
+- **Verify claims against actual code** - Check implementation before documenting issues
+- **Update Known Issues immediately** when issues are fixed - remove solved problems
+- **Delete obsolete sections entirely** rather than marking them as outdated
+- **Test claims in real code** - If documenting a limitation, verify it actually exists
+- **Remove fixed TODOs and resolved items** - Keep only current actionable items
+- **Documentation updates are part of implementation** - Update docs when changing code
+
+### 2. CLAUDE.md Maintenance
 - **Size Check**: Run `wc -c CLAUDE.md` after major updates
 - **Target**: Keep under 40,000 characters
 - **Actions when over limit**:
@@ -83,18 +93,18 @@ This document explains the documentation architecture, the purpose of each docum
   3. Consolidate redundant sections
   4. Archive completed task descriptions
 
-### 2. Cross-Reference Strategy
+### 3. Cross-Reference Strategy
 - **Don't duplicate**: If content exists in another doc, reference it
 - **Use links**: `See [documentation/FEATURE.md](documentation/FEATURE.md)`
 - **Keep references current**: Update links when files move or rename
 
-### 3. Documentation Updates with Code Changes
+### 4. Documentation Updates with Code Changes
 - **Rule**: Documentation is part of the implementation
 - **When changing code**: Update relevant documentation immediately
 - **New features**: Create or update feature documentation
 - **Breaking changes**: Update all affected documentation
 
-### 4. File Naming Conventions
+### 5. File Naming Conventions
 - **Feature docs**: `FEATURE_NAME.md` (e.g., `SOURCE_MAPPING.md`)
 - **Guides**: `ACTION_GUIDE.md` (e.g., `GETTING_STARTED.md`)
 - **LLM docs**: `LLM_PURPOSE.md` (e.g., `LLM_DOCUMENTATION_GUIDE.md`)
