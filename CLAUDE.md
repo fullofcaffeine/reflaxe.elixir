@@ -112,6 +112,11 @@ Repeat → Continuous Quality Improvement
 → **Feedback Loop**: Example development IS compiler development - they improve each other
 → **Workflow**: Example fails → Find compiler bug → Fix compiler → Example works better
 
+### When Dealing with Paradigm Differences
+→ **Paradigm Bridge**: See [`documentation/paradigms/PARADIGM_BRIDGE.md`](documentation/paradigms/PARADIGM_BRIDGE.md) - Understanding imperative→functional transformations
+→ **Developer Patterns**: See [`documentation/guides/DEVELOPER_PATTERNS.md`](documentation/guides/DEVELOPER_PATTERNS.md) - Best practices and patterns
+→ **Haxe Features**: Use `final`, pattern matching, and functional features to write better code
+
 ### When Dealing with Framework Integration Issues
 → **Framework Conventions**: See [`documentation/FRAMEWORK_CONVENTIONS.md`](documentation/FRAMEWORK_CONVENTIONS.md) - Phoenix/Elixir directory structure requirements
 → **Convention Adherence**: Generated code MUST follow target framework conventions exactly, not just be syntactically correct
@@ -125,7 +130,7 @@ Repeat → Continuous Quality Improvement
 - **Project Overview**: See [README.md](README.md) for project introduction and public interface
 - **LLM Documentation Guide**: [`documentation/LLM_DOCUMENTATION_GUIDE.md`](documentation/LLM_DOCUMENTATION_GUIDE.md) 📚
 - **Setup & Installation**: [`documentation/GETTING_STARTED.md`](documentation/GETTING_STARTED.md)
-- **Mix Integration**: [`documentation/MIX_INTEGRATION.md`](documentation/MIX_INTEGRATION.md) ⚡ **NEW**
+- **Mix Integration**: [`documentation/MIX_INTEGRATION.md`](documentation/MIX_INTEGRATION.md) ⚡
 - **Feature Status**: [`documentation/FEATURES.md`](documentation/FEATURES.md)
 - **Annotations**: [`documentation/ANNOTATIONS.md`](documentation/ANNOTATIONS.md)
 - **Examples**: [`documentation/EXAMPLES.md`](documentation/EXAMPLES.md)
@@ -133,6 +138,11 @@ Repeat → Continuous Quality Improvement
 - **Testing**: [`documentation/architecture/TESTING.md`](documentation/architecture/TESTING.md)
 - **Development Tools**: [`documentation/DEVELOPMENT_TOOLS.md`](documentation/DEVELOPMENT_TOOLS.md)
 - **Task History**: [`documentation/TASK_HISTORY.md`](documentation/TASK_HISTORY.md)
+
+### Paradigm & Development Guides ✨ **NEW**
+- **Paradigm Bridge**: [`documentation/paradigms/PARADIGM_BRIDGE.md`](documentation/paradigms/PARADIGM_BRIDGE.md) - How Haxe's imperative patterns translate to Elixir's functional world
+- **Haxe for Phoenix**: [`documentation/phoenix/HAXE_FOR_PHOENIX.md`](documentation/phoenix/HAXE_FOR_PHOENIX.md) - Advantages of using Haxe for Phoenix development
+- **Developer Patterns**: [`documentation/guides/DEVELOPER_PATTERNS.md`](documentation/guides/DEVELOPER_PATTERNS.md) - Best practices and patterns for effective Haxe→Elixir code
 
 ## Reference Code Location
 Reference examples for architectural patterns are located at:
