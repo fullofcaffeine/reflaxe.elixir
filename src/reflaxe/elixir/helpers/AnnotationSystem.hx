@@ -37,7 +37,8 @@ class AnnotationSystem {
         ":schema",       // Ecto Schema definitions
         ":changeset",    // Ecto Changeset validation
         ":liveview",     // Phoenix LiveView components
-        ":query"         // Ecto Query DSL (future implementation)
+        ":query",        // Ecto Query DSL (future implementation)
+        ":appName"       // Application name configuration (compatible with all)
     ];
     
     /**
@@ -57,7 +58,8 @@ class AnnotationSystem {
     public static var COMPATIBLE_COMBINATIONS = [
         [":liveview", ":template"],    // LiveView can use templates
         [":schema", ":query"],         // Schema can have query methods
-        [":changeset", ":query"]       // Changeset can have query methods
+        [":changeset", ":query"],      // Changeset can have query methods
+        [":appName"]                   // :appName is compatible with any other annotation
     ];
     
     /**
@@ -124,27 +126,32 @@ class AnnotationSystem {
         if (annotations.length > 1) {
             var hasValidCombination = false;
             
-            for (combination in COMPATIBLE_COMBINATIONS) {
-                var matchesAll = true;
-                for (annotation in annotations) {
-                    if (!combination.contains(annotation)) {
-                        matchesAll = false;
+            // :appName is compatible with everything
+            if (annotations.contains(":appName")) {
+                hasValidCombination = true;
+            } else {
+                for (combination in COMPATIBLE_COMBINATIONS) {
+                    var matchesAll = true;
+                    for (annotation in annotations) {
+                        if (!combination.contains(annotation)) {
+                            matchesAll = false;
+                            break;
+                        }
+                    }
+                    
+                    if (matchesAll) {
+                        hasValidCombination = true;
                         break;
                     }
                 }
                 
-                if (matchesAll) {
-                    hasValidCombination = true;
-                    break;
-                }
-            }
-            
-            // Check if it's a simple single + compatible annotation
-            if (!hasValidCombination && annotations.length == 2) {
-                for (combination in COMPATIBLE_COMBINATIONS) {
-                    if (combination.contains(annotations[0]) && combination.contains(annotations[1])) {
-                        hasValidCombination = true;
-                        break;
+                // Check if it's a simple single + compatible annotation
+                if (!hasValidCombination && annotations.length == 2) {
+                    for (combination in COMPATIBLE_COMBINATIONS) {
+                        if (combination.contains(annotations[0]) && combination.contains(annotations[1])) {
+                            hasValidCombination = true;
+                            break;
+                        }
                     }
                 }
             }
@@ -289,10 +296,61 @@ class AnnotationSystem {
                 trace("WARNING: @:query annotation is not yet implemented. Query methods will be compiled as regular functions.");
                 null;
                 
+            case ":appName":
+                // @:appName is a configuration annotation, not a compilation target
+                // It should be used by other compilers to get app name, but doesn't generate code itself
+                null;
+                
             default:
                 trace('ERROR: Unknown annotation: ${annotationInfo.primaryAnnotation}');
                 null;
         };
+    }
+    
+    /**
+     * Extract app name from @:appName annotation
+     * Searches the class hierarchy for @:appName(value) and returns the value
+     */
+    public static function getAppName(classType: ClassType): Null<String> {
+        if (classType.meta.has(":appName")) {
+            // Extract value from @:appName(value) metadata
+            var appNameMeta = classType.meta.extract(":appName");
+            if (appNameMeta.length > 0) {
+                var params = appNameMeta[0].params;
+                if (params != null && params.length > 0) {
+                    switch (params[0].expr) {
+                        case EConst(CString(s, _)):
+                            return s;
+                        default:
+                            trace("WARNING: @:appName annotation must contain a string value. Example: @:appName('MyApp')");
+                    }
+                } else {
+                    trace("WARNING: @:appName annotation requires a value. Example: @:appName('MyApp')");
+                }
+            }
+        }
+        
+        // Default app name if no annotation found
+        return null;
+    }
+    
+    /**
+     * Get effective app name - either from annotation or fallback to class name
+     */
+    public static function getEffectiveAppName(classType: ClassType): String {
+        var annotatedName = getAppName(classType);
+        if (annotatedName != null) {
+            return annotatedName;
+        }
+        
+        // Fallback: extract app name from class name (e.g., "TodoApp" from "TodoApp")
+        // or use "App" as default
+        var className = classType.name;
+        if (className.indexOf("App") > 0) {
+            return className.split("App")[0] + "App";
+        }
+        
+        return "App"; // Ultimate fallback
     }
     
     /**
@@ -337,6 +395,7 @@ class AnnotationSystem {
             case ":changeset": "Ecto changeset with validation pipeline";
             case ":liveview": "Phoenix LiveView with real-time updates";
             case ":query": "Ecto query DSL with type-safe operations";
+            case ":appName": "Application name configuration for module naming";
             default: "Unknown annotation";
         };
     }

@@ -12,6 +12,7 @@ import reflaxe.data.ClassVarData;
 import reflaxe.elixir.ElixirTyper;
 import reflaxe.elixir.helpers.NamingHelper;
 import reflaxe.elixir.helpers.FormatHelper;
+import reflaxe.elixir.helpers.AnnotationSystem;
 import reflaxe.elixir.PhoenixMapper;
 
 using StringTools;
@@ -61,17 +62,21 @@ class ClassCompiler {
             return compileInterface(classType, funcFields);
         }
         
-        // For OTP applications, use special compilation
-        if (isApplication) {
-            return compileApplication(classType, funcFields);
-        }
+        // Note: @:application classes are now compiled normally, 
+        // with app name replacement handled in post-processing
         
         // Module definition
         result.add('defmodule ${className} do\n');
         
-        // Add use Bitwise for bitwise operators if needed
-        // TODO: Only add this if the module actually uses bitwise operations
-        result.add('  use Bitwise\n');
+        // Add Application use statement for @:application classes
+        if (isApplication) {
+            result.add('  @moduledoc false\n\n');
+            result.add('  use Application\n\n');
+        } else {
+            // Add use Bitwise for bitwise operators if needed
+            // TODO: Only add this if the module actually uses bitwise operations
+            result.add('  use Bitwise\n');
+        }
         
         // Add @behaviour annotations for implemented interfaces
         if (classType.interfaces != null && classType.interfaces.length > 0) {
@@ -707,61 +712,6 @@ class ClassCompiler {
         return classType.meta.has(":application");
     }
     
-    /**
-     * Compile OTP Application module
-     */
-    private function compileApplication(classType: ClassType, funcFields: Array<ClassFuncData>): String {
-        var className = getNativeModuleName(classType);
-        if (className == null) {
-            className = NamingHelper.getElixirModuleName(classType.name);
-        }
-        
-        var result = new StringBuf();
-        
-        // Module definition
-        result.add('defmodule ${className} do\n');
-        result.add('  @moduledoc false\n\n');
-        result.add('  use Application\n\n');
-        
-        // Find and compile the start function
-        var startFunc = null;
-        var configChangeFunc = null;
-        
-        for (func in funcFields) {
-            if (func.field.name == "start") {
-                startFunc = func;
-            } else if (func.field.name == "config_change") {
-                configChangeFunc = func;
-            }
-        }
-        
-        if (startFunc != null) {
-            result.add('  @impl true\n');
-            result.add('  def start(_type, _args) do\n');
-            result.add('    # NOTE: This is a placeholder - proper compilation needs TypedExpr\n');
-            result.add('    children = [\n');
-            result.add('      TodoApp.Repo,\n');
-            result.add('      TodoAppWeb.Telemetry,\n');
-            result.add('      {Phoenix.PubSub, name: TodoApp.PubSub},\n');
-            result.add('      TodoAppWeb.Endpoint\n');
-            result.add('    ]\n\n');
-            result.add('    opts = [strategy: :one_for_one, name: TodoApp.Supervisor]\n');
-            result.add('    Supervisor.start_link(children, opts)\n');
-            result.add('  end\n');
-        }
-        
-        if (configChangeFunc != null) {
-            result.add('\n  @impl true\n');
-            result.add('  def config_change(changed, _new, removed) do\n');
-            result.add('    TodoAppWeb.Endpoint.config_change(changed, removed)\n');
-            result.add('    :ok\n');
-            result.add('  end\n');
-        }
-        
-        result.add('end\n');
-        
-        return result.toString();
-    }
     
     /**
      * Compile interface to Elixir behavior

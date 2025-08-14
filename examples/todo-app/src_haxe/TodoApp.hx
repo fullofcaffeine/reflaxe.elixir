@@ -9,17 +9,28 @@ import elixir.Supervisor;
  */
 @:native("TodoApp.Application")
 @:application
+@:appName("TodoApp")  
 class TodoApp {
+    /**
+     * Get the app name from the @:appName annotation
+     * Simplified version for testing
+     */
+    private static function getAppName(): String {
+        return "TodoApp";
+    }
     /**
      * Start the application
      */
     public static function start(type: Dynamic, args: Dynamic): Dynamic {
+        // Get the app name dynamically - this will be replaced by the compiler
+        var appName = getAppName();
+        
         // Define children for the supervision tree
         var children = [
             // Database repository
             {
-                id: "TodoApp.Repo",
-                start: {module: "TodoApp.Repo", "function": "start_link", args: []}
+                id: '${appName}.Repo',
+                start: {module: '${appName}.Repo', "function": "start_link", args: []}
             },
             // PubSub system
             {
@@ -27,23 +38,23 @@ class TodoApp {
                 start: {
                     module: "Phoenix.PubSub", 
                     "function": "start_link",
-                    args: [{name: "TodoApp.PubSub"}]
+                    args: [{name: '${appName}.PubSub'}]
                 }
             },
             // Telemetry supervisor
             {
-                id: "TodoAppWeb.Telemetry",
-                start: {module: "TodoAppWeb.Telemetry", "function": "start_link", args: []}
+                id: '${appName}Web.Telemetry',
+                start: {module: '${appName}Web.Telemetry', "function": "start_link", args: []}
             },
             // Web endpoint
             {
-                id: "TodoAppWeb.Endpoint", 
-                start: {module: "TodoAppWeb.Endpoint", "function": "start_link", args: []}
+                id: '${appName}Web.Endpoint', 
+                start: {module: '${appName}Web.Endpoint', "function": "start_link", args: []}
             }
         ];
 
         // Start supervisor with children
-        var opts = {strategy: "one_for_one", name: "TodoApp.Supervisor"};
+        var opts = {strategy: "one_for_one", name: '${appName}.Supervisor'};
         return Supervisor.startLink(children, opts);
     }
 

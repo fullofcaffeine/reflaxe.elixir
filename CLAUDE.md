@@ -245,6 +245,49 @@ This is acceptable - helpers are simpler for our needs while following similar s
 - Zero compilation warnings, Reflaxe snapshot testing approach, Performance targets: <15ms compilation, <150KB JS bundles
 - **Date Rule**: Always run `date` command before writing timestamps - never assume dates
 
+## Development Principles
+
+### ⚠️ CRITICAL: No Simplifications or Workarounds for Testing
+**NEVER simplify code just to make tests pass or to bypass compilation issues.**
+
+❌ **Don't**:
+- Comment out problematic code "temporarily" 
+- Return dummy values to avoid compilation errors
+- Skip proper error handling to make tests pass
+- Use placeholder values instead of fixing root causes
+- Disable features to work around bugs
+
+✅ **Instead**:
+- **Fix the root cause** of compilation errors
+- **Implement proper error handling** with meaningful messages
+- **Address the underlying architectural issue** causing the problem
+- **Write comprehensive tests** that validate the actual expected behavior
+- **Document why** a particular approach was chosen over alternatives
+
+**Example of Wrong Approach**:
+```haxe
+// ❌ BAD: Working around Supervisor.startLink compilation error
+return {status: "ok", pid: null}; // Simplified for testing
+```
+
+**Example of Right Approach**:
+```haxe
+// ✅ GOOD: Fix the Supervisor extern definition to make startLink work properly
+return Supervisor.startLink(children, opts);
+```
+
+**Why This Matters**:
+- Workarounds mask real problems and create technical debt
+- They make the system unreliable in production environments
+- They prevent proper learning about the system's architecture
+- They lead to incomplete implementations that fail in edge cases
+
+**When You Encounter a Blocker**:
+1. **Investigate the root cause** - understand why it's failing
+2. **Fix the underlying issue** - don't work around it
+3. **Test the proper solution** - ensure it works as intended
+4. **Document the learning** - explain what was fixed and why
+
 ## Commit Standards
 **Follow [Conventional Commits](https://www.conventionalcommits.org/)**: `<type>(<scope>): <subject>`
 - Types: `feat`, `fix`, `docs`, `test`, `refactor`, `perf`, `chore`
