@@ -512,6 +512,8 @@ What happens:
 4. **The TypeTools.iter error** = wrong test configuration, not API incompatibility
 
 ## Known Issues  
+- **Array Mutability**: Methods like `reverse()` and `sort()` don't mutate in place (Elixir lists are immutable)
+  - Workaround: Use assignment like `reversed = reversed.reverse()` instead of just `reversed.reverse()`
 - **Pattern Matching Implementation**: Core logic completed but needs type system integration
 - **Integration Tests**: Require mock/stub system for TypedExpr structures
 - **Some preprocessor artifacts**: Minor temporary variables may appear in complex nested loops (cosmetic)

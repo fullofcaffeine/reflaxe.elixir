@@ -17,9 +17,9 @@ defmodule Main do
 Log.trace(Enum.at(numbers, 0), %{fileName: "Main.hx", lineNumber: 12, className: "Main", methodName: "basicArrayOps"})
 Log.trace(length(numbers), %{fileName: "Main.hx", lineNumber: 13, className: "Main", methodName: "basicArrayOps"})
 numbers ++ [6]
-numbers.unshift(0)
+[0 | numbers]
 popped = List.last(numbers)
-shifted = numbers.shift()
+shifted = hd(numbers)
 Log.trace("Popped: " <> Kernel.inspect(popped) <> ", Shifted: " <> Kernel.inspect(shifted), %{fileName: "Main.hx", lineNumber: 20, className: "Main", methodName: "basicArrayOps"})
 mixed = [1, "hello", true, 3.14]
 Log.trace(mixed, %{fileName: "Main.hx", lineNumber: 24, className: "Main", methodName: "basicArrayOps"})
@@ -84,11 +84,11 @@ Log.trace("Combined: " <> Std.string(combined), %{fileName: "Main.hx", lineNumbe
 words = ["Hello", "World", "from", "Haxe"]
 sentence = Enum.join(words, " ")
 Log.trace("Sentence: " <> sentence, %{fileName: "Main.hx", lineNumber: 69, className: "Main", methodName: "arrayMethods"})
-reversed = numbers.copy()
-reversed.reverse()
+reversed = numbers
+Enum.reverse(reversed)
 Log.trace("Reversed: " <> Std.string(reversed), %{fileName: "Main.hx", lineNumber: 74, className: "Main", methodName: "arrayMethods"})
 unsorted = [3, 1, 4, 1, 5, 9, 2, 6]
-unsorted.sort(fn a, b -> a - b end)
+Enum.sort(unsorted, fn a, b -> a - b end)
 Log.trace("Sorted: " <> Std.string(unsorted), %{fileName: "Main.hx", lineNumber: 79, className: "Main", methodName: "arrayMethods"})
   end
 

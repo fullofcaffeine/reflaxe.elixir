@@ -2870,9 +2870,32 @@ class ElixirCompiler extends DirectToStringCompiler {
             case "pop":
                 // array.pop() → List.last(array) (note: doesn't modify original)
                 'List.last(${objStr})';
+            case "shift":
+                // array.shift() → hd(array) (gets first element, doesn't modify)
+                'hd(${objStr})';
+            case "unshift":
+                // array.unshift(item) → [item | array]
+                if (compiledArgs.length > 0) {
+                    '[${compiledArgs[0]} | ${objStr}]';
+                } else {
+                    objStr;
+                }
             case "length":
                 // array.length → length(array)
                 'length(${objStr})';
+            case "copy":
+                // array.copy() → array (lists are immutable, so just return the list)
+                objStr;
+            case "reverse":
+                // array.reverse() → Enum.reverse(array)
+                'Enum.reverse(${objStr})';
+            case "sort":
+                // array.sort(compareFn) → Enum.sort(array) or Enum.sort_by(array, fn)
+                if (compiledArgs.length > 0) {
+                    'Enum.sort(${objStr}, ${compiledArgs[0]})';
+                } else {
+                    'Enum.sort(${objStr})';
+                }
             case "map":
                 // array.map(fn) → Enum.map(array, fn)
                 if (compiledArgs.length > 0) {
