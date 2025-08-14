@@ -472,26 +472,63 @@ What happens:
 4. **The TypeTools.iter error** = wrong test configuration, not API incompatibility
 
 ## Known Issues
-- **Variable Scope Issues**: Generated code references undefined variables (e.g., `v.id` where `v` is undefined)
-  - Appears in filter/map patterns where variable names don't match between condition and body
-  - Needs proper variable name extraction and scope tracking
-  - **PRIORITY: CRITICAL** - Prevents generated code from compiling in Elixir
 - **Unused Variable Generation**: Generated code includes unnecessary variables (`_g = []`, `temp_array = nil`)
   - Creates cluttered output and Elixir compiler warnings
   - Loop optimization creates temporary variables that aren't cleaned up
-- **Transformation Extraction**: Array methods generate `fn item -> item end` instead of actual transformation logic
-  - Example: `arr.map(x -> x * 2)` should generate `fn x -> x * 2 end` not `fn item -> item end`
-  - Infrastructure for extraction improved but deep pattern recognition still needed
-  - Challenge: Haxe desugar transforms simple `.map()` calls into complex loop structures
+  - **PRIORITY: MEDIUM** - Code compiles but generates extra variables
 - **Compiler Architecture**: ElixirCompiler extends BaseCompiler instead of DirectToStringCompiler
   - Missing string compilation helpers and target code injection
   - See [`documentation/architecture/COMPILER_INHERITANCE.md`](documentation/architecture/COMPILER_INHERITANCE.md) for refactor justification
 - **Pattern Matching Implementation**: Core logic completed but needs type system integration
 - **Integration Tests**: Require mock/stub system for TypedExpr structures
 
+## Compiler Development Best Practices ⚡
+
+**Established from Variable Substitution Implementation (2025-08-14)**:
+
+### 1. Never Leave TODOs in Production Code
+- **Rule**: Fix issues immediately, don't leave placeholders
+- **Why**: TODOs accumulate technical debt and indicate incomplete implementation
+- **Example**: Don't write `// TODO: Need to substitute variables` - implement the substitution
+
+### 2. Pass TypedExpr Through Pipeline as Long as Possible
+- **Rule**: Keep AST nodes (TypedExpr) until the very last moment before string generation
+- **Why**: AST provides structural information for proper transformations
+- **Anti-pattern**: Converting to strings early then trying to manipulate strings
+- **Correct**: Store `conditionExpr: TypedExpr` alongside `condition: String`
+
+### 3. Apply Transformations at AST Level, Not String Level
+- **Rule**: Use recursive AST traversal for variable substitution and transformations
+- **Why**: String manipulation is fragile and error-prone
+- **Implementation**: `compileExpressionWithSubstitution(expr: TypedExpr, sourceVar: String, targetVar: String)`
+- **Benefits**: Type-safe, handles nested expressions, catches edge cases
+
+### 4. Variable Substitution Pattern
+- **Problem**: Lambda parameters need different names than original loop variables
+- **Solution**: 
+  1. Find source variable in AST using `findLoopVariable(expr: TypedExpr)`
+  2. Apply recursive substitution with `compileExpressionWithSubstitution()`
+  3. Generate consistent lambda parameter names (`"item"`)
+- **Result**: `numbers.map(n -> n * 2)` → `Enum.map(numbers, fn item -> item * 2 end)`
+
 ## Recently Fixed Issues ✅ (2025-08-14)
 
-**Latest Session - Transformation Extraction Infrastructure:**
+**Latest Session - Variable Substitution and Transformation Extraction Complete:**
+- **Variable Scope Issues RESOLVED** ✨ - Generated code now has consistent variable scoping
+  - Fixed lambda parameter mismatches where `numbers.map(n -> n * 2)` generated `Enum.map(numbers, fn item -> n * 2 end)`
+  - Implemented AST-level variable substitution with `compileExpressionWithVarMapping()` and recursive substitution
+  - Result: `numbers.map(n -> n * 2)` → `Enum.map(numbers, fn item -> item * 2 end)` with proper variable consistency
+- **Transformation Extraction WORKING** ✨ - Array methods generate actual logic instead of identity functions
+  - Fixed `extractTransformationFromBody` to extract real transformations from TCall, TBinop patterns  
+  - Added support for array push operations, list concatenation, and conditional transformations
+  - Working transformations: `item * 2`, `"Fruit: " + item`, `item * item`, conditionals with proper variable substitution
+- **Compiler Development Best Practices** - Added rules to prevent similar issues:
+  1. Never leave TODOs in production code - fix issues immediately
+  2. Pass TypedExpr through pipeline as long as possible before string generation
+  3. Apply transformations at AST level, not string level
+  4. Variable substitution pattern with recursive AST traversal
+
+**Previous Session - Transformation Extraction Infrastructure:**
 - **Enhanced transformation extraction framework** - Added TBinop, TCall, TField, TLocal, TConst expression support to extractTransformationFromBody
 - **Improved array building pattern detection** - Extended recognition for TArrayDecl, push operations, and array concatenation patterns
 - **Fixed technical implementation issues** - Resolved keyword conflicts, binary operator compilation, and field access handling
