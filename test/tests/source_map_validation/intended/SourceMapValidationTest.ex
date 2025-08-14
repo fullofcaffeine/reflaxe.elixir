@@ -29,14 +29,28 @@ Log.trace("Loop iteration: " <> 3, %{fileName: "SourceMapValidationTest.hx", lin
 Log.trace("Loop iteration: " <> 4, %{fileName: "SourceMapValidationTest.hx", lineNumber: 31, className: "SourceMapValidationTest", methodName: "main"})
 array = [1, 2, 3, 4, 5]
 _g = 0
-(fn loop_fn ->
-  if (_g < length(array)) do
-    item = Enum.at(array, _g)
-_g = _g + 1
-SourceMapValidationTest.processItem(item)
-    loop_fn.(loop_fn)
+(
+  try do
+    loop_fn = fn {_g} ->
+      if (_g < length(array)) do
+        try do
+          item = Enum.at(array, _g)
+      # _g incremented
+      SourceMapValidationTest.processItem(item)
+      loop_fn.({_g + 1})
+        catch
+          :break -> {_g}
+          :continue -> loop_fn.({_g})
+        end
+      else
+        {_g}
+      end
+    end
+    loop_fn.({_g})
+  catch
+    :break -> {_g}
   end
-end).(fn f -> f.(f) end)
+)
 obj_value = nil
 obj_nested_field = nil
 obj_name = nil

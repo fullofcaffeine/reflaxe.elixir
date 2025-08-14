@@ -29,6 +29,7 @@ class AnnotationSystem {
         ":genserver",    // OTP GenServer - highest priority for behavior classes
         ":controller",   // Phoenix Controller with routing
         ":router",       // Phoenix Router configuration
+        ":channel",      // Phoenix Channel for real-time communication
         ":behaviour",    // Elixir Behavior definitions
         ":protocol",     // Elixir Protocol definitions
         ":impl",         // Elixir Protocol implementations
@@ -46,9 +47,9 @@ class AnnotationSystem {
      * Classes cannot have multiple annotations from the same group
      */
     public static var EXCLUSIVE_GROUPS = [
-        [":genserver", ":liveview"],           // Behavior vs Component
-        [":schema", ":changeset"],             // Data vs Validation
-        [":migration", ":schema", ":changeset"] // Migration vs Runtime
+        [":genserver", ":liveview", ":channel"], // Behavior vs Component vs Channel
+        [":schema", ":changeset"],               // Data vs Validation
+        [":migration", ":schema", ":changeset"]  // Migration vs Runtime
     ];
     
     /**
@@ -225,6 +226,9 @@ class AnnotationSystem {
                     trace("ERROR: " +"@:router annotation detected but RouterCompiler validation failed");
                     null;
                 }
+                
+            case ":channel":
+                compileChannelClass(classType, varFields, funcFields);
                 
             case ":behaviour":
                 if (reflaxe.elixir.helpers.BehaviorCompiler.isBehaviorClassType(classType)) {
@@ -418,6 +422,10 @@ class AnnotationSystem {
     
     static function compileRouterClass(classType: ClassType, varFields: Array<ClassVarData>, funcFields: Array<ClassFuncData>): String {
         return reflaxe.elixir.helpers.RouterCompiler.compileRouter(classType);
+    }
+    
+    static function compileChannelClass(classType: ClassType, varFields: Array<ClassVarData>, funcFields: Array<ClassFuncData>): String {
+        return reflaxe.elixir.helpers.ChannelCompiler.compileChannel(classType, "");
     }
     
     static function compileBehaviorClass(classType: ClassType, varFields: Array<ClassVarData>, funcFields: Array<ClassFuncData>): String {

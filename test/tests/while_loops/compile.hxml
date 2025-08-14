@@ -1,0 +1,18 @@
+# While loop test compilation
+-cp ../../../src
+-cp ../../../std
+-lib reflaxe
+
+# Output directory
+-D elixir_output=out
+
+# Required for Reflaxe targets
+-D reflaxe_runtime
+-D no-utf16
+
+# Define library version and initialize compiler
+-D reflaxe.elixir=0.1.0
+--macro reflaxe.elixir.CompilerInit.Start()
+
+# Main class to compile - just basic loop testing
+Main
