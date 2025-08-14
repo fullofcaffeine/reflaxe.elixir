@@ -145,16 +145,7 @@ defmodule TodoLive do
     _g = []
     _g1 = 0
     _g2 = _this
-    (fn loop_fn ->
-      if (_g1 < length(_g2)) do
-        v = Enum.at(_g2, _g1)
-    _g1 = _g1 + 1
-    temp_todo = nil
-    if (v.id == updated_todo.id), do: temp_todo = updated_todo, else: temp_todo = v
-    _g ++ [temp_todo]
-        loop_fn.(loop_fn)
-      end
-    end).(fn f -> f.(f) end)
+    Enum.count(_g2, fn tempTodo ->  end)
     temp_array = _g
     todos2 = temp_array
     socket.assign(%{todos: todos2, completed_todos: TodoLive.count_completed(todos2), pending_todos: TodoLive.count_pending(todos2)})
@@ -167,14 +158,7 @@ defmodule TodoLive do
     _g = []
     _g1 = 0
     _g2 = _this
-    (fn loop_fn ->
-      if (_g1 < length(_g2)) do
-        v = Enum.at(_g2, _g1)
-    _g1 = _g1 + 1
-    if (v.id != id), do: _g ++ [v], else: nil
-        loop_fn.(loop_fn)
-      end
-    end).(fn f -> f.(f) end)
+    Enum.count(_g2, fn item ->  end)
     temp_array = _g
     todos2 = temp_array
     socket.assign(%{todos: todos2, total_todos: length(todos2), completed_todos: TodoLive.count_completed(todos2), pending_todos: TodoLive.count_pending(todos2)})
@@ -191,14 +175,15 @@ defmodule TodoLive do
   @doc "Generated from Haxe find_todo"
   def find_todo(id, todos) do
     _g = 0
-    (fn loop_fn ->
-      if (_g < length(todos)) do
-        todo = Enum.at(todos, _g)
-    _g = _g + 1
-    if (todo.id == id), do: todo, else: nil
-        loop_fn.(loop_fn)
-      end
-    end).(fn f -> f.(f) end)
+    (
+      Enum.reduce_while(todos, nil, fn todo, _acc ->
+        if (todo.id == id) do
+          {:halt, todo}
+        else
+          {:cont, nil}
+        end
+      end)
+    )
     nil
   end
 
@@ -206,14 +191,7 @@ defmodule TodoLive do
   def count_completed(todos) do
     count = 0
     _g = 0
-    (fn loop_fn ->
-      if (_g < length(todos)) do
-        todo = Enum.at(todos, _g)
-    _g = _g + 1
-    if (todo.completed), do: count = count + 1, else: nil
-        loop_fn.(loop_fn)
-      end
-    end).(fn f -> f.(f) end)
+    Enum.count(todos, fn todo -> (todo.completed) end)
     count
   end
 
@@ -221,14 +199,7 @@ defmodule TodoLive do
   def count_pending(todos) do
     count = 0
     _g = 0
-    (fn loop_fn ->
-      if (_g < length(todos)) do
-        todo = Enum.at(todos, _g)
-    _g = _g + 1
-    if (!todo.completed), do: count = count + 1, else: nil
-        loop_fn.(loop_fn)
-      end
-    end).(fn f -> f.(f) end)
+    Enum.count(todos, fn todo -> (!todo.completed) end)
     count
   end
 
@@ -240,14 +211,7 @@ defmodule TodoLive do
     _g = []
     _g1 = 0
     _g2 = _this
-    (fn loop_fn ->
-      if (_g1 < length(_g2)) do
-        v = Enum.at(_g2, _g1)
-    _g1 = _g1 + 1
-    _g ++ [StringTools.trim(v)]
-        loop_fn.(loop_fn)
-      end
-    end).(fn f -> f.(f) end)
+    Enum.count(_g2, fn item ->  end)
     temp_result = _g
     temp_result
   end
@@ -264,26 +228,11 @@ defmodule TodoLive do
     _g = []
     _g1 = 0
     _g2 = _this
-    (fn loop_fn ->
-      if (_g1 < length(_g2)) do
-        v = Enum.at(_g2, _g1)
-    _g1 = _g1 + 1
-    if (!v.completed), do: _g ++ [v], else: nil
-        loop_fn.(loop_fn)
-      end
-    end).(fn f -> f.(f) end)
+    Enum.count(_g2, fn item ->  end)
     temp_array = _g
     pending = temp_array
     _g = 0
-    (fn loop_fn ->
-      if (_g < length(pending)) do
-        todo = Enum.at(pending, _g)
-    _g = _g + 1
-    updated = Todo.toggle_completed(todo)
-    Repo.update(updated)
-        loop_fn.(loop_fn)
-      end
-    end).(fn f -> f.(f) end)
+    Enum.count(pending, fn item ->  end)
     Phoenix.PubSub.broadcast(App.PubSub, "todo:updates", %{type: "bulk_update", action: "complete_all"})
     socket.assign(%{todos: TodoLive.load_todos(socket.assigns.current_user.id), completed_todos: socket.assigns.total_todos, pending_todos: 0}).put_flash("info", "All todos marked as completed!")
   end
@@ -295,39 +244,18 @@ defmodule TodoLive do
     _g = []
     _g1 = 0
     _g2 = _this
-    (fn loop_fn ->
-      if (_g1 < length(_g2)) do
-        v = Enum.at(_g2, _g1)
-    _g1 = _g1 + 1
-    if (v.completed), do: _g ++ [v], else: nil
-        loop_fn.(loop_fn)
-      end
-    end).(fn f -> f.(f) end)
+    Enum.count(_g2, fn item ->  end)
     temp_array = _g
     completed = temp_array
     _g = 0
-    (fn loop_fn ->
-      if (_g < length(completed)) do
-        todo = Enum.at(completed, _g)
-    _g = _g + 1
-    Repo.delete(todo)
-        loop_fn.(loop_fn)
-      end
-    end).(fn f -> f.(f) end)
+    Enum.count(completed, fn item ->  end)
     Phoenix.PubSub.broadcast(App.PubSub, "todo:updates", %{type: "bulk_delete", action: "delete_completed"})
     temp_array1 = nil
     _this = socket.assigns.todos
     _g = []
     _g1 = 0
     _g2 = _this
-    (fn loop_fn ->
-      if (_g1 < length(_g2)) do
-        v = Enum.at(_g2, _g1)
-    _g1 = _g1 + 1
-    if (!v.completed), do: _g ++ [v], else: nil
-        loop_fn.(loop_fn)
-      end
-    end).(fn f -> f.(f) end)
+    Enum.count(_g2, fn item ->  end)
     temp_array1 = _g
     remaining = temp_array1
     socket.assign(%{todos: remaining, total_todos: length(remaining), completed_todos: 0, pending_todos: length(remaining)}).put_flash("info", "Completed todos deleted!")
@@ -362,14 +290,7 @@ defmodule TodoLive do
       _g = []
       _g1 = 0
       _g2 = selected_tags2
-      (fn loop_fn ->
-        if (_g1 < length(_g2)) do
-          v = Enum.at(_g2, _g1)
-      _g1 = _g1 + 1
-      if (v != tag), do: _g ++ [v], else: nil
-          loop_fn.(loop_fn)
-        end
-      end).(fn f -> f.(f) end)
+      Enum.count(_g2, fn item ->  end)
       temp_array = _g
     else
       temp_array = selected_tags2 ++ [tag]
