@@ -1,12 +1,3 @@
-haxe_iterators_StringKeyValueIterator.ex
-haxe_iterators_StringIterator.ex
-haxe_iterators_ArrayKeyValueIterator.ex
-haxe_iterators_ArrayIterator.ex
 haxe_CallStack.ex
 Type.ex
-StringTools.ex
-StringBuf.ex
-IntIterator.ex
-EnumValue.ex
 Displayable.ex
-Any.ex

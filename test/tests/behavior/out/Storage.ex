@@ -61,13 +61,25 @@ temp_iterator = nil
 this1 = __MODULE__.data
 temp_iterator = this1.keys()
 k = temp_iterator
-(fn loop_fn ->
-  if (k.hasNext()) do
-    k2 = k.next()
+(
+  try do
+    loop_fn = fn ->
+      if (k.hasNext()) do
+        try do
+          k2 = k.next()
 _g ++ [k2]
-    loop_fn.(loop_fn)
+          loop_fn.()
+        catch
+          :break -> nil
+          :continue -> loop_fn.()
+        end
+      end
+    end
+    loop_fn.()
+  catch
+    :break -> nil
   end
-end).(fn f -> f.(f) end)
+)
 temp_result = _g
 temp_result
   end

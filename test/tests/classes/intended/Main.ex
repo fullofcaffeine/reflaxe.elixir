@@ -164,14 +164,28 @@ defmodule Container do
     result = Container.new()
 _g = 0
 _g1 = __MODULE__.items
-(fn loop_fn ->
-  if (_g < length(_g1)) do
-    item = Enum.at(_g1, _g)
-_g = _g + 1
-result.add(arg0(item))
-    loop_fn.(loop_fn)
+(
+  try do
+    loop_fn = fn {_g} ->
+      if (_g < length(_g1)) do
+        try do
+          item = Enum.at(_g1, _g)
+      # _g incremented
+      result.add(arg0(item))
+      loop_fn.({_g + 1})
+        catch
+          :break -> {_g}
+          :continue -> loop_fn.({_g})
+        end
+      else
+        {_g}
+      end
+    end
+    loop_fn.({_g})
+  catch
+    :break -> {_g}
   end
-end).(fn f -> f.(f) end)
+)
 result
   end
 

@@ -1,9 +1,0 @@
-# Test channel compilation
--cp ../../std
--cp ../../src  
--lib reflaxe
--D reflaxe_runtime
--D elixir_output=out
--D reflaxe.elixir=0.1.0
---macro reflaxe.elixir.CompilerInit.Start()
-TestChannel
