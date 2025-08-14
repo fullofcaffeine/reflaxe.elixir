@@ -11,7 +11,7 @@ defmodule Main do
   @spec match_simple_value(integer()) :: String.t()
   def match_simple_value(arg0) do
     temp_result = nil
-case ((arg0)) do
+case (arg0) do
   0 ->
     temp_result = "zero"
   1 ->
@@ -42,13 +42,13 @@ case (length(arg0)) do
   1 ->
     _g = Enum.at(arg0, 0)
 x = _g
-temp_result = "single: " <> x
+temp_result = "single: " <> Integer.to_string(x)
   2 ->
     _g = Enum.at(arg0, 0)
 _g1 = Enum.at(arg0, 1)
 x = _g
 y = _g1
-temp_result = "pair: " <> x <> "," <> y
+temp_result = "pair: " <> Integer.to_string(x) <> "," <> Integer.to_string(y)
   3 ->
     _g = Enum.at(arg0, 0)
 _g1 = Enum.at(arg0, 1)
@@ -56,7 +56,7 @@ _g2 = Enum.at(arg0, 2)
 x = _g
 y = _g1
 z = _g2
-temp_result = "triple: " <> x <> "," <> y <> "," <> z
+temp_result = "triple: " <> Integer.to_string(x) <> "," <> Integer.to_string(y) <> "," <> Integer.to_string(z)
   4 ->
     _g = Enum.at(arg0, 0)
 _g1 = Enum.at(arg0, 1)
@@ -66,10 +66,10 @@ first = _g
 second = _g1
 third = _g2
 fourth = _g3
-temp_result = "quad: " <> first <> "," <> second <> "," <> third <> "," <> fourth
+temp_result = "quad: " <> Integer.to_string(first) <> "," <> Integer.to_string(second) <> "," <> Integer.to_string(third) <> "," <> Integer.to_string(fourth)
   _ ->
     a = arg0
-if (length(a) > 4), do: temp_result = "many: " <> length(a) <> " elements", else: temp_result = "unknown"
+if (length(a) > 4), do: temp_result = "many: " <> Integer.to_string(length(a)) <> " elements", else: temp_result = "unknown"
 end
 temp_result
   end
@@ -80,7 +80,7 @@ temp_result
   @spec classify_string(String.t()) :: String.t()
   def classify_string(arg0) do
     temp_result = nil
-case ((arg0)) do
+case (arg0) do
   "" ->
     temp_result = "empty"
   "goodbye" ->
@@ -155,7 +155,7 @@ temp_result
   @spec match_flags(boolean(), boolean(), boolean()) :: String.t()
   def match_flags(arg0, arg1, arg2) do
     temp_result = nil
-if ((arg0)), do: if ((arg1)), do: if ((arg2)), do: temp_result = "full access", else: temp_result = "verified user", else: if ((arg2)), do: temp_result = "unverified premium", else: temp_result = "basic user", else: temp_result = "inactive"
+if (arg0), do: if (arg1), do: if (arg2), do: temp_result = "full access", else: temp_result = "verified user", else: if (arg2), do: temp_result = "unverified premium", else: temp_result = "basic user", else: temp_result = "inactive"
 temp_result
   end
 
@@ -173,10 +173,10 @@ case (length(arg0)) do
 if (length(_g) == 1) do
   _g2 = Enum.at(_g, 0)
   x = _g2
-  temp_result = "single element: " <> x
+  temp_result = "single element: " <> Integer.to_string(x)
 else
   m = arg0
-  if (length(m) == length(Enum.at(m, 0))), do: temp_result = "square matrix " <> length(m) <> "x" <> length(m), else: temp_result = "non-square matrix"
+  if (length(m) == length(Enum.at(m, 0))), do: temp_result = "square matrix " <> Integer.to_string(length(m)) <> "x" <> Integer.to_string(length(m)), else: temp_result = "non-square matrix"
 end
   2 ->
     _g = Enum.at(arg0, 0)
@@ -191,56 +191,56 @@ if (length(_g) == 2) do
     d = _g5
     b = _g3
     a = _g2
-    temp_result = "2x2 matrix: [[" <> a <> "," <> b <> "],[" <> c <> "," <> d <> "]]"
+    temp_result = "2x2 matrix: [[" <> Integer.to_string(a) <> "," <> Integer.to_string(b) <> "],[" <> Integer.to_string(c) <> "," <> Integer.to_string(d) <> "]]"
   else
     m = arg0
-    if (length(m) == length(Enum.at(m, 0))), do: temp_result = "square matrix " <> length(m) <> "x" <> length(m), else: temp_result = "non-square matrix"
+    if (length(m) == length(Enum.at(m, 0))), do: temp_result = "square matrix " <> Integer.to_string(length(m)) <> "x" <> Integer.to_string(length(m)), else: temp_result = "non-square matrix"
   end
 else
   m = arg0
-  if (length(m) == length(Enum.at(m, 0))), do: temp_result = "square matrix " <> length(m) <> "x" <> length(m), else: temp_result = "non-square matrix"
+  if (length(m) == length(Enum.at(m, 0))), do: temp_result = "square matrix " <> Integer.to_string(length(m)) <> "x" <> Integer.to_string(length(m)), else: temp_result = "non-square matrix"
 end
   3 ->
     _g = Enum.at(arg0, 0)
 _g1 = Enum.at(arg0, 1)
 _g2 = Enum.at(arg0, 2)
 if (length(_g) == 3) do
-  _g3 = Enum.at(_g, 0)
-  _g4 = Enum.at(_g, 1)
-  _g5 = Enum.at(_g, 2)
+  Enum.at(_g, 0)
+  Enum.at(_g, 1)
+  Enum.at(_g, 2)
   if (length(_g1) == 3) do
-    _g6 = Enum.at(_g1, 0)
-    _g7 = Enum.at(_g1, 1)
-    _g8 = Enum.at(_g1, 2)
+    Enum.at(_g1, 0)
+    Enum.at(_g1, 1)
+    Enum.at(_g1, 2)
     if (length(_g2) == 3) do
-      _g9 = Enum.at(_g2, 0)
-      _g10 = Enum.at(_g2, 1)
-      _g11 = Enum.at(_g2, 2)
-      g = _g9
-      h = _g10
-      i = _g11
-      a = _g3
-      b = _g4
-      c = _g5
-      f = _g8
-      e = _g7
-      d = _g6
+      Enum.at(_g2, 0)
+      Enum.at(_g2, 1)
+      Enum.at(_g2, 2)
+      _g9
+      _g10
+      _g11
+      _g3
+      _g4
+      _g5
+      _g8
+      _g7
+      _g6
       temp_result = "3x3 matrix"
     else
       m = arg0
-      if (length(m) == length(Enum.at(m, 0))), do: temp_result = "square matrix " <> length(m) <> "x" <> length(m), else: temp_result = "non-square matrix"
+      if (length(m) == length(Enum.at(m, 0))), do: temp_result = "square matrix " <> Integer.to_string(length(m)) <> "x" <> Integer.to_string(length(m)), else: temp_result = "non-square matrix"
     end
   else
     m = arg0
-    if (length(m) == length(Enum.at(m, 0))), do: temp_result = "square matrix " <> length(m) <> "x" <> length(m), else: temp_result = "non-square matrix"
+    if (length(m) == length(Enum.at(m, 0))), do: temp_result = "square matrix " <> Integer.to_string(length(m)) <> "x" <> Integer.to_string(length(m)), else: temp_result = "non-square matrix"
   end
 else
   m = arg0
-  if (length(m) == length(Enum.at(m, 0))), do: temp_result = "square matrix " <> length(m) <> "x" <> length(m), else: temp_result = "non-square matrix"
+  if (length(m) == length(Enum.at(m, 0))), do: temp_result = "square matrix " <> Integer.to_string(length(m)) <> "x" <> Integer.to_string(length(m)), else: temp_result = "non-square matrix"
 end
   _ ->
     m = arg0
-if (length(m) == length(Enum.at(m, 0))), do: temp_result = "square matrix " <> length(m) <> "x" <> length(m), else: temp_result = "non-square matrix"
+if (length(m) == length(Enum.at(m, 0))), do: temp_result = "square matrix " <> Integer.to_string(length(m)) <> "x" <> Integer.to_string(length(m)), else: temp_result = "non-square matrix"
 end
 temp_result
   end
@@ -259,7 +259,7 @@ else
   if (a2 >= 0 && a2 < 13) do
     temp_result = "child"
   else
-    case ((arg1)) do
+    case (arg1) do
       false ->
         a3 = arg0
     if (a3 >= 13 && a3 < 18) do
@@ -362,7 +362,7 @@ else
   if (Enum.find_index(secondary_colors, &(&1 == c2)) >= 0) do
     temp_result = "secondary color"
   else
-    case ((arg0)) do
+    case (arg0) do
       "black" ->
         temp_result = "monochrome"
       "gray" ->
@@ -383,7 +383,7 @@ temp_result
   @spec match_status(String.t()) :: String.t()
   def match_status(arg0) do
     temp_result = nil
-case ((arg0)) do
+case (arg0) do
   "crashed" ->
     temp_result = "error state"
   "error" ->

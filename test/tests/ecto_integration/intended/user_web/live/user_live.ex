@@ -16,13 +16,13 @@ defmodule UserLive do
   @doc "Generated from Haxe handle_event"
   def handle_event(event, params, socket) do
     temp_result = nil
-    case ((event)) do
+    case (event) do
       "delete_user" ->
         user = Accounts.get_user(params.id)
     Accounts.delete_user(user)
     temp_result = %{noreply: true, socket: socket}
       "save_user" ->
-        result = Accounts.create_user(params)
+        Accounts.create_user(params)
     temp_result = %{noreply: true, socket: socket}
       _ ->
         temp_result = %{noreply: true, socket: socket}

@@ -14,7 +14,7 @@ defmodule PosException do
 	"
   @spec to_string() :: String.t()
   def to_string() do
-    "" <> super.toString() <> " in " <> __MODULE__.pos_infos.class_name <> "." <> __MODULE__.pos_infos.method_name <> " at " <> __MODULE__.pos_infos.file_name <> ":" <> __MODULE__.pos_infos.line_number
+    "" <> super.toString() <> " in " <> __MODULE__.pos_infos.class_name <> "." <> __MODULE__.pos_infos.method_name <> " at " <> __MODULE__.pos_infos.file_name <> ":" <> Integer.to_string(__MODULE__.pos_infos.line_number)
   end
 
 end

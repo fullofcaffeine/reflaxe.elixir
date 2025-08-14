@@ -117,6 +117,8 @@ With DirectToStringCompiler and Reflaxe 4.0, we get:
 - **Full preprocessor pipeline**: Automatic AST optimization
 - **Cleaner output**: No more `_g`, `temp_array` variables
 - **Better performance**: Optimized AST before string generation
+- **Type-aware string operations**: Proper `<>` operator usage with automatic type conversion
+- **Improved code quality**: Idiomatic Elixir without runtime errors
 
 ## Decision Rationale
 

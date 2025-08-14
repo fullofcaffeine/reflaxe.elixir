@@ -370,8 +370,9 @@ return Supervisor.startLink(children, opts);
 ## Development Environment
 **See**: [`documentation/GETTING_STARTED.md`](documentation/GETTING_STARTED.md) - Complete setup guide
 - **Haxe**: 4.3.6+ with modern patterns, API at https://api.haxe.org/  
+- **Reflaxe**: 4.0.0-beta with full preprocessor support (upgraded from 3.0)
 - **Testing**: `npm test` for full suite, `-D reflaxe_runtime` for test compilation
-- **Architecture**: 1:1 Haxe → Elixir file mapping, macro-time transpilation
+- **Architecture**: DirectToStringCompiler inheritance, macro-time transpilation
 
 ## Dynamic Type Usage Guidelines ⚠️
 **Dynamic should be used with caution** and only when necessary:
@@ -510,16 +511,10 @@ What happens:
 3. **Use Mix tests** - they test that generated Elixir actually works
 4. **The TypeTools.iter error** = wrong test configuration, not API incompatibility
 
-## Known Issues
-- **Unused Variable Generation**: Generated code includes unnecessary variables (`_g = []`, `temp_array = nil`)
-  - Creates cluttered output and Elixir compiler warnings
-  - Loop optimization creates temporary variables that aren't cleaned up
-  - **PRIORITY: MEDIUM** - Code compiles but generates extra variables
-- **Compiler Architecture**: ElixirCompiler extends BaseCompiler instead of DirectToStringCompiler
-  - Missing string compilation helpers and target code injection
-  - See [`documentation/architecture/COMPILER_INHERITANCE.md`](documentation/architecture/COMPILER_INHERITANCE.md) for refactor justification
+## Known Issues  
 - **Pattern Matching Implementation**: Core logic completed but needs type system integration
 - **Integration Tests**: Require mock/stub system for TypedExpr structures
+- **Some preprocessor artifacts**: Minor temporary variables may appear in complex nested loops (cosmetic)
 
 ## Compiler Development Best Practices ⚡
 

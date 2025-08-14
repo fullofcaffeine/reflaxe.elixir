@@ -50,7 +50,7 @@ rescue
     Log.trace("Caught string: " <> e, %{fileName: "Main.hx", lineNumber: 39, className: "Main", methodName: "multipleCatch"})
 rescue
   e ->
-    Log.trace("Caught int: " <> e, %{fileName: "Main.hx", lineNumber: 41, className: "Main", methodName: "multipleCatch"})
+    Log.trace("Caught int: " <> Integer.to_string(e), %{fileName: "Main.hx", lineNumber: 41, className: "Main", methodName: "multipleCatch"})
 rescue
   e ->
     Log.trace("Caught exception: " <> e.get_message(), %{fileName: "Main.hx", lineNumber: 43, className: "Main", methodName: "multipleCatch"})
@@ -111,7 +111,7 @@ end
   throw(CustomException.new("Custom error", 404))
 rescue
   e ->
-    Log.trace("Custom exception: " <> e.get_message() <> ", code: " <> e.code, %{fileName: "Main.hx", lineNumber: 102, className: "Main", methodName: "customException"})
+    Log.trace("Custom exception: " <> e.get_message() <> ", code: " <> Integer.to_string(e.code), %{fileName: "Main.hx", lineNumber: 102, className: "Main", methodName: "customException"})
 end
   end
 
@@ -127,7 +127,7 @@ arg0 / arg1
   def test_division() do
     try do
   result = Main.divide(10, 2)
-Log.trace("10 / 2 = " <> result, %{fileName: "Main.hx", lineNumber: 117, className: "Main", methodName: "testDivision"})
+Log.trace("10 / 2 = " <> Float.to_string(result), %{fileName: "Main.hx", lineNumber: 117, className: "Main", methodName: "testDivision"})
 result = Main.divide(10, 0)
 Log.trace("This won't execute", %{fileName: "Main.hx", lineNumber: 120, className: "Main", methodName: "testDivision"})
 rescue
@@ -181,7 +181,7 @@ rescue
     temp_maybe_number = 0
 end
 value = temp_maybe_number
-Log.trace("Parsed value: " <> value, %{fileName: "Main.hx", lineNumber: 169, className: "Main", methodName: "tryAsExpression"})
+Log.trace("Parsed value: " <> Kernel.inspect(value), %{fileName: "Main.hx", lineNumber: 169, className: "Main", methodName: "tryAsExpression"})
 temp_maybe_number1 = nil
 try do
   temp_maybe_number1 = Std.parseInt("not a number")
@@ -190,7 +190,7 @@ rescue
     temp_maybe_number1 = -1
 end
 value2 = temp_maybe_number1
-Log.trace("Failed parse value: " <> value2, %{fileName: "Main.hx", lineNumber: 176, className: "Main", methodName: "tryAsExpression"})
+Log.trace("Failed parse value: " <> Kernel.inspect(value2), %{fileName: "Main.hx", lineNumber: 176, className: "Main", methodName: "tryAsExpression"})
   end
 
   @doc "Function main"

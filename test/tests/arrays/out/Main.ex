@@ -75,7 +75,7 @@ Log.trace("Doubled: " <> Std.string(temp_array), %{fileName: "Main.hx", lineNumb
 temp_array1 = nil
 _g = []
 _g1 = 0
-Enum.map(numbers, fn item -> if (v rem 2 == 0), do: _g.push(item), else: item end)
+Enum.filter(numbers, fn item -> (item rem 2 == 0) end)
 temp_array1 = _g
 Log.trace("Evens: " <> Std.string(temp_array1), %{fileName: "Main.hx", lineNumber: 59, className: "Main", methodName: "arrayMethods"})
 more = [6, 7, 8]
@@ -175,7 +175,7 @@ Enum.map(arg0, fn item -> item * item end)
 temp_array = _g
 _g = []
 _g1 = 0
-Enum.map(temp_array, fn item -> if (v > 10), do: _g.push(item), else: item end)
+Enum.filter(temp_array, fn item -> (item > 10) end)
 temp_result = _g
 temp_result
   end

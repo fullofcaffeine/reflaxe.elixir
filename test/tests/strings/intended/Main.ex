@@ -19,7 +19,7 @@ str3 = str1 <> " " <> str2
 Log.trace(str3, %{fileName: "Main.hx", lineNumber: 15, className: "Main", methodName: "stringBasics"})
 multiline = "This is\na multi-line\nstring"
 Log.trace(multiline, %{fileName: "Main.hx", lineNumber: 21, className: "Main", methodName: "stringBasics"})
-Log.trace("Length of \"" <> str3 <> "\": " <> String.length(str3), %{fileName: "Main.hx", lineNumber: 24, className: "Main", methodName: "stringBasics"})
+Log.trace("Length of \"" <> str3 <> "\": " <> Integer.to_string(String.length(str3)), %{fileName: "Main.hx", lineNumber: 24, className: "Main", methodName: "stringBasics"})
   end
 
   @doc "Function string_interpolation"
@@ -29,14 +29,12 @@ Log.trace("Length of \"" <> str3 <> "\": " <> String.length(str3), %{fileName: "
 age = 30
 pi = 3.14159
 Log.trace("Hello, " <> name <> "!", %{fileName: "Main.hx", lineNumber: 34, className: "Main", methodName: "stringInterpolation"})
-Log.trace("Age: " <> age, %{fileName: "Main.hx", lineNumber: 35, className: "Main", methodName: "stringInterpolation"})
-Log.trace("Next year, " <> name <> " will be " <> (age + 1), %{fileName: "Main.hx", lineNumber: 38, className: "Main", methodName: "stringInterpolation"})
-Log.trace("Pi rounded: " <> Math.round(pi * 100) / 100, %{fileName: "Main.hx", lineNumber: 39, className: "Main", methodName: "stringInterpolation"})
-person_name = nil
-person_age = nil
+Log.trace("Age: " <> Integer.to_string(age), %{fileName: "Main.hx", lineNumber: 35, className: "Main", methodName: "stringInterpolation"})
+Log.trace("Next year, " <> name <> " will be " <> Integer.to_string((age + 1)), %{fileName: "Main.hx", lineNumber: 38, className: "Main", methodName: "stringInterpolation"})
+Log.trace("Pi rounded: " <> Float.to_string(Math.round(pi * 100) / 100), %{fileName: "Main.hx", lineNumber: 39, className: "Main", methodName: "stringInterpolation"})
 person_name = "Bob"
 person_age = 25
-Log.trace("Person: " <> person_name <> " is " <> person_age <> " years old", %{fileName: "Main.hx", lineNumber: 43, className: "Main", methodName: "stringInterpolation"})
+Log.trace("Person: " <> person_name <> " is " <> Integer.to_string(person_age) <> " years old", %{fileName: "Main.hx", lineNumber: 43, className: "Main", methodName: "stringInterpolation"})
 items = ["apple", "banana", "orange"]
 Log.trace("Items: " <> Enum.join(items, ", "), %{fileName: "Main.hx", lineNumber: 47, className: "Main", methodName: "stringInterpolation"})
 Log.trace("First item: " <> String.upcase(Enum.at(items, 0)), %{fileName: "Main.hx", lineNumber: 48, className: "Main", methodName: "stringInterpolation"})
@@ -53,9 +51,9 @@ text = "Hello, World!"
 Log.trace("Substring(0, 5): " <> String.slice(text, 0, 5), %{fileName: "Main.hx", lineNumber: 64, className: "Main", methodName: "stringMethods"})
 Log.trace("Substr(7, 5): " <> String.slice(text, 7, 5), %{fileName: "Main.hx", lineNumber: 65, className: "Main", methodName: "stringMethods"})
 Log.trace("Char at 0: " <> String.at(text, 0), %{fileName: "Main.hx", lineNumber: 68, className: "Main", methodName: "stringMethods"})
-Log.trace("Char code at 0: " <> case String.at(text, 0) do nil -> nil; c -> :binary.first(c) end, %{fileName: "Main.hx", lineNumber: 69, className: "Main", methodName: "stringMethods"})
-Log.trace("Index of \"World\": " <> case :binary.match(text, "World") do {pos, _} -> pos; :nomatch -> -1 end, %{fileName: "Main.hx", lineNumber: 72, className: "Main", methodName: "stringMethods"})
-Log.trace("Last index of \"o\": " <> text.lastIndexOf("o"), %{fileName: "Main.hx", lineNumber: 73, className: "Main", methodName: "stringMethods"})
+Log.trace("Char code at 0: " <> Kernel.inspect(case String.at(text, 0) do nil -> nil; c -> :binary.first(c) end), %{fileName: "Main.hx", lineNumber: 69, className: "Main", methodName: "stringMethods"})
+Log.trace("Index of \"World\": " <> Integer.to_string(case :binary.match(text, "World") do {pos, _} -> pos; :nomatch -> -1 end), %{fileName: "Main.hx", lineNumber: 72, className: "Main", methodName: "stringMethods"})
+Log.trace("Last index of \"o\": " <> Integer.to_string(text.lastIndexOf("o")), %{fileName: "Main.hx", lineNumber: 73, className: "Main", methodName: "stringMethods"})
 parts = String.split(text, ", ")
 Log.trace("Split parts: " <> Std.string(parts), %{fileName: "Main.hx", lineNumber: 77, className: "Main", methodName: "stringMethods"})
 joined = Enum.join(parts, " - ")
@@ -80,8 +78,7 @@ if (String.downcase(str1) == String.downcase(str2)), do: Log.trace("" <> str1 <>
   @doc "Function string_building"
   @spec string_building() :: nil
   def string_building() do
-    buf_b = nil
-buf_b = ""
+    buf_b = ""
 buf_b = buf_b <> "Building "
 buf_b = buf_b <> "a "
 buf_b = buf_b <> "string "
@@ -89,14 +86,13 @@ buf_b = buf_b <> "efficiently"
 buf_b = buf_b <> "!"
 buf_b = buf_b <> "!"
 buf_b = buf_b <> "!"
-result = buf_b
-Log.trace("Built string: " <> result, %{fileName: "Main.hx", lineNumber: 122, className: "Main", methodName: "stringBuilding"})
+Log.trace("Built string: " <> buf_b, %{fileName: "Main.hx", lineNumber: 122, className: "Main", methodName: "stringBuilding"})
 parts = []
-parts ++ ["Item " <> 1]
-parts ++ ["Item " <> 2]
-parts ++ ["Item " <> 3]
-parts ++ ["Item " <> 4]
-parts ++ ["Item " <> 5]
+parts ++ ["Item " <> Integer.to_string(1)]
+parts ++ ["Item " <> Integer.to_string(2)]
+parts ++ ["Item " <> Integer.to_string(3)]
+parts ++ ["Item " <> Integer.to_string(4)]
+parts ++ ["Item " <> Integer.to_string(5)]
 list = Enum.join(parts, ", ")
 Log.trace("List: " <> list, %{fileName: "Main.hx", lineNumber: 130, className: "Main", methodName: "stringBuilding"})
   end
@@ -109,26 +105,25 @@ digit_regex = EReg.new("\\d+", "")
 if (digit_regex.match(text)), do: Log.trace("First number found: " <> digit_regex.matched(0), %{fileName: "Main.hx", lineNumber: 140, className: "Main", methodName: "regexOperations"}), else: nil
 all_numbers = EReg.new("\\d+", "g")
 numbers = []
-temp = text
 (
   try do
-    loop_fn = fn {temp} ->
-      if (all_numbers.match(temp)) do
+    loop_fn = fn {text} ->
+      if (all_numbers.match(text)) do
         try do
           numbers ++ [all_numbers.matched(0)]
-      # temp updated to all_numbers.matchedRight()
+      # text updated to all_numbers.matchedRight()
       loop_fn.({all_numbers.matchedRight()})
         catch
-          :break -> {temp}
-          :continue -> loop_fn.({temp})
+          :break -> {text}
+          :continue -> loop_fn.({text})
         end
       else
-        {temp}
+        {text}
       end
     end
-    loop_fn.({temp})
+    loop_fn.({text})
   catch
-    :break -> {temp}
+    :break -> {text}
   end
 )
 Log.trace("All numbers: " <> Std.string(numbers), %{fileName: "Main.hx", lineNumber: 151, className: "Main", methodName: "regexOperations"})
@@ -162,7 +157,7 @@ Log.trace("URL decoded: " <> decoded, %{fileName: "Main.hx", lineNumber: 183, cl
   def unicode_strings() do
     unicode = "Hello 世界 🌍"
 Log.trace("Unicode string: " <> unicode, %{fileName: "Main.hx", lineNumber: 189, className: "Main", methodName: "unicodeStrings"})
-Log.trace("Length: " <> String.length(unicode), %{fileName: "Main.hx", lineNumber: 190, className: "Main", methodName: "unicodeStrings"})
+Log.trace("Length: " <> Integer.to_string(String.length(unicode)), %{fileName: "Main.hx", lineNumber: 190, className: "Main", methodName: "unicodeStrings"})
 escaped = "Line 1\nLine 2\tTabbed\r\nLine 3"
 Log.trace("Escaped: " <> escaped, %{fileName: "Main.hx", lineNumber: 194, className: "Main", methodName: "unicodeStrings"})
 quote = "She said \"Hello\""
