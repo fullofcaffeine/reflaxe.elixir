@@ -34,7 +34,7 @@ _g = 0
 _g1 = length(arg0)
 (fn loop_fn ->
   if (_g < _g1) do
-    i = _g + 1
+    i = _g = _g + 1
 d = __MODULE__.compareArg(Enum.at(arg0, i), Enum.at(arg1, i))
 if (d != 0), do: d, else: nil
     loop_fn.(loop_fn)

@@ -33,7 +33,7 @@ _g = 0
 (fn loop_fn ->
   if (_g < length(fruits)) do
     fruit = Enum.at(fruits, _g)
-_g + 1
+_g = _g + 1
 Log.trace("Fruit: " <> fruit, %{fileName: "Main.hx", lineNumber: 33, className: "Main", methodName: "arrayIteration"})
     loop_fn.(loop_fn)
   end
@@ -42,7 +42,7 @@ _g = 0
 _g1 = length(fruits)
 (fn loop_fn ->
   if (_g < _g1) do
-    i = _g + 1
+    i = _g = _g + 1
 Log.trace("" <> i <> ": " <> Enum.at(fruits, i), %{fileName: "Main.hx", lineNumber: 38, className: "Main", methodName: "arrayIteration"})
     loop_fn.(loop_fn)
   end
@@ -51,7 +51,7 @@ i = 0
 (fn loop_fn ->
   if (i < length(fruits)) do
     Log.trace("While: " <> Enum.at(fruits, i), %{fileName: "Main.hx", lineNumber: 44, className: "Main", methodName: "arrayIteration"})
-i + 1
+i = i + 1
     loop_fn.(loop_fn)
   end
 end).(fn f -> f.(f) end)
@@ -68,7 +68,7 @@ _g2 = numbers
 (fn loop_fn ->
   if (_g1 < length(_g2)) do
     v = Enum.at(_g2, _g1)
-_g1 + 1
+_g1 = _g1 + 1
 _g ++ [v * 2]
     loop_fn.(loop_fn)
   end
@@ -83,7 +83,7 @@ _g2 = numbers
 (fn loop_fn ->
   if (_g1 < length(_g2)) do
     v = Enum.at(_g2, _g1)
-_g1 + 1
+_g1 = _g1 + 1
 if (v rem 2 == 0), do: _g ++ [v], else: nil
     loop_fn.(loop_fn)
   end
@@ -155,12 +155,12 @@ _g = 0
 (fn loop_fn ->
   if (_g < length(matrix)) do
     row = Enum.at(matrix, _g)
-_g + 1
+_g = _g + 1
 _g2 = 0
 (fn loop_fn ->
   if (_g2 < length(row)) do
     elem = Enum.at(row, _g2)
-_g2 + 1
+_g2 = _g2 + 1
 Log.trace("Element: " <> elem, %{fileName: "Main.hx", lineNumber: 111, className: "Main", methodName: "multiDimensional"})
     loop_fn.(loop_fn)
   end
@@ -207,7 +207,7 @@ _g2 = arg0
 (fn loop_fn ->
   if (_g1 < length(_g2)) do
     v = Enum.at(_g2, _g1)
-_g1 + 1
+_g1 = _g1 + 1
 _g ++ [v * v]
     loop_fn.(loop_fn)
   end
@@ -220,7 +220,7 @@ _g2 = _this
 (fn loop_fn ->
   if (_g1 < length(_g2)) do
     v = Enum.at(_g2, _g1)
-_g1 + 1
+_g1 = _g1 + 1
 if (v > 10), do: _g ++ [v], else: nil
     loop_fn.(loop_fn)
   end
@@ -238,7 +238,7 @@ _g1 = 0
 _g2 = Std.int(Math.min(arg1, length(arg0)))
 (fn loop_fn ->
   if (_g1 < _g2) do
-    i = _g1 + 1
+    i = _g1 = _g1 + 1
 _g ++ [Enum.at(arg0, i)]
     loop_fn.(loop_fn)
   end

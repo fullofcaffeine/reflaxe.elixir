@@ -405,14 +405,9 @@ What happens:
 3. **Use Mix tests** - they test that generated Elixir actually works
 4. **The TypeTools.iter error** = wrong test configuration, not API incompatibility
 
-## Known Issues (Updated)
-- **Elixir Code Generation Issues**:
-  - **While loops**: Currently generates recursive functions with `_g` counters - functional but not idiomatic
-  - **Mutable operations**: `+=`, `-=` operators don't exist in Elixir (immutable variables)
-  - **Variable reassignment**: Elixir variables are immutable, need to use recursion or pipelines
-- **Type Safety Recommendations**:
-  - **Dynamic types are supported but discouraged** - proper typing (e.g., `Array<Todo>` instead of Dynamic) generates cleaner, safer code
-  - **App name is hardcoded** - "TodoApp.PubSub" should be configurable via metadata or build config
+## Known Issues
+- **While loops**: Currently generates recursive functions - functional but could be more idiomatic (use Enum.reduce/each patterns)
+- **App name is hardcoded** - "TodoApp.PubSub" should be configurable via metadata or build config
 - **Compiler Architecture**: ElixirCompiler extends BaseCompiler instead of DirectToStringCompiler
   - Causes StdTypes.ex generation bugs (typedefs outside modules) - FIXED by returning null
   - Missing string compilation helpers and target code injection
@@ -423,7 +418,11 @@ What happens:
 - **Pattern Matching Implementation**: Core logic completed but needs type system integration
 - **Integration Tests**: Require mock/stub system for TypedExpr structures
 
-### Recently Fixed Issues ✅
+## Recently Fixed Issues ✅ (2025-08-14)
+- **Mutable operations** (`+=`, `-=`, `*=`, `%=`) now correctly compile to reassignment (`x = x + 5`)
+- **Increment/decrement operators** (`++`, `--`) now properly generate variable reassignment
+- **Variable reassignment** properly handled in immutable Elixir context
+- **Type annotations in todo-app** - replaced Dynamic with proper typed structures
 - **Dynamic array methods** (.filter, .map) now correctly transform to Enum module functions
 - **Dynamic property access** (.length) now generates proper length() function calls
 - **String concatenation** properly uses `<>` operator

@@ -24,7 +24,7 @@ if (arg1.custom_params != nil) do
   (fn loop_fn ->
     if (_g < length(_g1)) do
       v2 = Enum.at(_g1, _g)
-  _g + 1
+  _g = _g + 1
   str = str <> ", " <> Std.string(v2)
       loop_fn.(loop_fn)
     end
