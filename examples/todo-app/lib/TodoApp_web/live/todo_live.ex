@@ -143,7 +143,7 @@ defmodule TodoLive do
     _this = socket.assigns.todos
     _g = []
     _g = 0
-    Enum.map(_this, fn item -> if (v.id == updated_todo.id), do: item = updated_todo, else: item = v end)
+    Enum.map(_this, fn item -> if (item.id == updated_todo.id), do: updated_todo, else: v end)
     socket.assign(%{todos: _g, completed_todos: TodoLive.count_completed(_g), pending_todos: TodoLive.count_pending(_g)})
   end
 
