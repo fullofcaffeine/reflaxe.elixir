@@ -69,19 +69,15 @@ i = 0
 temp_array = nil
 _g = []
 _g1 = 0
-_g2 = numbers
-Enum.map(_g2, fn item -> item * 2 end)
+Enum.map(numbers, fn item -> item * 2 end)
 temp_array = _g
-doubled = temp_array
-Log.trace("Doubled: " <> Std.string(doubled), %{fileName: "Main.hx", lineNumber: 55, className: "Main", methodName: "arrayMethods"})
+Log.trace("Doubled: " <> Std.string(temp_array), %{fileName: "Main.hx", lineNumber: 55, className: "Main", methodName: "arrayMethods"})
 temp_array1 = nil
 _g = []
 _g1 = 0
-_g2 = numbers
-Enum.map(_g2, fn item -> if (v rem 2 == 0), do: _g.push(item), else: item end)
+Enum.map(numbers, fn item -> if (v rem 2 == 0), do: _g.push(item), else: item end)
 temp_array1 = _g
-evens = temp_array1
-Log.trace("Evens: " <> Std.string(evens), %{fileName: "Main.hx", lineNumber: 59, className: "Main", methodName: "arrayMethods"})
+Log.trace("Evens: " <> Std.string(temp_array1), %{fileName: "Main.hx", lineNumber: 59, className: "Main", methodName: "arrayMethods"})
 more = [6, 7, 8]
 combined = numbers ++ more
 Log.trace("Combined: " <> Std.string(combined), %{fileName: "Main.hx", lineNumber: 64, className: "Main", methodName: "arrayMethods"})
@@ -107,8 +103,7 @@ _g ++ [9]
 _g ++ [16]
 _g ++ [25]
 temp_array = _g
-squares = temp_array
-Log.trace("Squares: " <> Std.string(squares), %{fileName: "Main.hx", lineNumber: 86, className: "Main", methodName: "arrayComprehensions"})
+Log.trace("Squares: " <> Std.string(temp_array), %{fileName: "Main.hx", lineNumber: 86, className: "Main", methodName: "arrayComprehensions"})
 temp_array1 = nil
 _g = []
 if (1 rem 2 == 0), do: _g ++ [1], else: nil
@@ -121,8 +116,7 @@ if (7 rem 2 == 0), do: _g ++ [49], else: nil
 if (8 rem 2 == 0), do: _g ++ [64], else: nil
 if (9 rem 2 == 0), do: _g ++ [81], else: nil
 temp_array1 = _g
-even_squares = temp_array1
-Log.trace("Even squares: " <> Std.string(even_squares), %{fileName: "Main.hx", lineNumber: 90, className: "Main", methodName: "arrayComprehensions"})
+Log.trace("Even squares: " <> Std.string(temp_array1), %{fileName: "Main.hx", lineNumber: 90, className: "Main", methodName: "arrayComprehensions"})
 temp_array2 = nil
 _g = []
 _g ++ [%{x: 1, y: 2}]
@@ -133,8 +127,7 @@ _g ++ [%{x: 3, y: 1}]
 _g ++ [%{x: 3, y: 2}]
 nil
 temp_array2 = _g
-pairs = temp_array2
-Log.trace("Pairs: " <> Std.string(pairs), %{fileName: "Main.hx", lineNumber: 94, className: "Main", methodName: "arrayComprehensions"})
+Log.trace("Pairs: " <> Std.string(temp_array2), %{fileName: "Main.hx", lineNumber: 94, className: "Main", methodName: "arrayComprehensions"})
   end
 
   @doc "Function multi_dimensional"
@@ -168,8 +161,7 @@ _g2 ++ [8]
 temp_array3 = _g2
 _g ++ [temp_array3]
 temp_array = _g
-grid = temp_array
-Log.trace("Grid: " <> Std.string(grid), %{fileName: "Main.hx", lineNumber: 117, className: "Main", methodName: "multiDimensional"})
+Log.trace("Grid: " <> Std.string(temp_array), %{fileName: "Main.hx", lineNumber: 117, className: "Main", methodName: "multiDimensional"})
   end
 
   @doc "Function process_array"
@@ -179,14 +171,11 @@ Log.trace("Grid: " <> Std.string(grid), %{fileName: "Main.hx", lineNumber: 117, 
 temp_array = nil
 _g = []
 _g1 = 0
-_g2 = arg0
-Enum.map(_g2, fn item -> item * item end)
+Enum.map(arg0, fn item -> item * item end)
 temp_array = _g
-_this = temp_array
 _g = []
 _g1 = 0
-_g2 = _this
-Enum.map(_g2, fn item -> if (v > 10), do: _g.push(item), else: item end)
+Enum.map(temp_array, fn item -> if (v > 10), do: _g.push(item), else: item end)
 temp_result = _g
 temp_result
   end
@@ -194,8 +183,7 @@ temp_result
   @doc "Function first_n"
   @spec first_n(Array.t(), integer()) :: Array.t()
   def first_n(arg0, arg1) do
-    temp_result = nil
-_g = []
+    _g = []
 _g1 = 0
 _g2 = Std.int(Math.min(arg1, length(arg0)))
 (
@@ -217,8 +205,7 @@ _g ++ [Enum.at(arg0, i)]
     :break -> nil
   end
 )
-temp_result = _g
-temp_result
+_g
   end
 
   @doc "Function main"

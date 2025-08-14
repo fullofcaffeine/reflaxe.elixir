@@ -29,8 +29,7 @@ defmodule MemoryStorage do
   @doc "Function get"
   @spec get(String.t()) :: term()
   def get(arg0) do
-    temp_result = nil
-this1 = __MODULE__.data
+    this1 = __MODULE__.data
 temp_result = this1.get(arg0)
 temp_result
   end
@@ -46,8 +45,7 @@ true
   @doc "Function delete"
   @spec delete(String.t()) :: boolean()
   def delete(arg0) do
-    temp_result = nil
-this1 = __MODULE__.data
+    this1 = __MODULE__.data
 temp_result = this1.remove(arg0)
 temp_result
   end
@@ -55,9 +53,7 @@ temp_result
   @doc "Function list"
   @spec list() :: Array.t()
   def list() do
-    temp_result = nil
-_g = []
-temp_iterator = nil
+    _g = []
 this1 = __MODULE__.data
 temp_iterator = this1.keys()
 k = temp_iterator
@@ -80,8 +76,7 @@ _g ++ [k2]
     :break -> nil
   end
 )
-temp_result = _g
-temp_result
+_g
   end
 
 end

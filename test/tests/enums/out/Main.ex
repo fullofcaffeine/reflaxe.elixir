@@ -88,9 +88,9 @@ if (# TODO: Implement expression type: TEnumIndex == 3) do
       if (b3 > 200 && r3 < 50 && g3 < 50) do
         temp_result = "mostly blue"
       else
-        r4 = _g
-        g4 = _g1
-        b4 = _g2
+        _g
+        _g1
+        _g2
         temp_result = "mixed color"
       end
     end
@@ -167,13 +167,21 @@ defmodule Color do
 
   @type t() ::
     :red |
-    {:r_g_b, term(), term(), term()} |
     :green |
-    :blue
+    :blue |
+    {:r_g_b, term(), term(), term()}
 
   @doc "Creates red enum value"
   @spec red() :: :red
   def red(), do: :red
+
+  @doc "Creates green enum value"
+  @spec green() :: :green
+  def green(), do: :green
+
+  @doc "Creates blue enum value"
+  @spec blue() :: :blue
+  def blue(), do: :blue
 
   @doc """
   Creates r_g_b enum value with parameters
@@ -188,24 +196,11 @@ defmodule Color do
     {:r_g_b, arg0, arg1, arg2}
   end
 
-  @doc "Creates green enum value"
-  @spec green() :: :green
-  def green(), do: :green
-
-  @doc "Creates blue enum value"
-  @spec blue() :: :blue
-  def blue(), do: :blue
-
   # Predicate functions for pattern matching
   @doc "Returns true if value is red variant"
   @spec is_red(t()) :: boolean()
   def is_red(:red), do: true
   def is_red(_), do: false
-
-  @doc "Returns true if value is r_g_b variant"
-  @spec is_r_g_b(t()) :: boolean()
-  def is_r_g_b({:r_g_b, _}), do: true
-  def is_r_g_b(_), do: false
 
   @doc "Returns true if value is green variant"
   @spec is_green(t()) :: boolean()
@@ -216,6 +211,11 @@ defmodule Color do
   @spec is_blue(t()) :: boolean()
   def is_blue(:blue), do: true
   def is_blue(_), do: false
+
+  @doc "Returns true if value is r_g_b variant"
+  @spec is_r_g_b(t()) :: boolean()
+  def is_r_g_b({:r_g_b, _}), do: true
+  def is_r_g_b(_), do: false
 
   @doc "Extracts value from r_g_b variant, returns {:ok, value} or :error"
   @spec get_r_g_b_value(t()) :: {:ok, {term(), term(), term()}} | :error
@@ -278,8 +278,19 @@ defmodule Tree do
   """
 
   @type t() ::
-    {:node, term(), term()} |
-    {:leaf, term()}
+    {:leaf, term()} |
+    {:node, term(), term()}
+
+  @doc """
+  Creates leaf enum value with parameters
+  
+  ## Parameters
+    - `arg0`: term()
+  """
+  @spec leaf(term()) :: {:leaf, term()}
+  def leaf(arg0) do
+    {:leaf, arg0}
+  end
 
   @doc """
   Creates node enum value with parameters
@@ -293,36 +304,25 @@ defmodule Tree do
     {:node, arg0, arg1}
   end
 
-  @doc """
-  Creates leaf enum value with parameters
-  
-  ## Parameters
-    - `arg0`: term()
-  """
-  @spec leaf(term()) :: {:leaf, term()}
-  def leaf(arg0) do
-    {:leaf, arg0}
-  end
-
   # Predicate functions for pattern matching
-  @doc "Returns true if value is node variant"
-  @spec is_node(t()) :: boolean()
-  def is_node({:node, _}), do: true
-  def is_node(_), do: false
-
   @doc "Returns true if value is leaf variant"
   @spec is_leaf(t()) :: boolean()
   def is_leaf({:leaf, _}), do: true
   def is_leaf(_), do: false
 
-  @doc "Extracts value from node variant, returns {:ok, value} or :error"
-  @spec get_node_value(t()) :: {:ok, {term(), term()}} | :error
-  def get_node_value({:node, arg0, arg1}), do: {:ok, {arg0, arg1}}
-  def get_node_value(_), do: :error
+  @doc "Returns true if value is node variant"
+  @spec is_node(t()) :: boolean()
+  def is_node({:node, _}), do: true
+  def is_node(_), do: false
 
   @doc "Extracts value from leaf variant, returns {:ok, value} or :error"
   @spec get_leaf_value(t()) :: {:ok, term()} | :error
   def get_leaf_value({:leaf, value}), do: {:ok, value}
   def get_leaf_value(_), do: :error
+
+  @doc "Extracts value from node variant, returns {:ok, value} or :error"
+  @spec get_node_value(t()) :: {:ok, {term(), term()}} | :error
+  def get_node_value({:node, arg0, arg1}), do: {:ok, {arg0, arg1}}
+  def get_node_value(_), do: :error
 
 end
