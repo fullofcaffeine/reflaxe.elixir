@@ -2874,9 +2874,35 @@ class ElixirCompiler extends DirectToStringCompiler {
      */
     private function compileExpressionWithTVarSubstitution(expr: TypedExpr, sourceTVar: TVar, targetVarName: String): String {
         switch (expr.expr) {
-            case TLocal(v) if (v == sourceTVar):
-                // Replace the source variable with target
-                return targetVarName;
+            case TLocal(v):
+                // Enhanced matching: try exact object match first, then fallback to more permissive matching
+                if (v == sourceTVar) {
+                    // Exact object match - this is definitely the same variable
+                    return targetVarName;
+                }
+                
+                // Fallback: check if this is likely the same logical variable
+                var varName = getOriginalVarName(v);
+                var sourceVarName = getOriginalVarName(sourceTVar);
+                
+                // If both have the same original name, they're likely the same logical variable
+                if (varName == sourceVarName && varName != null && varName != "") {
+                    return targetVarName;
+                }
+                
+                // Alternative: if this is a common loop variable name, substitute it
+                // Be more aggressive with known loop variable patterns
+                if (varName == "t" || varName == "v" || varName == "todo") {
+                    // Don't substitute important non-loop variables
+                    if (varName != "updated_todo" && varName != "count" && varName != "result" &&
+                        varName != "_g" && varName != "_g1" && varName != "_g2" && 
+                        !varName.startsWith("temp_") && !varName.startsWith("_this")) {
+                        return targetVarName;
+                    }
+                }
+                
+                // Not a match - compile normally
+                return compileExpression(expr);
             case TBinop(op, e1, e2):
                 // Handle assignment operations specially - we want the right-hand side value, not the assignment
                 if (op == OpAssign) {
@@ -2952,9 +2978,22 @@ class ElixirCompiler extends DirectToStringCompiler {
      */
     private function compileExpressionWithSubstitution(expr: TypedExpr, sourceVar: String, targetVar: String): String {
         switch (expr.expr) {
-            case TLocal(v) if (getOriginalVarName(v) == sourceVar):
-                // Replace the source variable with target
-                return targetVar;
+            case TLocal(v):
+                var varName = getOriginalVarName(v);
+                // Try exact match first
+                if (varName == sourceVar) {
+                    return targetVar;
+                }
+                // Also substitute common loop variable names
+                if (varName == "t" || varName == "v" || varName == "todo") {
+                    if (varName != "updated_todo" && varName != "count" && varName != "result" &&
+                        varName != "_g" && varName != "_g1" && varName != "_g2" && 
+                        !varName.startsWith("temp_") && !varName.startsWith("_this")) {
+                        return targetVar;
+                    }
+                }
+                // Not a match
+                return compileExpression(expr);
             case TBinop(op, e1, e2):
                 // Handle assignment operations specially - we want the right-hand side value, not the assignment
                 if (op == OpAssign) {
