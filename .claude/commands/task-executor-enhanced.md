@@ -15,6 +15,33 @@ Professional task execution with test-first development, BDD principles, and tes
 4. **Review Project Rules**: Check `.claude/rules/` directory if it exists
 5. **Review Task Context**: Understand task requirements fully before execution
 
+### 0.1 Project Context and Documentation References
+
+**CRITICAL: Always reference these resources during task execution:**
+
+1. **Current PRD Location**: 
+   - Active PRD: `documentation/plans/staging/[current-prd].md`
+   - Check `documentation/plans/staging/README.md` for current active plan
+   - Agent instructions: `documentation/plans/AGENT_INSTRUCTIONS.md`
+
+2. **Documentation Index**:
+   - Main index: `documentation/DOCUMENTATION_INDEX.md`
+   - Quick navigation to find any documentation needed
+   - Organized by purpose, audience, and task type
+
+3. **Reference Implementations**:
+   - Location: `/Users/fullofcaffeine/workspace/code/haxe.elixir.reference/`
+   - Contains: Reflaxe examples (CPP, CSharp, GDScript, Go), Phoenix patterns, Haxe source, compiler implementations
+   - Use for: Pattern reference, API checking, implementation examples
+   - Key folders: `reflaxe.CPP/` (mature reference), `haxe/std/` (standard library), `phoenix_live_view/` (LiveView patterns)
+
+4. **Key Documentation by Task Type**:
+   - **Compiler Features**: `documentation/architecture/`, `documentation/reference/ANNOTATIONS.md`
+   - **Testing**: `documentation/TESTING_OVERVIEW.md`, `documentation/TESTING_PRINCIPLES.md`
+   - **Phoenix/LiveView**: `documentation/phoenix/`, examples in reference folder
+   - **Paradigm Issues**: `documentation/paradigms/PARADIGM_BRIDGE.md`, `documentation/guides/DEVELOPER_PATTERNS.md`
+   - **Examples**: `documentation/guides/EXAMPLES.md`, `documentation/guides/COOKBOOK.md`
+
 ### 1. Task Execution Framework
 You are a professional task execution expert following these guidelines:
 
@@ -83,27 +110,33 @@ npm run test:mix           # Layer 2: Mix tests only
 ### 4. Project Context Integration
 
 #### **Always Reference Project Documentation**
-- **Primary Source**: `@cafetera-poc.md` contains the complete Product Requirements Document
-- **Architecture Details**: Memory-first design, Taskmaster integration, progressive intelligence
-- **Performance Targets**: Specific timing requirements (e.g., <15ms node creation, <100ms sync)
-- **Success Metrics**: Coverage targets, compatibility requirements, user experience goals
+- **Primary PRD**: Check `documentation/plans/staging/` for current development plan
+- **Documentation Index**: Use `documentation/DOCUMENTATION_INDEX.md` to find relevant docs
+- **Architecture Details**: See `documentation/architecture/ARCHITECTURE.md`
+- **Testing Strategy**: See `documentation/TESTING_OVERVIEW.md`
+- **Performance Targets**: Check current PRD for specific requirements (<15ms compilation, <300ms watch mode)
+- **Success Metrics**: Defined in active PRD and `documentation/reference/FEATURES.md`
 
 #### **Context-Aware Implementation**
 Before implementing any task:
-1. **Review PRD**: Check `@cafetera-poc.md` for relevant specifications
-2. **Understand Dependencies**: How this task fits into the overall architecture
-3. **Identify Interfaces**: What other components will interact with this code
-4. **Performance Considerations**: Apply relevant timing and scalability requirements
+1. **Review PRD**: Check active plan in `documentation/plans/staging/`
+2. **Find Documentation**: Use `documentation/DOCUMENTATION_INDEX.md` for navigation
+3. **Check References**: Look for patterns in `/Users/fullofcaffeine/workspace/code/haxe.elixir.reference/`
+4. **Understand Dependencies**: How this task fits into the overall architecture
+5. **Identify Interfaces**: What other components will interact with this code
+6. **Performance Considerations**: Apply timing requirements from PRD
 
 ### 5. Enhanced Task Execution Workflow
 
 #### **Pre-Execution Analysis**
 ```
 1. Parse task requirements and acceptance criteria
-2. Review @cafetera-poc.md for context and specifications
-3. Identify test strategy (Unit/Integration/E2E mix)
-4. Determine if test-first approach is appropriate
-5. Plan implementation phases
+2. Check current PRD in `documentation/plans/staging/` for context
+3. Reference `documentation/DOCUMENTATION_INDEX.md` for relevant guides
+4. Identify test strategy from `documentation/TESTING_OVERVIEW.md`
+5. Look for patterns in `/Users/fullofcaffeine/workspace/code/haxe.elixir.reference/`
+6. Determine if test-first approach is appropriate
+7. Plan implementation phases based on project conventions
 ```
 
 #### **Snapshot-First Implementation Cycle**
@@ -416,7 +449,7 @@ After completing each task:
 - [ ] **Compilation Verification**: Generated code compiles correctly in BEAM VM
 - [ ] **Three-Layer Validation**: Snapshot → Mix → Example tests all pass
 - [ ] **Real-World Usage**: Tests demonstrate actual compiler features working
-- [ ] **PRD Compliance**: Implementation matches specifications in @cafetera-poc.md
+- [ ] **PRD Compliance**: Implementation matches specifications in active PRD
 - [ ] **Performance Verified**: Timing requirements met with benchmarks
 - [ ] **Quality Gates Passed**: Focus on integration confidence over coverage metrics
 - [ ] **🚨 FULL TEST SUITE PASSES**: Run `npm test` and verify both snapshot tests and Mix tests pass
