@@ -1,3 +1,39 @@
+## [Unreleased]
+
+### 🎉 Major Features
+
+#### @:native Method Annotation Support
+- **Fix**: Resolved critical issue where extern method calls with @:native annotations generated incorrect double module names (e.g., "Supervisor.Supervisor.start_link")
+- **Enhancement**: Added proper handling of full module paths in @:native method annotations
+- **Impact**: All extern method calls throughout the system now compile correctly
+- **Standard Library**: Fixed compilation for all standard library externs (Process, Supervisor, Agent, etc.)
+
+#### Configurable Application Names (@:appName)
+- **Feature**: New @:appName annotation for configurable Phoenix application module names
+- **Capability**: Dynamic app name injection in supervision trees, PubSub modules, and endpoints
+- **Usage**: `@:appName("MyApp")` enables reusable Phoenix application code
+- **Integration**: String interpolation support with `${appName}` patterns
+- **Compatibility**: Works with all existing annotations without conflicts
+
+### 🐛 Bug Fixes
+
+- **Compiler**: Fixed getFieldName() function to properly extract @:native annotation values
+- **Method Calls**: Enhanced method call compilation template to handle native method paths
+- **Placeholder Code**: Removed hardcoded placeholder generation from ClassCompiler.compileApplication()
+
+### 📚 Documentation
+
+- **Updated**: Added comprehensive @:appName annotation documentation to ANNOTATIONS.md
+- **Enhanced**: Added @:native method best practices to EXTERN_CREATION_GUIDE.md
+- **Improved**: Updated FEATURES.md with new production-ready features
+- **Guidelines**: Added development principles about avoiding workarounds in CLAUDE.md
+
+### 🔧 Technical Improvements
+
+- **Compiler Architecture**: Enhanced ElixirCompiler with getCurrentAppName() for dynamic app name resolution
+- **Post-processing**: Added replaceAppNameCalls() for app name injection
+- **Annotation System**: Extended AnnotationSystem with @:appName support and compatibility handling
+
 ## [1.0.1](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v1.0.0...v1.0.1) (2025-08-11)
 
 

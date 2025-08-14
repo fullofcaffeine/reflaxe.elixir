@@ -438,6 +438,8 @@ Some annotations can be used together:
 - `@:liveview` + `@:template` - LiveView with template rendering
 - `@:controller` + `@:route` - Controller with route definitions
 - `@:behaviour` + `@:genserver` - GenServer implementing behavior
+- `@:application` + `@:appName` - OTP Application with configurable module names
+- `@:appName` + Any annotation - App name configuration is compatible with all annotations
 
 ## Annotation Conflicts
 
@@ -514,6 +516,84 @@ end
 - String module names become atoms: `"MyApp.Repo"` → `MyApp.Repo`
 - Objects with module/name become tuples: `{module: "Phoenix.PubSub", name: "MyApp.PubSub"}` → `{Phoenix.PubSub, name: MyApp.PubSub}`
 - Supervisor options converted to keyword lists
+
+### @:appName - Configurable Application Names
+
+Configures the application name for Phoenix applications, enabling reusable code across different projects.
+
+**Basic Usage**:
+```haxe
+@:application
+@:appName("BlogApp")
+@:native("BlogApp.Application")
+class BlogApp {
+    public static function start(type: Dynamic, args: Dynamic): Dynamic {
+        var appName = getAppName(); // Returns "BlogApp"
+        
+        var children = [
+            {
+                id: '${appName}.Repo',
+                start: {module: '${appName}.Repo', "function": "start_link", args: []}
+            },
+            {
+                id: "Phoenix.PubSub",
+                start: {
+                    module: "Phoenix.PubSub", 
+                    "function": "start_link",
+                    args: [{name: '${appName}.PubSub'}]
+                }
+            },
+            {
+                id: '${appName}Web.Endpoint', 
+                start: {module: '${appName}Web.Endpoint', "function": "start_link", args: []}
+            }
+        ];
+
+        var opts = {strategy: "one_for_one", name: '${appName}.Supervisor'};
+        return Supervisor.startLink(children, opts);
+    }
+}
+```
+
+**Generated Elixir**:
+```elixir
+defmodule BlogApp.Application do
+  @moduledoc false
+  
+  use Application
+  
+  @impl true
+  def start(_type, _args) do
+    children = [
+      %{id: "BlogApp.Repo", start: %{module: "BlogApp.Repo", function: "start_link", args: []}},
+      %{id: "Phoenix.PubSub", start: %{module: "Phoenix.PubSub", function: "start_link", args: [%{name: "BlogApp.PubSub"}]}},
+      %{id: "BlogAppWeb.Endpoint", start: %{module: "BlogAppWeb.Endpoint", function: "start_link", args: []}}
+    ]
+    
+    opts = %{strategy: "one_for_one", name: "BlogApp.Supervisor"}
+    Supervisor.start_link(children, opts)
+  end
+end
+```
+
+**Key Features**:
+- **Dynamic Module Names**: Use `${appName}` string interpolation for configurable module references
+- **Framework Compatibility**: Works with any Phoenix application naming convention
+- **Compatible with All Annotations**: Can be combined with any other annotation type
+- **Reusable Code**: Write once, use in multiple projects with different names
+- **No Hardcoding**: Eliminates hardcoded "TodoApp" references in generated code
+
+**Common Patterns**:
+- PubSub modules: `'${appName}.PubSub'` → `"BlogApp.PubSub"`
+- Web modules: `'${appName}Web.Endpoint'` → `"BlogAppWeb.Endpoint"`  
+- Supervisor names: `'${appName}.Supervisor'` → `"BlogApp.Supervisor"`
+- Repository modules: `'${appName}.Repo'` → `"BlogApp.Repo"`
+
+**Why @:appName is Important**:
+- Phoenix applications require app-specific module names (e.g., "BlogApp.PubSub", "ChatApp.PubSub")
+- Without @:appName, all applications would hardcode "TodoApp" references
+- Enables creating reusable Phoenix application templates
+- Makes project renaming and rebranding straightforward
 
 ## Usage Guidelines
 

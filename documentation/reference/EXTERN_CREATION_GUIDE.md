@@ -480,7 +480,55 @@ extern class SomeModule {
 }
 ```
 
-### 2. Type Safety vs Flexibility
+### 2. @:native Method Annotations
+
+**Important**: Use full module paths in @:native method annotations for external libraries:
+
+```haxe
+@:native("Supervisor")
+extern class Supervisor {
+    // ✅ CORRECT: Full module path in @:native
+    @:native("Supervisor.start_link")
+    public static function startLink(children: Array<Dynamic>, opts: Dynamic): Dynamic;
+}
+```
+
+**Why This Matters:**
+- The compiler automatically handles method compilation for full paths
+- Prevents double module name issues (e.g., "Supervisor.Supervisor.start_link")
+- Ensures proper mapping to Elixir function calls
+
+**Compilation Result:**
+```haxe
+// Your Haxe code:
+Supervisor.startLink(children, opts);
+
+// Generates correct Elixir:
+Supervisor.start_link(children, opts)
+```
+
+**Common Pattern for Standard Library:**
+```haxe
+@:native("Process") 
+extern class Process {
+    @:native("Process.spawn")    // Full path
+    public static function spawn(fun: Dynamic): Dynamic;
+    
+    @:native("Process.send")     // Full path
+    public static function send(dest: Dynamic, msg: Dynamic): Dynamic;
+}
+```
+
+**⚠️ Avoid These Patterns:**
+```haxe
+// ❌ WRONG: Don't use just the method name for external modules
+@:native("start_link")  // This can cause compilation issues
+
+// ❌ WRONG: Don't omit @:native on extern methods
+public static function startLink(...); // Missing @:native annotation
+```
+
+### 3. Type Safety vs Flexibility
 
 **Use Dynamic for:**
 - Complex return types you don't want to model
