@@ -29,7 +29,7 @@ _g = 0
 _g1 = String.length(sanitized)
 (fn loop_fn ->
   if (_g < _g1) do
-    i = _g + 1
+    i = _g = _g + 1
 c = String.at(sanitized, i)
 if (c >= "a" && c <= "z" || c >= "A" && c <= "Z" || c >= "0" && c <= "9" || c == "_"), do: clean = clean <> String.downcase(c), else: nil
     loop_fn.(loop_fn)
@@ -87,7 +87,7 @@ if (meta.params != nil && length(meta.params) > 0) do
   (fn loop_fn ->
     if (_g3 < length(fields)) do
       field = Enum.at(fields, _g3)
-  _g3 + 1
+  _g3 = _g3 + 1
   if (field.field == "table") do
     _g4 = field.expr.expr
     if (# TODO: Implement expression type: TEnumIndex == 0) do
@@ -142,7 +142,7 @@ _g = 0
 (fn loop_fn ->
   if (_g < length(arg1)) do
     column = Enum.at(arg1, _g)
-_g + 1
+_g = _g + 1
 parts = String.split(column, ":")
 name = Enum.at(parts, 0)
 temp_string = nil
@@ -176,7 +176,7 @@ _g2 = arg1
 (fn loop_fn ->
   if (_g1 < length(_g2)) do
     v = Enum.at(_g2, _g1)
-_g1 + 1
+_g1 = _g1 + 1
 _g ++ [":" <> v]
     loop_fn.(loop_fn)
   end
@@ -244,7 +244,7 @@ _g = 0
 _g1 = String.length(arg0)
 (fn loop_fn ->
   if (_g < _g1) do
-    i = _g + 1
+    i = _g = _g + 1
 char = String.at(arg0, i)
 if (i > 0 && char >= "A" && char <= "Z"), do: result = result <> "_", else: nil
 result = result <> String.downcase(char)
@@ -309,7 +309,7 @@ _g = 0
 (fn loop_fn ->
   if (_g < length(arg0)) do
     migration = Enum.at(arg0, _g)
-_g + 1
+_g = _g + 1
 compiled_migrations ++ [MigrationDSL.compileFullMigration(migration)]
     loop_fn.(loop_fn)
   end
@@ -365,7 +365,7 @@ _g = 0
 (fn loop_fn ->
   if (_g < length(column_defs)) do
     column_def = Enum.at(column_defs, _g)
-_g + 1
+_g = _g + 1
 result = result <> "      " <> column_def <> "\n"
     loop_fn.(loop_fn)
   end
@@ -378,7 +378,7 @@ if (length(index_defs) > 0) do
   (fn loop_fn ->
     if (_g < length(index_defs)) do
       index_def = Enum.at(index_defs, _g)
-  _g + 1
+  _g = _g + 1
   result = result <> "    " <> index_def <> "\n"
       loop_fn.(loop_fn)
     end
@@ -390,7 +390,7 @@ if (length(constraint_defs) > 0) do
   (fn loop_fn ->
     if (_g < length(constraint_defs)) do
       constraint_def = Enum.at(constraint_defs, _g)
-  _g + 1
+  _g = _g + 1
   result = result <> "    " <> constraint_def <> "\n"
       loop_fn.(loop_fn)
     end
@@ -422,7 +422,7 @@ if (arg3 != nil) do
   (fn loop_fn ->
     if (_g < length(fields)) do
       field = Enum.at(fields, _g)
-  _g + 1
+  _g = _g + 1
   value = Reflect.field(arg3, field)
   if (Std.isOfType(value, String)), do: opts ++ ["" <> field <> ": \"" <> value <> "\""], else: if (Std.isOfType(value, Bool)), do: opts ++ ["" <> field <> ": " <> value], else: opts ++ ["" <> field <> ": " <> value]
       loop_fn.(loop_fn)
@@ -446,7 +446,7 @@ _g2 = arg1
 (fn loop_fn ->
   if (_g1 < length(_g2)) do
     v = Enum.at(_g2, _g1)
-_g1 + 1
+_g1 = _g1 + 1
 _g ++ [":" <> v]
     loop_fn.(loop_fn)
   end
@@ -504,7 +504,7 @@ if (arg2 != nil) do
   (fn loop_fn ->
     if (_g < length(fields)) do
       field = Enum.at(fields, _g)
-  _g + 1
+  _g = _g + 1
   value = Reflect.field(arg2, field)
   temp_string = nil
   case ((field)) do
@@ -540,7 +540,7 @@ _g2 = arg0
 (fn loop_fn ->
   if (_g1 < length(_g2)) do
     v = Enum.at(_g2, _g1)
-_g1 + 1
+_g1 = _g1 + 1
 _g ++ [":" <> v]
     loop_fn.(loop_fn)
   end
@@ -563,7 +563,7 @@ _g1 = __MODULE__.columns
 (fn loop_fn ->
   if (_g < length(_g1)) do
     column = Enum.at(_g1, _g)
-_g + 1
+_g = _g + 1
 if (case :binary.match(column, ":" <> arg0 <> ",") do {pos, _} -> pos; :nomatch -> -1 end != -1) do
   new_columns ++ ["add :" <> arg0 <> ", references(:" <> arg1 <> ", column: :" <> arg2 <> ")"]
   found = true

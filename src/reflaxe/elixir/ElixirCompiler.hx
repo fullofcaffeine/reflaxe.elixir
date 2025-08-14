@@ -914,8 +914,30 @@ class ElixirCompiler extends BaseCompiler {
             case TUnop(op, postFix, e):
                 var expr_str = compileExpression(e);
                 switch (op) {
-                    case OpIncrement: postFix ? '${expr_str} + 1' : '${expr_str} + 1'; // Elixir doesn't have ++
-                    case OpDecrement: postFix ? '${expr_str} - 1' : '${expr_str} - 1'; // Elixir doesn't have --
+                    case OpIncrement: 
+                        // In Elixir, we can't mutate variables, so i++ becomes i = i + 1
+                        // However, as an expression, we just return the value
+                        // When used as a statement, the parent context should handle assignment
+                        // For now, we'll generate the expression that evaluates to the new value
+                        switch (e.expr) {
+                            case TLocal(v):
+                                // If it's a local variable, generate assignment
+                                var varName = NamingHelper.toSnakeCase(v.name);
+                                '${varName} = ${varName} + 1';
+                            case _:
+                                // For other expressions, just generate the increment expression
+                                '${expr_str} + 1';
+                        }
+                    case OpDecrement:
+                        switch (e.expr) {
+                            case TLocal(v):
+                                // If it's a local variable, generate assignment
+                                var varName = NamingHelper.toSnakeCase(v.name);
+                                '${varName} = ${varName} - 1';
+                            case _:
+                                // For other expressions, just generate the decrement expression
+                                '${expr_str} - 1';
+                        }
                     case OpNot: '!${expr_str}';
                     case OpNeg: '-${expr_str}';
                     case OpNegBits: 'bnot(${expr_str})';
@@ -995,6 +1017,12 @@ class ElixirCompiler extends BaseCompiler {
                 compileSwitchExpression(e, cases, edef);
                 
             case TWhile(econd, ebody, normalWhile):
+                // Try to detect and optimize common for-in loop patterns
+                var optimized = tryOptimizeForInPattern(econd, ebody);
+                if (optimized != null) {
+                    return optimized;
+                }
+                
                 // Elixir doesn't have while loops, so we generate a recursive function
                 // Using an immediately-invoked anonymous function to maintain scope
                 var condition = compileExpression(econd);
@@ -1548,6 +1576,24 @@ class ElixirCompiler extends BaseCompiler {
                 var compiledArgs = args.map(arg -> compileExpression(arg));
                 return compileExpression(e) + "(" + compiledArgs.join(", ") + ")";
         }
+    }
+    
+    /**
+     * Try to optimize for-in loop patterns that have been desugared to while loops
+     * Detects patterns like: _g = 0; while (_g < array.length) { var item = array[_g]; _g++; ... }
+     * And transforms them to: Enum.each(array, fn item -> ... end)
+     */
+    private function tryOptimizeForInPattern(econd: TypedExpr, ebody: TypedExpr): Null<String> {
+        // This is a simplified detection - in practice, we'd need to analyze the AST more deeply
+        // For now, we'll return null and let the default while loop generation happen
+        // A full implementation would need to:
+        // 1. Detect the counter variable (_g)
+        // 2. Find the array being iterated
+        // 3. Extract the loop variable (item = array[_g])
+        // 4. Transform the body to use Enum.each or Enum.map
+        
+        // TODO: Implement pattern detection and transformation
+        return null;
     }
     
     /**
