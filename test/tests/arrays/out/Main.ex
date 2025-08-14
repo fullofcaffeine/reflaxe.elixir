@@ -20,7 +20,7 @@ numbers ++ [6]
 numbers.unshift(0)
 popped = List.last(numbers)
 shifted = numbers.shift()
-Log.trace("Popped: " <> popped <> ", Shifted: " <> shifted, %{fileName: "Main.hx", lineNumber: 20, className: "Main", methodName: "basicArrayOps"})
+Log.trace("Popped: " <> Kernel.inspect(popped) <> ", Shifted: " <> Kernel.inspect(shifted), %{fileName: "Main.hx", lineNumber: 20, className: "Main", methodName: "basicArrayOps"})
 mixed = [1, "hello", true, 3.14]
 Log.trace(mixed, %{fileName: "Main.hx", lineNumber: 24, className: "Main", methodName: "basicArrayOps"})
   end
@@ -30,7 +30,7 @@ Log.trace(mixed, %{fileName: "Main.hx", lineNumber: 24, className: "Main", metho
   def array_iteration() do
     fruits = ["apple", "banana", "orange", "grape"]
 _g = 0
-Enum.map(fruits, fn item -> "Fruit: " + item end)
+Enum.map(fruits, fn item -> "Fruit: " <> item end)
 _g = 0
 _g1 = length(fruits)
 (
@@ -134,7 +134,7 @@ Log.trace("Pairs: " <> Std.string(temp_array2), %{fileName: "Main.hx", lineNumbe
   @spec multi_dimensional() :: nil
   def multi_dimensional() do
     matrix = [[1, 2, 3], [4, 5, 6], [7, 8, 9]]
-Log.trace("Matrix element [1][2]: " <> Enum.at(Enum.at(matrix, 1), 2), %{fileName: "Main.hx", lineNumber: 106, className: "Main", methodName: "multiDimensional"})
+Log.trace("Matrix element [1][2]: " <> Integer.to_string(Enum.at(Enum.at(matrix, 1), 2)), %{fileName: "Main.hx", lineNumber: 106, className: "Main", methodName: "multiDimensional"})
 _g = 0
 Enum.map(matrix, fn item -> item end)
 temp_array = nil
