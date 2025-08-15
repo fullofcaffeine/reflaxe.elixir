@@ -228,12 +228,12 @@ defmodule Main do
     GenServer.call(nil, "get_state")
     GenServer.cast(nil, "update_state")
     GenServer.stop(nil)
-    ElixirAtom.r_e_p_l_y()
+    :r_e_p_l_y
     "response"
     "new_state"
-    ElixirAtom.n_o_r_e_p_l_y()
+    :n_o_r_e_p_l_y
     "state"
-    ElixirAtom.s_t_o_p()
+    :s_t_o_p
     "normal"
     "final_state"
     GenServer.whereis("MyGenServer")

@@ -16,34 +16,38 @@ defmodule Main do
   """
 
   # Static functions
-  @doc "
-     * Demonstrate basic Result usage with string operations
-     "
+  @doc """
+    Demonstrate basic Result usage with string operations
+
+  """
   @spec parse_number(String.t()) :: Result.t()
   def parse_number(input) do
     parsed = Std.parseInt(input)
     if (parsed != nil), do: {:ok, parsed}, else: {:error, "Invalid number: " <> input}
   end
 
-  @doc "
-     * Chain Result operations using flatMap
-     "
+  @doc """
+    Chain Result operations using flatMap
+
+  """
   @spec divide_numbers(String.t(), String.t()) :: Result.t()
   def divide_numbers(a, b) do
     ResultTools.flatMap(Main.parseNumber(a), fn num_a -> ResultTools.flatMap(Main.parseNumber(b), fn num_b -> if (num_b == 0), do: {:error, "Division by zero"}, else: {:ok, num_a / num_b} end) end)
   end
 
-  @doc "
-     * Transform Result values using map
-     "
+  @doc """
+    Transform Result values using map
+
+  """
   @spec double_if_valid(String.t()) :: Result.t()
   def double_if_valid(input) do
     Enum.map(ResultTools, Main.parseNumber(input))
   end
 
-  @doc "
-     * Handle Result using pattern matching
-     "
+  @doc """
+    Handle Result using pattern matching
+
+  """
   @spec handle_result(Result.t()) :: String.t()
   def handle_result(result) do
     temp_result = nil
@@ -60,25 +64,28 @@ defmodule Main do
     temp_result
   end
 
-  @doc "
-     * Use fold to extract values safely
-     "
+  @doc """
+    Use fold to extract values safely
+
+  """
   @spec get_value_or_default(Result.t()) :: integer()
   def get_value_or_default(result) do
     ResultTools.fold(result, fn value -> value end, fn error -> -1 end)
   end
 
-  @doc "
-     * Work with complex Result types (nested data)
-     "
+  @doc """
+    Work with complex Result types (nested data)
+
+  """
   @spec process_user(term()) :: Result.t()
   def process_user(user_data) do
     Enum.map(ResultTools, Main.parseNumber(user_data.age))
   end
 
-  @doc "
-     * Demonstrate Result utilities
-     "
+  @doc """
+    Demonstrate Result utilities
+
+  """
   @spec demonstrate_utilities() :: term()
   def demonstrate_utilities() do
     success = {:ok, 42}
@@ -93,29 +100,32 @@ defmodule Main do
     %{isSuccessOk: is_success_ok, isFailureOk: is_failure_ok, isSuccessError: is_success_error, isFailureError: is_failure_error, successValue: success_value, failureValue: failure_value, mappedError: mapped_error}
   end
 
-  @doc "
-     * Demonstrate sequence operation for collecting Results
-     "
+  @doc """
+    Demonstrate sequence operation for collecting Results
+
+  """
   @spec process_multiple_numbers(Array.t()) :: Result.t()
   def process_multiple_numbers(inputs) do
     f = Main.parse_number
     _g = []
     _g = 0
-    Enum.map(inputs, fn item -> item(item) end)
+    Enum.map(inputs, transform)
     ResultTools.sequence(_g)
   end
 
-  @doc "
-     * Demonstrate traverse operation
-     "
+  @doc """
+    Demonstrate traverse operation
+
+  """
   @spec validate_and_double(Array.t()) :: Result.t()
   def validate_and_double(inputs) do
     ResultTools.traverse(inputs, fn input -> Enum.map(ResultTools, Main.parseNumber(input)) end)
   end
 
-  @doc "
-     * Main function demonstrating all Result patterns
-     "
+  @doc """
+    Main function demonstrating all Result patterns
+
+  """
   @spec main() :: nil
   def main() do
     result1 = Main.parseNumber("123")

@@ -11,9 +11,10 @@ defmodule MigrationDSL do
   """
 
   # Static functions
-  @doc "
-     * Sanitize identifiers to prevent injection attacks
-     "
+  @doc """
+    Sanitize identifiers to prevent injection attacks
+
+  """
   @spec sanitize_identifier(String.t()) :: String.t()
   def sanitize_identifier(identifier) do
     if (identifier == nil || identifier == ""), do: "unnamed", else: nil
@@ -53,28 +54,29 @@ defmodule MigrationDSL do
     temp_result
   end
 
-  @doc "
-     * Check if a class is annotated with @:migration (string version for testing)
-     "
+  @doc """
+    Check if a class is annotated with @:migration (string version for testing)
+
+  """
   @spec is_migration_class(String.t()) :: boolean()
   def is_migration_class(class_name) do
     if (class_name == nil || class_name == ""), do: false, else: nil
     case :binary.match(class_name, "Migration") do {pos, _} -> pos; :nomatch -> -1 end != -1 || case :binary.match(class_name, "Create") do {pos, _} -> pos; :nomatch -> -1 end != -1 || case :binary.match(class_name, "Alter") do {pos, _} -> pos; :nomatch -> -1 end != -1 || case :binary.match(class_name, "Drop") do {pos, _} -> pos; :nomatch -> -1 end != -1
   end
 
-  @doc "
-     * Check if ClassType has @:migration annotation (real implementation)
-     * Note: Temporarily simplified due to Haxe 4.3.6 API compatibility
-     "
+  @doc """
+    Check if ClassType has @:migration annotation (real implementation)
+    Note: Temporarily simplified due to Haxe 4.3.6 API compatibility
+  """
   @spec is_migration_class_type(term()) :: boolean()
   def is_migration_class_type(class_type) do
     true
   end
 
-  @doc "
-     * Get migration configuration from @:migration annotation
-     * Extracts table name from @:migration("table_name") annotation
-     "
+  @doc """
+    Get migration configuration from @:migration annotation
+    Extracts table name from @:migration("table_name") annotation
+  """
   @spec get_migration_config(ClassType.t()) :: term()
   def get_migration_config(class_type) do
     if (!class_type.meta.has(":migration")), do: %{table: "default_table", timestamp: MigrationDSL.generateTimestamp()}, else: nil
@@ -120,9 +122,10 @@ defmodule MigrationDSL do
     %{table: table_name, timestamp: MigrationDSL.generateTimestamp()}
   end
 
-  @doc "
-     * Extract table name from class name (CreateUsers -> users)
-     "
+  @doc """
+    Extract table name from class name (CreateUsers -> users)
+
+  """
   @spec extract_table_name_from_class_name(String.t()) :: String.t()
   def extract_table_name_from_class_name(class_name) do
     class_name = StringTools.replace(class_name, "Create", "")
@@ -135,9 +138,10 @@ defmodule MigrationDSL do
     MigrationDSL.camelCaseToSnakeCase(class_name)
   end
 
-  @doc "
-     * Compile table creation with columns
-     "
+  @doc """
+    Compile table creation with columns
+
+  """
   @spec compile_table_creation(String.t(), Array.t()) :: String.t()
   def compile_table_creation(table_name, columns) do
     column_defs = Array.new()
@@ -146,17 +150,19 @@ defmodule MigrationDSL do
     "create table(:" <> table_name <> ") do\n" <> Enum.join(column_defs, "\n") <> "\n" <> "      timestamps()\n" <> "    end"
   end
 
-  @doc "
-     * Generate basic migration module structure
-     "
+  @doc """
+    Generate basic migration module structure
+
+  """
   @spec generate_migration_module(String.t()) :: String.t()
   def generate_migration_module(class_name) do
     "defmodule " <> class_name <> " do\n" <> "  @moduledoc \"\"\"\n" <> ("  Generated from Haxe @:migration class: " <> class_name <> "\n") <> "  \n" <> "  This migration module was automatically generated from a Haxe source file\n" <> "  as part of the Reflaxe.Elixir compilation pipeline.\n" <> "  \"\"\"\n" <> "  \n" <> "  use Ecto.Migration\n" <> "  \n" <> "  @doc \"\"\"\n" <> "  Run the migration\n" <> "  \"\"\"\n" <> "  def change do\n" <> "    # Migration operations go here\n" <> "  end\n" <> "  \n" <> "  @doc \"\"\"\n" <> "  Run the migration up\n" <> "  \"\"\"\n" <> "  def up do\n" <> "    # Up migration operations\n" <> "  end\n" <> "  \n" <> "  @doc \"\"\"\n" <> "  Run the migration down (rollback)\n" <> "  \"\"\"\n" <> "  def down do\n" <> "    # Down migration operations\n" <> "  end\n" <> "end"
   end
 
-  @doc "
-     * Compile index creation
-     "
+  @doc """
+    Compile index creation
+
+  """
   @spec compile_index_creation(String.t(), Array.t(), String.t()) :: String.t()
   def compile_index_creation(table_name, fields, options) do
     _g = []
@@ -166,25 +172,28 @@ defmodule MigrationDSL do
     if (case :binary.match(options, "unique") do {pos, _} -> pos; :nomatch -> -1 end != -1), do: "create unique_index(:" <> table_name <> ", [" <> field_list <> "])", else: "create index(:" <> table_name <> ", [" <> field_list <> "])"
   end
 
-  @doc "
-     * Compile table drop for rollback
-     "
+  @doc """
+    Compile table drop for rollback
+
+  """
   @spec compile_table_drop(String.t()) :: String.t()
   def compile_table_drop(table_name) do
     "drop table(:" <> table_name <> ")"
   end
 
-  @doc "
-     * Compile column modification
-     "
+  @doc """
+    Compile column modification
+
+  """
   @spec compile_column_modification(String.t(), String.t(), String.t()) :: String.t()
   def compile_column_modification(table_name, column_name, modification) do
     "alter table(:" <> table_name <> ") do\n" <> ("  modify :" <> column_name <> ", :string, " <> modification <> "\n") <> "end"
   end
 
-  @doc "
-     * Compile full migration with all operations
-     "
+  @doc """
+    Compile full migration with all operations
+
+  """
   @spec compile_full_migration(term()) :: String.t()
   def compile_full_migration(migration_data) do
     class_name = migration_data.class_name
@@ -196,27 +205,30 @@ defmodule MigrationDSL do
     "defmodule " <> module_name <> " do\n" <> "  @moduledoc \"\"\"\n" <> ("  Generated migration for " <> table_name <> " table\n") <> "  \n" <> ("  Creates " <> table_name <> " table with proper schema and indexes\n") <> "  following Ecto migration patterns with compile-time validation.\n" <> "  \"\"\"\n" <> "  \n" <> "  use Ecto.Migration\n" <> "  \n" <> "  @doc \"\"\"\n" <> ("  Run the migration - creates " <> table_name <> " table\n") <> "  \"\"\"\n" <> "  def change do\n" <> ("    " <> table_creation <> "\n") <> "    \n" <> ("    " <> index_creation <> "\n") <> "  end\n" <> "  \n" <> "  @doc \"\"\"\n" <> ("  Rollback migration - drops " <> table_name <> " table\n") <> "  \"\"\"\n" <> "  def down do\n" <> ("    drop table(:" <> table_name <> ")\n") <> "  end\n" <> "end"
   end
 
-  @doc "
-     * Generate migration filename following Mix conventions
-     "
+  @doc """
+    Generate migration filename following Mix conventions
+
+  """
   @spec generate_migration_filename(String.t(), String.t()) :: String.t()
   def generate_migration_filename(migration_name, timestamp) do
     snake_case_name = MigrationDSL.camelCaseToSnakeCase(migration_name)
     "" <> timestamp <> "_" <> snake_case_name <> ".exs"
   end
 
-  @doc "
-     * Generate migration file path for Mix tasks
-     "
+  @doc """
+    Generate migration file path for Mix tasks
+
+  """
   @spec generate_migration_file_path(String.t(), String.t()) :: String.t()
   def generate_migration_file_path(migration_name, timestamp) do
     filename = MigrationDSL.generateMigrationFilename(migration_name, timestamp)
     "priv/repo/migrations/" <> filename
   end
 
-  @doc "
-     * Convert CamelCase to snake_case for Elixir conventions
-     "
+  @doc """
+    Convert CamelCase to snake_case for Elixir conventions
+
+  """
   @spec camel_case_to_snake_case(String.t()) :: String.t()
   def camel_case_to_snake_case(input) do
     result = ""
@@ -248,9 +260,10 @@ defmodule MigrationDSL do
     result
   end
 
-  @doc "
-     * Generate add column operation (standalone with alter table wrapper)
-     "
+  @doc """
+    Generate add column operation (standalone with alter table wrapper)
+
+  """
   @spec generate_add_column(String.t(), String.t(), String.t(), String.t()) :: String.t()
   def generate_add_column(table_name, column_name, data_type, options) do
     safe_table = MigrationDSL.sanitizeIdentifier(table_name)
@@ -261,17 +274,19 @@ defmodule MigrationDSL do
     "alter table(:" <> safe_table <> ") do\n  " <> temp_string <> "\nend"
   end
 
-  @doc "
-     * Generate drop column operation
-     "
+  @doc """
+    Generate drop column operation
+
+  """
   @spec generate_drop_column(String.t(), String.t()) :: String.t()
   def generate_drop_column(table_name, column_name) do
     "remove :" <> column_name
   end
 
-  @doc "
-     * Generate foreign key constraint (standalone with alter table wrapper)
-     "
+  @doc """
+    Generate foreign key constraint (standalone with alter table wrapper)
+
+  """
   @spec generate_foreign_key(String.t(), String.t(), String.t(), String.t()) :: String.t()
   def generate_foreign_key(table_name, column_name, referenced_table, referenced_column) do
     safe_table = MigrationDSL.sanitizeIdentifier(table_name)
@@ -282,9 +297,10 @@ defmodule MigrationDSL do
     "alter table(:" <> safe_table <> ") do\n  " <> fk_statement <> "\nend"
   end
 
-  @doc "
-     * Generate constraint creation
-     "
+  @doc """
+    Generate constraint creation
+
+  """
   @spec generate_constraint(String.t(), String.t(), String.t(), String.t()) :: String.t()
   def generate_constraint(table_name, constraint_name, constraint_type, definition) do
     safe_table = MigrationDSL.sanitizeIdentifier(table_name)
@@ -292,36 +308,40 @@ defmodule MigrationDSL do
     "create constraint(:" <> safe_table <> ", :" <> safe_name <> ", " <> constraint_type <> ": \"" <> definition <> "\")"
   end
 
-  @doc "
-     * Performance-optimized compilation for multiple migrations
-     "
+  @doc """
+    Performance-optimized compilation for multiple migrations
+
+  """
   @spec compile_batch_migrations(Array.t()) :: String.t()
   def compile_batch_migrations(migrations) do
     compiled_migrations = Array.new()
     _g = 0
-    Enum.map(migrations, fn item -> MigrationDSL.compileFullMigration(migration) end)
+    Enum.map(migrations, fn item -> MigrationDSL.compileFullMigration(item) end)
     Enum.join(compiled_migrations, "\n\n")
   end
 
-  @doc "
-     * Generate data migration (for complex schema changes)
-     "
+  @doc """
+    Generate data migration (for complex schema changes)
+
+  """
   @spec generate_data_migration(String.t(), String.t(), String.t()) :: String.t()
   def generate_data_migration(migration_name, up_code, down_code) do
     "defmodule Repo." <> migration_name <> " do\n" <> "  use Ecto.Migration\n" <> "  \n" <> "  def up do\n" <> ("    " <> up_code <> "\n") <> "  end\n" <> "  \n" <> "  def down do\n" <> ("    " <> down_code <> "\n") <> "  end\n" <> "end"
   end
 
-  @doc "
-     * Validate migration against existing schema (integration with SchemaIntrospection)
-     "
+  @doc """
+    Validate migration against existing schema (integration with SchemaIntrospection)
+
+  """
   @spec validate_migration_against_schema(term(), Array.t()) :: boolean()
   def validate_migration_against_schema(migration_data, existing_tables) do
     true
   end
 
-  @doc "
-     * Generate timestamp for migration
-     "
+  @doc """
+    Generate timestamp for migration
+
+  """
   @spec generate_timestamp() :: String.t()
   def generate_timestamp() do
     date = Date.now()
@@ -334,14 +354,14 @@ defmodule MigrationDSL do
     "" <> year <> month <> day <> hour <> minute <> second
   end
 
-  @doc "
-     * Real table creation DSL function used by migration examples
-     * Creates Ecto migration table with proper column definitions
-     "
+  @doc """
+    Real table creation DSL function used by migration examples
+    Creates Ecto migration table with proper column definitions
+  """
   @spec create_table(String.t(), Function.t()) :: String.t()
   def create_table(table_name, callback) do
     builder = Reflaxe.Elixir.Helpers.TableBuilder.new(table_name)
-    callback(builder)
+    callback.(builder)
     column_defs = builder.getColumnDefinitions()
     index_defs = builder.getIndexDefinitions()
     constraint_defs = builder.getConstraintDefinitions()
@@ -364,19 +384,19 @@ defmodule MigrationDSL do
     result
   end
 
-  @doc "
-     * Real table drop DSL function used by migration examples
-     * Generates proper Ecto migration drop table statement
-     "
+  @doc """
+    Real table drop DSL function used by migration examples
+    Generates proper Ecto migration drop table statement
+  """
   @spec drop_table(String.t()) :: String.t()
   def drop_table(table_name) do
     "drop table(:" <> table_name <> ")"
   end
 
-  @doc "
-     * Real add column function for table alterations
-     * Generates proper Ecto migration add column statement
-     "
+  @doc """
+    Real add column function for table alterations
+    Generates proper Ecto migration add column statement
+  """
   @spec add_column(String.t(), String.t(), String.t(), Null.t()) :: String.t()
   def add_column(table_name, column_name, data_type, options) do
     options_str = ""
@@ -390,10 +410,10 @@ defmodule MigrationDSL do
     "alter table(:" <> table_name <> ") do\n      add :" <> column_name <> ", :" <> data_type <> options_str <> "\n    end"
   end
 
-  @doc "
-     * Real add index function for performance optimization
-     * Generates proper Ecto migration index creation
-     "
+  @doc """
+    Real add index function for performance optimization
+    Generates proper Ecto migration index creation
+  """
   @spec add_index(String.t(), Array.t(), Null.t()) :: String.t()
   def add_index(table_name, columns, options) do
     _g = []
@@ -403,19 +423,19 @@ defmodule MigrationDSL do
     if (options != nil && Reflect.hasField(options, "unique") && Reflect.field(options, "unique") == true), do: "create unique_index(:" <> table_name <> ", [" <> column_list <> "])", else: "create index(:" <> table_name <> ", [" <> column_list <> "])"
   end
 
-  @doc "
-     * Real add foreign key function for referential integrity
-     * Generates proper Ecto migration foreign key constraint
-     "
+  @doc """
+    Real add foreign key function for referential integrity
+    Generates proper Ecto migration foreign key constraint
+  """
   @spec add_foreign_key(String.t(), String.t(), String.t(), String.t()) :: String.t()
   def add_foreign_key(table_name, column_name, referenced_table, referenced_column) do
     "alter table(:" <> table_name <> ") do\n      modify :" <> column_name <> ", references(:" <> referenced_table <> ", column: :" <> referenced_column <> ")\n    end"
   end
 
-  @doc "
-     * Real add check constraint function for data validation
-     * Generates proper Ecto migration check constraint
-     "
+  @doc """
+    Real add check constraint function for data validation
+    Generates proper Ecto migration check constraint
+  """
   @spec add_check_constraint(String.t(), String.t(), String.t()) :: String.t()
   def add_check_constraint(table_name, condition, constraint_name) do
     "create constraint(:" <> table_name <> ", :" <> constraint_name <> ", check: \"" <> condition <> "\")"
@@ -436,9 +456,10 @@ defmodule TableBuilder do
   """
 
   # Instance functions
-  @doc "
-     * Add a column to the table
-     "
+  @doc """
+    Add a column to the table
+
+  """
   @spec add_column(String.t(), String.t(), Null.t()) :: TableBuilder.t()
   def add_column(name, data_type, options) do
     if (name == "id"), do: __MODULE__.has_id_column = true, else: nil
@@ -455,9 +476,10 @@ defmodule TableBuilder do
     __MODULE__
   end
 
-  @doc "
-     * Add an index to the table
-     "
+  @doc """
+    Add an index to the table
+
+  """
   @spec add_index(Array.t(), Null.t()) :: TableBuilder.t()
   def add_index(column_names, options) do
     _g = []
@@ -468,9 +490,10 @@ defmodule TableBuilder do
     __MODULE__
   end
 
-  @doc "
-     * Add a foreign key constraint
-     "
+  @doc """
+    Add a foreign key constraint
+
+  """
   @spec add_foreign_key(String.t(), String.t(), String.t()) :: TableBuilder.t()
   def add_foreign_key(column_name, referenced_table, referenced_column) do
     new_columns = []
@@ -483,34 +506,38 @@ defmodule TableBuilder do
     __MODULE__
   end
 
-  @doc "
-     * Add a check constraint
-     "
+  @doc """
+    Add a check constraint
+
+  """
   @spec add_check_constraint(String.t(), String.t()) :: TableBuilder.t()
   def add_check_constraint(condition, constraint_name) do
     __MODULE__.constraints ++ ["create constraint(:" <> __MODULE__.table_name <> ", :" <> constraint_name <> ", check: \"" <> condition <> "\")"]
     __MODULE__
   end
 
-  @doc "
-     * Get all column definitions
-     "
+  @doc """
+    Get all column definitions
+
+  """
   @spec get_column_definitions() :: Array.t()
   def get_column_definitions() do
     __MODULE__.columns
   end
 
-  @doc "
-     * Get all index definitions
-     "
+  @doc """
+    Get all index definitions
+
+  """
   @spec get_index_definitions() :: Array.t()
   def get_index_definitions() do
     __MODULE__.indexes
   end
 
-  @doc "
-     * Get all constraint definitions
-     "
+  @doc """
+    Get all constraint definitions
+
+  """
   @spec get_constraint_definitions() :: Array.t()
   def get_constraint_definitions() do
     __MODULE__.constraints

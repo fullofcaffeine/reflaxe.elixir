@@ -249,7 +249,7 @@ class ElixirPrinter {
      * @return Formatted @doc
      */
     public function formatFunctionDoc(docString: String): String {
-        return '  @doc "${docString}"\n';
+        return FormatHelper.formatDoc(docString, false, 1) + '\n';
     }
     
     /**

@@ -5,9 +5,10 @@ defmodule Main do
   """
 
   # Static functions
-  @doc "
-     * Simple enum-like pattern matching
-     "
+  @doc """
+    Simple enum-like pattern matching
+
+  """
   @spec match_simple_value(integer()) :: String.t()
   def match_simple_value(value) do
     temp_result = nil
@@ -30,9 +31,10 @@ defmodule Main do
     temp_result
   end
 
-  @doc "
-     * Array pattern matching with guards
-     "
+  @doc """
+    Array pattern matching with guards
+
+  """
   @spec process_array(Array.t()) :: String.t()
   def process_array(arr) do
     temp_result = nil
@@ -74,9 +76,10 @@ defmodule Main do
     temp_result
   end
 
-  @doc "
-     * String pattern matching with guards
-     "
+  @doc """
+    String pattern matching with guards
+
+  """
   @spec classify_string(String.t()) :: String.t()
   def classify_string(str) do
     temp_result = nil
@@ -104,9 +107,10 @@ defmodule Main do
     temp_result
   end
 
-  @doc "
-     * Complex number range guards
-     "
+  @doc """
+    Complex number range guards
+
+  """
   @spec classify_number(float()) :: String.t()
   def classify_number(n) do
     temp_result = nil
@@ -149,9 +153,10 @@ defmodule Main do
     temp_result
   end
 
-  @doc "
-     * Boolean combinations with tuples
-     "
+  @doc """
+    Boolean combinations with tuples
+
+  """
   @spec match_flags(boolean(), boolean(), boolean()) :: String.t()
   def match_flags(active, verified, premium) do
     temp_result = nil
@@ -159,9 +164,10 @@ defmodule Main do
     temp_result
   end
 
-  @doc "
-     * Nested array patterns
-     "
+  @doc """
+    Nested array patterns
+
+  """
   @spec match_matrix(Array.t()) :: String.t()
   def match_matrix(matrix) do
     temp_result = nil
@@ -245,9 +251,10 @@ defmodule Main do
     temp_result
   end
 
-  @doc "
-     * Multiple guard conditions
-     "
+  @doc """
+    Multiple guard conditions
+
+  """
   @spec validate_age(integer(), boolean()) :: String.t()
   def validate_age(age, has_permission) do
     temp_result = nil
@@ -315,9 +322,10 @@ defmodule Main do
     temp_result
   end
 
-  @doc "
-     * Type checking guards (simulating is_binary, is_integer, etc.)
-     "
+  @doc """
+    Type checking guards (simulating is_binary, is_integer, etc.)
+
+  """
   @spec classify_value(term()) :: String.t()
   def classify_value(value) do
     temp_result = nil
@@ -346,9 +354,10 @@ defmodule Main do
     temp_result
   end
 
-  @doc "
-     * List membership simulation
-     "
+  @doc """
+    List membership simulation
+
+  """
   @spec check_color(String.t()) :: String.t()
   def check_color(color) do
     primary_colors = ["red", "green", "blue"]
@@ -377,9 +386,10 @@ defmodule Main do
     temp_result
   end
 
-  @doc "
-     * Combined patterns with OR
-     "
+  @doc """
+    Combined patterns with OR
+
+  """
   @spec match_status(String.t()) :: String.t()
   def match_status(status) do
     temp_result = nil

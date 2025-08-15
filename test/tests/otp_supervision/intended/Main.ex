@@ -19,9 +19,10 @@ defmodule Main do
     Main.testSupervisionTree()
   end
 
-  @doc "
-     * Test Supervisor extern functions
-     "
+  @doc """
+    Test Supervisor extern functions
+
+  """
   @spec test_supervisor() :: nil
   def test_supervisor() do
     temp_map = nil
@@ -103,9 +104,10 @@ defmodule Main do
     end
   end
 
-  @doc "
-     * Test Task extern functions
-     "
+  @doc """
+    Test Task extern functions
+
+  """
   @spec test_task() :: nil
   def test_task() do
     task = Task.async(fn  -> Process.sleep(100)
@@ -156,9 +158,10 @@ defmodule Main do
     Task.async_stream([1, 2, 3, 4, 5], fn x -> x * 2 end)
   end
 
-  @doc "
-     * Test Task.Supervisor extern functions
-     "
+  @doc """
+    Test Task.Supervisor extern functions
+
+  """
   @spec test_task_supervisor() :: nil
   def test_task_supervisor() do
     supervisor_result = Task.Supervisor.start_link()
@@ -183,7 +186,7 @@ defmodule Main do
       temp_array1 = nil
       _g = []
       _g = 0
-      Enum.map(funs, fn item -> Supervisor.Task.Supervisor.async(item, fun) end)
+      Enum.map(funs, fn item -> Supervisor.Task.Supervisor.async(item, item) end)
       temp_array1 = _g
       tasks = temp_array1
       _g = []
@@ -195,9 +198,10 @@ defmodule Main do
     end
   end
 
-  @doc "
-     * Test complete supervision tree
-     "
+  @doc """
+    Test complete supervision tree
+
+  """
   @spec test_supervision_tree() :: nil
   def test_supervision_tree() do
     temp_map = nil

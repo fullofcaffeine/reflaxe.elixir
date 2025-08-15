@@ -90,6 +90,64 @@ class FormatHelper {
     }
     
     /**
+     * Clean JavaDoc-style comments to plain text suitable for Elixir
+     * @param docString The JavaDoc documentation to clean
+     * @return Cleaned documentation text
+     */
+    public static function cleanJavaDoc(docString: String): String {
+        if (docString == null || docString == "") {
+            return "";
+        }
+        
+        // Remove JavaDoc asterisks and clean up indentation
+        var lines = docString.split("\n");
+        var cleanedLines = [];
+        var wasMultiLine = lines.length > 1;
+        
+        for (line in lines) {
+            // Replace tabs with spaces (2 spaces per tab for Elixir convention)
+            // Use regex for robust tab replacement
+            var tabRegex = ~/\t/g;
+            line = tabRegex.replace(line, "  ");
+            
+            var trimmed = line.trim();
+            
+            // Skip empty lines that are just asterisks
+            if (trimmed == "*" || trimmed == "") {
+                if (cleanedLines.length > 0 && cleanedLines[cleanedLines.length - 1] != "") {
+                    cleanedLines.push("");
+                }
+                continue;
+            }
+            
+            // Remove leading asterisk and whitespace
+            if (trimmed.startsWith("* ")) {
+                cleanedLines.push(trimmed.substr(2));
+            } else if (trimmed.startsWith("*")) {
+                cleanedLines.push(trimmed.substr(1));
+            } else {
+                cleanedLines.push(trimmed);
+            }
+        }
+        
+        // Remove trailing empty lines
+        while (cleanedLines.length > 0 && cleanedLines[cleanedLines.length - 1] == "") {
+            cleanedLines.pop();
+        }
+        
+        var result = cleanedLines.join("\n");
+        
+        // If original was multi-line but we collapsed it to single line, 
+        // preserve multi-line format for proper documentation formatting
+        if (wasMultiLine && !result.contains("\n") && result.length > 0) {
+            // Add a single newline to ensure multi-line formatting is used
+            result = result + "\n";
+        }
+        
+        return result;
+    }
+    
+    /**
      * Format Elixir documentation string
      * @param docString The documentation content
      * @param isModuleDoc Whether this is @moduledoc (vs @doc)
@@ -97,17 +155,42 @@ class FormatHelper {
      * @return Formatted documentation
      */
     public static function formatDoc(docString: String, isModuleDoc: Bool = false, indentLevel: Int = 1): String {
+        
+        if (docString == null || docString == "") {
+            return "";
+        }
+        
+        // Clean JavaDoc-style formatting first
+        var cleanDoc = cleanJavaDoc(docString);
+        
+        if (cleanDoc == "") {
+            return "";
+        }
+        
+        // Ensure any remaining tabs are converted to spaces using multiple approaches
+        cleanDoc = StringTools.replace(cleanDoc, "\t", "  ");
+        var tabRegex = ~/\t/g;
+        cleanDoc = tabRegex.replace(cleanDoc, "  ");
+        
+        
         var docType = isModuleDoc ? "@moduledoc" : "@doc";
         var baseIndent = indent("", indentLevel);
         
-        if (docString.contains("\n")) {
-            // Multi-line documentation
-            var lines = docString.split("\n");
-            var formattedLines = lines.map(line -> baseIndent + "  " + line);
+        if (cleanDoc.contains("\n")) {
+            // Multi-line documentation - always use heredoc for proper formatting
+            var lines = cleanDoc.split("\n");
+            var formattedLines = lines.map(line -> {
+                if (line == "") return "";
+                // Replace any remaining tabs in individual lines
+                var tabRegex = ~/\t/g;
+                line = tabRegex.replace(line, "  ");
+                return baseIndent + "  " + line;
+            });
             return baseIndent + docType + ' """\n' + formattedLines.join("\n") + '\n' + baseIndent + '"""';
         } else {
-            // Single-line documentation
-            return baseIndent + docType + ' "${docString}"';
+            // Single-line documentation - escape quotes and backslashes
+            var escapedDoc = cleanDoc.split('"').join('\\"').split('\\').join('\\\\');
+            return baseIndent + docType + ' "' + escapedDoc + '"';
         }
     }
     

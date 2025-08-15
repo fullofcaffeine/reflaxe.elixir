@@ -22,7 +22,7 @@ defmodule Main do
     dyn = %{name: "John", age: 30}
     Log.trace(dyn, %{fileName: "Main.hx", lineNumber: 20, className: "Main", methodName: "dynamicVars"})
     dyn = fn x -> x * 2 end
-    Log.trace(dyn(5), %{fileName: "Main.hx", lineNumber: 23, className: "Main", methodName: "dynamicVars"})
+    Log.trace(dyn.(5), %{fileName: "Main.hx", lineNumber: 23, className: "Main", methodName: "dynamicVars"})
   end
 
   @doc "Function dynamic_field_access"
@@ -40,15 +40,15 @@ defmodule Main do
   @doc "Function dynamic_functions"
   @spec dynamic_functions() :: nil
   def dynamic_functions() do
-    fn = fn a, b -> a + b end
-    Log.trace(fn(10, 20), %{fileName: "Main.hx", lineNumber: 49, className: "Main", methodName: "dynamicFunctions"})
-    fn = fn s -> String.upcase(s) end
-    Log.trace(fn("hello"), %{fileName: "Main.hx", lineNumber: 52, className: "Main", methodName: "dynamicFunctions"})
+    fn_ = fn a, b -> a + b end
+    Log.trace(fn_.(10, 20), %{fileName: "Main.hx", lineNumber: 49, className: "Main", methodName: "dynamicFunctions"})
+    fn_ = fn s -> String.upcase(s) end
+    Log.trace(fn_.("hello"), %{fileName: "Main.hx", lineNumber: 52, className: "Main", methodName: "dynamicFunctions"})
     var_args = fn args -> sum = 0
     _g = 0
     Enum.map(args, fn item -> item end)
     sum end
-    Log.trace(var_args([1, 2, 3, 4, 5]), %{fileName: "Main.hx", lineNumber: 62, className: "Main", methodName: "dynamicFunctions"})
+    Log.trace(var_args.([1, 2, 3, 4, 5]), %{fileName: "Main.hx", lineNumber: 62, className: "Main", methodName: "dynamicFunctions"})
   end
 
   @doc "Function type_checking"

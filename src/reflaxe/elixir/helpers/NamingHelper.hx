@@ -20,7 +20,34 @@ class NamingHelper {
                 result += char;
             }
         }
+        
+        // Handle Elixir reserved keywords by adding suffix
+        result = escapeElixirReservedKeyword(result);
+        
         return result;
+    }
+    
+    /**
+     * Escape Elixir reserved keywords by adding a suffix
+     */
+    private static function escapeElixirReservedKeyword(name: String): String {
+        var elixirReservedKeywords = [
+            "fn", "do", "end", "case", "when", "cond", "if", "unless", "else", "elsif",
+            "def", "defp", "defmacro", "defmodule", "defstruct", "defprotocol", "defimpl",
+            "and", "or", "not", "in", "true", "false", "nil", "super", "try", "catch",
+            "rescue", "after", "receive", "with", "quote", "unquote", "for", "import",
+            "require", "alias", "use", "spawn", "spawn_link", "spawn_monitor", "send",
+            "self", "make_ref", "node", "nodes", "tuple_size", "elem", "put_elem",
+            "binary_part", "is_atom", "is_binary", "is_bitstring", "is_boolean", "is_float",
+            "is_function", "is_integer", "is_list", "is_map", "is_number", "is_pid",
+            "is_port", "is_reference", "is_tuple"
+        ];
+        
+        if (elixirReservedKeywords.indexOf(name) >= 0) {
+            return name + "_";
+        }
+        
+        return name;
     }
     
     /**

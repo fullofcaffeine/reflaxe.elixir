@@ -160,8 +160,8 @@ defmodule Main do
     Log.trace("Length: " <> Integer.to_string(String.length(unicode)), %{fileName: "Main.hx", lineNumber: 190, className: "Main", methodName: "unicodeStrings"})
     escaped = "Line 1\nLine 2\tTabbed\r\nLine 3"
     Log.trace("Escaped: " <> escaped, %{fileName: "Main.hx", lineNumber: 194, className: "Main", methodName: "unicodeStrings"})
-    quote = "She said \"Hello\""
-    Log.trace("Quote: " <> quote, %{fileName: "Main.hx", lineNumber: 197, className: "Main", methodName: "unicodeStrings"})
+    quote_ = "She said \"Hello\""
+    Log.trace("Quote: " <> quote_, %{fileName: "Main.hx", lineNumber: 197, className: "Main", methodName: "unicodeStrings"})
     backslash = "Path: C:\\Users\\Name"
     Log.trace("Backslash: " <> backslash, %{fileName: "Main.hx", lineNumber: 200, className: "Main", methodName: "unicodeStrings"})
   end

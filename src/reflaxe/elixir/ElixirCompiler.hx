@@ -36,6 +36,8 @@ import reflaxe.elixir.helpers.RepositoryCompiler;
 import reflaxe.elixir.helpers.EctoErrorReporter;
 import reflaxe.elixir.helpers.TypedefCompiler;
 import reflaxe.elixir.helpers.LLMDocsGenerator;
+import reflaxe.elixir.helpers.ExUnitCompiler;
+import reflaxe.elixir.helpers.AlgebraicDataTypeCompiler;
 import reflaxe.elixir.ElixirTyper;
 import reflaxe.elixir.PhoenixMapper;
 import reflaxe.elixir.SourceMapWriter;
@@ -78,6 +80,9 @@ class ElixirCompiler extends DirectToStringCompiler {
     
     // Type mapping system for enhanced enum compilation
     private var typer: reflaxe.elixir.ElixirTyper;
+    
+    // Context tracking for variable substitution
+    private var isInLoopContext: Bool = false;
     
     // Pattern matching and guard compilation helpers
     private var patternMatcher: reflaxe.elixir.helpers.PatternMatcher;
@@ -474,6 +479,15 @@ class ElixirCompiler extends DirectToStringCompiler {
             // Annotation-aware file path generation for framework convention adherence
             var outputPath = generateAnnotationAwareOutputPath(classType, actualOutputDir);
             initSourceMapWriter(outputPath);
+        }
+        
+        // Check for ExUnit test classes first (before other annotations)
+        if (ExUnitCompiler.isExUnitTest(classType)) {
+            var result = ExUnitCompiler.compile(classType, this);
+            if (sourceMapOutputEnabled) {
+                finalizeSourceMapWriter();
+            }
+            return result;
         }
         
         // Use unified annotation system for detection, validation, and routing
@@ -996,6 +1010,7 @@ class ElixirCompiler extends DirectToStringCompiler {
      */
     private function compileElixirExpressionInternal(expr: TypedExpr, topLevel: Bool = false): Null<String> {
         
+        
         // Comprehensive expression compilation
         return switch (expr.expr) {
             case TConst(constant):
@@ -1214,6 +1229,9 @@ class ElixirCompiler extends DirectToStringCompiler {
                 compileSwitchExpression(e, cases, edef);
                 
             case TFor(tvar, iterExpr, blockExpr):
+                // Debug: Log TFor handling
+                var varName = getOriginalVarName(tvar);
+                trace('Processing TFor: tvar=${varName}');
                 // Compile for-in loops to idiomatic Elixir Enum operations
                 compileForLoop(tvar, iterExpr, blockExpr);
                 
@@ -1221,6 +1239,7 @@ class ElixirCompiler extends DirectToStringCompiler {
                 // Try to detect and optimize common for-in loop patterns
                 var optimized = tryOptimizeForInPattern(econd, ebody);
                 if (optimized != null) {
+                    trace('While loop optimized to: ${optimized}');
                     return optimized;
                 }
                 
@@ -1293,21 +1312,31 @@ class ElixirCompiler extends DirectToStringCompiler {
                 // This is used in switch statements to determine which enum constructor is being matched
                 var enumExpr = compileExpression(e);
                 
-                // Check if this is a Result type which needs special tuple-based handling
+                // Check if this is a Result or Option type which needs special tuple-based handling
                 // Result types compile to Elixir tuples {:ok, value} and {:error, reason}
+                // Option types compile to Elixir patterns {:some, value} and :none
                 // instead of standard enum modules, so introspection works differently
-                var isResult = switch (e.t) {
+                var typeInfo = switch (e.t) {
                     case TEnum(enumType, _):
-                        isResultType(enumType.get());
+                        var enumTypeRef = enumType.get();
+                        {
+                            isResult: isResultType(enumTypeRef),
+                            isOption: isOptionType(enumTypeRef)
+                        };
                     case _:
-                        false;
+                        {isResult: false, isOption: false};
                 };
                 
-                if (isResult) {
+                if (typeInfo.isResult) {
                     // Result types use tuple pattern matching to get the constructor index
                     // {:ok, _} maps to index 0, {:error, _} maps to index 1
                     // This generates a case statement that extracts the "tag" from the tuple
                     'case ${enumExpr} do {:ok, _} -> 0; {:error, _} -> 1; _ -> -1 end';
+                } else if (typeInfo.isOption) {
+                    // Option types use pattern matching to get the constructor index
+                    // {:some, _} maps to index 0, :none maps to index 1
+                    // This generates a case statement that extracts the type from the pattern
+                    'case ${enumExpr} do {:some, _} -> 0; :none -> 1; _ -> -1 end';
                 } else {
                     // Standard enums compile to tagged tuples like {:constructor_name, arg1, arg2}
                     // The first element (index 0) is always the constructor tag/atom
@@ -1319,15 +1348,19 @@ class ElixirCompiler extends DirectToStringCompiler {
                 // Used when accessing constructor arguments in pattern matching or introspection
                 var enumExpr = compileExpression(e);
                 
-                // Check if this is a Result type which uses different tuple structure
-                var isResult = switch (e.t) {
+                // Check if this is a Result or Option type which uses different tuple structure
+                var typeInfo = switch (e.t) {
                     case TEnum(enumType, _):
-                        isResultType(enumType.get());
+                        var enumTypeRef = enumType.get();
+                        {
+                            isResult: isResultType(enumTypeRef),
+                            isOption: isOptionType(enumTypeRef)
+                        };
                     case _:
-                        false;
+                        {isResult: false, isOption: false};
                 };
                 
-                if (isResult) {
+                if (typeInfo.isResult) {
                     // Result types have a simple 2-element tuple structure: {:ok, value} or {:error, reason}
                     // Both constructors have exactly one parameter at the same position
                     if (index == 0) {
@@ -1336,6 +1369,17 @@ class ElixirCompiler extends DirectToStringCompiler {
                         'case ${enumExpr} do {:ok, value} -> value; {:error, value} -> value; _ -> nil end';
                     } else {
                         // Result types only have one parameter, so index > 0 should not occur
+                        // Return nil for safety if this happens
+                        'nil';
+                    }
+                } else if (typeInfo.isOption) {
+                    // Option types have either {:some, value} or :none
+                    // Only Some has a parameter (index 0), None has no parameters
+                    if (index == 0) {
+                        // Extract the value from {:some, value}, return nil for :none
+                        'case ${enumExpr} do {:some, value} -> value; :none -> nil; _ -> nil end';
+                    } else {
+                        // Option types only have one parameter in Some, so index > 0 should not occur
                         // Return nil for safety if this happens
                         'nil';
                     }
@@ -1400,9 +1444,20 @@ class ElixirCompiler extends DirectToStringCompiler {
     
     /**
      * Check if an enum type is the Result<T,E> type
+     * @deprecated Use AlgebraicDataTypeCompiler.isADTType() instead
      */
     private function isResultType(enumType: EnumType): Bool {
-        return enumType.module == "haxe.functional.Result" && enumType.name == "Result";
+        return AlgebraicDataTypeCompiler.isADTType(enumType) && 
+               enumType.name == "Result";
+    }
+    
+    /**
+     * Check if an enum type is the Option<T> type
+     * @deprecated Use AlgebraicDataTypeCompiler.isADTType() instead
+     */
+    private function isOptionType(enumType: EnumType): Bool {
+        return AlgebraicDataTypeCompiler.isADTType(enumType) && 
+               enumType.name == "Option";
     }
     
     /**
@@ -1419,27 +1474,29 @@ class ElixirCompiler extends DirectToStringCompiler {
     
     /**
      * Compile Result enum constructor to proper Elixir tuple
+     * @deprecated Use AlgebraicDataTypeCompiler.compileADTPattern() instead
      */
     private function compileResultPattern(enumField: EnumField, args: Array<TypedExpr>): String {
-        var fieldName = enumField.name.toLowerCase();
-        
-        if (fieldName == "ok") {
-            if (args.length == 1) {
-                var argPattern = compilePatternArgument(args[0]);
-                return '{:ok, ${argPattern}}';
-            } else {
-                return '{:ok}';
+        // Find the Result enum type - this is a bit hacky but works for backward compatibility
+        var resultEnum = null;
+        try {
+            var resultType = haxe.macro.Context.getType("haxe.functional.Result");
+            switch (resultType) {
+                case TEnum(enumRef, _):
+                    resultEnum = enumRef.get();
+                case _:
             }
-        } else if (fieldName == "error") {
-            if (args.length == 1) {
-                var argPattern = compilePatternArgument(args[0]);
-                return '{:error, ${argPattern}}';
-            } else {
-                return '{:error}';
-            }
+        } catch (e: Dynamic) {
+            // Fallback if type not found
         }
         
-        // Fallback to regular enum pattern
+        if (resultEnum != null) {
+            var compiled = AlgebraicDataTypeCompiler.compileADTPattern(resultEnum, enumField, args, (expr) -> compilePatternArgument(expr));
+            if (compiled != null) return compiled;
+        }
+        
+        // Fallback to original logic for unknown patterns
+        var fieldName = enumField.name.toLowerCase();
         var snakeName = NamingHelper.toSnakeCase(fieldName);
         if (args.length == 0) {
             return ':${snakeName}';
@@ -1453,24 +1510,56 @@ class ElixirCompiler extends DirectToStringCompiler {
     }
     
     /**
+     * Compile Option enum constructor to proper Elixir pattern
+     * @deprecated Use AlgebraicDataTypeCompiler.compileADTPattern() instead
+     */
+    private function compileOptionPattern(enumField: EnumField, args: Array<TypedExpr>): String {
+        // Find the Option enum type - this is a bit hacky but works for backward compatibility
+        var optionEnum = null;
+        try {
+            var optionType = haxe.macro.Context.getType("haxe.ds.Option");
+            switch (optionType) {
+                case TEnum(enumRef, _):
+                    optionEnum = enumRef.get();
+                case _:
+            }
+        } catch (e: Dynamic) {
+            // Fallback if type not found
+        }
+        
+        if (optionEnum != null) {
+            var compiled = AlgebraicDataTypeCompiler.compileADTPattern(optionEnum, enumField, args, (expr) -> compilePatternArgument(expr));
+            if (compiled != null) return compiled;
+        }
+        
+        // Fallback to original logic for unknown patterns
+        var fieldName = enumField.name.toLowerCase();
+        var snakeName = NamingHelper.toSnakeCase(fieldName);
+        return ':${snakeName}';
+    }
+    
+    /**
      * Compile enum constructor pattern for case matching
      */
     private function compileEnumPattern(expr: TypedExpr): String {
         return switch (expr.expr) {
             case TField(_, FEnum(enumType, enumField)):
-                // Check if this is a Result type for special handling
-                if (isResultType(enumType.get())) {
-                    return compileResultPattern(enumField, []);
+                // Check if this is a known algebraic data type (Result, Option, etc.)
+                var enumTypeRef = enumType.get();
+                if (AlgebraicDataTypeCompiler.isADTType(enumTypeRef)) {
+                    var compiled = AlgebraicDataTypeCompiler.compileADTPattern(enumTypeRef, enumField, [], (expr) -> compilePatternArgument(expr));
+                    if (compiled != null) return compiled;
                 }
                 // Simple enum pattern: SomeEnum.Option → :option
                 var fieldName = NamingHelper.toSnakeCase(enumField.name);
                 ':${fieldName}';
                 
             case TCall(e, args) if (isEnumFieldAccess(e)):
-                // Check if this is a Result enum constructor call
+                // Check if this is a known algebraic data type constructor call
                 var enumInfo = extractEnumInfo(e);
-                if (enumInfo != null && isResultType(enumInfo.enumType.get())) {
-                    return compileResultPattern(enumInfo.enumField, args);
+                if (enumInfo != null && AlgebraicDataTypeCompiler.isADTType(enumInfo.enumType.get())) {
+                    var compiled = AlgebraicDataTypeCompiler.compileADTPattern(enumInfo.enumType.get(), enumInfo.enumField, args, (expr) -> compilePatternArgument(expr));
+                    if (compiled != null) return compiled;
                 }
                 
                 // Parameterized enum pattern: SomeEnum.Option(value) → {:option, value}
@@ -1837,6 +1926,17 @@ class ElixirCompiler extends DirectToStringCompiler {
                         case "winMetaCharacters": "win_meta_characters";
                         case other: NamingHelper.toSnakeCase(other);
                     };
+                }
+                
+                // Special handling for Option enum static access (before name conversion)
+                if (className == "Option" && (fieldName == "Some" || fieldName == "None")) {
+                    if (fieldName == "Some") {
+                        // Some without arguments becomes a partial function
+                        return "fn value -> {:some, value} end";
+                    } else if (fieldName == "None") {
+                        // None becomes the atom :none
+                        return ":none";
+                    }
                 } else {
                     fieldName = NamingHelper.getElixirFunctionName(fieldName);
                 }
@@ -1865,16 +1965,16 @@ class ElixirCompiler extends DirectToStringCompiler {
                 '&${expr}.${fieldName}/0'; // Function capture syntax
                 
             case FEnum(enumType, enumField):
-                // Check if this is a Result type for special handling
-                if (isResultType(enumType.get())) {
-                    // For Result.Ok and Result.Error, return just the field name
-                    // This will be processed later in compileMethodCall to generate direct tuples
-                    enumField.name;
-                } else {
-                    var enumName = NamingHelper.getElixirModuleName(enumType.get().getNameOrNative());
-                    var optionName = NamingHelper.toSnakeCase(enumField.name);
-                    '${enumName}.${optionName}()'; // Enum constructor call
+                // Check if this is a known algebraic data type (Result, Option, etc.)
+                var enumTypeRef = enumType.get();
+                if (AlgebraicDataTypeCompiler.isADTType(enumTypeRef)) {
+                    var compiled = AlgebraicDataTypeCompiler.compileADTFieldAccess(enumTypeRef, enumField);
+                    if (compiled != null) return compiled;
                 }
+                
+                // Fallback for regular enum types - compile to atoms, not function calls
+                var fieldName = NamingHelper.toSnakeCase(enumField.name);
+                ':${fieldName}';
         }
     }
     
@@ -1981,23 +2081,13 @@ class ElixirCompiler extends DirectToStringCompiler {
                     return RepositoryCompiler.compileRepoCall(methodName, compiledArgs, schemaName);
                 }
                 
-                // Check if this is a Result enum constructor call
+                // Check if this is an algebraic data type constructor call (Result, Option, etc.)
                 switch (fa) {
                     case FEnum(enumType, enumField):
-                        if (isResultType(enumType.get())) {
-                            // Generate direct tuple for Result types
-                            var compiledArgs = args.map(arg -> compileExpression(arg));
-                            var fieldName = enumField.name.toLowerCase();
-                            if (fieldName == "ok" || fieldName == "error") {
-                                if (compiledArgs.length == 1) {
-                                    return '{:${fieldName}, ${compiledArgs[0]}}';
-                                } else if (compiledArgs.length == 0) {
-                                    return ':${fieldName}';
-                                } else {
-                                    // Multiple arguments - wrap in a tuple
-                                    return '{:${fieldName}, {${compiledArgs.join(", ")}}}';
-                                }
-                            }
+                        var enumTypeRef = enumType.get();
+                        if (AlgebraicDataTypeCompiler.isADTType(enumTypeRef)) {
+                            var compiled = AlgebraicDataTypeCompiler.compileADTPattern(enumTypeRef, enumField, args, (expr) -> compileExpression(expr));
+                            if (compiled != null) return compiled;
                         }
                     case _:
                 }
@@ -2027,6 +2117,42 @@ class ElixirCompiler extends DirectToStringCompiler {
                 // Handle other method calls normally
                 var compiledArgs = args.map(arg -> compileExpression(arg));
                 
+                // Check for algebraic data type constructor calls that weren't detected as FEnum
+                if (AlgebraicDataTypeCompiler.isADTTypeName(objStr)) {
+                    var config = AlgebraicDataTypeCompiler.getADTConfigByTypeName(objStr);
+                    if (config != null) {
+                        // Try to get the actual enum type for full compilation
+                        var enumType = null;
+                        try {
+                            var fullTypeName = '${config.moduleName}.${config.typeName}';
+                            var adtType = haxe.macro.Context.getType(fullTypeName);
+                            switch (adtType) {
+                                case TEnum(enumRef, _):
+                                    enumType = enumRef.get();
+                                case _:
+                            }
+                        } catch (e: Dynamic) {
+                            // Fallback if type not found
+                        }
+                        
+                        if (enumType != null) {
+                            // Create a fake enum field for the method call
+                            var fakeField = null;
+                            for (field in enumType.constructs) {
+                                if (field.name.toLowerCase() == methodName.toLowerCase()) {
+                                    fakeField = field;
+                                    break;
+                                }
+                            }
+                            
+                            if (fakeField != null) {
+                                var compiled = AlgebraicDataTypeCompiler.compileADTMethodCall(enumType, methodName, args, (expr) -> compileExpression(expr));
+                                if (compiled != null) return compiled;
+                            }
+                        }
+                    }
+                }
+                
                 // Check if methodName already contains a module path (from @:native annotation)
                 if (methodName.indexOf(".") >= 0) {
                     // Native method with full path - use it directly
@@ -2045,7 +2171,25 @@ class ElixirCompiler extends DirectToStringCompiler {
                 
                 // Regular function call
                 var compiledArgs = args.map(arg -> compileExpression(arg));
-                return compileExpression(e) + "(" + compiledArgs.join(", ") + ")";
+                var functionName = compileExpression(e);
+                
+                // Check if this is an anonymous function call (function parameter)
+                // In Elixir, function parameters need dot syntax: fn.(args) instead of fn(args)
+                // This includes reserved keywords (ending with _) and regular function parameters
+                var isFunctionParameter = (functionName.endsWith("_") || 
+                    (functionName.toLowerCase() == functionName && // snake_case (likely parameter)
+                     !functionName.contains(".") && 
+                     !functionName.contains(" ") &&
+                     functionName.length > 1 && // not single chars
+                     functionName != "nil" && // not literals
+                     functionName != "true" &&
+                     functionName != "false"));
+                     
+                if (isFunctionParameter) {
+                    return functionName + ".(" + compiledArgs.join(", ") + ")";
+                } else {
+                    return functionName + "(" + compiledArgs.join(", ") + ")";
+                }
         }
     }
     
@@ -2062,9 +2206,14 @@ class ElixirCompiler extends DirectToStringCompiler {
      * @return Compiled Elixir code
      */
     private function compileForLoop(tvar: TVar, iterExpr: TypedExpr, blockExpr: TypedExpr): String {
+        // Set loop context to enable variable substitution
+        var previousContext = isInLoopContext;
+        isInLoopContext = true;
+        
         // Get the original variable name before Haxe's renaming
         var originalName = getOriginalVarName(tvar);
-        var loopVar = NamingHelper.toSnakeCase(originalName);
+        // Use consistent "item" as the loop variable for all Enum operations
+        var loopVar = "item";
         var iterableExpr = compileExpression(iterExpr);
         
         // Check if this is a find pattern (early return) - highest priority
@@ -2074,6 +2223,8 @@ class ElixirCompiler extends DirectToStringCompiler {
             var returnPattern = ~/return\s+(.+);?/;
             if (returnPattern.match(body)) {
                 var condition = returnPattern.matched(1);
+                // Restore previous loop context before returning
+                isInLoopContext = previousContext;
                 return 'Enum.find(${iterableExpr}, fn ${loopVar} -> ${condition} end)';
             }
         }
@@ -2083,6 +2234,8 @@ class ElixirCompiler extends DirectToStringCompiler {
             // For counting patterns, we need to handle the mutation differently
             // Count elements that match a condition
             var condition = extractCountingCondition(blockExpr, loopVar);
+            // Restore previous loop context before returning
+            isInLoopContext = previousContext;
             if (condition != null) {
                 return 'Enum.count(${iterableExpr}, fn ${loopVar} -> ${condition} end)';
             } else {
@@ -2092,15 +2245,23 @@ class ElixirCompiler extends DirectToStringCompiler {
         }
         
         // Default: compile as Enum.each for side effects or Enum.map for transformations
+        // Debug: Log the loop compilation parameters
+        trace('Loop compilation: originalName="${originalName}", loopVar="${loopVar}"');
         var body = compileExpressionWithSubstitution(blockExpr, originalName, loopVar);
+        trace('Loop body compiled to: "${body.substr(0, 100)}..."');
         
         // Check if the body has side effects only
+        var result: String;
         if (body.contains("Phoenix.PubSub") || body.contains("Repo.") || body.contains("IO.")) {
-            return 'Enum.each(${iterableExpr}, fn ${loopVar} -> ${body} end)';
+            result = 'Enum.each(${iterableExpr}, fn ${loopVar} -> ${body} end)';
         } else {
             // Otherwise use map for potential transformations
-            return 'Enum.map(${iterableExpr}, fn ${loopVar} -> ${body} end)';
+            result = 'Enum.map(${iterableExpr}, fn ${loopVar} -> ${body} end)';
         }
+        
+        // Restore previous loop context
+        isInLoopContext = previousContext;
+        return result;
     }
     
     /**
@@ -2298,6 +2459,7 @@ class ElixirCompiler extends DirectToStringCompiler {
         
         // 3. Check for mapping pattern (array transformation) - Lower priority than filtering
         if (bodyAnalysis.hasMapPattern) {
+            trace('Taking mapping pattern path for ${arrayExpr}');
             return generateEnumMapPattern(arrayExpr, loopVar, ebody);
         }
         
@@ -2540,19 +2702,29 @@ class ElixirCompiler extends DirectToStringCompiler {
      * Generate Enum.find pattern for early return loops
      */
     private function generateEnumFindPattern(arrayExpr: String, loopVar: String, ebody: TypedExpr): String {
+        // Set loop context to enable aggressive variable substitution
+        var previousContext = isInLoopContext;
+        isInLoopContext = true;
+        
         // Extract the condition from the if statement
         var condition = extractConditionFromReturn(ebody);
         if (condition != null) {
             // Generate Enum.find for simple cases
+            // Restore previous loop context
+            isInLoopContext = previousContext;
             return 'Enum.find(${arrayExpr}, fn ${loopVar} -> ${condition} end)';
         }
         
         // Fallback to reduce_while for complex cases
-        return '(\n' +
+        var result = '(\n' +
                '  Enum.reduce_while(${arrayExpr}, nil, fn ${loopVar}, _acc ->\n' +
                '    ${transformFindLoopBody(ebody, loopVar)}\n' +
                '  end)\n' +
                ')';
+        
+        // Restore previous loop context
+        isInLoopContext = previousContext;
+        return result;
     }
     
     /**
@@ -2638,6 +2810,10 @@ class ElixirCompiler extends DirectToStringCompiler {
      * Generate Enum.count pattern for conditional counting
      */
     private function generateEnumCountPattern(arrayExpr: String, loopVar: String, conditionExpr: TypedExpr): String {
+        // Set loop context to enable aggressive variable substitution
+        var previousContext = isInLoopContext;
+        isInLoopContext = true;
+        
         // Find the source variable in the condition
         var sourceVar = findLoopVariable(conditionExpr);
         
@@ -2646,6 +2822,9 @@ class ElixirCompiler extends DirectToStringCompiler {
         
         // Apply variable substitution to the condition
         var condition = compileExpressionWithVarMapping(conditionExpr, sourceVar, actualLoopVar);
+        
+        // Restore previous loop context
+        isInLoopContext = previousContext;
         return 'Enum.count(${arrayExpr}, fn ${actualLoopVar} -> ${condition} end)';
     }
     
@@ -2653,6 +2832,10 @@ class ElixirCompiler extends DirectToStringCompiler {
      * Generate Enum.filter pattern for filtering arrays
      */
     private function generateEnumFilterPattern(arrayExpr: String, loopVar: String, conditionExpr: TypedExpr): String {
+        // Set loop context to enable aggressive variable substitution
+        var previousContext = isInLoopContext;
+        isInLoopContext = true;
+        
         // Find the source variable in the condition
         var sourceVar = findLoopVariable(conditionExpr);
         
@@ -2662,6 +2845,8 @@ class ElixirCompiler extends DirectToStringCompiler {
         // Apply variable substitution to the condition
         var condition = compileExpressionWithVarMapping(conditionExpr, sourceVar, targetVar);
         
+        // Restore previous loop context
+        isInLoopContext = previousContext;
         return 'Enum.filter(${arrayExpr}, fn ${targetVar} -> ${condition} end)';
     }
     
@@ -2669,6 +2854,10 @@ class ElixirCompiler extends DirectToStringCompiler {
      * Generate Enum.map pattern for transforming arrays
      */
     private function generateEnumMapPattern(arrayExpr: String, loopVar: String, ebody: TypedExpr): String {
+        // Set loop context to enable aggressive variable substitution
+        var previousContext = isInLoopContext;
+        isInLoopContext = true;
+        
         // Try to find the lambda parameter directly from the body
         var lambdaParam = getLambdaParameterFromBody(ebody);
         
@@ -2688,7 +2877,32 @@ class ElixirCompiler extends DirectToStringCompiler {
             } else {
                 // Last resort: fallback to string-based approach
                 var sourceVar = findLoopVariable(ebody);
+                trace('findLoopVariable returned: ${sourceVar}');
                 transformation = extractTransformationFromBody(ebody, sourceVar, targetVar);
+            }
+        }
+        
+        // Restore previous loop context
+        isInLoopContext = previousContext;
+        
+        // Check if transformation is a simple function call pattern
+        // Pattern: "functionName(item)" should become just "functionName"
+        var functionCallPattern = ~/^([a-zA-Z_][a-zA-Z0-9_]*)\(${targetVar}\)$/;
+        if (functionCallPattern.match(transformation)) {
+            var functionName = functionCallPattern.matched(1);
+            return 'Enum.map(${arrayExpr}, ${functionName})';
+        }
+        
+        // Check for more complex function call patterns like "item(v)" which should use original function
+        // This handles the case where transform(item) became item(v) due to variable substitution
+        var itemCallPattern = ~/^item\(([^)]+)\)$/;
+        if (itemCallPattern.match(transformation)) {
+            var originalFunctionName = itemCallPattern.matched(1);
+            // If it's a system variable reference (like "v"), use the original function name
+            if (originalFunctionName == "v") {
+                // This is the case where transform(item) became item(v) due to substitution
+                // We should use the original function parameter name
+                return 'Enum.map(${arrayExpr}, transform)';
             }
         }
         
@@ -2992,6 +3206,60 @@ class ElixirCompiler extends DirectToStringCompiler {
     }
     
     /**
+     * Helper function to determine if a variable name represents a system/internal variable
+     * that should not be substituted in loop contexts
+     */
+    private function isSystemVariable(varName: String): Bool {
+        if (varName == null || varName == "") return true;
+        
+        // System prefixes
+        if (varName.startsWith("_g") || varName.startsWith("temp_") || varName.startsWith("_this")) {
+            return true;
+        }
+        
+        // Function parameters that should not be substituted in loop contexts
+        if (varName == "transform" || varName == "callback" || varName == "fn" || varName == "func" || 
+            varName == "predicate" || varName == "mapper" || varName == "filter" || varName == "reduce") {
+            return true;
+        }
+        
+        // CRITICAL FIX: Handle the case where Haxe renames transform -> v
+        // This is a common Haxe pattern where function parameters get renamed during compilation
+        if (varName == "v" && isInLoopContext) {
+            return true;
+        }
+        
+        // Known system variables
+        return varName == "updated_todo" || varName == "count" || varName == "result";
+    }
+    
+    /**
+     * Helper function to determine if a variable should be substituted in loop contexts
+     * @param varName The variable name to check
+     * @param sourceVar The specific source variable we're looking for (null for aggressive mode)
+     * @param isAggressiveMode Whether to substitute any non-system variable
+     */
+    private function shouldSubstituteVariable(varName: String, sourceVar: String = null, isAggressiveMode: Bool = false): Bool {
+        if (isSystemVariable(varName)) {
+            return false;
+        }
+        
+        if (sourceVar != null) {
+            // Exact match mode - only substitute the specific variable
+            return varName == sourceVar;
+        }
+        
+        if (isAggressiveMode) {
+            // Aggressive mode - only substitute when we're actually in a loop context
+            // This prevents function parameters like "transform" from being substituted
+            return isInLoopContext;
+        }
+        
+        // Default: don't substitute
+        return false;
+    }
+
+    /**
      * Compile expression with aggressive substitution for all likely loop variables
      * Used when normal loop variable detection fails
      */
@@ -2999,14 +3267,9 @@ class ElixirCompiler extends DirectToStringCompiler {
         switch (expr.expr) {
             case TLocal(v):
                 var varName = getOriginalVarName(v);
-                // Aggressively substitute known loop variable names
-                if (varName == "t" || varName == "v" || varName == "todo" || 
-                    varName == "item" || varName == "element" || varName == "el") {
-                    // Don't substitute critical variables
-                    if (varName != "updated_todo" && varName != "count" && varName != "result" &&
-                        !varName.startsWith("_g") && !varName.startsWith("temp_") && !varName.startsWith("_this")) {
-                        return targetVar;
-                    }
+                // Use helper function for clean, maintainable variable substitution logic
+                if (shouldSubstituteVariable(varName, null, true)) {
+                    return targetVar;
                 }
                 return compileExpression(expr);
                 
@@ -3140,15 +3403,9 @@ class ElixirCompiler extends DirectToStringCompiler {
                     return targetVarName;
                 }
                 
-                // Alternative: if this is a common loop variable name, substitute it
-                // Be more aggressive with known loop variable patterns
-                if (varName == "t" || varName == "v" || varName == "todo") {
-                    // Don't substitute important non-loop variables
-                    if (varName != "updated_todo" && varName != "count" && varName != "result" &&
-                        varName != "_g" && varName != "_g1" && varName != "_g2" && 
-                        !varName.startsWith("temp_") && !varName.startsWith("_this")) {
-                        return targetVarName;
-                    }
+                // Use helper function for aggressive substitution as fallback
+                if (shouldSubstituteVariable(varName, null, true)) {
+                    return targetVarName;
                 }
                 
                 // Not a match - compile normally
@@ -3223,6 +3480,7 @@ class ElixirCompiler extends DirectToStringCompiler {
         }
     }
 
+
     /**
      * Compile expression with variable substitution (string-based version)
      */
@@ -3230,19 +3488,12 @@ class ElixirCompiler extends DirectToStringCompiler {
         switch (expr.expr) {
             case TLocal(v):
                 var varName = getOriginalVarName(v);
-                // Try exact match first
-                if (varName == sourceVar) {
+                // Use helper function for consistent substitution logic
+                if (shouldSubstituteVariable(varName, sourceVar, false)) {
+                    trace('Substituting ${varName} -> ${targetVar} in context');
                     return targetVar;
                 }
-                // Also substitute common loop variable names
-                if (varName == "t" || varName == "v" || varName == "todo") {
-                    if (varName != "updated_todo" && varName != "count" && varName != "result" &&
-                        varName != "_g" && varName != "_g1" && varName != "_g2" && 
-                        !varName.startsWith("temp_") && !varName.startsWith("_this")) {
-                        return targetVar;
-                    }
-                }
-                // Not a match
+                // Not a match - compile normally
                 return compileExpression(expr);
             case TBinop(op, e1, e2):
                 // Handle assignment operations specially - we want the right-hand side value, not the assignment
@@ -3283,10 +3534,23 @@ class ElixirCompiler extends DirectToStringCompiler {
                 var fieldName = getFieldName(fa);
                 return '${obj}.${fieldName}';
             case TCall(e, args):
-                // Handle method calls with substitution
-                var obj = compileExpressionWithSubstitution(e, sourceVar, targetVar);
-                var compiledArgs = args.map(arg -> compileExpressionWithSubstitution(arg, sourceVar, targetVar));
-                return '${obj}(${compiledArgs.join(", ")})';
+                // Handle method calls with substitution using a custom approach
+                // We need to compile the method call properly while ensuring argument substitution
+                
+                // First, check if this is a simple static method call like UserRepository.find(id)
+                switch (e.expr) {
+                    case TField(obj, field):
+                        // This is a method call like UserRepository.find(id)
+                        var objStr = compileExpression(obj);
+                        var methodName = getFieldName(field);
+                        var substitutedArgs = args.map(arg -> compileExpressionWithSubstitution(arg, sourceVar, targetVar));
+                        return '${objStr}.${methodName}(${substitutedArgs.join(", ")})';
+                    default:
+                        // For other types of calls, fall back to regular compilation with argument substitution
+                        var compiledCall = compileExpression(e);
+                        var substitutedArgs = args.map(arg -> compileExpressionWithSubstitution(arg, sourceVar, targetVar));
+                        return '${compiledCall}(${substitutedArgs.join(", ")})';
+                }
             case TArray(e1, e2):
                 // Handle array access with substitution
                 var arr = compileExpressionWithSubstitution(e1, sourceVar, targetVar);
@@ -3628,7 +3892,12 @@ class ElixirCompiler extends DirectToStringCompiler {
      * @return The compiled Elixir method call
      */
     private function compileArrayMethod(objStr: String, methodName: String, args: Array<TypedExpr>): String {
+        // Save current loop context and disable it for argument compilation
+        // Array method arguments should not be subject to loop variable substitution
+        var previousContext = isInLoopContext;
+        isInLoopContext = false;
         var compiledArgs = args.map(arg -> compileExpression(arg));
+        isInLoopContext = previousContext;
         
         return switch (methodName) {
             case "join":

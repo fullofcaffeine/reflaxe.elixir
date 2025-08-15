@@ -95,13 +95,13 @@ defmodule UserQueries do
 
   @doc "Function from"
   @spec from(String.t(), String.t(), term()) :: term()
-  def from(table, alias, opts) do
+  def from(table, alias_, opts) do
     nil
   end
 
   @doc "Function where"
   @spec where(term(), String.t(), term()) :: term()
-  def where(query, alias, condition) do
+  def where(query, alias_, condition) do
     nil
   end
 
