@@ -23,14 +23,33 @@ class Main {
      * Test Supervisor extern functions
      */
     static function testSupervisor() {
-        // Test supervisor with different restart strategies
+        // Test supervisor with different restart strategies using anonymous objects
         var children = [
-            Supervisor.workerSpec("MyWorker", {name: "worker1"}, "worker1", "permanent"),
-            Supervisor.workerSpec("MyWorker", {name: "worker2"}, "worker2", "temporary"),
-            Supervisor.supervisorSpec("SubSupervisor", {}, "sub_supervisor", "permanent")
+            {
+                id: "worker1",
+                start: {_0: "MyWorker", _1: "start_link", _2: [{name: "worker1"}]},
+                restart: "permanent",
+                type: "worker"
+            },
+            {
+                id: "worker2", 
+                start: {_0: "MyWorker", _1: "start_link", _2: [{name: "worker2"}]},
+                restart: "temporary",
+                type: "worker"
+            },
+            {
+                id: "sub_supervisor",
+                start: {_0: "SubSupervisor", _1: "start_link", _2: [{}]},
+                restart: "permanent", 
+                type: "supervisor"
+            }
         ];
         
-        var options = Supervisor.simpleOneForOne(5, 10);
+        var options = {
+            strategy: "one_for_one",
+            max_restarts: 5,
+            max_seconds: 10
+        };
         
         // Start supervisor
         var result = Supervisor.startLink(children, options);
@@ -51,7 +70,12 @@ class Main {
             Supervisor.deleteChild(supervisor, "worker2");
             
             // Test dynamic child addition
-            var newChild = Supervisor.workerSpec("DynamicWorker", {}, "dynamic", "transient");
+            var newChild = {
+                id: "dynamic",
+                start: {_0: "DynamicWorker", _1: "start_link", _2: [{}]},
+                restart: "transient",
+                type: "worker"
+            };
             Supervisor.startChild(supervisor, newChild);
             
             // Test supervisor stats
@@ -203,18 +227,33 @@ class Main {
      * Test complete supervision tree
      */
     static function testSupervisionTree() {
-        // Test supervisor with simpler configuration
+        // Test supervisor with anonymous object configuration
         var children = [
-            Supervisor.workerSpec("Worker1", {}, "worker1", "permanent"),
-            Supervisor.workerSpec("Worker2", {}, "worker2", "temporary"),
-            Supervisor.workerSpec("Worker3", {}, "worker3", "transient")
+            {
+                id: "worker1",
+                start: {_0: "Worker1", _1: "start_link", _2: [{}]},
+                restart: "permanent",
+                type: "worker"
+            },
+            {
+                id: "worker2",
+                start: {_0: "Worker2", _1: "start_link", _2: [{}]},
+                restart: "temporary", 
+                type: "worker"
+            },
+            {
+                id: "worker3",
+                start: {_0: "Worker3", _1: "start_link", _2: [{}]},
+                restart: "transient",
+                type: "worker"
+            }
         ];
         
-        var options: Map<String, Dynamic> = [
-            "strategy" => "one_for_all",
-            "max_restarts" => 10,
-            "max_seconds" => 60
-        ];
+        var options = {
+            strategy: "one_for_all",
+            max_restarts: 10,
+            max_seconds: 60
+        };
         
         var result = Supervisor.startLink(children, options);
         if (result._0 == "ok") {

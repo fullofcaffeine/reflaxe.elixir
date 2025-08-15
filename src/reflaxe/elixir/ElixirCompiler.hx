@@ -1160,7 +1160,7 @@ class ElixirCompiler extends DirectToStringCompiler {
                     var key = if (useAtoms && isValidAtomName(f.name)) {
                         ":" + f.name;  // Generate atom key like :id
                     } else {
-                        f.name;  // Generate string key like "id" (Haxe already quotes field names)
+                        '"' + f.name + '"';  // Generate quoted string key like "id"
                     }
                     key + " => " + compileExpression(f.expr);
                 });
@@ -2215,25 +2215,18 @@ class ElixirCompiler extends DirectToStringCompiler {
      * @return Compiled Elixir code
      */
     private function compileForLoop(tvar: TVar, iterExpr: TypedExpr, blockExpr: TypedExpr): String {
-        // Set loop context to enable variable substitution
-        var previousContext = isInLoopContext;
-        isInLoopContext = true;
-        
-        // Get the original variable name before Haxe's renaming
+        // Get the original variable name and use it as the lambda parameter
         var originalName = getOriginalVarName(tvar);
-        // Use consistent "item" as the loop variable for all Enum operations
-        var loopVar = "item";
+        var loopVar = NamingHelper.toSnakeCase(originalName);
         var iterableExpr = compileExpression(iterExpr);
         
         // Check if this is a find pattern (early return) - highest priority
         if (hasReturnStatement(blockExpr)) {
-            var body = compileExpressionWithSubstitution(blockExpr, originalName, loopVar);
+            var body = compileExpression(blockExpr);
             // Extract just the condition from the return statement
             var returnPattern = ~/return\s+(.+);?/;
             if (returnPattern.match(body)) {
                 var condition = returnPattern.matched(1);
-                // Restore previous loop context before returning
-                isInLoopContext = previousContext;
                 return 'Enum.find(${iterableExpr}, fn ${loopVar} -> ${condition} end)';
             }
         }
@@ -2243,8 +2236,6 @@ class ElixirCompiler extends DirectToStringCompiler {
             // For counting patterns, we need to handle the mutation differently
             // Count elements that match a condition
             var condition = extractCountingCondition(blockExpr, loopVar);
-            // Restore previous loop context before returning
-            isInLoopContext = previousContext;
             if (condition != null) {
                 return 'Enum.count(${iterableExpr}, fn ${loopVar} -> ${condition} end)';
             } else {
@@ -2254,23 +2245,15 @@ class ElixirCompiler extends DirectToStringCompiler {
         }
         
         // Default: compile as Enum.each for side effects or Enum.map for transformations
-        // Debug: Log the loop compilation parameters
-        trace('Loop compilation: originalName="${originalName}", loopVar="${loopVar}"');
-        var body = compileExpressionWithSubstitution(blockExpr, originalName, loopVar);
-        trace('Loop body compiled to: "${body.substr(0, 100)}..."');
+        var body = compileExpression(blockExpr);
         
         // Check if the body has side effects only
-        var result: String;
         if (body.contains("Phoenix.PubSub") || body.contains("Repo.") || body.contains("IO.")) {
-            result = 'Enum.each(${iterableExpr}, fn ${loopVar} -> ${body} end)';
+            return 'Enum.each(${iterableExpr}, fn ${loopVar} -> ${body} end)';
         } else {
             // Otherwise use map for potential transformations
-            result = 'Enum.map(${iterableExpr}, fn ${loopVar} -> ${body} end)';
+            return 'Enum.map(${iterableExpr}, fn ${loopVar} -> ${body} end)';
         }
-        
-        // Restore previous loop context
-        isInLoopContext = previousContext;
-        return result;
     }
     
     /**
@@ -2818,37 +2801,84 @@ class ElixirCompiler extends DirectToStringCompiler {
      * Generate Enum.count pattern for conditional counting
      */
     private function generateEnumCountPattern(arrayExpr: String, loopVar: String, conditionExpr: TypedExpr): String {
-        // Set loop context to enable aggressive variable substitution
-        var previousContext = isInLoopContext;
-        isInLoopContext = true;
+        // Convert the loop variable name to snake_case for Elixir
+        var targetVar = NamingHelper.toSnakeCase(loopVar);
         
-        // Use "item" as the target variable for the lambda parameter (simplified approach)
-        var actualLoopVar = "item";
+        // Find what variable the condition expression actually references (like "v")
+        var referencedVar = findFirstLocalVariable(conditionExpr);
         
-        // Apply simple substitution: all TLocal variables become "item"
-        var condition = compileExpressionWithAggressiveSubstitution(conditionExpr, actualLoopVar);
+        // If the condition references a different variable than our target, substitute it
+        var condition: String;
+        if (referencedVar != null && referencedVar != targetVar) {
+            condition = compileExpressionWithSubstitution(conditionExpr, referencedVar, targetVar);
+        } else {
+            condition = compileExpression(conditionExpr);
+        }
         
-        // Restore previous loop context
-        isInLoopContext = previousContext;
-        return 'Enum.count(${arrayExpr}, fn ${actualLoopVar} -> ${condition} end)';
+        return 'Enum.count(${arrayExpr}, fn ${targetVar} -> ${condition} end)';
+    }
+    
+    /**
+     * Find the first local variable referenced in an expression
+     */
+    private function findFirstLocalVariable(expr: TypedExpr): Null<String> {
+        switch (expr.expr) {
+            case TLocal(v):
+                var varName = getOriginalVarName(v);
+                // Skip system variables
+                if (!isSystemVariable(varName)) {
+                    return varName;
+                }
+                
+            case TField(e, fa):
+                // For field access like "v.id", find the base variable
+                return findFirstLocalVariable(e);
+                
+            case TBinop(op, e1, e2):
+                // Check both sides, return the first non-system variable found
+                var left = findFirstLocalVariable(e1);
+                if (left != null) return left;
+                return findFirstLocalVariable(e2);
+                
+            case TUnop(op, postFix, e):
+                return findFirstLocalVariable(e);
+                
+            case TParenthesis(e):
+                return findFirstLocalVariable(e);
+                
+            case TCall(e, args):
+                // Check the function call and its arguments
+                var result = findFirstLocalVariable(e);
+                if (result != null) return result;
+                for (arg in args) {
+                    result = findFirstLocalVariable(arg);
+                    if (result != null) return result;
+                }
+                
+            case _:
+                // Other expression types don't contain local variables we care about
+        }
+        return null;
     }
     
     /**
      * Generate Enum.filter pattern for filtering arrays
      */
     private function generateEnumFilterPattern(arrayExpr: String, loopVar: String, conditionExpr: TypedExpr): String {
-        // Set loop context to enable aggressive variable substitution
-        var previousContext = isInLoopContext;
-        isInLoopContext = true;
+        // Convert the loop variable name to snake_case for Elixir
+        var targetVar = NamingHelper.toSnakeCase(loopVar);
         
-        // Use "item" as the target variable for the lambda parameter (simplified approach)
-        var targetVar = "item";
+        // Find what variable the condition expression actually references (like "v")
+        var referencedVar = findFirstLocalVariable(conditionExpr);
         
-        // Apply simple substitution: all TLocal variables become "item"
-        var condition = compileExpressionWithAggressiveSubstitution(conditionExpr, targetVar);
+        // If the condition references a different variable than our target, substitute it
+        var condition: String;
+        if (referencedVar != null && referencedVar != targetVar) {
+            condition = compileExpressionWithSubstitution(conditionExpr, referencedVar, targetVar);
+        } else {
+            condition = compileExpression(conditionExpr);
+        }
         
-        // Restore previous loop context
-        isInLoopContext = previousContext;
         return 'Enum.filter(${arrayExpr}, fn ${targetVar} -> ${condition} end)';
     }
     
@@ -2856,49 +2886,18 @@ class ElixirCompiler extends DirectToStringCompiler {
      * Generate Enum.map pattern for transforming arrays
      */
     private function generateEnumMapPattern(arrayExpr: String, loopVar: String, ebody: TypedExpr): String {
-        // Set loop context to enable aggressive variable substitution
-        var previousContext = isInLoopContext;
-        isInLoopContext = true;
+        // Convert the loop variable name to snake_case for Elixir
+        var targetVar = NamingHelper.toSnakeCase(loopVar);
         
-        // Try to find the lambda parameter directly from the body
-        var lambdaParam = getLambdaParameterFromBody(ebody);
+        // Find what variable the body expression actually references (like "v")
+        var referencedVar = findFirstLocalVariable(ebody);
         
-        // Use consistent target variable name for lambda parameter
-        var targetVar = "item";
-        
-        // Extract transformation with proper variable substitution
+        // If the body references a different variable than our target, substitute it
         var transformation: String;
-        if (lambdaParam != null) {
-            // Use TVar-based substitution for more accurate variable matching
-            transformation = extractTransformationFromBodyWithTVar(ebody, lambdaParam, targetVar);
+        if (referencedVar != null && referencedVar != targetVar) {
+            transformation = compileExpressionWithSubstitution(ebody, referencedVar, targetVar);
         } else {
-            // Simplified approach: Always use aggressive substitution
-            // This replaces all TLocal variables with the target variable
-            transformation = extractTransformationFromBodyWithAggressiveSubstitution(ebody, targetVar);
-        }
-        
-        // Restore previous loop context
-        isInLoopContext = previousContext;
-        
-        // Check if transformation is a simple function call pattern
-        // Pattern: "functionName(item)" should become just "functionName"
-        var functionCallPattern = ~/^([a-zA-Z_][a-zA-Z0-9_]*)\(${targetVar}\)$/;
-        if (functionCallPattern.match(transformation)) {
-            var functionName = functionCallPattern.matched(1);
-            return 'Enum.map(${arrayExpr}, ${functionName})';
-        }
-        
-        // Check for more complex function call patterns like "item(v)" which should use original function
-        // This handles the case where transform(item) became item(v) due to variable substitution
-        var itemCallPattern = ~/^item\(([^)]+)\)$/;
-        if (itemCallPattern.match(transformation)) {
-            var originalFunctionName = itemCallPattern.matched(1);
-            // If it's a system variable reference (like "v"), use the original function name
-            if (originalFunctionName == "v") {
-                // This is the case where transform(item) became item(v) due to substitution
-                // We should use the original function parameter name
-                return 'Enum.map(${arrayExpr}, transform)';
-            }
+            transformation = compileExpression(ebody);
         }
         
         return 'Enum.map(${arrayExpr}, fn ${targetVar} -> ${transformation} end)';
@@ -3214,11 +3213,8 @@ class ElixirCompiler extends DirectToStringCompiler {
             return true;
         }
         
-        // CRITICAL FIX: Handle the case where Haxe renames transform -> v
-        // This is a common Haxe pattern where function parameters get renamed during compilation
-        if (varName == "v" && isInLoopContext) {
-            return true;
-        }
+        // Note: Variable "v" is often used by Haxe for lambda parameters and should be substituted
+        // Don't treat "v" as a system variable in loop contexts
         
         // Known system variables
         return varName == "updated_todo" || varName == "count" || varName == "result";
@@ -3422,7 +3418,7 @@ class ElixirCompiler extends DirectToStringCompiler {
                 var varName = getOriginalVarName(v);
                 // Use helper function for consistent substitution logic
                 if (shouldSubstituteVariable(varName, sourceVar, false)) {
-                    trace('Substituting ${varName} -> ${targetVar} in context');
+                    // Variable substitution successful - replace with lambda parameter
                     return targetVar;
                 }
                 // Not a match - compile normally
@@ -3878,7 +3874,25 @@ class ElixirCompiler extends DirectToStringCompiler {
             case "map":
                 // array.map(fn) → Enum.map(array, fn)
                 if (compiledArgs.length > 0) {
-                    'Enum.map(${objStr}, ${compiledArgs[0]})';
+                    // Check if the argument is a lambda that needs variable substitution
+                    if (args.length > 0) {
+                        switch (args[0].expr) {
+                            case TFunction(func):
+                                // Handle lambda with targeted variable substitution
+                                var paramName = func.args.length > 0 ? NamingHelper.toSnakeCase(getOriginalVarName(func.args[0].v)) : "item";
+                                var paramTVar = func.args.length > 0 ? func.args[0].v : null;
+                                // Use TVar substitution to replace ONLY the lambda parameter, preserving outer scope variables
+                                var body = paramTVar != null ? 
+                                    compileExpressionWithTVarSubstitution(func.expr, paramTVar, paramName) :
+                                    compileExpression(func.expr);
+                                return 'Enum.map(${objStr}, fn ${paramName} -> ${body} end)';
+                            case _:
+                                // Not a simple lambda, use regular compilation
+                                return 'Enum.map(${objStr}, ${compiledArgs[0]})';
+                        }
+                    } else {
+                        return 'Enum.map(${objStr}, ${compiledArgs[0]})';
+                    }
                 } else {
                     objStr;
                 }
@@ -3889,9 +3903,13 @@ class ElixirCompiler extends DirectToStringCompiler {
                     if (args.length > 0) {
                         switch (args[0].expr) {
                             case TFunction(func):
-                                // Handle lambda with simplified variable substitution
+                                // Handle lambda with targeted variable substitution
                                 var paramName = func.args.length > 0 ? NamingHelper.toSnakeCase(getOriginalVarName(func.args[0].v)) : "item";
-                                var body = compileExpressionWithAggressiveSubstitution(func.expr, paramName);
+                                var paramTVar = func.args.length > 0 ? func.args[0].v : null;
+                                // Use TVar substitution to replace ONLY the lambda parameter, preserving outer scope variables
+                                var body = paramTVar != null ? 
+                                    compileExpressionWithTVarSubstitution(func.expr, paramTVar, paramName) :
+                                    compileExpression(func.expr);
                                 return 'Enum.filter(${objStr}, fn ${paramName} -> ${body} end)';
                             case _:
                                 // Not a simple lambda, use regular compilation
@@ -4266,40 +4284,38 @@ class ElixirCompiler extends DirectToStringCompiler {
     }
     
     /**
-     * Determine if an object should use atom keys based on field names and patterns
-     * This implements the general solution for generating idiomatic Elixir
+     * Determine if an object should use atom keys based on field patterns
+     * Takes a conservative approach - defaults to string keys unless we're certain
+     * Only uses atoms for very specific OTP patterns to avoid breaking user code
      */
     private function shouldUseAtomKeys(fields: Array<{name: String, expr: TypedExpr}>): Bool {
         if (fields == null || fields.length == 0) return false;
         
-        // Common OTP/Elixir configuration field names that should always be atoms
-        var otpFieldNames = [
-            "id", "start", "restart", "shutdown", "type", "modules",  // Supervisor child spec
-            "name", "strategy",  // Supervisor options
-            "function", "args",  // start tuple components
-            "temporary", "permanent", "transient",  // restart values
-            "worker", "supervisor"  // type values
-        ];
-        
         var fieldNames = fields.map(f -> f.name);
         
-        // If any field matches OTP patterns, use atoms for all fields (if they're valid atom names)
-        for (fieldName in fieldNames) {
-            if (otpFieldNames.indexOf(fieldName) != -1) {
-                // Check if ALL field names can be atoms
-                var allValidAtoms = true;
-                for (field in fields) {
-                    if (!isValidAtomName(field.name)) {
-                        allValidAtoms = false;
-                        break;
-                    }
-                }
-                return allValidAtoms;
+        // Only use atom keys for the most obvious OTP supervisor option pattern
+        // This requires all three supervisor configuration fields to be present
+        var supervisorFields = ["strategy", "max_restarts", "max_seconds"];
+        var hasAllSupervisorFields = true;
+        for (field in supervisorFields) {
+            if (fieldNames.indexOf(field) == -1) {
+                hasAllSupervisorFields = false;
+                break;
             }
         }
         
-        // For non-OTP objects, prefer strings to maintain backwards compatibility
-        // This ensures we don't break existing code that expects string keys
+        if (hasAllSupervisorFields && fieldNames.length == 3) {
+            // Verify all field names can be atoms
+            for (field in fields) {
+                if (!isValidAtomName(field.name)) {
+                    return false;
+                }
+            }
+            return true;
+        }
+        
+        // Default to string keys for all other cases
+        // This is safer and more predictable than trying to guess OTP patterns
         return false;
     }
     

@@ -186,7 +186,7 @@ class ChannelCompiler {
         if (functionBody != null) {
             result.add('    ${functionBody}\n');
         } else {
-            result.add('    # TODO: Implement ${functionName}\n');
+            result.add('    # Fallback: Channel function stub - implement ${functionName} in Haxe source\n');
         }
         
         result.add('  end\n\n');

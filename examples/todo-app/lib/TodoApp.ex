@@ -29,8 +29,8 @@ defmodule TodoApp.Application do
   @spec start(term(), term()) :: term()
   def start(type, args) do
     app_name = "TodoApp"
-    children = [%{:id => "" <> app_name <> ".Repo", :start => %{:module => "" <> app_name <> ".Repo", :function => "start_link", :args => []}}, %{:id => "Phoenix.PubSub", :start => %{:module => "Phoenix.PubSub", :function => "start_link", :args => [%{:name => "" <> app_name <> ".PubSub"}]}}, %{:id => "" <> app_name <> "Web.Telemetry", :start => %{:module => "" <> app_name <> "Web.Telemetry", :function => "start_link", :args => []}}, %{:id => "" <> app_name <> "Web.Endpoint", :start => %{:module => "" <> app_name <> "Web.Endpoint", :function => "start_link", :args => []}}]
-    opts = %{:strategy => "one_for_one", :name => "" <> app_name <> ".Supervisor"}
+    children = [%{"id" => "" <> app_name <> ".Repo", "start" => %{"module" => "" <> app_name <> ".Repo", "function" => "start_link", "args" => []}}, %{"id" => "Phoenix.PubSub", "start" => %{"module" => "Phoenix.PubSub", "function" => "start_link", "args" => [%{"name" => "" <> app_name <> ".PubSub"}]}}, %{"id" => "" <> app_name <> "Web.Telemetry", "start" => %{"module" => "" <> app_name <> "Web.Telemetry", "function" => "start_link", "args" => []}}, %{"id" => "" <> app_name <> "Web.Endpoint", "start" => %{"module" => "" <> app_name <> "Web.Endpoint", "function" => "start_link", "args" => []}}]
+    opts = %{"strategy" => "one_for_one", "name" => "" <> app_name <> ".Supervisor"}
     Supervisor.start_link(children, opts)
   end
 

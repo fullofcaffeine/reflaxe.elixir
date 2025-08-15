@@ -111,7 +111,7 @@ class ApplicationCompiler {
         }
         
         // Fallback for unknown format
-        return '      # TODO: Configure child spec';
+        return '      # Fallback: Unknown child spec format - define properly in Haxe source';
     }
     
     /**

@@ -134,20 +134,26 @@ class PhoenixMapper {
     
     /**
      * Get the application's Repo module name
-     * This should be configurable but defaults to MyApp.Repo
+     * Configurable via -D app_name compiler flag, defaults to MyApp.Repo
      */
     public static function getRepoModuleName(): String {
-        // TODO: Make this configurable via compiler flags or metadata
+        #if app_name
+        return haxe.macro.Compiler.getDefine("app_name") + ".Repo";
+        #else
         return "MyApp.Repo";
+        #end
     }
     
     /**
      * Get the application's main module name  
-     * This should be configurable but defaults to MyApp
+     * Configurable via -D app_name compiler flag, defaults to MyApp
      */
     public static function getAppModuleName(): String {
-        // TODO: Make this configurable via compiler flags or metadata
+        #if app_name
+        return haxe.macro.Compiler.getDefine("app_name");
+        #else
         return "MyApp";
+        #end
     }
     
     /**

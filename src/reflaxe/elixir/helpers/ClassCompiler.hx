@@ -73,9 +73,10 @@ class ClassCompiler {
             result.add('  @moduledoc false\n\n');
             result.add('  use Application\n\n');
         } else {
-            // Add use Bitwise for bitwise operators if needed
-            // TODO: Only add this if the module actually uses bitwise operations
-            result.add('  use Bitwise\n');
+            // Add use Bitwise only if the module uses bitwise operations
+            if (usesBitwiseOperations(classType)) {
+                result.add('  use Bitwise\n');
+            }
         }
         
         // Add @behaviour annotations for implemented interfaces
@@ -785,6 +786,82 @@ class ClassCompiler {
         result.add('end\n');
         
         return result.toString();
+    }
+    
+    /**
+     * Check if a class uses bitwise operations
+     */
+    static function usesBitwiseOperations(classType: ClassType): Bool {
+        // Check all fields for bitwise operators
+        for (field in classType.fields.get()) {
+            if (fieldContainsBitwiseOps(field)) {
+                return true;
+            }
+        }
+        
+        // Check static fields
+        for (field in classType.statics.get()) {
+            if (fieldContainsBitwiseOps(field)) {
+                return true;
+            }
+        }
+        
+        return false;
+    }
+    
+    /**
+     * Check if a field contains bitwise operations by examining its expression
+     */
+    static function fieldContainsBitwiseOps(field: ClassField): Bool {
+        if (field.expr() == null) return false;
+        
+        return exprContainsBitwiseOps(field.expr());
+    }
+    
+    /**
+     * Recursively check if an expression contains bitwise operations
+     */
+    static function exprContainsBitwiseOps(expr: TypedExpr): Bool {
+        switch (expr.expr) {
+            case TBinop(op, e1, e2):
+                // Check for bitwise operators
+                switch (op) {
+                    case OpAnd | OpOr | OpXor | OpShl | OpShr | OpUShr:
+                        return true;
+                    case _:
+                        // Recursively check sub-expressions
+                        return exprContainsBitwiseOps(e1) || exprContainsBitwiseOps(e2);
+                }
+            case TUnop(op, postFix, e):
+                switch (op) {
+                    case OpNot: // Bitwise NOT (~)
+                        return true;
+                    case _:
+                        return exprContainsBitwiseOps(e);
+                }
+            // Recursively check other expression types
+            case TBlock(el):
+                for (e in el) {
+                    if (exprContainsBitwiseOps(e)) return true;
+                }
+                return false;
+            case TIf(econd, eif, eelse):
+                return exprContainsBitwiseOps(econd) || 
+                       exprContainsBitwiseOps(eif) || 
+                       (eelse != null ? exprContainsBitwiseOps(eelse) : false);
+            case TFor(v, it, expr):
+                return exprContainsBitwiseOps(it) || exprContainsBitwiseOps(expr);
+            case TWhile(econd, e, normalWhile):
+                return exprContainsBitwiseOps(econd) || exprContainsBitwiseOps(e);
+            case TCall(e, el):
+                if (exprContainsBitwiseOps(e)) return true;
+                for (arg in el) {
+                    if (exprContainsBitwiseOps(arg)) return true;
+                }
+                return false;
+            case _:
+                return false;
+        }
     }
 }
 

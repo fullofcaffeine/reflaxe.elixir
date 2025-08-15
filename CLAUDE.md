@@ -741,6 +741,15 @@ What happens:
 - **Benefits**: Fewer bugs, easier onboarding for new developers, reduced maintenance overhead
 - **Guideline**: Optimize for code clarity first, performance second (unless performance is critical)
 
+### 11. Always Review Recent Work Before Major Changes (Added 2025-08-15)
+- **Rule**: Before implementing new features or significant refactors, check what's been done recently
+- **Process**: Read TASK_HISTORY.md, recent commit messages, and documentation updates
+- **Purpose**: Understand the current direction, avoid duplicating work, and build on recent insights
+- **Key Questions**: What patterns were just established? What approaches were tried and rejected?
+- **Example**: Before adding new atom key detection, review recent atom key work to avoid repeating mistakes
+- **Documentation**: Check for new architectural decisions, patterns, or best practices
+- **Why**: Ensures consistency, prevents regression, and leverages recent learning and discoveries
+
 ## Recently Fixed Issues ✅ (2025-08-15)
 
 **Current Session - Documentation Formatting and Test Suite Fixes:**

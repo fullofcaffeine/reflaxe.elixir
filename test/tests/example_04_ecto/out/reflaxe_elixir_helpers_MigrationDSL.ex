@@ -1,5 +1,4 @@
 defmodule MigrationDSL do
-  use Bitwise
   @moduledoc """
   MigrationDSL module generated from Haxe
   
@@ -468,7 +467,6 @@ end
 
 
 defmodule TableBuilder do
-  use Bitwise
   @moduledoc """
   TableBuilder module generated from Haxe
   

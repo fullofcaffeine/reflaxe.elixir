@@ -1,5 +1,4 @@
 defmodule AdvancedQueries do
-  use Bitwise
   @moduledoc """
   AdvancedQueries module generated from Haxe
   

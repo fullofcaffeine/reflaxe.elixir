@@ -1,5 +1,4 @@
 defmodule PosException do
-  use Bitwise
   @moduledoc """
   PosException module generated from Haxe
   
