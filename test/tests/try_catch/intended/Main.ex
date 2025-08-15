@@ -117,9 +117,9 @@ defmodule Main do
 
   @doc "Function divide"
   @spec divide(float(), float()) :: float()
-  def divide(arg0, arg1) do
-    if (arg1 == 0), do: throw(Haxe.Exception.new("Division by zero")), else: nil
-    arg0 / arg1
+  def divide(a, b) do
+    if (b == 0), do: throw(Haxe.Exception.new("Division by zero")), else: nil
+    a / b
   end
 
   @doc "Function test_division"

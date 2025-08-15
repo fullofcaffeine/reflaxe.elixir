@@ -22,31 +22,31 @@ defmodule MemoryStorage do
   # Instance functions
   @doc "Function init"
   @spec init(term()) :: term()
-  def init(arg0) do
+  def init(config) do
     %{ok: __MODULE__}
   end
 
   @doc "Function get"
   @spec get(String.t()) :: term()
-  def get(arg0) do
+  def get(key) do
     this = __MODULE__.data
-    temp_result = this.get(arg0)
+    temp_result = this.get(key)
     temp_result
   end
 
   @doc "Function put"
   @spec put(String.t(), term()) :: boolean()
-  def put(arg0, arg1) do
+  def put(key, value) do
     this = __MODULE__.data
-    this.set(arg0, arg1)
+    this.set(key, value)
     true
   end
 
   @doc "Function delete"
   @spec delete(String.t()) :: boolean()
-  def delete(arg0) do
+  def delete(key) do
     this = __MODULE__.data
-    temp_result = this.remove(arg0)
+    temp_result = this.remove(key)
     temp_result
   end
 
@@ -91,26 +91,26 @@ defmodule FileStorage do
   # Instance functions
   @doc "Function init"
   @spec init(term()) :: term()
-  def init(arg0) do
-    if (arg0.path != nil), do: __MODULE__.base_path = arg0.path, else: nil
+  def init(config) do
+    if (config.path != nil), do: __MODULE__.base_path = config.path, else: nil
     %{ok: __MODULE__}
   end
 
   @doc "Function get"
   @spec get(String.t()) :: term()
-  def get(arg0) do
+  def get(key) do
     nil
   end
 
   @doc "Function put"
   @spec put(String.t(), term()) :: boolean()
-  def put(arg0, arg1) do
+  def put(key, value) do
     true
   end
 
   @doc "Function delete"
   @spec delete(String.t()) :: boolean()
-  def delete(arg0) do
+  def delete(key) do
     true
   end
 
@@ -145,14 +145,14 @@ defmodule ConsoleLogger do
   # Instance functions
   @doc "Function log"
   @spec log(String.t()) :: nil
-  def log(arg0) do
-    Log.trace("[LOG] " <> arg0, %{fileName: "Storage.hx", lineNumber: 103, className: "ConsoleLogger", methodName: "log"})
+  def log(message) do
+    Log.trace("[LOG] " <> message, %{fileName: "Storage.hx", lineNumber: 103, className: "ConsoleLogger", methodName: "log"})
   end
 
   @doc "Function debug"
   @spec debug(String.t()) :: nil
-  def debug(arg0) do
-    Log.trace("[DEBUG] " <> arg0, %{fileName: "Storage.hx", lineNumber: 108, className: "ConsoleLogger", methodName: "debug"})
+  def debug(message) do
+    Log.trace("[DEBUG] " <> message, %{fileName: "Storage.hx", lineNumber: 108, className: "ConsoleLogger", methodName: "debug"})
   end
 
 end

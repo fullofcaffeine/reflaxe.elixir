@@ -1429,7 +1429,14 @@ class ElixirCompiler extends DirectToStringCompiler {
             var params = [];
             for (i in 0...funcField.args.length) {
                 var arg = funcField.args[i];
-                var paramName = NamingHelper.toSnakeCase(arg.originalName);
+                // Get the actual parameter name from tvar (consistent with setFunctionParameterMapping)
+                var originalName = if (arg.tvar != null) {
+                    arg.tvar.name;
+                } else {
+                    // Fallback to getName() if tvar is not available
+                    arg.getName();
+                }
+                var paramName = NamingHelper.toSnakeCase(originalName);
                 params.push(paramName);
             }
             paramStr = params.join(", ");
@@ -1752,19 +1759,21 @@ class ElixirCompiler extends DirectToStringCompiler {
         if (args != null) {
             for (i in 0...args.length) {
                 var arg = args[i];
-                // Try to get the name from tvar if available
-                var argName = if (arg.tvar != null) {
+                // Get the original parameter name from multiple sources
+                var originalName = if (arg.tvar != null) {
                     arg.tvar.name;
                 } else {
                     // Fallback to a generated name
                     'param${i}';
                 }
                 
-                currentFunctionParameterMap.set(argName, 'arg${i}');
+                // Map the original name to the snake_case version (no more arg0/arg1!)
+                var snakeCaseName = NamingHelper.toSnakeCase(originalName);
+                currentFunctionParameterMap.set(originalName, snakeCaseName);
                 
                 // Also handle common abstract type parameter patterns
-                if (argName == "this") {
-                    currentFunctionParameterMap.set("this1", 'arg${i}');
+                if (originalName == "this") {
+                    currentFunctionParameterMap.set("this1", snakeCaseName);
                 }
             }
         }

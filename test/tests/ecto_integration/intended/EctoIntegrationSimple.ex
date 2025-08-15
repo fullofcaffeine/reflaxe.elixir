@@ -71,7 +71,7 @@ defmodule UserQueries do
 
   @doc "Function users_by_organization"
   @spec users_by_organization(integer()) :: term()
-  def users_by_organization(arg0) do
+  def users_by_organization(org_id) do
     nil
   end
 
@@ -87,38 +87,38 @@ defmodule Repo do
   # Static functions
   @doc "Function all"
   @spec all(term()) :: Array.t()
-  def all(arg0) do
+  def all(schema) do
     []
   end
 
   @doc "Function get"
   @spec get(term(), integer()) :: term()
-  def get(arg0, arg1) do
+  def get(schema, id) do
     nil
   end
 
   @doc "Function insert"
   @spec insert(term()) :: term()
-  def insert(arg0) do
+  def insert(changeset) do
     nil
   end
 
   @doc "Function update"
   @spec update(term()) :: term()
-  def update(arg0) do
+  def update(changeset) do
     nil
   end
 
   @doc "Function delete"
   @spec delete(term()) :: term()
-  def delete(arg0) do
+  def delete(entity) do
     nil
   end
 
   @doc "Function preload"
   @spec preload(term(), Array.t()) :: term()
-  def preload(arg0, arg1) do
-    arg0
+  def preload(entity, associations) do
+    entity
   end
 
 end
@@ -142,29 +142,29 @@ defmodule Accounts do
 
   @doc "Function get_user"
   @spec get_user(integer()) :: term()
-  def get_user(arg0) do
-    Repo.get(User, arg0)
+  def get_user(id) do
+    Repo.get(User, id)
   end
 
   @doc "Function create_user"
   @spec create_user(term()) :: term()
-  def create_user(arg0) do
+  def create_user(attrs) do
     user = User.new()
-    changeset = UserChangeset.changeset(user, arg0)
+    changeset = UserChangeset.changeset(user, attrs)
     Repo.insert(changeset)
   end
 
   @doc "Function update_user"
   @spec update_user(User.t(), term()) :: term()
-  def update_user(arg0, arg1) do
-    changeset = UserChangeset.changeset(arg0, arg1)
+  def update_user(user, attrs) do
+    changeset = UserChangeset.changeset(user, attrs)
     Repo.update(changeset)
   end
 
   @doc "Function delete_user"
   @spec delete_user(User.t()) :: term()
-  def delete_user(arg0) do
-    Repo.delete(arg0)
+  def delete_user(user) do
+    Repo.delete(user)
   end
 
 end

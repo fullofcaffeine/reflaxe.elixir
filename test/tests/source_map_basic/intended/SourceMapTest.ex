@@ -23,8 +23,8 @@ defmodule SourceMapTest do
 
   @doc "Function conditional_method"
   @spec conditional_method(integer()) :: boolean()
-  def conditional_method(arg0) do
-    if (arg0 > 0), do: true, else: false
+  def conditional_method(value) do
+    if (value > 0), do: true, else: false
   end
 
 end

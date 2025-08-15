@@ -69,8 +69,8 @@ defmodule Main do
 
   @doc "Function dynamic_generics"
   @spec dynamic_generics(term()) :: T.t()
-  def dynamic_generics(arg0) do
-    arg0
+  def dynamic_generics(value) do
+    value
   end
 
   @doc "Function dynamic_collections"
@@ -88,8 +88,8 @@ defmodule Main do
 
   @doc "Function process_dynamic"
   @spec process_dynamic(term()) :: String.t()
-  def process_dynamic(arg0) do
-    if (arg0 == nil), do: "null", else: if (Std.isOfType(arg0, Bool)), do: "Bool: " <> Std.string(arg0), else: if (Std.isOfType(arg0, Int)), do: "Int: " <> Std.string(arg0), else: if (Std.isOfType(arg0, Float)), do: "Float: " <> Std.string(arg0), else: if (Std.isOfType(arg0, String)), do: "String: " <> Std.string(arg0), else: if (Std.isOfType(arg0, Array)), do: "Array of length: " <> Std.string(length(arg0)), else: "Unknown type"
+  def process_dynamic(value) do
+    if (value == nil), do: "null", else: if (Std.isOfType(value, Bool)), do: "Bool: " <> Std.string(value), else: if (Std.isOfType(value, Int)), do: "Int: " <> Std.string(value), else: if (Std.isOfType(value, Float)), do: "Float: " <> Std.string(value), else: if (Std.isOfType(value, String)), do: "String: " <> Std.string(value), else: if (Std.isOfType(value, Array)), do: "Array of length: " <> Std.string(length(value)), else: "Unknown type"
   end
 
   @doc "Function dynamic_method_calls"

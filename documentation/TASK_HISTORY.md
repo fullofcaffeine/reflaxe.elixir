@@ -7,6 +7,148 @@ Archives of previous history can be found in `TASK_HISTORY_ARCHIVE_*.md` files.
 
 ---
 
+## Session: 2025-08-15 - Parameter Naming Fix & PRD Vision Refinement
+
+### Context
+Continuation session focusing on refining the PRD vision from "LLM Leverager" to "Type-Safe Functional Haxe for Universal Deployment" and fixing the critical parameter naming issue where generated Elixir functions used arg0/arg1 instead of meaningful parameter names.
+
+### Problem Identification
+- **PRD Vision**: User wanted to clarify the project vision beyond just LLM leverage
+- **Parameter Naming Crisis**: Generated Elixir code used generic arg0/arg1 parameter names instead of meaningful names from Haxe source
+- **Professional Adoption Blocker**: Machine-generated appearance prevented professional adoption
+- **Cross-Platform Vision**: Need for functional Haxe patterns that work across all targets
+
+### PRD Vision Evolution
+1. **Initial Concept**: Dual-mode compiler (standard + Elixir-functional)
+2. **Refined Approach**: Pragmatic "idiomatic transformation" - keep both languages idiomatic with smart transformations
+3. **Final Vision**: "Type-Safe Functional Haxe for Universal Deployment"
+   - Promote functional Haxe features (GADTs, pattern matching)
+   - Universal patterns that work across ALL targets
+   - Smart compilation generates optimal code per target
+   - Type-safe domain abstractions
+
+### Technical Investigation
+
+#### Parameter Naming Bug Analysis
+**Before Fix**:
+```elixir
+def greet(arg0) do
+  "Hello, " <> arg0 <> "!"
+end
+```
+
+**Root Cause**: 
+- `ClassCompiler.hx:459` - hardcoded `'arg${i}'` in `generateFunction`
+- `ClassCompiler.hx:584` - similar issue in `generateModuleFunctions`
+- `ElixirCompiler.hx:1781` - `setFunctionParameterMapping` mapped to arg0/arg1
+
+**Investigation Process**:
+1. Created test case `test/tests/parameter_naming/` to reproduce issue
+2. Found ClassFuncArg structure has `originalName` and `tvar.name` fields
+3. Discovered multiple parameter extraction approaches in codebase
+4. Traced the complete parameter mapping pipeline
+
+### Technical Solution
+
+#### Parameter Name Extraction Fix
+**Files Modified**:
+- `src/reflaxe/elixir/helpers/ClassCompiler.hx` (lines 459-468, 584-592)
+- `src/reflaxe/elixir/ElixirCompiler.hx` (lines 1433-1438, 1781-1782)
+
+**Implementation**:
+```haxe
+// Extract actual parameter name from multiple sources
+var originalName = if (arg.tvar != null) {
+    arg.tvar.name;
+} else if (funcField.tfunc != null && funcField.tfunc.args != null && i < funcField.tfunc.args.length) {
+    funcField.tfunc.args[i].v.name;
+} else {
+    arg.getName();
+}
+var paramName = NamingHelper.toSnakeCase(originalName);
+```
+
+#### Parameter Mapping Fix
+**ElixirCompiler.hx setFunctionParameterMapping**:
+```haxe
+// Map original name to snake_case version (no more arg0/arg1!)
+var snakeCaseName = NamingHelper.toSnakeCase(originalName);
+currentFunctionParameterMap.set(originalName, snakeCaseName);
+```
+
+### Test Results
+
+#### Parameter Naming Validation
+**After Fix**:
+```elixir
+def greet(name) do
+  "Hello, " <> name <> "!"
+end
+
+def calculate_discount(original_price, discount_percent) do
+  original_price * (1.0 - discount_percent / 100.0)
+end
+```
+
+#### Test Infrastructure
+- **All 47 Haxe tests**: ✅ PASSING with improved parameter names
+- **Test intended outputs**: Updated to reflect meaningful parameter names
+- **New test added**: `parameter_naming` test validates the fix
+
+### Key Achievements ✨
+
+#### 1. PRD Vision Refinement
+- **Clear Direction**: Type-Safe Functional Haxe for Universal Deployment
+- **Pragmatic Approach**: Smart compilation over manual conditional compilation
+- **Universal Patterns**: Same functional code works across all targets
+- **Type System Maximization**: Leverage Haxe's GADTs, pattern matching, abstracts
+
+#### 2. Critical Parameter Naming Fix
+- **Idiomatic Code Generation**: Functions now have meaningful parameter names
+- **Professional Quality**: Generated code looks hand-written
+- **Cross-Platform Consistency**: Fix applies to all function generation paths
+- **Backward Compatibility**: All existing tests updated and passing
+
+#### 3. Foundation for Functional Haxe
+- **Parameter Infrastructure**: Proper name preservation enables better functional patterns
+- **Type-Safe Foundation**: Sets stage for Result<T,E>, Option<T> implementations
+- **Professional Adoption**: Removes #1 barrier to production use
+
+### Development Insights
+
+#### Parameter Name Preservation Patterns
+- **Multi-Source Extraction**: Use tvar.name, tfunc.args[].v.name, getName() in priority order
+- **Consistent Mapping**: Same extraction logic in both ClassCompiler and ElixirCompiler
+- **Snake Case Conversion**: Preserve original semantics while following Elixir conventions
+- **Function Body Consistency**: Parameter mapping ensures body uses same names as signature
+
+#### Reflaxe Architecture Understanding
+- **ClassFuncData Structure**: Contains multiple sources of parameter information
+- **Compilation Pipeline**: Parameter mapping affects both signature and body generation
+- **Test-Driven Development**: Snapshot testing enables safe refactoring of generated code
+
+#### Type-Safe Vision Implementation
+- **Foundation First**: Parameter naming enables more advanced functional features
+- **Universal Approach**: Functional patterns should work across all Haxe targets
+- **Smart Compilation**: Compiler should optimize without manual conditional compilation
+
+### Files Modified
+```
+src/reflaxe/elixir/helpers/ClassCompiler.hx    # Parameter extraction in generateFunction/generateModuleFunctions
+src/reflaxe/elixir/ElixirCompiler.hx           # Parameter mapping in setFunctionParameterMapping
+test/tests/parameter_naming/                   # New test case validating the fix
+test/tests/*/intended/                         # All 47 test intended outputs updated
+documentation/plans/ACTIVE_PRD.md             # Updated with refined vision
+```
+
+### Session Summary
+Successfully transformed Reflaxe.Elixir from generating machine-like code to producing professional, idiomatic Elixir with meaningful parameter names. Established clear vision for "Type-Safe Functional Haxe for Universal Deployment" and laid foundation for implementing advanced functional patterns. The parameter naming fix resolves the #1 critical issue blocking professional adoption.
+
+**Status**: ✅ COMPLETE - Parameter naming fix implemented and all tests passing
+**Next Priority**: Implement Universal Result<T,E> and Option<T> types for functional patterns
+
+---
+
 ## Session: 2025-08-15 - Critical TODO Bug Fix and Test Infrastructure Improvements
 
 ### Context

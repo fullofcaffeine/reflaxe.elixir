@@ -30,7 +30,7 @@ defmodule EReg do
 		If `s` is `null`, the result is unspecified.
 	"
   @spec match(String.t()) :: boolean()
-  def match(arg0) do
+  def match(s) do
     false
   end
 
@@ -46,7 +46,7 @@ defmodule EReg do
 		If `n` equals 0, the whole matched substring is returned.
 	"
   @spec matched(integer()) :: String.t()
-  def matched(arg0) do
+  def matched(n) do
     nil
   end
 
@@ -81,7 +81,7 @@ defmodule EReg do
 		If `s` or `by` are null, the result is unspecified.
 	"
   @spec replace(String.t(), String.t()) :: String.t()
-  def replace(arg0, arg1) do
+  def replace(s, by) do
     nil
   end
 
