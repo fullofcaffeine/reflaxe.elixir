@@ -43,10 +43,10 @@ defmodule Main do
 
   @doc "Function sum_range"
   @spec sum_range(integer(), integer()) :: integer()
-  def sum_range(start, end) do
+  def sum_range(start, end_) do
     sum = 0
     _g = start
-    _g = end
+    _g = end_
     (
       try do
         loop_fn = fn {sum} ->

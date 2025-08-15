@@ -58,11 +58,11 @@ defmodule Main do
       e ->
         Log.trace("Caught dynamic: " <> Std.string(e), %{fileName: "Main.hx", lineNumber: 45, className: "Main", methodName: "multipleCatch"})
     end end
-    test_error(1)
-    test_error(2)
-    test_error(3)
-    test_error(4)
-    test_error(0)
+    test_error.(1)
+    test_error.(2)
+    test_error.(3)
+    test_error.(4)
+    test_error.(0)
   end
 
   @doc "Function try_catch_finally"
@@ -141,14 +141,14 @@ defmodule Main do
   def rethrow_example() do
     inner_function = fn  -> throw(Haxe.Exception.new("Original error")) end
     middle_function = fn  -> try do
-      inner_function()
+      inner_function.()
     rescue
       e ->
         Log.trace("Middle caught: " <> e.get_message(), %{fileName: "Main.hx", lineNumber: 136, className: "Main", methodName: "rethrowExample"})
     throw(e)
     end end
     try do
-      middle_function()
+      middle_function.()
     rescue
       e ->
         Log.trace("Outer caught rethrown: " <> e.get_message(), %{fileName: "Main.hx", lineNumber: 144, className: "Main", methodName: "rethrowExample"})
@@ -160,9 +160,9 @@ defmodule Main do
   def stack_trace_example() do
     try do
       level3 = fn  -> throw(Haxe.Exception.new("Deep error")) end
-    level2 = fn  -> level3() end
-    level1 = fn  -> level2() end
-    level1()
+    level2 = fn  -> level3.() end
+    level1 = fn  -> level2.() end
+    level1.()
     rescue
       e ->
         Log.trace("Error: " <> e.get_message(), %{fileName: "Main.hx", lineNumber: 156, className: "Main", methodName: "stackTraceExample"})

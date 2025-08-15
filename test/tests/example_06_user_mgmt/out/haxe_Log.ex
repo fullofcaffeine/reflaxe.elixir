@@ -10,9 +10,10 @@ defmodule Log do
   """
 
   # Static functions
-  @doc "
-		Format the output of `trace` before printing it.
-	"
+  @doc """
+    Format the output of `trace` before printing it.
+
+  """
   @spec format_output(term(), PosInfos.t()) :: String.t()
   def format_output(v, infos) do
     str = Std.string(v)
@@ -26,24 +27,24 @@ defmodule Log do
     pstr <> ": " <> str
   end
 
-  @doc "
-		Outputs `v` in a platform-dependent way.
+  @doc """
+    Outputs `v` in a platform-dependent way.
 
-		The second parameter `infos` is injected by the compiler and contains
-		information about the position where the `trace()` call was made.
+    The second parameter `infos` is injected by the compiler and contains
+    information about the position where the `trace()` call was made.
 
-		This method can be rebound to a custom function:
+    This method can be rebound to a custom function:
 
-			var oldTrace = haxe.Log.trace; // store old function
-			haxe.Log.trace = function(v, ?infos) {
-			  // handle trace
-			}
-			...
-			haxe.Log.trace = oldTrace;
+    var oldTrace = haxe.Log.trace; // store old function
+    haxe.Log.trace = function(v, ?infos) {
+    // handle trace
+    }
+    ...
+    haxe.Log.trace = oldTrace;
 
-		If it is bound to null, subsequent calls to `trace()` will cause an
-		exception.
-	"
+    If it is bound to null, subsequent calls to `trace()` will cause an
+    exception.
+  """
   @spec trace(term(), Null.t()) :: nil
   def trace(v, infos) do
     str = Log.formatOutput(v, infos)

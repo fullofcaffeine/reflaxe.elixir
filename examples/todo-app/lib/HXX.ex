@@ -12,8 +12,8 @@ defmodule HXX do
   # Static functions
   @doc "Function hxx"
   @spec hxx(String.t()) :: String.t()
-  def hxx(arg0) do
-    arg0
+  def hxx(template_str) do
+    template_str
   end
 
 end

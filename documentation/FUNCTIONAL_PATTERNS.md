@@ -605,6 +605,13 @@ function complexValidation(data: UserData): Result<User, ValidationError> {
 5. **With Expressions**: Transform nested error handling to `with` expressions
 6. **More Array Methods**: Support slice, take, drop, reverse, sort operations
 
+## See Also
+
+- [BEAM Type Abstractions](BEAM_TYPE_ABSTRACTIONS.md) - Comprehensive guide to Option<T> and Result<T,E> types for type-safe null handling and error management
+- [Paradigm Bridge](paradigms/PARADIGM_BRIDGE.md) - Cross-platform development patterns and functional transformations
+- [Developer Patterns](guides/DEVELOPER_PATTERNS.md) - Best practices for writing effective Haxe→Elixir code
+- [Standard Library Handling](STANDARD_LIBRARY_HANDLING.md) - How standard library types including Option compile to Elixir
+
 ## References
 
 - [Elixir Recursion Guide](https://elixir-lang.org/getting-started/recursion.html)

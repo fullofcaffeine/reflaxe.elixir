@@ -5,9 +5,10 @@ defmodule PatternMatchingTest do
   """
 
   # Static functions
-  @doc "
-     * Basic enum pattern matching
-     "
+  @doc """
+    Basic enum pattern matching
+
+  """
   @spec match_color(Color.t()) :: String.t()
   def match_color(color) do
     temp_result = nil
@@ -30,9 +31,10 @@ defmodule PatternMatchingTest do
     temp_result
   end
 
-  @doc "
-     * Option type pattern matching
-     "
+  @doc """
+    Option type pattern matching
+
+  """
   @spec match_option(Option.t()) :: String.t()
   def match_option(option) do
     temp_result = nil
@@ -47,9 +49,10 @@ defmodule PatternMatchingTest do
     temp_result
   end
 
-  @doc "
-     * Integer pattern matching with guards
-     "
+  @doc """
+    Integer pattern matching with guards
+
+  """
   @spec match_int(integer()) :: String.t()
   def match_int(value) do
     temp_result = nil
@@ -70,9 +73,10 @@ defmodule PatternMatchingTest do
     temp_result
   end
 
-  @doc "
-     * String pattern matching
-     "
+  @doc """
+    String pattern matching
+
+  """
   @spec match_string(String.t()) :: String.t()
   def match_string(str) do
     temp_result = nil
@@ -88,9 +92,10 @@ defmodule PatternMatchingTest do
     temp_result
   end
 
-  @doc "
-     * Array pattern matching
-     "
+  @doc """
+    Array pattern matching
+
+  """
   @spec match_array(Array.t()) :: String.t()
   def match_array(arr) do
     temp_result = nil
@@ -121,9 +126,10 @@ defmodule PatternMatchingTest do
     temp_result
   end
 
-  @doc "
-     * Nested pattern matching
-     "
+  @doc """
+    Nested pattern matching
+
+  """
   @spec match_nested(Option.t()) :: String.t()
   def match_nested(option) do
     temp_result = nil
@@ -159,9 +165,10 @@ defmodule PatternMatchingTest do
     temp_result
   end
 
-  @doc "
-     * Boolean pattern matching
-     "
+  @doc """
+    Boolean pattern matching
+
+  """
   @spec match_bool(boolean(), integer()) :: String.t()
   def match_bool(flag, count) do
     temp_result = nil

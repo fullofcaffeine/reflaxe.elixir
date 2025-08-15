@@ -139,8 +139,8 @@ defmodule Main do
   def main() do
     color = Color.RGB(255, 128, 0)
     Log.trace(Main.colorToString(color), %{fileName: "Main.hx", lineNumber: 79, className: "Main", methodName: "main"})
-    some = Option.Some("Hello")
-    none = Option.none()
+    some = {:some, "Hello"}
+    none = :none
     Log.trace(Main.getValue(some, "default"), %{fileName: "Main.hx", lineNumber: 84, className: "Main", methodName: "main"})
     Log.trace(Main.getValue(none, "default"), %{fileName: "Main.hx", lineNumber: 85, className: "Main", methodName: "main"})
     tree = Tree.Node(Tree.Leaf(1), Tree.Node(Tree.Leaf(2), Tree.Leaf(3)))
@@ -279,7 +279,7 @@ defmodule Tree do
 
   @type t() ::
     {:leaf, term()} |
-    {:node, term(), term()}
+    {:node_, term(), term()}
 
   @doc """
   Creates leaf enum value with parameters
@@ -293,15 +293,15 @@ defmodule Tree do
   end
 
   @doc """
-  Creates node enum value with parameters
+  Creates node_ enum value with parameters
   
   ## Parameters
     - `arg0`: term()
     - `arg1`: term()
   """
-  @spec node(term(), term()) :: {:node, term(), term()}
-  def node(arg0, arg1) do
-    {:node, arg0, arg1}
+  @spec node_(term(), term()) :: {:node_, term(), term()}
+  def node_(arg0, arg1) do
+    {:node_, arg0, arg1}
   end
 
   # Predicate functions for pattern matching
@@ -310,19 +310,19 @@ defmodule Tree do
   def is_leaf({:leaf, _}), do: true
   def is_leaf(_), do: false
 
-  @doc "Returns true if value is node variant"
-  @spec is_node(t()) :: boolean()
-  def is_node({:node, _}), do: true
-  def is_node(_), do: false
+  @doc "Returns true if value is node_ variant"
+  @spec is_node_(t()) :: boolean()
+  def is_node_({:node_, _}), do: true
+  def is_node_(_), do: false
 
   @doc "Extracts value from leaf variant, returns {:ok, value} or :error"
   @spec get_leaf_value(t()) :: {:ok, term()} | :error
   def get_leaf_value({:leaf, value}), do: {:ok, value}
   def get_leaf_value(_), do: :error
 
-  @doc "Extracts value from node variant, returns {:ok, value} or :error"
-  @spec get_node_value(t()) :: {:ok, {term(), term()}} | :error
-  def get_node_value({:node, arg0, arg1}), do: {:ok, {arg0, arg1}}
-  def get_node_value(_), do: :error
+  @doc "Extracts value from node_ variant, returns {:ok, value} or :error"
+  @spec get_node__value(t()) :: {:ok, {term(), term()}} | :error
+  def get_node__value({:node_, arg0, arg1}), do: {:ok, {arg0, arg1}}
+  def get_node__value(_), do: :error
 
 end
