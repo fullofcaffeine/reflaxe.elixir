@@ -85,7 +85,7 @@ defmodule UserRepositoryTest do
   test "get user email returns email for valid user" do
     email = UserRepository.getUserEmail(1)
     assert OptionTools.is_some(email)
-    assert "alice@example.com"} == {:some
+    assert email == {:some, "alice@example.com"}
   end
 
   test "get user email returns none for invalid user" do
@@ -163,14 +163,14 @@ defmodule UserRepositoryTest do
 
   test "get users by status returns active users" do
     active_users = UserRepository.getUsersByStatus(true)
-    assert length(active_users >= 3, "Should have at least 3 active users")
+    assert length(active_users) >= 3
     _g = 0
     Enum.map(active_users, fn item -> item.active end)
   end
 
   test "get users by status returns inactive users" do
     inactive_users = UserRepository.getUsersByStatus(false)
-    assert length(inactive_users >= 1, "Should have at least 1 inactive user")
+    assert length(inactive_users) >= 1
     _g = 0
     Enum.map(inactive_users, fn item -> item.active end)
   end
