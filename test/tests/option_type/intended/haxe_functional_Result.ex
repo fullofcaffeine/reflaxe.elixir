@@ -1,5 +1,4 @@
 defmodule ResultTools do
-  use Bitwise
   @moduledoc """
   ResultTools module generated from Haxe
   

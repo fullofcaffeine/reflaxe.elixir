@@ -1,6 +1,8 @@
 import haxe.functional.Result;
 import haxe.functional.Result.ResultTools;
 
+using haxe.functional.Result.ResultTools;
+
 /**
  * Test case for Universal Result<T,E> type compilation
  * 
@@ -41,10 +43,10 @@ class Main {
     }
     
     /**
-     * Transform Result values using map
+     * Transform Result values using map (with extension syntax)
      */
     public static function doubleIfValid(input: String): Result<Int, String> {
-        return ResultTools.map(parseNumber(input), function(num) {
+        return parseNumber(input).map(function(num) {
             return num * 2;
         });
     }
@@ -68,6 +70,27 @@ class Main {
             function(error) return -1
         );
     }
+    
+    /**
+     * Demonstrate extension method chaining (similar to Option)
+     */
+    public static function testExtensionMethods() {
+        var result: Result<String, String> = Ok("hello");
+        
+        // Test map with extension syntax
+        var upperResult = result.map(s -> s.toUpperCase());
+        
+        // Test flatMap with extension syntax
+        var chainedResult = result.flatMap(s -> s.length > 0 ? Ok(s + "!") : Error("empty"));
+        
+        // Test isOk/isError
+        var isValid = result.isOk();
+        var hasError = result.isError();
+        
+        // Test unwrapOr
+        var value = result.unwrapOr("default");
+    }
+    
     
     /**
      * Work with complex Result types (nested data)

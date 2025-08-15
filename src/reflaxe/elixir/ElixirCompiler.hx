@@ -2109,6 +2109,26 @@ class ElixirCompiler extends DirectToStringCompiler {
                         // Continue with normal method call handling
                 }
                 
+                // Check if this is a static extension call from OptionTools or ResultTools
+                // Haxe's 'using' transforms user.map() into OptionTools.map(user, ...) 
+                if (objStr == "OptionTools" && isOptionMethod(methodName)) {
+                    var compiledArgs = args.map(arg -> compileExpression(arg));
+                    return 'OptionTools.${methodName}(${compiledArgs.join(", ")})';
+                } else if (objStr == "ResultTools" && isResultMethod(methodName)) {
+                    var compiledArgs = args.map(arg -> compileExpression(arg));
+                    return 'ResultTools.${methodName}(${compiledArgs.join(", ")})';
+                }
+                
+                // Check if this is an ADT type (Option<T>, Result<T,E>, etc.) with static extension methods
+                switch (obj.t) {
+                    case TEnum(enumRef, _):
+                        var enumType = enumRef.get();
+                        var compiled = compileADTStaticExtension(enumType, methodName, objStr, args);
+                        if (compiled != null) return compiled;
+                    case _:
+                        // Continue with normal method call handling
+                }
+                
                 // Check if this is an Array method call
                 switch (obj.t) {
                     case TInst(t, _) if (t.get().name == "Array"):
@@ -3800,6 +3820,65 @@ class ElixirCompiler extends DirectToStringCompiler {
             case _:
                 false;
         };
+    }
+    
+    /**
+     * Check if a method name is an OptionTools static extension method
+     */
+    private function isOptionMethod(methodName: String): Bool {
+        return switch (methodName) {
+            case "map", "then", "flatMap", "flatten", "filter", "unwrap", 
+                 "lazyUnwrap", "or", "lazyOr", "isSome", "isNone", 
+                 "all", "values", "toResult", "fromResult", "fromNullable",
+                 "toNullable", "toReply", "expect", "some", "none", "apply":
+                true;
+            case _:
+                false;
+        };
+    }
+    
+    /**
+     * Check if a method name is a ResultTools static extension method
+     */
+    private function isResultMethod(methodName: String): Bool {
+        return switch (methodName) {
+            case "map", "flatMap", "bind", "fold", "isOk", "isError", 
+                 "unwrap", "unwrapOr", "unwrapOrElse", "mapError", "bimap",
+                 "ok", "error", "sequence", "traverse", "toOption":
+                true;
+            case _:
+                false;
+        };
+    }
+    
+    /**
+     * Check if an enum type has static extension methods and compile them
+     * @param enumType The enum type being called on
+     * @param methodName The method name being called
+     * @param objStr The compiled object expression
+     * @param args The method arguments
+     * @return Compiled static extension call or null if not applicable
+     */
+    private function compileADTStaticExtension(enumType: haxe.macro.Type.EnumType, methodName: String, objStr: String, args: Array<TypedExpr>): Null<String> {
+        var toolsModule: String = null;
+        var isExtensionMethod: Bool = false;
+        
+        // Check which ADT type this is and if the method is valid
+        if (enumType.module == "haxe.ds.Option" && enumType.name == "Option") {
+            toolsModule = "OptionTools";
+            isExtensionMethod = isOptionMethod(methodName);
+        } else if (enumType.module == "haxe.functional.Result" && enumType.name == "Result") {
+            toolsModule = "ResultTools";
+            isExtensionMethod = isResultMethod(methodName);
+        }
+        
+        if (toolsModule != null && isExtensionMethod) {
+            var compiledArgs = args.map(arg -> compileExpression(arg));
+            // Call ToolsModule.method(object, args...) for static extension methods
+            return '${toolsModule}.${methodName}(${objStr}${compiledArgs.length > 0 ? ", " + compiledArgs.join(", ") : ""})';
+        }
+        
+        return null;
     }
     
     /**

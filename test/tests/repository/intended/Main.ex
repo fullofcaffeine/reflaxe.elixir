@@ -21,7 +21,6 @@ defmodule UserChangeset do
 end
 
 defmodule Main do
-  use Bitwise
   @moduledoc """
   Main module generated from Haxe
   """
@@ -33,14 +32,13 @@ defmodule Main do
   """
   @spec main() :: nil
   def main() do
-    Log.trace("Repository pattern compilation test complete!", %{fileName => "Main.hx", lineNumber => 45, className => "Main", methodName => "main"})
+    Log.trace("Repository pattern compilation test complete!", %{"fileName" => "Main.hx", "lineNumber" => 45, "className" => "Main", "methodName" => "main"})
   end
 
 end
 
 
 defmodule UserRepository do
-  use Bitwise
   @moduledoc """
   UserRepository module generated from Haxe
   """

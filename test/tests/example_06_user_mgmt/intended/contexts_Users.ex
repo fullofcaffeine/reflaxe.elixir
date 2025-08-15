@@ -21,7 +21,6 @@ defmodule UserChangeset do
 end
 
 defmodule Users do
-  use Bitwise
   @moduledoc """
   Users module generated from Haxe
   """
@@ -42,7 +41,7 @@ defmodule Users do
   """
   @spec change_user(Null.t()) :: term()
   def change_user(user) do
-    %{valid => true}
+    %{"valid" => true}
   end
 
   @doc """
@@ -51,7 +50,7 @@ defmodule Users do
   """
   @spec main() :: nil
   def main() do
-    Log.trace("Users context with User schema compiled successfully!", %{fileName => "./contexts/Users.hx", lineNumber => 66, className => "contexts.Users", methodName => "main"})
+    Log.trace("Users context with User schema compiled successfully!", %{"fileName" => "./contexts/Users.hx", "lineNumber" => 66, "className" => "contexts.Users", "methodName" => "main"})
   end
 
   @doc """
@@ -79,7 +78,7 @@ defmodule Users do
   @spec create_user(term()) :: term()
   def create_user(attrs) do
     changeset = UserChangeset.changeset(nil, attrs)
-    if (changeset != nil), do: %{status => "ok", user => nil}, else: %{status => "error", changeset => changeset}
+    if (changeset != nil), do: %{"status" => "ok", "user" => nil}, else: %{"status" => "error", "changeset" => changeset}
   end
 
   @doc """
@@ -89,7 +88,7 @@ defmodule Users do
   @spec update_user(User.t(), term()) :: term()
   def update_user(user, attrs) do
     changeset = UserChangeset.changeset(user, attrs)
-    if (changeset != nil), do: %{status => "ok", user => user}, else: %{status => "error", changeset => changeset}
+    if (changeset != nil), do: %{"status" => "ok", "user" => user}, else: %{"status" => "error", "changeset" => changeset}
   end
 
   @doc """
@@ -98,7 +97,7 @@ defmodule Users do
   """
   @spec delete_user(User.t()) :: term()
   def delete_user(user) do
-    Users.update_user(user, %{active => false})
+    Users.update_user(user, %{"active" => false})
   end
 
   @doc """
@@ -125,7 +124,7 @@ defmodule Users do
   """
   @spec user_stats() :: UserStats.t()
   def user_stats() do
-    %{total => 0, active => 0, inactive => 0}
+    %{"total" => 0, "active" => 0, "inactive" => 0}
   end
 
 end

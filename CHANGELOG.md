@@ -2,6 +2,15 @@
 
 ### 🎉 Major Features
 
+#### Option<T> and Result<T,E> Static Extension Methods (2025-08-15)
+- **Feature**: Complete implementation of static extension methods for Option<T> and Result<T,E> types
+- **Fix**: Resolved method name conflicts between Array methods and ADT extension methods (map, filter, etc.)
+- **Enhancement**: Both types now support idiomatic `using` syntax with proper method routing
+- **Implementation**: Added direct detection for OptionTools and ResultTools objects in method compilation
+- **API Consistency**: Both Option and Result follow the same DRY pattern for extension method handling
+- **Code Quality**: Generated code uses string keys for maps (safer than atom keys) for improved Elixir compatibility
+- **Impact**: Developers can now use `user.map(fn)` → `OptionTools.map(user, fn)` and `result.flatMap(fn)` → `ResultTools.flatMap(result, fn)`
+
 #### Critical Bug Fix: @:module Function Compilation (2025-08-15)
 - **Fix**: Eliminated TODO placeholder generation for implemented functions
 - **Impact**: @:module classes now generate actual function implementations instead of "TODO: Implement function body"

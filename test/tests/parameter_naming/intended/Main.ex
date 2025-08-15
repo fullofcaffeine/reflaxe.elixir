@@ -1,5 +1,4 @@
 defmodule Main do
-  use Bitwise
   @moduledoc """
   Main module generated from Haxe
   """
