@@ -215,7 +215,7 @@ defmodule Main do
     Log.trace("User emails: " <> Enum.join(user_emails, ", "), %{fileName: "src_haxe/Main.hx", lineNumber: 233, className: "Main", methodName: "demonstrateFunctionalComposition"})
     active_user_names = []
     _g = 0
-    Enum.map(user_ids, fn item -> OptionTools.map(OptionTools.filter(UserRepository.find(item), fn user -> user.active end), fn user -> user.name end) end)
+    Enum.map(user_ids, fn item -> OptionTools.map(OptionTools.filter(UserRepository.find(id), fn user -> user.active end), fn user -> user.name end) end)
     Log.trace("Active user names: " <> Enum.join(active_user_names, ", "), %{fileName: "src_haxe/Main.hx", lineNumber: 244, className: "Main", methodName: "demonstrateFunctionalComposition"})
     Log.trace("", %{fileName: "src_haxe/Main.hx", lineNumber: 246, className: "Main", methodName: "demonstrateFunctionalComposition"})
   end

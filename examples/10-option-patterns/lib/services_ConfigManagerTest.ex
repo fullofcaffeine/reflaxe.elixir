@@ -11,159 +11,246 @@ defmodule ConfigManagerTest do
   """
 
   test "get returns value for existing key" do
-    # Test method: getReturnsValueForExistingKey
-    # TODO: Compile actual method expressions
-    assert true
+    value = ConfigManager.get("app_name")
+    assert OptionTools.is_some(value)
+    assert "OptionPatterns"} == {:some
   end
 
   test "get returns none for missing key" do
-    # Test method: getReturnsNoneForMissingKey
-    # TODO: Compile actual method expressions
-    assert true
+    value = ConfigManager.get("nonexistent_key")
+    assert OptionTools.is_none(value)
   end
 
   test "get returns none for empty value" do
-    # Test method: getReturnsNoneForEmptyValue
-    # TODO: Compile actual method expressions
-    assert true
+    value = ConfigManager.get("empty_value")
+    assert OptionTools.is_none(value)
   end
 
   test "get returns none for null key" do
-    # Test method: getReturnsNoneForNullKey
-    # TODO: Compile actual method expressions
-    assert true
+    value = ConfigManager.get(nil)
+    assert OptionTools.is_none(value)
   end
 
   test "get returns none for empty key" do
-    # Test method: getReturnsNoneForEmptyKey
-    # TODO: Compile actual method expressions
-    assert true
+    value = ConfigManager.get("")
+    assert OptionTools.is_none(value)
   end
 
   test "get with default returns value for existing key" do
-    # Test method: getWithDefaultReturnsValueForExistingKey
-    # TODO: Compile actual method expressions
-    assert true
+    value = ConfigManager.getWithDefault("app_name", "DefaultApp")
+    assert value == "OptionPatterns"
   end
 
   test "get with default returns default for missing key" do
-    # Test method: getWithDefaultReturnsDefaultForMissingKey
-    # TODO: Compile actual method expressions
-    assert true
+    value = ConfigManager.getWithDefault("missing_key", "DefaultValue")
+    assert value == "DefaultValue"
   end
 
   test "get required returns ok for existing key" do
-    # Test method: getRequiredReturnsOkForExistingKey
-    # TODO: Compile actual method expressions
-    assert true
+    result = ConfigManager.getRequired("app_name")
+    assert ResultTools.is_ok(result)
+    case (case result do {:ok, _} -> 0; {:error, _} -> 1; _ -> -1 end) do
+      0 ->
+        _g = case result do {:ok, value} -> value; {:error, value} -> value; _ -> nil end
+    value = _g
+    assert value == "OptionPatterns"
+      1 ->
+        _g = case result do {:ok, value} -> value; {:error, value} -> value; _ -> nil end
+    msg = _g
+    flunk("Unexpected error: " <> msg)
+    end
   end
 
   test "get required returns error for missing key" do
-    # Test method: getRequiredReturnsErrorForMissingKey
-    # TODO: Compile actual method expressions
-    assert true
+    result = ConfigManager.getRequired("missing_key")
+    assert ResultTools.is_error(result)
+    case (case result do {:ok, _} -> 0; {:error, _} -> 1; _ -> -1 end) do
+      0 ->
+        case result do {:ok, value} -> value; {:error, value} -> value; _ -> nil end
+    flunk("Expected error for missing required key")
+      1 ->
+        _g = case result do {:ok, value} -> value; {:error, value} -> value; _ -> nil end
+    msg = _g
+    assert case :binary.match(msg do {pos, _} -> pos; :nomatch -> -1 end >= 0, "Error should mention the missing key")
+    end
   end
 
   test "get int returns value for valid number" do
-    # Test method: getIntReturnsValueForValidNumber
-    # TODO: Compile actual method expressions
-    assert true
+    value = ConfigManager.getInt("timeout")
+    assert OptionTools.is_some(value)
+    assert 30} == {:some
   end
 
   test "get int returns none for invalid number" do
-    # Test method: getIntReturnsNoneForInvalidNumber
-    # TODO: Compile actual method expressions
-    assert true
+    value = ConfigManager.getInt("invalid_number")
+    assert OptionTools.is_none(value)
   end
 
   test "get int returns none for missing key" do
-    # Test method: getIntReturnsNoneForMissingKey
-    # TODO: Compile actual method expressions
-    assert true
+    value = ConfigManager.getInt("missing_key")
+    assert OptionTools.is_none(value)
   end
 
   test "get bool returns true for valid true values" do
-    # Test method: getBoolReturnsTrueForValidTrueValues
-    # TODO: Compile actual method expressions
-    assert true
+    value = ConfigManager.getBool("debug")
+    assert OptionTools.is_some(value)
+    assert true} == {:some
   end
 
   test "get bool returns none for invalid value" do
-    # Test method: getBoolReturnsNoneForInvalidValue
-    # TODO: Compile actual method expressions
-    assert true
+    value = ConfigManager.getBool("app_name")
+    assert OptionTools.is_none(value)
   end
 
   test "get bool returns none for missing key" do
-    # Test method: getBoolReturnsNoneForMissingKey
-    # TODO: Compile actual method expressions
-    assert true
+    value = ConfigManager.getBool("missing_key")
+    assert OptionTools.is_none(value)
   end
 
   test "get int with range succeeds for valid value" do
-    # Test method: getIntWithRangeSucceedsForValidValue
-    # TODO: Compile actual method expressions
-    assert true
+    result = ConfigManager.getIntWithRange("max_connections", 1, 1000)
+    assert ResultTools.is_ok(result)
+    case (case result do {:ok, _} -> 0; {:error, _} -> 1; _ -> -1 end) do
+      0 ->
+        _g = case result do {:ok, value} -> value; {:error, value} -> value; _ -> nil end
+    value = _g
+    assert value == 100
+      1 ->
+        _g = case result do {:ok, value} -> value; {:error, value} -> value; _ -> nil end
+    msg = _g
+    flunk("Unexpected error: " <> msg)
+    end
   end
 
   test "get int with range fails for value below min" do
-    # Test method: getIntWithRangeFailsForValueBelowMin
-    # TODO: Compile actual method expressions
-    assert true
+    result = ConfigManager.getIntWithRange("timeout", 100, 1000)
+    assert ResultTools.is_error(result)
+    case (case result do {:ok, _} -> 0; {:error, _} -> 1; _ -> -1 end) do
+      0 ->
+        case result do {:ok, value} -> value; {:error, value} -> value; _ -> nil end
+    flunk("Expected error for value below minimum")
+      1 ->
+        _g = case result do {:ok, value} -> value; {:error, value} -> value; _ -> nil end
+    msg = _g
+    assert case :binary.match(msg do {pos, _} -> pos; :nomatch -> -1 end >= 0, "Error should mention minimum value")
+    end
   end
 
   test "get int with range fails for value above max" do
-    # Test method: getIntWithRangeFailsForValueAboveMax
-    # TODO: Compile actual method expressions
-    assert true
+    result = ConfigManager.getIntWithRange("max_connections", 1, 50)
+    assert ResultTools.is_error(result)
+    case (case result do {:ok, _} -> 0; {:error, _} -> 1; _ -> -1 end) do
+      0 ->
+        case result do {:ok, value} -> value; {:error, value} -> value; _ -> nil end
+    flunk("Expected error for value above maximum")
+      1 ->
+        _g = case result do {:ok, value} -> value; {:error, value} -> value; _ -> nil end
+    msg = _g
+    assert case :binary.match(msg do {pos, _} -> pos; :nomatch -> -1 end >= 0, "Error should mention maximum value")
+    end
   end
 
   test "get int with range fails for missing key" do
-    # Test method: getIntWithRangeFailsForMissingKey
-    # TODO: Compile actual method expressions
-    assert true
+    result = ConfigManager.getIntWithRange("missing_key", 1, 100)
+    assert ResultTools.is_error(result)
+    case (case result do {:ok, _} -> 0; {:error, _} -> 1; _ -> -1 end) do
+      0 ->
+        case result do {:ok, value} -> value; {:error, value} -> value; _ -> nil end
+    flunk("Expected error for missing key")
+      1 ->
+        _g = case result do {:ok, value} -> value; {:error, value} -> value; _ -> nil end
+    msg = _g
+    assert case :binary.match(msg do {pos, _} -> pos; :nomatch -> -1 end >= 0, "Error should mention missing/invalid")
+    end
   end
 
   test "get database url succeeds for valid url" do
-    # Test method: getDatabaseUrlSucceedsForValidUrl
-    # TODO: Compile actual method expressions
-    assert true
+    result = ConfigManager.getDatabaseUrl()
+    assert ResultTools.is_ok(result)
+    case (case result do {:ok, _} -> 0; {:error, _} -> 1; _ -> -1 end) do
+      0 ->
+        _g = case result do {:ok, value} -> value; {:error, value} -> value; _ -> nil end
+    url = _g
+    assert case :binary.match(url do {pos, _} -> pos; :nomatch -> -1 end >= 0, "Should contain protocol")
+      1 ->
+        _g = case result do {:ok, value} -> value; {:error, value} -> value; _ -> nil end
+    msg = _g
+    flunk("Unexpected error: " <> msg)
+    end
   end
 
   test "get timeout returns valid value within bounds" do
-    # Test method: getTimeoutReturnsValidValueWithinBounds
-    # TODO: Compile actual method expressions
-    assert true
+    timeout = ConfigManager.getTimeout()
+    assert timeout >= 1 && timeout <= 300
+    assert timeout == 30
   end
 
   test "is debug enabled returns correct value" do
-    # Test method: isDebugEnabledReturnsCorrectValue
-    # TODO: Compile actual method expressions
-    assert true
+    debug_enabled = ConfigManager.isDebugEnabled()
+    assert debug_enabled
   end
 
   test "get all set values returns only non empty values" do
-    # Test method: getAllSetValuesReturnsOnlyNonEmptyValues
-    # TODO: Compile actual method expressions
-    assert true
+    all_values = ConfigManager.getAllSetValues()
+    assert all_values.exists("app_name", "Should include app_name")
+    assert all_values.exists("timeout", "Should include timeout")
+    refute all_values.exists("empty_value", "Should not include empty values")
+    key = all_values.keys()
+    (
+      try do
+        loop_fn = fn ->
+          if (key.hasNext()) do
+            try do
+              key = key.next()
+    value = all_values.get(key)
+    assert value != nil && value != ""
+              loop_fn.()
+            catch
+              :break -> nil
+              :continue -> loop_fn.()
+            end
+          end
+        end
+        loop_fn.()
+      catch
+        :break -> nil
+      end
+    )
   end
 
   test "validate required succeeds when all keys present" do
-    # Test method: validateRequiredSucceedsWhenAllKeysPresent
-    # TODO: Compile actual method expressions
-    assert true
+    result = ConfigManager.validateRequired(["app_name", "timeout", "debug"])
+    assert ResultTools.is_ok(result)
+    case (case result do {:ok, _} -> 0; {:error, _} -> 1; _ -> -1 end) do
+      0 ->
+        _g = case result do {:ok, value} -> value; {:error, value} -> value; _ -> nil end
+    valid = _g
+    assert valid
+      1 ->
+        _g = case result do {:ok, value} -> value; {:error, value} -> value; _ -> nil end
+    msg = _g
+    flunk("Unexpected error: " <> msg)
+    end
   end
 
   test "validate required fails when keys are missing" do
-    # Test method: validateRequiredFailsWhenKeysAreMissing
-    # TODO: Compile actual method expressions
-    assert true
+    result = ConfigManager.validateRequired(["app_name", "missing_key1", "missing_key2"])
+    assert ResultTools.is_error(result)
+    case (case result do {:ok, _} -> 0; {:error, _} -> 1; _ -> -1 end) do
+      0 ->
+        case result do {:ok, value} -> value; {:error, value} -> value; _ -> nil end
+    flunk("Expected error for missing required keys")
+      1 ->
+        _g = case result do {:ok, value} -> value; {:error, value} -> value; _ -> nil end
+    msg = _g
+    assert case :binary.match(msg do {pos, _} -> pos; :nomatch -> -1 end >= 0, "Error should mention first missing key")
+    assert case :binary.match(msg do {pos, _} -> pos; :nomatch -> -1 end >= 0, "Error should mention second missing key")
+    end
   end
 
   test "validate required succeeds for empty array" do
-    # Test method: validateRequiredSucceedsForEmptyArray
-    # TODO: Compile actual method expressions
-    assert true
+    result = ConfigManager.validateRequired([])
+    assert ResultTools.is_ok(result)
   end
 
 end

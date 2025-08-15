@@ -11,153 +11,227 @@ defmodule UserRepositoryTest do
   """
 
   test "find returns option for valid id" do
-    # Test method: findReturnsOptionForValidId
-    # TODO: Compile actual method expressions
-    assert true
+    user = UserRepository.find(1)
+    assert OptionTools.is_some(user)
+    case (case user do {:some, _} -> 0; :none -> 1; _ -> -1 end) do
+      0 ->
+        _g = case user do {:some, value} -> value; :none -> nil; _ -> nil end
+    u = _g
+    assert u.name == "Alice Johnson"
+    assert u.email == "alice@example.com"
+    assert u.active
+      1 ->
+        flunk("Expected to find user with ID 1")
+    end
   end
 
   test "find returns none for invalid id" do
-    # Test method: findReturnsNoneForInvalidId
-    # TODO: Compile actual method expressions
-    assert true
+    user = UserRepository.find(999)
+    assert OptionTools.is_none(user)
   end
 
   test "find returns none for negative id" do
-    # Test method: findReturnsNoneForNegativeId
-    # TODO: Compile actual method expressions
-    assert true
+    user = UserRepository.find(-1)
+    assert OptionTools.is_none(user)
   end
 
   test "find returns none for zero id" do
-    # Test method: findReturnsNoneForZeroId
-    # TODO: Compile actual method expressions
-    assert true
+    user = UserRepository.find(0)
+    assert OptionTools.is_none(user)
   end
 
   test "find by email returns option for valid email" do
-    # Test method: findByEmailReturnsOptionForValidEmail
-    # TODO: Compile actual method expressions
-    assert true
+    user = UserRepository.findByEmail("bob@example.com")
+    assert OptionTools.is_some(user)
+    case (case user do {:some, _} -> 0; :none -> 1; _ -> -1 end) do
+      0 ->
+        _g = case user do {:some, value} -> value; :none -> nil; _ -> nil end
+    u = _g
+    assert u.id == 2
+    assert u.name == "Bob Smith"
+      1 ->
+        flunk("Expected to find user with email bob@example.com")
+    end
   end
 
   test "find by email returns none for invalid email" do
-    # Test method: findByEmailReturnsNoneForInvalidEmail
-    # TODO: Compile actual method expressions
-    assert true
+    user = UserRepository.findByEmail("nonexistent@example.com")
+    assert OptionTools.is_none(user)
   end
 
   test "find by email returns none for empty email" do
-    # Test method: findByEmailReturnsNoneForEmptyEmail
-    # TODO: Compile actual method expressions
-    assert true
+    user = UserRepository.findByEmail("")
+    assert OptionTools.is_none(user)
   end
 
   test "find by email returns none for null email" do
-    # Test method: findByEmailReturnsNoneForNullEmail
-    # TODO: Compile actual method expressions
-    assert true
+    user = UserRepository.findByEmail(nil)
+    assert OptionTools.is_none(user)
   end
 
   test "find first active returns active user" do
-    # Test method: findFirstActiveReturnsActiveUser
-    # TODO: Compile actual method expressions
-    assert true
+    user = UserRepository.findFirstActive()
+    assert OptionTools.is_some(user)
+    case (case user do {:some, _} -> 0; :none -> 1; _ -> -1 end) do
+      0 ->
+        _g = case user do {:some, value} -> value; :none -> nil; _ -> nil end
+    u = _g
+    assert u.active
+      1 ->
+        flunk("Expected to find an active user")
+    end
   end
 
   test "get user email returns email for valid user" do
-    # Test method: getUserEmailReturnsEmailForValidUser
-    # TODO: Compile actual method expressions
-    assert true
+    email = UserRepository.getUserEmail(1)
+    assert OptionTools.is_some(email)
+    assert "alice@example.com"} == {:some
   end
 
   test "get user email returns none for invalid user" do
-    # Test method: getUserEmailReturnsNoneForInvalidUser
-    # TODO: Compile actual method expressions
-    assert true
+    email = UserRepository.getUserEmail(999)
+    assert OptionTools.is_none(email)
   end
 
   test "get user display name returns name for valid user" do
-    # Test method: getUserDisplayNameReturnsNameForValidUser
-    # TODO: Compile actual method expressions
-    assert true
+    display_name = UserRepository.getUserDisplayName(1)
+    assert display_name == "Alice Johnson"
   end
 
   test "get user display name returns fallback for invalid user" do
-    # Test method: getUserDisplayNameReturnsFallbackForInvalidUser
-    # TODO: Compile actual method expressions
-    assert true
+    display_name = UserRepository.getUserDisplayName(999)
+    assert display_name == "Unknown User"
   end
 
   test "is user active returns true for active user" do
-    # Test method: isUserActiveReturnsTrueForActiveUser
-    # TODO: Compile actual method expressions
-    assert true
+    is_active = UserRepository.isUserActive(1)
+    assert is_active
   end
 
   test "is user active returns false for inactive user" do
-    # Test method: isUserActiveReturnsFalseForInactiveUser
-    # TODO: Compile actual method expressions
-    assert true
+    is_active = UserRepository.isUserActive(3)
+    refute is_active
   end
 
   test "is user active returns false for invalid user" do
-    # Test method: isUserActiveReturnsFalseForInvalidUser
-    # TODO: Compile actual method expressions
-    assert true
+    is_active = UserRepository.isUserActive(999)
+    refute is_active
   end
 
   test "update email succeeds for valid user" do
-    # Test method: updateEmailSucceedsForValidUser
-    # TODO: Compile actual method expressions
-    assert true
+    result = UserRepository.updateEmail(1, "newalice@example.com")
+    assert ResultTools.is_ok(result)
+    case (case result do {:ok, _} -> 0; {:error, _} -> 1; _ -> -1 end) do
+      0 ->
+        _g = case result do {:ok, value} -> value; {:error, value} -> value; _ -> nil end
+    user = _g
+    assert user.email == "newalice@example.com"
+      1 ->
+        _g = case result do {:ok, value} -> value; {:error, value} -> value; _ -> nil end
+    msg = _g
+    flunk("Unexpected error: " <> msg)
+    end
   end
 
   test "update email fails for invalid user" do
-    # Test method: updateEmailFailsForInvalidUser
-    # TODO: Compile actual method expressions
-    assert true
+    result = UserRepository.updateEmail(999, "test@example.com")
+    assert ResultTools.is_error(result)
+    case (case result do {:ok, _} -> 0; {:error, _} -> 1; _ -> -1 end) do
+      0 ->
+        case result do {:ok, value} -> value; {:error, value} -> value; _ -> nil end
+    flunk("Expected error for invalid user")
+      1 ->
+        _g = case result do {:ok, value} -> value; {:error, value} -> value; _ -> nil end
+    msg = _g
+    assert msg == "User not found"
+    end
   end
 
   test "update email fails for invalid email format" do
-    # Test method: updateEmailFailsForInvalidEmailFormat
-    # TODO: Compile actual method expressions
-    assert true
+    result = UserRepository.updateEmail(1, "invalid-email")
+    assert ResultTools.is_error(result)
+    case (case result do {:ok, _} -> 0; {:error, _} -> 1; _ -> -1 end) do
+      0 ->
+        case result do {:ok, value} -> value; {:error, value} -> value; _ -> nil end
+    flunk("Expected error for invalid email")
+      1 ->
+        _g = case result do {:ok, value} -> value; {:error, value} -> value; _ -> nil end
+    msg = _g
+    assert msg == "Invalid email format"
+    end
   end
 
   test "get users by status returns active users" do
-    # Test method: getUsersByStatusReturnsActiveUsers
-    # TODO: Compile actual method expressions
-    assert true
+    active_users = UserRepository.getUsersByStatus(true)
+    assert length(active_users >= 3, "Should have at least 3 active users")
+    _g = 0
+    Enum.map(active_users, fn item -> item.active end)
   end
 
   test "get users by status returns inactive users" do
-    # Test method: getUsersByStatusReturnsInactiveUsers
-    # TODO: Compile actual method expressions
-    assert true
+    inactive_users = UserRepository.getUsersByStatus(false)
+    assert length(inactive_users >= 1, "Should have at least 1 inactive user")
+    _g = 0
+    Enum.map(inactive_users, fn item -> item.active end)
   end
 
   test "create succeeds for valid data" do
-    # Test method: createSucceedsForValidData
-    # TODO: Compile actual method expressions
-    assert true
+    result = UserRepository.create("Test User", "test@example.com")
+    assert ResultTools.is_ok(result)
+    case (case result do {:ok, _} -> 0; {:error, _} -> 1; _ -> -1 end) do
+      0 ->
+        _g = case result do {:ok, value} -> value; {:error, value} -> value; _ -> nil end
+    user = _g
+    assert user.name == "Test User"
+    assert user.email == "test@example.com"
+    assert user.active
+      1 ->
+        _g = case result do {:ok, value} -> value; {:error, value} -> value; _ -> nil end
+    msg = _g
+    flunk("Unexpected error: " <> msg)
+    end
   end
 
   test "create fails for empty name" do
-    # Test method: createFailsForEmptyName
-    # TODO: Compile actual method expressions
-    assert true
+    result = UserRepository.create("", "test@example.com")
+    assert ResultTools.is_error(result)
+    case (case result do {:ok, _} -> 0; {:error, _} -> 1; _ -> -1 end) do
+      0 ->
+        case result do {:ok, value} -> value; {:error, value} -> value; _ -> nil end
+    flunk("Expected error for empty name")
+      1 ->
+        _g = case result do {:ok, value} -> value; {:error, value} -> value; _ -> nil end
+    msg = _g
+    assert msg == "Name is required"
+    end
   end
 
   test "create fails for invalid email" do
-    # Test method: createFailsForInvalidEmail
-    # TODO: Compile actual method expressions
-    assert true
+    result = UserRepository.create("Test User", "invalid-email")
+    assert ResultTools.is_error(result)
+    case (case result do {:ok, _} -> 0; {:error, _} -> 1; _ -> -1 end) do
+      0 ->
+        case result do {:ok, value} -> value; {:error, value} -> value; _ -> nil end
+    flunk("Expected error for invalid email")
+      1 ->
+        _g = case result do {:ok, value} -> value; {:error, value} -> value; _ -> nil end
+    msg = _g
+    assert msg == "Valid email is required"
+    end
   end
 
   test "create fails for duplicate email" do
-    # Test method: createFailsForDuplicateEmail
-    # TODO: Compile actual method expressions
-    assert true
+    result = UserRepository.create("Test User", "alice@example.com")
+    assert ResultTools.is_error(result)
+    case (case result do {:ok, _} -> 0; {:error, _} -> 1; _ -> -1 end) do
+      0 ->
+        case result do {:ok, value} -> value; {:error, value} -> value; _ -> nil end
+    flunk("Expected error for duplicate email")
+      1 ->
+        _g = case result do {:ok, value} -> value; {:error, value} -> value; _ -> nil end
+    msg = _g
+    assert msg == "Email already exists"
+    end
   end
 
 end
