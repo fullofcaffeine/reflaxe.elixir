@@ -20,8 +20,7 @@ defmodule BasicModule do
      "
   @spec hello() :: String.t()
   def hello() do
-    # TODO: Implement function body
-    nil
+    "world"
   end
 
   @doc "
@@ -30,8 +29,7 @@ defmodule BasicModule do
      "
   @spec greet(String.t()) :: String.t()
   def greet(name) do
-    # TODO: Implement function body
-    nil
+    "Hello, " <> arg0 <> "!"
   end
 
   @doc "
@@ -40,8 +38,20 @@ defmodule BasicModule do
      "
   @spec calculate(integer(), integer(), String.t()) :: integer()
   def calculate(x, y, operation) do
-    # TODO: Implement function body
-    nil
+    temp_result = nil
+    case (arg2) do
+      "add" ->
+        temp_result = arg0 + arg1
+      "divide" ->
+        if (arg1 != 0), do: temp_result = Std.int(arg0 / arg1), else: temp_result = 0
+      "multiply" ->
+        temp_result = arg0 * arg1
+      "subtract" ->
+        temp_result = arg0 - arg1
+      _ ->
+        temp_result = 0
+    end
+    temp_result
   end
 
   @doc "
@@ -50,8 +60,7 @@ defmodule BasicModule do
      "
   @spec get_timestamp() :: String.t()
   def get_timestamp() do
-    # TODO: Implement function body
-    nil
+    "2024-01-01T00:00:00Z"
   end
 
   @doc "
@@ -60,8 +69,7 @@ defmodule BasicModule do
      "
   @spec is_valid(String.t()) :: boolean()
   def is_valid(input) do
-    # TODO: Implement function body
-    nil
+    arg0 != nil && String.length(arg0) > 0
   end
 
   @doc "
@@ -69,8 +77,7 @@ defmodule BasicModule do
      "
   @spec main() :: nil
   def main() do
-    # TODO: Implement function body
-    nil
+    Log.trace("BasicModule example compiled successfully!", %{fileName: "BasicModule.hx", lineNumber: 62, className: "BasicModule", methodName: "main"})
   end
 
 end

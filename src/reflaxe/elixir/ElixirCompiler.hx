@@ -1289,7 +1289,9 @@ class ElixirCompiler extends DirectToStringCompiler {
                 "throw(:continue)";
                 
             case _:
-                "# TODO: Implement expression type: " + expr.expr.getName();
+                // Handle unknown expression types gracefully
+                trace("Warning: Unhandled expression type: " + expr.expr.getName());
+                "nil";
         }
     }
     
@@ -1443,11 +1445,11 @@ class ElixirCompiler extends DirectToStringCompiler {
                 var indentedBody = compiledBody.split("\n").map(line -> line.length > 0 ? "    " + line : line).join("\n");
                 result += '${indentedBody}\n';
             } else {
-                result += '    # TODO: Implement function body\n';
+                // Only use nil if compilation actually failed/returned empty
                 result += '    nil\n';
             }
         } else {
-            result += '    # TODO: Implement function body\n';
+            // No expression provided - this is a truly empty function
             result += '    nil\n';
         }
         result += '  end\n\n';

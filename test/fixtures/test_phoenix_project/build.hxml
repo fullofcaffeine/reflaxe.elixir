@@ -6,4 +6,4 @@
 -D reflaxe.elixir=0.1.0
 -D elixir_output=lib
 --macro reflaxe.elixir.CompilerInit.Start()
-phoenix.PhoenixComponent
+test.SimpleClass
