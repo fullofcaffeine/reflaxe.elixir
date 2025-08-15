@@ -7,6 +7,7 @@ Practical, copy-paste recipes for common tasks. Each recipe is complete and read
 | Category | Recipes | Difficulty |
 |----------|---------|------------|
 | [Basic Patterns](#basic-patterns) | Modules, functions, utilities | 🟢 Beginner |
+| [Type-Safe Patterns](#type-safe-patterns) | Option<T>, Result<T,E>, null safety | 🟢 Beginner |
 | [Mix Integration](#mix-integration) | Build setup, testing, deps | 🟢 Beginner |
 | [Phoenix Web](#phoenix-web) | Controllers, routing, middleware | 🟡 Intermediate |
 | [LiveView Components](#liveview-components) | Real-time UI, forms, events | 🟡 Intermediate |
@@ -212,6 +213,454 @@ class ApiResponse {
             }
         };
     }
+}
+```
+
+---
+
+## Type-Safe Patterns
+
+### Recipe: Safe User Repository with Option<T>
+
+**Use Case**: Replace nullable database queries with type-safe Option patterns that prevent null pointer errors.
+
+```haxe
+// src_haxe/repositories/UserRepository.hx
+package repositories;
+
+import haxe.ds.Option;
+using haxe.ds.OptionTools;
+
+@:module
+class UserRepository {
+    /**
+     * Find user by ID - returns Option to handle absence gracefully
+     */
+    public static function findById(id: Int): Option<User> {
+        var user = Database.query("SELECT * FROM users WHERE id = ?", [id]);
+        return user != null ? Some(user) : None;
+    }
+    
+    /**
+     * Find user by email - common lookup pattern
+     */
+    public static function findByEmail(email: String): Option<User> {
+        var user = Database.query("SELECT * FROM users WHERE email = ?", [email]);
+        return OptionTools.fromNullable(user);
+    }
+    
+    /**
+     * Get user display name with fallback logic
+     */
+    public static function getDisplayName(id: Int): String {
+        return findById(id)
+            .map(user -> user.displayName != null ? user.displayName : user.username)
+            .filter(name -> name.length > 0)
+            .unwrap("Anonymous User");
+    }
+    
+    /**
+     * Get active users from a list of IDs
+     */
+    public static function getActiveUsers(ids: Array<Int>): Array<User> {
+        return ids
+            .map(id -> findById(id))
+            .map(opt -> opt.filter(user -> user.isActive))
+            .values(); // Extract all Some values, discard None
+    }
+    
+    /**
+     * Update user if exists
+     */
+    public static function updateIfExists(id: Int, data: UserData): Option<User> {
+        return findById(id).map(user -> {
+            user.name = data.name;
+            user.email = data.email;
+            user.updatedAt = Date.now();
+            Database.save(user);
+            return user;
+        });
+    }
+}
+```
+
+**Generated Elixir**:
+```elixir
+defmodule Repositories.UserRepository do
+  def find_by_id(id) do
+    case Database.query("SELECT * FROM users WHERE id = ?", [id]) do
+      nil -> :none
+      user -> {:some, user}
+    end
+  end
+  
+  def find_by_email(email) do
+    case Database.query("SELECT * FROM users WHERE email = ?", [email]) do
+      nil -> :none
+      user -> {:some, user}
+    end
+  end
+  
+  def get_display_name(id) do
+    case find_by_id(id) do
+      {:some, user} ->
+        name = if user.display_name != nil, do: user.display_name, else: user.username
+        if String.length(name) > 0, do: name, else: "Anonymous User"
+      :none -> "Anonymous User"
+    end
+  end
+  
+  def get_active_users(ids) do
+    ids
+    |> Enum.map(&find_by_id/1)
+    |> Enum.filter(fn
+      {:some, user} -> user.is_active
+      :none -> false
+    end)
+    |> Enum.map(fn {:some, user} -> user end)
+  end
+end
+```
+
+**Usage Examples**:
+```elixir
+# Safe user lookup
+case UserRepository.find_by_id(123) do
+  {:some, user} -> process_user(user)
+  :none -> handle_not_found()
+end
+
+# Quick display name with fallback
+name = UserRepository.get_display_name(123)  # Always returns a string
+
+# Bulk operations
+active_users = UserRepository.get_active_users([1, 2, 3, 4, 5])
+```
+
+---
+
+### Recipe: Validation Service with Result<T,E>
+
+**Use Case**: Replace exception-based validation with composable Result chains that preserve error information.
+
+```haxe
+// src_haxe/services/ValidationService.hx
+package services;
+
+import haxe.functional.Result;
+using haxe.functional.ResultTools;
+
+enum ValidationError {
+    EmailTooShort(min: Int);
+    EmailInvalid(email: String);
+    PasswordTooWeak(requirements: Array<String>);
+    UsernameTaken(username: String);
+    AgeInvalid(age: Int, min: Int, max: Int);
+}
+
+@:module
+class ValidationService {
+    /**
+     * Validate email address with detailed error reporting
+     */
+    public static function validateEmail(email: String): Result<String, ValidationError> {
+        if (email.length < 3) {
+            return Error(EmailTooShort(3));
+        }
+        
+        var emailRegex = ~/^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.match(email)) {
+            return Error(EmailInvalid(email));
+        }
+        
+        return Ok(email.toLowerCase());
+    }
+    
+    /**
+     * Validate password strength
+     */
+    public static function validatePassword(password: String): Result<String, ValidationError> {
+        var requirements = [];
+        
+        if (password.length < 8) requirements.push("At least 8 characters");
+        if (!~/[A-Z]/.match(password)) requirements.push("One uppercase letter");
+        if (!~/[a-z]/.match(password)) requirements.push("One lowercase letter");
+        if (!~/[0-9]/.match(password)) requirements.push("One number");
+        
+        if (requirements.length > 0) {
+            return Error(PasswordTooWeak(requirements));
+        }
+        
+        return Ok(password);
+    }
+    
+    /**
+     * Validate age range
+     */
+    public static function validateAge(age: Int): Result<Int, ValidationError> {
+        if (age < 13 || age > 120) {
+            return Error(AgeInvalid(age, 13, 120));
+        }
+        return Ok(age);
+    }
+    
+    /**
+     * Complete user validation - chains all validations
+     */
+    public static function validateUser(data: UserData): Result<ValidatedUser, ValidationError> {
+        return validateEmail(data.email)
+            .flatMap(validEmail -> validatePassword(data.password)
+                .flatMap(validPassword -> validateAge(data.age)
+                    .map(validAge -> new ValidatedUser(validEmail, validPassword, validAge))
+                )
+            );
+    }
+    
+    /**
+     * Validate multiple users - fail fast on first error
+     */
+    public static function validateUsers(users: Array<UserData>): Result<Array<ValidatedUser>, ValidationError> {
+        return ResultTools.traverse(users, validateUser);
+    }
+    
+    /**
+     * Validate multiple users - collect all errors
+     */
+    public static function validateUsersWithAllErrors(users: Array<UserData>): {
+        successes: Array<ValidatedUser>,
+        failures: Array<{user: UserData, error: ValidationError}>
+    } {
+        var results = users.map(user -> validateUser(user).map(valid -> {user: user, valid: valid}));
+        
+        return {
+            successes: results.filter(r -> r.isOk()).map(r -> r.unwrap().valid),
+            failures: results.filter(r -> r.isError()).map(r -> {
+                user: r.unwrapError().user, 
+                error: r.unwrapError()
+            })
+        };
+    }
+}
+```
+
+**Generated Elixir**:
+```elixir
+defmodule Services.ValidationService do
+  def validate_email(email) do
+    cond do
+      String.length(email) < 3 ->
+        {:error, {:email_too_short, 3}}
+      
+      not Regex.match?(~r/^[^\s@]+@[^\s@]+\.[^\s@]+$/, email) ->
+        {:error, {:email_invalid, email}}
+      
+      true ->
+        {:ok, String.downcase(email)}
+    end
+  end
+  
+  def validate_user(data) do
+    with {:ok, valid_email} <- validate_email(data.email),
+         {:ok, valid_password} <- validate_password(data.password),
+         {:ok, valid_age} <- validate_age(data.age) do
+      {:ok, %ValidatedUser{email: valid_email, password: valid_password, age: valid_age}}
+    end
+  end
+  
+  def validate_users(users) do
+    Enum.reduce_while(users, {:ok, []}, fn user, {:ok, acc} ->
+      case validate_user(user) do
+        {:ok, valid_user} -> {:cont, {:ok, [valid_user | acc]}}
+        {:error, reason} -> {:halt, {:error, reason}}
+      end
+    end)
+    |> case do
+      {:ok, users} -> {:ok, Enum.reverse(users)}
+      {:error, reason} -> {:error, reason}
+    end
+  end
+end
+```
+
+**Usage Examples**:
+```elixir
+# Individual validation with pattern matching
+case ValidationService.validate_email("test@example.com") do
+  {:ok, email} -> proceed_with_email(email)
+  {:error, {:email_too_short, min}} -> "Email must be at least #{min} characters"
+  {:error, {:email_invalid, email}} -> "Invalid email format: #{email}"
+end
+
+# Chained validation
+case ValidationService.validate_user(user_data) do
+  {:ok, validated_user} -> create_user(validated_user)
+  {:error, {:password_too_weak, requirements}} -> 
+    "Password must have: #{Enum.join(requirements, ", ")}"
+  {:error, error} -> handle_validation_error(error)
+end
+
+# Bulk validation with error collection
+{successes, failures} = ValidationService.validate_users_with_all_errors(user_list)
+IO.puts("Created #{length(successes)} users, #{length(failures)} failed")
+```
+
+---
+
+### Recipe: Safe API Client with Option and Result
+
+**Use Case**: Build a robust API client that handles both missing data (Option) and API failures (Result).
+
+```haxe
+// src_haxe/clients/ApiClient.hx
+package clients;
+
+import haxe.ds.Option;
+import haxe.functional.Result;
+using haxe.ds.OptionTools;
+using haxe.functional.ResultTools;
+
+enum ApiError {
+    NetworkError(message: String);
+    NotFound(resource: String);
+    Unauthorized;
+    BadRequest(details: String);
+    ServerError(code: Int, message: String);
+    ParseError(response: String);
+}
+
+typedef ApiResponse<T> = Result<Option<T>, ApiError>;
+
+@:module
+class ApiClient {
+    private static var baseUrl: String = "https://api.example.com";
+    private static var authToken: Option<String> = None;
+    
+    /**
+     * Set authentication token
+     */
+    public static function setAuth(token: String): Void {
+        authToken = Some(token);
+    }
+    
+    /**
+     * Generic GET request that might return empty (404) or data
+     */
+    public static function get<T>(path: String, decoder: Dynamic -> T): ApiResponse<T> {
+        return makeRequest("GET", path)
+            .flatMap(response -> {
+                if (response.status == 404) {
+                    return Ok(None); // Not found is not an error, just empty
+                }
+                if (response.status >= 200 && response.status < 300) {
+                    return try {
+                        var decoded = decoder(response.body);
+                        Ok(Some(decoded));
+                    } catch (e: Dynamic) {
+                        Error(ParseError(response.body));
+                    }
+                }
+                return Error(ServerError(response.status, response.body));
+            });
+    }
+    
+    /**
+     * Find user by ID - returns Option<User> wrapped in Result
+     */
+    public static function findUser(id: Int): ApiResponse<User> {
+        return get('/users/${id}', data -> User.fromJson(data));
+    }
+    
+    /**
+     * Get user profile - chains API calls safely
+     */
+    public static function getUserProfile(userId: Int): Result<Option<UserProfile>, ApiError> {
+        return findUser(userId).flatMap(userOpt -> {
+            return switch (userOpt) {
+                case Some(user): 
+                    get('/profiles/${user.profileId}', data -> UserProfile.fromJson(data));
+                case None: 
+                    Ok(None); // User doesn't exist, so profile doesn't exist
+            }
+        });
+    }
+    
+    /**
+     * Search users - returns empty array for no matches, error for API failure
+     */
+    public static function searchUsers(query: String): Result<Array<User>, ApiError> {
+        return get('/users/search?q=${query}', data -> {
+            var users: Array<Dynamic> = data.users;
+            return users.map(userData -> User.fromJson(userData));
+        }).map(resultOpt -> resultOpt.unwrap([])); // Empty array if no results
+    }
+    
+    /**
+     * Batch user lookup - handles partial failures gracefully
+     */
+    public static function getUsers(ids: Array<Int>): Result<{found: Array<User>, missing: Array<Int>}, ApiError> {
+        var requests = ids.map(id -> findUser(id).map(userOpt -> {id: id, user: userOpt}));
+        
+        return ResultTools.traverse(requests, r -> r).map(results -> {
+            var found = [];
+            var missing = [];
+            
+            for (result in results) {
+                switch (result.user) {
+                    case Some(user): found.push(user);
+                    case None: missing.push(result.id);
+                }
+            }
+            
+            return {found: found, missing: missing};
+        });
+    }
+    
+    /**
+     * Helper for making HTTP requests
+     */
+    private static function makeRequest(method: String, path: String): Result<{status: Int, body: String}, ApiError> {
+        return try {
+            var headers = new Map<String, String>();
+            authToken.apply(token -> headers.set("Authorization", 'Bearer ${token}'));
+            
+            var response = Http.request(method, baseUrl + path, headers);
+            Ok({status: response.status, body: response.body});
+        } catch (e: Dynamic) {
+            Error(NetworkError(Std.string(e)));
+        }
+    }
+}
+```
+
+**Usage Examples**:
+```haxe
+// Safe user lookup with nested Option/Result handling
+switch (ApiClient.findUser(123)) {
+    case Ok(Some(user)): 
+        trace('Found user: ${user.name}');
+    case Ok(None): 
+        trace("User not found");
+    case Error(NotFound(_)): 
+        trace("User not found");
+    case Error(NetworkError(msg)): 
+        trace('Network error: ${msg}');
+    case Error(Unauthorized): 
+        trace("Please log in");
+}
+
+// Chain API calls safely
+switch (ApiClient.getUserProfile(123)) {
+    case Ok(Some(profile)): showProfile(profile);
+    case Ok(None): showNoProfileMessage();
+    case Error(error): handleApiError(error);
+}
+
+// Batch operations with partial success handling
+switch (ApiClient.getUsers([1, 2, 3, 999])) {
+    case Ok({found: users, missing: missingIds}):
+        trace('Found ${users.length} users, missing: ${missingIds}');
+    case Error(error): 
+        handleApiError(error);
 }
 ```
 

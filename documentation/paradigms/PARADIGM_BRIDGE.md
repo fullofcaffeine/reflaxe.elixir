@@ -16,13 +16,15 @@
 
 This guide is part of a comprehensive documentation ecosystem. See also:
 
-- **[Functional Patterns](../FUNCTIONAL_PATTERNS.md)** - Detailed examples of imperative→functional transformations and Result type usage
-- **[BEAM Type Abstractions](../BEAM_TYPE_ABSTRACTIONS.md)** - Option<T> and Result<T,E> types for type-safe null handling and error management
+- **[BEAM Type Abstractions](../BEAM_TYPE_ABSTRACTIONS.md)** - Comprehensive guide to Option<T> and Result<T,E> types with BEAM/OTP integration patterns and real-world examples
+- **[Functional Patterns](../FUNCTIONAL_PATTERNS.md)** - Detailed examples of imperative→functional transformations including Option/Result compilation patterns and functional operations
+- **[ExUnit Testing Guide](../EXUNIT_TESTING_GUIDE.md)** - Testing Option and Result types with type-safe assertions and comprehensive examples
+- **[Developer Patterns](../guides/DEVELOPER_PATTERNS.md)** - Practical patterns for effective Haxe→Elixir development including Option/Result migration strategies
+- **[Cookbook](../COOKBOOK.md)** - Practical recipes for common Option and Result patterns across different platforms
 - **[Escape Hatches](../ESCAPE_HATCHES.md)** - Complete guide to Elixir interop, untyped code, and extern definitions  
 - **[Dual-Target Compilation](../DUAL_TARGET_COMPILATION.md)** - Setting up projects that compile to multiple targets simultaneously
-- **[Standard Library Handling](../STANDARD_LIBRARY_HANDLING.md)** - Architectural decisions for cross-platform standard libraries
+- **[Standard Library Handling](../STANDARD_LIBRARY_HANDLING.md)** - Architectural decisions for cross-platform standard libraries including Option and Result
 - **[Haxe Best Practices](../HAXE_BEST_PRACTICES.md)** - Modern Haxe patterns and conditional compilation guidelines
-- **[Developer Patterns](../guides/DEVELOPER_PATTERNS.md)** - Practical patterns for effective Haxe→Elixir development
 - **[Architecture Guide](../ARCHITECTURE.md)** - Understanding the Reflaxe.Elixir compilation system
 
 ## Philosophy
@@ -800,6 +802,170 @@ class DataService {
     }
 }
 ```
+
+### Type-Safe Cross-Platform Patterns
+
+One of Reflaxe.Elixir's greatest strengths is enabling type-safe patterns that work consistently across all Haxe targets while generating idiomatic code for each platform.
+
+#### Option<T> - Universal Null Safety
+
+The `Option<T>` type bridges the gap between nullable types and type-safe null handling across platforms:
+
+**Universal Haxe Code**:
+```haxe
+import haxe.ds.Option;
+using haxe.ds.OptionTools;
+
+class UserService {
+    // Same code works on all platforms
+    public function findUser(id: Int): Option<User> {
+        var user = database.query("SELECT * FROM users WHERE id = ?", [id]);
+        return user != null ? Some(user) : None;
+    }
+    
+    public function getUserDisplayName(id: Int): String {
+        return findUser(id)
+            .map(user -> user.displayName != null ? user.displayName : user.username)
+            .unwrap("Anonymous User");
+    }
+    
+    public function getActiveUsers(ids: Array<Int>): Array<User> {
+        return ids
+            .map(id -> findUser(id))
+            .map(opt -> opt.filter(user -> user.isActive))
+            .values(); // Extract all Some values, discard None
+    }
+}
+```
+
+**Cross-Platform Compilation**:
+
+**Elixir Output** (idiomatic atoms and pattern matching):
+```elixir
+def find_user(id) do
+  case Database.query("SELECT * FROM users WHERE id = ?", [id]) do
+    nil -> :none
+    user -> {:some, user}
+  end
+end
+
+def get_user_display_name(id) do
+  case find_user(id) do
+    {:some, user} ->
+      if user.display_name != nil do
+        user.display_name
+      else
+        user.username
+      end
+    :none -> "Anonymous User"
+  end
+end
+
+def get_active_users(ids) do
+  ids
+  |> Enum.map(&find_user/1)
+  |> Enum.filter(fn
+    {:some, user} -> user.is_active
+    :none -> false
+  end)
+  |> Enum.map(fn {:some, user} -> user end)
+end
+```
+
+**JavaScript Output** (discriminated unions):
+```javascript
+function findUser(id) {
+    const user = database.query("SELECT * FROM users WHERE id = ?", [id]);
+    return user != null ? {tag: "some", value: user} : {tag: "none"};
+}
+
+function getUserDisplayName(id) {
+    const userOpt = findUser(id);
+    if (userOpt.tag === "some") {
+        const user = userOpt.value;
+        return user.displayName != null ? user.displayName : user.username;
+    }
+    return "Anonymous User";
+}
+```
+
+#### Cross-Platform Error Handling Architecture
+
+Combine Option and Result types for comprehensive error handling that works everywhere:
+
+```haxe
+// Universal error handling architecture
+enum DatabaseError {
+    NotFound;
+    ConnectionFailed(reason: String);
+    QueryError(sql: String, error: String);
+}
+
+class Repository {
+    // Option for simple presence/absence
+    public function exists(id: Int): Option<Bool> {
+        return try {
+            var count = database.query("SELECT COUNT(*) FROM users WHERE id = ?", [id]);
+            Some(count > 0);
+        } catch (e) {
+            None;
+        }
+    }
+    
+    // Result for detailed error information
+    public function findById(id: Int): Result<User, DatabaseError> {
+        return try {
+            var user = database.query("SELECT * FROM users WHERE id = ?", [id]);
+            user != null ? Ok(user) : Error(NotFound);
+        } catch (e: Dynamic) {
+            Error(ConnectionFailed(Std.string(e)));
+        }
+    }
+    
+    // Combine both for complex workflows
+    public function updateIfExists(id: Int, data: UserData): Result<Option<User>, DatabaseError> {
+        return findById(id).map(user -> {
+            // Update logic here
+            Some(updatedUser);
+        });
+    }
+}
+```
+
+**Benefits Across All Platforms**:
+1. **Type Safety**: Compile-time guarantees prevent null pointer exceptions
+2. **Explicit Intent**: Clear API contracts about what may fail or be absent
+3. **Composability**: Functional operations work consistently everywhere
+4. **Performance**: Zero-cost abstractions with optimal platform-specific code generation
+5. **Migration Path**: Gradual adoption from nullable types to Option/Result
+
+#### Universal Data Transformation Patterns
+
+Type-safe patterns for data transformation that generate optimal code per platform:
+
+```haxe
+// Universal data pipeline
+class DataProcessor {
+    public function processUserData(rawData: Array<Dynamic>): Result<Array<User>, ValidationError> {
+        return rawData
+            .map(item -> validateUserData(item))       // Array<Result<UserData, ValidationError>>
+            .traverse(data -> createUser(data))        // Result<Array<User>, ValidationError>
+            .map(users -> users.filter(user -> user.isActive))  // Filter active users
+            .map(users -> users.sort((a, b) -> a.name.localeCompare(b.name))); // Sort by name
+    }
+    
+    private function validateUserData(raw: Dynamic): Result<UserData, ValidationError> {
+        return validateEmail(raw.email)
+            .flatMap(_ -> validateAge(raw.age))
+            .map(age -> new UserData(raw.email, age, raw.name));
+    }
+}
+```
+
+This pattern generates:
+- **Elixir**: Efficient `Enum.map/2`, `Enum.filter/2`, `Enum.sort_by/2` with `{:ok, _}` / `{:error, _}` tuples
+- **JavaScript**: Array methods with proper error handling and type guards
+- **Other targets**: Optimal iteration patterns with consistent error semantics
 
 ### Universal Result<T,E> Type - Error Handling Paradigm Bridge
 

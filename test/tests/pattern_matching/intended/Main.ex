@@ -193,7 +193,7 @@ defmodule PatternMatchingTest do
   @doc "Function main"
   @spec main() :: nil
   def main() do
-    Log.trace("Pattern matching compilation test", %{fileName: "Main.hx", lineNumber: 110, className: "PatternMatchingTest", methodName: "main"})
+    Log.trace("Pattern matching compilation test", %{fileName => "Main.hx", lineNumber => 110, className => "PatternMatchingTest", methodName => "main"})
   end
 
 end

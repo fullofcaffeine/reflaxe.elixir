@@ -1154,7 +1154,17 @@ class ElixirCompiler extends DirectToStringCompiler {
                 "[" + el.map(expr -> compileExpression(expr)).join(", ") + "]";
                 
             case TObjectDecl(fields):
-                "%{" + fields.map(f -> f.name + ": " + compileExpression(f.expr)).join(", ") + "}";
+                // Determine if this object should use atom keys (for OTP patterns, etc.)
+                var useAtoms = shouldUseAtomKeys(fields);
+                var compiledFields = fields.map(f -> {
+                    var key = if (useAtoms && isValidAtomName(f.name)) {
+                        ":" + f.name;  // Generate atom key like :id
+                    } else {
+                        f.name;  // Generate string key like "id" (Haxe already quotes field names)
+                    }
+                    key + " => " + compileExpression(f.expr);
+                });
+                "%{" + compiledFields.join(", ") + "}";
                 
             case TVar(tvar, expr):
                 // Check if variable is marked as unused by optimizer
@@ -1239,7 +1249,6 @@ class ElixirCompiler extends DirectToStringCompiler {
                 // Try to detect and optimize common for-in loop patterns
                 var optimized = tryOptimizeForInPattern(econd, ebody);
                 if (optimized != null) {
-                    trace('While loop optimized to: ${optimized}');
                     return optimized;
                 }
                 
@@ -2459,7 +2468,6 @@ class ElixirCompiler extends DirectToStringCompiler {
         
         // 3. Check for mapping pattern (array transformation) - Lower priority than filtering
         if (bodyAnalysis.hasMapPattern) {
-            trace('Taking mapping pattern path for ${arrayExpr}');
             return generateEnumMapPattern(arrayExpr, loopVar, ebody);
         }
         
@@ -2814,14 +2822,11 @@ class ElixirCompiler extends DirectToStringCompiler {
         var previousContext = isInLoopContext;
         isInLoopContext = true;
         
-        // Find the source variable in the condition
-        var sourceVar = findLoopVariable(conditionExpr);
-        
-        // Use "item" as the target variable for the lambda parameter
+        // Use "item" as the target variable for the lambda parameter (simplified approach)
         var actualLoopVar = "item";
         
-        // Apply variable substitution to the condition
-        var condition = compileExpressionWithVarMapping(conditionExpr, sourceVar, actualLoopVar);
+        // Apply simple substitution: all TLocal variables become "item"
+        var condition = compileExpressionWithAggressiveSubstitution(conditionExpr, actualLoopVar);
         
         // Restore previous loop context
         isInLoopContext = previousContext;
@@ -2836,14 +2841,11 @@ class ElixirCompiler extends DirectToStringCompiler {
         var previousContext = isInLoopContext;
         isInLoopContext = true;
         
-        // Find the source variable in the condition
-        var sourceVar = findLoopVariable(conditionExpr);
-        
-        // Use "item" as the target variable for the lambda parameter
+        // Use "item" as the target variable for the lambda parameter (simplified approach)
         var targetVar = "item";
         
-        // Apply variable substitution to the condition
-        var condition = compileExpressionWithVarMapping(conditionExpr, sourceVar, targetVar);
+        // Apply simple substitution: all TLocal variables become "item"
+        var condition = compileExpressionWithAggressiveSubstitution(conditionExpr, targetVar);
         
         // Restore previous loop context
         isInLoopContext = previousContext;
@@ -2870,16 +2872,9 @@ class ElixirCompiler extends DirectToStringCompiler {
             // Use TVar-based substitution for more accurate variable matching
             transformation = extractTransformationFromBodyWithTVar(ebody, lambdaParam, targetVar);
         } else {
-            // Alternative approach: Find the first TLocal variable in the transformation
-            var loopTVar = findFirstTLocalInExpression(ebody);
-            if (loopTVar != null) {
-                transformation = extractTransformationFromBodyWithTVar(ebody, loopTVar, targetVar);
-            } else {
-                // Last resort: fallback to string-based approach
-                var sourceVar = findLoopVariable(ebody);
-                trace('findLoopVariable returned: ${sourceVar}');
-                transformation = extractTransformationFromBody(ebody, sourceVar, targetVar);
-            }
+            // Simplified approach: Always use aggressive substitution
+            // This replaces all TLocal variables with the target variable
+            transformation = extractTransformationFromBodyWithAggressiveSubstitution(ebody, targetVar);
         }
         
         // Restore previous loop context
@@ -3196,13 +3191,9 @@ class ElixirCompiler extends DirectToStringCompiler {
      * @return The compiled expression with variables substituted
      */
     private function compileExpressionWithVarMapping(expr: TypedExpr, sourceVar: String, targetVar: String): String {
-        if (sourceVar == null || sourceVar == "__AGGRESSIVE__") {
-            // Don't bypass - still apply aggressive substitution for loop variables
-            return compileExpressionWithAggressiveSubstitution(expr, targetVar);
-        }
-        
-        // Normal path with specific source variable
-        return compileExpressionWithSubstitution(expr, sourceVar, targetVar);
+        // Simplified: Always use aggressive substitution for consistency
+        // This ensures all TLocal variables are properly replaced regardless of the source variable
+        return compileExpressionWithAggressiveSubstitution(expr, targetVar);
     }
     
     /**
@@ -3314,72 +3305,13 @@ class ElixirCompiler extends DirectToStringCompiler {
     }
 
     /**
-     * Find the loop variable being used in an expression
+     * Simple approach: Always substitute all TLocal variables with the target variable
+     * This replaces the complex __AGGRESSIVE__ marker system with a straightforward solution
      */
-    private function findLoopVariable(expr: TypedExpr): Null<String> {
-        var variables = new Map<String, Int>();
-        collectVariables(expr, variables);
-        
-        // Find the most frequently used non-compiler variable
-        var bestVar: String = null;
-        var bestCount = 0;
-        
-        for (varName => count in variables) {
-            // Skip compiler-generated variables
-            if (varName != "_g" && varName != "_g1" && varName != "_g2" && 
-                !varName.startsWith("temp_") && !varName.startsWith("_this")) {
-                if (count > bestCount) {
-                    bestVar = varName;
-                    bestCount = count;
-                }
-            }
-        }
-        
-        // NEW: If no variable found, return marker to trigger aggressive substitution
-        if (bestVar == null) {
-            // Return special marker that tells the system to use aggressive substitution
-            return "__AGGRESSIVE__";
-        }
-        
-        return bestVar;
-    }
-    
-    /**
-     * Collect all variable names and their usage counts from an expression
-     */
-    private function collectVariables(expr: TypedExpr, variables: Map<String, Int>): Void {
-        switch (expr.expr) {
-            case TLocal(v):
-                var originalName = getOriginalVarName(v);
-                var currentCount = variables.exists(originalName) ? variables.get(originalName) : 0;
-                variables.set(originalName, currentCount + 1);
-            case TBinop(_, e1, e2):
-                collectVariables(e1, variables);
-                collectVariables(e2, variables);
-            case TField(e, _):
-                collectVariables(e, variables);
-            case TCall(e, args):
-                collectVariables(e, variables);
-                for (arg in args) {
-                    collectVariables(arg, variables);
-                }
-            case TArray(e1, e2):
-                collectVariables(e1, variables);
-                collectVariables(e2, variables);
-            case TIf(econd, eif, eelse):
-                collectVariables(econd, variables);
-                collectVariables(eif, variables);
-                if (eelse != null) collectVariables(eelse, variables);
-            case TBlock(exprs):
-                for (e in exprs) {
-                    collectVariables(e, variables);
-                }
-            case TParenthesis(e):
-                // Handle parenthesized expressions
-                collectVariables(e, variables);
-            case _:
-                // Other expression types don't contain variables
-        }
+    private function extractTransformationFromBodyWithAggressiveSubstitution(expr: TypedExpr, targetVar: String): String {
+        // Simply compile the expression with aggressive substitution
+        // All TLocal variables will be replaced with the target variable
+        return compileExpressionWithAggressiveSubstitution(expr, targetVar);
     }
     
     /**
@@ -3957,10 +3889,9 @@ class ElixirCompiler extends DirectToStringCompiler {
                     if (args.length > 0) {
                         switch (args[0].expr) {
                             case TFunction(func):
-                                // Handle lambda with proper variable substitution
+                                // Handle lambda with simplified variable substitution
                                 var paramName = func.args.length > 0 ? NamingHelper.toSnakeCase(getOriginalVarName(func.args[0].v)) : "item";
-                                var sourceVar = findLoopVariable(func.expr);
-                                var body = compileExpressionWithVarMapping(func.expr, sourceVar, paramName);
+                                var body = compileExpressionWithAggressiveSubstitution(func.expr, paramName);
                                 return 'Enum.filter(${objStr}, fn ${paramName} -> ${body} end)';
                             case _:
                                 // Not a simple lambda, use regular compilation
@@ -4305,6 +4236,71 @@ class ElixirCompiler extends DirectToStringCompiler {
             case FDynamic(s): s;
             case FEnum(_, ef): ef.name;
         };
+    }
+    
+    /**
+     * Check if a string can be a valid Elixir atom name
+     * Elixir atom rules: start with lowercase/underscore, contain alphanumeric/underscore
+     */
+    private function isValidAtomName(name: String): Bool {
+        if (name == null || name.length == 0) return false;
+        
+        // Check first character: must be lowercase letter or underscore
+        var firstChar = name.charAt(0);
+        if (!((firstChar >= 'a' && firstChar <= 'z') || firstChar == '_')) {
+            return false;
+        }
+        
+        // Check remaining characters: alphanumeric or underscore
+        for (i in 1...name.length) {
+            var char = name.charAt(i);
+            if (!((char >= 'a' && char <= 'z') || 
+                  (char >= 'A' && char <= 'Z') || 
+                  (char >= '0' && char <= '9') || 
+                  char == '_')) {
+                return false;
+            }
+        }
+        
+        return true;
+    }
+    
+    /**
+     * Determine if an object should use atom keys based on field names and patterns
+     * This implements the general solution for generating idiomatic Elixir
+     */
+    private function shouldUseAtomKeys(fields: Array<{name: String, expr: TypedExpr}>): Bool {
+        if (fields == null || fields.length == 0) return false;
+        
+        // Common OTP/Elixir configuration field names that should always be atoms
+        var otpFieldNames = [
+            "id", "start", "restart", "shutdown", "type", "modules",  // Supervisor child spec
+            "name", "strategy",  // Supervisor options
+            "function", "args",  // start tuple components
+            "temporary", "permanent", "transient",  // restart values
+            "worker", "supervisor"  // type values
+        ];
+        
+        var fieldNames = fields.map(f -> f.name);
+        
+        // If any field matches OTP patterns, use atoms for all fields (if they're valid atom names)
+        for (fieldName in fieldNames) {
+            if (otpFieldNames.indexOf(fieldName) != -1) {
+                // Check if ALL field names can be atoms
+                var allValidAtoms = true;
+                for (field in fields) {
+                    if (!isValidAtomName(field.name)) {
+                        allValidAtoms = false;
+                        break;
+                    }
+                }
+                return allValidAtoms;
+            }
+        }
+        
+        // For non-OTP objects, prefer strings to maintain backwards compatibility
+        // This ensures we don't break existing code that expects string keys
+        return false;
     }
     
 }

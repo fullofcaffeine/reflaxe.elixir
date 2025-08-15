@@ -30,7 +30,7 @@ defmodule Main do
     if (restart == nil), do: restart = "permanent", else: nil
     temp_map1 = nil
     _g = Haxe.Ds.StringMap.new()
-    _g.set("start", %{_0: "MyWorker", _1: "start_link", _2: [%{name: "worker1"}]})
+    _g.set("start", %{_0 => "MyWorker", _1 => "start_link", _2 => [%{:name => "worker1"}]})
     _g.set("restart", restart)
     _g.set("type", "worker")
     temp_map1 = _g
@@ -43,7 +43,7 @@ defmodule Main do
     if (restart == nil), do: restart = "permanent", else: nil
     temp_map3 = nil
     _g = Haxe.Ds.StringMap.new()
-    _g.set("start", %{_0: "MyWorker", _1: "start_link", _2: [%{name: "worker2"}]})
+    _g.set("start", %{_0 => "MyWorker", _1 => "start_link", _2 => [%{:name => "worker2"}]})
     _g.set("restart", restart)
     _g.set("type", "worker")
     temp_map3 = _g
@@ -56,7 +56,7 @@ defmodule Main do
     if (restart == nil), do: restart = "permanent", else: nil
     temp_map5 = nil
     _g = Haxe.Ds.StringMap.new()
-    _g.set("start", %{_0: "SubSupervisor", _1: "start_link", _2: [%{}]})
+    _g.set("start", %{_0 => "SubSupervisor", _1 => "start_link", _2 => [%{}]})
     _g.set("restart", restart)
     _g.set("type", "supervisor")
     temp_map5 = _g
@@ -84,7 +84,7 @@ defmodule Main do
       if (restart == nil), do: restart = "permanent", else: nil
       temp_map8 = nil
       _g = Haxe.Ds.StringMap.new()
-      _g.set("start", %{_0: "DynamicWorker", _1: "start_link", _2: [%{}]})
+      _g.set("start", %{_0 => "DynamicWorker", _1 => "start_link", _2 => [%{}]})
       _g.set("restart", restart)
       _g.set("type", "worker")
       temp_map8 = _g
@@ -96,10 +96,10 @@ defmodule Main do
       Supervisor.start_child(supervisor, new_child)
       temp_struct = nil
       counts = Supervisor.count_children(supervisor)
-      temp_struct = %{specs: counts.get("specs"), active: counts.get("active"), supervisors: counts.get("supervisors"), workers: counts.get("workers")}
+      temp_struct = %{specs => counts.get("specs"), active => counts.get("active"), supervisors => counts.get("supervisors"), workers => counts.get("workers")}
       stats = temp_struct
-      Log.trace("Active workers: " <> Integer.to_string(stats.workers) <> ", Supervisors: " <> Integer.to_string(stats.supervisors), %{fileName: "Main.hx", lineNumber: 59, className: "Main", methodName: "testSupervisor"})
-      if (Process.alive?(supervisor)), do: Log.trace("Supervisor is running", %{fileName: "Main.hx", lineNumber: 63, className: "Main", methodName: "testSupervisor"}), else: nil
+      Log.trace("Active workers: " <> Integer.to_string(stats.workers) <> ", Supervisors: " <> Integer.to_string(stats.supervisors), %{fileName => "Main.hx", lineNumber => 59, className => "Main", methodName => "testSupervisor"})
+      if (Process.alive?(supervisor)), do: Log.trace("Supervisor is running", %{fileName => "Main.hx", lineNumber => 63, className => "Main", methodName => "testSupervisor"}), else: nil
       Supervisor.stop(supervisor)
     end
   end
@@ -113,20 +113,22 @@ defmodule Main do
     task = Task.async(fn  -> Process.sleep(100)
     42 end)
     result = Task.await(task)
-    Log.trace("Async result: " <> result, %{fileName: "Main.hx", lineNumber: 83, className: "Main", methodName: "testTask"})
+    Log.trace("Async result: " <> result, %{fileName => "Main.hx", lineNumber => 83, className => "Main", methodName => "testTask"})
     slow_task = Task.async(fn  -> Process.sleep(5000)
     "slow" end)
     yield_result = Task.yield(slow_task, 100)
     if (yield_result == nil) do
-      Log.trace("Task timed out", %{fileName: "Main.hx", lineNumber: 93, className: "Main", methodName: "testTask"})
+      Log.trace("Task timed out", %{fileName => "Main.hx", lineNumber => 93, className => "Main", methodName => "testTask"})
       Task.shutdown(slow_task)
     end
-    Task.start(fn  -> Log.trace("Background task running", %{fileName: "Main.hx", lineNumber: 99, className: "Main", methodName: "testTask"}) end)
-    Task.start_link(fn  -> Log.trace("Linked task running", %{fileName: "Main.hx", lineNumber: 104, className: "Main", methodName: "testTask"}) end)
+    Task.start(fn  -> Log.trace("Background task running", %{fileName => "Main.hx", lineNumber => 99, className => "Main", methodName => "testTask"}) end)
+    Task.start_link(fn  -> Log.trace("Linked task running", %{fileName => "Main.hx", lineNumber => 104, className => "Main", methodName => "testTask"}) end)
     tasks = [Task.async(fn  -> 1 end), Task.async(fn  -> 2 end), Task.async(fn  -> 3 end)]
     results = Task.yield_many(tasks)
     _g = 0
-    Enum.map(results, fn item -> if (item._1 != nil && item._1._0 == "ok"), do: Log.trace("Task result: " <> Std.string(item._1._1), %{fileName: "Main.hx", lineNumber: 117, className: "Main", methodName: "testTask"}), else: item end)
+    Enum.map(results, fn item -> task_result = Enum.at(results, _g)
+    _g = _g + 1
+    if (task_result._1 != nil && task_result._1._0 == "ok"), do: Log.trace("Task result: " <> Std.string(task_result._1._1), %{fileName => "Main.hx", lineNumber => 117, className => "Main", methodName => "testTask"}), else: nil end)
     temp_var = nil
     task = Task.async(fn  -> "quick" end)
     temp_var = Task.await(task)
@@ -136,12 +138,16 @@ defmodule Main do
     temp_array1 = nil
     _g = []
     _g = 0
-    Enum.map(funs, fn item -> Task.Task.async(item) end)
+    Enum.map(funs, fn item -> fun = Enum.at(funs, _g)
+    _g = _g + 1
+    _g ++ [Task.async(fun)] end)
     temp_array1 = _g
     tasks = temp_array1
     _g = []
     _g = 0
-    Enum.map(tasks, fn item -> Task.Task.await(item) end)
+    Enum.map(tasks, fn item -> task = Enum.at(tasks, _g)
+    _g = _g + 1
+    _g ++ [Task.await(task)] end)
     temp_array = _g
     temp_maybe_maybe_string = nil
     task = Task.async(fn  -> Process.sleep(50)
@@ -154,7 +160,7 @@ defmodule Main do
       temp_maybe_maybe_string = nil
     end
     temp_maybe_maybe_string
-    Task.start(fn  -> Log.trace("Fire and forget", %{fileName: "Main.hx", lineNumber: 138, className: "Main", methodName: "testTask"}) end)
+    Task.start(fn  -> Log.trace("Fire and forget", %{fileName => "Main.hx", lineNumber => 138, className => "Main", methodName => "testTask"}) end)
     Task.async_stream([1, 2, 3, 4, 5], fn x -> x * 2 end)
   end
 
@@ -169,12 +175,12 @@ defmodule Main do
       supervisor = supervisor_result._1
       task = Task.Supervisor.async(supervisor, fn  -> "supervised" end)
       result = Task.await(task)
-      Log.trace("Supervised task result: " <> result, %{fileName: "Main.hx", lineNumber: 161, className: "Main", methodName: "testTaskSupervisor"})
+      Log.trace("Supervised task result: " <> result, %{fileName => "Main.hx", lineNumber => 161, className => "Main", methodName => "testTaskSupervisor"})
       nolink_task = Task.Supervisor.async_nolink(supervisor, fn  -> "not linked" end)
       Task.await(nolink_task)
-      Task.Supervisor.start_child(supervisor, fn  -> Log.trace("Supervised child task", %{fileName: "Main.hx", lineNumber: 171, className: "Main", methodName: "testTaskSupervisor"}) end)
+      Task.Supervisor.start_child(supervisor, fn  -> Log.trace("Supervised child task", %{fileName => "Main.hx", lineNumber => 171, className => "Main", methodName => "testTaskSupervisor"}) end)
       children = Task.Supervisor.children(supervisor)
-      Log.trace("Supervised tasks count: " <> Integer.to_string(length(children)), %{fileName: "Main.hx", lineNumber: 176, className: "Main", methodName: "testTaskSupervisor"})
+      Log.trace("Supervised tasks count: " <> Integer.to_string(length(children)), %{fileName => "Main.hx", lineNumber => 176, className => "Main", methodName => "testTaskSupervisor"})
       Task.Supervisor.async_stream(supervisor, [10, 20, 30], fn x -> x + 1 end)
       temp_var = nil
       task = Task.Supervisor.async(supervisor, fn  -> "helper result" end)
@@ -186,15 +192,19 @@ defmodule Main do
       temp_array1 = nil
       _g = []
       _g = 0
-      Enum.map(funs, fn item -> Supervisor.Task.Supervisor.async(item, item) end)
+      Enum.map(funs, fn item -> fun = Enum.at(funs, _g)
+      _g = _g + 1
+      _g ++ [Task.Supervisor.async(supervisor, fun)] end)
       temp_array1 = _g
       tasks = temp_array1
       _g = []
       _g = 0
-      Enum.map(tasks, fn item -> Task.Task.await(item) end)
+      Enum.map(tasks, fn item -> task = Enum.at(tasks, _g)
+      _g = _g + 1
+      _g ++ [Task.await(task)] end)
       temp_array = _g
       temp_array
-      Task.Supervisor.start_child(supervisor, fn  -> Log.trace("Background supervised task", %{fileName: "Main.hx", lineNumber: 197, className: "Main", methodName: "testTaskSupervisor"}) end)
+      Task.Supervisor.start_child(supervisor, fn  -> Log.trace("Background supervised task", %{fileName => "Main.hx", lineNumber => 197, className => "Main", methodName => "testTaskSupervisor"}) end)
     end
   end
 
@@ -209,7 +219,7 @@ defmodule Main do
     if (restart == nil), do: restart = "permanent", else: nil
     temp_map1 = nil
     _g = Haxe.Ds.StringMap.new()
-    _g.set("start", %{_0: "Worker1", _1: "start_link", _2: [%{}]})
+    _g.set("start", %{_0 => "Worker1", _1 => "start_link", _2 => [%{}]})
     _g.set("restart", restart)
     _g.set("type", "worker")
     temp_map1 = _g
@@ -222,7 +232,7 @@ defmodule Main do
     if (restart == nil), do: restart = "permanent", else: nil
     temp_map3 = nil
     _g = Haxe.Ds.StringMap.new()
-    _g.set("start", %{_0: "Worker2", _1: "start_link", _2: [%{}]})
+    _g.set("start", %{_0 => "Worker2", _1 => "start_link", _2 => [%{}]})
     _g.set("restart", restart)
     _g.set("type", "worker")
     temp_map3 = _g
@@ -235,7 +245,7 @@ defmodule Main do
     if (restart == nil), do: restart = "permanent", else: nil
     temp_map5 = nil
     _g = Haxe.Ds.StringMap.new()
-    _g.set("start", %{_0: "Worker3", _1: "start_link", _2: [%{}]})
+    _g.set("start", %{_0 => "Worker3", _1 => "start_link", _2 => [%{}]})
     _g.set("restart", restart)
     _g.set("type", "worker")
     temp_map5 = _g
@@ -256,12 +266,14 @@ defmodule Main do
       supervisor = result._1
       temp_struct = nil
       counts = Supervisor.count_children(supervisor)
-      temp_struct = %{specs: counts.get("specs"), active: counts.get("active"), supervisors: counts.get("supervisors"), workers: counts.get("workers")}
+      temp_struct = %{specs => counts.get("specs"), active => counts.get("active"), supervisors => counts.get("supervisors"), workers => counts.get("workers")}
       stats = temp_struct
-      Log.trace("Supervisor - Workers: " <> Integer.to_string(stats.workers) <> ", Supervisors: " <> Integer.to_string(stats.supervisors), %{fileName: "Main.hx", lineNumber: 225, className: "Main", methodName: "testSupervisionTree"})
+      Log.trace("Supervisor - Workers: " <> Integer.to_string(stats.workers) <> ", Supervisors: " <> Integer.to_string(stats.supervisors), %{fileName => "Main.hx", lineNumber => 225, className => "Main", methodName => "testSupervisionTree"})
       children_list = Supervisor.which_children(supervisor)
       _g = 0
-      Enum.map(children_list, fn item -> "Child: " <> Std.string(item._0) <> ", Type: " <> item._2 end)
+      Enum.map(children_list, fn item -> child = Enum.at(children_list, _g)
+      _g = _g + 1
+      Log.trace("Child: " <> Std.string(child._0) <> ", Type: " <> child._2, %{fileName => "Main.hx", lineNumber => 230, className => "Main", methodName => "testSupervisionTree"}) end)
       Supervisor.restart_child(supervisor, "worker1")
       Supervisor.stop(supervisor, "normal")
     end

@@ -283,7 +283,16 @@ defmodule OptionTools do
   def all(options) do
     values = []
     _g = 0
-    Enum.map(options, fn item -> item end)
+    Enum.map(options, fn item -> option = Enum.at(options, _g)
+    _g = _g + 1
+    case (case option do {:some, _} -> 0; :none -> 1; _ -> -1 end) do
+      0 ->
+        _g = case option do {:some, value} -> value; :none -> nil; _ -> nil end
+    value = _g
+    values ++ [value]
+      1 ->
+        :none
+    end end)
     {:some, values}
   end
 
@@ -300,7 +309,16 @@ defmodule OptionTools do
   def values(options) do
     result = []
     _g = 0
-    Enum.map(options, fn item -> item end)
+    Enum.map(options, fn item -> option = Enum.at(options, _g)
+    _g = _g + 1
+    case (case option do {:some, _} -> 0; :none -> 1; _ -> -1 end) do
+      0 ->
+        _g = case option do {:some, value} -> value; :none -> nil; _ -> nil end
+    value = _g
+    result ++ [value]
+      1 ->
+        nil
+    end end)
     result
   end
 
@@ -405,9 +423,9 @@ defmodule OptionTools do
       0 ->
         _g = case option do {:some, value} -> value; :none -> nil; _ -> nil end
     value = _g
-    temp_result = %{reply: value, status: "ok"}
+    temp_result = %{reply => value, status => "ok"}
       1 ->
-        temp_result = %{reply: nil, status: "none"}
+        temp_result = %{reply => nil, status => "none"}
     end
     temp_result
   end

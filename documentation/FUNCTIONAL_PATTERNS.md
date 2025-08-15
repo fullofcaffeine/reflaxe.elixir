@@ -435,6 +435,214 @@ function processItems(data: Data): Array<Item> {
 
 **See**: [`documentation/DYNAMIC_HANDLING.md`](DYNAMIC_HANDLING.md) for comprehensive Dynamic type handling guide.
 
+## Type-Safe Null Handling with Option<T>
+
+The `Option<T>` type provides type-safe null handling as an alternative to nullable types, compiling to idiomatic patterns per target following Gleam's approach to explicit over implicit.
+
+### The Option Type Pattern
+
+```haxe
+// Import the Option type and tools
+import haxe.ds.Option;
+using haxe.ds.OptionTools;
+
+// Define functions that may return nothing
+function findUser(id: Int): Option<User> {
+    var user = database.query("SELECT * FROM users WHERE id = ?", [id]);
+    return user != null ? Some(user) : None;
+}
+```
+
+### Compilation to Idiomatic Elixir
+
+**Haxe Input**:
+```haxe
+function getUserEmail(id: Int): Option<String> {
+    return switch (findUser(id)) {
+        case Some(user): 
+            if (user.email != null) Some(user.email) else None;
+        case None: 
+            None;
+    }
+}
+```
+
+**Generated Elixir**:
+```elixir
+def get_user_email(id) do
+  case find_user(id) do
+    {:some, user} -> 
+      if user.email != nil do 
+        {:some, user.email} 
+      else 
+        :none 
+      end
+    :none -> 
+      :none
+  end
+end
+```
+
+### Functional Operations
+
+Option types support comprehensive functional operations inspired by Gleam's approach:
+
+```haxe
+// Chain operations with flatMap/then
+function getUserProfile(id: Int): Option<UserProfile> {
+    return findUser(id).then(user -> 
+        findProfile(user.profileId).map(profile ->
+            new UserProfile(user.name, profile.bio)
+        )
+    );
+}
+
+// Transform values with map
+function getUserDisplayName(id: Int): Option<String> {
+    return findUser(id).map(user -> 
+        user.displayName != null ? user.displayName : user.username
+    );
+}
+
+// Extract values safely with unwrap
+function getNameOrDefault(id: Int): String {
+    return findUser(id)
+        .map(user -> user.name)
+        .unwrap("Anonymous User");
+}
+
+// Filter based on conditions
+function getActiveUser(id: Int): Option<User> {
+    return findUser(id).filter(user -> user.isActive);
+}
+```
+
+### Collection Operations
+
+Working with collections of Option values:
+
+```haxe
+// Process all options - fail if any is None
+function getUserProfiles(ids: Array<Int>): Option<Array<UserProfile>> {
+    var options = ids.map(id -> findUser(id));
+    return OptionTools.all(options).map(users ->
+        users.map(user -> createProfile(user))
+    );
+}
+
+// Extract all Some values, discard None values
+function getExistingUsers(ids: Array<Int>): Array<User> {
+    var options = ids.map(id -> findUser(id));
+    return OptionTools.values(options);
+}
+```
+
+### BEAM/OTP Integration
+
+Option types provide seamless integration with Elixir/OTP patterns:
+
+```haxe
+// Convert to Result for error handling chains
+function getUser(id: Int): Result<User, String> {
+    return findUser(id).toResult('User not found with id: ${id}');
+}
+
+// Use in GenServer replies
+function handleGetUser(id: Int): Dynamic {
+    return findUser(id).toReply(); // Generates proper {:reply, response, state}
+}
+
+// Bridge with nullable APIs
+function fromNullableAPI(data: Null<String>): Option<String> {
+    return OptionTools.fromNullable(data);
+}
+```
+
+### Pattern vs Nullable Comparison
+
+**Nullable-Based Approach**:
+```haxe
+// Traditional null checking
+function getUserEmail(id: Int): Null<String> {
+    var user = findUser(id); // Returns Null<User>
+    if (user != null) {
+        if (user.email != null) {
+            return user.email;
+        }
+    }
+    return null; // Information about why it failed is lost
+}
+```
+
+**Option-Based Approach**:
+```haxe
+// Type-safe Option handling
+function getUserEmail(id: Int): Option<String> {
+    return findUser(id)
+        .flatMap(user -> OptionTools.fromNullable(user.email));
+}
+
+// Caller must handle both cases explicitly
+switch (getUserEmail(123)) {
+    case Some(email): sendNotification(email);
+    case None: logError("Could not get email for user 123");
+}
+```
+
+### Cross-Platform Compilation
+
+Option types generate optimal patterns for each target:
+
+- **Elixir**: `{:some, value}` and `:none` atoms for pattern matching
+- **JavaScript**: Tagged objects `{tag: "some", value: v}` / `{tag: "none"}`
+- **Python**: Dataclasses with proper type hints
+- **Other targets**: Standard enum with type safety
+
+### Advanced Patterns
+
+**Chaining with Early Returns**:
+```haxe
+function getNestedProperty(userId: Int): Option<String> {
+    return findUser(userId)
+        .flatMap(user -> findProfile(user.profileId))
+        .flatMap(profile -> OptionTools.fromNullable(profile.website))
+        .filter(website -> website.startsWith("https://"));
+}
+```
+
+**Combining Multiple Options**:
+```haxe
+function createFullName(userId: Int): Option<String> {
+    var firstName = findUser(userId).map(u -> u.firstName);
+    var lastName = findUser(userId).map(u -> u.lastName);
+    
+    return switch ([firstName, lastName]) {
+        case [Some(first), Some(last)]: Some('${first} ${last}');
+        case [Some(first), None]: Some(first);
+        case [None, Some(last)]: Some(last);
+        case [None, None]: None;
+    }
+}
+```
+
+**Lazy Evaluation**:
+```haxe
+function getUserOrFallback(primaryId: Int, fallbackId: Int): Option<User> {
+    return findUser(primaryId).lazyOr(() -> findUser(fallbackId));
+}
+```
+
+### Benefits
+
+1. **Type Safety**: Compile-time guarantee of null safety
+2. **Explicit Intent**: Clear indication when values may be absent
+3. **Composability**: Chain operations without nested null checks
+4. **Cross-Platform**: Works consistently across all Haxe targets  
+5. **Performance**: Zero-cost abstractions with optimal code generation
+6. **BEAM Integration**: Seamless integration with Elixir/OTP patterns
+
+**See**: [`std/haxe/ds/Option.hx`](../std/haxe/ds/Option.hx) and [`std/haxe/ds/OptionTools.hx`](../std/haxe/ds/OptionTools.hx) for complete API documentation.
+
 ## Error Handling with Result<T,E>
 
 The `Result<T,E>` type provides functional error handling as an alternative to exceptions, compiling to idiomatic patterns per target.
@@ -608,9 +816,11 @@ function complexValidation(data: UserData): Result<User, ValidationError> {
 ## See Also
 
 - [BEAM Type Abstractions](BEAM_TYPE_ABSTRACTIONS.md) - Comprehensive guide to Option<T> and Result<T,E> types for type-safe null handling and error management
+- [ExUnit Testing Guide](EXUNIT_TESTING_GUIDE.md) - Testing Option and Result types with type-safe assertions
 - [Paradigm Bridge](paradigms/PARADIGM_BRIDGE.md) - Cross-platform development patterns and functional transformations
-- [Developer Patterns](guides/DEVELOPER_PATTERNS.md) - Best practices for writing effective Haxe→Elixir code
-- [Standard Library Handling](STANDARD_LIBRARY_HANDLING.md) - How standard library types including Option compile to Elixir
+- [Developer Patterns](guides/DEVELOPER_PATTERNS.md) - Best practices for writing effective Haxe→Elixir code including Option/Result migration patterns
+- [Standard Library Handling](STANDARD_LIBRARY_HANDLING.md) - How standard library types including Option and Result compile to Elixir
+- [Cookbook](COOKBOOK.md) - Practical recipes for common Option and Result patterns
 
 ## References
 

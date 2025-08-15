@@ -52,7 +52,7 @@ defmodule Main do
   @doc "Function main"
   @spec main() :: nil
   def main() do
-    Log.trace("RouterBuildMacro validation test with multiple invalid references", %{fileName: "Main.hx", lineNumber: 76, className: "Main", methodName: "main"})
+    Log.trace("RouterBuildMacro validation test with multiple invalid references", %{fileName => "Main.hx", lineNumber => 76, className => "Main", methodName => "main"})
   end
 
 end

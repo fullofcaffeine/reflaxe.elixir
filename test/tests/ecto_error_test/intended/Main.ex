@@ -30,7 +30,7 @@ defmodule Main do
   @doc "Function main"
   @spec main() :: nil
   def main() do
-    Log.trace("Ecto error validation test", %{fileName: "Main.hx", lineNumber: 27, className: "Main", methodName: "main"})
+    Log.trace("Ecto error validation test", %{fileName => "Main.hx", lineNumber => 27, className => "Main", methodName => "main"})
   end
 
 end
