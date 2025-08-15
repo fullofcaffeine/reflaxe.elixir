@@ -31,9 +31,9 @@ defmodule Point do
   # Instance functions
   @doc "Function distance"
   @spec distance(Point.t()) :: float()
-  def distance(arg0) do
-    dx = __MODULE__.x - arg0.x
-    dy = __MODULE__.y - arg0.y
+  def distance(other) do
+    dx = __MODULE__.x - other.x
+    dy = __MODULE__.y - other.y
     Math.sqrt(dx * dx + dy * dy)
   end
 
@@ -69,11 +69,11 @@ defmodule Shape do
 
   @doc "Function move"
   @spec move(float(), float()) :: nil
-  def move(arg0, arg1) do
+  def move(dx, dy) do
     fh = __MODULE__.position
-    fh.x = fh.x + arg0
+    fh.x = fh.x + dx
     fh = __MODULE__.position
-    fh.y = fh.y + arg1
+    fh.y = fh.y + dy
   end
 
 end
@@ -103,15 +103,15 @@ defmodule Circle do
 
   @doc "Function update"
   @spec update(float()) :: nil
-  def update(arg0) do
-    __MODULE__.move(__MODULE__.velocity.x * arg0, __MODULE__.velocity.y * arg0)
+  def update(dt) do
+    __MODULE__.move(__MODULE__.velocity.x * dt, __MODULE__.velocity.y * dt)
   end
 
   @doc "Function set_velocity"
   @spec set_velocity(float(), float()) :: nil
-  def set_velocity(arg0, arg1) do
-    __MODULE__.velocity.x = arg0
-    __MODULE__.velocity.y = arg1
+  def set_velocity(vx, vy) do
+    __MODULE__.velocity.x = vx
+    __MODULE__.velocity.y = vy
   end
 
 end
@@ -142,14 +142,14 @@ defmodule Container do
   # Instance functions
   @doc "Function add"
   @spec add(T.t()) :: nil
-  def add(arg0) do
-    __MODULE__.items ++ [arg0]
+  def add(item) do
+    __MODULE__.items ++ [item]
   end
 
   @doc "Function get"
   @spec get(integer()) :: T.t()
-  def get(arg0) do
-    Enum.at(__MODULE__.items, arg0)
+  def get(index) do
+    Enum.at(__MODULE__.items, index)
   end
 
   @doc "Function size"
@@ -160,11 +160,11 @@ defmodule Container do
 
   @doc "Function map"
   @spec map(Function.t()) :: Container.t()
-  def map(arg0) do
+  def map(fn) do
     result = Container.new()
     _g = 0
     _g = __MODULE__.items
-    Enum.map(_g, fn item -> arg0(item) end)
+    Enum.map(_g, fn item -> fn(item) end)
     result
   end
 

@@ -14,13 +14,13 @@ defmodule Log do
 		Format the output of `trace` before printing it.
 	"
   @spec format_output(term(), PosInfos.t()) :: String.t()
-  def format_output(arg0, arg1) do
-    str = Std.string(arg0)
-    if (arg1 == nil), do: str, else: nil
-    pstr = arg1.file_name <> ":" <> Integer.to_string(arg1.line_number)
-    if (arg1.custom_params != nil) do
+  def format_output(v, infos) do
+    str = Std.string(v)
+    if (infos == nil), do: str, else: nil
+    pstr = infos.file_name <> ":" <> Integer.to_string(infos.line_number)
+    if (infos.custom_params != nil) do
       _g = 0
-      _g = arg1.custom_params
+      _g = infos.custom_params
       Enum.map(_g, fn item -> item end)
     end
     pstr <> ": " <> str
@@ -45,8 +45,8 @@ defmodule Log do
 		exception.
 	"
   @spec trace(term(), Null.t()) :: nil
-  def trace(arg0, arg1) do
-    str = Log.formatOutput(arg0, arg1)
+  def trace(v, infos) do
+    str = Log.formatOutput(v, infos)
     Sys.println(str)
   end
 

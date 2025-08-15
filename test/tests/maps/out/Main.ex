@@ -488,16 +488,16 @@ defmodule Main do
 
   @doc "Function process_map"
   @spec process_map(Map.t()) :: Map.t()
-  def process_map(arg0) do
+  def process_map(input) do
     result = Haxe.Ds.StringMap.new()
-    key = arg0.keys()
+    key = input.keys()
     (
       try do
         loop_fn = fn ->
           if (key.hasNext()) do
             try do
               key = key.next()
-    value = arg0.get(key)
+    value = input.get(key)
     result.set(key, "Value: " <> Kernel.inspect(value))
               loop_fn.()
             catch

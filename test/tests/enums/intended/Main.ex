@@ -7,7 +7,7 @@ defmodule Main do
   # Static functions
   @doc "Function color_to_string"
   @spec color_to_string(Color.t()) :: String.t()
-  def color_to_string(arg0) do
+  def color_to_string(color) do
     temp_result = nil
     case (nil) do
       0 ->
@@ -30,7 +30,7 @@ defmodule Main do
 
   @doc "Function get_value"
   @spec get_value(Option.t(), T.t()) :: T.t()
-  def get_value(arg0, arg1) do
+  def get_value(opt, default_value) do
     temp_result = nil
     case (nil) do
       0 ->
@@ -38,14 +38,14 @@ defmodule Main do
     v = _g
     temp_result = v
       1 ->
-        temp_result = arg1
+        temp_result = default_value
     end
     temp_result
   end
 
   @doc "Function tree_sum"
   @spec tree_sum(Tree.t()) :: integer()
-  def tree_sum(arg0) do
+  def tree_sum(tree) do
     temp_result = nil
     case (nil) do
       0 ->
@@ -64,7 +64,7 @@ defmodule Main do
 
   @doc "Function describe_r_g_b"
   @spec describe_r_g_b(Color.t()) :: String.t()
-  def describe_r_g_b(arg0) do
+  def describe_r_g_b(color) do
     temp_result = nil
     if (nil == 3) do
       _g = nil
@@ -103,7 +103,7 @@ defmodule Main do
 
   @doc "Function compare_trees"
   @spec compare_trees(Tree.t(), Tree.t()) :: boolean()
-  def compare_trees(arg0, arg1) do
+  def compare_trees(t1, t2) do
     temp_result = nil
     case (nil) do
       0 ->

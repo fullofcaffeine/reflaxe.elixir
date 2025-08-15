@@ -180,12 +180,12 @@ defmodule Main do
 
   @doc "Function process_array"
   @spec process_array(Array.t()) :: Array.t()
-  def process_array(arg0) do
+  def process_array(arr) do
     temp_result = nil
     temp_array = nil
     _g = []
     _g = 0
-    Enum.map(arg0, fn item -> item * item end)
+    Enum.map(arr, fn item -> item * item end)
     temp_array = _g
     _g = []
     _g = 0
@@ -196,17 +196,17 @@ defmodule Main do
 
   @doc "Function first_n"
   @spec first_n(Array.t(), integer()) :: Array.t()
-  def first_n(arg0, arg1) do
+  def first_n(arr, n) do
     _g = []
     _g = 0
-    _g = Std.int(Math.min(arg1, length(arg0)))
+    _g = Std.int(Math.min(n, length(arr)))
     (
       try do
         loop_fn = fn ->
           if (_g < _g) do
             try do
               i = _g = _g + 1
-    _g ++ [Enum.at(arg0, i)]
+    _g ++ [Enum.at(arr, i)]
               loop_fn.()
             catch
               :break -> nil

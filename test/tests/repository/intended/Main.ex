@@ -57,24 +57,24 @@ defmodule UserRepository do
      * Get user by ID - compiles to Repo.get!(User, id)
      "
   @spec get_user(integer()) :: User.t()
-  def get_user(arg0) do
-    Repo.get(User, arg0)
+  def get_user(id) do
+    Repo.get(User, id)
   end
 
   @doc "
      * Get user by ID (raises if not found) - compiles to Repo.get!(User, id)
      "
   @spec get_user_bang(integer()) :: User.t()
-  def get_user_bang(arg0) do
-    Repo.get!(User, arg0)
+  def get_user_bang(id) do
+    Repo.get!(User, id)
   end
 
   @doc "
      * Create user - compiles to Repo.insert(changeset) with error tuple handling
      "
   @spec create_user(term()) :: term()
-  def create_user(arg0) do
-    changeset = UserChangeset.changeset(nil, arg0)
+  def create_user(attrs) do
+    changeset = UserChangeset.changeset(nil, attrs)
     Repo.insert(changeset)
   end
 
@@ -82,8 +82,8 @@ defmodule UserRepository do
      * Update user - compiles to Repo.update(changeset) with error tuple handling
      "
   @spec update_user(User.t(), term()) :: term()
-  def update_user(arg0, arg1) do
-    changeset = UserChangeset.changeset(arg0, arg1)
+  def update_user(user, attrs) do
+    changeset = UserChangeset.changeset(user, attrs)
     Repo.update(changeset)
   end
 
@@ -91,16 +91,16 @@ defmodule UserRepository do
      * Delete user - compiles to Repo.delete(user) with error tuple handling
      "
   @spec delete_user(User.t()) :: term()
-  def delete_user(arg0) do
-    Repo.delete(arg0)
+  def delete_user(user) do
+    Repo.delete(user)
   end
 
   @doc "
      * Preload associations - compiles to Repo.preload(user, [:posts])
      "
   @spec preload_posts(User.t()) :: User.t()
-  def preload_posts(arg0) do
-    Repo.preload(arg0, ["posts"])
+  def preload_posts(user) do
+    Repo.preload(user, ["posts"])
   end
 
   @doc "

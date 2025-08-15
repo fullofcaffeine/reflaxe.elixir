@@ -40,14 +40,14 @@ defmodule SourceMapValidationTest do
 
   @doc "Function test_function"
   @spec test_function(String.t(), integer()) :: nil
-  def test_function(arg0, arg1) do
-    Log.trace("Testing with: " <> arg0 <> " and " <> Integer.to_string(arg1), %{fileName: "SourceMapValidationTest.hx", lineNumber: 57, className: "SourceMapValidationTest", methodName: "testFunction"})
+  def test_function(str, num) do
+    Log.trace("Testing with: " <> str <> " and " <> Integer.to_string(num), %{fileName: "SourceMapValidationTest.hx", lineNumber: 57, className: "SourceMapValidationTest", methodName: "testFunction"})
   end
 
   @doc "Function process_item"
   @spec process_item(integer()) :: nil
-  def process_item(arg0) do
-    Log.trace("Processing item: " <> Integer.to_string(arg0), %{fileName: "SourceMapValidationTest.hx", lineNumber: 61, className: "SourceMapValidationTest", methodName: "processItem"})
+  def process_item(item) do
+    Log.trace("Processing item: " <> Integer.to_string(item), %{fileName: "SourceMapValidationTest.hx", lineNumber: 61, className: "SourceMapValidationTest", methodName: "processItem"})
   end
 
 end

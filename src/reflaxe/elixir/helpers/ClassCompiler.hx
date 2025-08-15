@@ -456,7 +456,15 @@ class ClassCompiler {
         if (funcField.args != null) {
             for (i in 0...funcField.args.length) {
                 var arg = funcField.args[i];
-                var paramName = 'arg${i}';
+                // Extract the actual parameter name - try multiple sources
+                var originalName = if (arg.tvar != null) {
+                    arg.tvar.name;
+                } else if (funcField.tfunc != null && funcField.tfunc.args != null && i < funcField.tfunc.args.length) {
+                    funcField.tfunc.args[i].v.name;
+                } else {
+                    arg.getName();
+                }
+                var paramName = NamingHelper.toSnakeCase(originalName);
                 params.push(paramName);
                 
                 var argType = getArgType(arg);
@@ -570,8 +578,17 @@ class ClassCompiler {
             var paramTypes = [];
             
             if (func.args != null) {
-                for (arg in func.args) {
-                    var argName = NamingHelper.toSnakeCase(arg.originalName != null ? arg.originalName : "arg");
+                for (i in 0...func.args.length) {
+                    var arg = func.args[i];
+                    // Extract the actual parameter name - try multiple sources
+                    var originalName = if (arg.tvar != null) {
+                        arg.tvar.name;
+                    } else if (func.tfunc != null && func.tfunc.args != null && i < func.tfunc.args.length) {
+                        func.tfunc.args[i].v.name;
+                    } else {
+                        arg.getName();
+                    }
+                    var argName = NamingHelper.toSnakeCase(originalName);
                     params.push(argName);
                     
                     var argType = getArgType(arg);
