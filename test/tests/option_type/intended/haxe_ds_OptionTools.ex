@@ -1,5 +1,4 @@
 defmodule OptionTools do
-  use Bitwise
   @moduledoc """
   OptionTools module generated from Haxe
   
@@ -423,9 +422,9 @@ defmodule OptionTools do
       0 ->
         _g = case option do {:some, value} -> value; :none -> nil; _ -> nil end
     value = _g
-    temp_result = %{reply => value, status => "ok"}
+    temp_result = %{"reply" => value, "status" => "ok"}
       1 ->
-        temp_result = %{reply => nil, status => "none"}
+        temp_result = %{"reply" => nil, "status" => "none"}
     end
     temp_result
   end

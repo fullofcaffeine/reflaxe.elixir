@@ -1,5 +1,4 @@
 defmodule StringIteratorUnicode do
-  use Bitwise
   @moduledoc """
   StringIteratorUnicode module generated from Haxe
   

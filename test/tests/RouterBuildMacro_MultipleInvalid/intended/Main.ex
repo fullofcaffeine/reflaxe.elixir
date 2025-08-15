@@ -1,5 +1,4 @@
 defmodule ValidController do
-  use Bitwise
   @moduledoc """
   ValidController module generated from Haxe
   
@@ -19,7 +18,6 @@ end
 
 
 defmodule PartialController do
-  use Bitwise
   @moduledoc """
   PartialController module generated from Haxe
   
@@ -39,7 +37,6 @@ end
 
 
 defmodule Main do
-  use Bitwise
   @moduledoc """
   Main module generated from Haxe
   
@@ -52,7 +49,7 @@ defmodule Main do
   @doc "Function main"
   @spec main() :: nil
   def main() do
-    Log.trace("RouterBuildMacro validation test with multiple invalid references", %{fileName => "Main.hx", lineNumber => 76, className => "Main", methodName => "main"})
+    Log.trace("RouterBuildMacro validation test with multiple invalid references", %{"fileName" => "Main.hx", "lineNumber" => 76, "className" => "Main", "methodName" => "main"})
   end
 
 end

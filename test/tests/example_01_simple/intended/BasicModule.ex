@@ -1,5 +1,4 @@
 defmodule BasicModule do
-  use Bitwise
   @moduledoc """
   BasicModule module generated from Haxe
   
@@ -78,7 +77,7 @@ defmodule BasicModule do
   """
   @spec main() :: nil
   def main() do
-    Log.trace("BasicModule example compiled successfully!", %{fileName => "BasicModule.hx", lineNumber => 62, className => "BasicModule", methodName => "main"})
+    Log.trace("BasicModule example compiled successfully!", %{"fileName" => "BasicModule.hx", "lineNumber" => 62, "className" => "BasicModule", "methodName" => "main"})
   end
 
 end

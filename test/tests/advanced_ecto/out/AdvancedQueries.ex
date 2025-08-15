@@ -128,17 +128,17 @@ defmodule AdvancedQueries do
   """
   @spec main() :: nil
   def main() do
-    Log.trace("=== Advanced Ecto Features Demonstration ===", %{fileName => "AdvancedQueries.hx", lineNumber => 138, className => "AdvancedQueries", methodName => "main"})
-    Log.trace("1. " <> AdvancedQueries.demonstrateSubquery(), %{fileName => "AdvancedQueries.hx", lineNumber => 140, className => "AdvancedQueries", methodName => "main"})
-    Log.trace("2. " <> AdvancedQueries.demonstrateCTE(), %{fileName => "AdvancedQueries.hx", lineNumber => 141, className => "AdvancedQueries", methodName => "main"})
-    Log.trace("3. " <> AdvancedQueries.demonstrateWindowFunctions(), %{fileName => "AdvancedQueries.hx", lineNumber => 142, className => "AdvancedQueries", methodName => "main"})
-    Log.trace("4. " <> AdvancedQueries.demonstrateComplexJoins(), %{fileName => "AdvancedQueries.hx", lineNumber => 143, className => "AdvancedQueries", methodName => "main"})
-    Log.trace("5. " <> AdvancedQueries.demonstrateMultiTransactions(), %{fileName => "AdvancedQueries.hx", lineNumber => 144, className => "AdvancedQueries", methodName => "main"})
-    Log.trace("6. " <> AdvancedQueries.demonstrateAdvancedAggregations(), %{fileName => "AdvancedQueries.hx", lineNumber => 145, className => "AdvancedQueries", methodName => "main"})
-    Log.trace("7. " <> AdvancedQueries.demonstrateFragments(), %{fileName => "AdvancedQueries.hx", lineNumber => 146, className => "AdvancedQueries", methodName => "main"})
-    Log.trace("8. " <> AdvancedQueries.demonstratePreloading(), %{fileName => "AdvancedQueries.hx", lineNumber => 147, className => "AdvancedQueries", methodName => "main"})
-    Log.trace("9. " <> AdvancedQueries.demonstrateComplexQuery(), %{fileName => "AdvancedQueries.hx", lineNumber => 148, className => "AdvancedQueries", methodName => "main"})
-    Log.trace("=== Advanced Ecto Features Completed ===", %{fileName => "AdvancedQueries.hx", lineNumber => 150, className => "AdvancedQueries", methodName => "main"})
+    Log.trace("=== Advanced Ecto Features Demonstration ===", %{"fileName" => "AdvancedQueries.hx", "lineNumber" => 138, "className" => "AdvancedQueries", "methodName" => "main"})
+    Log.trace("1. " <> AdvancedQueries.demonstrateSubquery(), %{"fileName" => "AdvancedQueries.hx", "lineNumber" => 140, "className" => "AdvancedQueries", "methodName" => "main"})
+    Log.trace("2. " <> AdvancedQueries.demonstrateCTE(), %{"fileName" => "AdvancedQueries.hx", "lineNumber" => 141, "className" => "AdvancedQueries", "methodName" => "main"})
+    Log.trace("3. " <> AdvancedQueries.demonstrateWindowFunctions(), %{"fileName" => "AdvancedQueries.hx", "lineNumber" => 142, "className" => "AdvancedQueries", "methodName" => "main"})
+    Log.trace("4. " <> AdvancedQueries.demonstrateComplexJoins(), %{"fileName" => "AdvancedQueries.hx", "lineNumber" => 143, "className" => "AdvancedQueries", "methodName" => "main"})
+    Log.trace("5. " <> AdvancedQueries.demonstrateMultiTransactions(), %{"fileName" => "AdvancedQueries.hx", "lineNumber" => 144, "className" => "AdvancedQueries", "methodName" => "main"})
+    Log.trace("6. " <> AdvancedQueries.demonstrateAdvancedAggregations(), %{"fileName" => "AdvancedQueries.hx", "lineNumber" => 145, "className" => "AdvancedQueries", "methodName" => "main"})
+    Log.trace("7. " <> AdvancedQueries.demonstrateFragments(), %{"fileName" => "AdvancedQueries.hx", "lineNumber" => 146, "className" => "AdvancedQueries", "methodName" => "main"})
+    Log.trace("8. " <> AdvancedQueries.demonstratePreloading(), %{"fileName" => "AdvancedQueries.hx", "lineNumber" => 147, "className" => "AdvancedQueries", "methodName" => "main"})
+    Log.trace("9. " <> AdvancedQueries.demonstrateComplexQuery(), %{"fileName" => "AdvancedQueries.hx", "lineNumber" => 148, "className" => "AdvancedQueries", "methodName" => "main"})
+    Log.trace("=== Advanced Ecto Features Completed ===", %{"fileName" => "AdvancedQueries.hx", "lineNumber" => 150, "className" => "AdvancedQueries", "methodName" => "main"})
   end
 
 end

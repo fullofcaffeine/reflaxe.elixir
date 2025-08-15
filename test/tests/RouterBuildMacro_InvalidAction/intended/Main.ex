@@ -1,5 +1,4 @@
 defmodule LimitedController do
-  use Bitwise
   @moduledoc """
   LimitedController module generated from Haxe
   
@@ -25,7 +24,6 @@ end
 
 
 defmodule Main do
-  use Bitwise
   @moduledoc """
   Main module generated from Haxe
   
@@ -38,7 +36,7 @@ defmodule Main do
   @doc "Function main"
   @spec main() :: nil
   def main() do
-    Log.trace("RouterBuildMacro validation test with invalid action reference", %{fileName => "Main.hx", lineNumber => 54, className => "Main", methodName => "main"})
+    Log.trace("RouterBuildMacro validation test with invalid action reference", %{"fileName" => "Main.hx", "lineNumber" => 54, "className" => "Main", "methodName" => "main"})
   end
 
 end

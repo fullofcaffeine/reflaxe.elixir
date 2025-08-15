@@ -46,11 +46,11 @@ defmodule StringUtils do
   """
   @spec process_email(String.t()) :: term()
   def process_email(email) do
-    if (email == nil), do: %{valid => false, error => "Email is required"}, else: nil
+    if (email == nil), do: %{"valid" => false, "error" => "Email is required"}, else: nil
     trimmed = StringTools.trim(email)
-    if (String.length(trimmed) == 0), do: %{valid => false, error => "Email cannot be empty"}, else: nil
-    if (!StringUtils.isValidEmailFormat(trimmed)), do: %{valid => false, error => "Invalid email format"}, else: nil
-    %{valid => true, email => String.downcase(trimmed), domain => StringUtils.extractDomain(trimmed), username => StringUtils.extractUsername(trimmed)}
+    if (String.length(trimmed) == 0), do: %{"valid" => false, "error" => "Email cannot be empty"}, else: nil
+    if (!StringUtils.isValidEmailFormat(trimmed)), do: %{"valid" => false, "error" => "Invalid email format"}, else: nil
+    %{"valid" => true, "email" => String.downcase(trimmed), "domain" => StringUtils.extractDomain(trimmed), "username" => StringUtils.extractUsername(trimmed)}
   end
 
   @doc """
@@ -230,7 +230,7 @@ defmodule StringUtils do
   """
   @spec main() :: nil
   def main() do
-    Log.trace("StringUtils compiled successfully for Mix project!", %{fileName => "./utils/StringUtils.hx", lineNumber => 178, className => "utils.StringUtils", methodName => "main"})
+    Log.trace("StringUtils compiled successfully for Mix project!", %{"fileName" => "./utils/StringUtils.hx", "lineNumber" => 178, "className" => "utils.StringUtils", "methodName" => "main"})
   end
 
 end

@@ -1,5 +1,4 @@
 defmodule Error do
-  use Bitwise
   @moduledoc """
   Error module generated from Haxe
   

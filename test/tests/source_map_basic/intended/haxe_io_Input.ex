@@ -1,5 +1,4 @@
 defmodule Input do
-  use Bitwise
   @moduledoc """
   Input module generated from Haxe
   

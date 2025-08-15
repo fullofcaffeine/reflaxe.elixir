@@ -22,7 +22,7 @@ defmodule MemoryStorage do
   @doc "Function init"
   @spec init(term()) :: term()
   def init(config) do
-    %{ok => __MODULE__}
+    %{"ok" => __MODULE__}
   end
 
   @doc "Function get"
@@ -91,7 +91,7 @@ defmodule FileStorage do
   @spec init(term()) :: term()
   def init(config) do
     if (config.path != nil), do: __MODULE__.base_path = config.path, else: nil
-    %{ok => __MODULE__}
+    %{"ok" => __MODULE__}
   end
 
   @doc "Function get"
@@ -143,13 +143,13 @@ defmodule ConsoleLogger do
   @doc "Function log"
   @spec log(String.t()) :: nil
   def log(message) do
-    Log.trace("[LOG] " <> message, %{fileName => "Storage.hx", lineNumber => 103, className => "ConsoleLogger", methodName => "log"})
+    Log.trace("[LOG] " <> message, %{"fileName" => "Storage.hx", "lineNumber" => 103, "className" => "ConsoleLogger", "methodName" => "log"})
   end
 
   @doc "Function debug"
   @spec debug(String.t()) :: nil
   def debug(message) do
-    Log.trace("[DEBUG] " <> message, %{fileName => "Storage.hx", lineNumber => 108, className => "ConsoleLogger", methodName => "debug"})
+    Log.trace("[DEBUG] " <> message, %{"fileName" => "Storage.hx", "lineNumber" => 108, "className" => "ConsoleLogger", "methodName" => "debug"})
   end
 
 end
