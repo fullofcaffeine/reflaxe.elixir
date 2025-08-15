@@ -8,6 +8,7 @@ This guide helps you resolve common issues when working with Reflaxe.Elixir. If 
 - [Runtime Errors](#runtime-errors)
 - [Type System Issues](#type-system-issues)
 - [Phoenix Integration Problems](#phoenix-integration-problems)
+- [HXX Template Processing](#hxx-template-processing)
 - [Performance Issues](#performance-issues)
 - [IDE and Tooling Issues](#ide-and-tooling-issues)
 - [Common Error Messages](#common-error-messages)
@@ -407,6 +408,260 @@ scope "/", MyAppWeb do
 end
 ```
 
+## HXX Template Processing
+
+### Problem: "invalid attribute value after `=`" in Phoenix templates
+
+**Symptom:**
+```
+** (Phoenix.LiveView.Tokenizer.ParseError) invalid attribute value after `=`. Expected either a value between quotes
+```
+
+**Cause:** HTML attributes being incorrectly escaped during template processing.
+
+**Solution:** 
+This was fixed in the latest compiler version. If you still encounter this:
+
+1. **Update to latest version:**
+```bash
+npx lix install github:fullofcaffeine/reflaxe.elixir#latest
+```
+
+2. **Verify HXX syntax:**
+```haxe
+// Correct HXX usage
+function render(assigns: Dynamic): String {
+    return HXX('<div class="container">${assigns.content}</div>');
+}
+```
+
+3. **Check string concatenation:**
+```haxe
+// Avoid manual string concatenation with HTML
+// Let HXX handle the template processing
+return HXX('
+    <div class="form-group">
+        <input type="text" value="${assigns.value}">
+    </div>
+');
+```
+
+### Problem: HXX interpolation not converting to HEEx format
+
+**Symptom:**
+Generated templates still use `${variable}` instead of `{variable}`:
+
+```elixir
+# Wrong output
+~H"""<div>${assigns.user.name}</div>"""
+
+# Expected output  
+~H"""<div>{assigns.user.name}</div>"""
+```
+
+**Solution:**
+1. **Ensure HXX function call:**
+```haxe
+// Must use HXX() function, not just string literals
+return HXX('<div>${assigns.user.name}</div>');
+
+// Not just:
+return '<div>${assigns.user.name}</div>';
+```
+
+2. **Check template detection:**
+```haxe
+// HXX templates must contain HTML-like syntax
+return HXX('<div class="user">${user.name}</div>');  // ✅ Detected
+return HXX('${user.name}');                        // ❌ May not be detected
+```
+
+### Problem: Multiline HXX templates breaking compilation
+
+**Symptom:**
+```
+Error: Unterminated string or unexpected line ending
+```
+
+**Solution:**
+```haxe
+// Use proper multiline string syntax
+function complexTemplate(assigns: Dynamic): String {
+    return HXX('
+        <div class="user-card">
+            <h3>${assigns.user.name}</h3>
+            <p class="email">${assigns.user.email}</p>
+            <div class="actions">
+                <button phx-click="edit">Edit</button>
+            </div>
+        </div>
+    ');
+}
+
+// Avoid concatenating separate HXX calls
+// This may cause issues:
+var part1 = HXX('<div class="header">');
+var part2 = HXX('<h1>${title}</h1>');
+var part3 = HXX('</div>');
+```
+
+### Problem: HXX templates not generating proper LiveView syntax
+
+**Symptom:**
+```elixir
+# Generated code missing ~H sigil
+def render(assigns) do
+  "<div>content</div>"  # Wrong: just a string
+end
+```
+
+**Expected:**
+```elixir
+def render(assigns) do
+  ~H"""
+  <div>content</div>
+  """
+end
+```
+
+**Solution:**
+1. **Use in LiveView context:**
+```haxe
+@:liveview
+class MyLive {
+    function render(assigns: Dynamic): String {
+        return HXX('<div class="content">${assigns.message}</div>');
+    }
+}
+```
+
+2. **Check annotation placement:**
+```haxe
+// Annotation must be on the class, not the function
+@:liveview  // ✅ Correct
+class MyLive {
+    function render(assigns: Dynamic): String {
+        return HXX('...');
+    }
+}
+```
+
+### Problem: HXX function not recognized
+
+**Symptom:**
+```
+src_haxe/MyLive.hx:10: Type not found : HXX
+```
+
+**Solution:**
+The HXX function is built into the compiler. If you see this error:
+
+1. **Check import issues:**
+```haxe
+// Don't try to import HXX - it's built-in
+// Remove any HXX imports
+
+// Just use it directly:
+function render(assigns: Dynamic): String {
+    return HXX('<div>content</div>');
+}
+```
+
+2. **Verify compiler version:**
+```bash
+# Check you have HXX support
+npx haxe build.hxml --version
+```
+
+3. **Check build configuration:**
+```hxml
+-lib reflaxe.elixir
+-D reflaxe_runtime
+# Make sure these are present
+```
+
+### Problem: Phoenix events not working in HXX templates
+
+**Symptom:**
+Phoenix events like `phx-click` don't trigger event handlers.
+
+**Solution:**
+```haxe
+// Ensure proper event syntax in HXX
+function todoItem(todo: Todo): String {
+    return HXX('
+        <li class="todo-item">
+            <input type="checkbox" 
+                   phx-click="toggle" 
+                   phx-value-id="${todo.id}">
+            <span>${todo.title}</span>
+            <button phx-click="delete" 
+                    phx-value-id="${todo.id}">
+                Delete
+            </button>
+        </li>
+    ');
+}
+
+// Make sure LiveView has matching event handlers
+@:liveview  
+class TodoLive {
+    function handleEvent(event: String, params: Dynamic, socket: Socket): SocketResult {
+        return switch (event) {
+            case "toggle":
+                var id = params.id;
+                // Handle toggle logic
+                {:noreply, socket};
+            case "delete":
+                var id = params.id;  
+                // Handle delete logic
+                {:noreply, socket};
+            default:
+                {:noreply, socket};
+        };
+    }
+}
+```
+
+### Problem: HXX template performance issues
+
+**Symptom:**
+Large HXX templates causing slow compilation.
+
+**Solution:**
+1. **Break into smaller components:**
+```haxe
+// Instead of one huge template
+function render(assigns: Dynamic): String {
+    return HXX('
+        ${header(assigns)}
+        ${content(assigns)}
+        ${footer(assigns)}
+    ');
+}
+
+function header(assigns: Dynamic): String {
+    return HXX('<header>${assigns.title}</header>');
+}
+
+function content(assigns: Dynamic): String {
+    return HXX('<main>${assigns.body}</main>');
+}
+```
+
+2. **Extract static parts:**
+```haxe
+// Move static HTML to separate templates if needed
+function staticWrapper(): String {
+    return HXX('
+        <div class="app-layout">
+            <nav>Static Navigation</nav>
+            <!-- Dynamic content slot -->
+        </div>
+    ');
+}
+```
+
 ## Performance Issues
 
 ### Problem: Slow compilation
@@ -770,7 +1025,7 @@ When encountering issues, go through this checklist:
 
 ## Issue Count Summary
 
-**Coverage Status**: ✅ **35+ Common Issues Documented**
+**Coverage Status**: ✅ **41+ Common Issues Documented**
 
 ### Issue Categories Covered:
 
@@ -779,8 +1034,8 @@ When encountering issues, go through this checklist:
 - **Runtime Errors** (6 issues): Undefined functions, pattern matches, argument errors
 - **Type System Issues** (4 issues): Type mismatches, null safety, array operations
 - **Phoenix Integration** (4 issues): LiveView updates, route generation, assigns
+- **HXX Template Processing** (6 issues): Template syntax, interpolation, LiveView integration, performance
 - **Mix Integration** (6 issues): Compiler setup, build configuration, file generation
-- **HXX Templates** (4 issues): Template syntax, rendering, function imports
 - **Pattern Matching** (4 issues): Exhaustive patterns, guards, binary patterns
 - **Performance Issues** (3 issues): Compilation speed, memory usage, optimization
 - **IDE/Tooling** (3 issues): VS Code setup, autocompletion, formatting
