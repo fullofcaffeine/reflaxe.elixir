@@ -29,7 +29,7 @@ defmodule BasicModule do
      "
   @spec greet(String.t()) :: String.t()
   def greet(name) do
-    "Hello, " <> arg0 <> "!"
+    "Hello, " <> name <> "!"
   end
 
   @doc "
@@ -39,15 +39,15 @@ defmodule BasicModule do
   @spec calculate(integer(), integer(), String.t()) :: integer()
   def calculate(x, y, operation) do
     temp_result = nil
-    case (arg2) do
+    case (operation) do
       "add" ->
-        temp_result = arg0 + arg1
+        temp_result = x + y
       "divide" ->
-        if (arg1 != 0), do: temp_result = Std.int(arg0 / arg1), else: temp_result = 0
+        if (y != 0), do: temp_result = Std.int(x / y), else: temp_result = 0
       "multiply" ->
-        temp_result = arg0 * arg1
+        temp_result = x * y
       "subtract" ->
-        temp_result = arg0 - arg1
+        temp_result = x - y
       _ ->
         temp_result = 0
     end
@@ -69,7 +69,7 @@ defmodule BasicModule do
      "
   @spec is_valid(String.t()) :: boolean()
   def is_valid(input) do
-    arg0 != nil && String.length(arg0) > 0
+    input != nil && String.length(input) > 0
   end
 
   @doc "

@@ -12,8 +12,8 @@ defmodule Main do
   # Static functions
   @doc "Function greet"
   @spec greet(String.t()) :: String.t()
-  def greet(arg0) do
-    "Hello, " <> arg0 <> "!"
+  def greet(name) do
+    "Hello, " <> name <> "!"
   end
 
   @doc "Function main"
@@ -31,22 +31,22 @@ defmodule Main do
   # Instance functions
   @doc "Function calculate"
   @spec calculate(integer(), integer()) :: integer()
-  def calculate(arg0, arg1) do
-    arg0 + arg1 * __MODULE__.instance_var
+  def calculate(x, y) do
+    x + y * __MODULE__.instance_var
   end
 
   @doc "Function check_value"
   @spec check_value(integer()) :: String.t()
-  def check_value(arg0) do
-    if (arg0 < 0), do: "negative", else: if (arg0 == 0), do: "zero", else: "positive"
+  def check_value(n) do
+    if (n < 0), do: "negative", else: if (n == 0), do: "zero", else: "positive"
   end
 
   @doc "Function sum_range"
   @spec sum_range(integer(), integer()) :: integer()
-  def sum_range(arg0, arg1) do
+  def sum_range(start, end) do
     sum = 0
-    _g = arg0
-    _g = arg1
+    _g = start
+    _g = end
     (
       try do
         loop_fn = fn {sum} ->
@@ -73,9 +73,9 @@ defmodule Main do
 
   @doc "Function factorial"
   @spec factorial(integer()) :: integer()
-  def factorial(arg0) do
+  def factorial(n) do
     result = 1
-    i = arg0
+    i = n
     (
       try do
         loop_fn = fn {result, i} ->
@@ -102,9 +102,9 @@ defmodule Main do
 
   @doc "Function day_name"
   @spec day_name(integer()) :: String.t()
-  def day_name(arg0) do
+  def day_name(day) do
     temp_result = nil
-    case (arg0) do
+    case (day) do
       1 ->
         temp_result = "Monday"
       2 ->

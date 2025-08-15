@@ -37,7 +37,7 @@ defmodule EReg do
 		If `s` or `by` are null, the result is unspecified.
 	"
   @spec replace(String.t(), String.t()) :: String.t()
-  def replace(arg0, arg1) do
+  def replace(s, by) do
     nil
   end
 

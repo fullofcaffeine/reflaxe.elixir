@@ -9,9 +9,9 @@ defmodule Main do
      * Simple enum-like pattern matching
      "
   @spec match_simple_value(integer()) :: String.t()
-  def match_simple_value(arg0) do
+  def match_simple_value(value) do
     temp_result = nil
-    case (arg0) do
+    case (value) do
       0 ->
         temp_result = "zero"
       1 ->
@@ -19,11 +19,11 @@ defmodule Main do
       2 ->
         temp_result = "two"
       _ ->
-        n = arg0
+        n = value
     if (n < 0) do
       temp_result = "negative"
     else
-      n = arg0
+      n = value
       if (n > 100), do: temp_result = "large", else: temp_result = "other"
     end
     end
@@ -34,41 +34,41 @@ defmodule Main do
      * Array pattern matching with guards
      "
   @spec process_array(Array.t()) :: String.t()
-  def process_array(arg0) do
+  def process_array(arr) do
     temp_result = nil
-    case (length(arg0)) do
+    case (length(arr)) do
       0 ->
         temp_result = "empty"
       1 ->
-        _g = Enum.at(arg0, 0)
+        _g = Enum.at(arr, 0)
     x = _g
     temp_result = "single: " <> Integer.to_string(x)
       2 ->
-        _g = Enum.at(arg0, 0)
-    _g = Enum.at(arg0, 1)
+        _g = Enum.at(arr, 0)
+    _g = Enum.at(arr, 1)
     x = _g
     y = _g
     temp_result = "pair: " <> Integer.to_string(x) <> "," <> Integer.to_string(y)
       3 ->
-        _g = Enum.at(arg0, 0)
-    _g = Enum.at(arg0, 1)
-    _g = Enum.at(arg0, 2)
+        _g = Enum.at(arr, 0)
+    _g = Enum.at(arr, 1)
+    _g = Enum.at(arr, 2)
     x = _g
     y = _g
     z = _g
     temp_result = "triple: " <> Integer.to_string(x) <> "," <> Integer.to_string(y) <> "," <> Integer.to_string(z)
       4 ->
-        _g = Enum.at(arg0, 0)
-    _g = Enum.at(arg0, 1)
-    _g = Enum.at(arg0, 2)
-    _g = Enum.at(arg0, 3)
+        _g = Enum.at(arr, 0)
+    _g = Enum.at(arr, 1)
+    _g = Enum.at(arr, 2)
+    _g = Enum.at(arr, 3)
     first = _g
     second = _g
     third = _g
     fourth = _g
     temp_result = "quad: " <> Integer.to_string(first) <> "," <> Integer.to_string(second) <> "," <> Integer.to_string(third) <> "," <> Integer.to_string(fourth)
       _ ->
-        a = arg0
+        a = arr
     if (length(a) > 4), do: temp_result = "many: " <> Integer.to_string(length(a)) <> " elements", else: temp_result = "unknown"
     end
     temp_result
@@ -78,9 +78,9 @@ defmodule Main do
      * String pattern matching with guards
      "
   @spec classify_string(String.t()) :: String.t()
-  def classify_string(arg0) do
+  def classify_string(str) do
     temp_result = nil
-    case (arg0) do
+    case (str) do
       "" ->
         temp_result = "empty"
       "goodbye" ->
@@ -88,15 +88,15 @@ defmodule Main do
       "hello" ->
         temp_result = "greeting"
       _ ->
-        s = arg0
+        s = str
     if (String.length(s) == 1) do
       temp_result = "single char"
     else
-      s = arg0
+      s = str
       if (String.length(s) > 10 && String.length(s) <= 20) do
         temp_result = "medium"
       else
-        s = arg0
+        s = str
         if (String.length(s) > 20), do: temp_result = "long", else: temp_result = "other"
       end
     end
@@ -108,36 +108,36 @@ defmodule Main do
      * Complex number range guards
      "
   @spec classify_number(float()) :: String.t()
-  def classify_number(arg0) do
+  def classify_number(n) do
     temp_result = nil
-    if (arg0 == 0.0) do
+    if (n == 0.0) do
       temp_result = "zero"
     else
-      x = arg0
+      x = n
       if (x > 0 && x <= 1) do
         temp_result = "tiny"
       else
-        x = arg0
+        x = n
         if (x > 1 && x <= 10) do
           temp_result = "small"
         else
-          x = arg0
+          x = n
           if (x > 10 && x <= 100) do
             temp_result = "medium"
           else
-            x = arg0
+            x = n
             if (x > 100 && x <= 1000) do
               temp_result = "large"
             else
-              x = arg0
+              x = n
               if (x > 1000) do
                 temp_result = "huge"
               else
-                x = arg0
+                x = n
                 if (x < 0 && x >= -10) do
                   temp_result = "small negative"
                 else
-                  x = arg0
+                  x = n
                   if (x < -10), do: temp_result = "large negative", else: temp_result = "unknown"
                 end
               end
@@ -153,9 +153,9 @@ defmodule Main do
      * Boolean combinations with tuples
      "
   @spec match_flags(boolean(), boolean(), boolean()) :: String.t()
-  def match_flags(arg0, arg1, arg2) do
+  def match_flags(active, verified, premium) do
     temp_result = nil
-    if (arg0), do: if (arg1), do: if (arg2), do: temp_result = "full access", else: temp_result = "verified user", else: if (arg2), do: temp_result = "unverified premium", else: temp_result = "basic user", else: temp_result = "inactive"
+    if (active), do: if (verified), do: if (premium), do: temp_result = "full access", else: temp_result = "verified user", else: if (premium), do: temp_result = "unverified premium", else: temp_result = "basic user", else: temp_result = "inactive"
     temp_result
   end
 
@@ -163,24 +163,24 @@ defmodule Main do
      * Nested array patterns
      "
   @spec match_matrix(Array.t()) :: String.t()
-  def match_matrix(arg0) do
+  def match_matrix(matrix) do
     temp_result = nil
-    case (length(arg0)) do
+    case (length(matrix)) do
       0 ->
         temp_result = "empty matrix"
       1 ->
-        _g = Enum.at(arg0, 0)
+        _g = Enum.at(matrix, 0)
     if (length(_g) == 1) do
       _g = Enum.at(_g, 0)
       x = _g
       temp_result = "single element: " <> Integer.to_string(x)
     else
-      m = arg0
+      m = matrix
       if (length(m) == length(Enum.at(m, 0))), do: temp_result = "square matrix " <> Integer.to_string(length(m)) <> "x" <> Integer.to_string(length(m)), else: temp_result = "non-square matrix"
     end
       2 ->
-        _g = Enum.at(arg0, 0)
-    _g = Enum.at(arg0, 1)
+        _g = Enum.at(matrix, 0)
+    _g = Enum.at(matrix, 1)
     if (length(_g) == 2) do
       _g = Enum.at(_g, 0)
       _g = Enum.at(_g, 1)
@@ -193,17 +193,17 @@ defmodule Main do
         a = _g
         temp_result = "2x2 matrix: [[" <> Integer.to_string(a) <> "," <> Integer.to_string(b) <> "],[" <> Integer.to_string(c) <> "," <> Integer.to_string(d) <> "]]"
       else
-        m = arg0
+        m = matrix
         if (length(m) == length(Enum.at(m, 0))), do: temp_result = "square matrix " <> Integer.to_string(length(m)) <> "x" <> Integer.to_string(length(m)), else: temp_result = "non-square matrix"
       end
     else
-      m = arg0
+      m = matrix
       if (length(m) == length(Enum.at(m, 0))), do: temp_result = "square matrix " <> Integer.to_string(length(m)) <> "x" <> Integer.to_string(length(m)), else: temp_result = "non-square matrix"
     end
       3 ->
-        _g = Enum.at(arg0, 0)
-    _g = Enum.at(arg0, 1)
-    _g = Enum.at(arg0, 2)
+        _g = Enum.at(matrix, 0)
+    _g = Enum.at(matrix, 1)
+    _g = Enum.at(matrix, 2)
     if (length(_g) == 3) do
       Enum.at(_g, 0)
       Enum.at(_g, 1)
@@ -227,19 +227,19 @@ defmodule Main do
           _g
           temp_result = "3x3 matrix"
         else
-          m = arg0
+          m = matrix
           if (length(m) == length(Enum.at(m, 0))), do: temp_result = "square matrix " <> Integer.to_string(length(m)) <> "x" <> Integer.to_string(length(m)), else: temp_result = "non-square matrix"
         end
       else
-        m = arg0
+        m = matrix
         if (length(m) == length(Enum.at(m, 0))), do: temp_result = "square matrix " <> Integer.to_string(length(m)) <> "x" <> Integer.to_string(length(m)), else: temp_result = "non-square matrix"
       end
     else
-      m = arg0
+      m = matrix
       if (length(m) == length(Enum.at(m, 0))), do: temp_result = "square matrix " <> Integer.to_string(length(m)) <> "x" <> Integer.to_string(length(m)), else: temp_result = "non-square matrix"
     end
       _ ->
-        m = arg0
+        m = matrix
     if (length(m) == length(Enum.at(m, 0))), do: temp_result = "square matrix " <> Integer.to_string(length(m)) <> "x" <> Integer.to_string(length(m)), else: temp_result = "non-square matrix"
     end
     temp_result
@@ -249,63 +249,63 @@ defmodule Main do
      * Multiple guard conditions
      "
   @spec validate_age(integer(), boolean()) :: String.t()
-  def validate_age(arg0, arg1) do
+  def validate_age(age, has_permission) do
     temp_result = nil
-    a = arg0
+    a = age
     if (a < 0) do
       temp_result = "invalid age"
     else
-      a = arg0
+      a = age
       if (a >= 0 && a < 13) do
         temp_result = "child"
       else
-        case (arg1) do
+        case (has_permission) do
           false ->
-            a = arg0
+            a = age
         if (a >= 13 && a < 18) do
           temp_result = "teen without permission"
         else
-          a = arg0
+          a = age
           if (a >= 18 && a < 21) do
             temp_result = "young adult"
           else
-            a = arg0
+            a = age
             if (a >= 21 && a < 65) do
               temp_result = "adult"
             else
-              a = arg0
+              a = age
               if (a >= 65), do: temp_result = "senior", else: temp_result = "unknown"
             end
           end
         end
           true ->
-            a = arg0
+            a = age
         if (a >= 13 && a < 18) do
           temp_result = "teen with permission"
         else
-          a = arg0
+          a = age
           if (a >= 18 && a < 21) do
             temp_result = "young adult"
           else
-            a = arg0
+            a = age
             if (a >= 21 && a < 65) do
               temp_result = "adult"
             else
-              a = arg0
+              a = age
               if (a >= 65), do: temp_result = "senior", else: temp_result = "unknown"
             end
           end
         end
           _ ->
-            a = arg0
+            a = age
         if (a >= 18 && a < 21) do
           temp_result = "young adult"
         else
-          a = arg0
+          a = age
           if (a >= 21 && a < 65) do
             temp_result = "adult"
           else
-            a = arg0
+            a = age
             if (a >= 65), do: temp_result = "senior", else: temp_result = "unknown"
           end
         end
@@ -319,26 +319,26 @@ defmodule Main do
      * Type checking guards (simulating is_binary, is_integer, etc.)
      "
   @spec classify_value(term()) :: String.t()
-  def classify_value(arg0) do
+  def classify_value(value) do
     temp_result = nil
-    v = arg0
+    v = value
     if (Std.isOfType(v, String)) do
       temp_result = "string: \"" <> Std.string(v) <> "\""
     else
-      v = arg0
+      v = value
       if (Std.isOfType(v, Int)) do
         temp_result = "integer: " <> Std.string(v)
       else
-        v = arg0
+        v = value
         if (Std.isOfType(v, Float)) do
           temp_result = "float: " <> Std.string(v)
         else
-          v = arg0
+          v = value
           if (Std.isOfType(v, Bool)) do
             temp_result = "boolean: " <> Std.string(v)
           else
-            v = arg0
-            if (Std.isOfType(v, Array)), do: temp_result = "array of length " <> Std.string(length(v)), else: if (arg0 == nil), do: temp_result = "null value", else: temp_result = "unknown type"
+            v = value
+            if (Std.isOfType(v, Array)), do: temp_result = "array of length " <> Std.string(length(v)), else: if (value == nil), do: temp_result = "null value", else: temp_result = "unknown type"
           end
         end
       end
@@ -350,19 +350,19 @@ defmodule Main do
      * List membership simulation
      "
   @spec check_color(String.t()) :: String.t()
-  def check_color(arg0) do
+  def check_color(color) do
     primary_colors = ["red", "green", "blue"]
     secondary_colors = ["orange", "purple", "yellow"]
     temp_result = nil
-    c = arg0
+    c = color
     if (Enum.find_index(primary_colors, &(&1 == c)) >= 0) do
       temp_result = "primary color"
     else
-      c = arg0
+      c = color
       if (Enum.find_index(secondary_colors, &(&1 == c)) >= 0) do
         temp_result = "secondary color"
       else
-        case (arg0) do
+        case (color) do
           "black" ->
             temp_result = "monochrome"
           "gray" ->
@@ -381,9 +381,9 @@ defmodule Main do
      * Combined patterns with OR
      "
   @spec match_status(String.t()) :: String.t()
-  def match_status(arg0) do
+  def match_status(status) do
     temp_result = nil
-    case (arg0) do
+    case (status) do
       "crashed" ->
         temp_result = "error state"
       "error" ->

@@ -31,7 +31,7 @@ defmodule Users do
      * Get all users with optional filtering
      "
   @spec list_users(Null.t()) :: Array.t()
-  def list_users(arg0) do
+  def list_users(filter) do
     []
   end
 
@@ -39,7 +39,7 @@ defmodule Users do
      * Create changeset for user (required by LiveView example)
      "
   @spec change_user(Null.t()) :: term()
-  def change_user(arg0) do
+  def change_user(user) do
     %{valid: true}
   end
 
@@ -55,7 +55,7 @@ defmodule Users do
      * Get user by ID with error handling
      "
   @spec get_user(integer()) :: User.t()
-  def get_user(arg0) do
+  def get_user(id) do
     nil
   end
 
@@ -63,7 +63,7 @@ defmodule Users do
      * Get user by ID, returns null if not found
      "
   @spec get_user_safe(integer()) :: Null.t()
-  def get_user_safe(arg0) do
+  def get_user_safe(id) do
     nil
   end
 
@@ -71,8 +71,8 @@ defmodule Users do
      * Create a new user
      "
   @spec create_user(term()) :: term()
-  def create_user(arg0) do
-    changeset = UserChangeset.changeset(nil, arg0)
+  def create_user(attrs) do
+    changeset = UserChangeset.changeset(nil, attrs)
     if (changeset != nil), do: %{status: "ok", user: nil}, else: %{status: "error", changeset: changeset}
   end
 
@@ -80,24 +80,24 @@ defmodule Users do
      * Update existing user
      "
   @spec update_user(User.t(), term()) :: term()
-  def update_user(arg0, arg1) do
-    changeset = UserChangeset.changeset(arg0, arg1)
-    if (changeset != nil), do: %{status: "ok", user: arg0}, else: %{status: "error", changeset: changeset}
+  def update_user(user, attrs) do
+    changeset = UserChangeset.changeset(user, attrs)
+    if (changeset != nil), do: %{status: "ok", user: user}, else: %{status: "error", changeset: changeset}
   end
 
   @doc "
      * Delete user (soft delete by setting active: false)
      "
   @spec delete_user(User.t()) :: term()
-  def delete_user(arg0) do
-    Users.update_user(arg0, %{active: false})
+  def delete_user(user) do
+    Users.update_user(user, %{active: false})
   end
 
   @doc "
      * Search users by name or email
      "
   @spec search_users(String.t()) :: Array.t()
-  def search_users(arg0) do
+  def search_users(term) do
     []
   end
 

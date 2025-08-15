@@ -9,7 +9,7 @@ defmodule PatternMatchingTest do
      * Basic enum pattern matching
      "
   @spec match_color(Color.t()) :: String.t()
-  def match_color(arg0) do
+  def match_color(color) do
     temp_result = nil
     case (nil) do
       0 ->
@@ -34,7 +34,7 @@ defmodule PatternMatchingTest do
      * Option type pattern matching
      "
   @spec match_option(Option.t()) :: String.t()
-  def match_option(arg0) do
+  def match_option(option) do
     temp_result = nil
     case (nil) do
       0 ->
@@ -51,19 +51,19 @@ defmodule PatternMatchingTest do
      * Integer pattern matching with guards
      "
   @spec match_int(integer()) :: String.t()
-  def match_int(arg0) do
+  def match_int(value) do
     temp_result = nil
-    case (arg0) do
+    case (value) do
       0 ->
         temp_result = "zero"
       1 ->
         temp_result = "one"
       _ ->
-        n = arg0
+        n = value
     if (n < 0) do
       temp_result = "negative"
     else
-      n = arg0
+      n = value
       if (n > 100), do: temp_result = "large", else: temp_result = "other"
     end
     end
@@ -74,15 +74,15 @@ defmodule PatternMatchingTest do
      * String pattern matching
      "
   @spec match_string(String.t()) :: String.t()
-  def match_string(arg0) do
+  def match_string(str) do
     temp_result = nil
-    case (arg0) do
+    case (str) do
       "" ->
         temp_result = "empty"
       "hello" ->
         temp_result = "greeting"
       _ ->
-        s = arg0
+        s = str
     if (String.length(s) > 10), do: temp_result = "long", else: temp_result = "other"
     end
     temp_result
@@ -92,25 +92,25 @@ defmodule PatternMatchingTest do
      * Array pattern matching
      "
   @spec match_array(Array.t()) :: String.t()
-  def match_array(arg0) do
+  def match_array(arr) do
     temp_result = nil
-    case (length(arg0)) do
+    case (length(arr)) do
       0 ->
         temp_result = "empty"
       1 ->
-        _g = Enum.at(arg0, 0)
+        _g = Enum.at(arr, 0)
     x = _g
     temp_result = "single(" <> Integer.to_string(x) <> ")"
       2 ->
-        _g = Enum.at(arg0, 0)
-    _g = Enum.at(arg0, 1)
+        _g = Enum.at(arr, 0)
+    _g = Enum.at(arr, 1)
     x = _g
     y = _g
     temp_result = "pair(" <> Integer.to_string(x) <> "," <> Integer.to_string(y) <> ")"
       3 ->
-        _g = Enum.at(arg0, 0)
-    _g = Enum.at(arg0, 1)
-    _g = Enum.at(arg0, 2)
+        _g = Enum.at(arr, 0)
+    _g = Enum.at(arr, 1)
+    _g = Enum.at(arr, 2)
     x = _g
     y = _g
     z = _g
@@ -125,7 +125,7 @@ defmodule PatternMatchingTest do
      * Nested pattern matching
      "
   @spec match_nested(Option.t()) :: String.t()
-  def match_nested(arg0) do
+  def match_nested(option) do
     temp_result = nil
     case (nil) do
       0 ->
@@ -163,20 +163,20 @@ defmodule PatternMatchingTest do
      * Boolean pattern matching
      "
   @spec match_bool(boolean(), integer()) :: String.t()
-  def match_bool(arg0, arg1) do
+  def match_bool(flag, count) do
     temp_result = nil
-    if (arg0) do
-      if (arg1 == 0) do
+    if (flag) do
+      if (count == 0) do
         temp_result = "true zero"
       else
-        n = arg1
+        n = count
         if (n > 0), do: temp_result = "true positive", else: temp_result = "other combination"
       end
     else
-      if (arg1 == 0) do
+      if (count == 0) do
         temp_result = "false zero"
       else
-        n = arg1
+        n = count
         if (n > 0), do: temp_result = "false positive", else: temp_result = "other combination"
       end
     end
