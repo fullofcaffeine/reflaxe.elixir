@@ -20,6 +20,7 @@ This document explains the documentation architecture, the purpose of each docum
   - `architecture/` - System design, compilation flow, testing architecture
   - `guides/` - User guides and tutorials
   - `reference/` - API references, annotations, feature status
+  - `plans/` - Product Requirements Documents and strategic planning
   - `llm/` - LLM-specific documentation
   - `history/` - Historical records and learnings
 
@@ -41,7 +42,16 @@ This document explains the documentation architecture, the purpose of each docum
   - `QUICKSTART.md` - Rapid onboarding guide
   - `TUTORIAL_FIRST_PROJECT.md` - Step-by-step tutorial
 
-### 5. Reference Documentation
+### 5. Product Requirements Documentation
+**Location**: `documentation/plans/`
+- **Purpose**: Strategic vision, requirements analysis, and product roadmap
+- **Key Files**:
+  - `PRD_VISION_ALIGNMENT.md` - Core vision and architecture requirements
+  - `PRD_README.md` - Index of PRDs with guidelines
+- **Content**: Executive summaries, requirement specifications, success metrics, implementation roadmaps
+- **Audience**: Project stakeholders, senior developers, strategic planners
+
+### 6. Reference Documentation
 **Location**: `documentation/reference/`
 - **Purpose**: API references and feature specifications
 - **Key Files**:

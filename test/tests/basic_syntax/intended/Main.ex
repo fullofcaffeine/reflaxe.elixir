@@ -20,12 +20,12 @@ defmodule Main do
   @spec main() :: nil
   def main() do
     instance = Main.new(10)
-Log.trace(Main.greet("World"), %{fileName: "Main.hx", lineNumber: 76, className: "Main", methodName: "main"})
-Log.trace(instance.calculate(5, 3), %{fileName: "Main.hx", lineNumber: 77, className: "Main", methodName: "main"})
-Log.trace(instance.checkValue(-5), %{fileName: "Main.hx", lineNumber: 78, className: "Main", methodName: "main"})
-Log.trace(instance.sumRange(1, 10), %{fileName: "Main.hx", lineNumber: 79, className: "Main", methodName: "main"})
-Log.trace(instance.factorial(5), %{fileName: "Main.hx", lineNumber: 80, className: "Main", methodName: "main"})
-Log.trace(instance.dayName(3), %{fileName: "Main.hx", lineNumber: 81, className: "Main", methodName: "main"})
+    Log.trace(Main.greet("World"), %{fileName: "Main.hx", lineNumber: 76, className: "Main", methodName: "main"})
+    Log.trace(instance.calculate(5, 3), %{fileName: "Main.hx", lineNumber: 77, className: "Main", methodName: "main"})
+    Log.trace(instance.checkValue(-5), %{fileName: "Main.hx", lineNumber: 78, className: "Main", methodName: "main"})
+    Log.trace(instance.sumRange(1, 10), %{fileName: "Main.hx", lineNumber: 79, className: "Main", methodName: "main"})
+    Log.trace(instance.factorial(5), %{fileName: "Main.hx", lineNumber: 80, className: "Main", methodName: "main"})
+    Log.trace(instance.dayName(3), %{fileName: "Main.hx", lineNumber: 81, className: "Main", methodName: "main"})
   end
 
   # Instance functions
@@ -45,84 +45,84 @@ Log.trace(instance.dayName(3), %{fileName: "Main.hx", lineNumber: 81, className:
   @spec sum_range(integer(), integer()) :: integer()
   def sum_range(arg0, arg1) do
     sum = 0
-_g = arg0
-_g = arg1
-(
-  try do
-    loop_fn = fn {sum} ->
-      if (_g < _g) do
-        try do
-          i = _g = _g + 1
-      # sum updated with + i
-      loop_fn.({sum + i})
-        catch
-          :break -> {sum}
-          :continue -> loop_fn.({sum})
+    _g = arg0
+    _g = arg1
+    (
+      try do
+        loop_fn = fn {sum} ->
+          if (_g < _g) do
+            try do
+              i = _g = _g + 1
+          # sum updated with + i
+          loop_fn.({sum + i})
+            catch
+              :break -> {sum}
+              :continue -> loop_fn.({sum})
+            end
+          else
+            {sum}
+          end
         end
-      else
-        {sum}
+        loop_fn.({sum})
+      catch
+        :break -> {sum}
       end
-    end
-    loop_fn.({sum})
-  catch
-    :break -> {sum}
-  end
-)
-sum
+    )
+    sum
   end
 
   @doc "Function factorial"
   @spec factorial(integer()) :: integer()
   def factorial(arg0) do
     result = 1
-i = arg0
-(
-  try do
-    loop_fn = fn {result, i} ->
-      if (i > 1) do
-        try do
-          # result updated with * i
-      # i decremented
-      loop_fn.({result * i, i - 1})
-        catch
-          :break -> {result, i}
-          :continue -> loop_fn.({result, i})
+    i = arg0
+    (
+      try do
+        loop_fn = fn {result, i} ->
+          if (i > 1) do
+            try do
+              # result updated with * i
+          # i decremented
+          loop_fn.({result * i, i - 1})
+            catch
+              :break -> {result, i}
+              :continue -> loop_fn.({result, i})
+            end
+          else
+            {result, i}
+          end
         end
-      else
-        {result, i}
+        loop_fn.({result, i})
+      catch
+        :break -> {result, i}
       end
-    end
-    loop_fn.({result, i})
-  catch
-    :break -> {result, i}
-  end
-)
-result
+    )
+    result
   end
 
   @doc "Function day_name"
   @spec day_name(integer()) :: String.t()
   def day_name(arg0) do
     temp_result = nil
-case (arg0) do
-  1 ->
-    temp_result = "Monday"
-  2 ->
-    temp_result = "Tuesday"
-  3 ->
-    temp_result = "Wednesday"
-  4 ->
-    temp_result = "Thursday"
-  5 ->
-    temp_result = "Friday"
-  6 ->
-    temp_result = "Saturday"
-  7 ->
-    temp_result = "Sunday"
-  _ ->
-    temp_result = "Invalid"
-end
-temp_result
+    case (arg0) do
+      1 ->
+        temp_result = "Monday"
+      2 ->
+        temp_result = "Tuesday"
+      3 ->
+        temp_result = "Wednesday"
+      4 ->
+        temp_result = "Thursday"
+      5 ->
+        temp_result = "Friday"
+      6 ->
+        temp_result = "Saturday"
+      7 ->
+        temp_result = "Sunday"
+      _ ->
+        temp_result = "Invalid"
+    end
+    temp_result
   end
 
 end

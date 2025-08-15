@@ -19,8 +19,12 @@ defmodule StringUtils do
      "
   @spec process_string(String.t()) :: String.t()
   def process_string(input) do
-    # TODO: Implement function body
-    nil
+    if (arg0 == nil), do: "", else: nil
+    processed = StringTools.trim(arg0)
+    if (String.length(processed) == 0), do: "[empty]", else: nil
+    processed = StringUtils.removeExcessWhitespace(processed)
+    processed = StringUtils.normalizeCase(processed)
+    processed
   end
 
   @doc "
@@ -29,8 +33,12 @@ defmodule StringUtils do
      "
   @spec format_display_name(String.t()) :: String.t()
   def format_display_name(name) do
-    # TODO: Implement function body
-    nil
+    if (arg0 == nil || String.length(StringTools.trim(arg0)) == 0), do: "Anonymous User", else: nil
+    parts = String.split(StringTools.trim(arg0), " ")
+    formatted = []
+    _g = 0
+    Enum.filter(parts, fn item -> (item.length > 0) end)
+    Enum.join(formatted, " ")
   end
 
   @doc "
@@ -38,8 +46,11 @@ defmodule StringUtils do
      "
   @spec process_email(String.t()) :: term()
   def process_email(email) do
-    # TODO: Implement function body
-    nil
+    if (arg0 == nil), do: %{valid: false, error: "Email is required"}, else: nil
+    trimmed = StringTools.trim(arg0)
+    if (String.length(trimmed) == 0), do: %{valid: false, error: "Email cannot be empty"}, else: nil
+    if (!StringUtils.isValidEmailFormat(trimmed)), do: %{valid: false, error: "Invalid email format"}, else: nil
+    %{valid: true, email: String.downcase(trimmed), domain: StringUtils.extractDomain(trimmed), username: StringUtils.extractUsername(trimmed)}
   end
 
   @doc "
@@ -47,8 +58,52 @@ defmodule StringUtils do
      "
   @spec create_slug(String.t()) :: String.t()
   def create_slug(text) do
-    # TODO: Implement function body
-    nil
+    if (arg0 == nil), do: "", else: nil
+    slug = StringTools.trim(String.downcase(arg0))
+    slug = EReg.new("[^a-z0-9\\s-]", "g").replace(slug, "")
+    slug = EReg.new("\\s+", "g").replace(slug, "-")
+    slug = EReg.new("-+", "g").replace(slug, "-")
+    (
+      try do
+        loop_fn = fn {slug} ->
+          if (String.at(slug, 0) == "-") do
+            try do
+              # slug updated to String.slice(slug, 1..-1)
+          loop_fn.({String.slice(slug, 1..-1)})
+            catch
+              :break -> {slug}
+              :continue -> loop_fn.({slug})
+            end
+          else
+            {slug}
+          end
+        end
+        loop_fn.({slug})
+      catch
+        :break -> {slug}
+      end
+    )
+    (
+      try do
+        loop_fn = fn {slug} ->
+          if (String.at(slug, String.length(slug) - 1) == "-") do
+            try do
+              # slug updated to String.slice(slug, 0, String.length(slug) - 1)
+          loop_fn.({String.slice(slug, 0, String.length(slug) - 1)})
+            catch
+              :break -> {slug}
+              :continue -> loop_fn.({slug})
+            end
+          else
+            {slug}
+          end
+        end
+        loop_fn.({slug})
+      catch
+        :break -> {slug}
+      end
+    )
+    slug
   end
 
   @doc "
@@ -56,8 +111,12 @@ defmodule StringUtils do
      "
   @spec truncate(String.t(), integer()) :: String.t()
   def truncate(text, max_length) do
-    # TODO: Implement function body
-    nil
+    if (arg0 == nil), do: "", else: nil
+    if (String.length(arg0) <= arg1), do: arg0, else: nil
+    truncated = String.slice(arg0, 0, arg1 - 3)
+    last_space = truncated.lastIndexOf(" ")
+    if (last_space > Std.int(arg1 * 0.7)), do: truncated = String.slice(truncated, 0, last_space), else: nil
+    truncated <> "..."
   end
 
   @doc "
@@ -65,43 +124,101 @@ defmodule StringUtils do
      "
   @spec mask_sensitive_info(String.t(), integer()) :: String.t()
   def mask_sensitive_info(text, visible_chars) do
-    # TODO: Implement function body
-    nil
+    if (arg0 == nil || String.length(arg0) <= arg1) do
+      temp_number = nil
+      if (arg0 != nil), do: temp_number = String.length(arg0), else: temp_number = 4
+      repeat_count = temp_number
+      result = ""
+      _g = 0
+      _g = repeat_count
+      (
+        try do
+          loop_fn = fn {result} ->
+            if (_g < _g) do
+              try do
+                _g = _g + 1
+            # result updated with <> "*"
+            loop_fn.({result <> "*"})
+              catch
+                :break -> {result}
+                :continue -> loop_fn.({result})
+              end
+            else
+              {result}
+            end
+          end
+          loop_fn.({result})
+        catch
+          :break -> {result}
+        end
+      )
+      result
+    end
+    visible = String.slice(arg0, 0, arg1)
+    masked_count = String.length(arg0) - arg1
+    masked = ""
+    _g = 0
+    _g = masked_count
+    (
+      try do
+        loop_fn = fn {masked} ->
+          if (_g < _g) do
+            try do
+              _g = _g + 1
+          # masked updated with <> "*"
+          loop_fn.({masked <> "*"})
+            catch
+              :break -> {masked}
+              :continue -> loop_fn.({masked})
+            end
+          else
+            {masked}
+          end
+        end
+        loop_fn.({masked})
+      catch
+        :break -> {masked}
+      end
+    )
+    visible <> masked
   end
 
   @doc "Function remove_excess_whitespace"
   @spec remove_excess_whitespace(String.t()) :: String.t()
   def remove_excess_whitespace(text) do
-    # TODO: Implement function body
-    nil
+    EReg.new("\\s+", "g").replace(arg0, " ")
   end
 
   @doc "Function normalize_case"
   @spec normalize_case(String.t()) :: String.t()
   def normalize_case(text) do
-    # TODO: Implement function body
-    nil
+    String.upcase(String.at(arg0, 0)) <> String.downcase(String.slice(arg0, 1..-1))
   end
 
   @doc "Function is_valid_email_format"
   @spec is_valid_email_format(String.t()) :: boolean()
   def is_valid_email_format(email) do
-    # TODO: Implement function body
-    nil
+    at_index = case :binary.match(arg0, "@") do {pos, _} -> pos; :nomatch -> -1 end
+    dot_index = arg0.lastIndexOf(".")
+    at_index > 0 && dot_index > at_index && dot_index < String.length(arg0) - 1
   end
 
   @doc "Function extract_domain"
   @spec extract_domain(String.t()) :: String.t()
   def extract_domain(email) do
-    # TODO: Implement function body
-    nil
+    at_index = case :binary.match(arg0, "@") do {pos, _} -> pos; :nomatch -> -1 end
+    temp_result = nil
+    if (at_index > 0), do: temp_result = String.slice(arg0, at_index + 1..-1), else: temp_result = ""
+    temp_result
   end
 
   @doc "Function extract_username"
   @spec extract_username(String.t()) :: String.t()
   def extract_username(email) do
-    # TODO: Implement function body
-    nil
+    at_index = case :binary.match(arg0, "@") do {pos, _} -> pos; :nomatch -> -1 end
+    temp_result = nil
+    if (at_index > 0), do: temp_result = String.slice(arg0, 0, at_index), else: temp_result = arg0
+    temp_result
   end
 
   @doc "
@@ -109,8 +226,7 @@ defmodule StringUtils do
      "
   @spec main() :: nil
   def main() do
-    # TODO: Implement function body
-    nil
+    Log.trace("StringUtils compiled successfully for Mix project!", %{fileName: "./utils/StringUtils.hx", lineNumber: 178, className: "utils.StringUtils", methodName: "main"})
   end
 
 end

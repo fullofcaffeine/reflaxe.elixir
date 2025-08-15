@@ -30,53 +30,53 @@ defmodule MemoryStorage do
   @spec get(String.t()) :: term()
   def get(arg0) do
     this = __MODULE__.data
-temp_result = this.get(arg0)
-temp_result
+    temp_result = this.get(arg0)
+    temp_result
   end
 
   @doc "Function put"
   @spec put(String.t(), term()) :: boolean()
   def put(arg0, arg1) do
     this = __MODULE__.data
-this.set(arg0, arg1)
-true
+    this.set(arg0, arg1)
+    true
   end
 
   @doc "Function delete"
   @spec delete(String.t()) :: boolean()
   def delete(arg0) do
     this = __MODULE__.data
-temp_result = this.remove(arg0)
-temp_result
+    temp_result = this.remove(arg0)
+    temp_result
   end
 
   @doc "Function list"
   @spec list() :: Array.t()
   def list() do
     _g = []
-this = __MODULE__.data
-temp_iterator = this.keys()
-k = temp_iterator
-(
-  try do
-    loop_fn = fn ->
-      if (k.hasNext()) do
-        try do
-          k = k.next()
-_g ++ [k]
-          loop_fn.()
-        catch
-          :break -> nil
-          :continue -> loop_fn.()
+    this = __MODULE__.data
+    temp_iterator = this.keys()
+    k = temp_iterator
+    (
+      try do
+        loop_fn = fn ->
+          if (k.hasNext()) do
+            try do
+              k = k.next()
+    _g ++ [k]
+              loop_fn.()
+            catch
+              :break -> nil
+              :continue -> loop_fn.()
+            end
+          end
         end
+        loop_fn.()
+      catch
+        :break -> nil
       end
-    end
-    loop_fn.()
-  catch
-    :break -> nil
-  end
-)
-_g
+    )
+    _g
   end
 
 end
@@ -93,7 +93,7 @@ defmodule FileStorage do
   @spec init(term()) :: term()
   def init(arg0) do
     if (arg0.path != nil), do: __MODULE__.base_path = arg0.path, else: nil
-%{ok: __MODULE__}
+    %{ok: __MODULE__}
   end
 
   @doc "Function get"

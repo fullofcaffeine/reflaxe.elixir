@@ -1,9 +1,0 @@
--cp src_haxe
--cp /Users/fullofcaffeine/workspace/code/haxe.elixir/src
--cp /Users/fullofcaffeine/workspace/code/haxe.elixir/std
--lib reflaxe
--D reflaxe_runtime
--D reflaxe.elixir=0.1.0
--D elixir_output=lib
---macro reflaxe.elixir.CompilerInit.Start()
-test.SimpleClass

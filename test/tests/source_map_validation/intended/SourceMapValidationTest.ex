@@ -18,24 +18,24 @@ defmodule SourceMapValidationTest do
   @spec main() :: nil
   def main() do
     Log.trace("=== Source Map Validation Test ===", %{fileName: "SourceMapValidationTest.hx", lineNumber: 13, className: "SourceMapValidationTest", methodName: "main"})
-simple_var = "test"
-number = 42
-SourceMapValidationTest.testFunction(simple_var, number)
-if (number > 0), do: Log.trace("Positive number", %{fileName: "SourceMapValidationTest.hx", lineNumber: 24, className: "SourceMapValidationTest", methodName: "main"}), else: Log.trace("Non-positive number", %{fileName: "SourceMapValidationTest.hx", lineNumber: 26, className: "SourceMapValidationTest", methodName: "main"})
-Log.trace("Loop iteration: " <> Integer.to_string(0), %{fileName: "SourceMapValidationTest.hx", lineNumber: 31, className: "SourceMapValidationTest", methodName: "main"})
-Log.trace("Loop iteration: " <> Integer.to_string(1), %{fileName: "SourceMapValidationTest.hx", lineNumber: 31, className: "SourceMapValidationTest", methodName: "main"})
-Log.trace("Loop iteration: " <> Integer.to_string(2), %{fileName: "SourceMapValidationTest.hx", lineNumber: 31, className: "SourceMapValidationTest", methodName: "main"})
-Log.trace("Loop iteration: " <> Integer.to_string(3), %{fileName: "SourceMapValidationTest.hx", lineNumber: 31, className: "SourceMapValidationTest", methodName: "main"})
-Log.trace("Loop iteration: " <> Integer.to_string(4), %{fileName: "SourceMapValidationTest.hx", lineNumber: 31, className: "SourceMapValidationTest", methodName: "main"})
-array = [1, 2, 3, 4, 5]
-_g = 0
-Enum.map(array, fn item -> item end)
-"Test"
-100
-"nested value"
-instance = TestClass.new("example")
-instance.doSomething()
-Log.trace("=== Test Complete ===", %{fileName: "SourceMapValidationTest.hx", lineNumber: 53, className: "SourceMapValidationTest", methodName: "main"})
+    simple_var = "test"
+    number = 42
+    SourceMapValidationTest.testFunction(simple_var, number)
+    if (number > 0), do: Log.trace("Positive number", %{fileName: "SourceMapValidationTest.hx", lineNumber: 24, className: "SourceMapValidationTest", methodName: "main"}), else: Log.trace("Non-positive number", %{fileName: "SourceMapValidationTest.hx", lineNumber: 26, className: "SourceMapValidationTest", methodName: "main"})
+    Log.trace("Loop iteration: " <> Integer.to_string(0), %{fileName: "SourceMapValidationTest.hx", lineNumber: 31, className: "SourceMapValidationTest", methodName: "main"})
+    Log.trace("Loop iteration: " <> Integer.to_string(1), %{fileName: "SourceMapValidationTest.hx", lineNumber: 31, className: "SourceMapValidationTest", methodName: "main"})
+    Log.trace("Loop iteration: " <> Integer.to_string(2), %{fileName: "SourceMapValidationTest.hx", lineNumber: 31, className: "SourceMapValidationTest", methodName: "main"})
+    Log.trace("Loop iteration: " <> Integer.to_string(3), %{fileName: "SourceMapValidationTest.hx", lineNumber: 31, className: "SourceMapValidationTest", methodName: "main"})
+    Log.trace("Loop iteration: " <> Integer.to_string(4), %{fileName: "SourceMapValidationTest.hx", lineNumber: 31, className: "SourceMapValidationTest", methodName: "main"})
+    array = [1, 2, 3, 4, 5]
+    _g = 0
+    Enum.map(array, fn item -> item end)
+    "Test"
+    100
+    "nested value"
+    instance = TestClass.new("example")
+    instance.doSomething()
+    Log.trace("=== Test Complete ===", %{fileName: "SourceMapValidationTest.hx", lineNumber: 53, className: "SourceMapValidationTest", methodName: "main"})
   end
 
   @doc "Function test_function"

@@ -11,6 +11,8 @@ Generated: 2025-08-12 20:58:31
 - [Patterns](./patterns/PATTERNS.md) - Common usage patterns
 - [Troubleshooting](./TROUBLESHOOTING_ADDITIONS.md) - Additional troubleshooting
 
+**Note**: This documentation has been moved from `.taskmaster/docs/` to `documentation/llm/` for better integration with the main project documentation.
+
 ## Quick Start for LLM Agents
 
 1. Read API_QUICK_REFERENCE.md for available APIs

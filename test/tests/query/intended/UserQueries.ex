@@ -62,7 +62,7 @@ defmodule UserQueries do
   @spec get_top_users() :: term()
   def get_top_users() do
     subquery = UserQueries.from("posts", "p", %{group_by: "p.user_id", select: %{user_id: "p.user_id", count: "count(p.id)"}})
-UserQueries.from("users", "u", %{join: %{table: subquery, alias: "s", on: "s.user_id == u.id"}, where: %{count_gt: 10}, select: "u"})
+    UserQueries.from("users", "u", %{join: %{table: subquery, alias: "s", on: "s.user_id == u.id"}, where: %{count_gt: 10}, select: "u"})
   end
 
   @doc "Function get_users_with_associations"
@@ -87,10 +87,10 @@ UserQueries.from("users", "u", %{join: %{table: subquery, alias: "s", on: "s.use
   @spec search_users(term()) :: term()
   def search_users(arg0) do
     query = UserQueries.from("users", "u", %{select: "u"})
-if (arg0.name != nil), do: query = UserQueries.where(query, "u", %{name_ilike: arg0.name}), else: nil
-if (arg0.email != nil), do: query = UserQueries.where(query, "u", %{email: arg0.email}), else: nil
-if (arg0.min_age != nil), do: query = UserQueries.where(query, "u", %{age_gte: arg0.min_age}), else: nil
-query
+    if (arg0.name != nil), do: query = UserQueries.where(query, "u", %{name_ilike: arg0.name}), else: nil
+    if (arg0.email != nil), do: query = UserQueries.where(query, "u", %{email: arg0.email}), else: nil
+    if (arg0.min_age != nil), do: query = UserQueries.where(query, "u", %{age_gte: arg0.min_age}), else: nil
+    query
   end
 
   @doc "Function from"

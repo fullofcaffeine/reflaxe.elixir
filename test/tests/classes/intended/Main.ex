@@ -33,8 +33,8 @@ defmodule Point do
   @spec distance(Point.t()) :: float()
   def distance(arg0) do
     dx = __MODULE__.x - arg0.x
-dy = __MODULE__.y - arg0.y
-Math.sqrt(dx * dx + dy * dy)
+    dy = __MODULE__.y - arg0.y
+    Math.sqrt(dx * dx + dy * dy)
   end
 
   @doc "Function to_string"
@@ -71,9 +71,9 @@ defmodule Shape do
   @spec move(float(), float()) :: nil
   def move(arg0, arg1) do
     fh = __MODULE__.position
-fh.x = fh.x + arg0
-fh = __MODULE__.position
-fh.y = fh.y + arg1
+    fh.x = fh.x + arg0
+    fh = __MODULE__.position
+    fh.y = fh.y + arg1
   end
 
 end
@@ -111,7 +111,7 @@ defmodule Circle do
   @spec set_velocity(float(), float()) :: nil
   def set_velocity(arg0, arg1) do
     __MODULE__.velocity.x = arg0
-__MODULE__.velocity.y = arg1
+    __MODULE__.velocity.y = arg1
   end
 
 end
@@ -162,10 +162,10 @@ defmodule Container do
   @spec map(Function.t()) :: Container.t()
   def map(arg0) do
     result = Container.new()
-_g = 0
-_g = __MODULE__.items
-Enum.map(_g, fn item -> arg0(item) end)
-result
+    _g = 0
+    _g = __MODULE__.items
+    Enum.map(_g, fn item -> arg0(item) end)
+    result
   end
 
 end
@@ -182,26 +182,26 @@ defmodule Main do
   @spec main() :: nil
   def main() do
     p1 = Point.new(3, 4)
-p2 = Point.new(0, 0)
-Log.trace(p1.distance(p2), %{fileName: "Main.hx", lineNumber: 143, className: "Main", methodName: "main"})
-shape = Shape.new(10, 20, "Rectangle")
-Log.trace(shape.draw(), %{fileName: "Main.hx", lineNumber: 147, className: "Main", methodName: "main"})
-shape.move(5, 5)
-Log.trace(shape.draw(), %{fileName: "Main.hx", lineNumber: 149, className: "Main", methodName: "main"})
-circle = Circle.new(0, 0, 10)
-Log.trace(circle.draw(), %{fileName: "Main.hx", lineNumber: 153, className: "Main", methodName: "main"})
-circle.setVelocity(1, 2)
-circle.update(1.5)
-Log.trace(circle.draw(), %{fileName: "Main.hx", lineNumber: 156, className: "Main", methodName: "main"})
-unit_circle = Circle.createUnit()
-Log.trace(unit_circle.draw(), %{fileName: "Main.hx", lineNumber: 160, className: "Main", methodName: "main"})
-container = Container.new()
-container.add("Hello")
-container.add("World")
-Log.trace(container.get(0), %{fileName: "Main.hx", lineNumber: 166, className: "Main", methodName: "main"})
-Log.trace(container.size(), %{fileName: "Main.hx", lineNumber: 167, className: "Main", methodName: "main"})
-lengths = Enum.map(container, fn s -> String.length(s) end)
-Log.trace(lengths.get(0), %{fileName: "Main.hx", lineNumber: 171, className: "Main", methodName: "main"})
+    p2 = Point.new(0, 0)
+    Log.trace(p1.distance(p2), %{fileName: "Main.hx", lineNumber: 143, className: "Main", methodName: "main"})
+    shape = Shape.new(10, 20, "Rectangle")
+    Log.trace(shape.draw(), %{fileName: "Main.hx", lineNumber: 147, className: "Main", methodName: "main"})
+    shape.move(5, 5)
+    Log.trace(shape.draw(), %{fileName: "Main.hx", lineNumber: 149, className: "Main", methodName: "main"})
+    circle = Circle.new(0, 0, 10)
+    Log.trace(circle.draw(), %{fileName: "Main.hx", lineNumber: 153, className: "Main", methodName: "main"})
+    circle.setVelocity(1, 2)
+    circle.update(1.5)
+    Log.trace(circle.draw(), %{fileName: "Main.hx", lineNumber: 156, className: "Main", methodName: "main"})
+    unit_circle = Circle.createUnit()
+    Log.trace(unit_circle.draw(), %{fileName: "Main.hx", lineNumber: 160, className: "Main", methodName: "main"})
+    container = Container.new()
+    container.add("Hello")
+    container.add("World")
+    Log.trace(container.get(0), %{fileName: "Main.hx", lineNumber: 166, className: "Main", methodName: "main"})
+    Log.trace(container.size(), %{fileName: "Main.hx", lineNumber: 167, className: "Main", methodName: "main"})
+    lengths = Enum.map(container, fn s -> String.length(s) end)
+    Log.trace(lengths.get(0), %{fileName: "Main.hx", lineNumber: 171, className: "Main", methodName: "main"})
   end
 
 end

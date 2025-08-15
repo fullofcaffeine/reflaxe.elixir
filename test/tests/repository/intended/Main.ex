@@ -75,7 +75,7 @@ defmodule UserRepository do
   @spec create_user(term()) :: term()
   def create_user(arg0) do
     changeset = UserChangeset.changeset(nil, arg0)
-Repo.insert(changeset)
+    Repo.insert(changeset)
   end
 
   @doc "
@@ -84,7 +84,7 @@ Repo.insert(changeset)
   @spec update_user(User.t(), term()) :: term()
   def update_user(arg0, arg1) do
     changeset = UserChangeset.changeset(arg0, arg1)
-Repo.update(changeset)
+    Repo.update(changeset)
   end
 
   @doc "
