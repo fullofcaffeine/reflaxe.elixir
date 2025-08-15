@@ -7,9 +7,10 @@
 [![Haxe](https://img.shields.io/badge/Haxe-4.3.6+-orange)](https://haxe.org)
 [![Elixir](https://img.shields.io/badge/Elixir-1.14+-purple)](https://elixir-lang.org)
 
-**Write your business logic once, deploy it anywhere.** A modern Haxe compilation target for Elixir/BEAM that brings type safety without vendor lock-in.
+**Transform Haxe into an LLM leverager for deterministic cross-platform development.** Write business logic once in type-safe Haxe, deploy anywhere with idiomatic code that looks hand-written.
 
-> **Current Status**: Pre-v1.0 (Phoenix/Ecto complete, OTP supervision patterns in progress)
+> **Vision**: See [VISION.md](VISION.md) for the strategic roadmap to revolutionize multi-platform development  
+> **Current Status**: Production-ready Phoenix integration, expanding to complete LLM leverager ecosystem
 
 ## Why Reflaxe.Elixir?
 
@@ -21,6 +22,7 @@
 - **Type safety today** - Catch errors at compile time, not in production
 - **Freedom tomorrow** - Your code can target JS, C++, Python, Java, C#, or any other Haxe target
 - **Phoenix ecosystem now** - Deep integration with LiveView, Ecto, OTP patterns, and HXX template processing
+- **AI-assisted development** - Structured, well-documented APIs that enable reliable code generation and rapid project scaffolding
 
 ### 💡 Real-World Scenarios
 

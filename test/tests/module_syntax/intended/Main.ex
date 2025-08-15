@@ -17,8 +17,7 @@ defmodule UserService do
      "
   @spec create_user(String.t(), integer()) :: String.t()
   def create_user(name, age) do
-    # TODO: Implement function body
-    nil
+    arg0 <> " is " <> Integer.to_string(arg1) <> " years old"
   end
 
   @doc "
@@ -26,8 +25,7 @@ defmodule UserService do
      "
   @spec validate_age(integer()) :: boolean()
   def validate_age(age) do
-    # TODO: Implement function body
-    nil
+    arg0 >= 0 && arg0 <= 150
   end
 
   @doc "
@@ -35,8 +33,7 @@ defmodule UserService do
      "
   @spec process_data(String.t()) :: String.t()
   def process_data(data) do
-    # TODO: Implement function body
-    nil
+    arg0
   end
 
   @doc "
@@ -44,8 +41,8 @@ defmodule UserService do
      "
   @spec complex_function(String.t(), integer(), boolean(), Array.t()) :: String.t()
   def complex_function(arg1, arg2, arg3, arg4) do
-    # TODO: Implement function body
-    nil
+    if (arg2), do: arg0 <> " " <> Integer.to_string(arg1), else: nil
+    "default"
   end
 
 end
@@ -66,15 +63,13 @@ defmodule StringUtils do
   @doc "Function is_empty"
   @spec is_empty(String.t()) :: boolean()
   def is_empty(str) do
-    # TODO: Implement function body
-    nil
+    arg0 == nil || String.length(arg0) == 0
   end
 
   @doc "Function sanitize"
   @spec sanitize(String.t()) :: String.t()
   def sanitize(str) do
-    # TODO: Implement function body
-    nil
+    arg0
   end
 
 end
@@ -96,8 +91,7 @@ defmodule UserHelper do
   @doc "Function format_name"
   @spec format_name(String.t(), String.t()) :: String.t()
   def format_name(first_name, last_name) do
-    # TODO: Implement function body
-    nil
+    arg0 <> " " <> arg1
   end
 
 end
