@@ -11,7 +11,7 @@ defmodule PatternMatchingTest do
   @spec match_color(Color.t()) :: String.t()
   def match_color(color) do
     temp_result = nil
-    case (nil) do
+    case (elem(color, 0)) do
       0 ->
         temp_result = "red"
       1 ->
@@ -19,9 +19,9 @@ defmodule PatternMatchingTest do
       2 ->
         temp_result = "blue"
       3 ->
-        _g = nil
-    _g = nil
-    _g = nil
+        _g = elem(color, 1)
+    _g = elem(color, 2)
+    _g = elem(color, 3)
     r = _g
     g = _g
     b = _g
@@ -36,11 +36,11 @@ defmodule PatternMatchingTest do
   @spec match_option(Option.t()) :: String.t()
   def match_option(option) do
     temp_result = nil
-    case (nil) do
+    case (elem(option, 0)) do
       0 ->
         temp_result = "none"
       1 ->
-        _g = nil
+        _g = elem(option, 1)
     value = _g
     temp_result = "some(" <> Std.string(value) <> ")"
     end
@@ -127,12 +127,12 @@ defmodule PatternMatchingTest do
   @spec match_nested(Option.t()) :: String.t()
   def match_nested(option) do
     temp_result = nil
-    case (nil) do
+    case (elem(option, 0)) do
       0 ->
         temp_result = "no color"
       1 ->
-        _g = nil
-    case (nil) do
+        _g = elem(option, 1)
+    case (elem(_g, 0)) do
       0 ->
         temp_result = "red color"
       1 ->
@@ -140,9 +140,9 @@ defmodule PatternMatchingTest do
       2 ->
         temp_result = "blue color"
       3 ->
-        _g = nil
-    nil
-    nil
+        _g = elem(_g, 1)
+    elem(_g, 2)
+    elem(_g, 3)
     r = _g
     _g
     _g
