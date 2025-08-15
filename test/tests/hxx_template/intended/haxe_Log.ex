@@ -16,14 +16,14 @@ defmodule Log do
   @spec format_output(term(), PosInfos.t()) :: String.t()
   def format_output(arg0, arg1) do
     str = Std.string(arg0)
-if (arg1 == nil), do: str, else: nil
-pstr = arg1.file_name <> ":" <> Integer.to_string(arg1.line_number)
-if (arg1.custom_params != nil) do
-  _g = 0
-  _g = arg1.custom_params
-  Enum.map(_g, fn item -> item end)
-end
-pstr <> ": " <> str
+    if (arg1 == nil), do: str, else: nil
+    pstr = arg1.file_name <> ":" <> Integer.to_string(arg1.line_number)
+    if (arg1.custom_params != nil) do
+      _g = 0
+      _g = arg1.custom_params
+      Enum.map(_g, fn item -> item end)
+    end
+    pstr <> ": " <> str
   end
 
   @doc "
@@ -47,7 +47,7 @@ pstr <> ": " <> str
   @spec trace(term(), Null.t()) :: nil
   def trace(arg0, arg1) do
     str = Log.formatOutput(arg0, arg1)
-Sys.println(str)
+    Sys.println(str)
   end
 
 end
