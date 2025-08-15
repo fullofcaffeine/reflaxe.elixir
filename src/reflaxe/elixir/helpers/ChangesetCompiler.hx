@@ -34,8 +34,34 @@ class ChangesetCompiler {
      * Note: Temporarily simplified due to Haxe 4.3.6 API compatibility
      */
     public static function getChangesetConfig(classType: Dynamic): Dynamic {
-        // Simplified implementation - would extract from metadata in proper setup
-        return {schema: "DefaultSchema"};
+        // For changeset classes, extract the schema name from the changeset function parameter
+        // If the class has a changeset function with signature changeset(user: User, attrs: Dynamic),
+        // the schema should be "User", not the changeset class name
+        
+        // Check if there's a changeset method and extract its first parameter type
+        var schemaName = "DefaultSchema"; // fallback
+        
+        // Try to extract from function signature - simplified approach
+        // In a real implementation, would analyze the function parameters
+        if (classType.name != null) {
+            var changesetClassName = classType.name;
+            var changesetSuffix = "Changeset";
+            var suffixLen = changesetSuffix.length;
+            if (changesetClassName.length > suffixLen) {
+                var endPart = changesetClassName.substring(changesetClassName.length - suffixLen, changesetClassName.length);
+                if (endPart == changesetSuffix) {
+                    // Extract schema name by removing "Changeset" suffix
+                    // e.g., "UserChangeset" -> "User"
+                    schemaName = changesetClassName.substring(0, changesetClassName.length - suffixLen);
+                } else {
+                    schemaName = changesetClassName;
+                }
+            } else {
+                schemaName = changesetClassName;
+            }
+        }
+        
+        return {schema: schemaName};
     }
     
     /**

@@ -1,4 +1,5 @@
 defmodule HXX do
+  use Bitwise
   @moduledoc """
   HXX module generated from Haxe
   
@@ -12,9 +13,9 @@ defmodule HXX do
      * Simple template string processor
      * For now, just returns the template string as-is for compilation testing
      "
-  @spec hxx(TInst(String,[]).t()) :: TInst(String,[]).t()
+  @spec hxx(String.t()) :: String.t()
   def hxx(arg0) do
-    template_str
+    arg0
   end
 
 end

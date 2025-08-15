@@ -1,7 +1,7 @@
-defmodule ___Int64 do
+defmodule Int64 do
   use Bitwise
   @moduledoc """
-  ___Int64 module generated from Haxe
+  Int64 module generated from Haxe
   """
 
 end

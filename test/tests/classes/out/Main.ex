@@ -98,7 +98,7 @@ defmodule Circle do
   @doc "Function draw"
   @spec draw() :: String.t()
   def draw() do
-    "" <> super.draw() <> " with radius " <> Float.to_string(__MODULE__.radius)
+    "" <> __MODULE__.draw() <> " with radius " <> Float.to_string(__MODULE__.radius)
   end
 
   @doc "Function update"

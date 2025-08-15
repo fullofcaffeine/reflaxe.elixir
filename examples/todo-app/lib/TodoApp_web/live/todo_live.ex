@@ -7,7 +7,7 @@ defmodule TodoLive do
   
   @impl true
   @doc "Generated from Haxe mount"
-  def mount(_params, _session, socket) do
+  def mount(params, session, socket) do
     Phoenix.PubSub.subscribe(TodoApp.PubSub, "todo:updates")
     current_user = TodoLive.get_user_from_session(session)
     todos = TodoLive.load_todos(current_user.id)

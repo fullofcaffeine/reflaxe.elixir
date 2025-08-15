@@ -19,7 +19,7 @@ class UserLive {
     var showForm: Bool = false;
     
     function mount(_params: Dynamic, _session: Dynamic, socket: Dynamic): {status: String, socket: Dynamic} {
-        users = Users.list_users();
+        var users = Users.list_users();
         
         return {
             status: "ok", 
@@ -59,9 +59,9 @@ class UserLive {
     }
     
     function handleNewUser(params: Dynamic, socket: Dynamic): {status: String, socket: Dynamic} {
-        changeset = Users.change_user(null);
-        selectedUser = null;
-        showForm = true;
+        var changeset = Users.change_user(null);
+        var selectedUser = null;
+        var showForm = true;
         
         return {
             status: "noreply",
@@ -75,9 +75,9 @@ class UserLive {
     
     function handleEditUser(params: Dynamic, socket: Dynamic): {status: String, socket: Dynamic} {
         var userId = params.id;
-        selectedUser = Users.get_user(userId);
-        changeset = Users.change_user(selectedUser);
-        showForm = true;
+        var selectedUser = Users.get_user(userId);
+        var changeset = Users.change_user(selectedUser);
+        var showForm = true;
         
         return {
             status: "noreply",
@@ -97,8 +97,8 @@ class UserLive {
             
         return switch(result.status) {
             case "ok":
-                users = Users.list_users();
-                showForm = false;
+                var users = Users.list_users();
+                var showForm = false;
                 
                 {
                     status: "noreply",
@@ -127,7 +127,7 @@ class UserLive {
         var result = Users.delete_user(user);
         
         if (result.status == "ok") {
-            users = Users.list_users();
+            var users = Users.list_users();
             
             return {
                 status: "noreply",
@@ -139,9 +139,9 @@ class UserLive {
     }
     
     function handleSearch(params: Dynamic, socket: Dynamic): {status: String, socket: Dynamic} {
-        searchTerm = params.search;
+        var searchTerm = params.search;
         
-        users = searchTerm.length > 0 
+        var users = searchTerm.length > 0 
             ? Users.search_users(searchTerm)
             : Users.list_users();
             
@@ -206,7 +206,9 @@ class UserLive {
                     </tr>
                 </thead>
                 <tbody>
-                    ${assigns.users.map(renderUserRow).join("")}
+                    <%= for user <- @users do %>
+                        <%= render_user_row(user) %>
+                    <% end %>
                 </tbody>
             </table>
         </div>
