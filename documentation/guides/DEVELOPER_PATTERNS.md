@@ -1,6 +1,11 @@
 # Developer Patterns: Writing Effective Haxe for Elixir
 
-**See Also**: [Paradigm Bridge](../paradigms/PARADIGM_BRIDGE.md) - Comprehensive guide to imperative→functional transformation patterns and cross-platform development philosophy.
+## See Also
+
+- **[Haxe→Elixir Mappings](../HAXE_ELIXIR_MAPPINGS.md)** - Complete reference for how Haxe constructs map to Elixir code
+- **[Paradigm Bridge](../paradigms/PARADIGM_BRIDGE.md)** - Comprehensive guide to imperative→functional transformation patterns and cross-platform development philosophy
+- **[BEAM Type Abstractions](../BEAM_TYPE_ABSTRACTIONS.md)** - Option<T> and Result<T,E> types for type-safe programming
+- **[Functional Patterns](../FUNCTIONAL_PATTERNS.md)** - Examples of functional programming transformations
 
 ## Table of Contents
 - [Core Principles](#core-principles)
@@ -77,13 +82,14 @@ class DataProcessor {
 
 **Compiler Support**: The `@:pipeline` annotation tells the compiler to optimize this as Elixir pipe operators.
 
-### Option/Maybe Pattern
+### Option<T> Pattern
 
-**Use Case**: Handle nullable values functionally
+**Use Case**: Type-safe null handling following Gleam's explicit-over-implicit philosophy
 
 ```haxe
-// Compiler provides Option<T> abstraction
-import reflaxe.elixir.Option;
+// Use the standard Option type and tools
+import haxe.ds.Option;
+using haxe.ds.OptionTools;
 
 class UserService {
     public static function findUser(id: Int): Option<User> {
@@ -95,7 +101,22 @@ class UserService {
         return findUser(id)
             .map(u -> u.email)
             .filter(e -> e != "")
-            .getOrElse("no-email@example.com");
+            .unwrap("no-email@example.com");
+    }
+    
+    // Chain operations with multiple Option values
+    public static function getUserFullName(id: Int): Option<String> {
+        return findUser(id).then(user -> {
+            var firstName = OptionTools.fromNullable(user.firstName);
+            var lastName = OptionTools.fromNullable(user.lastName);
+            
+            return switch ([firstName, lastName]) {
+                case [Some(first), Some(last)]: Some('${first} ${last}');
+                case [Some(first), None]: Some(first);
+                case [None, Some(last)]: Some(last);
+                case [None, None]: None;
+            }
+        });
     }
 }
 ```
@@ -110,20 +131,28 @@ def get_user_email(id) do
 end
 ```
 
-### Result/Either Pattern
+### Result<T,E> Pattern
 
-**Use Case**: Explicit error handling without exceptions
+**Use Case**: Explicit error handling without exceptions, compiling to `{:ok, value}` / `{:error, reason}` in Elixir
 
 ```haxe
-// Compiler provides Result<T, E> type
-import reflaxe.elixir.Result;
+// Use the standard Result type and tools
+import haxe.functional.Result;
+using haxe.functional.ResultTools;
 
 class PaymentService {
     public static function processPayment(amount: Float, card: Card): Result<Transaction, PaymentError> {
         return validateCard(card)
-            .andThen(c -> checkBalance(c, amount))
-            .andThen(c -> chargeCard(c, amount))
+            .flatMap(c -> checkBalance(c, amount))
+            .flatMap(c -> chargeCard(c, amount))
             .map(t -> logTransaction(t));
+    }
+    
+    // Collect multiple results - fail fast or collect all errors
+    public static function processMultiplePayments(payments: Array<PaymentData>): Result<Array<Transaction>, PaymentError> {
+        return ResultTools.traverse(payments, data -> 
+            processPayment(data.amount, data.card)
+        );
     }
     
     // Chain operations that might fail
@@ -498,6 +527,120 @@ function processData_v3(data: Array<Dynamic>): TransformResult {
 // Phase 4: Full typing
 function processData_v4(data: Array<InputItem>): TransformResult {
     return ElixirModule.transform(data.map(i -> i.toLegacy()));
+}
+```
+
+### From Nullable Types to Option<T>
+
+**Progressive Migration Strategy**: Move from nullable types to type-safe Option patterns.
+
+```haxe
+// Phase 1: Identify Nullable Patterns (Before)
+class UserService {
+    public static function findUser(id: Int): Null<User> {
+        var user = Database.query("users", {id: id});
+        return user; // Could be null - requires manual null checks
+    }
+    
+    public static function processUser(id: Int): String {
+        var user = findUser(id);
+        if (user != null) {
+            return user.name; // Manual null check required everywhere
+        }
+        return "Unknown User";
+    }
+}
+
+// Phase 2: Migrate to Option<T> (After)
+import haxe.ds.Option;
+using haxe.ds.OptionTools;
+
+class UserService {
+    public static function findUser(id: Int): Option<User> {
+        var user = Database.query("users", {id: id});
+        return user != null ? Some(user) : None;
+    }
+    
+    public static function processUser(id: Int): String {
+        return findUser(id)
+            .map(user -> user.name)
+            .unwrap("Unknown User");
+    }
+    
+    // Advanced patterns with Option
+    public static function getUserDisplayName(id: Int): String {
+        return findUser(id)
+            .map(user -> user.displayName != null ? user.displayName : user.username)
+            .filter(name -> name.length > 0)
+            .unwrap("Anonymous User");
+    }
+}
+```
+
+### From Exceptions to Result<T,E>
+
+**Strategy**: Replace exception-based error handling with explicit Result types.
+
+```haxe
+// Phase 1: Exception-Based Approach (Before)
+class PaymentService {
+    public static function processPayment(amount: Float, card: Card): Transaction {
+        try {
+            validateAmount(amount); // Throws on invalid
+            validateCard(card);     // Throws on invalid
+            var charge = chargeCard(card, amount); // Throws on failure
+            return createTransaction(charge);
+        } catch (e: PaymentError) {
+            throw e; // Re-throw, information might be lost
+        }
+    }
+}
+
+// Phase 2: Result-Based Approach (After)  
+import haxe.functional.Result;
+using haxe.functional.ResultTools;
+
+class PaymentService {
+    public static function processPayment(amount: Float, card: Card): Result<Transaction, PaymentError> {
+        return validateAmount(amount)
+            .flatMap(_ -> validateCard(card))
+            .flatMap(validCard -> chargeCard(validCard, amount))
+            .map(charge -> createTransaction(charge));
+    }
+    
+    // Usage with pattern matching
+    public static function handleOrder(order: Order): Void {
+        switch (processPayment(order.total, order.card)) {
+            case Ok(transaction): completeOrder(order, transaction);
+            case Error(error): handlePaymentError(order, error);
+        }
+    }
+}
+```
+
+### Bridging Legacy APIs
+
+**Pattern**: Gradually migrate existing nullable APIs without breaking compatibility.
+
+```haxe
+class UserService {
+    // Legacy nullable method (maintain for backward compatibility)
+    @:deprecated("Use findUserSafe instead")
+    public static function findUser(id: Int): Null<User> {
+        return findUserSafe(id).toNullable();
+    }
+    
+    // New type-safe method
+    public static function findUserSafe(id: Int): Option<User> {
+        var user = Database.query("users", {id: id});
+        return OptionTools.fromNullable(user);
+    }
+    
+    // Bridge external APIs that return null
+    public static function fromExternalAPI(id: Int): Option<User> {
+        var result = ExternalAPI.getUser(id); // Returns Null<User>
+        return OptionTools.fromNullable(result);
+    }
 }
 ```
 

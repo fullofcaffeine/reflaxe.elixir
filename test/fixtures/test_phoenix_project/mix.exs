@@ -8,15 +8,9 @@ defmodule TestPhoenixProject.MixProject do
       elixir: "~> 1.14",
       compilers: [:haxe] ++ Mix.compilers(),
       start_permanent: Mix.env() == :prod,
-      deps: [],
-      haxe_compiler: [
-        hxml_file: "build.hxml",
-        source_dir: "src_haxe",
-        target_dir: "lib",
-        verbose: false
-      ]
+      deps: []
     ]
   end
 
-  def application, do: [extra_applications: [:logger]]
+  def application, do: []
 end

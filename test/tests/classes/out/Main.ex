@@ -164,7 +164,9 @@ defmodule Container do
     result = Container.new()
     _g = 0
     _g = __MODULE__.items
-    Enum.map(_g, fn item -> fn_(item) end)
+    Enum.map(_g, fn item -> item = Enum.at(_g, _g)
+    _g = _g + 1
+    result.add(fn_.(item)) end)
     result
   end
 
@@ -183,25 +185,25 @@ defmodule Main do
   def main() do
     p1 = Point.new(3, 4)
     p2 = Point.new(0, 0)
-    Log.trace(p1.distance(p2), %{fileName: "Main.hx", lineNumber: 143, className: "Main", methodName: "main"})
+    Log.trace(p1.distance(p2), %{fileName => "Main.hx", lineNumber => 143, className => "Main", methodName => "main"})
     shape = Shape.new(10, 20, "Rectangle")
-    Log.trace(shape.draw(), %{fileName: "Main.hx", lineNumber: 147, className: "Main", methodName: "main"})
+    Log.trace(shape.draw(), %{fileName => "Main.hx", lineNumber => 147, className => "Main", methodName => "main"})
     shape.move(5, 5)
-    Log.trace(shape.draw(), %{fileName: "Main.hx", lineNumber: 149, className: "Main", methodName: "main"})
+    Log.trace(shape.draw(), %{fileName => "Main.hx", lineNumber => 149, className => "Main", methodName => "main"})
     circle = Circle.new(0, 0, 10)
-    Log.trace(circle.draw(), %{fileName: "Main.hx", lineNumber: 153, className: "Main", methodName: "main"})
+    Log.trace(circle.draw(), %{fileName => "Main.hx", lineNumber => 153, className => "Main", methodName => "main"})
     circle.setVelocity(1, 2)
     circle.update(1.5)
-    Log.trace(circle.draw(), %{fileName: "Main.hx", lineNumber: 156, className: "Main", methodName: "main"})
+    Log.trace(circle.draw(), %{fileName => "Main.hx", lineNumber => 156, className => "Main", methodName => "main"})
     unit_circle = Circle.createUnit()
-    Log.trace(unit_circle.draw(), %{fileName: "Main.hx", lineNumber: 160, className: "Main", methodName: "main"})
+    Log.trace(unit_circle.draw(), %{fileName => "Main.hx", lineNumber => 160, className => "Main", methodName => "main"})
     container = Container.new()
     container.add("Hello")
     container.add("World")
-    Log.trace(container.get(0), %{fileName: "Main.hx", lineNumber: 166, className: "Main", methodName: "main"})
-    Log.trace(container.size(), %{fileName: "Main.hx", lineNumber: 167, className: "Main", methodName: "main"})
+    Log.trace(container.get(0), %{fileName => "Main.hx", lineNumber => 166, className => "Main", methodName => "main"})
+    Log.trace(container.size(), %{fileName => "Main.hx", lineNumber => 167, className => "Main", methodName => "main"})
     lengths = Enum.map(container, fn s -> String.length(s) end)
-    Log.trace(lengths.get(0), %{fileName: "Main.hx", lineNumber: 171, className: "Main", methodName: "main"})
+    Log.trace(lengths.get(0), %{fileName => "Main.hx", lineNumber => 171, className => "Main", methodName => "main"})
   end
 
 end

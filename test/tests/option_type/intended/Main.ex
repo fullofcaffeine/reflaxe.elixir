@@ -75,9 +75,9 @@ defmodule Main do
       0 ->
         _g = case user do {:some, value} -> value; :none -> nil; _ -> nil end
     name = _g
-    Log.trace("Processing user: " <> name, %{fileName: "Main.hx", lineNumber: 68, className: "Main", methodName: "processUser"})
+    Log.trace("Processing user: " <> name, %{fileName => "Main.hx", lineNumber => 68, className => "Main", methodName => "processUser"})
       1 ->
-        Log.trace("No user to process", %{fileName: "Main.hx", lineNumber: 69, className: "Main", methodName: "processUser"})
+        Log.trace("No user to process", %{fileName => "Main.hx", lineNumber => 69, className => "Main", methodName => "processUser"})
     end
   end
 
@@ -195,7 +195,7 @@ defmodule UserService do
   @doc "Function send_email"
   @spec send_email(String.t(), String.t()) :: boolean()
   def send_email(email, message) do
-    Log.trace("Sending email to " <> email <> ": " <> message, %{fileName: "Main.hx", lineNumber: 225, className: "UserService", methodName: "sendEmail"})
+    Log.trace("Sending email to " <> email <> ": " <> message, %{fileName => "Main.hx", lineNumber => 225, className => "UserService", methodName => "sendEmail"})
     true
   end
 

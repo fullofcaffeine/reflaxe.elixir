@@ -9,21 +9,21 @@ defmodule CounterLive do
   @doc "Generated from Haxe mount"
   def mount(params, session, socket) do
     socket = LiveView.assign(socket, "count", 0)
-    %{ok: socket}
+    %{ok => socket}
   end
 
   @doc "Generated from Haxe handle_event_increment"
   def handle_event_increment(params, socket) do
     count = socket.assigns.count
     socket = LiveView.assign(socket, "count", count + 1)
-    %{noreply: socket}
+    %{noreply => socket}
   end
 
   @doc "Generated from Haxe handle_event_decrement"
   def handle_event_decrement(params, socket) do
     count = socket.assigns.count
     socket = LiveView.assign(socket, "count", count - 1)
-    %{noreply: socket}
+    %{noreply => socket}
   end
 
   @impl true

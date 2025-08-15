@@ -10,7 +10,10 @@ defmodule Log do
   """
 
   # Static functions
-  @doc "Format the output of `trace` before printing "
+  @doc """
+    Format the output of `trace` before printing it.
+
+  """
   @spec format_output(term(), PosInfos.t()) :: String.t()
   def format_output(v, infos) do
     str = Std.string(v)
@@ -19,7 +22,9 @@ defmodule Log do
     if (infos.custom_params != nil) do
       _g = 0
       _g = infos.custom_params
-      Enum.map(_g, fn item -> item end)
+      Enum.map(_g, fn item -> v = Enum.at(_g, _g)
+      _g = _g + 1
+      str = str <> ", " <> Std.string(v) end)
     end
     pstr <> ": " <> str
   end
