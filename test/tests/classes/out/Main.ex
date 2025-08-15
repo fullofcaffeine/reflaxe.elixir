@@ -23,7 +23,6 @@ end
 
 
 defmodule Point do
-  use Bitwise
   @moduledoc """
   Point module generated from Haxe
   """
@@ -47,7 +46,6 @@ end
 
 
 defmodule Shape do
-  use Bitwise
   @behaviour Drawable
 
   @moduledoc """
@@ -80,7 +78,6 @@ end
 
 
 defmodule Circle do
-  use Bitwise
   @behaviour Updatable
 
   @moduledoc """
@@ -118,7 +115,6 @@ end
 
 
 defmodule Vehicle do
-  use Bitwise
   @moduledoc """
   Vehicle module generated from Haxe
   """
@@ -134,7 +130,6 @@ end
 
 
 defmodule Container do
-  use Bitwise
   @moduledoc """
   Container module generated from Haxe
   """
@@ -174,7 +169,6 @@ end
 
 
 defmodule Main do
-  use Bitwise
   @moduledoc """
   Main module generated from Haxe
   """

@@ -1,5 +1,4 @@
 defmodule Log do
-  use Bitwise
   @moduledoc """
   Log module generated from Haxe
   

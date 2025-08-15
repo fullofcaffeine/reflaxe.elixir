@@ -1,5 +1,4 @@
 defmodule EReg do
-  use Bitwise
   @moduledoc """
   EReg module generated from Haxe
   

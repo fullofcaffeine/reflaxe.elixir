@@ -7,6 +7,113 @@ Archives of previous history can be found in `TASK_HISTORY_ARCHIVE_*.md` files.
 
 ---
 
+## Session: 2025-08-15 - Lambda Variable Substitution Testing and Documentation
+
+### Context
+Following the lambda variable substitution fix from the previous session, user requested comprehensive testing and documentation to prevent future regressions. This session focused on creating robust test coverage and comprehensive documentation for the variable substitution architecture.
+
+### User Guidance Received
+- **Key Request**: "update docs and tests to make sure we test this so if it breaks again you know why"
+- **Critical Testing Principle**: "when tests fail, you should check why and understand to see if it's not a regression (snapshots, for example, you shouldn't just update the snapshots before understanding the actual test failure)"
+- **Documentation Focus**: Ensure the lambda variable substitution fix is preserved through proper testing and architectural documentation
+
+### Tasks Completed ✅
+
+#### 1. Todo-App Verification ✨
+- **Verified Compilation**: Todo-app compiles successfully with lambda fix working
+- **Generated Code Validation**: 
+  - Line 159: `Enum.filter(_this, fn item -> (item.id != id) end)` ✅ Correct
+  - Line 283: `Enum.filter(_g, fn item -> (item != tag) end)` ✅ Correct  
+- **Debug Trace Cleanup**: Removed `trace('Substituting ${varName} -> ${targetVar} in context')` for clean compilation output
+- **Result**: Todo-app generates clean, functional lambda code without debug noise
+
+#### 2. LambdaVariableScope Snapshot Test Creation ✨
+- **Location**: `test/tests/LambdaVariableScope/`
+- **Test Coverage**:
+  - Array filter with outer scope variables (`item != targetItem`)
+  - Array map with outer scope variables (`n * multiplier`)
+  - Field access patterns (`item.id != id`)
+  - Nested array operations with multiple lambda scopes
+  - Multiple outer variable references in complex expressions
+- **Key Validation Lines**:
+  - Line 24: `Enum.filter(items, fn item -> (item != target_item) end)`
+  - Line 31: `Enum.filter(todos, fn item -> (item.id != id) end)`
+  - Line 86: `Enum.filter(items, fn item -> (item != exclude_item) end)`
+- **Result**: Comprehensive regression test for lambda variable substitution
+
+#### 3. TESTING_PRINCIPLES.md Enhancement ✨
+- **Added Section**: "Understanding Test Failures Before Updating Snapshots"
+- **Key Guidelines**:
+  - CRITICAL RULE: Understand WHY tests fail before updating snapshots
+  - Proper test failure investigation process (analyze, classify, investigate)
+  - Classification system: Regression (fix required), Improvement (update allowed), Breaking Change (document + update)
+  - Common regression indicators and red flags in snapshot diffs
+  - Investigation commands and debugging workflow
+- **Regression Prevention**: Specific guidance on lambda variable substitution test
+- **Result**: Clear process for preventing blind snapshot updates that hide regressions
+
+#### 4. VARIABLE_SUBSTITUTION.md Architecture Documentation ✨
+- **Comprehensive Documentation**:
+  - Problem statement with concrete examples of the lambda scoping issue
+  - Root cause analysis of Haxe's array method desugaring process
+  - Three-path variable substitution system architecture
+  - Key functions: `findFirstLocalVariable()`, `compileExpressionWithSubstitution()`, pattern generation
+  - Variable name preservation and original name recovery
+  - Implementation patterns and safe substitution logic
+- **Integration Points**: Array method compilation, for-loop optimization
+- **Test Coverage**: Detailed explanation of LambdaVariableScope test
+- **Debugging Guide**: Common issues, troubleshooting steps, verification points
+- **Result**: Complete architectural reference for understanding and maintaining variable substitution
+
+### Technical Insights Gained
+
+#### 1. Lambda Variable Substitution Architecture Understanding
+- **Three Compilation Paths**: TFor expressions, TWhile optimization, TCall array methods
+- **Variable Detection Strategy**: `findFirstLocalVariable()` finds variables that need substitution
+- **Recursive Substitution**: `compileExpressionWithSubstitution()` handles all expression types
+- **Safety Mechanisms**: System variable filtering and excluded variable checks
+- **Original Name Recovery**: Using Haxe's `:realPath` metadata to get developer-intended names
+
+#### 2. Testing Best Practices for Compiler Development
+- **Snapshot Testing Value**: Catches regressions automatically when compiler behavior changes
+- **Investigation Over Automation**: Never update snapshots without understanding what changed
+- **Regression Classification**: Different types of test failures require different responses
+- **Comprehensive Test Coverage**: Single focused test (LambdaVariableScope) covers critical functionality
+
+#### 3. Documentation for Maintainability
+- **Architecture Documentation**: Complex compiler logic needs detailed explanation
+- **Code Examples**: Concrete before/after examples clarify the problem and solution
+- **Debugging Guides**: Future maintainers need troubleshooting workflows
+- **Integration Points**: Document how features connect to other parts of the system
+
+### Files Modified
+- `src/reflaxe/elixir/ElixirCompiler.hx` - Removed debug trace, cleaned up comments
+- `test/tests/LambdaVariableScope/` - Complete new test suite for lambda variable substitution
+- `documentation/TESTING_PRINCIPLES.md` - Added regression testing guidelines
+- `documentation/VARIABLE_SUBSTITUTION.md` - Comprehensive architecture documentation
+
+### Key Achievements ✨
+1. **Regression Prevention**: LambdaVariableScope test will catch any future lambda scoping regressions
+2. **Testing Process**: Clear guidelines for investigating test failures before updating snapshots
+3. **Knowledge Preservation**: Complete documentation of the variable substitution architecture
+4. **Code Quality**: Removed debug traces for clean compilation output
+5. **Developer Experience**: Future maintainers have comprehensive guides for understanding and debugging
+
+### Development Insights
+- **User-Driven Quality**: User's insistence on testing/documentation prevents future problems
+- **Prevention Over Reaction**: Creating regression tests after fixing bugs prevents repeated issues
+- **Documentation as Code**: Architecture documentation is as important as the implementation
+- **Testing Philosophy**: Understanding test failures is more important than making tests pass
+
+### Session Summary
+Successfully created comprehensive testing and documentation for lambda variable substitution to prevent future regressions. The LambdaVariableScope test provides early warning for any changes that break lambda scoping, while the enhanced TESTING_PRINCIPLES.md guides developers to investigate test failures properly. Complete architectural documentation in VARIABLE_SUBSTITUTION.md ensures the complex variable substitution logic can be understood and maintained by future developers.
+
+**Status**: ✅ COMPLETE - Testing and documentation infrastructure in place for lambda variable substitution
+**Impact**: HIGH - Prevents regression of critical lambda scoping functionality
+**Quality**: Comprehensive test coverage, detailed documentation, clean codebase
+
+---
+
 ## Session: 2025-08-15 - Atom Key Implementation and Loop Transformation Simplification
 
 ### Context

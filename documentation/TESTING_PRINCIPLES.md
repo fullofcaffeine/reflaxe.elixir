@@ -138,6 +138,115 @@ All test suites implementing TDD methodology MUST include comprehensive edge cas
 6. **Type Safety** 🎯 - Invalid combinations, null handling, default fallbacks
 7. **Resource Management** 💾 - Memory cleanup, resource limits, disposal validation
 
+## Understanding Test Failures Before Updating Snapshots ⚠️
+
+**CRITICAL RULE**: When tests fail, you MUST understand WHY before updating snapshots.
+
+**Do NOT blindly run `update-intended` on failing tests.** Snapshot changes may indicate regressions.
+
+### Proper Test Failure Investigation Process
+
+#### 1. Analyze the Failure First 🔍
+```bash
+# Step 1: See what actually changed in the output
+haxe test/Test.hxml test=failing_test show-output
+
+# Step 2: Compare current vs expected output manually
+diff test/tests/failing_test/out/Main.ex test/tests/failing_test/intended/Main.ex
+
+# Step 3: Understand the root cause
+# - Is this a regression? (something that used to work broke)
+# - Is this an improvement? (compiler generates better code)
+# - Is this a breaking change? (intentional behavior change)
+```
+
+#### 2. Classification of Test Failures
+
+**🔴 REGRESSION (Fix Required)**:
+- Lambda variables broken: `item != item` instead of `item != id`
+- Missing function bodies: `# TODO: Implement` instead of actual code
+- Invalid syntax: Generated code doesn't compile
+- Loss of functionality: Features that worked before now broken
+
+**Action**: Fix the compiler bug, don't update snapshots
+
+**🟢 IMPROVEMENT (Update Allowed)**:
+- Better parameter names: `greet(name)` instead of `greet(arg0)`
+- Enhanced code generation: More idiomatic Elixir output
+- New features working: Additional functionality added correctly
+- Performance optimizations: Better generated code
+
+**Action**: Review improvement, then use `update-intended` if legitimate
+
+**🟡 BREAKING CHANGE (Document + Update)**:
+- Intentional API changes: New annotation syntax, different DSL
+- Architecture shifts: Different compilation approach
+- Standard library updates: Haxe language changes affecting output
+
+**Action**: Document the change, update snapshots, update migration guides
+
+#### 3. Regression Detection Patterns
+
+**Common Regression Indicators**:
+- Variables with wrong names (`item != item`, `v` instead of lambda parameter)
+- Empty or placeholder code (`TODO`, `nil` where logic should be)
+- Syntax errors in generated code (invalid Elixir)
+- Missing imports or undefined functions
+- Type errors or compilation failures
+
+**Red Flags in Snapshot Diffs**:
+```diff
+# 🚨 REGRESSION: Lambda variable scoping broken
+- Enum.filter(items, fn item -> item != id end)
++ Enum.filter(items, fn item -> item != item end)
+
+# 🚨 REGRESSION: Function body disappeared  
+- def calculate(price, tax), do: price * (1 + tax)
++ def calculate(price, tax), do: nil
+
+# 🚨 REGRESSION: Type lost
+- %{"id" => id, "name" => name}
++ %{id => id, name => name}  # Invalid: variables as keys
+```
+
+#### 4. Investigation Commands
+
+```bash
+# Show detailed test output and compilation process
+haxe test/Test.hxml test=LambdaVariableScope show-output
+
+# Run specific test in verbose mode
+haxe test/Test.hxml test=LambdaVariableScope --verbose
+
+# Check if other tests are affected (potential systemic issue)
+npm test 2>&1 | grep "FAILED\|ERROR"
+
+# Compare with previous working version (if in git)
+git show HEAD~1:test/tests/LambdaVariableScope/intended/Main.ex
+```
+
+### 5. When to Update Snapshots
+
+**✅ Safe to Update When**:
+- You can explain exactly what improved and why
+- Generated code is more correct/idiomatic than before
+- All tests still pass after the update
+- The change aligns with documented improvements
+
+**❌ Never Update When**:
+- You can't explain what changed or why
+- Generated code is less functional than before  
+- Other tests started failing after your changes
+- You're updating just to make tests pass
+
+### 6. Example Regression Prevention
+
+**Lambda Variable Substitution Test**:
+- **Location**: `test/tests/LambdaVariableScope/`
+- **Purpose**: Prevents regression where `item != item` instead of `item != id`
+- **Key Lines**: Lines 24, 31, 86 validate correct variable scoping
+- **If This Fails**: Lambda substitution logic has regressed - fix compiler, don't update
+
 ## Common Testing Mistakes to Avoid
 
 ❌ **DON'T**:
@@ -147,6 +256,8 @@ All test suites implementing TDD methodology MUST include comprehensive edge cas
 - Don't mix testing approaches (use consistent snapshot pattern)
 - Don't remove test code to make tests pass
 - Don't oversimplify tests to avoid syntax errors
+- **Don't update snapshots without understanding what changed**
+- **Don't assume test failures are always improvements**
 
 ✅ **DO**:
 - Fix the underlying issues that cause test failures
@@ -154,6 +265,8 @@ All test suites implementing TDD methodology MUST include comprehensive edge cas
 - Use update-intended only for legitimate improvements
 - Document any true limitations clearly
 - Keep tests as simple as needed, but no simpler
+- **Investigate test failures thoroughly before updating**
+- **Validate that snapshot changes represent genuine improvements**
 
 ## Framework Integration Debugging ⚛️
 

@@ -21,7 +21,6 @@ defmodule UserChangeset do
 end
 
 defmodule Users do
-  use Bitwise
   @moduledoc """
   Users module generated from Haxe
   """

@@ -9,7 +9,7 @@ defmodule UserLive do
   @doc "Generated from Haxe mount"
   def mount(params, session, socket) do
     users = Users.list_users()
-    %{status => "ok", socket => UserLive.assign_multiple(socket, %{users => users, selectedUser => nil, changeset => Users.change_user(nil), searchTerm => "", showForm => false})}
+    %{"status" => "ok", "socket" => UserLive.assign_multiple(socket, %{"users" => users, "selectedUser" => nil, "changeset" => Users.change_user(nil), "searchTerm" => "", "showForm" => false})}
   end
 
   @impl true
@@ -30,7 +30,7 @@ defmodule UserLive do
       "search" ->
         temp_result = __MODULE__.handleSearch(params, socket)
       _ ->
-        temp_result = %{status => "noreply", socket => socket}
+        temp_result = %{"status" => "noreply", "socket" => socket}
     end
     temp_result
   end
@@ -40,7 +40,7 @@ defmodule UserLive do
     changeset = Users.change_user(nil)
     selected_user = nil
     show_form = true
-    %{status => "noreply", socket => UserLive.assign_multiple(socket, %{changeset => changeset, selectedUser => selected_user, showForm => show_form})}
+    %{"status" => "noreply", "socket" => UserLive.assign_multiple(socket, %{"changeset" => changeset, "selectedUser" => selected_user, "showForm" => show_form})}
   end
 
   @doc "Generated from Haxe handleEditUser"
@@ -49,7 +49,7 @@ defmodule UserLive do
     selected_user = Users.get_user(user_id)
     changeset = Users.change_user(selected_user)
     show_form = true
-    %{status => "noreply", socket => UserLive.assign_multiple(socket, %{selectedUser => selected_user, changeset => changeset, showForm => show_form})}
+    %{"status" => "noreply", "socket" => UserLive.assign_multiple(socket, %{"selectedUser" => selected_user, "changeset" => changeset, "showForm" => show_form})}
   end
 
   @doc "Generated from Haxe handleSaveUser"
@@ -61,13 +61,13 @@ defmodule UserLive do
     _g = temp_struct.status
     case (_g) do
       "error" ->
-        temp_result = %{status => "noreply", socket => UserLive.assign(socket, "changeset", temp_struct.changeset)}
+        temp_result = %{"status" => "noreply", "socket" => UserLive.assign(socket, "changeset", temp_struct.changeset)}
       "ok" ->
         users = Users.list_users()
     show_form = false
-    temp_result = %{status => "noreply", socket => UserLive.assign_multiple(socket, %{users => users, showForm => show_form, selectedUser => nil, changeset => Users.change_user(nil)})}
+    temp_result = %{"status" => "noreply", "socket" => UserLive.assign_multiple(socket, %{"users" => users, "showForm" => show_form, "selectedUser" => nil, "changeset" => Users.change_user(nil)})}
       _ ->
-        temp_result = %{status => "noreply", socket => socket}
+        temp_result = %{"status" => "noreply", "socket" => socket}
     end
     temp_result
   end
@@ -79,9 +79,9 @@ defmodule UserLive do
     result = Users.delete_user(user)
     if (result.status == "ok") do
       users = Users.list_users()
-      %{status => "noreply", socket => UserLive.assign(socket, "users", users)}
+      %{"status" => "noreply", "socket" => UserLive.assign(socket, "users", users)}
     end
-    %{status => "noreply", socket => socket}
+    %{"status" => "noreply", "socket" => socket}
   end
 
   @doc "Generated from Haxe handleSearch"
@@ -89,12 +89,12 @@ defmodule UserLive do
     search_term = params.search
     temp_array = nil
     if (length(search_term) > 0), do: temp_array = Users.search_users(search_term), else: temp_array = Users.list_users()
-    %{status => "noreply", socket => UserLive.assign_multiple(socket, %{users => temp_array, searchTerm => search_term})}
+    %{"status" => "noreply", "socket" => UserLive.assign_multiple(socket, %{"users" => temp_array, "searchTerm" => search_term})}
   end
 
   @doc "Generated from Haxe handleCancel"
   def handle_cancel(socket) do
-    %{status => "noreply", socket => UserLive.assign_multiple(socket, %{showForm => false, selectedUser => nil, changeset => Users.change_user(nil)})}
+    %{"status" => "noreply", "socket" => UserLive.assign_multiple(socket, %{"showForm" => false, "selectedUser" => nil, "changeset" => Users.change_user(nil)})}
   end
 
   @impl true
@@ -160,7 +160,7 @@ defmodule UserLive do
 
   @doc "Generated from Haxe main"
   def main() do
-    Log.trace("UserLive with @:liveview annotation compiled successfully!", %{fileName => "src_haxe/live/UserLive.hx", lineNumber => 307, className => "live.UserLive", methodName => "main"})
+    Log.trace("UserLive with @:liveview annotation compiled successfully!", %{"fileName" => "src_haxe/live/UserLive.hx", "lineNumber" => 307, "className" => "live.UserLive", "methodName" => "main"})
   end
 
 end

@@ -1,5 +1,4 @@
 defmodule BasicModule do
-  use Bitwise
   @moduledoc """
   BasicModule module generated from Haxe
   
