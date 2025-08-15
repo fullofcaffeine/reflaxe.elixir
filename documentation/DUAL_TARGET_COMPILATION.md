@@ -9,6 +9,11 @@ This guide documents the successful implementation of dual-target compilation wh
 - **Elixir server code** (via Reflaxe.Elixir transpiler)  
 - **JavaScript client code** (via standard Haxe JS compilation)
 
+**See Also**: 
+- [Paradigm Bridge](paradigms/PARADIGM_BRIDGE.md) - Cross-platform development philosophy and conditional compilation best practices
+- [Escape Hatches](ESCAPE_HATCHES.md) - Platform-specific integration when universal code isn't sufficient
+- [Standard Library Handling](STANDARD_LIBRARY_HANDLING.md) - Architectural patterns for cross-platform standard libraries
+
 ## Architecture Pattern
 
 ```

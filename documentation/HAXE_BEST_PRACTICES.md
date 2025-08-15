@@ -2,6 +2,8 @@
 
 *Generated August 2025 - Based on real-world Phoenix LiveView integration experience*
 
+**See Also**: [Paradigm Bridge](paradigms/PARADIGM_BRIDGE.md) - Cross-platform development patterns, conditional compilation guidelines, and functional programming techniques for effective Haxe→Elixir code.
+
 ## 📋 Quick Reference
 
 ### Core Principles

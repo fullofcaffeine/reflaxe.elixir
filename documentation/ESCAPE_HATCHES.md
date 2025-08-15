@@ -2,6 +2,11 @@
 
 This guide covers how to interoperate with existing Elixir code, call Elixir functions directly, use Elixir libraries, and handle scenarios where you need to drop down to raw Elixir.
 
+**See Also**: 
+- [Paradigm Bridge](paradigms/PARADIGM_BRIDGE.md) - Understanding when to use escape hatches vs universal code patterns
+- [Dual-Target Compilation](DUAL_TARGET_COMPILATION.md) - Multi-target setup with conditional compilation
+- [Functional Patterns](FUNCTIONAL_PATTERNS.md) - Functional programming patterns that work across all targets
+
 ## Table of Contents
 - [The @:native Annotation](#the-native-annotation)
 - [Untyped Code Blocks](#untyped-code-blocks)
