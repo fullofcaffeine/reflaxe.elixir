@@ -1,5 +1,4 @@
 defmodule FPHelper do
-  use Bitwise
   @moduledoc """
   FPHelper module generated from Haxe
   

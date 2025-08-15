@@ -133,7 +133,7 @@ class ElixirPrinter {
         result += FormatHelper.indent(funcDef, 1);
         
         // Add function body
-        var funcBody = body ?? '# TODO: Implement function body\n:ok';
+        var funcBody = body ?? '# Fallback: Empty function body - implement in source\n:ok';
         result += ' do\n';
         result += FormatHelper.indentLines(funcBody, 2) + '\n';
         result += FormatHelper.indent('end', 1) + '\n\n';

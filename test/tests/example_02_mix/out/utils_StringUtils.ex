@@ -1,5 +1,4 @@
 defmodule StringUtils do
-  use Bitwise
   @moduledoc """
   StringUtils module generated from Haxe
   

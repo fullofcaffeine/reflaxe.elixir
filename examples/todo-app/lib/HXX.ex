@@ -1,5 +1,4 @@
 defmodule HXX do
-  use Bitwise
   @moduledoc """
   HXX module generated from Haxe
   

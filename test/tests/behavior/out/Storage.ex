@@ -14,7 +14,6 @@ end
 
 
 defmodule MemoryStorage do
-  use Bitwise
   @moduledoc """
   MemoryStorage module generated from Haxe
   """
@@ -83,7 +82,6 @@ end
 
 
 defmodule FileStorage do
-  use Bitwise
   @moduledoc """
   FileStorage module generated from Haxe
   """
@@ -137,7 +135,6 @@ end
 
 
 defmodule ConsoleLogger do
-  use Bitwise
   @moduledoc """
   ConsoleLogger module generated from Haxe
   """
