@@ -7,53 +7,54 @@
 [![Haxe](https://img.shields.io/badge/Haxe-4.3.6+-orange)](https://haxe.org)
 [![Elixir](https://img.shields.io/badge/Elixir-1.14+-purple)](https://elixir-lang.org)
 
-**Transform Haxe into an LLM leverager for deterministic cross-platform development.** Write business logic once in type-safe Haxe, deploy anywhere with idiomatic code that looks hand-written.
+**Type-safe Haxe to Elixir compiler with Phoenix/LiveView support.** Write business logic in Haxe, compile to idiomatic Elixir code for the BEAM ecosystem.
 
-> **Vision**: See [VISION.md](VISION.md) for the strategic roadmap to revolutionize multi-platform development  
-> **Current Status**: Production-ready Phoenix integration, expanding to complete LLM leverager ecosystem
+> **Future Vision**: See [VISION.md](VISION.md) for long-term plans including AI tooling and universal platform support  
+> **Current Status**: Production-ready Haxe→Elixir compilation with full Phoenix/LiveView/Ecto support
 
 ## Why Reflaxe.Elixir?
 
-### 🎯 The Strategic Choice for Type-Safe Elixir
+### 🎯 Type-Safe BEAM Development with Haxe
 
-**The Problem**: You want the power of BEAM (massive concurrency, fault tolerance, hot code reloading) with compile-time type safety. But existing solutions lock you into a single runtime.
+**The Problem**: You want BEAM's incredible concurrency and fault tolerance, but Elixir's dynamic typing means runtime errors in production.
 
-**The Solution**: Reflaxe.Elixir gives you:
-- **Type safety today** - Catch errors at compile time, not in production
-- **Freedom tomorrow** - Your code can target JS, C++, Python, Java, C#, or any other Haxe target
-- **Phoenix ecosystem now** - Deep integration with LiveView, Ecto, OTP patterns, and HXX template processing
-- **AI-assisted development** - Structured, well-documented APIs that enable reliable code generation and rapid project scaffolding
+**The Solution**: Reflaxe.Elixir brings compile-time type safety to the BEAM ecosystem:
+- **Type Safety Today** - Catch errors at compile time, not in production
+- **Idiomatic Elixir Output** - Generated code looks hand-written by Elixir experts
+- **Full Phoenix Integration** - LiveView, Ecto, OTP, GenServers all supported
+- **Future Expansion** - Haxe's multi-target nature enables future platform support
 
 ### 💡 Real-World Scenarios
 
-#### Share Code Across Your Stack
-Write validation logic once in Haxe, use it in:
-- Your Phoenix backend (compiled to Elixir)
-- Your React frontend (compiled to JavaScript)  
-- Your mobile app (compiled to C++ or Java)
-- Your CLI tools (compiled to Python or native)
+#### Build Type-Safe Phoenix Applications
+Write your Phoenix app in Haxe and get:
+- **Compile-time validation** of LiveView assign/update patterns
+- **Type-safe Ecto schemas** with automatic changeset generation
+- **OTP supervision trees** with typed GenServer callbacks
+- **Idiomatic Elixir output** that Phoenix developers recognize
 
-#### Future-Proof Your Architecture
-- Start with Elixir/BEAM for its excellent concurrency
-- Move performance-critical paths to C++ without rewriting
-- Deploy microservices to different runtimes as needed
-- Pivot to new platforms as requirements change
+#### Share Code with Frontend (Future)
+The foundation for multi-target development:
+- **Business logic in Haxe** - validation, algorithms, data transformations
+- **Backend on BEAM** - Phoenix/LiveView/Ecto with full type safety ✅
+- **Frontend on JavaScript** - Standard Haxe→JS compilation works today
+- **Advanced JS integration** - genes + dts2hx planned for TypeScript ecosystem access
 
-#### Unite Your Team's Knowledge
-- Frontend developers can understand backend code
-- Backend developers can contribute to frontend
-- One language to learn, maintain, and master
-- TypeScript-like syntax familiar to most developers
+#### Leverage BEAM's Unique Strengths
+- **Massive concurrency** - Handle millions of connections with lightweight processes
+- **Fault tolerance** - Let it crash philosophy with supervisor recovery
+- **Hot code reloading** - Update production systems without downtime
+- **Type safety** - Catch errors before they reach production
 
 ### 🚀 How It Compares
 
 | | Reflaxe.Elixir | Gleam | Pure Elixir | TypeScript |
 |---|---|---|---|---|
 | **Type Safety** | ✅ Compile-time | ✅ Compile-time | ❌ Runtime | ✅ Compile-time |
-| **Target Runtimes** | ✅ Multiple | ❌ BEAM only | ❌ BEAM only | ❌ JS only |
-| **Phoenix Integration** | ✅ Native | ⚠️ Via FFI | ✅ Native | ❌ None |
+| **BEAM Integration** | ✅ Full Phoenix/OTP | ✅ Native | ✅ Native | ❌ None |
+| **Phoenix LiveView** | ✅ Native support | ⚠️ Via FFI | ✅ Native | ❌ None |
+| **Multi-target Potential** | ✅ Haxe foundation | ❌ BEAM only | ❌ BEAM only | ⚠️ JS only |
 | **Ecosystem Maturity** | ✅ Since 2005 | ⚠️ New | ✅ Mature | ✅ Mature |
-| **Metaprogramming** | ✅ Powerful macros | ❌ None | ✅ Macros | ⚠️ Limited |
 | **Learning Curve** | ✅ TypeScript-like | ⚠️ Rust-like | ⚠️ Ruby-like | ✅ Familiar |
 
 ### 🎪 Built on Proven Technology
@@ -62,27 +63,24 @@ Write validation logic once in Haxe, use it in:
 - **Elixir/BEAM**: Powers WhatsApp (2B users), Discord, Pinterest, and other massive-scale systems
 - **Reflaxe**: Modern compiler framework making Haxe more powerful than ever
 
-## Current Status (Pre-v1.0)
+## Current Status & Roadmap
 
-### ✅ Production-Ready Features
+### ✅ Production Ready (v1.0)
 - **Phoenix Integration** - LiveView, controllers, templates, routers 100% supported
 - **HXX Template Processing** - JSX-like syntax for type-safe Phoenix HEEx templates
 - **Ecto Complete** - Schemas, changesets, queries, migrations with full DSL support  
 - **Mix Integration** - Seamless build pipeline with file watching and incremental compilation
 - **Source Maps** - First Reflaxe target with `.ex.map` generation for debugging
-- **Basic GenServer** - `@:genserver` compilation with lifecycle callbacks
+- **OTP Support** - GenServers, Supervisors, Registry with type-safe compilation
 - **Type Safety** - Complete Haxe→Elixir type mapping and compile-time validation
 
-### ⏳ In Development (Required for v1.0)
-- **OTP Supervision** - Supervisors, Registry, Task supervision (essential for production)
-- **Standard Library** - Process, IO, File, Enum extern definitions  
-- **Protocol Support** - Enumerable, String.Chars, Inspect (fundamental in Elixir)
-- **Type Aliases** - Typedef compilation for better code documentation
+### 🔮 Future Expansion
+For the complete roadmap including AI tooling, universal deployment, and multi-platform support, see [VISION.md](VISION.md):
 
-### 🎯 Post-v1.0 (Polish & Optimization)
-- Enhanced error messages and IDE support
-- Performance optimization and caching
-- Advanced metaprogramming features  
+- **JavaScript Integration** - Advanced TypeScript ecosystem access
+- **Mobile Support** - Capacitor and React Native deployment  
+- **Desktop Applications** - Electron/Tauri cross-platform apps
+- **AI-Enhanced Tooling** - Intelligent development assistance  
 
 ## Installation
 
