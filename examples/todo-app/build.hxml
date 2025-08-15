@@ -1,38 +1,5 @@
-# Example build configuration for Reflaxe.Elixir
-# This shows the minimal setup needed to compile Haxe to Elixir
+# Main build configuration - delegates to server build
+# Use build-client.hxml for JavaScript compilation
+# Use build-server.hxml for Elixir compilation (default)
 
-# Include Reflaxe.Elixir source directly (for examples running from subdirectories)
--cp ../../src
--cp ../../std
--lib reflaxe
-
-# Source directory containing your .hx files
--cp src_haxe
-
-# Output directory for generated .ex files
--D elixir_output=lib
-
-# Required for Reflaxe targets
--D reflaxe_runtime
-
-# Elixir is not a UTF-16 platform
--D no-utf16
-
-# Application-specific configuration
--D app_name=TodoApp
-
-# Define library version and initialize compiler
--D reflaxe.elixir=0.1.0
---macro reflaxe.elixir.CompilerInit.Start()
-
-# Main classes to compile
-TodoApp
-# Disabled routers that generate conflicting modules
-# TodoAppRouter
-# TodoAppRouterNew  
-# TodoAppRouterTypeSafe
-live.TodoLive
-schemas.Todo
-migrations.CreateTodos
-# controllers.UserController
-live.UserLive
+--next build-server.hxml

@@ -1,0 +1,24 @@
+# Haxe→JavaScript compilation for Phoenix LiveView client-side code
+# Generates efficient ES6 modules compatible with esbuild
+
+# Source directories
+-cp src_haxe/client
+-cp src_haxe
+-cp ../../std
+
+# JavaScript target with modern settings
+-js assets/js/app.js
+-D js-es6                     # ES6 module output for tree-shaking
+-D js-unflatten               # Better module structure 
+-D analyzer-optimize          # Enable optimizations
+--dce=full
+
+# Haxe 4.3+ optimizations
+-D real-position              # Better source maps
+-D js-source-map              # Generate source maps
+
+# Exclude server code from client compilation
+--macro exclude('server')
+
+# Main client entry point
+client.TodoApp
