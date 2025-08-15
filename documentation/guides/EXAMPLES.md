@@ -109,21 +109,65 @@ cd examples/04-ecto-migrations
 npx haxe build.hxml
 ```
 
-### 05-heex-templates
-**Status**: Production Ready  
-**Purpose**: Template compilation system with Phoenix components
+### 05-heex-templates  
+**Status**: Production Ready ✨ **ENHANCED**
+**Purpose**: HXX (Haxe JSX) template processing with Phoenix HEEx generation
 
 **Key Features Demonstrated**:
-- HEEx template processing
-- Phoenix component integration
-- Template compilation
-- Component generation
+- **HXX Template Processing**: JSX-like syntax for type-safe Phoenix templates
+- **Raw String Extraction**: Advanced AST processing preserving HTML attributes
+- **Multiline Template Support**: Complex templates with string interpolation
+- **HEEx Format Generation**: Proper ~H sigil output with {} interpolation syntax
+- **Phoenix LiveView Integration**: Seamless template compilation for LiveView components
+- **Component Generation**: Automatic Phoenix component structure
+
+**HXX Syntax Examples**:
+```haxe
+// Basic HXX template
+function userProfile(user: User): String {
+    return HXX('
+        <div class="user-profile">
+            <h2>${user.name}</h2>
+            <p class="email">${user.email}</p>
+            <button phx-click="edit">Edit</button>
+        </div>
+    ');
+}
+
+// Conditional rendering
+function statusBadge(user: User): String {
+    return HXX('
+        <span class="badge ${user.active ? "active" : "inactive"}">
+            ${user.active ? "Active" : "Inactive"}
+        </span>
+    ');
+}
+```
+
+**Generated HEEx Output**:
+```elixir
+def user_profile(user) do
+  ~H"""
+  <div class="user-profile">
+      <h2>{user.name}</h2>
+      <p class="email">{user.email}</p>
+      <button phx-click="edit">Edit</button>
+  </div>
+  """
+end
+```
 
 **How to Run**:
 ```bash
 cd examples/05-heex-templates
-npx haxe build.hxml
+npx haxe build.hxml        # Compile HXX templates to HEEx
+mix compile                # Compile generated Elixir
 ```
+
+**Files Generated**:
+- `templates_UserProfile.ex` - User profile HXX template compilation
+- `templates_FormComponents.ex` - Form component HXX templates
+- Proper HEEx format with HTML attribute preservation
 
 ### 06-user-management
 **Status**: Production Ready  
@@ -268,6 +312,103 @@ npx haxe build.hxml
 - `@optional_callbacks` directives for flexible contracts
 - `StreamProcessor` and `BatchProcessor` modules with @behaviour directives
 - Complete OTP integration with GenServer callbacks
+
+### todo-app (Real-World Example)
+**Status**: Production Ready ✨ **ENHANCED WITH HXX**
+**Purpose**: Complete Phoenix LiveView application demonstrating HXX template processing
+
+**Key Features Demonstrated**:
+- **Complete Phoenix App**: Runnable todo application with LiveView
+- **HXX Template Processing**: Real-world usage of JSX-like syntax for Phoenix templates
+- **LiveView Integration**: Full LiveView component with HXX-generated templates
+- **User Management**: Complete CRUD operations with Ecto integration
+- **Type-Safe Templates**: Compile-time validated template generation
+- **Phoenix Conventions**: Generated code follows Phoenix directory structure exactly
+
+**HXX Templates in Action**:
+```haxe
+@:liveview
+class TodoLive {
+    function render(assigns: Dynamic): String {
+        return HXX('
+            <div class="todo-app">
+                <h1>Todo List</h1>
+                <div class="todo-form">
+                    <form phx-submit="add-todo">
+                        <input type="text" name="title" placeholder="Add new todo...">
+                        <button type="submit">Add</button>
+                    </form>
+                </div>
+                <ul class="todo-list">
+                    ${renderTodos(assigns.todos)}
+                </ul>
+            </div>
+        ');
+    }
+    
+    function renderTodos(todos: Array<Todo>): String {
+        return todos.map(todo -> HXX('
+            <li class="todo-item ${todo.completed ? "completed" : ""}">
+                <input type="checkbox" 
+                       phx-click="toggle" 
+                       phx-value-id="${todo.id}"
+                       ${todo.completed ? "checked" : ""}>
+                <span>${todo.title}</span>
+                <button phx-click="delete" phx-value-id="${todo.id}">
+                    Delete
+                </button>
+            </li>
+        ')).join("");
+    }
+}
+```
+
+**Generated LiveView Module**:
+```elixir
+defmodule TodoApp.TodoLive do
+  use Phoenix.LiveView
+
+  def render(assigns) do
+    ~H"""
+    <div class="todo-app">
+        <h1>Todo List</h1>
+        <div class="todo-form">
+            <form phx-submit="add-todo">
+                <input type="text" name="title" placeholder="Add new todo...">
+                <button type="submit">Add</button>
+            </form>
+        </div>
+        <ul class="todo-list">
+            {render_todos(assigns.todos)}
+        </ul>
+    </div>
+    """
+  end
+end
+```
+
+**How to Run**:
+```bash
+cd examples/todo-app
+mix deps.get               # Install Phoenix dependencies
+npx haxe build.hxml        # Compile Haxe to Elixir (includes HXX processing)
+mix compile                # Compile generated Elixir
+mix phx.server            # Start Phoenix development server
+```
+
+**Features Showcased**:
+- Real-time todo management with LiveView
+- Type-safe HXX template compilation
+- Proper Phoenix directory structure
+- Ecto schema and changeset integration
+- Event handling with Phoenix events
+- State management with socket assigns
+
+**Files Generated**:
+- `lib/TodoApp_web/live/todo_live.ex` - Main LiveView with HXX templates
+- `lib/TodoApp_web/live/user_live.ex` - User management LiveView
+- `lib/TodoApp/schemas/user.ex` - User Ecto schema
+- All files follow Phoenix conventions exactly
 
 ### Abstract Types Example
 **Status**: Production Ready ✨ NEW  
