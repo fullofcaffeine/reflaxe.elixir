@@ -488,11 +488,12 @@ class ClassCompiler {
         if (funcField.expr != null) {
             // Compile the actual function expression
             var compiledBody = compileExpressionForFunction(funcField.expr, funcField.args);
-            if (compiledBody != null && compiledBody != "") {
-                result.add('    ${compiledBody}\n');
+            if (compiledBody != null && compiledBody.trim() != "") {
+                // Indent the function body properly
+                var indentedBody = compiledBody.split("\n").map(line -> line.length > 0 ? "    " + line : line).join("\n");
+                result.add('${indentedBody}\n');
             } else {
-                result.add('    # TODO: Implement function body\n');
-                
+                // Only use default return if compilation failed/returned empty
                 // For struct update methods, return updated struct
                 if (isInstance && isStructClass && elixirReturnType == 't()') {
                     result.add('    %{struct | }\n');
@@ -501,7 +502,7 @@ class ClassCompiler {
                 }
             }
         } else {
-            result.add('    # TODO: Implement function body\n');
+            // No expression provided - this is a truly empty function
             result.add('    nil\n');
         }
         
@@ -600,15 +601,15 @@ class ClassCompiler {
             
             result.add('  ${defKeyword} ${funcName}(${paramStr}) do\n');
             
-            // Function body - simplified for now
+            // Function body - compile the actual expression
             if (func.expr != null) {
-                // Real implementation would compile the expression
-                // For now, demonstrate pipe operator support
-                if (funcName.contains("pipe") || (func.field.doc != null && func.field.doc.contains("|>"))) {
-                    result.add('    # Pipe operator example: data |> process() |> format()\n');
-                    result.add('    data |> process() |> format()\n');
+                var compiledBody = compileExpressionForFunction(func.expr, func.args);
+                if (compiledBody != null && compiledBody.trim() != "") {
+                    // Indent the function body properly
+                    var indentedBody = compiledBody.split("\n").map(line -> line.length > 0 ? "    " + line : line).join("\n");
+                    result.add('${indentedBody}\n');
                 } else {
-                    result.add('    # TODO: Implement function body\n');
+                    // Only use nil if compilation actually failed/returned empty
                     result.add('    nil\n');
                 }
             } else {
