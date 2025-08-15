@@ -1288,6 +1288,64 @@ class ElixirCompiler extends DirectToStringCompiler {
                 // Continue statement - in Elixir, we use a throw/catch pattern or skip to next iteration
                 "throw(:continue)";
                 
+            case TEnumIndex(e):
+                // Get the index of an enum value - used for enum introspection
+                // This is used in switch statements to determine which enum constructor is being matched
+                var enumExpr = compileExpression(e);
+                
+                // Check if this is a Result type which needs special tuple-based handling
+                // Result types compile to Elixir tuples {:ok, value} and {:error, reason}
+                // instead of standard enum modules, so introspection works differently
+                var isResult = switch (e.t) {
+                    case TEnum(enumType, _):
+                        isResultType(enumType.get());
+                    case _:
+                        false;
+                };
+                
+                if (isResult) {
+                    // Result types use tuple pattern matching to get the constructor index
+                    // {:ok, _} maps to index 0, {:error, _} maps to index 1
+                    // This generates a case statement that extracts the "tag" from the tuple
+                    'case ${enumExpr} do {:ok, _} -> 0; {:error, _} -> 1; _ -> -1 end';
+                } else {
+                    // Standard enums compile to tagged tuples like {:constructor_name, arg1, arg2}
+                    // The first element (index 0) is always the constructor tag/atom
+                    'elem(${enumExpr}, 0)'; // Extract the constructor atom from tuple
+                }
+                
+            case TEnumParameter(e, ef, index):
+                // Extract a parameter from an enum constructor
+                // Used when accessing constructor arguments in pattern matching or introspection
+                var enumExpr = compileExpression(e);
+                
+                // Check if this is a Result type which uses different tuple structure
+                var isResult = switch (e.t) {
+                    case TEnum(enumType, _):
+                        isResultType(enumType.get());
+                    case _:
+                        false;
+                };
+                
+                if (isResult) {
+                    // Result types have a simple 2-element tuple structure: {:ok, value} or {:error, reason}
+                    // Both constructors have exactly one parameter at the same position
+                    if (index == 0) {
+                        // Extract the value from either {:ok, value} or {:error, value}
+                        // Uses pattern matching to safely extract from either constructor
+                        'case ${enumExpr} do {:ok, value} -> value; {:error, value} -> value; _ -> nil end';
+                    } else {
+                        // Result types only have one parameter, so index > 0 should not occur
+                        // Return nil for safety if this happens
+                        'nil';
+                    }
+                } else {
+                    // Standard enums compile to tuples like {:constructor, param1, param2, ...}
+                    // Parameters start at index 1 (index 0 is the constructor tag)
+                    // So we add 1 to the parameter index to get the correct tuple position
+                    'elem(${enumExpr}, ${index + 1})';
+                }
+                
             case _:
                 // Handle unknown expression types gracefully
                 trace("Warning: Unhandled expression type: " + expr.expr.getName());
@@ -1341,16 +1399,80 @@ class ElixirCompiler extends DirectToStringCompiler {
     }
     
     /**
+     * Check if an enum type is the Result<T,E> type
+     */
+    private function isResultType(enumType: EnumType): Bool {
+        return enumType.module == "haxe.functional.Result" && enumType.name == "Result";
+    }
+    
+    /**
+     * Extract enum type and field information from an expression
+     */
+    private function extractEnumInfo(expr: TypedExpr): Null<{enumType: haxe.macro.Ref<EnumType>, enumField: EnumField}> {
+        return switch (expr.expr) {
+            case TField(_, FEnum(enumType, enumField)):
+                {enumType: enumType, enumField: enumField};
+            case _:
+                null;
+        }
+    }
+    
+    /**
+     * Compile Result enum constructor to proper Elixir tuple
+     */
+    private function compileResultPattern(enumField: EnumField, args: Array<TypedExpr>): String {
+        var fieldName = enumField.name.toLowerCase();
+        
+        if (fieldName == "ok") {
+            if (args.length == 1) {
+                var argPattern = compilePatternArgument(args[0]);
+                return '{:ok, ${argPattern}}';
+            } else {
+                return '{:ok}';
+            }
+        } else if (fieldName == "error") {
+            if (args.length == 1) {
+                var argPattern = compilePatternArgument(args[0]);
+                return '{:error, ${argPattern}}';
+            } else {
+                return '{:error}';
+            }
+        }
+        
+        // Fallback to regular enum pattern
+        var snakeName = NamingHelper.toSnakeCase(fieldName);
+        if (args.length == 0) {
+            return ':${snakeName}';
+        } else if (args.length == 1) {
+            var argPattern = compilePatternArgument(args[0]);
+            return '{:${snakeName}, ${argPattern}}';
+        } else {
+            var argPatterns = args.map(compilePatternArgument);
+            return '{:${snakeName}, ${argPatterns.join(', ')}}';
+        }
+    }
+    
+    /**
      * Compile enum constructor pattern for case matching
      */
     private function compileEnumPattern(expr: TypedExpr): String {
         return switch (expr.expr) {
             case TField(_, FEnum(enumType, enumField)):
+                // Check if this is a Result type for special handling
+                if (isResultType(enumType.get())) {
+                    return compileResultPattern(enumField, []);
+                }
                 // Simple enum pattern: SomeEnum.Option → :option
                 var fieldName = NamingHelper.toSnakeCase(enumField.name);
                 ':${fieldName}';
                 
             case TCall(e, args) if (isEnumFieldAccess(e)):
+                // Check if this is a Result enum constructor call
+                var enumInfo = extractEnumInfo(e);
+                if (enumInfo != null && isResultType(enumInfo.enumType.get())) {
+                    return compileResultPattern(enumInfo.enumField, args);
+                }
+                
                 // Parameterized enum pattern: SomeEnum.Option(value) → {:option, value}
                 var fieldName = extractEnumFieldName(e);
                 if (args.length == 0) {
@@ -1743,9 +1865,16 @@ class ElixirCompiler extends DirectToStringCompiler {
                 '&${expr}.${fieldName}/0'; // Function capture syntax
                 
             case FEnum(enumType, enumField):
-                var enumName = NamingHelper.getElixirModuleName(enumType.get().getNameOrNative());
-                var optionName = NamingHelper.toSnakeCase(enumField.name);
-                '${enumName}.${optionName}()'; // Enum constructor call
+                // Check if this is a Result type for special handling
+                if (isResultType(enumType.get())) {
+                    // For Result.Ok and Result.Error, return just the field name
+                    // This will be processed later in compileMethodCall to generate direct tuples
+                    enumField.name;
+                } else {
+                    var enumName = NamingHelper.getElixirModuleName(enumType.get().getNameOrNative());
+                    var optionName = NamingHelper.toSnakeCase(enumField.name);
+                    '${enumName}.${optionName}()'; // Enum constructor call
+                }
         }
     }
     
@@ -1850,6 +1979,27 @@ class ElixirCompiler extends DirectToStringCompiler {
                     }
                     
                     return RepositoryCompiler.compileRepoCall(methodName, compiledArgs, schemaName);
+                }
+                
+                // Check if this is a Result enum constructor call
+                switch (fa) {
+                    case FEnum(enumType, enumField):
+                        if (isResultType(enumType.get())) {
+                            // Generate direct tuple for Result types
+                            var compiledArgs = args.map(arg -> compileExpression(arg));
+                            var fieldName = enumField.name.toLowerCase();
+                            if (fieldName == "ok" || fieldName == "error") {
+                                if (compiledArgs.length == 1) {
+                                    return '{:${fieldName}, ${compiledArgs[0]}}';
+                                } else if (compiledArgs.length == 0) {
+                                    return ':${fieldName}';
+                                } else {
+                                    // Multiple arguments - wrap in a tuple
+                                    return '{:${fieldName}, {${compiledArgs.join(", ")}}}';
+                                }
+                            }
+                        }
+                    case _:
                 }
                 
                 // Check if this is a String method call

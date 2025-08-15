@@ -9,7 +9,7 @@ defmodule Main do
   @spec color_to_string(Color.t()) :: String.t()
   def color_to_string(color) do
     temp_result = nil
-    case (nil) do
+    case (elem(color, 0)) do
       0 ->
         temp_result = "red"
       1 ->
@@ -17,9 +17,9 @@ defmodule Main do
       2 ->
         temp_result = "blue"
       3 ->
-        _g = nil
-    _g = nil
-    _g = nil
+        _g = elem(color, 1)
+    _g = elem(color, 2)
+    _g = elem(color, 3)
     r = _g
     g = _g
     b = _g
@@ -32,9 +32,9 @@ defmodule Main do
   @spec get_value(Option.t(), T.t()) :: T.t()
   def get_value(opt, default_value) do
     temp_result = nil
-    case (nil) do
+    case (elem(opt, 0)) do
       0 ->
-        _g = nil
+        _g = elem(opt, 1)
     v = _g
     temp_result = v
       1 ->
@@ -47,14 +47,14 @@ defmodule Main do
   @spec tree_sum(Tree.t()) :: integer()
   def tree_sum(tree) do
     temp_result = nil
-    case (nil) do
+    case (elem(tree, 0)) do
       0 ->
-        _g = nil
+        _g = elem(tree, 1)
     value = _g
     temp_result = value
       1 ->
-        _g = nil
-    _g = nil
+        _g = elem(tree, 1)
+    _g = elem(tree, 2)
     left = _g
     right = _g
     temp_result = Main.treeSum(left) + Main.treeSum(right)
@@ -66,10 +66,10 @@ defmodule Main do
   @spec describe_r_g_b(Color.t()) :: String.t()
   def describe_r_g_b(color) do
     temp_result = nil
-    if (nil == 3) do
-      _g = nil
-      _g = nil
-      _g = nil
+    if (elem(color, 0) == 3) do
+      _g = elem(color, 1)
+      _g = elem(color, 2)
+      _g = elem(color, 3)
       r = _g
       g = _g
       b = _g
@@ -105,11 +105,11 @@ defmodule Main do
   @spec compare_trees(Tree.t(), Tree.t()) :: boolean()
   def compare_trees(t1, t2) do
     temp_result = nil
-    case (nil) do
+    case (elem(t1, 0)) do
       0 ->
-        _g = nil
-    if (nil == 0) do
-      _g = nil
+        _g = elem(t1, 1)
+    if (elem(t2, 0) == 0) do
+      _g = elem(t2, 1)
       v2 = _g
       v1 = _g
       temp_result = v1 == v2
@@ -117,11 +117,11 @@ defmodule Main do
       temp_result = false
     end
       1 ->
-        _g = nil
-    _g = nil
-    if (nil == 1) do
-      _g = nil
-      _g = nil
+        _g = elem(t1, 1)
+    _g = elem(t1, 2)
+    if (elem(t2, 0) == 1) do
+      _g = elem(t2, 1)
+      _g = elem(t2, 2)
       l2 = _g
       r2 = _g
       r1 = _g

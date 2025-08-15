@@ -82,27 +82,27 @@ defmodule MigrationDSL do
     table_name = "default_table"
     if (meta.params != nil && length(meta.params) > 0) do
       _g = Enum.at(meta.params, 0).expr
-      case (nil) do
+      case (elem(_g, 0)) do
         0 ->
-          _g = nil
-      if (nil == 2) do
-        _g = nil
-        nil
+          _g = elem(_g, 1)
+      if (elem(_g, 0) == 2) do
+        _g = elem(_g, 1)
+        elem(_g, 2)
         s = _g
         table_name = s
       else
         table_name = MigrationDSL.extractTableNameFromClassName(class_type.name)
       end
         5 ->
-          _g = nil
+          _g = elem(_g, 1)
       fields = _g
       _g = 0
       Enum.map(fields, fn item -> if (item.field == "table"), do: _g = field.expr.expr
-      if (nil == 0) do
-        _g = nil
-        if (nil == 2) do
-          _g = nil
-          nil
+      if (elem(_g, 0) == 0) do
+        _g = elem(_g, 1)
+        if (elem(_g, 0) == 2) do
+          _g = elem(_g, 1)
+          elem(_g, 2)
           s = _g
           table_name = s
         else

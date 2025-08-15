@@ -1,0 +1,8 @@
+# Compilation configuration for result_type test
+-cp ../../../std
+-cp ../../../src
+-cp .
+-lib reflaxe
+--macro reflaxe.elixir.CompilerInit.Start()
+-D elixir_output=out
+Main
