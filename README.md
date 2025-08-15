@@ -3,7 +3,7 @@
 [![Version](https://img.shields.io/github/v/release/fullofcaffeine/reflaxe.elixir?include_prereleases)](https://github.com/fullofcaffeine/reflaxe.elixir/releases)
 [![License: GPL-3.0](https://img.shields.io/badge/License-GPL%20v3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 [![CI Status](https://github.com/fullofcaffeine/reflaxe.elixir/workflows/CI/badge.svg)](https://github.com/fullofcaffeine/reflaxe.elixir/actions)
-[![Tests](https://img.shields.io/badge/tests-130%2F130%20passing-brightgreen)](https://github.com/fullofcaffeine/reflaxe.elixir/actions)
+[![Tests](https://img.shields.io/badge/tests-59%2F59%20passing-brightgreen)](https://github.com/fullofcaffeine/reflaxe.elixir/actions)
 [![Haxe](https://img.shields.io/badge/Haxe-4.3.6+-orange)](https://haxe.org)
 [![Elixir](https://img.shields.io/badge/Elixir-1.14+-purple)](https://elixir-lang.org)
 
@@ -20,7 +20,7 @@
 **The Solution**: Reflaxe.Elixir gives you:
 - **Type safety today** - Catch errors at compile time, not in production
 - **Freedom tomorrow** - Your code can target JS, C++, Python, Java, C#, or any other Haxe target
-- **Phoenix ecosystem now** - Deep integration with LiveView, Ecto, OTP patterns
+- **Phoenix ecosystem now** - Deep integration with LiveView, Ecto, OTP patterns, and HXX template processing
 
 ### 💡 Real-World Scenarios
 
@@ -64,6 +64,7 @@ Write validation logic once in Haxe, use it in:
 
 ### ✅ Production-Ready Features
 - **Phoenix Integration** - LiveView, controllers, templates, routers 100% supported
+- **HXX Template Processing** - JSX-like syntax for type-safe Phoenix HEEx templates
 - **Ecto Complete** - Schemas, changesets, queries, migrations with full DSL support  
 - **Mix Integration** - Seamless build pipeline with file watching and incremental compilation
 - **Source Maps** - First Reflaxe target with `.ex.map` generation for debugging
@@ -281,6 +282,15 @@ class CounterLive {
         count++;
         return {:noreply, assign(socket, "count", count)};
     }
+    
+    function render(assigns: Dynamic): String {
+        return HXX('
+            <div class="counter">
+                <h1>Count: ${assigns.count}</h1>
+                <button phx-click="increment">+</button>
+            </div>
+        ');
+    }
 }
 ```
 
@@ -296,6 +306,15 @@ defmodule CounterLive do
   def handle_event("increment", _params, socket) do
     count = socket.assigns.count + 1
     {:noreply, assign(socket, :count, count)}
+  end
+  
+  def render(assigns) do
+    ~H"""
+    <div class="counter">
+        <h1>Count: {assigns.count}</h1>
+        <button phx-click="increment">+</button>
+    </div>
+    """
   end
 end
 ```
@@ -336,16 +355,16 @@ class CounterServer {
 The project uses a dual-ecosystem testing approach with self-referential library configuration:
 
 ```bash
-npm test              # Run ALL tests (158 total: 28 Haxe + 130 Mix)
+npm test              # Run ALL tests (59 total: 46 Haxe + 13 Mix)
 npm run test:haxe     # Run Haxe compiler tests only (snapshot tests)
-npm run test:mix      # Run Mix/Elixir tests only (130 runtime tests)
+npm run test:mix      # Run Mix/Elixir tests only (13 runtime tests)
 npm run test:update   # Update expected snapshot test output
 ```
 
 **Test Infrastructure:**
 - **Complete Coverage**: `npm test` runs both Haxe compiler tests AND Mix runtime tests
-- **Snapshot Testing**: Validates compiler output against expected Elixir code (28 tests)
-- **Runtime Validation**: Tests generated Elixir code execution in BEAM VM (130 tests)
+- **Snapshot Testing**: Validates compiler output against expected Elixir code (46 tests)
+- **Runtime Validation**: Tests generated Elixir code execution in BEAM VM (13 tests)
 - **Self-Referential Library**: Tests use `-lib reflaxe.elixir` via `haxe_libraries/reflaxe.elixir.hxml`
 - **Mix Integration**: Tests real compilation in Phoenix projects
 - **Test Helper**: `test/support/haxe_test_helper.ex` handles project setup
@@ -403,9 +422,10 @@ All compilation targets exceed performance requirements:
 
 **All snapshot tests + Mix tests passing**:
 
-### Haxe Snapshot Tests (28/28 ✅)
+### Haxe Snapshot Tests (46/46 ✅)
 - Source mapping tests (source_map_basic, source_map_validation)
 - LiveView, OTP, Ecto compilation tests
+- HXX template processing tests
 - Example compilation tests
 - Legacy extern definitions (FinalExternTest, CompilationOnlyTest, TestWorkingExterns)
 - Modern tink_unittest (async tests, performance validation, rich assertions)
