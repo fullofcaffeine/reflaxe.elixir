@@ -1,20 +1,75 @@
-# PRD: Vision Alignment - LLM Leverager for Cross-Platform Development
+# PRD: Type-Safe Functional Haxe for Universal Deployment
 
-**Version**: 1.0  
+**Version**: 2.0  
 **Date**: 2025-08-15  
-**Status**: Draft  
+**Status**: Active  
 **Author**: AI Assistant (Claude)  
 
 ## Executive Summary
 
 ### Vision Statement
-Transform Reflaxe.Elixir into an **LLM leverager for deterministic cross-platform development** that enables developers to write business logic once in Haxe and deploy it anywhere, while generating idiomatic target code that looks hand-written rather than machine-generated.
+Transform Reflaxe.Elixir into a **type-safe functional Haxe compiler** that leverages Haxe's powerful type system, GADTs, and pattern matching to generate beautiful, idiomatic code across all platforms. Write functional Haxe once, deploy type-safe code everywhere.
+
+### The Paradigm: Functional Haxe for Universal Excellence
+
+**Write functional Haxe leveraging:**
+- **GADTs** for algebraic data types (Result, Option, Either)
+- **Exhaustive pattern matching** with compile-time guarantees
+- **Type-safe domain abstractions** (Email, UserId, PositiveInt)
+- **Immutable data patterns** and functional transformations
+
+**Get idiomatic, type-safe code in:**
+- **Elixir**: Pattern matching, `{:ok, _}`/`{:error, _}` tuples, with statements
+- **JavaScript**: Discriminated unions, TypeScript definitions, Result objects
+- **Python**: Type hints, Result patterns, proper error handling
+- **Other targets**: Appropriate type-safe constructs for each platform
 
 ### Core Goals
-1. **Write Once, Deploy Anywhere**: Business logic written in Haxe compiles to idiomatic code across JS, Python, Elixir, and other targets
-2. **LLM Productivity Multiplier**: Provide deterministic vocabulary that reduces hallucinations and enables rapid boilerplate generation
-3. **Type Safety Without Vendor Lock-in**: Compile-time type checking while maintaining freedom to switch runtimes
-4. **Idiomatic Code Generation**: Generated code passes human review as "natural" rather than "machine-generated"
+1. **Type-Safe Universal Deployment**: Same functional patterns work beautifully across all targets
+2. **LLM Productivity Multiplier**: Deterministic functional vocabulary reduces hallucinations  
+3. **Maximum Type System Usage**: Leverage Haxe's underutilized GADTs, pattern matching, abstracts
+4. **Cross-Platform Type Safety**: Compile-time guarantees maintained in every target language
+
+### Pragmatic Implementation Philosophy
+**Core Principle**: Universal functional patterns first, targeted optimizations when justified.
+
+**Conditional Compilation Strategy**:
+- **Prefer universal patterns**: `Result<T,E>`, `Option<T>`, pattern matching work everywhere
+- **Allow targeted optimizations**: When significant benefits justify target-specific code
+- **Document all compromises**: Every `#if target` must be documented with justification
+- **Plan deprecation paths**: Target-specific code should have universal alternatives planned
+
+**Examples of Justified Conditional Compilation**:
+```haxe
+// GOOD: Universal pattern matching → Smart compilation
+switch(processData(input)) {
+  case Ok(result): result;
+  case Error(reason): handleError(reason);
+}
+// Compiler generates optimal code per target:
+// Elixir: with {:ok, result} <- process_data(input) do result else ...
+// JS: const result = processData(input); if (result.tag === 'Ok') ...
+
+// Justified: Truly platform-specific APIs
+#if elixir
+  Phoenix.PubSub.broadcast(topic, message)
+#elseif js
+  websocket.send(JSON.stringify(message))
+#else
+  // Generic event system fallback
+  EventBus.publish(topic, message)
+#end
+
+// NOT Justified: Performance optimizations the compiler should handle
+// ❌ DON'T DO THIS - let compiler optimize
+#if elixir
+  // Manual Elixir optimization
+#else
+  // Universal code
+#end
+```
+
+**The Rule**: Only use conditional compilation for fundamentally different APIs, never for performance optimizations that smart compilation should handle.
 
 ### Strategic Differentiators
 - **vs Gleam**: Multi-target capability (not BEAM-only) with stronger Phoenix integration
