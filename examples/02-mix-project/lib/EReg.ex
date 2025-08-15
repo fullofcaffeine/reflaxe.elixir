@@ -1,4 +1,5 @@
 defmodule EReg do
+  use Bitwise
   @moduledoc """
   EReg module generated from Haxe
   
@@ -28,7 +29,7 @@ defmodule EReg do
 
 		If `s` is `null`, the result is unspecified.
 	"
-  @spec match(TInst(String,[]).t()) :: TAbstract(Bool,[]).t()
+  @spec match(String.t()) :: boolean()
   def match(arg0) do
     false
   end
@@ -47,7 +48,7 @@ defmodule EReg do
 
 		If `s` or `by` are null, the result is unspecified.
 	"
-  @spec replace(TInst(String,[]).t(), TInst(String,[]).t()) :: TInst(String,[]).t()
+  @spec replace(String.t(), String.t()) :: String.t()
   def replace(arg0, arg1) do
     nil
   end
