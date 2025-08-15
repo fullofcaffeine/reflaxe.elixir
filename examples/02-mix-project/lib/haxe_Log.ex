@@ -1,4 +1,5 @@
 defmodule Log do
+  use Bitwise
   @moduledoc """
   Log module generated from Haxe
   
@@ -12,25 +13,17 @@ defmodule Log do
   @doc "
 		Format the output of `trace` before printing it.
 	"
-  @spec format_output(TDynamic(null).t(), TType(haxe.PosInfos,[]).t()) :: TInst(String,[]).t()
+  @spec format_output(term(), PosInfos.t()) :: String.t()
   def format_output(arg0, arg1) do
-    (
-  str = Std.string(v)
-  if (infos == nil), do: str, else: nil
-  pstr = infos.file_name + ":" + infos.line_number
-  if (infos.custom_params != nil), do: (
-  _g = 0
-  _g1 = infos.custom_params
-  while (_g < _g1.length) do
-  (
-  v2 = Enum.at(_g1, _g)
-  _g + 1
-  str += ", " + Std.string(v2)
-)
-end
-), else: nil
-  pstr + ": " + str
-)
+    str = Std.string(arg0)
+    if (arg1 == nil), do: str, else: nil
+    pstr = arg1.file_name <> ":" <> Integer.to_string(arg1.line_number)
+    if (arg1.custom_params != nil) do
+      _g = 0
+      _g = arg1.custom_params
+      Enum.map(_g, fn item -> item end)
+    end
+    pstr <> ": " <> str
   end
 
   @doc "
@@ -51,12 +44,10 @@ end
 		If it is bound to null, subsequent calls to `trace()` will cause an
 		exception.
 	"
-  @spec trace(TDynamic(null).t(), TAbstract(Null,[TType(haxe.PosInfos,[])]).t()) :: TAbstract(Void,[]).t()
+  @spec trace(term(), Null.t()) :: nil
   def trace(arg0, arg1) do
-    (
-  str = Log.format_output(v, infos)
-  Sys.println(str)
-)
+    str = Log.formatOutput(arg0, arg1)
+    Sys.println(str)
   end
 
 end
