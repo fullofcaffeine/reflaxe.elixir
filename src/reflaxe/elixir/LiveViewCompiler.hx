@@ -158,7 +158,7 @@ class LiveViewCompiler {
         } else {
             // Default mount and render if no functions provided
             content.add('  @impl true\n');
-            content.add('  def mount(_params, _session, socket) do\n');
+            content.add('  def mount(params, session, socket) do\n');
             content.add('    {:ok, socket}\n');
             content.add('  end\n');
             content.add('  \n');
@@ -207,14 +207,14 @@ class LiveViewCompiler {
      */
     public static function getLiveViewCallbackParams(funcName: String): Null<String> {
         return switch(funcName) {
-            case "mount": "_params, _session, socket";
+            case "mount": "params, session, socket";  // Don't prefix with _ since they might be used
             case "render": "assigns";
             case "handle_event": "event, params, socket";
             case "handle_info": "msg, socket";
-            case "handle_call": "msg, _from, socket";
+            case "handle_call": "msg, from, socket";  // Don't prefix with _ since they might be used
             case "handle_cast": "msg, socket";
             case "handle_continue": "continue_arg, socket";
-            case "terminate": "reason, _socket";
+            case "terminate": "reason, socket";  // Don't prefix with _ since they might be used
             default: null; // Not a callback, use normal compilation
         }
     }
@@ -224,7 +224,7 @@ class LiveViewCompiler {
      */
     private static function getLiveViewFunctionParams(funcName: String, funcField: ClassFuncData): String {
         return switch(funcName) {
-            case "mount": "_params, _session, socket";
+            case "mount": "params, session, socket";  // Consistent with getLiveViewCallbackParams
             case "render": "assigns";
             case "handle_event": "event, params, socket";
             case "handle_info": "msg, socket";

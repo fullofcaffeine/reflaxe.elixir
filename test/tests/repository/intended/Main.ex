@@ -1,18 +1,18 @@
 defmodule UserChangeset do
   @moduledoc """
-  Generated changeset for DefaultSchema schema
+  Generated changeset for User schema
   
-  Provides validation and casting for DefaultSchema data structures
+  Provides validation and casting for User data structures
   following Ecto changeset patterns with compile-time type safety.
   """
   
   import Ecto.Changeset
-  alias DefaultSchema
+  alias User
   
   @doc """
   Primary changeset function with comprehensive validation
   """
-  def changeset(%DefaultSchema{} = struct, attrs) do
+  def changeset(%User{} = struct, attrs) do
     struct
     |> cast(attrs, [:name, :email, :age])
     |> validate_required([:name, :email])

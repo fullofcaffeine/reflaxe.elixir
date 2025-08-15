@@ -11,8 +11,8 @@ defmodule User do
   @derive {Phoenix.Param, key: :id}
 
   schema "users" do
-    field :name, :string, null: false
-    field :email, :string, null: false
+    field :name, :string
+    field :email, :string
     field :age, :integer
     field :active, :boolean, default: true
     field :updated_at, :string

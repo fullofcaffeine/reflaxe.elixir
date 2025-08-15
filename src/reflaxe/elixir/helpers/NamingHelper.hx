@@ -53,12 +53,30 @@ class NamingHelper {
         for (part in parts) {
             // Ensure first letter is capitalized for Elixir modules
             if (part.length > 0) {
-                var modulePart = part.charAt(0).toUpperCase() + part.substr(1);
+                var modulePart = sanitizeModuleName(part.charAt(0).toUpperCase() + part.substr(1));
                 result.push(modulePart);
             }
         }
         
         return result.join(".");
+    }
+    
+    /**
+     * Sanitize module name to be valid in Elixir
+     * Fixes invalid prefixes like ___ and ensures proper naming
+     */
+    public static function sanitizeModuleName(name: String): String {
+        // Remove leading underscores (invalid in Elixir module names)
+        while (name.length > 0 && name.charAt(0) == "_") {
+            name = name.substr(1);
+        }
+        
+        // If name starts with invalid characters, prefix with Haxe
+        if (name.length == 0 || name.charAt(0) < 'A' || name.charAt(0) > 'Z') {
+            name = "Haxe" + name;
+        }
+        
+        return name;
     }
     
     /**

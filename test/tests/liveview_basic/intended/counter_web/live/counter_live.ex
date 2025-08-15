@@ -7,7 +7,7 @@ defmodule CounterLive do
   
   @impl true
   @doc "Generated from Haxe mount"
-  def mount(_params, _session, socket) do
+  def mount(params, session, socket) do
     socket = LiveView.assign(socket, "count", 0)
     %{ok: socket}
   end
