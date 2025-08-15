@@ -91,7 +91,7 @@ defmodule NotificationServiceTest do
       0 ->
         _g = case result do {:ok, value} -> value; {:error, value} -> value; _ -> nil end
     record = _g
-    assert record.user_id == 1")
+    assert record.user_id == 1
     assert record.message == "Email test"
       1 ->
         _g = case result do {:ok, value} -> value; {:error, value} -> value; _ -> nil end
@@ -110,7 +110,7 @@ defmodule NotificationServiceTest do
       1 ->
         _g = case result do {:ok, value} -> value; {:error, value} -> value; _ -> nil end
     msg = _g
-    assert case :binary.match(msg do {pos, _} -> pos; :nomatch -> -1 end >= 0, "Should mention email not found")
+    assert case :binary.match(msg, "No user found with email") do {pos, _} -> pos; :nomatch -> -1 end >= 0
     end
   end
 
@@ -151,32 +151,32 @@ defmodule NotificationServiceTest do
 
   test "send bulk returns correct success and failure counts" do
     result = NotificationService.sendBulk([1, 2, 3, 999], "Bulk test", :email)
-    assert result.getSuccessCount( == 2, "Should have 2 successful sends")
-    assert result.getFailureCount( == 2, "Should have 2 failed sends")
-    assert result.getTotalCount( == 4, "Should have 4 total sends")
+    assert result.getSuccessCount() == 2
+    assert result.getFailureCount() == 2
+    assert result.getTotalCount() == 4
     expected_rate = 0.5
-    assert result.getSuccessRate( == expected_rate, "Should have correct success rate")
+    assert result.getSuccessRate() == expected_rate
   end
 
   test "send bulk handles empty array" do
     result = NotificationService.sendBulk([], "Test", :email)
-    assert result.getSuccessCount( == 0, "Should have 0 successful sends")
-    assert result.getFailureCount( == 0, "Should have 0 failed sends")
-    assert result.getTotalCount( == 0, "Should have 0 total sends")
-    assert result.getSuccessRate( == 0.0, "Should have 0% success rate")
+    assert result.getSuccessCount() == 0
+    assert result.getFailureCount() == 0
+    assert result.getTotalCount() == 0
+    assert result.getSuccessRate() == 0.0
   end
 
   test "get user notification history returns correct records" do
     NotificationService.sendToUser(1, "History test", :email)
     history = NotificationService.getUserNotificationHistory(1)
-    assert length(history >= 1, "Should have at least 1 notification in history")
+    assert length(history) >= 1
     _g = 0
     Enum.map(history, fn item -> 1 end)
   end
 
   test "get user notification history returns empty for user without history" do
     history = NotificationService.getUserNotificationHistory(999)
-    assert length(history == 0, "Should have empty history for user without notifications")
+    assert length(history) == 0
   end
 
   test "get most recent notification returns latest record" do
@@ -251,7 +251,7 @@ defmodule NotificationServiceTest do
       1 ->
         _g = case result do {:ok, value} -> value; {:error, value} -> value; _ -> nil end
     msg = _g
-    assert case :binary.match(msg do {pos, _} -> pos; :nomatch -> -1 end >= 0, "Should mention disabled notification type")
+    assert case :binary.match(msg, "disabled Email notifications") do {pos, _} -> pos; :nomatch -> -1 end >= 0
     end
   end
 

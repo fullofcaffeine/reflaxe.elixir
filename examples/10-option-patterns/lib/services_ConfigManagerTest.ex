@@ -13,7 +13,7 @@ defmodule ConfigManagerTest do
   test "get returns value for existing key" do
     value = ConfigManager.get("app_name")
     assert OptionTools.is_some(value)
-    assert "OptionPatterns"} == {:some
+    assert value == {:some, "OptionPatterns"}
   end
 
   test "get returns none for missing key" do
@@ -71,14 +71,14 @@ defmodule ConfigManagerTest do
       1 ->
         _g = case result do {:ok, value} -> value; {:error, value} -> value; _ -> nil end
     msg = _g
-    assert case :binary.match(msg do {pos, _} -> pos; :nomatch -> -1 end >= 0, "Error should mention the missing key")
+    assert case :binary.match(msg, "missing_key") do {pos, _} -> pos; :nomatch -> -1 end >= 0
     end
   end
 
   test "get int returns value for valid number" do
     value = ConfigManager.getInt("timeout")
     assert OptionTools.is_some(value)
-    assert 30} == {:some
+    assert value == {:some, 30}
   end
 
   test "get int returns none for invalid number" do
@@ -94,7 +94,7 @@ defmodule ConfigManagerTest do
   test "get bool returns true for valid true values" do
     value = ConfigManager.getBool("debug")
     assert OptionTools.is_some(value)
-    assert true} == {:some
+    assert value == {:some, true}
   end
 
   test "get bool returns none for invalid value" do
@@ -132,7 +132,7 @@ defmodule ConfigManagerTest do
       1 ->
         _g = case result do {:ok, value} -> value; {:error, value} -> value; _ -> nil end
     msg = _g
-    assert case :binary.match(msg do {pos, _} -> pos; :nomatch -> -1 end >= 0, "Error should mention minimum value")
+    assert case :binary.match(msg, "below minimum") do {pos, _} -> pos; :nomatch -> -1 end >= 0
     end
   end
 
@@ -146,7 +146,7 @@ defmodule ConfigManagerTest do
       1 ->
         _g = case result do {:ok, value} -> value; {:error, value} -> value; _ -> nil end
     msg = _g
-    assert case :binary.match(msg do {pos, _} -> pos; :nomatch -> -1 end >= 0, "Error should mention maximum value")
+    assert case :binary.match(msg, "above maximum") do {pos, _} -> pos; :nomatch -> -1 end >= 0
     end
   end
 
@@ -160,7 +160,7 @@ defmodule ConfigManagerTest do
       1 ->
         _g = case result do {:ok, value} -> value; {:error, value} -> value; _ -> nil end
     msg = _g
-    assert case :binary.match(msg do {pos, _} -> pos; :nomatch -> -1 end >= 0, "Error should mention missing/invalid")
+    assert case :binary.match(msg, "missing or not a valid number") do {pos, _} -> pos; :nomatch -> -1 end >= 0
     end
   end
 
@@ -171,7 +171,7 @@ defmodule ConfigManagerTest do
       0 ->
         _g = case result do {:ok, value} -> value; {:error, value} -> value; _ -> nil end
     url = _g
-    assert case :binary.match(url do {pos, _} -> pos; :nomatch -> -1 end >= 0, "Should contain protocol")
+    assert case :binary.match(url, "postgres://") do {pos, _} -> pos; :nomatch -> -1 end >= 0
       1 ->
         _g = case result do {:ok, value} -> value; {:error, value} -> value; _ -> nil end
     msg = _g
@@ -192,9 +192,9 @@ defmodule ConfigManagerTest do
 
   test "get all set values returns only non empty values" do
     all_values = ConfigManager.getAllSetValues()
-    assert all_values.exists("app_name", "Should include app_name")
-    assert all_values.exists("timeout", "Should include timeout")
-    refute all_values.exists("empty_value", "Should not include empty values")
+    assert all_values.exists("app_name")
+    assert all_values.exists("timeout")
+    refute all_values.exists("empty_value")
     key = all_values.keys()
     (
       try do
@@ -243,8 +243,8 @@ defmodule ConfigManagerTest do
       1 ->
         _g = case result do {:ok, value} -> value; {:error, value} -> value; _ -> nil end
     msg = _g
-    assert case :binary.match(msg do {pos, _} -> pos; :nomatch -> -1 end >= 0, "Error should mention first missing key")
-    assert case :binary.match(msg do {pos, _} -> pos; :nomatch -> -1 end >= 0, "Error should mention second missing key")
+    assert case :binary.match(msg, "missing_key1") do {pos, _} -> pos; :nomatch -> -1 end >= 0
+    assert case :binary.match(msg, "missing_key2") do {pos, _} -> pos; :nomatch -> -1 end >= 0
     end
   end
 

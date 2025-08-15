@@ -321,7 +321,7 @@ defmodule ResultTools do
   def traverse(array, transform) do
     _g = []
     _g = 0
-    Enum.map(array, fn item -> item(v) end)
+    Enum.map(array, transform)
     ResultTools.sequence(_g)
   end
 
