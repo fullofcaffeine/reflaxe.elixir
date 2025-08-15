@@ -1,5 +1,4 @@
 defmodule Output do
-  use Bitwise
   @moduledoc """
   Output module generated from Haxe
   

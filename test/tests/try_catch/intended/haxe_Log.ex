@@ -1,5 +1,4 @@
 defmodule Log do
-  use Bitwise
   @moduledoc """
   Log module generated from Haxe
   
@@ -22,7 +21,7 @@ defmodule Log do
     if (infos.custom_params != nil) do
       _g = 0
       _g = infos.custom_params
-      Enum.map(_g, fn item -> v = Enum.at(_g, _g)
+      Enum.map(_g, fn str -> v = Enum.at(_g, _g)
       _g = _g + 1
       str = str <> ", " <> Std.string(v) end)
     end

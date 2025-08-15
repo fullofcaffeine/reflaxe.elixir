@@ -9,7 +9,7 @@ defmodule UserLive do
   @doc "Generated from Haxe mount"
   def mount(params, session, socket) do
     __MODULE__.users = Accounts.list_users()
-    %{ok => true, socket => socket}
+    %{"ok" => true, "socket" => socket}
   end
 
   @impl true
@@ -20,12 +20,12 @@ defmodule UserLive do
       "delete_user" ->
         user = Accounts.get_user(params.id)
     Accounts.delete_user(user)
-    temp_result = %{noreply => true, socket => socket}
+    temp_result = %{"noreply" => true, "socket" => socket}
       "save_user" ->
         Accounts.create_user(params)
-    temp_result = %{noreply => true, socket => socket}
+    temp_result = %{"noreply" => true, "socket" => socket}
       _ ->
-        temp_result = %{noreply => true, socket => socket}
+        temp_result = %{"noreply" => true, "socket" => socket}
     end
     temp_result
   end

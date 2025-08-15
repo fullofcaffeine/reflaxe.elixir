@@ -78,7 +78,7 @@ defmodule MigrationDSL do
   """
   @spec get_migration_config(ClassType.t()) :: term()
   def get_migration_config(class_type) do
-    if (!class_type.meta.has(":migration")), do: %{table => "default_table", timestamp => MigrationDSL.generateTimestamp()}, else: nil
+    if (!class_type.meta.has(":migration")), do: %{"table" => "default_table", "timestamp" => MigrationDSL.generateTimestamp()}, else: nil
     meta = Enum.at(class_type.meta.extract(":migration"), 0)
     table_name = "default_table"
     if (meta.params != nil && length(meta.params) > 0) do
@@ -122,7 +122,7 @@ defmodule MigrationDSL do
     else
       table_name = MigrationDSL.extractTableNameFromClassName(class_type.name)
     end
-    %{table => table_name, timestamp => MigrationDSL.generateTimestamp()}
+    %{"table" => table_name, "timestamp" => MigrationDSL.generateTimestamp()}
   end
 
   @doc """
@@ -149,7 +149,7 @@ defmodule MigrationDSL do
   def compile_table_creation(table_name, columns) do
     column_defs = Array.new()
     _g = 0
-    Enum.map(columns, fn item -> column = Enum.at(columns, _g)
+    Enum.map(columns, fn temp_string -> column = Enum.at(columns, _g)
     _g = _g + 1
     parts = String.split(column, ":")
     name = Enum.at(parts, 0)
@@ -382,7 +382,7 @@ defmodule MigrationDSL do
     result = "create table(:" <> table_name <> ") do\n"
     if (!builder.has_id_column), do: result = result <> "      add :id, :serial, primary_key: true\n", else: nil
     _g = 0
-    Enum.map(column_defs, fn item -> column_def = Enum.at(column_defs, _g)
+    Enum.map(column_defs, fn result -> column_def = Enum.at(column_defs, _g)
     _g = _g + 1
     result = result <> "      " <> column_def <> "\n" end)
     if (!builder.has_timestamps), do: result = result <> "      timestamps()\n", else: nil
@@ -390,14 +390,14 @@ defmodule MigrationDSL do
     if (length(index_defs) > 0) do
       result = result <> "\n\n"
       _g = 0
-      Enum.map(index_defs, fn item -> index_def = Enum.at(index_defs, _g)
+      Enum.map(index_defs, fn result -> index_def = Enum.at(index_defs, _g)
       _g = _g + 1
       result = result <> "    " <> index_def <> "\n" end)
     end
     if (length(constraint_defs) > 0) do
       result = result <> "\n\n"
       _g = 0
-      Enum.map(constraint_defs, fn item -> constraint_def = Enum.at(constraint_defs, _g)
+      Enum.map(constraint_defs, fn result -> constraint_def = Enum.at(constraint_defs, _g)
       _g = _g + 1
       result = result <> "    " <> constraint_def <> "\n" end)
     end
@@ -523,7 +523,7 @@ defmodule TableBuilder do
     found = false
     _g = 0
     _g = __MODULE__.columns
-    Enum.filter(_g, fn item -> (item.indexOf(":" + item + ",") != -1) end)
+    Enum.filter(_g, fn found -> (column.indexOf(":" <> column_name <> ",") != -1) end)
     if (!found), do: new_columns ++ ["add :" <> column_name <> ", references(:" <> referenced_table <> ", column: :" <> referenced_column <> ")"], else: nil
     __MODULE__.columns = new_columns
     __MODULE__

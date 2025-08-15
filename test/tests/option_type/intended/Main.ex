@@ -1,5 +1,4 @@
 defmodule Main do
-  use Bitwise
   @moduledoc """
   Main module generated from Haxe
   
@@ -75,9 +74,9 @@ defmodule Main do
       0 ->
         _g = case user do {:some, value} -> value; :none -> nil; _ -> nil end
     name = _g
-    Log.trace("Processing user: " <> name, %{fileName => "Main.hx", lineNumber => 68, className => "Main", methodName => "processUser"})
+    Log.trace("Processing user: " <> name, %{"fileName" => "Main.hx", "lineNumber" => 68, "className" => "Main", "methodName" => "processUser"})
       1 ->
-        Log.trace("No user to process", %{fileName => "Main.hx", lineNumber => 69, className => "Main", methodName => "processUser"})
+        Log.trace("No user to process", %{"fileName" => "Main.hx", "lineNumber" => 69, "className" => "Main", "methodName" => "processUser"})
     end
   end
 
@@ -88,12 +87,12 @@ defmodule Main do
   @spec test_functional_operations() :: nil
   def test_functional_operations() do
     user = {:some, "David"}
-    Enum.map(OptionTools, user)
-    Enum.filter(OptionTools, user)
+    OptionTools.map(user, fn name -> String.upcase(name) end)
+    OptionTools.filter(user, fn name -> String.length(name) > 3 end)
     OptionTools.then(user, fn name -> temp_result = nil
     if (String.length(name) > 0), do: temp_result = {:some, name <> "!"}, else: temp_result = :none
     temp_result end)
-    OptionTools.then(Enum.filter(OptionTools, Enum.map(OptionTools, user)), fn name -> {:some, name <> " [PROCESSED]"} end)
+    OptionTools.then(OptionTools.filter(OptionTools.map(user, fn name -> String.upcase(name) end), fn name -> String.length(name) > 2 end), fn name -> {:some, name <> " [PROCESSED]"} end)
     OptionTools.unwrap(user, "Anonymous")
     OptionTools.lazyUnwrap(user, fn  -> "Computed default" end)
     first = {:some, "First"}
@@ -127,7 +126,7 @@ defmodule Main do
   def test_null_safety() do
     maybe_null = nil
     safe_option = OptionTools.fromNullable(maybe_null)
-    OptionTools.unwrap(Enum.map(OptionTools, safe_option), 0)
+    OptionTools.unwrap(OptionTools.map(safe_option, fn s -> String.length(s) end), 0)
     OptionTools.isSome(safe_option)
     OptionTools.isNone(safe_option)
     OptionTools.toNullable(safe_option)
@@ -149,11 +148,13 @@ defmodule Main do
     temp_array1 = nil
     _g = []
     _g = 0
-    Enum.map(options, fn item -> OptionTools.map(v, fn x -> x * 2 end) end)
+    Enum.map(options, fn item -> v = Enum.at(options, _g)
+    _g = _g + 1
+    _g ++ [OptionTools.map(v, fn x -> x * 2 end)] end)
     temp_array1 = _g
     _g = []
     _g = 0
-    Enum.filter(temp_array1, fn item -> (OptionTools.isSome(v)) end)
+    Enum.filter(temp_array1, fn item -> (OptionTools.isSome(item)) end)
     temp_array = _g
   end
 
@@ -161,7 +162,6 @@ end
 
 
 defmodule UserService do
-  use Bitwise
   @moduledoc """
   UserService module generated from Haxe
   
@@ -189,13 +189,13 @@ defmodule UserService do
   @doc "Function notify_user"
   @spec notify_user(String.t(), String.t()) :: boolean()
   def notify_user(name, message) do
-    OptionTools.unwrap(Enum.map(OptionTools, UserService.getUserEmail(name)), false)
+    OptionTools.unwrap(OptionTools.map(UserService.getUserEmail(name), fn email -> UserService.sendEmail(email, message) end), false)
   end
 
   @doc "Function send_email"
   @spec send_email(String.t(), String.t()) :: boolean()
   def send_email(email, message) do
-    Log.trace("Sending email to " <> email <> ": " <> message, %{fileName => "Main.hx", lineNumber => 225, className => "UserService", methodName => "sendEmail"})
+    Log.trace("Sending email to " <> email <> ": " <> message, %{"fileName" => "Main.hx", "lineNumber" => 225, "className" => "UserService", "methodName" => "sendEmail"})
     true
   end
 
