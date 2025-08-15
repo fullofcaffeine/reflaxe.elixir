@@ -553,12 +553,19 @@ What happens:
 ## Known Issues  
 - **Array Mutability**: Methods like `reverse()` and `sort()` don't mutate in place (Elixir lists are immutable)
   - Workaround: Use assignment like `reversed = reversed.reverse()` instead of just `reversed.reverse()`
-- **Parameter Naming**: Generated functions use arg0/arg1 instead of original parameter names (cosmetic issue)
 - **Some preprocessor artifacts**: Minor temporary variables may appear in complex nested loops (cosmetic)
 
 ## Recently Fixed Issues ✅ (2025-08-15)
 
-**Latest Session - Critical TODO Bug Fix & Test Infrastructure Improvements:**
+**Current Session - Parameter Naming Fix & PRD Vision Refinement:**
+- **Parameter Naming Issue RESOLVED** ✨ - Generated functions now use meaningful parameter names instead of arg0/arg1
+  - Fixed ClassCompiler.hx parameter extraction to use arg.tvar.name from Haxe AST
+  - Fixed ElixirCompiler.hx parameter mapping to preserve original names in snake_case
+  - Impact: `def greet(arg0)` → `def greet(name)` - professional, idiomatic code generation
+  - Updated all 47 test intended outputs to reflect improved parameter names
+  - Result: Generated code now looks hand-written and meets professional adoption standards
+
+**Previous Session - Critical TODO Bug Fix & Test Infrastructure Improvements:**
 - **CRITICAL TODO Bug Fixed** ✨ - @:module functions now compile actual implementations instead of "TODO: Implement function body"
   - Fixed generateModuleFunctions() hardcoded TODO placeholders in ClassCompiler.hx
   - Fixed generateFunction() and ElixirCompiler TODO fallbacks
