@@ -10,6 +10,13 @@ A collection of practical recipes showing how to implement common Elixir/Phoenix
 - [With Expressions and Error Handling](#with-expressions-and-error-handling)
 - [Process Communication with Types](#process-communication-with-types)
 
+### HXX Template Processing ✨ **NEW**
+- [Basic HXX Templates](#basic-hxx-templates) ⭐ *JSX-like syntax for Phoenix*
+- [LiveView Templates with HXX](#liveview-templates-with-hxx)
+- [Conditional Rendering Patterns](#conditional-rendering-patterns)
+- [Component Composition with HXX](#component-composition-with-hxx)
+- [Form Templates and Validation](#form-templates-and-validation)
+
 ### Phoenix Contexts & Architecture
 - [Bounded Contexts with Type Contracts](#bounded-contexts-with-type-contracts)
 - [Action Fallback Pattern](#action-fallback-pattern)
@@ -55,6 +62,255 @@ A collection of practical recipes showing how to implement common Elixir/Phoenix
 - [API Client Testing](#api-client-testing)
 
 ---
+
+## HXX Template Processing ✨
+
+### Basic HXX Templates
+
+Create type-safe Phoenix templates with JSX-like syntax:
+
+```haxe
+// Simple user profile template
+function userProfile(user: User): String {
+    return HXX('
+        <div class="user-profile">
+            <img src="${user.avatar}" alt="Avatar" class="avatar">
+            <h2>${user.name}</h2>
+            <p class="email">${user.email}</p>
+            <span class="badge ${user.active ? "active" : "inactive"}">
+                ${user.active ? "Active" : "Inactive"}
+            </span>
+        </div>
+    ');
+}
+```
+
+**Compiles to**:
+```elixir
+def user_profile(user) do
+  ~H"""
+  <div class="user-profile">
+      <img src={user.avatar} alt="Avatar" class="avatar">
+      <h2>{user.name}</h2>
+      <p class="email">{user.email}</p>
+      <span class={"badge #{if user.active, do: "active", else: "inactive"}"}>
+          {if user.active, do: "Active", else: "Inactive"}
+      </span>
+  </div>
+  """
+end
+```
+
+### LiveView Templates with HXX
+
+Complete LiveView component with HXX rendering:
+
+```haxe
+@:liveview
+class TodoLive {
+    function mount(_params: Dynamic, _session: Dynamic, socket: Dynamic) {
+        var todos = TodoContext.listTodos();
+        return {:ok, assign(socket, "todos", todos)};
+    }
+    
+    function render(assigns: Dynamic): String {
+        return HXX('
+            <div class="todo-app">
+                <header class="app-header">
+                    <h1>My Todos</h1>
+                    <span class="count">${assigns.todos.length} items</span>
+                </header>
+                
+                <form phx-submit="add-todo" class="todo-form">
+                    <input type="text" 
+                           name="title" 
+                           placeholder="What needs to be done?"
+                           required>
+                    <button type="submit">Add Todo</button>
+                </form>
+                
+                <ul class="todo-list">
+                    ${renderTodos(assigns.todos)}
+                </ul>
+            </div>
+        ');
+    }
+    
+    function renderTodos(todos: Array<Todo>): String {
+        return todos.map(todo -> renderTodoItem(todo)).join("");
+    }
+    
+    function renderTodoItem(todo: Todo): String {
+        return HXX('
+            <li class="todo-item ${todo.completed ? "completed" : ""}">
+                <div class="todo-content">
+                    <input type="checkbox" 
+                           phx-click="toggle" 
+                           phx-value-id="${todo.id}"
+                           ${todo.completed ? "checked" : ""}>
+                    <span class="todo-text">${todo.title}</span>
+                </div>
+                <button phx-click="delete" 
+                        phx-value-id="${todo.id}" 
+                        class="delete-btn">
+                    ×
+                </button>
+            </li>
+        ');
+    }
+}
+```
+
+### Conditional Rendering Patterns
+
+Handle complex conditional rendering with type safety:
+
+```haxe
+function messageStatus(message: Message): String {
+    return switch (message.status) {
+        case "pending": HXX('
+            <span class="status pending">
+                <i class="icon-clock"></i> Pending
+            </span>
+        ');
+        case "sent": HXX('
+            <span class="status sent">
+                <i class="icon-check"></i> Sent
+            </span>
+        ');
+        case "failed": HXX('
+            <span class="status failed">
+                <i class="icon-error"></i> Failed
+                <button phx-click="retry" phx-value-id="${message.id}">
+                    Retry
+                </button>
+            </span>
+        ');
+        case _: HXX('<span class="status unknown">Unknown</span>');
+    };
+}
+
+function userPermissions(user: User): String {
+    var permissions = user.permissions;
+    var hasAdmin = permissions.contains("admin");
+    var canEdit = permissions.contains("edit");
+    
+    return HXX('
+        <div class="permissions">
+            ${hasAdmin ? adminControls() : ""}
+            ${canEdit ? editControls() : readOnlyMessage()}
+            ${renderPermissionList(permissions)}
+        </div>
+    ');
+}
+```
+
+### Component Composition with HXX
+
+Build reusable template components:
+
+```haxe
+// Base card component
+function card(content: String, ?className: String = ""): String {
+    return HXX('
+        <div class="card ${className}">
+            ${content}
+        </div>
+    ');
+}
+
+// Specialized user card
+function userCard(user: User): String {
+    var content = HXX('
+        <div class="card-header">
+            <img src="${user.avatar}" class="avatar">
+            <h3>${user.name}</h3>
+        </div>
+        <div class="card-body">
+            <p>${user.bio}</p>
+            <div class="tags">
+                ${user.tags.map(tag -> tagBadge(tag)).join("")}
+            </div>
+        </div>
+        <div class="card-footer">
+            <button phx-click="message" phx-value-user="${user.id}">
+                Message
+            </button>
+        </div>
+    ');
+    
+    return card(content, "user-card");
+}
+
+// Tag component
+function tagBadge(tag: String): String {
+    return HXX('<span class="tag">${tag}</span>');
+}
+
+// Usage in larger template
+function userGrid(users: Array<User>): String {
+    return HXX('
+        <div class="user-grid">
+            ${users.map(user -> userCard(user)).join("")}
+        </div>
+    ');
+}
+```
+
+### Form Templates and Validation
+
+Create form templates with validation feedback:
+
+```haxe
+typedef FormErrors = Map<String, Array<String>>;
+
+function userForm(user: User, errors: FormErrors): String {
+    return HXX('
+        <form phx-submit="save-user" phx-change="validate-user">
+            ${inputField("name", "Name", user.name, errors.get("name"))}
+            ${inputField("email", "Email", user.email, errors.get("email"), "email")}
+            ${textareaField("bio", "Bio", user.bio, errors.get("bio"))}
+            ${selectField("role", "Role", user.role, getRoleOptions(), errors.get("role"))}
+            
+            <div class="form-actions">
+                <button type="submit" 
+                        ${hasErrors(errors) ? "disabled" : ""}>
+                    Save User
+                </button>
+                <button type="button" phx-click="cancel">
+                    Cancel
+                </button>
+            </div>
+        </form>
+    ');
+}
+
+function inputField(name: String, label: String, value: String, 
+                   ?fieldErrors: Array<String>, ?type: String = "text"): String {
+    var hasError = fieldErrors != null && fieldErrors.length > 0;
+    var errorClass = hasError ? "error" : "";
+    
+    return HXX('
+        <div class="form-field ${errorClass}">
+            <label for="${name}">${label}</label>
+            <input type="${type}" 
+                   id="${name}" 
+                   name="${name}" 
+                   value="${value}"
+                   class="form-input">
+            ${hasError ? renderFieldErrors(fieldErrors) : ""}
+        </div>
+    ');
+}
+
+function renderFieldErrors(errors: Array<String>): String {
+    return HXX('
+        <div class="field-errors">
+            ${errors.map(error -> '<span class="error-message">${error}</span>').join("")}
+        </div>
+    ');
+}
+```
 
 ## Core Elixir Patterns
 
