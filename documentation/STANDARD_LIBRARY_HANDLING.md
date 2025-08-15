@@ -185,16 +185,19 @@ end
 - ✅ When wrapping existing target platform APIs
 - ✅ When performance requires native implementations
 - ✅ When target has specialized data structures (e.g., Elixir binaries)
+- ✅ When integrating with framework-specific modules (Phoenix, Ecto)
 
-**Pure Haxe Implementation** (like Result):
+**Pure Haxe Implementation** (like Result<T,E> and Option<T>):
 - ✅ For algebraic data types and functional patterns
 - ✅ When compile-time transformation is sufficient
 - ✅ For cross-platform abstractions
 - ✅ When target-specific optimization is possible
+- ✅ For type-safe error handling and null safety
+- ✅ When zero external dependencies are preferred
 
 ### Implementation Strategy
 
-The Result type uses **selective compilation patterns**:
+Both Result<T,E> and Option<T> use **selective compilation patterns**:
 
 ```haxe
 // In ElixirCompiler.hx
@@ -202,16 +205,190 @@ private function isResultType(enumType: EnumType): Bool {
     return enumType.module == "haxe.functional.Result" && enumType.name == "Result";
 }
 
-// Special handling for Result constructors
+private function isOptionType(enumType: EnumType): Bool {
+    return enumType.module == "haxe.ds.Option" && enumType.name == "Option";
+}
+
+// Special handling for algebraic type constructors
 if (isResult) {
     // Generate {:ok, value} or {:error, reason}
-    return '{:${fieldName}, ${compiledArgs[0]}}';
+    return '{:${fieldName.toLowerCase()}, ${compiledArgs[0]}}';
+} else if (isOption) {
+    // Generate {:some, value} or :none
+    return switch(fieldName) {
+        case "Some": '{:some, ${compiledArgs[0]}}';
+        case "None": ':none';
+        default: '${enumName}.${optionName}()';
+    }
 } else {
     // Standard enum compilation
     return '${enumName}.${optionName}()';
 }
 ```
 
-This approach allows Result types to compile to **native platform patterns** while maintaining the same Haxe API across all targets.
+This approach allows both types to compile to **native platform patterns** while maintaining the same Haxe API across all targets.
 
-**See**: [`documentation/FUNCTIONAL_PATTERNS.md`](FUNCTIONAL_PATTERNS.md) for comprehensive Result usage patterns and examples.
+**See**: [`documentation/FUNCTIONAL_PATTERNS.md`](FUNCTIONAL_PATTERNS.md) for comprehensive Result and Option usage patterns and examples.
+
+## Option<T> Type: Pure Haxe Implementation
+
+The `Option<T>` type in `std/haxe/ds/Option.hx` provides type-safe null handling following Gleam's explicit-over-implicit philosophy.
+
+**See Also**: [Haxe→Elixir Mappings](HAXE_ELIXIR_MAPPINGS.md) - Complete mapping reference including Option<T> patterns.
+
+### Why Option<T> Over Nullable Types?
+
+Option<T> eliminates the entire class of null pointer exceptions by making absence explicit:
+
+```haxe
+// ❌ Nullable approach - runtime errors possible
+function findUser(id: Int): Null<User> {
+    // Could return null, requires manual checks everywhere
+}
+
+var user = findUser(123);
+if (user != null) {  // Easy to forget this check!
+    processUser(user);
+}
+
+// ✅ Option approach - compile-time safety
+import haxe.ds.Option;
+using haxe.ds.OptionTools;
+
+function findUser(id: Int): Option<User> {
+    var user = Database.query("users", {id: id});
+    return user != null ? Some(user) : None;
+}
+
+// Compiler forces explicit handling
+switch (findUser(123)) {
+    case Some(user): processUser(user);  // Type-safe access
+    case None: handleNotFound();         // Must handle absence
+}
+```
+
+### Target-Specific Compilation
+
+Option<T> compiles to **idiomatic patterns** for each target:
+
+**Elixir Output**:
+```elixir
+# Some(42) compiles to:
+{:some, 42}
+
+# None compiles to:
+:none
+
+# Pattern matching works naturally:
+case find_user(123) do
+  {:some, user} -> process_user(user)
+  :none -> handle_not_found()
+end
+```
+
+**JavaScript Output** (for reference):
+```javascript
+// Some(42) compiles to:
+{tag: "some", value: 42}
+
+// None compiles to: 
+{tag: "none"}
+```
+
+### Functional Operations
+
+Option<T> provides comprehensive monadic operations:
+
+```haxe
+import haxe.ds.Option;
+using haxe.ds.OptionTools;
+
+class UserService {
+    public static function getUserDisplayName(id: Int): String {
+        return findUser(id)
+            .map(user -> user.displayName)           // Transform if present
+            .filter(name -> name.length > 0)         // Filter based on predicate
+            .or(() -> findUser(id).map(u -> u.name)) // Fallback to username
+            .unwrap("Anonymous User");               // Provide default
+    }
+    
+    // Chain multiple Option operations
+    public static function getUserProfile(id: Int): Option<Profile> {
+        return findUser(id)
+            .then(user -> findProfile(user.profileId))
+            .filter(profile -> profile.isPublic);
+    }
+    
+    // Combine multiple Option values
+    public static function combineUsers(id1: Int, id2: Int): Option<String> {
+        return switch ([findUser(id1), findUser(id2)]) {
+            case [Some(user1), Some(user2)]: Some('${user1.name} and ${user2.name}');
+            case _: None;
+        }
+    }
+}
+```
+
+### Migration from Nullable Types
+
+**Progressive Migration Strategy**:
+
+```haxe
+// Phase 1: Maintain Backward Compatibility
+class UserService {
+    // Legacy method (deprecated)
+    @:deprecated("Use findUserSafe instead")
+    public static function findUser(id: Int): Null<User> {
+        return findUserSafe(id).toNullable();
+    }
+    
+    // New type-safe method
+    public static function findUserSafe(id: Int): Option<User> {
+        var user = Database.query("users", {id: id});
+        return OptionTools.fromNullable(user);
+    }
+}
+
+// Phase 2: Bridge External APIs
+class ExternalAPIWrapper {
+    public static function getRemoteUser(id: Int): Option<User> {
+        var result = ExternalAPI.fetchUser(id); // Returns Null<User>
+        return OptionTools.fromNullable(result);
+    }
+}
+```
+
+## Standard Library Strategy Comparison
+
+| Component | Pattern | Rationale | Benefits | Trade-offs |
+|-----------|---------|-----------|----------|------------|
+| **StringTools** | Extern + Runtime | Platform-specific optimizations needed | Native performance, idiomatic code | Requires runtime dependency |
+| **Result<T,E>** | Pure Haxe | Cross-platform consistency | Zero deps, compile-time optimization | More complex compiler logic |
+| **Option<T>** | Pure Haxe | Type safety across targets | Eliminates null errors | Paradigm shift for developers |
+| **IO/File** | Extern + Runtime | Platform APIs vary significantly | Direct platform integration | Target-specific implementations |
+| **Math** | Mixed | Basic ops pure, advanced ops extern | Best of both approaches | Complexity in deciding boundaries |
+
+### Decision Framework
+
+When adding new standard library components, use this decision tree:
+
+1. **Is it an algebraic data type?** → Pure Haxe (Result, Option, Either)
+2. **Does it wrap platform-specific APIs?** → Extern + Runtime (File, Process, IO)
+3. **Does it need framework integration?** → Extern + Runtime (Phoenix, Ecto)
+4. **Is performance critical with platform differences?** → Extern + Runtime (StringTools, Math)
+5. **Is cross-platform consistency the priority?** → Pure Haxe (functional patterns)
+
+### Cross-References
+
+- **[Haxe→Elixir Mappings](HAXE_ELIXIR_MAPPINGS.md)** - How Option<T> and Result<T,E> compile to Elixir patterns
+- **[Functional Patterns](FUNCTIONAL_PATTERNS.md)** - Comprehensive usage examples and patterns
+- **[Developer Patterns](guides/DEVELOPER_PATTERNS.md)** - Migration strategies and best practices
+- **[BEAM Type Abstractions](BEAM_TYPE_ABSTRACTIONS.md)** - Deep dive into Option<T> and Result<T,E> design
+- **[Paradigm Bridge](paradigms/PARADIGM_BRIDGE.md)** - Cross-platform development philosophy
+- **[ExUnit Testing Guide](EXUNIT_TESTING_GUIDE.md)** - Testing patterns for type-safe code
+
+**Implementation Files**:
+- `std/haxe/ds/Option.hx` - Option<T> type definition and tools
+- `std/haxe/functional/Result.hx` - Result<T,E> type definition and tools  
+- `std/StringTools.hx` - StringTools extern definitions
+- `std/elixir/StringTools.ex` - StringTools runtime implementation

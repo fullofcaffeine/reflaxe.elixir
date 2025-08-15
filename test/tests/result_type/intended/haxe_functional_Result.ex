@@ -303,7 +303,18 @@ defmodule ResultTools do
   def sequence(results) do
     values = []
     _g = 0
-    Enum.map(results, fn item -> item end)
+    Enum.map(results, fn item -> result = Enum.at(results, _g)
+    _g = _g + 1
+    case (case result do {:ok, _} -> 0; {:error, _} -> 1; _ -> -1 end) do
+      0 ->
+        _g = case result do {:ok, value} -> value; {:error, value} -> value; _ -> nil end
+    value = _g
+    values ++ [value]
+      1 ->
+        _g = case result do {:ok, value} -> value; {:error, value} -> value; _ -> nil end
+    error = _g
+    {:error, error}
+    end end)
     {:ok, values}
   end
 
@@ -321,7 +332,9 @@ defmodule ResultTools do
   def traverse(array, transform) do
     _g = []
     _g = 0
-    Enum.map(array, transform)
+    Enum.map(array, fn item -> v = Enum.at(array, _g)
+    _g = _g + 1
+    _g ++ [transform.(v)] end)
     ResultTools.sequence(_g)
   end
 

@@ -205,6 +205,7 @@ your-project/
 - **[Cookbook](documentation/guides/COOKBOOK.md)** - Practical recipes for common tasks
 
 ### Reference
+- **[Haxe→Elixir Mappings](documentation/HAXE_ELIXIR_MAPPINGS.md)** ✨ - Complete reference for how Haxe constructs map to Elixir code
 - **[Source Mapping Guide](documentation/SOURCE_MAPPING.md)** 🎯 - Complete guide to our pioneering source mapping feature
 - **[Annotations](documentation/reference/ANNOTATIONS.md)** - Complete annotation reference
 - **[LLM Workflow Compatibility](documentation/llm/LLM_WORKFLOW_COMPATIBILITY.md)** - Using Reflaxe.Elixir with AI assistants

@@ -20,12 +20,12 @@ defmodule Main do
   @spec main() :: nil
   def main() do
     instance = Main.new(10)
-    Log.trace(Main.greet("World"), %{fileName: "Main.hx", lineNumber: 76, className: "Main", methodName: "main"})
-    Log.trace(instance.calculate(5, 3), %{fileName: "Main.hx", lineNumber: 77, className: "Main", methodName: "main"})
-    Log.trace(instance.checkValue(-5), %{fileName: "Main.hx", lineNumber: 78, className: "Main", methodName: "main"})
-    Log.trace(instance.sumRange(1, 10), %{fileName: "Main.hx", lineNumber: 79, className: "Main", methodName: "main"})
-    Log.trace(instance.factorial(5), %{fileName: "Main.hx", lineNumber: 80, className: "Main", methodName: "main"})
-    Log.trace(instance.dayName(3), %{fileName: "Main.hx", lineNumber: 81, className: "Main", methodName: "main"})
+    Log.trace(Main.greet("World"), %{fileName => "Main.hx", lineNumber => 76, className => "Main", methodName => "main"})
+    Log.trace(instance.calculate(5, 3), %{fileName => "Main.hx", lineNumber => 77, className => "Main", methodName => "main"})
+    Log.trace(instance.checkValue(-5), %{fileName => "Main.hx", lineNumber => 78, className => "Main", methodName => "main"})
+    Log.trace(instance.sumRange(1, 10), %{fileName => "Main.hx", lineNumber => 79, className => "Main", methodName => "main"})
+    Log.trace(instance.factorial(5), %{fileName => "Main.hx", lineNumber => 80, className => "Main", methodName => "main"})
+    Log.trace(instance.dayName(3), %{fileName => "Main.hx", lineNumber => 81, className => "Main", methodName => "main"})
   end
 
   # Instance functions

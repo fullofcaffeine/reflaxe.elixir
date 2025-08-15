@@ -30,7 +30,7 @@ defmodule Main do
     42
     "Answer"
     fn msg, code -> code == 200 end
-    fn  -> Log.trace("Async operation complete", %{fileName: "Main.hx", lineNumber: 145, className: "Main", methodName: "main"}) end
+    fn  -> Log.trace("Async operation complete", %{fileName => "Main.hx", lineNumber => 145, className => "Main", methodName => "main"}) end
     200
     true
     Date.now().getTime()
@@ -42,7 +42,7 @@ defmodule Main do
     3
     7
     15
-    Log.trace("Typedef compilation test complete", %{fileName: "Main.hx", lineNumber: 183, className: "Main", methodName: "main"})
+    Log.trace("Typedef compilation test complete", %{fileName => "Main.hx", lineNumber => 183, className => "Main", methodName => "main"})
   end
 
 end

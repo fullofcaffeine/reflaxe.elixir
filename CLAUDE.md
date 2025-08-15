@@ -676,7 +676,7 @@ What happens:
 
 ## Compiler Development Best Practices ⚡
 
-**Established from Variable Substitution Implementation (2025-08-14)**:
+**Continuously refined from implementation experience. See also**: [`documentation/COMPILER_PATTERNS.md`](documentation/COMPILER_PATTERNS.md) for detailed patterns.
 
 ### 1. Never Leave TODOs in Production Code
 - **Rule**: Fix issues immediately, don't leave placeholders
@@ -702,6 +702,64 @@ What happens:
   2. Apply recursive substitution with `compileExpressionWithSubstitution()`
   3. Generate consistent lambda parameter names (`"item"`)
 - **Result**: `numbers.map(n -> n * 2)` → `Enum.map(numbers, fn item -> item * 2 end)`
+
+### 5. Context-Aware Compilation (Added 2025-08-15)
+- **Rule**: Use context flags to track compilation state for different behavior
+- **Implementation**: `isInLoopContext` flag to determine variable substitution
+- **Why**: Same code needs different treatment in different contexts
+- **Example**: Variable substitution only applies inside loops, not in function parameters
+
+### 6. Avoid Hardcoded Variable Lists (Added 2025-08-15)
+- **Anti-pattern**: Maintaining hardcoded lists like `["i", "j", "item", "id"]`
+- **Solution**: Use function-based detection with `isCommonLoopVariable()` and `isSystemVariable()`
+- **Benefits**: More maintainable, extensible, and accurate detection
+
+### 7. Documentation String Generation (Added 2025-08-15)
+- **Rule**: Preserve multi-line intent from JavaDoc to generate proper @doc heredocs
+- **Fix**: Track `wasMultiLine` during cleaning to force proper formatting
+- **Escape properly**: Never use unsafe template strings for documentation content
+- **Result**: Professional, idiomatic Elixir documentation that matches language conventions
+
+### 8. Pattern Detection for Optimization (Added 2025-08-15)
+- **Pattern**: Detect function call patterns like `item(v)` to generate direct references
+- **Example**: `array.map(transform)` → `Enum.map(array, transform)` not `fn item -> item(v) end`
+- **Implementation**: Use regex patterns to detect and optimize common cases
+- **Why**: Generate cleaner, more efficient target code
+
+### 9. Avoid Ad-hoc Fixes - Implement General Solutions (Added 2025-08-15)
+- **Rule**: Never add function-specific workarounds (e.g., "if calling Supervisor.startLink, do X")
+- **Principle**: Always solve the root cause that benefits all similar use cases
+- **Goal**: The compiler should generate correct idiomatic Elixir for any valid Haxe code
+- **Example**: Don't special-case Supervisor child specs; fix how all objects with atom keys compile
+- **Why**: Ad-hoc fixes create technical debt, mask architectural issues, and don't scale
+
+### 10. Prefer Simple Solutions Over Clever Ones (Added 2025-08-15)
+- **Rule**: Choose straightforward implementations over complex, "clever" solutions
+- **Example**: Removed __AGGRESSIVE__ marker system in favor of always doing variable substitution
+- **Principle**: Simple code is easier to understand, debug, and maintain
+- **Test**: If explaining the code takes more than 30 seconds, it's probably too complex
+- **Benefits**: Fewer bugs, easier onboarding for new developers, reduced maintenance overhead
+- **Guideline**: Optimize for code clarity first, performance second (unless performance is critical)
+
+## Recently Fixed Issues ✅ (2025-08-15)
+
+**Current Session - Documentation Formatting and Test Suite Fixes:**
+- **Documentation Generation FIXED** ✨ - All 49/49 tests now passing (was 12/49)
+  - Fixed single-line documentation truncation by proper string escaping
+  - Enhanced multi-line documentation detection in cleanJavaDoc()
+  - Preserved JavaDoc intent to generate proper @doc """...""" heredocs
+  - Fixed unsafe template string interpolation causing content loss
+  - Result: Professional, idiomatic Elixir documentation matching language conventions
+- **Result.traverse() Compilation OPTIMIZED** ✨ - Direct function references instead of lambda wrappers
+  - Enhanced generateEnumMapPattern() to detect function call patterns
+  - Fixed `array.map(transform)` generating `Enum.map(array, transform)` not `fn item -> item(v) end`
+  - Pattern detection for renamed function parameters (transform → v)
+  - Result: Cleaner, more efficient Elixir code generation
+- **Compiler Patterns Documentation CREATED** ✨ - Comprehensive development guide
+  - Created documentation/COMPILER_PATTERNS.md with lessons learned
+  - Updated CLAUDE.md with new compiler development best practices
+  - Documented AST transformation patterns, variable substitution, context-aware compilation
+  - Result: Knowledge preservation for future development
 
 ## Recently Fixed Issues ✅ (2025-08-14)
 

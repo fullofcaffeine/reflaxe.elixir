@@ -281,6 +281,89 @@ class Config {
 }
 ```
 
+## Option and Result Interoperability
+
+Option and Result types are designed to work seamlessly together, allowing smooth transitions between different error handling strategies.
+
+### Converting Between Types
+
+```haxe
+// Option to Result - adding context about absence
+function getUser(id: Int): Result<User, String> {
+    return UserRepository.find(id)  // Returns Option<User>
+        .toResult('User not found with id: ${id}');
+}
+
+// Result to Option - discarding error information
+function tryGetUser(id: Int): Option<User> {
+    return UserRepository.create(userData)  // Returns Result<User, ValidationError>
+        .toOption();  // Success becomes Some, any error becomes None
+}
+```
+
+### Chaining Option and Result Operations
+
+```haxe
+// Complex workflow combining both types
+function processUserUpdate(userId: Int, data: Dynamic): Result<String, String> {
+    return UserRepository.find(userId)           // Option<User>
+        .toResult("User not found")              // Result<User, String>
+        .flatMap(user -> validateUpdate(data))   // Result<ValidatedData, String>
+        .flatMap(valid -> user.applyChanges(valid))  // Result<User, String>
+        .flatMap(updated -> UserRepository.save(updated))  // Result<User, String>
+        .map(user -> 'User ${user.id} updated successfully');  // Result<String, String>
+}
+```
+
+### Error Handling Strategies
+
+**Progressive Error Handling**: Start with Option for simple cases, upgrade to Result when you need error details:
+
+```haxe
+// Phase 1: Simple presence/absence
+function findUserSimple(id: Int): Option<User> {
+    return database.query("users", {id: id}).map(row -> User.fromRow(row));
+}
+
+// Phase 2: Add error context when needed
+function findUserWithErrors(id: Int): Result<User, DatabaseError> {
+    return try {
+        var result = database.queryStrict("users", {id: id});
+        Ok(User.fromRow(result));
+    } catch (e: DatabaseException) {
+        Error(DatabaseError.fromException(e));
+    }
+}
+```
+
+### Collection Operations
+
+Working with collections that contain mixed Option and Result values:
+
+```haxe
+// Process all user IDs, returning only successful results
+function getExistingUsers(ids: Array<Int>): Array<User> {
+    return ids
+        .map(id -> UserRepository.find(id))  // Array<Option<User>>
+        .map(opt -> opt.toResult("Not found"))  // Array<Result<User, String>>
+        .filter(res -> res.isOk())  // Keep only successful results
+        .map(res -> res.unwrap())   // Extract the users
+}
+
+// Alternative: Collect both successes and failures
+function getUsersWithErrors(ids: Array<Int>): {
+    users: Array<User>,
+    errors: Array<String>
+} {
+    var results = ids.map(id -> UserRepository.find(id).toResult('User ${id} not found'));
+    
+    return {
+        users: results.filter(r -> r.isOk()).map(r -> r.unwrap()),
+        errors: results.filter(r -> r.isError()).map(r -> r.unwrapError())
+    };
+}
+```
+
 ## Design Principles
 
 ### Why Not Just Use Null?
@@ -321,7 +404,15 @@ Reflaxe.Elixir's type abstractions follow these principles:
 
 ## See Also
 
-- [Paradigm Bridge](paradigms/PARADIGM_BRIDGE.md) - Cross-platform development patterns
-- [Functional Patterns](FUNCTIONAL_PATTERNS.md) - Functional programming in Haxe→Elixir
-- [Standard Library Handling](STANDARD_LIBRARY_HANDLING.md) - How standard library types compile
-- [Developer Patterns](guides/DEVELOPER_PATTERNS.md) - Best practices for Haxe→Elixir development
+- [Functional Patterns](FUNCTIONAL_PATTERNS.md) - Complete guide to Option<T> and Result<T,E> patterns including compilation examples and functional operations
+- [ExUnit Testing Guide](EXUNIT_TESTING_GUIDE.md) - Testing Option and Result types with comprehensive assertion examples
+- [Paradigm Bridge](paradigms/PARADIGM_BRIDGE.md) - Cross-platform development patterns and type-safe abstractions
+- [Standard Library Handling](STANDARD_LIBRARY_HANDLING.md) - How standard library types including Option and Result compile to target platforms
+- [Developer Patterns](guides/DEVELOPER_PATTERNS.md) - Best practices for Option/Result migration and Haxe→Elixir development
+- [Cookbook](COOKBOOK.md) - Practical recipes for common Option and Result usage patterns
+
+## References
+
+- [Gleam Language](https://gleam.run/) - Inspiration for type-safe BEAM development
+- [Option Type (Wikipedia)](https://en.wikipedia.org/wiki/Option_type) - General background on Optional types
+- [Railway Oriented Programming](https://fsharpforfunandprofit.com/rop/) - Error handling with Result chains

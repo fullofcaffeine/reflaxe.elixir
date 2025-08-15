@@ -9,7 +9,10 @@ defmodule PosException do
   """
 
   # Instance functions
-  @doc "Returns exception "
+  @doc """
+    Returns exception message.
+
+  """
   @spec to_string() :: String.t()
   def to_string() do
     "" <> __MODULE__.toString() <> " in " <> __MODULE__.pos_infos.class_name <> "." <> __MODULE__.pos_infos.method_name <> " at " <> __MODULE__.pos_infos.file_name <> ":" <> Integer.to_string(__MODULE__.pos_infos.line_number)

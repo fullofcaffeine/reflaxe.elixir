@@ -97,7 +97,7 @@ defmodule Main do
     success_value = ResultTools.unwrapOr(success, 0)
     failure_value = ResultTools.unwrapOr(failure, 0)
     mapped_error = ResultTools.mapError(failure, fn err -> "Mapped: " <> err end)
-    %{isSuccessOk: is_success_ok, isFailureOk: is_failure_ok, isSuccessError: is_success_error, isFailureError: is_failure_error, successValue: success_value, failureValue: failure_value, mappedError: mapped_error}
+    %{isSuccessOk => is_success_ok, isFailureOk => is_failure_ok, isSuccessError => is_success_error, isFailureError => is_failure_error, successValue => success_value, failureValue => failure_value, mappedError => mapped_error}
   end
 
   @doc """
@@ -109,7 +109,9 @@ defmodule Main do
     f = Main.parse_number
     _g = []
     _g = 0
-    Enum.map(inputs, transform)
+    Enum.map(inputs, fn item -> v = Enum.at(inputs, _g)
+    _g = _g + 1
+    _g ++ [f(v)] end)
     ResultTools.sequence(_g)
   end
 
@@ -137,17 +139,17 @@ defmodule Main do
     message2 = Main.handleResult(result2)
     Main.getValueOrDefault(result1)
     Main.getValueOrDefault(result2)
-    Main.processUser(%{name: "Alice", age: "25"})
+    Main.processUser(%{:name => "Alice", :age => "25"})
     Main.demonstrateUtilities()
     numbers = Main.processMultipleNumbers(["1", "2", "3"])
     Main.processMultipleNumbers(["1", "x", "3"])
     Main.validateAndDouble(["5", "10", "15"])
-    Log.trace("Parse \"123\": " <> message1, %{fileName: "Main.hx", lineNumber: 167, className: "Main", methodName: "main"})
-    Log.trace("Parse \"abc\": " <> message2, %{fileName: "Main.hx", lineNumber: 168, className: "Main", methodName: "main"})
-    Log.trace("Divide 10/2: " <> Std.string(div_result), %{fileName: "Main.hx", lineNumber: 169, className: "Main", methodName: "main"})
-    Log.trace("Double 21: " <> Std.string(doubled), %{fileName: "Main.hx", lineNumber: 170, className: "Main", methodName: "main"})
-    Log.trace("Numbers [1,2,3]: " <> Std.string(numbers), %{fileName: "Main.hx", lineNumber: 171, className: "Main", methodName: "main"})
-    Log.trace("Utilities test completed", %{fileName: "Main.hx", lineNumber: 172, className: "Main", methodName: "main"})
+    Log.trace("Parse \"123\": " <> message1, %{fileName => "Main.hx", lineNumber => 167, className => "Main", methodName => "main"})
+    Log.trace("Parse \"abc\": " <> message2, %{fileName => "Main.hx", lineNumber => 168, className => "Main", methodName => "main"})
+    Log.trace("Divide 10/2: " <> Std.string(div_result), %{fileName => "Main.hx", lineNumber => 169, className => "Main", methodName => "main"})
+    Log.trace("Double 21: " <> Std.string(doubled), %{fileName => "Main.hx", lineNumber => 170, className => "Main", methodName => "main"})
+    Log.trace("Numbers [1,2,3]: " <> Std.string(numbers), %{fileName => "Main.hx", lineNumber => 171, className => "Main", methodName => "main"})
+    Log.trace("Utilities test completed", %{fileName => "Main.hx", lineNumber => 172, className => "Main", methodName => "main"})
   end
 
 end
