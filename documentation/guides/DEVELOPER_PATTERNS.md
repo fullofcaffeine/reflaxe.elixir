@@ -1,5 +1,7 @@
 # Developer Patterns: Writing Effective Haxe for Elixir
 
+**See Also**: [Paradigm Bridge](../paradigms/PARADIGM_BRIDGE.md) - Comprehensive guide to imperative→functional transformation patterns and cross-platform development philosophy.
+
 ## Table of Contents
 - [Core Principles](#core-principles)
 - [Pattern Library](#pattern-library)

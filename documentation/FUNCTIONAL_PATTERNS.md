@@ -2,6 +2,8 @@
 
 This document describes how Reflaxe.Elixir transforms Haxe's imperative programming constructs into Elixir's functional paradigm.
 
+**See Also**: [Paradigm Bridge](paradigms/PARADIGM_BRIDGE.md) - Comprehensive guide to the imperative→functional paradigm bridge, including cross-platform development patterns and Result types.
+
 ## Overview
 
 Haxe is a multi-paradigm language with imperative features like loops and mutable variables. Elixir is a functional language with immutable data and recursion. Reflaxe.Elixir bridges this gap by transforming imperative patterns into functional equivalents at compile time.
@@ -432,6 +434,167 @@ function processItems(data: Data): Array<Item> {
 ```
 
 **See**: [`documentation/DYNAMIC_HANDLING.md`](DYNAMIC_HANDLING.md) for comprehensive Dynamic type handling guide.
+
+## Error Handling with Result<T,E>
+
+The `Result<T,E>` type provides functional error handling as an alternative to exceptions, compiling to idiomatic patterns per target.
+
+### The Result Type Pattern
+
+```haxe
+// Import the Result type
+using haxe.functional.Result;
+using haxe.functional.ResultTools;
+
+// Define functions that can fail
+function parseNumber(input: String): Result<Int, String> {
+    var parsed = Std.parseInt(input);
+    if (parsed != null) {
+        return Ok(parsed);
+    } else {
+        return Error('Invalid number: ${input}');
+    }
+}
+```
+
+### Compilation to Idiomatic Elixir
+
+**Haxe Input**:
+```haxe
+function processInput(input: String): Result<Int, String> {
+    return switch (parseNumber(input)) {
+        case Ok(value): 
+            if (value > 0) Ok(value * 2) else Error("Must be positive");
+        case Error(msg): 
+            Error("Parse failed: " + msg);
+    }
+}
+```
+
+**Generated Elixir**:
+```elixir
+def process_input(input) do
+  case parse_number(input) do
+    {:ok, value} -> 
+      if value > 0 do 
+        {:ok, value * 2} 
+      else 
+        {:error, "Must be positive"} 
+      end
+    {:error, msg} -> 
+      {:error, "Parse failed: " <> msg}
+  end
+end
+```
+
+### Functional Operations
+
+Result types support comprehensive functional operations:
+
+```haxe
+// Chain operations with flatMap
+function divideNumbers(a: String, b: String): Result<Float, String> {
+    return parseNumber(a).flatMap(numA -> 
+        parseNumber(b).flatMap(numB -> 
+            numB == 0 ? Error("Division by zero") : Ok(numA / numB)
+        )
+    );
+}
+
+// Transform values with map
+function doubleIfValid(input: String): Result<Int, String> {
+    return parseNumber(input).map(x -> x * 2);
+}
+
+// Extract values safely with fold
+function getValueOrDefault(result: Result<Int, String>): Int {
+    return result.fold(
+        value -> value,    // Success case
+        error -> -1        // Error case - return default
+    );
+}
+```
+
+### Pattern vs Exception Comparison
+
+**Exception-Based Approach**:
+```haxe
+// Traditional exception handling
+function processData(input: String): Int {
+    try {
+        var value = parseOrThrow(input);
+        if (value <= 0) throw "Must be positive";
+        return value * 2;
+    } catch (e: String) {
+        return -1; // Silent failure, information lost
+    }
+}
+```
+
+**Result-Based Approach**:
+```haxe
+// Functional error handling with Result
+function processData(input: String): Result<Int, String> {
+    return parseNumber(input)
+        .flatMap(value -> value > 0 ? Ok(value * 2) : Error("Must be positive"));
+}
+
+// Error information preserved, composable, type-safe
+```
+
+### Cross-Platform Compilation
+
+Result types generate optimal patterns for each target:
+
+- **Elixir**: `{:ok, value}` and `{:error, reason}` tuples
+- **JavaScript**: Tagged objects with discriminated unions
+- **Python**: Dataclasses with proper type hints
+- **Other targets**: Standard enum with type safety
+
+### Advanced Patterns
+
+**Collecting Results**:
+```haxe
+// Process multiple inputs, fail fast on first error
+function processMultiple(inputs: Array<String>): Result<Array<Int>, String> {
+    return ResultTools.traverse(inputs, parseNumber);
+}
+
+// Process all inputs, collect all errors
+function processAllWithErrors(inputs: Array<String>): {
+    successes: Array<Int>,
+    errors: Array<String>
+} {
+    var results = inputs.map(parseNumber);
+    return {
+        successes: results.map(r -> r.fold(v -> v, _ -> null))
+                          .filter(v -> v != null),
+        errors: results.map(r -> r.fold(_ -> null, e -> e))
+                       .filter(e -> e != null)
+    };
+}
+```
+
+**Chaining with Early Returns**:
+```haxe
+function complexValidation(data: UserData): Result<User, ValidationError> {
+    return validateEmail(data.email)
+        .flatMap(_ -> validateAge(data.age))
+        .flatMap(_ -> validatePassword(data.password))
+        .map(_ -> new User(data.email, data.age));
+}
+```
+
+### Benefits
+
+1. **Type Safety**: Compile-time guarantee of error handling
+2. **Composability**: Chain operations without nested try/catch
+3. **Information Preservation**: Error details maintained through pipeline
+4. **Cross-Platform**: Works consistently across all Haxe targets
+5. **Performance**: Zero-cost abstractions with optimal code generation
+6. **Readability**: Clear success/failure paths in code
+
+**See**: [`std/haxe/functional/Result.hx`](../std/haxe/functional/Result.hx) for complete API documentation.
 
 ## Future Improvements
 

@@ -3,7 +3,7 @@
 [![Version](https://img.shields.io/github/v/release/fullofcaffeine/reflaxe.elixir?include_prereleases)](https://github.com/fullofcaffeine/reflaxe.elixir/releases)
 [![License: GPL-3.0](https://img.shields.io/badge/License-GPL%20v3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 [![CI Status](https://github.com/fullofcaffeine/reflaxe.elixir/workflows/CI/badge.svg)](https://github.com/fullofcaffeine/reflaxe.elixir/actions)
-[![Tests](https://img.shields.io/badge/tests-178%2F178%20passing-brightgreen)](https://github.com/fullofcaffeine/reflaxe.elixir/actions)
+[![Tests](https://img.shields.io/badge/tests-180%2F180%20passing-brightgreen)](https://github.com/fullofcaffeine/reflaxe.elixir/actions)
 [![Haxe](https://img.shields.io/badge/Haxe-4.3.6+-orange)](https://haxe.org)
 [![Elixir](https://img.shields.io/badge/Elixir-1.14+-purple)](https://elixir-lang.org)
 
@@ -355,7 +355,7 @@ class CounterServer {
 The project uses a dual-ecosystem testing approach with self-referential library configuration:
 
 ```bash
-npm test              # Run ALL tests (178 total: 46 Haxe + 19 Generator + 132 Mix)
+npm test              # Run ALL tests (180 total: 48 Haxe + 19 Generator + 132 Mix)
 npm run test:haxe     # Run Haxe compiler tests only (snapshot tests)
 npm run test:mix      # Run Mix/Elixir tests only (132 runtime tests)
 npm run test:quick    # Run just Haxe tests for rapid feedback
@@ -366,7 +366,7 @@ npm run test:update   # Update expected snapshot test output
 
 **Test Infrastructure:**
 - **Complete Coverage**: `npm test` runs Haxe compiler tests, generator tests, AND Mix runtime tests
-- **Snapshot Testing**: Validates compiler output against expected Elixir code (46 tests)
+- **Snapshot Testing**: Validates compiler output against expected Elixir code (48 tests)
 - **Generator Testing**: Validates project templates and LLM documentation generation (19 tests)
 - **Runtime Validation**: Tests generated Elixir code execution in BEAM VM (132 tests)
 - **Self-Referential Library**: Tests use `-lib reflaxe.elixir` via `haxe_libraries/reflaxe.elixir.hxml`
@@ -426,7 +426,7 @@ All compilation targets exceed performance requirements:
 
 **All snapshot tests + Mix tests passing**:
 
-### Haxe Snapshot Tests (46/46 ✅)
+### Haxe Snapshot Tests (48/48 ✅)
 - Source mapping tests (source_map_basic, source_map_validation)
 - LiveView, OTP, Ecto compilation tests
 - HXX template processing tests
