@@ -22,20 +22,20 @@ defmodule EReg do
   """
 
   # Instance functions
-  @doc "
-		Replaces the first substring of `s` which `this` EReg matches with `by`.
+  @doc """
+    Replaces the first substring of `s` which `this` EReg matches with `by`.
 
-		If `this` EReg does not match any substring, the result is `s`.
+    If `this` EReg does not match any substring, the result is `s`.
 
-		By default, this method replaces only the first matched substring. If
-		the global g modifier is in place, all matched substrings are replaced.
+    By default, this method replaces only the first matched substring. If
+    the global g modifier is in place, all matched substrings are replaced.
 
-		If `by` contains `$1` to `$9`, the digit corresponds to number of a
-		matched sub-group and its value is used instead. If no such sub-group
-		exists, the replacement is unspecified. The string `$$` becomes `$`.
+    If `by` contains `$1` to `$9`, the digit corresponds to number of a
+    matched sub-group and its value is used instead. If no such sub-group
+    exists, the replacement is unspecified. The string `$$` becomes `$`.
 
-		If `s` or `by` are null, the result is unspecified.
-	"
+    If `s` or `by` are null, the result is unspecified.
+  """
   @spec replace(String.t(), String.t()) :: String.t()
   def replace(s, by) do
     nil

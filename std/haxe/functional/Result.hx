@@ -160,6 +160,7 @@ class ResultTools {
         }
     }
     
+    
     /**
      * Extract the success value or compute a default from the error.
      * 
@@ -266,5 +267,20 @@ class ResultTools {
     public static function traverse<T, U, E>(array: Array<T>, transform: T -> Result<U, E>): Result<Array<U>, E> {
         var results = array.map(transform);
         return sequence(results);
+    }
+    
+    /**
+     * Convert Result to Option, discarding error information.
+     * 
+     * Useful when you only care about success/failure, not the specific error.
+     * 
+     * @param result The result to convert
+     * @return Some with success value, or None for any error
+     */
+    public static function toOption<T, E>(result: Result<T, E>): haxe.ds.Option<T> {
+        return switch (result) {
+            case Ok(value): Some(value);
+            case Error(_): None;
+        }
     }
 }

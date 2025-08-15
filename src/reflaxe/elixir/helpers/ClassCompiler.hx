@@ -486,9 +486,11 @@ class ClassCompiler {
         var paramStr = params.join(', ');
         var typeStr = paramTypes.join(', ');
         
-        result.add('  @doc "');
-        result.add(funcField.field.doc != null ? funcField.field.doc : 'Function ${funcName}');
-        result.add('"\n');
+        var docString = funcField.field.doc != null ? funcField.field.doc : 'Function ${funcName}';
+        var formattedDoc = FormatHelper.formatDoc(docString, false, 1);
+        if (formattedDoc != "") {
+            result.add(formattedDoc + '\n');
+        }
         result.add('  @spec ${funcName}(${typeStr}) :: ${elixirReturnType}\n');
         result.add('  def ${funcName}(${paramStr}) do\n');
         
@@ -607,9 +609,11 @@ class ClassCompiler {
             var elixirReturnType = typer.compileType(returnType);
             
             // Add documentation
-            result.add('  @doc "');
-            result.add(func.field.doc != null ? func.field.doc : 'Function ${funcName}');
-            result.add('"\n');
+            var docString = func.field.doc != null ? func.field.doc : 'Function ${funcName}';
+            var formattedDoc = FormatHelper.formatDoc(docString, false, 1);
+            if (formattedDoc != "") {
+                result.add(formattedDoc + '\n');
+            }
             
             // Add spec only for public functions
             if (!isPrivate) {

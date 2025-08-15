@@ -17,6 +17,7 @@
 This guide is part of a comprehensive documentation ecosystem. See also:
 
 - **[Functional Patterns](../FUNCTIONAL_PATTERNS.md)** - Detailed examples of imperative→functional transformations and Result type usage
+- **[BEAM Type Abstractions](../BEAM_TYPE_ABSTRACTIONS.md)** - Option<T> and Result<T,E> types for type-safe null handling and error management
 - **[Escape Hatches](../ESCAPE_HATCHES.md)** - Complete guide to Elixir interop, untyped code, and extern definitions  
 - **[Dual-Target Compilation](../DUAL_TARGET_COMPILATION.md)** - Setting up projects that compile to multiple targets simultaneously
 - **[Standard Library Handling](../STANDARD_LIBRARY_HANDLING.md)** - Architectural decisions for cross-platform standard libraries

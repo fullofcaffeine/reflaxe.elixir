@@ -313,6 +313,37 @@ This is acceptable - helpers are simpler for our needs while following similar s
 - **CRITICAL: Idiomatic Elixir Code Generation** - The compiler MUST generate idiomatic, high-quality Elixir code that follows BEAM functional programming patterns, not just syntactically correct code
 - **Architecture Validation Rule** - Occasionally reference the Reflaxe source code and reference implementations in `/Users/fullofcaffeine/workspace/code/haxe.elixir.reference/` to ensure our architecture follows established Reflaxe patterns and isn't diverging too far from proven approaches
 
+## Gleam-Inspired BEAM Abstraction Design Principles ✨ **NEW**
+
+**Following [Gleam's proven approach](https://gleam.run/) to type-safe BEAM development**:
+
+1. **Type Safety First** - Sacrifice features that can't be type-safe over untyped flexibility
+   - No global mutable state (avoid named processes and global registries)
+   - Explicit message types and actor states visible in function signatures
+   - Compile-time guarantees over runtime flexibility
+
+2. **Explicit Over Implicit** - Make intentions clear in the type system
+   - Use tagged tuples `{:some, value}` instead of `nil` for optional values
+   - Explicit error types rather than generic exceptions
+   - Clear pattern matching over defensive null checks
+
+3. **BEAM Idioms with Type Guarantees** - Generate idiomatic BEAM code while maintaining compile-time safety
+   - Option<T> compiles to `{:some, value}` / `:none` patterns
+   - Result<T,E> compiles to `{:ok, value}` / `{:error, reason}` tuples
+   - GenServer messages use typed patterns for exhaustive matching
+
+4. **Fault Tolerance Through Types** - Use Result/Option for expected failures, supervision for unexpected ones
+   - Option<T> for values that may legitimately be absent
+   - Result<T,E> for operations that may fail with known error types
+   - Let it crash for programming errors and unexpected conditions
+
+5. **Functional Composition First** - Design APIs for chaining and transformation
+   - Full monadic operations (map, flatMap, filter, fold)
+   - Collection operations that preserve type safety
+   - Seamless conversion between Option and Result types
+
+**Reference**: Gleam's [OTP library](https://hexdocs.pm/gleam_otp/) demonstrates how to build type-safe abstractions over BEAM primitives while maintaining the fault-tolerance benefits of the Actor model.
+
 ## Documentation Standards 📝
 
 **Haxe uses JavaDoc-style documentation comments** - Follow Haxe standard library conventions:

@@ -270,6 +270,74 @@ defmodule MixIntegrationTest do
       assert Enum.any?(compiled_files, &String.ends_with?(&1, ".ex"))
     end
 
+    test "generated code compiles without heredoc indentation warnings" do
+      # Ensure directories exist
+      File.mkdir_p!(@haxe_source_dir)
+      File.mkdir_p!(@target_dir)
+      
+      # Create a Haxe file with tab-containing documentation to test the heredoc fix
+      haxe_content = """
+      /**
+       * Test class with tabs in documentation.
+       * \tThis line has a tab character.
+       * \tSo does this one.
+       */
+      class TestDocClass {
+          public static function main() {
+              trace("Testing documentation");
+          }
+      }
+      """
+      
+      File.write!("#{@haxe_source_dir}/TestDocClass.hx", haxe_content)
+      
+      # Update build.hxml to include our test class
+      project_root = HaxeTestHelper.find_project_root()
+      hxml_content = """
+      -cp src_haxe
+      -cp #{project_root}/src
+      -cp #{project_root}/std
+      -lib reflaxe
+      -D reflaxe_runtime
+      -D reflaxe.elixir=0.1.0
+      -D elixir_output=lib
+      --macro reflaxe.elixir.CompilerInit.Start()
+      TestDocClass
+      """
+      
+      File.write!("#{@test_project_dir}/build.hxml", hxml_content)
+      
+      # Compile Haxe to Elixir
+      assert {:ok, _} = HaxeCompiler.compile(
+        source_dir: "src_haxe",
+        target_dir: "lib",
+        hxml_file: "build.hxml"
+      )
+      
+      # Verify the Elixir file was generated and contains proper spacing (not tabs)
+      generated_file = "#{@test_project_dir}/lib/TestDocClass.ex"
+      assert File.exists?(generated_file)
+      
+      # Read the generated content and verify tabs were replaced with spaces
+      content = File.read!(generated_file)
+      refute String.contains?(content, "\t"), "Generated Elixir file should not contain tab characters"
+      
+      # Run mix compile and capture output
+      {output, exit_code} = System.cmd("mix", ["compile", "--force"], 
+        stderr_to_stdout: true,
+        cd: @test_project_dir
+      )
+      
+      # Assert compilation succeeds
+      assert exit_code == 0, "Mix compilation should succeed. Output: #{output}"
+      
+      # Assert no heredoc warnings
+      refute String.contains?(output, "outdented heredoc"), 
+        "Should not have 'outdented heredoc' warnings. Output: #{output}"
+      refute String.contains?(output, "heredoc line"), 
+        "Should not have 'heredoc line' warnings. Output: #{output}"
+    end
+
     test "incremental compilation only recompiles changed files" do
       # First compilation
       {:ok, compiled_files} = HaxeCompiler.compile(source_dir: "src_haxe", target_dir: "lib")

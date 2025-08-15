@@ -13,10 +13,10 @@ defmodule StringUtils do
 
   # Module functions - generated with @:module syntax sugar
 
-  @doc "
-     * Processes a string with common transformations
-     * Trims whitespace, handles case conversion, validates format
-     "
+  @doc """
+    Processes a string with common transformations
+    Trims whitespace, handles case conversion, validates format
+  """
   @spec process_string(String.t()) :: String.t()
   def process_string(input) do
     if (input == nil), do: "", else: nil
@@ -27,10 +27,10 @@ defmodule StringUtils do
     processed
   end
 
-  @doc "
-     * Formats a display name for user interfaces
-     * Capitalizes first letters, handles special cases
-     "
+  @doc """
+    Formats a display name for user interfaces
+    Capitalizes first letters, handles special cases
+  """
   @spec format_display_name(String.t()) :: String.t()
   def format_display_name(name) do
     if (name == nil || String.length(StringTools.trim(name)) == 0), do: "Anonymous User", else: nil
@@ -41,9 +41,10 @@ defmodule StringUtils do
     Enum.join(formatted, " ")
   end
 
-  @doc "
-     * Validates and formats email addresses
-     "
+  @doc """
+    Validates and formats email addresses
+
+  """
   @spec process_email(String.t()) :: term()
   def process_email(email) do
     if (email == nil), do: %{valid: false, error: "Email is required"}, else: nil
@@ -53,9 +54,10 @@ defmodule StringUtils do
     %{valid: true, email: String.downcase(trimmed), domain: StringUtils.extractDomain(trimmed), username: StringUtils.extractUsername(trimmed)}
   end
 
-  @doc "
-     * Generates a URL-friendly slug from text
-     "
+  @doc """
+    Generates a URL-friendly slug from text
+
+  """
   @spec create_slug(String.t()) :: String.t()
   def create_slug(text) do
     if (text == nil), do: "", else: nil
@@ -106,9 +108,10 @@ defmodule StringUtils do
     slug
   end
 
-  @doc "
-     * Truncates text to specified length with ellipsis
-     "
+  @doc """
+    Truncates text to specified length with ellipsis
+
+  """
   @spec truncate(String.t(), integer()) :: String.t()
   def truncate(text, max_length) do
     if (text == nil), do: "", else: nil
@@ -119,9 +122,10 @@ defmodule StringUtils do
     truncated <> "..."
   end
 
-  @doc "
-     * Masks sensitive information (like email addresses)
-     "
+  @doc """
+    Masks sensitive information (like email addresses)
+
+  """
   @spec mask_sensitive_info(String.t(), integer()) :: String.t()
   def mask_sensitive_info(text, visible_chars) do
     if (text == nil || String.length(text) <= visible_chars) do
@@ -221,9 +225,10 @@ defmodule StringUtils do
     temp_result
   end
 
-  @doc "
-     * Main function for compilation testing
-     "
+  @doc """
+    Main function for compilation testing
+
+  """
   @spec main() :: nil
   def main() do
     Log.trace("StringUtils compiled successfully for Mix project!", %{fileName: "./utils/StringUtils.hx", lineNumber: 178, className: "utils.StringUtils", methodName: "main"})

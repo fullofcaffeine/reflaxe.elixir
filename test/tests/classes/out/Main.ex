@@ -160,11 +160,11 @@ defmodule Container do
 
   @doc "Function map"
   @spec map(Function.t()) :: Container.t()
-  def map(fn) do
+  def map(fn_) do
     result = Container.new()
     _g = 0
     _g = __MODULE__.items
-    Enum.map(_g, fn item -> fn(item) end)
+    Enum.map(_g, fn item -> fn_(item) end)
     result
   end
 

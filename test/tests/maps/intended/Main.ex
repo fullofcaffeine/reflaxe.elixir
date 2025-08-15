@@ -459,9 +459,9 @@ defmodule Main do
   @spec enum_map() :: nil
   def enum_map() do
     map = Haxe.Ds.EnumValueMap.new()
-    map.set(Color.red(), "FF0000")
-    map.set(Color.green(), "00FF00")
-    map.set(Color.blue(), "0000FF")
+    map.set(:red, "FF0000")
+    map.set(:green, "00FF00")
+    map.set(:blue, "0000FF")
     Log.trace("Enum map:", %{fileName: "Main.hx", lineNumber: 198, className: "Main", methodName: "enumMap"})
     color = map.keys()
     (
@@ -483,7 +483,7 @@ defmodule Main do
         :break -> nil
       end
     )
-    if (map.exists(Color.red())), do: Log.trace("Red color code: #" <> Kernel.inspect(map.get(Color.red())), %{fileName: "Main.hx", lineNumber: 205, className: "Main", methodName: "enumMap"}), else: nil
+    if (map.exists(:red)), do: Log.trace("Red color code: #" <> Kernel.inspect(map.get(:red)), %{fileName: "Main.hx", lineNumber: 205, className: "Main", methodName: "enumMap"}), else: nil
   end
 
   @doc "Function process_map"

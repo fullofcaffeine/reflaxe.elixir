@@ -89,7 +89,7 @@ defmodule Main do
     temp_array1 = nil
     _g = []
     _g = 0
-    Enum.filter(numbers, fn item -> (item rem 2 == 0) end)
+    Enum.filter(numbers, fn item -> (v rem 2 == 0) end)
     temp_array1 = _g
     Log.trace("Evens: " <> Std.string(temp_array1), %{fileName: "Main.hx", lineNumber: 59, className: "Main", methodName: "arrayMethods"})
     more = [6, 7, 8]
@@ -189,7 +189,7 @@ defmodule Main do
     temp_array = _g
     _g = []
     _g = 0
-    Enum.filter(temp_array, fn item -> (item > 10) end)
+    Enum.filter(temp_array, fn item -> (v > 10) end)
     temp_result = _g
     temp_result
   end

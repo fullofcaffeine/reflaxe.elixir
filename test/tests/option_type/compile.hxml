@@ -1,0 +1,10 @@
+# Compile Option<T> type test
+-cp ../../../src
+-cp ../../../std
+-lib reflaxe
+
+-D elixir_output=out
+-D reflaxe_runtime
+--macro reflaxe.elixir.CompilerInit.Start()
+
+Main

@@ -302,6 +302,50 @@ Create a memory file when:
 
 ## Cross-referencing
 
+### Critical Rule: Review and Link When Adding New Documentation
+
+**When adding any new documentation file, you MUST**:
+
+1. **Review the entire documentation structure** to understand where your doc fits
+2. **Search for related documentation** that should cross-reference your new doc
+3. **Update all relevant existing docs** with links to your new documentation
+4. **Add your doc to appropriate index files** (README.md, ARCHITECTURE.md, etc.)
+5. **Check for duplicate content** that could be consolidated
+
+### Documentation Review Checklist
+
+When adding `NEW_FEATURE.md`, review and update:
+
+- [ ] **README.md** - Add to documentation section if major feature
+- [ ] **ARCHITECTURE.md** - Add to relevant architecture section
+- [ ] **Related feature docs** - Add "See Also" cross-references
+- [ ] **Parent category index** - e.g., guides/README.md
+- [ ] **CLAUDE.md** - Add reference if critical for development
+- [ ] **Paradigm/pattern docs** - If introducing new patterns
+- [ ] **FEATURES.md** - Update feature status
+- [ ] **EXAMPLES.md** - Add usage examples
+
+### Example: Adding BEAM_TYPE_ABSTRACTIONS.md
+
+When this doc was added, these files needed updates:
+```markdown
+# In FUNCTIONAL_PATTERNS.md:
+## See Also
+- [BEAM Type Abstractions](BEAM_TYPE_ABSTRACTIONS.md) - Option and Result types
+
+# In PARADIGM_BRIDGE.md:
+## Related Documentation
+- [BEAM Type Abstractions](BEAM_TYPE_ABSTRACTIONS.md) - Type-safe null handling
+
+# In STANDARD_LIBRARY_HANDLING.md:
+## Option Type Compilation
+See [BEAM Type Abstractions](BEAM_TYPE_ABSTRACTIONS.md) for Option patterns
+
+# In README.md:
+### Core Documentation
+- [BEAM Type Abstractions](documentation/BEAM_TYPE_ABSTRACTIONS.md) - Option/Result types
+```
+
 ### Internal Links
 
 Always use relative paths:
