@@ -163,9 +163,8 @@ class SchemaCompiler {
             
             // Add field options
             var options = [];
-            if (!fieldConfig.nullable) {
-                options.push("null: false");
-            }
+            // Note: Ecto schemas don't use "null: false" in field definitions
+            // Nullability is controlled by database constraints and changeset validations
             if (fieldConfig.defaultValue != null) {
                 options.push('default: ${fieldConfig.defaultValue}');
             }

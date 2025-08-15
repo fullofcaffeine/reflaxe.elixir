@@ -7,7 +7,7 @@ defmodule UserLive do
   
   @impl true
   @doc "Generated from Haxe mount"
-  def mount(_params, _session, socket) do
+  def mount(params, session, socket) do
     __MODULE__.users = Accounts.list_users()
     %{ok: true, socket: socket}
   end

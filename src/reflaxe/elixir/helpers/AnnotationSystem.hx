@@ -493,7 +493,7 @@ class AnnotationSystem {
     static function compileChangesetClass(classType: ClassType, varFields: Array<ClassVarData>, funcFields: Array<ClassFuncData>): String {
         var className = classType.name;
         var config = reflaxe.elixir.helpers.ChangesetCompiler.getChangesetConfig(classType);
-        return reflaxe.elixir.helpers.ChangesetCompiler.compileFullChangeset(className, "DefaultSchema");
+        return reflaxe.elixir.helpers.ChangesetCompiler.compileFullChangeset(className, config.schema);
     }
     
     static function compileLiveViewClass(classType: ClassType, varFields: Array<ClassVarData>, funcFields: Array<ClassFuncData>): String {
