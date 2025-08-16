@@ -24,6 +24,7 @@
 		"EnumValue.ex",
 		"Enum.ex",
 		"Class.ex",
+		"ArrayTools.ex",
 		"Any.ex"
 	],
 	"id": 1,

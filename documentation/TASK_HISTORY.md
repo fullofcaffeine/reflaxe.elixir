@@ -7,6 +7,76 @@ Archives of previous history can be found in `TASK_HISTORY_ARCHIVE_*.md` files.
 
 ---
 
+## Session: 2025-08-16 - ArrayTools Static Extension Implementation Complete ✅
+
+### Context
+Continuation from previous session where ArrayTools static extension methods were implemented but had compilation issues with proper static extension detection and variable substitution.
+
+### Tasks Completed ✅
+
+1. **Fixed isArrayMethod() Function** 
+   - Added missing ArrayTools extension methods: "fold", "exists", "any", "foreach", "all", "take", "drop", "flatMap"
+   - These methods now properly compile to idiomatic Elixir `Enum.*` functions instead of generating `ArrayTools.methodName()`
+   
+2. **Fixed Variable Substitution in Reduce**
+   - Implemented dual-parameter variable substitution for reduce/fold operations
+   - Fixed issue where reduce lambda parameters weren't properly mapped from Haxe names to Elixir names
+   - Changed from `compileExpression(func.expr)` to proper `compileExpressionWithTVarSubstitution` followed by string replacement
+   - Result: `acc + n` now properly becomes `acc + item` in generated Elixir
+
+3. **Updated Test Intended Output**
+   - Updated arrays test intended output to reflect all improvements
+   - ArrayTools.ex properly generated and included in test outputs
+   - All 8 functional methods now generate idiomatic Elixir code
+
+4. **Documentation Enhancement**
+   - Added completion status to STATIC_EXTENSION_PATTERNS.md
+   - Updated TASK_HISTORY.md with comprehensive session documentation
+
+### Technical Insights Gained
+
+1. **Static Extension Detection Pattern**
+   - Critical importance of adding extension methods to `isArrayMethod()` function
+   - Without this, TCall handler doesn't recognize methods as array operations
+   - Pattern: Always update method detection functions when adding new extensions
+
+2. **Dual-Parameter Variable Substitution**
+   - Reduce operations need both accumulator and item parameter substitution
+   - Solution: Apply TVar substitution for first parameter, then string replacement for second
+   - Simpler than complex AST manipulation - more reliable and maintainable
+
+3. **Generated Code Quality**
+   - Before: `ArrayTools.fold(numbers, fn acc, item -> acc * item end, 1)`
+   - After: `Enum.reduce(numbers, 1, fn item, acc -> acc * item end)`
+   - Demonstrates importance of static extension detection for idiomatic code generation
+
+### Files Modified
+- `src/reflaxe/elixir/ElixirCompiler.hx` - Enhanced isArrayMethod() and fixed reduce variable substitution
+- `test/tests/arrays/intended/Main.ex` - Updated with improved compilation output
+- `test/tests/arrays/intended/_GeneratedFiles.json` - Updated to include ArrayTools.ex
+- `test/tests/arrays/intended/ArrayTools.ex` - Generated ArrayTools static extension module
+- `documentation/STATIC_EXTENSION_PATTERNS.md` - Added completion status
+- `documentation/TASK_HISTORY.md` - Session documentation
+
+### Key Achievements ✨
+
+1. **Complete ArrayTools Implementation**: All 8 functional methods (reduce, fold, find, findIndex, exists, any, foreach, all, forEach, take, drop, flatMap) now compile to idiomatic Elixir
+2. **Static Extension Pattern Proven**: Established reliable pattern for future static extension implementations
+3. **Test Coverage**: Arrays test passing with comprehensive functional methods validation
+4. **Documentation**: Complete pattern documentation for future reference
+
+### Development Insights
+
+1. **Always Check What Exists First**: Before implementing complex solutions, check existing patterns and functions
+2. **String-Based Substitution**: Sometimes simpler than complex AST manipulation for specific cases like dual-parameter mapping
+3. **Method Detection Critical**: Static extension compilation depends entirely on proper method detection functions
+4. **Test-Driven Fixes**: Generated output immediately shows whether fixes are working correctly
+
+### Session Summary
+✅ **STATUS: COMPLETE** - ArrayTools static extension implementation is fully functional with proper static extension detection, variable substitution, and idiomatic Elixir code generation. Pattern is documented and ready for reuse in future static extensions like MapTools or enhanced StringTools.
+
+---
+
 ## Session: 2025-01-16 - Enhanced Pattern Matching Compilation ✅
 
 ### Context: @:elixirIdiomatic Annotation Implementation

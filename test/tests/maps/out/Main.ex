@@ -18,10 +18,10 @@ defmodule Main do
     map.set("three", 3)
     Log.trace("Value of \"two\": " <> Kernel.inspect(map.get("two")), %{"fileName" => "Main.hx", "lineNumber" => 18, "className" => "Main", "methodName" => "stringMap"})
     Log.trace("Value of \"four\": " <> Kernel.inspect(map.get("four")), %{"fileName" => "Main.hx", "lineNumber" => 19, "className" => "Main", "methodName" => "stringMap"})
-    Log.trace("Has \"one\": " <> Std.string(map.exists("one")), %{"fileName" => "Main.hx", "lineNumber" => 22, "className" => "Main", "methodName" => "stringMap"})
-    Log.trace("Has \"four\": " <> Std.string(map.exists("four")), %{"fileName" => "Main.hx", "lineNumber" => 23, "className" => "Main", "methodName" => "stringMap"})
+    Log.trace("Has \"one\": " <> Std.string(Enum.any?(map, "one")), %{"fileName" => "Main.hx", "lineNumber" => 22, "className" => "Main", "methodName" => "stringMap"})
+    Log.trace("Has \"four\": " <> Std.string(Enum.any?(map, "four")), %{"fileName" => "Main.hx", "lineNumber" => 23, "className" => "Main", "methodName" => "stringMap"})
     map.remove("two")
-    Log.trace("After remove, has \"two\": " <> Std.string(map.exists("two")), %{"fileName" => "Main.hx", "lineNumber" => 27, "className" => "Main", "methodName" => "stringMap"})
+    Log.trace("After remove, has \"two\": " <> Std.string(Enum.any?(map, "two")), %{"fileName" => "Main.hx", "lineNumber" => 27, "className" => "Main", "methodName" => "stringMap"})
     Log.trace("Iterating string map:", %{"fileName" => "Main.hx", "lineNumber" => 30, "className" => "Main", "methodName" => "stringMap"})
     key = map.keys()
     (
@@ -482,7 +482,7 @@ defmodule Main do
         :break -> nil
       end
     )
-    if (map.exists(:red)), do: Log.trace("Red color code: #" <> Kernel.inspect(map.get(:red)), %{"fileName" => "Main.hx", "lineNumber" => 205, "className" => "Main", "methodName" => "enumMap"}), else: nil
+    if (Enum.any?(map, :red)), do: Log.trace("Red color code: #" <> Kernel.inspect(map.get(:red)), %{"fileName" => "Main.hx", "lineNumber" => 205, "className" => "Main", "methodName" => "enumMap"}), else: nil
   end
 
   @doc "Function process_map"
