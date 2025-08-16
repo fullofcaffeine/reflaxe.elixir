@@ -352,10 +352,10 @@ defmodule ResultTools do
       0 ->
         _g = case result do {:ok, value} -> value; {:error, value} -> value; _ -> nil end
         value = _g
-        temp_result = {:some, value}
+        temp_result = {:ok, value}
       1 ->
         case result do {:ok, value} -> value; {:error, value} -> value; _ -> nil end
-        temp_result = :none
+        temp_result = :error
     end
     temp_result
   end

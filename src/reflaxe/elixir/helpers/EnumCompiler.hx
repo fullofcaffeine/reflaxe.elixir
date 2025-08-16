@@ -7,6 +7,9 @@ import reflaxe.data.EnumOptionData;
 import reflaxe.elixir.ElixirTyper;
 import reflaxe.elixir.helpers.NamingHelper;
 import reflaxe.elixir.helpers.FormatHelper;
+import reflaxe.elixir.helpers.AlgebraicDataTypeCompiler;
+
+using StringTools;
 
 /**
  * EnumCompiler - Helper for enum→tagged tuple compilation
@@ -37,15 +40,15 @@ class EnumCompiler {
         result.add(generateModuleDoc(enumName, enumType));
         
         // Generate @type definition with proper types
-        result.add(generateTypeDefinition(options));
+        result.add(generateTypeDefinition(options, enumType));
         
         // Generate constructor functions  
         for (option in options) {
-            result.add(generateConstructorFunction(option));
+            result.add(generateConstructorFunction(option, enumType));
         }
         
         // Generate utility functions
-        result.add(generateUtilityFunctions(options));
+        result.add(generateUtilityFunctions(options, enumType));
         
         result.add('end\n');
         
@@ -76,27 +79,68 @@ class EnumCompiler {
     /**
      * Generate @type definition with proper ElixirTyper integration
      */
-    private function generateTypeDefinition(options: Array<EnumOptionData>): String {
+    private function generateTypeDefinition(options: Array<EnumOptionData>, enumType: EnumType): String {
         var result = new StringBuf();
         result.add('  @type t() ::\n');
+        
+        // Check if this is an Option-like enum that should use idiomatic patterns
+        var isOptionLike = AlgebraicDataTypeCompiler.isADTType(enumType);
+        var adtConfig = isOptionLike ? AlgebraicDataTypeCompiler.getADTConfig(enumType) : null;
         
         var typeVariants = [];
         for (option in options) {
             var optionName = NamingHelper.toSnakeCase(option.field.name);
             
-            if (option.args.length == 0) {
-                // Simple enum → atom
-                typeVariants.push('    :${optionName}');
-            } else {
-                // Parameterized enum → tagged tuple with proper types
-                var argTypes = [];
-                for (arg in option.args) {
-                    var haxeType = getArgType(arg);
-                    var elixirType = typer.compileType(haxeType);
-                    argTypes.push(elixirType);
+            if (isOptionLike && adtConfig != null) {
+                // Use idiomatic ADT type patterns
+                var constructorConfig = adtConfig.constructors.get(optionName);
+                if (constructorConfig != null) {
+                    if (option.args.length == 0) {
+                        // No arguments - use the pattern as-is (e.g., :error)
+                        typeVariants.push('    ${constructorConfig.elixirPattern}');
+                    } else {
+                        // With arguments - substitute term() for the arguments
+                        var argTypes = [];
+                        for (arg in option.args) {
+                            var haxeType = getArgType(arg);
+                            var elixirType = typer.compileType(haxeType);
+                            argTypes.push(elixirType);
+                        }
+                        var argTypeStr = argTypes.join(', ');
+                        var typePattern = constructorConfig.elixirPattern.replace("%s", argTypeStr);
+                        typeVariants.push('    ${typePattern}');
+                    }
+                } else {
+                    // Fallback to default patterns
+                    if (option.args.length == 0) {
+                        typeVariants.push('    :${optionName}');
+                    } else {
+                        var argTypes = [];
+                        for (arg in option.args) {
+                            var haxeType = getArgType(arg);
+                            var elixirType = typer.compileType(haxeType);
+                            argTypes.push(elixirType);
+                        }
+                        var argTypeStr = argTypes.join(', ');
+                        typeVariants.push('    {:${optionName}, ${argTypeStr}}');
+                    }
                 }
-                var argTypeStr = argTypes.join(', ');
-                typeVariants.push('    {:${optionName}, ${argTypeStr}}');
+            } else {
+                // Default enum patterns
+                if (option.args.length == 0) {
+                    // Simple enum → atom
+                    typeVariants.push('    :${optionName}');
+                } else {
+                    // Parameterized enum → tagged tuple with proper types
+                    var argTypes = [];
+                    for (arg in option.args) {
+                        var haxeType = getArgType(arg);
+                        var elixirType = typer.compileType(haxeType);
+                        argTypes.push(elixirType);
+                    }
+                    var argTypeStr = argTypes.join(', ');
+                    typeVariants.push('    {:${optionName}, ${argTypeStr}}');
+                }
             }
         }
         
@@ -109,16 +153,37 @@ class EnumCompiler {
     /**
      * Generate constructor function for an enum option
      */
-    private function generateConstructorFunction(option: Dynamic): String {
+    private function generateConstructorFunction(option: Dynamic, enumType: EnumType): String {
         var result = new StringBuf();
         var optionName = NamingHelper.toSnakeCase(option.field.name);
         var originalName = option.field.name;
         
+        // Check if this is an Option-like enum that should use idiomatic patterns
+        var isOptionLike = AlgebraicDataTypeCompiler.isADTType(enumType);
+        var adtConfig = isOptionLike ? AlgebraicDataTypeCompiler.getADTConfig(enumType) : null;
+        
         if (option.args.length == 0) {
             // Simple enum constructor returning atom
-            result.add('  @doc "Creates ${optionName} enum value"\n');
-            result.add('  @spec ${optionName}() :: :${optionName}\n');
-            result.add('  def ${optionName}(), do: :${optionName}\n\n');
+            if (isOptionLike && adtConfig != null) {
+                // Use idiomatic ADT pattern (e.g., :error for None)
+                var constructorConfig = adtConfig.constructors.get(optionName);
+                if (constructorConfig != null) {
+                    var pattern = constructorConfig.elixirPattern;
+                    result.add('  @doc "Creates ${optionName} enum value"\n');
+                    result.add('  @spec ${optionName}() :: ${pattern}\n');
+                    result.add('  def ${optionName}(), do: ${pattern}\n\n');
+                } else {
+                    // Fallback to default pattern
+                    result.add('  @doc "Creates ${optionName} enum value"\n');
+                    result.add('  @spec ${optionName}() :: :${optionName}\n');
+                    result.add('  def ${optionName}(), do: :${optionName}\n\n');
+                }
+            } else {
+                // Default enum pattern
+                result.add('  @doc "Creates ${optionName} enum value"\n');
+                result.add('  @spec ${optionName}() :: :${optionName}\n');
+                result.add('  def ${optionName}(), do: :${optionName}\n\n');
+            }
         } else {
             // Parameterized enum constructor with proper type specs
             var params = [];
@@ -145,10 +210,30 @@ class EnumCompiler {
             result.add('  ## Parameters\n');
             result.add('  ${paramDocs.join('\\n  ')}\n');
             result.add('  """\n');
-            result.add('  @spec ${optionName}(${typeStr}) :: {:${optionName}, ${typeStr}}\n');
-            result.add('  def ${optionName}(${paramStr}) do\n');
-            result.add('    {:${optionName}, ${paramStr}}\n');
-            result.add('  end\n\n');
+            if (isOptionLike && adtConfig != null) {
+                // Use idiomatic ADT pattern (e.g., {:ok, value} for Some)
+                var constructorConfig = adtConfig.constructors.get(optionName);
+                if (constructorConfig != null) {
+                    var pattern = constructorConfig.elixirPattern.replace("%s", paramStr);
+                    var returnType = constructorConfig.elixirPattern.replace("%s", typeStr);
+                    result.add('  @spec ${optionName}(${typeStr}) :: ${returnType}\n');
+                    result.add('  def ${optionName}(${paramStr}) do\n');
+                    result.add('    ${pattern}\n');
+                    result.add('  end\n\n');
+                } else {
+                    // Fallback to default pattern
+                    result.add('  @spec ${optionName}(${typeStr}) :: {:${optionName}, ${typeStr}}\n');
+                    result.add('  def ${optionName}(${paramStr}) do\n');
+                    result.add('    {:${optionName}, ${paramStr}}\n');
+                    result.add('  end\n\n');
+                }
+            } else {
+                // Default enum pattern
+                result.add('  @spec ${optionName}(${typeStr}) :: {:${optionName}, ${typeStr}}\n');
+                result.add('  def ${optionName}(${paramStr}) do\n');
+                result.add('    {:${optionName}, ${paramStr}}\n');
+                result.add('  end\n\n');
+            }
         }
         
         return result.toString();
@@ -157,8 +242,12 @@ class EnumCompiler {
     /**
      * Generate utility functions for pattern matching and introspection
      */
-    private function generateUtilityFunctions(options: Array<EnumOptionData>): String {
+    private function generateUtilityFunctions(options: Array<EnumOptionData>, enumType: EnumType): String {
         var result = new StringBuf();
+        
+        // Check if this is an Option-like enum that should use idiomatic patterns
+        var isOptionLike = AlgebraicDataTypeCompiler.isADTType(enumType);
+        var adtConfig = isOptionLike ? AlgebraicDataTypeCompiler.getADTConfig(enumType) : null;
         
         // is_* predicate functions for each variant
         result.add('  # Predicate functions for pattern matching\n');
@@ -168,10 +257,33 @@ class EnumCompiler {
             result.add('  @doc "Returns true if value is ${optionName} variant"\n');
             result.add('  @spec is_${optionName}(t()) :: boolean()\n');
             
-            if (option.args.length == 0) {
-                result.add('  def is_${optionName}(:${optionName}), do: true\n');
+            if (isOptionLike && adtConfig != null) {
+                // Use idiomatic ADT patterns for predicate functions
+                var constructorConfig = adtConfig.constructors.get(optionName);
+                if (constructorConfig != null) {
+                    if (constructorConfig.isAtom) {
+                        // Atom patterns like :error
+                        result.add('  def is_${optionName}(${constructorConfig.elixirPattern}), do: true\n');
+                    } else {
+                        // Tuple patterns like {:ok, _}
+                        var pattern = constructorConfig.elixirPattern.replace("%s", "_");
+                        result.add('  def is_${optionName}(${pattern}), do: true\n');
+                    }
+                } else {
+                    // Fallback to default patterns
+                    if (option.args.length == 0) {
+                        result.add('  def is_${optionName}(:${optionName}), do: true\n');
+                    } else {
+                        result.add('  def is_${optionName}({:${optionName}, _}), do: true\n');
+                    }
+                }
             } else {
-                result.add('  def is_${optionName}({:${optionName}, _}), do: true\n');
+                // Default enum patterns
+                if (option.args.length == 0) {
+                    result.add('  def is_${optionName}(:${optionName}), do: true\n');
+                } else {
+                    result.add('  def is_${optionName}({:${optionName}, _}), do: true\n');
+                }
             }
             result.add('  def is_${optionName}(_), do: false\n\n');
         }
@@ -200,14 +312,44 @@ class EnumCompiler {
                 
                 result.add('} | :error\n');
                 
-                if (option.args.length == 1) {
-                    result.add('  def get_${optionName}_value({:${optionName}, value}), do: {:ok, value}\n');
-                } else {
-                    var argPattern = [];
-                    for (i in 0...option.args.length) {
-                        argPattern.push('arg${i}');
+                if (isOptionLike && adtConfig != null) {
+                    // Use idiomatic ADT patterns for extraction functions
+                    var constructorConfig = adtConfig.constructors.get(optionName);
+                    if (constructorConfig != null && !constructorConfig.isAtom) {
+                        if (option.args.length == 1) {
+                            var pattern = constructorConfig.elixirPattern.replace("%s", "value");
+                            result.add('  def get_${optionName}_value(${pattern}), do: {:ok, value}\n');
+                        } else {
+                            var argPattern = [];
+                            for (i in 0...option.args.length) {
+                                argPattern.push('arg${i}');
+                            }
+                            var pattern = constructorConfig.elixirPattern.replace("%s", argPattern.join(', '));
+                            result.add('  def get_${optionName}_value(${pattern}), do: {:ok, {${argPattern.join(', ')}}}\n');
+                        }
+                    } else {
+                        // Fallback to default patterns
+                        if (option.args.length == 1) {
+                            result.add('  def get_${optionName}_value({:${optionName}, value}), do: {:ok, value}\n');
+                        } else {
+                            var argPattern = [];
+                            for (i in 0...option.args.length) {
+                                argPattern.push('arg${i}');
+                            }
+                            result.add('  def get_${optionName}_value({:${optionName}, ${argPattern.join(', ')}}), do: {:ok, {${argPattern.join(', ')}}}\n');
+                        }
                     }
-                    result.add('  def get_${optionName}_value({:${optionName}, ${argPattern.join(', ')}}), do: {:ok, {${argPattern.join(', ')}}}\n');
+                } else {
+                    // Default enum patterns
+                    if (option.args.length == 1) {
+                        result.add('  def get_${optionName}_value({:${optionName}, value}), do: {:ok, value}\n');
+                    } else {
+                        var argPattern = [];
+                        for (i in 0...option.args.length) {
+                            argPattern.push('arg${i}');
+                        }
+                        result.add('  def get_${optionName}_value({:${optionName}, ${argPattern.join(', ')}}), do: {:ok, {${argPattern.join(', ')}}}\n');
+                    }
                 }
                 result.add('  def get_${optionName}_value(_), do: :error\n\n');
             }

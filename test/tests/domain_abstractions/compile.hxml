@@ -1,0 +1,6 @@
+-cp ../../../std
+-main Main
+-lib reflaxe
+--macro reflaxe.ReflaxeModule.addModuleTypeToDefault("ElixirCompiler")
+-D reflaxe-output=out
+-D reflaxe-classes-output=out

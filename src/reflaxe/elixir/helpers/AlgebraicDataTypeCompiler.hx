@@ -70,15 +70,15 @@ class AlgebraicDataTypeCompiler {
             constructors: resultConstructors
         });
         
-        // Option<T> configuration
+        // Option<T> configuration - using idiomatic Elixir patterns
         var optionConstructors = new Map<String, ADTConstructorConfig>();
         optionConstructors.set("some", {
-            elixirPattern: "{:some, %s}",
+            elixirPattern: "{:ok, %s}",
             arity: 1,
             isAtom: false
         });
         optionConstructors.set("none", {
-            elixirPattern: ":none",
+            elixirPattern: ":error",
             arity: 0,
             isAtom: true
         });
@@ -97,8 +97,68 @@ class AlgebraicDataTypeCompiler {
      */
     public static function isADTType(enumType: EnumType): Bool {
         initConfigs();
-        return adtConfigs.exists(enumType.module) && 
-               adtConfigs.get(enumType.module).typeName == enumType.name;
+        
+        // Only standard library ADTs use idiomatic patterns
+        if (adtConfigs.exists(enumType.module) && 
+            adtConfigs.get(enumType.module).typeName == enumType.name) {
+            return true;
+        }
+        
+        // Check if user-defined enum has explicit annotation for idiomatic patterns
+        return hasIdiomaticAnnotation(enumType);
+    }
+    
+    /**
+     * Detect which ADT configuration to use based on enum structure
+     * @param enumType The annotated enum type to analyze
+     * @return ADT configuration matching the enum's structure
+     */
+    private static function detectADTConfigByStructure(enumType: EnumType): Null<ADTConfig> {
+        initConfigs();
+        
+        // Collect constructor names (lowercased for comparison)
+        var constructorNames = [];
+        for (field in enumType.constructs) {
+            constructorNames.push(field.name.toLowerCase());
+        }
+        
+        // Check for Result-like patterns (ok/error, success/failure, etc.)
+        var hasOkError = constructorNames.contains("ok") && constructorNames.contains("error");
+        var hasSuccessFailure = constructorNames.contains("success") && constructorNames.contains("failure");
+        
+        if (hasOkError || hasSuccessFailure) {
+            return adtConfigs.get("haxe.functional.Result");
+        }
+        
+        // Check for Option-like patterns (some/none, just/nothing, etc.)
+        var hasSomeNone = constructorNames.contains("some") && constructorNames.contains("none");
+        var hasJustNothing = constructorNames.contains("just") && constructorNames.contains("nothing");
+        
+        if (hasSomeNone || hasJustNothing) {
+            return adtConfigs.get("haxe.ds.Option");
+        }
+        
+        // Default to Option patterns if we can't determine
+        // This covers cases where the constructor names don't match common patterns
+        return adtConfigs.get("haxe.ds.Option");
+    }
+    
+    /**
+     * Check if an enum has explicit annotation for idiomatic patterns
+     * @param enumType The enum type to check
+     * @return True if the enum has @:elixirIdiomatic annotation
+     */
+    private static function hasIdiomaticAnnotation(enumType: EnumType): Bool {
+        #if macro
+        // Check for @:elixirIdiomatic metadata
+        for (meta in enumType.meta.get()) {
+            if (meta.name == ":elixirIdiomatic") {
+                trace("DETECTED @:elixirIdiomatic annotation on " + enumType.name + " in " + enumType.module);
+                return true;
+            }
+        }
+        #end
+        return false;
     }
     
     /**
@@ -108,10 +168,19 @@ class AlgebraicDataTypeCompiler {
      */
     public static function getADTConfig(enumType: EnumType): Null<ADTConfig> {
         initConfigs();
+        
+        // Check for standard library ADT
         var config = adtConfigs.get(enumType.module);
         if (config != null && config.typeName == enumType.name) {
             return config;
         }
+        
+        // Check for user-defined enum with idiomatic annotation
+        if (hasIdiomaticAnnotation(enumType)) {
+            // Inspect structure to determine Result vs Option patterns
+            return detectADTConfigByStructure(enumType);
+        }
+        
         return null;
     }
     

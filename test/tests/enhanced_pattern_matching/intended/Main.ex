@@ -233,7 +233,7 @@ defmodule EnhancedPatternMatchingTest do
         context = _g
         context = context
         if (context == nil), do: context = "", else: nil
-        result = DataResult.Error(error, context)
+        result = {:error, error, context}
         this = nil
         this = result
         temp_result = this
@@ -251,7 +251,7 @@ defmodule EnhancedPatternMatchingTest do
         context = _g
         context = context
         if (context == nil), do: context = "", else: nil
-        result = DataResult.Error(error, context)
+        result = {:error, error, context}
         this = nil
         this = result
         temp_result1 = this
@@ -431,7 +431,7 @@ defmodule EnhancedPatternMatchingTest do
       temp_result = nil
       context = "validation"
       if (context == nil), do: context = "", else: nil
-      result = DataResult.Error("Empty input", context)
+      result = {:error, "Empty input", context}
       this = nil
       this = result
       temp_result = this
@@ -441,7 +441,7 @@ defmodule EnhancedPatternMatchingTest do
       temp_result1 = nil
       context = "validation"
       if (context == nil), do: context = "", else: nil
-      result = DataResult.Error("Input too long", context)
+      result = {:error, "Input too long", context}
       this = nil
       this = result
       temp_result1 = this
@@ -449,7 +449,7 @@ defmodule EnhancedPatternMatchingTest do
     end
     temp_result2 = nil
     value = String.downcase(input)
-    result = DataResult.Success(value)
+    result = {:success, value}
     temp_result2 = result
     temp_result2
   end
@@ -461,7 +461,7 @@ defmodule EnhancedPatternMatchingTest do
       temp_result = nil
       context = "processing"
       if (context == nil), do: context = "", else: nil
-      result = DataResult.Error("Data contains error keyword", context)
+      result = {:error, "Data contains error keyword", context}
       this = nil
       this = result
       temp_result = this
@@ -469,7 +469,7 @@ defmodule EnhancedPatternMatchingTest do
     end
     temp_result1 = nil
     value = String.upcase(data)
-    result = DataResult.Success(value)
+    result = {:success, value}
     temp_result1 = result
     temp_result1
   end
@@ -481,14 +481,14 @@ defmodule EnhancedPatternMatchingTest do
       temp_result = nil
       context = "formatting"
       if (context == nil), do: context = "", else: nil
-      result = DataResult.Error("No data to format", context)
+      result = {:error, "No data to format", context}
       this = nil
       this = result
       temp_result = this
       temp_result
     end
     temp_result1 = nil
-    result = DataResult.Success("Formatted: [" <> data <> "]")
+    result = {:success, "Formatted: [" <> data <> "]"}
     temp_result1 = result
     temp_result1
   end
@@ -497,17 +497,17 @@ defmodule EnhancedPatternMatchingTest do
   @spec main() :: nil
   def main() do
     Log.trace("Enhanced pattern matching compilation test", %{"fileName" => "Main.hx", "lineNumber" => 231, "className" => "EnhancedPatternMatchingTest", "methodName" => "main"})
-    Log.trace(EnhancedPatternMatchingTest.matchStatus(Status.Working("compile")), %{"fileName" => "Main.hx", "lineNumber" => 234, "className" => "EnhancedPatternMatchingTest", "methodName" => "main"})
-    Log.trace(EnhancedPatternMatchingTest.matchStatus(Status.Completed("success", 1500)), %{"fileName" => "Main.hx", "lineNumber" => 235, "className" => "EnhancedPatternMatchingTest", "methodName" => "main"})
-    Log.trace(EnhancedPatternMatchingTest.incompleteMatch(Status.Failed("timeout", 2)), %{"fileName" => "Main.hx", "lineNumber" => 238, "className" => "EnhancedPatternMatchingTest", "methodName" => "main"})
+    Log.trace(EnhancedPatternMatchingTest.matchStatus({:working, "compile"}), %{"fileName" => "Main.hx", "lineNumber" => 234, "className" => "EnhancedPatternMatchingTest", "methodName" => "main"})
+    Log.trace(EnhancedPatternMatchingTest.matchStatus({:completed, "success", 1500}), %{"fileName" => "Main.hx", "lineNumber" => 235, "className" => "EnhancedPatternMatchingTest", "methodName" => "main"})
+    Log.trace(EnhancedPatternMatchingTest.incompleteMatch({:failed, "timeout", 2}), %{"fileName" => "Main.hx", "lineNumber" => 238, "className" => "EnhancedPatternMatchingTest", "methodName" => "main"})
     temp_result = nil
     temp_result1 = nil
-    result = DataResult.Success("deep value")
+    result = {:success, "deep value"}
     temp_result1 = result
-    result = DataResult.Success(temp_result1)
+    result = {:success, temp_result1}
     temp_result = result
     Log.trace(EnhancedPatternMatchingTest.matchNestedResult(temp_result), %{"fileName" => "Main.hx", "lineNumber" => 242, "className" => "EnhancedPatternMatchingTest", "methodName" => "main"})
-    Log.trace(EnhancedPatternMatchingTest.matchWithComplexGuards(Status.Working("urgent task"), 8, true), %{"fileName" => "Main.hx", "lineNumber" => 245, "className" => "EnhancedPatternMatchingTest", "methodName" => "main"})
+    Log.trace(EnhancedPatternMatchingTest.matchWithComplexGuards({:working, "urgent task"}, 8, true), %{"fileName" => "Main.hx", "lineNumber" => 245, "className" => "EnhancedPatternMatchingTest", "methodName" => "main"})
     Log.trace(EnhancedPatternMatchingTest.matchWithRangeGuards(85, "score"), %{"fileName" => "Main.hx", "lineNumber" => 248, "className" => "EnhancedPatternMatchingTest", "methodName" => "main"})
     Log.trace(EnhancedPatternMatchingTest.matchWithRangeGuards(25, "temperature"), %{"fileName" => "Main.hx", "lineNumber" => 249, "className" => "EnhancedPatternMatchingTest", "methodName" => "main"})
     Log.trace(EnhancedPatternMatchingTest.chainResultOperations("valid input"), %{"fileName" => "Main.hx", "lineNumber" => 252, "className" => "EnhancedPatternMatchingTest", "methodName" => "main"})
@@ -518,8 +518,8 @@ defmodule EnhancedPatternMatchingTest do
     Log.trace(EnhancedPatternMatchingTest.matchStringPatterns("test@example.com"), %{"fileName" => "Main.hx", "lineNumber" => 261, "className" => "EnhancedPatternMatchingTest", "methodName" => "main"})
     Log.trace(EnhancedPatternMatchingTest.matchObjectPatterns(%{"name" => "Alice", "age" => 25, "active" => true}), %{"fileName" => "Main.hx", "lineNumber" => 264, "className" => "EnhancedPatternMatchingTest", "methodName" => "main"})
     Log.trace(EnhancedPatternMatchingTest.matchObjectPatterns(%{"name" => "Bob", "age" => 16, "active" => true}), %{"fileName" => "Main.hx", "lineNumber" => 265, "className" => "EnhancedPatternMatchingTest", "methodName" => "main"})
-    Log.trace(EnhancedPatternMatchingTest.matchValidationState(ValidationState.Invalid(["Required field missing", "Invalid format"])), %{"fileName" => "Main.hx", "lineNumber" => 268, "className" => "EnhancedPatternMatchingTest", "methodName" => "main"})
-    Log.trace(EnhancedPatternMatchingTest.matchValidationState(ValidationState.Pending("security_validator")), %{"fileName" => "Main.hx", "lineNumber" => 269, "className" => "EnhancedPatternMatchingTest", "methodName" => "main"})
+    Log.trace(EnhancedPatternMatchingTest.matchValidationState({:invalid, ["Required field missing", "Invalid format"]}), %{"fileName" => "Main.hx", "lineNumber" => 268, "className" => "EnhancedPatternMatchingTest", "methodName" => "main"})
+    Log.trace(EnhancedPatternMatchingTest.matchValidationState({:pending, "security_validator"}), %{"fileName" => "Main.hx", "lineNumber" => 269, "className" => "EnhancedPatternMatchingTest", "methodName" => "main"})
     Log.trace(EnhancedPatternMatchingTest.matchBinaryPattern("test"), %{"fileName" => "Main.hx", "lineNumber" => 272, "className" => "EnhancedPatternMatchingTest", "methodName" => "main"})
     Log.trace(EnhancedPatternMatchingTest.matchBinaryPattern(""), %{"fileName" => "Main.hx", "lineNumber" => 273, "className" => "EnhancedPatternMatchingTest", "methodName" => "main"})
   end
