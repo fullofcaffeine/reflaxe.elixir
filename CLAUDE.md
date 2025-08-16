@@ -385,6 +385,13 @@ When documenting compiler methods that handle **desugaring reversal**, always in
 
 ## Development Principles
 
+### ⚠️ CRITICAL: Test Infrastructure Rule
+**NEVER define test infrastructure types in application code**
+- **Test types** (Conn, Changeset<T>, LiveView, etc.) belong in the standard library at `/std/phoenix/test/` and `/std/ecto/test/`
+- **Applications** should import from standard library: `import phoenix.test.Conn` NOT `typedef Conn = Dynamic`
+- **This ensures**: consistency, reusability, proper maintenance, and type safety across all projects
+- **Example**: `import ecto.Changeset; var changeset: Changeset<User>` NOT `var changeset: Dynamic`
+
 ### ⚠️ CRITICAL: No Simplifications or Workarounds for Testing
 **NEVER simplify code just to make tests pass or to bypass compilation issues.**
 
@@ -435,8 +442,76 @@ return Supervisor.startLink(children, opts);
 ## Development Resources & Reference Strategy
 - **Reference Codebase**: `/Users/fullofcaffeine/workspace/code/haxe.elixir.reference/` - Contains Reflaxe patterns, Phoenix examples, Haxe source
 - **Haxe API Documentation**: https://api.haxe.org/ - For type system, standard library, and language features
+- **Haxe Code Cookbook**: https://code.haxe.org/ - Modern patterns and best practices
 - **Web Resources**: Use WebSearch and WebFetch for current documentation, API references, and best practices
 - **Principle**: Always reference existing working code and official documentation rather than guessing or assuming implementation details
+
+## Modern Haxe JavaScript Patterns ⚡ **REQUIRED READING**
+
+**CRITICAL**: Always check Haxe reference folder and official docs for modern APIs before implementing JavaScript features.
+
+### 1. JavaScript Code Injection
+❌ **Deprecated (Haxe 4.1+)**:
+```haxe
+untyped __js__("console.log({0})", value);  // Shows deprecation warning
+```
+
+✅ **Modern (Haxe 4.1+)**:
+```haxe
+js.Syntax.code("console.log({0})", value);  // Clean, no warnings
+```
+
+### 2. Type-Safe DOM Element Casting
+❌ **Unsafe Pattern**:
+```haxe
+var element = cast(e.target, js.html.Element);  // No type checking
+```
+
+✅ **Safe Pattern**:
+```haxe
+var target = e.target;
+if (target != null && js.Syntax.instanceof(target, js.html.Element)) {
+    var element = cast(target, js.html.Element);  // Type-safe casting
+    // Use element safely
+}
+```
+
+### 3. Performance Monitoring APIs
+❌ **Deprecated (Shows warnings)**:
+```haxe
+var timing = js.Browser.window.performance.timing;  // PerformanceTiming deprecated
+var loadTime = timing.loadEventEnd - timing.navigationStart;
+```
+
+✅ **Modern (No warnings)**:
+```haxe
+var entries = js.Browser.window.performance.getEntriesByType("navigation");
+if (entries.length > 0) {
+    var navTiming: js.html.PerformanceNavigationTiming = cast entries[0];
+    var domLoadTime = navTiming.domContentLoadedEventEnd - navTiming.domContentLoadedEventStart;
+    var fullLoadTime = navTiming.loadEventEnd - navTiming.fetchStart;
+}
+```
+
+### 4. DOM Hierarchy Understanding
+```
+EventTarget (addEventListener, removeEventListener)
+    ↓
+Node (nodeName, nodeType, parentNode)
+    ↓  
+DOMElement (id, className, classList, attributes)
+    ↓
+Element (click, focus, innerHTML) - The HTML element you usually want
+```
+
+### Development Rules
+1. **ALWAYS check existing implementations first** - Before starting any task, search for existing implementations, similar patterns, or related code in the codebase to avoid duplicate work
+2. **Verify task completion status** - Check if the task is already done through existing files, examples, or alternative approaches before implementing from scratch
+3. **Check deprecation warnings** - Never ignore Haxe compiler warnings about deprecated APIs
+4. **Reference modern docs** - Use https://api.haxe.org/ for Haxe 4.3+ patterns
+5. **Use reference folder** - Check `/Users/fullofcaffeine/workspace/code/haxe.elixir.reference/haxe/std/js/` for modern implementations
+6. **Type safety first** - Always use `js.Syntax.instanceof()` before casting DOM elements
+7. **Performance APIs** - Use `PerformanceNavigationTiming` instead of deprecated `PerformanceTiming`
 
 ## Implementation Status
 **See**: [`documentation/FEATURES.md`](documentation/FEATURES.md) - Complete feature status and production readiness

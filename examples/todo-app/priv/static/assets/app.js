@@ -1,6 +1,648 @@
 (() => {
+  var __getOwnPropNames = Object.getOwnPropertyNames;
+  var __commonJS = (cb, mod) => function __require() {
+    return mod || (0, cb[__getOwnPropNames(cb)[0]])((mod = { exports: {} }).exports, mod), mod.exports;
+  };
+
   // js/app.js
-  (function($global) {
-    "use strict";
-  })({});
+  var require_app = __commonJS({
+    "js/app.js"(exports, module) {
+      (function($hx_exports, $global) {
+        "use strict";
+        $hx_exports["client"] = $hx_exports["client"] || {};
+        $hx_exports["client"]["TodoApp"] = $hx_exports["client"]["TodoApp"] || {};
+        function $extend(from, fields) {
+          var proto = Object.create(from);
+          for (var name in fields)
+            proto[name] = fields[name];
+          if (fields.toString !== Object.prototype.toString)
+            proto.toString = fields.toString;
+          return proto;
+        }
+        Math.__name__ = true;
+        var Std = function() {
+        };
+        Std.__name__ = true;
+        Std.string = function(s) {
+          return js_Boot.__string_rec(s, "");
+        };
+        var client_TodoApp = function() {
+        };
+        client_TodoApp.__name__ = true;
+        client_TodoApp.main = $hx_exports["client"]["TodoApp"]["main"] = function() {
+          if (client_TodoApp.isInitialized) {
+            console.log("src_haxe/client/TodoApp.hx:26:", "TodoApp already initialized");
+            return;
+          }
+          console.log("src_haxe/client/TodoApp.hx:30:", "Todo App client initializing...");
+          client_TodoApp.initializeUtilities();
+          client_TodoApp.setupGlobalErrorHandling();
+          client_TodoApp.exportHooks();
+          client_TodoApp.initializeEnhancements();
+          client_TodoApp.isInitialized = true;
+          console.log("src_haxe/client/TodoApp.hx:45:", "Todo App client ready!");
+        };
+        client_TodoApp.initializeUtilities = function() {
+          client_utils_DarkMode.initialize();
+          client_utils_LocalStorage.initialize();
+        };
+        client_TodoApp.setupGlobalErrorHandling = function() {
+          window.addEventListener("error", function(event) {
+            console.log("src_haxe/client/TodoApp.hx:61:", "Client error: " + event.error);
+            client_TodoApp.logErrorToServer("javascript_error", { message: event.message, filename: event.filename, lineno: event.lineno, colno: event.colno, timestamp: (/* @__PURE__ */ new Date()).getTime() });
+          });
+          window.addEventListener("unhandledrejection", function(event) {
+            console.log("src_haxe/client/TodoApp.hx:73:", "Unhandled promise rejection: " + event.reason);
+            client_TodoApp.logErrorToServer("promise_rejection", { reason: event.reason == null ? "null" : "" + event.reason, timestamp: (/* @__PURE__ */ new Date()).getTime() });
+          });
+        };
+        client_TodoApp.exportHooks = function() {
+          var hooks = client_hooks_Hooks.getAll();
+          if (typeof window !== "undefined") {
+            window.TodoAppHooks = hooks;
+            window.AutoFocus = client_hooks_Hooks.getAutoFocus();
+            window.ThemeToggle = client_hooks_Hooks.getThemeToggle();
+            window.TodoForm = client_hooks_Hooks.getTodoForm();
+            window.TodoFilter = client_hooks_Hooks.getTodoFilter();
+            window.LiveSync = client_hooks_Hooks.getLiveSync();
+          }
+          if (typeof module !== "undefined" && module.exports) {
+            module.exports = {
+              Hooks: hooks,
+              AutoFocus: client_hooks_Hooks.getAutoFocus(),
+              ThemeToggle: client_hooks_Hooks.getThemeToggle(),
+              TodoForm: client_hooks_Hooks.getTodoForm(),
+              TodoFilter: client_hooks_Hooks.getTodoFilter(),
+              LiveSync: client_hooks_Hooks.getLiveSync()
+            };
+          }
+          ;
+          console.log("src_haxe/client/TodoApp.hx:122:", "Phoenix LiveView hooks exported successfully");
+        };
+        client_TodoApp.initializeEnhancements = function() {
+          client_TodoApp.setupGlobalKeyboardShortcuts();
+          client_TodoApp.setupPerformanceMonitoring();
+          client_TodoApp.addDynamicStyles();
+          client_TodoApp.setupAccessibilityFeatures();
+        };
+        client_TodoApp.setupGlobalKeyboardShortcuts = function() {
+          window.document.addEventListener("keydown", function(e) {
+            var target = e.target;
+            if (target != null && target instanceof HTMLElement) {
+              var element = js_Boot.__cast(target, HTMLElement);
+              if (element.nodeName == "INPUT" || element.nodeName == "TEXTAREA") {
+                return;
+              }
+            }
+            if (e.ctrlKey || e.metaKey) {
+              switch (e.key) {
+                case "/":
+                  e.preventDefault();
+                  client_TodoApp.showKeyboardShortcuts();
+                  break;
+                case "k":
+                  e.preventDefault();
+                  client_TodoApp.focusSearch();
+                  break;
+                case "n":
+                  e.preventDefault();
+                  client_TodoApp.triggerNewTodo();
+                  break;
+              }
+            }
+            if (e.key == "?") {
+              if (e.shiftKey) {
+                e.preventDefault();
+                client_TodoApp.showKeyboardShortcuts();
+              }
+            }
+          });
+        };
+        client_TodoApp.setupPerformanceMonitoring = function() {
+          window.addEventListener("load", function() {
+            if (window.performance != null) {
+              try {
+                var entries = window.performance.getEntriesByType("navigation");
+                if (entries.length > 0) {
+                  var navTiming = entries[0];
+                  var domLoadTime = navTiming.domContentLoadedEventEnd - navTiming.domContentLoadedEventStart;
+                  var fullLoadTime = navTiming.loadEventEnd - navTiming.fetchStart;
+                  console.log("src_haxe/client/TodoApp.hx:199:", "DOM load time: " + domLoadTime + "ms, Full page load: " + fullLoadTime + "ms");
+                  client_TodoApp.logMetricToServer("dom_load_time", domLoadTime);
+                  client_TodoApp.logMetricToServer("page_load_time", fullLoadTime);
+                } else {
+                  console.log("src_haxe/client/TodoApp.hx:204:", "PerformanceNavigationTiming not supported, using basic measurement");
+                }
+              } catch (_g) {
+                var e = haxe_Exception.caught(_g).unwrap();
+                console.log("src_haxe/client/TodoApp.hx:207:", "Performance monitoring error: " + Std.string(e));
+              }
+            }
+          });
+          client_TodoApp.monitorLiveViewPerformance();
+        };
+        client_TodoApp.addDynamicStyles = function() {
+          var style = window.document.createElement("style");
+          style.textContent = "\n            /* Todo App Enhanced Styles */\n            .todo-item {\n                transition: all 0.2s ease;\n            }\n            \n            .todo-item:hover {\n                transform: translateX(2px);\n            }\n            \n            .updated-highlight {\n                background: rgba(59, 130, 246, 0.1);\n                border-left: 3px solid #3B82F6;\n                animation: highlightFade 2s ease-out;\n            }\n            \n            @keyframes highlightFade {\n                from { \n                    background: rgba(59, 130, 246, 0.3);\n                    transform: scale(1.01);\n                }\n                to { \n                    background: rgba(59, 130, 246, 0.1);\n                    transform: scale(1);\n                }\n            }\n            \n            .theme-toggle-clicked {\n                transform: scale(0.95);\n                transition: transform 0.1s ease;\n            }\n            \n            .connection-status {\n                font-size: 0.75rem;\n                color: #6B7280;\n            }\n            \n            .connection-status.online {\n                color: #10B981;\n            }\n            \n            .connection-status.offline {\n                color: #EF4444;\n            }\n            \n            /* Keyboard shortcuts overlay */\n            .keyboard-shortcuts-overlay {\n                position: fixed;\n                top: 0;\n                left: 0;\n                right: 0;\n                bottom: 0;\n                background: rgba(0, 0, 0, 0.8);\n                z-index: 1000;\n                display: flex;\n                align-items: center;\n                justify-content: center;\n            }\n            \n            .keyboard-shortcuts-panel {\n                background: white;\n                dark:bg-gray-800;\n                border-radius: 0.5rem;\n                padding: 2rem;\n                max-width: 500px;\n                max-height: 80vh;\n                overflow-y: auto;\n            }\n        ";
+          window.document.head.appendChild(style);
+        };
+        client_TodoApp.setupAccessibilityFeatures = function() {
+          client_TodoApp.addSkipLinks();
+          client_TodoApp.setupFocusManagement();
+          client_TodoApp.setupLiveRegions();
+        };
+        client_TodoApp.addSkipLinks = function() {
+          var skipLinks = window.document.createElement("div");
+          skipLinks.className = "sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 z-50";
+          skipLinks.innerHTML = '\n            <a href="#main-content" class="bg-blue-600 text-white px-4 py-2 rounded-md">\n                Skip to main content\n            </a>\n            <a href="#todo-form" class="bg-blue-600 text-white px-4 py-2 rounded-md ml-2">\n                Skip to new todo form\n            </a>\n        ';
+          window.document.body.insertBefore(skipLinks, window.document.body.firstChild);
+        };
+        client_TodoApp.setupFocusManagement = function() {
+        };
+        client_TodoApp.setupLiveRegions = function() {
+          var liveRegion = window.document.createElement("div");
+          liveRegion.id = "live-region";
+          liveRegion.setAttribute("aria-live", "polite");
+          liveRegion.setAttribute("aria-atomic", "true");
+          liveRegion.className = "sr-only";
+          window.document.body.appendChild(liveRegion);
+        };
+        client_TodoApp.focusSearch = function() {
+          var searchInput = window.document.querySelector('input[type="text"][placeholder*="Search"]');
+          if (searchInput != null) {
+            searchInput.focus();
+          }
+        };
+        client_TodoApp.triggerNewTodo = function() {
+          var newTodoButton = window.document.querySelector('[phx-click="toggle_form"]');
+          if (newTodoButton != null) {
+            newTodoButton.click();
+          }
+        };
+        client_TodoApp.showKeyboardShortcuts = function() {
+          var overlay = window.document.querySelector(".keyboard-shortcuts-overlay");
+          if (overlay != null) {
+            overlay.style.display = "flex";
+            return;
+          }
+          overlay = window.document.createElement("div");
+          overlay.className = "keyboard-shortcuts-overlay";
+          overlay.innerHTML = '\n            <div class="keyboard-shortcuts-panel">\n                <h3 class="text-lg font-bold mb-4">Keyboard Shortcuts</h3>\n                <div class="space-y-2 text-sm">\n                    <div><kbd>Ctrl/Cmd + K</kbd> - Focus search</div>\n                    <div><kbd>Ctrl/Cmd + N</kbd> - New todo</div>\n                    <div><kbd>Ctrl/Cmd + /</kbd> - Show shortcuts</div>\n                    <div><kbd>Alt + 1/2/3</kbd> - Filter todos</div>\n                    <div><kbd>Escape</kbd> - Close forms/modals</div>\n                    <div><kbd>Ctrl/Cmd + Enter</kbd> - Submit form</div>\n                </div>\n                <button class="mt-4 px-4 py-2 bg-gray-200 rounded close-shortcuts">Close</button>\n            </div>\n        ';
+          overlay.addEventListener("click", function(e) {
+            if (e.target == overlay || e.target.classList.contains("close-shortcuts")) {
+              overlay.style.display = "none";
+            }
+          });
+          window.document.body.appendChild(overlay);
+        };
+        client_TodoApp.monitorLiveViewPerformance = function() {
+          console.log("src_haxe/client/TodoApp.hx:408:", "LiveView performance monitoring initialized");
+        };
+        client_TodoApp.logErrorToServer = function(type, details) {
+          client_utils_LocalStorage.setObject("last_error_" + type, { type, details, timestamp: (/* @__PURE__ */ new Date()).getTime() });
+        };
+        client_TodoApp.logMetricToServer = function(metric, value) {
+          client_utils_LocalStorage.setNumber("metric_" + metric, value);
+        };
+        var client_extern_LiveViewHook = function() {
+        };
+        client_extern_LiveViewHook.__name__ = true;
+        client_extern_LiveViewHook.__isInterface__ = true;
+        var client_hooks_AutoFocus = function() {
+        };
+        client_hooks_AutoFocus.__name__ = true;
+        client_hooks_AutoFocus.__interfaces__ = [client_extern_LiveViewHook];
+        var client_hooks_Hooks = function() {
+        };
+        client_hooks_Hooks.__name__ = true;
+        client_hooks_Hooks.getAll = function() {
+          return { AutoFocus: client_hooks_AutoFocus, ThemeToggle: client_hooks_ThemeToggle, TodoForm: client_hooks_TodoForm, TodoFilter: client_hooks_TodoFilter, LiveSync: client_hooks_LiveSync };
+        };
+        client_hooks_Hooks.getAutoFocus = function() {
+          return client_hooks_AutoFocus;
+        };
+        client_hooks_Hooks.getThemeToggle = function() {
+          return client_hooks_ThemeToggle;
+        };
+        client_hooks_Hooks.getTodoForm = function() {
+          return client_hooks_TodoForm;
+        };
+        client_hooks_Hooks.getTodoFilter = function() {
+          return client_hooks_TodoFilter;
+        };
+        client_hooks_Hooks.getLiveSync = function() {
+          return client_hooks_LiveSync;
+        };
+        var client_hooks_LiveSync = function() {
+        };
+        client_hooks_LiveSync.__name__ = true;
+        client_hooks_LiveSync.__interfaces__ = [client_extern_LiveViewHook];
+        var client_hooks_ThemeToggle = function() {
+        };
+        client_hooks_ThemeToggle.__name__ = true;
+        client_hooks_ThemeToggle.__interfaces__ = [client_extern_LiveViewHook];
+        var client_hooks_TodoFilter = function() {
+        };
+        client_hooks_TodoFilter.__name__ = true;
+        client_hooks_TodoFilter.__interfaces__ = [client_extern_LiveViewHook];
+        var client_hooks_TodoForm = function() {
+        };
+        client_hooks_TodoForm.__name__ = true;
+        client_hooks_TodoForm.__interfaces__ = [client_extern_LiveViewHook];
+        var client_utils_DarkMode = function() {
+        };
+        client_utils_DarkMode.__name__ = true;
+        client_utils_DarkMode.initialize = function() {
+          client_utils_DarkMode.applyTheme();
+          client_utils_DarkMode.setupToggleButton();
+        };
+        client_utils_DarkMode.isEnabled = function() {
+          return window.document.documentElement.classList.contains("dark");
+        };
+        client_utils_DarkMode.toggle = function() {
+          if (client_utils_DarkMode.isEnabled()) {
+            client_utils_DarkMode.setLightMode();
+          } else {
+            client_utils_DarkMode.setDarkMode();
+          }
+        };
+        client_utils_DarkMode.setDarkMode = function() {
+          window.document.documentElement.classList.add("dark");
+          client_utils_LocalStorage.setString("theme", "dark");
+          client_utils_DarkMode.updateToggleButton();
+        };
+        client_utils_DarkMode.setLightMode = function() {
+          window.document.documentElement.classList.remove("dark");
+          client_utils_LocalStorage.setString("theme", "light");
+          client_utils_DarkMode.updateToggleButton();
+        };
+        client_utils_DarkMode.getTheme = function() {
+          var saved = client_utils_LocalStorage.getString("theme");
+          if (saved != null) {
+            return saved;
+          }
+          if (window.matchMedia != null) {
+            var darkMediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+            if (darkMediaQuery.matches) {
+              return "dark";
+            } else {
+              return "light";
+            }
+          }
+          return "light";
+        };
+        client_utils_DarkMode.applyTheme = function() {
+          if (client_utils_DarkMode.getTheme() == "dark") {
+            window.document.documentElement.classList.add("dark");
+          } else {
+            window.document.documentElement.classList.remove("dark");
+          }
+        };
+        client_utils_DarkMode.setupToggleButton = function() {
+          var toggleButton = window.document.getElementById("theme-toggle");
+          if (toggleButton == null) {
+            return;
+          }
+          toggleButton.addEventListener("click", function(e) {
+            e.preventDefault();
+            client_utils_DarkMode.toggle();
+          });
+          client_utils_DarkMode.updateToggleButton();
+        };
+        client_utils_DarkMode.updateToggleButton = function() {
+          var darkIcon = window.document.getElementById("theme-toggle-dark-icon");
+          var lightIcon = window.document.getElementById("theme-toggle-light-icon");
+          if (darkIcon == null || lightIcon == null) {
+            return;
+          }
+          if (client_utils_DarkMode.isEnabled()) {
+            darkIcon.classList.add("hidden");
+            lightIcon.classList.remove("hidden");
+          } else {
+            darkIcon.classList.remove("hidden");
+            lightIcon.classList.add("hidden");
+          }
+        };
+        var js_Browser = function() {
+        };
+        js_Browser.__name__ = true;
+        js_Browser.getLocalStorage = function() {
+          try {
+            var s = window.localStorage;
+            s.getItem("");
+            if (s.length == 0) {
+              var key = "_hx_" + Math.random();
+              s.setItem(key, key);
+              s.removeItem(key);
+            }
+            return s;
+          } catch (_g) {
+            return null;
+          }
+        };
+        var client_utils_LocalStorage = function() {
+        };
+        client_utils_LocalStorage.__name__ = true;
+        client_utils_LocalStorage.initialize = function() {
+          if (!client_utils_LocalStorage.isAvailable()) {
+            console.log("src_haxe/client/utils/LocalStorage.hx:19:", "Warning: localStorage is not available");
+          }
+        };
+        client_utils_LocalStorage.isAvailable = function() {
+          try {
+            var test = "test";
+            client_utils_LocalStorage.storage.setItem(test, test);
+            client_utils_LocalStorage.storage.removeItem(test);
+            return true;
+          } catch (_g) {
+            return false;
+          }
+        };
+        client_utils_LocalStorage.setString = function(key, value) {
+          if (!client_utils_LocalStorage.isAvailable()) {
+            return;
+          }
+          try {
+            client_utils_LocalStorage.storage.setItem(key, value);
+          } catch (_g) {
+            var e = haxe_Exception.caught(_g).unwrap();
+            console.log("src_haxe/client/utils/LocalStorage.hx:46:", "Failed to store string in localStorage: " + Std.string(e));
+          }
+        };
+        client_utils_LocalStorage.getString = function(key, defaultValue) {
+          if (!client_utils_LocalStorage.isAvailable()) {
+            return defaultValue;
+          }
+          try {
+            var value = client_utils_LocalStorage.storage.getItem(key);
+            if (value != null) {
+              return value;
+            } else {
+              return defaultValue;
+            }
+          } catch (_g) {
+            var e = haxe_Exception.caught(_g).unwrap();
+            console.log("src_haxe/client/utils/LocalStorage.hx:60:", "Failed to retrieve string from localStorage: " + Std.string(e));
+            return defaultValue;
+          }
+        };
+        client_utils_LocalStorage.setNumber = function(key, value) {
+          client_utils_LocalStorage.setString(key, value == null ? "null" : "" + value);
+        };
+        client_utils_LocalStorage.setObject = function(key, value) {
+          try {
+            var json = JSON.stringify(value);
+            client_utils_LocalStorage.setString(key, json);
+          } catch (_g) {
+            var e = haxe_Exception.caught(_g).unwrap();
+            console.log("src_haxe/client/utils/LocalStorage.hx:108:", "Failed to store object in localStorage: " + Std.string(e));
+          }
+        };
+        var haxe_Exception = function(message, previous, native) {
+          Error.call(this, message);
+          this.message = message;
+          this.__previousException = previous;
+          this.__nativeException = native != null ? native : this;
+        };
+        haxe_Exception.__name__ = true;
+        haxe_Exception.caught = function(value) {
+          if (value instanceof haxe_Exception) {
+            return value;
+          } else if (value instanceof Error) {
+            return new haxe_Exception(value.message, null, value);
+          } else {
+            return new haxe_ValueException(value, null, value);
+          }
+        };
+        haxe_Exception.thrown = function(value) {
+          if (value instanceof haxe_Exception) {
+            return value.get_native();
+          } else if (value instanceof Error) {
+            return value;
+          } else {
+            var e = new haxe_ValueException(value);
+            return e;
+          }
+        };
+        haxe_Exception.__super__ = Error;
+        haxe_Exception.prototype = $extend(Error.prototype, {
+          unwrap: function() {
+            return this.__nativeException;
+          },
+          get_native: function() {
+            return this.__nativeException;
+          },
+          __class__: haxe_Exception
+        });
+        var haxe_ValueException = function(value, previous, native) {
+          haxe_Exception.call(this, String(value), previous, native);
+          this.value = value;
+        };
+        haxe_ValueException.__name__ = true;
+        haxe_ValueException.__super__ = haxe_Exception;
+        haxe_ValueException.prototype = $extend(haxe_Exception.prototype, {
+          unwrap: function() {
+            return this.value;
+          },
+          __class__: haxe_ValueException
+        });
+        var js_Boot = function() {
+        };
+        js_Boot.__name__ = true;
+        js_Boot.getClass = function(o) {
+          if (o == null) {
+            return null;
+          } else if (o instanceof Array) {
+            return Array;
+          } else {
+            var cl = o.__class__;
+            if (cl != null) {
+              return cl;
+            }
+            var name = js_Boot.__nativeClassName(o);
+            if (name != null) {
+              return js_Boot.__resolveNativeClass(name);
+            }
+            return null;
+          }
+        };
+        js_Boot.__string_rec = function(o, s) {
+          if (o == null) {
+            return "null";
+          }
+          if (s.length >= 5) {
+            return "<...>";
+          }
+          var t = typeof o;
+          if (t == "function" && (o.__name__ || o.__ename__)) {
+            t = "object";
+          }
+          switch (t) {
+            case "function":
+              return "<function>";
+            case "object":
+              if (o instanceof Array) {
+                var str = "[";
+                s += "	";
+                var _g = 0;
+                var _g1 = o.length;
+                while (_g < _g1) {
+                  var i = _g++;
+                  str += (i > 0 ? "," : "") + js_Boot.__string_rec(o[i], s);
+                }
+                str += "]";
+                return str;
+              }
+              var tostr;
+              try {
+                tostr = o.toString;
+              } catch (_g2) {
+                return "???";
+              }
+              if (tostr != null && tostr != Object.toString && typeof tostr == "function") {
+                var s2 = o.toString();
+                if (s2 != "[object Object]") {
+                  return s2;
+                }
+              }
+              var str = "{\n";
+              s += "	";
+              var hasp = o.hasOwnProperty != null;
+              var k = null;
+              for (k in o) {
+                if (hasp && !o.hasOwnProperty(k)) {
+                  continue;
+                }
+                if (k == "prototype" || k == "__class__" || k == "__super__" || k == "__interfaces__" || k == "__properties__") {
+                  continue;
+                }
+                if (str.length != 2) {
+                  str += ", \n";
+                }
+                str += s + k + " : " + js_Boot.__string_rec(o[k], s);
+              }
+              s = s.substring(1);
+              str += "\n" + s + "}";
+              return str;
+            case "string":
+              return o;
+            default:
+              return String(o);
+          }
+        };
+        js_Boot.__interfLoop = function(cc, cl) {
+          if (cc == null) {
+            return false;
+          }
+          if (cc == cl) {
+            return true;
+          }
+          var intf = cc.__interfaces__;
+          if (intf != null) {
+            var _g = 0;
+            var _g1 = intf.length;
+            while (_g < _g1) {
+              var i = _g++;
+              var i1 = intf[i];
+              if (i1 == cl || js_Boot.__interfLoop(i1, cl)) {
+                return true;
+              }
+            }
+          }
+          return js_Boot.__interfLoop(cc.__super__, cl);
+        };
+        js_Boot.__instanceof = function(o, cl) {
+          if (cl == null) {
+            return false;
+          }
+          switch (cl) {
+            case Array:
+              return o instanceof Array;
+            case Bool:
+              return typeof o == "boolean";
+            case Dynamic:
+              return o != null;
+            case Float:
+              return typeof o == "number";
+            case Int:
+              if (typeof o == "number") {
+                return (o | 0) === o;
+              } else {
+                return false;
+              }
+              break;
+            case String:
+              return typeof o == "string";
+            default:
+              if (o != null) {
+                if (typeof cl == "function") {
+                  if (js_Boot.__downcastCheck(o, cl)) {
+                    return true;
+                  }
+                } else if (typeof cl == "object" && js_Boot.__isNativeObj(cl)) {
+                  if (o instanceof cl) {
+                    return true;
+                  }
+                }
+              } else {
+                return false;
+              }
+              if (cl == Class ? o.__name__ != null : false) {
+                return true;
+              }
+              if (cl == Enum ? o.__ename__ != null : false) {
+                return true;
+              }
+              return false;
+          }
+        };
+        js_Boot.__downcastCheck = function(o, cl) {
+          if (!(o instanceof cl)) {
+            if (cl.__isInterface__) {
+              return js_Boot.__interfLoop(js_Boot.getClass(o), cl);
+            } else {
+              return false;
+            }
+          } else {
+            return true;
+          }
+        };
+        js_Boot.__cast = function(o, t) {
+          if (o == null || js_Boot.__instanceof(o, t)) {
+            return o;
+          } else {
+            throw haxe_Exception.thrown("Cannot cast " + Std.string(o) + " to " + Std.string(t));
+          }
+        };
+        js_Boot.__nativeClassName = function(o) {
+          var name = js_Boot.__toStr.call(o).slice(8, -1);
+          if (name == "Object" || name == "Function" || name == "Math" || name == "JSON") {
+            return null;
+          }
+          return name;
+        };
+        js_Boot.__isNativeObj = function(o) {
+          return js_Boot.__nativeClassName(o) != null;
+        };
+        js_Boot.__resolveNativeClass = function(name) {
+          return $global[name];
+        };
+        Object.defineProperty(String.prototype, "__class__", { value: String, enumerable: false, writable: true });
+        String.__name__ = true;
+        Array.__name__ = true;
+        Date.prototype.__class__ = Date;
+        Date.__name__ = "Date";
+        var Int = {};
+        var Dynamic = {};
+        var Float = Number;
+        var Bool = Boolean;
+        var Class = {};
+        var Enum = {};
+        js_Boot.__toStr = {}.toString;
+        client_TodoApp.isInitialized = false;
+        client_utils_LocalStorage.storage = js_Browser.getLocalStorage();
+      })(typeof exports != "undefined" ? exports : typeof window != "undefined" ? window : typeof self != "undefined" ? self : exports, typeof window != "undefined" ? window : typeof global != "undefined" ? global : typeof self != "undefined" ? self : exports);
+    }
+  });
+  require_app();
 })();

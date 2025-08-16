@@ -1,10 +1,81 @@
 {
   "name": "todo_app_assets",
   "version": "1.0.0",
-  "description": "Assets for TodoApp Phoenix LiveView application",
+  "description": "Assets for TodoApp Phoenix LiveView application with Haxe dual-target compilation",
+  "private": true,
+  "engines": {
+    "node": ">=14.0.0",
+    "npm": ">=6.0.0"
+  },
+  "scripts": {
+    "build": "npm run build:haxe && npm run build:esbuild",
+    "build:haxe": "haxe ../build-client.hxml",
+    "build:esbuild": "esbuild js/phoenix_app.js --bundle --outdir=../priv/static/assets --target=es2017",
+    "build:production": "npm run build:haxe && npm run build:esbuild:production",
+    "build:esbuild:production": "esbuild js/phoenix_app.js --bundle --outdir=../priv/static/assets --target=es2017 --minify --tree-shaking=true --drop:console --drop:debugger",
+    "watch": "concurrently \"npm run watch:haxe\" \"npm run watch:esbuild\"",
+    "watch:haxe": "haxe ../build-client.hxml --wait 6001",
+    "watch:esbuild": "esbuild js/phoenix_app.js --bundle --outdir=../priv/static/assets --target=es2017 --sourcemap=external --watch",
+    "analyze": "esbuild js/phoenix_app.js --bundle --metafile=meta.json --analyze",
+    "clean": "rm -rf ../priv/static/assets/*.js ../priv/static/assets/*.css ../priv/static/assets/*.map",
+    "lint": "eslint js/**/*.js",
+    "format": "prettier --write js/**/*.js css/**/*.css"
+  },
   "dependencies": {
     "phoenix": "file:../deps/phoenix",
-    "phoenix_html": "file:../deps/phoenix_html", 
+    "phoenix_html": "file:../deps/phoenix_html",
     "phoenix_live_view": "file:../deps/phoenix_live_view"
-  }
+  },
+  "devDependencies": {
+    "@tailwindcss/forms": "^0.5.7",
+    "@tailwindcss/typography": "^0.5.10",
+    "autoprefixer": "^10.4.16",
+    "concurrently": "^8.2.2",
+    "esbuild": "^0.19.8",
+    "eslint": "^8.55.0",
+    "postcss": "^8.4.32",
+    "prettier": "^3.1.0",
+    "tailwindcss": "^3.3.6"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/RobertBeckebans/reflaxe.elixir"
+  },
+  "keywords": [
+    "haxe",
+    "elixir",
+    "phoenix",
+    "liveview",
+    "typescript",
+    "frontend",
+    "esbuild",
+    "tailwind"
+  ],
+  "author": "Reflaxe.Elixir Contributors",
+  "license": "MIT",
+  "eslintConfig": {
+    "env": {
+      "browser": true,
+      "es2017": true
+    },
+    "extends": [
+      "eslint:recommended"
+    ],
+    "rules": {
+      "no-unused-vars": "warn",
+      "no-console": "off"
+    }
+  },
+  "prettier": {
+    "semi": true,
+    "singleQuote": true,
+    "tabWidth": 2,
+    "trailingComma": "es5"
+  },
+  "browserslist": [
+    "defaults",
+    "not IE 11",
+    "> 1%",
+    "last 2 versions"
+  ]
 }
