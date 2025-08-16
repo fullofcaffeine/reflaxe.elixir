@@ -843,6 +843,14 @@ What happens:
 - **Documentation**: Check for new architectural decisions, patterns, or best practices
 - **Why**: Ensures consistency, prevents regression, and leverages recent learning and discoveries
 
+### 12. JavaScript Generation Philosophy: Separation of Concerns (Added 2025-08-16)
+- **Rule**: Focus exclusively on Haxe→Elixir compilation; use standard Haxe JS compiler for JavaScript output
+- **Custom JS Only When**: Features don't exist in standard Haxe (e.g., async/await) or require specific Phoenix integration
+- **Benefits**: Reduced maintenance burden, clear project scope, better compatibility with JS tooling
+- **Implementation**: Delegate to Haxe's mature JS compiler unless absolutely necessary for custom features
+- **Future**: Consider Genes compiler migration while maintaining separation principle
+- **See**: [`documentation/JS_GENERATION_PHILOSOPHY.md`](documentation/JS_GENERATION_PHILOSOPHY.md) - Complete philosophical guide
+
 ## Recently Fixed Issues ✅ (2025-08-15)
 
 **Current Session - Documentation Formatting and Test Suite Fixes:**

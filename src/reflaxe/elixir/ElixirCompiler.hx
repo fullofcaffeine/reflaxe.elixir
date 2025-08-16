@@ -1411,44 +1411,122 @@ class ElixirCompiler extends DirectToStringCompiler {
      * Supports enum patterns, guard clauses, binary patterns, and pin operators
      */
     private function compileSwitchExpression(switchExpr: TypedExpr, cases: Array<{values: Array<TypedExpr>, expr: TypedExpr}>, defaultExpr: Null<TypedExpr>): String {
-        // Use PatternMatcher for advanced pattern compilation
+        // Use PatternMatcher for complete switch expression compilation
         if (patternMatcher == null) {
             patternMatcher = new reflaxe.elixir.helpers.PatternMatcher();
             patternMatcher.setCompiler(this);
         }
         
+        // Check for exhaustive pattern matching and warn if incomplete
+        var exhaustivenessWarnings = patternMatcher.validatePatternExhaustiveness(switchExpr, cases, defaultExpr);
+        for (warning in exhaustivenessWarnings) {
+            haxe.macro.Context.warning(warning, switchExpr.pos);
+        }
+        
+        // Check if this is a Result pattern that should use with statements
+        if (shouldUseWithStatement(switchExpr, cases)) {
+            return compileWithStatement(switchExpr, cases, defaultExpr);
+        }
+        
+        // Use PatternMatcher's comprehensive switch compilation
+        return patternMatcher.compileSwitchExpression(switchExpr, cases, defaultExpr);
+    }
+    
+    /**
+     * Check if switch expression should use with statement instead of case
+     * Returns true for Result patterns that benefit from Elixir's with syntax
+     */
+    private function shouldUseWithStatement(switchExpr: TypedExpr, cases: Array<{values: Array<TypedExpr>, expr: TypedExpr}>): Bool {
+        // Detect Result patterns that chain operations - ideal for with statements
+        if (cases.length >= 2) {
+            var hasSuccessPattern = false;
+            var hasErrorPattern = false;
+            
+            for (caseItem in cases) {
+                for (value in caseItem.values) {
+                    if (isResultSuccessPattern(value)) hasSuccessPattern = true;
+                    if (isResultErrorPattern(value)) hasErrorPattern = true;
+                }
+            }
+            
+            return hasSuccessPattern && hasErrorPattern;
+        }
+        
+        return false;
+    }
+    
+    /**
+     * Compile Result patterns using Elixir's with statement
+     * Generates idiomatic with/else syntax for Result chaining
+     */
+    private function compileWithStatement(switchExpr: TypedExpr, cases: Array<{values: Array<TypedExpr>, expr: TypedExpr}>, defaultExpr: Null<TypedExpr>): String {
         var result = new StringBuf();
         var switchValue = compileExpression(switchExpr);
         
-        result.add('case ${switchValue} do\n');
+        result.add('with ');
         
-        // Process each case with advanced pattern support
+        var successCases = [];
+        var errorCases = [];
+        
+        // Separate success and error patterns
         for (caseItem in cases) {
             for (value in caseItem.values) {
-                // Use PatternMatcher for all pattern types
-                var pattern = patternMatcher.compilePattern(value);
-                
-                // Check for guard expressions (if the field exists)
-                var guardClause = "";
-                // Guards are typically embedded in the value patterns in Haxe switch statements
-                // We'll need to extract them from the pattern if present
-                
-                var caseExpr = compileExpression(caseItem.expr);
-                result.add('  ${pattern}${guardClause} ->\n');
-                result.add('    ${caseExpr}\n');
+                if (isResultSuccessPattern(value)) {
+                    successCases.push({pattern: value, expr: caseItem.expr});
+                } else if (isResultErrorPattern(value)) {
+                    errorCases.push({pattern: value, expr: caseItem.expr});
+                }
             }
         }
         
-        // Add default case if present
+        // Generate with clause for success pattern
+        if (successCases.length > 0) {
+            var successCase = successCases[0];
+            var pattern = patternMatcher.compilePattern(successCase.pattern);
+            result.add('${pattern} <- ${switchValue} do\n');
+            
+            var successExpr = compileExpression(successCase.expr);
+            result.add('  ${successExpr}\n');
+        }
+        
+        // Generate else clause for error patterns
+        if (errorCases.length > 0) {
+            result.add('else\n');
+            
+            for (errorCase in errorCases) {
+                var pattern = patternMatcher.compilePattern(errorCase.pattern);
+                var errorExpr = compileExpression(errorCase.expr);
+                result.add('  ${pattern} -> ${errorExpr}\n');
+            }
+        }
+        
+        // Add default case to else if present
         if (defaultExpr != null) {
+            if (errorCases.length == 0) result.add('else\n');
             var defaultCode = compileExpression(defaultExpr);
-            result.add('  _ ->\n');
-            result.add('    ${defaultCode}\n');
+            result.add('  _ -> ${defaultCode}\n');
         }
         
         result.add('end');
-        
         return result.toString();
+    }
+    
+    /**
+     * Check if pattern represents Result success case
+     */
+    private function isResultSuccessPattern(pattern: TypedExpr): Bool {
+        // This is a simplified check - in practice would analyze the pattern more thoroughly
+        var patternStr = patternMatcher.compilePattern(pattern);
+        return patternStr.indexOf(":ok") >= 0 || patternStr.indexOf("success") >= 0;
+    }
+    
+    /**
+     * Check if pattern represents Result error case
+     */
+    private function isResultErrorPattern(pattern: TypedExpr): Bool {
+        // This is a simplified check - in practice would analyze the pattern more thoroughly
+        var patternStr = patternMatcher.compilePattern(pattern);
+        return patternStr.indexOf(":error") >= 0 || patternStr.indexOf("error") >= 0;
     }
     
     /**
