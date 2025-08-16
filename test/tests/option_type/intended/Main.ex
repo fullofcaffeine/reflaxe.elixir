@@ -26,14 +26,14 @@ defmodule Main do
   """
   @spec test_option_construction() :: nil
   def test_option_construction() do
-    {:some, "hello"}
-    :none
+    {:ok, "hello"}
+    :error
     name = "world"
     nullable_name = nil
     OptionTools.fromNullable(name)
     OptionTools.fromNullable(nullable_name)
-    {:some, "Alice"}
-    :none
+    {:ok, "Alice"}
+    :error
   end
 
   @doc """
@@ -42,37 +42,37 @@ defmodule Main do
   """
   @spec test_pattern_matching() :: nil
   def test_pattern_matching() do
-    user = {:some, "Bob"}
+    user = {:ok, "Bob"}
     temp_string = nil
-    case (case user do {:some, _} -> 0; :none -> 1; _ -> -1 end) do
+    case (case user do {:ok, _} -> 0; :error -> 1; _ -> -1 end) do
       0 ->
-        _g = case user do {:some, value} -> value; :none -> nil; _ -> nil end
+        _g = case user do {:ok, value} -> value; :error -> nil; _ -> nil end
         name = _g
         temp_string = "Hello, " <> name
       1 ->
         temp_string = "Hello, anonymous"
     end
-    scores = {:some, [1, 2, 3]}
+    scores = {:ok, [1, 2, 3]}
     temp_number = nil
-    case (case scores do {:some, _} -> 0; :none -> 1; _ -> -1 end) do
+    case (case scores do {:ok, _} -> 0; :error -> 1; _ -> -1 end) do
       0 ->
-        _g = case scores do {:some, value} -> value; :none -> nil; _ -> nil end
+        _g = case scores do {:ok, value} -> value; :error -> nil; _ -> nil end
         score_list = _g
         temp_number = length(score_list)
       1 ->
         temp_number = 0
     end
     temp_number
-    Main.processUser({:some, "Charlie"})
-    Main.processUser(:none)
+    Main.processUser({:ok, "Charlie"})
+    Main.processUser(:error)
   end
 
   @doc "Function process_user"
   @spec process_user(Option.t()) :: nil
   def process_user(user) do
-    case (case user do {:some, _} -> 0; :none -> 1; _ -> -1 end) do
+    case (case user do {:ok, _} -> 0; :error -> 1; _ -> -1 end) do
       0 ->
-        _g = case user do {:some, value} -> value; :none -> nil; _ -> nil end
+        _g = case user do {:ok, value} -> value; :error -> nil; _ -> nil end
         name = _g
         Log.trace("Processing user: " <> name, %{"fileName" => "Main.hx", "lineNumber" => 68, "className" => "Main", "methodName" => "processUser"})
       1 ->
@@ -86,19 +86,19 @@ defmodule Main do
   """
   @spec test_functional_operations() :: nil
   def test_functional_operations() do
-    user = {:some, "David"}
+    user = {:ok, "David"}
     OptionTools.map(user, fn name -> String.upcase(name) end)
     OptionTools.filter(user, fn name -> String.length(name) > 3 end)
     OptionTools.then(user, fn name -> temp_result = nil
-    if (String.length(name) > 0), do: temp_result = {:some, name <> "!"}, else: temp_result = :none
+    if (String.length(name) > 0), do: temp_result = {:ok, name <> "!"}, else: temp_result = :error
     temp_result end)
-    OptionTools.then(OptionTools.filter(OptionTools.map(user, fn name -> String.upcase(name) end), fn name -> String.length(name) > 2 end), fn name -> {:some, name <> " [PROCESSED]"} end)
+    OptionTools.then(OptionTools.filter(OptionTools.map(user, fn name -> String.upcase(name) end), fn name -> String.length(name) > 2 end), fn name -> {:ok, name <> " [PROCESSED]"} end)
     OptionTools.unwrap(user, "Anonymous")
     OptionTools.lazyUnwrap(user, fn  -> "Computed default" end)
-    first = {:some, "First"}
-    second = :none
+    first = {:ok, "First"}
+    second = :error
     OptionTools.or(first, second)
-    OptionTools.lazyOr(first, fn  -> {:some, "Lazy second"} end)
+    OptionTools.lazyOr(first, fn  -> {:ok, "Lazy second"} end)
   end
 
   @doc """
@@ -107,14 +107,14 @@ defmodule Main do
   """
   @spec test_beam_integration() :: nil
   def test_beam_integration() do
-    user = {:some, "Eve"}
+    user = {:ok, "Eve"}
     OptionTools.toResult(user, "User not found")
     ok_result = {:ok, "Frank"}
     error_result = {:error, "Not found"}
     OptionTools.fromResult(ok_result)
     OptionTools.fromResult(error_result)
     OptionTools.toReply(user)
-    valid_user = {:some, "Grace"}
+    valid_user = {:ok, "Grace"}
     OptionTools.expect(valid_user, "Expected valid user")
   end
 
@@ -138,11 +138,11 @@ defmodule Main do
   """
   @spec test_collection_operations() :: nil
   def test_collection_operations() do
-    options = [{:some, 1}, :none, {:some, 3}, {:some, 4}, :none]
+    options = [{:ok, 1}, :error, {:ok, 3}, {:ok, 4}, :error]
     OptionTools.values(options)
-    all_options = [{:some, 1}, {:some, 2}, {:some, 3}]
+    all_options = [{:ok, 1}, {:ok, 2}, {:ok, 3}]
     OptionTools.all(all_options)
-    mixed_options = [{:some, 1}, :none, {:some, 3}]
+    mixed_options = [{:ok, 1}, :error, {:ok, 3}]
     OptionTools.all(mixed_options)
     temp_array = nil
     temp_array1 = nil
@@ -177,7 +177,7 @@ defmodule UserService do
     _g = 0
     _g = UserService.users
     Enum.find(_g, fn item -> (user.name == name) end)
-    :none
+    :error
   end
 
   @doc "Function get_user_email"

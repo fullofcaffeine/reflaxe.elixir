@@ -86,36 +86,36 @@ defmodule MigrationDSL do
       case (elem(_g, 0)) do
         0 ->
           _g = elem(_g, 1)
-      if (elem(_g, 0) == 2) do
-        _g = elem(_g, 1)
-        elem(_g, 2)
-        s = _g
-        table_name = s
-      else
-        table_name = MigrationDSL.extractTableNameFromClassName(class_type.name)
-      end
-        5 ->
-          _g = elem(_g, 1)
-      fields = _g
-      _g = 0
-      Enum.map(fields, fn item -> field = Enum.at(fields, _g)
-      _g = _g + 1
-      if (field.field == "table") do
-        _g = field.expr.expr
-        if (elem(_g, 0) == 0) do
-          _g = elem(_g, 1)
           if (elem(_g, 0) == 2) do
             _g = elem(_g, 1)
             elem(_g, 2)
             s = _g
             table_name = s
           else
-            nil
+            table_name = MigrationDSL.extractTableNameFromClassName(class_type.name)
           end
-        else
-          nil
-        end
-      end end)
+        5 ->
+          _g = elem(_g, 1)
+          fields = _g
+          _g = 0
+          Enum.map(fields, fn item -> field = Enum.at(fields, _g)
+          _g = _g + 1
+          if (field.field == "table") do
+            _g = field.expr.expr
+            if (elem(_g, 0) == 0) do
+              _g = elem(_g, 1)
+              if (elem(_g, 0) == 2) do
+                _g = elem(_g, 1)
+                elem(_g, 2)
+                s = _g
+                table_name = s
+              else
+                nil
+              end
+            else
+              nil
+            end
+          end end)
         _ ->
           table_name = MigrationDSL.extractTableNameFromClassName(class_type.name)
       end

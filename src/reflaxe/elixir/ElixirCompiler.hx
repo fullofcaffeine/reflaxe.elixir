@@ -1323,7 +1323,7 @@ class ElixirCompiler extends DirectToStringCompiler {
                 
                 // Check if this is a Result or Option type which needs special tuple-based handling
                 // Result types compile to Elixir tuples {:ok, value} and {:error, reason}
-                // Option types compile to Elixir patterns {:some, value} and :none
+                // Option types compile to Elixir patterns {:ok, value} and :error
                 // instead of standard enum modules, so introspection works differently
                 var typeInfo = switch (e.t) {
                     case TEnum(enumType, _):
@@ -1343,9 +1343,9 @@ class ElixirCompiler extends DirectToStringCompiler {
                     'case ${enumExpr} do {:ok, _} -> 0; {:error, _} -> 1; _ -> -1 end';
                 } else if (typeInfo.isOption) {
                     // Option types use pattern matching to get the constructor index
-                    // {:some, _} maps to index 0, :none maps to index 1
+                    // {:ok, _} maps to index 0, :error maps to index 1
                     // This generates a case statement that extracts the type from the pattern
-                    'case ${enumExpr} do {:some, _} -> 0; :none -> 1; _ -> -1 end';
+                    'case ${enumExpr} do {:ok, _} -> 0; :error -> 1; _ -> -1 end';
                 } else {
                     // Standard enums compile to tagged tuples like {:constructor_name, arg1, arg2}
                     // The first element (index 0) is always the constructor tag/atom
@@ -1382,11 +1382,11 @@ class ElixirCompiler extends DirectToStringCompiler {
                         'nil';
                     }
                 } else if (typeInfo.isOption) {
-                    // Option types have either {:some, value} or :none
+                    // Option types have either {:ok, value} or :error
                     // Only Some has a parameter (index 0), None has no parameters
                     if (index == 0) {
-                        // Extract the value from {:some, value}, return nil for :none
-                        'case ${enumExpr} do {:some, value} -> value; :none -> nil; _ -> nil end';
+                        // Extract the value from {:ok, value}, return nil for :error
+                        'case ${enumExpr} do {:ok, value} -> value; :error -> nil; _ -> nil end';
                     } else {
                         // Option types only have one parameter in Some, so index > 0 should not occur
                         // Return nil for safety if this happens
@@ -2019,10 +2019,10 @@ class ElixirCompiler extends DirectToStringCompiler {
                 if (className == "Option" && (fieldName == "Some" || fieldName == "None")) {
                     if (fieldName == "Some") {
                         // Some without arguments becomes a partial function
-                        return "fn value -> {:some, value} end";
+                        return "fn value -> {:ok, value} end";
                     } else if (fieldName == "None") {
-                        // None becomes the atom :none
-                        return ":none";
+                        // None becomes the atom :error
+                        return ":error";
                     }
                 } else {
                     fieldName = NamingHelper.getElixirFunctionName(fieldName);
@@ -2173,8 +2173,22 @@ class ElixirCompiler extends DirectToStringCompiler {
                     case FEnum(enumType, enumField):
                         var enumTypeRef = enumType.get();
                         if (AlgebraicDataTypeCompiler.isADTType(enumTypeRef)) {
+                            // Handle standard library ADT types with idiomatic patterns
                             var compiled = AlgebraicDataTypeCompiler.compileADTPattern(enumTypeRef, enumField, args, (expr) -> compileExpression(expr));
                             if (compiled != null) return compiled;
+                        } else {
+                            // Handle user-defined enums with literal patterns
+                            var fieldName = NamingHelper.toSnakeCase(enumField.name);
+                            if (args.length == 0) {
+                                return ':${fieldName}';
+                            } else {
+                                var compiledArgs = args.map(arg -> compileExpression(arg));
+                                if (args.length == 1) {
+                                    return '{:${fieldName}, ${compiledArgs[0]}}';
+                                } else {
+                                    return '{:${fieldName}, ${compiledArgs.join(", ")}}';
+                                }
+                            }
                         }
                     case _:
                 }
@@ -2224,11 +2238,12 @@ class ElixirCompiler extends DirectToStringCompiler {
                 // Handle other method calls normally
                 var compiledArgs = args.map(arg -> compileExpression(arg));
                 
-                // Check for algebraic data type constructor calls that weren't detected as FEnum
+                // Check for standard library ADT constructor calls that weren't detected as FEnum
+                // Only applies to actual standard library types, not user-defined enums with same names
                 if (AlgebraicDataTypeCompiler.isADTTypeName(objStr)) {
                     var config = AlgebraicDataTypeCompiler.getADTConfigByTypeName(objStr);
                     if (config != null) {
-                        // Try to get the actual enum type for full compilation
+                        // Verify this is actually the standard library type, not a user-defined type
                         var enumType = null;
                         try {
                             var fullTypeName = '${config.moduleName}.${config.typeName}';
@@ -2236,10 +2251,14 @@ class ElixirCompiler extends DirectToStringCompiler {
                             switch (adtType) {
                                 case TEnum(enumRef, _):
                                     enumType = enumRef.get();
+                                    // Additional check: ensure this is actually an ADT type
+                                    if (!AlgebraicDataTypeCompiler.isADTType(enumType)) {
+                                        enumType = null; // Not actually a standard library ADT
+                                    }
                                 case _:
                             }
                         } catch (e: Dynamic) {
-                            // Fallback if type not found
+                            // Fallback if type not found - definitely not a standard library type
                         }
                         
                         if (enumType != null) {
