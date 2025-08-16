@@ -160,6 +160,7 @@ Repeat → Continuous Quality Improvement
 - **Paradigm Bridge**: [`documentation/paradigms/PARADIGM_BRIDGE.md`](documentation/paradigms/PARADIGM_BRIDGE.md) - How Haxe's imperative patterns translate to Elixir's functional world
 - **Haxe for Phoenix**: [`documentation/phoenix/HAXE_FOR_PHOENIX.md`](documentation/phoenix/HAXE_FOR_PHOENIX.md) - Advantages of using Haxe for Phoenix development
 - **Developer Patterns**: [`documentation/guides/DEVELOPER_PATTERNS.md`](documentation/guides/DEVELOPER_PATTERNS.md) - Best practices and patterns for effective Haxe→Elixir code
+- **Haxe Module System**: [`documentation/HAXE_MODULE_SYSTEM.md`](documentation/HAXE_MODULE_SYSTEM.md) - Module sub-types, static extensions, `using` vs `@:using` patterns
 
 ### Macro Development Guides ✨ **NEW**
 - **Macro Principles**: [`documentation/macro/MACRO_PRINCIPLES.md`](documentation/macro/MACRO_PRINCIPLES.md) - Core principles for developing reliable Haxe macros based on proven implementations
@@ -496,9 +497,41 @@ return Supervisor.startLink(children, opts);
 - **NO AI attribution**: Never add "Generated with Claude Code" or "Co-Authored-By: Claude"
 - Breaking changes: Use `!` after type (e.g., `feat!:`) or `BREAKING CHANGE:` in footer
 
+## Changelog Management Rules ⚠️
+
+**CRITICAL: NEVER manually edit CHANGELOG.md** - This project uses semantic-release automation.
+
+### How It Works
+1. **Write proper conventional commit messages** with types (feat:, fix:, docs:, etc.)
+2. **GitHub Actions runs semantic-release** on successful CI builds
+3. **Automatic changelog generation** from commit messages since last release
+4. **Version bumping** based on commit types (feat → minor, fix → patch, BREAKING → major)
+
+### What NOT to Do ❌
+- **Don't edit the `[Unreleased]` section** in CHANGELOG.md
+- **Don't manually add entries** to any changelog sections
+- **Don't create new version sections** manually
+
+### What TO Do ✅
+- **Write descriptive conventional commit messages**: `fix(compiler): add filter to Result method detection`
+- **Use proper commit types**: `feat(router): add support for nested resources`
+- **Include scope when relevant**: `fix(liveview): resolve parameter naming in generated hooks`
+- **Let semantic-release handle versioning** and changelog generation automatically
+
+### Example Proper Commits
+```
+feat(compiler): implement @:elixirIdiomatic annotation with smart pattern detection
+fix(compiler): resolve lambda variable substitution in array methods  
+docs(architecture): update testing methodology documentation
+test: add comprehensive snapshot tests for new enum patterns
+```
+
+**These commits will automatically appear in the next release's CHANGELOG.md when semantic-release runs.**
+
 ## Development Resources & Reference Strategy
 - **Reference Codebase**: `/Users/fullofcaffeine/workspace/code/haxe.elixir.reference/` - Contains Reflaxe patterns, Phoenix examples, Haxe source
 - **Haxe API Documentation**: https://api.haxe.org/ - For type system, standard library, and language features
+- **Haxe Manual**: https://haxe.org/manual/ - **CRITICAL**: For any advanced feature, always consult the official manual to use the best features, avoid outdated features, and not miss useful capabilities
 - **Haxe Code Cookbook**: https://code.haxe.org/ - Modern patterns and best practices
 - **Web Resources**: Use WebSearch and WebFetch for current documentation, API references, and best practices
 - **Principle**: Always reference existing working code and official documentation rather than guessing or assuming implementation details
