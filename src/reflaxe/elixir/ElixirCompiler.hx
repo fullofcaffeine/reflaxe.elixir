@@ -2201,7 +2201,7 @@ class ElixirCompiler extends DirectToStringCompiler {
                         // Continue with normal method call handling
                 }
                 
-                // Check if this is a static extension call from OptionTools or ResultTools
+                // Check if this is a static extension call from OptionTools, ResultTools, or ArrayTools
                 // Haxe's 'using' transforms user.map() into OptionTools.map(user, ...) 
                 if (objStr == "OptionTools" && isOptionMethod(methodName)) {
                     var compiledArgs = args.map(arg -> compileExpression(arg));
@@ -2209,6 +2209,17 @@ class ElixirCompiler extends DirectToStringCompiler {
                 } else if (objStr == "ResultTools" && isResultMethod(methodName)) {
                     var compiledArgs = args.map(arg -> compileExpression(arg));
                     return 'ResultTools.${methodName}(${compiledArgs.join(", ")})';
+                } else if (objStr == "ArrayTools" && isArrayMethod(methodName)) {
+                    // ArrayTools static extensions need to be compiled to idiomatic Elixir Enum calls
+                    // The first argument is the array, remaining arguments are method parameters
+                    if (args.length > 0) {
+                        var arrayExpr = compileExpression(args[0]);  // First arg is the array
+                        var methodArgs = args.slice(1);             // Remaining args are method parameters
+                        return compileArrayMethod(arrayExpr, methodName, methodArgs);
+                    } else {
+                        // Fallback for methods with no arguments
+                        return 'ArrayTools.${methodName}()';
+                    }
                 }
                 
                 // Check if this is an ADT type (Option<T>, Result<T,E>, etc.) with static extension methods
@@ -3912,7 +3923,10 @@ class ElixirCompiler extends DirectToStringCompiler {
             case "join", "push", "pop", "length", "map", "filter", 
                  "concat", "contains", "indexOf", "reduce", "forEach",
                  "find", "findIndex", "slice", "splice", "reverse",
-                 "sort", "shift", "unshift", "every", "some":
+                 "sort", "shift", "unshift", "every", "some",
+                 // ArrayTools extension methods
+                 "fold", "exists", "any", "foreach", "all", 
+                 "take", "drop", "flatMap":
                 true;
             case _:
                 false;
@@ -4117,6 +4131,208 @@ class ElixirCompiler extends DirectToStringCompiler {
                     'Enum.find_index(${objStr}, &(&1 == ${compiledArgs[0]}))';
                 } else {
                     'nil';
+                }
+            case "reduce", "fold":
+                // array.reduce((acc, item) -> acc + item, initial) → Enum.reduce(array, initial, fn item, acc -> acc + item end)
+                if (compiledArgs.length >= 2) {
+                    // Check if the first argument is a lambda that needs variable substitution
+                    if (args.length >= 1) {
+                        switch (args[0].expr) {
+                            case TFunction(func):
+                                // Handle lambda with targeted variable substitution for reduce
+                                // Haxe typically uses (acc, item) but Elixir Enum.reduce uses (item, acc) parameter order
+                                var haxeAccParamName = func.args.length > 0 ? NamingHelper.toSnakeCase(getOriginalVarName(func.args[0].v)) : "acc";
+                                var haxeItemParamName = func.args.length > 1 ? NamingHelper.toSnakeCase(getOriginalVarName(func.args[1].v)) : "item";
+                                var accParamTVar = func.args.length > 0 ? func.args[0].v : null;
+                                var itemParamTVar = func.args.length > 1 ? func.args[1].v : null;
+                                
+                                // For Elixir, we use "item" and "acc" as standard names
+                                var elixirItemName = "item";
+                                var elixirAccName = "acc";
+                                
+                                // Apply variable substitution for both parameters
+                                // Use the existing compileExpressionWithTVarSubstitution but apply both substitutions
+                                var bodyAfterAccSubst = accParamTVar != null ? 
+                                    compileExpressionWithTVarSubstitution(func.expr, accParamTVar, elixirAccName) : 
+                                    compileExpression(func.expr);
+                                
+                                // For the second parameter, we need to manually replace in the string
+                                // since we can't easily chain TVar substitutions
+                                var compiledBody = bodyAfterAccSubst;
+                                if (itemParamTVar != null) {
+                                    var originalItemName = getOriginalVarName(itemParamTVar);
+                                    compiledBody = compiledBody.replace(originalItemName, elixirItemName);
+                                }
+                                
+                                // Elixir's Enum.reduce expects (collection, initial, fn item, acc -> result end)
+                                return 'Enum.reduce(${objStr}, ${compiledArgs[1]}, fn ${elixirItemName}, ${elixirAccName} -> ${compiledBody} end)';
+                            case _:
+                                // Not a simple lambda, use regular compilation
+                                return 'Enum.reduce(${objStr}, ${compiledArgs[1]}, ${compiledArgs[0]})';
+                        }
+                    } else {
+                        return 'Enum.reduce(${objStr}, ${compiledArgs[1]}, ${compiledArgs[0]})';
+                    }
+                } else {
+                    objStr; // Not enough arguments for reduce
+                }
+            case "find":
+                // array.find(predicate) → Enum.find(array, predicate)
+                if (compiledArgs.length > 0) {
+                    // Check if the argument is a lambda that needs variable substitution
+                    if (args.length > 0) {
+                        switch (args[0].expr) {
+                            case TFunction(func):
+                                // Handle lambda with targeted variable substitution
+                                var paramName = func.args.length > 0 ? NamingHelper.toSnakeCase(getOriginalVarName(func.args[0].v)) : "item";
+                                var paramTVar = func.args.length > 0 ? func.args[0].v : null;
+                                var body = paramTVar != null ? 
+                                    compileExpressionWithTVarSubstitution(func.expr, paramTVar, paramName) :
+                                    compileExpression(func.expr);
+                                return 'Enum.find(${objStr}, fn ${paramName} -> ${body} end)';
+                            case _:
+                                // Not a simple lambda, use regular compilation
+                                return 'Enum.find(${objStr}, ${compiledArgs[0]})';
+                        }
+                    } else {
+                        return 'Enum.find(${objStr}, ${compiledArgs[0]})';
+                    }
+                } else {
+                    'nil';
+                }
+            case "findIndex":
+                // array.findIndex(predicate) → Enum.find_index(array, predicate)
+                if (compiledArgs.length > 0) {
+                    // Check if the argument is a lambda that needs variable substitution
+                    if (args.length > 0) {
+                        switch (args[0].expr) {
+                            case TFunction(func):
+                                // Handle lambda with targeted variable substitution
+                                var paramName = func.args.length > 0 ? NamingHelper.toSnakeCase(getOriginalVarName(func.args[0].v)) : "item";
+                                var paramTVar = func.args.length > 0 ? func.args[0].v : null;
+                                var body = paramTVar != null ? 
+                                    compileExpressionWithTVarSubstitution(func.expr, paramTVar, paramName) :
+                                    compileExpression(func.expr);
+                                return 'Enum.find_index(${objStr}, fn ${paramName} -> ${body} end)';
+                            case _:
+                                // Not a simple lambda, use regular compilation
+                                return 'Enum.find_index(${objStr}, ${compiledArgs[0]})';
+                        }
+                    } else {
+                        return 'Enum.find_index(${objStr}, ${compiledArgs[0]})';
+                    }
+                } else {
+                    'nil';
+                }
+            case "exists", "any":
+                // array.exists(predicate) → Enum.any?(array, predicate)
+                if (compiledArgs.length > 0) {
+                    // Check if the argument is a lambda that needs variable substitution
+                    if (args.length > 0) {
+                        switch (args[0].expr) {
+                            case TFunction(func):
+                                // Handle lambda with targeted variable substitution
+                                var paramName = func.args.length > 0 ? NamingHelper.toSnakeCase(getOriginalVarName(func.args[0].v)) : "item";
+                                var paramTVar = func.args.length > 0 ? func.args[0].v : null;
+                                var body = paramTVar != null ? 
+                                    compileExpressionWithTVarSubstitution(func.expr, paramTVar, paramName) :
+                                    compileExpression(func.expr);
+                                return 'Enum.any?(${objStr}, fn ${paramName} -> ${body} end)';
+                            case _:
+                                // Not a simple lambda, use regular compilation
+                                return 'Enum.any?(${objStr}, ${compiledArgs[0]})';
+                        }
+                    } else {
+                        return 'Enum.any?(${objStr}, ${compiledArgs[0]})';
+                    }
+                } else {
+                    'false';
+                }
+            case "foreach", "all":
+                // array.foreach(predicate) → Enum.all?(array, predicate)
+                if (compiledArgs.length > 0) {
+                    // Check if the argument is a lambda that needs variable substitution
+                    if (args.length > 0) {
+                        switch (args[0].expr) {
+                            case TFunction(func):
+                                // Handle lambda with targeted variable substitution
+                                var paramName = func.args.length > 0 ? NamingHelper.toSnakeCase(getOriginalVarName(func.args[0].v)) : "item";
+                                var paramTVar = func.args.length > 0 ? func.args[0].v : null;
+                                var body = paramTVar != null ? 
+                                    compileExpressionWithTVarSubstitution(func.expr, paramTVar, paramName) :
+                                    compileExpression(func.expr);
+                                return 'Enum.all?(${objStr}, fn ${paramName} -> ${body} end)';
+                            case _:
+                                // Not a simple lambda, use regular compilation
+                                return 'Enum.all?(${objStr}, ${compiledArgs[0]})';
+                        }
+                    } else {
+                        return 'Enum.all?(${objStr}, ${compiledArgs[0]})';
+                    }
+                } else {
+                    'true';
+                }
+            case "forEach":
+                // array.forEach(action) → Enum.each(array, action)
+                if (compiledArgs.length > 0) {
+                    // Check if the argument is a lambda that needs variable substitution
+                    if (args.length > 0) {
+                        switch (args[0].expr) {
+                            case TFunction(func):
+                                // Handle lambda with targeted variable substitution
+                                var paramName = func.args.length > 0 ? NamingHelper.toSnakeCase(getOriginalVarName(func.args[0].v)) : "item";
+                                var paramTVar = func.args.length > 0 ? func.args[0].v : null;
+                                var body = paramTVar != null ? 
+                                    compileExpressionWithTVarSubstitution(func.expr, paramTVar, paramName) :
+                                    compileExpression(func.expr);
+                                return 'Enum.each(${objStr}, fn ${paramName} -> ${body} end)';
+                            case _:
+                                // Not a simple lambda, use regular compilation
+                                return 'Enum.each(${objStr}, ${compiledArgs[0]})';
+                        }
+                    } else {
+                        return 'Enum.each(${objStr}, ${compiledArgs[0]})';
+                    }
+                } else {
+                    ':ok';
+                }
+            case "take":
+                // array.take(n) → Enum.take(array, n)
+                if (compiledArgs.length > 0) {
+                    'Enum.take(${objStr}, ${compiledArgs[0]})';
+                } else {
+                    objStr;
+                }
+            case "drop":
+                // array.drop(n) → Enum.drop(array, n)
+                if (compiledArgs.length > 0) {
+                    'Enum.drop(${objStr}, ${compiledArgs[0]})';
+                } else {
+                    objStr;
+                }
+            case "flatMap":
+                // array.flatMap(fn) → Enum.flat_map(array, fn)
+                if (compiledArgs.length > 0) {
+                    // Check if the argument is a lambda that needs variable substitution
+                    if (args.length > 0) {
+                        switch (args[0].expr) {
+                            case TFunction(func):
+                                // Handle lambda with targeted variable substitution
+                                var paramName = func.args.length > 0 ? NamingHelper.toSnakeCase(getOriginalVarName(func.args[0].v)) : "item";
+                                var paramTVar = func.args.length > 0 ? func.args[0].v : null;
+                                var body = paramTVar != null ? 
+                                    compileExpressionWithTVarSubstitution(func.expr, paramTVar, paramName) :
+                                    compileExpression(func.expr);
+                                return 'Enum.flat_map(${objStr}, fn ${paramName} -> ${body} end)';
+                            case _:
+                                // Not a simple lambda, use regular compilation
+                                return 'Enum.flat_map(${objStr}, ${compiledArgs[0]})';
+                        }
+                    } else {
+                        return 'Enum.flat_map(${objStr}, ${compiledArgs[0]})';
+                    }
+                } else {
+                    objStr;
                 }
             case _:
                 // Default: try to call as a regular method

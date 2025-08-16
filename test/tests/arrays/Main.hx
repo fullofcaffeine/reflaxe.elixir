@@ -1,5 +1,7 @@
 package;
 
+using ArrayTools;
+
 /**
  * Arrays test case
  * Tests array operations and list comprehensions
@@ -127,6 +129,72 @@ class Main {
 		return [for (i in 0...Std.int(Math.min(n, arr.length))) arr[i]];
 	}
 	
+	// NEW: Functional array methods tests
+	public static function functionalMethods(): Void {
+		var numbers = [1, 2, 3, 4, 5];
+		var strings = ["hello", "world", "haxe", "elixir"];
+		
+		// Test reduce/fold - accumulation operations
+		var sum = numbers.reduce((acc, item) -> acc + item, 0);
+		trace('Sum via reduce: $sum');
+		
+		var product = numbers.fold((acc, item) -> acc * item, 1);
+		trace('Product via fold: $product');
+		
+		// Test find - search for first match
+		var firstEven = numbers.find(n -> n % 2 == 0);
+		trace('First even number: $firstEven');
+		
+		var longWord = strings.find(s -> s.length > 4);
+		trace('First long word: $longWord');
+		
+		// Test findIndex - get index of first match
+		var evenIndex = numbers.findIndex(n -> n % 2 == 0);
+		trace('Index of first even: $evenIndex');
+		
+		var longWordIndex = strings.findIndex(s -> s.length > 4);
+		trace('Index of first long word: $longWordIndex');
+		
+		// Test exists/any - check if any element matches
+		var hasEven = numbers.exists(n -> n % 2 == 0);
+		trace('Has even numbers: $hasEven');
+		
+		var hasVeryLong = strings.any(s -> s.length > 10);
+		trace('Has very long word: $hasVeryLong');
+		
+		// Test foreach/all - check if all elements match
+		var allPositive = numbers.foreach(n -> n > 0);
+		trace('All positive: $allPositive');
+		
+		var allShort = strings.all(s -> s.length < 10);
+		trace('All short words: $allShort');
+		
+		// Test forEach - side effects
+		trace('Numbers via forEach:');
+		numbers.forEach(n -> trace('  - $n'));
+		
+		// Test take - get first n elements
+		var first3 = numbers.take(3);
+		trace('First 3 numbers: $first3');
+		
+		// Test drop - skip first n elements
+		var skip2 = numbers.drop(2);
+		trace('Skip first 2: $skip2');
+		
+		// Test flatMap - map and flatten
+		var nestedArrays = [[1, 2], [3, 4], [5]];
+		var flattened = nestedArrays.flatMap(arr -> arr.map(x -> x * 2));
+		trace('FlatMap doubled: $flattened');
+		
+		// Test chaining functional methods
+		var processed = numbers
+			.filter(n -> n > 2)           // [3, 4, 5]
+			.map(n -> n * n)              // [9, 16, 25]
+			.take(2)                      // [9, 16]
+			.reduce((acc, n) -> acc + n, 0); // 25
+		trace('Chained operations result: $processed');
+	}
+	
 	public static function main() {
 		trace("=== Basic Array Operations ===");
 		basicArrayOps();
@@ -149,5 +217,8 @@ class Main {
 		
 		var first3 = firstN(["a", "b", "c", "d", "e"], 3);
 		trace('First 3: $first3');
+		
+		trace("\n=== NEW: Functional Array Methods ===");
+		functionalMethods();
 	}
 }
