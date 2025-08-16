@@ -13,6 +13,7 @@ Reflaxe.Elixir now provides **full async/await support** for Haxe→JavaScript c
 ✅ **Zero Runtime Overhead** - Pure compile-time transformation  
 ✅ **100% Promise Compatibility** - Works with all JavaScript Promise libraries  
 ✅ **Error Handling** - Full try/catch support with async/await  
+✅ **Anonymous Function Support** ✨ **NEW** - Full @:async support for anonymous functions  
 ✅ **Snapshot Testing** - Included in test suite for reliability  
 
 ## Quick Start
@@ -45,7 +46,63 @@ class MyApp {
 }
 ```
 
-### 2. Build Configuration
+### 2. Anonymous Functions ✨ **NEW**
+
+```haxe
+import reflaxe.js.Async;
+
+class ClientApp {
+    public static function main(): Void {
+        // Anonymous async function without explicit return type
+        var loadUserData = @:async function() {
+            trace("Loading user data...");
+        };
+        
+        // Anonymous async function with explicit return type
+        var fetchSettings = @:async function(): Promise<Dynamic> {
+            return loadAppSettings();
+        };
+        
+        // Anonymous async function with await calls
+        var processData = @:async function() {
+            var userData = Async.await(loadUserData());
+            var settings = Async.await(fetchSettings());
+            return processUserWithSettings(userData, settings);
+        };
+        
+        // Use the functions naturally
+        processData();
+    }
+    
+    static function loadAppSettings(): js.lib.Promise<Dynamic> {
+        return js.lib.Promise.resolve({theme: "dark", lang: "en"});
+    }
+    
+    static function processUserWithSettings(user: Dynamic, settings: Dynamic): String {
+        return "Processed " + user + " with " + settings;
+    }
+}
+```
+
+**Generated JavaScript:**
+```javascript
+var loadUserData = function() {
+    console.log("Loading user data...");
+    return Promise.resolve(null);
+};
+
+var fetchSettings = function() {
+    return loadAppSettings();
+};
+
+var processData = function() {
+    var userData = await loadUserData();
+    var settings = await fetchSettings();
+    return Promise.resolve(processUserWithSettings(userData, settings));
+};
+```
+
+### 3. Build Configuration
 
 Add to your `.hxml` file:
 

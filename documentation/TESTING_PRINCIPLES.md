@@ -86,6 +86,45 @@ addColumn("users", "id", "serial", true, null); // primary_key param
 
 **When in doubt**: Check reference implementations (Haxe API, existing Reflaxe projects) rather than guessing or oversimplifying.
 
+### Universal Testing Principle: Test the Contract, Not the Mechanism 🎯
+
+**FUNDAMENTAL RULE**: At every level, test the behavioral contract with your users, not the implementation mechanism.
+
+**The Contract vs Mechanism Distinction**:
+- **Contract**: What you promise to deliver (behavior/outcome)
+- **Mechanism**: How you deliver it internally (implementation)
+
+**Examples Across All Levels**:
+
+#### Compiler Level
+- ✅ **Test Contract**: "Haxe async produces JS async syntax"
+- ❌ **Don't Test Mechanism**: "Compiler uses visitor pattern for AST"
+
+#### Library Level  
+- ✅ **Test Contract**: "StringTools.startsWith() identifies prefixes"
+- ❌ **Don't Test Mechanism**: "Uses Boyer-Moore string algorithm"
+
+#### Application Level
+- ✅ **Test Contract**: "Todos persist between sessions"
+- ❌ **Don't Test Mechanism**: "Uses async localStorage API"
+
+**Why This Matters**:
+- Implementations can change without breaking contracts
+- Tests document promises, not current implementations
+- Refactoring is safe when contracts are preserved
+- Users care about contracts, not mechanisms
+
+**The "User" at Each Level**:
+- **Compiler users**: Developers writing Haxe code
+- **Library users**: Developers using your functions
+- **App users**: End users using the software
+
+**Practical Application**:
+When writing a test, ask: "What does my user expect?" not "How do I currently do it?"
+
+**Real-World Application**:
+This principle guided our decision NOT to create `AsyncClientTest.hx` in the todo-app. The async/await refactoring is a mechanism change that preserves all existing contracts - todos still persist, errors still get logged, metrics still get collected. The existing tests continue to validate these contracts without modification.
+
 ## Test Architecture Documentation
 
 ### Understanding the Testing Layers
