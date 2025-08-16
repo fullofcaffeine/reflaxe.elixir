@@ -1,6 +1,6 @@
-package layouts;
+package server.layouts;
 
-import reflaxe.elixir.HXX;
+// HXX calls are transformed at compile-time by the Reflaxe.Elixir compiler
 
 /**
  * Root layout component for the Phoenix application

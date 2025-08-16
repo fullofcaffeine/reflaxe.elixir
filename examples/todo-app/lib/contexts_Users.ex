@@ -50,7 +50,7 @@ defmodule Users do
   """
   @spec main() :: nil
   def main() do
-    Log.trace("Users context with User schema compiled successfully!", %{"fileName" => "src_haxe/contexts/Users.hx", "lineNumber" => 66, "className" => "contexts.Users", "methodName" => "main"})
+    Log.trace("Users context with User schema compiled successfully!", %{"fileName" => "src_haxe/server/contexts/Users.hx", "lineNumber" => 66, "className" => "contexts.Users", "methodName" => "main"})
   end
 
   @doc """

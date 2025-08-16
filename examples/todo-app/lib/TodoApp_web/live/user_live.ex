@@ -64,8 +64,8 @@ defmodule UserLive do
         temp_result = %{"status" => "noreply", "socket" => UserLive.assign(socket, "changeset", temp_struct.changeset)}
       "ok" ->
         users = Users.list_users()
-    show_form = false
-    temp_result = %{"status" => "noreply", "socket" => UserLive.assign_multiple(socket, %{"users" => users, "showForm" => show_form, "selectedUser" => nil, "changeset" => Users.change_user(nil)})}
+        show_form = false
+        temp_result = %{"status" => "noreply", "socket" => UserLive.assign_multiple(socket, %{"users" => users, "showForm" => show_form, "selectedUser" => nil, "changeset" => Users.change_user(nil)})}
       _ ->
         temp_result = %{"status" => "noreply", "socket" => socket}
     end
@@ -100,33 +100,52 @@ defmodule UserLive do
   @impl true
   @doc "Generated from Haxe render"
   def render(assigns) do
-    "\n        <div class=\"user-management\">\n            <div class=\"header\">\n                <h1>User Management</h1>\n                <.button phx-click=\"new_user\" class=\"btn-primary\">\n                    <.icon name=\"plus\" /> New User\n                </.button>\n            </div>\n            \n            <div class=\"search-bar\">\n                <.form phx-change=\"search\">\n                    <.input \n                        name=\"search\" \n                        value={@searchTerm}\n                        placeholder=\"Search users...\"\n                        type=\"search\"\n                    />\n                </.form>\n            </div>\n            \n            " <> __MODULE__.renderUserList(assigns) <> "\n            " <> __MODULE__.renderUserForm(assigns) <> "\n        </div>\n        "
+    ~H"""
+      <div class="user-management">
+      <div class="header">
+      <h1>User Management</h1>
+      <.button phx-click="new_user" class="btn-primary">
+      <.icon name="plus" /> New User
+      </.button>
+      </div>
+      <div class="search-bar">
+      <.form phx-change="search">
+      <.input
+      name="search"
+      value={@searchTerm}
+      placeholder="Search users..."
+      type="search"
+      />
+      </.form>
+      </div>
+      {render_user_list({__MODULE__}, assigns)}
+      {render_user_form({__MODULE__}, assigns)}
+      </div>
+      """
   end
 
   @doc "Generated from Haxe renderUserList"
   def render_user_list(assigns) do
     ~H"""
-
-          <div class="users-list">
-          <table class="table">
-          <thead>
-          <tr>
-          <th>Name</th>
-          <th>Email</th>
-          <th>Age</th>
-          <th>Status</th>
-          <th>Actions</th>
-          </tr>
-          </thead>
-          <tbody>
-          <%= for user <- @users do %>
-          <%= render_user_row(user) %>
-          <% end %>
-          </tbody>
-          </table>
-          </div>
-
-        """
+      <div class="users-list">
+      <table class="table">
+      <thead>
+      <tr>
+      <th>Name</th>
+      <th>Email</th>
+      <th>Age</th>
+      <th>Status</th>
+      <th>Actions</th>
+      </tr>
+      </thead>
+      <tbody>
+      <%= for user <- @users do %>
+      <%= render_user_row(user) %>
+      <% end %>
+      </tbody>
+      </table>
+      </div>
+      """
   end
 
   @doc "Generated from Haxe renderUserRow"
@@ -135,7 +154,32 @@ defmodule UserLive do
     if (user.active), do: temp_string = "active", else: temp_string = "inactive"
     temp_string1 = nil
     if (user.active), do: temp_string1 = "Active", else: temp_string1 = "Inactive"
-    "\n        <tr>\n            <td>" <> user.name <> "</td>\n            <td>" <> user.email <> "</td>\n            <td>" <> Integer.to_string(user.age) <> "</td>\n            <td>\n                <span class=\"status " <> (temp_string) <> "\">\n                    " <> (temp_string1) <> "\n                </span>\n            </td>\n            <td class=\"actions\">\n                <.button phx-click=\"edit_user\" phx-value-id=\"" <> Integer.to_string(user.id) <> "\" size=\"sm\">\n                    Edit\n                </.button>\n                <.button \n                    phx-click=\"delete_user\" \n                    phx-value-id=\"" <> Integer.to_string(user.id) <> "\" \n                    data-confirm=\"Are you sure?\"\n                    variant=\"danger\"\n                    size=\"sm\"\n                >\n                    Delete\n                </.button>\n            </td>\n        </tr>\n        "
+    ~H"""
+      <tr>
+      <td>{{user}.name}</td>
+      <td>{{user}.email}</td>
+      <td>{{user}.age}</td>
+      <td>
+      <span class="status {temp_string}">
+      {temp_string1}
+      </span>
+      </td>
+      <td class="actions">
+      <.button phx-click="edit_user" phx-value-id="{{user}.id}" size="sm">
+      Edit
+      </.button>
+      <.button
+      phx-click="delete_user"
+      phx-value-id="{{user}.id}"
+      data-confirm="Are you sure?"
+      variant="danger"
+      size="sm"
+      >
+      Delete
+      </.button>
+      </td>
+      </tr>
+      """
   end
 
   @doc "Generated from Haxe renderUserForm"
@@ -145,7 +189,48 @@ defmodule UserLive do
     if (assigns.selected_user == nil), do: temp_string = "New User", else: temp_string = "Edit User"
     temp_string1 = nil
     if (assigns.selected_user == nil), do: temp_string1 = "Create", else: temp_string1 = "Update"
-    "\n        <div class=\"modal\">\n            <div class=\"modal-content\">\n                <div class=\"modal-header\">\n                    <h2>" <> temp_string <> "</h2>\n                    <button phx-click=\"cancel\" class=\"close\">&times;</button>\n                </div>\n                \n                <.form for={@changeset} phx-submit=\"save_user\">\n                    <div class=\"form-group\">\n                        <.label for=\"name\">Name</.label>\n                        <.input field={@changeset[:name]} type=\"text\" required />\n                        <.error field={@changeset[:name]} />\n                    </div>\n                    \n                    <div class=\"form-group\">\n                        <.label for=\"email\">Email</.label>\n                        <.input field={@changeset[:email]} type=\"email\" required />\n                        <.error field={@changeset[:email]} />\n                    </div>\n                    \n                    <div class=\"form-group\">\n                        <.label for=\"age\">Age</.label>\n                        <.input field={@changeset[:age]} type=\"number\" />\n                        <.error field={@changeset[:age]} />\n                    </div>\n                    \n                    <div class=\"form-group\">\n                        <.input \n                            field={@changeset[:active]} \n                            type=\"checkbox\" \n                            label=\"Active\"\n                        />\n                    </div>\n                    \n                    <div class=\"form-actions\">\n                        <.button type=\"submit\">\n                            " <> (temp_string1) <> " User\n                        </.button>\n                        <.button type=\"button\" phx-click=\"cancel\" variant=\"secondary\">\n                            Cancel\n                        </.button>\n                    </div>\n                </.form>\n            </div>\n        </div>\n        "
+    ~H"""
+      <div class="modal">
+      <div class="modal-content">
+      <div class="modal-header">
+      <h2>{temp_string}</h2>
+      <button phx-click="cancel" class="close">&times;</button>
+      </div>
+      <.form for={@changeset} phx-submit="save_user">
+      <div class="form-group">
+      <.label for="name">Name</.label>
+      <.input field={@changeset[:name]} type="text" required />
+      <.error field={@changeset[:name]} />
+      </div>
+      <div class="form-group">
+      <.label for="email">Email</.label>
+      <.input field={@changeset[:email]} type="email" required />
+      <.error field={@changeset[:email]} />
+      </div>
+      <div class="form-group">
+      <.label for="age">Age</.label>
+      <.input field={@changeset[:age]} type="number" />
+      <.error field={@changeset[:age]} />
+      </div>
+      <div class="form-group">
+      <.input
+      field={@changeset[:active]}
+      type="checkbox"
+      label="Active"
+      />
+      </div>
+      <div class="form-actions">
+      <.button type="submit">
+      {temp_string1} User
+      </.button>
+      <.button type="button" phx-click="cancel" variant="secondary">
+      Cancel
+      </.button>
+      </div>
+      </.form>
+      </div>
+      </div>
+      """
   end
 
   @doc "Generated from Haxe assign"
@@ -160,7 +245,7 @@ defmodule UserLive do
 
   @doc "Generated from Haxe main"
   def main() do
-    Log.trace("UserLive with @:liveview annotation compiled successfully!", %{"fileName" => "src_haxe/live/UserLive.hx", "lineNumber" => 307, "className" => "live.UserLive", "methodName" => "main"})
+    Log.trace("UserLive with @:liveview annotation compiled successfully!", %{"fileName" => "src_haxe/server/live/UserLive.hx", "lineNumber" => 306, "className" => "server.live.UserLive", "methodName" => "main"})
   end
 
 end
