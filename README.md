@@ -37,7 +37,7 @@ Write your Phoenix app in Haxe and get:
 The foundation for multi-target development:
 - **Business logic in Haxe** - validation, algorithms, data transformations
 - **Backend on BEAM** - Phoenix/LiveView/Ecto with full type safety ✅
-- **Frontend on JavaScript** - Standard Haxe→JS compilation works today
+- **Frontend on JavaScript** - Async/await support + standard Haxe→JS compilation ✅
 - **Advanced JS integration** - genes + dts2hx planned for TypeScript ecosystem access
 
 #### Leverage BEAM's Unique Strengths
@@ -73,6 +73,7 @@ The foundation for multi-target development:
 - **Source Maps** - First Reflaxe target with `.ex.map` generation for debugging
 - **OTP Support** - GenServers, Supervisors, Registry with type-safe compilation
 - **Type Safety** - Complete Haxe→Elixir type mapping and compile-time validation
+- **JavaScript Async/Await** - Native async/await compilation for modern JS development
 
 ### 🔮 Future Expansion
 For the complete roadmap including AI tooling, universal deployment, and multi-platform support, see [VISION.md](VISION.md):
