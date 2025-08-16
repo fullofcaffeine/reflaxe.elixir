@@ -2,9 +2,28 @@
 
 ## What is HXX?
 
-HXX (Haxe JSX) brings JSX-like syntax to Haxe for creating Phoenix HEEx templates. It provides a familiar, type-safe way to write templates that compile to proper Phoenix LiveView HEEx format.
+HXX (Haxe JSX) brings JSX-like syntax to Haxe for creating Phoenix HEEx templates. It provides a familiar, type-safe way to write templates that **compile to proper Phoenix LiveView HEEx format**.
+
+**Important**: HXX is a **compile-time transformation tool**, not a runtime library. Templates are processed during Haxe→Elixir compilation and generate standard Phoenix ~H sigils with no runtime dependencies.
 
 ## Getting Started
+
+### Project Setup
+
+To use HXX in your project, create a local `HXX.hx` file in your source directory:
+
+```haxe
+// src_haxe/HXX.hx
+class HXX {
+    public static function hxx(templateStr: String): String {
+        // Placeholder function for type checking
+        // The Reflaxe.Elixir compiler transforms calls to this function
+        return templateStr;
+    }
+}
+```
+
+**Why needed**: This provides the function signature for Haxe type checking. The actual template processing is handled by the Reflaxe.Elixir compiler during compilation.
 
 ### Basic Syntax
 

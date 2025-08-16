@@ -1,10 +1,9 @@
-package live;
+package server.live;
 
 import contexts.Users;
 import contexts.Users.User;
 
-// Import HXX function for template processing
-import HXX.*;
+// HXX template calls are processed at compile-time by the Reflaxe.Elixir compiler
 
 /**
  * Phoenix LiveView for user management
@@ -166,7 +165,7 @@ class UserLive {
     }
     
     function render(assigns: Dynamic): String {
-        return hxx('
+        return HXX.hxx('
         <div class="user-management">
             <div class="header">
                 <h1>User Management</h1>
@@ -193,7 +192,7 @@ class UserLive {
     }
     
     function renderUserList(assigns: Dynamic): String {
-        return hxx('
+        return HXX.hxx('
         <div class="users-list">
             <table class="table">
                 <thead>
@@ -216,7 +215,7 @@ class UserLive {
     }
     
     function renderUserRow(user: User): String {
-        return hxx('
+        return HXX.hxx('
         <tr>
             <td>${user.name}</td>
             <td>${user.email}</td>
@@ -249,7 +248,7 @@ class UserLive {
         
         var title = assigns.selectedUser == null ? "New User" : "Edit User";
         
-        return hxx('
+        return HXX.hxx('
         <div class="modal">
             <div class="modal-content">
                 <div class="modal-header">

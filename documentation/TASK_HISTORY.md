@@ -7,6 +7,97 @@ Archives of previous history can be found in `TASK_HISTORY_ARCHIVE_*.md` files.
 
 ---
 
+## Session: 2025-08-16 - HXX Template Integration Complete ✅
+
+### Context
+Completing the HXX integration that was started in the previous session. HxxCompiler.hx was created but not integrated into ElixirCompiler.hx, causing AST handling warnings and broken template compilation. The goal was to achieve complete compile-time HXX→HEEx transformation with zero warnings.
+
+### Tasks Completed ✅
+
+1. **Integrated HxxCompiler into ElixirCompiler.hx**
+   - Added HxxCompiler import to ElixirCompiler.hx
+   - Replaced old compileHxxCall() with clean delegation to HxxCompiler.compileHxxTemplate()
+   - Removed 150+ lines of old, broken HXX helper methods (extractRawStringFromTBinop, processHxxTemplate, formatHxxTemplate)
+   - Result: Clean separation of concerns with HxxCompiler handling all AST processing
+
+2. **Fixed Critical AST Node Handling Issues**
+   - **TCall syntax correction**: Fixed from `TCall(obj, method, args)` to `TCall(e, args)` following Haxe 4.3+ API
+   - **Complete TConst support**: Added TInt, TFloat, TBool, TNull, TThis, TSuper variants
+   - **TParenthesis handling**: Added support for parenthesized expressions like `(user.name)`
+   - **TTypeExpr support**: Added ModuleType pattern matching (TClassDecl, TEnumDecl, TTypeDecl, TAbstract)
+   - **Fixed ModuleType error**: Corrected TAbstract (not TAbstractDecl) following Haxe source code
+
+3. **Restored Working EReg.map Functionality**
+   - **API verification**: Confirmed EReg.map(s, function(r)) is correct Haxe API via source code analysis
+   - **Restored string optimization**: Re-implemented regex-based string concatenation optimization
+   - **Pattern**: `~/(pattern)/g.map(content, function(r) { ... })` for template processing
+   - **Why this matters**: The original code was correct; compilation errors were from missing AST cases
+
+4. **Added @:noRuntime Annotation to HXX**
+   - Updated /std/HXX.hx with @:noRuntime to prevent runtime generation
+   - Cleaned up generated HXX.ex files from todo-app
+   - Result: HXX is now purely compile-time with zero runtime dependencies
+
+5. **Created Comprehensive HXX Documentation**
+   - **HXX_VS_TEMPLATE.md**: Complete architectural guide explaining HXX vs @:template distinction
+   - **Usage patterns**: When to use HXX (inline, small templates) vs @:template (external files, large templates)
+   - **Migration strategies**: Both new projects and existing Phoenix integration
+   - **Technical implementation**: AST transformation process and compilation flow
+
+### Technical Insights Gained
+
+1. **EReg.map API Confirmation**
+   - Investigation of `/Users/fullofcaffeine/workspace/code/haxe.elixir.reference/haxe/std/EReg.hx` confirmed correct API
+   - Function signature: `map(s:String, f:EReg->String):String`
+   - Pattern: `ereg.map(string, function(r) { return r.matched(1); })`
+   - **Lesson**: Always verify against Haxe source code rather than assuming API issues
+
+2. **Complete AST Node Coverage Strategy**
+   - **Critical patterns**: Every AST node type in templates must be handled or will generate warnings
+   - **TConstant enum**: TInt, TFloat, TString, TBool, TNull, TThis, TSuper (complete coverage)
+   - **ModuleType enum**: TClassDecl, TEnumDecl, TTypeDecl, TAbstract (verified against source)
+   - **Expression wrapping**: TParenthesis unwraps to inner expression, TTypeExpr converts to snake_case names
+
+3. **Compile-time vs Runtime Architecture**
+   - **HXX.hxx() calls are pure markers** - never execute at runtime
+   - **AST transformation during compilation** - TypedExpr → TemplateNode → ~H sigil
+   - **@:noRuntime critical** - prevents generation of unnecessary runtime modules
+   - **Pattern**: Extern definition for type checking + compiler detection for transformation
+
+4. **Phoenix Template Integration Quality**
+   - **~H sigil generation**: Proper multi-line formatting with correct indentation
+   - **HEEx interpolation**: `${expr}` → `{expr}` conversion with Phoenix conventions
+   - **Component syntax preservation**: `<.button>` maintained for Phoenix component integration
+   - **Assigns pattern conversion**: `assigns.field` → `@field` in LiveView context
+
+### Files Modified
+
+- **src/reflaxe/elixir/ElixirCompiler.hx** - Added HxxCompiler import, replaced compileHxxCall(), removed old helper methods
+- **src/reflaxe/elixir/helpers/HxxCompiler.hx** - Enhanced with complete AST node support and EReg.map functionality
+- **std/HXX.hx** - Added @:noRuntime annotation to prevent runtime generation
+- **examples/todo-app/lib/HXX.ex** - Removed (cleanup of generated runtime file)
+- **documentation/HXX_VS_TEMPLATE.md** - Created comprehensive architectural guide
+
+### Key Achievements ✨
+
+1. **Zero AST Warnings**: Todo-app compiles cleanly with no "Unknown AST node type" warnings
+2. **Production-Ready Templates**: HXX generates idiomatic ~H sigils with proper Phoenix integration
+3. **Compile-time Architecture**: Complete separation of compile-time transformation from runtime execution
+4. **Comprehensive Documentation**: Full architectural guide covering HXX vs @:template usage patterns
+5. **API Verification**: Confirmed working EReg.map functionality with Haxe source code analysis
+
+### Development Insights
+
+1. **Always Check Haxe Source Code**: When API issues arise, verify against actual Haxe implementation
+2. **AST Completeness Critical**: Template systems require handling ALL possible AST node types
+3. **Separation of Concerns**: HxxCompiler handles AST, ElixirCompiler delegates cleanly
+4. **Documentation Architecture**: Clear distinction between compile-time tools (HXX) and runtime integration (@:template)
+
+### Session Summary
+✅ **STATUS: COMPLETE** - HXX template integration is now fully functional with complete AST support, zero compilation warnings, and production-ready ~H sigil generation. The todo-app demonstrates working Phoenix HEEx template compilation from JSX-like syntax with full type safety and compile-time validation.
+
+---
+
 ## Session: 2025-08-16 - MapTools Functional Standard Library Implementation ✅
 
 ### Context
