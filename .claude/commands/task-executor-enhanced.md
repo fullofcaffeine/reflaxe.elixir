@@ -1,7 +1,7 @@
 # Enhanced Task Executor Mode
 
 ## Purpose
-Professional task execution with test-first development, BDD principles, and testing trophy strategy integration.
+Professional task execution with snapshot-first development, Reflaxe compiler testing methodology, and three-layer validation strategy.
 
 ## Core Execution Principles
 
@@ -413,13 +413,13 @@ After completing each task:
 
 ## Usage Examples
 
-### Example 1: Test-First Data Model Implementation
+### Example 1: Snapshot-First Compiler Feature Implementation
 ```bash
-/task-executor-enhanced --test-first --component=data-model
+/task-executor-enhanced --snapshot-first --component=compiler-feature
 # 1. Analyzes requirements from PRD
-# 2. Creates comprehensive test suite following BDD
-# 3. Implements minimum viable code
-# 4. Refactors for quality
+# 2. Creates snapshot test with expected Elixir output
+# 3. Implements compiler feature to generate expected output
+# 4. Validates with Mix tests and example compilation
 # 5. Verifies all acceptance criteria
 ```
 
@@ -433,11 +433,11 @@ After completing each task:
 # 5. Performance tests critical paths
 ```
 
-### Example 3: Continuous Execution with Testing Trophy
+### Example 3: Continuous Execution with Three-Layer Testing
 ```bash
-/task-executor-enhanced --continuous --trophy-strategy
+/task-executor-enhanced --continuous --three-layer
 # 1. Executes all pending tasks sequentially
-# 2. Applies appropriate test mix for each component
+# 2. Applies three-layer testing (Snapshot → Mix → Example)
 # 3. Maintains quality gates throughout
 # 4. Provides comprehensive execution summary
 ```
@@ -472,9 +472,9 @@ After completing each task:
 ### Mandatory Task Completion Workflow
 
 #### 1. Task Execution Phase
-- Execute the assigned task following TDD/BDD methodology
-- Implement feature with appropriate Testing Trophy distribution
-- Create comprehensive tests (integration-heavy, appropriate unit tests)
+- Execute the assigned task following snapshot-first methodology
+- Implement feature with three-layer validation strategy
+- Create comprehensive tests (snapshot-heavy, Mix integration, examples)
 
 #### 2. 🚨 CRITICAL: Full Regression Testing Phase  
 **EVERY task must pass this phase before being marked complete:**
@@ -533,7 +533,7 @@ mcp__shrimp-task-manager-global__execute_task taskId="[next-task-id]"
 mcp__shrimp-task-manager-global__verify_task \
   taskId="[task-id]" \
   score=90 \
-  summary="✅ Implementation complete with TDD methodology. ✅ FULL test suite passes (X tests, 0 failures). ✅ No regressions detected. ✅ Ready for next task."
+  summary="✅ Implementation complete with snapshot-first methodology. ✅ FULL test suite passes (X snapshot + Y Mix tests). ✅ No regressions detected. ✅ Ready for next task."
 ```
 
 #### 4.1. 🚨 CRITICAL: Automatic Git Commit Protocol (IMMEDIATE POST-VERIFICATION)
@@ -575,7 +575,7 @@ EOF
 
 **COMMIT MESSAGE TEMPLATE (AUTOMATIC):**
 ```
-feat(component): implement [feature-name] with TDD methodology
+feat(component): implement [feature-name] with snapshot-first methodology
 
 - Add [key-functionality] with comprehensive test coverage
 - Implement [architecture-pattern] following project standards  
@@ -678,7 +678,7 @@ After completing a task:
 ### Success Criteria Summary
 
 ✅ **Feature Implementation**: New functionality working as specified  
-✅ **Test Coverage**: Appropriate Testing Trophy distribution  
+✅ **Test Coverage**: Three-layer validation (Snapshot → Mix → Example)  
 ✅ **Zero Regressions**: ALL previously passing tests still pass  
 ✅ **Full Test Suite**: Complete project test suite passes  
 ✅ **User Documentation**: End-user features properly documented in user guides  
@@ -697,32 +697,33 @@ After completing a task:
 # Get available tasks  
 mcp__shrimp-task-manager-global__list_tasks status="pending"
 
-# Execute specific task with TDD methodology
+# Execute specific task with snapshot-first methodology
 mcp__shrimp-task-manager-global__execute_task taskId="[task-id]"
 ```
 
-#### 2. Follow Embedded TDD Instructions
-Every shrimp task contains TDD instructions in the description:
-- Look for "🔴 RED Phase", "🟢 GREEN Phase", "🔵 REFACTOR Phase"
-- Follow "Testing Trophy Distribution" percentages
+#### 2. Follow Embedded Implementation Instructions
+Every shrimp task contains implementation guidance:
+- Use "Implementation Guide" for technical approach
+- Follow "Verification Criteria" for completion requirements
+- Reference "Related Files" for code locations
 - Use embedded performance targets from PRD
 
-#### 3. TDD Phase Progress Updates
+#### 3. Snapshot-First Development Progress Updates
 ```bash
-# RED Phase Update
+# Snapshot Phase Update
 mcp__shrimp-task-manager-global__update_task \
   taskId="[task-id]" \
-  prompt="🔴 RED Phase Complete: Created failing tests for [scenarios]. Tests fail with expected errors."
+  prompt="📸 SNAPSHOT Created: Haxe test created with expected Elixir output in intended/ directory."
 
-# GREEN Phase Update  
+# Implementation Phase Update  
 mcp__shrimp-task-manager-global__update_task \
   taskId="[task-id]" \
-  prompt="🟢 GREEN Phase Complete: Implementation passes all tests. Performance: [X]ms."
+  prompt="⚡ IMPLEMENTATION Complete: Compiler generates expected output. Snapshot test passes."
 
-# REFACTOR Phase Update
+# Validation Phase Update
 mcp__shrimp-task-manager-global__update_task \
   taskId="[task-id]" \
-  prompt="🔵 REFACTOR Complete: Design improved, coverage >80%, performance optimized."
+  prompt="✅ VALIDATION Complete: Mix tests pass, generated Elixir compiles and runs in BEAM VM."
 ```
 
 #### 4. Integrated Test Verification
@@ -731,7 +732,7 @@ mcp__shrimp-task-manager-global__update_task \
 mcp__shrimp-task-manager-global__verify_task \
   taskId="[task-id]" \
   score=85 \
-  summary="TDD methodology complete. All quality gates verified."
+  summary="Snapshot-first development complete. All quality gates verified: X snapshot tests, Y Mix tests passing."
 ```
 
 **This automatically triggers:**
@@ -793,10 +794,10 @@ mcp__shrimp-task-manager-global__update_task \
 
 ### Key Commands Reference
 
-- **`list_tasks`**: Get tasks with TDD instructions
+- **`list_tasks`**: Get tasks with implementation guidance
 - **`execute_task`**: Start task with embedded methodology  
-- **`get_task_detail`**: Get complete task with test requirements
-- **`update_task`**: Report progress at each TDD phase
+- **`get_task_detail`**: Get complete task with requirements
+- **`update_task`**: Report progress during development phases
 - **`verify_task`**: Trigger integrated test verification
 - **`update_task dependencies`**: Manage discovered dependencies
 
@@ -804,7 +805,7 @@ mcp__shrimp-task-manager-global__update_task \
 
 ✅ **Proper Shrimp Usage:**
 - All task interactions through MCP tools
-- TDD phase progress tracked in shrimp
+- Development phase progress tracked in shrimp
 - Test verification integrated with verify_task
 - Task dependencies managed through shrimp
 - Feedback communicated back to planning
@@ -876,8 +877,8 @@ After completing each task, you MUST automatically document the implementation:
 
 ## Implementation Summary
 - **What was built**: [Core functionality implemented]
-- **TDD Approach**: [RED-GREEN-REFACTOR phases completed]
-- **Test Results**: [X tests passing, Y coverage achieved]
+- **Development Approach**: [Snapshot-first methodology with three-layer validation]
+- **Test Results**: [X snapshot tests, Y Mix tests, Z examples passing]
 - **Performance**: [Timing benchmarks met/exceeded]
 - **Architecture Impact**: [How this affects system design]
 
@@ -893,7 +894,7 @@ After completing each task, you MUST automatically document the implementation:
 
 ## Files Modified/Created
 - [list of significant files with purpose]
-- Test files: [BDD test files created]
+- Test files: [Snapshot test files created in test/tests/]
 - Configuration: [Any config changes]
 - Documentation: [User docs updated]
 
@@ -982,7 +983,7 @@ Related files: @.llm-memory/[related-files].md
 1. **🔄 Auto-Document Implementation**:
    ```bash
    # AUTOMATICALLY add comprehensive task summary to CLAUDE.md
-   # Capture: implementation approach, TDD phases, test results, performance metrics
+   # Capture: implementation approach, development phases, test results, performance metrics
    # NO user prompting required - just do it
    ```
 
@@ -1018,7 +1019,7 @@ Related files: @.llm-memory/[related-files].md
 mcp__shrimp-task-manager-global__verify_task \
   taskId="[task-id]" \
   score=90 \
-  summary="✅ Implementation complete with TDD methodology. 🧠 Memory automatically updated: captured implementation details, test results (X tests, 0 failures), performance metrics (Yms avg), technical decisions, and integration points. Ready for next task."
+  summary="✅ Implementation complete with snapshot-first methodology. 🧠 Memory automatically updated: captured implementation details, test results (X snapshot + Y Mix tests), performance metrics (Yms avg), technical decisions, and integration points. Ready for next task."
 ```
 
 #### 6. 🔄 Memory Update Quality Gates
@@ -1034,7 +1035,7 @@ mcp__shrimp-task-manager-global__verify_task \
 ### 🧠 Automatic Memory Success Criteria
 
 ✅ **🔄 AUTOMATIC: Every completed task documented in CLAUDE.md or split files**
-✅ **🔄 AUTOMATIC: Implementation approach and TDD phases captured**
+✅ **🔄 AUTOMATIC: Implementation approach and development phases captured**
 ✅ **🔄 AUTOMATIC: Technical decisions and trade-offs recorded**
 ✅ **🔄 AUTOMATIC: Performance metrics and benchmarks documented**
 ✅ **🔄 AUTOMATIC: Error messages and solutions preserved**
@@ -1050,7 +1051,7 @@ This automatic memory protocol ensures that ALL implementation knowledge is capt
 
 ---
 
-This detailed integration ensures TDD methodology is properly tracked and verified through the complete shrimp task management workflow, with comprehensive documentation of all implementations and learnings preserved in the project's memory structure.
+This detailed integration ensures snapshot-first methodology is properly tracked and verified through the complete shrimp task management workflow, with comprehensive documentation of all implementations and learnings preserved in the project's memory structure.
 
 ---
 
@@ -1158,7 +1159,7 @@ mcp__shrimp-task-manager-global__list_tasks status="pending,in_progress"
 #### **Abort Conditions (Never Clear Context If)**
 - **Active Task in Progress**: Any task shows `in_progress` status
 - **Critical Errors Present**: System in error state requiring resolution
-- **Mid-TDD Cycle**: RED phase started but GREEN/REFACTOR incomplete
+- **Mid-Development Cycle**: Snapshot created but implementation incomplete
 - **User Intervention Required**: Decisions or confirmations pending
 - **Test Failures**: Test suite failures requiring immediate attention
 - **Build Broken**: Compilation or critical build issues present
