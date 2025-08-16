@@ -479,6 +479,130 @@ haxe --display MyClass.hx@0@diagnostic
 - `Abstract type cannot be instantiated` → Use factory methods or @:from/@:to
 - `Field ... has different type` → Check type compatibility
 
+## Module System and Static Extensions
+
+### Module Sub-Types
+Multiple types can be defined in a single `.hx` file:
+
+```haxe
+// File: Result.hx
+package haxe.functional;
+
+enum Result<T, E> {
+    Ok(value: T);
+    Error(error: E);
+}
+
+class ResultTools {
+    public static function isOk<T, E>(result: Result<T, E>): Bool {
+        return switch (result) {
+            case Ok(_): true;
+            case Error(_): false;
+        }
+    }
+}
+```
+
+**Import patterns:**
+```haxe
+// Import main type
+import haxe.functional.Result;
+
+// Import sub-type explicitly  
+import haxe.functional.Result.ResultTools;
+
+// Import both with qualified name
+import haxe.functional.Result;
+// ResultTools available as Result.ResultTools
+```
+
+### Static Extensions: `using` vs `@:using`
+
+#### Manual Extensions with `using`
+Apply static extensions per-file where needed:
+
+```haxe
+import haxe.functional.Result;
+import haxe.functional.Result.ResultTools;
+using haxe.functional.Result.ResultTools;
+
+class Example {
+    static function main() {
+        var result = Ok(42);
+        var isValid = result.isOk(); // Extension method
+    }
+}
+```
+
+#### Automatic Extensions with `@:using`
+Apply static extensions globally to a type:
+
+```haxe
+// In Result.hx
+@:using(haxe.functional.Result.ResultTools)
+enum Result<T, E> {
+    Ok(value: T);
+    Error(error: E);
+}
+
+class ResultTools {
+    public static function isOk<T, E>(result: Result<T, E>): Bool {
+        return switch (result) {
+            case Ok(_): true;
+            case Error(_): false;
+        }
+    }
+}
+```
+
+```haxe
+// In any other file
+import haxe.functional.Result;
+
+class Example {
+    static function main() {
+        var result = Ok(42);
+        var isValid = result.isOk(); // Automatically available!
+    }
+}
+```
+
+### When to Use Which Pattern
+
+| Pattern | Use When | Benefits |
+|---------|----------|----------|
+| **Same file** | Related types (Result + ResultTools) | Cohesion, single import |
+| **Separate files** | Large classes, different responsibilities | Modularity, clarity |
+| **`using` keyword** | Explicit control over extensions | Clear scope, selective usage |
+| **`@:using` metadata** | Extensions always needed with type | Convenience, global availability |
+
+### Examples from Our Codebase
+
+**Separate Files (Current)**:
+```haxe
+// std/haxe/functional/Result.hx - Just the enum
+// std/haxe/functional/ResultTools.hx - Just the tools
+
+// Usage:
+import haxe.functional.Result;
+import haxe.functional.ResultTools;
+using haxe.functional.ResultTools;
+```
+
+**Same File Alternative**:
+```haxe
+// std/haxe/functional/Result.hx - Both enum and tools
+@:using(haxe.functional.Result.ResultTools)
+enum Result<T, E> { ... }
+class ResultTools { ... }
+
+// Usage:
+import haxe.functional.Result;
+// Extensions automatically available
+```
+
+Both patterns are valid! The choice depends on project organization preferences.
+
 ## Summary for LLM Agents
 
 When writing Haxe code for Reflaxe.Elixir:
@@ -490,5 +614,7 @@ When writing Haxe code for Reflaxe.Elixir:
 5. **Handle errors explicitly** - use proper error types
 6. **Keep classes focused** - one responsibility per class
 7. **Leverage pattern matching** - more idiomatic than if-else chains
+8. **Choose module organization** - same file for related types, separate files for clarity
+9. **Use static extensions wisely** - `using` for explicit control, `@:using` for convenience
 
 This foundation ensures you can write effective Haxe code that compiles to clean, idiomatic Elixir.

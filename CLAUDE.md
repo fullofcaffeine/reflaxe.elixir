@@ -1017,6 +1017,33 @@ What happens:
 | **Build system integration** | Mix test | Testing generated code runs in BEAM |
 | **Framework integration** | Example test | Testing real-world usage patterns |
 
+### ExUnit Testing Philosophy ⚠️
+
+**CRITICAL RULE: Always write ExUnit tests in Haxe, NEVER in Elixir directly**
+
+- ✅ **Write tests in Haxe** using `std/haxe/test/ExUnit.hx` and `std/haxe/test/Assert.hx` externs
+- ✅ **Use @:exunit annotation** to mark test classes that should compile to ExUnit modules
+- ✅ **Extend TestCase** and use @:test annotation for test methods
+- ❌ **NEVER write .exs test files directly** - this breaks the "write once in Haxe" philosophy
+- ❌ **NEVER manually create ExUnit test modules** - let the compiler generate them
+
+**Example Haxe ExUnit Test**:
+```haxe
+import haxe.test.TestCase;
+import haxe.test.Assert;
+
+@:exunit
+class MyFeatureTest extends TestCase {
+    @:test
+    function testSomething() {
+        Assert.equals(expected, actual);
+        Assert.isOk(someResult);
+    }
+}
+```
+
+**Why**: This maintains single-source-of-truth in Haxe and ensures tests benefit from Haxe's type system while compiling to idiomatic ExUnit code.
+
 ### Core Commands
 ```bash
 npm test                                    # Run all tests

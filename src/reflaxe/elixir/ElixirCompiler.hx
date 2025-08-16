@@ -3939,7 +3939,7 @@ class ElixirCompiler extends DirectToStringCompiler {
      */
     private function isResultMethod(methodName: String): Bool {
         return switch (methodName) {
-            case "map", "flatMap", "bind", "fold", "isOk", "isError", 
+            case "map", "flatMap", "bind", "fold", "filter", "isOk", "isError", 
                  "unwrap", "unwrapOr", "unwrapOrElse", "mapError", "bimap",
                  "ok", "error", "sequence", "traverse", "toOption":
                 true;

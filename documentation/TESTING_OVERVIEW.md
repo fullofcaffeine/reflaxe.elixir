@@ -464,6 +464,118 @@ haxe test/Test.hxml test=MyMacro_Test flexible-positions
 **Problem**: Phoenix/framework integration issues
 **Solution**: Check file locations, module names, Phoenix conventions
 
+## ExUnit Testing Philosophy ⚠️
+
+### Critical Rule: Always Write ExUnit Tests in Haxe
+
+**NEVER write ExUnit tests directly in Elixir** - this breaks the core philosophy of Reflaxe.Elixir.
+
+#### Why This Matters
+
+Reflaxe.Elixir's core value proposition is **"write once in Haxe, deploy everywhere"**. Writing tests directly in the target language undermines this principle:
+
+- ❌ **Direct Elixir tests**: Lose Haxe's type safety and compile-time guarantees
+- ❌ **Manual ExUnit modules**: No integration with Haxe testing infrastructure
+- ❌ **Split testing approaches**: Inconsistent patterns across codebase
+
+#### The Correct Approach
+
+✅ **Write tests in Haxe using ExUnit externs**:
+
+```haxe
+import haxe.test.ExUnit.TestCase;
+import haxe.test.Assert;
+import haxe.validation.Email;
+
+@:exunit
+class DomainAbstractionsTest extends TestCase {
+    @:test
+    function testEmailValidation() {
+        var validEmail = Email.parse("user@example.com");
+        Assert.isOk(validEmail, "Valid email should parse");
+        
+        switch (validEmail) {
+            case Ok(email):
+                Assert.equals("example.com", email.getDomain());
+            case Error(reason):
+                Assert.fail("Email should be valid: " + reason);
+        }
+    }
+}
+```
+
+#### Generated ExUnit Code
+
+The above Haxe code compiles to idiomatic Elixir ExUnit:
+
+```elixir
+defmodule DomainAbstractionsTest do
+  use ExUnit.Case
+
+  test "email validation" do
+    valid_email = Email_Impl_.parse("user@example.com")
+    assert ResultTools.is_ok(valid_email)
+    
+    case valid_email do
+      {:ok, email} ->
+        assert Email_Impl_.getDomain(email) == "example.com"
+      {:error, reason} ->
+        flunk("Email should be valid: " <> reason)
+    end
+  end
+end
+```
+
+#### Benefits of Haxe ExUnit Tests
+
+1. **Type Safety**: Haxe's type system catches errors at compile time
+2. **Single Source of Truth**: All test logic defined in Haxe
+3. **Cross-Platform**: Same test patterns work for all Reflaxe targets
+4. **IDE Support**: Full Haxe tooling (autocomplete, refactoring, etc.)
+5. **Consistent API**: Same Assert methods across all test files
+
+#### When to Use ExUnit Tests
+
+Use Haxe ExUnit tests for:
+- **Domain logic validation**: Testing business rules and domain abstractions
+- **Integration testing**: Validating that generated code works correctly in BEAM
+- **Framework integration**: Testing Phoenix/Ecto/OTP integration points
+- **Regression testing**: Ensuring fixes continue to work
+
+#### Example: Domain Abstractions Testing
+
+The domain abstractions test (`test/tests/domain_abstractions_exunit/`) demonstrates this philosophy:
+
+- **Written in Haxe**: Full type safety and modern language features
+- **Comprehensive coverage**: Email, UserId, PositiveInt, NonEmptyString validation
+- **Result/Option integration**: Tests functional programming patterns
+- **Real-world scenarios**: Validates practical usage patterns
+- **Generated ExUnit**: Compiles to proper ExUnit test modules
+
+#### Test Structure
+
+```
+test/tests/domain_abstractions_exunit/
+├── Main.hx          # Haxe test source with @:exunit annotation
+├── compile.hxml     # Compilation configuration
+└── out/
+    └── Main.ex      # Generated ExUnit test module
+```
+
+#### Integration with Test Suite
+
+ExUnit tests integrate seamlessly with the existing test infrastructure:
+
+```bash
+# Compile Haxe tests to ExUnit
+cd test/tests/domain_abstractions_exunit && haxe compile.hxml
+
+# Run generated ExUnit tests
+mix test test/tests/domain_abstractions_exunit/out/Main.ex
+```
+
+This approach ensures that all tests benefit from Haxe's type system while generating proper ExUnit code that follows Elixir conventions.
+
 ## Related Documentation
 
 - **[TESTING_PRINCIPLES.md](TESTING_PRINCIPLES.md)** - Core testing philosophy and rules
