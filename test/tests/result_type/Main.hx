@@ -1,7 +1,7 @@
 import haxe.functional.Result;
-import haxe.functional.Result.ResultTools;
+import haxe.functional.ResultTools;
 
-using haxe.functional.Result.ResultTools;
+using haxe.functional.ResultTools;
 
 /**
  * Test case for Universal Result<T,E> type compilation
