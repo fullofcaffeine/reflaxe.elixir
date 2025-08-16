@@ -32,12 +32,12 @@ defmodule ResultTools do
     case (case result do {:ok, _} -> 0; {:error, _} -> 1; _ -> -1 end) do
       0 ->
         _g = case result do {:ok, value} -> value; {:error, value} -> value; _ -> nil end
-    value = _g
-    temp_result = {:ok, transform.(value)}
+        value = _g
+        temp_result = {:ok, transform.(value)}
       1 ->
         _g = case result do {:ok, value} -> value; {:error, value} -> value; _ -> nil end
-    error = _g
-    temp_result = {:error, error}
+        error = _g
+        temp_result = {:error, error}
     end
     temp_result
   end
@@ -58,12 +58,12 @@ defmodule ResultTools do
     case (case result do {:ok, _} -> 0; {:error, _} -> 1; _ -> -1 end) do
       0 ->
         _g = case result do {:ok, value} -> value; {:error, value} -> value; _ -> nil end
-    value = _g
-    temp_result = transform.(value)
+        value = _g
+        temp_result = transform.(value)
       1 ->
         _g = case result do {:ok, value} -> value; {:error, value} -> value; _ -> nil end
-    error = _g
-    temp_result = {:error, error}
+        error = _g
+        temp_result = {:error, error}
     end
     temp_result
   end
@@ -94,12 +94,12 @@ defmodule ResultTools do
     case (case result do {:ok, _} -> 0; {:error, _} -> 1; _ -> -1 end) do
       0 ->
         _g = case result do {:ok, value} -> value; {:error, value} -> value; _ -> nil end
-    value = _g
-    temp_result = on_success.(value)
+        value = _g
+        temp_result = on_success.(value)
       1 ->
         _g = case result do {:ok, value} -> value; {:error, value} -> value; _ -> nil end
-    error = _g
-    temp_result = on_error.(error)
+        error = _g
+        temp_result = on_error.(error)
     end
     temp_result
   end
@@ -115,10 +115,10 @@ defmodule ResultTools do
     case (case result do {:ok, _} -> 0; {:error, _} -> 1; _ -> -1 end) do
       0 ->
         case result do {:ok, value} -> value; {:error, value} -> value; _ -> nil end
-    temp_result = true
+        temp_result = true
       1 ->
         case result do {:ok, value} -> value; {:error, value} -> value; _ -> nil end
-    temp_result = false
+        temp_result = false
     end
     temp_result
   end
@@ -134,10 +134,10 @@ defmodule ResultTools do
     case (case result do {:ok, _} -> 0; {:error, _} -> 1; _ -> -1 end) do
       0 ->
         case result do {:ok, value} -> value; {:error, value} -> value; _ -> nil end
-    temp_result = false
+        temp_result = false
       1 ->
         case result do {:ok, value} -> value; {:error, value} -> value; _ -> nil end
-    temp_result = true
+        temp_result = true
     end
     temp_result
   end
@@ -157,12 +157,12 @@ defmodule ResultTools do
     case (case result do {:ok, _} -> 0; {:error, _} -> 1; _ -> -1 end) do
       0 ->
         _g = case result do {:ok, value} -> value; {:error, value} -> value; _ -> nil end
-    value = _g
-    temp_result = value
+        value = _g
+        temp_result = value
       1 ->
         _g = case result do {:ok, value} -> value; {:error, value} -> value; _ -> nil end
-    error = _g
-    throw("Attempted to unwrap Error result: " <> Std.string(error))
+        error = _g
+        throw("Attempted to unwrap Error result: " <> Std.string(error))
     end
     temp_result
   end
@@ -182,11 +182,11 @@ defmodule ResultTools do
     case (case result do {:ok, _} -> 0; {:error, _} -> 1; _ -> -1 end) do
       0 ->
         _g = case result do {:ok, value} -> value; {:error, value} -> value; _ -> nil end
-    value = _g
-    temp_result = value
+        value = _g
+        temp_result = value
       1 ->
         case result do {:ok, value} -> value; {:error, value} -> value; _ -> nil end
-    temp_result = default_value
+        temp_result = default_value
     end
     temp_result
   end
@@ -204,12 +204,12 @@ defmodule ResultTools do
     case (case result do {:ok, _} -> 0; {:error, _} -> 1; _ -> -1 end) do
       0 ->
         _g = case result do {:ok, value} -> value; {:error, value} -> value; _ -> nil end
-    value = _g
-    temp_result = value
+        value = _g
+        temp_result = value
       1 ->
         _g = case result do {:ok, value} -> value; {:error, value} -> value; _ -> nil end
-    error = _g
-    temp_result = error_handler.(error)
+        error = _g
+        temp_result = error_handler.(error)
     end
     temp_result
   end
@@ -227,12 +227,12 @@ defmodule ResultTools do
     case (case result do {:ok, _} -> 0; {:error, _} -> 1; _ -> -1 end) do
       0 ->
         _g = case result do {:ok, value} -> value; {:error, value} -> value; _ -> nil end
-    value = _g
-    temp_result = {:ok, value}
+        value = _g
+        temp_result = {:ok, value}
       1 ->
         _g = case result do {:ok, value} -> value; {:error, value} -> value; _ -> nil end
-    error = _g
-    temp_result = {:error, transform.(error)}
+        error = _g
+        temp_result = {:error, transform.(error)}
     end
     temp_result
   end
@@ -253,12 +253,12 @@ defmodule ResultTools do
     case (case result do {:ok, _} -> 0; {:error, _} -> 1; _ -> -1 end) do
       0 ->
         _g = case result do {:ok, value} -> value; {:error, value} -> value; _ -> nil end
-    value = _g
-    temp_result = {:ok, on_success.(value)}
+        value = _g
+        temp_result = {:ok, on_success.(value)}
       1 ->
         _g = case result do {:ok, value} -> value; {:error, value} -> value; _ -> nil end
-    error = _g
-    temp_result = {:error, on_error.(error)}
+        error = _g
+        temp_result = {:error, on_error.(error)}
     end
     temp_result
   end
@@ -307,12 +307,12 @@ defmodule ResultTools do
     case (case result do {:ok, _} -> 0; {:error, _} -> 1; _ -> -1 end) do
       0 ->
         _g = case result do {:ok, value} -> value; {:error, value} -> value; _ -> nil end
-    value = _g
-    values ++ [value]
+        value = _g
+        values ++ [value]
       1 ->
         _g = case result do {:ok, value} -> value; {:error, value} -> value; _ -> nil end
-    error = _g
-    {:error, error}
+        error = _g
+        {:error, error}
     end end)
     {:ok, values}
   end
@@ -351,11 +351,11 @@ defmodule ResultTools do
     case (case result do {:ok, _} -> 0; {:error, _} -> 1; _ -> -1 end) do
       0 ->
         _g = case result do {:ok, value} -> value; {:error, value} -> value; _ -> nil end
-    value = _g
-    temp_result = {:some, value}
+        value = _g
+        temp_result = {:some, value}
       1 ->
         case result do {:ok, value} -> value; {:error, value} -> value; _ -> nil end
-    temp_result = :none
+        temp_result = :none
     end
     temp_result
   end

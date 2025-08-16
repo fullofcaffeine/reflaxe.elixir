@@ -55,8 +55,8 @@ defmodule OptionTools do
     case (case option do {:some, _} -> 0; :none -> 1; _ -> -1 end) do
       0 ->
         _g = case option do {:some, value} -> value; :none -> nil; _ -> nil end
-    value = _g
-    temp_result = {:some, transform.(value)}
+        value = _g
+        temp_result = {:some, transform.(value)}
       1 ->
         temp_result = :none
     end
@@ -79,8 +79,8 @@ defmodule OptionTools do
     case (case option do {:some, _} -> 0; :none -> 1; _ -> -1 end) do
       0 ->
         _g = case option do {:some, value} -> value; :none -> nil; _ -> nil end
-    value = _g
-    temp_result = transform.(value)
+        value = _g
+        temp_result = transform.(value)
       1 ->
         temp_result = :none
     end
@@ -111,8 +111,8 @@ defmodule OptionTools do
     case (case option do {:some, _} -> 0; :none -> 1; _ -> -1 end) do
       0 ->
         _g = case option do {:some, value} -> value; :none -> nil; _ -> nil end
-    inner = _g
-    temp_result = inner
+        inner = _g
+        temp_result = inner
       1 ->
         temp_result = :none
     end
@@ -132,8 +132,8 @@ defmodule OptionTools do
     case (case option do {:some, _} -> 0; :none -> 1; _ -> -1 end) do
       0 ->
         _g = case option do {:some, value} -> value; :none -> nil; _ -> nil end
-    value = _g
-    if (predicate.(value)), do: temp_result = {:some, value}, else: temp_result = :none
+        value = _g
+        if (predicate.(value)), do: temp_result = {:some, value}, else: temp_result = :none
       1 ->
         temp_result = :none
     end
@@ -156,8 +156,8 @@ defmodule OptionTools do
     case (case option do {:some, _} -> 0; :none -> 1; _ -> -1 end) do
       0 ->
         _g = case option do {:some, value} -> value; :none -> nil; _ -> nil end
-    value = _g
-    temp_result = value
+        value = _g
+        temp_result = value
       1 ->
         temp_result = default_value
     end
@@ -179,8 +179,8 @@ defmodule OptionTools do
     case (case option do {:some, _} -> 0; :none -> 1; _ -> -1 end) do
       0 ->
         _g = case option do {:some, value} -> value; :none -> nil; _ -> nil end
-    value = _g
-    temp_result = value
+        value = _g
+        temp_result = value
       1 ->
         temp_result = fn_.()
     end
@@ -202,7 +202,7 @@ defmodule OptionTools do
     case (case first do {:some, _} -> 0; :none -> 1; _ -> -1 end) do
       0 ->
         case first do {:some, value} -> value; :none -> nil; _ -> nil end
-    temp_result = first
+        temp_result = first
       1 ->
         temp_result = second
     end
@@ -224,7 +224,7 @@ defmodule OptionTools do
     case (case first do {:some, _} -> 0; :none -> 1; _ -> -1 end) do
       0 ->
         case first do {:some, value} -> value; :none -> nil; _ -> nil end
-    temp_result = first
+        temp_result = first
       1 ->
         temp_result = fn_.()
     end
@@ -243,7 +243,7 @@ defmodule OptionTools do
     case (case option do {:some, _} -> 0; :none -> 1; _ -> -1 end) do
       0 ->
         case option do {:some, value} -> value; :none -> nil; _ -> nil end
-    temp_result = true
+        temp_result = true
       1 ->
         temp_result = false
     end
@@ -262,7 +262,7 @@ defmodule OptionTools do
     case (case option do {:some, _} -> 0; :none -> 1; _ -> -1 end) do
       0 ->
         case option do {:some, value} -> value; :none -> nil; _ -> nil end
-    temp_result = false
+        temp_result = false
       1 ->
         temp_result = true
     end
@@ -287,8 +287,8 @@ defmodule OptionTools do
     case (case option do {:some, _} -> 0; :none -> 1; _ -> -1 end) do
       0 ->
         _g = case option do {:some, value} -> value; :none -> nil; _ -> nil end
-    value = _g
-    values ++ [value]
+        value = _g
+        values ++ [value]
       1 ->
         :none
     end end)
@@ -313,8 +313,8 @@ defmodule OptionTools do
     case (case option do {:some, _} -> 0; :none -> 1; _ -> -1 end) do
       0 ->
         _g = case option do {:some, value} -> value; :none -> nil; _ -> nil end
-    value = _g
-    result ++ [value]
+        value = _g
+        result ++ [value]
       1 ->
         nil
     end end)
@@ -337,8 +337,8 @@ defmodule OptionTools do
     case (case option do {:some, _} -> 0; :none -> 1; _ -> -1 end) do
       0 ->
         _g = case option do {:some, value} -> value; :none -> nil; _ -> nil end
-    value = _g
-    temp_result = {:ok, value}
+        value = _g
+        temp_result = {:ok, value}
       1 ->
         temp_result = {:error, error}
     end
@@ -359,11 +359,11 @@ defmodule OptionTools do
     case (case result do {:ok, _} -> 0; {:error, _} -> 1; _ -> -1 end) do
       0 ->
         _g = case result do {:ok, value} -> value; {:error, value} -> value; _ -> nil end
-    value = _g
-    temp_result = {:some, value}
+        value = _g
+        temp_result = {:some, value}
       1 ->
         case result do {:ok, value} -> value; {:error, value} -> value; _ -> nil end
-    temp_result = :none
+        temp_result = :none
     end
     temp_result
   end
@@ -398,8 +398,8 @@ defmodule OptionTools do
     case (case option do {:some, _} -> 0; :none -> 1; _ -> -1 end) do
       0 ->
         _g = case option do {:some, value} -> value; :none -> nil; _ -> nil end
-    value = _g
-    temp_result = value
+        value = _g
+        temp_result = value
       1 ->
         temp_result = nil
     end
@@ -421,8 +421,8 @@ defmodule OptionTools do
     case (case option do {:some, _} -> 0; :none -> 1; _ -> -1 end) do
       0 ->
         _g = case option do {:some, value} -> value; :none -> nil; _ -> nil end
-    value = _g
-    temp_result = %{"reply" => value, "status" => "ok"}
+        value = _g
+        temp_result = %{"reply" => value, "status" => "ok"}
       1 ->
         temp_result = %{"reply" => nil, "status" => "none"}
     end
@@ -446,8 +446,8 @@ defmodule OptionTools do
     case (case option do {:some, _} -> 0; :none -> 1; _ -> -1 end) do
       0 ->
         _g = case option do {:some, value} -> value; :none -> nil; _ -> nil end
-    value = _g
-    temp_result = value
+        value = _g
+        temp_result = value
       1 ->
         throw("Expected Some value but got None: " <> message)
     end
@@ -489,8 +489,8 @@ defmodule OptionTools do
     case (case option do {:some, _} -> 0; :none -> 1; _ -> -1 end) do
       0 ->
         _g = case option do {:some, value} -> value; :none -> nil; _ -> nil end
-    value = _g
-    fn_.(value)
+        value = _g
+        fn_.(value)
       1 ->
         nil
     end

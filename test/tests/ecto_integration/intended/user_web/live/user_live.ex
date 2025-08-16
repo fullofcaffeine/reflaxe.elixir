@@ -19,11 +19,11 @@ defmodule UserLive do
     case (event) do
       "delete_user" ->
         user = Accounts.get_user(params.id)
-    Accounts.delete_user(user)
-    temp_result = %{"noreply" => true, "socket" => socket}
+        Accounts.delete_user(user)
+        temp_result = %{"noreply" => true, "socket" => socket}
       "save_user" ->
         Accounts.create_user(params)
-    temp_result = %{"noreply" => true, "socket" => socket}
+        temp_result = %{"noreply" => true, "socket" => socket}
       _ ->
         temp_result = %{"noreply" => true, "socket" => socket}
     end

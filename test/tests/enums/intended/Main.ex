@@ -17,12 +17,12 @@ defmodule Main do
         temp_result = "blue"
       3 ->
         _g = elem(color, 1)
-    _g = elem(color, 2)
-    _g = elem(color, 3)
-    r = _g
-    g = _g
-    b = _g
-    temp_result = "rgb(" <> Integer.to_string(r) <> ", " <> Integer.to_string(g) <> ", " <> Integer.to_string(b) <> ")"
+        _g = elem(color, 2)
+        _g = elem(color, 3)
+        r = _g
+        g = _g
+        b = _g
+        temp_result = "rgb(" <> Integer.to_string(r) <> ", " <> Integer.to_string(g) <> ", " <> Integer.to_string(b) <> ")"
     end
     temp_result
   end
@@ -34,8 +34,8 @@ defmodule Main do
     case (elem(opt, 0)) do
       0 ->
         _g = elem(opt, 1)
-    v = _g
-    temp_result = v
+        v = _g
+        temp_result = v
       1 ->
         temp_result = default_value
     end
@@ -49,14 +49,14 @@ defmodule Main do
     case (elem(tree, 0)) do
       0 ->
         _g = elem(tree, 1)
-    value = _g
-    temp_result = value
+        value = _g
+        temp_result = value
       1 ->
         _g = elem(tree, 1)
-    _g = elem(tree, 2)
-    left = _g
-    right = _g
-    temp_result = Main.treeSum(left) + Main.treeSum(right)
+        _g = elem(tree, 2)
+        left = _g
+        right = _g
+        temp_result = Main.treeSum(left) + Main.treeSum(right)
     end
     temp_result
   end
@@ -107,28 +107,28 @@ defmodule Main do
     case (elem(t1, 0)) do
       0 ->
         _g = elem(t1, 1)
-    if (elem(t2, 0) == 0) do
-      _g = elem(t2, 1)
-      v2 = _g
-      v1 = _g
-      temp_result = v1 == v2
-    else
-      temp_result = false
-    end
+        if (elem(t2, 0) == 0) do
+          _g = elem(t2, 1)
+          v2 = _g
+          v1 = _g
+          temp_result = v1 == v2
+        else
+          temp_result = false
+        end
       1 ->
         _g = elem(t1, 1)
-    _g = elem(t1, 2)
-    if (elem(t2, 0) == 1) do
-      _g = elem(t2, 1)
-      _g = elem(t2, 2)
-      l2 = _g
-      r2 = _g
-      r1 = _g
-      l1 = _g
-      temp_result = Main.compareTrees(l1, l2) && Main.compareTrees(r1, r2)
-    else
-      temp_result = false
-    end
+        _g = elem(t1, 2)
+        if (elem(t2, 0) == 1) do
+          _g = elem(t2, 1)
+          _g = elem(t2, 2)
+          l2 = _g
+          r2 = _g
+          r1 = _g
+          l1 = _g
+          temp_result = Main.compareTrees(l1, l2) && Main.compareTrees(r1, r2)
+        else
+          temp_result = false
+        end
     end
     temp_result
   end
