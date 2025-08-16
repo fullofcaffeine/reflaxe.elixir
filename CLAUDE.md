@@ -64,6 +64,7 @@ Example of correct approach:
 - [`documentation/HAXE_MACRO_APIS.md`](documentation/HAXE_MACRO_APIS.md) - **CRITICAL**: Correct Haxe macro API usage to avoid "macro-in-macro" errors
 - [`documentation/ARCHITECTURE.md`](documentation/ARCHITECTURE.md) - Complete architectural details
 - [`documentation/architecture/TESTING.md`](documentation/architecture/TESTING.md) - Testing philosophy and infrastructure
+- [`documentation/macro/MACRO_PRINCIPLES.md`](documentation/macro/MACRO_PRINCIPLES.md) - **CRITICAL**: Core principles for reliable macro development from real implementations
 
 **Key Insight**: Reflaxe.Elixir is a **macro-time transpiler**, not a runtime library. All transpilation happens during Haxe compilation, not at test runtime. This affects how you write and test compiler features.
 
@@ -158,6 +159,12 @@ Repeat → Continuous Quality Improvement
 - **Paradigm Bridge**: [`documentation/paradigms/PARADIGM_BRIDGE.md`](documentation/paradigms/PARADIGM_BRIDGE.md) - How Haxe's imperative patterns translate to Elixir's functional world
 - **Haxe for Phoenix**: [`documentation/phoenix/HAXE_FOR_PHOENIX.md`](documentation/phoenix/HAXE_FOR_PHOENIX.md) - Advantages of using Haxe for Phoenix development
 - **Developer Patterns**: [`documentation/guides/DEVELOPER_PATTERNS.md`](documentation/guides/DEVELOPER_PATTERNS.md) - Best practices and patterns for effective Haxe→Elixir code
+
+### Macro Development Guides ✨ **NEW**
+- **Macro Principles**: [`documentation/macro/MACRO_PRINCIPLES.md`](documentation/macro/MACRO_PRINCIPLES.md) - Core principles for developing reliable Haxe macros based on proven implementations
+- **Macro Patterns**: [`documentation/macro/MACRO_PATTERNS.md`](documentation/macro/MACRO_PATTERNS.md) - Reusable patterns and code templates for common macro development tasks
+- **Macro Debugging**: [`documentation/macro/MACRO_DEBUGGING.md`](documentation/macro/MACRO_DEBUGGING.md) - Comprehensive debugging strategies for troubleshooting macro transformations and AST processing
+- **Macro Case Studies**: [`documentation/macro/MACRO_CASE_STUDIES.md`](documentation/macro/MACRO_CASE_STUDIES.md) - Deep-dive analysis of real macro implementations including async/await anonymous function support
 
 ## Reference Code Location
 Reference examples for architectural patterns are located at:
@@ -445,6 +452,17 @@ return Supervisor.startLink(children, opts);
 - **Haxe Code Cookbook**: https://code.haxe.org/ - Modern patterns and best practices
 - **Web Resources**: Use WebSearch and WebFetch for current documentation, API references, and best practices
 - **Principle**: Always reference existing working code and official documentation rather than guessing or assuming implementation details
+
+## JavaScript Async/Await Support ✨ **PRODUCTION READY**
+
+**Complete async/await support for modern JavaScript compilation**:
+- ✅ **@:async annotation** - Transform functions to native `async function` declarations
+- ✅ **Anonymous function support** - Full async support for lambda expressions and event handlers
+- ✅ **Type-safe Promise handling** - Automatic Promise<T> wrapping with import-aware type detection
+- ✅ **Custom JS Generator** - AsyncJSGenerator extends ExampleJSGenerator for proper code generation
+- ✅ **Zero runtime overhead** - Pure compile-time transformation via build macros
+
+**See**: [`documentation/ASYNC_AWAIT.md`](documentation/ASYNC_AWAIT.md) - Complete usage guide and examples
 
 ## Modern Haxe JavaScript Patterns ⚡ **REQUIRED READING**
 

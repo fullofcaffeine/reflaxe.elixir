@@ -48,6 +48,7 @@ class Async {
     /**
      * Initialization function called automatically to register build macros.
      * Processes classes with @:async functions and transforms them.
+     * Also processes anonymous functions with @:async metadata.
      */
     public static function init(): Void {
         Compiler.addGlobalMetadata("", "@:build(reflaxe.js.Async.build())", true, true, false);
@@ -60,6 +61,7 @@ class Async {
      * - Converts return type T to js.lib.Promise<T>
      * - Wraps function body to generate native JavaScript async function
      * - Handles proper error propagation and Promise resolution
+     * - Recursively processes anonymous functions with @:async
      * 
      * @return Array of fields with transformed async functions
      */
@@ -71,10 +73,41 @@ class Async {
             switch (field.kind) {
                 case FFun(func):
                     if (hasAsyncMeta(field.meta)) {
-                        transformedFields.push(transformAsyncFunction(field, func));
+                        // Transform the async method
+                        var transformedField = transformAsyncFunction(field, func);
+                        // Also process any anonymous functions in the body
+                        switch (transformedField.kind) {
+                            case FFun(f):
+                                if (f.expr != null) {
+                                    f.expr = processExpression(f.expr);
+                                }
+                            case _:
+                        }
+                        transformedFields.push(transformedField);
                     } else {
+                        // Process anonymous functions even in non-async methods
+                        switch (field.kind) {
+                            case FFun(f):
+                                if (f.expr != null) {
+                                    f.expr = processExpression(f.expr);
+                                }
+                            case _:
+                        }
                         transformedFields.push(field);
                     }
+                case FVar(t, e) | FProp(_, _, t, e):
+                    // Process variable/property initializers for anonymous functions
+                    if (e != null) {
+                        var newExpr = processExpression(e);
+                        switch (field.kind) {
+                            case FVar(t, _):
+                                field.kind = FVar(t, newExpr);
+                            case FProp(get, set, t, _):
+                                field.kind = FProp(get, set, t, newExpr);
+                            case _:
+                        }
+                    }
+                    transformedFields.push(field);
                 case _:
                     transformedFields.push(field);
             }
@@ -162,13 +195,13 @@ class Async {
             });
         }
         
-        // Check if already a Promise type
+        // Check if already a Promise type (handles both imported and fully qualified)
         switch (returnType) {
-            case TPath({name: "Promise", pack: ["js", "lib"]}):
-                // Already a Promise, don't double-wrap
+            case TPath(p) if (p.name == "Promise" && (p.pack.length == 0 || (p.pack.length == 2 && p.pack[0] == "js" && p.pack[1] == "lib"))):
+                // Already a Promise type (either imported as Promise or fully qualified js.lib.Promise)
                 return returnType;
             case _:
-                // Wrap in Promise<T>
+                // Not a Promise type, wrap in Promise<T>
                 return TPath({
                     name: "Promise",
                     pack: ["js", "lib"],
@@ -264,6 +297,170 @@ class Async {
         return meta.filter(function(entry) {
             return entry.name != ":async" && entry.name != "async";
         });
+    }
+    
+    /**
+     * Recursively processes expressions to find and transform @:async anonymous functions.
+     * 
+     * @param expr Expression to process
+     * @return Transformed expression with async anonymous functions converted
+     */
+    static function processExpression(expr: Expr): Expr {
+        if (expr == null) return null;
+        
+        
+        return switch (expr.expr) {
+            // Handle @:async metadata on anonymous functions
+            case EMeta(meta, funcExpr) if (isAsyncMeta(meta.name)):
+                switch (funcExpr.expr) {
+                    case EFunction(kind, func):
+                        // Transform anonymous async function
+                        transformAnonymousAsync(funcExpr, func, meta, expr.pos);
+                    case _:
+                        // Not a function, just process recursively
+                        expr.map(processExpression);
+                }
+                
+            // Handle variable declarations that might contain functions
+            case EVars(vars):
+                var newVars = vars.map(function(v) {
+                    return {
+                        name: v.name,
+                        namePos: v.namePos,
+                        type: v.type,
+                        expr: v.expr != null ? processExpression(v.expr) : null,
+                        isFinal: v.isFinal,
+                        isStatic: v.isStatic,
+                        meta: v.meta
+                    };
+                });
+                {expr: EVars(newVars), pos: expr.pos};
+                
+            // Recursively process all other expressions
+            case _:
+                expr.map(processExpression);
+        }
+    }
+    
+    /**
+     * Checks if a metadata name represents async metadata.
+     * 
+     * @param name Metadata name to check
+     * @return True if it's @:async or @async
+     */
+    static function isAsyncMeta(name: String): Bool {
+        return name == ":async" || name == "async";
+    }
+    
+    /**
+     * Transforms an anonymous function with @:async metadata.
+     * 
+     * @param funcExpr The function expression
+     * @param func The function to transform
+     * @param meta The async metadata
+     * @param pos Position for error reporting
+     * @return Transformed async function expression
+     */
+    static function transformAnonymousAsync(funcExpr: Expr, func: Function, meta: MetadataEntry, pos: Position): Expr {
+        // Transform return type from T to Promise<T>
+        var newReturnType = transformReturnType(func.ret, pos);
+        
+        // For anonymous functions, transform the body to ensure it returns a Promise
+        var transformedBody = if (func.expr != null) {
+            transformAnonymousFunctionBody(func.expr, pos);
+        } else {
+            // Empty function should return resolved Promise
+            macro @:pos(pos) return js.lib.Promise.resolve(null);
+        };
+        
+        // Create new function with transformed properties
+        var newFunc: Function = {
+            args: func.args,
+            ret: newReturnType,
+            expr: transformedBody,
+            params: func.params
+        };
+        
+        // Get the function kind from the original expression
+        var kind = switch (funcExpr.expr) {
+            case EFunction(k, _): k;
+            case _: FAnonymous;
+        };
+        
+        // Create function with :jsAsync metadata (don't wrap in another EMeta)
+        var transformedFunction = {
+            expr: EFunction(kind, newFunc),
+            pos: funcExpr.pos
+        };
+        
+        // Add the :jsAsync metadata to mark it for JavaScript generation
+        return {
+            expr: EMeta({
+                name: ":jsAsync",
+                params: [],
+                pos: pos
+            }, transformedFunction),
+            pos: pos
+        };
+    }
+    
+    /**
+     * Transforms anonymous function body to properly return Promises.
+     * Unlike class methods, this doesn't wrap in IIFE but ensures proper Promise returns.
+     * 
+     * @param expr Function body expression
+     * @param pos Position for error reporting
+     * @return Transformed expression that returns a Promise
+     */
+    static function transformAnonymousFunctionBody(expr: Expr, pos: Position): Expr {
+        // Process await calls in the expression
+        var processedExpr = processAwaitInExpr(expr);
+        
+        // For anonymous functions, we need to ensure the body returns a Promise
+        return switch (processedExpr.expr) {
+            case EReturn(returnExpr):
+                // Already has a return statement, ensure it returns a Promise
+                if (returnExpr != null) {
+                    {
+                        expr: EReturn(macro @:pos(pos) js.lib.Promise.resolve($returnExpr)),
+                        pos: pos
+                    };
+                } else {
+                    {
+                        expr: EReturn(macro @:pos(pos) js.lib.Promise.resolve(null)),
+                        pos: pos
+                    };
+                }
+            case EBlock(exprs):
+                // Block expression - check if last expression is a return
+                if (exprs.length == 0) {
+                    // Empty block
+                    macro @:pos(pos) return js.lib.Promise.resolve(null);
+                } else {
+                    var lastExpr = exprs[exprs.length - 1];
+                    switch (lastExpr.expr) {
+                        case EReturn(_):
+                            // Already has return, transform it
+                            var newExprs = exprs.copy();
+                            newExprs[newExprs.length - 1] = transformAnonymousFunctionBody(lastExpr, pos);
+                            {
+                                expr: EBlock(newExprs),
+                                pos: pos
+                            };
+                        case _:
+                            // No return statement, add one
+                            var newExprs = exprs.copy();
+                            newExprs.push(macro @:pos(pos) return js.lib.Promise.resolve(null));
+                            {
+                                expr: EBlock(newExprs),
+                                pos: pos
+                            };
+                    }
+                }
+            case _:
+                // Single expression, wrap it in a Promise return
+                macro @:pos(pos) return js.lib.Promise.resolve($processedExpr);
+        };
     }
     
     #end

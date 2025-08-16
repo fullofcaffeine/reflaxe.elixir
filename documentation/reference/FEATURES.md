@@ -175,6 +175,19 @@ This document provides the current status of all major features in Reflaxe.Elixi
 - **Zero Hardcoding**: Eliminates hardcoded "TodoApp" references in generated code
 - **Universal Compatibility**: @:appName annotation works with all other annotation types
 
+### 18. JavaScript Async/Await Support
+- **Status**: Production Ready ✨ NEW
+- **Native JavaScript Generation**: @:async functions compile to native `async function` declarations
+- **Promise Type Safety**: Full Promise<T> type inference with automatic wrapping/unwrapping
+- **Anonymous Function Support**: Complete @:async support for anonymous functions and lambda expressions
+- **Build Macro Integration**: Automatic function transformation with universal class processing
+- **Custom JS Generator**: AsyncJSGenerator extends ExampleJSGenerator for proper code generation
+- **Zero Runtime Overhead**: Pure compile-time transformation with no runtime dependencies
+- **Error Handling**: Full try/catch support with async/await patterns
+- **Phoenix LiveView Integration**: Perfect for modern Phoenix LiveView hook implementations
+- **Type Detection**: Robust Promise type detection handling both imported and qualified forms
+- **Comprehensive Testing**: Snapshot tests validate all transformation scenarios
+
 ## 🚧 In Development
 
 ### Advanced Router Features

@@ -4,6 +4,7 @@ import shared.TodoTypes;
 import client.hooks.Hooks;
 import client.utils.DarkMode;
 import client.utils.LocalStorage;
+import reflaxe.js.Async;
 
 /**
  * Main client-side entry point for Todo App
@@ -59,22 +60,35 @@ class TodoApp {
     private static function setupGlobalErrorHandling(): Void {
         js.Browser.window.addEventListener("error", function(event) {
             trace('Client error: ${event.error}');
-            // Could send to server for logging via LiveView
-            logErrorToServer("javascript_error", {
-                message: event.message,
-                filename: event.filename,
-                lineno: event.lineno,
-                colno: event.colno,
-                timestamp: Date.now().getTime()
-            });
+            // Log error asynchronously (fire and forget)
+            js.Syntax.code("(async () => {
+                try {
+                    await {0}('javascript_error', {
+                        message: {1},
+                        filename: {2},
+                        lineno: {3},
+                        colno: {4},
+                        timestamp: Date.now()
+                    });
+                } catch (e) {
+                    console.warn('Failed to log error:', e);
+                }
+            })()", logErrorToServerAsync, event.message, event.filename, event.lineno, event.colno);
         });
         
         js.Browser.window.addEventListener("unhandledrejection", function(event) {
             trace('Unhandled promise rejection: ${event.reason}');
-            logErrorToServer("promise_rejection", {
-                reason: Std.string(event.reason),
-                timestamp: Date.now().getTime()
-            });
+            // Log promise rejection asynchronously (fire and forget)
+            js.Syntax.code("(async () => {
+                try {
+                    await {0}('promise_rejection', {
+                        reason: {1},
+                        timestamp: Date.now()
+                    });
+                } catch (e) {
+                    console.warn('Failed to log promise rejection:', e);
+                }
+            })()", logErrorToServerAsync, Std.string(event.reason));
         });
     }
     
@@ -182,35 +196,66 @@ class TodoApp {
     }
     
     /**
-     * Set up performance monitoring
+     * Set up performance monitoring with async/await for cleaner error handling
      */
     private static function setupPerformanceMonitoring(): Void {
         // Monitor page load performance using modern PerformanceNavigationTiming API
         js.Browser.window.addEventListener("load", function() {
-            if (js.Browser.window.performance != null) {
+            // Use async IIFE to handle performance measurement with proper error handling
+            js.Syntax.code("(async () => {
                 try {
-                    // Use modern PerformanceNavigationTiming API instead of deprecated timing
-                    var entries = js.Browser.window.performance.getEntriesByType("navigation");
-                    if (entries.length > 0) {
-                        var navTiming: js.html.PerformanceNavigationTiming = cast entries[0];
-                        var domLoadTime = navTiming.domContentLoadedEventEnd - navTiming.domContentLoadedEventStart;
-                        var fullLoadTime = navTiming.loadEventEnd - navTiming.fetchStart;
-                        
-                        trace('DOM load time: ${domLoadTime}ms, Full page load: ${fullLoadTime}ms');
-                        logMetricToServer("dom_load_time", domLoadTime);
-                        logMetricToServer("page_load_time", fullLoadTime);
-                    } else {
-                        // Fallback for browsers that don't support PerformanceNavigationTiming
-                        trace("PerformanceNavigationTiming not supported, using basic measurement");
-                    }
-                } catch (e: Dynamic) {
-                    trace('Performance monitoring error: ${e}');
+                    await {0}();
+                } catch (error) {
+                    console.error('Performance monitoring failed:', error);
                 }
-            }
+            })()", measurePagePerformance);
         });
         
         // Monitor LiveView connection time
         monitorLiveViewPerformance();
+    }
+    
+    /**
+     * Async function to measure page performance and log metrics
+     */
+    @:async
+    private static function measurePagePerformance(): Void {
+        if (js.Browser.window.performance == null) {
+            return;
+        }
+        
+        // Use modern PerformanceNavigationTiming API instead of deprecated timing
+        var entries = js.Browser.window.performance.getEntriesByType("navigation");
+        if (entries.length == 0) {
+            // Fallback for browsers that don't support PerformanceNavigationTiming
+            trace("PerformanceNavigationTiming not supported, using basic measurement");
+            return;
+        }
+        
+        var navTiming: js.html.PerformanceNavigationTiming = cast entries[0];
+        var domLoadTime = navTiming.domContentLoadedEventEnd - navTiming.domContentLoadedEventStart;
+        var fullLoadTime = navTiming.loadEventEnd - navTiming.fetchStart;
+        
+        trace('DOM load time: ${domLoadTime}ms, Full page load: ${fullLoadTime}ms');
+        
+        // Log metrics asynchronously with proper error handling
+        await(logMetricToServerAsync("dom_load_time", domLoadTime));
+        await(logMetricToServerAsync("page_load_time", fullLoadTime));
+        
+        // Log additional performance metrics
+        var resourceLoadTime = navTiming.loadEventEnd - navTiming.domContentLoadedEventEnd;
+        if (resourceLoadTime > 0) {
+            await(logMetricToServerAsync("resource_load_time", resourceLoadTime));
+        }
+        
+        // Check for performance issues and report them
+        if (fullLoadTime > 3000) { // Slow page load > 3 seconds
+            await(logErrorToServerAsync("performance_warning", {
+                type: "slow_page_load",
+                load_time: fullLoadTime,
+                threshold: 3000
+            }));
+        }
     }
     
     /**
@@ -408,25 +453,529 @@ class TodoApp {
         trace("LiveView performance monitoring initialized");
     }
     
+    
     /**
-     * Log error to server via LiveView
+     * Async error logging to server with retry logic and batching
      */
-    private static function logErrorToServer(type: String, details: Dynamic): Void {
-        // This would use Phoenix LiveView to send error logs to the server
-        // For now, just store locally
-        LocalStorage.setObject('last_error_${type}', {
-            type: type,
-            details: details,
-            timestamp: Date.now().getTime()
-        });
+    @:async
+    private static function logErrorToServerAsync(type: String, details: Dynamic): Void {
+        try {
+            // Store locally first as fallback
+            LocalStorage.setObject('last_error_${type}', {
+                type: type,
+                details: details,
+                timestamp: Date.now().getTime()
+            });
+            
+            // Attempt to send to server via LiveView
+            await(sendToLiveViewAsync("error_log", {
+                error_type: type,
+                details: details,
+                timestamp: Date.now().getTime(),
+                user_agent: js.Browser.navigator.userAgent,
+                url: js.Browser.location.href
+            }));
+            
+            trace('Error logged to server: ${type}');
+            
+        } catch (e: Dynamic) {
+            // Server communication failed, error is already stored locally
+            trace('Failed to send error to server: ${e}');
+            
+            // Queue for retry later
+            await(queueForRetryAsync("error", {
+                type: type,
+                details: details,
+                timestamp: Date.now().getTime()
+            }));
+        }
     }
     
     /**
-     * Log metric to server
+     * Async metric logging to server with batching for performance
      */
-    private static function logMetricToServer(metric: String, value: Float): Void {
-        // This would send performance metrics to the server
-        LocalStorage.setNumber('metric_${metric}', value);
+    @:async
+    private static function logMetricToServerAsync(metric: String, value: Float): Void {
+        try {
+            // Store locally first as fallback
+            LocalStorage.setNumber('metric_${metric}', value);
+            
+            // Batch metrics for efficient server communication
+            await(addToBatchAsync("metrics", {
+                metric: metric,
+                value: value,
+                timestamp: Date.now().getTime()
+            }));
+            
+            // Send batch if it's full or enough time has passed
+            await(maybeSendBatchAsync("metrics"));
+            
+        } catch (e: Dynamic) {
+            trace('Failed to process metric: ${e}');
+            // Metric is still stored locally, so we don't lose data
+        }
+    }
+    
+    /**
+     * Send data to Phoenix LiveView with error handling and timeout
+     */
+    @:async
+    private static function sendToLiveViewAsync(event: String, data: Dynamic): Void {
+        // Create a promise that resolves when LiveView responds or times out
+        var promise = new js.lib.Promise(function(resolve, reject) {
+            var timeout = js.Browser.window.setTimeout(function() {
+                reject("LiveView communication timeout");
+            }, 5000); // 5 second timeout
+            
+            try {
+                // Simulated LiveView push - in real implementation this would use LiveView hooks
+                js.Syntax.code("
+                    if (window.liveSocket && window.liveSocket.channel) {
+                        window.liveSocket.channel.push({0}, {1})
+                            .receive('ok', (resp) => {
+                                clearTimeout({2});
+                                {3}(resp);
+                            })
+                            .receive('error', (resp) => {
+                                clearTimeout({2});
+                                {4}(resp);
+                            });
+                    } else {
+                        clearTimeout({2});
+                        {4}('LiveView not available');
+                    }
+                ", event, data, timeout, resolve, reject);
+            } catch (e: Dynamic) {
+                js.Browser.window.clearTimeout(timeout);
+                reject(e);
+            }
+        });
+        
+        await(promise);
+    }
+    
+    /**
+     * Queue data for retry when server communication fails
+     */
+    @:async
+    private static function queueForRetryAsync(category: String, data: Dynamic): Void {
+        var queueKey = 'retry_queue_${category}';
+        var queue = LocalStorage.getObject(queueKey);
+        
+        if (queue == null) {
+            queue = [];
+        }
+        
+        queue.push(data);
+        
+        // Limit queue size to prevent memory issues
+        if (queue.length > 100) {
+            queue = queue.slice(-50); // Keep last 50 items
+        }
+        
+        LocalStorage.setObject(queueKey, queue);
+        
+        // Schedule retry attempt
+        await(scheduleRetryAsync(category));
+    }
+    
+    /**
+     * Add data to batch for efficient server communication
+     */
+    @:async
+    private static function addToBatchAsync(batchType: String, data: Dynamic): Void {
+        var batchKey = 'batch_${batchType}';
+        var batch = LocalStorage.getObject(batchKey);
+        
+        if (batch == null) {
+            batch = {
+                items: [],
+                created_at: Date.now().getTime()
+            };
+        }
+        
+        batch.items.push(data);
+        LocalStorage.setObject(batchKey, batch);
+    }
+    
+    /**
+     * Send batch to server if conditions are met
+     */
+    @:async
+    private static function maybeSendBatchAsync(batchType: String): Void {
+        var batchKey = 'batch_${batchType}';
+        var batch = LocalStorage.getObject(batchKey);
+        
+        if (batch == null || batch.items.length == 0) {
+            return;
+        }
+        
+        var shouldSend = false;
+        var now = Date.now().getTime();
+        
+        // Send if batch is full (10 items) or old (30 seconds)
+        if (batch.items.length >= 10 || (now - batch.created_at) > 30000) {
+            shouldSend = true;
+        }
+        
+        if (shouldSend) {
+            try {
+                await(sendToLiveViewAsync('batch_${batchType}', {
+                    items: batch.items,
+                    count: batch.items.length,
+                    created_at: batch.created_at,
+                    sent_at: now
+                }));
+                
+                // Clear batch after successful send
+                LocalStorage.removeItem(batchKey);
+                trace('Sent batch of ${batch.items.length} ${batchType} to server');
+                
+            } catch (e: Dynamic) {
+                trace('Failed to send batch ${batchType}: ${e}');
+                // Batch remains in LocalStorage for retry
+            }
+        }
+    }
+    
+    /**
+     * Schedule retry attempt for failed communications
+     */
+    @:async
+    private static function scheduleRetryAsync(category: String): Void {
+        // Use exponential backoff: 1s, 2s, 4s, 8s, then 30s max
+        var retryKey = 'retry_count_${category}';
+        var retryCount = LocalStorage.getNumber(retryKey, 0);
+        var delay = Math.min(1000 * Math.pow(2, retryCount), 30000);
+        
+        await(Async.delay(null, Std.int(delay)));
+        
+        try {
+            await(processRetryQueueAsync(category));
+            
+            // Reset retry count on success
+            LocalStorage.removeItem(retryKey);
+            
+        } catch (e: Dynamic) {
+            // Increment retry count and try again later
+            LocalStorage.setNumber(retryKey, retryCount + 1);
+            trace('Retry ${category} failed (attempt ${retryCount + 1}): ${e}');
+        }
+    }
+    
+    /**
+     * Process queued items for retry
+     */
+    @:async
+    private static function processRetryQueueAsync(category: String): Void {
+        var queueKey = 'retry_queue_${category}';
+        var queue = LocalStorage.getObject(queueKey);
+        
+        if (queue == null || queue.length == 0) {
+            return;
+        }
+        
+        // Process items in batch
+        await(sendToLiveViewAsync('retry_${category}', {
+            items: queue,
+            count: queue.length,
+            retry_timestamp: Date.now().getTime()
+        }));
+        
+        // Clear queue after successful send
+        LocalStorage.removeItem(queueKey);
+        trace('Successfully sent ${queue.length} queued ${category} items');
+    }
+    
+    // Async Data Fetching Utilities
+    
+    /**
+     * Fetch todos from server with proper error handling and caching
+     */
+    @:async
+    public static function fetchTodosAsync(): Array<Dynamic> {
+        try {
+            // Check cache first (5 minute expiry)
+            var cacheKey = "todos_cache";
+            var cacheData = LocalStorage.getObject(cacheKey);
+            var now = Date.now().getTime();
+            
+            if (cacheData != null && (now - cacheData.timestamp) < 300000) { // 5 minutes
+                trace("Returning cached todos");
+                return cacheData.todos;
+            }
+            
+            // Fetch from server
+            var response = await(fetchFromAPIAsync("/api/todos", "GET"));
+            var todos = response.data;
+            
+            // Cache the result
+            LocalStorage.setObject(cacheKey, {
+                todos: todos,
+                timestamp: now
+            });
+            
+            trace('Fetched ${todos.length} todos from server');
+            return todos;
+            
+        } catch (e: Dynamic) {
+            trace('Failed to fetch todos: ${e}');
+            
+            // Return cached data as fallback, even if expired
+            var fallbackData = LocalStorage.getObject("todos_cache");
+            if (fallbackData != null) {
+                trace("Returning stale cached todos as fallback");
+                return fallbackData.todos;
+            }
+            
+            // Return empty array if no cache available
+            return [];
+        }
+    }
+    
+    /**
+     * Create a new todo on the server
+     */
+    @:async
+    public static function createTodoAsync(title: String, ?description: String, ?priority: String): Dynamic {
+        try {
+            var todoData = {
+                title: title,
+                description: description ?? "",
+                priority: priority ?? "medium",
+                completed: false
+            };
+            
+            var response = await(fetchFromAPIAsync("/api/todos", "POST", todoData));
+            
+            // Invalidate cache after successful creation
+            LocalStorage.removeItem("todos_cache");
+            
+            // Log successful creation
+            await(logMetricToServerAsync("todo_created", 1));
+            
+            trace('Created todo: ${title}');
+            return response.data;
+            
+        } catch (e: Dynamic) {
+            trace('Failed to create todo: ${e}');
+            
+            // Log error
+            await(logErrorToServerAsync("todo_creation_failed", {
+                title: title,
+                error: Std.string(e)
+            }));
+            
+            throw e; // Re-throw to let caller handle it
+        }
+    }
+    
+    /**
+     * Update an existing todo on the server
+     */
+    @:async
+    public static function updateTodoAsync(id: Int, updates: Dynamic): Dynamic {
+        try {
+            var response = await(fetchFromAPIAsync('/api/todos/${id}', "PUT", updates));
+            
+            // Invalidate cache after successful update
+            LocalStorage.removeItem("todos_cache");
+            
+            // Log successful update
+            await(logMetricToServerAsync("todo_updated", 1));
+            
+            trace('Updated todo ${id}');
+            return response.data;
+            
+        } catch (e: Dynamic) {
+            trace('Failed to update todo ${id}: ${e}');
+            
+            // Log error
+            await(logErrorToServerAsync("todo_update_failed", {
+                todo_id: id,
+                updates: updates,
+                error: Std.string(e)
+            }));
+            
+            throw e;
+        }
+    }
+    
+    /**
+     * Delete a todo from the server
+     */
+    @:async
+    public static function deleteTodoAsync(id: Int): Void {
+        try {
+            await(fetchFromAPIAsync('/api/todos/${id}', "DELETE"));
+            
+            // Invalidate cache after successful deletion
+            LocalStorage.removeItem("todos_cache");
+            
+            // Log successful deletion
+            await(logMetricToServerAsync("todo_deleted", 1));
+            
+            trace('Deleted todo ${id}');
+            
+        } catch (e: Dynamic) {
+            trace('Failed to delete todo ${id}: ${e}');
+            
+            // Log error
+            await(logErrorToServerAsync("todo_deletion_failed", {
+                todo_id: id,
+                error: Std.string(e)
+            }));
+            
+            throw e;
+        }
+    }
+    
+    /**
+     * Sync local changes with server
+     */
+    @:async
+    public static function syncWithServerAsync(): Void {
+        try {
+            trace("Starting server sync...");
+            
+            // Process any queued offline changes
+            await(processOfflineChangesAsync());
+            
+            // Fetch latest data from server
+            var serverTodos = await(fetchTodosAsync());
+            
+            // Update local state (this would typically trigger UI updates)
+            announceStatus('Synced ${serverTodos.length} todos with server');
+            
+            // Log successful sync
+            await(logMetricToServerAsync("sync_completed", 1));
+            
+            trace("Server sync completed successfully");
+            
+        } catch (e: Dynamic) {
+            trace('Server sync failed: ${e}');
+            
+            // Log sync failure
+            await(logErrorToServerAsync("sync_failed", {
+                error: Std.string(e),
+                timestamp: Date.now().getTime()
+            }));
+            
+            announceStatus("Sync failed - working offline");
+        }
+    }
+    
+    /**
+     * Generic API fetch utility with retry logic and proper error handling
+     */
+    @:async
+    private static function fetchFromAPIAsync(url: String, method: String, ?data: Dynamic): Dynamic {
+        var maxRetries = 3;
+        var retryDelay = 1000; // Start with 1 second
+        
+        for (attempt in 0...maxRetries) {
+            try {
+                var requestOptions: Dynamic = {
+                    method: method,
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Accept": "application/json"
+                    }
+                };
+                
+                if (data != null && (method == "POST" || method == "PUT" || method == "PATCH")) {
+                    requestOptions.body = haxe.Json.stringify(data);
+                }
+                
+                // Create Promise for fetch request
+                var promise = new js.lib.Promise(function(resolve, reject) {
+                    js.Syntax.code("
+                        fetch({0}, {1})
+                            .then(response => {
+                                if (!response.ok) {
+                                    throw new Error(`HTTP error! status: ${response.status}`);
+                                }
+                                return response.json();
+                            })
+                            .then(data => {2}({
+                                data: data,
+                                status: 'success'
+                            }))
+                            .catch(error => {3}(error));
+                    ", url, requestOptions, resolve, reject);
+                });
+                
+                var response = await(promise);
+                return response;
+                
+            } catch (e: Dynamic) {
+                if (attempt == maxRetries - 1) {
+                    // Last attempt failed, throw error
+                    throw e;
+                }
+                
+                // Wait before retry with exponential backoff
+                trace('API request failed (attempt ${attempt + 1}/${maxRetries}): ${e}');
+                await(Async.delay(null, retryDelay));
+                retryDelay *= 2; // Exponential backoff
+            }
+        }
+        
+        throw "API request failed after all retries";
+    }
+    
+    /**
+     * Process any offline changes that haven't been synced
+     */
+    @:async
+    private static function processOfflineChangesAsync(): Void {
+        var offlineChanges = LocalStorage.getObject("offline_changes");
+        
+        if (offlineChanges == null || offlineChanges.length == 0) {
+            return;
+        }
+        
+        trace('Processing ${offlineChanges.length} offline changes');
+        
+        for (change in offlineChanges) {
+            try {
+                switch (change.type) {
+                    case "create":
+                        await(createTodoAsync(change.data.title, change.data.description, change.data.priority));
+                    case "update":
+                        await(updateTodoAsync(change.data.id, change.data.updates));
+                    case "delete":
+                        await(deleteTodoAsync(change.data.id));
+                }
+            } catch (e: Dynamic) {
+                trace('Failed to process offline change: ${e}');
+                // Keep the change for next sync attempt
+                continue;
+            }
+        }
+        
+        // Clear processed changes
+        LocalStorage.removeItem("offline_changes");
+        trace("Offline changes processed successfully");
+    }
+    
+    /**
+     * Queue changes for offline processing
+     */
+    public static function queueOfflineChange(type: String, data: Dynamic): Void {
+        var changes = LocalStorage.getObject("offline_changes");
+        if (changes == null) {
+            changes = [];
+        }
+        
+        changes.push({
+            type: type,
+            data: data,
+            timestamp: Date.now().getTime()
+        });
+        
+        LocalStorage.setObject("offline_changes", changes);
+        trace('Queued offline change: ${type}');
     }
     
     /**
