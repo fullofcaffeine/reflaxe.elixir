@@ -1,8 +1,9 @@
-# Compilation configuration for domain_abstractions test
+# Compilation configuration for domain_abstractions ExUnit test
 -cp ../../../std
 -cp ../../../src
 -cp .
 -lib reflaxe
 --macro reflaxe.elixir.CompilerInit.Start()
 -D elixir_output=out
+-D exunit_tests
 Main

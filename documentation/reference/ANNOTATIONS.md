@@ -583,6 +583,111 @@ Standard library types always use idiomatic patterns regardless of annotation:
 - `haxe.ds.Option<T>` → Always generates `{:ok, value}` / `:error`
 - `haxe.functional.Result<T,E>` → Always generates `{:ok, value}` / `{:error, reason}`
 
+### @:using - Automatic Static Extensions
+
+Automatically applies static extension methods to a type, making them globally available wherever the type is used.
+
+**Basic Usage**:
+```haxe
+// Define extension methods
+class ResultTools {
+    public static function isOk<T, E>(result: Result<T, E>): Bool {
+        return switch (result) {
+            case Ok(_): true;
+            case Error(_): false;
+        }
+    }
+    
+    public static function map<T, U, E>(result: Result<T, E>, transform: T -> U): Result<U, E> {
+        return switch (result) {
+            case Ok(value): Ok(transform(value));
+            case Error(error): Error(error);
+        }
+    }
+}
+
+// Apply extensions automatically to the type
+@:using(haxe.functional.Result.ResultTools)
+enum Result<T, E> {
+    Ok(value: T);
+    Error(error: E);
+}
+```
+
+**Usage Anywhere**:
+```haxe
+import haxe.functional.Result;
+
+class UserService {
+    static function validateUser(data: String): Result<User, String> {
+        var result = parseUser(data);
+        // Extensions automatically available - no 'using' needed
+        if (result.isOk()) {
+            return result.map(user -> enrichUser(user));
+        }
+        return result;
+    }
+}
+```
+
+**Comparison with `using` Keyword**:
+
+| Pattern | Scope | Control | Maintenance |
+|---------|-------|---------|-------------|
+| **`@:using` metadata** | Global (automatic) | Set once on type | Low maintenance |
+| **`using` keyword** | Per-file (explicit) | Manual per file | Higher maintenance |
+
+**Example with `using` keyword**:
+```haxe
+// Without @:using metadata on Result type
+import haxe.functional.Result;
+import haxe.functional.ResultTools;
+using haxe.functional.ResultTools; // Required in each file
+
+class UserService {
+    static function validateUser(data: String): Result<User, String> {
+        var result = parseUser(data);
+        return result.isOk() ? result.map(enrichUser) : result;
+    }
+}
+```
+
+**When to Use @:using**:
+- **Core data types** (Option, Result, List) that always need their extension methods
+- **Domain types** where extensions are fundamental to the type's usage
+- **Library development** where you want extensions to be automatically available
+
+**When to Use `using` Instead**:
+- **Large projects** where explicit imports provide better clarity
+- **Selective extension usage** where only some files need the extensions  
+- **Testing environments** where you want precise control over available methods
+
+**Real-World Examples**:
+```haxe
+// Haxe standard library pattern
+@:using(haxe.ds.Option.OptionTools)
+enum Option<T> {
+    Some(value: T);
+    None;
+}
+
+// Domain validation pattern
+@:using(models.Email.EmailTools)
+abstract Email(String) from String {
+    public function new(value: String) this = value;
+}
+
+class EmailTools {
+    public static function getDomain(email: Email): String {
+        return email.toString().split("@")[1];
+    }
+    
+    public static function isValidDomain(email: Email, domain: String): Bool {
+        return email.getDomain().toLowerCase() == domain.toLowerCase();
+    }
+}
+```
+
 ### @:appName - Configurable Application Names
 
 Configures the application name for Phoenix applications, enabling reusable code across different projects.

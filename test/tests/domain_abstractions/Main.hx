@@ -7,6 +7,7 @@ import haxe.ds.Option;
 
 using haxe.functional.ResultTools;
 using haxe.ds.OptionTools;
+using StringTools;
 
 /**
  * Comprehensive test for type-safe domain abstractions.
@@ -125,7 +126,7 @@ class Main {
             "user 123",     // Contains space
             "user-123",     // Contains hyphen
             "",             // Empty
-            "a".repeat(60)  // Too long (> 50 chars)
+            [for (i in 0...60) "a"].join("")  // Too long (> 50 chars)
         ];
         
         for (invalidId in invalidIds) {
@@ -337,7 +338,7 @@ class Main {
         // Chain UserId operations  
         var userIdChain = UserId.parse("TestUser123")
             .map(userId -> userId.normalize())
-            .filter(userId -> userId.startsWith("test"))
+            .filter(userId -> userId.startsWith("test"), "UserId does not start with 'test'")
             .unwrapOr(UserId.parse("defaultuser").unwrap());
         trace('UserId chain result: ${userIdChain.toString()}');
         

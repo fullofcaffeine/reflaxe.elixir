@@ -7,6 +7,125 @@ Archives of previous history can be found in `TASK_HISTORY_ARCHIVE_*.md` files.
 
 ---
 
+## Session: 2025-01-16 - Enhanced Pattern Matching Compilation ✅
+
+### Context: @:elixirIdiomatic Annotation Implementation
+User questioned automatic "Option-like" enum detection, leading to fundamental redesign of enum pattern compilation with explicit opt-in behavior.
+
+### User Feedback Received
+- **Core Question**: "can you explain to me why we're detecting 'Option-like' enums? Do we even need to do that? Why?"
+- **Design Decision**: "let's keep the logic for the builtin option type and then provide an annotation for users to activate that for their enums, otherwise, compile enums as is"
+- **Scope Clarification**: "Result should also be part of the default :ok,:error behavior"
+- **Documentation Request**: "document this thoroughly after done!"
+
+### Tasks Completed ✅
+
+#### 1. Removed Automatic "Option-Like" Detection ✨
+- **Fixed**: Removed `isOptionLikeEnum()` function from AlgebraicDataTypeCompiler.hx
+- **Changed**: No more automatic detection based on enum names like "Option"
+- **Result**: Predictable, explicit behavior instead of magic naming conventions
+
+#### 2. Implemented @:elixirIdiomatic Annotation ✨
+- **Added**: `hasIdiomaticAnnotation()` function for explicit opt-in detection
+- **Feature**: Users can now annotate enums with `@:elixirIdiomatic` for idiomatic patterns
+- **Architecture**: Clear separation between standard library and user-defined behavior
+- **Result**: User control over pattern generation with explicit annotation
+
+#### 3. Smart Structure Detection ✨
+- **Implemented**: `detectADTConfigByStructure()` for intelligent pattern matching
+- **Logic**: Detects Ok/Error constructors → Result patterns, Some/None → Option patterns
+- **Supports**: Common patterns like Success/Failure, Just/Nothing
+- **Result**: Automatic detection of whether annotated enum wants Result or Option patterns
+
+#### 4. Fixed Enum Constructor Compilation ✨
+- **Fixed**: FEnum case in ElixirCompiler.hx to handle non-ADT enums properly
+- **Added**: Else branch for literal pattern generation (`{:some, value}` / `:none`)
+- **Resolved**: Module function calls vs direct pattern generation issue
+- **Result**: User-defined enums generate correct literal patterns by default
+
+#### 5. Comprehensive Testing & Validation ✨
+- **Created**: test/tests/elixir_idiomatic/ comprehensive test suite
+- **Validated**: All three pattern types (standard library, annotated, literal)
+- **Fixed**: 3 existing tests to reflect new correct behavior
+- **Status**: 54/55 tests passing (improvement from 50/54)
+- **Result**: Robust test coverage for all enum pattern scenarios
+
+#### 6. Complete Documentation Update ✨
+- **Added**: @:elixirIdiomatic section to ANNOTATIONS.md with examples
+- **Updated**: ENUM_CONSTRUCTOR_PATTERNS.md with new detection logic
+- **Created**: Comprehensive session documentation in documentation/sessions/
+- **Result**: Thorough documentation of design decisions and usage patterns
+
+### Pattern Behavior Changes
+
+#### Standard Library Types (Unchanged)
+```haxe
+import haxe.ds.Option;
+import haxe.functional.Result;
+// Always generate idiomatic patterns regardless of annotation
+var some = Some("test");   // → {:ok, "test"}
+var ok = Ok("data");       // → {:ok, "data"}
+```
+
+#### User-Defined Enums (New Behavior)
+```haxe
+// Default: literal patterns
+enum UserOption<T> { Some(v:T); None; }
+var some = Some("test");   // → {:some, "test"}
+
+// Opt-in: idiomatic patterns
+@:elixirIdiomatic
+enum ApiOption<T> { Some(v:T); None; }
+var some = Some("test");   // → {:ok, "test"}
+```
+
+### Technical Insights Gained
+
+#### 1. Explicit Over Implicit Design
+- **Lesson**: Automatic behavior based on naming creates unpredictable systems
+- **Solution**: Explicit annotation provides clear user intent
+- **Principle**: Developer control over compiler behavior is crucial
+
+#### 2. Standard Library Privilege
+- **Design**: Standard library types get special treatment (universal patterns)
+- **Rationale**: `haxe.ds.Option` and `haxe.functional.Result` represent universal functional patterns
+- **Result**: Clean separation between framework types and user types
+
+#### 3. Smart Detection Without Magic
+- **Approach**: Use constructor structure (Ok/Error vs Some/None) for pattern detection
+- **Benefit**: Intelligent behavior without relying on naming conventions
+- **Result**: Annotation works correctly for both Result-like and Option-like enums
+
+#### 4. Test-Driven Validation Workflow
+- **Process**: Update tests to reflect correct behavior, not legacy behavior
+- **Tool**: Snapshot testing catches pattern changes immediately
+- **Validation**: Used `update-intended` to accept new correct outputs
+
+### Files Modified
+- `src/reflaxe/elixir/helpers/AlgebraicDataTypeCompiler.hx` - Core pattern detection
+- `src/reflaxe/elixir/ElixirCompiler.hx` - FEnum case handling
+- `documentation/reference/ANNOTATIONS.md` - @:elixirIdiomatic documentation
+- `documentation/ENUM_CONSTRUCTOR_PATTERNS.md` - Updated detection logic
+- `test/tests/elixir_idiomatic/` - New comprehensive test
+- Multiple test intended outputs updated for correct patterns
+
+### Key Achievements ✨
+- **54/55 tests passing** (improved from 50/54)
+- **Predictable enum pattern behavior** with explicit opt-in
+- **Smart structure detection** for Result vs Option patterns
+- **Comprehensive documentation** and examples
+- **Backwards compatibility** for standard library types
+- **User control** over pattern generation without magic conventions
+
+### Breaking Changes
+- User-defined enums named "Option" no longer automatically get idiomatic patterns
+- Migration: Add `@:elixirIdiomatic` annotation to maintain previous behavior
+
+### Session Summary
+Successfully transformed problematic automatic detection into a clean, explicit opt-in system. The new design provides predictable behavior, user control, and maintains special status for standard library algebraic data types while eliminating magic naming conventions.
+
+---
+
 ## Session: 2025-08-15 - Todo-App Dual-Target Compilation Success
 
 ### Context
