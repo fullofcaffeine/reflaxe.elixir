@@ -53,12 +53,12 @@ defmodule Main do
     case (case result do {:ok, _} -> 0; {:error, _} -> 1; _ -> -1 end) do
       0 ->
         _g = case result do {:ok, value} -> value; {:error, value} -> value; _ -> nil end
-    value = _g
-    temp_result = "Success: " <> Integer.to_string(value)
+        value = _g
+        temp_result = "Success: " <> Integer.to_string(value)
       1 ->
         _g = case result do {:ok, value} -> value; {:error, value} -> value; _ -> nil end
-    message = _g
-    temp_result = "Error: " <> message
+        message = _g
+        temp_result = "Error: " <> message
     end
     temp_result
   end

@@ -20,12 +20,12 @@ defmodule Main do
         temp_result = "two"
       _ ->
         n = value
-    if (n < 0) do
-      temp_result = "negative"
-    else
-      n = value
-      if (n > 100), do: temp_result = "large", else: temp_result = "other"
-    end
+        if (n < 0) do
+          temp_result = "negative"
+        else
+          n = value
+          if (n > 100), do: temp_result = "large", else: temp_result = "other"
+        end
     end
     temp_result
   end
@@ -42,35 +42,35 @@ defmodule Main do
         temp_result = "empty"
       1 ->
         _g = Enum.at(arr, 0)
-    x = _g
-    temp_result = "single: " <> Integer.to_string(x)
+        x = _g
+        temp_result = "single: " <> Integer.to_string(x)
       2 ->
         _g = Enum.at(arr, 0)
-    _g = Enum.at(arr, 1)
-    x = _g
-    y = _g
-    temp_result = "pair: " <> Integer.to_string(x) <> "," <> Integer.to_string(y)
+        _g = Enum.at(arr, 1)
+        x = _g
+        y = _g
+        temp_result = "pair: " <> Integer.to_string(x) <> "," <> Integer.to_string(y)
       3 ->
         _g = Enum.at(arr, 0)
-    _g = Enum.at(arr, 1)
-    _g = Enum.at(arr, 2)
-    x = _g
-    y = _g
-    z = _g
-    temp_result = "triple: " <> Integer.to_string(x) <> "," <> Integer.to_string(y) <> "," <> Integer.to_string(z)
+        _g = Enum.at(arr, 1)
+        _g = Enum.at(arr, 2)
+        x = _g
+        y = _g
+        z = _g
+        temp_result = "triple: " <> Integer.to_string(x) <> "," <> Integer.to_string(y) <> "," <> Integer.to_string(z)
       4 ->
         _g = Enum.at(arr, 0)
-    _g = Enum.at(arr, 1)
-    _g = Enum.at(arr, 2)
-    _g = Enum.at(arr, 3)
-    first = _g
-    second = _g
-    third = _g
-    fourth = _g
-    temp_result = "quad: " <> Integer.to_string(first) <> "," <> Integer.to_string(second) <> "," <> Integer.to_string(third) <> "," <> Integer.to_string(fourth)
+        _g = Enum.at(arr, 1)
+        _g = Enum.at(arr, 2)
+        _g = Enum.at(arr, 3)
+        first = _g
+        second = _g
+        third = _g
+        fourth = _g
+        temp_result = "quad: " <> Integer.to_string(first) <> "," <> Integer.to_string(second) <> "," <> Integer.to_string(third) <> "," <> Integer.to_string(fourth)
       _ ->
         a = arr
-    if (length(a) > 4), do: temp_result = "many: " <> Integer.to_string(length(a)) <> " elements", else: temp_result = "unknown"
+        if (length(a) > 4), do: temp_result = "many: " <> Integer.to_string(length(a)) <> " elements", else: temp_result = "unknown"
     end
     temp_result
   end
@@ -91,17 +91,17 @@ defmodule Main do
         temp_result = "greeting"
       _ ->
         s = str
-    if (String.length(s) == 1) do
-      temp_result = "single char"
-    else
-      s = str
-      if (String.length(s) > 10 && String.length(s) <= 20) do
-        temp_result = "medium"
-      else
-        s = str
-        if (String.length(s) > 20), do: temp_result = "long", else: temp_result = "other"
-      end
-    end
+        if (String.length(s) == 1) do
+          temp_result = "single char"
+        else
+          s = str
+          if (String.length(s) > 10 && String.length(s) <= 20) do
+            temp_result = "medium"
+          else
+            s = str
+            if (String.length(s) > 20), do: temp_result = "long", else: temp_result = "other"
+          end
+        end
     end
     temp_result
   end
@@ -175,77 +175,77 @@ defmodule Main do
         temp_result = "empty matrix"
       1 ->
         _g = Enum.at(matrix, 0)
-    if (length(_g) == 1) do
-      _g = Enum.at(_g, 0)
-      x = _g
-      temp_result = "single element: " <> Integer.to_string(x)
-    else
-      m = matrix
-      if (length(m) == length(Enum.at(m, 0))), do: temp_result = "square matrix " <> Integer.to_string(length(m)) <> "x" <> Integer.to_string(length(m)), else: temp_result = "non-square matrix"
-    end
-      2 ->
-        _g = Enum.at(matrix, 0)
-    _g = Enum.at(matrix, 1)
-    if (length(_g) == 2) do
-      _g = Enum.at(_g, 0)
-      _g = Enum.at(_g, 1)
-      if (length(_g) == 2) do
-        _g = Enum.at(_g, 0)
-        _g = Enum.at(_g, 1)
-        c = _g
-        d = _g
-        b = _g
-        a = _g
-        temp_result = "2x2 matrix: [[" <> Integer.to_string(a) <> "," <> Integer.to_string(b) <> "],[" <> Integer.to_string(c) <> "," <> Integer.to_string(d) <> "]]"
-      else
-        m = matrix
-        if (length(m) == length(Enum.at(m, 0))), do: temp_result = "square matrix " <> Integer.to_string(length(m)) <> "x" <> Integer.to_string(length(m)), else: temp_result = "non-square matrix"
-      end
-    else
-      m = matrix
-      if (length(m) == length(Enum.at(m, 0))), do: temp_result = "square matrix " <> Integer.to_string(length(m)) <> "x" <> Integer.to_string(length(m)), else: temp_result = "non-square matrix"
-    end
-      3 ->
-        _g = Enum.at(matrix, 0)
-    _g = Enum.at(matrix, 1)
-    _g = Enum.at(matrix, 2)
-    if (length(_g) == 3) do
-      Enum.at(_g, 0)
-      Enum.at(_g, 1)
-      Enum.at(_g, 2)
-      if (length(_g) == 3) do
-        Enum.at(_g, 0)
-        Enum.at(_g, 1)
-        Enum.at(_g, 2)
-        if (length(_g) == 3) do
-          Enum.at(_g, 0)
-          Enum.at(_g, 1)
-          Enum.at(_g, 2)
-          _g
-          _g
-          _g
-          _g
-          _g
-          _g
-          _g
-          _g
-          _g
-          temp_result = "3x3 matrix"
+        if (length(_g) == 1) do
+          _g = Enum.at(_g, 0)
+          x = _g
+          temp_result = "single element: " <> Integer.to_string(x)
         else
           m = matrix
           if (length(m) == length(Enum.at(m, 0))), do: temp_result = "square matrix " <> Integer.to_string(length(m)) <> "x" <> Integer.to_string(length(m)), else: temp_result = "non-square matrix"
         end
-      else
-        m = matrix
-        if (length(m) == length(Enum.at(m, 0))), do: temp_result = "square matrix " <> Integer.to_string(length(m)) <> "x" <> Integer.to_string(length(m)), else: temp_result = "non-square matrix"
-      end
-    else
-      m = matrix
-      if (length(m) == length(Enum.at(m, 0))), do: temp_result = "square matrix " <> Integer.to_string(length(m)) <> "x" <> Integer.to_string(length(m)), else: temp_result = "non-square matrix"
-    end
+      2 ->
+        _g = Enum.at(matrix, 0)
+        _g = Enum.at(matrix, 1)
+        if (length(_g) == 2) do
+          _g = Enum.at(_g, 0)
+          _g = Enum.at(_g, 1)
+          if (length(_g) == 2) do
+            _g = Enum.at(_g, 0)
+            _g = Enum.at(_g, 1)
+            c = _g
+            d = _g
+            b = _g
+            a = _g
+            temp_result = "2x2 matrix: [[" <> Integer.to_string(a) <> "," <> Integer.to_string(b) <> "],[" <> Integer.to_string(c) <> "," <> Integer.to_string(d) <> "]]"
+          else
+            m = matrix
+            if (length(m) == length(Enum.at(m, 0))), do: temp_result = "square matrix " <> Integer.to_string(length(m)) <> "x" <> Integer.to_string(length(m)), else: temp_result = "non-square matrix"
+          end
+        else
+          m = matrix
+          if (length(m) == length(Enum.at(m, 0))), do: temp_result = "square matrix " <> Integer.to_string(length(m)) <> "x" <> Integer.to_string(length(m)), else: temp_result = "non-square matrix"
+        end
+      3 ->
+        _g = Enum.at(matrix, 0)
+        _g = Enum.at(matrix, 1)
+        _g = Enum.at(matrix, 2)
+        if (length(_g) == 3) do
+          Enum.at(_g, 0)
+          Enum.at(_g, 1)
+          Enum.at(_g, 2)
+          if (length(_g) == 3) do
+            Enum.at(_g, 0)
+            Enum.at(_g, 1)
+            Enum.at(_g, 2)
+            if (length(_g) == 3) do
+              Enum.at(_g, 0)
+              Enum.at(_g, 1)
+              Enum.at(_g, 2)
+              _g
+              _g
+              _g
+              _g
+              _g
+              _g
+              _g
+              _g
+              _g
+              temp_result = "3x3 matrix"
+            else
+              m = matrix
+              if (length(m) == length(Enum.at(m, 0))), do: temp_result = "square matrix " <> Integer.to_string(length(m)) <> "x" <> Integer.to_string(length(m)), else: temp_result = "non-square matrix"
+            end
+          else
+            m = matrix
+            if (length(m) == length(Enum.at(m, 0))), do: temp_result = "square matrix " <> Integer.to_string(length(m)) <> "x" <> Integer.to_string(length(m)), else: temp_result = "non-square matrix"
+          end
+        else
+          m = matrix
+          if (length(m) == length(Enum.at(m, 0))), do: temp_result = "square matrix " <> Integer.to_string(length(m)) <> "x" <> Integer.to_string(length(m)), else: temp_result = "non-square matrix"
+        end
       _ ->
         m = matrix
-    if (length(m) == length(Enum.at(m, 0))), do: temp_result = "square matrix " <> Integer.to_string(length(m)) <> "x" <> Integer.to_string(length(m)), else: temp_result = "non-square matrix"
+        if (length(m) == length(Enum.at(m, 0))), do: temp_result = "square matrix " <> Integer.to_string(length(m)) <> "x" <> Integer.to_string(length(m)), else: temp_result = "non-square matrix"
     end
     temp_result
   end
@@ -268,53 +268,53 @@ defmodule Main do
         case (has_permission) do
           false ->
             a = age
-        if (a >= 13 && a < 18) do
-          temp_result = "teen without permission"
-        else
-          a = age
-          if (a >= 18 && a < 21) do
-            temp_result = "young adult"
-          else
-            a = age
-            if (a >= 21 && a < 65) do
-              temp_result = "adult"
+            if (a >= 13 && a < 18) do
+              temp_result = "teen without permission"
             else
               a = age
-              if (a >= 65), do: temp_result = "senior", else: temp_result = "unknown"
+              if (a >= 18 && a < 21) do
+                temp_result = "young adult"
+              else
+                a = age
+                if (a >= 21 && a < 65) do
+                  temp_result = "adult"
+                else
+                  a = age
+                  if (a >= 65), do: temp_result = "senior", else: temp_result = "unknown"
+                end
+              end
             end
-          end
-        end
           true ->
             a = age
-        if (a >= 13 && a < 18) do
-          temp_result = "teen with permission"
-        else
-          a = age
-          if (a >= 18 && a < 21) do
-            temp_result = "young adult"
-          else
-            a = age
-            if (a >= 21 && a < 65) do
-              temp_result = "adult"
+            if (a >= 13 && a < 18) do
+              temp_result = "teen with permission"
             else
               a = age
-              if (a >= 65), do: temp_result = "senior", else: temp_result = "unknown"
+              if (a >= 18 && a < 21) do
+                temp_result = "young adult"
+              else
+                a = age
+                if (a >= 21 && a < 65) do
+                  temp_result = "adult"
+                else
+                  a = age
+                  if (a >= 65), do: temp_result = "senior", else: temp_result = "unknown"
+                end
+              end
             end
-          end
-        end
           _ ->
             a = age
-        if (a >= 18 && a < 21) do
-          temp_result = "young adult"
-        else
-          a = age
-          if (a >= 21 && a < 65) do
-            temp_result = "adult"
-          else
-            a = age
-            if (a >= 65), do: temp_result = "senior", else: temp_result = "unknown"
-          end
-        end
+            if (a >= 18 && a < 21) do
+              temp_result = "young adult"
+            else
+              a = age
+              if (a >= 21 && a < 65) do
+                temp_result = "adult"
+              else
+                a = age
+                if (a >= 65), do: temp_result = "senior", else: temp_result = "unknown"
+              end
+            end
         end
       end
     end

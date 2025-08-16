@@ -20,12 +20,12 @@ defmodule PatternMatchingTest do
         temp_result = "blue"
       3 ->
         _g = elem(color, 1)
-    _g = elem(color, 2)
-    _g = elem(color, 3)
-    r = _g
-    g = _g
-    b = _g
-    temp_result = "rgb(" <> Integer.to_string(r) <> "," <> Integer.to_string(g) <> "," <> Integer.to_string(b) <> ")"
+        _g = elem(color, 2)
+        _g = elem(color, 3)
+        r = _g
+        g = _g
+        b = _g
+        temp_result = "rgb(" <> Integer.to_string(r) <> "," <> Integer.to_string(g) <> "," <> Integer.to_string(b) <> ")"
     end
     temp_result
   end
@@ -42,8 +42,8 @@ defmodule PatternMatchingTest do
         temp_result = "none"
       1 ->
         _g = elem(option, 1)
-    value = _g
-    temp_result = "some(" <> Std.string(value) <> ")"
+        value = _g
+        temp_result = "some(" <> Std.string(value) <> ")"
     end
     temp_result
   end
@@ -62,12 +62,12 @@ defmodule PatternMatchingTest do
         temp_result = "one"
       _ ->
         n = value
-    if (n < 0) do
-      temp_result = "negative"
-    else
-      n = value
-      if (n > 100), do: temp_result = "large", else: temp_result = "other"
-    end
+        if (n < 0) do
+          temp_result = "negative"
+        else
+          n = value
+          if (n > 100), do: temp_result = "large", else: temp_result = "other"
+        end
     end
     temp_result
   end
@@ -86,7 +86,7 @@ defmodule PatternMatchingTest do
         temp_result = "greeting"
       _ ->
         s = str
-    if (String.length(s) > 10), do: temp_result = "long", else: temp_result = "other"
+        if (String.length(s) > 10), do: temp_result = "long", else: temp_result = "other"
     end
     temp_result
   end
@@ -103,22 +103,22 @@ defmodule PatternMatchingTest do
         temp_result = "empty"
       1 ->
         _g = Enum.at(arr, 0)
-    x = _g
-    temp_result = "single(" <> Integer.to_string(x) <> ")"
+        x = _g
+        temp_result = "single(" <> Integer.to_string(x) <> ")"
       2 ->
         _g = Enum.at(arr, 0)
-    _g = Enum.at(arr, 1)
-    x = _g
-    y = _g
-    temp_result = "pair(" <> Integer.to_string(x) <> "," <> Integer.to_string(y) <> ")"
+        _g = Enum.at(arr, 1)
+        x = _g
+        y = _g
+        temp_result = "pair(" <> Integer.to_string(x) <> "," <> Integer.to_string(y) <> ")"
       3 ->
         _g = Enum.at(arr, 0)
-    _g = Enum.at(arr, 1)
-    _g = Enum.at(arr, 2)
-    x = _g
-    y = _g
-    z = _g
-    temp_result = "triple(" <> Integer.to_string(x) <> "," <> Integer.to_string(y) <> "," <> Integer.to_string(z) <> ")"
+        _g = Enum.at(arr, 1)
+        _g = Enum.at(arr, 2)
+        x = _g
+        y = _g
+        z = _g
+        temp_result = "triple(" <> Integer.to_string(x) <> "," <> Integer.to_string(y) <> "," <> Integer.to_string(z) <> ")"
       _ ->
         temp_result = "many"
     end
@@ -137,29 +137,29 @@ defmodule PatternMatchingTest do
         temp_result = "no color"
       1 ->
         _g = elem(option, 1)
-    case (elem(_g, 0)) do
-      0 ->
-        temp_result = "red color"
-      1 ->
-        temp_result = "green color"
-      2 ->
-        temp_result = "blue color"
-      3 ->
-        _g = elem(_g, 1)
-    elem(_g, 2)
-    elem(_g, 3)
-    r = _g
-    _g
-    _g
-    if (r > 128) do
-      temp_result = "bright rgb"
-    else
-      _g
-      _g
-      _g
-      temp_result = "dark rgb"
-    end
-    end
+        case (elem(_g, 0)) do
+          0 ->
+            temp_result = "red color"
+          1 ->
+            temp_result = "green color"
+          2 ->
+            temp_result = "blue color"
+          3 ->
+            _g = elem(_g, 1)
+            elem(_g, 2)
+            elem(_g, 3)
+            r = _g
+            _g
+            _g
+            if (r > 128) do
+              temp_result = "bright rgb"
+            else
+              _g
+              _g
+              _g
+              temp_result = "dark rgb"
+            end
+        end
     end
     temp_result
   end
