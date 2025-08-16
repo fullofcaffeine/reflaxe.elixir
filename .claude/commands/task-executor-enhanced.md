@@ -14,6 +14,9 @@ Professional task execution with snapshot-first development, Reflaxe compiler te
    - Use `get-library-docs` to fetch documentation
 4. **Review Project Rules**: Check `.claude/rules/` directory if it exists
 5. **Review Task Context**: Understand task requirements fully before execution
+6. **Apply Critical Development Principles**: Follow fundamental development rules:
+   - **ALWAYS CHECK WHAT EXISTS FIRST**: Search for existing implementations before creating new
+   - **HONESTY ABOUT PERFORMANCE**: Never claim "zero-cost" without evidence - be accurate about runtime vs compile-time behavior
 
 ### 0.1 Project Context and Documentation References
 

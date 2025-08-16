@@ -9,7 +9,7 @@ package haxe.ds;
  * ## Cross-Platform Compilation
  * 
  * Option values compile to idiomatic constructs per target:
- * - **Elixir**: `{:some, value}` / `:none` atoms for clear pattern matching
+ * - **Elixir**: `{:ok, value}` / `:error` atoms for clear pattern matching
  * - **JavaScript**: discriminated unions with tagged types
  * - **Python**: dataclasses with proper type hints
  * - **Other targets**: standard enum with type safety
@@ -52,7 +52,7 @@ enum Option<T> {
      * Represents a value that is present.
      * 
      * Compiles to:
-     * - Elixir: `{:some, value}`
+     * - Elixir: `{:ok, value}`
      * - JavaScript: `{tag: "some", value: value}`
      * - Other targets: enum variant with data
      * 
@@ -64,7 +64,7 @@ enum Option<T> {
      * Represents the absence of a value.
      * 
      * Compiles to:
-     * - Elixir: `:none`
+     * - Elixir: `:error`
      * - JavaScript: `{tag: "none"}`
      * - Other targets: enum variant without data
      */

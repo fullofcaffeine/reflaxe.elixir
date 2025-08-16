@@ -28,7 +28,7 @@ import haxe.functional.Result;
  *     .unwrap("unknown@example.com");
  * 
  * // OTP GenServer integration
- * var reply = getUser(id).toReply();  // {:reply, {:some, user}, state}
+ * var reply = getUser(id).toReply();  // {:reply, {:ok, user}, state}
  * 
  * // Error handling chains
  * var outcome = findUser(id)

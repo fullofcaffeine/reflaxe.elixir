@@ -517,6 +517,72 @@ end
 - Objects with module/name become tuples: `{module: "Phoenix.PubSub", name: "MyApp.PubSub"}` → `{Phoenix.PubSub, name: MyApp.PubSub}`
 - Supervisor options converted to keyword lists
 
+### @:elixirIdiomatic - Idiomatic Elixir Pattern Generation
+
+Marks a user-defined enum to generate idiomatic Elixir patterns instead of literal patterns.
+
+**Basic Usage**:
+```haxe
+@:elixirIdiomatic
+enum UserOption<T> {
+    Some(value: T);
+    None;
+}
+
+@:elixirIdiomatic  
+enum ApiResult<T, E> {
+    Ok(value: T);
+    Error(reason: E);
+}
+```
+
+**Generated Elixir (with @:elixirIdiomatic)**:
+```elixir
+defmodule UserOption do
+  @type t() ::
+    {:ok, term()} |
+    :error
+
+  def some(arg0), do: {:ok, arg0}
+  def none(), do: :error
+end
+
+defmodule ApiResult do
+  @type t() ::
+    {:ok, term()} |
+    {:error, term()}
+
+  def ok(arg0), do: {:ok, arg0}
+  def error(arg0), do: {:error, arg0}
+end
+```
+
+**Generated Elixir (without @:elixirIdiomatic)**:
+```elixir
+defmodule UserOption do
+  @type t() ::
+    {:some, term()} |
+    :none
+
+  def some(arg0), do: {:some, arg0}
+  def none(), do: :none
+end
+```
+
+**Key Differences**:
+- **Idiomatic patterns**: `{:ok, value}` / `:error` (standard Elixir conventions)
+- **Literal patterns**: `{:some, value}` / `:none` (direct translation from Haxe)
+
+**When to Use @:elixirIdiomatic**:
+- When integrating with Elixir libraries that expect standard `:ok` / `:error` patterns
+- When building APIs that should follow BEAM ecosystem conventions
+- When you want your Haxe enums to feel natural to Elixir developers
+
+**Standard Library Behavior**:
+Standard library types always use idiomatic patterns regardless of annotation:
+- `haxe.ds.Option<T>` → Always generates `{:ok, value}` / `:error`
+- `haxe.functional.Result<T,E>` → Always generates `{:ok, value}` / `{:error, reason}`
+
 ### @:appName - Configurable Application Names
 
 Configures the application name for Phoenix applications, enabling reusable code across different projects.

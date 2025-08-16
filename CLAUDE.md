@@ -153,6 +153,7 @@ Repeat → Continuous Quality Improvement
 - **Architecture**: [`documentation/ARCHITECTURE.md`](documentation/ARCHITECTURE.md)
 - **Testing**: [`documentation/architecture/TESTING.md`](documentation/architecture/TESTING.md)
 - **Development Tools**: [`documentation/DEVELOPMENT_TOOLS.md`](documentation/DEVELOPMENT_TOOLS.md)
+- **Enhanced Task Executor**: [`documentation/ENHANCED_TASK_EXECUTOR.md`](documentation/ENHANCED_TASK_EXECUTOR.md) - Professional task execution with Reflaxe snapshot testing methodology
 - **Task History**: [`documentation/TASK_HISTORY.md`](documentation/TASK_HISTORY.md)
 
 ### Paradigm & Development Guides ✨ **NEW**
@@ -391,6 +392,55 @@ When documenting compiler methods that handle **desugaring reversal**, always in
 - Example transformation showing before/after code
 
 ## Development Principles
+
+### ⚠️ CRITICAL: Always Check What Exists First
+**ALWAYS CHECK WHAT EXISTS FIRST** - This is a fundamental development principle:
+
+✅ **Before creating anything new**:
+- **Search for existing implementations** - Use Grep, Glob, LS tools to find similar functionality
+- **Check test directories** - Look for existing tests before creating new ones (`test/tests/`)
+- **Review standard library** - Check `std/` for existing types, helpers, and patterns
+- **Examine examples** - Look at `examples/` for similar use cases
+- **Check documentation** - Review `documentation/` for established patterns
+
+❌ **Never duplicate work**:
+- Don't create new tests when existing ones can be updated
+- Don't implement features that already exist
+- Don't create new directories when existing structure works
+- Don't reinvent abstractions that are already available
+
+**Why This Matters**:
+- Prevents duplicate code and conflicting implementations
+- Maintains consistency across the codebase
+- Saves development time and reduces maintenance burden
+- Builds on existing tested and proven patterns
+- Ensures architectural coherence
+
+**Example**:
+```
+❌ BAD: Create test/tests/option_idiomatic/ without checking
+✅ GOOD: Find existing test/tests/option_type/ and update it
+```
+
+### ⚠️ CRITICAL: Honesty About Performance Characteristics
+**NEVER make false claims about performance** - Be accurate about runtime vs compile-time behavior:
+
+✅ **Be honest about**:
+- **Runtime validation costs** - Acknowledge validation overhead exists
+- **Memory allocations** - Don't claim "zero-cost" when creating Result objects
+- **Function call overhead** - Method calls have costs vs direct operations
+- **Actual compilation targets** - What the code actually becomes
+
+❌ **Never claim**:
+- "Zero-cost abstraction" unless truly compile-time only
+- "No runtime overhead" when validation exists
+- Performance benefits without evidence
+
+**Example**:
+```haxe
+// ❌ BAD: "Zero-cost abstraction: compiles to plain Int with no runtime overhead"
+// ✅ GOOD: "Runtime safety: validates values to maintain invariants with minimal overhead"
+```
 
 ### ⚠️ CRITICAL: Test Infrastructure Rule
 **NEVER define test infrastructure types in application code**

@@ -136,16 +136,16 @@ defmodule Main do
   @doc "Function main"
   @spec main() :: nil
   def main() do
-    color = Color.RGB(255, 128, 0)
+    color = {:r_g_b, 255, 128, 0}
     Log.trace(Main.colorToString(color), %{"fileName" => "Main.hx", "lineNumber" => 79, "className" => "Main", "methodName" => "main"})
     some = {:some, "Hello"}
     none = :none
     Log.trace(Main.getValue(some, "default"), %{"fileName" => "Main.hx", "lineNumber" => 84, "className" => "Main", "methodName" => "main"})
     Log.trace(Main.getValue(none, "default"), %{"fileName" => "Main.hx", "lineNumber" => 85, "className" => "Main", "methodName" => "main"})
-    tree = Tree.Node(Tree.Leaf(1), Tree.Node(Tree.Leaf(2), Tree.Leaf(3)))
+    tree = {:node_, {:leaf, 1}, {:node_, {:leaf, 2}, {:leaf, 3}}}
     Log.trace(Main.treeSum(tree), %{"fileName" => "Main.hx", "lineNumber" => 92, "className" => "Main", "methodName" => "main"})
-    Log.trace(Main.describeRGB(Color.RGB(250, 10, 10)), %{"fileName" => "Main.hx", "lineNumber" => 95, "className" => "Main", "methodName" => "main"})
-    tree2 = Tree.Node(Tree.Leaf(1), Tree.Node(Tree.Leaf(2), Tree.Leaf(3)))
+    Log.trace(Main.describeRGB({:r_g_b, 250, 10, 10}), %{"fileName" => "Main.hx", "lineNumber" => 95, "className" => "Main", "methodName" => "main"})
+    tree2 = {:node_, {:leaf, 1}, {:node_, {:leaf, 2}, {:leaf, 3}}}
     Log.trace(Main.compareTrees(tree, tree2), %{"fileName" => "Main.hx", "lineNumber" => 99, "className" => "Main", "methodName" => "main"})
   end
 
