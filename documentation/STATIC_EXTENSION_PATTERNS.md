@@ -281,20 +281,32 @@ haxe test/Test.hxml test=new_tools
 - **Target**: OptionTools module (custom algebraic data type handling)  
 - **Pattern**: ADT-aware compilation
 
-## Future Static Extension Candidates
+### 4. **MapTools** ✅ IMPLEMENTED
+- **Methods**: size, isEmpty, any, all, reduce, find, keys, values, toArray (9 working)
+- **Disabled**: filter, map, mapKeys, merge, fromArray (5 methods - Haxe type inference issues)
+- **Target**: Elixir Map module with idiomatic functional compilation
+- **Pattern**: Dual-parameter lambda substitution with Map/Enum module calls
 
-### 1. **MapTools** (High Priority)
+**Example Usage**:
 ```haxe
 using MapTools;
-var value = myMap.getOrDefault(key, defaultValue);
-var updated = myMap.update(key, x -> x + 1);
-var filtered = myMap.filter((k, v) -> v > 0);
+var users = ["alice" => 85, "bob" => 72, "charlie" => 91];
+var totalScore = users.reduce(0, (acc, k, v) -> acc + v);
+var hasHighScore = users.any((k, v) -> v > 90);
+var usernames = users.keys();
 ```
 
-**Target**: Elixir Map module
-**Benefits**: Type-safe map operations with functional patterns
+**Compilation Examples**:
+- `map.size()` → `Map.size(map)`
+- `map.isEmpty()` → `Map.equal?(map, %{})`
+- `map.any((k,v) -> pred)` → `Enum.any?(Map.to_list(map), fn {k,v} -> pred end)`
+- `map.reduce(init, (acc,k,v) -> f)` → `Map.fold(map, init, fn k, v, acc -> f end)`
 
-### 2. **StringTools Enhanced** (Medium Priority)
+**Known Limitations**: 5 methods temporarily disabled due to Haxe type system issues with `Map<K,V>` return types in static extension context. Compiler infrastructure fully supports these methods.
+
+## Future Static Extension Candidates
+
+### 1. **StringTools Enhanced** (Medium Priority)
 ```haxe
 using StringTools;
 var processed = text.split(",").map(s -> s.trim()).filter(s -> s.length > 0);
@@ -304,7 +316,7 @@ var capitalized = words.join(" ").capitalize();
 **Target**: Elixir String module + Enum for collections
 **Benefits**: Fluent string processing chains
 
-### 3. **StreamTools** (Future)
+### 2. **StreamTools** (Future)
 ```haxe
 using StreamTools;
 var result = numbers.stream().filter(x -> x > 0).map(x -> x * 2).take(10).toArray();
