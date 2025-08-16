@@ -33,9 +33,17 @@ The Haxe→Elixir compiler provides ExUnit support through:
 ```haxe
 import haxe.test.ExUnit;
 import haxe.test.Assert;
+import phoenix.test.Conn;           // For HTTP testing
+import phoenix.test.LiveView;       // For LiveView testing
+import ecto.Changeset;              // For schema testing
+import haxe.test.phoenix.DataCase;  // For data-layer tests
+import haxe.test.phoenix.ConnCase;  // For controller/LiveView tests
 
 using haxe.test.ExUnit.ExUnitTools;
+using ecto.Changeset.ChangesetTools;
 ```
+
+**⚠️ IMPORTANT**: Always import test types from the standard library, never define them in application code.
 
 ### 2. Create Test Module
 
@@ -295,18 +303,22 @@ class UserControllerTest {
 ### Controller Tests
 
 ```haxe
-@:test
-@:useCase("ConnCase")  // Uses Phoenix.ConnTest
-class UserControllerTest {
-    @test
-    public function testIndex(conn: Conn) {
+import haxe.test.phoenix.ConnCase;
+import phoenix.test.Conn;
+
+@:exunit
+class UserControllerTest extends ConnCase {
+    @:test
+    public function testIndex(): Void {
+        var conn: Conn = build_conn();
         conn = get(conn, "/users");
-        Assert.equals(200, conn.status);
-        Assert.contains(conn.resp_body, "Users");
+        assertResponse(conn, 200);
+        assertResponseContains(conn, "Users");
     }
     
-    @test
-    public function testCreate(conn: Conn) {
+    @:test
+    public function testCreate(): Void {
+        var conn: Conn = build_conn();
         var params = {
             user: {
                 name: "Alice",
@@ -314,8 +326,8 @@ class UserControllerTest {
             }
         };
         
-        conn = post(conn, "/users", params);
-        Assert.equals(302, conn.status);  // Redirect after creation
+        conn = postWithParams(conn, "/users", params);
+        assertResponse(conn, 302);  // Redirect after creation
     }
 }
 ```
@@ -323,27 +335,32 @@ class UserControllerTest {
 ### LiveView Tests
 
 ```haxe
-@:test
-@:useCase("LiveViewTest")
-class TodoLiveTest {
-    @test
-    public function testRendersTodos(conn: Conn) {
-        var view = live(conn, "/todos");
+import haxe.test.phoenix.ConnCase;
+import phoenix.test.Conn;
+import phoenix.test.LiveView;
+
+@:exunit
+class TodoLiveTest extends ConnCase {
+    @:test
+    public function testRendersTodos(): Void {
+        var conn: Conn = build_conn();
+        var liveView: LiveView = live(conn, "/todos");
         
-        Assert.contains(view.html(), "Todo List");
-        Assert.matches(~/<li>.*Buy milk.*<\/li>/, view.html());
+        assertLiveViewContains(liveView, "Todo List");
+        assertLiveViewHasElement(liveView, "li:contains('Buy milk')");
     }
     
-    @test
-    public function testAddTodo(conn: Conn) {
-        var view = live(conn, "/todos");
+    @:test
+    public function testAddTodo(): Void {
+        var conn: Conn = build_conn();
+        var liveView: LiveView = live(conn, "/todos");
         
         // Simulate form submission
-        view.submitForm("todo-form", {
+        liveView = submitFormWithData(liveView, "#todo-form", {
             todo: {title: "New Task", completed: false}
         });
         
-        Assert.contains(view.html(), "New Task");
+        assertLiveViewContains(liveView, "New Task");
     }
 }
 ```

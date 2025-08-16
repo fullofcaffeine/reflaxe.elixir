@@ -2,7 +2,7 @@
 
 ## Architecture Overview
 
-Reflaxe.Elixir uses a **dual-ecosystem architecture** that cleanly separates concerns:
+Reflaxe.Elixir enables **full-stack development with Haxe** through a sophisticated compilation architecture that supports dual-target generation and modern JavaScript async/await patterns.
 
 ### 🔧 Haxe Development Side (npm + lix)
 **Purpose**: Build and test the Haxe→Elixir compiler itself
@@ -139,14 +139,77 @@ All compilation features meet <15ms performance requirements:
 - **OTP GenServer**: 0.07ms average ✅
 - **Phoenix LiveView**: <1ms average ✅
 
+## Full-Stack Development with Async/Await
+
+### Dual-Target Compilation
+Reflaxe.Elixir enables true full-stack development with a single language:
+
+- **Server-side**: Haxe → Elixir (Phoenix LiveView, Ecto, OTP)
+- **Client-side**: Haxe → JavaScript with native async/await support
+
+### Async/Await Implementation ✨ **NEW**
+Our JavaScript compilation now supports native async/await patterns:
+
+```haxe
+// Write in Haxe
+@:async
+function loadTodos(): js.lib.Promise<Array<Todo>> {
+    var user = Async.await(getCurrentUser());
+    var todos = Async.await(fetchUserTodos(user.id));
+    return todos;
+}
+
+// Compiles to clean JavaScript
+async function loadTodos() {
+    let user = await getCurrentUser();
+    let todos = await fetchUserTodos(user.id);
+    return todos;
+}
+```
+
+### Development Workflow
+1. **Shared Types**: Define data structures in `shared/` directory
+2. **Dual Compilation**: Build both targets with type-safe contracts
+3. **Live Reload**: Hot reload for both Elixir and JavaScript changes
+4. **Type Safety**: Full-stack type guarantees at compile time
+
+**See**: [`documentation/FULL_STACK_DEVELOPMENT.md`](documentation/FULL_STACK_DEVELOPMENT.md) for complete guide
+
+## Task Management with Shrimp
+
+This project uses **Shrimp Task Manager** for systematic development:
+
+### Features
+- **Hierarchical task breakdown** from requirements to implementation
+- **Dependency tracking** ensuring proper execution order
+- **Progress monitoring** with detailed status tracking
+- **AI-optimized documentation** for seamless LLM collaboration
+
+### Workflow
+1. **Planning**: Break down PRD requirements into Shrimp tasks
+2. **Execution**: Execute tasks in dependency order
+3. **Verification**: Mark tasks complete with comprehensive verification
+4. **Documentation**: Maintain real-time documentation of decisions and learnings
+
+### Current Status
+- ✅ **Parameter Naming**: Professional code generation (COMPLETE)
+- ✅ **Result<T,E>**: Functional error handling with 24 operations (COMPLETE)
+- ✅ **Option<T>**: Null safety via OptionTools with 22 operations (COMPLETE)
+- ✅ **Async/Await**: Native JavaScript async/await compilation (COMPLETE)
+- 🔄 **Standard Library**: Array/Map operations (IN PROGRESS)
+
 ## Contributing
 
 ### Adding New Features
-1. Create helper compiler in `src/reflaxe/elixir/helpers/`
-2. Add annotation support to main `ElixirCompiler.hx`  
-3. Write tests using utest in `test/`
-4. Update `test/TestRunner.hx` to include new test classes
-5. Run `npm test` to validate
+1. **Check existing implementations first** - Search for similar patterns before starting
+2. **Create task in Shrimp** - Break down the feature into manageable steps
+3. Create helper compiler in `src/reflaxe/elixir/helpers/`
+4. Add annotation support to main `ElixirCompiler.hx`  
+5. Write tests using utest in `test/`
+6. Update `test/TestRunner.hx` to include new test classes
+7. **Document thoroughly** - Update guides and examples
+8. Run `npm test` to validate
+9. **Mark task complete** - Verify implementation meets requirements
 
 ### Adding Tests  
 ```haxe

@@ -20,6 +20,7 @@ class TodoApp {
      * Application entry point
      * Called when the JavaScript loads in the browser
      */
+    @:expose
     public static function main(): Void {
         if (isInitialized) {
             trace("TodoApp already initialized");
@@ -84,8 +85,8 @@ class TodoApp {
     private static function exportHooks(): Void {
         var hooks = Hooks.getAll();
         
-        // Export to global scope for Phoenix LiveView
-        untyped __js__("
+        // Export to global scope for Phoenix LiveView using modern js.Syntax.code
+        js.Syntax.code("
             // Make hooks available globally
             if (typeof window !== 'undefined') {
                 window.TodoAppHooks = {0};
@@ -143,9 +144,9 @@ class TodoApp {
      */
     private static function setupGlobalKeyboardShortcuts(): Void {
         js.Browser.document.addEventListener("keydown", function(e: js.html.KeyboardEvent) {
-            // Only handle shortcuts if not in input/textarea
+            // Only handle shortcuts if not in input/textarea (type-safe casting)
             var target = e.target;
-            if (target != null) {
+            if (target != null && js.Syntax.instanceof(target, js.html.Element)) {
                 var element = cast(target, js.html.Element);
                 if (element.nodeName == "INPUT" || element.nodeName == "TEXTAREA") {
                     return;
@@ -184,15 +185,27 @@ class TodoApp {
      * Set up performance monitoring
      */
     private static function setupPerformanceMonitoring(): Void {
-        // Monitor page load performance
+        // Monitor page load performance using modern PerformanceNavigationTiming API
         js.Browser.window.addEventListener("load", function() {
             if (js.Browser.window.performance != null) {
-                var timing = js.Browser.window.performance.timing;
-                var loadTime = timing.loadEventEnd - timing.navigationStart;
-                trace('Page load time: ${loadTime}ms');
-                
-                // Could send metrics to server
-                logMetricToServer("page_load_time", loadTime);
+                try {
+                    // Use modern PerformanceNavigationTiming API instead of deprecated timing
+                    var entries = js.Browser.window.performance.getEntriesByType("navigation");
+                    if (entries.length > 0) {
+                        var navTiming: js.html.PerformanceNavigationTiming = cast entries[0];
+                        var domLoadTime = navTiming.domContentLoadedEventEnd - navTiming.domContentLoadedEventStart;
+                        var fullLoadTime = navTiming.loadEventEnd - navTiming.fetchStart;
+                        
+                        trace('DOM load time: ${domLoadTime}ms, Full page load: ${fullLoadTime}ms');
+                        logMetricToServer("dom_load_time", domLoadTime);
+                        logMetricToServer("page_load_time", fullLoadTime);
+                    } else {
+                        // Fallback for browsers that don't support PerformanceNavigationTiming
+                        trace("PerformanceNavigationTiming not supported, using basic measurement");
+                    }
+                } catch (e: Dynamic) {
+                    trace('Performance monitoring error: ${e}');
+                }
             }
         });
         
@@ -414,6 +427,17 @@ class TodoApp {
     private static function logMetricToServer(metric: String, value: Float): Void {
         // This would send performance metrics to the server
         LocalStorage.setNumber('metric_${metric}', value);
+    }
+    
+    /**
+     * Get hook definitions for PhoenixApp integration.
+     * 
+     * Called by PhoenixApp to retrieve hook definitions without
+     * automatically initializing everything. This allows PhoenixApp
+     * to control initialization timing and error handling.
+     */
+    public static function getHooks(): Dynamic {
+        return Hooks.getAll();
     }
     
     /**

@@ -19,7 +19,12 @@ config :todo_app, TodoAppWeb.Endpoint,
   debug_errors: true,
   secret_key_base: "HFnRr3hEFYrcH3i7y3b7Z1234567890abcdefghijklmnopqrstuvwxyz1234567",
   watchers: [
-    esbuild: {Esbuild, :install_and_run, [:todo_app, ~w(--sourcemap=external --watch)]}
+    # Haxe client compilation watcher
+    haxe_client: {"haxe", ["build-client.hxml", "--wait", "6001"]},
+    # esbuild bundling watcher  
+    esbuild: {Esbuild, :install_and_run, [:todo_app, ~w(--sourcemap=external --watch)]},
+    # Tailwind CSS watcher
+    tailwind: {Tailwind, :install_and_run, [:todo_app, ~w(--watch)]}
   ]
 
 # Watch static and templates for browser reloading.
@@ -28,7 +33,11 @@ config :todo_app, TodoAppWeb.Endpoint,
     patterns: [
       ~r"priv/static/.*(js|css|png|jpeg|jpg|gif|svg)$",
       ~r"priv/gettext/.*(po)$",
-      ~r"lib/todo_app_web/(controllers|live|components)/.*(ex|heex)$"
+      ~r"lib/todo_app_web/(controllers|live|components)/.*(ex|heex)$",
+      # Watch Haxe source files for recompilation
+      ~r"src_haxe/.*(hx)$",
+      # Watch generated Elixir files
+      ~r"lib/.*(ex)$"
     ]
   ]
 

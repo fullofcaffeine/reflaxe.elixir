@@ -6,6 +6,9 @@
 -cp src_haxe
 -cp ../../std
 
+# Include Reflaxe.js async/await library
+-lib reflaxe
+
 # JavaScript target with modern settings
 -js assets/js/app.js
 -D js-es6                     # ES6 module output for tree-shaking
@@ -20,5 +23,5 @@
 # Exclude server code from client compilation
 --macro exclude('server')
 
-# Main client entry point
-client.TodoApp
+# Main client entry point - pure Haxe Phoenix app
+client.PhoenixApp

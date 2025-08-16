@@ -1,112 +1,77 @@
 package test.support;
 
-import haxe.test.ExUnit.TestCase;
-import phoenix.Ecto;
+import haxe.test.phoenix.DataCase as BaseDataCase;
+import ecto.Changeset;
+import server.schemas.Todo;
 
 /**
  * DataCase provides the foundation for Ecto schema and data tests.
  * 
- * This module sets up the test database sandbox and provides
+ * This module extends the standard library DataCase with todo-app specific
  * helpers for testing schemas, changesets, and database operations.
  */
 @:exunit
-class DataCase extends TestCase {
+class DataCase extends BaseDataCase {
     
     /**
-     * Setup method for data tests
-     * Configures the Ecto sandbox for isolated test execution
+     * Override repository for todo-app
      */
-    override public function setup(context: Dynamic): Dynamic {
-        setupSandbox(context);
-        return context;
-    }
+    override public static var repo(default, null): String = "TodoApp.Repo";
     
     /**
-     * Set up Ecto sandbox for test isolation
-     * Ensures each test runs in its own database transaction
+     * Create a valid Todo changeset for testing.
      */
-    public static function setupSandbox(context: Dynamic): Void {
-        // Configure Ecto sandbox mode for test isolation
-        Ecto.Sandbox.checkout(getRepo());
+    override public static function validChangeset<T>(schema: Class<T>, attrs: Dynamic): Changeset<T> {
+        // For Todo schema specifically
+        if (schema == Todo) {
+            var validAttrs = {
+                title: "Test Todo",
+                description: "A test todo item",
+                completed: false,
+                priority: "medium"
+            };
+            
+            // Merge with provided attrs
+            for (key in Reflect.fields(attrs)) {
+                Reflect.setField(validAttrs, key, Reflect.field(attrs, key));
+            }
+            
+            return cast Todo.changeset(new Todo(), validAttrs);
+        }
         
-        // Handle async tests by allowing sandbox sharing
-        if (isAsyncTest(context)) {
-            Ecto.Sandbox.mode(getRepo(), {shared: self()});
+        throw 'Unknown schema type: ${schema}';
+    }
+    
+    /**
+     * Create an invalid Todo changeset for testing.
+     */
+    override public static function invalidChangeset<T>(schema: Class<T>, attrs: Dynamic): Changeset<T> {
+        // For Todo schema specifically
+        if (schema == Todo) {
+            var invalidAttrs = {
+                title: "", // Invalid: empty title
+                priority: "invalid_priority" // Invalid priority
+            };
+            
+            // Merge with provided attrs
+            for (key in Reflect.fields(attrs)) {
+                Reflect.setField(invalidAttrs, key, Reflect.field(attrs, key));
+            }
+            
+            return cast Todo.changeset(new Todo(), invalidAttrs);
         }
+        
+        throw 'Unknown schema type: ${schema}';
     }
     
     /**
-     * Get the application repository
+     * Create a Todo struct for testing.
      */
-    private static function getRepo(): String {
-        return "TodoApp.Repo";
-    }
-    
-    /**
-     * Check if the current test is async
-     */
-    private static function isAsyncTest(context: Dynamic): Bool {
-        return context.async == true;
-    }
-    
-    /**
-     * Helper to create a valid changeset for testing
-     */
-    public static function validChangeset(module: String, attrs: Dynamic): Dynamic {
-        return callStatic(module, "changeset", [struct(), attrs]);
-    }
-    
-    /**
-     * Helper to create an invalid changeset for testing
-     */
-    public static function invalidChangeset(module: String, attrs: Dynamic): Dynamic {
-        return callStatic(module, "changeset", [struct(), attrs]);
-    }
-    
-    /**
-     * Helper to create a struct instance
-     */
-    private static function struct(): Dynamic {
-        return {}; // Empty struct for testing
-    }
-    
-    /**
-     * Helper to call static methods on modules
-     */
-    private static function callStatic(module: String, method: String, args: Array<Dynamic>): Dynamic {
-        // This would be implemented by the Elixir runtime
-        return null;
-    }
-    
-    /**
-     * Assert that a changeset is valid
-     */
-    public static function assertValidChangeset(changeset: Dynamic): Void {
-        if (!isValidChangeset(changeset)) {
-            throw "Expected changeset to be valid, but it has errors: " + getChangesetErrors(changeset);
+    override public static function struct<T>(schema: Class<T>): T {
+        if (schema == Todo) {
+            return cast new Todo();
         }
-    }
-    
-    /**
-     * Assert that a changeset is invalid
-     */
-    public static function assertInvalidChangeset(changeset: Dynamic): Void {
-        if (isValidChangeset(changeset)) {
-            throw "Expected changeset to be invalid, but it was valid";
-        }
-    }
-    
-    /**
-     * Check if a changeset is valid
-     */
-    private static function isValidChangeset(changeset: Dynamic): Bool {
-        return changeset.valid == true;
-    }
-    
-    /**
-     * Get errors from a changeset
-     */
-    private static function getChangesetErrors(changeset: Dynamic): String {
-        return Std.string(changeset.errors);
+        
+        throw 'Unknown schema type: ${schema}';
     }
 }

@@ -1,0 +1,273 @@
+/* Main CSS file for Todo App with Tailwind CSS */
+
+@import "tailwindcss/base";
+@import "tailwindcss/components";
+@import "tailwindcss/utilities";
+
+/* Custom base styles */
+@layer base {
+  html {
+    font-family: 'Inter', system-ui, sans-serif;
+  }
+  
+  body {
+    @apply bg-gray-50 dark:bg-gray-900;
+    @apply text-gray-900 dark:text-gray-100;
+    @apply transition-colors duration-200;
+  }
+  
+  /* Focus styles for accessibility */
+  *:focus {
+    outline: 2px solid theme('colors.primary.500');
+    outline-offset: 2px;
+  }
+  
+  /* Custom scrollbar */
+  ::-webkit-scrollbar {
+    width: 8px;
+  }
+  
+  ::-webkit-scrollbar-track {
+    @apply bg-gray-100 dark:bg-gray-800;
+  }
+  
+  ::-webkit-scrollbar-thumb {
+    @apply bg-gray-300 dark:bg-gray-600 rounded-full;
+  }
+  
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-gray-400 dark:bg-gray-500;
+  }
+}
+
+/* Component styles */
+@layer components {
+  /* Phoenix LiveView specific styles */
+  .phx-connected {
+    @apply border-green-500;
+  }
+  
+  .phx-disconnected {
+    @apply border-red-500;
+  }
+  
+  .phx-error {
+    @apply bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded;
+  }
+  
+  /* Loading states */
+  .phx-loading {
+    @apply opacity-50 pointer-events-none;
+  }
+  
+  /* Form validation styles */
+  .form-field {
+    @apply mb-4;
+  }
+  
+  .form-label {
+    @apply block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2;
+  }
+  
+  .form-input {
+    @apply w-full px-3 py-2 border border-gray-300 dark:border-gray-600;
+    @apply bg-white dark:bg-gray-800;
+    @apply text-gray-900 dark:text-gray-100;
+    @apply rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500;
+    @apply transition-colors duration-200;
+  }
+  
+  .form-error {
+    @apply mt-1 text-sm text-red-600 dark:text-red-400;
+  }
+  
+  .form-help {
+    @apply mt-1 text-sm text-gray-500 dark:text-gray-400;
+  }
+  
+  /* Todo-specific components */
+  .todo-container {
+    @apply max-w-4xl mx-auto px-4 sm:px-6 lg:px-8;
+  }
+  
+  .todo-header {
+    @apply bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700;
+    @apply px-6 py-4 mb-6;
+  }
+  
+  .todo-stats {
+    @apply grid grid-cols-3 gap-4 mb-6;
+  }
+  
+  .todo-stat-card {
+    @apply bg-white dark:bg-gray-800 p-4 rounded-lg shadow-soft;
+    @apply border border-gray-200 dark:border-gray-700;
+  }
+  
+  .todo-list {
+    @apply space-y-3;
+  }
+  
+  .todo-item {
+    @apply p-4 bg-white dark:bg-gray-800 rounded-lg shadow-soft;
+    @apply border border-gray-200 dark:border-gray-700;
+    @apply transition-all duration-200 hover:shadow-medium;
+  }
+  
+  .todo-item.completed {
+    @apply opacity-60 bg-gray-50 dark:bg-gray-900;
+  }
+  
+  .todo-checkbox {
+    @apply w-5 h-5 text-primary-600 border-gray-300 dark:border-gray-600;
+    @apply bg-white dark:bg-gray-800 rounded focus:ring-primary-500;
+  }
+  
+  .todo-title {
+    @apply text-lg font-medium text-gray-900 dark:text-gray-100;
+  }
+  
+  .todo-title.completed {
+    @apply line-through text-gray-500 dark:text-gray-400;
+  }
+  
+  .todo-description {
+    @apply text-sm text-gray-600 dark:text-gray-400 mt-1;
+  }
+  
+  .todo-meta {
+    @apply flex items-center justify-between mt-3 text-xs text-gray-500 dark:text-gray-400;
+  }
+  
+  .todo-priority {
+    @apply px-2 py-1 rounded-full text-xs font-medium;
+  }
+  
+  .todo-priority.high {
+    @apply bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200;
+  }
+  
+  .todo-priority.medium {
+    @apply bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200;
+  }
+  
+  .todo-priority.low {
+    @apply bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200;
+  }
+  
+  /* Filter buttons */
+  .filter-buttons {
+    @apply flex space-x-2 mb-6;
+  }
+  
+  .filter-button {
+    @apply px-4 py-2 rounded-lg font-medium transition-colors duration-200;
+    @apply border border-gray-300 dark:border-gray-600;
+  }
+  
+  .filter-button.active {
+    @apply bg-primary-600 text-white border-primary-600;
+  }
+  
+  .filter-button:not(.active) {
+    @apply bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300;
+    @apply hover:bg-gray-50 dark:hover:bg-gray-700;
+  }
+  
+  /* Action buttons */
+  .action-buttons {
+    @apply flex space-x-2;
+  }
+  
+  .action-button {
+    @apply p-2 rounded-lg transition-colors duration-200;
+    @apply hover:bg-gray-100 dark:hover:bg-gray-700;
+  }
+  
+  /* Connection status indicator */
+  .connection-status {
+    @apply fixed top-4 right-4 px-3 py-1 rounded-full text-xs font-medium;
+    @apply transition-all duration-200;
+  }
+  
+  .connection-status.online {
+    @apply bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200;
+  }
+  
+  .connection-status.offline {
+    @apply bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200;
+  }
+  
+  .connection-status.syncing {
+    @apply bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200;
+    @apply animate-pulse;
+  }
+}
+
+/* Utility classes */
+@layer utilities {
+  /* Animations for todo interactions */
+  .animate-todo-add {
+    animation: slideIn 0.3s ease-out;
+  }
+  
+  .animate-todo-remove {
+    animation: slideOut 0.3s ease-in forwards;
+  }
+  
+  .animate-todo-complete {
+    animation: bounceSoft 0.6s ease-in-out;
+  }
+  
+  /* Progress bar styles */
+  .progress-bar {
+    @apply fixed top-0 left-0 h-1 bg-gradient-to-r from-primary-500 to-blue-500 z-50;
+    @apply transition-all duration-300 ease-out;
+  }
+  
+  /* Skip link for accessibility */
+  .skip-link {
+    @apply sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 z-50;
+    @apply bg-primary-600 text-white px-4 py-2 rounded-md;
+  }
+  
+  /* Screen reader only text */
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+  
+  .sr-only.focus\:not-sr-only:focus {
+    position: static;
+    width: auto;
+    height: auto;
+    padding: inherit;
+    margin: inherit;
+    overflow: visible;
+    clip: auto;
+    white-space: normal;
+  }
+}
+
+/* Print styles */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  
+  .todo-item {
+    break-inside: avoid;
+  }
+  
+  body {
+    background: white !important;
+    color: black !important;
+  }
+}
