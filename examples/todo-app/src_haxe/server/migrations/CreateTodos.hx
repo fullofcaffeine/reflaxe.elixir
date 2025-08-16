@@ -1,4 +1,4 @@
-package migrations;
+package server.migrations;
 
 /**
  * Generated Haxe migration: CreateTodos

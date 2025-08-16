@@ -133,6 +133,12 @@ Repeat → Continuous Quality Improvement
 → **Developer Patterns**: See [`documentation/guides/DEVELOPER_PATTERNS.md`](documentation/guides/DEVELOPER_PATTERNS.md) - Best practices and patterns
 → **Haxe Features**: Use `final`, pattern matching, and functional features to write better code
 
+### When Working on Templates and HXX
+→ **HXX Architecture**: See [`documentation/HXX_VS_TEMPLATE.md`](documentation/HXX_VS_TEMPLATE.md) - HXX vs @:template distinction
+→ **AST Processing**: HXX uses sophisticated TypedExpr transformation - check HxxCompiler.hx for patterns
+→ **Compile-time Only**: Never create runtime HXX modules - use @:noRuntime annotation
+→ **Phoenix Integration**: Generated templates must use proper ~H sigils and HEEx interpolation
+
 ### When Dealing with Framework Integration Issues
 → **Framework Conventions**: See [`documentation/FRAMEWORK_CONVENTIONS.md`](documentation/FRAMEWORK_CONVENTIONS.md) - Phoenix/Elixir directory structure requirements
 → **Convention Adherence**: Generated code MUST follow target framework conventions exactly, not just be syntactically correct
@@ -262,11 +268,13 @@ This is acceptable - helpers are simpler for our needs while following similar s
 
 **Results**: 760KB → 107KB (86% reduction) with external sourcemaps and proper minification.
 
-### HXX Compile-Time Architecture ✅
-**HXX is compile-time only** - never create runtime HXX.ex modules:
-- ✅ **HXX templates** compile to HEEx at build time
-- ❌ **HXX.ex runtime modules** are unnecessary and should be removed
-- 🎯 **Pattern**: Template compilation happens during Haxe transpilation, not at runtime
+### HXX Template System ✅ **PRODUCTION READY**
+**Complete compile-time JSX-like template compilation to Phoenix HEEx**:
+- ✅ **AST-based transformation** - Sophisticated TypedExpr processing for type-safe templates
+- ✅ **@:noRuntime annotation** - Zero runtime dependencies, pure compile-time compilation
+- ✅ **Complete AST support** - TParenthesis, TTypeExpr, all TConst variants handled
+- ✅ **Phoenix ~H sigils** - Generates idiomatic HEEx templates with proper interpolation
+- **See**: [`documentation/HXX_VS_TEMPLATE.md`](documentation/HXX_VS_TEMPLATE.md) - Architecture and usage guide
 
 ### Standard Library Architecture ✅
 **Implemented**: StringTools uses **Extern + Runtime Library** pattern
@@ -768,9 +776,17 @@ What happens:
   - Workaround: Use assignment like `reversed = reversed.reverse()` instead of just `reversed.reverse()`
 - **Some preprocessor artifacts**: Minor temporary variables may appear in complex nested loops (cosmetic)
 
-## Recently Fixed Issues ✅ (2025-08-15)
+## Recently Fixed Issues ✅ (2025-08-16)
 
-**Current Session - Parameter Naming Fix & PRD Vision Refinement:**
+**Current Session - HXX Integration Complete:**
+- **HXX Template Compilation WORKING** ✨ - Complete AST-based template transformation
+  - Fixed TCall, TParenthesis, TTypeExpr, TConst (TThis/TSuper) AST node handling
+  - Restored working EReg.map functionality that was incorrectly removed  
+  - HxxCompiler now generates proper ~H sigils with Phoenix interpolation
+  - Result: Todo-app compiles cleanly with zero HXX warnings
+  - **See**: [`documentation/TASK_HISTORY.md`](documentation/TASK_HISTORY.md) - Complete technical details
+
+**Previous Session (2025-08-15) - Parameter Naming Fix & PRD Vision Refinement:**
 - **Parameter Naming Issue RESOLVED** ✨ - Generated functions now use meaningful parameter names instead of arg0/arg1
   - Fixed ClassCompiler.hx parameter extraction to use arg.tvar.name from Haxe AST
   - Fixed ElixirCompiler.hx parameter mapping to preserve original names in snake_case

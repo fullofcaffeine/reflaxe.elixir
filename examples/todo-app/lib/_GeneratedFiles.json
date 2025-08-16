@@ -1,6 +1,9 @@
 {
 	"filesGenerated": [
-		"migrations_CreateTodos.ex",
+		"server_migrations_CreateTodos.ex",
+		"server_layouts_RootLayout.ex",
+		"server_layouts_Layouts.ex",
+		"server_layouts_AppLayout.ex",
 		"haxe_io_Output.ex",
 		"haxe_io_Input.ex",
 		"haxe_io_FPHelper.ex",
@@ -28,7 +31,6 @@
 		"TodoApp/schemas/todo.ex",
 		"TodoApp.ex",
 		"StdTypes.ex",
-		"HXX.ex",
 		"EnumValue.ex",
 		"Enum.ex",
 		"Class.ex",

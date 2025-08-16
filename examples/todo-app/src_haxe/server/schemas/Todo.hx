@@ -1,4 +1,4 @@
-package schemas;
+package server.schemas;
 
 import phoenix.Ecto;
 

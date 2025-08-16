@@ -1,9 +1,9 @@
-package live;
+package server.live;
 
-import schemas.Todo;
+import server.schemas.Todo;
 import phoenix.Phoenix;
 import phoenix.Ecto;
-import types.Types;
+import server.types.Types;
 
 using StringTools;
 
@@ -17,11 +17,11 @@ typedef EctoQuery = phoenix.Ecto.EctoQuery;
 @:liveview
 class TodoLive {
 	// Socket assigns
-	var todos: Array<schemas.Todo> = [];
+	var todos: Array<server.schemas.Todo> = [];
 	var filter: String = "all"; // all, active, completed
 	var sort_by: String = "created"; // created, priority, due_date
 	var current_user: User;
-	var editing_todo: Null<schemas.Todo> = null;
+	var editing_todo: Null<server.schemas.Todo> = null;
 	var show_form: Bool = false;
 	var search_query: String = "";
 	var selected_tags: Array<String> = [];
@@ -132,7 +132,7 @@ class TodoLive {
 			user_id: socket.assigns.current_user.id
 		};
 		
-		var changeset = Todo.changeset(new Todo(), todo_params);
+		var changeset = server.schemas.Todo.changeset(new server.schemas.Todo(), todo_params);
 		
 		var result = Repo.insert(changeset);
 		if (result.success) {
@@ -151,7 +151,7 @@ class TodoLive {
 					total_todos: todos.length,
 					pending_todos: socket.assigns.pending_todos + 1
 				})
-				.put_flash("info", "Todo created successfully!");
+				.put_flash("info", "server.schemas.Todo created successfully!");
 		} else {
 			return socket.put_flash("error", "Failed to create todo");
 		}
@@ -161,7 +161,7 @@ class TodoLive {
 		var todo = find_todo(id, socket.assigns.todos);
 		if (todo == null) return socket;
 		
-		var updated_todo = Todo.toggle_completed(todo);
+		var updated_todo = server.schemas.Todo.toggle_completed(todo);
 		
 		var result = Repo.update(updated_todo);
 		if (result.success) {
@@ -198,7 +198,7 @@ class TodoLive {
 		var todo = find_todo(id, socket.assigns.todos);
 		if (todo == null) return socket;
 		
-		var updated_todo = Todo.update_priority(todo, priority);
+		var updated_todo = server.schemas.Todo.update_priority(todo, priority);
 		
 		var result = Repo.update(updated_todo);
 		if (result.success) {
@@ -215,7 +215,7 @@ class TodoLive {
 	}
 	
 	// List management helpers
-	static function add_todo_to_list(todo: schemas.Todo, socket: Socket): Socket {
+	static function add_todo_to_list(todo: server.schemas.Todo, socket: Socket): Socket {
 		// Don't add if it's our own todo (already added)
 		if (todo.user_id == socket.assigns.current_user.id) {
 			return socket;
@@ -230,7 +230,7 @@ class TodoLive {
 		});
 	}
 	
-	static function update_todo_in_list(updated_todo: schemas.Todo, socket: Socket): Socket {
+	static function update_todo_in_list(updated_todo: server.schemas.Todo, socket: Socket): Socket {
 		var todos = socket.assigns.todos.map(function(t) {
 			return t.id == updated_todo.id ? updated_todo : t;
 		});
@@ -256,22 +256,22 @@ class TodoLive {
 	}
 	
 	// Utility functions
-	static function load_todos(user_id: Int): Array<schemas.Todo> {
+	static function load_todos(user_id: Int): Array<server.schemas.Todo> {
 		// Simplified query for initial compilation - use EctoQuery
-		var query = EctoQuery.from(Todo);
+		var query = EctoQuery.from(server.schemas.Todo);
 		query = EctoQuery.where(query, {user_id: user_id});
 		query = EctoQuery.order_by(query, "inserted_at");
 		return Repo.all(query);
 	}
 	
-	static function find_todo(id: Int, todos: Array<schemas.Todo>): Null<schemas.Todo> {
+	static function find_todo(id: Int, todos: Array<server.schemas.Todo>): Null<server.schemas.Todo> {
 		for (todo in todos) {
 			if (todo.id == id) return todo;
 		}
 		return null;
 	}
 	
-	static function count_completed(todos: Array<schemas.Todo>): Int {
+	static function count_completed(todos: Array<server.schemas.Todo>): Int {
 		var count = 0;
 		for (todo in todos) {
 			if (todo.completed) count++;
@@ -279,7 +279,7 @@ class TodoLive {
 		return count;
 	}
 	
-	static function count_pending(todos: Array<schemas.Todo>): Int {
+	static function count_pending(todos: Array<server.schemas.Todo>): Int {
 		var count = 0;
 		for (todo in todos) {
 			if (!todo.completed) count++;
@@ -299,10 +299,10 @@ class TodoLive {
 	
 	// Bulk operations
 	static function complete_all_todos(socket: Socket): Socket {
-		var pending: Array<schemas.Todo> = socket.assigns.todos.filter(function(t) return !t.completed);
+		var pending: Array<server.schemas.Todo> = socket.assigns.todos.filter(function(t) return !t.completed);
 		
 		for (todo in pending) {
-			var updated = Todo.toggle_completed(todo);
+			var updated = server.schemas.Todo.toggle_completed(todo);
 			Repo.update(updated);
 		}
 		
@@ -321,7 +321,7 @@ class TodoLive {
 	}
 	
 	static function delete_completed_todos(socket: Socket): Socket {
-		var completed: Array<schemas.Todo> = socket.assigns.todos.filter(function(t) return t.completed);
+		var completed: Array<server.schemas.Todo> = socket.assigns.todos.filter(function(t) return t.completed);
 		
 		for (todo in completed) {
 			Repo.delete(todo);
@@ -354,7 +354,7 @@ class TodoLive {
 		var todo = socket.assigns.editing_todo;
 		if (todo == null) return socket;
 		
-		var changeset = Todo.changeset(todo, params);
+		var changeset = server.schemas.Todo.changeset(todo, params);
 		var result = Repo.update(changeset);
 		if (result.success) {
 			var updated_todo = result.data;

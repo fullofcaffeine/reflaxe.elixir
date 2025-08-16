@@ -1,6 +1,6 @@
-package layouts;
+package server.layouts;
 
-import reflaxe.elixir.HXX;
+// HXX is handled at compile-time by the Reflaxe.Elixir compiler - no imports needed
 
 /**
  * Main layouts module for Phoenix application

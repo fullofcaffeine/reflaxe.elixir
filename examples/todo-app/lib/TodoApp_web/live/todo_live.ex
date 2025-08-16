@@ -76,13 +76,13 @@ defmodule TodoLive do
     temp_maybe_string = nil
     if (params.priority != nil), do: temp_maybe_string = params.priority, else: temp_maybe_string = "medium"
     todo_params = %{"title" => params.title, "description" => params.description, "completed" => false, "priority" => temp_maybe_string, "due_date" => params.due_date, "tags" => TodoLive.parse_tags(params.tags), "user_id" => socket.assigns.current_user.id}
-    changeset = Todo.changeset(Schemas.Todo.new(), todo_params)
+    changeset = Todo.changeset(Server.Schemas.Todo.new(), todo_params)
     result = Repo.insert(changeset)
     if (result.success) do
       todo = result.data
       Phoenix.PubSub.broadcast(TodoApp.PubSub, "todo:updates", %{"type" => "todo_created", "todo" => todo})
       todos = [todo] ++ socket.assigns.todos
-      socket.assign(%{"todos" => todos, "show_form" => false, "total_todos" => length(todos), "pending_todos" => socket.assigns.pending_todos + 1}).put_flash("info", "Todo created successfully!")
+      socket.assign(%{"todos" => todos, "show_form" => false, "total_todos" => length(todos), "pending_todos" => socket.assigns.pending_todos + 1}).put_flash("info", "server.schemas.Todo created successfully!")
     else
       socket.put_flash("error", "Failed to create todo")
     end

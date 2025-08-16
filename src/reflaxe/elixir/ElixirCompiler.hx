@@ -35,6 +35,7 @@ import reflaxe.elixir.helpers.EctoQueryAdvancedCompiler;
 import reflaxe.elixir.helpers.RepositoryCompiler;
 import reflaxe.elixir.helpers.EctoErrorReporter;
 import reflaxe.elixir.helpers.TypedefCompiler;
+import reflaxe.elixir.helpers.HxxCompiler;
 import reflaxe.elixir.helpers.LLMDocsGenerator;
 import reflaxe.elixir.helpers.ExUnitCompiler;
 import reflaxe.elixir.helpers.AlgebraicDataTypeCompiler;
@@ -4661,190 +4662,19 @@ class ElixirCompiler extends DirectToStringCompiler {
      * Compile HXX template function calls
      * Processes hxx() calls to transform JSX-like syntax to HEEx templates
      */
+    /**
+     * Compile HXX.hxx() calls to Phoenix HEEx templates
+     * 
+     * This method delegates to HxxCompiler for sophisticated AST-based template
+     * compilation that generates idiomatic ~H sigils with proper interpolation.
+     */
     private function compileHxxCall(args: Array<TypedExpr>): String {
         if (args.length != 1) {
             Context.error("hxx() expects exactly one string argument", Context.currentPos());
         }
         
-        // Extract the string literal from the argument
-        switch (args[0].expr) {
-            case TConst(TString(s)):
-                // Apply HXX transformations to the string
-                var processed = processHxxTemplate(s);
-                return formatHxxTemplate(processed);
-                
-            case TBinop(OpAdd, _, _):
-                // Handle string concatenation (multiline strings with interpolation)
-                // 
-                // When HXX templates contain multiline strings, Haxe parses them as TBinop(OpAdd)
-                // expressions that concatenate string literals. The old approach compiled these
-                // expressions first, which escaped quotes (class="x" -> class=\"x\"), then 
-                // extracted content from the escaped string. This caused invalid HEEx syntax.
-                //
-                // NEW APPROACH: Extract raw string content directly from the AST before any
-                // escaping occurs, then process it as HXX template. This preserves HTML 
-                // attribute quotes in the correct HEEx format.
-                var rawContent = extractRawStringFromTBinop(args[0]);
-                if (rawContent != null) {
-                    var processed = processHxxTemplate(rawContent);
-                    return formatHxxTemplate(processed);
-                }
-                // Fallback to compiled version if extraction fails (non-string expressions)
-                var compiled = compileExpression(args[0]);
-                return compiled;
-                
-            case _:
-                // For other cases, try to compile and check if it results in a string
-                var compiled = compileExpression(args[0]);
-                if (compiled.charAt(0) == '"' && compiled.charAt(compiled.length - 1) == '"') {
-                    // It's a string literal, extract the content
-                    var stringContent = compiled.substring(1, compiled.length - 1);
-                    var processed = processHxxTemplate(stringContent);
-                    return formatHxxTemplate(processed);
-                }
-                
-                Context.error("hxx() expects a string literal, got: " + args[0].expr.getName(), args[0].pos);
-        }
-        
-        return '""';  // Fallback
-    }
-    
-    /**
-     * Extract raw string content from TBinop string concatenation expressions
-     * This avoids double-escaping in HEEx templates
-     */
-    private function extractRawStringFromTBinop(expr: TypedExpr): Null<String> {
-        switch (expr.expr) {
-            case TConst(TString(s)):
-                return s;
-            case TBinop(OpAdd, left, right):
-                var leftStr = extractRawStringFromTBinop(left);
-                var rightStr = extractRawStringFromTBinop(right);
-                if (leftStr != null && rightStr != null) {
-                    return leftStr + rightStr;
-                }
-                return null;
-            case _:
-                return null;
-        }
-    }
-    
-    /**
-     * Format a string for Elixir output, handling multiline content properly
-     * Preserves HTML attribute quotes in HEEx templates
-     */
-    private function formatElixirString(content: String): String {
-        var escaped = content;
-        
-        // Handle newlines in multiline strings
-        if (content.indexOf('\n') != -1) {
-            escaped = escaped.split('\n').join('\\n');
-        }
-        
-        // For HEEx templates, we need to preserve HTML attribute quotes
-        // Only escape quotes that would break the Elixir string literal,
-        // not quotes that are part of HTML attributes
-        
-        // First, protect HTML attribute quotes by temporarily replacing them
-        var protectedQuotes = new Map<String, String>();
-        var counter = 0;
-        
-        // Find HTML attribute patterns: attribute="value" or attribute='value'
-        var htmlAttrPattern = ~/(\w+)=(["'])([^"']*)\2/g;
-        escaped = htmlAttrPattern.map(escaped, function(reg) {
-            var fullMatch = reg.matched(0);
-            var placeholder = '__PROTECTED_QUOTE_${counter++}__';
-            protectedQuotes.set(placeholder, fullMatch);
-            return placeholder;
-        });
-        
-        // Now escape any remaining quotes that could break the string literal
-        escaped = escaped.split('"').join('\\"');
-        
-        // Restore protected HTML attribute quotes
-        for (placeholder => originalQuote in protectedQuotes) {
-            escaped = escaped.split(placeholder).join(originalQuote);
-        }
-        
-        return '"' + escaped + '"';
-    }
-    
-    /**
-     * Format HXX template as proper HEEx template using ~H sigil
-     */
-    private function formatHxxTemplate(content: String): String {
-        // First, replace any escaped newlines with actual newlines
-        var unescaped = content.split('\\n').join('\n');
-        
-        // Clean up the content - remove leading/trailing whitespace from lines
-        var lines = unescaped.split('\n');
-        var cleanedLines = [];
-        
-        for (line in lines) {
-            var trimmed = line.trim();
-            if (trimmed.length > 0) {
-                cleanedLines.push('      ' + trimmed); // Indent for readability
-            } else {
-                cleanedLines.push(''); // Keep empty lines for spacing
-            }
-        }
-        
-        var cleanContent = cleanedLines.join('\n');
-        
-        // Return as a ~H sigil template
-        return '~H"""\n' + cleanContent + '\n    """';
-    }
-    
-    /**
-     * Process HXX template string - convert JSX-like syntax to HEEx
-     */
-    private function processHxxTemplate(template: String): String {
-        var processed = template;
-        
-        // First, handle Haxe-style interpolation ${} -> {} (HEEx syntax)
-        processed = ~/\$\{([^}]+)\}/g.replace(processed, '{$1}');
-        
-        // Handle function calls that appear in interpolations
-        // renderUserList(assigns) -> render_user_list(assigns)
-        processed = ~/(\w+)List\(/g.replace(processed, '$1_list(');
-        processed = ~/(\w+)Form\(/g.replace(processed, '$1_form(');
-        processed = ~/(\w+)Row\(/g.replace(processed, '$1_row(');
-        
-        // Convert camelCase function names to snake_case in interpolations
-        processed = ~/renderUser([A-Z]\w*)/g.replace(processed, 'render_user_$1');
-        
-        // Convert __MODULE__.methodName(assigns) patterns to proper function calls
-        processed = ~/(<%= )?__MODULE__\.([a-zA-Z_][a-zA-Z0-9_]*)\(([^)]*)\)( %>)?/g.replace(processed, '{$2($3)}');
-        
-        // Convert string concatenation patterns to HEEx interpolation
-        // " <> <%= expr %> <> " -> {expr}
-        processed = ~/" <> \{([^}]+)\} <> "/g.replace(processed, '{$1}');
-        
-        // Handle remaining " <> expr <> " patterns -> {expr}
-        processed = ~/" <> ([^<>]+) <> "/g.replace(processed, '{$1}');
-        
-        // Convert Std.string() calls to simple interpolation
-        processed = ~/Std\.string\(([^)]+)\)/g.replace(processed, '$1');
-        
-        // Convert Integer.to_string() calls to simple interpolation  
-        processed = ~/Integer\.to_string\(([^)]+)\)/g.replace(processed, '$1');
-        
-        // Handle array operations like assigns.users.map(renderUserRow)
-        // This converts them to proper Elixir for comprehensions
-        processed = ~/([^<>=\s]+)\.map\(([^)]+)\)\.join\("([^"]*)"\)/g.replace(processed, '<%= for item <- $1 do %><%= $2(item) %><% end %>');
-        
-        // Convert Enum.join(Enum.map(...)) patterns to for comprehensions
-        processed = ~/Enum\.join\(Enum\.map\(([^,]+),\s*([^)]+)\),\s*"([^"]*)"\)/g.replace(processed, '<%= for item <- $1 do %>$2<% end %>');
-        
-        // Handle conditional rendering (ternary operator)
-        // <%= condition ? "true_value" : "false_value" %> -> <%= if condition, do: "true_value", else: "false_value" %>
-        var ternaryPattern = ~/<%= ([^?]+)\?([^:]+):([^%]+) %>/g;
-        processed = ternaryPattern.replace(processed, '<%= if $1, do: $2, else: $3 %>');
-        
-        // Preserve Phoenix component syntax (<.button> stays as-is)
-        // LiveView events (phx-click, etc.) are already valid HEEx
-        
-        return processed;
+        // Delegate to HxxCompiler for comprehensive AST-based template compilation
+        return HxxCompiler.compileHxxTemplate(args[0]);
     }
     
     /**

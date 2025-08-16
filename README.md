@@ -67,7 +67,7 @@ The foundation for multi-target development:
 
 ### ✅ Production Ready (v1.0)
 - **Phoenix Integration** - LiveView, controllers, templates, routers 100% supported
-- **HXX Template Processing** - JSX-like syntax for type-safe Phoenix HEEx templates
+- **HXX Template System** - Complete compile-time JSX→HEEx transformation with AST-based processing
 - **Ecto Complete** - Schemas, changesets, queries, migrations with full DSL support  
 - **Mix Integration** - Seamless build pipeline with file watching and incremental compilation
 - **Source Maps** - First Reflaxe target with `.ex.map` generation for debugging
@@ -286,9 +286,9 @@ class CounterLive {
     }
     
     function render(assigns: Dynamic): String {
-        return HXX('
+        return HXX.hxx('
             <div class="counter">
-                <h1>Count: ${assigns.count}</h1>
+                <h1>${assigns.count}</h1>
                 <button phx-click="increment">+</button>
             </div>
         ');
@@ -313,8 +313,8 @@ defmodule CounterLive do
   def render(assigns) do
     ~H"""
     <div class="counter">
-        <h1>Count: {assigns.count}</h1>
-        <button phx-click="increment">+</button>
+      <h1>{assigns.count}</h1>
+      <button phx-click="increment">+</button>
     </div>
     """
   end

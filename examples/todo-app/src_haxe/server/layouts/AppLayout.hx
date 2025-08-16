@@ -1,6 +1,6 @@
-package layouts;
+package server.layouts;
 
-import reflaxe.elixir.HXX;
+// HXX calls are transformed at compile-time by the Reflaxe.Elixir compiler
 
 /**
  * Application layout component
@@ -54,11 +54,11 @@ class AppLayout {
                             <!-- User Menu -->
                             <div class="flex items-center space-x-4">
                                 <div class="text-sm text-gray-700 dark:text-gray-300">
-                                    Welcome, <span class="font-semibold">${assigns.current_user && assigns.current_user.name || "User"}</span>
+                                    Welcome, <span class="font-semibold">${assigns.current_user != null && assigns.current_user.name != null ? assigns.current_user.name : "User"}</span>
                                 </div>
                                 <div class="w-8 h-8 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center">
                                     <span class="text-white text-sm font-medium">
-                                        ${getInitials(assigns.current_user && assigns.current_user.name || "U")}
+                                        ${getInitials(assigns.current_user != null && assigns.current_user.name != null ? assigns.current_user.name : "U")}
                                     </span>
                                 </div>
                             </div>
@@ -76,7 +76,7 @@ class AppLayout {
                             </a>
                             <span class="text-gray-400 dark:text-gray-500">/</span>
                             <span class="text-gray-900 dark:text-white font-medium">
-                                ${assigns.page_title || "Todo Dashboard"}
+                                ${assigns.page_title != null ? assigns.page_title : "Todo Dashboard"}
                             </span>
                         </div>
                     </div>
@@ -90,12 +90,12 @@ class AppLayout {
                         <div class="md:flex md:items-center md:justify-between">
                             <div class="flex-1 min-w-0">
                                 <h2 class="text-2xl font-bold leading-7 text-gray-900 dark:text-white sm:text-3xl sm:truncate">
-                                    ${assigns.page_title || "Todo Dashboard"}
+                                    ${assigns.page_title != null ? assigns.page_title : "Todo Dashboard"}
                                 </h2>
                                 <div class="mt-1 flex flex-col sm:flex-row sm:flex-wrap sm:mt-0 sm:space-x-6">
                                     <div class="mt-2 flex items-center text-sm text-gray-500 dark:text-gray-400">
                                         <span class="mr-2">🕒</span>
-                                        Last updated: ${formatTimestamp(assigns.last_updated || "now")}
+                                        Last updated: ${formatTimestamp(assigns.last_updated != null ? assigns.last_updated : "now")}
                                     </div>
                                     <div class="mt-2 flex items-center text-sm text-gray-500 dark:text-gray-400">
                                         <span class="mr-2">⚡</span>

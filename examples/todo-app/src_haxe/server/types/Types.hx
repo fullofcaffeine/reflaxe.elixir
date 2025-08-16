@@ -1,4 +1,4 @@
-package types;
+package server.types;
 
 /**
  * Shared types for the todo-app
@@ -20,11 +20,11 @@ typedef Socket = {
 
 // Socket assigns structure  
 typedef SocketAssigns = {
-    var todos: Array<schemas.Todo>;
+    var todos: Array<server.schemas.Todo>;
     var filter: String;
     var sort_by: String;
     var current_user: User;
-    var editing_todo: Null<schemas.Todo>;
+    var editing_todo: Null<server.schemas.Todo>;
     var show_form: Bool;
     var search_query: String;
     var selected_tags: Array<String>;
@@ -50,7 +50,7 @@ typedef EventParams = {
 // Message types for PubSub
 typedef PubSubMessage = {
     var type: String;
-    var ?todo: schemas.Todo;
+    var ?todo: server.schemas.Todo;
     var ?id: Int;
     var ?action: String;
 }
