@@ -22,14 +22,42 @@ config :logger, :console,
 # Use Jason for JSON parsing in Phoenix
 config :phoenix, :json_library, Jason
 
-# Configure esbuild (the version is required)
+# Configure esbuild for Haxe→JavaScript + Phoenix integration
 config :esbuild,
-  version: "0.17.11",
+  version: "0.19.8",
   todo_app: [
-    args:
-      ~w(js/app.js --bundle --target=es2017 --outdir=../priv/static/assets --external:/fonts/* --external:/images/* --tree-shaking=true),
+    args: ~w(
+      js/phoenix_app.js
+      --bundle
+      --target=es2017
+      --outdir=../priv/static/assets
+      --external:/fonts/*
+      --external:/images/*
+      --tree-shaking=true
+      --splitting=false
+      --format=iife
+      --global-name=TodoApp
+      --sourcemap=external
+      --loader:.hx=text
+    ),
     cd: Path.expand("../assets", __DIR__),
-    env: %{"NODE_PATH" => Path.expand("../deps", __DIR__)}
+    env: %{
+      "NODE_PATH" => Path.expand("../deps", __DIR__),
+      "NODE_ENV" => to_string(Mix.env())
+    }
+  ]
+
+# Configure Tailwind CSS processing
+config :tailwind,
+  version: "3.3.6",
+  todo_app: [
+    args: ~w(
+      --config=tailwind.config.js
+      --input=css/app.css
+      --output=../priv/static/assets/app.css
+      --postcss
+    ),
+    cd: Path.expand("../assets", __DIR__)
   ]
 
 # Import environment specific config

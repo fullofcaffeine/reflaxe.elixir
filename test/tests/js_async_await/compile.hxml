@@ -1,0 +1,10 @@
+# JavaScript async/await test configuration
+-cp ../../../std
+-main Main
+-js out/main.js
+
+# Enable AsyncJSGenerator for native async/await support
+--macro reflaxe.js.AsyncJSGenerator.use()
+
+# Modern JavaScript target
+-D js-es=6

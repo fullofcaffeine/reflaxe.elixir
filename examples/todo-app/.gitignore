@@ -22,3 +22,8 @@ npm-debug.log*
 # Environment
 .env
 .env.local
+
+# Test artifacts (should be in main test suite only)
+test_*.js
+test*.html
+*.beam
