@@ -47,8 +47,8 @@ defmodule Main do
     case (case user do {:some, _} -> 0; :none -> 1; _ -> -1 end) do
       0 ->
         _g = case user do {:some, value} -> value; :none -> nil; _ -> nil end
-    name = _g
-    temp_string = "Hello, " <> name
+        name = _g
+        temp_string = "Hello, " <> name
       1 ->
         temp_string = "Hello, anonymous"
     end
@@ -57,8 +57,8 @@ defmodule Main do
     case (case scores do {:some, _} -> 0; :none -> 1; _ -> -1 end) do
       0 ->
         _g = case scores do {:some, value} -> value; :none -> nil; _ -> nil end
-    score_list = _g
-    temp_number = length(score_list)
+        score_list = _g
+        temp_number = length(score_list)
       1 ->
         temp_number = 0
     end
@@ -73,8 +73,8 @@ defmodule Main do
     case (case user do {:some, _} -> 0; :none -> 1; _ -> -1 end) do
       0 ->
         _g = case user do {:some, value} -> value; :none -> nil; _ -> nil end
-    name = _g
-    Log.trace("Processing user: " <> name, %{"fileName" => "Main.hx", "lineNumber" => 68, "className" => "Main", "methodName" => "processUser"})
+        name = _g
+        Log.trace("Processing user: " <> name, %{"fileName" => "Main.hx", "lineNumber" => 68, "className" => "Main", "methodName" => "processUser"})
       1 ->
         Log.trace("No user to process", %{"fileName" => "Main.hx", "lineNumber" => 69, "className" => "Main", "methodName" => "processUser"})
     end
