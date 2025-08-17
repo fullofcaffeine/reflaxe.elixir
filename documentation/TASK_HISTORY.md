@@ -7,6 +7,84 @@ Archives of previous history can be found in `TASK_HISTORY_ARCHIVE_*.md` files.
 
 ---
 
+## Session: 2025-08-17 - HXX Function Name Conversion Fix in HTML Attributes ✅
+
+### Context
+Critical fix session resolving a documented Known Issue where camelCase function names in HXX template HTML attributes weren't being converted to snake_case. This was causing compilation errors and breaking Phoenix template integration. The issue was documented as "CRITICAL DISCOVERY" in previous sessions but required investigation into the HXX compilation pipeline.
+
+### Tasks Completed ✅
+
+#### 1. **Root Cause Analysis** ✨
+- **Problem**: `class={getStatusClass(user.active)}` wasn't converting to `get_status_class` in HTML attributes
+- **Evidence**: Regular interpolations `${getStatusText(...)}` converted correctly, but HTML attributes didn't
+- **Investigation**: Added debug tracing to HxxCompiler.convertFunctionNames() function
+- **Discovery**: Function was being called with correct content, but regex pattern was failing
+
+#### 2. **Regex Pattern Fix** ✨  
+- **Root Cause**: Original regex `~/\b([a-z][a-zA-Z]*)(\\s*\()/g` used word boundary `\b` which doesn't match after `{` character
+- **Solution**: Updated to `~/(^|[^a-zA-Z0-9_])([a-z][a-zA-Z]*)(\s*\()/g` to handle any non-alphanumeric delimiter
+- **Implementation**: Enhanced capture group handling to preserve prefixes like `{`, spaces, etc.
+- **Result**: `{getStatusClass(` now correctly becomes `{get_status_class(`
+
+#### 3. **Verification and Testing** ✨
+- **Compilation Test**: UserLive.ex now generates `class={get_status_class(user.active)}` correctly
+- **Debug Cleanup**: Removed all debug trace statements after confirming fix
+- **Integration**: No more `undefined function getStatusClass/1` compilation errors
+- **Quality**: Fix works for all function names in HTML attributes, not just specific cases
+
+### Technical Insights Gained
+
+#### HXX Template Processing Architecture
+- **Pipeline Confirmation**: HTML attributes DO go through `convertFunctionNames()` function
+- **Regex Limitations**: Word boundaries `\b` don't work with special characters like `{`, `(`, `[`
+- **Pattern Matching**: Need to capture and preserve delimiters when transforming function names
+- **Universal Solution**: Fix applies to all camelCase functions in HTML attributes, not just getStatusClass
+
+#### Phoenix Integration Quality
+- **Template Consistency**: Both `${...}` and `{...}` interpolations now convert function names properly
+- **Code Generation**: Generated HEEx templates are fully idiomatic with correct snake_case functions
+- **Type Safety**: Fix maintains compile-time safety while ensuring runtime compatibility
+
+### Files Modified
+- **src/reflaxe/elixir/helpers/HxxCompiler.hx** - Fixed regex pattern in convertFunctionNames() method
+- **examples/todo-app/lib/todo_app_web/live/user_live.ex** - Generated output now correct
+- **documentation/TASK_HISTORY.md** - This documentation
+- **CLAUDE.md** - Removed resolved Known Issue
+
+### Key Achievements ✨
+1. **Resolved Critical Known Issue**: HXX function name conversion now works consistently across all template contexts
+2. **Improved Phoenix Integration**: All HXX templates generate proper snake_case function calls
+3. **Enhanced Code Quality**: Generated templates follow Elixir conventions perfectly
+4. **Better Developer Experience**: No more manual workarounds needed for HTML attribute functions
+
+### Development Insights
+#### Debugging Methodology
+- **AST vs String Processing**: Confirmed that HTML attributes are processed by string-based convertFunctionNames()
+- **Incremental Debugging**: Added targeted debug output to isolate specific regex pattern failures
+- **Verification**: Tested fix thoroughly before cleanup to ensure robustness
+
+#### Regex Pattern Design
+- **Delimiter Awareness**: Function name patterns must account for context characters
+- **Capture Group Strategy**: Preserve context while transforming content for clean results
+- **Universal Patterns**: Design for broad applicability rather than specific cases
+
+### Session Summary
+**Status**: ✅ **COMPLETE SUCCESS**
+**Primary Fix**: HXX template HTML attributes now properly convert camelCase function names to snake_case
+**Impact**: Eliminates compilation errors and manual workarounds for Phoenix template functions
+**Quality**: Generated code is fully idiomatic and professional
+**Documentation**: Resolved Known Issue removed from CLAUDE.md, comprehensive technical details preserved
+
+**Key Metrics**:
+- **Known Issues**: Reduced from 2 to 1 (50% reduction)
+- **Template Quality**: All function calls now convert consistently
+- **Developer Experience**: No more manual snake_case conversion needed
+- **Code Generation**: Professional, idiomatic Elixir output maintained
+
+This fix represents a significant improvement in the reliability and usability of HXX templates for Phoenix development.
+
+---
+
 ## Session: 2025-08-17 - Type-Safe Phoenix Abstractions and Template Helper Metadata ✅
 
 ### Context

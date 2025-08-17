@@ -295,60 +295,68 @@ array.map(transform)   // Generates: Enum.map(array, transform)
 
 ## HXX Template Compilation Patterns
 
-### 1. Multiple Processing Paths for Different Interpolation Types ⚠️ **CRITICAL DISCOVERY**
+### 1. HTML Attribute Function Name Conversion ✅ **RESOLVED (2025-08-17)**
 
-**Issue**: HTML attributes and regular interpolations may use different processing paths in HXX template compilation.
+**Issue**: HTML attributes and regular interpolations used different processing paths, causing inconsistent function name conversion.
 
-**Evidence**:
+**Previous Evidence**:
 ```haxe
 // In UserLive.hx template:
-<span class={getStatusClass(user.active)}>     // ❌ Stays as getStatusClass
-    ${getStatusText(user.active)}              // ✅ Becomes get_status_text  
+<span class={getStatusClass(user.active)}>     // ❌ Was staying as getStatusClass
+    ${getStatusText(user.active)}              // ✅ Was becoming get_status_text  
 </span>
 
-// Generated UserLive.ex:
+// Previously generated UserLive.ex:
 <span class={getStatusClass(user.active)}>    // ❌ Function name not converted
     <%= get_status_text(user.active) %>       // ✅ Function name correctly converted
 </span>
 ```
 
-**Root Cause**: 
-- Regular interpolations (`${...}`) → Processed by HxxCompiler → Function names converted via `convertFunctionNames()`
-- HTML attributes (`attr={...}`) → Processed by different pipeline → Function names NOT converted
+**Root Cause Identified**: 
+The regex pattern in `convertFunctionNames()` used word boundaries (`\b`) which don't match after special characters like `{`. HTML attributes like `class={getStatusClass(...)}` weren't being processed because the word boundary `\b` failed to match after the `{` character.
 
-**Current Status**: Under investigation. The `convertFunctionNames()` function in HxxCompiler is never called for HTML attribute expressions.
-
-**Technical Details**:
-- HxxCompiler.convertFunctionNames() has improved regex to handle complete function names
-- processPhoenixPatterns() pipeline works correctly for regular interpolations
-- HTML attribute interpolation appears to bypass the Phoenix pattern processing entirely
-
-**Investigation Commands Used**:
-```bash
-# Added debug traces to HxxCompiler functions
-trace('convertFunctionNames input: ${content}');
-trace('processPhoenixPatterns: Starting Phoenix pattern processing');
-
-# No debug output found, indicating these functions aren't called for attributes
-```
-
-**Implications**:
-1. **Template Consistency**: Different interpolation types have inconsistent function naming
-2. **Runtime Errors**: `undefined function get_statusclass/1` errors occur
-3. **Developer Experience**: Breaks expectations about uniform Haxe→Elixir conversion
-
-**Architecture Questions for Future Resolution**:
-1. Where are HTML attribute expressions actually processed?
-2. Should HTML attributes go through the same HxxCompiler pipeline?
-3. Is there a Phoenix/HEEx-specific processing system we need to hook into?
-
-**Workaround**: Manual conversion of camelCase function names in HTML attributes:
+**Solution Applied**:
+Updated the regex pattern in `HxxCompiler.convertFunctionNames()` from:
 ```haxe
-// Manual workaround until architecture issue is resolved
-<span class={get_status_class(user.active)}>  // Use snake_case directly
+// ❌ OLD: Word boundary fails after { character
+var functionPattern = ~/\b([a-z][a-zA-Z]*)(\\s*\()/g;
+
+// ✅ NEW: Delimiter-aware pattern handles all contexts
+var functionPattern = ~/(^|[^a-zA-Z0-9_])([a-z][a-zA-Z]*)(\s*\()/g;
 ```
 
-**Priority**: HIGH - Affects all HXX templates with function calls in HTML attributes.
+**Current Result**:
+```haxe
+// In UserLive.hx template:
+<span class={getStatusClass(user.active)}>     // ✅ Now converts properly
+    ${getStatusText(user.active)}              // ✅ Still works as before
+</span>
+
+// Generated UserLive.ex:
+<span class={get_status_class(user.active)}>  // ✅ Function name correctly converted
+    <%= get_status_text(user.active) %>       // ✅ Function name correctly converted
+</span>
+```
+
+**Technical Implementation**:
+The new pattern preserves context delimiters while converting function names:
+```haxe
+return functionPattern.map(content, function(r) {
+    var prefix = r.matched(1);      // Delimiter before function name
+    var functionName = r.matched(2); // The actual function name
+    var args = r.matched(3);         // Opening parenthesis
+    var snakeCaseName = NamingHelper.toSnakeCase(functionName);
+    return prefix + snakeCaseName + args;  // Preserve context
+});
+```
+
+**Benefits Achieved**:
+1. **Template Consistency**: Both interpolation types now have consistent function naming
+2. **No Runtime Errors**: All function calls compile to valid snake_case Elixir functions
+3. **Better Developer Experience**: Uniform Haxe→Elixir conversion across all template contexts
+4. **Regex Robustness**: Pattern now handles any delimiter context (braces, spaces, start of string)
+
+**Status**: ✅ **COMPLETELY RESOLVED** - All HXX templates now generate consistent, idiomatic Elixir code.
 
 ### 2. Function Name Conversion Pipeline
 

@@ -705,11 +705,6 @@ What happens:
 ## Known Issues  
 - **Array Mutability**: Methods like `reverse()` and `sort()` don't mutate in place (Elixir lists are immutable)
   - Workaround: Use assignment like `reversed = reversed.reverse()` instead of just `reversed.reverse()`
-- **HXX Function Name Conversion**: HTML attributes don't convert camelCase function names to snake_case
-  - Issue: `class={getStatusClass(...)}` stays as-is while `${getStatusText(...)}` becomes `get_status_text`
-  - Root Cause: HTML attributes bypass the `processPhoenixPatterns()` pipeline in HxxCompiler
-  - Workaround: Use snake_case directly in HTML attributes: `class={get_status_class(...)}`
-  - Status: Documented in [`documentation/COMPILER_PATTERNS.md`](documentation/COMPILER_PATTERNS.md) for future resolution
 
 
 ## Documentation Completeness Checklist ✓
