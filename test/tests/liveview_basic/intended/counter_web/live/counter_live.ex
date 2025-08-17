@@ -5,6 +5,9 @@ defmodule CounterLive do
   import Ecto.Query
   alias TodoApp.Repo
   
+  use Phoenix.Component
+  import TodoAppWeb.CoreComponents
+  
   @impl true
   @doc "Generated from Haxe mount"
   def mount(params, session, socket) do

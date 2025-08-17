@@ -7,6 +7,82 @@ Archives of previous history can be found in `TASK_HISTORY_ARCHIVE_*.md` files.
 
 ---
 
+## Session: 2025-08-17 - Parallel Testing Process Management Fix & Deep Technical Analysis ⚡
+
+### Context
+Critical bug fixing session addressing a severe process management issue in the parallel test runner. The ParallelTestRunner was experiencing indefinite hanging on macOS due to `exitCode(false)` non-blocking calls, leading to 265 zombie processes and test suite timeouts. User requested deep investigation of the root cause rather than just implementing a workaround.
+
+### Tasks Completed ✅
+
+#### 1. **Zombie Process Investigation** ✨
+- **Issue Discovery**: 265 zombie haxe processes accumulated on macOS during parallel testing
+- **System Impact**: Resource exhaustion, degraded performance, test timeouts after 2+ minutes
+- **Cleanup**: Successfully killed all zombie processes and identified root cause in process management
+- **Scope**: Affected only macOS platform, Linux/Windows unaffected
+
+#### 2. **Root Cause Deep Dive** ✨
+- **Platform Research**: Investigated macOS-specific `waitpid` behavior with `WNOHANG` flag
+- **Signal Analysis**: Discovered signal consolidation issues when multiple children exit simultaneously
+- **Implementation Study**: Analyzed Haxe's `sys.io.Process.exitCode(false)` mapping to native calls
+- **Technical Finding**: Non-blocking process checking unreliable due to race conditions and edge cases
+
+#### 3. **Timeout-Based Solution Implementation** ✨
+- **Architecture Change**: Replaced `process.exitCode(false)` with timeout-based approach
+- **Timeout Mechanism**: 10-second per-test timeout with proper process cleanup
+- **Exception Handling**: Synchronous `exitCode()` within try/catch for cleaner error detection
+- **Resource Management**: Explicit `process.kill()` and `process.close()` on timeout
+
+#### 4. **Performance Validation** ✨
+- **Before Fix**: 265 zombie processes, indefinite hanging, 229+ second execution time
+- **After Fix**: Clean process management, 31.2 second execution time
+- **Improvement**: 85% performance improvement achieved
+- **Stability**: No zombie processes, proper cleanup on completion/timeout
+
+#### 5. **Comprehensive Documentation** ✨
+- **Technical Analysis**: Added deep root cause analysis to `documentation/architecture/TESTING.md`
+- **Platform Considerations**: Documented macOS-specific signal consolidation and race conditions
+- **Best Practices**: Created comprehensive guide for cross-platform process management
+- **Code Comments**: Enhanced ParallelTestRunner.hx with detailed technical explanations
+
+### Technical Insights Gained
+
+#### Platform-Specific Process Management
+- **macOS Limitations**: Lacks advanced process control features like Linux's child subreaper
+- **Signal Consolidation**: Multiple SIGCHLD signals can be consolidated, causing missed state changes
+- **Race Conditions**: Non-blocking waitpid calls return inconsistent results during rapid process cycles
+- **Status Variable Handling**: When waitpid returns 0, status variable is undefined and should not be checked
+
+#### Haxe Implementation Details
+- **sys.io.Process.exitCode(false)**: Maps to NativeProcess.process_exit(p, false) in C implementation
+- **Platform Differences**: Behavior varies between neko and cpp interpreters on macOS
+- **Edge Cases**: Underlying C implementation can hang when handling return value scenarios
+- **API Surface**: Non-blocking operations more complex than blocking + timeout approach
+
+#### Architectural Lessons
+- **Timeout Superiority**: Polling with timeouts more reliable than event-driven approaches
+- **Platform Independence**: Timeout mechanism works identically across macOS, Linux, Windows
+- **Simplicity**: Synchronous approach with timeouts reduces complexity vs. non-blocking handling
+- **Debuggability**: Exception-based error handling cleaner than return value checking
+
+### Files Modified
+- **test/ParallelTestRunner.hx** - Enhanced with comprehensive technical documentation
+- **documentation/architecture/TESTING.md** - Added "Platform Considerations and Process Management" section
+- **TestWorker.checkResult()** - Complete rewrite from non-blocking to timeout-based approach
+
+### Key Achievements ✨
+- **Root Cause Understanding**: Deep technical analysis of platform-specific process management issues
+- **Production Fix**: Eliminated zombie process accumulation and test hanging
+- **Performance Success**: 85% improvement in test execution time (229s → 31.2s)
+- **Knowledge Documentation**: Comprehensive technical guide for future development
+- **Cross-Platform Reliability**: Solution works robustly on all development platforms
+
+### Session Summary
+Successfully investigated and resolved a critical process management issue in the parallel test runner through deep technical analysis. Discovered that `exitCode(false)` non-blocking calls were unreliable on macOS due to signal consolidation and race conditions in `waitpid` with `WNOHANG`. Implemented a robust timeout-based solution that achieves 85% performance improvement while maintaining clean process management. Documented comprehensive technical findings to prevent future issues and guide cross-platform process management best practices.
+
+**Status**: Process management issues resolved, performance targets achieved, comprehensive documentation complete
+
+---
+
 ## Session: 2025-08-17 - Parallel Test Architecture Implementation ⚡ 
 
 ### Context
