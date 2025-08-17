@@ -118,8 +118,8 @@ defmodule UserLive do
       />
       </.form>
       </div>
-      <%= render_user_list(__MODULE__, assigns) %>
-      <%= render_user_form(__MODULE__, assigns) %>
+      <%= render_user_list(assigns) %>
+      <%= render_user_form(assigns) %>
       </div>
       """
   end

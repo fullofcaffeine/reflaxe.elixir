@@ -1,10 +1,44 @@
 package server.layouts;
 
+import phoenix.Component;
+
 // HXX calls are transformed at compile-time by the Reflaxe.Elixir compiler
 
 /**
  * Root layout component for the Phoenix application
  * Handles HTML document structure, meta tags, and asset loading
+ * 
+ * IMPORTANT: JavaScript Architecture Decision
+ * =========================================
+ * 
+ * This template deliberately avoids inline JavaScript code inside <script> tags.
+ * Phoenix's HEEx parser treats JavaScript syntax (parentheses, quotes) as template 
+ * syntax, causing compilation errors like "expected closing `"` for attribute value".
+ * 
+ * CORRECT PATTERN (This file):
+ * - Reference external JavaScript files: <script src="/assets/app.js"></script>
+ * - Keep templates clean with only HTML and Elixir interpolation
+ * - Place all JavaScript logic in app.js or hook files
+ * 
+ * INCORRECT PATTERN (Causes compilation errors):
+ * - Inline JavaScript: <script>if (condition) { ... }</script>
+ * - Complex JavaScript expressions in templates
+ * - JavaScript variables and functions defined in HEEx
+ * 
+ * Dark Mode Implementation:
+ * - Theme detection/application: Handled by DarkMode.hx -> app.js
+ * - Theme toggle button logic: Handled by ThemeToggle hook in client/hooks/
+ * - Theme persistence: Handled by LocalStorage.hx utility
+ * 
+ * This architecture ensures:
+ * 1. Clean separation between templates and JavaScript
+ * 2. No HEEx parser conflicts with JavaScript syntax  
+ * 3. Better maintainability and testability
+ * 4. Proper Phoenix/LiveView best practices
+ * 
+ * @see /src_haxe/client/utils/DarkMode.hx - Theme logic implementation
+ * @see /src_haxe/client/hooks/ThemeToggle.hx - Theme toggle hook
+ * @see /assets/js/app.js - Compiled JavaScript output
  */
 class RootLayout {
     
@@ -20,7 +54,7 @@ class RootLayout {
                     <meta charset="utf-8"/>
                     <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
                     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-                    <meta name="csrf-token" content="${get_csrf_token()}"/>
+                    <meta name="csrf-token" content="${Component.get_csrf_token()}"/>
                     
                     <title>Todo App - Haxe ❤️ Phoenix LiveView</title>
                     <meta name="description" content="A beautiful todo application built with Haxe and Phoenix LiveView, showcasing modern UI and type-safe development"/>
@@ -39,15 +73,7 @@ class RootLayout {
                     <script defer phx-track-static type="text/javascript" src="/assets/app.js"></script>
                     <link phx-track-static rel="stylesheet" href="/assets/app.css"/>
                     
-                    <!-- Dark mode detection script -->
-                    <script>
-                        // Apply dark mode immediately to prevent flash
-                        if (localStorage.theme === "dark" || (!("theme" in localStorage) && window.matchMedia("(prefers-color-scheme: dark)").matches)) {
-                            document.documentElement.classList.add("dark")
-                        } else {
-                            document.documentElement.classList.remove("dark")
-                        }
-                    </script>
+                    <!-- Dark mode detection handled by app.js -->
                 </head>
                 
                 <body class="h-full bg-gray-50 dark:bg-gray-900 font-inter antialiased">
@@ -77,44 +103,10 @@ class RootLayout {
                         ${assigns.inner_content}
                     </main>
                     
-                    <!-- Dark mode toggle script -->
-                    <script>
-                        const themeToggle = document.getElementById("theme-toggle");
-                        const darkIcon = document.getElementById("theme-toggle-dark-icon");
-                        const lightIcon = document.getElementById("theme-toggle-light-icon");
-                        
-                        // Show the correct icon based on current theme
-                        if (localStorage.getItem("theme") === "dark" || (!localStorage.getItem("theme") && window.matchMedia("(prefers-color-scheme: dark)").matches)) {
-                            lightIcon.classList.remove("hidden");
-                        } else {
-                            darkIcon.classList.remove("hidden");
-                        }
-                        
-                        themeToggle.addEventListener("click", function() {
-                            // Toggle icons
-                            darkIcon.classList.toggle("hidden");
-                            lightIcon.classList.toggle("hidden");
-                            
-                            // Toggle theme
-                            if (document.documentElement.classList.contains("dark")) {
-                                document.documentElement.classList.remove("dark");
-                                localStorage.setItem("theme", "light");
-                            } else {
-                                document.documentElement.classList.add("dark");
-                                localStorage.setItem("theme", "dark");
-                            }
-                        });
-                    </script>
+                    <!-- Dark mode toggle handled by app.js -->
                 </body>
             </html>
         ');
     }
     
-    /**
-     * Helper function to get CSRF token for Phoenix forms
-     */
-    private static function get_csrf_token(): String {
-        // This will be handled by Phoenix when the template is rendered
-        return "#{get_csrf_token()}";
-    }
 }
