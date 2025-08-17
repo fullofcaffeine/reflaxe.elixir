@@ -51,7 +51,7 @@ class ParallelTestRunner {
     public static var NoDetails = false;
     public static var SpecificTests: Array<String> = [];
     public static var FlexiblePositions = false;
-    static var WorkerCount = 8; // Default worker count
+    static var WorkerCount = 16; // Optimized worker count for performance
     
     // Parallel execution state
     static var workers: Array<TestWorker> = [];
