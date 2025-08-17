@@ -478,6 +478,53 @@ function complexLogic(data: Array<Item>): Result {
 }
 ```
 
+### 4. ❌ Overusing Dynamic Type
+
+**Dynamic should be used with caution** and only when necessary:
+
+```haxe
+// ❌ Lazy typing - avoid this
+function processData(data: Dynamic): Dynamic {
+    return data.someProperty.transform();
+}
+
+// ✅ Proper typing with specific use cases
+function processUser(user: User): UserResult {
+    return {
+        id: user.id,
+        name: user.name,
+        active: user.active
+    };
+}
+
+// ✅ Dynamic only when truly necessary with justification
+function handleError(e: Dynamic): String {
+    // Dynamic used here because Haxe's catch can throw various error types
+    // Converting to String for error reporting
+    return Std.string(e);
+}
+```
+
+**When to use Dynamic**:
+- ✅ **Catch blocks** (error types vary)
+- ✅ **Reflection operations** (Type.getInstanceFields, etc.)
+- ✅ **External API integration** (gradual migration)
+
+**Always add justification comments**:
+```haxe
+} catch (e: Dynamic) {
+    // Dynamic used here because Haxe's catch can throw various error types
+    // Converting to String for error reporting
+    EctoErrorReporter.reportSchemaError(className, Std.string(e), pos);
+}
+```
+
+**Prefer type safety**:
+- ❌ Avoid Dynamic when generics or specific types work
+- ✅ Use `Option<T>` for nullable values
+- ✅ Use `Result<T,E>` for operations that can fail
+- ✅ Create proper type definitions for external APIs
+
 ## Migration Patterns
 
 ### Wrapping Existing Elixir Code
