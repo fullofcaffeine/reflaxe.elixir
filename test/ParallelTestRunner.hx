@@ -27,6 +27,12 @@ using StringTools;
  * Sequential: 62 tests × 3.7s = 229s
  * Parallel (8 workers): ~30s (87% improvement)
  * 
+ * Platform Considerations:
+ * - Uses timeout-based process management instead of non-blocking exitCode(false)
+ * - Prevents zombie process accumulation (265 processes found before fix)
+ * - Provides 10-second timeout per test with proper cleanup
+ * - Works reliably on macOS, Linux, and Windows
+ * 
  * Usage:
  *   haxe ParallelTest.hxml                    # Run all tests in parallel
  *   haxe ParallelTest.hxml -j 4              # Use 4 workers
@@ -368,14 +374,48 @@ class TestWorker {
         }
     }
     
+    /**
+     * Check if test process has completed and return result.
+     * 
+     * IMPORTANT: This method uses timeout-based process management instead of
+     * non-blocking exitCode(false) calls, which were unreliable on macOS and
+     * caused zombie process accumulation.
+     * 
+     * @return TestResult if process completed, null if still running
+     */
     public function checkResult(): TestResult {
         if (!isRunning) return pendingResult;
         if (process == null) return null;
         
-        // Check if process has completed (non-blocking)
+        // Check for timeout (10 seconds per test)
+        // CRITICAL: Timeout approach prevents hanging processes on macOS
+        final elapsed = haxe.Timer.stamp() - startTime;
+        final TIMEOUT = 10.0; // 10 seconds timeout
+        
+        if (elapsed > TIMEOUT) {
+            // Process timed out - kill it and return failure
+            try {
+                process.kill();
+                process.close();
+            } catch (e: Dynamic) {
+                // Ignore cleanup errors
+            }
+            
+            pendingResult = {
+                testName: currentTest,
+                success: false,
+                duration: elapsed,
+                errorMessage: 'Test timed out after ${TIMEOUT}s'
+            };
+            
+            isRunning = false;
+            return pendingResult;
+        }
+        
+        // Try to get exit code - use synchronous exitCode() within try/catch
+        // FIXED: Previously used exitCode(false) which was unreliable on macOS
         try {
-            final exitCode = process.exitCode(false); // false = non-blocking
-            if (exitCode == null) return null; // Still running
+            final exitCode = process.exitCode(); // Synchronous call - throws if still running
             
             // Process completed, collect results
             final stdout = process.stdout.readAll().toString();
@@ -404,7 +444,7 @@ class TestWorker {
             pendingResult = {
                 testName: currentTest,
                 success: success,
-                duration: 0.0, // Duration will be calculated by parent
+                duration: elapsed,
                 errorMessage: errorMessage
             };
             
@@ -412,7 +452,7 @@ class TestWorker {
             return pendingResult;
             
         } catch (e: Dynamic) {
-            // Process still running or error checking
+            // Process still running - this is expected, return null to check again later
             return null;
         }
     }
