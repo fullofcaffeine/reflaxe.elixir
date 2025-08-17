@@ -10,6 +10,7 @@ This document captures key patterns and lessons learned during Reflaxe.Elixir co
 - [Documentation Generation](#documentation-generation)
 - [Error Handling](#error-handling)
 - [Testing Patterns](#testing-patterns)
+- [HXX Template Compilation Patterns](#hxx-template-compilation-patterns)
 - [Common Pitfalls](#common-pitfalls)
 
 ## Core Principles
@@ -291,6 +292,108 @@ array.map(n -> n * 2)  // Generates: Enum.map(array, fn item -> item * 2 end)
 // ✅ GOOD: Detect function reference pattern
 array.map(transform)   // Generates: Enum.map(array, transform)
 ```
+
+## HXX Template Compilation Patterns
+
+### 1. Multiple Processing Paths for Different Interpolation Types ⚠️ **CRITICAL DISCOVERY**
+
+**Issue**: HTML attributes and regular interpolations may use different processing paths in HXX template compilation.
+
+**Evidence**:
+```haxe
+// In UserLive.hx template:
+<span class={getStatusClass(user.active)}>     // ❌ Stays as getStatusClass
+    ${getStatusText(user.active)}              // ✅ Becomes get_status_text  
+</span>
+
+// Generated UserLive.ex:
+<span class={getStatusClass(user.active)}>    // ❌ Function name not converted
+    <%= get_status_text(user.active) %>       // ✅ Function name correctly converted
+</span>
+```
+
+**Root Cause**: 
+- Regular interpolations (`${...}`) → Processed by HxxCompiler → Function names converted via `convertFunctionNames()`
+- HTML attributes (`attr={...}`) → Processed by different pipeline → Function names NOT converted
+
+**Current Status**: Under investigation. The `convertFunctionNames()` function in HxxCompiler is never called for HTML attribute expressions.
+
+**Technical Details**:
+- HxxCompiler.convertFunctionNames() has improved regex to handle complete function names
+- processPhoenixPatterns() pipeline works correctly for regular interpolations
+- HTML attribute interpolation appears to bypass the Phoenix pattern processing entirely
+
+**Investigation Commands Used**:
+```bash
+# Added debug traces to HxxCompiler functions
+trace('convertFunctionNames input: ${content}');
+trace('processPhoenixPatterns: Starting Phoenix pattern processing');
+
+# No debug output found, indicating these functions aren't called for attributes
+```
+
+**Implications**:
+1. **Template Consistency**: Different interpolation types have inconsistent function naming
+2. **Runtime Errors**: `undefined function get_statusclass/1` errors occur
+3. **Developer Experience**: Breaks expectations about uniform Haxe→Elixir conversion
+
+**Architecture Questions for Future Resolution**:
+1. Where are HTML attribute expressions actually processed?
+2. Should HTML attributes go through the same HxxCompiler pipeline?
+3. Is there a Phoenix/HEEx-specific processing system we need to hook into?
+
+**Workaround**: Manual conversion of camelCase function names in HTML attributes:
+```haxe
+// Manual workaround until architecture issue is resolved
+<span class={get_status_class(user.active)}>  // Use snake_case directly
+```
+
+**Priority**: HIGH - Affects all HXX templates with function calls in HTML attributes.
+
+### 2. Function Name Conversion Pipeline
+
+**Pattern**: The HxxCompiler uses a multi-stage transformation pipeline:
+
+```haxe
+compileHxxTemplate(expr) 
+    → reconstructTemplate(expr)      // AST → TemplateNode
+    → processPhoenixPatterns(data)   // Apply Elixir conventions  
+    → convertFunctionNames(content)  // camelCase → snake_case
+    → wrapInHEExSigil(content)      // Add ~H sigil
+```
+
+**Best Practice**: Function name conversion should happen at the AST level, not string level, for better reliability and context awareness.
+
+**Implementation**: 
+```haxe
+// ✅ GOOD: AST-level conversion in compileFunctionCall()
+var elixirMethod = NamingHelper.toSnakeCase(fieldName);
+return FunctionCallNode(obj, elixirMethod, args);
+
+// ⚠️ CURRENT: String-level conversion as fallback
+var functionPattern = ~/\b([a-z][a-zA-Z]*)(\\s*\()/g;
+return functionPattern.map(content, function(r) {
+    return NamingHelper.toSnakeCase(r.matched(1)) + r.matched(2);
+});
+```
+
+### 3. Template Context Awareness
+
+**Pattern**: HXX templates need different processing based on context:
+- Content interpolation: `<%= expression %>`
+- Attribute interpolation: `attr={expression}`
+- Component props: `<.component prop={expression}>`
+
+**Current Implementation**: Context tracking exists but may not be used consistently:
+```haxe
+class TemplateContext {
+    public var isInAttributeValue: Bool = false;  // Defined but not used
+    public var isInComponent: Bool = false;
+    public var depth: Int = 0;
+}
+```
+
+**Recommendation**: Implement context-aware function name conversion based on interpolation type.
 
 ## Best Practices Summary
 
