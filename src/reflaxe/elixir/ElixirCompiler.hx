@@ -806,6 +806,16 @@ class ElixirCompiler extends DirectToStringCompiler {
         var moduleHeader = reflaxe.elixir.LiveViewCompiler.generateModuleHeader(className);
         result.add(moduleHeader);
         
+        // Check if this LiveView uses HXX templates and add Phoenix.Component import
+        // HXX templates compile to Phoenix HEEx format (~H sigils) and require Phoenix.Component
+        var hxxChecker = new reflaxe.elixir.helpers.ClassCompiler();
+        if (hxxChecker.usesHxxTemplates(classType, funcFields)) {
+            trace('LiveView ${className} uses HXX→HEEx templates - adding Phoenix.Component');
+            result.add('  use Phoenix.Component\n\n');
+        } else {
+            trace('LiveView ${className} does not use HXX templates');
+        }
+        
         // LiveView modules don't need constructors or instance variables
         // State is managed through socket assigns, not instance variables
         

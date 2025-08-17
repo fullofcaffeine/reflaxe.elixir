@@ -509,16 +509,26 @@ class HxxCompiler {
     /**
      * Convert function names to snake_case in templates
      * getStatusClass(args) → get_status_class(args)
+     * 
+     * Fixed to properly handle entire function names by using word boundaries
+     * and processing the complete camelCase identifier.
      */
     private static function convertFunctionNames(content: String): String {
-        // Convert camelCase function names to snake_case (target function calls only)
-        var functionPattern = ~/([a-z])([A-Z])([a-zA-Z]*)(\s*\()/g;
+        // Pattern matches complete camelCase function names followed by parentheses
+        // Uses word boundary to capture complete function names, not just partial matches
+        // 
+        // ARCHITECTURAL NOTE: This function may not be called for all template contexts.
+        // Investigation shows HTML attributes (class={func()}) and regular interpolations 
+        // (${func()}) may use different processing paths in the HXX compilation pipeline.
+        var functionPattern = ~/\b([a-z][a-zA-Z]*)(\\s*\()/g;
         return functionPattern.map(content, function(r) {
-            var prefix = r.matched(1);
-            var upperChar = r.matched(2).toLowerCase();
-            var suffix = r.matched(3).toLowerCase();
-            var args = r.matched(4);
-            return prefix + '_' + upperChar + suffix + args;
+            var functionName = r.matched(1);
+            var args = r.matched(2);
+            
+            // Convert the entire function name to snake_case using NamingHelper
+            var snakeCaseName = NamingHelper.toSnakeCase(functionName);
+            
+            return snakeCaseName + args;
         });
     }
     

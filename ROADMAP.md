@@ -23,6 +23,13 @@ This document outlines the future development plans for Reflaxe.Elixir, organize
   - Advanced pipeline integration
   - WebSocket route support
 
+- [ ] **HXX Smart Interpolation** ✨ *Developer Experience Enhancement*
+  - Automatic context detection for `${}` vs `{}` syntax
+  - HTML attribute parsing for proper interpolation
+  - Backwards compatibility with explicit syntax
+  - Migration tool for existing templates
+  - See: [`documentation/guides/HXX_INTERPOLATION_SYNTAX.md`](documentation/guides/HXX_INTERPOLATION_SYNTAX.md)
+
 ### Improvements
 - [x] **File Watching & Incremental Compilation** ✅
   - HaxeWatcher for automatic file change detection

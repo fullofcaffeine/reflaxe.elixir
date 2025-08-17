@@ -221,6 +221,9 @@ Repeat → Continuous Quality Improvement
 - **Macro Debugging**: [`documentation/macro/MACRO_DEBUGGING.md`](documentation/macro/MACRO_DEBUGGING.md) - Comprehensive debugging strategies for troubleshooting macro transformations and AST processing
 - **Macro Case Studies**: [`documentation/macro/MACRO_CASE_STUDIES.md`](documentation/macro/MACRO_CASE_STUDIES.md) - Deep-dive analysis of real macro implementations including async/await anonymous function support
 
+### Haxe Language Guides ✨ **NEW**
+- **Operator Overloading**: [`documentation/guides/HAXE_OPERATOR_OVERLOADING.md`](documentation/guides/HAXE_OPERATOR_OVERLOADING.md) - Complete guide to operator overloading in Haxe abstracts with Phoenix-specific patterns
+
 ## Reference Code Location
 Reference examples for architectural patterns are located at:
 `/Users/fullofcaffeine/workspace/code/haxe.elixir.reference/`
@@ -921,21 +924,27 @@ What happens:
 ## Known Issues  
 - **Array Mutability**: Methods like `reverse()` and `sort()` don't mutate in place (Elixir lists are immutable)
   - Workaround: Use assignment like `reversed = reversed.reverse()` instead of just `reversed.reverse()`
-- **Some preprocessor artifacts**: Minor temporary variables may appear in complex nested loops (cosmetic)
+- **HXX Template Variables**: Complex ternary expressions generate temp variables that Phoenix LiveView prohibits
+  - Currently in development: HxxCompiler enhancement to generate inline conditionals
 
-## Recently Fixed Issues ✅ (2025-08-16)
+## Recently Fixed Issues ✅ (2025-08-17)
 
-**Current Session - HXX Template Variables and Test Suite Complete:**
-- **HXX Template Variable Fix RESOLVED** ✨ - Phoenix template variables now generate correctly
-  - Fixed `string(std, assigns.inner_content)` → `@inner_content` conversion in HxxCompiler.hx
-  - Enhanced AST detection to unwrap Haxe's automatic `Std.string()` type safety wrappers
-  - Added `isAssignsObject()` detection for Phoenix assigns patterns
-  - Result: Templates generate proper `<%= @inner_content %>` syntax instead of function calls
-- **Test Suite 100% SUCCESS** ✨ - All 57/57 tests passing (was 0/57 failing)
-  - Fixed module documentation formatting to include standard "ModuleName module generated from Haxe" headers
-  - Enhanced `generateModuleDoc()` in ClassCompiler.hx with consistent professional formatting
-  - Updated all test intended outputs via `update-intended` to reflect improved compiler quality
-  - Result: Professional documentation throughout, compiler generates production-ready code
+**Current Session - Type-Safe Phoenix Abstractions and Template Helper Metadata:**
+- **Template Helper Metadata System COMPLETE** ✨ - Eliminated hardcoded function lists with metadata-driven compilation
+  - Implemented `@:templateHelper` metadata for Phoenix template functions
+  - Enhanced HxxCompiler to detect metadata instead of hardcoded names via `isTemplateHelperCall()`
+  - Fixed Phoenix.Component extern duplicate method declarations using proper `@:overload` syntax
+  - Result: `Component.get_csrf_token()` compiles correctly to `<%= get_csrf_token() %>` in templates
+- **Type-Safe Phoenix Abstractions COMPLETE** ✨ - Eliminated Dynamic overuse with proper typed abstractions
+  - Created `Assigns<T>` with `@:arrayAccess` for ergonomic field access (`assigns["field"]`)
+  - Implemented `LiveViewSocket<T>`, `FlashMessage`/`FlashType`, and `RouteParams<T>` abstractions
+  - Fixed operator overloading using standard library patterns (DynamicAccess, Map)
+  - Result: Compile-time type safety for Phoenix APIs while maintaining runtime compatibility
+- **Haxe Operator Overloading Mastery** ✨ - Documented and implemented proper operator overloading patterns
+  - Created comprehensive guide at `documentation/guides/HAXE_OPERATOR_OVERLOADING.md`
+  - Fixed compilation errors by using `@:arrayAccess` instead of `@:op(a.b)` for dynamic field access
+  - Applied lessons from Haxe standard library (Map, DynamicAccess) for proven patterns
+  - Result: Type-safe, ergonomic APIs that follow Haxe best practices
 
 **Previous Session - HXX Integration Complete:**
 - **HXX Template Compilation WORKING** ✨ - Complete AST-based template transformation

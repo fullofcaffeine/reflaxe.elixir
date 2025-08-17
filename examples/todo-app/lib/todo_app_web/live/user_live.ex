@@ -5,6 +5,8 @@ defmodule UserLive do
   import Ecto.Query
   alias TodoApp.Repo
   
+  use Phoenix.Component
+
   @impl true
   @doc "Generated from Haxe mount"
   def mount(params, session, socket) do
@@ -140,7 +142,7 @@ defmodule UserLive do
       </thead>
       <tbody>
       <%= for user <- @users do %>
-      <%= render_user_row(%{user => user}) %>
+      <%= render_user_row(%{user: user}) %>
       <% end %>
       </tbody>
       </table>
@@ -153,12 +155,12 @@ defmodule UserLive do
     user = assigns.user
     ~H"""
       <tr>
-      <td><%= <%= user %>.name %></td>
-      <td><%= <%= user %>.email %></td>
-      <td><%= <%= user %>.age %></td>
+      <td><%= user.name %></td>
+      <td><%= user.email %></td>
+      <td><%= user.age %></td>
       <td>
       <span class={getStatusClass(user.active)}>
-      <%= get_status_text(user_live, user.active) %>
+      <%= get_status_text(user.active) %>
       </span>
       </td>
       <td class="actions">
