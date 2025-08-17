@@ -405,9 +405,9 @@ mix phx.server            # Start Phoenix development server
 - State management with socket assigns
 
 **Files Generated**:
-- `lib/TodoApp_web/live/todo_live.ex` - Main LiveView with HXX templates
-- `lib/TodoApp_web/live/user_live.ex` - User management LiveView
-- `lib/TodoApp/schemas/user.ex` - User Ecto schema
+- `lib/todo_app_web/live/todo_live.ex` - Main LiveView with HXX templates
+- `lib/todo_app_web/live/user_live.ex` - User management LiveView
+- `lib/todo_app/schemas/user.ex` - User Ecto schema
 - All files follow Phoenix conventions exactly
 
 ### Abstract Types Example
