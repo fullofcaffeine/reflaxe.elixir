@@ -7,6 +7,60 @@ Archives of previous history can be found in `TASK_HISTORY_ARCHIVE_*.md` files.
 
 ---
 
+## Session: 2025-08-17 - Snake_case Path Generation Fix & Documentation ✅
+
+### Context
+Critical bug fix for RouterCompiler path generation that was creating `TodoApp_web/` instead of `todo_app_web/`, causing Phoenix module loading failures. This session involved extensive debugging to find the root cause and implement a proper fix.
+
+### Tasks Completed ✅
+
+1. **Snake_case Path Generation Bug Fix**
+   - **Problem**: Router generated in `lib/TodoApp_web/router.ex` instead of `lib/todo_app_web/router.ex`
+   - **Root Cause**: Compiler define `app_name=TodoApp` bypassed snake_case conversion
+   - **Solution**: Always apply `toSnakeCase()` to compiler-defined app names
+   - **Impact**: Fixed Phoenix module loading errors
+
+2. **Comprehensive Documentation Created**
+   - Created `SNAKE_CASE_PATH_GENERATION_LESSONS.md` with full analysis
+   - Documents debugging journey, root cause, and prevention strategies
+   - Highlights importance of input normalization in compiler development
+
+3. **Debugging Journey**
+   - Initially suspected RouterCompiler logic
+   - Tested `toSnakeCase()` function in isolation (worked correctly)
+   - Discovered conditional compilation bypass with `#if (app_name)`
+   - Found `-D app_name=TodoApp` returning PascalCase directly
+
+### Technical Insights Gained
+
+1. **Input Normalization is Critical**
+   - Never trust external input format (defines, env vars)
+   - Always normalize to expected format
+   - Framework conventions must be enforced consistently
+
+2. **Conditional Compilation Creates Hidden Paths**
+   - `#if` blocks can bypass critical processing
+   - Makes debugging harder (traces might not execute)
+   - Creates untested code paths
+
+3. **Systematic Debugging Wins**
+   - Trace actual values, don't assume behavior
+   - Test utility functions in isolation
+   - Check for multiple sources of truth
+   - Be suspicious of conditional compilation
+
+### Key Achievements ✨
+
+- **Fixed critical Phoenix compatibility issue** - Router now loads correctly
+- **Path generation now follows conventions** - `todo_app_web/` instead of `TodoApp_web/`
+- **Created comprehensive documentation** - Future developers can learn from this debugging journey
+- **Simple fix, complex discovery** - 3-line fix after extensive investigation
+
+### Session Summary
+Successfully fixed a critical snake_case path generation bug that was preventing Phoenix from loading router modules correctly. The fix ensures all Phoenix framework paths follow proper naming conventions. Created extensive documentation of lessons learned for future compiler development.
+
+---
+
 ## Session: 2025-08-17 - Haxe-First Philosophy Refinement & Typed Extern Clarification ✅
 
 ### Context
@@ -77,7 +131,7 @@ Following up on previous HXX work, the focus shifted to comprehensive documentat
    - Established clear distinction: application logic (always Haxe) vs framework plumbing (can remain Elixir)
    - Created extern definitions for `TodoAppWeb` and `Gettext` in `std/phoenix/`
    - Fixed TodoAppRouter compilation by adding it to `build-server.hxml`
-   - Router now generates from Haxe source (`TodoAppRouter.hx` → `lib/TodoApp_web/router.ex`)
+   - Router now generates from Haxe source (`TodoAppRouter.hx` → `lib/todo_app_web/router.ex`)
 
 3. **Code Injection Policy**
    - Created strict `CODE_INJECTION.md` documentation with enforcement guidelines
@@ -102,7 +156,7 @@ Following up on previous HXX work, the focus shifted to comprehensive documentat
 2. **RouterCompiler Integration**
    - RouterCompiler is already integrated through AnnotationSystem
    - Flow: ElixirCompiler → AnnotationSystem → RouterCompiler for @:router classes
-   - Minor issue: generates `TodoApp_web` instead of `todo_app_web` (snake_case needed)
+   - ✅ FIXED: Was generating `TodoApp_web`, now correctly generates `todo_app_web`
 
 3. **Pragmatic Phoenix Approach**
    - Extern definitions provide clean integration with existing Elixir modules
