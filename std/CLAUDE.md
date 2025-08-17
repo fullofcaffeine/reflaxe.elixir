@@ -1,0 +1,352 @@
+# Standard Library Development Context for Reflaxe.Elixir
+
+> **Parent Context**: See [/CLAUDE.md](/CLAUDE.md) for project-wide conventions, architecture, and core development principles
+
+This file contains standard library-specific guidance for agents working on Reflaxe.Elixir's standard library modules.
+
+## 📚 Standard Library Architecture Overview
+
+### Directory Structure Philosophy
+```
+std/
+├── ArrayTools.hx          # Core Haxe type extensions
+├── StringTools.hx         # Cross-platform string utilities
+├── MapTools.hx           # Map/object manipulation tools
+├── HXX.hx                # Template system core
+├── ecto/                 # Ecto ORM integration
+├── elixir/              # Elixir standard library externs
+├── haxe/                # Haxe standard library extensions
+├── phoenix/             # Phoenix framework integration
+└── reflaxe/             # Reflaxe framework extensions
+```
+
+### Core Design Patterns
+
+#### 1. Extern + Runtime Library Pattern
+**Best for**: Elixir standard library integration
+```haxe
+// Define extern interface
+@:native("Enum")
+extern class ElixirEnum {
+    static function map<T,R>(enumerable: Array<T>, func: T -> R): Array<R>;
+}
+
+// Provide runtime implementation
+// - StringTools.ex (Elixir runtime)
+// - StringTools.hx (Haxe interface)
+```
+
+#### 2. Pure Haxe + Target Compilation Pattern  
+**Best for**: Cross-platform functionality
+```haxe
+// Result<T,E> compiles to target-specific patterns
+// {:ok, value} | {:error, reason} in Elixir
+// Right(value) | Left(error) in other targets
+abstract Result<T,E> {
+    // Pure Haxe implementation
+}
+```
+
+#### 3. Framework Integration Pattern
+**Best for**: Phoenix/Ecto deep integration
+```haxe
+// phoenix/LiveView.hx
+// Provides type-safe Phoenix LiveView API
+// with proper Elixir module generation
+```
+
+## 🎯 Standard Library Development Rules ⚠️ CRITICAL
+
+### ❌ NEVER Do This:
+- Define test infrastructure types in application code
+- Create duplicated functionality across different std modules
+- Use Dynamic for standard library APIs
+- Implement escape hatches in standard library
+- Break type safety for convenience
+
+### ✅ ALWAYS Do This:
+- Define test types in `/std/phoenix/test/` and `/std/ecto/test/`
+- Use proper type annotations throughout
+- Follow the "Extern + Runtime" or "Pure Haxe" patterns consistently
+- Provide comprehensive documentation with examples
+- Maintain cross-platform compatibility where possible
+
+## 📁 Module Organization Guidelines
+
+### Test Infrastructure Location
+**CRITICAL**: Test types belong in standard library, not application code
+```haxe
+// ✅ CORRECT: Standard library test types
+import phoenix.test.Conn;
+import ecto.test.Sandbox;
+import haxe.test.ExUnit;
+
+// ❌ WRONG: Application-defined test types
+typedef Conn = Dynamic;
+```
+
+### Namespace Conventions
+- **elixir/**: Direct Elixir standard library externs
+- **haxe/**: Extended Haxe functionality (Option, Result, validation)
+- **phoenix/**: Phoenix framework integration
+- **ecto/**: Ecto ORM integration
+- **reflaxe/**: Reflaxe framework-specific extensions
+
+### File Naming Patterns
+- **CamelCase.hx**: Main module files (StringTools.hx)
+- **test/**: Test utilities and infrastructure
+- **types/**: Type definitions and abstracts
+
+## 🔧 Extern Definition Best Practices
+
+### Type-Safe Extern Pattern
+```haxe
+@:native("ModuleName")
+extern class ExternModule {
+    // 1. Use proper Haxe types, not Dynamic
+    static function operation<T>(input: T): Result<T, String>;
+    
+    // 2. Include helper functions for common patterns
+    @:overload(function(items: Array<T>): Array<T> {})
+    static function filter<T>(items: Array<T>, pred: T -> Bool): Array<T>;
+    
+    // 3. Document complex APIs
+    /**
+     * Performs operation with detailed behavior explanation.
+     * @param input The input value of type T
+     * @return Result containing success value or error string
+     */
+    static function complexOperation<T>(input: T): Result<T, String>;
+}
+```
+
+### Runtime Implementation Pattern
+```elixir
+# StringTools.ex - Elixir runtime implementation
+defmodule StringTools do
+  def kebab_case(str) when is_binary(str) do
+    # Idiomatic Elixir implementation
+    str
+    |> String.replace(~r/([a-z])([A-Z])/, "\\1-\\2")
+    |> String.downcase()
+  end
+end
+```
+
+## 🎨 Type System Integration
+
+### Abstract Types for Safety
+```haxe
+// haxe/validation/Email.hx - Type-safe email validation
+abstract Email(String) from String {
+    public function new(email: String) {
+        if (!isValid(email)) {
+            throw 'Invalid email: $email';
+        }
+        this = email;
+    }
+    
+    private static function isValid(email: String): Bool {
+        // Validation logic
+        return ~/^[^\s@]+@[^\s@]+\.[^\s@]+$/.match(email);
+    }
+}
+```
+
+### Option/Result Functional Patterns
+```haxe
+// haxe/ds/Option.hx - Functional null handling
+enum Option<T> {
+    Some(value: T);
+    None;
+}
+
+// haxe/functional/Result.hx - Functional error handling  
+enum Result<T,E> {
+    Ok(value: T);
+    Error(error: E);
+}
+```
+
+## 🧪 Testing Patterns for Standard Library
+
+### Test Infrastructure Architecture
+```haxe
+// haxe/test/ExUnit.hx - ExUnit integration
+extern class ExUnit {
+    static function start(): Void;
+    static function configure(options: Dynamic): Void;
+}
+
+// phoenix/test/ConnCase.hx - Phoenix test patterns
+extern class ConnCase {
+    static function build_conn(): Conn;
+    static function get(conn: Conn, path: String): Conn;
+}
+```
+
+### Standard Library Test Structure
+- **Unit Tests**: Test individual module functionality
+- **Integration Tests**: Test cross-module interaction
+- **Phoenix Integration**: Test framework compatibility
+- **Type Safety**: Validate type system guarantees
+
+## 📊 Performance Considerations
+
+### Compilation Performance
+- **Extern Pattern**: Fastest compilation, delegates to native runtime
+- **Pure Haxe Pattern**: Moderate compilation, maximum type safety
+- **Hybrid Pattern**: Balance of safety and performance
+
+### Runtime Performance  
+- **Elixir Externs**: Native performance, idiomatic patterns
+- **Compiled Haxe**: Comparable performance with type safety
+- **Avoid**: Dynamic types and reflection in hot paths
+
+## 🎯 Framework Integration Guidelines
+
+### Phoenix Integration Standards
+```haxe
+// phoenix/LiveView.hx - Type-safe LiveView API
+extern class LiveView {
+    static function assign<T>(socket: Socket, assigns: T): Socket;
+    static function push_event(socket: Socket, event: String, payload: Dynamic): Socket;
+}
+
+// phoenix/types/Assigns.hx - Type-safe assigns
+abstract Assigns<T>(Dynamic) {
+    @:arrayAccess
+    public function get(key: String): Dynamic;
+    
+    @:arrayAccess  
+    public function set(key: String, value: Dynamic): Dynamic;
+}
+```
+
+### Ecto Integration Standards
+```haxe
+// ecto/Changeset.hx - Type-safe changesets
+extern class Changeset<T> {
+    static function cast<T>(data: T, params: Dynamic, permitted: Array<String>): Changeset<T>;
+    static function validate_required<T>(changeset: Changeset<T>, fields: Array<String>): Changeset<T>;
+}
+```
+
+## 🔍 Quality Standards for Standard Library
+
+### Type Safety Requirements
+- **100% typed APIs**: No Dynamic in public interfaces except for framework compatibility
+- **Null safety**: Use Option<T> for optional values
+- **Error handling**: Use Result<T,E> for fallible operations
+- **Validation**: Abstract types for constrained values
+
+### Documentation Requirements
+```haxe
+/**
+ * Brief description of the module functionality.
+ * 
+ * Detailed explanation including:
+ * - What the module provides
+ * - How it integrates with Elixir/Phoenix  
+ * - Usage patterns and examples
+ * - Performance characteristics
+ * 
+ * @see RelatedModule or documentation/FILE.md for related information
+ */
+class StandardLibraryModule {
+    /**
+     * Brief description of the method functionality.
+     * 
+     * @param paramName Description with type information
+     * @return Description with null/error conditions
+     */
+    public static function operation(): ReturnType;
+}
+```
+
+### Testing Requirements
+- **Test Coverage**: All public APIs must have test coverage
+- **Type Validation**: Test type safety guarantees  
+- **Framework Integration**: Test Phoenix/Ecto compatibility
+- **Error Scenarios**: Test error handling and validation
+
+## 🎨 Code Generation Patterns
+
+### Idiomatic Elixir Output
+Standard library modules should generate idiomatic Elixir that follows BEAM conventions:
+```elixir
+# ✅ GOOD: Generated from Option<T>
+case some_operation() do
+  {:some, value} -> value
+  :none -> default_value
+end
+
+# ✅ GOOD: Generated from Result<T,E>  
+case dangerous_operation() do
+  {:ok, result} -> handle_success(result)
+  {:error, reason} -> handle_error(reason)
+end
+```
+
+### Cross-Platform Compatibility
+```haxe
+// Compile to different patterns per target
+#if elixir
+    {:ok, value} | {:error, reason}
+#elseif js
+    Promise.resolve(value) | Promise.reject(reason)  
+#elseif java
+    Optional.of(value) | Optional.empty()
+#end
+```
+
+## 📚 Related Documentation
+
+### Core References
+- [`/documentation/STANDARD_LIBRARY_HANDLING.md`](/documentation/STANDARD_LIBRARY_HANDLING.md) - Complete standard library strategy
+- [`/documentation/FUNCTIONAL_PATTERNS.md`](/documentation/FUNCTIONAL_PATTERNS.md) - Option/Result functional patterns
+- [`/documentation/STRINGTOOLS_STRATEGY.md`](/documentation/STRINGTOOLS_STRATEGY.md) - Extern + Runtime pattern example
+
+### Framework Integration
+- [`/documentation/PHOENIX_INTEGRATION.md`](/documentation/PHOENIX_INTEGRATION.md) - Phoenix framework patterns
+- [`/documentation/ECTO_INTEGRATION.md`](/documentation/ECTO_INTEGRATION.md) - Ecto ORM integration
+- [`/documentation/HXX_VS_TEMPLATE.md`](/documentation/HXX_VS_TEMPLATE.md) - Template system architecture
+
+### Development Guides
+- [`/documentation/guides/DEVELOPER_PATTERNS.md`](/documentation/guides/DEVELOPER_PATTERNS.md) - Best practices
+- [`/documentation/TESTING_PRINCIPLES.md`](/documentation/TESTING_PRINCIPLES.md) - Testing methodology
+- [`/documentation/TYPE_SAFETY.md`](/documentation/TYPE_SAFETY.md) - Type system guidelines
+
+## 🏆 Standard Library Quality Checklist
+
+Before adding any standard library module, verify:
+
+### Type Safety ✓
+- [ ] All public APIs properly typed (no Dynamic unless required)
+- [ ] Optional values use Option<T> pattern
+- [ ] Error handling uses Result<T,E> pattern  
+- [ ] Validation types use abstract pattern
+- [ ] Test infrastructure properly typed
+
+### Framework Integration ✓
+- [ ] Phoenix/Ecto compatibility verified
+- [ ] Generates idiomatic Elixir code
+- [ ] Follows BEAM conventions
+- [ ] Performance characteristics documented
+- [ ] Cross-platform patterns considered
+
+### Documentation ✓
+- [ ] Comprehensive JavaDoc-style documentation
+- [ ] Usage examples provided
+- [ ] Performance characteristics explained
+- [ ] Cross-references to related modules
+- [ ] Integration patterns documented
+
+### Testing ✓
+- [ ] Unit tests for all public APIs
+- [ ] Integration tests with framework
+- [ ] Type safety validation
+- [ ] Error scenario coverage
+- [ ] Performance regression tests
+
+**Remember**: The standard library is the foundation of type safety for all applications. Every module must meet the highest quality standards and provide exemplary patterns for application developers.
