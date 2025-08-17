@@ -56,6 +56,47 @@ Example of correct approach:
 6. **Use modern Haxe 4.3+ patterns** - No legacy idioms
 7. **KEEP DOCS UPDATED** - Documentation is part of implementation, not separate
 
+## Haxe-First Philosophy ⚠️ FUNDAMENTAL RULE
+
+**100% Type Safety is the goal - whether through pure Haxe or typed extern definitions.**
+
+### The Type-Safe Approach
+- **Everything is typed**: No untyped code anywhere in the application
+- **Pure Haxe preferred**: Write implementations in Haxe when possible for maximum control
+- **Typed externs welcome**: Externs provide type-safe access to the Elixir ecosystem
+- **No escape hatches**: Avoid `Dynamic` and `__elixir__()` except in emergencies
+
+### When to Use What
+✅ **Pure Haxe Implementation**:
+- Core application logic and business rules
+- Custom domain models and workflows  
+- New greenfield functionality
+
+✅ **Typed Extern Definitions**:
+- Third-party Elixir libraries (database drivers, API clients, etc.)
+- Existing Elixir modules during migration
+- Complex BEAM/OTP features not yet in Reflaxe
+- Performance-critical NIFs and ports
+
+### Example of Type-Safe Extern
+```haxe
+// Type-safe integration with Elixir library
+@:native("ExAws.S3")
+extern class S3 {
+    static function list_objects(bucket: String): Promise<Array<S3Object>>;
+    static function put_object(bucket: String, key: String, body: Bytes): Promise<PutResult>;
+}
+
+// Typed return values
+typedef S3Object = {
+    key: String,
+    size: Int,
+    last_modified: Date
+}
+```
+
+The goal is **100% type safety throughout the entire application**, using the best tool for each scenario.
+
 ## Critical Architecture Knowledge for Development
 
 **MUST READ BEFORE WRITING CODE**:
@@ -161,6 +202,12 @@ Repeat → Continuous Quality Improvement
 - **Development Tools**: [`documentation/DEVELOPMENT_TOOLS.md`](documentation/DEVELOPMENT_TOOLS.md)
 - **Enhanced Task Executor**: [`documentation/ENHANCED_TASK_EXECUTOR.md`](documentation/ENHANCED_TASK_EXECUTOR.md) - Professional task execution with Reflaxe snapshot testing methodology
 - **Task History**: [`documentation/TASK_HISTORY.md`](documentation/TASK_HISTORY.md)
+
+### Build System & Integration
+- **HXML Architecture**: [`documentation/HXML_ARCHITECTURE.md`](documentation/HXML_ARCHITECTURE.md) - Complete HXML guide with project analysis
+- **HXML Best Practices**: [`documentation/HXML_BEST_PRACTICES.md`](documentation/HXML_BEST_PRACTICES.md) - Guidelines, templates, and anti-patterns
+- **Phoenix Integration**: [`documentation/PHOENIX_INTEGRATION.md`](documentation/PHOENIX_INTEGRATION.md) - Pragmatic approach to Phoenix framework
+- **Code Injection Policy**: [`documentation/CODE_INJECTION.md`](documentation/CODE_INJECTION.md) - Strict policy against escape hatches
 
 ### Paradigm & Development Guides ✨ **NEW**
 - **Paradigm Bridge**: [`documentation/paradigms/PARADIGM_BRIDGE.md`](documentation/paradigms/PARADIGM_BRIDGE.md) - How Haxe's imperative patterns translate to Elixir's functional world
@@ -323,6 +370,51 @@ This is acceptable - helpers are simpler for our needs while following similar s
 2. Configure proper package.json with file: dependencies
 3. Implement external sourcemaps for development
 4. Enable minification + tree-shaking for production
+
+## Haxe-First Philosophy ⚠️ FUNDAMENTAL RULE
+
+**Write EVERYTHING in Haxe unless technically impossible. Type safety everywhere, not just business logic.**
+
+The vision is 100% Haxe code with complete type safety. This means:
+- **All application code** in Haxe
+- **All UI templates** in HXX (no manual HEEx)
+- **All infrastructure** in Haxe (Endpoint, Repo, Telemetry, etc.)
+- **All error handling** in Haxe
+- **All components** in HXX with type safety
+
+**Escape hatches are for emergencies only**:
+- `__elixir__()` - NEVER use except for emergency debugging
+- Extern definitions - Only for gradual migration or third-party libs
+- Manual Elixir files - Only for build configs that can't be generated
+
+**The goal**: Zero manual Elixir, zero externs, zero escape hatches. Pure Haxe from top to bottom.
+
+## Code Injection Policy ⚠️ CRITICAL
+
+**NEVER use `__elixir__()` in application code, examples, or demos.**
+
+This feature exists ONLY for:
+1. **Compiler development debugging** (must be removed before commit)
+2. **Emergency production hotfixes** (with documented removal plan and date)
+3. **Proof of concept** (temporary, with ticket tracking removal)
+
+**Every use requires**:
+```haxe
+// EMERGENCY: Using __elixir__ because [specific reason]
+// TODO: Replace with [specific solution] by [specific date]
+// Justification: [why no other option works]
+// Approved by: [who approved this technical debt]
+// Ticket: [issue tracking removal]
+```
+
+**The todo-app and ALL examples must demonstrate ZERO uses of `__elixir__()`.**
+
+Instead use:
+- **Extern definitions** for Phoenix/Elixir modules
+- **Pure Haxe abstractions** for new functionality
+- **Type-safe patterns** throughout
+
+**See**: [`documentation/CODE_INJECTION.md`](documentation/CODE_INJECTION.md) - Complete policy and enforcement
 
 ## Quality Standards
 - Zero compilation warnings, Reflaxe snapshot testing approach, Performance targets: <15ms compilation, <150KB JS bundles

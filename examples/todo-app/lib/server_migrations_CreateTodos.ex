@@ -23,7 +23,7 @@ defmodule Repo.Migrations.CreateTodos do
       timestamps()
     end
     
-    create unique_index(:todos, [:email])
+    # No indexes needed for this table
   end
   
   @doc """

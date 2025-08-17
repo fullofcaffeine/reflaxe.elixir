@@ -7,6 +7,92 @@ Archives of previous history can be found in `TASK_HISTORY_ARCHIVE_*.md` files.
 
 ---
 
+## Session: 2025-08-17 - HXML Architecture, Phoenix Integration & Code Injection Policy ✅
+
+### Context
+Following up on previous HXX work, the focus shifted to comprehensive documentation of build system architecture (HXML files), establishing clear principles for gradual Haxe-Elixir migration, and creating a strict policy against code injection. The user emphasized that `__elixir__()` should never be used in application code as it undermines type safety.
+
+### Tasks Completed ✅
+
+1. **HXML Architecture Documentation**
+   - Created comprehensive `HXML_ARCHITECTURE.md` with real project usage analysis
+   - Analyzed 100+ HXML files across the project to understand actual patterns
+   - Documented what we do well (hierarchical config, clear separation) vs areas for improvement (orphaned files, missing env configs)
+   - Created `HXML_BEST_PRACTICES.md` with guidelines, templates, and anti-patterns
+   - Provided concrete recommendations for consolidation and cleanup
+
+2. **Phoenix Integration Architecture**
+   - Created `PHOENIX_INTEGRATION.md` documenting pragmatic approach to Phoenix
+   - Established clear distinction: application logic (always Haxe) vs framework plumbing (can remain Elixir)
+   - Created extern definitions for `TodoAppWeb` and `Gettext` in `std/phoenix/`
+   - Fixed TodoAppRouter compilation by adding it to `build-server.hxml`
+   - Router now generates from Haxe source (`TodoAppRouter.hx` → `lib/TodoApp_web/router.ex`)
+
+3. **Code Injection Policy**
+   - Created strict `CODE_INJECTION.md` documentation with enforcement guidelines
+   - Established that `__elixir__()` is an emergency escape hatch, NOT a development tool
+   - Updated CLAUDE.md with prominent warning against code injection
+   - Verified todo-app has ZERO uses of `__elixir__()` - demonstrates proper patterns only
+   - Documented required format for any emergency use (with justification, date, approval, ticket)
+
+4. **Documentation Updates**
+   - Updated CLAUDE.md with references to new documentation files
+   - Fixed todo-app/CLAUDE.md to reflect that Router is now generated from Haxe
+   - Added "Build System & Integration" section to main documentation references
+
+### Technical Insights Gained
+
+1. **HXML Pattern Analysis**
+   - Test infrastructure uses minimal delegation pattern (`Test.hxml` → `TestRunner`)
+   - Snapshot tests follow consistent structure across 40+ test directories
+   - Library management via Lix generates HXML files automatically
+   - Technical debt: 50+ orphaned test HXML files in root test directory
+
+2. **RouterCompiler Integration**
+   - RouterCompiler is already integrated through AnnotationSystem
+   - Flow: ElixirCompiler → AnnotationSystem → RouterCompiler for @:router classes
+   - Minor issue: generates `TodoApp_web` instead of `todo_app_web` (snake_case needed)
+
+3. **Pragmatic Phoenix Approach**
+   - Extern definitions provide clean integration with existing Elixir modules
+   - Gradual migration supported but not encouraged for new code
+   - Clear boundaries between Haxe application code and Phoenix infrastructure
+
+### Files Modified
+
+**New Files Created:**
+- `documentation/HXML_ARCHITECTURE.md` - Complete HXML guide with project analysis
+- `documentation/HXML_BEST_PRACTICES.md` - Guidelines, templates, and anti-patterns
+- `documentation/PHOENIX_INTEGRATION.md` - Pragmatic approach to Phoenix framework
+- `documentation/CODE_INJECTION.md` - Strict policy against escape hatches
+- `std/phoenix/TodoAppWeb.hx` - Extern definition for Phoenix web helpers
+- `std/phoenix/Gettext.hx` - Extern definition for internationalization
+
+**Files Modified:**
+- `CLAUDE.md` - Added code injection policy and documentation references
+- `examples/todo-app/CLAUDE.md` - Updated to reflect Router is now in Haxe
+- `examples/todo-app/build-server.hxml` - Added TodoAppRouter to compilation
+
+### Key Achievements ✨
+
+1. **Clear Architectural Principles**: Established that application logic must be in Haxe, framework plumbing can remain Elixir
+2. **Zero Code Injection**: Todo-app demonstrates all features without any `__elixir__()` usage
+3. **Comprehensive Build Documentation**: HXML architecture now fully documented with real usage analysis
+4. **Type-Safe Router**: Phoenix router now generates from Haxe source with @:router annotation
+5. **Strict Policy Enforcement**: Code injection now has clear documentation and enforcement mechanisms
+
+### Development Insights
+
+- **HXML files follow most best practices** but have accumulated technical debt with orphaned test files
+- **Pragmatic approach works well** - keeping Phoenix infrastructure as Elixir while writing app logic in Haxe maintains both type safety and framework compatibility
+- **Code injection must be culturally forbidden** - technical capability exists but using it undermines the entire value proposition
+- **Documentation is critical** - comprehensive guides prevent misuse and establish clear patterns
+
+### Session Summary
+Successfully established clear architectural principles for Reflaxe.Elixir with comprehensive documentation covering build system (HXML), Phoenix integration patterns, and strict code injection policy. The todo-app now serves as a reference implementation demonstrating proper patterns with zero escape hatches. ✅
+
+---
+
 ## Session: 2025-08-16 - HXX Template Integration Complete ✅
 
 ### Context
