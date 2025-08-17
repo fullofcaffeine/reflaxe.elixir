@@ -340,7 +340,7 @@ defmodule MixIntegrationTest do
 
     test "incremental compilation only recompiles changed files" do
       # First compilation
-      {:ok, compiled_files} = HaxeCompiler.compile(source_dir: "src_haxe", target_dir: "lib")
+      {:ok, _} = HaxeCompiler.compile(source_dir: "src_haxe", target_dir: "lib")
       
       # For incremental compilation test, create all expected target files
       # to simulate a complete previous compilation

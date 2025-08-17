@@ -70,12 +70,14 @@ This document outlines the development plans for Reflaxe.Elixir, organized by co
   - ✅ **Cross-Platform Process Management** - Robust timeout-based approach resolving macOS exitCode(false) issues  
   - ✅ **Production-Ready Testing** - No zombie processes, proper cleanup, reliable execution across all platforms
   - ✅ **Debug Infrastructure** - SimpleParallelTest for sequential debugging and issue isolation
-- [ ] **Elixir Target for Tooling** 🧪 *Self-Hosting Experiment*
-  - Compile development tools (ParallelTestRunner, build utilities) to Elixir target
-  - Dogfooding approach: use our own compiler to build testing infrastructure
-  - Performance comparison vs interpreter version for tooling
-  - Test complex language features (sys.io.Process → System.cmd, JSON handling, etc.)
-  - Foundation for future self-hosting capabilities
+- [ ] **Self-Hosting Development Infrastructure** 🧪 *Ultimate Dogfooding*
+  - **Phase 1**: Rewrite ParallelTestRunner.hx to compile to Elixir instead of interpreter
+  - **Phase 2**: Convert HaxeWatcher from Elixir to Haxe→Elixir (file system monitoring)
+  - **Phase 3**: Convert HaxeServer from Elixir to Haxe→Elixir (compilation server management)
+  - **Phase 4**: Convert all Mix tasks from Elixir to Haxe→Elixir (build pipeline)
+  - **Benefits**: Type safety for tooling, validation of complex OTP patterns, performance testing
+  - **Challenges**: GenServer patterns, file system APIs, Mix.Task integration
+  - **Foundation**: Complete self-hosting capabilities and compiler validation
 
 ## 🚀 Future Development (v1.2 - Q2 2025)
 *Focus: Testing & Developer Experience*
@@ -298,10 +300,15 @@ All v1.0 features are complete and production-ready!
 - **Legacy System Integration**: Compile to target platform's native language
 
 ### Advanced Features
-- **Self-Hosting Improvements**
+- **Self-Hosting Improvements** 🧪 *Ultimate Dogfooding*
   - Convert HaxeWatcher (file watching) from Elixir to Haxe→Elixir
-  - Convert HaxeServer (compiler server management) from Elixir to Haxe→Elixir
-  - Full build pipeline written in Haxe for consistency
+  - Convert HaxeServer (compiler server management) from Elixir to Haxe→Elixir  
+  - Convert all Mix tasks from Elixir to Haxe→Elixir
+  - Rewrite development infrastructure using our own compiler
+  - Full build pipeline written in Haxe for consistency and type safety
+  - Performance comparison: compiled vs direct Elixir for development tooling
+  - Validation of complex OTP patterns (GenServer, supervision trees, file watching)
+  - Test compiler on sophisticated language features it needs to support itself
 
 - **Machine Learning Integration**
   - Nx (Numerical Elixir) support
