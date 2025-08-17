@@ -1,5 +1,7 @@
 package test;
 
+import test.TestCommon;
+
 /**
  * Test Runner for Reflaxe.Elixir Compiler
  * 
@@ -229,7 +231,7 @@ Examples:
 		}
 		
 		// Compare all files
-		final differences = compareDirectories(outPath, intendedPath);
+		final differences = TestCommon.compareDirectoriesDetailed(outPath, intendedPath);
 		
 		if (differences.length > 0) {
 			Sys.println('  ❌ Output does not match intended:');
@@ -273,100 +275,6 @@ Examples:
 		}
 	}
 	
-	static function compareDirectories(actualDir: String, intendedDir: String): Array<String> {
-		final differences = [];
-		
-		// Get all files from intended directory
-		final intendedFiles = getAllFiles(intendedDir);
-		final actualFiles = getAllFiles(actualDir);
-		
-		// Check each intended file exists and matches
-		for (file in intendedFiles) {
-			final intendedPath = haxe.io.Path.join([intendedDir, file]);
-			final actualPath = haxe.io.Path.join([actualDir, file]);
-			
-			if (!sys.FileSystem.exists(actualPath)) {
-				differences.push('Missing file: $file');
-				continue;
-			}
-			
-			// Compare file contents
-			final intendedContent = normalizeContent(sys.io.File.getContent(intendedPath), file);
-			final actualContent = normalizeContent(sys.io.File.getContent(actualPath), file);
-			
-			if (intendedContent != actualContent) {
-				differences.push('Content differs: $file');
-				
-				if (!NoDetails && ShowAllOutput) {
-					// Show detailed diff
-					showDiff(file, intendedContent, actualContent);
-				}
-			}
-		}
-		
-		// Check for extra files in actual output
-		for (file in actualFiles) {
-			if (!intendedFiles.contains(file)) {
-				differences.push('Extra file: $file');
-			}
-		}
-		
-		return differences;
-	}
-	
-	static function getAllFiles(dir: String, prefix: String = ""): Array<String> {
-		if (!sys.FileSystem.exists(dir)) return [];
-		
-		final files = [];
-		for (item in sys.FileSystem.readDirectory(dir)) {
-			final path = haxe.io.Path.join([dir, item]);
-			final relPath = prefix.length > 0 ? haxe.io.Path.join([prefix, item]) : item;
-			
-			if (sys.FileSystem.isDirectory(path)) {
-				// Recursively get files from subdirectories
-				for (subFile in getAllFiles(path, relPath)) {
-					files.push(subFile);
-				}
-			} else {
-				files.push(relPath);
-			}
-		}
-		return files;
-	}
-	
-	static function normalizeContent(content: String, fileName: String = ""): String {
-		// Normalize line endings and trim whitespace
-		var normalized = StringTools.trim(StringTools.replace(content, "\r\n", "\n"));
-		
-		// Special handling for _GeneratedFiles.json - ignore the id field which increments on each build
-		if (fileName == "_GeneratedFiles.json") {
-			if (ShowAllOutput) {
-				Sys.println('    [DEBUG] Processing _GeneratedFiles.json - removing id field');
-			}
-			// Parse as JSON and remove the id field for comparison
-			try {
-				var lines = normalized.split("\n");
-				var filteredLines = [];
-				var idRegex = ~/^\s*"id"\s*:\s*\d+,?$/;
-				for (line in lines) {
-					// Skip the id line (with or without trailing comma)
-					if (!idRegex.match(line)) {
-						filteredLines.push(line);
-					} else if (ShowAllOutput) {
-						Sys.println('    [DEBUG] Skipping id line: $line');
-					}
-				}
-				normalized = filteredLines.join("\n");
-			} catch (e: Dynamic) {
-				// If parsing fails, use original normalized content
-				if (ShowAllOutput) {
-					Sys.println('    [DEBUG] Failed to process _GeneratedFiles.json: $e');
-				}
-			}
-		}
-		
-		return normalized;
-	}
 	
 	static function showDiff(file: String, intended: String, actual: String) {
 		Sys.println('    Diff for $file:');
