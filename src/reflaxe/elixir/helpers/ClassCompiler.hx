@@ -122,7 +122,7 @@ class ClassCompiler {
         }
         
         // Check if this class uses HXX templates (contains HXX.hxx calls)
-        // This is needed for layout modules and any class using HEEx templates
+        // HXX templates compile to Phoenix HEEx format and require Phoenix.Component
         if (usesHxxTemplates(classType, funcFields)) {
             result.add('  use Phoenix.Component\n\n');
         }
@@ -754,59 +754,168 @@ class ClassCompiler {
     
     /**
      * Check if a class uses HXX templates by looking for HXX.hxx() calls
-     * This is needed to determine if we should import Phoenix.Component for ~H sigil support
+     * HXX templates compile to Phoenix HEEx format with ~H sigils
+     * This determines if we should import Phoenix.Component for HEEx template support
      */
-    private function usesHxxTemplates(classType: ClassType, funcFields: Array<ClassFuncData>): Bool {
+    public function usesHxxTemplates(classType: ClassType, funcFields: Array<ClassFuncData>): Bool {
+        var className = classType.name;
+        trace('usesHxxTemplates: Checking ${className}');
+        
         // For now, check if this is a layout class by name pattern
         // Layout classes always need Phoenix.Component for HEEx templates
-        var className = classType.name.toLowerCase();
-        if (className.indexOf("layout") >= 0) {
+        var classNameLower = className.toLowerCase();
+        if (classNameLower.indexOf("layout") >= 0) {
+            trace('usesHxxTemplates: ${className} detected as layout');
             return true;
         }
         
         // Check all function bodies for HXX.hxx() calls
         if (funcFields != null) {
-            for (func in funcFields) {
-                if (func.expr != null && containsHxxCall(func.expr)) {
-                    return true;
+            trace('usesHxxTemplates: ${className} checking ${funcFields.length} function fields');
+            for (i in 0...funcFields.length) {
+                var func = funcFields[i];
+                trace('usesHxxTemplates: ${className} checking function ${func.field.name}');
+                if (func.expr != null) {
+                    var hasHxx = containsHxxCall(func.expr);
+                    trace('usesHxxTemplates: ${className}.${func.field.name} HXX = ${hasHxx}');
+                    if (hasHxx) {
+                        trace('usesHxxTemplates: ${className} found HXX in ${func.field.name}');
+                        return true;
+                    }
+                } else {
+                    trace('usesHxxTemplates: ${className}.${func.field.name} has null expr');
                 }
             }
+        } else {
+            trace('usesHxxTemplates: ${className} has null funcFields');
         }
         
         // Also check static fields that might be initialized with HXX
-        for (field in classType.statics.get()) {
+        var staticFields = classType.statics.get();
+        trace('usesHxxTemplates: ${className} checking ${staticFields.length} static fields');
+        for (field in staticFields) {
             if (field.expr() != null && containsHxxCall(field.expr())) {
+                trace('usesHxxTemplates: ${className} found HXX in static field ${field.name}');
                 return true;
             }
         }
         
+        trace('usesHxxTemplates: ${className} no HXX found');
         return false;
     }
     
     /**
      * Recursively check if an expression contains HXX.hxx() calls
+     * HXX templates compile to Phoenix HEEx format via ~H sigils
+     * Uses proper TypedExpr AST traversal for reliable detection
      */
-    private function containsHxxCall(expr: Dynamic): Bool {
-        // Handle TypedExpr type
+    public function containsHxxCall(expr: TypedExpr): Bool {
+        if (expr == null) return false;
+        return containsHxxCallInTypedExpr(expr);
+    }
+    
+    /**
+     * Properly traverse TypedExpr AST to find HXX.hxx() calls
+     * This mirrors the successful detection logic in ElixirCompiler.hx
+     */
+    private function containsHxxCallInTypedExpr(expr: TypedExpr): Bool {
         if (expr == null) return false;
         
-        // Check for the specific pattern of HXX.hxx() calls
-        // This is a simplified check - in practice we'd need to examine the AST structure
-        var exprStr = Std.string(expr);
-        
-        // Look for HXX references in the expression string representation
-        // This is a heuristic approach that works for most cases
-        if (exprStr.indexOf("HXX") >= 0 && exprStr.indexOf("hxx") >= 0) {
-            return true;
+        switch (expr.expr) {
+            case TCall(e, el):
+                // Check if this is a call to HXX.hxx() - the exact pattern from ElixirCompiler
+                switch (e.expr) {
+                    case TField({expr: TTypeExpr(_)}, FStatic(clsRef, cf)):
+                        // Static call like HXX.hxx()
+                        var cls = clsRef.get();
+                        if (cls.name == "HXX" && cf.get().name == "hxx") {
+                            return true;
+                        }
+                    case TField(obj, FInstance(_, _, cf)):
+                        // Instance call (less likely for HXX)
+                        if (cf.get().name == "hxx") {
+                            // Check if obj refers to HXX by string inspection
+                            var objStr = Std.string(obj);
+                            if (objStr.indexOf("HXX") >= 0) {
+                                return true;
+                            }
+                        }
+                    case _:
+                }
+                
+                // Recursively check the call target and arguments
+                if (containsHxxCallInTypedExpr(e)) return true;
+                for (arg in el) {
+                    if (containsHxxCallInTypedExpr(arg)) return true;
+                }
+                
+            case TBlock(el):
+                // Check all expressions in block
+                for (e in el) {
+                    if (containsHxxCallInTypedExpr(e)) return true;
+                }
+                
+            case TReturn(e):
+                // Check return expression
+                if (e != null && containsHxxCallInTypedExpr(e)) return true;
+                
+            case TIf(econd, eif, eelse):
+                // Check all branches
+                if (containsHxxCallInTypedExpr(econd)) return true;
+                if (containsHxxCallInTypedExpr(eif)) return true;
+                if (eelse != null && containsHxxCallInTypedExpr(eelse)) return true;
+                
+            case TVar(v, e):
+                // Check variable initialization
+                if (e != null && containsHxxCallInTypedExpr(e)) return true;
+                
+            case TFunction(f):
+                // Check function body
+                if (f.expr != null && containsHxxCallInTypedExpr(f.expr)) return true;
+                
+            case TFor(v, it, expr):
+                // Check iterator and body
+                if (containsHxxCallInTypedExpr(it)) return true;
+                if (containsHxxCallInTypedExpr(expr)) return true;
+                
+            case TWhile(econd, e, normalWhile):
+                // Check condition and body
+                if (containsHxxCallInTypedExpr(econd)) return true;
+                if (containsHxxCallInTypedExpr(e)) return true;
+                
+            case TSwitch(e, cases, edef):
+                // Check switch expression and cases
+                if (containsHxxCallInTypedExpr(e)) return true;
+                for (c in cases) {
+                    if (c.expr != null && containsHxxCallInTypedExpr(c.expr)) return true;
+                }
+                if (edef != null && containsHxxCallInTypedExpr(edef)) return true;
+                
+            case TBinop(op, e1, e2):
+                // Check both operands
+                if (containsHxxCallInTypedExpr(e1)) return true;
+                if (containsHxxCallInTypedExpr(e2)) return true;
+                
+            case TUnop(op, postFix, e):
+                // Check operand
+                if (containsHxxCallInTypedExpr(e)) return true;
+                
+            case TArrayDecl(el):
+                // Check array elements
+                for (e in el) {
+                    if (containsHxxCallInTypedExpr(e)) return true;
+                }
+                
+            case TObjectDecl(fields):
+                // Check object field values  
+                for (f in fields) {
+                    if (containsHxxCallInTypedExpr(f.expr)) return true;
+                }
+                
+            case _:
+                // For other expression types, no recursive check needed
         }
         
-        // Also check for ~H sigil pattern which indicates HEEx template
-        if (exprStr.indexOf("~H") >= 0) {
-            return true;
-        }
-        
-        // For a more thorough check, we'd need to traverse the TypedExpr AST
-        // but the string check above catches the common cases
         return false;
     }
     
