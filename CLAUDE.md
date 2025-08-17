@@ -187,42 +187,22 @@ Repeat → Continuous Quality Improvement
 → **Debugging Pattern**: Framework compilation errors often indicate file location/structure issues, not language compatibility
 → **Critical Rule**: Reflaxe compilers must understand target framework directory structures and naming conventions
 
-## User Documentation References
+## Documentation References
+**Complete Documentation Index**: [`documentation/DOCUMENTATION_INDEX.md`](documentation/DOCUMENTATION_INDEX.md) - Comprehensive guide to all project documentation
 
-### Core Documentation
-- **Project Overview**: See [README.md](README.md) for project introduction and public interface
-- **LLM Documentation Guide**: [`documentation/LLM_DOCUMENTATION_GUIDE.md`](documentation/LLM_DOCUMENTATION_GUIDE.md) 📚
-- **Setup & Installation**: [`documentation/GETTING_STARTED.md`](documentation/GETTING_STARTED.md)
-- **Mix Integration**: [`documentation/MIX_INTEGRATION.md`](documentation/MIX_INTEGRATION.md) ⚡
-- **Feature Status**: [`documentation/FEATURES.md`](documentation/FEATURES.md)
-- **Annotations**: [`documentation/ANNOTATIONS.md`](documentation/ANNOTATIONS.md)
-- **Examples**: [`documentation/EXAMPLES.md`](documentation/EXAMPLES.md)
-- **Architecture**: [`documentation/ARCHITECTURE.md`](documentation/ARCHITECTURE.md)
-- **Testing**: [`documentation/architecture/TESTING.md`](documentation/architecture/TESTING.md)
-- **Development Tools**: [`documentation/DEVELOPMENT_TOOLS.md`](documentation/DEVELOPMENT_TOOLS.md)
-- **Enhanced Task Executor**: [`documentation/ENHANCED_TASK_EXECUTOR.md`](documentation/ENHANCED_TASK_EXECUTOR.md) - Professional task execution with Reflaxe snapshot testing methodology
-- **Task History**: [`documentation/TASK_HISTORY.md`](documentation/TASK_HISTORY.md)
+**Key Quick References**:
+- [`documentation/reference/FEATURES.md`](documentation/reference/FEATURES.md) - Production-ready feature status
+- [`documentation/COMPILER_BEST_PRACTICES.md`](documentation/COMPILER_BEST_PRACTICES.md) - Compiler development practices  
+- [`documentation/TASK_HISTORY.md`](documentation/TASK_HISTORY.md) - Complete implementation history
 
-### Build System & Integration
-- **HXML Architecture**: [`documentation/HXML_ARCHITECTURE.md`](documentation/HXML_ARCHITECTURE.md) - Complete HXML guide with project analysis
-- **HXML Best Practices**: [`documentation/HXML_BEST_PRACTICES.md`](documentation/HXML_BEST_PRACTICES.md) - Guidelines, templates, and anti-patterns
-- **Phoenix Integration**: [`documentation/PHOENIX_INTEGRATION.md`](documentation/PHOENIX_INTEGRATION.md) - Pragmatic approach to Phoenix framework
-- **Code Injection Policy**: [`documentation/CODE_INJECTION.md`](documentation/CODE_INJECTION.md) - Strict policy against escape hatches
+**Build System & Integration**:
+- [`documentation/HXML_ARCHITECTURE.md`](documentation/HXML_ARCHITECTURE.md) - HXML build configuration patterns and project structure
+- [`documentation/MIX_INTEGRATION.md`](documentation/MIX_INTEGRATION.md) - Complete Mix integration with compilation and workflows
+- [`documentation/HXML_BEST_PRACTICES.md`](documentation/HXML_BEST_PRACTICES.md) - Guidelines and anti-patterns for HXML files
 
-### Paradigm & Development Guides ✨ **NEW**
-- **Paradigm Bridge**: [`documentation/paradigms/PARADIGM_BRIDGE.md`](documentation/paradigms/PARADIGM_BRIDGE.md) - How Haxe's imperative patterns translate to Elixir's functional world
-- **Haxe for Phoenix**: [`documentation/phoenix/HAXE_FOR_PHOENIX.md`](documentation/phoenix/HAXE_FOR_PHOENIX.md) - Advantages of using Haxe for Phoenix development
-- **Developer Patterns**: [`documentation/guides/DEVELOPER_PATTERNS.md`](documentation/guides/DEVELOPER_PATTERNS.md) - Best practices and patterns for effective Haxe→Elixir code
-- **Haxe Module System**: [`documentation/HAXE_MODULE_SYSTEM.md`](documentation/HAXE_MODULE_SYSTEM.md) - Module sub-types, static extensions, `using` vs `@:using` patterns
-
-### Macro Development Guides ✨ **NEW**
-- **Macro Principles**: [`documentation/macro/MACRO_PRINCIPLES.md`](documentation/macro/MACRO_PRINCIPLES.md) - Core principles for developing reliable Haxe macros based on proven implementations
-- **Macro Patterns**: [`documentation/macro/MACRO_PATTERNS.md`](documentation/macro/MACRO_PATTERNS.md) - Reusable patterns and code templates for common macro development tasks
-- **Macro Debugging**: [`documentation/macro/MACRO_DEBUGGING.md`](documentation/macro/MACRO_DEBUGGING.md) - Comprehensive debugging strategies for troubleshooting macro transformations and AST processing
-- **Macro Case Studies**: [`documentation/macro/MACRO_CASE_STUDIES.md`](documentation/macro/MACRO_CASE_STUDIES.md) - Deep-dive analysis of real macro implementations including async/await anonymous function support
-
-### Haxe Language Guides ✨ **NEW**
-- **Operator Overloading**: [`documentation/guides/HAXE_OPERATOR_OVERLOADING.md`](documentation/guides/HAXE_OPERATOR_OVERLOADING.md) - Complete guide to operator overloading in Haxe abstracts with Phoenix-specific patterns
+**New Features & Patterns**:
+- [`documentation/guides/HAXE_OPERATOR_OVERLOADING.md`](documentation/guides/HAXE_OPERATOR_OVERLOADING.md) - Operator overloading patterns  
+- [`documentation/guides/HXX_INTERPOLATION_SYNTAX.md`](documentation/guides/HXX_INTERPOLATION_SYNTAX.md) - HXX syntax guide
 
 ## Reference Code Location
 Reference examples for architectural patterns are located at:
@@ -341,31 +321,7 @@ This is acceptable - helpers are simpler for our needs while following similar s
 - **Usage**: `using haxe.functional.Result;` for functional error handling that compiles to `{:ok, value}` and `{:error, reason}` in Elixir
 
 ## Experimental Roadmap 🧪
-
-### 1. Comprehensive Loop Pattern Analysis 🔄 **PRIORITY**
-**Enhance loop compilation with intelligent pattern detection**:
-- **Why**: Transform imperative Haxe loops into idiomatic functional Elixir code
-- **Patterns to detect**:
-  - **Counting patterns** → `Enum.count/2`
-  - **Filtering patterns** → `Enum.filter/2`
-  - **Mapping patterns** → `Enum.map/2`
-  - **Accumulation patterns** → `Enum.reduce/3`
-  - **Find patterns** → `Enum.find/3`
-  - **All/Any patterns** → `Enum.all?/2`, `Enum.any?/2`
-- **Implementation**: Analyze loop body AST for mutation patterns and transform accordingly
-- **Status**: Critical for todo-app and general usability
-- **Impact**: Eliminates invalid Elixir code generation, produces idiomatic functional code
-
-### 2. Modern Haxe-to-JS with Genes Compiler
-**Replace standard Haxe JS compilation with [genes](https://github.com/benmerckx/genes)**:
-- **Why**: Modern JavaScript output, better optimization, smaller bundles
-- **Current Issue**: Todo app client (TodoApp.hx) has compilation errors with standard Haxe JS
-- **Goals**: 
-  - Fix browser API compatibility issues
-  - Generate smaller, more efficient client-side code
-  - Better integration with Phoenix LiveView hooks
-- **Status**: Experimental - needs investigation and testing
-- **Impact**: Could significantly reduce client-side JavaScript bundle sizes
+**See**: [`ROADMAP.md`](ROADMAP.md) - Complete experimental roadmap including loop pattern analysis and genes compiler integration
 
 ### Asset Pipeline Integration
 **Phoenix Projects MUST**:
@@ -393,29 +349,7 @@ The vision is 100% Haxe code with complete type safety. This means:
 **The goal**: Zero manual Elixir, zero externs, zero escape hatches. Pure Haxe from top to bottom.
 
 ## Code Injection Policy ⚠️ CRITICAL
-
-**NEVER use `__elixir__()` in application code, examples, or demos.**
-
-This feature exists ONLY for:
-1. **Compiler development debugging** (must be removed before commit)
-2. **Emergency production hotfixes** (with documented removal plan and date)
-3. **Proof of concept** (temporary, with ticket tracking removal)
-
-**Every use requires**:
-```haxe
-// EMERGENCY: Using __elixir__ because [specific reason]
-// TODO: Replace with [specific solution] by [specific date]
-// Justification: [why no other option works]
-// Approved by: [who approved this technical debt]
-// Ticket: [issue tracking removal]
-```
-
-**The todo-app and ALL examples must demonstrate ZERO uses of `__elixir__()`.**
-
-Instead use:
-- **Extern definitions** for Phoenix/Elixir modules
-- **Pure Haxe abstractions** for new functionality
-- **Type-safe patterns** throughout
+**NEVER use `__elixir__()` in application code, examples, or demos.** Use extern definitions and pure Haxe abstractions instead.
 
 **See**: [`documentation/CODE_INJECTION.md`](documentation/CODE_INJECTION.md) - Complete policy and enforcement
 
@@ -480,174 +414,18 @@ cd examples/todo-app && mix compile        # Integration test
 
 **See**: [`documentation/COMPILER_TESTING_GUIDE.md`](documentation/COMPILER_TESTING_GUIDE.md) - Complete testing workflows and strategies
 
-## Gleam-Inspired BEAM Abstraction Design Principles ✨ **NEW**
+## BEAM Abstraction Design Principles ✨
+**Following Gleam's proven approach** - Type safety first, explicit over implicit, BEAM idioms with type guarantees.
 
-**Following [Gleam's proven approach](https://gleam.run/) to type-safe BEAM development**:
-
-1. **Type Safety First** - Sacrifice features that can't be type-safe over untyped flexibility
-   - No global mutable state (avoid named processes and global registries)
-   - Explicit message types and actor states visible in function signatures
-   - Compile-time guarantees over runtime flexibility
-
-2. **Explicit Over Implicit** - Make intentions clear in the type system
-   - Use tagged tuples `{:some, value}` instead of `nil` for optional values
-   - Explicit error types rather than generic exceptions
-   - Clear pattern matching over defensive null checks
-
-3. **BEAM Idioms with Type Guarantees** - Generate idiomatic BEAM code while maintaining compile-time safety
-   - Option<T> compiles to `{:some, value}` / `:none` patterns
-   - Result<T,E> compiles to `{:ok, value}` / `{:error, reason}` tuples
-   - GenServer messages use typed patterns for exhaustive matching
-
-4. **Fault Tolerance Through Types** - Use Result/Option for expected failures, supervision for unexpected ones
-   - Option<T> for values that may legitimately be absent
-   - Result<T,E> for operations that may fail with known error types
-   - Let it crash for programming errors and unexpected conditions
-
-5. **Functional Composition First** - Design APIs for chaining and transformation
-   - Full monadic operations (map, flatMap, filter, fold)
-   - Collection operations that preserve type safety
-   - Seamless conversion between Option and Result types
-
-**Reference**: Gleam's [OTP library](https://hexdocs.pm/gleam_otp/) demonstrates how to build type-safe abstractions over BEAM primitives while maintaining the fault-tolerance benefits of the Actor model.
+**See**: [`documentation/BEAM_TYPE_ABSTRACTIONS.md`](documentation/BEAM_TYPE_ABSTRACTIONS.md) - Complete design principles and implementation patterns
 
 ## Documentation Standards 📝
+**Use JavaDoc-style documentation comments** following Haxe standard library conventions. ALL public methods and complex private methods must be documented.
 
-**Haxe uses JavaDoc-style documentation comments** - Follow Haxe standard library conventions:
-
-### Required Documentation Format
-```haxe
-/**
- * Brief description of the method/class functionality.
- * 
- * Detailed explanation including:
- * - What the method does
- * - How it fits into the overall architecture
- * - Important patterns or algorithms used
- * - Examples of transformations (for compiler methods)
- * 
- * @param paramName Description of parameter purpose and type
- * @param anotherParam Description with examples if complex
- * @return Description of return value and possible null cases
- * @see RelatedClass or documentation/FILE.md for related information
- */
-```
-
-### Documentation Requirements
-- **ALL public methods** MUST have comprehensive documentation
-- **Complex private methods** (especially pattern matching, transformations) MUST be documented
-- **Class-level documentation** MUST explain the purpose and key features
-- **Parameter documentation** MUST include purpose, expected format, and edge cases
-- **Return value documentation** MUST specify type and null conditions
-- **Cross-references** MUST link to related documentation files
-
-### Examples from Standard Library
-Haxe's standard library uses this style extensively. See `String.hx`, `Array.hx` for reference patterns.
-
-### Desugaring Documentation
-When documenting compiler methods that handle **desugaring reversal**, always include:
-- What Haxe pattern is being detected
-- What the generated Elixir should look like  
-- Example transformation showing before/after code
+**See**: [`documentation/LLM_DOCUMENTATION_GUIDE.md`](documentation/LLM_DOCUMENTATION_GUIDE.md) - Complete documentation standards and examples
 
 ## Development Principles
-
-### ⚠️ CRITICAL: Always Check What Exists First
-**ALWAYS CHECK WHAT EXISTS FIRST** - This is a fundamental development principle:
-
-✅ **Before creating anything new**:
-- **Search for existing implementations** - Use Grep, Glob, LS tools to find similar functionality
-- **Check test directories** - Look for existing tests before creating new ones (`test/tests/`)
-- **Review standard library** - Check `std/` for existing types, helpers, and patterns
-- **Examine examples** - Look at `examples/` for similar use cases
-- **Check documentation** - Review `documentation/` for established patterns
-
-❌ **Never duplicate work**:
-- Don't create new tests when existing ones can be updated
-- Don't implement features that already exist
-- Don't create new directories when existing structure works
-- Don't reinvent abstractions that are already available
-
-**Why This Matters**:
-- Prevents duplicate code and conflicting implementations
-- Maintains consistency across the codebase
-- Saves development time and reduces maintenance burden
-- Builds on existing tested and proven patterns
-- Ensures architectural coherence
-
-**Example**:
-```
-❌ BAD: Create test/tests/option_idiomatic/ without checking
-✅ GOOD: Find existing test/tests/option_type/ and update it
-```
-
-### ⚠️ CRITICAL: Honesty About Performance Characteristics
-**NEVER make false claims about performance** - Be accurate about runtime vs compile-time behavior:
-
-✅ **Be honest about**:
-- **Runtime validation costs** - Acknowledge validation overhead exists
-- **Memory allocations** - Don't claim "zero-cost" when creating Result objects
-- **Function call overhead** - Method calls have costs vs direct operations
-- **Actual compilation targets** - What the code actually becomes
-
-❌ **Never claim**:
-- "Zero-cost abstraction" unless truly compile-time only
-- "No runtime overhead" when validation exists
-- Performance benefits without evidence
-
-**Example**:
-```haxe
-// ❌ BAD: "Zero-cost abstraction: compiles to plain Int with no runtime overhead"
-// ✅ GOOD: "Runtime safety: validates values to maintain invariants with minimal overhead"
-```
-
-### ⚠️ CRITICAL: Test Infrastructure Rule
-**NEVER define test infrastructure types in application code**
-- **Test types** (Conn, Changeset<T>, LiveView, etc.) belong in the standard library at `/std/phoenix/test/` and `/std/ecto/test/`
-- **Applications** should import from standard library: `import phoenix.test.Conn` NOT `typedef Conn = Dynamic`
-- **This ensures**: consistency, reusability, proper maintenance, and type safety across all projects
-- **Example**: `import ecto.Changeset; var changeset: Changeset<User>` NOT `var changeset: Dynamic`
-
-### ⚠️ CRITICAL: No Simplifications or Workarounds for Testing
-**NEVER simplify code just to make tests pass or to bypass compilation issues.**
-
-❌ **Don't**:
-- Comment out problematic code "temporarily" 
-- Return dummy values to avoid compilation errors
-- Skip proper error handling to make tests pass
-- Use placeholder values instead of fixing root causes
-- Disable features to work around bugs
-
-✅ **Instead**:
-- **Fix the root cause** of compilation errors
-- **Implement proper error handling** with meaningful messages
-- **Address the underlying architectural issue** causing the problem
-- **Write comprehensive tests** that validate the actual expected behavior
-- **Document why** a particular approach was chosen over alternatives
-
-**Example of Wrong Approach**:
-```haxe
-// ❌ BAD: Working around Supervisor.startLink compilation error
-return {status: "ok", pid: null}; // Simplified for testing
-```
-
-**Example of Right Approach**:
-```haxe
-// ✅ GOOD: Fix the Supervisor extern definition to make startLink work properly
-return Supervisor.startLink(children, opts);
-```
-
-**Why This Matters**:
-- Workarounds mask real problems and create technical debt
-- They make the system unreliable in production environments
-- They prevent proper learning about the system's architecture
-- They lead to incomplete implementations that fail in edge cases
-
-**When You Encounter a Blocker**:
-1. **Investigate the root cause** - understand why it's failing
-2. **Fix the underlying issue** - don't work around it
-3. **Test the proper solution** - ensure it works as intended
-4. **Document the learning** - explain what was fixed and why
+**See**: [`documentation/COMPILER_BEST_PRACTICES.md`](documentation/COMPILER_BEST_PRACTICES.md) - Complete development principles, testing protocols, and best practices
 
 ## Commit Standards
 **Follow [Conventional Commits](https://www.conventionalcommits.org/)**: `<type>(<scope>): <subject>`
@@ -924,270 +702,22 @@ What happens:
 ## Known Issues  
 - **Array Mutability**: Methods like `reverse()` and `sort()` don't mutate in place (Elixir lists are immutable)
   - Workaround: Use assignment like `reversed = reversed.reverse()` instead of just `reversed.reverse()`
-- **HXX Template Variables**: Complex ternary expressions generate temp variables that Phoenix LiveView prohibits
-  - Currently in development: HxxCompiler enhancement to generate inline conditionals
+- **HXX Function Name Conversion**: HTML attributes don't convert camelCase function names to snake_case
+  - Issue: `class={getStatusClass(...)}` stays as-is while `${getStatusText(...)}` becomes `get_status_text`
+  - Root Cause: HTML attributes bypass the `processPhoenixPatterns()` pipeline in HxxCompiler
+  - Workaround: Use snake_case directly in HTML attributes: `class={get_status_class(...)}`
+  - Status: Documented in [`documentation/COMPILER_PATTERNS.md`](documentation/COMPILER_PATTERNS.md) for future resolution
 
-## Recently Fixed Issues ✅ (2025-08-17)
-
-**Current Session - Type-Safe Phoenix Abstractions and Template Helper Metadata:**
-- **Template Helper Metadata System COMPLETE** ✨ - Eliminated hardcoded function lists with metadata-driven compilation
-  - Implemented `@:templateHelper` metadata for Phoenix template functions
-  - Enhanced HxxCompiler to detect metadata instead of hardcoded names via `isTemplateHelperCall()`
-  - Fixed Phoenix.Component extern duplicate method declarations using proper `@:overload` syntax
-  - Result: `Component.get_csrf_token()` compiles correctly to `<%= get_csrf_token() %>` in templates
-- **Type-Safe Phoenix Abstractions COMPLETE** ✨ - Eliminated Dynamic overuse with proper typed abstractions
-  - Created `Assigns<T>` with `@:arrayAccess` for ergonomic field access (`assigns["field"]`)
-  - Implemented `LiveViewSocket<T>`, `FlashMessage`/`FlashType`, and `RouteParams<T>` abstractions
-  - Fixed operator overloading using standard library patterns (DynamicAccess, Map)
-  - Result: Compile-time type safety for Phoenix APIs while maintaining runtime compatibility
-- **Haxe Operator Overloading Mastery** ✨ - Documented and implemented proper operator overloading patterns
-  - Created comprehensive guide at `documentation/guides/HAXE_OPERATOR_OVERLOADING.md`
-  - Fixed compilation errors by using `@:arrayAccess` instead of `@:op(a.b)` for dynamic field access
-  - Applied lessons from Haxe standard library (Map, DynamicAccess) for proven patterns
-  - Result: Type-safe, ergonomic APIs that follow Haxe best practices
-
-**Previous Session - HXX Integration Complete:**
-- **HXX Template Compilation WORKING** ✨ - Complete AST-based template transformation
-  - Fixed TCall, TParenthesis, TTypeExpr, TConst (TThis/TSuper) AST node handling
-  - Restored working EReg.map functionality that was incorrectly removed  
-  - HxxCompiler now generates proper ~H sigils with Phoenix interpolation
-  - Result: Todo-app compiles cleanly with zero HXX warnings
-  - **See**: [`documentation/TASK_HISTORY.md`](documentation/TASK_HISTORY.md) - Complete technical details
-
-**Previous Session (2025-08-15) - Parameter Naming Fix & PRD Vision Refinement:**
-- **Parameter Naming Issue RESOLVED** ✨ - Generated functions now use meaningful parameter names instead of arg0/arg1
-  - Fixed ClassCompiler.hx parameter extraction to use arg.tvar.name from Haxe AST
-  - Fixed ElixirCompiler.hx parameter mapping to preserve original names in snake_case
-  - Impact: `def greet(arg0)` → `def greet(name)` - professional, idiomatic code generation
-  - Updated all 47 test intended outputs to reflect improved parameter names
-  - Result: Generated code now looks hand-written and meets professional adoption standards
-
-**Previous Session - Critical TODO Bug Fix & Test Infrastructure Improvements:**
-- **CRITICAL TODO Bug Fixed** ✨ - @:module functions now compile actual implementations instead of "TODO: Implement function body"
-  - Fixed generateModuleFunctions() hardcoded TODO placeholders in ClassCompiler.hx
-  - Fixed generateFunction() and ElixirCompiler TODO fallbacks
-  - Why todo-app worked: @:liveview used different code path, @:module was broken
-  - Impact: Business logic, utilities, and contexts in Phoenix apps now work correctly
-  - Updated all 46 test intended outputs to reflect proper function compilation
-- **Test Infrastructure Timeouts RESOLVED** ✨ - Enhanced npm scripts with proper timeout configuration
-  - Added 120s timeout for Mix tests to prevent test failures
-  - Created test:quick, test:verify, test:core commands for rapid feedback
-  - Updated test count accuracy to 178 total tests (46 Haxe + 19 Generator + 132 Mix)
-  - Result: All tests now pass consistently without timeout issues
-- **HXX Template Processing COMPLETE** ✨ - HEEx template generation with proper HTML attribute preservation
-  - Fixed HTML attribute escaping - templates now generate `class="value"` instead of `class=\"value\"`
-  - Implemented raw string extraction from AST before compilation escaping
-  - Added specialized TBinop handling for multiline template string concatenation
-  - Converted Haxe ${} interpolation to HEEx {} format
-  - Result: HXX templates generate valid Phoenix HEEx code with ~H sigil format
-- **Todo App Compilation SUCCESS** ✨ - All major compilation errors resolved
-  - Fixed super.toString() compilation using __MODULE__ instead of "super"
-  - Fixed invalid module naming (___Int64 → Int64) with sanitizeModuleName()
-  - Fixed LiveView parameter handling (removed underscore prefixes when parameters are used)
-  - Fixed changeset schema references (UserChangeset now references User schema correctly)
-  - Fixed invalid Ecto schema field options (removed "null: false")
-- **Test Suite 100% SUCCESS** ✨ - All 178/178 tests passing
-  - Updated snapshot tests to reflect improved compiler output (46/46)
-  - Maintained all Mix integration tests (132/132 passing)
-  - Project generator tests working perfectly (19/19 passing)
-  - Todo app compiles and runs successfully without errors
 
 ## Documentation Completeness Checklist ✓
+**MANDATORY: After completing any feature or fix, verify documentation updates across all categories.**
 
-**MANDATORY: After completing any feature or fix, verify ALL of these:**
-
-### 1. Public-Facing Documentation
-- [ ] **README.md** - Update feature list, badges, examples if new user-facing functionality added
-- [ ] **CHANGELOG.md** - Document all changes with version, date, and impact
-- [ ] **FEATURES.md** - Update production-ready status for new/enhanced features
-- [ ] **KNOWN_ISSUES.md** - Remove fixed issues, add new discovered issues
-
-### 2. User Guides
-- [ ] **Feature-specific guide** - Create documentation/guides/FEATURE_NAME.md for new features
-- [ ] **EXAMPLES.md** - Add working examples demonstrating the feature
-- [ ] **COOKBOOK.md** - Add recipes for common use cases
-- [ ] **TROUBLESHOOTING.md** - Document potential issues and solutions
-
-### 3. Technical Documentation  
-- [ ] **ARCHITECTURE.md** - Update if architectural changes made
-- [ ] **API documentation** - Document all public APIs and their usage
-- [ ] **Migration guides** - Document breaking changes and upgrade paths
-- [ ] **Test documentation** - Explain new test patterns or changes
-
-### 4. Development Documentation
-- [ ] **TASK_HISTORY.md** - Comprehensive session documentation
-- [ ] **Code TODOs** - Review and remove completed TODOs from code
-- [ ] **Inline comments** - Add detailed comments for complex logic
-- [ ] **Test counts** - Update test badges/counts in README
-
-### 5. Project Management
-- [ ] **Shrimp tasks** - Update task status, mark completed items
-- [ ] **Dependencies** - Document new dependencies or requirements
-- [ ] **Performance metrics** - Update if performance characteristics changed
-- [ ] **Compatibility notes** - Document version requirements or conflicts
-
-### 6. Integration Points
-- [ ] **Framework documentation** - Update Phoenix/Ecto/OTP integration docs
-- [ ] **External tool docs** - Document Mix tasks, CLI commands, etc.
-- [ ] **Configuration docs** - Document new config options or flags
-- [ ] **Error messages** - Ensure helpful error messages with solutions
-
-**RULE: This checklist is NOT optional. Every session MUST review all items.**
+**See**: [`documentation/LLM_DOCUMENTATION_GUIDE.md`](documentation/LLM_DOCUMENTATION_GUIDE.md) - Complete documentation checklist and maintenance procedures
 
 ## Compiler Development Best Practices ⚡
+**See**: [`documentation/COMPILER_BEST_PRACTICES.md`](documentation/COMPILER_BEST_PRACTICES.md) - Complete development practices and patterns for Reflaxe.Elixir compiler development
 
-**Continuously refined from implementation experience. See also**: [`documentation/COMPILER_PATTERNS.md`](documentation/COMPILER_PATTERNS.md) for detailed patterns.
-
-### 1. Never Leave TODOs in Production Code
-- **Rule**: Fix issues immediately, don't leave placeholders
-- **Why**: TODOs accumulate technical debt and indicate incomplete implementation
-- **Example**: Don't write `// TODO: Need to substitute variables` - implement the substitution
-
-### 2. Pass TypedExpr Through Pipeline as Long as Possible
-- **Rule**: Keep AST nodes (TypedExpr) until the very last moment before string generation
-- **Why**: AST provides structural information for proper transformations
-- **Anti-pattern**: Converting to strings early then trying to manipulate strings
-- **Correct**: Store `conditionExpr: TypedExpr` alongside `condition: String`
-
-### 3. Apply Transformations at AST Level, Not String Level
-- **Rule**: Use recursive AST traversal for variable substitution and transformations
-- **Why**: String manipulation is fragile and error-prone
-- **Implementation**: `compileExpressionWithSubstitution(expr: TypedExpr, sourceVar: String, targetVar: String)`
-- **Benefits**: Type-safe, handles nested expressions, catches edge cases
-
-### 4. Variable Substitution Pattern
-- **Problem**: Lambda parameters need different names than original loop variables
-- **Solution**: 
-  1. Find source variable in AST using `findLoopVariable(expr: TypedExpr)`
-  2. Apply recursive substitution with `compileExpressionWithSubstitution()`
-  3. Generate consistent lambda parameter names (`"item"`)
-- **Result**: `numbers.map(n -> n * 2)` → `Enum.map(numbers, fn item -> item * 2 end)`
-
-### 5. Context-Aware Compilation (Added 2025-08-15)
-- **Rule**: Use context flags to track compilation state for different behavior
-- **Implementation**: `isInLoopContext` flag to determine variable substitution
-- **Why**: Same code needs different treatment in different contexts
-- **Example**: Variable substitution only applies inside loops, not in function parameters
-
-### 6. Avoid Hardcoded Variable Lists (Added 2025-08-15)
-- **Anti-pattern**: Maintaining hardcoded lists like `["i", "j", "item", "id"]`
-- **Solution**: Use function-based detection with `isCommonLoopVariable()` and `isSystemVariable()`
-- **Benefits**: More maintainable, extensible, and accurate detection
-
-### 7. Documentation String Generation (Added 2025-08-15)
-- **Rule**: Preserve multi-line intent from JavaDoc to generate proper @doc heredocs
-- **Fix**: Track `wasMultiLine` during cleaning to force proper formatting
-- **Escape properly**: Never use unsafe template strings for documentation content
-- **Result**: Professional, idiomatic Elixir documentation that matches language conventions
-
-### 8. Pattern Detection for Optimization (Added 2025-08-15)
-- **Pattern**: Detect function call patterns like `item(v)` to generate direct references
-- **Example**: `array.map(transform)` → `Enum.map(array, transform)` not `fn item -> item(v) end`
-- **Implementation**: Use regex patterns to detect and optimize common cases
-- **Why**: Generate cleaner, more efficient target code
-
-### 9. Avoid Ad-hoc Fixes - Implement General Solutions (Added 2025-08-15)
-- **Rule**: Never add function-specific workarounds (e.g., "if calling Supervisor.startLink, do X")
-- **Principle**: Always solve the root cause that benefits all similar use cases
-- **Goal**: The compiler should generate correct idiomatic Elixir for any valid Haxe code
-- **Example**: Don't special-case Supervisor child specs; fix how all objects with atom keys compile
-- **Why**: Ad-hoc fixes create technical debt, mask architectural issues, and don't scale
-
-### 10. Prefer Simple Solutions Over Clever Ones (Added 2025-08-15)
-- **Rule**: Choose straightforward implementations over complex, "clever" solutions
-- **Example**: Removed __AGGRESSIVE__ marker system in favor of always doing variable substitution
-- **Principle**: Simple code is easier to understand, debug, and maintain
-- **Test**: If explaining the code takes more than 30 seconds, it's probably too complex
-- **Benefits**: Fewer bugs, easier onboarding for new developers, reduced maintenance overhead
-- **Guideline**: Optimize for code clarity first, performance second (unless performance is critical)
-
-### 11. Always Review Recent Work Before Major Changes (Added 2025-08-15)
-- **Rule**: Before implementing new features or significant refactors, check what's been done recently
-- **Process**: Read TASK_HISTORY.md, recent commit messages, and documentation updates
-- **Purpose**: Understand the current direction, avoid duplicating work, and build on recent insights
-- **Key Questions**: What patterns were just established? What approaches were tried and rejected?
-- **Example**: Before adding new atom key detection, review recent atom key work to avoid repeating mistakes
-- **Documentation**: Check for new architectural decisions, patterns, or best practices
-- **Why**: Ensures consistency, prevents regression, and leverages recent learning and discoveries
-
-### 12. JavaScript Generation Philosophy: Separation of Concerns (Added 2025-08-16)
-- **Rule**: Focus exclusively on Haxe→Elixir compilation; use standard Haxe JS compiler for JavaScript output
-- **Custom JS Only When**: Features don't exist in standard Haxe (e.g., async/await) or require specific Phoenix integration
-- **Benefits**: Reduced maintenance burden, clear project scope, better compatibility with JS tooling
-- **Implementation**: Delegate to Haxe's mature JS compiler unless absolutely necessary for custom features
-- **Future**: Consider Genes compiler migration while maintaining separation principle
-- **See**: [`documentation/JS_GENERATION_PHILOSOPHY.md`](documentation/JS_GENERATION_PHILOSOPHY.md) - Complete philosophical guide
-
-## Recently Fixed Issues ✅ (2025-08-15)
-
-**Current Session - Documentation Formatting and Test Suite Fixes:**
-- **Documentation Generation FIXED** ✨ - All 49/49 tests now passing (was 12/49)
-  - Fixed single-line documentation truncation by proper string escaping
-  - Enhanced multi-line documentation detection in cleanJavaDoc()
-  - Preserved JavaDoc intent to generate proper @doc """...""" heredocs
-  - Fixed unsafe template string interpolation causing content loss
-  - Result: Professional, idiomatic Elixir documentation matching language conventions
-- **Result.traverse() Compilation OPTIMIZED** ✨ - Direct function references instead of lambda wrappers
-  - Enhanced generateEnumMapPattern() to detect function call patterns
-  - Fixed `array.map(transform)` generating `Enum.map(array, transform)` not `fn item -> item(v) end`
-  - Pattern detection for renamed function parameters (transform → v)
-  - Result: Cleaner, more efficient Elixir code generation
-- **Compiler Patterns Documentation CREATED** ✨ - Comprehensive development guide
-  - Created documentation/COMPILER_PATTERNS.md with lessons learned
-  - Updated CLAUDE.md with new compiler development best practices
-  - Documented AST transformation patterns, variable substitution, context-aware compilation
-  - Result: Knowledge preservation for future development
-
-## Recently Fixed Issues ✅ (2025-08-14)
-
-**Latest Session - Variable Substitution and Transformation Extraction Complete:**
-- **Variable Scope Issues RESOLVED** ✨ - Generated code now has consistent variable scoping
-  - Fixed lambda parameter mismatches where `numbers.map(n -> n * 2)` generated `Enum.map(numbers, fn item -> n * 2 end)`
-  - Implemented AST-level variable substitution with `compileExpressionWithVarMapping()` and recursive substitution
-  - Result: `numbers.map(n -> n * 2)` → `Enum.map(numbers, fn item -> item * 2 end)` with proper variable consistency
-- **Transformation Extraction WORKING** ✨ - Array methods generate actual logic instead of identity functions
-  - Fixed `extractTransformationFromBody` to extract real transformations from TCall, TBinop patterns  
-  - Added support for array push operations, list concatenation, and conditional transformations
-  - Working transformations: `item * 2`, `"Fruit: " + item`, `item * item`, conditionals with proper variable substitution
-- **Compiler Development Best Practices** - Added rules to prevent similar issues:
-  1. Never leave TODOs in production code - fix issues immediately
-  2. Pass TypedExpr through pipeline as long as possible before string generation
-  3. Apply transformations at AST level, not string level
-  4. Variable substitution pattern with recursive AST traversal
-
-**Previous Session - Transformation Extraction Infrastructure:**
-- **Enhanced transformation extraction framework** - Added TBinop, TCall, TField, TLocal, TConst expression support to extractTransformationFromBody
-- **Improved array building pattern detection** - Extended recognition for TArrayDecl, push operations, and array concatenation patterns
-- **Fixed technical implementation issues** - Resolved keyword conflicts, binary operator compilation, and field access handling
-- **Maintained system stability** - Preserved all test compatibility while building infrastructure for future improvements
-
-**Previous Session - Array Method Compilation Fixes:**
-- **Array method priority detection** - Reordered pattern detection so Map → Filter → Count → Others prevents misclassification
-- **Array methods no longer generate broken Enum.count** - Now properly generate `Enum.map(_g2, fn item -> item end)` instead of `Enum.count(_g2, fn item -> end)`
-- **PubSub app name configuration** - Fixed hardcoded "App.PubSub" to use configurable `TodoApp.PubSub` via `-D app_name=TodoApp`
-- **Haxe macro API documentation** - Created comprehensive guide preventing "macro-in-macro" errors with Context vs Compiler APIs
-- **All 46 tests now pass** - Updated intended outputs to reflect improved code generation
-
-**Previous Session:**
-- **While/do-while loops** now generate idiomatic tail-recursive functions with proper state tuples and break/continue support using throw/catch pattern
-- **For-in loops** now optimize to `Enum.reduce()` with proper range syntax (`start..end`) for simple accumulation patterns
-- **Array iteration patterns** now generate idiomatic Elixir using appropriate Enum functions:
-  - Find patterns → `Enum.reduce_while` with `:halt/:cont` tuples
-  - Counting patterns → `Enum.count(array, fn item -> condition end)`
-  - Loop variable extraction from AST → Correct variable names (todo vs item/1)
-  - **See**: [`documentation/LOOP_OPTIMIZATION_LESSONS.md`](documentation/LOOP_OPTIMIZATION_LESSONS.md)
-- **Loop code generation** follows functional programming principles instead of generating invalid variable reassignments
-- **Standard library cleanup** prevents generation of empty Haxe built-in type modules (Array, String, etc.)
-- **Phoenix Framework support** with comprehensive extern definitions for Channel, Presence, Token, Endpoint modules
-- **@:channel annotation** support for compiling Phoenix Channel classes with proper callback generation
-- **Mutable operations** (`+=`, `-=`, `*=`, `%=`) now correctly compile to reassignment (`x = x + 5`)
-- **Increment/decrement operators** (`++`, `--`) now properly generate variable reassignment
-- **Variable reassignment** properly handled in immutable Elixir context
-- **Type annotations in todo-app** - replaced Dynamic with proper typed structures
-- **Dynamic array methods** (.filter, .map) now correctly transform to Enum module functions
-- **Dynamic property access** (.length) now generates proper length() function calls
-- **String concatenation** properly uses `<>` operator
-- **Function body compilation** now works with actual parameter names
+**All historical implementation details and fixes moved to**: [`documentation/TASK_HISTORY.md`](documentation/TASK_HISTORY.md)
 
 ## Testing Quick Reference ⚠️
 
@@ -1245,76 +775,18 @@ MIX_ENV=test mix test                      # Run Mix integration tests
 - Common workflows and troubleshooting
 - Why you can't unit test the compiler directly (macro-time vs runtime)
 
-## Current Implementation Status Summary
+## Implementation Status
+**v1.0 Status**: 18 production-ready features, 38/38 tests passing, complete Phoenix/LiveView/Ecto support.
 
-### v1.0 ESSENTIAL Tasks Status (4/4 Complete - 100%) ✅
-
-✅ **1. Essential Elixir Protocol Support** - COMPLETE
-   - ProtocolCompiler.hx fully implemented
-   - @:protocol and @:impl annotations working
-   - Examples in 07-protocols demonstrate functionality
-
-✅ **2. Create Essential Standard Library Extern Definitions** - COMPLETE
-   - All 9 essential modules implemented (Process, Registry, Agent, IO, File, Path, Enum, String, GenServer)
-   - Full type-safe extern definitions with helper functions
-   - Comprehensive test coverage
-
-✅ **3. Implement Haxe Typedef Compilation Support** - COMPLETE ✨ NEW
-   - TypedefCompiler.hx helper class fully implemented
-   - Complete type mapping for aliases, structures, functions, generics
-   - Snake_case field conversion and optional field handling
-   - Comprehensive snapshot test coverage
-
-✅ **4. Phoenix Router DSL Implementation** - COMPLETE ✨ **NEW**
-   - RouterCompiler.hx fully implemented with @:router annotation support
-   - LIVE and LIVE_DASHBOARD route generation working
-   - Complete Phoenix scope and pipeline integration  
-   - TodoAppRouter.hx example demonstrates full functionality
-
-**For complete feature status, example guides, and usage instructions, see:**
-- [`documentation/FEATURES.md`](documentation/FEATURES.md) - Production readiness status
-- [`documentation/EXAMPLES.md`](documentation/EXAMPLES.md) - Working example walkthroughs  
-- [`documentation/ANNOTATIONS.md`](documentation/ANNOTATIONS.md) - Annotation usage guide
-
-**Quick Status**: 16 production-ready features including Router DSL, 9 working examples, 38/38 tests passing.
+**See**: [`documentation/reference/FEATURES.md`](documentation/reference/FEATURES.md) - Complete feature status and production readiness
 
 ## Functional Programming Transformations
 **See**: [`documentation/FUNCTIONAL_PATTERNS.md`](documentation/FUNCTIONAL_PATTERNS.md) - How imperative Haxe transforms to functional Elixir
 
-## Task Completion and Documentation Protocol
+## Task Completion and Documentation Protocol ⚠️
+**CRITICAL**: After completing any task, MUST update TASK_HISTORY.md with comprehensive session documentation.
 
-### CRITICAL AGENT INSTRUCTION ⚠️
-After completing and verifying any task, you MUST:
-
-1. **Update TASK_HISTORY.md** with comprehensive session documentation including:
-   - Context and problem identification
-   - Detailed implementation steps
-   - Technical insights gained
-   - Files modified
-   - Key achievements
-   - Development insights
-   - Session summary with status
-
-2. **Document task completion** before finalizing the session
-
-This ensures:
-- ✅ **Knowledge preservation** across development sessions
-- ✅ **Context continuity** for future development
-- ✅ **Quality tracking** and process improvement
-- ✅ **Comprehensive project history** for team collaboration
-
-**Example Pattern**:
-```
-## Session: [Date] - [Task Description]
-### Context: [Problem/Request background]
-### Tasks Completed ✅: [Detailed implementation list]
-### Technical Insights Gained: [Architecture/pattern learnings]
-### Files Modified: [Complete file change list]
-### Key Achievements ✨: [Impact and value delivered]
-### Session Summary: [Status and completion confirmation]
-```
-
-**NEVER skip task history documentation** - it's as important as the implementation itself.
+**See**: [`documentation/LLM_DOCUMENTATION_GUIDE.md`](documentation/LLM_DOCUMENTATION_GUIDE.md) - Complete task documentation protocol and templates
 
 ## Haxe API Reference
 **See**: [`documentation/HAXE_API_REFERENCE.md`](documentation/HAXE_API_REFERENCE.md) - Complete Haxe standard library reference
