@@ -206,7 +206,7 @@ class UserLive {
                 </thead>
                 <tbody>
                     <%= for user <- @users do %>
-                        <%= render_user_row(user) %>
+                        <%= render_user_row(%{user => user}) %>
                     <% end %>
                 </tbody>
             </table>
@@ -214,24 +214,25 @@ class UserLive {
         ');
     }
     
-    function renderUserRow(user: User): String {
+    function renderUserRow(assigns: Dynamic): String {
+        var user = assigns.user;
         return HXX.hxx('
         <tr>
             <td>${user.name}</td>
             <td>${user.email}</td>
             <td>${user.age}</td>
             <td>
-                <span class="status ${user.active ? "active" : "inactive"}">
-                    ${user.active ? "Active" : "Inactive"}
+                <span class={getStatusClass(user.active)}>
+                    ${getStatusText(user.active)}
                 </span>
             </td>
             <td class="actions">
-                <.button phx-click="edit_user" phx-value-id="${user.id}" size="sm">
+                <.button phx-click="edit_user" phx-value-id={user.id} size="sm">
                     Edit
                 </.button>
                 <.button 
                     phx-click="delete_user" 
-                    phx-value-id="${user.id}" 
+                    phx-value-id={user.id} 
                     data-confirm="Are you sure?"
                     variant="danger"
                     size="sm"
@@ -241,6 +242,20 @@ class UserLive {
             </td>
         </tr>
         ');
+    }
+    
+    /**
+     * Get CSS class for user status
+     */
+    private static function getStatusClass(active: Bool): String {
+        return active ? "status active" : "status inactive";
+    }
+    
+    /**
+     * Get display text for user status
+     */
+    private static function getStatusText(active: Bool): String {
+        return active ? "Active" : "Inactive";
     }
     
     function renderUserForm(assigns: Dynamic): String {

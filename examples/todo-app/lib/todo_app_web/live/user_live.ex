@@ -140,7 +140,7 @@ defmodule UserLive do
       </thead>
       <tbody>
       <%= for user <- @users do %>
-      <%= render_user_row(user) %>
+      <%= render_user_row(%{user => user}) %>
       <% end %>
       </tbody>
       </table>
@@ -149,28 +149,25 @@ defmodule UserLive do
   end
 
   @doc "Generated from Haxe renderUserRow"
-  def render_user_row(user) do
-    temp_string = nil
-    if (user.active), do: temp_string = "active", else: temp_string = "inactive"
-    temp_string1 = nil
-    if (user.active), do: temp_string1 = "Active", else: temp_string1 = "Inactive"
+  def render_user_row(assigns) do
+    user = assigns.user
     ~H"""
       <tr>
       <td><%= <%= user %>.name %></td>
       <td><%= <%= user %>.email %></td>
       <td><%= <%= user %>.age %></td>
       <td>
-      <span class="status <%= temp_string %>">
-      <%= temp_string1 %>
+      <span class={getStatusClass(user.active)}>
+      <%= get_status_text(user_live, user.active) %>
       </span>
       </td>
       <td class="actions">
-      <.button phx-click="edit_user" phx-value-id="<%= <%= user %>.id %>" size="sm">
+      <.button phx-click="edit_user" phx-value-id={user.id} size="sm">
       Edit
       </.button>
       <.button
       phx-click="delete_user"
-      phx-value-id="<%= <%= user %>.id %>"
+      phx-value-id={user.id}
       data-confirm="Are you sure?"
       variant="danger"
       size="sm"
@@ -233,6 +230,20 @@ defmodule UserLive do
       """
   end
 
+  @doc "Generated from Haxe getStatusClass"
+  def get_status_class(active) do
+    temp_result = nil
+    if (active), do: temp_result = "status active", else: temp_result = "status inactive"
+    temp_result
+  end
+
+  @doc "Generated from Haxe getStatusText"
+  def get_status_text(active) do
+    temp_result = nil
+    if (active), do: temp_result = "Active", else: temp_result = "Inactive"
+    temp_result
+  end
+
   @doc "Generated from Haxe assign"
   def assign(socket, key, value) do
     socket
@@ -245,7 +256,7 @@ defmodule UserLive do
 
   @doc "Generated from Haxe main"
   def main() do
-    Log.trace("UserLive with @:liveview annotation compiled successfully!", %{"fileName" => "src_haxe/server/live/UserLive.hx", "lineNumber" => 306, "className" => "server.live.UserLive", "methodName" => "main"})
+    Log.trace("UserLive with @:liveview annotation compiled successfully!", %{"fileName" => "src_haxe/server/live/UserLive.hx", "lineNumber" => 321, "className" => "server.live.UserLive", "methodName" => "main"})
   end
 
 end

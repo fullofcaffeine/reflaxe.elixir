@@ -54,7 +54,7 @@ class RootLayout {
                     <meta charset="utf-8"/>
                     <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
                     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-                    <meta name="csrf-token" content="${Component.get_csrf_token()}"/>
+                    <meta name="csrf-token" content={Component.get_csrf_token()}/>
                     
                     <title>Todo App - Haxe ❤️ Phoenix LiveView</title>
                     <meta name="description" content="A beautiful todo application built with Haxe and Phoenix LiveView, showcasing modern UI and type-safe development"/>
