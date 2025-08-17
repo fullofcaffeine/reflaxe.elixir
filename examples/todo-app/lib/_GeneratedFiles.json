@@ -1,5 +1,10 @@
 {
 	"filesGenerated": [
+		"todo_app_web/router.ex",
+		"todo_app_web/live/user_live.ex",
+		"todo_app_web/live/todo_live.ex",
+		"todo_app/schemas/user.ex",
+		"todo_app/schemas/todo.ex",
 		"server_migrations_CreateTodos.ex",
 		"server_layouts_RootLayout.ex",
 		"server_layouts_Layouts.ex",
@@ -28,11 +33,6 @@
 		"elixir_Supervisor.ex",
 		"contexts_Users.ex",
 		"Type.ex",
-		"TodoApp_web/router.ex",
-		"TodoApp_web/live/user_live.ex",
-		"TodoApp_web/live/todo_live.ex",
-		"TodoApp/schemas/user.ex",
-		"TodoApp/schemas/todo.ex",
 		"TodoApp.ex",
 		"StdTypes.ex",
 		"EnumValue.ex",
