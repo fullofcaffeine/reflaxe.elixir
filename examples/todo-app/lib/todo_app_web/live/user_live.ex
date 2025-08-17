@@ -6,6 +6,9 @@ defmodule UserLive do
   alias TodoApp.Repo
   
   use Phoenix.Component
+  import TodoAppWeb.CoreComponents
+  
+  use Phoenix.Component
 
   @impl true
   @doc "Generated from Haxe mount"
@@ -159,7 +162,7 @@ defmodule UserLive do
       <td><%= user.email %></td>
       <td><%= user.age %></td>
       <td>
-      <span class={getStatusClass(user.active)}>
+      <span class={get_status_class(user.active)}>
       <%= get_status_text(user.active) %>
       </span>
       </td>
