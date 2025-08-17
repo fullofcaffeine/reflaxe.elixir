@@ -68,6 +68,8 @@ The foundation for multi-target development:
 ### ✅ Production Ready (v1.0)
 - **Phoenix Integration** - LiveView, controllers, templates, routers 100% supported
 - **HXX Template System** - Complete compile-time JSX→HEEx transformation with AST-based processing
+  - **Template Helper Metadata** ✨ NEW - Uses @:templateHelper metadata for extensible Phoenix function compilation
+  - **Type-Safe Phoenix Abstractions** ✨ NEW - Assigns<T>, LiveViewSocket<T>, FlashMessage, RouteParams<T> with operator overloading
 - **Ecto Complete** - Schemas, changesets, queries, migrations with full DSL support  
 - **Mix Integration** - Seamless build pipeline with file watching and incremental compilation
 - **Source Maps** - First Reflaxe target with `.ex.map` generation for debugging
