@@ -1,11 +1,9 @@
 defmodule Main do
   @moduledoc """
-  Main module generated from Haxe
-  
-  
- * Try-catch exception handling test case
- * Tests exception throwing, catching, and finally blocks
- 
+    Main module generated from Haxe
+
+     * Try-catch exception handling test case
+     * Tests exception throwing, catching, and finally blocks
   """
 
   # Static functions
@@ -219,8 +217,6 @@ end
 
 
 defmodule CustomException do
-  @moduledoc """
-  CustomException module generated from Haxe
-  """
+  @moduledoc "CustomException module generated from Haxe"
 
 end

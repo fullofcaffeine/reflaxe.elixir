@@ -1,7 +1,5 @@
 defmodule Main do
-  @moduledoc """
-  Main module generated from Haxe
-  """
+  @moduledoc "Main module generated from Haxe"
 
   # Static functions
   @doc "Function color_to_string"

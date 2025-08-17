@@ -1,11 +1,9 @@
 defmodule Main do
   @moduledoc """
-  Main module generated from Haxe
-  
-  
- * Basic syntax test case
- * Tests fundamental Haxe→Elixir compilation
- 
+    Main module generated from Haxe
+
+     * Basic syntax test case
+     * Tests fundamental Haxe→Elixir compilation
   """
 
   # Static functions

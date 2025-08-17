@@ -1,41 +1,39 @@
 defmodule OptionTools do
   @moduledoc """
-  OptionTools module generated from Haxe
-  
-  
- * Functional operations for Option<T> types with BEAM-first design.
- * 
- * Inspired by Gleam's approach: complete type safety, functional composition,
- * and seamless integration with OTP/BEAM patterns.
- * 
- * ## Design Philosophy
- * 
- * All operations follow Gleam's naming conventions and functional programming
- * principles while compiling to idiomatic BEAM code:
- * 
- * - **Functor operations**: map for transforming contained values
- * - **Monad operations**: then (flatMap) for chaining Option-returning functions  
- * - **Collection operations**: all, values for working with arrays
- * - **BEAM integration**: toResult, toReply for OTP patterns
- * 
- * ## Usage Examples
- * 
- * ```haxe
- * // Gleam-style chaining
- * var result = findUser(id)
- *     .map(user -> user.email)
- *     .filter(email -> email.contains("@"))
- *     .unwrap("unknown@example.com");
- * 
- * // OTP GenServer integration
- * var reply = getUser(id).toReply();  // {:reply, {:ok, user}, state}
- * 
- * // Error handling chains
- * var outcome = findUser(id)
- *     .toResult("User not found")
- *     .then(user -> updateUser(user, data));
- * ```
- 
+    OptionTools module generated from Haxe
+
+     * Functional operations for Option<T> types with BEAM-first design.
+     *
+     * Inspired by Gleam's approach: complete type safety, functional composition,
+     * and seamless integration with OTP/BEAM patterns.
+     *
+     * ## Design Philosophy
+     *
+     * All operations follow Gleam's naming conventions and functional programming
+     * principles while compiling to idiomatic BEAM code:
+     *
+     * - **Functor operations**: map for transforming contained values
+     * - **Monad operations**: then (flatMap) for chaining Option-returning functions
+     * - **Collection operations**: all, values for working with arrays
+     * - **BEAM integration**: toResult, toReply for OTP patterns
+     *
+     * ## Usage Examples
+     *
+     * ```haxe
+     * // Gleam-style chaining
+     * var result = findUser(id)
+     *     .map(user -> user.email)
+     *     .filter(email -> email.contains("@"))
+     *     .unwrap("unknown@example.com");
+     *
+     * // OTP GenServer integration
+     * var reply = getUser(id).toReply();  // {:reply, {:ok, user}, state}
+     *
+     * // Error handling chains
+     * var outcome = findUser(id)
+     *     .toResult("User not found")
+     *     .then(user -> updateUser(user, data));
+     * ```
   """
 
   # Static functions

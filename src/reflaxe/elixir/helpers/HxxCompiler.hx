@@ -122,13 +122,19 @@ class HxxCompiler {
                 
             case TField(obj, field):
                 // Object property access: user.name → {user.name}
-                var objNode = walkAST(obj, context);
                 var fieldName = switch (field) {
                     case FInstance(_, _, cf) | FStatic(_, cf) | FClosure(_, cf): cf.get().name;
                     case FAnon(cf): cf.get().name;
                     case FEnum(_, ef): ef.name;
                     case FDynamic(s): s;
                 };
+                
+                // Special case: assigns.inner_content becomes @inner_content in Phoenix
+                if (fieldName == "inner_content" && isAssignsObject(obj)) {
+                    return VariableNode("@inner_content");
+                }
+                
+                var objNode = walkAST(obj, context);
                 var elixirField = NamingHelper.toSnakeCase(fieldName);
                 return InterpolationNode(objNode, elixirField);
                 
@@ -151,8 +157,41 @@ class HxxCompiler {
                 return ConditionalNode(condNode, thenNode, elseNode);
                 
             case TCall(e, args):
-                // Function calls: user.getName() → {get_name(user)}
-                return compileFunctionCall(e, args, context);
+                // Check if this is a Std.string() wrapper (Haxe adds these for type safety in string interpolation)
+                switch (e.expr) {
+                    case TField({expr: TTypeExpr(TClassDecl(c))}, FStatic(_, cf)) if (c.get().name == "Std" && cf.get().name == "string"):
+                        // This is Std.string(expr) - unwrap and process the inner expression
+                        if (args.length > 0) {
+                            // Special handling for assigns.field pattern
+                            switch (args[0].expr) {
+                                case TField(obj, field) if (isAssignsObject(obj)):
+                                    // assigns.field should become @field in Phoenix templates
+                                    var fieldName = switch (field) {
+                                        case FInstance(_, _, cf) | FStatic(_, cf) | FClosure(_, cf): cf.get().name;
+                                        case FAnon(cf): cf.get().name;
+                                        case FEnum(_, ef): ef.name;
+                                        case FDynamic(s): s;
+                                    };
+                                    
+                                    // Special case: assigns.inner_content becomes @inner_content
+                                    if (fieldName == "inner_content") {
+                                        return VariableNode("@inner_content");
+                                    }
+                                    
+                                    // Other assigns.field become @field
+                                    var elixirField = NamingHelper.toSnakeCase(fieldName);
+                                    return VariableNode('@${elixirField}');
+                                    
+                                default:
+                                    // For other Std.string() calls, just process the inner expression
+                                    return walkAST(args[0], context);
+                            }
+                        }
+                        return walkAST(args[0], context);
+                    default:
+                        // Regular function calls
+                        return compileFunctionCall(e, args, context);
+                }
                 
             case TBinop(op, left, right):
                 // Other binary operations: ==, !=, >, <, etc.
@@ -190,7 +229,7 @@ class HxxCompiler {
             case TLocal(v):
                 // Local function call: func(args)
                 var elixirFunc = NamingHelper.toSnakeCase(v.name);
-                return FunctionCallNode(VariableNode(""), elixirFunc, argNodes);
+                return FunctionCallNode(null, elixirFunc, argNodes);
                 
             case _:
                 // Other function calls - treat as generic expression
@@ -225,10 +264,10 @@ class HxxCompiler {
                 
             case InterpolationNode(obj, field):
                 var objStr = generateTemplateContent(obj);
-                return '{${objStr}.${field}}';
+                return '<%= ${objStr}.${field} %>';
                 
             case VariableNode(name):
-                return '{${name}}';
+                return '<%= ${name} %>';
                 
             case ConcatNode(nodes):
                 return nodes.map(n -> generateTemplateContent(n)).join('');
@@ -237,22 +276,33 @@ class HxxCompiler {
                 var condStr = generateElixirExpression(cond);
                 var thenStr = generateTemplateContent(thenNode);
                 var elseStr = elseNode != null ? generateTemplateContent(elseNode) : '""';
-                return '{if ${condStr}, do: ${thenStr}, else: ${elseStr}}';
+                return '<%= if ${condStr}, do: ${thenStr}, else: ${elseStr} %>';
                 
             case FunctionCallNode(obj, method, args):
-                var objStr = generateTemplateContent(obj);
                 var argStrs = args.map(arg -> generateElixirExpression(arg));
-                return '{${method}(${objStr}${argStrs.length > 0 ? ", " + argStrs.join(", ") : ""})}';
+                
+                // Handle both object methods and standalone functions
+                if (obj != null) {
+                    var objStr = generateElixirExpression(obj);
+                    if (objStr != null && objStr != "") {
+                        // Object method call: obj.method(args)
+                        var allArgs = [objStr].concat(argStrs);
+                        return '<%= ${method}(${allArgs.join(", ")}) %>';
+                    }
+                }
+                
+                // Standalone function call: method(args)
+                return '<%= ${method}(${argStrs.join(", ")}) %>';
                 
             case BinaryOpNode(op, left, right):
                 var leftStr = generateElixirExpression(left);
                 var rightStr = generateElixirExpression(right);
                 var opStr = getElixirOperator(op);
-                return '{${leftStr} ${opStr} ${rightStr}}';
+                return '<%= ${leftStr} ${opStr} ${rightStr} %>';
                 
             case RawExpressionNode(expr):
                 // Fallback - this should be minimized
-                return '{raw_expression}';  // Placeholder
+                return '<%= raw_expression %>';  // Placeholder
         }
     }
     
@@ -260,6 +310,8 @@ class HxxCompiler {
      * Generates Elixir expressions for interpolation context
      */
     private static function generateElixirExpression(node: TemplateNode): String {
+        if (node == null) return "";
+        
         // Similar to generateTemplateContent but without wrapping {}
         switch (node) {
             case TextNode(text):
@@ -320,9 +372,15 @@ class HxxCompiler {
      * assigns.field → @field (in LiveView context)
      */
     private static function convertAssignsPatterns(content: String): String {
-        // Convert {assigns.field} to {@field} for LiveView templates
-        var assignsPattern = ~/\\{assigns\.([a-zA-Z_][a-zA-Z0-9_]*)\\}/g;
-        return assignsPattern.replace(content, '{@$1}');
+        // Convert <%= assigns.field %> to <%= @field %> for LiveView templates
+        var assignsPattern = ~/<%= assigns\.([a-zA-Z_][a-zA-Z0-9_]*) %>/g;
+        var result = assignsPattern.replace(content, '<%= @$1 %>');
+        
+        // Also handle cases without spaces for backward compatibility
+        var assignsPattern2 = ~/<%=assigns\.([a-zA-Z_][a-zA-Z0-9_]*)%>/g;
+        result = assignsPattern2.replace(result, '<%= @$1 %>');
+        
+        return result;
     }
     
     /**
@@ -354,6 +412,18 @@ class HxxCompiler {
         });
         
         return content;
+    }
+    
+    /**
+     * Check if an expression represents the assigns object in Phoenix templates
+     */
+    private static function isAssignsObject(expr: TypedExpr): Bool {
+        switch (expr.expr) {
+            case TLocal(v):
+                return v.name == "assigns";
+            case _:
+                return false;
+        }
     }
     
     /**

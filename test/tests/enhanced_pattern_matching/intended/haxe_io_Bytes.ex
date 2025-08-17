@@ -1,7 +1,5 @@
 defmodule Bytes do
-  @moduledoc """
-  Bytes module generated from Haxe
-  """
+  @moduledoc "Bytes module generated from Haxe"
 
   # Static functions
   @doc """

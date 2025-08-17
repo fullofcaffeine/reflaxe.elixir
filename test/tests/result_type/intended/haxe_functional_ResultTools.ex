@@ -1,19 +1,17 @@
 defmodule ResultTools do
   @moduledoc """
-  ResultTools module generated from Haxe
-  
-  
- * Companion class providing functional operations for Result<T,E>
- * 
- * Implements the full functional toolkit for Result types:
- * - Functor operations (map)
- * - Monad operations (flatMap/bind)
- * - Foldable operations (fold)
- * - Utility functions (isOk, isError, unwrap)
- * 
- * All operations are designed to work seamlessly across all Haxe targets
- * while generating optimal target-specific code.
- 
+    ResultTools module generated from Haxe
+
+     * Companion class providing functional operations for Result<T,E>
+     *
+     * Implements the full functional toolkit for Result types:
+     * - Functor operations (map)
+     * - Monad operations (flatMap/bind)
+     * - Foldable operations (fold)
+     * - Utility functions (isOk, isError, unwrap)
+     *
+     * All operations are designed to work seamlessly across all Haxe targets
+     * while generating optimal target-specific code.
   """
 
   # Static functions

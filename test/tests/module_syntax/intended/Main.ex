@@ -1,12 +1,10 @@
 defmodule UserService do
   @moduledoc """
-  UserService module generated from Haxe
-  
-  
- * Module Syntax Sugar Test
- * Tests @:module annotation for simplified Elixir module generation
- * Converted from framework-based ModuleSyntaxTest.hx to snapshot test
- 
+    UserService module generated from Haxe
+
+     * Module Syntax Sugar Test
+     * Tests @:module annotation for simplified Elixir module generation
+     * Converted from framework-based ModuleSyntaxTest.hx to snapshot test
   """
 
   # Module functions - generated with @:module syntax sugar
@@ -53,11 +51,9 @@ end
 
 defmodule StringUtils do
   @moduledoc """
-  StringUtils module generated from Haxe
-  
-  
- * Second module to test multiple module generation
- 
+    StringUtils module generated from Haxe
+
+     * Second module to test multiple module generation
   """
 
   # Module functions - generated with @:module syntax sugar
@@ -79,12 +75,10 @@ end
 
 defmodule UserHelper do
   @moduledoc """
-  UserHelper module generated from Haxe
-  
-  
- * Module with edge case: special characters in name
- * Should be sanitized to valid Elixir module name
- 
+    UserHelper module generated from Haxe
+
+     * Module with edge case: special characters in name
+     * Should be sanitized to valid Elixir module name
   """
 
   # Module functions - generated with @:module syntax sugar

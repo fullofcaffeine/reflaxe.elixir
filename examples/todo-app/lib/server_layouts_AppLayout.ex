@@ -1,7 +1,11 @@
 defmodule AppLayout do
+  use Phoenix.Component
+
   @moduledoc """
-    Application layout component
-    Provides the main container and navigation structure for the app
+    AppLayout module generated from Haxe
+
+     * Application layout component
+     * Provides the main container and navigation structure for the app
   """
 
   # Static functions
@@ -58,11 +62,11 @@ defmodule AppLayout do
       <!-- User Menu -->
       <div class="flex items-center space-x-4">
       <div class="text-sm text-gray-700 dark:text-gray-300">
-      Welcome, <span class="font-semibold">{temp_string}</span>
+      Welcome, <span class="font-semibold"><%= temp_string %></span>
       </div>
       <div class="w-8 h-8 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center">
       <span class="text-white text-sm font-medium">
-      {get_initials({app_layout}, temp_string1)}
+      <%= get_initials(app_layout, temp_string1) %>
       </span>
       </div>
       </div>
@@ -78,7 +82,7 @@ defmodule AppLayout do
       </a>
       <span class="text-gray-400 dark:text-gray-500">/</span>
       <span class="text-gray-900 dark:text-white font-medium">
-      {temp_string2}
+      <%= temp_string2 %>
       </span>
       </div>
       </div>
@@ -90,12 +94,12 @@ defmodule AppLayout do
       <div class="md:flex md:items-center md:justify-between">
       <div class="flex-1 min-w-0">
       <h2 class="text-2xl font-bold leading-7 text-gray-900 dark:text-white sm:text-3xl sm:truncate">
-      {temp_string3}
+      <%= temp_string3 %>
       </h2>
       <div class="mt-1 flex flex-col sm:flex-row sm:flex-wrap sm:mt-0 sm:space-x-6">
       <div class="mt-2 flex items-center text-sm text-gray-500 dark:text-gray-400">
       <span class="mr-2">🕒</span>
-      Last updated: {format_timestamp({app_layout}, temp_string4)}
+      Last updated: <%= format_timestamp(app_layout, temp_string4) %>
       </div>
       <div class="mt-2 flex items-center text-sm text-gray-500 dark:text-gray-400">
       <span class="mr-2">⚡</span>
@@ -116,7 +120,7 @@ defmodule AppLayout do
       </div>
       <!-- Content -->
       <div class="space-y-6">
-      {string({std}, assigns.inner_content)}
+      <%= @inner_content %>
       </div>
       </main>
       <!-- Footer -->

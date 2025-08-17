@@ -1,17 +1,15 @@
 defmodule Main do
   @moduledoc """
-  Main module generated from Haxe
-  
-  
- * Test case for Universal Result<T,E> type compilation
- * 
- * This test validates:
- * - Basic Result enum compilation
- * - Pattern matching on Result values
- * - ResultTools functional operations
- * - Type safety across success and error cases
- * - Proper Elixir tuple generation for {:ok, _} and {:error, _}
- 
+    Main module generated from Haxe
+
+     * Test case for Universal Result<T,E> type compilation
+     *
+     * This test validates:
+     * - Basic Result enum compilation
+     * - Pattern matching on Result values
+     * - ResultTools functional operations
+     * - Type safety across success and error cases
+     * - Proper Elixir tuple generation for {:ok, _} and {:error, _}
   """
 
   # Static functions

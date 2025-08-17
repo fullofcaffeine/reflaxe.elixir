@@ -1,11 +1,9 @@
 defmodule Main do
   @moduledoc """
-  Main module generated from Haxe
-  
-  
- * Map/Dictionary test case
- * Tests various map types and operations
- 
+    Main module generated from Haxe
+
+     * Map/Dictionary test case
+     * Tests various map types and operations
   """
 
   # Static functions

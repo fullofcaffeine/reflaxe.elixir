@@ -1,7 +1,11 @@
 defmodule RootLayout do
+  use Phoenix.Component
+
   @moduledoc """
-    Root layout component for the Phoenix application
-    Handles HTML document structure, meta tags, and asset loading
+    RootLayout module generated from Haxe
+
+     * Root layout component for the Phoenix application
+     * Handles HTML document structure, meta tags, and asset loading
   """
 
   # Static functions
@@ -18,7 +22,7 @@ defmodule RootLayout do
       <meta charset="utf-8"/>
       <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
       <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-      <meta name="csrf-token" content="{get_csrf_token({root_layout})}"/>
+      <meta name="csrf-token" content="<%= get_csrf_token(root_layout) %>"/>
       <title>Todo App - Haxe ❤️ Phoenix LiveView</title>
       <meta name="description" content="A beautiful todo application built with Haxe and Phoenix LiveView, showcasing modern UI and type-safe development"/>
       <!-- Favicon -->
@@ -63,7 +67,7 @@ defmodule RootLayout do
       </div>
       <!-- Main content -->
       <main id="main-content" class="h-full">
-      {string({std}, assigns.inner_content)}
+      <%= @inner_content %>
       </main>
       <!-- Dark mode toggle script -->
       <script>

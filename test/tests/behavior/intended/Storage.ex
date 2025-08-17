@@ -14,9 +14,7 @@ end
 
 
 defmodule MemoryStorage do
-  @moduledoc """
-  MemoryStorage module generated from Haxe
-  """
+  @moduledoc "MemoryStorage module generated from Haxe"
 
   # Instance functions
   @doc "Function init"
@@ -82,9 +80,7 @@ end
 
 
 defmodule FileStorage do
-  @moduledoc """
-  FileStorage module generated from Haxe
-  """
+  @moduledoc "FileStorage module generated from Haxe"
 
   # Instance functions
   @doc "Function init"
@@ -135,9 +131,7 @@ end
 
 
 defmodule ConsoleLogger do
-  @moduledoc """
-  ConsoleLogger module generated from Haxe
-  """
+  @moduledoc "ConsoleLogger module generated from Haxe"
 
   # Instance functions
   @doc "Function log"
