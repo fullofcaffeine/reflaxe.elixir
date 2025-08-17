@@ -228,7 +228,7 @@ defmodule StringUtils do
   """
   @spec main() :: nil
   def main() do
-    Log.trace("StringUtils compiled successfully for Mix project!", %{"fileName" => "./utils/StringUtils.hx", "lineNumber" => 178, "className" => "utils.StringUtils", "methodName" => "main"})
+    Log.trace("StringUtils compiled successfully for Mix project!", %{"fileName" => "utils/StringUtils.hx", "lineNumber" => 178, "className" => "utils.StringUtils", "methodName" => "main"})
   end
 
 end
