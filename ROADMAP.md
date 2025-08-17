@@ -1,9 +1,33 @@
 # Reflaxe.Elixir Roadmap
 
-This document outlines the future development plans for Reflaxe.Elixir, organized by release targets and priorities.
+This document outlines the development plans for Reflaxe.Elixir, organized by completed features and future priorities.
 
-## Version 0.2.0 (Q1 2025)
-*Focus: LLM Development Experience*
+## ✅ Completed Features
+
+### File Watching & Incremental Compilation (v0.2.0) ✅
+- **HaxeWatcher for automatic file change detection** ✅
+- **HaxeServer for incremental compilation** via `haxe --wait` ✅
+- **Mix integration** with `mix compile.haxe --watch` ✅
+- **Sub-second compilation times** optimized for LLM iteration cycles ✅
+
+### Source Mapping Achievement (v0.3.0) ✅ 
+**🎯 Reflaxe.Elixir is the FIRST Reflaxe target to implement source mapping!** While other targets (C++, C#, Go, GDScript) don't provide source maps, we've pioneered this feature for superior debugging experience.
+- **Source map generation** (.ex.map files with VLQ encoding) ✅
+- **Proper sources array** tracking Haxe files ✅
+- **Mix task infrastructure** for querying source maps ✅
+
+### Template Helper Metadata System (v1.0) ✅ **NEW**
+- **@:templateHelper metadata** for Phoenix template functions ✅
+- **Phoenix.Component integration** with automatic import detection ✅
+- **Type-safe template compilation** with proper metadata handling ✅
+
+### Type-Safe Phoenix Abstractions (v1.0) ✅ **NEW**
+- **Assigns<T>** with @:arrayAccess for ergonomic field access ✅
+- **LiveViewSocket<T>**, **FlashMessage**, **RouteParams<T>** abstractions ✅
+- **Operator overloading** using standard library patterns ✅
+
+## 🔄 Current Development (v1.1 - Q1 2025)
+*Focus: Enhanced LLM Development Experience*
 
 ### Features  
 - [ ] **LLM Workflow Integration** ✨
@@ -31,12 +55,6 @@ This document outlines the future development plans for Reflaxe.Elixir, organize
   - See: [`documentation/guides/HXX_INTERPOLATION_SYNTAX.md`](documentation/guides/HXX_INTERPOLATION_SYNTAX.md)
 
 ### Improvements
-- [x] **File Watching & Incremental Compilation** ✅
-  - HaxeWatcher for automatic file change detection
-  - HaxeServer for incremental compilation via `haxe --wait`
-  - Mix integration with `mix compile.haxe --watch` 
-  - Sub-second compilation times optimized for LLM iteration cycles
-
 - [ ] Performance optimizations for large codebases
 - [ ] Better error messages with source location  
 - [ ] IDE integration improvements
@@ -46,28 +64,24 @@ This document outlines the future development plans for Reflaxe.Elixir, organize
   - Support for Mix.Generator.copy_template, Mix.Generator.create_file, Mix.Generator.copy_from
   - Better integration with Mix ecosystem conventions
 
-## Version 0.3.0 (Q2 2024)
+## 🚀 Future Development (v1.2 - Q2 2025)
 *Focus: Testing & Developer Experience*
 
-### 🎯 Source Mapping Achievement
-**Reflaxe.Elixir is the FIRST Reflaxe target to implement source mapping!** While other targets (C++, C#, Go, GDScript) don't provide source maps, we've pioneered this feature for superior debugging experience. Current status:
-- ✅ Generating valid Source Map v3 files with real VLQ data
-- ✅ Proper sources array tracking Haxe files
-- ✅ Mix task infrastructure for querying source maps
-- ⚠️ VLQ decoder needs completion for position lookups to work
-
 ### Features
+- [ ] **Complete Source Mapping** 🚀 *Building on our pioneering source map implementation*
+  - [ ] Complete VLQ Base64 decoder implementation
+    - Current: Mock implementation returns placeholder mappings
+    - Needed: Proper VLQ decoding following Source Map v3 spec
+    - Reference: Haxe's `context/sourcemaps.ml` implementation
+  - [ ] Enhanced position tracking for all expression types
+  - [ ] Source map validation tests and performance benchmarks
+
 - [ ] **Test DSL**
   - `@:test` annotation for ExUnit tests
   - Property-based testing support
   - Mock generation for behaviors
 
-- [ ] **Debugging Support** 🚀 *First Reflaxe target with source mapping!*
-  - [x] Source map generation (.ex.map files with VLQ encoding)
-  - [ ] Complete VLQ Base64 decoder implementation
-    - Current: Mock implementation returns placeholder mappings
-    - Needed: Proper VLQ decoding following Source Map v3 spec
-    - Reference: Haxe's `context/sourcemaps.ml` implementation
+- [ ] **Advanced Debugging Support**
   - [ ] Enhanced position tracking
     - Track all expression types during compilation
     - Accurate column position tracking
@@ -91,8 +105,8 @@ This document outlines the future development plans for Reflaxe.Elixir, organize
 - [ ] Language server protocol (LSP) support
 - [ ] Hot code reloading integration
 
-## Version 0.4.0 (Q3 2024)
-*Focus: Advanced OTP Patterns*
+## 🔮 Long-term Vision (v2.0 - 2025+)
+*Focus: Advanced OTP Patterns & Production Excellence*
 
 ### Features
 - [ ] **Supervisor Trees**
@@ -115,10 +129,7 @@ This document outlines the future development plans for Reflaxe.Elixir, organize
 - [ ] Compilation speed improvements
 - [ ] Better macro expansion debugging
 
-## Version 0.5.0 (Q4 2024)
-*Focus: Production Readiness*
-
-### Features
+### Production-Ready Features
 - [ ] **Telemetry Integration**
   - `@:telemetry` annotation
   - Automatic instrumentation

@@ -184,6 +184,164 @@ function userListItem(user: User): String {
 }
 ```
 
+### Phoenix Helper Functions ✨ **NEW**
+
+HXX seamlessly integrates with Phoenix helper functions through the **@:templateHelper metadata system**, providing automatic detection and proper compilation of Phoenix template utilities.
+
+#### Automatic Phoenix.Component Integration
+
+Phoenix.Component functions are automatically detected and compiled properly:
+
+```haxe
+import phoenix.Component;
+
+function renderSecureForm(assigns: Dynamic): String {
+    return HXX('
+        <form method="post">
+            <meta name="csrf-token" content={Component.get_csrf_token()}/>
+            <div class="field">
+                <input type="text" name="title" required/>
+            </div>
+            <button type="submit">Submit</button>
+        </form>
+    ');
+}
+```
+
+**Generated Phoenix HEEx:**
+```elixir
+~H"""
+<form method="post">
+    <meta name="csrf-token" content={get_csrf_token()}/>
+    <div class="field">
+        <input type="text" name="title" required/>
+    </div>
+    <button type="submit">Submit</button>
+</form>
+"""
+```
+
+#### How It Works: @:templateHelper Metadata
+
+The HXX compiler uses metadata-driven detection instead of hardcoded function lists:
+
+```haxe
+// In phoenix/Component.hx
+@:templateHelper
+extern class Component {
+    @:templateHelper
+    static function get_csrf_token(): String;
+    
+    @:templateHelper  
+    static function form_for(changeset: Dynamic, action: String): String;
+    
+    @:templateHelper
+    static function text_input(form: Dynamic, field: String): String;
+}
+```
+
+**Benefits of Metadata System:**
+- **Extensible** - Add new helper functions without modifying compiler
+- **Type-Safe** - Full compile-time validation of helper usage
+- **Maintainable** - Clear declaration of template-compatible functions
+- **Future-Proof** - Easy to add custom Phoenix libraries
+
+#### Creating Custom Template Helpers
+
+You can create your own template helper functions using the @:templateHelper annotation:
+
+```haxe
+// Custom helper module
+class MyHelpers {
+    @:templateHelper
+    public static function formatCurrency(amount: Float): String {
+        return '$${Math.fround(amount * 100) / 100}';
+    }
+    
+    @:templateHelper
+    public static function timeAgo(date: Date): String {
+        var now = Date.now();
+        var diff = now.getTime() - date.getTime();
+        var minutes = Math.floor(diff / 60000);
+        
+        return if (minutes < 1) "just now";
+        else if (minutes < 60) '${minutes} minutes ago';
+        else if (minutes < 1440) '${Math.floor(minutes/60)} hours ago';
+        else '${Math.floor(minutes/1440)} days ago';
+    }
+}
+```
+
+**Usage in Templates:**
+```haxe
+function renderProduct(assigns: Dynamic): String {
+    return HXX('
+        <div class="product">
+            <h3>${assigns.product.name}</h3>
+            <p class="price">{MyHelpers.formatCurrency(assigns.product.price)}</p>
+            <p class="updated">Updated {MyHelpers.timeAgo(assigns.product.updatedAt)}</p>
+        </div>
+    ');
+}
+```
+
+**Generated HEEx:**
+```elixir
+~H"""
+<div class="product">
+    <h3><%= @product.name %></h3>
+    <p class="price">{format_currency(@product.price)}</p>
+    <p class="updated">Updated {time_ago(@product.updated_at)}</p>
+</div>
+"""
+```
+
+#### Function Name Conversion
+
+Template helper functions automatically convert from camelCase to snake_case in HTML attributes:
+
+```haxe
+// Haxe HXX
+<div class={MyHelpers.getStatusClass(status)} 
+     id={MyHelpers.generateElementId("item", index)}>
+</div>
+
+// Generated HEEx  
+<div class={get_status_class(status)}
+     id={generate_element_id("item", index)}>
+</div>
+```
+
+#### Advanced Template Helper Patterns
+
+**Conditional Helper Usage:**
+```haxe
+function renderUser(assigns: Dynamic): String {
+    var user = assigns.user;
+    return HXX('
+        <div class="user">
+            <img src={user.avatar ?? Component.default_avatar_url()} 
+                 alt="Avatar"/>
+            <span class="status {user.isOnline ? Component.online_class() : Component.offline_class()}">
+                {user.isOnline ? "Online" : "Offline"}
+            </span>
+        </div>
+    ');
+}
+```
+
+**Helper Function Chaining:**
+```haxe
+function renderTimestamp(assigns: Dynamic): String {
+    return HXX('
+        <time datetime={DateHelpers.toIsoString(assigns.date)}
+              title={DateHelpers.formatLong(assigns.date)}>
+            {DateHelpers.formatRelative(assigns.date)}
+        </time>
+    ');
+}
+```
+
 ## Best Practices
 
 ### 1. Keep Templates Readable
