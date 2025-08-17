@@ -1,6 +1,7 @@
 package test;
 
 import sys.io.Process;
+import test.TestCommon;
 
 using StringTools;
 
@@ -513,82 +514,9 @@ class TestWorker {
             return false; // No intended output found
         }
         
-        return compareDirectories(outPath, intendedPath);
+        return TestCommon.compareDirectoriesSimple(outPath, intendedPath);
     }
     
-    function compareDirectories(actualDir: String, intendedDir: String): Bool {
-        if (!sys.FileSystem.exists(actualDir) || !sys.FileSystem.exists(intendedDir)) {
-            return false;
-        }
-        
-        // Get all files from both directories
-        final intendedFiles = getAllFiles(intendedDir);
-        final actualFiles = getAllFiles(actualDir);
-        
-        // Quick check: same number of files
-        if (intendedFiles.length != actualFiles.length) {
-            return false;
-        }
-        
-        // Check each intended file exists and matches
-        for (file in intendedFiles) {
-            final intendedPath = haxe.io.Path.join([intendedDir, file]);
-            final actualPath = haxe.io.Path.join([actualDir, file]);
-            
-            if (!sys.FileSystem.exists(actualPath)) {
-                return false;
-            }
-            
-            // Compare file contents
-            final intendedContent = normalizeContent(sys.io.File.getContent(intendedPath));
-            final actualContent = normalizeContent(sys.io.File.getContent(actualPath));
-            
-            if (intendedContent != actualContent) {
-                return false;
-            }
-        }
-        
-        return true;
-    }
-    
-    function getAllFiles(dir: String): Array<String> {
-        final files = [];
-        
-        if (!sys.FileSystem.exists(dir)) return files;
-        
-        function collectFiles(currentDir: String, prefix: String = "") {
-            for (item in sys.FileSystem.readDirectory(currentDir)) {
-                final itemPath = haxe.io.Path.join([currentDir, item]);
-                final relativePath = prefix.length > 0 ? haxe.io.Path.join([prefix, item]) : item;
-                
-                if (sys.FileSystem.isDirectory(itemPath)) {
-                    collectFiles(itemPath, relativePath);
-                } else {
-                    files.push(relativePath);
-                }
-            }
-        }
-        
-        collectFiles(dir);
-        return files;
-    }
-    
-    function normalizeContent(content: String): String {
-        // Normalize line endings
-        content = StringTools.replace(content, "\r\n", "\n");
-        content = StringTools.replace(content, "\r", "\n");
-        
-        // Remove trailing whitespace from each line
-        var lines = content.split("\n");
-        lines = lines.map(line -> StringTools.rtrim(line));
-        
-        // Remove trailing empty lines
-        while (lines.length > 0 && lines[lines.length - 1] == "") {
-            lines.pop();
-        }
-        
-        return lines.join("\n");
-    }
     
     public function isAvailable(): Bool {
         return !isRunning;
