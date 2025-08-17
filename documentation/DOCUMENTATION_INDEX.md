@@ -16,7 +16,7 @@ This index provides a comprehensive guide to all documentation in the Reflaxe.El
 | Use annotations | Annotations Reference | [`reference/ANNOTATIONS.md`](reference/ANNOTATIONS.md) |
 | Understand paradigm differences | Paradigm Bridge | [`paradigms/PARADIGM_BRIDGE.md`](paradigms/PARADIGM_BRIDGE.md) |
 | Work with Phoenix | Phoenix Integration | [`phoenix/HAXE_FOR_PHOENIX.md`](phoenix/HAXE_FOR_PHOENIX.md) |
-| Find current development plan | Active PRD | [`plans/staging/README.md`](plans/staging/README.md) |
+| Find current development plan | Active PRD | [`plans/ACTIVE_PRD.md`](plans/ACTIVE_PRD.md) |
 | Reference existing code | Reference implementations | `/Users/fullofcaffeine/workspace/code/haxe.elixir.reference/` |
 
 ## 📂 Documentation Structure
@@ -32,6 +32,7 @@ This index provides a comprehensive guide to all documentation in the Reflaxe.El
 - **[`TUTORIAL_FIRST_PROJECT.md`](guides/TUTORIAL_FIRST_PROJECT.md)** - Step-by-step first project
 - **[`ROUTER_MIGRATION_GUIDE.md`](guides/ROUTER_MIGRATION_GUIDE.md)** - Phoenix router migration
 - **[`ADVANCED_ECTO_GUIDE.md`](guides/ADVANCED_ECTO_GUIDE.md)** - Database integration patterns
+- **[`TYPE_SAFE_ASSIGNS.md`](guides/TYPE_SAFE_ASSIGNS.md)** - Type-safe Phoenix assigns and socket abstractions
 - **[`WATCHER_DEVELOPMENT_GUIDE.md`](guides/WATCHER_DEVELOPMENT_GUIDE.md)** - File watcher workflow
 
 ### 2. Architecture Documentation (`/documentation/architecture/`)
@@ -201,12 +202,65 @@ Contains:
 ### Contributing to the Compiler?
 1. [`architecture/ARCHITECTURE.md`](architecture/ARCHITECTURE.md)
 2. [`TESTING_OVERVIEW.md`](TESTING_OVERVIEW.md)
-3. [`plans/staging/README.md`](plans/staging/README.md) (current work)
+3. [`plans/ACTIVE_PRD.md`](plans/ACTIVE_PRD.md) (current work)
 
 ### Setting up Development?
 1. [`DEVELOPMENT_TOOLS.md`](DEVELOPMENT_TOOLS.md)
 2. [`guides/WATCHER_DEVELOPMENT_GUIDE.md`](guides/WATCHER_DEVELOPMENT_GUIDE.md)
 3. [`MIX_INTEGRATION.md`](MIX_INTEGRATION.md)
+
+## 🧠 Distributed CLAUDE.md Architecture
+
+**Purpose**: Domain-specific context for AI agents working on different parts of the system
+
+The project uses a hierarchical CLAUDE.md system where each subdirectory can have its own specialized AI context while inheriting from the main project conventions.
+
+### Main Project Context
+- **[`/CLAUDE.md`](/CLAUDE.md)** - Project-wide conventions, architecture, and core development principles
+
+### Domain-Specific Contexts
+- **[`src/reflaxe/elixir/CLAUDE.md`](/src/reflaxe/elixir/CLAUDE.md)** - Compiler development guidance
+  - Macro-time vs runtime architecture patterns
+  - AST processing best practices
+  - Helper compiler development workflows
+  - TypedExpr transformation guidelines
+
+- **[`std/CLAUDE.md`](/std/CLAUDE.md)** - Standard library development patterns
+  - Extern + Runtime Library pattern documentation
+  - Type-safe API design principles
+  - Framework integration standards
+  - Cross-platform compatibility guidelines
+
+- **[`test/CLAUDE.md`](/test/CLAUDE.md)** - Testing-specific methodology
+  - 4-type testing architecture explanation
+  - Snapshot testing vs Mix testing guidelines
+  - Todo-app integration testing protocols
+  - Macro-time testing limitations
+
+- **[`examples/todo-app/CLAUDE.md`](/examples/todo-app/CLAUDE.md)** - Example-specific guidance
+  - Never edit generated files rule
+  - File watching workflow
+  - Integration testing patterns
+  - Phoenix development with Haxe
+
+### Parent-Child Relationship
+Each subdirectory CLAUDE.md includes a parent reference:
+```markdown
+> **Parent Context**: See [/CLAUDE.md](/CLAUDE.md) for project-wide conventions
+```
+
+This creates a hierarchical knowledge system that provides:
+- **Domain expertise** available where needed
+- **Consistent patterns** across all development areas
+- **Scalable architecture** that grows with project complexity
+- **Context inheritance** from parent to specialized domains
+
+### For AI Agents
+When working in any subdirectory, agents should:
+1. Check for local CLAUDE.md file first
+2. Inherit conventions from parent context
+3. Apply domain-specific patterns and constraints
+4. Maintain consistency with project-wide standards
 
 ---
 
