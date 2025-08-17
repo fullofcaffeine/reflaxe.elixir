@@ -1,11 +1,7 @@
 defmodule AppLayout do
   @moduledoc """
-  AppLayout module generated from Haxe
-  
-  
- * Application layout component
- * Provides the main container and navigation structure for the app
- 
+    Application layout component
+    Provides the main container and navigation structure for the app
   """
 
   # Static functions

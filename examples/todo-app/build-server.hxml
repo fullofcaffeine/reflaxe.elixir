@@ -32,8 +32,12 @@
 
 # Main server classes to compile
 TodoApp
+TodoAppRouter
 server.live.TodoLive
 server.schemas.Todo
 server.migrations.CreateTodos
 server.live.UserLive
 server.layouts.Layouts
+server.infrastructure.Repo
+server.infrastructure.Telemetry
+server.infrastructure.Endpoint

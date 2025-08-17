@@ -241,54 +241,71 @@ npx haxe build.hxml -D generate-llm-docs
 npx haxe build.hxml -D extract-patterns
 ```
 
-## 🏗️ Architecture Decision: Haxe vs Manual Elixir Files
+## 🏗️ Architecture Philosophy: Haxe First, Type Safety Everywhere
 
-### What Should Be Written in Haxe (Application Logic)
-✅ **Write in Haxe** - Frequently modified application code:
-- **LiveView modules** - Your interactive UI components (`TodoLive.hx`)
-- **Schemas** - Database models with `@:schema` annotation (`Todo.hx`)
-- **Migrations** - Database changes with `@:migration` annotation (`CreateTodos.hx`)
-- **Contexts** - Business logic modules (e.g., `Todos.hx` context)
-- **GenServers/Agents** - Your OTP behaviors and state management
-- **Application module** - With `@:application` annotation for supervision tree
-- **Any custom business logic** - Domain-specific code you'll iterate on
+### Core Principle: Everything in Haxe by Default
+**Write EVERYTHING in Haxe unless technically impossible.** Type safety isn't just for business logic - it's for the entire application.
 
-### What Should Remain as Manual Elixir (Phoenix Infrastructure)
-📦 **Keep as Elixir** - Phoenix framework scaffolding:
-- **Router** (`router.ex`) - Uses Phoenix-specific macros and DSL
-- **Endpoint** (`endpoint.ex`) - Phoenix configuration with compile-time setup
-- **CoreComponents** (`core_components.ex`) - Reusable UI components with ~H sigils
-- **TodoAppWeb** (`todo_app_web.ex`) - Phoenix macro definitions
-- **Layouts** (`layouts.ex`, `layouts/*.heex`) - HTML templates
-- **ErrorHTML/ErrorJSON** - Error handling pages
-- **Telemetry** - Metrics and monitoring setup
-- **Repo** (`repo.ex`) - Simple Ecto configuration
+### What IS Written in Haxe (Almost Everything)
+✅ **In Haxe** - The entire application stack:
+- **Router** (`TodoAppRouter.hx`) - Generates `router.ex` with @:router annotation ✓
+- **LiveView modules** (`TodoLive.hx`) - Interactive UI components ✓
+- **Schemas** (`Todo.hx`) - Database models with @:schema ✓
+- **Migrations** (`CreateTodos.hx`) - Database changes with @:migration ✓
+- **Contexts** (`Todos.hx`) - Business logic modules ✓
+- **Telemetry** (`Telemetry.hx`) - Metrics and monitoring ✓
+- **Repo** (`Repo.hx`) - Ecto repository configuration ✓
+- **Endpoint** (`Endpoint.hx`) - Phoenix endpoint configuration ✓
+- **Application** (`TodoApp.hx`) - OTP application with @:application ✓
+- **Layouts** - Should be HXX templates, not manual HEEx
+- **Error pages** - Type-safe error handling in Haxe
+- **Core components** - HXX components with full type safety
+- **Gettext i18n** - Type-safe internationalization wrapper
+- **Channel modules** - Real-time features with @:channel
+- **All templates** - HXX for everything, zero manual templates
 
-### The Principle
-**Infrastructure that rarely changes** → Manual Elixir files
-**Application logic you actively develop** → Haxe source files
+### What Remains as Elixir (Absolute Minimum)
+📦 **Only if technically required**:
+- **mix.exs** - Build tool configuration (could potentially be generated)
+- **config/*.exs** - Environment configs (could be templated from Haxe)
+- **Assets pipeline** - package.json, esbuild (JavaScript tooling)
 
-### Integration Pattern
-When Haxe code needs to use Phoenix infrastructure:
-1. Create extern definitions for the Elixir modules
-2. Import and use them naturally from Haxe
-3. The compiler handles the integration seamlessly
+### The Haxe-First Development Flow
+1. **Start with Haxe** - Always implement in Haxe first
+2. **Use HXX for all UI** - Templates, layouts, components
+3. **Generate, don't write** - If Elixir is needed, generate it
+4. **Type safety everywhere** - Even error pages and infrastructure
+5. **Extern only as last resort** - Prefer Haxe implementations
 
-Example:
+### ⚠️ EMERGENCY ONLY: Elixir Integration
+
+**Integrating with existing Elixir code via externs is an ESCAPE HATCH, not a feature.**
+
+Just like `__elixir__()`, extern definitions for existing Elixir modules should only be used in:
+1. **Emergency situations** - When a critical feature is blocking and no Haxe solution exists yet
+2. **Gradual migration** - When migrating a large existing Elixir codebase (temporary)
+3. **Third-party libraries** - When absolutely must use an Elixir library with no Haxe equivalent
+
+**The goal is 100% Haxe code, not "Haxe with Elixir integration".**
+
+Example of emergency extern (should be replaced with Haxe implementation):
 ```haxe
-// In Haxe - using Phoenix infrastructure via externs
-@:native("TodoAppWeb.CoreComponents")
-extern class CoreComponents {
-    static function button(assigns: Dynamic): Dynamic;
-    static function modal(assigns: Dynamic): Dynamic;
+// EMERGENCY: Using extern for existing Elixir module
+// TODO: Replace with proper Haxe implementation by [date]
+// Justification: Migration from legacy codebase
+// Ticket: #1234
+@:native("LegacyModule")
+extern class LegacyModule {
+    static function oldFunction(arg: String): Int;
 }
 ```
 
-This architecture gives you:
-- Type-safe application development in Haxe
-- Full access to Phoenix ecosystem and patterns
-- Clear separation of concerns
-- Best of both worlds: Haxe's type system + Phoenix's maturity
+### The Vision
+**100% Type-Safe Application** - Complete type safety throughout, using the right tool for each need:
+- **Pure Haxe preferred**: Write implementations in Haxe for maximum control
+- **Typed externs welcome**: Type-safe integration with Elixir ecosystem
+- **No Dynamic code**: Everything must be properly typed
+- **No escape hatches**: `__elixir__()` only in documented emergencies
 
 ## 📚 Additional Resources
 

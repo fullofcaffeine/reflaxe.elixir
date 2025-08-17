@@ -14,6 +14,9 @@ import reflaxe.elixir.helpers.NamingHelper;
 import reflaxe.elixir.helpers.FormatHelper;
 import reflaxe.elixir.helpers.AnnotationSystem;
 import reflaxe.elixir.PhoenixMapper;
+import reflaxe.elixir.helpers.RepoCompiler;
+import reflaxe.elixir.helpers.TelemetryCompiler;
+import reflaxe.elixir.helpers.EndpointCompiler;
 
 using StringTools;
 
@@ -62,6 +65,19 @@ class ClassCompiler {
             return compileInterface(classType, funcFields);
         }
         
+        // Check for Phoenix infrastructure annotations
+        if (RepoCompiler.isRepoClass(classType)) {
+            return RepoCompiler.compileRepoModule(classType, className);
+        }
+        
+        if (TelemetryCompiler.isTelemetryClass(classType)) {
+            return TelemetryCompiler.compileTelemetryModule(classType, className, funcFields);
+        }
+        
+        if (EndpointCompiler.isEndpointClass(classType)) {
+            return EndpointCompiler.compileEndpointModule(classType, className);
+        }
+        
         // Note: @:application classes are now compiled normally, 
         // with app name replacement handled in post-processing
         
@@ -70,7 +86,7 @@ class ClassCompiler {
         
         // Add Application use statement for @:application classes
         if (isApplication) {
-            result.add('  @moduledoc false\n\n');
+            // Application classes should have proper documentation, not @moduledoc false
             result.add('  use Application\n\n');
         } else {
             // Add use Bitwise only if the module uses bitwise operations
@@ -212,28 +228,26 @@ class ClassCompiler {
     }
     
     /**
-     * Generate module documentation
+     * Generate module documentation with proper formatting
      */
     private function generateModuleDoc(className: String, classType: Dynamic, isStruct: Bool): String {
-        var result = new StringBuf();
-        result.add('  @moduledoc """\n');
-        result.add('  ${className} ');
-        result.add(isStruct ? 'struct' : 'module');
-        result.add(' generated from Haxe\n');
+        var docString = "";
         
+        // Build the documentation content
         if (classType.doc != null) {
-            result.add('  \n');
-            result.add('  ${classType.doc}\n');
+            // Use the actual class documentation if available
+            docString = classType.doc;
+        } else {
+            // Generate default documentation
+            docString = '${className} ${isStruct ? "struct" : "module"} generated from Haxe';
+            
+            if (isStruct) {
+                docString += '\n\nThis module defines a struct with typed fields and constructor functions.';
+            }
         }
         
-        if (isStruct) {
-            result.add('  \n');
-            result.add('  This module defines a struct with typed fields and constructor functions.\n');
-        }
-        
-        result.add('  """\n\n');
-        
-        return result.toString();
+        // Use FormatHelper for proper formatting
+        return FormatHelper.formatDoc(docString, true, 1) + '\n\n';
     }
     
     /**

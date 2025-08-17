@@ -21,9 +21,7 @@ defmodule UserChangeset do
 end
 
 defmodule Users do
-  @moduledoc """
-  Users module generated from Haxe
-  """
+  @moduledoc "Users module generated from Haxe"
 
   # Static functions
   @doc """

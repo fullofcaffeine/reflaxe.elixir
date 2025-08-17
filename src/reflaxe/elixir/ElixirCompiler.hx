@@ -1149,12 +1149,43 @@ class ElixirCompiler extends DirectToStringCompiler {
                 compileFieldAccess(e, fa);
                 
             case TCall(e, el):
+                // Check for special compile-time function calls
+                switch (e.expr) {
+                    case TLocal(v) if (v.name == "getAppName"):
+                        // Resolve app name at compile-time from @:appName annotation
+                        var appName = AnnotationSystem.getEffectiveAppName(currentClassType);
+                        return '"${appName}"';
+                    case TField(obj, field):
+                        var fieldName = switch (field) {
+                            case FInstance(_, _, cf) | FStatic(_, cf) | FClosure(_, cf): cf.get().name;
+                            case FAnon(cf): cf.get().name;
+                            case FEnum(_, ef): ef.name;
+                            case FDynamic(s): s;
+                        };
+                        if (fieldName == "getAppName") {
+                            // Handle Class.getAppName() calls
+                            var appName = AnnotationSystem.getEffectiveAppName(currentClassType);
+                            return '"${appName}"';
+                        }
+                    case _:
+                        // Not a special function call, proceed normally
+                }
                 compileMethodCall(e, el);
                 
             case TArrayDecl(el):
                 "[" + el.map(expr -> compileExpression(expr)).join(", ") + "]";
                 
             case TObjectDecl(fields):
+                // Check if this is a Supervisor child spec object
+                if (isChildSpecObject(fields)) {
+                    return compileChildSpec(fields, currentClassType);
+                }
+                
+                // Check if this is a Supervisor options object
+                if (isSupervisorOptionsObject(fields)) {
+                    return compileSupervisorOptions(fields, currentClassType);
+                }
+                
                 // Determine if this object should use atom keys (for OTP patterns, etc.)
                 var useAtoms = shouldUseAtomKeys(fields);
                 var compiledFields = fields.map(f -> {
@@ -4856,6 +4887,174 @@ class ElixirCompiler extends DirectToStringCompiler {
         // Default to string keys for all other cases
         // This is safer and more predictable than trying to guess OTP patterns
         return false;
+    }
+    
+    /**
+     * Check if an object declaration represents a Supervisor child spec
+     * Child specs have "id" and "start" fields
+     */
+    private function isChildSpecObject(fields: Array<{name: String, expr: TypedExpr}>): Bool {
+        if (fields == null || fields.length == 0) return false;
+        
+        var fieldNames = fields.map(f -> f.name);
+        return fieldNames.indexOf("id") != -1 && fieldNames.indexOf("start") != -1;
+    }
+    
+    /**
+     * Compile a child spec object to proper Elixir child specification format
+     * Converts from Haxe objects to Elixir tuples/maps as expected by Supervisor.start_link
+     */
+    private function compileChildSpec(fields: Array<{name: String, expr: TypedExpr}>, classType: Null<ClassType>): String {
+        var id = "";
+        var startModule = "";
+        var startFunction = "";
+        var startArgs = "[]";
+        
+        // Get app name from annotation at compile time
+        var appName = AnnotationSystem.getEffectiveAppName(classType);
+        
+        // Extract fields from the child spec object
+        for (field in fields) {
+            switch (field.name) {
+                case "id":
+                    id = compileExpression(field.expr);
+                    // Remove quotes and resolve any app name interpolation
+                    id = resolveAppNameInString(id, appName);
+                    
+                case "start":
+                    // Handle start object with module, function, args
+                    switch (field.expr.expr) {
+                        case TObjectDecl(startFields):
+                            for (startField in startFields) {
+                                switch (startField.name) {
+                                    case "module":
+                                        startModule = compileExpression(startField.expr);
+                                        startModule = resolveAppNameInString(startModule, appName);
+                                    case "function":
+                                        startFunction = compileExpression(startField.expr);
+                                        startFunction = startFunction.split('"').join('');
+                                    case "args":
+                                        startArgs = compileExpression(startField.expr);
+                                        startArgs = resolveAppNameInString(startArgs, appName);
+                                }
+                            }
+                        case _:
+                            // If start is not an object, compile as-is
+                            var startExpr = compileExpression(field.expr);
+                            startModule = resolveAppNameInString(startExpr, appName);
+                    }
+            }
+        }
+        
+        // Generate proper Elixir child spec based on common patterns
+        if (id.indexOf("Repo") != -1) {
+            // Simple module reference for Repo
+            return '${appName}.Repo';
+        }
+        else if (id.indexOf("PubSub") != -1) {
+            // Tuple format for PubSub with configuration
+            if (startArgs != "[]" && startArgs.indexOf("name") != -1) {
+                // Extract name from args
+                var namePattern = ~/name.*:\s*([^}]*)/;
+                if (namePattern.match(startArgs)) {
+                    var nameValue = namePattern.matched(1).trim();
+                    nameValue = nameValue.split('"').join('');
+                    if (nameValue.endsWith(',')) nameValue = nameValue.substr(0, nameValue.length - 1);
+                    return '{Phoenix.PubSub, name: ${nameValue}}';
+                }
+            }
+            return '{Phoenix.PubSub, name: ${appName}.PubSub}';
+        }
+        else if (id.indexOf("Telemetry") != -1) {
+            // Simple module reference for Telemetry
+            return '${appName}Web.Telemetry';
+        }
+        else if (id.indexOf("Endpoint") != -1) {
+            // Simple module reference for Endpoint  
+            return '${appName}Web.Endpoint';
+        }
+        else {
+            // Generic child spec - use tuple format if has args, otherwise simple module
+            if (startArgs != "[]" && startArgs != "") {
+                return '{${startModule}, ${startArgs}}';
+            } else {
+                return startModule;
+            }
+        }
+    }
+    
+    /**
+     * Resolve app name interpolation in a string at compile time
+     * Handles patterns like: '"" <> app_name <> ".Repo"' -> 'TodoApp.Repo'
+     */
+    private function resolveAppNameInString(str: String, appName: String): String {
+        if (str == null) return "";
+        
+        // Remove outer quotes
+        str = str.split('"').join('');
+        
+        // Handle common interpolation patterns from Haxe string interpolation
+        str = str.replace('" <> app_name <> "', appName);
+        str = str.replace('${appName}', appName);
+        str = str.replace('app_name', appName);
+        
+        // Clean up any remaining empty string concatenations
+        str = str.replace('" <> "', '');
+        str = str.replace(' <> ', '');
+        
+        return str;
+    }
+    
+    /**
+     * Check if an object declaration represents Supervisor options
+     * Supervisor options have "strategy" and usually "name" fields
+     */
+    private function isSupervisorOptionsObject(fields: Array<{name: String, expr: TypedExpr}>): Bool {
+        if (fields == null || fields.length == 0) return false;
+        
+        var fieldNames = fields.map(f -> f.name);
+        return fieldNames.indexOf("strategy") != -1;
+    }
+    
+    /**
+     * Compile supervisor options object to proper Elixir keyword list format
+     * Converts from Haxe objects to Elixir keyword lists as expected by Supervisor.start_link
+     */
+    private function compileSupervisorOptions(fields: Array<{name: String, expr: TypedExpr}>, classType: Null<ClassType>): String {
+        var strategy = "one_for_one";
+        var name = "";
+        
+        // Get app name from annotation at compile time
+        var appName = AnnotationSystem.getEffectiveAppName(classType);
+        
+        // Extract fields from the supervisor options object
+        for (field in fields) {
+            switch (field.name) {
+                case "strategy":
+                    strategy = compileExpression(field.expr);
+                    strategy = strategy.split('"').join(''); // Remove quotes
+                    
+                case "name":
+                    name = compileExpression(field.expr);
+                    name = resolveAppNameInString(name, appName);
+            }
+        }
+        
+        // If no name was specified, generate default supervisor name
+        if (name == "") {
+            name = '${appName}.Supervisor';
+        }
+        
+        // Generate proper Elixir keyword list
+        var options = [];
+        
+        // Convert strategy to atom
+        options.push('strategy: :${strategy}');
+        
+        // Add supervisor name
+        options.push('name: ${name}');
+        
+        return '[${options.join(", ")}]';
     }
     
 }

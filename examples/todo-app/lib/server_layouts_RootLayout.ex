@@ -1,11 +1,7 @@
 defmodule RootLayout do
   @moduledoc """
-  RootLayout module generated from Haxe
-  
-  
- * Root layout component for the Phoenix application
- * Handles HTML document structure, meta tags, and asset loading
- 
+    Root layout component for the Phoenix application
+    Handles HTML document structure, meta tags, and asset loading
   """
 
   # Static functions
