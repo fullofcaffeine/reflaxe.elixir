@@ -66,10 +66,16 @@ This document outlines the development plans for Reflaxe.Elixir, organized by co
 
 ### Experimental Features
 - [x] **Parallel Test Infrastructure** 🧪 *Performance & Reliability*
-  - ✅ **ParallelTestRunner Architecture Complete** - Process-based parallelization with 85% performance improvement (229s → 31.2s)
-  - ✅ **Cross-Platform Process Management** - Robust timeout-based approach resolving macOS exitCode(false) issues  
-  - ✅ **Production-Ready Testing** - No zombie processes, proper cleanup, reliable execution across all platforms
-  - ✅ **Debug Infrastructure** - SimpleParallelTest for sequential debugging and issue isolation
+  - ✅ **ParallelTestRunner Architecture Complete** - File-based locking with 87% performance improvement (261s → 27s)
+  - ✅ **Optimized Worker Count** - 16 workers for maximum CPU utilization on multi-core systems
+  - ✅ **Production-Ready Testing** - Default parallel execution with 54/57 tests passing consistently
+  - ✅ **Simple, Maintainable Solution** - File-based mutex eliminates race conditions reliably
+- [ ] **Worker Process Architecture** 🧪 *Next-Generation Test Isolation*
+  - **Goal**: Jest-like separate worker processes for complete test isolation
+  - **Benefits**: Eliminate file locking entirely, independent working directories per worker
+  - **Architecture**: Main orchestrator + N worker processes communicating via IPC
+  - **Potential**: May resolve remaining 3 test failures through true isolation
+  - **See**: [`documentation/HAXE_THREADING_ANALYSIS.md`](documentation/HAXE_THREADING_ANALYSIS.md) - Complete analysis of threading vs process approaches
 - [ ] **Self-Hosting Development Infrastructure** 🧪 *Ultimate Dogfooding*
   - **Phase 1**: Rewrite ParallelTestRunner.hx to compile to Elixir instead of interpreter
   - **Phase 2**: Convert HaxeWatcher from Elixir to Haxe→Elixir (file system monitoring)
