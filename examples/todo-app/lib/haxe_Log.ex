@@ -1,11 +1,7 @@
 defmodule Log do
   @moduledoc """
-  Log module generated from Haxe
-  
-  
-	Log primarily provides the `trace()` method, which is invoked upon a call to
-	`trace()` in Haxe code.
-
+    Log primarily provides the `trace()` method, which is invoked upon a call to
+    `trace()` in Haxe code.
   """
 
   # Static functions

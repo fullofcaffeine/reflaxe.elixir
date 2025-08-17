@@ -1,11 +1,7 @@
 defmodule FPHelper do
   @moduledoc """
-  FPHelper module generated from Haxe
-  
-  
-	Helper that converts between floating point and binary representation.
-	Always works in low-endian encoding.
-
+    Helper that converts between floating point and binary representation.
+    Always works in low-endian encoding.
   """
 
 end

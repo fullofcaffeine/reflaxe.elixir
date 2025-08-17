@@ -1,9 +1,6 @@
 defmodule PosException do
   @moduledoc """
-  PosException module generated from Haxe
-  
-  
-	An exception that carry position information of a place where it was created.
+    An exception that carry position information of a place where it was created.
 
   """
 

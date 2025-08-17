@@ -200,6 +200,47 @@ class MigrationDSL {
     }
     
     /**
+     * Generate appropriate indexes for a table based on its columns
+     * Only creates indexes for fields that actually exist in the schema
+     */
+    public static function generateIndexesForTable(tableName: String, columns: Array<Dynamic>): String {
+        var indexes = [];
+        var columnNames = [];
+        
+        // Extract column names from the column definitions
+        for (column in columns) {
+            if (column.name != null) {
+                columnNames.push(column.name);
+            }
+        }
+        
+        // Only create indexes for fields that actually exist
+        // Common patterns for typical Phoenix tables:
+        
+        // If there's an email field, make it unique
+        if (columnNames.indexOf("email") != -1) {
+            indexes.push('create unique_index(:${tableName}, [:email])');
+        }
+        
+        // If there's a user_id field, create an index for it
+        if (columnNames.indexOf("user_id") != -1) {
+            indexes.push('create index(:${tableName}, [:user_id])');
+        }
+        
+        // If there's a slug field, make it unique
+        if (columnNames.indexOf("slug") != -1) {
+            indexes.push('create unique_index(:${tableName}, [:slug])');
+        }
+        
+        // Return empty string if no indexes needed
+        if (indexes.length == 0) {
+            return "# No indexes needed for this table";
+        }
+        
+        return indexes.join('\n    ');
+    }
+    
+    /**
      * Compile table drop for rollback
      */
     public static function compileTableDrop(tableName: String): String {
@@ -225,7 +266,7 @@ class MigrationDSL {
         
         var moduleName = 'Repo.Migrations.${className}';
         var tableCreation = compileTableCreation(tableName, columns);
-        var indexCreation = compileIndexCreation(tableName, ["email"], "unique: true");
+        var indexCreation = generateIndexesForTable(tableName, columns);
         
         return 'defmodule ${moduleName} do\n' +
                '  @moduledoc """\n' +
