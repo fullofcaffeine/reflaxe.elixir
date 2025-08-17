@@ -1,0 +1,29 @@
+# Parallel Test Runner Configuration
+# 
+# IMPORTANT: This compiles to INTERPRETER, not Elixir!
+# The ParallelTestRunner is development tooling that runs on the host machine,
+# not application code that runs on BEAM.
+#
+# Why interpreter target?
+# - Needs to spawn haxe processes on host machine
+# - Needs file system access to test directories
+# - Needs to run in same environment as developer
+# - This is infrastructure, not application code
+#
+# Usage:
+#   haxe test/ParallelTest.hxml                  # Run all tests in parallel
+#   haxe test/ParallelTest.hxml -j 4             # Use 4 workers
+#   haxe test/ParallelTest.hxml test=liveview    # Run specific test
+#   haxe test/ParallelTest.hxml update-intended  # Update intended output
+
+# Main class
+-main test.ParallelTestRunner
+
+# Class paths
+-cp test
+
+# Target: Haxe Interpreter (runs directly, no compilation to other language)
+--run test.ParallelTestRunner
+
+# Optional: Enable for debugging
+-D reflaxe_runtime

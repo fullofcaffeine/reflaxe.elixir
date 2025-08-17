@@ -1,0 +1,13 @@
+# Simple Test Runner Configuration - Debug Version
+# 
+# This is a simplified version to debug the parallel execution issues
+# Once this works, we can enhance the full ParallelTestRunner
+
+# Main class
+-main test.SimpleParallelTest
+
+# Class paths
+-cp test
+
+# Target: Run directly with interpreter
+--run test.SimpleParallelTest

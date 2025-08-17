@@ -1043,6 +1043,123 @@ trace("Running at runtime");
 
 
 
+## Parallel Testing Architecture ⚡
+
+### Overview
+
+Reflaxe.Elixir's test suite traditionally runs sequentially, taking ~229 seconds for 62 tests (3.7s per test). The parallel testing architecture aims to reduce this to ~30 seconds with an 87% performance improvement.
+
+### Design Principles
+
+1. **Process-Based Parallelization**: Each test runs in an isolated Haxe process to avoid shared state issues
+2. **Work-Stealing Queue**: Dynamic test distribution ensures optimal load balancing
+3. **Non-Blocking Process Management**: Workers check completion status without blocking the main process
+4. **Robust Error Handling**: Process failures are contained and reported properly
+
+### Components
+
+#### 1. ParallelTestRunner.hx
+- **Main orchestrator** for parallel test execution
+- Manages worker pool and test queue distribution
+- Collects results and provides progress reporting
+- Handles command-line argument parsing and configuration
+
+```haxe
+// Key features:
+- Configurable worker count (default 8, configurable via -j flag)
+- Real-time progress reporting with emoji status indicators
+- Timeout protection (5 minutes maximum)
+- Performance improvement calculations
+```
+
+#### 2. TestWorker Class
+- **Individual worker** that executes tests in isolation
+- Spawns separate `haxe` processes for each test
+- Handles directory context switching and process cleanup
+- Implements non-blocking result checking
+
+```haxe
+// Key features:
+- Non-blocking process.exitCode(false) for async completion
+- Directory context management (setCwd/restore pattern)
+- Output comparison using same logic as TestRunner.hx
+- Error handling and process resource cleanup
+```
+
+#### 3. SimpleParallelTest.hx (Debug Version)
+- **Sequential fallback** for debugging parallel execution issues
+- Validates basic process execution works correctly
+- Same test logic as parallel version but without worker coordination
+- Useful for isolating issues between process execution vs. parallel coordination
+
+### Usage Patterns
+
+```bash
+# Run all tests in parallel (default 8 workers)
+haxe test/ParallelTest.hxml
+
+# Run with specific worker count
+haxe test/ParallelTest.hxml -j 4
+
+# Run specific tests
+haxe test/ParallelTest.hxml test=arrays test=liveview
+
+# Update intended output in parallel
+haxe test/ParallelTest.hxml update-intended
+
+# Debug version (sequential)
+haxe test/SimpleParallelTest.hxml test=arrays
+```
+
+### Implementation Status
+
+✅ **Completed**:
+- ParallelTestRunner.hx with full feature set
+- TestWorker process management
+- Command-line argument parsing compatible with TestRunner.hx
+- SimpleParallelTest.hx debug version working correctly
+- HXML configurations for both interpreter and Elixir targets
+
+🔄 **In Progress**:
+- Fixing worker coordination hang issue
+- Process completion detection reliability
+- Worker-to-main communication improvements
+
+📋 **Planned**:
+- Test result caching mechanism
+- Test categorization for targeted execution
+- Haxe server mode optimization
+- Performance monitoring and metrics
+
+### Architecture Insights
+
+**Process vs. Thread**: We chose process-based parallelization over threads because:
+- No shared state issues between tests
+- Complete isolation prevents cross-test interference  
+- Simpler error handling and resource cleanup
+- Aligns with Haxe's execution model
+
+**Non-Blocking Polling**: Workers use `process.exitCode(false)` for non-blocking completion checks:
+- Prevents the main process from hanging on worker processes
+- Allows concurrent monitoring of multiple workers
+- Enables timeout detection and graceful shutdown
+
+**Directory Context Management**: Each worker properly handles test directory context:
+- Save original working directory before test execution
+- Change to test directory for compilation (matches TestRunner behavior)
+- Restore original directory even on exceptions
+- Ensures tests run in correct context without affecting other workers
+
+### Experimental Features
+
+**Elixir Target Compilation**: ParallelTestElixir.hxml compiles the test runner to Elixir:
+- Dogfooding approach using our own compiler for tooling
+- Tests complex language features like sys.io.Process → System.cmd
+- Performance comparison opportunity vs. interpreter version
+- Foundation for future self-hosting capabilities
+
+This represents an important milestone in compiler maturity - using our own output for development tooling.
+
 ## References
 
 - [Architecture Documentation](ARCHITECTURE.md)

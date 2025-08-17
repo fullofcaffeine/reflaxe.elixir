@@ -64,6 +64,14 @@ This document outlines the development plans for Reflaxe.Elixir, organized by co
   - Support for Mix.Generator.copy_template, Mix.Generator.create_file, Mix.Generator.copy_from
   - Better integration with Mix ecosystem conventions
 
+### Experimental Features
+- [ ] **Elixir Target for Tooling** 🧪 *Self-Hosting Experiment*
+  - Compile development tools (ParallelTestRunner, build utilities) to Elixir target
+  - Dogfooding approach: use our own compiler to build testing infrastructure
+  - Performance comparison vs interpreter version for tooling
+  - Test complex language features (sys.io.Process → System.cmd, JSON handling, etc.)
+  - Foundation for future self-hosting capabilities
+
 ## 🚀 Future Development (v1.2 - Q2 2025)
 *Focus: Testing & Developer Experience*
 
