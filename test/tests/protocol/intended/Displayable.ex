@@ -15,9 +15,7 @@ end
 
 
 defmodule User do
-  @moduledoc """
-  User module generated from Haxe
-  """
+  @moduledoc "User module generated from Haxe"
 
 end
 

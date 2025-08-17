@@ -1,7 +1,11 @@
 defmodule TodoAppWeb.Layouts do
+  use Phoenix.Component
+
   @moduledoc """
-    Main layouts module for Phoenix application
-    Provides the layout functions that Phoenix expects
+    TodoAppWeb.Layouts module generated from Haxe
+
+     * Main layouts module for Phoenix application
+     * Provides the layout functions that Phoenix expects
   """
 
   # Static functions

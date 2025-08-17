@@ -1,21 +1,19 @@
 defmodule MapTools do
   @moduledoc """
-  MapTools module generated from Haxe
-  
-  
- * Static extension class providing functional operations for Map<K,V>
- * 
- * Usage: `using MapTools;` then call methods on Map instances:
- *   var map = ["key" => "value"];
- *   var filtered = map.filter((k, v) -> v.length > 3);
- *   var keys = map.keys();
- * 
- * All methods maintain functional programming principles:
- * - Immutable operations (return new maps)
- * - Type-safe transformations  
- * - Cross-platform compatibility
- * - Compile to idiomatic target code (Elixir Map module, etc.)
- 
+    MapTools module generated from Haxe
+
+     * Static extension class providing functional operations for Map<K,V>
+     *
+     * Usage: `using MapTools;` then call methods on Map instances:
+     *   var map = ["key" => "value"];
+     *   var filtered = map.filter((k, v) -> v.length > 3);
+     *   var keys = map.keys();
+     *
+     * All methods maintain functional programming principles:
+     * - Immutable operations (return new maps)
+     * - Type-safe transformations
+     * - Cross-platform compatibility
+     * - Compile to idiomatic target code (Elixir Map module, etc.)
   """
 
   # Static functions

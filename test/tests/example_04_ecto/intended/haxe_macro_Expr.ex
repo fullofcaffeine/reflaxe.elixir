@@ -1,10 +1,8 @@
 defmodule Error do
   @moduledoc """
-  Error module generated from Haxe
-  
-  
-	This error can be used to handle or produce compilation errors in macros.
+    Error module generated from Haxe
 
+      This error can be used to handle or produce compilation errors in macros.
   """
 
 end

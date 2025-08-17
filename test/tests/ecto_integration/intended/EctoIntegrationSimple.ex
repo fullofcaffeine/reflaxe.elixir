@@ -39,7 +39,7 @@ defmodule Repo.Migrations.CreateUsersTable do
       timestamps()
     end
     
-    create unique_index(:create_users, [:email])
+    # No indexes needed for this table
   end
   
   @doc """
@@ -51,9 +51,7 @@ defmodule Repo.Migrations.CreateUsersTable do
 end
 
 defmodule UserQueries do
-  @moduledoc """
-  UserQueries module generated from Haxe
-  """
+  @moduledoc "UserQueries module generated from Haxe"
 
   # Static functions
   @doc "Function active_users"
@@ -78,9 +76,7 @@ end
 
 
 defmodule Repo do
-  @moduledoc """
-  Repo module generated from Haxe
-  """
+  @moduledoc "Repo module generated from Haxe"
 
   # Static functions
   @doc "Function all"
@@ -168,9 +164,7 @@ end
 
 
 defmodule EctoIntegrationSimple do
-  @moduledoc """
-  EctoIntegrationSimple module generated from Haxe
-  """
+  @moduledoc "EctoIntegrationSimple module generated from Haxe"
 
   # Static functions
   @doc "Function main"

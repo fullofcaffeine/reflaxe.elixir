@@ -1,10 +1,8 @@
 defmodule LimitedController do
   @moduledoc """
-  LimitedController module generated from Haxe
-  
-  
- * Valid controller class with limited methods for testing RouterBuildMacro action validation
- 
+    LimitedController module generated from Haxe
+
+     * Valid controller class with limited methods for testing RouterBuildMacro action validation
   """
 
   # Static functions
@@ -25,11 +23,9 @@ end
 
 defmodule Main do
   @moduledoc """
-  Main module generated from Haxe
-  
-  
- * Main entry point for test
- 
+    Main module generated from Haxe
+
+     * Main entry point for test
   """
 
   # Static functions

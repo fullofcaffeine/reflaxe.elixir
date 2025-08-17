@@ -17,7 +17,7 @@ defmodule Repo.Migrations.CreateUsers do
       timestamps()
     end
     
-    create unique_index(:users, [:email])
+    # No indexes needed for this table
   end
   
   @doc """

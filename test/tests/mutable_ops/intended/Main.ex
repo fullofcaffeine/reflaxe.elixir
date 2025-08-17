@@ -1,10 +1,8 @@
 defmodule Main do
   @moduledoc """
-  Main module generated from Haxe
-  
-  
- * Test for mutable operations like +=, -=, etc.
- 
+    Main module generated from Haxe
+
+     * Test for mutable operations like +=, -=, etc.
   """
 
   # Static functions

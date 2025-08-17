@@ -1,7 +1,5 @@
 defmodule PatternMatchingTest do
-  @moduledoc """
-  PatternMatchingTest module generated from Haxe
-  """
+  @moduledoc "PatternMatchingTest module generated from Haxe"
 
   # Static functions
   @doc """

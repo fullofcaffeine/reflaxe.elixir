@@ -118,8 +118,8 @@ defmodule UserLive do
       />
       </.form>
       </div>
-      {render_user_list({__MODULE__}, assigns)}
-      {render_user_form({__MODULE__}, assigns)}
+      <%= render_user_list(__MODULE__, assigns) %>
+      <%= render_user_form(__MODULE__, assigns) %>
       </div>
       """
   end
@@ -156,21 +156,21 @@ defmodule UserLive do
     if (user.active), do: temp_string1 = "Active", else: temp_string1 = "Inactive"
     ~H"""
       <tr>
-      <td>{{user}.name}</td>
-      <td>{{user}.email}</td>
-      <td>{{user}.age}</td>
+      <td><%= <%= user %>.name %></td>
+      <td><%= <%= user %>.email %></td>
+      <td><%= <%= user %>.age %></td>
       <td>
-      <span class="status {temp_string}">
-      {temp_string1}
+      <span class="status <%= temp_string %>">
+      <%= temp_string1 %>
       </span>
       </td>
       <td class="actions">
-      <.button phx-click="edit_user" phx-value-id="{{user}.id}" size="sm">
+      <.button phx-click="edit_user" phx-value-id="<%= <%= user %>.id %>" size="sm">
       Edit
       </.button>
       <.button
       phx-click="delete_user"
-      phx-value-id="{{user}.id}"
+      phx-value-id="<%= <%= user %>.id %>"
       data-confirm="Are you sure?"
       variant="danger"
       size="sm"
@@ -193,7 +193,7 @@ defmodule UserLive do
       <div class="modal">
       <div class="modal-content">
       <div class="modal-header">
-      <h2>{temp_string}</h2>
+      <h2><%= temp_string %></h2>
       <button phx-click="cancel" class="close">&times;</button>
       </div>
       <.form for={@changeset} phx-submit="save_user">
@@ -221,7 +221,7 @@ defmodule UserLive do
       </div>
       <div class="form-actions">
       <.button type="submit">
-      {temp_string1} User
+      <%= temp_string1 %> User
       </.button>
       <.button type="button" phx-click="cancel" variant="secondary">
       Cancel

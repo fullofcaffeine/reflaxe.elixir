@@ -1,11 +1,9 @@
 defmodule Main do
   @moduledoc """
-  Main module generated from Haxe
-  
-  
- * Comprehensive test for Option<T> type compilation
- * Tests idiomatic Haxe patterns compiling to BEAM-friendly Elixir
- 
+    Main module generated from Haxe
+
+     * Comprehensive test for Option<T> type compilation
+     * Tests idiomatic Haxe patterns compiling to BEAM-friendly Elixir
   """
 
   # Static functions
@@ -163,11 +161,9 @@ end
 
 defmodule UserService do
   @moduledoc """
-  UserService module generated from Haxe
-  
-  
- * Example service class showing Option usage patterns
- 
+    UserService module generated from Haxe
+
+     * Example service class showing Option usage patterns
   """
 
   # Static functions

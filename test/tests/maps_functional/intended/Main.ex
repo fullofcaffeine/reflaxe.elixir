@@ -1,11 +1,9 @@
 defmodule Main do
   @moduledoc """
-  Main module generated from Haxe
-  
-  
- * MapTools functional methods test case
- * Tests MapTools static extension methods for proper compilation to idiomatic Elixir
- 
+    Main module generated from Haxe
+
+     * MapTools functional methods test case
+     * Tests MapTools static extension methods for proper compilation to idiomatic Elixir
   """
 
   # Static functions

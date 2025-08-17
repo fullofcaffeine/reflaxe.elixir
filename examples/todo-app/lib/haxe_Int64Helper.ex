@@ -1,7 +1,8 @@
 defmodule Int64Helper do
   @moduledoc """
-    Helper for parsing to `Int64` instances.
+    Int64Helper module generated from Haxe
 
+      Helper for parsing to `Int64` instances.
   """
 
 end

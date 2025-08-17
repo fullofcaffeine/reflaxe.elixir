@@ -1,11 +1,9 @@
 defmodule Main do
   @moduledoc """
-  Main module generated from Haxe
-  
-  
- * Arrays test case
- * Tests array operations and list comprehensions
- 
+    Main module generated from Haxe
+
+     * Arrays test case
+     * Tests array operations and list comprehensions
   """
 
   # Static functions

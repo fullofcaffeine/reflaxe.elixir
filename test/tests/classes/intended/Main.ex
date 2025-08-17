@@ -23,9 +23,7 @@ end
 
 
 defmodule Point do
-  @moduledoc """
-  Point module generated from Haxe
-  """
+  @moduledoc "Point module generated from Haxe"
 
   # Instance functions
   @doc "Function distance"
@@ -48,9 +46,7 @@ end
 defmodule Shape do
   @behaviour Drawable
 
-  @moduledoc """
-  Shape module generated from Haxe
-  """
+  @moduledoc "Shape module generated from Haxe"
 
   # Instance functions
   @doc "Function draw"
@@ -80,9 +76,7 @@ end
 defmodule Circle do
   @behaviour Updatable
 
-  @moduledoc """
-  Circle module generated from Haxe
-  """
+  @moduledoc "Circle module generated from Haxe"
 
   # Static functions
   @doc "Function create_unit"
@@ -115,9 +109,7 @@ end
 
 
 defmodule Vehicle do
-  @moduledoc """
-  Vehicle module generated from Haxe
-  """
+  @moduledoc "Vehicle module generated from Haxe"
 
   # Instance functions
   @doc "Function accelerate"
@@ -130,9 +122,7 @@ end
 
 
 defmodule Container do
-  @moduledoc """
-  Container module generated from Haxe
-  """
+  @moduledoc "Container module generated from Haxe"
 
   # Instance functions
   @doc "Function add"
@@ -169,9 +159,7 @@ end
 
 
 defmodule Main do
-  @moduledoc """
-  Main module generated from Haxe
-  """
+  @moduledoc "Main module generated from Haxe"
 
   # Static functions
   @doc "Function main"

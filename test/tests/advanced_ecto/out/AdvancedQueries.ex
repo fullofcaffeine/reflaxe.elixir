@@ -1,22 +1,20 @@
 defmodule AdvancedQueries do
   @moduledoc """
-  AdvancedQueries module generated from Haxe
-  
-  
- * Advanced Ecto Query Features Demonstration
- * 
- * This test showcases complex query compilation capabilities including:
- * - Subqueries with proper binding management
- * - CTEs (Common Table Expressions) with recursive support
- * - Window functions (row_number, rank, dense_rank) 
- * - Complex joins with lateral joins
- * - Ecto.Multi transaction composition
- * - Advanced aggregations with HAVING clauses
- * - Fragment support for raw SQL
- * 
- * Expected compilation: Elixir module with query functions
- * that generate proper Ecto.Query pipe syntax.
- 
+    AdvancedQueries module generated from Haxe
+
+     * Advanced Ecto Query Features Demonstration
+     *
+     * This test showcases complex query compilation capabilities including:
+     * - Subqueries with proper binding management
+     * - CTEs (Common Table Expressions) with recursive support
+     * - Window functions (row_number, rank, dense_rank)
+     * - Complex joins with lateral joins
+     * - Ecto.Multi transaction composition
+     * - Advanced aggregations with HAVING clauses
+     * - Fragment support for raw SQL
+     *
+     * Expected compilation: Elixir module with query functions
+     * that generate proper Ecto.Query pipe syntax.
   """
 
   # Static functions

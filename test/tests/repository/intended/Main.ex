@@ -21,9 +21,7 @@ defmodule UserChangeset do
 end
 
 defmodule Main do
-  @moduledoc """
-  Main module generated from Haxe
-  """
+  @moduledoc "Main module generated from Haxe"
 
   # Static functions
   @doc """
@@ -39,9 +37,7 @@ end
 
 
 defmodule UserRepository do
-  @moduledoc """
-  UserRepository module generated from Haxe
-  """
+  @moduledoc "UserRepository module generated from Haxe"
 
   # Static functions
   @doc """

@@ -121,6 +121,12 @@ class ClassCompiler {
             result.add('  import Ecto.Changeset\n\n');
         }
         
+        // Check if this class uses HXX templates (contains HXX.hxx calls)
+        // This is needed for layout modules and any class using HEEx templates
+        if (usesHxxTemplates(classType, funcFields)) {
+            result.add('  use Phoenix.Component\n\n');
+        }
+        
         // Module documentation (skip for Phoenix contexts as they generate their own)
         if (!PhoenixMapper.isPhoenixContext(classType)) {
             result.add(generateModuleDoc(className, classType, isStruct));
@@ -231,19 +237,16 @@ class ClassCompiler {
      * Generate module documentation with proper formatting
      */
     private function generateModuleDoc(className: String, classType: Dynamic, isStruct: Bool): String {
-        var docString = "";
+        // Always start with the standard header
+        var docString = '${className} ${isStruct ? "struct" : "module"} generated from Haxe';
         
-        // Build the documentation content
+        // Add the actual class documentation if available
         if (classType.doc != null) {
-            // Use the actual class documentation if available
-            docString = classType.doc;
-        } else {
-            // Generate default documentation
-            docString = '${className} ${isStruct ? "struct" : "module"} generated from Haxe';
-            
-            if (isStruct) {
-                docString += '\n\nThis module defines a struct with typed fields and constructor functions.';
-            }
+            // Add spacing and then the original documentation with proper bullet formatting
+            docString += '\n\n\n * ' + classType.doc.split('\n').join('\n * ') + '\n ';
+        } else if (isStruct) {
+            // Add default struct documentation
+            docString += '\n\nThis module defines a struct with typed fields and constructor functions.';
         }
         
         // Use FormatHelper for proper formatting
@@ -747,6 +750,64 @@ class ClassCompiler {
     private function hasApplicationMetadata(classType: ClassType): Bool {
         if (classType.meta == null) return false;
         return classType.meta.has(":application");
+    }
+    
+    /**
+     * Check if a class uses HXX templates by looking for HXX.hxx() calls
+     * This is needed to determine if we should import Phoenix.Component for ~H sigil support
+     */
+    private function usesHxxTemplates(classType: ClassType, funcFields: Array<ClassFuncData>): Bool {
+        // For now, check if this is a layout class by name pattern
+        // Layout classes always need Phoenix.Component for HEEx templates
+        var className = classType.name.toLowerCase();
+        if (className.indexOf("layout") >= 0) {
+            return true;
+        }
+        
+        // Check all function bodies for HXX.hxx() calls
+        if (funcFields != null) {
+            for (func in funcFields) {
+                if (func.expr != null && containsHxxCall(func.expr)) {
+                    return true;
+                }
+            }
+        }
+        
+        // Also check static fields that might be initialized with HXX
+        for (field in classType.statics.get()) {
+            if (field.expr() != null && containsHxxCall(field.expr())) {
+                return true;
+            }
+        }
+        
+        return false;
+    }
+    
+    /**
+     * Recursively check if an expression contains HXX.hxx() calls
+     */
+    private function containsHxxCall(expr: Dynamic): Bool {
+        // Handle TypedExpr type
+        if (expr == null) return false;
+        
+        // Check for the specific pattern of HXX.hxx() calls
+        // This is a simplified check - in practice we'd need to examine the AST structure
+        var exprStr = Std.string(expr);
+        
+        // Look for HXX references in the expression string representation
+        // This is a heuristic approach that works for most cases
+        if (exprStr.indexOf("HXX") >= 0 && exprStr.indexOf("hxx") >= 0) {
+            return true;
+        }
+        
+        // Also check for ~H sigil pattern which indicates HEEx template
+        if (exprStr.indexOf("~H") >= 0) {
+            return true;
+        }
+        
+        // For a more thorough check, we'd need to traverse the TypedExpr AST
+        // but the string check above catches the common cases
+        return false;
     }
     
     

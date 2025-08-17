@@ -1,7 +1,5 @@
 defmodule SourceMapTest do
-  @moduledoc """
-  SourceMapTest module generated from Haxe
-  """
+  @moduledoc "SourceMapTest module generated from Haxe"
 
   # Static functions
   @doc "Function main"

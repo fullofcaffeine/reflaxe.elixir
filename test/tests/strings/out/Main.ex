@@ -1,11 +1,9 @@
 defmodule Main do
   @moduledoc """
-  Main module generated from Haxe
-  
-  
- * String operations test case
- * Tests string manipulation, interpolation, and methods
- 
+    Main module generated from Haxe
+
+     * String operations test case
+     * Tests string manipulation, interpolation, and methods
   """
 
   # Static functions

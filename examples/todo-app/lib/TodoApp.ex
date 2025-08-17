@@ -2,8 +2,10 @@ defmodule TodoApp.Application do
   use Application
 
   @moduledoc """
-    Main TodoApp application module
-    Defines the OTP application supervision tree
+    TodoApp.Application module generated from Haxe
+
+     * Main TodoApp application module
+     * Defines the OTP application supervision tree
   """
 
   # Static functions

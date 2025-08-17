@@ -1,11 +1,9 @@
 defmodule Main do
   @moduledoc """
-  Main module generated from Haxe
-  
-  
- * OTP Supervision Patterns Test
- * Tests Supervisor, Task, and Task.Supervisor extern definitions
- 
+    Main module generated from Haxe
+
+     * OTP Supervision Patterns Test
+     * Tests Supervisor, Task, and Task.Supervisor extern definitions
   """
 
   # Static functions
@@ -24,8 +22,8 @@ defmodule Main do
   """
   @spec test_supervisor() :: nil
   def test_supervisor() do
-    children = [%{"id" => "worker1", "start" => %{"_0" => "MyWorker", "_1" => "start_link", "_2" => [%{"name" => "worker1"}]}, "restart" => "permanent", "type" => "worker"}, %{"id" => "worker2", "start" => %{"_0" => "MyWorker", "_1" => "start_link", "_2" => [%{"name" => "worker2"}]}, "restart" => "temporary", "type" => "worker"}, %{"id" => "sub_supervisor", "start" => %{"_0" => "SubSupervisor", "_1" => "start_link", "_2" => [%{}]}, "restart" => "permanent", "type" => "supervisor"}]
-    options = %{:strategy => "one_for_one", :max_restarts => 5, :max_seconds => 10}
+    children = [, , ]
+    options = [strategy: :one_for_one, name: App.Supervisor]
     result = Supervisor.start_link(children, options)
     if (result._0 == "ok") do
       supervisor = result._1
@@ -34,7 +32,7 @@ defmodule Main do
       Supervisor.restart_child(supervisor, "worker1")
       Supervisor.terminate_child(supervisor, "worker2")
       Supervisor.delete_child(supervisor, "worker2")
-      new_child = %{"id" => "dynamic", "start" => %{"_0" => "DynamicWorker", "_1" => "start_link", "_2" => [%{}]}, "restart" => "transient", "type" => "worker"}
+      new_child = 
       Supervisor.start_child(supervisor, new_child)
       temp_struct = nil
       counts = Supervisor.count_children(supervisor)
@@ -156,8 +154,8 @@ defmodule Main do
   """
   @spec test_supervision_tree() :: nil
   def test_supervision_tree() do
-    children = [%{"id" => "worker1", "start" => %{"_0" => "Worker1", "_1" => "start_link", "_2" => [%{}]}, "restart" => "permanent", "type" => "worker"}, %{"id" => "worker2", "start" => %{"_0" => "Worker2", "_1" => "start_link", "_2" => [%{}]}, "restart" => "temporary", "type" => "worker"}, %{"id" => "worker3", "start" => %{"_0" => "Worker3", "_1" => "start_link", "_2" => [%{}]}, "restart" => "transient", "type" => "worker"}]
-    options = %{:strategy => "one_for_all", :max_restarts => 10, :max_seconds => 60}
+    children = [, , ]
+    options = [strategy: :one_for_all, name: App.Supervisor]
     result = Supervisor.start_link(children, options)
     if (result._0 == "ok") do
       supervisor = result._1

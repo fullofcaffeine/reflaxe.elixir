@@ -1,12 +1,10 @@
 defmodule MigrationDSL do
   @moduledoc """
-  MigrationDSL module generated from Haxe
-  
-  
- * Ecto Migration DSL compilation support following the proven ChangesetCompiler pattern
- * Handles @:migration annotation, table/column operations, and index management
- * Integrates with Mix tasks and ElixirCompiler architecture
- 
+    MigrationDSL module generated from Haxe
+
+     * Ecto Migration DSL compilation support following the proven ChangesetCompiler pattern
+     * Handles @:migration annotation, table/column operations, and index management
+     * Integrates with Mix tasks and ElixirCompiler architecture
   """
 
   # Static functions
@@ -185,6 +183,23 @@ defmodule MigrationDSL do
   end
 
   @doc """
+    Generate appropriate indexes for a table based on its columns
+    Only creates indexes for fields that actually exist in the schema
+  """
+  @spec generate_indexes_for_table(String.t(), Array.t()) :: String.t()
+  def generate_indexes_for_table(table_name, columns) do
+    indexes = []
+    column_names = []
+    _g = 0
+    Enum.filter(columns, fn item -> (item.name != nil) end)
+    if (Enum.find_index(column_names, &(&1 == "email")) != -1), do: indexes ++ ["create unique_index(:" <> table_name <> ", [:email])"], else: nil
+    if (Enum.find_index(column_names, &(&1 == "user_id")) != -1), do: indexes ++ ["create index(:" <> table_name <> ", [:user_id])"], else: nil
+    if (Enum.find_index(column_names, &(&1 == "slug")) != -1), do: indexes ++ ["create unique_index(:" <> table_name <> ", [:slug])"], else: nil
+    if (length(indexes) == 0), do: "# No indexes needed for this table", else: nil
+    Enum.join(indexes, "\n    ")
+  end
+
+  @doc """
     Compile table drop for rollback
 
   """
@@ -213,7 +228,7 @@ defmodule MigrationDSL do
     columns = migration_data.columns
     module_name = "Repo." <> class_name
     table_creation = MigrationDSL.compileTableCreation(table_name, columns)
-    index_creation = MigrationDSL.compileIndexCreation(table_name, ["email"], "unique: true")
+    index_creation = MigrationDSL.generateIndexesForTable(table_name, columns)
     "defmodule " <> module_name <> " do\n" <> "  @moduledoc \"\"\"\n" <> ("  Generated migration for " <> table_name <> " table\n") <> "  \n" <> ("  Creates " <> table_name <> " table with proper schema and indexes\n") <> "  following Ecto migration patterns with compile-time validation.\n" <> "  \"\"\"\n" <> "  \n" <> "  use Ecto.Migration\n" <> "  \n" <> "  @doc \"\"\"\n" <> ("  Run the migration - creates " <> table_name <> " table\n") <> "  \"\"\"\n" <> "  def change do\n" <> ("    " <> table_creation <> "\n") <> "    \n" <> ("    " <> index_creation <> "\n") <> "  end\n" <> "  \n" <> "  @doc \"\"\"\n" <> ("  Rollback migration - drops " <> table_name <> " table\n") <> "  \"\"\"\n" <> "  def down do\n" <> ("    drop table(:" <> table_name <> ")\n") <> "  end\n" <> "end"
   end
 
@@ -468,12 +483,10 @@ end
 
 defmodule TableBuilder do
   @moduledoc """
-  TableBuilder module generated from Haxe
-  
-  
- * Table builder class for DSL-style migration creation
- * Provides fluent interface for defining table structure
- 
+    TableBuilder module generated from Haxe
+
+     * Table builder class for DSL-style migration creation
+     * Provides fluent interface for defining table structure
   """
 
   # Instance functions

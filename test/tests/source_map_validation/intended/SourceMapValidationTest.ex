@@ -1,15 +1,13 @@
 defmodule SourceMapValidationTest do
   @moduledoc """
-  SourceMapValidationTest module generated from Haxe
-  
-  
- * Integration test to validate source map structure and content.
- * Tests that:
- * 1. Source maps are generated with correct v3 format
- * 2. VLQ encoding produces non-empty mappings
- * 3. Sources array correctly references Haxe files
- * 4. File paths are properly resolved
- 
+    SourceMapValidationTest module generated from Haxe
+
+     * Integration test to validate source map structure and content.
+     * Tests that:
+     * 1. Source maps are generated with correct v3 format
+     * 2. VLQ encoding produces non-empty mappings
+     * 3. Sources array correctly references Haxe files
+     * 4. File paths are properly resolved
   """
 
   # Static functions
@@ -55,9 +53,7 @@ end
 
 
 defmodule TestClass do
-  @moduledoc """
-  TestClass module generated from Haxe
-  """
+  @moduledoc "TestClass module generated from Haxe"
 
   # Instance functions
   @doc "Function do_something"

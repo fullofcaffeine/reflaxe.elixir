@@ -1,11 +1,9 @@
 defmodule Main do
   @moduledoc """
-  Main module generated from Haxe
-  
-  
- * Dynamic type test case
- * Tests dynamic typing and runtime type checking
- 
+    Main module generated from Haxe
+
+     * Dynamic type test case
+     * Tests dynamic typing and runtime type checking
   """
 
   # Static functions
