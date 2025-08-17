@@ -10,8 +10,7 @@
 -D reflaxe_runtime
 
 # Output to test directory
--D reflaxe-output=out/
--D elixir_output=out/
+-D elixir_output=out
 
 # Enable debug info
 -D debug
