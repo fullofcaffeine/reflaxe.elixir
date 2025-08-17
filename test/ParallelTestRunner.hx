@@ -342,28 +342,25 @@ class TestWorker {
         isRunning = true;
         startTime = haxe.Timer.stamp();
         
-        // Spawn a process to run this specific test
-        // This is the same as running: haxe test/tests/[testName]/compile.hxml
+        // Build shell command that changes directory ONLY for this subprocess
+        // This eliminates the global Sys.setCwd() race condition entirely
         final testPath = haxe.io.Path.join(["test/tests", testName]);
-        final originalCwd = Sys.getCwd();
+        final outputFlag = "-D elixir_output=" + (ParallelTestRunner.UpdateIntended ? "intended" : "out");
         
-        // Create process arguments for this specific test
-        final args = [
-            "-D", "elixir_output=" + (ParallelTestRunner.UpdateIntended ? "intended" : "out"),
-            "compile.hxml"
-        ];
+        // Create shell command for isolated directory execution
+        final isWindows = Sys.systemName() == "Windows";
+        final shellCmd = if (isWindows) {
+            // Windows: Use /d flag for drive changes, handle path quoting
+            'cd /d "${testPath}" && haxe ${outputFlag} compile.hxml';
+        } else {
+            // Unix/macOS: Standard cd with proper quoting
+            'cd "${testPath}" && haxe ${outputFlag} compile.hxml';
+        }
         
         try {
-            // Change to test directory (same as original TestRunner)
-            Sys.setCwd(testPath);
-            
-            // Start the compilation process
-            process = new Process("haxe", args);
-            
-            // Restore directory
-            Sys.setCwd(originalCwd);
+            // Use shell command mode (no args array) - directory change isolated to subprocess
+            process = new Process(shellCmd);
         } catch (e: Dynamic) {
-            Sys.setCwd(originalCwd);
             pendingResult = {
                 testName: testName,
                 success: false,
