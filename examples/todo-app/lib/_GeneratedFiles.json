@@ -12,6 +12,7 @@
 		"server_infrastructure_Telemetry.ex",
 		"server_infrastructure_Repo.ex",
 		"server_infrastructure_Endpoint.ex",
+		"phoenix_types_Flash.ex",
 		"haxe_io_Output.ex",
 		"haxe_io_Input.ex",
 		"haxe_io_FPHelper.ex",

@@ -66,7 +66,7 @@ defmodule AppLayout do
       </div>
       <div class="w-8 h-8 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center">
       <span class="text-white text-sm font-medium">
-      <%= get_initials(app_layout, temp_string1) %>
+      <%= get_initials(temp_string1) %>
       </span>
       </div>
       </div>
@@ -99,7 +99,7 @@ defmodule AppLayout do
       <div class="mt-1 flex flex-col sm:flex-row sm:flex-wrap sm:mt-0 sm:space-x-6">
       <div class="mt-2 flex items-center text-sm text-gray-500 dark:text-gray-400">
       <span class="mr-2">🕒</span>
-      Last updated: <%= format_timestamp(app_layout, temp_string4) %>
+      Last updated: <%= format_timestamp(temp_string4) %>
       </div>
       <div class="mt-2 flex items-center text-sm text-gray-500 dark:text-gray-400">
       <span class="mr-2">⚡</span>
