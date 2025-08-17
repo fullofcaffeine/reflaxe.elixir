@@ -1,11 +1,9 @@
 defmodule UserQueries do
   @moduledoc """
-  UserQueries module generated from Haxe
-  
-  
- * Query compiler test case
- * Tests Ecto query DSL compilation
- 
+    UserQueries module generated from Haxe
+
+     * Query compiler test case
+     * Tests Ecto query DSL compilation
   """
 
   # Static functions

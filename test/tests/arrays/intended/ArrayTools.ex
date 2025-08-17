@@ -1,21 +1,19 @@
 defmodule ArrayTools do
   @moduledoc """
-  ArrayTools module generated from Haxe
-  
-  
- * ArrayTools static extension for functional array methods
- * 
- * Provides functional programming methods for Array<T> including:
- * - Accumulation: reduce, fold
- * - Search: find, findIndex  
- * - Predicates: exists/any, all/foreach
- * - Collection ops: forEach, take, drop, flatMap
- * 
- * Usage:
- *   using ArrayTools;
- *   var numbers = [1, 2, 3, 4, 5];
- *   var sum = numbers.reduce((acc, item) -> acc + item, 0);
- 
+    ArrayTools module generated from Haxe
+
+     * ArrayTools static extension for functional array methods
+     *
+     * Provides functional programming methods for Array<T> including:
+     * - Accumulation: reduce, fold
+     * - Search: find, findIndex
+     * - Predicates: exists/any, all/foreach
+     * - Collection ops: forEach, take, drop, flatMap
+     *
+     * Usage:
+     *   using ArrayTools;
+     *   var numbers = [1, 2, 3, 4, 5];
+     *   var sum = numbers.reduce((acc, item) -> acc + item, 0);
   """
 
   # Static functions

@@ -1,6 +1,4 @@
 defmodule BytesBuffer do
-  @moduledoc """
-  BytesBuffer module generated from Haxe
-  """
+  @moduledoc "BytesBuffer module generated from Haxe"
 
 end

@@ -1,20 +1,18 @@
 defmodule Main do
   @moduledoc """
-  Main module generated from Haxe
-  
-  
- * Comprehensive test for type-safe domain abstractions.
- * 
- * This test demonstrates the four domain abstractions inspired by 
- * Domain-Driven Design and Gleam's type philosophy:
- * - Email: Type-safe email validation with domain extraction
- * - UserId: Alphanumeric user identifiers with case handling
- * - PositiveInt: Integers guaranteed to be > 0 with safe arithmetic
- * - NonEmptyString: Strings guaranteed to have content with safe operations
- * 
- * All abstractions follow "Parse, Don't Validate" principle and provide
- * runtime validation with minimal performance impact.
- 
+    Main module generated from Haxe
+
+     * Comprehensive test for type-safe domain abstractions.
+     *
+     * This test demonstrates the four domain abstractions inspired by
+     * Domain-Driven Design and Gleam's type philosophy:
+     * - Email: Type-safe email validation with domain extraction
+     * - UserId: Alphanumeric user identifiers with case handling
+     * - PositiveInt: Integers guaranteed to be > 0 with safe arithmetic
+     * - NonEmptyString: Strings guaranteed to have content with safe operations
+     *
+     * All abstractions follow "Parse, Don't Validate" principle and provide
+     * runtime validation with minimal performance impact.
   """
 
   # Static functions

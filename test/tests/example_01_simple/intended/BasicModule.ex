@@ -1,14 +1,12 @@
 defmodule BasicModule do
   @moduledoc """
-  BasicModule module generated from Haxe
-  
-  
- * BasicModule - Demonstrates core @:module syntax
- * 
- * This example shows the most basic usage of @:module annotation
- * to eliminate boilerplate "public static" declarations while
- * maintaining Haxe's type safety.
- 
+    BasicModule module generated from Haxe
+
+     * BasicModule - Demonstrates core @:module syntax
+     *
+     * This example shows the most basic usage of @:module annotation
+     * to eliminate boilerplate "public static" declarations while
+     * maintaining Haxe's type safety.
   """
 
   # Module functions - generated with @:module syntax sugar

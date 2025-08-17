@@ -1,10 +1,8 @@
 defmodule UserController do
   @moduledoc """
-  UserController module generated from Haxe
-  
-  
- * Valid controller class for testing RouterBuildMacro validation
- 
+    UserController module generated from Haxe
+
+     * Valid controller class for testing RouterBuildMacro validation
   """
 
   # Static functions
@@ -31,11 +29,9 @@ end
 
 defmodule Main do
   @moduledoc """
-  Main module generated from Haxe
-  
-  
- * Main entry point for test
- 
+    Main module generated from Haxe
+
+     * Main entry point for test
   """
 
   # Static functions

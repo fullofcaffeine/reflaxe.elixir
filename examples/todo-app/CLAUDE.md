@@ -307,11 +307,82 @@ extern class LegacyModule {
 - **No Dynamic code**: Everything must be properly typed
 - **No escape hatches**: `__elixir__()` only in documented emergencies
 
+## 🧪 Testing After Compiler Changes
+
+**The todo-app is the PRIMARY INTEGRATION TEST for the compiler.**
+
+### When You Change the Compiler
+After ANY modification to `/src/reflaxe/elixir/`:
+
+1. **Clean Generated Files**:
+   ```bash
+   rm -rf lib/*.ex lib/**/*.ex
+   ```
+
+2. **Regenerate Everything**:
+   ```bash
+   npx haxe build-server.hxml
+   ```
+
+3. **Test Compilation**:
+   ```bash
+   mix compile --force
+   ```
+
+4. **Check for Errors**:
+   - No duplicate module definitions
+   - All Phoenix imports present
+   - Valid HEEx template syntax
+   - Proper function signatures
+
+### Common Testing Patterns
+
+#### After HXX Changes
+```bash
+# Regenerate templates
+rm -rf lib/server_layouts_*.ex lib/todo_app_web/live/*.ex
+npx haxe build-server.hxml
+mix compile
+```
+
+#### After Router Changes
+```bash
+# Regenerate router
+rm lib/todo_app_web/router.ex
+npx haxe build-server.hxml
+mix phx.routes
+```
+
+#### After Schema Changes
+```bash
+# Regenerate schemas
+rm -rf lib/todo_app/schemas/*.ex
+npx haxe build-server.hxml
+mix ecto.compile
+```
+
+### Testing Checklist
+- [ ] All files regenerate without errors
+- [ ] `mix compile` succeeds without warnings
+- [ ] `mix phx.server` starts without crashes
+- [ ] Router paths are accessible
+- [ ] LiveView pages render
+- [ ] Database operations work
+
+### If Tests Fail
+1. **DON'T patch generated .ex files** - they'll be overwritten
+2. **DO fix the compiler source** at `/src/reflaxe/elixir/`
+3. **DO regenerate and retest** after fixes
+4. **DO update snapshot tests** if output improved
+
+**Remember**: If todo-app doesn't work, the compiler is broken!
+
 ## 📚 Additional Resources
 
 - [Watcher Development Guide](https://github.com/fullofcaffeine/reflaxe.elixir/blob/main/documentation/guides/WATCHER_DEVELOPMENT_GUIDE.md)
 - [Source Mapping Guide](https://github.com/fullofcaffeine/reflaxe.elixir/blob/main/documentation/SOURCE_MAPPING.md)
 - [Getting Started Guide](https://github.com/fullofcaffeine/reflaxe.elixir/blob/main/documentation/guides/GETTING_STARTED.md)
+- [Compiler Testing Guide](https://github.com/fullofcaffeine/reflaxe.elixir/blob/main/documentation/COMPILER_TESTING_GUIDE.md)
 
 ---
 

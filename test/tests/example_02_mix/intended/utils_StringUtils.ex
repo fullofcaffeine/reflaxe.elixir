@@ -1,13 +1,11 @@
 defmodule StringUtils do
   @moduledoc """
-  StringUtils module generated from Haxe
-  
-  
- * StringUtils - String processing utilities for Mix project
- * 
- * This module demonstrates utility functions that can be shared
- * across different parts of a Mix project.
- 
+    StringUtils module generated from Haxe
+
+     * StringUtils - String processing utilities for Mix project
+     *
+     * This module demonstrates utility functions that can be shared
+     * across different parts of a Mix project.
   """
 
   # Module functions - generated with @:module syntax sugar

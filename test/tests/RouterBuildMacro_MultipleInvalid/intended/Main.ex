@@ -1,10 +1,8 @@
 defmodule ValidController do
   @moduledoc """
-  ValidController module generated from Haxe
-  
-  
- * Valid controller class for comparison
- 
+    ValidController module generated from Haxe
+
+     * Valid controller class for comparison
   """
 
   # Static functions
@@ -19,11 +17,9 @@ end
 
 defmodule PartialController do
   @moduledoc """
-  PartialController module generated from Haxe
-  
-  
- * Another valid controller with limited methods
- 
+    PartialController module generated from Haxe
+
+     * Another valid controller with limited methods
   """
 
   # Static functions
@@ -38,11 +34,9 @@ end
 
 defmodule Main do
   @moduledoc """
-  Main module generated from Haxe
-  
-  
- * Main entry point for test
- 
+    Main module generated from Haxe
+
+     * Main entry point for test
   """
 
   # Static functions

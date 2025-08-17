@@ -1,11 +1,9 @@
 defmodule Main do
   @moduledoc """
-  Main module generated from Haxe
-  
-  
- * Test suite for essential standard library extern definitions
- * Tests that all extern definitions compile correctly and generate proper Elixir code
- 
+    Main module generated from Haxe
+
+     * Test suite for essential standard library extern definitions
+     * Tests that all extern definitions compile correctly and generate proper Elixir code
   """
 
   # Static functions

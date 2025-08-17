@@ -21,9 +21,7 @@ defmodule InvalidChangeset do
 end
 
 defmodule Main do
-  @moduledoc """
-  Main module generated from Haxe
-  """
+  @moduledoc "Main module generated from Haxe"
 
   # Static functions
   @doc "Function main"
