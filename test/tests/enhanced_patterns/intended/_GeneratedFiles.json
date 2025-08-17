@@ -1,7 +1,5 @@
 {
 	"filesGenerated": [
-		"user/schemas/user.ex",
-		"haxe_iterators_StringIteratorUnicode.ex",
 		"haxe_io_Output.ex",
 		"haxe_io_Input.ex",
 		"haxe_io_FPHelper.ex",
@@ -14,7 +12,6 @@
 		"haxe_exceptions_NotImplementedException.ex",
 		"haxe_ds_Map.ex",
 		"haxe_ds_EnumValueMap.ex",
-		"haxe_SysTools.ex",
 		"haxe_Log.ex",
 		"haxe_Int64Helper.ex",
 		"haxe_Int64.ex",
@@ -26,11 +23,10 @@
 		"Main.ex",
 		"EnumValue.ex",
 		"Enum.ex",
-		"EReg.ex",
 		"Class.ex",
 		"Any.ex"
 	],
-	"id": 98,
+	"id": 1,
 	"wasCached": false,
 	"version": 1
 }
