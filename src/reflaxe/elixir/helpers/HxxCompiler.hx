@@ -520,15 +520,21 @@ class HxxCompiler {
         // ARCHITECTURAL NOTE: This function may not be called for all template contexts.
         // Investigation shows HTML attributes (class={func()}) and regular interpolations 
         // (${func()}) may use different processing paths in the HXX compilation pipeline.
-        var functionPattern = ~/\b([a-z][a-zA-Z]*)(\\s*\()/g;
+        
+        // Updated pattern to handle both word boundaries and braces/other delimiters
+        // Fixed issue where {getStatusClass(args)} in HTML attributes was not being converted
+        // because \b word boundary doesn't match after { character
+        var functionPattern = ~/(^|[^a-zA-Z0-9_])([a-z][a-zA-Z]*)(\s*\()/g;
+        
         return functionPattern.map(content, function(r) {
-            var functionName = r.matched(1);
-            var args = r.matched(2);
+            var prefix = r.matched(1);      // Delimiter before function name (^, {, space, etc.)
+            var functionName = r.matched(2); // The actual function name (e.g., getStatusClass)
+            var args = r.matched(3);         // Opening parenthesis with optional whitespace
             
-            // Convert the entire function name to snake_case using NamingHelper
+            // Convert function name to snake_case using NamingHelper
             var snakeCaseName = NamingHelper.toSnakeCase(functionName);
             
-            return snakeCaseName + args;
+            return prefix + snakeCaseName + args;
         });
     }
     

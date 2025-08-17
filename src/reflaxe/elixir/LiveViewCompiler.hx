@@ -188,6 +188,9 @@ class LiveViewCompiler {
         result.add('  import Ecto.Query\n');
         result.add('  alias TodoApp.Repo\n');
         result.add('  \n');
+        result.add('  use Phoenix.Component\n');
+        result.add('  import TodoAppWeb.CoreComponents\n');
+        result.add('  \n');
         return result.toString();
     }
     
