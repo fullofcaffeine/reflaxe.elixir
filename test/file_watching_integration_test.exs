@@ -142,9 +142,6 @@ defmodule FileWatchingIntegrationTest do
           IO.puts("✅ Mix task completed successfully with #{length(files)} files")
           assert is_list(files)
           
-        {:noop, []} ->
-          IO.puts("✅ Mix task detected no recompilation needed")
-          
         {:error, []} ->
           IO.puts("⚠️  Mix task failed as expected (likely no Haxe available)")
           
@@ -166,7 +163,7 @@ defmodule FileWatchingIntegrationTest do
     
     # Test HaxeServer (may fail to connect, but should start gracefully)
     server_result = try do
-      {:ok, pid} = HaxeServer.start_link([])
+      {:ok, _} = HaxeServer.start_link([])
       Process.sleep(100)  # Give it time to initialize
       
       status = HaxeServer.status()

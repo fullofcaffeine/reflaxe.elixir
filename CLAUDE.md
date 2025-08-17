@@ -199,6 +199,7 @@ Repeat → Continuous Quality Improvement
 - [`documentation/TASK_HISTORY.md`](documentation/TASK_HISTORY.md) - Complete implementation history
 
 **Build System & Integration**:
+- [`documentation/ELIXIR_RUNTIME_ARCHITECTURE.md`](documentation/ELIXIR_RUNTIME_ARCHITECTURE.md) - Complete explanation of development infrastructure vs production runtime
 - [`documentation/HXML_ARCHITECTURE.md`](documentation/HXML_ARCHITECTURE.md) - HXML build configuration patterns and project structure
 - [`documentation/MIX_INTEGRATION.md`](documentation/MIX_INTEGRATION.md) - Complete Mix integration with compilation and workflows
 - [`documentation/HXML_BEST_PRACTICES.md`](documentation/HXML_BEST_PRACTICES.md) - Guidelines and anti-patterns for HXML files
