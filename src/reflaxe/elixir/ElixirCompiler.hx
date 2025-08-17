@@ -328,26 +328,25 @@ class ElixirCompiler extends DirectToStringCompiler {
     private function extractAppName(className: String): String {
         // First check if we can get app name from compiler defines
         #if (app_name)
-        return haxe.macro.Context.definedValue("app_name");
+        var definedName = haxe.macro.Context.definedValue("app_name");
+        // Always convert to snake_case for consistency
+        return toSnakeCase(definedName);
         #end
         
-        // For TodoLive, TodoAppRouter, etc., we need to infer the app name
-        // Special handling for TodoApp project - this should be configurable
-        if (className.indexOf("Todo") == 0) {
-            return "todo_app";
-        }
-        
-        // Remove common Phoenix suffixes and convert to snake_case
+        // Remove common Phoenix suffixes first
         var appPart = className.replace("Router", "")
                                .replace("Live", "")
                                .replace("Controller", "")
-                               .replace("Schema", "");
+                               .replace("Schema", "")
+                               .replace("Channel", "")
+                               .replace("View", "");
         
         // Handle special case where class name is just the suffix (e.g., "Router")
         if (appPart == "") {
             appPart = "app"; // Default fallback
         }
         
+        // Convert to snake_case
         return toSnakeCase(appPart);
     }
     
