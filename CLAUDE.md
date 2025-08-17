@@ -554,7 +554,7 @@ Element (click, focus, innerHTML) - The HTML element you usually want
 7. **Performance APIs** - Use `PerformanceNavigationTiming` instead of deprecated `PerformanceTiming`
 
 ## Implementation Status
-**See**: [`documentation/FEATURES.md`](documentation/FEATURES.md) - Complete feature status and production readiness
+**See**: [`documentation/reference/FEATURES.md`](documentation/reference/FEATURES.md) - Complete feature status and production readiness
 
 **v1.0 Status**: ALL COMPLETE ✅ - Core features, Phoenix Router DSL, LiveView, Ecto, OTP patterns, Mix integration, Testing (28 snapshot + 130 Mix tests ALL PASSING)
 
