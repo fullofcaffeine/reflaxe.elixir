@@ -342,29 +342,33 @@ class TestWorker {
         isRunning = true;
         startTime = haxe.Timer.stamp();
         
+        // Use simple locking to serialize directory changes (much simpler than complex parsing)
+        final testPath = haxe.io.Path.join(["test/tests", testName]);
+        final outputDir = ParallelTestRunner.UpdateIntended ? "intended" : "out";
+        final args = [
+            "-D", 'elixir_output=$outputDir',
+            "compile.hxml"
+        ];
+        
         try {
-            // Read and convert the actual compile.hxml to use absolute paths
-            // This eliminates directory changes while preserving exact test configuration
-            final currentDir = Sys.getCwd();
-            final testPath = haxe.io.Path.join([currentDir, "test/tests", testName]);
-            final compileHxmlPath = haxe.io.Path.join([testPath, "compile.hxml"]);
+            // Acquire lock, change directory, start process, restore directory, release lock
+            acquireDirectoryLock();
             
-            if (!sys.FileSystem.exists(compileHxmlPath)) {
-                pendingResult = {
-                    testName: testName,
-                    success: false,
-                    duration: 0,
-                    errorMessage: 'compile.hxml not found: $compileHxmlPath'
-                };
-                isRunning = false;
-                return;
+            final originalCwd = Sys.getCwd();
+            Sys.setCwd(testPath);
+            process = new Process("haxe", args);
+            Sys.setCwd(originalCwd);
+            
+            releaseDirectoryLock();
+        } catch (e: Dynamic) {
+            // Ensure lock is always released and directory restored
+            try {
+                Sys.setCwd(Sys.getCwd()); // Ensure we're in a valid directory
+                releaseDirectoryLock();
+            } catch (cleanupError: Dynamic) {
+                // Ignore cleanup errors
             }
             
-            final args = parseCompileHxml(compileHxmlPath, testPath, currentDir);
-            
-            // No directory changes needed - all paths are now absolute
-            process = new Process("haxe", args);
-        } catch (e: Dynamic) {
             pendingResult = {
                 testName: testName,
                 success: false,
@@ -376,107 +380,44 @@ class TestWorker {
     }
     
     /**
-     * Parse compile.hxml and convert relative paths to absolute paths.
-     * This allows running tests without changing working directory.
+     * Simple file-based locking to serialize directory changes.
+     * Much simpler than complex hxml parsing!
      */
-    function parseCompileHxml(hxmlPath: String, testPath: String, projectRoot: String): Array<String> {
-        final content = sys.io.File.getContent(hxmlPath);
-        final lines = content.split("\n");
-        final args = [];
+    function acquireDirectoryLock() {
+        final lockFile = "test/.parallel_lock";
+        var attempts = 0;
+        final maxAttempts = 100; // 10 seconds max wait
         
-        for (line in lines) {
-            final trimmed = StringTools.trim(line);
-            if (trimmed == "" || StringTools.startsWith(trimmed, "#")) {
-                continue; // Skip empty lines and comments
+        while (attempts < maxAttempts) {
+            try {
+                if (!sys.FileSystem.exists(lockFile)) {
+                    // Try to create lock file atomically
+                    sys.io.File.saveContent(lockFile, 'locked by worker ${id}');
+                    return; // Successfully acquired lock
+                }
+            } catch (e: Dynamic) {
+                // Lock creation failed, someone else got it
             }
             
-            // Handle different line formats
-            if (StringTools.startsWith(trimmed, "-cp ")) {
-                // Classpath with space separator
-                args.push("-cp");
-                final path = trimmed.substr(4);
-                final absolutePath = convertToAbsolutePath(path, testPath, projectRoot);
-                args.push(absolutePath);
-            } else if (StringTools.startsWith(trimmed, "-D ")) {
-                // Define with space separator  
-                final defineStr = trimmed.substr(3);
-                if (defineStr.indexOf("elixir_output=") >= 0) {
-                    // Replace elixir_output with absolute path
-                    final outputDir = ParallelTestRunner.UpdateIntended ? "intended" : "out";
-                    final absoluteOutputPath = haxe.io.Path.join([testPath, outputDir]);
-                    args.push('-D');
-                    args.push('elixir_output=${absoluteOutputPath}');
-                } else {
-                    args.push('-D');
-                    args.push(defineStr);
-                }
-            } else if (StringTools.startsWith(trimmed, "--main ")) {
-                // Main class specification (--main format)
-                args.push("--main");
-                args.push(trimmed.substr(7));
-            } else if (StringTools.startsWith(trimmed, "-main ")) {
-                // Main class specification (-main format, used by some tests)
-                args.push("-main");
-                args.push(trimmed.substr(6));
-            } else if (StringTools.startsWith(trimmed, "--macro ")) {
-                // Macro specification
-                args.push("--macro");
-                args.push(trimmed.substr(8));
-            } else if (StringTools.startsWith(trimmed, "-lib ")) {
-                // Library specification
-                args.push("-lib");
-                args.push(trimmed.substr(5));
-            } else if (StringTools.startsWith(trimmed, "-js ")) {
-                // JavaScript output
-                args.push("-js");
-                args.push(trimmed.substr(4));
-            } else {
-                // Single argument (no spaces)
-                args.push(trimmed);
-            }
+            // Wait a bit and try again
+            Sys.sleep(0.1);
+            attempts++;
         }
         
-        // Always add the test directory itself to the classpath (implicit in sequential runner)
-        // This is where Main.hx typically resides
-        var hasTestDirInClasspath = false;
-        for (i in 0...args.length) {
-            if (args[i] == "-cp" && i + 1 < args.length && args[i + 1] == testPath) {
-                hasTestDirInClasspath = true;
-                break;
-            }
-        }
-        
-        if (!hasTestDirInClasspath) {
-            args.unshift(testPath);
-            args.unshift("-cp");
-        }
-        
-        return args;
+        throw "Failed to acquire directory lock after 10 seconds";
     }
     
     /**
-     * Convert relative path to absolute path based on test directory context.
+     * Release the directory lock.
      */
-    function convertToAbsolutePath(relativePath: String, testPath: String, projectRoot: String): String {
-        if (haxe.io.Path.isAbsolute(relativePath)) {
-            return relativePath; // Already absolute
-        }
-        
-        // Handle relative paths like ../../../src
-        if (StringTools.startsWith(relativePath, "../")) {
-            // Count the number of "../" to go up from test directory
-            var path = relativePath;
-            var currentPath = testPath;
-            
-            while (StringTools.startsWith(path, "../")) {
-                path = path.substr(3);
-                currentPath = haxe.io.Path.directory(currentPath);
+    function releaseDirectoryLock() {
+        final lockFile = "test/.parallel_lock";
+        try {
+            if (sys.FileSystem.exists(lockFile)) {
+                sys.FileSystem.deleteFile(lockFile);
             }
-            
-            return haxe.io.Path.join([currentPath, path]);
-        } else {
-            // Relative to test directory
-            return haxe.io.Path.join([testPath, relativePath]);
+        } catch (e: Dynamic) {
+            // Ignore cleanup errors
         }
     }
     
