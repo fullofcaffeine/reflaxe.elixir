@@ -1,6 +1,8 @@
 # AI Development Instructions for todo-app
 
-This file contains instructions for AI assistants (Claude, ChatGPT, etc.) working on this Reflaxe.Elixir project.
+> **Parent Context**: See [/CLAUDE.md](/CLAUDE.md) for project-wide conventions, architecture, and core development principles
+
+This file contains todo-app specific instructions for AI assistants working on this Phoenix LiveView example.
 
 ## ⚠️ CRITICAL: Never Edit Generated Files
 

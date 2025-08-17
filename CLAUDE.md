@@ -49,14 +49,15 @@ Example of correct approach:
 1. **ALWAYS verify CLAUDE.md first** - This file contains the project truth
 2. **Check recent commits** - Run `git log --oneline -20` to understand recent work patterns, fixes, and ongoing features
 3. **Review Shrimp tasks if available** - Check existing task status with mcp__shrimp-task-manager tools for context
-4. **FOLLOW DOCUMENTATION GUIDE** - See [`documentation/LLM_DOCUMENTATION_GUIDE.md`](documentation/LLM_DOCUMENTATION_GUIDE.md) for how to document
-5. **UNDERSTAND THE ARCHITECTURE** - See [Understanding Reflaxe.Elixir's Compilation Architecture](#understanding-reflaxeelixirs-compilation-architecture-) section below
-6. **Check referenced documentation** - See documentation/*.md files for feature details
-7. **Consult Haxe documentation** when needed:
+4. **Check for subdirectory CLAUDE.md files** - Subdirectories may have local context in their own CLAUDE.md files (test/, std/, examples/todo-app/, src/reflaxe/elixir/)
+5. **FOLLOW DOCUMENTATION GUIDE** - See [`documentation/LLM_DOCUMENTATION_GUIDE.md`](documentation/LLM_DOCUMENTATION_GUIDE.md) for how to document
+6. **UNDERSTAND THE ARCHITECTURE** - See [Understanding Reflaxe.Elixir's Compilation Architecture](#understanding-reflaxeelixirs-compilation-architecture-) section below
+7. **Check referenced documentation** - See documentation/*.md files for feature details
+8. **Consult Haxe documentation** when needed:
    - https://api.haxe.org/ - Latest API reference
    - https://haxe.org/documentation/introduction/ - Language documentation
-8. **Use modern Haxe 4.3+ patterns** - No legacy idioms
-9. **KEEP DOCS UPDATED** - Documentation is part of implementation, not separate
+9. **Use modern Haxe 4.3+ patterns** - No legacy idioms
+10. **KEEP DOCS UPDATED** - Documentation is part of implementation, not separate
 
 ## Haxe-First Philosophy ⚠️ FUNDAMENTAL RULE
 
