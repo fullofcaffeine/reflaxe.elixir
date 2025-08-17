@@ -60,6 +60,9 @@ This document provides the current status of all major features in Reflaxe.Elixi
 - **JSX-like Syntax**: Familiar React/JSX patterns for Haxe developers
 - **Template Architecture**: Clear separation between HXX (inline) and @:template (external files)
 - **Zero AST Warnings**: Complete expression coverage eliminates "Unknown AST node type" warnings
+- **Template Helper Metadata System** ✨ NEW: Uses @:templateHelper metadata for extensible Phoenix function compilation
+- **Phoenix.Component Integration**: Automatic import detection and template helper function compilation
+- **Type-Safe Phoenix Abstractions**: Assigns<T>, LiveViewSocket<T>, FlashMessage, RouteParams<T> with @:arrayAccess operator overloading
 - **Documentation**: Comprehensive architectural guide at documentation/HXX_VS_TEMPLATE.md
 
 ### 8. Migration DSL
