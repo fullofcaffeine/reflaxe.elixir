@@ -152,12 +152,7 @@ npm run watch
 2. **Missing imports** - Phoenix.Component not imported for ~H sigil
 3. **Path casing** - Fixed but may have remnants
 
-**Temporary Workarounds:**
-```bash
-# Remove duplicates before running
-rm -rf lib/TodoApp/  # Remove PascalCase duplicates
-rm -rf lib/migrations_*.ex  # Remove duplicate migrations
-```
+**Note**: Previous PascalCase file generation issues have been resolved. Files now generate with proper snake_case names and directory structure.
 
 ## 🤖 Using with LLMs (Claude, ChatGPT, etc.)
 
@@ -229,8 +224,8 @@ end
 
 ### Standard Library
 The Haxe standard library types compile to Elixir:
-- `haxe.ds.Map` → `lib/haxe_ds_Map.ex`
-- `haxe.io.Bytes` → `lib/haxe_io_Bytes.ex`
+- `haxe.ds.Map` → `lib/haxe/ds/map.ex`
+- `haxe.io.Bytes` → `lib/haxe/io/bytes.ex`
 - Many helper modules for Haxe compatibility
 
 ## 🔧 Troubleshooting
