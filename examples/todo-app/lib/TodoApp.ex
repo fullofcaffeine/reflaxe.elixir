@@ -26,7 +26,7 @@ defmodule TodoApp.Application do
   def start(type, args) do
     app_name = "TodoApp"
     children = [TodoApp.Repo, {Phoenix.PubSub, name: TodoApp.PubSub}, TodoAppWeb.Telemetry, TodoAppWeb.Endpoint]
-    opts = [strategy: :one_for_one, name: TodoApp.Supervisor]
+    opts = [strategy: ::one_for_one, name: TodoApp.Supervisor]
     Supervisor.start_link(children, opts)
   end
 

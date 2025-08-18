@@ -35,6 +35,7 @@ class AnnotationSystem {
         ":genserver",    // OTP GenServer - highest priority for behavior classes
         ":controller",   // Phoenix Controller with routing
         ":router",       // Phoenix Router configuration
+        ":endpoint",     // Phoenix Endpoint configuration
         ":channel",      // Phoenix Channel for real-time communication
         ":behaviour",    // Elixir Behavior definitions
         ":protocol",     // Elixir Protocol definitions
@@ -233,6 +234,11 @@ class AnnotationSystem {
                     null;
                 }
                 
+            case ":endpoint":
+                // Endpoint classes are handled by main ElixirCompiler with framework-aware file placement
+                // Return null to let ElixirCompiler handle endpoint compilation
+                null;
+                
             case ":channel":
                 compileChannelClass(classType, varFields, funcFields);
                 
@@ -413,6 +419,8 @@ class AnnotationSystem {
     static function getAnnotationDescription(annotation: String): String {
         return switch (annotation) {
             case ":genserver": "OTP GenServer with lifecycle callbacks";
+            case ":router": "Phoenix Router with route definitions";
+            case ":endpoint": "Phoenix Endpoint with HTTP configuration";
             case ":protocol": "Elixir protocol for polymorphic dispatch";
             case ":impl": "Protocol implementation for specific types";
             case ":migration": "Ecto database migration with table operations";

@@ -299,7 +299,7 @@ class ElixirCompiler extends DirectToStringCompiler {
      */
     private function generatePhoenixLiveViewPath(className: String, outputDir: String): String {
         var appName = extractAppName(className);
-        var liveViewName = toSnakeCase(className.replace("Live", ""));
+        var liveViewName = NamingHelper.toSnakeCase(className.replace("Live", ""));
         var phoenixPath = '${appName}_web/live/${liveViewName}_live${fileExtension}';
         return haxe.io.Path.join([outputDir, phoenixPath]);
     }
@@ -309,7 +309,7 @@ class ElixirCompiler extends DirectToStringCompiler {
      */
     private function generatePhoenixControllerPath(className: String, outputDir: String): String {
         var appName = extractAppName(className);
-        var controllerName = toSnakeCase(className);
+        var controllerName = NamingHelper.toSnakeCase(className);
         var phoenixPath = '${appName}_web/controllers/${controllerName}${fileExtension}';
         return haxe.io.Path.join([outputDir, phoenixPath]);
     }
@@ -319,7 +319,7 @@ class ElixirCompiler extends DirectToStringCompiler {
      */
     private function generatePhoenixSchemaPath(className: String, outputDir: String): String {
         var appName = extractAppName(className);
-        var schemaName = toSnakeCase(className);
+        var schemaName = NamingHelper.toSnakeCase(className);
         var phoenixPath = '${appName}/schemas/${schemaName}${fileExtension}';
         return haxe.io.Path.join([outputDir, phoenixPath]);
     }
@@ -333,7 +333,7 @@ class ElixirCompiler extends DirectToStringCompiler {
         #if (app_name)
         var definedName = haxe.macro.Context.definedValue("app_name");
         // Always convert to snake_case for consistency
-        return toSnakeCase(definedName);
+        return NamingHelper.toSnakeCase(definedName);
         #end
         
         // Remove common Phoenix suffixes first
@@ -350,27 +350,13 @@ class ElixirCompiler extends DirectToStringCompiler {
         }
         
         // Convert to snake_case
-        return toSnakeCase(appPart);
+        return NamingHelper.toSnakeCase(appPart);
     }
     
     /**
      * Convert PascalCase to snake_case for Elixir file naming conventions.
      * Examples: TodoApp → todo_app, UserController → user_controller
      */
-    private function toSnakeCase(name: String): String {
-        if (name == null || name == "") return "";
-        
-        var result = "";
-        for (i in 0...name.length) {
-            var char = name.charAt(i);
-            if (char >= "A" && char <= "Z" && i > 0) {
-                result += "_";
-            }
-            result += char.toLowerCase();
-        }
-        
-        return result;
-    }
     
     /**
      * DEPRECATED: Framework-aware file relocation is now handled using Reflaxe's built-in system
@@ -448,21 +434,26 @@ class ElixirCompiler extends DirectToStringCompiler {
                 
             case ":liveview":
                 // UserLive → user_live.ex in app_web/live/
-                var liveViewName = toSnakeCase(className.replace("Live", ""));
+                var liveViewName = NamingHelper.toSnakeCase(className.replace("Live", ""));
                 fileName = liveViewName + "_live";
                 dirPath = appName + "_web/live";
                 
             case ":controller":
                 // UserController → user_controller.ex in app_web/controllers/
-                var controllerName = toSnakeCase(className);
+                var controllerName = NamingHelper.toSnakeCase(className);
                 fileName = controllerName;
                 dirPath = appName + "_web/controllers";
                 
             case ":schema":
                 // User → user.ex in app/schemas/
-                var schemaName = toSnakeCase(className);
+                var schemaName = NamingHelper.toSnakeCase(className);
                 fileName = schemaName;
                 dirPath = appName + "/schemas";
+                
+            case ":endpoint":
+                // Endpoint → endpoint.ex in app_web/
+                fileName = "endpoint";
+                dirPath = appName + "_web";
                 
             default:
                 // Other annotations use default behavior

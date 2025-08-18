@@ -515,7 +515,39 @@ cd examples/todo-app && mix compile        # Integration test
 **See**: [`documentation/LLM_DOCUMENTATION_GUIDE.md`](documentation/LLM_DOCUMENTATION_GUIDE.md) - Complete documentation standards and examples
 
 ## Development Principles
+
+### ⚠️ CRITICAL: Type Safety and String Avoidance
+**FUNDAMENTAL RULE: Avoid strings in compiler code unless absolutely necessary. When strings ARE necessary, they must be type-checked.**
+
+#### The File Naming Bug Lesson
+**Problem Discovered**: Multiple `toSnakeCase` implementations throughout the compiler led to:
+- `server_infrastructure_Endpoint.ex` instead of `lib/todo_app_web/endpoint.ex`
+- Inconsistent naming across generated files
+- Missing annotation support (`:endpoint` not in `SUPPORTED_ANNOTATIONS`)
+- Unpredictable behavior due to string manipulation
+
+#### Type-Safe Naming Rules ✅
+1. **Use ONE consistent naming utility**: `NamingHelper.toSnakeCase()` everywhere
+2. **Centralized annotation registry**: All annotations in `AnnotationSystem.SUPPORTED_ANNOTATIONS`
+3. **Type-checked annotation routing**: Each annotation must have explicit case in `routeCompilation`
+4. **Framework-aware file placement**: Use `setOutputFileName()` and `setOutputFileDir()` for Phoenix conventions
+5. **Test all naming paths**: Both annotated and non-annotated classes must generate proper file names
+
+#### String Usage Guidelines
+**❌ NEVER**:
+- Duplicate string manipulation functions
+- Hardcode file paths or module names
+- Use string concatenation for complex logic
+- Skip type checking for string-based APIs
+
+**✅ ALWAYS**:
+- Use type-safe abstracts for structured strings (URLs, paths, module names)
+- Centralize string utilities in helper classes
+- Validate string inputs at boundaries
+- Use enums instead of string constants where possible
+
 **See**: [`documentation/COMPILER_BEST_PRACTICES.md`](documentation/COMPILER_BEST_PRACTICES.md) - Complete development principles, testing protocols, and best practices
+**See**: [`documentation/ANNOTATION_SYSTEM.md`](documentation/ANNOTATION_SYSTEM.md) - Complete annotation documentation and usage guidelines
 
 ## Commit Standards
 **Follow [Conventional Commits](https://www.conventionalcommits.org/)**: `<type>(<scope>): <subject>`
