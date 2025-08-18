@@ -855,7 +855,8 @@ class ElixirCompiler extends DirectToStringCompiler {
         var result = new StringBuf();
         
         // Generate module header using LiveViewCompiler
-        var moduleHeader = reflaxe.elixir.LiveViewCompiler.generateModuleHeader(className);
+        // Don't require CoreComponents - use default Phoenix components
+        var moduleHeader = reflaxe.elixir.LiveViewCompiler.generateModuleHeader(className, null);
         result.add(moduleHeader);
         
         // Check if this LiveView uses HXX templates and add Phoenix.Component import
