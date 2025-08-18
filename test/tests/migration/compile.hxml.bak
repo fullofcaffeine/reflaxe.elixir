@@ -1,7 +1,0 @@
-# Compilation configuration for migration test
--cp std
--cp src
--cp test/tests/migration
--lib reflaxe
---macro reflaxe.elixir.CompilerInit.Start()
-CreateUsers

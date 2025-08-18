@@ -7,6 +7,7 @@ import haxe.macro.Expr;
 import haxe.macro.Type;
 import reflaxe.helpers.SyntaxHelper;
 import reflaxe.compiler.TargetCodeInjection;
+import reflaxe.elixir.helpers.NamingHelper;
 
 using StringTools;
 
@@ -55,7 +56,7 @@ class ProtocolCompiler {
         // Add protocol functions
         for (field in fields) {
             if (field.kind.match(FMethod(_))) {
-                var functionName = convertToSnakeCase(field.name);
+                var functionName = NamingHelper.toSnakeCase(field.name);
                 var signature = generateProtocolSignature(field);
                 output.add('  @spec ${functionName}${signature}\n');
                 output.add('  def ${functionName}(${generateParameterList(field)})\n');
@@ -88,7 +89,7 @@ class ProtocolCompiler {
         var fields = classType.fields.get();
         for (field in fields) {
             if (field.kind.match(FMethod(_))) {
-                var functionName = convertToSnakeCase(field.name);
+                var functionName = NamingHelper.toSnakeCase(field.name);
                 var implementation = generateImplementation(field, targetType);
                 output.add('  def ${functionName}(value${generateExtraParams(field)}) do\n');
                 output.add('    ${implementation}\n');
@@ -150,15 +151,12 @@ class ProtocolCompiler {
      * Generates appropriate dispatch calls for protocol usage.
      */
     public static function generateDispatch(protocolName: String, methodName: String, args: Array<String>): String {
-        var snakeMethod = convertToSnakeCase(methodName);
+        var snakeMethod = NamingHelper.toSnakeCase(methodName);
         return '${protocolName}.${snakeMethod}(${args.join(", ")})';
     }
     
     // Helper functions
     
-    private static function convertToSnakeCase(name: String): String {
-        return ~/([A-Z])/g.replace(name, "_$1").toLowerCase().substr(1);
-    }
     
     private static function generateProtocolSignature(field: ClassField): String {
         // Parse function type to generate Elixir typespec
