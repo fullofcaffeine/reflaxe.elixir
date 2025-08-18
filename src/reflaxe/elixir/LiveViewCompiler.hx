@@ -179,7 +179,7 @@ class LiveViewCompiler {
      * Generate LiveView module header with proper imports and use statements
      * This should be called by ElixirCompiler, which will handle function compilation
      */
-    public static function generateModuleHeader(moduleName: String): String {
+    public static function generateModuleHeader(moduleName: String, ?coreComponentsModule: String): String {
         var result = new StringBuf();
         result.add('defmodule ${moduleName} do\n');
         result.add('  use Phoenix.LiveView\n');
@@ -189,7 +189,14 @@ class LiveViewCompiler {
         result.add('  alias TodoApp.Repo\n');
         result.add('  \n');
         result.add('  use Phoenix.Component\n');
-        result.add('  import TodoAppWeb.CoreComponents\n');
+        
+        // Only import CoreComponents if specified and module exists
+        if (coreComponentsModule != null && coreComponentsModule != "") {
+            result.add('  import ${coreComponentsModule}\n');
+        } else {
+            result.add('  # Note: CoreComponents not imported - using default Phoenix components\n');
+        }
+        
         result.add('  \n');
         return result.toString();
     }

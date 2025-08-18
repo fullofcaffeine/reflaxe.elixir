@@ -1,6 +1,6 @@
 # Haxe to JavaScript compilation for client-side code
 -cp src_haxe
--main client.SimpleTodoApp
+-main client.TodoApp
 -js assets/js/todo-app-haxe.js
 -dce full
 -D analyzer-optimize

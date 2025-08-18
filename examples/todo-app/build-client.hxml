@@ -24,4 +24,4 @@
 --macro exclude('server')
 
 # Main client entry point - pure Haxe Phoenix app
-client.PhoenixApp
+client.TodoApp

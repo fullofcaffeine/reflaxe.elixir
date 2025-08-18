@@ -6,7 +6,7 @@ defmodule TodoLive do
   alias TodoApp.Repo
   
   use Phoenix.Component
-  import TodoAppWeb.CoreComponents
+  # Note: CoreComponents not imported - using default Phoenix components
   
   @impl true
   @doc "Generated from Haxe mount"
