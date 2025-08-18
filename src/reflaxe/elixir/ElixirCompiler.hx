@@ -353,6 +353,7 @@ class ElixirCompiler extends DirectToStringCompiler {
         return NamingHelper.toSnakeCase(appPart);
     }
     
+    
     /**
      * Convert PascalCase to snake_case for Elixir file naming conventions.
      * Examples: TodoApp → todo_app, UserController → user_controller
@@ -854,19 +855,22 @@ class ElixirCompiler extends DirectToStringCompiler {
         var className = classType.name;
         var result = new StringBuf();
         
-        // Generate module header using LiveViewCompiler
+        // Generate module name from @:native annotation or use default class name
+        var moduleName = classType.getNameOrNative();
+        
+        // Generate module header using LiveViewCompiler with resolved module name
         // Don't require CoreComponents - use default Phoenix components
-        var moduleHeader = reflaxe.elixir.LiveViewCompiler.generateModuleHeader(className, null);
+        var moduleHeader = reflaxe.elixir.LiveViewCompiler.generateModuleHeader(moduleName, null);
         result.add(moduleHeader);
         
         // Check if this LiveView uses HXX templates and add Phoenix.Component import
         // HXX templates compile to Phoenix HEEx format (~H sigils) and require Phoenix.Component
         var hxxChecker = new reflaxe.elixir.helpers.ClassCompiler();
         if (hxxChecker.usesHxxTemplates(classType, funcFields)) {
-            trace('LiveView ${className} uses HXX→HEEx templates - adding Phoenix.Component');
+            trace('LiveView ${moduleName} uses HXX→HEEx templates - adding Phoenix.Component');
             result.add('  use Phoenix.Component\n\n');
         } else {
-            trace('LiveView ${className} does not use HXX templates');
+            trace('LiveView ${moduleName} does not use HXX templates');
         }
         
         // LiveView modules don't need constructors or instance variables

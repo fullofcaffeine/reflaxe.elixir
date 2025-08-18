@@ -12,6 +12,7 @@ Enable developers to **write business logic once in Haxe and deploy it anywhere*
 - **Type Safety Without Vendor Lock-in**: Compile-time safety with deployment flexibility  
 - **LLM Productivity Multiplier**: Provide deterministic vocabulary that reduces AI hallucinations
 - **Framework Integration Excellence**: Deep Phoenix/Ecto/OTP integration, not just language compatibility
+- **Framework-Agnostic Architecture**: Support any Elixir application pattern (Phoenix, Nerves, pure OTP) without compiler assumptions
 
 **See**: [`documentation/plans/PRD_VISION_ALIGNMENT.md`](documentation/plans/PRD_VISION_ALIGNMENT.md) - Complete vision, requirements, and roadmap
 
@@ -188,6 +189,37 @@ The goal is **100% type safety throughout the entire application**, using the be
 **Key Insight**: Reflaxe.Elixir is a **macro-time transpiler**, not a runtime library. All transpilation happens during Haxe compilation, not at test runtime. This affects how you write and test compiler features.
 
 **Key Point**: The function body compilation fix was a legitimate use case - we went from empty function bodies (`# TODO: Implement function body`) to real compiled Elixir code. This required updating all intended outputs to reflect the improved compiler behavior.
+
+## Framework-Agnostic Design Pattern ✨ **ARCHITECTURAL PRINCIPLE**
+
+**CRITICAL RULE**: The compiler generates plain Elixir by default. Framework conventions are applied via annotations, not hardcoded assumptions.
+
+### Design Philosophy
+```haxe
+// ✅ CORRECT: Framework conventions via annotations
+@:native("AppNameWeb.TodoLive")  // Explicit Phoenix convention
+@:liveview
+class TodoLive {}
+
+// ❌ WRONG: Hardcoded framework detection in compiler
+if (isPhoenixProject()) {
+    moduleName = appName + "Web." + className;  // Compiler assumption
+}
+```
+
+### Benefits
+- **Universal compatibility**: Works with Phoenix, Nerves, pure OTP, custom frameworks
+- **Zero framework coupling**: Compiler core remains framework-neutral
+- **Explicit control**: Developers choose conventions per project/class
+- **Migration friendly**: Easy transition from manual to automatic naming
+
+### Implementation Pattern
+1. **@:native annotation**: Explicit module name override
+2. **Project configuration**: Optional bulk convention application  
+3. **Convention detection**: Future automatic framework detection
+4. **Fallback**: Package-based naming when no convention specified
+
+**See**: [`documentation/MODULE_RESOLUTION_ROADMAP.md`](documentation/MODULE_RESOLUTION_ROADMAP.md) - Complete module resolution strategy
 
 ## 🔄 Compiler-Example Development Feedback Loop
 

@@ -374,6 +374,9 @@ class RouterCompiler {
     private static function generateRouteFromAnnotation(controllerName: String, actionName: String, route: RouteInfo): String {
         var controller = route.controller != null ? route.controller : controllerName;
         
+        // Resolve controller name to proper Phoenix module name
+        controller = resolveControllerModuleName(controller);
+        
         return switch(route.method) {
             case "LIVE":
                 'live "${route.path}", ${controller}, :${route.action}';
@@ -383,6 +386,35 @@ class RouterCompiler {
             default:
                 var method = route.method.toLowerCase();
                 '${method} "${route.path}", ${controller}, :${route.action}';
+        }
+    }
+    
+    /**
+     * Resolve controller name to proper module name by looking up the actual type
+     * This allows for flexible module naming based on @:native annotations or class paths
+     */
+    private static function resolveControllerModuleName(controllerName: String): String {
+        if (controllerName == null || controllerName == "") {
+            return controllerName;
+        }
+        
+        try {
+            // Try to resolve the controller as a type to get its actual module name
+            var controllerType = Context.getType(controllerName);
+            switch (controllerType) {
+                case TInst(ref, _):
+                    var classType = ref.get();
+                    // Use the class's actual module name (respects @:native)
+                    return classType.getNameOrNative();
+                case _:
+                    // If not a class, return as-is
+                    return controllerName;
+            }
+        } catch (e: Dynamic) {
+            // If type resolution fails, treat as a direct module name
+            // Remove package prefix if present (e.g., "controllers.UserController" -> "UserController")
+            var parts = controllerName.split(".");
+            return parts[parts.length - 1];
         }
     }
     

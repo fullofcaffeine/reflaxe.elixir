@@ -1,4 +1,4 @@
-defmodule TodoLive do
+defmodule TodoAppWeb.TodoLive do
   use Phoenix.LiveView
   
   import Phoenix.LiveView.Helpers

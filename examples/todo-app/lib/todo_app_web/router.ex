@@ -1,5 +1,5 @@
-defmodule TodoAppWeb.RouterTypeSafe do
-  use TodoAppWebTypeSafe, :router
+defmodule TodoAppWeb.Router do
+  use TodoAppWeb, :router
 
   pipeline :browser do
     plug :accepts, ["html"]
@@ -14,14 +14,14 @@ defmodule TodoAppWeb.RouterTypeSafe do
     plug :accepts, ["json"]
   end
 
-  scope "/", TodoAppWebTypeSafe do
+  scope "/", TodoAppWeb do
     pipe_through :browser
 
-    live "/", TodoLive, :root
+    live "/", TodoAppWeb.TodoLive, :root
     live "/todos", TodoLive, :todosIndex
     live "/todos/:id", TodoLive, :todosShow
     live "/todos/:id/edit", TodoLive, :todosEdit
-    get "/api/users", controllers.UserController, :apiUsers
+    get "/api/users", UserController, :apiUsers
     get "/test", NonExistentController, :testInvalid
   end
 
