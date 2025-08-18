@@ -1,4 +1,4 @@
-defmodule UserLive do
+defmodule TodoAppWeb.UserLive do
   use Phoenix.LiveView
   
   import Phoenix.LiveView.Helpers
@@ -261,7 +261,7 @@ defmodule UserLive do
 
   @doc "Generated from Haxe main"
   def main() do
-    Log.trace("UserLive with @:liveview annotation compiled successfully!", %{"fileName" => "src_haxe/server/live/UserLive.hx", "lineNumber" => 321, "className" => "server.live.UserLive", "methodName" => "main"})
+    Log.trace("UserLive with @:liveview annotation compiled successfully!", %{"fileName" => "src_haxe/server/live/UserLive.hx", "lineNumber" => 322, "className" => "server.live.UserLive", "methodName" => "main"})
   end
 
 end

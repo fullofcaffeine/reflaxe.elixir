@@ -14,6 +14,7 @@ typedef EctoQuery = phoenix.Ecto.EctoQuery;
 /**
  * LiveView component for todo management with real-time updates
  */
+@:native("TodoAppWeb.TodoLive")
 @:liveview
 class TodoLive {
 	// Socket assigns

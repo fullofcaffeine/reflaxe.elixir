@@ -176,16 +176,31 @@ class MyLive {
 }
 ```
 
-### Pattern 2: Compile-Time Annotations
+### Pattern 2: Compile-Time Annotations with Framework Conventions
 
-Use annotations to generate proper Phoenix modules:
+Use @:native annotations to apply Phoenix module naming conventions:
 
 ```haxe
-@:liveview          // Generates Phoenix.LiveView module
-@:controller        // Generates Phoenix.Controller module
-@:channel           // Generates Phoenix.Channel module
-@:router            // Generates Phoenix.Router module
+@:native("TodoAppWeb.TodoLive")    // Explicit Phoenix convention
+@:liveview
+class TodoLive {
+    // Generates TodoAppWeb.TodoLive module in lib/todo_app_web/live/todo_live.ex
+}
+
+@:native("TodoAppWeb.UserController")
+@:controller
+class UserController {
+    // Generates TodoAppWeb.UserController module
+}
+
+@:native("TodoAppWeb.RoomChannel")
+@:channel
+class RoomChannel {
+    // Generates TodoAppWeb.RoomChannel module
+}
 ```
+
+**Framework-Agnostic Design**: The compiler generates plain Elixir by default. Phoenix conventions are applied via @:native annotations, ensuring compatibility with any Elixir application pattern (Phoenix, Nerves, pure OTP).
 
 ### Pattern 3: Mixed Projects
 

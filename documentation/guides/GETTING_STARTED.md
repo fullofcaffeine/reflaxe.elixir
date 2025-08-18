@@ -203,6 +203,7 @@ This generates a complete Ecto.Schema module with proper field definitions and v
 ### Phoenix LiveView Example
 
 ```haxe
+@:native("MyAppWeb.UserLive")  // Phoenix module convention
 @:liveview
 class UserLive {
     var users: Array<User> = [];
@@ -229,7 +230,7 @@ class UserLive {
 }
 ```
 
-This generates a complete Phoenix LiveView module with real-time capabilities.
+This generates a complete Phoenix LiveView module with real-time capabilities. The @:native annotation ensures proper Phoenix module naming (generates `MyAppWeb.UserLive`).
 
 ### Real-Time Development Example
 
@@ -242,6 +243,7 @@ mix compile.haxe --watch
 
 2. **Create CounterLive.hx** in src_haxe/live/:
 ```haxe
+@:native("MyAppWeb.CounterLive")  // Phoenix module convention
 @:liveview
 class CounterLive {
     function mount(_params, _session, socket) {

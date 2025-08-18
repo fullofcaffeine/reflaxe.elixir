@@ -70,6 +70,12 @@ This document outlines the development plans for Reflaxe.Elixir, organized by co
   - ✅ **Optimized Worker Count** - 16 workers for maximum CPU utilization on multi-core systems
   - ✅ **Production-Ready Testing** - Default parallel execution with 57/57 tests passing (100%)
   - ✅ **Simple, Maintainable Solution** - File-based mutex eliminates race conditions reliably
+- [x] **Framework-Agnostic Module Resolution** ✨ *Foundation Complete*
+  - ✅ **@:native Annotation System** - Explicit module name control for framework conventions
+  - ✅ **Framework-Agnostic Compiler** - No hardcoded Phoenix assumptions, works with any Elixir application
+  - ✅ **Type-Based Module Resolution** - RouterBuildMacro uses proper type lookup instead of string patterns
+  - [ ] **Progressive Enhancement Roadmap** - 3-phase plan for automatic module naming
+  - **See**: [`documentation/MODULE_RESOLUTION_ROADMAP.md`](documentation/MODULE_RESOLUTION_ROADMAP.md) - Complete enhancement strategy
 - [ ] **Worker Process Architecture** 🧪 *Next-Generation Test Isolation*
   - **Goal**: Jest-like separate worker processes for complete test isolation
   - **Benefits**: Eliminate file locking entirely, independent working directories per worker

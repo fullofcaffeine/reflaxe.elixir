@@ -106,8 +106,10 @@ mix compile.haxe --watch
 
 ### LiveView Component Pattern
 ```haxe
+// Framework-agnostic with explicit Phoenix convention
+@:native("TodoAppWeb.TodoLive")  // Generates TodoAppWeb.TodoLive module
 @:liveview
-class TodoAppLive {
+class TodoLive {
     public static function mount(params, session, socket) {
         return socket.assign({
             // Initial state here
@@ -124,6 +126,17 @@ class TodoAppLive {
     }
 }
 ```
+
+### Module Naming Convention
+**CRITICAL**: The compiler generates plain Elixir by default. Use @:native to apply Phoenix conventions:
+
+```haxe
+@:native("TodoAppWeb.TodoLive")    // Phoenix web module
+@:native("TodoApp.User")           // Phoenix app module  
+@:native("MyDeviceWeb.SensorLive") // Works with any framework
+```
+
+This framework-agnostic approach works with Phoenix, Nerves, pure OTP, or custom frameworks.
 
 ### Testing LiveView Changes
 1. Edit LiveView component → Save

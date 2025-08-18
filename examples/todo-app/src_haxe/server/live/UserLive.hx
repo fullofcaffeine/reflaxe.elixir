@@ -9,6 +9,7 @@ import contexts.Users.User;
  * Phoenix LiveView for user management
  * Demonstrates real-time user CRUD operations
  */
+@:native("TodoAppWeb.UserLive")
 @:liveview
 class UserLive {
     var users: Array<User> = [];
