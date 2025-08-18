@@ -1,8 +1,11 @@
 package;
 
 import phoenix.Phoenix;
+import elixir.otp.Application;
 import elixir.otp.Supervisor.SupervisorExtern;
 import elixir.otp.Supervisor.SupervisorStrategy;
+import elixir.otp.Supervisor.SupervisorOptions;
+import elixir.otp.Supervisor.ChildSpec;
 
 /**
  * Main TodoApp application module
@@ -22,12 +25,12 @@ class TodoApp {
     /**
      * Start the application
      */
-    public static function start(type: Dynamic, args: Dynamic): Dynamic {
+    public static function start(type: ApplicationStartType, args: ApplicationArgs): ApplicationResult {
         // Get the app name dynamically - this will be replaced by the compiler
         var appName = getAppName();
         
         // Define children for the supervision tree
-        var children = [
+        var children: Array<ChildSpec> = [
             // Database repository
             {
                 id: '${appName}.Repo',
@@ -55,14 +58,27 @@ class TodoApp {
         ];
 
         // Start supervisor with children
-        var opts = {strategy: OneForOne, name: '${appName}.Supervisor'};
-        return SupervisorExtern.start_link(children, opts);
+        var opts: SupervisorOptions = {
+            strategy: OneForOne,
+            max_restarts: 3,
+            max_seconds: 5
+        };
+        
+        // Start the supervisor and return proper ApplicationResult
+        var supervisorResult = SupervisorExtern.start_link(children, opts);
+        
+        // For OTP Application behavior, we need to return the supervisor PID
+        // In Elixir, this would be {:ok, supervisor_pid}
+        return Ok(supervisorResult);
     }
 
     /**
      * Called when application is preparing to shut down
+     * State is whatever was returned from start/2
      */
     public static function prep_stop(state: Dynamic): Dynamic {
+        // For now, keep Dynamic since this is rarely customized
+        // and state type varies based on application needs
         return state;
     }
 }

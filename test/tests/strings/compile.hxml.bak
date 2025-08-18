@@ -1,7 +1,0 @@
-# Compilation configuration for strings test
--cp std
--cp src
--cp test/tests/strings
--lib reflaxe
---macro reflaxe.elixir.CompilerInit.Start()
-Main

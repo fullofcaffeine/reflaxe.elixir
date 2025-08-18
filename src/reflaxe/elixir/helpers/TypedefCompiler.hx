@@ -6,6 +6,7 @@ import haxe.macro.Context;
 import haxe.macro.Expr;
 import haxe.macro.Type;
 import reflaxe.helpers.SyntaxHelper;
+import reflaxe.elixir.helpers.NamingHelper;
 
 using StringTools;
 using reflaxe.helpers.NullableMetaAccessHelper;
@@ -50,7 +51,7 @@ class TypedefCompiler {
         var output = new StringBuf();
         
         // Extract typedef name and convert to snake_case
-        var typedefName = convertToSnakeCase(defType.name);
+        var typedefName = NamingHelper.toSnakeCase(defType.name);
         
         // Add documentation if available
         if (defType.doc != null && defType.doc.length > 0) {
@@ -122,7 +123,7 @@ class TypedefCompiler {
                 
             case TType(t, params):
                 // Another typedef reference
-                var refName = convertToSnakeCase(t.get().name);
+                var refName = NamingHelper.toSnakeCase(t.get().name);
                 if (params != null && params.length > 0) {
                     var paramSpecs = params.map(p -> compileType(p, typeParams));
                     refName + '(' + paramSpecs.join(', ') + ')';
@@ -151,7 +152,7 @@ class TypedefCompiler {
         
         var fieldSpecs = [];
         for (field in fields) {
-            var fieldName = convertToSnakeCase(field.name);
+            var fieldName = NamingHelper.toSnakeCase(field.name);
             var fieldType = compileType(field.type, typeParams);
             
             // Check if field is optional
@@ -259,27 +260,6 @@ class TypedefCompiler {
         return output.toString();
     }
     
-    /**
-     * Converts CamelCase to snake_case
-     */
-    private static function convertToSnakeCase(name: String): String {
-        // Handle special cases
-        if (name == name.toUpperCase()) {
-            return name.toLowerCase();
-        }
-        
-        // Convert CamelCase to snake_case
-        var result = "";
-        for (i in 0...name.length) {
-            var char = name.charAt(i);
-            if (i > 0 && char == char.toUpperCase() && char != "_") {
-                result += "_";
-            }
-            result += char.toLowerCase();
-        }
-        
-        return result;
-    }
 }
 
 #end
