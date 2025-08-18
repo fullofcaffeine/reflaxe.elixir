@@ -1,5 +1,3 @@
-# @install: lix --silent download "gh://github.com/SomeRanDev/reflaxe#430b4187a6bf4813cf618fc3a73ccf494a2ab9f5" into reflaxe/4.0.0-beta/github/430b4187a6bf4813cf618fc3a73ccf494a2ab9f5
--cp ${HAXE_LIBCACHE}/reflaxe/4.0.0-beta/github/430b4187a6bf4813cf618fc3a73ccf494a2ab9f5/src/
+-cp ${SCOPE_DIR}/vendor/reflaxe/src/
 -D reflaxe=4.0.0-beta
---macro nullSafety("reflaxe")
---macro reflaxe.ReflectCompiler.Start()
+--macro Sys.println("haxe_libraries/reflaxe.hxml:2: [Warning] Using dev version of library reflaxe")

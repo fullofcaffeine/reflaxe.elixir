@@ -1283,6 +1283,12 @@ class ElixirCompiler extends DirectToStringCompiler {
                             case FEnum(_, ef): ef.name;
                             case FDynamic(s): s;
                         };
+                        
+                        // Check for elixir.Syntax calls and transform them to __elixir__ injection
+                        if (isElixirSyntaxCall(obj, fieldName)) {
+                            return compileElixirSyntaxCall(fieldName, el);
+                        }
+                        
                         if (fieldName == "getAppName") {
                             // Handle Class.getAppName() calls
                             var appName = AnnotationSystem.getEffectiveAppName(currentClassType);
@@ -5225,6 +5231,215 @@ class ElixirCompiler extends DirectToStringCompiler {
         options.push('name: ${name}');
         
         return '[${options.join(", ")}]';
+    }
+    
+    /**
+     * Check if this is a call to elixir.Syntax static methods
+     * 
+     * @param obj The object expression (should be TTypeExpr for elixir.Syntax)
+     * @param fieldName The method name being called
+     * @return true if this is an elixir.Syntax call
+     */
+    private function isElixirSyntaxCall(obj: TypedExpr, fieldName: String): Bool {
+        switch (obj.expr) {
+            case TTypeExpr(moduleType):
+                // Check if this is the elixir.Syntax module
+                switch (moduleType) {
+                    case TClassDecl(c):
+                        var classRef = c.get();
+                        var fullPath = classRef.pack.join(".") + (classRef.pack.length > 0 ? "." : "") + classRef.name;
+                        return fullPath == "elixir.Syntax";
+                    case TTypeDecl(t):
+                        // Handle typedef case (though elixir.Syntax should be a class)
+                        var typeRef = t.get();
+                        var fullPath = typeRef.pack.join(".") + (typeRef.pack.length > 0 ? "." : "") + typeRef.name;
+                        return fullPath == "elixir.Syntax";
+                    case _:
+                        return false;
+                }
+            case _:
+                return false;
+        }
+    }
+    
+    /**
+     * Compile elixir.Syntax method calls to __elixir__ injection calls
+     * 
+     * This transforms type-safe elixir.Syntax calls into the underlying __elixir__
+     * injection mechanism that Reflaxe processes via targetCodeInjectionName.
+     * 
+     * @param methodName The elixir.Syntax method being called (code, atom, tuple, etc.)
+     * @param args The arguments to the method call
+     * @return Compiled Elixir code
+     */
+    private function compileElixirSyntaxCall(methodName: String, args: Array<TypedExpr>): String {
+        return switch (methodName) {
+            case "code":
+                // elixir.Syntax.code(code, ...args) → direct injection
+                if (args.length == 0) {
+                    Context.error("elixir.Syntax.code requires at least one String argument.", Context.currentPos());
+                    "";
+                } else {
+                    // Get the code string from the first argument
+                    var codeString = switch (args[0].expr) {
+                        case TConst(TString(s)): s;
+                        case _: 
+                            Context.error("elixir.Syntax.code first parameter must be a constant String.", args[0].pos);
+                            "";
+                    };
+                    
+                    // Compile the remaining arguments
+                    var compiledArgs = [];
+                    for (i in 1...args.length) {
+                        compiledArgs.push(compileExpression(args[i]));
+                    }
+                    
+                    // Validate placeholder count matches argument count (js.Syntax pattern)
+                    var placeholderCount = 0;
+                    ~/{(\d+)}/g.map(codeString, function(ereg) {
+                        var num = Std.parseInt(ereg.matched(1));
+                        if (num != null && num >= placeholderCount) {
+                            placeholderCount = num + 1;
+                        }
+                        return ereg.matched(0);
+                    });
+                    
+                    if (placeholderCount > compiledArgs.length) {
+                        Context.error('elixir.Syntax.code() requires ${placeholderCount} arguments but ${compiledArgs.length} provided', Context.currentPos());
+                    }
+                    
+                    // Replace {N} placeholders with compiled arguments (following js.Syntax pattern)
+                    var result = ~/{(\d+)}/g.map(codeString, function(ereg) {
+                        var num = Std.parseInt(ereg.matched(1));
+                        return (num != null && num < compiledArgs.length) ? compiledArgs[num] : ereg.matched(0);
+                    });
+                    
+                    return result;
+                }
+                
+            case "plainCode":
+                // elixir.Syntax.plainCode(code) → direct injection without interpolation
+                if (args.length != 1) {
+                    Context.error("elixir.Syntax.plainCode requires exactly one String argument.", Context.currentPos());
+                    "";
+                } else {
+                    switch (args[0].expr) {
+                        case TConst(TString(s)): s;
+                        case _:
+                            Context.error("elixir.Syntax.plainCode parameter must be a constant String.", args[0].pos);
+                            "";
+                    }
+                }
+                
+            case "atom":
+                // elixir.Syntax.atom(name) → :name
+                if (args.length != 1) {
+                    Context.error("elixir.Syntax.atom requires exactly one String argument.", Context.currentPos());
+                    "";
+                } else {
+                    switch (args[0].expr) {
+                        case TConst(TString(s)): ':$s';
+                        case _:
+                            var atomName = compileExpression(args[0]);
+                            ':${atomName}';
+                    }
+                }
+                
+            case "tuple":
+                // elixir.Syntax.tuple(...args) → {arg1, arg2, ...}
+                var compiledArgs = args.map(arg -> compileExpression(arg));
+                '{${compiledArgs.join(", ")}}';
+                
+            case "keyword":
+                // elixir.Syntax.keyword([key1, value1, key2, value2]) → [key1: value1, key2: value2]
+                if (args.length != 1) {
+                    Context.error("elixir.Syntax.keyword requires exactly one Array argument.", Context.currentPos());
+                    "";
+                } else {
+                    switch (args[0].expr) {
+                        case TArrayDecl(elements):
+                            if (elements.length % 2 != 0) {
+                                Context.error("elixir.Syntax.keyword array must have an even number of elements (key-value pairs).", args[0].pos);
+                                "";
+                            } else {
+                                var pairs = [];
+                                var i = 0;
+                                while (i < elements.length) {
+                                    var key = compileExpression(elements[i]);
+                                    var value = compileExpression(elements[i + 1]);
+                                    pairs.push('${key}: ${value}');
+                                    i += 2;
+                                }
+                                '[${pairs.join(", ")}]';
+                            }
+                        case _:
+                            Context.error("elixir.Syntax.keyword parameter must be an array literal.", args[0].pos);
+                            "";
+                    }
+                }
+                
+            case "map":
+                // elixir.Syntax.map([key1, value1, key2, value2]) → %{key1 => value1, key2 => value2}
+                if (args.length != 1) {
+                    Context.error("elixir.Syntax.map requires exactly one Array argument.", Context.currentPos());
+                    "";
+                } else {
+                    switch (args[0].expr) {
+                        case TArrayDecl(elements):
+                            if (elements.length % 2 != 0) {
+                                Context.error("elixir.Syntax.map array must have an even number of elements (key-value pairs).", args[0].pos);
+                                "";
+                            } else {
+                                var pairs = [];
+                                var i = 0;
+                                while (i < elements.length) {
+                                    var key = compileExpression(elements[i]);
+                                    var value = compileExpression(elements[i + 1]);
+                                    pairs.push('${key} => ${value}');
+                                    i += 2;
+                                }
+                                '%{${pairs.join(", ")}}';
+                            }
+                        case _:
+                            Context.error("elixir.Syntax.map parameter must be an array literal.", args[0].pos);
+                            "";
+                    }
+                }
+                
+            case "pipe":
+                // elixir.Syntax.pipe(initial, op1, op2, ...) → initial |> op1 |> op2 |> ...
+                if (args.length < 2) {
+                    Context.error("elixir.Syntax.pipe requires at least two arguments (initial value and one operation).", Context.currentPos());
+                    "";
+                } else {
+                    var initial = compileExpression(args[0]);
+                    var operations = [];
+                    for (i in 1...args.length) {
+                        operations.push(compileExpression(args[i]));
+                    }
+                    '${initial} |> ${operations.join(" |> ")}';
+                }
+                
+            case "match":
+                // elixir.Syntax.match(value, patterns) → case value do patterns end
+                if (args.length != 2) {
+                    Context.error("elixir.Syntax.match requires exactly two arguments (value and patterns).", Context.currentPos());
+                    "";
+                } else {
+                    var value = compileExpression(args[0]);
+                    var patterns = switch (args[1].expr) {
+                        case TConst(TString(s)): s;
+                        case _:
+                            Context.error("elixir.Syntax.match patterns must be a constant String.", args[1].pos);
+                            "";
+                    };
+                    'case ${value} do\n  ${patterns.split("\\n").join("\n  ")}\nend';
+                }
+                
+            case _:
+                Context.error('Unknown elixir.Syntax method: ${methodName}', Context.currentPos());
+                "";
+        };
     }
     
 }

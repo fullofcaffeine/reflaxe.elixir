@@ -20,11 +20,11 @@ import server.pubsub.TodoPubSub.TodoPubSubTopic;
 import server.pubsub.TodoPubSub.TodoPubSubMessage;
 import server.live.SafeAssigns;
 import server.live.TypeSafeConversions;
+import server.infrastructure.Repo; // Import the TodoApp.Repo module
 
 using StringTools;
 
 // For convenience, alias Ecto types for cleaner code
-typedef Repo = phoenix.Ecto.EctoRepo;
 typedef EctoQuery = phoenix.Ecto.EctoQuery;
 typedef EctoChangeset = phoenix.Ecto.EctoChangeset;
 

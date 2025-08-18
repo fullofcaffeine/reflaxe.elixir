@@ -504,10 +504,31 @@ var iso = date.toIso8601();            // ✅ Platform-specific feature
 
 **See**: [`/std/CLAUDE.md`](/std/CLAUDE.md#dual-api-pattern) - Complete implementation guidelines and patterns
 
-## Code Injection Policy ⚠️ CRITICAL
-**NEVER use `__elixir__()` in application code, examples, or demos.** Use extern definitions and pure Haxe abstractions instead.
+## Type-Safe Code Injection ⚡ **NEW API**
 
-**See**: [`documentation/CODE_INJECTION.md`](documentation/CODE_INJECTION.md) - Complete policy and enforcement
+**Modern type-safe injection using `elixir.Syntax.code()` - replaces legacy `untyped __elixir__()`**:
+
+### ✅ NEW: elixir.Syntax API (Recommended)
+```haxe
+import elixir.Syntax;
+var result = Syntax.code("DateTime.utc_now()");           // Type-safe, IDE support
+var formatted = Syntax.code("String.slice({0}, {1})", str, start);  // Parameter interpolation
+```
+
+### 🔄 LEGACY: untyped __elixir__() (Backward Compatibility Only)
+```haxe
+var result = untyped __elixir__("DateTime.utc_now()");    // Legacy approach
+```
+
+### Usage Guidelines
+- **Standard Library**: Use `elixir.Syntax.code()` for new implementations
+- **Application Code**: Prefer pure Haxe abstractions and extern definitions
+- **Migration**: Gradually convert `untyped __elixir__()` to `elixir.Syntax.code()`
+
+**See**: 
+- [`documentation/ELIXIR_INJECTION_GUIDE.md`](documentation/ELIXIR_INJECTION_GUIDE.md) - **UPDATED**: Complete injection guide with elixir.Syntax examples
+- [`documentation/REFLAXE_RUNTIME_EXPLAINED.md`](documentation/REFLAXE_RUNTIME_EXPLAINED.md) - **NEW**: Macro-time vs runtime processing explained
+- [`documentation/CRITICAL_ARCHITECTURE_LESSONS.md`](documentation/CRITICAL_ARCHITECTURE_LESSONS.md) - Why idiomatic code generation matters
 
 ## Quality Standards
 - Zero compilation warnings, Reflaxe snapshot testing approach, Performance targets: <15ms compilation, <150KB JS bundles
@@ -602,6 +623,20 @@ cd examples/todo-app && mix compile        # Integration test
 **See**: [`documentation/LLM_DOCUMENTATION_GUIDE.md`](documentation/LLM_DOCUMENTATION_GUIDE.md) - Complete documentation standards and examples
 
 ## Development Principles
+
+### ⚠️ CRITICAL: Code Replacement Safety Protocol
+**ALWAYS double-check before removing code - compare implementations thoroughly and keep the SUPERIOR version, not just resolve duplicates blindly.**
+
+When resolving duplicate code or methods:
+1. **Analyze both implementations** - Compare logic, patterns, robustness
+2. **Identify the superior approach** - Better error handling, proper patterns, extensibility
+3. **Replace inferior with superior** - Don't just remove to fix conflicts
+4. **Verify the decision** - Ensure the kept implementation handles all cases
+
+**Example**: When finding duplicate `compileElixirSyntaxCall()` methods, compare:
+- ❌ Simple `string.replace('{$i}')` approach (brittle, no bounds checking)
+- ✅ Regex `~/{(\d+)}/g.map()` approach (robust, follows js.Syntax patterns)
+- **Decision**: Replace simple approach with regex approach, don't just remove newer code
 
 ### ⚠️ CRITICAL: Type Safety and String Avoidance
 **FUNDAMENTAL RULE: Avoid strings in compiler code unless absolutely necessary. When strings ARE necessary, they must be type-checked.**
