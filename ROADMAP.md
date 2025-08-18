@@ -76,6 +76,19 @@ This document outlines the development plans for Reflaxe.Elixir, organized by co
   - **Architecture**: Main orchestrator + N worker processes communicating via IPC
   - **Potential**: May resolve remaining 3 test failures through true isolation
   - **See**: [`documentation/HAXE_THREADING_ANALYSIS.md`](documentation/HAXE_THREADING_ANALYSIS.md) - Complete analysis of threading vs process approaches
+- [ ] **File Naming Consistency Architecture** ⚡ *HIGH PRIORITY - Fixes Ongoing Issues*
+  - **Problem**: Multiple snake_case implementations causing inconsistent file naming (e.g., `server_infrastructure_Endpoint.ex` should be `endpoint.ex`)
+  - **Root Cause**: Local `toSnakeCase()` in ElixirCompiler.hx vs `NamingHelper.toSnakeCase()` + different code paths for annotations
+  - **Solution**: Centralized file naming pipeline with single entry point for ALL generated files
+  - **Implementation**: Remove duplicate conversion functions, force all paths through NamingHelper
+  - **Benefits**: Consistent file naming, easier debugging, eliminates class of bugs like the current Endpoint issue
+- [ ] **Advanced Functional Pattern Optimization** 🧪 *Enhanced Code Generation*
+  - **Pattern Matching to Function Heads**: Convert case expressions to multiple function clauses for better performance
+  - **FunctionalOptimizer.hx Helper**: Dedicated class for advanced pattern detection and optimization
+  - **Function Clause Generation**: Generate `def func(pattern1), def func(pattern2)` instead of single function with case
+  - **Guard Compilation**: Transform pattern guards to Elixir `when` clauses
+  - **Benefits**: More idiomatic Elixir, better pattern matching performance, cleaner generated code
+  - **Current Status**: Core optimizations complete (Array→Enum, with statements, tail recursion)
 - [ ] **Self-Hosting Development Infrastructure** 🧪 *Ultimate Dogfooding*
   - **Phase 1**: Rewrite ParallelTestRunner.hx to compile to Elixir instead of interpreter
   - **Phase 2**: Convert HaxeWatcher from Elixir to Haxe→Elixir (file system monitoring)
