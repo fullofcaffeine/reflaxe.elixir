@@ -21,7 +21,7 @@ package elixir.otp;
  */
 typedef ChildSpec = {
     id: String,
-    start: {module: String, function: String, args: Array<Dynamic>},
+    start: {module: String, func: String, args: Array<Dynamic>},
     ?restart: RestartType,
     ?shutdown: ShutdownType,
     ?type: ChildType,
@@ -76,14 +76,14 @@ enum SupervisorStrategy {
 /**
  * Helper class for creating child specifications
  */
-class ChildSpec {
+class ChildSpecBuilder {
     /**
      * Create a worker child spec
      */
     public static function worker(module: String, args: Array<Dynamic>, ?id: String): ChildSpec {
         return {
             id: id != null ? id : module,
-            start: {module: module, function: "start_link", args: args},
+            start: {module: module, func: "start_link", args: args},
             restart: Permanent,
             shutdown: Timeout(5000),
             type: Worker,
@@ -97,7 +97,7 @@ class ChildSpec {
     public static function supervisor(module: String, args: Array<Dynamic>, ?id: String): ChildSpec {
         return {
             id: id != null ? id : module,
-            start: {module: module, function: "start_link", args: args},
+            start: {module: module, func: "start_link", args: args},
             restart: Permanent,
             shutdown: Infinity,
             type: Supervisor,
@@ -118,7 +118,7 @@ class ChildSpec {
 /**
  * Helper class for supervisor options
  */
-class SupervisorOptions {
+class SupervisorOptionsBuilder {
     /**
      * Default supervisor options
      */
