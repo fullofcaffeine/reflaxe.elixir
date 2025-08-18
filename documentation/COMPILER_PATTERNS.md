@@ -6,6 +6,7 @@ This document captures key patterns and lessons learned during Reflaxe.Elixir co
 
 - [Core Principles](#core-principles)
 - [AST Transformation Patterns](#ast-transformation-patterns)
+- [Struct Field Assignment Pattern](#struct-field-assignment-pattern)
 - [Variable Substitution](#variable-substitution)
 - [Documentation Generation](#documentation-generation)
 - [Error Handling](#error-handling)
@@ -117,6 +118,88 @@ if (itemCallPattern.match(transformation)) {
     }
 }
 ```
+
+## Struct Field Assignment Pattern
+
+### Paradigm Bridge: Mutable to Immutable
+**Pattern**: Transform Haxe's mutable field assignments to Elixir's immutable struct updates.
+
+**Problem**: Haxe allows direct field mutation while Elixir requires functional update syntax.
+
+```haxe
+// Haxe source (natural, mutable style)
+spec.restart = Temporary;
+opts.strategy = OneForOne;
+```
+
+**Invalid Elixir** (what naive compilation would generate):
+```elixir
+# ❌ Cannot invoke remote function spec.restart/0 inside a match
+spec.restart = :temporary
+opts.strategy = :one_for_one
+```
+
+**Idiomatic Elixir** (what our compiler generates):
+```elixir
+# ✅ Proper immutable struct update syntax
+spec = %{spec | restart: :temporary}
+opts = %{opts | strategy: :one_for_one}
+```
+
+### Implementation Pattern
+
+**Compiler Logic** (ElixirCompiler.hx:1154-1189):
+```haxe
+case OpAssign:
+    // Handle struct field assignment with Elixir's immutable update syntax
+    switch (e1.expr) {
+        case TField(structExpr, fa):
+            // This is a field assignment like spec.restart = :temporary
+            // We need to generate: spec = %{spec | restart: :temporary}
+            switch (structExpr.expr) {
+                case TLocal(v):
+                    // Simple local variable struct update
+                    var structName = getOriginalVarName(v);
+                    var fieldName = extractFieldName(fa);
+                    var value = compileExpression(e2);
+                    
+                    // Generate idiomatic Elixir struct update syntax
+                    '${structName} = %{${structName} | ${fieldName}: ${value}}';
+                    
+                case _:
+                    // Complex struct expressions - future enhancement
+                    fallbackToStandardAssignment();
+            }
+            
+        case _:
+            // Regular variable assignment
+            compileExpression(e1) + " = " + compileExpression(e2);
+    }
+```
+
+### Key Benefits
+
+1. **Developer Ergonomics**: Write natural Haxe field assignment syntax
+2. **Idiomatic Output**: Generate publication-ready Elixir following BEAM conventions
+3. **Framework Integration**: Enables proper OTP/Phoenix supervisor configuration
+4. **Type Safety**: Maintains compile-time guarantees while bridging paradigms
+
+### Testing Pattern
+
+**Validation Approach**:
+```haxe
+// Test input
+var spec = ChildSpec.worker("MyWorker", []);
+spec.restart = Temporary;
+
+// Expected output validation
+assert(compiledCode.contains("spec = %{spec | restart: :temporary}"));
+assert(!compiledCode.contains("spec.restart = "));
+```
+
+### Related Patterns
+- See [Variable Substitution](#variable-substitution) for AST transformation techniques
+- See [Core Principles](#core-principles) for why AST-level transformation is preferred
 
 ## Variable Substitution
 
