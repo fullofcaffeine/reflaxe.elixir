@@ -14,9 +14,9 @@ File.mkdir_p!("test/fixtures")
 # Compile test support modules
 Code.compile_file("test/support/haxe_test_helper.ex")
 
-# Configure ExUnit to run tests sequentially to avoid port conflicts
-# This is especially important for HaxeServer tests that use port 6000
-ExUnit.configure(max_cases: 1)
+# Configure ExUnit for parallel execution (default: 2x CPU cores)
+# Tests with async: false will still run sequentially as needed
+# Remove max_cases limitation to enable default parallel execution
 
 # Start ExUnit
 ExUnit.start()
