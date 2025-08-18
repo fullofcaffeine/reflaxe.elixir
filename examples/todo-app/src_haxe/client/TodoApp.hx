@@ -13,6 +13,7 @@ import reflaxe.js.Async;
  * This provides a clean, modular architecture for client-side functionality
  * while maintaining type safety throughout the application.
  */
+@:build(reflaxe.js.Async.build())
 class TodoApp {
     
     private static var isInitialized: Bool = false;
@@ -219,9 +220,9 @@ class TodoApp {
      * Async function to measure page performance and log metrics
      */
     @:async
-    private static function measurePagePerformance(): Void {
+    private static function measurePagePerformance(): js.lib.Promise<Void> {
         if (js.Browser.window.performance == null) {
-            return;
+            return js.lib.Promise.resolve();
         }
         
         // Use modern PerformanceNavigationTiming API instead of deprecated timing
@@ -229,7 +230,7 @@ class TodoApp {
         if (entries.length == 0) {
             // Fallback for browsers that don't support PerformanceNavigationTiming
             trace("PerformanceNavigationTiming not supported, using basic measurement");
-            return;
+            return js.lib.Promise.resolve();
         }
         
         var navTiming: js.html.PerformanceNavigationTiming = cast entries[0];
@@ -239,23 +240,25 @@ class TodoApp {
         trace('DOM load time: ${domLoadTime}ms, Full page load: ${fullLoadTime}ms');
         
         // Log metrics asynchronously with proper error handling
-        await(logMetricToServerAsync("dom_load_time", domLoadTime));
-        await(logMetricToServerAsync("page_load_time", fullLoadTime));
+        Async.await(logMetricToServerAsync("dom_load_time", domLoadTime));
+        Async.await(logMetricToServerAsync("page_load_time", fullLoadTime));
         
         // Log additional performance metrics
         var resourceLoadTime = navTiming.loadEventEnd - navTiming.domContentLoadedEventEnd;
         if (resourceLoadTime > 0) {
-            await(logMetricToServerAsync("resource_load_time", resourceLoadTime));
+            Async.await(logMetricToServerAsync("resource_load_time", resourceLoadTime));
         }
         
         // Check for performance issues and report them
         if (fullLoadTime > 3000) { // Slow page load > 3 seconds
-            await(logErrorToServerAsync("performance_warning", {
+            Async.await(logErrorToServerAsync("performance_warning", {
                 type: "slow_page_load",
                 load_time: fullLoadTime,
                 threshold: 3000
             }));
         }
+        
+        return js.lib.Promise.resolve();
     }
     
     /**
@@ -458,7 +461,7 @@ class TodoApp {
      * Async error logging to server with retry logic and batching
      */
     @:async
-    private static function logErrorToServerAsync(type: String, details: Dynamic): Void {
+    private static function logErrorToServerAsync(type: String, details: Dynamic): js.lib.Promise<Void> {
         try {
             // Store locally first as fallback
             LocalStorage.setObject('last_error_${type}', {
@@ -468,13 +471,14 @@ class TodoApp {
             });
             
             // Attempt to send to server via LiveView
-            await(sendToLiveViewAsync("error_log", {
+            var errorData: Dynamic = {
                 error_type: type,
                 details: details,
                 timestamp: Date.now().getTime(),
                 user_agent: js.Browser.navigator.userAgent,
                 url: js.Browser.location.href
-            }));
+            };
+            var _result = Async.await(sendToLiveViewAsync("error_log", errorData));
             
             trace('Error logged to server: ${type}');
             
@@ -483,44 +487,49 @@ class TodoApp {
             trace('Failed to send error to server: ${e}');
             
             // Queue for retry later
-            await(queueForRetryAsync("error", {
+            Async.await(queueForRetryAsync("error", {
                 type: type,
                 details: details,
                 timestamp: Date.now().getTime()
             }));
         }
+        
+        return js.lib.Promise.resolve();
     }
     
     /**
      * Async metric logging to server with batching for performance
      */
     @:async
-    private static function logMetricToServerAsync(metric: String, value: Float): Void {
+    private static function logMetricToServerAsync(metric: String, value: Float): js.lib.Promise<Void> {
         try {
             // Store locally first as fallback
             LocalStorage.setNumber('metric_${metric}', value);
             
             // Batch metrics for efficient server communication
-            await(addToBatchAsync("metrics", {
+            var metricData: Dynamic = {
                 metric: metric,
                 value: value,
                 timestamp: Date.now().getTime()
-            }));
+            };
+            var _result1 = Async.await(addToBatchAsync("metrics", metricData));
             
             // Send batch if it's full or enough time has passed
-            await(maybeSendBatchAsync("metrics"));
+            Async.await(maybeSendBatchAsync("metrics"));
             
         } catch (e: Dynamic) {
             trace('Failed to process metric: ${e}');
             // Metric is still stored locally, so we don't lose data
         }
+        
+        return js.lib.Promise.resolve();
     }
     
     /**
      * Send data to Phoenix LiveView with error handling and timeout
      */
     @:async
-    private static function sendToLiveViewAsync(event: String, data: Dynamic): Void {
+    private static function sendToLiveViewAsync(event: String, data: Dynamic): js.lib.Promise<Void> {
         // Create a promise that resolves when LiveView responds or times out
         var promise = new js.lib.Promise(function(resolve, reject) {
             var timeout = js.Browser.window.setTimeout(function() {
@@ -551,14 +560,14 @@ class TodoApp {
             }
         });
         
-        await(promise);
+        Async.await(promise);
     }
     
     /**
      * Queue data for retry when server communication fails
      */
     @:async
-    private static function queueForRetryAsync(category: String, data: Dynamic): Void {
+    private static function queueForRetryAsync(category: String, data: Dynamic): js.lib.Promise<Void> {
         var queueKey = 'retry_queue_${category}';
         var queue = LocalStorage.getObject(queueKey);
         
@@ -576,14 +585,16 @@ class TodoApp {
         LocalStorage.setObject(queueKey, queue);
         
         // Schedule retry attempt
-        await(scheduleRetryAsync(category));
+        Async.await(scheduleRetryAsync(category));
+        
+        return js.lib.Promise.resolve();
     }
     
     /**
      * Add data to batch for efficient server communication
      */
     @:async
-    private static function addToBatchAsync(batchType: String, data: Dynamic): Void {
+    private static function addToBatchAsync(batchType: String, data: Dynamic): js.lib.Promise<Void> {
         var batchKey = 'batch_${batchType}';
         var batch = LocalStorage.getObject(batchKey);
         
@@ -596,13 +607,15 @@ class TodoApp {
         
         batch.items.push(data);
         LocalStorage.setObject(batchKey, batch);
+        
+        return js.lib.Promise.resolve();
     }
     
     /**
      * Send batch to server if conditions are met
      */
     @:async
-    private static function maybeSendBatchAsync(batchType: String): Void {
+    private static function maybeSendBatchAsync(batchType: String): js.lib.Promise<Void> {
         var batchKey = 'batch_${batchType}';
         var batch = LocalStorage.getObject(batchKey);
         
@@ -620,7 +633,7 @@ class TodoApp {
         
         if (shouldSend) {
             try {
-                await(sendToLiveViewAsync('batch_${batchType}', {
+                Async.await(sendToLiveViewAsync('batch_${batchType}', {
                     items: batch.items,
                     count: batch.items.length,
                     created_at: batch.created_at,
@@ -636,22 +649,24 @@ class TodoApp {
                 // Batch remains in LocalStorage for retry
             }
         }
+        
+        return js.lib.Promise.resolve();
     }
     
     /**
      * Schedule retry attempt for failed communications
      */
     @:async
-    private static function scheduleRetryAsync(category: String): Void {
+    private static function scheduleRetryAsync(category: String): js.lib.Promise<Void> {
         // Use exponential backoff: 1s, 2s, 4s, 8s, then 30s max
         var retryKey = 'retry_count_${category}';
         var retryCount = LocalStorage.getNumber(retryKey, 0);
         var delay = Math.min(1000 * Math.pow(2, retryCount), 30000);
         
-        await(Async.delay(null, Std.int(delay)));
+        Async.await(Async.delay(null, Std.int(delay)));
         
         try {
-            await(processRetryQueueAsync(category));
+            Async.await(processRetryQueueAsync(category));
             
             // Reset retry count on success
             LocalStorage.removeItem(retryKey);
@@ -661,22 +676,24 @@ class TodoApp {
             LocalStorage.setNumber(retryKey, retryCount + 1);
             trace('Retry ${category} failed (attempt ${retryCount + 1}): ${e}');
         }
+        
+        return js.lib.Promise.resolve();
     }
     
     /**
      * Process queued items for retry
      */
     @:async
-    private static function processRetryQueueAsync(category: String): Void {
+    private static function processRetryQueueAsync(category: String): js.lib.Promise<Void> {
         var queueKey = 'retry_queue_${category}';
         var queue = LocalStorage.getObject(queueKey);
         
         if (queue == null || queue.length == 0) {
-            return;
+            return js.lib.Promise.resolve();
         }
         
         // Process items in batch
-        await(sendToLiveViewAsync('retry_${category}', {
+        Async.await(sendToLiveViewAsync('retry_${category}', {
             items: queue,
             count: queue.length,
             retry_timestamp: Date.now().getTime()
@@ -685,6 +702,8 @@ class TodoApp {
         // Clear queue after successful send
         LocalStorage.removeItem(queueKey);
         trace('Successfully sent ${queue.length} queued ${category} items');
+        
+        return js.lib.Promise.resolve();
     }
     
     // Async Data Fetching Utilities
@@ -693,7 +712,7 @@ class TodoApp {
      * Fetch todos from server with proper error handling and caching
      */
     @:async
-    public static function fetchTodosAsync(): Array<Dynamic> {
+    public static function fetchTodosAsync(): js.lib.Promise<Array<Dynamic>> {
         try {
             // Check cache first (5 minute expiry)
             var cacheKey = "todos_cache";
@@ -706,7 +725,7 @@ class TodoApp {
             }
             
             // Fetch from server
-            var response = await(fetchFromAPIAsync("/api/todos", "GET"));
+            var response = Async.await(fetchFromAPIAsync("/api/todos", "GET"));
             var todos = response.data;
             
             // Cache the result
@@ -737,7 +756,7 @@ class TodoApp {
      * Create a new todo on the server
      */
     @:async
-    public static function createTodoAsync(title: String, ?description: String, ?priority: String): Dynamic {
+    public static function createTodoAsync(title: String, ?description: String, ?priority: String): js.lib.Promise<Dynamic> {
         try {
             var todoData = {
                 title: title,
@@ -746,13 +765,13 @@ class TodoApp {
                 completed: false
             };
             
-            var response = await(fetchFromAPIAsync("/api/todos", "POST", todoData));
+            var response = Async.await(fetchFromAPIAsync("/api/todos", "POST", todoData));
             
             // Invalidate cache after successful creation
             LocalStorage.removeItem("todos_cache");
             
             // Log successful creation
-            await(logMetricToServerAsync("todo_created", 1));
+            Async.await(logMetricToServerAsync("todo_created", 1));
             
             trace('Created todo: ${title}');
             return response.data;
@@ -761,7 +780,7 @@ class TodoApp {
             trace('Failed to create todo: ${e}');
             
             // Log error
-            await(logErrorToServerAsync("todo_creation_failed", {
+            Async.await(logErrorToServerAsync("todo_creation_failed", {
                 title: title,
                 error: Std.string(e)
             }));
@@ -774,15 +793,15 @@ class TodoApp {
      * Update an existing todo on the server
      */
     @:async
-    public static function updateTodoAsync(id: Int, updates: Dynamic): Dynamic {
+    public static function updateTodoAsync(id: Int, updates: Dynamic): js.lib.Promise<Dynamic> {
         try {
-            var response = await(fetchFromAPIAsync('/api/todos/${id}', "PUT", updates));
+            var response = Async.await(fetchFromAPIAsync('/api/todos/${id}', "PUT", updates));
             
             // Invalidate cache after successful update
             LocalStorage.removeItem("todos_cache");
             
             // Log successful update
-            await(logMetricToServerAsync("todo_updated", 1));
+            Async.await(logMetricToServerAsync("todo_updated", 1));
             
             trace('Updated todo ${id}');
             return response.data;
@@ -791,7 +810,7 @@ class TodoApp {
             trace('Failed to update todo ${id}: ${e}');
             
             // Log error
-            await(logErrorToServerAsync("todo_update_failed", {
+            Async.await(logErrorToServerAsync("todo_update_failed", {
                 todo_id: id,
                 updates: updates,
                 error: Std.string(e)
@@ -799,21 +818,23 @@ class TodoApp {
             
             throw e;
         }
+        
+        return js.lib.Promise.resolve();
     }
     
     /**
      * Delete a todo from the server
      */
     @:async
-    public static function deleteTodoAsync(id: Int): Void {
+    public static function deleteTodoAsync(id: Int): js.lib.Promise<Void> {
         try {
-            await(fetchFromAPIAsync('/api/todos/${id}', "DELETE"));
+            Async.await(fetchFromAPIAsync('/api/todos/${id}', "DELETE"));
             
             // Invalidate cache after successful deletion
             LocalStorage.removeItem("todos_cache");
             
             // Log successful deletion
-            await(logMetricToServerAsync("todo_deleted", 1));
+            Async.await(logMetricToServerAsync("todo_deleted", 1));
             
             trace('Deleted todo ${id}');
             
@@ -821,34 +842,36 @@ class TodoApp {
             trace('Failed to delete todo ${id}: ${e}');
             
             // Log error
-            await(logErrorToServerAsync("todo_deletion_failed", {
+            Async.await(logErrorToServerAsync("todo_deletion_failed", {
                 todo_id: id,
                 error: Std.string(e)
             }));
             
             throw e;
         }
+        
+        return js.lib.Promise.resolve();
     }
     
     /**
      * Sync local changes with server
      */
     @:async
-    public static function syncWithServerAsync(): Void {
+    public static function syncWithServerAsync(): js.lib.Promise<Void> {
         try {
             trace("Starting server sync...");
             
             // Process any queued offline changes
-            await(processOfflineChangesAsync());
+            Async.await(processOfflineChangesAsync());
             
             // Fetch latest data from server
-            var serverTodos = await(fetchTodosAsync());
+            var serverTodos = Async.await(fetchTodosAsync());
             
             // Update local state (this would typically trigger UI updates)
             announceStatus('Synced ${serverTodos.length} todos with server');
             
             // Log successful sync
-            await(logMetricToServerAsync("sync_completed", 1));
+            Async.await(logMetricToServerAsync("sync_completed", 1));
             
             trace("Server sync completed successfully");
             
@@ -856,20 +879,22 @@ class TodoApp {
             trace('Server sync failed: ${e}');
             
             // Log sync failure
-            await(logErrorToServerAsync("sync_failed", {
+            Async.await(logErrorToServerAsync("sync_failed", {
                 error: Std.string(e),
                 timestamp: Date.now().getTime()
             }));
             
             announceStatus("Sync failed - working offline");
         }
+        
+        return js.lib.Promise.resolve();
     }
     
     /**
      * Generic API fetch utility with retry logic and proper error handling
      */
     @:async
-    private static function fetchFromAPIAsync(url: String, method: String, ?data: Dynamic): Dynamic {
+    private static function fetchFromAPIAsync(url: String, method: String, ?data: Dynamic): js.lib.Promise<Dynamic> {
         var maxRetries = 3;
         var retryDelay = 1000; // Start with 1 second
         
@@ -905,7 +930,7 @@ class TodoApp {
                     ", url, requestOptions, resolve, reject);
                 });
                 
-                var response = await(promise);
+                var response = Async.await(promise);
                 return response;
                 
             } catch (e: Dynamic) {
@@ -916,7 +941,7 @@ class TodoApp {
                 
                 // Wait before retry with exponential backoff
                 trace('API request failed (attempt ${attempt + 1}/${maxRetries}): ${e}');
-                await(Async.delay(null, retryDelay));
+                Async.await(Async.delay(null, retryDelay));
                 retryDelay *= 2; // Exponential backoff
             }
         }
@@ -928,11 +953,11 @@ class TodoApp {
      * Process any offline changes that haven't been synced
      */
     @:async
-    private static function processOfflineChangesAsync(): Void {
+    private static function processOfflineChangesAsync(): js.lib.Promise<Void> {
         var offlineChanges = LocalStorage.getObject("offline_changes");
         
         if (offlineChanges == null || offlineChanges.length == 0) {
-            return;
+            return js.lib.Promise.resolve();
         }
         
         trace('Processing ${offlineChanges.length} offline changes');
@@ -941,11 +966,11 @@ class TodoApp {
             try {
                 switch (change.type) {
                     case "create":
-                        await(createTodoAsync(change.data.title, change.data.description, change.data.priority));
+                        Async.await(createTodoAsync(change.data.title, change.data.description, change.data.priority));
                     case "update":
-                        await(updateTodoAsync(change.data.id, change.data.updates));
+                        Async.await(updateTodoAsync(change.data.id, change.data.updates));
                     case "delete":
-                        await(deleteTodoAsync(change.data.id));
+                        Async.await(deleteTodoAsync(change.data.id));
                 }
             } catch (e: Dynamic) {
                 trace('Failed to process offline change: ${e}');
@@ -957,6 +982,8 @@ class TodoApp {
         // Clear processed changes
         LocalStorage.removeItem("offline_changes");
         trace("Offline changes processed successfully");
+        
+        return js.lib.Promise.resolve();
     }
     
     /**
