@@ -137,44 +137,61 @@ haxe.elixir/                          # Project root
 
 ## Haxe-First Philosophy ⚠️ FUNDAMENTAL RULE
 
-**100% Type Safety is the goal - whether through pure Haxe or typed extern definitions.**
+**100% Type Safety with Maximum Flexibility - Choose your abstraction level while maintaining complete type safety.**
 
-### The Type-Safe Approach
+### The Type-Safe Flexibility Approach
 - **Everything is typed**: No untyped code anywhere in the application
-- **Pure Haxe preferred**: Write implementations in Haxe when possible for maximum control
-- **Typed externs welcome**: Externs provide type-safe access to the Elixir ecosystem
-- **No escape hatches**: Avoid `Dynamic` and `__elixir__()` except in emergencies
+- **Developer choice**: Pick the right abstraction level for your needs
+- **Mix and match**: Combine cross-platform and platform-specific APIs as needed
+- **No Dynamic**: Avoid `Dynamic` and `__elixir__()` except for debugging
 
 ### When to Use What
-✅ **Pure Haxe Implementation**:
-- Core application logic and business rules
-- Custom domain models and workflows  
-- New greenfield functionality
+✅ **Pure Haxe Implementation** (Maximum Portability):
+- Core application logic that needs to run on multiple platforms
+- Business rules that should be platform-agnostic
+- New functionality where you control the implementation
 
-✅ **Typed Extern Definitions**:
+✅ **Dual-API Approach** (Balanced Power):
+- Standard library usage where you want both options
+- Mix cross-platform methods with platform-specific enhancements
+- Example: `date.getTime()` (cross-platform) + `date.add(7, Day)` (Elixir-style)
+
+✅ **Typed Extern Definitions** (Ecosystem Access):
 - Third-party Elixir libraries (database drivers, API clients, etc.)
-- Existing Elixir modules during migration
-- Complex BEAM/OTP features not yet in Reflaxe
+- Existing Elixir modules you want to leverage
+- Complex BEAM/OTP features not yet in standard library
 - Performance-critical NIFs and ports
 
-### Example of Type-Safe Extern
+### Example of Mixed Approach
 ```haxe
-// Type-safe integration with Elixir library
-@:native("ExAws.S3")
-extern class S3 {
-    static function list_objects(bucket: String): Promise<Array<S3Object>>;
-    static function put_object(bucket: String, key: String, body: Bytes): Promise<PutResult>;
+// Pure Haxe for business logic
+class OrderService {
+    public function calculateTotal(items: Array<Item>): Float {
+        return items.reduce((sum, item) -> sum + item.price, 0);  // Cross-platform
+    }
+    
+    public function processPayment(order: Order): Result<Receipt, Error> {
+        // Use typed extern for payment gateway
+        var result = StripeGateway.charge(order.total, order.currency);
+        
+        // Use Elixir-style date methods
+        var processedAt = Date.now().truncate(Second);
+        
+        return switch(result) {
+            case Ok(charge): Ok({id: charge.id, date: processedAt});
+            case Error(e): Error(e);
+        }
+    }
 }
 
-// Typed return values
-typedef S3Object = {
-    key: String,
-    size: Int,
-    last_modified: Date
+// Typed extern for existing Elixir library
+@:native("Stripe")
+extern class StripeGateway {
+    static function charge(amount: Float, currency: String): Result<Charge, String>;
 }
 ```
 
-The goal is **100% type safety throughout the entire application**, using the best tool for each scenario.
+The goal is **100% type safety with maximum developer flexibility**, using the right abstraction for each scenario.
 
 ## Critical Architecture Knowledge for Development
 
@@ -453,12 +470,39 @@ The vision is 100% Haxe code with complete type safety. This means:
 - **All error handling** in Haxe
 - **All components** in HXX with type safety
 
-**Escape hatches are for emergencies only**:
-- `__elixir__()` - NEVER use except for emergency debugging
-- Extern definitions - Only for gradual migration or third-party libs
-- Manual Elixir files - Only for build configs that can't be generated
+**Developer Choice and Flexibility**:
+- **Pure Haxe preferred**: Write implementations in Haxe for maximum control and cross-platform compatibility
+- **Typed externs welcome**: Leverage the rich Elixir ecosystem with full type safety
+- **Dual-API standard library**: Use cross-platform OR platform-specific methods as needed
+- **Mix and match**: Combine approaches based on project requirements
 
-**The goal**: Zero manual Elixir, zero externs, zero escape hatches. Pure Haxe from top to bottom.
+**Abstraction Level Choice**:
+- **100% Cross-Platform**: Use only Haxe standard APIs (`date.getTime()`, `array.map()`)
+- **Platform-Enhanced**: Mix Haxe + Elixir APIs (`date.getTime()` + `date.add(7, Day)`)
+- **Ecosystem Integration**: Use typed externs for existing Elixir libraries
+- **Emergency Only**: `__elixir__()` code injection for debugging/prototyping
+
+**The goal**: Maximum developer flexibility with complete type safety. Choose your abstraction level.
+
+## Standard Library Philosophy ⚡ **DUAL-API PATTERN**
+
+**Every standard library type provides BOTH cross-platform AND native APIs** - Maximum developer flexibility:
+
+✅ **Dual-API Benefits**:
+- **Cross-platform compatibility** using Haxe standard methods (`getTime()`, `getMonth()`)
+- **Platform-specific power** using Elixir-style methods (`add()`, `diff()`, `toIso8601()`)
+- **Gradual migration** from pure Elixir to type-safe Haxe
+- **Developer choice** between portability and platform features
+
+**Example - Date Type**:
+```haxe
+var date = Date.now();
+var timestamp = date.getTime();        // ✅ Cross-platform Haxe API
+var nextWeek = date.add(7, Day);       // ✅ Elixir-native API
+var iso = date.toIso8601();            // ✅ Platform-specific feature
+```
+
+**See**: [`/std/CLAUDE.md`](/std/CLAUDE.md#dual-api-pattern) - Complete implementation guidelines and patterns
 
 ## Code Injection Policy ⚠️ CRITICAL
 **NEVER use `__elixir__()` in application code, examples, or demos.** Use extern definitions and pure Haxe abstractions instead.
