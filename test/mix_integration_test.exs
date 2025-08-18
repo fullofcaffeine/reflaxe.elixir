@@ -315,7 +315,7 @@ defmodule MixIntegrationTest do
       )
       
       # Verify the Elixir file was generated and contains proper spacing (not tabs)
-      generated_file = "#{@test_project_dir}/lib/TestDocClass.ex"
+      generated_file = "#{@test_project_dir}/lib/test_doc_class.ex"
       assert File.exists?(generated_file)
       
       # Read the generated content and verify tabs were replaced with spaces
