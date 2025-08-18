@@ -100,6 +100,7 @@ This index provides a comprehensive guide to all documentation in the Reflaxe.El
 **Purpose**: Project-wide documentation
 
 - **[`TASK_HISTORY.md`](TASK_HISTORY.md)** - Completed task documentation
+- **[`SESSION_LESSONS_TYPE_ORGANIZATION.md`](SESSION_LESSONS_TYPE_ORGANIZATION.md)** - Framework type organization lessons
 - **[`TROUBLESHOOTING.md`](TROUBLESHOOTING.md)** - Common issues and solutions
 - **[`MIX_INTEGRATION.md`](MIX_INTEGRATION.md)** - Mix build system integration
 - **[`DEVELOPMENT_TOOLS.md`](DEVELOPMENT_TOOLS.md)** - Development environment setup

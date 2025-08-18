@@ -7,6 +7,137 @@ Archives of previous history can be found in `TASK_HISTORY_ARCHIVE_*.md` files.
 
 ---
 
+## Session: 2025-01-18 - Framework Type Organization & Research-Driven Architecture ⚡
+
+### Context
+Critical architectural improvement session focused on proper organization of framework types. User questioned whether types were truly Phoenix-specific, leading to comprehensive research and reorganization based on framework origin rather than usage context. This represents a major architectural milestone in establishing proper framework layering.
+
+### Key Discovery ⚡
+**Initial Problem**: All type abstracts placed in `std/phoenix/types/` regardless of actual framework origin  
+**Research Finding**: Types should be organized by **origin framework**, not **usage context**  
+**Framework Hierarchy**: OTP → Plug → Phoenix (dependency chain)
+
+### Tasks Completed ✅
+
+#### 1. **Comprehensive Framework Research** ✨
+- **Method**: Examined `/haxe.elixir.reference/` directory for actual framework organization
+- **Web Research**: Confirmed Plug.Conn belongs to Plug library, not Phoenix
+- **Source Analysis**: Studied Elixir core, Phoenix LiveView, and Reflaxe.CPP organization patterns
+- **Result**: Established clear framework dependency hierarchy and origin mapping
+
+#### 2. **Directory Structure Reorganization** ✨
+- **Created**: `std/elixir/otp/` for OTP/BEAM abstractions
+- **Created**: `std/plug/` for Plug framework types  
+- **Maintained**: `std/phoenix/types/` for Phoenix-specific types only
+- **Pattern**: Organization reflects framework layering (OTP → Plug → Phoenix)
+
+#### 3. **Type Abstract Migration** ✨
+- **Application.hx**: `phoenix.types` → `elixir.otp` (OTP concept, not Phoenix)
+- **Supervisor.hx**: `phoenix.types` → `elixir.otp` (OTP concept, not Phoenix)
+- **Conn.hx**: `phoenix.types` → `plug` (Plug library concept, not Phoenix)
+- **Socket.hx**: Kept in `phoenix.types` (Truly Phoenix LiveView specific)
+- **Method**: Updated package declarations + moved files to proper directories
+
+#### 4. **FlashMessage Type Creation** ✨
+- **Created**: `std/phoenix/types/FlashMessage.hx` with comprehensive type safety
+- **Features**: Enum-based FlashType, builder pattern, CSS class helpers, timeout support
+- **Design**: Truly Phoenix-specific concept (flash messages are Phoenix.Controller feature)
+- **Innovation**: Advanced type abstracts with metadata and fluent builder API
+
+#### 5. **Comprehensive Session Documentation** ✨
+- **Created**: `SESSION_LESSONS_TYPE_ORGANIZATION.md` with complete research findings
+- **Contents**: Problem analysis, research methodology, architectural lessons, implementation patterns
+- **Value**: Permanent knowledge base for future organizational decisions
+- **Scope**: 400+ lines of detailed architectural documentation
+
+### Technical Insights 💡
+
+#### Framework Relationship Discovery
+```
+┌─ Erlang/OTP (Core) ──────────┐
+│ • Application               │  ← OTP concepts
+│ • Supervisor                │
+└─────────────────────────────┘
+           ↑ uses
+┌─ Plug (HTTP Layer) ─────────┐
+│ • Conn                      │  ← HTTP abstractions  
+│ • Router (basic)            │
+└─────────────────────────────┘
+           ↑ uses
+┌─ Phoenix (Web Framework) ───┐
+│ • Socket (LiveView)         │  ← Web framework features
+│ • FlashMessage              │
+└─────────────────────────────┘
+```
+
+#### Import Pattern Evolution
+```haxe
+// Before: Everything from phoenix.types
+import phoenix.types.Application;  // ❌ Wrong origin
+import phoenix.types.Supervisor;   // ❌ Wrong origin  
+import phoenix.types.Conn;         // ❌ Wrong origin
+
+// After: Framework-specific imports
+import elixir.otp.Application;     // ✅ OTP concept
+import elixir.otp.Supervisor;      // ✅ OTP concept
+import plug.Conn;                  // ✅ Plug concept
+import phoenix.types.Socket;       // ✅ Phoenix concept
+```
+
+### Architecture Improvements ⚡
+
+#### 1. **Clear Framework Boundaries**
+- OTP types can be used in **any** Elixir application
+- Plug types can be used in **any** Plug-based application  
+- Phoenix types are **only** for Phoenix applications
+- Enables gradual adoption and framework-agnostic code
+
+#### 2. **Type Safety Through Proper Layering**
+- Lower layers don't depend on higher layers
+- Clear separation enables better reusability
+- Framework concepts properly abstracted at correct level
+
+#### 3. **Research-Driven Decision Making**
+- Used actual framework source code as reference
+- Web search validation of framework relationships
+- Pattern matching with other Reflaxe target organizations
+
+### Files Changed 📁
+- ✅ **Created**: `std/elixir/otp/Application.hx` (moved from phoenix/types)
+- ✅ **Created**: `std/elixir/otp/Supervisor.hx` (moved from phoenix/types)  
+- ✅ **Created**: `std/plug/Conn.hx` (moved from phoenix/types)
+- ✅ **Created**: `std/phoenix/types/FlashMessage.hx` (new comprehensive type)
+- ✅ **Created**: `documentation/SESSION_LESSONS_TYPE_ORGANIZATION.md` (knowledge base)
+- ✅ **Updated**: All package declarations to match new framework organization
+
+### Key Learnings 🎓
+
+#### 1. **Organization Principle**: Origin > Usage  
+Always organize by **framework origin** rather than **usage context**
+
+#### 2. **Research Methodology**
+- Check reference implementations first
+- Validate assumptions through multiple sources
+- Understand framework dependency hierarchies
+
+#### 3. **Architectural Impact**
+Proper organization enables:
+- Framework-agnostic business logic
+- Gradual framework adoption  
+- Clear dependency management
+- Better type safety guarantees
+
+### Future Implications 🔮
+This organizational pattern establishes foundation for:
+- `std/ecto/` for Ecto ORM types
+- `std/elixir/stdlib/` for Elixir standard library abstractions
+- Clear migration paths for framework-specific features
+- Type-safe abstractions at appropriate framework levels
+
+**Session Impact**: Fundamental architectural improvement establishing proper framework layering and type organization principles that will guide all future development.
+
+---
+
 ## Session: 2025-08-18 - File Naming Conventions, Mix Test Parallelization & Task Management Cleanup ⚡
 
 ### Context
