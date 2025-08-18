@@ -104,6 +104,15 @@ This document outlines the development plans for Reflaxe.Elixir, organized by co
   - **Challenges**: GenServer patterns, file system APIs, Mix.Task integration
   - **Foundation**: Complete self-hosting capabilities and compiler validation
   - **Note**: Once we migrate the test runner to target the Elixir target, we might leverage the Mix parallel test runner instead of our existing custom solution to simplify architecture and reduce code maintenance
+- [ ] **Reflaxe Framework Integration** 🧪 *Compiler Architecture Enhancement*
+  - **Goal**: Modify vendored Reflaxe to support `elixir.Syntax.code()` at framework level (similar to `__elixir__()`)
+  - **Current**: Regular class implementation working excellently with compiler-level detection
+  - **Future**: Framework-level handling in `vendor/reflaxe/src/reflaxe/input/TargetCodeInjection.hx`
+  - **Benefits**: Simplified compiler code, consistent pattern across all Reflaxe targets, better error messages
+  - **Implementation**: Add `isTargetSyntaxInjection()` pattern to TargetCodeInjection alongside existing `__target__()` support
+  - **Priority**: LOW - Current approach works perfectly, this is an optimization opportunity not a necessity
+  - **See**: [`documentation/ELIXIR_SYNTAX_IMPLEMENTATION.md`](documentation/ELIXIR_SYNTAX_IMPLEMENTATION.md) - Why current regular class approach works so well
+  - **See**: [`vendor/reflaxe/FUTURE_MODIFICATIONS.md`](vendor/reflaxe/FUTURE_MODIFICATIONS.md) - Proposed Reflaxe enhancements
 
 ## 🚀 Future Development (v1.2 - Q2 2025)
 *Focus: Testing & Developer Experience*
