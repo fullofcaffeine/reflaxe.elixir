@@ -33,7 +33,7 @@ When documenting new features or fixes:
 Example of correct approach:
 ```markdown
 ## New Feature Name
-**See**: [`documentation/FEATURE_DETAILS.md`](documentation/FEATURE_DETAILS.md) - Full implementation details
+**See**: [`documentation/LLM_DOCUMENTATION_INDEX.md`](documentation/LLM_DOCUMENTATION_INDEX.md) - Complete documentation navigation guide
 ```
 
 ### 📝 CRITICAL: Documentation Maintenance Rules ⚠️
@@ -44,6 +44,31 @@ Example of correct approach:
 4. **Delete obsolete sections entirely** rather than marking them as outdated
 5. **Test claims in real code** - If documenting a limitation, verify it actually exists
 6. **Remove fixed TODOs and resolved items** - Keep only current actionable items
+
+### 🧹 MANDATORY Cleanup Protocol ⚠️ CRITICAL
+
+**RULE: Always purge deprecated, unused, and duplicate files proactively**
+
+#### Regular Cleanup Audits
+1. **File Duplication Check**: Look for `*New.hx`, `*TypeSafe.hx`, `*Old.hx` patterns
+2. **Build Configuration Validation**: Verify all .hxml files reference existing classes
+3. **Documentation Link Verification**: Check all referenced docs actually exist
+4. **Test File Justification**: Remove test stubs that don't provide real validation
+5. **Experimental Code Removal**: Delete experimental versions once direction decided
+
+#### When to Trigger Cleanup
+- Before any major commit
+- After completing feature implementations  
+- When discovering duplicate files
+- During documentation updates
+- After refactoring sessions
+
+#### Cleanup Priority
+1. **Remove broken references immediately** - Fix dead links in docs
+2. **Consolidate duplicate functionality** - No multiple versions of same feature
+3. **Update documentation to reflect removals** - Keep docs accurate
+4. **Verify builds after cleanup** - Ensure nothing breaks
+5. **Document cleanup decisions** - Record why files were removed
 
 ## 📁 Project Directory Structure Map
 
@@ -156,7 +181,7 @@ The goal is **100% type safety throughout the entire application**, using the be
 - [Understanding Reflaxe.Elixir's Compilation Architecture](#understanding-reflaxeelixirs-compilation-architecture-) - How the transpiler actually works
 - [Critical: Macro-Time vs Runtime](#critical-macro-time-vs-runtime-) - THE MOST IMPORTANT CONCEPT TO UNDERSTAND
 - [`documentation/HAXE_MACRO_APIS.md`](documentation/HAXE_MACRO_APIS.md) - **CRITICAL**: Correct Haxe macro API usage to avoid "macro-in-macro" errors
-- [`documentation/ARCHITECTURE.md`](documentation/ARCHITECTURE.md) - Complete architectural details
+- [`documentation/architecture/ARCHITECTURE.md`](documentation/architecture/ARCHITECTURE.md) - Complete architectural details
 - [`documentation/architecture/TESTING.md`](documentation/architecture/TESTING.md) - Testing philosophy and infrastructure
 - [`documentation/macro/MACRO_PRINCIPLES.md`](documentation/macro/MACRO_PRINCIPLES.md) - **CRITICAL**: Core principles for reliable macro development from real implementations
 
@@ -675,7 +700,7 @@ Element (click, focus, innerHTML) - The HTML element you usually want
 **v1.0 Status**: ALL COMPLETE ✅ - Core features, Phoenix Router DSL, LiveView, Ecto, OTP patterns, Mix integration, Testing (57 snapshot + 133 Mix tests ALL PASSING, file naming conventions fixed)
 
 ## Development Environment
-**See**: [`documentation/GETTING_STARTED.md`](documentation/GETTING_STARTED.md) - Complete setup guide
+**See**: [`documentation/guides/GETTING_STARTED.md`](documentation/guides/GETTING_STARTED.md) - Complete setup guide
 - **Haxe**: 4.3.6+ with modern patterns, API at https://api.haxe.org/  
 - **Reflaxe**: 4.0.0-beta with full preprocessor support (upgraded from 3.0)
 - **Testing**: `npm test` for full suite, `-D reflaxe_runtime` for test compilation
@@ -692,7 +717,7 @@ Element (click, focus, innerHTML) - The HTML element you usually want
 
 ## Understanding Reflaxe.Elixir's Compilation Architecture ✅
 
-**For complete architectural details, see [`documentation/ARCHITECTURE.md`](documentation/ARCHITECTURE.md)**  
+**For complete architectural details, see [`documentation/architecture/ARCHITECTURE.md`](documentation/architecture/ARCHITECTURE.md)**  
 
 ### How Reflaxe.Elixir Actually Works
 
