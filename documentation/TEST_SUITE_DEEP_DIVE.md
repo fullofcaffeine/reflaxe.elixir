@@ -118,7 +118,7 @@ haxe test/Test.hxml show-output
 - **Phoenix integration** - LiveView code might not actually work
 - **Performance** - No validation of generated code efficiency
 
-## Layer 2: Mix Integration Tests (130 tests)
+## Layer 2: Mix Integration Tests (133 tests)
 
 ### What They Test
 
@@ -362,7 +362,7 @@ haxe test/Test.hxml update-intended
 ### Execution Time
 - **Total suite**: ~4-5 seconds for all 172+ tests
 - **Snapshot tests**: ~2 seconds for 28 tests
-- **Mix tests**: ~2 seconds for 130 tests
+- **Mix tests**: ~2 seconds for 133 tests
 - **Examples**: ~1 second for 9 examples
 
 ### Coverage Areas
