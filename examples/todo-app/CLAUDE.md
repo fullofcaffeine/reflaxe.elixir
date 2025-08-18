@@ -102,15 +102,62 @@ mix compile.haxe --watch
 
 
 
-## ⚠️ CRITICAL: Compiler Development Rule
+## ⚠️ CRITICAL: Framework-Level Development Principles
+
+### **Principle 1: Framework vs Application Separation**
 
 **The todo-app is a DEVELOPMENT GUIDE for the compiler, NOT a hardcoded dependency.**
 
-### Fundamental Principle
+**Fundamental Rules:**
 - ✅ **todo-app drives compiler features** - When todo-app needs something, we enhance the compiler
 - ✅ **Compiler remains generic** - Zero knowledge of "TodoApp", "TodoAppWeb", or todo-app specifics
 - ❌ **NEVER hardcode app-specific strings** - No "TodoApp", "TodoAppWeb", "todo_app" in compiler source
 - ❌ **NEVER make compiler todo-app dependent** - Must work for ANY Phoenix application
+
+### **Principle 2: Standard Library vs Application Code**
+
+**CRITICAL: Type-safe patterns discovered in todo-app should become framework features.**
+
+**When to Move Code to Framework:**
+- ✅ **Type-safe PubSub** - Every Phoenix app needs compile-time topic/message validation
+- ✅ **SafePubSub class** - Move from `todo-app/Types.hx` to `/std/phoenix/PubSub.hx`
+- ✅ **Message parsing utilities** - Auto-generation should benefit all apps
+- ✅ **Common Phoenix patterns** - LiveView helpers, Socket operations, Channel integration
+- ✅ **Error handling patterns** - Result<T,E> integration with Phoenix operations
+
+**Examples of Framework-Level Features:**
+```haxe
+// ❌ BAD: App-specific implementation
+// In: todo-app/src_haxe/server/types/Types.hx
+class SafePubSub { ... } // Only todo-app benefits
+
+// ✅ GOOD: Framework-level implementation  
+// In: /std/phoenix/PubSub.hx
+class SafePubSub { ... } // ALL Phoenix apps benefit
+```
+
+**Benefits of Framework-Level Features:**
+- 🌐 **Universal type safety** - Every Phoenix app gets compile-time PubSub validation
+- 📚 **Consistent APIs** - Same type-safe patterns across all applications
+- 🔄 **Automatic improvements** - Framework enhancements benefit entire ecosystem
+- 📖 **Better documentation** - Framework features get proper documentation and examples
+- 🧪 **Comprehensive testing** - Framework code has rigorous test coverage
+
+**Development Workflow:**
+1. **Discover pattern in todo-app** - "We need type-safe PubSub"
+2. **Implement app-specific version** - Quick prototype in `todo-app/Types.hx`
+3. **Validate the approach** - Does it solve the problem? Good IntelliSense?
+4. **Extract to framework** - Move to `/std/phoenix/` with proper documentation
+5. **Update todo-app to use framework version** - Import from standard library
+6. **Document the pattern** - Add to framework documentation and examples
+
+**Framework Enhancement Checklist:**
+- [ ] Move SafePubSub to `/std/phoenix/PubSub.hx`
+- [ ] Create comprehensive documentation with examples
+- [ ] Add unit tests for all framework functionality
+- [ ] Update todo-app to import from framework
+- [ ] Verify other Phoenix apps can use the same patterns
+- [ ] Document in framework feature documentation
 
 ### The Right Approach
 ```haxe

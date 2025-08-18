@@ -24,29 +24,37 @@ class Todo {
 	}
 	
 	@:changeset
-	public static function changeset(todo: Dynamic, params: Dynamic): Dynamic {
-		// Validation pipeline using Haxe syntax (avoiding 'cast' keyword)
-		var changeset = phoenix.Ecto.EctoChangeset.changeset_cast(todo, params, ["title", "description", "completed", "priority", "due_date", "tags", "user_id"]);
+	public static function changeset(todo: Todo, params: phoenix.Ecto.ChangesetParams): phoenix.Ecto.Changeset<Todo> {
+		// Validation pipeline using correct Ecto method names
+		var changeset = phoenix.Ecto.EctoChangeset.castChangeset(todo, params, ["title", "description", "completed", "priority", "due_date", "tags", "user_id"]);
 		changeset = phoenix.Ecto.EctoChangeset.validate_required(changeset, ["title", "user_id"]);
 		changeset = phoenix.Ecto.EctoChangeset.validate_length(changeset, "title", {min: 3, max: 200});
 		changeset = phoenix.Ecto.EctoChangeset.validate_length(changeset, "description", {max: 1000});
-		changeset = phoenix.Ecto.EctoChangeset.validate_inclusion(changeset, "priority", ["low", "medium", "high"]);
+		// Fix: Use proper ChangesetValue array instead of string array
+		var priorityValues = [phoenix.Ecto.ChangesetValue.StringValue("low"), phoenix.Ecto.ChangesetValue.StringValue("medium"), phoenix.Ecto.ChangesetValue.StringValue("high")];
+		changeset = phoenix.Ecto.EctoChangeset.validate_inclusion(changeset, "priority", priorityValues);
 		changeset = phoenix.Ecto.EctoChangeset.foreign_key_constraint(changeset, "user_id");
 		return changeset;
 	}
 	
-	// Helper functions for business logic
-	public static function toggle_completed(todo: Dynamic): Dynamic {
-		return changeset(todo, {completed: !todo.completed});
+	// Helper functions for business logic with proper types
+	public static function toggle_completed(todo: Todo): phoenix.Ecto.Changeset<Todo> {
+		var params = new Map<String, phoenix.Ecto.ChangesetValue>();
+		params.set("completed", phoenix.Ecto.ChangesetValue.BoolValue(!todo.completed));
+		return changeset(todo, params);
 	}
 	
-	public static function update_priority(todo: Dynamic, priority: String): Dynamic {
-		return changeset(todo, {priority: priority});
+	public static function update_priority(todo: Todo, priority: String): phoenix.Ecto.Changeset<Todo> {
+		var params = new Map<String, phoenix.Ecto.ChangesetValue>();
+		params.set("priority", phoenix.Ecto.ChangesetValue.StringValue(priority));
+		return changeset(todo, params);
 	}
 	
-	public static function add_tag(todo: Dynamic, tag: String): Dynamic {
+	public static function add_tag(todo: Todo, tag: String): phoenix.Ecto.Changeset<Todo> {
 		var tags: Array<String> = todo.tags != null ? todo.tags : [];
 		tags.push(tag);
-		return changeset(todo, {tags: tags});
+		var params = new Map<String, phoenix.Ecto.ChangesetValue>();
+		params.set("tags", phoenix.Ecto.ChangesetValue.ArrayValue(tags.map(t -> phoenix.Ecto.ChangesetValue.StringValue(t))));
+		return changeset(todo, params);
 	}
 }

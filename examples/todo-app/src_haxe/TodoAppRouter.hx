@@ -25,7 +25,7 @@ import reflaxe.elixir.macros.HttpMethod;
         name: "todosIndex", 
         method: HttpMethod.LIVE, 
         path: "/todos", 
-        controller: "TodoLive", 
+        controller: "server.live.TodoLive", 
         action: "index"
     },
     
@@ -33,7 +33,7 @@ import reflaxe.elixir.macros.HttpMethod;
         name: "todosShow", 
         method: HttpMethod.LIVE, 
         path: "/todos/:id", 
-        controller: "TodoLive", 
+        controller: "server.live.TodoLive", 
         action: "show"
     },
     
@@ -41,7 +41,7 @@ import reflaxe.elixir.macros.HttpMethod;
         name: "todosEdit", 
         method: HttpMethod.LIVE, 
         path: "/todos/:id/edit", 
-        controller: "TodoLive", 
+        controller: "server.live.TodoLive", 
         action: "edit"
     },
     
