@@ -15,10 +15,49 @@ std/
 ├── HXX.hx                # Template system core
 ├── ecto/                 # Ecto ORM integration
 ├── elixir/              # Elixir standard library externs
+│   └── otp/             # OTP/BEAM abstractions (Application, Supervisor)
 ├── haxe/                # Haxe standard library extensions
 ├── phoenix/             # Phoenix framework integration
+│   └── types/           # Phoenix-specific type abstractions
+├── plug/                # Plug framework types (Conn, etc.)
 └── reflaxe/             # Reflaxe framework extensions
 ```
+
+### Framework Layering Organization ⚡ **NEW**
+
+**CRITICAL PRINCIPLE: Organize types by framework origin, not usage context**
+
+```
+┌─ Erlang/OTP (std/elixir/otp/) ────┐
+│ • Application.hx                   │  ← Core BEAM/OTP concepts
+│ • Supervisor.hx                    │
+└────────────────────────────────────┘
+           ↑ depends on
+┌─ Plug (std/plug/) ────────────────┐
+│ • Conn.hx                          │  ← HTTP abstraction layer
+└────────────────────────────────────┘
+           ↑ depends on
+┌─ Phoenix (std/phoenix/types/) ────┐
+│ • Socket.hx (LiveView)             │  ← Web framework features
+│ • FlashMessage.hx                  │
+│ • Assigns.hx                       │
+└────────────────────────────────────┘
+```
+
+**Import Pattern**:
+```haxe
+// Framework-specific imports reflect origin
+import elixir.otp.Application;     // ✅ OTP concept
+import elixir.otp.Supervisor;      // ✅ OTP concept
+import plug.Conn;                  // ✅ Plug concept
+import phoenix.types.Socket;       // ✅ Phoenix concept
+```
+
+**Benefits**:
+- **Framework-agnostic code**: OTP types can be used in any Elixir application
+- **Clear dependencies**: Lower layers don't depend on higher layers  
+- **Logical organization**: Directory structure reflects framework relationships
+- **Better reusability**: Each layer provides appropriate abstractions
 
 ### Core Design Patterns
 

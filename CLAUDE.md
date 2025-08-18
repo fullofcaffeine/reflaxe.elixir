@@ -45,9 +45,59 @@ Example of correct approach:
 5. **Test claims in real code** - If documenting a limitation, verify it actually exists
 6. **Remove fixed TODOs and resolved items** - Keep only current actionable items
 
+## 📁 Project Directory Structure Map
+
+**CRITICAL FOR NAVIGATION**: This monorepo contains multiple important projects and directories:
+
+```
+haxe.elixir/                          # Project root
+├── src/reflaxe/elixir/                # 🔧 Compiler source code
+│   ├── ElixirCompiler.hx              # Main transpiler
+│   ├── helpers/                       # Specialized compilers
+│   │   ├── NamingHelper.hx            # Snake_case conversion
+│   │   ├── EndpointCompiler.hx        # @:endpoint annotation
+│   │   ├── LiveViewCompiler.hx        # @:liveview annotation
+│   │   └── ...                        # Other helpers
+│   └── ...
+├── std/                               # 📚 Standard library & framework types
+│   ├── phoenix/                       # Phoenix framework integration
+│   │   ├── Phoenix.hx                 # Core Phoenix externs
+│   │   └── types/Assigns.hx           # Type-safe assigns abstract
+│   ├── haxe/test/ExUnit.hx           # ExUnit testing from Haxe
+│   └── ...
+├── examples/todo-app/                 # 🎯 Main integration test & showcase
+│   ├── src_haxe/                      # Haxe source files
+│   │   ├── TodoApp.hx                 # Application entry point
+│   │   ├── server/                    # Server-side code
+│   │   │   ├── live/TodoLive.hx       # LiveView components
+│   │   │   ├── infrastructure/Endpoint.hx  # @:endpoint class
+│   │   │   └── ...
+│   │   └── client/                    # Client-side code
+│   ├── lib/                           # 🤖 GENERATED Elixir files (DO NOT EDIT)
+│   ├── mix.exs                        # Elixir project config
+│   └── ...
+├── test/                              # 🧪 Compiler snapshot tests
+│   ├── Test.hxml                      # Test runner
+│   ├── tests/                         # Individual test cases
+│   └── ...
+├── documentation/                     # 📖 Comprehensive docs
+│   ├── ARCHITECTURE.md                # System architecture
+│   ├── TESTING_PRINCIPLES.md          # Testing methodology
+│   └── ...
+└── CLAUDE.md                          # This file
+```
+
+**Key Locations for Common Tasks**:
+- **Compiler bugs**: `src/reflaxe/elixir/`
+- **Type abstracts**: `std/phoenix/types/`, `std/haxe/`
+- **Phoenix externs**: `std/phoenix/Phoenix.hx`
+- **Integration testing**: `examples/todo-app/`
+- **Snapshot tests**: `test/tests/`
+
 ## IMPORTANT: Agent Execution Instructions
 1. **ALWAYS verify CLAUDE.md first** - This file contains the project truth
-2. **Check recent commits** - Run `git log --oneline -20` to understand recent work patterns, fixes, and ongoing features
+2. **USE THE DIRECTORY MAP** - Navigate correctly using the structure above
+3. **Check recent commits** - Run `git log --oneline -20` to understand recent work patterns, fixes, and ongoing features
 3. **Review Shrimp tasks if available** - Check existing task status with mcp__shrimp-task-manager tools for context
 4. **Check for subdirectory CLAUDE.md files** - Subdirectories may have local context in their own CLAUDE.md files (test/, std/, examples/todo-app/, src/reflaxe/elixir/)
 5. **FOLLOW DOCUMENTATION GUIDE** - See [`documentation/LLM_DOCUMENTATION_GUIDE.md`](documentation/LLM_DOCUMENTATION_GUIDE.md) for how to document
