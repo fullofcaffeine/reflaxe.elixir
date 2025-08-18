@@ -121,9 +121,9 @@ case FEnum(enumType, enumField):
 
 ### Test Updates
 3. `test/tests/enums/intended/Main.ex` - Updated for literal patterns
-4. `test/tests/option_type/intended/haxe_ds_Option.ex` - Updated for idiomatic patterns
-5. `test/tests/result_type/intended/haxe_ds_Option.ex` - Updated for idiomatic patterns
-6. `test/tests/result_type/intended/haxe_functional_Result.ex` - Fixed `to_option` function
+4. `test/tests/option_type/intended/haxe/ds/option.ex` - Updated for idiomatic patterns
+5. `test/tests/result_type/intended/haxe/ds/option.ex` - Updated for idiomatic patterns
+6. `test/tests/result_type/intended/haxe/functional/result.ex` - Fixed `to_option` function
 7. `test/tests/enhanced_pattern_matching/intended/Main.ex` - Auto-updated via update-intended
 
 ### Documentation
