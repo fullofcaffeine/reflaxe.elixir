@@ -454,6 +454,11 @@ end
 - [`/documentation/TESTING_PRINCIPLES.md`](/documentation/TESTING_PRINCIPLES.md) - Testing methodology
 - [`/documentation/TYPE_SAFETY.md`](/documentation/TYPE_SAFETY.md) - Type system guidelines
 
+### Code Injection and Architecture
+- [`/documentation/ELIXIR_INJECTION_GUIDE.md`](/documentation/ELIXIR_INJECTION_GUIDE.md) - **CRITICAL**: Complete `__elixir__()` usage guide
+- [`/documentation/CRITICAL_ARCHITECTURE_LESSONS.md`](/documentation/CRITICAL_ARCHITECTURE_LESSONS.md) - **MANDATORY**: Idiomatic code generation principles
+- [`/documentation/STANDARD_LIBRARY_COMPILATION_CONTEXT.md`](/documentation/STANDARD_LIBRARY_COMPILATION_CONTEXT.md) - Why `untyped` is required for `__elixir__()`
+
 ## 🏆 Standard Library Quality Checklist
 
 Before adding any standard library module, verify:

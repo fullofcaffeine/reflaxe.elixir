@@ -1,10 +1,12 @@
 package;
 
+import elixir.Syntax;
+
 /**
- * StringTools for Reflaxe.Elixir
+ * StringTools for Reflaxe.Elixir with idiomatic Elixir implementations
  * 
- * Basic implementation that provides required methods for compilation.
- * The actual Elixir code generation is handled by the compiler.
+ * Uses elixir.Syntax.code() for type-safe injection of idiomatic Elixir code
+ * that leverages Elixir's excellent string processing capabilities.
  */
 class StringTools {
     public static function isSpace(s: String, pos: Int): Bool {
@@ -14,100 +16,61 @@ class StringTools {
     }
     
     public static function ltrim(s: String): String {
-        var l = s.length;
-        var r = 0;
-        while (r < l && isSpace(s, r)) {
-            r++;
-        }
-        if (r > 0) {
-            return s.substr(r, l - r);
-        } else {
-            return s;
-        }
+        return Syntax.code("String.trim_leading({0})", s);
     }
     
     public static function rtrim(s: String): String {
-        var l = s.length;
-        var r = 0;
-        while (r < l && isSpace(s, l - r - 1)) {
-            r++;
-        }
-        if (r > 0) {
-            return s.substr(0, l - r);
-        } else {
-            return s;
-        }
+        return Syntax.code("String.trim_trailing({0})", s);
     }
     
     public static function trim(s: String): String {
-        return ltrim(rtrim(s));
+        return Syntax.code("String.trim({0})", s);
     }
     
     public static function urlEncode(s: String): String {
-        // Stub implementation
-        return s;
+        return Syntax.code("URI.encode({0})", s);
     }
     
     public static function urlDecode(s: String): String {
-        // Stub implementation
-        return s;
+        return Syntax.code("URI.decode({0})", s);
     }
     
     public static function htmlEscape(s: String, ?quotes: Bool): String {
-        // Basic implementation
-        s = s.split("&").join("&amp;");
-        s = s.split("<").join("&lt;");
-        s = s.split(">").join("&gt;");
-        if (quotes) {
-            s = s.split('"').join("&quot;");
-            s = s.split("'").join("&#039;");
+        if (quotes == true) {
+            return Syntax.code("Phoenix.HTML.html_escape({0})", s);
+        } else {
+            return Syntax.code("Phoenix.HTML.html_escape({0})", s);
         }
-        return s;
     }
     
     public static function htmlUnescape(s: String): String {
-        return s.split("&gt;").join(">")
-            .split("&lt;").join("<")
-            .split("&quot;").join('"')
-            .split("&#039;").join("'")
-            .split("&amp;").join("&");
+        return Syntax.code("Phoenix.HTML.raw({0})", s);
     }
     
     public static function startsWith(s: String, start: String): Bool {
-        return s.length >= start.length && s.substr(0, start.length) == start;
+        return Syntax.code("String.starts_with?({0}, {1})", s, start);
     }
     
     public static function endsWith(s: String, end: String): Bool {
-        var elen = end.length;
-        var slen = s.length;
-        return slen >= elen && s.substr(slen - elen, elen) == end;
+        return Syntax.code("String.ends_with?({0}, {1})", s, end);
     }
     
     public static function replace(s: String, sub: String, by: String): String {
-        return s.split(sub).join(by);
+        return Syntax.code("String.replace({0}, {1}, {2})", s, sub, by);
     }
     
     public static function lpad(s: String, c: String, l: Int): String {
         if (c.length <= 0) return s;
-        var buf = "";
-        l -= s.length;
-        while (buf.length < l) {
-            buf += c;
-        }
-        return buf + s;
+        return Syntax.code("String.pad_leading({0}, {1}, {2})", s, l, c);
     }
     
     public static function rpad(s: String, c: String, l: Int): String {
         if (c.length <= 0) return s;
-        var buf = s;
-        while (buf.length < l) {
-            buf += c;
-        }
-        return buf;
+        return Syntax.code("String.pad_trailing({0}, {1}, {2})", s, l, c);
     }
     
     public static function contains(s: String, value: String): Bool {
-        return s.indexOf(value) != -1;
+        return Syntax.code("String.contains?({0}, {1})", s, value);
     }
     
     public static function fastCodeAt(s: String, index: Int): Int {
@@ -123,29 +86,11 @@ class StringTools {
     }
     
     public static function hex(n: Int, ?digits: Int): String {
-        var s = "";
-        var hexChars = "0123456789ABCDEF";
-        if (n < 0) {
-            // Handle negative numbers
-            n = -n;
-            s = "-";
+        var hexStr: String = Syntax.code("Integer.to_string({0}, 16)", n);
+        if (digits != null && digits > 0) {
+            return Syntax.code("String.pad_leading({0}, {1}, \"0\")", hexStr, digits);
         }
-        if (n == 0) {
-            s = "0";
-        } else {
-            var result = "";
-            while (n > 0) {
-                result = hexChars.charAt(n & 15) + result;
-                n = n >>> 4;
-            }
-            s += result;
-        }
-        if (digits != null) {
-            while (s.length < digits) {
-                s = "0" + s;
-            }
-        }
-        return s;
+        return hexStr;
     }
     
     public static function iterator(s: String): haxe.iterators.StringIterator {

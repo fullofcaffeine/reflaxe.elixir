@@ -1,0 +1,12 @@
+{
+  "name": "reflaxe",
+  "url": "https://github.com/SomeRanDev/reflaxe",
+  "license": "MIT",
+  "tags": ["compiler", "transpiler", "codegen"],
+  "description": "A source-to-source transpiler framework for Haxe (vendored with patches)",
+  "version": "4.0.0-beta",
+  "classPath": "src/",
+  "releasenote": "Vendored version with critical filesystem bug fixes",
+  "contributors": ["SomeRanDev"],
+  "dependencies": {}
+}

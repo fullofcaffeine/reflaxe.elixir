@@ -1,5 +1,7 @@
 package;
 
+import elixir.Syntax;
+
 /**
  * Static extension class providing functional operations for Map<K,V>
  * 
@@ -51,11 +53,7 @@ class MapTools {
      * @return Final accumulated value
      */
     public static function reduce<K, V, A>(map: Map<K, V>, initial: A, reducer: (A, K, V) -> A): A {
-        var acc = initial;
-        for (key => value in map) {
-            acc = reducer(acc, key, value);
-        }
-        return acc;
+        return Syntax.code("Enum.reduce({0}, {1}, fn {{k, v}}, acc -> {2}.(acc, k, v) end)", map, initial, reducer);
     }
     
     /**
@@ -65,12 +63,7 @@ class MapTools {
      * @return True if any entry matches, false otherwise
      */
     public static function any<K, V>(map: Map<K, V>, predicate: (K, V) -> Bool): Bool {
-        for (key => value in map) {
-            if (predicate(key, value)) {
-                return true;
-            }
-        }
-        return false;
+        return Syntax.code("Enum.any?({0}, fn {{k, v}} -> {1}.(k, v) end)", map, predicate);
     }
     
     /**
@@ -80,12 +73,7 @@ class MapTools {
      * @return True if all entries match, false otherwise
      */
     public static function all<K, V>(map: Map<K, V>, predicate: (K, V) -> Bool): Bool {
-        for (key => value in map) {
-            if (!predicate(key, value)) {
-                return false;
-            }
-        }
-        return true;
+        return Syntax.code("Enum.all?({0}, fn {{k, v}} -> {1}.(k, v) end)", map, predicate);
     }
     
     /**
@@ -95,12 +83,7 @@ class MapTools {
      * @return Entry as {key: K, value: V} or null if not found
      */
     public static function find<K, V>(map: Map<K, V>, predicate: (K, V) -> Bool): Null<{key: K, value: V}> {
-        for (key => value in map) {
-            if (predicate(key, value)) {
-                return {key: key, value: value};
-            }
-        }
-        return null;
+        return Syntax.code("case Enum.find({0}, fn {{k, v}} -> {1}.(k, v) end) do\n      {{k, v}} -> %{{key: k, value: v}}\n      nil -> nil\n    end", map, predicate);
     }
     
     /**
@@ -109,11 +92,7 @@ class MapTools {
      * @return Array of all keys
      */
     public static function keys<K, V>(map: Map<K, V>): Array<K> {
-        var result: Array<K> = [];
-        for (key in map.keys()) {
-            result.push(key);
-        }
-        return result;
+        return Syntax.code("Map.keys({0}) |> Enum.to_list()", map);
     }
     
     /**
@@ -122,11 +101,7 @@ class MapTools {
      * @return Array of all values
      */
     public static function values<K, V>(map: Map<K, V>): Array<V> {
-        var result: Array<V> = [];
-        for (value in map) {
-            result.push(value);
-        }
-        return result;
+        return Syntax.code("Map.values({0}) |> Enum.to_list()", map);
     }
     
     /**
@@ -135,11 +110,7 @@ class MapTools {
      * @return Array of {key: K, value: V} objects
      */
     public static function toArray<K, V>(map: Map<K, V>): Array<{key: K, value: V}> {
-        var result: Array<{key: K, value: V}> = [];
-        for (key => value in map) {
-            result.push({key: key, value: value});
-        }
-        return result;
+        return Syntax.code("Enum.map({0}, fn {{k, v}} -> %{{key: k, value: v}} end)", map);
     }
     
     /**
@@ -165,10 +136,7 @@ class MapTools {
      * @return True if map has no entries, false otherwise
      */
     public static function isEmpty<K, V>(map: Map<K, V>): Bool {
-        for (_ in map) {
-            return false;
-        }
-        return true;
+        return Syntax.code("Enum.empty?({0})", map);
     }
     
     /**
@@ -177,10 +145,6 @@ class MapTools {
      * @return Number of entries in the map
      */
     public static function size<K, V>(map: Map<K, V>): Int {
-        var count = 0;
-        for (_ in map) {
-            count++;
-        }
-        return count;
+        return Syntax.code("map_size({0})", map);
     }
 }

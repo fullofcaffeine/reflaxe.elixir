@@ -50,6 +50,9 @@ This index provides a comprehensive guide to all documentation in the Reflaxe.El
 
 - **[`HAXE_STDLIB_ELIXIR_ARCHITECTURE.md`](HAXE_STDLIB_ELIXIR_ARCHITECTURE.md)** - Haxe stdlib → idiomatic Elixir compilation strategy
 - **[`ABSTRACT_TYPES_SOLUTION.md`](ABSTRACT_TYPES_SOLUTION.md)** - Abstract types solution for field access issues
+- **[`STANDARD_LIBRARY_COMPILATION_CONTEXT.md`](STANDARD_LIBRARY_COMPILATION_CONTEXT.md)** - Critical learnings about `untyped __elixir__()` in std/
+- **[`CRITICAL_ARCHITECTURE_LESSONS.md`](CRITICAL_ARCHITECTURE_LESSONS.md)** - **MANDATORY**: Never repeat architectural mistakes
+- **[`ELIXIR_INJECTION_GUIDE.md`](ELIXIR_INJECTION_GUIDE.md)** - Complete `__elixir__()` usage guide with cross-target comparison
 
 ### 3. Reference Documentation (`/documentation/reference/`)
 **Purpose**: API references and feature specifications

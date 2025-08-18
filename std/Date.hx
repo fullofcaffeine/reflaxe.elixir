@@ -1,12 +1,29 @@
 package;
 
-import elixir.DateTime.NaiveDateTime;
-import elixir.DateTime.Date as ElixirDate;
-import elixir.DateTime.DateTime as ElixirDateTime;
-import elixir.DateTime.TimeUnit;
-import elixir.DateTime.TimePrecision;
-import elixir.DateTime.ComparisonResult;
-import haxe.functional.Result;
+import elixir.Syntax;
+
+// Dual-API implementation using Elixir's native DateTime capabilities
+
+// Define simple enums for Elixir time operations
+enum TimeUnit {
+	Second;
+	Minute;
+	Hour;
+	Day;
+	Week;
+}
+
+enum TimePrecision {
+	Second;
+	Millisecond;
+	Microsecond;
+}
+
+enum ComparisonResult {
+	Lt; // :lt
+	Eq; // :eq
+	Gt; // :gt
+}
 
 /**
  * Haxe Date implementation for Elixir target with Dual-API support
@@ -25,11 +42,13 @@ import haxe.functional.Result;
  * 
  * ## Implementation Notes
  * 
+ * - Uses Elixir's native DateTime and NaiveDateTime for all operations
+ * - Generates idiomatic Elixir code that looks hand-written
  * - Uses abstract type over Float for clean encapsulation
  * - No field access issues - abstracts compile away at runtime
- * - Converts to/from NaiveDateTime only when needed for Elixir operations
  * - Month is 0-based (0-11) per Haxe convention
- * - Full type safety with zero runtime overhead
+ * - Leverages Elixir's excellent date/time library capabilities
+ * - Uses `elixir.Syntax.code()` for platform-specific operations
  */
 abstract Date(Float) {
 	
@@ -44,26 +63,21 @@ abstract Date(Float) {
 	 * @param sec Seconds (0-59)
 	 */
 	public function new(year: Int, month: Int, day: Int, hour: Int, min: Int, sec: Int) {
-		// Convert Haxe's 0-based month to Elixir's 1-based month
-		var elixirMonth = month + 1;
-		
-		// Create NaiveDateTime and extract timestamp
-		var result = NaiveDateTime.new_datetime(year, elixirMonth, day, hour, min, sec);
-		switch (result) {
-			case Ok(dt):
-				// Convert NaiveDateTime to timestamp for storage
-				this = untyped __elixir__("DateTime.to_unix(DateTime.from_naive!({0}, \"Etc/UTC\"), :millisecond)", dt);
-			case Error(reason):
-				throw 'Invalid date: $reason';
-		}
+		// Use Elixir's NaiveDateTime for proper date handling
+		var elixirMonth = month + 1; // Convert 0-based month to 1-based for Elixir
+		var naiveDateTime = Syntax.code("NaiveDateTime.new!({0}, {1}, {2}, {3}, {4}, {5})", 
+			year, elixirMonth, day, hour, min, sec);
+		// Convert to Unix timestamp in milliseconds
+		this = Syntax.code("DateTime.to_unix(DateTime.from_naive!({0}, \"Etc/UTC\"), :millisecond)", 
+			naiveDateTime);
 	}
 	
 	/**
-	 * Convert internal timestamp to NaiveDateTime for Elixir operations
+	 * Convert to NaiveDateTime for Elixir operations
 	 */
-	private function asNaiveDateTime(): NaiveDateTime {
-		var seconds = Math.floor(this / 1000);
-		return untyped __elixir__("DateTime.from_unix!({0}, :second) |> DateTime.to_naive()", seconds);
+	private function toNaiveDateTime(): Dynamic {
+		// Convert milliseconds back to NaiveDateTime
+		return Syntax.code("DateTime.from_unix!({0}, :millisecond) |> DateTime.to_naive()", this);
 	}
 	
 	// ========================================
@@ -81,28 +95,32 @@ abstract Date(Float) {
 	 * Returns the hours of this Date (0-23 range) in the local timezone.
 	 */
 	public function getHours(): Int {
-		return asNaiveDateTime().hour;
+		var naiveDateTime = toNaiveDateTime();
+		return Syntax.code("{0}.hour", naiveDateTime);
 	}
 	
 	/**
 	 * Returns the minutes of this Date (0-59 range) in the local timezone.
 	 */
 	public function getMinutes(): Int {
-		return asNaiveDateTime().minute;
+		var naiveDateTime = toNaiveDateTime();
+		return Syntax.code("{0}.minute", naiveDateTime);
 	}
 	
 	/**
 	 * Returns the seconds of this Date (0-59 range) in the local timezone.
 	 */
 	public function getSeconds(): Int {
-		return asNaiveDateTime().second;
+		var naiveDateTime = toNaiveDateTime();
+		return Syntax.code("{0}.second", naiveDateTime);
 	}
 	
 	/**
 	 * Returns the full year of this Date (4 digits) in the local timezone.
 	 */
 	public function getFullYear(): Int {
-		return asNaiveDateTime().year;
+		var naiveDateTime = toNaiveDateTime();
+		return Syntax.code("{0}.year", naiveDateTime);
 	}
 	
 	/**
@@ -110,15 +128,17 @@ abstract Date(Float) {
 	 * Note that the month number is zero-based per Haxe convention.
 	 */
 	public function getMonth(): Int {
-		// Convert Elixir's 1-based month to Haxe's 0-based month
-		return asNaiveDateTime().month - 1;
+		var naiveDateTime = toNaiveDateTime();
+		var elixirMonth = Syntax.code("{0}.month", naiveDateTime);
+		return elixirMonth - 1; // Convert from 1-based to 0-based
 	}
 	
 	/**
 	 * Returns the day of this Date (1-31 range) in the local timezone.
 	 */
 	public function getDate(): Int {
-		return asNaiveDateTime().day;
+		var naiveDateTime = toNaiveDateTime();
+		return Syntax.code("{0}.day", naiveDateTime);
 	}
 	
 	/**
@@ -126,10 +146,13 @@ abstract Date(Float) {
 	 * in the local timezone.
 	 */
 	public function getDay(): Int {
-		// Elixir's Date.day_of_week returns 1-7 (Monday-Sunday)
-		// Haxe expects 0-6 (Sunday-Saturday)
-		var naiveDateTime = asNaiveDateTime();
-		return untyped __elixir__("rem(Date.day_of_week(Date.from_erl!({0} |> NaiveDateTime.to_erl() |> elem(0))), 7)", naiveDateTime);
+		// Use Elixir's Date.day_of_week which returns 1-7 (Monday-Sunday)
+		var naiveDateTime = toNaiveDateTime();
+		var elixirDate = Syntax.code("NaiveDateTime.to_date({0})", naiveDateTime);
+		var elixirDayOfWeek = Syntax.code("Date.day_of_week({0})", elixirDate);
+		
+		// Convert from Elixir's 1-7 (Mon-Sun) to Haxe's 0-6 (Sun-Sat)
+		return elixirDayOfWeek == 7 ? 0 : elixirDayOfWeek;
 	}
 	
 	/**
@@ -200,7 +223,8 @@ abstract Date(Float) {
 	 * Returns a string representation of this Date.
 	 */
 	public function toString(): String {
-		return asNaiveDateTime().to_string();
+		var naiveDateTime = toNaiveDateTime();
+		return Syntax.code("NaiveDateTime.to_string({0})", naiveDateTime);
 	}
 	
 	/**
@@ -216,8 +240,8 @@ abstract Date(Float) {
 	 * Returns a Date representing the current time.
 	 */
 	public static function now(): Date {
-		var dt = NaiveDateTime.utc_now();
-		var timestampMs = untyped __elixir__("DateTime.to_unix(DateTime.from_naive!({0}, \"Etc/UTC\"), :millisecond)", dt);
+		// Use Elixir's DateTime.utc_now() for current time
+		var timestampMs = Syntax.code("DateTime.to_unix(DateTime.utc_now(), :millisecond)");
 		return fromTime(timestampMs);
 	}
 	
@@ -231,15 +255,16 @@ abstract Date(Float) {
 	 * @param s Date string to parse
 	 */
 	public static function fromString(s: String): Date {
-		// Try ISO 8601 first
-		var result = NaiveDateTime.from_iso8601(s);
-		switch (result) {
-			case Ok(dt):
-				var timestampMs = untyped __elixir__("DateTime.to_unix(DateTime.from_naive!({0}, \"Etc/UTC\"), :millisecond)", dt);
-				return fromTime(timestampMs);
-			case Error(_):
-				// Try other formats
-				throw 'Cannot parse date: $s';
+		// Try parsing as ISO 8601 using Elixir's parser
+		var result = Syntax.code("NaiveDateTime.from_iso8601({0})", s);
+		var isOk = Syntax.code("elem({0}, 0) == :ok", result);
+		
+		if (isOk) {
+			var naiveDateTime = Syntax.code("elem({0}, 1)", result);
+			var timestampMs = Syntax.code("DateTime.to_unix(DateTime.from_naive!({0}, \"Etc/UTC\"), :millisecond)", naiveDateTime);
+			return fromTime(timestampMs);
+		} else {
+			throw 'Cannot parse date: $s';
 		}
 	}
 	
@@ -248,47 +273,12 @@ abstract Date(Float) {
 	// ========================================
 	
 	/**
-	 * Add time to this date (Elixir-style)
-	 * @param amount Amount to add
-	 * @param unit Time unit (Second, Minute, Hour, Day, Week)
-	 * @return New Date with added time
-	 */
-	public function add(amount: Int, unit: TimeUnit): Date {
-		var naiveDateTime = asNaiveDateTime();
-		var newDt = NaiveDateTime.add(naiveDateTime, amount, unit);
-		var newTimestamp = untyped __elixir__("DateTime.to_unix(DateTime.from_naive!({0}, \"Etc/UTC\"), :millisecond)", newDt);
-		return fromTime(newTimestamp);
-	}
-	
-	/**
-	 * Calculate difference between this date and another (Elixir-style)
-	 * @param other The other date to compare
-	 * @param unit Time unit for the result
-	 * @return Difference in the specified unit
-	 */
-	public function diff(other: Date, unit: TimeUnit): Int {
-		var thisNaive = asNaiveDateTime();
-		var otherNaive = other.asNaiveDateTime();
-		return NaiveDateTime.diff(thisNaive, otherNaive, unit);
-	}
-	
-	/**
-	 * Compare this date with another (Elixir-style)
-	 * @param other The date to compare with
-	 * @return :lt if this < other, :eq if equal, :gt if this > other
-	 */
-	public function compare(other: Date): ComparisonResult {
-		var thisNaive = asNaiveDateTime();
-		var otherNaive = other.asNaiveDateTime();
-		return NaiveDateTime.compare(thisNaive, otherNaive);
-	}
-	
-	/**
 	 * Convert to ISO 8601 string format (Elixir-style)
 	 * @return ISO 8601 formatted string
 	 */
 	public function toIso8601(): String {
-		return asNaiveDateTime().to_iso8601();
+		var naiveDateTime = toNaiveDateTime();
+		return Syntax.code("NaiveDateTime.to_iso8601({0})", naiveDateTime);
 	}
 	
 	/**
@@ -305,60 +295,5 @@ abstract Date(Float) {
 	 */
 	public function endOfDay(): Date {
 		return new Date(getFullYear(), getMonth(), getDate(), 23, 59, 59);
-	}
-	
-	/**
-	 * Truncate this date to the specified precision
-	 * @param precision The precision to truncate to (Second, Millisecond, Microsecond)
-	 * @return New Date truncated to the specified precision
-	 */
-	public function truncate(precision: TimePrecision): Date {
-		var naiveDateTime = asNaiveDateTime();
-		var truncated = NaiveDateTime.truncate(naiveDateTime, precision);
-		var newTimestamp = untyped __elixir__("DateTime.to_unix(DateTime.from_naive!({0}, \"Etc/UTC\"), :millisecond)", truncated);
-		return fromTime(newTimestamp);
-	}
-	
-	// ========================================
-	// Conversion Methods
-	// ========================================
-	
-	/**
-	 * Convert to Elixir NaiveDateTime
-	 */
-	public function toNaiveDateTime(): NaiveDateTime {
-		return asNaiveDateTime();
-	}
-	
-	/**
-	 * Convert to Elixir Date (date only, no time)
-	 */
-	public function toElixirDate(): ElixirDate {
-		var naiveDateTime = asNaiveDateTime();
-		return untyped __elixir__("Date.from_erl!({0} |> NaiveDateTime.to_erl() |> elem(0))", naiveDateTime);
-	}
-	
-	/**
-	 * Create from Elixir NaiveDateTime
-	 */
-	public static function fromNaiveDateTime(dt: NaiveDateTime): Date {
-		var timestampMs = untyped __elixir__("DateTime.to_unix(DateTime.from_naive!({0}, \"Etc/UTC\"), :millisecond)", dt);
-		return fromTime(timestampMs);
-	}
-	
-	/**
-	 * Create from Elixir Date
-	 */
-	public static function fromElixirDate(d: ElixirDate): Date {
-		return new Date(d.year, d.month - 1, d.day, 0, 0, 0);
-	}
-	
-	/**
-	 * Create from Elixir DateTime (with timezone)
-	 */
-	public static function fromDateTime(dt: ElixirDateTime): Date {
-		// Convert DateTime to NaiveDateTime (loses timezone info)
-		var naiveDt = untyped __elixir__("DateTime.to_naive({0})", dt);
-		return fromNaiveDateTime(naiveDt);
 	}
 }
