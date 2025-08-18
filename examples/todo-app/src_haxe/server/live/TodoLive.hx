@@ -19,6 +19,7 @@ import server.pubsub.TodoPubSub;
 import server.pubsub.TodoPubSub.TodoPubSubTopic;
 import server.pubsub.TodoPubSub.TodoPubSubMessage;
 import server.live.SafeAssigns;
+import server.live.TypeSafeConversions;
 
 using StringTools;
 
@@ -212,7 +213,9 @@ class TodoLive {
 			user_id: socket.assigns.current_user.id
 		};
 		
-		var changeset = server.schemas.Todo.changeset(new server.schemas.Todo(), todo_params);
+		// Convert EventParams to ChangesetParams with type safety
+		var changesetParams = TypeSafeConversions.eventParamsToChangesetParams(params);
+		var changeset = server.schemas.Todo.changeset(new server.schemas.Todo(), changesetParams);
 		
 		// Use type-safe Repo operations
 		switch (Repo.insert(changeset)) {
@@ -226,12 +229,20 @@ class TodoLive {
 				}
 				
 				var todos = [todo].concat(socket.assigns.todos);
-				var updated_socket = LiveView.assign_multiple(socket, {
-					todos: todos,
-					show_form: false,
-					total_todos: todos.length,
-					pending_todos: socket.assigns.pending_todos + 1
-				});
+				// Use complete assigns structure for type safety
+				var currentAssigns = socket.assigns;
+				var completeAssigns = TypeSafeConversions.createCompleteAssigns(
+					currentAssigns,
+					todos,
+					null, // filter unchanged
+					null, // sort_by unchanged
+					null, // current_user unchanged  
+					null, // editing_todo unchanged
+					false, // show_form = false
+					null, // search_query unchanged
+					null  // selected_tags unchanged
+				);
+				var updated_socket = LiveView.assign_multiple(socket, completeAssigns);
 				return LiveView.put_flash(updated_socket, Success, "Todo created successfully!");
 				
 			case Error(reason):
@@ -323,12 +334,14 @@ class TodoLive {
 		}
 		
 		var todos = [todo].concat(socket.assigns.todos);
-		return LiveView.assign_multiple(socket, {
-			todos: todos,
-			total_todos: todos.length,
-			pending_todos: count_pending(todos),
-			completed_todos: count_completed(todos)
-		});
+		// Use complete assigns structure for type safety
+		var currentAssigns = socket.assigns;
+		var completeAssigns = TypeSafeConversions.createCompleteAssigns(
+			currentAssigns,
+			todos // Updated todos list
+			// All other fields will maintain current values from base
+		);
+		return LiveView.assign_multiple(socket, completeAssigns);
 	}
 	
 	static function update_todo_in_list(updated_todo: server.schemas.Todo, socket: Socket<TodoLiveAssigns>): Socket<TodoLiveAssigns> {
@@ -336,11 +349,14 @@ class TodoLive {
 			return t.id == updated_todo.id ? updated_todo : t;
 		});
 		
-		return LiveView.assign_multiple(socket, {
-			todos: todos,
-			completed_todos: count_completed(todos),
-			pending_todos: count_pending(todos)
-		});
+		// Use complete assigns structure for type safety
+		var currentAssigns = socket.assigns;
+		var completeAssigns = TypeSafeConversions.createCompleteAssigns(
+			currentAssigns,
+			todos // Updated todos list
+			// All other fields will maintain current values from base
+		);
+		return LiveView.assign_multiple(socket, completeAssigns);
 	}
 	
 	static function remove_todo_from_list(id: Int, socket: Socket<TodoLiveAssigns>): Socket<TodoLiveAssigns> {
@@ -348,12 +364,14 @@ class TodoLive {
 			return t.id != id;
 		});
 		
-		return LiveView.assign_multiple(socket, {
-			todos: todos,
-			total_todos: todos.length,
-			completed_todos: count_completed(todos),
-			pending_todos: count_pending(todos)
-		});
+		// Use complete assigns structure for type safety
+		var currentAssigns = socket.assigns;
+		var completeAssigns = TypeSafeConversions.createCompleteAssigns(
+			currentAssigns,
+			todos // Updated todos list
+			// All other fields will maintain current values from base
+		);
+		return LiveView.assign_multiple(socket, completeAssigns);
 	}
 	
 	// Utility functions
@@ -436,13 +454,17 @@ class TodoLive {
 				trace("Failed to broadcast bulk complete: " + reason);
 		}
 		
-		// Reload todos and update socket
+		// Reload todos and update socket with complete assigns
 		var updated_todos = load_todos(socket.assigns.current_user.id);
-		var updated_socket = LiveView.assign_multiple(socket, {
-			todos: updated_todos,
-			completed_todos: socket.assigns.total_todos,
-			pending_todos: 0
-		});
+		var currentAssigns = socket.assigns;
+		var completeAssigns = TypeSafeConversions.createCompleteAssigns(
+			currentAssigns,
+			updated_todos
+		);
+		// Override calculated statistics for bulk complete
+		completeAssigns.completed_todos = completeAssigns.total_todos;
+		completeAssigns.pending_todos = 0;
+		var updated_socket = LiveView.assign_multiple(socket, completeAssigns);
 		
 		return LiveView.put_flash(updated_socket, Info, "All todos marked as completed!");
 	}
@@ -461,14 +483,18 @@ class TodoLive {
 		
 		var remaining = socket.assigns.todos.filter(function(t) return !t.completed);
 		
-		return socket
-			.assign({
-				todos: remaining,
-				total_todos: remaining.length,
-				completed_todos: 0,
-				pending_todos: remaining.length
-			})
-			.put_flash("info", "Completed todos deleted!");
+		// Use complete assigns and proper type-safe socket operations
+		var currentAssigns = socket.assigns;
+		var completeAssigns = TypeSafeConversions.createCompleteAssigns(
+			currentAssigns,
+			remaining
+		);
+		// Override calculated statistics
+		completeAssigns.completed_todos = 0;
+		completeAssigns.pending_todos = remaining.length;
+		
+		var updated_socket = LiveView.assign_multiple(socket, completeAssigns);
+		return LiveView.put_flash(updated_socket, Info, "Completed todos deleted!");
 	}
 	
 	// Additional helper functions with type-safe socket handling
@@ -481,7 +507,9 @@ class TodoLive {
 		var todo = socket.assigns.editing_todo;
 		if (todo == null) return socket;
 		
-		var changeset = server.schemas.Todo.changeset(todo, params);
+		// Convert EventParams to ChangesetParams with type safety
+		var changesetParams = TypeSafeConversions.eventParamsToChangesetParams(params);
+		var changeset = server.schemas.Todo.changeset(todo, changesetParams);
 		
 		// Use type-safe Repo operations
 		switch (Repo.update(changeset)) {
@@ -508,21 +536,24 @@ class TodoLive {
 			case CompleteAll:
 				// Reload todos to reflect bulk completion
 				var updated_todos = load_todos(socket.assigns.current_user.id);
-				LiveView.assign_multiple(socket, {
-					todos: updated_todos,
-					completed_todos: count_completed(updated_todos),
-					pending_todos: count_pending(updated_todos)
-				});
+				// Use complete assigns structure for type safety
+				var currentAssigns = socket.assigns;
+				var completeAssigns = TypeSafeConversions.createCompleteAssigns(
+					currentAssigns,
+					updated_todos
+				);
+				LiveView.assign_multiple(socket, completeAssigns);
 			
 			case DeleteCompleted:
 				// Reload todos to reflect bulk deletion
 				var updated_todos = load_todos(socket.assigns.current_user.id);
-				LiveView.assign_multiple(socket, {
-					todos: updated_todos,
-					total_todos: updated_todos.length,
-					completed_todos: count_completed(updated_todos),
-					pending_todos: count_pending(updated_todos)
-				});
+				// Use complete assigns structure for type safety
+				var currentAssigns = socket.assigns;
+				var completeAssigns = TypeSafeConversions.createCompleteAssigns(
+					currentAssigns,
+					updated_todos
+				);
+				LiveView.assign_multiple(socket, completeAssigns);
 			
 			case SetPriority(priority):
 				// Could handle bulk priority changes in future
