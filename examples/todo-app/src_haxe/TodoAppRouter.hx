@@ -16,7 +16,7 @@ import reflaxe.elixir.macros.HttpMethod;
         name: "root", 
         method: HttpMethod.LIVE, 
         path: "/", 
-        controller: "TodoLive", 
+        controller: "server.live.TodoLive", 
         action: "index"
     },
     

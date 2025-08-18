@@ -579,31 +579,35 @@ Phoenix Expectation          | Haxe Source              | Generated Output
 /priv/repo/migrations/*.exs | migrations/*.hx          | /priv/repo/migrations/*.exs
 ```
 
-#### RouterCompiler File Location Logic
+#### RouterCompiler Module Resolution
 
-**Current Issue**: RouterCompiler generates files based on Haxe class names without considering Phoenix conventions:
+**✅ IMPLEMENTED**: RouterCompiler uses type-based module resolution with @:native annotation support:
 
 ```haxe
-// Problem: Direct class name mapping
-var outputFile = '${className}.ex';  // → TodoAppRouter.ex
+// Framework-agnostic approach with explicit control
+@:native("TodoAppWeb.Router")  // Phoenix convention
+@:router
+class TodoAppRouter {}
 
-// Solution: Framework-aware mapping  
-var webModuleName = className.replace("Router", "Web.Router");
-var outputPath = generatePhoenixPath(webModuleName);  // → /lib/todo_app_web/router.ex
+// Generates: lib/todo_app_web/router.ex with module TodoAppWeb.Router
 ```
 
-**Required Fix**: RouterCompiler needs framework-aware file location logic:
+**Current Implementation**: RouterBuildMacro uses proper type lookup for controller validation:
 
 ```haxe
-private static function generatePhoenixOutputPath(className: String, classType: ClassType): String {
-    if (RouterCompiler.isRouterClassType(classType)) {
-        // Phoenix expects: /lib/app_web/router.ex
-        var appName = extractAppName(className);  // TodoAppRouter → todo_app
-        return '/lib/${appName}_web/router.ex';
+private static function resolveControllerModuleName(controllerName: String): String {
+    try {
+        var controllerType = Context.getType(controllerName);
+        switch (controllerType) {
+            case TInst(ref, _):
+                var classType = ref.get();
+                return classType.getNameOrNative();  // Respects @:native
+            case _:
+                return controllerName;
+        }
+    } catch (e: Dynamic) {
+        return extractClassName(controllerName);
     }
-    
-    // Other Phoenix conventions...
-    return defaultElixirPath(className);
 }
 ```
 
