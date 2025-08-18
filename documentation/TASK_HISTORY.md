@@ -7,6 +7,48 @@ Archives of previous history can be found in `TASK_HISTORY_ARCHIVE_*.md` files.
 
 ---
 
+## Session: 2025-08-18 - Comprehensive DRY File Naming Architecture 🔧
+
+### Context
+Continued from previous session focused on type safety improvements. User discovered critical file naming bug: TodoApp.ex was not being converted to todo_app.ex. This led to a comprehensive refactoring of the entire file naming system to follow DRY principles and eliminate an entire class of naming bugs.
+
+### Key Discovery 🎯
+**User Observation**: "wait, why TodoApp.ex? Shouldn't it be todo_app.ex? Think hard."
+**Root Cause**: Multiple code paths for file naming with early returns preventing snake_case conversion
+**Solution**: Single comprehensive naming function that handles all cases without early returns
+
+### Tasks Completed ✅
+
+#### 1. **Type Safety Improvements**
+- Replaced Dynamic types in TodoApp.hx with proper OTP abstractions
+- Created ApplicationStartType, ApplicationArgs, ApplicationResult types
+- Fixed supervisor options compilation (::one_for_one → :one_for_one bug)
+
+#### 2. **DRY File Naming Architecture** ⚡
+- Created getComprehensiveNamingRule() function as single source of truth
+- Handles all framework annotations (@:application, @:router, @:endpoint, etc.)
+- Converts Haxe packages to Elixir directory structures
+- Always applies snake_case transformation (no early returns)
+- Follows idiomatic Elixir/Phoenix conventions
+
+#### 3. **Code Cleanup & Consolidation**
+- Consolidated 4 duplicate convertToSnakeCase functions into NamingHelper.toSnakeCase()
+- Wrapped debug traces in conditional compilation (#if debug_hxx)
+- Removed 19 backup .bak files from test directories
+- Improved maintainability through DRY principles
+
+#### 4. **Documentation**
+- Created FILE_NAMING_ARCHITECTURE.md with comprehensive naming system documentation
+- Documented bug fixes and historical issues in detail
+- Updated CLAUDE.md to emphasize idiomatic Elixir/Phoenix conventions
+
+### Technical Details
+**Files Modified**: ElixirCompiler.hx, BehaviorCompiler.hx, ProtocolCompiler.hx, RouterCompiler.hx, TypedefCompiler.hx
+**Key Fix**: Lines 409-500 in ElixirCompiler.hx - getComprehensiveNamingRule() implementation
+**Test Result**: todo-app compiles correctly with proper file names (application.ex, not TodoApp.ex)
+
+---
+
 ## Session: 2025-01-18 - Framework Type Organization & Research-Driven Architecture ⚡
 
 ### Context
