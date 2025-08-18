@@ -1151,6 +1151,43 @@ class ElixirCompiler extends DirectToStringCompiler {
                                 '${left} = ${left} ${compileBinop(innerOp)} ${right}';
                         }
                         
+                    case OpAssign:
+                        // Handle struct field assignment with Elixir's immutable update syntax
+                        switch (e1.expr) {
+                            case TField(structExpr, fa):
+                                // This is a field assignment like spec.restart = :temporary
+                                // We need to generate: spec = %{spec | restart: :temporary}
+                                switch (structExpr.expr) {
+                                    case TLocal(v):
+                                        // Simple local variable struct update
+                                        var structName = getOriginalVarName(v);
+                                        var fieldName = switch (fa) {
+                                            case FInstance(_, _, cf) | FStatic(_, cf) | FAnon(cf) | FClosure(_, cf):
+                                                cf.get().name;
+                                            case FDynamic(s): s;
+                                            case FEnum(_, ef): ef.name;
+                                        };
+                                        var value = compileExpression(e2);
+                                        
+                                        // Generate idiomatic Elixir struct update syntax
+                                        '${structName} = %{${structName} | ${fieldName}: ${value}}';
+                                        
+                                    case _:
+                                        // Complex struct expression - compile normally for now
+                                        var structStr = compileExpression(structExpr);
+                                        var fieldStr = compileFieldAccess(structExpr, fa);
+                                        var value = compileExpression(e2);
+                                        
+                                        // For complex expressions, we may need a temporary variable
+                                        // For now, fall back to standard assignment (will error in Elixir)
+                                        '${structStr}.${fieldStr} = ${value}';
+                                }
+                                
+                            case _:
+                                // Regular variable assignment
+                                compileExpression(e1) + " = " + compileExpression(e2);
+                        }
+                    
                     case OpShl | OpShr | OpUShr:
                         // Bitwise shift operators need to use Bitwise module
                         var left = compileExpression(e1);
