@@ -59,6 +59,49 @@ import phoenix.types.Socket;       // ✅ Phoenix concept
 - **Logical organization**: Directory structure reflects framework relationships
 - **Better reusability**: Each layer provides appropriate abstractions
 
+### ⚡ Dual-API Pattern **CRITICAL PHILOSOPHY**
+
+**Every standard library type MUST provide BOTH cross-platform AND native APIs** - Give developers maximum flexibility:
+
+```haxe
+class Date {
+    // === Haxe Standard Library API (Cross-Platform) ===
+    public function getTime(): Float { }        // Milliseconds since epoch
+    public function getMonth(): Int { }         // 0-based (0-11)
+    public function toString(): String { }      // Standard format
+    public static function now(): Date { }      // Current time
+    
+    // === Elixir Native API Extensions ===
+    public function add(amount: Int, unit: TimeUnit): Date { }      // Elixir-style
+    public function diff(other: Date, unit: TimeUnit): Int { }      // Elixir-style
+    public function toIso8601(): String { }                         // ISO format
+    public function beginningOfDay(): Date { }                      // Phoenix/Timex
+    public function compare(other: Date): ComparisonResult { }      // Elixir atoms
+    
+    // === Conversion Methods ===
+    public function toNaiveDateTime(): elixir.NaiveDateTime { }
+    public function toElixirDate(): elixir.Date { }
+    public static function fromNaiveDateTime(dt: elixir.NaiveDateTime): Date { }
+}
+```
+
+**Implementation Guidelines**:
+1. **Always implement full Haxe interface first** - Ensures cross-platform compatibility
+2. **Add native methods as extensions** - Don't break the Haxe contract
+3. **Use Haxe naming conventions** - `camelCase` for all methods to maintain consistency
+4. **Provide conversion methods** - Seamless interop between type systems
+5. **Document both APIs clearly** - Mark cross-platform vs platform-specific
+6. **Match Elixir functionality** - Methods should behave like their Elixir counterparts
+
+**Benefits**:
+- **Cross-Platform Code**: Write once, run anywhere using Haxe methods
+- **Platform Power**: Access full Elixir/BEAM capabilities when needed
+- **Gradual Migration**: Teams can migrate from pure Elixir gradually
+- **Familiar APIs**: Elixir developers can use methods they know
+- **No Compromise**: Full type safety with maximum flexibility
+
+**See**: [`/documentation/COMPILER_BEST_PRACTICES.md`](/documentation/COMPILER_BEST_PRACTICES.md#dual-api-philosophy-for-standard-library) - Complete implementation guidelines
+
 ### Core Design Patterns
 
 #### 1. Extern + Runtime Library Pattern

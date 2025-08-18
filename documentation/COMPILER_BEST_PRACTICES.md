@@ -103,6 +103,60 @@ return Supervisor.startLink(children, opts);
 3. **Test the proper solution** - ensure it works as intended
 4. **Document the learning** - explain what was fixed and why
 
+### ⚠️ CRITICAL: Dual-API Philosophy for Standard Library
+**Every standard library type MUST provide BOTH cross-platform AND native APIs** - Give developers maximum flexibility:
+
+✅ **Dual-API Pattern**:
+- **Haxe Standard API** - Cross-platform methods following Haxe conventions
+- **Elixir Native API** - Platform-specific methods familiar to Elixir/Phoenix developers
+- **Conversion Methods** - Easy bridging between Haxe and Elixir types
+- **Developer Choice** - Use either or both APIs as needed
+
+**Implementation Example**:
+```haxe
+class Date {
+    // === Haxe Standard Library API (Cross-Platform) ===
+    public function getTime(): Float { }        // Returns milliseconds
+    public function getMonth(): Int { }         // 0-based (0-11)
+    public static function now(): Date { }      // Current time
+    
+    // === Elixir Native API Extensions ===
+    public function add(amount: Int, unit: TimeUnit): Date { }      // Elixir-style
+    public function diff(other: Date, unit: TimeUnit): Int { }      // Elixir-style
+    public function toIso8601(): String { }                         // Elixir feature
+    public function beginningOfDay(): Date { }                      // Phoenix/Timex
+    public function compare(other: Date): ComparisonResult { }      // Elixir-style
+    public function truncate(precision: TimePrecision): Date { }    // Elixir feature
+    
+    // === Conversion Methods ===
+    public function toNaiveDateTime(): elixir.NaiveDateTime { }
+    public function toElixirDate(): elixir.Date { }
+    public static function fromNaiveDateTime(dt: elixir.NaiveDateTime): Date { }
+}
+```
+
+**Benefits**:
+- **Cross-Platform Code**: Write once, run anywhere using Haxe methods
+- **Platform Power**: Access full Elixir/BEAM capabilities when needed
+- **Gradual Migration**: Teams can migrate from pure Elixir gradually
+- **Familiar APIs**: Elixir developers can use methods they know
+- **No Compromise**: Full type safety with maximum flexibility
+
+**Implementation Guidelines**:
+1. **Always implement full Haxe interface first** - Ensures cross-platform compatibility
+2. **Add native methods as extensions** - Don't break the Haxe contract
+3. **Use Haxe naming conventions** - `camelCase` for all methods to maintain consistency
+4. **Provide conversion methods** - Seamless interop between type systems
+5. **Document both APIs clearly** - Mark cross-platform vs platform-specific
+6. **Match Elixir functionality** - Methods should behave like their Elixir counterparts
+
+**Why This Matters**:
+- Maximizes adoption by supporting both communities
+- Enables true write-once/run-anywhere when needed
+- Provides escape hatches for platform-specific optimization
+- Supports gradual adoption and migration paths
+- Maintains type safety while offering flexibility
+
 ## Compiler Implementation Patterns
 
 ### 1. Never Leave TODOs in Production Code

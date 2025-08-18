@@ -11,6 +11,8 @@ This index provides a comprehensive guide to all documentation in the Reflaxe.El
 |------|--------------|----------|
 | Get started with the project | Getting Started Guide | [`guides/GETTING_STARTED.md`](guides/GETTING_STARTED.md) |
 | Understand the architecture | Architecture Overview | [`architecture/ARCHITECTURE.md`](architecture/ARCHITECTURE.md) |
+| Understand standard library design | Haxe Stdlib Architecture | [`HAXE_STDLIB_ELIXIR_ARCHITECTURE.md`](HAXE_STDLIB_ELIXIR_ARCHITECTURE.md) |
+| Solve field access issues | Abstract Types Solution | [`ABSTRACT_TYPES_SOLUTION.md`](ABSTRACT_TYPES_SOLUTION.md) |
 | Write tests | Testing Overview | [`TESTING_OVERVIEW.md`](TESTING_OVERVIEW.md) |
 | Find code examples | Examples Guide | [`guides/EXAMPLES.md`](guides/EXAMPLES.md) |
 | Use annotations | Annotations Reference | [`reference/ANNOTATIONS.md`](reference/ANNOTATIONS.md) |
@@ -43,6 +45,12 @@ This index provides a comprehensive guide to all documentation in the Reflaxe.El
 - **[`TESTING.md`](architecture/TESTING.md)** - Testing architecture and philosophy
 - **[`TESTING_ARCHITECTURE_COMPLETE.md`](architecture/TESTING_ARCHITECTURE_COMPLETE.md)** - Detailed test infrastructure
 
+### 2a. Standard Library Architecture (`/documentation/`)
+**Purpose**: Standard library design patterns and solutions
+
+- **[`HAXE_STDLIB_ELIXIR_ARCHITECTURE.md`](HAXE_STDLIB_ELIXIR_ARCHITECTURE.md)** - Haxe stdlib → idiomatic Elixir compilation strategy
+- **[`ABSTRACT_TYPES_SOLUTION.md`](ABSTRACT_TYPES_SOLUTION.md)** - Abstract types solution for field access issues
+
 ### 3. Reference Documentation (`/documentation/reference/`)
 **Purpose**: API references and feature specifications
 
@@ -60,6 +68,7 @@ This index provides a comprehensive guide to all documentation in the Reflaxe.El
 **Purpose**: Phoenix-specific patterns and integration
 
 - **[`HAXE_FOR_PHOENIX.md`](phoenix/HAXE_FOR_PHOENIX.md)** - Phoenix development with Haxe advantages
+- **[`PHOENIX_DIRECTORY_STRUCTURE.md`](PHOENIX_DIRECTORY_STRUCTURE.md)** - Phoenix conventions vs Haxe organization
 
 ### 6. LLM/AI Documentation (`/documentation/llm/`)
 **Purpose**: AI-optimized documentation for agents and LLMs
