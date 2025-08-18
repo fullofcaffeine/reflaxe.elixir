@@ -21,8 +21,9 @@ class ApplicationCompiler {
     
     /**
      * Generate proper OTP application module with Phoenix conventions
+     * Accepts appName parameter for generic application support
      */
-    public static function generateApplicationModule(className: String, children: Array<Dynamic>): String {
+    public static function generateApplicationModule(className: String, children: Array<Dynamic>, appName: String = "App"): String {
         var moduleName = className.indexOf(".") > -1 ? className : className + ".Application";
         var result = new StringBuf();
         
@@ -38,13 +39,13 @@ class ApplicationCompiler {
         // Generate proper child specifications
         var childSpecs = [];
         for (child in children) {
-            childSpecs.push(generateChildSpec(child));
+            childSpecs.push(generateChildSpec(child, appName));
         }
         
         result.add(childSpecs.join(',\n'));
         result.add('\n    ]\n');
         result.add('\n');
-        result.add('    opts = [strategy: :one_for_one, name: ${className}.Supervisor]\n');
+        result.add('    opts = [strategy: :one_for_one, name: ${appName}.Supervisor]\n');
         result.add('    Supervisor.start_link(children, opts)\n');
         result.add('  end\n');
         
@@ -53,7 +54,7 @@ class ApplicationCompiler {
             result.add('\n');
             result.add('  @impl true\n');
             result.add('  def config_change(changed, _new, removed) do\n');
-            result.add('    ${className}Web.Endpoint.config_change(changed, removed)\n');
+            result.add('    ${appName}Web.Endpoint.config_change(changed, removed)\n');
             result.add('    :ok\n');
             result.add('  end\n');
         }
@@ -65,30 +66,35 @@ class ApplicationCompiler {
     
     /**
      * Generate a proper OTP child specification
+     * Uses dynamic app name resolution to remain generic across different applications
      */
-    public static function generateChildSpec(child: Dynamic): String {
+    public static function generateChildSpec(child: Dynamic, appName: String = "App"): String {
         // Handle different child spec formats
         if (child.id != null) {
             var id = child.id;
             
             // Check for special Phoenix modules
-            if (id == "TodoApp.Repo" || id.indexOf(".Repo") > -1) {
-                // Simple module reference for Repo
-                return '      TodoApp.Repo';
+            if (id.indexOf(".Repo") > -1) {
+                // Simple module reference for Repo - use provided app name
+                var repoModule = id.indexOf(appName) > -1 ? id : '${appName}.Repo';
+                return '      ${repoModule}';
             }
             else if (id == "Phoenix.PubSub" || id.indexOf("PubSub") > -1) {
                 // Tuple format for PubSub with configuration
+                var defaultPubSubName = '${appName}.PubSub';
                 var name = child.start != null && child.start.args != null && 
-                          child.start.args[0] != null ? child.start.args[0].name : "TodoApp.PubSub";
+                          child.start.args[0] != null ? child.start.args[0].name : defaultPubSubName;
                 return '      {Phoenix.PubSub, name: ${name}}';
             }
             else if (id.indexOf("Telemetry") > -1) {
-                // Simple module reference for Telemetry
-                return '      TodoAppWeb.Telemetry';
+                // Simple module reference for Telemetry - use dynamic app name
+                var telemetryModule = id.indexOf(appName) > -1 ? id : '${appName}Web.Telemetry';
+                return '      ${telemetryModule}';
             }
             else if (id.indexOf("Endpoint") > -1) {
-                // Simple module reference for Endpoint
-                return '      TodoAppWeb.Endpoint';
+                // Simple module reference for Endpoint - use dynamic app name
+                var endpointModule = id.indexOf(appName) > -1 ? id : '${appName}Web.Endpoint';
+                return '      ${endpointModule}';
             }
             else {
                 // Generic child spec - try to determine format

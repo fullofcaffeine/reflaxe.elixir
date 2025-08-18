@@ -6,7 +6,7 @@ defmodule TodoAppWeb.TodoLive do
   alias TodoApp.Repo
   
   use Phoenix.Component
-  # Note: CoreComponents not imported - using default Phoenix components
+  import TodoAppWeb.CoreComponents
   
   @impl true
   @doc "Generated from Haxe mount"
@@ -221,7 +221,7 @@ defmodule TodoAppWeb.TodoLive do
     _this = socket.assigns.todos
     _g = []
     _g = 0
-    Enum.filter(_this, fn item -> (!v.completed) end)
+    Enum.filter(_this, fn item -> (!item.completed) end)
     temp_array = _g
     _g = 0
     Enum.map(temp_array, fn item -> todo = Enum.at(temp_array, _g)
@@ -249,7 +249,7 @@ defmodule TodoAppWeb.TodoLive do
     _this = socket.assigns.todos
     _g = []
     _g = 0
-    Enum.filter(_this, fn item -> (!v.completed) end)
+    Enum.filter(_this, fn item -> (!item.completed) end)
     temp_array1 = _g
     socket.assign(%{"todos" => temp_array1, "total_todos" => length(temp_array1), "completed_todos" => 0, "pending_todos" => length(temp_array1)}).put_flash("info", "Completed todos deleted!")
   end

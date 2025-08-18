@@ -39,6 +39,7 @@ import reflaxe.elixir.helpers.HxxCompiler;
 import reflaxe.elixir.helpers.LLMDocsGenerator;
 import reflaxe.elixir.helpers.ExUnitCompiler;
 import reflaxe.elixir.helpers.AlgebraicDataTypeCompiler;
+import reflaxe.elixir.helpers.ExpressionCompiler;
 import reflaxe.elixir.ElixirTyper;
 import reflaxe.elixir.PhoenixMapper;
 import reflaxe.elixir.SourceMapWriter;
@@ -243,6 +244,17 @@ class ElixirCompiler extends DirectToStringCompiler {
         // Check if the variable has :realPath metadata
         // TVar has both name and meta properties, so we can use the helper
         return v.getNameOrMeta(":realPath");
+    }
+    
+    /**
+     * Detect if a LiveView class uses Phoenix CoreComponents
+     * Simple heuristic: assumes CoreComponents are used if this is a LiveView class
+     */
+    private function detectCoreComponentsUsage(classType: ClassType, funcFields: Array<ClassFuncData>): Bool {
+        // For now, use a simple heuristic: all LiveView classes likely use CoreComponents
+        // A more sophisticated implementation would analyze the function bodies for component calls
+        // but that requires complex AST traversal which is beyond the current scope
+        return classType.meta.has(":liveview");
     }
     
     /**
@@ -859,8 +871,14 @@ class ElixirCompiler extends DirectToStringCompiler {
         var moduleName = classType.getNameOrNative();
         
         // Generate module header using LiveViewCompiler with resolved module name
-        // Don't require CoreComponents - use default Phoenix components
-        var moduleHeader = reflaxe.elixir.LiveViewCompiler.generateModuleHeader(moduleName, null);
+        // Auto-detect CoreComponents usage and import if needed using dynamic app name
+        var appName = reflaxe.elixir.helpers.AnnotationSystem.getEffectiveAppName(classType);
+        var coreComponentsModule: Null<String> = null;
+        if (detectCoreComponentsUsage(classType, funcFields)) {
+            var webModuleName = appName + "Web";
+            coreComponentsModule = webModuleName + ".CoreComponents";
+        }
+        var moduleHeader = reflaxe.elixir.LiveViewCompiler.generateModuleHeader(moduleName, appName, coreComponentsModule);
         result.add(moduleHeader);
         
         // Check if this LiveView uses HXX templates and add Phoenix.Component import
@@ -3078,13 +3096,13 @@ class ElixirCompiler extends DirectToStringCompiler {
         // Convert the loop variable name to snake_case for Elixir
         var targetVar = NamingHelper.toSnakeCase(loopVar);
         
-        // Find what variable the condition expression actually references (like "v")
-        var referencedVar = findFirstLocalVariable(conditionExpr);
+        // Find what TVar the condition expression actually references
+        var referencedTVar = findFirstLocalTVar(conditionExpr);
         
-        // If the condition references a different variable than our target, substitute it
+        // If the condition references a variable, use TVar-based substitution
         var condition: String;
-        if (referencedVar != null && referencedVar != targetVar) {
-            condition = compileExpressionWithSubstitution(conditionExpr, referencedVar, targetVar);
+        if (referencedTVar != null) {
+            condition = compileExpressionWithTVarSubstitution(conditionExpr, referencedTVar, targetVar);
         } else {
             condition = compileExpression(conditionExpr);
         }
@@ -3136,19 +3154,64 @@ class ElixirCompiler extends DirectToStringCompiler {
     }
     
     /**
+     * Find the first local TVar referenced in an expression
+     * This is more robust than string-based matching as it uses object identity
+     */
+    private function findFirstLocalTVar(expr: TypedExpr): Null<TVar> {
+        switch (expr.expr) {
+            case TLocal(v):
+                var varName = getOriginalVarName(v);
+                // Skip system variables
+                if (!isSystemVariable(varName)) {
+                    return v;
+                }
+                
+            case TField(e, fa):
+                // For field access like "v.id", find the base variable
+                return findFirstLocalTVar(e);
+                
+            case TBinop(op, e1, e2):
+                // Check both sides, return the first non-system variable found
+                var left = findFirstLocalTVar(e1);
+                if (left != null) return left;
+                return findFirstLocalTVar(e2);
+                
+            case TUnop(op, postFix, e):
+                return findFirstLocalTVar(e);
+                
+            case TParenthesis(e):
+                return findFirstLocalTVar(e);
+                
+            case TCall(e, args):
+                // Check the function call and its arguments
+                var result = findFirstLocalTVar(e);
+                if (result != null) return result;
+                for (arg in args) {
+                    result = findFirstLocalTVar(arg);
+                    if (result != null) return result;
+                }
+                
+            case _:
+                // Other expression types don't contain local variables we care about
+        }
+        return null;
+    }
+    
+    /**
      * Generate Enum.filter pattern for filtering arrays
      */
     private function generateEnumFilterPattern(arrayExpr: String, loopVar: String, conditionExpr: TypedExpr): String {
         // Convert the loop variable name to snake_case for Elixir
         var targetVar = NamingHelper.toSnakeCase(loopVar);
         
-        // Find what variable the condition expression actually references (like "v")
-        var referencedVar = findFirstLocalVariable(conditionExpr);
+        // Find what TVar the condition expression actually references
+        var referencedTVar = findFirstLocalTVar(conditionExpr);
         
-        // If the condition references a different variable than our target, substitute it
+        // If the condition references a variable, use TVar-based substitution
         var condition: String;
-        if (referencedVar != null && referencedVar != targetVar) {
-            condition = compileExpressionWithSubstitution(conditionExpr, referencedVar, targetVar);
+        if (referencedTVar != null) {
+            trace('generateEnumFilterPattern: Found TVar ${getOriginalVarName(referencedTVar)}, substituting with ${targetVar}');
+            condition = compileExpressionWithTVarSubstitution(conditionExpr, referencedTVar, targetVar);
         } else {
             condition = compileExpression(conditionExpr);
         }
@@ -3163,13 +3226,13 @@ class ElixirCompiler extends DirectToStringCompiler {
         // Convert the loop variable name to snake_case for Elixir
         var targetVar = NamingHelper.toSnakeCase(loopVar);
         
-        // Find what variable the body expression actually references (like "v")
-        var referencedVar = findFirstLocalVariable(ebody);
+        // Find what TVar the body expression actually references
+        var referencedTVar = findFirstLocalTVar(ebody);
         
-        // If the body references a different variable than our target, substitute it
+        // If the body references a variable, use TVar-based substitution
         var transformation: String;
-        if (referencedVar != null && referencedVar != targetVar) {
-            transformation = compileExpressionWithSubstitution(ebody, referencedVar, targetVar);
+        if (referencedTVar != null) {
+            transformation = compileExpressionWithTVarSubstitution(ebody, referencedTVar, targetVar);
         } else {
             transformation = compileExpression(ebody);
         }
@@ -3590,27 +3653,33 @@ class ElixirCompiler extends DirectToStringCompiler {
     private function compileExpressionWithTVarSubstitution(expr: TypedExpr, sourceTVar: TVar, targetVarName: String): String {
         switch (expr.expr) {
             case TLocal(v):
+                // Debug output to understand what variables we're dealing with
+                var varName = getOriginalVarName(v);
+                var sourceVarName = getOriginalVarName(sourceTVar);
+                // TVar-based variable identification for reliable lambda parameter substitution
+                
                 // Enhanced matching: try exact object match first, then fallback to more permissive matching
                 if (v == sourceTVar) {
                     // Exact object match - this is definitely the same variable
+                    // Exact TVar match - replace with target variable name
                     return targetVarName;
                 }
                 
                 // Fallback: check if this is likely the same logical variable
-                var varName = getOriginalVarName(v);
-                var sourceVarName = getOriginalVarName(sourceTVar);
-                
                 // If both have the same original name, they're likely the same logical variable
                 if (varName == sourceVarName && varName != null && varName != "") {
+                    // Name-based fallback match - same variable name
                     return targetVarName;
                 }
                 
                 // Use helper function for aggressive substitution as fallback
                 if (shouldSubstituteVariable(varName, null, true)) {
+                    // Aggressive fallback - pattern-based substitution
                     return targetVarName;
                 }
                 
                 // Not a match - compile normally
+                // No match found - compile variable normally
                 return compileExpression(expr);
             case TBinop(op, e1, e2):
                 // Handle assignment operations specially - we want the right-hand side value, not the assignment
@@ -3647,8 +3716,10 @@ class ElixirCompiler extends DirectToStringCompiler {
                 return '${left} ${compileBinop(op)} ${right}';
             case TField(e, fa):
                 // Handle field access on substituted variables
+                // Handle field access with variable substitution
                 var obj = compileExpressionWithTVarSubstitution(e, sourceTVar, targetVarName);
                 var fieldName = getFieldName(fa);
+                // Field access on substituted variable
                 return '${obj}.${fieldName}';
             case TCall(e, args):
                 // Handle method calls with substitution
@@ -3676,6 +3747,23 @@ class ElixirCompiler extends DirectToStringCompiler {
             case TParenthesis(e):
                 // Handle parenthesized expressions with substitution
                 return "(" + compileExpressionWithTVarSubstitution(e, sourceTVar, targetVarName) + ")";
+            case TUnop(op, postFix, e):
+                // Handle unary operations with substitution (like !variable)
+                // Handle unary operations with variable substitution
+                var operand = compileExpressionWithTVarSubstitution(e, sourceTVar, targetVarName);
+                
+                // Compile unary operator inline (from main compileExpression logic)
+                var result = switch (op) {
+                    case OpIncrement: '${operand} + 1';
+                    case OpDecrement: '${operand} - 1'; 
+                    case OpNot: '!${operand}';
+                    case OpNeg: '-${operand}';
+                    case OpNegBits: 'bnot(${operand})';
+                    case _: operand;
+                };
+                
+                // Unary operation with substituted operand
+                return result;
             case _:
                 // For other cases, fall back to regular compilation
                 return compileExpression(expr);
@@ -4228,14 +4316,9 @@ class ElixirCompiler extends DirectToStringCompiler {
                     if (args.length > 0) {
                         switch (args[0].expr) {
                             case TFunction(func):
-                                // Handle lambda with targeted variable substitution
-                                var paramName = func.args.length > 0 ? NamingHelper.toSnakeCase(getOriginalVarName(func.args[0].v)) : "item";
-                                var paramTVar = func.args.length > 0 ? func.args[0].v : null;
-                                // Use TVar substitution to replace ONLY the lambda parameter, preserving outer scope variables
-                                var body = paramTVar != null ? 
-                                    compileExpressionWithTVarSubstitution(func.expr, paramTVar, paramName) :
-                                    compileExpression(func.expr);
-                                return 'Enum.map(${objStr}, fn ${paramName} -> ${body} end)';
+                                // Use centralized context-sensitive compilation
+                                var lambda = ExpressionCompiler.compileLambdaWithContext(this, func, "item");
+                                return 'Enum.map(${objStr}, fn ${lambda.paramName} -> ${lambda.body} end)';
                             case _:
                                 // Not a simple lambda, use regular compilation
                                 return 'Enum.map(${objStr}, ${compiledArgs[0]})';
@@ -4248,20 +4331,20 @@ class ElixirCompiler extends DirectToStringCompiler {
                 }
             case "filter":
                 // array.filter(fn) → Enum.filter(array, fn)
+                trace('Array method: Compiling filter on ${objStr}');
                 if (compiledArgs.length > 0) {
                     // Check if the argument is a lambda that needs variable substitution
                     if (args.length > 0) {
+                        trace('Array method: Found ${args.length} arguments');
                         switch (args[0].expr) {
                             case TFunction(func):
-                                // Handle lambda with targeted variable substitution
-                                var paramName = func.args.length > 0 ? NamingHelper.toSnakeCase(getOriginalVarName(func.args[0].v)) : "item";
-                                var paramTVar = func.args.length > 0 ? func.args[0].v : null;
-                                // Use TVar substitution to replace ONLY the lambda parameter, preserving outer scope variables
-                                var body = paramTVar != null ? 
-                                    compileExpressionWithTVarSubstitution(func.expr, paramTVar, paramName) :
-                                    compileExpression(func.expr);
-                                return 'Enum.filter(${objStr}, fn ${paramName} -> ${body} end)';
+                                trace('Array method: Found TFunction with ${func.args.length} params');
+                                // Use centralized context-sensitive compilation
+                                var lambda = ExpressionCompiler.compileLambdaWithContext(this, func, "item");
+                                trace('Array method: Generated lambda - param: ${lambda.paramName}, body: ${lambda.body}');
+                                return 'Enum.filter(${objStr}, fn ${lambda.paramName} -> ${lambda.body} end)';
                             case _:
+                                trace('Array method: Not a TFunction, using regular compilation');
                                 // Not a simple lambda, use regular compilation
                                 return 'Enum.filter(${objStr}, ${compiledArgs[0]})';
                         }
@@ -4299,30 +4382,33 @@ class ElixirCompiler extends DirectToStringCompiler {
                     if (args.length >= 1) {
                         switch (args[0].expr) {
                             case TFunction(func):
-                                // Handle lambda with targeted variable substitution for reduce
-                                // Haxe typically uses (acc, item) but Elixir Enum.reduce uses (item, acc) parameter order
-                                var haxeAccParamName = func.args.length > 0 ? NamingHelper.toSnakeCase(getOriginalVarName(func.args[0].v)) : "acc";
-                                var haxeItemParamName = func.args.length > 1 ? NamingHelper.toSnakeCase(getOriginalVarName(func.args[1].v)) : "item";
+                                // Use centralized context-sensitive compilation for reduce
+                                // Note: Haxe uses (acc, item) but Elixir uses (item, acc) parameter order
+                                
+                                // Enable loop context for lambda body compilation
+                                var previousContext = isInLoopContext;
+                                isInLoopContext = true;
+                                
+                                // Extract parameter information with reordering
                                 var accParamTVar = func.args.length > 0 ? func.args[0].v : null;
                                 var itemParamTVar = func.args.length > 1 ? func.args[1].v : null;
-                                
-                                // For Elixir, we use "item" and "acc" as standard names
                                 var elixirItemName = "item";
                                 var elixirAccName = "acc";
                                 
                                 // Apply variable substitution for both parameters
-                                // Use the existing compileExpressionWithTVarSubstitution but apply both substitutions
                                 var bodyAfterAccSubst = accParamTVar != null ? 
                                     compileExpressionWithTVarSubstitution(func.expr, accParamTVar, elixirAccName) : 
                                     compileExpression(func.expr);
                                 
-                                // For the second parameter, we need to manually replace in the string
-                                // since we can't easily chain TVar substitutions
+                                // Apply second parameter substitution
                                 var compiledBody = bodyAfterAccSubst;
                                 if (itemParamTVar != null) {
                                     var originalItemName = getOriginalVarName(itemParamTVar);
                                     compiledBody = compiledBody.replace(originalItemName, elixirItemName);
                                 }
+                                
+                                // Restore previous context
+                                isInLoopContext = previousContext;
                                 
                                 // Elixir's Enum.reduce expects (collection, initial, fn item, acc -> result end)
                                 return 'Enum.reduce(${objStr}, ${compiledArgs[1]}, fn ${elixirItemName}, ${elixirAccName} -> ${compiledBody} end)';
@@ -4343,13 +4429,9 @@ class ElixirCompiler extends DirectToStringCompiler {
                     if (args.length > 0) {
                         switch (args[0].expr) {
                             case TFunction(func):
-                                // Handle lambda with targeted variable substitution
-                                var paramName = func.args.length > 0 ? NamingHelper.toSnakeCase(getOriginalVarName(func.args[0].v)) : "item";
-                                var paramTVar = func.args.length > 0 ? func.args[0].v : null;
-                                var body = paramTVar != null ? 
-                                    compileExpressionWithTVarSubstitution(func.expr, paramTVar, paramName) :
-                                    compileExpression(func.expr);
-                                return 'Enum.find(${objStr}, fn ${paramName} -> ${body} end)';
+                                // Use centralized context-sensitive compilation
+                                var lambda = ExpressionCompiler.compileLambdaWithContext(this, func, "item");
+                                return 'Enum.find(${objStr}, fn ${lambda.paramName} -> ${lambda.body} end)';
                             case _:
                                 // Not a simple lambda, use regular compilation
                                 return 'Enum.find(${objStr}, ${compiledArgs[0]})';
@@ -4367,13 +4449,9 @@ class ElixirCompiler extends DirectToStringCompiler {
                     if (args.length > 0) {
                         switch (args[0].expr) {
                             case TFunction(func):
-                                // Handle lambda with targeted variable substitution
-                                var paramName = func.args.length > 0 ? NamingHelper.toSnakeCase(getOriginalVarName(func.args[0].v)) : "item";
-                                var paramTVar = func.args.length > 0 ? func.args[0].v : null;
-                                var body = paramTVar != null ? 
-                                    compileExpressionWithTVarSubstitution(func.expr, paramTVar, paramName) :
-                                    compileExpression(func.expr);
-                                return 'Enum.find_index(${objStr}, fn ${paramName} -> ${body} end)';
+                                // Use centralized context-sensitive compilation
+                                var lambda = ExpressionCompiler.compileLambdaWithContext(this, func, "item");
+                                return 'Enum.find_index(${objStr}, fn ${lambda.paramName} -> ${lambda.body} end)';
                             case _:
                                 // Not a simple lambda, use regular compilation
                                 return 'Enum.find_index(${objStr}, ${compiledArgs[0]})';
@@ -4391,13 +4469,9 @@ class ElixirCompiler extends DirectToStringCompiler {
                     if (args.length > 0) {
                         switch (args[0].expr) {
                             case TFunction(func):
-                                // Handle lambda with targeted variable substitution
-                                var paramName = func.args.length > 0 ? NamingHelper.toSnakeCase(getOriginalVarName(func.args[0].v)) : "item";
-                                var paramTVar = func.args.length > 0 ? func.args[0].v : null;
-                                var body = paramTVar != null ? 
-                                    compileExpressionWithTVarSubstitution(func.expr, paramTVar, paramName) :
-                                    compileExpression(func.expr);
-                                return 'Enum.any?(${objStr}, fn ${paramName} -> ${body} end)';
+                                // Use centralized context-sensitive compilation
+                                var lambda = ExpressionCompiler.compileLambdaWithContext(this, func, "item");
+                                return 'Enum.any?(${objStr}, fn ${lambda.paramName} -> ${lambda.body} end)';
                             case _:
                                 // Not a simple lambda, use regular compilation
                                 return 'Enum.any?(${objStr}, ${compiledArgs[0]})';
@@ -4415,13 +4489,9 @@ class ElixirCompiler extends DirectToStringCompiler {
                     if (args.length > 0) {
                         switch (args[0].expr) {
                             case TFunction(func):
-                                // Handle lambda with targeted variable substitution
-                                var paramName = func.args.length > 0 ? NamingHelper.toSnakeCase(getOriginalVarName(func.args[0].v)) : "item";
-                                var paramTVar = func.args.length > 0 ? func.args[0].v : null;
-                                var body = paramTVar != null ? 
-                                    compileExpressionWithTVarSubstitution(func.expr, paramTVar, paramName) :
-                                    compileExpression(func.expr);
-                                return 'Enum.all?(${objStr}, fn ${paramName} -> ${body} end)';
+                                // Use centralized context-sensitive compilation
+                                var lambda = ExpressionCompiler.compileLambdaWithContext(this, func, "item");
+                                return 'Enum.all?(${objStr}, fn ${lambda.paramName} -> ${lambda.body} end)';
                             case _:
                                 // Not a simple lambda, use regular compilation
                                 return 'Enum.all?(${objStr}, ${compiledArgs[0]})';
@@ -4439,13 +4509,9 @@ class ElixirCompiler extends DirectToStringCompiler {
                     if (args.length > 0) {
                         switch (args[0].expr) {
                             case TFunction(func):
-                                // Handle lambda with targeted variable substitution
-                                var paramName = func.args.length > 0 ? NamingHelper.toSnakeCase(getOriginalVarName(func.args[0].v)) : "item";
-                                var paramTVar = func.args.length > 0 ? func.args[0].v : null;
-                                var body = paramTVar != null ? 
-                                    compileExpressionWithTVarSubstitution(func.expr, paramTVar, paramName) :
-                                    compileExpression(func.expr);
-                                return 'Enum.each(${objStr}, fn ${paramName} -> ${body} end)';
+                                // Use centralized context-sensitive compilation
+                                var lambda = ExpressionCompiler.compileLambdaWithContext(this, func, "item");
+                                return 'Enum.each(${objStr}, fn ${lambda.paramName} -> ${lambda.body} end)';
                             case _:
                                 // Not a simple lambda, use regular compilation
                                 return 'Enum.each(${objStr}, ${compiledArgs[0]})';
@@ -4477,13 +4543,9 @@ class ElixirCompiler extends DirectToStringCompiler {
                     if (args.length > 0) {
                         switch (args[0].expr) {
                             case TFunction(func):
-                                // Handle lambda with targeted variable substitution
-                                var paramName = func.args.length > 0 ? NamingHelper.toSnakeCase(getOriginalVarName(func.args[0].v)) : "item";
-                                var paramTVar = func.args.length > 0 ? func.args[0].v : null;
-                                var body = paramTVar != null ? 
-                                    compileExpressionWithTVarSubstitution(func.expr, paramTVar, paramName) :
-                                    compileExpression(func.expr);
-                                return 'Enum.flat_map(${objStr}, fn ${paramName} -> ${body} end)';
+                                // Use centralized context-sensitive compilation
+                                var lambda = ExpressionCompiler.compileLambdaWithContext(this, func, "item");
+                                return 'Enum.flat_map(${objStr}, fn ${lambda.paramName} -> ${lambda.body} end)';
                             case _:
                                 // Not a simple lambda, use regular compilation
                                 return 'Enum.flat_map(${objStr}, ${compiledArgs[0]})';

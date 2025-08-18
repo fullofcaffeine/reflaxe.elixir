@@ -86,24 +86,28 @@ class RouterCompiler {
     
     /**
      * Compiles a @:router annotated class into Phoenix router configuration.
+     * Uses dynamic app name resolution to remain generic across different applications.
      */
     public static function compileRouter(classType: ClassType): String {
         var className = classType.name;
         var fields = classType.fields.get();
         
-        // Generate proper Phoenix web module name (TodoAppRouter -> TodoAppWeb.Router)
-        var webModuleName = className.replace("Router", "Web.Router");
-        var webModuleScope = webModuleName.replace(".Router", "");
+        // Get app name dynamically instead of hardcoding "TodoApp"
+        var appName = reflaxe.elixir.helpers.AnnotationSystem.getEffectiveAppName(classType);
+        
+        // Generate proper Phoenix web module name (Router -> AppWeb.Router)
+        var webModuleName = appName + "Web.Router";
+        var webModuleScope = appName + "Web";
         
         var output = new StringBuf();
         output.add('defmodule ${webModuleName} do\n');
         output.add('  use ${webModuleScope}, :router\n\n');
         
         // Generate pipeline definitions from annotations or defaults  
-        output.add(generatePipelineDefinitions(classType));
+        output.add(generatePipelineDefinitions(classType, appName));
         
         // Generate route scopes and definitions
-        output.add(generateRouteScopes(classType, fields, webModuleScope));
+        output.add(generateRouteScopes(classType, fields, webModuleScope, appName));
         
         output.add('end\n');
         
@@ -112,8 +116,9 @@ class RouterCompiler {
     
     /**
      * Generate Phoenix pipeline definitions
+     * Uses dynamic app name instead of hardcoded "TodoAppWeb"
      */
-    private static function generatePipelineDefinitions(classType: ClassType): String {
+    private static function generatePipelineDefinitions(classType: ClassType, appName: String): String {
         var output = new StringBuf();
         
         // Default pipelines for Phoenix 1.7+
@@ -121,7 +126,7 @@ class RouterCompiler {
         output.add('    plug :accepts, ["html"]\n');
         output.add('    plug :fetch_session\n');
         output.add('    plug :fetch_live_flash\n');
-        output.add('    plug :put_root_layout, html: {TodoAppWeb.Layouts, :root}\n');
+        output.add('    plug :put_root_layout, html: {${appName}Web.Layouts, :root}\n');
         output.add('    plug :protect_from_forgery\n');
         output.add('    plug :put_secure_browser_headers\n');
         output.add('  end\n\n');
@@ -140,8 +145,9 @@ class RouterCompiler {
     
     /**
      * Generate route scopes and route definitions
+     * Uses dynamic app name instead of hardcoded ":todo_app"
      */
-    private static function generateRouteScopes(classType: ClassType, fields: Array<ClassField>, webModuleScope: String): String {
+    private static function generateRouteScopes(classType: ClassType, fields: Array<ClassField>, webModuleScope: String, appName: String): String {
         var output = new StringBuf();
         
         // Parse actual routes from @:route annotations
@@ -173,10 +179,11 @@ class RouterCompiler {
             output.add('  end\n\n');
         }
         
-        // Development routes with conditional compilation
+        // Development routes with conditional compilation - use dynamic app name
         if (devRoutes.length > 0) {
             output.add('  # Enable LiveDashboard in development\n');
-            output.add('  if Application.compile_env(:todo_app, :dev_routes) do\n');
+            var appAtom = reflaxe.elixir.helpers.NamingHelper.toSnakeCase(appName);
+            output.add('  if Application.compile_env(:${appAtom}, :dev_routes) do\n');
             output.add('    import Phoenix.LiveDashboard.Router\n\n');
             output.add('    scope "/dev" do\n');
             output.add('      pipe_through :browser\n\n');

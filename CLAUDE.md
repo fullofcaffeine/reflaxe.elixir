@@ -839,6 +839,11 @@ What happens:
 - **Array Mutability**: Methods like `reverse()` and `sort()` don't mutate in place (Elixir lists are immutable)
   - Workaround: Use assignment like `reversed = reversed.reverse()` instead of just `reversed.reverse()`
 
+## Recently Resolved Issues ✅
+- **Variable Substitution in Lambda Expressions**: Fixed undefined variable issues (e.g., `fn item -> (!v.completed)` now correctly generates `fn item -> (!item.completed)`)
+- **Hardcoded Application Dependencies**: Removed all hardcoded "TodoApp" references from compiler - now works with any Phoenix application
+- **Phoenix CoreComponents Integration**: Added type-safe @:component annotations and automatic component detection
+
 
 ## Documentation Completeness Checklist ✓
 **MANDATORY: After completing any feature or fix, verify documentation updates across all categories.**

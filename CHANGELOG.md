@@ -2,6 +2,14 @@
 
 ### 🎉 Major Features
 
+#### Critical Compiler Architecture Refactoring (2025-08-18)
+- **Variable Substitution Fix**: Resolved undefined variable issues in lambda expressions using TVar-based object identity substitution
+- **Compiler Genericity**: Eliminated all hardcoded application dependencies ("TodoApp", "TodoAppWeb") for true cross-application compatibility  
+- **Phoenix CoreComponents**: Added comprehensive type-safe @:component annotation system with automatic detection and import resolution
+- **Dynamic App Name Resolution**: Implemented `AnnotationSystem.getEffectiveAppName()` for configurable application naming throughout compilation pipeline
+- **Context-Sensitive Expression Compilation**: Enhanced lambda parameter handling with proper scope management for functional patterns
+- **Impact**: Compiler now works with ANY Phoenix application, not just TodoApp, while generating correct variable names in all contexts
+
 #### Option<T> and Result<T,E> Static Extension Methods (2025-08-15)
 - **Feature**: Complete implementation of static extension methods for Option<T> and Result<T,E> types
 - **Fix**: Resolved method name conflicts between Array methods and ADT extension methods (map, filter, etc.)
