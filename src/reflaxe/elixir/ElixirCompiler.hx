@@ -262,8 +262,8 @@ class ElixirCompiler extends DirectToStringCompiler {
         var annotationInfo = reflaxe.elixir.helpers.AnnotationSystem.detectAnnotations(classType);
         
         if (annotationInfo.primaryAnnotation == null) {
-            // No framework annotation - use default 1:1 mapping
-            return haxe.io.Path.join([outputDir, className + fileExtension]);
+            // No framework annotation - use default snake_case mapping with package-to-directory conversion
+            return haxe.io.Path.join([outputDir, convertPackageToDirectoryPath(classType) + fileExtension]);
         }
         
         // Generate framework-specific paths based on annotation
@@ -277,8 +277,8 @@ class ElixirCompiler extends DirectToStringCompiler {
             case ":schema":
                 generatePhoenixSchemaPath(className, outputDir);
             case _:
-                // Unknown annotation - use default 1:1 mapping
-                haxe.io.Path.join([outputDir, className + fileExtension]);
+                // Unknown annotation - use default snake_case mapping with package-to-directory conversion
+                haxe.io.Path.join([outputDir, convertPackageToDirectoryPath(classType) + fileExtension]);
         }
     }
     
@@ -391,6 +391,30 @@ class ElixirCompiler extends DirectToStringCompiler {
      */
     public function toElixirName(haxeName: String): String {
         return NamingHelper.toSnakeCase(haxeName);
+    }
+    
+    /**
+     * Convert package.ClassName to package/class_name.ex path
+     * Examples: 
+     * - haxe.CallStack → haxe/call_stack  
+     * - TestDocClass → test_doc_class
+     * - my.nested.Module → my/nested/module
+     */
+    private function convertPackageToDirectoryPath(classType: ClassType): String {
+        var packageParts = classType.pack;
+        var className = classType.name;
+        
+        // Convert class name to snake_case
+        var snakeClassName = NamingHelper.toSnakeCase(className);
+        
+        if (packageParts.length == 0) {
+            // No package - just return snake_case class name
+            return snakeClassName;
+        }
+        
+        // Convert package parts to snake_case and join with directories
+        var snakePackageParts = packageParts.map(part -> NamingHelper.toSnakeCase(part));
+        return haxe.io.Path.join(snakePackageParts.concat([snakeClassName]));
     }
     
     /**

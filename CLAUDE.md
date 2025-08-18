@@ -264,6 +264,21 @@ This is acceptable - helpers are simpler for our needs while following similar s
 
 **See**: [`documentation/ROUTER_DSL.md`](documentation/ROUTER_DSL.md) - Complete syntax guide and migration from manual functions
 
+## Elixir File Naming Conventions ✅ **PRODUCTION READY**
+
+**Complete implementation of proper Elixir file naming conventions**:
+- ✅ **Snake_case conversion** - PascalCase class names → snake_case filenames
+- ✅ **Package-to-directory structure** - `haxe.CallStack` → `haxe/call_stack.ex`
+- ✅ **Framework compatibility** - Phoenix-specific paths unchanged  
+- ✅ **All tests updated** - Snapshot tests accept new directory structure
+
+**Examples**:
+- `TestDocClass.hx` → `test_doc_class.ex` (simple classes)
+- `haxe.CallStack` → `haxe/call_stack.ex` (packaged classes)
+- `haxe.ds.EnumValueMap` → `haxe/ds/enum_value_map.ex` (nested packages)
+
+**See**: [`documentation/FILE_NAMING_CONVENTIONS.md`](documentation/FILE_NAMING_CONVENTIONS.md) - Complete implementation details and examples
+
 ## Phoenix Framework Integration ⚡ **NEW**
 
 **Comprehensive Phoenix Framework support with type-safe extern definitions**:
