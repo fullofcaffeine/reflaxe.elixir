@@ -84,6 +84,7 @@ This document outlines the development plans for Reflaxe.Elixir, organized by co
   - **Benefits**: Type safety for tooling, validation of complex OTP patterns, performance testing
   - **Challenges**: GenServer patterns, file system APIs, Mix.Task integration
   - **Foundation**: Complete self-hosting capabilities and compiler validation
+  - **Note**: Once we migrate the test runner to target the Elixir target, we might leverage the Mix parallel test runner instead of our existing custom solution to simplify architecture and reduce code maintenance
 
 ## 🚀 Future Development (v1.2 - Q2 2025)
 *Focus: Testing & Developer Experience*
