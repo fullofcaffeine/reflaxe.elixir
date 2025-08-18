@@ -135,7 +135,7 @@ For detailed technical architecture of our testing infrastructure:
 
 ### Test Categories
 - **Snapshot Tests** (28 tests): Validate compiler output against expected Elixir code
-- **Mix Integration Tests** (130 tests): Validate generated code actually runs
+- **Mix Integration Tests** (133 tests): Validate generated code actually runs
 - **Example Tests** (9 tests): Real-world usage patterns
 
 ## Creating New Tests
