@@ -759,48 +759,70 @@ class ClassCompiler {
      */
     public function usesHxxTemplates(classType: ClassType, funcFields: Array<ClassFuncData>): Bool {
         var className = classType.name;
+        #if debug_hxx
         trace('usesHxxTemplates: Checking ${className}');
+        #end
         
         // For now, check if this is a layout class by name pattern
         // Layout classes always need Phoenix.Component for HEEx templates
         var classNameLower = className.toLowerCase();
         if (classNameLower.indexOf("layout") >= 0) {
+            #if debug_hxx
             trace('usesHxxTemplates: ${className} detected as layout');
+            #end
             return true;
         }
         
         // Check all function bodies for HXX.hxx() calls
         if (funcFields != null) {
+            #if debug_hxx
             trace('usesHxxTemplates: ${className} checking ${funcFields.length} function fields');
+            #end
             for (i in 0...funcFields.length) {
                 var func = funcFields[i];
+                #if debug_hxx
                 trace('usesHxxTemplates: ${className} checking function ${func.field.name}');
+                #end
                 if (func.expr != null) {
                     var hasHxx = containsHxxCall(func.expr);
+                    #if debug_hxx
                     trace('usesHxxTemplates: ${className}.${func.field.name} HXX = ${hasHxx}');
+                    #end
                     if (hasHxx) {
+                        #if debug_hxx
                         trace('usesHxxTemplates: ${className} found HXX in ${func.field.name}');
+                        #end
                         return true;
                     }
                 } else {
+                    #if debug_hxx
                     trace('usesHxxTemplates: ${className}.${func.field.name} has null expr');
+                    #end
                 }
             }
         } else {
+            #if debug_hxx
             trace('usesHxxTemplates: ${className} has null funcFields');
+            #end
         }
         
         // Also check static fields that might be initialized with HXX
         var staticFields = classType.statics.get();
+        #if debug_hxx
         trace('usesHxxTemplates: ${className} checking ${staticFields.length} static fields');
+        #end
         for (field in staticFields) {
             if (field.expr() != null && containsHxxCall(field.expr())) {
+                #if debug_hxx
                 trace('usesHxxTemplates: ${className} found HXX in static field ${field.name}');
+                #end
                 return true;
             }
         }
         
+        #if debug_hxx
         trace('usesHxxTemplates: ${className} no HXX found');
+        #end
         return false;
     }
     

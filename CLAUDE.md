@@ -314,20 +314,6 @@ This is acceptable - helpers are simpler for our needs while following similar s
 
 **See**: [`documentation/ROUTER_DSL.md`](documentation/ROUTER_DSL.md) - Complete syntax guide and migration from manual functions
 
-## Elixir File Naming Conventions ✅ **PRODUCTION READY**
-
-**Complete implementation of proper Elixir file naming conventions**:
-- ✅ **Snake_case conversion** - PascalCase class names → snake_case filenames
-- ✅ **Package-to-directory structure** - `haxe.CallStack` → `haxe/call_stack.ex`
-- ✅ **Framework compatibility** - Phoenix-specific paths unchanged  
-- ✅ **All tests updated** - Snapshot tests accept new directory structure
-
-**Examples**:
-- `TestDocClass.hx` → `test_doc_class.ex` (simple classes)
-- `haxe.CallStack` → `haxe/call_stack.ex` (packaged classes)
-- `haxe.ds.EnumValueMap` → `haxe/ds/enum_value_map.ex` (nested packages)
-
-**See**: [`documentation/FILE_NAMING_CONVENTIONS.md`](documentation/FILE_NAMING_CONVENTIONS.md) - Complete implementation details and examples
 
 ## Phoenix Framework Integration ⚡ **NEW**
 
@@ -519,19 +505,30 @@ cd examples/todo-app && mix compile        # Integration test
 ### ⚠️ CRITICAL: Type Safety and String Avoidance
 **FUNDAMENTAL RULE: Avoid strings in compiler code unless absolutely necessary. When strings ARE necessary, they must be type-checked.**
 
-#### The File Naming Bug Lesson
-**Problem Discovered**: Multiple `toSnakeCase` implementations throughout the compiler led to:
-- `server_infrastructure_Endpoint.ex` instead of `lib/todo_app_web/endpoint.ex`
-- Inconsistent naming across generated files
-- Missing annotation support (`:endpoint` not in `SUPPORTED_ANNOTATIONS`)
-- Unpredictable behavior due to string manipulation
+#### Comprehensive File Naming System ⚡ **PRODUCTION READY**
+**Complete DRY naming architecture that follows idiomatic Elixir/Phoenix conventions**:
+- ✅ **Universal snake_case conversion** - ALL files get proper Elixir naming (TodoApp → todo_app)
+- ✅ **Package-to-directory mapping** - Haxe packages become snake_case directories
+- ✅ **Idiomatic Phoenix placement** - Framework files go exactly where Phoenix developers expect
+- ✅ **DRY implementation** - Single `getComprehensiveNamingRule()` function handles ALL cases
 
-#### Type-Safe Naming Rules ✅
-1. **Use ONE consistent naming utility**: `NamingHelper.toSnakeCase()` everywhere
-2. **Centralized annotation registry**: All annotations in `AnnotationSystem.SUPPORTED_ANNOTATIONS`
-3. **Type-checked annotation routing**: Each annotation must have explicit case in `routeCompilation`
-4. **Framework-aware file placement**: Use `setOutputFileName()` and `setOutputFileDir()` for Phoenix conventions
-5. **Test all naming paths**: Both annotated and non-annotated classes must generate proper file names
+**Idiomatic Elixir/Phoenix File Placement**:
+```
+TodoApp.hx @:application   → lib/todo_app/application.ex     # Phoenix convention
+TodoAppRouter.hx @:router   → lib/todo_app_web/router.ex      # Always router.ex
+UserLive.hx @:liveview      → lib/todo_app_web/live/user_live.ex
+Endpoint.hx @:endpoint      → lib/todo_app_web/endpoint.ex    # Always endpoint.ex
+Todo.hx @:schema            → lib/todo_app/schemas/todo.ex    # Domain models
+server.contexts.Users       → lib/server/contexts/users.ex    # Package preservation
+```
+
+**The Architecture**: 
+- **Single source of truth**: `getComprehensiveNamingRule()` in ElixirCompiler.hx
+- **No string duplication**: One naming system for ALL file generation
+- **Phoenix-aware**: Knows where Phoenix developers expect files
+- **Future-proof**: Easy to add new annotations without breaking existing ones
+
+**See**: [`documentation/FILE_NAMING_ARCHITECTURE.md`](documentation/FILE_NAMING_ARCHITECTURE.md) - Complete naming system documentation
 
 #### String Usage Guidelines
 **❌ NEVER**:

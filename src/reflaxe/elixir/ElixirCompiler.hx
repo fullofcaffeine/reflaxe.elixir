@@ -411,58 +411,92 @@ class ElixirCompiler extends DirectToStringCompiler {
      * 
      * This method detects framework annotations and uses setOutputFileDir() and setOutputFileName()
      * to place files in Phoenix-expected locations BEFORE compilation occurs.
+     * 
+     * COMPREHENSIVE: Now handles packages, @:native annotations, and universal snake_case conversion.
      */
     private function setFrameworkAwareOutputPath(classType: ClassType): Void {
-        var className = classType.name;
-        var annotationInfo = reflaxe.elixir.helpers.AnnotationSystem.detectAnnotations(classType);
-        
-        if (annotationInfo.primaryAnnotation == null) {
-            // No framework annotation - use default 1:1 mapping
-            return;
-        }
-        
-        // Calculate framework-aware file path components
-        var appName = extractAppName(className);
-        var fileName: String = "";
-        var dirPath: String = "";
-        
-        switch (annotationInfo.primaryAnnotation) {
-            case ":router":
-                // TodoAppRouter → router.ex in todo_app_web/
-                fileName = "router";
-                dirPath = appName + "_web";
-                
-            case ":liveview":
-                // UserLive → user_live.ex in app_web/live/
-                var liveViewName = NamingHelper.toSnakeCase(className.replace("Live", ""));
-                fileName = liveViewName + "_live";
-                dirPath = appName + "_web/live";
-                
-            case ":controller":
-                // UserController → user_controller.ex in app_web/controllers/
-                var controllerName = NamingHelper.toSnakeCase(className);
-                fileName = controllerName;
-                dirPath = appName + "_web/controllers";
-                
-            case ":schema":
-                // User → user.ex in app/schemas/
-                var schemaName = NamingHelper.toSnakeCase(className);
-                fileName = schemaName;
-                dirPath = appName + "/schemas";
-                
-            case ":endpoint":
-                // Endpoint → endpoint.ex in app_web/
-                fileName = "endpoint";
-                dirPath = appName + "_web";
-                
-            default:
-                // Other annotations use default behavior
-                return;
-        }
+        // Get the comprehensive naming rule for this class
+        var namingRule = getComprehensiveNamingRule(classType);
         
         // Set the file output overrides using Reflaxe's built-in system
-        setOutputFileName(fileName);
-        setOutputFileDir(dirPath);
+        setOutputFileName(namingRule.fileName);
+        setOutputFileDir(namingRule.dirPath);
+    }
+    
+    /**
+     * Comprehensive naming rule system - handles ALL naming scenarios.
+     * 
+     * This centralizes ALL naming logic including:
+     * - Package-to-directory conversion (my.package.Class → my/package/)
+     * - Framework annotations (@:router, @:liveview, etc.)
+     * - Universal snake_case conversion
+     * - @:native annotation handling
+     * 
+     * Every file gets proper Elixir naming conventions applied.
+     */
+    private function getComprehensiveNamingRule(classType: ClassType): {fileName: String, dirPath: String} {
+        var className = classType.name;
+        var packageParts = classType.pack;
+        var annotationInfo = reflaxe.elixir.helpers.AnnotationSystem.detectAnnotations(classType);
+        
+        // Start with the base snake_case file name
+        var baseFileName = NamingHelper.toSnakeCase(className);
+        
+        // Convert package parts to snake_case directories
+        var snakePackageParts = packageParts.map(part -> NamingHelper.toSnakeCase(part));
+        var packagePath = snakePackageParts.length > 0 ? snakePackageParts.join("/") : "";
+        
+        // Default rule: snake_case file name with package-based directory
+        var rule = {
+            fileName: baseFileName,
+            dirPath: packagePath
+        };
+        
+        // Apply framework annotation overrides if present
+        if (annotationInfo.primaryAnnotation != null) {
+            var appName = extractAppName(className);
+            
+            switch (annotationInfo.primaryAnnotation) {
+                case ":router":
+                    // TodoAppRouter → router.ex in todo_app_web/
+                    rule.fileName = "router";
+                    rule.dirPath = appName + "_web";
+                    
+                case ":liveview":
+                    // UserLive → user_live.ex in app_web/live/
+                    var liveViewName = baseFileName.replace("_live", "");
+                    rule.fileName = liveViewName + "_live";
+                    rule.dirPath = appName + "_web/live";
+                    
+                case ":controller":
+                    // UserController → user_controller.ex in app_web/controllers/
+                    rule.fileName = baseFileName;
+                    rule.dirPath = appName + "_web/controllers";
+                    
+                case ":schema":
+                    // User → user.ex in app/schemas/
+                    rule.fileName = baseFileName;
+                    rule.dirPath = appName + "/schemas";
+                    
+                case ":endpoint":
+                    // Endpoint → endpoint.ex in app_web/
+                    rule.fileName = "endpoint";
+                    rule.dirPath = appName + "_web";
+                    
+                case ":application":
+                    // TodoApp → todo_app.ex in lib/ (root)
+                    // Special case: for @:application, we want the file named after the class
+                    // not the @:native module name
+                    rule.fileName = baseFileName;
+                    rule.dirPath = ""; // Root lib/ directory
+                    
+                default:
+                    // Other annotations: keep package-based path with snake_case
+                    // Already set in default rule
+            }
+        }
+        
+        return rule;
     }
     
     /**
@@ -5060,6 +5094,11 @@ class ElixirCompiler extends DirectToStringCompiler {
                 case "strategy":
                     strategy = compileExpression(field.expr);
                     strategy = strategy.split('"').join(''); // Remove quotes
+                    
+                    // Remove leading colon if present (enum values already include it)
+                    if (strategy.startsWith(":")) {
+                        strategy = strategy.substring(1);
+                    }
                     
                 case "name":
                     name = compileExpression(field.expr);

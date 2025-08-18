@@ -1,7 +1,0 @@
-# Compilation configuration for enums test
--cp std
--cp src
--cp test/tests/enums
--lib reflaxe
---macro reflaxe.elixir.CompilerInit.Start()
-Main

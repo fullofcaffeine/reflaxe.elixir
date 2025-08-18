@@ -7,6 +7,7 @@ import haxe.macro.Expr;
 import haxe.macro.Type;
 import reflaxe.helpers.SyntaxHelper;
 import reflaxe.compiler.TargetCodeInjection;
+import reflaxe.elixir.helpers.NamingHelper;
 
 using StringTools;
 
@@ -311,7 +312,7 @@ class RouterCompiler {
     // Helper functions
     
     private static function compileControllerAction(field: ClassField): String {
-        var actionName = convertToSnakeCase(field.name);
+        var actionName = NamingHelper.toSnakeCase(field.name);
         var params = generateActionParameters(field);
         
         var output = new StringBuf();
@@ -388,7 +389,7 @@ class RouterCompiler {
     private static function extractResourceName(classType: ClassType): String {
         if (classType.meta.has(":resources")) {
             // Extract resource name from annotation or derive from class name
-            return convertToSnakeCase(classType.name.replace("Controller", ""));
+            return NamingHelper.toSnakeCase(classType.name.replace("Controller", ""));
         }
         return "resource";
     }
@@ -423,16 +424,13 @@ class RouterCompiler {
     }
     
     private static function generateRouteHelper(controllerName: String, actionName: String, route: RouteInfo): String {
-        var helperName = '${convertToSnakeCase(controllerName)}_${actionName}_path';
+        var helperName = '${NamingHelper.toSnakeCase(controllerName)}_${actionName}_path';
         var pathParams = extractPathParameters(route.path);
         var params = ["conn", ":${actionName}"].concat(pathParams).join(", ");
         
         return '# ${helperName}(${params})';
     }
     
-    private static function convertToSnakeCase(name: String): String {
-        return ~/([A-Z])/g.replace(name, "_$1").toLowerCase().substr(1);
-    }
     
     /**
      * Performance optimization: batch route compilation

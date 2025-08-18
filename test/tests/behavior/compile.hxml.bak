@@ -1,7 +1,0 @@
-# Compilation configuration for behavior test
--cp std
--cp src
--cp test/tests/behavior
--lib reflaxe
---macro reflaxe.elixir.CompilerInit.Start()
-Storage

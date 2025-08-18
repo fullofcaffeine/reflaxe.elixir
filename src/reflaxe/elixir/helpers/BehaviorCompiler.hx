@@ -7,6 +7,7 @@ import haxe.macro.Expr;
 import haxe.macro.Type;
 import reflaxe.helpers.SyntaxHelper;
 import reflaxe.compiler.TargetCodeInjection;
+import reflaxe.elixir.helpers.NamingHelper;
 
 using reflaxe.helpers.NullableMetaAccessHelper;
 using reflaxe.helpers.TypeHelper;
@@ -62,7 +63,7 @@ class BehaviorCompiler {
         // Add callback specifications
         for (field in fields) {
             if (field.kind.match(FMethod(_))) {
-                var functionName = convertToSnakeCase(field.name);
+                var functionName = NamingHelper.toSnakeCase(field.name);
                 var signature = generateCallbackSignature(field);
                 var arity = getCallbackArity(field);
                 
@@ -205,10 +206,6 @@ class BehaviorCompiler {
     }
     
     // Helper functions
-    
-    private static function convertToSnakeCase(name: String): String {
-        return ~/([A-Z])/g.replace(name, "_$1").toLowerCase().substr(1);
-    }
     
     private static function generateCallbackSignature(field: ClassField): String {
         // Generate Elixir @callback typespec from Haxe function type
