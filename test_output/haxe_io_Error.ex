@@ -10,10 +10,14 @@ defmodule Error do
   """
 
   @type t() ::
+    :blocked |
     :overflow |
     :outside_bounds |
-    {:custom, :term()} |
-    :blocked
+    {:custom, term()}
+
+  @doc "Creates blocked enum value"
+  @spec blocked() :: :blocked
+  def blocked(), do: :blocked
 
   @doc "Creates overflow enum value"
   @spec overflow() :: :overflow
@@ -27,18 +31,19 @@ defmodule Error do
   Creates custom enum value with parameters
   
   ## Parameters
-    - `arg0`: :term()
+    - `arg0`: term()
   """
-  @spec custom(:term()) :: {:custom, :term()}
+  @spec custom(term()) :: {:custom, term()}
   def custom(arg0) do
     {:custom, arg0}
   end
 
-  @doc "Creates blocked enum value"
-  @spec blocked() :: :blocked
-  def blocked(), do: :blocked
-
   # Predicate functions for pattern matching
+  @doc "Returns true if value is blocked variant"
+  @spec is_blocked(t()) :: boolean()
+  def is_blocked(:blocked), do: true
+  def is_blocked(_), do: false
+
   @doc "Returns true if value is overflow variant"
   @spec is_overflow(t()) :: boolean()
   def is_overflow(:overflow), do: true
@@ -54,13 +59,8 @@ defmodule Error do
   def is_custom({:custom, _}), do: true
   def is_custom(_), do: false
 
-  @doc "Returns true if value is blocked variant"
-  @spec is_blocked(t()) :: boolean()
-  def is_blocked(:blocked), do: true
-  def is_blocked(_), do: false
-
   @doc "Extracts value from custom variant, returns {:ok, value} or :error"
-  @spec get_custom_value(t()) :: {:ok, :term()} | :error
+  @spec get_custom_value(t()) :: {:ok, term()} | :error
   def get_custom_value({:custom, value}), do: {:ok, value}
   def get_custom_value(_), do: :error
 
