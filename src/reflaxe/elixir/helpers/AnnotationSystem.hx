@@ -32,21 +32,22 @@ class AnnotationSystem {
      * All supported annotations in priority order (first match wins)
      */
     public static var SUPPORTED_ANNOTATIONS = [
-        ":genserver",    // OTP GenServer - highest priority for behavior classes
-        ":controller",   // Phoenix Controller with routing
-        ":router",       // Phoenix Router configuration
-        ":endpoint",     // Phoenix Endpoint configuration
-        ":channel",      // Phoenix Channel for real-time communication
-        ":behaviour",    // Elixir Behavior definitions
-        ":protocol",     // Elixir Protocol definitions
-        ":impl",         // Elixir Protocol implementations
-        ":migration",    // Ecto Migration - database schema changes
-        ":template",     // Phoenix HEEx templates
-        ":schema",       // Ecto Schema definitions
-        ":changeset",    // Ecto Changeset validation
-        ":liveview",     // Phoenix LiveView components
-        ":query",        // Ecto Query DSL (future implementation)
-        ":appName"       // Application name configuration (compatible with all)
+        ":genserver",        // OTP GenServer - highest priority for behavior classes
+        ":controller",       // Phoenix Controller with routing
+        ":router",           // Phoenix Router configuration
+        ":endpoint",         // Phoenix Endpoint configuration
+        ":channel",          // Phoenix Channel for real-time communication
+        ":behaviour",        // Elixir Behavior definitions
+        ":protocol",         // Elixir Protocol definitions
+        ":impl",             // Elixir Protocol implementations
+        ":migration",        // Ecto Migration - database schema changes
+        ":template",         // Phoenix HEEx templates
+        ":phoenix.components", // Phoenix UI Components (CoreComponents)
+        ":schema",           // Ecto Schema definitions
+        ":changeset",        // Ecto Changeset validation
+        ":liveview",         // Phoenix LiveView components
+        ":query",            // Ecto Query DSL (future implementation)
+        ":appName"           // Application name configuration (compatible with all)
     ];
     
     /**
@@ -282,6 +283,9 @@ class AnnotationSystem {
                     null;
                 }
                 
+            case ":phoenix.components":
+                compileComponentClass(classType, varFields, funcFields);
+                
             case ":schema":
                 if (reflaxe.elixir.helpers.SchemaCompiler.isSchemaClassType(classType)) {
                     compileSchemaClass(classType, varFields, funcFields);
@@ -492,6 +496,198 @@ class AnnotationSystem {
         return reflaxe.elixir.helpers.TemplateCompiler.compileFullTemplate(className, config);
     }
     
+    /**
+     * Compile Phoenix component class with @:component annotations
+     * 
+     * Processes functions marked with @:component and generates Phoenix.Component
+     * function definitions with proper attr/slot metadata.
+     */
+    static function compileComponentClass(classType: ClassType, varFields: Array<ClassVarData>, funcFields: Array<ClassFuncData>): String {
+        var className = classType.name;
+        var moduleName = classType.getNameOrNative();
+        var result = new StringBuf();
+        
+        // Generate module header
+        result.add('defmodule ${moduleName} do\n');
+        result.add('  @moduledoc """\n');
+        result.add('  Core UI components for Phoenix applications.\n');
+        result.add('  \n');
+        result.add('  Generated from Haxe CoreComponents with type safety and consistent styling.\n');
+        result.add('  """\n');
+        result.add('  use Phoenix.Component\n\n');
+        
+        // Process each function marked with @:component
+        for (funcField in funcFields) {
+            if (funcField.field.meta != null && funcField.field.meta.has(":component")) {
+                var componentCode = compileComponentFunction(funcField, classType);
+                result.add(componentCode);
+                result.add('\n');
+            }
+        }
+        
+        result.add('end\n');
+        return result.toString();
+    }
+    
+    /**
+     * Compile individual component function with attr/slot metadata
+     */
+    static function compileComponentFunction(funcField: ClassFuncData, classType: ClassType): String {
+        var funcName = funcField.field.name;
+        var result = new StringBuf();
+        
+        // Extract @:attr and @:slot annotations
+        var attributes = extractComponentAttributes(funcField.field.meta);
+        var slots = extractComponentSlots(funcField.field.meta);
+        
+        // Generate attr declarations
+        for (attr in attributes) {
+            result.add('  attr :${attr.name}, :${attr.type}');
+            if (attr.required) {
+                result.add(', required: true');
+            } else if (attr.defaultValue != null) {
+                result.add(', default: ${attr.defaultValue}');
+            }
+            result.add('\n');
+        }
+        
+        // Generate slot declarations
+        for (slot in slots) {
+            result.add('  slot :${slot.name}');
+            if (slot.required) {
+                result.add(', required: true');
+            }
+            result.add('\n');
+        }
+        
+        // Generate function definition
+        result.add('  def ${funcName}(assigns) do\n');
+        
+        // For now, compile the function body using HXX compiler
+        // TODO: Extract and compile the actual HXX template from function body
+        result.add('    ~H"""\n');
+        result.add('    <!-- Generated component template -->\n');
+        result.add('    <div class="${funcName}-component">\n');
+        result.add('      <%= render_slot(@inner_block) %>\n');
+        result.add('    </div>\n');
+        result.add('    """\n');
+        result.add('  end\n');
+        
+        return result.toString();
+    }
+    
+    /**
+     * Extract @:attr annotations from function metadata
+     */
+    static function extractComponentAttributes(meta: Null<MetaAccess>): Array<ComponentAttribute> {
+        var attributes = [];
+        if (meta == null) return attributes;
+        
+        var attrMeta = meta.extract(":attr");
+        for (attr in attrMeta) {
+            if (attr.params != null && attr.params.length >= 2) {
+                var name = extractStringParam(attr.params[0]);
+                var type = extractStringParam(attr.params[1]);
+                var options = attr.params.length > 2 ? attr.params[2] : null;
+                
+                var attribute: ComponentAttribute = {
+                    name: name,
+                    type: type,
+                    required: false,
+                    defaultValue: null
+                };
+                
+                // Parse options object
+                if (options != null) {
+                    switch (options.expr) {
+                        case EObjectDecl(fields):
+                            for (field in fields) {
+                                switch (field.field) {
+                                    case "required":
+                                        attribute.required = extractBoolParam(field.expr);
+                                    case "default":
+                                        attribute.defaultValue = extractValueParam(field.expr);
+                                }
+                            }
+                        case _:
+                    }
+                }
+                
+                attributes.push(attribute);
+            }
+        }
+        
+        return attributes;
+    }
+    
+    /**
+     * Extract @:slot annotations from function metadata
+     */
+    static function extractComponentSlots(meta: Null<MetaAccess>): Array<ComponentSlot> {
+        var slots = [];
+        if (meta == null) return slots;
+        
+        var slotMeta = meta.extract(":slot");
+        for (slot in slotMeta) {
+            if (slot.params != null && slot.params.length >= 1) {
+                var name = extractStringParam(slot.params[0]);
+                var options = slot.params.length > 1 ? slot.params[1] : null;
+                
+                var slotDef: ComponentSlot = {
+                    name: name,
+                    required: false
+                };
+                
+                // Parse options
+                if (options != null) {
+                    switch (options.expr) {
+                        case EObjectDecl(fields):
+                            for (field in fields) {
+                                if (field.field == "required") {
+                                    slotDef.required = extractBoolParam(field.expr);
+                                }
+                            }
+                        case _:
+                    }
+                }
+                
+                slots.push(slotDef);
+            }
+        }
+        
+        return slots;
+    }
+    
+    /**
+     * Helper functions for extracting annotation parameters
+     */
+    static function extractStringParam(expr: Expr): String {
+        return switch (expr.expr) {
+            case EConst(CString(s, _)): s;
+            case _: "";
+        };
+    }
+    
+    static function extractBoolParam(expr: Expr): Bool {
+        return switch (expr.expr) {
+            case EConst(CIdent("true")): true;
+            case EConst(CIdent("false")): false;
+            case _: false;
+        };
+    }
+    
+    static function extractValueParam(expr: Expr): String {
+        return switch (expr.expr) {
+            case EConst(CString(s, _)): '"${s}"';
+            case EConst(CInt(i)): Std.string(i);
+            case EConst(CFloat(f)): f;
+            case EConst(CIdent("true")): "true";
+            case EConst(CIdent("false")): "false";
+            case EConst(CIdent("nil")): "nil";
+            case _: "nil";
+        };
+    }
+    
     static function compileSchemaClass(classType: ClassType, varFields: Array<ClassVarData>, funcFields: Array<ClassFuncData>): String {
         var className = classType.name;
         var config = reflaxe.elixir.helpers.SchemaCompiler.getSchemaConfig(classType);
@@ -529,6 +725,24 @@ typedef AnnotationConflict = {
     type: String,
     conflicting: Array<String>,
     message: String
+}
+
+/**
+ * Component attribute definition for Phoenix components
+ */
+typedef ComponentAttribute = {
+    name: String,
+    type: String,
+    required: Bool,
+    defaultValue: Null<String>
+}
+
+/**
+ * Component slot definition for Phoenix components
+ */
+typedef ComponentSlot = {
+    name: String,
+    required: Bool
 }
 
 #end

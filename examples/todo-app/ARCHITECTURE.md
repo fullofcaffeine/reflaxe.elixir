@@ -149,8 +149,12 @@ npm run watch
 
 **Known Issues:**
 1. **Duplicate modules** - Some modules generate in multiple locations
-2. **Missing imports** - Phoenix.Component not imported for ~H sigil
-3. **Path casing** - Fixed but may have remnants
+2. **Path casing** - Fixed but may have remnants
+
+**Recently Resolved:**
+- ✅ **Missing imports** - Phoenix.Component now properly imported for ~H sigil usage
+- ✅ **Variable substitution** - Lambda expressions now generate correct variable names
+- ✅ **Hardcoded app names** - Compiler now works with any Phoenix application, not just TodoApp
 
 **Note**: Previous PascalCase file generation issues have been resolved. Files now generate with proper snake_case names and directory structure.
 

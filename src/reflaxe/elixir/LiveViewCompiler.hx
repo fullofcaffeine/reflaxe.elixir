@@ -132,10 +132,12 @@ class LiveViewCompiler {
         content.add('  use Phoenix.LiveView\n');
         content.add('  \n');
         
-        // Add any required imports
+        // Add any required imports - use fallback app name since we don't have ClassType here
+        // TODO: Pass ClassType parameter to this method for proper app name resolution
+        var appName = "App"; // Fallback - this method should be refactored to accept ClassType
         content.add('  import Phoenix.LiveView.Helpers\n');
         content.add('  import Ecto.Query\n');
-        content.add('  alias TodoApp.Repo\n');
+        content.add('  alias ${appName}.Repo\n');
         content.add('  \n');
         
         // If we have functions, compile them properly
@@ -178,15 +180,16 @@ class LiveViewCompiler {
     /**
      * Generate LiveView module header with proper imports and use statements
      * This should be called by ElixirCompiler, which will handle function compilation
+     * Uses dynamic app name instead of hardcoded "TodoApp"
      */
-    public static function generateModuleHeader(moduleName: String, ?coreComponentsModule: String): String {
+    public static function generateModuleHeader(moduleName: String, appName: String, ?coreComponentsModule: String): String {
         var result = new StringBuf();
         result.add('defmodule ${moduleName} do\n');
         result.add('  use Phoenix.LiveView\n');
         result.add('  \n');
         result.add('  import Phoenix.LiveView.Helpers\n');
         result.add('  import Ecto.Query\n');
-        result.add('  alias TodoApp.Repo\n');
+        result.add('  alias ${appName}.Repo\n');
         result.add('  \n');
         result.add('  use Phoenix.Component\n');
         

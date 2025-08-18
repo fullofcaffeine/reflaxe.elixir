@@ -102,6 +102,43 @@ mix compile.haxe --watch
 
 
 
+## ⚠️ CRITICAL: Compiler Development Rule
+
+**The todo-app is a DEVELOPMENT GUIDE for the compiler, NOT a hardcoded dependency.**
+
+### Fundamental Principle
+- ✅ **todo-app drives compiler features** - When todo-app needs something, we enhance the compiler
+- ✅ **Compiler remains generic** - Zero knowledge of "TodoApp", "TodoAppWeb", or todo-app specifics
+- ❌ **NEVER hardcode app-specific strings** - No "TodoApp", "TodoAppWeb", "todo_app" in compiler source
+- ❌ **NEVER make compiler todo-app dependent** - Must work for ANY Phoenix application
+
+### The Right Approach
+```haxe
+// ❌ WRONG - Hardcoded in compiler
+var moduleHeader = LiveViewCompiler.generateModuleHeader(moduleName, "TodoAppWeb.CoreComponents");
+
+// ✅ RIGHT - Dynamic resolution
+var appName = AnnotationSystem.getEffectiveAppName(classType);
+var coreComponentsModule = appName + "Web.CoreComponents";
+var moduleHeader = LiveViewCompiler.generateModuleHeader(moduleName, coreComponentsModule);
+```
+
+### Development Workflow
+1. **todo-app needs feature X** → Implement generic feature X in compiler
+2. **todo-app breaks with change** → Fix compiler's generic implementation, not todo-app-specific patches
+3. **New Phoenix app fails** → Compiler bug, not user error - fix the compiler
+
+### Validation Rule
+**Every compiler change MUST be tested with a different app name to ensure it's generic.**
+
+Example test:
+```haxe
+@:appName("MyCustomApp")  // Not TodoApp!
+class TestRouter { ... }
+```
+
+If this fails, the compiler has hardcoded dependencies that must be removed.
+
 ## 🔴 LiveView Development
 
 ### LiveView Component Pattern
