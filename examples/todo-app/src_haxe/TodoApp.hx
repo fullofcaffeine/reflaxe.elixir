@@ -1,7 +1,8 @@
 package;
 
 import phoenix.Phoenix;
-import elixir.Supervisor;
+import elixir.otp.Supervisor.SupervisorExtern;
+import elixir.otp.Supervisor.SupervisorStrategy;
 
 /**
  * Main TodoApp application module
@@ -30,32 +31,32 @@ class TodoApp {
             // Database repository
             {
                 id: '${appName}.Repo',
-                start: {module: '${appName}.Repo', "function": "start_link", args: []}
+                start: {module: '${appName}.Repo', func: "start_link", args: []}
             },
             // PubSub system
             {
                 id: "Phoenix.PubSub",
                 start: {
                     module: "Phoenix.PubSub", 
-                    "function": "start_link",
+                    func: "start_link",
                     args: [{name: '${appName}.PubSub'}]
                 }
             },
             // Telemetry supervisor
             {
                 id: '${appName}Web.Telemetry',
-                start: {module: '${appName}Web.Telemetry', "function": "start_link", args: []}
+                start: {module: '${appName}Web.Telemetry', func: "start_link", args: []}
             },
             // Web endpoint
             {
                 id: '${appName}Web.Endpoint', 
-                start: {module: '${appName}Web.Endpoint', "function": "start_link", args: []}
+                start: {module: '${appName}Web.Endpoint', func: "start_link", args: []}
             }
         ];
 
         // Start supervisor with children
-        var opts = {strategy: "one_for_one", name: '${appName}.Supervisor'};
-        return Supervisor.startLink(children, opts);
+        var opts = {strategy: OneForOne, name: '${appName}.Supervisor'};
+        return SupervisorExtern.start_link(children, opts);
     }
 
     /**
