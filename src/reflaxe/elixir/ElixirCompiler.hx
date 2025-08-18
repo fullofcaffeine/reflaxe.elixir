@@ -276,6 +276,9 @@ class ElixirCompiler extends DirectToStringCompiler {
                 generatePhoenixControllerPath(className, outputDir);
             case ":schema":
                 generatePhoenixSchemaPath(className, outputDir);
+            case ":endpoint":
+                // Use default snake_case mapping for @:endpoint - no special Phoenix path needed
+                haxe.io.Path.join([outputDir, convertPackageToDirectoryPath(classType) + fileExtension]);
             case _:
                 // Unknown annotation - use default snake_case mapping with package-to-directory conversion
                 haxe.io.Path.join([outputDir, convertPackageToDirectoryPath(classType) + fileExtension]);
