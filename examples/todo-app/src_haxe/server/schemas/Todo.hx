@@ -1,7 +1,6 @@
 package server.schemas;
 
 import phoenix.Ecto;
-import elixir.Date as ElixirDate;
 
 /**
  * Todo schema for managing tasks
@@ -14,7 +13,7 @@ class Todo {
 	@:field public var description: String;
 	@:field public var completed: Bool = false;
 	@:field public var priority: String = "medium"; // low, medium, high
-	@:field public var due_date: Null<ElixirDate>; // Type-safe nullable Elixir Date
+	@:field public var due_date: Null<Date>; // Type-safe nullable Date
 	@:field public var tags: Array<String> = [];
 	@:field public var user_id: Int;
 	

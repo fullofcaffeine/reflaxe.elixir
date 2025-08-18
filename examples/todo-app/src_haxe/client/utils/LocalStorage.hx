@@ -1,14 +1,20 @@
 package client.utils;
 
 import js.Browser;
+import js.html.Storage;
 
 /**
- * Type-safe localStorage utility
- * Provides convenient methods for storing and retrieving data
+ * Type-safe localStorage utility wrapper around js.Browser.getLocalStorage()
+ * 
+ * Provides convenient methods for storing and retrieving data with
+ * proper error handling and type conversions.
+ * 
+ * Uses Haxe's built-in js.html.Storage API for maximum compatibility
+ * and type safety.
  */
 class LocalStorage {
     
-    private static var storage = Browser.getLocalStorage();
+    private static var storage: Null<Storage> = Browser.getLocalStorage();
     
     /**
      * Initialize localStorage utilities
@@ -135,6 +141,14 @@ class LocalStorage {
         } catch (e: Dynamic) {
             trace('Failed to remove item from localStorage: $e');
         }
+    }
+    
+    /**
+     * Remove a value from localStorage (alias for remove)
+     * This method provides compatibility with common localStorage usage patterns
+     */
+    public static function removeItem(key: String): Void {
+        remove(key);
     }
     
     /**
