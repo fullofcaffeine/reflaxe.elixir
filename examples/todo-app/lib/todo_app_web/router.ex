@@ -1,5 +1,5 @@
-defmodule TodoAppWeb.Router do
-  use TodoAppWeb, :router
+defmodule TodoAppWeb.RouterTypeSafe do
+  use TodoAppWebTypeSafe, :router
 
   pipeline :browser do
     plug :accepts, ["html"]
@@ -14,13 +14,15 @@ defmodule TodoAppWeb.Router do
     plug :accepts, ["json"]
   end
 
-  scope "/", TodoAppWeb do
+  scope "/", TodoAppWebTypeSafe do
     pipe_through :browser
 
     live "/", TodoLive, :root
     live "/todos", TodoLive, :todosIndex
     live "/todos/:id", TodoLive, :todosShow
     live "/todos/:id/edit", TodoLive, :todosEdit
+    get "/api/users", controllers.UserController, :apiUsers
+    get "/test", NonExistentController, :testInvalid
   end
 
   # Enable LiveDashboard in development
@@ -30,7 +32,7 @@ defmodule TodoAppWeb.Router do
     scope "/dev" do
       pipe_through :browser
 
-      live_dashboard "/dev/dashboard", metrics: TodoAppWeb.Telemetry
+      live_dashboard "/dev/dashboard"
     end
   end
 end

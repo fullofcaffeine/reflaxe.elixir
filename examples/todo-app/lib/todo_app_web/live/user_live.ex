@@ -6,7 +6,7 @@ defmodule UserLive do
   alias TodoApp.Repo
   
   use Phoenix.Component
-  import TodoAppWeb.CoreComponents
+  # Note: CoreComponents not imported - using default Phoenix components
   
   use Phoenix.Component
 
