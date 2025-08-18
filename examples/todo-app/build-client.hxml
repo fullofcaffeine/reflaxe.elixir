@@ -9,6 +9,9 @@
 # Include Reflaxe.js async/await library
 -lib reflaxe
 
+# Enable AsyncJSGenerator for native async/await support
+--macro reflaxe.js.AsyncJSGenerator.use()
+
 # JavaScript target with modern settings
 -js assets/js/app.js
 -D js-es6                     # ES6 module output for tree-shaking
