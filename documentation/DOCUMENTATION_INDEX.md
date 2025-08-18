@@ -20,6 +20,7 @@ This index provides a comprehensive guide to all documentation in the Reflaxe.El
 | Work with Phoenix | Phoenix Integration | [`phoenix/HAXE_FOR_PHOENIX.md`](phoenix/HAXE_FOR_PHOENIX.md) |
 | Find current development plan | Active PRD | [`plans/ACTIVE_PRD.md`](plans/ACTIVE_PRD.md) |
 | Reference existing code | Reference implementations | `/Users/fullofcaffeine/workspace/code/haxe.elixir.reference/` |
+| Plan Reflaxe enhancements | Future Modifications | [`../vendor/reflaxe/FUTURE_MODIFICATIONS.md`](../vendor/reflaxe/FUTURE_MODIFICATIONS.md) |
 
 ## 📂 Documentation Structure
 
@@ -53,6 +54,9 @@ This index provides a comprehensive guide to all documentation in the Reflaxe.El
 - **[`STANDARD_LIBRARY_COMPILATION_CONTEXT.md`](STANDARD_LIBRARY_COMPILATION_CONTEXT.md)** - Critical learnings about `untyped __elixir__()` in std/
 - **[`CRITICAL_ARCHITECTURE_LESSONS.md`](CRITICAL_ARCHITECTURE_LESSONS.md)** - **MANDATORY**: Never repeat architectural mistakes
 - **[`ELIXIR_INJECTION_GUIDE.md`](ELIXIR_INJECTION_GUIDE.md)** - Complete `__elixir__()` usage guide with cross-target comparison
+- **[`ELIXIR_SYNTAX_IMPLEMENTATION.md`](ELIXIR_SYNTAX_IMPLEMENTATION.md)** - **NEW**: Complete elixir.Syntax implementation analysis and success documentation
+- **[`EXTERN_CLASS_SYNTAX_INJECTION.md`](EXTERN_CLASS_SYNTAX_INJECTION.md)** - Extern class vs regular class approaches for syntax injection
+- **[`LIX_VENDORED_DEPENDENCIES.md`](LIX_VENDORED_DEPENDENCIES.md)** - **NEW**: Lix vendored dependency management patterns and best practices
 
 ### 3. Reference Documentation (`/documentation/reference/`)
 **Purpose**: API references and feature specifications
