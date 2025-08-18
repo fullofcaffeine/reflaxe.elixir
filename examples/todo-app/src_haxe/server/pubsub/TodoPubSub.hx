@@ -166,27 +166,27 @@ class TodoPubSub {
                     todo: todo
                 };
             case TodoDeleted(id):
-                {
+                cast {
                     type: "todo_deleted",
-                    id: id
+                    todo_id: id
                 };
             case BulkUpdate(action):
-                {
+                cast {
                     type: "bulk_update",
                     action: bulkActionToString(action)
                 };
             case UserOnline(user_id):
-                {
+                cast {
                     type: "user_online",
                     user_id: user_id
                 };
             case UserOffline(user_id):
-                {
+                cast {
                     type: "user_offline",
                     user_id: user_id
                 };
             case SystemAlert(message, level):
-                {
+                cast {
                     type: "system_alert",
                     message: message,
                     level: alertLevelToString(level)
@@ -212,7 +212,7 @@ class TodoPubSub {
             case "todo_updated":
                 if (msg.todo != null) Some(TodoUpdated(msg.todo)) else None;
             case "todo_deleted":
-                if (msg.id != null) Some(TodoDeleted(msg.id)) else None;
+                if (msg.todo_id != null) Some(TodoDeleted(msg.todo_id)) else None;
             case "bulk_update":
                 if (msg.action != null) {
                     var bulkAction = parseBulkAction(msg.action);

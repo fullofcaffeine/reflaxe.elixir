@@ -18,9 +18,9 @@ defmodule TodoAppWeb.Router do
     pipe_through :browser
 
     live "/", TodoAppWeb.TodoLive, :root
-    live "/todos", TodoLive, :todosIndex
-    live "/todos/:id", TodoLive, :todosShow
-    live "/todos/:id/edit", TodoLive, :todosEdit
+    live "/todos", TodoAppWeb.TodoLive, :todosIndex
+    live "/todos/:id", TodoAppWeb.TodoLive, :todosShow
+    live "/todos/:id/edit", TodoAppWeb.TodoLive, :todosEdit
     get "/api/users", UserController, :apiUsers
     get "/test", NonExistentController, :testInvalid
   end
