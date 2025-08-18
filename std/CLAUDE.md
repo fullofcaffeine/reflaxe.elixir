@@ -303,6 +303,61 @@ class StandardLibraryModule {
 }
 ```
 
+### ⚠️ CRITICAL RULE: Type Documentation Standards (Complexity-Scaled)
+
+**Documentation depth MUST match type complexity:**
+
+#### **Simple Types** (minimal docs needed):
+- Basic typedefs: Brief description + field meanings
+- Simple enums: One-line descriptions per variant
+- Wrapper abstracts: Purpose + basic usage
+
+#### **Complex/Generic Types** (comprehensive docs required):
+- Generic types (`Socket<T>`, `Result<T,E>`): Full documentation
+- Framework integration types: Usage patterns + type safety benefits
+- Multi-variant enums with data: Complete examples
+
+#### **Required Elements for Complex Types**:
+1. **Generic Parameters**: What `<T>` represents and type constraints
+2. **Usage Patterns**: Complete code examples showing generic usage  
+3. **Type Safety Benefits**: What compile-time guarantees the generics provide
+4. **Framework Integration**: How generics compile to target framework patterns
+
+**Example Required Documentation Pattern**:
+```haxe
+/**
+ * Type description with full type safety
+ * 
+ * @param T The specific type this generic represents (e.g., "socket assigns structure")
+ * 
+ * ## Generic Usage Pattern
+ * 
+ * Define your specific type:
+ * ```haxe
+ * typedef MySpecificType = { var field: String; }
+ * ```
+ * 
+ * Use with generics:
+ * ```haxe
+ * function myFunction(input: GenericType<MySpecificType>): Result<MySpecificType> {
+ *     // Implementation with full type safety
+ * }
+ * ```
+ * 
+ * ## Type Safety Benefits
+ * 
+ * - **Benefit 1**: Specific compile-time guarantee
+ * - **Benefit 2**: IntelliSense and refactoring support
+ * - **Benefit 3**: Framework compatibility details
+ */
+enum GenericType<T> {
+    // Variants with detailed documentation
+}
+```
+
+**Why This Matters**: Generic types are complex. Without comprehensive documentation, developers cannot understand how to use them correctly, defeating the purpose of type safety.
+```
+
 ### Testing Requirements
 - **Test Coverage**: All public APIs must have test coverage
 - **Type Validation**: Test type safety guarantees  
