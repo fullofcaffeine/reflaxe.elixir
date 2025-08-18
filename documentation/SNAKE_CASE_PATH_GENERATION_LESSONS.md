@@ -1,5 +1,7 @@
 # Snake_case Path Generation Lessons Learned
 
+> **Historical Note**: This document describes an earlier naming bug that has been comprehensively fixed by the DRY file naming architecture implemented in 2025-08-18. For the current naming system, see [`FILE_NAMING_ARCHITECTURE.md`](FILE_NAMING_ARCHITECTURE.md). This document is preserved for historical context and learning purposes.
+
 ## Problem Statement
 The RouterCompiler was generating Phoenix router files in `TodoApp_web/router.ex` instead of the correct `todo_app_web/router.ex`, causing Phoenix module loading issues.
 
