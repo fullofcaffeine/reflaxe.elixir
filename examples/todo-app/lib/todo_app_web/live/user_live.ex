@@ -61,7 +61,7 @@ defmodule TodoAppWeb.UserLive do
   def handle_save_user(params, socket) do
     user_params = params.user
     temp_struct = nil
-    if (__MODULE__.selected_user == nil), do: temp_struct = Users.create_user(user_params), else: temp_struct = Users.update_user(__MODULE__.selected_user, user_params)
+    if (struct.selected_user == nil), do: temp_struct = Users.create_user(user_params), else: temp_struct = Users.update_user(struct.selected_user, user_params)
     temp_result = nil
     _g = temp_struct.status
     case (_g) do
