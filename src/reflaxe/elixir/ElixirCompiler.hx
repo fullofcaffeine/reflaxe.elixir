@@ -107,6 +107,10 @@ class ElixirCompiler extends DirectToStringCompiler {
     
     // Parameter mapping system for abstract type implementation methods
     private var currentFunctionParameterMap: Map<String, String> = new Map();
+    
+    // Track inline function context across multiple expressions in a block
+    // Maps inline variable names (like "_this") to their assigned values (like "struct.buf")
+    private var inlineContextMap: Map<String, String> = new Map<String, String>();
     private var isCompilingAbstractMethod: Bool = false;
     private var isCompilingCaseArm: Bool = false;
     
@@ -1263,6 +1267,11 @@ class ElixirCompiler extends DirectToStringCompiler {
                 // Get the original variable name (before Haxe's renaming for shadowing avoidance)
                 var originalName = getOriginalVarName(v);
                 
+                // Special handling for inline context variables
+                if (originalName == "_this" && hasInlineContext("_this")) {
+                    return "_this";
+                }
+                
                 // Use parameter mapping if available (for both abstract methods and regular functions with standardized arg names)
                 if (currentFunctionParameterMap.exists(originalName)) {
                     currentFunctionParameterMap.get(originalName);
@@ -1333,6 +1342,24 @@ class ElixirCompiler extends DirectToStringCompiler {
                         }
                         
                     case OpAssign:
+                        // FIRST: Check if this is an inline context assignment like _this = struct.buf
+                        trace('[DEBUG] OpAssign: Processing assignment');
+                        switch (e1.expr) {
+                            case TLocal(v):
+                                var varName = getOriginalVarName(v);
+                                trace('[DEBUG] OpAssign: TLocal with varName = ${varName}');
+                                if (varName == "_this") {
+                                    // This is _this = something - track that _this is now active for inline context
+                                    var value = compileExpression(e2);
+                                    // Mark _this as active (the value doesn't matter, just its existence)
+                                    trace('[DEBUG] OpAssign: Setting inline context for _this to active');
+                                    setInlineContext("_this", "active");
+                                    return '_this = ${value}';
+                                }
+                            case _:
+                                trace('[DEBUG] OpAssign: e1 is not TLocal, it is ${e1.expr}');
+                        }
+                        
                         // Handle struct field assignment with Elixir's immutable update syntax
                         switch (e1.expr) {
                             case TField(structExpr, fa):
@@ -1365,10 +1392,8 @@ class ElixirCompiler extends DirectToStringCompiler {
                                         }
                                         
                                     case TConst(TThis):
-                                        // FIXED: Handle this.field assignments properly
-                                        // This should generate struct field updates on the mapped parameter
-                                        var mappedName = currentFunctionParameterMap.get("this");
-                                        if (mappedName == null) mappedName = "struct";
+                                        // Handle this.field assignments properly with enhanced inline context support
+                                        var mappedName = resolveThisReference();
                                         
                                         var fieldName = switch (fa) {
                                             case FInstance(_, _, cf) | FStatic(_, cf) | FAnon(cf) | FClosure(_, cf):
@@ -1476,10 +1501,17 @@ class ElixirCompiler extends DirectToStringCompiler {
                 }
                 
             case TField(e, fa):
-                // FIXED: Handle nested field access properly by ensuring the complete chain is built
-                // For nested access like this.buf.b, we need to compile the base expression recursively
-                // while preserving the complete field path
-                var baseExpr = compileExpression(e);
+                // Handle nested field access with inline context support
+                trace('[DEBUG] TField: Processing field access');
+                var baseExpr = switch (e.expr) {
+                    case TConst(TThis):
+                        // Use enhanced inline context resolution
+                        trace('[DEBUG] TField: Base is TConst(TThis), calling resolveThisReference()');
+                        resolveThisReference();
+                    case _:
+                        trace('[DEBUG] TField: Base is not TConst(TThis), compiling normally');
+                        compileExpression(e);
+                };
                 var fieldName = switch (fa) {
                     case FInstance(_, _, cf) | FStatic(_, cf) | FAnon(cf): cf.get().name;
                     case FDynamic(s): s;
@@ -1487,7 +1519,9 @@ class ElixirCompiler extends DirectToStringCompiler {
                     case _: "unknown_field";
                 };
                 var elixirFieldName = reflaxe.elixir.helpers.NamingHelper.toSnakeCase(fieldName);
-                '${baseExpr}.${elixirFieldName}';
+                var result = '${baseExpr}.${elixirFieldName}';
+                trace('[DEBUG] TField: Result = ${result}');
+                result;
                 
             case TCall(e, el):
                 // Check for special compile-time function calls
@@ -1565,8 +1599,41 @@ class ElixirCompiler extends DirectToStringCompiler {
                 // Get the original variable name (before Haxe's renaming)
                 var originalName = getOriginalVarName(tvar);
                 var varName = NamingHelper.toSnakeCase(originalName);
+                
                 if (expr != null) {
-                    '${varName} = ${compileExpression(expr)}';
+                    // Check if this is an inline expansion of _this = this.someField
+                    // We need to detect this BEFORE compiling to prevent premature context activation
+                    var isInlineThisInit = originalName == "_this" && switch(expr.expr) {
+                        case TField(e, _): switch(e.expr) {
+                            case TConst(TThis): true;
+                            case _: false;
+                        };
+                        case _: false;
+                    };
+                    
+                    if (isInlineThisInit) {
+                        trace('[DEBUG] TVar: Detected inline _this initialization from this.field');
+                        // Temporarily disable any existing _this context to compile the right side correctly
+                        var savedContext = inlineContextMap.get("_this");
+                        inlineContextMap.remove("_this");
+                        var compiledExpr = compileExpression(expr);
+                        
+                        // Now set the context for future uses - just mark _this as active
+                        trace('[DEBUG] TVar: Activating inline context for _this');
+                        setInlineContext("_this", "active");  // Mark _this as active
+                        
+                        '${varName} = ${compiledExpr}';
+                    } else {
+                        var compiledExpr = compileExpression(expr);
+                        
+                        // For other _this assignments, track them normally
+                        if (originalName == "_this") {
+                            trace('[DEBUG] TVar: Activating inline context for _this');
+                            setInlineContext("_this", "active");
+                        }
+                        
+                        '${varName} = ${compiledExpr}';
+                    }
                 } else {
                     '${varName} = nil';
                 }
@@ -1594,13 +1661,17 @@ class ElixirCompiler extends DirectToStringCompiler {
                         var processedIndices = getProcessedStatementIndices(el, pipelinePattern);
                         var remainingStatements = [];
                         
+                        // Collect remaining expressions to compile with preserved context
+                        var remainingExpressions = [];
                         for (i in 0...el.length) {
                             if (processedIndices.indexOf(i) == -1) {
-                                var compiled = compileExpression(el[i]);
-                                if (compiled != null && compiled.trim() != "") {
-                                    remainingStatements.push(compiled);
-                                }
+                                remainingExpressions.push(el[i]);
                             }
+                        }
+                        
+                        // Compile remaining expressions with preserved inline context
+                        if (remainingExpressions.length > 0) {
+                            remainingStatements = compileBlockExpressionsWithContext(remainingExpressions);
                         }
                         
                         // Combine pipeline and remaining statements
@@ -1648,23 +1719,13 @@ class ElixirCompiler extends DirectToStringCompiler {
                                 
                                 allStatements.join("\n");
                             } else {
-                                // No field assignments, proceed normally
-                                for (i in 0...el.length) {
-                                    var compiled = compileExpression(el[i]);
-                                    if (compiled != null && compiled.trim() != "") {
-                                        compiledStatements.push(compiled);
-                                    }
-                                }
+                                // No field assignments, proceed normally with preserved context
+                                compiledStatements = compileBlockExpressionsWithContext(el);
                                 compiledStatements.join("\n");
                             }
                         } else {
-                            // Normal block compilation
-                            for (i in 0...el.length) {
-                                var compiled = compileExpression(el[i]);
-                                if (compiled != null && compiled.trim() != "") {
-                                    compiledStatements.push(compiled);
-                                }
-                            }
+                            // Normal block compilation with preserved inline context
+                            compiledStatements = compileBlockExpressionsWithContext(el);
                             compiledStatements.join("\n");
                         }
                     }
@@ -2571,6 +2632,7 @@ class ElixirCompiler extends DirectToStringCompiler {
         var savedThisMapping2 = currentFunctionParameterMap.get("_this");
         
         currentFunctionParameterMap.clear();
+        inlineContextMap.clear(); // Reset inline context for new function
         isCompilingAbstractMethod = true;
         
         // Restore 'this' mappings if they existed
@@ -2621,6 +2683,61 @@ class ElixirCompiler extends DirectToStringCompiler {
         // Remove 'this' mappings while preserving other parameter mappings
         currentFunctionParameterMap.remove("this");
         currentFunctionParameterMap.remove("_this");
+    }
+    
+    /**
+     * Helper methods for managing inline function context
+     */
+    private function setInlineContext(varName: String, value: String): Void {
+        inlineContextMap.set(varName, value);
+    }
+    
+    private function getInlineContext(varName: String): Null<String> {
+        return inlineContextMap.get(varName);
+    }
+    
+    private function hasInlineContext(varName: String): Bool {
+        return inlineContextMap.exists(varName);
+    }
+    
+    public function clearInlineContext(): Void {
+        inlineContextMap.clear();
+    }
+    
+    /**
+     * Get the effective variable name for 'this' references, considering inline context
+     */
+    private function resolveThisReference(): String {
+        // First check if we're in an inline context where _this is active
+        if (hasInlineContext("_this")) {
+            trace('[DEBUG] resolveThisReference: Found _this in inline context, returning "_this"');
+            return "_this";
+        }
+        
+        // Fall back to parameter mapping
+        var mapped = currentFunctionParameterMap.get("this");
+        var result = mapped != null ? mapped : "struct";
+        trace('[DEBUG] resolveThisReference: No inline context for _this, returning "${result}"');
+        return result;
+    }
+    
+    /**
+     * Compile a block of expressions while preserving inline context across all expressions.
+     * This is crucial for handling Haxe's inline function expansion correctly.
+     */
+    private function compileBlockExpressionsWithContext(expressions: Array<TypedExpr>): Array<String> {
+        var compiledStatements = [];
+        
+        // Compile each expression while maintaining inline context
+        // DO NOT save/restore context - we want inline context to persist across expressions
+        for (i in 0...expressions.length) {
+            var compiled = compileExpression(expressions[i]);
+            if (compiled != null && compiled.trim() != "") {
+                compiledStatements.push(compiled);
+            }
+        }
+        
+        return compiledStatements;
     }
     
     /**

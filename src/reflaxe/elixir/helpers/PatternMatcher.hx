@@ -43,6 +43,8 @@ class PatternMatcher {
                     var caseExpr = compileExpression(caseItem.expr);
                     if (compiler != null) {
                         compiler.setCaseArmContext(false);
+                        // Clear inline context after each case arm to prevent it from affecting subsequent arms
+                        compiler.clearInlineContext();
                     }
                     
                     // Add guard clause if present
@@ -63,6 +65,8 @@ class PatternMatcher {
             var defaultCode = compileExpression(defaultExpr);
             if (compiler != null) {
                 compiler.setCaseArmContext(false);
+                // Clear inline context after default case as well
+                compiler.clearInlineContext();
             }
             result.add('  _ ->\n');
             result.add('    ${indentExpression(defaultCode)}\n');
