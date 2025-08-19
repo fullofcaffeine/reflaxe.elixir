@@ -8,8 +8,19 @@ class NamingHelper {
      * Convert CamelCase to snake_case
      * MyClass -> my_class
      * someMethod -> some_method
+     * Also sanitizes Haxe compiler-generated temp variables:
+     * _g -> g, _g1 -> g1, _g2 -> g2 (removes leading underscore)
      */
     public static function toSnakeCase(camelCase: String): String {
+        // First, handle Haxe's compiler-generated temp variables
+        // These start with underscore but should not in Elixir (as _ indicates unused)
+        if (camelCase.charAt(0) == '_' && camelCase.length > 1) {
+            // Remove the leading underscore for ALL Haxe-generated variables that are actually used
+            // This includes: _g, _g1, _g2 (temp vars), _this (iterator reference), etc.
+            // In Elixir, underscore prefix means "unused", but these ARE used
+            camelCase = camelCase.substr(1);
+        }
+        
         var result = "";
         for (i in 0...camelCase.length) {
             var char = camelCase.charAt(i);

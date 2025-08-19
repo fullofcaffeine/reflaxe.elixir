@@ -58,7 +58,8 @@ class PipelineOptimizer {
         var currentVariable: String = null;
         var operations: Array<PipelineOperation> = [];
         
-        for (stmt in statements) {
+        for (i in 0...statements.length) {
+            var stmt = statements[i];
             var pipelineOp = extractPipelineOperation(stmt);
             
             if (pipelineOp != null) {
@@ -181,7 +182,7 @@ class PipelineOptimizer {
                 v.name;
             default:
                 null;
-        }
+        };
     }
     
     /**
@@ -195,6 +196,9 @@ class PipelineOptimizer {
             case TConst(TFloat(f)): Std.string(f);
             case TConst(TBool(b)): Std.string(b);
             case TField(e, field): getExpressionString(e) + "." + field;
+            case TArrayDecl(_) | TObjectDecl(_) | TCall(_, _):
+                // For complex expressions, delegate to the main compiler
+                compiler.compileExpression(expr);
             default: "expr"; // Fallback
         }
     }
@@ -207,7 +211,8 @@ class PipelineOptimizer {
             "assign", "push_event", "push_patch", // Phoenix LiveView
             "map", "filter", "reduce", "reject", "find", // Enum
             "trim", "downcase", "upcase", "split", // String
-            "put", "get", "merge", "delete" // Map
+            "put", "get", "merge", "delete", // Map
+            "where", "order_by", "group_by", "having", "select", "from", "join", "limit", "offset" // Ecto Query functions
         ];
         return builtins.indexOf(funcName) != -1;
     }
@@ -220,7 +225,8 @@ class PipelineOptimizer {
         
         var result = pattern.variable;
         
-        for (op in pattern.operations) {
+        for (i in 0...pattern.operations.length) {
+            var op = pattern.operations[i];
             result += "\n  |> " + compilePipelineOperation(op);
         }
         
@@ -243,7 +249,11 @@ class PipelineOptimizer {
                 "String." + op.functionName + args;
             case "put" | "get" | "merge" | "delete":
                 "Map." + op.functionName + args;
+            case "where" | "order_by" | "group_by" | "having" | "select" | "from" | "join" | "limit" | "offset":
+                // These are Ecto query functions that don't need module prefix in pipelines
+                op.functionName + args;
             default:
+                // For any other function, use as-is (let the main compiler handle module resolution)
                 op.functionName + args;
         }
     }

@@ -41,3 +41,9 @@ server.layouts.Layouts
 server.infrastructure.Repo
 server.infrastructure.Telemetry
 server.infrastructure.Endpoint
+server.infrastructure.TodoAppWeb
+server.infrastructure.CoreComponents
+server.infrastructure.Gettext
+server.infrastructure.TranslationBindings
+server.infrastructure.GettextErrorMessages
+server.infrastructure.GettextUIMessages

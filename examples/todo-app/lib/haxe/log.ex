@@ -17,11 +17,31 @@ defmodule Log do
     if (infos == nil), do: str, else: nil
     pstr = infos.file_name <> ":" <> Integer.to_string(infos.line_number)
     if (infos.custom_params != nil) do
-      _g = 0
-      _g = infos.custom_params
-      Enum.map(_g, fn str -> v = Enum.at(_g, _g)
-      _g = _g + 1
-      str = str <> ", " <> Std.string(v) end)
+      g = 0
+      g = infos.custom_params
+      (
+        loop_helper = fn loop_fn, {g, str} ->
+          if (g < g.length) do
+            try do
+              v = Enum.at(g, g)
+            g = g + 1
+            str = str <> ", " <> Std.string(v)
+            loop_fn.({g + 1, str <> ", " <> Std.string(v)})
+              loop_fn.(loop_fn, {g, str})
+            catch
+              :break -> {g, str}
+              :continue -> loop_fn.(loop_fn, {g, str})
+            end
+          else
+            {g, str}
+          end
+        end
+        {g, str} = try do
+          loop_helper.(loop_helper, {nil, nil})
+        catch
+          :break -> {nil, nil}
+        end
+      )
     end
     pstr <> ": " <> str
   end

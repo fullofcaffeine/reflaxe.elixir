@@ -106,10 +106,30 @@ defmodule SafeAssigns do
   @spec count_completed(Array.t()) :: integer()
   def count_completed(todos) do
     count = 0
-    _g = 0
-    Enum.map(todos, fn todo -> todo = Enum.at(todos, _g)
-    _g = _g + 1
-    if (todo.completed), do: count = count + 1, else: nil end)
+    g = 0
+    (
+      loop_helper = fn loop_fn, {g, count} ->
+        if (g < todos.length) do
+          try do
+            todo = Enum.at(todos, g)
+          g = g + 1
+          if (todo.completed), do: count = count + 1, else: nil
+          loop_fn.({g + 1, count})
+            loop_fn.(loop_fn, {g, count})
+          catch
+            :break -> {g, count}
+            :continue -> loop_fn.(loop_fn, {g, count})
+          end
+        else
+          {g, count}
+        end
+      end
+      {g, count} = try do
+        loop_helper.(loop_helper, {nil, nil})
+      catch
+        :break -> {nil, nil}
+      end
+    )
     count
   end
 
@@ -120,10 +140,30 @@ defmodule SafeAssigns do
   @spec count_pending(Array.t()) :: integer()
   def count_pending(todos) do
     count = 0
-    _g = 0
-    Enum.map(todos, fn todo -> todo = Enum.at(todos, _g)
-    _g = _g + 1
-    if (!todo.completed), do: count = count + 1, else: nil end)
+    g = 0
+    (
+      loop_helper = fn loop_fn, {g, count} ->
+        if (g < todos.length) do
+          try do
+            todo = Enum.at(todos, g)
+          g = g + 1
+          if (!todo.completed), do: count = count + 1, else: nil
+          loop_fn.({g + 1, count})
+            loop_fn.(loop_fn, {g, count})
+          catch
+            :break -> {g, count}
+            :continue -> loop_fn.(loop_fn, {g, count})
+          end
+        else
+          {g, count}
+        end
+      end
+      {g, count} = try do
+        loop_helper.(loop_helper, {nil, nil})
+      catch
+        :break -> {nil, nil}
+      end
+    )
     count
   end
 

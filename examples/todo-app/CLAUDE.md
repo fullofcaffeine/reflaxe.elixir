@@ -375,6 +375,7 @@ npx haxe build.hxml -D extract-patterns
 3. **Generate, don't write** - If Elixir is needed, generate it
 4. **Type safety everywhere** - Even error pages and infrastructure
 5. **Extern only as last resort** - Prefer Haxe implementations
+6. **NO DYNAMIC OR ANY** - Never use Dynamic or Any in any Haxe code. `Any` is just `Dynamic` in disguise. Use proper types, generics, or abstracts instead
 
 ### ⚠️ EMERGENCY ONLY: Elixir Integration
 

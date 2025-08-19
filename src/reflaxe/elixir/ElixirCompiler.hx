@@ -286,8 +286,14 @@ class ElixirCompiler extends DirectToStringCompiler {
     
     /**
      * Check if a statement targets a specific variable (used for pipeline detection).
+     * Excludes terminal operations that consume but don't transform the variable.
      */
     private function statementTargetsVariable(stmt: TypedExpr, variableName: String): Bool {
+        // Skip terminal operations - they consume the variable but aren't part of the pipeline
+        if (isTerminalOperation(stmt, variableName)) {
+            return false;
+        }
+        
         return switch(stmt.expr) {
             case TVar(v, init) if (init != null):
                 // var x = f(x, ...) pattern
@@ -314,6 +320,149 @@ class ElixirCompiler extends DirectToStringCompiler {
         }
     }
     
+    /**
+     * Check if a statement is a terminal operation that consumes a pipeline variable
+     * but doesn't transform it (like Repo.all, Repo.one, etc.)
+     */
+    private function isTerminalOperation(stmt: TypedExpr, variableName: String): Bool {
+        return switch(stmt.expr) {
+            case TCall(funcExpr, args):
+                // Check for Repo operations or other terminal functions
+                var funcName = extractFunctionNameFromCall(funcExpr);
+                var terminalFunctions = ["Repo.all", "Repo.one", "Repo.get", "Repo.insert", "Repo.update", "Repo.delete"];
+                
+                if (terminalFunctions.indexOf(funcName) >= 0) {
+                    // Check if first argument references our variable
+                    if (args.length > 0) {
+                        containsVariableReference(args[0], variableName);
+                    } else {
+                        false;
+                    }
+                } else {
+                    false;
+                }
+                
+            default:
+                false;
+        }
+    }
+    
+    /**
+     * Check if an expression (typically from a TReturn) is a terminal operation on a specific variable
+     */
+    private function isTerminalOperationOnVariable(expr: TypedExpr, variableName: String): Bool {
+        return switch(expr.expr) {
+            case TCall(funcExpr, args):
+                // Check for Repo operations or other terminal functions
+                var funcName = extractFunctionNameFromCall(funcExpr);
+                var terminalFunctions = ["Repo.all", "Repo.one", "Repo.get", "Repo.insert", "Repo.update", "Repo.delete"];
+                
+                if (terminalFunctions.indexOf(funcName) >= 0) {
+                    // Check if first argument references our variable
+                    if (args.length > 0) {
+                        containsVariableReference(args[0], variableName);
+                    } else {
+                        false;
+                    }
+                } else {
+                    false;
+                }
+                
+            default:
+                false;
+        }
+    }
+    
+    /**
+     * Extract the terminal function call from an expression, removing the pipeline variable reference
+     * For example: Repo.all(query) becomes "Repo.all()"
+     */
+    private function extractTerminalCall(expr: TypedExpr, variableName: String): Null<String> {
+        return switch(expr.expr) {
+            case TCall(funcExpr, args):
+                // Check for Repo operations or other terminal functions
+                var funcName = extractFunctionNameFromCall(funcExpr);
+                var terminalFunctions = ["Repo.all", "Repo.one", "Repo.get", "Repo.insert", "Repo.update", "Repo.delete"];
+                
+                if (terminalFunctions.indexOf(funcName) >= 0) {
+                    // Check if first argument references our variable
+                    if (args.length > 0 && containsVariableReference(args[0], variableName)) {
+                        // Extract remaining arguments (if any) after the pipeline variable
+                        var remainingArgs = [];
+                        for (i in 1...args.length) {
+                            remainingArgs.push(compileExpression(args[i]));
+                        }
+                        
+                        // Generate the terminal function call
+                        if (remainingArgs.length > 0) {
+                            return funcName + "(" + remainingArgs.join(", ") + ")";
+                        } else {
+                            return funcName + "()";
+                        }
+                    }
+                }
+                null;
+                
+            default:
+                null;
+        }
+    }
+    
+    /**
+     * Extract function name from a call expression
+     */
+    private function extractFunctionNameFromCall(funcExpr: TypedExpr): String {
+        return switch(funcExpr.expr) {
+            case TField({expr: TLocal({name: moduleName})}, fa):
+                // Module.function pattern (e.g., Repo.all)
+                var funcName = switch(fa) {
+                    case FInstance(_, _, cf) | FStatic(_, cf) | FAnon(cf) | FClosure(_, cf):
+                        cf.get().name;
+                    case FDynamic(s):
+                        s;
+                    case FEnum(_, ef):
+                        ef.name;
+                };
+                moduleName + "." + funcName;
+                
+            case TField({expr: TTypeExpr(moduleType)}, fa):
+                // Type.function pattern (for static calls like Repo.all)
+                switch(fa) {
+                    case FStatic(classRef, cf):
+                        // For static calls, get the module name from the class
+                        var moduleName = switch(classRef.get().name) {
+                            case "Repo": "Repo";  // Special case for Repo
+                            case name: NamingHelper.toSnakeCase(name);
+                        };
+                        moduleName + "." + cf.get().name;
+                    case FInstance(_, _, cf) | FAnon(cf) | FClosure(_, cf):
+                        cf.get().name;
+                    case FDynamic(s):
+                        s;
+                    case FEnum(_, ef):
+                        ef.name;
+                };
+                
+            case TLocal({name: funcName}):
+                // Simple function call
+                funcName;
+                
+            case TField(_, fa):
+                // Method call without module
+                switch(fa) {
+                    case FInstance(_, _, cf) | FStatic(_, cf) | FAnon(cf) | FClosure(_, cf):
+                        cf.get().name;
+                    case FDynamic(s):
+                        s;
+                    case FEnum(_, ef):
+                        ef.name;
+                };
+                
+            default:
+                "";
+        }
+    }
+
     /**
      * Check if an expression contains a reference to a specific variable.
      */
@@ -1191,6 +1340,10 @@ class ElixirCompiler extends DirectToStringCompiler {
             case "Class" | "Enum" | "Type" | "Reflect" | "Std" | "Math":
                 true;
                 
+            // Regular expression class (has special compiler integration)
+            case "EReg":
+                true;
+                
             default:
                 false;
         };
@@ -1316,7 +1469,6 @@ class ElixirCompiler extends DirectToStringCompiler {
                             case TField(structExpr, fa):
                                 // Field compound assignment: struct.field += value
                                 // This needs to become: struct = %{struct | field: struct.field + value}
-                                trace('[DEBUG] OpAssignOp with TField detected, isCompilingCaseArm = ${isCompilingCaseArm}');
                                 
                                 var structStr = compileExpression(structExpr);
                                 var fieldName = switch (fa) {
@@ -1347,11 +1499,9 @@ class ElixirCompiler extends DirectToStringCompiler {
                                 
                                 if (isCompilingCaseArm) {
                                     // In case arm: return struct update expression
-                                    trace('[DEBUG] OpAssignOp: Generating case arm struct update');
                                     '%{${structStr} | ${elixirFieldName}: ${newValue}}';
                                 } else {
                                     // Regular context: struct = %{struct | field: newValue}
-                                    trace('[DEBUG] OpAssignOp: Generating regular struct update assignment');
                                     '${structStr} = %{${structStr} | ${elixirFieldName}: ${newValue}}';
                                 }
                                 
@@ -1391,23 +1541,32 @@ class ElixirCompiler extends DirectToStringCompiler {
                         
                     case OpAssign:
                         // FIRST: Check if this is an inline context assignment like _this = struct.buf
-                        trace('[DEBUG] OpAssign: Processing assignment, isCompilingCaseArm = ${isCompilingCaseArm}');
                         switch (e1.expr) {
                             case TLocal(v):
                                 var varName = getOriginalVarName(v);
-                                trace('[DEBUG] OpAssign: TLocal with varName = ${varName}');
                                 if (varName == "_this") {
-                                    // This is _this = something - track that _this is now active for inline context
+                                    // Only set inline context if this is actually an inline function expansion
+                                    // Check if this is _this = this.field pattern (inline expansion)
+                                    var isInlineExpansion = switch(e2.expr) {
+                                        case TField(e, _): switch(e.expr) {
+                                            case TConst(TThis): true;
+                                            case _: false;
+                                        };
+                                        case _: false;
+                                    };
+                                    
                                     var value = compileExpression(e2);
-                                    // Mark _this as active (the value doesn't matter, just its existence)
-                                    trace('[DEBUG] OpAssign: Setting inline context for _this to active');
-                                    setInlineContext("_this", "active");
+                                    
+                                    // Only set inline context for genuine inline expansions
+                                    if (isInlineExpansion) {
+                                        setInlineContext("_this", "active");
+                                    } else {
+                                    }
+                                    
                                     return '_this = ${value}';
                                 }
                             case TField(_, _):
-                                trace('[DEBUG] OpAssign: e1 is TField - handling field assignment');
                             case _:
-                                trace('[DEBUG] OpAssign: e1 is not TLocal or TField, e1.expr = ${e1.expr}');
                         }
                         
                         // Handle struct field assignment with Elixir's immutable update syntax
@@ -1418,7 +1577,6 @@ class ElixirCompiler extends DirectToStringCompiler {
                                     case TLocal(v):
                                         // Simple local variable struct update
                                         var structName = getOriginalVarName(v);
-                                        trace('[DEBUG] OpAssign TField TLocal: structName = ${structName}, isCompilingCaseArm = ${isCompilingCaseArm}');
                                         var fieldName = switch (fa) {
                                             case FInstance(_, _, cf) | FStatic(_, cf) | FAnon(cf) | FClosure(_, cf):
                                                 cf.get().name;
@@ -1430,21 +1588,17 @@ class ElixirCompiler extends DirectToStringCompiler {
                                         var elixirFieldName = reflaxe.elixir.helpers.NamingHelper.toSnakeCase(fieldName);
                                         var value = compileExpression(e2);
                                         
-                                        trace('[DEBUG] OpAssign TField: field = ${fieldName} -> ${elixirFieldName}, value = ${value}');
                                         
                                         // Check if we're in a case arm and need to return struct update as expression
                                         if (isCompilingCaseArm) {
-                                            trace('[DEBUG] OpAssign TField: IN CASE ARM - generating struct update expression');
                                             // Map 'this' to struct parameter if it exists
                                             var actualStructName = currentFunctionParameterMap.get("this");
                                             if (actualStructName == null) actualStructName = structName;
                                             
                                             // Return struct update as expression (not assignment)
                                             var result = '%{${actualStructName} | ${elixirFieldName}: ${value}}';
-                                            trace('[DEBUG] OpAssign TField: Generated case arm result = ${result}');
                                             result;
                                         } else {
-                                            trace('[DEBUG] OpAssign TField: NOT in case arm - generating assignment');
                                             // Generate regular Elixir struct update assignment
                                             '${structName} = %{${structName} | ${elixirFieldName}: ${value}}';
                                         }
@@ -1503,7 +1657,6 @@ class ElixirCompiler extends DirectToStringCompiler {
                                 switch (e1.expr) {
                                     case TField(structExpr, fa):
                                         // This is a field assignment - MUST use struct update syntax
-                                        trace('[DEBUG] OpAssign fallback: Caught field assignment in default case');
                                         
                                         // Compile the struct expression to get the variable name
                                         var structStr = compileExpression(structExpr);
@@ -1589,14 +1742,11 @@ class ElixirCompiler extends DirectToStringCompiler {
                 
             case TField(e, fa):
                 // Handle nested field access with inline context support
-                trace('[DEBUG] TField: Processing field access');
                 var baseExpr = switch (e.expr) {
                     case TConst(TThis):
                         // Use enhanced inline context resolution
-                        trace('[DEBUG] TField: Base is TConst(TThis), calling resolveThisReference()');
                         resolveThisReference();
                     case _:
-                        trace('[DEBUG] TField: Base is not TConst(TThis), compiling normally');
                         compileExpression(e);
                 };
                 var fieldName = switch (fa) {
@@ -1607,7 +1757,6 @@ class ElixirCompiler extends DirectToStringCompiler {
                 };
                 var elixirFieldName = reflaxe.elixir.helpers.NamingHelper.toSnakeCase(fieldName);
                 var result = '${baseExpr}.${elixirFieldName}';
-                trace('[DEBUG] TField: Result = ${result}');
                 result;
                 
             case TCall(e, el):
@@ -1685,11 +1834,30 @@ class ElixirCompiler extends DirectToStringCompiler {
                 
                 // Get the original variable name (before Haxe's renaming)
                 var originalName = getOriginalVarName(tvar);
-                var varName = NamingHelper.toSnakeCase(originalName);
+                
+                // Check if this is _this and needs special handling
+                var preserveUnderscore = false;
+                if (originalName == "_this") {
+                    // Check if this is an inline expansion of _this = this.someField
+                    var isInlineThisInit = switch(expr.expr) {
+                        case TField(e, _): switch(e.expr) {
+                            case TConst(TThis): true;
+                            case _: false;
+                        };
+                        case _: false;
+                    };
+                    
+                    // Also check if we already have an inline context (struct updates)
+                    var hasExistingContext = hasInlineContext("_this");
+                    
+                    // Preserve _this if it's an inline expansion OR if inline context is already active
+                    preserveUnderscore = isInlineThisInit || hasExistingContext;
+                }
+                
+                var varName = preserveUnderscore ? originalName : NamingHelper.toSnakeCase(originalName);
                 
                 if (expr != null) {
                     // Check if this is an inline expansion of _this = this.someField
-                    // We need to detect this BEFORE compiling to prevent premature context activation
                     var isInlineThisInit = originalName == "_this" && switch(expr.expr) {
                         case TField(e, _): switch(e.expr) {
                             case TConst(TThis): true;
@@ -1699,23 +1867,20 @@ class ElixirCompiler extends DirectToStringCompiler {
                     };
                     
                     if (isInlineThisInit) {
-                        trace('[DEBUG] TVar: Detected inline _this initialization from this.field');
                         // Temporarily disable any existing _this context to compile the right side correctly
                         var savedContext = inlineContextMap.get("_this");
                         inlineContextMap.remove("_this");
                         var compiledExpr = compileExpression(expr);
                         
-                        // Now set the context for future uses - just mark _this as active
-                        trace('[DEBUG] TVar: Activating inline context for _this');
-                        setInlineContext("_this", "active");  // Mark _this as active
+                        // Now set the context for future uses - mark _this as active
+                        setInlineContext("_this", "active");
                         
                         '${varName} = ${compiledExpr}';
                     } else {
                         var compiledExpr = compileExpression(expr);
                         
-                        // For other _this assignments, track them normally
-                        if (originalName == "_this") {
-                            trace('[DEBUG] TVar: Activating inline context for _this');
+                        // If this is _this and we preserved the underscore, activate inline context
+                        if (originalName == "_this" && preserveUnderscore) {
                             setInlineContext("_this", "active");
                         }
                         
@@ -1731,6 +1896,40 @@ class ElixirCompiler extends DirectToStringCompiler {
                 } else if (el.length == 1) {
                     compileExpression(el[0]);
                 } else {
+                    // Filter out orphaned Haxe temp variable references
+                    // These occur when enum parameters are extracted but not used
+                    var filteredExpressions = [];
+                    for (i in 0...el.length) {
+                        var shouldInclude = true;
+                        
+                        // Check if this is an orphaned temp variable reference
+                        switch (el[i].expr) {
+                            case TLocal(v):
+                                var varName = getOriginalVarName(v);
+                                // Check if this is just a standalone temp variable reference
+                                // that appears after a TEnumParameter extraction
+                                if (varName == "g" || varName.startsWith("g") && ~/^g\d*$/.match(varName)) {
+                                    // Check if the previous expression was a TEnumParameter
+                                    if (i > 0) {
+                                        switch (el[i - 1].expr) {
+                                            case TEnumParameter(_, _, _):
+                                                // This is an orphaned temp variable after enum parameter extraction
+                                                shouldInclude = false;
+                                            case _:
+                                        }
+                                    }
+                                }
+                            case _:
+                        }
+                        
+                        if (shouldInclude) {
+                            filteredExpressions.push(el[i]);
+                        }
+                    }
+                    
+                    // Use filtered expressions for the rest of the compilation
+                    el = filteredExpressions;
+                    
                     // Analyze all expressions for import requirements
                     importOptimizer.analyzeModule(el);
                     
@@ -1744,30 +1943,42 @@ class ElixirCompiler extends DirectToStringCompiler {
                         // Generate idiomatic pipeline code
                         var pipelineCode = pipelineOptimizer.compilePipeline(pipelinePattern);
                         
-                        // Handle any remaining non-pipeline statements
+                        // Handle remaining statements with proper ordering for terminal operations
                         var processedIndices = getProcessedStatementIndices(el, pipelinePattern);
-                        var remainingStatements = [];
+                        var preStatements = [];
+                        var terminalStatements = [];
                         
-                        // Collect remaining expressions to compile with preserved context
-                        var remainingExpressions = [];
+                        // Separate remaining expressions into pre-pipeline and terminal operations
+                        var preExpressions = [];
+                        var terminalExpressions = [];
                         for (i in 0...el.length) {
                             if (processedIndices.indexOf(i) == -1) {
-                                remainingExpressions.push(el[i]);
+                                var stmt = el[i];
+                                if (isTerminalOperation(stmt, pipelinePattern.variable)) {
+                                    terminalExpressions.push(stmt);
+                                } else {
+                                    preExpressions.push(stmt);
+                                }
                             }
                         }
                         
-                        // Compile remaining expressions with preserved inline context
-                        if (remainingExpressions.length > 0) {
-                            remainingStatements = compileBlockExpressionsWithContext(remainingExpressions);
+                        // Compile pre-pipeline statements (variable declarations, etc.)
+                        if (preExpressions.length > 0) {
+                            preStatements = compileBlockExpressionsWithContext(preExpressions);
                         }
                         
-                        // Combine pipeline and remaining statements
-                        if (remainingStatements.length > 0) {
-                            var allStatements = [pipelineCode].concat(remainingStatements);
-                            allStatements.join("\n");
-                        } else {
-                            pipelineCode;
+                        // Compile terminal statements (Repo.all, etc.)
+                        if (terminalExpressions.length > 0) {
+                            terminalStatements = compileBlockExpressionsWithContext(terminalExpressions);
                         }
+                        
+                        // Combine in correct order: pre-statements, pipeline, terminal statements
+                        var allStatements = [];
+                        allStatements = allStatements.concat(preStatements);
+                        allStatements.push(pipelineCode);
+                        allStatements = allStatements.concat(terminalStatements);
+                        
+                        allStatements.join("\n");
                     } else {
                         // No pipeline pattern detected - use traditional compilation
                         // For multiple statements, compile each and join with newlines
@@ -1776,23 +1987,18 @@ class ElixirCompiler extends DirectToStringCompiler {
                         
                         // Special handling for case arm context - convert field assignments to struct updates
                         if (isCompilingCaseArm && el.length > 0) {
-                            trace('[DEBUG] TBlock in case arm: processing ${el.length} expressions');
                             var fieldUpdates = [];
                             var nonAssignmentStatements = [];
                             
                             for (i in 0...el.length) {
                                 var stmt = el[i];
-                                trace('[DEBUG] TBlock case arm expr[${i}]: ${stmt.expr}');
                                 if (isFieldAssignment(stmt)) {
-                                    trace('[DEBUG] TBlock: Detected field assignment at index ${i}');
                                     // Convert field assignment to struct update mapping
                                     var update = extractFieldUpdate(stmt);
                                     if (update != null) {
-                                        trace('[DEBUG] TBlock: Extracted update: ${update}');
                                         fieldUpdates.push(update);
                                     }
                                 } else {
-                                    trace('[DEBUG] TBlock: Not a field assignment at index ${i}');
                                     var compiled = compileExpression(stmt);
                                     if (compiled != null && compiled.trim() != "") {
                                         nonAssignmentStatements.push(compiled);
@@ -2368,8 +2574,87 @@ class ElixirCompiler extends DirectToStringCompiler {
         result += '  def ${funcName}(${paramStr}) do\n';
         
         if (funcField.expr != null) {
-            // Compile the actual function body  
-            var compiledBody = compileExpression(funcField.expr);
+            // Check if function body is a TBlock that could benefit from pipeline optimization
+            var compiledBody = switch(funcField.expr.expr) {
+                case TBlock(el) if (el.length > 1):
+                    // Check for pipeline optimization opportunities in function body
+                    var pipelinePattern = pipelineOptimizer.detectPipelinePattern(el);
+                    
+                    if (pipelinePattern != null) {
+                        
+                        // Handle remaining statements with proper ordering for terminal operations
+                        var processedIndices = getProcessedStatementIndices(el, pipelinePattern);
+                        var preStatements = [];
+                        
+                        // Separate remaining expressions into pre-pipeline and potential terminal operations
+                        var preExpressions = [];
+                        var terminalReturnExpr: TypedExpr = null;
+                        
+                        for (i in 0...el.length) {
+                            if (processedIndices.indexOf(i) == -1) {
+                                var stmt = el[i];
+                                
+                                // Check if this is a TReturn with a terminal operation that uses our pipeline variable
+                                switch(stmt.expr) {
+                                    case TReturn(returnExpr) if (returnExpr != null):
+                                        if (isTerminalOperationOnVariable(returnExpr, pipelinePattern.variable)) {
+                                            // This return contains a terminal operation on our pipeline variable
+                                            terminalReturnExpr = returnExpr;
+                                        } else {
+                                            preExpressions.push(stmt);
+                                        }
+                                    case _:
+                                        if (isTerminalOperation(stmt, pipelinePattern.variable)) {
+                                            // Direct terminal operation (not in return)
+                                            terminalReturnExpr = stmt;
+                                        } else {
+                                            preExpressions.push(stmt);
+                                        }
+                                }
+                            }
+                        }
+                        
+                        // Compile pre-pipeline statements (variable declarations, etc.)
+                        if (preExpressions.length > 0) {
+                            preStatements = compileBlockExpressionsWithContext(preExpressions);
+                        }
+                        
+                        // Generate pipeline with integrated terminal operation
+                        var finalPipelineCode: String;
+                        if (terminalReturnExpr != null) {
+                            // Extract the terminal function call from the return expression
+                            var terminalCall = extractTerminalCall(terminalReturnExpr, pipelinePattern.variable);
+                            if (terminalCall != null) {
+                                // Generate pipeline ending with terminal operation
+                                var pipelineCode = pipelineOptimizer.compilePipeline(pipelinePattern);
+                                finalPipelineCode = pipelineCode + "\n  |> " + terminalCall;
+                            } else {
+                                // Fallback: use original pipeline + compile terminal separately
+                                var pipelineCode = pipelineOptimizer.compilePipeline(pipelinePattern);
+                                var terminalCode = compileExpression(terminalReturnExpr);
+                                finalPipelineCode = pipelineCode + "\n" + terminalCode;
+                            }
+                        } else {
+                            // No terminal operation found - use regular pipeline
+                            finalPipelineCode = pipelineOptimizer.compilePipeline(pipelinePattern);
+                        }
+                        
+                        // Combine: pre-statements + integrated pipeline
+                        var allParts = [];
+                        if (preStatements.length > 0) allParts = allParts.concat(preStatements);
+                        allParts.push(finalPipelineCode);
+                        
+                        allParts.join("\n");
+                    } else {
+                        // No pipeline pattern - use regular compilation
+                        compileExpression(funcField.expr);
+                    }
+                    
+                case _:
+                    // Not a multi-statement block - use regular compilation
+                    compileExpression(funcField.expr);
+            };
+            
             if (compiledBody != null && compiledBody.trim() != "") {
                 // Indent the function body properly
                 var indentedBody = compiledBody.split("\n").map(line -> line.length > 0 ? "    " + line : line).join("\n");
@@ -2802,14 +3087,12 @@ class ElixirCompiler extends DirectToStringCompiler {
     private function resolveThisReference(): String {
         // First check if we're in an inline context where _this is active
         if (hasInlineContext("_this")) {
-            trace('[DEBUG] resolveThisReference: Found _this in inline context, returning "_this"');
             return "_this";
         }
         
         // Fall back to parameter mapping
         var mapped = currentFunctionParameterMap.get("this");
         var result = mapped != null ? mapped : "struct";
-        trace('[DEBUG] resolveThisReference: No inline context for _this, returning "${result}"');
         return result;
     }
     
@@ -2905,22 +3188,33 @@ class ElixirCompiler extends DirectToStringCompiler {
                     // We need to determine this from the object's type or compilation context
                     var isMapObject = false;
                     
-                    // Check if objStr looks like a map variable or map expression
-                    if (objStr.contains("Map.") || objStr.contains("%{") || 
-                        objStr.contains("map") || objStr.contains("_map") ||
-                        // Check common map variable names
-                        objStr == "map" || objStr.endsWith("_map") || objStr.endsWith("Map")) {
-                        isMapObject = true;
-                    }
-                    
-                    // Also check the object's type information if available
+                    // First check the object's type information - most accurate
                     switch (obj.t) {
                         case TInst(t, _):
                             var typeName = t.get().name;
                             if (MapCompiler.isMapType(typeName)) {
                                 isMapObject = true;
                             }
+                        case TAbstract(t, _):
+                            var typeName = t.get().name;
+                            // Check for Map abstract types
+                            if (typeName == "Map" || typeName.contains("Map")) {
+                                isMapObject = true;
+                            }
                         case _:
+                    }
+                    
+                    // Fallback: Check if objStr looks like a map variable or map expression
+                    if (!isMapObject) {
+                        if (objStr.contains("Map.") || objStr.contains("%{") || 
+                            objStr.contains("map") || objStr.contains("_map") ||
+                            // Check common map variable names
+                            objStr == "map" || objStr.endsWith("_map") || objStr.endsWith("Map") ||
+                            // Also check for variables that might be maps based on naming
+                            objStr.contains("conditions") || objStr.contains("params") || 
+                            objStr.contains("attributes") || objStr.contains("data")) {
+                            isMapObject = true;
+                        }
                     }
                     
                     if (isMapObject) {

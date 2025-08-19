@@ -63,8 +63,8 @@ defmodule TodoAppWeb.UserLive do
     temp_struct = nil
     if (struct.selected_user == nil), do: temp_struct = Users.create_user(user_params), else: temp_struct = Users.update_user(struct.selected_user, user_params)
     temp_result = nil
-    _g = temp_struct.status
-    case (_g) do
+    g = temp_struct.status
+    case (g) do
       "error" ->
         temp_result = %{"status" => "noreply", "socket" => UserLive.assign(socket, "changeset", temp_struct.changeset)}
       "ok" ->

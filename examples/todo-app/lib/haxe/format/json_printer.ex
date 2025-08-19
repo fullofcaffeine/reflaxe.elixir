@@ -58,8 +58,8 @@ defmodule JsonPrinter do
   @spec write(t(), term(), term()) :: nil
   def write(%__MODULE__{} = struct, k, v) do
     if (struct.replacer != nil), do: v = struct.replacer(k, v), else: nil
-    _g = Type.typeof(v)
-    case (elem(_g, 0)) do
+    g = Type.typeof(v)
+    case (elem(g, 0)) do
       0 ->
         _this = struct.buf
         %{_this | b: _this.b <> "null"}
@@ -81,8 +81,8 @@ defmodule JsonPrinter do
         _this = struct.buf
         %{_this | b: _this.b <> "\"<fun>\""}
       6 ->
-        _g = elem(_g, 1)
-        c = _g
+        g = elem(g, 1)
+        c = g
         if (c == String) do
           struct.quote(v)
         else
@@ -92,13 +92,13 @@ defmodule JsonPrinter do
             %{_this | b: _this.b <> "["}
             len = v.length
             last = len - 1
-            _g = 0
-            _g = len
+            g = 0
+            g = len
             (
               loop_helper = fn loop_fn ->
-                if (_g < _g) do
+                if (g < g) do
                   try do
-                    i = _g = _g + 1
+                    i = g = g + 1
             if (i > 0) do
               _this = struct.buf
               %{_this | b: _this.b <> ","}
@@ -183,7 +183,7 @@ defmodule JsonPrinter do
           end
         end
       7 ->
-        elem(_g, 1)
+        elem(g, 1)
         i = Type.enumIndex(v)
         v = Std.string(i)
         _this = struct.buf
@@ -207,13 +207,13 @@ defmodule JsonPrinter do
     _this = %{_this | b: _this.b <> "{"}
     len = fields.length
     empty = true
-    _g = 0
-    _g = len
+    g = 0
+    g = len
     (
       loop_helper = fn loop_fn, {empty} ->
-        if (_g < _g) do
+        if (g < g) do
           try do
-            i = _g = _g + 1
+            i = g = g + 1
           f = Enum.at(fields, i)
           value = Reflect.field(v, f)
           if (Reflect.isFunction(value)), do: throw(:continue), else: nil
