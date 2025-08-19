@@ -59,7 +59,10 @@ class ClassCompiler {
             className = NamingHelper.getElixirModuleName(classType.name);
         }
         this.currentClassName = className;
-        var isStruct = hasStructMetadata(classType);
+        
+        // CRITICAL: Automatically detect instance classes and treat them as structs
+        // This fixes JsonPrinter, StringBuf, and all other instance-based classes
+        var isStruct = hasStructMetadata(classType) || isInstanceClass(classType, varFields, funcFields);
         var isModule = hasModuleMetadata(classType);
         var isApplication = hasApplicationMetadata(classType);
         var isInterface = classType.isInterface;
@@ -183,6 +186,65 @@ class ClassCompiler {
         
         var metaEntries = classType.meta.extract(":struct");
         return metaEntries.length > 0;
+    }
+    
+    /**
+     * CRITICAL: Detect if a class should be compiled as a struct
+     * This fixes JsonPrinter, StringBuf, and all instance-based classes
+     * 
+     * A class is considered an "instance class" if it has:
+     * - Instance fields (non-static variables)
+     * - A constructor that initializes instance state
+     * - Instance methods that operate on the instance
+     * 
+     * These classes need struct-based compilation to work correctly in Elixir
+     */
+    private function isInstanceClass(classType: ClassType, varFields: Array<ClassVarData>, funcFields: Array<ClassFuncData>): Bool {
+        // Skip extern classes - they use different compilation patterns
+        if (classType.isExtern) return false;
+        
+        // Skip abstract types - they compile differently
+        if (classType.isAbstract) return false;
+        
+        // Skip interfaces - they become behaviors
+        if (classType.isInterface) return false;
+        
+        // Check for instance fields
+        var hasInstanceFields = false;
+        if (varFields != null) {
+            for (field in varFields) {
+                if (!field.isStatic) {
+                    hasInstanceFields = true;
+                    break;
+                }
+            }
+        }
+        
+        // Check for constructor
+        var hasConstructor = false;
+        if (funcFields != null) {
+            for (field in funcFields) {
+                if (field.field.name == "new" && !field.isStatic) {
+                    hasConstructor = true;
+                    break;
+                }
+            }
+        }
+        
+        // Check for instance methods
+        var hasInstanceMethods = false;
+        if (funcFields != null) {
+            for (field in funcFields) {
+                if (!field.isStatic && field.field.name != "new") {
+                    hasInstanceMethods = true;
+                    break;
+                }
+            }
+        }
+        
+        // A class is an instance class if it has any instance-based features
+        // This ensures classes like JsonPrinter and StringBuf compile as structs
+        return hasInstanceFields || hasConstructor || hasInstanceMethods;
     }
     
     /**
@@ -534,8 +596,20 @@ class ClassCompiler {
         
         // Function body
         if (funcField.expr != null) {
+            // For struct instance methods, set up parameter mapping for 'this' -> 'struct'
+            if (isInstance && isStructClass && compiler != null) {
+                // Add mapping for this -> struct parameter
+                compiler.setThisParameterMapping("struct");
+            }
+            
             // Compile the actual function expression
             var compiledBody = compileExpressionForFunction(funcField.expr, funcField.args);
+            
+            // Clear any this parameter mapping after compilation
+            if (isInstance && isStructClass && compiler != null) {
+                compiler.clearThisParameterMapping();
+            }
+            
             if (compiledBody != null && compiledBody.trim() != "") {
                 // Indent the function body properly
                 var indentedBody = compiledBody.split("\n").map(line -> line.length > 0 ? "    " + line : line).join("\n");
