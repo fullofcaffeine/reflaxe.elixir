@@ -214,9 +214,3 @@ defmodule Main do
   end
 
 end
-
-
-defmodule CustomException do
-  @moduledoc "CustomException module generated from Haxe"
-
-end
