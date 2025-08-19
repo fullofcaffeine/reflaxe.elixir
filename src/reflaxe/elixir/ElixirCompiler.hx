@@ -28,6 +28,7 @@ import reflaxe.elixir.helpers.GuardCompiler;
 import reflaxe.elixir.helpers.PipelineOptimizer;
 import reflaxe.elixir.helpers.PipelineOptimizer.PipelinePattern;
 import reflaxe.elixir.helpers.ImportOptimizer;
+import reflaxe.elixir.helpers.MapCompiler;
 import reflaxe.elixir.helpers.TemplateCompiler;
 import reflaxe.elixir.helpers.SchemaCompiler;
 import reflaxe.elixir.helpers.ProtocolCompiler;
@@ -1560,10 +1561,17 @@ class ElixirCompiler extends DirectToStringCompiler {
                 
             case TNew(c, _, el):
                 var className = NamingHelper.getElixirModuleName(c.toString());
-                var args = el.map(expr -> compileExpression(expr)).join(", ");
-                args.length > 0 ? 
-                    '${className}.new(${args})' :
-                    '${className}.new()';
+                var args = el.map(expr -> compileExpression(expr));
+                
+                // Check if this is a Map type and handle it idiomatically
+                MapCompiler.isMapType(className) ? 
+                    MapCompiler.compileMapConstructor(className, args) :
+                    (function() {
+                        var argString = args.join(", ");
+                        return argString.length > 0 ? 
+                            '${className}.new(${argString})' :
+                            '${className}.new()';
+                    })();
                 
             case TFunction(func):
                 // Get original parameter names (before Haxe's renaming)
@@ -2450,6 +2458,36 @@ class ElixirCompiler extends DirectToStringCompiler {
                                 return compileHxxCall(args);
                             }
                         case _:
+                    }
+                }
+                
+                // Detect Map method calls and transform to idiomatic Elixir
+                if (MapCompiler.isMapMethod(methodName)) {
+                    // Check if the object is a Map type or if this is a Map method call
+                    // We need to determine this from the object's type or compilation context
+                    var isMapObject = false;
+                    
+                    // Check if objStr looks like a map variable or map expression
+                    if (objStr.contains("Map.") || objStr.contains("%{") || 
+                        objStr.contains("map") || objStr.contains("_map") ||
+                        // Check common map variable names
+                        objStr == "map" || objStr.endsWith("_map") || objStr.endsWith("Map")) {
+                        isMapObject = true;
+                    }
+                    
+                    // Also check the object's type information if available
+                    switch (obj.t) {
+                        case TInst(t, _):
+                            var typeName = t.get().name;
+                            if (MapCompiler.isMapType(typeName)) {
+                                isMapObject = true;
+                            }
+                        case _:
+                    }
+                    
+                    if (isMapObject) {
+                        var compiledArgs = args.map(arg -> compileExpression(arg));
+                        return MapCompiler.compileMapMethod(objStr, methodName, compiledArgs);
                     }
                 }
                 
