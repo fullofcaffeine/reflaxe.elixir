@@ -3,11 +3,11 @@ defmodule TodoPubSubMessage do
   TodoPubSubMessage enum generated from Haxe
   
   
- * Type-safe PubSub message types with compile-time validation
- * 
- * Each message type is strongly typed with required parameters.
- * Adding new messages requires updating parseMessage function.
- 
+   * Type-safe PubSub message types with compile-time validation
+   * 
+   * Each message type is strongly typed with required parameters.
+   * Adding new messages requires updating parseMessage function.
+   
   
   This module provides tagged tuple constructors and pattern matching helpers.
   """

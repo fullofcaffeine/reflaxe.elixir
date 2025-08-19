@@ -170,7 +170,7 @@ defmodule AppLayout do
   def get_initials(name) do
     if (name == nil || name == ""), do: "U", else: nil
     parts = String.split(name, " ")
-    if (length(parts) >= 2), do: String.upcase(String.at(Enum.at(parts, 0), 0)) <> String.upcase(String.at(Enum.at(parts, 1), 0)), else: nil
+    if (parts.length >= 2), do: String.upcase(String.at(Enum.at(parts, 0), 0)) <> String.upcase(String.at(Enum.at(parts, 1), 0)), else: nil
     String.upcase(String.at(name, 0))
   end
 

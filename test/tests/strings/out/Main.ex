@@ -16,7 +16,7 @@ defmodule Main do
     Log.trace(str3, %{"fileName" => "Main.hx", "lineNumber" => 15, "className" => "Main", "methodName" => "stringBasics"})
     multiline = "This is\na multi-line\nstring"
     Log.trace(multiline, %{"fileName" => "Main.hx", "lineNumber" => 21, "className" => "Main", "methodName" => "stringBasics"})
-    Log.trace("Length of \"" <> str3 <> "\": " <> Integer.to_string(String.length(str3)), %{"fileName" => "Main.hx", "lineNumber" => 24, "className" => "Main", "methodName" => "stringBasics"})
+    Log.trace("Length of \"" <> str3 <> "\": " <> Integer.to_string(str3.length), %{"fileName" => "Main.hx", "lineNumber" => 24, "className" => "Main", "methodName" => "stringBasics"})
   end
 
   @doc "Function string_interpolation"
@@ -154,7 +154,7 @@ defmodule Main do
   def unicode_strings() do
     unicode = "Hello 世界 🌍"
     Log.trace("Unicode string: " <> unicode, %{"fileName" => "Main.hx", "lineNumber" => 189, "className" => "Main", "methodName" => "unicodeStrings"})
-    Log.trace("Length: " <> Integer.to_string(String.length(unicode)), %{"fileName" => "Main.hx", "lineNumber" => 190, "className" => "Main", "methodName" => "unicodeStrings"})
+    Log.trace("Length: " <> Integer.to_string(unicode.length), %{"fileName" => "Main.hx", "lineNumber" => 190, "className" => "Main", "methodName" => "unicodeStrings"})
     escaped = "Line 1\nLine 2\tTabbed\r\nLine 3"
     Log.trace("Escaped: " <> escaped, %{"fileName" => "Main.hx", "lineNumber" => 194, "className" => "Main", "methodName" => "unicodeStrings"})
     quote_ = "She said \"Hello\""

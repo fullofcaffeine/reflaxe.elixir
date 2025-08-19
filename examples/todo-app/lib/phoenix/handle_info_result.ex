@@ -3,40 +3,40 @@ defmodule HandleInfoResult do
   HandleInfoResult enum generated from Haxe
   
   
- * Info message handling return type with full type safety  
- * 
- * @param TAssigns The application-specific socket assigns structure type
- * 
- * ## Generic Usage Pattern
- * 
- * ```haxe
- * public static function handle_info(info: PubSubMessage, socket: Socket<MyAssigns>): HandleInfoResult<MyAssigns> {
- *     return switch (parseMessage(info)) {
- *         case Some(TodoCreated(todo)):
- *             var updated_todos = [todo].concat(socket.assigns.todos);
- *             var updated_socket = socket.assign({todos: updated_todos});
- *             NoReply(updated_socket);
- *         case Some(SystemAlert(message)):
- *             var updated_socket = socket.put_flash("info", message);
- *             NoReply(updated_socket);
- *         case None:
- *             // Unknown message - log and ignore
- *             NoReply(socket);
- *     };
- * }
- * ```
- * 
- * ## Return Types
- * 
- * - **NoReply(socket)**: Update socket and continue (most common)
- * - **Error(reason, socket)**: Handle error with context
- * 
- * ## Type Safety Benefits
- * 
- * - **Message type safety**: Combined with type-safe PubSub for end-to-end safety
- * - **Socket consistency**: Input and output socket types must match  
- * - **Real-time validation**: PubSub message parsing errors caught at compile time
- 
+   * Info message handling return type with full type safety  
+   * 
+   * @param TAssigns The application-specific socket assigns structure type
+   * 
+   * ## Generic Usage Pattern
+   * 
+   * ```haxe
+   * public static function handle_info(info: PubSubMessage, socket: Socket<MyAssigns>): HandleInfoResult<MyAssigns> {
+   *     return switch (parseMessage(info)) {
+   *         case Some(TodoCreated(todo)):
+   *             var updated_todos = [todo].concat(socket.assigns.todos);
+   *             var updated_socket = socket.assign({todos: updated_todos});
+   *             NoReply(updated_socket);
+   *         case Some(SystemAlert(message)):
+   *             var updated_socket = socket.put_flash("info", message);
+   *             NoReply(updated_socket);
+   *         case None:
+   *             // Unknown message - log and ignore
+   *             NoReply(socket);
+   *     };
+   * }
+   * ```
+   * 
+   * ## Return Types
+   * 
+   * - **NoReply(socket)**: Update socket and continue (most common)
+   * - **Error(reason, socket)**: Handle error with context
+   * 
+   * ## Type Safety Benefits
+   * 
+   * - **Message type safety**: Combined with type-safe PubSub for end-to-end safety
+   * - **Socket consistency**: Input and output socket types must match  
+   * - **Real-time validation**: PubSub message parsing errors caught at compile time
+   
   
   This module provides tagged tuple constructors and pattern matching helpers.
   """

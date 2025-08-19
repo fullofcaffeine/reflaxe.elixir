@@ -137,7 +137,7 @@ defmodule Main do
     color = {:r_g_b, 255, 128, 0}
     Log.trace(Main.colorToString(color), %{"fileName" => "Main.hx", "lineNumber" => 79, "className" => "Main", "methodName" => "main"})
     some = {:some, "Hello"}
-    none = :none
+    none = Option.none
     Log.trace(Main.getValue(some, "default"), %{"fileName" => "Main.hx", "lineNumber" => 84, "className" => "Main", "methodName" => "main"})
     Log.trace(Main.getValue(none, "default"), %{"fileName" => "Main.hx", "lineNumber" => 85, "className" => "Main", "methodName" => "main"})
     tree = {:node_, {:leaf, 1}, {:node_, {:leaf, 2}, {:leaf, 3}}}

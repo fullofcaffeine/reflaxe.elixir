@@ -3,8 +3,8 @@ defmodule ChildType do
   ChildType enum generated from Haxe
   
   
- * Child type
- 
+   * Child type
+   
   
   This module provides tagged tuple constructors and pattern matching helpers.
   """

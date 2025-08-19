@@ -3,8 +3,8 @@ defmodule StackItem do
   StackItem enum generated from Haxe
   
   
-	Elements return by `CallStack` methods.
-
+  	Elements return by `CallStack` methods.
+  
   
   This module provides tagged tuple constructors and pattern matching helpers.
   """

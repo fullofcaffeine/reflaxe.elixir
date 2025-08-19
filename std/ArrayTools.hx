@@ -1,7 +1,5 @@
 package;
 
-import elixir.Syntax;
-
 /**
  * ArrayTools static extension for functional array methods
  * 
@@ -26,7 +24,7 @@ class ArrayTools {
      * @return Final accumulated value
      */
     public static function reduce<T, U>(array: Array<T>, func: (U, T) -> U, initial: U): U {
-        return Syntax.code("Enum.reduce({0}, {1}, fn item, acc -> {2}.(acc, item) end)", array, initial, func);
+        return untyped __elixir__("Enum.reduce({0}, {1}, fn item, acc -> {2}.(acc, item) end)", array, initial, func);
     }
     
     /**
@@ -47,7 +45,7 @@ class ArrayTools {
      * @return First matching element or null
      */
     public static function find<T>(array: Array<T>, predicate: T -> Bool): Null<T> {
-        return Syntax.code("Enum.find({0}, fn item -> {1}.(item) end)", array, predicate);
+        return untyped __elixir__("Enum.find({0}, fn item -> {1}.(item) end)", array, predicate);
     }
     
     /**
@@ -57,7 +55,7 @@ class ArrayTools {
      * @return Index of first match or -1
      */
     public static function findIndex<T>(array: Array<T>, predicate: T -> Bool): Int {
-        return Syntax.code("case Enum.find_index({0}, fn item -> {1}.(item) end) do\n      nil -> -1\n      index -> index\n    end", array, predicate);
+        return untyped __elixir__("case Enum.find_index({0}, fn item -> {1}.(item) end) do\n      nil -> -1\n      index -> index\n    end", array, predicate);
     }
     
     /**
@@ -67,7 +65,7 @@ class ArrayTools {
      * @return True if any element matches
      */
     public static function exists<T>(array: Array<T>, predicate: T -> Bool): Bool {
-        return Syntax.code("Enum.any?({0}, fn item -> {1}.(item) end)", array, predicate);
+        return untyped __elixir__("Enum.any?({0}, fn item -> {1}.(item) end)", array, predicate);
     }
     
     /**
@@ -84,7 +82,7 @@ class ArrayTools {
      * @return True if all elements match
      */
     public static function foreach<T>(array: Array<T>, predicate: T -> Bool): Bool {
-        return Syntax.code("Enum.all?({0}, fn item -> {1}.(item) end)", array, predicate);
+        return untyped __elixir__("Enum.all?({0}, fn item -> {1}.(item) end)", array, predicate);
     }
     
     /**
@@ -100,7 +98,7 @@ class ArrayTools {
      * @param action Function to execute for each element
      */
     public static function forEach<T>(array: Array<T>, action: T -> Void): Void {
-        return Syntax.code("Enum.each({0}, fn item -> {1}.(item) end)", array, action);
+        return untyped __elixir__("Enum.each({0}, fn item -> {1}.(item) end)", array, action);
     }
     
     /**
@@ -110,7 +108,7 @@ class ArrayTools {
      * @return New array with first n elements
      */
     public static function take<T>(array: Array<T>, n: Int): Array<T> {
-        return Syntax.code("Enum.take({0}, {1})", array, n);
+        return untyped __elixir__("Enum.take({0}, {1})", array, n);
     }
     
     /**
@@ -120,7 +118,7 @@ class ArrayTools {
      * @return New array without first n elements
      */
     public static function drop<T>(array: Array<T>, n: Int): Array<T> {
-        return Syntax.code("Enum.drop({0}, {1})", array, n);
+        return untyped __elixir__("Enum.drop({0}, {1})", array, n);
     }
     
     /**
@@ -130,6 +128,6 @@ class ArrayTools {
      * @return Flattened result array
      */
     public static function flatMap<T, U>(array: Array<T>, mapper: T -> Array<U>): Array<U> {
-        return Syntax.code("Enum.flat_map({0}, fn item -> {1}.(item) end)", array, mapper);
+        return untyped __elixir__("Enum.flat_map({0}, fn item -> {1}.(item) end)", array, mapper);
     }
 }

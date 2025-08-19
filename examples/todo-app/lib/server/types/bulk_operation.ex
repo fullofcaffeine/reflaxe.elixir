@@ -3,8 +3,8 @@ defmodule BulkOperation do
   BulkOperation enum generated from Haxe
   
   
- * Bulk operation types
- 
+   * Bulk operation types
+   
   
   This module provides tagged tuple constructors and pattern matching helpers.
   """

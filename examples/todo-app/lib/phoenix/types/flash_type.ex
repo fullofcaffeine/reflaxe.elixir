@@ -3,14 +3,14 @@ defmodule FlashType do
   FlashType enum generated from Haxe
   
   
- * Standard flash message types used in Phoenix applications
- * 
- * These correspond to common CSS classes and UI patterns:
- * - Info: Blue, informational messages
- * - Success: Green, confirmation messages  
- * - Warning: Yellow, caution messages
- * - Error: Red, error messages
- 
+   * Standard flash message types used in Phoenix applications
+   * 
+   * These correspond to common CSS classes and UI patterns:
+   * - Info: Blue, informational messages
+   * - Success: Green, confirmation messages  
+   * - Warning: Yellow, caution messages
+   * - Error: Red, error messages
+   
   
   This module provides tagged tuple constructors and pattern matching helpers.
   """

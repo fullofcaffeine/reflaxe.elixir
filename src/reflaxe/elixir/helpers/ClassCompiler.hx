@@ -490,7 +490,7 @@ class ClassCompiler {
         result.add('  @doc "Updates struct fields using a map of changes"\n');
         result.add('  @spec update(t(), map()) :: t()\n');
         result.add('  def update(struct, changes) when is_map(changes) do\n');
-        result.add('    struct |> Map.merge(changes) |> struct(__MODULE__, _1)\n');
+        result.add('    Map.merge(struct, changes) |> then(&struct(__MODULE__, &1))\n');
         result.add('  end\n\n');
         
         return result.toString();

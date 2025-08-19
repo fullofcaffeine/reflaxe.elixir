@@ -3,8 +3,8 @@ defmodule FieldType do
   FieldType enum generated from Haxe
   
   
- * Ecto field types
- 
+   * Ecto field types
+   
   
   This module provides tagged tuple constructors and pattern matching helpers.
   """

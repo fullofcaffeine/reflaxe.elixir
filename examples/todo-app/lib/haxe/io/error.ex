@@ -3,8 +3,8 @@ defmodule Error do
   Error enum generated from Haxe
   
   
-	The possible IO errors that can occur
-
+  	The possible IO errors that can occur
+  
   
   This module provides tagged tuple constructors and pattern matching helpers.
   """

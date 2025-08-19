@@ -39,10 +39,10 @@ defmodule FlashTypeTools do
     temp_result = nil
     _g = String.downcase(str)
     with "success" <- (_g) do
-      temp_result = :success
+      temp_result = FlashType.success
     else
-      "error" -> temp_result = :error
-      _ -> temp_result = :info
+      "error" -> temp_result = FlashType.error
+      _ -> temp_result = FlashType.info
     end
     temp_result
   end

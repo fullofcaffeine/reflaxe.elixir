@@ -3,8 +3,8 @@ defmodule AlertLevel do
   AlertLevel enum generated from Haxe
   
   
- * Alert levels for system notifications
- 
+   * Alert levels for system notifications
+   
   
   This module provides tagged tuple constructors and pattern matching helpers.
   """

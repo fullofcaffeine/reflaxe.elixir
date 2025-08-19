@@ -3,8 +3,8 @@ defmodule SupervisorStrategy do
   SupervisorStrategy enum generated from Haxe
   
   
- * Supervisor restart strategy
- 
+   * Supervisor restart strategy
+   
   
   This module provides tagged tuple constructors and pattern matching helpers.
   """
