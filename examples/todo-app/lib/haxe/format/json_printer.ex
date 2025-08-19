@@ -62,24 +62,24 @@ defmodule JsonPrinter do
     case (elem(_g, 0)) do
       0 ->
         _this = struct.buf
-        _this.b = _this.b <> "null"
+        %{_this | b: _this.b <> "null"}
       1 ->
         _this = struct.buf
-        _this.b = _this.b <> Std.string(v)
+        %{_this | b: _this.b <> Std.string(v)}
       2 ->
         temp_string = nil
         if (Math.isFinite(v)), do: temp_string = Std.string(v), else: temp_string = "null"
         v = temp_string
         _this = struct.buf
-        _this.b = _this.b <> Std.string(v)
+        %{_this | b: _this.b <> Std.string(v)}
       3 ->
         _this = struct.buf
-        _this.b = _this.b <> Std.string(v)
+        %{_this | b: _this.b <> Std.string(v)}
       4 ->
         struct.fieldsString(v, Reflect.fields(v))
       5 ->
         _this = struct.buf
-        _this.b = _this.b <> "\"<fun>\""
+        %{_this | b: _this.b <> "\"<fun>\""}
       6 ->
         _g = elem(_g, 1)
         c = _g
@@ -89,45 +89,70 @@ defmodule JsonPrinter do
           if (c == Array) do
             v = v
             _this = struct.buf
-            _this.b = _this.b <> "["
+            %{_this | b: _this.b <> "["}
             len = v.length
             last = len - 1
             _g = 0
             _g = len
             (
-              try do
-                loop_fn = fn ->
-                  if (_g < _g) do
-                    try do
-                      i = _g = _g + 1
+              loop_fn = fn ->
+                if (_g < _g) do
+                  try do
+                    i = _g = _g + 1
             if (i > 0) do
               _this = struct.buf
-              _this.b = _this.b <> ","
+              %{_this | b: _this.b <> ","}
             else
               _this.nind + 1
             end
             if (_this.pretty) do
               _this = struct.buf
-              _this.b = _this.b <> "\n"
+              %{_this | b: _this.b <> "\n"}
             end
             if (_this.pretty) do
               v = StringTools.lpad("", _this.indent, _this.nind * _this.indent.length)
               _this = struct.buf
-              _this.b = _this.b <> Std.string(v)
+              %{_this | b: _this.b <> Std.string(v)}
             end
             struct.write(i, Enum.at(v, i))
             if (i == last) do
               _this.nind - 1
               if (_this.pretty) do
                 _this = struct.buf
-                _this.b = _this.b <> "\n"
+                %{_this | b: _this.b <> "\n"}
               end
               if (_this.pretty) do
                 v = StringTools.lpad("", _this.indent, _this.nind * _this.indent.length)
                 _this = struct.buf
-                _this.b = _this.b <> Std.string(v)
+                %{_this | b: _this.b <> Std.string(v)}
               end
             end
+                    loop_fn.()
+                  catch
+                    :break -> nil
+                    :continue -> loop_fn.()
+                  end
+                end
+              end
+              try do
+                loop_fn.()
+              catch
+                :break -> nil
+              end
+            )
+            _this = struct.buf
+            %{_this | b: _this.b <> "]"}
+          else
+            if (c == StringMap) do
+              v = v
+              o = %{}
+              k = v.keys()
+              (
+                loop_fn = fn ->
+                  if (k.hasNext()) do
+                    try do
+                      k = k.next()
+              Reflect.setField(o, k, v.get(k))
                       loop_fn.()
                     catch
                       :break -> nil
@@ -135,32 +160,7 @@ defmodule JsonPrinter do
                     end
                   end
                 end
-                loop_fn.()
-              catch
-                :break -> nil
-              end
-            )
-            _this = struct.buf
-            _this.b = _this.b <> "]"
-          else
-            if (c == StringMap) do
-              v = v
-              o = %{}
-              k = v.keys()
-              (
                 try do
-                  loop_fn = fn ->
-                    if (k.hasNext()) do
-                      try do
-                        k = k.next()
-              Reflect.setField(o, k, v.get(k))
-                        loop_fn.()
-                      catch
-                        :break -> nil
-                        :continue -> loop_fn.()
-                      end
-                    end
-                  end
                   loop_fn.()
                 catch
                   :break -> nil
@@ -183,10 +183,10 @@ defmodule JsonPrinter do
         i = Type.enumIndex(v)
         v = Std.string(i)
         _this = struct.buf
-        _this.b = _this.b <> Std.string(v)
+        %{_this | b: _this.b <> Std.string(v)}
       8 ->
         _this = struct.buf
-        _this.b = _this.b <> "\"???\""
+        %{_this | b: _this.b <> "\"???\""}
     end
   end
 
@@ -200,17 +200,16 @@ defmodule JsonPrinter do
   @spec fields_string(t(), term(), Array.t()) :: nil
   def fields_string(%__MODULE__{} = struct, v, fields) do
     _this = struct.buf
-    _this.b = _this.b <> "{"
+    _this = %{_this | b: _this.b <> "{"}
     len = fields.length
     empty = true
     _g = 0
     _g = len
     (
-      try do
-        loop_fn = fn {empty} ->
-          if (_g < _g) do
-            try do
-              i = _g = _g + 1
+      loop_fn = fn {empty} ->
+        if (_g < _g) do
+          try do
+            i = _g = _g + 1
           f = Enum.at(fields, i)
           value = Reflect.field(v, f)
           if (Reflect.isFunction(value)), do: throw(:continue), else: nil
@@ -219,113 +218,114 @@ defmodule JsonPrinter do
       empty = false
     else
       _this = struct.buf
-      _this.b = _this.b <> ","
+      _this = %{_this | b: _this.b <> ","}
     end
           if (_this.pretty) do
       _this = struct.buf
-      _this.b = _this.b <> "\n"
+      _this = %{_this | b: _this.b <> "\n"}
     end
           if (_this.pretty) do
       v = StringTools.lpad("", _this.indent, _this.nind * _this.indent.length)
       _this = struct.buf
-      _this.b = _this.b <> Std.string(v)
+      _this = %{_this | b: _this.b <> Std.string(v)}
     end
           struct.quote(f)
           _this = struct.buf
-          _this.b = _this.b <> ":"
+          _this = %{_this | b: _this.b <> ":"}
           if (_this.pretty) do
       _this = struct.buf
-      _this.b = _this.b <> " "
+      _this = %{_this | b: _this.b <> " "}
     end
           struct.write(f, value)
           loop_fn.({empty})
-            catch
-              :break -> {empty}
-              :continue -> loop_fn.({empty})
-            end
-          else
-            {empty}
+          catch
+            :break -> {empty}
+            :continue -> loop_fn.({empty})
           end
+        else
+          {empty}
         end
-        loop_fn.({empty})
+      end
+      {empty} = try do
+        loop_fn.({nil})
       catch
-        :break -> {empty}
+        :break -> {nil}
       end
     )
     if (!empty) do
       _this.nind - 1
       if (_this.pretty) do
         _this = struct.buf
-        _this.b = _this.b <> "\n"
+        _this = %{_this | b: _this.b <> "\n"}
       end
       if (_this.pretty) do
         v = StringTools.lpad("", _this.indent, _this.nind * _this.indent.length)
         _this = struct.buf
-        _this.b = _this.b <> Std.string(v)
+        _this = %{_this | b: _this.b <> Std.string(v)}
       end
     end
     _this = struct.buf
-    _this.b = _this.b <> "}"
+    _this = %{_this | b: _this.b <> "}"}
   end
 
   @doc "Function quote_"
   @spec quote_(t(), String.t()) :: nil
   def quote_(%__MODULE__{} = struct, s) do
     _this = struct.buf
-    _this.b = _this.b <> "\""
+    _this = %{_this | b: _this.b <> "\""}
     i = 0
     length = s.length
     (
-      try do
-        loop_fn = fn {tempNumber} ->
-          if (i < length) do
-            try do
-              temp_number = nil
+      loop_fn = fn {temp_number} ->
+        if (i < length) do
+          try do
+            temp_number = nil
           index = i = i + 1
-          # tempNumber updated to s.cca(index)
+          temp_number = s.cca(index)
           c = temp_number
           case (c) do
       8 ->
         _this = struct.buf
-        _this.b = _this.b <> "\\b"
+        %{_this | b: _this.b <> "\\b"}
       9 ->
         _this = struct.buf
-        _this.b = _this.b <> "\\t"
+        %{_this | b: _this.b <> "\\t"}
       10 ->
         _this = struct.buf
-        _this.b = _this.b <> "\\n"
+        %{_this | b: _this.b <> "\\n"}
       12 ->
         _this = struct.buf
-        _this.b = _this.b <> "\\f"
+        %{_this | b: _this.b <> "\\f"}
       13 ->
         _this = struct.buf
-        _this.b = _this.b <> "\\r"
+        %{_this | b: _this.b <> "\\r"}
       34 ->
         _this = struct.buf
-        _this.b = _this.b <> "\\\""
+        %{_this | b: _this.b <> "\\\""}
       92 ->
         _this = struct.buf
-        _this.b = _this.b <> "\\\\"
+        %{_this | b: _this.b <> "\\\\"}
       _ ->
         _this = struct.buf
-        _this.b = _this.b <> String.fromCharCode(c)
+        %{_this | b: _this.b <> String.fromCharCode(c)}
     end
           loop_fn.({s.cca(index)})
-            catch
-              :break -> {tempNumber}
-              :continue -> loop_fn.({tempNumber})
-            end
-          else
-            {tempNumber}
+          catch
+            :break -> {temp_number}
+            :continue -> loop_fn.({temp_number})
           end
+        else
+          {temp_number}
         end
-        loop_fn.({tempNumber})
+      end
+      {temp_number} = try do
+        loop_fn.({nil})
       catch
-        :break -> {tempNumber}
+        :break -> {nil}
       end
     )
     _this = struct.buf
-    _this.b = _this.b <> "\""
+    _this = %{_this | b: _this.b <> "\""}
   end
 
 end
