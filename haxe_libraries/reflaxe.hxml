@@ -1,3 +1,5 @@
 -cp ${SCOPE_DIR}/vendor/reflaxe/src/
 -D reflaxe=4.0.0-beta
+--macro nullSafety("reflaxe")
+--macro reflaxe.ReflectCompiler.Start()
 --macro Sys.println("haxe_libraries/reflaxe.hxml:2: [Warning] Using dev version of library reflaxe")

@@ -37,8 +37,10 @@
 		"haxe_Int32.ex",
 		"haxe_Constraints.ex",
 		"haxe_CallStack.ex",
+		"haxe/sys_tools.ex",
 		"haxe/log.ex",
 		"haxe/json.ex",
+		"haxe/iterators/string_iterator_unicode.ex",
 		"haxe/io/output.ex",
 		"haxe/io/input.ex",
 		"haxe/io/f_p_helper.ex",
@@ -69,7 +71,7 @@
 		"Any.ex",
 		"e_reg.ex"
 	],
-	"id": 1,
+	"id": 3,
 	"wasCached": false,
 	"version": 1
 }

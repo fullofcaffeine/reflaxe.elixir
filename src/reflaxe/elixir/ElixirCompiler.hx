@@ -103,6 +103,7 @@ class ElixirCompiler extends DirectToStringCompiler {
     // Source mapping support for debugging and LLM workflows
     private var currentSourceMapWriter: Null<SourceMapWriter> = null;
     private var sourceMapOutputEnabled: Bool = false;
+    private var pendingSourceMapWriters: Array<SourceMapWriter> = [];
     
     // Parameter mapping system for abstract type implementation methods
     private var currentFunctionParameterMap: Map<String, String> = new Map();
@@ -229,6 +230,7 @@ class ElixirCompiler extends DirectToStringCompiler {
         if (!sourceMapOutputEnabled) return;
         
         currentSourceMapWriter = new SourceMapWriter(outputPath);
+        pendingSourceMapWriters.push(currentSourceMapWriter);
     }
     
     /**
@@ -613,7 +615,7 @@ class ElixirCompiler extends DirectToStringCompiler {
     }
     
     /**
-     * Required override for GenericCompiler - implements class compilation
+     * Required implementation for DirectToStringCompiler - implements class compilation
      * @param classType The Haxe class type
      * @param varFields Class variables
      * @param funcFields Class functions
@@ -624,9 +626,6 @@ class ElixirCompiler extends DirectToStringCompiler {
         
         // Skip standard library classes that shouldn't generate Elixir modules
         if (isStandardLibraryClass(classType.name)) {
-            #if debug
-            trace('Skipping standard library class: ${classType.name}');
-            #end
             return null;
         }
         
@@ -652,19 +651,12 @@ class ElixirCompiler extends DirectToStringCompiler {
         // Check for ExUnit test classes first (before other annotations)
         if (ExUnitCompiler.isExUnitTest(classType)) {
             var result = ExUnitCompiler.compile(classType, this);
-            if (sourceMapOutputEnabled) {
-                finalizeSourceMapWriter();
-            }
             return result;
         }
         
         // Use unified annotation system for detection, validation, and routing
         var annotationResult = reflaxe.elixir.helpers.AnnotationSystem.routeCompilation(classType, varFields, funcFields);
         if (annotationResult != null) {
-            // Generate source map for annotated compilation
-            if (sourceMapOutputEnabled) {
-                finalizeSourceMapWriter();
-            }
             return annotationResult;
         }
         
@@ -672,9 +664,6 @@ class ElixirCompiler extends DirectToStringCompiler {
         var annotationInfo = reflaxe.elixir.helpers.AnnotationSystem.detectAnnotations(classType);
         if (annotationInfo.primaryAnnotation == ":liveview") {
             var result = compileLiveViewClass(classType, varFields, funcFields);
-            if (sourceMapOutputEnabled) {
-                finalizeSourceMapWriter();
-            }
             return result;
         }
         
@@ -698,11 +687,6 @@ class ElixirCompiler extends DirectToStringCompiler {
         // Post-process to replace getAppName() calls with actual app name
         if (result != null) {
             result = replaceAppNameCalls(result, classType);
-        }
-        
-        // Finalize source mapping for this class
-        if (sourceMapOutputEnabled) {
-            finalizeSourceMapWriter();
         }
         
         return result;
@@ -989,10 +973,7 @@ class ElixirCompiler extends DirectToStringCompiler {
         // HXX templates compile to Phoenix HEEx format (~H sigils) and require Phoenix.Component
         var hxxChecker = new reflaxe.elixir.helpers.ClassCompiler();
         if (hxxChecker.usesHxxTemplates(classType, funcFields)) {
-            trace('LiveView ${moduleName} uses HXX→HEEx templates - adding Phoenix.Component');
             result.add('  use Phoenix.Component\n\n');
-        } else {
-            trace('LiveView ${moduleName} does not use HXX templates');
         }
         
         // LiveView modules don't need constructors or instance variables
@@ -1020,7 +1001,7 @@ class ElixirCompiler extends DirectToStringCompiler {
     }
     
     /**
-     * Required override for GenericCompiler - implements enum compilation
+     * Required implementation for DirectToStringCompiler - implements enum compilation
      */
     public function compileEnumImpl(enumType: EnumType, options: Array<EnumOptionData>): Null<String> {
         if (enumType == null) return null;
@@ -1031,7 +1012,7 @@ class ElixirCompiler extends DirectToStringCompiler {
     }
     
     /**
-     * Compile expression - required by BaseCompiler (implements abstract method)
+     * Compile expression - required by DirectToStringCompiler (implements abstract method)
      */
     public function compileExpressionImpl(expr: TypedExpr, topLevel: Bool): Null<String> {
         return compileElixirExpressionInternal(expr, topLevel);
@@ -1060,7 +1041,7 @@ class ElixirCompiler extends DirectToStringCompiler {
         
         // For now, don't generate standalone type alias files - they cause compilation errors
         // Type aliases should be defined within modules that use them
-        trace('Skipping standalone type alias generation for abstract ${typeName}');
+        // Skipping standalone type alias generation for abstract
         
         // Return null to prevent generating a standalone file for type-only abstracts
         return null;
@@ -1540,7 +1521,6 @@ class ElixirCompiler extends DirectToStringCompiler {
             case TFor(tvar, iterExpr, blockExpr):
                 // Debug: Log TFor handling
                 var varName = getOriginalVarName(tvar);
-                trace('Processing TFor: tvar=${varName}');
                 // Compile for-in loops to idiomatic Elixir Enum operations
                 compileForLoop(tvar, iterExpr, blockExpr);
                 
@@ -1707,7 +1687,7 @@ class ElixirCompiler extends DirectToStringCompiler {
                 
             case _:
                 // Handle unknown expression types gracefully
-                trace("Warning: Unhandled expression type: " + expr.expr.getName());
+                // Warning: Unhandled expression type
                 "nil";
         }
     }
@@ -3393,7 +3373,6 @@ class ElixirCompiler extends DirectToStringCompiler {
         // If the condition references a variable, use TVar-based substitution
         var condition: String;
         if (referencedTVar != null) {
-            trace('generateEnumFilterPattern: Found TVar ${getOriginalVarName(referencedTVar)}, substituting with ${targetVar}');
             condition = compileExpressionWithTVarSubstitution(conditionExpr, referencedTVar, targetVar);
         } else {
             condition = compileExpression(conditionExpr);
@@ -4514,20 +4493,15 @@ class ElixirCompiler extends DirectToStringCompiler {
                 }
             case "filter":
                 // array.filter(fn) → Enum.filter(array, fn)
-                trace('Array method: Compiling filter on ${objStr}');
                 if (compiledArgs.length > 0) {
                     // Check if the argument is a lambda that needs variable substitution
                     if (args.length > 0) {
-                        trace('Array method: Found ${args.length} arguments');
                         switch (args[0].expr) {
                             case TFunction(func):
-                                trace('Array method: Found TFunction with ${func.args.length} params');
                                 // Use centralized context-sensitive compilation
                                 var lambda = ExpressionCompiler.compileLambdaWithContext(this, func, "item");
-                                trace('Array method: Generated lambda - param: ${lambda.paramName}, body: ${lambda.body}');
                                 return 'Enum.filter(${objStr}, fn ${lambda.paramName} -> ${lambda.body} end)';
                             case _:
-                                trace('Array method: Not a TFunction, using regular compilation');
                                 // Not a simple lambda, use regular compilation
                                 return 'Enum.filter(${objStr}, ${compiledArgs[0]})';
                         }
@@ -5617,6 +5591,22 @@ class ElixirCompiler extends DirectToStringCompiler {
                 Context.error('Unknown elixir.Syntax method: ${methodName}', Context.currentPos());
                 "";
         };
+    }
+    
+    /**
+     * Override called after all files have been generated by DirectToStringCompiler.
+     * This is the proper place to generate source maps since the main .ex files exist now.
+     */
+    public override function onCompileEnd() {
+        // Generate all pending source maps after all .ex files are written
+        if (sourceMapOutputEnabled) {
+            for (writer in pendingSourceMapWriters) {
+                if (writer != null) {
+                    writer.generateSourceMap();
+                }
+            }
+            pendingSourceMapWriters = [];
+        }
     }
     
 }

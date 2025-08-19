@@ -897,6 +897,29 @@ What happens:
 3. **Use Mix tests** - they test that generated Elixir actually works
 4. **The TypeTools.iter error** = wrong test configuration, not API incompatibility
 
+## Critical: Vendoring and Dependency Management ⚠️
+
+### Lesson Learned: Missing Reflaxe Macro Registration
+**Issue**: When vendoring Reflaxe locally to fix the EReg module corruption bug, the critical `--macro reflaxe.ReflectCompiler.Start()` was accidentally removed from `haxe_libraries/reflaxe.hxml`, causing complete compilation failure where no .ex files were generated.
+
+**Root Cause**: The vendored configuration only included the classpath but missed the essential macro registration that actually starts the Reflaxe compiler framework.
+
+**Fix**: Always ensure vendored Reflaxe includes these critical lines in `haxe_libraries/reflaxe.hxml`:
+```hxml
+-cp ${SCOPE_DIR}/vendor/reflaxe/src/
+-D reflaxe=4.0.0-beta
+--macro nullSafety("reflaxe")
+--macro reflaxe.ReflectCompiler.Start()  # CRITICAL: Without this, no compilation happens!
+```
+
+**Prevention**: When vendoring any Haxe library:
+1. Compare the original `.hxml` configuration with the vendored version
+2. Preserve ALL macro calls and compiler directives
+3. Test immediately after vendoring to catch missing functionality
+4. Document why vendoring was necessary (in our case: EReg module corruption bug specific to Reflaxe.Elixir)
+
+**See**: [`vendor/reflaxe/src/reflaxe/helpers/BaseTypeHelper.hx`](vendor/reflaxe/src/reflaxe/helpers/BaseTypeHelper.hx) - Contains the EReg fix documentation
+
 ## Known Issues  
 - **Array Mutability**: Methods like `reverse()` and `sort()` don't mutate in place (Elixir lists are immutable)
   - Workaround: Use assignment like `reversed = reversed.reverse()` instead of just `reversed.reverse()`
