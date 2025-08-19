@@ -73,34 +73,34 @@ defmodule TodoPubSub do
     temp_struct = nil
     case (elem(message, 0)) do
       0 ->
-        _g = elem(message, 1)
-        todo = _g
+        g = elem(message, 1)
+        todo = g
         temp_struct = %{"type" => "todo_created", "todo" => todo}
       1 ->
-        _g = elem(message, 1)
-        todo = _g
+        g = elem(message, 1)
+        todo = g
         temp_struct = %{"type" => "todo_updated", "todo" => todo}
       2 ->
-        _g = elem(message, 1)
-        id = _g
+        g = elem(message, 1)
+        id = g
         temp_struct = %{"type" => "todo_deleted", "todo_id" => id}
       3 ->
-        _g = elem(message, 1)
-        action = _g
+        g = elem(message, 1)
+        action = g
         temp_struct = %{"type" => "bulk_update", "action" => TodoPubSub.bulkActionToString(action)}
       4 ->
-        _g = elem(message, 1)
-        user_id = _g
+        g = elem(message, 1)
+        user_id = g
         temp_struct = %{"type" => "user_online", "user_id" => user_id}
       5 ->
-        _g = elem(message, 1)
-        user_id = _g
+        g = elem(message, 1)
+        user_id = g
         temp_struct = %{"type" => "user_offline", "user_id" => user_id}
       6 ->
-        _g = elem(message, 1)
-        _g = elem(message, 2)
-        message = _g
-        level = _g
+        g = elem(message, 1)
+        g = elem(message, 2)
+        message = g
+        level = g
         temp_struct = %{"type" => "system_alert", "message" => message, "level" => TodoPubSub.alertLevelToString(level)}
     end
     SafePubSub.addTimestamp(temp_struct)
@@ -113,19 +113,19 @@ defmodule TodoPubSub do
   @spec parse_message_impl(term()) :: Option.t()
   def parse_message_impl(msg) do
     if (!SafePubSub.isValidMessage(msg)) do
-      Log.trace(SafePubSub.createMalformedMessageError(msg), %{"fileName" => "src_haxe/server/pubsub/TodoPubSub.hx", "lineNumber" => 205, "className" => "server.pubsub.TodoPubSub", "methodName" => "parseMessageImpl"})
+      Log.trace(SafePubSub.createMalformedMessageError(msg), %{"fileName" => "src_haxe/server/pubsub/TodoPubSub.hx", "lineNumber" => 188, "className" => "server.pubsub.TodoPubSub", "methodName" => "parseMessageImpl"})
       Option.none
     end
     temp_result = nil
-    _g = msg.type
-    case (_g) do
+    g = msg.type
+    case (g) do
       "bulk_update" ->
         if (msg.action != nil) do
           bulk_action = TodoPubSub.parseBulkAction(msg.action)
           case (case bulk_action do {:ok, _} -> 0; :error -> 1; _ -> -1 end) do
             0 ->
-              _g = case bulk_action do {:ok, value} -> value; :error -> nil; _ -> nil end
-              action = _g
+              g = case bulk_action do {:ok, value} -> value; :error -> nil; _ -> nil end
+              action = g
               temp_result = {:ok, {:bulk_update, action}}
             1 ->
               temp_result = Option.none
@@ -138,8 +138,8 @@ defmodule TodoPubSub do
           alert_level = TodoPubSub.parseAlertLevel(msg.level)
           case (case alert_level do {:ok, _} -> 0; :error -> 1; _ -> -1 end) do
             0 ->
-              _g = case alert_level do {:ok, value} -> value; :error -> nil; _ -> nil end
-              level = _g
+              g = case alert_level do {:ok, value} -> value; :error -> nil; _ -> nil end
+              level = g
               temp_result = {:ok, {:system_alert, msg.message, level}}
             1 ->
               temp_result = Option.none
@@ -158,7 +158,7 @@ defmodule TodoPubSub do
       "user_online" ->
         if (msg.user_id != nil), do: temp_result = {:ok, {:user_online, msg.user_id}}, else: temp_result = Option.none
       _ ->
-        Log.trace(SafePubSub.createUnknownMessageError(msg.type), %{"fileName" => "src_haxe/server/pubsub/TodoPubSub.hx", "lineNumber" => 237, "className" => "server.pubsub.TodoPubSub", "methodName" => "parseMessageImpl"})
+        Log.trace(SafePubSub.createUnknownMessageError(msg.type), %{"fileName" => "src_haxe/server/pubsub/TodoPubSub.hx", "lineNumber" => 220, "className" => "server.pubsub.TodoPubSub", "methodName" => "parseMessageImpl"})
         temp_result = Option.none
     end
     temp_result
@@ -178,15 +178,12 @@ defmodule TodoPubSub do
         temp_result = "delete_completed"
       2 ->
         elem(action, 1)
-        _g
         temp_result = "set_priority"
       3 ->
         elem(action, 1)
-        _g
         temp_result = "add_tag"
       4 ->
         elem(action, 1)
-        _g
         temp_result = "remove_tag"
     end
     temp_result

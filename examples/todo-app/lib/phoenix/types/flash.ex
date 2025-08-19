@@ -112,20 +112,60 @@ defmodule Flash do
     errors = []
     changeset_errors = Reflect.field(changeset, "errors")
     if (changeset_errors != nil) do
-      _g = 0
-      _g = Reflect.fields(changeset_errors)
-      Enum.map(_g, fn item -> field = Enum.at(_g, _g)
-      _g = _g + 1
-      field_errors = Reflect.field(changeset_errors, field)
-      if (Std.isOfType(field_errors, Array)) do
-        _g = 0
-        _g = field_errors
-        Enum.map(_g, fn item -> error = Enum.at(_g, _g)
-        _g = _g + 1
-        errors ++ ["" <> field <> ": " <> Std.string(error)] end)
+      g = 0
+      g = Reflect.fields(changeset_errors)
+      (
+        loop_helper = fn loop_fn, {g} ->
+          if (g < g.length) do
+            try do
+              field = Enum.at(g, g)
+            g = g + 1
+            field_errors = Reflect.field(changeset_errors, field)
+            if (Std.isOfType(field_errors, Array)) do
+        g = 0
+        g = field_errors
+        (
+          loop_helper = fn loop_fn, {g} ->
+            if (g < g.length) do
+              try do
+                error = Enum.at(g, g)
+              g = g + 1
+              errors ++ ["" <> field <> ": " <> Std.string(error)]
+              loop_fn.({g + 1})
+                loop_fn.(loop_fn, {g})
+              catch
+                :break -> {g}
+                :continue -> loop_fn.(loop_fn, {g})
+              end
+            else
+              {g}
+            end
+          end
+          {g} = try do
+            loop_helper.(loop_helper, {nil})
+          catch
+            :break -> {nil}
+          end
+        )
       else
         errors ++ ["" <> field <> ": " <> field_errors]
-      end end)
+      end
+            loop_fn.({g + 1})
+              loop_fn.(loop_fn, {g})
+            catch
+              :break -> {g}
+              :continue -> loop_fn.(loop_fn, {g})
+            end
+          else
+            {g}
+          end
+        end
+        {g} = try do
+          loop_helper.(loop_helper, {nil})
+        catch
+          :break -> {nil}
+        end
+      )
     end
     errors
   end

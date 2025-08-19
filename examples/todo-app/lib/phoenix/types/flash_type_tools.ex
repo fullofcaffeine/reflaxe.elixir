@@ -37,8 +37,8 @@ defmodule FlashTypeTools do
   @spec from_string(String.t()) :: FlashType.t()
   def from_string(str) do
     temp_result = nil
-    _g = String.downcase(str)
-    with "success" <- (_g) do
+    g = String.downcase(str)
+    with "success" <- (g) do
       temp_result = FlashType.success
     else
       "error" -> temp_result = FlashType.error
