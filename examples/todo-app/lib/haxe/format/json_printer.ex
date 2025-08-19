@@ -95,7 +95,7 @@ defmodule JsonPrinter do
             _g = 0
             _g = len
             (
-              loop_fn = fn ->
+              loop_helper = fn loop_fn ->
                 if (_g < _g) do
                   try do
                     i = _g = _g + 1
@@ -127,15 +127,17 @@ defmodule JsonPrinter do
                 %{_this | b: _this.b <> Std.string(v)}
               end
             end
-                    loop_fn.()
+                    loop_fn.(loop_fn)
                   catch
                     :break -> nil
-                    :continue -> loop_fn.()
+                    :continue -> loop_fn.(loop_fn)
                   end
+                else
+                  nil
                 end
               end
               try do
-                loop_fn.()
+                loop_helper.(loop_helper)
               catch
                 :break -> nil
               end
@@ -148,20 +150,22 @@ defmodule JsonPrinter do
               o = %{}
               k = v.keys()
               (
-                loop_fn = fn ->
+                loop_helper = fn loop_fn ->
                   if (k.hasNext()) do
                     try do
                       k = k.next()
               Reflect.setField(o, k, v.get(k))
-                      loop_fn.()
+                      loop_fn.(loop_fn)
                     catch
                       :break -> nil
-                      :continue -> loop_fn.()
+                      :continue -> loop_fn.(loop_fn)
                     end
+                  else
+                    nil
                   end
                 end
                 try do
-                  loop_fn.()
+                  loop_helper.(loop_helper)
                 catch
                   :break -> nil
                 end
@@ -206,7 +210,7 @@ defmodule JsonPrinter do
     _g = 0
     _g = len
     (
-      loop_fn = fn {empty} ->
+      loop_helper = fn loop_fn, {empty} ->
         if (_g < _g) do
           try do
             i = _g = _g + 1
@@ -238,16 +242,17 @@ defmodule JsonPrinter do
     end
           struct.write(f, value)
           loop_fn.({empty})
+            loop_fn.(loop_fn, {empty})
           catch
             :break -> {empty}
-            :continue -> loop_fn.({empty})
+            :continue -> loop_fn.(loop_fn, {empty})
           end
         else
           {empty}
         end
       end
       {empty} = try do
-        loop_fn.({nil})
+        loop_helper.(loop_helper, {nil})
       catch
         :break -> {nil}
       end
@@ -276,7 +281,7 @@ defmodule JsonPrinter do
     i = 0
     length = s.length
     (
-      loop_fn = fn {temp_number} ->
+      loop_helper = fn loop_fn, {temp_number} ->
         if (i < length) do
           try do
             temp_number = nil
@@ -310,16 +315,17 @@ defmodule JsonPrinter do
         %{_this | b: _this.b <> String.fromCharCode(c)}
     end
           loop_fn.({s.cca(index)})
+            loop_fn.(loop_fn, {temp_number})
           catch
             :break -> {temp_number}
-            :continue -> loop_fn.({temp_number})
+            :continue -> loop_fn.(loop_fn, {temp_number})
           end
         else
           {temp_number}
         end
       end
       {temp_number} = try do
-        loop_fn.({nil})
+        loop_helper.(loop_helper, {nil})
       catch
         :break -> {nil}
       end

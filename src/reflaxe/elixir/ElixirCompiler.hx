@@ -4550,60 +4550,59 @@ class ElixirCompiler extends DirectToStringCompiler {
         if (normalWhile) {
             // while (condition) { body }
             if (modifiedVars.length > 0) {
-                // Convert variable names to snake_case for consistency and initialize them
+                // Convert variable names to snake_case for consistency
                 var stateVarsInit = modifiedVars.map(v -> {
                     var snakeName = NamingHelper.toSnakeCase(v.name);
-                    // Initialize variables that aren't already defined
                     return snakeName;
                 });
                 var stateVars = stateVarsInit.join(", ");
                 
                 // Generate initial values - use nil for all loop variables
-                // since they're local to the loop and don't exist before it starts
                 var initialValues = modifiedVars.map(v -> {
-                    // All loop-modified variables should start as nil
-                    // They'll be immediately assigned in the loop body
                     return "nil";
                 }).join(", ");
                 
-                // Move loop_fn outside try block to fix scoping issues
+                // Use a simple recursive pattern that avoids scoping issues
+                // by passing the function as a parameter (Y combinator style)
                 return '(\n' +
-                       '  loop_fn = fn {${stateVars}} ->\n' +
+                       '  loop_helper = fn loop_fn, {${stateVars}} ->\n' +
                        '    if ${condition} do\n' +
                        '      try do\n' +
                        '        ${transformedBody}\n' +
+                       '        loop_fn.(loop_fn, {${stateVars}})\n' +
                        '      catch\n' +
                        '        :break -> {${stateVars}}\n' +
-                       '        :continue -> loop_fn.({${stateVars}})\n' +
+                       '        :continue -> loop_fn.(loop_fn, {${stateVars}})\n' +
                        '      end\n' +
                        '    else\n' +
                        '      {${stateVars}}\n' +
                        '    end\n' +
                        '  end\n' +
                        '  {${stateVars}} = try do\n' +
-                       '    loop_fn.({${initialValues}})\n' +
+                       '    loop_helper.(loop_helper, {${initialValues}})\n' +
                        '  catch\n' +
                        '    :break -> {${initialValues}}\n' +
                        '  end\n' +
                        ')';
             } else {
-                // Simple loop without state - compile normally but use tail recursion
+                // Simple loop without state - use Y combinator pattern
                 var body = compileExpression(ebody);
-                // Move loop_fn outside try block to fix scoping issues
                 return '(\n' +
-                       '  loop_fn = fn ->\n' +
+                       '  loop_helper = fn loop_fn ->\n' +
                        '    if ${condition} do\n' +
                        '      try do\n' +
                        '        ${body}\n' +
-                       '        loop_fn.()\n' +
+                       '        loop_fn.(loop_fn)\n' +
                        '      catch\n' +
                        '        :break -> nil\n' +
-                       '        :continue -> loop_fn.()\n' +
+                       '        :continue -> loop_fn.(loop_fn)\n' +
                        '      end\n' +
+                       '    else\n' +
+                       '      nil\n' +
                        '    end\n' +
                        '  end\n' +
                        '  try do\n' +
-                       '    loop_fn.()\n' +
+                       '    loop_helper.(loop_helper)\n' +
                        '  catch\n' +
                        '    :break -> nil\n' +
                        '  end\n' +
@@ -4619,28 +4618,38 @@ class ElixirCompiler extends DirectToStringCompiler {
                 });
                 var stateVars = stateVarsInit.join(", ");
                 
-                // Generate initial values - use nil for all loop variables
-                // since they're local to the loop and don't exist before it starts
+                // Generate initial values
                 var initialValues = modifiedVars.map(v -> {
-                    // All loop-modified variables should start as nil
-                    // They'll be immediately assigned in the loop body
                     return "nil";
                 }).join(", ");
                 
+                // For do-while, execute body once then use recursive pattern
                 return '(\n' +
-                       '  loop_fn = fn {${stateVars}} ->\n' +
-                       '    ${transformedBody}\n' +
+                       '  {${stateVars}} = {${initialValues}}\n' +
+                       '  ${transformedBody}\n' +
+                       '  loop_helper = fn loop_fn, {${stateVars}} ->\n' +
+                       '    if ${condition} do\n' +
+                       '      ${transformedBody}\n' +
+                       '      loop_fn.(loop_fn, {${stateVars}})\n' +
+                       '    else\n' +
+                       '      {${stateVars}}\n' +
+                       '    end\n' +
                        '  end\n' +
-                       '  {${stateVars}} = loop_fn.({${initialValues}})\n' +
+                       '  {${stateVars}} = loop_helper.(loop_helper, {${stateVars}})\n' +
                        ')';
             } else {
                 var body = compileExpression(ebody);
                 return '(\n' +
-                       '  loop_fn = fn ->\n' +
-                       '    ${body}\n' +
-                       '    if ${condition}, do: loop_fn.(), else: nil\n' +
+                       '  ${body}\n' +
+                       '  loop_helper = fn loop_fn ->\n' +
+                       '    if ${condition} do\n' +
+                       '      ${body}\n' +
+                       '      loop_fn.(loop_fn)\n' +
+                       '    else\n' +
+                       '      nil\n' +
+                       '    end\n' +
                        '  end\n' +
-                       '  loop_fn.()\n' +
+                       '  loop_helper.(loop_helper)\n' +
                        ')';
             }
         }
