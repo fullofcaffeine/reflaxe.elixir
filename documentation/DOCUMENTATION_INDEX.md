@@ -18,6 +18,12 @@ This index provides a comprehensive guide to all documentation in the Reflaxe.El
 | Use annotations | Annotations Reference | [`reference/ANNOTATIONS.md`](reference/ANNOTATIONS.md) |
 | Understand paradigm differences | Paradigm Bridge | [`paradigms/PARADIGM_BRIDGE.md`](paradigms/PARADIGM_BRIDGE.md) |
 | Work with Phoenix | Phoenix Integration | [`phoenix/HAXE_FOR_PHOENIX.md`](phoenix/HAXE_FOR_PHOENIX.md) |
+| Build Phoenix LiveView apps | LiveView Architecture | [`PHOENIX_LIVEVIEW_ARCHITECTURE.md`](PHOENIX_LIVEVIEW_ARCHITECTURE.md) |
+| Learn LiveView patterns | LiveView Patterns | [`PHOENIX_LIVEVIEW_PATTERNS.md`](PHOENIX_LIVEVIEW_PATTERNS.md) |
+| Implement LiveView features | LiveView Guide | [`guides/PHOENIX_LIVEVIEW_GUIDE.md`](guides/PHOENIX_LIVEVIEW_GUIDE.md) |
+| Test LiveView applications | LiveView Testing | [`PHOENIX_LIVEVIEW_TESTING.md`](PHOENIX_LIVEVIEW_TESTING.md) |
+| Use modern JavaScript patterns | JavaScript Patterns | [`JAVASCRIPT_PATTERNS.md`](JAVASCRIPT_PATTERNS.md) |
+| Understand testing architecture | Testing Architecture | [`TESTING_ARCHITECTURE.md`](TESTING_ARCHITECTURE.md) |
 | Find current development plan | Active PRD | [`plans/ACTIVE_PRD.md`](plans/ACTIVE_PRD.md) |
 | Reference existing code | Reference implementations | `/Users/fullofcaffeine/workspace/code/haxe.elixir.reference/` |
 | Plan Reflaxe enhancements | Future Modifications | [`../vendor/reflaxe/FUTURE_MODIFICATIONS.md`](../vendor/reflaxe/FUTURE_MODIFICATIONS.md) |
@@ -37,6 +43,7 @@ This index provides a comprehensive guide to all documentation in the Reflaxe.El
 - **[`ADVANCED_ECTO_GUIDE.md`](guides/ADVANCED_ECTO_GUIDE.md)** - Database integration patterns
 - **[`TYPE_SAFE_ASSIGNS.md`](guides/TYPE_SAFE_ASSIGNS.md)** - Type-safe Phoenix assigns and socket abstractions
 - **[`WATCHER_DEVELOPMENT_GUIDE.md`](guides/WATCHER_DEVELOPMENT_GUIDE.md)** - File watcher workflow
+- **[`PHOENIX_LIVEVIEW_GUIDE.md`](guides/PHOENIX_LIVEVIEW_GUIDE.md)** - **NEW**: Step-by-step Phoenix LiveView implementation with Haxe
 
 ### 2. Architecture Documentation (`/documentation/architecture/`)
 **Purpose**: Explain system design and implementation details
@@ -57,6 +64,8 @@ This index provides a comprehensive guide to all documentation in the Reflaxe.El
 - **[`ELIXIR_SYNTAX_IMPLEMENTATION.md`](ELIXIR_SYNTAX_IMPLEMENTATION.md)** - **NEW**: Complete elixir.Syntax implementation analysis and success documentation
 - **[`EXTERN_CLASS_SYNTAX_INJECTION.md`](EXTERN_CLASS_SYNTAX_INJECTION.md)** - Extern class vs regular class approaches for syntax injection
 - **[`LIX_VENDORED_DEPENDENCIES.md`](LIX_VENDORED_DEPENDENCIES.md)** - **NEW**: Lix vendored dependency management patterns and best practices
+- **[`JAVASCRIPT_PATTERNS.md`](JAVASCRIPT_PATTERNS.md)** - **NEW**: Modern Haxe JavaScript patterns, async/await, and DOM handling
+- **[`TESTING_ARCHITECTURE.md`](TESTING_ARCHITECTURE.md)** - **NEW**: Complete testing strategy for compiler and applications
 
 ### 3. Reference Documentation (`/documentation/reference/`)
 **Purpose**: API references and feature specifications
@@ -76,6 +85,9 @@ This index provides a comprehensive guide to all documentation in the Reflaxe.El
 
 - **[`HAXE_FOR_PHOENIX.md`](phoenix/HAXE_FOR_PHOENIX.md)** - Phoenix development with Haxe advantages
 - **[`PHOENIX_DIRECTORY_STRUCTURE.md`](PHOENIX_DIRECTORY_STRUCTURE.md)** - Phoenix conventions vs Haxe organization
+- **[`PHOENIX_LIVEVIEW_ARCHITECTURE.md`](PHOENIX_LIVEVIEW_ARCHITECTURE.md)** - **NEW**: Core LiveView philosophy and server-centric patterns
+- **[`PHOENIX_LIVEVIEW_PATTERNS.md`](PHOENIX_LIVEVIEW_PATTERNS.md)** - **NEW**: Where Haxe makes LiveView better with compile-time safety
+- **[`PHOENIX_LIVEVIEW_TESTING.md`](PHOENIX_LIVEVIEW_TESTING.md)** - **NEW**: Multi-layer testing strategy for LiveView apps
 
 ### 6. LLM/AI Documentation (`/documentation/llm/`)
 **Purpose**: AI-optimized documentation for agents and LLMs

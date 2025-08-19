@@ -25,6 +25,8 @@ import reflaxe.elixir.helpers.EnumCompiler;
 import reflaxe.elixir.helpers.ClassCompiler;
 import reflaxe.elixir.helpers.PatternMatcher;
 import reflaxe.elixir.helpers.GuardCompiler;
+import reflaxe.elixir.helpers.PipelineOptimizer;
+import reflaxe.elixir.helpers.PipelineOptimizer.PipelinePattern;
 import reflaxe.elixir.helpers.TemplateCompiler;
 import reflaxe.elixir.helpers.SchemaCompiler;
 import reflaxe.elixir.helpers.ProtocolCompiler;
@@ -90,6 +92,9 @@ class ElixirCompiler extends DirectToStringCompiler {
     private var patternMatcher: reflaxe.elixir.helpers.PatternMatcher;
     private var guardCompiler: reflaxe.elixir.helpers.GuardCompiler;
     
+    // Pipeline optimization for idiomatic Elixir code generation
+    private var pipelineOptimizer: reflaxe.elixir.helpers.PipelineOptimizer;
+    
     // Source mapping support for debugging and LLM workflows
     private var currentSourceMapWriter: Null<SourceMapWriter> = null;
     private var sourceMapOutputEnabled: Bool = false;
@@ -109,6 +114,7 @@ class ElixirCompiler extends DirectToStringCompiler {
         this.typer = new reflaxe.elixir.ElixirTyper();
         this.patternMatcher = new reflaxe.elixir.helpers.PatternMatcher();
         this.guardCompiler = new reflaxe.elixir.helpers.GuardCompiler();
+        this.pipelineOptimizer = new reflaxe.elixir.helpers.PipelineOptimizer(this);
         
         // Set compiler reference for delegation
         this.patternMatcher.setCompiler(this);
@@ -244,6 +250,94 @@ class ElixirCompiler extends DirectToStringCompiler {
         // Check if the variable has :realPath metadata
         // TVar has both name and meta properties, so we can use the helper
         return v.getNameOrMeta(":realPath");
+    }
+    
+    /**
+     * Determine which statement indices were processed as part of a pipeline pattern.
+     * This prevents double-compilation of statements that were already included in the pipeline.
+     */
+    private function getProcessedStatementIndices(statements: Array<TypedExpr>, pattern: PipelinePattern): Array<Int> {
+        var processedIndices = [];
+        var targetVariable = pattern.variable;
+        
+        // Find all statements that operate on the pipeline variable
+        for (i in 0...statements.length) {
+            var stmt = statements[i];
+            if (statementTargetsVariable(stmt, targetVariable)) {
+                processedIndices.push(i);
+            }
+        }
+        
+        return processedIndices;
+    }
+    
+    /**
+     * Check if a statement targets a specific variable (used for pipeline detection).
+     */
+    private function statementTargetsVariable(stmt: TypedExpr, variableName: String): Bool {
+        return switch(stmt.expr) {
+            case TVar(v, init) if (init != null):
+                // var x = f(x, ...) pattern
+                var varName = v.name;
+                if (varName == variableName) {
+                    // Check if the init expression uses the same variable
+                    containsVariableReference(init, variableName);
+                } else {
+                    false;
+                }
+                
+            case TBinop(OpAssign, {expr: TLocal(v)}, right):
+                // x = f(x, ...) pattern
+                var varName = v.name;
+                if (varName == variableName) {
+                    // Check if the right side uses the same variable
+                    containsVariableReference(right, variableName);
+                } else {
+                    false;
+                }
+                
+            default:
+                false;
+        }
+    }
+    
+    /**
+     * Check if an expression contains a reference to a specific variable.
+     */
+    private function containsVariableReference(expr: TypedExpr, variableName: String): Bool {
+        return switch(expr.expr) {
+            case TLocal(v):
+                v.name == variableName;
+                
+            case TCall(func, args):
+                // Check if first argument is the target variable
+                if (args.length > 0 && containsVariableReference(args[0], variableName)) {
+                    true;
+                } else {
+                    // Check other arguments and function
+                    var foundInFunc = containsVariableReference(func, variableName);
+                    var foundInArgs = false;
+                    for (arg in args) {
+                        if (containsVariableReference(arg, variableName)) {
+                            foundInArgs = true;
+                            break;
+                        }
+                    }
+                    foundInFunc || foundInArgs;
+                }
+                
+            case TBinop(_, e1, e2):
+                containsVariableReference(e1, variableName) || containsVariableReference(e2, variableName);
+                
+            case TField(e, _):
+                containsVariableReference(e, variableName);
+                
+            case TParenthesis(e):
+                containsVariableReference(e, variableName);
+                
+            default:
+                false;
+        }
     }
     
     /**
@@ -1351,16 +1445,46 @@ class ElixirCompiler extends DirectToStringCompiler {
                 } else if (el.length == 1) {
                     compileExpression(el[0]);
                 } else {
-                    // For multiple statements, compile each and join with newlines
-                    // The last expression is the return value in Elixir
-                    var compiledStatements = [];
-                    for (i in 0...el.length) {
-                        var compiled = compileExpression(el[i]);
-                        if (compiled != null && compiled.trim() != "") {
-                            compiledStatements.push(compiled);
+                    // Check for pipeline optimization opportunities first
+                    var pipelinePattern = pipelineOptimizer.detectPipelinePattern(el);
+                    
+                    if (pipelinePattern != null) {
+                        // Generate idiomatic pipeline code
+                        var pipelineCode = pipelineOptimizer.compilePipeline(pipelinePattern);
+                        
+                        // Handle any remaining non-pipeline statements
+                        var processedIndices = getProcessedStatementIndices(el, pipelinePattern);
+                        var remainingStatements = [];
+                        
+                        for (i in 0...el.length) {
+                            if (processedIndices.indexOf(i) == -1) {
+                                var compiled = compileExpression(el[i]);
+                                if (compiled != null && compiled.trim() != "") {
+                                    remainingStatements.push(compiled);
+                                }
+                            }
                         }
+                        
+                        // Combine pipeline and remaining statements
+                        if (remainingStatements.length > 0) {
+                            var allStatements = [pipelineCode].concat(remainingStatements);
+                            allStatements.join("\n");
+                        } else {
+                            pipelineCode;
+                        }
+                    } else {
+                        // No pipeline pattern detected - use traditional compilation
+                        // For multiple statements, compile each and join with newlines
+                        // The last expression is the return value in Elixir
+                        var compiledStatements = [];
+                        for (i in 0...el.length) {
+                            var compiled = compileExpression(el[i]);
+                            if (compiled != null && compiled.trim() != "") {
+                                compiledStatements.push(compiled);
+                            }
+                        }
+                        compiledStatements.join("\n");
                     }
-                    compiledStatements.join("\n");
                 }
                 
             case TIf(econd, eif, eelse):

@@ -400,6 +400,16 @@ This is acceptable - helpers are simpler for our needs while following similar s
 
 **Pattern**: All Phoenix features use **Extern + Compiler Helper** architecture for optimal type safety and code generation.
 
+## Phoenix LiveView Development ⚡ **COMPLETE DOCUMENTATION**
+
+**Comprehensive guides for building idiomatic Phoenix LiveView applications with Haxe→Elixir**:
+- **See**: [`documentation/PHOENIX_LIVEVIEW_ARCHITECTURE.md`](documentation/PHOENIX_LIVEVIEW_ARCHITECTURE.md) - Core philosophy, server-centric patterns, and client code size limits (<200 lines)
+- **See**: [`documentation/PHOENIX_LIVEVIEW_PATTERNS.md`](documentation/PHOENIX_LIVEVIEW_PATTERNS.md) - Where Haxe makes LiveView better: compile-time type safety, zero runtime errors, exhaustive pattern matching
+- **See**: [`documentation/guides/PHOENIX_LIVEVIEW_GUIDE.md`](documentation/guides/PHOENIX_LIVEVIEW_GUIDE.md) - Step-by-step implementation with real-world examples
+- **See**: [`documentation/PHOENIX_LIVEVIEW_TESTING.md`](documentation/PHOENIX_LIVEVIEW_TESTING.md) - Multi-layer testing strategy with type-safe test data
+
+**Key Insight**: Haxe brings **compile-time safety to a runtime environment** - catching entire classes of production errors that traditional LiveView applications only discover at runtime.
+
 ## Phoenix LiveView Asset Pipeline Rules ⚡
 
 ### CRITICAL: JavaScript Bundle Optimization
@@ -645,6 +655,46 @@ When resolving duplicate code or methods:
 - ✅ Regex `~/{(\d+)}/g.map()` approach (robust, follows js.Syntax patterns)
 - **Decision**: Replace simple approach with regex approach, don't just remove newer code
 
+### ⚠️ CRITICAL: Check Haxe Standard Library First
+**FUNDAMENTAL RULE: Always check if Haxe stdlib already offers something before implementing it ourselves.**
+
+**Why This Matters:**
+- **Avoid Duplicate Work**: Don't reimplement well-tested, cross-platform solutions
+- **Better Quality**: Haxe stdlib code is optimized, tested, and maintained by the core team
+- **Cross-Platform Compatibility**: Standard library works consistently across all targets
+- **Type Safety**: Official APIs have better type definitions and documentation
+
+**Examples of Common Implementations to Check:**
+```haxe
+// ❌ BAD: Reimplementing localStorage
+class LocalStorage {
+    static function setItem(key: String, value: String) { ... }
+    static function getItem(key: String): String { ... }
+}
+
+// ✅ GOOD: Using existing Haxe stdlib
+import js.Browser;
+var storage = js.Browser.getLocalStorage(); // js.html.Storage
+storage.setItem(key, value);
+var value = storage.getItem(key);
+```
+
+**Always Check Before Implementing:**
+- **Storage APIs**: js.Browser.getLocalStorage(), js.Browser.getSessionStorage()
+- **HTTP/Fetch**: js.lib.Promise, native fetch() via js.Syntax.code()
+- **Date/Time**: Date class (cross-platform), target-specific DateTime
+- **JSON**: haxe.Json for parsing/stringifying
+- **Collections**: Array, Map, Set, List with rich standard library methods
+- **String Operations**: StringTools, EReg for regex
+- **Math**: Math class with comprehensive mathematical functions
+- **File/IO**: sys.io.File, sys.FileSystem for system targets
+
+**Development Process:**
+1. **Search Haxe API docs first**: https://api.haxe.org/
+2. **Check target-specific APIs**: js.html.*, sys.*, eval.*, etc.
+3. **Look at reference code**: Check `/haxe/std/` in reference folder
+4. **Only implement if missing**: Create abstracts/externs for new functionality
+
 ### ⚠️ CRITICAL: Type Safety and String Avoidance
 **FUNDAMENTAL RULE: Avoid strings in compiler code unless absolutely necessary. When strings ARE necessary, they must be type-checked.**
 
@@ -734,83 +784,9 @@ test: add comprehensive snapshot tests for new enum patterns
 - **Web Resources**: Use WebSearch and WebFetch for current documentation, API references, and best practices
 - **Principle**: Always reference existing working code and official documentation rather than guessing or assuming implementation details
 
-## JavaScript Async/Await Support ✨ **PRODUCTION READY**
+## JavaScript Development Patterns ⚡
 
-**Complete async/await support for modern JavaScript compilation**:
-- ✅ **@:async annotation** - Transform functions to native `async function` declarations
-- ✅ **Anonymous function support** - Full async support for lambda expressions and event handlers
-- ✅ **Type-safe Promise handling** - Automatic Promise<T> wrapping with import-aware type detection
-- ✅ **Custom JS Generator** - AsyncJSGenerator extends ExampleJSGenerator for proper code generation
-- ✅ **Zero runtime overhead** - Pure compile-time transformation via build macros
-
-**See**: [`documentation/ASYNC_AWAIT.md`](documentation/ASYNC_AWAIT.md) - Complete usage guide and examples
-
-## Modern Haxe JavaScript Patterns ⚡ **REQUIRED READING**
-
-**CRITICAL**: Always check Haxe reference folder and official docs for modern APIs before implementing JavaScript features.
-
-### 1. JavaScript Code Injection
-❌ **Deprecated (Haxe 4.1+)**:
-```haxe
-untyped __js__("console.log({0})", value);  // Shows deprecation warning
-```
-
-✅ **Modern (Haxe 4.1+)**:
-```haxe
-js.Syntax.code("console.log({0})", value);  // Clean, no warnings
-```
-
-### 2. Type-Safe DOM Element Casting
-❌ **Unsafe Pattern**:
-```haxe
-var element = cast(e.target, js.html.Element);  // No type checking
-```
-
-✅ **Safe Pattern**:
-```haxe
-var target = e.target;
-if (target != null && js.Syntax.instanceof(target, js.html.Element)) {
-    var element = cast(target, js.html.Element);  // Type-safe casting
-    // Use element safely
-}
-```
-
-### 3. Performance Monitoring APIs
-❌ **Deprecated (Shows warnings)**:
-```haxe
-var timing = js.Browser.window.performance.timing;  // PerformanceTiming deprecated
-var loadTime = timing.loadEventEnd - timing.navigationStart;
-```
-
-✅ **Modern (No warnings)**:
-```haxe
-var entries = js.Browser.window.performance.getEntriesByType("navigation");
-if (entries.length > 0) {
-    var navTiming: js.html.PerformanceNavigationTiming = cast entries[0];
-    var domLoadTime = navTiming.domContentLoadedEventEnd - navTiming.domContentLoadedEventStart;
-    var fullLoadTime = navTiming.loadEventEnd - navTiming.fetchStart;
-}
-```
-
-### 4. DOM Hierarchy Understanding
-```
-EventTarget (addEventListener, removeEventListener)
-    ↓
-Node (nodeName, nodeType, parentNode)
-    ↓  
-DOMElement (id, className, classList, attributes)
-    ↓
-Element (click, focus, innerHTML) - The HTML element you usually want
-```
-
-### Development Rules
-1. **ALWAYS check existing implementations first** - Before starting any task, search for existing implementations, similar patterns, or related code in the codebase to avoid duplicate work
-2. **Verify task completion status** - Check if the task is already done through existing files, examples, or alternative approaches before implementing from scratch
-3. **Check deprecation warnings** - Never ignore Haxe compiler warnings about deprecated APIs
-4. **Reference modern docs** - Use https://api.haxe.org/ for Haxe 4.3+ patterns
-5. **Use reference folder** - Check `/Users/fullofcaffeine/workspace/code/haxe.elixir.reference/haxe/std/js/` for modern implementations
-6. **Type safety first** - Always use `js.Syntax.instanceof()` before casting DOM elements
-7. **Performance APIs** - Use `PerformanceNavigationTiming` instead of deprecated `PerformanceTiming`
+**See**: [`documentation/JAVASCRIPT_PATTERNS.md`](documentation/JAVASCRIPT_PATTERNS.md) - Modern Haxe JavaScript patterns, async/await support, and type-safe DOM handling
 
 ## Implementation Status
 **See**: [`documentation/reference/FEATURES.md`](documentation/reference/FEATURES.md) - Complete feature status and production readiness
@@ -941,61 +917,13 @@ What happens:
 
 **All historical implementation details and fixes moved to**: [`documentation/TASK_HISTORY.md`](documentation/TASK_HISTORY.md)
 
-## Testing Quick Reference ⚠️
+## Testing Strategy ⚠️
 
-**CRITICAL**: Reflaxe.Elixir uses **4 different test types** - choose the right one for your task!
-
-### Test Type Matrix
-| What You're Testing | Test Type | When to Use |
-|-------------------|-----------|-------------|
-| **New compiler feature** | Snapshot test | Testing AST → Elixir transformation |
-| **Build macro validation** | Compile-time test | Testing warnings/errors from DSLs |
-| **Build system integration** | Mix test | Testing generated code runs in BEAM |
-| **Framework integration** | Example test | Testing real-world usage patterns |
-
-### ExUnit Testing Philosophy ⚠️
-
-**CRITICAL RULE: Always write ExUnit tests in Haxe, NEVER in Elixir directly**
-
-- ✅ **Write tests in Haxe** using `std/haxe/test/ExUnit.hx` and `std/haxe/test/Assert.hx` externs
-- ✅ **Use @:exunit annotation** to mark test classes that should compile to ExUnit modules
-- ✅ **Extend TestCase** and use @:test annotation for test methods
-- ❌ **NEVER write .exs test files directly** - this breaks the "write once in Haxe" philosophy
-- ❌ **NEVER manually create ExUnit test modules** - let the compiler generate them
-
-**Example Haxe ExUnit Test**:
-```haxe
-import haxe.test.TestCase;
-import haxe.test.Assert;
-
-@:exunit
-class MyFeatureTest extends TestCase {
-    @:test
-    function testSomething() {
-        Assert.equals(expected, actual);
-        Assert.isOk(someResult);
-    }
-}
-```
-
-**Why**: This maintains single-source-of-truth in Haxe and ensures tests benefit from Haxe's type system while compiling to idiomatic ExUnit code.
-
-### Core Commands
-```bash
-npm test                                    # Run all tests
-haxe test/Test.hxml test=feature_name      # Run specific snapshot test
-haxe test/Test.hxml test=feature_name update-intended  # Accept new output
-MIX_ENV=test mix test                      # Run Mix integration tests
-```
-
-**⚠️ CRITICAL RULE**: Never remove test code to fix failures - fix the underlying compiler issue instead.
-
-**See**: [`documentation/TESTING_OVERVIEW.md`](documentation/TESTING_OVERVIEW.md) - **COMPLETE testing guide for LLMs**
-- 4 test types explained in detail
-- When to use each type  
-- How to create tests for new features
-- Common workflows and troubleshooting
-- Why you can't unit test the compiler directly (macro-time vs runtime)
+**See**: [`documentation/TESTING_ARCHITECTURE.md`](documentation/TESTING_ARCHITECTURE.md) - **Complete testing architecture**
+- **Key insight**: Examples (todo-app) ARE E2E tests for the compiler
+- **Two layers**: Compiler testing vs Application testing  
+- **Testing matrix**: Snapshot, Integration, Examples-as-E2E, Browser tests
+- **Commands**: `npm test`, `MIX_ENV=test mix test`, `mix compile` (in examples)
 
 
 ## Functional Programming Transformations

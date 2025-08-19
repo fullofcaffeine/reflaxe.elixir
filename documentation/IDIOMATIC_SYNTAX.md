@@ -39,12 +39,31 @@ Every translation decision prioritizes **idiomatic output**. For example:
 
 ## Pipe Operators
 
-Haxe.Elixir automatically transforms method chaining into Elixir's pipe operator (`|>`).
+Haxe.Elixir features **intelligent pipeline optimization** that automatically detects sequential operations and transforms them into idiomatic Elixir pipeline operators (`|>`).
 
-### Basic Transformation
+### Automatic Pipeline Detection ✨ **NEW**
 
+The compiler analyzes your Haxe code and automatically detects these patterns:
+
+**Pattern 1: Sequential Variable Operations**
 ```haxe
-// Haxe code
+// Haxe code - Sequential operations on same variable
+socket = assign(socket, :name, "Alice");
+socket = assign(socket, :age, 30);
+socket = assign(socket, :status, :active);
+```
+
+```elixir
+# Generated Elixir - Automatic pipeline transformation
+socket
+  |> assign(:name, "Alice")
+  |> assign(:age, 30)
+  |> assign(:status, :active)
+```
+
+**Pattern 2: Method Chaining**
+```haxe
+// Haxe code - Method chaining
 var result = input
     .trim()
     .toLowerCase()
@@ -54,7 +73,7 @@ var result = input
 ```
 
 ```elixir
-# Generated Elixir
+# Generated Elixir - Method chains become pipelines
 result = input
   |> String.trim()
   |> String.downcase()
@@ -62,6 +81,52 @@ result = input
   |> Enum.filter(&(String.length(&1) > 3))
   |> Enum.map(&String.capitalize/1)
 ```
+
+### Pipeline Pattern Recognition ⚡ **NEW**
+
+The compiler intelligently recognizes these patterns and automatically optimizes them:
+
+**Phoenix LiveView Assign Chains:**
+```haxe
+// Traditional sequential assignments
+socket = assign(socket, :current_user, user);
+socket = assign(socket, :todos, todos);
+socket = assign(socket, :loading, false);
+```
+
+Becomes:
+```elixir
+# Idiomatic pipeline
+socket
+  |> assign(:current_user, user)
+  |> assign(:todos, todos)
+  |> assign(:loading, false)
+```
+
+**Enum Operations:**
+```haxe
+// Sequential transformations
+data = Enum.filter(data, x -> x.active);
+data = Enum.map(data, x -> x.name);
+data = Enum.sort(data);
+```
+
+Becomes:
+```elixir
+# Functional pipeline
+data
+  |> Enum.filter(&(&1.active))
+  |> Enum.map(&(&1.name))
+  |> Enum.sort()
+```
+
+### When Pipeline Optimization Triggers
+
+The optimization automatically activates when:
+- **2+ sequential operations** on the same variable
+- **Variable reassignment pattern**: `var = func(var, args)`
+- **Recognized pipeline functions**: `assign`, `push_event`, `map`, `filter`, etc.
+- **Non-conflicting statements**: No complex control flow between operations
 
 ### Complex Pipelines
 

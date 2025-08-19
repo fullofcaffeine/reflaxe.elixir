@@ -520,6 +520,7 @@ helpers/
 ├── EnumCompiler.hx        # Enum to tagged tuple compilation
 ├── PatternMatcher.hx      # Pattern matching compilation
 ├── GuardCompiler.hx       # Guard clause compilation
+├── PipelineOptimizer.hx   # ⚡ NEW: Intelligent pipeline generation
 ├── RouterCompiler.hx      # Phoenix.Router generation with @:router/@:route DSL
 ├── SchemaCompiler.hx      # Ecto.Schema generation
 ├── ChangesetCompiler.hx   # Ecto.Changeset generation
@@ -530,6 +531,43 @@ helpers/
 ├── TemplateCompiler.hx    # Phoenix template compilation
 └── NamingHelper.hx        # Haxe→Elixir naming conventions
 ```
+
+### ⚡ Pipeline Optimization Architecture **NEW**
+
+The PipelineOptimizer represents a significant architectural advancement - moving from mechanical compilation to intelligent pattern recognition:
+
+**AST Pattern Analysis:**
+```haxe
+// PipelineOptimizer analyzes TBlock expressions and detects:
+// Pattern: socket = assign(socket, :key1, value1)
+//          socket = assign(socket, :key2, value2)
+// Result:  socket |> assign(:key1, value1) |> assign(:key2, value2)
+
+class PipelineOptimizer {
+    public function detectPipelinePattern(statements: Array<TypedExpr>): Null<PipelinePattern>
+    public function compilePipeline(pattern: PipelinePattern): String
+}
+```
+
+**Integration with Main Compiler:**
+```haxe
+// In ElixirCompiler.hx - TBlock case
+case TBlock(el):
+    var pipelinePattern = pipelineOptimizer.detectPipelinePattern(el);
+    if (pipelinePattern != null) {
+        // Generate idiomatic pipeline code
+        var pipelineCode = pipelineOptimizer.compilePipeline(pipelinePattern);
+        // Handle remaining non-pipeline statements
+        // ...
+    }
+```
+
+**Detected Patterns:**
+- **Sequential Variable Operations**: `var = func(var, args)`
+- **Phoenix LiveView Chains**: `assign()`, `push_event()`, `push_patch()`
+- **Enum Operations**: `map()`, `filter()`, `reduce()`, `reject()`
+- **String Transformations**: `trim()`, `downcase()`, `split()`
+- **Map Operations**: `put()`, `get()`, `merge()`, `delete()`
 
 ### Compilation Flow Example
 

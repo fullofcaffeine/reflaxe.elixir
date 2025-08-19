@@ -174,6 +174,15 @@ This document outlines the development plans for Reflaxe.Elixir, organized by co
   - PubSub patterns
   - Node communication helpers
 
+### Language Enhancements
+- [ ] **Enhanced Async/Await Syntax** 🎨 *Developer Experience Enhancement*
+  - `@:await` annotation syntax for cleaner async code
+  - Current: `Async.await(someAsyncFunction())` (verbose)
+  - Proposed: `@:await someAsyncFunction()` (elegant)
+  - Benefits: Reduced boilerplate, better readability, annotation-based approach consistent with other Haxe features
+  - Implementation: Extend async build macro to detect and transform `@:await` annotations
+  - Priority: MEDIUM - Current system works well, this is a quality-of-life improvement
+
 ### Improvements
 - [ ] Memory usage optimizations
 - [ ] Compilation speed improvements
