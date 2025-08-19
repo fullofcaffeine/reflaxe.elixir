@@ -27,6 +27,7 @@ import reflaxe.elixir.helpers.PatternMatcher;
 import reflaxe.elixir.helpers.GuardCompiler;
 import reflaxe.elixir.helpers.PipelineOptimizer;
 import reflaxe.elixir.helpers.PipelineOptimizer.PipelinePattern;
+import reflaxe.elixir.helpers.ImportOptimizer;
 import reflaxe.elixir.helpers.TemplateCompiler;
 import reflaxe.elixir.helpers.SchemaCompiler;
 import reflaxe.elixir.helpers.ProtocolCompiler;
@@ -95,6 +96,9 @@ class ElixirCompiler extends DirectToStringCompiler {
     // Pipeline optimization for idiomatic Elixir code generation
     private var pipelineOptimizer: reflaxe.elixir.helpers.PipelineOptimizer;
     
+    // Import optimization for clean import statements
+    private var importOptimizer: reflaxe.elixir.helpers.ImportOptimizer;
+    
     // Source mapping support for debugging and LLM workflows
     private var currentSourceMapWriter: Null<SourceMapWriter> = null;
     private var sourceMapOutputEnabled: Bool = false;
@@ -115,6 +119,7 @@ class ElixirCompiler extends DirectToStringCompiler {
         this.patternMatcher = new reflaxe.elixir.helpers.PatternMatcher();
         this.guardCompiler = new reflaxe.elixir.helpers.GuardCompiler();
         this.pipelineOptimizer = new reflaxe.elixir.helpers.PipelineOptimizer(this);
+        this.importOptimizer = new reflaxe.elixir.helpers.ImportOptimizer(this);
         
         // Set compiler reference for delegation
         this.patternMatcher.setCompiler(this);
@@ -627,6 +632,9 @@ class ElixirCompiler extends DirectToStringCompiler {
         // Store current class context for use in expression compilation
         this.currentClassType = classType;
         
+        // Reset import optimizer for this module
+        importOptimizer.reset();
+        
         // Set framework-aware file path BEFORE compilation using Reflaxe's built-in system
         setFrameworkAwareOutputPath(classType);
         
@@ -672,6 +680,7 @@ class ElixirCompiler extends DirectToStringCompiler {
         // Use the enhanced ClassCompiler for proper struct/module generation
         var classCompiler = new reflaxe.elixir.helpers.ClassCompiler(this.typer);
         classCompiler.setCompiler(this);
+        classCompiler.setImportOptimizer(importOptimizer);
         
         // Handle inheritance tracking
         if (classType.superClass != null) {
@@ -1445,10 +1454,16 @@ class ElixirCompiler extends DirectToStringCompiler {
                 } else if (el.length == 1) {
                     compileExpression(el[0]);
                 } else {
+                    // Analyze all expressions for import requirements
+                    importOptimizer.analyzeModule(el);
+                    
                     // Check for pipeline optimization opportunities first
                     var pipelinePattern = pipelineOptimizer.detectPipelinePattern(el);
                     
                     if (pipelinePattern != null) {
+                        // Register pipeline imports for later optimization
+                        importOptimizer.registerPipelineImports([pipelinePattern]);
+                        
                         // Generate idiomatic pipeline code
                         var pipelineCode = pipelineOptimizer.compilePipeline(pipelinePattern);
                         

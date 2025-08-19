@@ -29,6 +29,7 @@ class ClassCompiler {
     private var typer: ElixirTyper;
     private var compiler: Null<reflaxe.elixir.ElixirCompiler> = null;
     private var currentClassName: Null<String> = null;
+    private var importOptimizer: Null<reflaxe.elixir.helpers.ImportOptimizer> = null;
     
     public function new(?typer: ElixirTyper) {
         this.typer = (typer != null) ? typer : new ElixirTyper();
@@ -36,6 +37,10 @@ class ClassCompiler {
     
     public function setCompiler(compiler: reflaxe.elixir.ElixirCompiler) {
         this.compiler = compiler;
+    }
+    
+    public function setImportOptimizer(importOptimizer: reflaxe.elixir.helpers.ImportOptimizer) {
+        this.importOptimizer = importOptimizer;
     }
     
     /**
@@ -83,6 +88,21 @@ class ClassCompiler {
         
         // Module definition
         result.add('defmodule ${className} do\n');
+        
+        // Add optimized import statements
+        if (importOptimizer != null && importOptimizer.hasImports()) {
+            var importSection = importOptimizer.generateImportSection();
+            if (importSection.trim().length > 0) {
+                result.add('\n  # Import statements\n');
+                var importLines = importSection.split('\n');
+                for (line in importLines) {
+                    if (line.trim().length > 0) {
+                        result.add('  ${line}\n');
+                    }
+                }
+                result.add('\n');
+            }
+        }
         
         // Add Application use statement for @:application classes
         if (isApplication) {
