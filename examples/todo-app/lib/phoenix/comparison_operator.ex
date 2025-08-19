@@ -3,8 +3,8 @@ defmodule ComparisonOperator do
   ComparisonOperator enum generated from Haxe
   
   
- * Comparison operators for joins and conditions
- 
+   * Comparison operators for joins and conditions
+   
   
   This module provides tagged tuple constructors and pattern matching helpers.
   """

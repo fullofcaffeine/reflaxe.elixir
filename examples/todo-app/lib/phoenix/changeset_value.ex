@@ -3,8 +3,8 @@ defmodule ChangesetValue do
   ChangesetValue enum generated from Haxe
   
   
- * Valid changeset values - strongly typed
- 
+   * Valid changeset values - strongly typed
+   
   
   This module provides tagged tuple constructors and pattern matching helpers.
   """

@@ -3,8 +3,8 @@ defmodule PubSubTopic do
   PubSubTopic enum generated from Haxe
   
   
- * Type-safe PubSub topics - prevents typos and invalid topic strings
- 
+   * Type-safe PubSub topics - prevents typos and invalid topic strings
+   
   
   This module provides tagged tuple constructors and pattern matching helpers.
   """

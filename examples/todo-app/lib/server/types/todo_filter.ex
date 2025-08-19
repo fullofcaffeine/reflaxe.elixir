@@ -3,8 +3,8 @@ defmodule TodoFilter do
   TodoFilter enum generated from Haxe
   
   
- * Todo filter options
- 
+   * Todo filter options
+   
   
   This module provides tagged tuple constructors and pattern matching helpers.
   """

@@ -3,11 +3,11 @@ defmodule HttpMethod do
   HttpMethod enum generated from Haxe
   
   
- * Type-safe HTTP methods for Router DSL
- * 
- * Provides compile-time validation and IDE autocomplete for route methods
- * instead of error-prone string literals.
- 
+   * Type-safe HTTP methods for Router DSL
+   * 
+   * Provides compile-time validation and IDE autocomplete for route methods
+   * instead of error-prone string literals.
+   
   
   This module provides tagged tuple constructors and pattern matching helpers.
   """

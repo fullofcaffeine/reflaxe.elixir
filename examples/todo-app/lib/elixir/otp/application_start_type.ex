@@ -3,8 +3,8 @@ defmodule ApplicationStartType do
   ApplicationStartType enum generated from Haxe
   
   
- * Application start type - normal, temporary, or permanent
- 
+   * Application start type - normal, temporary, or permanent
+   
   
   This module provides tagged tuple constructors and pattern matching helpers.
   """

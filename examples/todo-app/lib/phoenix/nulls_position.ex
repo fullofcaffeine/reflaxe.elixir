@@ -3,8 +3,8 @@ defmodule NullsPosition do
   NullsPosition enum generated from Haxe
   
   
- * Nulls position in ordering
- 
+   * Nulls position in ordering
+   
   
   This module provides tagged tuple constructors and pattern matching helpers.
   """

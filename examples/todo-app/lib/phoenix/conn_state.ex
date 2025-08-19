@@ -3,8 +3,8 @@ defmodule ConnState do
   ConnState enum generated from Haxe
   
   
- * Connection state
- 
+   * Connection state
+   
   
   This module provides tagged tuple constructors and pattern matching helpers.
   """

@@ -3,8 +3,8 @@ defmodule OnReplaceAction do
   OnReplaceAction enum generated from Haxe
   
   
- * On replace actions
- 
+   * On replace actions
+   
   
   This module provides tagged tuple constructors and pattern matching helpers.
   """

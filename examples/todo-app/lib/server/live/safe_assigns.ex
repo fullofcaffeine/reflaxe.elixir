@@ -87,7 +87,7 @@ defmodule SafeAssigns do
   def update_todos_and_stats(socket, todos) do
     completed = SafeAssigns.countCompleted(todos)
     pending = SafeAssigns.countPending(todos)
-    LiveView.assign_multiple(socket, %{"todos" => todos, "total_todos" => length(todos), "completed_todos" => completed, "pending_todos" => pending})
+    LiveView.assign_multiple(socket, %{"todos" => todos, "total_todos" => todos.length, "completed_todos" => completed, "pending_todos" => pending})
   end
 
   @doc """

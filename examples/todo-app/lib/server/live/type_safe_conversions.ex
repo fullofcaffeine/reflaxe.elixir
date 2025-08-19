@@ -106,7 +106,7 @@ defmodule TypeSafeConversions do
   """
   @spec validate_todo_creation_params(EventParams.t()) :: boolean()
   def validate_todo_creation_params(params) do
-    params.title != nil && String.length(params.title) > 0
+    params.title != nil && params.title.length > 0
   end
 
   @doc """
@@ -138,7 +138,7 @@ defmodule TypeSafeConversions do
     temp_array1 = nil
     if (selected_tags != nil), do: temp_array1 = selected_tags, else: if (base != nil), do: temp_array1 = base.selected_tags, else: temp_array1 = []
     assigns = %{"todos" => temp_array, "filter" => temp_string, "sort_by" => temp_string1, "current_user" => temp_user, "editing_todo" => temp_maybe_todo, "show_form" => temp_bool, "search_query" => temp_string2, "selected_tags" => temp_array1, "total_todos" => 0, "completed_todos" => 0, "pending_todos" => 0}
-    assigns = %{assigns | total_todos: length(assigns.todos)}
+    assigns = %{assigns | total_todos: assigns.todos.length}
     assigns = %{assigns | completed_todos: TypeSafeConversions.countCompleted(assigns.todos)}
     assigns = %{assigns | pending_todos: assigns.total_todos - assigns.completed_todos}
     assigns

@@ -93,7 +93,7 @@ defmodule TodoAppWeb.UserLive do
   def handle_search(params, socket) do
     search_term = params.search
     temp_array = nil
-    if (length(search_term) > 0), do: temp_array = Users.search_users(search_term), else: temp_array = Users.list_users()
+    if (search_term.length > 0), do: temp_array = Users.search_users(search_term), else: temp_array = Users.list_users()
     %{"status" => "noreply", "socket" => UserLive.assign_multiple(socket, %{"users" => temp_array, "searchTerm" => search_term})}
   end
 

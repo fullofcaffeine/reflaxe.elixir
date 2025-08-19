@@ -3,8 +3,8 @@ defmodule SortDirection do
   SortDirection enum generated from Haxe
   
   
- * Sort direction
- 
+   * Sort direction
+   
   
   This module provides tagged tuple constructors and pattern matching helpers.
   """

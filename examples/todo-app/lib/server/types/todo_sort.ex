@@ -3,8 +3,8 @@ defmodule TodoSort do
   TodoSort enum generated from Haxe
   
   
- * Todo sort options
- 
+   * Todo sort options
+   
   
   This module provides tagged tuple constructors and pattern matching helpers.
   """

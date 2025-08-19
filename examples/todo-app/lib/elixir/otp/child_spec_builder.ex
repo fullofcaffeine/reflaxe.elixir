@@ -35,7 +35,7 @@ defmodule ChildSpecBuilder do
   @spec temp_worker(String.t(), Array.t(), Null.t()) :: ChildSpec.t()
   def temp_worker(module, args, id) do
     spec = ChildSpecBuilder.worker(module, args, id)
-    spec = %{spec | restart: :temporary}
+    spec = %{spec | restart: RestartType.temporary}
     spec
   end
 

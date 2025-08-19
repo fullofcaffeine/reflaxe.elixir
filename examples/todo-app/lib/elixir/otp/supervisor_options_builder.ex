@@ -12,7 +12,7 @@ defmodule SupervisorOptionsBuilder do
   """
   @spec defaults() :: SupervisorOptions.t()
   def defaults() do
-    [strategy: :one_for_one, name: TodoApp.Supervisor]
+    [strategy: :SupervisorStrategy.one_for_one, name: TodoApp.Supervisor]
   end
 
   @doc """

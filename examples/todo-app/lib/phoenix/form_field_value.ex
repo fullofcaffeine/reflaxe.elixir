@@ -3,8 +3,8 @@ defmodule FormFieldValue do
   FormFieldValue enum generated from Haxe
   
   
- * Form field value types for type-safe form handling
- 
+   * Form field value types for type-safe form handling
+   
   
   This module provides tagged tuple constructors and pattern matching helpers.
   """

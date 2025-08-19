@@ -3,8 +3,8 @@ defmodule JoinType do
   JoinType enum generated from Haxe
   
   
- * Join type enumeration
- 
+   * Join type enumeration
+   
   
   This module provides tagged tuple constructors and pattern matching helpers.
   """

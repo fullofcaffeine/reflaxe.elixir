@@ -66,7 +66,11 @@ class EnumCompiler {
         // EnumType.doc field access
         if (enumType.doc != null && enumType.doc.length > 0) {
             result.add('  \n');
-            result.add('  ${enumType.doc}\n');
+            // Ensure proper indentation for heredoc content
+            var docLines = enumType.doc.split('\n');
+            for (line in docLines) {
+                result.add('  ${line}\n');
+            }
         }
         
         result.add('  \n');

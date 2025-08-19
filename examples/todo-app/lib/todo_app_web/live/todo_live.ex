@@ -11,7 +11,7 @@ defmodule TodoAppWeb.TodoLive do
   @impl true
   @doc "Generated from Haxe mount"
   def mount(params, session, socket) do
-    _g = TodoPubSub.subscribe(:todo_updates)
+    _g = TodoPubSub.subscribe(TodoPubSubTopic.todo_updates)
     case (case _g do {:ok, _} -> 0; {:error, _} -> 1; _ -> -1 end) do
       0 ->
         case _g do {:ok, value} -> value; {:error, value} -> value; _ -> nil end
@@ -22,7 +22,7 @@ defmodule TodoAppWeb.TodoLive do
     end
     current_user = TodoLive.get_user_from_session(session)
     todos = TodoLive.load_todos(current_user.id)
-    assigns = %{"todos" => todos, "filter" => "all", "sort_by" => "created", "current_user" => current_user, "editing_todo" => nil, "show_form" => false, "search_query" => "", "selected_tags" => [], "total_todos" => length(todos), "completed_todos" => TodoLive.count_completed(todos), "pending_todos" => TodoLive.count_pending(todos)}
+    assigns = %{"todos" => todos, "filter" => "all", "sort_by" => "created", "current_user" => current_user, "editing_todo" => nil, "show_form" => false, "search_query" => "", "selected_tags" => [], "total_todos" => todos.length, "completed_todos" => TodoLive.count_completed(todos), "pending_todos" => TodoLive.count_pending(todos)}
     updated_socket = LiveView.assign_multiple(socket, assigns)
     {:ok, updated_socket}
   end
@@ -108,13 +108,13 @@ defmodule TodoAppWeb.TodoLive do
             temp_flash_type = nil
             case (elem(level, 0)) do
               0 ->
-                temp_flash_type = :info
+                temp_flash_type = FlashType.info
               1 ->
-                temp_flash_type = :warning
+                temp_flash_type = FlashType.warning
               2 ->
-                temp_flash_type = :error
+                temp_flash_type = FlashType.error
               3 ->
-                temp_flash_type = :error
+                temp_flash_type = FlashType.error
             end
             flash_type = temp_flash_type
             temp_socket = LiveView.put_flash(socket, flash_type, message)
@@ -143,7 +143,7 @@ defmodule TodoAppWeb.TodoLive do
       0 ->
         _g = case _g do {:ok, value} -> value; {:error, value} -> value; _ -> nil end
         todo = _g
-        _g = TodoPubSub.broadcast(:todo_updates, {:todo_created, todo})
+        _g = TodoPubSub.broadcast(TodoPubSubTopic.todo_updates, {:todo_created, todo})
         case (case _g do {:ok, _} -> 0; {:error, _} -> 1; _ -> -1 end) do
           0 ->
             case _g do {:ok, value} -> value; {:error, value} -> value; _ -> nil end
@@ -156,11 +156,11 @@ defmodule TodoAppWeb.TodoLive do
         current_assigns = socket.assigns
         complete_assigns = TypeSafeConversions.createCompleteAssigns(current_assigns, todos, nil, nil, nil, nil, false, nil, nil)
         updated_socket = LiveView.assign_multiple(socket, complete_assigns)
-        LiveView.put_flash(updated_socket, :success, "Todo created successfully!")
+        LiveView.put_flash(updated_socket, FlashType.success, "Todo created successfully!")
       1 ->
         _g = case _g do {:ok, value} -> value; {:error, value} -> value; _ -> nil end
         reason = _g
-        LiveView.put_flash(socket, :error, "Failed to create todo: " <> Std.string(reason))
+        LiveView.put_flash(socket, FlashType.error, "Failed to create todo: " <> Std.string(reason))
     end
   end
 
@@ -174,7 +174,7 @@ defmodule TodoAppWeb.TodoLive do
       0 ->
         _g = case _g do {:ok, value} -> value; {:error, value} -> value; _ -> nil end
         updated_todo = _g
-        _g = TodoPubSub.broadcast(:todo_updates, {:todo_updated, updated_todo})
+        _g = TodoPubSub.broadcast(TodoPubSubTopic.todo_updates, {:todo_updated, updated_todo})
         case (case _g do {:ok, _} -> 0; {:error, _} -> 1; _ -> -1 end) do
           0 ->
             case _g do {:ok, value} -> value; {:error, value} -> value; _ -> nil end
@@ -187,7 +187,7 @@ defmodule TodoAppWeb.TodoLive do
       1 ->
         _g = case _g do {:ok, value} -> value; {:error, value} -> value; _ -> nil end
         reason = _g
-        LiveView.put_flash(socket, :error, "Failed to update todo: " <> Std.string(reason))
+        LiveView.put_flash(socket, FlashType.error, "Failed to update todo: " <> Std.string(reason))
     end
   end
 
@@ -213,7 +213,7 @@ defmodule TodoAppWeb.TodoLive do
       1 ->
         _g = case _g do {:ok, value} -> value; {:error, value} -> value; _ -> nil end
         reason = _g
-        LiveView.put_flash(socket, :error, "Failed to delete todo: " <> Std.string(reason))
+        LiveView.put_flash(socket, FlashType.error, "Failed to delete todo: " <> Std.string(reason))
     end
   end
 
@@ -240,7 +240,7 @@ defmodule TodoAppWeb.TodoLive do
       1 ->
         _g = case _g do {:ok, value} -> value; {:error, value} -> value; _ -> nil end
         reason = _g
-        LiveView.put_flash(socket, :error, "Failed to update priority: " <> Std.string(reason))
+        LiveView.put_flash(socket, FlashType.error, "Failed to update priority: " <> Std.string(reason))
     end
   end
 
@@ -376,7 +376,7 @@ defmodule TodoAppWeb.TodoLive do
     completeAssigns = %{completeAssigns | completed_todos: complete_assigns.total_todos}
     completeAssigns = %{completeAssigns | pending_todos: 0}
     updated_socket = LiveView.assign_multiple(socket, complete_assigns)
-    LiveView.put_flash(updated_socket, :info, "All todos marked as completed!")
+    LiveView.put_flash(updated_socket, FlashType.info, "All todos marked as completed!")
   end
 
   @doc "Generated from Haxe delete_completed_todos"
@@ -401,9 +401,9 @@ defmodule TodoAppWeb.TodoLive do
     current_assigns = socket.assigns
     complete_assigns = TypeSafeConversions.createCompleteAssigns(current_assigns, temp_array1)
     completeAssigns = %{completeAssigns | completed_todos: 0}
-    completeAssigns = %{completeAssigns | pending_todos: length(temp_array1)}
+    completeAssigns = %{completeAssigns | pending_todos: temp_array1.length}
     updated_socket = LiveView.assign_multiple(socket, complete_assigns)
-    LiveView.put_flash(updated_socket, :info, "Completed todos deleted!")
+    LiveView.put_flash(updated_socket, FlashType.info, "Completed todos deleted!")
   end
 
   @doc "Generated from Haxe start_editing"
@@ -423,7 +423,7 @@ defmodule TodoAppWeb.TodoLive do
       0 ->
         _g = case _g do {:ok, value} -> value; {:error, value} -> value; _ -> nil end
         updated_todo = _g
-        _g = TodoPubSub.broadcast(:todo_updates, {:todo_updated, updated_todo})
+        _g = TodoPubSub.broadcast(TodoPubSubTopic.todo_updates, {:todo_updated, updated_todo})
         case (case _g do {:ok, _} -> 0; {:error, _} -> 1; _ -> -1 end) do
           0 ->
             case _g do {:ok, value} -> value; {:error, value} -> value; _ -> nil end
@@ -437,7 +437,7 @@ defmodule TodoAppWeb.TodoLive do
       1 ->
         _g = case _g do {:ok, value} -> value; {:error, value} -> value; _ -> nil end
         reason = _g
-        LiveView.put_flash(socket, :error, "Failed to save todo: " <> Std.string(reason))
+        LiveView.put_flash(socket, FlashType.error, "Failed to save todo: " <> Std.string(reason))
     end
   end
 

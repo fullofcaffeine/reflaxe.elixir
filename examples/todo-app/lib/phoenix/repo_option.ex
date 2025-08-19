@@ -3,8 +3,8 @@ defmodule RepoOption do
   RepoOption enum generated from Haxe
   
   
- * Repository operation options - type-safe alternatives to Dynamic
- 
+   * Repository operation options - type-safe alternatives to Dynamic
+   
   
   This module provides tagged tuple constructors and pattern matching helpers.
   """

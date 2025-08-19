@@ -3,38 +3,38 @@ defmodule HandleEventResult do
   HandleEventResult enum generated from Haxe
   
   
- * Event handling return type with full type safety
- * 
- * @param TAssigns The application-specific socket assigns structure type
- * 
- * ## Generic Usage Pattern
- * 
- * ```haxe
- * public static function handle_event(event: String, params: EventParams, socket: Socket<MyAssigns>): HandleEventResult<MyAssigns> {
- *     return switch (event) {
- *         case "create_todo":
- *             var updated_socket = socket.assign({todos: newTodos});
- *             NoReply(updated_socket);
- *         case "invalid_event":
- *             Error("Unknown event", socket);
- *         case _: 
- *             NoReply(socket);
- *     };
- * }
- * ```
- * 
- * ## Return Types
- * 
- * - **NoReply(socket)**: Update socket and continue (most common)
- * - **Reply(message, socket)**: Send reply to client and update socket
- * - **Error(reason, socket)**: Handle error with context
- * 
- * ## Type Safety Benefits
- * 
- * - **Exhaustive pattern matching**: All event cases must be handled
- * - **Socket consistency**: Input and output socket types must match
- * - **Compile-time validation**: Invalid socket operations caught early
- 
+   * Event handling return type with full type safety
+   * 
+   * @param TAssigns The application-specific socket assigns structure type
+   * 
+   * ## Generic Usage Pattern
+   * 
+   * ```haxe
+   * public static function handle_event(event: String, params: EventParams, socket: Socket<MyAssigns>): HandleEventResult<MyAssigns> {
+   *     return switch (event) {
+   *         case "create_todo":
+   *             var updated_socket = socket.assign({todos: newTodos});
+   *             NoReply(updated_socket);
+   *         case "invalid_event":
+   *             Error("Unknown event", socket);
+   *         case _: 
+   *             NoReply(socket);
+   *     };
+   * }
+   * ```
+   * 
+   * ## Return Types
+   * 
+   * - **NoReply(socket)**: Update socket and continue (most common)
+   * - **Reply(message, socket)**: Send reply to client and update socket
+   * - **Error(reason, socket)**: Handle error with context
+   * 
+   * ## Type Safety Benefits
+   * 
+   * - **Exhaustive pattern matching**: All event cases must be handled
+   * - **Socket consistency**: Input and output socket types must match
+   * - **Compile-time validation**: Invalid socket operations caught early
+   
   
   This module provides tagged tuple constructors and pattern matching helpers.
   """

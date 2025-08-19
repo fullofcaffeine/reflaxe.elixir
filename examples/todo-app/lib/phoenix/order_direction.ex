@@ -3,8 +3,8 @@ defmodule OrderDirection do
   OrderDirection enum generated from Haxe
   
   
- * Order by directions
- 
+   * Order by directions
+   
   
   This module provides tagged tuple constructors and pattern matching helpers.
   """

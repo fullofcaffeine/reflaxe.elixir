@@ -3,8 +3,8 @@ defmodule RestartType do
   RestartType enum generated from Haxe
   
   
- * Child restart strategy
- 
+   * Child restart strategy
+   
   
   This module provides tagged tuple constructors and pattern matching helpers.
   """
