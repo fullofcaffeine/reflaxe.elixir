@@ -3,35 +3,35 @@ defmodule MountResult do
   MountResult enum generated from Haxe
   
   
- * LiveView mount return type with full type safety
- * 
- * @param TAssigns The application-specific socket assigns structure type
- * 
- * ## Generic Usage Pattern
- * 
- * Define your assigns structure:
- * ```haxe
- * typedef MyAssigns = {
- *     var user: User;
- *     var todos: Array<Todo>;
- *     var filter: String;
- * }
- * ```
- * 
- * Use in mount function:
- * ```haxe
- * public static function mount(params, session, socket: Socket<MyAssigns>): MountResult<MyAssigns> {
- *     return Ok(socket.assign({user: currentUser, todos: [], filter: "all"}));
- * }
- * ```
- * 
- * ## Type Safety Benefits
- * 
- * - **Compile-time validation**: Invalid assign access caught at compile time
- * - **IntelliSense support**: Full autocomplete for socket.assigns.fieldName
- * - **Refactoring safety**: Rename assigns fields with confidence
- * - **Framework compatibility**: Compiles to standard Phoenix LiveView patterns
- 
+   * LiveView mount return type with full type safety
+   * 
+   * @param TAssigns The application-specific socket assigns structure type
+   * 
+   * ## Generic Usage Pattern
+   * 
+   * Define your assigns structure:
+   * ```haxe
+   * typedef MyAssigns = {
+   *     var user: User;
+   *     var todos: Array<Todo>;
+   *     var filter: String;
+   * }
+   * ```
+   * 
+   * Use in mount function:
+   * ```haxe
+   * public static function mount(params, session, socket: Socket<MyAssigns>): MountResult<MyAssigns> {
+   *     return Ok(socket.assign({user: currentUser, todos: [], filter: "all"}));
+   * }
+   * ```
+   * 
+   * ## Type Safety Benefits
+   * 
+   * - **Compile-time validation**: Invalid assign access caught at compile time
+   * - **IntelliSense support**: Full autocomplete for socket.assigns.fieldName
+   * - **Refactoring safety**: Rename assigns fields with confidence
+   * - **Framework compatibility**: Compiles to standard Phoenix LiveView patterns
+   
   
   This module provides tagged tuple constructors and pattern matching helpers.
   """

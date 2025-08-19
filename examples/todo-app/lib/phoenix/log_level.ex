@@ -3,8 +3,8 @@ defmodule LogLevel do
   LogLevel enum generated from Haxe
   
   
- * Log levels for repository operations
- 
+   * Log levels for repository operations
+   
   
   This module provides tagged tuple constructors and pattern matching helpers.
   """

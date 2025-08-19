@@ -3,8 +3,8 @@ defmodule PubSubMessageType do
   PubSubMessageType enum generated from Haxe
   
   
- * Type-safe PubSub message types - compile-time validation of message structure
- 
+   * Type-safe PubSub message types - compile-time validation of message structure
+   
   
   This module provides tagged tuple constructors and pattern matching helpers.
   """

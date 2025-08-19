@@ -114,7 +114,7 @@ defmodule TodoPubSub do
   def parse_message_impl(msg) do
     if (!SafePubSub.isValidMessage(msg)) do
       Log.trace(SafePubSub.createMalformedMessageError(msg), %{"fileName" => "src_haxe/server/pubsub/TodoPubSub.hx", "lineNumber" => 205, "className" => "server.pubsub.TodoPubSub", "methodName" => "parseMessageImpl"})
-      :error
+      Option.none
     end
     temp_result = nil
     _g = msg.type
@@ -128,10 +128,10 @@ defmodule TodoPubSub do
               action = _g
               temp_result = {:ok, {:bulk_update, action}}
             1 ->
-              temp_result = :error
+              temp_result = Option.none
           end
         else
-          temp_result = :error
+          temp_result = Option.none
         end
       "system_alert" ->
         if (msg.message != nil && msg.level != nil) do
@@ -142,24 +142,24 @@ defmodule TodoPubSub do
               level = _g
               temp_result = {:ok, {:system_alert, msg.message, level}}
             1 ->
-              temp_result = :error
+              temp_result = Option.none
           end
         else
-          temp_result = :error
+          temp_result = Option.none
         end
       "todo_created" ->
-        if (msg.todo != nil), do: temp_result = {:ok, {:todo_created, msg.todo}}, else: temp_result = :error
+        if (msg.todo != nil), do: temp_result = {:ok, {:todo_created, msg.todo}}, else: temp_result = Option.none
       "todo_deleted" ->
-        if (msg.todo_id != nil), do: temp_result = {:ok, {:todo_deleted, msg.todo_id}}, else: temp_result = :error
+        if (msg.todo_id != nil), do: temp_result = {:ok, {:todo_deleted, msg.todo_id}}, else: temp_result = Option.none
       "todo_updated" ->
-        if (msg.todo != nil), do: temp_result = {:ok, {:todo_updated, msg.todo}}, else: temp_result = :error
+        if (msg.todo != nil), do: temp_result = {:ok, {:todo_updated, msg.todo}}, else: temp_result = Option.none
       "user_offline" ->
-        if (msg.user_id != nil), do: temp_result = {:ok, {:user_offline, msg.user_id}}, else: temp_result = :error
+        if (msg.user_id != nil), do: temp_result = {:ok, {:user_offline, msg.user_id}}, else: temp_result = Option.none
       "user_online" ->
-        if (msg.user_id != nil), do: temp_result = {:ok, {:user_online, msg.user_id}}, else: temp_result = :error
+        if (msg.user_id != nil), do: temp_result = {:ok, {:user_online, msg.user_id}}, else: temp_result = Option.none
       _ ->
         Log.trace(SafePubSub.createUnknownMessageError(msg.type), %{"fileName" => "src_haxe/server/pubsub/TodoPubSub.hx", "lineNumber" => 237, "className" => "server.pubsub.TodoPubSub", "methodName" => "parseMessageImpl"})
-        temp_result = :error
+        temp_result = Option.none
     end
     temp_result
   end
@@ -203,15 +203,15 @@ defmodule TodoPubSub do
       "add_tag" ->
         temp_result = {:ok, {:add_tag, ""}}
       "complete_all" ->
-        temp_result = {:ok, :complete_all}
+        temp_result = {:ok, BulkOperationType.complete_all}
       "delete_completed" ->
-        temp_result = {:ok, :delete_completed}
+        temp_result = {:ok, BulkOperationType.delete_completed}
       "remove_tag" ->
         temp_result = {:ok, {:remove_tag, ""}}
       "set_priority" ->
-        temp_result = {:ok, {:set_priority, :medium}}
+        temp_result = {:ok, {:set_priority, TodoPriority.medium}}
       _ ->
-        temp_result = :error
+        temp_result = Option.none
     end
     temp_result
   end
@@ -245,15 +245,15 @@ defmodule TodoPubSub do
     temp_result = nil
     case (level) do
       "critical" ->
-        temp_result = {:ok, :critical}
+        temp_result = {:ok, AlertLevel.critical}
       "error" ->
-        temp_result = {:ok, :error}
+        temp_result = {:ok, AlertLevel.error}
       "info" ->
-        temp_result = {:ok, :info}
+        temp_result = {:ok, AlertLevel.info}
       "warning" ->
-        temp_result = {:ok, :warning}
+        temp_result = {:ok, AlertLevel.warning}
       _ ->
-        temp_result = :error
+        temp_result = Option.none
     end
     temp_result
   end

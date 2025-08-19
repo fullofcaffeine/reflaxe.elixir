@@ -3,8 +3,8 @@ defmodule HttpStatus do
   HttpStatus enum generated from Haxe
   
   
- * HTTP status codes with semantic meaning
- 
+   * HTTP status codes with semantic meaning
+   
   
   This module provides tagged tuple constructors and pattern matching helpers.
   """

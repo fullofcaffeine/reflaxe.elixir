@@ -3,8 +3,8 @@ defmodule OnDeleteAction do
   OnDeleteAction enum generated from Haxe
   
   
- * On delete actions
- 
+   * On delete actions
+   
   
   This module provides tagged tuple constructors and pattern matching helpers.
   """

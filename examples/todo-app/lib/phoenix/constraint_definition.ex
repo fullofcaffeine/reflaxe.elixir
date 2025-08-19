@@ -3,8 +3,8 @@ defmodule ConstraintDefinition do
   ConstraintDefinition enum generated from Haxe
   
   
- * Constraint definition
- 
+   * Constraint definition
+   
   
   This module provides tagged tuple constructors and pattern matching helpers.
   """

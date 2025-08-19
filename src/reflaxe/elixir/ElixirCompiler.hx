@@ -1336,8 +1336,7 @@ class ElixirCompiler extends DirectToStringCompiler {
                         // Handle struct field assignment with Elixir's immutable update syntax
                         switch (e1.expr) {
                             case TField(structExpr, fa):
-                                // This is a field assignment like _this.b = value
-                                // We need to generate: _this = %{_this | b: value}
+                                // This is a field assignment like _this.b = value or struct.field = value
                                 switch (structExpr.expr) {
                                     case TLocal(v):
                                         // Simple local variable struct update
@@ -1363,6 +1362,29 @@ class ElixirCompiler extends DirectToStringCompiler {
                                         } else {
                                             // Generate regular Elixir struct update assignment
                                             '${structName} = %{${structName} | ${fieldName}: ${value}}';
+                                        }
+                                        
+                                    case TConst(TThis):
+                                        // FIXED: Handle this.field assignments properly
+                                        // This should generate struct field updates on the mapped parameter
+                                        var mappedName = currentFunctionParameterMap.get("this");
+                                        if (mappedName == null) mappedName = "struct";
+                                        
+                                        var fieldName = switch (fa) {
+                                            case FInstance(_, _, cf) | FStatic(_, cf) | FAnon(cf) | FClosure(_, cf):
+                                                cf.get().name;
+                                            case FDynamic(s): s;
+                                            case FEnum(_, ef): ef.name;
+                                        };
+                                        var value = compileExpression(e2);
+                                        var elixirFieldName = reflaxe.elixir.helpers.NamingHelper.toSnakeCase(fieldName);
+                                        
+                                        if (isCompilingCaseArm) {
+                                            // Return struct update as expression (not assignment)
+                                            '%{${mappedName} | ${elixirFieldName}: ${value}}';
+                                        } else {
+                                            // Generate regular Elixir struct update assignment
+                                            '${mappedName} = %{${mappedName} | ${elixirFieldName}: ${value}}';
                                         }
                                         
                                     case _:
@@ -1454,27 +1476,18 @@ class ElixirCompiler extends DirectToStringCompiler {
                 }
                 
             case TField(e, fa):
-                // Special handling for 'this' references in struct instance methods
-                var result = switch (e.expr) {
-                    case TConst(TThis):
-                        var mappedName = currentFunctionParameterMap.get("this");
-                        if (mappedName != null) {
-                            // Use mapped parameter name for struct field access
-                            var fieldName = switch (fa) {
-                                case FInstance(_, _, cf) | FStatic(_, cf) | FAnon(cf): cf.get().name;
-                                case FDynamic(s): s;
-                                case FEnum(_, ef): ef.name;
-                                case _: "unknown_field";
-                            };
-                            var elixirFieldName = reflaxe.elixir.helpers.NamingHelper.toSnakeCase(fieldName);
-                            '${mappedName}.${elixirFieldName}';
-                        } else {
-                            compileFieldAccess(e, fa);
-                        }
-                    case _:
-                        compileFieldAccess(e, fa);
+                // FIXED: Handle nested field access properly by ensuring the complete chain is built
+                // For nested access like this.buf.b, we need to compile the base expression recursively
+                // while preserving the complete field path
+                var baseExpr = compileExpression(e);
+                var fieldName = switch (fa) {
+                    case FInstance(_, _, cf) | FStatic(_, cf) | FAnon(cf): cf.get().name;
+                    case FDynamic(s): s;
+                    case FEnum(_, ef): ef.name;
+                    case _: "unknown_field";
                 };
-                result;
+                var elixirFieldName = reflaxe.elixir.helpers.NamingHelper.toSnakeCase(fieldName);
+                '${baseExpr}.${elixirFieldName}';
                 
             case TCall(e, el):
                 // Check for special compile-time function calls
@@ -1490,6 +1503,12 @@ class ElixirCompiler extends DirectToStringCompiler {
                             case FEnum(_, ef): ef.name;
                             case FDynamic(s): s;
                         };
+                        
+                        // Check for super method calls (TField on TSuper)
+                        if (obj.expr.match(TConst(TSuper)) && fieldName == "toString") {
+                            // Handle super.toString() specially for exception classes
+                            return '"Exception"';
+                        }
                         
                         // Check for elixir.Syntax calls and transform them to __elixir__ injection
                         if (isElixirSyntaxCall(obj, fieldName)) {
@@ -2280,7 +2299,7 @@ class ElixirCompiler extends DirectToStringCompiler {
                 // Check if 'this' should be mapped to a parameter (e.g., 'struct' in instance methods)
                 var mappedName = currentFunctionParameterMap.get("this");
                 mappedName != null ? mappedName : "__MODULE__"; // Default to __MODULE__ if no mapping
-            case TSuper: "__MODULE__"; // Elixir doesn't have super() - use module reference as fallback
+            case TSuper: "\"Exception\""; // Elixir doesn't have super() - return base type string
             case _: "nil";
         }
     }

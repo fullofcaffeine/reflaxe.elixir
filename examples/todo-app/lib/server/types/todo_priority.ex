@@ -3,8 +3,8 @@ defmodule TodoPriority do
   TodoPriority enum generated from Haxe
   
   
- * Todo priority levels
- 
+   * Todo priority levels
+   
   
   This module provides tagged tuple constructors and pattern matching helpers.
   """

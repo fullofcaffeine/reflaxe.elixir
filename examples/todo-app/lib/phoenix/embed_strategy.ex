@@ -3,8 +3,8 @@ defmodule EmbedStrategy do
   EmbedStrategy enum generated from Haxe
   
   
- * Embed strategies
- 
+   * Embed strategies
+   
   
   This module provides tagged tuple constructors and pattern matching helpers.
   """

@@ -3,8 +3,8 @@ defmodule ValueType do
   ValueType enum generated from Haxe
   
   
-	The different possible runtime types of a value.
-
+  	The different possible runtime types of a value.
+  
   
   This module provides tagged tuple constructors and pattern matching helpers.
   """

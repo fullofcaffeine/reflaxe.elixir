@@ -3,8 +3,8 @@ defmodule OnUpdateAction do
   OnUpdateAction enum generated from Haxe
   
   
- * On update actions
- 
+   * On update actions
+   
   
   This module provides tagged tuple constructors and pattern matching helpers.
   """

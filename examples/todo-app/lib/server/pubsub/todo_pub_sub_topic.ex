@@ -3,13 +3,13 @@ defmodule TodoPubSubTopic do
   TodoPubSubTopic enum generated from Haxe
   
   
- * Type-safe PubSub topics for the todo application
- * 
- * Adding new topics requires:
- * 1. Add enum case here
- * 2. Add case to topicToString function
- * 3. Compiler ensures exhaustiveness
- 
+   * Type-safe PubSub topics for the todo application
+   * 
+   * Adding new topics requires:
+   * 1. Add enum case here
+   * 2. Add case to topicToString function
+   * 3. Compiler ensures exhaustiveness
+   
   
   This module provides tagged tuple constructors and pattern matching helpers.
   """

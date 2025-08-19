@@ -3,8 +3,8 @@ defmodule HttpMethod do
   HttpMethod enum generated from Haxe
   
   
- * HTTP methods enum
- 
+   * HTTP methods enum
+   
   
   This module provides tagged tuple constructors and pattern matching helpers.
   """

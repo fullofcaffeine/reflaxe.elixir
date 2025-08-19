@@ -3,8 +3,8 @@ defmodule ShutdownType do
   ShutdownType enum generated from Haxe
   
   
- * Child shutdown strategy
- 
+   * Child shutdown strategy
+   
   
   This module provides tagged tuple constructors and pattern matching helpers.
   """

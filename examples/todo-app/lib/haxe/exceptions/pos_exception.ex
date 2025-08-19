@@ -22,7 +22,7 @@ defmodule PosException do
   @doc "Updates struct fields using a map of changes"
   @spec update(t(), map()) :: t()
   def update(struct, changes) when is_map(changes) do
-    struct |> Map.merge(changes) |> struct(__MODULE__, _1)
+    Map.merge(struct, changes) |> then(&struct(__MODULE__, &1))
   end
 
   # Instance functions
@@ -32,7 +32,7 @@ defmodule PosException do
   """
   @spec to_string(t()) :: String.t()
   def to_string(%__MODULE__{} = struct) do
-    "" <> __MODULE__.toString() <> " in " <> __MODULE__.pos_infos.class_name <> "." <> __MODULE__.pos_infos.method_name <> " at " <> __MODULE__.pos_infos.file_name <> ":" <> Integer.to_string(__MODULE__.pos_infos.line_number)
+    "" <> "Exception" <> " in " <> struct.pos_infos.class_name <> "." <> struct.pos_infos.method_name <> " at " <> struct.pos_infos.file_name <> ":" <> Integer.to_string(struct.pos_infos.line_number)
   end
 
 end

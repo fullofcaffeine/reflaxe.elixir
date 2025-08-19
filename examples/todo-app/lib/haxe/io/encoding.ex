@@ -3,8 +3,8 @@ defmodule Encoding do
   Encoding enum generated from Haxe
   
   
-	String binary encoding supported by Haxe I/O
-
+  	String binary encoding supported by Haxe I/O
+  
   
   This module provides tagged tuple constructors and pattern matching helpers.
   """

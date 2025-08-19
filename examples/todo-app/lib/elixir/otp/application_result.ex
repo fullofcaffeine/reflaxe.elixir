@@ -3,8 +3,8 @@ defmodule ApplicationResult do
   ApplicationResult enum generated from Haxe
   
   
- * Application start result - success with state or error
- 
+   * Application start result - success with state or error
+   
   
   This module provides tagged tuple constructors and pattern matching helpers.
   """

@@ -3,8 +3,8 @@ defmodule FlashType do
   FlashType enum generated from Haxe
   
   
- * Flash message types
- 
+   * Flash message types
+   
   
   This module provides tagged tuple constructors and pattern matching helpers.
   """

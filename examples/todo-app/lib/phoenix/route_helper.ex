@@ -3,8 +3,8 @@ defmodule RouteHelper do
   RouteHelper enum generated from Haxe
   
   
- * Route helper identifier
- 
+   * Route helper identifier
+   
   
   This module provides tagged tuple constructors and pattern matching helpers.
   """

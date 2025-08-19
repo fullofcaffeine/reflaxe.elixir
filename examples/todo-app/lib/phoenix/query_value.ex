@@ -3,8 +3,8 @@ defmodule QueryValue do
   QueryValue enum generated from Haxe
   
   
- * Query value types for parameterized queries
- 
+   * Query value types for parameterized queries
+   
   
   This module provides tagged tuple constructors and pattern matching helpers.
   """
