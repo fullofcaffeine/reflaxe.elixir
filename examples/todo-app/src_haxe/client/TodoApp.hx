@@ -478,7 +478,7 @@ class TodoApp {
                 user_agent: js.Browser.navigator.userAgent,
                 url: js.Browser.location.href
             };
-            var _result = Async.await(sendToLiveViewAsync("error_log", errorData));
+            sendToLiveViewAsync("error_log", errorData);
             
             trace('Error logged to server: ${type}');
             
@@ -487,11 +487,11 @@ class TodoApp {
             trace('Failed to send error to server: ${e}');
             
             // Queue for retry later
-            Async.await(queueForRetryAsync("error", {
+            queueForRetryAsync("error", {
                 type: type,
                 details: details,
                 timestamp: Date.now().getTime()
-            }));
+            });
         }
         
         return js.lib.Promise.resolve();
@@ -512,10 +512,10 @@ class TodoApp {
                 value: value,
                 timestamp: Date.now().getTime()
             };
-            var _result1 = Async.await(addToBatchAsync("metrics", metricData));
+            addToBatchAsync("metrics", metricData);
             
             // Send batch if it's full or enough time has passed
-            Async.await(maybeSendBatchAsync("metrics"));
+            maybeSendBatchAsync("metrics");
             
         } catch (e: Dynamic) {
             trace('Failed to process metric: ${e}');
@@ -585,7 +585,7 @@ class TodoApp {
         LocalStorage.setObject(queueKey, queue);
         
         // Schedule retry attempt
-        Async.await(scheduleRetryAsync(category));
+        scheduleRetryAsync(category);
         
         return js.lib.Promise.resolve();
     }
@@ -620,7 +620,7 @@ class TodoApp {
         var batch = LocalStorage.getObject(batchKey);
         
         if (batch == null || batch.items.length == 0) {
-            return;
+            return js.lib.Promise.resolve();
         }
         
         var shouldSend = false;
@@ -633,12 +633,12 @@ class TodoApp {
         
         if (shouldSend) {
             try {
-                Async.await(sendToLiveViewAsync('batch_${batchType}', {
+                sendToLiveViewAsync('batch_${batchType}', {
                     items: batch.items,
                     count: batch.items.length,
                     created_at: batch.created_at,
                     sent_at: now
-                }));
+                });
                 
                 // Clear batch after successful send
                 LocalStorage.removeItem(batchKey);
@@ -666,7 +666,7 @@ class TodoApp {
         Async.await(Async.delay(null, Std.int(delay)));
         
         try {
-            Async.await(processRetryQueueAsync(category));
+            processRetryQueueAsync(category);
             
             // Reset retry count on success
             LocalStorage.removeItem(retryKey);
@@ -693,11 +693,11 @@ class TodoApp {
         }
         
         // Process items in batch
-        Async.await(sendToLiveViewAsync('retry_${category}', {
+        sendToLiveViewAsync('retry_${category}', {
             items: queue,
             count: queue.length,
             retry_timestamp: Date.now().getTime()
-        }));
+        });
         
         // Clear queue after successful send
         LocalStorage.removeItem(queueKey);
