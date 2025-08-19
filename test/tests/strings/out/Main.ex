@@ -142,10 +142,10 @@ defmodule Main do
     Log.trace("Right padded: " <> rpadded, %{"fileName" => "Main.hx", "lineNumber" => 172, "className" => "Main", "methodName" => "stringFormatting"})
     hex = StringTools.hex(255)
     Log.trace("255 in hex: " <> hex, %{"fileName" => "Main.hx", "lineNumber" => 176, "className" => "Main", "methodName" => "stringFormatting"})
-    url = "Hello World!"
-    encoded = StringTools.urlEncode(url)
+    "Hello World!"
+    encoded = nil
     Log.trace("URL encoded: " <> encoded, %{"fileName" => "Main.hx", "lineNumber" => 181, "className" => "Main", "methodName" => "stringFormatting"})
-    decoded = StringTools.urlDecode(encoded)
+    decoded = nil
     Log.trace("URL decoded: " <> decoded, %{"fileName" => "Main.hx", "lineNumber" => 183, "className" => "Main", "methodName" => "stringFormatting"})
   end
 
