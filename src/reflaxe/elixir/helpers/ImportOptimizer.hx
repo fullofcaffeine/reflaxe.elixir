@@ -1,0 +1,515 @@
+package reflaxe.elixir.helpers;
+
+#if (macro || reflaxe_runtime)
+
+import haxe.macro.Type;
+import reflaxe.elixir.helpers.PipelineOptimizer.PipelinePattern;
+
+using StringTools;
+
+/**
+ * Represents an import statement to be generated
+ */
+typedef ImportStatement = {
+    var module: String;
+    var functions: Array<ImportFunction>;
+    var alias: Null<String>;
+    var importType: ImportType;
+}
+
+typedef ImportFunction = {
+    var name: String;
+    var arity: Int;
+}
+
+enum ImportType {
+    FullImport;           // import Module
+    SelectiveImport;      // import Module, only: [func: 2]
+    AliasImport;          // alias Module, as: Alias
+}
+
+/**
+ * Optimizes import statements for idiomatic Elixir code generation
+ * 
+ * This class analyzes function usage patterns throughout a module and generates
+ * clean, optimized import statements that follow Elixir best practices:
+ * 
+ * - Groups related functions from same module
+ * - Uses selective imports when only few functions are used
+ * - Applies common aliases (e.g., import Ecto.Changeset, as: Changeset)
+ * - Sorts imports according to Elixir conventions
+ * - Removes duplicate and redundant imports
+ */
+class ImportOptimizer {
+    
+    var compiler: Dynamic; // ElixirCompiler reference
+    var detectedImports: Map<String, ImportStatement>;
+    var functionUsage: Map<String, Array<ImportFunction>>;
+    
+    public function new(compiler: Dynamic) {
+        this.compiler = compiler;
+        this.detectedImports = new Map();
+        this.functionUsage = new Map();
+    }
+    
+    /**
+     * Clear all detected imports for a new module
+     */
+    public function reset(): Void {
+        detectedImports.clear();
+        functionUsage.clear();
+    }
+    
+    /**
+     * Register usage of a function that may require an import
+     */
+    public function registerFunctionUsage(module: String, functionName: String, arity: Int = 1): Void {
+        if (!functionUsage.exists(module)) {
+            functionUsage.set(module, []);
+        }
+        
+        var functions = functionUsage.get(module);
+        var func = {name: functionName, arity: arity};
+        
+        // Only add if not already present
+        var exists = false;
+        for (existing in functions) {
+            if (existing.name == func.name && existing.arity == func.arity) {
+                exists = true;
+                break;
+            }
+        }
+        
+        if (!exists) {
+            functions.push(func);
+        }
+    }
+    
+    /**
+     * Register a pipeline pattern's import requirements
+     */
+    public function registerPipelineImports(patterns: Array<PipelinePattern>): Void {
+        for (pattern in patterns) {
+            for (operation in pattern.operations) {
+                var module = getModuleForFunction(operation.functionName);
+                if (module != null) {
+                    registerFunctionUsage(module, operation.functionName, operation.arguments.length + 1);
+                }
+            }
+        }
+    }
+    
+    /**
+     * Get the module name for a given function
+     */
+    private function getModuleForFunction(functionName: String): Null<String> {
+        return switch(functionName) {
+            // Enum functions
+            case "map" | "filter" | "reduce" | "reject" | "find" | "any?" | "all?" | "count" | "empty?" | "member?":
+                "Enum";
+                
+            // String functions  
+            case "trim" | "downcase" | "upcase" | "split" | "replace" | "contains?" | "starts_with?" | "ends_with?":
+                "String";
+                
+            // Map functions
+            case "put" | "get" | "merge" | "delete" | "keys" | "values" | "has_key?":
+                "Map";
+                
+            // List functions
+            case "first" | "last" | "flatten" | "reverse":
+                "List";
+                
+            // Phoenix LiveView functions
+            case "assign" | "push_event" | "push_patch" | "push_redirect" | "redirect":
+                "Phoenix.LiveView";
+                
+            // Ecto.Changeset functions  
+            case "change" | "validate_required" | "validate_length" | "cast":
+                "Ecto.Changeset";
+                
+            // Logger functions
+            case "info" | "debug" | "warn" | "error":
+                "Logger";
+                
+            default:
+                null;
+        }
+    }
+    
+    /**
+     * Analyze usage patterns and determine optimal import strategy
+     */
+    public function optimizeImports(): Array<ImportStatement> {
+        var optimized: Array<ImportStatement> = [];
+        
+        for (module in functionUsage.keys()) {
+            var functions = functionUsage.get(module);
+            var importStmt = optimizeModuleImport(module, functions);
+            if (importStmt != null) {
+                optimized.push(importStmt);
+            }
+        }
+        
+        // Sort imports according to Elixir conventions
+        optimized.sort(compareImports);
+        
+        return optimized;
+    }
+    
+    /**
+     * Determine the best import strategy for a specific module
+     */
+    private function optimizeModuleImport(module: String, functions: Array<ImportFunction>): Null<ImportStatement> {
+        if (functions.length == 0) return null;
+        
+        // Apply module-specific optimization rules
+        return switch(module) {
+            case "Enum":
+                optimizeEnumImport(functions);
+                
+            case "String":
+                optimizeStringImport(functions);
+                
+            case "Phoenix.LiveView":
+                optimizeLiveViewImport(functions);
+                
+            case "Ecto.Changeset":
+                optimizeChangesetImport(functions);
+                
+            default:
+                optimizeGenericImport(module, functions);
+        };
+    }
+    
+    /**
+     * Optimize Enum module imports
+     */
+    private function optimizeEnumImport(functions: Array<ImportFunction>): ImportStatement {
+        // Enum is used so frequently in functional code that we often import it fully
+        if (functions.length >= 3) {
+            return {
+                module: "Enum",
+                functions: [],
+                alias: null,
+                importType: FullImport
+            };
+        } else {
+            return {
+                module: "Enum",
+                functions: functions,
+                alias: null,
+                importType: SelectiveImport
+            };
+        }
+    }
+    
+    /**
+     * Optimize String module imports
+     */
+    private function optimizeStringImport(functions: Array<ImportFunction>): ImportStatement {
+        // String functions are often used selectively
+        return {
+            module: "String",
+            functions: functions,
+            alias: null,
+            importType: SelectiveImport
+        };
+    }
+    
+    /**
+     * Optimize Phoenix.LiveView imports
+     */
+    private function optimizeLiveViewImport(functions: Array<ImportFunction>): ImportStatement {
+        // LiveView functions are commonly imported selectively
+        return {
+            module: "Phoenix.LiveView",
+            functions: functions,
+            alias: null,
+            importType: SelectiveImport
+        };
+    }
+    
+    /**
+     * Optimize Ecto.Changeset imports
+     */
+    private function optimizeChangesetImport(functions: Array<ImportFunction>): ImportStatement {
+        // Changeset is often aliased for brevity
+        if (functions.length >= 2) {
+            return {
+                module: "Ecto.Changeset",
+                functions: [],
+                alias: "Changeset",
+                importType: AliasImport
+            };
+        } else {
+            return {
+                module: "Ecto.Changeset",
+                functions: functions,
+                alias: null,
+                importType: SelectiveImport
+            };
+        }
+    }
+    
+    /**
+     * Generic import optimization for unknown modules
+     */
+    private function optimizeGenericImport(module: String, functions: Array<ImportFunction>): ImportStatement {
+        // For unknown modules, use selective imports to be explicit
+        return {
+            module: module,
+            functions: functions,
+            alias: null,
+            importType: SelectiveImport
+        };
+    }
+    
+    /**
+     * Generate Elixir import statements from optimized imports
+     */
+    public function generateImportStatements(imports: Array<ImportStatement>): Array<String> {
+        var statements: Array<String> = [];
+        
+        for (importStmt in imports) {
+            var statement = generateSingleImport(importStmt);
+            if (statement != null) {
+                statements.push(statement);
+            }
+        }
+        
+        return statements;
+    }
+    
+    /**
+     * Generate a single import statement
+     */
+    private function generateSingleImport(importStmt: ImportStatement): Null<String> {
+        return switch(importStmt.importType) {
+            case FullImport:
+                'import ${importStmt.module}';
+                
+            case AliasImport:
+                'alias ${importStmt.module}, as: ${importStmt.alias}';
+                
+            case SelectiveImport:
+                if (importStmt.functions.length == 0) {
+                    null;
+                } else {
+                    var funcList = importStmt.functions.map(f -> '${f.name}: ${f.arity}').join(", ");
+                    'import ${importStmt.module}, only: [${funcList}]';
+                }
+        };
+    }
+    
+    /**
+     * Compare imports for sorting according to Elixir conventions
+     */
+    private function compareImports(a: ImportStatement, b: ImportStatement): Int {
+        // Sort order: 
+        // 1. Standard library (Enum, String, etc.)
+        // 2. External dependencies (Phoenix, Ecto, etc.)
+        // 3. Internal modules
+        // 4. Within each group, alphabetical by module name
+        
+        var aOrder = getImportOrder(a.module);
+        var bOrder = getImportOrder(b.module);
+        
+        if (aOrder != bOrder) {
+            return aOrder - bOrder;
+        }
+        
+        // Same order group, sort alphabetically
+        if (a.module < b.module) return -1;
+        if (a.module > b.module) return 1;
+        return 0;
+    }
+    
+    /**
+     * Get import order priority for a module
+     */
+    private function getImportOrder(module: String): Int {
+        return if (isStandardLibrary(module)) {
+            0; // Standard library first
+        } else if (isExternalDependency(module)) {
+            1; // External dependencies second
+        } else {
+            2; // Internal modules last
+        };
+    }
+    
+    /**
+     * Check if a module is part of Elixir standard library
+     */
+    private function isStandardLibrary(module: String): Bool {
+        var stdLibModules = [
+            "Enum", "Stream", "String", "Map", "List", "Keyword",
+            "Agent", "GenServer", "Task", "Process", "Logger"
+        ];
+        return stdLibModules.indexOf(module) != -1;
+    }
+    
+    /**
+     * Check if a module is from an external dependency
+     */
+    private function isExternalDependency(module: String): Bool {
+        return module.startsWith("Phoenix.") || 
+               module.startsWith("Ecto.") ||
+               module.startsWith("Plug.") ||
+               module.startsWith("ExUnit.");
+    }
+    
+    /**
+     * Analyze an entire module's AST to detect required imports
+     */
+    public function analyzeModule(moduleAST: Array<TypedExpr>): Void {
+        for (expr in moduleAST) {
+            analyzeExpression(expr);
+        }
+    }
+    
+    /**
+     * Recursively analyze expressions to detect function usage
+     */
+    private function analyzeExpression(expr: TypedExpr): Void {
+        switch(expr.expr) {
+            case TCall(func, args):
+                analyzeCall(func, args);
+                
+            case TBlock(exprs):
+                for (e in exprs) analyzeExpression(e);
+                
+            case TBinop(_, e1, e2):
+                analyzeExpression(e1);
+                analyzeExpression(e2);
+                
+            case TUnop(_, _, e):
+                analyzeExpression(e);
+                
+            case TVar(_, init) if (init != null):
+                analyzeExpression(init);
+                
+            case TIf(cond, ifExpr, elseExpr):
+                analyzeExpression(cond);
+                analyzeExpression(ifExpr);
+                if (elseExpr != null) analyzeExpression(elseExpr);
+                
+            case TReturn(e) if (e != null):
+                analyzeExpression(e);
+                
+            case TFor(_, e1, e2):
+                // TFor(variable, iteration_expression, body)
+                analyzeExpression(e1);
+                analyzeExpression(e2);
+                
+            case TWhile(cond, e, normalWhile):
+                // TWhile(condition, body, is_normal_while)
+                analyzeExpression(cond);
+                analyzeExpression(e);
+                
+            case TSwitch(e, cases, def):
+                analyzeExpression(e);
+                for (c in cases) {
+                    for (val in c.values) analyzeExpression(val);
+                    analyzeExpression(c.expr);
+                }
+                if (def != null) analyzeExpression(def);
+                
+            case TArray(e1, e2):
+                // TArray(array_expression, index_expression) - Array access
+                analyzeExpression(e1);
+                analyzeExpression(e2);
+                
+            case TArrayDecl(el):
+                // TArrayDecl(elements) - Array literal
+                for (e in el) analyzeExpression(e);
+                
+            case TObjectDecl(fields):
+                for (field in fields) analyzeExpression(field.expr);
+                
+            case TField(e, _):
+                analyzeExpression(e);
+                
+            case TParenthesis(e):
+                analyzeExpression(e);
+                
+            case TMeta(_, e):
+                analyzeExpression(e);
+                
+            case TCast(e, _):
+                analyzeExpression(e);
+                
+            default:
+                // Other expression types don't require analysis
+        }
+    }
+    
+    /**
+     * Analyze function calls to detect import requirements
+     */
+    private function analyzeCall(func: TypedExpr, args: Array<TypedExpr>): Void {
+        // Analyze arguments first
+        for (arg in args) {
+            analyzeExpression(arg);
+        }
+        
+        // Analyze the function call itself
+        switch(func.expr) {
+            case TField(obj, field):
+                var functionName = getFunctionNameFromField(field);
+                if (functionName != null) {
+                    var module = getModuleForFunction(functionName);
+                    if (module != null) {
+                        registerFunctionUsage(module, functionName, args.length);
+                    }
+                }
+                
+            case TLocal(v):
+                // Local function call - check if it maps to known imports
+                var module = getModuleForFunction(v.name);
+                if (module != null) {
+                    registerFunctionUsage(module, v.name, args.length);
+                }
+                
+            default:
+                analyzeExpression(func);
+        }
+    }
+    
+    /**
+     * Extract function name from field access
+     */
+    private function getFunctionNameFromField(field: FieldAccess): Null<String> {
+        return switch(field) {
+            case FInstance(_, _, cf) | FStatic(_, cf) | FAnon(cf) | FClosure(_, cf):
+                cf.get().name;
+            case FDynamic(s):
+                s;
+            case FEnum(_, ef):
+                ef.name;
+        };
+    }
+    
+    /**
+     * Generate a complete import section for a module
+     */
+    public function generateImportSection(): String {
+        var imports = optimizeImports();
+        var statements = generateImportStatements(imports);
+        
+        if (statements.length == 0) {
+            return "";
+        }
+        
+        return statements.join("\n") + "\n";
+    }
+    
+    /**
+     * Check if any imports are needed
+     */
+    public function hasImports(): Bool {
+        return functionUsage.keys().hasNext();
+    }
+}
+
+#end
