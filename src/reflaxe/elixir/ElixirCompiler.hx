@@ -117,6 +117,9 @@ class ElixirCompiler extends DirectToStringCompiler {
     // Current class context for app name resolution and other class-specific operations
     private var currentClassType: Null<ClassType> = null;
     
+    // Track instance variable names for LiveView classes to generate socket.assigns references
+    private var liveViewInstanceVars: Null<Map<String, Bool>> = null;
+    
     /**
      * Constructor - Initialize the compiler with type mapping and pattern matching systems
      */
@@ -1171,6 +1174,12 @@ class ElixirCompiler extends DirectToStringCompiler {
         // Generate module name from @:native annotation or use default class name
         var moduleName = classType.getNameOrNative();
         
+        // Track instance variables for socket.assigns references
+        this.liveViewInstanceVars = new Map<String, Bool>();
+        for (field in varFields) {
+            this.liveViewInstanceVars.set(field.field.name, true);
+        }
+        
         // Generate module header using LiveViewCompiler with resolved module name
         // Auto-detect CoreComponents usage and import if needed using dynamic app name
         var appName = reflaxe.elixir.helpers.AnnotationSystem.getEffectiveAppName(classType);
@@ -1210,6 +1219,10 @@ class ElixirCompiler extends DirectToStringCompiler {
         }
         
         result.add('end\n');
+        
+        // Clear instance variable tracking after compilation
+        this.liveViewInstanceVars = null;
+        
         return result.toString();
     }
     
@@ -1425,6 +1438,12 @@ class ElixirCompiler extends DirectToStringCompiler {
                     return "_this";
                 }
                 
+                // Check if this is a LiveView instance variable that should use socket.assigns
+                if (liveViewInstanceVars != null && liveViewInstanceVars.exists(originalName)) {
+                    var snakeCaseName = NamingHelper.toSnakeCase(originalName);
+                    return 'socket.assigns.${snakeCaseName}';
+                }
+                
                 // Use parameter mapping if available (for both abstract methods and regular functions with standardized arg names)
                 if (currentFunctionParameterMap.exists(originalName)) {
                     currentFunctionParameterMap.get(originalName);
@@ -1577,6 +1596,7 @@ class ElixirCompiler extends DirectToStringCompiler {
                                     case TLocal(v):
                                         // Simple local variable struct update
                                         var structName = getOriginalVarName(v);
+                                        var elixirStructName = reflaxe.elixir.helpers.NamingHelper.toSnakeCase(structName);
                                         var fieldName = switch (fa) {
                                             case FInstance(_, _, cf) | FStatic(_, cf) | FAnon(cf) | FClosure(_, cf):
                                                 cf.get().name;
@@ -1593,14 +1613,14 @@ class ElixirCompiler extends DirectToStringCompiler {
                                         if (isCompilingCaseArm) {
                                             // Map 'this' to struct parameter if it exists
                                             var actualStructName = currentFunctionParameterMap.get("this");
-                                            if (actualStructName == null) actualStructName = structName;
+                                            if (actualStructName == null) actualStructName = elixirStructName;
                                             
                                             // Return struct update as expression (not assignment)
                                             var result = '%{${actualStructName} | ${elixirFieldName}: ${value}}';
                                             result;
                                         } else {
                                             // Generate regular Elixir struct update assignment
-                                            '${structName} = %{${structName} | ${elixirFieldName}: ${value}}';
+                                            '${elixirStructName} = %{${elixirStructName} | ${elixirFieldName}: ${value}}';
                                         }
                                         
                                     case TConst(TThis):
@@ -1742,22 +1762,50 @@ class ElixirCompiler extends DirectToStringCompiler {
                 
             case TField(e, fa):
                 // Handle nested field access with inline context support
-                var baseExpr = switch (e.expr) {
-                    case TConst(TThis):
-                        // Use enhanced inline context resolution
-                        resolveThisReference();
+                // Special handling for enum field access - generate atoms, not field calls
+                switch (fa) {
+                    case FEnum(enumType, enumField):
+                        // Check if this is a known algebraic data type (Result, Option, etc.)
+                        var enumTypeRef = enumType.get();
+                        if (AlgebraicDataTypeCompiler.isADTType(enumTypeRef)) {
+                            var compiled = AlgebraicDataTypeCompiler.compileADTFieldAccess(enumTypeRef, enumField);
+                            if (compiled != null) return compiled;
+                        }
+                        
+                        // For regular enum types - compile to atoms, not function calls
+                        var fieldName = NamingHelper.toSnakeCase(enumField.name);
+                        ':${fieldName}';
+                        
                     case _:
-                        compileExpression(e);
-                };
-                var fieldName = switch (fa) {
-                    case FInstance(_, _, cf) | FStatic(_, cf) | FAnon(cf): cf.get().name;
-                    case FDynamic(s): s;
-                    case FEnum(_, ef): ef.name;
-                    case _: "unknown_field";
-                };
-                var elixirFieldName = reflaxe.elixir.helpers.NamingHelper.toSnakeCase(fieldName);
-                var result = '${baseExpr}.${elixirFieldName}';
-                result;
+                        // Regular field access for non-enum fields
+                        var baseExpr = switch (e.expr) {
+                            case TConst(TThis):
+                                // Extract field name for LiveView check
+                                var fieldName = switch (fa) {
+                                    case FInstance(_, _, cf) | FStatic(_, cf) | FAnon(cf): cf.get().name;
+                                    case FDynamic(s): s;
+                                    case _: "unknown_field";
+                                };
+                                
+                                // Check if this is a LiveView instance field access
+                                if (liveViewInstanceVars != null && liveViewInstanceVars.exists(fieldName)) {
+                                    var elixirFieldName = reflaxe.elixir.helpers.NamingHelper.toSnakeCase(fieldName);
+                                    return 'socket.assigns.${elixirFieldName}';
+                                } else {
+                                    // Use enhanced inline context resolution for non-LiveView cases
+                                    resolveThisReference();
+                                }
+                            case _:
+                                compileExpression(e);
+                        };
+                        var fieldName = switch (fa) {
+                            case FInstance(_, _, cf) | FStatic(_, cf) | FAnon(cf): cf.get().name;
+                            case FDynamic(s): s;
+                            case _: "unknown_field";
+                        };
+                        var elixirFieldName = reflaxe.elixir.helpers.NamingHelper.toSnakeCase(fieldName);
+                        '${baseExpr}.${elixirFieldName}';
+                }
                 
             case TCall(e, el):
                 // Check for special compile-time function calls
@@ -3082,12 +3130,19 @@ class ElixirCompiler extends DirectToStringCompiler {
     }
     
     /**
-     * Get the effective variable name for 'this' references, considering inline context
+     * Get the effective variable name for 'this' references, considering inline context and LiveView
      */
     private function resolveThisReference(): String {
         // First check if we're in an inline context where _this is active
         if (hasInlineContext("_this")) {
             return "_this";
+        }
+        
+        // Check if we're in a LiveView class - in this case, 'this' references are invalid
+        // because LiveView instance variables should be accessed through socket.assigns
+        if (liveViewInstanceVars != null) {
+            // Return a special marker that indicates this should not be used directly
+            return "__LIVEVIEW_THIS__";
         }
         
         // Fall back to parameter mapping
