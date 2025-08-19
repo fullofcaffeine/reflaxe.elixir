@@ -1,7 +1,7 @@
 # Haxe→JavaScript compilation for Phoenix LiveView client-side code
 # Generates efficient ES6 modules compatible with esbuild
 
-# Source directories
+# Source directories  
 -cp src_haxe/client
 -cp src_haxe
 -cp ../../std
