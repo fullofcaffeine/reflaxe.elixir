@@ -46,6 +46,8 @@
     "test:update": "npx haxe test/Test.hxml update-intended",
     "test:verify": "npm run test:core && echo 'Core functionality verified ✅'",
     "clean": "rm -rf out && find test/tests -name 'out' -type d -exec rm -rf {} +",
+    "clean:ex": "find . -name '*.ex' -not -path './vendor/*' -not -path './_build/*' -not -path './deps/*' -not -path './test/*.exs' -not -path './test/*/*.exs' -not -path './config/*' -not -path './priv/*' -delete",
+    "clean:todo": "cd examples/todo-app && find lib -name '*.ex' -delete 2>/dev/null || true",
     "setup": "lix scope create && lix install haxelib:reflaxe"
   },
   "engines": {
