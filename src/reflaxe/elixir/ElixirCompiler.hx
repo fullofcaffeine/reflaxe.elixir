@@ -1310,40 +1310,88 @@ class ElixirCompiler extends DirectToStringCompiler {
                     case OpAssignOp(innerOp):
                         // Handle compound assignment operators (+=, -=, etc.)
                         // These need special handling since Elixir variables are immutable
-                        var left = compileExpression(e1);
-                        var right = compileExpression(e2);
                         
-                        switch (innerOp) {
-                            case OpAdd:
-                                // Check if string concatenation
-                                var isStringOp = switch (e1.t) {
-                                    case TInst(t, _) if (t.get().name == "String"): true;
-                                    case _: false;
+                        // Check if this is a field compound assignment which needs special handling
+                        switch (e1.expr) {
+                            case TField(structExpr, fa):
+                                // Field compound assignment: struct.field += value
+                                // This needs to become: struct = %{struct | field: struct.field + value}
+                                trace('[DEBUG] OpAssignOp with TField detected, isCompilingCaseArm = ${isCompilingCaseArm}');
+                                
+                                var structStr = compileExpression(structExpr);
+                                var fieldName = switch (fa) {
+                                    case FInstance(_, _, cf) | FStatic(_, cf) | FAnon(cf) | FClosure(_, cf):
+                                        cf.get().name;
+                                    case FDynamic(s): s;
+                                    case FEnum(_, ef): ef.name;
+                                };
+                                var elixirFieldName = reflaxe.elixir.helpers.NamingHelper.toSnakeCase(fieldName);
+                                var right = compileExpression(e2);
+                                
+                                // Build the compound operation expression
+                                var opStr = switch (innerOp) {
+                                    case OpAdd:
+                                        // Check if string concatenation
+                                        var isStringOp = switch (e1.t) {
+                                            case TInst(t, _) if (t.get().name == "String"): true;
+                                            case _: false;
+                                        };
+                                        isStringOp ? "<>" : "+";
+                                    case OpSub: "-";
+                                    case OpMult: "*";
+                                    case OpDiv: "/";
+                                    case _: compileBinop(innerOp);
                                 };
                                 
-                                if (isStringOp) {
-                                    '${left} = ${left} <> ${right}';
+                                var newValue = '${structStr}.${elixirFieldName} ${opStr} ${right}';
+                                
+                                if (isCompilingCaseArm) {
+                                    // In case arm: return struct update expression
+                                    trace('[DEBUG] OpAssignOp: Generating case arm struct update');
+                                    '%{${structStr} | ${elixirFieldName}: ${newValue}}';
                                 } else {
-                                    '${left} = ${left} + ${right}';
+                                    // Regular context: struct = %{struct | field: newValue}
+                                    trace('[DEBUG] OpAssignOp: Generating regular struct update assignment');
+                                    '${structStr} = %{${structStr} | ${elixirFieldName}: ${newValue}}';
                                 }
                                 
-                            case OpSub:
-                                '${left} = ${left} - ${right}';
-                                
-                            case OpMult:
-                                '${left} = ${left} * ${right}';
-                                
-                            case OpDiv:
-                                '${left} = ${left} / ${right}';
-                                
                             case _:
-                                // For other operators, use the standard pattern
-                                '${left} = ${left} ${compileBinop(innerOp)} ${right}';
+                                // Regular compound assignment
+                                var left = compileExpression(e1);
+                                var right = compileExpression(e2);
+                                
+                                switch (innerOp) {
+                                    case OpAdd:
+                                        // Check if string concatenation
+                                        var isStringOp = switch (e1.t) {
+                                            case TInst(t, _) if (t.get().name == "String"): true;
+                                            case _: false;
+                                        };
+                                        
+                                        if (isStringOp) {
+                                            '${left} = ${left} <> ${right}';
+                                        } else {
+                                            '${left} = ${left} + ${right}';
+                                        }
+                                        
+                                    case OpSub:
+                                        '${left} = ${left} - ${right}';
+                                        
+                                    case OpMult:
+                                        '${left} = ${left} * ${right}';
+                                        
+                                    case OpDiv:
+                                        '${left} = ${left} / ${right}';
+                                        
+                                    case _:
+                                        // For other operators, use the standard pattern
+                                        '${left} = ${left} ${compileBinop(innerOp)} ${right}';
+                                }
                         }
                         
                     case OpAssign:
                         // FIRST: Check if this is an inline context assignment like _this = struct.buf
-                        trace('[DEBUG] OpAssign: Processing assignment');
+                        trace('[DEBUG] OpAssign: Processing assignment, isCompilingCaseArm = ${isCompilingCaseArm}');
                         switch (e1.expr) {
                             case TLocal(v):
                                 var varName = getOriginalVarName(v);
@@ -1356,8 +1404,10 @@ class ElixirCompiler extends DirectToStringCompiler {
                                     setInlineContext("_this", "active");
                                     return '_this = ${value}';
                                 }
+                            case TField(_, _):
+                                trace('[DEBUG] OpAssign: e1 is TField - handling field assignment');
                             case _:
-                                trace('[DEBUG] OpAssign: e1 is not TLocal, it is ${e1.expr}');
+                                trace('[DEBUG] OpAssign: e1 is not TLocal or TField, e1.expr = ${e1.expr}');
                         }
                         
                         // Handle struct field assignment with Elixir's immutable update syntax
@@ -1368,27 +1418,35 @@ class ElixirCompiler extends DirectToStringCompiler {
                                     case TLocal(v):
                                         // Simple local variable struct update
                                         var structName = getOriginalVarName(v);
+                                        trace('[DEBUG] OpAssign TField TLocal: structName = ${structName}, isCompilingCaseArm = ${isCompilingCaseArm}');
                                         var fieldName = switch (fa) {
                                             case FInstance(_, _, cf) | FStatic(_, cf) | FAnon(cf) | FClosure(_, cf):
                                                 cf.get().name;
                                             case FDynamic(s): s;
                                             case FEnum(_, ef): ef.name;
                                         };
+                                        
+                                        // Convert field name to snake_case for Elixir
+                                        var elixirFieldName = reflaxe.elixir.helpers.NamingHelper.toSnakeCase(fieldName);
                                         var value = compileExpression(e2);
+                                        
+                                        trace('[DEBUG] OpAssign TField: field = ${fieldName} -> ${elixirFieldName}, value = ${value}');
                                         
                                         // Check if we're in a case arm and need to return struct update as expression
                                         if (isCompilingCaseArm) {
+                                            trace('[DEBUG] OpAssign TField: IN CASE ARM - generating struct update expression');
                                             // Map 'this' to struct parameter if it exists
                                             var actualStructName = currentFunctionParameterMap.get("this");
                                             if (actualStructName == null) actualStructName = structName;
                                             
-                                            var elixirFieldName = reflaxe.elixir.helpers.NamingHelper.toSnakeCase(fieldName);
-                                            
                                             // Return struct update as expression (not assignment)
-                                            '%{${actualStructName} | ${elixirFieldName}: ${value}}';
+                                            var result = '%{${actualStructName} | ${elixirFieldName}: ${value}}';
+                                            trace('[DEBUG] OpAssign TField: Generated case arm result = ${result}');
+                                            result;
                                         } else {
+                                            trace('[DEBUG] OpAssign TField: NOT in case arm - generating assignment');
                                             // Generate regular Elixir struct update assignment
-                                            '${structName} = %{${structName} | ${fieldName}: ${value}}';
+                                            '${structName} = %{${structName} | ${elixirFieldName}: ${value}}';
                                         }
                                         
                                     case TConst(TThis):
@@ -1441,8 +1499,37 @@ class ElixirCompiler extends DirectToStringCompiler {
                                 }
                                 
                             case _:
-                                // Regular variable assignment
-                                compileExpression(e1) + " = " + compileExpression(e2);
+                                // Check if this is a field assignment that we missed
+                                switch (e1.expr) {
+                                    case TField(structExpr, fa):
+                                        // This is a field assignment - MUST use struct update syntax
+                                        trace('[DEBUG] OpAssign fallback: Caught field assignment in default case');
+                                        
+                                        // Compile the struct expression to get the variable name
+                                        var structStr = compileExpression(structExpr);
+                                        var fieldName = switch (fa) {
+                                            case FInstance(_, _, cf) | FStatic(_, cf) | FAnon(cf) | FClosure(_, cf):
+                                                cf.get().name;
+                                            case FDynamic(s): s;
+                                            case FEnum(_, ef): ef.name;
+                                        };
+                                        var elixirFieldName = reflaxe.elixir.helpers.NamingHelper.toSnakeCase(fieldName);
+                                        var value = compileExpression(e2);
+                                        
+                                        // In Elixir, we MUST use struct update syntax
+                                        // Direct field assignment like struct.field = value is INVALID
+                                        if (isCompilingCaseArm) {
+                                            // In case arms, return struct update expression
+                                            '%{${structStr} | ${elixirFieldName}: ${value}}';
+                                        } else {
+                                            // Regular context: struct = %{struct | field: value}
+                                            '${structStr} = %{${structStr} | ${elixirFieldName}: ${value}}';
+                                        }
+                                        
+                                    case _:
+                                        // Regular variable assignment
+                                        compileExpression(e1) + " = " + compileExpression(e2);
+                                }
                         }
                     
                     case OpShl | OpShr | OpUShr:
@@ -1689,18 +1776,23 @@ class ElixirCompiler extends DirectToStringCompiler {
                         
                         // Special handling for case arm context - convert field assignments to struct updates
                         if (isCompilingCaseArm && el.length > 0) {
+                            trace('[DEBUG] TBlock in case arm: processing ${el.length} expressions');
                             var fieldUpdates = [];
                             var nonAssignmentStatements = [];
                             
                             for (i in 0...el.length) {
                                 var stmt = el[i];
+                                trace('[DEBUG] TBlock case arm expr[${i}]: ${stmt.expr}');
                                 if (isFieldAssignment(stmt)) {
+                                    trace('[DEBUG] TBlock: Detected field assignment at index ${i}');
                                     // Convert field assignment to struct update mapping
                                     var update = extractFieldUpdate(stmt);
                                     if (update != null) {
+                                        trace('[DEBUG] TBlock: Extracted update: ${update}');
                                         fieldUpdates.push(update);
                                     }
                                 } else {
+                                    trace('[DEBUG] TBlock: Not a field assignment at index ${i}');
                                     var compiled = compileExpression(stmt);
                                     if (compiled != null && compiled.trim() != "") {
                                         nonAssignmentStatements.push(compiled);
@@ -4458,42 +4550,59 @@ class ElixirCompiler extends DirectToStringCompiler {
         if (normalWhile) {
             // while (condition) { body }
             if (modifiedVars.length > 0) {
-                var stateVars = modifiedVars.map(v -> v.name).join(", ");
+                // Convert variable names to snake_case for consistency and initialize them
+                var stateVarsInit = modifiedVars.map(v -> {
+                    var snakeName = NamingHelper.toSnakeCase(v.name);
+                    // Initialize variables that aren't already defined
+                    return snakeName;
+                });
+                var stateVars = stateVarsInit.join(", ");
+                
+                // Generate initial values - use nil for all loop variables
+                // since they're local to the loop and don't exist before it starts
+                var initialValues = modifiedVars.map(v -> {
+                    // All loop-modified variables should start as nil
+                    // They'll be immediately assigned in the loop body
+                    return "nil";
+                }).join(", ");
+                
+                // Move loop_fn outside try block to fix scoping issues
                 return '(\n' +
-                       '  try do\n' +
-                       '    loop_fn = fn {${stateVars}} ->\n' +
-                       '      if ${condition} do\n' +
-                       '        try do\n' +
-                       '          ${transformedBody}\n' +
-                       '        catch\n' +
-                       '          :break -> {${stateVars}}\n' +
-                       '          :continue -> loop_fn.({${stateVars}})\n' +
-                       '        end\n' +
-                       '      else\n' +
-                       '        {${stateVars}}\n' +
+                       '  loop_fn = fn {${stateVars}} ->\n' +
+                       '    if ${condition} do\n' +
+                       '      try do\n' +
+                       '        ${transformedBody}\n' +
+                       '      catch\n' +
+                       '        :break -> {${stateVars}}\n' +
+                       '        :continue -> loop_fn.({${stateVars}})\n' +
                        '      end\n' +
+                       '    else\n' +
+                       '      {${stateVars}}\n' +
                        '    end\n' +
-                       '    loop_fn.({${stateVars}})\n' +
+                       '  end\n' +
+                       '  {${stateVars}} = try do\n' +
+                       '    loop_fn.({${initialValues}})\n' +
                        '  catch\n' +
-                       '    :break -> {${stateVars}}\n' +
+                       '    :break -> {${initialValues}}\n' +
                        '  end\n' +
                        ')';
             } else {
                 // Simple loop without state - compile normally but use tail recursion
                 var body = compileExpression(ebody);
+                // Move loop_fn outside try block to fix scoping issues
                 return '(\n' +
-                       '  try do\n' +
-                       '    loop_fn = fn ->\n' +
-                       '      if ${condition} do\n' +
-                       '        try do\n' +
-                       '          ${body}\n' +
-                       '          loop_fn.()\n' +
-                       '        catch\n' +
-                       '          :break -> nil\n' +
-                       '          :continue -> loop_fn.()\n' +
-                       '        end\n' +
+                       '  loop_fn = fn ->\n' +
+                       '    if ${condition} do\n' +
+                       '      try do\n' +
+                       '        ${body}\n' +
+                       '        loop_fn.()\n' +
+                       '      catch\n' +
+                       '        :break -> nil\n' +
+                       '        :continue -> loop_fn.()\n' +
                        '      end\n' +
                        '    end\n' +
+                       '  end\n' +
+                       '  try do\n' +
                        '    loop_fn.()\n' +
                        '  catch\n' +
                        '    :break -> nil\n' +
@@ -4503,12 +4612,26 @@ class ElixirCompiler extends DirectToStringCompiler {
         } else {
             // do { body } while (condition)
             if (modifiedVars.length > 0) {
-                var stateVars = modifiedVars.map(v -> v.name).join(", ");
+                // Convert variable names to snake_case for consistency
+                var stateVarsInit = modifiedVars.map(v -> {
+                    var snakeName = NamingHelper.toSnakeCase(v.name);
+                    return snakeName;
+                });
+                var stateVars = stateVarsInit.join(", ");
+                
+                // Generate initial values - use nil for all loop variables
+                // since they're local to the loop and don't exist before it starts
+                var initialValues = modifiedVars.map(v -> {
+                    // All loop-modified variables should start as nil
+                    // They'll be immediately assigned in the loop body
+                    return "nil";
+                }).join(", ");
+                
                 return '(\n' +
                        '  loop_fn = fn {${stateVars}} ->\n' +
                        '    ${transformedBody}\n' +
                        '  end\n' +
-                       '  {${stateVars}} = loop_fn.({${stateVars}})\n' +
+                       '  {${stateVars}} = loop_fn.({${initialValues}})\n' +
                        ')';
             } else {
                 var body = compileExpression(ebody);
@@ -4592,9 +4715,10 @@ class ElixirCompiler extends DirectToStringCompiler {
         var updates = new Map<String, String>();
         var compiledBody = compileExpressionWithMutationTracking(expr, updates);
         
-        // Generate the return statement with updated values
+        // Generate the return statement with updated values - convert to snake_case for consistency
         var stateVars = modifiedVars.map(v -> {
-            return updates.exists(v.name) ? updates.get(v.name) : v.name;
+            var snakeName = NamingHelper.toSnakeCase(v.name);
+            return updates.exists(v.name) ? updates.get(v.name) : snakeName;
         }).join(", ");
         
         if (normalWhile) {
@@ -4623,9 +4747,11 @@ class ElixirCompiler extends DirectToStringCompiler {
                 switch (e1.expr) {
                     case TLocal(v):
                         var originalName = getOriginalVarName(v);
+                        var snakeName = NamingHelper.toSnakeCase(originalName);
                         var rightSide = compileExpression(e2);
                         updates.set(originalName, rightSide);
-                        '# ${originalName} updated to ${rightSide}';
+                        // Generate actual assignment, not just a comment
+                        '${snakeName} = ${rightSide}';
                     case _:
                         compileExpression(expr);
                 }
@@ -4635,6 +4761,7 @@ class ElixirCompiler extends DirectToStringCompiler {
                 switch (e1.expr) {
                     case TLocal(v):
                         var originalName = getOriginalVarName(v);
+                        var snakeName = NamingHelper.toSnakeCase(originalName);
                         var rightSide = compileExpression(e2);
                         var opStr = compileBinop(innerOp);
                         
@@ -4647,9 +4774,10 @@ class ElixirCompiler extends DirectToStringCompiler {
                             opStr = isStringOp ? "<>" : "+";
                         }
                         
-                        var newValue = '${originalName} ${opStr} ${rightSide}';
+                        var newValue = '${snakeName} ${opStr} ${rightSide}';
                         updates.set(originalName, newValue);
-                        '# ${originalName} updated with ${opStr} ${rightSide}';
+                        // Generate actual assignment, not just a comment
+                        '${snakeName} = ${newValue}';
                     case _:
                         compileExpression(expr);
                 }
@@ -4659,14 +4787,16 @@ class ElixirCompiler extends DirectToStringCompiler {
                 switch (e1.expr) {
                     case TLocal(v):
                         var originalName = getOriginalVarName(v);
+                        var snakeName = NamingHelper.toSnakeCase(originalName);
                         var op = switch (expr.expr) {
                             case TUnop(OpIncrement, _, _): "+";
                             case TUnop(OpDecrement, _, _): "-";
                             case _: "+";
                         };
-                        var newValue = '${originalName} ${op} 1';
+                        var newValue = '${snakeName} ${op} 1';
                         updates.set(originalName, newValue);
-                        '# ${originalName} ${op == "+" ? "incremented" : "decremented"}';
+                        // Generate actual assignment, not just a comment
+                        '${snakeName} = ${newValue}';
                     case _:
                         compileExpression(expr);
                 }
