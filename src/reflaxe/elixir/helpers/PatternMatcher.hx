@@ -35,7 +35,15 @@ class PatternMatcher {
                 for (value in (caseItem.values : Array<Dynamic>)) {
                     var pattern = compilePattern(value);
                     var guard = compileGuard(caseItem.guard);
+                    
+                    // Set case arm compilation context before compiling expression
+                    if (compiler != null) {
+                        compiler.setCaseArmContext(true);
+                    }
                     var caseExpr = compileExpression(caseItem.expr);
+                    if (compiler != null) {
+                        compiler.setCaseArmContext(false);
+                    }
                     
                     // Add guard clause if present
                     var guardClause = (guard != null && guard.length > 0) ? ' when ${guard}' : '';
@@ -48,7 +56,14 @@ class PatternMatcher {
         
         // Add default case if present
         if (defaultExpr != null) {
+            // Set case arm compilation context for default case too
+            if (compiler != null) {
+                compiler.setCaseArmContext(true);
+            }
             var defaultCode = compileExpression(defaultExpr);
+            if (compiler != null) {
+                compiler.setCaseArmContext(false);
+            }
             result.add('  _ ->\n');
             result.add('    ${indentExpression(defaultCode)}\n');
         }

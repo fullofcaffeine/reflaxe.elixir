@@ -108,6 +108,7 @@ class ElixirCompiler extends DirectToStringCompiler {
     // Parameter mapping system for abstract type implementation methods
     private var currentFunctionParameterMap: Map<String, String> = new Map();
     private var isCompilingAbstractMethod: Bool = false;
+    private var isCompilingCaseArm: Bool = false;
     
     // Current class context for app name resolution and other class-specific operations
     private var currentClassType: Null<ClassType> = null;
@@ -530,10 +531,69 @@ class ElixirCompiler extends DirectToStringCompiler {
      * COMPREHENSIVE: Now handles packages, @:native annotations, and universal snake_case conversion.
      */
     private function setFrameworkAwareOutputPath(classType: ClassType): Void {
-        // Get the comprehensive naming rule for this class
-        var namingRule = getComprehensiveNamingRule(classType);
+        // Check for framework annotations first
+        var annotationInfo = reflaxe.elixir.helpers.AnnotationSystem.detectAnnotations(classType);
         
-        // Set the file output overrides using Reflaxe's built-in system
+        if (annotationInfo.primaryAnnotation != null) {
+            // Use the comprehensive naming rule for framework annotations
+            var namingRule = getComprehensiveNamingRule(classType);
+            setOutputFileName(namingRule.fileName);
+            setOutputFileDir(namingRule.dirPath);
+        } else {
+            // Use universal naming for regular classes
+            setUniversalOutputPath(classType.name, classType.pack);
+        }
+    }
+    
+    /**
+     * Universal naming system for ALL module types (classes, enums, abstracts, typedefs).
+     * 
+     * This is the SINGLE SOURCE OF TRUTH for file naming across the entire compiler.
+     * It handles dot notation (haxe.CallStack → haxe/call_stack), ensures snake_case
+     * for all parts, and works with any module type.
+     * 
+     * @param moduleName Full module name including dots (e.g., "haxe.CallStack", "Any")
+     * @param pack Package array (can be empty)
+     * @return Naming rule with snake_case fileName and dirPath
+     */
+    private function getUniversalNamingRule(moduleName: String, pack: Array<String> = null): {fileName: String, dirPath: String} {
+        // Handle dot notation in module name (e.g., "haxe.CallStack")
+        var parts = moduleName.split(".");
+        
+        // Convert all parts to snake_case
+        var snakeParts = parts.map(part -> NamingHelper.toSnakeCase(part));
+        
+        var fileName: String;
+        var dirPath: String;
+        
+        if (snakeParts.length > 1) {
+            // Multi-part name: last part is filename, rest is directory
+            fileName = snakeParts.pop();
+            dirPath = snakeParts.join("/");
+        } else if (pack != null && pack.length > 0) {
+            // Single name with package: use package for directory
+            fileName = snakeParts[0];
+            var snakePackageParts = pack.map(part -> NamingHelper.toSnakeCase(part));
+            dirPath = snakePackageParts.join("/");
+        } else {
+            // Single name, no package: just the filename
+            fileName = snakeParts[0];
+            dirPath = "";
+        }
+        
+        return {
+            fileName: fileName,
+            dirPath: dirPath
+        };
+    }
+    
+    /**
+     * Set output path for ANY module type using the universal naming system.
+     * This ensures consistent snake_case naming for all generated files.
+     */
+    private function setUniversalOutputPath(moduleName: String, pack: Array<String> = null): Void {
+        var namingRule = getUniversalNamingRule(moduleName, pack);
+        trace('Universal naming: ${moduleName} → file: ${namingRule.fileName}, dir: ${namingRule.dirPath}');
         setOutputFileName(namingRule.fileName);
         setOutputFileDir(namingRule.dirPath);
     }
@@ -1006,6 +1066,9 @@ class ElixirCompiler extends DirectToStringCompiler {
     public function compileEnumImpl(enumType: EnumType, options: Array<EnumOptionData>): Null<String> {
         if (enumType == null) return null;
         
+        // Set universal output path for consistent snake_case naming
+        setUniversalOutputPath(enumType.name, enumType.pack);
+        
         // Use the enhanced EnumCompiler helper for proper type integration
         var enumCompiler = new reflaxe.elixir.helpers.EnumCompiler(this.typer);
         return enumCompiler.compileEnum(enumType, options);
@@ -1024,9 +1087,13 @@ class ElixirCompiler extends DirectToStringCompiler {
      */
     public override function compileAbstractImpl(abstractType: AbstractType): Null<String> {
         // Skip core Haxe types that are handled elsewhere
+        // Return null (not empty string) to prevent file generation
         if (isBuiltinAbstractType(abstractType.name)) {
-            return "";
+            return null;
         }
+        
+        // Set universal output path for consistent snake_case naming
+        setUniversalOutputPath(abstractType.name, abstractType.pack);
         
         // Skip Haxe constraint abstracts that don't need generation
         // These are internal Haxe types used for type constraints
@@ -1071,6 +1138,9 @@ class ElixirCompiler extends DirectToStringCompiler {
             case "StringBuf" | "StringTools" | "Math" | "Reflect" | "Type" | "Std":
                 true;
                 
+            // JSON handling types are now compiled normally as structs
+            // (Removed JsonPrinter | JsonParser - they compile as instance classes)
+                
             // Error/debugging types (handled by Elixir's error system)
             case "CallStack" | "Exception" | "Error":
                 true;
@@ -1105,6 +1175,9 @@ class ElixirCompiler extends DirectToStringCompiler {
             // Data structure implementation classes
             case "StringBuf" | "StringTools" | "List" | "GenericStack" | "BalancedTree" | "TreeNode":
                 true;
+                
+            // JSON implementation classes are now compiled normally as structs
+            // (Removed JsonPrinter | JsonParser - they compile as instance classes)
                 
             // Abstract implementation classes (compiler-generated)
             case name if (name.endsWith("_Impl_")):
@@ -1263,8 +1336,8 @@ class ElixirCompiler extends DirectToStringCompiler {
                         // Handle struct field assignment with Elixir's immutable update syntax
                         switch (e1.expr) {
                             case TField(structExpr, fa):
-                                // This is a field assignment like spec.restart = :temporary
-                                // We need to generate: spec = %{spec | restart: :temporary}
+                                // This is a field assignment like _this.b = value
+                                // We need to generate: _this = %{_this | b: value}
                                 switch (structExpr.expr) {
                                     case TLocal(v):
                                         // Simple local variable struct update
@@ -1277,18 +1350,47 @@ class ElixirCompiler extends DirectToStringCompiler {
                                         };
                                         var value = compileExpression(e2);
                                         
-                                        // Generate idiomatic Elixir struct update syntax
-                                        '${structName} = %{${structName} | ${fieldName}: ${value}}';
+                                        // Check if we're in a case arm and need to return struct update as expression
+                                        if (isCompilingCaseArm) {
+                                            // Map 'this' to struct parameter if it exists
+                                            var actualStructName = currentFunctionParameterMap.get("this");
+                                            if (actualStructName == null) actualStructName = structName;
+                                            
+                                            var elixirFieldName = reflaxe.elixir.helpers.NamingHelper.toSnakeCase(fieldName);
+                                            
+                                            // Return struct update as expression (not assignment)
+                                            '%{${actualStructName} | ${elixirFieldName}: ${value}}';
+                                        } else {
+                                            // Generate regular Elixir struct update assignment
+                                            '${structName} = %{${structName} | ${fieldName}: ${value}}';
+                                        }
                                         
                                     case _:
-                                        // Complex struct expression - compile normally for now
-                                        var structStr = compileExpression(structExpr);
-                                        var fieldStr = compileFieldAccess(structExpr, fa);
-                                        var value = compileExpression(e2);
-                                        
-                                        // For complex expressions, we may need a temporary variable
-                                        // For now, fall back to standard assignment (will error in Elixir)
-                                        '${structStr}.${fieldStr} = ${value}';
+                                        // Complex struct expression
+                                        if (isCompilingCaseArm) {
+                                            // In case arms, we can't do assignments - return struct update expression
+                                            var value = compileExpression(e2);
+                                            var fieldName = switch (fa) {
+                                                case FInstance(_, _, cf) | FStatic(_, cf) | FAnon(cf): cf.get().name;
+                                                case _: "unknown_field";
+                                            };
+                                            var elixirFieldName = reflaxe.elixir.helpers.NamingHelper.toSnakeCase(fieldName);
+                                            
+                                            // Use struct parameter name from current function mapping
+                                            var structVar = currentFunctionParameterMap.get("this");
+                                            if (structVar == null) structVar = "struct";
+                                            
+                                            '%{${structVar} | ${elixirFieldName}: ${value}}';
+                                        } else {
+                                            // Complex struct expression - compile normally for now
+                                            var structStr = compileExpression(structExpr);
+                                            var fieldStr = compileFieldAccess(structExpr, fa);
+                                            var value = compileExpression(e2);
+                                            
+                                            // For complex expressions, we may need a temporary variable
+                                            // For now, fall back to standard assignment (will error in Elixir)
+                                            '${structStr}.${fieldStr} = ${value}';
+                                        }
                                 }
                                 
                             case _:
@@ -1352,7 +1454,27 @@ class ElixirCompiler extends DirectToStringCompiler {
                 }
                 
             case TField(e, fa):
-                compileFieldAccess(e, fa);
+                // Special handling for 'this' references in struct instance methods
+                var result = switch (e.expr) {
+                    case TConst(TThis):
+                        var mappedName = currentFunctionParameterMap.get("this");
+                        if (mappedName != null) {
+                            // Use mapped parameter name for struct field access
+                            var fieldName = switch (fa) {
+                                case FInstance(_, _, cf) | FStatic(_, cf) | FAnon(cf): cf.get().name;
+                                case FDynamic(s): s;
+                                case FEnum(_, ef): ef.name;
+                                case _: "unknown_field";
+                            };
+                            var elixirFieldName = reflaxe.elixir.helpers.NamingHelper.toSnakeCase(fieldName);
+                            '${mappedName}.${elixirFieldName}';
+                        } else {
+                            compileFieldAccess(e, fa);
+                        }
+                    case _:
+                        compileFieldAccess(e, fa);
+                };
+                result;
                 
             case TCall(e, el):
                 // Check for special compile-time function calls
@@ -1474,13 +1596,58 @@ class ElixirCompiler extends DirectToStringCompiler {
                         // For multiple statements, compile each and join with newlines
                         // The last expression is the return value in Elixir
                         var compiledStatements = [];
-                        for (i in 0...el.length) {
-                            var compiled = compileExpression(el[i]);
-                            if (compiled != null && compiled.trim() != "") {
-                                compiledStatements.push(compiled);
+                        
+                        // Special handling for case arm context - convert field assignments to struct updates
+                        if (isCompilingCaseArm && el.length > 0) {
+                            var fieldUpdates = [];
+                            var nonAssignmentStatements = [];
+                            
+                            for (i in 0...el.length) {
+                                var stmt = el[i];
+                                if (isFieldAssignment(stmt)) {
+                                    // Convert field assignment to struct update mapping
+                                    var update = extractFieldUpdate(stmt);
+                                    if (update != null) {
+                                        fieldUpdates.push(update);
+                                    }
+                                } else {
+                                    var compiled = compileExpression(stmt);
+                                    if (compiled != null && compiled.trim() != "") {
+                                        nonAssignmentStatements.push(compiled);
+                                    }
+                                }
                             }
+                            
+                            // Generate final expression for case arm
+                            if (fieldUpdates.length > 0) {
+                                var structVar = currentFunctionParameterMap.get("this");
+                                if (structVar == null) structVar = "struct";
+                                
+                                // Combine any non-assignment statements with struct update
+                                var allStatements = nonAssignmentStatements.copy();
+                                allStatements.push('%{${structVar} | ${fieldUpdates.join(", ")}}');
+                                
+                                allStatements.join("\n");
+                            } else {
+                                // No field assignments, proceed normally
+                                for (i in 0...el.length) {
+                                    var compiled = compileExpression(el[i]);
+                                    if (compiled != null && compiled.trim() != "") {
+                                        compiledStatements.push(compiled);
+                                    }
+                                }
+                                compiledStatements.join("\n");
+                            }
+                        } else {
+                            // Normal block compilation
+                            for (i in 0...el.length) {
+                                var compiled = compileExpression(el[i]);
+                                if (compiled != null && compiled.trim() != "") {
+                                    compiledStatements.push(compiled);
+                                }
+                            }
+                            compiledStatements.join("\n");
                         }
-                        compiledStatements.join("\n");
                     }
                 }
                 
@@ -2109,7 +2276,10 @@ class ElixirCompiler extends DirectToStringCompiler {
                 '"${escaped}"';
             case TBool(b): b ? "true" : "false";
             case TNull: "nil";
-            case TThis: "__MODULE__"; // In Elixir, use __MODULE__ for self-reference
+            case TThis: 
+                // Check if 'this' should be mapped to a parameter (e.g., 'struct' in instance methods)
+                var mappedName = currentFunctionParameterMap.get("this");
+                mappedName != null ? mappedName : "__MODULE__"; // Default to __MODULE__ if no mapping
             case TSuper: "__MODULE__"; // Elixir doesn't have super() - use module reference as fallback
             case _: "nil";
         }
@@ -2240,14 +2410,24 @@ class ElixirCompiler extends DirectToStringCompiler {
      * Helper: Compile field access
      */
     private function compileFieldAccess(e: TypedExpr, fa: FieldAccess): String {
-        var expr = compileExpression(e);
+        // Check if this is a 'this' reference that should be mapped to a parameter
+        var expr = switch (e.expr) {
+            case TConst(TThis): 
+                var mappedName = currentFunctionParameterMap.get("this");
+                mappedName != null ? mappedName : compileExpression(e);
+            case TLocal(v) if (v.name == "this" || v.name == "_this"):
+                var mappedName = currentFunctionParameterMap.get("this");
+                mappedName != null ? mappedName : compileExpression(e);
+            case _:
+                compileExpression(e);
+        };
         
         return switch (fa) {
             case FInstance(classType, _, classFieldRef):
                 var fieldName = classFieldRef.get().name;
+                var classTypeName = classType.get().name;
                 
                 // Special handling for String properties
-                var classTypeName = classType.get().name;
                 if (classTypeName == "String" && fieldName == "length") {
                     return 'String.length(${expr})';
                 }
@@ -2262,8 +2442,20 @@ class ElixirCompiler extends DirectToStringCompiler {
                     return 'length(${expr})';
                 }
                 
-                // Default field access
+                // CRITICAL: Instance field access for struct-based classes
+                // For classes compiled as structs (like JsonPrinter, StringBuf), 
+                // use map access syntax, not function calls
                 fieldName = NamingHelper.toSnakeCase(fieldName);
+                
+                // Check if this is accessing a field on an instance-based class
+                var classRef = classType.get();
+                if (!classRef.isExtern && !classRef.isInterface && !classRef.isAbstract) {
+                    // This is a struct field access - use direct struct syntax
+                    // For struct-based classes like JsonPrinter, use direct field access
+                    return '${expr}.${fieldName}';
+                }
+                
+                // Default field access for other cases
                 '${expr}.${fieldName}'; // Map access syntax
                 
             case FStatic(classType, classFieldRef):
@@ -2355,8 +2547,20 @@ class ElixirCompiler extends DirectToStringCompiler {
      * Set up parameter mapping for function compilation
      */
     public function setFunctionParameterMapping(args: Array<reflaxe.data.ClassFuncArg>): Void {
+        // Preserve any existing 'this' mappings for struct instance methods
+        var savedThisMapping = currentFunctionParameterMap.get("this");
+        var savedThisMapping2 = currentFunctionParameterMap.get("_this");
+        
         currentFunctionParameterMap.clear();
         isCompilingAbstractMethod = true;
+        
+        // Restore 'this' mappings if they existed
+        if (savedThisMapping != null) {
+            currentFunctionParameterMap.set("this", savedThisMapping);
+        }
+        if (savedThisMapping2 != null) {
+            currentFunctionParameterMap.set("_this", savedThisMapping2);
+        }
         
         if (args != null) {
             for (i in 0...args.length) {
@@ -2379,6 +2583,32 @@ class ElixirCompiler extends DirectToStringCompiler {
                 }
             }
         }
+    }
+    
+    /**
+     * Set up parameter mapping for 'this' references in struct instance methods
+     */
+    public function setThisParameterMapping(structParamName: String): Void {
+        // Map 'this' references to the struct parameter name
+        currentFunctionParameterMap.set("this", structParamName);
+        // Also handle variations like _this which Haxe might generate
+        currentFunctionParameterMap.set("_this", structParamName);
+    }
+    
+    /**
+     * Clear 'this' parameter mapping after function compilation
+     */
+    public function clearThisParameterMapping(): Void {
+        // Remove 'this' mappings while preserving other parameter mappings
+        currentFunctionParameterMap.remove("this");
+        currentFunctionParameterMap.remove("_this");
+    }
+    
+    /**
+     * Set case arm compilation context
+     */
+    public function setCaseArmContext(inCaseArm: Bool): Void {
+        isCompilingCaseArm = inCaseArm;
     }
     
     /**
@@ -5590,6 +5820,52 @@ class ElixirCompiler extends DirectToStringCompiler {
             case _:
                 Context.error('Unknown elixir.Syntax method: ${methodName}', Context.currentPos());
                 "";
+        };
+    }
+    
+    /**
+     * Check if a TypedExpr represents a field assignment (this.field = value)
+     */
+    private function isFieldAssignment(expr: TypedExpr): Bool {
+        return switch (expr.expr) {
+            case TBinop(OpAssign, e1, e2):
+                switch (e1.expr) {
+                    case TField(e, fa):
+                        // Check if the field access is on 'this' 
+                        switch (e.expr) {
+                            case TConst(TThis): true;
+                            case TLocal(v): v.name == "this" || v.name == "_this";
+                            case _: false;
+                        }
+                    case _: false;
+                }
+            case _: false;
+        };
+    }
+    
+    /**
+     * Extract field update information from a field assignment expression
+     * Returns: "field_name: new_value" for struct update syntax
+     */
+    private function extractFieldUpdate(expr: TypedExpr): Null<String> {
+        return switch (expr.expr) {
+            case TBinop(OpAssign, e1, e2):
+                switch (e1.expr) {
+                    case TField(e, fa):
+                        var fieldName = switch (fa) {
+                            case FInstance(_, _, cf) | FStatic(_, cf) | FAnon(cf): cf.get().name;
+                            case _: null;
+                        };
+                        if (fieldName != null) {
+                            var value = compileExpression(e2);
+                            var elixirFieldName = reflaxe.elixir.helpers.NamingHelper.toSnakeCase(fieldName);
+                            '${elixirFieldName}: ${value}';
+                        } else {
+                            null;
+                        }
+                    case _: null;
+                }
+            case _: null;
         };
     }
     
