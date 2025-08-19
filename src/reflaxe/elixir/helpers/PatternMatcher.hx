@@ -47,6 +47,23 @@ class PatternMatcher {
                         compiler.clearInlineContext();
                     }
                     
+                    // Filter out orphaned Haxe temp variables that appear on separate lines
+                    // These occur when enum parameters are extracted but not used
+                    var lines = caseExpr.split("\n");
+                    var filteredLines = [];
+                    for (i in 0...lines.length) {
+                        var line = StringTools.trim(lines[i]);
+                        // Skip standalone temp variable references like "g" or "g1" that appear after elem() calls
+                        if (line == "g" || ~/^g\d*$/.match(line)) {
+                            // Check if previous line was an elem() extraction
+                            if (i > 0 && lines[i - 1].indexOf("elem(") >= 0) {
+                                continue; // Skip this orphaned temp variable
+                            }
+                        }
+                        filteredLines.push(lines[i]);
+                    }
+                    caseExpr = filteredLines.join("\n");
+                    
                     // Add guard clause if present
                     var guardClause = (guard != null && guard.length > 0) ? ' when ${guard}' : '';
                     
@@ -68,6 +85,23 @@ class PatternMatcher {
                 // Clear inline context after default case as well
                 compiler.clearInlineContext();
             }
+            
+            // Filter out orphaned Haxe temp variables for default case too
+            var lines = defaultCode.split("\n");
+            var filteredLines = [];
+            for (i in 0...lines.length) {
+                var line = StringTools.trim(lines[i]);
+                // Skip standalone temp variable references like "g" or "g1" that appear after elem() calls
+                if (line == "g" || ~/^g\d*$/.match(line)) {
+                    // Check if previous line was an elem() extraction
+                    if (i > 0 && lines[i - 1].indexOf("elem(") >= 0) {
+                        continue; // Skip this orphaned temp variable
+                    }
+                }
+                filteredLines.push(lines[i]);
+            }
+            defaultCode = filteredLines.join("\n");
+            
             result.add('  _ ->\n');
             result.add('    ${indentExpression(defaultCode)}\n');
         }

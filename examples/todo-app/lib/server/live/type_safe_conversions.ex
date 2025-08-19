@@ -34,27 +34,27 @@ defmodule TypeSafeConversions do
     changeset_params = %{}
     if (params.title != nil) do
       value = {:string_value, params.title}
-      changeset_params.set("title", value)
+      Map.put(changeset_params, "title", value)
     end
     if (params.description != nil) do
       value = {:string_value, params.description}
-      changeset_params.set("description", value)
+      Map.put(changeset_params, "description", value)
     end
     if (params.priority != nil) do
       value = {:string_value, params.priority}
-      changeset_params.set("priority", value)
+      Map.put(changeset_params, "priority", value)
     end
     if (params.due_date != nil) do
       value = {:string_value, params.due_date}
-      changeset_params.set("due_date", value)
+      Map.put(changeset_params, "due_date", value)
     end
     if (params.tags != nil) do
       value = {:string_value, params.tags}
-      changeset_params.set("tags", value)
+      Map.put(changeset_params, "tags", value)
     end
     if (params.completed != nil) do
       value = {:bool_value, params.completed}
-      changeset_params.set("completed", value)
+      Map.put(changeset_params, "completed", value)
     end
     changeset_params
   end
@@ -76,24 +76,24 @@ defmodule TypeSafeConversions do
   def create_todo_params(title, description, priority, due_date, tags, user_id) do
     changeset_params = %{}
     value = {:string_value, title}
-    changeset_params.set("title", value)
+    Map.put(changeset_params, "title", value)
     value = {:string_value, priority}
-    changeset_params.set("priority", value)
+    Map.put(changeset_params, "priority", value)
     value = {:int_value, user_id}
-    changeset_params.set("user_id", value)
+    Map.put(changeset_params, "user_id", value)
     value = {:bool_value, false}
-    changeset_params.set("completed", value)
+    Map.put(changeset_params, "completed", value)
     if (description != nil) do
       value = {:string_value, description}
-      changeset_params.set("description", value)
+      Map.put(changeset_params, "description", value)
     end
     if (due_date != nil) do
       value = {:string_value, due_date}
-      changeset_params.set("due_date", value)
+      Map.put(changeset_params, "due_date", value)
     end
     if (tags != nil) do
       value = {:string_value, tags}
-      changeset_params.set("tags", value)
+      Map.put(changeset_params, "tags", value)
     end
     changeset_params
   end
@@ -160,10 +160,30 @@ defmodule TypeSafeConversions do
   @spec count_completed(Array.t()) :: integer()
   def count_completed(todos) do
     count = 0
-    _g = 0
-    Enum.map(todos, fn todo -> todo = Enum.at(todos, _g)
-    _g = _g + 1
-    if (todo.completed), do: count = count + 1, else: nil end)
+    g = 0
+    (
+      loop_helper = fn loop_fn, {g, count} ->
+        if (g < todos.length) do
+          try do
+            todo = Enum.at(todos, g)
+          g = g + 1
+          if (todo.completed), do: count = count + 1, else: nil
+          loop_fn.({g + 1, count})
+            loop_fn.(loop_fn, {g, count})
+          catch
+            :break -> {g, count}
+            :continue -> loop_fn.(loop_fn, {g, count})
+          end
+        else
+          {g, count}
+        end
+      end
+      {g, count} = try do
+        loop_helper.(loop_helper, {nil, nil})
+      catch
+        :break -> {nil, nil}
+      end
+    )
     count
   end
 

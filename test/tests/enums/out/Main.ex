@@ -14,12 +14,12 @@ defmodule Main do
       2 ->
         temp_result = "blue"
       3 ->
-        _g = elem(color, 1)
-        _g = elem(color, 2)
-        _g = elem(color, 3)
-        r = _g
-        g = _g
-        b = _g
+        g = elem(color, 1)
+        g = elem(color, 2)
+        g = elem(color, 3)
+        r = g
+        g = g
+        b = g
         temp_result = "rgb(" <> Integer.to_string(r) <> ", " <> Integer.to_string(g) <> ", " <> Integer.to_string(b) <> ")"
     end
     temp_result
@@ -31,8 +31,8 @@ defmodule Main do
     temp_result = nil
     case (elem(opt, 0)) do
       0 ->
-        _g = elem(opt, 1)
-        v = _g
+        g = elem(opt, 1)
+        v = g
         temp_result = v
       1 ->
         temp_result = default_value
@@ -46,14 +46,14 @@ defmodule Main do
     temp_result = nil
     case (elem(tree, 0)) do
       0 ->
-        _g = elem(tree, 1)
-        value = _g
+        g = elem(tree, 1)
+        value = g
         temp_result = value
       1 ->
-        _g = elem(tree, 1)
-        _g = elem(tree, 2)
-        left = _g
-        right = _g
+        g = elem(tree, 1)
+        g = elem(tree, 2)
+        left = g
+        right = g
         temp_result = Main.treeSum(left) + Main.treeSum(right)
     end
     temp_result
@@ -64,30 +64,30 @@ defmodule Main do
   def describe_r_g_b(color) do
     temp_result = nil
     if (elem(color, 0) == 3) do
-      _g = elem(color, 1)
-      _g = elem(color, 2)
-      _g = elem(color, 3)
-      r = _g
-      g = _g
-      b = _g
+      g = elem(color, 1)
+      g = elem(color, 2)
+      g = elem(color, 3)
+      r = g
+      g = g
+      b = g
       if (r > 200 && g < 50 && b < 50) do
         temp_result = "mostly red"
       else
-        r = _g
-        g = _g
-        b = _g
+        r = g
+        g = g
+        b = g
         if (g > 200 && r < 50 && b < 50) do
           temp_result = "mostly green"
         else
-          r = _g
-          g = _g
-          b = _g
+          r = g
+          g = g
+          b = g
           if (b > 200 && r < 50 && g < 50) do
             temp_result = "mostly blue"
           else
-            _g
-            _g
-            _g
+            g
+            g
+            g
             temp_result = "mixed color"
           end
         end
@@ -104,25 +104,25 @@ defmodule Main do
     temp_result = nil
     case (elem(t1, 0)) do
       0 ->
-        _g = elem(t1, 1)
+        g = elem(t1, 1)
         if (elem(t2, 0) == 0) do
-          _g = elem(t2, 1)
-          v2 = _g
-          v1 = _g
+          g = elem(t2, 1)
+          v2 = g
+          v1 = g
           temp_result = v1 == v2
         else
           temp_result = false
         end
       1 ->
-        _g = elem(t1, 1)
-        _g = elem(t1, 2)
+        g = elem(t1, 1)
+        g = elem(t1, 2)
         if (elem(t2, 0) == 1) do
-          _g = elem(t2, 1)
-          _g = elem(t2, 2)
-          l2 = _g
-          r2 = _g
-          r1 = _g
-          l1 = _g
+          g = elem(t2, 1)
+          g = elem(t2, 2)
+          l2 = g
+          r2 = g
+          r1 = g
+          l1 = g
           temp_result = Main.compareTrees(l1, l2) && Main.compareTrees(r1, r2)
         else
           temp_result = false

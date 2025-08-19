@@ -180,6 +180,68 @@ class UserController {
 
 **Generated File**: `lib/{app_name}_web/channels/{name}_channel.ex`
 
+#### `@:phoenixWebModule` - Phoenix Web Module Hub
+**Purpose**: Central hub module providing Phoenix framework helpers and macros.
+
+**Generated File**: `lib/{app_name}_web.ex`
+
+**Example**:
+```haxe
+@:phoenixWebModule
+@:native("TodoAppWeb")
+class TodoAppWeb {
+    public static function static_paths(): Array<String> {
+        return ["assets", "fonts", "images", "favicon.ico", "robots.txt"];
+    }
+}
+```
+
+**Generated Output**:
+```elixir
+defmodule TodoAppWeb do
+  def static_paths, do: ~w(assets fonts images favicon.ico robots.txt)
+
+  def router do
+    quote do
+      use Phoenix.Router, helpers: false
+      import Plug.Conn
+      import Phoenix.Controller
+      import Phoenix.LiveView.Router
+    end
+  end
+
+  def controller do
+    quote do
+      use Phoenix.Controller,
+        formats: [:html, :json],
+        layouts: [html: TodoAppWeb.Layouts]
+      import TodoAppWeb.Gettext
+      unquote(verified_routes())
+    end
+  end
+
+  def live_view do
+    quote do
+      use Phoenix.LiveView,
+        layout: {TodoAppWeb.Layouts, :app}
+      unquote(html_helpers())
+    end
+  end
+
+  # ... additional Phoenix macros for channel, html, etc.
+
+  defmacro __using__(which) when is_atom(which) do
+    apply(__MODULE__, which, [])
+  end
+end
+```
+
+**Key Features**:
+- Generates all Phoenix web module macros (router, controller, live_view, channel, html)
+- Provides `__using__` macro for Phoenix convention `use TodoAppWeb, :controller`
+- Includes helper functions for HTML imports and verified routes
+- Configures session options and plug pipeline settings
+
 ### Ecto Framework Annotations
 
 #### `@:schema` - Ecto Schema Definition
@@ -362,6 +424,7 @@ public static var SUPPORTED_ANNOTATIONS = [
     ":controller",   // Phoenix web layer
     ":router",       // Phoenix routing
     ":endpoint",     // Phoenix HTTP layer
+    ":phoenixWebModule",  // Phoenix web module hub
     // ... etc in priority order
 ];
 ```
@@ -374,7 +437,10 @@ Each annotation routes to specialized compiler helpers:
 public static function routeCompilation(classType: ClassType, varFields: Array<ClassVarData>, funcFields: Array<ClassFuncData>): Null<String> {
     return switch (annotationInfo.primaryAnnotation) {
         case ":endpoint":
-            // Returns null - handled by main ElixirCompiler with framework-aware file placement
+            // Handled by EndpointCompiler in ClassCompiler
+            null;
+        case ":phoenixWebModule":
+            // Handled by WebModuleCompiler in ClassCompiler
             null;
         case ":router":
             RouterCompiler.compile(classType, varFields, funcFields);

@@ -4,6 +4,8 @@ import phoenix.SafePubSub;
 import haxe.ds.Option;
 import haxe.functional.Result;
 import server.types.Types.TodoPriority;
+import server.types.Types.BulkOperationType;
+import server.types.Types.AlertLevel;
 
 /**
  * Todo-app specific PubSub topics and messages with complete type safety
@@ -72,26 +74,7 @@ enum TodoPubSubMessage {
     SystemAlert(message: String, level: AlertLevel);
 }
 
-/**
- * Bulk operation types for type-safe bulk actions
- */
-enum BulkOperationType {
-    CompleteAll;
-    DeleteCompleted;
-    SetPriority(priority: TodoPriority);
-    AddTag(tag: String);
-    RemoveTag(tag: String);
-}
-
-/**
- * Alert levels for system notifications
- */
-enum AlertLevel {
-    Info;
-    Warning;
-    Error;
-    Critical;
-}
+// BulkOperationType and AlertLevel are imported from server.types.Types
 
 /**
  * Todo-app specific SafePubSub wrapper with complete type safety

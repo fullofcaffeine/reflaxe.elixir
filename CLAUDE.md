@@ -641,6 +641,30 @@ cd examples/todo-app && mix compile        # Integration test
 
 ## Development Principles
 
+### ⚠️ CRITICAL: No Direct Elixir Files - Everything Through Haxe
+**FUNDAMENTAL RULE: NEVER write .ex files directly. Everything must be generated from Haxe.**
+
+**Why This Matters:**
+- **Vision Integrity**: The entire point of Reflaxe.Elixir is to write everything in Haxe
+- **Type Safety**: Manual .ex files bypass Haxe's type system entirely
+- **Maintainability**: Two sources of truth (Haxe + manual Elixir) create confusion
+- **Compiler Evolution**: The compiler should handle ALL Elixir generation needs
+
+**When You Need Complex Elixir Features:**
+1. **Create a compiler helper**: Add to `src/reflaxe/elixir/helpers/`
+2. **Use annotations**: Create DSLs through @:annotation patterns
+3. **Enhance the compiler**: Add new capabilities to handle the use case
+4. **Use Haxe macros**: Create compile-time transformations in Haxe
+
+**Examples:**
+- ❌ **WRONG**: Writing `lib/todo_app_web.ex` manually for Phoenix macros
+- ✅ **RIGHT**: Creating `WebModuleCompiler.hx` to generate Phoenix web modules from @:phoenixWebModule annotation
+
+- ❌ **WRONG**: Creating manual migration files in `priv/repo/migrations/`
+- ✅ **RIGHT**: Using @:migration annotation with MigrationCompiler
+
+**The Rule**: If you're typing in a .ex file, you're doing it wrong. Find or create the Haxe way.
+
 ### ⚠️ CRITICAL: Code Replacement Safety Protocol
 **ALWAYS double-check before removing code - compare implementations thoroughly and keep the SUPERIOR version, not just resolve duplicates blindly.**
 

@@ -17,6 +17,7 @@ import reflaxe.elixir.PhoenixMapper;
 import reflaxe.elixir.helpers.RepoCompiler;
 import reflaxe.elixir.helpers.TelemetryCompiler;
 import reflaxe.elixir.helpers.EndpointCompiler;
+import reflaxe.elixir.helpers.WebModuleCompiler;
 
 using StringTools;
 
@@ -84,6 +85,10 @@ class ClassCompiler {
         
         if (EndpointCompiler.isEndpointClass(classType)) {
             return EndpointCompiler.compileEndpointModule(classType, className);
+        }
+        
+        if (WebModuleCompiler.isWebModuleClass(classType)) {
+            return WebModuleCompiler.compileWebModule(classType, className);
         }
         
         // Note: @:application classes are now compiled normally, 
