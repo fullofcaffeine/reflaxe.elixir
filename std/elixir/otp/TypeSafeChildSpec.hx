@@ -181,7 +181,7 @@ class TypeSafeChildSpecBuilder {
      * @return TypeSafeChildSpec for Phoenix.PubSub
      */
     public static function pubsub(appName: String): TypeSafeChildSpec {
-        return PubSub('${appName}.PubSub');
+        return PubSub(appName + ".PubSub");
     }
     
     /**

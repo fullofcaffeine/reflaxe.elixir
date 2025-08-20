@@ -1446,6 +1446,11 @@ class ElixirCompiler extends DirectToStringCompiler {
                     return 'socket.assigns.${snakeCaseName}';
                 }
                 
+                // Check if this is a function reference being passed as an argument
+                if (isFunctionReference(v, originalName)) {
+                    return generateFunctionReference(originalName);
+                }
+                
                 // Use parameter mapping if available (for both abstract methods and regular functions with standardized arg names)
                 if (currentFunctionParameterMap.exists(originalName)) {
                     currentFunctionParameterMap.get(originalName);
@@ -1464,8 +1469,32 @@ class ElixirCompiler extends DirectToStringCompiler {
                         
                         if (isStringConcat) {
                             // Use <> for string concatenation in Elixir
-                            var left = compileExpression(e1);
-                            var right = compileExpression(e2);
+                            // Handle string constants directly to preserve quotes
+                            var left = switch (e1.expr) {
+                                case TConst(TString(s)): 
+                                    // Properly escape and quote the string
+                                    var escaped = StringTools.replace(s, '\\', '\\\\');
+                                    escaped = StringTools.replace(escaped, '"', '\\"');
+                                    escaped = StringTools.replace(escaped, '\n', '\\n');
+                                    escaped = StringTools.replace(escaped, '\r', '\\r');
+                                    escaped = StringTools.replace(escaped, '\t', '\\t');
+                                    '"${escaped}"';
+                                case _: 
+                                    compileExpression(e1);
+                            };
+                            
+                            var right = switch (e2.expr) {
+                                case TConst(TString(s)): 
+                                    // Properly escape and quote the string
+                                    var escaped = StringTools.replace(s, '\\', '\\\\');
+                                    escaped = StringTools.replace(escaped, '"', '\\"');
+                                    escaped = StringTools.replace(escaped, '\n', '\\n');
+                                    escaped = StringTools.replace(escaped, '\r', '\\r');
+                                    escaped = StringTools.replace(escaped, '\t', '\\t');
+                                    '"${escaped}"';
+                                case _: 
+                                    compileExpression(e2);
+                            };
                             
                             // Convert non-string operands to strings
                             if (!e1IsString && e2IsString) {
@@ -2852,8 +2881,30 @@ class ElixirCompiler extends DirectToStringCompiler {
                 var isStringConcat = e1IsString || e2IsString;
                 
                 if (isStringConcat) {
-                    var left = compileExpressionWithTypeAwareness(e1);
-                    var right = compileExpressionWithTypeAwareness(e2);
+                    // Handle string constants directly to preserve quotes
+                    var left = switch (e1.expr) {
+                        case TConst(TString(s)): 
+                            // Properly escape and quote the string
+                            var escaped = StringTools.replace(s, '\\', '\\\\');
+                            escaped = StringTools.replace(escaped, '"', '\\"');
+                            escaped = StringTools.replace(escaped, '\n', '\\n');
+                            escaped = StringTools.replace(escaped, '\r', '\\r');
+                            escaped = StringTools.replace(escaped, '\t', '\\t');
+                            '"${escaped}"';
+                        case _: compileExpressionWithTypeAwareness(e1);
+                    };
+                    
+                    var right = switch (e2.expr) {
+                        case TConst(TString(s)): 
+                            // Properly escape and quote the string
+                            var escaped = StringTools.replace(s, '\\', '\\\\');
+                            escaped = StringTools.replace(escaped, '"', '\\"');
+                            escaped = StringTools.replace(escaped, '\n', '\\n');
+                            escaped = StringTools.replace(escaped, '\r', '\\r');
+                            escaped = StringTools.replace(escaped, '\t', '\\t');
+                            '"${escaped}"';
+                        case _: compileExpressionWithTypeAwareness(e2);
+                    };
                     
                     // Convert non-string operands to strings
                     if (!e1IsString && e2IsString) {
@@ -3195,6 +3246,111 @@ class ElixirCompiler extends DirectToStringCompiler {
         var mapped = currentFunctionParameterMap.get("this");
         var result = mapped != null ? mapped : "struct";
         return result;
+    }
+    
+    /**
+     * Check if a TLocal variable represents a function being passed as a reference
+     * 
+     * @param v The TVar representing the local variable
+     * @param originalName The original name of the variable
+     * @return true if this is a function reference, false otherwise
+     */
+    private function isFunctionReference(v: TVar, originalName: String): Bool {
+        // Check if the variable's type is a function type
+        switch (v.t) {
+            case TFun(_, _):
+                // This is definitely a function type
+                return true;
+            case _:
+                // Check if this is a static method reference by name
+                // This handles cases where the TVar type isn't TFun but it's actually a function
+                if (currentClassType != null) {
+                    // Look for static methods in the current class
+                    var classFields = currentClassType.statics.get();
+                    for (field in classFields) {
+                        if (field.name == originalName && field.type.match(TFun(_, _))) {
+                            return true;
+                        }
+                    }
+                    
+                    // Look for instance methods (though these are less common as references)
+                    var instanceFields = currentClassType.fields.get();
+                    for (field in instanceFields) {
+                        if (field.name == originalName && field.type.match(TFun(_, _))) {
+                            return true;
+                        }
+                    }
+                }
+                return false;
+        }
+    }
+    
+    /**
+     * Generate Elixir function reference syntax for a function name
+     * 
+     * @param functionName The function name to create a reference for
+     * @return Elixir function reference syntax like &Module.function/arity
+     */
+    private function generateFunctionReference(functionName: String): String {
+        // Convert function name to snake_case for Elixir
+        var elixirFunctionName = NamingHelper.toSnakeCase(functionName);
+        
+        // Get the current module name for the function reference
+        var currentModuleName = getCurrentModuleName();
+        
+        // Determine the arity by looking up the function
+        var arity = getFunctionArity(functionName);
+        
+        // Generate Elixir function reference syntax
+        return '&${currentModuleName}.${elixirFunctionName}/${arity}';
+    }
+    
+    /**
+     * Get the current module name for function references
+     */
+    private function getCurrentModuleName(): String {
+        if (currentClassType != null) {
+            // Use the current class name as the module name
+            return currentClassType.name;
+        }
+        return "UnknownModule";
+    }
+    
+    /**
+     * Get the arity (number of parameters) for a function by name
+     * 
+     * @param functionName The function name to look up
+     * @return The arity of the function, or 1 as a reasonable default
+     */
+    private function getFunctionArity(functionName: String): Int {
+        if (currentClassType != null) {
+            // Look for static methods in the current class
+            var classFields = currentClassType.statics.get();
+            for (field in classFields) {
+                if (field.name == functionName) {
+                    switch (field.type) {
+                        case TFun(args, _):
+                            return args.length;
+                        case _:
+                    }
+                }
+            }
+            
+            // Look for instance methods
+            var instanceFields = currentClassType.fields.get();
+            for (field in instanceFields) {
+                if (field.name == functionName) {
+                    switch (field.type) {
+                        case TFun(args, _):
+                            return args.length;
+                        case _:
+                    }
+                }
+            }
+        }
+        
+        // Default to arity 1 for unknown functions
+        return 1;
     }
     
     /**
@@ -6206,7 +6362,10 @@ class ElixirCompiler extends DirectToStringCompiler {
                     pubsubName = namePattern.matched(1);
                 }
             }
-            return '{Phoenix.PubSub, name: ${pubsubName}}';
+            // Convert to atom format for Phoenix compatibility
+            // Phoenix expects name to be an atom, not a string
+            var atomName = pubsubName.split('"').join(''); // Remove any quotes
+            return '{Phoenix.PubSub, name: ${atomName}}';
         }
         
         // For other modules, check if they have simple args
@@ -7151,10 +7310,18 @@ class ElixirCompiler extends DirectToStringCompiler {
             case "PubSub":
                 if (args.length == 1) {
                     var nameArg = compileExpression(args[0]);
-                    // Generate modern tuple format for Phoenix.PubSub
-                    '{Phoenix.PubSub, name: ${nameArg}}';
+                    // Handle different formats of name argument
+                    var cleanName = if (nameArg.indexOf("<>") >= 0) {
+                        // For concatenations like 'app_name <> ".PubSub"', keep as-is (already has proper quotes)
+                        nameArg;
+                    } else {
+                        // For simple strings like '"TodoApp.PubSub"', remove quotes for atom format
+                        nameArg.split('"').join('');
+                    };
+                    // Generate modern tuple format for Phoenix.PubSub with atom name
+                    '{Phoenix.PubSub, name: ${cleanName}}';
                 } else {
-                    // Default name based on app
+                    // Default name based on app - generate as atom
                     '{Phoenix.PubSub, name: ${appName}.PubSub}';
                 }
                 

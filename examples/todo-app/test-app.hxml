@@ -1,0 +1,31 @@
+# Test TodoApp compilation only
+-cp ../../src
+-cp ../../std
+-lib reflaxe
+
+# Source directories
+-cp src_haxe
+-cp src_haxe/server
+-cp src_haxe/shared
+
+# Output directory for generated .ex files
+-D elixir_output=lib
+
+# Required for Reflaxe targets
+-D reflaxe_runtime
+
+# Elixir is not a UTF-16 platform
+-D no-utf16
+
+# Application-specific configuration
+-D app_name=TodoApp
+
+# Exclude client code from server compilation
+--macro exclude('client')
+
+# Define library version and initialize compiler
+-D reflaxe.elixir=0.1.0
+--macro reflaxe.elixir.CompilerInit.Start()
+
+# Just compile TodoApp
+TodoApp

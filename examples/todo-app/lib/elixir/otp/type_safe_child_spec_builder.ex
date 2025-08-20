@@ -17,7 +17,7 @@ defmodule TypeSafeChildSpecBuilder do
   """
   @spec pubsub(String.t()) :: TypeSafeChildSpec.t()
   def pubsub(app_name) do
-    {Phoenix.PubSub, name: "" <> app_name <> ".PubSub"}
+    {Phoenix.PubSub, name: app_name <> ".PubSub"}
   end
 
   @doc """
