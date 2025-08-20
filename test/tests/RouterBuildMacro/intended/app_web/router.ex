@@ -5,7 +5,7 @@ defmodule AppWeb.Router do
     plug :accepts, ["html"]
     plug :fetch_session
     plug :fetch_live_flash
-    plug :put_root_layout, html: {TodoAppWeb.Layouts, :root}
+    plug :put_root_layout, html: {AppWeb.Layouts, :root}
     plug :protect_from_forgery
     plug :put_secure_browser_headers
   end
@@ -24,7 +24,7 @@ defmodule AppWeb.Router do
   end
 
   # Enable LiveDashboard in development
-  if Application.compile_env(:todo_app, :dev_routes) do
+  if Application.compile_env(:app, :dev_routes) do
     import Phoenix.LiveDashboard.Router
 
     scope "/dev" do

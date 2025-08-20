@@ -1,10 +1,32 @@
 defmodule Main do
   @moduledoc """
-    Main module generated from Haxe
+    Main struct generated from Haxe
 
      * Basic syntax test case
      * Tests fundamental Haxe→Elixir compilation
   """
+
+  defstruct [:instance_var, c_o_n_s_t_a_n_t: 0, static_var: ""]
+
+  @type t() :: %__MODULE__{
+    instance_var: integer() | nil,
+    c_o_n_s_t_a_n_t: integer(),
+    static_var: String.t()
+  }
+
+  @doc "Creates a new struct instance"
+  @spec new(integer()) :: t()
+  def new(arg0) do
+    %__MODULE__{
+      instance_var: arg0,
+    }
+  end
+
+  @doc "Updates struct fields using a map of changes"
+  @spec update(t(), map()) :: t()
+  def update(struct, changes) when is_map(changes) do
+    Map.merge(struct, changes) |> then(&struct(__MODULE__, &1))
+  end
 
   # Static functions
   @doc "Function greet"
@@ -19,87 +41,88 @@ defmodule Main do
     instance = Main.new(10)
     Log.trace(Main.greet("World"), %{"fileName" => "Main.hx", "lineNumber" => 76, "className" => "Main", "methodName" => "main"})
     Log.trace(instance.calculate(5, 3), %{"fileName" => "Main.hx", "lineNumber" => 77, "className" => "Main", "methodName" => "main"})
-    Log.trace(instance.checkValue(-5), %{"fileName" => "Main.hx", "lineNumber" => 78, "className" => "Main", "methodName" => "main"})
-    Log.trace(instance.sumRange(1, 10), %{"fileName" => "Main.hx", "lineNumber" => 79, "className" => "Main", "methodName" => "main"})
+    Log.trace(instance.check_value(-5), %{"fileName" => "Main.hx", "lineNumber" => 78, "className" => "Main", "methodName" => "main"})
+    Log.trace(instance.sum_range(1, 10), %{"fileName" => "Main.hx", "lineNumber" => 79, "className" => "Main", "methodName" => "main"})
     Log.trace(instance.factorial(5), %{"fileName" => "Main.hx", "lineNumber" => 80, "className" => "Main", "methodName" => "main"})
-    Log.trace(instance.dayName(3), %{"fileName" => "Main.hx", "lineNumber" => 81, "className" => "Main", "methodName" => "main"})
+    Log.trace(instance.day_name(3), %{"fileName" => "Main.hx", "lineNumber" => 81, "className" => "Main", "methodName" => "main"})
   end
 
   # Instance functions
   @doc "Function calculate"
-  @spec calculate(integer(), integer()) :: integer()
-  def calculate(x, y) do
-    x + y * __MODULE__.instance_var
+  @spec calculate(t(), integer(), integer()) :: integer()
+  def calculate(%__MODULE__{} = struct, x, y) do
+    x + y * struct.instance_var
   end
 
   @doc "Function check_value"
-  @spec check_value(integer()) :: String.t()
-  def check_value(n) do
+  @spec check_value(t(), integer()) :: String.t()
+  def check_value(%__MODULE__{} = struct, n) do
     if (n < 0), do: "negative", else: if (n == 0), do: "zero", else: "positive"
   end
 
   @doc "Function sum_range"
-  @spec sum_range(integer(), integer()) :: integer()
-  def sum_range(start, end_) do
+  @spec sum_range(t(), integer(), integer()) :: integer()
+  def sum_range(%__MODULE__{} = struct, start, end_) do
     sum = 0
-    _g = start
-    _g = end_
+    _g_1 = start
+    _g_2 = end_
     (
-      try do
-        loop_fn = fn {sum} ->
-          if (_g < _g) do
-            try do
-              i = _g = _g + 1
-          # sum updated with + i
-          loop_fn.({sum + i})
-            catch
-              :break -> {sum}
-              :continue -> loop_fn.({sum})
-            end
-          else
-            {sum}
+      loop_helper = fn loop_fn, {sum} ->
+        if (g < g) do
+          try do
+            i = g = g + 1
+    sum = sum + i
+            loop_fn.(loop_fn, {sum})
+          catch
+            :break -> {sum}
+            :continue -> loop_fn.(loop_fn, {sum})
           end
+        else
+          {sum}
         end
-        loop_fn.({sum})
+      end
+      {sum} = try do
+        loop_helper.(loop_helper, {nil})
       catch
-        :break -> {sum}
+        :break -> {nil}
       end
     )
     sum
   end
 
   @doc "Function factorial"
-  @spec factorial(integer()) :: integer()
-  def factorial(n) do
+  @spec factorial(t(), integer()) :: integer()
+  def factorial(%__MODULE__{} = struct, n) do
     result = 1
     i = n
     (
-      try do
-        loop_fn = fn {result, i} ->
-          if (i > 1) do
-            try do
-              # result updated with * i
-          # i decremented
+      loop_helper = fn loop_fn, {result, i} ->
+        if (i > 1) do
+          try do
+            result = result * i
+          i = i - 1
           loop_fn.({result * i, i - 1})
-            catch
-              :break -> {result, i}
-              :continue -> loop_fn.({result, i})
-            end
-          else
-            {result, i}
+            loop_fn.(loop_fn, {result, i})
+          catch
+            :break -> {result, i}
+            :continue -> loop_fn.(loop_fn, {result, i})
           end
+        else
+          {result, i}
         end
-        loop_fn.({result, i})
+      end
+      {result, i} = try do
+        loop_helper.(loop_helper, {nil, nil})
       catch
-        :break -> {result, i}
+        :break -> {nil, nil}
       end
     )
     result
   end
 
   @doc "Function day_name"
-  @spec day_name(integer()) :: String.t()
-  def day_name(day) do
+  @spec day_name(t(), integer()) :: String.t()
+  def day_name(%__MODULE__{} = struct, day) do
     temp_result = nil
     case (day) do
       1 ->

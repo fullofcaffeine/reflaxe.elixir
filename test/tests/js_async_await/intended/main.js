@@ -1,30 +1,5 @@
 var $_, $hxClasses = $hxClasses || {}, $estr = function() { return js.Boot.__string_rec(this,''); };
 function $bind(o,m) { if( m == null ) return null; if( m.__id__ == null ) m.__id__ = $global.$haxeUID++; var f; if( o.hx__closures__ == null ) o.hx__closures__ = {}; else f = o.hx__closures__[m.__id__]; if( f == null ) { f = m.bind(o); o.hx__closures__[m.__id__] = f; } return f; };
-HxOverrides = $hxClasses['HxOverrides'] = function() { };
-HxOverrides.__name__ = "HxOverrides";
-HxOverrides.cca = function(s,index) {
-	let x = s.charCodeAt(index);
-	if(x != x) {
-		return undefined;
-	}
-	return x;
-};
-HxOverrides.substr = function(s,pos,len) {
-	if(len == null) {
-		len = s.length;
-	} else if(len < 0) {
-		if(pos == 0) {
-			len = s.length + len;
-		} else {
-			return "";
-		}
-	}
-	return s.substr(pos,len);
-};
-HxOverrides.now = function() {
-	return Date.now();
-};
-HxOverrides.prototype.__class__ = HxOverrides;
 Main = $hxClasses['Main'] = function() { };
 Main.__name__ = "Main";
 Main.simpleAsync = async function() {
@@ -66,157 +41,6 @@ Std.string = function(s) {
 	return js.Boot.__string_rec(s,"");
 };
 Std.prototype.__class__ = Std;
-StringTools = $hxClasses['StringTools'] = function() { };
-StringTools.__name__ = "StringTools";
-StringTools.isSpace = function(s,pos) {
-	if(pos < 0 || pos >= s.length) {
-		return false;
-	}
-	let c = HxOverrides.cca(s,pos);
-	if(!(c > 8 && c < 14)) {
-		return c == 32;
-	} else {
-		return true;
-	}
-};
-StringTools.ltrim = function(s) {
-	let l = s.length;
-	let r = 0;
-	while(r < l && StringTools.isSpace(s,r)) ++r;
-	if(r > 0) {
-		return HxOverrides.substr(s,r,l - r);
-	} else {
-		return s;
-	}
-};
-StringTools.rtrim = function(s) {
-	let l = s.length;
-	let r = 0;
-	while(r < l && StringTools.isSpace(s,l - r - 1)) ++r;
-	if(r > 0) {
-		return HxOverrides.substr(s,0,l - r);
-	} else {
-		return s;
-	}
-};
-StringTools.trim = function(s) {
-	return StringTools.ltrim(StringTools.rtrim(s));
-};
-StringTools.urlEncode = function(s) {
-	return s;
-};
-StringTools.urlDecode = function(s) {
-	return s;
-};
-StringTools.htmlEscape = function(s,quotes) {
-	s = s.split("&").join("&amp;");
-	s = s.split("<").join("&lt;");
-	s = s.split(">").join("&gt;");
-	if(quotes) {
-		s = s.split("\"").join("&quot;");
-		s = s.split("'").join("&#039;");
-	}
-	return s;
-};
-StringTools.htmlUnescape = function(s) {
-	return s.split("&gt;").join(">").split("&lt;").join("<").split("&quot;").join("\"").split("&#039;").join("'").split("&amp;").join("&");
-};
-StringTools.startsWith = function(s,start) {
-	if(s.length >= start.length) {
-		return HxOverrides.substr(s,0,start.length) == start;
-	} else {
-		return false;
-	}
-};
-StringTools.endsWith = function(s,end) {
-	let elen = end.length;
-	let slen = s.length;
-	if(slen >= elen) {
-		return HxOverrides.substr(s,slen - elen,elen) == end;
-	} else {
-		return false;
-	}
-};
-StringTools.replace = function(s,sub,by) {
-	return s.split(sub).join(by);
-};
-StringTools.lpad = function(s,c,l) {
-	if(c.length <= 0) {
-		return s;
-	}
-	let buf = "";
-	l -= s.length;
-	while(buf.length < l) buf += c;
-	return buf + s;
-};
-StringTools.rpad = function(s,c,l) {
-	if(c.length <= 0) {
-		return s;
-	}
-	let buf = s;
-	while(buf.length < l) buf += c;
-	return buf;
-};
-StringTools.contains = function(s,value) {
-	return s.indexOf(value) != -1;
-};
-StringTools.fastCodeAt = function(s,index) {
-	return HxOverrides.cca(s,index);
-};
-StringTools.unsafeCodeAt = function(s,index) {
-	return HxOverrides.cca(s,index);
-};
-StringTools.isEof = function(c) {
-	return false;
-};
-StringTools.hex = function(n,digits) {
-	let s = "";
-	let hexChars = "0123456789ABCDEF";
-	if(n < 0) {
-		n = -n;
-		s = "-";
-	}
-	if(n == 0) {
-		s = "0";
-	} else {
-		let result = "";
-		while(n > 0) {
-			result = hexChars.charAt(n & 15) + result;
-			n >>>= 4;
-		}
-		s += result;
-	}
-	if(digits != null) {
-		while(s.length < digits) s = "0" + s;
-	}
-	return s;
-};
-StringTools.iterator = function(s) {
-	return new haxe.iterators.StringIterator(s);
-};
-StringTools.keyValueIterator = function(s) {
-	return new haxe.iterators.StringKeyValueIterator(s);
-};
-StringTools.quoteUnixArg = function(argument) {
-	if(argument == "") {
-		return "''";
-	}
-	return "'" + StringTools.replace(argument,"'","'\"'\"'") + "'";
-};
-StringTools.quoteWinArg = function(argument,escapeMetaCharacters) {
-	if(argument.indexOf(" ") != -1 || argument == "") {
-		argument = "\"" + StringTools.replace(argument,"\"","\\\"") + "\"";
-	}
-	return argument;
-};
-StringTools.utf16CodePointAt = function(s,index) {
-	let c = StringTools.fastCodeAt(s,index);
-	if(c >= 55296 && c <= 56319) {
-		c = c - 55296 << 10 | StringTools.fastCodeAt(s,index + 1) & 1023 | 65536;
-	}
-	return c;
-};
-StringTools.prototype.__class__ = StringTools;
 if(typeof haxe=='undefined') haxe = {};
 haxe.Exception = $hxClasses['haxe.Exception'] = function(message,previous,native) {
 	super(message);
@@ -256,18 +80,20 @@ haxe.ValueException.prototype.unwrap = function() {
 };
 haxe.ValueException.prototype.__class__ = haxe.ValueException;
 if(!haxe.iterators) haxe.iterators = {};
-haxe.iterators.StringIterator = $hxClasses['haxe.iterators.StringIterator'] = function(s) {
-	this.s = s;
+haxe.iterators.ArrayIterator = $hxClasses['haxe.iterators.ArrayIterator'] = function(array) {
+	this.current = 0;
+	this.array = array;
 };
-haxe.iterators.StringIterator.__name__ = "haxe.iterators.StringIterator";
-haxe.iterators.StringIterator.prototype.s = null;
-haxe.iterators.StringIterator.prototype.__class__ = haxe.iterators.StringIterator;
-haxe.iterators.StringKeyValueIterator = $hxClasses['haxe.iterators.StringKeyValueIterator'] = function(s) {
-	this.s = s;
+haxe.iterators.ArrayIterator.__name__ = "haxe.iterators.ArrayIterator";
+haxe.iterators.ArrayIterator.prototype.array = null;
+haxe.iterators.ArrayIterator.prototype.current = null;
+haxe.iterators.ArrayIterator.prototype.hasNext = function() {
+	return this.current < this.array.length;
 };
-haxe.iterators.StringKeyValueIterator.__name__ = "haxe.iterators.StringKeyValueIterator";
-haxe.iterators.StringKeyValueIterator.prototype.s = null;
-haxe.iterators.StringKeyValueIterator.prototype.__class__ = haxe.iterators.StringKeyValueIterator;
+haxe.iterators.ArrayIterator.prototype.next = function() {
+	return this.array[this.current++];
+};
+haxe.iterators.ArrayIterator.prototype.__class__ = haxe.iterators.ArrayIterator;
 if(typeof js=='undefined') js = {};
 js.Boot = $hxClasses['js.Boot'] = function() { };
 js.Boot.__name__ = "js.Boot";
@@ -365,7 +191,6 @@ reflaxe.js.Async.fromCallback = function(fn) {
 	});
 };
 reflaxe.js.Async.prototype.__class__ = reflaxe.js.Async;
-(typeof(performance) != "undefined" ? typeof(performance.now) == "function" : false) ? HxOverrides.now = performance.now.bind(performance) : null;
 ;
 ;
 {
@@ -373,8 +198,4 @@ reflaxe.js.Async.prototype.__class__ = reflaxe.js.Async;
 	Array.__name__ = true;
 };
 js.Boot.__toStr = ({ }).toString;
-StringTools.winMetaCharacters = [40,41,37,33,94,34,60,62,38,124];
-;
-StringTools.MIN_SURROGATE_CODE_POINT = 65536;
-;
 Main.main();

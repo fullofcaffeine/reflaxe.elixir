@@ -63,7 +63,7 @@ defmodule Mix.Tasks.Compile.Haxe do
       if config[:verbose] do
         Mix.shell().info("Haxe files are up to date")
       end
-      {:ok, []}
+      {:noreply, []}
     end
   end
   
@@ -100,7 +100,7 @@ defmodule Mix.Tasks.Compile.Haxe do
     Mix.Project.config()
     |> Keyword.get(:haxe, [])
     |> Keyword.put_new(:hxml_file, "build.hxml")
-    |> Keyword.put_new(:source_dir, "src_haxe")
+    |> Keyword.put_new(:source_dir, "src")
     |> Keyword.put_new(:target_dir, "lib")
     |> Keyword.put_new(:watch, Mix.env() == :dev)
     |> Keyword.put_new(:verbose, false)
@@ -167,7 +167,7 @@ defmodule Mix.Tasks.Compile.Haxe do
         # Return diagnostics if there were warnings
         diagnostics = get_compilation_diagnostics()
         if Enum.empty?(diagnostics) do
-          {:ok, compiled_files}
+          {:ok, []}
         else
           {:ok, diagnostics}
         end
@@ -236,22 +236,7 @@ defmodule Mix.Tasks.Compile.Haxe do
   
   defp parse_compilation_errors(reason) when is_binary(reason) do
     # Use HaxeCompiler's error parser
-    parsed_errors = HaxeCompiler.parse_haxe_errors(reason)
-    
-    # If no errors were parsed but we have a reason, create a generic error
-    if Enum.empty?(parsed_errors) and String.trim(reason) != "" do
-      [%{
-        file: nil,
-        line: nil,
-        column_start: nil,
-        column_end: nil,
-        type: :compilation_error,
-        message: reason,
-        raw_line: reason
-      }]
-    else
-      parsed_errors
-    end
+    HaxeCompiler.parse_haxe_errors(reason)
   end
   
   defp parse_compilation_errors(_), do: []
