@@ -1863,12 +1863,13 @@ class ElixirCompiler extends DirectToStringCompiler {
                 // Determine if this object should use atom keys (for OTP patterns, etc.)
                 var useAtoms = shouldUseAtomKeys(fields);
                 var compiledFields = fields.map(f -> {
-                    var key = if (useAtoms && isValidAtomName(f.name)) {
-                        ":" + f.name;  // Generate atom key like :id
+                    if (useAtoms && isValidAtomName(f.name)) {
+                        // Use idiomatic colon syntax for atom keys: %{name: value}
+                        f.name + ": " + compileExpression(f.expr);
                     } else {
-                        '"' + f.name + '"';  // Generate quoted string key like "id"
+                        // Use arrow syntax for string keys: %{"key" => value}
+                        '"' + f.name + '"' + " => " + compileExpression(f.expr);
                     }
-                    key + " => " + compileExpression(f.expr);
                 });
                 "%{" + compiledFields.join(", ") + "}";
                 
@@ -6098,6 +6099,12 @@ class ElixirCompiler extends DirectToStringCompiler {
                 }
             }
             return true;
+        }
+        
+        // Check for Phoenix.PubSub configuration pattern
+        // Objects with just a "name" field are typically PubSub configs
+        if (fieldNames.length == 1 && fieldNames[0] == "name") {
+            return isValidAtomName("name");
         }
         
         // Default to string keys for all other cases

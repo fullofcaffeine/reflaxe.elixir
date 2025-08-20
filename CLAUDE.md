@@ -800,6 +800,59 @@ test: add comprehensive snapshot tests for new enum patterns
 
 **These commits will automatically appear in the next release's CHANGELOG.md when semantic-release runs.**
 
+## Development Loop ⚡ **CRITICAL WORKFLOW**
+
+**MANDATORY: Every development change MUST follow this complete validation loop:**
+
+### Complete Development Validation Loop
+```bash
+# 1. Run full test suite (ALL tests must pass)
+npm test
+
+# 2. Verify todo-app compiles in Haxe
+cd examples/todo-app
+npx haxe build-server.hxml
+
+# 3. Ensure Elixir compilation succeeds
+mix compile --force
+
+# 4. Verify application starts properly
+mix phx.server &
+sleep 5
+
+# 5. Test expected functionality via curl
+curl -s http://localhost:4000/ | grep -q "TodoApp"
+if [ $? -eq 0 ]; then
+    echo "✅ TodoApp responds correctly"
+else
+    echo "❌ TodoApp response failed"
+fi
+
+# 6. Clean up
+pkill -f "mix phx.server"
+```
+
+### Why This Matters
+- **Tests validate compiler correctness** - Snapshot and Mix tests catch regressions
+- **Todo-app validates integration** - Real Phoenix application compilation
+- **Elixir compilation validates syntax** - Generated code must be syntactically correct  
+- **Server start validates runtime** - Code must actually execute in BEAM VM
+- **Curl validates functionality** - Application must respond to HTTP requests correctly
+
+### Quick Commands for Development
+```bash
+# Full validation (run after ANY compiler change)
+npm test && cd examples/todo-app && mix compile && echo "✅ All validations passed"
+
+# Quick integration test
+cd examples/todo-app && npx haxe build-server.hxml && mix compile
+
+# Test application response
+mix phx.server & sleep 3 && curl localhost:4000 && pkill -f "mix phx.server"
+```
+
+**Rule**: If ANY step in this loop fails, the development change is incomplete. Fix all issues before moving to the next task.
+
 ## Development Resources & Reference Strategy
 - **Reference Codebase**: `/Users/fullofcaffeine/workspace/code/haxe.elixir.reference/` - Contains Reflaxe patterns, Phoenix examples, Haxe source
 - **Haxe API Documentation**: https://api.haxe.org/ - For type system, standard library, and language features
