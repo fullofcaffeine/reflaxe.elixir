@@ -30,7 +30,7 @@ defmodule ApplicationResultTools do
   """
   @spec ignore() :: ApplicationResult.t()
   def ignore() do
-    ApplicationResult.ignore
+    :ignore
   end
 
 end

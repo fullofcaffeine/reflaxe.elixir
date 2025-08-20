@@ -28,81 +28,111 @@ import haxe.functional.Result;
 @:native("TodoApp.Repo")
 @:repo
 @:appName("TodoApp")
-extern class Repo {
+class Repo {
     /**
      * Get a single record by primary key
      */
-    static function get<T>(queryable: Class<T>, id: Int): Null<T>;
+    public static function get<T>(queryable: Class<T>, id: Int): Null<T> {
+        throw new haxe.exceptions.NotImplementedException("Repo.get - implemented by Ecto.Repo");
+    }
     
     /**
      * Get a single record by primary key, raise if not found
      */
-    static function get_by<T>(queryable: Class<T>, conditions: QueryConditions): Null<T>;
+    public static function get_by<T>(queryable: Class<T>, conditions: QueryConditions): Null<T> {
+        throw new haxe.exceptions.NotImplementedException("Repo.get_by - implemented by Ecto.Repo");
+    }
     
     /**
      * Get all records matching a query
      */
-    static function all<T>(query: Query<T>): Array<T>;
+    public static function all<T>(query: Query<T>): Array<T> {
+        throw new haxe.exceptions.NotImplementedException("Repo.all - implemented by Ecto.Repo");
+    }
     
     /**
      * Get the first record matching a query
      */
-    static function one<T>(query: Query<T>): Null<T>;
+    public static function one<T>(query: Query<T>): Null<T> {
+        throw new haxe.exceptions.NotImplementedException("Repo.one - implemented by Ecto.Repo");
+    }
     
     /**
      * Get the first record matching a query, raise if not found
      */
-    static function one_not_null<T>(query: Query<T>): T;
+    public static function one_not_null<T>(query: Query<T>): T {
+        throw new haxe.exceptions.NotImplementedException("Repo.one_not_null - implemented by Ecto.Repo");
+    }
     
     /**
      * Check if any records exist for a query
      */
-    static function exists<T>(query: Query<T>): Bool;
+    public static function exists<T>(query: Query<T>): Bool {
+        throw new haxe.exceptions.NotImplementedException("Repo.exists - implemented by Ecto.Repo");
+    }
     
     /**
      * Insert a new record
      */
-    static function insert<T>(changeset: Changeset<T>): Result<T, ChangesetError>;
+    public static function insert<T>(changeset: Changeset<T>): Result<T, ChangesetError> {
+        throw new haxe.exceptions.NotImplementedException("Repo.insert - implemented by Ecto.Repo");
+    }
     
     /**
      * Insert a new record, raise on error
      */
-    static function insert_not_null<T>(changeset: Changeset<T>): T;
+    public static function insert_not_null<T>(changeset: Changeset<T>): T {
+        throw new haxe.exceptions.NotImplementedException("Repo.insert_not_null - implemented by Ecto.Repo");
+    }
     
     /**
      * Update an existing record
      */
-    static function update<T>(changeset: Changeset<T>): Result<T, ChangesetError>;
+    public static function update<T>(changeset: Changeset<T>): Result<T, ChangesetError> {
+        throw new haxe.exceptions.NotImplementedException("Repo.update - implemented by Ecto.Repo");
+    }
     
     /**
      * Update an existing record, raise on error
      */
-    static function update_not_null<T>(changeset: Changeset<T>): T;
+    public static function update_not_null<T>(changeset: Changeset<T>): T {
+        throw new haxe.exceptions.NotImplementedException("Repo.update_not_null - implemented by Ecto.Repo");
+    }
     
     /**
      * Delete a record
      */
-    static function delete<T>(record: T): Result<T, ChangesetError>;
+    public static function delete<T>(record: T): Result<T, ChangesetError> {
+        throw new haxe.exceptions.NotImplementedException("Repo.delete - implemented by Ecto.Repo");
+    }
     
     /**
      * Delete a record, raise on error
      */
-    static function delete_not_null<T>(record: T): T;
+    public static function delete_not_null<T>(record: T): T {
+        throw new haxe.exceptions.NotImplementedException("Repo.delete_not_null - implemented by Ecto.Repo");
+    }
     
     /**
      * Preload associations on a record or list of records
      */
-    static function preload<T>(record: T, associations: Array<String>): T;
+    public static function preload<T>(record: T, associations: Array<String>): T {
+        throw new haxe.exceptions.NotImplementedException("Repo.preload - implemented by Ecto.Repo");
+    }
     
     /**
      * Run operations in a transaction
      */
-    static function transaction<T>(fun: () -> Result<T, String>): Result<T, String>;
+    public static function transaction<T>(fun: () -> Result<T, String>): Result<T, String> {
+        throw new haxe.exceptions.NotImplementedException("Repo.transaction - implemented by Ecto.Repo");
+    }
     
     /**
      * Rollback a transaction with a specific error value
      */
-    static function rollback<E>(value: E): E;
+    public static function rollback<E>(value: E): E {
+        throw new haxe.exceptions.NotImplementedException("Repo.rollback - implemented by Ecto.Repo");
+    }
 }
 
 /**

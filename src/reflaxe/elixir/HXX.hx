@@ -12,7 +12,7 @@ import haxe.macro.Expr;
  * to Phoenix HEEx format with proper interpolation and component syntax.
  * 
  * Features:
- * - String interpolation: ${expr} -> #{expr}
+ * - String interpolation: ${expr} converts to Elixir interpolation syntax
  * - Conditional rendering: ternary -> if/else
  * - Loop transformations: map/join -> for comprehensions
  * - Component syntax preservation: <.button> stays as-is
@@ -82,7 +82,6 @@ class HXX {
         var mapJoinPattern = ~/#\{([^.]+)\.map\(([^)]+)\)\.join\("([^"]*)"\)\}/g;
         return mapJoinPattern.replace(template, '<%= for item <- $1 do %><%= $2(item) %><% end %>');
     }
-    #end
     
     /**
      * Process Phoenix component syntax
@@ -129,12 +128,5 @@ class HXX {
         // Basic balance check
         return opens.length == closes.length;
     }
-    
-    /**
-     * Runtime helper for template processing (if needed)
-     */
-    public static function processRuntimeTemplate(template: String): String {
-        // This would be used if runtime template processing is needed
-        return template;
-    }
+    #end
 }

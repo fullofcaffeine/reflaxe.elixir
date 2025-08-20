@@ -25,10 +25,10 @@ defmodule TodoApp.Application do
   @spec start(ApplicationStartType.t(), ApplicationArgs.t()) :: ApplicationResult.t()
   def start(type, args) do
     app_name = "TodoApp"
-    children = [TodoApp.Repo, {Phoenix.PubSub, name: TodoApp.PubSub}, TodoAppWeb.Telemetry, TodoAppWeb.Endpoint]
-    opts = [strategy: :SupervisorStrategy.one_for_one, name: TodoApp.Supervisor]
+    children = [%{id: Phoenix.PubSub, start: {Phoenix.PubSub, :start_link, [%{name => TodoApp.PubSub}]}}, %{id: TodoAppWeb.Telemetry, start: {TodoAppWeb.Telemetry, :start_link, []}}, %{id: TodoAppWeb.Endpoint, start: {TodoAppWeb.Endpoint, :start_link, []}}]
+    opts = [strategy: :one_for_one, name: TodoApp.Supervisor]
     supervisor_result = Supervisor.start_link(children, opts)
-    {:ok, supervisor_result}
+    supervisor_result
   end
 
   @doc """

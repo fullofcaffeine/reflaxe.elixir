@@ -4,6 +4,45 @@
 
 HXX templates in Reflaxe.Elixir must compile to valid Phoenix HEEx syntax, which has **different interpolation rules** depending on context. Understanding these distinctions is critical for proper template compilation.
 
+## ⚠️ CRITICAL WARNING: Avoid `${@field}` Pattern
+
+**The `${@field}` pattern WILL CAUSE COMPILATION ERRORS** and must never be used.
+
+### Why `${@field}` Fails
+
+❌ **THIS PATTERN BREAKS** (causes Haxe compilation errors):
+```haxe
+return HXX.hxx('<div id="${@id}" class="${@className}">
+    ${@inner_content}
+</div>');
+```
+
+**Root Cause**: 
+1. Haxe's string interpolation is triggered by `${}` in single-quoted strings
+2. Haxe tries to evaluate `@field` as a variable expression  
+3. `@` is not a valid identifier character in Haxe
+4. Compilation fails with "Expected expression" or "Unknown identifier" errors
+
+### Haxe String Interpolation Rules
+- **Single quotes** (`'string'`) enable string interpolation with `${}`
+- **Double quotes** (`"string"`) do NOT enable string interpolation  
+- **Interpolation requires valid Haxe identifiers** - `@field` is invalid
+- **Phoenix assigns syntax** (`@field`) conflicts with Haxe parsing
+
+### The Correct Solution
+
+✅ **USE THIS INSTEAD** (works correctly):
+```haxe
+return HXX.hxx('<div id={@id} class={@className}>
+    <%= @inner_content %>
+</div>');
+```
+
+**Key Changes**:
+- **Attributes**: `{@field}` (no dollar sign)
+- **Text content**: `<%= @field %>` (Phoenix syntax directly)
+- **No Haxe interpolation conflict**: HxxCompiler handles Phoenix transformation
+
 ## The Two Interpolation Syntaxes
 
 ### 1. Text Content Interpolation: `${expression}`

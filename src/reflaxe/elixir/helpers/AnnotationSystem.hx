@@ -40,9 +40,10 @@ class AnnotationSystem {
         ":behaviour",        // Elixir Behavior definitions
         ":protocol",         // Elixir Protocol definitions
         ":impl",             // Elixir Protocol implementations
+        ":repo",             // Ecto Repository configuration
         ":migration",        // Ecto Migration - database schema changes
         ":template",         // Phoenix HEEx templates
-        ":phoenix.components", // Phoenix UI Components (CoreComponents)
+        ":component",         // Phoenix UI Components
         ":schema",           // Ecto Schema definitions
         ":changeset",        // Ecto Changeset validation
         ":liveview",         // Phoenix LiveView components
@@ -267,6 +268,14 @@ class AnnotationSystem {
                     null;
                 }
                 
+            case ":repo":
+                if (reflaxe.elixir.helpers.RepoCompiler.isRepoClass(classType)) {
+                    compileRepoClass(classType, varFields, funcFields);
+                } else {
+                    trace("ERROR: @:repo annotation detected but RepoCompiler validation failed");
+                    null;
+                }
+                
             case ":migration":
                 if (reflaxe.elixir.helpers.MigrationDSL.isMigrationClassType(classType)) {
                     compileMigrationClass(classType, varFields, funcFields);
@@ -283,7 +292,7 @@ class AnnotationSystem {
                     null;
                 }
                 
-            case ":phoenix.components":
+            case ":component":
                 compileComponentClass(classType, varFields, funcFields);
                 
             case ":schema":
@@ -432,6 +441,7 @@ class AnnotationSystem {
             case ":schema": "Ecto schema with field definitions and associations";
             case ":changeset": "Ecto changeset with validation pipeline";
             case ":liveview": "Phoenix LiveView with real-time updates";
+            case ":component": "Phoenix UI components with type-safe renders";
             case ":query": "Ecto query DSL with type-safe operations";
             case ":appName": "Application name configuration for module naming";
             default: "Unknown annotation";
@@ -472,6 +482,11 @@ class AnnotationSystem {
     
     static function compileImplClass(classType: ClassType, varFields: Array<ClassVarData>, funcFields: Array<ClassFuncData>): String {
         return reflaxe.elixir.helpers.ProtocolCompiler.compileImplementation(classType);
+    }
+    
+    static function compileRepoClass(classType: ClassType, varFields: Array<ClassVarData>, funcFields: Array<ClassFuncData>): String {
+        var className = classType.getNameOrNative();
+        return reflaxe.elixir.helpers.RepoCompiler.compileRepoModule(classType, className);
     }
     
     static function compileMigrationClass(classType: ClassType, varFields: Array<ClassVarData>, funcFields: Array<ClassFuncData>): String {
@@ -563,18 +578,19 @@ class AnnotationSystem {
         // Generate function definition
         result.add('  def ${funcName}(assigns) do\n');
         
-        // For now, compile the function body using HXX compiler
-        // TODO: Extract and compile the actual HXX template from function body
-        result.add('    ~H"""\n');
-        result.add('    <!-- Generated component template -->\n');
-        result.add('    <div class="${funcName}-component">\n');
-        result.add('      <%= render_slot(@inner_block) %>\n');
-        result.add('    </div>\n');
-        result.add('    """\n');
+        // Extract HXX AST from function body and compile through HxxCompiler
+        if (funcField.expr != null) {
+            var hxxTemplate = reflaxe.elixir.helpers.HxxCompiler.compileHxxTemplate(funcField.expr);
+            result.add('    ${hxxTemplate}\n');
+        } else {
+            // Fallback if no function body
+            result.add('    ~H"""\n    <div></div>\n    """\n');
+        }
         result.add('  end\n');
         
         return result.toString();
     }
+    
     
     /**
      * Extract @:attr annotations from function metadata

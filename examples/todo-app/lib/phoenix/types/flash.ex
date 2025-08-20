@@ -15,7 +15,7 @@ defmodule Flash do
   """
   @spec info(String.t(), Null.t()) :: FlashMessage.t()
   def info(message, title) do
-    %{"type" => FlashType.info, "message" => message, "title" => title, "dismissible" => true}
+    %{"type" => :info, "message" => message, "title" => title, "dismissible" => true}
   end
 
   @doc """
@@ -27,7 +27,7 @@ defmodule Flash do
   """
   @spec success(String.t(), Null.t()) :: FlashMessage.t()
   def success(message, title) do
-    %{"type" => FlashType.success, "message" => message, "title" => title, "dismissible" => true, "timeout" => 5000}
+    %{"type" => :success, "message" => message, "title" => title, "dismissible" => true, "timeout" => 5000}
   end
 
   @doc """
@@ -39,7 +39,7 @@ defmodule Flash do
   """
   @spec warning(String.t(), Null.t()) :: FlashMessage.t()
   def warning(message, title) do
-    %{"type" => FlashType.warning, "message" => message, "title" => title, "dismissible" => true}
+    %{"type" => :warning, "message" => message, "title" => title, "dismissible" => true}
   end
 
   @doc """
@@ -52,7 +52,7 @@ defmodule Flash do
   """
   @spec error(String.t(), Null.t(), Null.t()) :: FlashMessage.t()
   def error(message, details, title) do
-    %{"type" => FlashType.error, "message" => message, "details" => details, "title" => title, "dismissible" => true}
+    %{"type" => :error, "message" => message, "details" => details, "title" => title, "dismissible" => true}
   end
 
   @doc """
@@ -65,7 +65,7 @@ defmodule Flash do
   @spec validation_error(String.t(), term()) :: FlashMessage.t()
   def validation_error(message, changeset) do
     errors = Flash.extractChangesetErrors(changeset)
-    %{"type" => FlashType.error, "message" => message, "details" => errors, "title" => "Validation Failed", "dismissible" => true}
+    %{"type" => :error, "message" => message, "details" => errors, "title" => "Validation Failed", "dismissible" => true}
   end
 
   @doc """

@@ -42,7 +42,7 @@ class EndpointCompiler {
         
         // Get app name from annotation
         var appName = AnnotationSystem.getEffectiveAppName(classType);
-        var otpApp = appName.toLowerCase();
+        var otpApp = reflaxe.elixir.helpers.NamingHelper.toSnakeCase(appName);
         var webModule = '${appName}Web';
         
         // Module definition

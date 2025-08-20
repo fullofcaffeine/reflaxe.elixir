@@ -114,7 +114,7 @@ defmodule TodoPubSub do
   def parse_message_impl(msg) do
     if (!SafePubSub.isValidMessage(msg)) do
       Log.trace(SafePubSub.createMalformedMessageError(msg), %{"fileName" => "src_haxe/server/pubsub/TodoPubSub.hx", "lineNumber" => 188, "className" => "server.pubsub.TodoPubSub", "methodName" => "parseMessageImpl"})
-      Option.none
+      :error
     end
     temp_result = nil
     g = msg.type
@@ -128,10 +128,10 @@ defmodule TodoPubSub do
               action = g
               temp_result = {:ok, {:bulk_update, action}}
             1 ->
-              temp_result = Option.none
+              temp_result = :error
           end
         else
-          temp_result = Option.none
+          temp_result = :error
         end
       "system_alert" ->
         if (msg.message != nil && msg.level != nil) do
@@ -142,24 +142,24 @@ defmodule TodoPubSub do
               level = g
               temp_result = {:ok, {:system_alert, msg.message, level}}
             1 ->
-              temp_result = Option.none
+              temp_result = :error
           end
         else
-          temp_result = Option.none
+          temp_result = :error
         end
       "todo_created" ->
-        if (msg.todo != nil), do: temp_result = {:ok, {:todo_created, msg.todo}}, else: temp_result = Option.none
+        if (msg.todo != nil), do: temp_result = {:ok, {:todo_created, msg.todo}}, else: temp_result = :error
       "todo_deleted" ->
-        if (msg.todo_id != nil), do: temp_result = {:ok, {:todo_deleted, msg.todo_id}}, else: temp_result = Option.none
+        if (msg.todo_id != nil), do: temp_result = {:ok, {:todo_deleted, msg.todo_id}}, else: temp_result = :error
       "todo_updated" ->
-        if (msg.todo != nil), do: temp_result = {:ok, {:todo_updated, msg.todo}}, else: temp_result = Option.none
+        if (msg.todo != nil), do: temp_result = {:ok, {:todo_updated, msg.todo}}, else: temp_result = :error
       "user_offline" ->
-        if (msg.user_id != nil), do: temp_result = {:ok, {:user_offline, msg.user_id}}, else: temp_result = Option.none
+        if (msg.user_id != nil), do: temp_result = {:ok, {:user_offline, msg.user_id}}, else: temp_result = :error
       "user_online" ->
-        if (msg.user_id != nil), do: temp_result = {:ok, {:user_online, msg.user_id}}, else: temp_result = Option.none
+        if (msg.user_id != nil), do: temp_result = {:ok, {:user_online, msg.user_id}}, else: temp_result = :error
       _ ->
         Log.trace(SafePubSub.createUnknownMessageError(msg.type), %{"fileName" => "src_haxe/server/pubsub/TodoPubSub.hx", "lineNumber" => 220, "className" => "server.pubsub.TodoPubSub", "methodName" => "parseMessageImpl"})
-        temp_result = Option.none
+        temp_result = :error
     end
     temp_result
   end
@@ -200,15 +200,15 @@ defmodule TodoPubSub do
       "add_tag" ->
         temp_result = {:ok, {:add_tag, ""}}
       "complete_all" ->
-        temp_result = {:ok, BulkOperationType.complete_all}
+        temp_result = {:ok, :complete_all}
       "delete_completed" ->
-        temp_result = {:ok, BulkOperationType.delete_completed}
+        temp_result = {:ok, :delete_completed}
       "remove_tag" ->
         temp_result = {:ok, {:remove_tag, ""}}
       "set_priority" ->
-        temp_result = {:ok, {:set_priority, TodoPriority.medium}}
+        temp_result = {:ok, {:set_priority, :medium}}
       _ ->
-        temp_result = Option.none
+        temp_result = :error
     end
     temp_result
   end
@@ -242,15 +242,15 @@ defmodule TodoPubSub do
     temp_result = nil
     case (level) do
       "critical" ->
-        temp_result = {:ok, AlertLevel.critical}
+        temp_result = {:ok, :critical}
       "error" ->
-        temp_result = {:ok, AlertLevel.error}
+        temp_result = {:ok, :error}
       "info" ->
-        temp_result = {:ok, AlertLevel.info}
+        temp_result = {:ok, :info}
       "warning" ->
-        temp_result = {:ok, AlertLevel.warning}
+        temp_result = {:ok, :warning}
       _ ->
-        temp_result = Option.none
+        temp_result = :error
     end
     temp_result
   end
