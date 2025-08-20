@@ -89,6 +89,9 @@
 		"haxe/exceptions/not_implemented_exception.ex",
 		"haxe/ds/option.ex",
 		"haxe/ds/enum_value_map.ex",
+		"elixir/otp/type_safe_child_spec_tools.ex",
+		"elixir/otp/type_safe_child_spec_builder.ex",
+		"elixir/otp/type_safe_child_spec.ex",
 		"elixir/otp/supervisor_strategy.ex",
 		"elixir/otp/supervisor_options_builder.ex",
 		"elixir/otp/shutdown_type.ex",
@@ -104,7 +107,7 @@
 		"value_type.ex",
 		"todo_app_web.ex"
 	],
-	"id": 298,
+	"id": 308,
 	"wasCached": false,
 	"version": 1
 }

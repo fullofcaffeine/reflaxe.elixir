@@ -5,6 +5,7 @@ import elixir.otp.Application;
 import elixir.otp.Supervisor.SupervisorExtern;
 import elixir.otp.Supervisor.SupervisorStrategy;
 import elixir.otp.Supervisor.SupervisorOptions;
+import elixir.otp.TypeSafeChildSpec;
 import elixir.otp.Supervisor.ChildSpec;
 
 /**
@@ -29,33 +30,25 @@ class TodoApp {
         // Get the app name dynamically - this will be replaced by the compiler
         var appName = getAppName();
         
-        // Define children for the supervision tree
-        var children: Array<ChildSpec> = [
+        // Define children for the supervision tree using type-safe child specs
+        var typeSafeChildren: Array<TypeSafeChildSpec> = [
             // Database repository - temporarily disabled due to PostgreSQL TypeManager issues
-            // {
-            //     id: '${appName}.Repo',
-            //     start: {module: '${appName}.Repo', func: "start_link", args: []}
-            // },
-            // PubSub system
-            {
-                id: "Phoenix.PubSub",
-                start: {
-                    module: "Phoenix.PubSub", 
-                    func: "start_link",
-                    args: [{name: '${appName}.PubSub'}]
-                }
-            },
+            // TypeSafeChildSpec.Repo(),
+            
+            // PubSub system - using type-safe enum pattern
+            TypeSafeChildSpec.PubSub('${appName}.PubSub'),
+            
             // Telemetry supervisor
-            {
-                id: '${appName}Web.Telemetry',
-                start: {module: '${appName}Web.Telemetry', func: "start_link", args: []}
-            },
+            TypeSafeChildSpec.Telemetry(),
+            
             // Web endpoint
-            {
-                id: '${appName}Web.Endpoint', 
-                start: {module: '${appName}Web.Endpoint', func: "start_link", args: []}
-            }
+            TypeSafeChildSpec.Endpoint()
         ];
+
+        // Convert type-safe child specs to legacy format for supervisor compatibility
+        var children: Array<ChildSpec> = typeSafeChildren.map(function(child) {
+            return elixir.otp.TypeSafeChildSpec.TypeSafeChildSpecTools.toLegacy(child, appName);
+        });
 
         // Start supervisor with children
         var opts: SupervisorOptions = {

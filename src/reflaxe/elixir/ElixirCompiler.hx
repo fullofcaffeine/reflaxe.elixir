@@ -1836,6 +1836,11 @@ class ElixirCompiler extends DirectToStringCompiler {
                             return compileElixirSyntaxCall(fieldName, el);
                         }
                         
+                        // Check for TypeSafeChildSpec enum constructor calls
+                        if (isTypeSafeChildSpecCall(obj, fieldName)) {
+                            return compileTypeSafeChildSpecCall(fieldName, el);
+                        }
+                        
                         if (fieldName == "getAppName") {
                             // Handle Class.getAppName() calls
                             var appName = AnnotationSystem.getEffectiveAppName(currentClassType);
@@ -6124,6 +6129,125 @@ class ElixirCompiler extends DirectToStringCompiler {
     }
     
     /**
+     * Child spec format types for structure-based detection
+     */
+    private static inline var MODERN_TUPLE = "ModernTuple";    // {Module, args} - for modules with child_spec/1
+    private static inline var SIMPLE_MODULE = "SimpleModule";   // ModuleName - simple module reference
+    private static inline var TRADITIONAL_MAP = "TraditionalMap"; // %{id: ..., start: ...} - explicit map format
+    
+    /**
+     * Analyze child spec structure to determine the appropriate output format
+     * 
+     * This replaces hardcoded module name detection with structural analysis:
+     * - Minimal specs (only id + start) → ModernTuple format
+     * - Specs with restart/shutdown/type → TraditionalMap format
+     * - Simple module reference → SimpleModule format
+     */
+    private function analyzeChildSpecStructure(compiledFields: Map<String, String>): String {
+        var hasRestart = compiledFields.exists("restart");
+        var hasShutdown = compiledFields.exists("shutdown");
+        var hasType = compiledFields.exists("type");
+        var hasModules = compiledFields.exists("modules");
+        
+        // If we have explicit restart/shutdown configuration, use traditional map
+        if (hasRestart || hasShutdown || hasType || hasModules) {
+            return TRADITIONAL_MAP;
+        }
+        
+        // For minimal specs with only id + start, determine if they can use modern format
+        var idField = compiledFields.get("id");
+        var startField = compiledFields.get("start");
+        
+        if (idField != null && startField != null) {
+            // Check if this looks like a simple start spec (suitable for tuple format)
+            if (hasSimpleStartPattern(startField)) {
+                return MODERN_TUPLE;
+            }
+        }
+        
+        // Default to traditional map format for safety
+        return TRADITIONAL_MAP;
+    }
+    
+    /**
+     * Check if a start field follows simple patterns suitable for modern tuple format
+     */
+    private function hasSimpleStartPattern(startField: String): Bool {
+        // Look for simple start patterns like {Module, :start_link, [args]}
+        // These can be converted to tuple format like {Module, args}
+        
+        // Check for start_link function calls (standard OTP pattern)
+        if (startField.indexOf(":start_link") > -1) {
+            return true;
+        }
+        
+        // Check for empty args or simple configuration args
+        if (startField.indexOf(", []") > -1 || startField.indexOf("[%{") > -1) {
+            return true;
+        }
+        
+        return false;
+    }
+    
+    /**
+     * Generate modern tuple format for child specs
+     * Examples: {Phoenix.PubSub, name: MyApp.PubSub}, MyApp.Repo
+     */
+    private function generateModernTupleFormat(idField: String, startField: String, appName: String): String {
+        var cleanId = idField.split('"').join('');
+        
+        // Special handling for Phoenix.PubSub with name parameter
+        if (cleanId == "Phoenix.PubSub") {
+            var pubsubName = '${appName}.PubSub';
+            // Extract name from start args if available
+            if (startField.indexOf('[%{name: ') > -1) {
+                var namePattern = ~/\[%\{name: ([^}]+)\}\]/;
+                if (namePattern.match(startField)) {
+                    pubsubName = namePattern.matched(1);
+                }
+            }
+            return '{Phoenix.PubSub, name: ${pubsubName}}';
+        }
+        
+        // For other modules, check if they have simple args
+        if (startField.indexOf(", []") > -1) {
+            // No args - use simple module reference
+            return cleanId;
+        } else if (startField.indexOf("[%{") > -1) {
+            // Has configuration args - extract and use tuple format
+            var argsPattern = ~/\[(%\{[^}]+\})\]/;
+            if (argsPattern.match(startField)) {
+                var args = argsPattern.matched(1);
+                return '{${cleanId}, ${args}}';
+            }
+        }
+        
+        // Fallback to simple module reference
+        return cleanId;
+    }
+    
+    /**
+     * Generate simple module reference format
+     * Examples: MyApp.Repo, MyAppWeb.Endpoint
+     */
+    private function generateSimpleModuleFormat(idField: String, appName: String): String {
+        var cleanId = idField.split('"').join('');
+        
+        // Apply common Phoenix naming conventions if not already prefixed
+        if (cleanId.indexOf("Telemetry") > -1 && cleanId.indexOf(appName) == -1) {
+            return '${appName}Web.Telemetry';
+        }
+        if (cleanId.indexOf("Endpoint") > -1 && cleanId.indexOf(appName) == -1) {
+            return '${appName}Web.Endpoint';
+        }
+        if (cleanId.indexOf("Repo") > -1 && cleanId.indexOf(appName) == -1) {
+            return '${appName}.Repo';
+        }
+        
+        return cleanId;
+    }
+    
+    /**
      * Compile a child spec object to proper Elixir child specification format
      * Converts from Haxe objects to Elixir maps as expected by Supervisor.start_link
      */
@@ -6232,12 +6356,24 @@ class ElixirCompiler extends DirectToStringCompiler {
             }
         }
         
-        // Build the complete ChildSpec map
-        var mapFields = [];
-        
-        // Required fields with defaults
+        // Use structure-based detection instead of hardcoded module names
         var idField = compiledFields.get("id") != null ? compiledFields.get("id") : "module";
         var startField = compiledFields.get("start") != null ? compiledFields.get("start") : '{module, :start_link, []}';
+        
+        // Analyze child spec structure to determine output format
+        var specFormat = analyzeChildSpecStructure(compiledFields);
+        
+        switch (specFormat) {
+            case MODERN_TUPLE:
+                return generateModernTupleFormat(idField, startField, appName);
+            case SIMPLE_MODULE:
+                return generateSimpleModuleFormat(idField, appName);
+            case TRADITIONAL_MAP:
+                // Fall through to map generation below
+        }
+        
+        // Default: use traditional map format for non-Phoenix modules
+        var mapFields = [];
         mapFields.push('id: ${idField}');
         mapFields.push('start: ${startField}');
         
@@ -6982,6 +7118,66 @@ class ElixirCompiler extends DirectToStringCompiler {
             case TConst(TNull): true;
             case TIdent("nil"): true;
             case _: false;
+        };
+    }
+    
+    /**
+     * Check if this is a TypeSafeChildSpec enum constructor call
+     */
+    private function isTypeSafeChildSpecCall(obj: TypedExpr, fieldName: String): Bool {
+        // Check if the object is a reference to TypeSafeChildSpec enum
+        switch (obj.expr) {
+            case TTypeExpr(moduleType):
+                switch (moduleType) {
+                    case TEnumDecl(enumRef):
+                        var enumType = enumRef.get();
+                        return enumType.name == "TypeSafeChildSpec" && 
+                               enumType.pack.join(".") == "elixir.otp";
+                    case _:
+                        return false;
+                }
+            case _:
+                return false;
+        }
+    }
+    
+    /**
+     * Compile TypeSafeChildSpec enum constructor calls directly to ChildSpec format
+     */
+    private function compileTypeSafeChildSpecCall(fieldName: String, args: Array<TypedExpr>): String {
+        var appName = AnnotationSystem.getEffectiveAppName(currentClassType);
+        
+        return switch (fieldName) {
+            case "PubSub":
+                if (args.length == 1) {
+                    var nameArg = compileExpression(args[0]);
+                    // Generate modern tuple format for Phoenix.PubSub
+                    '{Phoenix.PubSub, name: ${nameArg}}';
+                } else {
+                    // Default name based on app
+                    '{Phoenix.PubSub, name: ${appName}.PubSub}';
+                }
+                
+            case "Repo":
+                // Generate simple module reference
+                '${appName}.Repo';
+                
+            case "Endpoint":
+                // Generate simple module reference  
+                '${appName}Web.Endpoint';
+                
+            case "Telemetry":
+                // Generate simple module reference
+                '${appName}Web.Telemetry';
+                
+            case _:
+                // Fallback to regular enum compilation for unknown constructors
+                if (args.length == 0) {
+                    ':${NamingHelper.toSnakeCase(fieldName)}';
+                } else {
+                    var argList = args.map(function(arg) return compileExpression(arg)).join(", ");
+                    '{:${NamingHelper.toSnakeCase(fieldName)}, ${argList}}';
+                }
         };
     }
     
