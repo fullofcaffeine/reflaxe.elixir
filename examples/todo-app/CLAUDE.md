@@ -66,6 +66,140 @@ mix haxe.gen.migration CreateTodos --table todos --columns "title:string,descrip
 ### Why This Matters:
 The entire point of Reflaxe.Elixir is to write everything in Haxe. Writing manual Elixir migrations defeats the purpose and breaks the single-language paradigm. The compiler has full @:migration support - use it!
 
+## 🎨 HXX Template Syntax for Phoenix Assigns
+
+**CRITICAL**: Understanding correct HXX syntax is essential for Phoenix LiveView development. Wrong syntax causes compilation errors.
+
+### ⚠️ NEVER Use `${@field}` Pattern
+
+❌ **THIS FAILS** (causes Haxe compilation errors):
+```haxe
+return HXX.hxx('<button class="${@className}" id="${@id}">
+    ${@inner_content}
+</button>');
+```
+
+**Why it fails**: Haxe's string interpolation tries to evaluate `@field` as a variable, but `@` is not a valid Haxe identifier character.
+
+### ✅ ALWAYS Use `{@field}` Pattern
+
+✅ **THIS WORKS** (correct Phoenix assigns syntax):
+```haxe
+return HXX.hxx('<button class={@className} id={@id}>
+    <%= @inner_content %>
+</button>');
+```
+
+### HXX → HEEx Translation Rules
+
+#### 1. Attribute Values: `{@field}` → `{@field}`
+```haxe
+// Haxe HXX Input
+<meta name="csrf-token" content={Component.get_csrf_token()}/>
+<div class={@userClass} id={@userId}>
+
+// Generated HEEx Output  
+<meta name="csrf-token" content={Component.get_csrf_token()}/>
+<div class={@user_class} id={@user_id}>
+```
+
+#### 2. Text Content: Direct Phoenix Syntax
+```haxe
+// Haxe HXX Input
+<h1><%= @title %></h1>
+<p>Welcome, <%= @user.name %>!</p>
+
+// Generated HEEx Output (same)
+<h1><%= @title %></h1>  
+<p>Welcome, <%= @user.name %>!</p>
+```
+
+#### 3. Conditional Attributes
+```haxe
+// ❌ WRONG: Ternary in template string (causes Haxe errors)
+<button class="${@active ? 'btn-active' : 'btn-inactive'}">
+
+// ✅ CORRECT: Phoenix conditional syntax  
+<button class={if @active, do: "btn-active", else: "btn-inactive"}>
+
+// ✅ ALSO CORRECT: Using Phoenix template syntax directly
+<button class="<%= if @active, do: 'btn-active', else: 'btn-inactive' %>">
+```
+
+### Working Examples from Codebase
+
+#### UserLive.hx (✅ Correct Pattern)
+```haxe
+return HXX.hxx('
+    <.input 
+        name="search" 
+        value={@searchTerm}        // ✅ Correct: {@ for attributes
+        placeholder="Search users..."
+        type="search"
+    />
+    
+    ${renderUserList(assigns)}     // ✅ Correct: ${ for Haxe function calls
+');
+```
+
+#### RootLayout.hx (✅ Correct Pattern)  
+```haxe
+return HXX.hxx('
+    <meta name="csrf-token" content={Component.get_csrf_token()}/>  // ✅ Correct
+');
+```
+
+### Migration Guide for Broken Patterns
+
+If you find `${@field}` patterns in the codebase:
+
+1. **For attributes**: Change `"${@field}"` → `{@field}`
+2. **For text content**: Change `${@field}` → `<%= @field %>`
+3. **For complex expressions**: Use Phoenix conditional syntax
+
+#### Before (Broken):
+```haxe
+return HXX.hxx('<button type="${@type || "button"}" class="${@className}" ${@disabled ? "disabled" : ""}>
+    ${@inner_content}
+</button>');
+```
+
+#### After (Fixed):
+```haxe
+return HXX.hxx('<button type={@type || "button"} class={@className} disabled={@disabled}>
+    <%= @inner_content %>
+</button>');
+```
+
+### Debugging HXX Compilation Errors
+
+#### Common Error: "Expected expression"
+```
+src_haxe/components/Component.hx:25: character 39 : Expected expression
+... For function argument 'templateStr'
+```
+
+**Cause**: Using `${@field}` triggers Haxe string interpolation  
+**Fix**: Change to `{@field}` for attributes or `<%= @field %>` for text
+
+#### Common Error: "Unknown identifier"
+```  
+src_haxe/components/Component.hx:30: Unknown identifier : @field
+```
+
+**Cause**: `@field` is not a valid Haxe variable name  
+**Fix**: Remove `$` to prevent Haxe interpolation: `{@field}`
+
+### Summary: The Golden Rules
+
+1. **Attributes**: Use `{@field}` (no dollar sign)
+2. **Text content**: Use `<%= @field %>` (Phoenix syntax)  
+3. **Haxe functions**: Use `${functionCall()}` (with dollar sign)
+4. **Never**: Use `${@field}` (causes compilation errors)
+5. **Complex logic**: Use Phoenix conditional syntax, not Haxe ternary
+
+**See**: [`/documentation/guides/HXX_INTERPOLATION_SYNTAX.md`](/documentation/guides/HXX_INTERPOLATION_SYNTAX.md) - Complete technical details
+
 ## 📋 Project Overview
 
 - **Project**: todo-app

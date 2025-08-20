@@ -6,15 +6,15 @@ defmodule TodoAppWeb.Endpoint do
     This module compiles to TodoAppWeb.Endpoint with proper Phoenix endpoint
     configuration including plugs, session handling, and LiveView support.
   """
-  use Phoenix.Endpoint, otp_app: :todoapp
+  use Phoenix.Endpoint, otp_app: :todo_app
 
   # The session will be stored in the cookie and signed,
   # this means its contents can be read but not tampered with.
   # Set :encryption_salt if you would also like to encrypt it.
   @session_options [
     store: :cookie,
-    key: "_todoapp_key",
-    signing_salt: "urp7kHhm"
+    key: "_todo_app_key",
+    signing_salt: "BDuMf3f0"
   ]
 
   socket "/live", Phoenix.LiveView.Socket, websocket: [connect_info: [session: @session_options]]
@@ -25,7 +25,7 @@ defmodule TodoAppWeb.Endpoint do
   # when deploying your static files in production.
   plug Plug.Static,
     at: "/",
-    from: :todoapp,
+    from: :todo_app,
     gzip: false,
     only: ~w(assets fonts images favicon.ico robots.txt)
 
@@ -35,7 +35,7 @@ defmodule TodoAppWeb.Endpoint do
     socket "/phoenix/live_reload/socket", Phoenix.LiveReloader.Socket
     plug Phoenix.LiveReloader
     plug Phoenix.CodeReloader
-    plug Phoenix.Ecto.CheckRepoStatus, otp_app: :todoapp
+    plug Phoenix.Ecto.CheckRepoStatus, otp_app: :todo_app
   end
 
   plug Plug.RequestId
