@@ -262,31 +262,29 @@ class UserLive {
     function renderUserForm(assigns: Dynamic): String {
         if (!assigns.showForm) return "";
         
-        var title = assigns.selectedUser == null ? "New User" : "Edit User";
-        
         return HXX.hxx('
         <div class="modal">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h2>${title}</h2>
+                    <h2><%= if @selectedUser, do: "Edit User", else: "New User" %></h2>
                     <button phx-click="cancel" class="close">&times;</button>
                 </div>
                 
                 <.form for={@changeset} phx-submit="save_user">
                     <div class="form-group">
-                        <.label for="name">Name</.label>
+                        <.label htmlFor="name">Name</.label>
                         <.input field={@changeset[:name]} type="text" required />
                         <.error field={@changeset[:name]} />
                     </div>
                     
                     <div class="form-group">
-                        <.label for="email">Email</.label>
+                        <.label htmlFor="email">Email</.label>
                         <.input field={@changeset[:email]} type="email" required />
                         <.error field={@changeset[:email]} />
                     </div>
                     
                     <div class="form-group">
-                        <.label for="age">Age</.label>
+                        <.label htmlFor="age">Age</.label>
                         <.input field={@changeset[:age]} type="number" />
                         <.error field={@changeset[:age]} />
                     </div>
@@ -301,7 +299,7 @@ class UserLive {
                     
                     <div class="form-actions">
                         <.button type="submit">
-                            ${assigns.selectedUser == null ? "Create" : "Update"} User
+                            <%= if @selectedUser, do: "Update", else: "Create" %> User
                         </.button>
                         <.button type="button" phx-click="cancel" variant="secondary">
                             Cancel

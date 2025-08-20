@@ -157,6 +157,20 @@ class HxxCompiler {
                 return ConditionalNode(condNode, thenNode, elseNode);
                 
             case TCall(e, args):
+                // Check if this is HXX.hxx() call itself - extract template string
+                switch (e.expr) {
+                    case TField({expr: TTypeExpr(_)}, FStatic(c, cf)):
+                        if (c.get().name == "HXX" && cf.get().name == "hxx") {
+                            // This is HXX.hxx() call - extract and process the template string
+                            if (args.length > 0) {
+                                return walkAST(args[0], context);
+                            } else {
+                                return TextNode("");
+                            }
+                        }
+                    default:
+                }
+                
                 // Check if this is a Std.string() wrapper (Haxe adds these for type safety in string interpolation)
                 switch (e.expr) {
                     case TField({expr: TTypeExpr(TClassDecl(c))}, FStatic(_, cf)) if (c.get().name == "Std" && cf.get().name == "string"):
@@ -206,6 +220,16 @@ class HxxCompiler {
                     value: walkAST(f.expr, context)
                 });
                 return ObjectNode(objectFields);
+                
+            case TReturn(expr):
+                // Handle return statements by processing the inner expression
+                // This occurs when component functions have return HXX.hxx(...) statements
+                if (expr != null) {
+                    return walkAST(expr, context);
+                } else {
+                    // Return with no expression - shouldn't happen in HXX context
+                    return TextNode("");
+                }
                 
             case _:
                 // Unknown expression type - wrap in generic interpolation
