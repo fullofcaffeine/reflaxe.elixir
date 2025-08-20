@@ -787,6 +787,63 @@ server.contexts.Users       → lib/server/contexts/users.ex    # Package preser
 **See**: [`documentation/COMPILER_BEST_PRACTICES.md`](documentation/COMPILER_BEST_PRACTICES.md) - Complete development principles, testing protocols, and best practices
 **See**: [`documentation/ANNOTATION_SYSTEM.md`](documentation/ANNOTATION_SYSTEM.md) - Complete annotation documentation and usage guidelines
 
+## ⚠️ CRITICAL: Comprehensive Code Documentation Rule
+
+**FUNDAMENTAL RULE: All complex compiler code MUST be comprehensively documented with context-aware comments.**
+
+### Documentation Requirements by Complexity
+- **Simple operations**: Brief inline comments explaining what
+- **Complex logic**: Multi-line comments explaining WHY, HOW, and architectural context
+- **Compiler infrastructure**: Full architectural documentation with integration details
+
+### Required Elements for Complex Code
+1. **WHY the code exists**: What problem does it solve? What pattern does it implement?
+2. **HOW it works**: Step-by-step explanation of the algorithm or approach
+3. **Architectural context**: How does it fit into the overall compiler architecture?
+4. **Integration points**: What other compiler components does it interact with?
+5. **Edge cases**: What scenarios require special handling and why?
+
+### Documentation Template for Complex Code
+```haxe
+/**
+ * COMPLEX FUNCTIONALITY: Brief description of what this does
+ * 
+ * WHY: Explain the problem this solves and why this approach was chosen
+ * - Specific issue or pattern being addressed
+ * - Alternative approaches considered and why rejected
+ * 
+ * HOW: Detailed explanation of the implementation
+ * - Step-by-step algorithm or process
+ * - Key data structures and transformations
+ * - Important implementation decisions
+ * 
+ * ARCHITECTURE: How this fits into the compiler
+ * - Which compiler phase/component this belongs to
+ * - Integration with other helpers/systems
+ * - Data flow in and out of this component
+ * 
+ * EDGE CASES: Special handling scenarios
+ * - Specific patterns that require different treatment
+ * - Known limitations or assumptions
+ * 
+ * @param param Description of input parameters
+ * @return Description of return values and possible states
+ */
+function complexCompilerFunction(param: Type): ReturnType {
+    // Implementation with inline comments for complex steps
+}
+```
+
+### Examples Requiring Full Documentation
+- Y combinator generation and detection logic
+- AST transformation algorithms
+- Context-sensitive compilation decisions
+- Pattern matching and optimization strategies
+- Framework-specific code generation
+- Error handling and recovery mechanisms
+
+**Why This Matters**: The compiler is a complex system with many interdependent components. Without comprehensive documentation, future modifications become error-prone and architectural understanding is lost.
+
 ## Commit Standards
 **Follow [Conventional Commits](https://www.conventionalcommits.org/)**: `<type>(<scope>): <subject>`
 - Types: `feat`, `fix`, `docs`, `test`, `refactor`, `perf`, `chore`
