@@ -148,15 +148,35 @@ defmodule TodoPubSub do
           temp_result = :error
         end
       "todo_created" ->
-        temp_result = if (msg.todo != nil), do: {:ok, {:todo_created, msg.todo}}, else: :error
+        if (msg.todo != nil) do
+          temp_result = {:ok, {:todo_created, msg.todo}}
+        else
+          temp_result = :error
+        end
       "todo_deleted" ->
-        temp_result = if (msg.todo_id != nil), do: {:ok, {:todo_deleted, msg.todo_id}}, else: :error
+        if (msg.todo_id != nil) do
+          temp_result = {:ok, {:todo_deleted, msg.todo_id}}
+        else
+          temp_result = :error
+        end
       "todo_updated" ->
-        temp_result = if (msg.todo != nil), do: {:ok, {:todo_updated, msg.todo}}, else: :error
+        if (msg.todo != nil) do
+          temp_result = {:ok, {:todo_updated, msg.todo}}
+        else
+          temp_result = :error
+        end
       "user_offline" ->
-        temp_result = if (msg.user_id != nil), do: {:ok, {:user_offline, msg.user_id}}, else: :error
+        if (msg.user_id != nil) do
+          temp_result = {:ok, {:user_offline, msg.user_id}}
+        else
+          temp_result = :error
+        end
       "user_online" ->
-        temp_result = if (msg.user_id != nil), do: {:ok, {:user_online, msg.user_id}}, else: :error
+        if (msg.user_id != nil) do
+          temp_result = {:ok, {:user_online, msg.user_id}}
+        else
+          temp_result = :error
+        end
       _ ->
         Log.trace(SafePubSub.create_unknown_message_error(msg.type), %{"fileName" => "src_haxe/server/pubsub/TodoPubSub.hx", "lineNumber" => 220, "className" => "server.pubsub.TodoPubSub", "methodName" => "parseMessageImpl"})
         temp_result = :error

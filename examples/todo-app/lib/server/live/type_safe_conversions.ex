@@ -122,21 +122,21 @@ defmodule TypeSafeConversions do
   @spec create_complete_assigns(Null.t(), Null.t(), Null.t(), Null.t(), Null.t(), Null.t(), Null.t(), Null.t(), Null.t()) :: TodoLiveAssigns.t()
   def create_complete_assigns(base, todos, filter, sort_by, current_user, editing_todo, show_form, search_query, selected_tags) do
     temp_array = nil
-    if (todos != nil), do: temp_array = todos, else: temp_array = if (base != nil), do: base.todos, else: []
+    if (todos != nil), do: temp_array = todos, else: if (base != nil), do: temp_array = base.todos, else: temp_array = []
     temp_string = nil
-    if (filter != nil), do: temp_string = filter, else: temp_string = if (base != nil), do: base.filter, else: "all"
+    if (filter != nil), do: temp_string = filter, else: if (base != nil), do: temp_string = base.filter, else: temp_string = "all"
     temp_string1 = nil
-    if (sort_by != nil), do: temp_string1 = sort_by, else: temp_string1 = if (base != nil), do: base.sort_by, else: "created"
+    if (sort_by != nil), do: temp_string1 = sort_by, else: if (base != nil), do: temp_string1 = base.sort_by, else: temp_string1 = "created"
     temp_user = nil
-    if (current_user != nil), do: temp_user = current_user, else: temp_user = if (base != nil), do: base.current_user, else: TypeSafeConversions.create_default_user()
+    if (current_user != nil), do: temp_user = current_user, else: if (base != nil), do: temp_user = base.current_user, else: temp_user = TypeSafeConversions.create_default_user()
     temp_maybe_todo = nil
-    if (editing_todo != nil), do: temp_maybe_todo = editing_todo, else: temp_maybe_todo = if (base != nil), do: base.editing_todo, else: nil
+    if (editing_todo != nil), do: temp_maybe_todo = editing_todo, else: if (base != nil), do: temp_maybe_todo = base.editing_todo, else: temp_maybe_todo = nil
     temp_bool = nil
-    if (show_form != nil), do: temp_bool = show_form, else: temp_bool = if (base != nil), do: base.show_form, else: false
+    if (show_form != nil), do: temp_bool = show_form, else: if (base != nil), do: temp_bool = base.show_form, else: temp_bool = false
     temp_string2 = nil
-    if (search_query != nil), do: temp_string2 = search_query, else: temp_string2 = if (base != nil), do: base.search_query, else: ""
+    if (search_query != nil), do: temp_string2 = search_query, else: if (base != nil), do: temp_string2 = base.search_query, else: temp_string2 = ""
     temp_array1 = nil
-    if (selected_tags != nil), do: temp_array1 = selected_tags, else: temp_array1 = if (base != nil), do: base.selected_tags, else: []
+    if (selected_tags != nil), do: temp_array1 = selected_tags, else: if (base != nil), do: temp_array1 = base.selected_tags, else: temp_array1 = []
     assigns = %{"todos" => temp_array, "filter" => temp_string, "sort_by" => temp_string1, "current_user" => temp_user, "editing_todo" => temp_maybe_todo, "show_form" => temp_bool, "search_query" => temp_string2, "selected_tags" => temp_array1, "total_todos" => 0, "completed_todos" => 0, "pending_todos" => 0}
     assigns = %{assigns | total_todos: assigns.todos.length}
     assigns = %{assigns | completed_todos: TypeSafeConversions.count_completed(assigns.todos)}
