@@ -1,11 +1,13 @@
 package server.components;
 
+import reflaxe.elixir.HXX;
+
 /**
  * Type-safe assigns for Phoenix components
  */
 typedef ComponentAssigns = {
     ?id: String,
-    ?class: String,
+    ?className: String,
     ?show: Bool,
     ?inner_content: String
 }
@@ -18,7 +20,7 @@ typedef ModalAssigns = {
 
 typedef ButtonAssigns = {
     ?type: String,
-    ?class: String,
+    ?className: String,
     ?disabled: Bool,
     inner_content: String
 }
@@ -38,12 +40,30 @@ typedef FormField = {
     ?errors: Array<String>
 }
 
+/**
+ * Type-safe abstract for Phoenix form targets
+ * Compiles to the appropriate Elixir representation
+ */
+abstract FormTarget(String) {
+    public function new(target: String) {
+        this = target;
+    }
+    
+    @:from public static function fromString(s: String): FormTarget {
+        return new FormTarget(s);
+    }
+    
+    @:to public function toString(): String {
+        return this;
+    }
+}
+
 typedef ErrorAssigns = {
     field: FormField
 }
 
 typedef FormAssigns = {
-    for: Any, // This would be a changeset or schema
+    formFor: FormTarget, // Changeset or schema
     action: String,
     ?method: String,
     inner_content: String
@@ -59,8 +79,10 @@ typedef TableColumn = {
     label: String
 }
 
+typedef TableRowData = Map<String, String>;
+
 typedef TableAssigns = {
-    rows: Array<Map<String, Any>>,
+    rows: Array<TableRowData>,
     columns: Array<TableColumn>
 }
 
@@ -74,7 +96,13 @@ typedef BackAssigns = {
 
 typedef IconAssigns = {
     name: String,
-    ?class: String
+    ?className: String
+}
+
+typedef LabelAssigns = {
+    ?htmlFor: String,
+    ?className: String,
+    inner_content: String
 }
 
 /**
@@ -93,11 +121,9 @@ class CoreComponents {
      */
     @:component
     public static function modal(assigns: ModalAssigns): String {
-        // The actual HEEx template would be handled by HXX compiler
-        // For now, return a placeholder that the compiler will transform
-        return '<div id={assigns.id} class="modal" phx-show={assigns.show}>
-            <%= assigns.inner_content %>
-        </div>';
+        return HXX.hxx('<div id={@id} class="modal" phx-show={@show}>
+            <%= @inner_content %>
+        </div>');
     }
     
     /**
@@ -105,11 +131,9 @@ class CoreComponents {
      */
     @:component
     public static function button(assigns: ButtonAssigns): String {
-        var type = assigns.type != null ? assigns.type : "button";
-        var disabled = assigns.disabled != null && assigns.disabled ? "disabled" : "";
-        return '<button type={type} class={assigns.class} {disabled}>
-            <%= assigns.inner_content %>
-        </button>';
+        return HXX.hxx('<button type={@type || "button"} class={@className} disabled={@disabled}>
+            <%= @inner_content %>
+        </button>');
     }
     
     /**
@@ -117,23 +141,21 @@ class CoreComponents {
      */
     @:component
     public static function input(assigns: InputAssigns): String {
-        var type = assigns.type != null ? assigns.type : "text";
-        var required = assigns.required != null && assigns.required ? "required" : "";
-        return '<div class="form-group">
-            <label for={assigns.field.id}><%= assigns.label %></label>
+        return HXX.hxx('<div class="form-group">
+            <label for={@field.id}><%= @label %></label>
             <input 
-                type={type} 
-                id={assigns.field.id}
-                name={assigns.field.name}
-                value={assigns.field.value}
-                placeholder={assigns.placeholder}
+                type={@type || "text"} 
+                id={@field.id}
+                name={@field.name}
+                value={@field.value}
+                placeholder={@placeholder}
                 class="form-control"
-                {required}
+                required={@required}
             />
-            <%= if assigns.field.errors != null && assigns.field.errors.length > 0 do %>
-                <span class="error"><%= Enum.join(assigns.field.errors, ", ") %></span>
+            <%= if @field.errors && length(@field.errors) > 0 do %>
+                <span class="error"><%= Enum.join(@field.errors, ", ") %></span>
             <% end %>
-        </div>';
+        </div>');
     }
     
     /**
@@ -141,22 +163,21 @@ class CoreComponents {
      */
     @:component
     public static function error(assigns: ErrorAssigns): String {
-        return '<%= if assigns.field != null && assigns.field.errors != null && assigns.field.errors.length > 0 do %>
+        return HXX.hxx('<%= if @field && @field.errors && length(@field.errors) > 0 do %>
             <div class="error-message">
-                <%= Enum.join(assigns.field.errors, ", ") %>
+                <%= Enum.join(@field.errors, ", ") %>
             </div>
-        <% end %>';
+        <% end %>');
     }
     
     /**
      * Renders a simple form
      */
     @:component  
-    public static function simpleForm(assigns: FormAssigns): String {
-        var method = assigns.method != null ? assigns.method : "post";
-        return '<.form :let={f} for={assigns.for} action={assigns.action} method={method}>
-            <%= assigns.inner_content %>
-        </.form>';
+    public static function simple_form(assigns: FormAssigns): String {
+        return HXX.hxx('<.form :let={f} for={@formFor} action={@action} method={@method || "post"}>
+            <%= @inner_content %>
+        </.form>');
     }
     
     /**
@@ -164,14 +185,14 @@ class CoreComponents {
      */
     @:component
     public static function header(assigns: HeaderAssigns): String {
-        return '<header class="header">
-            <h1><%= assigns.title %></h1>
-            <%= if assigns.actions != null do %>
+        return HXX.hxx('<header class="header">
+            <h1><%= @title %></h1>
+            <%= if @actions do %>
                 <div class="actions">
-                    <%= assigns.actions %>
+                    <%= @actions %>
                 </div>
             <% end %>
-        </header>';
+        </header>');
     }
     
     /**
@@ -179,24 +200,24 @@ class CoreComponents {
      */
     @:component
     public static function table(assigns: TableAssigns): String {
-        return '<table class="table">
+        return HXX.hxx('<table class="table">
             <thead>
                 <tr>
-                    <%= for col <- assigns.columns do %>
+                    <%= for col <- @columns do %>
                         <th><%= col.label %></th>
                     <% end %>
                 </tr>
             </thead>
             <tbody>
-                <%= for row <- assigns.rows do %>
+                <%= for row <- @rows do %>
                     <tr>
-                        <%= for col <- assigns.columns do %>
+                        <%= for col <- @columns do %>
                             <td><%= Map.get(row, col.field) %></td>
                         <% end %>
                     </tr>
                 <% end %>
             </tbody>
-        </table>';
+        </table>');
     }
     
     /**
@@ -204,11 +225,11 @@ class CoreComponents {
      */
     @:component
     public static function list(assigns: ListAssigns): String {
-        return '<ul class="list">
-            <%= for item <- assigns.items do %>
+        return HXX.hxx('<ul class="list">
+            <%= for item <- @items do %>
                 <li><%= item %></li>
             <% end %>
-        </ul>';
+        </ul>');
     }
     
     /**
@@ -216,11 +237,11 @@ class CoreComponents {
      */
     @:component
     public static function back(assigns: BackAssigns): String {
-        return '<div class="back-link">
-            <.link navigate={assigns.navigate}>
+        return HXX.hxx('<div class="back-link">
+            <.link navigate={@navigate}>
                 ← Back
             </.link>
-        </div>';
+        </div>');
     }
     
     /**
@@ -228,10 +249,22 @@ class CoreComponents {
      */
     @:component
     public static function icon(assigns: IconAssigns): String {
-        var className = "icon icon-" + assigns.name;
-        if (assigns.class != null) {
-            className += " " + assigns.class;
-        }
-        return '<span class={className}></span>';
+        return HXX.hxx('<%= if @className do %>
+            <span class={"icon icon-" <> @name <> " " <> @className}></span>
+        <% else %>
+            <span class={"icon icon-" <> @name}></span>
+        <% end %>');
+    }
+    
+    /**
+     * Renders a form label
+     */
+    @:component
+    public static function label(assigns: LabelAssigns): String {
+        return HXX.hxx('<%= if @htmlFor do %>
+            <label for={@htmlFor} class={@className}><%= @inner_content %></label>
+        <% else %>
+            <label class={@className}><%= @inner_content %></label>
+        <% end %>');
     }
 }

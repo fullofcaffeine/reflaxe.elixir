@@ -14,7 +14,7 @@ defmodule TodoAppWeb.UserLive do
   @doc "Generated from Haxe mount"
   def mount(params, session, socket) do
     users = Users.list_users()
-    %{"status" => "ok", "socket" => UserLive.assign_multiple(socket, %{"users" => users, "selectedUser" => nil, "changeset" => Users.change_user(nil), "searchTerm" => "", "showForm" => false})}
+    %{"status" => "ok", "socket" => UserLive.assign_multiple(socket, %{"users" => socket.assigns.users, "selectedUser" => nil, "changeset" => Users.change_user(nil), "searchTerm" => "", "showForm" => false})}
   end
 
   @impl true
@@ -45,23 +45,23 @@ defmodule TodoAppWeb.UserLive do
     changeset = Users.change_user(nil)
     selected_user = nil
     show_form = true
-    %{"status" => "noreply", "socket" => UserLive.assign_multiple(socket, %{"changeset" => changeset, "selectedUser" => selected_user, "showForm" => show_form})}
+    %{"status" => "noreply", "socket" => UserLive.assign_multiple(socket, %{"changeset" => socket.assigns.changeset, "selectedUser" => socket.assigns.selected_user, "showForm" => socket.assigns.show_form})}
   end
 
   @doc "Generated from Haxe handleEditUser"
   def handle_edit_user(params, socket) do
     user_id = params.id
     selected_user = Users.get_user(user_id)
-    changeset = Users.change_user(selected_user)
+    changeset = Users.change_user(socket.assigns.selected_user)
     show_form = true
-    %{"status" => "noreply", "socket" => UserLive.assign_multiple(socket, %{"selectedUser" => selected_user, "changeset" => changeset, "showForm" => show_form})}
+    %{"status" => "noreply", "socket" => UserLive.assign_multiple(socket, %{"selectedUser" => socket.assigns.selected_user, "changeset" => socket.assigns.changeset, "showForm" => socket.assigns.show_form})}
   end
 
   @doc "Generated from Haxe handleSaveUser"
   def handle_save_user(params, socket) do
     user_params = params.user
     temp_struct = nil
-    if (struct.selected_user == nil), do: temp_struct = Users.create_user(user_params), else: temp_struct = Users.update_user(struct.selected_user, user_params)
+    if (socket.assigns.selected_user == nil), do: temp_struct = Users.create_user(user_params), else: temp_struct = Users.update_user(socket.assigns.selected_user, user_params)
     temp_result = nil
     g = temp_struct.status
     case (g) do
@@ -70,7 +70,7 @@ defmodule TodoAppWeb.UserLive do
       "ok" ->
         users = Users.list_users()
         show_form = false
-        temp_result = %{"status" => "noreply", "socket" => UserLive.assign_multiple(socket, %{"users" => users, "showForm" => show_form, "selectedUser" => nil, "changeset" => Users.change_user(nil)})}
+        temp_result = %{"status" => "noreply", "socket" => UserLive.assign_multiple(socket, %{"users" => socket.assigns.users, "showForm" => socket.assigns.show_form, "selectedUser" => nil, "changeset" => Users.change_user(nil)})}
       _ ->
         temp_result = %{"status" => "noreply", "socket" => socket}
     end
@@ -84,7 +84,7 @@ defmodule TodoAppWeb.UserLive do
     result = Users.delete_user(user)
     if (result.status == "ok") do
       users = Users.list_users()
-      %{"status" => "noreply", "socket" => UserLive.assign(socket, "users", users)}
+      %{"status" => "noreply", "socket" => UserLive.assign(socket, "users", socket.assigns.users)}
     end
     %{"status" => "noreply", "socket" => socket}
   end
@@ -93,8 +93,8 @@ defmodule TodoAppWeb.UserLive do
   def handle_search(params, socket) do
     search_term = params.search
     temp_array = nil
-    if (search_term.length > 0), do: temp_array = Users.search_users(search_term), else: temp_array = Users.list_users()
-    %{"status" => "noreply", "socket" => UserLive.assign_multiple(socket, %{"users" => temp_array, "searchTerm" => search_term})}
+    if (socket.assigns.search_term.length > 0), do: temp_array = Users.search_users(socket.assigns.search_term), else: temp_array = Users.list_users()
+    %{"status" => "noreply", "socket" => UserLive.assign_multiple(socket, %{"users" => temp_array, "searchTerm" => socket.assigns.search_term})}
   end
 
   @doc "Generated from Haxe handleCancel"
@@ -187,30 +187,26 @@ defmodule TodoAppWeb.UserLive do
   @doc "Generated from Haxe renderUserForm"
   def render_user_form(assigns) do
     if (!assigns.show_form), do: "", else: nil
-    temp_string = nil
-    if (assigns.selected_user == nil), do: temp_string = "New User", else: temp_string = "Edit User"
-    temp_string1 = nil
-    if (assigns.selected_user == nil), do: temp_string1 = "Create", else: temp_string1 = "Update"
     ~H"""
       <div class="modal">
       <div class="modal-content">
       <div class="modal-header">
-      <h2><%= temp_string %></h2>
+      <h2><%= if @selectedUser, do: "Edit User", else: "New User" %></h2>
       <button phx-click="cancel" class="close">&times;</button>
       </div>
       <.form for={@changeset} phx-submit="save_user">
       <div class="form-group">
-      <.label for="name">Name</.label>
+      <.label htmlFor="name">Name</.label>
       <.input field={@changeset[:name]} type="text" required />
       <.error field={@changeset[:name]} />
       </div>
       <div class="form-group">
-      <.label for="email">Email</.label>
+      <.label htmlFor="email">Email</.label>
       <.input field={@changeset[:email]} type="email" required />
       <.error field={@changeset[:email]} />
       </div>
       <div class="form-group">
-      <.label for="age">Age</.label>
+      <.label htmlFor="age">Age</.label>
       <.input field={@changeset[:age]} type="number" />
       <.error field={@changeset[:age]} />
       </div>
@@ -223,7 +219,7 @@ defmodule TodoAppWeb.UserLive do
       </div>
       <div class="form-actions">
       <.button type="submit">
-      <%= temp_string1 %> User
+      <%= if @selectedUser, do: "Update", else: "Create" %> User
       </.button>
       <.button type="button" phx-click="cancel" variant="secondary">
       Cancel
@@ -261,7 +257,7 @@ defmodule TodoAppWeb.UserLive do
 
   @doc "Generated from Haxe main"
   def main() do
-    Log.trace("UserLive with @:liveview annotation compiled successfully!", %{"fileName" => "src_haxe/server/live/UserLive.hx", "lineNumber" => 322, "className" => "server.live.UserLive", "methodName" => "main"})
+    Log.trace("UserLive with @:liveview annotation compiled successfully!", %{"fileName" => "src_haxe/server/live/UserLive.hx", "lineNumber" => 320, "className" => "server.live.UserLive", "methodName" => "main"})
   end
 
 end
