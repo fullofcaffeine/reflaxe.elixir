@@ -130,7 +130,7 @@ defmodule Flash do
               try do
                 error = Enum.at(g, g)
               g = g + 1
-              errors ++ ["" <> field <> ": " <> Std.string(error)]
+              errors ++ ["" <> field <> ": " <> Std.string(&Flash.error/3)]
               loop_fn.({g + 1})
                 loop_fn.(loop_fn, {g})
               catch

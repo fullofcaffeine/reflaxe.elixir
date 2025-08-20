@@ -150,22 +150,11 @@ class RouterCompiler {
     private static function generateRouteScopes(classType: ClassType, fields: Array<ClassField>, webModuleScope: String, appName: String): String {
         var output = new StringBuf();
         
-        // Parse actual routes from @:route annotations
-        var routes = generateRoutes(classType);
-        var browserRoutes = [];
-        var apiRoutes = [];
-        var devRoutes = [];
-        
-        // Categorize routes by pipeline type
-        for (route in routes) {
-            if (route.indexOf("live_dashboard") >= 0) {
-                devRoutes.push(route);
-            } else if (route.indexOf("live ") >= 0 || route.indexOf("get ") >= 0) {
-                browserRoutes.push(route);
-            } else {
-                apiRoutes.push(route);
-            }
-        }
+        // Parse actual routes from @:route annotations with scope awareness
+        var routeData = generateScopeAwareRoutes(classType, webModuleScope);
+        var browserRoutes = routeData.browserRoutes;
+        var apiRoutes = routeData.apiRoutes;
+        var devRoutes = routeData.devRoutes;
         
         // Browser scope with actual routes
         if (browserRoutes.length > 0) {
@@ -215,6 +204,53 @@ class RouterCompiler {
         return output.toString();
     }
     
+    /**
+     * Generate scope-aware routes categorized by pipeline type
+     */
+    private static function generateScopeAwareRoutes(classType: ClassType, webModuleScope: String): {browserRoutes: Array<String>, apiRoutes: Array<String>, devRoutes: Array<String>} {
+        var browserRoutes = [];
+        var apiRoutes = [];
+        var devRoutes = [];
+        
+        var fields = classType.fields.get();
+        var statics = classType.statics.get();
+        var allFields = fields.concat(statics);
+        
+        for (field in allFields) {
+            if (field.kind.match(FMethod(_))) {
+                var routeAnnotation = extractRouteAnnotation(field);
+                if (routeAnnotation != null) {
+                    var controllerName = routeAnnotation.controller != null ? 
+                        routeAnnotation.controller : 
+                        "DefaultController";
+                    
+                    var route: String;
+                    
+                    // Generate routes with appropriate scope context
+                    if (routeAnnotation.method == "LIVE_DASHBOARD") {
+                        // DevRoutes don't use webModuleScope
+                        route = generateRouteFromAnnotation(controllerName, field.name, routeAnnotation);
+                        devRoutes.push(route);
+                    } else if (routeAnnotation.method == "LIVE" || routeAnnotation.method == "GET") {
+                        // Browser routes use webModuleScope for relative naming
+                        route = generateRouteFromAnnotation(controllerName, field.name, routeAnnotation, webModuleScope);
+                        browserRoutes.push(route);
+                    } else {
+                        // API routes might not use scope
+                        route = generateRouteFromAnnotation(controllerName, field.name, routeAnnotation);
+                        apiRoutes.push(route);
+                    }
+                }
+            }
+        }
+        
+        return {
+            browserRoutes: browserRoutes,
+            apiRoutes: apiRoutes,
+            devRoutes: devRoutes
+        };
+    }
+
     /**
      * Generates route definitions from controller annotations.
      */
@@ -378,11 +414,11 @@ class RouterCompiler {
         return null;
     }
     
-    private static function generateRouteFromAnnotation(controllerName: String, actionName: String, route: RouteInfo): String {
+    private static function generateRouteFromAnnotation(controllerName: String, actionName: String, route: RouteInfo, ?scopePrefix: String): String {
         var controller = route.controller != null ? route.controller : controllerName;
         
         // Resolve controller name to proper Phoenix module name
-        controller = resolveControllerModuleName(controller);
+        controller = resolveControllerModuleName(controller, scopePrefix);
         
         return switch(route.method) {
             case "LIVE":
@@ -399,11 +435,14 @@ class RouterCompiler {
     /**
      * Resolve controller name to proper module name by looking up the actual type
      * This allows for flexible module naming based on @:native annotations or class paths
+     * When scopePrefix is provided, returns relative name within that scope
      */
-    private static function resolveControllerModuleName(controllerName: String): String {
+    private static function resolveControllerModuleName(controllerName: String, ?scopePrefix: String): String {
         if (controllerName == null || controllerName == "") {
             return controllerName;
         }
+        
+        var fullModuleName: String;
         
         try {
             // Try to resolve the controller as a type to get its actual module name
@@ -412,17 +451,24 @@ class RouterCompiler {
                 case TInst(ref, _):
                     var classType = ref.get();
                     // Use the class's actual module name (respects @:native)
-                    return classType.getNameOrNative();
+                    fullModuleName = classType.getNameOrNative();
                 case _:
                     // If not a class, return as-is
-                    return controllerName;
+                    fullModuleName = controllerName;
             }
         } catch (e: Dynamic) {
             // If type resolution fails, treat as a direct module name
             // Remove package prefix if present (e.g., "controllers.UserController" -> "UserController")
             var parts = controllerName.split(".");
-            return parts[parts.length - 1];
+            fullModuleName = parts[parts.length - 1];
         }
+        
+        // If we have a scope prefix and the module name starts with it, return relative name
+        if (scopePrefix != null && fullModuleName.startsWith(scopePrefix + ".")) {
+            return fullModuleName.substring(scopePrefix.length + 1);
+        }
+        
+        return fullModuleName;
     }
     
     private static function extractResourceName(classType: ClassType): String {

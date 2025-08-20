@@ -16,7 +16,7 @@ import reflaxe.elixir.macros.HttpMethod;
         name: "root", 
         method: HttpMethod.LIVE, 
         path: "/", 
-        controller: "server.live.TodoLive", 
+        controller: "server.live.TodoLive",  // this is not type safe, needs to be the actual controller type. This DSL should be as expressive as the Elixir one, but typesafe.
         action: "index"
     },
     
