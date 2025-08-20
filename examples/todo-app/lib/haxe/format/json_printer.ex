@@ -48,7 +48,7 @@ defmodule JsonPrinter do
   """
   @spec print(term(), Null.t(), Null.t()) :: String.t()
   def print(o, replacer, space) do
-    printer = Haxe.Format.JsonPrinter.new(replacer, space)
+    printer = Haxe.Format.JsonPrinter.new(&JsonPrinter.replacer/2, space)
     printer.write("", o)
     printer.buf.b
   end

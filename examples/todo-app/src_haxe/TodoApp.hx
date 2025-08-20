@@ -36,7 +36,7 @@ class TodoApp {
             // TypeSafeChildSpec.Repo(),
             
             // PubSub system - using type-safe enum pattern
-            TypeSafeChildSpec.PubSub('${appName}.PubSub'),
+            TypeSafeChildSpec.PubSub("TodoApp.PubSub"),
             
             // Telemetry supervisor
             TypeSafeChildSpec.Telemetry(),
@@ -45,10 +45,9 @@ class TodoApp {
             TypeSafeChildSpec.Endpoint()
         ];
 
-        // Convert type-safe child specs to legacy format for supervisor compatibility
-        var children: Array<ChildSpec> = typeSafeChildren.map(function(child) {
-            return elixir.otp.TypeSafeChildSpec.TypeSafeChildSpecTools.toLegacy(child, appName);
-        });
+        // Use the TypeSafeChildSpec directly - they compile to proper child spec format
+        // Avoiding .map() due to compiler bug with variable naming in loops
+        var children: Dynamic = typeSafeChildren;
 
         // Start supervisor with children
         var opts: SupervisorOptions = {
