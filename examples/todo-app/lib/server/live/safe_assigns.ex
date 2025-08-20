@@ -85,8 +85,8 @@ defmodule SafeAssigns do
   """
   @spec update_todos_and_stats(Phoenix.Socket.t(), Array.t()) :: Phoenix.Socket.t()
   def update_todos_and_stats(socket, todos) do
-    completed = SafeAssigns.countCompleted(todos)
-    pending = SafeAssigns.countPending(todos)
+    completed = SafeAssigns.count_completed(todos)
+    pending = SafeAssigns.count_pending(todos)
     LiveView.assign_multiple(socket, %{"todos" => todos, "total_todos" => todos.length, "completed_todos" => completed, "pending_todos" => pending})
   end
 
@@ -106,7 +106,7 @@ defmodule SafeAssigns do
   @spec count_completed(Array.t()) :: integer()
   def count_completed(todos) do
     count = 0
-    g = 0
+    g_counter = 0
     (
       loop_helper = fn loop_fn, {g, count} ->
         if (g < todos.length) do
@@ -140,7 +140,7 @@ defmodule SafeAssigns do
   @spec count_pending(Array.t()) :: integer()
   def count_pending(todos) do
     count = 0
-    g = 0
+    g_counter = 0
     (
       loop_helper = fn loop_fn, {g, count} ->
         if (g < todos.length) do

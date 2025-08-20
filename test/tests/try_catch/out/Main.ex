@@ -172,7 +172,7 @@ defmodule Main do
   def try_as_expression() do
     temp_maybe_number = nil
     try do
-      temp_maybe_number = Std.parseInt("123")
+      temp_maybe_number = Std.parse_int("123")
     rescue
       e ->
         temp_maybe_number = 0
@@ -181,7 +181,7 @@ defmodule Main do
     Log.trace("Parsed value: " <> Kernel.inspect(value), %{"fileName" => "Main.hx", "lineNumber" => 169, "className" => "Main", "methodName" => "tryAsExpression"})
     temp_maybe_number1 = nil
     try do
-      temp_maybe_number1 = Std.parseInt("not a number")
+      temp_maybe_number1 = Std.parse_int("not a number")
     rescue
       e ->
         temp_maybe_number1 = -1
@@ -194,23 +194,23 @@ defmodule Main do
   @spec main() :: nil
   def main() do
     Log.trace("=== Basic Try-Catch ===", %{"fileName" => "Main.hx", "lineNumber" => 180, "className" => "Main", "methodName" => "main"})
-    Main.basicTryCatch()
+    Main.basic_try_catch()
     Log.trace("\n=== Multiple Catch ===", %{"fileName" => "Main.hx", "lineNumber" => 183, "className" => "Main", "methodName" => "main"})
-    Main.multipleCatch()
+    Main.multiple_catch()
     Log.trace("\n=== Try-Catch-Finally ===", %{"fileName" => "Main.hx", "lineNumber" => 186, "className" => "Main", "methodName" => "main"})
-    Main.tryCatchFinally()
+    Main.try_catch_finally()
     Log.trace("\n=== Nested Try-Catch ===", %{"fileName" => "Main.hx", "lineNumber" => 189, "className" => "Main", "methodName" => "main"})
-    Main.nestedTryCatch()
+    Main.nested_try_catch()
     Log.trace("\n=== Custom Exception ===", %{"fileName" => "Main.hx", "lineNumber" => 192, "className" => "Main", "methodName" => "main"})
-    Main.customException()
+    Main.custom_exception()
     Log.trace("\n=== Division Test ===", %{"fileName" => "Main.hx", "lineNumber" => 195, "className" => "Main", "methodName" => "main"})
-    Main.testDivision()
+    Main.test_division()
     Log.trace("\n=== Rethrow Example ===", %{"fileName" => "Main.hx", "lineNumber" => 198, "className" => "Main", "methodName" => "main"})
-    Main.rethrowExample()
+    Main.rethrow_example()
     Log.trace("\n=== Stack Trace Example ===", %{"fileName" => "Main.hx", "lineNumber" => 201, "className" => "Main", "methodName" => "main"})
-    Main.stackTraceExample()
+    Main.stack_trace_example()
     Log.trace("\n=== Try as Expression ===", %{"fileName" => "Main.hx", "lineNumber" => 204, "className" => "Main", "methodName" => "main"})
-    Main.tryAsExpression()
+    Main.try_as_expression()
   end
 
 end

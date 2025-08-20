@@ -6,29 +6,6 @@ function $extend(from, fields) {
 	if( fields.toString !== Object.prototype.toString ) proto.toString = fields.toString;
 	return proto;
 }
-var HxOverrides = function() { };
-HxOverrides.cca = function(s,index) {
-	var x = s.charCodeAt(index);
-	if(x != x) {
-		return undefined;
-	}
-	return x;
-};
-HxOverrides.substr = function(s,pos,len) {
-	if(len == null) {
-		len = s.length;
-	} else if(len < 0) {
-		if(pos == 0) {
-			len = s.length + len;
-		} else {
-			return "";
-		}
-	}
-	return s.substr(pos,len);
-};
-HxOverrides.now = function() {
-	return Date.now();
-};
 var MainMinimal = function() { };
 MainMinimal.main = function() {
 	var simple = function() {
@@ -36,155 +13,6 @@ MainMinimal.main = function() {
 		return Promise.resolve(null);
 	};
 	console.log("MainMinimal.hx:15:","Anonymous async function created successfully");
-};
-var StringTools = function() { };
-StringTools.isSpace = function(s,pos) {
-	if(pos < 0 || pos >= s.length) {
-		return false;
-	}
-	var c = HxOverrides.cca(s,pos);
-	if(!(c > 8 && c < 14)) {
-		return c == 32;
-	} else {
-		return true;
-	}
-};
-StringTools.ltrim = function(s) {
-	var l = s.length;
-	var r = 0;
-	while(r < l && StringTools.isSpace(s,r)) ++r;
-	if(r > 0) {
-		return HxOverrides.substr(s,r,l - r);
-	} else {
-		return s;
-	}
-};
-StringTools.rtrim = function(s) {
-	var l = s.length;
-	var r = 0;
-	while(r < l && StringTools.isSpace(s,l - r - 1)) ++r;
-	if(r > 0) {
-		return HxOverrides.substr(s,0,l - r);
-	} else {
-		return s;
-	}
-};
-StringTools.trim = function(s) {
-	return StringTools.ltrim(StringTools.rtrim(s));
-};
-StringTools.urlEncode = function(s) {
-	return s;
-};
-StringTools.urlDecode = function(s) {
-	return s;
-};
-StringTools.htmlEscape = function(s,quotes) {
-	s = s.split("&").join("&amp;");
-	s = s.split("<").join("&lt;");
-	s = s.split(">").join("&gt;");
-	if(quotes) {
-		s = s.split("\"").join("&quot;");
-		s = s.split("'").join("&#039;");
-	}
-	return s;
-};
-StringTools.htmlUnescape = function(s) {
-	return s.split("&gt;").join(">").split("&lt;").join("<").split("&quot;").join("\"").split("&#039;").join("'").split("&amp;").join("&");
-};
-StringTools.startsWith = function(s,start) {
-	if(s.length >= start.length) {
-		return HxOverrides.substr(s,0,start.length) == start;
-	} else {
-		return false;
-	}
-};
-StringTools.endsWith = function(s,end) {
-	var elen = end.length;
-	var slen = s.length;
-	if(slen >= elen) {
-		return HxOverrides.substr(s,slen - elen,elen) == end;
-	} else {
-		return false;
-	}
-};
-StringTools.replace = function(s,sub,by) {
-	return s.split(sub).join(by);
-};
-StringTools.lpad = function(s,c,l) {
-	if(c.length <= 0) {
-		return s;
-	}
-	var buf = "";
-	l -= s.length;
-	while(buf.length < l) buf += c;
-	return buf + s;
-};
-StringTools.rpad = function(s,c,l) {
-	if(c.length <= 0) {
-		return s;
-	}
-	var buf = s;
-	while(buf.length < l) buf += c;
-	return buf;
-};
-StringTools.contains = function(s,value) {
-	return s.indexOf(value) != -1;
-};
-StringTools.fastCodeAt = function(s,index) {
-	return HxOverrides.cca(s,index);
-};
-StringTools.unsafeCodeAt = function(s,index) {
-	return HxOverrides.cca(s,index);
-};
-StringTools.isEof = function(c) {
-	return false;
-};
-StringTools.hex = function(n,digits) {
-	var s = "";
-	var hexChars = "0123456789ABCDEF";
-	if(n < 0) {
-		n = -n;
-		s = "-";
-	}
-	if(n == 0) {
-		s = "0";
-	} else {
-		var result = "";
-		while(n > 0) {
-			result = hexChars.charAt(n & 15) + result;
-			n >>>= 4;
-		}
-		s += result;
-	}
-	if(digits != null) {
-		while(s.length < digits) s = "0" + s;
-	}
-	return s;
-};
-StringTools.iterator = function(s) {
-	return new haxe_iterators_StringIterator(s);
-};
-StringTools.keyValueIterator = function(s) {
-	return new haxe_iterators_StringKeyValueIterator(s);
-};
-StringTools.quoteUnixArg = function(argument) {
-	if(argument == "") {
-		return "''";
-	}
-	return "'" + StringTools.replace(argument,"'","'\"'\"'") + "'";
-};
-StringTools.quoteWinArg = function(argument,escapeMetaCharacters) {
-	if(argument.indexOf(" ") != -1 || argument == "") {
-		argument = "\"" + StringTools.replace(argument,"\"","\\\"") + "\"";
-	}
-	return argument;
-};
-StringTools.utf16CodePointAt = function(s,index) {
-	var c = StringTools.fastCodeAt(s,index);
-	if(c >= 55296 && c <= 56319) {
-		c = c - 55296 << 10 | StringTools.fastCodeAt(s,index + 1) & 1023 | 65536;
-	}
-	return c;
 };
 var haxe_Exception = function(message,previous,native) {
 	Error.call(this,message);
@@ -217,11 +45,17 @@ haxe_ValueException.prototype = $extend(haxe_Exception.prototype,{
 		return this.value;
 	}
 });
-var haxe_iterators_StringIterator = function(s) {
-	this.s = s;
+var haxe_iterators_ArrayIterator = function(array) {
+	this.current = 0;
+	this.array = array;
 };
-var haxe_iterators_StringKeyValueIterator = function(s) {
-	this.s = s;
+haxe_iterators_ArrayIterator.prototype = {
+	hasNext: function() {
+		return this.current < this.array.length;
+	}
+	,next: function() {
+		return this.array[this.current++];
+	}
 };
 var reflaxe_js_Async = function() { };
 reflaxe_js_Async.resolve = function(value) {
@@ -247,10 +81,5 @@ reflaxe_js_Async.fromCallback = function(fn) {
 		}
 	});
 };
-if(typeof(performance) != "undefined" ? typeof(performance.now) == "function" : false) {
-	HxOverrides.now = performance.now.bind(performance);
-}
-StringTools.winMetaCharacters = [40,41,37,33,94,34,60,62,38,124];
-StringTools.MIN_SURROGATE_CODE_POINT = 65536;
 MainMinimal.main();
 })({});

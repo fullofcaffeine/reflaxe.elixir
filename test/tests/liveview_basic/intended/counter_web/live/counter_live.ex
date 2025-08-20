@@ -3,10 +3,10 @@ defmodule CounterLive do
   
   import Phoenix.LiveView.Helpers
   import Ecto.Query
-  alias TodoApp.Repo
+  alias App.Repo
   
   use Phoenix.Component
-  import TodoAppWeb.CoreComponents
+  import AppWeb.CoreComponents
   
   @impl true
   @doc "Generated from Haxe mount"

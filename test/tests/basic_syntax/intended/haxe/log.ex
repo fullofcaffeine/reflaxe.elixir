@@ -17,11 +17,30 @@ defmodule Log do
     if (infos == nil), do: str, else: nil
     pstr = infos.file_name <> ":" <> Integer.to_string(infos.line_number)
     if (infos.custom_params != nil) do
-      _g = 0
-      _g = infos.custom_params
-      Enum.map(_g, fn str -> v = Enum.at(_g, _g)
-      _g = _g + 1
-      str = str <> ", " <> Std.string(v) end)
+      _g_counter = 0
+      _g_1 = infos.customParams
+      (
+        loop_helper = fn loop_fn, {g_1, str} ->
+          if (g < g.length) do
+            try do
+              v = Enum.at(g, g)
+      g = g + 1
+      str = str <> ", " <> Std.string(v)
+              loop_fn.(loop_fn, {g_1, str})
+            catch
+              :break -> {g_1, str}
+              :continue -> loop_fn.(loop_fn, {g_1, str})
+            end
+          else
+            {g_1, str}
+          end
+        end
+        {g_1, str} = try do
+          loop_helper.(loop_helper, {nil, nil})
+        catch
+          :break -> {nil, nil}
+        end
+      )
     end
     pstr <> ": " <> str
   end
@@ -46,7 +65,7 @@ defmodule Log do
   """
   @spec trace(term(), Null.t()) :: nil
   def trace(v, infos) do
-    str = Log.formatOutput(v, infos)
+    str = Log.format_output(v, infos)
     Sys.println(str)
   end
 
