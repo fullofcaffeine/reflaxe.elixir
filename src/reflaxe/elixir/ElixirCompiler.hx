@@ -46,6 +46,7 @@ import reflaxe.elixir.helpers.ExUnitCompiler;
 import reflaxe.elixir.helpers.AlgebraicDataTypeCompiler;
 import reflaxe.elixir.helpers.ExpressionCompiler;
 import reflaxe.elixir.ElixirTyper;
+import reflaxe.elixir.helpers.DebugHelper;
 import reflaxe.elixir.PhoenixMapper;
 import reflaxe.elixir.SourceMapWriter;
 
@@ -2414,29 +2415,8 @@ class ElixirCompiler extends DirectToStringCompiler {
                 
             case TIf(econd, eif, eelse):
                 // Track TIf statements for proper compilation
-                var condStr = compileExpression(econd);
-                // Condition processed
-                
-                // ENHANCED DEBUG: Specifically trace TFor patterns within TIf
-                var containsTFor = checkForTForInExpression(eif);
-                var containsReflectFields = checkForReflectFieldsInExpression(eif);
-                if (containsTFor || containsReflectFields) {
-                    // Found TFor or ReflectFields pattern - force block syntax
-                }
-                
-                // Check if this is a temp variable assignment pattern in both branches
-                var tempVarAssignPattern = detectTempVariableAssignmentPattern(eif, eelse);
-                
-                if (tempVarAssignPattern != null) {
-                    // Handle temp variable assignment: if (...), do: temp_var = val1, else: temp_var = val2
-                    // Transform to: temp_var = if (...), do: val1, else: val2
-                    var cond = compileExpression(econd);
-                    var thenValue = extractAssignmentValue(eif);
-                    var elseValue = eelse != null ? extractAssignmentValue(eelse) : "nil";
-                    return '${tempVarAssignPattern.varName} = if ${cond}, do: ${thenValue}, else: ${elseValue}';
-                }
-                
                 var cond = compileExpression(econd);
+                
                 
                 // CRITICAL: Check if the if-body or else-body contains multiple statements
                 // This must be done BEFORE compiling to avoid syntax errors
@@ -2462,7 +2442,17 @@ class ElixirCompiler extends DirectToStringCompiler {
                 var elseExpr = eelse != null ? compileExpression(eelse) : "nil";
                 var hasNewlines = ifExpr.contains("\n") || (elseExpr != "nil" && elseExpr.contains("\n"));
                 
-                // CRITICAL FIX: Also check for Y combinator patterns which start with parenthesis
+                // EXPLANATION: The key insight here is that Elixir has two if syntaxes:
+                //   1. Inline: if condition, do: expression, else: expression
+                //   2. Block:  if condition do...else...end
+                // 
+                // Inline syntax only works for SIMPLE expressions. Multi-line expressions,
+                // function definitions, Y combinators, and complex patterns MUST use block syntax.
+                // The problem we're solving: Y combinator gets generated as part of inline if,
+                // causing syntax like: if (config != nil), do: [Y combinator...], else: nil
+                // This fails because Y combinator spans multiple lines with fn definitions.
+                
+                // CRITICAL FIX: Check for Y combinator patterns which start with parenthesis
                 // or contain anonymous function definitions which indicate complex multi-line code
                 // ALSO check if the expression contains Reflect operations which will be desugared
                 var hasComplexPattern = ifExpr.startsWith("(") || ifExpr.contains("fn ") || 
@@ -2470,14 +2460,22 @@ class ElixirCompiler extends DirectToStringCompiler {
                                        (elseExpr != "nil" && (elseExpr.startsWith("(") || elseExpr.contains("fn ") || 
                                                               elseExpr.contains("Reflect.") || elseExpr.contains("loop_helper")));
                 
-                // ADDITIONAL FIX: Force block syntax if the original AST indicates complexity
-                // even if the compiled result looks simple (this catches partial compilation issues)
+                // CRITICAL FIX: Force block syntax if the original AST indicates complexity
+                // This is the ROOT CAUSE of the Y combinator syntax error:
+                // When the if body contains multiple statements, inline syntax fails
                 var forceBlockSyntax = switch(eif.expr) {
                     case TBlock(exprs) if (exprs.length > 1): true;
                     case TFor(_, _, _): true;
                     case TWhile(_, _, _): true;
                     case _: false;
                 };
+                
+                // ADDITIONAL FIX: Also check if the compiled ifExpr contains multiple statements
+                // This catches cases where a single Haxe statement expands to multiple Elixir statements
+                var hasMultipleStatements = ifExpr.split("\n").length > 1;
+                if (hasMultipleStatements) {
+                    forceBlockSyntax = true;
+                }
                 
                 // Also check eelse for complexity
                 var forceElseBlockSyntax = false;
@@ -2490,18 +2488,24 @@ class ElixirCompiler extends DirectToStringCompiler {
                     };
                 }
                 
-                // Use block syntax if any complexity is detected
-                // CRITICAL: Detect complex patterns that MUST use block syntax
-                // Y combinator patterns, function literals, and complex Elixir constructs cannot use inline syntax
+                // PATTERN DETECTION: Identify complex expressions that CANNOT use inline if syntax
+                // WHY: Elixir's inline if syntax (if cond, do: expr, else: expr) only works for simple expressions.
+                // Complex patterns like Y combinators, function definitions, multi-line expressions, etc. 
+                // will cause syntax errors if forced into inline syntax. We detect these patterns and 
+                // force block syntax (if cond do...else...end) instead.
                 var hasComplexPattern = false;
                 
-                // Check for Y combinator patterns
+                // PATTERN 1: Y Combinator Detection
+                // HOW: Y combinators contain "loop_helper" and "loop_fn" function definitions
+                // WHY: These are recursive anonymous functions spanning multiple lines that cannot be inline
                 if (ifExpr.contains("loop_helper") || ifExpr.contains("loop_fn") ||
                     (elseExpr != null && (elseExpr.contains("loop_helper") || elseExpr.contains("loop_fn")))) {
                     hasComplexPattern = true;
                 }
                 
-                // Check for function literals and complex Elixir constructs
+                // PATTERN 2: Function Literals and Elixir Control Structures
+                // HOW: Look for "fn ", "->", "try do", "catch", "case", etc.
+                // WHY: These are multi-line Elixir constructs that break inline syntax
                 if (ifExpr.contains("fn ") || ifExpr.contains(" ->") || ifExpr.contains("try do") || ifExpr.contains("catch") ||
                     ifExpr.contains("case ") || ifExpr.contains(" do\n") || ifExpr.contains("end\n") ||
                     (elseExpr != null && (elseExpr.contains("fn ") || elseExpr.contains(" ->") || elseExpr.contains("try do") || 
@@ -2509,13 +2513,41 @@ class ElixirCompiler extends DirectToStringCompiler {
                     hasComplexPattern = true;
                 }
                 
-                // Check for parenthesized complex expressions (often indicate nested complex logic)
-                if (ifExpr.startsWith("(") && ifExpr.contains("\n")) {
+                // PATTERN 3: Multi-line Expressions (Most Important)
+                // HOW: Check if compiled expression contains newline characters
+                // WHY: Any expression with newlines cannot fit in inline syntax by definition
+                if (ifExpr.contains("\n") || (elseExpr != null && elseExpr.contains("\n"))) {
                     hasComplexPattern = true;
                 }
                 
-                // CRITICAL: Multi-line expressions MUST use block syntax
-                if (ifExpr.contains("\n") || (elseExpr != null && elseExpr.contains("\n"))) {
+                // DEBUG: Log when we detect simple assignment patterns that might be problematic
+                // GOAL: Find the specific TIf that generates "if (config != nil), do: _g_1 = 0"
+                if (ifExpr.contains("_g_1 = 0") || ifExpr == "_g_1 = 0") {
+                    trace('=== SIMPLE ASSIGNMENT DEBUG ===');
+                    trace('ifExpr: "$ifExpr"');
+                    trace('hasComplexPattern: $hasComplexPattern');
+                    trace('hasNewlines: $hasNewlines');
+                    trace('forceBlockSyntax: $forceBlockSyntax');
+                    trace('Final needsBlockSyntax will be: ${needsBlockSyntax || hasNewlines || hasComplexPattern || forceBlockSyntax || forceElseBlockSyntax || forceCaseArmBlockSyntax}');
+                    trace('Condition: $cond');
+                    trace('================================');
+                }
+                
+                // PATTERN 4: Parenthesized Multi-line Expressions
+                // HOW: Look for expressions starting with "(" and containing newlines
+                // WHY: These are typically complex anonymous function expressions (Y combinators)
+                // EXAMPLE: "(\n  loop_helper = fn loop_fn, {g_1} ->\n    ...\n  end\n)"
+                if (ifExpr.contains("(\n") || (ifExpr.startsWith("(") && ifExpr.contains("\n"))) {
+                    hasComplexPattern = true;
+                }
+                
+                // PATTERN 5: Multiple Statement Sequences
+                // HOW: Check for multi-line expressions containing assignments or Y combinator calls
+                // WHY: Multiple statements indicate a block that was incorrectly compiled as single expression
+                // EXAMPLE: "_g_1 = 0\n_g_1 = Reflect.fields(config)\n(Y combinator...)"
+                var hasMultipleStatements = ifExpr.split("\n").length > 1 && 
+                                          (ifExpr.contains(" = ") || ifExpr.contains("loop_helper"));
+                if (hasMultipleStatements) {
                     hasComplexPattern = true;
                 }
                 
@@ -2529,7 +2561,11 @@ class ElixirCompiler extends DirectToStringCompiler {
                     needsBlockSyntax = true;
                 }
                 
-                if (needsBlockSyntax || hasNewlines || hasComplexPattern || forceBlockSyntax || forceElseBlockSyntax || forceCaseArmBlockSyntax) {
+                // Apply the decision logic for block vs inline syntax
+                var useBlockSyntax = needsBlockSyntax || hasNewlines || hasComplexPattern || forceBlockSyntax || forceElseBlockSyntax || forceCaseArmBlockSyntax;
+                
+                if (useBlockSyntax) {
+                    // Use block syntax for complex expressions
                     var result = 'if ${cond} do\n';
                     result += ifExpr.split("\n").map(line -> line.length > 0 ? "  " + line : line).join("\n") + "\n";
                     if (eelse != null) {
@@ -2557,14 +2593,24 @@ class ElixirCompiler extends DirectToStringCompiler {
                 compileSwitchExpression(e, cases, edef);
                 
             case TFor(tvar, iterExpr, blockExpr):
-                // Debug: Log TFor handling
-                var varName = getOriginalVarName(tvar);
-                
-                // Compile TFor patterns to idiomatic Elixir
-                var iteratorStr = compileExpression(iterExpr);
-                
-                // Compile for-in loops to idiomatic Elixir Enum operations
-                compileForLoop(tvar, iterExpr, blockExpr);
+                /**
+                 * TFor COMPILATION: Transform Haxe for-loops to idiomatic Elixir
+                 * 
+                 * WHY: Haxe for-loops need to be converted to functional Elixir patterns
+                 * - Reflect.fields iterations → Map.merge optimizations  
+                 * - Array iterations → Enum.map/filter/reduce operations
+                 * - Complex patterns → Y combinator recursion as fallback
+                 * 
+                 * HOW: Direct delegation to compileForLoop for optimization detection
+                 * - Pattern detection happens at AST level before string compilation
+                 * - Avoids generating and then re-parsing string representations
+                 * 
+                 * CRITICAL: Must return the result, not just call the function
+                 */
+                #if debug_for_loops
+                    DebugHelper.debugForLoop("TFor compilation in compileExpression", tvar, iterExpr, blockExpr);
+                #end
+                return compileForLoop(tvar, iterExpr, blockExpr);
                 
             case TWhile(econd, ebody, normalWhile):
                 // Process TWhile patterns
@@ -4089,6 +4135,28 @@ class ElixirCompiler extends DirectToStringCompiler {
         // Special case: Check if we're iterating over Reflect.fields
         var isReflectFields = false;
         var targetObject: String = null;
+        
+        /**
+         * DEBUG TRACING: For-loop compilation with Reflect.fields optimization
+         * 
+         * WHY: Investigating why Reflect.fields → Map.merge pattern detection isn't working
+         * - Need to verify if TFor expressions are reaching this function
+         * - Confirm that Reflect.fields expressions are properly detected
+         * - Track the flow of pattern detection logic
+         * 
+         * HOW: Debug infrastructure shows runtime compilation flow
+         * - Traces loop variable names and types
+         * - Shows iterator expression structure (e.g., Reflect.fields calls)
+         * - Displays block expression content for pattern matching
+         * 
+         * ARCHITECTURE: Part of compileForLoop optimization pipeline
+         * - Called from TFor case in compileExpression
+         * - Feeds into pattern detection for Map.merge optimization
+         * - Falls back to Y combinator if patterns don't match
+         */
+        #if debug_for_loops
+        DebugHelper.debugForLoop("For-loop compilation with Reflect.fields optimization", tvar, iterExpr, blockExpr);
+        #end
         switch (iterExpr.expr) {
             case TCall(e, args):
                 switch (e.expr) {
@@ -4276,8 +4344,14 @@ class ElixirCompiler extends DirectToStringCompiler {
         // Check if this is a Reflect.fields iteration pattern
         // The pattern in the problematic code is: _g < g.length or similar variants
         // where g or _g_X contains Reflect.fields result
+        #if debug_patterns
+            DebugHelper.debugPattern("Reflect.fields detection", "Checking TWhile for Reflect.fields pattern", "Analyzing condition and body");
+        #end
         var reflectFieldsPattern = detectReflectFieldsPattern(econd, ebody);
         if (reflectFieldsPattern != null) {
+            #if debug_patterns
+                DebugHelper.debugOptimization("Reflect.fields pattern", "Original TWhile", reflectFieldsPattern, "Detected Reflect.fields iteration");
+            #end
             return reflectFieldsPattern;
         }
         
@@ -4311,12 +4385,47 @@ class ElixirCompiler extends DirectToStringCompiler {
      * Compile Reflect.fields iteration to idiomatic Elixir
      */
     private function compileReflectFieldsIteration(fieldVar: String, sourceObject: String, blockExpr: TypedExpr): String {
+        /**
+         * DEBUG TRACING: Reflect.fields pattern detection for Map.merge optimization
+         * 
+         * WHY: Diagnosing why simple field copying patterns aren't being detected
+         * - Track parameters passed to pattern detection
+         * - Verify blockExpr types and structure
+         * - Identify if pattern detection logic is correct
+         * 
+         * PATTERN EXPECTED: Reflect.setField(target, field, Reflect.field(source, field))
+         * OPTIMIZATION TARGET: Map.merge(target, source)
+         * 
+         * HOW: Debug infrastructure reveals pattern matching process
+         * - Shows the field variable name and source object
+         * - Displays AST structure of the block expression
+         * - Traces whether simple copying pattern is detected
+         * 
+         * ARCHITECTURE: Core of Map.merge optimization detection
+         * - Called when Reflect.fields iteration is confirmed
+         * - Analyzes loop body for simple field assignment patterns
+         * - Returns target object name if pattern matches, null otherwise
+         */
+        #if debug_patterns
+        DebugHelper.debugPattern("Reflect.fields iteration optimization", 
+            "Reflect.setField(target, field, Reflect.field(source, field))", 
+            'fieldVar: $fieldVar, sourceObject: $sourceObject');
+        #end
+        
+        #if debug_ast
+        DebugHelper.debugAST("Block expression for pattern detection", blockExpr);
+        #end
+        
         // Check if this is a simple field copying pattern: Reflect.setField(target, field, Reflect.field(source, field))
         var fieldCopyPattern = detectSimpleFieldCopyPattern(blockExpr, sourceObject, fieldVar);
+        
+        trace('fieldCopyPattern result: $fieldCopyPattern');
         
         if (fieldCopyPattern != null) {
             // Simple field copying can be optimized to Map.merge
             var targetObject = fieldCopyPattern;
+            trace('=== MAP.MERGE OPTIMIZATION APPLIED ===');
+            trace('target: $targetObject, source: $sourceObject');
             return '${targetObject} = Map.merge(${targetObject}, ${sourceObject})';
         }
         
@@ -4334,68 +4443,94 @@ class ElixirCompiler extends DirectToStringCompiler {
      * Returns the target object name if it's a simple copy pattern, null otherwise
      */
     private function detectSimpleFieldCopyPattern(blockExpr: TypedExpr, sourceObject: String, fieldVar: String): Null<String> {
+        #if debug_patterns
+        DebugHelper.debugPattern("Pattern detection analysis", 
+            "Checking block expression structure", 
+            'Analyzing structure for Map.merge optimization');
+        #end
+        
         switch (blockExpr.expr) {
             case TCall(e, args):
+                #if debug_patterns
+                DebugHelper.debugPattern("TCall pattern", "Direct function call", 'Found TCall with ${args.length} args');
+                #end
                 // Check for direct Reflect.setField call
                 return detectReflectSetFieldPattern(e, args, sourceObject, fieldVar);
                 
             case TBlock(exprs):
+                #if debug_patterns
+                DebugHelper.debugPattern("TBlock pattern", "Block expression", 'Found TBlock with ${exprs.length} expressions');
+                #end
                 // If there's only one expression in the block, check if it's a simple setField
                 if (exprs.length == 1) {
                     return detectSimpleFieldCopyPattern(exprs[0], sourceObject, fieldVar);
                 }
-                // For multiple expressions, this is too complex for Map.merge optimization
+                // For multiple expressions, scan through to find a simple Reflect.setField pattern
+                // This handles cases where Haxe generates additional statements (variable assignments, etc.)
+                #if debug_patterns
+                DebugHelper.debugPattern("TBlock analysis", "Multiple expressions", 'Scanning ${exprs.length} expressions for simple field copy pattern');
+                #end
+                for (expr in exprs) {
+                    var result = detectSimpleFieldCopyPattern(expr, sourceObject, fieldVar);
+                    if (result != null) {
+                        #if debug_patterns
+                        DebugHelper.debugPattern("TBlock success", "Found simple pattern", 'Simple field copy found within block: $result');
+                        #end
+                        return result;
+                    }
+                }
+                #if debug_patterns
+                DebugHelper.debugPattern("TBlock complexity", "No simple pattern found", 'No simple field copy pattern found in ${exprs.length} expressions');
+                #end
+                return null;
+                
+            case TVar(tvar, init):
+                /**
+                 * CRITICAL: Handle TVar expressions (variable declarations/assignments).
+                 * 
+                 * CONTEXT: Haxe generates variable assignments in loop bodies like:
+                 * - field = Enum.at(array, index)
+                 * - counter = counter + 1
+                 * These are intermediate statements before the actual Reflect.setField call.
+                 * 
+                 * SOLUTION: TVar expressions are benign for Map.merge pattern detection.
+                 * We should skip them and continue scanning for the Reflect.setField pattern.
+                 * 
+                 * WHY THIS MATTERS: Without handling TVar, the entire pattern detection fails
+                 * even when a valid Reflect.setField pattern exists in the same block.
+                 */
+                #if debug_patterns
+                DebugHelper.debugPattern("TVar pattern", "Variable declaration/assignment", 'TVar ${tvar.name} - skipping as benign intermediate statement');
+                #end
+                // TVar expressions are just intermediate variable assignments
+                // They don't disqualify the pattern, so we return null to continue scanning
                 return null;
                 
             case _:
+                #if debug_patterns
+                DebugHelper.debugPattern("Unsupported pattern", "Unknown expression type", 'Expression type not supported for pattern detection: ${blockExpr.expr.getName()}');
+                #end
                 return null;
         }
     }
     
     /**
-     * Detect Reflect.setField(target, field, Reflect.field(source, field)) pattern
+     * Check if an expression represents a variable that matches the expected name
      */
-    private function detectReflectSetFieldPattern(e: TypedExpr, args: Array<TypedExpr>, sourceObject: String, fieldVar: String): Null<String> {
-        switch (e.expr) {
-            case TField(obj, fa):
-                // Use AST pattern matching instead of compileExpression to avoid infinite loops
-                switch (obj.expr) {
-                    case TTypeExpr(module):
-                        var moduleName = switch (module) {
-                            case TClassDecl(c): c.get().name;
-                            case _: "";
-                        };
-                        if (moduleName == "Reflect") {
-                            switch (fa) {
-                                case FStatic(_, cf):
-                                    if (cf.get().name == "setField" && args.length >= 3) {
-                                        var targetExpr = args[0];
-                                        var fieldExpr = args[1]; 
-                                        var valueExpr = args[2];
-                                        
-                                        // Check if field parameter matches the loop variable using AST
-                                        if (!isMatchingVariable(fieldExpr, fieldVar)) {
-                                            return null; // Field doesn't match loop variable
-                                        }
-                                        
-                                        // Check if value is Reflect.field(sourceObject, fieldVar)
-                                        if (isReflectFieldCall(valueExpr, sourceObject, fieldVar)) {
-                                            // This is the simple copying pattern: Reflect.setField(target, field, Reflect.field(source, field))
-                                            // Return the target variable name for Map.merge optimization
-                                            switch (targetExpr.expr) {
-                                                case TLocal(v): return v.name;
-                                                case _: return null; // Only support simple variable targets for now
-                                            }
-                                        }
-                                    }
-                                case _:
-                            }
-                        }
-                    case _:
-                }
+    private function isMatchingVariable(expr: TypedExpr, expectedName: String): Bool {
+        switch (expr.expr) {
+            case TLocal(v):
+                var actualName = getOriginalVarName(v);
+                #if debug_patterns
+                DebugHelper.debugPattern("isMatchingVariable", "Variable comparison", 'actualName: "$actualName", expectedName: "$expectedName", v.name: "${v.name}", match: ${actualName == expectedName}');
+                #end
+                return actualName == expectedName;
             case _:
+                #if debug_patterns
+                DebugHelper.debugPattern("isMatchingVariable", "Not TLocal", 'Expression is not TLocal, type: ${expr.expr.getName()}');
+                #end
+                return false;
         }
-        return null;
     }
     
     /**
@@ -4404,28 +4539,35 @@ class ElixirCompiler extends DirectToStringCompiler {
     private function isReflectFieldCall(expr: TypedExpr, sourceObject: String, fieldVar: String): Bool {
         switch (expr.expr) {
             case TCall(e, args):
-                switch (e.expr) {
-                    case TField(obj, fa):
-                        // Use AST pattern matching instead of compileExpression to avoid infinite loops
-                        switch (obj.expr) {
-                            case TTypeExpr(module):
-                                var moduleName = switch (module) {
-                                    case TClassDecl(c): c.get().name;
-                                    case _: "";
-                                };
-                                if (moduleName == "Reflect") {
-                                    switch (fa) {
-                                        case FStatic(_, cf):
-                                            if (cf.get().name == "field" && args.length >= 2) {
-                                                // Simple AST-based validation without compilation
-                                                return isMatchingVariable(args[0], sourceObject) && isMatchingVariable(args[1], fieldVar);
-                                            }
-                                        case _:
+                if (args.length >= 2) {
+                    switch (e.expr) {
+                        case TField(obj, fa):
+                            switch (obj.expr) {
+                                case TTypeExpr(module):
+                                    var moduleName = switch (module) {
+                                        case TClassDecl(c): c.get().name;
+                                        case _: "";
+                                    };
+                                    if (moduleName == "Reflect") {
+                                        switch (fa) {
+                                            case FStatic(_, cf):
+                                                if (cf.get().name == "field") {
+                                                    // Check if first arg matches sourceObject
+                                                    var sourceMatches = switch (args[0].expr) {
+                                                        case TLocal(v): getOriginalVarName(v) == sourceObject;
+                                                        case _: false;
+                                                    };
+                                                    // Check if second arg matches fieldVar
+                                                    var fieldMatches = isMatchingVariable(args[1], fieldVar);
+                                                    return sourceMatches && fieldMatches;
+                                                }
+                                            case _:
+                                        }
                                     }
-                                }
-                            case _:
-                        }
-                    case _:
+                                case _:
+                            }
+                        case _:
+                    }
                 }
             case _:
         }
@@ -4433,14 +4575,100 @@ class ElixirCompiler extends DirectToStringCompiler {
     }
     
     /**
-     * Check if a TypedExpr matches a variable name (simple AST check)
+     * Detect Reflect.setField(target, field, Reflect.field(source, field)) pattern
      */
-    private function isMatchingVariable(expr: TypedExpr, varName: String): Bool {
-        switch (expr.expr) {
-            case TLocal(v): return v.name == varName;
-            case TConst(TString(s)): return s == varName;
-            case _: return false;
+    private function detectReflectSetFieldPattern(e: TypedExpr, args: Array<TypedExpr>, sourceObject: String, fieldVar: String): Null<String> {
+        #if debug_patterns
+        DebugHelper.debugPattern("detectReflectSetFieldPattern", "Starting analysis", 'Looking for Reflect.setField pattern with sourceObject: $sourceObject, fieldVar: $fieldVar');
+        #end
+        
+        switch (e.expr) {
+            case TField(obj, fa):
+                #if debug_patterns
+                DebugHelper.debugPattern("detectReflectSetFieldPattern", "TField found", "Checking if this is Reflect module");
+                #end
+                // Use AST pattern matching instead of compileExpression to avoid infinite loops
+                switch (obj.expr) {
+                    case TTypeExpr(module):
+                        var moduleName = switch (module) {
+                            case TClassDecl(c): c.get().name;
+                            case _: "";
+                        };
+                        #if debug_patterns
+                        DebugHelper.debugPattern("detectReflectSetFieldPattern", "Module name", 'Found module: $moduleName');
+                        #end
+                        if (moduleName == "Reflect") {
+                            switch (fa) {
+                                case FStatic(_, cf):
+                                    var methodName = cf.get().name;
+                                    #if debug_patterns
+                                    DebugHelper.debugPattern("detectReflectSetFieldPattern", "Method name", 'Found method: $methodName with ${args.length} args');
+                                    #end
+                                    if (methodName == "setField" && args.length >= 3) {
+                                        var targetExpr = args[0];
+                                        var fieldExpr = args[1]; 
+                                        var valueExpr = args[2];
+                                        
+                                        #if debug_patterns
+                                        DebugHelper.debugPattern("detectReflectSetFieldPattern", "Checking field match", 'Field expr vs fieldVar: $fieldVar');
+                                        #end
+                                        // Check if field parameter matches the loop variable using AST
+                                        if (!isMatchingVariable(fieldExpr, fieldVar)) {
+                                            #if debug_patterns
+                                            DebugHelper.debugPattern("detectReflectSetFieldPattern", "Field mismatch", "Field parameter doesn't match loop variable");
+                                            #end
+                                            return null; // Field doesn't match loop variable
+                                        }
+                                        
+                                        #if debug_patterns
+                                        DebugHelper.debugPattern("detectReflectSetFieldPattern", "Checking value pattern", 'Checking if value is Reflect.field call');
+                                        #end
+                                        // Check if value is Reflect.field(sourceObject, fieldVar)
+                                        if (isReflectFieldCall(valueExpr, sourceObject, fieldVar)) {
+                                            #if debug_patterns
+                                            DebugHelper.debugPattern("detectReflectSetFieldPattern", "Pattern match!", "Found simple field copy pattern");
+                                            #end
+                                            // This is the simple copying pattern: Reflect.setField(target, field, Reflect.field(source, field))
+                                            // Return the target variable name for Map.merge optimization
+                                            switch (targetExpr.expr) {
+                                                case TLocal(v): 
+                                                    #if debug_patterns
+                                                    DebugHelper.debugPattern("detectReflectSetFieldPattern", "Success!", 'Returning target variable: ${v.name}');
+                                                    #end
+                                                    return v.name;
+                                                case _: 
+                                                    #if debug_patterns
+                                                    DebugHelper.debugPattern("detectReflectSetFieldPattern", "Target not variable", "Target is not a simple variable");
+                                                    #end
+                                                    return null; // Only support simple variable targets for now
+                                            }
+                                        } else {
+                                            #if debug_patterns
+                                            DebugHelper.debugPattern("detectReflectSetFieldPattern", "Value pattern mismatch", "Value is not Reflect.field call");
+                                            #end
+                                        }
+                                    }
+                                case _:
+                                    #if debug_patterns
+                                    DebugHelper.debugPattern("detectReflectSetFieldPattern", "Not static method", "Field access is not static");
+                                    #end
+                            }
+                        }
+                    case _:
+                        #if debug_patterns
+                        DebugHelper.debugPattern("detectReflectSetFieldPattern", "Not TTypeExpr", "Object is not a type expression");
+                        #end
+                }
+            case _:
+                #if debug_patterns
+                DebugHelper.debugPattern("detectReflectSetFieldPattern", "Not TField", "Expression is not a field access");
+                #end
         }
+        
+        #if debug_patterns
+        DebugHelper.debugPattern("detectReflectSetFieldPattern", "Pattern not found", "Returning null");
+        #end
+        return null;
     }
     
     /**
@@ -4710,11 +4938,17 @@ class ElixirCompiler extends DirectToStringCompiler {
     
     /**
      * Detect and optimize Reflect.fields iteration patterns
-     * This converts Y combinator patterns to idiomatic Enum.each
+     * 
+     * Detects field copying patterns and delegates to compileReflectFieldsIteration
+     * for proper Map.merge optimization when applicable, or Enum.each for complex patterns.
      */
     private function detectReflectFieldsPattern(econd: TypedExpr, ebody: TypedExpr): Null<String> {
         // Look for patterns where we're iterating over Reflect.fields result
         // The condition is typically: _g < array.length where array = Reflect.fields(obj)
+        
+        #if debug_patterns
+            DebugHelper.debugPattern("detectReflectFieldsPattern", "Starting analysis", "Scanning body for Reflect operations");
+        #end
         
         // First, check if the body contains Reflect.field/setField operations
         var hasReflectOperations = false;
@@ -4731,6 +4965,9 @@ class ElixirCompiler extends DirectToStringCompiler {
                                     var fieldName = cf.get().name;
                                     if (objStr == "Reflect" && (fieldName == "field" || fieldName == "setField")) {
                                         hasReflectOperations = true;
+                                        #if debug_patterns
+                                            DebugHelper.debugPattern("Reflect operation found", fieldName, "Found Reflect." + fieldName + " call");
+                                        #end
                                         // Try to extract the target object from the first argument
                                         if (args.length > 0 && targetObject == null) {
                                             switch (args[0].expr) {
@@ -4762,48 +4999,156 @@ class ElixirCompiler extends DirectToStringCompiler {
         scanForReflect(ebody);
         
         if (!hasReflectOperations) {
+            #if debug_patterns
+                DebugHelper.debugPattern("detectReflectFieldsPattern", "No Reflect operations found", "Returning null");
+            #end
             return null;
         }
+        
+        #if debug_patterns
+            DebugHelper.debugPattern("detectReflectFieldsPattern", "Reflect operations found", "Proceeding with optimization, target: " + targetObject);
+        #end
         
         // Now we know this is a Reflect.fields iteration pattern
         // Generate idiomatic Elixir code using Enum.each
         
-        // Extract the field variable name from the loop body
-        var fieldVarName = "field"; // Default
+        /**
+         * CRITICAL VARIABLE NAME EXTRACTION:
+         * 
+         * PROBLEM: Haxe compiler transforms variable names during AST processing.
+         * A for-loop like `for (field in Reflect.fields(config))` becomes:
+         * - Original source: variable named "field" 
+         * - Haxe AST: variable renamed to "k", "k3", etc.
+         * - Pattern matching fails because we search for "field" but AST contains "k"
+         * 
+         * SOLUTION: Extract actual variable names from AST patterns instead of hardcoding.
+         * Multiple extraction strategies to handle different AST transformations:
+         * 
+         * 1. Array access patterns: field = array[index] where index is our variable
+         * 2. Reflect.setField calls: Reflect.setField(target, fieldVar, value) where fieldVar is second arg
+         * 3. General TLocal variables: Any variable found (fallback)
+         * 
+         * WHY THIS MATTERS: The variable name is used later in detectReflectSetFieldPattern
+         * for matching. If names don't match, Map.merge optimization fails and we get
+         * Y combinator patterns instead of clean Map.merge(target, source).
+         */
+        var fieldVarName = "field"; // Default - will be replaced with actual AST variable name
         var fieldsVarName = "_fields"; // Default for the fields array
         
-        // Look for the pattern where we access array elements
+        #if debug_patterns
+        DebugHelper.debugPattern("Variable extraction", "Starting extraction", 'Initial fieldVarName: "$fieldVarName"');
+        #end
+        
+        /**
+         * Comprehensive variable name extraction from AST patterns.
+         * 
+         * This function handles the complexity of Haxe's variable renaming during compilation.
+         * It searches for multiple patterns to reliably extract the actual variable name
+         * that will be used in pattern matching later.
+         */
         function findArrayAccess(expr: TypedExpr): Void {
             switch (expr.expr) {
                 case TArray(arr, index):
-                    // This is array[index] access - the array is likely our fields
+                    // Pattern: array[index] where index could be our loop variable
+                    // Haxe often transforms field access to array indexing
                     var arrStr = compileExpression(arr);
                     if (arrStr != null && (arrStr.contains("g") || arrStr.contains("_g"))) {
                         fieldsVarName = arrStr;
+                        #if debug_patterns
+                        DebugHelper.debugPattern("Variable extraction", "Found fields array", 'fieldsVarName: "$fieldsVarName"');
+                        #end
                     }
+                    
+                    // CRITICAL: Extract the index variable - this is often the renamed loop variable
+                    switch (index.expr) {
+                        case TLocal(v):
+                            var extractedName = getOriginalVarName(v);
+                            fieldVarName = extractedName;
+                            #if debug_patterns
+                            DebugHelper.debugPattern("Variable extraction", "Found array index variable", 'fieldVarName: "$fieldVarName", v.name: "${v.name}"');
+                            #end
+                        case _:
+                            #if debug_patterns
+                            DebugHelper.debugPattern("Variable extraction", "Array index not TLocal", 'Index type: ${index.expr.getName()}');
+                            #end
+                    }
+                    
                 case TLocal(v):
+                    // Pattern: Direct variable usage - capture any variable we find
                     var name = getOriginalVarName(v);
-                    if (name == "field") {
+                    if (fieldVarName == "field") { // Only update if we haven't found a better candidate
                         fieldVarName = name;
+                        #if debug_patterns
+                        DebugHelper.debugPattern("Variable extraction", "Found TLocal variable (fallback)", 'fieldVarName: "$fieldVarName", v.name: "${v.name}"');
+                        #end
                     }
+                    
                 case TBlock(exprs):
+                    // Recursively search block expressions
                     for (e in exprs) findArrayAccess(e);
+                    
+                case TCall(e, args):
+                    // Pattern: Reflect.setField(target, fieldVar, value)
+                    // The second argument (args[1]) is our field variable - most reliable extraction method
+                    switch (e.expr) {
+                        case TField(obj, fa):
+                            switch (obj.expr) {
+                                case TTypeExpr(module):
+                                    var moduleName = switch (module) {
+                                        case TClassDecl(c): c.get().name;
+                                        case _: "";
+                                    };
+                                    if (moduleName == "Reflect") {
+                                        switch (fa) {
+                                            case FStatic(_, cf):
+                                                if (cf.get().name == "setField" && args.length >= 2) {
+                                                    // CRITICAL: Second argument is the field variable in setField calls
+                                                    // This is the most reliable way to extract the actual variable name
+                                                    switch (args[1].expr) {
+                                                        case TLocal(v):
+                                                            var extractedName = getOriginalVarName(v);
+                                                            fieldVarName = extractedName;
+                                                            #if debug_patterns
+                                                            DebugHelper.debugPattern("Variable extraction", "Found field variable in Reflect.setField (RELIABLE)", 'fieldVarName: "$fieldVarName", v.name: "${v.name}"');
+                                                            #end
+                                                        case _:
+                                                            #if debug_patterns
+                                                            DebugHelper.debugPattern("Variable extraction", "Reflect.setField field arg not TLocal", 'Field arg type: ${args[1].expr.getName()}');
+                                                            #end
+                                                    }
+                                                }
+                                            case _:
+                                        }
+                                    }
+                                case _:
+                            }
+                        case _:
+                    }
+                    // Continue searching in call arguments
+                    for (arg in args) findArrayAccess(arg);
+                    
                 case _:
+                    // Continue searching in sub-expressions if applicable
             }
         }
         
         findArrayAccess(ebody);
         
-        // Transform the loop body to work with Enum.each
-        var transformedBody = transformReflectFieldsBody(ebody, targetObject, fieldVarName);
+        #if debug_patterns
+        DebugHelper.debugPattern("Variable extraction", "Extraction complete", 'Final fieldVarName: "$fieldVarName", fieldsVarName: "$fieldsVarName"');
+        #end
         
-        // Generate the optimized Elixir code
+        /**
+         * CRITICAL: Now that we have the correct variable name from the AST,
+         * pass it to compileReflectFieldsIteration which will use it in detectReflectSetFieldPattern.
+         * This should fix the variable name mismatch that was causing pattern detection to fail.
+         */
+        // Use the existing compileReflectFieldsIteration for proper Map.merge optimization
         if (targetObject != null) {
-            return 'if ${targetObject} != nil do\n' +
-                   '  Enum.each(Map.keys(${targetObject}), fn ${NamingHelper.toSnakeCase(fieldVarName)} ->\n' +
-                   '    ${transformedBody}\n' +
-                   '  end)\n' +
-                   'end';
+            #if debug_patterns
+                DebugHelper.debugOptimization("detectReflectFieldsPattern", "Enum.each generation", "compileReflectFieldsIteration call", "Switching to proper Map.merge optimization");
+            #end
+            return compileReflectFieldsIteration(fieldVarName, targetObject, ebody);
         }
         
         // Fallback if we couldn't determine the target object
