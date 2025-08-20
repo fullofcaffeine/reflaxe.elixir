@@ -2492,8 +2492,14 @@ class ElixirCompiler extends DirectToStringCompiler {
                 
                 // Use block syntax if any complexity is detected
                 // Check for Y combinator patterns that require block syntax
-                if (cond == "(config != nil)" && ifExpr.contains("loop_helper")) {
-                    // Y combinator pattern detected - force block syntax
+                if (ifExpr.contains("loop_helper") || (elseExpr != null && elseExpr.contains("loop_helper"))) {
+                    // Y combinator pattern detected in if or else clause - force block syntax to prevent ", else: nil" syntax errors
+                    needsBlockSyntax = true;
+                }
+                
+                // Check for complex expressions that start with parentheses and span multiple lines
+                if (ifExpr.startsWith("(") && ifExpr.split("\n").length > 3) {
+                    // Complex multi-line parenthesized expression - use block syntax for safety
                     needsBlockSyntax = true;
                 }
                 
@@ -8671,6 +8677,7 @@ class ElixirCompiler extends DirectToStringCompiler {
      * Looks for patterns like: temp_var = actual_value
      */
     private function extractValueFromTempAssignment(expr: TypedExpr, tempVarName: String): Null<String> {
+        if (expr == null) return null;
         return switch (expr.expr) {
             case TBinop(OpAssign, lhs, rhs):
                 // Check if left side is our temp variable

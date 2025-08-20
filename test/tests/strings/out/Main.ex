@@ -34,7 +34,7 @@ defmodule Main do
     Log.trace("Person: " <> person_name <> " is " <> Integer.to_string(person_age) <> " years old", %{"fileName" => "Main.hx", "lineNumber" => 43, "className" => "Main", "methodName" => "stringInterpolation"})
     items = ["apple", "banana", "orange"]
     Log.trace("Items: " <> Enum.join(items, ", "), %{"fileName" => "Main.hx", "lineNumber" => 47, "className" => "Main", "methodName" => "stringInterpolation"})
-    Log.trace("First item: " <> String.upcase(Enum.at(items, 0)), %{"fileName" => "Main.hx", "lineNumber" => 48, "className" => "Main", "methodName" => "stringInterpolation"})
+    Log.trace("First item: " <> Enum.at(items, 0).to_upper_case(), %{"fileName" => "Main.hx", "lineNumber" => 48, "className" => "Main", "methodName" => "stringInterpolation"})
   end
 
   @doc "Function string_methods"
@@ -42,15 +42,15 @@ defmodule Main do
   def string_methods() do
     str = "  Hello, World!  "
     Log.trace("Trimmed: \"" <> StringTools.trim(str) <> "\"", %{"fileName" => "Main.hx", "lineNumber" => 56, "className" => "Main", "methodName" => "stringMethods"})
-    Log.trace("Upper: " <> String.upcase(str), %{"fileName" => "Main.hx", "lineNumber" => 59, "className" => "Main", "methodName" => "stringMethods"})
-    Log.trace("Lower: " <> String.downcase(str), %{"fileName" => "Main.hx", "lineNumber" => 60, "className" => "Main", "methodName" => "stringMethods"})
+    Log.trace("Upper: " <> str.to_upper_case(), %{"fileName" => "Main.hx", "lineNumber" => 59, "className" => "Main", "methodName" => "stringMethods"})
+    Log.trace("Lower: " <> str.to_lower_case(), %{"fileName" => "Main.hx", "lineNumber" => 60, "className" => "Main", "methodName" => "stringMethods"})
     text = "Hello, World!"
     Log.trace("Substring(0, 5): " <> String.slice(text, 0, 5), %{"fileName" => "Main.hx", "lineNumber" => 64, "className" => "Main", "methodName" => "stringMethods"})
     Log.trace("Substr(7, 5): " <> String.slice(text, 7, 5), %{"fileName" => "Main.hx", "lineNumber" => 65, "className" => "Main", "methodName" => "stringMethods"})
-    Log.trace("Char at 0: " <> String.at(text, 0), %{"fileName" => "Main.hx", "lineNumber" => 68, "className" => "Main", "methodName" => "stringMethods"})
-    Log.trace("Char code at 0: " <> Kernel.inspect(case String.at(text, 0) do nil -> nil; c -> :binary.first(c) end), %{"fileName" => "Main.hx", "lineNumber" => 69, "className" => "Main", "methodName" => "stringMethods"})
-    Log.trace("Index of \"World\": " <> Integer.to_string(case :binary.match(text, "World") do {pos, _} -> pos; :nomatch -> -1 end), %{"fileName" => "Main.hx", "lineNumber" => 72, "className" => "Main", "methodName" => "stringMethods"})
-    Log.trace("Last index of \"o\": " <> Integer.to_string(text.lastIndexOf("o")), %{"fileName" => "Main.hx", "lineNumber" => 73, "className" => "Main", "methodName" => "stringMethods"})
+    Log.trace("Char at 0: " <> text.char_at(0), %{"fileName" => "Main.hx", "lineNumber" => 68, "className" => "Main", "methodName" => "stringMethods"})
+    Log.trace("Char code at 0: " <> Kernel.inspect(text.char_code_at(0)), %{"fileName" => "Main.hx", "lineNumber" => 69, "className" => "Main", "methodName" => "stringMethods"})
+    Log.trace("Index of \"World\": " <> Integer.to_string(text.index_of("World")), %{"fileName" => "Main.hx", "lineNumber" => 72, "className" => "Main", "methodName" => "stringMethods"})
+    Log.trace("Last index of \"o\": " <> Integer.to_string(text.last_index_of("o")), %{"fileName" => "Main.hx", "lineNumber" => 73, "className" => "Main", "methodName" => "stringMethods"})
     parts = String.split(text, ", ")
     Log.trace("Split parts: " <> Std.string(parts), %{"fileName" => "Main.hx", "lineNumber" => 77, "className" => "Main", "methodName" => "stringMethods"})
     joined = Enum.join(parts, " - ")
@@ -69,7 +69,7 @@ defmodule Main do
     Log.trace("str1 == str3: " <> Std.string(str1 == str3), %{"fileName" => "Main.hx", "lineNumber" => 94, "className" => "Main", "methodName" => "stringComparison"})
     Log.trace("str1 == str2: " <> Std.string(str1 == str2), %{"fileName" => "Main.hx", "lineNumber" => 95, "className" => "Main", "methodName" => "stringComparison"})
     if (str1 < str4), do: Log.trace("" <> str1 <> " comes before " <> str4, %{"fileName" => "Main.hx", "lineNumber" => 99, "className" => "Main", "methodName" => "stringComparison"}), else: nil
-    if (String.downcase(str1) == String.downcase(str2)), do: Log.trace("" <> str1 <> " and " <> str2 <> " are equal (case-insensitive)", %{"fileName" => "Main.hx", "lineNumber" => 104, "className" => "Main", "methodName" => "stringComparison"}), else: nil
+    if (str1.to_lower_case() == str2.to_lower_case()), do: Log.trace("" <> str1 <> " and " <> str2 <> " are equal (case-insensitive)", %{"fileName" => "Main.hx", "lineNumber" => 104, "className" => "Main", "methodName" => "stringComparison"}), else: nil
   end
 
   @doc "Function string_building"
@@ -107,8 +107,8 @@ defmodule Main do
         if (all_numbers.match(text)) do
           try do
             numbers ++ [all_numbers.matched(0)]
-          text = all_numbers.matchedRight()
-          loop_fn.({all_numbers.matchedRight()})
+          text = all_numbers.matched_right()
+          loop_fn.({all_numbers.matched_right()})
             loop_fn.(loop_fn, {text})
           catch
             :break -> {text}
@@ -168,21 +168,21 @@ defmodule Main do
   @spec main() :: nil
   def main() do
     Log.trace("=== String Basics ===", %{"fileName" => "Main.hx", "lineNumber" => 204, "className" => "Main", "methodName" => "main"})
-    Main.stringBasics()
+    Main.string_basics()
     Log.trace("\n=== String Interpolation ===", %{"fileName" => "Main.hx", "lineNumber" => 207, "className" => "Main", "methodName" => "main"})
-    Main.stringInterpolation()
+    Main.string_interpolation()
     Log.trace("\n=== String Methods ===", %{"fileName" => "Main.hx", "lineNumber" => 210, "className" => "Main", "methodName" => "main"})
-    Main.stringMethods()
+    Main.string_methods()
     Log.trace("\n=== String Comparison ===", %{"fileName" => "Main.hx", "lineNumber" => 213, "className" => "Main", "methodName" => "main"})
-    Main.stringComparison()
+    Main.string_comparison()
     Log.trace("\n=== String Building ===", %{"fileName" => "Main.hx", "lineNumber" => 216, "className" => "Main", "methodName" => "main"})
-    Main.stringBuilding()
+    Main.string_building()
     Log.trace("\n=== Regex Operations ===", %{"fileName" => "Main.hx", "lineNumber" => 219, "className" => "Main", "methodName" => "main"})
-    Main.regexOperations()
+    Main.regex_operations()
     Log.trace("\n=== String Formatting ===", %{"fileName" => "Main.hx", "lineNumber" => 222, "className" => "Main", "methodName" => "main"})
-    Main.stringFormatting()
+    Main.string_formatting()
     Log.trace("\n=== Unicode Strings ===", %{"fileName" => "Main.hx", "lineNumber" => 225, "className" => "Main", "methodName" => "main"})
-    Main.unicodeStrings()
+    Main.unicode_strings()
   end
 
 end

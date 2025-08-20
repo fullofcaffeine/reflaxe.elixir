@@ -23,17 +23,17 @@ defmodule TodoAppWeb.UserLive do
     temp_result = nil
     case (event) do
       "cancel" ->
-        temp_result = __MODULE__.handleCancel(socket)
+        temp_result = __MODULE__.handle_cancel(socket)
       "delete_user" ->
-        temp_result = __MODULE__.handleDeleteUser(params, socket)
+        temp_result = __MODULE__.handle_delete_user(params, socket)
       "edit_user" ->
-        temp_result = __MODULE__.handleEditUser(params, socket)
+        temp_result = __MODULE__.handle_edit_user(params, socket)
       "new_user" ->
-        temp_result = __MODULE__.handleNewUser(params, socket)
+        temp_result = __MODULE__.handle_new_user(params, socket)
       "save_user" ->
-        temp_result = __MODULE__.handleSaveUser(params, socket)
+        temp_result = __MODULE__.handle_save_user(params, socket)
       "search" ->
-        temp_result = __MODULE__.handleSearch(params, socket)
+        temp_result = __MODULE__.handle_search(params, socket)
       _ ->
         temp_result = %{"status" => "noreply", "socket" => socket}
     end

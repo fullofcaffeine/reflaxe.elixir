@@ -64,7 +64,7 @@ defmodule Flash do
   """
   @spec validation_error(String.t(), term()) :: FlashMessage.t()
   def validation_error(message, changeset) do
-    errors = Flash.extractChangesetErrors(changeset)
+    errors = Flash.extract_changeset_errors(changeset)
     %{"type" => :error, "message" => message, "details" => errors, "title" => "Validation Failed", "dismissible" => true}
   end
 
@@ -77,12 +77,22 @@ defmodule Flash do
   """
   @spec to_phoenix_flash(FlashMessage.t()) :: term()
   def to_phoenix_flash(flash) do
-    result = %{"type" => FlashTypeTools.toString(flash.type), "message" => flash.message}
-    if (flash.title != nil), do: Reflect.setField(result, "title", flash.title), else: nil
-    if (flash.details != nil), do: Reflect.setField(result, "details", flash.details), else: nil
-    if (flash.dismissible != nil), do: Reflect.setField(result, "dismissible", flash.dismissible), else: nil
-    if (flash.timeout != nil), do: Reflect.setField(result, "timeout", flash.timeout), else: nil
-    if (flash.action != nil), do: Reflect.setField(result, "action", flash.action), else: nil
+    result = %{"type" => FlashTypeTools.to_string(flash.type), "message" => flash.message}
+    if (flash.title != nil) do
+      Reflect.set_field(result, "title", flash.title)
+    end
+    if (flash.details != nil) do
+      Reflect.set_field(result, "details", flash.details)
+    end
+    if (flash.dismissible != nil) do
+      Reflect.set_field(result, "dismissible", flash.dismissible)
+    end
+    if (flash.timeout != nil) do
+      Reflect.set_field(result, "timeout", flash.timeout)
+    end
+    if (flash.action != nil) do
+      Reflect.set_field(result, "action", flash.action)
+    end
     result
   end
 
@@ -95,7 +105,7 @@ defmodule Flash do
   """
   @spec from_phoenix_flash(term()) :: FlashMessage.t()
   def from_phoenix_flash(phoenix_flash) do
-    type = FlashTypeTools.fromString(Reflect.field(phoenix_flash, "type"))
+    type = FlashTypeTools.from_string(Reflect.field(phoenix_flash, "type"))
     message = Reflect.field(phoenix_flash, "message")
     %{"type" => type, "message" => message, "title" => Reflect.field(phoenix_flash, "title"), "details" => Reflect.field(phoenix_flash, "details"), "dismissible" => Reflect.field(phoenix_flash, "dismissible"), "timeout" => Reflect.field(phoenix_flash, "timeout"), "action" => Reflect.field(phoenix_flash, "action")}
   end
@@ -112,36 +122,29 @@ defmodule Flash do
     errors = []
     changeset_errors = Reflect.field(changeset, "errors")
     if (changeset_errors != nil) do
-      g = 0
-      g = Reflect.fields(changeset_errors)
-      (
-        loop_helper = fn loop_fn, {g} ->
-          if (g < g.length) do
-            try do
-              field = Enum.at(g, g)
-            g = g + 1
-            field_errors = Reflect.field(changeset_errors, field)
-            if (Std.isOfType(field_errors, Array)) do
-        g = 0
-        g = field_errors
+      Enum.each(Map.keys(changeset_errors), fn field ->
+        g = g + 1
+          field_errors = Map.get(changeset_errors, field)
+          if (Std.is_of_type(field_errors, Array)) do
+        _g_counter = 0
+        _g_1 = field_errors
         (
-          loop_helper = fn loop_fn, {g} ->
+          loop_helper = fn loop_fn, {g_1} ->
             if (g < g.length) do
               try do
                 error = Enum.at(g, g)
-              g = g + 1
-              errors ++ ["" <> field <> ": " <> Std.string(&Flash.error/3)]
-              loop_fn.({g + 1})
-                loop_fn.(loop_fn, {g})
+        g = g + 1
+        errors.push("" ++ field ++ ": " ++ Std.string(&Flash.error/3))
+                loop_fn.(loop_fn, {g_1})
               catch
-                :break -> {g}
-                :continue -> loop_fn.(loop_fn, {g})
+                :break -> {g_1}
+                :continue -> loop_fn.(loop_fn, {g_1})
               end
             else
-              {g}
+              {g_1}
             end
           end
-          {g} = try do
+          {g_1} = try do
             loop_helper.(loop_helper, {nil})
           catch
             :break -> {nil}
@@ -150,22 +153,7 @@ defmodule Flash do
       else
         errors ++ ["" <> field <> ": " <> field_errors]
       end
-            loop_fn.({g + 1})
-              loop_fn.(loop_fn, {g})
-            catch
-              :break -> {g}
-              :continue -> loop_fn.(loop_fn, {g})
-            end
-          else
-            {g}
-          end
-        end
-        {g} = try do
-          loop_helper.(loop_helper, {nil})
-        catch
-          :break -> {nil}
-        end
-      )
+      end)
     end
     errors
   end

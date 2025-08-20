@@ -1,5 +1,7 @@
 package;
 
+using StringTools;
+
 /**
  * Test ImportOptimizer functionality.
  * This test should generate Elixir imports for detected function usage.

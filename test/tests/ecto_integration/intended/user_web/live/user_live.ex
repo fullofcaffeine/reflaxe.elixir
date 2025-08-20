@@ -3,15 +3,15 @@ defmodule UserLive do
   
   import Phoenix.LiveView.Helpers
   import Ecto.Query
-  alias TodoApp.Repo
+  alias App.Repo
   
   use Phoenix.Component
-  import TodoAppWeb.CoreComponents
+  import AppWeb.CoreComponents
   
   @impl true
   @doc "Generated from Haxe mount"
   def mount(params, session, socket) do
-    __MODULE__.users = Accounts.list_users()
+    __LIVEVIEW_THIS__ = %{__LIVEVIEW_THIS__ | users: Accounts.list_users()}
     %{"ok" => true, "socket" => socket}
   end
 

@@ -469,6 +469,26 @@ This is acceptable - helpers are simpler for our needs while following similar s
 3. Implement external sourcemaps for development
 4. Enable minification + tree-shaking for production
 
+## ⚠️ CRITICAL: Mix Tasks Are Core Infrastructure - NEVER DELETE
+
+**The `/lib/mix/tasks/` directory contains essential Mix task infrastructure that enables Haxe compilation in Mix projects. These files are NOT generated and MUST NOT be deleted.**
+
+### Essential Mix Tasks (Never Delete)
+- **`compile.haxe.ex`** - Core Mix compiler integration that enables `mix compile` to work with Haxe
+- **`haxe.watch.ex`** - File watching for development workflow
+- **`haxe.gen.*.ex`** - Code generation tasks for scaffolding
+
+### Why This Matters
+Without these Mix tasks, the todo-app and other Mix projects CANNOT compile Haxe source code. The `mix compile` command will fail with "The task 'compile.haxe' could not be found."
+
+### If Accidentally Deleted
+Restore from git history:
+```bash
+git show 16a8bec:examples/todo-app/lib/mix/tasks/compile.haxe.ex > lib/mix/tasks/compile.haxe.ex
+```
+
+**These are infrastructure files, not generated output. They are permanent project components.**
+
 ## Haxe-First Philosophy ⚠️ FUNDAMENTAL RULE
 
 **Write EVERYTHING in Haxe unless technically impossible. Type safety everywhere, not just business logic.**

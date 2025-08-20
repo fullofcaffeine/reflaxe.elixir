@@ -128,7 +128,7 @@ defmodule TypeSafeConversions do
     temp_string1 = nil
     if (sort_by != nil), do: temp_string1 = sort_by, else: temp_string1 = if (base != nil), do: base.sort_by, else: "created"
     temp_user = nil
-    if (current_user != nil), do: temp_user = current_user, else: temp_user = if (base != nil), do: base.current_user, else: TypeSafeConversions.createDefaultUser()
+    if (current_user != nil), do: temp_user = current_user, else: temp_user = if (base != nil), do: base.current_user, else: TypeSafeConversions.create_default_user()
     temp_maybe_todo = nil
     if (editing_todo != nil), do: temp_maybe_todo = editing_todo, else: temp_maybe_todo = if (base != nil), do: base.editing_todo, else: nil
     temp_bool = nil
@@ -139,7 +139,7 @@ defmodule TypeSafeConversions do
     if (selected_tags != nil), do: temp_array1 = selected_tags, else: temp_array1 = if (base != nil), do: base.selected_tags, else: []
     assigns = %{"todos" => temp_array, "filter" => temp_string, "sort_by" => temp_string1, "current_user" => temp_user, "editing_todo" => temp_maybe_todo, "show_form" => temp_bool, "search_query" => temp_string2, "selected_tags" => temp_array1, "total_todos" => 0, "completed_todos" => 0, "pending_todos" => 0}
     assigns = %{assigns | total_todos: assigns.todos.length}
-    assigns = %{assigns | completed_todos: TypeSafeConversions.countCompleted(assigns.todos)}
+    assigns = %{assigns | completed_todos: TypeSafeConversions.count_completed(assigns.todos)}
     assigns = %{assigns | pending_todos: assigns.total_todos - assigns.completed_todos}
     assigns
   end
@@ -160,7 +160,7 @@ defmodule TypeSafeConversions do
   @spec count_completed(Array.t()) :: integer()
   def count_completed(todos) do
     count = 0
-    g = 0
+    g_counter = 0
     (
       loop_helper = fn loop_fn, {g, count} ->
         if (g < todos.length) do

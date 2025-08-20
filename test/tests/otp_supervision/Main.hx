@@ -1,6 +1,6 @@
 package;
 
-import elixir.Supervisor;
+import elixir.otp.Supervisor;
 import elixir.Task;
 import elixir.TaskSupervisor;
 import elixir.GenServer;

@@ -1,15 +1,10 @@
 {
 	"filesGenerated": [
-		"haxe_CallStack.ex",
+		"haxe/stack_item.ex",
 		"counter_web/live/counter_live.ex",
-		"Type.ex",
-		"StdTypes.ex",
-		"EnumValue.ex",
-		"Enum.ex",
-		"Class.ex",
-		"Any.ex"
+		"value_type.ex"
 	],
-	"id": 1,
+	"id": 18,
 	"wasCached": false,
 	"version": 1
 }

@@ -22,7 +22,7 @@ defmodule Main do
           temp_result = "negative"
         else
           n = value
-          if (n > 100), do: temp_result = "large", else: temp_result = "other"
+          temp_result = if (n > 100), do: "large", else: "other"
         end
     end
     temp_result
@@ -35,40 +35,40 @@ defmodule Main do
   @spec process_array(Array.t()) :: String.t()
   def process_array(arr) do
     temp_result = nil
-    case (length(arr)) do
+    case (arr.length) do
       0 ->
         temp_result = "empty"
       1 ->
-        _g = Enum.at(arr, 0)
-        x = _g
+        g = Enum.at(arr, 0)
+        x = g
         temp_result = "single: " <> Integer.to_string(x)
       2 ->
-        _g = Enum.at(arr, 0)
-        _g = Enum.at(arr, 1)
-        x = _g
-        y = _g
-        temp_result = "pair: " <> Integer.to_string(x) <> "," <> Integer.to_string(y)
+        _g_1 = Enum.at(arr, 0)
+        _g_1 = Enum.at(arr, 1)
+        x = _g_1
+        y = _g_1
+        temp_result = "pair: " ++ x ++ "," ++ y
       3 ->
-        _g = Enum.at(arr, 0)
-        _g = Enum.at(arr, 1)
-        _g = Enum.at(arr, 2)
-        x = _g
-        y = _g
-        z = _g
-        temp_result = "triple: " <> Integer.to_string(x) <> "," <> Integer.to_string(y) <> "," <> Integer.to_string(z)
+        _g_1 = Enum.at(arr, 0)
+        _g_1 = Enum.at(arr, 1)
+        _g_2 = Enum.at(arr, 2)
+        x = _g_2
+        y = _g_2
+        z = _g_2
+        temp_result = "triple: " ++ x ++ "," ++ y ++ "," ++ z
       4 ->
-        _g = Enum.at(arr, 0)
-        _g = Enum.at(arr, 1)
-        _g = Enum.at(arr, 2)
-        _g = Enum.at(arr, 3)
-        first = _g
-        second = _g
-        third = _g
-        fourth = _g
-        temp_result = "quad: " <> Integer.to_string(first) <> "," <> Integer.to_string(second) <> "," <> Integer.to_string(third) <> "," <> Integer.to_string(fourth)
+        _g_1 = Enum.at(arr, 0)
+        _g_1 = Enum.at(arr, 1)
+        _g_2 = Enum.at(arr, 2)
+        _g_3 = Enum.at(arr, 3)
+        first = _g_3
+        second = _g_3
+        third = _g_3
+        fourth = _g_3
+        temp_result = "quad: " ++ first ++ "," ++ second ++ "," ++ third ++ "," ++ fourth
       _ ->
         a = arr
-        if (length(a) > 4), do: temp_result = "many: " <> Integer.to_string(length(a)) <> " elements", else: temp_result = "unknown"
+        temp_result = if (a.length > 4), do: "many: " <> Integer.to_string(a.length) <> " elements", else: "unknown"
     end
     temp_result
   end
@@ -89,15 +89,15 @@ defmodule Main do
         temp_result = "greeting"
       _ ->
         s = str
-        if (String.length(s) == 1) do
+        if (s.length == 1) do
           temp_result = "single char"
         else
           s = str
-          if (String.length(s) > 10 && String.length(s) <= 20) do
+          if (s.length > 10 && s.length <= 20) do
             temp_result = "medium"
           else
             s = str
-            if (String.length(s) > 20), do: temp_result = "long", else: temp_result = "other"
+            temp_result = if (s.length > 20), do: "long", else: "other"
           end
         end
     end
@@ -139,7 +139,7 @@ defmodule Main do
                   temp_result = "small negative"
                 else
                   x = n
-                  if (x < -10), do: temp_result = "large negative", else: temp_result = "unknown"
+                  temp_result = if (x < -10), do: "large negative", else: "unknown"
                 end
               end
             end
@@ -157,7 +157,7 @@ defmodule Main do
   @spec match_flags(boolean(), boolean(), boolean()) :: String.t()
   def match_flags(active, verified, premium) do
     temp_result = nil
-    if (active), do: if (verified), do: if (premium), do: temp_result = "full access", else: temp_result = "verified user", else: if (premium), do: temp_result = "unverified premium", else: temp_result = "basic user", else: temp_result = "inactive"
+    if (active), do: if (verified), do: temp_result = if (premium), do: "full access", else: "verified user", else: temp_result = if (premium), do: "unverified premium", else: "basic user", else: temp_result = "inactive"
     temp_result
   end
 
@@ -168,82 +168,62 @@ defmodule Main do
   @spec match_matrix(Array.t()) :: String.t()
   def match_matrix(matrix) do
     temp_result = nil
-    case (length(matrix)) do
+    case (matrix.length) do
       0 ->
         temp_result = "empty matrix"
       1 ->
-        _g = Enum.at(matrix, 0)
-        if (length(_g) == 1) do
-          _g = Enum.at(_g, 0)
-          x = _g
+        g = Enum.at(matrix, 0)
+        if (g.length == 1) do
+          g = Enum.at(g, 0)
+          x = g
           temp_result = "single element: " <> Integer.to_string(x)
         else
           m = matrix
-          if (length(m) == length(Enum.at(m, 0))), do: temp_result = "square matrix " <> Integer.to_string(length(m)) <> "x" <> Integer.to_string(length(m)), else: temp_result = "non-square matrix"
+          temp_result = if (m.length == Enum.at(m, 0).length), do: "square matrix " <> Integer.to_string(m.length) <> "x" <> Integer.to_string(m.length), else: "non-square matrix"
         end
       2 ->
-        _g = Enum.at(matrix, 0)
-        _g = Enum.at(matrix, 1)
-        if (length(_g) == 2) do
-          _g = Enum.at(_g, 0)
-          _g = Enum.at(_g, 1)
-          if (length(_g) == 2) do
-            _g = Enum.at(_g, 0)
-            _g = Enum.at(_g, 1)
-            c = _g
-            d = _g
-            b = _g
-            a = _g
-            temp_result = "2x2 matrix: [[" <> Integer.to_string(a) <> "," <> Integer.to_string(b) <> "],[" <> Integer.to_string(c) <> "," <> Integer.to_string(d) <> "]]"
-          else
-            m = matrix
-            if (length(m) == length(Enum.at(m, 0))), do: temp_result = "square matrix " <> Integer.to_string(length(m)) <> "x" <> Integer.to_string(length(m)), else: temp_result = "non-square matrix"
-          end
-        else
-          m = matrix
-          if (length(m) == length(Enum.at(m, 0))), do: temp_result = "square matrix " <> Integer.to_string(length(m)) <> "x" <> Integer.to_string(length(m)), else: temp_result = "non-square matrix"
-        end
+        _g_1 = Enum.at(matrix, 0)
+        _g_1 = Enum.at(matrix, 1)
+        if (g.length == 2), do: _g_1 = Enum.at(g, 0)
+        _g_1 = Enum.at(g, 1)
+        if (g.length == 2), do: _g_1 = Enum.at(g, 0)
+        _g_1 = Enum.at(g, 1)
+        c = _g_1
+        d = _g_1
+        b = _g_1
+        a = _g_1
+        temp_result = "2x2 matrix: [[" ++ a ++ "," ++ b ++ "],[" ++ c ++ "," ++ d ++ "]]", else: m = matrix
+        if (m.length == Enum.at(m, 0).length), do: temp_result = "square matrix " ++ Enum.count(m) ++ "x" ++ Enum.count(m), else: temp_result = "non-square matrix", else: m = matrix
+        if (m.length == Enum.at(m, 0).length), do: temp_result = "square matrix " ++ Enum.count(m) ++ "x" ++ Enum.count(m), else: temp_result = "non-square matrix"
       3 ->
-        _g = Enum.at(matrix, 0)
-        _g = Enum.at(matrix, 1)
-        _g = Enum.at(matrix, 2)
-        if (length(_g) == 3) do
-          Enum.at(_g, 0)
-          Enum.at(_g, 1)
-          Enum.at(_g, 2)
-          if (length(_g) == 3) do
-            Enum.at(_g, 0)
-            Enum.at(_g, 1)
-            Enum.at(_g, 2)
-            if (length(_g) == 3) do
-              Enum.at(_g, 0)
-              Enum.at(_g, 1)
-              Enum.at(_g, 2)
-              _g
-              _g
-              _g
-              _g
-              _g
-              _g
-              _g
-              _g
-              _g
-              temp_result = "3x3 matrix"
-            else
-              m = matrix
-              if (length(m) == length(Enum.at(m, 0))), do: temp_result = "square matrix " <> Integer.to_string(length(m)) <> "x" <> Integer.to_string(length(m)), else: temp_result = "non-square matrix"
-            end
-          else
-            m = matrix
-            if (length(m) == length(Enum.at(m, 0))), do: temp_result = "square matrix " <> Integer.to_string(length(m)) <> "x" <> Integer.to_string(length(m)), else: temp_result = "non-square matrix"
-          end
-        else
-          m = matrix
-          if (length(m) == length(Enum.at(m, 0))), do: temp_result = "square matrix " <> Integer.to_string(length(m)) <> "x" <> Integer.to_string(length(m)), else: temp_result = "non-square matrix"
-        end
+        _g_1 = Enum.at(matrix, 0)
+        _g_1 = Enum.at(matrix, 1)
+        _g_2 = Enum.at(matrix, 2)
+        if (g.length == 3), do: _g_2 = Enum.at(g, 0)
+        _g_2 = Enum.at(g, 1)
+        _g_2 = Enum.at(g, 2)
+        if (g.length == 3), do: _g_2 = Enum.at(g, 0)
+        _g_2 = Enum.at(g, 1)
+        _g_2 = Enum.at(g, 2)
+        if (g.length == 3), do: _g_2 = Enum.at(g, 0)
+        _g_2 = Enum.at(g, 1)
+        _g_2 = Enum.at(g, 2)
+        g = _g_2
+        h = _g_2
+        i = _g_2
+        a = _g_2
+        b = _g_2
+        c = _g_2
+        f = _g_2
+        e = _g_2
+        d = _g_2
+        temp_result = "3x3 matrix", else: m = matrix
+        if (m.length == Enum.at(m, 0).length), do: temp_result = "square matrix " ++ Enum.count(m) ++ "x" ++ Enum.count(m), else: temp_result = "non-square matrix", else: m = matrix
+        if (m.length == Enum.at(m, 0).length), do: temp_result = "square matrix " ++ Enum.count(m) ++ "x" ++ Enum.count(m), else: temp_result = "non-square matrix", else: m = matrix
+        if (m.length == Enum.at(m, 0).length), do: temp_result = "square matrix " ++ Enum.count(m) ++ "x" ++ Enum.count(m), else: temp_result = "non-square matrix"
       _ ->
         m = matrix
-        if (length(m) == length(Enum.at(m, 0))), do: temp_result = "square matrix " <> Integer.to_string(length(m)) <> "x" <> Integer.to_string(length(m)), else: temp_result = "non-square matrix"
+        temp_result = if (m.length == Enum.at(m, 0).length), do: "square matrix " <> Integer.to_string(m.length) <> "x" <> Integer.to_string(m.length), else: "non-square matrix"
     end
     temp_result
   end
@@ -278,7 +258,7 @@ defmodule Main do
                   temp_result = "adult"
                 else
                   a = age
-                  if (a >= 65), do: temp_result = "senior", else: temp_result = "unknown"
+                  temp_result = if (a >= 65), do: "senior", else: "unknown"
                 end
               end
             end
@@ -296,7 +276,7 @@ defmodule Main do
                   temp_result = "adult"
                 else
                   a = age
-                  if (a >= 65), do: temp_result = "senior", else: temp_result = "unknown"
+                  temp_result = if (a >= 65), do: "senior", else: "unknown"
                 end
               end
             end
@@ -310,7 +290,7 @@ defmodule Main do
                 temp_result = "adult"
               else
                 a = age
-                if (a >= 65), do: temp_result = "senior", else: temp_result = "unknown"
+                temp_result = if (a >= 65), do: "senior", else: "unknown"
               end
             end
         end
@@ -327,23 +307,23 @@ defmodule Main do
   def classify_value(value) do
     temp_result = nil
     v = value
-    if (Std.isOfType(v, String)) do
+    if (Std.is_of_type(v, String)) do
       temp_result = "string: \"" <> Std.string(v) <> "\""
     else
       v = value
-      if (Std.isOfType(v, Int)) do
+      if (Std.is_of_type(v, Int)) do
         temp_result = "integer: " <> Std.string(v)
       else
         v = value
-        if (Std.isOfType(v, Float)) do
+        if (Std.is_of_type(v, Float)) do
           temp_result = "float: " <> Std.string(v)
         else
           v = value
-          if (Std.isOfType(v, Bool)) do
+          if (Std.is_of_type(v, Bool)) do
             temp_result = "boolean: " <> Std.string(v)
           else
             v = value
-            if (Std.isOfType(v, Array)), do: temp_result = "array of length " <> Std.string(length(v)), else: if (value == nil), do: temp_result = "null value", else: temp_result = "unknown type"
+            if (Std.is_of_type(v, Array)), do: temp_result = "array of length " <> Std.string(v.length), else: temp_result = if (value == nil), do: "null value", else: "unknown type"
           end
         end
       end
@@ -361,11 +341,11 @@ defmodule Main do
     secondary_colors = ["orange", "purple", "yellow"]
     temp_result = nil
     c = color
-    if (Enum.find_index(primary_colors, &(&1 == c)) >= 0) do
+    if (primary_colors.index_of(c) >= 0) do
       temp_result = "primary color"
     else
       c = color
-      if (Enum.find_index(secondary_colors, &(&1 == c)) >= 0) do
+      if (secondary_colors.index_of(c) >= 0) do
         temp_result = "secondary color"
       else
         case (color) do
@@ -425,53 +405,53 @@ defmodule Main do
   @spec main() :: nil
   def main() do
     Log.trace("Advanced pattern matching test", %{"fileName" => "Main.hx", "lineNumber" => 201, "className" => "Main", "methodName" => "main"})
-    Log.trace(Main.matchSimpleValue(0), %{"fileName" => "Main.hx", "lineNumber" => 204, "className" => "Main", "methodName" => "main"})
-    Log.trace(Main.matchSimpleValue(42), %{"fileName" => "Main.hx", "lineNumber" => 205, "className" => "Main", "methodName" => "main"})
-    Log.trace(Main.matchSimpleValue(-5), %{"fileName" => "Main.hx", "lineNumber" => 206, "className" => "Main", "methodName" => "main"})
-    Log.trace(Main.matchSimpleValue(150), %{"fileName" => "Main.hx", "lineNumber" => 207, "className" => "Main", "methodName" => "main"})
-    Log.trace(Main.processArray([]), %{"fileName" => "Main.hx", "lineNumber" => 210, "className" => "Main", "methodName" => "main"})
-    Log.trace(Main.processArray([1]), %{"fileName" => "Main.hx", "lineNumber" => 211, "className" => "Main", "methodName" => "main"})
-    Log.trace(Main.processArray([1, 2]), %{"fileName" => "Main.hx", "lineNumber" => 212, "className" => "Main", "methodName" => "main"})
-    Log.trace(Main.processArray([1, 2, 3]), %{"fileName" => "Main.hx", "lineNumber" => 213, "className" => "Main", "methodName" => "main"})
-    Log.trace(Main.processArray([1, 2, 3, 4, 5]), %{"fileName" => "Main.hx", "lineNumber" => 214, "className" => "Main", "methodName" => "main"})
-    Log.trace(Main.classifyString(""), %{"fileName" => "Main.hx", "lineNumber" => 217, "className" => "Main", "methodName" => "main"})
-    Log.trace(Main.classifyString("hello"), %{"fileName" => "Main.hx", "lineNumber" => 218, "className" => "Main", "methodName" => "main"})
-    Log.trace(Main.classifyString("x"), %{"fileName" => "Main.hx", "lineNumber" => 219, "className" => "Main", "methodName" => "main"})
-    Log.trace(Main.classifyString("medium length string"), %{"fileName" => "Main.hx", "lineNumber" => 220, "className" => "Main", "methodName" => "main"})
-    Log.trace(Main.classifyString("this is a very long string that exceeds twenty characters"), %{"fileName" => "Main.hx", "lineNumber" => 221, "className" => "Main", "methodName" => "main"})
-    Log.trace(Main.classifyNumber(0.0), %{"fileName" => "Main.hx", "lineNumber" => 224, "className" => "Main", "methodName" => "main"})
-    Log.trace(Main.classifyNumber(0.5), %{"fileName" => "Main.hx", "lineNumber" => 225, "className" => "Main", "methodName" => "main"})
-    Log.trace(Main.classifyNumber(5.0), %{"fileName" => "Main.hx", "lineNumber" => 226, "className" => "Main", "methodName" => "main"})
-    Log.trace(Main.classifyNumber(50.0), %{"fileName" => "Main.hx", "lineNumber" => 227, "className" => "Main", "methodName" => "main"})
-    Log.trace(Main.classifyNumber(500.0), %{"fileName" => "Main.hx", "lineNumber" => 228, "className" => "Main", "methodName" => "main"})
-    Log.trace(Main.classifyNumber(5000.0), %{"fileName" => "Main.hx", "lineNumber" => 229, "className" => "Main", "methodName" => "main"})
-    Log.trace(Main.classifyNumber(-5.0), %{"fileName" => "Main.hx", "lineNumber" => 230, "className" => "Main", "methodName" => "main"})
-    Log.trace(Main.classifyNumber(-50.0), %{"fileName" => "Main.hx", "lineNumber" => 231, "className" => "Main", "methodName" => "main"})
-    Log.trace(Main.matchFlags(true, true, true), %{"fileName" => "Main.hx", "lineNumber" => 234, "className" => "Main", "methodName" => "main"})
-    Log.trace(Main.matchFlags(true, true, false), %{"fileName" => "Main.hx", "lineNumber" => 235, "className" => "Main", "methodName" => "main"})
-    Log.trace(Main.matchFlags(false, false, false), %{"fileName" => "Main.hx", "lineNumber" => 236, "className" => "Main", "methodName" => "main"})
-    Log.trace(Main.matchMatrix([]), %{"fileName" => "Main.hx", "lineNumber" => 239, "className" => "Main", "methodName" => "main"})
-    Log.trace(Main.matchMatrix([[1]]), %{"fileName" => "Main.hx", "lineNumber" => 240, "className" => "Main", "methodName" => "main"})
-    Log.trace(Main.matchMatrix([[1, 2], [3, 4]]), %{"fileName" => "Main.hx", "lineNumber" => 241, "className" => "Main", "methodName" => "main"})
-    Log.trace(Main.matchMatrix([[1, 2, 3], [4, 5, 6], [7, 8, 9]]), %{"fileName" => "Main.hx", "lineNumber" => 242, "className" => "Main", "methodName" => "main"})
-    Log.trace(Main.validateAge(10, false), %{"fileName" => "Main.hx", "lineNumber" => 245, "className" => "Main", "methodName" => "main"})
-    Log.trace(Main.validateAge(15, true), %{"fileName" => "Main.hx", "lineNumber" => 246, "className" => "Main", "methodName" => "main"})
-    Log.trace(Main.validateAge(25, false), %{"fileName" => "Main.hx", "lineNumber" => 247, "className" => "Main", "methodName" => "main"})
-    Log.trace(Main.validateAge(70, true), %{"fileName" => "Main.hx", "lineNumber" => 248, "className" => "Main", "methodName" => "main"})
-    Log.trace(Main.classifyValue("hello"), %{"fileName" => "Main.hx", "lineNumber" => 251, "className" => "Main", "methodName" => "main"})
-    Log.trace(Main.classifyValue(42), %{"fileName" => "Main.hx", "lineNumber" => 252, "className" => "Main", "methodName" => "main"})
-    Log.trace(Main.classifyValue(3.14), %{"fileName" => "Main.hx", "lineNumber" => 253, "className" => "Main", "methodName" => "main"})
-    Log.trace(Main.classifyValue(true), %{"fileName" => "Main.hx", "lineNumber" => 254, "className" => "Main", "methodName" => "main"})
-    Log.trace(Main.classifyValue([1, 2, 3]), %{"fileName" => "Main.hx", "lineNumber" => 255, "className" => "Main", "methodName" => "main"})
-    Log.trace(Main.classifyValue(nil), %{"fileName" => "Main.hx", "lineNumber" => 256, "className" => "Main", "methodName" => "main"})
-    Log.trace(Main.checkColor("red"), %{"fileName" => "Main.hx", "lineNumber" => 259, "className" => "Main", "methodName" => "main"})
-    Log.trace(Main.checkColor("orange"), %{"fileName" => "Main.hx", "lineNumber" => 260, "className" => "Main", "methodName" => "main"})
-    Log.trace(Main.checkColor("black"), %{"fileName" => "Main.hx", "lineNumber" => 261, "className" => "Main", "methodName" => "main"})
-    Log.trace(Main.checkColor("pink"), %{"fileName" => "Main.hx", "lineNumber" => 262, "className" => "Main", "methodName" => "main"})
-    Log.trace(Main.matchStatus("active"), %{"fileName" => "Main.hx", "lineNumber" => 265, "className" => "Main", "methodName" => "main"})
-    Log.trace(Main.matchStatus("paused"), %{"fileName" => "Main.hx", "lineNumber" => 266, "className" => "Main", "methodName" => "main"})
-    Log.trace(Main.matchStatus("error"), %{"fileName" => "Main.hx", "lineNumber" => 267, "className" => "Main", "methodName" => "main"})
-    Log.trace(Main.matchStatus("unknown"), %{"fileName" => "Main.hx", "lineNumber" => 268, "className" => "Main", "methodName" => "main"})
+    Log.trace(Main.match_simple_value(0), %{"fileName" => "Main.hx", "lineNumber" => 204, "className" => "Main", "methodName" => "main"})
+    Log.trace(Main.match_simple_value(42), %{"fileName" => "Main.hx", "lineNumber" => 205, "className" => "Main", "methodName" => "main"})
+    Log.trace(Main.match_simple_value(-5), %{"fileName" => "Main.hx", "lineNumber" => 206, "className" => "Main", "methodName" => "main"})
+    Log.trace(Main.match_simple_value(150), %{"fileName" => "Main.hx", "lineNumber" => 207, "className" => "Main", "methodName" => "main"})
+    Log.trace(Main.process_array([]), %{"fileName" => "Main.hx", "lineNumber" => 210, "className" => "Main", "methodName" => "main"})
+    Log.trace(Main.process_array([1]), %{"fileName" => "Main.hx", "lineNumber" => 211, "className" => "Main", "methodName" => "main"})
+    Log.trace(Main.process_array([1, 2]), %{"fileName" => "Main.hx", "lineNumber" => 212, "className" => "Main", "methodName" => "main"})
+    Log.trace(Main.process_array([1, 2, 3]), %{"fileName" => "Main.hx", "lineNumber" => 213, "className" => "Main", "methodName" => "main"})
+    Log.trace(Main.process_array([1, 2, 3, 4, 5]), %{"fileName" => "Main.hx", "lineNumber" => 214, "className" => "Main", "methodName" => "main"})
+    Log.trace(Main.classify_string(""), %{"fileName" => "Main.hx", "lineNumber" => 217, "className" => "Main", "methodName" => "main"})
+    Log.trace(Main.classify_string("hello"), %{"fileName" => "Main.hx", "lineNumber" => 218, "className" => "Main", "methodName" => "main"})
+    Log.trace(Main.classify_string("x"), %{"fileName" => "Main.hx", "lineNumber" => 219, "className" => "Main", "methodName" => "main"})
+    Log.trace(Main.classify_string("medium length string"), %{"fileName" => "Main.hx", "lineNumber" => 220, "className" => "Main", "methodName" => "main"})
+    Log.trace(Main.classify_string("this is a very long string that exceeds twenty characters"), %{"fileName" => "Main.hx", "lineNumber" => 221, "className" => "Main", "methodName" => "main"})
+    Log.trace(Main.classify_number(0.0), %{"fileName" => "Main.hx", "lineNumber" => 224, "className" => "Main", "methodName" => "main"})
+    Log.trace(Main.classify_number(0.5), %{"fileName" => "Main.hx", "lineNumber" => 225, "className" => "Main", "methodName" => "main"})
+    Log.trace(Main.classify_number(5.0), %{"fileName" => "Main.hx", "lineNumber" => 226, "className" => "Main", "methodName" => "main"})
+    Log.trace(Main.classify_number(50.0), %{"fileName" => "Main.hx", "lineNumber" => 227, "className" => "Main", "methodName" => "main"})
+    Log.trace(Main.classify_number(500.0), %{"fileName" => "Main.hx", "lineNumber" => 228, "className" => "Main", "methodName" => "main"})
+    Log.trace(Main.classify_number(5000.0), %{"fileName" => "Main.hx", "lineNumber" => 229, "className" => "Main", "methodName" => "main"})
+    Log.trace(Main.classify_number(-5.0), %{"fileName" => "Main.hx", "lineNumber" => 230, "className" => "Main", "methodName" => "main"})
+    Log.trace(Main.classify_number(-50.0), %{"fileName" => "Main.hx", "lineNumber" => 231, "className" => "Main", "methodName" => "main"})
+    Log.trace(Main.match_flags(true, true, true), %{"fileName" => "Main.hx", "lineNumber" => 234, "className" => "Main", "methodName" => "main"})
+    Log.trace(Main.match_flags(true, true, false), %{"fileName" => "Main.hx", "lineNumber" => 235, "className" => "Main", "methodName" => "main"})
+    Log.trace(Main.match_flags(false, false, false), %{"fileName" => "Main.hx", "lineNumber" => 236, "className" => "Main", "methodName" => "main"})
+    Log.trace(Main.match_matrix([]), %{"fileName" => "Main.hx", "lineNumber" => 239, "className" => "Main", "methodName" => "main"})
+    Log.trace(Main.match_matrix([[1]]), %{"fileName" => "Main.hx", "lineNumber" => 240, "className" => "Main", "methodName" => "main"})
+    Log.trace(Main.match_matrix([[1, 2], [3, 4]]), %{"fileName" => "Main.hx", "lineNumber" => 241, "className" => "Main", "methodName" => "main"})
+    Log.trace(Main.match_matrix([[1, 2, 3], [4, 5, 6], [7, 8, 9]]), %{"fileName" => "Main.hx", "lineNumber" => 242, "className" => "Main", "methodName" => "main"})
+    Log.trace(Main.validate_age(10, false), %{"fileName" => "Main.hx", "lineNumber" => 245, "className" => "Main", "methodName" => "main"})
+    Log.trace(Main.validate_age(15, true), %{"fileName" => "Main.hx", "lineNumber" => 246, "className" => "Main", "methodName" => "main"})
+    Log.trace(Main.validate_age(25, false), %{"fileName" => "Main.hx", "lineNumber" => 247, "className" => "Main", "methodName" => "main"})
+    Log.trace(Main.validate_age(70, true), %{"fileName" => "Main.hx", "lineNumber" => 248, "className" => "Main", "methodName" => "main"})
+    Log.trace(Main.classify_value("hello"), %{"fileName" => "Main.hx", "lineNumber" => 251, "className" => "Main", "methodName" => "main"})
+    Log.trace(Main.classify_value(42), %{"fileName" => "Main.hx", "lineNumber" => 252, "className" => "Main", "methodName" => "main"})
+    Log.trace(Main.classify_value(3.14), %{"fileName" => "Main.hx", "lineNumber" => 253, "className" => "Main", "methodName" => "main"})
+    Log.trace(Main.classify_value(true), %{"fileName" => "Main.hx", "lineNumber" => 254, "className" => "Main", "methodName" => "main"})
+    Log.trace(Main.classify_value([1, 2, 3]), %{"fileName" => "Main.hx", "lineNumber" => 255, "className" => "Main", "methodName" => "main"})
+    Log.trace(Main.classify_value(nil), %{"fileName" => "Main.hx", "lineNumber" => 256, "className" => "Main", "methodName" => "main"})
+    Log.trace(Main.check_color("red"), %{"fileName" => "Main.hx", "lineNumber" => 259, "className" => "Main", "methodName" => "main"})
+    Log.trace(Main.check_color("orange"), %{"fileName" => "Main.hx", "lineNumber" => 260, "className" => "Main", "methodName" => "main"})
+    Log.trace(Main.check_color("black"), %{"fileName" => "Main.hx", "lineNumber" => 261, "className" => "Main", "methodName" => "main"})
+    Log.trace(Main.check_color("pink"), %{"fileName" => "Main.hx", "lineNumber" => 262, "className" => "Main", "methodName" => "main"})
+    Log.trace(Main.match_status("active"), %{"fileName" => "Main.hx", "lineNumber" => 265, "className" => "Main", "methodName" => "main"})
+    Log.trace(Main.match_status("paused"), %{"fileName" => "Main.hx", "lineNumber" => 266, "className" => "Main", "methodName" => "main"})
+    Log.trace(Main.match_status("error"), %{"fileName" => "Main.hx", "lineNumber" => 267, "className" => "Main", "methodName" => "main"})
+    Log.trace(Main.match_status("unknown"), %{"fileName" => "Main.hx", "lineNumber" => 268, "className" => "Main", "methodName" => "main"})
   end
 
 end

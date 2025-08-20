@@ -15,10 +15,10 @@ defmodule TestApp.Application do
   @doc "Function main"
   @spec main() :: nil
   def main() do
-    Application.testTypeSafeChildSpecs()
-    Application.testChildSpecBuilders()
-    Application.testComplexChildSpecs()
-    Application.testApplicationChildren()
+    Application.test_type_safe_child_specs()
+    Application.test_child_spec_builders()
+    Application.test_complex_child_specs()
+    Application.test_application_children()
   end
 
   @doc """
@@ -29,8 +29,8 @@ defmodule TestApp.Application do
   """
   @spec test_type_safe_child_specs() :: nil
   def test_type_safe_child_specs() do
-    {Phoenix.PubSub, name: "TestApp.PubSub"}
-    {Phoenix.PubSub, name: "CustomName.PubSub"}
+    {Phoenix.PubSub, name: TestApp.PubSub}
+    {Phoenix.PubSub, name: CustomName.PubSub}
     App.Repo
     AppWeb.Endpoint
     AppWeb.Telemetry
@@ -47,7 +47,7 @@ defmodule TestApp.Application do
   """
   @spec test_child_spec_builders() :: nil
   def test_child_spec_builders() do
-    {Phoenix.PubSub, name: "TestApp.PubSub"}
+    {Phoenix.PubSub, name: TestApp.PubSub}
     App.Repo
     AppWeb.Endpoint
     AppWeb.Telemetry
@@ -75,14 +75,14 @@ defmodule TestApp.Application do
   """
   @spec test_application_children() :: nil
   def test_application_children() do
-    {Phoenix.PubSub, name: "TestApp.PubSub"}
+    {Phoenix.PubSub, name: TestApp.PubSub}
     App.Repo
     AppWeb.Endpoint
     AppWeb.Telemetry
     {:presence, %{"name" => "TestApp.Presence", "pubsub_server" => "TestApp.PubSub"}}
     {:custom, BackgroundWorker, BackgroundWorker.new("background_worker_args"), :permanent, {:timeout, 10000}}
     {:custom, TaskSupervisor, TaskSupervisor.new("task_supervisor_args"), :permanent, :infinity}
-    {Phoenix.PubSub, name: "TestApp.PubSub"}
+    {Phoenix.PubSub, name: TestApp.PubSub}
     {:legacy, %{id: legacy_worker, start: {LegacyWorker, :start_link, [%{}]}, restart: :temporary, shutdown: {:timeout, 1000}}}
     Log.trace("Application children test completed", %{"fileName" => "Main.hx", "lineNumber" => 173, "className" => "Main", "methodName" => "testApplicationChildren"})
   end

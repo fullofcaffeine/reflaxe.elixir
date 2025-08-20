@@ -9,9 +9,9 @@ defmodule Main do
   @doc "Function main"
   @spec main() :: nil
   def main() do
-    Main.testMutableOps()
-    Main.testVariableReassignment()
-    Main.testLoopCounters()
+    Main.test_mutable_ops()
+    Main.test_variable_reassignment()
+    Main.test_loop_counters()
   end
 
   @doc "Function test_mutable_ops"
@@ -57,114 +57,119 @@ defmodule Main do
   def test_loop_counters() do
     i = 0
     (
-      try do
-        loop_fn = fn {i} ->
-          if (i < 5) do
-            try do
-              Log.trace("While loop i: " <> Integer.to_string(i), %{"fileName" => "Main.hx", "lineNumber" => 73, "className" => "Main", "methodName" => "testLoopCounters"})
-          # i incremented
+      loop_helper = fn loop_fn, {i} ->
+        if (i < 5) do
+          try do
+            Log.trace("While loop i: " <> Integer.to_string(i), %{"fileName" => "Main.hx", "lineNumber" => 73, "className" => "Main", "methodName" => "testLoopCounters"})
+          i = i + 1
           loop_fn.({i + 1})
-            catch
-              :break -> {i}
-              :continue -> loop_fn.({i})
-            end
-          else
-            {i}
+            loop_fn.(loop_fn, {i})
+          catch
+            :break -> {i}
+            :continue -> loop_fn.(loop_fn, {i})
           end
+        else
+          {i}
         end
-        loop_fn.({i})
+      end
+      {i} = try do
+        loop_helper.(loop_helper, {nil})
       catch
-        :break -> {i}
+        :break -> {nil}
       end
     )
     j = 5
     (
-      try do
-        loop_fn = fn {j} ->
-          if (j > 0) do
-            try do
-              Log.trace("While loop j: " <> Integer.to_string(j), %{"fileName" => "Main.hx", "lineNumber" => 80, "className" => "Main", "methodName" => "testLoopCounters"})
-          # j decremented
+      loop_helper = fn loop_fn, {j} ->
+        if (j > 0) do
+          try do
+            Log.trace("While loop j: " <> Integer.to_string(j), %{"fileName" => "Main.hx", "lineNumber" => 80, "className" => "Main", "methodName" => "testLoopCounters"})
+          j = j - 1
           loop_fn.({j - 1})
-            catch
-              :break -> {j}
-              :continue -> loop_fn.({j})
-            end
-          else
-            {j}
+            loop_fn.(loop_fn, {j})
+          catch
+            :break -> {j}
+            :continue -> loop_fn.(loop_fn, {j})
           end
+        else
+          {j}
         end
-        loop_fn.({j})
+      end
+      {j} = try do
+        loop_helper.(loop_helper, {nil})
       catch
-        :break -> {j}
+        :break -> {nil}
       end
     )
     sum = 0
     k = 1
     (
-      try do
-        loop_fn = fn {sum, k} ->
-          if (k <= 5) do
-            try do
-              # sum updated with + k
-          # k incremented
+      loop_helper = fn loop_fn, {sum, k} ->
+        if (k <= 5) do
+          try do
+            sum = sum + k
+          k = k + 1
           loop_fn.({sum + k, k + 1})
-            catch
-              :break -> {sum, k}
-              :continue -> loop_fn.({sum, k})
-            end
-          else
-            {sum, k}
+            loop_fn.(loop_fn, {sum, k})
+          catch
+            :break -> {sum, k}
+            :continue -> loop_fn.(loop_fn, {sum, k})
           end
+        else
+          {sum, k}
         end
-        loop_fn.({sum, k})
+      end
+      {sum, k} = try do
+        loop_helper.(loop_helper, {nil, nil})
       catch
-        :break -> {sum, k}
+        :break -> {nil, nil}
       end
     )
     Log.trace("Sum: " <> Integer.to_string(sum), %{"fileName" => "Main.hx", "lineNumber" => 91, "className" => "Main", "methodName" => "testLoopCounters"})
     total = 0
     x = 0
     (
-      try do
-        loop_fn = fn {x} ->
-          if (x < 3) do
-            try do
-              y = 0
+      loop_helper = fn loop_fn, {x} ->
+        if (x < 3) do
+          try do
+            y = 0
           (
-      try do
-        loop_fn = fn {total, y} ->
-          if (y < 3) do
-            try do
-              # total updated with + 1
-          # y incremented
+      loop_helper = fn loop_fn, {total, y} ->
+        if (y < 3) do
+          try do
+            total = total + 1
+          y = y + 1
           loop_fn.({total + 1, y + 1})
-            catch
-              :break -> {total, y}
-              :continue -> loop_fn.({total, y})
-            end
-          else
-            {total, y}
+            loop_fn.(loop_fn, {total, y})
+          catch
+            :break -> {total, y}
+            :continue -> loop_fn.(loop_fn, {total, y})
           end
+        else
+          {total, y}
         end
-        loop_fn.({total, y})
+      end
+      {total, y} = try do
+        loop_helper.(loop_helper, {nil, nil})
       catch
-        :break -> {total, y}
+        :break -> {nil, nil}
       end
     )
-          # x incremented
+          x = x + 1
           loop_fn.({x + 1})
-            catch
-              :break -> {x}
-              :continue -> loop_fn.({x})
-            end
-          else
-            {x}
+            loop_fn.(loop_fn, {x})
+          catch
+            :break -> {x}
+            :continue -> loop_fn.(loop_fn, {x})
           end
+        else
+          {x}
         end
-        loop_fn.({x})
+      end
+      {x} = try do
+        loop_helper.(loop_helper, {nil})
       catch
-        :break -> {x}
+        :break -> {nil}
       end
     )
     Log.trace("Total from nested loops: " <> Integer.to_string(total), %{"fileName" => "Main.hx", "lineNumber" => 104, "className" => "Main", "methodName" => "testLoopCounters"})

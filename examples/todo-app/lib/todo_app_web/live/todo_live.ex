@@ -37,7 +37,7 @@ defmodule TodoAppWeb.TodoLive do
       "bulk_delete_completed" ->
         temp_socket = TodoLive.delete_completed_todos(socket)
       "cancel_edit" ->
-        temp_socket = SafeAssigns.setEditingTodo(socket, nil)
+        temp_socket = SafeAssigns.set_editing_todo(socket, nil)
       "create_todo" ->
         temp_socket = TodoLive.create_new_todo(params, socket)
       "delete_todo" ->
@@ -45,17 +45,17 @@ defmodule TodoAppWeb.TodoLive do
       "edit_todo" ->
         temp_socket = TodoLive.start_editing(params.id, socket)
       "filter_todos" ->
-        temp_socket = SafeAssigns.setFilter(socket, params.filter)
+        temp_socket = SafeAssigns.set_filter(socket, params.filter)
       "save_todo" ->
         temp_socket = TodoLive.save_edited_todo(params, socket)
       "search_todos" ->
-        temp_socket = SafeAssigns.setSearchQuery(socket, params.query)
+        temp_socket = SafeAssigns.set_search_query(socket, params.query)
       "set_priority" ->
         temp_socket = TodoLive.update_todo_priority(params.id, params.priority, socket)
       "sort_todos" ->
-        temp_socket = SafeAssigns.setSortBy(socket, params.sort_by)
+        temp_socket = SafeAssigns.set_sort_by(socket, params.sort_by)
       "toggle_form" ->
-        temp_socket = SafeAssigns.setShowForm(socket, !socket.assigns.show_form)
+        temp_socket = SafeAssigns.set_show_form(socket, !socket.assigns.show_form)
       "toggle_tag" ->
         temp_socket = TodoLive.toggle_tag_filter(params.tag, socket)
       "toggle_todo" ->
@@ -70,7 +70,7 @@ defmodule TodoAppWeb.TodoLive do
   @doc "Generated from Haxe handle_info"
   def handle_info(msg, socket) do
     temp_socket = nil
-    g = TodoPubSub.parseMessage(msg)
+    g = TodoPubSub.parse_message(msg)
     case (case g do {:ok, _} -> 0; :error -> 1; _ -> -1 end) do
       0 ->
         g = case g do {:ok, value} -> value; :error -> nil; _ -> nil end
@@ -99,11 +99,11 @@ defmodule TodoAppWeb.TodoLive do
             elem(parsed_msg, 1)
             temp_socket = socket
           6 ->
-            g = elem(parsed_msg, 1)
-            g = elem(parsed_msg, 2)
-            message = g
-            level = g
-            temp_flash_type = nil
+            _g_1 = elem(parsed_msg, 1)
+            _g_1 = elem(parsed_msg, 2)
+            message = _g_1
+            level = _g_1
+            tempFlashType = nil
             case (elem(level, 0)) do
               0 ->
                 temp_flash_type = :info
@@ -134,7 +134,7 @@ defmodule TodoAppWeb.TodoLive do
     params.due_date
     TodoLive.parse_tags(params.tags)
     socket.assigns.current_user.id
-    changeset_params = TypeSafeConversions.eventParamsToChangesetParams(params)
+    changeset_params = TypeSafeConversions.event_params_to_changeset_params(params)
     changeset = Todo.changeset(Server.Schemas.Todo.new(), changeset_params)
     g = Repo.insert(changeset)
     case (case g do {:ok, _} -> 0; {:error, _} -> 1; _ -> -1 end) do
@@ -152,7 +152,7 @@ defmodule TodoAppWeb.TodoLive do
         end
         todos = [todo] ++ socket.assigns.todos
         current_assigns = socket.assigns
-        complete_assigns = TypeSafeConversions.createCompleteAssigns(current_assigns, todos, nil, nil, nil, nil, false, nil, nil)
+        complete_assigns = TypeSafeConversions.create_complete_assigns(current_assigns, todos, nil, nil, nil, nil, false, nil, nil)
         updated_socket = LiveView.assign_multiple(socket, complete_assigns)
         LiveView.put_flash(updated_socket, :success, "Todo created successfully!")
       1 ->
@@ -247,75 +247,73 @@ defmodule TodoAppWeb.TodoLive do
     if (todo.user_id == socket.assigns.current_user.id), do: socket, else: nil
     todos = [todo] ++ socket.assigns.todos
     current_assigns = socket.assigns
-    complete_assigns = TypeSafeConversions.createCompleteAssigns(current_assigns, todos)
+    complete_assigns = TypeSafeConversions.create_complete_assigns(current_assigns, todos)
     LiveView.assign_multiple(socket, complete_assigns)
   end
 
   @doc "Generated from Haxe update_todo_in_list"
   def update_todo_in_list(updated_todo, socket) do
     this = socket.assigns.todos
-    g = []
-    g = 0
+    _g_array = []
+    _g_counter = 0
     (
-      loop_helper = fn loop_fn, {g, temp_todo} ->
+      loop_helper = fn loop_fn, {g_counter, temp_todo} ->
         if (g < this.length) do
           try do
             v = Enum.at(this, g)
-          g = g + 1
-          temp_todo = nil
-          temp_todo = if (v.id == updated_todo.id), do: updated_todo, else: v
-          g ++ [temp_todo]
-          loop_fn.({g + 1, temp_todo})
-            loop_fn.(loop_fn, {g, temp_todo})
+    g = g + 1
+    tempTodo = nil
+    if (v.id == updated_todo.id), do: temp_todo = updated_todo, else: temp_todo = v
+    _g_counter.push(temp_todo)
+            loop_fn.(loop_fn, {g_counter, temp_todo})
           catch
-            :break -> {g, temp_todo}
-            :continue -> loop_fn.(loop_fn, {g, temp_todo})
+            :break -> {g_counter, temp_todo}
+            :continue -> loop_fn.(loop_fn, {g_counter, temp_todo})
           end
         else
-          {g, temp_todo}
+          {g_counter, temp_todo}
         end
       end
-      {g, temp_todo} = try do
+      {g_counter, temp_todo} = try do
         loop_helper.(loop_helper, {nil, nil})
       catch
         :break -> {nil, nil}
       end
     )
-    current_assigns = socket.assigns
-    complete_assigns = TypeSafeConversions.createCompleteAssigns(current_assigns, g)
+    currentAssigns = socket.assigns
+    completeAssigns = TypeSafeConversions.createCompleteAssigns(current_assigns, _g_counter)
     LiveView.assign_multiple(socket, complete_assigns)
   end
 
   @doc "Generated from Haxe remove_todo_from_list"
   def remove_todo_from_list(id, socket) do
     this = socket.assigns.todos
-    g = []
-    g = 0
+    _g_array = []
+    _g_counter = 0
     (
-      loop_helper = fn loop_fn, {g} ->
+      loop_helper = fn loop_fn, {g_counter} ->
         if (g < this.length) do
           try do
             v = Enum.at(this, g)
-          g = g + 1
-          if (v.id != id), do: g ++ [v], else: nil
-          loop_fn.({g + 1})
-            loop_fn.(loop_fn, {g})
+    g = g + 1
+    if (v.id != id), do: _g_counter.push(v), else: nil
+            loop_fn.(loop_fn, {g_counter})
           catch
-            :break -> {g}
-            :continue -> loop_fn.(loop_fn, {g})
+            :break -> {g_counter}
+            :continue -> loop_fn.(loop_fn, {g_counter})
           end
         else
-          {g}
+          {g_counter}
         end
       end
-      {g} = try do
+      {g_counter} = try do
         loop_helper.(loop_helper, {nil})
       catch
         :break -> {nil}
       end
     )
-    current_assigns = socket.assigns
-    complete_assigns = TypeSafeConversions.createCompleteAssigns(current_assigns, g)
+    currentAssigns = socket.assigns
+    completeAssigns = TypeSafeConversions.createCompleteAssigns(current_assigns, _g_counter)
     LiveView.assign_multiple(socket, complete_assigns)
   end
 
@@ -332,7 +330,7 @@ defmodule TodoAppWeb.TodoLive do
 
   @doc "Generated from Haxe find_todo"
   def find_todo(id, todos) do
-    g = 0
+    g_counter = 0
     (
       loop_helper = fn loop_fn, {g} ->
         if (g < todos.length) do
@@ -362,7 +360,7 @@ defmodule TodoAppWeb.TodoLive do
   @doc "Generated from Haxe count_completed"
   def count_completed(todos) do
     count = 0
-    g = 0
+    g_counter = 0
     (
       loop_helper = fn loop_fn, {g, count} ->
         if (g < todos.length) do
@@ -392,7 +390,7 @@ defmodule TodoAppWeb.TodoLive do
   @doc "Generated from Haxe count_pending"
   def count_pending(todos) do
     count = 0
-    g = 0
+    g_counter = 0
     (
       loop_helper = fn loop_fn, {g, count} ->
         if (g < todos.length) do
@@ -423,26 +421,25 @@ defmodule TodoAppWeb.TodoLive do
   def parse_tags(tags_string) do
     if (tags_string == nil || tags_string == ""), do: [], else: nil
     this = String.split(tags_string, ",")
-    g = []
-    g = 0
+    _g_array = []
+    _g_counter = 0
     (
-      loop_helper = fn loop_fn, {g} ->
+      loop_helper = fn loop_fn, {g_counter} ->
         if (g < this.length) do
           try do
             v = Enum.at(this, g)
-          g = g + 1
-          g ++ [StringTools.trim(v)]
-          loop_fn.({g + 1})
-            loop_fn.(loop_fn, {g})
+    g = g + 1
+    _g_counter.push(StringTools.trim(v))
+            loop_fn.(loop_fn, {g_counter})
           catch
-            :break -> {g}
-            :continue -> loop_fn.(loop_fn, {g})
+            :break -> {g_counter}
+            :continue -> loop_fn.(loop_fn, {g_counter})
           end
         else
-          {g}
+          {g_counter}
         end
       end
-      {g} = try do
+      {g_counter} = try do
         loop_helper.(loop_helper, {nil})
       catch
         :break -> {nil}
@@ -462,8 +459,8 @@ defmodule TodoAppWeb.TodoLive do
   def complete_all_todos(socket) do
     temp_array = nil
     this = socket.assigns.todos
-    g = []
-    g = 0
+    g_array = []
+    g_counter = 0
     (
       loop_helper = fn loop_fn, {g} ->
         if (g < this.length) do
@@ -488,7 +485,7 @@ defmodule TodoAppWeb.TodoLive do
       end
     )
     temp_array = g
-    g = 0
+    g_counter = 0
     (
       loop_helper = fn loop_fn, {g} ->
         if (g < temp_array.length) do
@@ -534,7 +531,7 @@ defmodule TodoAppWeb.TodoLive do
     end
     updated_todos = TodoLive.load_todos(socket.assigns.current_user.id)
     current_assigns = socket.assigns
-    complete_assigns = TypeSafeConversions.createCompleteAssigns(current_assigns, updated_todos)
+    complete_assigns = TypeSafeConversions.create_complete_assigns(current_assigns, updated_todos)
     complete_assigns = %{complete_assigns | completed_todos: complete_assigns.total_todos}
     complete_assigns = %{complete_assigns | pending_todos: 0}
     updated_socket = LiveView.assign_multiple(socket, complete_assigns)
@@ -545,8 +542,8 @@ defmodule TodoAppWeb.TodoLive do
   def delete_completed_todos(socket) do
     temp_array = nil
     this = socket.assigns.todos
-    g = []
-    g = 0
+    g_array = []
+    g_counter = 0
     (
       loop_helper = fn loop_fn, {g} ->
         if (g < this.length) do
@@ -571,7 +568,7 @@ defmodule TodoAppWeb.TodoLive do
       end
     )
     temp_array = g
-    g = 0
+    g_counter = 0
     (
       loop_helper = fn loop_fn, {g} ->
         if (g < temp_array.length) do
@@ -598,8 +595,8 @@ defmodule TodoAppWeb.TodoLive do
     Phoenix.PubSub.broadcast(TodoApp.PubSub, "todo:updates", %{"type" => "bulk_delete", "action" => "delete_completed"})
     temp_array1 = nil
     this = socket.assigns.todos
-    g = []
-    g = 0
+    g_array = []
+    g_counter = 0
     (
       loop_helper = fn loop_fn, {g} ->
         if (g < this.length) do
@@ -625,7 +622,7 @@ defmodule TodoAppWeb.TodoLive do
     )
     temp_array1 = g
     current_assigns = socket.assigns
-    complete_assigns = TypeSafeConversions.createCompleteAssigns(current_assigns, temp_array1)
+    complete_assigns = TypeSafeConversions.create_complete_assigns(current_assigns, temp_array1)
     complete_assigns = %{complete_assigns | completed_todos: 0}
     complete_assigns = %{complete_assigns | pending_todos: temp_array1.length}
     updated_socket = LiveView.assign_multiple(socket, complete_assigns)
@@ -635,14 +632,14 @@ defmodule TodoAppWeb.TodoLive do
   @doc "Generated from Haxe start_editing"
   def start_editing(id, socket) do
     todo = TodoLive.find_todo(id, socket.assigns.todos)
-    SafeAssigns.setEditingTodo(socket, todo)
+    SafeAssigns.set_editing_todo(socket, todo)
   end
 
   @doc "Generated from Haxe save_edited_todo"
   def save_edited_todo(params, socket) do
     todo = socket.assigns.editing_todo
     if (todo == nil), do: socket, else: nil
-    changeset_params = TypeSafeConversions.eventParamsToChangesetParams(params)
+    changeset_params = TypeSafeConversions.event_params_to_changeset_params(params)
     changeset = Todo.changeset(todo, changeset_params)
     g = Repo.update(changeset)
     case (case g do {:ok, _} -> 0; {:error, _} -> 1; _ -> -1 end) do
@@ -674,12 +671,12 @@ defmodule TodoAppWeb.TodoLive do
       0 ->
         updated_todos = TodoLive.load_todos(socket.assigns.current_user.id)
         current_assigns = socket.assigns
-        complete_assigns = TypeSafeConversions.createCompleteAssigns(current_assigns, updated_todos)
+        complete_assigns = TypeSafeConversions.create_complete_assigns(current_assigns, updated_todos)
         temp_result = LiveView.assign_multiple(socket, complete_assigns)
       1 ->
         updated_todos = TodoLive.load_todos(socket.assigns.current_user.id)
         current_assigns = socket.assigns
-        complete_assigns = TypeSafeConversions.createCompleteAssigns(current_assigns, updated_todos)
+        complete_assigns = TypeSafeConversions.create_complete_assigns(current_assigns, updated_todos)
         temp_result = LiveView.assign_multiple(socket, complete_assigns)
       2 ->
         elem(action, 1)
@@ -699,37 +696,36 @@ defmodule TodoAppWeb.TodoLive do
     selected_tags = socket.assigns.selected_tags
     temp_array = nil
     if (Enum.member?(selected_tags, tag)) do
-      g = []
-      g = 0
-      g = selected_tags
+      _g_array = []
+      _g_counter = 0
+      _g_2 = selected_tags
       (
-        loop_helper = fn loop_fn, {g} ->
+        loop_helper = fn loop_fn, {g_2} ->
           if (g < g.length) do
             try do
               v = Enum.at(g, g)
-            g = g + 1
-            if (v != tag), do: g ++ [v], else: nil
-            loop_fn.({g + 1})
-              loop_fn.(loop_fn, {g})
+      g = g + 1
+      if (v != tag), do: _g_2.push(v), else: nil
+              loop_fn.(loop_fn, {g_2})
             catch
-              :break -> {g}
-              :continue -> loop_fn.(loop_fn, {g})
+              :break -> {g_2}
+              :continue -> loop_fn.(loop_fn, {g_2})
             end
           else
-            {g}
+            {g_2}
           end
         end
-        {g} = try do
+        {g_2} = try do
           loop_helper.(loop_helper, {nil})
         catch
           :break -> {nil}
         end
       )
-      temp_array = g
+      temp_array = _g_2
     else
       temp_array = selected_tags ++ [tag]
     end
-    SafeAssigns.setSelectedTags(socket, temp_array)
+    SafeAssigns.set_selected_tags(socket, temp_array)
   end
 
 end

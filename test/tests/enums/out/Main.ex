@@ -14,13 +14,13 @@ defmodule Main do
       2 ->
         temp_result = "blue"
       3 ->
-        g = elem(color, 1)
-        g = elem(color, 2)
-        g = elem(color, 3)
-        r = g
-        g = g
-        b = g
-        temp_result = "rgb(" <> Integer.to_string(r) <> ", " <> Integer.to_string(g) <> ", " <> Integer.to_string(b) <> ")"
+        _g_1 = elem(color, 1)
+        _g_1 = elem(color, 2)
+        _g_2 = elem(color, 3)
+        r = _g_2
+        g = _g_2
+        b = _g_2
+        temp_result = "rgb(" ++ r ++ ", " ++ g ++ ", " ++ b ++ ")"
     end
     temp_result
   end
@@ -50,11 +50,11 @@ defmodule Main do
         value = g
         temp_result = value
       1 ->
-        g = elem(tree, 1)
-        g = elem(tree, 2)
-        left = g
-        right = g
-        temp_result = Main.treeSum(left) + Main.treeSum(right)
+        _g_1 = elem(tree, 1)
+        _g_1 = elem(tree, 2)
+        left = _g_1
+        right = _g_1
+        temp_result = Main.treeSum(left) ++ Main.treeSum(right)
     end
     temp_result
   end
@@ -64,34 +64,22 @@ defmodule Main do
   def describe_r_g_b(color) do
     temp_result = nil
     if (elem(color, 0) == 3) do
-      g = elem(color, 1)
-      g = elem(color, 2)
-      g = elem(color, 3)
-      r = g
-      g = g
-      b = g
-      if (r > 200 && g < 50 && b < 50) do
-        temp_result = "mostly red"
-      else
-        r = g
-        g = g
-        b = g
-        if (g > 200 && r < 50 && b < 50) do
-          temp_result = "mostly green"
-        else
-          r = g
-          g = g
-          b = g
-          if (b > 200 && r < 50 && g < 50) do
-            temp_result = "mostly blue"
-          else
-            g
-            g
-            g
-            temp_result = "mixed color"
-          end
-        end
-      end
+      _g_1 = elem(color, 1)
+      _g_1 = elem(color, 2)
+      _g_2 = elem(color, 3)
+      r = _g_2
+      g = _g_2
+      b = _g_2
+      if (r > 200 && g < 50 && b < 50), do: temp_result = "mostly red", else: r = _g_2
+      g = _g_2
+      b = _g_2
+      if (g > 200 && r < 50 && b < 50), do: temp_result = "mostly green", else: r = _g_2
+      g = _g_2
+      b = _g_2
+      if (b > 200 && r < 50 && g < 50), do: temp_result = "mostly blue", else: r = _g_2
+      g = _g_2
+      b = _g_2
+      temp_result = "mixed color"
     else
       temp_result = "not RGB"
     end
@@ -114,19 +102,15 @@ defmodule Main do
           temp_result = false
         end
       1 ->
-        g = elem(t1, 1)
-        g = elem(t1, 2)
-        if (elem(t2, 0) == 1) do
-          g = elem(t2, 1)
-          g = elem(t2, 2)
-          l2 = g
-          r2 = g
-          r1 = g
-          l1 = g
-          temp_result = Main.compareTrees(l1, l2) && Main.compareTrees(r1, r2)
-        else
-          temp_result = false
-        end
+        _g_1 = elem(t1, 1)
+        _g_1 = elem(t1, 2)
+        if (elem(t2, 0) == 1), do: _g_1 = elem(t2, 1)
+        _g_1 = elem(t2, 2)
+        l2 = _g_1
+        r2 = _g_1
+        r1 = _g_1
+        l1 = _g_1
+        temp_result = Main.compare_trees(l1, l2) && Main.compare_trees(r1, r2), else: temp_result = false
     end
     temp_result
   end
@@ -135,16 +119,16 @@ defmodule Main do
   @spec main() :: nil
   def main() do
     color = {:r_g_b, 255, 128, 0}
-    Log.trace(Main.colorToString(color), %{"fileName" => "Main.hx", "lineNumber" => 79, "className" => "Main", "methodName" => "main"})
+    Log.trace(Main.color_to_string(color), %{"fileName" => "Main.hx", "lineNumber" => 79, "className" => "Main", "methodName" => "main"})
     some = {:some, "Hello"}
     none = :none
-    Log.trace(Main.getValue(some, "default"), %{"fileName" => "Main.hx", "lineNumber" => 84, "className" => "Main", "methodName" => "main"})
-    Log.trace(Main.getValue(none, "default"), %{"fileName" => "Main.hx", "lineNumber" => 85, "className" => "Main", "methodName" => "main"})
+    Log.trace(Main.get_value(some, "default"), %{"fileName" => "Main.hx", "lineNumber" => 84, "className" => "Main", "methodName" => "main"})
+    Log.trace(Main.get_value(none, "default"), %{"fileName" => "Main.hx", "lineNumber" => 85, "className" => "Main", "methodName" => "main"})
     tree = {:node_, {:leaf, 1}, {:node_, {:leaf, 2}, {:leaf, 3}}}
-    Log.trace(Main.treeSum(tree), %{"fileName" => "Main.hx", "lineNumber" => 92, "className" => "Main", "methodName" => "main"})
-    Log.trace(Main.describeRGB({:r_g_b, 250, 10, 10}), %{"fileName" => "Main.hx", "lineNumber" => 95, "className" => "Main", "methodName" => "main"})
+    Log.trace(Main.tree_sum(tree), %{"fileName" => "Main.hx", "lineNumber" => 92, "className" => "Main", "methodName" => "main"})
+    Log.trace(Main.describe_r_g_b({:r_g_b, 250, 10, 10}), %{"fileName" => "Main.hx", "lineNumber" => 95, "className" => "Main", "methodName" => "main"})
     tree2 = {:node_, {:leaf, 1}, {:node_, {:leaf, 2}, {:leaf, 3}}}
-    Log.trace(Main.compareTrees(tree, tree2), %{"fileName" => "Main.hx", "lineNumber" => 99, "className" => "Main", "methodName" => "main"})
+    Log.trace(Main.compare_trees(tree, tree2), %{"fileName" => "Main.hx", "lineNumber" => 99, "className" => "Main", "methodName" => "main"})
   end
 
 end

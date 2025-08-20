@@ -45,6 +45,7 @@ class ParallelTestRunner {
     static final TEST_DIR = "test/tests";
     static final OUT_DIR = "out";
     static final INTENDED_DIR = "intended";
+    static final PROJECT_ROOT = Sys.getCwd(); // Store project root for absolute paths
     
     // Configuration
     public static var UpdateIntended = false;
@@ -190,7 +191,7 @@ Performance:
     
     static function spawnWorkers() {
         for (i in 0...WorkerCount) {
-            final worker = new TestWorker(i);
+            final worker = new TestWorker(i, PROJECT_ROOT);
             workers.push(worker);
             worker.start();
         }
@@ -286,9 +287,27 @@ Performance:
         }
     }
     
+    /**
+     * CRITICAL MASTER CLEANUP: Ensure all worker processes are terminated
+     * 
+     * WHY: Prevents the accumulation of hanging Haxe compiler processes that
+     * was causing 800+ zombie processes and test timeouts. This is the main
+     * entry point for cleaning up all parallel test infrastructure.
+     * 
+     * HOW: Calls cleanup() on each worker with exception isolation to ensure
+     * that if one worker cleanup fails, others still get cleaned up properly.
+     * 
+     * ARCHITECTURE: Called during test runner shutdown (line 80) and should
+     * be the last operation before process exit to guarantee no leaked processes.
+     */
     static function cleanupWorkers() {
         for (worker in workers) {
-            worker.cleanup();
+            try {
+                worker.cleanup();
+            } catch (e: Dynamic) {
+                // Continue cleaning other workers even if one fails
+                // Note: Can't use Sys.println here as it may interfere with test output
+            }
         }
         workers = [];
     }
@@ -326,9 +345,11 @@ class TestWorker {
     
     var pendingResult: TestResult;
     var startTime: Float;
+    var projectRoot: String;
     
-    public function new(id: Int) {
+    public function new(id: Int, projectRoot: String) {
         this.id = id;
+        this.projectRoot = projectRoot;
     }
     
     public function start() {
@@ -351,23 +372,26 @@ class TestWorker {
             "compile.hxml"
         ];
         
+        final originalCwd = Sys.getCwd(); // Declare outside try block for catch access
+        
         try {
             // Acquire lock, change directory, start process, restore directory, release lock
             acquireDirectoryLock();
             
-            final originalCwd = Sys.getCwd();
             Sys.setCwd(testPath);
             process = new Process("haxe", args);
             Sys.setCwd(originalCwd);
             
             releaseDirectoryLock();
         } catch (e: Dynamic) {
-            // Ensure lock is always released and directory restored
+            // Ensure process cleanup, lock release, and directory restoration
+            cleanup(); // CRITICAL: Clean up any partially created process
+            
             try {
-                Sys.setCwd(Sys.getCwd()); // Ensure we're in a valid directory
+                Sys.setCwd(originalCwd); // Restore original directory
                 releaseDirectoryLock();
             } catch (cleanupError: Dynamic) {
-                // Ignore cleanup errors
+                // Ignore cleanup errors but ensure state is reset
             }
             
             pendingResult = {
@@ -385,7 +409,7 @@ class TestWorker {
      * Much simpler than complex hxml parsing!
      */
     function acquireDirectoryLock() {
-        final lockFile = "test/.parallel_lock";
+        final lockFile = haxe.io.Path.join([projectRoot, "test", ".parallel_lock"]);
         var attempts = 0;
         final maxAttempts = 100; // 10 seconds max wait
         
@@ -412,7 +436,7 @@ class TestWorker {
      * Release the directory lock.
      */
     function releaseDirectoryLock() {
-        final lockFile = "test/.parallel_lock";
+        final lockFile = haxe.io.Path.join([projectRoot, "test", ".parallel_lock"]);
         try {
             if (sys.FileSystem.exists(lockFile)) {
                 sys.FileSystem.deleteFile(lockFile);
@@ -522,10 +546,50 @@ class TestWorker {
         return !isRunning;
     }
     
+    /**
+     * CRITICAL PROCESS CLEANUP: Forcefully terminate and clean up worker processes
+     * 
+     * WHY: Prevents accumulation of hanging Haxe compiler server processes.
+     * Previous implementation was incomplete and caused resource leaks where 800+
+     * processes accumulated over time, causing test timeouts and system slowdown.
+     * 
+     * HOW: Implements robust process termination with multiple cleanup strategies:
+     * 1. Try graceful termination with process.kill()
+     * 2. Force cleanup with process.close() regardless of state
+     * 3. Reset worker state to prevent future issues
+     * 4. Handle all exceptions to ensure cleanup always completes
+     * 
+     * ARCHITECTURE: Called by ParallelTestRunner.cleanupWorkers() during shutdown
+     * and also when workers timeout or encounter errors. Essential for preventing
+     * the resource leak that was causing 871 hanging processes.
+     * 
+     * EDGE CASES: Handles stuck processes, already-dead processes, and cleanup
+     * exceptions gracefully. No exceptions escape this method.
+     */
     public function cleanup() {
         if (process != null) {
-            process.close();
+            try {
+                // Try to kill the process if it's still running
+                process.kill();
+            } catch (e: Dynamic) {
+                // Process might already be dead or not killable - continue cleanup
+            }
+            
+            try {
+                // Always call close() to clean up resources
+                process.close();
+            } catch (e: Dynamic) {
+                // Process might already be closed - ignore error but log for debugging
+                // Note: We can't use trace here as it might interfere with test output
+            }
+            
+            // Clear the process reference
+            process = null;
         }
+        
+        // Reset worker state to ensure it's not marked as running
+        isRunning = false;
+        currentTest = null;
     }
 }
 

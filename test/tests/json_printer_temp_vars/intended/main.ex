@@ -26,7 +26,7 @@ defmodule Main do
   def test_ternary_with_temp_vars() do
     value = 42.5
     temp_string = nil
-    temp_string = if (Math.isFinite(value)), do: Std.string(value), else: "null"
+    temp_string = if (Math.is_finite(value)), do: Std.string(value), else: "null"
     Log.trace("Ternary result: " <> temp_string, %{"fileName" => "Main.hx", "lineNumber" => 41, "className" => "Main", "methodName" => "testTernaryWithTempVars"})
   end
 
@@ -34,9 +34,9 @@ defmodule Main do
   @spec main() :: nil
   def main() do
     Log.trace("=== Testing JsonPrinter Temp Variable Scoping ===", %{"fileName" => "Main.hx", "lineNumber" => 45, "className" => "Main", "methodName" => "main"})
-    Main.testTempVariableScoping()
+    Main.test_temp_variable_scoping()
     Log.trace("\n=== Testing Ternary with Temp Variables ===", %{"fileName" => "Main.hx", "lineNumber" => 48, "className" => "Main", "methodName" => "main"})
-    Main.testTernaryWithTempVars()
+    Main.test_ternary_with_temp_vars()
   end
 
 end
