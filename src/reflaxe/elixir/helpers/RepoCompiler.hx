@@ -39,7 +39,7 @@ class RepoCompiler {
         
         // Get app name from annotation
         var appName = AnnotationSystem.getEffectiveAppName(classType);
-        var otpApp = appName.toLowerCase();
+        var otpApp = reflaxe.elixir.helpers.NamingHelper.toSnakeCase(appName);
         
         // Module definition
         result.add('defmodule ${className} do\n');
@@ -72,7 +72,7 @@ class RepoCompiler {
      * for the repository database connection.
      */
     public static function generateRepoConfig(appName: String): String {
-        var otpApp = appName.toLowerCase();
+        var otpApp = reflaxe.elixir.helpers.NamingHelper.toSnakeCase(appName);
         var repoModule = '${appName}.Repo';
         
         return 'config :${otpApp}, ${repoModule},\n' +

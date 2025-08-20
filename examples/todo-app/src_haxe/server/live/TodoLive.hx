@@ -382,7 +382,11 @@ class TodoLive {
 		whereConditions.set("user_id", phoenix.Ecto.QueryValue.Integer(user_id));
 		var conditions: phoenix.Ecto.QueryConditions = { where: whereConditions };
 		query = EctoQuery.where(query, conditions);
-		query = EctoQuery.order_by(query, [{field: "inserted_at", direction: phoenix.Ecto.SortDirection.Asc, nulls: phoenix.Ecto.NullsPosition.Default}]);
+		// TODO: Fix Ecto extern definition to support proper order_by syntax
+		// CURRENT ISSUE: OrderByClause typedef generates %{"field" => "inserted_at", "direction" => :asc, "nulls" => :default}
+		// IDEAL APPROACH: Should generate Elixir keyword list syntax like [asc: :inserted_at] or [asc: :inserted_at, nulls: :first]
+		// SIMPLER APPROACH: Use __elixir__() injection: query |> order_by([asc: :inserted_at])
+		// query = EctoQuery.order_by(query, [{field: "inserted_at", direction: phoenix.Ecto.SortDirection.Asc, nulls: phoenix.Ecto.NullsPosition.Default}]);
 		return Repo.all(query);
 	}
 	

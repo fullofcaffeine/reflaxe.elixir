@@ -31,11 +31,11 @@ class TodoApp {
         
         // Define children for the supervision tree
         var children: Array<ChildSpec> = [
-            // Database repository
-            {
-                id: '${appName}.Repo',
-                start: {module: '${appName}.Repo', func: "start_link", args: []}
-            },
+            // Database repository - temporarily disabled due to PostgreSQL TypeManager issues
+            // {
+            //     id: '${appName}.Repo',
+            //     start: {module: '${appName}.Repo', func: "start_link", args: []}
+            // },
             // PubSub system
             {
                 id: "Phoenix.PubSub",
@@ -67,9 +67,8 @@ class TodoApp {
         // Start the supervisor and return proper ApplicationResult
         var supervisorResult = SupervisorExtern.start_link(children, opts);
         
-        // For OTP Application behavior, we need to return the supervisor PID
-        // In Elixir, this would be {:ok, supervisor_pid}
-        return Ok(supervisorResult);
+        // Return the supervisor result directly - it's already {:ok, pid} format
+        return supervisorResult;
     }
 
     /**

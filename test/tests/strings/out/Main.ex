@@ -103,24 +103,25 @@ defmodule Main do
     all_numbers = EReg.new("\\d+", "g")
     numbers = []
     (
-      try do
-        loop_fn = fn {text} ->
-          if (all_numbers.match(text)) do
-            try do
-              numbers ++ [all_numbers.matched(0)]
-          # text updated to all_numbers.matchedRight()
+      loop_helper = fn loop_fn, {text} ->
+        if (all_numbers.match(text)) do
+          try do
+            numbers ++ [all_numbers.matched(0)]
+          text = all_numbers.matchedRight()
           loop_fn.({all_numbers.matchedRight()})
-            catch
-              :break -> {text}
-              :continue -> loop_fn.({text})
-            end
-          else
-            {text}
+            loop_fn.(loop_fn, {text})
+          catch
+            :break -> {text}
+            :continue -> loop_fn.(loop_fn, {text})
           end
+        else
+          {text}
         end
-        loop_fn.({text})
+      end
+      {text} = try do
+        loop_helper.(loop_helper, {nil})
       catch
-        :break -> {text}
+        :break -> {nil}
       end
     )
     Log.trace("All numbers: " <> Std.string(numbers), %{"fileName" => "Main.hx", "lineNumber" => 151, "className" => "Main", "methodName" => "regexOperations"})

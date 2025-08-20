@@ -34,6 +34,7 @@ import reflaxe.elixir.helpers.SchemaCompiler;
 import reflaxe.elixir.helpers.ProtocolCompiler;
 import reflaxe.elixir.helpers.BehaviorCompiler;
 import reflaxe.elixir.helpers.RouterCompiler;
+import reflaxe.elixir.helpers.RepoCompiler;
 import reflaxe.elixir.helpers.AnnotationSystem;
 import reflaxe.elixir.helpers.EctoQueryAdvancedCompiler;
 import reflaxe.elixir.helpers.RepositoryCompiler;
@@ -109,7 +110,7 @@ class ElixirCompiler extends DirectToStringCompiler {
     private var currentFunctionParameterMap: Map<String, String> = new Map();
     
     // Track inline function context across multiple expressions in a block
-    // Maps inline variable names (like "_this") to their assigned values (like "struct.buf")
+    // Maps inline variable names (like "struct") to their assigned values (like "struct.buf")
     private var inlineContextMap: Map<String, String> = new Map<String, String>();
     private var isCompilingAbstractMethod: Bool = false;
     private var isCompilingCaseArm: Bool = false;
@@ -127,6 +128,7 @@ class ElixirCompiler extends DirectToStringCompiler {
         super();
         this.typer = new reflaxe.elixir.ElixirTyper();
         this.patternMatcher = new reflaxe.elixir.helpers.PatternMatcher();
+        this.patternMatcher.setCompiler(this);
         this.guardCompiler = new reflaxe.elixir.helpers.GuardCompiler();
         this.pipelineOptimizer = new reflaxe.elixir.helpers.PipelineOptimizer(this);
         this.importOptimizer = new reflaxe.elixir.helpers.ImportOptimizer(this);
@@ -1434,8 +1436,8 @@ class ElixirCompiler extends DirectToStringCompiler {
                 var originalName = getOriginalVarName(v);
                 
                 // Special handling for inline context variables
-                if (originalName == "_this" && hasInlineContext("_this")) {
-                    return "_this";
+                if (originalName == "_this" && hasInlineContext("struct")) {
+                    return "struct";
                 }
                 
                 // Check if this is a LiveView instance variable that should use socket.assigns
@@ -1578,11 +1580,11 @@ class ElixirCompiler extends DirectToStringCompiler {
                                     
                                     // Only set inline context for genuine inline expansions
                                     if (isInlineExpansion) {
-                                        setInlineContext("_this", "active");
+                                        setInlineContext("struct", "active");
                                     } else {
                                     }
                                     
-                                    return '_this = ${value}';
+                                    return 'struct = ${value}';
                                 }
                             case TField(_, _):
                             case _:
@@ -1896,7 +1898,7 @@ class ElixirCompiler extends DirectToStringCompiler {
                     };
                     
                     // Also check if we already have an inline context (struct updates)
-                    var hasExistingContext = hasInlineContext("_this");
+                    var hasExistingContext = hasInlineContext("struct");
                     
                     // Preserve _this if it's an inline expansion OR if inline context is already active
                     preserveUnderscore = isInlineThisInit || hasExistingContext;
@@ -1915,26 +1917,36 @@ class ElixirCompiler extends DirectToStringCompiler {
                     };
                     
                     if (isInlineThisInit) {
-                        // Temporarily disable any existing _this context to compile the right side correctly
-                        var savedContext = inlineContextMap.get("_this");
-                        inlineContextMap.remove("_this");
+                        // Temporarily disable any existing struct context to compile the right side correctly
+                        var savedContext = inlineContextMap.get("struct");
+                        inlineContextMap.remove("struct");
                         var compiledExpr = compileExpression(expr);
                         
-                        // Now set the context for future uses - mark _this as active
-                        setInlineContext("_this", "active");
+                        // Now set the context for future uses - mark struct as active
+                        setInlineContext("struct", "active");
                         
-                        '${varName} = ${compiledExpr}';
+                        // Always use 'struct' for inline expansions instead of '_this'
+                        'struct = ${compiledExpr}';
                     } else {
                         var compiledExpr = compileExpression(expr);
                         
                         // If this is _this and we preserved the underscore, activate inline context
                         if (originalName == "_this" && preserveUnderscore) {
-                            setInlineContext("_this", "active");
+                            setInlineContext("struct", "active");
+                        }
+                        
+                        // In case arms, avoid temp variable assignments - return expressions directly
+                        if (isCompilingCaseArm && (originalName.startsWith("temp_") || originalName.startsWith("temp"))) {
+                            return compiledExpr;
                         }
                         
                         '${varName} = ${compiledExpr}';
                     }
                 } else {
+                    // In case arms, skip temp variable nil assignments completely
+                    if (isCompilingCaseArm && (originalName.startsWith("temp_") || originalName.startsWith("temp"))) {
+                        return "nil";
+                    }
                     '${varName} = nil';
                 }
                 
@@ -2028,6 +2040,14 @@ class ElixirCompiler extends DirectToStringCompiler {
                         
                         allStatements.join("\n");
                     } else {
+                        // Check for temp variable pattern: temp_var = nil; case...; temp_var
+                        var tempVarPattern = detectTempVariablePattern(el);
+                        if (tempVarPattern != null) {
+                            trace('Found temp variable pattern: ${tempVarPattern}');
+                            // Transform temp variable pattern to idiomatic case expression
+                            return optimizeTempVariablePattern(tempVarPattern, el);
+                        }
+                        
                         // No pipeline pattern detected - use traditional compilation
                         // For multiple statements, compile each and join with newlines
                         // The last expression is the return value in Elixir
@@ -3054,7 +3074,7 @@ class ElixirCompiler extends DirectToStringCompiler {
     public function setFunctionParameterMapping(args: Array<reflaxe.data.ClassFuncArg>): Void {
         // Preserve any existing 'this' mappings for struct instance methods
         var savedThisMapping = currentFunctionParameterMap.get("this");
-        var savedThisMapping2 = currentFunctionParameterMap.get("_this");
+        var savedThisMapping2 = currentFunctionParameterMap.get("struct");
         
         currentFunctionParameterMap.clear();
         inlineContextMap.clear(); // Reset inline context for new function
@@ -3065,7 +3085,7 @@ class ElixirCompiler extends DirectToStringCompiler {
             currentFunctionParameterMap.set("this", savedThisMapping);
         }
         if (savedThisMapping2 != null) {
-            currentFunctionParameterMap.set("_this", savedThisMapping2);
+            currentFunctionParameterMap.set("struct", savedThisMapping2);
         }
         
         if (args != null) {
@@ -3098,7 +3118,7 @@ class ElixirCompiler extends DirectToStringCompiler {
         // Map 'this' references to the struct parameter name
         currentFunctionParameterMap.set("this", structParamName);
         // Also handle variations like _this which Haxe might generate
-        currentFunctionParameterMap.set("_this", structParamName);
+        currentFunctionParameterMap.set("struct", structParamName);
     }
     
     /**
@@ -3107,7 +3127,7 @@ class ElixirCompiler extends DirectToStringCompiler {
     public function clearThisParameterMapping(): Void {
         // Remove 'this' mappings while preserving other parameter mappings
         currentFunctionParameterMap.remove("this");
-        currentFunctionParameterMap.remove("_this");
+        currentFunctionParameterMap.remove("struct");
     }
     
     /**
@@ -3133,9 +3153,9 @@ class ElixirCompiler extends DirectToStringCompiler {
      * Get the effective variable name for 'this' references, considering inline context and LiveView
      */
     private function resolveThisReference(): String {
-        // First check if we're in an inline context where _this is active
-        if (hasInlineContext("_this")) {
-            return "_this";
+        // First check if we're in an inline context where struct is active
+        if (hasInlineContext("struct")) {
+            return "struct";
         }
         
         // Check if we're in a LiveView class - in this case, 'this' references are invalid
@@ -6078,85 +6098,137 @@ class ElixirCompiler extends DirectToStringCompiler {
     
     /**
      * Compile a child spec object to proper Elixir child specification format
-     * Converts from Haxe objects to Elixir tuples/maps as expected by Supervisor.start_link
+     * Converts from Haxe objects to Elixir maps as expected by Supervisor.start_link
      */
     private function compileChildSpec(fields: Array<{name: String, expr: TypedExpr}>, classType: Null<ClassType>): String {
-        var id = "";
-        var startModule = "";
-        var startFunction = "";
-        var startArgs = "[]";
+        var compiledFields = new Map<String, String>();
         
         // Get app name from annotation at compile time
         var appName = AnnotationSystem.getEffectiveAppName(classType);
         
-        // Extract fields from the child spec object
+        // Extract all fields from the child spec object
         for (field in fields) {
             switch (field.name) {
                 case "id":
-                    id = compileExpression(field.expr);
-                    // Remove quotes and resolve any app name interpolation
-                    id = resolveAppNameInString(id, appName);
+                    var idValue = compileExpression(field.expr);
+                    // Handle temp variables from ternary expressions
+                    if (idValue.indexOf("temp_") != -1 || idValue.indexOf("temp") == 0) {
+                        // This is typically id != null ? id : module
+                        // Generate an inline ternary in Elixir
+                        compiledFields.set("id", "if(id != nil, do: id, else: module)");
+                    } else {
+                        // Normal id value - resolve app name interpolation
+                        idValue = resolveAppNameInString(idValue, appName);
+                        compiledFields.set("id", idValue);
+                    }
                     
                 case "start":
                     // Handle start object with module, function, args
                     switch (field.expr.expr) {
                         case TObjectDecl(startFields):
+                            var startValues = new Map<String, String>();
                             for (startField in startFields) {
+                                var value = compileExpression(startField.expr);
                                 switch (startField.name) {
                                     case "module":
-                                        startModule = compileExpression(startField.expr);
-                                        startModule = resolveAppNameInString(startModule, appName);
-                                    case "function":
-                                        startFunction = compileExpression(startField.expr);
-                                        startFunction = startFunction.split('"').join('');
+                                        value = resolveAppNameInString(value, appName);
+                                        startValues.set("module", value);
+                                    case "func":
+                                        value = value.split('"').join(''); // Remove quotes
+                                        startValues.set("func", ':${value}'); // Convert to atom
                                     case "args":
-                                        startArgs = compileExpression(startField.expr);
-                                        startArgs = resolveAppNameInString(startArgs, appName);
+                                        value = resolveAppNameInString(value, appName);
+                                        startValues.set("args", value);
                                 }
                             }
+                            // Generate start tuple {module, func, args}
+                            var moduleVal = startValues.get("module") != null ? startValues.get("module") : "module";
+                            var funcVal = startValues.get("func") != null ? startValues.get("func") : ":start_link";
+                            var argsVal = startValues.get("args") != null ? startValues.get("args") : "[]";
+                            compiledFields.set("start", '{${moduleVal}, ${funcVal}, ${argsVal}}');
                         case _:
                             // If start is not an object, compile as-is
                             var startExpr = compileExpression(field.expr);
-                            startModule = resolveAppNameInString(startExpr, appName);
+                            startExpr = resolveAppNameInString(startExpr, appName);
+                            compiledFields.set("start", startExpr);
                     }
+                    
+                case "restart":
+                    var restartValue = compileExpression(field.expr);
+                    // Convert enum values to atoms
+                    if (restartValue.indexOf("Permanent") != -1) {
+                        compiledFields.set("restart", ":permanent");
+                    } else if (restartValue.indexOf("Temporary") != -1) {
+                        compiledFields.set("restart", ":temporary");
+                    } else if (restartValue.indexOf("Transient") != -1) {
+                        compiledFields.set("restart", ":transient");
+                    } else {
+                        compiledFields.set("restart", restartValue);
+                    }
+                    
+                case "shutdown":
+                    var shutdownValue = compileExpression(field.expr);
+                    // Convert enum values to atoms or numbers
+                    if (shutdownValue.indexOf("Brutal") != -1) {
+                        compiledFields.set("shutdown", ":brutal_kill");
+                    } else if (shutdownValue.indexOf("Infinity") != -1) {
+                        compiledFields.set("shutdown", ":infinity");
+                    } else if (shutdownValue.indexOf("Timeout") != -1) {
+                        // Extract timeout value from Timeout(5000) pattern
+                        var timeoutPattern = ~/Timeout\((\d+)\)/;
+                        if (timeoutPattern.match(shutdownValue)) {
+                            var timeoutMs = timeoutPattern.matched(1);
+                            compiledFields.set("shutdown", timeoutMs);
+                        } else {
+                            compiledFields.set("shutdown", "5000"); // Default timeout
+                        }
+                    } else {
+                        compiledFields.set("shutdown", shutdownValue);
+                    }
+                    
+                case "type":
+                    var typeValue = compileExpression(field.expr);
+                    // Convert enum values to atoms
+                    if (typeValue.indexOf("Worker") != -1) {
+                        compiledFields.set("type", ":worker");
+                    } else if (typeValue.indexOf("Supervisor") != -1) {
+                        compiledFields.set("type", ":supervisor");
+                    } else {
+                        compiledFields.set("type", typeValue);
+                    }
+                    
+                case "modules":
+                    var modulesValue = compileExpression(field.expr);
+                    // modules should be an array, resolve app name in module references
+                    modulesValue = resolveAppNameInString(modulesValue, appName);
+                    compiledFields.set("modules", modulesValue);
             }
         }
         
-        // Generate proper Elixir child spec based on common patterns
-        if (id.indexOf("Repo") != -1) {
-            // Simple module reference for Repo
-            return '${appName}.Repo';
+        // Build the complete ChildSpec map
+        var mapFields = [];
+        
+        // Required fields with defaults
+        var idField = compiledFields.get("id") != null ? compiledFields.get("id") : "module";
+        var startField = compiledFields.get("start") != null ? compiledFields.get("start") : '{module, :start_link, []}';
+        mapFields.push('id: ${idField}');
+        mapFields.push('start: ${startField}');
+        
+        // Optional fields
+        if (compiledFields.get("restart") != null) {
+            mapFields.push('restart: ${compiledFields.get("restart")}');
         }
-        else if (id.indexOf("PubSub") != -1) {
-            // Tuple format for PubSub with configuration
-            if (startArgs != "[]" && startArgs.indexOf("name") != -1) {
-                // Extract name from args
-                var namePattern = ~/name.*:\s*([^}]*)/;
-                if (namePattern.match(startArgs)) {
-                    var nameValue = namePattern.matched(1).trim();
-                    nameValue = nameValue.split('"').join('');
-                    if (nameValue.endsWith(',')) nameValue = nameValue.substr(0, nameValue.length - 1);
-                    return '{Phoenix.PubSub, name: ${nameValue}}';
-                }
-            }
-            return '{Phoenix.PubSub, name: ${appName}.PubSub}';
+        if (compiledFields.get("shutdown") != null) {
+            mapFields.push('shutdown: ${compiledFields.get("shutdown")}');
         }
-        else if (id.indexOf("Telemetry") != -1) {
-            // Simple module reference for Telemetry
-            return '${appName}Web.Telemetry';
+        if (compiledFields.get("type") != null) {
+            mapFields.push('type: ${compiledFields.get("type")}');
         }
-        else if (id.indexOf("Endpoint") != -1) {
-            // Simple module reference for Endpoint  
-            return '${appName}Web.Endpoint';
+        if (compiledFields.get("modules") != null) {
+            mapFields.push('modules: ${compiledFields.get("modules")}');
         }
-        else {
-            // Generic child spec - use tuple format if has args, otherwise simple module
-            if (startArgs != "[]" && startArgs != "") {
-                return '{${startModule}, ${startArgs}}';
-            } else {
-                return startModule;
-            }
-        }
+        
+        return '%{${mapFields.join(", ")}}';
     }
     
     /**
@@ -6490,6 +6562,119 @@ class ElixirCompiler extends DirectToStringCompiler {
                     case _: null;
                 }
             case _: null;
+        };
+    }
+    
+    /**
+     * Detect temp variable patterns: temp_var = nil; case...; temp_var
+     * Returns the temp variable name if pattern is detected, null otherwise.
+     */
+    private function detectTempVariablePattern(expressions: Array<TypedExpr>): Null<String> {
+        if (expressions.length < 3) return null;
+        
+        // Pattern: [TVar(temp, nil), TSwitch(...), TLocal(temp)]
+        var first = expressions[0];
+        var last = expressions[expressions.length - 1];
+        
+        
+        // Check first: temp_var = nil
+        var tempVarName: String = null;
+        switch (first.expr) {
+            case TVar(tvar, expr):
+                var varName = getOriginalVarName(tvar);
+                if ((varName.startsWith("temp_") || varName.startsWith("temp")) && (expr == null || isNilExpression(expr))) {
+                    tempVarName = varName;
+                } else {
+                    return null;
+                }
+            case _:
+                return null;
+        }
+        
+        // Check last: return temp_var (can be TLocal or TReturn(TLocal))
+        var lastVarName: String = null;
+        switch (last.expr) {
+            case TLocal(v):
+                lastVarName = getOriginalVarName(v);
+            case TReturn(expr):
+                switch (expr.expr) {
+                    case TLocal(v):
+                        lastVarName = getOriginalVarName(v);
+                    case _:
+                }
+            case _:
+        }
+        
+        if (lastVarName == tempVarName) {
+            // Check if there's a TSwitch or TIf in between (for ternary operators)
+            for (i in 1...expressions.length - 1) {
+                switch (expressions[i].expr) {
+                    case TSwitch(_, _, _):
+                        return tempVarName;
+                    case TIf(_, _, _):
+                        return tempVarName;
+                    case _:
+                }
+            }
+        }
+        
+        return null;
+    }
+    
+    /**
+     * Optimize temp variable pattern to idiomatic case expression
+     */
+    private function optimizeTempVariablePattern(tempVarName: String, expressions: Array<TypedExpr>): String {
+        // Find the switch expression or if expression (for ternary operators)
+        for (i in 1...expressions.length - 1) {
+            switch (expressions[i].expr) {
+                case TSwitch(switchExpr, cases, defaultExpr):
+                    // Transform the switch to return values directly instead of assignments
+                    var originalCaseArmContext = isCompilingCaseArm;
+                    isCompilingCaseArm = true;
+                    
+                    // Compile the switch expression with case arm context
+                    var result = compileSwitchExpression(switchExpr, cases, defaultExpr);
+                    
+                    // Restore original context
+                    isCompilingCaseArm = originalCaseArmContext;
+                    
+                    return result;
+                case TIf(condition, thenExpr, elseExpr):
+                    // Transform the if expression (ternary) to return value directly
+                    var originalCaseArmContext = isCompilingCaseArm;
+                    isCompilingCaseArm = true;
+                    
+                    // Compile as ternary expression
+                    var result = compileExpression(expressions[i]);
+                    
+                    // Restore original context
+                    isCompilingCaseArm = originalCaseArmContext;
+                    
+                    return result;
+                case _:
+            }
+        }
+        
+        // Fallback: compile normally if pattern detection was wrong
+        var compiledStatements = [];
+        for (expr in expressions) {
+            var compiled = compileExpression(expr);
+            if (compiled != null && compiled.length > 0) {
+                compiledStatements.push(compiled);
+            }
+        }
+        return compiledStatements.join("\n");
+    }
+    
+    /**
+     * Check if expression is nil
+     */
+    private function isNilExpression(expr: TypedExpr): Bool {
+        return switch (expr.expr) {
+            case TConst(TNull): true;
+            case TIdent("nil"): true;
+            case _: false;
         };
     }
     

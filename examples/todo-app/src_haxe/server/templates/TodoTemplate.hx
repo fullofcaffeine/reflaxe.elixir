@@ -26,7 +26,7 @@ class TodoTemplate {
                         </p>
                         <div class="mt-4 inline-flex items-center px-3 py-1 rounded-full bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200">
                             <span class="w-2 h-2 bg-green-500 rounded-full mr-2 animate-pulse"></span>
-                            👤 ${@current_user.name}
+                            👤 <%= @current_user.name %>
                         </div>
                     </header>
                     
@@ -36,7 +36,7 @@ class TodoTemplate {
                             <div class="flex items-center">
                                 <div class="flex-1">
                                     <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400">Total Todos</h3>
-                                    <p class="text-2xl font-bold text-gray-900 dark:text-white">${@total_todos}</p>
+                                    <p class="text-2xl font-bold text-gray-900 dark:text-white"><%= @total_todos %></p>
                                 </div>
                                 <div class="text-blue-500 text-2xl">📊</div>
                             </div>
@@ -46,7 +46,7 @@ class TodoTemplate {
                             <div class="flex items-center">
                                 <div class="flex-1">
                                     <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400">Pending</h3>
-                                    <p class="text-2xl font-bold text-yellow-600 dark:text-yellow-400">${@pending_todos}</p>
+                                    <p class="text-2xl font-bold text-yellow-600 dark:text-yellow-400"><%= @pending_todos %></p>
                                 </div>
                                 <div class="text-yellow-500 text-2xl">⏳</div>
                             </div>
@@ -56,7 +56,7 @@ class TodoTemplate {
                             <div class="flex items-center">
                                 <div class="flex-1">
                                     <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400">Completed</h3>
-                                    <p class="text-2xl font-bold text-green-600 dark:text-green-400">${@completed_todos}</p>
+                                    <p class="text-2xl font-bold text-green-600 dark:text-green-400"><%= @completed_todos %></p>
                                 </div>
                                 <div class="text-green-500 text-2xl">✅</div>
                             </div>
@@ -71,8 +71,8 @@ class TodoTemplate {
                             <button 
                                 phx-click="toggle_form" 
                                 class="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
-                                <span class="mr-2">${@show_form ? "❌" : "➕"}</span>
-                                ${@show_form ? "Cancel" : "New Todo"}
+                                <span class="mr-2"><%= if @show_form, do: "❌", else: "➕" %></span>
+                                <%= if @show_form, do: "Cancel", else: "New Todo" %>
                             </button>
                             
                             <!-- Filter Buttons -->
@@ -80,19 +80,19 @@ class TodoTemplate {
                                 <button 
                                     phx-click="filter_todos" 
                                     phx-value-filter="all"
-                                    class="${@filter == "all" ? "bg-blue-500 text-white" : "bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300"} px-4 py-2 text-sm font-medium hover:bg-blue-100 dark:hover:bg-gray-600 transition-colors">
+                                    class={if @filter == "all", do: "bg-blue-500 text-white", else: "bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300"} px-4 py-2 text-sm font-medium hover:bg-blue-100 dark:hover:bg-gray-600 transition-colors">
                                     All
                                 </button>
                                 <button 
                                     phx-click="filter_todos" 
                                     phx-value-filter="active"
-                                    class="${@filter == "active" ? "bg-blue-500 text-white" : "bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300"} px-4 py-2 text-sm font-medium border-l border-gray-300 dark:border-gray-600 hover:bg-blue-100 dark:hover:bg-gray-600 transition-colors">
+                                    class={if @filter == "active", do: "bg-blue-500 text-white", else: "bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300"} px-4 py-2 text-sm font-medium border-l border-gray-300 dark:border-gray-600 hover:bg-blue-100 dark:hover:bg-gray-600 transition-colors">
                                     Active
                                 </button>
                                 <button 
                                     phx-click="filter_todos" 
                                     phx-value-filter="completed"
-                                    class="${@filter == "completed" ? "bg-blue-500 text-white" : "bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300"} px-4 py-2 text-sm font-medium border-l border-gray-300 dark:border-gray-600 hover:bg-blue-100 dark:hover:bg-gray-600 transition-colors">
+                                    class={if @filter == "completed", do: "bg-blue-500 text-white", else: "bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300"} px-4 py-2 text-sm font-medium border-l border-gray-300 dark:border-gray-600 hover:bg-blue-100 dark:hover:bg-gray-600 transition-colors">
                                     Completed
                                 </button>
                             </div>
@@ -105,7 +105,7 @@ class TodoTemplate {
                                         phx-keyup="search_todos"
                                         phx-debounce="300"
                                         placeholder="Search todos..."
-                                        value="${@search_query}"
+                                        value={@search_query}
                                         class="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400" />
                                     <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                         <span class="text-gray-400">🔍</span>
@@ -118,9 +118,9 @@ class TodoTemplate {
                                 phx-change="sort_todos" 
                                 name="sort_by"
                                 class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white">
-                                <option value="created" ${@sort_by == "created" ? "selected" : ""}>📅 Date Created</option>
-                                <option value="priority" ${@sort_by == "priority" ? "selected" : ""}>⚡ Priority</option>
-                                <option value="due_date" ${@sort_by == "due_date" ? "selected" : ""}>⏰ Due Date</option>
+                                <option value="created" selected={@sort_by == "created"}>📅 Date Created</option>
+                                <option value="priority" selected={@sort_by == "priority"}>⚡ Priority</option>
+                                <option value="due_date" selected={@sort_by == "due_date"}>⏰ Due Date</option>
                             </select>
                             
                         </div>
@@ -270,12 +270,12 @@ class TodoTemplate {
                 
                 <!-- Todo Items -->
                 <%= for todo <- filter_and_sort_todos(@todos, @filter, @sort_by, @search_query) do %>
-                    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md hover:shadow-lg transition-shadow duration-200 border-l-4 ${getPriorityBorderColor(todo.priority)}">
+                    <div class={"bg-white dark:bg-gray-800 rounded-lg shadow-md hover:shadow-lg transition-shadow duration-200 border-l-4 " <> getPriorityBorderColor(todo.priority)}>
                         
                         <%= if @editing_todo && @editing_todo.id == todo.id do %>
-                            ${renderEditForm(todo)}
+                            <%= render_edit_form(%{todo: todo}) %>
                         <% else %>
-                            ${renderTodoItem(todo)}
+                            <%= render_todo_item(%{todo: todo}) %>
                         <% end %>
                         
                     </div>
@@ -286,10 +286,10 @@ class TodoTemplate {
                     <div class="text-center py-12">
                         <div class="text-6xl mb-4">📝</div>
                         <h3 class="text-xl font-medium text-gray-500 dark:text-gray-400 mb-2">
-                            ${getEmptyStateMessage(@filter, @search_query)}
+                            <%= get_empty_state_message(@filter, @search_query) %>
                         </h3>
                         <p class="text-gray-400 dark:text-gray-500">
-                            ${getEmptyStateSubtext(@filter, @search_query)}
+                            <%= get_empty_state_subtext(@filter, @search_query) %>
                         </p>
                     </div>
                 <% end %>
@@ -309,20 +309,20 @@ class TodoTemplate {
                     <!-- Checkbox -->
                     <button 
                         phx-click="toggle_todo"
-                        phx-value-id="${todo.id}"
-                        class="flex-shrink-0 w-6 h-6 rounded-full border-2 ${todo.completed ? "bg-green-500 border-green-500" : "border-gray-300 dark:border-gray-600"} hover:border-green-400 transition-colors duration-200 flex items-center justify-center">
-                        ${todo.completed ? "✓" : ""}
+                        phx-value-id={todo.id}
+                        class={if todo.completed, do: "flex-shrink-0 w-6 h-6 rounded-full border-2 bg-green-500 border-green-500 hover:border-green-400 transition-colors duration-200 flex items-center justify-center", else: "flex-shrink-0 w-6 h-6 rounded-full border-2 border-gray-300 dark:border-gray-600 hover:border-green-400 transition-colors duration-200 flex items-center justify-center"}>
+                        <%= if todo.completed, do: "✓", else: "" %>
                     </button>
                     
                     <!-- Todo Content -->
                     <div class="flex-1 min-w-0">
-                        <h4 class="${todo.completed ? "line-through text-gray-500 dark:text-gray-400" : "text-gray-900 dark:text-white"} font-medium text-lg">
-                            ${todo.title}
+                        <h4 class={if todo.completed, do: "line-through text-gray-500 dark:text-gray-400 font-medium text-lg", else: "text-gray-900 dark:text-white font-medium text-lg"}>
+                            <%= todo.title %>
                         </h4>
                         
                         <%= if todo.description do %>
                             <p class="text-gray-600 dark:text-gray-300 mt-1 text-sm">
-                                ${todo.description}
+                                <%= todo.description %>
                             </p>
                         <% end %>
                         
@@ -330,15 +330,15 @@ class TodoTemplate {
                         <div class="flex items-center space-x-4 mt-3 text-sm text-gray-500 dark:text-gray-400">
                             
                             <!-- Priority Badge -->
-                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getPriorityClasses(todo.priority)}">
-                                ${getPriorityIcon(todo.priority)} ${String.toUpperCase(todo.priority)}
+                            <span class={"inline-flex items-center px-2 py-1 rounded-full text-xs font-medium " <> getPriorityClasses(todo.priority)}>
+                                <%= getPriorityIcon(todo.priority) %> <%= String.toUpperCase(todo.priority) %>
                             </span>
                             
                             <!-- Due Date -->
                             <%= if todo.due_date do %>
                                 <span class="inline-flex items-center">
                                     <span class="mr-1">📅</span>
-                                    ${formatDate(todo.due_date)}
+                                    <%= formatDate(todo.due_date) %>
                                 </span>
                             <% end %>
                             
@@ -347,7 +347,7 @@ class TodoTemplate {
                                 <div class="flex flex-wrap gap-1">
                                     <%= for tag <- String.split(todo.tags, ",") do %>
                                         <span class="inline-flex items-center px-2 py-1 rounded-full text-xs bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200">
-                                            #${String.trim(tag)}
+                                            #<%= String.trim(tag) %>
                                         </span>
                                     <% end %>
                                 </div>
@@ -362,18 +362,18 @@ class TodoTemplate {
                         <!-- Priority Quick Change -->
                         <select 
                             phx-change="set_priority"
-                            phx-value-id="${todo.id}"
+                            phx-value-id={todo.id}
                             name="priority"
                             class="text-sm border-0 bg-transparent focus:ring-2 focus:ring-blue-500 rounded">
-                            <option value="low" ${todo.priority == "low" ? "selected" : ""}>🟢</option>
-                            <option value="medium" ${todo.priority == "medium" ? "selected" : ""}>🟡</option>
-                            <option value="high" ${todo.priority == "high" ? "selected" : ""}>🔴</option>
+                            <option value="low" selected={todo.priority == "low"}>🟢</option>
+                            <option value="medium" selected={todo.priority == "medium"}>🟡</option>
+                            <option value="high" selected={todo.priority == "high"}>🔴</option>
                         </select>
                         
                         <!-- Edit Button -->
                         <button 
                             phx-click="edit_todo"
-                            phx-value-id="${todo.id}"
+                            phx-value-id={todo.id}
                             class="p-2 text-blue-600 hover:text-blue-800 hover:bg-blue-50 dark:hover:bg-blue-900 rounded-lg transition-colors"
                             title="Edit todo">
                             ✏️
@@ -382,7 +382,7 @@ class TodoTemplate {
                         <!-- Delete Button -->
                         <button 
                             phx-click="delete_todo"
-                            phx-value-id="${todo.id}"
+                            phx-value-id={todo.id}
                             data-confirm="Delete this todo?"
                             class="p-2 text-red-600 hover:text-red-800 hover:bg-red-50 dark:hover:bg-red-900 rounded-lg transition-colors"
                             title="Delete todo">
@@ -403,14 +403,14 @@ class TodoTemplate {
         return HXX.hxx('
             <div class="p-6 bg-blue-50 dark:bg-blue-900">
                 <form phx-submit="save_todo" class="space-y-4">
-                    <input type="hidden" name="id" value="${todo.id}" />
+                    <input type="hidden" name="id" value={todo.id} />
                     
                     <!-- Edit Title -->
                     <div>
                         <input 
                             type="text"
                             name="title"
-                            value="${todo.title}"
+                            value={todo.title}
                             placeholder="Todo title"
                             required
                             class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
@@ -423,7 +423,7 @@ class TodoTemplate {
                             name="description"
                             placeholder="Description (optional)"
                             rows="2"
-                            class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white">${todo.description || ""}</textarea>
+                            class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"><%= todo.description || "" %></textarea>
                     </div>
                     
                     <!-- Edit Form Actions -->

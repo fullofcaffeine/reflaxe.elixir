@@ -233,16 +233,12 @@ defmodule TodoAppWeb.UserLive do
 
   @doc "Generated from Haxe getStatusClass"
   def get_status_class(active) do
-    temp_result = nil
     if (active), do: temp_result = "status active", else: temp_result = "status inactive"
-    temp_result
   end
 
   @doc "Generated from Haxe getStatusText"
   def get_status_text(active) do
-    temp_result = nil
     if (active), do: temp_result = "Active", else: temp_result = "Inactive"
-    temp_result
   end
 
   @doc "Generated from Haxe assign"
