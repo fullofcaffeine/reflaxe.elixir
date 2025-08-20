@@ -61,7 +61,7 @@ defmodule TodoAppWeb.UserLive do
   def handle_save_user(params, socket) do
     user_params = params.user
     temp_struct = nil
-    temp_struct = if (socket.assigns.selected_user == nil), do: Users.create_user(user_params), else: Users.update_user(socket.assigns.selected_user, user_params)
+    if (socket.assigns.selected_user == nil), do: temp_struct = Users.create_user(user_params), else: temp_struct = Users.update_user(socket.assigns.selected_user, user_params)
     temp_result = nil
     g = temp_struct.status
     case (g) do
@@ -93,7 +93,7 @@ defmodule TodoAppWeb.UserLive do
   def handle_search(params, socket) do
     search_term = params.search
     temp_array = nil
-    temp_array = if (socket.assigns.search_term.length > 0), do: Users.search_users(socket.assigns.search_term), else: Users.list_users()
+    if (socket.assigns.search_term.length > 0), do: temp_array = Users.search_users(socket.assigns.search_term), else: temp_array = Users.list_users()
     %{"status" => "noreply", "socket" => UserLive.assign_multiple(socket, %{"users" => temp_array, "searchTerm" => socket.assigns.search_term})}
   end
 
