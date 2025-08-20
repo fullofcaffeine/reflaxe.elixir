@@ -1,0 +1,8 @@
+# Compilation configuration for json_printer_temp_vars test  
+-cp ../../../std
+-cp ../../../src
+-cp .
+-lib reflaxe
+--macro reflaxe.elixir.CompilerInit.Start()
+-D elixir_output=out
+Main

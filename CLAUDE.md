@@ -966,11 +966,14 @@ What happens:
 
 ## Testing Strategy ⚠️
 
+**⚠️ CRITICAL RULE: ALWAYS run `npm test` after any compiler changes to avoid regressions**
+
 **See**: [`documentation/TESTING_ARCHITECTURE.md`](documentation/TESTING_ARCHITECTURE.md) - **Complete testing architecture**
 - **Key insight**: Examples (todo-app) ARE E2E tests for the compiler
 - **Two layers**: Compiler testing vs Application testing  
 - **Testing matrix**: Snapshot, Integration, Examples-as-E2E, Browser tests
 - **Commands**: `npm test`, `MIX_ENV=test mix test`, `mix compile` (in examples)
+- **Mandatory**: Every change must pass the complete test suite before commit
 
 
 ## Functional Programming Transformations
