@@ -68,7 +68,11 @@ defmodule JsonPrinter do
         %{struct | b: struct.b <> Std.string(v)}
       2 ->
         nil
-        temp_string = if (Math.is_finite(v)), do: Std.string(v), else: "null"
+        if (Math.is_finite(v)) do
+          temp_string = Std.string(v)
+        else
+          temp_string = "null"
+        end
         v = temp_string
         struct = struct.buf
         %{struct | b: struct.b <> Std.string(v)}
@@ -126,12 +130,10 @@ defmodule JsonPrinter do
               v = v
               o = %{}
               k = v.keys()
-              if o != nil do
-                Enum.each(Map.keys(o), fn field ->
-                  k = k.next()
-                  Map.put(o, k, v.get(k))
-                end)
-              end
+              Enum.each(Map.keys(o), fn k ->
+                k = k.next()
+                o = Map.put(o, k, v.get(k))
+              end)
               v = o
               struct.fields_string(v, Reflect.fields(v))
             else

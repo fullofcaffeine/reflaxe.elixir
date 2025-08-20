@@ -130,7 +130,7 @@ defmodule TodoAppWeb.TodoLive do
     params.description
     false
     temp_right = nil
-    temp_right = if (params.priority != nil), do: params.priority, else: "medium"
+    if (params.priority != nil), do: temp_right = params.priority, else: temp_right = "medium"
     params.due_date
     TodoLive.parse_tags(params.tags)
     socket.assigns.current_user.id
@@ -451,7 +451,7 @@ defmodule TodoAppWeb.TodoLive do
   @doc "Generated from Haxe get_user_from_session"
   def get_user_from_session(session) do
     temp_number = nil
-    temp_number = if (session.user_id != nil), do: session.user_id, else: 1
+    if (session.user_id != nil), do: temp_number = session.user_id, else: temp_number = 1
     %{"id" => temp_number, "name" => "Demo User", "email" => "demo@example.com", "password_hash" => "hashed_password", "confirmed_at" => nil, "last_login_at" => nil, "active" => true}
   end
 

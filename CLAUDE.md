@@ -268,6 +268,152 @@ Repeat → Continuous Quality Improvement
 - **Real-world patterns**: Drive compiler to handle complex scenarios
 - **Production readiness**: Examples must compile cleanly for v1.0 quality
 
+## ⚠️ CRITICAL: Debug Infrastructure for Compiler Development
+
+**FUNDAMENTAL RULE: Use conditional debug infrastructure for compiler development, not temporary trace statements.**
+
+### The Problem with Ad-hoc Debug Traces
+- **Production pollution**: Manual traces leak into committed code
+- **Performance impact**: Traces execute even when not needed
+- **Inconsistent format**: Each developer uses different debug styles
+- **Cleanup overhead**: Must remember to remove temporary traces
+- **Lost debugging**: Delete useful traces, then need them again
+
+### Professional Debug Infrastructure Solution
+
+#### 1. Conditional Compilation Pattern
+```haxe
+#if debug_compiler
+    DebugHelper.debugForLoop("TFor compilation", tvar, iterExpr, blockExpr);
+#end
+```
+
+#### 2. Categorized Debug Functions
+```haxe
+#if debug_patterns
+    DebugHelper.debugPattern("Map.merge detection", pattern, result);
+#end
+
+#if debug_optimizations  
+    DebugHelper.debugOptimization("Enum.map transformation", before, after);
+#end
+
+#if debug_annotations
+    DebugHelper.debugInfo("@:liveview processing", "Found LiveView class: " + className);
+#end
+
+#if debug_expressions
+    DebugHelper.debugExpression("TCall compilation", expr, result);
+#end
+```
+
+#### 3. Build-Time Control
+```bash
+# Enable all debugging
+npx haxe build-server.hxml -D debug_compiler
+
+# Enable specific categories
+npx haxe build-server.hxml -D debug_patterns -D debug_for_loops -D debug_annotations
+
+# Production build (no debug output)
+npx haxe build-server.hxml
+```
+
+### Debug Infrastructure Implementation
+
+#### Required Components
+1. **DebugHelper.hx** - Central debug infrastructure module
+   - Pretty-printing for TypedExpr AST nodes
+   - Structured output formatting
+   - Category management and filtering
+
+2. **Conditional Compilation Guards** - Wrap all debug calls
+   - `#if debug_compiler` for general debugging
+   - `#if debug_[category]` for specific areas
+   - Zero performance impact in production builds
+
+3. **Documentation Standards** - Clear debug categories
+   - `debug_compiler` - General compiler debugging (enables all categories)
+   - `debug_for_loops` - For-loop compilation and optimization
+   - `debug_patterns` - Pattern detection and matching (Map.merge, Y combinator, etc.)
+   - `debug_optimizations` - Optimization decisions and results  
+   - `debug_ast` - AST structure analysis
+   - `debug_expressions` - Expression compilation details
+   - `debug_types` - Type resolution and mapping
+   - `debug_annotations` - Annotation processing (@:liveview, @:router, etc.)
+   - `debug_helpers` - Helper compiler debugging (EnumCompiler, ClassCompiler, etc.)
+
+### Usage Guidelines
+
+#### ❌ NEVER Do This:
+```haxe
+// Ad-hoc traces that clutter code without documentation
+trace('Debugging TFor: ${expr}');
+trace('Pattern result: $result');
+
+// OR: Debug infrastructure without proper documentation
+#if debug_for_loops
+    DebugHelper.debugForLoop("TFor compilation", tvar, iterExpr, blockExpr);
+#end
+```
+
+#### ✅ ALWAYS Do This:
+```haxe
+/**
+ * TFor COMPILATION: Transform Haxe for-loops to idiomatic Elixir
+ * 
+ * WHY: Haxe for-loops need to be converted to functional Elixir patterns
+ * - Reflect.fields iterations → Map.merge optimizations  
+ * - Array iterations → Enum.map/filter/reduce operations
+ * - Complex patterns → Y combinator recursion as fallback
+ * 
+ * HOW: Direct delegation to compileForLoop for optimization detection
+ * - Pattern detection happens at AST level before string compilation
+ * - Avoids generating and then re-parsing string representations
+ */
+#if debug_for_loops
+    DebugHelper.debugForLoop("TFor compilation", tvar, iterExpr, blockExpr);
+#end
+return compileForLoop(tvar, iterExpr, blockExpr);
+```
+
+### Critical Rule: Documentation AND Debug Infrastructure
+**Both comprehensive code documentation AND debug infrastructure are mandatory:**
+
+1. **Documentation Comments**: Explain WHY, HOW, ARCHITECTURE, EDGE CASES
+2. **Debug Infrastructure**: Enable runtime observation of complex logic
+3. **Combined Benefit**: Comments explain the design, debug shows the execution
+
+### Debug Output Format Standards
+```
+[DEBUG:FOR_LOOP] ============================================
+Context: TFor compilation - Reflect.fields iteration
+Variable: field (String)
+Iterator: Reflect.fields(config) 
+Block: TCall(Reflect.setField, [target, field, value])
+Pattern: Simple field copying detected
+Optimization: Applying Map.merge(target, source)
+Result: endpoint_config = Map.merge(endpoint_config, config)
+[DEBUG:END] ================================================
+```
+
+### Benefits of Professional Debug Infrastructure
+- **Zero production overhead**: Debug code completely eliminated in production builds
+- **Persistent debugging**: Keep useful debug information in codebase without pollution
+- **Consistent format**: All debug output follows the same structured format
+- **Selective debugging**: Enable only the categories you need for specific issues
+- **Documentation value**: Debug calls serve as inline documentation of complex logic
+- **Collaboration**: Other developers can easily enable debugging for their issues
+
+### When to Use Debug Infrastructure
+- **Complex AST transformations**: Understanding TypedExpr processing
+- **Pattern detection logic**: Diagnosing why optimizations aren't triggering
+- **Optimization decisions**: Tracking which code paths are taken
+- **Performance analysis**: Understanding compilation bottlenecks
+- **Integration debugging**: Tracking data flow between compiler components
+
+**Why This Matters**: The compiler is a complex system with many interdependent components. Professional debug infrastructure makes development faster, more reliable, and more collaborative while keeping production builds clean and performant.
+
 ## 📍 Agent Navigation Guide
 
 ### When Writing or Fixing Tests

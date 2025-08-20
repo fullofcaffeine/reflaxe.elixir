@@ -29,7 +29,11 @@ defmodule TypeSafeChildSpecTools do
         config = g
         repo_module = "" <> app_name <> ".Repo"
         nil
-        temp_array = if (config != nil), do: [config], else: []
+        if (config != nil) do
+          temp_array = [config]
+        else
+          temp_array = []
+        end
         args = temp_array
         temp_result = repo_module
       2 ->
@@ -72,7 +76,11 @@ defmodule TypeSafeChildSpecTools do
         config = g
         telemetry_module = "" <> app_name <> "Web.Telemetry"
         nil
-        temp_array1 = if (config != nil), do: [config], else: []
+        if (config != nil) do
+          temp_array1 = [config]
+        else
+          temp_array1 = []
+        end
         args = temp_array1
         temp_result = telemetry_module
       4 ->

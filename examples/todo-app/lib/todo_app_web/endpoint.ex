@@ -14,7 +14,7 @@ defmodule TodoAppWeb.Endpoint do
   @session_options [
     store: :cookie,
     key: "_todo_app_key",
-    signing_salt: "O4bEadlI"
+    signing_salt: "krZhua9A"
   ]
 
   socket "/live", Phoenix.LiveView.Socket, websocket: [connect_info: [session: @session_options]]
