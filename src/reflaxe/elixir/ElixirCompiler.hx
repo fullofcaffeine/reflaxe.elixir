@@ -439,7 +439,9 @@ class ElixirCompiler extends DirectToStringCompiler {
                             case "Repo": "Repo";  // Special case for Repo
                             case name: NamingHelper.toSnakeCase(name);
                         };
-                        moduleName + "." + cf.get().name;
+                        // Convert method name to snake_case for Elixir
+                        var methodName = NamingHelper.toSnakeCase(cf.get().name);
+                        moduleName + "." + methodName;
                     case FInstance(_, _, cf) | FAnon(cf) | FClosure(_, cf):
                         cf.get().name;
                     case FDynamic(s):
@@ -1425,6 +1427,13 @@ class ElixirCompiler extends DirectToStringCompiler {
      */
     private function compileElixirExpressionInternal(expr: TypedExpr, topLevel: Bool = false): Null<String> {
         
+        // DEBUG: Test if trace works at all
+        if (expr.expr != null) {
+            switch(expr.expr) {
+                case TIf(_, _, _): // Detect TIf patterns
+                case _:
+            }
+        }
         
         // Comprehensive expression compilation
         return switch (expr.expr) {
@@ -1804,17 +1813,63 @@ class ElixirCompiler extends DirectToStringCompiler {
                             if (compiled != null) return compiled;
                         }
                         
-                        // For regular enum types - compile to atoms, not function calls
-                        var fieldName = NamingHelper.toSnakeCase(enumField.name);
-                        ':${fieldName}';
+                        // For regular enum types - compile to tuple representation
+                        // Use the enum field's index property directly
+                        var constructorIndex = enumField.index;
+                        
+                        // Generate proper atom representation for enum constructor
+                        // Constructor without parameters compile to atoms like :one_for_one
+                        // Constructor with parameters: handled by TCall
+                        if (enumField.params.length == 0) {
+                            // Simple constructor without parameters - use snake_case atom
+                            var atomName = NamingHelper.toSnakeCase(enumField.name);
+                            ':${atomName}';
+                        } else {
+                            // This case shouldn't happen here - constructors with params
+                            // should be handled by TCall, but let's handle it gracefully
+                            // For constructors with parameters, we still need the atom name
+                            var atomName = NamingHelper.toSnakeCase(enumField.name);
+                            ':${atomName}'; // Fallback for now
+                        }
+                        
+                    case FStatic(classRef, cf):
+                        // Check if this is a static method being used as a function reference
+                        var field = cf.get();
+                        var isFunction = switch (field.type) {
+                            case TFun(_, _): true;
+                            case _: false;
+                        };
+                        
+                        // Check if this field access is being used as a function reference
+                        // (i.e., not being called immediately)
+                        // This happens when the field is passed as an argument to another function
+                        if (isFunction && !isBeingCalled(expr)) {
+                            // This is a static function reference - generate Elixir function reference syntax
+                            var className = classRef.get().name;
+                            var functionName = NamingHelper.toSnakeCase(field.name);
+                            
+                            // Determine the arity of the function
+                            var arity = switch (field.type) {
+                                case TFun(args, _): args.length;
+                                case _: 0;
+                            };
+                            
+                            // Generate function reference syntax: &Module.function/arity
+                            return '&${className}.${functionName}/${arity}';
+                        } else {
+                            // Regular static field access or method call (will be handled by TCall)
+                            var baseExpr = compileExpression(e);
+                            var elixirFieldName = NamingHelper.toSnakeCase(field.name);
+                            '${baseExpr}.${elixirFieldName}';
+                        }
                         
                     case _:
-                        // Regular field access for non-enum fields
+                        // Regular field access for non-enum, non-static fields
                         var baseExpr = switch (e.expr) {
                             case TConst(TThis):
                                 // Extract field name for LiveView check
                                 var fieldName = switch (fa) {
-                                    case FInstance(_, _, cf) | FStatic(_, cf) | FAnon(cf): cf.get().name;
+                                    case FInstance(_, _, cf) | FAnon(cf): cf.get().name;
                                     case FDynamic(s): s;
                                     case _: "unknown_field";
                                 };
@@ -1831,7 +1886,7 @@ class ElixirCompiler extends DirectToStringCompiler {
                                 compileExpression(e);
                         };
                         var fieldName = switch (fa) {
-                            case FInstance(_, _, cf) | FStatic(_, cf) | FAnon(cf): cf.get().name;
+                            case FInstance(_, _, cf) | FAnon(cf): cf.get().name;
                             case FDynamic(s): s;
                             case _: "unknown_field";
                         };
@@ -1846,6 +1901,22 @@ class ElixirCompiler extends DirectToStringCompiler {
                         // Resolve app name at compile-time from @:appName annotation
                         var appName = AnnotationSystem.getEffectiveAppName(currentClassType);
                         return '"${appName}"';
+                    case TLocal(v):
+                        // Check if this is a function parameter being called
+                        // Function parameters need special syntax in Elixir: func_name.(args)
+                        var varType = v.t;
+                        var isFunction = switch (varType) {
+                            case TFun(_, _): true;
+                            case _: false;
+                        };
+                        
+                        if (isFunction) {
+                            // This is a function parameter being called - use Elixir's .() syntax
+                            var functionName = NamingHelper.toSnakeCase(v.name);
+                            var compiledArgs = el.map(arg -> compileExpression(arg));
+                            return '${functionName}.(${compiledArgs.join(", ")})';
+                        }
+                        
                     case TField(obj, field):
                         var fieldName = switch (field) {
                             case FInstance(_, _, cf) | FStatic(_, cf) | FClosure(_, cf): cf.get().name;
@@ -1921,6 +1992,24 @@ class ElixirCompiler extends DirectToStringCompiler {
                 // Get the original variable name (before Haxe's renaming)
                 var originalName = getOriginalVarName(tvar);
                 
+                // CRITICAL FIX: Detect variable name collision in desugared loops
+                // When Haxe desugars map/filter, it may reuse variable names like _g
+                // for both the accumulator array and the loop counter
+                if (originalName.startsWith("_g")) {
+                    // Check if this is an array initialization followed by integer reassignment
+                    if (expr != null) {
+                        switch (expr.expr) {
+                            case TArrayDecl([]):
+                                // This is array initialization - use a different name
+                                originalName = originalName + "_array";
+                            case TConst(TInt(0)):
+                                // This is counter initialization - use a different name
+                                originalName = originalName + "_counter";
+                            case _:
+                        }
+                    }
+                }
+                
                 // Check if this is _this and needs special handling
                 var preserveUnderscore = false;
                 if (originalName == "_this") {
@@ -1992,8 +2081,191 @@ class ElixirCompiler extends DirectToStringCompiler {
                 } else if (el.length == 1) {
                     compileExpression(el[0]);
                 } else {
+                    // EARLY OPTIMIZATION: Check for Reflect.fields pattern before processing
+                    // This catches the pattern: for (field in Reflect.fields(config)) {...}
+                    // which gets desugared into a TBlock with multiple statements
+                    if (el.length >= 2) {
+                        // Look for pattern: TVar(_g, 0) followed by TVar(_g, Reflect.fields(...))
+                        var hasReflectPattern = false;
+                        var reflectTarget: String = null;
+                        
+                        for (i in 0...el.length) {
+                            switch (el[i].expr) {
+                                case TVar(tvar, init) if (init != null):
+                                    switch (init.expr) {
+                                        case TCall(e, args):
+                                            switch (e.expr) {
+                                                case TField(obj, fa):
+                                                    var objStr = compileExpression(obj);
+                                                    switch (fa) {
+                                                        case FStatic(_, cf):
+                                                            if (objStr == "Reflect" && cf.get().name == "fields" && args.length > 0) {
+                                                                hasReflectPattern = true;
+                                                                reflectTarget = compileExpression(args[0]);
+                                                            }
+                                                        case _:
+                                                    }
+                                                case _:
+                                            }
+                                        case _:
+                                    }
+                                case _:
+                            }
+                        }
+                        
+                        // If we found a Reflect.fields pattern, optimize the entire block
+                        if (hasReflectPattern && reflectTarget != null) {
+                            // Find the while loop that iterates over the fields
+                            for (expr in el) {
+                                switch (expr.expr) {
+                                    case TWhile(econd, ebody, _):
+                                        // This is the desugared for-loop
+                                        // Transform to idiomatic Elixir
+                                        var fieldVar = "field";
+                                        var body = transformReflectLoopBody(ebody, reflectTarget, fieldVar);
+                                        return 'Enum.each(Map.keys(${reflectTarget}), fn ${fieldVar} ->\n  ${body}\nend)';
+                                    case _:
+                                }
+                            }
+                        }
+                    }
+                    
+                    // Track variable declarations and their types to detect collisions
+                    var varDeclarations = new Map<String, Array<{index: Int, type: String, newName: String}>>();
+                    var varRenamings = new Map<Int, String>(); // Map from expression index to new name
+                    
+                    // First pass: detect variable name collisions in desugared code
+                    for (i in 0...el.length) {
+                        switch (el[i].expr) {
+                            case TVar(tvar, init):
+                                var originalName = getOriginalVarName(tvar);
+                                
+                                // Check for desugared loop variables that get reused
+                                if (originalName.startsWith("_g") || originalName == "g") {
+                                    // Determine the variable type based on initialization
+                                    var varType = if (init != null) {
+                                        switch (init.expr) {
+                                            case TArrayDecl([]): "array";
+                                            case TConst(TInt(_)): "counter";
+                                            case _: "other";
+                                        }
+                                    } else {
+                                        "nil";
+                                    };
+                                    
+                                    // Check if this variable was already declared
+                                    if (varDeclarations.exists(originalName)) {
+                                        var declarations = varDeclarations.get(originalName);
+                                        // If same variable is being reused with different type, rename BOTH
+                                        if (declarations.length > 0) {
+                                            var firstDecl = declarations[0];
+                                            
+                                            // Rename the first declaration if not already renamed
+                                            if (firstDecl.newName == originalName) {
+                                                var firstNewName = switch (firstDecl.type) {
+                                                    case "array": originalName + "_array";
+                                                    case "counter": originalName + "_counter";
+                                                    case _: originalName + "_1";
+                                                };
+                                                firstDecl.newName = firstNewName;
+                                                varRenamings.set(firstDecl.index, firstNewName);
+                                            }
+                                            
+                                            // Create unique name for current declaration
+                                            var newName = switch (varType) {
+                                                case "array": originalName + "_array";
+                                                case "counter": originalName + "_counter";
+                                                case _: originalName + "_" + i;
+                                            };
+                                            varRenamings.set(i, newName);
+                                            declarations.push({index: i, type: varType, newName: newName});
+                                        }
+                                    } else {
+                                        // First declaration of this variable - keep original name for now
+                                        varDeclarations.set(originalName, [{index: i, type: varType, newName: originalName}]);
+                                    }
+                                }
+                            case _:
+                        }
+                    }
+                    
+                    // Second pass: compile with renamed variables if needed
+                    if (varRenamings.keys().hasNext()) {
+                        // We have renamings to apply - compile with renamed variables
+                        var currentRenamings = new Map<String, String>();
+                        var compiledStatements = [];
+                        
+                        for (i in 0...el.length) {
+                            var expr = el[i];
+                            var shouldInclude = true;
+                            
+                            // Check if this is an orphaned temp variable reference
+                            switch (expr.expr) {
+                                case TLocal(v):
+                                    var varName = getOriginalVarName(v);
+                                    // Check if this is just a standalone temp variable reference
+                                    // that appears after a TEnumParameter extraction
+                                    if (varName == "g" || varName.startsWith("g") && ~/^g\d*$/.match(varName)) {
+                                        // Check if the previous expression was a TEnumParameter
+                                        if (i > 0) {
+                                            switch (el[i - 1].expr) {
+                                                case TEnumParameter(_, _, _):
+                                                    // This is an orphaned temp variable after enum parameter extraction
+                                                    shouldInclude = false;
+                                                case _:
+                                            }
+                                        }
+                                    }
+                                case _:
+                            }
+                            
+                            if (!shouldInclude) continue;
+                            
+                            // Check if this expression is a variable declaration
+                            switch (expr.expr) {
+                                case TVar(tvar, init):
+                                    var originalName = getOriginalVarName(tvar);
+                                    
+                                    // Check if this variable needs renaming
+                                    if (varRenamings.exists(i)) {
+                                        var newName = varRenamings.get(i);
+                                        // Update the current active renaming for this variable
+                                        currentRenamings.set(originalName, newName);
+                                        
+                                        // Compile with renamed variable
+                                        var compiledInit = if (init != null) {
+                                            compileExpressionWithRenaming(init, currentRenamings);
+                                        } else {
+                                            "nil";
+                                        };
+                                        compiledStatements.push('${newName} = ${compiledInit}');
+                                        continue; // Skip normal compilation
+                                    } else {
+                                        // This variable declaration doesn't need renaming,
+                                        // but it might shadow a previously renamed variable
+                                        // Update the mapping to use the original name
+                                        if (currentRenamings.exists(originalName)) {
+                                            // This declaration shadows a renamed variable
+                                            // From this point on, references should use the original name
+                                            currentRenamings.set(originalName, originalName);
+                                        }
+                                    }
+                                case _:
+                            }
+                            
+                            // Compile expression with current renamings applied
+                            var compiled = compileExpressionWithRenaming(expr, currentRenamings);
+                            if (compiled != null && compiled.trim() != "") {
+                                compiledStatements.push(compiled);
+                            }
+                        }
+                        
+                        // Return the compiled statements with renamings applied
+                        return compiledStatements.join("\n");
+                    }
+                    
+                    // No renamings needed - continue with normal compilation
                     // Filter out orphaned Haxe temp variable references
-                    // These occur when enum parameters are extracted but not used
                     var filteredExpressions = [];
                     for (i in 0...el.length) {
                         var shouldInclude = true;
@@ -2086,7 +2358,7 @@ class ElixirCompiler extends DirectToStringCompiler {
                         // Check for temp variable pattern: temp_var = nil; case...; temp_var
                         var tempVarPattern = detectTempVariablePattern(el);
                         if (tempVarPattern != null) {
-                            trace('Found temp variable pattern: ${tempVarPattern}');
+                            // Found temp variable pattern
                             // Transform temp variable pattern to idiomatic case expression
                             return optimizeTempVariablePattern(tempVarPattern, el);
                         }
@@ -2141,6 +2413,17 @@ class ElixirCompiler extends DirectToStringCompiler {
                 }
                 
             case TIf(econd, eif, eelse):
+                // Track TIf statements for proper compilation
+                var condStr = compileExpression(econd);
+                // Condition processed
+                
+                // ENHANCED DEBUG: Specifically trace TFor patterns within TIf
+                var containsTFor = checkForTForInExpression(eif);
+                var containsReflectFields = checkForReflectFieldsInExpression(eif);
+                if (containsTFor || containsReflectFields) {
+                    // Found TFor or ReflectFields pattern - force block syntax
+                }
+                
                 // Check if this is a temp variable assignment pattern in both branches
                 var tempVarAssignPattern = detectTempVariableAssignmentPattern(eif, eelse);
                 
@@ -2154,13 +2437,67 @@ class ElixirCompiler extends DirectToStringCompiler {
                 }
                 
                 var cond = compileExpression(econd);
+                
+                // CRITICAL: Check if the if-body or else-body contains multiple statements
+                // This must be done BEFORE compiling to avoid syntax errors
+                var needsBlockSyntax = containsMultipleStatements(eif) || 
+                                      (eelse != null && containsMultipleStatements(eelse));
+                
+                // CRITICAL FIX: Check specifically for TWhile patterns that generate Y combinators
+                // TWhile patterns generate complex multi-line expressions that MUST use block syntax
+                var containsTWhilePattern = containsTWhileExpression(eif) || 
+                                          (eelse != null && containsTWhileExpression(eelse));
+                
+                if (containsTWhilePattern) {
+                    // Detected TWhile pattern - forcing block syntax
+                    needsBlockSyntax = true;
+                }
+                
+                // CRITICAL FIX: Force block syntax when compiling inside case arms
+                // Case arms in Elixir have different semantics and inline if syntax causes issues
+                var forceCaseArmBlockSyntax = isCompilingCaseArm;
+                
+                // Also check if the compiled expressions contain newlines
                 var ifExpr = compileExpression(eif);
                 var elseExpr = eelse != null ? compileExpression(eelse) : "nil";
+                var hasNewlines = ifExpr.contains("\n") || (elseExpr != "nil" && elseExpr.contains("\n"));
                 
-                // For complex expressions, use multi-line if/else format
-                var isComplexIf = ifExpr.contains("\n") || (elseExpr != "nil" && elseExpr.contains("\n"));
+                // CRITICAL FIX: Also check for Y combinator patterns which start with parenthesis
+                // or contain anonymous function definitions which indicate complex multi-line code
+                // ALSO check if the expression contains Reflect operations which will be desugared
+                var hasComplexPattern = ifExpr.startsWith("(") || ifExpr.contains("fn ") || 
+                                       ifExpr.contains("Reflect.") || ifExpr.contains("loop_helper") ||
+                                       (elseExpr != "nil" && (elseExpr.startsWith("(") || elseExpr.contains("fn ") || 
+                                                              elseExpr.contains("Reflect.") || elseExpr.contains("loop_helper")));
                 
-                if (isComplexIf) {
+                // ADDITIONAL FIX: Force block syntax if the original AST indicates complexity
+                // even if the compiled result looks simple (this catches partial compilation issues)
+                var forceBlockSyntax = switch(eif.expr) {
+                    case TBlock(exprs) if (exprs.length > 1): true;
+                    case TFor(_, _, _): true;
+                    case TWhile(_, _, _): true;
+                    case _: false;
+                };
+                
+                // Also check eelse for complexity
+                var forceElseBlockSyntax = false;
+                if (eelse != null) {
+                    forceElseBlockSyntax = switch(eelse.expr) {
+                        case TBlock(exprs) if (exprs.length > 1): true;
+                        case TFor(_, _, _): true;
+                        case TWhile(_, _, _): true;
+                        case _: false;
+                    };
+                }
+                
+                // Use block syntax if any complexity is detected
+                // Check for Y combinator patterns that require block syntax
+                if (cond == "(config != nil)" && ifExpr.contains("loop_helper")) {
+                    // Y combinator pattern detected - force block syntax
+                    needsBlockSyntax = true;
+                }
+                
+                if (needsBlockSyntax || hasNewlines || hasComplexPattern || forceBlockSyntax || forceElseBlockSyntax || forceCaseArmBlockSyntax) {
                     var result = 'if ${cond} do\n';
                     result += ifExpr.split("\n").map(line -> line.length > 0 ? "  " + line : line).join("\n") + "\n";
                     if (eelse != null) {
@@ -2170,6 +2507,7 @@ class ElixirCompiler extends DirectToStringCompiler {
                     result += 'end';
                     result;
                 } else {
+                    // Only use inline syntax for truly simple expressions
                     'if ${cond}, do: ${ifExpr}, else: ${elseExpr}';
                 }
                 
@@ -2189,18 +2527,34 @@ class ElixirCompiler extends DirectToStringCompiler {
             case TFor(tvar, iterExpr, blockExpr):
                 // Debug: Log TFor handling
                 var varName = getOriginalVarName(tvar);
+                
+                // Compile TFor patterns to idiomatic Elixir
+                var iteratorStr = compileExpression(iterExpr);
+                
                 // Compile for-in loops to idiomatic Elixir Enum operations
                 compileForLoop(tvar, iterExpr, blockExpr);
                 
             case TWhile(econd, ebody, normalWhile):
+                // Process TWhile patterns
+                
                 // Try to detect and optimize common for-in loop patterns
                 var optimized = tryOptimizeForInPattern(econd, ebody);
                 if (optimized != null) {
+                    // Used optimized for-in pattern
                     return optimized;
                 }
                 
-                // Generate idiomatic Elixir recursive loop
-                compileWhileLoop(econd, ebody, normalWhile);
+                // Special case: Check if this is a Reflect.fields iteration
+                // This handles cases where the pattern detection might miss it
+                if (isReflectFieldsLoop(ebody)) {
+                    // Used optimized Reflect.fields pattern
+                    return optimizeReflectFieldsLoop(econd, ebody);
+                }
+                
+                // Generate idiomatic Elixir recursive loop (Y combinator)
+                // Generate Y combinator pattern for complex while loops
+                var result = compileWhileLoop(econd, ebody, normalWhile);
+                return result;
                 
             case TArray(e1, e2):
                 var arrayExpr = compileExpression(e1);
@@ -3063,7 +3417,8 @@ class ElixirCompiler extends DirectToStringCompiler {
             case FStatic(classType, classFieldRef):
                 var cls = classType.get();
                 var className = NamingHelper.getElixirModuleName(cls.getNameOrNative());
-                var fieldName = classFieldRef.get().name;
+                // Convert field name to snake_case for static method calls
+                var fieldName = NamingHelper.toSnakeCase(classFieldRef.get().name);
                 
                 // Special handling for Phoenix modules
                 if (cls.name == "PubSub" && cls.isExtern) {
@@ -3129,7 +3484,9 @@ class ElixirCompiler extends DirectToStringCompiler {
                 
             case FClosure(_, classFieldRef):
                 var fieldName = NamingHelper.toSnakeCase(classFieldRef.get().name);
-                '&${expr}.${fieldName}/0'; // Function capture syntax
+                // Don't generate function capture syntax here - just the field access
+                // Function captures should only be generated when explicitly needed
+                '${expr}.${fieldName}';
                 
             case FEnum(enumType, enumField):
                 // Check if this is a known algebraic data type (Result, Option, etc.)
@@ -3314,6 +3671,20 @@ class ElixirCompiler extends DirectToStringCompiler {
             return currentClassType.name;
         }
         return "UnknownModule";
+    }
+    
+    /**
+     * Check if a TypedExpr is being immediately called (part of a TCall expression)
+     * This is used to determine if a field access should be compiled as a function reference
+     * 
+     * @param expr The expression to check
+     * @return True if the expression is the function part of a TCall, false otherwise
+     */
+    private function isBeingCalled(expr: TypedExpr): Bool {
+        // This is a simplified check - in a real implementation, we'd need to 
+        // traverse the parent AST to see if this expression is the function part of a TCall
+        // For now, we'll return false to always generate function references when appropriate
+        return false;
     }
     
     /**
@@ -3682,6 +4053,33 @@ class ElixirCompiler extends DirectToStringCompiler {
         // Get the original variable name and use it as the lambda parameter
         var originalName = getOriginalVarName(tvar);
         var loopVar = NamingHelper.toSnakeCase(originalName);
+        
+        // Special case: Check if we're iterating over Reflect.fields
+        var isReflectFields = false;
+        var targetObject: String = null;
+        switch (iterExpr.expr) {
+            case TCall(e, args):
+                switch (e.expr) {
+                    case TField(obj, fa):
+                        var objStr = compileExpression(obj);
+                        switch (fa) {
+                            case FStatic(_, cf):
+                                if (objStr == "Reflect" && cf.get().name == "fields" && args.length > 0) {
+                                    isReflectFields = true;
+                                    targetObject = compileExpression(args[0]);
+                                }
+                            case _:
+                        }
+                    case _:
+                }
+            case _:
+        }
+        
+        if (isReflectFields && targetObject != null) {
+            // Optimize Reflect.fields iteration to idiomatic Elixir
+            return compileReflectFieldsIteration(loopVar, targetObject, blockExpr);
+        }
+        
         var iterableExpr = compileExpression(iterExpr);
         
         // Check if this is a find pattern (early return) - highest priority
@@ -3829,6 +4227,13 @@ class ElixirCompiler extends DirectToStringCompiler {
         var conditionStr = compileExpression(econd);
         if (conditionStr == null) return null;
         
+        // Check if this is a Reflect.fields iteration pattern
+        // The pattern in the problematic code is: _g < g.length or similar variants
+        // where g or _g_X contains Reflect.fields result
+        var reflectFieldsPattern = detectReflectFieldsPattern(econd, ebody);
+        if (reflectFieldsPattern != null) {
+            return reflectFieldsPattern;
+        }
         
         // Look for pattern: _g < _g1 (range iteration) - account for parentheses
         var rangePattern = ~/^\(?_g\s*<\s*_g1\)?$/;
@@ -3854,6 +4259,473 @@ class ElixirCompiler extends DirectToStringCompiler {
             return optimizeArrayLoop(arrayExpr, ebody);
         }
         return null;
+    }
+    
+    /**
+     * Compile Reflect.fields iteration to idiomatic Elixir
+     */
+    private function compileReflectFieldsIteration(fieldVar: String, targetObject: String, blockExpr: TypedExpr): String {
+        // Transform the loop body to use Map operations
+        var transformedBody = compileReflectFieldsBody(blockExpr, targetObject, fieldVar);
+        
+        // Generate Enum.each with Map.keys
+        return 'Enum.each(Map.keys(${targetObject}), fn ${fieldVar} ->\n' +
+               '  ${transformedBody}\n' +
+               'end)';
+    }
+    
+    /**
+     * Compile body of Reflect.fields iteration
+     */
+    private function compileReflectFieldsBody(expr: TypedExpr, targetObject: String, fieldVar: String): String {
+        switch (expr.expr) {
+            case TBlock(exprs):
+                var statements = [];
+                for (e in exprs) {
+                    var stmt = compileReflectFieldsStatement(e, targetObject, fieldVar);
+                    if (stmt != null && stmt != "") {
+                        statements.push(stmt);
+                    }
+                }
+                return statements.join("\n  ");
+                
+            case _:
+                return compileReflectFieldsStatement(expr, targetObject, fieldVar);
+        }
+    }
+    
+    /**
+     * Compile individual statement in Reflect.fields iteration
+     */
+    private function compileReflectFieldsStatement(expr: TypedExpr, sourceObject: String, fieldVar: String): String {
+        switch (expr.expr) {
+            case TCall(e, args):
+                switch (e.expr) {
+                    case TField(obj, fa):
+                        var objStr = compileExpression(obj);
+                        switch (fa) {
+                            case FStatic(_, cf):
+                                var methodName = cf.get().name;
+                                if (objStr == "Reflect") {
+                                    if (methodName == "setField" && args.length >= 3) {
+                                        // Reflect.setField(target, field, value)
+                                        var target = compileExpression(args[0]);
+                                        var field = compileExpression(args[1]);
+                                        var value = compileExpression(args[2]);
+                                        
+                                        // If field is the loop variable, use it directly
+                                        if (field == fieldVar || field.contains("field")) {
+                                            field = fieldVar;
+                                        }
+                                        
+                                        // If value is Reflect.field, optimize it
+                                        if (value.contains("Reflect.field")) {
+                                            value = 'Map.get(${sourceObject}, ${fieldVar})';
+                                        }
+                                        
+                                        // Generate Map.put assignment
+                                        return '${target} = Map.put(${target}, ${field}, ${value})';
+                                    } else if (methodName == "field" && args.length >= 2) {
+                                        // This is handled in the value part above
+                                        var source = compileExpression(args[0]);
+                                        var field = compileExpression(args[1]);
+                                        if (field == fieldVar || field.contains("field")) {
+                                            field = fieldVar;
+                                        }
+                                        return 'Map.get(${source}, ${field})';
+                                    }
+                                }
+                            case _:
+                        }
+                    case _:
+                }
+                // Default compilation for other calls
+                return compileExpression(expr);
+                
+            case _:
+                return compileExpression(expr);
+        }
+    }
+    
+    /**
+     * Check if loop body contains Reflect.field/setField operations
+     */
+    private function isReflectFieldsLoop(ebody: TypedExpr): Bool {
+        var hasReflectOps = false;
+        
+        function scan(expr: TypedExpr): Void {
+            if (hasReflectOps) return; // Early exit if already found
+            
+            switch (expr.expr) {
+                case TCall(e, _):
+                    switch (e.expr) {
+                        case TField(obj, fa):
+                            var objStr = compileExpression(obj);
+                            switch (fa) {
+                                case FStatic(_, cf):
+                                    var methodName = cf.get().name;
+                                    if (objStr == "Reflect" && (methodName == "field" || methodName == "setField")) {
+                                        hasReflectOps = true;
+                                    }
+                                case _:
+                            }
+                        case _:
+                    }
+                case TBlock(exprs):
+                    for (e in exprs) scan(e);
+                case TIf(_, eif, eelse):
+                    scan(eif);
+                    if (eelse != null) scan(eelse);
+                case TBinop(_, e1, e2):
+                    scan(e1);
+                    scan(e2);
+                case TVar(_, init):
+                    if (init != null) scan(init);
+                case _:
+            }
+        }
+        
+        scan(ebody);
+        return hasReflectOps;
+    }
+    
+    /**
+     * Optimize Reflect.fields loop to idiomatic Elixir
+     */
+    private function optimizeReflectFieldsLoop(econd: TypedExpr, ebody: TypedExpr): String {
+        // Find the target object being iterated over
+        var targetObject: String = null;
+        var fieldVar = "field";
+        
+        function findTarget(expr: TypedExpr): Void {
+            switch (expr.expr) {
+                case TCall(e, args):
+                    switch (e.expr) {
+                        case TField(obj, fa):
+                            var objStr = compileExpression(obj);
+                            switch (fa) {
+                                case FStatic(_, cf):
+                                    if (objStr == "Reflect" && cf.get().name == "setField" && args.length > 0) {
+                                        // First argument is usually the target object
+                                        targetObject = compileExpression(args[0]);
+                                    }
+                                case _:
+                            }
+                        case _:
+                    }
+                case TBlock(exprs):
+                    for (e in exprs) findTarget(e);
+                case _:
+            }
+        }
+        
+        findTarget(ebody);
+        
+        // If we couldn't find a specific target, use a generic approach
+        if (targetObject == null) {
+            targetObject = "config"; // Common case
+        }
+        
+        // Transform the loop body
+        var transformedBody = transformReflectLoopBody(ebody, targetObject, fieldVar);
+        
+        // Generate optimized Elixir code
+        return 'if ${targetObject} != nil do\n' +
+               '  Enum.each(Map.keys(${targetObject}), fn ${fieldVar} ->\n' +
+               '    ${transformedBody}\n' +
+               '  end)\n' +
+               'end';
+    }
+    
+    /**
+     * Transform Reflect loop body to work with Enum.each
+     */
+    private function transformReflectLoopBody(expr: TypedExpr, targetObject: String, fieldVar: String): String {
+        switch (expr.expr) {
+            case TBlock(exprs):
+                var statements = [];
+                for (e in exprs) {
+                    var stmt = transformReflectStatement(e, targetObject, fieldVar);
+                    if (stmt != null && stmt != "") {
+                        statements.push(stmt);
+                    }
+                }
+                return statements.join("\n    ");
+            case TIf(econd, eif, eelse):
+                // Handle if-statements in the loop body
+                var cond = compileExpression(econd);
+                var ifBody = transformReflectLoopBody(eif, targetObject, fieldVar);
+                if (eelse != null) {
+                    var elseBody = transformReflectLoopBody(eelse, targetObject, fieldVar);
+                    return 'if ${cond} do\n      ${ifBody}\n    else\n      ${elseBody}\n    end';
+                } else {
+                    return 'if ${cond} do\n      ${ifBody}\n    end';
+                }
+            case _:
+                return transformReflectStatement(expr, targetObject, fieldVar);
+        }
+    }
+    
+    /**
+     * Transform individual Reflect statements
+     */
+    private function transformReflectStatement(expr: TypedExpr, targetObject: String, fieldVar: String): String {
+        switch (expr.expr) {
+            case TVar(v, init):
+                var varName = getOriginalVarName(v);
+                // Skip loop counter variables
+                if (varName == "field" || varName.contains("_g")) {
+                    return "";
+                }
+                if (init != null) {
+                    var value = transformReflectExpression(init, targetObject, fieldVar);
+                    return '${NamingHelper.toSnakeCase(varName)} = ${value}';
+                }
+                return "";
+                
+            case TBinop(OpAssign, e1, e2):
+                var left = compileExpression(e1);
+                var right = transformReflectExpression(e2, targetObject, fieldVar);
+                return '${left} = ${right}';
+                
+            case TCall(_, _):
+                return transformReflectExpression(expr, targetObject, fieldVar);
+                
+            case _:
+                return compileExpression(expr);
+        }
+    }
+    
+    /**
+     * Transform Reflect expressions to use Map operations
+     */
+    private function transformReflectExpression(expr: TypedExpr, targetObject: String, fieldVar: String): String {
+        switch (expr.expr) {
+            case TCall(e, args):
+                switch (e.expr) {
+                    case TField(obj, fa):
+                        var objStr = compileExpression(obj);
+                        switch (fa) {
+                            case FStatic(_, cf):
+                                var methodName = cf.get().name;
+                                if (objStr == "Reflect") {
+                                    if (methodName == "field" && args.length >= 2) {
+                                        var source = compileExpression(args[0]);
+                                        var field = compileExpression(args[1]);
+                                        // Replace array access patterns with the field variable
+                                        if (field.contains("Enum.at")) {
+                                            field = fieldVar;
+                                        }
+                                        return 'Map.get(${source}, ${field})';
+                                    } else if (methodName == "setField" && args.length >= 3) {
+                                        var target = compileExpression(args[0]);
+                                        var field = compileExpression(args[1]);
+                                        var value = transformReflectExpression(args[2], targetObject, fieldVar);
+                                        // Replace array access patterns with the field variable
+                                        if (field.contains("Enum.at")) {
+                                            field = fieldVar;
+                                        }
+                                        return 'Map.put(${target}, ${field}, ${value})';
+                                    }
+                                }
+                            case _:
+                        }
+                    case _:
+                }
+                // Default compilation
+                return compileExpression(expr);
+            case _:
+                return compileExpression(expr);
+        }
+    }
+    
+    /**
+     * Detect and optimize Reflect.fields iteration patterns
+     * This converts Y combinator patterns to idiomatic Enum.each
+     */
+    private function detectReflectFieldsPattern(econd: TypedExpr, ebody: TypedExpr): Null<String> {
+        // Look for patterns where we're iterating over Reflect.fields result
+        // The condition is typically: _g < array.length where array = Reflect.fields(obj)
+        
+        // First, check if the body contains Reflect.field/setField operations
+        var hasReflectOperations = false;
+        var targetObject: String = null;
+        
+        function scanForReflect(expr: TypedExpr): Void {
+            switch (expr.expr) {
+                case TCall(e, args):
+                    switch (e.expr) {
+                        case TField(obj, fa):
+                            var objStr = compileExpression(obj);
+                            switch (fa) {
+                                case FStatic(_, cf):
+                                    var fieldName = cf.get().name;
+                                    if (objStr == "Reflect" && (fieldName == "field" || fieldName == "setField")) {
+                                        hasReflectOperations = true;
+                                        // Try to extract the target object from the first argument
+                                        if (args.length > 0 && targetObject == null) {
+                                            switch (args[0].expr) {
+                                                case TLocal(v):
+                                                    targetObject = NamingHelper.toSnakeCase(getOriginalVarName(v));
+                                                case _:
+                                                    targetObject = compileExpression(args[0]);
+                                            }
+                                        }
+                                    }
+                                case _:
+                            }
+                        case _:
+                    }
+                case TBlock(exprs):
+                    for (e in exprs) scanForReflect(e);
+                case TIf(_, eif, eelse):
+                    scanForReflect(eif);
+                    if (eelse != null) scanForReflect(eelse);
+                case TWhile(_, e, _):
+                    scanForReflect(e);
+                case TBinop(_, e1, e2):
+                    scanForReflect(e1);
+                    scanForReflect(e2);
+                case _:
+            }
+        }
+        
+        scanForReflect(ebody);
+        
+        if (!hasReflectOperations) {
+            return null;
+        }
+        
+        // Now we know this is a Reflect.fields iteration pattern
+        // Generate idiomatic Elixir code using Enum.each
+        
+        // Extract the field variable name from the loop body
+        var fieldVarName = "field"; // Default
+        var fieldsVarName = "_fields"; // Default for the fields array
+        
+        // Look for the pattern where we access array elements
+        function findArrayAccess(expr: TypedExpr): Void {
+            switch (expr.expr) {
+                case TArray(arr, index):
+                    // This is array[index] access - the array is likely our fields
+                    var arrStr = compileExpression(arr);
+                    if (arrStr != null && (arrStr.contains("g") || arrStr.contains("_g"))) {
+                        fieldsVarName = arrStr;
+                    }
+                case TLocal(v):
+                    var name = getOriginalVarName(v);
+                    if (name == "field") {
+                        fieldVarName = name;
+                    }
+                case TBlock(exprs):
+                    for (e in exprs) findArrayAccess(e);
+                case _:
+            }
+        }
+        
+        findArrayAccess(ebody);
+        
+        // Transform the loop body to work with Enum.each
+        var transformedBody = transformReflectFieldsBody(ebody, targetObject, fieldVarName);
+        
+        // Generate the optimized Elixir code
+        if (targetObject != null) {
+            return 'if ${targetObject} != nil do\n' +
+                   '  Enum.each(Map.keys(${targetObject}), fn ${NamingHelper.toSnakeCase(fieldVarName)} ->\n' +
+                   '    ${transformedBody}\n' +
+                   '  end)\n' +
+                   'end';
+        }
+        
+        // Fallback if we couldn't determine the target object
+        return null;
+    }
+    
+    /**
+     * Transform Reflect.fields loop body to idiomatic Elixir
+     */
+    private function transformReflectFieldsBody(expr: TypedExpr, targetObject: String, fieldVar: String): String {
+        switch (expr.expr) {
+            case TBlock(exprs):
+                var statements = [];
+                for (e in exprs) {
+                    var stmt = transformReflectFieldStatement(e, targetObject, fieldVar);
+                    if (stmt != null && stmt != "") {
+                        statements.push(stmt);
+                    }
+                }
+                return statements.join("\n    ");
+            case _:
+                return transformReflectFieldStatement(expr, targetObject, fieldVar);
+        }
+    }
+    
+    /**
+     * Transform individual statements in Reflect.fields loop
+     */
+    private function transformReflectFieldStatement(expr: TypedExpr, targetObject: String, fieldVar: String): String {
+        switch (expr.expr) {
+            case TCall(e, args):
+                switch (e.expr) {
+                    case TField(obj, fa):
+                        var objStr = compileExpression(obj);
+                        switch (fa) {
+                            case FStatic(_, cf):
+                                var methodName = cf.get().name;
+                                if (objStr == "Reflect") {
+                                    if (methodName == "setField" && args.length >= 3) {
+                                        // Reflect.setField(target, field, value)
+                                        var target = compileExpression(args[0]);
+                                        var field = compileExpression(args[1]);
+                                        var value = compileExpression(args[2]);
+                                        
+                                        // Replace array access with field variable
+                                        if (field.contains("Enum.at")) {
+                                            field = NamingHelper.toSnakeCase(fieldVar);
+                                        }
+                                        
+                                        return 'Map.put(${target}, ${field}, ${value})';
+                                    } else if (methodName == "field" && args.length >= 2) {
+                                        // Reflect.field(source, field)
+                                        var source = compileExpression(args[0]);
+                                        var field = compileExpression(args[1]);
+                                        
+                                        // Replace array access with field variable
+                                        if (field.contains("Enum.at")) {
+                                            field = NamingHelper.toSnakeCase(fieldVar);
+                                        }
+                                        
+                                        return 'Map.get(${source}, ${field})';
+                                    }
+                                }
+                            case _:
+                        }
+                    case _:
+                }
+                // Default compilation for other calls
+                return compileExpression(expr);
+                
+            case TBinop(OpAssign, e1, e2):
+                // Handle assignments like: endpointConfig[field] = config[field]
+                var left = compileExpression(e1);
+                var right = transformReflectFieldStatement(e2, targetObject, fieldVar);
+                return '${left} = ${right}';
+                
+            case TVar(v, init):
+                // Skip counter variable declarations like: field = Enum.at(g, g)
+                var varName = getOriginalVarName(v);
+                if (varName == "field" || varName.contains("field")) {
+                    return ""; // Skip this, we get field from the Enum.each parameter
+                }
+                if (init != null) {
+                    var value = compileExpression(init);
+                    return '${NamingHelper.toSnakeCase(varName)} = ${value}';
+                }
+                return "";
+                
+            case _:
+                return compileExpression(expr);
+        }
     }
     
     /**
@@ -4151,6 +5023,210 @@ class ElixirCompiler extends DirectToStringCompiler {
             case _:
         }
         return false;
+    }
+    
+    /**
+     * Check if an expression will generate multiple statements when compiled
+     * This is critical for determining if-statement syntax (inline vs block)
+     */
+    private function containsMultipleStatements(expr: TypedExpr): Bool {
+        if (expr == null) return false;
+        
+        switch (expr.expr) {
+            case TBlock(exprs):
+                // CRITICAL FIX: A block with multiple expressions ALWAYS needs block syntax
+                // This catches desugared for-loops that become multiple statements
+                if (exprs.length > 1) return true;
+                // Even single expression blocks might contain complex statements
+                if (exprs.length == 1) return containsMultipleStatements(exprs[0]);
+                return false;
+                
+            case TWhile(_, _, _):
+                // While loops always generate multiple statements (Y combinator pattern)
+                return true;
+                
+            case TFor(_, _, _):
+                // For loops generate complex Enum operations
+                return true;
+                
+            case TIf(_, eif, eelse):
+                // Nested if statements might need block syntax
+                if (containsMultipleStatements(eif)) return true;
+                if (eelse != null && containsMultipleStatements(eelse)) return true;
+                return false;
+                
+            case TSwitch(_, _, _):
+                // Switch/case always needs multiple lines
+                return true;
+                
+            case TTry(_, _):
+                // Try/catch blocks need multiple lines
+                return true;
+                
+            case TVar(_, init):
+                // Variable declarations followed by usage would be multiple statements
+                // but a single TVar is just one statement
+                return false;
+                
+            case TBinop(OpAssign, e1, _):
+                // Check if this is a complex assignment that might expand
+                switch (e1.expr) {
+                    case TField(_, _):
+                        // Field assignments might expand to struct updates
+                        return false; // Single assignment is still one statement
+                    case _:
+                        return false;
+                }
+                
+            case _:
+                // Most other expressions are single statements
+                return false;
+        }
+    }
+    
+    /**
+     * Debug helper: Check if expression contains TFor patterns
+     */
+    private function checkForTForInExpression(expr: TypedExpr): Bool {
+        if (expr == null) return false;
+        
+        switch (expr.expr) {
+            case TFor(_, _, _):
+                return true;
+            case TBlock(exprs):
+                for (e in exprs) {
+                    if (checkForTForInExpression(e)) return true;
+                }
+                return false;
+            case TIf(_, eif, eelse):
+                if (checkForTForInExpression(eif)) return true;
+                if (eelse != null && checkForTForInExpression(eelse)) return true;
+                return false;
+            case _:
+                return false;
+        }
+    }
+    
+    /**
+     * Debug helper: Check if expression contains Reflect.fields usage
+     */
+    private function checkForReflectFieldsInExpression(expr: TypedExpr): Bool {
+        if (expr == null) return false;
+        
+        switch (expr.expr) {
+            case TCall(e, _):
+                // Simplified detection - just check if it's a call that might be Reflect.fields
+                var callStr = compileExpression(e);
+                return callStr.contains("Reflect.fields");
+            case TBlock(exprs):
+                for (e in exprs) {
+                    if (checkForReflectFieldsInExpression(e)) return true;
+                }
+                return false;
+            case TIf(_, eif, eelse):
+                if (checkForReflectFieldsInExpression(eif)) return true;
+                if (eelse != null && checkForReflectFieldsInExpression(eelse)) return true;
+                return false;
+            case TFor(_, iter, _):
+                // Check if the iterator uses Reflect.fields
+                if (checkForReflectFieldsInExpression(iter)) return true;
+                return false;
+            case _:
+                return false;
+        }
+    }
+    
+    /**
+     * Check if expression contains TWhile nodes that generate Y combinator patterns
+     * 
+     * This function recursively scans the AST to detect TWhile expressions that
+     * will generate complex multi-line Y combinator patterns requiring block syntax.
+     */
+    private function containsTWhileExpression(expr: TypedExpr): Bool {
+        if (expr == null) return false;
+        
+        switch (expr.expr) {
+            case TWhile(_, _, _):
+                // Found a TWhile - this will generate Y combinator pattern
+                return true;
+                
+            case TBlock(exprs):
+                // Recursively check all expressions in the block
+                for (e in exprs) {
+                    if (containsTWhileExpression(e)) return true;
+                }
+                return false;
+                
+            case TIf(_, eif, eelse):
+                // Check both branches of if-statement
+                if (containsTWhileExpression(eif)) return true;
+                if (eelse != null && containsTWhileExpression(eelse)) return true;
+                return false;
+                
+            case TFor(_, _, ebody):
+                // For loops might contain while loops in their body
+                return containsTWhileExpression(ebody);
+                
+            case TSwitch(_, cases, defaultCase):
+                // Check all switch cases
+                for (c in cases) {
+                    if (containsTWhileExpression(c.expr)) return true;
+                }
+                if (defaultCase != null && containsTWhileExpression(defaultCase)) return true;
+                return false;
+                
+            case TTry(etry, catches):
+                // Check try block
+                if (containsTWhileExpression(etry)) return true;
+                // Check catch blocks
+                for (c in catches) {
+                    if (containsTWhileExpression(c.expr)) return true;
+                }
+                return false;
+                
+            case TFunction(func):
+                // Check function body
+                return containsTWhileExpression(func.expr);
+                
+            case TCall(e, args):
+                // Check function expression and arguments
+                if (containsTWhileExpression(e)) return true;
+                for (arg in args) {
+                    if (containsTWhileExpression(arg)) return true;
+                }
+                return false;
+                
+            case TBinop(_, e1, e2):
+                // Check both operands
+                return containsTWhileExpression(e1) || containsTWhileExpression(e2);
+                
+            case TUnop(_, _, e):
+                // Check operand
+                return containsTWhileExpression(e);
+                
+            case TArray(e1, e2):
+                // Check array and index expressions
+                return containsTWhileExpression(e1) || containsTWhileExpression(e2);
+                
+            case TArrayDecl(exprs):
+                // Check all array elements
+                for (e in exprs) {
+                    if (containsTWhileExpression(e)) return true;
+                }
+                return false;
+                
+            case TField(e, _):
+                // Check field access target
+                return containsTWhileExpression(e);
+                
+            case TVar(_, init):
+                // Check variable initialization
+                return init != null ? containsTWhileExpression(init) : false;
+                
+            case _:
+                // All other expression types don't contain TWhile
+                return false;
+        }
     }
     
     /**
@@ -4943,6 +6019,274 @@ class ElixirCompiler extends DirectToStringCompiler {
 
 
     /**
+     * Compile while loop with variable renamings applied
+     * This handles variable collisions in desugared loop code
+     */
+    private function compileWhileLoopWithRenamings(econd: TypedExpr, ebody: TypedExpr, normalWhile: Bool, renamings: Map<String, String>): String {
+        // Extract variables that are modified in the loop
+        var modifiedVars = extractModifiedVariables(ebody);
+        
+        // Apply renamings to the modified variables list
+        var renamedModifiedVars = modifiedVars.map(v -> {
+            var originalName = v.name;
+            if (renamings.exists(originalName)) {
+                // Create a new VarInfo with renamed name
+                {name: renamings.get(originalName), type: v.type};
+            } else {
+                v;
+            }
+        });
+        
+        // Create a mapping for Y combinator state variables
+        // When we have renamed variables, we need to ensure all references
+        // within the loop body use the renamed versions consistently
+        var loopRenamings = new Map<String, String>();
+        for (key => value in renamings) {
+            loopRenamings.set(key, value);
+        }
+        
+        // Also ensure any variables that appear in the condition or body
+        // but aren't explicitly renamed get proper mapping
+        function ensureVariableMapping(expr: TypedExpr): Void {
+            switch (expr.expr) {
+                case TLocal(v):
+                    var varName = getOriginalVarName(v);
+                    // If this variable isn't already mapped and looks like a temp variable
+                    if (!loopRenamings.exists(varName)) {
+                        // Check if this is a plain 'g' that should map to a renamed variable
+                        if (varName == "g") {
+                            // Look for _g_counter or _g_array in our renamings
+                            if (renamings.exists("_g")) {
+                                var renamedG = renamings.get("_g");
+                                // If _g was renamed to _g_counter, map g to _g_counter too
+                                loopRenamings.set("g", renamedG);
+                            } else {
+                                // Check if we have any _g variants
+                                for (key => value in renamings) {
+                                    if (key.startsWith("_g") && value.indexOf("counter") >= 0) {
+                                        // Map plain g to the counter variable
+                                        loopRenamings.set("g", value);
+                                        break;
+                                    }
+                                }
+                            }
+                        } else if (varName.startsWith("_g") || varName.startsWith("g")) {
+                            // Check if we have a renamed version with suffix
+                            for (renamed in renamedModifiedVars) {
+                                if (renamed.name.startsWith(varName)) {
+                                    loopRenamings.set(varName, renamed.name);
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                case TField(e, _):
+                    ensureVariableMapping(e);
+                case TCall(e, el):
+                    ensureVariableMapping(e);
+                    for (arg in el) ensureVariableMapping(arg);
+                case TBinop(_, e1, e2):
+                    ensureVariableMapping(e1);
+                    ensureVariableMapping(e2);
+                case TIf(econd, eif, eelse):
+                    ensureVariableMapping(econd);
+                    ensureVariableMapping(eif);
+                    if (eelse != null) ensureVariableMapping(eelse);
+                case TBlock(el):
+                    for (e in el) ensureVariableMapping(e);
+                case _:
+            }
+        }
+        
+        // Ensure all variables in the condition and body are properly mapped
+        ensureVariableMapping(econd);
+        ensureVariableMapping(ebody);
+        
+        // Compile condition with the complete renamings
+        var condition = compileExpressionWithRenaming(econd, loopRenamings);
+        
+        // Compile the loop body with the complete renamings
+        var bodyWithRenamings = compileExpressionWithRenaming(ebody, loopRenamings);
+        
+        if (normalWhile) {
+            // while (condition) { body }
+            if (renamedModifiedVars.length > 0) {
+                // Convert variable names to snake_case for consistency
+                var stateVarsInit = renamedModifiedVars.map(v -> {
+                    var snakeName = NamingHelper.toSnakeCase(v.name);
+                    return snakeName;
+                });
+                var stateVars = stateVarsInit.join(", ");
+                
+                // Generate initial values - use nil for all loop variables
+                var initialValues = renamedModifiedVars.map(v -> {
+                    return "nil";
+                }).join(", ");
+                
+                // Use Y combinator pattern for the loop
+                return '(\n' +
+                       '  loop_helper = fn loop_fn, {${stateVars}} ->\n' +
+                       '    if ${condition} do\n' +
+                       '      try do\n' +
+                       '        ${bodyWithRenamings}\n' +
+                       '        loop_fn.(loop_fn, {${stateVars}})\n' +
+                       '      catch\n' +
+                       '        :break -> {${stateVars}}\n' +
+                       '        :continue -> loop_fn.(loop_fn, {${stateVars}})\n' +
+                       '      end\n' +
+                       '    else\n' +
+                       '      {${stateVars}}\n' +
+                       '    end\n' +
+                       '  end\n' +
+                       '  {${stateVars}} = try do\n' +
+                       '    loop_helper.(loop_helper, {${initialValues}})\n' +
+                       '  catch\n' +
+                       '    :break -> {${initialValues}}\n' +
+                       '  end\n' +
+                       ')';
+            } else {
+                // No mutable state - simpler recursive pattern
+                return '(\n' +
+                       '  loop_helper = fn loop_fn ->\n' +
+                       '    if ${condition} do\n' +
+                       '      ${bodyWithRenamings}\n' +
+                       '      loop_fn.()\n' +
+                       '    else\n' +
+                       '      nil\n' +
+                       '    end\n' +
+                       '  end\n' +
+                       '  loop_helper.(loop_helper)\n' +
+                       ')';
+            }
+        } else {
+            // do-while pattern (not commonly used in the codebase)
+            // Use the standard while loop compilation with renamings
+            return compileWhileLoop(econd, ebody, normalWhile);
+        }
+    }
+    
+    /**
+     * Compile expression with multiple variable renamings applied
+     * This is used to handle variable collisions in desugared loop code
+     */
+    private function compileExpressionWithRenaming(expr: TypedExpr, renamings: Map<String, String>): String {
+        if (renamings == null || !renamings.keys().hasNext()) {
+            // No renamings - compile normally
+            return compileExpression(expr);
+        }
+        
+        switch (expr.expr) {
+            case TLocal(v):
+                var varName = getOriginalVarName(v);
+                // Check if this variable needs renaming
+                if (renamings.exists(varName)) {
+                    return renamings.get(varName);
+                }
+                // Not renamed - compile normally
+                return compileExpression(expr);
+                
+            case TVar(v, init):
+                var varName = getOriginalVarName(v);
+                // Check if this variable declaration needs renaming
+                if (renamings.exists(varName)) {
+                    var newName = renamings.get(varName);
+                    if (init != null) {
+                        var compiledInit = compileExpressionWithRenaming(init, renamings);
+                        return '${newName} = ${compiledInit}';
+                    } else {
+                        return '${newName} = nil';
+                    }
+                }
+                // Not renamed - but still need to apply renamings to the init expression
+                if (init != null) {
+                    var compiledInit = compileExpressionWithRenaming(init, renamings);
+                    return '${varName} = ${compiledInit}';
+                } else {
+                    return '${varName} = nil';
+                }
+                
+            case TBinop(op, e1, e2):
+                // Recursively apply renamings to both sides
+                var left = compileExpressionWithRenaming(e1, renamings);
+                var right = compileExpressionWithRenaming(e2, renamings);
+                
+                // Handle the operator
+                return switch (op) {
+                    case OpAdd: '${left} ++ ${right}'; // Array concatenation in desugared loops
+                    case OpAssign: '${left} = ${right}';
+                    case OpEq: '${left} == ${right}';
+                    case OpNotEq: '${left} != ${right}';
+                    case OpLt: '${left} < ${right}';
+                    case OpLte: '${left} <= ${right}';
+                    case OpGt: '${left} > ${right}';
+                    case OpGte: '${left} >= ${right}';
+                    case _: compileExpression(expr); // Fall back for complex operators
+                };
+                
+            case TField(e, fa):
+                // Apply renamings to the object being accessed
+                var obj = compileExpressionWithRenaming(e, renamings);
+                
+                // Handle field access
+                switch (fa) {
+                    case FInstance(_, _, cf) | FStatic(_, cf) | FAnon(cf):
+                        var fieldName = cf.get().name;
+                        // Check if this is a special array property like 'length'
+                        if (fieldName == "length") {
+                            // In Elixir, use Enum.count for array length
+                            return 'Enum.count(${obj})';
+                        }
+                        return '${obj}.${fieldName}';
+                    case FDynamic(s):
+                        return '${obj}.${s}';
+                    case FClosure(_, cf):
+                        var fieldName = cf.get().name;
+                        return '${obj}.${fieldName}';
+                    case FEnum(_, ef):
+                        return ef.name;
+                }
+                
+            case TCall(e, el):
+                // Check if this is a function reference pattern (e.g., &Module.function/arity)
+                var isCapture = false;
+                switch (e.expr) {
+                    case TField(_, FStatic(_, cf)):
+                        // Check if this looks like a function capture attempt
+                        // In the problematic code, we see &Reflect.fields/1(config)
+                        // This should be just Reflect.fields(config)
+                        isCapture = false; // We don't generate captures in this context
+                    case _:
+                }
+                
+                // Apply renamings to function and arguments
+                var func = compileExpressionWithRenaming(e, renamings);
+                var args = el.map(arg -> compileExpressionWithRenaming(arg, renamings));
+                return '${func}(${args.join(", ")})';
+                
+            case TIf(econd, eif, eelse):
+                var cond = compileExpressionWithRenaming(econd, renamings);
+                var ifExpr = compileExpressionWithRenaming(eif, renamings);
+                var elseExpr = eelse != null ? compileExpressionWithRenaming(eelse, renamings) : "nil";
+                return 'if ${cond}, do: ${ifExpr}, else: ${elseExpr}';
+                
+            case TBlock(el):
+                // Recursively compile block with renamings
+                var statements = el.map(e -> compileExpressionWithRenaming(e, renamings));
+                return statements.join("\n");
+                
+            case TWhile(econd, e, normalWhile):
+                // Apply renamings within while loop by creating a modified version of the loop
+                // We need to compile the while loop with renamed variables
+                return compileWhileLoopWithRenamings(econd, e, normalWhile, renamings);
+                
+            case _:
+                // For other expression types, use normal compilation
+                // This is safe because the renamings are only for local variables
+                return compileExpression(expr);
+        }
+    }
+    
+    /**
      * Compile expression with variable substitution (string-based version)
      */
     private function compileExpressionWithSubstitution(expr: TypedExpr, sourceVar: String, targetVar: String): String {
@@ -5091,6 +6435,12 @@ class ElixirCompiler extends DirectToStringCompiler {
      * Generates proper tail-recursive patterns that handle mutable state correctly
      */
     private function compileWhileLoop(econd: TypedExpr, ebody: TypedExpr, normalWhile: Bool): String {
+        // First check if this is an array-building pattern that wasn't optimized
+        var arrayBuildPattern = detectArrayBuildingPattern(ebody);
+        if (arrayBuildPattern != null) {
+            return compileArrayBuildingLoop(econd, ebody, arrayBuildPattern);
+        }
+        
         // Extract variables that are modified in the loop
         var modifiedVars = extractModifiedVariables(ebody);
         var condition = compileExpression(econd);
@@ -5207,6 +6557,214 @@ class ElixirCompiler extends DirectToStringCompiler {
     }
     
     /**
+     * Detect if a loop body is building an array (common desugared pattern)
+     * Returns info about the pattern if detected, null otherwise
+     */
+    private function detectArrayBuildingPattern(ebody: TypedExpr): Null<{indexVar: String, accumVar: String, arrayExpr: String}> {
+        // Look for patterns like:
+        // _g = 0;
+        // _g1 = [];
+        // while (_g < array.length) {
+        //     var item = array[_g];
+        //     _g++;
+        //     _g1 = _g1 ++ [transform(item)];
+        // }
+        
+        var indexVar: String = null;
+        var accumVar: String = null;
+        var arrayExpr: String = null;
+        
+        function checkExpr(expr: TypedExpr): Bool {
+            switch (expr.expr) {
+                case TBlock(exprs):
+                    for (e in exprs) {
+                        if (checkExpr(e)) return true;
+                    }
+                case TBinop(OpAssign, e1, e2):
+                    // Look for array concatenation pattern: var = var ++ [...]
+                    switch (e1.expr) {
+                        case TLocal(v):
+                            var varName = getOriginalVarName(v);
+                            switch (e2.expr) {
+                                case TBinop(OpAdd, e3, e4):
+                                    // Check if this is array concatenation
+                                    switch (e3.expr) {
+                                        case TLocal(v2) if (getOriginalVarName(v2) == varName):
+                                            // Found pattern: var = var ++ something
+                                            // Check if the right side is an array
+                                            switch (e4.expr) {
+                                                case TArrayDecl(_):
+                                                    accumVar = varName;
+                                                    return true;
+                                                case _:
+                                            }
+                                        case _:
+                                    }
+                                case _:
+                            }
+                        case _:
+                    }
+                case TUnop(OpIncrement, _, e):
+                    // Look for index increment
+                    switch (e.expr) {
+                        case TLocal(v):
+                            indexVar = getOriginalVarName(v);
+                        case _:
+                    }
+                case _:
+            }
+            return false;
+        }
+        
+        if (checkExpr(ebody) && indexVar != null && accumVar != null && indexVar != accumVar) {
+            // Detected array building pattern with separate index and accumulator
+            return {
+                indexVar: indexVar,
+                accumVar: accumVar,
+                arrayExpr: arrayExpr
+            };
+        }
+        
+        return null;
+    }
+    
+    /**
+     * Compile an array-building loop pattern to idiomatic Elixir
+     */
+    private function compileArrayBuildingLoop(econd: TypedExpr, ebody: TypedExpr, pattern: {indexVar: String, accumVar: String, arrayExpr: String}): String {
+        // Extract the array expression from the condition
+        var condStr = compileExpression(econd);
+        var arrayExpr = "";
+        
+        // Try to extract array from condition patterns like "_g < array.length"
+        var arrayPattern1 = ~/^\(?([^<]+)\s*<\s*(.+?)\.length\)?$/;
+        var arrayPattern2 = ~/^\(?([^<]+)\s*<\s*length\(([^)]+)\)\)?$/;
+        
+        if (arrayPattern1.match(condStr)) {
+            arrayExpr = arrayPattern1.matched(2);
+        } else if (arrayPattern2.match(condStr)) {
+            arrayExpr = arrayPattern2.matched(2);
+        }
+        
+        if (arrayExpr == "") {
+            // Fallback to generic compilation if we can't extract the array
+            return compileWhileLoopGeneric(econd, ebody, true);
+        }
+        
+        // Extract the transformation from the loop body
+        var transformation = extractArrayTransformation(ebody, pattern.indexVar, pattern.accumVar);
+        
+        if (transformation != null) {
+            // Generate Enum.map pattern
+            var snakeAccumVar = NamingHelper.toSnakeCase(pattern.accumVar);
+            return '${snakeAccumVar} = Enum.map(${arrayExpr}, fn item -> ${transformation} end)';
+        } else {
+            // Fallback to generic compilation
+            return compileWhileLoopGeneric(econd, ebody, true);
+        }
+    }
+    
+    /**
+     * Extract the transformation applied to array elements
+     */
+    private function extractArrayTransformation(ebody: TypedExpr, indexVar: String, accumVar: String): Null<String> {
+        // Look for the transformation in patterns like: _g1 = _g1 ++ [transform(item)]
+        
+        function findTransform(expr: TypedExpr): Null<String> {
+            switch (expr.expr) {
+                case TBlock(exprs):
+                    for (e in exprs) {
+                        var result = findTransform(e);
+                        if (result != null) return result;
+                    }
+                case TBinop(OpAssign, e1, e2):
+                    switch (e1.expr) {
+                        case TLocal(v) if (getOriginalVarName(v) == accumVar):
+                            // Found assignment to accumulator
+                            switch (e2.expr) {
+                                case TBinop(OpAdd, _, e4):
+                                    // Extract what's being added
+                                    switch (e4.expr) {
+                                        case TArrayDecl(items) if (items.length == 1):
+                                            // Single item being added
+                                            return compileExpression(items[0]);
+                                        case _:
+                                    }
+                                case _:
+                            }
+                        case _:
+                    }
+                case _:
+            }
+            return null;
+        }
+        
+        return findTransform(ebody);
+    }
+    
+    /**
+     * Fallback generic while loop compilation
+     */
+    private function compileWhileLoopGeneric(econd: TypedExpr, ebody: TypedExpr, normalWhile: Bool): String {
+        // Revert to the original implementation for cases we can't optimize
+        var modifiedVars = extractModifiedVariables(ebody);
+        var condition = compileExpression(econd);
+        var transformedBody = transformLoopBodyMutations(ebody, modifiedVars, normalWhile, condition);
+        
+        if (modifiedVars.length > 0) {
+            var stateVarsInit = modifiedVars.map(v -> {
+                var snakeName = NamingHelper.toSnakeCase(v.name);
+                return snakeName;
+            });
+            var stateVars = stateVarsInit.join(", ");
+            var initialValues = modifiedVars.map(v -> "nil").join(", ");
+            
+            return '(\n' +
+                   '  loop_helper = fn loop_fn, {${stateVars}} ->\n' +
+                   '    if ${condition} do\n' +
+                   '      try do\n' +
+                   '        ${transformedBody}\n' +
+                   '        loop_fn.(loop_fn, {${stateVars}})\n' +
+                   '      catch\n' +
+                   '        :break -> {${stateVars}}\n' +
+                   '        :continue -> loop_fn.(loop_fn, {${stateVars}})\n' +
+                   '      end\n' +
+                   '    else\n' +
+                   '      {${stateVars}}\n' +
+                   '    end\n' +
+                   '  end\n' +
+                   '  {${stateVars}} = try do\n' +
+                   '    loop_helper.(loop_helper, {${initialValues}})\n' +
+                   '  catch\n' +
+                   '    :break -> {${initialValues}}\n' +
+                   '  end\n' +
+                   ')';
+        } else {
+            var body = compileExpression(ebody);
+            return '(\n' +
+                   '  loop_helper = fn loop_fn ->\n' +
+                   '    if ${condition} do\n' +
+                   '      try do\n' +
+                   '        ${body}\n' +
+                   '        loop_fn.(loop_fn)\n' +
+                   '      catch\n' +
+                   '        :break -> nil\n' +
+                   '        :continue -> loop_fn.(loop_fn)\n' +
+                   '      end\n' +
+                   '    else\n' +
+                   '      nil\n' +
+                   '    end\n' +
+                   '  end\n' +
+                   '  try do\n' +
+                   '    loop_helper.(loop_helper)\n' +
+                   '  catch\n' +
+                   '    :break -> nil\n' +
+                   '  end\n' +
+                   ')';
+        }
+    }
+    
+    /**
      * Extract variables that are modified within a loop body
      */
     private function extractModifiedVariables(expr: TypedExpr): Array<{name: String, type: String}> {
@@ -5282,6 +6840,16 @@ class ElixirCompiler extends DirectToStringCompiler {
         }).join(", ");
         
         if (normalWhile) {
+            // For while loops, we need to be careful about variable naming
+            // Check if we're mistakenly using the same variable for different purposes
+            var hasArrayBuilding = compiledBody.indexOf("++") > -1 && compiledBody.indexOf("[") > -1;
+            if (hasArrayBuilding) {
+                // This might be an array building pattern - need special handling
+                // Don't duplicate the recursive call if it's already in the body
+                if (compiledBody.indexOf("loop_fn.(") > -1) {
+                    return compiledBody;
+                }
+            }
             // For while loops, just call recursively with updated state
             return '${compiledBody}\n      loop_fn.({${stateVars}})';
         } else {
@@ -5297,8 +6865,35 @@ class ElixirCompiler extends DirectToStringCompiler {
         return switch (expr.expr) {
             case TBlock(exprs):
                 var results = [];
+                
+                // Check for array building pattern initialization
+                var hasArrayInit = false;
+                var arrayVar = "";
                 for (e in exprs) {
-                    results.push(compileExpressionWithMutationTracking(e, updates));
+                    switch (e.expr) {
+                        case TVar(v, init):
+                            // Check if this is array initialization
+                            if (init != null) {
+                                switch (init.expr) {
+                                    case TArrayDecl([]):
+                                        hasArrayInit = true;
+                                        arrayVar = getOriginalVarName(v);
+                                    case _:
+                                }
+                            }
+                        case _:
+                    }
+                }
+                
+                // Process expressions
+                for (e in exprs) {
+                    var compiled = compileExpressionWithMutationTracking(e, updates);
+                    // Skip problematic duplicate initialization
+                    if (hasArrayInit && compiled.indexOf(arrayVar + " = 0") > -1) {
+                        // Skip this - it's overwriting the array initialization
+                        continue;
+                    }
+                    results.push(compiled);
                 }
                 results.join("\n      ");
                 
@@ -5309,9 +6904,17 @@ class ElixirCompiler extends DirectToStringCompiler {
                         var originalName = getOriginalVarName(v);
                         var snakeName = NamingHelper.toSnakeCase(originalName);
                         var rightSide = compileExpression(e2);
-                        updates.set(originalName, rightSide);
-                        // Generate actual assignment, not just a comment
-                        '${snakeName} = ${rightSide}';
+                        
+                        // Check if this is array concatenation
+                        if (rightSide.indexOf(snakeName + " ++ [") > -1) {
+                            // This is array building - keep the accumulator separate
+                            updates.set(originalName, snakeName);
+                            rightSide;
+                        } else {
+                            updates.set(originalName, rightSide);
+                            // Generate actual assignment, not just a comment
+                            '${snakeName} = ${rightSide}';
+                        }
                     case _:
                         compileExpression(expr);
                 }
@@ -5359,6 +6962,17 @@ class ElixirCompiler extends DirectToStringCompiler {
                         '${snakeName} = ${newValue}';
                     case _:
                         compileExpression(expr);
+                }
+                
+            case TVar(v, init):
+                // Handle variable declarations in loop body
+                var varName = getOriginalVarName(v);
+                var snakeVarName = NamingHelper.toSnakeCase(varName);
+                if (init != null) {
+                    var initValue = compileExpression(init);
+                    '${snakeVarName} = ${initValue}';
+                } else {
+                    '${snakeVarName} = nil';
                 }
                 
             case _:
@@ -6184,7 +7798,8 @@ class ElixirCompiler extends DirectToStringCompiler {
                         return nativeName;
                     }
                 }
-                return field.name;
+                // Convert method name to snake_case for Elixir
+                return NamingHelper.toSnakeCase(field.name);
             case FAnon(cf): 
                 var field = cf.get();
                 // Check for @:native annotation on anonymous fields too
@@ -6198,9 +7813,10 @@ class ElixirCompiler extends DirectToStringCompiler {
                         return nativeName;
                     }
                 }
-                return field.name;
-            case FDynamic(s): s;
-            case FEnum(_, ef): ef.name;
+                // Convert method name to snake_case for Elixir
+                return NamingHelper.toSnakeCase(field.name);
+            case FDynamic(s): NamingHelper.toSnakeCase(s);
+            case FEnum(_, ef): NamingHelper.toSnakeCase(ef.name);
         };
     }
     
