@@ -78,21 +78,11 @@ defmodule Flash do
   @spec to_phoenix_flash(FlashMessage.t()) :: term()
   def to_phoenix_flash(flash) do
     result = %{"type" => FlashTypeTools.to_string(flash.type), "message" => flash.message}
-    if (flash.title != nil) do
-      Reflect.set_field(result, "title", flash.title)
-    end
-    if (flash.details != nil) do
-      Reflect.set_field(result, "details", flash.details)
-    end
-    if (flash.dismissible != nil) do
-      Reflect.set_field(result, "dismissible", flash.dismissible)
-    end
-    if (flash.timeout != nil) do
-      Reflect.set_field(result, "timeout", flash.timeout)
-    end
-    if (flash.action != nil) do
-      Reflect.set_field(result, "action", flash.action)
-    end
+    if (flash.title != nil), do: Reflect.set_field(result, "title", flash.title), else: nil
+    if (flash.details != nil), do: Reflect.set_field(result, "details", flash.details), else: nil
+    if (flash.dismissible != nil), do: Reflect.set_field(result, "dismissible", flash.dismissible), else: nil
+    if (flash.timeout != nil), do: Reflect.set_field(result, "timeout", flash.timeout), else: nil
+    if (flash.action != nil), do: Reflect.set_field(result, "action", flash.action), else: nil
     result
   end
 

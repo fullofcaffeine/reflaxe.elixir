@@ -2491,9 +2491,35 @@ class ElixirCompiler extends DirectToStringCompiler {
                 }
                 
                 // Use block syntax if any complexity is detected
-                // Check for Y combinator patterns that require block syntax
-                if (ifExpr.contains("loop_helper") || (elseExpr != null && elseExpr.contains("loop_helper"))) {
-                    // Y combinator pattern detected in if or else clause - force block syntax to prevent ", else: nil" syntax errors
+                // CRITICAL: Detect complex patterns that MUST use block syntax
+                // Y combinator patterns, function literals, and complex Elixir constructs cannot use inline syntax
+                var hasComplexPattern = false;
+                
+                // Check for Y combinator patterns
+                if (ifExpr.contains("loop_helper") || ifExpr.contains("loop_fn") ||
+                    (elseExpr != null && (elseExpr.contains("loop_helper") || elseExpr.contains("loop_fn")))) {
+                    hasComplexPattern = true;
+                }
+                
+                // Check for function literals and complex Elixir constructs
+                if (ifExpr.contains("fn ") || ifExpr.contains(" ->") || ifExpr.contains("try do") || ifExpr.contains("catch") ||
+                    ifExpr.contains("case ") || ifExpr.contains(" do\n") || ifExpr.contains("end\n") ||
+                    (elseExpr != null && (elseExpr.contains("fn ") || elseExpr.contains(" ->") || elseExpr.contains("try do") || 
+                     elseExpr.contains("catch") || elseExpr.contains("case ") || elseExpr.contains(" do\n") || elseExpr.contains("end\n")))) {
+                    hasComplexPattern = true;
+                }
+                
+                // Check for parenthesized complex expressions (often indicate nested complex logic)
+                if (ifExpr.startsWith("(") && ifExpr.contains("\n")) {
+                    hasComplexPattern = true;
+                }
+                
+                // CRITICAL: Multi-line expressions MUST use block syntax
+                if (ifExpr.contains("\n") || (elseExpr != null && elseExpr.contains("\n"))) {
+                    hasComplexPattern = true;
+                }
+                
+                if (hasComplexPattern) {
                     needsBlockSyntax = true;
                 }
                 
@@ -4067,12 +4093,26 @@ class ElixirCompiler extends DirectToStringCompiler {
             case TCall(e, args):
                 switch (e.expr) {
                     case TField(obj, fa):
-                        var objStr = compileExpression(obj);
-                        switch (fa) {
-                            case FStatic(_, cf):
-                                if (objStr == "Reflect" && cf.get().name == "fields" && args.length > 0) {
-                                    isReflectFields = true;
-                                    targetObject = compileExpression(args[0]);
+                        // Use AST pattern matching instead of compileExpression to avoid infinite loops
+                        switch (obj.expr) {
+                            case TTypeExpr(module):
+                                var moduleName = switch (module) {
+                                    case TClassDecl(c): c.get().name;
+                                    case _: "";
+                                };
+                                if (moduleName == "Reflect") {
+                                    switch (fa) {
+                                        case FStatic(_, cf):
+                                            if (cf.get().name == "fields" && args.length > 0) {
+                                                isReflectFields = true;
+                                                // Extract target object name from AST
+                                                switch (args[0].expr) {
+                                                    case TLocal(v): targetObject = v.name;
+                                                    case _: // For complex expressions, fall back to normal compilation
+                                                }
+                                            }
+                                        case _:
+                                    }
                                 }
                             case _:
                         }
@@ -4270,14 +4310,137 @@ class ElixirCompiler extends DirectToStringCompiler {
     /**
      * Compile Reflect.fields iteration to idiomatic Elixir
      */
-    private function compileReflectFieldsIteration(fieldVar: String, targetObject: String, blockExpr: TypedExpr): String {
-        // Transform the loop body to use Map operations
-        var transformedBody = compileReflectFieldsBody(blockExpr, targetObject, fieldVar);
+    private function compileReflectFieldsIteration(fieldVar: String, sourceObject: String, blockExpr: TypedExpr): String {
+        // Check if this is a simple field copying pattern: Reflect.setField(target, field, Reflect.field(source, field))
+        var fieldCopyPattern = detectSimpleFieldCopyPattern(blockExpr, sourceObject, fieldVar);
+        
+        if (fieldCopyPattern != null) {
+            // Simple field copying can be optimized to Map.merge
+            var targetObject = fieldCopyPattern;
+            return '${targetObject} = Map.merge(${targetObject}, ${sourceObject})';
+        }
+        
+        // For complex patterns, fall back to the existing Map.keys approach
+        var transformedBody = compileReflectFieldsBody(blockExpr, sourceObject, fieldVar);
         
         // Generate Enum.each with Map.keys
-        return 'Enum.each(Map.keys(${targetObject}), fn ${fieldVar} ->\n' +
+        return 'Enum.each(Map.keys(${sourceObject}), fn ${fieldVar} ->\n' +
                '  ${transformedBody}\n' +
                'end)';
+    }
+    
+    /**
+     * Detect if this is a simple field copying pattern that can be optimized to Map.merge
+     * Returns the target object name if it's a simple copy pattern, null otherwise
+     */
+    private function detectSimpleFieldCopyPattern(blockExpr: TypedExpr, sourceObject: String, fieldVar: String): Null<String> {
+        switch (blockExpr.expr) {
+            case TCall(e, args):
+                // Check for direct Reflect.setField call
+                return detectReflectSetFieldPattern(e, args, sourceObject, fieldVar);
+                
+            case TBlock(exprs):
+                // If there's only one expression in the block, check if it's a simple setField
+                if (exprs.length == 1) {
+                    return detectSimpleFieldCopyPattern(exprs[0], sourceObject, fieldVar);
+                }
+                // For multiple expressions, this is too complex for Map.merge optimization
+                return null;
+                
+            case _:
+                return null;
+        }
+    }
+    
+    /**
+     * Detect Reflect.setField(target, field, Reflect.field(source, field)) pattern
+     */
+    private function detectReflectSetFieldPattern(e: TypedExpr, args: Array<TypedExpr>, sourceObject: String, fieldVar: String): Null<String> {
+        switch (e.expr) {
+            case TField(obj, fa):
+                // Use AST pattern matching instead of compileExpression to avoid infinite loops
+                switch (obj.expr) {
+                    case TTypeExpr(module):
+                        var moduleName = switch (module) {
+                            case TClassDecl(c): c.get().name;
+                            case _: "";
+                        };
+                        if (moduleName == "Reflect") {
+                            switch (fa) {
+                                case FStatic(_, cf):
+                                    if (cf.get().name == "setField" && args.length >= 3) {
+                                        var targetExpr = args[0];
+                                        var fieldExpr = args[1]; 
+                                        var valueExpr = args[2];
+                                        
+                                        // Check if field parameter matches the loop variable using AST
+                                        if (!isMatchingVariable(fieldExpr, fieldVar)) {
+                                            return null; // Field doesn't match loop variable
+                                        }
+                                        
+                                        // Check if value is Reflect.field(sourceObject, fieldVar)
+                                        if (isReflectFieldCall(valueExpr, sourceObject, fieldVar)) {
+                                            // This is the simple copying pattern: Reflect.setField(target, field, Reflect.field(source, field))
+                                            // Return the target variable name for Map.merge optimization
+                                            switch (targetExpr.expr) {
+                                                case TLocal(v): return v.name;
+                                                case _: return null; // Only support simple variable targets for now
+                                            }
+                                        }
+                                    }
+                                case _:
+                            }
+                        }
+                    case _:
+                }
+            case _:
+        }
+        return null;
+    }
+    
+    /**
+     * Check if an expression is Reflect.field(sourceObject, fieldVar)
+     */
+    private function isReflectFieldCall(expr: TypedExpr, sourceObject: String, fieldVar: String): Bool {
+        switch (expr.expr) {
+            case TCall(e, args):
+                switch (e.expr) {
+                    case TField(obj, fa):
+                        // Use AST pattern matching instead of compileExpression to avoid infinite loops
+                        switch (obj.expr) {
+                            case TTypeExpr(module):
+                                var moduleName = switch (module) {
+                                    case TClassDecl(c): c.get().name;
+                                    case _: "";
+                                };
+                                if (moduleName == "Reflect") {
+                                    switch (fa) {
+                                        case FStatic(_, cf):
+                                            if (cf.get().name == "field" && args.length >= 2) {
+                                                // Simple AST-based validation without compilation
+                                                return isMatchingVariable(args[0], sourceObject) && isMatchingVariable(args[1], fieldVar);
+                                            }
+                                        case _:
+                                    }
+                                }
+                            case _:
+                        }
+                    case _:
+                }
+            case _:
+        }
+        return false;
+    }
+    
+    /**
+     * Check if a TypedExpr matches a variable name (simple AST check)
+     */
+    private function isMatchingVariable(expr: TypedExpr, varName: String): Bool {
+        switch (expr.expr) {
+            case TLocal(v): return v.name == varName;
+            case TConst(TString(s)): return s == varName;
+            case _: return false;
+        }
     }
     
     /**
