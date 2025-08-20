@@ -1481,6 +1481,7 @@ class ElixirCompiler extends DirectToStringCompiler {
                             compileExpression(e1) + " + " + compileExpression(e2);
                         }
                         
+                        
                     case OpAssignOp(innerOp):
                         // Handle compound assignment operators (+=, -=, etc.)
                         // These need special handling since Elixir variables are immutable
@@ -2040,6 +2041,13 @@ class ElixirCompiler extends DirectToStringCompiler {
                         
                         allStatements.join("\n");
                     } else {
+                        // Check for temp variable assignment sequence: TIf with temp assignments + TBinop using temp var
+                        var tempAssignSequence = detectTempVariableAssignmentSequence(el);
+                        if (tempAssignSequence != null) {
+                            // Transform the sequence: TIf with assignments + usage → optimized assignment
+                            return optimizeTempVariableAssignmentSequence(tempAssignSequence, el);
+                        }
+                        
                         // Check for temp variable pattern: temp_var = nil; case...; temp_var
                         var tempVarPattern = detectTempVariablePattern(el);
                         if (tempVarPattern != null) {
@@ -2098,6 +2106,18 @@ class ElixirCompiler extends DirectToStringCompiler {
                 }
                 
             case TIf(econd, eif, eelse):
+                // Check if this is a temp variable assignment pattern in both branches
+                var tempVarAssignPattern = detectTempVariableAssignmentPattern(eif, eelse);
+                
+                if (tempVarAssignPattern != null) {
+                    // Handle temp variable assignment: if (...), do: temp_var = val1, else: temp_var = val2
+                    // Transform to: temp_var = if (...), do: val1, else: val2
+                    var cond = compileExpression(econd);
+                    var thenValue = extractAssignmentValue(eif);
+                    var elseValue = eelse != null ? extractAssignmentValue(eelse) : "nil";
+                    return '${tempVarAssignPattern.varName} = if ${cond}, do: ${thenValue}, else: ${elseValue}';
+                }
+                
                 var cond = compileExpression(econd);
                 var ifExpr = compileExpression(eif);
                 var elseExpr = eelse != null ? compileExpression(eelse) : "nil";
@@ -6641,17 +6661,33 @@ class ElixirCompiler extends DirectToStringCompiler {
                     
                     return result;
                 case TIf(condition, thenExpr, elseExpr):
-                    // Transform the if expression (ternary) to return value directly
-                    var originalCaseArmContext = isCompilingCaseArm;
-                    isCompilingCaseArm = true;
+                    // Handle TIf expressions that assign temp variables
+                    // Pattern: if (cond), do: temp_var = val1, else: temp_var = val2
+                    // Fix: temp_var = if (cond), do: val1, else: val2
                     
-                    // Compile as ternary expression
-                    var result = compileExpression(expressions[i]);
+                    var conditionCompiled = compileExpression(condition);
                     
-                    // Restore original context
-                    isCompilingCaseArm = originalCaseArmContext;
+                    // Extract actual values from temp variable assignments
+                    var thenValue = extractValueFromTempAssignment(thenExpr, tempVarName);
+                    var elseValue = extractValueFromTempAssignment(elseExpr, tempVarName);
                     
-                    return result;
+                    if (thenValue != null && elseValue != null) {
+                        // Generate direct ternary expression without temp variables
+                        return 'if (${conditionCompiled}), do: ${thenValue}, else: ${elseValue}';
+                    } else {
+                        // If we can't optimize, ensure proper variable scoping
+                        // Declare temp variable before if expression 
+                        var originalCaseArmContext = isCompilingCaseArm;
+                        isCompilingCaseArm = true;
+                        
+                        var compiledIf = compileExpression(expressions[i]);
+                        
+                        // Ensure temp variable is declared properly
+                        var result = '${tempVarName} = nil\n${compiledIf}';
+                        
+                        isCompilingCaseArm = originalCaseArmContext;
+                        return result;
+                    }
                 case _:
             }
         }
@@ -6664,7 +6700,271 @@ class ElixirCompiler extends DirectToStringCompiler {
                 compiledStatements.push(compiled);
             }
         }
-        return compiledStatements.join("\n");
+        
+        var result = compiledStatements.join("\n");
+        
+        // Post-process to fix temp variable scope issues
+        // Pattern: if (cond), do: temp_var = val1, else: temp_var = val2\nvar = temp_var
+        // Fix: var = if (cond), do: val1, else: val2
+        if (tempVarName != null) {
+            result = fixTempVariableScoping(result, tempVarName);
+        }
+        
+        return result;
+    }
+    
+    /**
+     * Fix temp variable scoping issues in compiled Elixir code
+     * Transforms: if (cond), do: temp_var = val1, else: temp_var = val2\nvar = temp_var
+     * Into: var = if (cond), do: val1, else: val2
+     */
+    private function fixTempVariableScoping(code: String, tempVarName: String): String {
+        // Fix the specific JsonPrinter pattern where temp variables are assigned in if expressions
+        // Pattern: if (cond), do: temp_var = val1, else: temp_var = val2
+        // Next line: var = temp_var  
+        // Fix: var = if (cond), do: val1, else: val2
+        
+        var result = code;
+        
+        // More flexible regex that handles various whitespace patterns
+        // Look for: if (...), do: temp_var = ..., else: temp_var = ...
+        // Followed by: variable = temp_var
+        var problematicPattern = new EReg(
+            'if \\(([^)]+)\\), do: ' + tempVarName + ' = ([^,]+), else: ' + tempVarName + ' = ([^\\n]+)\\s*\\n\\s*([a-zA-Z_][a-zA-Z0-9_]*) = ' + tempVarName,
+            'g'
+        );
+        
+        // Apply the transformation
+        while (problematicPattern.match(result)) {
+            var condition = problematicPattern.matched(1);
+            var thenValue = problematicPattern.matched(2);
+            var elseValue = problematicPattern.matched(3);
+            var targetVar = problematicPattern.matched(4);
+            
+            var replacement = '${targetVar} = if (${condition}), do: ${thenValue}, else: ${elseValue}';
+            result = problematicPattern.replace(result, replacement);
+        }
+        
+        return result;
+    }
+    
+    /**
+     * Extract the value being assigned to a temp variable
+     * Looks for patterns like: temp_var = actual_value
+     */
+    private function extractValueFromTempAssignment(expr: TypedExpr, tempVarName: String): Null<String> {
+        return switch (expr.expr) {
+            case TBinop(OpAssign, lhs, rhs):
+                // Check if left side is our temp variable
+                switch (lhs.expr) {
+                    case TLocal(v):
+                        var varName = getOriginalVarName(v);
+                        if (varName == tempVarName) {
+                            // Return the actual value being assigned
+                            return compileExpression(rhs);
+                        }
+                    case _:
+                }
+                
+                // Also check nested blocks and expressions
+                var rhsResult = extractValueFromTempAssignment(rhs, tempVarName);
+                if (rhsResult != null) return rhsResult;
+                
+                var lhsResult = extractValueFromTempAssignment(lhs, tempVarName);
+                if (lhsResult != null) return lhsResult;
+                
+                null;
+            case TBlock(expressions):
+                // Look inside block expressions for the assignment
+                for (e in expressions) {
+                    var result = extractValueFromTempAssignment(e, tempVarName);
+                    if (result != null) return result;
+                }
+                null;
+            case TIf(condition, thenExpr, elseExpr):
+                // Also check inside if expressions
+                var thenResult = extractValueFromTempAssignment(thenExpr, tempVarName);
+                if (thenResult != null) return thenResult;
+                
+                var elseResult = extractValueFromTempAssignment(elseExpr, tempVarName);
+                if (elseResult != null) return elseResult;
+                
+                null;
+            case _:
+                null;
+        };
+    }
+    
+    /**
+     * Check if expression uses a temp variable (like v = temp_var)
+     */
+    private function isTempVariableUsage(expr: TypedExpr, tempVarName: String): Bool {
+        return switch (expr.expr) {
+            case TBinop(OpAssign, lhs, rhs):
+                // Check if right side uses our temp variable
+                switch (rhs.expr) {
+                    case TLocal(v):
+                        var varName = getOriginalVarName(v);
+                        return varName == tempVarName;
+                    case _:
+                        return false;
+                }
+            case _:
+                return false;
+        };
+    }
+    
+    /**
+     * Detect if both branches of TIf assign to the same temp variable
+     * Returns {varName: String} if pattern detected, null otherwise
+     */
+    private function detectTempVariableAssignmentPattern(ifBranch: TypedExpr, elseBranch: Null<TypedExpr>): Null<{varName: String}> {
+        if (elseBranch == null) return null;
+        
+        // Check if both branches are assignments to the same variable
+        var ifAssignment = getAssignmentVariable(ifBranch);
+        var elseAssignment = getAssignmentVariable(elseBranch);
+        
+        if (ifAssignment != null && elseAssignment != null && ifAssignment == elseAssignment) {
+            // Check if it's a temp variable (starts with temp_)
+            if (ifAssignment.indexOf("temp_") == 0 || ifAssignment.indexOf("temp") == 0) {
+                // Convert to snake_case for consistent naming
+                var snakeCaseVarName = NamingHelper.toSnakeCase(ifAssignment);
+                return {varName: snakeCaseVarName};
+            }
+        }
+        
+        return null;
+    }
+    
+    /**
+     * Extract the variable name from an assignment expression
+     */
+    private function getAssignmentVariable(expr: TypedExpr): Null<String> {
+        return switch (expr.expr) {
+            case TBinop(OpAssign, lhs, rhs):
+                switch (lhs.expr) {
+                    case TLocal(v):
+                        getOriginalVarName(v);
+                    case _:
+                        null;
+                }
+            case _:
+                null;
+        };
+    }
+    
+    /**
+     * Extract the value being assigned in an assignment expression
+     */
+    private function extractAssignmentValue(expr: TypedExpr): String {
+        return switch (expr.expr) {
+            case TBinop(OpAssign, lhs, rhs):
+                compileExpression(rhs);
+            case _:
+                compileExpression(expr);
+        };
+    }
+    
+    /**
+     * Detect temp variable assignment sequence in a block of expressions
+     * Pattern: TIf with temp assignments in both branches + TBinop assignment using temp var
+     */
+    private function detectTempVariableAssignmentSequence(expressions: Array<TypedExpr>): Null<{ifIndex: Int, assignIndex: Int, tempVar: String, targetVar: String}> {
+        for (i in 0...expressions.length - 1) {
+            var currentExpr = expressions[i];
+            var nextExpr = expressions[i + 1];
+            
+            // Check if current expression is TIf with temp variable assignments
+            switch (currentExpr.expr) {
+                case TIf(_, ifBranch, elseBranch):
+                    var tempVarPattern = detectTempVariableAssignmentPattern(ifBranch, elseBranch);
+                    if (tempVarPattern != null) {
+                        // Check if next expression uses this temp variable
+                        switch (nextExpr.expr) {
+                            case TBinop(OpAssign, lhs, rhs):
+                                var targetVarName = getAssignmentVariable(nextExpr);
+                                // Ensure target variable is also in snake_case
+                                var targetSnakeCaseName = targetVarName != null ? NamingHelper.toSnakeCase(targetVarName) : null;
+                                switch (rhs.expr) {
+                                    case TLocal(v):
+                                        var rhsVarName = getOriginalVarName(v);
+                                        var rhsSnakeCaseName = NamingHelper.toSnakeCase(rhsVarName);
+                                        if (rhsSnakeCaseName == tempVarPattern.varName) {
+                                            return {
+                                                ifIndex: i,
+                                                assignIndex: i + 1,
+                                                tempVar: tempVarPattern.varName,
+                                                targetVar: targetSnakeCaseName
+                                            };
+                                        }
+                                    case _:
+                                }
+                            case _:
+                        }
+                    }
+                case _:
+            }
+        }
+        
+        return null;
+    }
+    
+    /**
+     * Optimize temp variable assignment sequence
+     */
+    private function optimizeTempVariableAssignmentSequence(sequence: {ifIndex: Int, assignIndex: Int, tempVar: String, targetVar: String}, expressions: Array<TypedExpr>): String {
+        var ifExpr = expressions[sequence.ifIndex];
+        
+        // Extract the TIf components
+        switch (ifExpr.expr) {
+            case TIf(econd, eif, eelse):
+                var cond = compileExpression(econd);
+                var thenValue = extractAssignmentValue(eif);
+                var elseValue = eelse != null ? extractAssignmentValue(eelse) : "nil";
+                
+                // Generate optimized assignment: target_var = if (cond), do: val1, else: val2
+                var optimizedAssignment = '${sequence.targetVar} = if ${cond}, do: ${thenValue}, else: ${elseValue}';
+                
+                // Compile remaining expressions (skip the TIf and the assignment)
+                var remainingExprs = [];
+                for (i in 0...expressions.length) {
+                    if (i != sequence.ifIndex && i != sequence.assignIndex) {
+                        remainingExprs.push(compileExpression(expressions[i]));
+                    }
+                }
+                
+                // Combine optimized assignment with remaining expressions
+                var allStatements = [optimizedAssignment];
+                allStatements = allStatements.concat(remainingExprs);
+                
+                return allStatements.join("\n");
+            case _:
+        }
+        
+        // Fallback - compile normally
+        return expressions.map(e -> compileExpression(e)).join("\n");
+    }
+    
+    /**
+     * Get the target variable from an assignment expression (like v = temp_var)
+     */
+    private function getTargetVariableFromAssignment(expr: TypedExpr): Null<String> {
+        return switch (expr.expr) {
+            case TBinop(OpAssign, lhs, rhs):
+                // Get the left-hand side variable
+                switch (lhs.expr) {
+                    case TLocal(v):
+                        return getOriginalVarName(v);
+                    case TField(e, field):
+                        var objCompiled = compileExpression(e);
+                        return objCompiled; // For field access like struct.field
+                    case _:
+                        return null;
+                }
+            case _:
+                return null;
+        };
     }
     
     /**
