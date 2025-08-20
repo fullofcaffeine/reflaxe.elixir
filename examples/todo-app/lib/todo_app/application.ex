@@ -25,9 +25,35 @@ defmodule TodoApp.Application do
   @spec start(ApplicationStartType.t(), ApplicationArgs.t()) :: ApplicationResult.t()
   def start(type, args) do
     app_name = "TodoApp"
-    children = [%{id: Phoenix.PubSub, start: {Phoenix.PubSub, :start_link, [%{name: TodoApp.PubSub}]}}, %{id: TodoAppWeb.Telemetry, start: {TodoAppWeb.Telemetry, :start_link, []}}, %{id: TodoAppWeb.Endpoint, start: {TodoAppWeb.Endpoint, :start_link, []}}]
+    type_safe_children = [{Phoenix.PubSub, name: "" <> app_name <> ".PubSub"}, TodoAppWeb.Telemetry, TodoAppWeb.Endpoint]
+    g = []
+    g = 0
+    g = type_safe_children
+    (
+      loop_helper = fn loop_fn, {g} ->
+        if (g < g.length) do
+          try do
+            v = Enum.at(g, g)
+          g = g + 1
+          g ++ [TypeSafeChildSpecTools.toLegacy(v, app_name)]
+          loop_fn.({g + 1})
+            loop_fn.(loop_fn, {g})
+          catch
+            :break -> {g}
+            :continue -> loop_fn.(loop_fn, {g})
+          end
+        else
+          {g}
+        end
+      end
+      {g} = try do
+        loop_helper.(loop_helper, {nil})
+      catch
+        :break -> {nil}
+      end
+    )
     opts = [strategy: :one_for_one, name: TodoApp.Supervisor]
-    supervisor_result = Supervisor.start_link(children, opts)
+    supervisor_result = Supervisor.start_link(g, opts)
     supervisor_result
   end
 

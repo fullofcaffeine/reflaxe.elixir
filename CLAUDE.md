@@ -641,6 +641,30 @@ cd examples/todo-app && mix compile        # Integration test
 
 ## Development Principles
 
+### 🔄 Development Loop Validation ⚠️ MANDATORY
+
+**After ANY compiler change, ALWAYS verify the complete development loop:**
+
+1. **Run Full Test Suite**: `npm test` - ALL tests must pass (snapshot + Mix + generator)
+2. **Test Todo-App Compilation**: 
+   ```bash
+   cd examples/todo-app
+   rm -rf lib/*.ex lib/**/*.ex  # Clean generated files
+   npx haxe build-server.hxml    # Regenerate from Haxe
+   mix compile --force           # Verify Elixir compilation
+   ```
+3. **Test Todo-App Runtime**:
+   ```bash
+   mix phx.server                # Start Phoenix server
+   curl http://localhost:4000    # Verify expected response
+   ```
+4. **Verify TypeSafeChildSpec Patterns**: 
+   ```bash
+   haxe test/Test.hxml test=type_safe_child_specs  # Validate new child spec compilation
+   ```
+
+**Critical Rule**: If ANY step fails, the compiler change is incomplete. Fix the root cause in the compiler source, never patch generated files.
+
 ### ⚠️ CRITICAL: No Direct Elixir Files - Everything Through Haxe
 **FUNDAMENTAL RULE: NEVER write .ex files directly. Everything must be generated from Haxe.**
 
