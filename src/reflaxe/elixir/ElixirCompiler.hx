@@ -47,6 +47,13 @@ import reflaxe.elixir.helpers.AlgebraicDataTypeCompiler;
 import reflaxe.elixir.helpers.ExpressionCompiler;
 import reflaxe.elixir.ElixirTyper;
 import reflaxe.elixir.helpers.DebugHelper;
+import reflaxe.elixir.helpers.CompilerUtilities;
+import reflaxe.elixir.helpers.LoopCompiler;
+import reflaxe.elixir.helpers.PhoenixPathGenerator;
+import reflaxe.elixir.helpers.PatternMatchingCompiler;
+import reflaxe.elixir.helpers.MigrationCompiler;
+import reflaxe.elixir.helpers.LiveViewCompiler;
+import reflaxe.elixir.helpers.GenServerCompiler;
 import reflaxe.elixir.PhoenixMapper;
 import reflaxe.elixir.SourceMapWriter;
 
@@ -99,6 +106,24 @@ class ElixirCompiler extends DirectToStringCompiler {
     // Pipeline optimization for idiomatic Elixir code generation
     private var pipelineOptimizer: reflaxe.elixir.helpers.PipelineOptimizer;
     
+    // Loop compilation and optimization helper
+    private var loopCompiler: reflaxe.elixir.helpers.LoopCompiler;
+    
+    // Pattern matching compilation helper
+    private var patternMatchingCompiler: reflaxe.elixir.helpers.PatternMatchingCompiler;
+    
+    // Schema and changeset compilation helper
+    private var schemaCompiler: reflaxe.elixir.helpers.SchemaCompiler;
+    
+    // Migration compilation helper
+    private var migrationCompiler: reflaxe.elixir.helpers.MigrationCompiler;
+    
+    // LiveView compilation helper
+    private var liveViewCompiler: reflaxe.elixir.helpers.LiveViewCompiler;
+    
+    // GenServer compilation helper
+    private var genServerCompiler: reflaxe.elixir.helpers.GenServerCompiler;
+    
     // Import optimization for clean import statements
     private var importOptimizer: reflaxe.elixir.helpers.ImportOptimizer;
     
@@ -133,6 +158,12 @@ class ElixirCompiler extends DirectToStringCompiler {
         this.guardCompiler = new reflaxe.elixir.helpers.GuardCompiler();
         this.pipelineOptimizer = new reflaxe.elixir.helpers.PipelineOptimizer(this);
         this.importOptimizer = new reflaxe.elixir.helpers.ImportOptimizer(this);
+        this.loopCompiler = new reflaxe.elixir.helpers.LoopCompiler(this);
+        this.patternMatchingCompiler = new reflaxe.elixir.helpers.PatternMatchingCompiler(this);
+        this.schemaCompiler = new reflaxe.elixir.helpers.SchemaCompiler(this);
+        this.migrationCompiler = new reflaxe.elixir.helpers.MigrationCompiler(this);
+        this.liveViewCompiler = new reflaxe.elixir.helpers.LiveViewCompiler(this);
+        this.genServerCompiler = new reflaxe.elixir.helpers.GenServerCompiler(this);
         
         // Set compiler reference for delegation
         this.patternMatcher.setCompiler(this);
@@ -623,25 +654,25 @@ class ElixirCompiler extends DirectToStringCompiler {
         
         if (annotationInfo.primaryAnnotation == null) {
             // No framework annotation - use default snake_case mapping with package-to-directory conversion
-            return haxe.io.Path.join([outputDir, convertPackageToDirectoryPath(classType) + fileExtension]);
+            return haxe.io.Path.join([outputDir, PhoenixPathGenerator.convertPackageToDirectoryPath(classType, fileExtension)]);
         }
         
         // Generate framework-specific paths based on annotation
         return switch (annotationInfo.primaryAnnotation) {
             case ":router":
-                generatePhoenixRouterPath(className, outputDir);
+                PhoenixPathGenerator.generatePhoenixRouterPath(className, outputDir, fileExtension);
             case ":liveview":
-                generatePhoenixLiveViewPath(className, outputDir);
+                PhoenixPathGenerator.generatePhoenixLiveViewPath(className, outputDir, fileExtension);
             case ":controller":
-                generatePhoenixControllerPath(className, outputDir);
+                PhoenixPathGenerator.generatePhoenixControllerPath(className, outputDir, fileExtension);
             case ":schema":
-                generatePhoenixSchemaPath(className, outputDir);
+                PhoenixPathGenerator.generatePhoenixSchemaPath(className, outputDir, fileExtension);
             case ":endpoint":
                 // Use default snake_case mapping for @:endpoint - no special Phoenix path needed
-                haxe.io.Path.join([outputDir, convertPackageToDirectoryPath(classType) + fileExtension]);
+                haxe.io.Path.join([outputDir, PhoenixPathGenerator.convertPackageToDirectoryPath(classType, fileExtension)]);
             case _:
                 // Unknown annotation - use default snake_case mapping with package-to-directory conversion
-                haxe.io.Path.join([outputDir, convertPackageToDirectoryPath(classType) + fileExtension]);
+                haxe.io.Path.join([outputDir, PhoenixPathGenerator.convertPackageToDirectoryPath(classType, fileExtension)]);
         }
     }
     
@@ -874,7 +905,7 @@ class ElixirCompiler extends DirectToStringCompiler {
         
         // Apply framework annotation overrides if present
         if (annotationInfo.primaryAnnotation != null) {
-            var appName = extractAppName(className);
+            var appName = PhoenixPathGenerator.extractAppName(className);
             
             switch (annotationInfo.primaryAnnotation) {
                 case ":router":
@@ -949,7 +980,7 @@ class ElixirCompiler extends DirectToStringCompiler {
             var actualOutputDir = this.output.outputDir != null ? this.output.outputDir : outputDirectory;
             
             // Annotation-aware file path generation for framework convention adherence
-            var outputPath = generateAnnotationAwareOutputPath(classType, actualOutputDir);
+            var outputPath = PhoenixPathGenerator.generateAnnotationAwareOutputPath(classType, actualOutputDir, fileExtension);
             initSourceMapWriter(outputPath);
         }
         
@@ -1001,101 +1032,10 @@ class ElixirCompiler extends DirectToStringCompiler {
      * Compile @:migration annotated class to Ecto migration module
      */
     private function compileMigrationClass(classType: ClassType, varFields: Array<ClassVarData>, funcFields: Array<ClassFuncData>): String {
-        try {
-            var className = classType.name;
-            var config = reflaxe.elixir.helpers.MigrationDSL.getMigrationConfig(classType);
-            var tableName = config.table != null ? config.table : "default_table";
-            
-            // Validate table name
-            if (tableName == "default_table") {
-                reflaxe.elixir.helpers.EctoErrorReporter.warnAboutPattern(
-                    "Migration using default table name",
-                    "Specify a table name with @:migration({table: \"your_table\"})",
-                    classType.pos
-                );
-            }
-            
-            // Extract table operations from class variables and functions
-            var columns = varFields.map(field -> '${field.field.name}:${mapHaxeTypeToElixir(field.field.type)}');
-            
-            // Create migration data structure
-            var migrationData = {
-                className: className,
-                timestamp: reflaxe.elixir.helpers.MigrationDSL.generateTimestamp(),
-                tableName: tableName,
-                columns: columns
-            };
-            
-            // Generate comprehensive migration with table operations
-            var migrationModule = reflaxe.elixir.helpers.MigrationDSL.compileFullMigration(migrationData);
-        
-        // Add custom migration functions if present in funcFields
-        var customOperations = new Array<String>();
-        for (func in funcFields) {
-            if (func.field.name.indexOf("migrate") == 0) {
-                var operationName = func.field.name.substring(7); // Remove "migrate" prefix
-                var customOperation = generateCustomMigrationOperation(operationName, tableName);
-                customOperations.push(customOperation);
-            }
-        }
-        
-        // Append custom operations to the migration if any exist
-        if (customOperations.length > 0) {
-            migrationModule += "\n\n  # Custom migration operations\n" + customOperations.join("\n");
-        }
-        
-        return migrationModule;
-        } catch (e: Dynamic) {
-            // Dynamic used here because migration compilation can throw various error types
-            reflaxe.elixir.helpers.EctoErrorReporter.reportMigrationError(
-                "create_table",
-                Std.string(e),
-                classType.pos
-            );
-            return "";
-        }
+        // Delegate to specialized migration compiler
+        return migrationCompiler.compileMigrationClass(classType, varFields, funcFields);
     }
     
-    /**
-     * Extract table name from migration class name
-     */
-    private function extractTableNameFromClassName(className: String): String {
-        // Convert CreateUsersTable -> users, AlterPostsTable -> posts, etc.
-        var tableName = className;
-        
-        // Remove common prefixes
-        if (tableName.indexOf("Create") == 0) {
-            tableName = tableName.substring(6);
-        } else if (tableName.indexOf("Alter") == 0) {
-            tableName = tableName.substring(5);
-        } else if (tableName.indexOf("Drop") == 0) {
-            tableName = tableName.substring(4);
-        }
-        
-        // Remove Table suffix
-        if (tableName.endsWith("Table")) {
-            tableName = tableName.substring(0, tableName.length - 5);
-        }
-        
-        // Convert to snake_case
-        return reflaxe.elixir.helpers.MigrationDSL.camelCaseToSnakeCase(tableName);
-    }
-    
-    /**
-     * Map Haxe types to Elixir migration types
-     */
-    private function mapHaxeTypeToElixir(haxeType: Dynamic): String {
-        // Simplified type mapping - would use ElixirTyper for full implementation
-        return "string"; // Default to string for now
-    }
-    
-    /**
-     * Generate custom migration operation
-     */
-    private function generateCustomMigrationOperation(operationName: String, tableName: String): String {
-        return '  # Custom operation: ${operationName}\n' +
-               '  # Add custom migration logic for ${tableName} table';
-    }
     
     /**
      * Compile @:template annotated class to Phoenix template module
@@ -1112,207 +1052,32 @@ class ElixirCompiler extends DirectToStringCompiler {
      * Compile @:schema annotated class to Ecto.Schema module with enhanced error reporting
      */
     private function compileSchemaClass(classType: ClassType, varFields: Array<ClassVarData>, funcFields: Array<ClassFuncData>): String {
-        var className = classType.name;
-        var pos = classType.pos;
-        
-        try {
-            var config = reflaxe.elixir.helpers.SchemaCompiler.getSchemaConfig(classType);
-            
-            // Validate schema fields before compilation
-            var fields = varFields.map(function(field) {
-                var meta = field.field.meta.get();
-                var fieldMeta = null;
-                
-                // Extract field metadata
-                for (m in meta) {
-                    if (m.name == ":field") {
-                        fieldMeta = m.params.length > 0 ? m.params[0] : null;
-                    }
-                }
-                
-                return {
-                    name: field.field.name,
-                    type: mapHaxeTypeToElixir(field.field.type),
-                    meta: fieldMeta
-                };
-            });
-            
-            // Validate fields using error reporter
-            if (!EctoErrorReporter.validateSchemaFields(fields, pos)) {
-                return ""; // Error already reported
-            }
-            
-            // Generate comprehensive Ecto.Schema module with schema/2 macro and associations
-            return reflaxe.elixir.helpers.SchemaCompiler.compileFullSchema(className, config, varFields);
-        } catch (e: Dynamic) {
-            // Dynamic used here because Haxe's catch can throw various error types
-            // Converting to String for error reporting
-            EctoErrorReporter.reportSchemaError(className, Std.string(e), pos);
-            return "";
-        }
+        // Delegate to specialized schema compiler
+        return schemaCompiler.compileSchemaClass(classType, varFields, funcFields);
     }
     
     /**
      * Compile @:changeset annotated class to Ecto changeset module with enhanced error reporting
      */
     private function compileChangesetClass(classType: ClassType, varFields: Array<ClassVarData>, funcFields: Array<ClassFuncData>): String {
-        var className = classType.name;
-        var pos = classType.pos;
-        
-        try {
-            var config = reflaxe.elixir.helpers.ChangesetCompiler.getChangesetConfig(classType);
-            var schemaName = config.schema != null ? config.schema : "DefaultSchema";
-            
-            // Validate changeset configuration
-            if (!EctoErrorReporter.validateChangesetConfig(className, config, pos)) {
-                return ""; // Error already reported
-            }
-            
-            // Extract field information from class variables for validation
-            var fieldNames = varFields.map(field -> field.field.name);
-            
-            // Generate comprehensive changeset with schema integration
-            var changesetModule = reflaxe.elixir.helpers.ChangesetCompiler.compileFullChangeset(className, schemaName);
-            
-            // Add custom validation functions if present in funcFields
-            var customValidations = new Array<String>();
-            for (func in funcFields) {
-                if (func.field.name.indexOf("validate") == 0) {
-                    var validationName = func.field.name.substring(8); // Remove "validate" prefix
-                    var customValidation = reflaxe.elixir.helpers.ChangesetCompiler.generateCustomValidation(
-                        validationName, 
-                        "field", 
-                        "true" // Simplified condition
-                    );
-                    customValidations.push(customValidation);
-                }
-            }
-            
-            // Append custom validations to the module
-            if (customValidations.length > 0) {
-                changesetModule += "\n\n" + customValidations.join("\n");
-            }
-            
-            return changesetModule;
-        } catch (e: Dynamic) {
-            // Dynamic used here because Haxe's catch can throw various error types
-            // Converting to String for error reporting
-            EctoErrorReporter.reportChangesetError(className, Std.string(e), pos);
-            return "";
-        }
+        // Delegate to specialized schema compiler (handles both @:schema and @:changeset)
+        return schemaCompiler.compileChangesetClass(classType, varFields, funcFields);
     }
     
     /**
      * Compile @:genserver annotated class to OTP GenServer module
      */
     private function compileGenServerClass(classType: ClassType, varFields: Array<ClassVarData>, funcFields: Array<ClassFuncData>): String {
-        var className = classType.name;
-        var config = reflaxe.elixir.helpers.OTPCompiler.getGenServerConfig(classType);
-        
-        // Extract state from class variables
-        var initialState = "%{";
-        var stateFields = [];
-        for (field in varFields) {
-            var fieldName = field.field.name;
-            var defaultValue = switch(Std.string(field.field.type)) {
-                case "Int": "0";
-                case "String": '""';
-                case "Bool": "false";
-                default: "nil";
-            };
-            stateFields.push('${fieldName}: ${defaultValue}');
-        }
-        initialState += stateFields.join(", ") + "}";
-        
-        // Extract methods and categorize into calls vs casts
-        var callMethods = [];
-        var castMethods = [];
-        
-        for (func in funcFields) {
-            var methodName = func.field.name;
-            
-            // Methods starting with "get" or returning values are synchronous calls
-            if (methodName.indexOf("get") == 0 || methodName.indexOf("is") == 0) {
-                callMethods.push({name: methodName, returns: "Dynamic"});
-            }
-            // Methods that modify state are asynchronous casts
-            else if (methodName.indexOf("set") == 0 || methodName.indexOf("update") == 0 || methodName.indexOf("increment") == 0) {
-                castMethods.push({name: methodName, modifies: "value"});
-            }
-        }
-        
-        // Create GenServer data structure
-        var genServerData = {
-            className: className,
-            initialState: initialState,
-            callMethods: callMethods,
-            castMethods: castMethods
-        };
-        
-        // Generate comprehensive GenServer with all callbacks
-        return reflaxe.elixir.helpers.OTPCompiler.compileFullGenServer(genServerData);
+        // Delegate to specialized GenServer compiler
+        return genServerCompiler.compileGenServerClass(classType, varFields, funcFields);
     }
     
     /**
      * Compile @:liveview annotated class to Phoenix LiveView module  
      */
     private function compileLiveViewClass(classType: ClassType, varFields: Array<ClassVarData>, funcFields: Array<ClassFuncData>): String {
-        var className = classType.name;
-        var result = new StringBuf();
-        
-        // Generate module name from @:native annotation or use default class name
-        var moduleName = classType.getNameOrNative();
-        
-        // Track instance variables for socket.assigns references
-        this.liveViewInstanceVars = new Map<String, Bool>();
-        for (field in varFields) {
-            this.liveViewInstanceVars.set(field.field.name, true);
-        }
-        
-        // Generate module header using LiveViewCompiler with resolved module name
-        // Auto-detect CoreComponents usage and import if needed using dynamic app name
-        var appName = reflaxe.elixir.helpers.AnnotationSystem.getEffectiveAppName(classType);
-        var coreComponentsModule: Null<String> = null;
-        if (detectCoreComponentsUsage(classType, funcFields)) {
-            var webModuleName = appName + "Web";
-            coreComponentsModule = webModuleName + ".CoreComponents";
-        }
-        var moduleHeader = reflaxe.elixir.LiveViewCompiler.generateModuleHeader(moduleName, appName, coreComponentsModule);
-        result.add(moduleHeader);
-        
-        // Check if this LiveView uses HXX templates and add Phoenix.Component import
-        // HXX templates compile to Phoenix HEEx format (~H sigils) and require Phoenix.Component
-        var hxxChecker = new reflaxe.elixir.helpers.ClassCompiler();
-        if (hxxChecker.usesHxxTemplates(classType, funcFields)) {
-            result.add('  use Phoenix.Component\n\n');
-        }
-        
-        // LiveView modules don't need constructors or instance variables
-        // State is managed through socket assigns, not instance variables
-        
-        // Filter out the "new" function if it exists - LiveView doesn't need constructors
-        var filteredFuncs = funcFields.filter(func -> func.field.name != "new");
-        
-        // Compile all functions using the main compiler (which we just fixed)
-        for (funcField in filteredFuncs) {
-            var funcName = funcField.field.name;
-            
-            // Add @impl true for LiveView callbacks
-            if (reflaxe.elixir.LiveViewCompiler.isLiveViewCallback(funcName)) {
-                result.add('  @impl true\n');
-            }
-            
-            // Use the main compiler's compileFunction method (which now works properly)
-            var compiledFunc = compileFunction(funcField, false);
-            result.add(compiledFunc);
-        }
-        
-        result.add('end\n');
-        
-        // Clear instance variable tracking after compilation
-        this.liveViewInstanceVars = null;
-        
-        return result.toString();
+        // Delegate to specialized LiveView compiler
+        return liveViewCompiler.compileLiveViewClass(classType, varFields, funcFields);
     }
     
     /**
@@ -1547,9 +1312,9 @@ class ElixirCompiler extends DirectToStringCompiler {
                 
                 // Use parameter mapping if available (for both abstract methods and regular functions with standardized arg names)
                 if (currentFunctionParameterMap.exists(originalName)) {
-                    currentFunctionParameterMap.get(originalName);
+                    return currentFunctionParameterMap.get(originalName);
                 } else {
-                    NamingHelper.toSnakeCase(originalName);
+                    return NamingHelper.toSnakeCase(originalName);
                 }
                 
             case TBinop(op, e1, e2):
@@ -1787,14 +1552,61 @@ class ElixirCompiler extends DirectToStringCompiler {
                                             
                                             '%{${structVar} | ${elixirFieldName}: ${value}}';
                                         } else {
-                                            // Complex struct expression - compile normally for now
+                                            /**
+                                             * FEATURE: Dynamic Object Field Assignment Compiler Fix
+                                             * 
+                                             * WHY: Haxe allows obj.field = value on Dynamic objects, but Elixir doesn't support
+                                             *      direct field assignment. We must detect Dynamic objects and use Map.put instead.
+                                             * WHAT: Transform Dynamic field assignments from obj.field = value to Map.put(obj, :field, value)
+                                             * HOW: Check field access type - if FDynamic, use Map operations; otherwise use struct syntax
+                                             * EDGE CASES: Non-Dynamic complex expressions still use struct update syntax
+                                             */
+                                            #if debug_dynamic_assignment
+                                            trace("[XRay DynamicAssignment] OPERATION START");
+                                            trace('[XRay DynamicAssignment] Field Access Type: ${fa}');
+                                            #end
+                                            
                                             var structStr = compileExpression(structExpr);
-                                            var fieldStr = compileFieldAccess(structExpr, fa);
                                             var value = compileExpression(e2);
                                             
-                                            // For complex expressions, we may need a temporary variable
-                                            // For now, fall back to standard assignment (will error in Elixir)
-                                            '${structStr}.${fieldStr} = ${value}';
+                                            // Check if this is a Dynamic field assignment
+                                            var result = switch (fa) {
+                                                case FDynamic(fieldName):
+                                                    #if debug_dynamic_assignment
+                                                    trace("[XRay DynamicAssignment] ✓ DYNAMIC FIELD DETECTED");
+                                                    trace('[XRay DynamicAssignment] Transforming: ${structStr}.${fieldName} = ${value}');
+                                                    trace('[XRay DynamicAssignment] To: Map.put(${structStr}, :${fieldName}, ${value})');
+                                                    #end
+                                                    
+                                                    // Dynamic object field assignment → Map.put operation
+                                                    '${structStr} = Map.put(${structStr}, :${fieldName}, ${value})';
+                                                    
+                                                case FInstance(_, _, cf) | FStatic(_, cf) | FAnon(cf) | FClosure(_, cf):
+                                                    #if debug_dynamic_assignment
+                                                    trace("[XRay DynamicAssignment] ✓ STRUCT FIELD DETECTED");
+                                                    #end
+                                                    
+                                                    // Struct field assignment → struct update syntax
+                                                    var fieldName = cf.get().name;
+                                                    var elixirFieldName = reflaxe.elixir.helpers.NamingHelper.toSnakeCase(fieldName);
+                                                    '${structStr} = %{${structStr} | ${elixirFieldName}: ${value}}';
+                                                    
+                                                case FEnum(_, ef):
+                                                    #if debug_dynamic_assignment
+                                                    trace("[XRay DynamicAssignment] ✓ ENUM FIELD DETECTED");
+                                                    #end
+                                                    
+                                                    // Enum field assignment → struct update syntax
+                                                    var elixirFieldName = reflaxe.elixir.helpers.NamingHelper.toSnakeCase(ef.name);
+                                                    '${structStr} = %{${structStr} | ${elixirFieldName}: ${value}}';
+                                            };
+                                            
+                                            #if debug_dynamic_assignment
+                                            trace('[XRay DynamicAssignment] Generated: ${result}');
+                                            trace("[XRay DynamicAssignment] OPERATION END");
+                                            #end
+                                            
+                                            result;
                                         }
                                 }
                                 
@@ -1826,8 +1638,52 @@ class ElixirCompiler extends DirectToStringCompiler {
                                         }
                                         
                                     case _:
-                                        // Regular variable assignment
-                                        compileExpression(e1) + " = " + compileExpression(e2);
+                                        /**
+                                         * FEATURE: Final Dynamic Assignment Detection
+                                         * 
+                                         * WHY: Some Dynamic field assignments slip through TField detection and end up here
+                                         * WHAT: Check if compiled e1 contains field access pattern and fix it retroactively
+                                         * HOW: Parse the compiled left-hand side for .field patterns and convert to Map operations
+                                         * EDGE CASES: Only applies to Dynamic objects, preserves regular variable assignments
+                                         */
+                                        var leftExpr = compileExpression(e1);
+                                        var rightExpr = compileExpression(e2);
+                                        
+                                        #if debug_dynamic_assignment
+                                        trace("[XRay DynamicAssignment] FALLBACK CHECK");
+                                        trace('[XRay DynamicAssignment] Left expr: ${leftExpr}');
+                                        trace('[XRay DynamicAssignment] AST type: ${Type.enumConstructor(e1.expr)}');
+                                        #end
+                                        
+                                        // Check if this is a field access that was missed (pattern: obj.field)
+                                        var fieldAccessPattern = ~/^(.+)\.([a-zA-Z_][a-zA-Z0-9_]*)$/;
+                                        if (fieldAccessPattern.match(leftExpr)) {
+                                            #if debug_dynamic_assignment
+                                            trace("[XRay DynamicAssignment] ✓ FIELD ACCESS PATTERN DETECTED");
+                                            trace('[XRay DynamicAssignment] Converting: ${leftExpr} = ${rightExpr}');
+                                            #end
+                                            
+                                            var objName = fieldAccessPattern.matched(1);
+                                            var fieldName = fieldAccessPattern.matched(2);
+                                            
+                                            // For Dynamic objects, use Map.put; for structs, use update syntax
+                                            // Since we can't determine the type here, assume Dynamic and use Map.put
+                                            var result = '${objName} = Map.put(${objName}, :${fieldName}, ${rightExpr})';
+                                            
+                                            #if debug_dynamic_assignment
+                                            trace('[XRay DynamicAssignment] To: ${result}');
+                                            trace("[XRay DynamicAssignment] FALLBACK FIX APPLIED");
+                                            #end
+                                            
+                                            result;
+                                        } else {
+                                            #if debug_dynamic_assignment
+                                            trace("[XRay DynamicAssignment] ✓ REGULAR ASSIGNMENT");
+                                            #end
+                                            
+                                            // Regular variable assignment
+                                            '${leftExpr} = ${rightExpr}';
+                                        }
                                 }
                         }
                     
@@ -3223,7 +3079,7 @@ class ElixirCompiler extends DirectToStringCompiler {
                 "(" + compileExpression(e) + ")";
                 
             case TSwitch(e, cases, edef):
-                compileSwitchExpression(e, cases, edef);
+                patternMatchingCompiler.compileSwitchExpression(e, cases, edef);
                 
             case TFor(tvar, iterExpr, blockExpr):
                 /**
@@ -3243,7 +3099,7 @@ class ElixirCompiler extends DirectToStringCompiler {
                 #if debug_for_loops
                     DebugHelper.debugForLoop("TFor compilation in compileExpression", tvar, iterExpr, blockExpr);
                 #end
-                return compileForLoop(tvar, iterExpr, blockExpr);
+                return loopCompiler.compileForLoop(tvar, iterExpr, blockExpr);
                 
             case TWhile(econd, ebody, normalWhile):
                 // Process TWhile patterns
@@ -3267,7 +3123,7 @@ class ElixirCompiler extends DirectToStringCompiler {
                 #if debug_y_combinator
                 DebugHelper.debugYCombinator("TWhile compilation", "Starting generation", 'normalWhile: $normalWhile');
                 #end
-                var result = compileWhileLoop(econd, ebody, normalWhile);
+                var result = loopCompiler.compileWhileLoop(econd, ebody, normalWhile);
                 #if debug_y_combinator
                 DebugHelper.debugYCombinator("TWhile compilation", "Generation complete", 'Result length: ${result.length} chars');
                 #end

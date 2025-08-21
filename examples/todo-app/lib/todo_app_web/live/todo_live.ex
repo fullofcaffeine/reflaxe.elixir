@@ -169,9 +169,7 @@ defmodule TodoAppWeb.TodoLive do
   @doc "Generated from Haxe toggle_todo_status"
   def toggle_todo_status(id, socket) do
     todo = TodoLive.find_todo(id, socket.assigns.todos)
-    if (todo == nil) do
-      socket
-    end
+    if (todo == nil), do: socket, else: nil
     updated_changeset = Todo.toggle_completed(todo)
     g = Repo.update(updated_changeset)
     case (case g do {:ok, _} -> 0; {:error, _} -> 1; _ -> -1 end) do
@@ -198,9 +196,7 @@ defmodule TodoAppWeb.TodoLive do
   @doc "Generated from Haxe delete_todo"
   def delete_todo(id, socket) do
     todo = TodoLive.find_todo(id, socket.assigns.todos)
-    if (todo == nil) do
-      socket
-    end
+    if (todo == nil), do: socket, else: nil
     g = Repo.delete(todo)
     case (case g do {:ok, _} -> 0; {:error, _} -> 1; _ -> -1 end) do
       0 ->
@@ -226,9 +222,7 @@ defmodule TodoAppWeb.TodoLive do
   @doc "Generated from Haxe update_todo_priority"
   def update_todo_priority(id, priority, socket) do
     todo = TodoLive.find_todo(id, socket.assigns.todos)
-    if (todo == nil) do
-      socket
-    end
+    if (todo == nil), do: socket, else: nil
     updated_changeset = Todo.update_priority(todo, priority)
     g = Repo.update(updated_changeset)
     case (case g do {:ok, _} -> 0; {:error, _} -> 1; _ -> -1 end) do
@@ -254,9 +248,7 @@ defmodule TodoAppWeb.TodoLive do
 
   @doc "Generated from Haxe add_todo_to_list"
   def add_todo_to_list(todo, socket) do
-    if (todo.user_id == socket.assigns.current_user.id) do
-      socket
-    end
+    if (todo.user_id == socket.assigns.current_user.id), do: socket, else: nil
     todos = [todo] ++ socket.assigns.todos
     current_assigns = socket.assigns
     complete_assigns = TypeSafeConversions.create_complete_assigns(current_assigns, todos)
@@ -308,7 +300,7 @@ defmodule TodoAppWeb.TodoLive do
           try do
             v = Enum.at(this, g)
     g = g + 1
-    if (v.id != id), do: _g_counter.push(v), else: nil
+    if (v.id != id), do: _g_counter.push(v)
             loop_fn.(loop_fn, {g_counter})
           catch
             :break -> {g_counter}
@@ -343,31 +335,18 @@ defmodule TodoAppWeb.TodoLive do
   @doc "Generated from Haxe find_todo"
   def find_todo(id, todos) do
     g_counter = 0
-    (
-      loop_helper = fn loop_fn, {g} ->
-        if (g < todos.length) do
-          try do
-            todo = Enum.at(todos, g)
-          g = g + 1
-          if (todo.id == id) do
-      todo
+    loop_helper = fn loop_fn, {todo} ->
+      if (g < todos.length) do
+        todo = Enum.at(todos, g)
+        g = g + 1
+        if (todo.id == id), do: todo
+        loop_fn.(loop_fn, {todo})
+      else
+        {todo}
+      end
     end
-          loop_fn.({g + 1})
-            loop_fn.(loop_fn, {g})
-          catch
-            :break -> {g}
-            :continue -> loop_fn.(loop_fn, {g})
-          end
-        else
-          {g}
-        end
-      end
-      {g} = try do
-        loop_helper.(loop_helper, {nil})
-      catch
-        :break -> {nil}
-      end
-    )
+
+    {todo} = loop_helper.(loop_helper, {todo})
     nil
   end
 
@@ -375,31 +354,20 @@ defmodule TodoAppWeb.TodoLive do
   def count_completed(todos) do
     count = 0
     g_counter = 0
-    (
-      loop_helper = fn loop_fn, {g, count} ->
-        if (g < todos.length) do
-          try do
-            todo = Enum.at(todos, g)
-          g = g + 1
-          if (todo.completed) do
-      count = count + 1
-    end
-          loop_fn.({g + 1, count})
-            loop_fn.(loop_fn, {g, count})
-          catch
-            :break -> {g, count}
-            :continue -> loop_fn.(loop_fn, {g, count})
-          end
-        else
-          {g, count}
+    loop_helper = fn loop_fn, {todo} ->
+      if (g < todos.length) do
+        todo = Enum.at(todos, g)
+        g = g + 1
+        if (todo.completed) do
+          count = count + 1
         end
+        loop_fn.(loop_fn, {todo})
+      else
+        {todo}
       end
-      {g, count} = try do
-        loop_helper.(loop_helper, {nil, nil})
-      catch
-        :break -> {nil, nil}
-      end
-    )
+    end
+
+    {todo} = loop_helper.(loop_helper, {todo})
     count
   end
 
@@ -407,39 +375,26 @@ defmodule TodoAppWeb.TodoLive do
   def count_pending(todos) do
     count = 0
     g_counter = 0
-    (
-      loop_helper = fn loop_fn, {g, count} ->
-        if (g < todos.length) do
-          try do
-            todo = Enum.at(todos, g)
-          g = g + 1
-          if (!todo.completed) do
-      count = count + 1
-    end
-          loop_fn.({g + 1, count})
-            loop_fn.(loop_fn, {g, count})
-          catch
-            :break -> {g, count}
-            :continue -> loop_fn.(loop_fn, {g, count})
-          end
-        else
-          {g, count}
+    loop_helper = fn loop_fn, {todo} ->
+      if (g < todos.length) do
+        todo = Enum.at(todos, g)
+        g = g + 1
+        if (!todo.completed) do
+          count = count + 1
         end
+        loop_fn.(loop_fn, {todo})
+      else
+        {todo}
       end
-      {g, count} = try do
-        loop_helper.(loop_helper, {nil, nil})
-      catch
-        :break -> {nil, nil}
-      end
-    )
+    end
+
+    {todo} = loop_helper.(loop_helper, {todo})
     count
   end
 
   @doc "Generated from Haxe parse_tags"
   def parse_tags(tags_string) do
-    if (tags_string == nil || tags_string == "") do
-      []
-    end
+    if (tags_string == nil || tags_string == ""), do: [], else: nil
     this = String.split(tags_string, ",")
     _g_array = []
     _g_counter = 0
@@ -485,67 +440,43 @@ defmodule TodoAppWeb.TodoLive do
     this = socket.assigns.todos
     g_array = []
     g_counter = 0
-    (
-      loop_helper = fn loop_fn, {g} ->
-        if (g < this.length) do
-          try do
-            v = Enum.at(this, g)
-          g = g + 1
-          if (!v.completed) do
-      g ++ [v]
+    loop_helper = fn loop_fn, {v} ->
+      if (g < this.length) do
+        v = Enum.at(this, g)
+        g = g + 1
+        if (!v.completed), do: g ++ [v]
+        loop_fn.(loop_fn, {v})
+      else
+        {v}
+      end
     end
-          loop_fn.({g + 1})
-            loop_fn.(loop_fn, {g})
-          catch
-            :break -> {g}
-            :continue -> loop_fn.(loop_fn, {g})
-          end
-        else
-          {g}
-        end
-      end
-      {g} = try do
-        loop_helper.(loop_helper, {nil})
-      catch
-        :break -> {nil}
-      end
-    )
+
+    {v} = loop_helper.(loop_helper, {v})
     temp_array = g
     g_counter = 0
-    (
-      loop_helper = fn loop_fn, {g} ->
-        if (g < temp_array.length) do
-          try do
-            todo = Enum.at(temp_array, g)
-          g = g + 1
-          updated_changeset = Todo.toggle_completed(todo)
-          g = Repo.update(updated_changeset)
-    case (case g do {:ok, _} -> 0; {:error, _} -> 1; _ -> -1 end) do
-      0 ->
-        case g do {:ok, value} -> value; {:error, value} -> value; _ -> nil end
-        g
-        nil
-      1 ->
-        g = case g do {:ok, value} -> value; {:error, value} -> value; _ -> nil end
-        reason = g
-        Log.trace("Failed to complete todo " <> Integer.to_string(todo.id) <> ": " <> Std.string(reason), %{"fileName" => "src_haxe/server/live/TodoLive.hx", "lineNumber" => 446, "className" => "server.live.TodoLive", "methodName" => "complete_all_todos"})
-    end
-          loop_fn.({g + 1})
-            loop_fn.(loop_fn, {g})
-          catch
-            :break -> {g}
-            :continue -> loop_fn.(loop_fn, {g})
-          end
-        else
-          {g}
+    loop_helper = fn loop_fn, {todo, updated_changeset} ->
+      if (g < temp_array.length) do
+        todo = Enum.at(temp_array, g)
+        g = g + 1
+        updated_changeset = Todo.toggle_completed(todo)
+        g = Repo.update(updated_changeset)
+        case (case g do {:ok, _} -> 0; {:error, _} -> 1; _ -> -1 end) do
+          0 ->
+            case g do {:ok, value} -> value; {:error, value} -> value; _ -> nil end
+            g
+            nil
+          1 ->
+            g = case g do {:ok, value} -> value; {:error, value} -> value; _ -> nil end
+            reason = g
+            Log.trace("Failed to complete todo " <> Integer.to_string(todo.id) <> ": " <> Std.string(reason), %{"fileName" => "src_haxe/server/live/TodoLive.hx", "lineNumber" => 446, "className" => "server.live.TodoLive", "methodName" => "complete_all_todos"})
         end
+        loop_fn.(loop_fn, {todo, updated_changeset})
+      else
+        {todo, updated_changeset}
       end
-      {g} = try do
-        loop_helper.(loop_helper, {nil})
-      catch
-        :break -> {nil}
-      end
-    )
+    end
+
+    {todo, updated_changeset} = loop_helper.(loop_helper, {todo, updated_changeset})
     g = Phoenix.PubSub.broadcast(TodoApp.PubSub, "todo:updates", %{"type" => "bulk_update", "action" => "complete_all"})
     case (case g do {:ok, _} -> 0; {:error, _} -> 1; _ -> -1 end) do
       0 ->
@@ -570,86 +501,49 @@ defmodule TodoAppWeb.TodoLive do
     this = socket.assigns.todos
     g_array = []
     g_counter = 0
-    (
-      loop_helper = fn loop_fn, {g} ->
-        if (g < this.length) do
-          try do
-            v = Enum.at(this, g)
-          g = g + 1
-          if (v.completed) do
-      g ++ [v]
+    loop_helper = fn loop_fn, {v} ->
+      if (g < this.length) do
+        v = Enum.at(this, g)
+        g = g + 1
+        if (v.completed), do: g ++ [v]
+        loop_fn.(loop_fn, {v})
+      else
+        {v}
+      end
     end
-          loop_fn.({g + 1})
-            loop_fn.(loop_fn, {g})
-          catch
-            :break -> {g}
-            :continue -> loop_fn.(loop_fn, {g})
-          end
-        else
-          {g}
-        end
-      end
-      {g} = try do
-        loop_helper.(loop_helper, {nil})
-      catch
-        :break -> {nil}
-      end
-    )
+
+    {v} = loop_helper.(loop_helper, {v})
     temp_array = g
     g_counter = 0
-    (
-      loop_helper = fn loop_fn, {g} ->
-        if (g < temp_array.length) do
-          try do
-            todo = Enum.at(temp_array, g)
-          g = g + 1
-          Repo.delete(todo)
-          loop_fn.({g + 1})
-            loop_fn.(loop_fn, {g})
-          catch
-            :break -> {g}
-            :continue -> loop_fn.(loop_fn, {g})
-          end
-        else
-          {g}
-        end
+    loop_helper = fn loop_fn, {todo} ->
+      if (g < temp_array.length) do
+        todo = Enum.at(temp_array, g)
+        g = g + 1
+        Repo.delete(todo)
+        loop_fn.(loop_fn, {todo})
+      else
+        {todo}
       end
-      {g} = try do
-        loop_helper.(loop_helper, {nil})
-      catch
-        :break -> {nil}
-      end
-    )
+    end
+
+    {todo} = loop_helper.(loop_helper, {todo})
     Phoenix.PubSub.broadcast(TodoApp.PubSub, "todo:updates", %{"type" => "bulk_delete", "action" => "delete_completed"})
     temp_array1 = nil
     this = socket.assigns.todos
     g_array = []
     g_counter = 0
-    (
-      loop_helper = fn loop_fn, {g} ->
-        if (g < this.length) do
-          try do
-            v = Enum.at(this, g)
-          g = g + 1
-          if (!v.completed) do
-      g ++ [v]
+    loop_helper = fn loop_fn, {v} ->
+      if (g < this.length) do
+        v = Enum.at(this, g)
+        g = g + 1
+        if (!v.completed), do: g ++ [v]
+        loop_fn.(loop_fn, {v})
+      else
+        {v}
+      end
     end
-          loop_fn.({g + 1})
-            loop_fn.(loop_fn, {g})
-          catch
-            :break -> {g}
-            :continue -> loop_fn.(loop_fn, {g})
-          end
-        else
-          {g}
-        end
-      end
-      {g} = try do
-        loop_helper.(loop_helper, {nil})
-      catch
-        :break -> {nil}
-      end
-    )
+
+    {v} = loop_helper.(loop_helper, {v})
     temp_array1 = g
     current_assigns = socket.assigns
     complete_assigns = TypeSafeConversions.create_complete_assigns(current_assigns, temp_array1)
@@ -668,9 +562,7 @@ defmodule TodoAppWeb.TodoLive do
   @doc "Generated from Haxe save_edited_todo"
   def save_edited_todo(params, socket) do
     todo = socket.assigns.editing_todo
-    if (todo == nil) do
-      socket
-    end
+    if (todo == nil), do: socket, else: nil
     changeset_params = TypeSafeConversions.event_params_to_changeset_params(params)
     changeset = Todo.changeset(todo, changeset_params)
     g = Repo.update(changeset)

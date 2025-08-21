@@ -105,19 +105,19 @@ defmodule JsonPrinter do
                 if (g < g) do
                   i = g = g + 1
             if (i > 0), do: _this = struct.buf
-            %{struct | b: struct.b <> ","}, else: struct.nind + 1
+            # FIXME: Malformed assignment with else: %{struct | b: struct.b <> ","}, else: struct = %{struct | nind: struct.nind + 1}
             if (struct.pretty), do: _this = struct.buf
-            %{struct | b: struct.b <> "\n"}, else: nil
+            %{struct | b: struct.b <> "\n"}
             if (struct.pretty), do: v = StringTools.lpad("", struct.indent, struct.nind * struct.indent.length)
             _this = struct.buf
-            %{struct | b: struct.b <> Std.string(v)}, else: nil
+            %{struct | b: struct.b <> Std.string(v)}
             struct.write(i, Enum.at(v, i))
-            if (i == last), do: struct.nind - 1
+            if (i == last), do: struct = %{struct | nind: struct.nind - 1}
             if (struct.pretty), do: _this = struct.buf
-            %{struct | b: struct.b <> "\n"}, else: nil
+            %{struct | b: struct.b <> "\n"}
             if (struct.pretty), do: v = StringTools.lpad("", struct.indent, struct.nind * struct.indent.length)
             _this = struct.buf
-            %{struct | b: struct.b <> Std.string(v)}, else: nil, else: nil
+            %{struct | b: struct.b <> Std.string(v)}
                   loop_fn.()
                 else
                   nil
@@ -184,20 +184,20 @@ defmodule JsonPrinter do
             i = g = g + 1
     f = Enum.at(fields, i)
     value = Reflect.field(v, f)
-    if (Reflect.is_function_(value)), do: throw(:continue), else: nil
-    if (empty), do: struct.nind + 1
-    empty = false, else: _this = struct.buf
+    if (Reflect.is_function_(value)), do: throw(:continue)
+    if (empty), do: struct = %{struct | nind: struct.nind + 1}
+    # FIXME: Malformed assignment with else: empty = false, else: _this = struct.buf
     struct = %{struct | b: struct.b <> ","}
     if (struct.pretty), do: _this = struct.buf
-    struct = %{struct | b: struct.b <> "\n"}, else: nil
+    struct = %{struct | b: struct.b <> "\n"}
     if (struct.pretty), do: v = StringTools.lpad("", struct.indent, struct.nind * struct.indent.length)
     _this = struct.buf
-    struct = %{struct | b: struct.b <> Std.string(v)}, else: nil
+    struct = %{struct | b: struct.b <> Std.string(v)}
     struct.quote(f)
     _this = struct.buf
     struct = %{struct | b: struct.b <> ":"}
     if (struct.pretty), do: _this = struct.buf
-    struct = %{struct | b: struct.b <> " "}, else: nil
+    struct = %{struct | b: struct.b <> " "}
     struct.write(f, value)
             loop_fn.(loop_fn, {empty})
           catch
@@ -214,12 +214,12 @@ defmodule JsonPrinter do
         :break -> {nil}
       end
     )
-    if (!empty), do: struct.nind - 1
+    if (!empty), do: struct = %{struct | nind: struct.nind - 1}
     if (struct.pretty), do: _this = struct.buf
-    struct = %{struct | b: struct.b <> "\n"}, else: nil
+    struct = %{struct | b: struct.b <> "\n"}
     if (struct.pretty), do: v = StringTools.lpad("", struct.indent, struct.nind * struct.indent.length)
     _this = struct.buf
-    struct = %{struct | b: struct.b <> Std.string(v)}, else: nil, else: nil
+    struct = %{struct | b: struct.b <> Std.string(v)}
     _this = struct.buf
     struct = %{struct | b: struct.b <> "}"}
   end
@@ -231,56 +231,45 @@ defmodule JsonPrinter do
     struct = %{struct | b: struct.b <> "\""}
     i = 0
     length = s.length
-    (
-      loop_helper = fn loop_fn, {temp_number} ->
-        if (i < length) do
-          try do
-            temp_number = nil
-          index = i = i + 1
-          temp_number = s.cca(index)
-          c = temp_number
-          case (c) do
-      8 ->
-        struct = struct.buf
-        %{struct | b: struct.b <> "\\b"}
-      9 ->
-        struct = struct.buf
-        %{struct | b: struct.b <> "\\t"}
-      10 ->
-        struct = struct.buf
-        %{struct | b: struct.b <> "\\n"}
-      12 ->
-        struct = struct.buf
-        %{struct | b: struct.b <> "\\f"}
-      13 ->
-        struct = struct.buf
-        %{struct | b: struct.b <> "\\r"}
-      34 ->
-        struct = struct.buf
-        %{struct | b: struct.b <> "\\\""}
-      92 ->
-        struct = struct.buf
-        %{struct | b: struct.b <> "\\\\"}
-      _ ->
-        struct = struct.buf
-        %{struct | b: struct.b <> String.from_char_code(c)}
-    end
-          loop_fn.({s.cca(index)})
-            loop_fn.(loop_fn, {temp_number})
-          catch
-            :break -> {temp_number}
-            :continue -> loop_fn.(loop_fn, {temp_number})
-          end
-        else
-          {temp_number}
+    loop_helper = fn loop_fn, {temp_number, index, c} ->
+      if (i < length) do
+        temp_number = nil
+        index = i = i + 1
+        temp_number = s.cca(index)
+        c = temp_number
+        case (c) do
+          8 ->
+            struct = struct.buf
+            %{struct | b: struct.b <> "\\b"}
+          9 ->
+            struct = struct.buf
+            %{struct | b: struct.b <> "\\t"}
+          10 ->
+            struct = struct.buf
+            %{struct | b: struct.b <> "\\n"}
+          12 ->
+            struct = struct.buf
+            %{struct | b: struct.b <> "\\f"}
+          13 ->
+            struct = struct.buf
+            %{struct | b: struct.b <> "\\r"}
+          34 ->
+            struct = struct.buf
+            %{struct | b: struct.b <> "\\\""}
+          92 ->
+            struct = struct.buf
+            %{struct | b: struct.b <> "\\\\"}
+          _ ->
+            struct = struct.buf
+            %{struct | b: struct.b <> String.from_char_code(c)}
         end
+        loop_fn.(loop_fn, {temp_number, index, c})
+      else
+        {temp_number, index, c}
       end
-      {temp_number} = try do
-        loop_helper.(loop_helper, {nil})
-      catch
-        :break -> {nil}
-      end
-    )
+    end
+
+    {temp_number, index, c} = loop_helper.(loop_helper, {temp_number, index, c})
     struct = struct.buf
     struct = %{struct | b: struct.b <> "\""}
   end

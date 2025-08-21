@@ -107,31 +107,20 @@ defmodule SafeAssigns do
   def count_completed(todos) do
     count = 0
     g_counter = 0
-    (
-      loop_helper = fn loop_fn, {g, count} ->
-        if (g < todos.length) do
-          try do
-            todo = Enum.at(todos, g)
-          g = g + 1
-          if (todo.completed) do
-      count = count + 1
-    end
-          loop_fn.({g + 1, count})
-            loop_fn.(loop_fn, {g, count})
-          catch
-            :break -> {g, count}
-            :continue -> loop_fn.(loop_fn, {g, count})
-          end
-        else
-          {g, count}
+    loop_helper = fn loop_fn, {todo} ->
+      if (g < todos.length) do
+        todo = Enum.at(todos, g)
+        g = g + 1
+        if (todo.completed) do
+          count = count + 1
         end
+        loop_fn.(loop_fn, {todo})
+      else
+        {todo}
       end
-      {g, count} = try do
-        loop_helper.(loop_helper, {nil, nil})
-      catch
-        :break -> {nil, nil}
-      end
-    )
+    end
+
+    {todo} = loop_helper.(loop_helper, {todo})
     count
   end
 
@@ -143,31 +132,20 @@ defmodule SafeAssigns do
   def count_pending(todos) do
     count = 0
     g_counter = 0
-    (
-      loop_helper = fn loop_fn, {g, count} ->
-        if (g < todos.length) do
-          try do
-            todo = Enum.at(todos, g)
-          g = g + 1
-          if (!todo.completed) do
-      count = count + 1
-    end
-          loop_fn.({g + 1, count})
-            loop_fn.(loop_fn, {g, count})
-          catch
-            :break -> {g, count}
-            :continue -> loop_fn.(loop_fn, {g, count})
-          end
-        else
-          {g, count}
+    loop_helper = fn loop_fn, {todo} ->
+      if (g < todos.length) do
+        todo = Enum.at(todos, g)
+        g = g + 1
+        if (!todo.completed) do
+          count = count + 1
         end
+        loop_fn.(loop_fn, {todo})
+      else
+        {todo}
       end
-      {g, count} = try do
-        loop_helper.(loop_helper, {nil, nil})
-      catch
-        :break -> {nil, nil}
-      end
-    )
+    end
+
+    {todo} = loop_helper.(loop_helper, {todo})
     count
   end
 
