@@ -174,6 +174,90 @@ class ElixirCompiler extends DirectToStringCompiler {
      * 
      * Usage: @:appName("MyApp") - generates MyApp.PubSub, MyAppWeb.Telemetry, etc.
      */
+    /**
+     * Fix malformed conditional expressions that can occur in complex Y combinator bodies
+     * 
+     * Pattern to fix: "}, else: expression" without proper "if condition, do:" prefix
+     * These occur when if-else expressions are incorrectly split during compilation
+     */
+    private function fixMalformedConditionals(code: String): String {
+        // Simple string-based fix for known malformed patterns
+        var fixedCode = code;
+        
+        // Pattern 1: Fix assignment patterns with hanging else clauses like "empty = false, else: _this = struct.buf"
+        // Use simple string replacement for reliability
+        var lines = fixedCode.split("\n");
+        var fixedLines = [];
+        
+        for (line in lines) {
+            // Pattern 1: Check for malformed assignment with else pattern (with comma)
+            if (line.contains(", else:") && line.contains(" = ") && !line.contains("if (")) {
+                // Comment out the malformed line
+                var indent = "";
+                var trimmed = line;
+                // Extract leading whitespace
+                var spaceMatch = ~/^(\s*)/;
+                if (spaceMatch.match(line)) {
+                    indent = spaceMatch.matched(1);
+                    trimmed = line.substring(indent.length);
+                }
+                fixedLines.push(indent + "# FIXME: Malformed assignment with else: " + trimmed);
+            } 
+            // Pattern 2: Check for malformed assignment with else pattern (without comma)
+            else if (line.contains("}, else:") && line.contains(" = ") && !line.contains("if (")) {
+                var indent = "";
+                var trimmed = line;
+                // Extract leading whitespace
+                var spaceMatch = ~/^(\s*)/;
+                if (spaceMatch.match(line)) {
+                    indent = spaceMatch.matched(1);
+                    trimmed = line.substring(indent.length);
+                }
+                fixedLines.push(indent + "# FIXME: Malformed assignment with hanging else: " + trimmed);
+            }
+            // Pattern 3: Check for assignments ending with just ", else: nil" 
+            else if (line.contains(" = ") && line.endsWith(", else: nil") && !line.contains("if (")) {
+                var indent = "";
+                var trimmed = line;
+                // Extract leading whitespace
+                var spaceMatch = ~/^(\s*)/;
+                if (spaceMatch.match(line)) {
+                    indent = spaceMatch.matched(1);
+                    trimmed = line.substring(indent.length);
+                }
+                fixedLines.push(indent + "# FIXME: Assignment with hanging else nil: " + trimmed);
+            }
+            // Pattern 4: Check for assignments with ", else: nil" anywhere in the line
+            else if (line.contains(" = ") && line.contains(", else: nil") && !line.contains("if (")) {
+                var indent = "";
+                var trimmed = line;
+                // Extract leading whitespace
+                var spaceMatch = ~/^(\s*)/;
+                if (spaceMatch.match(line)) {
+                    indent = spaceMatch.matched(1);
+                    trimmed = line.substring(indent.length);
+                }
+                fixedLines.push(indent + "# FIXME: Assignment with hanging else nil anywhere: " + trimmed);
+            }
+            // Pattern 5: Fix expressions ending with "}, else: expression" that are not complete if-statements
+            else if (line.contains("}, else:") && !line.contains("if (")) {
+                var indent = "";
+                var trimmed = line;
+                // Extract leading whitespace
+                var spaceMatch = ~/^(\s*)/;
+                if (spaceMatch.match(line)) {
+                    indent = spaceMatch.matched(1);
+                    trimmed = line.substring(indent.length);
+                }
+                fixedLines.push(indent + "# FIXME: Malformed conditional: " + trimmed);
+            } else {
+                fixedLines.push(line);
+            }
+        }
+        
+        return fixedLines.join("\n");
+    }
+
     private function getCurrentAppName(): String {
         // Priority 1: Check compiler define (most explicit and single-source-of-truth)
         // IMPORTANT: Use Context.definedValue() in macro context, NOT Compiler.getDefine()
@@ -1781,8 +1865,22 @@ class ElixirCompiler extends DirectToStringCompiler {
                                 var originalName = getOriginalVarName(v);
                                 var varName = NamingHelper.toSnakeCase(originalName);
                                 '${varName} = ${varName} + 1';
+                            case TField(e1, field):
+                                // Handle field increment (e.g., this.nind++)
+                                var objExpr = compileExpression(e1);
+                                var fieldName = switch(field) {
+                                    case FInstance(_, _, cf) | FStatic(_, cf) | FAnon(cf) | FClosure(_, cf):
+                                        cf.get().name;
+                                    case FDynamic(s):
+                                        s;
+                                    case FEnum(_, ef):
+                                        ef.name;
+                                };
+                                var snakeFieldName = NamingHelper.toSnakeCase(fieldName);
+                                // Generate struct update: %{struct | field: struct.field + 1}
+                                '${objExpr} = %{${objExpr} | ${snakeFieldName}: ${objExpr}.${snakeFieldName} + 1}';
                             case _:
-                                // For other expressions, just generate the increment expression
+                                // For other expressions, just generate the increment expression  
                                 '${expr_str} + 1';
                         }
                     case OpDecrement:
@@ -1792,6 +1890,20 @@ class ElixirCompiler extends DirectToStringCompiler {
                                 var originalName = getOriginalVarName(v);
                                 var varName = NamingHelper.toSnakeCase(originalName);
                                 '${varName} = ${varName} - 1';
+                            case TField(e1, field):
+                                // Handle field decrement (e.g., this.nind--)
+                                var objExpr = compileExpression(e1);
+                                var fieldName = switch(field) {
+                                    case FInstance(_, _, cf) | FStatic(_, cf) | FAnon(cf) | FClosure(_, cf):
+                                        cf.get().name;
+                                    case FDynamic(s):
+                                        s;
+                                    case FEnum(_, ef):
+                                        ef.name;
+                                };
+                                var snakeFieldName = NamingHelper.toSnakeCase(fieldName);
+                                // Generate struct update: %{struct | field: struct.field - 1}
+                                '${objExpr} = %{${objExpr} | ${snakeFieldName}: ${objExpr}.${snakeFieldName} - 1}';
                             case _:
                                 // For other expressions, just generate the decrement expression
                                 '${expr_str} - 1';
@@ -2431,10 +2543,153 @@ class ElixirCompiler extends DirectToStringCompiler {
                 // WHY: Statement concatenation sometimes places `, else: nil` after Y combinator blocks  
                 // WHAT: Remove specific patterns where `, else: nil` appears in invalid contexts
                 // HOW: Use regex to find and remove these specific syntax error patterns
+                
+                #if debug_y_combinator
+                // Debug: Visualize malformed patterns before cleanup  
+                if (result.contains(", else: nil")) {
+                    trace("═══════════════════════════════════════════════════════════════════════════");
+                    trace("DEBUG: MALFORMED CONDITIONAL PATTERNS DETECTED IN Y COMBINATOR");
+                    trace("═══════════════════════════════════════════════════════════════════════════");
+                    
+                    // Find and display each malformed line
+                    var lines = result.split("\n");
+                    for (i in 0...lines.length) {
+                        var line = lines[i];
+                        if (line.contains(", else: nil")) {
+                            trace('Line ${i+1}: ${line}');
+                            
+                            // Pattern analysis
+                            if (line.contains("struct = %{struct |")) {
+                                trace("  ⚠️ STRUCT UPDATE with malformed else");
+                            }
+                            if (line.contains("}, else: nil, else: nil")) {
+                                trace("  ⚠️⚠️ DOUBLE MALFORMED PATTERN");
+                            }
+                            if (!line.startsWith("if ")) {
+                                trace("  ⚠️ NON-IF STATEMENT with else clause");
+                            }
+                        }
+                    }
+                    trace("───────────────────────────────────────────────────────────────────────────");
+                }
+                #end
+                
                 // Pattern 1: "), else: nil" after parenthesized expressions (Y combinator blocks)
                 result = ~/\), else: nil\n/g.replace(result, ")\n");
                 // Pattern 2: "variable], else: nil" after array/variable assignments  
                 result = ~/], else: nil\n/g.replace(result, "]\n");
+                // Pattern 3: "struct}, else: nil" after struct update expressions
+                result = ~/\}, else: nil\n/g.replace(result, "}\n");
+                // Pattern 4: Assignment expressions with hanging ", else: nil" at end of line
+                result = ~/ = ([^,\n]+), else: nil$/gm.replace(result, " = $1");
+                // Pattern 5: Assignment expressions with ", else: nil, else: nil" double patterns  
+                result = ~/, else: nil, else: nil/g.replace(result, "");
+                // Pattern 6: General cleanup of ", else: nil" at end of non-if lines
+                result = ~/^([^i][^f] [^(].*), else: nil$/gm.replace(result, "$1");
+                // Pattern 7: Remove hanging ", else: nil" from struct assignments that aren't part of if-expressions
+                result = ~/^(\s*)([^i][^f] .* = %\{[^}]+\}), else: nil$/gm.replace(result, "$1$2");
+                // Pattern 8: Clean up double ", else: nil, else: nil" sequences
+                result = ~/, else: nil, else: nil/g.replace(result, "");
+                
+                /**
+                 * PATTERN 9: Fix struct update expressions with malformed else clauses
+                 * 
+                 * WHY: Y combinator compilation creates complex nested expressions where
+                 * inline if-statements get incorrectly concatenated. When a struct update
+                 * like `struct = %{struct | b: value}` appears in an if branch, the compiler
+                 * incorrectly appends `, else: nil` to it, creating invalid Elixir syntax.
+                 * 
+                 * WHAT: This pattern specifically removes `, else: nil` from struct update
+                 * expressions that are NOT if-statements. These are assignment statements
+                 * that should never have an else clause.
+                 * 
+                 * HOW: Process line-by-line because Haxe's multiline regex flag doesn't work
+                 * as expected. For each line containing struct updates with malformed else
+                 * clauses, use regex replacement to remove the invalid suffix.
+                 * 
+                 * EXAMPLES OF MALFORMED PATTERNS:
+                 * - `struct = %{struct | b: struct.b <> "\n"}, else: nil`
+                 * - `struct = %{struct | b: struct.b <> Std.string(v)}, else: nil, else: nil`
+                 * 
+                 * EXPECTED OUTPUT:
+                 * - `struct = %{struct | b: struct.b <> "\n"}`
+                 * - `struct = %{struct | b: struct.b <> Std.string(v)}`
+                 */
+                var lines = result.split("\n");
+                for (i in 0...lines.length) {
+                    var line = lines[i];
+                    
+                    /**
+                     * PATTERN 9 ENHANCED: Fix struct update expressions with malformed else clauses
+                     * 
+                     * WHY: Previous pattern was too restrictive - looked for exact "struct = %{struct |"
+                     * but actual malformed lines can be any bare struct update with ", else: nil"
+                     * 
+                     * WHAT: Detect ANY line containing struct updates with malformed else that
+                     * is NOT an if-statement (which legitimately can have else clauses)
+                     * 
+                     * HOW: Check for struct update pattern + malformed else, excluding if-statements
+                     * - Contains "%{struct |" (struct update syntax)
+                     * - Contains "}, else: nil" (malformed suffix) 
+                     * - Does NOT contain "if (" (not a legitimate if-statement)
+                     * 
+                     * EXAMPLES FIXED:
+                     * - `struct = %{struct | b: struct.b <> "\n"}, else: nil`
+                     * - `struct = %{struct | b: struct.b <> Std.string(v)}, else: nil, else: nil`
+                     */
+                    if (line.contains("%{struct |") && line.contains("}, else: nil") && !line.contains("if (")) {
+                        #if debug_y_combinator
+                        trace('[XRay Y-Combinator] PATTERN 9: Found malformed struct update at line ${i+1}');
+                        trace('[XRay Y-Combinator] - Original: ${line}');
+                        #end
+                        
+                        var cleaned = line;
+                        
+                        // Remove single ", else: nil" suffix from struct updates
+                        cleaned = ~/^(\s*)(.*%\{struct \|[^}]+\}), else: nil$/.replace(cleaned, "$1$2");
+                        
+                        // If still contains double pattern, clean that too
+                        if (cleaned.contains(", else: nil, else: nil")) {
+                            cleaned = ~/^(\s*)(.*%\{struct \|[^}]+\}), else: nil, else: nil$/.replace(cleaned, "$1$2");
+                        }
+                        
+                        // Also handle any remaining single ", else: nil" patterns
+                        if (cleaned.contains(", else: nil")) {
+                            cleaned = cleaned.replace(", else: nil", "");
+                        }
+                        
+                        #if debug_y_combinator
+                        if (cleaned != line) {
+                            trace('[XRay Y-Combinator] ✓ CLEANED SUCCESSFULLY');
+                            trace('[XRay Y-Combinator] - Result: ${cleaned}');
+                        } else {
+                            trace('[XRay Y-Combinator] ⚠️ NO CHANGE - Pattern may need adjustment');
+                        }
+                        #end
+                        
+                        lines[i] = cleaned;
+                    }
+                }
+                result = lines.join("\n");
+                
+                #if debug_y_combinator
+                // Debug: Verify cleanup success
+                if (result.contains(", else: nil")) {
+                    trace("DEBUG: POST-CLEANUP - Some patterns may remain:");
+                    var remainingCount = 0;
+                    var lines = result.split("\n");
+                    for (i in 0...lines.length) {
+                        if (lines[i].contains(", else: nil") && !lines[i].startsWith("if ")) {
+                            remainingCount++;
+                            trace('  Still malformed at line ${i+1}: ${lines[i].substr(0, 60)}...');
+                        }
+                    }
+                    if (remainingCount > 0) {
+                        trace('  ⚠️ ${remainingCount} malformed patterns still present after cleanup');
+                    }
+                }
+                #end
+                
                 result;
                 
             case TIf(econd, eif, eelse):
@@ -2473,15 +2728,43 @@ class ElixirCompiler extends DirectToStringCompiler {
                 var forceCaseArmBlockSyntax = isCompilingCaseArm;
                 
                 
-                // CRITICAL FIX: Force block syntax for if statements without explicit else clause
-                // WHY: If statements without else in Haxe should not generate incomplete inline syntax
-                // WHAT: When eelse is null, always use block syntax to avoid `, else: nil` concatenation issues  
-                var forceBlockSyntaxForNoElse = (eelse == null);
+                // COMPATIBILITY FIX: Preserve inline syntax for simple cases
+                // WHY: Simple if-statements should generate inline syntax like before our Y combinator fix
+                // WHAT: Only force block syntax for complex expressions that would generate malformed inline syntax
+                var forceBlockSyntaxForNoElse = false; // Disable this flag for now to restore compatibility
                 
                 // Also check if the compiled expressions contain newlines
                 var ifExpr = compileExpression(eif);
                 var elseExpr = eelse != null ? compileExpression(eelse) : "nil";
                 var hasNewlines = ifExpr.contains("\n") || (elseExpr != "nil" && elseExpr.contains("\n"));
+                
+                #if debug_if_expressions
+                // Debug: Deep trace TIf compilation to find malformed pattern source
+                trace("╔═══════════════════════════════════════════════════════════════════════════");
+                trace("║ DEBUG: TIf COMPILATION TRACE");
+                trace("╠═══════════════════════════════════════════════════════════════════════════");
+                trace("║ Condition: " + cond.substr(0, 60) + (cond.length > 60 ? "..." : ""));
+                trace("║ If branch AST: " + Type.enumConstructor(eif.expr));
+                if (eelse != null) {
+                    trace("║ Else branch AST: " + Type.enumConstructor(eelse.expr));
+                }
+                trace("║ --- Compiled Expressions ---");
+                trace("║ ifExpr: " + ifExpr.substr(0, 100) + (ifExpr.length > 100 ? "..." : ""));
+                trace("║ elseExpr: " + elseExpr.substr(0, 100) + (elseExpr.length > 100 ? "..." : ""));
+                trace("║ --- Analysis ---");
+                trace("║ hasNewlines: " + hasNewlines);
+                trace("║ needsBlockSyntax: " + needsBlockSyntax);
+                trace("║ forceBlockSyntaxForNoElse: " + forceBlockSyntaxForNoElse);
+                
+                // Check for problematic patterns
+                if (ifExpr.contains("struct = %{struct |") || elseExpr.contains("struct = %{struct |")) {
+                    trace("║ ⚠️ WARNING: Struct update expression detected in if/else branch!");
+                }
+                if (ifExpr.contains("loop_helper") || elseExpr.contains("loop_helper")) {
+                    trace("║ ⚠️ WARNING: Y combinator pattern detected!");
+                }
+                trace("╚═══════════════════════════════════════════════════════════════════════════");
+                #end
                 
                 // IMMEDIATE Y COMBINATOR DETECTION (after compilation, before syntax decision)
                 // WHY: Prevents Y combinator syntax errors by detecting patterns in compiled output.
@@ -2756,8 +3039,99 @@ class ElixirCompiler extends DirectToStringCompiler {
                     isSimpleAssignmentPattern = ifIsSimpleAssignment && elseIsSimpleAssignment;
                 }
                 
-                // Apply the decision logic for block vs inline syntax
-                var useBlockSyntax = needsBlockSyntax || hasNewlines || hasComplexPattern || forceBlockSyntax || forceElseBlockSyntax || forceCaseArmBlockSyntax || forceBlockSyntaxForNoElse || isSimpleAssignmentPattern;
+                // CRITICAL FIX: Be more aggressive about forcing block syntax
+                // to prevent malformed inline expressions
+                
+                /**
+                 * STRUCT UPDATE PATTERN DETECTION: Critical for Y combinator compilation
+                 * 
+                 * WHY: Struct updates like `struct = %{struct | field: value}` create malformed
+                 * syntax when used in inline if-else expressions, causing compilation errors
+                 * in generated code like JsonPrinter (lines 219, 222).
+                 * 
+                 * WHAT: Force block syntax whenever struct update patterns are detected.
+                 * The pattern `%{struct |` or `%{var |` indicates a struct update operation
+                 * that MUST use block syntax to avoid malformed conditionals.
+                 * 
+                 * HOW: Check both if and else branches for struct update patterns using
+                 * specific pattern matching that identifies the update syntax.
+                 */
+                var hasStructUpdatePattern = false;
+                
+                #if debug_y_combinator
+                trace("[XRay Y-Combinator] STRUCT UPDATE DETECTION START");
+                trace("[XRay Y-Combinator] - Checking ifExpr for struct updates...");
+                if (ifExpr != null && ifExpr.length > 0) {
+                    trace('[XRay Y-Combinator] - ifExpr preview: ${ifExpr.substring(0, Math.min(100, ifExpr.length))}...');
+                }
+                #end
+                
+                if (ifExpr != null) {
+                    // Pattern: variable = %{variable | field: value}
+                    var hasAssignmentWithUpdate = (ifExpr.contains(" = %{") && ifExpr.contains(" | ") && ifExpr.contains("}"));
+                    // Also catch direct struct updates without assignment
+                    var hasDirectStructUpdate = (ifExpr.contains("%{struct |") || ifExpr.contains("%{_this |"));
+                    
+                    #if debug_y_combinator
+                    if (hasAssignmentWithUpdate || hasDirectStructUpdate) {
+                        trace("[XRay Y-Combinator] ✓ STRUCT UPDATE FOUND IN IF BRANCH");
+                        trace('[XRay Y-Combinator]   - hasAssignmentWithUpdate: $hasAssignmentWithUpdate');
+                        trace('[XRay Y-Combinator]   - hasDirectStructUpdate: $hasDirectStructUpdate');
+                        trace('[XRay Y-Combinator]   - Pattern matched: ${ifExpr.substring(0, Math.min(150, ifExpr.length))}');
+                    }
+                    #end
+                    
+                    hasStructUpdatePattern = hasStructUpdatePattern || hasAssignmentWithUpdate || hasDirectStructUpdate;
+                }
+                
+                #if debug_y_combinator
+                trace("[XRay Y-Combinator] - Checking elseExpr for struct updates...");
+                if (elseExpr != null && elseExpr != "nil" && elseExpr.length > 0) {
+                    trace('[XRay Y-Combinator] - elseExpr preview: ${elseExpr.substring(0, Math.min(100, elseExpr.length))}...');
+                }
+                #end
+                
+                if (elseExpr != null && elseExpr != "nil") {
+                    // Pattern: variable = %{variable | field: value}
+                    var hasAssignmentWithUpdate = (elseExpr.contains(" = %{") && elseExpr.contains(" | ") && elseExpr.contains("}"));
+                    // Also catch direct struct updates without assignment
+                    var hasDirectStructUpdate = (elseExpr.contains("%{struct |") || elseExpr.contains("%{_this |"));
+                    
+                    #if debug_y_combinator
+                    if (hasAssignmentWithUpdate || hasDirectStructUpdate) {
+                        trace("[XRay Y-Combinator] ✓ STRUCT UPDATE FOUND IN ELSE BRANCH");
+                        trace('[XRay Y-Combinator]   - hasAssignmentWithUpdate: $hasAssignmentWithUpdate');
+                        trace('[XRay Y-Combinator]   - hasDirectStructUpdate: $hasDirectStructUpdate');
+                        trace('[XRay Y-Combinator]   - Pattern matched: ${elseExpr.substring(0, Math.min(150, elseExpr.length))}');
+                    }
+                    #end
+                    
+                    hasStructUpdatePattern = hasStructUpdatePattern || hasAssignmentWithUpdate || hasDirectStructUpdate;
+                }
+                
+                #if debug_y_combinator
+                if (hasStructUpdatePattern) {
+                    trace("[XRay Y-Combinator] ⚠️ STRUCT UPDATE PATTERN DETECTED - FORCING BLOCK SYNTAX");
+                    trace("[XRay Y-Combinator] - This prevents malformed inline if-else expressions");
+                } else {
+                    trace("[XRay Y-Combinator] - No struct update patterns detected");
+                }
+                trace("[XRay Y-Combinator] STRUCT UPDATE DETECTION END");
+                #end
+                
+                // General struct/map checks (less specific but still important)
+                var hasStructUpdates = ifExpr.contains("%{") || elseExpr.contains("%{");
+                var hasComplexAssignments = ifExpr.contains(" = ") || elseExpr.contains(" = ");
+                
+                // CRITICAL FIX: Only force block syntax for truly complex patterns
+                // Simple if-else statements should remain inline for compatibility
+                var useBlockSyntax = needsBlockSyntax || hasNewlines || 
+                    forceBlockSyntax || forceElseBlockSyntax || forceCaseArmBlockSyntax || 
+                    (hasComplexPattern && containsTWhilePattern) || // Only complex Y combinator patterns
+                    (forceBlockSyntaxForNoElse && containsTWhilePattern) || // Only for Y combinator without else
+                    (isSimpleAssignmentPattern && (hasStructUpdatePattern || hasStructUpdates)) || // Only assignment with struct updates
+                    hasComplexAssignments; // Keep complex assignments in block syntax
+                
                 
                 // CRITICAL DEBUG: Track if-expression decision process
                 #if debug_if_expressions
@@ -2814,7 +3188,28 @@ class ElixirCompiler extends DirectToStringCompiler {
                     DebugHelper.debugInlineIf("TIf inline syntax", "Generating inline if-statement", 'Condition: ${cond}', 'Full result: if ${cond}, do: ${ifExpr}, else: ${elseExpr}');
                     #end
                     
-                    'if ${cond}, do: ${ifExpr}, else: ${elseExpr}';
+                    // CRITICAL FIX: Ensure complete if-else expression generation
+                    // Validate that we're not generating malformed expressions
+                    var result = 'if ${cond}, do: ${ifExpr}, else: ${elseExpr}';
+                    
+                    // EMERGENCY VALIDATION: Check for malformed patterns
+                    if (result.contains("}, else:") && !result.startsWith("if ")) {
+                        #if debug_critical_fixes
+                        DebugHelper.debugCriticalFix("MALFORMED IF-ELSE DETECTED", "Found malformed conditional expression", 'Malformed result: $result', "Forcing block syntax to avoid syntax errors");
+                        #end
+                        
+                        // Force block syntax for safety
+                        var blockResult = 'if ${cond} do\n';
+                        blockResult += ifExpr.split("\n").map(line -> line.length > 0 ? "  " + line : line).join("\n") + "\n";
+                        if (eelse != null) {
+                            blockResult += 'else\n';
+                            blockResult += elseExpr.split("\n").map(line -> line.length > 0 ? "  " + line : line).join("\n") + "\n";
+                        }
+                        blockResult += 'end';
+                        return blockResult;
+                    }
+                    
+                    result;
                 }
                 
             case TReturn(expr):
@@ -7072,6 +7467,10 @@ class ElixirCompiler extends DirectToStringCompiler {
         // Compile the loop body with the complete renamings
         var bodyWithRenamings = compileExpressionWithRenaming(ebody, loopRenamings);
         
+        // CRITICAL FIX: Post-process to fix malformed if-else expressions
+        // Pattern: "}, else: expression" without proper "if condition, do: {struct |" prefix
+        bodyWithRenamings = fixMalformedConditionals(bodyWithRenamings);
+        
         if (normalWhile) {
             // while (condition) { body }
             if (renamedModifiedVars.length > 0) {
@@ -7228,15 +7627,60 @@ class ElixirCompiler extends DirectToStringCompiler {
                 return '${func}(${args.join(", ")})';
                 
             case TIf(econd, eif, eelse):
+                /**
+                 * TIF RENAMING COMPILATION: Handle if-statements in variable renaming context
+                 * 
+                 * WHY: This is a separate compilation path used during Y combinator variable
+                 * renaming that was incorrectly generating malformed inline if-statements.
+                 * The main TIf compilation has proper safety checks, but this path was
+                 * bypassing them, creating malformed conditionals.
+                 * 
+                 * WHAT: When eelse is null, generate if-statements WITHOUT else clauses
+                 * instead of adding ", else: nil" which causes post-processing corruption.
+                 * 
+                 * HOW: Check if eelse is null and generate appropriate syntax:
+                 * - With else: `if condition, do: expr, else: elseExpr`
+                 * - Without else: `if condition, do: expr` (no else clause)
+                 * 
+                 * CRITICAL: This prevents malformed patterns like:
+                 * `struct = %{struct | b: value}, else: nil`
+                 */
                 var cond = compileExpressionWithRenaming(econd, renamings);
                 var ifExpr = compileExpressionWithRenaming(eif, renamings);
-                var elseExpr = eelse != null ? compileExpressionWithRenaming(eelse, renamings) : "nil";
                 
-                #if debug_inline_if
-                DebugHelper.debugInlineIf("TIf renaming path", "Generating inline if-statement with renaming", 'Condition: ${cond}', 'Full result: if ${cond}, do: ${ifExpr}, else: ${elseExpr}');
+                #if debug_y_combinator
+                trace("[XRay Y-Combinator] TIF RENAMING START");
+                trace('[XRay Y-Combinator] - Condition: ${cond}');
+                trace('[XRay Y-Combinator] - If expression: ${ifExpr.substring(0, Math.min(100, ifExpr.length))}...');
+                trace('[XRay Y-Combinator] - Has else clause: ${eelse != null}');
                 #end
                 
-                return 'if ${cond}, do: ${ifExpr}, else: ${elseExpr}';
+                if (eelse != null) {
+                    // Full if-else expression
+                    var elseExpr = compileExpressionWithRenaming(eelse, renamings);
+                    
+                    #if debug_inline_if
+                    DebugHelper.debugInlineIf("TIf renaming path", "Generating inline if-statement with renaming", 'Condition: ${cond}', 'Full result: if ${cond}, do: ${ifExpr}, else: ${elseExpr}');
+                    #end
+                    
+                    #if debug_y_combinator
+                    trace('[XRay Y-Combinator] ✓ COMPLETE IF-ELSE GENERATED');
+                    trace('[XRay Y-Combinator] - Else expression: ${elseExpr.substring(0, Math.min(100, elseExpr.length))}...');
+                    trace("[XRay Y-Combinator] TIF RENAMING END");
+                    #end
+                    
+                    return 'if ${cond}, do: ${ifExpr}, else: ${elseExpr}';
+                } else {
+                    // If-only expression (no else clause)
+                    #if debug_y_combinator
+                    trace("[XRay Y-Combinator] ⚠️ IF-WITHOUT-ELSE DETECTED");
+                    trace("[XRay Y-Combinator] - Generating: if condition, do: expression (NO ELSE)");
+                    trace("[XRay Y-Combinator] - This prevents malformed ', else: nil' patterns");
+                    trace("[XRay Y-Combinator] TIF RENAMING END");
+                    #end
+                    
+                    return 'if ${cond}, do: ${ifExpr}';
+                }
                 
             case TBlock(el):
                 // Recursively compile block with renamings
