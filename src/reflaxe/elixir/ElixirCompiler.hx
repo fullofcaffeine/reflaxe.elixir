@@ -1320,62 +1320,7 @@ class ElixirCompiler extends DirectToStringCompiler {
                 
             // TField now handled by ExpressionDispatcher → FieldAccessCompiler
                 
-            case TCall(e, el):
-                // Check for special compile-time function calls
-                switch (e.expr) {
-                    case TLocal(v) if (v.name == "getAppName"):
-                        // Resolve app name at compile-time from @:appName annotation
-                        var appName = AnnotationSystem.getEffectiveAppName(currentClassType);
-                        return '"${appName}"';
-                    case TLocal(v):
-                        // Check if this is a function parameter being called
-                        // Function parameters need special syntax in Elixir: func_name.(args)
-                        var varType = v.t;
-                        var isFunction = switch (varType) {
-                            case TFun(_, _): true;
-                            case _: false;
-                        };
-                        
-                        if (isFunction) {
-                            // This is a function parameter being called - use Elixir's .() syntax
-                            var functionName = NamingHelper.toSnakeCase(v.name);
-                            var compiledArgs = el.map(arg -> compileExpression(arg));
-                            return '${functionName}.(${compiledArgs.join(", ")})';
-                        }
-                        
-                    case TField(obj, field):
-                        var fieldName = switch (field) {
-                            case FInstance(_, _, cf) | FStatic(_, cf) | FClosure(_, cf): cf.get().name;
-                            case FAnon(cf): cf.get().name;
-                            case FEnum(_, ef): ef.name;
-                            case FDynamic(s): s;
-                        };
-                        
-                        // Check for super method calls (TField on TSuper)
-                        if (obj.expr.match(TConst(TSuper)) && fieldName == "toString") {
-                            // Handle super.toString() specially for exception classes
-                            return '"Exception"';
-                        }
-                        
-                        // Check for elixir.Syntax calls and transform them to __elixir__ injection
-                        if (isElixirSyntaxCall(obj, fieldName)) {
-                            return compileElixirSyntaxCall(fieldName, el);
-                        }
-                        
-                        // Check for TypeSafeChildSpec enum constructor calls
-                        if (isTypeSafeChildSpecCall(obj, fieldName)) {
-                            return compileTypeSafeChildSpecCall(fieldName, el);
-                        }
-                        
-                        if (fieldName == "getAppName") {
-                            // Handle Class.getAppName() calls
-                            var appName = AnnotationSystem.getEffectiveAppName(currentClassType);
-                            return '"${appName}"';
-                        }
-                    case _:
-                        // Not a special function call, proceed normally
-                }
-                return compileMethodCall(e, el);
+            // TCall now handled by ExpressionDispatcher → MethodCallCompiler
                 
             // TArrayDecl now handled by ExpressionDispatcher → DataStructureCompiler
                 

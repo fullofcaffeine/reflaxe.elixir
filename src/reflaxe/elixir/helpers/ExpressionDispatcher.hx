@@ -209,10 +209,9 @@ class ExpressionDispatcher {
                 
             case TCall(e, el):
                 #if debug_expression_dispatcher
-                trace("[XRay ExpressionDispatcher] → DELEGATING TCall to original function (temporary)");
+                trace("[XRay ExpressionDispatcher] ✓ DISPATCHING to MethodCallCompiler (TCall)");
                 #end
-                // Temporary delegation to debug MethodCallCompiler issue
-                compiler.compileElixirExpressionInternal(expr, topLevel);
+                methodCallCompiler.compileCallExpression(e, el);
                 
             case TReturn(e):
                 #if debug_expression_dispatcher
