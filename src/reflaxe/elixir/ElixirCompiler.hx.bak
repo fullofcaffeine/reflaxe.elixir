@@ -4089,6 +4089,282 @@ class ElixirCompiler extends DirectToStringCompiler {
         return methodCallCompiler.compileMethodCall(e, args);
     }
     
+    // Note: Original implementation moved to MethodCallCompiler.hx
+    private function compileMethodCallOld(e: TypedExpr, args: Array<TypedExpr>): String {
+        // Check for repository operations (Repo.method calls)
+        switch (e.expr) {
+            case TField(obj, fa):
+                var methodName = getFieldName(fa);
+                var objStr = compileExpression(obj);
+                
+                // Detect Phoenix.PubSub operations
+                if (objStr == "Phoenix.PubSub" || objStr == "PubSub") {
+                    var compiledArgs = args.map(arg -> compileExpression(arg));
+                    
+                    // PubSub methods need the app's PubSub module as first argument
+                    var appName = getCurrentAppName();
+                    var pubsubModule = '${appName}.PubSub';
+                    
+                    switch (methodName) {
+                        case "subscribe":
+                            // Phoenix.PubSub.subscribe(TodoApp.PubSub, topic)
+                            return 'Phoenix.PubSub.subscribe(${pubsubModule}, ${compiledArgs.join(", ")})';
+                        case "broadcast":
+                            // Phoenix.PubSub.broadcast(TodoApp.PubSub, topic, message)
+                            return 'Phoenix.PubSub.broadcast(${pubsubModule}, ${compiledArgs.join(", ")})';
+                        case "broadcast_from":
+                            // Phoenix.PubSub.broadcast_from(TodoApp.PubSub, from_pid, topic, message)
+                            return 'Phoenix.PubSub.broadcast_from(${pubsubModule}, ${compiledArgs.join(", ")})';
+                        default:
+                            // Other PubSub methods
+                            return 'Phoenix.PubSub.${methodName}(${pubsubModule}, ${compiledArgs.join(", ")})';
+                    }
+                }
+                
+                // Detect HXX template function calls
+                if (objStr == "HXX" && methodName == "hxx") {
+                    return compileHxxCall(args);
+                }
+                
+                // Also handle direct hxx() calls (via import HXX.*)
+                if (methodName == "hxx" && args.length == 1) {
+                    // Check if this is likely an HXX call based on context
+                    switch (obj.expr) {
+                        case TField({expr: TTypeExpr(_)}, FStatic(c, _)):
+                            var className = c.get().name;
+                            if (className == "HXX") {
+                                return compileHxxCall(args);
+                            }
+                        case _:
+                    }
+                }
+                
+                // Detect Map method calls and transform to idiomatic Elixir
+                if (MapCompiler.isMapMethod(methodName)) {
+                    // Check if the object is a Map type or if this is a Map method call
+                    // We need to determine this from the object's type or compilation context
+                    var isMapObject = false;
+                    
+                    // First check the object's type information - most accurate
+                    switch (obj.t) {
+                        case TInst(t, _):
+                            var typeName = t.get().name;
+                            if (MapCompiler.isMapType(typeName)) {
+                                isMapObject = true;
+                            }
+                        case TAbstract(t, _):
+                            var typeName = t.get().name;
+                            // Check for Map abstract types
+                            if (typeName == "Map" || typeName.contains("Map")) {
+                                isMapObject = true;
+                            }
+                        case _:
+                    }
+                    
+                    // Fallback: Check if objStr looks like a map variable or map expression
+                    if (!isMapObject) {
+                        if (objStr.contains("Map.") || objStr.contains("%{") || 
+                            objStr.contains("map") || objStr.contains("_map") ||
+                            // Check common map variable names
+                            objStr == "map" || objStr.endsWith("_map") || objStr.endsWith("Map") ||
+                            // Also check for variables that might be maps based on naming
+                            objStr.contains("conditions") || objStr.contains("params") || 
+                            objStr.contains("attributes") || objStr.contains("data")) {
+                            isMapObject = true;
+                        }
+                    }
+                    
+                    if (isMapObject) {
+                        var compiledArgs = args.map(arg -> compileExpression(arg));
+                        return MapCompiler.compileMapMethod(objStr, methodName, compiledArgs);
+                    }
+                }
+                
+                // Detect Repo operations
+                if (objStr == "Repo") {
+                    var compiledArgs = args.map(arg -> compileExpression(arg));
+                    var schemaName = detectSchemaFromArgs(args);
+                    
+                    // Special handling for @:native methods like get!
+                    if (methodName == "getBang") {
+                        methodName = "get!";
+                    }
+                    
+                    return RepositoryCompiler.compileRepoCall(methodName, compiledArgs, schemaName);
+                }
+                
+                // Check if this is an algebraic data type constructor call (Result, Option, etc.)
+                switch (fa) {
+                    case FEnum(enumType, enumField):
+                        var enumTypeRef = enumType.get();
+                        if (AlgebraicDataTypeCompiler.isADTType(enumTypeRef)) {
+                            // Handle standard library ADT types with idiomatic patterns
+                            var compiled = AlgebraicDataTypeCompiler.compileADTPattern(enumTypeRef, enumField, args, (expr) -> compileExpression(expr));
+                            if (compiled != null) return compiled;
+                        } else {
+                            // Handle user-defined enums with literal patterns
+                            var fieldName = NamingHelper.toSnakeCase(enumField.name);
+                            if (args.length == 0) {
+                                return ':${fieldName}';
+                            } else {
+                                var compiledArgs = args.map(arg -> compileExpression(arg));
+                                if (args.length == 1) {
+                                    return '{:${fieldName}, ${compiledArgs[0]}}';
+                                } else {
+                                    return '{:${fieldName}, ${compiledArgs.join(", ")}}';
+                                }
+                            }
+                        }
+                    case _:
+                }
+                
+                // Check if this is a String method call
+                switch (obj.t) {
+                    case TInst(t, _) if (t.get().name == "String"):
+                        return compileStringMethod(objStr, methodName, args);
+                    case _:
+                        // Continue with normal method call handling
+                }
+                
+                // Check if this is a static extension call from OptionTools, ResultTools, or ArrayTools
+                // Haxe's 'using' transforms user.map() into OptionTools.map(user, ...) 
+                if (objStr == "OptionTools" && isOptionMethod(methodName)) {
+                    var compiledArgs = args.map(arg -> compileExpression(arg));
+                    return 'OptionTools.${methodName}(${compiledArgs.join(", ")})';
+                } else if (objStr == "ResultTools" && isResultMethod(methodName)) {
+                    var compiledArgs = args.map(arg -> compileExpression(arg));
+                    return 'ResultTools.${methodName}(${compiledArgs.join(", ")})';
+                } else if (objStr == "ArrayTools" && isArrayMethod(methodName)) {
+                    // ArrayTools static extensions need to be compiled to idiomatic Elixir Enum calls
+                    // The first argument is the array, remaining arguments are method parameters
+                    if (args.length > 0) {
+                        var arrayExpr = compileExpression(args[0]);  // First arg is the array
+                        var methodArgs = args.slice(1);             // Remaining args are method parameters
+                        return compileArrayMethod(arrayExpr, methodName, methodArgs);
+                    } else {
+                        // Fallback for methods with no arguments
+                        return 'ArrayTools.${methodName}()';
+                    }
+                } else if (objStr == "MapTools" && isMapMethod(methodName)) {
+                    // MapTools static extensions need to be compiled to idiomatic Elixir Map calls
+                    // The first argument is the map, remaining arguments are method parameters
+                    if (args.length > 0) {
+                        var mapExpr = compileExpression(args[0]);    // First arg is the map
+                        var methodArgs = args.slice(1);             // Remaining args are method parameters
+                        return compileMapMethod(mapExpr, methodName, methodArgs);
+                    } else {
+                        // Fallback for methods with no arguments
+                        return 'MapTools.${methodName}()';
+                    }
+                }
+                
+                // Check if this is an ADT type (Option<T>, Result<T,E>, etc.) with static extension methods
+                switch (obj.t) {
+                    case TEnum(enumRef, _):
+                        var enumType = enumRef.get();
+                        var compiled = compileADTStaticExtension(enumType, methodName, objStr, args);
+                        if (compiled != null) return compiled;
+                    case _:
+                        // Continue with normal method call handling
+                }
+                
+                // Check if this is an Array method call
+                switch (obj.t) {
+                    case TInst(t, _) if (t.get().name == "Array"):
+                        return compileArrayMethod(objStr, methodName, args);
+                    case _:
+                        // Continue with normal method call handling
+                }
+                
+                // Check if this is a common array method on a Dynamic type
+                // This handles cases where we're calling array methods on Dynamic typed values
+                if (isArrayMethod(methodName)) {
+                    return compileArrayMethod(objStr, methodName, args);
+                }
+                
+                // Handle other method calls normally
+                var compiledArgs = args.map(arg -> compileExpression(arg));
+                
+                // Check for standard library ADT constructor calls that weren't detected as FEnum
+                // Only applies to actual standard library types, not user-defined enums with same names
+                if (AlgebraicDataTypeCompiler.isADTTypeName(objStr)) {
+                    var config = AlgebraicDataTypeCompiler.getADTConfigByTypeName(objStr);
+                    if (config != null) {
+                        // Verify this is actually the standard library type, not a user-defined type
+                        var enumType = null;
+                        try {
+                            var fullTypeName = '${config.moduleName}.${config.typeName}';
+                            var adtType = haxe.macro.Context.getType(fullTypeName);
+                            switch (adtType) {
+                                case TEnum(enumRef, _):
+                                    enumType = enumRef.get();
+                                    // Additional check: ensure this is actually an ADT type
+                                    if (!AlgebraicDataTypeCompiler.isADTType(enumType)) {
+                                        enumType = null; // Not actually a standard library ADT
+                                    }
+                                case _:
+                            }
+                        } catch (e: Dynamic) {
+                            // Fallback if type not found - definitely not a standard library type
+                        }
+                        
+                        if (enumType != null) {
+                            // Create a fake enum field for the method call
+                            var fakeField = null;
+                            for (field in enumType.constructs) {
+                                if (field.name.toLowerCase() == methodName.toLowerCase()) {
+                                    fakeField = field;
+                                    break;
+                                }
+                            }
+                            
+                            if (fakeField != null) {
+                                var compiled = AlgebraicDataTypeCompiler.compileADTMethodCall(enumType, methodName, args, (expr) -> compileExpression(expr));
+                                if (compiled != null) return compiled;
+                            }
+                        }
+                    }
+                }
+                
+                // Check if methodName already contains a module path (from @:native annotation)
+                if (methodName.indexOf(".") >= 0) {
+                    // Native method with full path - use it directly
+                    return '${methodName}(${compiledArgs.join(", ")})';
+                } else {
+                    // Regular method call - concatenate with object
+                    return '${objStr}.${methodName}(${compiledArgs.join(", ")})';
+                }
+                
+            case _:
+                // Check for direct hxx() calls (via import HXX.*)
+                var functionName = compileExpression(e);
+                if (functionName == "hxx") {
+                    return compileHxxCall(args);
+                }
+                
+                // Regular function call
+                var compiledArgs = args.map(arg -> compileExpression(arg));
+                var functionName = compileExpression(e);
+                
+                // Check if this is an anonymous function call (function parameter)
+                // In Elixir, function parameters need dot syntax: fn.(args) instead of fn(args)
+                // This includes reserved keywords (ending with _) and regular function parameters
+                var isFunctionParameter = (functionName.endsWith("_") || 
+                    (functionName.toLowerCase() == functionName && // snake_case (likely parameter)
+                     !functionName.contains(".") && 
+                     !functionName.contains(" ") &&
+                     functionName.length > 1 && // not single chars
+                     functionName != "nil" && // not literals
+                     functionName != "true" &&
+                     functionName != "false"));
+                     
+                if (isFunctionParameter) {
+                    return functionName + ".(" + compiledArgs.join(", ") + ")";
+                } else {
+                    return functionName + "(" + compiledArgs.join(", ") + ")";
+                }
+        }
+    }
     
     /**
      * Compile for-in loops to idiomatic Elixir Enum operations
