@@ -115,6 +115,7 @@ class ElixirCompiler extends DirectToStringCompiler {
     private var inlineContextMap: Map<String, String> = new Map<String, String>();
     private var isCompilingAbstractMethod: Bool = false;
     private var isCompilingCaseArm: Bool = false;
+    private var isCompilingTBlock: Bool = false;
     
     // Current class context for app name resolution and other class-specific operations
     private var currentClassType: Null<ClassType> = null;
@@ -2084,7 +2085,13 @@ class ElixirCompiler extends DirectToStringCompiler {
                 }
                 #end
                 
-                if (el.length == 0) {
+                // CRITICAL FIX: Set TBlock context to force block syntax for all if statements
+                // WHY: Inline if statements in TBlock contexts cause statement concatenation issues
+                // WHAT: Any if statement within a TBlock should use block syntax for safety
+                var originalTBlockContext = isCompilingTBlock;
+                isCompilingTBlock = true;
+                
+                var result = if (el.length == 0) {
                     "nil";
                 } else if (el.length == 1) {
                     #if debug_y_combinator
@@ -2412,19 +2419,23 @@ class ElixirCompiler extends DirectToStringCompiler {
                                 var allStatements = nonAssignmentStatements.copy();
                                 allStatements.push('%{${structVar} | ${fieldUpdates.join(", ")}}');
                                 
-                                return allStatements.join("\n");
+                                allStatements.join("\n");
                             } else {
                                 // No field assignments, proceed normally with preserved context
                                 compiledStatements = compileBlockExpressionsWithContext(el);
-                                return compiledStatements.join("\n");
+                                compiledStatements.join("\n");
                             }
                         } else {
                             // Normal block compilation with preserved inline context
                             compiledStatements = compileBlockExpressionsWithContext(el);
-                            return compiledStatements.join("\n");
+                            compiledStatements.join("\n");
                         }
                     }
                 }
+                
+                // Restore TBlock context
+                isCompilingTBlock = originalTBlockContext;
+                result;
                 
             case TIf(econd, eif, eelse):
                 // Track TIf statements for proper compilation
@@ -2461,10 +2472,70 @@ class ElixirCompiler extends DirectToStringCompiler {
                 // Case arms in Elixir have different semantics and inline if syntax causes issues
                 var forceCaseArmBlockSyntax = isCompilingCaseArm;
                 
+                // CRITICAL FIX: Force block syntax when compiling inside TBlock expressions
+                // WHY: TBlock contexts require proper statement separation - inline if syntax breaks this
+                // WHAT: Any if statement within a TBlock should always use block syntax for safety
+                var forceTBlockSyntax = isCompilingTBlock;
+                
                 // Also check if the compiled expressions contain newlines
                 var ifExpr = compileExpression(eif);
                 var elseExpr = eelse != null ? compileExpression(eelse) : "nil";
                 var hasNewlines = ifExpr.contains("\n") || (elseExpr != "nil" && elseExpr.contains("\n"));
+                
+                // IMMEDIATE Y COMBINATOR DETECTION (after compilation, before syntax decision)
+                // WHY: Prevents Y combinator syntax errors by detecting patterns in compiled output.
+                // The AST-based detection approach failed because Haxe's AST transformations 
+                // make it difficult to predict which patterns will generate Y combinators.
+                // 
+                // WHAT: String-based pattern detection for Y combinator indicators in compiled expressions.
+                // Forces block syntax when patterns that require it are detected.
+                // 
+                // HOW: Searches compiled strings for known Y combinator patterns:
+                // - "loop_helper" and "loop_fn" (Y combinator function names)
+                // - "(\n" (multi-line parenthesized expressions)
+                // 
+                // SOLUTION ANALYSIS:
+                // ✅ BENEFITS:
+                // - Immediate fix for current Y combinator syntax errors  
+                // - Post-compilation detection is more reliable than AST prediction
+                // - Safe fallback: forces block syntax when uncertain
+                // - Clear and debuggable patterns
+                // 
+                // ⚠️ LIMITATIONS & FUTURE CONCERNS:
+                // - BRITTLE: Relies on specific string patterns that could change
+                // - NOT FUTURE-PROOF: Y combinator generation format could evolve
+                // - FALSE POSITIVES: Could trigger on legitimate "loop_helper" usage
+                // - MAINTENANCE BURDEN: Requires pattern updates as compiler evolves
+                // 
+                // 🔄 RECOMMENDED FUTURE SOLUTION:
+                // Replace with semantic AST analysis that understands the actual meaning
+                // of expressions rather than string patterns. This would involve:
+                // 1. Enhanced AST walker that tracks loop generation context
+                // 2. Semantic analysis of expression complexity at AST level
+                // 3. Type-based detection of recursive patterns vs simple expressions
+                // 4. Integration with Haxe's type inference to predict compilation results
+                // 
+                // JUSTIFICATION FOR INTERIM APPROACH:
+                // This string-based solution is justified because:
+                // 1. It solves the immediate critical bug (Y combinator syntax errors)
+                // 2. AST-based prediction proved more complex than anticipated due to Haxe transformations
+                // 3. The patterns are currently stable and well-defined
+                // 4. It provides a working foundation while the proper semantic solution is developed
+                var hasYCombinatorPatterns = ifExpr.contains("loop_helper") || 
+                                           ifExpr.contains("loop_fn") ||
+                                           ifExpr.contains("(\n") || // Multi-line parenthesized expressions
+                                           (elseExpr != "nil" && (elseExpr.contains("loop_helper") || 
+                                                                elseExpr.contains("loop_fn") ||
+                                                                elseExpr.contains("(\n")));
+                
+                if (hasYCombinatorPatterns) {
+                    #if debug_compiler
+                    trace('[Y_COMBINATOR] Immediate detection: Y combinator pattern found, forcing block syntax for condition: $cond');
+                    #end
+                    // This overrides the inline syntax decision
+                    hasNewlines = true; // Force the hasNewlines check to trigger block syntax
+                    needsBlockSyntax = true;
+                }
                 
                 // EXPLANATION: The key insight here is that Elixir has two if syntaxes:
                 //   1. Inline: if condition, do: expression, else: expression
@@ -2524,6 +2595,24 @@ class ElixirCompiler extends DirectToStringCompiler {
                         case TWhile(_, _, _): true;
                         case _: false;
                     };
+                }
+                
+                // POST-COMPILATION Y COMBINATOR DETECTION
+                // WHY: AST detection doesn't catch all patterns due to Haxe transformations
+                // WHAT: Check compiled output for Y combinator patterns that would break inline syntax
+                // HOW: Look for "loop_helper" and other Y combinator indicators in compiled strings
+                var containsYCombinatorInCompiled = ifExpr.contains("loop_helper") || 
+                                                   ifExpr.contains("loop_fn") ||
+                                                   ifExpr.contains("(\n") || // Multi-line parenthesized expressions
+                                                   (elseExpr != "nil" && (elseExpr.contains("loop_helper") || 
+                                                                        elseExpr.contains("loop_fn") ||
+                                                                        elseExpr.contains("(\n")));
+                
+                if (containsYCombinatorInCompiled) {
+                    #if debug_compiler
+                    trace('[Y_COMBINATOR] Post-compilation detection: Y combinator pattern found in compiled output, forcing block syntax');
+                    #end
+                    forceBlockSyntax = true;
                 }
                 
                 // ENHANCED PATTERN DETECTION: Handle Haxe-transformed AST structures
@@ -2650,7 +2739,7 @@ class ElixirCompiler extends DirectToStringCompiler {
                 }
                 
                 // Apply the decision logic for block vs inline syntax
-                var useBlockSyntax = needsBlockSyntax || hasNewlines || hasComplexPattern || forceBlockSyntax || forceElseBlockSyntax || forceCaseArmBlockSyntax;
+                var useBlockSyntax = needsBlockSyntax || hasNewlines || hasComplexPattern || forceBlockSyntax || forceElseBlockSyntax || forceCaseArmBlockSyntax || forceTBlockSyntax;
                 
                 #if debug_y_combinator
                 DebugHelper.debugYCombinator("TIf DECISION", "Block syntax decision factors", 
