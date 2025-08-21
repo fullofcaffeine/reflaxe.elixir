@@ -44,7 +44,7 @@ defmodule TypeSafeChildSpecTools do
         endpointModule = "" ++ app_name ++ "Web.Endpoint"
         args = []
         if (port != nil || config != nil), do: endpointConfig = %{}
-        if (port != nil), do: endpoint_config.port = port, else: nil
+        if (port != nil), do: endpoint_config.port = port
         if (config != nil), do: _g_1 = 0
         _g_1 = Reflect.fields(config)
         (

@@ -68,12 +68,8 @@ defmodule Main do
     str4 = "banana"
     Log.trace("str1 == str3: " <> Std.string(str1 == str3), %{"fileName" => "Main.hx", "lineNumber" => 94, "className" => "Main", "methodName" => "stringComparison"})
     Log.trace("str1 == str2: " <> Std.string(str1 == str2), %{"fileName" => "Main.hx", "lineNumber" => 95, "className" => "Main", "methodName" => "stringComparison"})
-    if (str1 < str4) do
-      Log.trace("" <> str1 <> " comes before " <> str4, %{"fileName" => "Main.hx", "lineNumber" => 99, "className" => "Main", "methodName" => "stringComparison"})
-    end
-    if (str1.to_lower_case() == str2.to_lower_case()) do
-      Log.trace("" <> str1 <> " and " <> str2 <> " are equal (case-insensitive)", %{"fileName" => "Main.hx", "lineNumber" => 104, "className" => "Main", "methodName" => "stringComparison"})
-    end
+    if (str1 < str4), do: Log.trace("" <> str1 <> " comes before " <> str4, %{"fileName" => "Main.hx", "lineNumber" => 99, "className" => "Main", "methodName" => "stringComparison"})
+    if (str1.to_lower_case() == str2.to_lower_case()), do: Log.trace("" <> str1 <> " and " <> str2 <> " are equal (case-insensitive)", %{"fileName" => "Main.hx", "lineNumber" => 104, "className" => "Main", "methodName" => "stringComparison"}), else: nil
   end
 
   @doc "Function string_building"
@@ -103,33 +99,20 @@ defmodule Main do
   def regex_operations() do
     text = "The year is 2024 and the time is 15:30"
     digit_regex = EReg.new("\\d+", "")
-    if (digit_regex.match(text)) do
-      Log.trace("First number found: " <> digit_regex.matched(0), %{"fileName" => "Main.hx", "lineNumber" => 140, "className" => "Main", "methodName" => "regexOperations"})
-    end
+    if (digit_regex.match(text)), do: Log.trace("First number found: " <> digit_regex.matched(0), %{"fileName" => "Main.hx", "lineNumber" => 140, "className" => "Main", "methodName" => "regexOperations"})
     all_numbers = EReg.new("\\d+", "g")
     numbers = []
-    (
-      loop_helper = fn loop_fn, {text} ->
-        if (all_numbers.match(text)) do
-          try do
-            numbers ++ [all_numbers.matched(0)]
-          text = all_numbers.matched_right()
-          loop_fn.({all_numbers.matched_right()})
-            loop_fn.(loop_fn, {text})
-          catch
-            :break -> {text}
-            :continue -> loop_fn.(loop_fn, {text})
-          end
-        else
-          {text}
-        end
+    loop_helper = fn loop_fn, {text} ->
+      if (all_numbers.match(text)) do
+        numbers ++ [all_numbers.matched(0)]
+        text = all_numbers.matched_right()
+        loop_fn.(loop_fn, {text})
+      else
+        {text}
       end
-      {text} = try do
-        loop_helper.(loop_helper, {nil})
-      catch
-        :break -> {nil}
-      end
-    )
+    end
+
+    {text} = loop_helper.(loop_helper, {text})
     Log.trace("All numbers: " <> Std.string(numbers), %{"fileName" => "Main.hx", "lineNumber" => 151, "className" => "Main", "methodName" => "regexOperations"})
     replaced = EReg.new("\\d+", "").replace(text, "XXX")
     Log.trace("Numbers replaced: " <> replaced, %{"fileName" => "Main.hx", "lineNumber" => 155, "className" => "Main", "methodName" => "regexOperations"})

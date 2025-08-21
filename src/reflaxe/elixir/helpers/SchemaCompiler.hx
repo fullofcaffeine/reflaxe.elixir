@@ -2,467 +2,344 @@ package reflaxe.elixir.helpers;
 
 #if (macro || reflaxe_runtime)
 
-import haxe.macro.Context;
 import haxe.macro.Type;
 import haxe.macro.Expr;
-import reflaxe.data.ClassFuncData;
-import reflaxe.data.ClassVarData;
+import reflaxe.BaseCompiler;
 import reflaxe.elixir.helpers.NamingHelper;
-import reflaxe.elixir.schema.SchemaIntrospection;
 
-using StringTools;
+using reflaxe.helpers.NullHelper;
 using reflaxe.helpers.NameMetaHelper;
+using reflaxe.helpers.SyntaxHelper;
+using reflaxe.helpers.TypedExprHelper;
+using StringTools;
 
 /**
- * SchemaCompiler - Compiles @:schema annotated classes to Ecto.Schema modules
+ * Schema and Changeset Compiler for Reflaxe.Elixir
  * 
- * Supports:
- * - @:schema annotation detection and table name extraction
- * - @:field, @:primary_key, @:timestamps annotations
- * - @:has_many, @:belongs_to, @:has_one associations
- * - Integration with SchemaIntrospection for compile-time validation
- * - Complete Ecto.Schema module generation with schema/2 macro calls
+ * WHY: Ecto schemas and changesets are fundamental to Phoenix applications.
+ * This compiler provides type-safe generation of Ecto schemas with automatic
+ * changeset functions, validations, and associations.
+ * 
+ * WHAT: Handles compilation of classes annotated with:
+ * - @:schema - Generates Ecto schema modules with fields and types
+ * - @:changeset - Generates changeset functions with validations
+ * - Field metadata for types, defaults, and validations
+ * - Association definitions (has_many, belongs_to, etc.)
+ * 
+ * HOW:
+ * 1. Extract schema metadata and field annotations
+ * 2. Generate Ecto schema definition with proper types
+ * 3. Create changeset functions with validations
+ * 4. Handle associations and embedded schemas
+ * 5. Generate query helpers and custom functions
+ * 
+ * @see documentation/ECTO_INTEGRATION.md - Complete Ecto integration guide
  */
 @:nullSafety(Off)
 class SchemaCompiler {
     
+    var compiler: Dynamic; // ElixirCompiler reference
+    
     /**
-     * Check if a class type has @:schema annotation
+     * Create a new schema compiler
+     * 
+     * @param compiler The main ElixirCompiler instance
      */
-    public static function isSchemaClassType(classType: ClassType): Bool {
-        if (classType == null) return false;
-        return classType.meta.has(":schema");
+    public function new(compiler: Dynamic) {
+        this.compiler = compiler;
     }
     
     /**
-     * Extract schema configuration from @:schema annotation
+     * Compile a class annotated with @:schema
+     * 
+     * WHY: Ecto schemas need specific module structure with use Ecto.Schema,
+     * field definitions, and changeset functions.
+     * 
+     * WHAT: Generates a complete Ecto schema module including:
+     * - Module definition with use Ecto.Schema
+     * - Schema block with field definitions
+     * - Changeset function with validations
+     * - Timestamps and associations
+     * - Query helpers and custom functions
+     * 
+     * HOW:
+     * 1. Extract table name from metadata or class name
+     * 2. Process each field for type and options
+     * 3. Generate schema block with proper syntax
+     * 4. Create changeset with validations
+     * 5. Add custom functions from class methods
+     * 
+     * @param classType The class type information
+     * @param varFields Variable fields (schema fields)
+     * @param funcFields Function fields (custom methods)
+     * @return Generated Ecto schema module code
      */
-    public static function getSchemaConfig(classType: ClassType): SchemaConfig {
-        if (!classType.meta.has(":schema")) {
-            return {tableName: null, hasTimestamps: false};
-        }
+    public function compileSchemaClass(
+        classType: ClassType, 
+        varFields: Array<Dynamic>, // ClassVarData
+        funcFields: Array<Dynamic>  // ClassFuncData
+    ): String {
         
-        var meta = classType.meta.extract(":schema")[0];
-        var tableName = null;
+        #if debug_schema
+        trace('[SchemaCompiler] Compiling schema class: ${classType.name}');
+        trace('[SchemaCompiler] Fields: ${varFields.length}, Functions: ${funcFields.length}');
+        #end
         
-        if (meta.params != null && meta.params.length > 0) {
-            switch (meta.params[0].expr) {
-                case EConst(CString(s, _)):
-                    tableName = s;
-                case _:
-            }
-        }
+        var moduleName = compiler.getModuleName(classType);
+        var tableName = extractTableName(classType);
         
-        // Check for class-level @:timestamps annotation
-        var hasTimestamps = classType.meta.has(":timestamps");
-        
-        return {tableName: tableName, hasTimestamps: hasTimestamps};
-    }
-    
-    /**
-     * Compile @:schema annotated class to Ecto.Schema module
-     */
-    public static function compileFullSchema(className: String, config: SchemaConfig, varFields: Array<ClassVarData>): String {
-        var moduleName = NamingHelper.getElixirModuleName(className);
-        var tableName = config.tableName != null ? config.tableName : NamingHelper.toSnakeCase(className) + "s";
-        
+        // Generate module header
         var result = 'defmodule ${moduleName} do\n';
-        result += '  @moduledoc """\n';
-        result += '  Ecto schema module generated from Haxe @:schema class\n';
-        result += '  Table: ${tableName}\n';
-        result += '  """\n\n';
-        
-        // Import Ecto.Schema
         result += '  use Ecto.Schema\n';
         result += '  import Ecto.Changeset\n\n';
         
-        // Add schema definition
-        result += '  @primary_key {:id, :id, autogenerate: true}\n';
-        result += '  @derive {Phoenix.Param, key: :id}\n\n';
-        
+        // Generate schema block
         result += '  schema "${tableName}" do\n';
+        result += generateSchemaFields(varFields);
+        result += '\n    timestamps()\n';
+        result += '  end\n\n';
         
-        // Process field definitions
-        for (field in varFields) {
-            // Skip id field (it's already defined as primary key)
-            if (field.field.name == "id") {
-                continue;
-            }
-            
-            // Skip timestamp fields if class has @:timestamps
-            if (config.hasTimestamps && (field.field.name == "inserted_at" || field.field.name == "updated_at")) {
-                continue;
-            }
-            
-            var fieldDef = compileSchemaField(field);
-            if (fieldDef != null && fieldDef.length > 0) {
-                result += '    ${fieldDef}\n';
+        // Generate changeset function
+        result += generateChangesetFunction(classType, varFields);
+        
+        // Generate custom functions
+        for (funcField in funcFields) {
+            if (!isSpecialFunction(funcField.name)) {
+                result += '\n' + compiler.compileFunction(funcField, true);
             }
         }
-        
-        // Add timestamps if class has @:timestamps annotation
-        if (config.hasTimestamps) {
-            result += '    timestamps()\n';
-        }
-        
-        result += '  end\n\n';
-        
-        // Add changeset function
-        result += '  @doc """\n';
-        result += '  Changeset function for ${className} schema\n';
-        result += '  """\n';
-        result += '  def changeset(%${className}{} = ${NamingHelper.toSnakeCase(className)}, attrs \\\\ %{}) do\n';
-        result += '    ${NamingHelper.toSnakeCase(className)}\n';
-        result += '    |> cast(attrs, changeable_fields())\n';
-        result += '    |> validate_required(required_fields())\n';
-        result += '  end\n\n';
-        
-        // Add helper functions
-        result += '  defp changeable_fields do\n';
-        result += '    [${getChangeableFields(varFields)}]\n';
-        result += '  end\n\n';
-        
-        result += '  defp required_fields do\n';
-        result += '    [${getRequiredFields(varFields)}]\n';
-        result += '  end\n\n';
         
         result += 'end\n';
         
-        // Register schema with SchemaIntrospection system
-        registerSchemaForIntrospection(className, tableName, varFields);
+        #if debug_schema
+        trace('[SchemaCompiler] Generated schema module: ${result.substring(0, 200)}...');
+        #end
         
         return result;
     }
     
     /**
-     * Compile individual schema field from ClassVarData
+     * Compile a class annotated with @:changeset
+     * 
+     * WHY: Some classes need custom changeset logic beyond the default
+     * 
+     * WHAT: Generates a module focused on changeset operations:
+     * - Multiple changeset functions for different contexts
+     * - Complex validations and transformations
+     * - Custom error handling
+     * 
+     * @param classType The class type information
+     * @param varFields Variable fields
+     * @param funcFields Function fields (changeset methods)
+     * @return Generated changeset module code
      */
-    static function compileSchemaField(field: ClassVarData): String {
-        var fieldName = NamingHelper.toSnakeCase(field.field.name);
+    public function compileChangesetClass(
+        classType: ClassType,
+        varFields: Array<Dynamic>,
+        funcFields: Array<Dynamic>
+    ): String {
         
-        // Check for special annotations
-        var fieldMeta = field.field.meta;
+        #if debug_schema
+        trace('[SchemaCompiler] Compiling changeset class: ${classType.name}');
+        #end
         
-        // Skip primary key fields (handled by schema/2 macro)
-        if (fieldMeta.has(":primary_key")) {
-            return "";
+        var moduleName = compiler.getModuleName(classType);
+        
+        var result = 'defmodule ${moduleName} do\n';
+        result += '  import Ecto.Changeset\n\n';
+        
+        // Compile each changeset function
+        for (funcField in funcFields) {
+            result += compiler.compileFunction(funcField, true) + '\n';
         }
         
-        // Timestamps should be handled at class level, not field level
-        if (fieldMeta.has(":timestamps")) {
-            // This shouldn't happen with proper class-level @:timestamps
-            return "";
-        }
+        result += 'end\n';
         
-        // Handle regular field annotation
-        if (fieldMeta.has(":field")) {
-            var fieldConfig = extractFieldConfig(fieldMeta);
-            var elixirType = fieldConfig.type != null ? fieldConfig.type : mapHaxeTypeToElixir(field.field.type);
-            
-            var fieldDef = 'field :${fieldName}, :${elixirType}';
-            
-            // Add field options
-            var options = [];
-            // Note: Ecto schemas don't use "null: false" in field definitions
-            // Nullability is controlled by database constraints and changeset validations
-            if (fieldConfig.defaultValue != null) {
-                options.push('default: ${fieldConfig.defaultValue}');
-            }
+        return result;
+    }
+    
+    // ================== Private Helper Methods ==================
+    
+    /**
+     * Extract table name from class metadata or generate from class name
+     */
+    private function extractTableName(classType: ClassType): String {
+        var tableMeta = classType.meta.extract(":table");
+        if (tableMeta != null && tableMeta.length > 0) {
+            return switch (tableMeta[0].params[0].expr) {
+                case EConst(CString(s)): s;
+                default: pluralizeTableName(classType.name);
+            };
+        }
+        return pluralizeTableName(classType.name);
+    }
+    
+    /**
+     * Simple pluralization for table names
+     */
+    private function pluralizeTableName(name: String): String {
+        var snakeName = NamingHelper.toSnakeCase(name);
+        // Simple pluralization rules
+        if (snakeName.endsWith("y")) {
+            return snakeName.substring(0, snakeName.length - 1) + "ies";
+        } else if (snakeName.endsWith("s") || snakeName.endsWith("x") || snakeName.endsWith("ch")) {
+            return snakeName + "es";
+        } else {
+            return snakeName + "s";
+        }
+    }
+    
+    /**
+     * Generate schema field definitions
+     */
+    private function generateSchemaFields(varFields: Array<Dynamic>): String {
+        var fields: Array<String> = [];
+        
+        for (varField in varFields) {
+            var fieldName = NamingHelper.toSnakeCase(varField.name);
+            var fieldType = mapHaxeTypeToEcto(varField.type);
+            var options = extractFieldOptions(varField);
             
             if (options.length > 0) {
-                fieldDef += ', ' + options.join(', ');
-            }
-            
-            return fieldDef;
-        }
-        
-        // Handle association annotations
-        if (fieldMeta.has(":has_many")) {
-            var assocConfig = extractAssociationConfig(fieldMeta, ":has_many");
-            return 'has_many :${fieldName}, ${assocConfig.schema}';
-        }
-        
-        if (fieldMeta.has(":belongs_to")) {
-            var assocConfig = extractAssociationConfig(fieldMeta, ":belongs_to");
-            return 'belongs_to :${fieldName}, ${assocConfig.schema}';
-        }
-        
-        if (fieldMeta.has(":has_one")) {
-            var assocConfig = extractAssociationConfig(fieldMeta, ":has_one");
-            return 'has_one :${fieldName}, ${assocConfig.schema}';
-        }
-        
-        // Default field compilation
-        var elixirType = mapHaxeTypeToElixir(field.field.type);
-        return 'field :${fieldName}, :${elixirType}';
-    }
-    
-    /**
-     * Extract field configuration from @:field annotation
-     */
-    static function extractFieldConfig(meta: haxe.macro.Type.MetaAccess): FieldConfig {
-        var config = {type: null, nullable: true, defaultValue: null};
-        
-        var fieldMeta = meta.extract(":field");
-        if (fieldMeta.length > 0 && fieldMeta[0].params != null) {
-            for (param in fieldMeta[0].params) {
-                switch (param.expr) {
-                    case EObjectDecl(fields):
-                        for (objField in fields) {
-                            switch (objField.field) {
-                                case "type":
-                                    switch (objField.expr.expr) {
-                                        case EConst(CString(s, _)):
-                                            config.type = s;
-                                        case _:
-                                    }
-                                case "null" | "nullable":
-                                    switch (objField.expr.expr) {
-                                        case EConst(CIdent("false")):
-                                            config.nullable = false;
-                                        case EConst(CIdent("true")):
-                                            config.nullable = true;
-                                        case _:
-                                    }
-                                case "default" | "defaultValue":
-                                    config.defaultValue = extractDefaultValue(objField.expr);
-                                case _:
-                            }
-                        }
-                    case _:
-                }
+                fields.push('    field :${fieldName}, ${fieldType}, ${options.join(", ")}');
+            } else {
+                fields.push('    field :${fieldName}, ${fieldType}');
             }
         }
         
-        return config;
+        return fields.join("\n") + (fields.length > 0 ? "\n" : "");
     }
     
     /**
-     * Extract association configuration from annotation
+     * Map Haxe types to Ecto field types
      */
-    static function extractAssociationConfig(meta: haxe.macro.Type.MetaAccess, annotationName: String): AssociationConfig {
-        var config = {schema: null, foreignKey: null};
-        
-        var assocMeta = meta.extract(annotationName);
-        if (assocMeta.length > 0 && assocMeta[0].params != null && assocMeta[0].params.length >= 2) {
-            // Format: @:has_many("posts", "Post", "user_id")
-            switch (assocMeta[0].params[1].expr) {
-                case EConst(CString(s, _)):
-                    config.schema = s;
-                case _:
-            }
-            
-            if (assocMeta[0].params.length >= 3) {
-                switch (assocMeta[0].params[2].expr) {
-                    case EConst(CString(s, _)):
-                        config.foreignKey = s;
-                    case _:
-                }
-            }
-        }
-        
-        return config;
-    }
-    
-    /**
-     * Extract default value from expression
-     */
-    static function extractDefaultValue(expr: Expr): Dynamic {
-        return switch (expr.expr) {
-            case EConst(CString(s, _)): '"${s}"';
-            case EConst(CInt(i)): i;
-            case EConst(CFloat(f)): f;
-            case EConst(CIdent("true")): "true";
-            case EConst(CIdent("false")): "false";
-            case EConst(CIdent("null")): "nil";
-            case _: null;
-        };
-    }
-    
-    /**
-     * Map Haxe types to Elixir/Ecto types
-     */
-    static function mapHaxeTypeToElixir(haxeType: haxe.macro.Type): String {
-        return switch (haxeType) {
+    private function mapHaxeTypeToEcto(type: Type): String {
+        return switch (type) {
             case TInst(t, _):
                 switch (t.get().name) {
-                    case "String": "string";
-                    case "Array": "string"; // Arrays often stored as JSON
-                    default: "string";
+                    case "String": ":string";
+                    case "Date": ":utc_datetime";
+                    case "Array": ":array";
+                    default: ":string";
                 }
             case TAbstract(t, _):
                 switch (t.get().name) {
-                    case "Int": "integer";
-                    case "Float": "float";
-                    case "Bool": "boolean";
-                    default: "string";
+                    case "Int": ":integer";
+                    case "Float": ":float";
+                    case "Bool": ":boolean";
+                    default: ":string";
                 }
-            case _: "string";
+            default: ":string";
         };
     }
     
     /**
-     * Get changeable fields list for changeset
+     * Extract field options from metadata
      */
-    static function getChangeableFields(varFields: Array<ClassVarData>): String {
-        var fields = [];
-        for (field in varFields) {
-            // Skip primary key and timestamps
-            if (!field.field.meta.has(":primary_key") && !field.field.meta.has(":timestamps")) {
-                // Skip associations for changeset
-                if (!field.field.meta.has(":has_many") && !field.field.meta.has(":belongs_to") && !field.field.meta.has(":has_one")) {
-                    fields.push(':${NamingHelper.toSnakeCase(field.field.name)}');
-                }
+    private function extractFieldOptions(varField: Dynamic): Array<String> {
+        var options: Array<String> = [];
+        
+        // Check for :default metadata
+        if (varField.meta != null) {
+            var defaultMeta = varField.meta.extract(":default");
+            if (defaultMeta != null && defaultMeta.length > 0) {
+                options.push('default: ${compiler.compileExpr(defaultMeta[0].params[0])}');
+            }
+            
+            // Check for :nullable
+            var nullableMeta = varField.meta.extract(":nullable");
+            if (nullableMeta != null && nullableMeta.length > 0) {
+                options.push('nullable: true');
             }
         }
-        return fields.join(", ");
+        
+        return options;
     }
     
     /**
-     * Get required fields list for changeset validation
+     * Generate the default changeset function
      */
-    static function getRequiredFields(varFields: Array<ClassVarData>): String {
-        var fields = [];
-        for (field in varFields) {
-            // Check if field has null: false in @:field annotation
-            if (field.field.meta.has(":field")) {
-                var fieldConfig = extractFieldConfig(field.field.meta);
-                if (!fieldConfig.nullable) {
-                    fields.push(':${NamingHelper.toSnakeCase(field.field.name)}');
-                }
+    private function generateChangesetFunction(classType: ClassType, varFields: Array<Dynamic>): String {
+        var schemaVar = NamingHelper.toSnakeCase(classType.name);
+        var requiredFields: Array<String> = [];
+        var optionalFields: Array<String> = [];
+        
+        // Categorize fields
+        for (varField in varFields) {
+            var fieldName = NamingHelper.toSnakeCase(varField.name);
+            if (isRequiredField(varField)) {
+                requiredFields.push(':${fieldName}');
+            } else {
+                optionalFields.push(':${fieldName}');
             }
         }
-        return fields.join(", ");
+        
+        var allFields = requiredFields.concat(optionalFields);
+        
+        var result = '  def changeset(${schemaVar}, attrs) do\n';
+        result += '    ${schemaVar}\n';
+        result += '    |> cast(attrs, [${allFields.join(", ")}])\n';
+        
+        if (requiredFields.length > 0) {
+            result += '    |> validate_required([${requiredFields.join(", ")}])\n';
+        }
+        
+        // Add custom validations from metadata
+        result += generateValidations(classType, varFields);
+        
+        result += '  end\n';
+        
+        return result;
     }
     
     /**
-     * Register schema with SchemaIntrospection for compile-time validation
+     * Check if a field is required
      */
-    static function registerSchemaForIntrospection(className: String, tableName: String, varFields: Array<ClassVarData>): Void {
-        var fields = new Map<String, reflaxe.elixir.schema.SchemaIntrospection.FieldInfo>();
-        var associations = new Map<String, reflaxe.elixir.schema.SchemaIntrospection.AssociationInfo>();
-        
-        // Process fields
-        for (field in varFields) {
-            var fieldName = NamingHelper.toSnakeCase(field.field.name);
-            
-            if (field.field.meta.has(":field")) {
-                var fieldConfig = extractFieldConfig(field.field.meta);
-                var elixirType = fieldConfig.type != null ? fieldConfig.type : mapHaxeTypeToElixir(field.field.type);
-                
-                fields.set(fieldName, {
-                    name: fieldName,
-                    type: mapElixirTypeToHaxe(elixirType),
-                    nullable: fieldConfig.nullable,
-                    defaultValue: fieldConfig.defaultValue,
-                    indexed: false
-                });
-            }
-            
-            // Handle associations
-            if (field.field.meta.has(":has_many")) {
-                var assocConfig = extractAssociationConfig(field.field.meta, ":has_many");
-                associations.set(fieldName, {
-                    name: fieldName,
-                    type: "has_many",
-                    schema: assocConfig.schema,
-                    foreignKey: assocConfig.foreignKey,
-                    throughAssociation: null
-                });
-            }
-            
-            if (field.field.meta.has(":belongs_to")) {
-                var assocConfig = extractAssociationConfig(field.field.meta, ":belongs_to");
-                associations.set(fieldName, {
-                    name: fieldName,
-                    type: "belongs_to", 
-                    schema: assocConfig.schema,
-                    foreignKey: assocConfig.foreignKey,
-                    throughAssociation: null
-                });
-            }
-        }
-        
-        // Handle timestamps
-        var hasTimestamps = false;
-        for (field in varFields) {
-            if (field.field.meta.has(":timestamps")) {
-                hasTimestamps = true;
-                break;
-            }
-        }
-        
-        if (hasTimestamps) {
-            fields.set("inserted_at", {
-                name: "inserted_at",
-                type: "String", // Simplified for Haxe compatibility
-                nullable: false,
-                defaultValue: null,
-                indexed: false
-            });
-            fields.set("updated_at", {
-                name: "updated_at",
-                type: "String",
-                nullable: false,
-                defaultValue: null,
-                indexed: false
-            });
-        }
-        
-        // Register schema
-        var schemaInfo = {
-            name: className,
-            fields: fields,
-            associations: associations,
-            tableName: tableName,
-            primaryKey: "id"
-        };
-        
-        reflaxe.elixir.schema.SchemaIntrospection.addSchema(schemaInfo);
+    private function isRequiredField(varField: Dynamic): Bool {
+        if (varField.meta == null) return false;
+        var requiredMeta = varField.meta.extract(":required");
+        return requiredMeta != null && requiredMeta.length > 0;
     }
     
     /**
-     * Map Elixir types back to Haxe types for SchemaIntrospection
+     * Generate validation pipeline from metadata
      */
-    static function mapElixirTypeToHaxe(elixirType: String): String {
-        return switch (elixirType) {
-            case "string": "String";
-            case "integer": "Int";
-            case "float": "Float";
-            case "boolean": "Bool";
-            case "date": "String";
-            case "datetime", "naive_datetime": "String";
-            case "decimal": "Float";
-            case "binary": "String";
-            case "text": "String";
-            default: "Dynamic";
-        };
+    private function generateValidations(classType: ClassType, varFields: Array<Dynamic>): String {
+        var validations: Array<String> = [];
+        
+        for (varField in varFields) {
+            if (varField.meta == null) continue;
+            
+            var fieldName = NamingHelper.toSnakeCase(varField.name);
+            
+            // Length validation
+            var lengthMeta = varField.meta.extract(":length");
+            if (lengthMeta != null && lengthMeta.length > 0) {
+                validations.push('    |> validate_length(:${fieldName}, ${compiler.compileExpr(lengthMeta[0].params[0])})');
+            }
+            
+            // Format validation
+            var formatMeta = varField.meta.extract(":format");
+            if (formatMeta != null && formatMeta.length > 0) {
+                validations.push('    |> validate_format(:${fieldName}, ${compiler.compileExpr(formatMeta[0].params[0])})');
+            }
+            
+            // Unique constraint
+            var uniqueMeta = varField.meta.extract(":unique");
+            if (uniqueMeta != null && uniqueMeta.length > 0) {
+                validations.push('    |> unique_constraint(:${fieldName})');
+            }
+        }
+        
+        return validations.join("\n") + (validations.length > 0 ? "\n" : "");
     }
-}
-
-/**
- * Schema configuration extracted from @:schema annotation
- */
-typedef SchemaConfig = {
-    tableName: Null<String>,
-    ?hasTimestamps: Bool
-}
-
-/**
- * Field configuration extracted from @:field annotation
- */
-typedef FieldConfig = {
-    type: Null<String>,
-    nullable: Bool,
-    defaultValue: Dynamic
-}
-
-/**
- * Association configuration extracted from association annotations
- */
-typedef AssociationConfig = {
-    schema: Null<String>,
-    foreignKey: Null<String>
+    
+    /**
+     * Check if a function is a special schema function
+     */
+    private function isSpecialFunction(name: String): Bool {
+        return name == "new" || name == "changeset" || name == "__construct";
+    }
 }
 
 #end

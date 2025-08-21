@@ -26,18 +26,10 @@ defmodule FlashMapTools do
   @spec get_all(FlashMap.t()) :: Array.t()
   def get_all(flash_map) do
     messages = []
-    if (flash_map.info != nil) do
-      messages ++ [Flash.info(flash_map.info)]
-    end
-    if (flash_map.success != nil) do
-      messages ++ [Flash.success(flash_map.success)]
-    end
-    if (flash_map.warning != nil) do
-      messages ++ [Flash.warning(flash_map.warning)]
-    end
-    if (flash_map.error != nil) do
-      messages ++ [Flash.error(flash_map.error)]
-    end
+    if (flash_map.info != nil), do: messages ++ [Flash.info(flash_map.info)]
+    if (flash_map.success != nil), do: messages ++ [Flash.success(flash_map.success)]
+    if (flash_map.warning != nil), do: messages ++ [Flash.warning(flash_map.warning)]
+    if (flash_map.error != nil), do: messages ++ [Flash.error(flash_map.error)]
     messages
   end
 

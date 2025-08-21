@@ -296,12 +296,8 @@ class AnnotationSystem {
                 compileComponentClass(classType, varFields, funcFields);
                 
             case ":schema":
-                if (reflaxe.elixir.helpers.SchemaCompiler.isSchemaClassType(classType)) {
-                    compileSchemaClass(classType, varFields, funcFields);
-                } else {
-                    trace("ERROR: " +"@:schema annotation detected but SchemaCompiler validation failed");
-                    null;
-                }
+                // Schema compilation is handled directly by ElixirCompiler
+                null;
                 
             case ":changeset":
                 if (reflaxe.elixir.helpers.ChangesetCompiler.isChangesetClassType(classType)) {
@@ -704,11 +700,8 @@ class AnnotationSystem {
         };
     }
     
-    static function compileSchemaClass(classType: ClassType, varFields: Array<ClassVarData>, funcFields: Array<ClassFuncData>): String {
-        var className = classType.name;
-        var config = reflaxe.elixir.helpers.SchemaCompiler.getSchemaConfig(classType);
-        return reflaxe.elixir.helpers.SchemaCompiler.compileFullSchema(className, config, varFields);
-    }
+    // Schema compilation delegated to SchemaCompiler instance
+    // static function compileSchemaClass removed - handled by ElixirCompiler
     
     static function compileChangesetClass(classType: ClassType, varFields: Array<ClassVarData>, funcFields: Array<ClassFuncData>): String {
         var className = classType.name;

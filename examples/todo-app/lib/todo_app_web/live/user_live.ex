@@ -194,9 +194,7 @@ defmodule TodoAppWeb.UserLive do
 
   @doc "Generated from Haxe renderUserForm"
   def render_user_form(assigns) do
-    if (!assigns.show_form) do
-      ""
-    end
+    if (!assigns.show_form), do: "", else: nil
     ~H"""
       <div class="modal">
       <div class="modal-content">
