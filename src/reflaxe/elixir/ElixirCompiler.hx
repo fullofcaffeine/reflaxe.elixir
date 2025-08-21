@@ -55,6 +55,7 @@ import reflaxe.elixir.helpers.MigrationCompiler;
 import reflaxe.elixir.helpers.LiveViewCompiler;
 import reflaxe.elixir.helpers.GenServerCompiler;
 import reflaxe.elixir.helpers.MethodCallCompiler;
+import reflaxe.elixir.helpers.ReflectionCompiler;
 import reflaxe.elixir.PhoenixMapper;
 import reflaxe.elixir.SourceMapWriter;
 
@@ -128,6 +129,9 @@ class ElixirCompiler extends DirectToStringCompiler {
     // Method call compilation
     private var methodCallCompiler: reflaxe.elixir.helpers.MethodCallCompiler;
     
+    // Reflection compilation
+    private var reflectionCompiler: reflaxe.elixir.helpers.ReflectionCompiler;
+    
     // Import optimization for clean import statements
     private var importOptimizer: reflaxe.elixir.helpers.ImportOptimizer;
     
@@ -169,6 +173,7 @@ class ElixirCompiler extends DirectToStringCompiler {
         this.liveViewCompiler = new reflaxe.elixir.helpers.LiveViewCompiler(this);
         this.genServerCompiler = new reflaxe.elixir.helpers.GenServerCompiler(this);
         this.methodCallCompiler = new reflaxe.elixir.helpers.MethodCallCompiler(this);
+        this.reflectionCompiler = new reflaxe.elixir.helpers.ReflectionCompiler(this);
         
         // Set compiler reference for delegation
         this.patternMatcher.setCompiler(this);
