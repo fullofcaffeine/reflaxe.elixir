@@ -57,7 +57,9 @@ defmodule SafePubSub do
   """
   @spec add_timestamp(term()) :: term()
   def add_timestamp(payload) do
-    if (payload == nil), do: payload = %{}, else: nil
+    if (payload == nil) do
+      payload = %{}
+    end
     Reflect.set_field(payload, "timestamp", Date.now().get_time())
     payload
   end

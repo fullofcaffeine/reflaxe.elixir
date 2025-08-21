@@ -68,8 +68,12 @@ defmodule Main do
     str4 = "banana"
     Log.trace("str1 == str3: " <> Std.string(str1 == str3), %{"fileName" => "Main.hx", "lineNumber" => 94, "className" => "Main", "methodName" => "stringComparison"})
     Log.trace("str1 == str2: " <> Std.string(str1 == str2), %{"fileName" => "Main.hx", "lineNumber" => 95, "className" => "Main", "methodName" => "stringComparison"})
-    if (str1 < str4), do: Log.trace("" <> str1 <> " comes before " <> str4, %{"fileName" => "Main.hx", "lineNumber" => 99, "className" => "Main", "methodName" => "stringComparison"}), else: nil
-    if (str1.to_lower_case() == str2.to_lower_case()), do: Log.trace("" <> str1 <> " and " <> str2 <> " are equal (case-insensitive)", %{"fileName" => "Main.hx", "lineNumber" => 104, "className" => "Main", "methodName" => "stringComparison"}), else: nil
+    if (str1 < str4) do
+      Log.trace("" <> str1 <> " comes before " <> str4, %{"fileName" => "Main.hx", "lineNumber" => 99, "className" => "Main", "methodName" => "stringComparison"})
+    end
+    if (str1.to_lower_case() == str2.to_lower_case()) do
+      Log.trace("" <> str1 <> " and " <> str2 <> " are equal (case-insensitive)", %{"fileName" => "Main.hx", "lineNumber" => 104, "className" => "Main", "methodName" => "stringComparison"})
+    end
   end
 
   @doc "Function string_building"
@@ -99,7 +103,9 @@ defmodule Main do
   def regex_operations() do
     text = "The year is 2024 and the time is 15:30"
     digit_regex = EReg.new("\\d+", "")
-    if (digit_regex.match(text)), do: Log.trace("First number found: " <> digit_regex.matched(0), %{"fileName" => "Main.hx", "lineNumber" => 140, "className" => "Main", "methodName" => "regexOperations"}), else: nil
+    if (digit_regex.match(text)) do
+      Log.trace("First number found: " <> digit_regex.matched(0), %{"fileName" => "Main.hx", "lineNumber" => 140, "className" => "Main", "methodName" => "regexOperations"})
+    end
     all_numbers = EReg.new("\\d+", "g")
     numbers = []
     (

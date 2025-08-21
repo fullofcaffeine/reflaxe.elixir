@@ -113,7 +113,9 @@ defmodule SafeAssigns do
           try do
             todo = Enum.at(todos, g)
           g = g + 1
-          if (todo.completed), do: count = count + 1, else: nil
+          if (todo.completed) do
+      count = count + 1
+    end
           loop_fn.({g + 1, count})
             loop_fn.(loop_fn, {g, count})
           catch
@@ -147,7 +149,9 @@ defmodule SafeAssigns do
           try do
             todo = Enum.at(todos, g)
           g = g + 1
-          if (!todo.completed), do: count = count + 1, else: nil
+          if (!todo.completed) do
+      count = count + 1
+    end
           loop_fn.({g + 1, count})
             loop_fn.(loop_fn, {g, count})
           catch

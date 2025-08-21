@@ -138,7 +138,9 @@ defmodule AppLayout do
   """
   @spec get_user_display_name(Null.t()) :: String.t()
   def get_user_display_name(user) do
-    if (user != nil && user.name != nil), do: user.name, else: nil
+    if (user != nil && user.name != nil) do
+      user.name
+    end
     "User"
   end
 
@@ -148,7 +150,9 @@ defmodule AppLayout do
   """
   @spec get_page_title(Null.t()) :: String.t()
   def get_page_title(title) do
-    if (title != nil), do: title, else: nil
+    if (title != nil) do
+      title
+    end
     "Todo Dashboard"
   end
 
@@ -158,7 +162,9 @@ defmodule AppLayout do
   """
   @spec get_last_updated(Null.t()) :: String.t()
   def get_last_updated(timestamp) do
-    if (timestamp != nil), do: timestamp, else: nil
+    if (timestamp != nil) do
+      timestamp
+    end
     "now"
   end
 
@@ -168,9 +174,13 @@ defmodule AppLayout do
   """
   @spec get_initials(String.t()) :: String.t()
   def get_initials(name) do
-    if (name == nil || name == ""), do: "U", else: nil
+    if (name == nil || name == "") do
+      "U"
+    end
     parts = String.split(name, " ")
-    if (parts.length >= 2), do: Enum.at(parts, 0).char_at(0).to_upper_case() <> Enum.at(parts, 1).char_at(0).to_upper_case(), else: nil
+    if (parts.length >= 2) do
+      Enum.at(parts, 0).char_at(0).to_upper_case() <> Enum.at(parts, 1).char_at(0).to_upper_case()
+    end
     name.char_at(0).to_upper_case()
   end
 

@@ -130,7 +130,11 @@ defmodule TodoAppWeb.TodoLive do
     params.description
     false
     temp_right = nil
-    if (params.priority != nil), do: temp_right = params.priority, else: temp_right = "medium"
+    if (params.priority != nil) do
+      temp_right = params.priority
+    else
+      temp_right = "medium"
+    end
     params.due_date
     TodoLive.parse_tags(params.tags)
     socket.assigns.current_user.id
@@ -165,7 +169,9 @@ defmodule TodoAppWeb.TodoLive do
   @doc "Generated from Haxe toggle_todo_status"
   def toggle_todo_status(id, socket) do
     todo = TodoLive.find_todo(id, socket.assigns.todos)
-    if (todo == nil), do: socket, else: nil
+    if (todo == nil) do
+      socket
+    end
     updated_changeset = Todo.toggle_completed(todo)
     g = Repo.update(updated_changeset)
     case (case g do {:ok, _} -> 0; {:error, _} -> 1; _ -> -1 end) do
@@ -192,7 +198,9 @@ defmodule TodoAppWeb.TodoLive do
   @doc "Generated from Haxe delete_todo"
   def delete_todo(id, socket) do
     todo = TodoLive.find_todo(id, socket.assigns.todos)
-    if (todo == nil), do: socket, else: nil
+    if (todo == nil) do
+      socket
+    end
     g = Repo.delete(todo)
     case (case g do {:ok, _} -> 0; {:error, _} -> 1; _ -> -1 end) do
       0 ->
@@ -218,7 +226,9 @@ defmodule TodoAppWeb.TodoLive do
   @doc "Generated from Haxe update_todo_priority"
   def update_todo_priority(id, priority, socket) do
     todo = TodoLive.find_todo(id, socket.assigns.todos)
-    if (todo == nil), do: socket, else: nil
+    if (todo == nil) do
+      socket
+    end
     updated_changeset = Todo.update_priority(todo, priority)
     g = Repo.update(updated_changeset)
     case (case g do {:ok, _} -> 0; {:error, _} -> 1; _ -> -1 end) do
@@ -244,7 +254,9 @@ defmodule TodoAppWeb.TodoLive do
 
   @doc "Generated from Haxe add_todo_to_list"
   def add_todo_to_list(todo, socket) do
-    if (todo.user_id == socket.assigns.current_user.id), do: socket, else: nil
+    if (todo.user_id == socket.assigns.current_user.id) do
+      socket
+    end
     todos = [todo] ++ socket.assigns.todos
     current_assigns = socket.assigns
     complete_assigns = TypeSafeConversions.create_complete_assigns(current_assigns, todos)
@@ -337,7 +349,9 @@ defmodule TodoAppWeb.TodoLive do
           try do
             todo = Enum.at(todos, g)
           g = g + 1
-          if (todo.id == id), do: todo, else: nil
+          if (todo.id == id) do
+      todo
+    end
           loop_fn.({g + 1})
             loop_fn.(loop_fn, {g})
           catch
@@ -367,7 +381,9 @@ defmodule TodoAppWeb.TodoLive do
           try do
             todo = Enum.at(todos, g)
           g = g + 1
-          if (todo.completed), do: count = count + 1, else: nil
+          if (todo.completed) do
+      count = count + 1
+    end
           loop_fn.({g + 1, count})
             loop_fn.(loop_fn, {g, count})
           catch
@@ -397,7 +413,9 @@ defmodule TodoAppWeb.TodoLive do
           try do
             todo = Enum.at(todos, g)
           g = g + 1
-          if (!todo.completed), do: count = count + 1, else: nil
+          if (!todo.completed) do
+      count = count + 1
+    end
           loop_fn.({g + 1, count})
             loop_fn.(loop_fn, {g, count})
           catch
@@ -419,7 +437,9 @@ defmodule TodoAppWeb.TodoLive do
 
   @doc "Generated from Haxe parse_tags"
   def parse_tags(tags_string) do
-    if (tags_string == nil || tags_string == ""), do: [], else: nil
+    if (tags_string == nil || tags_string == "") do
+      []
+    end
     this = String.split(tags_string, ",")
     _g_array = []
     _g_counter = 0
@@ -451,7 +471,11 @@ defmodule TodoAppWeb.TodoLive do
   @doc "Generated from Haxe get_user_from_session"
   def get_user_from_session(session) do
     temp_number = nil
-    if (session.user_id != nil), do: temp_number = session.user_id, else: temp_number = 1
+    if (session.user_id != nil) do
+      temp_number = session.user_id
+    else
+      temp_number = 1
+    end
     %{"id" => temp_number, "name" => "Demo User", "email" => "demo@example.com", "password_hash" => "hashed_password", "confirmed_at" => nil, "last_login_at" => nil, "active" => true}
   end
 
@@ -467,7 +491,9 @@ defmodule TodoAppWeb.TodoLive do
           try do
             v = Enum.at(this, g)
           g = g + 1
-          if (!v.completed), do: g ++ [v], else: nil
+          if (!v.completed) do
+      g ++ [v]
+    end
           loop_fn.({g + 1})
             loop_fn.(loop_fn, {g})
           catch
@@ -550,7 +576,9 @@ defmodule TodoAppWeb.TodoLive do
           try do
             v = Enum.at(this, g)
           g = g + 1
-          if (v.completed), do: g ++ [v], else: nil
+          if (v.completed) do
+      g ++ [v]
+    end
           loop_fn.({g + 1})
             loop_fn.(loop_fn, {g})
           catch
@@ -603,7 +631,9 @@ defmodule TodoAppWeb.TodoLive do
           try do
             v = Enum.at(this, g)
           g = g + 1
-          if (!v.completed), do: g ++ [v], else: nil
+          if (!v.completed) do
+      g ++ [v]
+    end
           loop_fn.({g + 1})
             loop_fn.(loop_fn, {g})
           catch
@@ -638,7 +668,9 @@ defmodule TodoAppWeb.TodoLive do
   @doc "Generated from Haxe save_edited_todo"
   def save_edited_todo(params, socket) do
     todo = socket.assigns.editing_todo
-    if (todo == nil), do: socket, else: nil
+    if (todo == nil) do
+      socket
+    end
     changeset_params = TypeSafeConversions.event_params_to_changeset_params(params)
     changeset = Todo.changeset(todo, changeset_params)
     g = Repo.update(changeset)
@@ -705,7 +737,7 @@ defmodule TodoAppWeb.TodoLive do
             try do
               v = Enum.at(g, g)
       g = g + 1
-      if (v != tag), do: _g_2.push(v), else: nil
+      if (v != tag), do: _g_2.push(v)
               loop_fn.(loop_fn, {g_2})
             catch
               :break -> {g_2}
