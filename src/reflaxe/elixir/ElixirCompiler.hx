@@ -443,10 +443,7 @@ class ElixirCompiler extends DirectToStringCompiler {
         return processedIndices;
     }
     
-    /**
-     * Check if a statement targets a specific variable (used for pipeline detection).
-     * Excludes terminal operations that consume but don't transform the variable.
-     */
+    // statementTargetsVariable temporarily reverted for debugging
     private function statementTargetsVariable(stmt: TypedExpr, variableName: String): Bool {
         // Skip terminal operations - they consume the variable but aren't part of the pipeline
         if (isTerminalOperation(stmt, variableName)) {
@@ -479,10 +476,7 @@ class ElixirCompiler extends DirectToStringCompiler {
         }
     }
     
-    /**
-     * Check if a statement is a terminal operation that consumes a pipeline variable
-     * but doesn't transform it (like Repo.all, Repo.one, etc.)
-     */
+    // isTerminalOperation temporarily reverted for debugging
     private function isTerminalOperation(stmt: TypedExpr, variableName: String): Bool {
         return switch(stmt.expr) {
             case TCall(funcExpr, args):
@@ -506,30 +500,9 @@ class ElixirCompiler extends DirectToStringCompiler {
         }
     }
     
-    /**
-     * Check if an expression (typically from a TReturn) is a terminal operation on a specific variable
-     */
+    // isTerminalOperationOnVariable moved to VariableCompiler.hx
     private function isTerminalOperationOnVariable(expr: TypedExpr, variableName: String): Bool {
-        return switch(expr.expr) {
-            case TCall(funcExpr, args):
-                // Check for Repo operations or other terminal functions
-                var funcName = extractFunctionNameFromCall(funcExpr);
-                var terminalFunctions = ["Repo.all", "Repo.one", "Repo.get", "Repo.insert", "Repo.update", "Repo.delete"];
-                
-                if (terminalFunctions.indexOf(funcName) >= 0) {
-                    // Check if first argument references our variable
-                    if (args.length > 0) {
-                        containsVariableReference(args[0], variableName);
-                    } else {
-                        false;
-                    }
-                } else {
-                    false;
-                }
-                
-            default:
-                false;
-        }
+        return expressionDispatcher.variableCompiler.isTerminalOperationOnVariable(expr, variableName);
     }
     
     /**
@@ -567,61 +540,9 @@ class ElixirCompiler extends DirectToStringCompiler {
         }
     }
     
-    /**
-     * Extract function name from a call expression
-     */
+    // extractFunctionNameFromCall moved to VariableCompiler.hx
     private function extractFunctionNameFromCall(funcExpr: TypedExpr): String {
-        return switch(funcExpr.expr) {
-            case TField({expr: TLocal({name: moduleName})}, fa):
-                // Module.function pattern (e.g., Repo.all)
-                var funcName = switch(fa) {
-                    case FInstance(_, _, cf) | FStatic(_, cf) | FAnon(cf) | FClosure(_, cf):
-                        cf.get().name;
-                    case FDynamic(s):
-                        s;
-                    case FEnum(_, ef):
-                        ef.name;
-                };
-                moduleName + "." + funcName;
-                
-            case TField({expr: TTypeExpr(moduleType)}, fa):
-                // Type.function pattern (for static calls like Repo.all)
-                switch(fa) {
-                    case FStatic(classRef, cf):
-                        // For static calls, get the module name from the class
-                        var moduleName = switch(classRef.get().name) {
-                            case "Repo": "Repo";  // Special case for Repo
-                            case name: NamingHelper.toSnakeCase(name);
-                        };
-                        // Convert method name to snake_case for Elixir
-                        var methodName = NamingHelper.toSnakeCase(cf.get().name);
-                        moduleName + "." + methodName;
-                    case FInstance(_, _, cf) | FAnon(cf) | FClosure(_, cf):
-                        cf.get().name;
-                    case FDynamic(s):
-                        s;
-                    case FEnum(_, ef):
-                        ef.name;
-                };
-                
-            case TLocal({name: funcName}):
-                // Simple function call
-                funcName;
-                
-            case TField(_, fa):
-                // Method call without module
-                switch(fa) {
-                    case FInstance(_, _, cf) | FStatic(_, cf) | FAnon(cf) | FClosure(_, cf):
-                        cf.get().name;
-                    case FDynamic(s):
-                        s;
-                    case FEnum(_, ef):
-                        ef.name;
-                };
-                
-            default:
-                "";
-        }
+        return expressionDispatcher.variableCompiler.extractFunctionNameFromCall(funcExpr);
     }
 
     // containsVariableReference moved to VariableCompiler.hx
