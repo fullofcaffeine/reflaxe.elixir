@@ -143,11 +143,61 @@ haxe.elixir/                          # Project root
 
 **FUNDAMENTAL RULE: Every piece of compiler logic MUST include comprehensive documentation and XRay debug traces.**
 
-### The Four Mandatory Elements:
-1. **WHY/WHAT/HOW Documentation** - Explain reasoning, purpose, and implementation
-2. **XRay Debug Traces** - Provide runtime visibility with `#if debug_feature` blocks
-3. **Pattern Detection Visibility** - Show what patterns are detected and why
-4. **Edge Case Documentation** - Document known limitations and special handling
+### The Five Mandatory Elements:
+1. **Class-Level HaxeDoc with WHY/WHAT/HOW** - Comprehensive class purpose and architecture documentation
+2. **Function-Level WHY/WHAT/HOW Documentation** - Explain reasoning, purpose, and implementation
+3. **XRay Debug Traces** - Provide runtime visibility with `#if debug_feature` blocks
+4. **Pattern Detection Visibility** - Show what patterns are detected and why
+5. **Edge Case Documentation** - Document known limitations and special handling
+
+### 1. Class-Level HaxeDoc Requirements (NEW MANDATE)
+
+**ALL compiler classes MUST have comprehensive class-level documentation following the WHY/WHAT/HOW pattern:**
+
+```haxe
+/**
+ * CLASS_NAME: Brief class purpose
+ * 
+ * WHY: Explain the problem this class solves and architectural decisions
+ * - What problem in compiler design this addresses
+ * - Why this separation/extraction was needed
+ * - What happens if this class doesn't exist
+ * - How it fits into overall compiler architecture
+ * 
+ * WHAT: High-level class responsibilities and capabilities
+ * - Primary operations and transformations
+ * - Key patterns handled or generated
+ * - Integration points with other compiler components
+ * - Public API surface and usage patterns
+ * 
+ * HOW: Implementation approach and internal architecture
+ * - Key algorithms and data structures used
+ * - Major internal methods and their responsibilities
+ * - Collaboration patterns with other classes
+ * - Extension points and future considerations
+ * 
+ * ARCHITECTURE BENEFITS:
+ * - Single Responsibility: Clear separation of concerns
+ * - Open/Closed Principle: Extension without modification
+ * - Testability: Independent testing capabilities
+ * - Maintainability: Clear boundaries and interfaces
+ * - Performance: Optimized for specific use cases
+ * 
+ * EDGE CASES:
+ * - Known limitations and workarounds
+ * - Special handling requirements
+ * - Integration complexity points
+ * - Future improvement areas
+ * 
+ * @see documentation/RELATED_ARCHITECTURE.md - Related patterns and designs
+ */
+@:nullSafety(Off)
+class CompilerClass {
+    // Implementation...
+}
+```
+
+**Example**: See `VariableCompiler.hx` for a complete implementation of this pattern.
 
 ### Example Template:
 ```haxe
