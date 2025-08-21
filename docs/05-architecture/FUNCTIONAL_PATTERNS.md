@@ -59,6 +59,143 @@ i = 0
 end).(fn f -> f.(f) end)
 ```
 
+### 🚀 Evolution: Y Combinator → Idiomatic Elixir Patterns
+
+**Current State**: Y combinator works well but isn't idiomatic Elixir. The compiler can evolve to generate more natural Enum patterns.
+
+#### Y Combinator vs Idiomatic Elixir Comparison
+
+##### Pattern 1: Finding Elements
+```haxe
+// Haxe: Find first matching todo
+for (todo in todos) {
+    if (todo.id == targetId) return todo;
+}
+```
+
+```elixir
+# Current: Y Combinator (functional but complex)
+(fn loop_fn, {remaining, found} ->
+  case remaining do
+    [] -> found
+    [head | tail] ->
+      if head.id == target_id do
+        head
+      else
+        loop_fn.(loop_fn, {tail, found})
+      end
+  end
+end).(fn f -> f.(f) end, {todos, nil})
+
+# Future: Idiomatic Elixir (what developers expect)
+Enum.reduce_while(todos, nil, fn todo, _acc ->
+  if todo.id == target_id do
+    {:halt, todo}
+  else
+    {:cont, nil}
+  end
+end)
+
+# Even More Idiomatic: Standard library function
+Enum.find(todos, fn todo -> todo.id == target_id end)
+```
+
+##### Pattern 2: Counting with Conditions
+```haxe
+// Haxe: Count completed todos
+var count = 0;
+for (todo in todos) {
+    if (todo.completed) count++;
+}
+```
+
+```elixir
+# Current: Y Combinator (verbose accumulator logic)
+(fn loop_fn, {remaining, count} ->
+  case remaining do
+    [] -> count
+    [head | tail] ->
+      new_count = if head.completed, do: count + 1, else: count
+      loop_fn.(loop_fn, {tail, new_count})
+  end
+end).(fn f -> f.(f) end, {todos, 0})
+
+# Future: Idiomatic Elixir (crystal clear intent)
+Enum.count(todos, fn todo -> todo.completed end)
+```
+
+##### Pattern 3: Filtering Collections
+```haxe
+// Haxe: Get all completed todos
+var completed = [];
+for (todo in todos) {
+    if (todo.completed) completed.push(todo);
+}
+```
+
+```elixir
+# Current: Y Combinator (complex accumulator management)
+(fn loop_fn, {remaining, acc} ->
+  case remaining do
+    [] -> Enum.reverse(acc)
+    [head | tail] ->
+      new_acc = if head.completed, do: [head | acc], else: acc
+      loop_fn.(loop_fn, {tail, new_acc})
+  end
+end).(fn f -> f.(f) end, {todos, []})
+
+# Future: Idiomatic Elixir (standard library power)
+Enum.filter(todos, fn todo -> todo.completed end)
+```
+
+##### Pattern 4: Transforming Collections
+```haxe
+// Haxe: Extract all todo titles
+var titles = [];
+for (todo in todos) {
+    titles.push(todo.title);
+}
+```
+
+```elixir
+# Current: Y Combinator (unnecessary complexity)
+(fn loop_fn, {remaining, acc} ->
+  case remaining do
+    [] -> Enum.reverse(acc)
+    [head | tail] ->
+      loop_fn.(loop_fn, {tail, [head.title | acc]})
+  end
+end).(fn f -> f.(f) end, {todos, []})
+
+# Future: Idiomatic Elixir (functional programming at its best)
+Enum.map(todos, fn todo -> todo.title end)
+```
+
+#### Benefits of Idiomatic Transformation
+
+| Aspect | Y Combinator | Idiomatic Elixir |
+|--------|-------------|------------------|
+| **Readability** | Requires understanding recursion | Immediate intent recognition |
+| **Line Count** | 6-10 lines per loop | 1-2 lines per operation |
+| **Performance** | Custom recursion | BEAM-optimized standard library |
+| **Debugging** | Complex stack traces | Standard library debugging |
+| **Maintainability** | Unique patterns per project | Universal Elixir patterns |
+| **Documentation** | Project-specific explanations | Standard library docs apply |
+
+#### Implementation Status
+
+**✅ Proof of Concept Complete**: Successfully implemented in `examples/todo-app/`
+- Functions like `find_todo`, `count_completed` generate idiomatic Enum patterns
+- TodoApp compiles and runs with improved code generation
+- Performance benchmarks show both cleaner and faster execution
+
+**📋 Next Phase**: 
+- Compiler configuration for choosing transformation strategy
+- Gradual migration tooling from Y combinator to Enum patterns
+- Complete pattern coverage for complex loop scenarios
+
+**See**: [../../07-patterns/LOOP_OPTIMIZATION_LESSONS.md](../../07-patterns/LOOP_OPTIMIZATION_LESSONS.md) - Complete implementation details and success analysis
+
 ### 2. Do-While Loops → Recursive Functions
 
 Do-while loops always execute at least once before checking the condition.

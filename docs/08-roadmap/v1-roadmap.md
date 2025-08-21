@@ -27,9 +27,44 @@ This document outlines the development plans for Reflaxe.Elixir, organized by co
 - **Operator overloading** using standard library patterns ✅
 
 ## 🔄 Current Development (v1.1 - Q1 2025)
-*Focus: Enhanced LLM Development Experience*
+*Focus: Idiomatic Elixir Code Generation & Enhanced LLM Development Experience*
 
-### Features  
+### 🎯 Priority Feature: Y Combinator → Idiomatic Elixir Transformation ✨
+**Goal**: Transform recursive lambda patterns into native Elixir Enum functions
+
+#### Current State: Functional but Not Idiomatic
+```elixir
+# Current Y combinator output (works, but complex)
+(fn loop_fn, {vars} ->
+  if condition do
+    # loop body  
+    loop_fn.(loop_fn, {updated_vars})
+  else
+    {final_vars}
+  end
+end).(fn f -> f.(f) end)
+```
+
+#### Target State: Idiomatic Elixir Patterns  
+```elixir
+# Idiomatic transformations (what Elixir developers expect)
+Enum.reduce_while(items, acc, fn item, acc -> ... end)  # Find patterns
+Enum.count(items, fn item -> condition end)            # Counting patterns
+Enum.filter(items, fn item -> condition end)           # Filtering patterns
+Enum.map(items, fn item -> transform(item) end)        # Mapping patterns
+```
+
+#### Implementation Status
+- [x] **Pattern Detection System** ✅ - Successfully identifies different loop purposes (find, count, filter, map)
+- [x] **Proof of Concept** ✅ - Working transformations in `examples/todo-app/` (see JsonPrinter functions)
+- [x] **Performance Validation** ✅ - Generated Enum functions are cleaner and more performant than Y combinator
+- [ ] **Compiler Integration** 🔄 - Configuration options for choosing transformation strategy
+- [ ] **Migration Tooling** - Gradual transition from Y combinator to idiomatic patterns
+- [ ] **Complete Pattern Coverage** - Handle edge cases and complex loop scenarios
+
+**See**: [docs/07-patterns/LOOP_OPTIMIZATION_LESSONS.md](../07-patterns/LOOP_OPTIMIZATION_LESSONS.md) - Complete implementation success story
+
+### Other Features  
 - [ ] **LLM Workflow Integration** ✨
   - JSON status output for programmatic queries (`mix haxe.status --format json`)
   - Status file generation (`.haxe_status.json`) for continuous monitoring
