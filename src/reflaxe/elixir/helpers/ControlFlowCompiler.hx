@@ -94,9 +94,27 @@ class ControlFlowCompiler {
         trace('[XRay ControlFlowCompiler] Block length: ${el.length}');
         #end
         
-        // For now, delegate back to original function to maintain functionality
-        // TODO: Extract the full TBlock logic from compileElixirExpressionInternal
-        var result = compiler.compileElixirExpressionInternal({expr: TBlock(el), pos: null, t: null}, topLevel);
+        // BASIC IMPLEMENTATION: Handle block expressions
+        if (el.length == 0) {
+            return "nil";
+        }
+        
+        // Compile each expression in the block
+        var statements = [];
+        for (i in 0...el.length) {
+            var compiled = compiler.compileExpression(el[i]);
+            if (compiled != null && compiled.length > 0) {
+                statements.push(compiled);
+            }
+        }
+        
+        var result = if (topLevel) {
+            // Top-level blocks (function bodies) should separate statements with newlines
+            statements.join("\n    ");
+        } else {
+            // Nested blocks can be parenthesized expressions
+            "(" + statements.join("; ") + ")";
+        };
         
         #if debug_control_flow_compiler
         trace('[XRay ControlFlowCompiler] Generated block: ${result != null ? result.substring(0, 100) + "..." : "null"}');

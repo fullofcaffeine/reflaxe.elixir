@@ -408,7 +408,7 @@ class ElixirCompiler extends DirectToStringCompiler {
      * @return The original variable name
      */
     public function getOriginalVarName(v: TVar): String {
-        return expressionDispatcher.variableCompiler.getOriginalVarName(v);
+        return v.getNameOrMeta(":realPath");
     }
     
     /**
@@ -421,7 +421,39 @@ class ElixirCompiler extends DirectToStringCompiler {
      * @return True if the expression contains a reference to the variable
      */
     public function containsVariableReference(expr: TypedExpr, variableName: String): Bool {
-        return expressionDispatcher.variableCompiler.containsVariableReference(expr, variableName);
+        return switch(expr.expr) {
+            case TLocal(v): v.name == variableName;
+            case TField(e, fa): containsVariableReference(e, variableName);
+            case TCall(e, el): 
+                containsVariableReference(e, variableName) || 
+                Lambda.exists(el, arg -> containsVariableReference(arg, variableName));
+            case TBinop(op, e1, e2): 
+                containsVariableReference(e1, variableName) || 
+                containsVariableReference(e2, variableName);
+            case TUnop(op, postFix, e): 
+                containsVariableReference(e, variableName);
+            case TArrayDecl(el): 
+                Lambda.exists(el, e -> containsVariableReference(e, variableName));
+            case TObjectDecl(fields): 
+                Lambda.exists(fields, field -> containsVariableReference(field.expr, variableName));
+            case TIf(econd, eif, eelse): 
+                containsVariableReference(econd, variableName) || 
+                containsVariableReference(eif, variableName) || 
+                (eelse != null && containsVariableReference(eelse, variableName));
+            case TReturn(e): 
+                e != null && containsVariableReference(e, variableName);
+            case TBlock(el): 
+                Lambda.exists(el, e -> containsVariableReference(e, variableName));
+            case TVar(v, e): 
+                e != null && containsVariableReference(e, variableName);
+            case TMeta(m, e): 
+                containsVariableReference(e, variableName);
+            case TParenthesis(e): 
+                containsVariableReference(e, variableName);
+            case TCast(e, m): 
+                containsVariableReference(e, variableName);
+            default: false;
+        };
     }
     
     /**
@@ -500,9 +532,28 @@ class ElixirCompiler extends DirectToStringCompiler {
         }
     }
     
-    // isTerminalOperationOnVariable moved to VariableCompiler.hx
+    // isTerminalOperationOnVariable temporarily reverted for debugging
     private function isTerminalOperationOnVariable(expr: TypedExpr, variableName: String): Bool {
-        return expressionDispatcher.variableCompiler.isTerminalOperationOnVariable(expr, variableName);
+        return switch(expr.expr) {
+            case TCall(funcExpr, args):
+                // Check for Repo operations or other terminal functions
+                var funcName = extractFunctionNameFromCall(funcExpr);
+                var terminalFunctions = ["Repo.all", "Repo.one", "Repo.get", "Repo.insert", "Repo.update", "Repo.delete"];
+                
+                if (terminalFunctions.indexOf(funcName) >= 0) {
+                    // Check if first argument references our variable
+                    if (args.length > 0) {
+                        containsVariableReference(args[0], variableName);
+                    } else {
+                        false;
+                    }
+                } else {
+                    false;
+                }
+                
+            default:
+                false;
+        };
     }
     
     /**
@@ -540,9 +591,57 @@ class ElixirCompiler extends DirectToStringCompiler {
         }
     }
     
-    // extractFunctionNameFromCall moved to VariableCompiler.hx
+    // extractFunctionNameFromCall temporarily reverted for debugging
     private function extractFunctionNameFromCall(funcExpr: TypedExpr): String {
-        return expressionDispatcher.variableCompiler.extractFunctionNameFromCall(funcExpr);
+        return switch(funcExpr.expr) {
+            case TField({expr: TLocal({name: moduleName})}, fa):
+                // Module.function pattern (e.g., Repo.all)
+                var funcName = switch(fa) {
+                    case FInstance(_, _, cf) | FStatic(_, cf) | FAnon(cf) | FClosure(_, cf):
+                        cf.get().name;
+                    case FDynamic(s):
+                        s;
+                    case FEnum(_, ef):
+                        ef.name;
+                };
+                moduleName + "." + funcName;
+                
+            case TField({expr: TTypeExpr(moduleType)}, fa):
+                // Type.function pattern (for static calls like Repo.all)
+                switch(fa) {
+                    case FStatic(classRef, cf):
+                        var moduleName = switch(classRef.get().name) {
+                            case "Repo": "Repo";  // Special case for Repo
+                            case name: name;  // Keep original for now
+                        };
+                        var methodName = cf.get().name;
+                        moduleName + "." + methodName;
+                    case FInstance(_, _, cf) | FAnon(cf) | FClosure(_, cf):
+                        cf.get().name;
+                    case FDynamic(s):
+                        s;
+                    case FEnum(_, ef):
+                        ef.name;
+                }
+                
+            case TLocal({name: funcName}):
+                // Simple function call
+                funcName;
+                
+            case TField(_, fa):
+                // Method call without module
+                switch(fa) {
+                    case FInstance(_, _, cf) | FStatic(_, cf) | FAnon(cf) | FClosure(_, cf):
+                        cf.get().name;
+                    case FDynamic(s):
+                        s;
+                    case FEnum(_, ef):
+                        ef.name;
+                }
+                
+            default:
+                "unknown_function";
+        };
     }
 
     // containsVariableReference moved to VariableCompiler.hx
@@ -1198,82 +1297,6 @@ class ElixirCompiler extends DirectToStringCompiler {
     }
     
     
-    /**
-     * Internal Elixir expression compilation
-     */
-    private function compileElixirExpressionInternal(expr: TypedExpr, topLevel: Bool = false): Null<String> {
-        
-        // DEBUG: Test if trace works at all
-        if (expr.expr != null) {
-            switch(expr.expr) {
-                case TIf(_, _, _): // Detect TIf patterns
-                case _:
-            }
-        }
-        
-        // Comprehensive expression compilation
-        return switch (expr.expr) {
-            // TConst now handled by ExpressionDispatcher → LiteralCompiler
-                
-            // TLocal now handled by ExpressionDispatcher → VariableCompiler
-                
-            // TBinop now handled by ExpressionDispatcher → OperatorCompiler
-                
-            // TUnop now handled by ExpressionDispatcher → OperatorCompiler
-                
-            // TField now handled by ExpressionDispatcher → FieldAccessCompiler
-                
-            // TCall now handled by ExpressionDispatcher → MethodCallCompiler
-                
-            // TArrayDecl now handled by ExpressionDispatcher → DataStructureCompiler
-                
-            // TObjectDecl now handled by ExpressionDispatcher → DataStructureCompiler
-                
-            // TArray now handled by ExpressionDispatcher → DataStructureCompiler
-            // TVar now handled by ExpressionDispatcher → VariableCompiler
-                
-            // TBlock now handled by ExpressionDispatcher → ControlFlowCompiler
-                
-            // TIf now handled by ExpressionDispatcher → ControlFlowCompiler
-                
-            // TReturn now handled by ExpressionDispatcher → MiscExpressionCompiler
-                
-            // TParenthesis now handled by ExpressionDispatcher → MiscExpressionCompiler
-                
-            // TSwitch now handled by ExpressionDispatcher → ControlFlowCompiler
-                
-            // TFor now handled by ExpressionDispatcher → ControlFlowCompiler
-                
-            // TWhile now handled by ExpressionDispatcher → ControlFlowCompiler
-                
-            // TArray now handled by ExpressionDispatcher → DataStructureCompiler
-                
-            // TNew now handled by ExpressionDispatcher → MiscExpressionCompiler
-                
-            // TFunction now handled by ExpressionDispatcher → MiscExpressionCompiler
-                
-            // TMeta now handled by ExpressionDispatcher → MiscExpressionCompiler
-                
-            // TTry now handled by ExpressionDispatcher → ControlFlowCompiler
-                
-            // TThrow now handled by ExpressionDispatcher → MiscExpressionCompiler
-                
-            // TCast now handled by ExpressionDispatcher → MiscExpressionCompiler
-                
-            // TTypeExpr now handled by ExpressionDispatcher → MiscExpressionCompiler
-                
-            // TBreak now handled by ExpressionDispatcher → MiscExpressionCompiler
-                
-            // TContinue now handled by ExpressionDispatcher → MiscExpressionCompiler
-                
-                
-                
-            case _:
-                // Handle unknown expression types gracefully
-                // Warning: Unhandled expression type
-                "nil";
-        }
-    }
     
     /**
      * Compile switch expression to Elixir case statement with advanced pattern matching
@@ -1373,23 +1396,9 @@ class ElixirCompiler extends DirectToStringCompiler {
                             if (processedIndices.indexOf(i) == -1) {
                                 var stmt = el[i];
                                 
-                                // Check if this is a TReturn with a terminal operation that uses our pipeline variable
-                                switch(stmt.expr) {
-                                    case TReturn(returnExpr) if (returnExpr != null):
-                                        if (isTerminalOperationOnVariable(returnExpr, pipelinePattern.variable)) {
-                                            // This return contains a terminal operation on our pipeline variable
-                                            terminalReturnExpr = returnExpr;
-                                        } else {
-                                            preExpressions.push(stmt);
-                                        }
-                                    case _:
-                                        if (isTerminalOperation(stmt, pipelinePattern.variable)) {
-                                            // Direct terminal operation (not in return)
-                                            terminalReturnExpr = stmt;
-                                        } else {
-                                            preExpressions.push(stmt);
-                                        }
-                                }
+                                // TEMPORARY: Disable terminal operation logic for debugging
+                                // All statements go to preExpressions for now
+                                preExpressions.push(stmt);
                             }
                         }
                         

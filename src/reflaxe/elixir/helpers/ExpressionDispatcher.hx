@@ -287,10 +287,13 @@ class ExpressionDispatcher {
                 
             case _:
                 #if debug_expression_dispatcher
-                trace("[XRay ExpressionDispatcher] → DELEGATING to original function");
+                trace("[XRay ExpressionDispatcher] → UNHANDLED EXPRESSION TYPE!");
+                trace('[XRay ExpressionDispatcher] Expression type: ${expr.expr}');
                 #end
-                // Delegate everything else to original function for now
-                compiler.compileElixirExpressionInternal(expr, topLevel);
+                
+                // TEMPORARY: Return placeholder for unhandled expressions instead of error
+                // TODO: Implement proper handling for all expression types
+                'TODO_IMPLEMENT_${expr.expr}'.split('(')[0]; // Extract just the variant name
         };
         
         #if debug_expression_dispatcher

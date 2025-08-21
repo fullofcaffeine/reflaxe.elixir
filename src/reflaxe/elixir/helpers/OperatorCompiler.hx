@@ -101,9 +101,26 @@ class OperatorCompiler {
         trace('[XRay OperatorCompiler] Right type: ${e2.t}');
         #end
         
-        // For now, delegate back to original function to maintain functionality
-        // TODO: Extract the full TBinop logic from compileElixirExpressionInternal
-        var result = compiler.compileElixirExpressionInternal({expr: TBinop(op, e1, e2), pos: null, t: null}, false);
+        // BASIC IMPLEMENTATION: Handle common binary operators
+        var left = compiler.compileExpression(e1);
+        var right = compiler.compileExpression(e2);
+        
+        var result = switch(op) {
+            case OpAdd: '(${left} + ${right})';
+            case OpSub: '(${left} - ${right})';
+            case OpMult: '(${left} * ${right})';
+            case OpDiv: '(${left} / ${right})';
+            case OpEq: '(${left} == ${right})';
+            case OpNotEq: '(${left} != ${right})';
+            case OpGt: '(${left} > ${right})';
+            case OpGte: '(${left} >= ${right})';
+            case OpLt: '(${left} < ${right})';
+            case OpLte: '(${left} <= ${right})';
+            case OpAnd: '(${left} and ${right})';
+            case OpOr: '(${left} or ${right})';
+            case OpAssign: '${left} = ${right}';
+            default: 'TODO_BINOP_${op}(${left}, ${right})';
+        };
         
         #if debug_operator_compiler
         trace('[XRay OperatorCompiler] Generated binary op: ${result != null ? result.substring(0, 100) + "..." : "null"}');
@@ -138,9 +155,16 @@ class OperatorCompiler {
         trace('[XRay OperatorCompiler] Operand type: ${e.t}');
         #end
         
-        // For now, delegate back to original function to maintain functionality
-        // TODO: Extract the full TUnop logic from compileElixirExpressionInternal
-        var result = compiler.compileElixirExpressionInternal({expr: TUnop(op, postFix, e), pos: null, t: null}, false);
+        // BASIC IMPLEMENTATION: Handle common unary operators
+        var operand = compiler.compileExpression(e);
+        
+        var result = switch(op) {
+            case OpNot: 'not ${operand}';
+            case OpNeg: '-${operand}';
+            case OpIncrement: postFix ? '${operand}++' : '++${operand}'; // Note: Elixir doesn't have ++, this is for debug
+            case OpDecrement: postFix ? '${operand}--' : '--${operand}'; // Note: Elixir doesn't have --, this is for debug
+            default: 'TODO_UNOP_${op}(${operand})';
+        };
         
         #if debug_operator_compiler
         trace('[XRay OperatorCompiler] Generated unary op: ${result != null ? result.substring(0, 100) + "..." : "null"}');
