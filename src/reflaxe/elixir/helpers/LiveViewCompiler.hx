@@ -87,7 +87,7 @@ class LiveViewCompiler {
         trace('[LiveViewCompiler] Functions: ${funcFields.length}');
         #end
         
-        var moduleName = compiler.getModuleName(classType);
+        var moduleName = NamingHelper.getElixirModuleName(classType.name);
         var appName = extractAppName(moduleName);
         
         // Generate module header
