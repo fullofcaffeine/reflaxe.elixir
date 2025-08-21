@@ -106,20 +106,50 @@ class OperatorCompiler {
         var right = compiler.compileExpression(e2);
         
         var result = switch(op) {
-            case OpAdd: '(${left} + ${right})';
+            // Arithmetic operators
+            case OpAdd: 
+                // Handle string concatenation vs numeric addition
+                if (isStringConcatenation(e1, e2)) {
+                    compileStringConcatenation(e1, e2);
+                } else {
+                    '(${left} + ${right})';
+                }
             case OpSub: '(${left} - ${right})';
             case OpMult: '(${left} * ${right})';
             case OpDiv: '(${left} / ${right})';
+            case OpMod: 'rem(${left}, ${right})'; // Elixir uses rem() for modulo
+            
+            // Comparison operators
             case OpEq: '(${left} == ${right})';
             case OpNotEq: '(${left} != ${right})';
             case OpGt: '(${left} > ${right})';
             case OpGte: '(${left} >= ${right})';
             case OpLt: '(${left} < ${right})';
             case OpLte: '(${left} <= ${right})';
+            
+            // Logical operators
             case OpAnd: '(${left} and ${right})';
             case OpOr: '(${left} or ${right})';
+            
+            // Bitwise operators (using Elixir's Bitwise module)
+            case OpXor: 'Bitwise.bxor(${left}, ${right})';
+            case OpShl: 'Bitwise.bsl(${left}, ${right})'; // Bit shift left
+            case OpShr: 'Bitwise.bsr(${left}, ${right})'; // Bit shift right
+            case OpUShr: 'Bitwise.bsr(${left}, ${right})'; // Unsigned right shift (same as signed in Elixir)
+            
+            // Assignment operators
             case OpAssign: '${left} = ${right}';
-            default: 'TODO_BINOP_${op}(${left}, ${right})';
+            case OpAssignOp(op):
+                // Compound assignment operators (+=, -=, etc.)
+                compileCompoundAssignment(op, e1, e2, left, right);
+            
+            // Special operators
+            case OpBoolAnd: '(${left} && ${right})'; // Short-circuit boolean and
+            case OpBoolOr: '(${left} || ${right})';  // Short-circuit boolean or
+            case OpInterval: '${left}..${right}';    // Range operator for Elixir ranges
+            case OpArrow: '${left} -> ${right}';     // Lambda arrow (used in pattern matching)
+            case OpIn: '${left} in ${right}';        // Iteration operator (used in for-in loops)
+            case OpNullCoal: '${left} || ${right}';  // Null coalescing operator
         };
         
         #if debug_operator_compiler
@@ -161,9 +191,29 @@ class OperatorCompiler {
         var result = switch(op) {
             case OpNot: 'not ${operand}';
             case OpNeg: '-${operand}';
-            case OpIncrement: postFix ? '${operand}++' : '++${operand}'; // Note: Elixir doesn't have ++, this is for debug
-            case OpDecrement: postFix ? '${operand}--' : '--${operand}'; // Note: Elixir doesn't have --, this is for debug
-            default: 'TODO_UNOP_${op}(${operand})';
+            case OpNegBits: 'Bitwise.bnot(${operand})'; // Bitwise NOT
+            
+            // Increment/Decrement - Convert to idiomatic Elixir patterns
+            case OpIncrement: 
+                // Elixir doesn't have ++ operator, convert to addition
+                if (postFix) {
+                    // For postfix, we need to return old value but this is complex in functional context
+                    // For now, just do the increment
+                    '${operand} + 1';
+                } else {
+                    '${operand} + 1';
+                }
+            case OpDecrement:
+                // Elixir doesn't have -- operator, convert to subtraction
+                if (postFix) {
+                    // For postfix, we need to return old value but this is complex in functional context
+                    '${operand} - 1';
+                } else {
+                    '${operand} - 1';
+                }
+            
+            // Type operations
+            case OpSpread: '...${operand}'; // Spread operator for pattern matching
         };
         
         #if debug_operator_compiler
@@ -235,6 +285,55 @@ class OperatorCompiler {
             case TAbstract(t, _) if (t.get().name == "Bool"): 'Atom.to_string(${compiled})';
             case _: 'to_string(${compiled})';
         };
+    }
+    
+    /**
+     * Compile compound assignment operators (+=, -=, *=, etc.)
+     * 
+     * WHY: Compound assignments need to handle Elixir's immutability patterns
+     * 
+     * @param op The inner binary operator (+, -, *, etc.)
+     * @param e1 Left side expression (variable being assigned to)
+     * @param e2 Right side expression (value being operated with)
+     * @param left Compiled left side
+     * @param right Compiled right side
+     * @return Compiled Elixir compound assignment
+     */
+    private function compileCompoundAssignment(op: Binop, e1: TypedExpr, e2: TypedExpr, left: String, right: String): String {
+        #if debug_operator_compiler
+        trace("[XRay OperatorCompiler] COMPOUND ASSIGNMENT START");
+        trace('[XRay OperatorCompiler] Inner operator: ${op}');
+        #end
+        
+        // For compound assignment, we need to expand: x += y → x = x + y
+        var expandedOp = switch(op) {
+            case OpAdd: 
+                if (isStringConcatenation(e1, e2)) {
+                    '${left} <> ${right}';
+                } else {
+                    '${left} + ${right}';
+                }
+            case OpSub: '${left} - ${right}';
+            case OpMult: '${left} * ${right}';
+            case OpDiv: '${left} / ${right}';
+            case OpMod: 'rem(${left}, ${right})';
+            case OpXor: 'Bitwise.bxor(${left}, ${right})';
+            case OpShl: 'Bitwise.bsl(${left}, ${right})';
+            case OpShr: 'Bitwise.bsr(${left}, ${right})';
+            case OpUShr: 'Bitwise.bsr(${left}, ${right})';
+            case OpOr: '${left} or ${right}';
+            case OpAnd: '${left} and ${right}';
+            default: '${left} UNKNOWN_COMPOUND_OP_${op} ${right}';
+        };
+        
+        var result = '${left} = ${expandedOp}';
+        
+        #if debug_operator_compiler
+        trace('[XRay OperatorCompiler] Generated compound assignment: ${result}');
+        trace("[XRay OperatorCompiler] COMPOUND ASSIGNMENT END");
+        #end
+        
+        return result;
     }
     
     /**

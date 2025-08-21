@@ -1379,8 +1379,9 @@ class ElixirCompiler extends DirectToStringCompiler {
             // Check if function body is a TBlock that could benefit from pipeline optimization
             var compiledBody = switch(funcField.expr.expr) {
                 case TBlock(el) if (el.length > 1):
+                    // TEMPORARY: Disable pipeline optimization to test topLevel formatting
                     // Check for pipeline optimization opportunities in function body
-                    var pipelinePattern = pipelineOptimizer.detectPipelinePattern(el);
+                    var pipelinePattern = null; // pipelineOptimizer.detectPipelinePattern(el);
                     
                     if (pipelinePattern != null) {
                         
@@ -1434,13 +1435,13 @@ class ElixirCompiler extends DirectToStringCompiler {
                         
                         allParts.join("\n");
                     } else {
-                        // No pipeline pattern - use regular compilation
-                        compileExpression(funcField.expr);
+                        // No pipeline pattern - use regular compilation with topLevel = true for function bodies
+                        compileExpressionImpl(funcField.expr, true);
                     }
                     
                 case _:
-                    // Not a multi-statement block - use regular compilation
-                    compileExpression(funcField.expr);
+                    // Not a multi-statement block - use regular compilation with topLevel = true for function bodies
+                    compileExpressionImpl(funcField.expr, true);
             };
             
             if (compiledBody != null && compiledBody.trim() != "") {

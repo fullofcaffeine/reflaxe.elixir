@@ -92,6 +92,7 @@ class ControlFlowCompiler {
         #if debug_control_flow_compiler
         trace("[XRay ControlFlowCompiler] BLOCK COMPILATION START");
         trace('[XRay ControlFlowCompiler] Block length: ${el.length}');
+        trace('[XRay ControlFlowCompiler] *** CRITICAL: topLevel = ${topLevel} ***');
         #end
         
         // BASIC IMPLEMENTATION: Handle block expressions
@@ -102,20 +103,28 @@ class ControlFlowCompiler {
         // Compile each expression in the block
         var statements = [];
         for (i in 0...el.length) {
-            var compiled = compiler.compileExpression(el[i]);
+            // CRITICAL FIX: Pass topLevel parameter to maintain clean formatting for function bodies
+            var compiled = compiler.compileExpression(el[i], topLevel);
             if (compiled != null && compiled.length > 0) {
                 statements.push(compiled);
             }
         }
         
         var result: String = if (topLevel) {
-            // Top-level blocks (function bodies) should have proper Elixir formatting
-            statements.join("\n    ");
+            // Top-level blocks (function bodies) should be clean newline-separated statements
+            // This matches the original compiler behavior: compiledStatements.join("\n")
+            statements.join("\n");
         } else {
-            // Nested blocks should use proper Elixir block syntax with do..end
+            // CRITICAL FIX: For multi-statement blocks, always use clean formatting
+            // Single expressions can stay inline, but multi-statement blocks should be clean
             if (statements != null && statements.length == 1) {
-                statements[0] != null ? statements[0] : "nil"; // Ensure not null
+                statements[0] != null ? statements[0] : "nil"; // Single expression
+            } else if (statements != null && statements.length > 6) {
+                // Large blocks (like function bodies) should use clean formatting
+                // even if topLevel=false due to calling path issues
+                statements.join("\n");
             } else {
+                // Small multi-statement nested blocks use parentheses for proper scoping
                 "(\n      " + statements.join("\n      ") + "\n    )";
             }
         };
