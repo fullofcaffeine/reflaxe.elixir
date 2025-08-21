@@ -44,7 +44,11 @@ defmodule TypeSafeChildSpecBuilder do
   def endpoint(app_name, port, config) do
     temp_number = nil
     tmp = port
-    temp_number = if (tmp != nil), do: tmp, else: 4000
+    if (tmp != nil) do
+      temp_number = tmp
+    else
+      temp_number = 4000
+    end
     AppWeb.Endpoint
   end
 
@@ -71,7 +75,11 @@ defmodule TypeSafeChildSpecBuilder do
   def presence(app_name, pubsub_name) do
     temp_string = nil
     tmp = pubsub_name
-    temp_string = if (tmp != nil), do: tmp, else: "" <> app_name <> ".PubSub"
+    if (tmp != nil) do
+      temp_string = tmp
+    else
+      temp_string = "" <> app_name <> ".PubSub"
+    end
     {:presence, %{"name" => "" <> app_name <> ".Presence", "pubsub_server" => temp_string}}
   end
 

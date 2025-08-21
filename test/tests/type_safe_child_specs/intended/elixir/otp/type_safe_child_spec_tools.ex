@@ -29,7 +29,11 @@ defmodule TypeSafeChildSpecTools do
         config = g
         repo_module = "" <> app_name <> ".Repo"
         nil
-        temp_array = if (config != nil), do: [config], else: []
+        if (config != nil) do
+          temp_array = [config]
+        else
+          temp_array = []
+        end
         args = temp_array
         temp_result = repo_module
       2 ->
@@ -64,15 +68,19 @@ defmodule TypeSafeChildSpecTools do
           catch
             :break -> {nil}
           end
-        ), else: nil
-        args = [endpoint_config], else: nil
+        )
+        args = [endpoint_config]
         temp_result = endpoint_module
       3 ->
         g = elem(spec, 1)
         config = g
         telemetry_module = "" <> app_name <> "Web.Telemetry"
         nil
-        temp_array1 = if (config != nil), do: [config], else: []
+        if (config != nil) do
+          temp_array1 = [config]
+        else
+          temp_array1 = []
+        end
         args = temp_array1
         temp_result = telemetry_module
       4 ->
@@ -208,7 +216,7 @@ defmodule TypeSafeChildSpecTools do
         _g_1 = elem(spec, 2)
         port = _g_1
         config = _g_1
-        if (port != nil && (port < 1 || port > 65535)), do: errors.push("Endpoint port must be between 1 and 65535"), else: nil
+        if (port != nil && (port < 1 || port > 65535)), do: errors.push("Endpoint port must be between 1 and 65535")
       3 ->
         elem(spec, 1)
         nil
@@ -227,7 +235,7 @@ defmodule TypeSafeChildSpecTools do
         args = _g_3
         restart = _g_3
         shutdown = _g_3
-        if (module == nil), do: errors.push("Custom child spec module cannot be null"), else: nil
+        if (module == nil), do: errors.push("Custom child spec module cannot be null")
       6 ->
         g = elem(spec, 1)
         spec = g
