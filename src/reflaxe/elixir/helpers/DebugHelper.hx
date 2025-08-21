@@ -58,6 +58,9 @@ using haxe.macro.TypedExprTools;
  * - **debug_types**: Type resolution and mapping
  * - **debug_annotations**: Annotation processing (@:liveview, @:router, etc.)
  * - **debug_helpers**: Helper compiler debugging (EnumCompiler, ClassCompiler, etc.)
+ * - **debug_y_combinator**: Y combinator generation and related syntax issues
+ * - **debug_if_expressions**: If-expression compilation (inline vs block syntax)
+ * - **debug_variable_tracking**: Variable name tracking and renaming throughout compilation
  * 
  * @see CLAUDE.md - Complete debug infrastructure documentation
  */
@@ -191,6 +194,93 @@ class DebugHelper {
         trace('Info: $info');
         trace('[DEBUG:END] ======================================================');
         #end
+    }
+    
+    /**
+     * Debug Y combinator generation and compilation
+     * 
+     * Traces Y combinator creation, syntax issues, and related optimizations.
+     * Critical for debugging the `, else: nil` syntax error.
+     * 
+     * @param context Description of Y combinator context
+     * @param stage Current stage (generation, compilation, optimization)
+     * @param details Specific details about the Y combinator
+     */
+    public static function debugYCombinator(context: String, stage: String, details: String): Void {
+        #if (debug_compiler || debug_y_combinator)
+        trace('[DEBUG:Y_COMBINATOR] ==========================================');
+        trace('Context: $context');
+        trace('Stage: $stage');
+        trace('Details: $details');
+        trace('[DEBUG:END] ==============================================');
+        #end
+    }
+    
+    /**
+     * Debug if-expression compilation decisions
+     * 
+     * Traces inline vs block syntax decisions, nested if handling,
+     * and where `, else: nil` might be incorrectly appended.
+     * 
+     * @param context Description of if-expression context
+     * @param decision Whether using inline or block syntax
+     * @param reason Why this decision was made
+     * @param result The generated Elixir code
+     */
+    public static function debugIfExpression(context: String, decision: String, reason: String, result: String): Void {
+        #if (debug_compiler || debug_if_expressions)
+        trace('[DEBUG:IF_EXPR] ===============================================');
+        trace('Context: $context');
+        trace('Decision: $decision');
+        trace('Reason: $reason');
+        trace('Result: $result');
+        trace('[DEBUG:END] ==================================================');
+        #end
+    }
+    
+    /**
+     * Debug inline if-statement generation
+     * 
+     * Traces inline if-statement generation across different compilation paths.
+     * Critical for debugging Y combinator syntax errors and missing `, else: nil` completions.
+     * 
+     * @param context Description of inline if context
+     * @param stage Current compilation stage
+     * @param condition The if condition being compiled
+     * @param result The complete generated inline if statement
+     */
+    public static function debugInlineIf(context: String, stage: String, condition: String, result: String): Void {
+        #if (debug_compiler || debug_inline_if)
+        trace('[DEBUG:INLINE_IF] ============================================');
+        trace('Context: $context');
+        trace('Stage: $stage');
+        trace('Condition: $condition');
+        trace('Result: $result');
+        trace('[DEBUG:END] ==================================================');
+        #end
+    }
+    
+    /**
+     * Debug variable name tracking and renaming
+     * 
+     * Tracks how variables are renamed during compilation,
+     * critical for understanding Map.merge variable issues.
+     * 
+     * @param context Description of variable tracking context
+     * @param originalName Original variable name from Haxe
+     * @param renamedTo What the variable was renamed to
+     * @param reason Why the renaming occurred
+     */
+    public static function debugVariableTracking(context: String, originalName: String, renamedTo: String, reason: String): Void {
+        #if (debug_compiler || debug_variable_tracking)
+        trace('[DEBUG:VAR_TRACK] =============================================');
+        trace('Context: $context');
+        trace('Original: $originalName');
+        trace('Renamed To: $renamedTo');
+        trace('Reason: $reason');
+        trace('[DEBUG:END] ===============================================');
+        #end
+        
     }
     
     // Helper functions for pretty-printing
