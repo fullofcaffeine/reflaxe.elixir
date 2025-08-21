@@ -412,6 +412,19 @@ class ElixirCompiler extends DirectToStringCompiler {
     }
     
     /**
+     * Check if an expression contains a reference to a specific variable
+     * 
+     * WHY: Delegates to VariableCompiler for centralized variable analysis
+     * 
+     * @param expr The expression to analyze
+     * @param variableName The variable name to search for
+     * @return True if the expression contains a reference to the variable
+     */
+    public function containsVariableReference(expr: TypedExpr, variableName: String): Bool {
+        return expressionDispatcher.variableCompiler.containsVariableReference(expr, variableName);
+    }
+    
+    /**
      * Determine which statement indices were processed as part of a pipeline pattern.
      * This prevents double-compilation of statements that were already included in the pipeline.
      */
@@ -611,44 +624,7 @@ class ElixirCompiler extends DirectToStringCompiler {
         }
     }
 
-    /**
-     * Check if an expression contains a reference to a specific variable.
-     */
-    private function containsVariableReference(expr: TypedExpr, variableName: String): Bool {
-        return switch(expr.expr) {
-            case TLocal(v):
-                v.name == variableName;
-                
-            case TCall(func, args):
-                // Check if first argument is the target variable
-                if (args.length > 0 && containsVariableReference(args[0], variableName)) {
-                    true;
-                } else {
-                    // Check other arguments and function
-                    var foundInFunc = containsVariableReference(func, variableName);
-                    var foundInArgs = false;
-                    for (arg in args) {
-                        if (containsVariableReference(arg, variableName)) {
-                            foundInArgs = true;
-                            break;
-                        }
-                    }
-                    foundInFunc || foundInArgs;
-                }
-                
-            case TBinop(_, e1, e2):
-                containsVariableReference(e1, variableName) || containsVariableReference(e2, variableName);
-                
-            case TField(e, _):
-                containsVariableReference(e, variableName);
-                
-            case TParenthesis(e):
-                containsVariableReference(e, variableName);
-                
-            default:
-                false;
-        }
-    }
+    // containsVariableReference moved to VariableCompiler.hx
     
     /**
      * Detect if a LiveView class uses Phoenix CoreComponents

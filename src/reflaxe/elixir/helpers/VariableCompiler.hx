@@ -348,6 +348,93 @@ class VariableCompiler {
     }
     
     /**
+     * Check if an expression contains a reference to a specific variable
+     * 
+     * WHY: Variable reference analysis is needed for pipeline optimization and dependency tracking
+     * 
+     * WHAT: Recursively analyze TypedExpr AST to find variable references
+     * 
+     * HOW: Pattern match on expression types and recursively check sub-expressions
+     * 
+     * @param expr The expression to analyze
+     * @param variableName The variable name to search for
+     * @return True if the expression contains a reference to the variable
+     */
+    public function containsVariableReference(expr: TypedExpr, variableName: String): Bool {
+        #if debug_variable_compiler
+        trace("[XRay VariableCompiler] CHECKING VARIABLE REFERENCE");
+        trace('[XRay VariableCompiler] Looking for variable: ${variableName}');
+        trace('[XRay VariableCompiler] In expression: ${expr.expr}');
+        #end
+        
+        var result = switch(expr.expr) {
+            case TLocal(v):
+                var found = v.name == variableName;
+                #if debug_variable_compiler
+                trace('[XRay VariableCompiler] TLocal check: ${v.name} == ${variableName} = ${found}');
+                #end
+                found;
+                
+            case TCall(func, args):
+                // Check if first argument is the target variable
+                if (args.length > 0 && containsVariableReference(args[0], variableName)) {
+                    #if debug_variable_compiler
+                    trace("[XRay VariableCompiler] ✓ FOUND in first argument");
+                    #end
+                    true;
+                } else {
+                    // Check other arguments and function
+                    var foundInFunc = containsVariableReference(func, variableName);
+                    var foundInArgs = false;
+                    for (arg in args) {
+                        if (containsVariableReference(arg, variableName)) {
+                            foundInArgs = true;
+                            break;
+                        }
+                    }
+                    var found = foundInFunc || foundInArgs;
+                    #if debug_variable_compiler
+                    if (found) trace("[XRay VariableCompiler] ✓ FOUND in TCall");
+                    #end
+                    found;
+                }
+                
+            case TBinop(_, e1, e2):
+                var found = containsVariableReference(e1, variableName) || containsVariableReference(e2, variableName);
+                #if debug_variable_compiler
+                if (found) trace("[XRay VariableCompiler] ✓ FOUND in TBinop");
+                #end
+                found;
+                
+            case TField(e, _):
+                var found = containsVariableReference(e, variableName);
+                #if debug_variable_compiler
+                if (found) trace("[XRay VariableCompiler] ✓ FOUND in TField");
+                #end
+                found;
+                
+            case TParenthesis(e):
+                var found = containsVariableReference(e, variableName);
+                #if debug_variable_compiler
+                if (found) trace("[XRay VariableCompiler] ✓ FOUND in TParenthesis");
+                #end
+                found;
+                
+            default:
+                #if debug_variable_compiler
+                trace("[XRay VariableCompiler] No variable reference found in expression type");
+                #end
+                false;
+        };
+        
+        #if debug_variable_compiler
+        trace('[XRay VariableCompiler] Final result: ${result}');
+        #end
+        
+        return result;
+    }
+    
+    /**
      * TODO: Future implementation will contain additional extracted utility methods:
      * 
      * - Variable collision detection and resolution algorithms
