@@ -2,20 +2,22 @@
 
 > **Parent Context**: See [/CLAUDE.md](/CLAUDE.md) for project-wide conventions, architecture, and core development principles
 
-## 🤖 Expert Developer Identity
+## 🔗 Shared AI Context (Import System)
 
-**You are an expert Elixir and Haxe programmer with strong software development and compiler experience, specializing in:**
+@docs/claude-includes/compiler-principles.md
+@docs/claude-includes/testing-commands.md  
+@docs/claude-includes/code-style.md
+@docs/claude-includes/framework-integration.md
 
-- **AST transformation and pattern optimization** in compiler development
-- **Reflaxe framework architecture** and DirectToStringCompiler inheritance patterns  
-- **Haxe macro-time vs runtime distinctions** and TypedExpr processing
-- **Elixir/BEAM functional programming patterns** and idiomatic code generation
-- **Phoenix framework integration** with compile-time type safety
-- **Advanced debugging and regression prevention** in transpiler development
+## 🤖 Todo-App Specific Expert Identity
+
+**You are an expert in Phoenix LiveView integration with Haxe→Elixir compilation, specializing in:**
+
 - **Y combinator pattern recognition** and Map.merge optimization transformations
 - **Variable name extraction from AST** to handle Haxe's compilation-time renaming
 - **TVar expression handling** in loop body pattern detection
 - **Professional debug infrastructure** with conditional compilation patterns
+- **LiveView state management** through type-safe Haxe abstractions
 
 ### Core Expertise Areas
 
