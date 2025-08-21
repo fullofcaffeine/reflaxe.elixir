@@ -45,6 +45,8 @@ import reflaxe.elixir.helpers.LLMDocsGenerator;
 import reflaxe.elixir.helpers.ExUnitCompiler;
 import reflaxe.elixir.helpers.AlgebraicDataTypeCompiler;
 import reflaxe.elixir.helpers.ExpressionCompiler;
+import reflaxe.elixir.helpers.ArrayOptimizationCompiler;
+import reflaxe.elixir.helpers.ExpressionDispatcher;
 import reflaxe.elixir.ElixirTyper;
 import reflaxe.elixir.helpers.DebugHelper;
 import reflaxe.elixir.helpers.CompilerUtilities;
@@ -132,6 +134,11 @@ class ElixirCompiler extends DirectToStringCompiler {
     // Reflection compilation
     private var reflectionCompiler: reflaxe.elixir.helpers.ReflectionCompiler;
     
+    // Array optimization compiler for loop pattern detection and Enum function generation
+    private var arrayOptimizationCompiler: reflaxe.elixir.helpers.ArrayOptimizationCompiler;
+    
+    private var expressionDispatcher: reflaxe.elixir.helpers.ExpressionDispatcher;
+    
     // Import optimization for clean import statements
     private var importOptimizer: reflaxe.elixir.helpers.ImportOptimizer;
     
@@ -174,6 +181,8 @@ class ElixirCompiler extends DirectToStringCompiler {
         this.genServerCompiler = new reflaxe.elixir.helpers.GenServerCompiler(this);
         this.methodCallCompiler = new reflaxe.elixir.helpers.MethodCallCompiler(this);
         this.reflectionCompiler = new reflaxe.elixir.helpers.ReflectionCompiler(this);
+        this.arrayOptimizationCompiler = new reflaxe.elixir.helpers.ArrayOptimizationCompiler(this);
+        this.expressionDispatcher = new reflaxe.elixir.helpers.ExpressionDispatcher(this);
         
         // Set compiler reference for delegation
         this.patternMatcher.setCompiler(this);
@@ -1106,9 +1115,13 @@ class ElixirCompiler extends DirectToStringCompiler {
     
     /**
      * Compile expression - required by DirectToStringCompiler (implements abstract method)
+     * 
+     * WHY: Delegates to ExpressionDispatcher to replace the massive 2,011-line compileElixirExpressionInternal function
+     * WHAT: Clean entry point that routes TypedExpr compilation to specialized expression compilers
+     * HOW: Uses the dispatcher pattern to maintain clean separation of concerns
      */
     public function compileExpressionImpl(expr: TypedExpr, topLevel: Bool): Null<String> {
-        return compileElixirExpressionInternal(expr, topLevel);
+        return expressionDispatcher.compileExpression(expr, topLevel);
     }
     
     /**
@@ -1297,488 +1310,13 @@ class ElixirCompiler extends DirectToStringCompiler {
         
         // Comprehensive expression compilation
         return switch (expr.expr) {
-            case TConst(constant):
-                compileTConstant(constant);
+            // TConst now handled by ExpressionDispatcher → LiteralCompiler
                 
-            case TLocal(v):
-                // Get the original variable name (before Haxe's renaming for shadowing avoidance)
-                var originalName = getOriginalVarName(v);
+            // TLocal now handled by ExpressionDispatcher → VariableCompiler
                 
-                // Special handling for inline context variables
-                if (originalName == "_this" && hasInlineContext("struct")) {
-                    return "struct";
-                }
+            // TBinop now handled by ExpressionDispatcher → OperatorCompiler
                 
-                // Check if this is a LiveView instance variable that should use socket.assigns
-                if (liveViewInstanceVars != null && liveViewInstanceVars.exists(originalName)) {
-                    var snakeCaseName = NamingHelper.toSnakeCase(originalName);
-                    return 'socket.assigns.${snakeCaseName}';
-                }
-                
-                // Check if this is a function reference being passed as an argument
-                if (isFunctionReference(v, originalName)) {
-                    return generateFunctionReference(originalName);
-                }
-                
-                // Use parameter mapping if available (for both abstract methods and regular functions with standardized arg names)
-                if (currentFunctionParameterMap.exists(originalName)) {
-                    return currentFunctionParameterMap.get(originalName);
-                } else {
-                    return NamingHelper.toSnakeCase(originalName);
-                }
-                
-            case TBinop(op, e1, e2):
-                // Special handling for string concatenation and assignment operators
-                switch (op) {
-                    case OpAdd:
-                        // Check if this is string concatenation
-                        var e1IsString = isStringType(e1.t);
-                        var e2IsString = isStringType(e2.t);
-                        var isStringConcat = e1IsString || e2IsString;
-                        
-                        if (isStringConcat) {
-                            // Use <> for string concatenation in Elixir
-                            // Handle string constants directly to preserve quotes
-                            var left = switch (e1.expr) {
-                                case TConst(TString(s)): 
-                                    // Properly escape and quote the string
-                                    var escaped = StringTools.replace(s, '\\', '\\\\');
-                                    escaped = StringTools.replace(escaped, '"', '\\"');
-                                    escaped = StringTools.replace(escaped, '\n', '\\n');
-                                    escaped = StringTools.replace(escaped, '\r', '\\r');
-                                    escaped = StringTools.replace(escaped, '\t', '\\t');
-                                    '"${escaped}"';
-                                case _: 
-                                    compileExpression(e1);
-                            };
-                            
-                            var right = switch (e2.expr) {
-                                case TConst(TString(s)): 
-                                    // Properly escape and quote the string
-                                    var escaped = StringTools.replace(s, '\\', '\\\\');
-                                    escaped = StringTools.replace(escaped, '"', '\\"');
-                                    escaped = StringTools.replace(escaped, '\n', '\\n');
-                                    escaped = StringTools.replace(escaped, '\r', '\\r');
-                                    escaped = StringTools.replace(escaped, '\t', '\\t');
-                                    '"${escaped}"';
-                                case _: 
-                                    compileExpression(e2);
-                            };
-                            
-                            // Convert non-string operands to strings
-                            if (!e1IsString && e2IsString) {
-                                // Left side needs conversion
-                                left = convertToString(e1, left);
-                            } else if (e1IsString && !e2IsString) {
-                                // Right side needs conversion
-                                right = convertToString(e2, right);
-                            }
-                            
-                            '${left} <> ${right}';
-                        } else {
-                            compileExpression(e1) + " + " + compileExpression(e2);
-                        }
-                        
-                        
-                    case OpAssignOp(innerOp):
-                        // Handle compound assignment operators (+=, -=, etc.)
-                        // These need special handling since Elixir variables are immutable
-                        
-                        // Check if this is a field compound assignment which needs special handling
-                        switch (e1.expr) {
-                            case TField(structExpr, fa):
-                                // Field compound assignment: struct.field += value
-                                // This needs to become: struct = %{struct | field: struct.field + value}
-                                
-                                var structStr = compileExpression(structExpr);
-                                var fieldName = switch (fa) {
-                                    case FInstance(_, _, cf) | FStatic(_, cf) | FAnon(cf) | FClosure(_, cf):
-                                        cf.get().name;
-                                    case FDynamic(s): s;
-                                    case FEnum(_, ef): ef.name;
-                                };
-                                var elixirFieldName = reflaxe.elixir.helpers.NamingHelper.toSnakeCase(fieldName);
-                                var right = compileExpression(e2);
-                                
-                                // Build the compound operation expression
-                                var opStr = switch (innerOp) {
-                                    case OpAdd:
-                                        // Check if string concatenation
-                                        var isStringOp = switch (e1.t) {
-                                            case TInst(t, _) if (t.get().name == "String"): true;
-                                            case _: false;
-                                        };
-                                        isStringOp ? "<>" : "+";
-                                    case OpSub: "-";
-                                    case OpMult: "*";
-                                    case OpDiv: "/";
-                                    case _: compileBinop(innerOp);
-                                };
-                                
-                                var newValue = '${structStr}.${elixirFieldName} ${opStr} ${right}';
-                                
-                                if (isCompilingCaseArm) {
-                                    // In case arm: return struct update expression
-                                    '%{${structStr} | ${elixirFieldName}: ${newValue}}';
-                                } else {
-                                    // Regular context: struct = %{struct | field: newValue}
-                                    '${structStr} = %{${structStr} | ${elixirFieldName}: ${newValue}}';
-                                }
-                                
-                            case _:
-                                // Regular compound assignment
-                                var left = compileExpression(e1);
-                                var right = compileExpression(e2);
-                                
-                                switch (innerOp) {
-                                    case OpAdd:
-                                        // Check if string concatenation
-                                        var isStringOp = switch (e1.t) {
-                                            case TInst(t, _) if (t.get().name == "String"): true;
-                                            case _: false;
-                                        };
-                                        
-                                        if (isStringOp) {
-                                            '${left} = ${left} <> ${right}';
-                                        } else {
-                                            '${left} = ${left} + ${right}';
-                                        }
-                                        
-                                    case OpSub:
-                                        '${left} = ${left} - ${right}';
-                                        
-                                    case OpMult:
-                                        '${left} = ${left} * ${right}';
-                                        
-                                    case OpDiv:
-                                        '${left} = ${left} / ${right}';
-                                        
-                                    case _:
-                                        // For other operators, use the standard pattern
-                                        '${left} = ${left} ${compileBinop(innerOp)} ${right}';
-                                }
-                        }
-                        
-                    case OpAssign:
-                        // FIRST: Check if this is an inline context assignment like _this = struct.buf
-                        switch (e1.expr) {
-                            case TLocal(v):
-                                var varName = getOriginalVarName(v);
-                                if (varName == "_this") {
-                                    // Only set inline context if this is actually an inline function expansion
-                                    // Check if this is _this = this.field pattern (inline expansion)
-                                    var isInlineExpansion = switch(e2.expr) {
-                                        case TField(e, _): switch(e.expr) {
-                                            case TConst(TThis): true;
-                                            case _: false;
-                                        };
-                                        case _: false;
-                                    };
-                                    
-                                    var value = compileExpression(e2);
-                                    
-                                    // Only set inline context for genuine inline expansions
-                                    if (isInlineExpansion) {
-                                        setInlineContext("struct", "active");
-                                    } else {
-                                    }
-                                    
-                                    return 'struct = ${value}';
-                                }
-                            case TField(_, _):
-                            case _:
-                        }
-                        
-                        // Handle struct field assignment with Elixir's immutable update syntax
-                        switch (e1.expr) {
-                            case TField(structExpr, fa):
-                                // This is a field assignment like _this.b = value or struct.field = value
-                                switch (structExpr.expr) {
-                                    case TLocal(v):
-                                        // Simple local variable struct update
-                                        var structName = getOriginalVarName(v);
-                                        var elixirStructName = reflaxe.elixir.helpers.NamingHelper.toSnakeCase(structName);
-                                        var fieldName = switch (fa) {
-                                            case FInstance(_, _, cf) | FStatic(_, cf) | FAnon(cf) | FClosure(_, cf):
-                                                cf.get().name;
-                                            case FDynamic(s): s;
-                                            case FEnum(_, ef): ef.name;
-                                        };
-                                        
-                                        // Convert field name to snake_case for Elixir
-                                        var elixirFieldName = reflaxe.elixir.helpers.NamingHelper.toSnakeCase(fieldName);
-                                        var value = compileExpression(e2);
-                                        
-                                        
-                                        // Check if we're in a case arm and need to return struct update as expression
-                                        if (isCompilingCaseArm) {
-                                            // Map 'this' to struct parameter if it exists
-                                            var actualStructName = currentFunctionParameterMap.get("this");
-                                            if (actualStructName == null) actualStructName = elixirStructName;
-                                            
-                                            // Return struct update as expression (not assignment)
-                                            var result = '%{${actualStructName} | ${elixirFieldName}: ${value}}';
-                                            result;
-                                        } else {
-                                            // Generate regular Elixir struct update assignment
-                                            '${elixirStructName} = %{${elixirStructName} | ${elixirFieldName}: ${value}}';
-                                        }
-                                        
-                                    case TConst(TThis):
-                                        // Handle this.field assignments properly with enhanced inline context support
-                                        var mappedName = resolveThisReference();
-                                        
-                                        var fieldName = switch (fa) {
-                                            case FInstance(_, _, cf) | FStatic(_, cf) | FAnon(cf) | FClosure(_, cf):
-                                                cf.get().name;
-                                            case FDynamic(s): s;
-                                            case FEnum(_, ef): ef.name;
-                                        };
-                                        var value = compileExpression(e2);
-                                        var elixirFieldName = reflaxe.elixir.helpers.NamingHelper.toSnakeCase(fieldName);
-                                        
-                                        if (isCompilingCaseArm) {
-                                            // Return struct update as expression (not assignment)
-                                            '%{${mappedName} | ${elixirFieldName}: ${value}}';
-                                        } else {
-                                            // Generate regular Elixir struct update assignment
-                                            '${mappedName} = %{${mappedName} | ${elixirFieldName}: ${value}}';
-                                        }
-                                        
-                                    case _:
-                                        // Complex struct expression
-                                        if (isCompilingCaseArm) {
-                                            // In case arms, we can't do assignments - return struct update expression
-                                            var value = compileExpression(e2);
-                                            var fieldName = switch (fa) {
-                                                case FInstance(_, _, cf) | FStatic(_, cf) | FAnon(cf): cf.get().name;
-                                                case _: "unknown_field";
-                                            };
-                                            var elixirFieldName = reflaxe.elixir.helpers.NamingHelper.toSnakeCase(fieldName);
-                                            
-                                            // Use struct parameter name from current function mapping
-                                            var structVar = currentFunctionParameterMap.get("this");
-                                            if (structVar == null) structVar = "struct";
-                                            
-                                            '%{${structVar} | ${elixirFieldName}: ${value}}';
-                                        } else {
-                                            /**
-                                             * FEATURE: Dynamic Object Field Assignment Compiler Fix
-                                             * 
-                                             * WHY: Haxe allows obj.field = value on Dynamic objects, but Elixir doesn't support
-                                             *      direct field assignment. We must detect Dynamic objects and use Map.put instead.
-                                             * WHAT: Transform Dynamic field assignments from obj.field = value to Map.put(obj, :field, value)
-                                             * HOW: Check field access type - if FDynamic, use Map operations; otherwise use struct syntax
-                                             * EDGE CASES: Non-Dynamic complex expressions still use struct update syntax
-                                             */
-                                            #if debug_dynamic_assignment
-                                            trace("[XRay DynamicAssignment] OPERATION START");
-                                            trace('[XRay DynamicAssignment] Field Access Type: ${fa}');
-                                            #end
-                                            
-                                            var structStr = compileExpression(structExpr);
-                                            var value = compileExpression(e2);
-                                            
-                                            // Check if this is a Dynamic field assignment
-                                            var result = switch (fa) {
-                                                case FDynamic(fieldName):
-                                                    #if debug_dynamic_assignment
-                                                    trace("[XRay DynamicAssignment] ✓ DYNAMIC FIELD DETECTED");
-                                                    trace('[XRay DynamicAssignment] Transforming: ${structStr}.${fieldName} = ${value}');
-                                                    trace('[XRay DynamicAssignment] To: Map.put(${structStr}, :${fieldName}, ${value})');
-                                                    #end
-                                                    
-                                                    // Dynamic object field assignment → Map.put operation
-                                                    '${structStr} = Map.put(${structStr}, :${fieldName}, ${value})';
-                                                    
-                                                case FInstance(_, _, cf) | FStatic(_, cf) | FAnon(cf) | FClosure(_, cf):
-                                                    #if debug_dynamic_assignment
-                                                    trace("[XRay DynamicAssignment] ✓ STRUCT FIELD DETECTED");
-                                                    #end
-                                                    
-                                                    // Struct field assignment → struct update syntax
-                                                    var fieldName = cf.get().name;
-                                                    var elixirFieldName = reflaxe.elixir.helpers.NamingHelper.toSnakeCase(fieldName);
-                                                    '${structStr} = %{${structStr} | ${elixirFieldName}: ${value}}';
-                                                    
-                                                case FEnum(_, ef):
-                                                    #if debug_dynamic_assignment
-                                                    trace("[XRay DynamicAssignment] ✓ ENUM FIELD DETECTED");
-                                                    #end
-                                                    
-                                                    // Enum field assignment → struct update syntax
-                                                    var elixirFieldName = reflaxe.elixir.helpers.NamingHelper.toSnakeCase(ef.name);
-                                                    '${structStr} = %{${structStr} | ${elixirFieldName}: ${value}}';
-                                            };
-                                            
-                                            #if debug_dynamic_assignment
-                                            trace('[XRay DynamicAssignment] Generated: ${result}');
-                                            trace("[XRay DynamicAssignment] OPERATION END");
-                                            #end
-                                            
-                                            result;
-                                        }
-                                }
-                                
-                            case _:
-                                // Check if this is a field assignment that we missed
-                                switch (e1.expr) {
-                                    case TField(structExpr, fa):
-                                        // This is a field assignment - MUST use struct update syntax
-                                        
-                                        // Compile the struct expression to get the variable name
-                                        var structStr = compileExpression(structExpr);
-                                        var fieldName = switch (fa) {
-                                            case FInstance(_, _, cf) | FStatic(_, cf) | FAnon(cf) | FClosure(_, cf):
-                                                cf.get().name;
-                                            case FDynamic(s): s;
-                                            case FEnum(_, ef): ef.name;
-                                        };
-                                        var elixirFieldName = reflaxe.elixir.helpers.NamingHelper.toSnakeCase(fieldName);
-                                        var value = compileExpression(e2);
-                                        
-                                        // In Elixir, we MUST use struct update syntax
-                                        // Direct field assignment like struct.field = value is INVALID
-                                        if (isCompilingCaseArm) {
-                                            // In case arms, return struct update expression
-                                            '%{${structStr} | ${elixirFieldName}: ${value}}';
-                                        } else {
-                                            // Regular context: struct = %{struct | field: value}
-                                            '${structStr} = %{${structStr} | ${elixirFieldName}: ${value}}';
-                                        }
-                                        
-                                    case _:
-                                        /**
-                                         * FEATURE: Final Dynamic Assignment Detection
-                                         * 
-                                         * WHY: Some Dynamic field assignments slip through TField detection and end up here
-                                         * WHAT: Check if compiled e1 contains field access pattern and fix it retroactively
-                                         * HOW: Parse the compiled left-hand side for .field patterns and convert to Map operations
-                                         * EDGE CASES: Only applies to Dynamic objects, preserves regular variable assignments
-                                         */
-                                        var leftExpr = compileExpression(e1);
-                                        var rightExpr = compileExpression(e2);
-                                        
-                                        #if debug_dynamic_assignment
-                                        trace("[XRay DynamicAssignment] FALLBACK CHECK");
-                                        trace('[XRay DynamicAssignment] Left expr: ${leftExpr}');
-                                        trace('[XRay DynamicAssignment] AST type: ${Type.enumConstructor(e1.expr)}');
-                                        #end
-                                        
-                                        // Check if this is a field access that was missed (pattern: obj.field)
-                                        var fieldAccessPattern = ~/^(.+)\.([a-zA-Z_][a-zA-Z0-9_]*)$/;
-                                        if (fieldAccessPattern.match(leftExpr)) {
-                                            #if debug_dynamic_assignment
-                                            trace("[XRay DynamicAssignment] ✓ FIELD ACCESS PATTERN DETECTED");
-                                            trace('[XRay DynamicAssignment] Converting: ${leftExpr} = ${rightExpr}');
-                                            #end
-                                            
-                                            var objName = fieldAccessPattern.matched(1);
-                                            var fieldName = fieldAccessPattern.matched(2);
-                                            
-                                            // For Dynamic objects, use Map.put; for structs, use update syntax
-                                            // Since we can't determine the type here, assume Dynamic and use Map.put
-                                            var result = '${objName} = Map.put(${objName}, :${fieldName}, ${rightExpr})';
-                                            
-                                            #if debug_dynamic_assignment
-                                            trace('[XRay DynamicAssignment] To: ${result}');
-                                            trace("[XRay DynamicAssignment] FALLBACK FIX APPLIED");
-                                            #end
-                                            
-                                            result;
-                                        } else {
-                                            #if debug_dynamic_assignment
-                                            trace("[XRay DynamicAssignment] ✓ REGULAR ASSIGNMENT");
-                                            #end
-                                            
-                                            // Regular variable assignment
-                                            '${leftExpr} = ${rightExpr}';
-                                        }
-                                }
-                        }
-                    
-                    case OpShl | OpShr | OpUShr:
-                        // Bitwise shift operators need to use Bitwise module
-                        var left = compileExpression(e1);
-                        var right = compileExpression(e2);
-                        switch (op) {
-                            case OpShl:
-                                'Bitwise.<<<(${left}, ${right})';
-                            case OpShr:
-                                'Bitwise.>>>(${left}, ${right})';
-                            case OpUShr:
-                                'Bitwise.>>>(${left}, ${right})'; // Elixir doesn't distinguish signed/unsigned
-                            case _:
-                                '${left} ${compileBinop(op)} ${right}';
-                        }
-                        
-                    case _:
-                        // For all other binary operators, use standard compilation
-                        compileExpression(e1) + " " + compileBinop(op) + " " + compileExpression(e2);
-                }
-                
-            case TUnop(op, postFix, e):
-                var expr_str = compileExpression(e);
-                switch (op) {
-                    case OpIncrement: 
-                        // In Elixir, we can't mutate variables, so i++ becomes i = i + 1
-                        // However, as an expression, we just return the value
-                        // When used as a statement, the parent context should handle assignment
-                        // For now, we'll generate the expression that evaluates to the new value
-                        switch (e.expr) {
-                            case TLocal(v):
-                                // If it's a local variable, generate assignment
-                                var originalName = getOriginalVarName(v);
-                                var varName = NamingHelper.toSnakeCase(originalName);
-                                '${varName} = ${varName} + 1';
-                            case TField(e1, field):
-                                // Handle field increment (e.g., this.nind++)
-                                var objExpr = compileExpression(e1);
-                                var fieldName = switch(field) {
-                                    case FInstance(_, _, cf) | FStatic(_, cf) | FAnon(cf) | FClosure(_, cf):
-                                        cf.get().name;
-                                    case FDynamic(s):
-                                        s;
-                                    case FEnum(_, ef):
-                                        ef.name;
-                                };
-                                var snakeFieldName = NamingHelper.toSnakeCase(fieldName);
-                                // Generate struct update: %{struct | field: struct.field + 1}
-                                '${objExpr} = %{${objExpr} | ${snakeFieldName}: ${objExpr}.${snakeFieldName} + 1}';
-                            case _:
-                                // For other expressions, just generate the increment expression  
-                                '${expr_str} + 1';
-                        }
-                    case OpDecrement:
-                        switch (e.expr) {
-                            case TLocal(v):
-                                // If it's a local variable, generate assignment
-                                var originalName = getOriginalVarName(v);
-                                var varName = NamingHelper.toSnakeCase(originalName);
-                                '${varName} = ${varName} - 1';
-                            case TField(e1, field):
-                                // Handle field decrement (e.g., this.nind--)
-                                var objExpr = compileExpression(e1);
-                                var fieldName = switch(field) {
-                                    case FInstance(_, _, cf) | FStatic(_, cf) | FAnon(cf) | FClosure(_, cf):
-                                        cf.get().name;
-                                    case FDynamic(s):
-                                        s;
-                                    case FEnum(_, ef):
-                                        ef.name;
-                                };
-                                var snakeFieldName = NamingHelper.toSnakeCase(fieldName);
-                                // Generate struct update: %{struct | field: struct.field - 1}
-                                '${objExpr} = %{${objExpr} | ${snakeFieldName}: ${objExpr}.${snakeFieldName} - 1}';
-                            case _:
-                                // For other expressions, just generate the decrement expression
-                                '${expr_str} - 1';
-                        }
-                    case OpNot: '!${expr_str}';
-                    case OpNeg: '-${expr_str}';
-                    case OpNegBits: 'bnot(${expr_str})';
-                    case _: '${expr_str}';
-                }
+            // TUnop now handled by ExpressionDispatcher → OperatorCompiler
                 
             case TField(e, fa):
                 // Handle nested field access with inline context support
@@ -1928,1155 +1466,18 @@ class ElixirCompiler extends DirectToStringCompiler {
                     case _:
                         // Not a special function call, proceed normally
                 }
-                compileMethodCall(e, el);
+                return compileMethodCall(e, el);
                 
-            case TArrayDecl(el):
-                "[" + el.map(expr -> compileExpression(expr)).join(", ") + "]";
+            // TArrayDecl now handled by ExpressionDispatcher → DataStructureCompiler
                 
-            case TObjectDecl(fields):
-                // Check if this is a Supervisor child spec object
-                if (isChildSpecObject(fields)) {
-                    return compileChildSpec(fields, currentClassType);
-                }
+            // TObjectDecl now handled by ExpressionDispatcher → DataStructureCompiler
                 
-                // Check if this is a Supervisor options object
-                if (isSupervisorOptionsObject(fields)) {
-                    return compileSupervisorOptions(fields, currentClassType);
-                }
+            // TArray now handled by ExpressionDispatcher → DataStructureCompiler
+            // TVar now handled by ExpressionDispatcher → VariableCompiler
                 
-                // Determine if this object should use atom keys (for OTP patterns, etc.)
-                var useAtoms = shouldUseAtomKeys(fields);
-                var compiledFields = fields.map(f -> {
-                    if (useAtoms && isValidAtomName(f.name)) {
-                        // Use idiomatic colon syntax for atom keys: %{name: value}
-                        f.name + ": " + compileExpression(f.expr);
-                    } else {
-                        // Use arrow syntax for string keys: %{"key" => value}
-                        '"' + f.name + '"' + " => " + compileExpression(f.expr);
-                    }
-                });
-                "%{" + compiledFields.join(", ") + "}";
+            // TBlock now handled by ExpressionDispatcher → ControlFlowCompiler
                 
-            case TVar(tvar, expr):
-                // Check if variable is marked as unused by optimizer
-                if (tvar.meta != null && tvar.meta.has("-reflaxe.unused")) {
-                    // Skip generating unused variables, but still evaluate expression if it has side effects
-                    if (expr != null) {
-                        return compileExpression(expr);
-                    } else {
-                        return "";  // Don't generate anything for unused variables without init
-                    }
-                }
-                
-                // Get the original variable name (before Haxe's renaming)
-                var originalName = getOriginalVarName(tvar);
-                
-                // CRITICAL FIX: Detect variable name collision in desugared loops
-                // When Haxe desugars map/filter, it may reuse variable names like _g
-                // for both the accumulator array and the loop counter
-                if (originalName.startsWith("_g")) {
-                    // Check if this is an array initialization followed by integer reassignment
-                    if (expr != null) {
-                        switch (expr.expr) {
-                            case TArrayDecl([]):
-                                // This is array initialization - use a different name
-                                originalName = originalName + "_array";
-                            case TConst(TInt(0)):
-                                // This is counter initialization - use a different name
-                                originalName = originalName + "_counter";
-                            case _:
-                        }
-                    }
-                }
-                
-                // Check if this is _this and needs special handling
-                var preserveUnderscore = false;
-                if (originalName == "_this") {
-                    // Check if this is an inline expansion of _this = this.someField
-                    var isInlineThisInit = switch(expr.expr) {
-                        case TField(e, _): switch(e.expr) {
-                            case TConst(TThis): true;
-                            case _: false;
-                        };
-                        case _: false;
-                    };
-                    
-                    // Also check if we already have an inline context (struct updates)
-                    var hasExistingContext = hasInlineContext("struct");
-                    
-                    // Preserve _this if it's an inline expansion OR if inline context is already active
-                    preserveUnderscore = isInlineThisInit || hasExistingContext;
-                }
-                
-                var varName = preserveUnderscore ? originalName : NamingHelper.toSnakeCase(originalName);
-                
-                if (expr != null) {
-                    // Check if this is an inline expansion of _this = this.someField
-                    var isInlineThisInit = originalName == "_this" && switch(expr.expr) {
-                        case TField(e, _): switch(e.expr) {
-                            case TConst(TThis): true;
-                            case _: false;
-                        };
-                        case _: false;
-                    };
-                    
-                    if (isInlineThisInit) {
-                        // Temporarily disable any existing struct context to compile the right side correctly
-                        var savedContext = inlineContextMap.get("struct");
-                        inlineContextMap.remove("struct");
-                        var compiledExpr = compileExpression(expr);
-                        
-                        // Now set the context for future uses - mark struct as active
-                        setInlineContext("struct", "active");
-                        
-                        // Always use 'struct' for inline expansions instead of '_this'
-                        'struct = ${compiledExpr}';
-                    } else {
-                        var compiledExpr = compileExpression(expr);
-                        
-                        // If this is _this and we preserved the underscore, activate inline context
-                        if (originalName == "_this" && preserveUnderscore) {
-                            setInlineContext("struct", "active");
-                        }
-                        
-                        // In case arms, avoid temp variable assignments - return expressions directly
-                        if (isCompilingCaseArm && (originalName.startsWith("temp_") || originalName.startsWith("temp"))) {
-                            return compiledExpr;
-                        }
-                        
-                        '${varName} = ${compiledExpr}';
-                    }
-                } else {
-                    // In case arms, skip temp variable nil assignments completely
-                    if (isCompilingCaseArm && (originalName.startsWith("temp_") || originalName.startsWith("temp"))) {
-                        return "nil";
-                    }
-                    '${varName} = nil';
-                }
-                
-            case TBlock(el):
-                #if debug_y_combinator
-                DebugHelper.debugYCombinator("TBlock START", "TBlock compilation beginning", 'expression count: ${el.length}');
-                for (i in 0...el.length) {
-                    DebugHelper.debugYCombinator("TBlock AST", 'Expression $i', 'type: ${Type.enumConstructor(el[i].expr)}');
-                }
-                #end
-                
-                
-                var result = if (el.length == 0) {
-                    "nil";
-                } else if (el.length == 1) {
-                    #if debug_y_combinator
-                    DebugHelper.debugYCombinator("TBlock SINGLE", "Single expression in block", 'compiling: ${Type.enumConstructor(el[0].expr)}');
-                    #end
-                    compileExpression(el[0]);
-                } else {
-                    #if debug_y_combinator
-                    DebugHelper.debugYCombinator("TBlock MULTIPLE", "Multiple expressions in block", 'this will generate multiple Elixir statements');
-                    #end
-                    // EARLY OPTIMIZATION: Check for Reflect.fields pattern before processing
-                    // This catches the pattern: for (field in Reflect.fields(config)) {...}
-                    // which gets desugared into a TBlock with multiple statements
-                    if (el.length >= 2) {
-                        // Look for pattern: TVar(_g, 0) followed by TVar(_g, Reflect.fields(...))
-                        var hasReflectPattern = false;
-                        var reflectTarget: String = null;
-                        
-                        for (i in 0...el.length) {
-                            switch (el[i].expr) {
-                                case TVar(tvar, init) if (init != null):
-                                    switch (init.expr) {
-                                        case TCall(e, args):
-                                            switch (e.expr) {
-                                                case TField(obj, fa):
-                                                    var objStr = compileExpression(obj);
-                                                    switch (fa) {
-                                                        case FStatic(_, cf):
-                                                            if (objStr == "Reflect" && cf.get().name == "fields" && args.length > 0) {
-                                                                hasReflectPattern = true;
-                                                                reflectTarget = compileExpression(args[0]);
-                                                            }
-                                                        case _:
-                                                    }
-                                                case _:
-                                            }
-                                        case _:
-                                    }
-                                case _:
-                            }
-                        }
-                        
-                        // If we found a Reflect.fields pattern, optimize the entire block
-                        if (hasReflectPattern && reflectTarget != null) {
-                            // Find the while loop that iterates over the fields
-                            for (expr in el) {
-                                switch (expr.expr) {
-                                    case TWhile(econd, ebody, _):
-                                        // This is the desugared for-loop
-                                        // Transform to idiomatic Elixir
-                                        var fieldVar = "field";
-                                        var body = transformReflectLoopBody(ebody, reflectTarget, fieldVar);
-                                        return 'Enum.each(Map.keys(${reflectTarget}), fn ${fieldVar} ->\n  ${body}\nend)';
-                                    case _:
-                                }
-                            }
-                        }
-                    }
-                    
-                    // Track variable declarations and their types to detect collisions
-                    var varDeclarations = new Map<String, Array<{index: Int, type: String, newName: String}>>();
-                    var varRenamings = new Map<Int, String>(); // Map from expression index to new name
-                    
-                    // First pass: detect variable name collisions in desugared code
-                    for (i in 0...el.length) {
-                        switch (el[i].expr) {
-                            case TVar(tvar, init):
-                                var originalName = getOriginalVarName(tvar);
-                                
-                                // Check for desugared loop variables that get reused
-                                if (originalName.startsWith("_g") || originalName == "g") {
-                                    // Determine the variable type based on initialization
-                                    var varType = if (init != null) {
-                                        switch (init.expr) {
-                                            case TArrayDecl([]): "array";
-                                            case TConst(TInt(_)): "counter";
-                                            case _: "other";
-                                        }
-                                    } else {
-                                        "nil";
-                                    };
-                                    
-                                    // Check if this variable was already declared
-                                    if (varDeclarations.exists(originalName)) {
-                                        var declarations = varDeclarations.get(originalName);
-                                        // If same variable is being reused with different type, rename BOTH
-                                        if (declarations.length > 0) {
-                                            var firstDecl = declarations[0];
-                                            
-                                            // Rename the first declaration if not already renamed
-                                            if (firstDecl.newName == originalName) {
-                                                var firstNewName = switch (firstDecl.type) {
-                                                    case "array": originalName + "_array";
-                                                    case "counter": originalName + "_counter";
-                                                    case _: originalName + "_1";
-                                                };
-                                                firstDecl.newName = firstNewName;
-                                                varRenamings.set(firstDecl.index, firstNewName);
-                                            }
-                                            
-                                            // Create unique name for current declaration
-                                            var newName = switch (varType) {
-                                                case "array": originalName + "_array";
-                                                case "counter": originalName + "_counter";
-                                                case _: originalName + "_" + i;
-                                            };
-                                            varRenamings.set(i, newName);
-                                            declarations.push({index: i, type: varType, newName: newName});
-                                        }
-                                    } else {
-                                        // First declaration of this variable - keep original name for now
-                                        varDeclarations.set(originalName, [{index: i, type: varType, newName: originalName}]);
-                                    }
-                                }
-                            case _:
-                        }
-                    }
-                    
-                    // Second pass: compile with renamed variables if needed
-                    if (varRenamings.keys().hasNext()) {
-                        // We have renamings to apply - compile with renamed variables
-                        var currentRenamings = new Map<String, String>();
-                        var compiledStatements = [];
-                        
-                        for (i in 0...el.length) {
-                            var expr = el[i];
-                            var shouldInclude = true;
-                            
-                            // Check if this is an orphaned temp variable reference
-                            switch (expr.expr) {
-                                case TLocal(v):
-                                    var varName = getOriginalVarName(v);
-                                    // Check if this is just a standalone temp variable reference
-                                    // that appears after a TEnumParameter extraction
-                                    if (varName == "g" || varName.startsWith("g") && ~/^g\d*$/.match(varName)) {
-                                        // Check if the previous expression was a TEnumParameter
-                                        if (i > 0) {
-                                            switch (el[i - 1].expr) {
-                                                case TEnumParameter(_, _, _):
-                                                    // This is an orphaned temp variable after enum parameter extraction
-                                                    shouldInclude = false;
-                                                case _:
-                                            }
-                                        }
-                                    }
-                                case _:
-                            }
-                            
-                            if (!shouldInclude) continue;
-                            
-                            // Check if this expression is a variable declaration
-                            switch (expr.expr) {
-                                case TVar(tvar, init):
-                                    var originalName = getOriginalVarName(tvar);
-                                    
-                                    // Check if this variable needs renaming
-                                    if (varRenamings.exists(i)) {
-                                        var newName = varRenamings.get(i);
-                                        // Update the current active renaming for this variable
-                                        currentRenamings.set(originalName, newName);
-                                        
-                                        // Compile with renamed variable
-                                        var compiledInit = if (init != null) {
-                                            compileExpressionWithRenaming(init, currentRenamings);
-                                        } else {
-                                            "nil";
-                                        };
-                                        compiledStatements.push('${newName} = ${compiledInit}');
-                                        continue; // Skip normal compilation
-                                    } else {
-                                        // This variable declaration doesn't need renaming,
-                                        // but it might shadow a previously renamed variable
-                                        // Update the mapping to use the original name
-                                        if (currentRenamings.exists(originalName)) {
-                                            // This declaration shadows a renamed variable
-                                            // From this point on, references should use the original name
-                                            currentRenamings.set(originalName, originalName);
-                                        }
-                                    }
-                                case _:
-                            }
-                            
-                            // Compile expression with current renamings applied
-                            var compiled = compileExpressionWithRenaming(expr, currentRenamings);
-                            if (compiled != null && compiled.trim() != "") {
-                                compiledStatements.push(compiled);
-                            }
-                        }
-                        
-                        // Return the compiled statements with renamings applied
-                        return compiledStatements.join("\n");
-                    }
-                    
-                    // No renamings needed - continue with normal compilation
-                    // Filter out orphaned Haxe temp variable references
-                    var filteredExpressions = [];
-                    for (i in 0...el.length) {
-                        var shouldInclude = true;
-                        
-                        // Check if this is an orphaned temp variable reference
-                        switch (el[i].expr) {
-                            case TLocal(v):
-                                var varName = getOriginalVarName(v);
-                                // Check if this is just a standalone temp variable reference
-                                // that appears after a TEnumParameter extraction
-                                if (varName == "g" || varName.startsWith("g") && ~/^g\d*$/.match(varName)) {
-                                    // Check if the previous expression was a TEnumParameter
-                                    if (i > 0) {
-                                        switch (el[i - 1].expr) {
-                                            case TEnumParameter(_, _, _):
-                                                // This is an orphaned temp variable after enum parameter extraction
-                                                shouldInclude = false;
-                                            case _:
-                                        }
-                                    }
-                                }
-                            case _:
-                        }
-                        
-                        if (shouldInclude) {
-                            filteredExpressions.push(el[i]);
-                        }
-                    }
-                    
-                    // Use filtered expressions for the rest of the compilation
-                    el = filteredExpressions;
-                    
-                    // Analyze all expressions for import requirements
-                    importOptimizer.analyzeModule(el);
-                    
-                    // Check for pipeline optimization opportunities first
-                    var pipelinePattern = pipelineOptimizer.detectPipelinePattern(el);
-                    
-                    if (pipelinePattern != null) {
-                        // Register pipeline imports for later optimization
-                        importOptimizer.registerPipelineImports([pipelinePattern]);
-                        
-                        // Generate idiomatic pipeline code
-                        var pipelineCode = pipelineOptimizer.compilePipeline(pipelinePattern);
-                        
-                        // Handle remaining statements with proper ordering for terminal operations
-                        var processedIndices = getProcessedStatementIndices(el, pipelinePattern);
-                        var preStatements = [];
-                        var terminalStatements = [];
-                        
-                        // Separate remaining expressions into pre-pipeline and terminal operations
-                        var preExpressions = [];
-                        var terminalExpressions = [];
-                        for (i in 0...el.length) {
-                            if (processedIndices.indexOf(i) == -1) {
-                                var stmt = el[i];
-                                if (isTerminalOperation(stmt, pipelinePattern.variable)) {
-                                    terminalExpressions.push(stmt);
-                                } else {
-                                    preExpressions.push(stmt);
-                                }
-                            }
-                        }
-                        
-                        // Compile pre-pipeline statements (variable declarations, etc.)
-                        if (preExpressions.length > 0) {
-                            preStatements = compileBlockExpressionsWithContext(preExpressions);
-                        }
-                        
-                        // Compile terminal statements (Repo.all, etc.)
-                        if (terminalExpressions.length > 0) {
-                            terminalStatements = compileBlockExpressionsWithContext(terminalExpressions);
-                        }
-                        
-                        // Combine in correct order: pre-statements, pipeline, terminal statements
-                        var allStatements = [];
-                        allStatements = allStatements.concat(preStatements);
-                        allStatements.push(pipelineCode);
-                        allStatements = allStatements.concat(terminalStatements);
-                        
-                        allStatements.join("\n");
-                    } else {
-                        // Check for temp variable assignment sequence: TIf with temp assignments + TBinop using temp var
-                        var tempAssignSequence = detectTempVariableAssignmentSequence(el);
-                        if (tempAssignSequence != null) {
-                            // Transform the sequence: TIf with assignments + usage → optimized assignment
-                            return optimizeTempVariableAssignmentSequence(tempAssignSequence, el);
-                        }
-                        
-                        // Check for temp variable pattern: temp_var = nil; case...; temp_var
-                        var tempVarPattern = detectTempVariablePattern(el);
-                        if (tempVarPattern != null) {
-                            // Found temp variable pattern
-                            // Transform temp variable pattern to idiomatic case expression
-                            return optimizeTempVariablePattern(tempVarPattern, el);
-                        }
-                        
-                        // No pipeline pattern detected - use traditional compilation
-                        // For multiple statements, compile each and join with newlines
-                        // The last expression is the return value in Elixir
-                        var compiledStatements = [];
-                        
-                        // Special handling for case arm context - convert field assignments to struct updates
-                        if (isCompilingCaseArm && el.length > 0) {
-                            var fieldUpdates = [];
-                            var nonAssignmentStatements = [];
-                            
-                            for (i in 0...el.length) {
-                                var stmt = el[i];
-                                if (isFieldAssignment(stmt)) {
-                                    // Convert field assignment to struct update mapping
-                                    var update = extractFieldUpdate(stmt);
-                                    if (update != null) {
-                                        fieldUpdates.push(update);
-                                    }
-                                } else {
-                                    var compiled = compileExpression(stmt);
-                                    if (compiled != null && compiled.trim() != "") {
-                                        nonAssignmentStatements.push(compiled);
-                                    }
-                                }
-                            }
-                            
-                            // Generate final expression for case arm
-                            if (fieldUpdates.length > 0) {
-                                var structVar = currentFunctionParameterMap.get("this");
-                                if (structVar == null) structVar = "struct";
-                                
-                                // Combine any non-assignment statements with struct update
-                                var allStatements = nonAssignmentStatements.copy();
-                                allStatements.push('%{${structVar} | ${fieldUpdates.join(", ")}}');
-                                
-                                allStatements.join("\n");
-                            } else {
-                                // No field assignments, proceed normally with preserved context
-                                compiledStatements = compileBlockExpressionsWithContext(el);
-                                compiledStatements.join("\n");
-                            }
-                        } else {
-                            // Normal block compilation with preserved inline context
-                            compiledStatements = compileBlockExpressionsWithContext(el);
-                            compiledStatements.join("\n");
-                        }
-                    }
-                }
-                
-                // CRITICAL POST-PROCESSING FIX: Remove orphaned else clauses after Y combinator blocks
-                // WHY: Statement concatenation sometimes places `, else: nil` after Y combinator blocks  
-                // WHAT: Remove specific patterns where `, else: nil` appears in invalid contexts
-                // HOW: Use regex to find and remove these specific syntax error patterns
-                
-                #if debug_y_combinator
-                // Debug: Visualize malformed patterns before cleanup  
-                if (result.contains(", else: nil")) {
-                    trace("═══════════════════════════════════════════════════════════════════════════");
-                    trace("DEBUG: MALFORMED CONDITIONAL PATTERNS DETECTED IN Y COMBINATOR");
-                    trace("═══════════════════════════════════════════════════════════════════════════");
-                    
-                    // Find and display each malformed line
-                    var lines = result.split("\n");
-                    for (i in 0...lines.length) {
-                        var line = lines[i];
-                        if (line.contains(", else: nil")) {
-                            trace('Line ${i+1}: ${line}');
-                            
-                            // Pattern analysis
-                            if (line.contains("struct = %{struct |")) {
-                                trace("  ⚠️ STRUCT UPDATE with malformed else");
-                            }
-                            if (line.contains("}, else: nil, else: nil")) {
-                                trace("  ⚠️⚠️ DOUBLE MALFORMED PATTERN");
-                            }
-                            if (!line.startsWith("if ")) {
-                                trace("  ⚠️ NON-IF STATEMENT with else clause");
-                            }
-                        }
-                    }
-                    trace("───────────────────────────────────────────────────────────────────────────");
-                }
-                #end
-                
-                // Pattern 1: "), else: nil" after parenthesized expressions (Y combinator blocks)
-                result = ~/\), else: nil\n/g.replace(result, ")\n");
-                // Pattern 2: "variable], else: nil" after array/variable assignments  
-                result = ~/], else: nil\n/g.replace(result, "]\n");
-                // Pattern 3: "struct}, else: nil" after struct update expressions
-                result = ~/\}, else: nil\n/g.replace(result, "}\n");
-                // Pattern 4: Assignment expressions with hanging ", else: nil" at end of line
-                result = ~/ = ([^,\n]+), else: nil$/gm.replace(result, " = $1");
-                // Pattern 5: Assignment expressions with ", else: nil, else: nil" double patterns  
-                result = ~/, else: nil, else: nil/g.replace(result, "");
-                // Pattern 6: General cleanup of ", else: nil" at end of non-if lines
-                result = ~/^([^i][^f] [^(].*), else: nil$/gm.replace(result, "$1");
-                // Pattern 7: Remove hanging ", else: nil" from struct assignments that aren't part of if-expressions
-                result = ~/^(\s*)([^i][^f] .* = %\{[^}]+\}), else: nil$/gm.replace(result, "$1$2");
-                // Pattern 8: Clean up double ", else: nil, else: nil" sequences
-                result = ~/, else: nil, else: nil/g.replace(result, "");
-                
-                /**
-                 * PATTERN 9: Fix struct update expressions with malformed else clauses
-                 * 
-                 * WHY: Y combinator compilation creates complex nested expressions where
-                 * inline if-statements get incorrectly concatenated. When a struct update
-                 * like `struct = %{struct | b: value}` appears in an if branch, the compiler
-                 * incorrectly appends `, else: nil` to it, creating invalid Elixir syntax.
-                 * 
-                 * WHAT: This pattern specifically removes `, else: nil` from struct update
-                 * expressions that are NOT if-statements. These are assignment statements
-                 * that should never have an else clause.
-                 * 
-                 * HOW: Process line-by-line because Haxe's multiline regex flag doesn't work
-                 * as expected. For each line containing struct updates with malformed else
-                 * clauses, use regex replacement to remove the invalid suffix.
-                 * 
-                 * EXAMPLES OF MALFORMED PATTERNS:
-                 * - `struct = %{struct | b: struct.b <> "\n"}, else: nil`
-                 * - `struct = %{struct | b: struct.b <> Std.string(v)}, else: nil, else: nil`
-                 * 
-                 * EXPECTED OUTPUT:
-                 * - `struct = %{struct | b: struct.b <> "\n"}`
-                 * - `struct = %{struct | b: struct.b <> Std.string(v)}`
-                 */
-                var lines = result.split("\n");
-                for (i in 0...lines.length) {
-                    var line = lines[i];
-                    
-                    /**
-                     * PATTERN 9 ENHANCED: Fix struct update expressions with malformed else clauses
-                     * 
-                     * WHY: Previous pattern was too restrictive - looked for exact "struct = %{struct |"
-                     * but actual malformed lines can be any bare struct update with ", else: nil"
-                     * 
-                     * WHAT: Detect ANY line containing struct updates with malformed else that
-                     * is NOT an if-statement (which legitimately can have else clauses)
-                     * 
-                     * HOW: Check for struct update pattern + malformed else, excluding if-statements
-                     * - Contains "%{struct |" (struct update syntax)
-                     * - Contains "}, else: nil" (malformed suffix) 
-                     * - Does NOT contain "if (" (not a legitimate if-statement)
-                     * 
-                     * EXAMPLES FIXED:
-                     * - `struct = %{struct | b: struct.b <> "\n"}, else: nil`
-                     * - `struct = %{struct | b: struct.b <> Std.string(v)}, else: nil, else: nil`
-                     */
-                    if (line.contains("%{struct |") && line.contains("}, else: nil") && !line.contains("if (")) {
-                        #if debug_y_combinator
-                        trace('[XRay Y-Combinator] PATTERN 9: Found malformed struct update at line ${i+1}');
-                        trace('[XRay Y-Combinator] - Original: ${line}');
-                        #end
-                        
-                        var cleaned = line;
-                        
-                        // Remove single ", else: nil" suffix from struct updates
-                        cleaned = ~/^(\s*)(.*%\{struct \|[^}]+\}), else: nil$/.replace(cleaned, "$1$2");
-                        
-                        // If still contains double pattern, clean that too
-                        if (cleaned.contains(", else: nil, else: nil")) {
-                            cleaned = ~/^(\s*)(.*%\{struct \|[^}]+\}), else: nil, else: nil$/.replace(cleaned, "$1$2");
-                        }
-                        
-                        // Also handle any remaining single ", else: nil" patterns
-                        if (cleaned.contains(", else: nil")) {
-                            cleaned = cleaned.replace(", else: nil", "");
-                        }
-                        
-                        #if debug_y_combinator
-                        if (cleaned != line) {
-                            trace('[XRay Y-Combinator] ✓ CLEANED SUCCESSFULLY');
-                            trace('[XRay Y-Combinator] - Result: ${cleaned}');
-                        } else {
-                            trace('[XRay Y-Combinator] ⚠️ NO CHANGE - Pattern may need adjustment');
-                        }
-                        #end
-                        
-                        lines[i] = cleaned;
-                    }
-                }
-                result = lines.join("\n");
-                
-                #if debug_y_combinator
-                // Debug: Verify cleanup success
-                if (result.contains(", else: nil")) {
-                    trace("DEBUG: POST-CLEANUP - Some patterns may remain:");
-                    var remainingCount = 0;
-                    var lines = result.split("\n");
-                    for (i in 0...lines.length) {
-                        if (lines[i].contains(", else: nil") && !lines[i].startsWith("if ")) {
-                            remainingCount++;
-                            trace('  Still malformed at line ${i+1}: ${lines[i].substr(0, 60)}...');
-                        }
-                    }
-                    if (remainingCount > 0) {
-                        trace('  ⚠️ ${remainingCount} malformed patterns still present after cleanup');
-                    }
-                }
-                #end
-                
-                result;
-                
-            case TIf(econd, eif, eelse):
-                // Track TIf statements for proper compilation
-                var cond = compileExpression(econd);
-                
-                #if debug_y_combinator
-                DebugHelper.debugYCombinator("TIf START", "Beginning TIf compilation", 'condition: $cond');
-                DebugHelper.debugYCombinator("TIf AST", "eif AST type", 'eif.expr: ${Type.enumConstructor(eif.expr)}');
-                if (eelse != null) {
-                    DebugHelper.debugYCombinator("TIf AST", "eelse AST type", 'eelse.expr: ${Type.enumConstructor(eelse.expr)}');
-                }
-                #end
-                
-                // CRITICAL: Check if the if-body or else-body contains multiple statements
-                // This must be done BEFORE compiling to avoid syntax errors
-                var needsBlockSyntax = containsMultipleStatements(eif) || 
-                                      (eelse != null && containsMultipleStatements(eelse));
-                
-                #if debug_y_combinator
-                DebugHelper.debugYCombinator("TIf ANALYSIS", "containsMultipleStatements check", 'needsBlockSyntax: $needsBlockSyntax for eif: ${Type.enumConstructor(eif.expr)}');
-                #end
-                
-                // CRITICAL FIX: Check specifically for TWhile patterns that generate Y combinators
-                // TWhile patterns generate complex multi-line expressions that MUST use block syntax
-                var containsTWhilePattern = containsTWhileExpression(eif) || 
-                                          (eelse != null && containsTWhileExpression(eelse));
-                
-                if (containsTWhilePattern) {
-                    // Detected TWhile pattern - forcing block syntax
-                    needsBlockSyntax = true;
-                }
-                
-                // CRITICAL FIX: Force block syntax when compiling inside case arms
-                // Case arms in Elixir have different semantics and inline if syntax causes issues
-                var forceCaseArmBlockSyntax = isCompilingCaseArm;
-                
-                
-                // COMPATIBILITY FIX: Preserve inline syntax for simple cases
-                // WHY: Simple if-statements should generate inline syntax like before our Y combinator fix
-                // WHAT: Only force block syntax for complex expressions that would generate malformed inline syntax
-                var forceBlockSyntaxForNoElse = false; // Disable this flag for now to restore compatibility
-                
-                // Also check if the compiled expressions contain newlines
-                var ifExpr = compileExpression(eif);
-                var elseExpr = eelse != null ? compileExpression(eelse) : "nil";
-                var hasNewlines = ifExpr.contains("\n") || (elseExpr != "nil" && elseExpr.contains("\n"));
-                
-                #if debug_if_expressions
-                // Debug: Deep trace TIf compilation to find malformed pattern source
-                trace("╔═══════════════════════════════════════════════════════════════════════════");
-                trace("║ DEBUG: TIf COMPILATION TRACE");
-                trace("╠═══════════════════════════════════════════════════════════════════════════");
-                trace("║ Condition: " + cond.substr(0, 60) + (cond.length > 60 ? "..." : ""));
-                trace("║ If branch AST: " + Type.enumConstructor(eif.expr));
-                if (eelse != null) {
-                    trace("║ Else branch AST: " + Type.enumConstructor(eelse.expr));
-                }
-                trace("║ --- Compiled Expressions ---");
-                trace("║ ifExpr: " + ifExpr.substr(0, 100) + (ifExpr.length > 100 ? "..." : ""));
-                trace("║ elseExpr: " + elseExpr.substr(0, 100) + (elseExpr.length > 100 ? "..." : ""));
-                trace("║ --- Analysis ---");
-                trace("║ hasNewlines: " + hasNewlines);
-                trace("║ needsBlockSyntax: " + needsBlockSyntax);
-                trace("║ forceBlockSyntaxForNoElse: " + forceBlockSyntaxForNoElse);
-                
-                // Check for problematic patterns
-                if (ifExpr.contains("struct = %{struct |") || elseExpr.contains("struct = %{struct |")) {
-                    trace("║ ⚠️ WARNING: Struct update expression detected in if/else branch!");
-                }
-                if (ifExpr.contains("loop_helper") || elseExpr.contains("loop_helper")) {
-                    trace("║ ⚠️ WARNING: Y combinator pattern detected!");
-                }
-                trace("╚═══════════════════════════════════════════════════════════════════════════");
-                #end
-                
-                // IMMEDIATE Y COMBINATOR DETECTION (after compilation, before syntax decision)
-                // WHY: Prevents Y combinator syntax errors by detecting patterns in compiled output.
-                // The AST-based detection approach failed because Haxe's AST transformations 
-                // make it difficult to predict which patterns will generate Y combinators.
-                // 
-                // WHAT: String-based pattern detection for Y combinator indicators in compiled expressions.
-                // Forces block syntax when patterns that require it are detected.
-                // 
-                // HOW: Searches compiled strings for known Y combinator patterns:
-                // - "loop_helper" and "loop_fn" (Y combinator function names)
-                // - "(\n" (multi-line parenthesized expressions)
-                // 
-                // SOLUTION ANALYSIS:
-                // ✅ BENEFITS:
-                // - Immediate fix for current Y combinator syntax errors  
-                // - Post-compilation detection is more reliable than AST prediction
-                // - Safe fallback: forces block syntax when uncertain
-                // - Clear and debuggable patterns
-                // 
-                // ⚠️ LIMITATIONS & FUTURE CONCERNS:
-                // - BRITTLE: Relies on specific string patterns that could change
-                // - NOT FUTURE-PROOF: Y combinator generation format could evolve
-                // - FALSE POSITIVES: Could trigger on legitimate "loop_helper" usage
-                // - MAINTENANCE BURDEN: Requires pattern updates as compiler evolves
-                // 
-                // 🔄 RECOMMENDED FUTURE SOLUTION:
-                // Replace with semantic AST analysis that understands the actual meaning
-                // of expressions rather than string patterns. This would involve:
-                // 1. Enhanced AST walker that tracks loop generation context
-                // 2. Semantic analysis of expression complexity at AST level
-                // 3. Type-based detection of recursive patterns vs simple expressions
-                // 4. Integration with Haxe's type inference to predict compilation results
-                // 
-                // JUSTIFICATION FOR INTERIM APPROACH:
-                // This string-based solution is justified because:
-                // 1. It solves the immediate critical bug (Y combinator syntax errors)
-                // 2. AST-based prediction proved more complex than anticipated due to Haxe transformations
-                // 3. The patterns are currently stable and well-defined
-                // 4. It provides a working foundation while the proper semantic solution is developed
-                var hasYCombinatorPatterns = ifExpr.contains("loop_helper") || 
-                                           ifExpr.contains("loop_fn") ||
-                                           ifExpr.contains("(\n") || // Multi-line parenthesized expressions
-                                           (elseExpr != "nil" && (elseExpr.contains("loop_helper") || 
-                                                                elseExpr.contains("loop_fn") ||
-                                                                elseExpr.contains("(\n")));
-                
-                if (hasYCombinatorPatterns) {
-                    #if debug_compiler
-                    trace('[Y_COMBINATOR] Immediate detection: Y combinator pattern found, forcing block syntax for condition: $cond');
-                    #end
-                    // This overrides the inline syntax decision
-                    hasNewlines = true; // Force the hasNewlines check to trigger block syntax
-                    needsBlockSyntax = true;
-                }
-                
-                // EXPLANATION: The key insight here is that Elixir has two if syntaxes:
-                //   1. Inline: if condition, do: expression, else: expression
-                //   2. Block:  if condition do...else...end
-                // 
-                // Inline syntax only works for SIMPLE expressions. Multi-line expressions,
-                // function definitions, Y combinators, and complex patterns MUST use block syntax.
-                // The problem we're solving: Y combinator gets generated as part of inline if,
-                // causing syntax like: if (config != nil), do: [Y combinator...], else: nil
-                // This fails because Y combinator spans multiple lines with fn definitions.
-                
-                // CRITICAL FIX: Check for Y combinator patterns which start with parenthesis
-                // or contain anonymous function definitions which indicate complex multi-line code
-                // ALSO check if the expression contains Reflect operations which will be desugared
-                var hasComplexPattern = ifExpr.startsWith("(") || ifExpr.contains("fn ") || 
-                                       ifExpr.contains("Reflect.") || ifExpr.contains("loop_helper") ||
-                                       (elseExpr != "nil" && (elseExpr.startsWith("(") || elseExpr.contains("fn ") || 
-                                                              elseExpr.contains("Reflect.") || elseExpr.contains("loop_helper")));
-                
-                // CRITICAL FIX: Force block syntax if the original AST indicates complexity
-                // This is the ROOT CAUSE of the Y combinator syntax error:
-                // When the if body contains multiple statements, inline syntax fails
-                
-                var forceBlockSyntax = switch(eif.expr) {
-                    case TBlock(exprs) if (exprs.length > 1): true;
-                    case TFor(_, _, _): true;
-                    case TWhile(_, _, _): true;
-                    case _: false;
-                };
-                
-                // NEW: AST-level Y combinator detection (before string compilation)
-                var willGenerateYCombinator = detectYCombinatorInAST(eif) || (eelse != null && detectYCombinatorInAST(eelse));
-                #if debug_compiler
-                trace('[Y_COMBINATOR] AST detection result: ${willGenerateYCombinator}');
-                trace('[Y_COMBINATOR] Current condition: ${cond}');
-                #end
-                if (willGenerateYCombinator) {
-                    #if debug_compiler
-                    trace('[Y_COMBINATOR] AST detection: forcing block syntax for Y combinator pattern');
-                    #end
-                    forceBlockSyntax = true;
-                }
-                
-                // ADDITIONAL FIX: Also check if the compiled ifExpr contains multiple statements
-                // This catches cases where a single Haxe statement expands to multiple Elixir statements
-                var hasMultipleStatements = ifExpr.split("\n").length > 1;
-                if (hasMultipleStatements) {
-                    forceBlockSyntax = true;
-                }
-                
-                // Also check eelse for complexity
-                var forceElseBlockSyntax = false;
-                if (eelse != null) {
-                    forceElseBlockSyntax = switch(eelse.expr) {
-                        case TBlock(exprs) if (exprs.length > 1): true;
-                        case TFor(_, _, _): true;
-                        case TWhile(_, _, _): true;
-                        case _: false;
-                    };
-                }
-                
-                // POST-COMPILATION Y COMBINATOR DETECTION
-                // WHY: AST detection doesn't catch all patterns due to Haxe transformations
-                // WHAT: Check compiled output for Y combinator patterns that would break inline syntax
-                // HOW: Look for "loop_helper" and other Y combinator indicators in compiled strings
-                var containsYCombinatorInCompiled = ifExpr.contains("loop_helper") || 
-                                                   ifExpr.contains("loop_fn") ||
-                                                   ifExpr.contains("(\n") || // Multi-line parenthesized expressions
-                                                   (elseExpr != "nil" && (elseExpr.contains("loop_helper") || 
-                                                                        elseExpr.contains("loop_fn") ||
-                                                                        elseExpr.contains("(\n")));
-                
-                if (containsYCombinatorInCompiled) {
-                    #if debug_compiler
-                    trace('[Y_COMBINATOR] Post-compilation detection: Y combinator pattern found in compiled output, forcing block syntax');
-                    #end
-                    forceBlockSyntax = true;
-                }
-                
-                // ENHANCED PATTERN DETECTION: Handle Haxe-transformed AST structures
-                // CRITICAL FIX: Haxe splits complex if-expressions into multiple TIf nodes with TBinop bodies.
-                // This causes Y combinator patterns to lose their TFor detection and incorrectly use inline syntax.
-                // We need enhanced detection that works with Haxe's transformed AST structure.
-                // NOTE: hasComplexPattern was already declared above, don't redeclare it
-                
-                // PATTERN 1: Y Combinator Detection (Enhanced for Haxe Transformations)
-                // HOW: Y combinators contain "loop_helper", "loop_fn", or characteristic variable patterns
-                // WHY: These are recursive anonymous functions spanning multiple lines that cannot be inline
-                // ENHANCED: Also detect patterns like "_g_1" which indicate Haxe variable transformation
-                if (ifExpr.contains("loop_helper") || ifExpr.contains("loop_fn") ||
-                    ifExpr.contains("_g_1") || ifExpr.contains("_g_2") || ifExpr.contains("_g_3") ||
-                    (elseExpr != null && (elseExpr.contains("loop_helper") || elseExpr.contains("loop_fn") ||
-                     elseExpr.contains("_g_1") || elseExpr.contains("_g_2") || elseExpr.contains("_g_3")))) {
-                    hasComplexPattern = true;
-                }
-                
-                // PATTERN 2: Function Literals and Elixir Control Structures
-                // HOW: Look for "fn ", "->", "try do", "catch", "case", etc.
-                // WHY: These are multi-line Elixir constructs that break inline syntax
-                if (ifExpr.contains("fn ") || ifExpr.contains(" ->") || ifExpr.contains("try do") || ifExpr.contains("catch") ||
-                    ifExpr.contains("case ") || ifExpr.contains(" do\n") || ifExpr.contains("end\n") ||
-                    (elseExpr != null && (elseExpr.contains("fn ") || elseExpr.contains(" ->") || elseExpr.contains("try do") || 
-                     elseExpr.contains("catch") || elseExpr.contains("case ") || elseExpr.contains(" do\n") || elseExpr.contains("end\n")))) {
-                    hasComplexPattern = true;
-                }
-                
-                // PATTERN 3: Multi-line Expressions (Most Important)
-                // HOW: Check if compiled expression contains newline characters
-                // WHY: Any expression with newlines cannot fit in inline syntax by definition
-                if (ifExpr.contains("\n") || (elseExpr != null && elseExpr.contains("\n"))) {
-                    hasComplexPattern = true;
-                }
-                
-                // PATTERN 4: Haxe Transformed Variable Patterns (ENHANCED FIX!)
-                // CRITICAL: The issue is more subtle - we need to check if the COMPILED body will be complex
-                // HOW: Analyze both AST structure AND the compiled result to detect Y combinator generation
-                // WHY: A simple condition like "(config != null)" can have complex body that generates Y combinators
-                
-                // First check: AST-level detection for transformed expressions
-                switch(eif.expr) {
-                    case TBinop(_, _, _):
-                        // If this is a TBinop and contains patterns that will generate Y combinators
-                        if (ifExpr.contains("Reflect.fields") || ifExpr.contains("Reflect.setField") ||
-                            ifExpr.contains("_g_") || cond.contains("config") || cond.contains("_g_")) {
-                            hasComplexPattern = true;
-                        }
-                    case _:
-                        // Keep existing logic for other expression types
-                }
-                
-                // Second check: Pre-compilation analysis for known problematic patterns
-                // DETECTION: Look for conditions that commonly lead to Y combinator generation
-                if (cond.contains("config") && (cond.contains("!= null") || cond.contains("!= nil"))) {
-                    // This is likely "if (config != null)" which often contains Reflect.fields loops
-                    // Force block syntax as a precaution since these frequently generate Y combinators
-                    hasComplexPattern = true;
-                }
-                
-                // CRITICAL FIX: Detect the specific problematic pattern
-                // PATTERN: if (config != null), do: _g_1 = 0 followed by Y combinator generation
-                // ISSUE: The inline syntax applies ", else: nil" to subsequent unrelated statements
-                if (cond.contains("config") && (cond.contains("!= nil") || cond.contains("!= null")) && 
-                    (ifExpr.contains("_g_1 = 0") || ifExpr.contains("_g_") && ifExpr.contains(" = "))) {
-                    // This is the exact pattern that causes the Y combinator syntax error
-                    // Force block syntax to prevent ", else: nil" from affecting subsequent statements
-                    hasComplexPattern = true;
-                    #if debug_y_combinator
-                    DebugHelper.debugYCombinator("TIf Y combinator fix", "CONFIG PATTERN DETECTED: forcing block syntax", 'cond: $cond, ifExpr: ${ifExpr.substring(0, 50)}...');
-                    #end
-                }
-                
-                // CRITICAL FIX: Detect Reflect.fields patterns that spawn Y combinators
-                // PATTERN: if (config != null) { for (field in Reflect.fields(config)) ... }
-                // ISSUE: Reflect.fields loops get compiled to Y combinators with detached ", else: nil"
-                if ((cond.contains("config") || cond.contains("!=")) && 
-                    (ifExpr.contains("Reflect.fields") || ifExpr.contains("loop_helper"))) {
-                    hasComplexPattern = true;
-                    #if debug_y_combinator
-                    DebugHelper.debugYCombinator("TIf Reflect.fields fix", "REFLECT FIELDS PATTERN DETECTED: forcing block syntax", 'cond: $cond, ifExpr contains Reflect.fields or loop_helper');
-                    #end
-                }
-                
-                // Third check: Look for conditions involving variables that typically contain reflection
-                if (cond.contains("!= null") || cond.contains("!= nil")) {
-                    // Extract variable name from condition like "(config != null)" -> "config"
-                    var conditionVar = cond;
-                    if (conditionVar.contains("(")) conditionVar = conditionVar.substring(conditionVar.indexOf("(") + 1);
-                    if (conditionVar.contains(")")) conditionVar = conditionVar.substring(0, conditionVar.indexOf(")"));
-                    if (conditionVar.contains("!=")) conditionVar = conditionVar.substring(0, conditionVar.indexOf("!=")).trim();
-                    
-                    if (conditionVar == "config" || conditionVar.contains("_g_")) {
-                        // Variables named "config" or Haxe-generated variables often lead to complex bodies
-                        hasComplexPattern = true;
-                    }
-                }
-                
-                // PATTERN 5: Parenthesized Multi-line Expressions  
-                // HOW: Look for expressions starting with "(" and containing newlines
-                // WHY: These are typically complex anonymous function expressions (Y combinators)
-                if (ifExpr.contains("(\n") || (ifExpr.startsWith("(") && ifExpr.contains("\n"))) {
-                    hasComplexPattern = true;
-                }
-                
-                // PATTERN 6: Multiple Statement Sequences
-                // HOW: Check for multi-line expressions containing assignments or Y combinator calls
-                // WHY: Multiple statements indicate a block that was incorrectly compiled as single expression
-                var hasMultipleStatements = ifExpr.split("\n").length > 1 && 
-                                          (ifExpr.contains(" = ") || ifExpr.contains("loop_helper"));
-                if (hasMultipleStatements) {
-                    hasComplexPattern = true;
-                }
-                
-                if (hasComplexPattern) {
-                    needsBlockSyntax = true;
-                }
-                
-                // Check for complex expressions that start with parentheses and span multiple lines
-                if (ifExpr.startsWith("(") && ifExpr.split("\n").length > 3) {
-                    // Complex multi-line parenthesized expression - use block syntax for safety
-                    needsBlockSyntax = true;
-                }
-                
-                // CRITICAL FIX: Force block syntax for if statements without explicit else clause
-                // WHY: If statements without else in Haxe should not generate incomplete inline syntax
-                // WHAT: When eelse is null, always use block syntax to avoid `, else: nil` concatenation issues  
-                var forceBlockSyntaxForNoElse = (eelse == null);
-                
-                // CRITICAL FIX: Force block syntax for simple assignment patterns  
-                // WHY: Simple assignment if-else statements are more readable in block format
-                // WHAT: Detect if both branches are simple variable assignments and force block syntax
-                // HOW: Use efficient string prefix check instead of regex for performance
-                var isSimpleAssignmentPattern = false;
-                if (eelse != null && elseExpr != "nil") {
-                    // Performance optimized: check for common assignment patterns without regex
-                    var ifIsSimpleAssignment = ifExpr.indexOf(" = ") > 0 && ifExpr.indexOf("\n") == -1;
-                    var elseIsSimpleAssignment = elseExpr.indexOf(" = ") > 0 && elseExpr.indexOf("\n") == -1;
-                    isSimpleAssignmentPattern = ifIsSimpleAssignment && elseIsSimpleAssignment;
-                }
-                
-                // CRITICAL FIX: Be more aggressive about forcing block syntax
-                // to prevent malformed inline expressions
-                
-                /**
-                 * STRUCT UPDATE PATTERN DETECTION: Critical for Y combinator compilation
-                 * 
-                 * WHY: Struct updates like `struct = %{struct | field: value}` create malformed
-                 * syntax when used in inline if-else expressions, causing compilation errors
-                 * in generated code like JsonPrinter (lines 219, 222).
-                 * 
-                 * WHAT: Force block syntax whenever struct update patterns are detected.
-                 * The pattern `%{struct |` or `%{var |` indicates a struct update operation
-                 * that MUST use block syntax to avoid malformed conditionals.
-                 * 
-                 * HOW: Check both if and else branches for struct update patterns using
-                 * specific pattern matching that identifies the update syntax.
-                 */
-                var hasStructUpdatePattern = false;
-                
-                #if debug_y_combinator
-                trace("[XRay Y-Combinator] STRUCT UPDATE DETECTION START");
-                trace("[XRay Y-Combinator] - Checking ifExpr for struct updates...");
-                if (ifExpr != null && ifExpr.length > 0) {
-                    trace('[XRay Y-Combinator] - ifExpr preview: ${ifExpr.substring(0, Math.min(100, ifExpr.length))}...');
-                }
-                #end
-                
-                if (ifExpr != null) {
-                    // Pattern: variable = %{variable | field: value}
-                    var hasAssignmentWithUpdate = (ifExpr.contains(" = %{") && ifExpr.contains(" | ") && ifExpr.contains("}"));
-                    // Also catch direct struct updates without assignment
-                    var hasDirectStructUpdate = (ifExpr.contains("%{struct |") || ifExpr.contains("%{_this |"));
-                    
-                    #if debug_y_combinator
-                    if (hasAssignmentWithUpdate || hasDirectStructUpdate) {
-                        trace("[XRay Y-Combinator] ✓ STRUCT UPDATE FOUND IN IF BRANCH");
-                        trace('[XRay Y-Combinator]   - hasAssignmentWithUpdate: $hasAssignmentWithUpdate');
-                        trace('[XRay Y-Combinator]   - hasDirectStructUpdate: $hasDirectStructUpdate');
-                        trace('[XRay Y-Combinator]   - Pattern matched: ${ifExpr.substring(0, Math.min(150, ifExpr.length))}');
-                    }
-                    #end
-                    
-                    hasStructUpdatePattern = hasStructUpdatePattern || hasAssignmentWithUpdate || hasDirectStructUpdate;
-                }
-                
-                #if debug_y_combinator
-                trace("[XRay Y-Combinator] - Checking elseExpr for struct updates...");
-                if (elseExpr != null && elseExpr != "nil" && elseExpr.length > 0) {
-                    trace('[XRay Y-Combinator] - elseExpr preview: ${elseExpr.substring(0, Math.min(100, elseExpr.length))}...');
-                }
-                #end
-                
-                if (elseExpr != null && elseExpr != "nil") {
-                    // Pattern: variable = %{variable | field: value}
-                    var hasAssignmentWithUpdate = (elseExpr.contains(" = %{") && elseExpr.contains(" | ") && elseExpr.contains("}"));
-                    // Also catch direct struct updates without assignment
-                    var hasDirectStructUpdate = (elseExpr.contains("%{struct |") || elseExpr.contains("%{_this |"));
-                    
-                    #if debug_y_combinator
-                    if (hasAssignmentWithUpdate || hasDirectStructUpdate) {
-                        trace("[XRay Y-Combinator] ✓ STRUCT UPDATE FOUND IN ELSE BRANCH");
-                        trace('[XRay Y-Combinator]   - hasAssignmentWithUpdate: $hasAssignmentWithUpdate');
-                        trace('[XRay Y-Combinator]   - hasDirectStructUpdate: $hasDirectStructUpdate');
-                        trace('[XRay Y-Combinator]   - Pattern matched: ${elseExpr.substring(0, Math.min(150, elseExpr.length))}');
-                    }
-                    #end
-                    
-                    hasStructUpdatePattern = hasStructUpdatePattern || hasAssignmentWithUpdate || hasDirectStructUpdate;
-                }
-                
-                #if debug_y_combinator
-                if (hasStructUpdatePattern) {
-                    trace("[XRay Y-Combinator] ⚠️ STRUCT UPDATE PATTERN DETECTED - FORCING BLOCK SYNTAX");
-                    trace("[XRay Y-Combinator] - This prevents malformed inline if-else expressions");
-                } else {
-                    trace("[XRay Y-Combinator] - No struct update patterns detected");
-                }
-                trace("[XRay Y-Combinator] STRUCT UPDATE DETECTION END");
-                #end
-                
-                // General struct/map checks (less specific but still important)
-                var hasStructUpdates = ifExpr.contains("%{") || elseExpr.contains("%{");
-                var hasComplexAssignments = ifExpr.contains(" = ") || elseExpr.contains(" = ");
-                
-                // CRITICAL FIX: Only force block syntax for truly complex patterns
-                // Simple if-else statements should remain inline for compatibility
-                var useBlockSyntax = needsBlockSyntax || hasNewlines || 
-                    forceBlockSyntax || forceElseBlockSyntax || forceCaseArmBlockSyntax || 
-                    (hasComplexPattern && containsTWhilePattern) || // Only complex Y combinator patterns
-                    (forceBlockSyntaxForNoElse && containsTWhilePattern) || // Only for Y combinator without else
-                    (isSimpleAssignmentPattern && (hasStructUpdatePattern || hasStructUpdates)) || // Only assignment with struct updates
-                    hasComplexAssignments; // Keep complex assignments in block syntax
-                
-                
-                // CRITICAL DEBUG: Track if-expression decision process
-                #if debug_if_expressions
-                DebugHelper.debugIfExpression(
-                    "TIf compilation decision",
-                    useBlockSyntax ? "BLOCK syntax" : "INLINE syntax",
-                    'needsBlockSyntax:$needsBlockSyntax, hasNewlines:$hasNewlines, hasComplexPattern:$hasComplexPattern, forceBlockSyntax:$forceBlockSyntax, forceElseBlockSyntax:$forceElseBlockSyntax, forceCaseArmBlockSyntax:$forceCaseArmBlockSyntax, forceBlockSyntaxForNoElse:$forceBlockSyntaxForNoElse, isSimpleAssignmentPattern:$isSimpleAssignmentPattern, eelse:${eelse != null ? "NOT NULL" : "NULL"}',
-                    'Compiled expressions - ifExpr: ${ifExpr.substr(0, Std.int(Math.min(50, ifExpr.length)))}${ifExpr.length > 50 ? "..." : ""}, elseExpr: ${elseExpr.substr(0, Std.int(Math.min(50, elseExpr.length)))}${elseExpr.length > 50 ? "..." : ""}'
-                );
-                #end
-                
-                #if debug_y_combinator
-                DebugHelper.debugYCombinator("TIf DECISION", "Block syntax decision factors", 
-                    'needsBlockSyntax: $needsBlockSyntax, hasNewlines: $hasNewlines, hasComplexPattern: $hasComplexPattern, forceBlockSyntax: $forceBlockSyntax, forceElseBlockSyntax: $forceElseBlockSyntax, forceCaseArmBlockSyntax: $forceCaseArmBlockSyntax');
-                DebugHelper.debugYCombinator("TIf DECISION", "Final decision", 'useBlockSyntax: $useBlockSyntax');
-                DebugHelper.debugYCombinator("TIf COMPILED", "Compiled expressions", 'ifExpr (first 100 chars): ${ifExpr.substring(0, Math.min(100, ifExpr.length))}...');
-                if (elseExpr != "nil") {
-                    DebugHelper.debugYCombinator("TIf COMPILED", "Else expression", 'elseExpr: $elseExpr');
-                }
-                #end
-                
-                if (useBlockSyntax) {
-                    // Use block syntax for complex expressions
-                    #if debug_if_expressions
-                    DebugHelper.debugIfExpression("TIf block syntax", "Using block syntax", 'needsBlockSyntax: $needsBlockSyntax, hasNewlines: $hasNewlines, hasComplexPattern: $hasComplexPattern', "Starting block generation");
-                    #end
-                    var result = 'if ${cond} do\n';
-                    result += ifExpr.split("\n").map(line -> line.length > 0 ? "  " + line : line).join("\n") + "\n";
-                    if (eelse != null) {
-                        result += 'else\n';
-                        result += elseExpr.split("\n").map(line -> line.length > 0 ? "  " + line : line).join("\n") + "\n";
-                    }
-                    result += 'end';
-                    #if debug_if_expressions
-                    DebugHelper.debugIfExpression("TIf block syntax", "Block generation complete", "Generated proper end termination", result.substring(0, 100) + "...");
-                    #end
-                    result;
-                } else {
-                    // Only use inline syntax for truly simple expressions
-                    #if debug_if_expressions
-                    DebugHelper.debugIfExpression("TIf inline syntax", "Using inline syntax", "Simple expression detected", 'if ${cond}, do: ${ifExpr}, else: ${elseExpr}');
-                    #end
-                    
-                    // EMERGENCY VALIDATION: This should NEVER happen after our fix
-                    #if debug_y_combinator
-                    if (ifExpr.contains("loop_helper") || ifExpr.contains("Y combinator") || ifExpr.contains("(\n")) {
-                        DebugHelper.debugYCombinator("CRITICAL BUG DETECTION", "Y combinator incorrectly getting inline syntax!", 'Condition: ${cond}', "This indicates our pattern detection failed");
-                        DebugHelper.debugYCombinator("CRITICAL BUG DETECTION", "Debug details", 'ifExpr: ${ifExpr.substring(0, 100)}...', 'elseExpr: ${elseExpr}');
-                        DebugHelper.debugYCombinator("CRITICAL BUG DETECTION", "Syntax decision analysis", 'useBlockSyntax was: ${needsBlockSyntax || hasNewlines || hasComplexPattern || forceBlockSyntax || forceElseBlockSyntax || forceCaseArmBlockSyntax}', 'hasComplexPattern: ${hasComplexPattern}');
-                    }
-                    #end
-                    
-                    #if debug_inline_if
-                    DebugHelper.debugInlineIf("TIf inline syntax", "Generating inline if-statement", 'Condition: ${cond}', 'Full result: if ${cond}, do: ${ifExpr}, else: ${elseExpr}');
-                    #end
-                    
-                    // CRITICAL FIX: Ensure complete if-else expression generation
-                    // Validate that we're not generating malformed expressions
-                    var result = 'if ${cond}, do: ${ifExpr}, else: ${elseExpr}';
-                    
-                    // EMERGENCY VALIDATION: Check for malformed patterns
-                    if (result.contains("}, else:") && !result.startsWith("if ")) {
-                        #if debug_critical_fixes
-                        DebugHelper.debugCriticalFix("MALFORMED IF-ELSE DETECTED", "Found malformed conditional expression", 'Malformed result: $result', "Forcing block syntax to avoid syntax errors");
-                        #end
-                        
-                        // Force block syntax for safety
-                        var blockResult = 'if ${cond} do\n';
-                        blockResult += ifExpr.split("\n").map(line -> line.length > 0 ? "  " + line : line).join("\n") + "\n";
-                        if (eelse != null) {
-                            blockResult += 'else\n';
-                            blockResult += elseExpr.split("\n").map(line -> line.length > 0 ? "  " + line : line).join("\n") + "\n";
-                        }
-                        blockResult += 'end';
-                        return blockResult;
-                    }
-                    
-                    result;
-                }
+            // TIf now handled by ExpressionDispatcher → ControlFlowCompiler
                 
             case TReturn(expr):
                 if (expr != null) {
@@ -3088,61 +1489,13 @@ class ElixirCompiler extends DirectToStringCompiler {
             case TParenthesis(e):
                 "(" + compileExpression(e) + ")";
                 
-            case TSwitch(e, cases, edef):
-                patternMatchingCompiler.compileSwitchExpression(e, cases, edef);
+            // TSwitch now handled by ExpressionDispatcher → ControlFlowCompiler
                 
-            case TFor(tvar, iterExpr, blockExpr):
-                /**
-                 * TFor COMPILATION: Transform Haxe for-loops to idiomatic Elixir
-                 * 
-                 * WHY: Haxe for-loops need to be converted to functional Elixir patterns
-                 * - Reflect.fields iterations → Map.merge optimizations  
-                 * - Array iterations → Enum.map/filter/reduce operations
-                 * - Complex patterns → Y combinator recursion as fallback
-                 * 
-                 * HOW: Direct delegation to compileForLoop for optimization detection
-                 * - Pattern detection happens at AST level before string compilation
-                 * - Avoids generating and then re-parsing string representations
-                 * 
-                 * CRITICAL: Must return the result, not just call the function
-                 */
-                #if debug_for_loops
-                    DebugHelper.debugForLoop("TFor compilation in compileExpression", tvar, iterExpr, blockExpr);
-                #end
-                return loopCompiler.compileForLoop(tvar, iterExpr, blockExpr);
+            // TFor now handled by ExpressionDispatcher → ControlFlowCompiler
                 
-            case TWhile(econd, ebody, normalWhile):
-                // Process TWhile patterns
+            // TWhile now handled by ExpressionDispatcher → ControlFlowCompiler
                 
-                // Try to detect and optimize common for-in loop patterns
-                var optimized = tryOptimizeForInPattern(econd, ebody);
-                if (optimized != null) {
-                    // Used optimized for-in pattern
-                    return optimized;
-                }
-                
-                // Special case: Check if this is a Reflect.fields iteration
-                // This handles cases where the pattern detection might miss it
-                if (isReflectFieldsLoop(ebody)) {
-                    // Used optimized Reflect.fields pattern
-                    return optimizeReflectFieldsLoop(econd, ebody);
-                }
-                
-                // Generate idiomatic Elixir recursive loop (Y combinator)
-                // Generate Y combinator pattern for complex while loops
-                #if debug_y_combinator
-                DebugHelper.debugYCombinator("TWhile compilation", "Starting generation", 'normalWhile: $normalWhile');
-                #end
-                var result = loopCompiler.compileWhileLoop(econd, ebody, normalWhile);
-                #if debug_y_combinator
-                DebugHelper.debugYCombinator("TWhile compilation", "Generation complete", 'Result length: ${result.length} chars');
-                #end
-                return result;
-                
-            case TArray(e1, e2):
-                var arrayExpr = compileExpression(e1);
-                var indexExpr = compileExpression(e2);
-                'Enum.at(${arrayExpr}, ${indexExpr})';
+            // TArray now handled by ExpressionDispatcher → DataStructureCompiler
                 
             case TNew(c, _, el):
                 var className = NamingHelper.getElixirModuleName(c.toString());
@@ -3169,19 +1522,7 @@ class ElixirCompiler extends DirectToStringCompiler {
                 // Compile metadata wrapper - just compile the inner expression
                 compileExpression(expr);
                 
-            case TTry(tryExpr, catches):
-                var tryBody = compileExpression(tryExpr);
-                var result = 'try do\n  ${tryBody}\n';
-                
-                for (catchItem in catches) {
-                    var catchVar = NamingHelper.toSnakeCase(getOriginalVarName(catchItem.v));
-                    var catchBody = compileExpression(catchItem.expr);
-                    result += 'rescue\n  ${catchVar} ->\n    ${catchBody}\n';
-                }
-                
-                result + 'end';
-                
-            case TThrow(expr):
+            // TTry now handled by ExpressionDispatcher → ControlFlowCompiler            case TThrow(expr):
                 var throwExpr = compileExpression(expr);
                 'throw(${throwExpr})';
                 
@@ -3520,28 +1861,7 @@ class ElixirCompiler extends DirectToStringCompiler {
     /**
      * Helper: Compile TConstant (typed constants) to Elixir literals
      */
-    private function compileTConstant(constant: TConstant): String {
-        return switch (constant) {
-            case TInt(i): Std.string(i);
-            case TFloat(s): s;
-            case TString(s): 
-                // Properly escape string content for Elixir
-                var escaped = StringTools.replace(s, '\\', '\\\\'); // Escape backslashes first
-                escaped = StringTools.replace(escaped, '"', '\\"');  // Escape double quotes
-                escaped = StringTools.replace(escaped, '\n', '\\n'); // Escape newlines
-                escaped = StringTools.replace(escaped, '\r', '\\r'); // Escape carriage returns
-                escaped = StringTools.replace(escaped, '\t', '\\t'); // Escape tabs
-                '"${escaped}"';
-            case TBool(b): b ? "true" : "false";
-            case TNull: "nil";
-            case TThis: 
-                // Check if 'this' should be mapped to a parameter (e.g., 'struct' in instance methods)
-                var mappedName = currentFunctionParameterMap.get("this");
-                mappedName != null ? mappedName : "__MODULE__"; // Default to __MODULE__ if no mapping
-            case TSuper: "\"Exception\""; // Elixir doesn't have super() - return base type string
-            case _: "nil";
-        }
-    }
+    // compileTConstant function extracted to LiteralCompiler
     
     /**
      * Compile expression with proper type awareness for operators.
@@ -4358,88 +2678,11 @@ class ElixirCompiler extends DirectToStringCompiler {
     
     /**
      * Compile Reflect.fields iteration to idiomatic Elixir
+     * 
+     * DELEGATED to ReflectionCompiler for specialized handling
      */
     private function compileReflectFieldsIteration(fieldVar: String, sourceObject: String, blockExpr: TypedExpr): String {
-        /**
-         * DEBUG TRACING: Reflect.fields pattern detection for Map.merge optimization
-         * 
-         * WHY: Diagnosing why simple field copying patterns aren't being detected
-         * - Track parameters passed to pattern detection
-         * - Verify blockExpr types and structure
-         * - Identify if pattern detection logic is correct
-         * 
-         * PATTERN EXPECTED: Reflect.setField(target, field, Reflect.field(source, field))
-         * OPTIMIZATION TARGET: Map.merge(target, source)
-         * 
-         * HOW: Debug infrastructure reveals pattern matching process
-         * - Shows the field variable name and source object
-         * - Displays AST structure of the block expression
-         * - Traces whether simple copying pattern is detected
-         * 
-         * ARCHITECTURE: Core of Map.merge optimization detection
-         * - Called when Reflect.fields iteration is confirmed
-         * - Analyzes loop body for simple field assignment patterns
-         * - Returns target object name if pattern matches, null otherwise
-         */
-        #if debug_patterns
-        DebugHelper.debugPattern("Reflect.fields iteration optimization", 
-            "Reflect.setField(target, field, Reflect.field(source, field))", 
-            'fieldVar: $fieldVar, sourceObject: $sourceObject');
-        #end
-        
-        #if debug_ast
-        DebugHelper.debugAST("Block expression for pattern detection", blockExpr);
-        #end
-        
-        // ═══════════════════════════════════════════════════════════════════════
-        // PATTERN DETECTION: Check for simple field copying optimization
-        // ═══════════════════════════════════════════════════════════════════════
-        // 
-        // This attempts to detect patterns like:
-        //   for (field in Reflect.fields(source)) {
-        //       Reflect.setField(target, field, Reflect.field(source, field));
-        //   }
-        // 
-        // Which can be optimized to: target = Map.merge(target, source)
-        //
-        // detectSimpleFieldCopyPattern returns:
-        //   - String (target object name) if simple pattern detected
-        //   - null if pattern is complex and needs Enum.each approach
-        var detectedTargetObject = detectSimpleFieldCopyPattern(blockExpr, sourceObject, fieldVar);
-        
-        #if debug_patterns
-        DebugHelper.debugPattern("Reflect.fields pattern detection", "Field copy pattern", 'Result: $detectedTargetObject');
-        DebugHelper.debugInfo("Pattern analysis", 'sourceObject: $sourceObject, fieldVar: $fieldVar');
-        #end
-        
-        #if debug_ast
-        DebugHelper.debugAST("Loop block structure", blockExpr);
-        #end
-        
-        // ═══════════════════════════════════════════════════════════════════════
-        // OPTIMIZATION BRANCH 1: Simple field copying → Map.merge
-        // ═══════════════════════════════════════════════════════════════════════
-        if (detectedTargetObject != null) {
-            // Simple field copying pattern detected - can use Map.merge optimization
-            #if debug_optimizations
-            DebugHelper.debugOptimization("Map.merge transformation", 'Reflect.fields loop with fieldVar: $fieldVar', '${detectedTargetObject} = Map.merge(${detectedTargetObject}, ${sourceObject})', "Simple field copying pattern detected");
-            #end
-            return '${detectedTargetObject} = Map.merge(${detectedTargetObject}, ${sourceObject})';
-        }
-        
-        // ═══════════════════════════════════════════════════════════════════════
-        // OPTIMIZATION BRANCH 2: Complex pattern → Enum.each with Map.keys
-        // ═══════════════════════════════════════════════════════════════════════
-        // If we reach here, the pattern is too complex for Map.merge optimization.
-        // This handles cases with conditional logic, transformations, or multiple operations per field.
-        
-        // For complex patterns, fall back to the existing Map.keys approach
-        var transformedBody = compileReflectFieldsBody(blockExpr, sourceObject, fieldVar);
-        
-        // Generate Enum.each with Map.keys
-        return 'Enum.each(Map.keys(${sourceObject}), fn ${fieldVar} ->\n' +
-               '  ${transformedBody}\n' +
-               'end)';
+        return reflectionCompiler.compileReflectFieldsIteration(fieldVar, sourceObject, blockExpr);
     }
     
     /**
@@ -4884,192 +3127,41 @@ class ElixirCompiler extends DirectToStringCompiler {
      * Check if loop body contains Reflect.field/setField operations
      */
     private function isReflectFieldsLoop(ebody: TypedExpr): Bool {
-        var hasReflectOps = false;
-        
-        function scan(expr: TypedExpr): Void {
-            if (hasReflectOps) return; // Early exit if already found
-            
-            switch (expr.expr) {
-                case TCall(e, _):
-                    switch (e.expr) {
-                        case TField(obj, fa):
-                            var objStr = compileExpression(obj);
-                            switch (fa) {
-                                case FStatic(_, cf):
-                                    var methodName = cf.get().name;
-                                    if (objStr == "Reflect" && (methodName == "field" || methodName == "setField")) {
-                                        hasReflectOps = true;
-                                    }
-                                case _:
-                            }
-                        case _:
-                    }
-                case TBlock(exprs):
-                    for (e in exprs) scan(e);
-                case TIf(_, eif, eelse):
-                    scan(eif);
-                    if (eelse != null) scan(eelse);
-                case TBinop(_, e1, e2):
-                    scan(e1);
-                    scan(e2);
-                case TVar(_, init):
-                    if (init != null) scan(init);
-                case _:
-            }
-        }
-        
-        scan(ebody);
-        return hasReflectOps;
+        return reflectionCompiler.isReflectFieldsLoop(ebody);
     }
     
     /**
      * Optimize Reflect.fields loop to idiomatic Elixir
      */
     private function optimizeReflectFieldsLoop(econd: TypedExpr, ebody: TypedExpr): String {
-        // Find the target object being iterated over
-        var targetObject: String = null;
-        var fieldVar = "field";
-        
-        function findTarget(expr: TypedExpr): Void {
-            switch (expr.expr) {
-                case TCall(e, args):
-                    switch (e.expr) {
-                        case TField(obj, fa):
-                            var objStr = compileExpression(obj);
-                            switch (fa) {
-                                case FStatic(_, cf):
-                                    if (objStr == "Reflect" && cf.get().name == "setField" && args.length > 0) {
-                                        // First argument is usually the target object
-                                        targetObject = compileExpression(args[0]);
-                                    }
-                                case _:
-                            }
-                        case _:
-                    }
-                case TBlock(exprs):
-                    for (e in exprs) findTarget(e);
-                case _:
-            }
-        }
-        
-        findTarget(ebody);
-        
-        // If we couldn't find a specific target, use a generic approach
-        if (targetObject == null) {
-            targetObject = "config"; // Common case
-        }
-        
-        // Transform the loop body
-        var transformedBody = transformReflectLoopBody(ebody, targetObject, fieldVar);
-        
-        // Generate optimized Elixir code
-        return 'if ${targetObject} != nil do\n' +
-               '  Enum.each(Map.keys(${targetObject}), fn ${fieldVar} ->\n' +
-               '    ${transformedBody}\n' +
-               '  end)\n' +
-               'end';
+        return reflectionCompiler.optimizeReflectFieldsLoop(econd, ebody);
     }
     
     /**
      * Transform Reflect loop body to work with Enum.each
+     * 
+     * DELEGATED to ReflectionCompiler for specialized handling
      */
     private function transformReflectLoopBody(expr: TypedExpr, targetObject: String, fieldVar: String): String {
-        switch (expr.expr) {
-            case TBlock(exprs):
-                var statements = [];
-                for (e in exprs) {
-                    var stmt = transformReflectStatement(e, targetObject, fieldVar);
-                    if (stmt != null && stmt != "") {
-                        statements.push(stmt);
-                    }
-                }
-                return statements.join("\n    ");
-            case TIf(econd, eif, eelse):
-                // Handle if-statements in the loop body
-                var cond = compileExpression(econd);
-                var ifBody = transformReflectLoopBody(eif, targetObject, fieldVar);
-                if (eelse != null) {
-                    var elseBody = transformReflectLoopBody(eelse, targetObject, fieldVar);
-                    return 'if ${cond} do\n      ${ifBody}\n    else\n      ${elseBody}\n    end';
-                } else {
-                    return 'if ${cond} do\n      ${ifBody}\n    end';
-                }
-            case _:
-                return transformReflectStatement(expr, targetObject, fieldVar);
-        }
+        return reflectionCompiler.transformReflectLoopBody(expr, targetObject, fieldVar);
     }
     
     /**
      * Transform individual Reflect statements
+     * 
+     * DELEGATED to ReflectionCompiler for specialized handling
      */
     private function transformReflectStatement(expr: TypedExpr, targetObject: String, fieldVar: String): String {
-        switch (expr.expr) {
-            case TVar(v, init):
-                var varName = getOriginalVarName(v);
-                // Skip loop counter variables
-                if (varName == "field" || varName.contains("_g")) {
-                    return "";
-                }
-                if (init != null) {
-                    var value = transformReflectExpression(init, targetObject, fieldVar);
-                    return '${NamingHelper.toSnakeCase(varName)} = ${value}';
-                }
-                return "";
-                
-            case TBinop(OpAssign, e1, e2):
-                var left = compileExpression(e1);
-                var right = transformReflectExpression(e2, targetObject, fieldVar);
-                return '${left} = ${right}';
-                
-            case TCall(_, _):
-                return transformReflectExpression(expr, targetObject, fieldVar);
-                
-            case _:
-                return compileExpression(expr);
-        }
+        return reflectionCompiler.transformReflectStatement(expr, targetObject, fieldVar);
     }
     
     /**
      * Transform Reflect expressions to use Map operations
+     * 
+     * DELEGATED to ReflectionCompiler for specialized handling
      */
     private function transformReflectExpression(expr: TypedExpr, targetObject: String, fieldVar: String): String {
-        switch (expr.expr) {
-            case TCall(e, args):
-                switch (e.expr) {
-                    case TField(obj, fa):
-                        var objStr = compileExpression(obj);
-                        switch (fa) {
-                            case FStatic(_, cf):
-                                var methodName = cf.get().name;
-                                if (objStr == "Reflect") {
-                                    if (methodName == "field" && args.length >= 2) {
-                                        var source = compileExpression(args[0]);
-                                        var field = compileExpression(args[1]);
-                                        // Replace array access patterns with the field variable
-                                        if (field.contains("Enum.at")) {
-                                            field = fieldVar;
-                                        }
-                                        return 'Map.get(${source}, ${field})';
-                                    } else if (methodName == "setField" && args.length >= 3) {
-                                        var target = compileExpression(args[0]);
-                                        var field = compileExpression(args[1]);
-                                        var value = transformReflectExpression(args[2], targetObject, fieldVar);
-                                        // Replace array access patterns with the field variable
-                                        if (field.contains("Enum.at")) {
-                                            field = fieldVar;
-                                        }
-                                        return 'Map.put(${target}, ${field}, ${value})';
-                                    }
-                                }
-                            case _:
-                        }
-                    case _:
-                }
-                // Default compilation
-                return compileExpression(expr);
-            case _:
-                return compileExpression(expr);
-        }
+        return reflectionCompiler.transformReflectExpression(expr, targetObject, fieldVar);
     }
     
     /**
@@ -5453,57 +3545,7 @@ class ElixirCompiler extends DirectToStringCompiler {
      * Optimize array-based loops to use appropriate Enum functions
      */
     private function optimizeArrayLoop(arrayExpr: String, ebody: TypedExpr): String {
-        var bodyAnalysis = analyzeLoopBody(ebody);
-        
-        // Extract actual loop variable name from the AST
-        var loopVar = extractLoopVariableFromBody(ebody);
-        if (loopVar == null) loopVar = "item"; // Default fallback
-        
-        // For counting patterns, try to extract the variable used in condition
-        if (bodyAnalysis.hasCountPattern && bodyAnalysis.condition != null) {
-            var conditionVar = extractVariableFromCondition(bodyAnalysis.condition);
-            if (conditionVar != null) loopVar = conditionVar;
-        }
-        
-        // Dispatch to appropriate pattern generator based on analysis
-        // Higher priority patterns checked first
-        
-        // 1. Check if this is a find pattern (early return)
-        if (bodyAnalysis.hasEarlyReturn) {
-            return generateEnumFindPattern(arrayExpr, loopVar, ebody);
-        }
-        
-        // 2. Check for filtering pattern BEFORE mapping (filter has higher priority!)
-        if (bodyAnalysis.hasFilterPattern && bodyAnalysis.conditionExpr != null) {
-            return generateEnumFilterPattern(arrayExpr, loopVar, bodyAnalysis.conditionExpr);
-        }
-        
-        // 3. Check for mapping pattern (array transformation) - Lower priority than filtering
-        if (bodyAnalysis.hasMapPattern) {
-            return generateEnumMapPattern(arrayExpr, loopVar, ebody);
-        }
-        
-        // 4. Check for counting pattern (lower priority since loops may have increments)
-        if (bodyAnalysis.hasCountPattern && bodyAnalysis.conditionExpr != null) {
-            return generateEnumCountPattern(arrayExpr, loopVar, bodyAnalysis.conditionExpr);
-        }
-        
-        // 5. Check for simple numeric accumulation
-        if (bodyAnalysis.hasSimpleAccumulator) {
-            return '(\n' +
-                   '  {${bodyAnalysis.accumulator}} = Enum.reduce(${arrayExpr}, ${bodyAnalysis.accumulator}, fn ${loopVar}, acc ->\n' +
-                   '    acc + ${loopVar}\n' +
-                   '  end)\n' +
-                   ')';
-        } 
-        
-        // 6. Default to Enum.each for side effects
-        var transformedBody = transformComplexLoopBody(ebody);
-        return '(\n' +
-               '  Enum.each(${arrayExpr}, fn ${loopVar} ->\n' +
-               '    ${transformedBody}\n' +
-               '  end)\n' +
-               ')';
+        return arrayOptimizationCompiler.optimizeArrayLoop(arrayExpr, ebody);
     }
     
     /**
@@ -5521,133 +3563,14 @@ class ElixirCompiler extends DirectToStringCompiler {
         condition: String,
         conditionExpr: Null<TypedExpr>
     } {
-        // Default analysis result
-        var result = {
-            hasSimpleAccumulator: false,
-            hasEarlyReturn: false,
-            hasCountPattern: false,
-            hasFilterPattern: false,
-            hasMapPattern: false,
-            accumulator: "sum",
-            loopVar: "item", 
-            isAddition: false,
-            condition: "",
-            conditionExpr: null
-        };
-        
-        // Look for early returns (find patterns)
-        result.hasEarlyReturn = hasReturnStatement(ebody);
-        
-        // Analyze AST structure for different patterns
-        analyzeLoopBodyAST(ebody, result);
-        
-        // Look for simple accumulation patterns in the body (fallback)
-        var bodyStr = compileExpression(ebody);
-        if (bodyStr == null) return result;
-        
-        // Check for += pattern: sum += i (numeric accumulation)
-        var addPattern = ~/(\w+)\s*=\s*\1\s*\+\s*(\w+)/;
-        if (addPattern.match(bodyStr)) {
-            result.hasSimpleAccumulator = true;
-            result.accumulator = addPattern.matched(1);
-            result.loopVar = addPattern.matched(2);
-            result.isAddition = true;
-        }
-        
-        return result;
+        return arrayOptimizationCompiler.analyzeLoopBody(ebody);
     }
     
     /**
      * Analyze loop body AST to detect specific patterns
      */
     private function analyzeLoopBodyAST(expr: TypedExpr, result: Dynamic): Void {
-        switch (expr.expr) {
-            case TBlock(exprs):
-                for (e in exprs) {
-                    analyzeLoopBodyAST(e, result);
-                }
-                
-            case TIf(econd, eif, _):
-                // Check for filtering pattern: if (condition) array.push(item)
-                // or counting pattern: if (condition) count++
-                var condition = compileExpression(econd);
-                
-                // Helper function to check for push pattern
-                function checkForPush(e: TypedExpr): Bool {
-                    switch (e.expr) {
-                        case TCall({expr: TField(_, FInstance(_, _, cf))}, _):
-                            if (cf.get().name == "push") {
-                                return true;
-                            }
-                        case TBlock(exprs):
-                            for (expr in exprs) {
-                                if (checkForPush(expr)) return true;
-                            }
-                        case _:
-                    }
-                    return false;
-                }
-                
-                // Check if this is a filter pattern (has push call)
-                if (checkForPush(eif)) {
-                    result.hasFilterPattern = true;
-                    result.conditionExpr = econd;
-                } else {
-                    // Check for counting patterns
-                    switch (eif.expr) {
-                        case TUnop(OpIncrement, _, {expr: TLocal(v)}):
-                            // Found count++ pattern (direct)
-                            result.hasCountPattern = true;
-                            result.accumulator = getOriginalVarName(v);
-                            result.condition = condition;
-                            result.conditionExpr = econd;
-                        case TBlock(blockExprs):
-                            // Check for count++ inside block
-                            for (blockExpr in blockExprs) {
-                                switch (blockExpr.expr) {
-                                    case TUnop(OpIncrement, _, {expr: TLocal(v)}):
-                                        // Found count++ pattern in block
-                                        result.hasCountPattern = true;
-                                        result.accumulator = getOriginalVarName(v);
-                                        result.condition = condition;
-                                        result.conditionExpr = econd;
-                                    case TBinop(OpAssign, {expr: TLocal(v)}, {expr: TBinop(OpAdd, _, _)}):
-                                        // Found count = count + 1 pattern in block
-                                        result.hasCountPattern = true;
-                                        result.accumulator = getOriginalVarName(v);
-                                        result.condition = condition;
-                                        result.conditionExpr = econd;
-                                    case _:
-                                }
-                            }
-                        case TBinop(OpAssign, {expr: TLocal(v)}, {expr: TBinop(OpAdd, _, _)}):
-                            // Found count = count + 1 pattern (direct)
-                            result.hasCountPattern = true;
-                            result.accumulator = getOriginalVarName(v);
-                            result.condition = condition;
-                            result.conditionExpr = econd;
-                        case _:
-                    }
-                }
-                
-            case TVar(v, init):
-                // Check for new variable declarations (potential filtering/mapping)
-                if (init != null) {
-                    switch (init.expr) {
-                        case TArray(e1, e2):
-                            // Array access - potential mapping
-                            result.hasMapPattern = true;
-                        case _:
-                    }
-                }
-                
-            case TUnop(OpIncrement, false, {expr: TLocal(v)}):
-                // Direct increment outside condition - simple counting
-                result.hasCountPattern = true;
-                result.accumulator = getOriginalVarName(v);
-                
-            case _:
-        }
+        return arrayOptimizationCompiler.analyzeLoopBodyAST(expr, result);
     }
     
     /**
@@ -5804,29 +3727,7 @@ class ElixirCompiler extends DirectToStringCompiler {
      * Debug helper: Check if expression contains Reflect.fields usage
      */
     private function checkForReflectFieldsInExpression(expr: TypedExpr): Bool {
-        if (expr == null) return false;
-        
-        switch (expr.expr) {
-            case TCall(e, _):
-                // Simplified detection - just check if it's a call that might be Reflect.fields
-                var callStr = compileExpression(e);
-                return callStr.contains("Reflect.fields");
-            case TBlock(exprs):
-                for (e in exprs) {
-                    if (checkForReflectFieldsInExpression(e)) return true;
-                }
-                return false;
-            case TIf(_, eif, eelse):
-                if (checkForReflectFieldsInExpression(eif)) return true;
-                if (eelse != null && checkForReflectFieldsInExpression(eelse)) return true;
-                return false;
-            case TFor(_, iter, _):
-                // Check if the iterator uses Reflect.fields
-                if (checkForReflectFieldsInExpression(iter)) return true;
-                return false;
-            case _:
-                return false;
-        }
+        return reflectionCompiler.checkForReflectFieldsInExpression(expr);
     }
     
     /**
@@ -5926,172 +3827,35 @@ class ElixirCompiler extends DirectToStringCompiler {
      * Generate Enum.find pattern for early return loops
      */
     private function generateEnumFindPattern(arrayExpr: String, loopVar: String, ebody: TypedExpr): String {
-        // Set loop context to enable aggressive variable substitution
-        var previousContext = isInLoopContext;
-        isInLoopContext = true;
-        
-        // Extract the condition from the if statement
-        var condition = extractConditionFromReturn(ebody);
-        if (condition != null) {
-            // Generate Enum.find for simple cases
-            // Restore previous loop context
-            isInLoopContext = previousContext;
-            return 'Enum.find(${arrayExpr}, fn ${loopVar} -> ${condition} end)';
-        }
-        
-        // Fallback to reduce_while for complex cases
-        var result = '(\n' +
-               '  Enum.reduce_while(${arrayExpr}, nil, fn ${loopVar}, _acc ->\n' +
-               '    ${transformFindLoopBody(ebody, loopVar)}\n' +
-               '  end)\n' +
-               ')';
-        
-        // Restore previous loop context
-        isInLoopContext = previousContext;
-        return result;
+        return arrayOptimizationCompiler.generateEnumFindPattern(arrayExpr, loopVar, ebody);
     }
     
     /**
      * Extract condition from return statement in loop body
      */
     private function extractConditionFromReturn(expr: TypedExpr): Null<String> {
-        switch (expr.expr) {
-            case TBlock(exprs):
-                for (e in exprs) {
-                    var result = extractConditionFromReturn(e);
-                    if (result != null) return result;
-                }
-            case TIf(econd, eif, _):
-                switch (eif.expr) {
-                    case TReturn(_):
-                        return compileExpression(econd);
-                    case _:
-                }
-            case _:
-        }
-        return null;
+        return arrayOptimizationCompiler.extractConditionFromReturn(expr);
     }
     
     /**
      * Transform loop body for find patterns with reduce_while
      */
     private function transformFindLoopBody(expr: TypedExpr, loopVar: String): String {
-        switch (expr.expr) {
-            case TBlock(exprs):
-                var result = "";
-                for (e in exprs) {
-                    switch (e.expr) {
-                        case TIf(econd, eif, _):
-                            var condition = compileExpression(econd);
-                            // Check what's inside the eif (then branch)
-                            switch (eif.expr) {
-                                case TReturn(retExpr):
-                                    var returnValue = retExpr != null ? compileExpression(retExpr) : loopVar;
-                                    result += 'if ${condition} do\n' +
-                                             '      {:halt, ${returnValue}}\n' +
-                                             '    else\n' +
-                                             '      {:cont, nil}\n' +
-                                             '    end';
-                                case TBlock(blockExprs):
-                                    // Handle block containing return
-                                    for (blockExpr in blockExprs) {
-                                        switch (blockExpr.expr) {
-                                            case TReturn(retExpr):
-                                                var returnValue = retExpr != null ? compileExpression(retExpr) : loopVar;
-                                                result += 'if ${condition} do\n' +
-                                                         '      {:halt, ${returnValue}}\n' +
-                                                         '    else\n' +
-                                                         '      {:cont, nil}\n' +
-                                                         '    end';
-                                            case _:
-                                        }
-                                    }
-                                case _:
-                            }
-                        case _:
-                    }
-                }
-                return result;
-            case TIf(econd, eif, _):
-                // Handle direct if statement (not wrapped in block)
-                var condition = compileExpression(econd);
-                switch (eif.expr) {
-                    case TReturn(retExpr):
-                        var returnValue = retExpr != null ? compileExpression(retExpr) : loopVar;
-                        return 'if ${condition} do\n' +
-                               '      {:halt, ${returnValue}}\n' +
-                               '    else\n' +
-                               '      {:cont, nil}\n' +
-                               '    end';
-                    case _:
-                }
-            case _:
-        }
-        return '# Complex loop body transformation needed';
+        return arrayOptimizationCompiler.transformFindLoopBody(expr, loopVar);
     }
     
     /**
      * Generate Enum.count pattern for conditional counting
      */
     private function generateEnumCountPattern(arrayExpr: String, loopVar: String, conditionExpr: TypedExpr): String {
-        // Convert the loop variable name to snake_case for Elixir
-        var targetVar = NamingHelper.toSnakeCase(loopVar);
-        
-        // Find what TVar the condition expression actually references
-        var referencedTVar = findFirstLocalTVar(conditionExpr);
-        
-        // If the condition references a variable, use TVar-based substitution
-        var condition: String;
-        if (referencedTVar != null) {
-            condition = compileExpressionWithTVarSubstitution(conditionExpr, referencedTVar, targetVar);
-        } else {
-            condition = compileExpression(conditionExpr);
-        }
-        
-        return 'Enum.count(${arrayExpr}, fn ${targetVar} -> ${condition} end)';
+        return arrayOptimizationCompiler.generateEnumCountPattern(arrayExpr, loopVar, conditionExpr);
     }
     
     /**
      * Find the first local variable referenced in an expression
      */
     private function findFirstLocalVariable(expr: TypedExpr): Null<String> {
-        switch (expr.expr) {
-            case TLocal(v):
-                var varName = getOriginalVarName(v);
-                // Skip system variables
-                if (!isSystemVariable(varName)) {
-                    return varName;
-                }
-                
-            case TField(e, fa):
-                // For field access like "v.id", find the base variable
-                return findFirstLocalVariable(e);
-                
-            case TBinop(op, e1, e2):
-                // Check both sides, return the first non-system variable found
-                var left = findFirstLocalVariable(e1);
-                if (left != null) return left;
-                return findFirstLocalVariable(e2);
-                
-            case TUnop(op, postFix, e):
-                return findFirstLocalVariable(e);
-                
-            case TParenthesis(e):
-                return findFirstLocalVariable(e);
-                
-            case TCall(e, args):
-                // Check the function call and its arguments
-                var result = findFirstLocalVariable(e);
-                if (result != null) return result;
-                for (arg in args) {
-                    result = findFirstLocalVariable(arg);
-                    if (result != null) return result;
-                }
-                
-            case _:
-                // Other expression types don't contain local variables we care about
-        }
-        return null;
+        return arrayOptimizationCompiler.findFirstLocalVariable(expr);
     }
     
     /**
@@ -6099,204 +3863,42 @@ class ElixirCompiler extends DirectToStringCompiler {
      * This is more robust than string-based matching as it uses object identity
      */
     private function findFirstLocalTVar(expr: TypedExpr): Null<TVar> {
-        switch (expr.expr) {
-            case TLocal(v):
-                var varName = getOriginalVarName(v);
-                // Skip system variables
-                if (!isSystemVariable(varName)) {
-                    return v;
-                }
-                
-            case TField(e, fa):
-                // For field access like "v.id", find the base variable
-                return findFirstLocalTVar(e);
-                
-            case TBinop(op, e1, e2):
-                // Check both sides, return the first non-system variable found
-                var left = findFirstLocalTVar(e1);
-                if (left != null) return left;
-                return findFirstLocalTVar(e2);
-                
-            case TUnop(op, postFix, e):
-                return findFirstLocalTVar(e);
-                
-            case TParenthesis(e):
-                return findFirstLocalTVar(e);
-                
-            case TCall(e, args):
-                // Check the function call and its arguments
-                var result = findFirstLocalTVar(e);
-                if (result != null) return result;
-                for (arg in args) {
-                    result = findFirstLocalTVar(arg);
-                    if (result != null) return result;
-                }
-                
-            case _:
-                // Other expression types don't contain local variables we care about
-        }
-        return null;
+        return arrayOptimizationCompiler.findFirstLocalTVar(expr);
     }
     
     /**
      * Generate Enum.filter pattern for filtering arrays
      */
     private function generateEnumFilterPattern(arrayExpr: String, loopVar: String, conditionExpr: TypedExpr): String {
-        // Convert the loop variable name to snake_case for Elixir
-        var targetVar = NamingHelper.toSnakeCase(loopVar);
-        
-        // Find what TVar the condition expression actually references
-        var referencedTVar = findFirstLocalTVar(conditionExpr);
-        
-        // If the condition references a variable, use TVar-based substitution
-        var condition: String;
-        if (referencedTVar != null) {
-            condition = compileExpressionWithTVarSubstitution(conditionExpr, referencedTVar, targetVar);
-        } else {
-            condition = compileExpression(conditionExpr);
-        }
-        
-        return 'Enum.filter(${arrayExpr}, fn ${targetVar} -> ${condition} end)';
+        return arrayOptimizationCompiler.generateEnumFilterPattern(arrayExpr, loopVar, conditionExpr);
     }
     
     /**
      * Generate Enum.map pattern for transforming arrays
      */
     private function generateEnumMapPattern(arrayExpr: String, loopVar: String, ebody: TypedExpr): String {
-        // Convert the loop variable name to snake_case for Elixir
-        var targetVar = NamingHelper.toSnakeCase(loopVar);
-        
-        // Find what TVar the body expression actually references
-        var referencedTVar = findFirstLocalTVar(ebody);
-        
-        // If the body references a variable, use TVar-based substitution
-        var transformation: String;
-        if (referencedTVar != null) {
-            transformation = compileExpressionWithTVarSubstitution(ebody, referencedTVar, targetVar);
-        } else {
-            transformation = compileExpression(ebody);
-        }
-        
-        return 'Enum.map(${arrayExpr}, fn ${targetVar} -> ${transformation} end)';
+        return arrayOptimizationCompiler.generateEnumMapPattern(arrayExpr, loopVar, ebody);
     }
     
     /**
      * Find the loop variable by looking for patterns like "v.field" where v is the loop variable
      */
     private function findFirstTLocalInExpression(expr: TypedExpr): Null<TVar> {
-        // Look for TField patterns first (like v.id, v.completed) which indicate loop variables
-        var fieldVar = findTLocalFromFieldAccess(expr);
-        if (fieldVar != null) return fieldVar;
-        
-        // Fallback to first TLocal found
-        return findFirstTLocalInExpressionRecursive(expr);
+        return arrayOptimizationCompiler.findFirstTLocalInExpression(expr);
     }
 
     /**
      * Find TLocal from field access patterns (e.g., v.id -> return v)
      */
     private function findTLocalFromFieldAccess(expr: TypedExpr): Null<TVar> {
-        switch (expr.expr) {
-            case TField(e, fa):
-                switch (e.expr) {
-                    case TLocal(v):
-                        var varName = getOriginalVarName(v);
-                        if (varName != "_g" && varName != "_g1" && varName != "_g2" && 
-                            !varName.startsWith("temp_") && !varName.startsWith("_this")) {
-                            return v;
-                        }
-                    case _:
-                        // Not a TLocal field access
-                }
-            case TBlock(exprs):
-                for (e in exprs) {
-                    var result = findTLocalFromFieldAccess(e);
-                    if (result != null) return result;
-                }
-            case TBinop(_, e1, e2):
-                var result = findTLocalFromFieldAccess(e1);
-                if (result != null) return result;
-                return findTLocalFromFieldAccess(e2);
-            case TIf(econd, eif, eelse):
-                var result = findTLocalFromFieldAccess(econd);
-                if (result != null) return result;
-                result = findTLocalFromFieldAccess(eif);
-                if (result != null) return result;
-                if (eelse != null) {
-                    result = findTLocalFromFieldAccess(eelse);
-                    if (result != null) return result;
-                }
-            case TCall(e, args):
-                var result = findTLocalFromFieldAccess(e);
-                if (result != null) return result;
-                for (arg in args) {
-                    result = findTLocalFromFieldAccess(arg);
-                    if (result != null) return result;
-                }
-            case TParenthesis(e):
-                return findTLocalFromFieldAccess(e);
-            case _:
-                // Other expression types
-        }
-        return null;
+        return arrayOptimizationCompiler.findTLocalFromFieldAccess(expr);
     }
 
     /**
      * Find the first TLocal variable in an expression recursively
      */
     private function findFirstTLocalInExpressionRecursive(expr: TypedExpr): Null<TVar> {
-        switch (expr.expr) {
-            case TLocal(v):
-                // Skip compiler-generated variables
-                var varName = getOriginalVarName(v);
-                if (varName != "_g" && varName != "_g1" && varName != "_g2" && 
-                    !varName.startsWith("temp_") && !varName.startsWith("_this")) {
-                    return v;
-                }
-            case TBlock(exprs):
-                // Look through block expressions
-                for (e in exprs) {
-                    var result = findFirstTLocalInExpressionRecursive(e);
-                    if (result != null) return result;
-                }
-            case TBinop(_, e1, e2):
-                // Check both operands
-                var result = findFirstTLocalInExpressionRecursive(e1);
-                if (result != null) return result;
-                return findFirstTLocalInExpressionRecursive(e2);
-            case TField(e, fa):
-                // Look in the base expression (e.g., for "v.id", check "v")
-                return findFirstTLocalInExpressionRecursive(e);
-            case TCall(e, args):
-                // Check function and arguments
-                var result = findFirstTLocalInExpressionRecursive(e);
-                if (result != null) return result;
-                for (arg in args) {
-                    result = findFirstTLocalInExpressionRecursive(arg);
-                    if (result != null) return result;
-                }
-            case TIf(econd, eif, eelse):
-                // Check condition and branches
-                var result = findFirstTLocalInExpressionRecursive(econd);
-                if (result != null) return result;
-                result = findFirstTLocalInExpressionRecursive(eif);
-                if (result != null) return result;
-                if (eelse != null) {
-                    result = findFirstTLocalInExpressionRecursive(eelse);
-                    if (result != null) return result;
-                }
-            case TArray(e1, e2):
-                // Check array and index
-                var result = findFirstTLocalInExpressionRecursive(e1);
-                if (result != null) return result;
-                return findFirstTLocalInExpressionRecursive(e2);
-            case TParenthesis(e):
-                // Look inside parentheses
-                return findFirstTLocalInExpressionRecursive(e);
-            case _:
-                // Other expression types don't contain variables
-        }
-        return null;
+        return arrayOptimizationCompiler.findFirstTLocalInExpressionRecursive(expr);
     }
 
     /**
@@ -6479,24 +4081,7 @@ class ElixirCompiler extends DirectToStringCompiler {
      * that should not be substituted in loop contexts
      */
     private function isSystemVariable(varName: String): Bool {
-        if (varName == null || varName == "") return true;
-        
-        // System prefixes
-        if (varName.startsWith("_g") || varName.startsWith("temp_") || varName.startsWith("_this")) {
-            return true;
-        }
-        
-        // Function parameters that should not be substituted in loop contexts
-        if (varName == "transform" || varName == "callback" || varName == "fn" || varName == "func" || 
-            varName == "predicate" || varName == "mapper" || varName == "filter" || varName == "reduce") {
-            return true;
-        }
-        
-        // Note: Variable "v" is often used by Haxe for lambda parameters and should be substituted
-        // Don't treat "v" as a system variable in loop contexts
-        
-        // Known system variables
-        return varName == "updated_todo" || varName == "count" || varName == "result";
+        return arrayOptimizationCompiler.isSystemVariable(varName);
     }
     
     /**
@@ -6675,7 +4260,7 @@ class ElixirCompiler extends DirectToStringCompiler {
                 return 'Enum.at(${arr}, ${index})';
             case TConst(c):
                 // Constants don't need substitution
-                return compileTConstant(c);
+                return expressionDispatcher.literalCompiler.compileConstant(c);
             case TIf(econd, eif, eelse):
                 // Handle conditionals with substitution
                 var condition = compileExpressionWithTVarSubstitution(econd, sourceTVar, targetVarName);
@@ -7112,7 +4697,7 @@ class ElixirCompiler extends DirectToStringCompiler {
                 return 'Enum.at(${arr}, ${index})';
             case TConst(c):
                 // Constants don't need substitution
-                return compileTConstant(c);
+                return expressionDispatcher.literalCompiler.compileConstant(c);
             case TIf(econd, eif, eelse):
                 // Handle conditionals with substitution
                 var condition = compileExpressionWithSubstitution(econd, sourceVar, targetVar);
@@ -7136,12 +4721,7 @@ class ElixirCompiler extends DirectToStringCompiler {
      * Extract variable name from condition string
      */
     private function extractVariableFromCondition(condition: String): Null<String> {
-        // Look for patterns like "todo.completed", "!todo.completed", "todo.id == id" etc.
-        var varPattern = ~/\(?(\w+)\./; // Match variable before dot
-        if (varPattern.match(condition)) {
-            return varPattern.matched(1);
-        }
-        return null;
+        return arrayOptimizationCompiler.extractVariableFromCondition(condition);
     }
 
     /**
@@ -7169,14 +4749,7 @@ class ElixirCompiler extends DirectToStringCompiler {
      * Transform complex loop bodies that can't be simplified to Enum.reduce
      */
     private function transformComplexLoopBody(ebody: TypedExpr): String {
-        // For now, compile the body as-is but replace iterator references
-        var bodyStr = compileExpression(ebody);
-        if (bodyStr == null) return "";
-        
-        // Replace references to _g with the loop variable
-        bodyStr = StringTools.replace(bodyStr, "_g", "i");
-        
-        return bodyStr;
+        return arrayOptimizationCompiler.transformComplexLoopBody(ebody);
     }
     
     /**
@@ -9825,65 +7398,7 @@ class ElixirCompiler extends DirectToStringCompiler {
      * @return True if any expression uses Reflect.fields (indicating Y combinator generation)
      */
     private function hasReflectFieldsIteration(expressions: Array<TypedExpr>): Bool {
-        #if debug_compiler
-        trace('[Y_COMBINATOR] hasReflectFieldsIteration: checking block with ${expressions.length} expressions');
-        #end
-        
-        for (i in 0...expressions.length) {
-            var expr = expressions[i];
-            #if debug_compiler
-            trace('[Y_COMBINATOR] Expression $i: ${Type.enumConstructor(expr.expr)}');
-            #end
-            
-            switch(expr.expr) {
-                case TVar(tvar, init) if (init != null):
-                    #if debug_compiler
-                    trace('[Y_COMBINATOR] Found TVar: ${tvar.name}, checking initialization');
-                    #end
-                    switch(init.expr) {
-                        case TCall(e, args):
-                            switch(e.expr) {
-                                case TField(obj, fa):
-                                    var objStr = compileExpression(obj);
-                                    switch(fa) {
-                                        case FStatic(_, cf):
-                                            #if debug_compiler
-                                            trace('[Y_COMBINATOR] Found static call: ${objStr}.${cf.get().name}');
-                                            #end
-                                            if (objStr == "Reflect" && cf.get().name == "fields") {
-                                                #if debug_compiler
-                                                trace('[Y_COMBINATOR] FOUND Reflect.fields pattern! Returning true.');
-                                                #end
-                                                return true;
-                                            }
-                                        case _:
-                                    }
-                                case _:
-                            }
-                        case _:
-                    }
-                case TFor(tvar, iterExpr, blockExpr):
-                    #if debug_compiler
-                    trace('[Y_COMBINATOR] Found TFor loop, checking if it uses Reflect.fields');
-                    #end
-                    // Recursively check if this for-loop contains Y combinator patterns
-                    if (detectYCombinatorInAST(expr)) {
-                        #if debug_compiler
-                        trace('[Y_COMBINATOR] TFor contains Y combinator pattern! Returning true.');
-                        #end
-                        return true;
-                    }
-                case _:
-                    #if debug_compiler
-                    trace('[Y_COMBINATOR] Skipping expression type: ${Type.enumConstructor(expr.expr)}');
-                    #end
-            }
-        }
-        
-        #if debug_compiler
-        trace('[Y_COMBINATOR] hasReflectFieldsIteration: No Reflect.fields pattern found, returning false');
-        #end
-        return false;
+        return reflectionCompiler.hasReflectFieldsIteration(expressions);
     }
 
     /**
