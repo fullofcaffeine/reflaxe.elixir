@@ -137,6 +137,9 @@ class ElixirCompiler extends DirectToStringCompiler {
     // Array optimization compiler for loop pattern detection and Enum function generation
     private var arrayOptimizationCompiler: reflaxe.elixir.helpers.ArrayOptimizationCompiler;
     
+    // Variable substitution and renaming compiler for centralized variable handling
+    private var substitutionCompiler: reflaxe.elixir.helpers.SubstitutionCompiler;
+    
     private var expressionDispatcher: reflaxe.elixir.helpers.ExpressionDispatcher;
     
     // Import optimization for clean import statements
@@ -182,6 +185,8 @@ class ElixirCompiler extends DirectToStringCompiler {
         this.methodCallCompiler = new reflaxe.elixir.helpers.MethodCallCompiler(this);
         this.reflectionCompiler = new reflaxe.elixir.helpers.ReflectionCompiler(this);
         this.arrayOptimizationCompiler = new reflaxe.elixir.helpers.ArrayOptimizationCompiler(this);
+        // TODO: Re-enable after fixing interface dependencies
+        // this.substitutionCompiler = new reflaxe.elixir.helpers.SubstitutionCompiler(this);
         this.expressionDispatcher = new reflaxe.elixir.helpers.ExpressionDispatcher(this);
         
         // Set compiler reference for delegation
@@ -863,7 +868,12 @@ class ElixirCompiler extends DirectToStringCompiler {
         var fileName: String;
         var dirPath: String;
         
-        if (snakeParts.length > 1) {
+        // Safety check for empty snakeParts array
+        if (snakeParts.length == 0) {
+            // Fallback for empty module name
+            fileName = "unknown_module";
+            dirPath = "";
+        } else if (snakeParts.length > 1) {
             // Multi-part name: last part is filename, rest is directory
             fileName = snakeParts.pop();
             dirPath = snakeParts.join("/");
