@@ -1318,98 +1318,7 @@ class ElixirCompiler extends DirectToStringCompiler {
                 
             // TUnop now handled by ExpressionDispatcher → OperatorCompiler
                 
-            case TField(e, fa):
-                // Handle nested field access with inline context support
-                // Special handling for enum field access - generate atoms, not field calls
-                switch (fa) {
-                    case FEnum(enumType, enumField):
-                        // Check if this is a known algebraic data type (Result, Option, etc.)
-                        var enumTypeRef = enumType.get();
-                        if (AlgebraicDataTypeCompiler.isADTType(enumTypeRef)) {
-                            var compiled = AlgebraicDataTypeCompiler.compileADTFieldAccess(enumTypeRef, enumField);
-                            if (compiled != null) return compiled;
-                        }
-                        
-                        // For regular enum types - compile to tuple representation
-                        // Use the enum field's index property directly
-                        var constructorIndex = enumField.index;
-                        
-                        // Generate proper atom representation for enum constructor
-                        // Constructor without parameters compile to atoms like :one_for_one
-                        // Constructor with parameters: handled by TCall
-                        if (enumField.params.length == 0) {
-                            // Simple constructor without parameters - use snake_case atom
-                            var atomName = NamingHelper.toSnakeCase(enumField.name);
-                            ':${atomName}';
-                        } else {
-                            // This case shouldn't happen here - constructors with params
-                            // should be handled by TCall, but let's handle it gracefully
-                            // For constructors with parameters, we still need the atom name
-                            var atomName = NamingHelper.toSnakeCase(enumField.name);
-                            ':${atomName}'; // Fallback for now
-                        }
-                        
-                    case FStatic(classRef, cf):
-                        // Check if this is a static method being used as a function reference
-                        var field = cf.get();
-                        var isFunction = switch (field.type) {
-                            case TFun(_, _): true;
-                            case _: false;
-                        };
-                        
-                        // Check if this field access is being used as a function reference
-                        // (i.e., not being called immediately)
-                        // This happens when the field is passed as an argument to another function
-                        if (isFunction && !isBeingCalled(expr)) {
-                            // This is a static function reference - generate Elixir function reference syntax
-                            var className = classRef.get().name;
-                            var functionName = NamingHelper.toSnakeCase(field.name);
-                            
-                            // Determine the arity of the function
-                            var arity = switch (field.type) {
-                                case TFun(args, _): args.length;
-                                case _: 0;
-                            };
-                            
-                            // Generate function reference syntax: &Module.function/arity
-                            return '&${className}.${functionName}/${arity}';
-                        } else {
-                            // Regular static field access or method call (will be handled by TCall)
-                            var baseExpr = compileExpression(e);
-                            var elixirFieldName = NamingHelper.toSnakeCase(field.name);
-                            '${baseExpr}.${elixirFieldName}';
-                        }
-                        
-                    case _:
-                        // Regular field access for non-enum, non-static fields
-                        var baseExpr = switch (e.expr) {
-                            case TConst(TThis):
-                                // Extract field name for LiveView check
-                                var fieldName = switch (fa) {
-                                    case FInstance(_, _, cf) | FAnon(cf): cf.get().name;
-                                    case FDynamic(s): s;
-                                    case _: "unknown_field";
-                                };
-                                
-                                // Check if this is a LiveView instance field access
-                                if (liveViewInstanceVars != null && liveViewInstanceVars.exists(fieldName)) {
-                                    var elixirFieldName = reflaxe.elixir.helpers.NamingHelper.toSnakeCase(fieldName);
-                                    return 'socket.assigns.${elixirFieldName}';
-                                } else {
-                                    // Use enhanced inline context resolution for non-LiveView cases
-                                    resolveThisReference();
-                                }
-                            case _:
-                                compileExpression(e);
-                        };
-                        var fieldName = switch (fa) {
-                            case FInstance(_, _, cf) | FAnon(cf): cf.get().name;
-                            case FDynamic(s): s;
-                            case _: "unknown_field";
-                        };
-                        var elixirFieldName = reflaxe.elixir.helpers.NamingHelper.toSnakeCase(fieldName);
-                        '${baseExpr}.${elixirFieldName}';
-                }
+            // TField now handled by ExpressionDispatcher → FieldAccessCompiler
                 
             case TCall(e, el):
                 // Check for special compile-time function calls
@@ -1479,15 +1388,9 @@ class ElixirCompiler extends DirectToStringCompiler {
                 
             // TIf now handled by ExpressionDispatcher → ControlFlowCompiler
                 
-            case TReturn(expr):
-                if (expr != null) {
-                    compileExpression(expr); // Elixir uses implicit returns
-                } else {
-                    "nil";
-                }
+            // TReturn now handled by ExpressionDispatcher → MiscExpressionCompiler
                 
-            case TParenthesis(e):
-                "(" + compileExpression(e) + ")";
+            // TParenthesis now handled by ExpressionDispatcher → MiscExpressionCompiler
                 
             // TSwitch now handled by ExpressionDispatcher → ControlFlowCompiler
                 
@@ -1497,56 +1400,23 @@ class ElixirCompiler extends DirectToStringCompiler {
                 
             // TArray now handled by ExpressionDispatcher → DataStructureCompiler
                 
-            case TNew(c, _, el):
-                var className = NamingHelper.getElixirModuleName(c.toString());
-                var args = el.map(expr -> compileExpression(expr));
+            // TNew now handled by ExpressionDispatcher → MiscExpressionCompiler
                 
-                // Check if this is a Map type and handle it idiomatically
-                MapCompiler.isMapType(className) ? 
-                    MapCompiler.compileMapConstructor(className, args) :
-                    (function() {
-                        var argString = args.join(", ");
-                        return argString.length > 0 ? 
-                            '${className}.new(${argString})' :
-                            '${className}.new()';
-                    })();
+            // TFunction now handled by ExpressionDispatcher → MiscExpressionCompiler
                 
-            case TFunction(func):
-                // Get original parameter names (before Haxe's renaming)
-                var args = func.args.map(arg -> NamingHelper.toSnakeCase(getOriginalVarName(arg.v))).join(", ");
-                // Compile the body with proper type awareness for string concatenation
-                var body = compileExpressionWithTypeAwareness(func.expr);
-                'fn ${args} -> ${body} end';
+            // TMeta now handled by ExpressionDispatcher → MiscExpressionCompiler
                 
-            case TMeta(metadata, expr):
-                // Compile metadata wrapper - just compile the inner expression
-                compileExpression(expr);
+            // TTry now handled by ExpressionDispatcher → ControlFlowCompiler
                 
-            // TTry now handled by ExpressionDispatcher → ControlFlowCompiler            case TThrow(expr):
-                var throwExpr = compileExpression(expr);
-                'throw(${throwExpr})';
+            // TThrow now handled by ExpressionDispatcher → MiscExpressionCompiler
                 
-            case TCast(expr, moduleType):
-                // Simple cast - just compile the expression
-                // In Elixir, we rely on pattern matching for type safety
-                compileExpression(expr);
+            // TCast now handled by ExpressionDispatcher → MiscExpressionCompiler
                 
-            case TTypeExpr(moduleType):
-                // Type expression - convert to Elixir module name
-                switch (moduleType) {
-                    case TClassDecl(c): NamingHelper.getElixirModuleName(c.get().name);
-                    case TEnumDecl(e): NamingHelper.getElixirModuleName(e.get().name);
-                    case TAbstract(a): NamingHelper.getElixirModuleName(a.get().name);
-                    case _: "Dynamic";
-                }
+            // TTypeExpr now handled by ExpressionDispatcher → MiscExpressionCompiler
                 
-            case TBreak:
-                // Break statement - in Elixir, we use a throw/catch pattern or early return
-                "throw(:break)";
+            // TBreak now handled by ExpressionDispatcher → MiscExpressionCompiler
                 
-            case TContinue:
-                // Continue statement - in Elixir, we use a throw/catch pattern or skip to next iteration
-                "throw(:continue)";
+            // TContinue now handled by ExpressionDispatcher → MiscExpressionCompiler
                 
             case TEnumIndex(e):
                 // Get the index of an enum value - used for enum introspection
