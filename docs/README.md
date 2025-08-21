@@ -15,12 +15,13 @@ Welcome to the comprehensive documentation for Reflaxe.Elixir, a Haxe compilatio
 
 ### 📖 User Guide
 **[02-user-guide/](02-user-guide/)** - Complete user documentation for application developers
-- [Haxe→Elixir Basics](02-user-guide/haxe-basics.md) - Core concepts and language mappings
-- [Phoenix Integration](02-user-guide/phoenix-integration.md) - Building Phoenix applications
-- [LiveView Development](02-user-guide/liveview-development.md) - Real-time UI with type safety
-- [Ecto Schemas](02-user-guide/ecto-schemas.md) - Database integration and migrations
-- [Testing Guide](02-user-guide/testing.md) - Writing and running tests
-- [Deployment](02-user-guide/deployment.md) - Production deployment strategies
+- [Haxe Language Fundamentals](02-user-guide/HAXE_LANGUAGE_FUNDAMENTALS.md) - Core concepts
+- [Haxe→Elixir Mappings](02-user-guide/HAXE_ELIXIR_MAPPINGS.md) - Language conversion guide
+- [Phoenix Integration](02-user-guide/PHOENIX_INTEGRATION.md) - Building Phoenix applications
+- [Phoenix LiveView Architecture](02-user-guide/PHOENIX_LIVEVIEW_ARCHITECTURE.md) - Real-time UI patterns
+- [Haxe for Phoenix](02-user-guide/haxe-for-phoenix.md) - Why Haxe makes Phoenix better
+- [Ecto Integration Patterns](02-user-guide/ECTO_INTEGRATION_PATTERNS.md) - Database integration
+- [User Guide](02-user-guide/USER_GUIDE.md) - Comprehensive development guide
 
 ### ⚙️ Compiler Development
 **[03-compiler-development/](03-compiler-development/)** - For contributors to the compiler itself
@@ -67,15 +68,15 @@ Welcome to the comprehensive documentation for Reflaxe.Elixir, a Haxe compilatio
 **[08-roadmap/](08-roadmap/)** - Project direction and future plans
 - [Vision](08-roadmap/vision.md) - Long-term project vision
 - [V1 Roadmap](08-roadmap/v1-roadmap.md) - Version 1.0 release goals
-- [Active PRD](08-roadmap/active-prd.md) - Current product requirements
-- [Completed Features](08-roadmap/completed-features.md) - Release history
+- [Active PRD](08-roadmap/ACTIVE_PRD.md) - Current product requirements
+- [Product Requirements Document](08-roadmap/product-requirements-document.md) - Comprehensive PRD
 
 ### 📜 History & Records
 **[09-history/](09-history/)** - Historical documentation and decisions
-- [Task History](09-history/task-history.md) - Complete implementation log
-- [Architectural Decisions](09-history/architectural-decisions.md) - ADRs and rationale
-- [Lessons Learned](09-history/lessons-learned.md) - Post-mortems and insights
-- [Changelog](09-history/changelog.md) - Detailed release notes
+- [Task History](09-history/task-history.md) - Complete implementation log (3200+ entries)
+- [Legacy Development Guide](09-history/legacy-development-guide.md) - Previous development workflow
+- [Legacy Installation Guide](09-history/legacy-installation-guide.md) - Previous setup instructions
+- [Session Records](09-history/sessions/) - Development session archives
 
 ### 🤝 Contributing
 **[10-contributing/](10-contributing/)** - Contribution guidelines and processes
