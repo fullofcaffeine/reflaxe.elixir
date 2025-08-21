@@ -160,7 +160,7 @@ class Run {
 		
 		Sys.println("");
 		Sys.println("📚 Documentation:");
-		Sys.println("  https://github.com/fullofcaffeine/reflaxe.elixir/blob/main/documentation/GETTING_STARTED.md");
+		Sys.println("  https://github.com/fullofcaffeine/reflaxe.elixir/blob/main/docs/01-getting-started/installation.md");
 		Sys.println("");
 		Sys.println("Happy coding! 🎉");
 	}

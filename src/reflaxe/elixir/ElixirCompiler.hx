@@ -75,8 +75,8 @@ using reflaxe.helpers.TypeHelper;
  * into idiomatic Elixir code. It handles desugaring reversal - detecting patterns
  * that Haxe has desugared and converting them back to idiomatic target constructs.
  * 
- * @see documentation/ARCHITECTURE.md Complete architectural overview
- * @see documentation/TESTING.md Testing methodology and patterns
+ * @see docs/05-architecture/ARCHITECTURE.md Complete architectural overview
+ * @see docs/03-compiler-development/TESTING.md Testing methodology and patterns
  */
 class ElixirCompiler extends DirectToStringCompiler {
     

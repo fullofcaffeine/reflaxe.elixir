@@ -1215,9 +1215,9 @@ npx haxe build.hxml -D extract-patterns
 
 ## 📚 Additional Resources
 
-- [Watcher Development Guide](https://github.com/fullofcaffeine/reflaxe.elixir/blob/main/documentation/guides/WATCHER_DEVELOPMENT_GUIDE.md)
-- [Source Mapping Guide](https://github.com/fullofcaffeine/reflaxe.elixir/blob/main/documentation/SOURCE_MAPPING.md)
-- [Getting Started Guide](https://github.com/fullofcaffeine/reflaxe.elixir/blob/main/documentation/guides/GETTING_STARTED.md)
+- [Watcher Development Guide](https://github.com/fullofcaffeine/reflaxe.elixir/blob/main/docs/06-guides/WATCHER_DEVELOPMENT_GUIDE.md)
+- [Source Mapping Guide](https://github.com/fullofcaffeine/reflaxe.elixir/blob/main/docs/04-api-reference/SOURCE_MAPPING.md)
+- [Getting Started Guide](https://github.com/fullofcaffeine/reflaxe.elixir/blob/main/docs/01-getting-started/installation.md)
 
 ---
 
