@@ -61,7 +61,11 @@ defmodule TodoAppWeb.UserLive do
   def handle_save_user(params, socket) do
     user_params = params.user
     temp_struct = nil
-    if (socket.assigns.selected_user == nil), do: temp_struct = Users.create_user(user_params), else: temp_struct = Users.update_user(socket.assigns.selected_user, user_params)
+    if (socket.assigns.selected_user == nil) do
+      temp_struct = Users.create_user(user_params)
+    else
+      temp_struct = Users.update_user(socket.assigns.selected_user, user_params)
+    end
     temp_result = nil
     g = temp_struct.status
     case (g) do
@@ -93,7 +97,11 @@ defmodule TodoAppWeb.UserLive do
   def handle_search(params, socket) do
     search_term = params.search
     temp_array = nil
-    if (socket.assigns.search_term.length > 0), do: temp_array = Users.search_users(socket.assigns.search_term), else: temp_array = Users.list_users()
+    if (socket.assigns.search_term.length > 0) do
+      temp_array = Users.search_users(socket.assigns.search_term)
+    else
+      temp_array = Users.list_users()
+    end
     %{"status" => "noreply", "socket" => UserLive.assign_multiple(socket, %{"users" => temp_array, "searchTerm" => socket.assigns.search_term})}
   end
 
@@ -186,7 +194,9 @@ defmodule TodoAppWeb.UserLive do
 
   @doc "Generated from Haxe renderUserForm"
   def render_user_form(assigns) do
-    if (!assigns.show_form), do: "", else: nil
+    if (!assigns.show_form) do
+      ""
+    end
     ~H"""
       <div class="modal">
       <div class="modal-content">
