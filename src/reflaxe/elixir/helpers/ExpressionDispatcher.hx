@@ -66,6 +66,7 @@ class ExpressionDispatcher {
     var fieldAccessCompiler: FieldAccessCompiler;
     var methodCallCompiler: MethodCallCompiler;
     var miscExpressionCompiler: MiscExpressionCompiler;
+    var enumIntrospectionCompiler: EnumIntrospectionCompiler;
     
     /**
      * Create a new expression dispatcher
@@ -86,6 +87,7 @@ class ExpressionDispatcher {
         this.dataStructureCompiler = new DataStructureCompiler(compiler);
         this.fieldAccessCompiler = new FieldAccessCompiler(compiler);
         this.miscExpressionCompiler = new MiscExpressionCompiler(compiler);
+        this.enumIntrospectionCompiler = new EnumIntrospectionCompiler(compiler);
     }
     
     /**
@@ -271,6 +273,18 @@ class ExpressionDispatcher {
                 trace("[XRay ExpressionDispatcher] ✓ DISPATCHING to MiscExpressionCompiler (TContinue)");
                 #end
                 miscExpressionCompiler.compileContinueStatement();
+                
+            case TEnumIndex(e):
+                #if debug_expression_dispatcher
+                trace("[XRay ExpressionDispatcher] ✓ DISPATCHING to EnumIntrospectionCompiler (TEnumIndex)");
+                #end
+                enumIntrospectionCompiler.compileEnumIndexExpression(e);
+                
+            case TEnumParameter(e, ef, index):
+                #if debug_expression_dispatcher
+                trace("[XRay ExpressionDispatcher] ✓ DISPATCHING to EnumIntrospectionCompiler (TEnumParameter)");
+                #end
+                enumIntrospectionCompiler.compileEnumParameterExpression(e, ef, index);
                 
             case _:
                 #if debug_expression_dispatcher
