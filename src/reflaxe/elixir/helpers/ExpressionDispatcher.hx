@@ -63,7 +63,9 @@ class ExpressionDispatcher {
     // TODO: Uncomment as compilers are extracted:
     var variableCompiler: VariableCompiler;
     var dataStructureCompiler: DataStructureCompiler;
+    var fieldAccessCompiler: FieldAccessCompiler;
     var methodCallCompiler: MethodCallCompiler;
+    var miscExpressionCompiler: MiscExpressionCompiler;
     
     /**
      * Create a new expression dispatcher
@@ -82,6 +84,8 @@ class ExpressionDispatcher {
         // TODO: Initialize other compilers as they're extracted:
         this.variableCompiler = new VariableCompiler(compiler);
         this.dataStructureCompiler = new DataStructureCompiler(compiler);
+        this.fieldAccessCompiler = new FieldAccessCompiler(compiler);
+        this.miscExpressionCompiler = new MiscExpressionCompiler(compiler);
     }
     
     /**
@@ -194,6 +198,79 @@ class ExpressionDispatcher {
                 trace("[XRay ExpressionDispatcher] ✓ DISPATCHING to VariableCompiler (TVar)");
                 #end
                 variableCompiler.compileVariableDeclaration(tvar, expr);
+                
+            case TField(e, fa):
+                #if debug_expression_dispatcher
+                trace("[XRay ExpressionDispatcher] ✓ DISPATCHING to FieldAccessCompiler (TField)");
+                #end
+                fieldAccessCompiler.compileFieldAccess(e, fa, expr);
+                
+            case TCall(e, el):
+                #if debug_expression_dispatcher
+                trace("[XRay ExpressionDispatcher] → DELEGATING TCall to original function (temporary)");
+                #end
+                // Temporary delegation to debug MethodCallCompiler issue
+                compiler.compileElixirExpressionInternal(expr, topLevel);
+                
+            case TReturn(e):
+                #if debug_expression_dispatcher
+                trace("[XRay ExpressionDispatcher] ✓ DISPATCHING to MiscExpressionCompiler (TReturn)");
+                #end
+                miscExpressionCompiler.compileReturnStatement(e);
+                
+            case TParenthesis(e):
+                #if debug_expression_dispatcher
+                trace("[XRay ExpressionDispatcher] ✓ DISPATCHING to MiscExpressionCompiler (TParenthesis)");
+                #end
+                miscExpressionCompiler.compileParenthesesExpression(e);
+                
+            case TNew(c, params, el):
+                #if debug_expression_dispatcher
+                trace("[XRay ExpressionDispatcher] ✓ DISPATCHING to MiscExpressionCompiler (TNew)");
+                #end
+                miscExpressionCompiler.compileNewExpression(c, params, el);
+                
+            case TFunction(func):
+                #if debug_expression_dispatcher
+                trace("[XRay ExpressionDispatcher] ✓ DISPATCHING to MiscExpressionCompiler (TFunction)");
+                #end
+                miscExpressionCompiler.compileLambdaFunction(func);
+                
+            case TMeta(metadata, expr):
+                #if debug_expression_dispatcher
+                trace("[XRay ExpressionDispatcher] ✓ DISPATCHING to MiscExpressionCompiler (TMeta)");
+                #end
+                miscExpressionCompiler.compileMetadataExpression(metadata, expr);
+                
+            case TThrow(e):
+                #if debug_expression_dispatcher
+                trace("[XRay ExpressionDispatcher] ✓ DISPATCHING to MiscExpressionCompiler (TThrow)");
+                #end
+                miscExpressionCompiler.compileThrowStatement(e);
+                
+            case TCast(e, moduleType):
+                #if debug_expression_dispatcher
+                trace("[XRay ExpressionDispatcher] ✓ DISPATCHING to MiscExpressionCompiler (TCast)");
+                #end
+                miscExpressionCompiler.compileCastExpression(e, moduleType);
+                
+            case TTypeExpr(moduleType):
+                #if debug_expression_dispatcher
+                trace("[XRay ExpressionDispatcher] ✓ DISPATCHING to MiscExpressionCompiler (TTypeExpr)");
+                #end
+                miscExpressionCompiler.compileTypeExpression(moduleType);
+                
+            case TBreak:
+                #if debug_expression_dispatcher
+                trace("[XRay ExpressionDispatcher] ✓ DISPATCHING to MiscExpressionCompiler (TBreak)");
+                #end
+                miscExpressionCompiler.compileBreakStatement();
+                
+            case TContinue:
+                #if debug_expression_dispatcher
+                trace("[XRay ExpressionDispatcher] ✓ DISPATCHING to MiscExpressionCompiler (TContinue)");
+                #end
+                miscExpressionCompiler.compileContinueStatement();
                 
             case _:
                 #if debug_expression_dispatcher
