@@ -14,9 +14,7 @@ defmodule Log do
   @spec format_output(term(), PosInfos.t()) :: String.t()
   def format_output(v, infos) do
     str = Std.string(v)
-    if (infos == nil) do
-      str
-    end
+    if (infos == nil), do: str, else: nil
     pstr = infos.file_name <> ":" <> Integer.to_string(infos.line_number)
     if (infos.custom_params != nil) do
       _g_counter = 0

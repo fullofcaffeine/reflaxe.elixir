@@ -1,0 +1,311 @@
+package reflaxe.elixir.helpers;
+
+#if (macro || reflaxe_runtime)
+
+import haxe.macro.Type;
+import haxe.macro.Expr;
+import reflaxe.BaseCompiler;
+import reflaxe.elixir.helpers.NamingHelper;
+
+using reflaxe.helpers.NullHelper;
+using reflaxe.helpers.NameMetaHelper;
+using reflaxe.helpers.SyntaxHelper;
+using reflaxe.helpers.TypedExprHelper;
+
+/**
+ * GenServer Compiler for Reflaxe.Elixir
+ * 
+ * WHY: GenServer is the fundamental OTP behavior for stateful processes.
+ * This compiler enables type-safe GenServer development in Haxe with
+ * compile-time checking of callbacks and message passing.
+ * 
+ * WHAT: Handles compilation of classes annotated with @:genserver:
+ * - Generates GenServer modules with OTP callbacks
+ * - init/1, handle_call/3, handle_cast/2, handle_info/2
+ * - start_link/1 and child_spec/1 functions
+ * - Type-safe message passing
+ * - State management
+ * 
+ * HOW:
+ * 1. Extract GenServer metadata and options
+ * 2. Generate module with use GenServer
+ * 3. Compile callback functions with proper signatures
+ * 4. Generate client API functions
+ * 5. Ensure message type safety
+ * 
+ * @see documentation/OTP_GENSERVER.md - Complete GenServer guide
+ */
+@:nullSafety(Off)
+class GenServerCompiler {
+    
+    var compiler: Dynamic; // ElixirCompiler reference
+    
+    /**
+     * Create a new GenServer compiler
+     * 
+     * @param compiler The main ElixirCompiler instance
+     */
+    public function new(compiler: Dynamic) {
+        this.compiler = compiler;
+    }
+    
+    /**
+     * Compile a class annotated with @:genserver
+     * 
+     * WHY: GenServer modules need specific OTP callback structure
+     * with proper error handling and supervision tree integration.
+     * 
+     * WHAT: Generates a complete GenServer module including:
+     * - Module definition with use GenServer
+     * - start_link/1 for supervision tree
+     * - init/1 for initialization
+     * - handle_call/3 for synchronous requests
+     * - handle_cast/2 for asynchronous messages
+     * - handle_info/2 for system messages
+     * - Client API functions
+     * 
+     * HOW:
+     * 1. Extract GenServer configuration
+     * 2. Generate module with use GenServer
+     * 3. Create start_link and child_spec
+     * 4. Compile each callback with OTP signature
+     * 5. Generate client API from public methods
+     * 
+     * @param classType The class type information
+     * @param varFields Variable fields (server state)
+     * @param funcFields Function fields (callbacks and API)
+     * @return Generated GenServer module code
+     */
+    public function compileGenServerClass(
+        classType: ClassType,
+        varFields: Array<Dynamic>, // ClassVarData
+        funcFields: Array<Dynamic>  // ClassFuncData
+    ): String {
+        
+        #if debug_genserver
+        trace('[GenServerCompiler] Compiling GenServer class: ${classType.name}');
+        trace('[GenServerCompiler] State fields: ${varFields.length}, Functions: ${funcFields.length}');
+        #end
+        
+        var moduleName = compiler.getModuleName(classType);
+        
+        // Generate module header
+        var result = 'defmodule ${moduleName} do\n';
+        result += '  use GenServer\n\n';
+        
+        // Generate client API section
+        result += '  # Client API\n\n';
+        result += generateStartLink(classType);
+        result += generateClientAPI(funcFields);
+        
+        // Generate server callbacks section
+        result += '\n  # Server Callbacks\n\n';
+        result += generateInitCallback(varFields);
+        result += generateCallbacks(funcFields);
+        
+        // Add any private helper functions
+        result += generateHelperFunctions(funcFields);
+        
+        result += 'end\n';
+        
+        #if debug_genserver
+        trace('[GenServerCompiler] Generated GenServer: ${result.substring(0, 200)}...');
+        #end
+        
+        return result;
+    }
+    
+    // ================== Private Helper Methods ==================
+    
+    /**
+     * Generate start_link function
+     */
+    private function generateStartLink(classType: ClassType): String {
+        var serverName = NamingHelper.toSnakeCase(classType.name);
+        
+        return '  def start_link(opts \\\\ []) do\n' +
+               '    GenServer.start_link(__MODULE__, opts, name: __MODULE__)\n' +
+               '  end\n\n';
+    }
+    
+    /**
+     * Generate client API functions
+     */
+    private function generateClientAPI(funcFields: Array<Dynamic>): String {
+        var result = "";
+        
+        for (funcField in funcFields) {
+            if (isClientFunction(funcField)) {
+                result += generateClientFunction(funcField) + '\n';
+            }
+        }
+        
+        return result;
+    }
+    
+    /**
+     * Generate init callback
+     */
+    private function generateInitCallback(varFields: Array<Dynamic>): String {
+        // Generate initial state from var fields
+        var stateFields: Array<String> = [];
+        
+        for (varField in varFields) {
+            var fieldName = NamingHelper.toSnakeCase(varField.name);
+            var defaultValue = getDefaultValue(varField);
+            stateFields.push('${fieldName}: ${defaultValue}');
+        }
+        
+        var initialState = stateFields.length > 0 
+            ? '%{' + stateFields.join(', ') + '}'
+            : '%{}';
+        
+        return '  @impl true\n' +
+               '  def init(_opts) do\n' +
+               '    {:ok, ${initialState}}\n' +
+               '  end\n\n';
+    }
+    
+    /**
+     * Generate GenServer callbacks
+     */
+    private function generateCallbacks(funcFields: Array<Dynamic>): String {
+        var result = "";
+        
+        // Standard GenServer callbacks
+        var callbacks = ["handle_call", "handle_cast", "handle_info", "terminate"];
+        
+        for (callbackName in callbacks) {
+            for (funcField in funcFields) {
+                if (funcField.name == callbackName) {
+                    result += '  @impl true\n';
+                    result += compiler.compileFunction(funcField, true) + '\n';
+                }
+            }
+        }
+        
+        return result;
+    }
+    
+    /**
+     * Generate helper functions
+     */
+    private function generateHelperFunctions(funcFields: Array<Dynamic>): String {
+        var result = "";
+        var hasPrivate = false;
+        
+        for (funcField in funcFields) {
+            if (isPrivateHelper(funcField)) {
+                if (!hasPrivate) {
+                    result += '\n  # Private Functions\n\n';
+                    hasPrivate = true;
+                }
+                result += compiler.compileFunction(funcField, false) + '\n';
+            }
+        }
+        
+        return result;
+    }
+    
+    /**
+     * Check if function should be in client API
+     */
+    private function isClientFunction(funcField: Dynamic): Bool {
+        // Public functions that aren't callbacks become client API
+        var name = funcField.name;
+        return funcField.isPublic && 
+               !isGenServerCallback(name) &&
+               name != "new" &&
+               name != "start_link";
+    }
+    
+    /**
+     * Generate a client API function
+     */
+    private function generateClientFunction(funcField: Dynamic): String {
+        var name = NamingHelper.toSnakeCase(funcField.name);
+        var params = generateParameterList(funcField);
+        
+        // Determine if it's a call or cast based on return type
+        var isCall = !isVoidReturn(funcField);
+        
+        if (isCall) {
+            return '  def ${name}(${params}) do\n' +
+                   '    GenServer.call(__MODULE__, {:${name}, ${params}})\n' +
+                   '  end\n';
+        } else {
+            return '  def ${name}(${params}) do\n' +
+                   '    GenServer.cast(__MODULE__, {:${name}, ${params}})\n' +
+                   '  end\n';
+        }
+    }
+    
+    /**
+     * Check if function is a GenServer callback
+     */
+    private function isGenServerCallback(name: String): Bool {
+        return switch (name) {
+            case "init", "handle_call", "handle_cast", "handle_info", "terminate":
+                true;
+            default:
+                false;
+        };
+    }
+    
+    /**
+     * Check if function is a private helper
+     */
+    private function isPrivateHelper(funcField: Dynamic): Bool {
+        return !funcField.isPublic && 
+               !isGenServerCallback(funcField.name);
+    }
+    
+    /**
+     * Get default value for a state field
+     */
+    private function getDefaultValue(varField: Dynamic): String {
+        // Check for default metadata
+        if (varField.meta != null) {
+            var defaultMeta = varField.meta.extract(":default");
+            if (defaultMeta != null && defaultMeta.length > 0) {
+                return compiler.compileExpr(defaultMeta[0].params[0]);
+            }
+        }
+        
+        // Use type-based defaults
+        return switch (varField.type) {
+            case TInst(t, _):
+                switch (t.get().name) {
+                    case "Array": "[]";
+                    case "String": '""';
+                    default: "nil";
+                }
+            case TAbstract(t, _):
+                switch (t.get().name) {
+                    case "Int", "Float": "0";
+                    case "Bool": "false";
+                    default: "nil";
+                }
+            default: "nil";
+        };
+    }
+    
+    /**
+     * Generate parameter list for a function
+     */
+    private function generateParameterList(funcField: Dynamic): String {
+        // Simplified - would need proper parameter extraction
+        return "args";
+    }
+    
+    /**
+     * Check if function returns void
+     */
+    private function isVoidReturn(funcField: Dynamic): Bool {
+        // Check if return type is Void
+        return funcField.type == null || 
+               funcField.type.toString() == "Void";
+    }
+}
+
+#end

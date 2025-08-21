@@ -139,6 +139,88 @@ haxe.elixir/                          # Project root
 
 **Key Insight**: Reflaxe.Elixir is a **macro-time transpiler**, not a runtime library. All transpilation happens during Haxe compilation.
 
+## ⚠️ CRITICAL: Comprehensive Documentation Rule for ALL Compiler Code
+
+**FUNDAMENTAL RULE: Every piece of compiler logic MUST include comprehensive documentation and XRay debug traces.**
+
+### The Four Mandatory Elements:
+1. **WHY/WHAT/HOW Documentation** - Explain reasoning, purpose, and implementation
+2. **XRay Debug Traces** - Provide runtime visibility with `#if debug_feature` blocks
+3. **Pattern Detection Visibility** - Show what patterns are detected and why
+4. **Edge Case Documentation** - Document known limitations and special handling
+
+### Example Template:
+```haxe
+/**
+ * FEATURE NAME: Brief description
+ * 
+ * WHY: Problem being solved and rationale
+ * WHAT: High-level operation description  
+ * HOW: Step-by-step implementation details
+ * EDGE CASES: Special scenarios and limitations
+ */
+function compilerFunction() {
+    #if debug_feature
+    trace("[XRay Feature] OPERATION START");
+    trace('[XRay Feature] Input: ${input.substring(0, 100)}...');
+    #end
+    
+    // Implementation with visibility
+    
+    #if debug_feature
+    trace("[XRay Feature] ✓ PATTERN DETECTED");
+    trace("[XRay Feature] OPERATION END");
+    #end
+}
+```
+
+**See**: [`docs/03-compiler-development/COMPREHENSIVE_DOCUMENTATION_STANDARD.md`](docs/03-compiler-development/COMPREHENSIVE_DOCUMENTATION_STANDARD.md) - Complete documentation standards and XRay patterns
+
+## ⚠️ CRITICAL: File Size and Maintainability Standards
+
+**FUNDAMENTAL RULE: Large files are maintenance debt and MUST be refactored.**
+
+### File Size Guidelines (Based on Reflaxe Reference Implementations)
+
+| File Type | Target Size | Maximum Size | Current State |
+|-----------|-------------|--------------|---------------|
+| **Utility Classes** | 100-300 lines | 500 lines | ✅ Most helpers good |
+| **Helper Compilers** | 300-800 lines | 1,200 lines | ✅ Most helpers good |
+| **Main Compiler** | 800-1,500 lines | 2,000 lines | ❌ **ElixirCompiler.hx: 10,661 lines!** |
+| **Complex Compilers** | 1,000-2,000 lines | 2,500 lines | Expression compilation |
+
+### ⚠️ MANDATORY REFACTORING TRIGGERS
+
+A file MUST be refactored when:
+- [ ] Size exceeds maximum guidelines (ElixirCompiler.hx is 5x too large!)
+- [ ] Multiple responsibilities are mixed (loops + expressions + patterns + utilities)
+- [ ] Changes frequently break unrelated functionality  
+- [ ] Debugging requires scrolling through thousands of lines
+- [ ] New developers struggle to understand the file
+
+### Single Responsibility Principle
+
+Each file should have **one clear reason to change**:
+
+✅ **GOOD Examples**:
+- `LoopCompiler.hx` - Only handles loop compilation and optimization
+- `PatternDetector.hx` - Only detects AST patterns  
+- `CompilerUtilities.hx` - Only provides shared utility functions
+
+❌ **BAD Examples**:
+- `ElixirCompiler.hx` (current) - Handles loops, expressions, patterns, utilities, types, etc.
+
+### Refactoring Standards
+
+**Every extraction must include**:
+- Complete HaxeDoc for all functions
+- WHY/WHAT/HOW documentation for complex logic
+- XRay debug traces for compilation functions
+- Single responsibility focus
+- Test coverage to prevent regressions
+
+**Validation**: `npm test && cd examples/todo-app && npx haxe build-server.hxml && mix compile`
+
 ## Framework-Agnostic Design Pattern ✨ **ARCHITECTURAL PRINCIPLE**
 
 **CRITICAL RULE**: The compiler generates plain Elixir by default. Framework conventions are applied via annotations, not hardcoded assumptions.
@@ -236,11 +318,68 @@ if (isPhoenixProject()) {
 ### ⚠️ CRITICAL: Type Safety and String Avoidance
 **FUNDAMENTAL RULE: Avoid strings in compiler code unless absolutely necessary.**
 
+## 🏗️ Architecture & Refactoring Guidelines
+
+### ⚠️ CRITICAL: Prevent Monolithic Files (LEARNED FROM 10,668-LINE DISASTER)
+
+**FUNDAMENTAL RULE: NO SOURCE FILE MAY EXCEED 2000 LINES. IDEAL: 200-500 LINES.**
+
+#### The Single Responsibility Principle (ENFORCED)
+- **One file = One responsibility** - If you can't describe a file's purpose in one sentence, split it
+- **Extract early, extract often** - Don't wait until a file is 10k+ lines to refactor
+- **Helper pattern** - Use `helpers/` directory for specialized compilers (PatternMatchingCompiler, SchemaCompiler, etc.)
+
+#### File Size Limits (MANDATORY)
+```
+✅ IDEAL:       200-500 lines   (focused, maintainable)
+⚠️  ACCEPTABLE:  500-1000 lines  (consider splitting)
+🚨 WARNING:     1000-2000 lines (must have justification)
+❌ FORBIDDEN:   >2000 lines     (automatic refactoring required)
+```
+
+#### Extraction Guidelines
+When a file approaches 1000 lines, IMMEDIATELY:
+1. **Identify logical sections** - Look for groups of related functions
+2. **Extract helper modules** - Create specialized compilers in `helpers/`
+3. **Use delegation pattern** - Main compiler delegates to helpers
+4. **Document with WHY/WHAT/HOW** - Every extracted module needs comprehensive docs
+
+#### Example Structure (FROM OUR REFACTORING)
+```
+ElixirCompiler.hx (main orchestrator, <2000 lines)
+├── helpers/PatternMatchingCompiler.hx  (~400 lines - switch/case compilation)
+├── helpers/SchemaCompiler.hx           (~350 lines - @:schema/@:changeset)
+├── helpers/MigrationCompiler.hx        (~150 lines - @:migration)
+├── helpers/LiveViewCompiler.hx         (~220 lines - @:liveview)
+├── helpers/GenServerCompiler.hx        (~280 lines - @:genserver)
+├── helpers/ExpressionCompiler.hx       (~500 lines - expression utilities)
+├── helpers/ReflectionCompiler.hx       (~450 lines - Reflect.fields)
+└── helpers/LoopCompiler.hx            (~500 lines - for/while optimization)
+```
+
+#### Red Flags That Demand Immediate Refactoring
+- 🚨 **191 switch statements in one file** - Extract pattern matching
+- 🚨 **100+ repeated code patterns** - Create utility functions
+- 🚨 **Multiple responsibilities** - Split into focused modules
+- 🚨 **Deep nesting (>4 levels)** - Extract helper methods
+- 🚨 **Long functions (>100 lines)** - Break into smaller functions
+
+### Testing During Refactoring (MANDATORY)
+```bash
+# After EVERY extraction:
+npm test                    # Must pass ALL tests
+
+# After 2-3 extractions:
+cd examples/todo-app && npx haxe build-server.hxml && mix compile --force
+```
+
+**NEVER** complete a refactoring session without full test validation.
+
 ## Known Issues  
 - **Array Mutability**: Methods like `reverse()` and `sort()` don't mutate in place (Elixir lists are immutable)
 
 ## Recently Resolved Issues ✅
-- **Y Combinator Syntax**: Fixed undefined variable issues with post-processing approach
+- **Y Combinator Struct Update Patterns**: Fixed malformed inline if-else expressions with struct updates by forcing block syntax (see [`docs/03-compiler-development/Y_COMBINATOR_PATTERNS.md`](docs/03-compiler-development/Y_COMBINATOR_PATTERNS.md))
 - **Variable Substitution in Lambda Expressions**: Fixed with proper AST variable tracking
 - **Hardcoded Application Dependencies**: Removed all hardcoded references
 
