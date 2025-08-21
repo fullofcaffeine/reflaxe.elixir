@@ -241,30 +241,35 @@ class ControlFlowCompiler {
     /**
      * Compile TFor expressions to idiomatic Elixir Enum operations
      * 
-     * WHY: For loops should become functional Enum operations (map, each, reduce) in Elixir
+     * WHY: For loops require sophisticated pattern detection and optimization for
+     *      idiomatic Elixir code generation. This functionality is specialized in LoopCompiler.
+     * 
+     * WHAT: Delegates to LoopCompiler which provides comprehensive optimization:
+     *       - Pattern detection (map, filter, find, count, Reflect.fields)
+     *       - Variable substitution for clean lambda parameters
+     *       - Enum function selection based on loop body analysis
+     *       - Y combinator patterns for complex loops
+     * 
+     * HOW: Direct delegation to specialized LoopCompiler ensures consistent
+     *      optimization patterns and maintains centralized loop logic.
      * 
      * @param tvar Loop variable
      * @param iterExpr Iterable expression
      * @param blockExpr Loop body expression
-     * @return Compiled Elixir Enum operation
+     * @return Compiled Elixir Enum operation with appropriate optimizations
      */
     public function compileForLoop(tvar: TVar, iterExpr: TypedExpr, blockExpr: TypedExpr): String {
         #if debug_control_flow_compiler
-        trace("[XRay ControlFlowCompiler] FOR COMPILATION START");
+        trace("[XRay ControlFlowCompiler] DELEGATING FOR COMPILATION TO LoopCompiler");
         trace('[XRay ControlFlowCompiler] Loop variable: ${tvar.name}');
         #end
         
-        // IDIOMATIC IMPLEMENTATION: Convert for loops to Elixir Enum operations
-        var iterable = compiler.compileExpression(iterExpr);
-        var body = compiler.compileExpression(blockExpr);
-        var varName = tvar.name;
-        
-        // Convert to idiomatic Elixir Enum.each pattern
-        var result = 'Enum.each(${iterable}, fn ${varName} -> ${body} end)';
+        // DELEGATE to LoopCompiler for sophisticated pattern detection and optimization
+        var result = compiler.loopCompiler.compileForLoop(tvar, iterExpr, blockExpr);
         
         #if debug_control_flow_compiler
-        trace('[XRay ControlFlowCompiler] Generated for: ${result != null ? result.substring(0, 100) + "..." : "null"}');
-        trace("[XRay ControlFlowCompiler] FOR COMPILATION END");
+        trace('[XRay ControlFlowCompiler] LoopCompiler result: ${result != null ? result.substring(0, 100) + "..." : "null"}');
+        trace("[XRay ControlFlowCompiler] FOR COMPILATION DELEGATION COMPLETE");
         #end
         
         return result;
