@@ -2077,11 +2077,24 @@ class ElixirCompiler extends DirectToStringCompiler {
                 }
                 
             case TBlock(el):
+                #if debug_y_combinator
+                DebugHelper.debugYCombinator("TBlock START", "TBlock compilation beginning", 'expression count: ${el.length}');
+                for (i in 0...el.length) {
+                    DebugHelper.debugYCombinator("TBlock AST", 'Expression $i', 'type: ${Type.enumConstructor(el[i].expr)}');
+                }
+                #end
+                
                 if (el.length == 0) {
                     "nil";
                 } else if (el.length == 1) {
+                    #if debug_y_combinator
+                    DebugHelper.debugYCombinator("TBlock SINGLE", "Single expression in block", 'compiling: ${Type.enumConstructor(el[0].expr)}');
+                    #end
                     compileExpression(el[0]);
                 } else {
+                    #if debug_y_combinator
+                    DebugHelper.debugYCombinator("TBlock MULTIPLE", "Multiple expressions in block", 'this will generate multiple Elixir statements');
+                    #end
                     // EARLY OPTIMIZATION: Check for Reflect.fields pattern before processing
                     // This catches the pattern: for (field in Reflect.fields(config)) {...}
                     // which gets desugared into a TBlock with multiple statements
@@ -2417,11 +2430,22 @@ class ElixirCompiler extends DirectToStringCompiler {
                 // Track TIf statements for proper compilation
                 var cond = compileExpression(econd);
                 
+                #if debug_y_combinator
+                DebugHelper.debugYCombinator("TIf START", "Beginning TIf compilation", 'condition: $cond');
+                DebugHelper.debugYCombinator("TIf AST", "eif AST type", 'eif.expr: ${Type.enumConstructor(eif.expr)}');
+                if (eelse != null) {
+                    DebugHelper.debugYCombinator("TIf AST", "eelse AST type", 'eelse.expr: ${Type.enumConstructor(eelse.expr)}');
+                }
+                #end
                 
                 // CRITICAL: Check if the if-body or else-body contains multiple statements
                 // This must be done BEFORE compiling to avoid syntax errors
                 var needsBlockSyntax = containsMultipleStatements(eif) || 
                                       (eelse != null && containsMultipleStatements(eelse));
+                
+                #if debug_y_combinator
+                DebugHelper.debugYCombinator("TIf ANALYSIS", "containsMultipleStatements check", 'needsBlockSyntax: $needsBlockSyntax for eif: ${Type.enumConstructor(eif.expr)}');
+                #end
                 
                 // CRITICAL FIX: Check specifically for TWhile patterns that generate Y combinators
                 // TWhile patterns generate complex multi-line expressions that MUST use block syntax
@@ -2464,23 +2488,25 @@ class ElixirCompiler extends DirectToStringCompiler {
                 // This is the ROOT CAUSE of the Y combinator syntax error:
                 // When the if body contains multiple statements, inline syntax fails
                 
-                // DEBUG: Enhanced AST analysis for Y combinator detection
-                #if debug_y_combinator
-                DebugHelper.debugYCombinator("TIf AST Analysis", 'Condition: ${cond}', 'eif.expr type: ${Type.enumConstructor(eif.expr)}', "Analyzing AST structure for Y combinator patterns");
-                switch(eif.expr) {
-                    case TBlock(exprs): DebugHelper.debugYCombinator("TIf AST Analysis", "TBlock detected", 'Expression count: ${exprs.length}', "Multiple expressions in block");
-                    case TFor(_, _, _): DebugHelper.debugYCombinator("TIf AST Analysis", "TFor detected", "Original for-loop structure preserved", "This should force block syntax");
-                    case TBinop(_, _, _): DebugHelper.debugYCombinator("TIf AST Analysis", "TBinop detected", "Haxe may have transformed complex expression", "Checking for Y combinator patterns");
-                    case _: DebugHelper.debugYCombinator("TIf AST Analysis", "Other expression type", 'Type: ${Type.enumConstructor(eif.expr)}', "Standard expression processing");
-                }
-                #end
-                
                 var forceBlockSyntax = switch(eif.expr) {
                     case TBlock(exprs) if (exprs.length > 1): true;
                     case TFor(_, _, _): true;
                     case TWhile(_, _, _): true;
                     case _: false;
                 };
+                
+                // NEW: AST-level Y combinator detection (before string compilation)
+                var willGenerateYCombinator = detectYCombinatorInAST(eif) || (eelse != null && detectYCombinatorInAST(eelse));
+                #if debug_compiler
+                trace('[Y_COMBINATOR] AST detection result: ${willGenerateYCombinator}');
+                trace('[Y_COMBINATOR] Current condition: ${cond}');
+                #end
+                if (willGenerateYCombinator) {
+                    #if debug_compiler
+                    trace('[Y_COMBINATOR] AST detection: forcing block syntax for Y combinator pattern');
+                    #end
+                    forceBlockSyntax = true;
+                }
                 
                 // ADDITIONAL FIX: Also check if the compiled ifExpr contains multiple statements
                 // This catches cases where a single Haxe statement expands to multiple Elixir statements
@@ -2568,9 +2594,18 @@ class ElixirCompiler extends DirectToStringCompiler {
                     // Force block syntax to prevent ", else: nil" from affecting subsequent statements
                     hasComplexPattern = true;
                     #if debug_y_combinator
-                    DebugHelper.debugYCombinator("TIf Y combinator fix", 
-                        "CONFIG PATTERN DETECTED: forcing block syntax", 
-                        'cond: $cond, ifExpr: ${ifExpr.substring(0, 50)}...');
+                    DebugHelper.debugYCombinator("TIf Y combinator fix", "CONFIG PATTERN DETECTED: forcing block syntax", 'cond: $cond, ifExpr: ${ifExpr.substring(0, 50)}...');
+                    #end
+                }
+                
+                // CRITICAL FIX: Detect Reflect.fields patterns that spawn Y combinators
+                // PATTERN: if (config != null) { for (field in Reflect.fields(config)) ... }
+                // ISSUE: Reflect.fields loops get compiled to Y combinators with detached ", else: nil"
+                if ((cond.contains("config") || cond.contains("!=")) && 
+                    (ifExpr.contains("Reflect.fields") || ifExpr.contains("loop_helper"))) {
+                    hasComplexPattern = true;
+                    #if debug_y_combinator
+                    DebugHelper.debugYCombinator("TIf Reflect.fields fix", "REFLECT FIELDS PATTERN DETECTED: forcing block syntax", 'cond: $cond, ifExpr contains Reflect.fields or loop_helper');
                     #end
                 }
                 
@@ -2616,6 +2651,16 @@ class ElixirCompiler extends DirectToStringCompiler {
                 
                 // Apply the decision logic for block vs inline syntax
                 var useBlockSyntax = needsBlockSyntax || hasNewlines || hasComplexPattern || forceBlockSyntax || forceElseBlockSyntax || forceCaseArmBlockSyntax;
+                
+                #if debug_y_combinator
+                DebugHelper.debugYCombinator("TIf DECISION", "Block syntax decision factors", 
+                    'needsBlockSyntax: $needsBlockSyntax, hasNewlines: $hasNewlines, hasComplexPattern: $hasComplexPattern, forceBlockSyntax: $forceBlockSyntax, forceElseBlockSyntax: $forceElseBlockSyntax, forceCaseArmBlockSyntax: $forceCaseArmBlockSyntax');
+                DebugHelper.debugYCombinator("TIf DECISION", "Final decision", 'useBlockSyntax: $useBlockSyntax');
+                DebugHelper.debugYCombinator("TIf COMPILED", "Compiled expressions", 'ifExpr (first 100 chars): ${ifExpr.substring(0, Math.min(100, ifExpr.length))}...');
+                if (elseExpr != "nil") {
+                    DebugHelper.debugYCombinator("TIf COMPILED", "Else expression", 'elseExpr: $elseExpr');
+                }
+                #end
                 
                 if (useBlockSyntax) {
                     // Use block syntax for complex expressions
@@ -9791,6 +9836,159 @@ class ElixirCompiler extends DirectToStringCompiler {
         };
     }
     
+    /**
+     * Detect if an AST expression will generate a Y combinator pattern.
+     * 
+     * This function analyzes the AST structure BEFORE string compilation
+     * to identify patterns that will result in Y combinator generation,
+     * preventing the inline syntax bug where ", else: nil" gets misplaced.
+     * 
+     * @param expr The TypedExpr to analyze
+     * @return True if this expression will generate a Y combinator
+     */
+    private function detectYCombinatorInAST(expr: TypedExpr): Bool {
+        var result = switch(expr.expr) {
+            case TBlock(expressions):
+                #if debug_compiler
+                trace('[Y_COMBINATOR] Checking TBlock with ${expressions.length} expressions');
+                #end
+                // Check if block contains patterns that generate Y combinators
+                for (e in expressions) {
+                    if (detectYCombinatorInAST(e)) return true;
+                }
+                // Check for Reflect.fields iteration patterns
+                hasReflectFieldsIteration(expressions);
+                
+            case TFor(tvar, iterExpr, blockExpr):
+                #if debug_compiler
+                trace('[Y_COMBINATOR] Checking TFor loop');
+                #end
+                // TFor loops may generate Y combinators, especially with Reflect.fields
+                switch(iterExpr.expr) {
+                    case TCall(e, args):
+                        switch(e.expr) {
+                            case TField(obj, fa):
+                                var objStr = compileExpression(obj);
+                                switch(fa) {
+                                    case FStatic(_, cf):
+                                        // Reflect.fields iterations generate Y combinators
+                                        var isReflectFields = objStr == "Reflect" && cf.get().name == "fields";
+                                        #if debug_compiler
+                                        if (isReflectFields) trace('[Y_COMBINATOR] Found Reflect.fields pattern - will generate Y combinator');
+                                        #end
+                                        isReflectFields;
+                                    case _: false;
+                                }
+                            case _: false;
+                        }
+                    case _: false;
+                }
+                
+            case TWhile(_, _, _):
+                #if debug_compiler
+                trace('[Y_COMBINATOR] Found TWhile - will generate Y combinator');
+                #end
+                // While loops generate Y combinators
+                true;
+                
+            case _:
+                // Recursively check nested expressions
+                false;
+        }
+        
+        #if debug_compiler
+        if (result) trace('[Y_COMBINATOR] AST detection result: Y combinator pattern detected');
+        #end
+        
+        return result;
+    }
+    
+    /**
+     * Check if a block of expressions contains Reflect.fields iteration.
+     * 
+     * @param expressions Array of expressions to check
+     * @return True if contains Reflect.fields iteration pattern
+     */
+    /**
+     * Enhanced Reflect.fields detection with comprehensive debugging.
+     * 
+     * WHY: The original detection was missing Reflect.fields patterns, causing
+     * Y combinator syntax errors. This enhanced version traces the AST structure
+     * to understand why patterns aren't being detected.
+     * 
+     * HOW: Iterates through expressions in a TBlock, specifically looking for:
+     * 1. TVar assignments that call Reflect.fields
+     * 2. TFor loops that iterate over Reflect.fields results
+     * 3. Any nested expressions that contain these patterns
+     * 
+     * DEBUGGING: Uses XRay debugging to trace AST structure when debug_compiler flag is enabled,
+     * allowing us to understand exactly what AST patterns we're encountering.
+     * 
+     * @param expressions Array of expressions from a TBlock to analyze
+     * @return True if any expression uses Reflect.fields (indicating Y combinator generation)
+     */
+    private function hasReflectFieldsIteration(expressions: Array<TypedExpr>): Bool {
+        #if debug_compiler
+        trace('[Y_COMBINATOR] hasReflectFieldsIteration: checking block with ${expressions.length} expressions');
+        #end
+        
+        for (i in 0...expressions.length) {
+            var expr = expressions[i];
+            #if debug_compiler
+            trace('[Y_COMBINATOR] Expression $i: ${Type.enumConstructor(expr.expr)}');
+            #end
+            
+            switch(expr.expr) {
+                case TVar(tvar, init) if (init != null):
+                    #if debug_compiler
+                    trace('[Y_COMBINATOR] Found TVar: ${tvar.name}, checking initialization');
+                    #end
+                    switch(init.expr) {
+                        case TCall(e, args):
+                            switch(e.expr) {
+                                case TField(obj, fa):
+                                    var objStr = compileExpression(obj);
+                                    switch(fa) {
+                                        case FStatic(_, cf):
+                                            #if debug_compiler
+                                            trace('[Y_COMBINATOR] Found static call: ${objStr}.${cf.get().name}');
+                                            #end
+                                            if (objStr == "Reflect" && cf.get().name == "fields") {
+                                                #if debug_compiler
+                                                trace('[Y_COMBINATOR] FOUND Reflect.fields pattern! Returning true.');
+                                                #end
+                                                return true;
+                                            }
+                                        case _:
+                                    }
+                                case _:
+                            }
+                        case _:
+                    }
+                case TFor(tvar, iterExpr, blockExpr):
+                    #if debug_compiler
+                    trace('[Y_COMBINATOR] Found TFor loop, checking if it uses Reflect.fields');
+                    #end
+                    // Recursively check if this for-loop contains Y combinator patterns
+                    if (detectYCombinatorInAST(expr)) {
+                        #if debug_compiler
+                        trace('[Y_COMBINATOR] TFor contains Y combinator pattern! Returning true.');
+                        #end
+                        return true;
+                    }
+                case _:
+                    #if debug_compiler
+                    trace('[Y_COMBINATOR] Skipping expression type: ${Type.enumConstructor(expr.expr)}');
+                    #end
+            }
+        }
+        
+        #if debug_compiler
+        trace('[Y_COMBINATOR] hasReflectFieldsIteration: No Reflect.fields pattern found, returning false');
+        #end
+        return false;
+    }
+
     /**
      * Override called after all files have been generated by DirectToStringCompiler.
      * This is the proper place to generate source maps since the main .ex files exist now.

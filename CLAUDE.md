@@ -1003,7 +1003,111 @@ server.contexts.Users       → lib/server/contexts/users.ex    # Package preser
 **See**: [`documentation/COMPILER_BEST_PRACTICES.md`](documentation/COMPILER_BEST_PRACTICES.md) - Complete development principles, testing protocols, and best practices
 **See**: [`documentation/ANNOTATION_SYSTEM.md`](documentation/ANNOTATION_SYSTEM.md) - Complete annotation documentation and usage guidelines
 
+## ⚠️ CRITICAL: XRay Debugging Principles
+
+**FUNDAMENTAL RULE: Use conditional compilation for debugging, not ad-hoc trace statements.**
+
+### XRay Debugging Philosophy
+The compiler should be debuggable without performance impact in production builds. Use Haxe's conditional compilation system to provide comprehensive debugging capabilities.
+
+#### Correct XRay Pattern
+```haxe
+// ✅ GOOD: Conditional debugging with general flag
+#if debug_compiler
+trace('[COMPONENT] Description: specific information');
+#end
+
+// ✅ GOOD: Specific category flags for targeted debugging
+#if debug_y_combinator
+trace('[Y_COMBINATOR] Specific pattern: details');
+#end
+```
+
+#### Avoid Ad-Hoc Debugging
+```haxe
+// ❌ WRONG: Always-on debug output
+trace('Debugging info'); // Performance impact, clutters output
+
+// ❌ WRONG: Overly specific debug methods
+DebugHelper.debugSpecificFeature(...); // Proliferation of debug methods
+```
+
+#### Benefits of XRay Approach
+- **Zero performance impact** in production builds
+- **Targeted debugging** with specific flags like `-D debug_y_combinator`
+- **General debugging** with `-D debug_compiler` for all components
+- **No code pollution** - debug code only exists when needed
+- **Easy to maintain** - standard trace format across all components
+
+#### Usage in Development
+```bash
+# Debug specific feature
+haxe build.hxml -D debug_y_combinator
+
+# Debug everything
+haxe build.hxml -D debug_compiler
+
+# Production build (no debug output)
+haxe build.hxml
+```
+
+**Why This Matters**: Ad-hoc debugging code accumulates and creates maintenance burden. XRay provides surgical debugging capabilities with zero production impact.
+
 ## ⚠️ CRITICAL: Comprehensive Code Documentation Rule
+
+**FUNDAMENTAL RULE: Every code addition must document WHY it exists, WHAT it does, and HOW it does it.**
+
+### Code Documentation Requirements
+
+#### For Every New Function or Method
+1. **WHY**: What problem does this solve? What was broken or missing?
+2. **WHAT**: Clear description of the functionality and purpose
+3. **HOW**: Explanation of the algorithm, approach, or pattern used
+4. **PARAMETERS**: Document all parameters with types and purpose
+5. **RETURN VALUES**: Explain what is returned and under what conditions
+
+#### Documentation Template
+```haxe
+/**
+ * Brief description of function purpose.
+ * 
+ * WHY: Explain the problem this solves - what was broken or missing?
+ * For example: "The original Y combinator detection was missing patterns, 
+ * causing syntax errors when if-statements contained loops with Reflect.fields."
+ * 
+ * WHAT: Clear description of functionality.
+ * For example: "Detects AST patterns that will generate Y combinator expressions 
+ * before string compilation begins."
+ * 
+ * HOW: Explain the approach or algorithm.
+ * For example: "Recursively walks the AST structure, checking for TFor nodes 
+ * that iterate over Reflect.fields calls, and TWhile nodes that generate recursion."
+ * 
+ * @param paramName Description of parameter and its constraints
+ * @return Description of return value and possible states
+ */
+function exampleFunction(paramName: Type): ReturnType {
+    // Implementation with inline comments for complex logic
+}
+```
+
+#### For Complex Logic Sections
+```haxe
+// WHY: This complex transformation is needed because...
+// WHAT: Transform AST pattern X into Elixir pattern Y
+// HOW: Step 1, Step 2, Step 3...
+var complexResult = performComplexTransformation();
+```
+
+**Benefits**:
+- **Future maintainability** - Code remains understandable months later
+- **Bug prevention** - Clear intent prevents incorrect modifications
+- **Knowledge transfer** - New developers understand the codebase faster
+- **Architecture preservation** - Design decisions are preserved
+
+**Why This Matters**: Compiler code is inherently complex. Without comprehensive documentation, maintenance becomes error-prone and architectural understanding is lost over time.
+
+## ⚠️ CRITICAL: Legacy Documentation Rule
 
 **FUNDAMENTAL RULE: All complex compiler code MUST be comprehensively documented with context-aware comments.**
 
