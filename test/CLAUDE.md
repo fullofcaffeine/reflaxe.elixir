@@ -130,9 +130,9 @@ cd examples/todo-app && mix compile        # Integration validation
 5. **Fix the root cause** - Don't patch the symptoms
 
 ## 📚 Related Documentation
-- [`/documentation/TESTING_OVERVIEW.md`](/documentation/TESTING_OVERVIEW.md) - Complete testing guide
-- [`/documentation/TESTING_PRINCIPLES.md`](/documentation/TESTING_PRINCIPLES.md) - Testing methodology
-- [`/documentation/COMPILER_TESTING_GUIDE.md`](/documentation/COMPILER_TESTING_GUIDE.md) - Compiler-specific testing
-- [`/documentation/architecture/TESTING.md`](/documentation/architecture/TESTING.md) - Technical infrastructure
+- [`/docs/03-compiler-development/TESTING_OVERVIEW.md`](/docs/03-compiler-development/TESTING_OVERVIEW.md) - Complete testing guide
+- [`/docs/03-compiler-development/TESTING_PRINCIPLES.md`](/docs/03-compiler-development/TESTING_PRINCIPLES.md) - Testing methodology
+- [`/docs/03-compiler-development/COMPILER_TESTING_GUIDE.md`](/docs/03-compiler-development/COMPILER_TESTING_GUIDE.md) - Compiler-specific testing
+- [`/docs/05-architecture/TESTING.md`](/docs/05-architecture/TESTING.md) - Technical infrastructure
 
 **Remember**: Testing is not separate from implementation - it IS implementation validation. Every test failure teaches us something about the system.
