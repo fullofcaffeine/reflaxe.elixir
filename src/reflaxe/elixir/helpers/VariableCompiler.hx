@@ -435,21 +435,280 @@ class VariableCompiler {
     }
     
     /**
-     * TODO: Future implementation will contain additional extracted utility methods:
+     * Check if a statement targets a specific variable (used for pipeline detection).
+     * Excludes terminal operations that consume but don't transform the variable.
      * 
-     * - Variable collision detection and resolution algorithms
-     * - LiveView instance variable pattern recognition
-     * - Function reference detection and capture syntax generation
-     * - Inline context management for struct update optimizations
-     * - Temporary variable elimination patterns
-     * - Parameter mapping consistency utilities
-     * - containsVariableReference() - Check if expression references a variable
-     * - statementTargetsVariable() - Check if statement targets specific variable
-     * - substituteVariableInExpression() - AST variable substitution
+     * WHY: Pipeline optimization requires identifying statements that transform variables
      * 
-     * These methods will support the main compilation functions with
-     * specialized logic for variable handling patterns.
+     * WHAT: Analyze statement patterns to detect variable transformation vs consumption
+     * 
+     * HOW: Check for var x = f(x, ...) and x = f(x, ...) patterns while excluding terminal operations
+     * 
+     * @param stmt The statement to analyze
+     * @param variableName The variable name to check for
+     * @return True if statement transforms the variable (part of pipeline)
      */
+    public function statementTargetsVariable(stmt: TypedExpr, variableName: String): Bool {
+        #if debug_variable_compiler
+        trace("[XRay VariableCompiler] STATEMENT TARGETS VARIABLE CHECK");
+        trace('[XRay VariableCompiler] Variable: ${variableName}');
+        trace('[XRay VariableCompiler] Statement: ${stmt.expr}');
+        #end
+        
+        // Skip terminal operations - they consume the variable but aren't part of the pipeline
+        if (isTerminalOperation(stmt, variableName)) {
+            #if debug_variable_compiler
+            trace("[XRay VariableCompiler] ✓ TERMINAL OPERATION DETECTED - SKIPPING");
+            #end
+            return false;
+        }
+        
+        var result = switch(stmt.expr) {
+            case TVar(v, init) if (init != null):
+                // var x = f(x, ...) pattern
+                var varName = v.name;
+                if (varName == variableName) {
+                    // Check if the init expression uses the same variable
+                    var found = containsVariableReference(init, variableName);
+                    #if debug_variable_compiler
+                    trace('[XRay VariableCompiler] TVar pattern found: ${found}');
+                    #end
+                    found;
+                } else {
+                    false;
+                }
+                
+            case TBinop(OpAssign, {expr: TLocal(v)}, right):
+                // x = f(x, ...) pattern
+                var varName = v.name;
+                if (varName == variableName) {
+                    // Check if the right side uses the same variable
+                    var found = containsVariableReference(right, variableName);
+                    #if debug_variable_compiler
+                    trace('[XRay VariableCompiler] TBinop assignment pattern found: ${found}');
+                    #end
+                    found;
+                } else {
+                    false;
+                }
+                
+            default:
+                false;
+        };
+        
+        #if debug_variable_compiler
+        trace('[XRay VariableCompiler] Statement targets variable result: ${result}');
+        #end
+        
+        return result;
+    }
+    
+    /**
+     * Check if a statement is a terminal operation that consumes a pipeline variable
+     * but doesn't transform it (like Repo.all, Repo.one, etc.)
+     * 
+     * WHY: Pipeline optimization needs to distinguish transformation vs consumption
+     * 
+     * WHAT: Identify terminal operations that end pipelines rather than extend them
+     * 
+     * HOW: Check for known terminal functions and verify they use the target variable
+     * 
+     * @param stmt The statement to analyze
+     * @param variableName The variable name to check for
+     * @return True if statement is a terminal operation on the variable
+     */
+    public function isTerminalOperation(stmt: TypedExpr, variableName: String): Bool {
+        #if debug_variable_compiler
+        trace("[XRay VariableCompiler] TERMINAL OPERATION CHECK");
+        trace('[XRay VariableCompiler] Variable: ${variableName}');
+        #end
+        
+        var result = switch(stmt.expr) {
+            case TCall(funcExpr, args):
+                // Check for Repo operations or other terminal functions
+                var funcName = extractFunctionNameFromCall(funcExpr);
+                var terminalFunctions = ["Repo.all", "Repo.one", "Repo.get", "Repo.insert", "Repo.update", "Repo.delete"];
+                
+                #if debug_variable_compiler
+                trace('[XRay VariableCompiler] Function name: ${funcName}');
+                #end
+                
+                if (terminalFunctions.indexOf(funcName) >= 0) {
+                    // Check if first argument references our variable
+                    if (args.length > 0) {
+                        var found = containsVariableReference(args[0], variableName);
+                        #if debug_variable_compiler
+                        trace('[XRay VariableCompiler] Terminal function uses variable: ${found}');
+                        #end
+                        found;
+                    } else {
+                        false;
+                    }
+                } else {
+                    false;
+                }
+                
+            default:
+                false;
+        };
+        
+        #if debug_variable_compiler
+        trace('[XRay VariableCompiler] Terminal operation result: ${result}');
+        #end
+        
+        return result;
+    }
+    
+    /**
+     * Check if an expression (typically from a TReturn) is a terminal operation on a specific variable
+     * 
+     * WHY: Return statements often contain terminal operations that need special handling
+     * 
+     * WHAT: Analyze return expressions for terminal pipeline operations
+     * 
+     * HOW: Similar to isTerminalOperation but focused on expressions rather than statements
+     * 
+     * @param expr The expression to analyze
+     * @param variableName The variable name to check for
+     * @return True if expression is a terminal operation on the variable
+     */
+    public function isTerminalOperationOnVariable(expr: TypedExpr, variableName: String): Bool {
+        #if debug_variable_compiler
+        trace("[XRay VariableCompiler] TERMINAL OPERATION ON VARIABLE CHECK");
+        trace('[XRay VariableCompiler] Variable: ${variableName}');
+        #end
+        
+        var result = switch(expr.expr) {
+            case TCall(funcExpr, args):
+                // Check for Repo operations or other terminal functions
+                var funcName = extractFunctionNameFromCall(funcExpr);
+                var terminalFunctions = ["Repo.all", "Repo.one", "Repo.get", "Repo.insert", "Repo.update", "Repo.delete"];
+                
+                #if debug_variable_compiler
+                trace('[XRay VariableCompiler] Function name: ${funcName}');
+                #end
+                
+                if (terminalFunctions.indexOf(funcName) >= 0) {
+                    // Check if first argument references our variable
+                    if (args.length > 0) {
+                        var found = containsVariableReference(args[0], variableName);
+                        #if debug_variable_compiler
+                        trace('[XRay VariableCompiler] Terminal function uses variable: ${found}');
+                        #end
+                        found;
+                    } else {
+                        false;
+                    }
+                } else {
+                    false;
+                }
+                
+            default:
+                false;
+        };
+        
+        #if debug_variable_compiler
+        trace('[XRay VariableCompiler] Terminal operation on variable result: ${result}');
+        #end
+        
+        return result;
+    }
+    
+    /**
+     * Extract function name from a call expression
+     * 
+     * WHY: Pipeline analysis requires identifying function names for terminal operation detection
+     * 
+     * WHAT: Parse TypedExpr call expressions to extract qualified function names
+     * 
+     * HOW: Pattern match on different field access patterns and module references
+     * 
+     * @param funcExpr The function expression to analyze
+     * @return The extracted function name (e.g., "Repo.all", "map", etc.)
+     */
+    public function extractFunctionNameFromCall(funcExpr: TypedExpr): String {
+        #if debug_variable_compiler
+        trace("[XRay VariableCompiler] EXTRACTING FUNCTION NAME FROM CALL");
+        trace('[XRay VariableCompiler] Function expression: ${funcExpr.expr}');
+        #end
+        
+        var result = switch(funcExpr.expr) {
+            case TField({expr: TLocal({name: moduleName})}, fa):
+                // Module.function pattern (e.g., Repo.all)
+                var funcName = switch(fa) {
+                    case FInstance(_, _, cf) | FStatic(_, cf) | FAnon(cf) | FClosure(_, cf):
+                        cf.get().name;
+                    case FDynamic(s):
+                        s;
+                    case FEnum(_, ef):
+                        ef.name;
+                };
+                var fullName = moduleName + "." + funcName;
+                #if debug_variable_compiler
+                trace('[XRay VariableCompiler] Module.function pattern: ${fullName}');
+                #end
+                fullName;
+                
+            case TField({expr: TTypeExpr(moduleType)}, fa):
+                // Type.function pattern (for static calls like Repo.all)
+                var result = switch(fa) {
+                    case FStatic(classRef, cf):
+                        // For static calls, get the module name from the class
+                        var moduleName = switch(classRef.get().name) {
+                            case "Repo": "Repo";  // Special case for Repo
+                            case name: NamingHelper.toSnakeCase(name);
+                        };
+                        // Convert method name to snake_case for Elixir
+                        var methodName = NamingHelper.toSnakeCase(cf.get().name);
+                        var fullName = moduleName + "." + methodName;
+                        #if debug_variable_compiler
+                        trace('[XRay VariableCompiler] Type.function pattern: ${fullName}');
+                        #end
+                        fullName;
+                    case FInstance(_, _, cf) | FAnon(cf) | FClosure(_, cf):
+                        cf.get().name;
+                    case FDynamic(s):
+                        s;
+                    case FEnum(_, ef):
+                        ef.name;
+                };
+                result;
+                
+            case TLocal({name: funcName}):
+                // Simple function call
+                #if debug_variable_compiler
+                trace('[XRay VariableCompiler] Simple function: ${funcName}');
+                #end
+                funcName;
+                
+            case TField(_, fa):
+                // Method call without module
+                var funcName = switch(fa) {
+                    case FInstance(_, _, cf) | FStatic(_, cf) | FAnon(cf) | FClosure(_, cf):
+                        cf.get().name;
+                    case FDynamic(s):
+                        s;
+                    case FEnum(_, ef):
+                        ef.name;
+                };
+                #if debug_variable_compiler
+                trace('[XRay VariableCompiler] Method call: ${funcName}');
+                #end
+                funcName;
+                
+            default:
+                #if debug_variable_compiler
+                trace("[XRay VariableCompiler] Unknown function expression type");
+                #end
+                "";
+        };
+        
+        #if debug_variable_compiler
+        trace('[XRay VariableCompiler] Final function name: ${result}');
+        #end
+        
+        return result;
+    }
 }
 
 #end
