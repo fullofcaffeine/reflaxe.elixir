@@ -54,6 +54,7 @@ import reflaxe.elixir.helpers.PatternMatchingCompiler;
 import reflaxe.elixir.helpers.MigrationCompiler;
 import reflaxe.elixir.helpers.LiveViewCompiler;
 import reflaxe.elixir.helpers.GenServerCompiler;
+import reflaxe.elixir.helpers.MethodCallCompiler;
 import reflaxe.elixir.PhoenixMapper;
 import reflaxe.elixir.SourceMapWriter;
 
@@ -124,6 +125,9 @@ class ElixirCompiler extends DirectToStringCompiler {
     // GenServer compilation helper
     private var genServerCompiler: reflaxe.elixir.helpers.GenServerCompiler;
     
+    // Method call compilation
+    private var methodCallCompiler: reflaxe.elixir.helpers.MethodCallCompiler;
+    
     // Import optimization for clean import statements
     private var importOptimizer: reflaxe.elixir.helpers.ImportOptimizer;
     
@@ -164,6 +168,7 @@ class ElixirCompiler extends DirectToStringCompiler {
         this.migrationCompiler = new reflaxe.elixir.helpers.MigrationCompiler(this);
         this.liveViewCompiler = new reflaxe.elixir.helpers.LiveViewCompiler(this);
         this.genServerCompiler = new reflaxe.elixir.helpers.GenServerCompiler(this);
+        this.methodCallCompiler = new reflaxe.elixir.helpers.MethodCallCompiler(this);
         
         // Set compiler reference for delegation
         this.patternMatcher.setCompiler(this);
@@ -3291,128 +3296,13 @@ class ElixirCompiler extends DirectToStringCompiler {
      * Compile switch expression to Elixir case statement with advanced pattern matching
      * Supports enum patterns, guard clauses, binary patterns, and pin operators
      */
+    // Delegated to PatternMatchingCompiler - keeping for backward compatibility
     private function compileSwitchExpression(switchExpr: TypedExpr, cases: Array<{values: Array<TypedExpr>, expr: TypedExpr}>, defaultExpr: Null<TypedExpr>): String {
-        // Use PatternMatcher for complete switch expression compilation
-        if (patternMatcher == null) {
-            patternMatcher = new reflaxe.elixir.helpers.PatternMatcher();
-            patternMatcher.setCompiler(this);
-        }
-        
-        // Check for exhaustive pattern matching and warn if incomplete
-        var exhaustivenessWarnings = patternMatcher.validatePatternExhaustiveness(switchExpr, cases, defaultExpr);
-        for (warning in exhaustivenessWarnings) {
-            haxe.macro.Context.warning(warning, switchExpr.pos);
-        }
-        
-        // Check if this is a Result pattern that should use with statements
-        if (shouldUseWithStatement(switchExpr, cases)) {
-            return compileWithStatement(switchExpr, cases, defaultExpr);
-        }
-        
-        // Use PatternMatcher's comprehensive switch compilation
-        return patternMatcher.compileSwitchExpression(switchExpr, cases, defaultExpr);
-    }
-    
-    /**
-     * Check if switch expression should use with statement instead of case
-     * Returns true for Result patterns that benefit from Elixir's with syntax
-     */
-    private function shouldUseWithStatement(switchExpr: TypedExpr, cases: Array<{values: Array<TypedExpr>, expr: TypedExpr}>): Bool {
-        // Detect Result patterns that chain operations - ideal for with statements
-        if (cases.length >= 2) {
-            var hasSuccessPattern = false;
-            var hasErrorPattern = false;
-            
-            for (caseItem in cases) {
-                for (value in caseItem.values) {
-                    if (isResultSuccessPattern(value)) hasSuccessPattern = true;
-                    if (isResultErrorPattern(value)) hasErrorPattern = true;
-                }
-            }
-            
-            return hasSuccessPattern && hasErrorPattern;
-        }
-        
-        return false;
-    }
-    
-    /**
-     * Compile Result patterns using Elixir's with statement
-     * Generates idiomatic with/else syntax for Result chaining
-     */
-    private function compileWithStatement(switchExpr: TypedExpr, cases: Array<{values: Array<TypedExpr>, expr: TypedExpr}>, defaultExpr: Null<TypedExpr>): String {
-        var result = new StringBuf();
-        var switchValue = compileExpression(switchExpr);
-        
-        result.add('with ');
-        
-        var successCases = [];
-        var errorCases = [];
-        
-        // Separate success and error patterns
-        for (caseItem in cases) {
-            for (value in caseItem.values) {
-                if (isResultSuccessPattern(value)) {
-                    successCases.push({pattern: value, expr: caseItem.expr});
-                } else if (isResultErrorPattern(value)) {
-                    errorCases.push({pattern: value, expr: caseItem.expr});
-                }
-            }
-        }
-        
-        // Generate with clause for success pattern
-        if (successCases.length > 0) {
-            var successCase = successCases[0];
-            var pattern = patternMatcher.compilePattern(successCase.pattern);
-            result.add('${pattern} <- ${switchValue} do\n');
-            
-            var successExpr = compileExpression(successCase.expr);
-            result.add('  ${successExpr}\n');
-        }
-        
-        // Generate else clause for error patterns
-        if (errorCases.length > 0) {
-            result.add('else\n');
-            
-            for (errorCase in errorCases) {
-                var pattern = patternMatcher.compilePattern(errorCase.pattern);
-                var errorExpr = compileExpression(errorCase.expr);
-                result.add('  ${pattern} -> ${errorExpr}\n');
-            }
-        }
-        
-        // Add default case to else if present
-        if (defaultExpr != null) {
-            if (errorCases.length == 0) result.add('else\n');
-            var defaultCode = compileExpression(defaultExpr);
-            result.add('  _ -> ${defaultCode}\n');
-        }
-        
-        result.add('end');
-        return result.toString();
-    }
-    
-    /**
-     * Check if pattern represents Result success case
-     */
-    private function isResultSuccessPattern(pattern: TypedExpr): Bool {
-        // This is a simplified check - in practice would analyze the pattern more thoroughly
-        var patternStr = patternMatcher.compilePattern(pattern);
-        return patternStr.indexOf(":ok") >= 0 || patternStr.indexOf("success") >= 0;
-    }
-    
-    /**
-     * Check if pattern represents Result error case
-     */
-    private function isResultErrorPattern(pattern: TypedExpr): Bool {
-        // This is a simplified check - in practice would analyze the pattern more thoroughly
-        var patternStr = patternMatcher.compilePattern(pattern);
-        return patternStr.indexOf(":error") >= 0 || patternStr.indexOf("error") >= 0;
+        return patternMatchingCompiler.compileSwitchExpression(switchExpr, cases, defaultExpr);
     }
     
     /**
      * Check if an enum type is the Result<T,E> type
-     * @deprecated Use AlgebraicDataTypeCompiler.isADTType() instead
      */
     private function isResultType(enumType: EnumType): Bool {
         return AlgebraicDataTypeCompiler.isADTType(enumType) && 
@@ -3420,157 +3310,13 @@ class ElixirCompiler extends DirectToStringCompiler {
     }
     
     /**
-     * Check if an enum type is the Option<T> type
-     * @deprecated Use AlgebraicDataTypeCompiler.isADTType() instead
+     * Check if an enum type is the Option<T> type  
      */
     private function isOptionType(enumType: EnumType): Bool {
         return AlgebraicDataTypeCompiler.isADTType(enumType) && 
                enumType.name == "Option";
     }
     
-    /**
-     * Extract enum type and field information from an expression
-     */
-    private function extractEnumInfo(expr: TypedExpr): Null<{enumType: haxe.macro.Ref<EnumType>, enumField: EnumField}> {
-        return switch (expr.expr) {
-            case TField(_, FEnum(enumType, enumField)):
-                {enumType: enumType, enumField: enumField};
-            case _:
-                null;
-        }
-    }
-    
-    /**
-     * Compile Result enum constructor to proper Elixir tuple
-     * @deprecated Use AlgebraicDataTypeCompiler.compileADTPattern() instead
-     */
-    private function compileResultPattern(enumField: EnumField, args: Array<TypedExpr>): String {
-        // Find the Result enum type - this is a bit hacky but works for backward compatibility
-        var resultEnum = null;
-        try {
-            var resultType = haxe.macro.Context.getType("haxe.functional.Result");
-            switch (resultType) {
-                case TEnum(enumRef, _):
-                    resultEnum = enumRef.get();
-                case _:
-            }
-        } catch (e: Dynamic) {
-            // Fallback if type not found
-        }
-        
-        if (resultEnum != null) {
-            var compiled = AlgebraicDataTypeCompiler.compileADTPattern(resultEnum, enumField, args, (expr) -> compilePatternArgument(expr));
-            if (compiled != null) return compiled;
-        }
-        
-        // Fallback to original logic for unknown patterns
-        var fieldName = enumField.name.toLowerCase();
-        var snakeName = NamingHelper.toSnakeCase(fieldName);
-        if (args.length == 0) {
-            return ':${snakeName}';
-        } else if (args.length == 1) {
-            var argPattern = compilePatternArgument(args[0]);
-            return '{:${snakeName}, ${argPattern}}';
-        } else {
-            var argPatterns = args.map(compilePatternArgument);
-            return '{:${snakeName}, ${argPatterns.join(', ')}}';
-        }
-    }
-    
-    /**
-     * Compile Option enum constructor to proper Elixir pattern
-     * @deprecated Use AlgebraicDataTypeCompiler.compileADTPattern() instead
-     */
-    private function compileOptionPattern(enumField: EnumField, args: Array<TypedExpr>): String {
-        // Find the Option enum type - this is a bit hacky but works for backward compatibility
-        var optionEnum = null;
-        try {
-            var optionType = haxe.macro.Context.getType("haxe.ds.Option");
-            switch (optionType) {
-                case TEnum(enumRef, _):
-                    optionEnum = enumRef.get();
-                case _:
-            }
-        } catch (e: Dynamic) {
-            // Fallback if type not found
-        }
-        
-        if (optionEnum != null) {
-            var compiled = AlgebraicDataTypeCompiler.compileADTPattern(optionEnum, enumField, args, (expr) -> compilePatternArgument(expr));
-            if (compiled != null) return compiled;
-        }
-        
-        // Fallback to original logic for unknown patterns
-        var fieldName = enumField.name.toLowerCase();
-        var snakeName = NamingHelper.toSnakeCase(fieldName);
-        return ':${snakeName}';
-    }
-    
-    /**
-     * Compile enum constructor pattern for case matching
-     */
-    private function compileEnumPattern(expr: TypedExpr): String {
-        return switch (expr.expr) {
-            case TField(_, FEnum(enumType, enumField)):
-                // Check if this is a known algebraic data type (Result, Option, etc.)
-                var enumTypeRef = enumType.get();
-                if (AlgebraicDataTypeCompiler.isADTType(enumTypeRef)) {
-                    var compiled = AlgebraicDataTypeCompiler.compileADTPattern(enumTypeRef, enumField, [], (expr) -> compilePatternArgument(expr));
-                    if (compiled != null) return compiled;
-                }
-                // Simple enum pattern: SomeEnum.Option → :option
-                var fieldName = NamingHelper.toSnakeCase(enumField.name);
-                ':${fieldName}';
-                
-            case TCall(e, args) if (isEnumFieldAccess(e)):
-                // Check if this is a known algebraic data type constructor call
-                var enumInfo = extractEnumInfo(e);
-                if (enumInfo != null && AlgebraicDataTypeCompiler.isADTType(enumInfo.enumType.get())) {
-                    var compiled = AlgebraicDataTypeCompiler.compileADTPattern(enumInfo.enumType.get(), enumInfo.enumField, args, (expr) -> compilePatternArgument(expr));
-                    if (compiled != null) return compiled;
-                }
-                
-                // Parameterized enum pattern: SomeEnum.Option(value) → {:option, value}
-                var fieldName = extractEnumFieldName(e);
-                if (args.length == 0) {
-                    ':${fieldName}';
-                } else if (args.length == 1) {
-                    var argPattern = compilePatternArgument(args[0]);
-                    '{:${fieldName}, ${argPattern}}';
-                } else {
-                    var argPatterns = args.map(compilePatternArgument);
-                    '{:${fieldName}, ${argPatterns.join(', ')}}';
-                }
-                
-            case TConst(constant):
-                // Literal constants in switch
-                compileTConstant(constant);
-                
-            case _:
-                // Fallback - compile as regular expression
-                compileExpression(expr);
-        }
-    }
-    
-    /**
-     * Compile pattern argument (variable binding or literal)
-     */
-    private function compilePatternArgument(expr: TypedExpr): String {
-        return switch (expr.expr) {
-            case TLocal(v):
-                // Variable binding in pattern
-                var originalName = getOriginalVarName(v);
-                NamingHelper.toSnakeCase(originalName);
-                
-            case TConst(constant):
-                // Literal in pattern
-                compileTConstant(constant);
-                
-            case _:
-                // Wildcard or complex pattern
-                "_";
-        }
-    }
     
     /**
      * Helper: Compile struct definition from class variables
