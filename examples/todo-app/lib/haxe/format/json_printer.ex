@@ -57,7 +57,9 @@ defmodule JsonPrinter do
   @doc "Function write"
   @spec write(t(), term(), term()) :: nil
   def write(%__MODULE__{} = struct, k, v) do
-    if (struct.replacer != nil), do: v = struct.replacer(k, v), else: nil
+    if (struct.replacer != nil) do
+      v = struct.replacer(k, v)
+    end
     g = Type.typeof(v)
     case (elem(g, 0)) do
       0 ->
