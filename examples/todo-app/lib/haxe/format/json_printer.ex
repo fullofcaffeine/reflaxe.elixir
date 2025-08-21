@@ -130,10 +130,12 @@ defmodule JsonPrinter do
               v = v
               o = %{}
               k = v.keys()
-              Enum.each(Map.keys(o), fn k ->
-                k = k.next()
-                o = Map.put(o, k, v.get(k))
-              end)
+              if o != nil do
+                Enum.each(Map.keys(o), fn field ->
+                  k = k.next()
+                  Map.put(o, k, v.get(k))
+                end)
+              end
               v = o
               struct.fields_string(v, Reflect.fields(v))
             else

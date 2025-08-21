@@ -71,6 +71,56 @@ Example of correct approach:
 4. **Verify builds after cleanup** - Ensure nothing breaks
 5. **Document cleanup decisions** - Record why files were removed
 
+### 📝 CRITICAL: Documentation Maintenance Protocol ⚠️
+
+**RULE: All documentation MUST be kept current and accurate at ALL times**
+
+#### Live Documentation Standards
+1. **XRay Debugging System**: [`documentation/DEBUG_XRAY_SYSTEM.md`](documentation/DEBUG_XRAY_SYSTEM.md) - **MUST** be updated when:
+   - Adding new debug categories (`debug_feature_name`)
+   - Creating new DebugHelper methods
+   - Modifying debug output formats
+   - Adding compilation flags or debug workflows
+
+2. **Architecture Documentation**: [`documentation/architecture/ARCHITECTURE.md`](documentation/architecture/ARCHITECTURE.md) - **MUST** be updated when:
+   - Changing compiler core architecture
+   - Adding new helper compilers
+   - Modifying compilation phases or AST processing
+   - Adding or removing major features
+
+3. **API Documentation**: All files in [`documentation/`](documentation/) - **MUST** be updated when:
+   - Adding new APIs or changing existing ones
+   - Modifying standard library interfaces
+   - Changing annotation systems (@:router, @:liveview, etc.)
+   - Adding new framework integrations
+
+#### Documentation Update Triggers
+**MANDATORY: Update documentation IMMEDIATELY when:**
+- Adding new features or capabilities
+- Modifying existing functionality behavior
+- Creating new debugging infrastructure (XRay)
+- Fixing bugs that affect documented behavior
+- Adding new compiler phases or helpers
+- Changing development workflows or testing procedures
+
+#### Documentation Verification Checklist
+**Before ANY commit:**
+- [ ] All referenced documentation files exist and are accessible
+- [ ] Code examples in documentation compile and work correctly
+- [ ] API changes are reflected in relevant documentation
+- [ ] New features have comprehensive documentation
+- [ ] Deprecated features are removed from documentation
+- [ ] Debug workflows and XRay usage are documented
+
+#### Documentation Quality Standards
+1. **Accuracy**: All examples must work with current codebase
+2. **Completeness**: Cover all major use cases and edge cases
+3. **Clarity**: Written for both experienced and new developers
+4. **Currency**: Always reflect the latest implementation
+5. **Cross-references**: Link related documentation appropriately
+
+**CRITICAL**: Outdated documentation is worse than no documentation - it misleads developers and wastes time. Always keep documentation current!
+
 ## 📁 Project Directory Structure Map
 
 **CRITICAL FOR NAVIGATION**: This monorepo contains multiple important projects and directories:
@@ -1123,6 +1173,55 @@ mix phx.server & sleep 3 && curl localhost:4000 && pkill -f "mix phx.server"
 - **Reflaxe**: 4.0.0-beta with full preprocessor support (upgraded from 3.0)
 - **Testing**: `npm test` for full suite, `-D reflaxe_runtime` for test compilation
 - **Architecture**: DirectToStringCompiler inheritance, macro-time transpilation
+
+## 🔧 Debug Infrastructure Hierarchy ⚠️ **MANDATORY FOR ALL AGENTS**
+
+**CRITICAL RULE: ALWAYS use DebugHelper instead of trace() for debug output**
+
+### Debug Category Hierarchy
+```
+debug_compiler          (MASTER FLAG - enables ALL categories)
+    ├── debug_patterns   (Pattern detection and optimization)
+    ├── debug_ast        (AST structure analysis)  
+    ├── debug_expressions (Expression compilation)
+    ├── debug_for_loops  (For-loop compilation)
+    ├── debug_annotations (@:liveview, @:router processing)
+    ├── debug_optimizations (Optimization decisions)
+    ├── debug_types      (Type resolution)
+    └── debug_helpers    (Helper compiler debugging)
+```
+
+### Usage Patterns - FOLLOW EXACTLY
+```haxe
+// ✅ CORRECT: Use DebugHelper with proper hierarchy
+#if debug_patterns
+DebugHelper.debugPattern("Context", "Pattern name", result);
+#end
+
+#if debug_ast  
+DebugHelper.debugAST("Context description", expr);
+#end
+
+#if debug_expressions
+DebugHelper.debugExpression("Context", inputExpr, outputCode);
+#end
+
+// ❌ WRONG: Direct trace() calls bypass the infrastructure
+trace('Debug info');  // Never do this
+```
+
+### How Hierarchy Works
+- **`-D debug_compiler`**: Enables ALL debug output (use for comprehensive debugging)
+- **`-D debug_patterns`**: Only pattern detection output
+- **`-D debug_ast`**: Only AST analysis output  
+- **`-D debug_patterns -D debug_ast`**: Multiple specific categories
+- **No flags**: No debug output (production mode)
+
+### Implementation Rule
+**Every DebugHelper method uses OR logic**: `#if (debug_compiler || debug_specific_category)`
+This means setting `-D debug_compiler` automatically enables all categories.
+
+**See**: [`src/reflaxe/elixir/helpers/DebugHelper.hx`](src/reflaxe/elixir/helpers/DebugHelper.hx) - Complete debug infrastructure with examples
 
 ## Dynamic Type Usage Guidelines ⚠️
 **See**: [`documentation/guides/DEVELOPER_PATTERNS.md`](documentation/guides/DEVELOPER_PATTERNS.md) - Complete Dynamic usage guidelines with examples and justification patterns
