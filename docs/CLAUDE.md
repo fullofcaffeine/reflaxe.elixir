@@ -81,6 +81,73 @@ docs/
 - **Understand the task**: Building apps vs contributing to compiler vs understanding concepts
 - **Provide appropriate depth**: Quick answer vs comprehensive explanation vs detailed implementation
 
+## 📚 COMPREHENSIVE DOCUMENTATION DISCOVERY (ALL 232 FILES)
+
+**Using Anthropic's import system to make every documentation file LLM-discoverable**
+
+### 🎯 Complete Section Imports
+```
+@01-getting-started/*.md                    # All getting started guides
+@02-user-guide/*.md                         # All 30+ user development guides  
+@03-compiler-development/*.md               # All 20+ compiler development docs
+@04-api-reference/*.md                      # All 40+ technical API references
+@05-architecture/*.md                       # All 40+ architecture documents
+@06-guides/*.md                             # All 25+ practical how-to guides
+@07-patterns/*.md                           # All 20+ copy-paste code patterns
+@08-roadmap/*.md                            # All vision and planning documents
+@09-history/*.md                            # All historical records and decisions
+@10-contributing/*.md                       # All contribution guidelines
+```
+
+### 🔍 Topic-Based Discovery (Cross-Cutting Concerns)
+
+**Testing Documentation** (All Files):
+```
+@03-compiler-development/TESTING*.md       # Core testing guides
+@03-compiler-development/TEST*.md          # Test infrastructure  
+@03-compiler-development/MACRO_TIME_TESTING*.md # Macro testing
+@05-architecture/TESTING*.md               # Testing architecture
+@06-guides/*TESTING*.md                    # Testing how-tos
+@07-patterns/MACRO_TIME_TESTING*.md        # Testing patterns
+```
+
+**Phoenix Integration** (All Files):
+```
+@02-user-guide/PHOENIX*.md                 # Phoenix user guides
+@02-user-guide/HXX*.md                     # Template system
+@04-api-reference/ROUTER*.md               # Router DSL
+@06-guides/PHOENIX*.md                     # Phoenix how-tos
+@07-patterns/PHOENIX*.md                   # Phoenix patterns
+```
+
+**Architecture & Compilation** (All Files):
+```
+@05-architecture/*.md                      # All architecture docs
+@03-compiler-development/COMPILATION*.md   # Compilation process
+@03-compiler-development/MACRO*.md         # Macro development
+@04-api-reference/*ARCHITECTURE*.md        # Architecture references
+```
+
+**Haxe Language Integration** (All Files):
+```
+@02-user-guide/HAXE*.md                    # Haxe user guides
+@04-api-reference/HAXE*.md                 # Haxe API references
+@06-guides/HAXE*.md                        # Haxe how-tos
+```
+
+### 📋 Specialized Documentation Access
+
+**LLM Documentation Maintenance**:
+```
+@10-contributing/llm-integration/*.md      # LLM documentation guides
+@10-contributing/updating-claude-md.md     # CLAUDE.md maintenance
+```
+
+**Complete Reference Index**:
+```  
+@10-contributing/llm-integration/LLM_DOCUMENTATION_INDEX.md  # Complete 232-file index
+```
+
 ## 📋 Documentation Maintenance Guidelines
 
 ### When Documentation Changes
