@@ -2,6 +2,13 @@
 
 > **Parent Context**: See [/CLAUDE.md](/CLAUDE.md) for project-wide conventions, architecture, and core development principles
 
+## 🔗 Shared AI Context (Import System)
+
+@docs/claude-includes/compiler-principles.md
+@docs/claude-includes/testing-commands.md
+@docs/claude-includes/code-style.md
+@docs/claude-includes/framework-integration.md
+
 This file contains standard library-specific guidance for agents working on Reflaxe.Elixir's standard library modules.
 
 ## 📚 Standard Library Architecture Overview

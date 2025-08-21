@@ -43,9 +43,39 @@ Enable developers to **write business logic once in Haxe and deploy it anywhere*
 #### **Troubleshooting Problems?**
 → **[docs/06-guides/troubleshooting.md](docs/06-guides/troubleshooting.md)** - Comprehensive problem solving
 
+## 🔗 Shared AI Context (Import System)
+
+@docs/claude-includes/compiler-principles.md
+@docs/claude-includes/testing-commands.md
+@docs/claude-includes/code-style.md
+@docs/claude-includes/framework-integration.md
+
+## 🚀 Essential Commands
+
+### Development Workflow
+```bash
+# Build and test
+npm test                          # Full test suite (mandatory before commit)
+npx haxe build-server.hxml       # Compile Haxe to Elixir
+mix compile --force               # Compile generated Elixir
+mix phx.server                    # Run Phoenix application
+
+# Integration testing
+cd examples/todo-app && npx haxe build-server.hxml && mix compile
+curl http://localhost:4000        # Test application response
+```
+
+### Quick Testing
+```bash
+haxe test/Test.hxml test=name              # Specific snapshot test
+haxe test/Test.hxml update-intended        # Accept new output
+MIX_ENV=test mix test                      # Runtime validation
+```
+
 ## CLAUDE.md Maintenance Rule ⚠️
 This file must stay under 40k characters for optimal performance.
-- Keep only essential agent instructions
+- Keep only essential agent instructions  
+- Use imports from `docs/claude-includes/` for shared content
 - Move detailed content to appropriate [docs/](docs/) sections
 - Reference docs instead of duplicating content
 - Review size after major updates: `wc -c CLAUDE.md`
