@@ -49,6 +49,133 @@ class MethodCallCompiler {
     }
     
     /**
+     * Compile TCall call expressions with special case handling
+     * 
+     * WHY: TCall expressions need sophisticated analysis for compile-time functions and special syntax
+     * 
+     * WHAT: Transform Haxe method calls to appropriate Elixir function call patterns
+     * 
+     * HOW:
+     * 1. Check for special compile-time function calls (getAppName, etc.)
+     * 2. Handle function parameter calls with .() syntax
+     * 3. Detect framework-specific calls (Elixir syntax, TypeSafeChildSpec)
+     * 4. Delegate to standard method call compilation
+     * 
+     * @param e The function expression being called
+     * @param el The array of argument expressions
+     * @return Compiled Elixir function call expression
+     */
+    public function compileCallExpression(e: TypedExpr, el: Array<TypedExpr>): String {
+        #if debug_method_call_compiler
+        trace("[XRay MethodCallCompiler] CALL EXPRESSION COMPILATION START");
+        trace('[XRay MethodCallCompiler] Call expression type: ${e.expr}');
+        trace('[XRay MethodCallCompiler] Arguments count: ${el.length}');
+        #end
+        
+        // Check for special compile-time function calls
+        var result = switch (e.expr) {
+            case TLocal(v) if (v.name == "getAppName"):
+                #if debug_method_call_compiler
+                trace("[XRay MethodCallCompiler] ✓ COMPILE-TIME getAppName DETECTED");
+                #end
+                // Resolve app name at compile-time from @:appName annotation
+                var appName = AnnotationSystem.getEffectiveAppName(compiler.currentClassType);
+                '"${appName}"';
+                
+            case TLocal(v):
+                #if debug_method_call_compiler
+                trace("[XRay MethodCallCompiler] ✓ LOCAL FUNCTION CALL DETECTED");
+                #end
+                // Check if this is a function parameter being called
+                // Function parameters need special syntax in Elixir: func_name.(args)
+                var varType = v.t;
+                var isFunction = switch (varType) {
+                    case TFun(_, _): true;
+                    case _: false;
+                };
+                
+                if (isFunction) {
+                    #if debug_method_call_compiler
+                    trace("[XRay MethodCallCompiler] ✓ FUNCTION PARAMETER CALL (.() syntax)");
+                    #end
+                    // This is a function parameter being called - use Elixir's .() syntax
+                    var functionName = NamingHelper.toSnakeCase(v.name);
+                    var compiledArgs = el.map(arg -> compiler.compileExpression(arg));
+                    '${functionName}.(${compiledArgs.join(", ")})';
+                } else {
+                    // Regular local function call - delegate to standard method compilation
+                    compileMethodCall(e, el);
+                }
+                
+            case TField(obj, field):
+                #if debug_method_call_compiler
+                trace("[XRay MethodCallCompiler] ✓ FIELD METHOD CALL DETECTED");
+                #end
+                var fieldName = switch (field) {
+                    case FInstance(_, _, cf) | FStatic(_, cf) | FClosure(_, cf): cf.get().name;
+                    case FAnon(cf): cf.get().name;
+                    case FEnum(_, ef): ef.name;
+                    case FDynamic(s): s;
+                };
+                
+                #if debug_method_call_compiler
+                trace('[XRay MethodCallCompiler] Field name: ${fieldName}');
+                #end
+                
+                // Check for super method calls (TField on TSuper)
+                if (obj.expr.match(TConst(TSuper)) && fieldName == "toString") {
+                    #if debug_method_call_compiler
+                    trace("[XRay MethodCallCompiler] ✓ SUPER.toString() DETECTED");
+                    #end
+                    // Handle super.toString() specially for exception classes
+                    return '"Exception"';
+                }
+                
+                // Check for elixir.Syntax calls and transform them to __elixir__ injection
+                if (compiler.isElixirSyntaxCall(obj, fieldName)) {
+                    #if debug_method_call_compiler
+                    trace("[XRay MethodCallCompiler] ✓ ELIXIR SYNTAX CALL DETECTED");
+                    #end
+                    return compiler.compileElixirSyntaxCall(fieldName, el);
+                }
+                
+                // Check for TypeSafeChildSpec enum constructor calls
+                if (compiler.isTypeSafeChildSpecCall(obj, fieldName)) {
+                    #if debug_method_call_compiler
+                    trace("[XRay MethodCallCompiler] ✓ TYPESAFE CHILDSPEC CALL DETECTED");
+                    #end
+                    return compiler.compileTypeSafeChildSpecCall(fieldName, el);
+                }
+                
+                if (fieldName == "getAppName") {
+                    #if debug_method_call_compiler
+                    trace("[XRay MethodCallCompiler] ✓ CLASS.getAppName() DETECTED");
+                    #end
+                    // Handle Class.getAppName() calls
+                    var appName = AnnotationSystem.getEffectiveAppName(compiler.currentClassType);
+                    return '"${appName}"';
+                }
+                
+                // Regular field method call - delegate to standard method compilation
+                compileMethodCall(e, el);
+                
+            case _:
+                #if debug_method_call_compiler
+                trace("[XRay MethodCallCompiler] ✓ STANDARD METHOD CALL");
+                #end
+                // Not a special function call, proceed normally
+                compileMethodCall(e, el);
+        };
+        
+        #if debug_method_call_compiler
+        trace('[XRay MethodCallCompiler] Generated call: ${result != null ? result.substring(0, 100) + (result.length > 100 ? "..." : "") : "null"}');
+        trace("[XRay MethodCallCompiler] CALL EXPRESSION COMPILATION END");
+        #end
+        
+        return result;
+    }
+    
+    /**
      * Compile method call with repository operation detection
      * 
      * WHY: Method calls need special handling for different patterns
