@@ -96,7 +96,7 @@ class VariableCompiler {
         #end
         
         // Get the original variable name (before Haxe's renaming for shadowing avoidance)
-        var originalName = compiler.getOriginalVarName(v);
+        var originalName = getOriginalVarName(v);
         
         #if debug_variable_compiler
         trace('[XRay VariableCompiler] Original name: ${originalName}');
@@ -184,7 +184,7 @@ class VariableCompiler {
         }
         
         // Get the original variable name (before Haxe's renaming)
-        var originalName = compiler.getOriginalVarName(tvar);
+        var originalName = getOriginalVarName(tvar);
         
         #if debug_variable_compiler
         trace('[XRay VariableCompiler] Original name: ${originalName}');
@@ -319,7 +319,36 @@ class VariableCompiler {
     }
     
     /**
-     * TODO: Future implementation will contain extracted utility methods:
+     * Get the original variable name before Haxe's internal renaming
+     * 
+     * WHY: Haxe compiler may rename variables internally, but we want the original names
+     * 
+     * WHAT: Extract original variable name from TVar metadata if available
+     * 
+     * HOW: Check :realPath metadata first, fallback to variable name
+     * 
+     * @param v The TVar to get the original name from
+     * @return Original variable name
+     */
+    public function getOriginalVarName(v: TVar): String {
+        #if debug_variable_compiler
+        trace("[XRay VariableCompiler] GETTING ORIGINAL VAR NAME");
+        trace('[XRay VariableCompiler] TVar name: ${v.name}');
+        #end
+        
+        // Check if the variable has :realPath metadata
+        // TVar has both name and meta properties, so we can use the helper
+        var originalName = v.getNameOrMeta(":realPath");
+        
+        #if debug_variable_compiler
+        trace('[XRay VariableCompiler] Original name resolved: ${originalName}');
+        #end
+        
+        return originalName;
+    }
+    
+    /**
+     * TODO: Future implementation will contain additional extracted utility methods:
      * 
      * - Variable collision detection and resolution algorithms
      * - LiveView instance variable pattern recognition
@@ -327,6 +356,9 @@ class VariableCompiler {
      * - Inline context management for struct update optimizations
      * - Temporary variable elimination patterns
      * - Parameter mapping consistency utilities
+     * - containsVariableReference() - Check if expression references a variable
+     * - statementTargetsVariable() - Check if statement targets specific variable
+     * - substituteVariableInExpression() - AST variable substitution
      * 
      * These methods will support the main compilation functions with
      * specialized logic for variable handling patterns.

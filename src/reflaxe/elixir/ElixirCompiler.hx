@@ -399,10 +399,16 @@ class ElixirCompiler extends DirectToStringCompiler {
      * @param v The TVar to get the name from
      * @return The original variable name or the current name if no metadata exists
      */
-    private function getOriginalVarName(v: TVar): String {
-        // Check if the variable has :realPath metadata
-        // TVar has both name and meta properties, so we can use the helper
-        return v.getNameOrMeta(":realPath");
+    /**
+     * Get the original variable name before Haxe's internal renaming
+     * 
+     * WHY: Delegates to VariableCompiler for centralized variable name management
+     * 
+     * @param v The TVar to get the name from
+     * @return The original variable name
+     */
+    public function getOriginalVarName(v: TVar): String {
+        return expressionDispatcher.variableCompiler.getOriginalVarName(v);
     }
     
     /**
