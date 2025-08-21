@@ -61,7 +61,7 @@ class ExpressionDispatcher {
     var controlFlowCompiler: ControlFlowCompiler;
     var operatorCompiler: OperatorCompiler;
     // TODO: Uncomment as compilers are extracted:
-    var variableCompiler: VariableCompiler;
+    public var variableCompiler: VariableCompiler;
     var dataStructureCompiler: DataStructureCompiler;
     var fieldAccessCompiler: FieldAccessCompiler;
     var methodCallCompiler: MethodCallCompiler;
