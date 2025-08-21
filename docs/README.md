@@ -20,6 +20,7 @@ Welcome to the comprehensive documentation for Reflaxe.Elixir, a Haxe compilatio
 - [Phoenix Integration](02-user-guide/PHOENIX_INTEGRATION.md) - Building Phoenix applications
 - [Phoenix LiveView Architecture](02-user-guide/PHOENIX_LIVEVIEW_ARCHITECTURE.md) - Real-time UI patterns
 - [Haxe for Phoenix](02-user-guide/haxe-for-phoenix.md) - Why Haxe makes Phoenix better
+- [Todo App Specifics](02-user-guide/todo-app-specifics.md) - LiveView implementation patterns and project-specific guidance
 - [Ecto Integration Patterns](02-user-guide/ECTO_INTEGRATION_PATTERNS.md) - Database integration
 - [User Guide](02-user-guide/USER_GUIDE.md) - Comprehensive development guide
 
@@ -36,6 +37,7 @@ Welcome to the comprehensive documentation for Reflaxe.Elixir, a Haxe compilatio
 **[04-api-reference/](04-api-reference/)** - Technical reference documentation
 - [Annotations](04-api-reference/annotations.md) - @:router, @:liveview, @:schema reference
 - [Standard Library](04-api-reference/standard-library.md) - Haxe stdlib support matrix
+- [Haxe Stdlib API Reference](04-api-reference/haxe-stdlib-api-reference.md) - Complete Haxe standard library API reference
 - [Phoenix Externs](04-api-reference/phoenix-externs.md) - Phoenix framework type definitions
 - [Compiler APIs](04-api-reference/compiler-apis.md) - Reflaxe framework APIs
 - [Mix Tasks](04-api-reference/mix-tasks.md) - Custom Mix task reference
@@ -76,6 +78,8 @@ Welcome to the comprehensive documentation for Reflaxe.Elixir, a Haxe compilatio
 - [Task History](09-history/task-history.md) - Complete implementation log (3200+ entries)
 - [Legacy Development Guide](09-history/legacy-development-guide.md) - Previous development workflow
 - [Legacy Installation Guide](09-history/legacy-installation-guide.md) - Previous setup instructions
+- [Legacy Documentation Index](09-history/legacy-documentation-index.md) - Previous documentation structure
+- [Archive](09-history/archive/) - Historical development plans and PRDs
 - [Session Records](09-history/sessions/) - Development session archives
 
 ### 🤝 Contributing
