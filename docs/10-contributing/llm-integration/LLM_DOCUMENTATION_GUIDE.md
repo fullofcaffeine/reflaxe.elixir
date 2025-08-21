@@ -20,18 +20,30 @@ This guide teaches LLMs how to efficiently query, write, and maintain documentat
 
 ```
 Project Root/
-├── CLAUDE.md                          # LLM execution instructions & project truth
+├── CLAUDE.md                          # LLM execution instructions & project truth  
 ├── README.md                          # User-facing project overview
-├── INSTALLATION.md                    # Setup guide
-├── DEVELOPMENT.md                     # Developer guide
-├── documentation/                     # All feature documentation
-│   ├── SOURCE_MAPPING.md             # Example: Comprehensive feature guide
-│   ├── WATCHER_WORKFLOW.md           # Example: Workflow documentation
-│   ├── MIX_TASKS.md                  # Example: Reference documentation
-│   └── LLM_DOCUMENTATION_GUIDE.md    # This file - how to document
-└── .llm-memory/                       # LLM-specific memory files
-    ├── feature-implementation.md      # Implementation notes
-    └── lessons-learned.md            # Patterns & insights
+├── docs/                              # All feature documentation (organized structure)
+│   ├── 01-getting-started/           # Installation, quickstart, workflows
+│   ├── 02-user-guide/               # Complete application development guides
+│   ├── 03-compiler-development/     # Compiler contributor documentation  
+│   ├── 04-api-reference/            # Technical references and APIs
+│   ├── 05-architecture/             # System design documentation
+│   ├── 06-guides/                   # Task-oriented how-to guides
+│   ├── 07-patterns/                 # Copy-paste code patterns
+│   ├── 08-roadmap/                  # Vision and planning documents
+│   ├── 09-history/                  # Historical records and decisions
+│   ├── 10-contributing/             # Contribution guidelines
+│   ├── claude-includes/             # Shared CLAUDE.md components for imports
+│   ├── CLAUDE.md                    # Documentation navigation for AI
+│   └── README.md                    # Documentation index and entry point
+```
+
+### Import System for CLAUDE.md Files
+```
+@docs/claude-includes/compiler-principles.md   # Shared compiler concepts
+@docs/claude-includes/testing-commands.md      # Common test commands  
+@docs/claude-includes/code-style.md           # Project-wide code style
+@docs/claude-includes/framework-integration.md # Phoenix/LiveView patterns
 ```
 
 ### Documentation Priority Levels

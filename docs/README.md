@@ -87,6 +87,8 @@ Welcome to the comprehensive documentation for Reflaxe.Elixir, a Haxe compilatio
 - [Contributing Guide](10-contributing/contributing.md) - How to contribute
 - [Code Style](10-contributing/code-style.md) - Coding standards
 - [Updating CLAUDE.md](10-contributing/updating-claude-md.md) - AI context and unified documentation strategy
+- [LLM Documentation Guide](10-contributing/llm-integration/LLM_DOCUMENTATION_GUIDE.md) - How to write LLM-friendly documentation
+- [LLM Documentation Index](10-contributing/llm-integration/LLM_DOCUMENTATION_INDEX.md) - Complete 232-file navigation index
 - [Commit Conventions](10-contributing/commit-conventions.md) - Git conventions
 - [Release Process](10-contributing/release-process.md) - Versioning and releases
 
