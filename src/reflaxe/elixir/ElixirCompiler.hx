@@ -2562,14 +2562,16 @@ class ElixirCompiler extends DirectToStringCompiler {
                 // CRITICAL FIX: Detect the specific problematic pattern
                 // PATTERN: if (config != null), do: _g_1 = 0 followed by Y combinator generation
                 // ISSUE: The inline syntax applies ", else: nil" to subsequent unrelated statements
-                if (cond.contains("config") && cond.contains("!= nil") && 
+                if (cond.contains("config") && (cond.contains("!= nil") || cond.contains("!= null")) && 
                     (ifExpr.contains("_g_1 = 0") || ifExpr.contains("_g_") && ifExpr.contains(" = "))) {
                     // This is the exact pattern that causes the Y combinator syntax error
                     // Force block syntax to prevent ", else: nil" from affecting subsequent statements
                     hasComplexPattern = true;
-                    trace('CONFIG PATTERN DETECTED: forcing block syntax for config != nil pattern');
-                    trace('  cond: ' + cond);
-                    trace('  ifExpr: ' + ifExpr.substring(0, 50) + "...");
+                    #if debug_y_combinator
+                    DebugHelper.debugYCombinator("TIf Y combinator fix", 
+                        "CONFIG PATTERN DETECTED: forcing block syntax", 
+                        'cond: $cond, ifExpr: ${ifExpr.substring(0, 50)}...');
+                    #end
                 }
                 
                 // Third check: Look for conditions involving variables that typically contain reflection
