@@ -108,12 +108,16 @@ class ControlFlowCompiler {
             }
         }
         
-        var result = if (topLevel) {
-            // Top-level blocks (function bodies) should separate statements with newlines
+        var result: String = if (topLevel) {
+            // Top-level blocks (function bodies) should have proper Elixir formatting
             statements.join("\n    ");
         } else {
-            // Nested blocks can be parenthesized expressions
-            "(" + statements.join("; ") + ")";
+            // Nested blocks should use proper Elixir block syntax with do..end
+            if (statements != null && statements.length == 1) {
+                statements[0] != null ? statements[0] : "nil"; // Ensure not null
+            } else {
+                "(\n      " + statements.join("\n      ") + "\n    )";
+            }
         };
         
         #if debug_control_flow_compiler
@@ -140,9 +144,17 @@ class ControlFlowCompiler {
         trace('[XRay ControlFlowCompiler] Has else branch: ${eelse != null}');
         #end
         
-        // For now, delegate back to original function
-        // TODO: Extract the full TIf logic from compileElixirExpressionInternal
-        var result = compiler.compileElixirExpressionInternal({expr: TIf(econd, eif, eelse), pos: null, t: null}, false);
+        // IDIOMATIC IMPLEMENTATION: Convert to Elixir if-else patterns
+        var condition = compiler.compileExpression(econd);
+        var thenBranch = compiler.compileExpression(eif);
+        var elseBranch = eelse != null ? compiler.compileExpression(eelse) : "nil";
+        
+        // Generate idiomatic Elixir if-else
+        var result = if (elseBranch != "nil") {
+            'if ${condition} do\n      ${thenBranch}\n    else\n      ${elseBranch}\n    end';
+        } else {
+            'if ${condition} do\n      ${thenBranch}\n    end';
+        };
         
         #if debug_control_flow_compiler
         trace('[XRay ControlFlowCompiler] Generated if: ${result != null ? result.substring(0, 100) + "..." : "null"}');
@@ -196,9 +208,18 @@ class ControlFlowCompiler {
         trace('[XRay ControlFlowCompiler] Normal while: ${normalWhile}');
         #end
         
-        // For now, delegate back to original function
-        // TODO: Extract the full TWhile logic from compileElixirExpressionInternal
-        var result = compiler.compileElixirExpressionInternal({expr: TWhile(econd, ebody, normalWhile), pos: null, t: null}, false);
+        // IDIOMATIC IMPLEMENTATION: Convert while loops to proper Elixir patterns
+        var condition = compiler.compileExpression(econd);
+        var body = compiler.compileExpression(ebody);
+        
+        // In Elixir, while loops are typically implemented with tail recursion
+        var result = if (normalWhile) {
+            // Standard while loop -> tail recursive function
+            'while_loop(fn -> ${condition} end, fn -> ${body} end)';
+        } else {
+            // Do-while -> different pattern
+            'do_while_loop(fn -> ${body} end, fn -> ${condition} end)';
+        };
         
         #if debug_control_flow_compiler
         trace('[XRay ControlFlowCompiler] Generated while: ${result != null ? result.substring(0, 100) + "..." : "null"}');
@@ -224,9 +245,13 @@ class ControlFlowCompiler {
         trace('[XRay ControlFlowCompiler] Loop variable: ${tvar.name}');
         #end
         
-        // For now, delegate back to original function
-        // TODO: Extract the full TFor logic from compileElixirExpressionInternal
-        var result = compiler.compileElixirExpressionInternal({expr: TFor(tvar, iterExpr, blockExpr), pos: null, t: null}, false);
+        // IDIOMATIC IMPLEMENTATION: Convert for loops to Elixir Enum operations
+        var iterable = compiler.compileExpression(iterExpr);
+        var body = compiler.compileExpression(blockExpr);
+        var varName = tvar.name;
+        
+        // Convert to idiomatic Elixir Enum.each pattern
+        var result = 'Enum.each(${iterable}, fn ${varName} -> ${body} end)';
         
         #if debug_control_flow_compiler
         trace('[XRay ControlFlowCompiler] Generated for: ${result != null ? result.substring(0, 100) + "..." : "null"}');
@@ -251,9 +276,23 @@ class ControlFlowCompiler {
         trace('[XRay ControlFlowCompiler] Catch clauses: ${catches.length}');
         #end
         
-        // For now, delegate back to original function
-        // TODO: Extract the full TTry logic from compileElixirExpressionInternal
-        var result = compiler.compileElixirExpressionInternal({expr: TTry(e, catches), pos: null, t: null}, false);
+        // IDIOMATIC IMPLEMENTATION: Convert to Elixir try-rescue patterns
+        var tryBody = compiler.compileExpression(e);
+        
+        // Convert catches to idiomatic Elixir rescue clauses
+        var rescueClauses = [];
+        for (c in catches) {
+            // Simplified exception handling for now
+            var catchVar = c.v.name;
+            var catchBody = compiler.compileExpression(c.expr);
+            rescueClauses.push('${catchVar} -> ${catchBody}');
+        }
+        
+        var result = if (rescueClauses.length > 0) {
+            'try do\n      ${tryBody}\n    rescue\n      ${rescueClauses.join("\n      ")}\n    end';
+        } else {
+            tryBody; // No catches, just return the try body
+        };
         
         #if debug_control_flow_compiler
         trace('[XRay ControlFlowCompiler] Generated try: ${result != null ? result.substring(0, 100) + "..." : "null"}');
