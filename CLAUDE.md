@@ -264,7 +264,7 @@ Each file should have **one clear reason to change**:
 
 **Every extraction must include**:
 - Complete HaxeDoc for all functions
-- WHY/WHAT/HOW documentation for complex logic
+- **⚠️ MANDATORY WHY/WHAT/HOW documentation** - Every new class, entity, or code must comprehensively justify its existence with WHY (problem being solved), WHAT (responsibilities and capabilities), HOW (implementation approach)
 - XRay debug traces for compilation functions
 - Single responsibility focus
 - Test coverage to prevent regressions
