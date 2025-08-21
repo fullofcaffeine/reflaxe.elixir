@@ -68,8 +68,8 @@ defmodule TypeSafeChildSpecTools do
           catch
             :break -> {nil}
           end
-        ), else: nil
-        args = [endpoint_config], else: nil
+        )
+        args = [endpoint_config]
         temp_result = endpoint_module
       3 ->
         g = elem(spec, 1)
@@ -216,7 +216,7 @@ defmodule TypeSafeChildSpecTools do
         _g_1 = elem(spec, 2)
         port = _g_1
         config = _g_1
-        if (port != nil && (port < 1 || port > 65535)), do: errors.push("Endpoint port must be between 1 and 65535"), else: nil
+        if (port != nil && (port < 1 || port > 65535)), do: errors.push("Endpoint port must be between 1 and 65535")
       3 ->
         elem(spec, 1)
         nil
@@ -235,7 +235,7 @@ defmodule TypeSafeChildSpecTools do
         args = _g_3
         restart = _g_3
         shutdown = _g_3
-        if (module == nil), do: errors.push("Custom child spec module cannot be null"), else: nil
+        if (module == nil), do: errors.push("Custom child spec module cannot be null")
       6 ->
         g = elem(spec, 1)
         spec = g

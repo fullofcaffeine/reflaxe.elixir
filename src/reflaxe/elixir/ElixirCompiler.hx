@@ -115,7 +115,6 @@ class ElixirCompiler extends DirectToStringCompiler {
     private var inlineContextMap: Map<String, String> = new Map<String, String>();
     private var isCompilingAbstractMethod: Bool = false;
     private var isCompilingCaseArm: Bool = false;
-    private var isCompilingTBlock: Bool = false;
     
     // Current class context for app name resolution and other class-specific operations
     private var currentClassType: Null<ClassType> = null;
@@ -2085,11 +2084,6 @@ class ElixirCompiler extends DirectToStringCompiler {
                 }
                 #end
                 
-                // CRITICAL FIX: Set TBlock context to force block syntax for all if statements
-                // WHY: Inline if statements in TBlock contexts cause statement concatenation issues
-                // WHAT: Any if statement within a TBlock should use block syntax for safety
-                var originalTBlockContext = isCompilingTBlock;
-                isCompilingTBlock = true;
                 
                 var result = if (el.length == 0) {
                     "nil";
@@ -2433,8 +2427,14 @@ class ElixirCompiler extends DirectToStringCompiler {
                     }
                 }
                 
-                // Restore TBlock context
-                isCompilingTBlock = originalTBlockContext;
+                // CRITICAL POST-PROCESSING FIX: Remove orphaned else clauses after Y combinator blocks
+                // WHY: Statement concatenation sometimes places `, else: nil` after Y combinator blocks  
+                // WHAT: Remove specific patterns where `, else: nil` appears in invalid contexts
+                // HOW: Use regex to find and remove these specific syntax error patterns
+                // Pattern 1: "), else: nil" after parenthesized expressions (Y combinator blocks)
+                result = ~/\), else: nil\n/g.replace(result, ")\n");
+                // Pattern 2: "variable], else: nil" after array/variable assignments  
+                result = ~/], else: nil\n/g.replace(result, "]\n");
                 result;
                 
             case TIf(econd, eif, eelse):
@@ -2472,10 +2472,11 @@ class ElixirCompiler extends DirectToStringCompiler {
                 // Case arms in Elixir have different semantics and inline if syntax causes issues
                 var forceCaseArmBlockSyntax = isCompilingCaseArm;
                 
-                // CRITICAL FIX: Force block syntax when compiling inside TBlock expressions
-                // WHY: TBlock contexts require proper statement separation - inline if syntax breaks this
-                // WHAT: Any if statement within a TBlock should always use block syntax for safety
-                var forceTBlockSyntax = isCompilingTBlock;
+                
+                // CRITICAL FIX: Force block syntax for if statements without explicit else clause
+                // WHY: If statements without else in Haxe should not generate incomplete inline syntax
+                // WHAT: When eelse is null, always use block syntax to avoid `, else: nil` concatenation issues  
+                var forceBlockSyntaxForNoElse = (eelse == null);
                 
                 // Also check if the compiled expressions contain newlines
                 var ifExpr = compileExpression(eif);
@@ -2738,8 +2739,35 @@ class ElixirCompiler extends DirectToStringCompiler {
                     needsBlockSyntax = true;
                 }
                 
+                // CRITICAL FIX: Force block syntax for if statements without explicit else clause
+                // WHY: If statements without else in Haxe should not generate incomplete inline syntax
+                // WHAT: When eelse is null, always use block syntax to avoid `, else: nil` concatenation issues  
+                var forceBlockSyntaxForNoElse = (eelse == null);
+                
+                // CRITICAL FIX: Force block syntax for simple assignment patterns  
+                // WHY: Simple assignment if-else statements are more readable in block format
+                // WHAT: Detect if both branches are simple variable assignments and force block syntax
+                // HOW: Use efficient string prefix check instead of regex for performance
+                var isSimpleAssignmentPattern = false;
+                if (eelse != null && elseExpr != "nil") {
+                    // Performance optimized: check for common assignment patterns without regex
+                    var ifIsSimpleAssignment = ifExpr.indexOf(" = ") > 0 && ifExpr.indexOf("\n") == -1;
+                    var elseIsSimpleAssignment = elseExpr.indexOf(" = ") > 0 && elseExpr.indexOf("\n") == -1;
+                    isSimpleAssignmentPattern = ifIsSimpleAssignment && elseIsSimpleAssignment;
+                }
+                
                 // Apply the decision logic for block vs inline syntax
-                var useBlockSyntax = needsBlockSyntax || hasNewlines || hasComplexPattern || forceBlockSyntax || forceElseBlockSyntax || forceCaseArmBlockSyntax || forceTBlockSyntax;
+                var useBlockSyntax = needsBlockSyntax || hasNewlines || hasComplexPattern || forceBlockSyntax || forceElseBlockSyntax || forceCaseArmBlockSyntax || forceBlockSyntaxForNoElse || isSimpleAssignmentPattern;
+                
+                // CRITICAL DEBUG: Track if-expression decision process
+                #if debug_if_expressions
+                DebugHelper.debugIfExpression(
+                    "TIf compilation decision",
+                    useBlockSyntax ? "BLOCK syntax" : "INLINE syntax",
+                    'needsBlockSyntax:$needsBlockSyntax, hasNewlines:$hasNewlines, hasComplexPattern:$hasComplexPattern, forceBlockSyntax:$forceBlockSyntax, forceElseBlockSyntax:$forceElseBlockSyntax, forceCaseArmBlockSyntax:$forceCaseArmBlockSyntax, forceBlockSyntaxForNoElse:$forceBlockSyntaxForNoElse, isSimpleAssignmentPattern:$isSimpleAssignmentPattern, eelse:${eelse != null ? "NOT NULL" : "NULL"}',
+                    'Compiled expressions - ifExpr: ${ifExpr.substr(0, Std.int(Math.min(50, ifExpr.length)))}${ifExpr.length > 50 ? "..." : ""}, elseExpr: ${elseExpr.substr(0, Std.int(Math.min(50, elseExpr.length)))}${elseExpr.length > 50 ? "..." : ""}'
+                );
+                #end
                 
                 #if debug_y_combinator
                 DebugHelper.debugYCombinator("TIf DECISION", "Block syntax decision factors", 
