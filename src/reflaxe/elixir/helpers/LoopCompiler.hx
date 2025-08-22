@@ -1571,16 +1571,56 @@ end)';
         var varInitializations = [for (v in modifiedVars) '${v.name}'];
         var varParams = varInitializations.join(", ");
         
-        var result = 'loop_helper = fn loop_fn, {${varParams}} ->
-  if ${condition} do
-${CompilerUtilities.indentCode(transformedBody, 4)}
-    loop_fn.(loop_fn, {${varParams}})
-  else
-    {${varParams}}
-  end
-end
-
-{${varParams}} = loop_helper.(loop_helper, {${varParams}})';
+        // Generate Y combinator pattern based on whether we have break statements
+        var hasBreakStatement = transformedBody.indexOf("throw(:break)") != -1;
+        
+        var result = if (normalWhile) {
+            // while (condition) { body } pattern
+            if (hasBreakStatement) {
+                // Complex pattern with break handling
+                '(\n' +
+                '  try do\n' +
+                '    loop_fn = fn {${varParams}} ->\n' +
+                '      if ${condition} do\n' +
+                '        try do\n' +
+                '${CompilerUtilities.indentCode(transformedBody, 10)}\n' +
+                '      loop_fn.({${varParams}})\n' +
+                '        catch\n' +
+                '          :break -> {${varParams}}\n' +
+                '          :continue -> loop_fn.({${varParams}})\n' +
+                '        end\n' +
+                '      else\n' +
+                '        {${varParams}}\n' +
+                '      end\n' +
+                '    end\n' +
+                '    loop_fn.({${varParams}})\n' +
+                '  catch\n' +
+                '    :break -> {${varParams}}\n' +
+                '  end\n' +
+                ')';
+            } else {
+                // Simple pattern without break handling
+                'loop_helper = fn loop_fn, {${varParams}} ->\n' +
+                '  if ${condition} do\n' +
+                '${CompilerUtilities.indentCode(transformedBody, 4)}\n' +
+                '    loop_fn.(loop_fn, {${varParams}})\n' +
+                '  else\n' +
+                '    {${varParams}}\n' +
+                '  end\n' +
+                'end\n' +
+                '\n' +
+                '{${varParams}} = loop_helper.(loop_helper, {${varParams}})';
+            }
+        } else {
+            // do { body } while (condition) pattern - inline format
+            '(\n' +
+            '  loop_fn = fn {${varParams}} ->\n' +
+            '${CompilerUtilities.indentCode(transformedBody, 4)}\n' +
+            '    if ${condition}, do: loop_fn.({${varParams}}), else: {${varParams}}\n' +
+            '  end\n' +
+            '  {${varParams}} = loop_fn.({${varParams}})\n' +
+            ')';
+        };
         
         #if debug_y_combinator
         trace('[XRay YCombinator] ✓ Y COMBINATOR GENERATED');
@@ -1604,13 +1644,19 @@ end
         // Recursively find all variable assignments and mutations
         function findMutations(expr: TypedExpr): Void {
             switch(expr.expr) {
-                case TBinop(OpAssign, e1, e2):
-                    // Variable assignment
-                    if (isVariableAccess(e1)) {
-                        var varName = extractVariableName(e1);
-                        if (!Lambda.exists(modifiedVars, v -> v.name == varName)) {
-                            modifiedVars.push({name: varName, type: "Dynamic"});
-                        }
+                case TBinop(op, e1, e2):
+                    // Variable assignment and compound assignments
+                    switch (op) {
+                        case OpAssign, OpAssignOp(_):
+                            if (isVariableAccess(e1)) {
+                                var varName = extractVariableName(e1);
+                                if (!Lambda.exists(modifiedVars, v -> v.name == varName)) {
+                                    modifiedVars.push({name: varName, type: "Dynamic"});
+                                }
+                            }
+                        case _:
+                            // For other binary operations, recursively check both sides
+                            findMutations(e1);
                     }
                     findMutations(e2);
                     
@@ -1621,6 +1667,20 @@ end
                         modifiedVars.push({name: varName, type: "Dynamic"});
                     }
                     if (valueExpr != null) findMutations(valueExpr);
+                    
+                case TUnop(op, postFix, e):
+                    // Unary operations like i++, i--, ++i, --i
+                    switch (op) {
+                        case OpIncrement, OpDecrement:
+                            if (isVariableAccess(e)) {
+                                var varName = extractVariableName(e);
+                                if (!Lambda.exists(modifiedVars, v -> v.name == varName)) {
+                                    modifiedVars.push({name: varName, type: "Dynamic"});
+                                }
+                            }
+                        case _:
+                            findMutations(e);
+                    }
                     
                 case TBlock(exprs):
                     for (e in exprs) findMutations(e);
@@ -1699,14 +1759,57 @@ end
      */
     private function transformStatement(expr: TypedExpr, modifiedVars: Array<{name: String, type: String}>): String {
         return switch(expr.expr) {
-            case TBinop(OpAssign, e1, e2):
-                // Transform variable assignment
-                if (isVariableAccess(e1)) {
-                    var varName = extractVariableName(e1);
-                    var value = compiler.compileExpression(e2);
-                    '${varName} = ${value}';
-                } else {
-                    compiler.compileExpression(expr);
+            case TBinop(op, e1, e2):
+                // Transform variable assignment and compound assignments
+                switch (op) {
+                    case OpAssign:
+                        if (isVariableAccess(e1)) {
+                            var varName = extractVariableName(e1);
+                            var value = compiler.compileExpression(e2);
+                            '${varName} = ${value}';
+                        } else {
+                            compiler.compileExpression(expr);
+                        }
+                    case OpAssignOp(assignOp):
+                        // Handle compound assignments like +=, -=, *=, /=
+                        if (isVariableAccess(e1)) {
+                            var varName = extractVariableName(e1);
+                            var value = compiler.compileExpression(e2);
+                            var opStr = switch (assignOp) {
+                                case OpAdd: "+";
+                                case OpSub: "-";
+                                case OpMult: "*";
+                                case OpDiv: "/";
+                                case OpMod: "rem";
+                                case _: "+"; // fallback
+                            };
+                            '${varName} = ${varName} ${opStr} ${value}';
+                        } else {
+                            compiler.compileExpression(expr);
+                        }
+                    case _:
+                        compiler.compileExpression(expr);
+                }
+                
+            case TUnop(op, postFix, e):
+                // Transform increment/decrement operations
+                switch (op) {
+                    case OpIncrement:
+                        if (isVariableAccess(e)) {
+                            var varName = extractVariableName(e);
+                            '${varName} = ${varName} + 1';
+                        } else {
+                            compiler.compileExpression(expr);
+                        }
+                    case OpDecrement:
+                        if (isVariableAccess(e)) {
+                            var varName = extractVariableName(e);
+                            '${varName} = ${varName} - 1';
+                        } else {
+                            compiler.compileExpression(expr);
+                        }
+                    case _:
+                        compiler.compileExpression(expr);
                 }
                 
             case _:
