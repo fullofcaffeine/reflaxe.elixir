@@ -691,6 +691,9 @@ class ClassCompiler {
              * HOW: Configure compiler's parameter mapping and inline context
              */
             if (isInstance && isStructClass && compiler != null) {
+                // GLOBAL FIX: Start global struct method compilation
+                compiler.startCompilingStructMethod("struct");
+                
                 // Map this -> struct for consistent variable references
                 compiler.setThisParameterMapping("struct");
                 // Replace _this variables (from Haxe desugaring) with struct
@@ -700,6 +703,7 @@ class ClassCompiler {
                 
                 #if debug_state_threading
                 trace('[XRay ClassCompiler] ✓ SET _this → struct mapping for method: ${funcField.field.name}');
+                trace('[XRay ClassCompiler] ✓ GLOBAL struct method compilation started');
                 trace('[XRay ClassCompiler] Current map size: ${Lambda.count(compiler.currentFunctionParameterMap)}');
                 for (key in compiler.currentFunctionParameterMap.keys()) {
                     trace('[XRay ClassCompiler] Map entry: ${key} → ${compiler.currentFunctionParameterMap.get(key)}');
@@ -711,7 +715,7 @@ class ClassCompiler {
                  * 
                  * WHY: Mutating methods need to return updated structs
                  * WHAT: Enable transformation of field assignments
-                 * HOW: Compiler will transform this.field = value to struct = %{struct | field: value}
+                 * HOY: Compiler will transform this.field = value to struct = %{struct | field: value}
                  */
                 if (shouldTransform) {
                     compiler.enableStateThreadingMode(mutabilityInfo);
@@ -771,6 +775,12 @@ class ClassCompiler {
                 trace('[XRay ClassCompiler] ✓ State threading cleanup completed for: ${funcField.field.name}');
                 #end
             }
+            
+            // GLOBAL FIX: Stop global struct method compilation
+            compiler.stopCompilingStructMethod();
+            #if debug_state_threading
+            trace('[XRay ClassCompiler] ✓ GLOBAL struct method compilation stopped');
+            #end
         }
         
         return result.toString();
