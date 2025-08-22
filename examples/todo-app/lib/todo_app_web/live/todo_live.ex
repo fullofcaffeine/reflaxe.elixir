@@ -481,8 +481,8 @@ defmodule TodoLive do
     updated_todos = TodoLive.load_todos(socket.assigns.current_user.id)
     current_assigns = socket.assigns
     complete_assigns = TypeSafeConversions.create_complete_assigns(current_assigns, updated_todos)
-    complete_assigns.completed_todos = complete_assigns.total_todos
-    complete_assigns.pending_todos = 0
+    %{complete_assigns | completed_todos: complete_assigns.total_todos}
+    %{complete_assigns | pending_todos: 0}
     updated_socket = LiveView.assign_multiple(socket, complete_assigns)
     LiveView.put_flash(updated_socket, :info, "All todos marked as completed!")
   end
@@ -523,8 +523,8 @@ defmodule TodoLive do
     temp_array1 = g
     current_assigns = socket.assigns
     complete_assigns = TypeSafeConversions.create_complete_assigns(current_assigns, temp_array1)
-    complete_assigns.completed_todos = 0
-    complete_assigns.pending_todos = temp_array1.length
+    %{complete_assigns | completed_todos: 0}
+    %{complete_assigns | pending_todos: temp_array1.length}
     updated_socket = LiveView.assign_multiple(socket, complete_assigns)
     LiveView.put_flash(updated_socket, :info, "Completed todos deleted!")
   end
