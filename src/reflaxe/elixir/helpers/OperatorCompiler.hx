@@ -105,9 +105,16 @@ class OperatorCompiler {
         // Special handling for OpAssign with _this variable
         var left = if (op == OpAssign) {
             switch (e1.expr) {
-                case TLocal(v) if (v.name == "_this" && compiler.currentFunctionParameterMap.exists("_this")):
-                    // Replace _this with mapped parameter name (usually "struct")
-                    compiler.currentFunctionParameterMap.get("_this");
+                case TLocal(v) if (v.name == "_this"):
+                    // Try local parameter map first, then global struct method mapping
+                    if (compiler.currentFunctionParameterMap.exists("_this")) {
+                        compiler.currentFunctionParameterMap.get("_this");
+                    } else if (untyped compiler.isCompilingStructMethod && untyped compiler.globalStructParameterMap.exists("_this")) {
+                        // GLOBAL FIX: Use global mapping when local is not available
+                        untyped compiler.globalStructParameterMap.get("_this");
+                    } else {
+                        compiler.compileExpression(e1);
+                    }
                 default:
                     compiler.compileExpression(e1);
             }
@@ -116,10 +123,22 @@ class OperatorCompiler {
         }
         // Also handle _this in right-hand expressions (especially in struct updates)
         var compiledRight = compiler.compileExpression(e2);
-        var right = if (op == OpAssign && compiler.currentFunctionParameterMap.exists("_this")) {
-            // Replace _this references in struct updates or any assignment right-hand side
-            var structParam = compiler.currentFunctionParameterMap.get("_this");
-            StringTools.replace(compiledRight, "_this", structParam);
+        var right = if (op == OpAssign) {
+            // Try local parameter map first, then global struct method mapping
+            var structParam: Null<String> = null;
+            if (compiler.currentFunctionParameterMap.exists("_this")) {
+                structParam = compiler.currentFunctionParameterMap.get("_this");
+            } else if (untyped compiler.isCompilingStructMethod && untyped compiler.globalStructParameterMap.exists("_this")) {
+                // GLOBAL FIX: Use global mapping when local is not available
+                structParam = untyped compiler.globalStructParameterMap.get("_this");
+            }
+            
+            if (structParam != null) {
+                // Replace _this references in struct updates or any assignment right-hand side
+                StringTools.replace(compiledRight, "_this", structParam);
+            } else {
+                compiledRight;
+            }
         } else {
             compiledRight;
         };

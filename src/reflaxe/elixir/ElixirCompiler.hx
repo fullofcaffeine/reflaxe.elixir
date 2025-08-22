@@ -205,6 +205,16 @@ class ElixirCompiler extends DirectToStringCompiler {
     private var stateThreadingInfo: Null<reflaxe.elixir.helpers.MutabilityAnalyzer.MutabilityInfo> = null;
     
     /**
+     * GLOBAL STRUCT METHOD COMPILATION
+     * 
+     * WHY: Fix JsonPrinter _this issue - parameter mapping gets lost in nested contexts
+     * WHAT: Track if we're compiling ANY struct method globally
+     * HOW: Set flag when compiling struct methods, use global mapping that persists through all nested compilation
+     */
+    private var isCompilingStructMethod: Bool = false;
+    private var globalStructParameterMap: Map<String, String> = new Map();
+    
+    /**
      * Constructor - Initialize the compiler with type mapping and pattern matching systems
      */
     public function new() {
@@ -978,6 +988,43 @@ class ElixirCompiler extends DirectToStringCompiler {
     }
     
     /**
+     * Start compiling a struct method globally
+     * 
+     * WHY: JsonPrinter _this issue - ensure _this mapping persists through ALL nested contexts
+     * WHAT: Set global flag and global parameter mapping that survives context switches
+     * HOW: Store mapping in separate global map that compileExpressionImpl always checks
+     * 
+     * @param structParamName The parameter name to use for _this mapping (typically "struct")
+     */
+    public function startCompilingStructMethod(structParamName: String): Void {
+        isCompilingStructMethod = true;
+        globalStructParameterMap.set("_this", structParamName);
+        globalStructParameterMap.set("this", structParamName);
+        globalStructParameterMap.set("struct", structParamName);
+        
+        #if debug_state_threading
+        trace('[ElixirCompiler] 🌍 GLOBAL struct method compilation started');
+        trace('[ElixirCompiler] 🌍 Global mapping: _this -> ${structParamName}');
+        #end
+    }
+    
+    /**
+     * Stop compiling struct method globally
+     * 
+     * WHY: Global state should be cleaned up after struct method compilation
+     * WHAT: Clear global flag and global parameter mapping
+     * HOW: Reset global state variables
+     */
+    public function stopCompilingStructMethod(): Void {
+        isCompilingStructMethod = false;
+        globalStructParameterMap.clear();
+        
+        #if debug_state_threading
+        trace('[ElixirCompiler] 🌍 GLOBAL struct method compilation stopped');
+        #end
+    }
+    
+    /**
      * Set inline context for variable replacement
      * 
      * WHY: Some variables need to be replaced during compilation
@@ -1240,22 +1287,36 @@ class ElixirCompiler extends DirectToStringCompiler {
         // This handles cases where expressions are compiled after state threading is disabled
         switch (expr.expr) {
             case TLocal(v) if (v.name == "_this"):
+                // Try local function parameter map first
                 var mappedName = currentFunctionParameterMap.get("_this");
                 if (mappedName != null) {
                     #if debug_state_threading
-                    trace('[XRay ElixirCompiler] ✓ Direct _this replacement (persistent): _this -> ${mappedName}');
+                    trace('[XRay ElixirCompiler] ✓ Local _this replacement: _this -> ${mappedName}');
                     #end
                     return mappedName;
-                } else {
-                    #if debug_state_threading
-                    trace('[XRay ElixirCompiler] ⚠️ Found _this but NO MAPPING available');
-                    trace('[XRay ElixirCompiler] ⚠️ State threading enabled: ${isStateThreadingEnabled()}');
-                    trace('[XRay ElixirCompiler] ⚠️ Parameter map size: ${currentFunctionParameterMap != null ? Lambda.count(currentFunctionParameterMap) : 0}');
-                    trace('[XRay ElixirCompiler] ⚠️ Available keys: ${currentFunctionParameterMap != null ? [for (k in currentFunctionParameterMap.keys()) k] : []}');
-                    trace('[XRay ElixirCompiler] ⚠️ Current function context: ${currentFunctionContext != null ? currentFunctionContext.structParamName : "null"}');
-                    trace('[XRay ElixirCompiler] ⚠️ Expression position: ${expr.pos}');
-                    #end
                 }
+                
+                // GLOBAL FIX: Try global struct method mapping if we're compiling a struct method
+                if (isCompilingStructMethod) {
+                    var globalMappedName = globalStructParameterMap.get("_this");
+                    if (globalMappedName != null) {
+                        #if debug_state_threading
+                        trace('[XRay ElixirCompiler] ✓ GLOBAL _this replacement: _this -> ${globalMappedName}');
+                        #end
+                        return globalMappedName;
+                    }
+                }
+                
+                // Still no mapping found - log for debugging
+                #if debug_state_threading
+                trace('[XRay ElixirCompiler] ⚠️ Found _this but NO MAPPING available');
+                trace('[XRay ElixirCompiler] ⚠️ State threading enabled: ${isStateThreadingEnabled()}');
+                trace('[XRay ElixirCompiler] ⚠️ Global struct method: ${isCompilingStructMethod}');
+                trace('[XRay ElixirCompiler] ⚠️ Local parameter map size: ${currentFunctionParameterMap != null ? Lambda.count(currentFunctionParameterMap) : 0}');
+                trace('[XRay ElixirCompiler] ⚠️ Global parameter map size: ${Lambda.count(globalStructParameterMap)}');
+                trace('[XRay ElixirCompiler] ⚠️ Expression position: ${expr.pos}');
+                #end
+                
             case _:
                 // Continue with normal compilation
         }
