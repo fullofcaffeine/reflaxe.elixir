@@ -663,6 +663,291 @@ class SubstitutionCompiler {
                 // Other expression types don't modify variables
         }
     }
+    
+    /**
+     * Compile expression with variable mapping for loop variable substitution
+     * 
+     * WHY: String-based variable mapping was scattered in multiple functions in ElixirCompiler.
+     * Centralized here for consistency with aggressive substitution patterns.
+     * 
+     * WHAT: Compiles expressions with source-to-target variable mapping, using aggressive
+     * substitution to ensure all TLocal variables are properly replaced.
+     * 
+     * HOW: Delegates to compileExpressionWithAggressiveSubstitution to handle the heavy lifting
+     * of variable replacement while maintaining expression semantics.
+     * 
+     * @param expr The expression to compile with variable mapping
+     * @param sourceVar The source variable name to replace (for compatibility - not used in aggressive mode)
+     * @param targetVar The target variable name to use as replacement
+     * @return Compiled expression with variable mapping applied
+     */
+    public function compileExpressionWithVarMapping(expr: TypedExpr, sourceVar: String, targetVar: String): String {
+        #if debug_substitution_compiler
+        trace("[XRay SubstitutionCompiler] VAR MAPPING START");
+        trace('[XRay SubstitutionCompiler] Source var: ${sourceVar} -> Target var: ${targetVar}');
+        #end
+        
+        // Simplified: Always use aggressive substitution for consistency
+        // This ensures all TLocal variables are properly replaced regardless of the source variable
+        return compileExpressionWithAggressiveSubstitution(expr, targetVar);
+    }
+    
+    /**
+     * Compile expression with aggressive variable substitution
+     * 
+     * WHY: Lambda expressions in desugared Haxe code often need ALL local variables
+     * replaced with the target variable for proper loop compilation.
+     * 
+     * WHAT: Aggressively replaces ALL TLocal variables with the target variable,
+     * useful for situations where we need complete variable substitution.
+     * 
+     * HOW: 
+     * 1. For TLocal expressions, check if variable should be substituted using helper
+     * 2. Replace with target variable if substitution criteria are met
+     * 3. Recursively process nested expressions with same target variable
+     * 4. Handle special cases like field access, function calls, and operators
+     * 
+     * @param expr The expression to compile with aggressive substitution
+     * @param targetVar The target variable name to use for all substitutions
+     * @return Compiled expression with aggressive variable substitution applied
+     */
+    public function compileExpressionWithAggressiveSubstitution(expr: TypedExpr, targetVar: String): String {
+        #if debug_substitution_compiler
+        trace("[XRay SubstitutionCompiler] AGGRESSIVE SUBSTITUTION START");
+        trace('[XRay SubstitutionCompiler] Target var: ${targetVar}');
+        #end
+        
+        switch (expr.expr) {
+            case TLocal(v):
+                var varName = compiler.getOriginalVarName(v);
+                // Use helper function for clean, maintainable variable substitution logic
+                if (shouldSubstituteVariable(varName, null, true)) {
+                    #if debug_substitution_compiler
+                    trace('[XRay SubstitutionCompiler] ✓ AGGRESSIVE SUBSTITUTING: ${varName} -> ${targetVar}');
+                    #end
+                    return targetVar;
+                }
+                return compiler.compileExpression(expr);
+                
+            case TBinop(op, e1, e2):
+                var left = compileExpressionWithAggressiveSubstitution(e1, targetVar);
+                var right = compileExpressionWithAggressiveSubstitution(e2, targetVar);
+                return '${left} ${compiler.compileBinop(op)} ${right}';
+                
+            case TField(e, fa):
+                var obj = compileExpressionWithAggressiveSubstitution(e, targetVar);
+                var fieldName = compiler.getFieldName(fa);
+                return '${obj}.${fieldName}';
+                
+            case TCall(e, args):
+                var func = compileExpressionWithAggressiveSubstitution(e, targetVar);
+                var compiledArgs = args.map(arg -> compileExpressionWithAggressiveSubstitution(arg, targetVar));
+                return '${func}(${compiledArgs.join(", ")})';
+                
+            case TArray(e1, e2):
+                var arr = compileExpressionWithAggressiveSubstitution(e1, targetVar);
+                var index = compileExpressionWithAggressiveSubstitution(e2, targetVar);
+                return 'Enum.at(${arr}, ${index})';
+                
+            case TIf(econd, eif, eelse):
+                var condition = compileExpressionWithAggressiveSubstitution(econd, targetVar);
+                var thenValue = compileExpressionWithAggressiveSubstitution(eif, targetVar);
+                var elseValue = eelse != null ? compileExpressionWithAggressiveSubstitution(eelse, targetVar) : "nil";
+                return 'if ${condition}, do: ${thenValue}, else: ${elseValue}';
+                
+            case TBlock(exprs):
+                var compiledExprs = exprs.map(e -> compileExpressionWithAggressiveSubstitution(e, targetVar));
+                return compiledExprs.join('\n');
+                
+            case TParenthesis(e):
+                return "(" + compileExpressionWithAggressiveSubstitution(e, targetVar) + ")";
+                
+            case TUnop(op, postFix, e):
+                var operand = compileExpressionWithAggressiveSubstitution(e, targetVar);
+                var result = switch (op) {
+                    case OpIncrement: '${operand} + 1';
+                    case OpDecrement: '${operand} - 1'; 
+                    case OpNot: '!${operand}';
+                    case OpNeg: '-${operand}';
+                    case OpNegBits: 'bnot(${operand})';
+                    case _: operand;
+                };
+                return result;
+                
+            case _:
+                return compiler.compileExpression(expr);
+        }
+    }
+    
+    /**
+     * Extract transformation logic from mapping body (TVar-based version)
+     * 
+     * WHY: Array method transformations (map, filter) need to extract the actual
+     * transformation logic from complex loop bodies while preserving variable context.
+     * 
+     * WHAT: Analyzes expression structure to find transformation patterns and extract
+     * the core logic that should be applied to each array element.
+     * 
+     * HOW:
+     * 1. Look through block expressions for transformation patterns
+     * 2. Handle assignment patterns like _g = _g ++ [transformation]
+     * 3. Extract conditional logic for filter operations
+     * 4. Apply TVar-based substitution to maintain variable identity
+     * 
+     * @param expr The expression containing transformation logic
+     * @param sourceTVar The source TVar to replace in the transformation
+     * @param targetVarName The target variable name for substitution
+     * @return Extracted transformation with variable substitution applied
+     */
+    public function extractTransformationFromBodyWithTVar(expr: TypedExpr, sourceTVar: TVar, targetVarName: String): String {
+        #if debug_substitution_compiler
+        trace("[XRay SubstitutionCompiler] EXTRACT TRANSFORMATION (TVAR) START");
+        trace('[XRay SubstitutionCompiler] Source TVar: ${compiler.getOriginalVarName(sourceTVar)} -> Target: ${targetVarName}');
+        #end
+        
+        switch (expr.expr) {
+            case TBlock(exprs):
+                // Look for the actual transformation in the loop body
+                for (e in exprs) {
+                    switch (e.expr) {
+                        case TCall(_, args) if (args.length > 0):
+                            // Function call pattern like list.push(transformation)
+                            switch (args[0].expr) {
+                                case TCall(_, innerArgs) if (innerArgs.length > 0):
+                                    // Extract and compile the transformation with variable mapping
+                                    return compileExpressionWithTVarSubstitution(args[0], sourceTVar, targetVarName);
+                                case _:
+                            }
+                        case TBinop(OpAssign, eleft, eright):
+                            // Assignment pattern like _g = _g ++ [transformation]
+                            // Look for list concatenation patterns
+                            switch (eright.expr) {
+                                case TBinop(OpAdd, _, etransform):
+                                    // _g = _g ++ [transformation] pattern
+                                    return compileExpressionWithTVarSubstitution(etransform, sourceTVar, targetVarName);
+                                case _:
+                                    return compileExpressionWithTVarSubstitution(eright, sourceTVar, targetVarName);
+                            }
+                        case TIf(econd, eif, eelse):
+                            // Conditional transformation
+                            var condition = compileExpressionWithTVarSubstitution(econd, sourceTVar, targetVarName);
+                            var thenValue = compileExpressionWithTVarSubstitution(eif, sourceTVar, targetVarName);
+                            var elseValue = eelse != null ? compileExpressionWithTVarSubstitution(eelse, sourceTVar, targetVarName) : targetVarName;
+                            
+                            return 'if ${condition}, do: ${thenValue}, else: ${elseValue}';
+                        case _:
+                            // Keep looking through other expressions
+                    }
+                }
+            case TIf(econd, eif, eelse):
+                // Direct conditional transformation
+                var condition = compileExpressionWithTVarSubstitution(econd, sourceTVar, targetVarName);
+                var thenValue = compileExpressionWithTVarSubstitution(eif, sourceTVar, targetVarName);
+                var elseValue = eelse != null ? compileExpressionWithTVarSubstitution(eelse, sourceTVar, targetVarName) : targetVarName;
+                
+                return 'if ${condition}, do: ${thenValue}, else: ${elseValue}';
+            case _:
+                // Try to compile the expression directly with variable mapping
+                return compileExpressionWithTVarSubstitution(expr, sourceTVar, targetVarName);
+        }
+        return targetVarName; // Fallback: no transformation
+    }
+    
+    /**
+     * Extract transformation logic from mapping body (string-based version)
+     * 
+     * WHY: Legacy compatibility for string-based variable substitution patterns
+     * in loop transformation extraction.
+     * 
+     * WHAT: Analyzes expression structure to find transformation patterns using
+     * string-based variable matching instead of TVar-based matching.
+     * 
+     * HOW: Similar to TVar version but uses string-based variable mapping for
+     * compatibility with older compilation patterns.
+     * 
+     * @param expr The expression containing transformation logic
+     * @param sourceVar The source variable name to replace
+     * @param targetVar The target variable name for substitution
+     * @return Extracted transformation with string-based variable substitution
+     */
+    public function extractTransformationFromBody(expr: TypedExpr, sourceVar: String, targetVar: String): String {
+        #if debug_substitution_compiler
+        trace("[XRay SubstitutionCompiler] EXTRACT TRANSFORMATION (STRING) START");
+        trace('[XRay SubstitutionCompiler] Source var: ${sourceVar} -> Target var: ${targetVar}');
+        #end
+        
+        switch (expr.expr) {
+            case TBlock(exprs):
+                // Look for the actual transformation in the loop body
+                for (e in exprs) {
+                    switch (e.expr) {
+                        case TCall(_, args) if (args.length > 0):
+                            // Function call pattern like list.push(transformation)
+                            switch (args[0].expr) {
+                                case TCall(_, innerArgs) if (innerArgs.length > 0):
+                                    // Extract and compile the transformation with variable mapping
+                                    return compileExpressionWithVarMapping(args[0], sourceVar, targetVar);
+                                case _:
+                            }
+                        case TBinop(OpAssign, eleft, eright):
+                            // Assignment pattern like _g = _g ++ [transformation]
+                            // Look for list concatenation patterns
+                            switch (eright.expr) {
+                                case TBinop(OpAdd, _, etransform):
+                                    // _g = _g ++ [transformation] pattern
+                                    return compileExpressionWithVarMapping(etransform, sourceVar, targetVar);
+                                case _:
+                                    return compileExpressionWithVarMapping(eright, sourceVar, targetVar);
+                            }
+                        case TIf(econd, eif, eelse):
+                            // Conditional transformation
+                            var condition = compileExpressionWithVarMapping(econd, sourceVar, targetVar);
+                            var thenValue = compileExpressionWithVarMapping(eif, sourceVar, targetVar);
+                            var elseValue = eelse != null ? compileExpressionWithVarMapping(eelse, sourceVar, targetVar) : targetVar;
+                            return 'if ${condition}, do: ${thenValue}, else: ${elseValue}';
+                        case _:
+                            // Keep looking through other expressions
+                    }
+                }
+            case TIf(econd, eif, eelse):
+                // Direct conditional transformation
+                var condition = compileExpressionWithVarMapping(econd, sourceVar, targetVar);
+                var thenValue = compileExpressionWithVarMapping(eif, sourceVar, targetVar);
+                var elseValue = eelse != null ? compileExpressionWithVarMapping(eelse, sourceVar, targetVar) : targetVar;
+                return 'if ${condition}, do: ${thenValue}, else: ${elseValue}';
+            case _:
+                // Try to compile the expression directly with variable mapping
+                return compileExpressionWithVarMapping(expr, sourceVar, targetVar);
+        }
+        return targetVar; // Fallback: no transformation
+    }
+    
+    /**
+     * Extract transformation from body with aggressive substitution
+     * 
+     * WHY: Some transformation patterns need aggressive variable substitution
+     * where ALL local variables are replaced with the target variable.
+     * 
+     * WHAT: Simplified transformation extraction that applies aggressive substitution
+     * to handle cases where variable identity is less important than replacement.
+     * 
+     * HOW: Delegates to compileExpressionWithAggressiveSubstitution to ensure
+     * all TLocal variables are replaced consistently.
+     * 
+     * @param expr The expression containing transformation logic
+     * @param targetVar The target variable name for all substitutions
+     * @return Extracted transformation with aggressive variable substitution
+     */
+    public function extractTransformationFromBodyWithAggressiveSubstitution(expr: TypedExpr, targetVar: String): String {
+        #if debug_substitution_compiler
+        trace("[XRay SubstitutionCompiler] EXTRACT TRANSFORMATION (AGGRESSIVE) START");
+        trace('[XRay SubstitutionCompiler] Target var: ${targetVar}');
+        #end
+        
+        // Simply compile the expression with aggressive substitution
+        // All TLocal variables will be replaced with the target variable
+        return compileExpressionWithAggressiveSubstitution(expr, targetVar);
+    }
 }
 
 #end
