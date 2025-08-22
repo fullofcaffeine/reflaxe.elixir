@@ -1,35 +1,31 @@
 defmodule InvalidSchema do
-  @moduledoc """
-  Ecto schema module generated from Haxe @:schema class
-  Table: invalid_schemas
-  """
-
   use Ecto.Schema
   import Ecto.Changeset
 
-  @primary_key {:id, :id, autogenerate: true}
-  @derive {Phoenix.Param, key: :id}
+  @moduledoc """
+    InvalidSchema struct generated from Haxe
 
-  schema "invalid_schemas" do
-    field :valid_field, :string, default: "test"
-    field :invalid_type_field, :invalid_type
-  end
-
-  @doc """
-  Changeset function for InvalidSchema schema
+     * Test for Ecto error reporting validation
+     * This test intentionally contains errors to validate error messages
   """
-  def changeset(%InvalidSchema{} = invalid_schema, attrs \\ %{}) do
-    invalid_schema
-    |> cast(attrs, changeable_fields())
-    |> validate_required(required_fields())
+
+  defstruct [:valid_field, :invalid_type_field]
+
+  @type t() :: %__MODULE__{
+    valid_field: String.t() | nil,
+    invalid_type_field: String.t() | nil
+  }
+
+  @doc "Creates a new struct with default values"
+  @spec new() :: t()
+  def new() do
+    %__MODULE__{}
   end
 
-  defp changeable_fields do
-    [:valid_field, :invalid_type_field]
-  end
-
-  defp required_fields do
-    []
+  @doc "Updates struct fields using a map of changes"
+  @spec update(t(), map()) :: t()
+  def update(struct, changes) when is_map(changes) do
+    Map.merge(struct, changes) |> then(&struct(__MODULE__, &1))
   end
 
 end

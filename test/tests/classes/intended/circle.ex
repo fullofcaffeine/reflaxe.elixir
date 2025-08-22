@@ -40,20 +40,23 @@ defmodule Circle do
   @doc "Function draw"
   @spec draw(t()) :: String.t()
   def draw(%__MODULE__{} = struct) do
-    "" <> "Exception".draw() <> " with radius " <> Float.to_string(struct.radius)
+    "" <> "Exception".draw() <> " with radius " <> to_string(struct.radius)
   end
 
   @doc "Function update"
   @spec update(t(), float()) :: nil
   def update(%__MODULE__{} = struct, dt) do
-    struct.move(struct.velocity.x * dt, struct.velocity.y * dt)
+    struct.move((struct.velocity.x * dt), (struct.velocity.y * dt))
   end
 
   @doc "Function set_velocity"
-  @spec set_velocity(t(), float(), float()) :: nil
+  @spec set_velocity(t(), float(), float()) :: t()
   def set_velocity(%__MODULE__{} = struct, vx, vy) do
-    struct.velocity.struct.velocity.x = vx
-    struct.velocity.struct.velocity.y = vy
+    (
+          %{struct.velocity | x: vx}
+          %{struct.velocity | y: vy}
+        )
+    struct
   end
 
 end

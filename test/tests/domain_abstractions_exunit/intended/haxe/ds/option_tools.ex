@@ -49,16 +49,18 @@ defmodule OptionTools do
   """
   @spec map(Option.t(), Function.t()) :: Option.t()
   def map(option, transform) do
-    temp_result = nil
-    case (case option do {:ok, _} -> 0; :error -> 1; _ -> -1 end) do
-      0 ->
-        g = case option do {:ok, value} -> value; :error -> nil; _ -> nil end
-        value = g
-        temp_result = {:ok, transform.(value)}
-      1 ->
-        temp_result = :error
+    (
+          temp_result = nil
+          case (case option do {:ok, _} -> 0; :error -> 1; _ -> -1 end) do
+      0 -> (
+          g = case option do {:ok, value} -> value; :error -> nil; _ -> nil end
+          value = g
+          temp_result = Option.some(transform.(value))
+        )
+      1 -> temp_result = :error
     end
-    temp_result
+          temp_result
+        )
   end
 
   @doc """
@@ -73,16 +75,18 @@ defmodule OptionTools do
   """
   @spec then(Option.t(), Function.t()) :: Option.t()
   def then(option, transform) do
-    temp_result = nil
-    case (case option do {:ok, _} -> 0; :error -> 1; _ -> -1 end) do
-      0 ->
-        g = case option do {:ok, value} -> value; :error -> nil; _ -> nil end
-        value = g
-        temp_result = transform.(value)
-      1 ->
-        temp_result = :error
+    (
+          temp_result = nil
+          case (case option do {:ok, _} -> 0; :error -> 1; _ -> -1 end) do
+      0 -> (
+          g = case option do {:ok, value} -> value; :error -> nil; _ -> nil end
+          value = g
+          temp_result = transform.(value)
+        )
+      1 -> temp_result = :error
     end
-    temp_result
+          temp_result
+        )
   end
 
   @doc """
@@ -91,7 +95,7 @@ defmodule OptionTools do
   """
   @spec flat_map(Option.t(), Function.t()) :: Option.t()
   def flat_map(option, transform) do
-    OptionTools.then(option, &OptionTools.transform/1)
+    OptionTools.then(option, transform)
   end
 
   @doc """
@@ -105,16 +109,18 @@ defmodule OptionTools do
   """
   @spec flatten(Option.t()) :: Option.t()
   def flatten(option) do
-    temp_result = nil
-    case (case option do {:ok, _} -> 0; :error -> 1; _ -> -1 end) do
-      0 ->
-        g = case option do {:ok, value} -> value; :error -> nil; _ -> nil end
-        inner = g
-        temp_result = inner
-      1 ->
-        temp_result = :error
+    (
+          temp_result = nil
+          case (case option do {:ok, _} -> 0; :error -> 1; _ -> -1 end) do
+      0 -> (
+          g = case option do {:ok, value} -> value; :error -> nil; _ -> nil end
+          inner = g
+          temp_result = inner
+        )
+      1 -> temp_result = :error
     end
-    temp_result
+          temp_result
+        )
   end
 
   @doc """
@@ -126,16 +132,22 @@ defmodule OptionTools do
   """
   @spec filter(Option.t(), Function.t()) :: Option.t()
   def filter(option, predicate) do
-    temp_result = nil
-    case (case option do {:ok, _} -> 0; :error -> 1; _ -> -1 end) do
-      0 ->
-        g = case option do {:ok, value} -> value; :error -> nil; _ -> nil end
-        value = g
-        temp_result = if (predicate.(value)), do: {:ok, value}, else: :error
-      1 ->
-        temp_result = :error
+    (
+          temp_result = nil
+          case (case option do {:ok, _} -> 0; :error -> 1; _ -> -1 end) do
+      0 -> (
+          g = case option do {:ok, value} -> value; :error -> nil; _ -> nil end
+          value = g
+          if (predicate.(value)) do
+          temp_result = Option.some(value)
+        else
+          temp_result = :error
+        end
+        )
+      1 -> temp_result = :error
     end
-    temp_result
+          temp_result
+        )
   end
 
   @doc """
@@ -150,16 +162,18 @@ defmodule OptionTools do
   """
   @spec unwrap(Option.t(), T.t()) :: T.t()
   def unwrap(option, default_value) do
-    temp_result = nil
-    case (case option do {:ok, _} -> 0; :error -> 1; _ -> -1 end) do
-      0 ->
-        g = case option do {:ok, value} -> value; :error -> nil; _ -> nil end
-        value = g
-        temp_result = value
-      1 ->
-        temp_result = default_value
+    (
+          temp_result = nil
+          case (case option do {:ok, _} -> 0; :error -> 1; _ -> -1 end) do
+      0 -> (
+          g = case option do {:ok, value} -> value; :error -> nil; _ -> nil end
+          value = g
+          temp_result = value
+        )
+      1 -> temp_result = default_value
     end
-    temp_result
+          temp_result
+        )
   end
 
   @doc """
@@ -173,16 +187,18 @@ defmodule OptionTools do
   """
   @spec lazy_unwrap(Option.t(), Function.t()) :: T.t()
   def lazy_unwrap(option, fn_) do
-    temp_result = nil
-    case (case option do {:ok, _} -> 0; :error -> 1; _ -> -1 end) do
-      0 ->
-        g = case option do {:ok, value} -> value; :error -> nil; _ -> nil end
-        value = g
-        temp_result = value
-      1 ->
-        temp_result = fn_.()
+    (
+          temp_result = nil
+          case (case option do {:ok, _} -> 0; :error -> 1; _ -> -1 end) do
+      0 -> (
+          g = case option do {:ok, value} -> value; :error -> nil; _ -> nil end
+          value = g
+          temp_result = value
+        )
+      1 -> temp_result = fn_.()
     end
-    temp_result
+          temp_result
+        )
   end
 
   @doc """
@@ -196,15 +212,17 @@ defmodule OptionTools do
   """
   @spec or_(Option.t(), Option.t()) :: Option.t()
   def or_(first, second) do
-    temp_result = nil
-    case (case first do {:ok, _} -> 0; :error -> 1; _ -> -1 end) do
-      0 ->
-        case first do {:ok, value} -> value; :error -> nil; _ -> nil end
-        temp_result = first
-      1 ->
-        temp_result = second
+    (
+          temp_result = nil
+          case (case first do {:ok, _} -> 0; :error -> 1; _ -> -1 end) do
+      0 -> (
+          case first do {:ok, value} -> value; :error -> nil; _ -> nil end
+          temp_result = first
+        )
+      1 -> temp_result = second
     end
-    temp_result
+          temp_result
+        )
   end
 
   @doc """
@@ -218,15 +236,17 @@ defmodule OptionTools do
   """
   @spec lazy_or(Option.t(), Function.t()) :: Option.t()
   def lazy_or(first, fn_) do
-    temp_result = nil
-    case (case first do {:ok, _} -> 0; :error -> 1; _ -> -1 end) do
-      0 ->
-        case first do {:ok, value} -> value; :error -> nil; _ -> nil end
-        temp_result = first
-      1 ->
-        temp_result = fn_.()
+    (
+          temp_result = nil
+          case (case first do {:ok, _} -> 0; :error -> 1; _ -> -1 end) do
+      0 -> (
+          case first do {:ok, value} -> value; :error -> nil; _ -> nil end
+          temp_result = first
+        )
+      1 -> temp_result = fn_.()
     end
-    temp_result
+          temp_result
+        )
   end
 
   @doc """
@@ -237,15 +257,17 @@ defmodule OptionTools do
   """
   @spec is_some(Option.t()) :: boolean()
   def is_some(option) do
-    temp_result = nil
-    case (case option do {:ok, _} -> 0; :error -> 1; _ -> -1 end) do
-      0 ->
-        case option do {:ok, value} -> value; :error -> nil; _ -> nil end
-        temp_result = true
-      1 ->
-        temp_result = false
+    (
+          temp_result = nil
+          case (case option do {:ok, _} -> 0; :error -> 1; _ -> -1 end) do
+      0 -> (
+          case option do {:ok, value} -> value; :error -> nil; _ -> nil end
+          temp_result = true
+        )
+      1 -> temp_result = false
     end
-    temp_result
+          temp_result
+        )
   end
 
   @doc """
@@ -256,15 +278,17 @@ defmodule OptionTools do
   """
   @spec is_none(Option.t()) :: boolean()
   def is_none(option) do
-    temp_result = nil
-    case (case option do {:ok, _} -> 0; :error -> 1; _ -> -1 end) do
-      0 ->
-        case option do {:ok, value} -> value; :error -> nil; _ -> nil end
-        temp_result = false
-      1 ->
-        temp_result = true
+    (
+          temp_result = nil
+          case (case option do {:ok, _} -> 0; :error -> 1; _ -> -1 end) do
+      0 -> (
+          case option do {:ok, value} -> value; :error -> nil; _ -> nil end
+          temp_result = false
+        )
+      1 -> temp_result = true
     end
-    temp_result
+          temp_result
+        )
   end
 
   @doc """
@@ -278,39 +302,23 @@ defmodule OptionTools do
   """
   @spec all(Array.t()) :: Option.t()
   def all(options) do
-    values = []
-    g_counter = 0
     (
-      loop_helper = fn loop_fn, {g} ->
-        if (g < options.length) do
-          try do
-            option = Enum.at(options, g)
-          g = g + 1
+          values = []
+          g_counter = 0
+          while_loop(fn -> ((g < options.length)) end, fn -> (
+          option = Enum.at(options, g)
+          g + 1
           case (case option do {:ok, _} -> 0; :error -> 1; _ -> -1 end) do
-      0 ->
-        g = case option do {:ok, value} -> value; :error -> nil; _ -> nil end
-        value = g
-        &OptionTools.values/1 ++ [value]
-      1 ->
-        :error
+      0 -> (
+          g = case option do {:ok, value} -> value; :error -> nil; _ -> nil end
+          value = g
+          &OptionTools.values/1 ++ [value]
+        )
+      1 -> :error
     end
-          loop_fn.({g + 1})
-            loop_fn.(loop_fn, {g})
-          catch
-            :break -> {g}
-            :continue -> loop_fn.(loop_fn, {g})
-          end
-        else
-          {g}
-        end
-      end
-      {g} = try do
-        loop_helper.(loop_helper, {nil})
-      catch
-        :break -> {nil}
-      end
-    )
-    {:ok, &OptionTools.values/1}
+        ) end)
+          Option.some(&OptionTools.values/1)
+        )
   end
 
   @doc """
@@ -324,39 +332,23 @@ defmodule OptionTools do
   """
   @spec values(Array.t()) :: Array.t()
   def values(options) do
-    result = []
-    g_counter = 0
     (
-      loop_helper = fn loop_fn, {g} ->
-        if (g < options.length) do
-          try do
-            option = Enum.at(options, g)
-          g = g + 1
+          result = []
+          g_counter = 0
+          while_loop(fn -> ((g < options.length)) end, fn -> (
+          option = Enum.at(options, g)
+          g + 1
           case (case option do {:ok, _} -> 0; :error -> 1; _ -> -1 end) do
-      0 ->
-        g = case option do {:ok, value} -> value; :error -> nil; _ -> nil end
-        value = g
-        result ++ [value]
-      1 ->
-        nil
+      0 -> (
+          g = case option do {:ok, value} -> value; :error -> nil; _ -> nil end
+          value = g
+          result ++ [value]
+        )
+      1 -> nil
     end
-          loop_fn.({g + 1})
-            loop_fn.(loop_fn, {g})
-          catch
-            :break -> {g}
-            :continue -> loop_fn.(loop_fn, {g})
-          end
-        else
-          {g}
-        end
-      end
-      {g} = try do
-        loop_helper.(loop_helper, {nil})
-      catch
-        :break -> {nil}
-      end
-    )
-    result
+        ) end)
+          result
+        )
   end
 
   @doc """
@@ -371,16 +363,18 @@ defmodule OptionTools do
   """
   @spec to_result(Option.t(), E.t()) :: Result.t()
   def to_result(option, error) do
-    temp_result = nil
-    case (case option do {:ok, _} -> 0; :error -> 1; _ -> -1 end) do
-      0 ->
-        g = case option do {:ok, value} -> value; :error -> nil; _ -> nil end
-        value = g
-        temp_result = {:ok, value}
-      1 ->
-        temp_result = {:error, error}
+    (
+          temp_result = nil
+          case (case option do {:ok, _} -> 0; :error -> 1; _ -> -1 end) do
+      0 -> (
+          g = case option do {:ok, value} -> value; :error -> nil; _ -> nil end
+          value = g
+          temp_result = {:ok, value}
+        )
+      1 -> temp_result = {:error, error}
     end
-    temp_result
+          temp_result
+        )
   end
 
   @doc """
@@ -393,17 +387,21 @@ defmodule OptionTools do
   """
   @spec from_result(Result.t()) :: Option.t()
   def from_result(result) do
-    temp_result = nil
-    case (case result do {:ok, _} -> 0; {:error, _} -> 1; _ -> -1 end) do
-      0 ->
-        g = case result do {:ok, value} -> value; {:error, value} -> value; _ -> nil end
-        value = g
-        temp_result = {:ok, value}
-      1 ->
-        case result do {:ok, value} -> value; {:error, value} -> value; _ -> nil end
-        temp_result = :error
+    (
+          temp_result = nil
+          case (case result do {:ok, _} -> 0; {:error, _} -> 1; _ -> -1 end) do
+      0 -> (
+          g = case result do {:ok, value} -> value; {:error, value} -> value; _ -> nil end
+          value = g
+          temp_result = Option.some(value)
+        )
+      1 -> (
+          case result do {:ok, value} -> value; {:error, value} -> value; _ -> nil end
+          temp_result = :error
+        )
     end
-    temp_result
+          temp_result
+        )
   end
 
   @doc """
@@ -416,7 +414,15 @@ defmodule OptionTools do
   """
   @spec from_nullable(Null.t()) :: Option.t()
   def from_nullable(value) do
-    if ((value != nil)), do: {:ok, value}, else: :error
+    (
+          temp_result = nil
+          if ((value != nil)) do
+          temp_result = Option.some(value)
+        else
+          temp_result = :error
+        end
+          temp_result
+        )
   end
 
   @doc """
@@ -430,16 +436,18 @@ defmodule OptionTools do
   """
   @spec to_nullable(Option.t()) :: Null.t()
   def to_nullable(option) do
-    temp_result = nil
-    case (case option do {:ok, _} -> 0; :error -> 1; _ -> -1 end) do
-      0 ->
-        g = case option do {:ok, value} -> value; :error -> nil; _ -> nil end
-        value = g
-        temp_result = value
-      1 ->
-        temp_result = nil
+    (
+          temp_result = nil
+          case (case option do {:ok, _} -> 0; :error -> 1; _ -> -1 end) do
+      0 -> (
+          g = case option do {:ok, value} -> value; :error -> nil; _ -> nil end
+          value = g
+          temp_result = value
+        )
+      1 -> temp_result = nil
     end
-    temp_result
+          temp_result
+        )
   end
 
   @doc """
@@ -453,16 +461,18 @@ defmodule OptionTools do
   """
   @spec to_reply(Option.t()) :: term()
   def to_reply(option) do
-    temp_result = nil
-    case (case option do {:ok, _} -> 0; :error -> 1; _ -> -1 end) do
-      0 ->
-        g = case option do {:ok, value} -> value; :error -> nil; _ -> nil end
-        value = g
-        temp_result = %{"reply" => value, "status" => "ok"}
-      1 ->
-        temp_result = %{"reply" => nil, "status" => "none"}
+    (
+          temp_result = nil
+          case (case option do {:ok, _} -> 0; :error -> 1; _ -> -1 end) do
+      0 -> (
+          g = case option do {:ok, value} -> value; :error -> nil; _ -> nil end
+          value = g
+          temp_result = %{"reply" => value, "status" => "ok"}
+        )
+      1 -> temp_result = %{"reply" => nil, "status" => "none"}
     end
-    temp_result
+          temp_result
+        )
   end
 
   @doc """
@@ -478,16 +488,18 @@ defmodule OptionTools do
   """
   @spec expect(Option.t(), String.t()) :: T.t()
   def expect(option, message) do
-    temp_result = nil
-    case (case option do {:ok, _} -> 0; :error -> 1; _ -> -1 end) do
-      0 ->
-        g = case option do {:ok, value} -> value; :error -> nil; _ -> nil end
-        value = g
-        temp_result = value
-      1 ->
-        throw("Expected Some value but got None: " <> message)
+    (
+          temp_result = nil
+          case (case option do {:ok, _} -> 0; :error -> 1; _ -> -1 end) do
+      0 -> (
+          g = case option do {:ok, value} -> value; :error -> nil; _ -> nil end
+          value = g
+          temp_result = value
+        )
+      1 -> raise "Expected Some value but got None: " <> message
     end
-    temp_result
+          temp_result
+        )
   end
 
   @doc """
@@ -498,7 +510,7 @@ defmodule OptionTools do
   """
   @spec some(T.t()) :: Option.t()
   def some(value) do
-    {:ok, value}
+    Option.some(value)
   end
 
   @doc """
@@ -522,15 +534,17 @@ defmodule OptionTools do
   """
   @spec apply(Option.t(), Function.t()) :: Option.t()
   def apply(option, fn_) do
-    case (case option do {:ok, _} -> 0; :error -> 1; _ -> -1 end) do
-      0 ->
-        g = case option do {:ok, value} -> value; :error -> nil; _ -> nil end
-        value = g
-        fn_.(value)
-      1 ->
-        nil
+    (
+          case (case option do {:ok, _} -> 0; :error -> 1; _ -> -1 end) do
+      0 -> (
+          g = case option do {:ok, value} -> value; :error -> nil; _ -> nil end
+          value = g
+          fn_.(value)
+        )
+      1 -> nil
     end
-    option
+          option
+        )
   end
 
 end

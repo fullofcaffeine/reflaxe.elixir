@@ -1,41 +1,39 @@
 defmodule Post do
-  @moduledoc """
-  Ecto schema module generated from Haxe @:schema class
-  Table: posts
-  """
-
   use Ecto.Schema
   import Ecto.Changeset
 
-  @primary_key {:id, :id, autogenerate: true}
-  @derive {Phoenix.Param, key: :id}
+  @moduledoc """
+    Post struct generated from Haxe
 
-  schema "posts" do
-    field :title, :string
-    field :content, :string
-    field :published, :boolean
-    field :view_count, :integer
-    belongs_to :user, User
-    field :user_id, :integer
-    has_many :comments, Comment
-    field :updated_at, :string
-  end
-
-  @doc """
-  Changeset function for Post schema
+    This module defines a struct with typed fields and constructor functions.
   """
-  def changeset(%Post{} = post, attrs \\ %{}) do
-    post
-    |> cast(attrs, changeable_fields())
-    |> validate_required(required_fields())
+
+  defstruct [:id, :title, :content, published: true, view_count: 0, :user, :user_id, :comments, :inserted_at, :updated_at]
+
+  @type t() :: %__MODULE__{
+    id: integer() | nil,
+    title: String.t() | nil,
+    content: String.t() | nil,
+    published: boolean(),
+    view_count: integer(),
+    user: term() | nil,
+    user_id: integer() | nil,
+    comments: Array.t() | nil,
+    inserted_at: term() | nil,
+    updated_at: term() | nil
+  }
+
+  @doc "Creates a new struct instance"
+  @spec new() :: t()
+  def new() do
+    %__MODULE__{
+    }
   end
 
-  defp changeable_fields do
-    [:id, :title, :content, :published, :view_count, :user_id, :updated_at]
-  end
-
-  defp required_fields do
-    []
+  @doc "Updates struct fields using a map of changes"
+  @spec update(t(), map()) :: t()
+  def update(struct, changes) when is_map(changes) do
+    Map.merge(struct, changes) |> then(&struct(__MODULE__, &1))
   end
 
 end

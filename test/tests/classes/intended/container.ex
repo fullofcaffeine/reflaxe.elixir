@@ -26,9 +26,10 @@ defmodule Container do
 
   # Instance functions
   @doc "Function add"
-  @spec add(t(), T.t()) :: nil
+  @spec add(t(), T.t()) :: t()
   def add(%__MODULE__{} = struct, item) do
-    struct.items ++ [item]
+    struct.items = struct.items.push(item)
+    struct
   end
 
   @doc "Function get"
@@ -46,32 +47,17 @@ defmodule Container do
   @doc "Function map"
   @spec map(t(), Function.t()) :: Container.t()
   def map(%__MODULE__{} = struct, fn_) do
-    result = Container.new()
-    _g_counter = 0
-    _g_2 = struct.items
     (
-      loop_helper = fn loop_fn, {g_2} ->
-        if (g < g.length) do
-          try do
-            item = Enum.at(g, g)
-    g = g + 1
-    result.add(&Container.fn_/1(item))
-            loop_fn.(loop_fn, {g_2})
-          catch
-            :break -> {g_2}
-            :continue -> loop_fn.(loop_fn, {g_2})
-          end
-        else
-          {g_2}
-        end
-      end
-      {g_2} = try do
-        loop_helper.(loop_helper, {nil})
-      catch
-        :break -> {nil}
-      end
-    )
-    result
+          result = Container.new()
+          g_counter = 0
+          g = struct.items
+          while_loop(fn -> ((g < g.length)) end, fn -> (
+          item = Enum.at(g, g)
+          g + 1
+          result.add(fn_.(item))
+        ) end)
+          result
+        )
   end
 
 end

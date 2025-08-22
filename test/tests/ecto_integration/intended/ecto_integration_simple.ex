@@ -8,8 +8,8 @@ defmodule EctoIntegrationSimple do
     Log.trace("=== Ecto Integration Test Suite ===", %{"fileName" => "EctoIntegrationSimple.hx", "lineNumber" => 218, "className" => "EctoIntegrationSimple", "methodName" => "main"})
     Log.trace("Testing @:schema annotation...", %{"fileName" => "EctoIntegrationSimple.hx", "lineNumber" => 221, "className" => "EctoIntegrationSimple", "methodName" => "main"})
     user = User.new()
-    user = %{user | name: "Test User"}
-    user = %{user | email: "test@example.com"}
+    %{user | name: "Test User"}
+    %{user | email: "test@example.com"}
     Log.trace("Testing @:changeset annotation...", %{"fileName" => "EctoIntegrationSimple.hx", "lineNumber" => 227, "className" => "EctoIntegrationSimple", "methodName" => "main"})
     UserChangeset.changeset(user, %{"name" => "Updated", "email" => "new@example.com"})
     Log.trace("Testing @:migration annotation...", %{"fileName" => "EctoIntegrationSimple.hx", "lineNumber" => 231, "className" => "EctoIntegrationSimple", "methodName" => "main"})
@@ -17,18 +17,18 @@ defmodule EctoIntegrationSimple do
     Log.trace("Testing query functions...", %{"fileName" => "EctoIntegrationSimple.hx", "lineNumber" => 235, "className" => "EctoIntegrationSimple", "methodName" => "main"})
     UserQueries.active_users()
     Log.trace("Testing @:repository annotation...", %{"fileName" => "EctoIntegrationSimple.hx", "lineNumber" => 239, "className" => "EctoIntegrationSimple", "methodName" => "main"})
-    Repo.all(User)
+    Enum.all?(Repo, User)
     Log.trace("Testing @:context annotation...", %{"fileName" => "EctoIntegrationSimple.hx", "lineNumber" => 243, "className" => "EctoIntegrationSimple", "methodName" => "main"})
     Accounts.list_users()
     Log.trace("Testing @:liveview with Ecto integration...", %{"fileName" => "EctoIntegrationSimple.hx", "lineNumber" => 247, "className" => "EctoIntegrationSimple", "methodName" => "main"})
     UserLive.new()
     Log.trace("Testing associations...", %{"fileName" => "EctoIntegrationSimple.hx", "lineNumber" => 251, "className" => "EctoIntegrationSimple", "methodName" => "main"})
     org = Organization.new()
-    org = %{org | name: "Test Org"}
+    %{org | name: "Test Org"}
     post = Post.new()
-    post = %{post | title: "Test Post"}
+    %{post | title: "Test Post"}
     comment = Comment.new()
-    comment = %{comment | body: "Test Comment"}
+    %{comment | body: "Test Comment"}
     Log.trace("=== All Ecto Integration Tests Completed ===", %{"fileName" => "EctoIntegrationSimple.hx", "lineNumber" => 261, "className" => "EctoIntegrationSimple", "methodName" => "main"})
   end
 

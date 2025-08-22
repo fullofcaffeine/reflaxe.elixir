@@ -26,7 +26,7 @@ defmodule ArrayTools do
   """
   @spec reduce(Array.t(), Function.t(), U.t()) :: U.t()
   def reduce(array, func, initial) do
-    Enum.reduce(array, initial, fn item, acc -> &ArrayTools.func/1.(acc, item) end)
+    __elixir__("Enum.reduce({0}, {1}, fn item, acc -> {2}.(acc, item) end)", array, initial, func)
   end
 
   @doc """
@@ -38,7 +38,7 @@ defmodule ArrayTools do
   """
   @spec fold(Array.t(), Function.t(), U.t()) :: U.t()
   def fold(array, func, initial) do
-    Enum.reduce(array, initial, &ArrayTools.func/1)
+    Enum.reduce(array, initial, func)
   end
 
   @doc """
@@ -49,7 +49,7 @@ defmodule ArrayTools do
   """
   @spec find(Array.t(), Function.t()) :: Null.t()
   def find(array, predicate) do
-    Enum.find(array, fn item -> &ArrayTools.predicate/1.(item) end)
+    __elixir__("Enum.find({0}, fn item -> {1}.(item) end)", array, predicate)
   end
 
   @doc """
@@ -60,10 +60,7 @@ defmodule ArrayTools do
   """
   @spec find_index(Array.t(), Function.t()) :: integer()
   def find_index(array, predicate) do
-    case Enum.find_index(array, fn item -> &ArrayTools.predicate/1.(item) end) do
-          nil -> -1
-          index -> index
-        end
+    __elixir__("case Enum.find_index({0}, fn item -> {1}.(item) end) do\n      nil -> -1\n      index -> index\n    end", array, predicate)
   end
 
   @doc """
@@ -74,7 +71,7 @@ defmodule ArrayTools do
   """
   @spec exists(Array.t(), Function.t()) :: boolean()
   def exists(array, predicate) do
-    Enum.any?(array, fn item -> &ArrayTools.predicate/1.(item) end)
+    __elixir__("Enum.any?({0}, fn item -> {1}.(item) end)", array, predicate)
   end
 
   @doc """
@@ -83,7 +80,7 @@ defmodule ArrayTools do
   """
   @spec any(Array.t(), Function.t()) :: boolean()
   def any(array, predicate) do
-    Enum.any?(array, &ArrayTools.predicate/1)
+    Enum.any?(array, predicate)
   end
 
   @doc """
@@ -94,7 +91,7 @@ defmodule ArrayTools do
   """
   @spec foreach(Array.t(), Function.t()) :: boolean()
   def foreach(array, predicate) do
-    Enum.all?(array, fn item -> &ArrayTools.predicate/1.(item) end)
+    __elixir__("Enum.all?({0}, fn item -> {1}.(item) end)", array, predicate)
   end
 
   @doc """
@@ -103,7 +100,7 @@ defmodule ArrayTools do
   """
   @spec all(Array.t(), Function.t()) :: boolean()
   def all(array, predicate) do
-    Enum.all?(array, &ArrayTools.predicate/1)
+    Enum.all?(array, predicate)
   end
 
   @doc """
@@ -113,7 +110,7 @@ defmodule ArrayTools do
   """
   @spec for_each(Array.t(), Function.t()) :: nil
   def for_each(array, action) do
-    Enum.each(array, fn item -> &ArrayTools.action/1.(item) end)
+    __elixir__("Enum.each({0}, fn item -> {1}.(item) end)", array, action)
   end
 
   @doc """
@@ -124,7 +121,7 @@ defmodule ArrayTools do
   """
   @spec take(Array.t(), integer()) :: Array.t()
   def take(array, n) do
-    Enum.take(array, n)
+    __elixir__("Enum.take({0}, {1})", array, n)
   end
 
   @doc """
@@ -135,7 +132,7 @@ defmodule ArrayTools do
   """
   @spec drop(Array.t(), integer()) :: Array.t()
   def drop(array, n) do
-    Enum.drop(array, n)
+    __elixir__("Enum.drop({0}, {1})", array, n)
   end
 
   @doc """
@@ -146,7 +143,7 @@ defmodule ArrayTools do
   """
   @spec flat_map(Array.t(), Function.t()) :: Array.t()
   def flat_map(array, mapper) do
-    Enum.flat_map(array, fn item -> &ArrayTools.mapper/1.(item) end)
+    __elixir__("Enum.flat_map({0}, fn item -> {1}.(item) end)", array, mapper)
   end
 
 end

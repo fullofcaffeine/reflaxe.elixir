@@ -31,15 +31,17 @@ defmodule Point do
   @doc "Function distance"
   @spec distance(t(), Point.t()) :: float()
   def distance(%__MODULE__{} = struct, other) do
-    dx = struct.x - other.x
-    dy = struct.y - other.y
-    Math.sqrt(dx * dx + dy * dy)
+    (
+          dx = (struct.x - other.x)
+          dy = (struct.y - other.y)
+          Math.sqrt(((dx * dx) + (dy * dy)))
+        )
   end
 
-  @doc "Function to_string"
-  @spec to_string(t()) :: String.t()
-  def to_string(%__MODULE__{} = struct) do
-    "Point(" <> Float.to_string(struct.x) <> ", " <> Float.to_string(struct.y) <> ")"
+  @doc "Function format"
+  @spec format(t()) :: String.t()
+  def format(%__MODULE__{} = struct) do
+    "Point(" <> to_string(struct.x) <> ", " <> to_string(struct.y) <> ")"
   end
 
 end

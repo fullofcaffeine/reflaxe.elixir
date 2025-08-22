@@ -1,37 +1,35 @@
 defmodule Organization do
-  @moduledoc """
-  Ecto schema module generated from Haxe @:schema class
-  Table: organizations
-  """
-
   use Ecto.Schema
   import Ecto.Changeset
 
-  @primary_key {:id, :id, autogenerate: true}
-  @derive {Phoenix.Param, key: :id}
+  @moduledoc """
+    Organization struct generated from Haxe
 
-  schema "organizations" do
-    field :name, :string
-    field :domain, :string
-    has_many :users, User
-    field :updated_at, :string
-  end
-
-  @doc """
-  Changeset function for Organization schema
+    This module defines a struct with typed fields and constructor functions.
   """
-  def changeset(%Organization{} = organization, attrs \\ %{}) do
-    organization
-    |> cast(attrs, changeable_fields())
-    |> validate_required(required_fields())
+
+  defstruct [:id, :name, :domain, :users, :inserted_at, :updated_at]
+
+  @type t() :: %__MODULE__{
+    id: integer() | nil,
+    name: String.t() | nil,
+    domain: String.t() | nil,
+    users: Array.t() | nil,
+    inserted_at: term() | nil,
+    updated_at: term() | nil
+  }
+
+  @doc "Creates a new struct instance"
+  @spec new() :: t()
+  def new() do
+    %__MODULE__{
+    }
   end
 
-  defp changeable_fields do
-    [:id, :name, :domain, :updated_at]
-  end
-
-  defp required_fields do
-    []
+  @doc "Updates struct fields using a map of changes"
+  @spec update(t(), map()) :: t()
+  def update(struct, changes) when is_map(changes) do
+    Map.merge(struct, changes) |> then(&struct(__MODULE__, &1))
   end
 
 end

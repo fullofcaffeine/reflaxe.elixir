@@ -28,7 +28,7 @@ defmodule Vehicle do
   @doc "Function accelerate"
   @spec accelerate(t()) :: nil
   def accelerate(%__MODULE__{} = struct) do
-    throw("Abstract method")
+    raise "Abstract method"
   end
 
 end
