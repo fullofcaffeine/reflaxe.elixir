@@ -55,8 +55,33 @@ class PatternMatcher {
                         var line = StringTools.trim(lines[i]);
                         // Skip standalone temp variable references like "g" or "g1" that appear after elem() calls
                         if (line == "g" || ~/^g\d*$/.match(line)) {
-                            // Check if previous line was an elem() extraction
-                            if (i > 0 && lines[i - 1].indexOf("elem(") >= 0) {
+                            // Check if any previous line (within last 5 lines) was an elem() extraction
+                            // This handles multi-line structures with intervening parentheses or other syntax
+                            var foundElemCall = false;
+                            var lookbackLimit = Std.int(Math.min(5, i)); // Look back max 5 lines
+                            
+                            #if debug_pattern_matching
+                            trace('[PatternMatcher DEBUG] Found potential orphaned g at line ${i}: "${line}"');
+                            trace('[PatternMatcher DEBUG] Looking back ${lookbackLimit} lines for elem() call');
+                            #end
+                            
+                            for (j in 1...lookbackLimit + 1) {
+                                var checkLine = StringTools.trim(lines[i - j]);
+                                #if debug_pattern_matching
+                                trace('[PatternMatcher DEBUG] Checking line ${i - j}: "${checkLine}"');
+                                #end
+                                if (checkLine.indexOf("elem(") >= 0) {
+                                    foundElemCall = true;
+                                    #if debug_pattern_matching
+                                    trace('[PatternMatcher DEBUG] ✓ Found elem() call - will skip orphaned g');
+                                    #end
+                                    break;
+                                }
+                            }
+                            if (foundElemCall) {
+                                #if debug_pattern_matching
+                                trace('[PatternMatcher DEBUG] Skipping orphaned temp variable "${line}"');
+                                #end
                                 continue; // Skip this orphaned temp variable
                             }
                         }
@@ -93,8 +118,33 @@ class PatternMatcher {
                 var line = StringTools.trim(lines[i]);
                 // Skip standalone temp variable references like "g" or "g1" that appear after elem() calls
                 if (line == "g" || ~/^g\d*$/.match(line)) {
-                    // Check if previous line was an elem() extraction
-                    if (i > 0 && lines[i - 1].indexOf("elem(") >= 0) {
+                    // Check if any previous line (within last 5 lines) was an elem() extraction
+                    // This handles multi-line structures with intervening parentheses or other syntax
+                    var foundElemCall = false;
+                    var lookbackLimit = Std.int(Math.min(5, i)); // Look back max 5 lines
+                    
+                    #if debug_pattern_matching
+                    trace('[PatternMatcher DEBUG] Found potential orphaned g at line ${i}: "${line}"');
+                    trace('[PatternMatcher DEBUG] Looking back ${lookbackLimit} lines for elem() call');
+                    #end
+                    
+                    for (j in 1...lookbackLimit + 1) {
+                        var checkLine = StringTools.trim(lines[i - j]);
+                        #if debug_pattern_matching
+                        trace('[PatternMatcher DEBUG] Checking line ${i - j}: "${checkLine}"');
+                        #end
+                        if (checkLine.indexOf("elem(") >= 0) {
+                            foundElemCall = true;
+                            #if debug_pattern_matching
+                            trace('[PatternMatcher DEBUG] ✓ Found elem() call - will skip orphaned g');
+                            #end
+                            break;
+                        }
+                    }
+                    if (foundElemCall) {
+                        #if debug_pattern_matching
+                        trace('[PatternMatcher DEBUG] Skipping orphaned temp variable "${line}"');
+                        #end
                         continue; // Skip this orphaned temp variable
                     }
                 }
