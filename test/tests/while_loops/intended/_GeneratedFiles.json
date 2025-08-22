@@ -1,15 +1,15 @@
 {
-	"filesGenerated": [
-		"haxe_CallStack.ex",
-		"Type.ex",
-		"StdTypes.ex",
-		"Main.ex",
-		"EnumValue.ex",
-		"Enum.ex",
-		"Class.ex",
-		"Any.ex"
-	],
-	"id": 1,
-	"wasCached": false,
-	"version": 1
+  "filesGenerated": [
+    "haxe_CallStack.ex",
+    "type.ex",
+    "std_types.ex",
+    "main.ex",
+    "enum_value.ex",
+    "enum.ex",
+    "class.ex",
+    "any.ex"
+  ],
+  "id": 1,
+  "wasCached": false,
+  "version": 1
 }

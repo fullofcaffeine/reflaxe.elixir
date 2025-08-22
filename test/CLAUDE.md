@@ -13,11 +13,35 @@ This file contains testing-specific guidance for agents working on Reflaxe.Elixi
 4. **Integration Tests** - End-to-end compilation and execution
 
 ### Critical Commands
+
+#### Complete Test Suite
 ```bash
-npm test                                    # Run ALL 180 tests (mandatory before commits)
+npm test                                    # Run ALL tests (Haxe + Generator + Mix) - mandatory before commits
+npm run test:sequential                     # Same as npm test but sequential (for debugging)
+```
+
+#### Individual Test Categories  
+```bash
+npm run test:quick                          # Haxe snapshot tests only (fastest)
+npm run test:haxe                          # Same as test:quick - Haxe compilation tests
+npm run test:generator                     # Project template generation tests
+npm run test:mix                           # Elixir runtime tests (BEAM VM validation)
+npm run test:parallel                      # Parallel Haxe tests (experimental)
+```
+
+#### Specific Test Operations
+```bash
 haxe test/Test.hxml test=feature_name      # Run specific snapshot test
 haxe test/Test.hxml update-intended        # Accept new output when compiler improves
-MIX_ENV=test mix test                      # Run Mix/Elixir tests only
+npm run test:update                        # Update all intended outputs
+npm run test:core                          # Run core functionality tests only
+npm run test:verify                        # Verify core functionality + cleanup
+```
+
+#### Development/Debugging
+```bash
+npm run test:mix-fast                      # Fast Mix tests (stale only)
+npm run test:parallel:debug                # Debug parallel test issues
 ```
 
 ## 🎯 Testing Principles ⚠️ CRITICAL
@@ -65,9 +89,19 @@ test/tests/feature_name/
 ├── compile.hxml       # Compilation configuration
 ├── Main.hx           # Test source code
 ├── intended/         # Expected output
-│   └── Main.ex      # Expected Elixir code
+│   └── main.ex      # Expected Elixir code (snake_case)
 └── out/             # Generated output (for comparison)
 ```
+
+### ⚠️ CRITICAL: Snake_Case Naming Convention
+
+**ALL .ex files in intended directories MUST use snake_case naming:**
+- ✅ `main.ex` (correct) 
+- ❌ `Main.ex` (incorrect)
+- ✅ `std_types.ex` (correct)
+- ❌ `StdTypes.ex` (incorrect)
+
+**Recently Fixed (January 2025)**: Migrated 328 PascalCase intended files to snake_case to match compiler output. This resolves test failures where the compiler correctly generates snake_case but tests expected PascalCase.
 
 ### Mix Test Patterns
 - Place in `test/` directory with `.exs` extension
