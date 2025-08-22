@@ -102,8 +102,27 @@ class OperatorCompiler {
         #end
         
         // BASIC IMPLEMENTATION: Handle common binary operators
-        var left = compiler.compileExpression(e1);
-        var right = compiler.compileExpression(e2);
+        // Special handling for OpAssign with _this variable
+        var left = if (op == OpAssign) {
+            switch (e1.expr) {
+                case TLocal(v) if (v.name == "_this" && compiler.currentFunctionParameterMap.exists("_this")):
+                    // Replace _this with mapped parameter name (usually "struct")
+                    compiler.currentFunctionParameterMap.get("_this");
+                default:
+                    compiler.compileExpression(e1);
+            }
+        } else {
+            compiler.compileExpression(e1);
+        }
+        // Also handle _this in right-hand expressions (especially in struct updates)
+        var compiledRight = compiler.compileExpression(e2);
+        var right = if (op == OpAssign && compiler.currentFunctionParameterMap.exists("_this")) {
+            // Replace _this references in struct updates or any assignment right-hand side
+            var structParam = compiler.currentFunctionParameterMap.get("_this");
+            StringTools.replace(compiledRight, "_this", structParam);
+        } else {
+            compiledRight;
+        };
         
         var result = switch(op) {
             // Arithmetic operators
