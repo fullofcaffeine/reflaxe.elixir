@@ -59,6 +59,9 @@ import reflaxe.elixir.helpers.LiveViewCompiler;
 import reflaxe.elixir.helpers.GenServerCompiler;
 import reflaxe.elixir.helpers.MethodCallCompiler;
 import reflaxe.elixir.helpers.ReflectionCompiler;
+import reflaxe.elixir.helpers.ArrayMethodCompiler;
+import reflaxe.elixir.helpers.MapToolsCompiler;
+import reflaxe.elixir.helpers.ADTMethodCompiler;
 import reflaxe.elixir.PhoenixMapper;
 import reflaxe.elixir.SourceMapWriter;
 
@@ -144,6 +147,15 @@ class ElixirCompiler extends DirectToStringCompiler {
     // Function compilation
     private var functionCompiler: reflaxe.elixir.helpers.FunctionCompiler;
     
+    // Array method compilation
+    private var arrayMethodCompiler: reflaxe.elixir.helpers.ArrayMethodCompiler;
+    
+    // MapTools extension method compilation
+    private var mapToolsCompiler: reflaxe.elixir.helpers.MapToolsCompiler;
+    
+    // ADT (Option/Result) static extension method compilation
+    private var adtMethodCompiler: reflaxe.elixir.helpers.ADTMethodCompiler;
+    
     public var expressionDispatcher: reflaxe.elixir.helpers.ExpressionDispatcher;
     
     // Import optimization for clean import statements
@@ -192,6 +204,9 @@ class ElixirCompiler extends DirectToStringCompiler {
         // TODO: Re-enable after fixing interface dependencies
         // this.substitutionCompiler = new reflaxe.elixir.helpers.SubstitutionCompiler(this);
         this.functionCompiler = new reflaxe.elixir.helpers.FunctionCompiler(this);
+        this.arrayMethodCompiler = new reflaxe.elixir.helpers.ArrayMethodCompiler(this);
+        this.mapToolsCompiler = new reflaxe.elixir.helpers.MapToolsCompiler(this);
+        this.adtMethodCompiler = new reflaxe.elixir.helpers.ADTMethodCompiler(this);
         this.expressionDispatcher = new reflaxe.elixir.helpers.ExpressionDispatcher(this);
         
         // Set compiler reference for delegation
@@ -3926,68 +3941,35 @@ class ElixirCompiler extends DirectToStringCompiler {
     }
     
     /**
-     * Check if a method name is a common array method
+     * Check if a method name is a common array method (DELEGATED)
      */
     public function isArrayMethod(methodName: String): Bool {
-        return switch (methodName) {
-            case "join", "push", "pop", "length", "map", "filter", 
-                 "concat", "contains", "indexOf", "reduce", "forEach",
-                 "find", "findIndex", "slice", "splice", "reverse",
-                 "sort", "shift", "unshift", "every", "some",
-                 // ArrayTools extension methods
-                 "fold", "exists", "any", "foreach", "all", 
-                 "take", "drop", "flatMap":
-                true;
-            case _:
-                false;
-        };
+        return arrayMethodCompiler.isArrayMethod(methodName);
     }
     
     /**
-     * Check if a method name is a MapTools static extension method
+     * Check if a method name is a MapTools static extension method (DELEGATED)
      */
     public function isMapMethod(methodName: String): Bool {
-        return switch (methodName) {
-            case "filter", "map", "mapKeys", "reduce", "any", "all", 
-                 "find", "keys", "values", "toArray", "fromArray", 
-                 "merge", "isEmpty", "size":
-                true;
-            case _:
-                false;
-        };
+        return mapToolsCompiler.isMapMethod(methodName);
     }
     
     /**
-     * Check if a method name is an OptionTools static extension method
+     * Check if a method name is an OptionTools static extension method (DELEGATED)
      */
     public function isOptionMethod(methodName: String): Bool {
-        return switch (methodName) {
-            case "map", "then", "flatMap", "flatten", "filter", "unwrap", 
-                 "lazyUnwrap", "or", "lazyOr", "isSome", "isNone", 
-                 "all", "values", "toResult", "fromResult", "fromNullable",
-                 "toNullable", "toReply", "expect", "some", "none", "apply":
-                true;
-            case _:
-                false;
-        };
+        return adtMethodCompiler.isOptionMethod(methodName);
     }
     
     /**
-     * Check if a method name is a ResultTools static extension method
+     * Check if a method name is a ResultTools static extension method (DELEGATED)
      */
     public function isResultMethod(methodName: String): Bool {
-        return switch (methodName) {
-            case "map", "flatMap", "bind", "fold", "filter", "isOk", "isError", 
-                 "unwrap", "unwrapOr", "unwrapOrElse", "mapError", "bimap",
-                 "ok", "error", "sequence", "traverse", "toOption":
-                true;
-            case _:
-                false;
-        };
+        return adtMethodCompiler.isResultMethod(methodName);
     }
     
     /**
-     * Check if an enum type has static extension methods and compile them
+     * Check if an enum type has static extension methods and compile them (DELEGATED)
      * @param enumType The enum type being called on
      * @param methodName The method name being called
      * @param objStr The compiled object expression
@@ -3995,38 +3977,11 @@ class ElixirCompiler extends DirectToStringCompiler {
      * @return Compiled static extension call or null if not applicable
      */
     public function compileADTStaticExtension(enumType: haxe.macro.Type.EnumType, methodName: String, objStr: String, args: Array<TypedExpr>): Null<String> {
-        var toolsModule: String = null;
-        var isExtensionMethod: Bool = false;
-        
-        // Check which ADT type this is and if the method is valid
-        if (enumType.module == "haxe.ds.Option" && enumType.name == "Option") {
-            toolsModule = "OptionTools";
-            isExtensionMethod = isOptionMethod(methodName);
-        } else if (enumType.module == "haxe.functional.Result" && enumType.name == "Result") {
-            toolsModule = "ResultTools";
-            isExtensionMethod = isResultMethod(methodName);
-        }
-        
-        if (toolsModule != null && isExtensionMethod) {
-            var compiledArgs = args.map(arg -> compileExpression(arg));
-            // Call ToolsModule.method(object, args...) for static extension methods
-            return '${toolsModule}.${methodName}(${objStr}${compiledArgs.length > 0 ? ", " + compiledArgs.join(", ") : ""})';
-        }
-        
-        return null;
+        return adtMethodCompiler.compileADTStaticExtension(enumType, methodName, objStr, args);
     }
     
     /**
-     * Compile Haxe array method calls to idiomatic Elixir Enum functions.
-     * 
-     * Transforms common array operations to their Elixir equivalents:
-     * - `array.map(fn)` → `Enum.map(array, fn)`
-     * - `array.filter(fn)` → `Enum.filter(array, fn)` (with variable substitution)
-     * - `array.join(sep)` → `Enum.join(array, sep)`
-     * - `array.push(item)` → `array ++ [item]`
-     * 
-     * Special handling for lambda expressions includes variable substitution to
-     * ensure proper parameter naming in generated Elixir functions.
+     * Compile Haxe array method calls to idiomatic Elixir Enum functions (DELEGATED)
      * 
      * @param objStr The compiled array object expression
      * @param methodName The method being called (e.g., "filter", "map")
@@ -4034,596 +3989,16 @@ class ElixirCompiler extends DirectToStringCompiler {
      * @return The compiled Elixir method call
      */
     public function compileArrayMethod(objStr: String, methodName: String, args: Array<TypedExpr>): String {
-        // Save current loop context and disable it for argument compilation
-        // Array method arguments should not be subject to loop variable substitution
-        var previousContext = isInLoopContext;
-        isInLoopContext = false;
-        var compiledArgs = args.map(arg -> compileExpression(arg));
-        isInLoopContext = previousContext;
-        
-        return switch (methodName) {
-            case "join":
-                // array.join(separator) → Enum.join(array, separator)
-                if (compiledArgs.length > 0) {
-                    'Enum.join(${objStr}, ${compiledArgs[0]})';
-                } else {
-                    'Enum.join(${objStr}, "")';
-                }
-            case "push":
-                // array.push(item) → array ++ [item]
-                if (compiledArgs.length > 0) {
-                    '${objStr} ++ [${compiledArgs[0]}]';
-                } else {
-                    objStr;
-                }
-            case "pop":
-                // array.pop() → List.last(array) (note: doesn't modify original)
-                'List.last(${objStr})';
-            case "shift":
-                // array.shift() → hd(array) (gets first element, doesn't modify)
-                'hd(${objStr})';
-            case "unshift":
-                // array.unshift(item) → [item | array]
-                if (compiledArgs.length > 0) {
-                    '[${compiledArgs[0]} | ${objStr}]';
-                } else {
-                    objStr;
-                }
-            case "length":
-                // array.length → length(array)
-                'length(${objStr})';
-            case "copy":
-                // array.copy() → array (lists are immutable, so just return the list)
-                objStr;
-            case "reverse":
-                // array.reverse() → Enum.reverse(array)
-                'Enum.reverse(${objStr})';
-            case "sort":
-                // array.sort(compareFn) → Enum.sort(array) or Enum.sort_by(array, fn)
-                if (compiledArgs.length > 0) {
-                    'Enum.sort(${objStr}, ${compiledArgs[0]})';
-                } else {
-                    'Enum.sort(${objStr})';
-                }
-            case "map":
-                // array.map(fn) → Enum.map(array, fn)
-                if (compiledArgs.length > 0) {
-                    // Check if the argument is a lambda that needs variable substitution
-                    if (args.length > 0) {
-                        switch (args[0].expr) {
-                            case TFunction(func):
-                                // Use centralized context-sensitive compilation
-                                var lambda = ExpressionCompiler.compileLambdaWithContext(this, func, "item");
-                                return 'Enum.map(${objStr}, fn ${lambda.paramName} -> ${lambda.body} end)';
-                            case _:
-                                // Not a simple lambda, use regular compilation
-                                return 'Enum.map(${objStr}, ${compiledArgs[0]})';
-                        }
-                    } else {
-                        return 'Enum.map(${objStr}, ${compiledArgs[0]})';
-                    }
-                } else {
-                    objStr;
-                }
-            case "filter":
-                // array.filter(fn) → Enum.filter(array, fn)
-                if (compiledArgs.length > 0) {
-                    // Check if the argument is a lambda that needs variable substitution
-                    if (args.length > 0) {
-                        switch (args[0].expr) {
-                            case TFunction(func):
-                                // Use centralized context-sensitive compilation
-                                var lambda = ExpressionCompiler.compileLambdaWithContext(this, func, "item");
-                                return 'Enum.filter(${objStr}, fn ${lambda.paramName} -> ${lambda.body} end)';
-                            case _:
-                                // Not a simple lambda, use regular compilation
-                                return 'Enum.filter(${objStr}, ${compiledArgs[0]})';
-                        }
-                    } else {
-                        return 'Enum.filter(${objStr}, ${compiledArgs[0]})';
-                    }
-                } else {
-                    objStr;
-                }
-            case "concat":
-                // array.concat(other) → array ++ other
-                if (compiledArgs.length > 0) {
-                    '${objStr} ++ ${compiledArgs[0]}';
-                } else {
-                    objStr;
-                }
-            case "contains":
-                // array.contains(elem) → Enum.member?(array, elem)
-                if (compiledArgs.length > 0) {
-                    'Enum.member?(${objStr}, ${compiledArgs[0]})';
-                } else {
-                    'false';
-                }
-            case "indexOf":
-                // array.indexOf(elem) → Enum.find_index(array, &(&1 == elem))
-                if (compiledArgs.length > 0) {
-                    'Enum.find_index(${objStr}, &(&1 == ${compiledArgs[0]}))';
-                } else {
-                    'nil';
-                }
-            case "reduce", "fold":
-                // array.reduce((acc, item) -> acc + item, initial) → Enum.reduce(array, initial, fn item, acc -> acc + item end)
-                if (compiledArgs.length >= 2) {
-                    // Check if the first argument is a lambda that needs variable substitution
-                    if (args.length >= 1) {
-                        switch (args[0].expr) {
-                            case TFunction(func):
-                                // Use centralized context-sensitive compilation for reduce
-                                // Note: Haxe uses (acc, item) but Elixir uses (item, acc) parameter order
-                                
-                                // Enable loop context for lambda body compilation
-                                var previousContext = isInLoopContext;
-                                isInLoopContext = true;
-                                
-                                // Extract parameter information with reordering
-                                var accParamTVar = func.args.length > 0 ? func.args[0].v : null;
-                                var itemParamTVar = func.args.length > 1 ? func.args[1].v : null;
-                                var elixirItemName = "item";
-                                var elixirAccName = "acc";
-                                
-                                // Apply variable substitution for both parameters
-                                var bodyAfterAccSubst = accParamTVar != null ? 
-                                    compileExpressionWithTVarSubstitution(func.expr, accParamTVar, elixirAccName) : 
-                                    compileExpression(func.expr);
-                                
-                                // Apply second parameter substitution
-                                var compiledBody = bodyAfterAccSubst;
-                                if (itemParamTVar != null) {
-                                    var originalItemName = getOriginalVarName(itemParamTVar);
-                                    compiledBody = compiledBody.replace(originalItemName, elixirItemName);
-                                }
-                                
-                                // Restore previous context
-                                isInLoopContext = previousContext;
-                                
-                                // Elixir's Enum.reduce expects (collection, initial, fn item, acc -> result end)
-                                return 'Enum.reduce(${objStr}, ${compiledArgs[1]}, fn ${elixirItemName}, ${elixirAccName} -> ${compiledBody} end)';
-                            case _:
-                                // Not a simple lambda, use regular compilation
-                                return 'Enum.reduce(${objStr}, ${compiledArgs[1]}, ${compiledArgs[0]})';
-                        }
-                    } else {
-                        return 'Enum.reduce(${objStr}, ${compiledArgs[1]}, ${compiledArgs[0]})';
-                    }
-                } else {
-                    objStr; // Not enough arguments for reduce
-                }
-            case "find":
-                // array.find(predicate) → Enum.find(array, predicate)
-                if (compiledArgs.length > 0) {
-                    // Check if the argument is a lambda that needs variable substitution
-                    if (args.length > 0) {
-                        switch (args[0].expr) {
-                            case TFunction(func):
-                                // Use centralized context-sensitive compilation
-                                var lambda = ExpressionCompiler.compileLambdaWithContext(this, func, "item");
-                                return 'Enum.find(${objStr}, fn ${lambda.paramName} -> ${lambda.body} end)';
-                            case _:
-                                // Not a simple lambda, use regular compilation
-                                return 'Enum.find(${objStr}, ${compiledArgs[0]})';
-                        }
-                    } else {
-                        return 'Enum.find(${objStr}, ${compiledArgs[0]})';
-                    }
-                } else {
-                    'nil';
-                }
-            case "findIndex":
-                // array.findIndex(predicate) → Enum.find_index(array, predicate)
-                if (compiledArgs.length > 0) {
-                    // Check if the argument is a lambda that needs variable substitution
-                    if (args.length > 0) {
-                        switch (args[0].expr) {
-                            case TFunction(func):
-                                // Use centralized context-sensitive compilation
-                                var lambda = ExpressionCompiler.compileLambdaWithContext(this, func, "item");
-                                return 'Enum.find_index(${objStr}, fn ${lambda.paramName} -> ${lambda.body} end)';
-                            case _:
-                                // Not a simple lambda, use regular compilation
-                                return 'Enum.find_index(${objStr}, ${compiledArgs[0]})';
-                        }
-                    } else {
-                        return 'Enum.find_index(${objStr}, ${compiledArgs[0]})';
-                    }
-                } else {
-                    'nil';
-                }
-            case "exists", "any":
-                // array.exists(predicate) → Enum.any?(array, predicate)
-                if (compiledArgs.length > 0) {
-                    // Check if the argument is a lambda that needs variable substitution
-                    if (args.length > 0) {
-                        switch (args[0].expr) {
-                            case TFunction(func):
-                                // Use centralized context-sensitive compilation
-                                var lambda = ExpressionCompiler.compileLambdaWithContext(this, func, "item");
-                                return 'Enum.any?(${objStr}, fn ${lambda.paramName} -> ${lambda.body} end)';
-                            case _:
-                                // Not a simple lambda, use regular compilation
-                                return 'Enum.any?(${objStr}, ${compiledArgs[0]})';
-                        }
-                    } else {
-                        return 'Enum.any?(${objStr}, ${compiledArgs[0]})';
-                    }
-                } else {
-                    'false';
-                }
-            case "foreach", "all":
-                // array.foreach(predicate) → Enum.all?(array, predicate)
-                if (compiledArgs.length > 0) {
-                    // Check if the argument is a lambda that needs variable substitution
-                    if (args.length > 0) {
-                        switch (args[0].expr) {
-                            case TFunction(func):
-                                // Use centralized context-sensitive compilation
-                                var lambda = ExpressionCompiler.compileLambdaWithContext(this, func, "item");
-                                return 'Enum.all?(${objStr}, fn ${lambda.paramName} -> ${lambda.body} end)';
-                            case _:
-                                // Not a simple lambda, use regular compilation
-                                return 'Enum.all?(${objStr}, ${compiledArgs[0]})';
-                        }
-                    } else {
-                        return 'Enum.all?(${objStr}, ${compiledArgs[0]})';
-                    }
-                } else {
-                    'true';
-                }
-            case "forEach":
-                // array.forEach(action) → Enum.each(array, action)
-                if (compiledArgs.length > 0) {
-                    // Check if the argument is a lambda that needs variable substitution
-                    if (args.length > 0) {
-                        switch (args[0].expr) {
-                            case TFunction(func):
-                                // Use centralized context-sensitive compilation
-                                var lambda = ExpressionCompiler.compileLambdaWithContext(this, func, "item");
-                                return 'Enum.each(${objStr}, fn ${lambda.paramName} -> ${lambda.body} end)';
-                            case _:
-                                // Not a simple lambda, use regular compilation
-                                return 'Enum.each(${objStr}, ${compiledArgs[0]})';
-                        }
-                    } else {
-                        return 'Enum.each(${objStr}, ${compiledArgs[0]})';
-                    }
-                } else {
-                    ':ok';
-                }
-            case "take":
-                // array.take(n) → Enum.take(array, n)
-                if (compiledArgs.length > 0) {
-                    'Enum.take(${objStr}, ${compiledArgs[0]})';
-                } else {
-                    objStr;
-                }
-            case "drop":
-                // array.drop(n) → Enum.drop(array, n)
-                if (compiledArgs.length > 0) {
-                    'Enum.drop(${objStr}, ${compiledArgs[0]})';
-                } else {
-                    objStr;
-                }
-            case "flatMap":
-                // array.flatMap(fn) → Enum.flat_map(array, fn)
-                if (compiledArgs.length > 0) {
-                    // Check if the argument is a lambda that needs variable substitution
-                    if (args.length > 0) {
-                        switch (args[0].expr) {
-                            case TFunction(func):
-                                // Use centralized context-sensitive compilation
-                                var lambda = ExpressionCompiler.compileLambdaWithContext(this, func, "item");
-                                return 'Enum.flat_map(${objStr}, fn ${lambda.paramName} -> ${lambda.body} end)';
-                            case _:
-                                // Not a simple lambda, use regular compilation
-                                return 'Enum.flat_map(${objStr}, ${compiledArgs[0]})';
-                        }
-                    } else {
-                        return 'Enum.flat_map(${objStr}, ${compiledArgs[0]})';
-                    }
-                } else {
-                    objStr;
-                }
-            case _:
-                // Default: try to call as a regular method
-                '${objStr}.${methodName}(${compiledArgs.join(", ")})';
-        };
+        return arrayMethodCompiler.compileArrayMethod(objStr, methodName, args);
     }
     
     /**
-     * Compile MapTools static extension methods to idiomatic Elixir Map module calls
+     * Compile MapTools static extension methods to idiomatic Elixir Map module calls (DELEGATED)
      */
     public function compileMapMethod(objStr: String, methodName: String, args: Array<TypedExpr>): String {
-        // Save current loop context and disable it for argument compilation
-        var previousContext = isInLoopContext;
-        isInLoopContext = false;
-        var compiledArgs = args.map(arg -> compileExpression(arg));
-        isInLoopContext = previousContext;
-        
-        return switch (methodName) {
-            case "filter":
-                // map.filter((k, v) -> bool) → Map.filter(map, fn {k, v} -> bool end)
-                if (compiledArgs.length > 0) {
-                    // Check if the argument is a lambda that needs variable substitution
-                    if (args.length > 0) {
-                        switch (args[0].expr) {
-                            case TFunction(func):
-                                // Handle lambda with two parameters: key and value
-                                var keyParamName = func.args.length > 0 ? NamingHelper.toSnakeCase(getOriginalVarName(func.args[0].v)) : "key";
-                                var valueParamName = func.args.length > 1 ? NamingHelper.toSnakeCase(getOriginalVarName(func.args[1].v)) : "value";
-                                var keyParamTVar = func.args.length > 0 ? func.args[0].v : null;
-                                var valueParamTVar = func.args.length > 1 ? func.args[1].v : null;
-                                
-                                // Apply dual variable substitution like in reduce
-                                var tempBody = func.expr;
-                                if (keyParamTVar != null) {
-                                    tempBody = substituteVariableInExpression(tempBody, keyParamTVar, keyParamName);
-                                }
-                                if (valueParamTVar != null) {
-                                    tempBody = substituteVariableInExpression(tempBody, valueParamTVar, valueParamName);
-                                }
-                                var body = compileExpression(tempBody);
-                                return 'Map.filter(${objStr}, fn {${keyParamName}, ${valueParamName}} -> ${body} end)';
-                            case _:
-                                return 'Map.filter(${objStr}, ${compiledArgs[0]})';
-                        }
-                    } else {
-                        return 'Map.filter(${objStr}, ${compiledArgs[0]})';
-                    }
-                } else {
-                    objStr;
-                }
-            case "map":
-                // map.map((k, v) -> newV) → Map.new(map, fn {k, v} -> {k, newV} end) 
-                if (compiledArgs.length > 0) {
-                    if (args.length > 0) {
-                        switch (args[0].expr) {
-                            case TFunction(func):
-                                var keyParamName = func.args.length > 0 ? NamingHelper.toSnakeCase(getOriginalVarName(func.args[0].v)) : "key";
-                                var valueParamName = func.args.length > 1 ? NamingHelper.toSnakeCase(getOriginalVarName(func.args[1].v)) : "value";
-                                var keyParamTVar = func.args.length > 0 ? func.args[0].v : null;
-                                var valueParamTVar = func.args.length > 1 ? func.args[1].v : null;
-                                
-                                var tempBody = func.expr;
-                                if (keyParamTVar != null) {
-                                    tempBody = substituteVariableInExpression(tempBody, keyParamTVar, keyParamName);
-                                }
-                                if (valueParamTVar != null) {
-                                    tempBody = substituteVariableInExpression(tempBody, valueParamTVar, valueParamName);
-                                }
-                                var body = compileExpression(tempBody);
-                                return 'Map.new(${objStr}, fn {${keyParamName}, ${valueParamName}} -> {${keyParamName}, ${body}} end)';
-                            case _:
-                                return 'Map.new(${objStr}, ${compiledArgs[0]})';
-                        }
-                    } else {
-                        return 'Map.new(${objStr}, ${compiledArgs[0]})';
-                    }
-                } else {
-                    objStr;
-                }
-            case "mapKeys":
-                // map.mapKeys((k, v) -> newK) → Map.new(map, fn {k, v} -> {newK, v} end)
-                if (compiledArgs.length > 0) {
-                    if (args.length > 0) {
-                        switch (args[0].expr) {
-                            case TFunction(func):
-                                var keyParamName = func.args.length > 0 ? NamingHelper.toSnakeCase(getOriginalVarName(func.args[0].v)) : "key";
-                                var valueParamName = func.args.length > 1 ? NamingHelper.toSnakeCase(getOriginalVarName(func.args[1].v)) : "value";
-                                var keyParamTVar = func.args.length > 0 ? func.args[0].v : null;
-                                var valueParamTVar = func.args.length > 1 ? func.args[1].v : null;
-                                
-                                var tempBody = func.expr;
-                                if (keyParamTVar != null) {
-                                    tempBody = substituteVariableInExpression(tempBody, keyParamTVar, keyParamName);
-                                }
-                                if (valueParamTVar != null) {
-                                    tempBody = substituteVariableInExpression(tempBody, valueParamTVar, valueParamName);
-                                }
-                                var body = compileExpression(tempBody);
-                                return 'Map.new(${objStr}, fn {${keyParamName}, ${valueParamName}} -> {${body}, ${valueParamName}} end)';
-                            case _:
-                                return 'Map.new(${objStr}, ${compiledArgs[0]})';
-                        }
-                    } else {
-                        return 'Map.new(${objStr}, ${compiledArgs[0]})';
-                    }
-                } else {
-                    objStr;
-                }
-            case "reduce":
-                // map.reduce(initial, (acc, k, v) -> newAcc) → Map.fold(map, initial, fn k, v, acc -> newAcc end)
-                if (compiledArgs.length >= 2) {
-                    if (args.length >= 2) {
-                        switch (args[1].expr) {
-                            case TFunction(func):
-                                // Parameters: acc, key, value in Haxe → key, value, acc in Elixir
-                                var accParamName = func.args.length > 0 ? NamingHelper.toSnakeCase(getOriginalVarName(func.args[0].v)) : "acc";
-                                var keyParamName = func.args.length > 1 ? NamingHelper.toSnakeCase(getOriginalVarName(func.args[1].v)) : "key";
-                                var valueParamName = func.args.length > 2 ? NamingHelper.toSnakeCase(getOriginalVarName(func.args[2].v)) : "value";
-                                
-                                var accParamTVar = func.args.length > 0 ? func.args[0].v : null;
-                                var keyParamTVar = func.args.length > 1 ? func.args[1].v : null;
-                                var valueParamTVar = func.args.length > 2 ? func.args[2].v : null;
-                                
-                                var tempBody = func.expr;
-                                if (accParamTVar != null) {
-                                    tempBody = substituteVariableInExpression(tempBody, accParamTVar, accParamName);
-                                }
-                                if (keyParamTVar != null) {
-                                    tempBody = substituteVariableInExpression(tempBody, keyParamTVar, keyParamName);
-                                }
-                                if (valueParamTVar != null) {
-                                    tempBody = substituteVariableInExpression(tempBody, valueParamTVar, valueParamName);
-                                }
-                                var body = compileExpression(tempBody);
-                                
-                                return 'Map.fold(${objStr}, ${compiledArgs[0]}, fn ${keyParamName}, ${valueParamName}, ${accParamName} -> ${body} end)';
-                            case _:
-                                return 'Map.fold(${objStr}, ${compiledArgs[0]}, ${compiledArgs[1]})';
-                        }
-                    } else {
-                        return 'Map.fold(${objStr}, ${compiledArgs[0]}, ${compiledArgs[1]})';
-                    }
-                } else {
-                    objStr;
-                }
-            case "any":
-                // map.any((k, v) -> bool) → Enum.any?(Map.to_list(map), fn {k, v} -> bool end)
-                if (compiledArgs.length > 0) {
-                    if (args.length > 0) {
-                        switch (args[0].expr) {
-                            case TFunction(func):
-                                var keyParamName = func.args.length > 0 ? NamingHelper.toSnakeCase(getOriginalVarName(func.args[0].v)) : "key";
-                                var valueParamName = func.args.length > 1 ? NamingHelper.toSnakeCase(getOriginalVarName(func.args[1].v)) : "value";
-                                var keyParamTVar = func.args.length > 0 ? func.args[0].v : null;
-                                var valueParamTVar = func.args.length > 1 ? func.args[1].v : null;
-                                
-                                var tempBody = func.expr;
-                                if (keyParamTVar != null) {
-                                    tempBody = substituteVariableInExpression(tempBody, keyParamTVar, keyParamName);
-                                }
-                                if (valueParamTVar != null) {
-                                    tempBody = substituteVariableInExpression(tempBody, valueParamTVar, valueParamName);
-                                }
-                                var body = compileExpression(tempBody);
-                                return 'Enum.any?(Map.to_list(${objStr}), fn {${keyParamName}, ${valueParamName}} -> ${body} end)';
-                            case _:
-                                return 'Enum.any?(Map.to_list(${objStr}), ${compiledArgs[0]})';
-                        }
-                    } else {
-                        return 'Enum.any?(Map.to_list(${objStr}), ${compiledArgs[0]})';
-                    }
-                } else {
-                    'false';
-                }
-            case "all":
-                // map.all((k, v) -> bool) → Enum.all?(Map.to_list(map), fn {k, v} -> bool end)
-                if (compiledArgs.length > 0) {
-                    if (args.length > 0) {
-                        switch (args[0].expr) {
-                            case TFunction(func):
-                                var keyParamName = func.args.length > 0 ? NamingHelper.toSnakeCase(getOriginalVarName(func.args[0].v)) : "key";
-                                var valueParamName = func.args.length > 1 ? NamingHelper.toSnakeCase(getOriginalVarName(func.args[1].v)) : "value";
-                                var keyParamTVar = func.args.length > 0 ? func.args[0].v : null;
-                                var valueParamTVar = func.args.length > 1 ? func.args[1].v : null;
-                                
-                                var tempBody = func.expr;
-                                if (keyParamTVar != null) {
-                                    tempBody = substituteVariableInExpression(tempBody, keyParamTVar, keyParamName);
-                                }
-                                if (valueParamTVar != null) {
-                                    tempBody = substituteVariableInExpression(tempBody, valueParamTVar, valueParamName);
-                                }
-                                var body = compileExpression(tempBody);
-                                return 'Enum.all?(Map.to_list(${objStr}), fn {${keyParamName}, ${valueParamName}} -> ${body} end)';
-                            case _:
-                                return 'Enum.all?(Map.to_list(${objStr}), ${compiledArgs[0]})';
-                        }
-                    } else {
-                        return 'Enum.all?(Map.to_list(${objStr}), ${compiledArgs[0]})';
-                    }
-                } else {
-                    'true';
-                }
-            case "find":
-                // map.find((k, v) -> bool) → Enum.find(Map.to_list(map), fn {k, v} -> bool end)
-                if (compiledArgs.length > 0) {
-                    if (args.length > 0) {
-                        switch (args[0].expr) {
-                            case TFunction(func):
-                                var keyParamName = func.args.length > 0 ? NamingHelper.toSnakeCase(getOriginalVarName(func.args[0].v)) : "key";
-                                var valueParamName = func.args.length > 1 ? NamingHelper.toSnakeCase(getOriginalVarName(func.args[1].v)) : "value";
-                                var keyParamTVar = func.args.length > 0 ? func.args[0].v : null;
-                                var valueParamTVar = func.args.length > 1 ? func.args[1].v : null;
-                                
-                                var tempBody = func.expr;
-                                if (keyParamTVar != null) {
-                                    tempBody = substituteVariableInExpression(tempBody, keyParamTVar, keyParamName);
-                                }
-                                if (valueParamTVar != null) {
-                                    tempBody = substituteVariableInExpression(tempBody, valueParamTVar, valueParamName);
-                                }
-                                var body = compileExpression(tempBody);
-                                return 'Enum.find(Map.to_list(${objStr}), fn {${keyParamName}, ${valueParamName}} -> ${body} end)';
-                            case _:
-                                return 'Enum.find(Map.to_list(${objStr}), ${compiledArgs[0]})';
-                        }
-                    } else {
-                        return 'Enum.find(Map.to_list(${objStr}), ${compiledArgs[0]})';
-                    }
-                } else {
-                    'nil';
-                }
-            case "keys":
-                // map.keys() → Map.keys(map)
-                'Map.keys(${objStr})';
-            case "values":
-                // map.values() → Map.values(map)
-                'Map.values(${objStr})';
-            case "toArray":
-                // map.toArray() → Map.to_list(map)
-                'Map.to_list(${objStr})';
-            case "fromArray":
-                // MapTools.fromArray(pairs) → Map.new(pairs)
-                if (compiledArgs.length > 0) {
-                    'Map.new(${compiledArgs[0]})';
-                } else {
-                    'Map.new()';
-                }
-            case "merge":
-                // map.merge(otherMap) → Map.merge(map, otherMap)
-                if (compiledArgs.length > 0) {
-                    'Map.merge(${objStr}, ${compiledArgs[0]})';
-                } else {
-                    objStr;
-                }
-            case "isEmpty":
-                // map.isEmpty() → Map.equal?(map, %{})
-                'Map.equal?(${objStr}, %{})';
-            case "size":
-                // map.size() → Map.size(map)
-                'Map.size(${objStr})';
-            case _:
-                // Default: try to call as a regular method
-                '${objStr}.${methodName}(${compiledArgs.join(", ")})';
-        };
+        return mapToolsCompiler.compileMapMethod(objStr, methodName, args);
     }
     
-    /**
-     * Substitute a variable in an expression for MapTools dual/triple parameter support
-     */
-    private function substituteVariableInExpression(expr: TypedExpr, sourceTVar: TVar, targetVarName: String): TypedExpr {
-        return switch (expr.expr) {
-            case TLocal(v):
-                if (v == sourceTVar) {
-                    // Create new expression with substituted variable reference
-                    var compiledExpr = compileExpression(expr);
-                    var substitutedExpr = compiledExpr.replace(v.name, targetVarName);
-                    // Return expression that compiles to the substituted string
-                    {expr: TConst(TString(substitutedExpr)), t: expr.t, pos: expr.pos};
-                } else {
-                    expr;
-                }
-            case TBinop(op, e1, e2):
-                var newE1 = substituteVariableInExpression(e1, sourceTVar, targetVarName);
-                var newE2 = substituteVariableInExpression(e2, sourceTVar, targetVarName);
-                {expr: TBinop(op, newE1, newE2), t: expr.t, pos: expr.pos};
-            case TField(e, fa):
-                var newE = substituteVariableInExpression(e, sourceTVar, targetVarName);
-                {expr: TField(newE, fa), t: expr.t, pos: expr.pos};
-            case TCall(e, args):
-                var newE = substituteVariableInExpression(e, sourceTVar, targetVarName);
-                var newArgs = args.map(arg -> substituteVariableInExpression(arg, sourceTVar, targetVarName));
-                {expr: TCall(newE, newArgs), t: expr.t, pos: expr.pos};
-            case _:
-                // For other cases, no substitution needed
-                expr;
-        };
-    }
     
     /**
      * Compile HXX template function calls
