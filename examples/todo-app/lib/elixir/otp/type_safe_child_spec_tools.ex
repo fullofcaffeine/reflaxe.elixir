@@ -27,7 +27,7 @@ defmodule TypeSafeChildSpecTools do
           temp_result = {Phoenix.PubSub, name: name}
         )
       1 -> (
-          g = elem(spec, 1)
+          g = nil
           (
           config = g
           (
@@ -77,7 +77,7 @@ defmodule TypeSafeChildSpecTools do
         )
         )
       3 -> (
-          g = elem(spec, 1)
+          g = nil
           (
           config = g
           (
@@ -147,7 +147,7 @@ defmodule TypeSafeChildSpecTools do
           temp_result = "Phoenix.PubSub"
         )
       1 -> (
-          elem(spec, 1)
+          nil
           temp_result = "" <> app_name <> ".Repo"
         )
       2 -> (
@@ -156,7 +156,7 @@ defmodule TypeSafeChildSpecTools do
           temp_result = "" <> app_name <> "Web.Endpoint"
         )
       3 -> (
-          elem(spec, 1)
+          nil
           temp_result = "" <> app_name <> "Web.Telemetry"
         )
       4 -> (
@@ -197,7 +197,7 @@ defmodule TypeSafeChildSpecTools do
           temp_result = true
         )
       1 -> (
-          elem(spec, 1)
+          nil
           temp_result = true
         )
       2 -> (
@@ -206,7 +206,7 @@ defmodule TypeSafeChildSpecTools do
           temp_result = true
         )
       3 -> (
-          elem(spec, 1)
+          nil
           temp_result = true
         )
       4 -> (
@@ -251,7 +251,7 @@ defmodule TypeSafeChildSpecTools do
         end
         )
       1 -> (
-          elem(spec, 1)
+          nil
           (
           g
           nil
@@ -269,7 +269,7 @@ defmodule TypeSafeChildSpecTools do
         )
         )
       3 -> (
-          elem(spec, 1)
+          nil
           (
           g
           nil
