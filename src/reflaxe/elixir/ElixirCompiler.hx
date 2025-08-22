@@ -174,6 +174,9 @@ class ElixirCompiler extends DirectToStringCompiler {
     /** Pattern detection and analysis utilities */
     private var patternDetectionCompiler: reflaxe.elixir.helpers.PatternDetectionCompiler;
     
+    /** Pattern analysis for structural and framework pattern detection */
+    private var patternAnalysisCompiler: reflaxe.elixir.helpers.PatternAnalysisCompiler;
+    
     /** While loop compilation with Y combinator pattern generation */
     private var whileLoopCompiler: reflaxe.elixir.helpers.WhileLoopCompiler;
     
@@ -253,6 +256,7 @@ class ElixirCompiler extends DirectToStringCompiler {
         this.adtMethodCompiler = new reflaxe.elixir.helpers.ADTMethodCompiler(this);
         this.yCombinatorCompiler = new reflaxe.elixir.helpers.YCombinatorCompiler(this);
         this.patternDetectionCompiler = new reflaxe.elixir.helpers.PatternDetectionCompiler(this);
+        this.patternAnalysisCompiler = new reflaxe.elixir.helpers.PatternAnalysisCompiler(this);
         this.whileLoopCompiler = new reflaxe.elixir.helpers.WhileLoopCompiler(this);
         this.expressionDispatcher = new reflaxe.elixir.helpers.ExpressionDispatcher(this);
         
@@ -723,10 +727,7 @@ class ElixirCompiler extends DirectToStringCompiler {
      * Simple heuristic: assumes CoreComponents are used if this is a LiveView class
      */
     private function detectCoreComponentsUsage(classType: ClassType, funcFields: Array<ClassFuncData>): Bool {
-        // For now, use a simple heuristic: all LiveView classes likely use CoreComponents
-        // A more sophisticated implementation would analyze the function bodies for component calls
-        // but that requires complex AST traversal which is beyond the current scope
-        return classType.meta.has(":liveview");
+        return patternAnalysisCompiler.detectCoreComponentsUsage(classType, funcFields);
     }
     
     /**
@@ -2537,16 +2538,7 @@ class ElixirCompiler extends DirectToStringCompiler {
         loopVar: String,
         isAddition: Bool
     } {
-        var result = {
-            hasSimpleAccumulator: true,  // Assume simple for now
-            accumulator: "sum",
-            loopVar: "i", 
-            isAddition: true
-        };
-        
-        // For range loops, we can make educated guesses based on common patterns
-        // Most range loops are simple accumulation: for (i in start...end) { sum += i; }
-        return result;
+        return patternAnalysisCompiler.analyzeRangeLoopBody(ebody);
     }
     
     /**
@@ -2765,21 +2757,7 @@ class ElixirCompiler extends DirectToStringCompiler {
      * Detect schema name from repository operation arguments
      */
     private function detectSchemaFromArgs(args: Array<TypedExpr>): Null<String> {
-        if (args.length == 0) return null;
-        
-        // Try to detect schema from first argument type
-        var firstArgType = args[0].t;
-        switch (firstArgType) {
-            case TInst(t, _):
-                var classType = t.get();
-                // Check if this is a schema class
-                if (classType.meta.has(":schema")) {
-                    return classType.name;
-                }
-            case _:
-        }
-        
-        return null;
+        return patternAnalysisCompiler.detectSchemaFromArgs(args);
     }
     
     /**
@@ -2920,49 +2898,14 @@ class ElixirCompiler extends DirectToStringCompiler {
      * - Simple module reference → SimpleModule format
      */
     private function analyzeChildSpecStructure(compiledFields: Map<String, String>): String {
-        var hasRestart = compiledFields.exists("restart");
-        var hasShutdown = compiledFields.exists("shutdown");
-        var hasType = compiledFields.exists("type");
-        var hasModules = compiledFields.exists("modules");
-        
-        // If we have explicit restart/shutdown configuration, use traditional map
-        if (hasRestart || hasShutdown || hasType || hasModules) {
-            return TRADITIONAL_MAP;
-        }
-        
-        // For minimal specs with only id + start, determine if they can use modern format
-        var idField = compiledFields.get("id");
-        var startField = compiledFields.get("start");
-        
-        if (idField != null && startField != null) {
-            // Check if this looks like a simple start spec (suitable for tuple format)
-            if (hasSimpleStartPattern(startField)) {
-                return MODERN_TUPLE;
-            }
-        }
-        
-        // Default to traditional map format for safety
-        return TRADITIONAL_MAP;
+        return patternAnalysisCompiler.analyzeChildSpecStructure(compiledFields);
     }
     
     /**
      * Check if a start field follows simple patterns suitable for modern tuple format
      */
     private function hasSimpleStartPattern(startField: String): Bool {
-        // Look for simple start patterns like {Module, :start_link, [args]}
-        // These can be converted to tuple format like {Module, args}
-        
-        // Check for start_link function calls (standard OTP pattern)
-        if (startField.indexOf(":start_link") > -1) {
-            return true;
-        }
-        
-        // Check for empty args or simple configuration args
-        if (startField.indexOf(", []") > -1 || startField.indexOf("[%{") > -1) {
-            return true;
-        }
-        
-        return false;
+        return patternAnalysisCompiler.hasSimpleStartPattern(startField);
     }
     
     /**
@@ -3426,17 +3369,7 @@ class ElixirCompiler extends DirectToStringCompiler {
      * Extract the variable name from an assignment expression
      */
     private function getAssignmentVariable(expr: TypedExpr): Null<String> {
-        return switch (expr.expr) {
-            case TBinop(OpAssign, lhs, rhs):
-                switch (lhs.expr) {
-                    case TLocal(v):
-                        getOriginalVarName(v);
-                    case _:
-                        null;
-                }
-            case _:
-                null;
-        };
+        return patternAnalysisCompiler.getAssignmentVariable(expr);
     }
     
     /**
