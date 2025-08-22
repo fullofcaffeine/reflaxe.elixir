@@ -3,10 +3,10 @@ package reflaxe.elixir.helpers;
 #if (macro || reflaxe_runtime)
 
 import haxe.macro.Type;
-import reflaxe.elixir.ElixirCompiler;import haxe.macro.Expr;
-import reflaxe.elixir.ElixirCompiler;import reflaxe.BaseCompiler;
-import reflaxe.elixir.ElixirCompiler;import reflaxe.elixir.helpers.NamingHelper;
-import reflaxe.elixir.ElixirCompiler;
+import haxe.macro.Expr;
+import reflaxe.BaseCompiler;
+import reflaxe.elixir.helpers.NamingHelper;
+
 using reflaxe.helpers.NullHelper;
 using reflaxe.helpers.NameMetaHelper;
 using reflaxe.helpers.SyntaxHelper;
@@ -243,7 +243,7 @@ class SchemaCompiler {
         if (varField.meta != null) {
             var defaultMeta = varField.meta.extract(":default");
             if (defaultMeta != null && defaultMeta.length > 0) {
-                options.push('default: ${compiler.compileExpression(defaultMeta[0].params[0])}');
+                options.push('default: ${compiler.compileExpr(defaultMeta[0].params[0])}');
             }
             
             // Check for :nullable
@@ -315,13 +315,13 @@ class SchemaCompiler {
             // Length validation
             var lengthMeta = varField.meta.extract(":length");
             if (lengthMeta != null && lengthMeta.length > 0) {
-                validations.push('    |> validate_length(:${fieldName}, ${compiler.compileExpression(lengthMeta[0].params[0])})');
+                validations.push('    |> validate_length(:${fieldName}, ${compiler.compileExpr(lengthMeta[0].params[0])})');
             }
             
             // Format validation
             var formatMeta = varField.meta.extract(":format");
             if (formatMeta != null && formatMeta.length > 0) {
-                validations.push('    |> validate_format(:${fieldName}, ${compiler.compileExpression(formatMeta[0].params[0])})');
+                validations.push('    |> validate_format(:${fieldName}, ${compiler.compileExpr(formatMeta[0].params[0])})');
             }
             
             // Unique constraint

@@ -3,8 +3,8 @@ package reflaxe.elixir.helpers;
 #if (macro || reflaxe_runtime)
 
 import haxe.macro.Type;
-import reflaxe.elixir.ElixirCompiler;import reflaxe.elixir.helpers.NamingHelper;
-import reflaxe.elixir.ElixirCompiler;
+import reflaxe.elixir.helpers.NamingHelper;
+
 using reflaxe.helpers.NameMetaHelper;
 using StringTools;
 

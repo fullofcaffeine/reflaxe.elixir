@@ -3,10 +3,10 @@ package reflaxe.elixir.helpers;
 #if (macro || reflaxe_runtime)
 
 import haxe.macro.Type;
-import reflaxe.elixir.ElixirCompiler;import haxe.macro.Expr;
-import reflaxe.elixir.ElixirCompiler;import reflaxe.BaseCompiler;
-import reflaxe.elixir.ElixirCompiler;import reflaxe.elixir.helpers.NamingHelper;
-import reflaxe.elixir.ElixirCompiler;
+import haxe.macro.Expr;
+import reflaxe.BaseCompiler;
+import reflaxe.elixir.helpers.NamingHelper;
+
 using reflaxe.helpers.NullHelper;
 using reflaxe.helpers.NameMetaHelper;
 using reflaxe.helpers.SyntaxHelper;

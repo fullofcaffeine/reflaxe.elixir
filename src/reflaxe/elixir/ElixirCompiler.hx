@@ -101,7 +101,7 @@ class ElixirCompiler extends DirectToStringCompiler {
     private var typer: reflaxe.elixir.ElixirTyper;
     
     // Context tracking for variable substitution
-    private var isInLoopContext: Bool = false;
+    public var isInLoopContext: Bool = false;
     
     // Pattern matching and guard compilation helpers
     private var patternMatcher: reflaxe.elixir.helpers.PatternMatcher;
@@ -111,10 +111,10 @@ class ElixirCompiler extends DirectToStringCompiler {
     private var pipelineOptimizer: reflaxe.elixir.helpers.PipelineOptimizer;
     
     // Loop compilation and optimization helper
-    private var loopCompiler: reflaxe.elixir.helpers.LoopCompiler;
+    public var loopCompiler: reflaxe.elixir.helpers.LoopCompiler;
     
     // Pattern matching compilation helper
-    private var patternMatchingCompiler: reflaxe.elixir.helpers.PatternMatchingCompiler;
+    public var patternMatchingCompiler: reflaxe.elixir.helpers.PatternMatchingCompiler;
     
     // Schema and changeset compilation helper
     private var schemaCompiler: reflaxe.elixir.helpers.SchemaCompiler;
@@ -140,7 +140,7 @@ class ElixirCompiler extends DirectToStringCompiler {
     // Variable substitution and renaming compiler for centralized variable handling
     private var substitutionCompiler: reflaxe.elixir.helpers.SubstitutionCompiler;
     
-    private var expressionDispatcher: reflaxe.elixir.helpers.ExpressionDispatcher;
+    public var expressionDispatcher: reflaxe.elixir.helpers.ExpressionDispatcher;
     
     // Import optimization for clean import statements
     private var importOptimizer: reflaxe.elixir.helpers.ImportOptimizer;
@@ -151,19 +151,19 @@ class ElixirCompiler extends DirectToStringCompiler {
     private var pendingSourceMapWriters: Array<SourceMapWriter> = [];
     
     // Parameter mapping system for abstract type implementation methods
-    private var currentFunctionParameterMap: Map<String, String> = new Map();
+    public var currentFunctionParameterMap: Map<String, String> = new Map();
     
     // Track inline function context across multiple expressions in a block
     // Maps inline variable names (like "struct") to their assigned values (like "struct.buf")
-    private var inlineContextMap: Map<String, String> = new Map<String, String>();
+    public var inlineContextMap: Map<String, String> = new Map<String, String>();
     private var isCompilingAbstractMethod: Bool = false;
-    private var isCompilingCaseArm: Bool = false;
+    public var isCompilingCaseArm: Bool = false;
     
     // Current class context for app name resolution and other class-specific operations
-    private var currentClassType: Null<ClassType> = null;
+    public var currentClassType: Null<ClassType> = null;
     
     // Track instance variable names for LiveView classes to generate socket.assigns references
-    private var liveViewInstanceVars: Null<Map<String, Bool>> = null;
+    public var liveViewInstanceVars: Null<Map<String, Bool>> = null;
     
     /**
      * Constructor - Initialize the compiler with type mapping and pattern matching systems
@@ -313,7 +313,7 @@ class ElixirCompiler extends DirectToStringCompiler {
         return fixedLines.join("\n");
     }
 
-    private function getCurrentAppName(): String {
+    public function getCurrentAppName(): String {
         // Priority 1: Check compiler define (most explicit and single-source-of-truth)
         // IMPORTANT: Use Context.definedValue() in macro context, NOT Compiler.getDefine()
         // Compiler.getDefine() is a macro function meant for regular code generation
@@ -1357,7 +1357,7 @@ class ElixirCompiler extends DirectToStringCompiler {
     /**
      * Check if an enum type is the Result<T,E> type
      */
-    private function isResultType(enumType: EnumType): Bool {
+    public function isResultType(enumType: EnumType): Bool {
         return AlgebraicDataTypeCompiler.isADTType(enumType) && 
                enumType.name == "Result";
     }
@@ -1365,7 +1365,7 @@ class ElixirCompiler extends DirectToStringCompiler {
     /**
      * Check if an enum type is the Option<T> type  
      */
-    private function isOptionType(enumType: EnumType): Bool {
+    public function isOptionType(enumType: EnumType): Bool {
         return AlgebraicDataTypeCompiler.isADTType(enumType) && 
                enumType.name == "Option";
     }
@@ -1392,7 +1392,7 @@ class ElixirCompiler extends DirectToStringCompiler {
     /**
      * Helper: Compile function definition
      */
-    private function compileFunction(funcField: ClassFuncData, isStatic: Bool = false): String {
+    public function compileFunction(funcField: ClassFuncData, isStatic: Bool = false): String {
         var funcName = NamingHelper.getElixirFunctionName(funcField.field.name);
         
         // Build parameter list - check for LiveView callback override first
@@ -1541,7 +1541,7 @@ class ElixirCompiler extends DirectToStringCompiler {
     /**
      * Helper: Compile constants to Elixir literals
      */
-    private function compileConstant(constant: Constant): String {
+    public function compileConstant(constant: Constant): String {
         return switch (constant) {
             case CInt(i, _): i;
             case CFloat(s, _): s;
@@ -1626,7 +1626,7 @@ class ElixirCompiler extends DirectToStringCompiler {
     /**
      * Check if a Type is a string type
      */
-    private function isStringType(type: Type): Bool {
+    public function isStringType(type: Type): Bool {
         if (type == null) return false;
         
         return switch (type) {
@@ -1642,7 +1642,7 @@ class ElixirCompiler extends DirectToStringCompiler {
     /**
      * Convert a non-string expression to a string in Elixir
      */
-    private function convertToString(expr: TypedExpr, compiledExpr: String): String {
+    public function convertToString(expr: TypedExpr, compiledExpr: String): String {
         // Check the type and use the appropriate conversion function
         return switch (expr.t) {
             case TAbstract(t, _):
@@ -1670,7 +1670,7 @@ class ElixirCompiler extends DirectToStringCompiler {
     /**
      * Helper: Compile binary operators to Elixir
      */
-    private function compileBinop(op: Binop): String {
+    public function compileBinop(op: Binop): String {
         return switch (op) {
             case OpAdd: "+";
             case OpMult: "*";
@@ -1905,7 +1905,7 @@ class ElixirCompiler extends DirectToStringCompiler {
     /**
      * Helper methods for managing inline function context
      */
-    private function setInlineContext(varName: String, value: String): Void {
+    public function setInlineContext(varName: String, value: String): Void {
         inlineContextMap.set(varName, value);
     }
     
@@ -1913,7 +1913,7 @@ class ElixirCompiler extends DirectToStringCompiler {
         return inlineContextMap.get(varName);
     }
     
-    private function hasInlineContext(varName: String): Bool {
+    public function hasInlineContext(varName: String): Bool {
         return inlineContextMap.exists(varName);
     }
     
@@ -1950,7 +1950,7 @@ class ElixirCompiler extends DirectToStringCompiler {
      * @param originalName The original name of the variable
      * @return true if this is a function reference, false otherwise
      */
-    private function isFunctionReference(v: TVar, originalName: String): Bool {
+    public function isFunctionReference(v: TVar, originalName: String): Bool {
         // Check if the variable's type is a function type
         switch (v.t) {
             case TFun(_, _):
@@ -1986,7 +1986,7 @@ class ElixirCompiler extends DirectToStringCompiler {
      * @param functionName The function name to create a reference for
      * @return Elixir function reference syntax like &Module.function/arity
      */
-    private function generateFunctionReference(functionName: String): String {
+    public function generateFunctionReference(functionName: String): String {
         // Convert function name to snake_case for Elixir
         var elixirFunctionName = NamingHelper.toSnakeCase(functionName);
         
@@ -2003,12 +2003,19 @@ class ElixirCompiler extends DirectToStringCompiler {
     /**
      * Get the current module name for function references
      */
-    private function getCurrentModuleName(): String {
+    public function getCurrentModuleName(): String {
         if (currentClassType != null) {
             // Use the current class name as the module name
             return currentClassType.name;
         }
         return "UnknownModule";
+    }
+    
+    /**
+     * Get module name for a specific ClassType
+     */
+    public function getModuleName(classType: ClassType): String {
+        return classType.name;
     }
     
     /**
@@ -3121,7 +3128,7 @@ class ElixirCompiler extends DirectToStringCompiler {
     /**
      * Compile expression with variable substitution using TVar object comparison
      */
-    private function compileExpressionWithTVarSubstitution(expr: TypedExpr, sourceTVar: TVar, targetVarName: String): String {
+    public function compileExpressionWithTVarSubstitution(expr: TypedExpr, sourceTVar: TVar, targetVarName: String): String {
         switch (expr.expr) {
             case TLocal(v):
                 // Debug output to understand what variables we're dealing with
@@ -4269,7 +4276,7 @@ class ElixirCompiler extends DirectToStringCompiler {
     /**
      * Check if a method name is a common array method
      */
-    private function isArrayMethod(methodName: String): Bool {
+    public function isArrayMethod(methodName: String): Bool {
         return switch (methodName) {
             case "join", "push", "pop", "length", "map", "filter", 
                  "concat", "contains", "indexOf", "reduce", "forEach",
@@ -4287,7 +4294,7 @@ class ElixirCompiler extends DirectToStringCompiler {
     /**
      * Check if a method name is a MapTools static extension method
      */
-    private function isMapMethod(methodName: String): Bool {
+    public function isMapMethod(methodName: String): Bool {
         return switch (methodName) {
             case "filter", "map", "mapKeys", "reduce", "any", "all", 
                  "find", "keys", "values", "toArray", "fromArray", 
@@ -4301,7 +4308,7 @@ class ElixirCompiler extends DirectToStringCompiler {
     /**
      * Check if a method name is an OptionTools static extension method
      */
-    private function isOptionMethod(methodName: String): Bool {
+    public function isOptionMethod(methodName: String): Bool {
         return switch (methodName) {
             case "map", "then", "flatMap", "flatten", "filter", "unwrap", 
                  "lazyUnwrap", "or", "lazyOr", "isSome", "isNone", 
@@ -4316,7 +4323,7 @@ class ElixirCompiler extends DirectToStringCompiler {
     /**
      * Check if a method name is a ResultTools static extension method
      */
-    private function isResultMethod(methodName: String): Bool {
+    public function isResultMethod(methodName: String): Bool {
         return switch (methodName) {
             case "map", "flatMap", "bind", "fold", "filter", "isOk", "isError", 
                  "unwrap", "unwrapOr", "unwrapOrElse", "mapError", "bimap",
@@ -4335,7 +4342,7 @@ class ElixirCompiler extends DirectToStringCompiler {
      * @param args The method arguments
      * @return Compiled static extension call or null if not applicable
      */
-    private function compileADTStaticExtension(enumType: haxe.macro.Type.EnumType, methodName: String, objStr: String, args: Array<TypedExpr>): Null<String> {
+    public function compileADTStaticExtension(enumType: haxe.macro.Type.EnumType, methodName: String, objStr: String, args: Array<TypedExpr>): Null<String> {
         var toolsModule: String = null;
         var isExtensionMethod: Bool = false;
         
@@ -4374,7 +4381,7 @@ class ElixirCompiler extends DirectToStringCompiler {
      * @param args The method arguments as TypedExpr array
      * @return The compiled Elixir method call
      */
-    private function compileArrayMethod(objStr: String, methodName: String, args: Array<TypedExpr>): String {
+    public function compileArrayMethod(objStr: String, methodName: String, args: Array<TypedExpr>): String {
         // Save current loop context and disable it for argument compilation
         // Array method arguments should not be subject to loop variable substitution
         var previousContext = isInLoopContext;
@@ -4677,7 +4684,7 @@ class ElixirCompiler extends DirectToStringCompiler {
     /**
      * Compile MapTools static extension methods to idiomatic Elixir Map module calls
      */
-    private function compileMapMethod(objStr: String, methodName: String, args: Array<TypedExpr>): String {
+    public function compileMapMethod(objStr: String, methodName: String, args: Array<TypedExpr>): String {
         // Save current loop context and disable it for argument compilation
         var previousContext = isInLoopContext;
         isInLoopContext = false;
@@ -4976,7 +4983,7 @@ class ElixirCompiler extends DirectToStringCompiler {
      * This method delegates to HxxCompiler for sophisticated AST-based template
      * compilation that generates idiomatic ~H sigils with proper interpolation.
      */
-    private function compileHxxCall(args: Array<TypedExpr>): String {
+    public function compileHxxCall(args: Array<TypedExpr>): String {
         if (args.length != 1) {
             Context.error("hxx() expects exactly one string argument", Context.currentPos());
         }
@@ -5067,7 +5074,7 @@ class ElixirCompiler extends DirectToStringCompiler {
      * Get field name from field access
      * Handles @:native annotations on extern methods
      */
-    private function getFieldName(fa: FieldAccess): String {
+    public function getFieldName(fa: FieldAccess): String {
         return switch (fa) {
             case FInstance(_, _, cf) | FStatic(_, cf) | FClosure(_, cf): 
                 var field = cf.get();
@@ -5311,7 +5318,7 @@ class ElixirCompiler extends DirectToStringCompiler {
      * Compile a child spec object to proper Elixir child specification format
      * Converts from Haxe objects to Elixir maps as expected by Supervisor.start_link
      */
-    private function compileChildSpec(fields: Array<{name: String, expr: TypedExpr}>, classType: Null<ClassType>): String {
+    public function compileChildSpec(fields: Array<{name: String, expr: TypedExpr}>, classType: Null<ClassType>): String {
         var compiledFields = new Map<String, String>();
         
         // Get app name from annotation at compile time
@@ -5491,7 +5498,7 @@ class ElixirCompiler extends DirectToStringCompiler {
      * Compile supervisor options object to proper Elixir keyword list format
      * Converts from Haxe objects to Elixir keyword lists as expected by Supervisor.start_link
      */
-    private function compileSupervisorOptions(fields: Array<{name: String, expr: TypedExpr}>, classType: Null<ClassType>): String {
+    public function compileSupervisorOptions(fields: Array<{name: String, expr: TypedExpr}>, classType: Null<ClassType>): String {
         var strategy = "one_for_one";
         var name = "";
         
@@ -5540,7 +5547,7 @@ class ElixirCompiler extends DirectToStringCompiler {
      * @param fieldName The method name being called
      * @return true if this is an elixir.Syntax call
      */
-    private function isElixirSyntaxCall(obj: TypedExpr, fieldName: String): Bool {
+    public function isElixirSyntaxCall(obj: TypedExpr, fieldName: String): Bool {
         switch (obj.expr) {
             case TTypeExpr(moduleType):
                 // Check if this is the elixir.Syntax module
@@ -5572,7 +5579,7 @@ class ElixirCompiler extends DirectToStringCompiler {
      * @param args The arguments to the method call
      * @return Compiled Elixir code
      */
-    private function compileElixirSyntaxCall(methodName: String, args: Array<TypedExpr>): String {
+    public function compileElixirSyntaxCall(methodName: String, args: Array<TypedExpr>): String {
         return switch (methodName) {
             case "code":
                 // elixir.Syntax.code(code, ...args) → direct injection
@@ -6185,7 +6192,7 @@ class ElixirCompiler extends DirectToStringCompiler {
     /**
      * Check if this is a TypeSafeChildSpec enum constructor call
      */
-    private function isTypeSafeChildSpecCall(obj: TypedExpr, fieldName: String): Bool {
+    public function isTypeSafeChildSpecCall(obj: TypedExpr, fieldName: String): Bool {
         // Check if the object is a reference to TypeSafeChildSpec enum
         switch (obj.expr) {
             case TTypeExpr(moduleType):
@@ -6205,7 +6212,7 @@ class ElixirCompiler extends DirectToStringCompiler {
     /**
      * Compile TypeSafeChildSpec enum constructor calls directly to ChildSpec format
      */
-    private function compileTypeSafeChildSpecCall(fieldName: String, args: Array<TypedExpr>): String {
+    public function compileTypeSafeChildSpecCall(fieldName: String, args: Array<TypedExpr>): String {
         var appName = AnnotationSystem.getEffectiveAppName(currentClassType);
         
         return switch (fieldName) {
@@ -6358,6 +6365,30 @@ class ElixirCompiler extends DirectToStringCompiler {
                 }
             }
             pendingSourceMapWriters = [];
+        }
+    }
+    
+    /**
+     * Convert a Haxe Type to string representation
+     * 
+     * WHY: SubstitutionCompiler needs type information for variable tracking
+     * WHAT: Provides basic type-to-string conversion for debugging and analysis
+     * HOW: Simple pattern matching on Type enum with fallback to "Dynamic"
+     * 
+     * @param type The Haxe Type to convert
+     * @return String representation of the type
+     */
+    public function typeToString(type: Type): String {
+        return switch (type) {
+            case TInst(t, _): t.get().name;
+            case TAbstract(t, _): t.get().name;
+            case TEnum(t, _): t.get().name;
+            case TFun(_, ret): "Function";
+            case TMono(_): "Mono";
+            case TDynamic(_): "Dynamic";
+            case TAnonymous(_): "Anonymous";
+            case TType(t, _): t.get().name;
+            case TLazy(_): "Lazy";
         }
     }
     

@@ -3,7 +3,7 @@ package reflaxe.elixir.helpers;
 #if (macro || reflaxe_runtime)
 
 import haxe.macro.Type;
-import reflaxe.elixir.ElixirCompiler;
+
 using StringTools;
 
 /**
