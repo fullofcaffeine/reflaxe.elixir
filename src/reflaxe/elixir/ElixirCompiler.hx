@@ -153,6 +153,9 @@ class ElixirCompiler extends DirectToStringCompiler {
     // Naming convention and file path management
     private var namingConventionCompiler: reflaxe.elixir.helpers.NamingConventionCompiler;
     
+    // State threading and parameter mapping management
+    private var stateManagementCompiler: reflaxe.elixir.helpers.StateManagementCompiler;
+    
     // Function compilation
     private var functionCompiler: reflaxe.elixir.helpers.FunctionCompiler;
     
@@ -207,8 +210,8 @@ class ElixirCompiler extends DirectToStringCompiler {
      * WHAT: Track when we're compiling a mutating method that needs state threading
      * HOW: When enabled, field assignments generate struct updates that are threaded through
      */
-    private var stateThreadingEnabled: Bool = false;
-    private var stateThreadingInfo: Null<reflaxe.elixir.helpers.MutabilityAnalyzer.MutabilityInfo> = null;
+    public var stateThreadingEnabled: Bool = false;
+    public var stateThreadingInfo: Null<reflaxe.elixir.helpers.MutabilityAnalyzer.MutabilityInfo> = null;
     
     /**
      * GLOBAL STRUCT METHOD COMPILATION
@@ -217,8 +220,8 @@ class ElixirCompiler extends DirectToStringCompiler {
      * WHAT: Track if we're compiling ANY struct method globally
      * HOW: Set flag when compiling struct methods, use global mapping that persists through all nested compilation
      */
-    private var isCompilingStructMethod: Bool = false;
-    private var globalStructParameterMap: Map<String, String> = new Map();
+    public var isCompilingStructMethod: Bool = false;
+    public var globalStructParameterMap: Map<String, String> = new Map();
     
     /**
      * Constructor - Initialize the compiler with type mapping and pattern matching systems
@@ -243,6 +246,7 @@ class ElixirCompiler extends DirectToStringCompiler {
         this.substitutionCompiler = new reflaxe.elixir.helpers.SubstitutionCompiler(this);
         this.tempVariableOptimizer = new reflaxe.elixir.helpers.TempVariableOptimizer(this);
         this.namingConventionCompiler = new reflaxe.elixir.helpers.NamingConventionCompiler(this);
+        this.stateManagementCompiler = new reflaxe.elixir.helpers.StateManagementCompiler(this);
         this.functionCompiler = new reflaxe.elixir.helpers.FunctionCompiler(this);
         this.arrayMethodCompiler = new reflaxe.elixir.helpers.ArrayMethodCompiler(this);
         this.mapToolsCompiler = new reflaxe.elixir.helpers.MapToolsCompiler(this);
@@ -764,7 +768,7 @@ class ElixirCompiler extends DirectToStringCompiler {
      * Delegates to NamingHelper for consistency
      */
     public function toElixirName(haxeName: String): String {
-        return NamingHelper.toSnakeCase(haxeName);
+        return namingConventionCompiler.toElixirName(haxeName);
     }
     
     /**
@@ -775,20 +779,7 @@ class ElixirCompiler extends DirectToStringCompiler {
      * - my.nested.Module → my/nested/module
      */
     private function convertPackageToDirectoryPath(classType: ClassType): String {
-        var packageParts = classType.pack;
-        var className = classType.name;
-        
-        // Convert class name to snake_case
-        var snakeClassName = NamingHelper.toSnakeCase(className);
-        
-        if (packageParts.length == 0) {
-            // No package - just return snake_case class name
-            return snakeClassName;
-        }
-        
-        // Convert package parts to snake_case and join with directories
-        var snakePackageParts = packageParts.map(part -> NamingHelper.toSnakeCase(part));
-        return haxe.io.Path.join(snakePackageParts.concat([snakeClassName]));
+        return namingConventionCompiler.convertPackageToDirectoryPath(classType);
     }
     
     /**
@@ -800,21 +791,7 @@ class ElixirCompiler extends DirectToStringCompiler {
      * COMPREHENSIVE: Now handles packages, @:native annotations, and universal snake_case conversion.
      */
     private function setFrameworkAwareOutputPath(classType: ClassType): Void {
-        // Check for framework annotations first
-        var annotationInfo = reflaxe.elixir.helpers.AnnotationSystem.detectAnnotations(classType);
-        
-        if (annotationInfo.primaryAnnotation != null) {
-            // Use the comprehensive naming rule for framework annotations
-            var namingRule = getComprehensiveNamingRule(classType);
-            setOutputFileName(namingRule.fileName);
-            
-            // CRITICAL FIX: Prevent Reflaxe framework from receiving empty directory paths
-            var safeDir = namingRule.dirPath != null && namingRule.dirPath.length > 0 ? namingRule.dirPath : ".";
-            setOutputFileDir(safeDir);
-        } else {
-            // Use universal naming for regular classes
-            setUniversalOutputPath(classType.name, classType.pack);
-        }
+        namingConventionCompiler.setFrameworkAwareOutputPath(classType);
     }
     
     /**
@@ -840,7 +817,7 @@ class ElixirCompiler extends DirectToStringCompiler {
      * @return Object with fileName and dirPath for consistent naming
      */
     private function getUniversalNamingRule(moduleName: String, pack: Array<String> = null): {fileName: String, dirPath: String} {
-        return NamingHelper.getUniversalNamingRule(moduleName, pack);
+        return namingConventionCompiler.getUniversalNamingRule(moduleName, pack);
     }
     
     /**
@@ -848,16 +825,7 @@ class ElixirCompiler extends DirectToStringCompiler {
      * This ensures consistent snake_case naming for all generated files.
      */
     private function setUniversalOutputPath(moduleName: String, pack: Array<String> = null): Void {
-        var namingRule = getUniversalNamingRule(moduleName, pack);
-        trace('Universal naming: ${moduleName} → file: ${namingRule.fileName}, dir: ${namingRule.dirPath}');
-        setOutputFileName(namingRule.fileName);
-        
-        // CRITICAL FIX: Prevent Reflaxe framework from receiving empty directory paths
-        // which can cause "index out of bounds" errors in path processing
-        var safeDir = namingRule.dirPath != null && namingRule.dirPath.length > 0 ? namingRule.dirPath : ".";
-        setOutputFileDir(safeDir);
-        
-        trace('DEBUG: setUniversalOutputPath completed successfully for ${moduleName}');
+        namingConventionCompiler.setUniversalOutputPath(moduleName, pack);
     }
     
     /**
@@ -882,7 +850,7 @@ class ElixirCompiler extends DirectToStringCompiler {
      * @return Object with fileName and dirPath following Phoenix conventions
      */
     private function getComprehensiveNamingRule(classType: ClassType): {fileName: String, dirPath: String} {
-        return PhoenixPathGenerator.getComprehensiveNamingRule(classType);
+        return namingConventionCompiler.getComprehensiveNamingRule(classType);
     }
     
     /**
@@ -903,14 +871,7 @@ class ElixirCompiler extends DirectToStringCompiler {
      * @param info Mutability analysis results from MutabilityAnalyzer
      */
     public function enableStateThreadingMode(info: reflaxe.elixir.helpers.MutabilityAnalyzer.MutabilityInfo): Void {
-        stateThreadingEnabled = true;
-        stateThreadingInfo = info;
-        
-        #if debug_state_threading
-        trace('[ElixirCompiler] State threading enabled for mutating method');
-        trace('  - mutatedFields: ${info.mutatedFields}');
-        trace('  - hasNestedMutations: ${info.hasNestedMutations}');
-        #end
+        stateManagementCompiler.enableStateThreadingMode(info);
     }
     
     /**
@@ -921,12 +882,7 @@ class ElixirCompiler extends DirectToStringCompiler {
      * HOW: Clears flags and mutability info
      */
     public function disableStateThreadingMode(): Void {
-        stateThreadingEnabled = false;
-        stateThreadingInfo = null;
-        
-        #if debug_state_threading
-        trace('[ElixirCompiler] State threading disabled');
-        #end
+        stateManagementCompiler.disableStateThreadingMode();
     }
     
     /**
@@ -939,7 +895,7 @@ class ElixirCompiler extends DirectToStringCompiler {
      * @return True if state threading transformations should be applied
      */
     public function isStateThreadingEnabled(): Bool {
-        return stateThreadingEnabled;
+        return stateManagementCompiler.isStateThreadingEnabled();
     }
     
     /**
@@ -952,7 +908,7 @@ class ElixirCompiler extends DirectToStringCompiler {
      * @return Mutability analysis results or null
      */
     public function getStateThreadingInfo(): Null<reflaxe.elixir.helpers.MutabilityAnalyzer.MutabilityInfo> {
-        return stateThreadingInfo;
+        return stateManagementCompiler.getStateThreadingInfo();
     }
     
     /**
@@ -965,16 +921,7 @@ class ElixirCompiler extends DirectToStringCompiler {
      * @param structParamName The parameter name to use (typically "struct")
      */
     public function setThisParameterMapping(structParamName: String): Void {
-        currentFunctionParameterMap.set("this", structParamName);
-        // Map _this which Haxe generates during desugaring
-        currentFunctionParameterMap.set("_this", structParamName);
-        // Also map struct for consistency
-        currentFunctionParameterMap.set("struct", structParamName);
-        
-        #if (debug_parameter_mapping || debug_variable_compiler)
-        trace('[ElixirCompiler] Set this parameter mapping to: ${structParamName}');
-        trace('[ElixirCompiler] Parameter map now contains: ${[for (k in currentFunctionParameterMap.keys()) '${k}->${currentFunctionParameterMap.get(k)}'].join(", ")}');
-        #end
+        stateManagementCompiler.setParameterMapping(structParamName);
     }
     
     /**
@@ -985,13 +932,7 @@ class ElixirCompiler extends DirectToStringCompiler {
      * HOW: Clears specific keys from the map
      */
     public function clearThisParameterMapping(): Void {
-        currentFunctionParameterMap.remove("this");
-        currentFunctionParameterMap.remove("_this");
-        currentFunctionParameterMap.remove("struct");
-        
-        #if debug_parameter_mapping
-        trace('[ElixirCompiler] Cleared this parameter mapping');
-        #end
+        stateManagementCompiler.clearParameterMapping();
     }
     
     /**
@@ -1004,15 +945,7 @@ class ElixirCompiler extends DirectToStringCompiler {
      * @param structParamName The parameter name to use for _this mapping (typically "struct")
      */
     public function startCompilingStructMethod(structParamName: String): Void {
-        isCompilingStructMethod = true;
-        globalStructParameterMap.set("_this", structParamName);
-        globalStructParameterMap.set("this", structParamName);
-        globalStructParameterMap.set("struct", structParamName);
-        
-        #if debug_state_threading
-        trace('[ElixirCompiler] 🌍 GLOBAL struct method compilation started');
-        trace('[ElixirCompiler] 🌍 Global mapping: _this -> ${structParamName}');
-        #end
+        stateManagementCompiler.startGlobalStructMethodCompilation(structParamName);
     }
     
     /**
@@ -1023,12 +956,7 @@ class ElixirCompiler extends DirectToStringCompiler {
      * HOW: Reset global state variables
      */
     public function stopCompilingStructMethod(): Void {
-        isCompilingStructMethod = false;
-        globalStructParameterMap.clear();
-        
-        #if debug_state_threading
-        trace('[ElixirCompiler] 🌍 GLOBAL struct method compilation stopped');
-        #end
+        stateManagementCompiler.stopGlobalStructMethodCompilation();
     }
     
     /**
@@ -1042,11 +970,7 @@ class ElixirCompiler extends DirectToStringCompiler {
      * @param replacement The replacement value
      */
     public function setInlineContext(varName: String, replacement: String): Void {
-        inlineContextMap.set(varName, replacement);
-        
-        #if debug_inline_context
-        trace('[ElixirCompiler] Set inline context: ${varName} -> ${replacement}');
-        #end
+        stateManagementCompiler.setInlineContext(varName, replacement);
     }
     
     /**
@@ -1060,7 +984,7 @@ class ElixirCompiler extends DirectToStringCompiler {
      * @return True if the variable has an inline context mapping
      */
     public function hasInlineContext(varName: String): Bool {
-        return inlineContextMap.exists(varName);
+        return stateManagementCompiler.hasInlineContext(varName);
     }
     
     /**
@@ -1074,7 +998,7 @@ class ElixirCompiler extends DirectToStringCompiler {
      * @return The replacement value or null
      */
     private function getInlineContext(varName: String): Null<String> {
-        return inlineContextMap.get(varName);
+        return stateManagementCompiler.getInlineContext(varName);
     }
     
     /**
@@ -1085,11 +1009,7 @@ class ElixirCompiler extends DirectToStringCompiler {
      * HOW: Removes all entries from the map
      */
     public function clearInlineContext(): Void {
-        inlineContextMap.clear();
-        
-        #if debug_inline_context
-        trace('[ElixirCompiler] Cleared inline context');
-        #end
+        stateManagementCompiler.clearInlineContext();
     }
     
     /**
@@ -1998,7 +1918,7 @@ class ElixirCompiler extends DirectToStringCompiler {
      */
     private function resolveThisReference(): String {
         // First check if we're in an inline context where struct is active
-        if (hasInlineContext("struct")) {
+        if (stateManagementCompiler.hasInlineContext("struct")) {
             return "struct";
         }
         
@@ -2009,10 +1929,8 @@ class ElixirCompiler extends DirectToStringCompiler {
             return "__LIVEVIEW_THIS__";
         }
         
-        // Fall back to parameter mapping
-        var mapped = currentFunctionParameterMap.get("this");
-        var result = mapped != null ? mapped : "struct";
-        return result;
+        // Fall back to StateManagementCompiler for general 'this' resolution
+        return stateManagementCompiler.resolveThisReference();
     }
     
     /**
