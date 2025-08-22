@@ -359,6 +359,13 @@ if (isPhoenixProject()) {
 
 ## Development Principles
 
+### ⚠️ CRITICAL: Debug-First Development - No Assumptions
+**FUNDAMENTAL RULE: Always rely on debug data first. If you don't see the data/AST, don't assume things.**
+- Add comprehensive debug traces to understand actual behavior
+- Use XRay debug patterns to visualize AST transformations
+- Never guess what the compiler is doing - instrument and observe
+- When debugging issues, add traces FIRST, then analyze
+
 ### ⚠️ CRITICAL: No Direct Elixir Files - Everything Through Haxe
 **FUNDAMENTAL RULE: NEVER write .ex files directly. Everything must be generated from Haxe.**
 

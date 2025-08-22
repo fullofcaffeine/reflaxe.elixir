@@ -136,6 +136,8 @@ class ControlFlowCompiler {
         trace("[XRay ControlFlowCompiler] BLOCK COMPILATION START");
         trace('[XRay ControlFlowCompiler] Block length: ${el.length}');
         trace('[XRay ControlFlowCompiler] *** CRITICAL: topLevel = ${topLevel} ***');
+        trace('[XRay ControlFlowCompiler] context = ${context != null ? "exists" : "null"}');
+        trace('[XRay ControlFlowCompiler] structParamName in context = ${context != null && context.structParamName != null ? context.structParamName : "null"}');
         #end
         
         // BASIC IMPLEMENTATION: Handle block expressions
@@ -268,7 +270,7 @@ class ControlFlowCompiler {
         }
         
         // Merge the patterns into a single atomic update
-        var mergedCode = generateMergedFieldUpdate(variableReassignment, fieldAssignment);
+        var mergedCode = generateMergedFieldUpdate(variableReassignment, fieldAssignment, context);
         
         return {
             compiledCode: mergedCode,
@@ -411,7 +413,7 @@ class ControlFlowCompiler {
      * @param context Function context containing struct parameter name
      * @return DirectFieldAssignment if pattern detected, null otherwise
      */
-    private function analyzeDirectFieldAssignment(expr: TypedExpr, context: Null<FunctionContext>): Null<DirectFieldAssignment> {
+    public function analyzeDirectFieldAssignment(expr: TypedExpr, context: Null<FunctionContext>): Null<DirectFieldAssignment> {
         // Must have context to resolve struct parameter name
         if (context == null || context.structParamName == null) {
             return null;
@@ -498,13 +500,30 @@ class ControlFlowCompiler {
      * 
      * @param varPattern Variable reassignment pattern
      * @param fieldPattern Field assignment pattern
+     * @param context Optional function context with struct parameter name
      * @return Compiled merged update expression
      */
-    private function generateMergedFieldUpdate(varPattern: VariableToFieldPattern, fieldPattern: FieldAssignmentPattern): String {
+    private function generateMergedFieldUpdate(varPattern: VariableToFieldPattern, fieldPattern: FieldAssignmentPattern, ?context: FunctionContext): String {
         var valueCompiled = compiler.compileExpression(fieldPattern.valueExpression);
         
+        // Use struct parameter name if available and variable is _this
+        var varName = varPattern.varName;
+        
+        #if debug_control_flow_compiler
+        trace('[XRay ControlFlowCompiler] generateMergedFieldUpdate: varName = ${varName}');
+        trace('[XRay ControlFlowCompiler] context = ${context != null ? "exists" : "null"}');
+        trace('[XRay ControlFlowCompiler] structParamName = ${context != null && context.structParamName != null ? context.structParamName : "null"}');
+        #end
+        
+        if (context != null && context.structParamName != null && varName == "_this") {
+            varName = context.structParamName;
+            #if debug_control_flow_compiler
+            trace('[XRay ControlFlowCompiler] Replaced _this with ${varName}');
+            #end
+        }
+        
         // Generate: variable = %{variable.source_field | target_field: value}
-        return '${varPattern.varName} = %{${varPattern.varName}.${varPattern.sourceFieldAccess} | ${fieldPattern.fieldName}: ${valueCompiled}}';
+        return '${varName} = %{${varName}.${varPattern.sourceFieldAccess} | ${fieldPattern.fieldName}: ${valueCompiled}}';
     }
     
     /**
@@ -565,8 +584,8 @@ class ControlFlowCompiler {
         }
         #end
         
-        // TSwitch delegates to PatternMatchingCompiler with context
-        var result = compiler.patternMatchingCompiler.compileSwitchExpression(e, cases, edef, context);
+        // TSwitch delegates to ElixirCompiler which handles context passing properly  
+        var result = compiler.compileSwitchExpression(e, cases, edef);
         
         #if debug_control_flow_compiler
         trace('[XRay ControlFlowCompiler] Generated switch: ${result != null ? result.substring(0, 100) + "..." : "null"}');

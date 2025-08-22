@@ -102,6 +102,31 @@ class VariableCompiler {
         trace('[XRay VariableCompiler] Original name: ${originalName}');
         #end
         
+        /**
+         * PARAMETER MAPPING CHECK
+         * 
+         * WHY: Variables like '_this' need to be mapped to their actual parameter names
+         * WHAT: Check if there's a parameter mapping for this variable
+         * HOW: Look up in currentFunctionParameterMap first, then inline context
+         */
+        // Check parameter mapping first (for function parameters)
+        #if debug_variable_compiler
+        trace('[XRay VariableCompiler] Checking parameter mapping for: ${originalName}');
+        trace('[XRay VariableCompiler] Parameter map has: ${[for (k in compiler.currentFunctionParameterMap.keys()) k].join(", ")}');
+        #end
+        
+        var mappedName = compiler.currentFunctionParameterMap.get(originalName);
+        if (mappedName != null) {
+            #if debug_variable_compiler
+            trace('[XRay VariableCompiler] ✓ PARAMETER MAPPING: ${originalName} -> ${mappedName}');
+            #end
+            return mappedName;
+        }
+        
+        #if debug_variable_compiler
+        trace('[XRay VariableCompiler] No parameter mapping found for: ${originalName}');
+        #end
+        
         // Special handling for inline context variables
         if (originalName == "_this" && compiler.hasInlineContext("struct")) {
             #if debug_variable_compiler
@@ -215,6 +240,29 @@ class VariableCompiler {
                     case _:
                 }
             }
+        }
+        
+        /**
+         * PARAMETER MAPPING CHECK FOR TVAR
+         * 
+         * WHY: TVar assignments may reference mapped parameters like '_this' -> 'struct'
+         * WHAT: Check parameter mapping before deciding variable name
+         * HOW: Look up originalName in parameter map and use mapped value if exists
+         */
+        // Check if there's a parameter mapping for this variable
+        var mappedName = compiler.currentFunctionParameterMap.get(originalName);
+        if (mappedName != null) {
+            #if debug_variable_compiler
+            trace('[XRay VariableCompiler] ✓ TVAR PARAMETER MAPPING: ${originalName} -> ${mappedName}');
+            #end
+            // Use the mapped name directly
+            var varName = mappedName;
+            
+            if (expr != null) {
+                var compiledExpr = compiler.compileExpression(expr);
+                return '${varName} = ${compiledExpr}';
+            }
+            return varName;
         }
         
         // Check if this is _this and needs special handling

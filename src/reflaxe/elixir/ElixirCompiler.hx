@@ -195,6 +195,16 @@ class ElixirCompiler extends DirectToStringCompiler {
     public var liveViewInstanceVars: Null<Map<String, Bool>> = null;
     
     /**
+     * STATE THREADING MODE
+     * 
+     * WHY: Transform mutable field assignments in Haxe to immutable struct updates in Elixir
+     * WHAT: Track when we're compiling a mutating method that needs state threading
+     * HOW: When enabled, field assignments generate struct updates that are threaded through
+     */
+    private var stateThreadingEnabled: Bool = false;
+    private var stateThreadingInfo: Null<reflaxe.elixir.helpers.MutabilityAnalyzer.MutabilityInfo> = null;
+    
+    /**
      * Constructor - Initialize the compiler with type mapping and pattern matching systems
      */
     public function new() {
@@ -859,6 +869,176 @@ class ElixirCompiler extends DirectToStringCompiler {
     }
     
     /**
+     * STATE THREADING METHOD SUITE
+     * 
+     * WHY: Enable transformation of mutable Haxe code to immutable Elixir patterns
+     * WHAT: Manage compiler state for mutable-to-immutable transformations
+     * HOW: Track mutability info and enable appropriate transformations
+     */
+    
+    /**
+     * Enable state threading mode for mutating methods
+     * 
+     * WHY: Mutating methods need special handling to return updated structs
+     * WHAT: Activates transformation of field assignments to struct updates
+     * HOW: Sets flags that OperatorCompiler and other helpers check
+     * 
+     * @param info Mutability analysis results from MutabilityAnalyzer
+     */
+    public function enableStateThreadingMode(info: reflaxe.elixir.helpers.MutabilityAnalyzer.MutabilityInfo): Void {
+        stateThreadingEnabled = true;
+        stateThreadingInfo = info;
+        
+        #if debug_state_threading
+        trace('[ElixirCompiler] State threading enabled for mutating method');
+        trace('  - mutatedFields: ${info.mutatedFields}');
+        trace('  - hasNestedMutations: ${info.hasNestedMutations}');
+        #end
+    }
+    
+    /**
+     * Disable state threading mode after method compilation
+     * 
+     * WHY: State threading should only apply to specific mutating methods
+     * WHAT: Resets transformation flags to normal compilation mode
+     * HOW: Clears flags and mutability info
+     */
+    public function disableStateThreadingMode(): Void {
+        stateThreadingEnabled = false;
+        stateThreadingInfo = null;
+        
+        #if debug_state_threading
+        trace('[ElixirCompiler] State threading disabled');
+        #end
+    }
+    
+    /**
+     * Check if state threading is currently enabled
+     * 
+     * WHY: Other compilers need to know if they should transform assignments
+     * WHAT: Returns current state threading status
+     * HOW: Simple flag check
+     * 
+     * @return True if state threading transformations should be applied
+     */
+    public function isStateThreadingEnabled(): Bool {
+        return stateThreadingEnabled;
+    }
+    
+    /**
+     * Get current mutability information
+     * 
+     * WHY: Helpers need to know which fields are being mutated
+     * WHAT: Returns analysis results from MutabilityAnalyzer
+     * HOW: Returns stored mutability info
+     * 
+     * @return Mutability analysis results or null
+     */
+    public function getStateThreadingInfo(): Null<reflaxe.elixir.helpers.MutabilityAnalyzer.MutabilityInfo> {
+        return stateThreadingInfo;
+    }
+    
+    /**
+     * Set parameter mapping for 'this' references
+     * 
+     * WHY: Haxe uses 'this' but Elixir structs use explicit parameter names
+     * WHAT: Maps 'this' and '_this' to the struct parameter name
+     * HOW: Updates the parameter map used during expression compilation
+     * 
+     * @param structParamName The parameter name to use (typically "struct")
+     */
+    public function setThisParameterMapping(structParamName: String): Void {
+        currentFunctionParameterMap.set("this", structParamName);
+        // Map _this which Haxe generates during desugaring
+        currentFunctionParameterMap.set("_this", structParamName);
+        // Also map struct for consistency
+        currentFunctionParameterMap.set("struct", structParamName);
+        
+        #if (debug_parameter_mapping || debug_variable_compiler)
+        trace('[ElixirCompiler] Set this parameter mapping to: ${structParamName}');
+        trace('[ElixirCompiler] Parameter map now contains: ${[for (k in currentFunctionParameterMap.keys()) '${k}->${currentFunctionParameterMap.get(k)}'].join(", ")}');
+        #end
+    }
+    
+    /**
+     * Clear parameter mapping after method compilation
+     * 
+     * WHY: Parameter mappings should be function-scoped
+     * WHAT: Removes 'this' mappings from the parameter map
+     * HOW: Clears specific keys from the map
+     */
+    public function clearThisParameterMapping(): Void {
+        currentFunctionParameterMap.remove("this");
+        currentFunctionParameterMap.remove("_this");
+        currentFunctionParameterMap.remove("struct");
+        
+        #if debug_parameter_mapping
+        trace('[ElixirCompiler] Cleared this parameter mapping');
+        #end
+    }
+    
+    /**
+     * Set inline context for variable replacement
+     * 
+     * WHY: Some variables need to be replaced during compilation
+     * WHAT: Maps variable names to replacement values
+     * HOW: Updates the inline context map
+     * 
+     * @param varName The variable name to replace
+     * @param replacement The replacement value
+     */
+    public function setInlineContext(varName: String, replacement: String): Void {
+        inlineContextMap.set(varName, replacement);
+        
+        #if debug_inline_context
+        trace('[ElixirCompiler] Set inline context: ${varName} -> ${replacement}');
+        #end
+    }
+    
+    /**
+     * Check if inline context exists for a variable
+     * 
+     * WHY: Need to determine if a variable has an inline replacement
+     * WHAT: Checks if the variable exists in the inline context map
+     * HOW: Returns true if the variable has been mapped
+     * 
+     * @param varName The variable name to check
+     * @return True if the variable has an inline context mapping
+     */
+    public function hasInlineContext(varName: String): Bool {
+        return inlineContextMap.exists(varName);
+    }
+    
+    /**
+     * Get inline context value for a variable
+     * 
+     * WHY: Need to retrieve replacement values for inline context
+     * WHAT: Gets the replacement value for a variable
+     * HOW: Returns the mapped value or null if not found
+     * 
+     * @param varName The variable name to look up
+     * @return The replacement value or null
+     */
+    private function getInlineContext(varName: String): Null<String> {
+        return inlineContextMap.get(varName);
+    }
+    
+    /**
+     * Clear inline context after use
+     * 
+     * WHY: Inline context should be scoped to specific compilations
+     * WHAT: Clears the inline context map
+     * HOW: Removes all entries from the map
+     */
+    public function clearInlineContext(): Void {
+        inlineContextMap.clear();
+        
+        #if debug_inline_context
+        trace('[ElixirCompiler] Cleared inline context');
+        #end
+    }
+    
+    /**
      * Required implementation for DirectToStringCompiler - implements class compilation
      * @param classType The Haxe class type
      * @param varFields Class variables
@@ -1037,7 +1217,46 @@ class ElixirCompiler extends DirectToStringCompiler {
      * WHAT: Clean entry point that routes TypedExpr compilation to specialized expression compilers
      * HOW: Uses the dispatcher pattern to maintain clean separation of concerns
      */
+    /**
+     * Override base compileExpression to ensure ALL expression compilation goes through state threading
+     * 
+     * WHY: The base DirectToStringCompiler has a compileExpression method that helper classes call.
+     * We need to intercept ALL these calls to apply state threading transformations consistently.
+     * 
+     * WHAT: Routes all expression compilation through our state threading logic before delegating
+     * to the expression dispatcher for actual compilation.
+     * 
+     * HOW: Check for state threading conditions first, then delegate to expressionDispatcher.
+     */
+    public override function compileExpression(expr: TypedExpr, topLevel: Bool = false): Null<String> {
+        #if debug_state_threading
+        trace('[XRay ElixirCompiler] ✓ compileExpression override called');
+        #end
+        return compileExpressionImpl(expr, topLevel);
+    }
+    
     public function compileExpressionImpl(expr: TypedExpr, topLevel: Bool): Null<String> {
+        // CRITICAL: Always check for _this mapping first, regardless of state threading status
+        // This handles cases where expressions are compiled after state threading is disabled
+        switch (expr.expr) {
+            case TLocal(v) if (v.name == "_this"):
+                var mappedName = currentFunctionParameterMap.get("_this");
+                if (mappedName != null) {
+                    #if debug_state_threading
+                    trace('[XRay ElixirCompiler] ✓ Direct _this replacement (persistent): _this -> ${mappedName}');
+                    #end
+                    return mappedName;
+                } else {
+                    #if debug_state_threading
+                    trace('[XRay ElixirCompiler] ⚠️ Found _this but NO MAPPING available');
+                    trace('[XRay ElixirCompiler] ⚠️ State threading enabled: ${isStateThreadingEnabled()}');
+                    trace('[XRay ElixirCompiler] ⚠️ Parameter map size: ${currentFunctionParameterMap != null ? Lambda.count(currentFunctionParameterMap) : 0}');
+                    #end
+                }
+            case _:
+                // Continue with normal compilation
+        }
+        
         return expressionDispatcher.compileExpression(expr, topLevel);
     }
     
@@ -1218,8 +1437,44 @@ class ElixirCompiler extends DirectToStringCompiler {
      * Supports enum patterns, guard clauses, binary patterns, and pin operators
      */
     // Delegated to PatternMatchingCompiler - keeping for backward compatibility
-    private function compileSwitchExpression(switchExpr: TypedExpr, cases: Array<{values: Array<TypedExpr>, expr: TypedExpr}>, defaultExpr: Null<TypedExpr>): String {
-        return patternMatchingCompiler.compileSwitchExpression(switchExpr, cases, defaultExpr);
+    public function compileSwitchExpression(switchExpr: TypedExpr, cases: Array<{values: Array<TypedExpr>, expr: TypedExpr}>, defaultExpr: Null<TypedExpr>): String {
+        // Create FunctionContext with struct parameter name if we're in state threading mode
+        var context: Null<reflaxe.elixir.helpers.ControlFlowCompiler.FunctionContext> = null;
+        
+        #if debug_state_threading
+        trace('[XRay compileSwitchExpression] Checking for _this mapping');
+        trace('[XRay compileSwitchExpression] isStateThreadingEnabled: ${isStateThreadingEnabled()}');
+        trace('[XRay compileSwitchExpression] currentFunctionParameterMap size: ${Lambda.count(currentFunctionParameterMap)}');
+        for (key in currentFunctionParameterMap.keys()) {
+            trace('[XRay compileSwitchExpression] Map key: ${key} -> ${currentFunctionParameterMap.get(key)}');
+        }
+        #end
+        
+        // Check if we have a struct parameter mapping for _this
+        if (currentFunctionParameterMap.exists("_this")) {
+            var structParamName = currentFunctionParameterMap.get("_this");
+            context = {
+                structParamName: structParamName
+            };
+            #if debug_state_threading
+            trace('[XRay compileSwitchExpression] ✓ Found _this mapping to ${structParamName}');
+            trace('[XRay compileSwitchExpression] Created context with structParamName: ${structParamName}');
+            #end
+        } else if (isStateThreadingEnabled()) {
+            // If state threading is enabled but no _this mapping, use "struct" as default
+            context = {
+                structParamName: "struct"
+            };
+            #if debug_state_threading
+            trace('[XRay compileSwitchExpression] State threading enabled but no _this mapping, using default "struct"');
+            #end
+        } else {
+            #if debug_state_threading
+            trace('[XRay compileSwitchExpression] ✗ No _this mapping found and state threading not enabled');
+            #end
+        }
+        
+        return patternMatchingCompiler.compileSwitchExpression(switchExpr, cases, defaultExpr, context);
     }
     
     /**
@@ -1478,7 +1733,11 @@ class ElixirCompiler extends DirectToStringCompiler {
                 var mappedName = currentFunctionParameterMap.get("this");
                 mappedName != null ? mappedName : compileExpression(e);
             case TLocal(v) if (v.name == "this" || v.name == "_this"):
+                // Check both "this" and "_this" mappings when state threading is enabled
                 var mappedName = currentFunctionParameterMap.get("this");
+                if (mappedName == null && v.name == "_this") {
+                    mappedName = currentFunctionParameterMap.get("_this");
+                }
                 mappedName != null ? mappedName : compileExpression(e);
             case _:
                 compileExpression(e);
@@ -1612,20 +1871,31 @@ class ElixirCompiler extends DirectToStringCompiler {
      * Set up parameter mapping for function compilation
      */
     public function setFunctionParameterMapping(args: Array<reflaxe.data.ClassFuncArg>): Void {
+        /**
+         * PRESERVE CRITICAL MAPPINGS
+         * 
+         * WHY: We need to preserve _this -> struct mappings for state threading
+         * WHAT: Save all this-related mappings before clearing
+         * HOW: Save this, _this, and struct mappings, then restore after clear
+         */
         // Preserve any existing 'this' mappings for struct instance methods
         var savedThisMapping = currentFunctionParameterMap.get("this");
-        var savedThisMapping2 = currentFunctionParameterMap.get("struct");
+        var savedUnderscoreThisMapping = currentFunctionParameterMap.get("_this");
+        var savedStructMapping = currentFunctionParameterMap.get("struct");
         
         currentFunctionParameterMap.clear();
         inlineContextMap.clear(); // Reset inline context for new function
         isCompilingAbstractMethod = true;
         
-        // Restore 'this' mappings if they existed
+        // Restore ALL 'this' related mappings if they existed
         if (savedThisMapping != null) {
             currentFunctionParameterMap.set("this", savedThisMapping);
         }
-        if (savedThisMapping2 != null) {
-            currentFunctionParameterMap.set("struct", savedThisMapping2);
+        if (savedUnderscoreThisMapping != null) {
+            currentFunctionParameterMap.set("_this", savedUnderscoreThisMapping);
+        }
+        if (savedStructMapping != null) {
+            currentFunctionParameterMap.set("struct", savedStructMapping);
         }
         
         if (args != null) {
@@ -1651,46 +1921,6 @@ class ElixirCompiler extends DirectToStringCompiler {
         }
     }
     
-    /**
-     * Set up parameter mapping for 'this' references in struct instance methods
-     */
-    public function setThisParameterMapping(structParamName: String): Void {
-        // Map 'this' references to the struct parameter name
-        currentFunctionParameterMap.set("this", structParamName);
-        // CRITICAL: Map _this which Haxe generates during desugaring
-        currentFunctionParameterMap.set("_this", structParamName);
-        // Also handle variations like struct which might be referenced
-        currentFunctionParameterMap.set("struct", structParamName);
-    }
-    
-    /**
-     * Clear 'this' parameter mapping after function compilation
-     */
-    public function clearThisParameterMapping(): Void {
-        // Remove 'this' mappings while preserving other parameter mappings
-        currentFunctionParameterMap.remove("this");
-        currentFunctionParameterMap.remove("_this");
-        currentFunctionParameterMap.remove("struct");
-    }
-    
-    /**
-     * Helper methods for managing inline function context
-     */
-    public function setInlineContext(varName: String, value: String): Void {
-        inlineContextMap.set(varName, value);
-    }
-    
-    private function getInlineContext(varName: String): Null<String> {
-        return inlineContextMap.get(varName);
-    }
-    
-    public function hasInlineContext(varName: String): Bool {
-        return inlineContextMap.exists(varName);
-    }
-    
-    public function clearInlineContext(): Void {
-        inlineContextMap.clear();
-    }
     
     /**
      * Get the effective variable name for 'this' references, considering inline context and LiveView
