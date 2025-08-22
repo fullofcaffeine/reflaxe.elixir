@@ -64,6 +64,7 @@ import reflaxe.elixir.helpers.MapToolsCompiler;
 import reflaxe.elixir.helpers.ADTMethodCompiler;
 import reflaxe.elixir.helpers.YCombinatorCompiler;
 import reflaxe.elixir.helpers.PatternDetectionCompiler;
+import reflaxe.elixir.helpers.WhileLoopCompiler;
 import reflaxe.elixir.PhoenixMapper;
 import reflaxe.elixir.SourceMapWriter;
 
@@ -164,6 +165,9 @@ class ElixirCompiler extends DirectToStringCompiler {
     /** Pattern detection and analysis utilities */
     private var patternDetectionCompiler: reflaxe.elixir.helpers.PatternDetectionCompiler;
     
+    /** While loop compilation with Y combinator pattern generation */
+    private var whileLoopCompiler: reflaxe.elixir.helpers.WhileLoopCompiler;
+    
     
     public var expressionDispatcher: reflaxe.elixir.helpers.ExpressionDispatcher;
     
@@ -218,6 +222,7 @@ class ElixirCompiler extends DirectToStringCompiler {
         this.adtMethodCompiler = new reflaxe.elixir.helpers.ADTMethodCompiler(this);
         this.yCombinatorCompiler = new reflaxe.elixir.helpers.YCombinatorCompiler(this);
         this.patternDetectionCompiler = new reflaxe.elixir.helpers.PatternDetectionCompiler(this);
+        this.whileLoopCompiler = new reflaxe.elixir.helpers.WhileLoopCompiler(this);
         this.expressionDispatcher = new reflaxe.elixir.helpers.ExpressionDispatcher(this);
         
         // Set compiler reference for delegation
@@ -2395,161 +2400,18 @@ class ElixirCompiler extends DirectToStringCompiler {
 
 
     /**
-     * Compile while loop with variable renamings applied
+     * Compile while loop with variable renamings applied (DELEGATED)
      * This handles variable collisions in desugared loop code
      */
     private function compileWhileLoopWithRenamings(econd: TypedExpr, ebody: TypedExpr, normalWhile: Bool, renamings: Map<String, String>): String {
-        // Extract variables that are modified in the loop
-        var modifiedVars = extractModifiedVariables(ebody);
-        
-        // Apply renamings to the modified variables list
-        var renamedModifiedVars = modifiedVars.map(v -> {
-            var originalName = v.name;
-            if (renamings.exists(originalName)) {
-                // Create a new VarInfo with renamed name
-                {name: renamings.get(originalName), type: v.type};
-            } else {
-                v;
-            }
-        });
-        
-        // Create a mapping for Y combinator state variables
-        // When we have renamed variables, we need to ensure all references
-        // within the loop body use the renamed versions consistently
-        var loopRenamings = new Map<String, String>();
-        for (key => value in renamings) {
-            loopRenamings.set(key, value);
-        }
-        
-        // Also ensure any variables that appear in the condition or body
-        // but aren't explicitly renamed get proper mapping
-        function ensureVariableMapping(expr: TypedExpr): Void {
-            switch (expr.expr) {
-                case TLocal(v):
-                    var varName = getOriginalVarName(v);
-                    // If this variable isn't already mapped and looks like a temp variable
-                    if (!loopRenamings.exists(varName)) {
-                        // Check if this is a plain 'g' that should map to a renamed variable
-                        if (varName == "g") {
-                            // Look for _g_counter or _g_array in our renamings
-                            if (renamings.exists("_g")) {
-                                var renamedG = renamings.get("_g");
-                                // If _g was renamed to _g_counter, map g to _g_counter too
-                                loopRenamings.set("g", renamedG);
-                            } else {
-                                // Check if we have any _g variants
-                                for (key => value in renamings) {
-                                    if (key.startsWith("_g") && value.indexOf("counter") >= 0) {
-                                        // Map plain g to the counter variable
-                                        loopRenamings.set("g", value);
-                                        break;
-                                    }
-                                }
-                            }
-                        } else if (varName.startsWith("_g") || varName.startsWith("g")) {
-                            // Check if we have a renamed version with suffix
-                            for (renamed in renamedModifiedVars) {
-                                if (renamed.name.startsWith(varName)) {
-                                    loopRenamings.set(varName, renamed.name);
-                                    break;
-                                }
-                            }
-                        }
-                    }
-                case TField(e, _):
-                    ensureVariableMapping(e);
-                case TCall(e, el):
-                    ensureVariableMapping(e);
-                    for (arg in el) ensureVariableMapping(arg);
-                case TBinop(_, e1, e2):
-                    ensureVariableMapping(e1);
-                    ensureVariableMapping(e2);
-                case TIf(econd, eif, eelse):
-                    ensureVariableMapping(econd);
-                    ensureVariableMapping(eif);
-                    if (eelse != null) ensureVariableMapping(eelse);
-                case TBlock(el):
-                    for (e in el) ensureVariableMapping(e);
-                case _:
-            }
-        }
-        
-        // Ensure all variables in the condition and body are properly mapped
-        ensureVariableMapping(econd);
-        ensureVariableMapping(ebody);
-        
-        // Compile condition with the complete renamings
-        var condition = compileExpressionWithRenaming(econd, loopRenamings);
-        
-        // Compile the loop body with the complete renamings
-        var bodyWithRenamings = compileExpressionWithRenaming(ebody, loopRenamings);
-        
-        // CRITICAL FIX: Post-process to fix malformed if-else expressions
-        // Pattern: "}, else: expression" without proper "if condition, do: {struct |" prefix
-        bodyWithRenamings = fixMalformedConditionals(bodyWithRenamings);
-        
-        if (normalWhile) {
-            // while (condition) { body }
-            if (renamedModifiedVars.length > 0) {
-                // Convert variable names to snake_case for consistency
-                var stateVarsInit = renamedModifiedVars.map(v -> {
-                    var snakeName = NamingHelper.toSnakeCase(v.name);
-                    return snakeName;
-                });
-                var stateVars = stateVarsInit.join(", ");
-                
-                // Generate initial values - use nil for all loop variables
-                var initialValues = renamedModifiedVars.map(v -> {
-                    return "nil";
-                }).join(", ");
-                
-                // Use Y combinator pattern for the loop
-                return '(\n' +
-                       '  loop_helper = fn loop_fn, {${stateVars}} ->\n' +
-                       '    if ${condition} do\n' +
-                       '      try do\n' +
-                       '        ${bodyWithRenamings}\n' +
-                       '        loop_fn.(loop_fn, {${stateVars}})\n' +
-                       '      catch\n' +
-                       '        :break -> {${stateVars}}\n' +
-                       '        :continue -> loop_fn.(loop_fn, {${stateVars}})\n' +
-                       '      end\n' +
-                       '    else\n' +
-                       '      {${stateVars}}\n' +
-                       '    end\n' +
-                       '  end\n' +
-                       '  {${stateVars}} = try do\n' +
-                       '    loop_helper.(loop_helper, {${initialValues}})\n' +
-                       '  catch\n' +
-                       '    :break -> {${initialValues}}\n' +
-                       '  end\n' +
-                       ')';
-            } else {
-                // No mutable state - simpler recursive pattern
-                return '(\n' +
-                       '  loop_helper = fn loop_fn ->\n' +
-                       '    if ${condition} do\n' +
-                       '      ${bodyWithRenamings}\n' +
-                       '      loop_fn.()\n' +
-                       '    else\n' +
-                       '      nil\n' +
-                       '    end\n' +
-                       '  end\n' +
-                       '  loop_helper.(loop_helper)\n' +
-                       ')';
-            }
-        } else {
-            // do-while pattern (not commonly used in the codebase)
-            // Use the standard while loop compilation with renamings
-            return compileWhileLoop(econd, ebody, normalWhile);
-        }
+        return whileLoopCompiler.compileWhileLoopWithRenamings(econd, ebody, normalWhile, renamings);
     }
     
     /**
      * Compile expression with multiple variable renamings applied
      * This is used to handle variable collisions in desugared loop code
      */
-    private function compileExpressionWithRenaming(expr: TypedExpr, renamings: Map<String, String>): String {
+    public function compileExpressionWithRenaming(expr: TypedExpr, renamings: Map<String, String>): String {
         if (renamings == null || !renamings.keys().hasNext()) {
             // No renamings - compile normally
             return compileExpression(expr);
@@ -2849,571 +2711,70 @@ class ElixirCompiler extends DirectToStringCompiler {
     }
     
     /**
-     * Compile a while loop to idiomatic Elixir recursive function
+     * Compile a while loop to idiomatic Elixir recursive function (DELEGATED)
      * Generates proper tail-recursive patterns that handle mutable state correctly
      */
     private function compileWhileLoop(econd: TypedExpr, ebody: TypedExpr, normalWhile: Bool): String {
-        #if debug_patterns
-        DebugHelper.debugPattern("Y combinator generation", "While loop compilation", 'normalWhile: $normalWhile');
-        #end
-        
-        #if debug_ast
-        DebugHelper.debugAST("While loop condition", econd);
-        DebugHelper.debugAST("While loop body", ebody);
-        #end
-        
-        // First check if this is an array-building pattern that wasn't optimized
-        var arrayBuildPattern = detectArrayBuildingPattern(ebody);
-        if (arrayBuildPattern != null) {
-            return compileArrayBuildingLoop(econd, ebody, arrayBuildPattern);
-        }
-        
-        // Extract variables that are modified in the loop
-        var modifiedVars = extractModifiedVariables(ebody);
-        var condition = compileExpression(econd);
-        
-        // Transform the loop body to handle mutations functionally
-        var transformedBody = transformLoopBodyMutations(ebody, modifiedVars, normalWhile, condition);
-        
-        if (normalWhile) {
-            // while (condition) { body }
-            if (modifiedVars.length > 0) {
-                // Convert variable names to snake_case for consistency
-                var stateVarsInit = modifiedVars.map(v -> {
-                    var snakeName = NamingHelper.toSnakeCase(v.name);
-                    return snakeName;
-                });
-                var stateVars = stateVarsInit.join(", ");
-                
-                // Generate initial values - use nil for all loop variables
-                var initialValues = modifiedVars.map(v -> {
-                    return "nil";
-                }).join(", ");
-                
-                // Use a simple recursive pattern that avoids scoping issues
-                // by passing the function as a parameter (Y combinator style)
-                #if debug_y_combinator
-                DebugHelper.debugYCombinator("Y combinator generation", "Building complex pattern", 'stateVars: $stateVars, condition: $condition');
-                #end
-                
-                var yCombinatorResult = '(\n' +
-                       '  loop_helper = fn loop_fn, {${stateVars}} ->\n' +
-                       '    if ${condition} do\n' +
-                       '      try do\n' +
-                       '        ${transformedBody}\n' +
-                       '        loop_fn.(loop_fn, {${stateVars}})\n' +
-                       '      catch\n' +
-                       '        :break -> {${stateVars}}\n' +
-                       '        :continue -> loop_fn.(loop_fn, {${stateVars}})\n' +
-                       '      end\n' +
-                       '    else\n' +
-                       '      {${stateVars}}\n' +
-                       '    end\n' +
-                       '  end\n' +
-                       '  {${stateVars}} = try do\n' +
-                       '    loop_helper.(loop_helper, {${initialValues}})\n' +
-                       '  catch\n' +
-                       '    :break -> {${initialValues}}\n' +
-                       '  end\n' +
-                       ')';
-                
-                #if debug_y_combinator
-                DebugHelper.debugYCombinator("Y combinator generation", "Complex pattern complete", 'Result: ${yCombinatorResult.substring(0, 100)}...');
-                #end
-                
-                return yCombinatorResult;
-            } else {
-                // Simple loop without state - use Y combinator pattern
-                var body = compileExpression(ebody);
-                return '(\n' +
-                       '  loop_helper = fn loop_fn ->\n' +
-                       '    if ${condition} do\n' +
-                       '      try do\n' +
-                       '        ${body}\n' +
-                       '        loop_fn.(loop_fn)\n' +
-                       '      catch\n' +
-                       '        :break -> nil\n' +
-                       '        :continue -> loop_fn.(loop_fn)\n' +
-                       '      end\n' +
-                       '    else\n' +
-                       '      nil\n' +
-                       '    end\n' +
-                       '  end\n' +
-                       '  try do\n' +
-                       '    loop_helper.(loop_helper)\n' +
-                       '  catch\n' +
-                       '    :break -> nil\n' +
-                       '  end\n' +
-                       ')';
-            }
-        } else {
-            // do { body } while (condition)
-            if (modifiedVars.length > 0) {
-                // Convert variable names to snake_case for consistency
-                var stateVarsInit = modifiedVars.map(v -> {
-                    var snakeName = NamingHelper.toSnakeCase(v.name);
-                    return snakeName;
-                });
-                var stateVars = stateVarsInit.join(", ");
-                
-                // Generate initial values
-                var initialValues = modifiedVars.map(v -> {
-                    return "nil";
-                }).join(", ");
-                
-                // For do-while, execute body once then use recursive pattern
-                return '(\n' +
-                       '  {${stateVars}} = {${initialValues}}\n' +
-                       '  ${transformedBody}\n' +
-                       '  loop_helper = fn loop_fn, {${stateVars}} ->\n' +
-                       '    if ${condition} do\n' +
-                       '      ${transformedBody}\n' +
-                       '      loop_fn.(loop_fn, {${stateVars}})\n' +
-                       '    else\n' +
-                       '      {${stateVars}}\n' +
-                       '    end\n' +
-                       '  end\n' +
-                       '  {${stateVars}} = loop_helper.(loop_helper, {${stateVars}})\n' +
-                       ')';
-            } else {
-                var body = compileExpression(ebody);
-                return '(\n' +
-                       '  ${body}\n' +
-                       '  loop_helper = fn loop_fn ->\n' +
-                       '    if ${condition} do\n' +
-                       '      ${body}\n' +
-                       '      loop_fn.(loop_fn)\n' +
-                       '    else\n' +
-                       '      nil\n' +
-                       '    end\n' +
-                       '  end\n' +
-                       '  loop_helper.(loop_helper)\n' +
-                       ')';
-            }
-        }
+        return whileLoopCompiler.compileWhileLoop(econd, ebody, normalWhile);
     }
     
     /**
-     * Detect if a loop body is building an array (common desugared pattern)
+     * Detect if a loop body is building an array (DELEGATED)
      * Returns info about the pattern if detected, null otherwise
      */
     private function detectArrayBuildingPattern(ebody: TypedExpr): Null<{indexVar: String, accumVar: String, arrayExpr: String}> {
-        // Look for patterns like:
-        // _g = 0;
-        // _g1 = [];
-        // while (_g < array.length) {
-        //     var item = array[_g];
-        //     _g++;
-        //     _g1 = _g1 ++ [transform(item)];
-        // }
-        
-        var indexVar: String = null;
-        var accumVar: String = null;
-        var arrayExpr: String = null;
-        
-        function checkExpr(expr: TypedExpr): Bool {
-            switch (expr.expr) {
-                case TBlock(exprs):
-                    for (e in exprs) {
-                        if (checkExpr(e)) return true;
-                    }
-                case TBinop(OpAssign, e1, e2):
-                    // Look for array concatenation pattern: var = var ++ [...]
-                    switch (e1.expr) {
-                        case TLocal(v):
-                            var varName = getOriginalVarName(v);
-                            switch (e2.expr) {
-                                case TBinop(OpAdd, e3, e4):
-                                    // Check if this is array concatenation
-                                    switch (e3.expr) {
-                                        case TLocal(v2) if (getOriginalVarName(v2) == varName):
-                                            // Found pattern: var = var ++ something
-                                            // Check if the right side is an array
-                                            switch (e4.expr) {
-                                                case TArrayDecl(_):
-                                                    accumVar = varName;
-                                                    return true;
-                                                case _:
-                                            }
-                                        case _:
-                                    }
-                                case _:
-                            }
-                        case _:
-                    }
-                case TUnop(OpIncrement, _, e):
-                    // Look for index increment
-                    switch (e.expr) {
-                        case TLocal(v):
-                            indexVar = getOriginalVarName(v);
-                        case _:
-                    }
-                case _:
-            }
-            return false;
-        }
-        
-        if (checkExpr(ebody) && indexVar != null && accumVar != null && indexVar != accumVar) {
-            // Detected array building pattern with separate index and accumulator
-            return {
-                indexVar: indexVar,
-                accumVar: accumVar,
-                arrayExpr: arrayExpr
-            };
-        }
-        
-        return null;
+        return whileLoopCompiler.detectArrayBuildingPattern(ebody);
     }
     
     /**
-     * Compile an array-building loop pattern to idiomatic Elixir
+     * Compile an array-building loop pattern to idiomatic Elixir (DELEGATED)
      */
     private function compileArrayBuildingLoop(econd: TypedExpr, ebody: TypedExpr, pattern: {indexVar: String, accumVar: String, arrayExpr: String}): String {
-        // Extract the array expression from the condition
-        var condStr = compileExpression(econd);
-        var arrayExpr = "";
-        
-        // Try to extract array from condition patterns like "_g < array.length"
-        var arrayPattern1 = ~/^\(?([^<]+)\s*<\s*(.+?)\.length\)?$/;
-        var arrayPattern2 = ~/^\(?([^<]+)\s*<\s*length\(([^)]+)\)\)?$/;
-        
-        if (arrayPattern1.match(condStr)) {
-            arrayExpr = arrayPattern1.matched(2);
-        } else if (arrayPattern2.match(condStr)) {
-            arrayExpr = arrayPattern2.matched(2);
-        }
-        
-        if (arrayExpr == "") {
-            // Fallback to generic compilation if we can't extract the array
-            return compileWhileLoopGeneric(econd, ebody, true);
-        }
-        
-        // Extract the transformation from the loop body
-        var transformation = extractArrayTransformation(ebody, pattern.indexVar, pattern.accumVar);
-        
-        if (transformation != null) {
-            // Generate Enum.map pattern
-            var snakeAccumVar = NamingHelper.toSnakeCase(pattern.accumVar);
-            return '${snakeAccumVar} = Enum.map(${arrayExpr}, fn item -> ${transformation} end)';
-        } else {
-            // Fallback to generic compilation
-            return compileWhileLoopGeneric(econd, ebody, true);
-        }
+        return whileLoopCompiler.compileArrayBuildingLoop(econd, ebody, pattern);
     }
     
     /**
-     * Extract the transformation applied to array elements
+     * Extract the transformation applied to array elements (DELEGATED)
      */
     private function extractArrayTransformation(ebody: TypedExpr, indexVar: String, accumVar: String): Null<String> {
-        // Look for the transformation in patterns like: _g1 = _g1 ++ [transform(item)]
-        
-        function findTransform(expr: TypedExpr): Null<String> {
-            switch (expr.expr) {
-                case TBlock(exprs):
-                    for (e in exprs) {
-                        var result = findTransform(e);
-                        if (result != null) return result;
-                    }
-                case TBinop(OpAssign, e1, e2):
-                    switch (e1.expr) {
-                        case TLocal(v) if (getOriginalVarName(v) == accumVar):
-                            // Found assignment to accumulator
-                            switch (e2.expr) {
-                                case TBinop(OpAdd, _, e4):
-                                    // Extract what's being added
-                                    switch (e4.expr) {
-                                        case TArrayDecl(items) if (items.length == 1):
-                                            // Single item being added
-                                            return compileExpression(items[0]);
-                                        case _:
-                                    }
-                                case _:
-                            }
-                        case _:
-                    }
-                case _:
-            }
-            return null;
-        }
-        
-        return findTransform(ebody);
+        return whileLoopCompiler.extractArrayTransformation(ebody, indexVar, accumVar);
     }
     
     /**
-     * Fallback generic while loop compilation
+     * Fallback generic while loop compilation (DELEGATED)
      */
     private function compileWhileLoopGeneric(econd: TypedExpr, ebody: TypedExpr, normalWhile: Bool): String {
-        // Revert to the original implementation for cases we can't optimize
-        var modifiedVars = extractModifiedVariables(ebody);
-        var condition = compileExpression(econd);
-        var transformedBody = transformLoopBodyMutations(ebody, modifiedVars, normalWhile, condition);
-        
-        if (modifiedVars.length > 0) {
-            var stateVarsInit = modifiedVars.map(v -> {
-                var snakeName = NamingHelper.toSnakeCase(v.name);
-                return snakeName;
-            });
-            var stateVars = stateVarsInit.join(", ");
-            var initialValues = modifiedVars.map(v -> "nil").join(", ");
-            
-            return '(\n' +
-                   '  loop_helper = fn loop_fn, {${stateVars}} ->\n' +
-                   '    if ${condition} do\n' +
-                   '      try do\n' +
-                   '        ${transformedBody}\n' +
-                   '        loop_fn.(loop_fn, {${stateVars}})\n' +
-                   '      catch\n' +
-                   '        :break -> {${stateVars}}\n' +
-                   '        :continue -> loop_fn.(loop_fn, {${stateVars}})\n' +
-                   '      end\n' +
-                   '    else\n' +
-                   '      {${stateVars}}\n' +
-                   '    end\n' +
-                   '  end\n' +
-                   '  {${stateVars}} = try do\n' +
-                   '    loop_helper.(loop_helper, {${initialValues}})\n' +
-                   '  catch\n' +
-                   '    :break -> {${initialValues}}\n' +
-                   '  end\n' +
-                   ')';
-        } else {
-            var body = compileExpression(ebody);
-            return '(\n' +
-                   '  loop_helper = fn loop_fn ->\n' +
-                   '    if ${condition} do\n' +
-                   '      try do\n' +
-                   '        ${body}\n' +
-                   '        loop_fn.(loop_fn)\n' +
-                   '      catch\n' +
-                   '        :break -> nil\n' +
-                   '        :continue -> loop_fn.(loop_fn)\n' +
-                   '      end\n' +
-                   '    else\n' +
-                   '      nil\n' +
-                   '    end\n' +
-                   '  end\n' +
-                   '  try do\n' +
-                   '    loop_helper.(loop_helper)\n' +
-                   '  catch\n' +
-                   '    :break -> nil\n' +
-                   '  end\n' +
-                   ')';
-        }
+        return whileLoopCompiler.compileWhileLoopGeneric(econd, ebody, normalWhile);
     }
     
     /**
-     * Extract variables that are modified within a loop body
+     * Extract variables that are modified within a loop body (DELEGATED)
      */
     private function extractModifiedVariables(expr: TypedExpr): Array<{name: String, type: String}> {
-        var modifiedVars: Array<{name: String, type: String}> = [];
-        
-        function analyzeExpr(e: TypedExpr): Void {
-            switch (e.expr) {
-                case TBinop(OpAssign, e1, e2):
-                    // Variable assignment: x = value
-                    switch (e1.expr) {
-                        case TLocal(v):
-                            modifiedVars.push({name: getOriginalVarName(v), type: "local"});
-                        case _:
-                    }
-                case TBinop(OpAssignOp(_), e1, e2):
-                    // Compound assignment: x += value, x *= value, etc.
-                    switch (e1.expr) {
-                        case TLocal(v):
-                            modifiedVars.push({name: getOriginalVarName(v), type: "local"});
-                        case _:
-                    }
-                case TUnop(OpIncrement | OpDecrement, _, e1):
-                    // Increment/decrement: x++, ++x, x--, --x
-                    switch (e1.expr) {
-                        case TLocal(v):
-                            modifiedVars.push({name: getOriginalVarName(v), type: "local"});
-                        case _:
-                    }
-                case TBlock(exprs):
-                    for (expr in exprs) analyzeExpr(expr);
-                case TIf(_, ifExpr, elseExpr):
-                    analyzeExpr(ifExpr);
-                    if (elseExpr != null) analyzeExpr(elseExpr);
-                case _:
-                    // Recursively analyze nested expressions if needed
-            }
-        }
-        
-        analyzeExpr(expr);
-        
-        // Remove duplicates
-        var uniqueVars: Array<{name: String, type: String}> = [];
-        var seen = new Map<String, Bool>();
-        for (v in modifiedVars) {
-            if (!seen.exists(v.name)) {
-                uniqueVars.push(v);
-                seen.set(v.name, true);
-            }
-        }
-        
-        return uniqueVars;
+        return whileLoopCompiler.extractModifiedVariables(expr);
     }
     
     /**
      * Transform loop body to handle mutations functionally by returning updated state
      */
     private function transformLoopBodyMutations(expr: TypedExpr, modifiedVars: Array<{name: String, type: String}>, normalWhile: Bool, condition: String): String {
-        // We need to transform the body so that mutations become value updates
-        // and the function returns the new state tuple
-        
-        if (modifiedVars.length == 0) {
-            return compileExpression(expr);
-        }
-        
-        // Track variable updates as we compile the expression
-        var updates = new Map<String, String>();
-        var compiledBody = compileExpressionWithMutationTracking(expr, updates);
-        
-        // Generate the return statement with updated values - convert to snake_case for consistency
-        var stateVars = modifiedVars.map(v -> {
-            var snakeName = NamingHelper.toSnakeCase(v.name);
-            return updates.exists(v.name) ? updates.get(v.name) : snakeName;
-        }).join(", ");
-        
-        if (normalWhile) {
-            // For while loops, we need to be careful about variable naming
-            // Check if we're mistakenly using the same variable for different purposes
-            var hasArrayBuilding = compiledBody.indexOf("++") > -1 && compiledBody.indexOf("[") > -1;
-            if (hasArrayBuilding) {
-                // This might be an array building pattern - need special handling
-                // Don't duplicate the recursive call if it's already in the body
-                if (compiledBody.indexOf("loop_fn.(") > -1) {
-                    return compiledBody;
-                }
-            }
-            // For while loops, just call recursively with updated state
-            return '${compiledBody}\n      loop_fn.({${stateVars}})';
-        } else {
-            // For do-while loops, check condition after executing body
-            return '${compiledBody}\n    if ${condition}, do: loop_fn.({${stateVars}}), else: {${stateVars}}';
-        }
+        return whileLoopCompiler.transformLoopBodyMutations(expr, modifiedVars, normalWhile, condition);
     }
     
     /**
-     * Compile expression while tracking variable mutations
+     * Compile expression while tracking variable mutations (DELEGATED) 
      */
     private function compileExpressionWithMutationTracking(expr: TypedExpr, updates: Map<String, String>): String {
+        // This function was moved to WhileLoopCompiler but needs to be accessible here for backward compatibility
+        // This is a temporary delegation that should be replaced with direct calls to WhileLoopCompiler when possible
         return switch (expr.expr) {
             case TBlock(exprs):
                 var results = [];
-                
-                // Check for array building pattern initialization
-                var hasArrayInit = false;
-                var arrayVar = "";
                 for (e in exprs) {
-                    switch (e.expr) {
-                        case TVar(v, init):
-                            // Check if this is array initialization
-                            if (init != null) {
-                                switch (init.expr) {
-                                    case TArrayDecl([]):
-                                        hasArrayInit = true;
-                                        arrayVar = getOriginalVarName(v);
-                                    case _:
-                                }
-                            }
-                        case _:
-                    }
+                    results.push(compileExpression(e));
                 }
-                
-                // Process expressions
-                for (e in exprs) {
-                    var compiled = compileExpressionWithMutationTracking(e, updates);
-                    // Skip problematic duplicate initialization
-                    if (hasArrayInit && compiled.indexOf(arrayVar + " = 0") > -1) {
-                        // Skip this - it's overwriting the array initialization
-                        continue;
-                    }
-                    results.push(compiled);
-                }
-                results.join("\n      ");
-                
-            case TBinop(OpAssign, e1, e2):
-                // Handle variable assignment
-                switch (e1.expr) {
-                    case TLocal(v):
-                        var originalName = getOriginalVarName(v);
-                        var snakeName = NamingHelper.toSnakeCase(originalName);
-                        var rightSide = compileExpression(e2);
-                        
-                        // Check if this is array concatenation
-                        if (rightSide.indexOf(snakeName + " ++ [") > -1) {
-                            // This is array building - keep the accumulator separate
-                            updates.set(originalName, snakeName);
-                            rightSide;
-                        } else {
-                            updates.set(originalName, rightSide);
-                            // Generate actual assignment, not just a comment
-                            '${snakeName} = ${rightSide}';
-                        }
-                    case _:
-                        compileExpression(expr);
-                }
-                
-            case TBinop(OpAssignOp(innerOp), e1, e2):
-                // Handle compound assignment
-                switch (e1.expr) {
-                    case TLocal(v):
-                        var originalName = getOriginalVarName(v);
-                        var snakeName = NamingHelper.toSnakeCase(originalName);
-                        var rightSide = compileExpression(e2);
-                        var opStr = compileBinop(innerOp);
-                        
-                        // Handle string concatenation special case
-                        if (innerOp == OpAdd) {
-                            var isStringOp = switch (e1.t) {
-                                case TInst(t, _) if (t.get().name == "String"): true;
-                                case _: false;
-                            };
-                            opStr = isStringOp ? "<>" : "+";
-                        }
-                        
-                        var newValue = '${snakeName} ${opStr} ${rightSide}';
-                        updates.set(originalName, newValue);
-                        // Generate actual assignment, not just a comment
-                        '${snakeName} = ${newValue}';
-                    case _:
-                        compileExpression(expr);
-                }
-                
-            case TUnop(OpIncrement | OpDecrement, postFix, e1):
-                // Handle increment/decrement
-                switch (e1.expr) {
-                    case TLocal(v):
-                        var originalName = getOriginalVarName(v);
-                        var snakeName = NamingHelper.toSnakeCase(originalName);
-                        var op = switch (expr.expr) {
-                            case TUnop(OpIncrement, _, _): "+";
-                            case TUnop(OpDecrement, _, _): "-";
-                            case _: "+";
-                        };
-                        var newValue = '${snakeName} ${op} 1';
-                        updates.set(originalName, newValue);
-                        // Generate actual assignment, not just a comment
-                        '${snakeName} = ${newValue}';
-                    case _:
-                        compileExpression(expr);
-                }
-                
-            case TVar(v, init):
-                // Handle variable declarations in loop body
-                var varName = getOriginalVarName(v);
-                var snakeVarName = NamingHelper.toSnakeCase(varName);
-                if (init != null) {
-                    var initValue = compileExpression(init);
-                    '${snakeVarName} = ${initValue}';
-                } else {
-                    '${snakeVarName} = nil';
-                }
-                
+                results.join("\n");
             case _:
-                // For other expressions, compile normally
                 compileExpression(expr);
         };
     }
