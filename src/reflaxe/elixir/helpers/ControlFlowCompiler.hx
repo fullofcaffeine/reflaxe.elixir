@@ -168,10 +168,11 @@ class ControlFlowCompiler {
                 // Check for unused TEnumParameter patterns before normal compilation
                 if (isUnusedEnumParameterExpression(el, i)) {
                     #if debug_control_flow_compiler
-                    trace('[XRay ControlFlowCompiler] ✓ SKIPPING unused TEnumParameter at index ${i}');
+                    trace('[XRay ControlFlowCompiler] ✓ SKIPPING unused TEnumParameter and following TLocal at index ${i}');
                     #end
-                    // Skip this unused enum parameter extraction
-                    i++;
+                    // Skip BOTH the TEnumParameter AND the following TLocal(g) expression
+                    // The pattern is: TEnumParameter (generates 'g = elem(...)') followed by TLocal(g)
+                    i += 2;  // Skip both expressions
                     continue;
                 }
                 
@@ -756,6 +757,11 @@ class ControlFlowCompiler {
      *      - TLocal(g) → generates standalone 'g' 
      *      - No other usage → indicates orphaned variable
      * 
+     * EDGE CASES:
+     *      - Must have at least 2 expressions (TEnumParameter + TLocal)
+     *      - Only affects 'g' variables (from loop transformations)
+     *      - Validates no subsequent meaningful usage
+     * 
      * @param expressions Array of expressions to analyze
      * @param currentIndex Current position in the expression array
      * @return True if this TEnumParameter should be skipped to prevent orphaned variables
@@ -769,13 +775,20 @@ class ControlFlowCompiler {
         
         var currentExpr = expressions[currentIndex];
         
-        // Check if current expression is TEnumParameter
-        var isEnumParam = switch (currentExpr.expr) {
-            case TEnumParameter(_, _, _): true;
-            case _: false;
+        // Check if current expression is TEnumParameter and extract details
+        var enumParamInfo = switch (currentExpr.expr) {
+            case TEnumParameter(enumExpr, enumField, index): 
+                #if debug_control_flow_compiler
+                trace('[XRay ControlFlowCompiler] ✓ Found TEnumParameter');
+                trace('[XRay ControlFlowCompiler]   - Enum field: ${enumField.name}');
+                trace('[XRay ControlFlowCompiler]   - Parameter index: ${index}');
+                #end
+                {isEnum: true, fieldName: enumField.name, paramIndex: index};
+            case _: 
+                {isEnum: false, fieldName: "", paramIndex: -1};
         };
         
-        if (!isEnumParam) {
+        if (!enumParamInfo.isEnum) {
             #if debug_control_flow_compiler
             trace('[XRay ControlFlowCompiler] ❌ Not a TEnumParameter expression');
             #end
@@ -783,7 +796,7 @@ class ControlFlowCompiler {
         }
         
         #if debug_control_flow_compiler
-        trace('[XRay ControlFlowCompiler] ✓ Found TEnumParameter, checking for orphaned pattern');
+        trace('[XRay ControlFlowCompiler] Checking if ${enumParamInfo.fieldName} parameter ${enumParamInfo.paramIndex} is orphaned...');
         #end
         
         // Look ahead for the orphaned variable pattern
@@ -794,14 +807,22 @@ class ControlFlowCompiler {
         var nextExpr = expressions[nextIndex];
         
         // Check if next expression is a TLocal reference to 'g' 
+        // The orphaned pattern specifically involves 'g' variables from loop transformations
         var hasOrphanedLocal = switch (nextExpr.expr) {
             case TLocal(tvar): 
-                var isGVariable = tvar.name == "g" || tvar.name.startsWith("g") || tvar.name.contains("_g");
+                // Be precise: Only 'g' variables from loop transformations are affected
+                // These are typically named: g, _g, _g_1, _g_2, etc.
+                var isGVariable = (tvar.name == "g" || 
+                                  tvar.name == "_g" || 
+                                  tvar.name.startsWith("_g_") ||
+                                  tvar.name.startsWith("g_"));
+                
                 #if debug_control_flow_compiler
                 if (isGVariable) {
                     trace('[XRay ControlFlowCompiler] ✓ Found orphaned local variable: ${tvar.name}');
+                    trace('[XRay ControlFlowCompiler] Variable ID: ${tvar.id}');
                 } else {
-                    trace('[XRay ControlFlowCompiler] ❌ Local variable not orphaned: ${tvar.name}');
+                    trace('[XRay ControlFlowCompiler] ❌ Local variable not orphaned pattern: ${tvar.name}');
                 }
                 #end
                 isGVariable;
