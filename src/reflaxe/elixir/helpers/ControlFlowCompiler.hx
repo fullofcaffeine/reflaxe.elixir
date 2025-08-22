@@ -130,9 +130,18 @@ class ControlFlowCompiler {
         var statements = [];
         var i = 0;
         while (i < el.length) {
+            #if debug_control_flow_compiler
+            trace('[XRay ControlFlowCompiler] Processing expression ${i}/${el.length}: ${el[i].expr}');
+            #end
+            
             // Check for sequential field assignment patterns that need merging
             var mergedAssignment = detectAndMergeSequentialFieldAssignments(el, i);
             if (mergedAssignment != null) {
+                #if debug_control_flow_compiler
+                trace('[XRay ControlFlowCompiler] ✓ MERGED ASSIGNMENT DETECTED at index ${i}!');
+                trace('[XRay ControlFlowCompiler] Merged code: ${mergedAssignment.compiledCode.substring(0, 100)}...');
+                #end
+                
                 // Sequential assignments were merged, add the result and skip processed expressions
                 statements.push(mergedAssignment.compiledCode);
                 i = mergedAssignment.nextIndex;
@@ -232,7 +241,7 @@ class ControlFlowCompiler {
     private function analyzeVariableToFieldAssignment(expr: TypedExpr): Null<VariableToFieldPattern> {
         switch (expr.expr) {
             case TBinop(OpAssign, e1, e2):
-                // Check if left side is a local variable
+                // Pattern: struct = struct.buf
                 switch (e1.expr) {
                     case TLocal(v):
                         var varName = v.name;
@@ -261,6 +270,41 @@ class ControlFlowCompiler {
                         }
                     case _: return null;
                 }
+                
+            case TVar(tvar, valueExpr) if (valueExpr != null):
+                // Pattern: var _this = this.buf (JsonPrinter style)
+                var varName = tvar.name;
+                
+                switch (valueExpr.expr) {
+                    case TField(obj, fieldAccess):
+                        var fieldName = switch (fieldAccess) {
+                            case FInstance(_, _, cf) | FStatic(_, cf) | FAnon(cf): cf.get().name;
+                            case FEnum(_, ef): ef.name;
+                            case FClosure(_, cf): cf.get().name;
+                            case FDynamic(s): s;
+                            case _: "unknown_field";
+                        };
+                        
+                        // For TVar patterns, the original object name needs to be extracted differently
+                        var sourceObjectName = switch (obj.expr) {
+                            case TConst(TThis): "struct"; // this.buf -> struct.buf
+                            case TLocal(v): v.name;
+                            case _: "unknown";
+                        };
+                        
+                        #if debug_control_flow_compiler
+                        trace('[XRay ControlFlowCompiler] ✓ DETECTED TVar field assignment pattern');
+                        trace('[XRay ControlFlowCompiler] Variable: ${varName}, Field: ${fieldName}, Source: ${sourceObjectName}');
+                        #end
+                        
+                        return {
+                            varName: varName,
+                            sourceFieldAccess: fieldName,
+                            sourceObject: sourceObjectName
+                        };
+                    case _: return null;
+                }
+                
             case _: return null;
         }
     }
@@ -274,8 +318,8 @@ class ControlFlowCompiler {
      */
     private function analyzeFieldAssignmentPattern(expr: TypedExpr, targetVarName: String): Null<FieldAssignmentPattern> {
         switch (expr.expr) {
-            case TBinop(OpAssign, e1, e2):
-                // Check if left side is field access on target variable
+            case TBinop(OpAssign, e1, e2) | TBinop(OpAssignOp(_), e1, e2):
+                // Handle both simple assignment and compound assignment (+=, <>, etc.)
                 switch (e1.expr) {
                     case TField(obj, fieldAccess):
                         switch (obj.expr) {
@@ -287,6 +331,10 @@ class ControlFlowCompiler {
                                     case FDynamic(s): s;
                                     case _: "unknown_field";
                                 };
+                                
+                                #if debug_control_flow_compiler
+                                trace('[XRay ControlFlowCompiler] ✓ DETECTED field assignment on ${targetVarName}.${fieldName}');
+                                #end
                                 
                                 return {
                                     fieldName: fieldName,
