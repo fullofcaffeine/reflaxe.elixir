@@ -175,6 +175,12 @@ result = ~/\), else: nil\n/g.replace(result, ")\n");
 - **Pattern consistency** - follow established compiler patterns
 - **Type safety** - avoid `Dynamic` and untyped code
 
+### Development Workflow Standards
+- **Commit after each completed task** - Incremental progress must be saved with comprehensive commit messages
+- **Test before committing** - Run `npm test` to verify no regressions
+- **Document significant changes** - Update relevant documentation after major modifications
+- **Use git bisect for debugging** - Commit often to enable effective regression debugging
+
 ## 🔗 Related Documentation
 
 ### Essential Reading

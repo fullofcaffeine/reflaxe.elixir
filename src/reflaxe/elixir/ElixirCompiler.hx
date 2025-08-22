@@ -2653,25 +2653,16 @@ class ElixirCompiler extends DirectToStringCompiler {
     
     /**
      * Debug helper: Check if expression contains TFor patterns
+     * 
+     * WHY: Delegates to LoopCompiler for centralized loop pattern detection
+     * WHAT: Wrapper function that maintains backward compatibility while delegating
+     * HOW: Simply forwards the call to loopCompiler.checkForTForInExpression()
+     * 
+     * @param expr The expression to analyze for TFor patterns
+     * @return True if expression contains any TFor nodes
      */
     private function checkForTForInExpression(expr: TypedExpr): Bool {
-        if (expr == null) return false;
-        
-        switch (expr.expr) {
-            case TFor(_, _, _):
-                return true;
-            case TBlock(exprs):
-                for (e in exprs) {
-                    if (checkForTForInExpression(e)) return true;
-                }
-                return false;
-            case TIf(_, eif, eelse):
-                if (checkForTForInExpression(eif)) return true;
-                if (eelse != null && checkForTForInExpression(eelse)) return true;
-                return false;
-            case _:
-                return false;
-        }
+        return loopCompiler.checkForTForInExpression(expr);
     }
     
     /**
@@ -2684,94 +2675,18 @@ class ElixirCompiler extends DirectToStringCompiler {
     /**
      * Check if expression contains TWhile nodes that generate Y combinator patterns
      * 
-     * This function recursively scans the AST to detect TWhile expressions that
-     * will generate complex multi-line Y combinator patterns requiring block syntax.
+     * WHY: Delegates to LoopCompiler for centralized loop pattern detection and analysis
+     * WHAT: Wrapper function that maintains backward compatibility while delegating
+     * HOW: Simply forwards the call to loopCompiler.containsTWhileExpression()
+     * 
+     * This function was moved to LoopCompiler as part of loop-related logic consolidation.
+     * Y combinator pattern detection is core loop compilation functionality.
+     * 
+     * @param expr The expression to analyze for TWhile patterns
+     * @return True if expression contains any TWhile nodes
      */
     private function containsTWhileExpression(expr: TypedExpr): Bool {
-        if (expr == null) return false;
-        
-        switch (expr.expr) {
-            case TWhile(_, _, _):
-                // Found a TWhile - this will generate Y combinator pattern
-                return true;
-                
-            case TBlock(exprs):
-                // Recursively check all expressions in the block
-                for (e in exprs) {
-                    if (containsTWhileExpression(e)) return true;
-                }
-                return false;
-                
-            case TIf(_, eif, eelse):
-                // Check both branches of if-statement
-                if (containsTWhileExpression(eif)) return true;
-                if (eelse != null && containsTWhileExpression(eelse)) return true;
-                return false;
-                
-            case TFor(_, _, ebody):
-                // For loops might contain while loops in their body
-                return containsTWhileExpression(ebody);
-                
-            case TSwitch(_, cases, defaultCase):
-                // Check all switch cases
-                for (c in cases) {
-                    if (containsTWhileExpression(c.expr)) return true;
-                }
-                if (defaultCase != null && containsTWhileExpression(defaultCase)) return true;
-                return false;
-                
-            case TTry(etry, catches):
-                // Check try block
-                if (containsTWhileExpression(etry)) return true;
-                // Check catch blocks
-                for (c in catches) {
-                    if (containsTWhileExpression(c.expr)) return true;
-                }
-                return false;
-                
-            case TFunction(func):
-                // Check function body
-                return containsTWhileExpression(func.expr);
-                
-            case TCall(e, args):
-                // Check function expression and arguments
-                if (containsTWhileExpression(e)) return true;
-                for (arg in args) {
-                    if (containsTWhileExpression(arg)) return true;
-                }
-                return false;
-                
-            case TBinop(_, e1, e2):
-                // Check both operands
-                return containsTWhileExpression(e1) || containsTWhileExpression(e2);
-                
-            case TUnop(_, _, e):
-                // Check operand
-                return containsTWhileExpression(e);
-                
-            case TArray(e1, e2):
-                // Check array and index expressions
-                return containsTWhileExpression(e1) || containsTWhileExpression(e2);
-                
-            case TArrayDecl(exprs):
-                // Check all array elements
-                for (e in exprs) {
-                    if (containsTWhileExpression(e)) return true;
-                }
-                return false;
-                
-            case TField(e, _):
-                // Check field access target
-                return containsTWhileExpression(e);
-                
-            case TVar(_, init):
-                // Check variable initialization
-                return init != null ? containsTWhileExpression(init) : false;
-                
-            case _:
-                // All other expression types don't contain TWhile
-                return false;
-        }
+        return loopCompiler.containsTWhileExpression(expr);
     }
     
     /**
