@@ -138,7 +138,7 @@ class PatternMatchingCompiler {
         for (caseData in cases) {
             for (value in caseData.values) {
                 var pattern = compilePattern(value);
-                var body = compiler.compileExpression(caseData.expr);
+                var body = compilePatternBody(caseData.expr);
                 
                 if (isSuccessPattern(pattern)) {
                     patterns.push('${pattern} <- ${exprStr}');
@@ -409,7 +409,7 @@ class PatternMatchingCompiler {
         for (caseData in cases) {
             for (value in caseData.values) {
                 var pattern = compileEnumPattern(value);
-                var body = compiler.compileExpression(caseData.expr);
+                var body = compilePatternBody(caseData.expr);
                 caseStrings.push('  ${pattern} -> ${body}');
             }
         }
@@ -474,6 +474,73 @@ class PatternMatchingCompiler {
     private function isSuccessPattern(pattern: String): Bool {
         return pattern.indexOf("{:ok,") == 0 || 
                pattern.indexOf("{:some,") == 0;
+    }
+    
+    /**
+     * Compile pattern body expression with field assignment detection
+     * 
+     * WHY: Case body expressions can contain sequential field assignments that need transformation
+     * WHAT: Apply the same field assignment detection as ControlFlowCompiler.compileBlock
+     * HOW: Check if expression is TBlock, if so delegate to ControlFlowCompiler, otherwise use normal compilation
+     * 
+     * @param expr The case body expression
+     * @return Compiled expression with field assignment transformations applied
+     */
+    private function compilePatternBody(expr: TypedExpr): String {
+        #if debug_pattern_matching
+        trace("[XRay PatternMatchingCompiler] CASE BODY COMPILATION START");
+        trace('[XRay PatternMatchingCompiler] Body expression type: ${expr.expr}');
+        #end
+        
+        return switch (expr.expr) {
+            case TBlock(el):
+                #if debug_pattern_matching
+                trace("[XRay PatternMatchingCompiler] ✓ DELEGATING TBlock to ControlFlowCompiler");
+                trace('[XRay PatternMatchingCompiler] Block has ${el.length} expressions');
+                for (i in 0...el.length) {
+                    trace('[XRay PatternMatchingCompiler] Expression ${i}: ${el[i].expr}');
+                }
+                #end
+                
+                // Delegate to ControlFlowCompiler for block expressions with field assignment detection
+                var result = compiler.expressionDispatcher.controlFlowCompiler.compileBlock(el, false);
+                
+                #if debug_pattern_matching
+                trace('[XRay PatternMatchingCompiler] ControlFlowCompiler result: ${result.substring(0, 100)}...');
+                #end
+                
+                result;
+                
+            case TParenthesis(e):
+                #if debug_pattern_matching
+                trace("[XRay PatternMatchingCompiler] ✓ FOUND TParenthesis wrapping another expression");
+                trace('[XRay PatternMatchingCompiler] Inner expression type: ${e.expr}');
+                #end
+                
+                // Recursively process the parentheses content - this might be a TBlock!
+                var result = compilePatternBody(e);
+                
+                #if debug_pattern_matching
+                trace('[XRay PatternMatchingCompiler] TParenthesis result: ${result.substring(0, 100)}...');
+                #end
+                
+                // The parentheses are already handled by the inner expression
+                result;
+                
+            case _:
+                #if debug_pattern_matching
+                trace("[XRay PatternMatchingCompiler] ✓ USING standard compilation for non-block");
+                #end
+                
+                // Normal expression compilation for non-block expressions
+                var result = compiler.compileExpression(expr);
+                
+                #if debug_pattern_matching
+                trace('[XRay PatternMatchingCompiler] Standard result: ${result.substring(0, 100)}...');
+                #end
+                
+                result;
+        };
     }
     
     /**

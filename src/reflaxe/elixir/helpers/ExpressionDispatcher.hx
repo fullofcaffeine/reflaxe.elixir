@@ -58,7 +58,7 @@ class ExpressionDispatcher {
     
     // Specialized compilers (will be created as we extract more functionality)
     public var literalCompiler: LiteralCompiler;
-    var controlFlowCompiler: ControlFlowCompiler;
+    public var controlFlowCompiler: ControlFlowCompiler;
     var operatorCompiler: OperatorCompiler;
     // TODO: Uncomment as compilers are extracted:
     public var variableCompiler: VariableCompiler;

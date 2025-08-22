@@ -66,14 +66,8 @@ defmodule JsonPrinter do
           (
           g = Type.typeof(v)
           case (elem(g, 0)) do
-      0 -> (
-          struct = struct.buf
-          struct.b = struct.b <> "null"
-        )
-      1 -> (
-          struct = struct.buf
-          struct.b = struct.b <> Std.string(v)
-        )
+      0 -> _this = %{_this.buf | b: "null"}
+      1 -> _this = %{_this.buf | b: Std.string(v)}
       2 -> (
           temp_string = nil
           if (Math.is_finite(v)) do
@@ -82,20 +76,11 @@ defmodule JsonPrinter do
           temp_string = "null"
         end
           v = temp_string
-          (
-          struct = struct.buf
-          struct.b = struct.b <> Std.string(v)
+          _this = %{_this.buf | b: Std.string(v)}
         )
-        )
-      3 -> (
-          struct = struct.buf
-          struct.b = struct.b <> Std.string(v)
-        )
+      3 -> _this = %{_this.buf | b: Std.string(v)}
       4 -> struct.fields_string(v, Reflect.fields(v))
-      5 -> (
-          struct = struct.buf
-          struct.b = struct.b <> "\"<fun>\""
-        )
+      5 -> _this = %{_this.buf | b: "\"<fun>\""}
       6 -> (
           g = elem(g, 1)
           c = g
@@ -104,10 +89,7 @@ defmodule JsonPrinter do
         else
           if ((c == Array)) do
           v = v
-    (
-          struct = struct.buf
-          struct.b = struct.b <> "["
-        )
+    _this = %{_this.buf | b: "["}
     len = v.length
     last = (len - 1)
     g_counter = 0
@@ -115,26 +97,17 @@ defmodule JsonPrinter do
     while_loop(fn -> ((g < g)) end, fn -> (
           i = g + 1
           if ((i > 0)) do
-          (
-          struct = struct.buf
-          struct.b = struct.b <> ","
-        )
+          _this = %{_this.buf | b: ","}
         else
           struct.nind + 1
         end
           if (struct.pretty) do
-          (
-          struct = struct.buf
-          struct.b = struct.b <> "\n"
-        )
+          _this = %{_this.buf | b: "\n"}
         end
           if (struct.pretty) do
           (
           v = StringTools.lpad("", struct.indent, (struct.nind * struct.indent.length))
-          (
-          struct = struct.buf
-          struct.b = struct.b <> Std.string(v)
-        )
+          _this = %{_this.buf | b: Std.string(v)}
         )
         end
           struct.write(i, Enum.at(v, i))
@@ -142,27 +115,18 @@ defmodule JsonPrinter do
           (
           struct.nind - 1
           if (struct.pretty) do
-          (
-          struct = struct.buf
-          struct.b = struct.b <> "\n"
-        )
+          _this = %{_this.buf | b: "\n"}
         end
           if (struct.pretty) do
           (
           v = StringTools.lpad("", struct.indent, (struct.nind * struct.indent.length))
-          (
-          struct = struct.buf
-          struct.b = struct.b <> Std.string(v)
-        )
+          _this = %{_this.buf | b: Std.string(v)}
         )
         end
         )
         end
         ) end)
-    (
-          struct = struct.buf
-          struct.b = struct.b <> "]"
-        )
+    _this = %{_this.buf | b: "]"}
         else
           if ((c == StringMap)) do
           (
@@ -197,17 +161,11 @@ defmodule JsonPrinter do
           i = Type.enum_index(v)
           (
           v = Std.string(i)
-          (
-          struct = struct.buf
-          struct.b = struct.b <> Std.string(v)
+          _this = %{_this.buf | b: Std.string(v)}
         )
         )
         )
-        )
-      8 -> (
-          struct = struct.buf
-          struct.b = struct.b <> "\"???\""
-        )
+      8 -> _this = %{_this.buf | b: "\"???\""}
     end
         )
         )
@@ -222,10 +180,7 @@ defmodule JsonPrinter do
   @doc "Function fields_string"
   @spec fields_string(t(), term(), Array.t()) :: nil
   def fields_string(%__MODULE__{} = struct, v, fields) do
-    (
-          struct = struct.buf
-          struct.b = struct.b <> "{"
-        )
+    _this = %{_this.buf | b: "{"}
     len = fields.length
     empty = true
     g_counter = 0
@@ -242,72 +197,45 @@ defmodule JsonPrinter do
           empty = false
         )
         else
-          (
-          struct = struct.buf
-          struct.b = struct.b <> ","
-        )
+          _this = %{_this.buf | b: ","}
         end
     if (struct.pretty) do
-          (
-          struct = struct.buf
-          struct.b = struct.b <> "\n"
-        )
+          _this = %{_this.buf | b: "\n"}
         end
     if (struct.pretty) do
           (
           v = StringTools.lpad("", struct.indent, (struct.nind * struct.indent.length))
-          (
-          struct = struct.buf
-          struct.b = struct.b <> Std.string(v)
-        )
+          _this = %{_this.buf | b: Std.string(v)}
         )
         end
     struct.quote_(f)
-    (
-          struct = struct.buf
-          struct.b = struct.b <> ":"
-        )
+    _this = %{_this.buf | b: ":"}
     if (struct.pretty) do
-          (
-          struct = struct.buf
-          struct.b = struct.b <> " "
-        )
+          _this = %{_this.buf | b: " "}
         end
     struct.write(f, value) end)
     if (not empty) do
           (
           struct.nind - 1
           if (struct.pretty) do
-          (
-          struct = struct.buf
-          struct.b = struct.b <> "\n"
-        )
+          _this = %{_this.buf | b: "\n"}
         end
           if (struct.pretty) do
           (
           v = StringTools.lpad("", struct.indent, (struct.nind * struct.indent.length))
-          (
-          struct = struct.buf
-          struct.b = struct.b <> Std.string(v)
-        )
+          _this = %{_this.buf | b: Std.string(v)}
         )
         end
         )
         end
-    (
-          struct = struct.buf
-          struct.b = struct.b <> "}"
-        )
+    _this = %{_this.buf | b: "}"}
   end
 
   @doc "Function quote_"
   @spec quote_(t(), String.t()) :: nil
   def quote_(%__MODULE__{} = struct, s) do
     (
-          (
-          struct = struct.buf
-          struct.b = struct.b <> "\""
-        )
+          _this = %{_this.buf | b: "\""}
           i = 0
           length = s.length
           while_loop(fn -> ((i < length)) end, fn -> (
@@ -316,44 +244,17 @@ defmodule JsonPrinter do
           temp_number = s.cca(index)
           c = temp_number
           case (c) do
-      8 -> (
-          struct = struct.buf
-          struct.b = struct.b <> "\\b"
-        )
-      9 -> (
-          struct = struct.buf
-          struct.b = struct.b <> "\\t"
-        )
-      10 -> (
-          struct = struct.buf
-          struct.b = struct.b <> "\\n"
-        )
-      12 -> (
-          struct = struct.buf
-          struct.b = struct.b <> "\\f"
-        )
-      13 -> (
-          struct = struct.buf
-          struct.b = struct.b <> "\\r"
-        )
-      34 -> (
-          struct = struct.buf
-          struct.b = struct.b <> "\\\""
-        )
-      92 -> (
-          struct = struct.buf
-          struct.b = struct.b <> "\\\\"
-        )
-      _ -> (
-          struct = struct.buf
-          struct.b = struct.b <> String.from_char_code(c)
-        )
+      8 -> _this = %{_this.buf | b: "\\b"}
+      9 -> _this = %{_this.buf | b: "\\t"}
+      10 -> _this = %{_this.buf | b: "\\n"}
+      12 -> _this = %{_this.buf | b: "\\f"}
+      13 -> _this = %{_this.buf | b: "\\r"}
+      34 -> _this = %{_this.buf | b: "\\\""}
+      92 -> _this = %{_this.buf | b: "\\\\"}
+      _ -> _this = %{_this.buf | b: String.from_char_code(c)}
     end
         ) end)
-          (
-          struct = struct.buf
-          struct.b = struct.b <> "\""
-        )
+          _this = %{_this.buf | b: "\""}
         )
   end
 
