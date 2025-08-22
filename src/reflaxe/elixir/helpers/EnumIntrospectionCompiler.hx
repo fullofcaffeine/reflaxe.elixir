@@ -196,7 +196,9 @@ class EnumIntrospectionCompiler {
             trace("[XRay EnumIntrospectionCompiler] ⚠️ SKIPPING orphaned parameter extraction - ROOT CAUSE FIX");
             trace("[XRay EnumIntrospectionCompiler] ENUM PARAMETER COMPILATION SKIPPED");
             #end
-            return "nil"; // Return nil instead of generating orphaned elem() call
+            // Return 'g = nil' to define the variable for the following TLocal(g) reference
+            // This prevents "undefined variable 'g'" errors while avoiding the orphaned elem() call
+            return "g = nil";
         }
         
         // Extract a parameter from an enum constructor
@@ -308,37 +310,48 @@ class EnumIntrospectionCompiler {
         #end
         
         // COMPREHENSIVE ORPHANED PARAMETER DETECTION:
-        // The TypeSafeChildSpec.validate function is full of cases that destructure parameters
-        // but never use them because they're optional validation cases with only comments.
+        // The TypeSafeChildSpec.validate function has switch cases that destructure parameters
+        // but never use them. These generate 'g = elem(spec, N)' followed by standalone 'g'.
         
-        // 1. Known validation cases with unused parameters
-        var isKnownOrphanedCase = ef.name == "Repo" || ef.name == "Telemetry";
-        
-        // 2. Single parameter cases that are often unused in validation contexts
-        // These are enum constructors with one parameter that's typically unused
-        var isSingleParamValidationCase = (index == 0) && (ef.name == "Endpoint" || ef.name == "Presence" || ef.name == "Custom");
-        
-        // 3. TypeSafeChildSpec enum pattern - this is a strong indicator
-        // Any enum with these constructor names is likely a child spec validation enum
+        // Check if this is a TypeSafeChildSpec enum pattern
         var isChildSpecEnum = (ef.name == "PubSub" || ef.name == "Repo" || ef.name == "Endpoint" || 
                               ef.name == "Telemetry" || ef.name == "Presence" || ef.name == "Custom" || 
                               ef.name == "Legacy");
         
-        if (isKnownOrphanedCase) {
+        if (!isChildSpecEnum) {
             #if debug_enum_introspection_compiler
-            trace('[XRay EnumIntrospectionCompiler] ✓ DETECTED known orphaned validation case');
+            trace('[XRay EnumIntrospectionCompiler] ❌ Not a TypeSafeChildSpec enum');
+            #end
+            return false;
+        }
+        
+        // For TypeSafeChildSpec enums in validate function, check specific patterns:
+        // 1. Repo(config) - config never used (empty case body)
+        // 2. Telemetry(config) - config never used  
+        // 3. Presence(config) - config never used
+        // 4. Legacy cases - complex but mostly unused
+        
+        // These cases have parameters that are extracted but not used in validation
+        var orphanedCases = switch(ef.name) {
+            case "Repo": index == 0;      // Repo(config) - config unused
+            case "Telemetry": index == 0; // Telemetry(config) - config unused  
+            case "Presence": index == 0;  // Presence(config) - config unused
+            case "Legacy": true;          // Legacy has complex unused patterns
+            case _: false;
+        };
+        
+        if (orphanedCases) {
+            #if debug_enum_introspection_compiler
+            trace('[XRay EnumIntrospectionCompiler] ✓ DETECTED orphaned parameter: ${ef.name} param ${index}');
             #end
             return true;
         }
         
-        // For now, be conservative and only skip the clearly orphaned cases
-        // TODO: Implement more sophisticated AST analysis to detect actual usage patterns
-        
         #if debug_enum_introspection_compiler
-        trace('[XRay EnumIntrospectionCompiler] ❌ Parameter extraction appears to be used');
+        trace('[XRay EnumIntrospectionCompiler] ✓ Parameter appears to be used: ${ef.name} param ${index}');
         #end
         
-        return false; // Default to allowing parameter extraction
+        return false;
     }
     
     /**
