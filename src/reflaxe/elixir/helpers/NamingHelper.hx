@@ -125,10 +125,10 @@ class NamingHelper {
         // Convert to snake_case
         var snakeName = toSnakeCase(haxeName);
         
-        // Handle special Haxe method names
+        // Handle special Haxe method names and avoid conflicts with Elixir Kernel functions
         switch (snakeName) {
             case "new": return "__struct__";  // Constructor becomes struct constructor
-            case "to_string": return "to_string";  // Already correct
+            case "to_string": return "format";  // Avoid conflict with Kernel.to_string/1
             default: return snakeName;
         }
     }
