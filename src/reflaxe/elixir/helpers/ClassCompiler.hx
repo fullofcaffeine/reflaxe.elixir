@@ -18,6 +18,7 @@ import reflaxe.elixir.helpers.RepoCompiler;
 import reflaxe.elixir.helpers.TelemetryCompiler;
 import reflaxe.elixir.helpers.EndpointCompiler;
 import reflaxe.elixir.helpers.WebModuleCompiler;
+import reflaxe.elixir.helpers.MutabilityAnalyzer;
 
 using StringTools;
 
@@ -31,6 +32,7 @@ class ClassCompiler {
     private var compiler: Null<reflaxe.elixir.ElixirCompiler> = null;
     private var currentClassName: Null<String> = null;
     private var importOptimizer: Null<reflaxe.elixir.helpers.ImportOptimizer> = null;
+    private var mutabilityAnalyzer: Null<MutabilityAnalyzer> = null;
     
     public function new(?typer: ElixirTyper) {
         this.typer = (typer != null) ? typer : new ElixirTyper();
@@ -38,6 +40,9 @@ class ClassCompiler {
     
     public function setCompiler(compiler: reflaxe.elixir.ElixirCompiler) {
         this.compiler = compiler;
+        if (compiler != null) {
+            this.mutabilityAnalyzer = new MutabilityAnalyzer(compiler);
+        }
     }
     
     public function setImportOptimizer(importOptimizer: reflaxe.elixir.helpers.ImportOptimizer) {
@@ -541,11 +546,60 @@ class ClassCompiler {
     }
     
     /**
-     * Generate a single function
+     * Generate a single function with state threading transformation for mutable methods
+     * 
+     * WHY: Elixir's immutable data structures require transforming mutable Haxe methods
+     * that modify struct fields into functions that return the updated struct. This enables
+     * functional state threading while preserving the imperative programming style in Haxe.
+     * 
+     * WHAT: Analyzes methods for field mutations and transforms them:
+     * - Detects field assignments (this.field = value)
+     * - Changes return type from void to struct type
+     * - Ensures the method returns the updated struct
+     * - Enables state threading mode in the compiler
+     * 
+     * HOW: 
+     * 1. Uses MutabilityAnalyzer to detect field mutations
+     * 2. Transforms return type to t() for mutating methods
+     * 3. Sets up parameter mapping (this -> struct)
+     * 4. Enables state threading mode during compilation
+     * 5. Ensures struct is returned at method end
+     * 
+     * EDGE CASES:
+     * - Methods that already return the struct type
+     * - Empty method bodies
+     * - Methods with explicit return statements
+     * - Nested field mutations (this.data.value = x)
+     * 
+     * @param funcField The function data to compile
+     * @param isInstance Whether this is an instance method
+     * @param isStructClass Whether the containing class is a struct
+     * @return Generated Elixir function code
      */
     private function generateFunction(funcField: ClassFuncData, isInstance: Bool, isStructClass: Bool): String {
         var result = new StringBuf();
         var funcName = NamingHelper.getElixirFunctionName(funcField.field.name);
+        
+        /**
+         * MUTABILITY ANALYSIS
+         * 
+         * WHY: Detect which methods mutate struct fields so we can transform them
+         * WHAT: Analyze the method's AST for field assignments
+         * HOW: MutabilityAnalyzer recursively traverses the expression tree
+         */
+        var mutabilityInfo = null;
+        var shouldTransform = false;
+        if (isInstance && isStructClass && mutabilityAnalyzer != null && funcField.expr != null) {
+            mutabilityInfo = mutabilityAnalyzer.analyzeMethod(funcField.expr);
+            shouldTransform = MutabilityAnalyzer.shouldTransformMethod(mutabilityInfo, isStructClass);
+            
+            #if debug_mutability
+            trace('[ClassCompiler] Method ${funcName} mutability analysis:');
+            trace('  - isMutating: ${mutabilityInfo.isMutating}');
+            trace('  - mutatedFields: ${mutabilityInfo.mutatedFields}');
+            trace('  - shouldTransform: ${shouldTransform}');
+            #end
+        }
         
         // Build parameter list
         var params = [];
@@ -582,8 +636,10 @@ class ClassCompiler {
         var returnType = getReturnType(funcField);
         var elixirReturnType = typer.compileType(returnType);
         
-        // Handle struct-returning instance methods (for immutable updates)
-        if (isInstance && isStructClass && returnType == classNameFromFunc(funcField)) {
+        // Transform return type for mutable methods to return the updated struct
+        if (shouldTransform) {
+            elixirReturnType = 't()';
+        } else if (isInstance && isStructClass && returnType == classNameFromFunc(funcField)) {
             elixirReturnType = 't()';
         }
         
@@ -599,44 +655,103 @@ class ClassCompiler {
         result.add('  @spec ${funcName}(${typeStr}) :: ${elixirReturnType}\n');
         result.add('  def ${funcName}(${paramStr}) do\n');
         
-        // Function body
+        /**
+         * FUNCTION BODY COMPILATION WITH STATE THREADING
+         * 
+         * WHY: Transform mutable field assignments into immutable struct updates
+         * WHAT: Configure compiler for state threading when processing mutating methods
+         * HOW: Set up parameter mappings and enable state threading mode
+         */
         if (funcField.expr != null) {
-            // For struct instance methods, set up parameter mapping and inline context
+            /**
+             * PARAMETER MAPPING SETUP
+             * 
+             * WHY: Haxe uses 'this' but Elixir structs use explicit parameter names
+             * WHAT: Map 'this' references to the 'struct' parameter
+             * HOW: Configure compiler's parameter mapping and inline context
+             */
             if (isInstance && isStructClass && compiler != null) {
-                // Add mapping for this -> struct parameter
+                // Map this -> struct for consistent variable references
                 compiler.setThisParameterMapping("struct");
-                // CRITICAL: Set inline context so _this variables are replaced with struct
+                // Replace _this variables (from Haxe desugaring) with struct
                 compiler.setInlineContext("struct", "struct");
+                // CRITICAL: Also map _this to struct for switch case transformations
+                compiler.currentFunctionParameterMap.set("_this", "struct");
+                
+                #if debug_state_threading
+                trace('[XRay ClassCompiler] ✓ SET _this → struct mapping for method: ${funcField.field.name}');
+                trace('[XRay ClassCompiler] Current map size: ${Lambda.count(compiler.currentFunctionParameterMap)}');
+                for (key in compiler.currentFunctionParameterMap.keys()) {
+                    trace('[XRay ClassCompiler] Map entry: ${key} → ${compiler.currentFunctionParameterMap.get(key)}');
+                }
+                #end
+                
+                /**
+                 * STATE THREADING MODE
+                 * 
+                 * WHY: Mutating methods need to return updated structs
+                 * WHAT: Enable transformation of field assignments
+                 * HOW: Compiler will transform this.field = value to struct = %{struct | field: value}
+                 */
+                if (shouldTransform) {
+                    compiler.enableStateThreadingMode(mutabilityInfo);
+                }
             }
             
             // Compile the actual function expression
             var compiledBody = compileExpressionForFunction(funcField.expr, funcField.args);
             
-            // Clear any this parameter mapping and inline context after compilation
-            if (isInstance && isStructClass && compiler != null) {
-                compiler.clearThisParameterMapping();
-                compiler.clearInlineContext();
-            }
             
             if (compiledBody != null && compiledBody.trim() != "") {
-                // Indent the function body properly
-                var indentedBody = compiledBody.split("\n").map(line -> line.length > 0 ? "    " + line : line).join("\n");
-                result.add('${indentedBody}\n');
+                // For mutating methods, ensure we return the struct at the end
+                if (shouldTransform) {
+                    // Check if the body already returns something
+                    var trimmedBody = compiledBody.trim();
+                    if (!trimmedBody.endsWith("struct")) {
+                        // Add struct return at the end
+                        var indentedBody = compiledBody.split("\n").map(line -> line.length > 0 ? "    " + line : line).join("\n");
+                        result.add('${indentedBody}\n');
+                        result.add('    struct\n');
+                    } else {
+                        var indentedBody = compiledBody.split("\n").map(line -> line.length > 0 ? "    " + line : line).join("\n");
+                        result.add('${indentedBody}\n');
+                    }
+                } else {
+                    // Indent the function body properly
+                    var indentedBody = compiledBody.split("\n").map(line -> line.length > 0 ? "    " + line : line).join("\n");
+                    result.add('${indentedBody}\n');
+                }
             } else {
                 // Only use default return if compilation failed/returned empty
                 // For struct update methods, return updated struct
-                if (isInstance && isStructClass && elixirReturnType == 't()') {
-                    result.add('    %{struct | }\n');
+                if (isInstance && isStructClass && (elixirReturnType == 't()' || shouldTransform)) {
+                    result.add('    struct\n');
                 } else {
                     result.add('    nil\n');
                 }
             }
         } else {
             // No expression provided - this is a truly empty function
-            result.add('    nil\n');
+            if (shouldTransform) {
+                result.add('    struct\n');
+            } else {
+                result.add('    nil\n');
+            }
         }
         
         result.add('  end\n\n');
+        
+        // Clear any this parameter mapping and inline context after ALL compilation is complete
+        if (isInstance && isStructClass && compiler != null) {
+            compiler.clearThisParameterMapping();
+            compiler.clearInlineContext();
+            if (shouldTransform) {
+                compiler.disableStateThreadingMode();
+                #if debug_state_threading
+                trace('[XRay ClassCompiler] ✓ State threading cleanup completed for: ${funcField.field.name}');
+                #end
+            }
+        }
         
         return result.toString();
     }
@@ -812,18 +927,64 @@ class ClassCompiler {
      */
     private function compileExpressionForFunction(expr: Dynamic, args: Array<ClassFuncArg>): Null<String> {
         if (compiler != null) {
+            /**
+             * PARAMETER MAPPING PRESERVATION
+             * 
+             * WHY: We need to preserve existing mappings like _this -> struct
+             * WHAT: Save current mappings, add function parameters, then restore
+             * HOW: Copy map before modifying, restore after compilation
+             */
+            // Save the current parameter map (includes _this -> struct mapping)
+            var savedMap = new Map<String, String>();
+            for (key in compiler.currentFunctionParameterMap.keys()) {
+                savedMap.set(key, compiler.currentFunctionParameterMap.get(key));
+            }
+            
+            #if debug_state_threading
+            trace('[XRay ClassCompiler] compileExpressionForFunction - BEFORE parameter mapping');
+            trace('[XRay ClassCompiler] Saved map size: ${Lambda.count(savedMap)}');
+            for (key in savedMap.keys()) {
+                trace('[XRay ClassCompiler] Saved: ${key} → ${savedMap.get(key)}');
+            }
+            #end
+            
             // Always set up parameter mapping when we generate standardized arg names
             // This ensures TLocal variables in the function body use the correct parameter names
             if (args != null && args.length > 0) {
                 compiler.setFunctionParameterMapping(args);
+                
+                #if debug_state_threading
+                trace('[XRay ClassCompiler] AFTER setFunctionParameterMapping');
+                trace('[XRay ClassCompiler] Current map size: ${Lambda.count(compiler.currentFunctionParameterMap)}');
+                for (key in compiler.currentFunctionParameterMap.keys()) {
+                    trace('[XRay ClassCompiler] Current: ${key} → ${compiler.currentFunctionParameterMap.get(key)}');
+                }
+                #end
             }
             
             var result = compiler.compileExpression(expr);
             
-            // Clear parameter mapping
-            if (args != null && args.length > 0) {
-                compiler.clearFunctionParameterMapping();
+            #if debug_state_threading
+            trace('[XRay ClassCompiler] AFTER compileExpression, BEFORE restore');
+            trace('[XRay ClassCompiler] Current map size: ${Lambda.count(compiler.currentFunctionParameterMap)}');
+            for (key in compiler.currentFunctionParameterMap.keys()) {
+                trace('[XRay ClassCompiler] Current: ${key} → ${compiler.currentFunctionParameterMap.get(key)}');
             }
+            #end
+            
+            // Restore the saved parameter map instead of clearing completely
+            compiler.currentFunctionParameterMap.clear();
+            for (key in savedMap.keys()) {
+                compiler.currentFunctionParameterMap.set(key, savedMap.get(key));
+            }
+            
+            #if debug_state_threading
+            trace('[XRay ClassCompiler] AFTER restore');
+            trace('[XRay ClassCompiler] Restored map size: ${Lambda.count(compiler.currentFunctionParameterMap)}');
+            for (key in compiler.currentFunctionParameterMap.keys()) {
+                trace('[XRay ClassCompiler] Restored: ${key} → ${compiler.currentFunctionParameterMap.get(key)}');
+            }
+            #end
             
             return result;
         }
