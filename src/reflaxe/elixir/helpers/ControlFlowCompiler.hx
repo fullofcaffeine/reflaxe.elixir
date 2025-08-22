@@ -5,6 +5,7 @@ package reflaxe.elixir.helpers;
 import haxe.macro.Type;
 import haxe.macro.Expr;
 import reflaxe.BaseCompiler;
+import reflaxe.elixir.ElixirCompiler;
 
 using reflaxe.helpers.NullHelper;
 using reflaxe.helpers.NameMetaHelper;
@@ -58,14 +59,14 @@ using StringTools;
 @:nullSafety(Off)
 class ControlFlowCompiler {
     
-    var compiler: Dynamic; // ElixirCompiler reference
+    var compiler: ElixirCompiler; // ElixirCompiler reference (NEVER Dynamic!)
     
     /**
      * Create a new control flow compiler
      * 
      * @param compiler The main ElixirCompiler instance
      */
-    public function new(compiler: Dynamic) {
+    public function new(compiler: ElixirCompiler) {
         this.compiler = compiler;
     }
     

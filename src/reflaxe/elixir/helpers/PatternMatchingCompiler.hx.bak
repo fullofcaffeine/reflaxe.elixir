@@ -5,8 +5,7 @@ package reflaxe.elixir.helpers;
 import haxe.macro.Type;
 import haxe.macro.Expr;
 import reflaxe.BaseCompiler;
-import reflaxe.elixir.ElixirCompiler;
-import reflaxe.elixir.helpers.NamingHelper;
+
 using reflaxe.helpers.NullHelper;
 using reflaxe.helpers.NameMetaHelper;
 using reflaxe.helpers.SyntaxHelper;
@@ -292,18 +291,8 @@ class PatternMatchingCompiler {
                 NamingHelper.toSnakeCase(v.name);
                 
             case TConst(c):
-                // WHY: TConstant vs Constant Type Distinction in Haxe Macro System
-                // TypedExpr uses TConstant (from typed AST), not Constant (from untyped AST)
-                // These are different enums: TConstant has TInt/TFloat/TString/TBool/TNull/TThis/TSuper
-                // while Constant has CInt/CFloat/CString/CIdent/CRegexp - they're incompatible!
-                // 
-                // WHAT: This was causing OCaml "index out of bounds" errors because Dynamic typing
-                // was hiding the type mismatch between TConstant and Constant parameters
-                // 
-                // HOW: Use LiteralCompiler.compileConstant(TConstant) instead of 
-                // ElixirCompiler.compileConstant(Constant) for proper pattern literal generation
-                // Examples: TInt(42) → "42", TString("test") → "\"test\"", TBool(true) → "true"
-                compiler.expressionDispatcher.literalCompiler.compileConstant(c);
+                // Literal pattern
+                compiler.compileConstant(c);
                 
             default:
                 // Complex pattern
@@ -439,9 +428,7 @@ class PatternMatchingCompiler {
     private function compilePattern(expr: TypedExpr): String {
         return switch (expr.expr) {
             case TConst(c):
-                // TConstant from typed AST - use LiteralCompiler for proper handling
-                // See compilePatternArgument above for detailed explanation of TConstant vs Constant
-                compiler.expressionDispatcher.literalCompiler.compileConstant(c);
+                compiler.compileConstant(c);
                 
             case TCall(_, _):
                 compileEnumPattern(expr);

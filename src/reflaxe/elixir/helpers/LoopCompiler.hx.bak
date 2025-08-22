@@ -1,9 +1,9 @@
 package reflaxe.elixir.helpers;
 
 import haxe.macro.Type;
-import reflaxe.elixir.ElixirCompiler;import reflaxe.elixir.helpers.CompilerUtilities;
-import reflaxe.elixir.ElixirCompiler;import reflaxe.elixir.helpers.NamingHelper;
-import reflaxe.elixir.ElixirCompiler;
+import reflaxe.elixir.helpers.CompilerUtilities;
+import reflaxe.elixir.helpers.NamingHelper;
+
 using Lambda;
 
 /**
