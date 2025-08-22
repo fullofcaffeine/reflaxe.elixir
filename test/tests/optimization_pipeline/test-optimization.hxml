@@ -1,0 +1,14 @@
+-cp .
+-cp ../../../src
+-cp ../../../std
+-lib reflaxe
+-main Main
+--macro reflaxe.elixir.OptimizationTestCompiler.Start()
+-D elixir
+-D elixir_output=out
+-D reflaxe_runtime
+# Enable full optimization to see maximum difference
+-D analyzer-optimize
+-dce full
+# Enable debug output
+-D debug_optimization_test
