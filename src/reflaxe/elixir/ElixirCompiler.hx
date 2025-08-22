@@ -840,7 +840,10 @@ class ElixirCompiler extends DirectToStringCompiler {
             // Use the comprehensive naming rule for framework annotations
             var namingRule = getComprehensiveNamingRule(classType);
             setOutputFileName(namingRule.fileName);
-            setOutputFileDir(namingRule.dirPath);
+            
+            // CRITICAL FIX: Prevent Reflaxe framework from receiving empty directory paths
+            var safeDir = namingRule.dirPath != null && namingRule.dirPath.length > 0 ? namingRule.dirPath : ".";
+            setOutputFileDir(safeDir);
         } else {
             // Use universal naming for regular classes
             setUniversalOutputPath(classType.name, classType.pack);
@@ -902,7 +905,13 @@ class ElixirCompiler extends DirectToStringCompiler {
         var namingRule = getUniversalNamingRule(moduleName, pack);
         trace('Universal naming: ${moduleName} → file: ${namingRule.fileName}, dir: ${namingRule.dirPath}');
         setOutputFileName(namingRule.fileName);
-        setOutputFileDir(namingRule.dirPath);
+        
+        // CRITICAL FIX: Prevent Reflaxe framework from receiving empty directory paths
+        // which can cause "index out of bounds" errors in path processing
+        var safeDir = namingRule.dirPath != null && namingRule.dirPath.length > 0 ? namingRule.dirPath : ".";
+        setOutputFileDir(safeDir);
+        
+        trace('DEBUG: setUniversalOutputPath completed successfully for ${moduleName}');
     }
     
     /**
@@ -1004,52 +1013,80 @@ class ElixirCompiler extends DirectToStringCompiler {
         
         // Set framework-aware file path BEFORE compilation using Reflaxe's built-in system
         setFrameworkAwareOutputPath(classType);
+        trace('DEBUG: setFrameworkAwareOutputPath completed for ${classType.name}');
         
         // Initialize source mapping for this class
         if (sourceMapOutputEnabled) {
+            trace('DEBUG: Starting source mapping for ${classType.name}');
             var className = classType.name;
             var actualOutputDir = this.output.outputDir != null ? this.output.outputDir : outputDirectory;
             
             // Annotation-aware file path generation for framework convention adherence
             var outputPath = PhoenixPathGenerator.generateAnnotationAwareOutputPath(classType, actualOutputDir, fileExtension);
             initSourceMapWriter(outputPath);
+            trace('DEBUG: Source mapping completed for ${classType.name}');
         }
+        trace('DEBUG: About to check ExUnit for ${classType.name}');
         
         // Check for ExUnit test classes first (before other annotations)
-        if (ExUnitCompiler.isExUnitTest(classType)) {
-            var result = ExUnitCompiler.compile(classType, this);
-            return result;
+        try {
+            trace('DEBUG: About to call ExUnitCompiler.isExUnitTest for ${classType.name}');
+            if (ExUnitCompiler.isExUnitTest(classType)) {
+                trace('DEBUG: ${classType.name} is an ExUnit test');
+                var result = ExUnitCompiler.compile(classType, this);
+                return result;
+            }
+            trace('DEBUG: ${classType.name} is NOT an ExUnit test, continuing');
+        } catch (e: Dynamic) {
+            trace('DEBUG: ERROR in ExUnit check for ${classType.name}: ${e}');
+            throw e;
         }
         
         // Use unified annotation system for detection, validation, and routing
+        trace('DEBUG: About to call AnnotationSystem.routeCompilation for ${classType.name}');
         var annotationResult = reflaxe.elixir.helpers.AnnotationSystem.routeCompilation(classType, varFields, funcFields);
+        trace('DEBUG: AnnotationSystem.routeCompilation completed for ${classType.name}');
         if (annotationResult != null) {
             return annotationResult;
         }
         
         // Check if this is a LiveView class that should use special compilation
+        trace('DEBUG: About to call AnnotationSystem.detectAnnotations for ${classType.name}');
         var annotationInfo = reflaxe.elixir.helpers.AnnotationSystem.detectAnnotations(classType);
+        trace('DEBUG: AnnotationSystem.detectAnnotations completed for ${classType.name}');
         if (annotationInfo.primaryAnnotation == ":liveview") {
             var result = compileLiveViewClass(classType, varFields, funcFields);
             return result;
         }
+        trace('DEBUG: Not a LiveView, continuing to ClassCompiler for ${classType.name}');
         
         // Use the enhanced ClassCompiler for proper struct/module generation
+        trace('DEBUG: About to create ClassCompiler for ${classType.name}');
         var classCompiler = new reflaxe.elixir.helpers.ClassCompiler(this.typer);
+        trace('DEBUG: ClassCompiler created, setting compiler for ${classType.name}');
         classCompiler.setCompiler(this);
+        trace('DEBUG: Compiler set, setting import optimizer for ${classType.name}');
         classCompiler.setImportOptimizer(importOptimizer);
+        trace('DEBUG: ClassCompiler setup complete for ${classType.name}');
         
         // Handle inheritance tracking
+        trace('DEBUG: Checking inheritance for ${classType.name}');
         if (classType.superClass != null) {
+            trace('DEBUG: ${classType.name} has superclass, adding for compilation');
             addModuleTypeForCompilation(TClassDecl(classType.superClass.t));
         }
+        trace('DEBUG: Inheritance check complete for ${classType.name}');
         
         // Handle interface tracking
+        trace('DEBUG: Checking interfaces for ${classType.name}');
         for (iface in classType.interfaces) {
             addModuleTypeForCompilation(TClassDecl(iface.t));
         }
+        trace('DEBUG: Interface check complete for ${classType.name}');
         
+        trace('DEBUG: About to call classCompiler.compileClass for ${classType.name}');
         var result = classCompiler.compileClass(classType, varFields, funcFields);
+        trace('DEBUG: classCompiler.compileClass completed for ${classType.name}');
         
         // Post-process to replace getAppName() calls with actual app name
         if (result != null) {
