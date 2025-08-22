@@ -230,6 +230,36 @@ class MethodCallCompiler {
         var methodName = compiler.getFieldName(fa);
         var objStr = compiler.compileExpression(obj);
         
+        #if debug_state_threading
+        trace('[XRay MethodCallCompiler] 🔍 Method call: ${objStr}.${methodName}() - StateThreading: ${compiler.isStateThreadingEnabled()}');
+        #end
+        
+        /**
+         * STATE THREADING TRANSFORMATION
+         * 
+         * WHY: Method calls on mutable structs need to capture return values
+         * WHAT: Transform struct.method() to struct = struct.method() for mutating methods
+         * HOW: Check if object is a struct reference and method is mutating
+         */
+        if (compiler.isStateThreadingEnabled() && isStructMethodCall(obj, fa)) {
+            #if debug_state_threading
+            trace('[XRay MethodCallCompiler] 🔧 Potential struct method call: ${objStr}.${methodName}()');
+            #end
+            
+            // Check if this is a mutating method that should capture return value
+            if (isMutatingStructMethod(obj, methodName)) {
+                var compiledArgs = args.map(arg -> compiler.compileExpression(arg));
+                var callExpression = objStr + "." + compiler.toElixirName(methodName) + "(" + compiledArgs.join(", ") + ")";
+                
+                #if debug_state_threading
+                trace('[XRay MethodCallCompiler] ✓ Transforming mutating method call: ${objStr} = ${callExpression}');
+                #end
+                
+                // Return the assignment form
+                return objStr + " = " + callExpression;
+            }
+        }
+        
         // Detect Phoenix.PubSub operations
         if (objStr == "Phoenix.PubSub" || objStr == "PubSub") {
             return compilePubSubCall(methodName, args);
@@ -751,6 +781,55 @@ class MethodCallCompiler {
             case _:
                 return false;
         }
+    }
+    
+    /**
+     * Check if a method call is on a struct instance
+     * 
+     * WHY: We only transform method calls on struct instances, not static calls
+     * WHAT: Detect if the object is a struct reference (local variable or field access)
+     * HOW: Check the object expression type and structure
+     */
+    private function isStructMethodCall(obj: TypedExpr, fa: FieldAccess): Bool {
+        // Check if object is a local variable or field access that could be a struct
+        switch (obj.expr) {
+            case TLocal(_):
+                // Local variable could be a struct instance
+                return true;
+            case TField(_, _):
+                // Field access could be accessing a struct field
+                return true;
+            case _:
+                // Other expressions are unlikely to be struct instances
+                return false;
+        }
+    }
+    
+    /**
+     * Check if a method on a struct is mutating and should capture return value
+     * 
+     * WHY: Only mutating methods need return value capture transformation
+     * WHAT: Identify methods that modify struct state
+     * HOW: Check method name patterns and known mutating operations
+     */
+    private function isMutatingStructMethod(obj: TypedExpr, methodName: String): Bool {
+        // Common mutating method patterns
+        var mutatingPatterns = [
+            "write", "add", "push", "pop", "remove", "clear", "set", "update",
+            "append", "prepend", "insert", "delete", "merge", "replace",
+            "quote_", "fields_string", "class_string"  // JsonPrinter specific methods
+        ];
+        
+        for (pattern in mutatingPatterns) {
+            if (methodName == pattern || methodName.indexOf(pattern) == 0) {
+                #if debug_state_threading
+                trace('[XRay MethodCallCompiler] ✓ Detected mutating method: ${methodName}');
+                #end
+                return true;
+            }
+        }
+        
+        return false;
     }
 }
 

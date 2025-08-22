@@ -69,6 +69,15 @@ class ClassCompiler {
         // CRITICAL: Automatically detect instance classes and treat them as structs
         // This fixes JsonPrinter, StringBuf, and all other instance-based classes
         var isStruct = hasStructMetadata(classType) || isInstanceClass(classType, varFields, funcFields);
+        
+        #if debug_state_threading
+        if (className == "JsonPrinter") {
+            trace('[XRay ClassCompiler] ====== JSONPRINTER ANALYSIS ======');
+            trace('[XRay ClassCompiler] hasStructMetadata: ${hasStructMetadata(classType)}');
+            trace('[XRay ClassCompiler] isInstanceClass: ${isInstanceClass(classType, varFields, funcFields)}');
+            trace('[XRay ClassCompiler] Final isStruct: ${isStruct}');
+        }
+        #end
         var isModule = hasModuleMetadata(classType);
         var isApplication = hasApplicationMetadata(classType);
         var isInterface = classType.isInterface;
@@ -592,6 +601,17 @@ class ClassCompiler {
         if (isInstance && isStructClass && mutabilityAnalyzer != null && funcField.expr != null) {
             mutabilityInfo = mutabilityAnalyzer.analyzeMethod(funcField.expr);
             shouldTransform = MutabilityAnalyzer.shouldTransformMethod(mutabilityInfo, isStructClass);
+            
+            #if debug_state_threading
+            if (currentClassName == "JsonPrinter") {
+                trace('[XRay ClassCompiler] JsonPrinter method ${funcName}:');
+                trace('[XRay ClassCompiler]   - isInstance: ${isInstance}');
+                trace('[XRay ClassCompiler]   - isStructClass: ${isStructClass}');
+                trace('[XRay ClassCompiler]   - isMutating: ${mutabilityInfo.isMutating}');
+                trace('[XRay ClassCompiler]   - mutatedFields: ${mutabilityInfo.mutatedFields}');
+                trace('[XRay ClassCompiler]   - shouldTransform: ${shouldTransform}');
+            }
+            #end
             
             #if debug_mutability
             trace('[ClassCompiler] Method ${funcName} mutability analysis:');

@@ -1251,6 +1251,9 @@ class ElixirCompiler extends DirectToStringCompiler {
                     trace('[XRay ElixirCompiler] ⚠️ Found _this but NO MAPPING available');
                     trace('[XRay ElixirCompiler] ⚠️ State threading enabled: ${isStateThreadingEnabled()}');
                     trace('[XRay ElixirCompiler] ⚠️ Parameter map size: ${currentFunctionParameterMap != null ? Lambda.count(currentFunctionParameterMap) : 0}');
+                    trace('[XRay ElixirCompiler] ⚠️ Available keys: ${currentFunctionParameterMap != null ? [for (k in currentFunctionParameterMap.keys()) k] : []}');
+                    trace('[XRay ElixirCompiler] ⚠️ Current function context: ${currentFunctionContext != null ? currentFunctionContext.structParamName : "null"}');
+                    trace('[XRay ElixirCompiler] ⚠️ Expression position: ${expr.pos}');
                     #end
                 }
             case _:
