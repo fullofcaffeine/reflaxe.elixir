@@ -38,6 +38,7 @@ import reflaxe.elixir.helpers.RepoCompiler;
 import reflaxe.elixir.helpers.AnnotationSystem;
 import reflaxe.elixir.helpers.EctoQueryAdvancedCompiler;
 import reflaxe.elixir.helpers.RepositoryCompiler;
+import reflaxe.elixir.helpers.FunctionCompiler;
 import reflaxe.elixir.helpers.EctoErrorReporter;
 import reflaxe.elixir.helpers.TypedefCompiler;
 import reflaxe.elixir.helpers.HxxCompiler;
@@ -140,6 +141,9 @@ class ElixirCompiler extends DirectToStringCompiler {
     // Variable substitution and renaming compiler for centralized variable handling
     private var substitutionCompiler: reflaxe.elixir.helpers.SubstitutionCompiler;
     
+    // Function compilation
+    private var functionCompiler: reflaxe.elixir.helpers.FunctionCompiler;
+    
     public var expressionDispatcher: reflaxe.elixir.helpers.ExpressionDispatcher;
     
     // Import optimization for clean import statements
@@ -187,6 +191,7 @@ class ElixirCompiler extends DirectToStringCompiler {
         this.arrayOptimizationCompiler = new reflaxe.elixir.helpers.ArrayOptimizationCompiler(this);
         // TODO: Re-enable after fixing interface dependencies
         // this.substitutionCompiler = new reflaxe.elixir.helpers.SubstitutionCompiler(this);
+        this.functionCompiler = new reflaxe.elixir.helpers.FunctionCompiler(this);
         this.expressionDispatcher = new reflaxe.elixir.helpers.ExpressionDispatcher(this);
         
         // Set compiler reference for delegation
@@ -1224,120 +1229,20 @@ class ElixirCompiler extends DirectToStringCompiler {
     /**
      * Helper: Compile function definition
      */
+    /**
+     * DELEGATION: Function compilation (moved to FunctionCompiler.hx)
+     * 
+     * ARCHITECTURAL DECISION: This function was moved to FunctionCompiler.hx as part of 
+     * function compilation logic consolidation. Function-specific compilation including
+     * parameter mapping, pipeline optimization, and LiveView callback handling belongs
+     * in a specialized compiler, not in the main compiler.
+     * 
+     * @param funcField The Haxe function data including name, parameters, and body  
+     * @param isStatic Whether this is a static function (currently unused)
+     * @return Complete Elixir function definition string
+     */
     public function compileFunction(funcField: ClassFuncData, isStatic: Bool = false): String {
-        var funcName = NamingHelper.getElixirFunctionName(funcField.field.name);
-        
-        // Build parameter list - check for LiveView callback override first
-        var paramStr = "";
-        var liveViewParams = reflaxe.elixir.LiveViewCompiler.getLiveViewCallbackParams(funcName);
-        
-        if (liveViewParams != null) {
-            // Use LiveView-specific parameter names for callbacks
-            paramStr = liveViewParams;
-        } else {
-            // Use actual parameter names converted to snake_case for regular functions
-            var params = [];
-            for (i in 0...funcField.args.length) {
-                var arg = funcField.args[i];
-                // Get the actual parameter name from tvar (consistent with setFunctionParameterMapping)
-                var originalName = if (arg.tvar != null) {
-                    arg.tvar.name;
-                } else {
-                    // Fallback to getName() if tvar is not available
-                    arg.getName();
-                }
-                var paramName = NamingHelper.toSnakeCase(originalName);
-                params.push(paramName);
-            }
-            paramStr = params.join(", ");
-        }
-        var result = '  @doc "Generated from Haxe ${funcField.field.name}"\n';
-        result += '  def ${funcName}(${paramStr}) do\n';
-        
-        if (funcField.expr != null) {
-            // Check if function body is a TBlock that could benefit from pipeline optimization
-            var compiledBody = switch(funcField.expr.expr) {
-                case TBlock(el) if (el.length > 1):
-                    // TEMPORARY: Disable pipeline optimization to test topLevel formatting
-                    // Check for pipeline optimization opportunities in function body
-                    var pipelinePattern = null; // pipelineOptimizer.detectPipelinePattern(el);
-                    
-                    if (pipelinePattern != null) {
-                        
-                        // Handle remaining statements with proper ordering for terminal operations
-                        var processedIndices = getProcessedStatementIndices(el, pipelinePattern);
-                        var preStatements = [];
-                        
-                        // Separate remaining expressions into pre-pipeline and potential terminal operations
-                        var preExpressions = [];
-                        var terminalReturnExpr: TypedExpr = null;
-                        
-                        for (i in 0...el.length) {
-                            if (processedIndices.indexOf(i) == -1) {
-                                var stmt = el[i];
-                                
-                                // TEMPORARY: Disable terminal operation logic for debugging
-                                // All statements go to preExpressions for now
-                                preExpressions.push(stmt);
-                            }
-                        }
-                        
-                        // Compile pre-pipeline statements (variable declarations, etc.)
-                        if (preExpressions.length > 0) {
-                            preStatements = compileBlockExpressionsWithContext(preExpressions);
-                        }
-                        
-                        // Generate pipeline with integrated terminal operation
-                        var finalPipelineCode: String;
-                        if (terminalReturnExpr != null) {
-                            // Extract the terminal function call from the return expression
-                            var terminalCall = extractTerminalCall(terminalReturnExpr, pipelinePattern.variable);
-                            if (terminalCall != null) {
-                                // Generate pipeline ending with terminal operation
-                                var pipelineCode = pipelineOptimizer.compilePipeline(pipelinePattern);
-                                finalPipelineCode = pipelineCode + "\n  |> " + terminalCall;
-                            } else {
-                                // Fallback: use original pipeline + compile terminal separately
-                                var pipelineCode = pipelineOptimizer.compilePipeline(pipelinePattern);
-                                var terminalCode = compileExpression(terminalReturnExpr);
-                                finalPipelineCode = pipelineCode + "\n" + terminalCode;
-                            }
-                        } else {
-                            // No terminal operation found - use regular pipeline
-                            finalPipelineCode = pipelineOptimizer.compilePipeline(pipelinePattern);
-                        }
-                        
-                        // Combine: pre-statements + integrated pipeline
-                        var allParts = [];
-                        if (preStatements.length > 0) allParts = allParts.concat(preStatements);
-                        allParts.push(finalPipelineCode);
-                        
-                        allParts.join("\n");
-                    } else {
-                        // No pipeline pattern - use regular compilation with topLevel = true for function bodies
-                        compileExpressionImpl(funcField.expr, true);
-                    }
-                    
-                case _:
-                    // Not a multi-statement block - use regular compilation with topLevel = true for function bodies
-                    compileExpressionImpl(funcField.expr, true);
-            };
-            
-            if (compiledBody != null && compiledBody.trim() != "") {
-                // Indent the function body properly
-                var indentedBody = compiledBody.split("\n").map(line -> line.length > 0 ? "    " + line : line).join("\n");
-                result += '${indentedBody}\n';
-            } else {
-                // Only use nil if compilation actually failed/returned empty
-                result += '    nil\n';
-            }
-        } else {
-            // No expression provided - this is a truly empty function
-            result += '    nil\n';
-        }
-        result += '  end\n\n';
-        
-        return result;
+        return functionCompiler.compileFunction(funcField, isStatic);
     }
     
     /**
