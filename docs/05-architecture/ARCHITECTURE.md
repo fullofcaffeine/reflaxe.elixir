@@ -811,3 +811,4 @@ npm test
 - [Reflaxe Documentation](https://somerandev.github.io/reflaxe/)
 - [Haxe Macro Documentation](https://haxe.org/manual/macro.html)
 - [TypedExpr API](https://api.haxe.org/haxe/macro/TypedExpr.html)
+- [Haxe Optimization Pipeline Investigation](HAXE_OPTIMIZATION_PIPELINE.md) - Research into leveraging Haxe's optimizer in Reflaxe
