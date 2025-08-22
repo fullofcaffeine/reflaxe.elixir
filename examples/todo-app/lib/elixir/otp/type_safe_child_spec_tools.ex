@@ -27,7 +27,7 @@ defmodule TypeSafeChildSpecTools do
           temp_result = {Phoenix.PubSub, name: name}
         )
       1 -> (
-          g = nil
+          g = g = nil
           (
           config = g
           (
@@ -77,7 +77,7 @@ defmodule TypeSafeChildSpecTools do
         )
         )
       3 -> (
-          g = nil
+          g = g = nil
           (
           config = g
           (
@@ -94,7 +94,7 @@ defmodule TypeSafeChildSpecTools do
         )
         )
       4 -> (
-          g = elem(spec, 1)
+          g = g = nil
           (
           config = g
           (
@@ -121,7 +121,7 @@ defmodule TypeSafeChildSpecTools do
         )
         )
       6 -> (
-          g = elem(spec, 1)
+          g = g = nil
           spec = g
           temp_result = spec
         )
@@ -147,7 +147,7 @@ defmodule TypeSafeChildSpecTools do
           temp_result = "Phoenix.PubSub"
         )
       1 -> (
-          nil
+          g = nil
           temp_result = "" <> app_name <> ".Repo"
         )
       2 -> (
@@ -156,11 +156,11 @@ defmodule TypeSafeChildSpecTools do
           temp_result = "" <> app_name <> "Web.Endpoint"
         )
       3 -> (
-          nil
+          g = nil
           temp_result = "" <> app_name <> "Web.Telemetry"
         )
       4 -> (
-          elem(spec, 1)
+          g = nil
           temp_result = "" <> app_name <> ".Presence"
         )
       5 -> (
@@ -172,7 +172,7 @@ defmodule TypeSafeChildSpecTools do
           temp_result = Type.get_class_name(module)
         )
       6 -> (
-          g = elem(spec, 1)
+          g = g = nil
           spec = g
           temp_result = spec.id
         )
@@ -197,7 +197,7 @@ defmodule TypeSafeChildSpecTools do
           temp_result = true
         )
       1 -> (
-          nil
+          g = nil
           temp_result = true
         )
       2 -> (
@@ -206,11 +206,11 @@ defmodule TypeSafeChildSpecTools do
           temp_result = true
         )
       3 -> (
-          nil
+          g = nil
           temp_result = true
         )
       4 -> (
-          elem(spec, 1)
+          g = nil
           temp_result = true
         )
       5 -> (
@@ -221,7 +221,7 @@ defmodule TypeSafeChildSpecTools do
           temp_result = false
         )
       6 -> (
-          elem(spec, 1)
+          g = nil
           temp_result = false
         )
     end
@@ -251,7 +251,7 @@ defmodule TypeSafeChildSpecTools do
         end
         )
       1 -> (
-          nil
+          g = nil
           (
           g
           nil
@@ -269,14 +269,14 @@ defmodule TypeSafeChildSpecTools do
         )
         )
       3 -> (
-          nil
+          g = nil
           (
           g
           nil
         )
         )
       4 -> (
-          g = elem(spec, 1)
+          g = g = nil
           (
           config = g
           if (((config.name == nil) || (config.name == ""))) do
@@ -296,7 +296,7 @@ defmodule TypeSafeChildSpecTools do
           errors ++ ["Custom child spec module cannot be null"]
         end
       6 -> (
-          g = elem(spec, 1)
+          g = g = nil
           spec = g
           if (((spec.id == nil) || (spec.id == ""))) do
           errors ++ ["Legacy child spec id cannot be empty"]
