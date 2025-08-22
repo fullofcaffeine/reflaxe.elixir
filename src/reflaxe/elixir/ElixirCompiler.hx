@@ -2302,105 +2302,14 @@ class ElixirCompiler extends DirectToStringCompiler {
      * Extract transformation logic from mapping body (TVar-based version)
      */
     private function extractTransformationFromBodyWithTVar(expr: TypedExpr, sourceTVar: TVar, targetVarName: String): String {
-        switch (expr.expr) {
-            case TBlock(exprs):
-                // Look for the actual transformation in the loop body
-                for (e in exprs) {
-                    switch (e.expr) {
-                        case TCall(eobj, args) if (args.length > 0):
-                            // This is likely _g.push(transformation) or similar
-                            // Check if it's an array push operation
-                            switch (eobj.expr) {
-                                case TField(_, fa):
-                                    // Extract and compile the transformation with variable mapping
-                                    return compileExpressionWithTVarSubstitution(args[0], sourceTVar, targetVarName);
-                                case _:
-                            }
-                        case TBinop(OpAssign, eleft, eright):
-                            // Assignment pattern like _g = _g ++ [transformation]
-                            // Look for list concatenation patterns
-                            switch (eright.expr) {
-                                case TBinop(OpAdd, _, etransform):
-                                    // _g = _g ++ [transformation] pattern
-                                    return compileExpressionWithTVarSubstitution(etransform, sourceTVar, targetVarName);
-                                case _:
-                                    return compileExpressionWithTVarSubstitution(eright, sourceTVar, targetVarName);
-                            }
-                        case TIf(econd, eif, eelse):
-                            // Conditional transformation
-                            var condition = compileExpressionWithTVarSubstitution(econd, sourceTVar, targetVarName);
-                            var thenValue = compileExpressionWithTVarSubstitution(eif, sourceTVar, targetVarName);
-                            var elseValue = eelse != null ? compileExpressionWithTVarSubstitution(eelse, sourceTVar, targetVarName) : targetVarName;
-                            
-                            return 'if ${condition}, do: ${thenValue}, else: ${elseValue}';
-                        case _:
-                            // Keep looking through other expressions
-                    }
-                }
-            case TIf(econd, eif, eelse):
-                // Direct conditional transformation
-                var condition = compileExpressionWithTVarSubstitution(econd, sourceTVar, targetVarName);
-                var thenValue = compileExpressionWithTVarSubstitution(eif, sourceTVar, targetVarName);
-                var elseValue = eelse != null ? compileExpressionWithTVarSubstitution(eelse, sourceTVar, targetVarName) : targetVarName;
-                
-                return 'if ${condition}, do: ${thenValue}, else: ${elseValue}';
-            case _:
-                // Try to compile the expression directly with variable mapping
-                return compileExpressionWithTVarSubstitution(expr, sourceTVar, targetVarName);
-        }
-        return targetVarName; // Fallback: no transformation
+        return substitutionCompiler.extractTransformationFromBodyWithTVar(expr, sourceTVar, targetVarName);
     }
 
     /**
      * Extract transformation logic from mapping body (string-based version)
      */
     private function extractTransformationFromBody(expr: TypedExpr, sourceVar: String, targetVar: String): String {
-        
-        switch (expr.expr) {
-            case TBlock(exprs):
-                // Look for the actual transformation in the loop body
-                for (e in exprs) {
-                    switch (e.expr) {
-                        case TCall(eobj, args) if (args.length > 0):
-                            // This is likely _g.push(transformation) or similar
-                            // Check if it's an array push operation
-                            switch (eobj.expr) {
-                                case TField(_, fa):
-                                    // Extract and compile the transformation with variable mapping
-                                    return compileExpressionWithVarMapping(args[0], sourceVar, targetVar);
-                                case _:
-                            }
-                        case TBinop(OpAssign, eleft, eright):
-                            // Assignment pattern like _g = _g ++ [transformation]
-                            // Look for list concatenation patterns
-                            switch (eright.expr) {
-                                case TBinop(OpAdd, _, etransform):
-                                    // _g = _g ++ [transformation] pattern
-                                    return compileExpressionWithVarMapping(etransform, sourceVar, targetVar);
-                                case _:
-                                    return compileExpressionWithVarMapping(eright, sourceVar, targetVar);
-                            }
-                        case TIf(econd, eif, eelse):
-                            // Conditional transformation
-                            var condition = compileExpressionWithVarMapping(econd, sourceVar, targetVar);
-                            var thenValue = compileExpressionWithVarMapping(eif, sourceVar, targetVar);
-                            var elseValue = eelse != null ? compileExpressionWithVarMapping(eelse, sourceVar, targetVar) : targetVar;
-                            return 'if ${condition}, do: ${thenValue}, else: ${elseValue}';
-                        case _:
-                            // Keep looking through other expressions
-                    }
-                }
-            case TIf(econd, eif, eelse):
-                // Direct conditional transformation
-                var condition = compileExpressionWithVarMapping(econd, sourceVar, targetVar);
-                var thenValue = compileExpressionWithVarMapping(eif, sourceVar, targetVar);
-                var elseValue = eelse != null ? compileExpressionWithVarMapping(eelse, sourceVar, targetVar) : targetVar;
-                return 'if ${condition}, do: ${thenValue}, else: ${elseValue}';
-            case _:
-                // Try to compile the expression directly with variable mapping
-                return compileExpressionWithVarMapping(expr, sourceVar, targetVar);
-        }
-        return targetVar; // Fallback: no transformation
+        return substitutionCompiler.extractTransformationFromBody(expr, sourceVar, targetVar);
     }
     
     /**
@@ -2468,9 +2377,7 @@ class ElixirCompiler extends DirectToStringCompiler {
      * @return The compiled expression with variables substituted
      */
     private function compileExpressionWithVarMapping(expr: TypedExpr, sourceVar: String, targetVar: String): String {
-        // Simplified: Always use aggressive substitution for consistency
-        // This ensures all TLocal variables are properly replaced regardless of the source variable
-        return compileExpressionWithAggressiveSubstitution(expr, targetVar);
+        return substitutionCompiler.compileExpressionWithVarMapping(expr, sourceVar, targetVar);
     }
     
     /**
@@ -2512,53 +2419,7 @@ class ElixirCompiler extends DirectToStringCompiler {
      * Used when normal loop variable detection fails
      */
     private function compileExpressionWithAggressiveSubstitution(expr: TypedExpr, targetVar: String): String {
-        switch (expr.expr) {
-            case TLocal(v):
-                var varName = getOriginalVarName(v);
-                // Use helper function for clean, maintainable variable substitution logic
-                if (shouldSubstituteVariable(varName, null, true)) {
-                    return targetVar;
-                }
-                return compileExpression(expr);
-                
-            case TField(e, fa):
-                // Handle field access with aggressive substitution
-                var obj = compileExpressionWithAggressiveSubstitution(e, targetVar);
-                var fieldName = getFieldName(fa);
-                return '${obj}.${fieldName}';
-                
-            case TUnop(op, postFix, e):
-                // Handle unary operations with aggressive substitution
-                var inner = compileExpressionWithAggressiveSubstitution(e, targetVar);
-                // Generate the unary operation inline
-                switch (op) {
-                    case OpNot: return '!${inner}';
-                    case OpNeg: return '-${inner}';
-                    case OpIncrement: return '${inner} + 1';
-                    case OpDecrement: return '${inner} - 1';
-                    case _: return compileExpression(expr);
-                }
-                
-            case TBinop(op, e1, e2):
-                // Handle binary operations with aggressive substitution
-                var left = compileExpressionWithAggressiveSubstitution(e1, targetVar);
-                var right = compileExpressionWithAggressiveSubstitution(e2, targetVar);
-                return '${left} ${compileBinop(op)} ${right}';
-                
-            case TCall(e, args):
-                // Handle method calls with aggressive substitution
-                var obj = compileExpressionWithAggressiveSubstitution(e, targetVar);
-                var compiledArgs = args.map(arg -> compileExpressionWithAggressiveSubstitution(arg, targetVar));
-                return '${obj}(${compiledArgs.join(", ")})';
-                
-            case TParenthesis(e):
-                // Handle parenthesized expressions
-                return "(" + compileExpressionWithAggressiveSubstitution(e, targetVar) + ")";
-                
-            case _:
-                // For other expression types, use regular compilation
-                return compileExpression(expr);
-        }
+        return substitutionCompiler.compileExpressionWithAggressiveSubstitution(expr, targetVar);
     }
 
     /**
@@ -2566,9 +2427,7 @@ class ElixirCompiler extends DirectToStringCompiler {
      * This replaces the complex __AGGRESSIVE__ marker system with a straightforward solution
      */
     private function extractTransformationFromBodyWithAggressiveSubstitution(expr: TypedExpr, targetVar: String): String {
-        // Simply compile the expression with aggressive substitution
-        // All TLocal variables will be replaced with the target variable
-        return compileExpressionWithAggressiveSubstitution(expr, targetVar);
+        return substitutionCompiler.extractTransformationFromBodyWithAggressiveSubstitution(expr, targetVar);
     }
     
     /**
