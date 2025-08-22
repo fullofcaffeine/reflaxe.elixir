@@ -12,8 +12,8 @@ defmodule FlashTypeTools do
     @param type Flash type enum value
     @return String Phoenix-compatible string representation
   """
-  @spec to_string(FlashType.t()) :: String.t()
-  def to_string(type) do
+  @spec format(FlashType.t()) :: String.t()
+  def format(type) do
     (
           temp_result = nil
           case (elem(type, 0)) do
