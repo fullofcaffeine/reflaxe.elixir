@@ -139,6 +139,37 @@ haxe.elixir/                          # Project root
 
 **Key Insight**: Reflaxe.Elixir is a **macro-time transpiler**, not a runtime library. All transpilation happens during Haxe compilation.
 
+## ⚠️ CRITICAL: NO BAND-AID FIXES EVER
+
+**FUNDAMENTAL RULE: NEVER USE POST-PROCESSING OR BAND-AID FIXES. ALWAYS FIX THE ROOT CAUSE.**
+
+**What counts as a band-aid fix:**
+- ❌ **Post-processing filters** to clean up bad output after generation
+- ❌ **String manipulation** to fix generated code issues  
+- ❌ **Workarounds** that patch symptoms instead of fixing the cause
+- ❌ **"Quick fixes"** that add complexity without solving the underlying issue
+- ❌ **Conditional patches** for specific edge cases without understanding why they occur
+
+**The correct approach:**
+- ✅ **Understand WHY the issue happens** - Find the exact compilation step causing problems
+- ✅ **Fix at the source** - Modify the compiler logic that generates the problematic code
+- ✅ **Test the root fix** - Ensure the underlying problem is completely resolved
+- ✅ **Comprehensive solution** - Fix should work for all similar cases, not just the specific instance
+
+**Example of wrong vs right approach:**
+```haxe
+// ❌ WRONG: Band-aid fix
+var result = patternMatchingCompiler.compile(...);
+result = cleanupOrphanedVariables(result); // Post-processing patch
+return result;
+
+// ✅ RIGHT: Root cause fix  
+// Modify the pattern matching compiler itself to not generate orphaned variables
+// by detecting empty case bodies and avoiding parameter extraction
+```
+
+**Remember**: If you're adding a "cleanup" step, you're probably doing it wrong. Fix the generator, not the output.
+
 ## ⚠️ CRITICAL: Comprehensive Documentation Rule for ALL Compiler Code
 
 **FUNDAMENTAL RULE: Every piece of compiler logic MUST include comprehensive documentation and XRay debug traces.**

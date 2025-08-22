@@ -165,6 +165,16 @@ class ControlFlowCompiler {
                 statements.push(mergedAssignment.compiledCode);
                 i = mergedAssignment.nextIndex;
             } else {
+                // Check for unused TEnumParameter patterns before normal compilation
+                if (isUnusedEnumParameterExpression(el, i)) {
+                    #if debug_control_flow_compiler
+                    trace('[XRay ControlFlowCompiler] ✓ SKIPPING unused TEnumParameter at index ${i}');
+                    #end
+                    // Skip this unused enum parameter extraction
+                    i++;
+                    continue;
+                }
+                
                 // Normal expression compilation
                 var compiled = compiler.compileExpression(el[i], topLevel);
                 if (compiled != null && compiled.length > 0) {
@@ -730,11 +740,113 @@ class ControlFlowCompiler {
     }
     
     /**
-     * TODO: Future implementation will contain the extracted logic:
+     * Detect if a TEnumParameter expression is unused (orphaned 'g' variable pattern)
+     * 
+     * WHY: Haxe generates TEnumParameter expressions for enum destructuring even in empty 
+     *      case bodies with only comments. This creates unused 'g = elem(spec, 1)' followed
+     *      by standalone 'g' references that serve no purpose.
+     * 
+     * WHAT: Analyze the upcoming expressions to detect if this TEnumParameter:
+     *       1. Extracts a parameter that gets assigned to 'g' variable
+     *       2. Is followed by a standalone 'g' local reference  
+     *       3. Has no other meaningful usage of the extracted parameter
+     * 
+     * HOW: Look ahead in the expression list to find the pattern:
+     *      - TEnumParameter → generates 'g = elem(...)'
+     *      - TLocal(g) → generates standalone 'g' 
+     *      - No other usage → indicates orphaned variable
+     * 
+     * @param expressions Array of expressions to analyze
+     * @param currentIndex Current position in the expression array
+     * @return True if this TEnumParameter should be skipped to prevent orphaned variables
+     */
+    private function isUnusedEnumParameterExpression(expressions: Array<TypedExpr>, currentIndex: Int): Bool {
+        #if debug_control_flow_compiler
+        trace('[XRay ControlFlowCompiler] CHECKING FOR UNUSED ENUM PARAMETER at index ${currentIndex}');
+        #end
+        
+        if (currentIndex >= expressions.length) return false;
+        
+        var currentExpr = expressions[currentIndex];
+        
+        // Check if current expression is TEnumParameter
+        var isEnumParam = switch (currentExpr.expr) {
+            case TEnumParameter(_, _, _): true;
+            case _: false;
+        };
+        
+        if (!isEnumParam) {
+            #if debug_control_flow_compiler
+            trace('[XRay ControlFlowCompiler] ❌ Not a TEnumParameter expression');
+            #end
+            return false;
+        }
+        
+        #if debug_control_flow_compiler
+        trace('[XRay ControlFlowCompiler] ✓ Found TEnumParameter, checking for orphaned pattern');
+        #end
+        
+        // Look ahead for the orphaned variable pattern
+        // Pattern: TEnumParameter followed by TLocal(g) with no meaningful usage
+        var nextIndex = currentIndex + 1;
+        if (nextIndex >= expressions.length) return false;
+        
+        var nextExpr = expressions[nextIndex];
+        
+        // Check if next expression is a TLocal reference to 'g' 
+        var hasOrphanedLocal = switch (nextExpr.expr) {
+            case TLocal(tvar): 
+                var isGVariable = tvar.name == "g" || tvar.name.startsWith("g") || tvar.name.contains("_g");
+                #if debug_control_flow_compiler
+                if (isGVariable) {
+                    trace('[XRay ControlFlowCompiler] ✓ Found orphaned local variable: ${tvar.name}');
+                } else {
+                    trace('[XRay ControlFlowCompiler] ❌ Local variable not orphaned: ${tvar.name}');
+                }
+                #end
+                isGVariable;
+            case _: 
+                #if debug_control_flow_compiler
+                trace('[XRay ControlFlowCompiler] ❌ Next expression not TLocal');
+                #end
+                false;
+        };
+        
+        if (!hasOrphanedLocal) return false;
+        
+        // Check if there are no meaningful expressions after the orphaned local
+        // This indicates the parameter extraction serves no purpose
+        var hasSubsequentUsage = false;
+        for (i in (nextIndex + 1)...expressions.length) {
+            var expr = expressions[i];
+            switch (expr.expr) {
+                case TConst(TString(_)): continue; // Skip string constants (comments)
+                case TConst(TNull): continue;      // Skip null constants
+                case TBlock([]): continue;         // Skip empty blocks
+                case _: 
+                    hasSubsequentUsage = true;
+                    break;
+            }
+        }
+        
+        var isOrphaned = !hasSubsequentUsage;
+        
+        #if debug_control_flow_compiler
+        if (isOrphaned) {
+            trace('[XRay ControlFlowCompiler] ⚠️  DETECTED ORPHANED ENUM PARAMETER - will skip compilation');
+        } else {
+            trace('[XRay ControlFlowCompiler] ✓ Enum parameter has subsequent usage - will compile normally');
+        }
+        #end
+        
+        return isOrphaned;
+    }
+    
+    /**
+     * TODO: Future implementation will contain additional extracted logic:
      * 
      * - Full TBlock compilation with variable collision detection
-     * - Reflect.fields pattern optimization
-     * - Variable renaming for desugared code (_g variables)
+     * - Reflect.fields pattern optimization  
      * - Y combinator detection and generation
      * - Pipeline pattern optimization
      * - Complex control flow nesting handling
