@@ -315,7 +315,15 @@ class OperatorCompiler {
     /**
      * Compile compound assignment operators (+=, -=, *=, etc.)
      * 
-     * WHY: Compound assignments need to handle Elixir's immutability patterns
+     * WHY: Compound assignments need to handle Elixir's immutability patterns.
+     * With state threading, field compound assignments need special transformation.
+     * 
+     * WHAT: Transform x += y to x = x + y, with special handling for struct fields
+     * in state threading mode.
+     * 
+     * HOW:
+     * - Normal: x += y becomes x = x + y
+     * - State threading field: this.count += 1 becomes struct = %{struct | count: struct.count + 1}
      * 
      * @param op The inner binary operator (+, -, *, etc.)
      * @param e1 Left side expression (variable being assigned to)
@@ -330,7 +338,73 @@ class OperatorCompiler {
         trace('[XRay OperatorCompiler] Inner operator: ${op}');
         #end
         
-        // For compound assignment, we need to expand: x += y → x = x + y
+        /**
+         * STATE THREADING CHECK FOR COMPOUND ASSIGNMENTS
+         * 
+         * WHY: Field compound assignments need Map update syntax in state threading
+         * WHAT: Check if this is a field assignment that needs transformation
+         * HOW: Transform this.field += value to struct = %{struct | field: struct.field + value}
+         */
+        if (compiler.isStateThreadingEnabled() && isFieldAssignment(e1)) {
+            switch (e1.expr) {
+                case TField(obj, fieldAccess):
+                    // Check if this is a 'this' field access
+                    var isThisAccess = switch (obj.expr) {
+                        case TConst(TThis): true;
+                        case TLocal(v) if (v.name == "this" || v.name == "_this"): true;
+                        case _: false;
+                    };
+                    
+                    if (isThisAccess) {
+                        // Extract field name
+                        var fieldName = switch (fieldAccess) {
+                            case FInstance(_, _, cf) | FStatic(_, cf) | FAnon(cf): 
+                                NamingHelper.toSnakeCase(cf.get().name);
+                            case FEnum(_, ef): 
+                                NamingHelper.toSnakeCase(ef.name);
+                            case FClosure(_, cf): 
+                                NamingHelper.toSnakeCase(cf.get().name);
+                            case FDynamic(s): 
+                                NamingHelper.toSnakeCase(s);
+                            case _: 
+                                "unknown_field";
+                        };
+                        
+                        // Build the operation expression
+                        var operation = switch(op) {
+                            case OpAdd: 
+                                if (isStringConcatenation(e1, e2)) {
+                                    'struct.${fieldName} <> ${right}';
+                                } else {
+                                    'struct.${fieldName} + ${right}';
+                                }
+                            case OpSub: 'struct.${fieldName} - ${right}';
+                            case OpMult: 'struct.${fieldName} * ${right}';
+                            case OpDiv: 'struct.${fieldName} / ${right}';
+                            case OpMod: 'rem(struct.${fieldName}, ${right})';
+                            case OpXor: 'Bitwise.bxor(struct.${fieldName}, ${right})';
+                            case OpShl: 'Bitwise.bsl(struct.${fieldName}, ${right})';
+                            case OpShr: 'Bitwise.bsr(struct.${fieldName}, ${right})';
+                            case OpUShr: 'Bitwise.bsr(struct.${fieldName}, ${right})';
+                            case OpOr: 'struct.${fieldName} or ${right}';
+                            case OpAnd: 'struct.${fieldName} and ${right}';
+                            default: 'struct.${fieldName} UNKNOWN_COMPOUND_OP_${op} ${right}';
+                        };
+                        
+                        #if debug_state_threading
+                        trace('[OperatorCompiler] State threading compound assignment: this.${fieldName} ${op}= value');
+                        trace('[OperatorCompiler] Transforming to: struct = %{struct | ${fieldName}: ${operation}}');
+                        #end
+                        
+                        // Return the struct update
+                        return 'struct = %{struct | ${fieldName}: ${operation}}';
+                    }
+                case _:
+                    // Not a field assignment
+            }
+        }
+        
+        // Normal compound assignment expansion: x += y → x = x + y
         var expandedOp = switch(op) {
             case OpAdd: 
                 if (isStringConcatenation(e1, e2)) {
@@ -407,9 +481,20 @@ class OperatorCompiler {
     /**
      * Compile field assignment using Elixir Map update syntax
      * 
-     * WHY: Elixir structs/maps are immutable, can't use obj.field = value syntax
-     * WHAT: Transform field assignment to Map update pattern
-     * HOW: Generate %{obj | field: value} or Map.put(obj, :field, value) syntax
+     * WHY: Elixir structs/maps are immutable, can't use obj.field = value syntax.
+     * With state threading enabled, we also need to update the struct variable itself.
+     * 
+     * WHAT: Transform field assignment to Map update pattern, with special handling
+     * for state threading mode where assignments must update the struct variable.
+     * 
+     * HOW: 
+     * - Normal mode: Generate %{obj | field: value}
+     * - State threading: Generate struct = %{struct | field: value}
+     * 
+     * EDGE CASES:
+     * - Nested field updates (this.data.value)
+     * - Field updates with operations (this.count += 1)
+     * - Complex update patterns (struct.b = struct.b <> "text")
      * 
      * @param fieldExpr The field access expression (left-hand side)
      * @param valueExpr The value expression (right-hand side) 
@@ -418,26 +503,81 @@ class OperatorCompiler {
     private function compileFieldAssignment(fieldExpr: TypedExpr, valueExpr: TypedExpr): String {
         switch (fieldExpr.expr) {
             case TField(obj, fieldAccess):
-                var objCompiled = compiler.compileExpression(obj);
+                /**
+                 * STATE THREADING CHECK
+                 * 
+                 * WHY: When state threading is enabled, field assignments must update the struct variable
+                 * WHAT: Check if we're in state threading mode and if the object is 'this'
+                 * HOW: Transform this.field = value to struct = %{struct | field: value}
+                 */
+                var isStateThreading = compiler.isStateThreadingEnabled();
+                var isThisAccess = false;
+                
+                // Check if we're accessing 'this' (which maps to 'struct' in state threading)
+                switch (obj.expr) {
+                    case TConst(TThis):
+                        isThisAccess = true;
+                    case TLocal(v) if (v.name == "this" || v.name == "_this"):
+                        isThisAccess = true;
+                    case _:
+                        // Not a 'this' access
+                }
+                
+                // In state threading mode with 'this' access, use 'struct' directly
+                var objCompiled = if (isStateThreading && isThisAccess) {
+                    "struct";
+                } else {
+                    compiler.compileExpression(obj);
+                };
                 var valueCompiled = compiler.compileExpression(valueExpr);
                 
-                // Extract field name
+                // Extract field name and convert to snake_case for Elixir
                 var fieldName = switch (fieldAccess) {
-                    case FInstance(_, _, cf) | FStatic(_, cf) | FAnon(cf): cf.get().name;
-                    case FEnum(_, ef): ef.name;
-                    case FClosure(_, cf): cf.get().name;
-                    case FDynamic(s): s;
-                    case _: "unknown_field";
+                    case FInstance(_, _, cf) | FStatic(_, cf) | FAnon(cf): 
+                        NamingHelper.toSnakeCase(cf.get().name);
+                    case FEnum(_, ef): 
+                        NamingHelper.toSnakeCase(ef.name);
+                    case FClosure(_, cf): 
+                        NamingHelper.toSnakeCase(cf.get().name);
+                    case FDynamic(s): 
+                        NamingHelper.toSnakeCase(s);
+                    case _: 
+                        "unknown_field";
                 };
                 
                 // Check if this is a complex field assignment that needs special handling
                 // Pattern: struct.b = struct.b <> "something" where struct was just reassigned
                 if (isComplexFieldUpdatePattern(objCompiled, fieldName, valueExpr)) {
-                    return compileComplexFieldUpdate(objCompiled, fieldName, valueExpr);
+                    var complexUpdate = compileComplexFieldUpdate(objCompiled, fieldName, valueExpr);
+                    
+                    // Apply state threading transformation if needed
+                    if (isStateThreading && isThisAccess) {
+                        return 'struct = ${complexUpdate}';
+                    }
+                    return complexUpdate;
                 }
                 
-                // Generate Map update syntax - use pattern %{obj | field: value}
-                return '%{${objCompiled} | ${fieldName}: ${valueCompiled}}';
+                // Generate Map update syntax
+                var mapUpdate = '%{${objCompiled} | ${fieldName}: ${valueCompiled}}';
+                
+                /**
+                 * STATE THREADING TRANSFORMATION
+                 * 
+                 * WHY: In state threading mode, we need to update the struct variable
+                 * WHAT: Wrap the map update in a struct assignment
+                 * HOW: struct = %{struct | field: value}
+                 */
+                if (isStateThreading && isThisAccess) {
+                    #if debug_state_threading
+                    trace('[OperatorCompiler] State threading field assignment: this.${fieldName} = value');
+                    trace('[OperatorCompiler] Transforming to: struct = %{struct | ${fieldName}: value}');
+                    #end
+                    
+                    return 'struct = ${mapUpdate}';
+                }
+                
+                // Normal mode - just return the map update
+                return mapUpdate;
                 
             case _:
                 // Fallback - shouldn't happen but handle gracefully

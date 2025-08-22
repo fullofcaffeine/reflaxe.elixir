@@ -93,7 +93,7 @@ class PatternMatchingCompiler {
             #if debug_pattern_matching
             trace("[PatternMatchingCompiler] Using with statement optimization");
             #end
-            return compileWithStatement(switchExpr, cases, defaultExpr);
+            return compileWithStatement(switchExpr, cases, defaultExpr, context);
         }
         
         // Check for enum type handling
@@ -105,9 +105,9 @@ class PatternMatchingCompiler {
             
             // Special handling for Option and Result types
             if (isOptionType(enumType)) {
-                return compileOptionSwitch(switchExpr, cases, defaultExpr);
+                return compileOptionSwitch(switchExpr, cases, defaultExpr, context);
             } else if (isResultType(enumType)) {
-                return compileResultSwitch(switchExpr, cases, defaultExpr);
+                return compileResultSwitch(switchExpr, cases, defaultExpr, context);
             }
         }
         
@@ -129,7 +129,8 @@ class PatternMatchingCompiler {
     public function compileWithStatement(
         switchExpr: TypedExpr,
         cases: Array<{values: Array<TypedExpr>, expr: TypedExpr}>,
-        defaultExpr: Null<TypedExpr>
+        defaultExpr: Null<TypedExpr>,
+        ?context: reflaxe.elixir.helpers.ControlFlowCompiler.FunctionContext
     ): String {
         
         var exprStr = compiler.compileExpression(switchExpr);
@@ -139,7 +140,7 @@ class PatternMatchingCompiler {
         for (caseData in cases) {
             for (value in caseData.values) {
                 var pattern = compilePattern(value);
-                var body = compilePatternBody(caseData.expr);
+                var body = compilePatternBody(caseData.expr, context);
                 
                 if (isSuccessPattern(pattern)) {
                     patterns.push('${pattern} <- ${exprStr}');
@@ -386,10 +387,49 @@ class PatternMatchingCompiler {
             // Check if the body is a TBlock and pass context for field assignment transformation
             var body = switch (caseData.expr.expr) {
                 case TBlock(el):
+                    #if debug_state_threading
+                    trace('[XRay compileStandardCase] TBlock case body with ${el.length} expressions');
+                    trace('[XRay compileStandardCase] Context: ${context != null ? "exists" : "null"}');
+                    if (context != null) {
+                        trace('[XRay compileStandardCase] structParamName: ${context.structParamName}');
+                    }
+                    #end
                     // Pass context to ControlFlowCompiler for _this replacement
                     compiler.expressionDispatcher.controlFlowCompiler.compileBlock(el, false, context);
                 default:
-                    compiler.compileExpression(caseData.expr);
+                    #if debug_state_threading
+                    trace('[XRay compileStandardCase] Non-TBlock case body: ${caseData.expr.expr}');
+                    trace('[XRay compileStandardCase] Expression type: ${Type.enumConstructor(caseData.expr.expr)}');
+                    trace('[XRay compileStandardCase] Context: ${context != null ? "exists" : "null"}');
+                    if (context != null) {
+                        trace('[XRay compileStandardCase] structParamName: ${context.structParamName}');
+                    }
+                    #end
+                    // Check if this is a direct field assignment that needs transformation
+                    if (context != null && context.structParamName != null) {
+                        #if debug_state_threading
+                        trace('[XRay compileStandardCase] Checking for direct field assignment with context.structParamName = ${context.structParamName}');
+                        #end
+                        // Try to transform direct field assignments
+                        var directAssignment = compiler.expressionDispatcher.controlFlowCompiler.analyzeDirectFieldAssignment(caseData.expr, context);
+                        if (directAssignment != null) {
+                            #if debug_state_threading
+                            trace('[XRay compileStandardCase] ✓ Direct assignment found, using transformed code');
+                            trace('[XRay compileStandardCase] Transformed: ${directAssignment.compiledCode}');
+                            #end
+                            directAssignment.compiledCode;
+                        } else {
+                            #if debug_state_threading
+                            trace('[XRay compileStandardCase] ✗ No direct assignment found, using normal compilation');
+                            #end
+                            compiler.compileExpression(caseData.expr);
+                        }
+                    } else {
+                        #if debug_state_threading
+                        trace('[XRay compileStandardCase] ✗ No context or structParamName, using normal compilation');
+                        #end
+                        compiler.compileExpression(caseData.expr);
+                    }
             };
             
             for (pattern in patterns) {
@@ -398,7 +438,8 @@ class PatternMatchingCompiler {
         }
         
         if (defaultExpr != null) {
-            caseStrings.push('  _ -> ${compiler.compileExpression(defaultExpr)}');
+            var defaultBody = compilePatternBody(defaultExpr, context);
+            caseStrings.push('  _ -> ${defaultBody}');
         }
         
         return 'case ${exprStr} do\n${caseStrings.join("\n")}\nend';
@@ -410,7 +451,8 @@ class PatternMatchingCompiler {
     private function compileOptionSwitch(
         switchExpr: TypedExpr,
         cases: Array<{values: Array<TypedExpr>, expr: TypedExpr}>,
-        defaultExpr: Null<TypedExpr>
+        defaultExpr: Null<TypedExpr>,
+        ?context: reflaxe.elixir.helpers.ControlFlowCompiler.FunctionContext
     ): String {
         
         var exprStr = compiler.compileExpression(switchExpr);
@@ -419,13 +461,14 @@ class PatternMatchingCompiler {
         for (caseData in cases) {
             for (value in caseData.values) {
                 var pattern = compileEnumPattern(value);
-                var body = compilePatternBody(caseData.expr);
+                var body = compilePatternBody(caseData.expr, context);
                 caseStrings.push('  ${pattern} -> ${body}');
             }
         }
         
         if (defaultExpr != null) {
-            caseStrings.push('  _ -> ${compiler.compileExpression(defaultExpr)}');
+            var defaultBody = compilePatternBody(defaultExpr, context);
+            caseStrings.push('  _ -> ${defaultBody}');
         }
         
         return 'case ${exprStr} do\n${caseStrings.join("\n")}\nend';
@@ -437,10 +480,11 @@ class PatternMatchingCompiler {
     private function compileResultSwitch(
         switchExpr: TypedExpr,
         cases: Array<{values: Array<TypedExpr>, expr: TypedExpr}>,
-        defaultExpr: Null<TypedExpr>
+        defaultExpr: Null<TypedExpr>,
+        ?context: reflaxe.elixir.helpers.ControlFlowCompiler.FunctionContext
     ): String {
         
-        return compileOptionSwitch(switchExpr, cases, defaultExpr); // Similar logic
+        return compileOptionSwitch(switchExpr, cases, defaultExpr, context); // Similar logic
     }
     
     /**
@@ -496,10 +540,14 @@ class PatternMatchingCompiler {
      * @param expr The case body expression
      * @return Compiled expression with field assignment transformations applied
      */
-    private function compilePatternBody(expr: TypedExpr): String {
+    private function compilePatternBody(expr: TypedExpr, ?context: reflaxe.elixir.helpers.ControlFlowCompiler.FunctionContext): String {
         #if debug_pattern_matching
         trace("[XRay PatternMatchingCompiler] CASE BODY COMPILATION START");
         trace('[XRay PatternMatchingCompiler] Body expression type: ${expr.expr}');
+        trace('[XRay PatternMatchingCompiler] Context received: ${context != null ? "yes" : "no"}');
+        if (context != null && context.structParamName != null) {
+            trace('[XRay PatternMatchingCompiler] Context structParamName: ${context.structParamName}');
+        }
         #end
         
         return switch (expr.expr) {
@@ -510,15 +558,11 @@ class PatternMatchingCompiler {
                 for (i in 0...el.length) {
                     trace('[XRay PatternMatchingCompiler] Expression ${i}: ${el[i].expr}');
                 }
+                trace('[XRay PatternMatchingCompiler] Passing context to compileBlock: ${context != null ? "yes" : "no"}');
                 #end
                 
-                // Create function context for field assignment transformations
-                // For now, assume "struct" as the parameter name for JsonPrinter-style functions
-                var context: reflaxe.elixir.helpers.ControlFlowCompiler.FunctionContext = {
-                    structParamName: "struct"
-                };
-                
-                // Delegate to ControlFlowCompiler for block expressions with field assignment detection
+                // Use the passed context if available, otherwise don't pass context
+                // This allows proper state threading transformation when context is provided
                 var result = compiler.expressionDispatcher.controlFlowCompiler.compileBlock(el, false, context);
                 
                 #if debug_pattern_matching
@@ -534,7 +578,7 @@ class PatternMatchingCompiler {
                 #end
                 
                 // Recursively process the parentheses content - this might be a TBlock!
-                var result = compilePatternBody(e);
+                var result = compilePatternBody(e, context);
                 
                 #if debug_pattern_matching
                 trace('[XRay PatternMatchingCompiler] TParenthesis result: ${result.substring(0, 100)}...');
@@ -546,10 +590,40 @@ class PatternMatchingCompiler {
             case _:
                 #if debug_pattern_matching
                 trace("[XRay PatternMatchingCompiler] ✓ USING standard compilation for non-block");
+                trace('[XRay PatternMatchingCompiler] Context available: ${context != null}');
+                if (context != null) {
+                    trace('[XRay PatternMatchingCompiler] structParamName: ${context.structParamName}');
+                }
                 #end
+                
+                // If we have context, temporarily set parameter mapping for _this replacement
+                var hadMapping = false;
+                var originalMapping = null;
+                if (context != null && context.structParamName != null) {
+                    originalMapping = compiler.currentFunctionParameterMap.get("_this");
+                    hadMapping = originalMapping != null;
+                    compiler.currentFunctionParameterMap.set("_this", context.structParamName);
+                    
+                    #if debug_pattern_matching
+                    trace('[XRay PatternMatchingCompiler] ✓ Set temporary _this mapping to: ${context.structParamName}');
+                    #end
+                }
                 
                 // Normal expression compilation for non-block expressions
                 var result = compiler.compileExpression(expr);
+                
+                // Restore original mapping state
+                if (context != null && context.structParamName != null) {
+                    if (hadMapping) {
+                        compiler.currentFunctionParameterMap.set("_this", originalMapping);
+                    } else {
+                        compiler.currentFunctionParameterMap.remove("_this");
+                    }
+                    
+                    #if debug_pattern_matching
+                    trace('[XRay PatternMatchingCompiler] ✓ Restored original _this mapping state');
+                    #end
+                }
                 
                 #if debug_pattern_matching
                 trace('[XRay PatternMatchingCompiler] Standard result: ${result.substring(0, 100)}...');

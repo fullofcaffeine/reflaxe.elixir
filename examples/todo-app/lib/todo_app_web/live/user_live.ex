@@ -3,10 +3,10 @@ defmodule UserLive do
 
   @doc "Generated from Haxe new"
   def __struct__() do
-    %{__MODULE__ | showForm: false}
-    %{__MODULE__ | searchTerm: ""}
+    %{__MODULE__ | show_form: false}
+    %{__MODULE__ | search_term: ""}
     %{__MODULE__ | changeset: nil}
-    %{__MODULE__ | selectedUser: nil}
+    %{__MODULE__ | selected_user: nil}
     %{__MODULE__ | users: []}
   end
 

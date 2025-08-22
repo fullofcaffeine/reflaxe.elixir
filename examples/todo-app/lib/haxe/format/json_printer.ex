@@ -49,7 +49,7 @@ defmodule JsonPrinter do
   @spec print(term(), Null.t(), Null.t()) :: String.t()
   def print(o, replacer, space) do
     (
-          printer = Haxe.Format.JsonPrinter.new(&JsonPrinter.replacer/2, space)
+          printer = Haxe.Format.JsonPrinter.new(replacer, space)
           printer.write("", o)
           printer.buf.b
         )
@@ -57,7 +57,7 @@ defmodule JsonPrinter do
 
   # Instance functions
   @doc "Function write"
-  @spec write(t(), term(), term()) :: nil
+  @spec write(t(), term(), term()) :: t()
   def write(%__MODULE__{} = struct, k, v) do
     (
           if ((struct.replacer != nil)) do
@@ -66,8 +66,8 @@ defmodule JsonPrinter do
           (
           g = Type.typeof(v)
           case (elem(g, 0)) do
-      0 -> _this = %{_this.buf | b: "null"}
-      1 -> _this = %{_this.buf | b: Std.string(v)}
+      0 -> struct = %{struct.buf | b: "null"}
+      1 -> struct = %{struct.buf | b: Std.string(v)}
       2 -> (
           temp_string = nil
           if (Math.is_finite(v)) do
@@ -78,9 +78,9 @@ defmodule JsonPrinter do
           v = temp_string
           _this = %{_this.buf | b: Std.string(v)}
         )
-      3 -> _this = %{_this.buf | b: Std.string(v)}
+      3 -> struct = %{struct.buf | b: Std.string(v)}
       4 -> struct.fields_string(v, Reflect.fields(v))
-      5 -> _this = %{_this.buf | b: "\"<fun>\""}
+      5 -> struct = %{struct.buf | b: "\"<fun>\""}
       6 -> (
           g = elem(g, 1)
           c = g
@@ -165,10 +165,11 @@ defmodule JsonPrinter do
         )
         )
         )
-      8 -> _this = %{_this.buf | b: "\"???\""}
+      8 -> struct = %{struct.buf | b: "\"???\""}
     end
         )
         )
+    struct
   end
 
   @doc "Function class_string"
@@ -178,7 +179,7 @@ defmodule JsonPrinter do
   end
 
   @doc "Function fields_string"
-  @spec fields_string(t(), term(), Array.t()) :: nil
+  @spec fields_string(t(), term(), Array.t()) :: t()
   def fields_string(%__MODULE__{} = struct, v, fields) do
     _this = %{_this.buf | b: "{"}
     len = fields.length
@@ -229,10 +230,11 @@ defmodule JsonPrinter do
         )
         end
     _this = %{_this.buf | b: "}"}
+    struct
   end
 
   @doc "Function quote_"
-  @spec quote_(t(), String.t()) :: nil
+  @spec quote_(t(), String.t()) :: t()
   def quote_(%__MODULE__{} = struct, s) do
     (
           _this = %{_this.buf | b: "\""}
@@ -244,18 +246,19 @@ defmodule JsonPrinter do
           temp_number = s.cca(index)
           c = temp_number
           case (c) do
-      8 -> _this = %{_this.buf | b: "\\b"}
-      9 -> _this = %{_this.buf | b: "\\t"}
-      10 -> _this = %{_this.buf | b: "\\n"}
-      12 -> _this = %{_this.buf | b: "\\f"}
-      13 -> _this = %{_this.buf | b: "\\r"}
-      34 -> _this = %{_this.buf | b: "\\\""}
-      92 -> _this = %{_this.buf | b: "\\\\"}
-      _ -> _this = %{_this.buf | b: String.from_char_code(c)}
+      8 -> struct = %{struct.buf | b: "\\b"}
+      9 -> struct = %{struct.buf | b: "\\t"}
+      10 -> struct = %{struct.buf | b: "\\n"}
+      12 -> struct = %{struct.buf | b: "\\f"}
+      13 -> struct = %{struct.buf | b: "\\r"}
+      34 -> struct = %{struct.buf | b: "\\\""}
+      92 -> struct = %{struct.buf | b: "\\\\"}
+      _ -> struct = %{struct.buf | b: String.from_char_code(c)}
     end
         ) end)
           _this = %{_this.buf | b: "\""}
         )
+    struct
   end
 
 end
