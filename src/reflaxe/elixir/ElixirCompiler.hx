@@ -177,6 +177,9 @@ class ElixirCompiler extends DirectToStringCompiler {
     /** Pattern analysis for structural and framework pattern detection */
     private var patternAnalysisCompiler: reflaxe.elixir.helpers.PatternAnalysisCompiler;
     
+    /** Type resolution and mapping between Haxe and Elixir type systems */
+    private var typeResolutionCompiler: reflaxe.elixir.helpers.TypeResolutionCompiler;
+    
     /** While loop compilation with Y combinator pattern generation */
     private var whileLoopCompiler: reflaxe.elixir.helpers.WhileLoopCompiler;
     
@@ -257,6 +260,7 @@ class ElixirCompiler extends DirectToStringCompiler {
         this.yCombinatorCompiler = new reflaxe.elixir.helpers.YCombinatorCompiler(this);
         this.patternDetectionCompiler = new reflaxe.elixir.helpers.PatternDetectionCompiler(this);
         this.patternAnalysisCompiler = new reflaxe.elixir.helpers.PatternAnalysisCompiler(this);
+        this.typeResolutionCompiler = new reflaxe.elixir.helpers.TypeResolutionCompiler(this);
         this.whileLoopCompiler = new reflaxe.elixir.helpers.WhileLoopCompiler(this);
         this.expressionDispatcher = new reflaxe.elixir.helpers.ExpressionDispatcher(this);
         
@@ -1290,121 +1294,36 @@ class ElixirCompiler extends DirectToStringCompiler {
      * This includes standard library types that are either built-in or handled elsewhere
      */
     private function isBuiltinAbstractType(name: String): Bool {
-        return switch (name) {
-            // Core Haxe types
-            case "Int" | "Float" | "Bool" | "String" | "Dynamic" | "Void" | "Any" | "Null" | 
-                 "Function" | "Class" | "Enum" | "EnumValue" | "Int32" | "Int64":
-                true;
-            
-            // Standard library containers and collections  
-            case "Array" | "Map" | "List" | "Vector" | "Stack" | "GenericStack":
-                true;
-                
-            // Standard library iterators (handled by Elixir's Enum/Stream)
-            case "IntIterator" | "ArrayIterator" | "StringIterator" | "MapIterator" |
-                 "ArrayKeyValueIterator" | "StringKeyValueIterator" | "MapKeyValueIterator":
-                true;
-                
-            // Standard library utility types (handled internally)
-            case "StringBuf" | "StringTools" | "Math" | "Reflect" | "Type" | "Std":
-                true;
-                
-            // JSON handling types are now compiled normally as structs
-            // (Removed JsonPrinter | JsonParser - they compile as instance classes)
-                
-            // Error/debugging types (handled by Elixir's error system)
-            case "CallStack" | "Exception" | "Error":
-                true;
-                
-            // Abstract implementation types (compiler-generated)
-            case name if (name.endsWith("_Impl_")):
-                true;
-                
-            // Haxe package types (handled separately if needed)
-            case name if (name.startsWith("haxe.")):
-                true;
-                
-            default:
-                false;
-        };
+        return typeResolutionCompiler.isBuiltinAbstractType(name);
     }
     
     /**
      * Check if this is a standard library class type that should NOT generate an Elixir module
      */
     private function isStandardLibraryClass(name: String): Bool {
-        return switch (name) {
-            // Haxe standard library classes that should be skipped
-            case name if (name.startsWith("haxe.") || name.startsWith("sys.") || name.startsWith("js.") || name.startsWith("flash.")):
-                true;
-                
-            // Iterator implementation classes
-            case "ArrayIterator" | "StringIterator" | "IntIterator" | "MapIterator" |
-                 "ArrayKeyValueIterator" | "StringKeyValueIterator" | "MapKeyValueIterator":
-                true;
-                
-            // Data structure implementation classes
-            case "StringBuf" | "StringTools" | "List" | "GenericStack" | "BalancedTree" | "TreeNode":
-                true;
-                
-            // JSON implementation classes are now compiled normally as structs
-            // (Removed JsonPrinter | JsonParser - they compile as instance classes)
-                
-            // Abstract implementation classes (compiler-generated)
-            case name if (name.endsWith("_Impl_")):
-                true;
-                
-            // Built-in type classes
-            case "Class" | "Enum" | "Type" | "Reflect" | "Std" | "Math":
-                true;
-                
-            // Regular expression class (has special compiler integration)
-            case "EReg":
-                true;
-                
-            default:
-                false;
-        };
+        return typeResolutionCompiler.isStandardLibraryClass(name);
     }
 
     /**
      * Get Elixir type representation from Haxe type
      */
     private function getElixirTypeFromHaxeType(type: Type): String {
-        return switch (type) {
-            case TInst(_.get() => classType, _):
-                switch (classType.name) {
-                    case "String": "String.t()";
-                    case "Array": "list()";
-                    default: "term()";
-                }
-            case TAbstract(_.get() => abstractType, _):
-                switch (abstractType.name) {
-                    case "Int": "integer()";
-                    case "Float": "float()";
-                    case "Bool": "boolean()";
-                    default: "term()";
-                }
-            default:
-                "term()";
-        };
+        return typeResolutionCompiler.getElixirTypeFromHaxeType(type);
     }
     
     /**
      * Helper methods for managing module content - simplified for now
      */
     private function getCurrentModuleContent(abstractType: AbstractType): Null<String> {
-        // For now, return a simple placeholder
-        return "";
+        return typeResolutionCompiler.getCurrentModuleContent(abstractType);
     }
     
     private function addTypeDefinition(content: String, typeAlias: String): String {
-        return content + "\n  " + typeAlias + "\n";
+        return typeResolutionCompiler.addTypeDefinition(content, typeAlias);
     }
     
     private function updateCurrentModuleContent(abstractType: AbstractType, content: String): Void {
-        // For now, this is a placeholder - in a full implementation,
-        // this would update the module's content in the output system
+        typeResolutionCompiler.updateCurrentModuleContent(abstractType, content);
     }
     
     /**
@@ -1412,14 +1331,7 @@ class ElixirCompiler extends DirectToStringCompiler {
      * This prevents generating invalid StdTypes.ex files with @typedoc/@type outside modules.
      */
     public override function compileTypedefImpl(defType: DefType): Null<String> {
-        // Following BaseCompiler recommendation: ignore typedefs since
-        // "Haxe redirects all types automatically" - no standalone typedef files needed
-        // 
-        // Returning null prevents generating invalid StdTypes.ex files with 
-        // @typedoc/@type directives outside modules.
-        // 
-        // Now using DirectToStringCompiler - typedefs still not needed for Elixir
-        return null;
+        return typeResolutionCompiler.compileTypedefImpl(defType);
     }
     
     
