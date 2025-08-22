@@ -65,6 +65,9 @@ import reflaxe.elixir.helpers.ADTMethodCompiler;
 import reflaxe.elixir.helpers.YCombinatorCompiler;
 import reflaxe.elixir.helpers.PatternDetectionCompiler;
 import reflaxe.elixir.helpers.WhileLoopCompiler;
+import reflaxe.elixir.helpers.CodeFixupCompiler;
+import reflaxe.elixir.helpers.PipelineAnalyzer;
+import reflaxe.elixir.helpers.ExpressionVariantCompiler;
 import reflaxe.elixir.PhoenixMapper;
 import reflaxe.elixir.SourceMapWriter;
 
@@ -145,7 +148,7 @@ class ElixirCompiler extends DirectToStringCompiler {
     private var arrayOptimizationCompiler: reflaxe.elixir.helpers.ArrayOptimizationCompiler;
     
     // Variable substitution and renaming compiler for centralized variable handling
-    private var substitutionCompiler: reflaxe.elixir.helpers.SubstitutionCompiler;
+    public var substitutionCompiler: reflaxe.elixir.helpers.SubstitutionCompiler;
     
     // Temporary variable pattern optimization
     private var tempVariableOptimizer: reflaxe.elixir.helpers.TempVariableOptimizer;
@@ -180,9 +183,17 @@ class ElixirCompiler extends DirectToStringCompiler {
     /** Type resolution and mapping between Haxe and Elixir type systems */
     private var typeResolutionCompiler: reflaxe.elixir.helpers.TypeResolutionCompiler;
     
+    /** Code fixup and post-processing operations for generated Elixir code */
+    private var codeFixupCompiler: reflaxe.elixir.helpers.CodeFixupCompiler;
+    
+    /** Pipeline pattern detection and variable analysis for optimization compilation */
+    private var pipelineAnalyzer: reflaxe.elixir.helpers.PipelineAnalyzer;
+    
     /** While loop compilation with Y combinator pattern generation */
     private var whileLoopCompiler: reflaxe.elixir.helpers.WhileLoopCompiler;
     
+    /** Expression variant compilation for specialized expression handling patterns */
+    private var expressionVariantCompiler: reflaxe.elixir.helpers.ExpressionVariantCompiler;
     
     public var expressionDispatcher: reflaxe.elixir.helpers.ExpressionDispatcher;
     
@@ -261,7 +272,10 @@ class ElixirCompiler extends DirectToStringCompiler {
         this.patternDetectionCompiler = new reflaxe.elixir.helpers.PatternDetectionCompiler(this);
         this.patternAnalysisCompiler = new reflaxe.elixir.helpers.PatternAnalysisCompiler(this);
         this.typeResolutionCompiler = new reflaxe.elixir.helpers.TypeResolutionCompiler(this);
+        this.codeFixupCompiler = new reflaxe.elixir.helpers.CodeFixupCompiler(this);
+        this.pipelineAnalyzer = new reflaxe.elixir.helpers.PipelineAnalyzer(this);
         this.whileLoopCompiler = new reflaxe.elixir.helpers.WhileLoopCompiler(this);
+        this.expressionVariantCompiler = new reflaxe.elixir.helpers.ExpressionVariantCompiler(this);
         this.expressionDispatcher = new reflaxe.elixir.helpers.ExpressionDispatcher(this);
         
         // Set compiler reference for delegation
@@ -311,118 +325,11 @@ class ElixirCompiler extends DirectToStringCompiler {
      * These occur when if-else expressions are incorrectly split during compilation
      */
     private function fixMalformedConditionals(code: String): String {
-        // Simple string-based fix for known malformed patterns
-        var fixedCode = code;
-        
-        // Pattern 1: Fix assignment patterns with hanging else clauses like "empty = false, else: _this = struct.buf"
-        // Use simple string replacement for reliability
-        var lines = fixedCode.split("\n");
-        var fixedLines = [];
-        
-        for (line in lines) {
-            // Pattern 1: Check for malformed assignment with else pattern (with comma)
-            if (line.contains(", else:") && line.contains(" = ") && !line.contains("if (")) {
-                // Comment out the malformed line
-                var indent = "";
-                var trimmed = line;
-                // Extract leading whitespace
-                var spaceMatch = ~/^(\s*)/;
-                if (spaceMatch.match(line)) {
-                    indent = spaceMatch.matched(1);
-                    trimmed = line.substring(indent.length);
-                }
-                fixedLines.push(indent + "# FIXME: Malformed assignment with else: " + trimmed);
-            } 
-            // Pattern 2: Check for malformed assignment with else pattern (without comma)
-            else if (line.contains("}, else:") && line.contains(" = ") && !line.contains("if (")) {
-                var indent = "";
-                var trimmed = line;
-                // Extract leading whitespace
-                var spaceMatch = ~/^(\s*)/;
-                if (spaceMatch.match(line)) {
-                    indent = spaceMatch.matched(1);
-                    trimmed = line.substring(indent.length);
-                }
-                fixedLines.push(indent + "# FIXME: Malformed assignment with hanging else: " + trimmed);
-            }
-            // Pattern 3: Check for assignments ending with just ", else: nil" 
-            else if (line.contains(" = ") && line.endsWith(", else: nil") && !line.contains("if (")) {
-                var indent = "";
-                var trimmed = line;
-                // Extract leading whitespace
-                var spaceMatch = ~/^(\s*)/;
-                if (spaceMatch.match(line)) {
-                    indent = spaceMatch.matched(1);
-                    trimmed = line.substring(indent.length);
-                }
-                fixedLines.push(indent + "# FIXME: Assignment with hanging else nil: " + trimmed);
-            }
-            // Pattern 4: Check for assignments with ", else: nil" anywhere in the line
-            else if (line.contains(" = ") && line.contains(", else: nil") && !line.contains("if (")) {
-                var indent = "";
-                var trimmed = line;
-                // Extract leading whitespace
-                var spaceMatch = ~/^(\s*)/;
-                if (spaceMatch.match(line)) {
-                    indent = spaceMatch.matched(1);
-                    trimmed = line.substring(indent.length);
-                }
-                fixedLines.push(indent + "# FIXME: Assignment with hanging else nil anywhere: " + trimmed);
-            }
-            // Pattern 5: Fix expressions ending with "}, else: expression" that are not complete if-statements
-            else if (line.contains("}, else:") && !line.contains("if (")) {
-                var indent = "";
-                var trimmed = line;
-                // Extract leading whitespace
-                var spaceMatch = ~/^(\s*)/;
-                if (spaceMatch.match(line)) {
-                    indent = spaceMatch.matched(1);
-                    trimmed = line.substring(indent.length);
-                }
-                fixedLines.push(indent + "# FIXME: Malformed conditional: " + trimmed);
-            } else {
-                fixedLines.push(line);
-            }
-        }
-        
-        return fixedLines.join("\n");
+        return codeFixupCompiler.fixMalformedConditionals(code);
     }
 
     public function getCurrentAppName(): String {
-        // Priority 1: Check compiler define (most explicit and single-source-of-truth)
-        // IMPORTANT: Use Context.definedValue() in macro context, NOT Compiler.getDefine()
-        // Compiler.getDefine() is a macro function meant for regular code generation
-        #if app_name
-        var defineValue = haxe.macro.Context.definedValue("app_name");
-        if (defineValue != null && defineValue.length > 0) {
-            return defineValue;
-        }
-        #end
-        
-        // Priority 2: Check current class annotation
-        if (this.currentClassType != null) {
-            var annotatedName = AnnotationSystem.getAppName(this.currentClassType);
-            if (annotatedName != null) {
-                return annotatedName;
-            }
-        }
-        
-        // Priority 3: Check global registry (if any class had @:appName)
-        var globalName = AnnotationSystem.getGlobalAppName();
-        if (globalName != null) {
-            return globalName;
-        }
-        
-        // Priority 4: Try to infer from class name
-        if (this.currentClassType != null) {
-            var className = this.currentClassType.name;
-            if (className.endsWith("App")) {
-                return className;
-            }
-        }
-        
-        // Priority 5: Ultimate fallback
-        return "App";
+        return codeFixupCompiler.getCurrentAppName();
     }
     
     /**
@@ -430,43 +337,21 @@ class ElixirCompiler extends DirectToStringCompiler {
      * This post-processing step enables dynamic app name injection in generated code
      */
     private function replaceAppNameCalls(code: String, classType: ClassType): String {
-        var appName = AnnotationSystem.getEffectiveAppName(classType);
-        
-        // Replace direct getAppName() calls - these become simple string literals
-        code = code.replace('getAppName()', '"${appName}"');
-        
-        // Replace method calls like MyClass.getAppName() (camelCase version)
-        code = ~/([A-Za-z0-9_]+)\.getAppName\(\)/g.replace(code, '"${appName}"');
-        
-        // Replace method calls like MyClass.get_app_name() (snake_case version)
-        code = ~/([A-Za-z0-9_]+)\.get_app_name\(\)/g.replace(code, '"${appName}"');
-        
-        // Fix any cases where we ended up with Module."AppName" syntax (invalid)
-        // This handles cases where method replacement created invalid syntax
-        code = ~/([A-Za-z0-9_]+)\."([^"]+)"/g.replace(code, '"$2"');
-        
-        return code;
+        return codeFixupCompiler.replaceAppNameCalls(code, classType);
     }
     
     /**
      * Initialize source map writer for a specific output file
      */
     private function initSourceMapWriter(outputPath: String): Void {
-        if (!sourceMapOutputEnabled) return;
-        
-        currentSourceMapWriter = new SourceMapWriter(outputPath);
-        pendingSourceMapWriters.push(currentSourceMapWriter);
+        codeFixupCompiler.initSourceMapWriter(outputPath);
     }
     
     /**
      * Finalize source map writer and generate .ex.map file
      */
     private function finalizeSourceMapWriter(): Null<String> {
-        if (!sourceMapOutputEnabled || currentSourceMapWriter == null) return null;
-        
-        var sourceMapPath = currentSourceMapWriter.generateSourceMap();
-        currentSourceMapWriter = null;
-        return sourceMapPath;
+        return codeFixupCompiler.finalizeSourceMapWriter();
     }
     
     /**
@@ -501,39 +386,7 @@ class ElixirCompiler extends DirectToStringCompiler {
      * @return True if the expression contains a reference to the variable
      */
     public function containsVariableReference(expr: TypedExpr, variableName: String): Bool {
-        return switch(expr.expr) {
-            case TLocal(v): v.name == variableName;
-            case TField(e, fa): containsVariableReference(e, variableName);
-            case TCall(e, el): 
-                containsVariableReference(e, variableName) || 
-                Lambda.exists(el, arg -> containsVariableReference(arg, variableName));
-            case TBinop(op, e1, e2): 
-                containsVariableReference(e1, variableName) || 
-                containsVariableReference(e2, variableName);
-            case TUnop(op, postFix, e): 
-                containsVariableReference(e, variableName);
-            case TArrayDecl(el): 
-                Lambda.exists(el, e -> containsVariableReference(e, variableName));
-            case TObjectDecl(fields): 
-                Lambda.exists(fields, field -> containsVariableReference(field.expr, variableName));
-            case TIf(econd, eif, eelse): 
-                containsVariableReference(econd, variableName) || 
-                containsVariableReference(eif, variableName) || 
-                (eelse != null && containsVariableReference(eelse, variableName));
-            case TReturn(e): 
-                e != null && containsVariableReference(e, variableName);
-            case TBlock(el): 
-                Lambda.exists(el, e -> containsVariableReference(e, variableName));
-            case TVar(v, e): 
-                e != null && containsVariableReference(e, variableName);
-            case TMeta(m, e): 
-                containsVariableReference(e, variableName);
-            case TParenthesis(e): 
-                containsVariableReference(e, variableName);
-            case TCast(e, m): 
-                containsVariableReference(e, variableName);
-            default: false;
-        };
+        return pipelineAnalyzer.containsVariableReference(expr, variableName);
     }
     
     /**
@@ -541,99 +394,22 @@ class ElixirCompiler extends DirectToStringCompiler {
      * This prevents double-compilation of statements that were already included in the pipeline.
      */
     private function getProcessedStatementIndices(statements: Array<TypedExpr>, pattern: PipelinePattern): Array<Int> {
-        var processedIndices = [];
-        var targetVariable = pattern.variable;
-        
-        // Find all statements that operate on the pipeline variable
-        for (i in 0...statements.length) {
-            var stmt = statements[i];
-            if (statementTargetsVariable(stmt, targetVariable)) {
-                processedIndices.push(i);
-            }
-        }
-        
-        return processedIndices;
+        return pipelineAnalyzer.getProcessedStatementIndices(statements, pattern);
     }
     
     // statementTargetsVariable temporarily reverted for debugging
     private function statementTargetsVariable(stmt: TypedExpr, variableName: String): Bool {
-        // Skip terminal operations - they consume the variable but aren't part of the pipeline
-        if (isTerminalOperation(stmt, variableName)) {
-            return false;
-        }
-        
-        return switch(stmt.expr) {
-            case TVar(v, init) if (init != null):
-                // var x = f(x, ...) pattern
-                var varName = v.name;
-                if (varName == variableName) {
-                    // Check if the init expression uses the same variable
-                    containsVariableReference(init, variableName);
-                } else {
-                    false;
-                }
-                
-            case TBinop(OpAssign, {expr: TLocal(v)}, right):
-                // x = f(x, ...) pattern
-                var varName = v.name;
-                if (varName == variableName) {
-                    // Check if the right side uses the same variable
-                    containsVariableReference(right, variableName);
-                } else {
-                    false;
-                }
-                
-            default:
-                false;
-        }
+        return pipelineAnalyzer.statementTargetsVariable(stmt, variableName);
     }
     
     // isTerminalOperation temporarily reverted for debugging
     private function isTerminalOperation(stmt: TypedExpr, variableName: String): Bool {
-        return switch(stmt.expr) {
-            case TCall(funcExpr, args):
-                // Check for Repo operations or other terminal functions
-                var funcName = extractFunctionNameFromCall(funcExpr);
-                var terminalFunctions = ["Repo.all", "Repo.one", "Repo.get", "Repo.insert", "Repo.update", "Repo.delete"];
-                
-                if (terminalFunctions.indexOf(funcName) >= 0) {
-                    // Check if first argument references our variable
-                    if (args.length > 0) {
-                        containsVariableReference(args[0], variableName);
-                    } else {
-                        false;
-                    }
-                } else {
-                    false;
-                }
-                
-            default:
-                false;
-        }
+        return pipelineAnalyzer.isTerminalOperation(stmt, variableName);
     }
     
     // isTerminalOperationOnVariable temporarily reverted for debugging
     private function isTerminalOperationOnVariable(expr: TypedExpr, variableName: String): Bool {
-        return switch(expr.expr) {
-            case TCall(funcExpr, args):
-                // Check for Repo operations or other terminal functions
-                var funcName = extractFunctionNameFromCall(funcExpr);
-                var terminalFunctions = ["Repo.all", "Repo.one", "Repo.get", "Repo.insert", "Repo.update", "Repo.delete"];
-                
-                if (terminalFunctions.indexOf(funcName) >= 0) {
-                    // Check if first argument references our variable
-                    if (args.length > 0) {
-                        containsVariableReference(args[0], variableName);
-                    } else {
-                        false;
-                    }
-                } else {
-                    false;
-                }
-                
-            default:
-                false;
-        };
+        return pipelineAnalyzer.isTerminalOperationOnVariable(expr, variableName);
     }
     
     /**
@@ -641,87 +417,12 @@ class ElixirCompiler extends DirectToStringCompiler {
      * For example: Repo.all(query) becomes "Repo.all()"
      */
     private function extractTerminalCall(expr: TypedExpr, variableName: String): Null<String> {
-        return switch(expr.expr) {
-            case TCall(funcExpr, args):
-                // Check for Repo operations or other terminal functions
-                var funcName = extractFunctionNameFromCall(funcExpr);
-                var terminalFunctions = ["Repo.all", "Repo.one", "Repo.get", "Repo.insert", "Repo.update", "Repo.delete"];
-                
-                if (terminalFunctions.indexOf(funcName) >= 0) {
-                    // Check if first argument references our variable
-                    if (args.length > 0 && containsVariableReference(args[0], variableName)) {
-                        // Extract remaining arguments (if any) after the pipeline variable
-                        var remainingArgs = [];
-                        for (i in 1...args.length) {
-                            remainingArgs.push(compileExpression(args[i]));
-                        }
-                        
-                        // Generate the terminal function call
-                        if (remainingArgs.length > 0) {
-                            return funcName + "(" + remainingArgs.join(", ") + ")";
-                        } else {
-                            return funcName + "()";
-                        }
-                    }
-                }
-                null;
-                
-            default:
-                null;
-        }
+        return pipelineAnalyzer.extractTerminalCall(expr, variableName);
     }
     
     // extractFunctionNameFromCall temporarily reverted for debugging
     private function extractFunctionNameFromCall(funcExpr: TypedExpr): String {
-        return switch(funcExpr.expr) {
-            case TField({expr: TLocal({name: moduleName})}, fa):
-                // Module.function pattern (e.g., Repo.all)
-                var funcName = switch(fa) {
-                    case FInstance(_, _, cf) | FStatic(_, cf) | FAnon(cf) | FClosure(_, cf):
-                        cf.get().name;
-                    case FDynamic(s):
-                        s;
-                    case FEnum(_, ef):
-                        ef.name;
-                };
-                moduleName + "." + funcName;
-                
-            case TField({expr: TTypeExpr(moduleType)}, fa):
-                // Type.function pattern (for static calls like Repo.all)
-                switch(fa) {
-                    case FStatic(classRef, cf):
-                        var moduleName = switch(classRef.get().name) {
-                            case "Repo": "Repo";  // Special case for Repo
-                            case name: name;  // Keep original for now
-                        };
-                        var methodName = cf.get().name;
-                        moduleName + "." + methodName;
-                    case FInstance(_, _, cf) | FAnon(cf) | FClosure(_, cf):
-                        cf.get().name;
-                    case FDynamic(s):
-                        s;
-                    case FEnum(_, ef):
-                        ef.name;
-                }
-                
-            case TLocal({name: funcName}):
-                // Simple function call
-                funcName;
-                
-            case TField(_, fa):
-                // Method call without module
-                switch(fa) {
-                    case FInstance(_, _, cf) | FStatic(_, cf) | FAnon(cf) | FClosure(_, cf):
-                        cf.get().name;
-                    case FDynamic(s):
-                        s;
-                    case FEnum(_, ef):
-                        ef.name;
-                }
-                
-            default:
-                "unknown_function";
-        };
+        return pipelineAnalyzer.extractFunctionNameFromCall(funcExpr);
     }
 
     // containsVariableReference moved to VariableCompiler.hx
@@ -1215,45 +916,7 @@ class ElixirCompiler extends DirectToStringCompiler {
     }
     
     public function compileExpressionImpl(expr: TypedExpr, topLevel: Bool): Null<String> {
-        // CRITICAL: Always check for _this mapping first, regardless of state threading status
-        // This handles cases where expressions are compiled after state threading is disabled
-        switch (expr.expr) {
-            case TLocal(v) if (v.name == "_this"):
-                // Try local function parameter map first
-                var mappedName = currentFunctionParameterMap.get("_this");
-                if (mappedName != null) {
-                    #if debug_state_threading
-                    trace('[XRay ElixirCompiler] ✓ Local _this replacement: _this -> ${mappedName}');
-                    #end
-                    return mappedName;
-                }
-                
-                // GLOBAL FIX: Try global struct method mapping if we're compiling a struct method
-                if (isCompilingStructMethod) {
-                    var globalMappedName = globalStructParameterMap.get("_this");
-                    if (globalMappedName != null) {
-                        #if debug_state_threading
-                        trace('[XRay ElixirCompiler] ✓ GLOBAL _this replacement: _this -> ${globalMappedName}');
-                        #end
-                        return globalMappedName;
-                    }
-                }
-                
-                // Still no mapping found - log for debugging
-                #if debug_state_threading
-                trace('[XRay ElixirCompiler] ⚠️ Found _this but NO MAPPING available');
-                trace('[XRay ElixirCompiler] ⚠️ State threading enabled: ${isStateThreadingEnabled()}');
-                trace('[XRay ElixirCompiler] ⚠️ Global struct method: ${isCompilingStructMethod}');
-                trace('[XRay ElixirCompiler] ⚠️ Local parameter map size: ${currentFunctionParameterMap != null ? Lambda.count(currentFunctionParameterMap) : 0}');
-                trace('[XRay ElixirCompiler] ⚠️ Global parameter map size: ${Lambda.count(globalStructParameterMap)}');
-                trace('[XRay ElixirCompiler] ⚠️ Expression position: ${expr.pos}');
-                #end
-                
-            case _:
-                // Continue with normal compilation
-        }
-        
-        return expressionDispatcher.compileExpression(expr, topLevel);
+        return expressionVariantCompiler.compileExpressionImpl(expr, topLevel);
     }
     
     /**
@@ -1342,43 +1005,7 @@ class ElixirCompiler extends DirectToStringCompiler {
      */
     // Delegated to PatternMatchingCompiler - keeping for backward compatibility
     public function compileSwitchExpression(switchExpr: TypedExpr, cases: Array<{values: Array<TypedExpr>, expr: TypedExpr}>, defaultExpr: Null<TypedExpr>): String {
-        // Create FunctionContext with struct parameter name if we're in state threading mode
-        var context: Null<reflaxe.elixir.helpers.ControlFlowCompiler.FunctionContext> = null;
-        
-        #if debug_state_threading
-        trace('[XRay compileSwitchExpression] Checking for _this mapping');
-        trace('[XRay compileSwitchExpression] isStateThreadingEnabled: ${isStateThreadingEnabled()}');
-        trace('[XRay compileSwitchExpression] currentFunctionParameterMap size: ${Lambda.count(currentFunctionParameterMap)}');
-        for (key in currentFunctionParameterMap.keys()) {
-            trace('[XRay compileSwitchExpression] Map key: ${key} -> ${currentFunctionParameterMap.get(key)}');
-        }
-        #end
-        
-        // Check if we have a struct parameter mapping for _this
-        if (currentFunctionParameterMap.exists("_this")) {
-            var structParamName = currentFunctionParameterMap.get("_this");
-            context = {
-                structParamName: structParamName
-            };
-            #if debug_state_threading
-            trace('[XRay compileSwitchExpression] ✓ Found _this mapping to ${structParamName}');
-            trace('[XRay compileSwitchExpression] Created context with structParamName: ${structParamName}');
-            #end
-        } else if (isStateThreadingEnabled()) {
-            // If state threading is enabled but no _this mapping, use "struct" as default
-            context = {
-                structParamName: "struct"
-            };
-            #if debug_state_threading
-            trace('[XRay compileSwitchExpression] State threading enabled but no _this mapping, using default "struct"');
-            #end
-        } else {
-            #if debug_state_threading
-            trace('[XRay compileSwitchExpression] ✗ No _this mapping found and state threading not enabled');
-            #end
-        }
-        
-        return patternMatchingCompiler.compileSwitchExpression(switchExpr, cases, defaultExpr, context);
+        return expressionVariantCompiler.compileSwitchExpression(switchExpr, cases, defaultExpr);
     }
     
     /**
@@ -1489,65 +1116,7 @@ class ElixirCompiler extends DirectToStringCompiler {
      * This ensures string concatenation uses <> and not +.
      */
     private function compileExpressionWithTypeAwareness(expr: TypedExpr): String {
-        if (expr == null) return "nil";
-        
-        // For binary operations, check if we need special handling
-        switch (expr.expr) {
-            case TBinop(OpAdd, e1, e2):
-                // Check if either operand is a string type
-                var e1IsString = isStringType(e1.t);
-                var e2IsString = isStringType(e2.t);
-                var isStringConcat = e1IsString || e2IsString;
-                
-                if (isStringConcat) {
-                    // Handle string constants directly to preserve quotes
-                    var left = switch (e1.expr) {
-                        case TConst(TString(s)): 
-                            // Properly escape and quote the string
-                            var escaped = StringTools.replace(s, '\\', '\\\\');
-                            escaped = StringTools.replace(escaped, '"', '\\"');
-                            escaped = StringTools.replace(escaped, '\n', '\\n');
-                            escaped = StringTools.replace(escaped, '\r', '\\r');
-                            escaped = StringTools.replace(escaped, '\t', '\\t');
-                            '"${escaped}"';
-                        case _: compileExpressionWithTypeAwareness(e1);
-                    };
-                    
-                    var right = switch (e2.expr) {
-                        case TConst(TString(s)): 
-                            // Properly escape and quote the string
-                            var escaped = StringTools.replace(s, '\\', '\\\\');
-                            escaped = StringTools.replace(escaped, '"', '\\"');
-                            escaped = StringTools.replace(escaped, '\n', '\\n');
-                            escaped = StringTools.replace(escaped, '\r', '\\r');
-                            escaped = StringTools.replace(escaped, '\t', '\\t');
-                            '"${escaped}"';
-                        case _: compileExpressionWithTypeAwareness(e2);
-                    };
-                    
-                    // Convert non-string operands to strings
-                    if (!e1IsString && e2IsString) {
-                        left = convertToString(e1, left);
-                    } else if (e1IsString && !e2IsString) {
-                        right = convertToString(e2, right);
-                    }
-                    
-                    return '${left} <> ${right}';
-                } else {
-                    var left = compileExpressionWithTypeAwareness(e1);
-                    var right = compileExpressionWithTypeAwareness(e2);
-                    return '${left} + ${right}';
-                }
-                
-            case TBinop(op, e1, e2):
-                var left = compileExpressionWithTypeAwareness(e1);
-                var right = compileExpressionWithTypeAwareness(e2);
-                return '${left} ${compileBinop(op)} ${right}';
-                
-            case _:
-                // For all other cases, use regular compilation
-                return compileExpression(expr);
-        }
+        return expressionVariantCompiler.compileExpressionWithTypeAwareness(expr);
     }
     
     /**
@@ -1977,18 +1546,7 @@ class ElixirCompiler extends DirectToStringCompiler {
      * This is crucial for handling Haxe's inline function expansion correctly.
      */
     private function compileBlockExpressionsWithContext(expressions: Array<TypedExpr>): Array<String> {
-        var compiledStatements = [];
-        
-        // Compile each expression while maintaining inline context
-        // DO NOT save/restore context - we want inline context to persist across expressions
-        for (i in 0...expressions.length) {
-            var compiled = compileExpression(expressions[i]);
-            if (compiled != null && compiled.trim() != "") {
-                compiledStatements.push(compiled);
-            }
-        }
-        
-        return compiledStatements;
+        return expressionVariantCompiler.compileBlockExpressionsWithContext(expressions);
     }
     
     /**
@@ -2141,14 +1699,14 @@ class ElixirCompiler extends DirectToStringCompiler {
      * Extract transformation logic from mapping body (TVar-based version)
      */
     private function extractTransformationFromBodyWithTVar(expr: TypedExpr, sourceTVar: TVar, targetVarName: String): String {
-        return substitutionCompiler.extractTransformationFromBodyWithTVar(expr, sourceTVar, targetVarName);
+        return expressionVariantCompiler.extractTransformationFromBodyWithTVar(expr, sourceTVar, targetVarName);
     }
 
     /**
      * Extract transformation logic from mapping body (string-based version)
      */
     private function extractTransformationFromBody(expr: TypedExpr, sourceVar: String, targetVar: String): String {
-        return substitutionCompiler.extractTransformationFromBody(expr, sourceVar, targetVar);
+        return expressionVariantCompiler.extractTransformationFromBody(expr, sourceVar, targetVar);
     }
     
     /**
@@ -2216,7 +1774,7 @@ class ElixirCompiler extends DirectToStringCompiler {
      * @return The compiled expression with variables substituted
      */
     private function compileExpressionWithVarMapping(expr: TypedExpr, sourceVar: String, targetVar: String): String {
-        return substitutionCompiler.compileExpressionWithVarMapping(expr, sourceVar, targetVar);
+        return expressionVariantCompiler.compileExpressionWithVarMapping(expr, sourceVar, targetVar);
     }
     
     /**
@@ -2233,7 +1791,7 @@ class ElixirCompiler extends DirectToStringCompiler {
      * @param sourceVar The specific source variable we're looking for (null for aggressive mode)
      * @param isAggressiveMode Whether to substitute any non-system variable
      */
-    private function shouldSubstituteVariable(varName: String, sourceVar: String = null, isAggressiveMode: Bool = false): Bool {
+    public function shouldSubstituteVariable(varName: String, sourceVar: String = null, isAggressiveMode: Bool = false): Bool {
         if (isSystemVariable(varName)) {
             return false;
         }
@@ -2258,7 +1816,7 @@ class ElixirCompiler extends DirectToStringCompiler {
      * Used when normal loop variable detection fails
      */
     private function compileExpressionWithAggressiveSubstitution(expr: TypedExpr, targetVar: String): String {
-        return substitutionCompiler.compileExpressionWithAggressiveSubstitution(expr, targetVar);
+        return expressionVariantCompiler.compileExpressionWithAggressiveSubstitution(expr, targetVar);
     }
 
     /**
@@ -2273,123 +1831,7 @@ class ElixirCompiler extends DirectToStringCompiler {
      * Compile expression with variable substitution using TVar object comparison
      */
     public function compileExpressionWithTVarSubstitution(expr: TypedExpr, sourceTVar: TVar, targetVarName: String): String {
-        switch (expr.expr) {
-            case TLocal(v):
-                // Debug output to understand what variables we're dealing with
-                var varName = getOriginalVarName(v);
-                var sourceVarName = getOriginalVarName(sourceTVar);
-                // TVar-based variable identification for reliable lambda parameter substitution
-                
-                // Enhanced matching: try exact object match first, then fallback to more permissive matching
-                if (v == sourceTVar) {
-                    // Exact object match - this is definitely the same variable
-                    // Exact TVar match - replace with target variable name
-                    return targetVarName;
-                }
-                
-                // Fallback: check if this is likely the same logical variable
-                // If both have the same original name, they're likely the same logical variable
-                if (varName == sourceVarName && varName != null && varName != "") {
-                    // Name-based fallback match - same variable name
-                    return targetVarName;
-                }
-                
-                // Use helper function for aggressive substitution as fallback
-                if (shouldSubstituteVariable(varName, null, true)) {
-                    // Aggressive fallback - pattern-based substitution
-                    return targetVarName;
-                }
-                
-                // Not a match - compile normally
-                // No match found - compile variable normally
-                return compileExpression(expr);
-            case TBinop(op, e1, e2):
-                // Handle assignment operations specially - we want the right-hand side value, not the assignment
-                if (op == OpAssign) {
-                    // For assignments in ternary contexts, return just the right-hand side value
-                    return compileExpressionWithTVarSubstitution(e2, sourceTVar, targetVarName);
-                }
-                
-                // Recursively substitute in binary operations with type awareness
-                if (op == OpAdd) {
-                    // Check if this is string concatenation
-                    var e1IsString = isStringType(e1.t);
-                    var e2IsString = isStringType(e2.t);
-                    var isStringConcat = e1IsString || e2IsString;
-                    
-                    if (isStringConcat) {
-                        var left = compileExpressionWithTVarSubstitution(e1, sourceTVar, targetVarName);
-                        var right = compileExpressionWithTVarSubstitution(e2, sourceTVar, targetVarName);
-                        
-                        // Convert non-string operands to strings
-                        if (!e1IsString && e2IsString) {
-                            left = convertToString(e1, left);
-                        } else if (e1IsString && !e2IsString) {
-                            right = convertToString(e2, right);
-                        }
-                        
-                        return '${left} <> ${right}';
-                    }
-                }
-                
-                // For non-string addition or other operators
-                var left = compileExpressionWithTVarSubstitution(e1, sourceTVar, targetVarName);
-                var right = compileExpressionWithTVarSubstitution(e2, sourceTVar, targetVarName);
-                return '${left} ${compileBinop(op)} ${right}';
-            case TField(e, fa):
-                // Handle field access on substituted variables
-                // Handle field access with variable substitution
-                var obj = compileExpressionWithTVarSubstitution(e, sourceTVar, targetVarName);
-                var fieldName = getFieldName(fa);
-                // Field access on substituted variable
-                return '${obj}.${fieldName}';
-            case TCall(e, args):
-                // Handle method calls with substitution
-                var obj = compileExpressionWithTVarSubstitution(e, sourceTVar, targetVarName);
-                var compiledArgs = args.map(arg -> compileExpressionWithTVarSubstitution(arg, sourceTVar, targetVarName));
-                return '${obj}(${compiledArgs.join(", ")})';
-            case TArray(e1, e2):
-                // Handle array access with substitution
-                var arr = compileExpressionWithTVarSubstitution(e1, sourceTVar, targetVarName);
-                var index = compileExpressionWithTVarSubstitution(e2, sourceTVar, targetVarName);
-                return 'Enum.at(${arr}, ${index})';
-            case TConst(c):
-                // Constants don't need substitution
-                return expressionDispatcher.literalCompiler.compileConstant(c);
-            case TIf(econd, eif, eelse):
-                // Handle conditionals with substitution
-                var condition = compileExpressionWithTVarSubstitution(econd, sourceTVar, targetVarName);
-                var thenValue = compileExpressionWithTVarSubstitution(eif, sourceTVar, targetVarName);
-                var elseValue = eelse != null ? compileExpressionWithTVarSubstitution(eelse, sourceTVar, targetVarName) : targetVarName;
-                return 'if ${condition}, do: ${thenValue}, else: ${elseValue}';
-            case TBlock(exprs):
-                // Handle blocks with substitution
-                var compiledExprs = exprs.map(e -> compileExpressionWithTVarSubstitution(e, sourceTVar, targetVarName));
-                return compiledExprs.join('\n');
-            case TParenthesis(e):
-                // Handle parenthesized expressions with substitution
-                return "(" + compileExpressionWithTVarSubstitution(e, sourceTVar, targetVarName) + ")";
-            case TUnop(op, postFix, e):
-                // Handle unary operations with substitution (like !variable)
-                // Handle unary operations with variable substitution
-                var operand = compileExpressionWithTVarSubstitution(e, sourceTVar, targetVarName);
-                
-                // Compile unary operator inline (from main compileExpression logic)
-                var result = switch (op) {
-                    case OpIncrement: '${operand} + 1';
-                    case OpDecrement: '${operand} - 1'; 
-                    case OpNot: '!${operand}';
-                    case OpNeg: '-${operand}';
-                    case OpNegBits: 'bnot(${operand})';
-                    case _: operand;
-                };
-                
-                // Unary operation with substituted operand
-                return result;
-            case _:
-                // For other cases, fall back to regular compilation
-                return compileExpression(expr);
-        }
+        return expressionVariantCompiler.compileExpressionWithTVarSubstitution(expr, sourceTVar, targetVarName);
     }
 
 
@@ -2515,18 +1957,7 @@ class ElixirCompiler extends DirectToStringCompiler {
      * Compile expression while tracking variable mutations (DELEGATED) 
      */
     private function compileExpressionWithMutationTracking(expr: TypedExpr, updates: Map<String, String>): String {
-        // This function was moved to WhileLoopCompiler but needs to be accessible here for backward compatibility
-        // This is a temporary delegation that should be replaced with direct calls to WhileLoopCompiler when possible
-        return switch (expr.expr) {
-            case TBlock(exprs):
-                var results = [];
-                for (e in exprs) {
-                    results.push(compileExpression(e));
-                }
-                results.join("\n");
-            case _:
-                compileExpression(expr);
-        };
+        return expressionVariantCompiler.compileExpressionWithMutationTracking(expr, updates);
     }
     
     /**
