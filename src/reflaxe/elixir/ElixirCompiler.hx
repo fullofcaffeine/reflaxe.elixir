@@ -164,6 +164,7 @@ class ElixirCompiler extends DirectToStringCompiler {
     /** Pattern detection and analysis utilities */
     private var patternDetectionCompiler: reflaxe.elixir.helpers.PatternDetectionCompiler;
     
+    
     public var expressionDispatcher: reflaxe.elixir.helpers.ExpressionDispatcher;
     
     // Import optimization for clean import statements
