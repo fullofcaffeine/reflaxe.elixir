@@ -132,4 +132,63 @@ class NamingHelper {
             default: return snakeName;
         }
     }
+    
+    /**
+     * Universal naming rule system for ALL module types (classes, enums, abstracts, typedefs)
+     * 
+     * WHY: This function was moved from ElixirCompiler.hx as part of naming/path utilities
+     * consolidation. Universal naming logic belongs with other naming functionality.
+     * 
+     * WHAT: Converts any Haxe module name and package to proper Elixir file/directory naming:
+     * - Handles dot notation in module names (e.g., "haxe.CallStack")  
+     * - Converts all parts to snake_case using consistent rules
+     * - Supports both package-based and dot-based directory structures
+     * - Provides safe fallbacks for edge cases
+     * 
+     * HOW: 
+     * 1. Split module name on dots to handle nested naming
+     * 2. Convert all parts to snake_case consistently
+     * 3. Use last part as filename, rest as directory path
+     * 4. Fall back to package path if single module name
+     * 5. Provide safe defaults for edge cases
+     * 
+     * @param moduleName The Haxe module name (can contain dots)
+     * @param pack Optional package array for directory structure
+     * @return Object with fileName and dirPath for consistent naming
+     */
+    public static function getUniversalNamingRule(moduleName: String, pack: Array<String> = null): {fileName: String, dirPath: String} {
+        // Handle dot notation in module name (e.g., "haxe.CallStack")
+        var parts = moduleName.split(".");
+        
+        // Convert all parts to snake_case
+        var snakeParts = parts.map(part -> toSnakeCase(part));
+        
+        var fileName: String;
+        var dirPath: String;
+        
+        // Safety check for empty snakeParts array
+        if (snakeParts.length == 0) {
+            // Fallback for empty module name
+            fileName = "unknown_module";
+            dirPath = "";
+        } else if (snakeParts.length > 1) {
+            // Multi-part name: last part is filename, rest is directory
+            fileName = snakeParts.pop();
+            dirPath = snakeParts.join("/");
+        } else if (pack != null && pack.length > 0) {
+            // Single name with package: use package for directory
+            fileName = snakeParts[0];
+            var snakePackageParts = pack.map(part -> toSnakeCase(part));
+            dirPath = snakePackageParts.join("/");
+        } else {
+            // Single name, no package: just the filename
+            fileName = snakeParts[0];
+            dirPath = "";
+        }
+        
+        return {
+            fileName: fileName,
+            dirPath: dirPath
+        };
+    }
 }

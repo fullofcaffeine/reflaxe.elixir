@@ -450,6 +450,102 @@ class PhoenixPathGenerator {
         
         return result;
     }
+    
+    /**
+     * COMPREHENSIVE NAMING RULE: Framework annotation-aware path and filename generation
+     * 
+     * WHY: Different Phoenix components need different path structures based on their role.
+     * Phoenix has strict conventions about where files should be placed - LiveViews go
+     * in app_web/live/, controllers in app_web/controllers/, schemas in app/schemas/, etc.
+     * This centralized function ensures all path generation follows Phoenix conventions.
+     * 
+     * WHAT: Analyzes class annotations to determine the correct Phoenix path structure:
+     * - @:router → router.ex in {app}_web/
+     * - @:liveview → {name}_live.ex in {app}_web/live/
+     * - @:controller → {name}_controller.ex in {app}_web/controllers/
+     * - @:schema → {name}.ex in {app}/schemas/
+     * - @:endpoint → endpoint.ex in {app}_web/
+     * - @:application → {name}.ex in root lib/ directory
+     * - Default → snake_case filename with package-based directory
+     * 
+     * HOW: 
+     * 1. Extract class name and package information
+     * 2. Detect Phoenix framework annotations using AnnotationSystem
+     * 3. Apply annotation-specific path and filename rules
+     * 4. Fall back to universal naming rule for non-Phoenix classes
+     * 5. Return structured result with fileName and dirPath
+     * 
+     * FRAMEWORK INTEGRATION: This function embodies the framework-agnostic design principle.
+     * The compiler generates plain Elixir by default, but framework conventions are applied
+     * via annotations rather than hardcoded assumptions.
+     * 
+     * @param classType The Haxe ClassType containing metadata and package information
+     * @return Object with fileName and dirPath following Phoenix conventions
+     */
+    public static function getComprehensiveNamingRule(classType: ClassType): {fileName: String, dirPath: String} {
+        var className = classType.name;
+        var packageParts = classType.pack;
+        var annotationInfo = AnnotationSystem.detectAnnotations(classType);
+        
+        // Start with the base snake_case file name
+        var baseFileName = NamingHelper.toSnakeCase(className);
+        
+        // Convert package parts to snake_case directories
+        var snakePackageParts = packageParts.map(part -> NamingHelper.toSnakeCase(part));
+        var packagePath = snakePackageParts.length > 0 ? snakePackageParts.join("/") : "";
+        
+        // Default rule: snake_case file name with package-based directory
+        var rule = {
+            fileName: baseFileName,
+            dirPath: packagePath
+        };
+        
+        // Apply framework annotation overrides if present
+        if (annotationInfo.primaryAnnotation != null) {
+            var appName = extractAppName(className);
+            
+            switch (annotationInfo.primaryAnnotation) {
+                case ":router":
+                    // TodoAppRouter → router.ex in todo_app_web/
+                    rule.fileName = "router";
+                    rule.dirPath = appName + "_web";
+                    
+                case ":liveview":
+                    // UserLive → user_live.ex in app_web/live/
+                    var liveViewName = baseFileName.replace("_live", "");
+                    rule.fileName = liveViewName + "_live";
+                    rule.dirPath = appName + "_web/live";
+                    
+                case ":controller":
+                    // UserController → user_controller.ex in app_web/controllers/
+                    rule.fileName = baseFileName;
+                    rule.dirPath = appName + "_web/controllers";
+                    
+                case ":schema":
+                    // User → user.ex in app/schemas/
+                    rule.fileName = baseFileName;
+                    rule.dirPath = appName + "/schemas";
+                    
+                case ":endpoint":
+                    // Endpoint → endpoint.ex in app_web/
+                    rule.fileName = "endpoint";
+                    rule.dirPath = appName + "_web";
+                    
+                case ":application":
+                    // TodoApp → todo_app.ex in lib/ (root)
+                    // Special case: for @:application, we want the file named after the class
+                    // not the @:native module name
+                    rule.fileName = baseFileName;
+                    rule.dirPath = ""; // Root lib/ directory
+                    
+                default:
+                    // Other annotations: keep package-based path with snake_case
+                    // Already set in default rule
+            }
+        }
+        
+        return rule;
+    }
 }
 
 #end
