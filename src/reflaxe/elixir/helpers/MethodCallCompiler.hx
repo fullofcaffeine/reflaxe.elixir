@@ -3,6 +3,7 @@ package reflaxe.elixir.helpers;
 #if (macro || reflaxe_runtime)
 
 import haxe.macro.Type;
+import haxe.macro.Context;
 import reflaxe.elixir.ElixirCompiler;import haxe.macro.Expr;
 import reflaxe.elixir.ElixirCompiler;import reflaxe.BaseCompiler;
 import reflaxe.elixir.ElixirCompiler;
@@ -132,19 +133,19 @@ class MethodCallCompiler {
                 }
                 
                 // Check for elixir.Syntax calls and transform them to __elixir__ injection
-                if (compiler.isElixirSyntaxCall(obj, fieldName)) {
+                if (isElixirSyntaxCall(obj, fieldName)) {
                     #if debug_method_call_compiler
                     trace("[XRay MethodCallCompiler] ✓ ELIXIR SYNTAX CALL DETECTED");
                     #end
-                    return compiler.compileElixirSyntaxCall(fieldName, el);
+                    return compileElixirSyntaxCall(fieldName, el);
                 }
                 
                 // Check for TypeSafeChildSpec enum constructor calls
-                if (compiler.isTypeSafeChildSpecCall(obj, fieldName)) {
+                if (isTypeSafeChildSpecCall(obj, fieldName)) {
                     #if debug_method_call_compiler
                     trace("[XRay MethodCallCompiler] ✓ TYPESAFE CHILDSPEC CALL DETECTED");
                     #end
-                    return compiler.compileTypeSafeChildSpecCall(fieldName, el);
+                    return compileTypeSafeChildSpecCall(fieldName, el);
                 }
                 
                 if (fieldName == "getAppName") {
@@ -425,6 +426,331 @@ class MethodCallCompiler {
         var functionName = compiler.compileExpression(e);
         var compiledArgs = args.map(arg -> compiler.compileExpression(arg));
         return functionName + "(" + compiledArgs.join(", ") + ")";
+    }
+    
+    /**
+     * Compile elixir.Syntax method calls to __elixir__ injection calls
+     * 
+     * WHY: elixir.Syntax provides type-safe access to Elixir-specific syntax patterns
+     * that can't be expressed in Haxe. These need to be transformed into direct Elixir
+     * code generation while maintaining compile-time validation.
+     * 
+     * WHAT: Transforms type-safe elixir.Syntax calls into the underlying __elixir__
+     * injection mechanism that Reflaxe processes via targetCodeInjectionName.
+     * Supports: code, plainCode, atom, tuple, keyword, map, list, pipe, match
+     * 
+     * HOW: Pattern matches on method names and generates appropriate Elixir syntax:
+     * 1. Validates argument counts and types at compile-time
+     * 2. Handles placeholder substitution for parameterized code injection
+     * 3. Generates idiomatic Elixir patterns (atoms, tuples, maps, etc.)
+     * 4. Provides error reporting for invalid usage
+     * 
+     * @param methodName The elixir.Syntax method being called (code, atom, tuple, etc.)
+     * @param args The arguments to the method call
+     * @return Compiled Elixir code
+     */
+    public function compileElixirSyntaxCall(methodName: String, args: Array<TypedExpr>): String {
+        return switch (methodName) {
+            case "code":
+                // elixir.Syntax.code(code, ...args) → direct injection
+                if (args.length == 0) {
+                    Context.error("elixir.Syntax.code requires at least one String argument.", Context.currentPos());
+                    "";
+                } else {
+                    // Get the code string from the first argument
+                    var codeString = switch (args[0].expr) {
+                        case TConst(TString(s)): s;
+                        case _: 
+                            Context.error("elixir.Syntax.code first parameter must be a constant String.", args[0].pos);
+                            "";
+                    };
+                    
+                    // Compile the remaining arguments
+                    var compiledArgs = [];
+                    for (i in 1...args.length) {
+                        compiledArgs.push(compiler.compileExpression(args[i]));
+                    }
+                    
+                    // Validate placeholder count matches argument count (js.Syntax pattern)
+                    var placeholderCount = 0;
+                    ~/{(\d+)}/g.map(codeString, function(ereg) {
+                        var num = Std.parseInt(ereg.matched(1));
+                        if (num != null && num >= placeholderCount) {
+                            placeholderCount = num + 1;
+                        }
+                        return ereg.matched(0);
+                    });
+                    
+                    if (placeholderCount > compiledArgs.length) {
+                        Context.error('elixir.Syntax.code() requires ${placeholderCount} arguments but ${compiledArgs.length} provided', Context.currentPos());
+                    }
+                    
+                    // Replace {N} placeholders with compiled arguments (following js.Syntax pattern)
+                    var result = ~/{(\d+)}/g.map(codeString, function(ereg) {
+                        var num = Std.parseInt(ereg.matched(1));
+                        return (num != null && num < compiledArgs.length) ? compiledArgs[num] : ereg.matched(0);
+                    });
+                    
+                    return result;
+                }
+                
+            case "plainCode":
+                // elixir.Syntax.plainCode(code) → direct injection without interpolation
+                if (args.length != 1) {
+                    Context.error("elixir.Syntax.plainCode requires exactly one String argument.", Context.currentPos());
+                    "";
+                } else {
+                    switch (args[0].expr) {
+                        case TConst(TString(s)): s;
+                        case _:
+                            Context.error("elixir.Syntax.plainCode parameter must be a constant String.", args[0].pos);
+                            "";
+                    }
+                }
+                
+            case "atom":
+                // elixir.Syntax.atom(name) → :name
+                if (args.length != 1) {
+                    Context.error("elixir.Syntax.atom requires exactly one String argument.", Context.currentPos());
+                    "";
+                } else {
+                    switch (args[0].expr) {
+                        case TConst(TString(s)): ':$s';
+                        case _:
+                            var atomName = compiler.compileExpression(args[0]);
+                            ':${atomName}';
+                    }
+                }
+                
+            case "tuple":
+                // elixir.Syntax.tuple(...args) → {arg1, arg2, ...}
+                var compiledArgs = args.map(arg -> compiler.compileExpression(arg));
+                '{${compiledArgs.join(", ")}}';
+                
+            case "keyword":
+                // elixir.Syntax.keyword([key1, value1, key2, value2]) → [key1: value1, key2: value2]
+                if (args.length != 1) {
+                    Context.error("elixir.Syntax.keyword requires exactly one Array argument.", Context.currentPos());
+                    "";
+                } else {
+                    switch (args[0].expr) {
+                        case TArrayDecl(elements):
+                            if (elements.length % 2 != 0) {
+                                Context.error("elixir.Syntax.keyword array must have an even number of elements (key-value pairs).", args[0].pos);
+                                "";
+                            } else {
+                                var pairs = [];
+                                var i = 0;
+                                while (i < elements.length) {
+                                    var key = compiler.compileExpression(elements[i]);
+                                    var value = compiler.compileExpression(elements[i + 1]);
+                                    pairs.push('${key}: ${value}');
+                                    i += 2;
+                                }
+                                '[${pairs.join(", ")}]';
+                            }
+                        case _:
+                            Context.error("elixir.Syntax.keyword parameter must be an array literal.", args[0].pos);
+                            "";
+                    }
+                }
+                
+            case "map":
+                // elixir.Syntax.map([key1, value1, key2, value2]) → %{key1 => value1, key2 => value2}
+                if (args.length != 1) {
+                    Context.error("elixir.Syntax.map requires exactly one Array argument.", Context.currentPos());
+                    "";
+                } else {
+                    switch (args[0].expr) {
+                        case TArrayDecl(elements):
+                            if (elements.length % 2 != 0) {
+                                Context.error("elixir.Syntax.map array must have an even number of elements (key-value pairs).", args[0].pos);
+                                "";
+                            } else {
+                                var pairs = [];
+                                var i = 0;
+                                while (i < elements.length) {
+                                    var key = compiler.compileExpression(elements[i]);
+                                    var value = compiler.compileExpression(elements[i + 1]);
+                                    pairs.push('${key} => ${value}');
+                                    i += 2;
+                                }
+                                '%{${pairs.join(", ")}}';
+                            }
+                        case _:
+                            Context.error("elixir.Syntax.map parameter must be an array literal.", args[0].pos);
+                            "";
+                    }
+                }
+                
+            case "list":
+                // elixir.Syntax.list(...args) → [arg1, arg2, ...]
+                var compiledArgs = args.map(arg -> compiler.compileExpression(arg));
+                '[${compiledArgs.join(", ")}]';
+                
+            case "pipe":
+                // elixir.Syntax.pipe(initial, ...operations) → initial |> op1 |> op2 |> ...
+                if (args.length < 2) {
+                    Context.error("elixir.Syntax.pipe requires at least two arguments (initial value and operations).", Context.currentPos());
+                    "";
+                } else {
+                    var initial = compiler.compileExpression(args[0]);
+                    var operations = [];
+                    for (i in 1...args.length) {
+                        operations.push(compiler.compileExpression(args[i]));
+                    }
+                    '${initial} |> ${operations.join(" |> ")}';
+                }
+                
+            case "match":
+                // elixir.Syntax.match(value, patterns) → case value do patterns end
+                if (args.length != 2) {
+                    Context.error("elixir.Syntax.match requires exactly two arguments (value and patterns).", Context.currentPos());
+                    "";
+                } else {
+                    var value = compiler.compileExpression(args[0]);
+                    var patterns = switch (args[1].expr) {
+                        case TConst(TString(s)): s;
+                        case _:
+                            Context.error("elixir.Syntax.match patterns must be a constant String.", args[1].pos);
+                            "";
+                    };
+                    'case ${value} do\n  ${StringTools.replace(patterns, "\\n", "\n  ")}\nend';
+                }
+                
+            case _:
+                Context.error('Unknown elixir.Syntax method: ${methodName}', Context.currentPos());
+                "";
+        };
+    }
+    
+    /**
+     * Check if a method call is a TypeSafeChildSpec enum constructor call
+     * 
+     * WHY: TypeSafeChildSpec provides type-safe child specification construction for
+     * OTP supervision trees, requiring special compilation to Elixir childspec format.
+     * 
+     * WHAT: Identifies static calls on TypeSafeChildSpec enum constructors that need
+     * to be compiled directly to Elixir child specification tuples.
+     * 
+     * HOW: Examines the TypedExpr to check if it references the elixir.otp.TypeSafeChildSpec enum.
+     * 
+     * @param obj The object expression being called on  
+     * @param fieldName The constructor name being called
+     * @return True if this is a TypeSafeChildSpec constructor call
+     */
+    public function isTypeSafeChildSpecCall(obj: TypedExpr, fieldName: String): Bool {
+        // Check if the object is a reference to TypeSafeChildSpec enum
+        switch (obj.expr) {
+            case TTypeExpr(moduleType):
+                switch (moduleType) {
+                    case TEnumDecl(enumRef):
+                        var enumType = enumRef.get();
+                        return enumType.name == "TypeSafeChildSpec" && 
+                               enumType.pack.join(".") == "elixir.otp";
+                    case _:
+                        return false;
+                }
+            case _:
+                return false;
+        }
+    }
+    
+    /**
+     * Compile TypeSafeChildSpec enum constructor calls directly to ChildSpec format
+     * 
+     * WHY: TypeSafeChildSpec constructors need to generate proper Elixir child
+     * specifications that follow OTP supervision tree patterns.
+     * 
+     * WHAT: Transforms TypeSafeChildSpec enum constructors to appropriate Elixir
+     * child specification format. Supports: PubSub, Repo, Endpoint, Telemetry.
+     * 
+     * HOW: Pattern matches on constructor names and generates the corresponding
+     * Elixir module references or child specification tuples with proper naming.
+     * 
+     * @param fieldName The TypeSafeChildSpec constructor name
+     * @param args The constructor arguments
+     * @return Compiled Elixir child specification
+     */
+    public function compileTypeSafeChildSpecCall(fieldName: String, args: Array<TypedExpr>): String {
+        var appName = reflaxe.elixir.helpers.AnnotationSystem.getEffectiveAppName(compiler.currentClassType);
+        
+        return switch (fieldName) {
+            case "PubSub":
+                if (args.length == 1) {
+                    var nameArg = compiler.compileExpression(args[0]);
+                    // Handle different formats of name argument
+                    var cleanName = if (nameArg.indexOf("<>") >= 0) {
+                        // For concatenations like 'app_name <> ".PubSub"', keep as-is (already has proper quotes)
+                        nameArg;
+                    } else {
+                        // For simple strings like '"TodoApp.PubSub"', remove quotes for atom format
+                        StringTools.replace(nameArg, '"', '');
+                    };
+                    // Generate modern tuple format for Phoenix.PubSub with atom name
+                    '{Phoenix.PubSub, name: ${cleanName}}';
+                } else {
+                    // Default name based on app - generate as atom
+                    '{Phoenix.PubSub, name: ${appName}.PubSub}';
+                }
+                
+            case "Repo":
+                // Generate simple module reference
+                '${appName}.Repo';
+                
+            case "Endpoint":
+                // Generate simple module reference  
+                '${appName}Web.Endpoint';
+                
+            case "Telemetry":
+                // Generate simple module reference
+                '${appName}Web.Telemetry';
+                
+            case _:
+                // Fallback to regular enum compilation for unknown constructors
+                if (args.length == 0) {
+                    ':${reflaxe.elixir.helpers.NamingHelper.toSnakeCase(fieldName)}';
+                } else {
+                    var argList = args.map(function(arg) return compiler.compileExpression(arg)).join(", ");
+                    '{:${reflaxe.elixir.helpers.NamingHelper.toSnakeCase(fieldName)}, ${argList}}';
+                }
+        };
+    }
+    
+    /**
+     * Check if a method call is an elixir.Syntax static method call
+     * 
+     * WHY: elixir.Syntax calls need special handling as they generate direct Elixir
+     * code injection rather than standard method calls.
+     * 
+     * WHAT: Identifies static method calls on the elixir.Syntax class for special compilation.
+     * 
+     * HOW: Examines the TypedExpr to see if it references elixir.Syntax module type.
+     * 
+     * @param obj The object expression being called on
+     * @param fieldName The method name being called
+     * @return True if this is an elixir.Syntax method call
+     */
+    public function isElixirSyntaxCall(obj: TypedExpr, fieldName: String): Bool {
+        switch (obj.expr) {
+            case TTypeExpr(moduleType):
+                // Check if this is the elixir.Syntax module
+                switch (moduleType) {
+                    case TClassDecl(c):
+                        var classRef = c.get();
+                        var fullPath = classRef.pack.join(".") + (classRef.pack.length > 0 ? "." : "") + classRef.name;
+                        return fullPath == "elixir.Syntax";
+                    case TTypeDecl(t):
+                        // Handle typedef case (though elixir.Syntax should be a class)
+                        var typeRef = t.get();
+                        var fullPath = typeRef.pack.join(".") + (typeRef.pack.length > 0 ? "." : "") + typeRef.name;
+                        return fullPath == "elixir.Syntax";
+                    case _:
+                        return false;
+                }
+            case _:
+                return false;
+        }
     }
 }
 
