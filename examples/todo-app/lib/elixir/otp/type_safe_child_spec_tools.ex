@@ -56,7 +56,7 @@ defmodule TypeSafeChildSpecTools do
           (
           endpoint_config = %{}
           if ((port != nil)) do
-          endpoint_config.port = port
+          %{endpoint_config | port: port}
         end
           if ((config != nil)) do
           (
