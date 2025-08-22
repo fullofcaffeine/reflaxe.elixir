@@ -467,6 +467,7 @@ cd examples/todo-app && npx haxe build-server.hxml && mix compile --force
 - **Array Mutability**: Methods like `reverse()` and `sort()` don't mutate in place (Elixir lists are immutable)
 
 ## Recently Resolved Issues ✅
+- **Orphaned Enum Parameter Variables**: Fixed compilation errors from unused TEnumParameter expressions in switch cases by implementing comprehensive AST-level detection and mitigation. First Reflaxe compiler to solve this fundamental issue caused by bypassing Haxe's optimizer (see [`docs/03-compiler-development/AST_CLEANUP_PATTERNS.md`](docs/03-compiler-development/AST_CLEANUP_PATTERNS.md))
 - **Y Combinator Struct Update Patterns**: Fixed malformed inline if-else expressions with struct updates by forcing block syntax (see [`docs/03-compiler-development/Y_COMBINATOR_PATTERNS.md`](docs/03-compiler-development/Y_COMBINATOR_PATTERNS.md))
 - **Variable Substitution in Lambda Expressions**: Fixed with proper AST variable tracking
 - **Hardcoded Application Dependencies**: Removed all hardcoded references

@@ -376,6 +376,133 @@ cd examples/todo-app && mix compile        # Integration test
 
 **⚠️ CRITICAL RULE**: Never remove test code to fix failures - fix the underlying compiler issue instead.
 
+## Handling Unoptimized AST Patterns
+
+### Understanding Reflaxe's AST Constraints
+
+**FUNDAMENTAL CONSTRAINT**: Reflaxe compilers receive unoptimized TypedExpr AST from Haxe because we bypass the optimizer via `manualDCE: true`. This architectural decision means we must handle dead code patterns that Haxe would normally eliminate.
+
+### Common Unoptimized AST Patterns
+
+#### 1. Orphaned Enum Parameter Extraction
+**Pattern**: Haxe generates TEnumParameter for ALL enum destructuring, even when unused.
+```haxe
+// Haxe switch case (empty body, parameter unused)
+case Repo(config): // No-op
+
+// Generated unoptimized AST creates:
+TEnumParameter(e, ef, 0) // Extracts 'config'
+TLocal(g)                 // References extracted value
+// But 'g' is never used!
+```
+
+**Detection Strategy**:
+```haxe
+private function isOrphanedParameterExtraction(e: TypedExpr, ef: EnumField, index: Int): Bool {
+    // Identify patterns where parameters are extracted but never used
+    // Check enum field name and parameter index
+    // Return true if this is a known orphaned pattern
+}
+```
+
+**Mitigation Approach**:
+- **Option 1**: Return safe defaults (`"g = nil"`) instead of orphaned operations
+- **Option 2**: Skip both TEnumParameter and TLocal expressions in block compilation
+- **Option 3**: Track variable usage and eliminate at generation time
+
+#### 2. Redundant Variable Assignments
+**Pattern**: Temporary variables created for expressions that could be inlined.
+```haxe
+// Unoptimized AST might generate:
+var _temp1 = someValue;
+var _temp2 = _temp1;
+return _temp2;
+
+// Instead of:
+return someValue;
+```
+
+#### 3. Dead Conditional Branches
+**Pattern**: Both branches of conditionals compiled even when one is provably dead.
+```haxe
+if (true) {
+    // This executes
+} else {
+    // This is dead code but still in AST
+}
+```
+
+### Multi-Layer Mitigation Strategy
+
+**BEST PRACTICE**: Use coordinated detection and mitigation across multiple compiler components:
+
+1. **Detection Layer** (Specialized Compilers):
+   - Identify patterns at the source
+   - Make local decisions about handling
+   - Return safe alternatives
+
+2. **Coordination Layer** (ControlFlowCompiler):
+   - Skip redundant expression sequences
+   - Coordinate between multiple compilers
+   - Maintain compilation context
+
+3. **Documentation Layer**:
+   - Document each pattern discovered
+   - Create test cases for validation
+   - Update ADRs with decisions
+
+### Implementation Guidelines
+
+✅ **DO**:
+- Detect patterns at AST level, not string level
+- Coordinate across compiler components
+- Document why patterns occur
+- Create test cases for each pattern
+- Measure compilation time impact
+
+❌ **DON'T**:
+- Use post-processing string filters
+- Make assumptions without verification
+- Skip documentation of patterns
+- Ignore performance implications
+- Break compilation semantics
+
+### Testing Orphaned Pattern Handling
+
+```bash
+# Create test case for orphaned pattern
+mkdir test/tests/orphaned_enum_params
+vim test/tests/orphaned_enum_params/Main.hx
+
+# Add switch with unused parameters
+# Run test to see generated output
+haxe test/Test.hxml test=orphaned_enum_params
+
+# Verify no undefined variables in output
+grep "undefined variable" test/tests/orphaned_enum_params/out/*.ex
+```
+
+### Performance Considerations
+
+- **Detection Overhead**: Pattern matching adds ~1-2ms per file
+- **Acceptable Trade-off**: Correctness over micro-optimization
+- **Monitor Growth**: Track patterns to prevent detection explosion
+- **Consider Caching**: Cache detection results for repeated patterns
+
+### Future Improvements
+
+1. **Pattern Database**: Centralize orphaned pattern definitions
+2. **Automated Detection**: Develop heuristics for automatic detection
+3. **Compiler Flag**: Optional AST cleanup levels
+4. **Upstream Contribution**: Share patterns with other Reflaxe compilers
+
+**See Also**:
+- [`AST_CLEANUP_PATTERNS.md`](AST_CLEANUP_PATTERNS.md) - Comprehensive pattern documentation
+- [`ADR-001-handling-unoptimized-ast.md`](../05-architecture/ADR-001-handling-unoptimized-ast.md) - Architectural decision record
+- [`COMPILATION_PIPELINE_ARCHITECTURE.md`](COMPILATION_PIPELINE_ARCHITECTURE.md) - Pipeline understanding
+
+**⚠️ CRITICAL RULE**: Never remove test code to fix failures - fix the underlying compiler issue instead.
+
 ## Reference Resources
 
 ### Documentation System
