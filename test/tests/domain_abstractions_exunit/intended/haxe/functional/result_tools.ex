@@ -26,18 +26,22 @@ defmodule ResultTools do
   """
   @spec map(Result.t(), Function.t()) :: Result.t()
   def map(result, transform) do
-    temp_result = nil
-    case (case result do {:ok, _} -> 0; {:error, _} -> 1; _ -> -1 end) do
-      0 ->
-        g = case result do {:ok, value} -> value; {:error, value} -> value; _ -> nil end
-        value = g
-        temp_result = {:ok, transform.(value)}
-      1 ->
-        g = case result do {:ok, value} -> value; {:error, value} -> value; _ -> nil end
-        error = g
-        temp_result = {:error, &ResultTools.error/1}
+    (
+          temp_result = nil
+          case (case result do {:ok, _} -> 0; {:error, _} -> 1; _ -> -1 end) do
+      0 -> (
+          g = case result do {:ok, value} -> value; {:error, value} -> value; _ -> nil end
+          value = g
+          temp_result = {:ok, transform.(value)}
+        )
+      1 -> (
+          g = case result do {:ok, value} -> value; {:error, value} -> value; _ -> nil end
+          error = g
+          temp_result = {:error, &ResultTools.error/1}
+        )
     end
-    temp_result
+          temp_result
+        )
   end
 
   @doc """
@@ -52,18 +56,22 @@ defmodule ResultTools do
   """
   @spec flat_map(Result.t(), Function.t()) :: Result.t()
   def flat_map(result, transform) do
-    temp_result = nil
-    case (case result do {:ok, _} -> 0; {:error, _} -> 1; _ -> -1 end) do
-      0 ->
-        g = case result do {:ok, value} -> value; {:error, value} -> value; _ -> nil end
-        value = g
-        temp_result = transform.(value)
-      1 ->
-        g = case result do {:ok, value} -> value; {:error, value} -> value; _ -> nil end
-        error = g
-        temp_result = {:error, &ResultTools.error/1}
+    (
+          temp_result = nil
+          case (case result do {:ok, _} -> 0; {:error, _} -> 1; _ -> -1 end) do
+      0 -> (
+          g = case result do {:ok, value} -> value; {:error, value} -> value; _ -> nil end
+          value = g
+          temp_result = transform.(value)
+        )
+      1 -> (
+          g = case result do {:ok, value} -> value; {:error, value} -> value; _ -> nil end
+          error = g
+          temp_result = {:error, &ResultTools.error/1}
+        )
     end
-    temp_result
+          temp_result
+        )
   end
 
   @doc """
@@ -72,7 +80,7 @@ defmodule ResultTools do
   """
   @spec bind(Result.t(), Function.t()) :: Result.t()
   def bind(result, transform) do
-    ResultTools.flat_map(result, &ResultTools.transform/1)
+    ResultTools.flat_map(result, transform)
   end
 
   @doc """
@@ -88,18 +96,22 @@ defmodule ResultTools do
   """
   @spec fold(Result.t(), Function.t(), Function.t()) :: R.t()
   def fold(result, on_success, on_error) do
-    temp_result = nil
-    case (case result do {:ok, _} -> 0; {:error, _} -> 1; _ -> -1 end) do
-      0 ->
-        g = case result do {:ok, value} -> value; {:error, value} -> value; _ -> nil end
-        value = g
-        temp_result = on_success.(value)
-      1 ->
-        g = case result do {:ok, value} -> value; {:error, value} -> value; _ -> nil end
-        error = g
-        temp_result = on_error.(&ResultTools.error/1)
+    (
+          temp_result = nil
+          case (case result do {:ok, _} -> 0; {:error, _} -> 1; _ -> -1 end) do
+      0 -> (
+          g = case result do {:ok, value} -> value; {:error, value} -> value; _ -> nil end
+          value = g
+          temp_result = on_success.(value)
+        )
+      1 -> (
+          g = case result do {:ok, value} -> value; {:error, value} -> value; _ -> nil end
+          error = g
+          temp_result = on_error.(&ResultTools.error/1)
+        )
     end
-    temp_result
+          temp_result
+        )
   end
 
   @doc """
@@ -109,16 +121,20 @@ defmodule ResultTools do
   """
   @spec is_ok(Result.t()) :: boolean()
   def is_ok(result) do
-    temp_result = nil
-    case (case result do {:ok, _} -> 0; {:error, _} -> 1; _ -> -1 end) do
-      0 ->
-        case result do {:ok, value} -> value; {:error, value} -> value; _ -> nil end
-        temp_result = true
-      1 ->
-        case result do {:ok, value} -> value; {:error, value} -> value; _ -> nil end
-        temp_result = false
+    (
+          temp_result = nil
+          case (case result do {:ok, _} -> 0; {:error, _} -> 1; _ -> -1 end) do
+      0 -> (
+          case result do {:ok, value} -> value; {:error, value} -> value; _ -> nil end
+          temp_result = true
+        )
+      1 -> (
+          case result do {:ok, value} -> value; {:error, value} -> value; _ -> nil end
+          temp_result = false
+        )
     end
-    temp_result
+          temp_result
+        )
   end
 
   @doc """
@@ -128,16 +144,20 @@ defmodule ResultTools do
   """
   @spec is_error(Result.t()) :: boolean()
   def is_error(result) do
-    temp_result = nil
-    case (case result do {:ok, _} -> 0; {:error, _} -> 1; _ -> -1 end) do
-      0 ->
-        case result do {:ok, value} -> value; {:error, value} -> value; _ -> nil end
-        temp_result = false
-      1 ->
-        case result do {:ok, value} -> value; {:error, value} -> value; _ -> nil end
-        temp_result = true
+    (
+          temp_result = nil
+          case (case result do {:ok, _} -> 0; {:error, _} -> 1; _ -> -1 end) do
+      0 -> (
+          case result do {:ok, value} -> value; {:error, value} -> value; _ -> nil end
+          temp_result = false
+        )
+      1 -> (
+          case result do {:ok, value} -> value; {:error, value} -> value; _ -> nil end
+          temp_result = true
+        )
     end
-    temp_result
+          temp_result
+        )
   end
 
   @doc """
@@ -151,18 +171,22 @@ defmodule ResultTools do
   """
   @spec unwrap(Result.t()) :: T.t()
   def unwrap(result) do
-    temp_result = nil
-    case (case result do {:ok, _} -> 0; {:error, _} -> 1; _ -> -1 end) do
-      0 ->
-        g = case result do {:ok, value} -> value; {:error, value} -> value; _ -> nil end
-        value = g
-        temp_result = value
-      1 ->
-        g = case result do {:ok, value} -> value; {:error, value} -> value; _ -> nil end
-        error = g
-        throw("Attempted to unwrap Error result: " <> Std.string(&ResultTools.error/1))
+    (
+          temp_result = nil
+          case (case result do {:ok, _} -> 0; {:error, _} -> 1; _ -> -1 end) do
+      0 -> (
+          g = case result do {:ok, value} -> value; {:error, value} -> value; _ -> nil end
+          value = g
+          temp_result = value
+        )
+      1 -> (
+          g = case result do {:ok, value} -> value; {:error, value} -> value; _ -> nil end
+          error = g
+          raise "Attempted to unwrap Error result: " <> Std.string(&ResultTools.error/1)
+        )
     end
-    temp_result
+          temp_result
+        )
   end
 
   @doc """
@@ -176,17 +200,21 @@ defmodule ResultTools do
   """
   @spec unwrap_or(Result.t(), T.t()) :: T.t()
   def unwrap_or(result, default_value) do
-    temp_result = nil
-    case (case result do {:ok, _} -> 0; {:error, _} -> 1; _ -> -1 end) do
-      0 ->
-        g = case result do {:ok, value} -> value; {:error, value} -> value; _ -> nil end
-        value = g
-        temp_result = value
-      1 ->
-        case result do {:ok, value} -> value; {:error, value} -> value; _ -> nil end
-        temp_result = default_value
+    (
+          temp_result = nil
+          case (case result do {:ok, _} -> 0; {:error, _} -> 1; _ -> -1 end) do
+      0 -> (
+          g = case result do {:ok, value} -> value; {:error, value} -> value; _ -> nil end
+          value = g
+          temp_result = value
+        )
+      1 -> (
+          case result do {:ok, value} -> value; {:error, value} -> value; _ -> nil end
+          temp_result = default_value
+        )
     end
-    temp_result
+          temp_result
+        )
   end
 
   @doc """
@@ -198,18 +226,22 @@ defmodule ResultTools do
   """
   @spec unwrap_or_else(Result.t(), Function.t()) :: T.t()
   def unwrap_or_else(result, error_handler) do
-    temp_result = nil
-    case (case result do {:ok, _} -> 0; {:error, _} -> 1; _ -> -1 end) do
-      0 ->
-        g = case result do {:ok, value} -> value; {:error, value} -> value; _ -> nil end
-        value = g
-        temp_result = value
-      1 ->
-        g = case result do {:ok, value} -> value; {:error, value} -> value; _ -> nil end
-        error = g
-        temp_result = error_handler.(&ResultTools.error/1)
+    (
+          temp_result = nil
+          case (case result do {:ok, _} -> 0; {:error, _} -> 1; _ -> -1 end) do
+      0 -> (
+          g = case result do {:ok, value} -> value; {:error, value} -> value; _ -> nil end
+          value = g
+          temp_result = value
+        )
+      1 -> (
+          g = case result do {:ok, value} -> value; {:error, value} -> value; _ -> nil end
+          error = g
+          temp_result = error_handler.(&ResultTools.error/1)
+        )
     end
-    temp_result
+          temp_result
+        )
   end
 
   @doc """
@@ -222,18 +254,26 @@ defmodule ResultTools do
   """
   @spec filter(Result.t(), Function.t(), E.t()) :: Result.t()
   def filter(result, predicate, error_value) do
-    temp_result = nil
-    case (case result do {:ok, _} -> 0; {:error, _} -> 1; _ -> -1 end) do
-      0 ->
-        g = case result do {:ok, value} -> value; {:error, value} -> value; _ -> nil end
-        value = g
-        temp_result = if (predicate.(value)), do: {:ok, value}, else: {:error, error_value}
-      1 ->
-        g = case result do {:ok, value} -> value; {:error, value} -> value; _ -> nil end
-        error = g
-        temp_result = {:error, &ResultTools.error/1}
+    (
+          temp_result = nil
+          case (case result do {:ok, _} -> 0; {:error, _} -> 1; _ -> -1 end) do
+      0 -> (
+          g = case result do {:ok, value} -> value; {:error, value} -> value; _ -> nil end
+          value = g
+          if (predicate.(value)) do
+          temp_result = {:ok, value}
+        else
+          temp_result = {:error, error_value}
+        end
+        )
+      1 -> (
+          g = case result do {:ok, value} -> value; {:error, value} -> value; _ -> nil end
+          error = g
+          temp_result = {:error, &ResultTools.error/1}
+        )
     end
-    temp_result
+          temp_result
+        )
   end
 
   @doc """
@@ -245,18 +285,22 @@ defmodule ResultTools do
   """
   @spec map_error(Result.t(), Function.t()) :: Result.t()
   def map_error(result, transform) do
-    temp_result = nil
-    case (case result do {:ok, _} -> 0; {:error, _} -> 1; _ -> -1 end) do
-      0 ->
-        g = case result do {:ok, value} -> value; {:error, value} -> value; _ -> nil end
-        value = g
-        temp_result = {:ok, value}
-      1 ->
-        g = case result do {:ok, value} -> value; {:error, value} -> value; _ -> nil end
-        error = g
-        temp_result = {:error, transform.(&ResultTools.error/1)}
+    (
+          temp_result = nil
+          case (case result do {:ok, _} -> 0; {:error, _} -> 1; _ -> -1 end) do
+      0 -> (
+          g = case result do {:ok, value} -> value; {:error, value} -> value; _ -> nil end
+          value = g
+          temp_result = {:ok, value}
+        )
+      1 -> (
+          g = case result do {:ok, value} -> value; {:error, value} -> value; _ -> nil end
+          error = g
+          temp_result = {:error, transform.(&ResultTools.error/1)}
+        )
     end
-    temp_result
+          temp_result
+        )
   end
 
   @doc """
@@ -271,18 +315,22 @@ defmodule ResultTools do
   """
   @spec bimap(Result.t(), Function.t(), Function.t()) :: Result.t()
   def bimap(result, on_success, on_error) do
-    temp_result = nil
-    case (case result do {:ok, _} -> 0; {:error, _} -> 1; _ -> -1 end) do
-      0 ->
-        g = case result do {:ok, value} -> value; {:error, value} -> value; _ -> nil end
-        value = g
-        temp_result = {:ok, on_success.(value)}
-      1 ->
-        g = case result do {:ok, value} -> value; {:error, value} -> value; _ -> nil end
-        error = g
-        temp_result = {:error, on_error.(&ResultTools.error/1)}
+    (
+          temp_result = nil
+          case (case result do {:ok, _} -> 0; {:error, _} -> 1; _ -> -1 end) do
+      0 -> (
+          g = case result do {:ok, value} -> value; {:error, value} -> value; _ -> nil end
+          value = g
+          temp_result = {:ok, on_success.(value)}
+        )
+      1 -> (
+          g = case result do {:ok, value} -> value; {:error, value} -> value; _ -> nil end
+          error = g
+          temp_result = {:error, on_error.(&ResultTools.error/1)}
+        )
     end
-    temp_result
+          temp_result
+        )
   end
 
   @doc """
@@ -308,7 +356,7 @@ defmodule ResultTools do
   """
   @spec error(E.t()) :: Result.t()
   def error(error) do
-    {:error, &ResultTools.error/1}
+    {:error, error}
   end
 
   @doc """
@@ -322,41 +370,27 @@ defmodule ResultTools do
   """
   @spec sequence(Array.t()) :: Result.t()
   def sequence(results) do
-    values = []
-    g_counter = 0
     (
-      loop_helper = fn loop_fn, {g} ->
-        if (g < results.length) do
-          try do
-            result = Enum.at(results, g)
-          g = g + 1
+          values = []
+          g_counter = 0
+          while_loop(fn -> ((g < results.length)) end, fn -> (
+          result = Enum.at(results, g)
+          g + 1
           case (case result do {:ok, _} -> 0; {:error, _} -> 1; _ -> -1 end) do
-      0 ->
-        g = case result do {:ok, value} -> value; {:error, value} -> value; _ -> nil end
-        value = g
-        values ++ [value]
-      1 ->
-        g = case result do {:ok, value} -> value; {:error, value} -> value; _ -> nil end
-        error = g
-        {:error, &ResultTools.error/1}
+      0 -> (
+          g = case result do {:ok, value} -> value; {:error, value} -> value; _ -> nil end
+          value = g
+          values ++ [value]
+        )
+      1 -> (
+          g = case result do {:ok, value} -> value; {:error, value} -> value; _ -> nil end
+          error = g
+          {:error, &ResultTools.error/1}
+        )
     end
-          loop_fn.({g + 1})
-            loop_fn.(loop_fn, {g})
-          catch
-            :break -> {g}
-            :continue -> loop_fn.(loop_fn, {g})
-          end
-        else
-          {g}
-        end
-      end
-      {g} = try do
-        loop_helper.(loop_helper, {nil})
-      catch
-        :break -> {nil}
-      end
-    )
-    {:ok, values}
+        ) end)
+          {:ok, values}
+        )
   end
 
   @doc """
@@ -371,31 +405,16 @@ defmodule ResultTools do
   """
   @spec traverse(Array.t(), Function.t()) :: Result.t()
   def traverse(array, transform) do
-    _g_array = []
-    _g_counter = 0
     (
-      loop_helper = fn loop_fn, {g_counter} ->
-        if (g < array.length) do
-          try do
-            v = Enum.at(array, g)
-    g = g + 1
-    _g_counter.push(&ResultTools.transform/1(v))
-            loop_fn.(loop_fn, {g_counter})
-          catch
-            :break -> {g_counter}
-            :continue -> loop_fn.(loop_fn, {g_counter})
-          end
-        else
-          {g_counter}
-        end
-      end
-      {g_counter} = try do
-        loop_helper.(loop_helper, {nil})
-      catch
-        :break -> {nil}
-      end
-    )
-    ResultTools.sequence(g)
+          g_array = []
+          g_counter = 0
+          while_loop(fn -> ((g < array.length)) end, fn -> (
+          v = Enum.at(array, g)
+          g + 1
+          g ++ [transform.(v)]
+        ) end)
+          ResultTools.sequence(g)
+        )
   end
 
   @doc """
@@ -408,17 +427,21 @@ defmodule ResultTools do
   """
   @spec to_option(Result.t()) :: Option.t()
   def to_option(result) do
-    temp_result = nil
-    case (case result do {:ok, _} -> 0; {:error, _} -> 1; _ -> -1 end) do
-      0 ->
-        g = case result do {:ok, value} -> value; {:error, value} -> value; _ -> nil end
-        value = g
-        temp_result = {:ok, value}
-      1 ->
-        case result do {:ok, value} -> value; {:error, value} -> value; _ -> nil end
-        temp_result = :error
+    (
+          temp_result = nil
+          case (case result do {:ok, _} -> 0; {:error, _} -> 1; _ -> -1 end) do
+      0 -> (
+          g = case result do {:ok, value} -> value; {:error, value} -> value; _ -> nil end
+          value = g
+          temp_result = Option.some(value)
+        )
+      1 -> (
+          case result do {:ok, value} -> value; {:error, value} -> value; _ -> nil end
+          temp_result = :error
+        )
     end
-    temp_result
+          temp_result
+        )
   end
 
 end

@@ -45,10 +45,10 @@ defmodule Shape do
   @doc "Function move"
   @spec move(t(), float(), float()) :: nil
   def move(%__MODULE__{} = struct, dx, dy) do
-    fh = struct.position
-    fh = %{fh | x: fh.x + dx}
-    fh = struct.position
-    fh = %{fh | y: fh.y + dy}
+    (
+          fh = %{fh.position | x: dx}
+          fh2 = %{fh2.position | y: dy}
+        )
   end
 
 end

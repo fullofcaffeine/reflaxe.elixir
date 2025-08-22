@@ -30,9 +30,9 @@ defmodule PosException do
     Returns exception message.
 
   """
-  @spec to_string(t()) :: String.t()
-  def to_string(%__MODULE__{} = struct) do
-    "" <> "Exception" <> " in " <> struct.pos_infos.class_name <> "." <> struct.pos_infos.method_name <> " at " <> struct.pos_infos.file_name <> ":" <> Integer.to_string(struct.pos_infos.line_number)
+  @spec format(t()) :: String.t()
+  def format(%__MODULE__{} = struct) do
+    "" <> "Exception" <> " in " <> struct.pos_infos.class_name <> "." <> struct.pos_infos.method_name <> " at " <> struct.pos_infos.file_name <> ":" <> to_string(struct.pos_infos.line_number)
   end
 
 end

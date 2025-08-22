@@ -35,20 +35,21 @@ defmodule BasicModule do
   """
   @spec calculate(integer(), integer(), String.t()) :: integer()
   def calculate(x, y, operation) do
-    temp_result = nil
-    case (operation) do
-      "add" ->
-        temp_result = x + y
-      "divide" ->
-        temp_result = if (y != 0), do: Std.int(x / y), else: 0
-      "multiply" ->
-        temp_result = x * y
-      "subtract" ->
-        temp_result = x - y
-      _ ->
-        temp_result = 0
+    (
+          temp_result = nil
+          case (operation) do
+      "add" -> temp_result = (x + y)
+      "divide" -> if ((y != 0)) do
+          temp_result = Std.int((x / y))
+        else
+          temp_result = 0
+        end
+      "multiply" -> temp_result = (x * y)
+      "subtract" -> temp_result = (x - y)
+      _ -> temp_result = 0
     end
-    temp_result
+          temp_result
+        )
   end
 
   @doc """
@@ -66,7 +67,7 @@ defmodule BasicModule do
   """
   @spec is_valid(String.t()) :: boolean()
   def is_valid(input) do
-    input != nil && input.length > 0
+    ((input != nil) && (input.length > 0))
   end
 
   @doc """

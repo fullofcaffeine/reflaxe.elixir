@@ -51,98 +51,69 @@ defmodule Main do
   @doc "Function calculate"
   @spec calculate(t(), integer(), integer()) :: integer()
   def calculate(%__MODULE__{} = struct, x, y) do
-    x + y * struct.instance_var
+    (x + (y * struct.instance_var))
   end
 
   @doc "Function check_value"
   @spec check_value(t(), integer()) :: String.t()
   def check_value(%__MODULE__{} = struct, n) do
-    if (n < 0), do: "negative", else: if (n == 0), do: "zero", else: "positive"
+    if ((n < 0)) do
+          "negative"
+        else
+          if ((n == 0)) do
+          "zero"
+        else
+          "positive"
+        end
+        end
   end
 
   @doc "Function sum_range"
   @spec sum_range(t(), integer(), integer()) :: integer()
   def sum_range(%__MODULE__{} = struct, start, end_) do
-    sum = 0
-    _g_1 = start
-    _g_2 = end_
     (
-      loop_helper = fn loop_fn, {sum} ->
-        if (g < g) do
-          try do
-            i = g = g + 1
-    sum = sum + i
-            loop_fn.(loop_fn, {sum})
-          catch
-            :break -> {sum}
-            :continue -> loop_fn.(loop_fn, {sum})
-          end
-        else
-          {sum}
-        end
-      end
-      {sum} = try do
-        loop_helper.(loop_helper, {nil})
-      catch
-        :break -> {nil}
-      end
-    )
-    sum
+          sum = 0
+          g = start
+          g = end_
+          while_loop(fn -> ((g < g)) end, fn -> (
+          i = g + 1
+          sum = sum + i
+        ) end)
+          sum
+        )
   end
 
   @doc "Function factorial"
   @spec factorial(t(), integer()) :: integer()
   def factorial(%__MODULE__{} = struct, n) do
-    result = 1
-    i = n
     (
-      loop_helper = fn loop_fn, {result, i} ->
-        if (i > 1) do
-          try do
-            result = result * i
-          i = i - 1
-          loop_fn.({result * i, i - 1})
-            loop_fn.(loop_fn, {result, i})
-          catch
-            :break -> {result, i}
-            :continue -> loop_fn.(loop_fn, {result, i})
-          end
-        else
-          {result, i}
-        end
-      end
-      {result, i} = try do
-        loop_helper.(loop_helper, {nil, nil})
-      catch
-        :break -> {nil, nil}
-      end
-    )
-    result
+          result = 1
+          i = n
+          while_loop(fn -> ((i > 1)) end, fn -> (
+          result = result * i
+          i - 1
+        ) end)
+          result
+        )
   end
 
   @doc "Function day_name"
   @spec day_name(t(), integer()) :: String.t()
   def day_name(%__MODULE__{} = struct, day) do
-    temp_result = nil
-    case (day) do
-      1 ->
-        temp_result = "Monday"
-      2 ->
-        temp_result = "Tuesday"
-      3 ->
-        temp_result = "Wednesday"
-      4 ->
-        temp_result = "Thursday"
-      5 ->
-        temp_result = "Friday"
-      6 ->
-        temp_result = "Saturday"
-      7 ->
-        temp_result = "Sunday"
-      _ ->
-        temp_result = "Invalid"
+    (
+          temp_result = nil
+          case (day) do
+      1 -> temp_result = "Monday"
+      2 -> temp_result = "Tuesday"
+      3 -> temp_result = "Wednesday"
+      4 -> temp_result = "Thursday"
+      5 -> temp_result = "Friday"
+      6 -> temp_result = "Saturday"
+      7 -> temp_result = "Sunday"
+      _ -> temp_result = "Invalid"
     end
-    temp_result
+          temp_result
+        )
   end
 
 end
