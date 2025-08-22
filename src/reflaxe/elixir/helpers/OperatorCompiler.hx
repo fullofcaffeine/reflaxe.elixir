@@ -358,6 +358,32 @@ class OperatorCompiler {
             case _: false;
         };
     }
+
+    /**
+     * Check if an expression is a complex field assignment with variable reassignment
+     * 
+     * WHY: Complex patterns like "struct = struct.buf; struct.b = ..." need special handling
+     * WHAT: Detect variable reassignment followed by field assignment on the same variable
+     * HOW: Analyze if variable is being reassigned to a field access of itself
+     * 
+     * @param left Left side of assignment (variable name)
+     * @param right Right side of assignment (field access expression)
+     * @param varName Variable name being assigned to
+     * @return True if this is a variable reassignment that will lead to field mutations
+     */
+    private function isComplexFieldAssignment(left: TypedExpr, right: TypedExpr, varName: String): Bool {
+        // Check if we're assigning a variable to a field access of itself
+        // Pattern: struct = struct.buf (variable = variable.field)
+        return switch(right.expr) {
+            case TField(obj, fieldAccess): 
+                // Check if the object being accessed matches the variable being assigned
+                switch(obj.expr) {
+                    case TLocal(localVar): localVar.name == varName;
+                    case _: false;
+                };
+            case _: false;
+        };
+    }
     
     /**
      * Compile field assignment using Elixir Map update syntax
@@ -385,6 +411,12 @@ class OperatorCompiler {
                     case _: "unknown_field";
                 };
                 
+                // Check if this is a complex field assignment that needs special handling
+                // Pattern: struct.b = struct.b <> "something" where struct was just reassigned
+                if (isComplexFieldUpdatePattern(objCompiled, fieldName, valueExpr)) {
+                    return compileComplexFieldUpdate(objCompiled, fieldName, valueExpr);
+                }
+                
                 // Generate Map update syntax - use pattern %{obj | field: value}
                 return '%{${objCompiled} | ${fieldName}: ${valueCompiled}}';
                 
@@ -392,6 +424,64 @@ class OperatorCompiler {
                 // Fallback - shouldn't happen but handle gracefully
                 return '${compiler.compileExpression(fieldExpr)} = ${compiler.compileExpression(valueExpr)}';
         }
+    }
+
+    /**
+     * Check if this is a complex field update pattern that needs transformation
+     * 
+     * WHY: Patterns like struct.b = struct.b <> "text" need special handling in immutable context
+     * WHAT: Detect when field assignment references the same field in the value expression
+     * HOW: Analyze if the value expression contains a field access to the same object/field
+     * 
+     * @param objCompiled The compiled object expression
+     * @param fieldName The field being assigned to
+     * @param valueExpr The value expression being assigned
+     * @return True if this is a complex field update pattern
+     */
+    private function isComplexFieldUpdatePattern(objCompiled: String, fieldName: String, valueExpr: TypedExpr): Bool {
+        // Look for patterns where the value expression references the same field
+        // Example: struct.b = struct.b <> "text"
+        switch (valueExpr.expr) {
+            case TBinop(op, e1, e2):
+                // Check if left operand is a field access to the same field
+                switch (e1.expr) {
+                    case TField(obj, fieldAccess):
+                        var leftFieldName = switch (fieldAccess) {
+                            case FInstance(_, _, cf) | FStatic(_, cf) | FAnon(cf): cf.get().name;
+                            case FEnum(_, ef): ef.name;
+                            case FClosure(_, cf): cf.get().name;
+                            case FDynamic(s): s;
+                            case _: "unknown_field";
+                        };
+                        
+                        var leftObjCompiled = compiler.compileExpression(obj);
+                        
+                        // Check if it's the same object and field
+                        return leftObjCompiled == objCompiled && leftFieldName == fieldName;
+                    case _: return false;
+                }
+            case _: return false;
+        }
+    }
+
+    /**
+     * Compile complex field update pattern with proper Map syntax
+     * 
+     * WHY: Transform struct.b = struct.b <> "text" to proper immutable update
+     * WHAT: Generate Map update that handles the field reference correctly
+     * HOW: Transform to %{obj | field: obj.field <> "text"} or similar pattern
+     * 
+     * @param objCompiled The compiled object expression
+     * @param fieldName The field being updated
+     * @param valueExpr The value expression (contains the operation)
+     * @return Compiled Map update expression
+     */
+    private function compileComplexFieldUpdate(objCompiled: String, fieldName: String, valueExpr: TypedExpr): String {
+        var valueCompiled = compiler.compileExpression(valueExpr);
+        
+        // For complex updates, we need to generate the proper Map update syntax
+        // The value expression already contains the field reference, so we can use it directly
+        return '%{${objCompiled} | ${fieldName}: ${valueCompiled}}';
     }
     
     /**

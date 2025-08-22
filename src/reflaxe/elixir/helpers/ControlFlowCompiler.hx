@@ -14,6 +14,31 @@ using reflaxe.helpers.TypedExprHelper;
 using StringTools;
 
 /**
+ * Data structure for merged assignment results
+ */
+typedef MergedAssignment = {
+    compiledCode: String,
+    nextIndex: Int
+};
+
+/**
+ * Pattern data for variable to field assignment
+ */
+typedef VariableToFieldPattern = {
+    varName: String,
+    sourceFieldAccess: String,
+    sourceObject: String
+};
+
+/**
+ * Pattern data for field assignment
+ */
+typedef FieldAssignmentPattern = {
+    fieldName: String,
+    valueExpression: TypedExpr
+};
+
+/**
  * Control Flow Compiler for Reflaxe.Elixir
  * 
  * WHY: The compileElixirExpressionInternal function contained ~600 lines of control flow compilation
@@ -101,13 +126,23 @@ class ControlFlowCompiler {
             return "nil";
         }
         
-        // Compile each expression in the block
+        // Compile each expression in the block with sequential field assignment analysis
         var statements = [];
-        for (i in 0...el.length) {
-            // CRITICAL FIX: Pass topLevel parameter to maintain clean formatting for function bodies
-            var compiled = compiler.compileExpression(el[i], topLevel);
-            if (compiled != null && compiled.length > 0) {
-                statements.push(compiled);
+        var i = 0;
+        while (i < el.length) {
+            // Check for sequential field assignment patterns that need merging
+            var mergedAssignment = detectAndMergeSequentialFieldAssignments(el, i);
+            if (mergedAssignment != null) {
+                // Sequential assignments were merged, add the result and skip processed expressions
+                statements.push(mergedAssignment.compiledCode);
+                i = mergedAssignment.nextIndex;
+            } else {
+                // Normal expression compilation
+                var compiled = compiler.compileExpression(el[i], topLevel);
+                if (compiled != null && compiled.length > 0) {
+                    statements.push(compiled);
+                }
+                i++;
             }
         }
         
@@ -136,6 +171,147 @@ class ControlFlowCompiler {
         #end
         
         return result;
+    }
+    
+    /**
+     * Detect and merge sequential field assignments in block expressions
+     * 
+     * WHY: Patterns like "struct = struct.buf; struct.b = ..." need to be merged into atomic updates
+     * WHAT: Analyze consecutive assignments for variable reassignment followed by field mutation
+     * HOW: 
+     * 1. Check if current expression is variable assignment to field access (struct = struct.buf)
+     * 2. Check if next expression is field assignment on same variable (struct.b = ...)
+     * 3. If pattern matches, merge into single Map update expression
+     * 
+     * @param expressions Array of expressions in the block
+     * @param startIndex Current expression index to analyze
+     * @return MergedAssignment if pattern detected, null otherwise
+     */
+    private function detectAndMergeSequentialFieldAssignments(expressions: Array<TypedExpr>, startIndex: Int): Null<MergedAssignment> {
+        // Need at least 2 expressions to have a sequential pattern
+        if (startIndex + 1 >= expressions.length) {
+            return null;
+        }
+        
+        var firstExpr = expressions[startIndex];
+        var secondExpr = expressions[startIndex + 1];
+        
+        #if debug_control_flow_compiler
+        trace('[XRay ControlFlowCompiler] Checking pattern at index ${startIndex}');
+        trace('[XRay ControlFlowCompiler] First expr: ${firstExpr.expr}');
+        trace('[XRay ControlFlowCompiler] Second expr: ${secondExpr.expr}');
+        #end
+        
+        // Pattern 1: struct = struct.buf (variable assignment to field access)
+        var variableReassignment = analyzeVariableToFieldAssignment(firstExpr);
+        if (variableReassignment == null) {
+            return null;
+        }
+        
+        // Pattern 2: struct.b = struct.b <> "text" (field assignment on same variable)
+        var fieldAssignment = analyzeFieldAssignmentPattern(secondExpr, variableReassignment.varName);
+        if (fieldAssignment == null) {
+            return null;
+        }
+        
+        // Merge the patterns into a single atomic update
+        var mergedCode = generateMergedFieldUpdate(variableReassignment, fieldAssignment);
+        
+        return {
+            compiledCode: mergedCode,
+            nextIndex: startIndex + 2  // Skip both processed expressions
+        };
+    }
+    
+    /**
+     * Analyze if expression is variable assignment to field access (struct = struct.buf)
+     * 
+     * @param expr Expression to analyze
+     * @return Pattern info if matches, null otherwise
+     */
+    private function analyzeVariableToFieldAssignment(expr: TypedExpr): Null<VariableToFieldPattern> {
+        switch (expr.expr) {
+            case TBinop(OpAssign, e1, e2):
+                // Check if left side is a local variable
+                switch (e1.expr) {
+                    case TLocal(v):
+                        var varName = v.name;
+                        
+                        // Check if right side is field access on same variable
+                        switch (e2.expr) {
+                            case TField(obj, fieldAccess):
+                                switch (obj.expr) {
+                                    case TLocal(objVar) if (objVar.name == varName):
+                                        var fieldName = switch (fieldAccess) {
+                                            case FInstance(_, _, cf) | FStatic(_, cf) | FAnon(cf): cf.get().name;
+                                            case FEnum(_, ef): ef.name;
+                                            case FClosure(_, cf): cf.get().name;
+                                            case FDynamic(s): s;
+                                            case _: "unknown_field";
+                                        };
+                                        
+                                        return {
+                                            varName: varName,
+                                            sourceFieldAccess: fieldName,
+                                            sourceObject: varName
+                                        };
+                                    case _: return null;
+                                }
+                            case _: return null;
+                        }
+                    case _: return null;
+                }
+            case _: return null;
+        }
+    }
+    
+    /**
+     * Analyze if expression is field assignment on specified variable
+     * 
+     * @param expr Expression to analyze
+     * @param targetVarName Variable name to check for
+     * @return Pattern info if matches, null otherwise  
+     */
+    private function analyzeFieldAssignmentPattern(expr: TypedExpr, targetVarName: String): Null<FieldAssignmentPattern> {
+        switch (expr.expr) {
+            case TBinop(OpAssign, e1, e2):
+                // Check if left side is field access on target variable
+                switch (e1.expr) {
+                    case TField(obj, fieldAccess):
+                        switch (obj.expr) {
+                            case TLocal(v) if (v.name == targetVarName):
+                                var fieldName = switch (fieldAccess) {
+                                    case FInstance(_, _, cf) | FStatic(_, cf) | FAnon(cf): cf.get().name;
+                                    case FEnum(_, ef): ef.name;
+                                    case FClosure(_, cf): cf.get().name;
+                                    case FDynamic(s): s;
+                                    case _: "unknown_field";
+                                };
+                                
+                                return {
+                                    fieldName: fieldName,
+                                    valueExpression: e2
+                                };
+                            case _: return null;
+                        }
+                    case _: return null;
+                }
+            case _: return null;
+        }
+    }
+    
+    /**
+     * Generate merged field update expression
+     * 
+     * @param varPattern Variable reassignment pattern
+     * @param fieldPattern Field assignment pattern
+     * @return Compiled merged update expression
+     */
+    private function generateMergedFieldUpdate(varPattern: VariableToFieldPattern, fieldPattern: FieldAssignmentPattern): String {
+        var valueCompiled = compiler.compileExpression(fieldPattern.valueExpression);
+        
+        // Generate: variable = %{variable.source_field | target_field: value}
+        return '${varPattern.varName} = %{${varPattern.varName}.${varPattern.sourceFieldAccess} | ${fieldPattern.fieldName}: ${valueCompiled}}';
     }
     
     /**
