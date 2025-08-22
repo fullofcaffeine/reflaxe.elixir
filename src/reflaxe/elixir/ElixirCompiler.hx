@@ -861,40 +861,19 @@ class ElixirCompiler extends DirectToStringCompiler {
      * @param pack Package array (can be empty)
      * @return Naming rule with snake_case fileName and dirPath
      */
+    /**
+     * Universal naming rule system - delegates to NamingHelper for centralized logic
+     * 
+     * WHY: Delegates to NamingHelper for centralized naming rule management
+     * WHAT: Wrapper function that maintains backward compatibility while delegating
+     * HOW: Simply forwards the call to NamingHelper.getUniversalNamingRule()
+     * 
+     * @param moduleName The Haxe module name (can contain dots)
+     * @param pack Optional package array for directory structure
+     * @return Object with fileName and dirPath for consistent naming
+     */
     private function getUniversalNamingRule(moduleName: String, pack: Array<String> = null): {fileName: String, dirPath: String} {
-        // Handle dot notation in module name (e.g., "haxe.CallStack")
-        var parts = moduleName.split(".");
-        
-        // Convert all parts to snake_case
-        var snakeParts = parts.map(part -> NamingHelper.toSnakeCase(part));
-        
-        var fileName: String;
-        var dirPath: String;
-        
-        // Safety check for empty snakeParts array
-        if (snakeParts.length == 0) {
-            // Fallback for empty module name
-            fileName = "unknown_module";
-            dirPath = "";
-        } else if (snakeParts.length > 1) {
-            // Multi-part name: last part is filename, rest is directory
-            fileName = snakeParts.pop();
-            dirPath = snakeParts.join("/");
-        } else if (pack != null && pack.length > 0) {
-            // Single name with package: use package for directory
-            fileName = snakeParts[0];
-            var snakePackageParts = pack.map(part -> NamingHelper.toSnakeCase(part));
-            dirPath = snakePackageParts.join("/");
-        } else {
-            // Single name, no package: just the filename
-            fileName = snakeParts[0];
-            dirPath = "";
-        }
-        
-        return {
-            fileName: fileName,
-            dirPath: dirPath
-        };
+        return NamingHelper.getUniversalNamingRule(moduleName, pack);
     }
     
     /**
@@ -925,69 +904,18 @@ class ElixirCompiler extends DirectToStringCompiler {
      * 
      * Every file gets proper Elixir naming conventions applied.
      */
+    /**
+     * DELEGATION: Comprehensive naming rule extraction (moved to PhoenixPathGenerator.hx)
+     * 
+     * ARCHITECTURAL DECISION: This function was moved to PhoenixPathGenerator.hx as part of 
+     * naming/path utilities consolidation. Framework-specific path generation logic belongs 
+     * with other Phoenix path generation functionality, not in the main compiler.
+     * 
+     * @param classType The Haxe ClassType containing metadata and package information
+     * @return Object with fileName and dirPath following Phoenix conventions
+     */
     private function getComprehensiveNamingRule(classType: ClassType): {fileName: String, dirPath: String} {
-        var className = classType.name;
-        var packageParts = classType.pack;
-        var annotationInfo = reflaxe.elixir.helpers.AnnotationSystem.detectAnnotations(classType);
-        
-        // Start with the base snake_case file name
-        var baseFileName = NamingHelper.toSnakeCase(className);
-        
-        // Convert package parts to snake_case directories
-        var snakePackageParts = packageParts.map(part -> NamingHelper.toSnakeCase(part));
-        var packagePath = snakePackageParts.length > 0 ? snakePackageParts.join("/") : "";
-        
-        // Default rule: snake_case file name with package-based directory
-        var rule = {
-            fileName: baseFileName,
-            dirPath: packagePath
-        };
-        
-        // Apply framework annotation overrides if present
-        if (annotationInfo.primaryAnnotation != null) {
-            var appName = PhoenixPathGenerator.extractAppName(className);
-            
-            switch (annotationInfo.primaryAnnotation) {
-                case ":router":
-                    // TodoAppRouter → router.ex in todo_app_web/
-                    rule.fileName = "router";
-                    rule.dirPath = appName + "_web";
-                    
-                case ":liveview":
-                    // UserLive → user_live.ex in app_web/live/
-                    var liveViewName = baseFileName.replace("_live", "");
-                    rule.fileName = liveViewName + "_live";
-                    rule.dirPath = appName + "_web/live";
-                    
-                case ":controller":
-                    // UserController → user_controller.ex in app_web/controllers/
-                    rule.fileName = baseFileName;
-                    rule.dirPath = appName + "_web/controllers";
-                    
-                case ":schema":
-                    // User → user.ex in app/schemas/
-                    rule.fileName = baseFileName;
-                    rule.dirPath = appName + "/schemas";
-                    
-                case ":endpoint":
-                    // Endpoint → endpoint.ex in app_web/
-                    rule.fileName = "endpoint";
-                    rule.dirPath = appName + "_web";
-                    
-                case ":application":
-                    // TodoApp → todo_app.ex in lib/ (root)
-                    // Special case: for @:application, we want the file named after the class
-                    // not the @:native module name
-                    rule.fileName = baseFileName;
-                    rule.dirPath = ""; // Root lib/ directory
-                    
-                default:
-                    // Other annotations: keep package-based path with snake_case
-                    // Already set in default rule
-            }
-        }
-        
-        return rule;
+        return PhoenixPathGenerator.getComprehensiveNamingRule(classType);
     }
     
     /**
