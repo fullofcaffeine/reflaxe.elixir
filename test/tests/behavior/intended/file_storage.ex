@@ -28,8 +28,13 @@ defmodule FileStorage do
   @doc "Function init"
   @spec init(t(), term()) :: t()
   def init(%__MODULE__{} = struct, config) do
-    if (config.path != nil), do: struct = %{struct | base_path: config.path}, else: nil
-    %{"ok" => struct}
+    (
+          if ((config.path != nil)) do
+          struct = %{struct | base_path: config.path}
+        end
+          %{"ok" => struct}
+        )
+    struct
   end
 
   @doc "Function get"

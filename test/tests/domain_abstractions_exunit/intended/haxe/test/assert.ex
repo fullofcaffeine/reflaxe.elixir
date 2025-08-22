@@ -37,7 +37,7 @@ defmodule Assert do
   """
   @spec is_true(boolean(), Null.t()) :: nil
   def is_true(value, message) do
-    throw("Assert.isTrue should be compiled by ExUnitCompiler")
+    raise "Assert.isTrue should be compiled by ExUnitCompiler"
   end
 
   @doc """
@@ -48,7 +48,7 @@ defmodule Assert do
   """
   @spec is_false(boolean(), Null.t()) :: nil
   def is_false(value, message) do
-    throw("Assert.isFalse should be compiled by ExUnitCompiler")
+    raise "Assert.isFalse should be compiled by ExUnitCompiler"
   end
 
   @doc """
@@ -61,7 +61,7 @@ defmodule Assert do
   """
   @spec equals(T.t(), T.t(), Null.t()) :: nil
   def equals(expected, actual, message) do
-    throw("Assert.equals should be compiled by ExUnitCompiler")
+    raise "Assert.equals should be compiled by ExUnitCompiler"
   end
 
   @doc """
@@ -73,7 +73,7 @@ defmodule Assert do
   """
   @spec not_equals(T.t(), T.t(), Null.t()) :: nil
   def not_equals(expected, actual, message) do
-    throw("Assert.notEquals should be compiled by ExUnitCompiler")
+    raise "Assert.notEquals should be compiled by ExUnitCompiler"
   end
 
   @doc """
@@ -84,7 +84,7 @@ defmodule Assert do
   """
   @spec is_null(T.t(), Null.t()) :: nil
   def is_null(value, message) do
-    throw("Assert.isNull should be compiled by ExUnitCompiler")
+    raise "Assert.isNull should be compiled by ExUnitCompiler"
   end
 
   @doc """
@@ -95,7 +95,7 @@ defmodule Assert do
   """
   @spec is_not_null(T.t(), Null.t()) :: nil
   def is_not_null(value, message) do
-    throw("Assert.isNotNull should be compiled by ExUnitCompiler")
+    raise "Assert.isNotNull should be compiled by ExUnitCompiler"
   end
 
   @doc """
@@ -106,7 +106,7 @@ defmodule Assert do
   """
   @spec is_some(Option.t(), Null.t()) :: nil
   def is_some(option, message) do
-    throw("Assert.isSome should be compiled by ExUnitCompiler")
+    raise "Assert.isSome should be compiled by ExUnitCompiler"
   end
 
   @doc """
@@ -117,7 +117,7 @@ defmodule Assert do
   """
   @spec is_none(Option.t(), Null.t()) :: nil
   def is_none(option, message) do
-    throw("Assert.isNone should be compiled by ExUnitCompiler")
+    raise "Assert.isNone should be compiled by ExUnitCompiler"
   end
 
   @doc """
@@ -128,7 +128,7 @@ defmodule Assert do
   """
   @spec is_ok(Result.t(), Null.t()) :: nil
   def is_ok(result, message) do
-    throw("Assert.isOk should be compiled by ExUnitCompiler")
+    raise "Assert.isOk should be compiled by ExUnitCompiler"
   end
 
   @doc """
@@ -139,7 +139,7 @@ defmodule Assert do
   """
   @spec is_error(Result.t(), Null.t()) :: nil
   def is_error(result, message) do
-    throw("Assert.isError should be compiled by ExUnitCompiler")
+    raise "Assert.isError should be compiled by ExUnitCompiler"
   end
 
   @doc """
@@ -151,7 +151,7 @@ defmodule Assert do
   """
   @spec raises(Function.t(), Null.t(), Null.t()) :: nil
   def raises(fn_, exception_type, message) do
-    throw("Assert.raises should be compiled by ExUnitCompiler")
+    raise "Assert.raises should be compiled by ExUnitCompiler"
   end
 
   @doc """
@@ -162,7 +162,7 @@ defmodule Assert do
   """
   @spec does_not_raise(Function.t(), Null.t()) :: nil
   def does_not_raise(fn_, message) do
-    throw("Assert.doesNotRaise should be compiled by ExUnitCompiler")
+    raise "Assert.doesNotRaise should be compiled by ExUnitCompiler"
   end
 
   @doc """
@@ -174,7 +174,7 @@ defmodule Assert do
   """
   @spec contains(Array.t(), T.t(), Null.t()) :: nil
   def contains(collection, item, message) do
-    throw("Assert.contains should be compiled by ExUnitCompiler")
+    raise "Assert.contains should be compiled by ExUnitCompiler"
   end
 
   @doc """
@@ -186,7 +186,7 @@ defmodule Assert do
   """
   @spec contains_string(String.t(), String.t(), Null.t()) :: nil
   def contains_string(haystack, needle, message) do
-    throw("Assert.containsString should be compiled by ExUnitCompiler")
+    raise "Assert.containsString should be compiled by ExUnitCompiler"
   end
 
   @doc """
@@ -198,7 +198,7 @@ defmodule Assert do
   """
   @spec does_not_contain_string(String.t(), String.t(), Null.t()) :: nil
   def does_not_contain_string(haystack, needle, message) do
-    throw("Assert.doesNotContainString should be compiled by ExUnitCompiler")
+    raise "Assert.doesNotContainString should be compiled by ExUnitCompiler"
   end
 
   @doc """
@@ -209,7 +209,7 @@ defmodule Assert do
   """
   @spec is_empty(Array.t(), Null.t()) :: nil
   def is_empty(collection, message) do
-    throw("Assert.isEmpty should be compiled by ExUnitCompiler")
+    raise "Assert.isEmpty should be compiled by ExUnitCompiler"
   end
 
   @doc """
@@ -220,7 +220,7 @@ defmodule Assert do
   """
   @spec is_not_empty(Array.t(), Null.t()) :: nil
   def is_not_empty(collection, message) do
-    throw("Assert.isNotEmpty should be compiled by ExUnitCompiler")
+    raise "Assert.isNotEmpty should be compiled by ExUnitCompiler"
   end
 
   @doc """
@@ -233,7 +233,7 @@ defmodule Assert do
   """
   @spec in_delta(float(), float(), float(), Null.t()) :: nil
   def in_delta(expected, actual, delta, message) do
-    throw("Assert.inDelta should be compiled by ExUnitCompiler")
+    raise "Assert.inDelta should be compiled by ExUnitCompiler"
   end
 
   @doc """
@@ -243,7 +243,7 @@ defmodule Assert do
   """
   @spec fail(String.t()) :: nil
   def fail(message) do
-    throw("Assert.fail should be compiled by ExUnitCompiler")
+    raise "Assert.fail should be compiled by ExUnitCompiler"
   end
 
   @doc """
@@ -256,7 +256,7 @@ defmodule Assert do
   """
   @spec matches(T.t(), T.t(), Null.t()) :: nil
   def matches(pattern, value, message) do
-    throw("Assert.matches should be compiled by ExUnitCompiler")
+    raise "Assert.matches should be compiled by ExUnitCompiler"
   end
 
   @doc """
@@ -269,7 +269,7 @@ defmodule Assert do
   """
   @spec received(term(), Null.t(), Null.t()) :: nil
   def received(pattern, timeout, message) do
-    throw("Assert.received should be compiled by ExUnitCompiler")
+    raise "Assert.received should be compiled by ExUnitCompiler"
   end
 
 end

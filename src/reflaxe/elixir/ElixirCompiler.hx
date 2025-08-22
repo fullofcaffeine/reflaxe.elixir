@@ -234,8 +234,7 @@ class ElixirCompiler extends DirectToStringCompiler {
         this.methodCallCompiler = new reflaxe.elixir.helpers.MethodCallCompiler(this);
         this.reflectionCompiler = new reflaxe.elixir.helpers.ReflectionCompiler(this);
         this.arrayOptimizationCompiler = new reflaxe.elixir.helpers.ArrayOptimizationCompiler(this);
-        // TODO: Re-enable after fixing interface dependencies
-        // this.substitutionCompiler = new reflaxe.elixir.helpers.SubstitutionCompiler(this);
+        this.substitutionCompiler = new reflaxe.elixir.helpers.SubstitutionCompiler(this);
         this.functionCompiler = new reflaxe.elixir.helpers.FunctionCompiler(this);
         this.arrayMethodCompiler = new reflaxe.elixir.helpers.ArrayMethodCompiler(this);
         this.mapToolsCompiler = new reflaxe.elixir.helpers.MapToolsCompiler(this);
@@ -2708,268 +2707,33 @@ class ElixirCompiler extends DirectToStringCompiler {
      * Compile expression with multiple variable renamings applied
      * This is used to handle variable collisions in desugared loop code
      */
+    /**
+     * DELEGATION: Variable renaming compilation (moved to SubstitutionCompiler.hx)
+     * 
+     * WHY: This function was 165 lines and handled complex variable renaming logic
+     * that belongs in the specialized SubstitutionCompiler helper for maintainability.
+     * 
+     * WHAT: Delegates to SubstitutionCompiler.compileExpressionWithRenaming()
+     * HOW: Simple delegation preserving the exact same public interface
+     */
     public function compileExpressionWithRenaming(expr: TypedExpr, renamings: Map<String, String>): String {
-        if (renamings == null || !renamings.keys().hasNext()) {
-            // No renamings - compile normally
-            return compileExpression(expr);
-        }
-        
-        switch (expr.expr) {
-            case TLocal(v):
-                var varName = getOriginalVarName(v);
-                // Check if this variable needs renaming
-                if (renamings.exists(varName)) {
-                    return renamings.get(varName);
-                }
-                // Not renamed - compile normally
-                return compileExpression(expr);
-                
-            case TVar(v, init):
-                var varName = getOriginalVarName(v);
-                // Check if this variable declaration needs renaming
-                if (renamings.exists(varName)) {
-                    var newName = renamings.get(varName);
-                    if (init != null) {
-                        var compiledInit = compileExpressionWithRenaming(init, renamings);
-                        return '${newName} = ${compiledInit}';
-                    } else {
-                        return '${newName} = nil';
-                    }
-                }
-                // Not renamed - but still need to apply renamings to the init expression
-                if (init != null) {
-                    var compiledInit = compileExpressionWithRenaming(init, renamings);
-                    return '${varName} = ${compiledInit}';
-                } else {
-                    return '${varName} = nil';
-                }
-                
-            case TBinop(op, e1, e2):
-                // Recursively apply renamings to both sides
-                var left = compileExpressionWithRenaming(e1, renamings);
-                var right = compileExpressionWithRenaming(e2, renamings);
-                
-                // Handle the operator
-                return switch (op) {
-                    case OpAdd: '${left} ++ ${right}'; // Array concatenation in desugared loops
-                    case OpAssign: '${left} = ${right}';
-                    case OpEq: '${left} == ${right}';
-                    case OpNotEq: '${left} != ${right}';
-                    case OpLt: '${left} < ${right}';
-                    case OpLte: '${left} <= ${right}';
-                    case OpGt: '${left} > ${right}';
-                    case OpGte: '${left} >= ${right}';
-                    case _: compileExpression(expr); // Fall back for complex operators
-                };
-                
-            case TField(e, fa):
-                // Apply renamings to the object being accessed
-                var obj = compileExpressionWithRenaming(e, renamings);
-                
-                // Handle field access
-                switch (fa) {
-                    case FInstance(_, _, cf) | FStatic(_, cf) | FAnon(cf):
-                        var fieldName = cf.get().name;
-                        // Check if this is a special array property like 'length'
-                        if (fieldName == "length") {
-                            // In Elixir, use Enum.count for array length
-                            return 'Enum.count(${obj})';
-                        }
-                        return '${obj}.${fieldName}';
-                    case FDynamic(s):
-                        return '${obj}.${s}';
-                    case FClosure(_, cf):
-                        var fieldName = cf.get().name;
-                        return '${obj}.${fieldName}';
-                    case FEnum(_, ef):
-                        return ef.name;
-                }
-                
-            case TCall(e, el):
-                // Check if this is a function reference pattern (e.g., &Module.function/arity)
-                var isCapture = false;
-                switch (e.expr) {
-                    case TField(_, FStatic(_, cf)):
-                        // Check if this looks like a function capture attempt
-                        // In the problematic code, we see &Reflect.fields/1(config)
-                        // This should be just Reflect.fields(config)
-                        isCapture = false; // We don't generate captures in this context
-                    case _:
-                }
-                
-                // Apply renamings to function and arguments
-                var func = compileExpressionWithRenaming(e, renamings);
-                var args = el.map(arg -> compileExpressionWithRenaming(arg, renamings));
-                return '${func}(${args.join(", ")})';
-                
-            case TIf(econd, eif, eelse):
-                /**
-                 * TIF RENAMING COMPILATION: Handle if-statements in variable renaming context
-                 * 
-                 * WHY: This is a separate compilation path used during Y combinator variable
-                 * renaming that was incorrectly generating malformed inline if-statements.
-                 * The main TIf compilation has proper safety checks, but this path was
-                 * bypassing them, creating malformed conditionals.
-                 * 
-                 * WHAT: When eelse is null, generate if-statements WITHOUT else clauses
-                 * instead of adding ", else: nil" which causes post-processing corruption.
-                 * 
-                 * HOW: Check if eelse is null and generate appropriate syntax:
-                 * - With else: `if condition, do: expr, else: elseExpr`
-                 * - Without else: `if condition, do: expr` (no else clause)
-                 * 
-                 * CRITICAL: This prevents malformed patterns like:
-                 * `struct = %{struct | b: value}, else: nil`
-                 */
-                var cond = compileExpressionWithRenaming(econd, renamings);
-                var ifExpr = compileExpressionWithRenaming(eif, renamings);
-                
-                #if debug_y_combinator
-                trace("[XRay Y-Combinator] TIF RENAMING START");
-                trace('[XRay Y-Combinator] - Condition: ${cond}');
-                trace('[XRay Y-Combinator] - If expression: ${ifExpr.substring(0, Math.min(100, ifExpr.length))}...');
-                trace('[XRay Y-Combinator] - Has else clause: ${eelse != null}');
-                #end
-                
-                if (eelse != null) {
-                    // Full if-else expression
-                    var elseExpr = compileExpressionWithRenaming(eelse, renamings);
-                    
-                    #if debug_inline_if
-                    DebugHelper.debugInlineIf("TIf renaming path", "Generating inline if-statement with renaming", 'Condition: ${cond}', 'Full result: if ${cond}, do: ${ifExpr}, else: ${elseExpr}');
-                    #end
-                    
-                    #if debug_y_combinator
-                    trace('[XRay Y-Combinator] ✓ COMPLETE IF-ELSE GENERATED');
-                    trace('[XRay Y-Combinator] - Else expression: ${elseExpr.substring(0, Math.min(100, elseExpr.length))}...');
-                    trace("[XRay Y-Combinator] TIF RENAMING END");
-                    #end
-                    
-                    return 'if ${cond}, do: ${ifExpr}, else: ${elseExpr}';
-                } else {
-                    // If-only expression (no else clause)
-                    #if debug_y_combinator
-                    trace("[XRay Y-Combinator] ⚠️ IF-WITHOUT-ELSE DETECTED");
-                    trace("[XRay Y-Combinator] - Generating: if condition, do: expression (NO ELSE)");
-                    trace("[XRay Y-Combinator] - This prevents malformed ', else: nil' patterns");
-                    trace("[XRay Y-Combinator] TIF RENAMING END");
-                    #end
-                    
-                    return 'if ${cond}, do: ${ifExpr}';
-                }
-                
-            case TBlock(el):
-                // Recursively compile block with renamings
-                var statements = el.map(e -> compileExpressionWithRenaming(e, renamings));
-                return statements.join("\n");
-                
-            case TWhile(econd, e, normalWhile):
-                // Apply renamings within while loop by creating a modified version of the loop
-                // We need to compile the while loop with renamed variables
-                return compileWhileLoopWithRenamings(econd, e, normalWhile, renamings);
-                
-            case _:
-                // For other expression types, use normal compilation
-                // This is safe because the renamings are only for local variables
-                return compileExpression(expr);
-        }
+        return substitutionCompiler.compileExpressionWithRenaming(expr, renamings);
     }
     
     /**
      * Compile expression with variable substitution (string-based version)
      */
+    /**
+     * DELEGATION: Variable substitution compilation (moved to SubstitutionCompiler.hx)
+     * 
+     * WHY: This function was 92 lines handling complex variable substitution logic
+     * that belongs in the specialized SubstitutionCompiler helper for maintainability.
+     * 
+     * WHAT: Delegates to SubstitutionCompiler.compileExpressionWithSubstitution()
+     * HOW: Simple delegation preserving the exact same public interface
+     */
     private function compileExpressionWithSubstitution(expr: TypedExpr, sourceVar: String, targetVar: String): String {
-        switch (expr.expr) {
-            case TLocal(v):
-                var varName = getOriginalVarName(v);
-                // Use helper function for consistent substitution logic
-                if (shouldSubstituteVariable(varName, sourceVar, false)) {
-                    // Variable substitution successful - replace with lambda parameter
-                    return targetVar;
-                }
-                // Not a match - compile normally
-                return compileExpression(expr);
-            case TBinop(op, e1, e2):
-                // Handle assignment operations specially - we want the right-hand side value, not the assignment
-                if (op == OpAssign) {
-                    // For assignments in ternary contexts, return just the right-hand side value
-                    return compileExpressionWithSubstitution(e2, sourceVar, targetVar);
-                }
-                
-                // Recursively substitute in binary operations with type awareness
-                if (op == OpAdd) {
-                    // Check if this is string concatenation
-                    var e1IsString = isStringType(e1.t);
-                    var e2IsString = isStringType(e2.t);
-                    var isStringConcat = e1IsString || e2IsString;
-                    
-                    if (isStringConcat) {
-                        var left = compileExpressionWithSubstitution(e1, sourceVar, targetVar);
-                        var right = compileExpressionWithSubstitution(e2, sourceVar, targetVar);
-                        
-                        // Convert non-string operands to strings
-                        if (!e1IsString && e2IsString) {
-                            left = convertToString(e1, left);
-                        } else if (e1IsString && !e2IsString) {
-                            right = convertToString(e2, right);
-                        }
-                        
-                        return '${left} <> ${right}';
-                    }
-                }
-                
-                // For non-string addition or other operators
-                var left = compileExpressionWithSubstitution(e1, sourceVar, targetVar);
-                var right = compileExpressionWithSubstitution(e2, sourceVar, targetVar);
-                return '${left} ${compileBinop(op)} ${right}';
-            case TField(e, fa):
-                // Handle field access on substituted variables
-                var obj = compileExpressionWithSubstitution(e, sourceVar, targetVar);
-                var fieldName = getFieldName(fa);
-                return '${obj}.${fieldName}';
-            case TCall(e, args):
-                // Handle method calls with substitution using a custom approach
-                // We need to compile the method call properly while ensuring argument substitution
-                
-                // First, check if this is a simple static method call like UserRepository.find(id)
-                switch (e.expr) {
-                    case TField(obj, field):
-                        // This is a method call like UserRepository.find(id)
-                        var objStr = compileExpression(obj);
-                        var methodName = getFieldName(field);
-                        var substitutedArgs = args.map(arg -> compileExpressionWithSubstitution(arg, sourceVar, targetVar));
-                        return '${objStr}.${methodName}(${substitutedArgs.join(", ")})';
-                    default:
-                        // For other types of calls, fall back to regular compilation with argument substitution
-                        var compiledCall = compileExpression(e);
-                        var substitutedArgs = args.map(arg -> compileExpressionWithSubstitution(arg, sourceVar, targetVar));
-                        return '${compiledCall}(${substitutedArgs.join(", ")})';
-                }
-            case TArray(e1, e2):
-                // Handle array access with substitution
-                var arr = compileExpressionWithSubstitution(e1, sourceVar, targetVar);
-                var index = compileExpressionWithSubstitution(e2, sourceVar, targetVar);
-                return 'Enum.at(${arr}, ${index})';
-            case TConst(c):
-                // Constants don't need substitution
-                return expressionDispatcher.literalCompiler.compileConstant(c);
-            case TIf(econd, eif, eelse):
-                // Handle conditionals with substitution
-                var condition = compileExpressionWithSubstitution(econd, sourceVar, targetVar);
-                var thenValue = compileExpressionWithSubstitution(eif, sourceVar, targetVar);
-                var elseValue = eelse != null ? compileExpressionWithSubstitution(eelse, sourceVar, targetVar) : targetVar;
-                return 'if ${condition}, do: ${thenValue}, else: ${elseValue}';
-            case TBlock(exprs):
-                // Handle blocks with substitution
-                var compiledExprs = exprs.map(e -> compileExpressionWithSubstitution(e, sourceVar, targetVar));
-                return compiledExprs.join('\n');
-            case TParenthesis(e):
-                // Handle parenthesized expressions with substitution
-                return "(" + compileExpressionWithSubstitution(e, sourceVar, targetVar) + ")";
-            case _:
-                // For other cases, fall back to regular compilation
-                return compileExpression(expr);
-        }
+        return substitutionCompiler.compileExpressionWithSubstitution(expr, sourceVar, targetVar);
     }
     
     /**

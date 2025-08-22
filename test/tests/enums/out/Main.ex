@@ -17,7 +17,7 @@ defmodule Main do
     r = g
     g = g
     b = g
-    temp_result = "rgb(" <> to_string(r) <> ", " <> to_string(g) <> ", " <> to_string(b) <> ")"
+    temp_result = "rgb(" <> to_string(r) <> ", " <> to_string(nil) <> ", " <> to_string(b) <> ")"
     end
           temp_result
         )
@@ -75,21 +75,21 @@ defmodule Main do
     r = g
     g = g
     b = g
-    if ((((r > 200) && (g < 50)) && (b < 50))) do
+    if ((((r > 200) && (nil < 50)) && (b < 50))) do
           temp_result = "mostly red"
         else
           (
           r = g
           g = g
           b = g
-          if ((((g > 200) && (r < 50)) && (b < 50))) do
+          if ((((nil > 200) && (r < 50)) && (b < 50))) do
           temp_result = "mostly green"
         else
           (
           r = g
           g = g
           b = g
-          if ((((b > 200) && (r < 50)) && (g < 50))) do
+          if ((((b > 200) && (r < 50)) && (nil < 50))) do
           temp_result = "mostly blue"
         else
           (
