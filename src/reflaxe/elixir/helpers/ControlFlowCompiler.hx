@@ -39,6 +39,21 @@ typedef FieldAssignmentPattern = {
 };
 
 /**
+ * Function context information for field assignment transformations
+ */
+typedef FunctionContext = {
+    structParamName: Null<String>  // Name of the struct parameter (e.g., "struct", "this", etc.)
+};
+
+/**
+ * Direct field assignment pattern result
+ */
+typedef DirectFieldAssignment = {
+    structParam: String,        // Name of struct parameter to use
+    compiledCode: String       // Generated Elixir code
+};
+
+/**
  * Control Flow Compiler for Reflaxe.Elixir
  * 
  * WHY: The compileElixirExpressionInternal function contained ~600 lines of control flow compilation
@@ -109,12 +124,14 @@ class ControlFlowCompiler {
      * 3. Analyze variable declarations for collision detection in desugared code
      * 4. Apply variable renaming for collision resolution (_g variables, etc.)
      * 5. Generate proper Elixir multi-statement blocks with correct scoping
+     * 6. Use function context to resolve struct parameter names for field assignments
      * 
      * @param el Array of TypedExpr representing block statements
      * @param topLevel Whether this is a top-level block
+     * @param context Function context for field assignment transformations
      * @return Compiled Elixir block expression
      */
-    public function compileBlock(el: Array<TypedExpr>, topLevel: Bool = false): String {
+    public function compileBlock(el: Array<TypedExpr>, topLevel: Bool = false, context: Null<FunctionContext> = null): String {
         #if debug_control_flow_compiler
         trace("[XRay ControlFlowCompiler] BLOCK COMPILATION START");
         trace('[XRay ControlFlowCompiler] Block length: ${el.length}');
@@ -135,7 +152,7 @@ class ControlFlowCompiler {
             #end
             
             // Check for sequential field assignment patterns that need merging
-            var mergedAssignment = detectAndMergeSequentialFieldAssignments(el, i);
+            var mergedAssignment = detectAndMergeSequentialFieldAssignments(el, i, context);
             if (mergedAssignment != null) {
                 #if debug_control_flow_compiler
                 trace('[XRay ControlFlowCompiler] ✓ MERGED ASSIGNMENT DETECTED at index ${i}!');
@@ -186,33 +203,60 @@ class ControlFlowCompiler {
      * Detect and merge sequential field assignments in block expressions
      * 
      * WHY: Patterns like "struct = struct.buf; struct.b = ..." need to be merged into atomic updates
+     * Also handles direct field assignments like "struct.buf.b = ..." when context provides struct name
+     * 
      * WHAT: Analyze consecutive assignments for variable reassignment followed by field mutation
+     * Also detect direct field assignments that need proper struct variable resolution
+     * 
      * HOW: 
      * 1. Check if current expression is variable assignment to field access (struct = struct.buf)
      * 2. Check if next expression is field assignment on same variable (struct.b = ...)
-     * 3. If pattern matches, merge into single Map update expression
+     * 3. Check for direct field assignments and use context to resolve struct name
+     * 4. If pattern matches, merge into single Map update expression with correct variable
      * 
      * @param expressions Array of expressions in the block
      * @param startIndex Current expression index to analyze
+     * @param context Function context containing struct parameter name
      * @return MergedAssignment if pattern detected, null otherwise
      */
-    private function detectAndMergeSequentialFieldAssignments(expressions: Array<TypedExpr>, startIndex: Int): Null<MergedAssignment> {
-        // Need at least 2 expressions to have a sequential pattern
+    private function detectAndMergeSequentialFieldAssignments(expressions: Array<TypedExpr>, startIndex: Int, context: Null<FunctionContext>): Null<MergedAssignment> {
+        var currentExpr = expressions[startIndex];
+        
+        #if debug_control_flow_compiler
+        trace('[XRay ControlFlowCompiler] Checking pattern at index ${startIndex}');
+        trace('[XRay ControlFlowCompiler] Current expr: ${currentExpr.expr}');
+        trace('[XRay ControlFlowCompiler] Context struct param: ${context != null ? context.structParamName : "null"}');
+        #end
+        
+        // PATTERN A: Direct field assignment in case expression (e.g., struct.buf.b = "value")
+        // This happens when we have a direct field assignment without prior variable declaration
+        var directFieldAssignment = analyzeDirectFieldAssignment(currentExpr, context);
+        if (directFieldAssignment != null) {
+            #if debug_control_flow_compiler
+            trace('[XRay ControlFlowCompiler] ✓ DIRECT FIELD ASSIGNMENT DETECTED!');
+            trace('[XRay ControlFlowCompiler] Using struct param: ${directFieldAssignment.structParam}');
+            #end
+            
+            return {
+                compiledCode: directFieldAssignment.compiledCode,
+                nextIndex: startIndex + 1  // Skip only current expression
+            };
+        }
+        
+        // PATTERN B: Sequential assignment pattern (struct = struct.buf; struct.b = ...)
+        // Need at least 2 expressions for sequential pattern
         if (startIndex + 1 >= expressions.length) {
             return null;
         }
         
-        var firstExpr = expressions[startIndex];
         var secondExpr = expressions[startIndex + 1];
         
         #if debug_control_flow_compiler
-        trace('[XRay ControlFlowCompiler] Checking pattern at index ${startIndex}');
-        trace('[XRay ControlFlowCompiler] First expr: ${firstExpr.expr}');
         trace('[XRay ControlFlowCompiler] Second expr: ${secondExpr.expr}');
         #end
         
         // Pattern 1: struct = struct.buf (variable assignment to field access)
-        var variableReassignment = analyzeVariableToFieldAssignment(firstExpr);
+        var variableReassignment = analyzeVariableToFieldAssignment(currentExpr);
         if (variableReassignment == null) {
             return null;
         }
@@ -349,6 +393,107 @@ class ControlFlowCompiler {
     }
     
     /**
+     * Analyze direct field assignment in case expressions (e.g., struct.buf.b = "value")
+     * 
+     * WHY: JsonPrinter generates direct field assignments in case expressions that don't use _this
+     * but need to use the actual struct parameter name from the function context
+     * 
+     * WHAT: Detect field assignments like TBinop(OpAssign, TField(...), value) and transform
+     * them to use proper Map update syntax with the correct struct variable name
+     * 
+     * HOW:
+     * 1. Check if expression is field assignment (TBinop with OpAssign or OpAssignOp)
+     * 2. Extract the field chain (struct.buf.b)
+     * 3. Use context to determine correct struct parameter name
+     * 4. Generate proper Map update syntax
+     * 
+     * @param expr Expression to analyze
+     * @param context Function context containing struct parameter name
+     * @return DirectFieldAssignment if pattern detected, null otherwise
+     */
+    private function analyzeDirectFieldAssignment(expr: TypedExpr, context: Null<FunctionContext>): Null<DirectFieldAssignment> {
+        // Must have context to resolve struct parameter name
+        if (context == null || context.structParamName == null) {
+            return null;
+        }
+        
+        switch (expr.expr) {
+            case TBinop(OpAssign, e1, e2) | TBinop(OpAssignOp(_), e1, e2):
+                // Check if this is a simple _this assignment that should use struct
+                switch (e1.expr) {
+                    case TLocal(v) if (v.name == "_this"):
+                        // Pattern: _this = %{_this.buf | b: value}
+                        // This should be: struct = %{struct.buf | b: value}
+                        var valueCompiled = compiler.compileExpression(e2);
+                        var structParam = context.structParamName;
+                        
+                        #if debug_control_flow_compiler
+                        trace('[XRay ControlFlowCompiler] ✓ SIMPLE _THIS ASSIGNMENT DETECTED: _this = ${valueCompiled}');
+                        trace('[XRay ControlFlowCompiler] Converting to use struct param: ${structParam}');
+                        #end
+                        
+                        // Replace _this with struct in the compiled value expression
+                        // This is a bit hacky but effective for this pattern
+                        var correctedValue = valueCompiled.replace("_this", structParam);
+                        var compiledCode = '${structParam} = ${correctedValue}';
+                        
+                        return {
+                            structParam: structParam,
+                            compiledCode: compiledCode
+                        };
+                        
+                    case TField(obj, fieldAccess):
+                        // Extract the field name
+                        var fieldName = switch (fieldAccess) {
+                            case FInstance(_, _, cf) | FStatic(_, cf) | FAnon(cf): cf.get().name;
+                            case FEnum(_, ef): ef.name;
+                            case FClosure(_, cf): cf.get().name;
+                            case FDynamic(s): s;
+                            case _: "unknown_field";
+                        };
+                        
+                        // Check if this is a nested field access (obj.field.subfield)
+                        var sourceField = switch (obj.expr) {
+                            case TField(baseObj, baseFieldAccess):
+                                // This is a nested field access like struct.buf.b
+                                switch (baseFieldAccess) {
+                                    case FInstance(_, _, cf) | FStatic(_, cf) | FAnon(cf): cf.get().name;
+                                    case FEnum(_, ef): ef.name;
+                                    case FClosure(_, cf): cf.get().name;
+                                    case FDynamic(s): s;
+                                    case _: "unknown_field";
+                                }
+                            case _: null;
+                        };
+                        
+                        if (sourceField != null) {
+                            // This is a nested field assignment: struct.sourceField.fieldName = value
+                            var valueCompiled = compiler.compileExpression(e2);
+                            var structParam = context.structParamName;
+                            
+                            #if debug_control_flow_compiler
+                            trace('[XRay ControlFlowCompiler] ✓ DIRECT NESTED FIELD ASSIGNMENT: ${structParam}.${sourceField}.${fieldName} = ${valueCompiled}');
+                            #end
+                            
+                            // Generate: struct = %{struct.sourceField | fieldName: value}
+                            // Use the actual struct parameter name, not hardcoded "_this"
+                            var compiledCode = '${structParam} = %{${structParam}.${sourceField} | ${fieldName}: ${valueCompiled}}';
+                            
+                            return {
+                                structParam: structParam,
+                                compiledCode: compiledCode
+                            };
+                        }
+                        
+                    case _: return null;
+                }
+            case _: return null;
+        }
+        
+        return null;
+    }
+    
+    /**
      * Generate merged field update expression
      * 
      * @param varPattern Variable reassignment pattern
@@ -406,17 +551,22 @@ class ControlFlowCompiler {
      * @param e Switch target expression
      * @param cases Array of case patterns and expressions
      * @param edef Default case expression (nullable)
+     * @param context Optional function context for field assignment transformation
      * @return Compiled Elixir case-do-end expression
      */
-    public function compileSwitchExpression(e: TypedExpr, cases: Array<{values: Array<TypedExpr>, expr: TypedExpr}>, edef: Null<TypedExpr>): String {
+    public function compileSwitchExpression(e: TypedExpr, cases: Array<{values: Array<TypedExpr>, expr: TypedExpr}>, edef: Null<TypedExpr>, ?context: FunctionContext): String {
         #if debug_control_flow_compiler
         trace("[XRay ControlFlowCompiler] SWITCH COMPILATION START");
         trace('[XRay ControlFlowCompiler] Cases count: ${cases.length}');
         trace('[XRay ControlFlowCompiler] Has default: ${edef != null}');
+        trace('[XRay ControlFlowCompiler] Has context: ${context != null}');
+        if (context != null) {
+            trace('[XRay ControlFlowCompiler] Context struct param: ${context.structParamName}');
+        }
         #end
         
-        // TSwitch delegates to PatternMatchingCompiler in original code
-        var result = compiler.patternMatchingCompiler.compileSwitchExpression(e, cases, edef);
+        // TSwitch delegates to PatternMatchingCompiler with context
+        var result = compiler.patternMatchingCompiler.compileSwitchExpression(e, cases, edef, context);
         
         #if debug_control_flow_compiler
         trace('[XRay ControlFlowCompiler] Generated switch: ${result != null ? result.substring(0, 100) + "..." : "null"}');

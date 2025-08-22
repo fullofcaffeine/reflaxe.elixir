@@ -78,7 +78,8 @@ class PatternMatchingCompiler {
     public function compileSwitchExpression(
         switchExpr: TypedExpr, 
         cases: Array<{values: Array<TypedExpr>, expr: TypedExpr}>, 
-        defaultExpr: Null<TypedExpr>
+        defaultExpr: Null<TypedExpr>,
+        ?context: reflaxe.elixir.helpers.ControlFlowCompiler.FunctionContext
     ): String {
         
         #if debug_pattern_matching
@@ -111,7 +112,7 @@ class PatternMatchingCompiler {
         }
         
         // Standard case statement compilation
-        return compileStandardCase(switchExpr, cases, defaultExpr);
+        return compileStandardCase(switchExpr, cases, defaultExpr, context);
     }
     
     /**
@@ -372,7 +373,8 @@ class PatternMatchingCompiler {
     private function compileStandardCase(
         switchExpr: TypedExpr,
         cases: Array<{values: Array<TypedExpr>, expr: TypedExpr}>,
-        defaultExpr: Null<TypedExpr>
+        defaultExpr: Null<TypedExpr>,
+        ?context: reflaxe.elixir.helpers.ControlFlowCompiler.FunctionContext
     ): String {
         
         var exprStr = compiler.compileExpression(switchExpr);
@@ -380,7 +382,15 @@ class PatternMatchingCompiler {
         
         for (caseData in cases) {
             var patterns = caseData.values.map(v -> compilePattern(v));
-            var body = compiler.compileExpression(caseData.expr);
+            
+            // Check if the body is a TBlock and pass context for field assignment transformation
+            var body = switch (caseData.expr.expr) {
+                case TBlock(el):
+                    // Pass context to ControlFlowCompiler for _this replacement
+                    compiler.expressionDispatcher.controlFlowCompiler.compileBlock(el, false, context);
+                default:
+                    compiler.compileExpression(caseData.expr);
+            };
             
             for (pattern in patterns) {
                 caseStrings.push('  ${pattern} -> ${body}');
@@ -502,8 +512,14 @@ class PatternMatchingCompiler {
                 }
                 #end
                 
+                // Create function context for field assignment transformations
+                // For now, assume "struct" as the parameter name for JsonPrinter-style functions
+                var context: reflaxe.elixir.helpers.ControlFlowCompiler.FunctionContext = {
+                    structParamName: "struct"
+                };
+                
                 // Delegate to ControlFlowCompiler for block expressions with field assignment detection
-                var result = compiler.expressionDispatcher.controlFlowCompiler.compileBlock(el, false);
+                var result = compiler.expressionDispatcher.controlFlowCompiler.compileBlock(el, false, context);
                 
                 #if debug_pattern_matching
                 trace('[XRay PatternMatchingCompiler] ControlFlowCompiler result: ${result.substring(0, 100)}...');

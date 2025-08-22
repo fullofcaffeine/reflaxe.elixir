@@ -1657,7 +1657,9 @@ class ElixirCompiler extends DirectToStringCompiler {
     public function setThisParameterMapping(structParamName: String): Void {
         // Map 'this' references to the struct parameter name
         currentFunctionParameterMap.set("this", structParamName);
-        // Also handle variations like _this which Haxe might generate
+        // CRITICAL: Map _this which Haxe generates during desugaring
+        currentFunctionParameterMap.set("_this", structParamName);
+        // Also handle variations like struct which might be referenced
         currentFunctionParameterMap.set("struct", structParamName);
     }
     
@@ -1667,6 +1669,7 @@ class ElixirCompiler extends DirectToStringCompiler {
     public function clearThisParameterMapping(): Void {
         // Remove 'this' mappings while preserving other parameter mappings
         currentFunctionParameterMap.remove("this");
+        currentFunctionParameterMap.remove("_this");
         currentFunctionParameterMap.remove("struct");
     }
     

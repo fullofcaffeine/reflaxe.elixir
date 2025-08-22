@@ -127,7 +127,7 @@ class ExpressionDispatcher {
                 #if debug_expression_dispatcher
                 trace("[XRay ExpressionDispatcher] ✓ DISPATCHING to ControlFlowCompiler (TBlock)");
                 #end
-                controlFlowCompiler.compileBlock(el, topLevel);
+                controlFlowCompiler.compileBlock(el, topLevel, null);
                 
             case TIf(econd, eif, eelse):
                 #if debug_expression_dispatcher

@@ -601,18 +601,21 @@ class ClassCompiler {
         
         // Function body
         if (funcField.expr != null) {
-            // For struct instance methods, set up parameter mapping for 'this' -> 'struct'
+            // For struct instance methods, set up parameter mapping and inline context
             if (isInstance && isStructClass && compiler != null) {
                 // Add mapping for this -> struct parameter
                 compiler.setThisParameterMapping("struct");
+                // CRITICAL: Set inline context so _this variables are replaced with struct
+                compiler.setInlineContext("struct", "struct");
             }
             
             // Compile the actual function expression
             var compiledBody = compileExpressionForFunction(funcField.expr, funcField.args);
             
-            // Clear any this parameter mapping after compilation
+            // Clear any this parameter mapping and inline context after compilation
             if (isInstance && isStructClass && compiler != null) {
                 compiler.clearThisParameterMapping();
+                compiler.clearInlineContext();
             }
             
             if (compiledBody != null && compiledBody.trim() != "") {
