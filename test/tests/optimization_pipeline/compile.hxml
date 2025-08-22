@@ -1,0 +1,6 @@
+-cp .
+-main Main
+--custom-target elixir=out
+-D analyzer-optimize
+# Enable DCE to see its effects
+-dce full
