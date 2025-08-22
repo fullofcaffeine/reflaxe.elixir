@@ -87,6 +87,44 @@
 - [ ] Can use standard Elixir libraries without extern workarounds
 - [ ] Can integrate with existing Elixir codebases
 
+## 🏗️ Post-v1.0 Architectural Improvements: Eliminating Technical Debt
+
+### 📌 CodeFixupCompiler Elimination ⚡ IMPORTANT
+**Status**: Identified Technical Debt (Extract completed, root cause fixes pending)
+**Issue**: CodeFixupCompiler performs post-processing string manipulation that should be fixed at AST compilation level
+
+#### Problems to Fix at Root Cause:
+1. **Y Combinator Malformed Conditionals**: Fix compilation to generate correct syntax from start
+   - Current: String replacement of `}, else: expression` patterns
+   - Target: Proper conditional generation in YCombinatorCompiler.hx
+   
+2. **App Name Resolution**: Handle @:appName injection during AST compilation, not string replacement
+   - Current: Post-processing `getAppName()` → `"AppName"` replacements
+   - Target: AST-level name resolution during expression compilation
+   
+3. **Source Map Integration**: Integrate source mapping into core compilation flow
+   - Current: Separate source map writer management
+   - Target: Built-in source map generation during AST processing
+   
+4. **Syntax Cleanup**: Generate clean syntax from start rather than cleaning up artifacts
+   - Current: Post-processing empty string concatenation removal
+   - Target: Proper expression compilation without artifacts
+
+#### Implementation Strategy:
+- **Phase 1**: Identify root causes in YCombinatorCompiler and expression compilation
+- **Phase 2**: Implement proper AST-level fixes for each category
+- **Phase 3**: Remove CodeFixupCompiler delegation methods one by one
+- **Phase 4**: Eliminate CodeFixupCompiler entirely
+
+**Why Important**: String post-processing is brittle, hard to debug, and doesn't scale. Proper AST-level compilation is more robust and maintainable.
+
+**Success Criteria**:
+- [ ] Y combinator generates correct conditionals without fixup
+- [ ] App names resolved during AST compilation
+- [ ] Source maps integrated into main compilation flow
+- [ ] CodeFixupCompiler.hx deleted entirely
+- [ ] All tests continue passing
+
 ## Conclusion
 
 **Current State**: Excellent Phoenix/Ecto foundation (70% of production needs)
