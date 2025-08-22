@@ -23,7 +23,7 @@ defmodule SupervisorOptionsBuilder do
   def with_strategy(strategy) do
     (
           opts = SupervisorOptionsBuilder.defaults()
-          opts.strategy = strategy
+          %{opts | strategy: strategy}
           opts
         )
   end
@@ -36,8 +36,8 @@ defmodule SupervisorOptionsBuilder do
   def with_limits(max_restarts, max_seconds) do
     (
           opts = SupervisorOptionsBuilder.defaults()
-          opts.max_restarts = max_restarts
-          opts.max_seconds = max_seconds
+          %{opts | max_restarts: max_restarts}
+          %{opts | max_seconds: max_seconds}
           opts
         )
   end

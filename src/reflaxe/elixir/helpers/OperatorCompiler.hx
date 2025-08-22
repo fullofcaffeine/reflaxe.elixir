@@ -138,7 +138,13 @@ class OperatorCompiler {
             case OpUShr: 'Bitwise.bsr(${left}, ${right})'; // Unsigned right shift (same as signed in Elixir)
             
             // Assignment operators
-            case OpAssign: '${left} = ${right}';
+            case OpAssign: 
+                // Handle field assignments differently - they need Map update syntax in Elixir
+                if (isFieldAssignment(e1)) {
+                    compileFieldAssignment(e1, e2);
+                } else {
+                    '${left} = ${right}';
+                }
             case OpAssignOp(op):
                 // Compound assignment operators (+=, -=, etc.)
                 compileCompoundAssignment(op, e1, e2, left, right);
@@ -334,6 +340,58 @@ class OperatorCompiler {
         #end
         
         return result;
+    }
+    
+    /**
+     * Check if expression is a field assignment (obj.field = value)
+     * 
+     * WHY: Field assignments need special handling in Elixir due to immutability
+     * WHAT: Detects when the left-hand side of assignment is a field access
+     * HOW: Checks if expression is TField accessing object property
+     * 
+     * @param expr Expression to check
+     * @return True if this is a field assignment
+     */
+    private function isFieldAssignment(expr: TypedExpr): Bool {
+        return switch (expr.expr) {
+            case TField(obj, fieldAccess): true; // obj.field pattern
+            case _: false;
+        };
+    }
+    
+    /**
+     * Compile field assignment using Elixir Map update syntax
+     * 
+     * WHY: Elixir structs/maps are immutable, can't use obj.field = value syntax
+     * WHAT: Transform field assignment to Map update pattern
+     * HOW: Generate %{obj | field: value} or Map.put(obj, :field, value) syntax
+     * 
+     * @param fieldExpr The field access expression (left-hand side)
+     * @param valueExpr The value expression (right-hand side) 
+     * @return Compiled Elixir Map update expression
+     */
+    private function compileFieldAssignment(fieldExpr: TypedExpr, valueExpr: TypedExpr): String {
+        switch (fieldExpr.expr) {
+            case TField(obj, fieldAccess):
+                var objCompiled = compiler.compileExpression(obj);
+                var valueCompiled = compiler.compileExpression(valueExpr);
+                
+                // Extract field name
+                var fieldName = switch (fieldAccess) {
+                    case FInstance(_, _, cf) | FStatic(_, cf) | FAnon(cf): cf.get().name;
+                    case FEnum(_, ef): ef.name;
+                    case FClosure(_, cf): cf.get().name;
+                    case FDynamic(s): s;
+                    case _: "unknown_field";
+                };
+                
+                // Generate Map update syntax - use pattern %{obj | field: value}
+                return '%{${objCompiled} | ${fieldName}: ${valueCompiled}}';
+                
+            case _:
+                // Fallback - shouldn't happen but handle gracefully
+                return '${compiler.compileExpression(fieldExpr)} = ${compiler.compileExpression(valueExpr)}';
+        }
     }
     
     /**

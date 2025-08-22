@@ -228,9 +228,9 @@ defmodule TypeSafeConversions do
         end
         end
     assigns = %{"todos" => temp_array, "filter" => temp_string, "sort_by" => temp_string1, "current_user" => temp_user, "editing_todo" => temp_maybe_todo, "show_form" => temp_bool, "search_query" => temp_string2, "selected_tags" => temp_array1, "total_todos" => 0, "completed_todos" => 0, "pending_todos" => 0}
-    assigns.total_todos = assigns.todos.length
-    assigns.completed_todos = TypeSafeConversions.count_completed(assigns.todos)
-    assigns.pending_todos = (assigns.total_todos - assigns.completed_todos)
+    %{assigns | total_todos: assigns.todos.length}
+    %{assigns | completed_todos: TypeSafeConversions.count_completed(assigns.todos)}
+    %{assigns | pending_todos: (assigns.total_todos - assigns.completed_todos)}
     assigns
   end
 
