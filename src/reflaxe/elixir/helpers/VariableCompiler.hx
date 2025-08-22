@@ -123,6 +123,17 @@ class VariableCompiler {
             return mappedName;
         }
         
+        // GLOBAL FIX: Try global struct method mapping if we're compiling a struct method
+        if (originalName == "_this" && untyped compiler.isCompilingStructMethod) {
+            var globalMappedName = untyped compiler.globalStructParameterMap.get("_this");
+            if (globalMappedName != null) {
+                #if debug_variable_compiler
+                trace('[XRay VariableCompiler] ✓ GLOBAL STRUCT MAPPING: ${originalName} -> ${globalMappedName}');
+                #end
+                return globalMappedName;
+            }
+        }
+        
         #if debug_variable_compiler
         trace('[XRay VariableCompiler] No parameter mapping found for: ${originalName}');
         #end
@@ -158,6 +169,12 @@ class VariableCompiler {
             trace("[XRay VariableCompiler] ✓ PARAMETER MAPPING DETECTED");
             #end
             compiler.currentFunctionParameterMap.get(originalName);
+        } else if (originalName == "_this" && untyped compiler.isCompilingStructMethod && untyped compiler.globalStructParameterMap.exists("_this")) {
+            // GLOBAL FIX: Use global struct method mapping when local is not available
+            #if debug_variable_compiler
+            trace("[XRay VariableCompiler] ✓ GLOBAL STRUCT MAPPING DETECTED");
+            #end
+            untyped compiler.globalStructParameterMap.get("_this");
         } else {
             NamingHelper.toSnakeCase(originalName);
         }
@@ -263,6 +280,24 @@ class VariableCompiler {
                 return '${varName} = ${compiledExpr}';
             }
             return varName;
+        }
+        
+        // GLOBAL FIX: Try global struct method mapping if we're compiling a struct method
+        if (originalName == "_this" && untyped compiler.isCompilingStructMethod) {
+            var globalMappedName = untyped compiler.globalStructParameterMap.get("_this");
+            if (globalMappedName != null) {
+                #if debug_variable_compiler
+                trace('[XRay VariableCompiler] ✓ TVAR GLOBAL STRUCT MAPPING: ${originalName} -> ${globalMappedName}');
+                #end
+                // Use the global mapped name directly
+                var varName = globalMappedName;
+                
+                if (expr != null) {
+                    var compiledExpr = compiler.compileExpression(expr);
+                    return '${varName} = ${compiledExpr}';
+                }
+                return varName;
+            }
         }
         
         // Check if this is _this and needs special handling

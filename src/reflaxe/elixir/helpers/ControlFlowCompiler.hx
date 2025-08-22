@@ -427,22 +427,35 @@ class ControlFlowCompiler {
                         // Pattern: _this = %{_this.buf | b: value}
                         // This should be: struct = %{struct.buf | b: value}
                         var valueCompiled = compiler.compileExpression(e2);
-                        var structParam = context.structParamName;
+                        
+                        // Try local context first, then global struct method mapping
+                        var structParam: Null<String> = null;
+                        if (context != null && context.structParamName != null) {
+                            structParam = context.structParamName;
+                        } else if (untyped compiler.isCompilingStructMethod && untyped compiler.globalStructParameterMap.exists("_this")) {
+                            // GLOBAL FIX: Use global mapping when local context is not available
+                            structParam = untyped compiler.globalStructParameterMap.get("_this");
+                        }
                         
                         #if debug_control_flow_compiler
                         trace('[XRay ControlFlowCompiler] ✓ SIMPLE _THIS ASSIGNMENT DETECTED: _this = ${valueCompiled}');
                         trace('[XRay ControlFlowCompiler] Converting to use struct param: ${structParam}');
                         #end
                         
-                        // Replace _this with struct in the compiled value expression
-                        // This is a bit hacky but effective for this pattern
-                        var correctedValue = valueCompiled.replace("_this", structParam);
-                        var compiledCode = '${structParam} = ${correctedValue}';
-                        
-                        return {
-                            structParam: structParam,
-                            compiledCode: compiledCode
-                        };
+                        if (structParam != null) {
+                            // Replace _this with struct in the compiled value expression
+                            // This is a bit hacky but effective for this pattern
+                            var correctedValue = valueCompiled.replace("_this", structParam);
+                            var compiledCode = '${structParam} = ${correctedValue}';
+                            
+                            return {
+                                structParam: structParam,
+                                compiledCode: compiledCode
+                            };
+                        } else {
+                            // Fallback to default behavior if no mapping available
+                            return null;
+                        }
                         
                     case TField(obj, fieldAccess):
                         // Extract the field name
@@ -515,8 +528,14 @@ class ControlFlowCompiler {
         trace('[XRay ControlFlowCompiler] structParamName = ${context != null && context.structParamName != null ? context.structParamName : "null"}');
         #end
         
-        if (context != null && context.structParamName != null && varName == "_this") {
-            varName = context.structParamName;
+        if (varName == "_this") {
+            // Try local context first, then global struct method mapping
+            if (context != null && context.structParamName != null) {
+                varName = context.structParamName;
+            } else if (untyped compiler.isCompilingStructMethod && untyped compiler.globalStructParameterMap.exists("_this")) {
+                // GLOBAL FIX: Use global mapping when local context is not available
+                varName = untyped compiler.globalStructParameterMap.get("_this");
+            }
             #if debug_control_flow_compiler
             trace('[XRay ControlFlowCompiler] Replaced _this with ${varName}');
             #end
