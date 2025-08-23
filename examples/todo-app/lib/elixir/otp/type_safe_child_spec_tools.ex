@@ -46,20 +46,9 @@ defmodule TypeSafeChildSpecTools do
           (
           g_counter = 0
           g = Reflect.fields(config)
-          field = nil
-    g2 = nil
-    loop_helper = fn loop_fn, {field, g2} ->
-      if ((g_counter < g_counter.length)) do
-        field = Enum.at(g_counter, g_counter)
-        g2 = g2 + 1
-        Reflect.set_field(endpoint_config, field, Reflect.field(config, field))
-        loop_fn.(loop_fn, {field, g2})
-      else
-        {field, g2}
-      end
-    end
-
-    {field, g2} = loop_helper.(loop_helper, {field, g2})
+          Enum.each(g_counter, fn field -> 
+      Reflect.set_field(endpoint_config, field, Reflect.field(config, field))
+    end)
         )
         end
           args = [endpoint_config]
