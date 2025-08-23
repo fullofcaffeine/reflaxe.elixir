@@ -23,7 +23,10 @@ defmodule Log do
           (
           g_counter = 0
           g = infos.custom_params
-          loop_helper = fn loop_fn, {v2, g, str} ->
+          v2 = nil
+    g = nil
+    str = nil
+    loop_helper = fn loop_fn, {v2, g, str} ->
       if ((g_counter < g_counter.length)) do
         v = Enum.at(g_counter, g_counter)
         g = g + 1

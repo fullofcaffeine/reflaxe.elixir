@@ -2700,13 +2700,28 @@ end)';
         var varInitializations = [for (v in modifiedVars) '${v.name}'];
         var varParams = varInitializations.join(", ");
         
+        // Generate variable initializations - ALL variables need to be defined before use
+        var varInits = "";
+        if (modifiedVars.length > 0) {
+            var initStatements = [];
+            for (v in modifiedVars) {
+                // Initialize ALL variables to nil initially - they'll be set to proper values if needed
+                // This ensures no undefined variable errors in the Y combinator call
+                initStatements.push('${v.name} = nil');
+            }
+            if (initStatements.length > 0) {
+                varInits = initStatements.join("\n") + "\n";
+            }
+        }
+        
         // Generate Y combinator pattern based on whether we have break statements
         var hasBreakStatement = transformedBody.indexOf("throw(:break)") != -1;
         
         var result = if (normalWhile) {
             // while (condition) { body } pattern
             if (hasBreakStatement) {
-                // Complex pattern with break handling
+                // Complex pattern with break handling - need to initialize variables first
+                varInits +
                 '(\n' +
                 '  try do\n' +
                 '    loop_fn = fn {${varParams}} ->\n' +
@@ -2728,7 +2743,8 @@ end)';
                 '  end\n' +
                 ')';
             } else {
-                // Simple pattern without break handling
+                // Simple pattern without break handling - need to initialize variables first
+                varInits +
                 'loop_helper = fn loop_fn, {${varParams}} ->\n' +
                 '  if ${condition} do\n' +
                 '${CompilerUtilities.indentCode(transformedBody, 4)}\n' +
@@ -2742,6 +2758,7 @@ end)';
             }
         } else {
             // do { body } while (condition) pattern - inline format
+            varInits +
             '(\n' +
             '  loop_fn = fn {${varParams}} ->\n' +
             '${CompilerUtilities.indentCode(transformedBody, 4)}\n' +
@@ -2765,10 +2782,29 @@ end)';
      * Extract variables that are modified in loop body
      * 
      * @param ebody Loop body expression
-     * @return Array of modified variable information
+     * @return Array of modified variable information with initialization flag
      */
-    private function extractModifiedVariables(ebody: TypedExpr): Array<{name: String, type: String}> {
-        var modifiedVars: Array<{name: String, type: String}> = [];
+    private function extractModifiedVariables(ebody: TypedExpr): Array<{name: String, type: String, needsInit: Bool}> {
+        var modifiedVars: Array<{name: String, type: String, needsInit: Bool}> = [];
+        var declaredVars: Array<String> = []; // Track variables declared with TVar
+        
+        // First pass: find all TVar declarations
+        function findDeclarations(expr: TypedExpr): Void {
+            switch(expr.expr) {
+                case TVar(tvar, _):
+                    var varName = CompilerUtilities.toElixirVarName(tvar);
+                    if (declaredVars.indexOf(varName) == -1) {
+                        declaredVars.push(varName);
+                    }
+                case TBlock(exprs):
+                    for (e in exprs) findDeclarations(e);
+                case TIf(_, thenExpr, elseExpr):
+                    findDeclarations(thenExpr);
+                    if (elseExpr != null) findDeclarations(elseExpr);
+                case _:
+                    // Continue with other expression types as needed
+            }
+        }
         
         // Recursively find all variable assignments and mutations
         function findMutations(expr: TypedExpr): Void {
@@ -2780,7 +2816,9 @@ end)';
                             if (isVariableAccess(e1)) {
                                 var varName = extractVariableName(e1);
                                 if (!Lambda.exists(modifiedVars, v -> v.name == varName)) {
-                                    modifiedVars.push({name: varName, type: "Dynamic"});
+                                    // Variable needs init if it's assigned but not declared with TVar
+                                    var needsInit = declaredVars.indexOf(varName) == -1;
+                                    modifiedVars.push({name: varName, type: "Dynamic", needsInit: needsInit});
                                 }
                             }
                         case _:
@@ -2790,10 +2828,10 @@ end)';
                     findMutations(e2);
                     
                 case TVar(tvar, valueExpr):
-                    // Variable declaration
+                    // Variable declaration - these don't need separate initialization
                     var varName = CompilerUtilities.toElixirVarName(tvar);
                     if (!Lambda.exists(modifiedVars, v -> v.name == varName)) {
-                        modifiedVars.push({name: varName, type: "Dynamic"});
+                        modifiedVars.push({name: varName, type: "Dynamic", needsInit: false});
                     }
                     if (valueExpr != null) findMutations(valueExpr);
                     
@@ -2804,7 +2842,9 @@ end)';
                             if (isVariableAccess(e)) {
                                 var varName = extractVariableName(e);
                                 if (!Lambda.exists(modifiedVars, v -> v.name == varName)) {
-                                    modifiedVars.push({name: varName, type: "Dynamic"});
+                                    // Increment/decrement assumes variable exists, needs init if not declared
+                                    var needsInit = declaredVars.indexOf(varName) == -1;
+                                    modifiedVars.push({name: varName, type: "Dynamic", needsInit: needsInit});
                                 }
                             }
                         case _:
@@ -2828,6 +2868,8 @@ end)';
             }
         }
         
+        // Run both passes
+        findDeclarations(ebody);
         findMutations(ebody);
         return modifiedVars;
     }
@@ -2867,7 +2909,7 @@ end)';
      * @param condition Loop condition string
      * @return Transformed body with proper variable handling
      */
-    private function transformLoopBodyMutations(expr: TypedExpr, modifiedVars: Array<{name: String, type: String}>, normalWhile: Bool, condition: String): String {
+    private function transformLoopBodyMutations(expr: TypedExpr, modifiedVars: Array<{name: String, type: String, needsInit: Bool}>, normalWhile: Bool, condition: String): String {
         // Transform variable assignments to tuple updates
         return switch(expr.expr) {
             case TBlock(exprs):
@@ -2886,7 +2928,7 @@ end)';
      * @param modifiedVars Modified variables context
      * @return Transformed statement
      */
-    private function transformStatement(expr: TypedExpr, modifiedVars: Array<{name: String, type: String}>): String {
+    private function transformStatement(expr: TypedExpr, modifiedVars: Array<{name: String, type: String, needsInit: Bool}>): String {
         return switch(expr.expr) {
             case TBinop(op, e1, e2):
                 // Transform variable assignment and compound assignments
