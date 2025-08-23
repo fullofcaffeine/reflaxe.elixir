@@ -445,6 +445,13 @@ class PatternMatchingCompiler {
             // Extract pattern variables from the case body first
             var patternVars = extractPatternVariables(caseData.expr);
             
+            #if debug_pattern_matching
+            trace('[XRay PatternMatchingCompiler] Pattern variables extracted: ${Lambda.count(patternVars)} vars');
+            for (idx in patternVars.keys()) {
+                trace('[XRay PatternMatchingCompiler]   Index ${idx}: ${patternVars.get(idx)}');
+            }
+            #end
+            
             // Compile patterns with extracted variables
             var patterns = [];
             for (value in caseData.values) {
@@ -474,7 +481,8 @@ class PatternMatchingCompiler {
                     }
                     #end
                     // Filter out the TVar expressions used for pattern extraction
-                    var filteredEl = filterPatternExtractionVars(el);
+                    // Pass the pattern variables to the filter so it knows which extractions to keep
+                    var filteredEl = filterPatternExtractionVars(el, patternVars);
                     // Pass context to ControlFlowCompiler for _this replacement
                     compiler.expressionDispatcher.controlFlowCompiler.compileBlock(filteredEl, false, context);
                 default:
@@ -736,33 +744,72 @@ class PatternMatchingCompiler {
      * These need to be filtered at all levels of the AST, not just the top level.
      * 
      * WHAT: Recursively processes expressions to remove:
-     * 1. TVar expressions that extract enum parameters (_g variables)
+     * 1. TVar expressions that extract enum parameters (_g variables) - BUT ONLY IF THEY ARE USED FOR PATTERNS
      * 2. TVar expressions that reassign pattern variables from extraction vars
      * 
-     * HOW: Two-phase approach:
-     * 1. Collect all extraction variable names from the entire expression tree
-     * 2. Filter and recursively transform expressions, removing redundant assignments
+     * HOW: Three-phase approach:
+     * 1. Identify which extraction vars are used for pattern matching (not orphaned)
+     * 2. Collect extraction variable names from the entire expression tree
+     * 3. Filter and recursively transform expressions, removing only redundant assignments
      * 
      * @param el The block expressions to filter
+     * @param patternVars Map of pattern variables extracted for this case (helps identify orphaned extractions)
      * @return Filtered expressions without pattern extraction code
      */
-    private function filterPatternExtractionVars(el: Array<TypedExpr>): Array<TypedExpr> {
+    private function filterPatternExtractionVars(el: Array<TypedExpr>, patternVars: Map<Int, String>): Array<TypedExpr> {
         #if debug_pattern_matching
         trace("[XRay filterPatternExtractionVars] START - Processing ${el.length} expressions");
+        trace('[XRay filterPatternExtractionVars] Pattern vars count: ${Lambda.count(patternVars)}');
         #end
         
-        // Phase 1: Collect all extraction variable names from the entire tree
-        var extractionVars = new Map<String, Bool>();
-        collectExtractionVarsRecursive(el, extractionVars);
+        // Phase 1: Identify which extraction vars are actually used for patterns (not orphaned)
+        var usedExtractionVars = new Map<String, Int>(); // Maps extraction var name to param index
+        var patternVarsByName = new Map<String, Int>(); // Maps pattern var name to param index
+        
+        // Build reverse mapping from pattern var names to indices
+        for (idx in patternVars.keys()) {
+            var varName = patternVars.get(idx);
+            patternVarsByName.set(varName, idx);
+        }
+        
+        // Find extraction vars that are used by pattern variables
+        for (i in 0...el.length) {
+            switch (el[i].expr) {
+                case TVar(tvar, e):
+                    if (StringTools.startsWith(tvar.name, "_g") && e != null) {
+                        switch (e.expr) {
+                            case TEnumParameter(_, enumField, index):
+                                // Check if this extraction index is used by a pattern variable
+                                if (patternVars.exists(index)) {
+                                    usedExtractionVars.set(tvar.name, index);
+                                    #if debug_pattern_matching
+                                    trace('[XRay filterPatternExtractionVars] ✓ Keeping extraction var ${tvar.name} (used for pattern param ${index})');
+                                    #end
+                                } else {
+                                    #if debug_pattern_matching
+                                    trace('[XRay filterPatternExtractionVars] ✗ Marking orphaned extraction var ${tvar.name} (param ${index} not used in pattern)');
+                                    #end
+                                }
+                            case _:
+                        }
+                    }
+                case _:
+            }
+        }
+        
+        // Phase 2: Collect all extraction variable names from the entire tree (both used and orphaned)
+        var allExtractionVars = new Map<String, Bool>();
+        collectExtractionVarsRecursive(el, allExtractionVars);
         
         #if debug_pattern_matching
-        trace('[XRay filterPatternExtractionVars] Found extraction vars: ${[for (k in extractionVars.keys()) k]}');
+        trace('[XRay filterPatternExtractionVars] Found extraction vars: ${[for (k in allExtractionVars.keys()) k]}');
+        trace('[XRay filterPatternExtractionVars] Used extraction vars: ${[for (k in usedExtractionVars.keys()) k]}');
         #end
         
-        // Phase 2: Filter expressions recursively
+        // Phase 3: Filter expressions recursively, but be smart about what to remove
         var filtered = [];
         for (expr in el) {
-            var processedExpr = filterExpressionRecursive(expr, extractionVars);
+            var processedExpr = filterExpressionRecursive(expr, allExtractionVars, usedExtractionVars);
             if (processedExpr != null) {
                 filtered.push(processedExpr);
             }
@@ -836,26 +883,37 @@ class PatternMatchingCompiler {
      * Recursively filter an expression, removing pattern extraction code
      * and transforming nested structures
      * 
+     * @param expr The expression to filter
+     * @param allExtractionVars All extraction variables found in the tree
+     * @param usedExtractionVars Extraction variables that are actually used for patterns (should be kept)
      * @return The filtered expression, or null if it should be removed entirely
      */
-    private function filterExpressionRecursive(expr: TypedExpr, extractionVars: Map<String, Bool>): Null<TypedExpr> {
+    private function filterExpressionRecursive(expr: TypedExpr, allExtractionVars: Map<String, Bool>, usedExtractionVars: Map<String, Int>): Null<TypedExpr> {
         switch (expr.expr) {
             case TVar(tvar, e):
-                // Check if this should be filtered out
+                // Check if this should be filtered out - but be smart about it!
                 if (StringTools.startsWith(tvar.name, "_g") && e != null) {
                     switch (e.expr) {
                         case TEnumParameter(_, _, _):
-                            #if debug_pattern_matching
-                            trace('[XRay filterExpression] Filtering out enum parameter extraction: ${tvar.name}');
-                            #end
-                            return null; // Skip enum parameter extraction
+                            // CRITICAL FIX: Only filter out enum parameter extractions that are NOT used for patterns
+                            if (!usedExtractionVars.exists(tvar.name)) {
+                                #if debug_pattern_matching
+                                trace('[XRay filterExpression] Filtering out ORPHANED enum parameter extraction: ${tvar.name}');
+                                #end
+                                return null; // Skip orphaned enum parameter extraction
+                            } else {
+                                #if debug_pattern_matching
+                                trace('[XRay filterExpression] Keeping USED enum parameter extraction: ${tvar.name}');
+                                #end
+                                // Keep this extraction because it's used for pattern matching
+                            }
                         case _:
                     }
                 } else if (e != null) {
                     // Check if this is a redundant pattern variable assignment
                     switch (e.expr) {
                         case TLocal(v):
-                            if (extractionVars.exists(v.name)) {
+                            if (allExtractionVars.exists(v.name)) {
                                 #if debug_pattern_matching
                                 trace('[XRay filterExpression] Filtering out pattern var assignment: ${tvar.name} = ${v.name}');
                                 #end
@@ -870,7 +928,7 @@ class PatternMatchingCompiler {
                 // Recursively filter block contents
                 var filtered = [];
                 for (e in el) {
-                    var processedExpr = filterExpressionRecursive(e, extractionVars);
+                    var processedExpr = filterExpressionRecursive(e, allExtractionVars, usedExtractionVars);
                     if (processedExpr != null) {
                         filtered.push(processedExpr);
                     }
@@ -888,8 +946,8 @@ class PatternMatchingCompiler {
                 trace("[XRay filterExpression] Processing TIf - filtering branches");
                 #end
                 
-                var filteredIf = filterExpressionRecursive(eif, extractionVars);
-                var filteredElse = eelse != null ? filterExpressionRecursive(eelse, extractionVars) : null;
+                var filteredIf = filterExpressionRecursive(eif, allExtractionVars, usedExtractionVars);
+                var filteredElse = eelse != null ? filterExpressionRecursive(eelse, allExtractionVars, usedExtractionVars) : null;
                 
                 // Create new TIf with filtered branches
                 return {
@@ -900,7 +958,7 @@ class PatternMatchingCompiler {
                 
             case TParenthesis(e):
                 // Recursively filter parenthesis content
-                var filtered = filterExpressionRecursive(e, extractionVars);
+                var filtered = filterExpressionRecursive(e, allExtractionVars, usedExtractionVars);
                 if (filtered != null) {
                     return {
                         expr: TParenthesis(filtered),
@@ -912,7 +970,7 @@ class PatternMatchingCompiler {
                 
             case TWhile(cond, e, normalWhile):
                 // Recursively filter while body
-                var filtered = filterExpressionRecursive(e, extractionVars);
+                var filtered = filterExpressionRecursive(e, allExtractionVars, usedExtractionVars);
                 if (filtered != null) {
                     return {
                         expr: TWhile(cond, filtered, normalWhile),
@@ -924,7 +982,7 @@ class PatternMatchingCompiler {
                 
             case TFor(v, iter, e):
                 // Recursively filter for body
-                var filtered = filterExpressionRecursive(e, extractionVars);
+                var filtered = filterExpressionRecursive(e, allExtractionVars, usedExtractionVars);
                 if (filtered != null) {
                     return {
                         expr: TFor(v, iter, filtered),
@@ -937,6 +995,58 @@ class PatternMatchingCompiler {
             default:
                 // Keep other expressions as-is
                 return expr;
+        }
+    }
+    
+    /**
+     * RECURSIVE HELPER: Find pattern variable assignments that use extraction variables
+     * 
+     * WHY: Pattern variable assignments like TVar(config, TLocal(_g)) can be nested
+     * inside TBlock expressions, not just at the top level. This function recursively
+     * searches through all expressions to find these assignments.
+     * 
+     * WHAT: Recursively searches expressions for TVar assignments that reference
+     * extraction variables, updating the patternVars map with found mappings
+     * 
+     * HOW: Uses recursive traversal to examine TBlock, TIf, and other nested structures
+     * 
+     * @param expressions List of expressions to search
+     * @param extractionVars Map of extraction variable names to parameter indices  
+     * @param patternVars Map to update with found pattern variable mappings
+     */
+    private function findPatternVariableAssignments(expressions: Array<TypedExpr>, 
+                                                   extractionVars: Map<String, Int>, 
+                                                   patternVars: Map<Int, String>): Void {
+        for (expr in expressions) {
+            switch (expr.expr) {
+                case TVar(patternVar, assignExpr) if (assignExpr != null):
+                    switch (assignExpr.expr) {
+                        case TLocal(v):
+                            if (extractionVars.exists(v.name)) {
+                                var paramIndex = extractionVars.get(v.name);
+                                var varName = NamingHelper.toSnakeCase(patternVar.name);
+                                patternVars.set(paramIndex, varName);
+                                #if debug_pattern_matching
+                                trace('[XRay PatternMatchingCompiler] ✓ Mapped param ${paramIndex} to variable: ${varName} (via ${v.name})');
+                                #end
+                            }
+                        case _:
+                    }
+                case TBlock(el):
+                    // Recurse into nested blocks
+                    #if debug_pattern_matching
+                    trace('[XRay PatternMatchingCompiler] Recursing into TBlock with ${el.length} expressions');
+                    #end
+                    findPatternVariableAssignments(el, extractionVars, patternVars);
+                case TIf(econd, eif, eelse):
+                    // Recurse into if branches (less common but possible)
+                    findPatternVariableAssignments([eif], extractionVars, patternVars);
+                    if (eelse != null) {
+                        findPatternVariableAssignments([eelse], extractionVars, patternVars);
+                    }
+                case _:
+                    // Other expressions types don't typically contain nested variable assignments
+            }
         }
     }
     
@@ -1005,25 +1115,8 @@ class PatternMatchingCompiler {
                     }
                 }
                 
-                // Second pass: Find pattern variable assignments that use these extraction vars
-                for (i in 0...el.length) {
-                    switch (el[i].expr) {
-                        case TVar(patternVar, assignExpr) if (assignExpr != null):
-                            switch (assignExpr.expr) {
-                                case TLocal(v):
-                                    if (extractionVars.exists(v.name)) {
-                                        var paramIndex = extractionVars.get(v.name);
-                                        var varName = NamingHelper.toSnakeCase(patternVar.name);
-                                        patternVars.set(paramIndex, varName);
-                                        #if debug_pattern_matching
-                                        trace('[XRay PatternMatchingCompiler] ✓ Mapped param ${paramIndex} to variable: ${varName} (via ${v.name})');
-                                        #end
-                                    }
-                                case _:
-                            }
-                        case _:
-                    }
-                }
+                // Second pass: Find pattern variable assignments that use these extraction vars (recursive)
+                findPatternVariableAssignments(el, extractionVars, patternVars);
             case _:
                 #if debug_pattern_matching
                 trace('[XRay PatternMatchingCompiler] Case body is not TBlock: ${expr.expr}');

@@ -56,13 +56,33 @@ defmodule TodoLive do
           g = elem(g, 1)
           parsed_msg = g_counter
           case (elem(parsed_msg, 0)) do
-      0 -> temp_socket = TodoLive.add_todo_to_list(todo, socket)
-      1 -> temp_socket = TodoLive.update_todo_in_list(todo, socket)
-      {2, id} -> temp_socket = TodoLive.remove_todo_from_list(id, socket)
-      {3, action} -> temp_socket = TodoLive.handle_bulk_update(action, socket)
-      4 -> temp_socket = socket
-      5 -> temp_socket = socket
+      {0, todo} -> (
+          g = elem(parsed_msg, 1)
+          temp_socket = TodoLive.add_todo_to_list(todo, socket)
+        )
+      {1, todo} -> (
+          g = elem(parsed_msg, 1)
+          temp_socket = TodoLive.update_todo_in_list(todo, socket)
+        )
+      {2, id} -> (
+          g = elem(parsed_msg, 1)
+          temp_socket = TodoLive.remove_todo_from_list(id, socket)
+        )
+      {3, action} -> (
+          g = elem(parsed_msg, 1)
+          temp_socket = TodoLive.handle_bulk_update(action, socket)
+        )
+      {4, user_id} -> (
+          elem(parsed_msg, 1)
+          temp_socket = socket
+        )
+      {5, user_id} -> (
+          elem(parsed_msg, 1)
+          temp_socket = socket
+        )
       {6, message, level} -> (
+          g = elem(parsed_msg, 1)
+          g = elem(parsed_msg, 2)
           temp_flash_type = nil
           case (elem(level, 0)) do
       0 -> temp_flash_type = :info
@@ -519,9 +539,18 @@ defmodule TodoLive do
           complete_assigns = TypeSafeConversions.create_complete_assigns(current_assigns, updated_todos)
           temp_result = LiveView.assign_multiple(socket, complete_assigns)
         )
-      {2, priority} -> temp_result = socket
-      3 -> temp_result = socket
-      4 -> temp_result = socket
+      {2, priority} -> (
+          elem(action, 1)
+          temp_result = socket
+        )
+      {3, tag} -> (
+          elem(action, 1)
+          temp_result = socket
+        )
+      {4, tag} -> (
+          elem(action, 1)
+          temp_result = socket
+        )
     end
     temp_result
   end

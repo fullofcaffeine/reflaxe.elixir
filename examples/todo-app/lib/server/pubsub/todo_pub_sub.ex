@@ -72,13 +72,35 @@ defmodule TodoPubSub do
     (
           temp_struct = nil
           case (elem(message, 0)) do
-      0 -> temp_struct = %{"type" => "todo_created", "todo" => todo}
-      1 -> temp_struct = %{"type" => "todo_updated", "todo" => todo}
-      {2, id} -> temp_struct = %{"type" => "todo_deleted", "todo_id" => id}
-      {3, action} -> temp_struct = %{"type" => "bulk_update", "action" => TodoPubSub.bulk_action_to_string(action)}
-      4 -> temp_struct = %{"type" => "user_online", "user_id" => user_id}
-      5 -> temp_struct = %{"type" => "user_offline", "user_id" => user_id}
-      {6, message2, level} -> temp_struct = %{"type" => "system_alert", "message" => message, "level" => TodoPubSub.alert_level_to_string(level)}
+      {0, todo} -> (
+          g = elem(message, 1)
+          temp_struct = %{"type" => "todo_created", "todo" => todo}
+        )
+      {1, todo} -> (
+          g = elem(message, 1)
+          temp_struct = %{"type" => "todo_updated", "todo" => todo}
+        )
+      {2, id} -> (
+          g = elem(message, 1)
+          temp_struct = %{"type" => "todo_deleted", "todo_id" => id}
+        )
+      {3, action} -> (
+          g = elem(message, 1)
+          temp_struct = %{"type" => "bulk_update", "action" => TodoPubSub.bulk_action_to_string(action)}
+        )
+      {4, user_id} -> (
+          g = elem(message, 1)
+          temp_struct = %{"type" => "user_online", "user_id" => user_id}
+        )
+      {5, user_id} -> (
+          g = elem(message, 1)
+          temp_struct = %{"type" => "user_offline", "user_id" => user_id}
+        )
+      {6, message2, level} -> (
+          g = elem(message, 1)
+          g = elem(message, 2)
+          temp_struct = %{"type" => "system_alert", "message" => message, "level" => TodoPubSub.alert_level_to_string(level)}
+        )
     end
           SafePubSub.add_timestamp(temp_struct)
         )
@@ -177,9 +199,18 @@ defmodule TodoPubSub do
           case (elem(action, 0)) do
       0 -> temp_result = "complete_all"
       1 -> temp_result = "delete_completed"
-      {2, priority} -> temp_result = "set_priority"
-      3 -> temp_result = "add_tag"
-      4 -> temp_result = "remove_tag"
+      {2, priority} -> (
+          elem(action, 1)
+          temp_result = "set_priority"
+        )
+      {3, tag} -> (
+          elem(action, 1)
+          temp_result = "add_tag"
+        )
+      {4, tag} -> (
+          elem(action, 1)
+          temp_result = "remove_tag"
+        )
     end
           temp_result
         )

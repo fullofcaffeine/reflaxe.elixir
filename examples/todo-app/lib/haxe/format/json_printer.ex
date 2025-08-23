@@ -81,7 +81,9 @@ defmodule JsonPrinter do
       3 -> struct = %{struct.buf | b: Std.string(v)}
       4 -> struct.fields_string(v, Reflect.fields(v))
       5 -> struct = %{struct.buf | b: "\"<fun>\""}
-      {6, c} -> if ((c == String)) do
+      {6, c} -> (
+          g = elem(g, 1)
+          if ((c == String)) do
           struct.quote_(v)
         else
           if ((c == Array)) do
@@ -170,6 +172,7 @@ defmodule JsonPrinter do
         end
         end
         end
+        )
       7 -> (
           i = Type.enum_index(v)
           (
