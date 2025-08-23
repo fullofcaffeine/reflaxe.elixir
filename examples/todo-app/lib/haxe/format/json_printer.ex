@@ -98,8 +98,8 @@ defmodule JsonPrinter do
     this = nil
     v3 = nil
     loop_helper = fn loop_fn, {i, g3, this, v3} ->
-      if ((g_counter < g_counter)) do
-        i = g_counter + 1
+      if ((g < g)) do
+        i = g + 1
         if ((i > 0)) do
               struct = %{struct.buf | b: ","}
             else
@@ -209,8 +209,8 @@ defmodule JsonPrinter do
     this = nil
     v2 = nil
     loop_helper = fn loop_fn, {i, g, f, value, empty, this, v2} ->
-      if ((g_counter < g_counter)) do
-        i = g_counter + 1
+      if ((g < g)) do
+        i = g + 1
         f = Enum.at(fields, i)
         value = Reflect.field(v, f)
         if Reflect.is_function_(value) do

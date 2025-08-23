@@ -823,8 +823,25 @@ class ControlFlowCompiler {
                 #end
         }
         
+        // CRITICAL FIX: Clear any incorrect g -> g_counter mapping before switch compilation
+        // This prevents the switch from using the wrong variable name
+        var savedGMapping = null;
+        if (compiler.currentFunctionParameterMap.exists("g")) {
+            var existingMapping = compiler.currentFunctionParameterMap.get("g");
+            if (StringTools.endsWith(existingMapping, "_counter")) {
+                trace('[XRay ControlFlowCompiler] ⚠️ REMOVING incorrect g -> ${existingMapping} mapping before switch compilation');
+                compiler.currentFunctionParameterMap.remove("g");
+                savedGMapping = existingMapping;
+            }
+        }
+        
         // Standard compilation for non-Result/Option switches
         var result = compiler.compileSwitchExpression(e, cases, edef);
+        
+        // Don't restore the incorrect mapping
+        if (savedGMapping != null) {
+            trace('[XRay ControlFlowCompiler] ✓ NOT restoring incorrect g -> ${savedGMapping} mapping');
+        }
         
         #if debug_control_flow_compiler
         trace('[XRay ControlFlowCompiler] Generated switch: ${result != null ? result.substring(0, 100) + "..." : "null"}');
@@ -875,15 +892,17 @@ class ControlFlowCompiler {
             #end
         }
         
-        // Extract the variable name directly from AST to avoid contamination
+        // CRITICAL FIX: Use proper variable compilation to apply snake_case mappings
+        // Don't extract raw names - use VariableCompiler which handles:
+        // - camelCase to snake_case conversion (bulkAction -> bulk_action)
+        // - Variable name mappings from currentFunctionParameterMap
+        // - Proper handling of special variables like 'g'
         var innerExprStr = switch (innerExpr.expr) {
             case TLocal(localVar): 
-                // Extract variable name directly to avoid g_counter contamination
-                var rawName = localVar.name;
-                // Clean up Haxe-generated prefixes
-                var cleanName = rawName.startsWith("_g") ? "g" : rawName;
-                // Variable name extracted and cleaned
-                cleanName;
+                // Use VariableCompiler to properly compile the variable reference
+                // This ensures camelCase variables are converted to snake_case
+                var variableCompiler = new VariableCompiler(compiler);
+                variableCompiler.compileLocalVariable(localVar);
             case _: 
                 // Fallback to regular compilation for non-local expressions
                 compiler.compileExpression(innerExpr);

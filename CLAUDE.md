@@ -13,6 +13,8 @@ Enable developers to **write business logic once in Haxe and deploy it anywhere*
 - **LLM Productivity Multiplier**: Provide deterministic vocabulary that reduces AI hallucinations
 - **Framework Integration Excellence**: Deep Phoenix/Ecto/OTP integration, not just language compatibility
 - **Framework-Agnostic Architecture**: Support any Elixir application pattern (Phoenix, Nerves, pure OTP) without compiler assumptions
+- **Hand-Written Quality**: Generated code should look like it was written by an Elixir expert, not a machine
+- **Transparent Bridge Variables**: When compiler-generated variables are needed (like `g` for switch expressions), add comments explaining their purpose
 
 ## 📚 Complete Documentation Index
 
@@ -389,6 +391,44 @@ if (isPhoenixProject()) {
 **See**: [docs/03-compiler-development/testing-infrastructure.md](docs/03-compiler-development/testing-infrastructure.md) - Complete testing guide
 
 ## Development Principles
+
+### ⚠️ CRITICAL: Always Check Recent Work Before Starting
+**FUNDAMENTAL RULE: Check git history and recent commits to understand what's been done and avoid repeating work.**
+- Run `git log --oneline -20` to see recent commits  
+- Review related files for recent changes
+- Never start debugging without understanding what's already been tried
+- Avoid repeating fixes that were already attempted
+
+### ⚠️ CRITICAL: Never Confirm Something Works Without Actual Tests
+**FUNDAMENTAL RULE: Don't confirm something is working before being 100% sure by verifying with actual tests.**
+- Always run `npm test` after changes
+- Test todo-app compilation: `cd examples/todo-app && npx haxe build-server.hxml && mix compile`
+- Verify the application runs: `mix phx.server`
+- Check for runtime errors, not just compilation success
+- Never say "it's fixed" without running the complete test suite
+
+### ⚠️ CRITICAL: Avoid Regressions and Circular Work
+**FUNDAMENTAL RULE: Avoid regressions and walking in circles by checking previous work.**
+- Check git history before attempting a fix: `git log --oneline -30 --grep="issue_keywords"`
+- Review git blame for recently changed code: `git blame path/to/file`
+- Look for TODO/FIXME comments in related files
+- If something was already tried and reverted, understand WHY before trying again
+- Document WHY previous approaches failed to prevent repeating mistakes
+
+### ⚠️ CRITICAL: No Ad-Hoc Fixes - Solve Root Architectural Problems
+**FUNDAMENTAL RULE: Never apply band-aid fixes - always solve the root architectural problem.**
+- **NO string replacements** like `if (x == "wrong") x = "right"` - find WHY it's wrong
+- **NO special case handling** without understanding the general pattern
+- **NO symptom patching** - trace back to where the problem originates
+- **Always ask**: Why is this happening? What's the root cause?
+- **The fix must be general** - it should solve ALL similar cases, not just the one you found
+- **Example of wrong approach**: Replacing "g_counter" with "g" in output
+- **Example of right approach**: Fix the variable mapping system that creates "g_counter" incorrectly
+- **If an ad-hoc fix is truly needed** (rare!), you MUST:
+  - Explain to the user WHY the root cause can't be fixed
+  - Document what the proper fix would be
+  - Add comprehensive comments explaining the temporary nature
+  - Create a tracking issue for the proper fix
 
 ### ⚠️ CRITICAL: Debug-First Development - No Assumptions
 **FUNDAMENTAL RULE: Always rely on debug data first. If you don't see the data/AST, don't assume things.**
