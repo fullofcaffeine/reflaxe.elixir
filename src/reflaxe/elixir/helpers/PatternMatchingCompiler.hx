@@ -133,7 +133,28 @@ class PatternMatchingCompiler {
         ?context: reflaxe.elixir.helpers.ControlFlowCompiler.FunctionContext
     ): String {
         
+        // CRITICAL FIX: Remove 'g' mapping before compiling switch expression
+        // The 'g' variable should never be mapped to g_counter in switch expressions
+        var savedGMapping: Null<String> = null;
+        if (compiler.currentFunctionParameterMap.exists("g")) {
+            savedGMapping = compiler.currentFunctionParameterMap.get("g");
+            compiler.currentFunctionParameterMap.remove("g");
+            #if debug_pattern_matching
+            trace('[PatternMatchingCompiler] Temporarily removed g mapping in with statement: g -> ${savedGMapping}');
+            #end
+        }
+        
         var exprStr = compiler.compileExpression(switchExpr);
+        
+        // Restore the 'g' mapping after compilation
+        // CRITICAL FIX: Don't restore if the mapping is to g_counter - that's always wrong
+        if (savedGMapping != null && !StringTools.endsWith(savedGMapping, "_counter")) {
+            compiler.currentFunctionParameterMap.set("g", savedGMapping);
+        } else if (savedGMapping != null) {
+            #if debug_pattern_matching
+            trace('[PatternMatchingCompiler] ⚠️ BLOCKED restoration of incorrect g -> ${savedGMapping} mapping');
+            #end
+        }
         var patterns: Array<String> = [];
         var elsePatterns: Array<String> = [];
         
@@ -378,7 +399,28 @@ class PatternMatchingCompiler {
         ?context: reflaxe.elixir.helpers.ControlFlowCompiler.FunctionContext
     ): String {
         
+        // CRITICAL FIX: Remove 'g' mapping before compiling switch expression
+        // The 'g' variable should never be mapped to g_counter in switch expressions
+        var savedGMapping: Null<String> = null;
+        if (compiler.currentFunctionParameterMap.exists("g")) {
+            savedGMapping = compiler.currentFunctionParameterMap.get("g");
+            compiler.currentFunctionParameterMap.remove("g");
+            #if debug_pattern_matching
+            trace('[PatternMatchingCompiler] Temporarily removed g mapping in standard case: g -> ${savedGMapping}');
+            #end
+        }
+        
         var exprStr = compiler.compileExpression(switchExpr);
+        
+        // Restore the 'g' mapping after compilation
+        // CRITICAL FIX: Don't restore if the mapping is to g_counter - that's always wrong
+        if (savedGMapping != null && !StringTools.endsWith(savedGMapping, "_counter")) {
+            compiler.currentFunctionParameterMap.set("g", savedGMapping);
+        } else if (savedGMapping != null) {
+            #if debug_pattern_matching
+            trace('[PatternMatchingCompiler] ⚠️ BLOCKED restoration of incorrect g -> ${savedGMapping} mapping');
+            #end
+        }
         var caseStrings: Array<String> = [];
         
         for (caseData in cases) {
@@ -463,10 +505,15 @@ class PatternMatchingCompiler {
             };
             
             // Restore the saved mapping if we removed it
-            if (savedGMapping != null) {
+            // CRITICAL FIX: Don't restore if the mapping is to g_counter - that's always wrong
+            if (savedGMapping != null && !StringTools.endsWith(savedGMapping, "_counter")) {
                 compiler.currentFunctionParameterMap.set("g", savedGMapping);
                 #if debug_pattern_matching
                 trace('[XRay PatternMatchingCompiler] RESTORED g -> ${savedGMapping} mapping after case body compilation');
+                #end
+            } else if (savedGMapping != null) {
+                #if debug_pattern_matching
+                trace('[XRay PatternMatchingCompiler] ⚠️ BLOCKED restoration of incorrect g -> ${savedGMapping} mapping after case body');
                 #end
             }
             
@@ -493,7 +540,28 @@ class PatternMatchingCompiler {
         ?context: reflaxe.elixir.helpers.ControlFlowCompiler.FunctionContext
     ): String {
         
+        // CRITICAL FIX: Remove 'g' mapping before compiling switch expression
+        // The 'g' variable should never be mapped to g_counter in switch expressions
+        var savedGMapping: Null<String> = null;
+        if (compiler.currentFunctionParameterMap.exists("g")) {
+            savedGMapping = compiler.currentFunctionParameterMap.get("g");
+            compiler.currentFunctionParameterMap.remove("g");
+            #if debug_pattern_matching
+            trace('[PatternMatchingCompiler] Temporarily removed g mapping before switch: g -> ${savedGMapping}');
+            #end
+        }
+        
         var exprStr = compiler.compileExpression(switchExpr);
+        
+        // Restore the 'g' mapping after compilation
+        // CRITICAL FIX: Don't restore if the mapping is to g_counter - that's always wrong
+        if (savedGMapping != null && !StringTools.endsWith(savedGMapping, "_counter")) {
+            compiler.currentFunctionParameterMap.set("g", savedGMapping);
+        } else if (savedGMapping != null) {
+            #if debug_pattern_matching
+            trace('[PatternMatchingCompiler] ⚠️ BLOCKED restoration of incorrect g -> ${savedGMapping} mapping');
+            #end
+        }
         var caseStrings: Array<String> = [];
         
         for (caseData in cases) {
@@ -514,6 +582,16 @@ class PatternMatchingCompiler {
     
     /**
      * Compile Result switch to case statement
+     * 
+     * WHY: Result<T,E> types should generate direct {:ok, value} | {:error, reason} pattern matching
+     *      instead of double-nested case expressions with integer tags
+     * 
+     * WHAT: Transform Result enum switch directly to idiomatic Elixir patterns
+     * 
+     * HOW:
+     * 1. Compile switch expression normally (without enum index extraction)
+     * 2. Generate {:ok, _} and {:error, _} patterns directly from case values
+     * 3. Avoid double-nesting by bypassing enum introspection for Result types
      */
     private function compileResultSwitch(
         switchExpr: TypedExpr,
@@ -521,8 +599,120 @@ class PatternMatchingCompiler {
         defaultExpr: Null<TypedExpr>,
         ?context: reflaxe.elixir.helpers.ControlFlowCompiler.FunctionContext
     ): String {
+        #if debug_pattern_matching
+        trace("[PatternMatchingCompiler] ✓ RESULT SWITCH COMPILATION - Generating direct patterns");
+        #end
         
-        return compileOptionSwitch(switchExpr, cases, defaultExpr, context); // Similar logic
+        // CRITICAL FIX: Remove 'g' mapping before compiling switch expression
+        // The 'g' variable should never be mapped to g_counter in switch expressions
+        var savedGMapping: Null<String> = null;
+        if (compiler.currentFunctionParameterMap.exists("g")) {
+            savedGMapping = compiler.currentFunctionParameterMap.get("g");
+            compiler.currentFunctionParameterMap.remove("g");
+            #if debug_pattern_matching
+            trace('[PatternMatchingCompiler] Temporarily removed g mapping in Result switch: g -> ${savedGMapping}');
+            #end
+        }
+        
+        // CRITICAL FIX: Compile the switch expression directly without enum introspection
+        // This avoids the inner case statement that creates double-nesting
+        var exprStr = compiler.compileExpression(switchExpr);
+        
+        // CRITICAL FIX: If the compiled expression contains a case statement, extract the variable
+        // This handles situations where enum introspection was already applied
+        if (exprStr.indexOf("case ") == 0 && exprStr.indexOf(" do ") > 0) {
+            #if debug_pattern_matching
+            trace('[PatternMatchingCompiler] ⚠️ DETECTED ENUM INTROSPECTION in Result switch - extracting variable');
+            trace('[PatternMatchingCompiler] Original exprStr: ${exprStr}');
+            #end
+            
+            // Extract the variable from "case g do {:ok, _} -> 0; {:error, _} -> 1; _ -> -1 end"
+            var caseStartIndex = exprStr.indexOf("case ") + 5;
+            var doIndex = exprStr.indexOf(" do ");
+            if (caseStartIndex < doIndex) {
+                exprStr = exprStr.substring(caseStartIndex, doIndex);
+                #if debug_pattern_matching
+                trace('[PatternMatchingCompiler] ✓ EXTRACTED variable: ${exprStr}');
+                #end
+            }
+        }
+        
+        // Restore the 'g' mapping after compilation
+        // CRITICAL FIX: Don't restore if the mapping is to g_counter - that's always wrong
+        if (savedGMapping != null && !StringTools.endsWith(savedGMapping, "_counter")) {
+            compiler.currentFunctionParameterMap.set("g", savedGMapping);
+        } else if (savedGMapping != null) {
+            #if debug_pattern_matching
+            trace('[PatternMatchingCompiler] ⚠️ BLOCKED restoration of incorrect g -> ${savedGMapping} mapping in Result switch');
+            #end
+        }
+        
+        var caseStrings: Array<String> = [];
+        
+        // Generate direct Result patterns for each case
+        for (caseData in cases) {
+            for (value in caseData.values) {
+                #if debug_pattern_matching
+                trace('[PatternMatchingCompiler] Processing Result case value: ${value.expr}');
+                #end
+                
+                var pattern = switch (value.expr) {
+                    case TConst(TInt(0)):
+                        #if debug_pattern_matching
+                        trace('[PatternMatchingCompiler] ✓ OK pattern (index 0)');
+                        #end
+                        "{:ok, _}"; // Ok constructor
+                        
+                    case TConst(TInt(1)):
+                        #if debug_pattern_matching
+                        trace('[PatternMatchingCompiler] ✓ ERROR pattern (index 1)');
+                        #end
+                        "{:error, _}"; // Error constructor
+                        
+                    case TCall(e, args):
+                        // Handle direct enum constructor calls
+                        switch (e.expr) {
+                            case TField(_, FEnum(enumRef, enumField)):
+                                var enumType = enumRef.get();
+                                if (enumType.name == "Result") {
+                                    compileResultPattern(enumField, args);
+                                } else {
+                                    compiler.compileExpression(value);
+                                }
+                            case _:
+                                compiler.compileExpression(value);
+                        }
+                        
+                    case _:
+                        #if debug_pattern_matching
+                        trace('[PatternMatchingCompiler] ✓ FALLBACK pattern compilation');
+                        #end
+                        // Fall back to regular pattern compilation
+                        compileEnumPattern(value);
+                };
+                
+                var body = compilePatternBody(caseData.expr, context);
+                caseStrings.push('  ${pattern} -> ${body}');
+                
+                #if debug_pattern_matching
+                trace('[PatternMatchingCompiler] Generated Result case: ${pattern} -> [body]');
+                #end
+            }
+        }
+        
+        if (defaultExpr != null) {
+            var defaultBody = compilePatternBody(defaultExpr, context);
+            caseStrings.push('  _ -> ${defaultBody}');
+        }
+        
+        var result = 'case ${exprStr} do\n${caseStrings.join("\n")}\nend';
+        
+        #if debug_pattern_matching
+        trace('[PatternMatchingCompiler] ✓ RESULT SWITCH COMPLETE');
+        trace('[PatternMatchingCompiler] Generated: ${result.substring(0, 100)}...');
+        #end
+        
+        return result;
     }
     
     /**
