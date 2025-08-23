@@ -360,13 +360,16 @@ class EnumIntrospectionCompiler {
         // 4. Legacy cases - complex but mostly unused
         
         // These cases have parameters that are extracted but not used in validation
-        var orphanedCases = switch(ef.name) {
+        // DISABLED: This detection is too aggressive and causes undefined variable errors
+        // The variables ARE being referenced, just not in meaningful ways
+        var orphanedCases = false; // Temporarily disable orphaned detection
+        /* switch(ef.name) {
             case "Repo": index == 0;      // Repo(config) - config unused
             case "Telemetry": index == 0; // Telemetry(config) - config unused  
             case "Presence": index == 0;  // Presence(config) - config unused
             case "Legacy": true;          // Legacy has complex unused patterns
             case _: false;
-        };
+        }; */
         
         if (orphanedCases) {
             #if debug_enum_introspection_compiler

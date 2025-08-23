@@ -81,10 +81,7 @@ defmodule JsonPrinter do
       3 -> struct = %{struct.buf | b: Std.string(v)}
       4 -> struct.fields_string(v, Reflect.fields(v))
       5 -> struct = %{struct.buf | b: "\"<fun>\""}
-      6 -> (
-          g = elem(g_counter, 1)
-          c = g_counter
-          if ((c == String)) do
+      {6, c} -> if ((c == String)) do
           struct.quote_(v)
         else
           if ((c == Array)) do
@@ -94,6 +91,10 @@ defmodule JsonPrinter do
     last = (len - 1)
     g_counter = 0
     g = len
+    i = nil
+    g3 = nil
+    this = nil
+    v3 = nil
     loop_helper = fn loop_fn, {i, g3, this, v3} ->
       if ((g_counter < g_counter)) do
         i = g_counter + 1
@@ -140,7 +141,8 @@ defmodule JsonPrinter do
           v = v
           o = %{}
           k = v.keys()
-          loop_helper = fn loop_fn, {k3} ->
+          k3 = nil
+    loop_helper = fn loop_fn, {k3} ->
       if (k.has_next()) do
         k = k.next()
         Reflect.set_field(o, k, v.get(k))
@@ -168,15 +170,11 @@ defmodule JsonPrinter do
         end
         end
         end
-        )
       7 -> (
-          elem(g_counter, 1)
-          (
           i = Type.enum_index(v)
           (
           v = Std.string(i)
           struct = %{struct.buf | b: Std.string(v)}
-        )
         )
         )
       8 -> struct = %{struct.buf | b: "\"???\""}
@@ -200,6 +198,13 @@ defmodule JsonPrinter do
     empty = true
     g_counter = 0
     g = len
+    i = nil
+    g = nil
+    f = nil
+    value = nil
+    empty = nil
+    this = nil
+    v2 = nil
     loop_helper = fn loop_fn, {i, g, f, value, empty, this, v2} ->
       if ((g_counter < g_counter)) do
         i = g_counter + 1
@@ -263,7 +268,11 @@ defmodule JsonPrinter do
           struct = %{struct.buf | b: "\""}
           i = 0
           length = s.length
-          loop_helper = fn loop_fn, {temp_number, index, i, c} ->
+          temp_number = nil
+    index = nil
+    i = nil
+    c = nil
+    loop_helper = fn loop_fn, {temp_number, index, i, c} ->
       if ((i < length)) do
         temp_number = nil
         index = i + 1
