@@ -1,0 +1,37 @@
+private class haxe.ds._List.ListNode<T> {
+
+	public function new[Function:(item : haxe.ds._List.ListNode.T, next : haxe.ds._List.ListNode<haxe.ds._List.ListNode.T>) -> Void]
+		[Arg:haxe.ds._List.ListNode.T] [Local item(2354):haxe.ds._List.ListNode.T]
+		[Arg:haxe.ds._List.ListNode<haxe.ds._List.ListNode.T>] [Local next(2355):haxe.ds._List.ListNode<haxe.ds._List.ListNode.T>]
+		[Block:haxe.ds._List.ListNode<haxe.ds._List.ListNode.T>]
+			[Binop:haxe.ds._List.ListNode.T]
+				[Field:haxe.ds._List.ListNode.T]
+					[Const:haxe.ds._List.ListNode<haxe.ds._List.ListNode.T>] this
+					[FInstance:haxe.ds._List.ListNode.T]
+						haxe.ds._List.ListNode<haxe.ds._List.ListNode.T>
+						item:haxe.ds._List.ListNode.T
+				=
+				[Local item(2354):haxe.ds._List.ListNode.T:haxe.ds._List.ListNode.T]
+			[Binop:haxe.ds._List.ListNode<haxe.ds._List.ListNode.T>]
+				[Field:haxe.ds._List.ListNode<haxe.ds._List.ListNode.T>]
+					[Const:haxe.ds._List.ListNode<haxe.ds._List.ListNode.T>] this
+					[FInstance:haxe.ds._List.ListNode<haxe.ds._List.ListNode.T>]
+						haxe.ds._List.ListNode<haxe.ds._List.ListNode.T>
+						next:haxe.ds._List.ListNode<haxe.ds._List.ListNode.T>
+				=
+				[Local next(2355):haxe.ds._List.ListNode<haxe.ds._List.ListNode.T>:haxe.ds._List.ListNode<haxe.ds._List.ListNode.T>]
+
+	public var item:haxe.ds._List.ListNode.T;
+
+	public var next:haxe.ds._List.ListNode<haxe.ds._List.ListNode.T>;
+
+	public static inline function create<T>[Function:(item : create.T, next : haxe.ds._List.ListNode<create.T>) -> haxe.ds._List.ListNode<create.T>]
+		[Arg:create.T] [Local item(2352):create.T]
+		[Arg:haxe.ds._List.ListNode<create.T>] [Local next(2353):haxe.ds._List.ListNode<create.T>]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[New:haxe.ds._List.ListNode<create.T>]
+					haxe.ds._List.ListNode<create.T>
+					[Local item(2352):create.T:create.T]
+					[Local next(2353):haxe.ds._List.ListNode<create.T>:haxe.ds._List.ListNode<create.T>]
+}

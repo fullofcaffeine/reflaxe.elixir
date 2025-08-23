@@ -384,6 +384,9 @@ class PatternMatchingCompiler {
         for (caseData in cases) {
             var patterns = caseData.values.map(v -> compilePattern(v));
             
+            // No changes needed here - the fix should be in EnumIntrospectionCompiler itself
+            var savedGMapping = null;
+            
             // Check if the body is a TBlock and pass context for field assignment transformation
             var body = switch (caseData.expr.expr) {
                 case TBlock(el):
@@ -431,6 +434,14 @@ class PatternMatchingCompiler {
                         compiler.compileExpression(caseData.expr);
                     }
             };
+            
+            // Restore the saved mapping if we removed it
+            if (savedGMapping != null) {
+                compiler.currentFunctionParameterMap.set("g", savedGMapping);
+                #if debug_pattern_matching
+                trace('[XRay PatternMatchingCompiler] RESTORED g -> ${savedGMapping} mapping after case body compilation');
+                #end
+            }
             
             for (pattern in patterns) {
                 caseStrings.push('  ${pattern} -> ${body}');

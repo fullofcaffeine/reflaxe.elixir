@@ -1,0 +1,5 @@
+@:flatEnum
+enum haxe.macro.EFieldKind {
+	Normal;
+	Safe;
+}

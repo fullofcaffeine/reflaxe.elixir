@@ -1,0 +1,4 @@
+enum haxe.ds.Either<L, R> {
+	Left(v:haxe.ds.Either.L);
+	Right(v:haxe.ds.Either.R);
+}

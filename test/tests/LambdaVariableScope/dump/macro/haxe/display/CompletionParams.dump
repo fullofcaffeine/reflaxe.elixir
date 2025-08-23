@@ -1,0 +1,1 @@
+typedef haxe.display.CompletionParams = { wasAutoTriggered : Bool, offset : Int, ?meta : Null<Array<String>>, file : haxe.display.FsPath, ?contents : Null<String> }

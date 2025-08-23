@@ -1,0 +1,18 @@
+@:enum
+private class haxe.display._Diagnostic.MissingFieldCauseKind_Impl_ {
+
+	@:value(cast "AbstractParent") @:impl @:enum
+	public static inline var AbstractParent:haxe.display.MissingFieldCauseKind<{ parent : haxe.display.JsonTypePathWithParams }> = [Cast:haxe.display.MissingFieldCauseKind<{ parent : haxe.display.JsonTypePathWithParams }>] [Const:String] "AbstractParent";
+
+	@:value(cast "ImplementedInterface") @:impl @:enum
+	public static inline var ImplementedInterface:haxe.display.MissingFieldCauseKind<{ parent : haxe.display.JsonTypePathWithParams }> = [Cast:haxe.display.MissingFieldCauseKind<{ parent : haxe.display.JsonTypePathWithParams }>] [Const:String] "ImplementedInterface";
+
+	@:value(cast "PropertyAccessor") @:impl @:enum
+	public static inline var PropertyAccessor:haxe.display.MissingFieldCauseKind<{ property : haxe.display.JsonClassField, isGetter : Bool }> = [Cast:haxe.display.MissingFieldCauseKind<{ property : haxe.display.JsonClassField, isGetter : Bool }>] [Const:String] "PropertyAccessor";
+
+	@:value(cast "FieldAccess") @:impl @:enum
+	public static inline var FieldAccess:haxe.display.MissingFieldCauseKind<{ }> = [Cast:haxe.display.MissingFieldCauseKind<{ }>] [Const:String] "FieldAccess";
+
+	@:value(cast "FinalFields") @:impl @:enum
+	public static inline var FinalFields:haxe.display.MissingFieldCauseKind<{ fields : Array<haxe.display.JsonClassField> }> = [Cast:haxe.display.MissingFieldCauseKind<{ fields : Array<haxe.display.JsonClassField> }>] [Const:String] "FinalFields";
+}

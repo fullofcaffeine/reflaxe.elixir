@@ -1,0 +1,442 @@
+@:nullSafety(Off)
+class reflaxe.elixir.helpers.TypeResolutionCompiler {
+
+	public function new[Function:(compiler : reflaxe.elixir.ElixirCompiler) -> Void]
+		[Arg:reflaxe.elixir.ElixirCompiler] [Local compiler(33252):reflaxe.elixir.ElixirCompiler]
+		[Block:reflaxe.elixir.ElixirCompiler]
+			[Binop:reflaxe.elixir.ElixirCompiler]
+				[Field:reflaxe.elixir.ElixirCompiler]
+					[Const:reflaxe.elixir.helpers.TypeResolutionCompiler] this
+					[FInstance:reflaxe.elixir.ElixirCompiler]
+						reflaxe.elixir.helpers.TypeResolutionCompiler
+						compiler:reflaxe.elixir.ElixirCompiler
+				=
+				[Local compiler(33252):reflaxe.elixir.ElixirCompiler:reflaxe.elixir.ElixirCompiler]
+
+	var compiler:reflaxe.elixir.ElixirCompiler;
+
+	public function getElixirTypeFromHaxeType[Function:(type : haxe.macro.Type) -> String]
+		[Arg:haxe.macro.Type] [Local type(33253):haxe.macro.Type]
+		[Block:Dynamic]
+			[Var result(33278):String]
+				[Meta:String]
+					:ast(switch (type) {
+	case TInst(_.get() => classType, _):
+		switch (classType.name) {
+			case "String":
+				"String.t()";			
+			case "Array":
+				"list()";			
+			default:
+				"term()";			
+		};	
+	case TAbstract(_.get() => abstractType, _):
+		switch (abstractType.name) {
+			case "Int":
+				"integer()";			
+			case "Float":
+				"float()";			
+			case "Bool":
+				"boolean()";			
+			default:
+				"term()";			
+		};	
+	default:
+		"term()";	
+})
+					[Switch:String]
+						[EnumIndex:Int] [Local type(33253):haxe.macro.Type:haxe.macro.Type]
+						[Case:String]
+							[Const:Int] 2
+							[Block:String]
+								[Var `(33268):haxe.macro.Ref<haxe.macro.ClassType>]
+									[EnumParameter:haxe.macro.Ref<haxe.macro.ClassType>]
+										[Local type(33253):haxe.macro.Type:haxe.macro.Type]
+										TInst
+										0
+								[Var `(33269):Array<haxe.macro.Type>]
+									[EnumParameter:Array<haxe.macro.Type>]
+										[Local type(33253):haxe.macro.Type:haxe.macro.Type]
+										TInst
+										1
+								[Block:String]
+									[Var _hx_tmp(33270):haxe.macro.ClassType]
+									[Block:String]
+										[Var classType(33271):haxe.macro.ClassType]
+											[Parenthesis:haxe.macro.ClassType]
+												[Binop:haxe.macro.ClassType]
+													[Local _hx_tmp(33270):haxe.macro.ClassType:haxe.macro.ClassType]
+													=
+													[Call:haxe.macro.ClassType]
+														[Field:() -> haxe.macro.ClassType]
+															[Local `(33268):haxe.macro.Ref<haxe.macro.ClassType>:haxe.macro.Ref<haxe.macro.ClassType>]
+															[FAnon:() -> haxe.macro.ClassType] get:() -> haxe.macro.ClassType
+										[Block:String]
+											[Meta:String]
+												:ast(switch (classType.name) {
+	case "String":
+		"String.t()";	
+	case "Array":
+		"list()";	
+	default:
+		"term()";	
+})
+												[Block:String]
+													[Var `(33272):String]
+														[Field:String]
+															[Local classType(33271):haxe.macro.ClassType:haxe.macro.ClassType]
+															[FAnon:String] name:String
+													[Switch:String]
+														[Local `(33272):String:String]
+														[Case:String]
+															[Const:String] "Array"
+															[Block:String] [Block:String] [Const:String] "list()"
+														[Case:String]
+															[Const:String] "String"
+															[Block:String] [Block:String] [Const:String] "String.t()"
+														[Default:String] [Block:String] [Const:String] "term()"
+						[Case:String]
+							[Const:Int] 8
+							[Block:String]
+								[Var `(33273):haxe.macro.Ref<haxe.macro.AbstractType>]
+									[EnumParameter:haxe.macro.Ref<haxe.macro.AbstractType>]
+										[Local type(33253):haxe.macro.Type:haxe.macro.Type]
+										TAbstract
+										0
+								[Var `(33274):Array<haxe.macro.Type>]
+									[EnumParameter:Array<haxe.macro.Type>]
+										[Local type(33253):haxe.macro.Type:haxe.macro.Type]
+										TAbstract
+										1
+								[Block:String]
+									[Var _hx_tmp(33275):haxe.macro.AbstractType]
+									[Block:String]
+										[Var abstractType(33276):haxe.macro.AbstractType]
+											[Parenthesis:haxe.macro.AbstractType]
+												[Binop:haxe.macro.AbstractType]
+													[Local _hx_tmp(33275):haxe.macro.AbstractType:haxe.macro.AbstractType]
+													=
+													[Call:haxe.macro.AbstractType]
+														[Field:() -> haxe.macro.AbstractType]
+															[Local `(33273):haxe.macro.Ref<haxe.macro.AbstractType>:haxe.macro.Ref<haxe.macro.AbstractType>]
+															[FAnon:() -> haxe.macro.AbstractType] get:() -> haxe.macro.AbstractType
+										[Block:String]
+											[Meta:String]
+												:ast(switch (abstractType.name) {
+	case "Int":
+		"integer()";	
+	case "Float":
+		"float()";	
+	case "Bool":
+		"boolean()";	
+	default:
+		"term()";	
+})
+												[Block:String]
+													[Var `(33277):String]
+														[Field:String]
+															[Local abstractType(33276):haxe.macro.AbstractType:haxe.macro.AbstractType]
+															[FAnon:String] name:String
+													[Switch:String]
+														[Local `(33277):String:String]
+														[Case:String]
+															[Const:String] "Bool"
+															[Block:String] [Block:String] [Const:String] "boolean()"
+														[Case:String]
+															[Const:String] "Float"
+															[Block:String] [Block:String] [Const:String] "float()"
+														[Case:String]
+															[Const:String] "Int"
+															[Block:String] [Block:String] [Const:String] "integer()"
+														[Default:String] [Block:String] [Const:String] "term()"
+						[Default:String] [Block:String] [Const:String] "term()"
+			[Return:Dynamic] [Local result(33278):String:String]
+
+	public function isBuiltinAbstractType[Function:(name : String) -> Bool]
+		[Arg:String] [Local name(33279):String]
+		[Block:Dynamic]
+			[Var result(33284):Bool]
+				[Meta:Bool]
+					:ast(switch (name) {
+	case "Int" | "Float" | "Bool" | "String" | "Dynamic" | "Void" | "Any" | "Null" | "Function" | "Class" | "Enum" | "EnumValue" | "Int32" | "Int64":
+		true;	
+	case "Array" | "Map" | "List" | "Vector" | "Stack" | "GenericStack":
+		true;	
+	case "IntIterator" | "ArrayIterator" | "StringIterator" | "MapIterator" | "ArrayKeyValueIterator" | "StringKeyValueIterator" | "MapKeyValueIterator":
+		true;	
+	case "StringBuf" | "StringTools" | "Math" | "Reflect" | "Type" | "Std":
+		true;	
+	case "CallStack" | "Exception" | "Error":
+		true;	
+	case name if (name.endsWith("_Impl_")):
+		true;	
+	case name if (name.startsWith("haxe.")):
+		true;	
+	default:
+		false;	
+})
+					[Switch:Bool]
+						[Local name(33279):String:String]
+						[Case:Bool]
+							[Const:String] "CallStack"
+							[Const:String] "Error"
+							[Const:String] "Exception"
+							[Block:Bool] [Block:Bool] [Const:Bool] true
+						[Case:Bool]
+							[Const:String] "Array"
+							[Const:String] "GenericStack"
+							[Const:String] "List"
+							[Const:String] "Map"
+							[Const:String] "Stack"
+							[Const:String] "Vector"
+							[Block:Bool] [Block:Bool] [Const:Bool] true
+						[Case:Bool]
+							[Const:String] "Any"
+							[Const:String] "Bool"
+							[Const:String] "Class"
+							[Const:String] "Dynamic"
+							[Const:String] "Enum"
+							[Const:String] "EnumValue"
+							[Const:String] "Float"
+							[Const:String] "Function"
+							[Const:String] "Int"
+							[Const:String] "Int32"
+							[Const:String] "Int64"
+							[Const:String] "Null"
+							[Const:String] "String"
+							[Const:String] "Void"
+							[Block:Bool] [Block:Bool] [Const:Bool] true
+						[Case:Bool]
+							[Const:String] "ArrayIterator"
+							[Const:String] "ArrayKeyValueIterator"
+							[Const:String] "IntIterator"
+							[Const:String] "MapIterator"
+							[Const:String] "MapKeyValueIterator"
+							[Const:String] "StringIterator"
+							[Const:String] "StringKeyValueIterator"
+							[Block:Bool] [Block:Bool] [Const:Bool] true
+						[Case:Bool]
+							[Const:String] "Math"
+							[Const:String] "Reflect"
+							[Const:String] "Std"
+							[Const:String] "StringBuf"
+							[Const:String] "StringTools"
+							[Const:String] "Type"
+							[Block:Bool] [Block:Bool] [Const:Bool] true
+						[Default:Bool]
+							[Block:Bool]
+								[Var name(33282):String] [Local name(33279):String:String]
+								[If:Bool]
+									[Call:Bool]
+										[Field:(s : String, end : String) -> Bool]
+											[TypeExpr StringTools:{ Statics StringTools }]
+											[FStatic:(s : String, end : String) -> Bool]
+												StringTools
+												endsWith:(s : String, end : String) -> Bool
+										[Local name(33282):String:String]
+										[Const:String] "_Impl_"
+									[Then:Bool] [Block:Bool] [Const:Bool] true
+									[Else:Bool] [Block:Bool]
+										[Var name(33283):String] [Local name(33279):String:String]
+										[If:Bool]
+											[Call:Bool]
+												[Field:(s : String, start : String) -> Bool]
+													[TypeExpr StringTools:{ Statics StringTools }]
+													[FStatic:(s : String, start : String) -> Bool]
+														StringTools
+														startsWith:(s : String, start : String) -> Bool
+												[Local name(33283):String:String]
+												[Const:String] "haxe."
+											[Then:Bool] [Block:Bool] [Const:Bool] true
+											[Else:Bool] [Block:Bool] [Const:Bool] false
+			[Return:Dynamic] [Local result(33284):Bool:Bool]
+
+	public function isStandardLibraryClass[Function:(name : String) -> Bool]
+		[Arg:String] [Local name(33285):String]
+		[Block:Dynamic]
+			[Var result(33292):Bool]
+				[Meta:Bool]
+					:ast(switch (name) {
+	case name if (name.startsWith("haxe.") || name.startsWith("sys.") || name.startsWith("js.") || name.startsWith("flash.")):
+		true;	
+	case "ArrayIterator" | "StringIterator" | "IntIterator" | "MapIterator" | "ArrayKeyValueIterator" | "StringKeyValueIterator" | "MapKeyValueIterator":
+		true;	
+	case "StringBuf" | "StringTools" | "List" | "GenericStack" | "BalancedTree" | "TreeNode":
+		true;	
+	case name if (name.endsWith("_Impl_")):
+		true;	
+	case "Class" | "Enum" | "Type" | "Reflect" | "Std" | "Math":
+		true;	
+	case "EReg":
+		true;	
+	default:
+		false;	
+})
+					[Block:Bool]
+						[Var name(33288):String] [Local name(33285):String:String]
+						[If:Bool]
+							[Binop:Bool]
+								[Binop:Bool]
+									[Binop:Bool]
+										[Call:Bool]
+											[Field:(s : String, start : String) -> Bool]
+												[TypeExpr StringTools:{ Statics StringTools }]
+												[FStatic:(s : String, start : String) -> Bool]
+													StringTools
+													startsWith:(s : String, start : String) -> Bool
+											[Local name(33288):String:String]
+											[Const:String] "haxe."
+										||
+										[Call:Bool]
+											[Field:(s : String, start : String) -> Bool]
+												[TypeExpr StringTools:{ Statics StringTools }]
+												[FStatic:(s : String, start : String) -> Bool]
+													StringTools
+													startsWith:(s : String, start : String) -> Bool
+											[Local name(33288):String:String]
+											[Const:String] "sys."
+									||
+									[Call:Bool]
+										[Field:(s : String, start : String) -> Bool]
+											[TypeExpr StringTools:{ Statics StringTools }]
+											[FStatic:(s : String, start : String) -> Bool]
+												StringTools
+												startsWith:(s : String, start : String) -> Bool
+										[Local name(33288):String:String]
+										[Const:String] "js."
+								||
+								[Call:Bool]
+									[Field:(s : String, start : String) -> Bool]
+										[TypeExpr StringTools:{ Statics StringTools }]
+										[FStatic:(s : String, start : String) -> Bool]
+											StringTools
+											startsWith:(s : String, start : String) -> Bool
+									[Local name(33288):String:String]
+									[Const:String] "flash."
+							[Then:Bool] [Block:Bool] [Const:Bool] true
+							[Else:Bool] [Switch:Bool]
+								[Local name(33285):String:String]
+								[Case:Bool]
+									[Const:String] "EReg"
+									[Block:Bool]
+										[Block:Bool]
+											[Var name(33289):String] [Local name(33285):String:String]
+											[If:Bool]
+												[Call:Bool]
+													[Field:(s : String, end : String) -> Bool]
+														[TypeExpr StringTools:{ Statics StringTools }]
+														[FStatic:(s : String, end : String) -> Bool]
+															StringTools
+															endsWith:(s : String, end : String) -> Bool
+													[Local name(33289):String:String]
+													[Const:String] "_Impl_"
+												[Then:Bool] [Block:Bool] [Const:Bool] true
+												[Else:Bool] [Block:Bool] [Const:Bool] true
+								[Case:Bool]
+									[Const:String] "ArrayIterator"
+									[Const:String] "ArrayKeyValueIterator"
+									[Const:String] "IntIterator"
+									[Const:String] "MapIterator"
+									[Const:String] "MapKeyValueIterator"
+									[Const:String] "StringIterator"
+									[Const:String] "StringKeyValueIterator"
+									[Block:Bool] [Block:Bool] [Const:Bool] true
+								[Case:Bool]
+									[Const:String] "Class"
+									[Const:String] "Enum"
+									[Const:String] "Math"
+									[Const:String] "Reflect"
+									[Const:String] "Std"
+									[Const:String] "Type"
+									[Block:Bool]
+										[Block:Bool]
+											[Var name(33290):String] [Local name(33285):String:String]
+											[If:Bool]
+												[Call:Bool]
+													[Field:(s : String, end : String) -> Bool]
+														[TypeExpr StringTools:{ Statics StringTools }]
+														[FStatic:(s : String, end : String) -> Bool]
+															StringTools
+															endsWith:(s : String, end : String) -> Bool
+													[Local name(33290):String:String]
+													[Const:String] "_Impl_"
+												[Then:Bool] [Block:Bool] [Const:Bool] true
+												[Else:Bool] [Block:Bool] [Const:Bool] true
+								[Case:Bool]
+									[Const:String] "BalancedTree"
+									[Const:String] "GenericStack"
+									[Const:String] "List"
+									[Const:String] "StringBuf"
+									[Const:String] "StringTools"
+									[Const:String] "TreeNode"
+									[Block:Bool] [Block:Bool] [Const:Bool] true
+								[Default:Bool]
+									[Block:Bool]
+										[Var name(33291):String] [Local name(33285):String:String]
+										[If:Bool]
+											[Call:Bool]
+												[Field:(s : String, end : String) -> Bool]
+													[TypeExpr StringTools:{ Statics StringTools }]
+													[FStatic:(s : String, end : String) -> Bool]
+														StringTools
+														endsWith:(s : String, end : String) -> Bool
+												[Local name(33291):String:String]
+												[Const:String] "_Impl_"
+											[Then:Bool] [Block:Bool] [Const:Bool] true
+											[Else:Bool] [Block:Bool] [Const:Bool] false
+			[Return:Dynamic] [Local result(33292):Bool:Bool]
+
+	public function getCurrentModuleContent[Function:(abstractType : haxe.macro.AbstractType) -> Null<String>]
+		[Arg:haxe.macro.AbstractType] [Local abstractType(33293):haxe.macro.AbstractType]
+		[Block:Dynamic]
+			[Var result(33294):String] [Const:String] ""
+			[Return:Dynamic] [Local result(33294):String:String]
+
+	public function addTypeDefinition[Function:(content : String, typeAlias : String) -> String]
+		[Arg:String] [Local content(33295):String]
+		[Arg:String] [Local typeAlias(33296):String]
+		[Block:Dynamic]
+			[Var result(33297):String]
+				[Binop:String]
+					[Binop:String]
+						[Binop:String]
+							[Local content(33295):String:String]
+							+
+							[Const:String] "\n  "
+						+
+						[Local typeAlias(33296):String:String]
+					+
+					[Const:String] "\n"
+			[Return:Dynamic] [Local result(33297):String:String]
+
+	public function updateCurrentModuleContent[Function:(abstractType : haxe.macro.AbstractType, content : String) -> Void]
+		[Arg:haxe.macro.AbstractType] [Local abstractType(33298):haxe.macro.AbstractType]
+		[Arg:String] [Local content(33299):String]
+		[Block:Void]
+
+	public function compileTypedefImpl[Function:(defType : haxe.macro.DefType) -> Null<String>]
+		[Arg:haxe.macro.DefType] [Local defType(33300):haxe.macro.DefType]
+		[Block:Dynamic] [Return:Dynamic] [Const:Null<String>] null
+
+	public function generateTypeAlias[Function:(abstractType : haxe.macro.AbstractType) -> String]
+		[Arg:haxe.macro.AbstractType] [Local abstractType(33301):haxe.macro.AbstractType]
+		[Block:Dynamic]
+			[Var underlyingType(33302):String]
+				[Call:String]
+					[Field:(type : haxe.macro.Type) -> String]
+						[Const:reflaxe.elixir.helpers.TypeResolutionCompiler] this
+						[FInstance:(type : haxe.macro.Type) -> String]
+							reflaxe.elixir.helpers.TypeResolutionCompiler
+							getElixirTypeFromHaxeType:(type : haxe.macro.Type) -> String
+					[Field:haxe.macro.Type]
+						[Local abstractType(33301):haxe.macro.AbstractType:haxe.macro.AbstractType]
+						[FAnon:haxe.macro.Type] type:haxe.macro.Type
+			[Var result(33303):String] [Const:String] "@type ${abstractType.name.toLowerCase()}() :: ${underlyingType}"
+			[Return:Dynamic] [Local result(33303):String:String]
+
+	public function resolveFunctionTypeSpec[Function:(funcType : haxe.macro.Type) -> String]
+		[Arg:haxe.macro.Type] [Local funcType(33304):haxe.macro.Type]
+		[Block:Dynamic]
+			[Var result(33305):String] [Const:String] "(...) :: term()"
+			[Return:Dynamic] [Local result(33305):String:String]
+}

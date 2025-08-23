@@ -1,0 +1,1 @@
+typedef haxe.macro.EnumField = { type : haxe.macro.Type, pos : haxe.macro.Position, params : Array<haxe.macro.TypeParameter>, name : String, meta : haxe.macro.MetaAccess, index : Int, doc : Null<String> }

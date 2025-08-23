@@ -1,0 +1,2344 @@
+class reflaxe.elixir.helpers.EnumCompiler {
+
+	public function new[Function:(?typer : Null<reflaxe.elixir.ElixirTyper>) -> Void]
+		[Arg:Null<reflaxe.elixir.ElixirTyper>]
+			[Local typer(14918):Null<reflaxe.elixir.ElixirTyper>]
+			[Const:Null<reflaxe.elixir.ElixirTyper>] null
+		[Block:reflaxe.elixir.ElixirTyper]
+			[Binop:reflaxe.elixir.ElixirTyper]
+				[Field:reflaxe.elixir.ElixirTyper]
+					[Const:reflaxe.elixir.helpers.EnumCompiler] this
+					[FInstance:reflaxe.elixir.ElixirTyper]
+						reflaxe.elixir.helpers.EnumCompiler
+						typer:reflaxe.elixir.ElixirTyper
+				=
+				[If:reflaxe.elixir.ElixirTyper]
+					[Parenthesis:Bool]
+						[Binop:Bool]
+							[Local typer(14918):Null<reflaxe.elixir.ElixirTyper>:Null<reflaxe.elixir.ElixirTyper>]
+							!=
+							[Const:Null<reflaxe.elixir.ElixirTyper>] null
+					[Then:Null<reflaxe.elixir.ElixirTyper>] [Block:Null<reflaxe.elixir.ElixirTyper>] [Local typer(14918):Null<reflaxe.elixir.ElixirTyper>:Null<reflaxe.elixir.ElixirTyper>]
+					[Else:reflaxe.elixir.ElixirTyper] [Block:reflaxe.elixir.ElixirTyper] [New:reflaxe.elixir.ElixirTyper] reflaxe.elixir.ElixirTyper
+
+	var typer:reflaxe.elixir.ElixirTyper;
+
+	public function compileEnum[Function:(enumType : haxe.macro.EnumType, options : Array<reflaxe.data.EnumOptionData>) -> String]
+		[Arg:haxe.macro.EnumType] [Local enumType(14919):haxe.macro.EnumType]
+		[Arg:Array<reflaxe.data.EnumOptionData>] [Local options(14920):Array<reflaxe.data.EnumOptionData>]
+		[Block:Dynamic]
+			[If:Void]
+				[Binop:Bool]
+					[Binop:Bool]
+						[Local enumType(14919):haxe.macro.EnumType:haxe.macro.EnumType]
+						==
+						[Const:haxe.macro.EnumType] null
+					||
+					[Binop:Bool]
+						[Local options(14920):Array<reflaxe.data.EnumOptionData>:Array<reflaxe.data.EnumOptionData>]
+						==
+						[Const:Array<reflaxe.data.EnumOptionData>] null
+				[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [Const:String] ""
+			[Var enumName(14921):String]
+				[Call:String]
+					[Field:(haxeName : String) -> String]
+						[TypeExpr reflaxe.elixir.helpers.NamingHelper:Class<reflaxe.elixir.helpers.NamingHelper>]
+						[FStatic:(haxeName : String) -> String]
+							reflaxe.elixir.helpers.NamingHelper
+							getElixirModuleName:(haxeName : String) -> String
+					[Field:String]
+						[Local enumType(14919):haxe.macro.EnumType:haxe.macro.EnumType]
+						[FAnon:String] name:String
+			[Var result(14922):StringBuf] [New:StringBuf] StringBuf
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(14922):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Binop:String]
+					[Binop:String]
+						[Const:String] "defmodule "
+						+
+						[Local enumName(14921):String:String]
+					+
+					[Const:String] " do\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(14922):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Call:String]
+					[Field:(enumName : String, enumType : haxe.macro.EnumType) -> String]
+						[Const:reflaxe.elixir.helpers.EnumCompiler] this
+						[FInstance:(enumName : String, enumType : haxe.macro.EnumType) -> String]
+							reflaxe.elixir.helpers.EnumCompiler
+							generateModuleDoc:(enumName : String, enumType : haxe.macro.EnumType) -> String
+					[Local enumName(14921):String:String]
+					[Local enumType(14919):haxe.macro.EnumType:haxe.macro.EnumType]
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(14922):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Call:String]
+					[Field:(options : Array<reflaxe.data.EnumOptionData>, enumType : haxe.macro.EnumType) -> String]
+						[Const:reflaxe.elixir.helpers.EnumCompiler] this
+						[FInstance:(options : Array<reflaxe.data.EnumOptionData>, enumType : haxe.macro.EnumType) -> String]
+							reflaxe.elixir.helpers.EnumCompiler
+							generateTypeDefinition:(options : Array<reflaxe.data.EnumOptionData>, enumType : haxe.macro.EnumType) -> String
+					[Local options(14920):Array<reflaxe.data.EnumOptionData>:Array<reflaxe.data.EnumOptionData>]
+					[Local enumType(14919):haxe.macro.EnumType:haxe.macro.EnumType]
+			[Block:Void]
+				[Var `(14999):Int] [Const:Int] 0
+				[While:Void]
+					[Binop:Bool]
+						[Local `(14999):Int:Int]
+						<
+						[Field:Int]
+							[Local options(14920):Array<reflaxe.data.EnumOptionData>:Array<reflaxe.data.EnumOptionData>]
+							[FInstance:Int]
+								Array<reflaxe.data.EnumOptionData>
+								length:Int
+					[Block:Void]
+						[Var option(14966):reflaxe.data.EnumOptionData]
+							[Array:reflaxe.data.EnumOptionData]
+								[Local options(14920):Array<reflaxe.data.EnumOptionData>:Array<reflaxe.data.EnumOptionData>]
+								[Local `(14999):Int:Int]
+						[Unop:Int]
+							++
+							Prefix
+							[Local `(14999):Int:Int]
+						[Call:Void]
+							[Field:(x : String) -> Void]
+								[Local result(14922):StringBuf:StringBuf]
+								[FInstance:(x : String) -> Void]
+									StringBuf
+									add:(x : add.T) -> Void
+							[Call:String]
+								[Field:(option : Dynamic, enumType : haxe.macro.EnumType) -> String]
+									[Const:reflaxe.elixir.helpers.EnumCompiler] this
+									[FInstance:(option : Dynamic, enumType : haxe.macro.EnumType) -> String]
+										reflaxe.elixir.helpers.EnumCompiler
+										generateConstructorFunction:(option : Dynamic, enumType : haxe.macro.EnumType) -> String
+								[Local option(14966):reflaxe.data.EnumOptionData:reflaxe.data.EnumOptionData]
+								[Local enumType(14919):haxe.macro.EnumType:haxe.macro.EnumType]
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(14922):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Call:String]
+					[Field:(options : Array<reflaxe.data.EnumOptionData>, enumType : haxe.macro.EnumType) -> String]
+						[Const:reflaxe.elixir.helpers.EnumCompiler] this
+						[FInstance:(options : Array<reflaxe.data.EnumOptionData>, enumType : haxe.macro.EnumType) -> String]
+							reflaxe.elixir.helpers.EnumCompiler
+							generateUtilityFunctions:(options : Array<reflaxe.data.EnumOptionData>, enumType : haxe.macro.EnumType) -> String
+					[Local options(14920):Array<reflaxe.data.EnumOptionData>:Array<reflaxe.data.EnumOptionData>]
+					[Local enumType(14919):haxe.macro.EnumType:haxe.macro.EnumType]
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(14922):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "end\n"
+			[Return:Dynamic]
+				[Call:String]
+					[Field:() -> String]
+						[Local result(14922):StringBuf:StringBuf]
+						[FInstance:() -> String]
+							StringBuf
+							toString:() -> String
+
+	function generateModuleDoc[Function:(enumName : String, enumType : haxe.macro.EnumType) -> String]
+		[Arg:String] [Local enumName(14923):String]
+		[Arg:haxe.macro.EnumType] [Local enumType(14924):haxe.macro.EnumType]
+		[Block:Dynamic]
+			[Var result(14925):StringBuf] [New:StringBuf] StringBuf
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(14925):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "  @moduledoc \"\"\"\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(14925):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Binop:String]
+					[Binop:String]
+						[Const:String] "  "
+						+
+						[Local enumName(14923):String:String]
+					+
+					[Const:String] " enum generated from Haxe\n"
+			[If:Void]
+				[Binop:Bool]
+					[Binop:Bool]
+						[Field:Null<String>]
+							[Local enumType(14924):haxe.macro.EnumType:haxe.macro.EnumType]
+							[FAnon:Null<String>] doc:Null<String>
+						!=
+						[Const:Null<String>] null
+					&&
+					[Binop:Bool]
+						[Field:Int]
+							[Field:Null<String>]
+								[Local enumType(14924):haxe.macro.EnumType:haxe.macro.EnumType]
+								[FAnon:Null<String>] doc:Null<String>
+							[FInstance:Int]
+								String
+								length:Int
+						>
+						[Const:Int] 0
+				[Then:Void] [Block:Void]
+					[Call:Void]
+						[Field:(x : String) -> Void]
+							[Local result(14925):StringBuf:StringBuf]
+							[FInstance:(x : String) -> Void]
+								StringBuf
+								add:(x : add.T) -> Void
+						[Const:String] "  \n"
+					[Var docLines(14926):Array<String>]
+						[Call:Array<String>]
+							[Field:(delimiter : String) -> Array<String>]
+								[Field:Null<String>]
+									[Local enumType(14924):haxe.macro.EnumType:haxe.macro.EnumType]
+									[FAnon:Null<String>] doc:Null<String>
+								[FInstance:(delimiter : String) -> Array<String>]
+									String
+									split:(delimiter : String) -> Array<String>
+							[Const:String] "\n"
+					[Block:Void]
+						[Var `(14928):Int] [Const:Int] 0
+						[While:Void]
+							[Binop:Bool]
+								[Local `(14928):Int:Int]
+								<
+								[Field:Int]
+									[Local docLines(14926):Array<String>:Array<String>]
+									[FInstance:Int]
+										Array<String>
+										length:Int
+							[Block:Void]
+								[Var line(14927):String]
+									[Array:String]
+										[Local docLines(14926):Array<String>:Array<String>]
+										[Local `(14928):Int:Int]
+								[Unop:Int]
+									++
+									Prefix
+									[Local `(14928):Int:Int]
+								[Call:Void]
+									[Field:(x : String) -> Void]
+										[Local result(14925):StringBuf:StringBuf]
+										[FInstance:(x : String) -> Void]
+											StringBuf
+											add:(x : add.T) -> Void
+									[Binop:String]
+										[Binop:String]
+											[Const:String] "  "
+											+
+											[Local line(14927):String:String]
+										+
+										[Const:String] "\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(14925):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "  \n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(14925):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "  This module provides tagged tuple constructors and pattern matching helpers.\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(14925):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "  \"\"\"\n\n"
+			[Return:Dynamic]
+				[Call:String]
+					[Field:() -> String]
+						[Local result(14925):StringBuf:StringBuf]
+						[FInstance:() -> String]
+							StringBuf
+							toString:() -> String
+
+	function generateTypeDefinition[Function:(options : Array<reflaxe.data.EnumOptionData>, enumType : haxe.macro.EnumType) -> String]
+		[Arg:Array<reflaxe.data.EnumOptionData>] [Local options(14929):Array<reflaxe.data.EnumOptionData>]
+		[Arg:haxe.macro.EnumType] [Local enumType(14930):haxe.macro.EnumType]
+		[Block:Dynamic]
+			[Var result(14931):StringBuf] [New:StringBuf] StringBuf
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(14931):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "  @type t() ::\n"
+			[Var isOptionLike(14932):Bool]
+				[Call:Bool]
+					[Field:(enumType : haxe.macro.EnumType) -> Bool]
+						[TypeExpr reflaxe.elixir.helpers.AlgebraicDataTypeCompiler:Class<reflaxe.elixir.helpers.AlgebraicDataTypeCompiler>]
+						[FStatic:(enumType : haxe.macro.EnumType) -> Bool]
+							reflaxe.elixir.helpers.AlgebraicDataTypeCompiler
+							isADTType:(enumType : haxe.macro.EnumType) -> Bool
+					[Local enumType(14930):haxe.macro.EnumType:haxe.macro.EnumType]
+			[Var adtConfig(14933):Null<Null<{ typeName : String, moduleName : String, constructors : Map<String, reflaxe.elixir.helpers.ADTConstructorConfig> }>>]
+				[If:Null<{ typeName : String, moduleName : String, constructors : Map<String, reflaxe.elixir.helpers.ADTConstructorConfig> }>]
+					[Local isOptionLike(14932):Bool:Bool]
+					[Then:Null<reflaxe.elixir.helpers.ADTConfig>] [Block:Null<reflaxe.elixir.helpers.ADTConfig>]
+						[Call:Null<reflaxe.elixir.helpers.ADTConfig>]
+							[Field:(enumType : haxe.macro.EnumType) -> Null<reflaxe.elixir.helpers.ADTConfig>]
+								[TypeExpr reflaxe.elixir.helpers.AlgebraicDataTypeCompiler:Class<reflaxe.elixir.helpers.AlgebraicDataTypeCompiler>]
+								[FStatic:(enumType : haxe.macro.EnumType) -> Null<reflaxe.elixir.helpers.ADTConfig>]
+									reflaxe.elixir.helpers.AlgebraicDataTypeCompiler
+									getADTConfig:(enumType : haxe.macro.EnumType) -> Null<reflaxe.elixir.helpers.ADTConfig>
+							[Local enumType(14930):haxe.macro.EnumType:haxe.macro.EnumType]
+					[Else:Null<Null<{ typeName : String, moduleName : String, constructors : Map<String, reflaxe.elixir.helpers.ADTConstructorConfig> }>>] [Block:Null<Null<{ typeName : String, moduleName : String, constructors : Map<String, reflaxe.elixir.helpers.ADTConstructorConfig> }>>] [Const:Null<Null<{ typeName : String, moduleName : String, constructors : Map<String, reflaxe.elixir.helpers.ADTConstructorConfig> }>>] null
+			[Var typeVariants(14934):Array<String>] [ArrayDecl:Array<String>]
+			[Block:Void]
+				[Var `(14965):Int] [Const:Int] 0
+				[While:Void]
+					[Binop:Bool]
+						[Local `(14965):Int:Int]
+						<
+						[Field:Int]
+							[Local options(14929):Array<reflaxe.data.EnumOptionData>:Array<reflaxe.data.EnumOptionData>]
+							[FInstance:Int]
+								Array<reflaxe.data.EnumOptionData>
+								length:Int
+					[Block:Void]
+						[Var option(14935):reflaxe.data.EnumOptionData]
+							[Array:reflaxe.data.EnumOptionData]
+								[Local options(14929):Array<reflaxe.data.EnumOptionData>:Array<reflaxe.data.EnumOptionData>]
+								[Local `(14965):Int:Int]
+						[Unop:Int]
+							++
+							Prefix
+							[Local `(14965):Int:Int]
+						[Var optionName(14936):String]
+							[Call:String]
+								[Field:(camelCase : String) -> String]
+									[TypeExpr reflaxe.elixir.helpers.NamingHelper:Class<reflaxe.elixir.helpers.NamingHelper>]
+									[FStatic:(camelCase : String) -> String]
+										reflaxe.elixir.helpers.NamingHelper
+										toSnakeCase:(camelCase : String) -> String
+								[Field:String]
+									[Field:haxe.macro.EnumField]
+										[Local option(14935):reflaxe.data.EnumOptionData:reflaxe.data.EnumOptionData]
+										[FInstance:haxe.macro.EnumField]
+											reflaxe.data.EnumOptionData
+											field:haxe.macro.EnumField
+									[FAnon:String] name:String
+						[If:Void]
+							[Binop:Bool]
+								[Local isOptionLike(14932):Bool:Bool]
+								&&
+								[Binop:Bool]
+									[Local adtConfig(14933):Null<Null<{ typeName : String, moduleName : String, constructors : Map<String, reflaxe.elixir.helpers.ADTConstructorConfig> }>>:Null<Null<{ typeName : String, moduleName : String, constructors : Map<String, reflaxe.elixir.helpers.ADTConstructorConfig> }>>]
+									!=
+									[Const:Null<Null<{ typeName : String, moduleName : String, constructors : Map<String, reflaxe.elixir.helpers.ADTConstructorConfig> }>>] null
+							[Then:Void] [Block:Void]
+								[Var constructorConfig(14941):Null<reflaxe.elixir.helpers.ADTConstructorConfig>]
+									[Block:Null<reflaxe.elixir.helpers.ADTConstructorConfig>]
+										[Var this(14939):haxe.IMap<String, reflaxe.elixir.helpers.ADTConstructorConfig>]
+											[Field:Map<String, reflaxe.elixir.helpers.ADTConstructorConfig>]
+												[Local adtConfig(14933):Null<Null<{ typeName : String, moduleName : String, constructors : Map<String, reflaxe.elixir.helpers.ADTConstructorConfig> }>>:Null<Null<{ typeName : String, moduleName : String, constructors : Map<String, reflaxe.elixir.helpers.ADTConstructorConfig> }>>]
+												[FAnon:Map<String, reflaxe.elixir.helpers.ADTConstructorConfig>] constructors:Map<String, reflaxe.elixir.helpers.ADTConstructorConfig>
+										[Call:Null<reflaxe.elixir.helpers.ADTConstructorConfig>]
+											[Field:(key : String) -> Null<reflaxe.elixir.helpers.ADTConstructorConfig>]
+												[Cast:haxe.ds.StringMap<reflaxe.elixir.helpers.ADTConstructorConfig>] [Local this(14939):haxe.IMap<String, reflaxe.elixir.helpers.ADTConstructorConfig>:haxe.IMap<String, reflaxe.elixir.helpers.ADTConstructorConfig>]
+												[FInstance:(key : String) -> Null<reflaxe.elixir.helpers.ADTConstructorConfig>]
+													haxe.ds.StringMap<reflaxe.elixir.helpers.ADTConstructorConfig>
+													get:(key : String) -> Null<haxe.ds.StringMap.T>
+											[Local optionName(14936):String:String]
+								[If:Void]
+									[Binop:Bool]
+										[Local constructorConfig(14941):Null<reflaxe.elixir.helpers.ADTConstructorConfig>:Null<reflaxe.elixir.helpers.ADTConstructorConfig>]
+										!=
+										[Const:Null<reflaxe.elixir.helpers.ADTConstructorConfig>] null
+									[Then:Void] [Block:Void]
+										[If:Void]
+											[Binop:Bool]
+												[Field:Int]
+													[Field:Array<reflaxe.data.EnumOptionArg>]
+														[Local option(14935):reflaxe.data.EnumOptionData:reflaxe.data.EnumOptionData]
+														[FInstance:Array<reflaxe.data.EnumOptionArg>]
+															reflaxe.data.EnumOptionData
+															args:Array<reflaxe.data.EnumOptionArg>
+													[FInstance:Int]
+														Array<reflaxe.data.EnumOptionArg>
+														length:Int
+												==
+												[Const:Int] 0
+											[Then:Int] [Block:Int]
+												[Call:Int]
+													[Field:(x : String) -> Int]
+														[Local typeVariants(14934):Array<String>:Array<String>]
+														[FInstance:(x : String) -> Int]
+															Array<String>
+															push:(x : Array.T) -> Int
+													[Binop:String]
+														[Const:String] "    "
+														+
+														[Field:String]
+															[Local constructorConfig(14941):Null<reflaxe.elixir.helpers.ADTConstructorConfig>:Null<reflaxe.elixir.helpers.ADTConstructorConfig>]
+															[FAnon:String] elixirPattern:String
+											[Else:Int] [Block:Int]
+												[Var argTypes(14942):Array<String>] [ArrayDecl:Array<String>]
+												[Block:Void]
+													[Var `(14947):Int] [Const:Int] 0
+													[Var `(14948):Array<reflaxe.data.EnumOptionArg>]
+														[Field:Array<reflaxe.data.EnumOptionArg>]
+															[Local option(14935):reflaxe.data.EnumOptionData:reflaxe.data.EnumOptionData]
+															[FInstance:Array<reflaxe.data.EnumOptionArg>]
+																reflaxe.data.EnumOptionData
+																args:Array<reflaxe.data.EnumOptionArg>
+													[While:Void]
+														[Binop:Bool]
+															[Local `(14947):Int:Int]
+															<
+															[Field:Int]
+																[Local `(14948):Array<reflaxe.data.EnumOptionArg>:Array<reflaxe.data.EnumOptionArg>]
+																[FInstance:Int]
+																	Array<reflaxe.data.EnumOptionArg>
+																	length:Int
+														[Block:Void]
+															[Var arg(14943):reflaxe.data.EnumOptionArg]
+																[Array:reflaxe.data.EnumOptionArg]
+																	[Local `(14948):Array<reflaxe.data.EnumOptionArg>:Array<reflaxe.data.EnumOptionArg>]
+																	[Local `(14947):Int:Int]
+															[Unop:Int]
+																++
+																Prefix
+																[Local `(14947):Int:Int]
+															[Var haxeType(14945):String]
+																[Call:String]
+																	[Field:(arg : Dynamic) -> String]
+																		[Const:reflaxe.elixir.helpers.EnumCompiler] this
+																		[FInstance:(arg : Dynamic) -> String]
+																			reflaxe.elixir.helpers.EnumCompiler
+																			getArgType:(arg : Dynamic) -> String
+																	[Local arg(14943):reflaxe.data.EnumOptionArg:reflaxe.data.EnumOptionArg]
+															[Var elixirType(14946):String]
+																[Call:String]
+																	[Field:(haxeType : String, ?context : Null<reflaxe.elixir.TypeContext>) -> String]
+																		[Field:reflaxe.elixir.ElixirTyper]
+																			[Const:reflaxe.elixir.helpers.EnumCompiler] this
+																			[FInstance:reflaxe.elixir.ElixirTyper]
+																				reflaxe.elixir.helpers.EnumCompiler
+																				typer:reflaxe.elixir.ElixirTyper
+																		[FInstance:(haxeType : String, ?context : Null<reflaxe.elixir.TypeContext>) -> String]
+																			reflaxe.elixir.ElixirTyper
+																			compileType:(haxeType : String, ?context : Null<reflaxe.elixir.TypeContext>) -> String
+																	[Local haxeType(14945):String:String]
+																	[Const:Null<reflaxe.elixir.TypeContext>] null
+															[Call:Int]
+																[Field:(x : String) -> Int]
+																	[Local argTypes(14942):Array<String>:Array<String>]
+																	[FInstance:(x : String) -> Int]
+																		Array<String>
+																		push:(x : Array.T) -> Int
+																[Local elixirType(14946):String:String]
+												[Var argTypeStr(14949):String]
+													[Call:String]
+														[Field:(sep : String) -> String]
+															[Local argTypes(14942):Array<String>:Array<String>]
+															[FInstance:(sep : String) -> String]
+																Array<String>
+																join:(sep : String) -> String
+														[Const:String] ", "
+												[Var typePattern(14950):String]
+													[Call:String]
+														[Field:(s : String, sub : String, by : String) -> String]
+															[TypeExpr StringTools:{ Statics StringTools }]
+															[FStatic:(s : String, sub : String, by : String) -> String]
+																StringTools
+																replace:(s : String, sub : String, by : String) -> String
+														[Field:String]
+															[Local constructorConfig(14941):Null<reflaxe.elixir.helpers.ADTConstructorConfig>:Null<reflaxe.elixir.helpers.ADTConstructorConfig>]
+															[FAnon:String] elixirPattern:String
+														[Const:String] "%s"
+														[Local argTypeStr(14949):String:String]
+												[Call:Int]
+													[Field:(x : String) -> Int]
+														[Local typeVariants(14934):Array<String>:Array<String>]
+														[FInstance:(x : String) -> Int]
+															Array<String>
+															push:(x : Array.T) -> Int
+													[Binop:String]
+														[Const:String] "    "
+														+
+														[Local typePattern(14950):String:String]
+									[Else:Void] [Block:Void]
+										[If:Void]
+											[Binop:Bool]
+												[Field:Int]
+													[Field:Array<reflaxe.data.EnumOptionArg>]
+														[Local option(14935):reflaxe.data.EnumOptionData:reflaxe.data.EnumOptionData]
+														[FInstance:Array<reflaxe.data.EnumOptionArg>]
+															reflaxe.data.EnumOptionData
+															args:Array<reflaxe.data.EnumOptionArg>
+													[FInstance:Int]
+														Array<reflaxe.data.EnumOptionArg>
+														length:Int
+												==
+												[Const:Int] 0
+											[Then:Int] [Block:Int]
+												[Call:Int]
+													[Field:(x : String) -> Int]
+														[Local typeVariants(14934):Array<String>:Array<String>]
+														[FInstance:(x : String) -> Int]
+															Array<String>
+															push:(x : Array.T) -> Int
+													[Binop:String]
+														[Const:String] "    :"
+														+
+														[Local optionName(14936):String:String]
+											[Else:Int] [Block:Int]
+												[Var argTypes(14951):Array<String>] [ArrayDecl:Array<String>]
+												[Block:Void]
+													[Var `(14955):Int] [Const:Int] 0
+													[Var `(14956):Array<reflaxe.data.EnumOptionArg>]
+														[Field:Array<reflaxe.data.EnumOptionArg>]
+															[Local option(14935):reflaxe.data.EnumOptionData:reflaxe.data.EnumOptionData]
+															[FInstance:Array<reflaxe.data.EnumOptionArg>]
+																reflaxe.data.EnumOptionData
+																args:Array<reflaxe.data.EnumOptionArg>
+													[While:Void]
+														[Binop:Bool]
+															[Local `(14955):Int:Int]
+															<
+															[Field:Int]
+																[Local `(14956):Array<reflaxe.data.EnumOptionArg>:Array<reflaxe.data.EnumOptionArg>]
+																[FInstance:Int]
+																	Array<reflaxe.data.EnumOptionArg>
+																	length:Int
+														[Block:Void]
+															[Var arg(14952):reflaxe.data.EnumOptionArg]
+																[Array:reflaxe.data.EnumOptionArg]
+																	[Local `(14956):Array<reflaxe.data.EnumOptionArg>:Array<reflaxe.data.EnumOptionArg>]
+																	[Local `(14955):Int:Int]
+															[Unop:Int]
+																++
+																Prefix
+																[Local `(14955):Int:Int]
+															[Var haxeType(14953):String]
+																[Call:String]
+																	[Field:(arg : Dynamic) -> String]
+																		[Const:reflaxe.elixir.helpers.EnumCompiler] this
+																		[FInstance:(arg : Dynamic) -> String]
+																			reflaxe.elixir.helpers.EnumCompiler
+																			getArgType:(arg : Dynamic) -> String
+																	[Local arg(14952):reflaxe.data.EnumOptionArg:reflaxe.data.EnumOptionArg]
+															[Var elixirType(14954):String]
+																[Call:String]
+																	[Field:(haxeType : String, ?context : Null<reflaxe.elixir.TypeContext>) -> String]
+																		[Field:reflaxe.elixir.ElixirTyper]
+																			[Const:reflaxe.elixir.helpers.EnumCompiler] this
+																			[FInstance:reflaxe.elixir.ElixirTyper]
+																				reflaxe.elixir.helpers.EnumCompiler
+																				typer:reflaxe.elixir.ElixirTyper
+																		[FInstance:(haxeType : String, ?context : Null<reflaxe.elixir.TypeContext>) -> String]
+																			reflaxe.elixir.ElixirTyper
+																			compileType:(haxeType : String, ?context : Null<reflaxe.elixir.TypeContext>) -> String
+																	[Local haxeType(14953):String:String]
+																	[Const:Null<reflaxe.elixir.TypeContext>] null
+															[Call:Int]
+																[Field:(x : String) -> Int]
+																	[Local argTypes(14951):Array<String>:Array<String>]
+																	[FInstance:(x : String) -> Int]
+																		Array<String>
+																		push:(x : Array.T) -> Int
+																[Local elixirType(14954):String:String]
+												[Var argTypeStr(14957):String]
+													[Call:String]
+														[Field:(sep : String) -> String]
+															[Local argTypes(14951):Array<String>:Array<String>]
+															[FInstance:(sep : String) -> String]
+																Array<String>
+																join:(sep : String) -> String
+														[Const:String] ", "
+												[Call:Int]
+													[Field:(x : String) -> Int]
+														[Local typeVariants(14934):Array<String>:Array<String>]
+														[FInstance:(x : String) -> Int]
+															Array<String>
+															push:(x : Array.T) -> Int
+													[Binop:String]
+														[Binop:String]
+															[Binop:String]
+																[Binop:String]
+																	[Const:String] "    {:"
+																	+
+																	[Local optionName(14936):String:String]
+																+
+																[Const:String] ", "
+															+
+															[Local argTypeStr(14957):String:String]
+														+
+														[Const:String] "}"
+							[Else:Void] [Block:Void]
+								[If:Void]
+									[Binop:Bool]
+										[Field:Int]
+											[Field:Array<reflaxe.data.EnumOptionArg>]
+												[Local option(14935):reflaxe.data.EnumOptionData:reflaxe.data.EnumOptionData]
+												[FInstance:Array<reflaxe.data.EnumOptionArg>]
+													reflaxe.data.EnumOptionData
+													args:Array<reflaxe.data.EnumOptionArg>
+											[FInstance:Int]
+												Array<reflaxe.data.EnumOptionArg>
+												length:Int
+										==
+										[Const:Int] 0
+									[Then:Int] [Block:Int]
+										[Call:Int]
+											[Field:(x : String) -> Int]
+												[Local typeVariants(14934):Array<String>:Array<String>]
+												[FInstance:(x : String) -> Int]
+													Array<String>
+													push:(x : Array.T) -> Int
+											[Binop:String]
+												[Const:String] "    :"
+												+
+												[Local optionName(14936):String:String]
+									[Else:Int] [Block:Int]
+										[Var argTypes(14958):Array<String>] [ArrayDecl:Array<String>]
+										[Block:Void]
+											[Var `(14962):Int] [Const:Int] 0
+											[Var `(14963):Array<reflaxe.data.EnumOptionArg>]
+												[Field:Array<reflaxe.data.EnumOptionArg>]
+													[Local option(14935):reflaxe.data.EnumOptionData:reflaxe.data.EnumOptionData]
+													[FInstance:Array<reflaxe.data.EnumOptionArg>]
+														reflaxe.data.EnumOptionData
+														args:Array<reflaxe.data.EnumOptionArg>
+											[While:Void]
+												[Binop:Bool]
+													[Local `(14962):Int:Int]
+													<
+													[Field:Int]
+														[Local `(14963):Array<reflaxe.data.EnumOptionArg>:Array<reflaxe.data.EnumOptionArg>]
+														[FInstance:Int]
+															Array<reflaxe.data.EnumOptionArg>
+															length:Int
+												[Block:Void]
+													[Var arg(14959):reflaxe.data.EnumOptionArg]
+														[Array:reflaxe.data.EnumOptionArg]
+															[Local `(14963):Array<reflaxe.data.EnumOptionArg>:Array<reflaxe.data.EnumOptionArg>]
+															[Local `(14962):Int:Int]
+													[Unop:Int]
+														++
+														Prefix
+														[Local `(14962):Int:Int]
+													[Var haxeType(14960):String]
+														[Call:String]
+															[Field:(arg : Dynamic) -> String]
+																[Const:reflaxe.elixir.helpers.EnumCompiler] this
+																[FInstance:(arg : Dynamic) -> String]
+																	reflaxe.elixir.helpers.EnumCompiler
+																	getArgType:(arg : Dynamic) -> String
+															[Local arg(14959):reflaxe.data.EnumOptionArg:reflaxe.data.EnumOptionArg]
+													[Var elixirType(14961):String]
+														[Call:String]
+															[Field:(haxeType : String, ?context : Null<reflaxe.elixir.TypeContext>) -> String]
+																[Field:reflaxe.elixir.ElixirTyper]
+																	[Const:reflaxe.elixir.helpers.EnumCompiler] this
+																	[FInstance:reflaxe.elixir.ElixirTyper]
+																		reflaxe.elixir.helpers.EnumCompiler
+																		typer:reflaxe.elixir.ElixirTyper
+																[FInstance:(haxeType : String, ?context : Null<reflaxe.elixir.TypeContext>) -> String]
+																	reflaxe.elixir.ElixirTyper
+																	compileType:(haxeType : String, ?context : Null<reflaxe.elixir.TypeContext>) -> String
+															[Local haxeType(14960):String:String]
+															[Const:Null<reflaxe.elixir.TypeContext>] null
+													[Call:Int]
+														[Field:(x : String) -> Int]
+															[Local argTypes(14958):Array<String>:Array<String>]
+															[FInstance:(x : String) -> Int]
+																Array<String>
+																push:(x : Array.T) -> Int
+														[Local elixirType(14961):String:String]
+										[Var argTypeStr(14964):String]
+											[Call:String]
+												[Field:(sep : String) -> String]
+													[Local argTypes(14958):Array<String>:Array<String>]
+													[FInstance:(sep : String) -> String]
+														Array<String>
+														join:(sep : String) -> String
+												[Const:String] ", "
+										[Call:Int]
+											[Field:(x : String) -> Int]
+												[Local typeVariants(14934):Array<String>:Array<String>]
+												[FInstance:(x : String) -> Int]
+													Array<String>
+													push:(x : Array.T) -> Int
+											[Binop:String]
+												[Binop:String]
+													[Binop:String]
+														[Binop:String]
+															[Const:String] "    {:"
+															+
+															[Local optionName(14936):String:String]
+														+
+														[Const:String] ", "
+													+
+													[Local argTypeStr(14964):String:String]
+												+
+												[Const:String] "}"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(14931):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Call:String]
+					[Field:(sep : String) -> String]
+						[Local typeVariants(14934):Array<String>:Array<String>]
+						[FInstance:(sep : String) -> String]
+							Array<String>
+							join:(sep : String) -> String
+					[Const:String] " |\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(14931):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "\n\n"
+			[Return:Dynamic]
+				[Call:String]
+					[Field:() -> String]
+						[Local result(14931):StringBuf:StringBuf]
+						[FInstance:() -> String]
+							StringBuf
+							toString:() -> String
+
+	function generateConstructorFunction[Function:(option : Dynamic, enumType : haxe.macro.EnumType) -> String]
+		[Arg:Dynamic] [Local option(14967):Dynamic]
+		[Arg:haxe.macro.EnumType] [Local enumType(14968):haxe.macro.EnumType]
+		[Block:Dynamic]
+			[Var result(14969):StringBuf] [New:StringBuf] StringBuf
+			[Var optionName(14970):String]
+				[Call:String]
+					[Field:(camelCase : String) -> String]
+						[TypeExpr reflaxe.elixir.helpers.NamingHelper:Class<reflaxe.elixir.helpers.NamingHelper>]
+						[FStatic:(camelCase : String) -> String]
+							reflaxe.elixir.helpers.NamingHelper
+							toSnakeCase:(camelCase : String) -> String
+					[Field:Dynamic]
+						[Field:Dynamic]
+							[Local option(14967):Dynamic:Dynamic]
+							[FDynamic:Dynamic] field
+						[FDynamic:Dynamic] name
+			[Var originalName(14971):Unknown<35>]
+				[Field:Dynamic]
+					[Field:Dynamic]
+						[Local option(14967):Dynamic:Dynamic]
+						[FDynamic:Dynamic] field
+					[FDynamic:Dynamic] name
+			[Var isOptionLike(14972):Bool]
+				[Call:Bool]
+					[Field:(enumType : haxe.macro.EnumType) -> Bool]
+						[TypeExpr reflaxe.elixir.helpers.AlgebraicDataTypeCompiler:Class<reflaxe.elixir.helpers.AlgebraicDataTypeCompiler>]
+						[FStatic:(enumType : haxe.macro.EnumType) -> Bool]
+							reflaxe.elixir.helpers.AlgebraicDataTypeCompiler
+							isADTType:(enumType : haxe.macro.EnumType) -> Bool
+					[Local enumType(14968):haxe.macro.EnumType:haxe.macro.EnumType]
+			[Var adtConfig(14973):Null<Null<{ typeName : String, moduleName : String, constructors : Map<String, reflaxe.elixir.helpers.ADTConstructorConfig> }>>]
+				[If:Null<{ typeName : String, moduleName : String, constructors : Map<String, reflaxe.elixir.helpers.ADTConstructorConfig> }>]
+					[Local isOptionLike(14972):Bool:Bool]
+					[Then:Null<reflaxe.elixir.helpers.ADTConfig>] [Block:Null<reflaxe.elixir.helpers.ADTConfig>]
+						[Call:Null<reflaxe.elixir.helpers.ADTConfig>]
+							[Field:(enumType : haxe.macro.EnumType) -> Null<reflaxe.elixir.helpers.ADTConfig>]
+								[TypeExpr reflaxe.elixir.helpers.AlgebraicDataTypeCompiler:Class<reflaxe.elixir.helpers.AlgebraicDataTypeCompiler>]
+								[FStatic:(enumType : haxe.macro.EnumType) -> Null<reflaxe.elixir.helpers.ADTConfig>]
+									reflaxe.elixir.helpers.AlgebraicDataTypeCompiler
+									getADTConfig:(enumType : haxe.macro.EnumType) -> Null<reflaxe.elixir.helpers.ADTConfig>
+							[Local enumType(14968):haxe.macro.EnumType:haxe.macro.EnumType]
+					[Else:Null<Null<{ typeName : String, moduleName : String, constructors : Map<String, reflaxe.elixir.helpers.ADTConstructorConfig> }>>] [Block:Null<Null<{ typeName : String, moduleName : String, constructors : Map<String, reflaxe.elixir.helpers.ADTConstructorConfig> }>>] [Const:Null<Null<{ typeName : String, moduleName : String, constructors : Map<String, reflaxe.elixir.helpers.ADTConstructorConfig> }>>] null
+			[If:Void]
+				[Binop:Bool]
+					[Field:Dynamic]
+						[Field:Dynamic]
+							[Local option(14967):Dynamic:Dynamic]
+							[FDynamic:Dynamic] args
+						[FDynamic:Dynamic] length
+					==
+					[Const:Int] 0
+				[Then:Void] [Block:Void]
+					[If:Void]
+						[Binop:Bool]
+							[Local isOptionLike(14972):Bool:Bool]
+							&&
+							[Binop:Bool]
+								[Local adtConfig(14973):Null<Null<{ typeName : String, moduleName : String, constructors : Map<String, reflaxe.elixir.helpers.ADTConstructorConfig> }>>:Null<Null<{ typeName : String, moduleName : String, constructors : Map<String, reflaxe.elixir.helpers.ADTConstructorConfig> }>>]
+								!=
+								[Const:Null<Null<{ typeName : String, moduleName : String, constructors : Map<String, reflaxe.elixir.helpers.ADTConstructorConfig> }>>] null
+						[Then:Void] [Block:Void]
+							[Var constructorConfig(14978):Null<reflaxe.elixir.helpers.ADTConstructorConfig>]
+								[Block:Null<reflaxe.elixir.helpers.ADTConstructorConfig>]
+									[Var this(14976):haxe.IMap<String, reflaxe.elixir.helpers.ADTConstructorConfig>]
+										[Field:Map<String, reflaxe.elixir.helpers.ADTConstructorConfig>]
+											[Local adtConfig(14973):Null<Null<{ typeName : String, moduleName : String, constructors : Map<String, reflaxe.elixir.helpers.ADTConstructorConfig> }>>:Null<Null<{ typeName : String, moduleName : String, constructors : Map<String, reflaxe.elixir.helpers.ADTConstructorConfig> }>>]
+											[FAnon:Map<String, reflaxe.elixir.helpers.ADTConstructorConfig>] constructors:Map<String, reflaxe.elixir.helpers.ADTConstructorConfig>
+									[Call:Null<reflaxe.elixir.helpers.ADTConstructorConfig>]
+										[Field:(key : String) -> Null<reflaxe.elixir.helpers.ADTConstructorConfig>]
+											[Cast:haxe.ds.StringMap<reflaxe.elixir.helpers.ADTConstructorConfig>] [Local this(14976):haxe.IMap<String, reflaxe.elixir.helpers.ADTConstructorConfig>:haxe.IMap<String, reflaxe.elixir.helpers.ADTConstructorConfig>]
+											[FInstance:(key : String) -> Null<reflaxe.elixir.helpers.ADTConstructorConfig>]
+												haxe.ds.StringMap<reflaxe.elixir.helpers.ADTConstructorConfig>
+												get:(key : String) -> Null<haxe.ds.StringMap.T>
+										[Local optionName(14970):String:String]
+							[If:Void]
+								[Binop:Bool]
+									[Local constructorConfig(14978):Null<reflaxe.elixir.helpers.ADTConstructorConfig>:Null<reflaxe.elixir.helpers.ADTConstructorConfig>]
+									!=
+									[Const:Null<reflaxe.elixir.helpers.ADTConstructorConfig>] null
+								[Then:Void] [Block:Void]
+									[Var pattern(14979):String]
+										[Field:String]
+											[Local constructorConfig(14978):Null<reflaxe.elixir.helpers.ADTConstructorConfig>:Null<reflaxe.elixir.helpers.ADTConstructorConfig>]
+											[FAnon:String] elixirPattern:String
+									[Call:Void]
+										[Field:(x : String) -> Void]
+											[Local result(14969):StringBuf:StringBuf]
+											[FInstance:(x : String) -> Void]
+												StringBuf
+												add:(x : add.T) -> Void
+										[Binop:String]
+											[Binop:String]
+												[Const:String] "  @doc \"Creates "
+												+
+												[Local optionName(14970):String:String]
+											+
+											[Const:String] " enum value\"\n"
+									[Call:Void]
+										[Field:(x : String) -> Void]
+											[Local result(14969):StringBuf:StringBuf]
+											[FInstance:(x : String) -> Void]
+												StringBuf
+												add:(x : add.T) -> Void
+										[Binop:String]
+											[Binop:String]
+												[Binop:String]
+													[Binop:String]
+														[Const:String] "  @spec "
+														+
+														[Local optionName(14970):String:String]
+													+
+													[Const:String] "() :: "
+												+
+												[Local pattern(14979):String:String]
+											+
+											[Const:String] "\n"
+									[Call:Void]
+										[Field:(x : String) -> Void]
+											[Local result(14969):StringBuf:StringBuf]
+											[FInstance:(x : String) -> Void]
+												StringBuf
+												add:(x : add.T) -> Void
+										[Binop:String]
+											[Binop:String]
+												[Binop:String]
+													[Binop:String]
+														[Const:String] "  def "
+														+
+														[Local optionName(14970):String:String]
+													+
+													[Const:String] "(), do: "
+												+
+												[Local pattern(14979):String:String]
+											+
+											[Const:String] "\n\n"
+								[Else:Void] [Block:Void]
+									[Call:Void]
+										[Field:(x : String) -> Void]
+											[Local result(14969):StringBuf:StringBuf]
+											[FInstance:(x : String) -> Void]
+												StringBuf
+												add:(x : add.T) -> Void
+										[Binop:String]
+											[Binop:String]
+												[Const:String] "  @doc \"Creates "
+												+
+												[Local optionName(14970):String:String]
+											+
+											[Const:String] " enum value\"\n"
+									[Call:Void]
+										[Field:(x : String) -> Void]
+											[Local result(14969):StringBuf:StringBuf]
+											[FInstance:(x : String) -> Void]
+												StringBuf
+												add:(x : add.T) -> Void
+										[Binop:String]
+											[Binop:String]
+												[Binop:String]
+													[Binop:String]
+														[Const:String] "  @spec "
+														+
+														[Local optionName(14970):String:String]
+													+
+													[Const:String] "() :: :"
+												+
+												[Local optionName(14970):String:String]
+											+
+											[Const:String] "\n"
+									[Call:Void]
+										[Field:(x : String) -> Void]
+											[Local result(14969):StringBuf:StringBuf]
+											[FInstance:(x : String) -> Void]
+												StringBuf
+												add:(x : add.T) -> Void
+										[Binop:String]
+											[Binop:String]
+												[Binop:String]
+													[Binop:String]
+														[Const:String] "  def "
+														+
+														[Local optionName(14970):String:String]
+													+
+													[Const:String] "(), do: :"
+												+
+												[Local optionName(14970):String:String]
+											+
+											[Const:String] "\n\n"
+						[Else:Void] [Block:Void]
+							[Call:Void]
+								[Field:(x : String) -> Void]
+									[Local result(14969):StringBuf:StringBuf]
+									[FInstance:(x : String) -> Void]
+										StringBuf
+										add:(x : add.T) -> Void
+								[Binop:String]
+									[Binop:String]
+										[Const:String] "  @doc \"Creates "
+										+
+										[Local optionName(14970):String:String]
+									+
+									[Const:String] " enum value\"\n"
+							[Call:Void]
+								[Field:(x : String) -> Void]
+									[Local result(14969):StringBuf:StringBuf]
+									[FInstance:(x : String) -> Void]
+										StringBuf
+										add:(x : add.T) -> Void
+								[Binop:String]
+									[Binop:String]
+										[Binop:String]
+											[Binop:String]
+												[Const:String] "  @spec "
+												+
+												[Local optionName(14970):String:String]
+											+
+											[Const:String] "() :: :"
+										+
+										[Local optionName(14970):String:String]
+									+
+									[Const:String] "\n"
+							[Call:Void]
+								[Field:(x : String) -> Void]
+									[Local result(14969):StringBuf:StringBuf]
+									[FInstance:(x : String) -> Void]
+										StringBuf
+										add:(x : add.T) -> Void
+								[Binop:String]
+									[Binop:String]
+										[Binop:String]
+											[Binop:String]
+												[Const:String] "  def "
+												+
+												[Local optionName(14970):String:String]
+											+
+											[Const:String] "(), do: :"
+										+
+										[Local optionName(14970):String:String]
+									+
+									[Const:String] "\n\n"
+				[Else:Void] [Block:Void]
+					[Var params(14980):Array<String>] [ArrayDecl:Array<String>]
+					[Var paramTypes(14981):Array<String>] [ArrayDecl:Array<String>]
+					[Var paramDocs(14982):Array<String>] [ArrayDecl:Array<String>]
+					[Block:Void]
+						[Var `(14988):Int] [Const:Int] 0
+						[Var `(14989):Int]
+							[Cast:Int]
+								[Field:Dynamic]
+									[Field:Dynamic]
+										[Local option(14967):Dynamic:Dynamic]
+										[FDynamic:Dynamic] args
+									[FDynamic:Dynamic] length
+						[While:Void]
+							[Binop:Bool]
+								[Local `(14988):Int:Int]
+								<
+								[Local `(14989):Int:Int]
+							[Block:Int]
+								[Var i(14983):Int]
+									[Unop:Int]
+										++
+										Postfix
+										[Local `(14988):Int:Int]
+								[Var arg(14984):Unknown<36>]
+									[Array:Unknown<36>]
+										[Field:Dynamic]
+											[Local option(14967):Dynamic:Dynamic]
+											[FDynamic:Dynamic] args
+										[Local i(14983):Int:Int]
+								[Var paramName(14985):String]
+									[Binop:String]
+										[Const:String] "arg"
+										+
+										[Local i(14983):Int:Int]
+								[Call:Int]
+									[Field:(x : String) -> Int]
+										[Local params(14980):Array<String>:Array<String>]
+										[FInstance:(x : String) -> Int]
+											Array<String>
+											push:(x : Array.T) -> Int
+									[Local paramName(14985):String:String]
+								[Var haxeType(14986):String]
+									[Call:String]
+										[Field:(arg : Dynamic) -> String]
+											[Const:reflaxe.elixir.helpers.EnumCompiler] this
+											[FInstance:(arg : Dynamic) -> String]
+												reflaxe.elixir.helpers.EnumCompiler
+												getArgType:(arg : Dynamic) -> String
+										[Local arg(14984):Unknown<36>:Unknown<36>]
+								[Var elixirType(14987):String]
+									[Call:String]
+										[Field:(haxeType : String, ?context : Null<reflaxe.elixir.TypeContext>) -> String]
+											[Field:reflaxe.elixir.ElixirTyper]
+												[Const:reflaxe.elixir.helpers.EnumCompiler] this
+												[FInstance:reflaxe.elixir.ElixirTyper]
+													reflaxe.elixir.helpers.EnumCompiler
+													typer:reflaxe.elixir.ElixirTyper
+											[FInstance:(haxeType : String, ?context : Null<reflaxe.elixir.TypeContext>) -> String]
+												reflaxe.elixir.ElixirTyper
+												compileType:(haxeType : String, ?context : Null<reflaxe.elixir.TypeContext>) -> String
+										[Local haxeType(14986):String:String]
+										[Const:Null<reflaxe.elixir.TypeContext>] null
+								[Call:Int]
+									[Field:(x : String) -> Int]
+										[Local paramTypes(14981):Array<String>:Array<String>]
+										[FInstance:(x : String) -> Int]
+											Array<String>
+											push:(x : Array.T) -> Int
+									[Local elixirType(14987):String:String]
+								[Call:Int]
+									[Field:(x : String) -> Int]
+										[Local paramDocs(14982):Array<String>:Array<String>]
+										[FInstance:(x : String) -> Int]
+											Array<String>
+											push:(x : Array.T) -> Int
+									[Binop:String]
+										[Binop:String]
+											[Binop:String]
+												[Const:String] "  - `"
+												+
+												[Local paramName(14985):String:String]
+											+
+											[Const:String] "`: "
+										+
+										[Local elixirType(14987):String:String]
+					[Var paramStr(14990):String]
+						[Call:String]
+							[Field:(sep : String) -> String]
+								[Local params(14980):Array<String>:Array<String>]
+								[FInstance:(sep : String) -> String]
+									Array<String>
+									join:(sep : String) -> String
+							[Const:String] ", "
+					[Var typeStr(14991):String]
+						[Call:String]
+							[Field:(sep : String) -> String]
+								[Local paramTypes(14981):Array<String>:Array<String>]
+								[FInstance:(sep : String) -> String]
+									Array<String>
+									join:(sep : String) -> String
+							[Const:String] ", "
+					[Call:Void]
+						[Field:(x : String) -> Void]
+							[Local result(14969):StringBuf:StringBuf]
+							[FInstance:(x : String) -> Void]
+								StringBuf
+								add:(x : add.T) -> Void
+						[Const:String] "  @doc \"\"\"\n"
+					[Call:Void]
+						[Field:(x : String) -> Void]
+							[Local result(14969):StringBuf:StringBuf]
+							[FInstance:(x : String) -> Void]
+								StringBuf
+								add:(x : add.T) -> Void
+						[Binop:String]
+							[Binop:String]
+								[Const:String] "  Creates "
+								+
+								[Local optionName(14970):String:String]
+							+
+							[Const:String] " enum value with parameters\n"
+					[Call:Void]
+						[Field:(x : String) -> Void]
+							[Local result(14969):StringBuf:StringBuf]
+							[FInstance:(x : String) -> Void]
+								StringBuf
+								add:(x : add.T) -> Void
+						[Const:String] "  \n"
+					[Call:Void]
+						[Field:(x : String) -> Void]
+							[Local result(14969):StringBuf:StringBuf]
+							[FInstance:(x : String) -> Void]
+								StringBuf
+								add:(x : add.T) -> Void
+						[Const:String] "  ## Parameters\n"
+					[Call:Void]
+						[Field:(x : String) -> Void]
+							[Local result(14969):StringBuf:StringBuf]
+							[FInstance:(x : String) -> Void]
+								StringBuf
+								add:(x : add.T) -> Void
+						[Binop:String]
+							[Binop:String]
+								[Const:String] "  "
+								+
+								[Call:String]
+									[Field:(sep : String) -> String]
+										[Local paramDocs(14982):Array<String>:Array<String>]
+										[FInstance:(sep : String) -> String]
+											Array<String>
+											join:(sep : String) -> String
+									[Const:String] "\n  "
+							+
+							[Const:String] "\n"
+					[Call:Void]
+						[Field:(x : String) -> Void]
+							[Local result(14969):StringBuf:StringBuf]
+							[FInstance:(x : String) -> Void]
+								StringBuf
+								add:(x : add.T) -> Void
+						[Const:String] "  \"\"\"\n"
+					[If:Void]
+						[Binop:Bool]
+							[Local isOptionLike(14972):Bool:Bool]
+							&&
+							[Binop:Bool]
+								[Local adtConfig(14973):Null<Null<{ typeName : String, moduleName : String, constructors : Map<String, reflaxe.elixir.helpers.ADTConstructorConfig> }>>:Null<Null<{ typeName : String, moduleName : String, constructors : Map<String, reflaxe.elixir.helpers.ADTConstructorConfig> }>>]
+								!=
+								[Const:Null<Null<{ typeName : String, moduleName : String, constructors : Map<String, reflaxe.elixir.helpers.ADTConstructorConfig> }>>] null
+						[Then:Void] [Block:Void]
+							[Var constructorConfig(14996):Null<reflaxe.elixir.helpers.ADTConstructorConfig>]
+								[Block:Null<reflaxe.elixir.helpers.ADTConstructorConfig>]
+									[Var this(14994):haxe.IMap<String, reflaxe.elixir.helpers.ADTConstructorConfig>]
+										[Field:Map<String, reflaxe.elixir.helpers.ADTConstructorConfig>]
+											[Local adtConfig(14973):Null<Null<{ typeName : String, moduleName : String, constructors : Map<String, reflaxe.elixir.helpers.ADTConstructorConfig> }>>:Null<Null<{ typeName : String, moduleName : String, constructors : Map<String, reflaxe.elixir.helpers.ADTConstructorConfig> }>>]
+											[FAnon:Map<String, reflaxe.elixir.helpers.ADTConstructorConfig>] constructors:Map<String, reflaxe.elixir.helpers.ADTConstructorConfig>
+									[Call:Null<reflaxe.elixir.helpers.ADTConstructorConfig>]
+										[Field:(key : String) -> Null<reflaxe.elixir.helpers.ADTConstructorConfig>]
+											[Cast:haxe.ds.StringMap<reflaxe.elixir.helpers.ADTConstructorConfig>] [Local this(14994):haxe.IMap<String, reflaxe.elixir.helpers.ADTConstructorConfig>:haxe.IMap<String, reflaxe.elixir.helpers.ADTConstructorConfig>]
+											[FInstance:(key : String) -> Null<reflaxe.elixir.helpers.ADTConstructorConfig>]
+												haxe.ds.StringMap<reflaxe.elixir.helpers.ADTConstructorConfig>
+												get:(key : String) -> Null<haxe.ds.StringMap.T>
+										[Local optionName(14970):String:String]
+							[If:Void]
+								[Binop:Bool]
+									[Local constructorConfig(14996):Null<reflaxe.elixir.helpers.ADTConstructorConfig>:Null<reflaxe.elixir.helpers.ADTConstructorConfig>]
+									!=
+									[Const:Null<reflaxe.elixir.helpers.ADTConstructorConfig>] null
+								[Then:Void] [Block:Void]
+									[Var pattern(14997):String]
+										[Call:String]
+											[Field:(s : String, sub : String, by : String) -> String]
+												[TypeExpr StringTools:{ Statics StringTools }]
+												[FStatic:(s : String, sub : String, by : String) -> String]
+													StringTools
+													replace:(s : String, sub : String, by : String) -> String
+											[Field:String]
+												[Local constructorConfig(14996):Null<reflaxe.elixir.helpers.ADTConstructorConfig>:Null<reflaxe.elixir.helpers.ADTConstructorConfig>]
+												[FAnon:String] elixirPattern:String
+											[Const:String] "%s"
+											[Local paramStr(14990):String:String]
+									[Var returnType(14998):String]
+										[Call:String]
+											[Field:(s : String, sub : String, by : String) -> String]
+												[TypeExpr StringTools:{ Statics StringTools }]
+												[FStatic:(s : String, sub : String, by : String) -> String]
+													StringTools
+													replace:(s : String, sub : String, by : String) -> String
+											[Field:String]
+												[Local constructorConfig(14996):Null<reflaxe.elixir.helpers.ADTConstructorConfig>:Null<reflaxe.elixir.helpers.ADTConstructorConfig>]
+												[FAnon:String] elixirPattern:String
+											[Const:String] "%s"
+											[Local typeStr(14991):String:String]
+									[Call:Void]
+										[Field:(x : String) -> Void]
+											[Local result(14969):StringBuf:StringBuf]
+											[FInstance:(x : String) -> Void]
+												StringBuf
+												add:(x : add.T) -> Void
+										[Binop:String]
+											[Binop:String]
+												[Binop:String]
+													[Binop:String]
+														[Binop:String]
+															[Binop:String]
+																[Const:String] "  @spec "
+																+
+																[Local optionName(14970):String:String]
+															+
+															[Const:String] "("
+														+
+														[Local typeStr(14991):String:String]
+													+
+													[Const:String] ") :: "
+												+
+												[Local returnType(14998):String:String]
+											+
+											[Const:String] "\n"
+									[Call:Void]
+										[Field:(x : String) -> Void]
+											[Local result(14969):StringBuf:StringBuf]
+											[FInstance:(x : String) -> Void]
+												StringBuf
+												add:(x : add.T) -> Void
+										[Binop:String]
+											[Binop:String]
+												[Binop:String]
+													[Binop:String]
+														[Const:String] "  def "
+														+
+														[Local optionName(14970):String:String]
+													+
+													[Const:String] "("
+												+
+												[Local paramStr(14990):String:String]
+											+
+											[Const:String] ") do\n"
+									[Call:Void]
+										[Field:(x : String) -> Void]
+											[Local result(14969):StringBuf:StringBuf]
+											[FInstance:(x : String) -> Void]
+												StringBuf
+												add:(x : add.T) -> Void
+										[Binop:String]
+											[Binop:String]
+												[Const:String] "    "
+												+
+												[Local pattern(14997):String:String]
+											+
+											[Const:String] "\n"
+									[Call:Void]
+										[Field:(x : String) -> Void]
+											[Local result(14969):StringBuf:StringBuf]
+											[FInstance:(x : String) -> Void]
+												StringBuf
+												add:(x : add.T) -> Void
+										[Const:String] "  end\n\n"
+								[Else:Void] [Block:Void]
+									[Call:Void]
+										[Field:(x : String) -> Void]
+											[Local result(14969):StringBuf:StringBuf]
+											[FInstance:(x : String) -> Void]
+												StringBuf
+												add:(x : add.T) -> Void
+										[Binop:String]
+											[Binop:String]
+												[Binop:String]
+													[Binop:String]
+														[Binop:String]
+															[Binop:String]
+																[Binop:String]
+																	[Binop:String]
+																		[Const:String] "  @spec "
+																		+
+																		[Local optionName(14970):String:String]
+																	+
+																	[Const:String] "("
+																+
+																[Local typeStr(14991):String:String]
+															+
+															[Const:String] ") :: {:"
+														+
+														[Local optionName(14970):String:String]
+													+
+													[Const:String] ", "
+												+
+												[Local typeStr(14991):String:String]
+											+
+											[Const:String] "}\n"
+									[Call:Void]
+										[Field:(x : String) -> Void]
+											[Local result(14969):StringBuf:StringBuf]
+											[FInstance:(x : String) -> Void]
+												StringBuf
+												add:(x : add.T) -> Void
+										[Binop:String]
+											[Binop:String]
+												[Binop:String]
+													[Binop:String]
+														[Const:String] "  def "
+														+
+														[Local optionName(14970):String:String]
+													+
+													[Const:String] "("
+												+
+												[Local paramStr(14990):String:String]
+											+
+											[Const:String] ") do\n"
+									[Call:Void]
+										[Field:(x : String) -> Void]
+											[Local result(14969):StringBuf:StringBuf]
+											[FInstance:(x : String) -> Void]
+												StringBuf
+												add:(x : add.T) -> Void
+										[Binop:String]
+											[Binop:String]
+												[Binop:String]
+													[Binop:String]
+														[Const:String] "    {:"
+														+
+														[Local optionName(14970):String:String]
+													+
+													[Const:String] ", "
+												+
+												[Local paramStr(14990):String:String]
+											+
+											[Const:String] "}\n"
+									[Call:Void]
+										[Field:(x : String) -> Void]
+											[Local result(14969):StringBuf:StringBuf]
+											[FInstance:(x : String) -> Void]
+												StringBuf
+												add:(x : add.T) -> Void
+										[Const:String] "  end\n\n"
+						[Else:Void] [Block:Void]
+							[Call:Void]
+								[Field:(x : String) -> Void]
+									[Local result(14969):StringBuf:StringBuf]
+									[FInstance:(x : String) -> Void]
+										StringBuf
+										add:(x : add.T) -> Void
+								[Binop:String]
+									[Binop:String]
+										[Binop:String]
+											[Binop:String]
+												[Binop:String]
+													[Binop:String]
+														[Binop:String]
+															[Binop:String]
+																[Const:String] "  @spec "
+																+
+																[Local optionName(14970):String:String]
+															+
+															[Const:String] "("
+														+
+														[Local typeStr(14991):String:String]
+													+
+													[Const:String] ") :: {:"
+												+
+												[Local optionName(14970):String:String]
+											+
+											[Const:String] ", "
+										+
+										[Local typeStr(14991):String:String]
+									+
+									[Const:String] "}\n"
+							[Call:Void]
+								[Field:(x : String) -> Void]
+									[Local result(14969):StringBuf:StringBuf]
+									[FInstance:(x : String) -> Void]
+										StringBuf
+										add:(x : add.T) -> Void
+								[Binop:String]
+									[Binop:String]
+										[Binop:String]
+											[Binop:String]
+												[Const:String] "  def "
+												+
+												[Local optionName(14970):String:String]
+											+
+											[Const:String] "("
+										+
+										[Local paramStr(14990):String:String]
+									+
+									[Const:String] ") do\n"
+							[Call:Void]
+								[Field:(x : String) -> Void]
+									[Local result(14969):StringBuf:StringBuf]
+									[FInstance:(x : String) -> Void]
+										StringBuf
+										add:(x : add.T) -> Void
+								[Binop:String]
+									[Binop:String]
+										[Binop:String]
+											[Binop:String]
+												[Const:String] "    {:"
+												+
+												[Local optionName(14970):String:String]
+											+
+											[Const:String] ", "
+										+
+										[Local paramStr(14990):String:String]
+									+
+									[Const:String] "}\n"
+							[Call:Void]
+								[Field:(x : String) -> Void]
+									[Local result(14969):StringBuf:StringBuf]
+									[FInstance:(x : String) -> Void]
+										StringBuf
+										add:(x : add.T) -> Void
+								[Const:String] "  end\n\n"
+			[Return:Dynamic]
+				[Call:String]
+					[Field:() -> String]
+						[Local result(14969):StringBuf:StringBuf]
+						[FInstance:() -> String]
+							StringBuf
+							toString:() -> String
+
+	function generateUtilityFunctions[Function:(options : Array<reflaxe.data.EnumOptionData>, enumType : haxe.macro.EnumType) -> String]
+		[Arg:Array<reflaxe.data.EnumOptionData>] [Local options(15000):Array<reflaxe.data.EnumOptionData>]
+		[Arg:haxe.macro.EnumType] [Local enumType(15001):haxe.macro.EnumType]
+		[Block:Dynamic]
+			[Var result(15002):StringBuf] [New:StringBuf] StringBuf
+			[Var isOptionLike(15003):Bool]
+				[Call:Bool]
+					[Field:(enumType : haxe.macro.EnumType) -> Bool]
+						[TypeExpr reflaxe.elixir.helpers.AlgebraicDataTypeCompiler:Class<reflaxe.elixir.helpers.AlgebraicDataTypeCompiler>]
+						[FStatic:(enumType : haxe.macro.EnumType) -> Bool]
+							reflaxe.elixir.helpers.AlgebraicDataTypeCompiler
+							isADTType:(enumType : haxe.macro.EnumType) -> Bool
+					[Local enumType(15001):haxe.macro.EnumType:haxe.macro.EnumType]
+			[Var adtConfig(15004):Null<Null<{ typeName : String, moduleName : String, constructors : Map<String, reflaxe.elixir.helpers.ADTConstructorConfig> }>>]
+				[If:Null<{ typeName : String, moduleName : String, constructors : Map<String, reflaxe.elixir.helpers.ADTConstructorConfig> }>]
+					[Local isOptionLike(15003):Bool:Bool]
+					[Then:Null<reflaxe.elixir.helpers.ADTConfig>] [Block:Null<reflaxe.elixir.helpers.ADTConfig>]
+						[Call:Null<reflaxe.elixir.helpers.ADTConfig>]
+							[Field:(enumType : haxe.macro.EnumType) -> Null<reflaxe.elixir.helpers.ADTConfig>]
+								[TypeExpr reflaxe.elixir.helpers.AlgebraicDataTypeCompiler:Class<reflaxe.elixir.helpers.AlgebraicDataTypeCompiler>]
+								[FStatic:(enumType : haxe.macro.EnumType) -> Null<reflaxe.elixir.helpers.ADTConfig>]
+									reflaxe.elixir.helpers.AlgebraicDataTypeCompiler
+									getADTConfig:(enumType : haxe.macro.EnumType) -> Null<reflaxe.elixir.helpers.ADTConfig>
+							[Local enumType(15001):haxe.macro.EnumType:haxe.macro.EnumType]
+					[Else:Null<Null<{ typeName : String, moduleName : String, constructors : Map<String, reflaxe.elixir.helpers.ADTConstructorConfig> }>>] [Block:Null<Null<{ typeName : String, moduleName : String, constructors : Map<String, reflaxe.elixir.helpers.ADTConstructorConfig> }>>] [Const:Null<Null<{ typeName : String, moduleName : String, constructors : Map<String, reflaxe.elixir.helpers.ADTConstructorConfig> }>>] null
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(15002):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "  # Predicate functions for pattern matching\n"
+			[Block:Void]
+				[Var `(15013):Int] [Const:Int] 0
+				[While:Void]
+					[Binop:Bool]
+						[Local `(15013):Int:Int]
+						<
+						[Field:Int]
+							[Local options(15000):Array<reflaxe.data.EnumOptionData>:Array<reflaxe.data.EnumOptionData>]
+							[FInstance:Int]
+								Array<reflaxe.data.EnumOptionData>
+								length:Int
+					[Block:Void]
+						[Var option(15005):reflaxe.data.EnumOptionData]
+							[Array:reflaxe.data.EnumOptionData]
+								[Local options(15000):Array<reflaxe.data.EnumOptionData>:Array<reflaxe.data.EnumOptionData>]
+								[Local `(15013):Int:Int]
+						[Unop:Int]
+							++
+							Prefix
+							[Local `(15013):Int:Int]
+						[Var optionName(15006):String]
+							[Call:String]
+								[Field:(camelCase : String) -> String]
+									[TypeExpr reflaxe.elixir.helpers.NamingHelper:Class<reflaxe.elixir.helpers.NamingHelper>]
+									[FStatic:(camelCase : String) -> String]
+										reflaxe.elixir.helpers.NamingHelper
+										toSnakeCase:(camelCase : String) -> String
+								[Field:String]
+									[Field:haxe.macro.EnumField]
+										[Local option(15005):reflaxe.data.EnumOptionData:reflaxe.data.EnumOptionData]
+										[FInstance:haxe.macro.EnumField]
+											reflaxe.data.EnumOptionData
+											field:haxe.macro.EnumField
+									[FAnon:String] name:String
+						[Call:Void]
+							[Field:(x : String) -> Void]
+								[Local result(15002):StringBuf:StringBuf]
+								[FInstance:(x : String) -> Void]
+									StringBuf
+									add:(x : add.T) -> Void
+							[Binop:String]
+								[Binop:String]
+									[Const:String] "  @doc \"Returns true if value is "
+									+
+									[Local optionName(15006):String:String]
+								+
+								[Const:String] " variant\"\n"
+						[Call:Void]
+							[Field:(x : String) -> Void]
+								[Local result(15002):StringBuf:StringBuf]
+								[FInstance:(x : String) -> Void]
+									StringBuf
+									add:(x : add.T) -> Void
+							[Binop:String]
+								[Binop:String]
+									[Const:String] "  @spec is_"
+									+
+									[Local optionName(15006):String:String]
+								+
+								[Const:String] "(t()) :: boolean()\n"
+						[If:Void]
+							[Binop:Bool]
+								[Local isOptionLike(15003):Bool:Bool]
+								&&
+								[Binop:Bool]
+									[Local adtConfig(15004):Null<Null<{ typeName : String, moduleName : String, constructors : Map<String, reflaxe.elixir.helpers.ADTConstructorConfig> }>>:Null<Null<{ typeName : String, moduleName : String, constructors : Map<String, reflaxe.elixir.helpers.ADTConstructorConfig> }>>]
+									!=
+									[Const:Null<Null<{ typeName : String, moduleName : String, constructors : Map<String, reflaxe.elixir.helpers.ADTConstructorConfig> }>>] null
+							[Then:Void] [Block:Void]
+								[Var constructorConfig(15011):Null<reflaxe.elixir.helpers.ADTConstructorConfig>]
+									[Block:Null<reflaxe.elixir.helpers.ADTConstructorConfig>]
+										[Var this(15009):haxe.IMap<String, reflaxe.elixir.helpers.ADTConstructorConfig>]
+											[Field:Map<String, reflaxe.elixir.helpers.ADTConstructorConfig>]
+												[Local adtConfig(15004):Null<Null<{ typeName : String, moduleName : String, constructors : Map<String, reflaxe.elixir.helpers.ADTConstructorConfig> }>>:Null<Null<{ typeName : String, moduleName : String, constructors : Map<String, reflaxe.elixir.helpers.ADTConstructorConfig> }>>]
+												[FAnon:Map<String, reflaxe.elixir.helpers.ADTConstructorConfig>] constructors:Map<String, reflaxe.elixir.helpers.ADTConstructorConfig>
+										[Call:Null<reflaxe.elixir.helpers.ADTConstructorConfig>]
+											[Field:(key : String) -> Null<reflaxe.elixir.helpers.ADTConstructorConfig>]
+												[Cast:haxe.ds.StringMap<reflaxe.elixir.helpers.ADTConstructorConfig>] [Local this(15009):haxe.IMap<String, reflaxe.elixir.helpers.ADTConstructorConfig>:haxe.IMap<String, reflaxe.elixir.helpers.ADTConstructorConfig>]
+												[FInstance:(key : String) -> Null<reflaxe.elixir.helpers.ADTConstructorConfig>]
+													haxe.ds.StringMap<reflaxe.elixir.helpers.ADTConstructorConfig>
+													get:(key : String) -> Null<haxe.ds.StringMap.T>
+											[Local optionName(15006):String:String]
+								[If:Void]
+									[Binop:Bool]
+										[Local constructorConfig(15011):Null<reflaxe.elixir.helpers.ADTConstructorConfig>:Null<reflaxe.elixir.helpers.ADTConstructorConfig>]
+										!=
+										[Const:Null<reflaxe.elixir.helpers.ADTConstructorConfig>] null
+									[Then:Void] [Block:Void]
+										[If:Void]
+											[Field:Bool]
+												[Local constructorConfig(15011):Null<reflaxe.elixir.helpers.ADTConstructorConfig>:Null<reflaxe.elixir.helpers.ADTConstructorConfig>]
+												[FAnon:Bool] isAtom:Bool
+											[Then:Void] [Block:Void]
+												[Call:Void]
+													[Field:(x : String) -> Void]
+														[Local result(15002):StringBuf:StringBuf]
+														[FInstance:(x : String) -> Void]
+															StringBuf
+															add:(x : add.T) -> Void
+													[Binop:String]
+														[Binop:String]
+															[Binop:String]
+																[Binop:String]
+																	[Const:String] "  def is_"
+																	+
+																	[Local optionName(15006):String:String]
+																+
+																[Const:String] "("
+															+
+															[Field:String]
+																[Local constructorConfig(15011):Null<reflaxe.elixir.helpers.ADTConstructorConfig>:Null<reflaxe.elixir.helpers.ADTConstructorConfig>]
+																[FAnon:String] elixirPattern:String
+														+
+														[Const:String] "), do: true\n"
+											[Else:Void] [Block:Void]
+												[Var pattern(15012):String]
+													[Call:String]
+														[Field:(s : String, sub : String, by : String) -> String]
+															[TypeExpr StringTools:{ Statics StringTools }]
+															[FStatic:(s : String, sub : String, by : String) -> String]
+																StringTools
+																replace:(s : String, sub : String, by : String) -> String
+														[Field:String]
+															[Local constructorConfig(15011):Null<reflaxe.elixir.helpers.ADTConstructorConfig>:Null<reflaxe.elixir.helpers.ADTConstructorConfig>]
+															[FAnon:String] elixirPattern:String
+														[Const:String] "%s"
+														[Const:String] "_"
+												[Call:Void]
+													[Field:(x : String) -> Void]
+														[Local result(15002):StringBuf:StringBuf]
+														[FInstance:(x : String) -> Void]
+															StringBuf
+															add:(x : add.T) -> Void
+													[Binop:String]
+														[Binop:String]
+															[Binop:String]
+																[Binop:String]
+																	[Const:String] "  def is_"
+																	+
+																	[Local optionName(15006):String:String]
+																+
+																[Const:String] "("
+															+
+															[Local pattern(15012):String:String]
+														+
+														[Const:String] "), do: true\n"
+									[Else:Void] [Block:Void]
+										[If:Void]
+											[Binop:Bool]
+												[Field:Int]
+													[Field:Array<reflaxe.data.EnumOptionArg>]
+														[Local option(15005):reflaxe.data.EnumOptionData:reflaxe.data.EnumOptionData]
+														[FInstance:Array<reflaxe.data.EnumOptionArg>]
+															reflaxe.data.EnumOptionData
+															args:Array<reflaxe.data.EnumOptionArg>
+													[FInstance:Int]
+														Array<reflaxe.data.EnumOptionArg>
+														length:Int
+												==
+												[Const:Int] 0
+											[Then:Void] [Block:Void]
+												[Call:Void]
+													[Field:(x : String) -> Void]
+														[Local result(15002):StringBuf:StringBuf]
+														[FInstance:(x : String) -> Void]
+															StringBuf
+															add:(x : add.T) -> Void
+													[Binop:String]
+														[Binop:String]
+															[Binop:String]
+																[Binop:String]
+																	[Const:String] "  def is_"
+																	+
+																	[Local optionName(15006):String:String]
+																+
+																[Const:String] "(:"
+															+
+															[Local optionName(15006):String:String]
+														+
+														[Const:String] "), do: true\n"
+											[Else:Void] [Block:Void]
+												[Call:Void]
+													[Field:(x : String) -> Void]
+														[Local result(15002):StringBuf:StringBuf]
+														[FInstance:(x : String) -> Void]
+															StringBuf
+															add:(x : add.T) -> Void
+													[Binop:String]
+														[Binop:String]
+															[Binop:String]
+																[Binop:String]
+																	[Const:String] "  def is_"
+																	+
+																	[Local optionName(15006):String:String]
+																+
+																[Const:String] "({:"
+															+
+															[Local optionName(15006):String:String]
+														+
+														[Const:String] ", _}), do: true\n"
+							[Else:Void] [Block:Void]
+								[If:Void]
+									[Binop:Bool]
+										[Field:Int]
+											[Field:Array<reflaxe.data.EnumOptionArg>]
+												[Local option(15005):reflaxe.data.EnumOptionData:reflaxe.data.EnumOptionData]
+												[FInstance:Array<reflaxe.data.EnumOptionArg>]
+													reflaxe.data.EnumOptionData
+													args:Array<reflaxe.data.EnumOptionArg>
+											[FInstance:Int]
+												Array<reflaxe.data.EnumOptionArg>
+												length:Int
+										==
+										[Const:Int] 0
+									[Then:Void] [Block:Void]
+										[Call:Void]
+											[Field:(x : String) -> Void]
+												[Local result(15002):StringBuf:StringBuf]
+												[FInstance:(x : String) -> Void]
+													StringBuf
+													add:(x : add.T) -> Void
+											[Binop:String]
+												[Binop:String]
+													[Binop:String]
+														[Binop:String]
+															[Const:String] "  def is_"
+															+
+															[Local optionName(15006):String:String]
+														+
+														[Const:String] "(:"
+													+
+													[Local optionName(15006):String:String]
+												+
+												[Const:String] "), do: true\n"
+									[Else:Void] [Block:Void]
+										[Call:Void]
+											[Field:(x : String) -> Void]
+												[Local result(15002):StringBuf:StringBuf]
+												[FInstance:(x : String) -> Void]
+													StringBuf
+													add:(x : add.T) -> Void
+											[Binop:String]
+												[Binop:String]
+													[Binop:String]
+														[Binop:String]
+															[Const:String] "  def is_"
+															+
+															[Local optionName(15006):String:String]
+														+
+														[Const:String] "({:"
+													+
+													[Local optionName(15006):String:String]
+												+
+												[Const:String] ", _}), do: true\n"
+						[Call:Void]
+							[Field:(x : String) -> Void]
+								[Local result(15002):StringBuf:StringBuf]
+								[FInstance:(x : String) -> Void]
+									StringBuf
+									add:(x : add.T) -> Void
+							[Binop:String]
+								[Binop:String]
+									[Const:String] "  def is_"
+									+
+									[Local optionName(15006):String:String]
+								+
+								[Const:String] "(_), do: false\n\n"
+			[Block:Void]
+				[Var `(15043):Int] [Const:Int] 0
+				[While:Void]
+					[Binop:Bool]
+						[Local `(15043):Int:Int]
+						<
+						[Field:Int]
+							[Local options(15000):Array<reflaxe.data.EnumOptionData>:Array<reflaxe.data.EnumOptionData>]
+							[FInstance:Int]
+								Array<reflaxe.data.EnumOptionData>
+								length:Int
+					[Block:Void]
+						[Var option(15014):reflaxe.data.EnumOptionData]
+							[Array:reflaxe.data.EnumOptionData]
+								[Local options(15000):Array<reflaxe.data.EnumOptionData>:Array<reflaxe.data.EnumOptionData>]
+								[Local `(15043):Int:Int]
+						[Unop:Int]
+							++
+							Prefix
+							[Local `(15043):Int:Int]
+						[If:Void]
+							[Binop:Bool]
+								[Field:Int]
+									[Field:Array<reflaxe.data.EnumOptionArg>]
+										[Local option(15014):reflaxe.data.EnumOptionData:reflaxe.data.EnumOptionData]
+										[FInstance:Array<reflaxe.data.EnumOptionArg>]
+											reflaxe.data.EnumOptionData
+											args:Array<reflaxe.data.EnumOptionArg>
+									[FInstance:Int]
+										Array<reflaxe.data.EnumOptionArg>
+										length:Int
+								>
+								[Const:Int] 0
+							[Then:Void] [Block:Void]
+								[Var optionName(15015):String]
+									[Call:String]
+										[Field:(camelCase : String) -> String]
+											[TypeExpr reflaxe.elixir.helpers.NamingHelper:Class<reflaxe.elixir.helpers.NamingHelper>]
+											[FStatic:(camelCase : String) -> String]
+												reflaxe.elixir.helpers.NamingHelper
+												toSnakeCase:(camelCase : String) -> String
+										[Field:String]
+											[Field:haxe.macro.EnumField]
+												[Local option(15014):reflaxe.data.EnumOptionData:reflaxe.data.EnumOptionData]
+												[FInstance:haxe.macro.EnumField]
+													reflaxe.data.EnumOptionData
+													field:haxe.macro.EnumField
+											[FAnon:String] name:String
+								[Call:Void]
+									[Field:(x : String) -> Void]
+										[Local result(15002):StringBuf:StringBuf]
+										[FInstance:(x : String) -> Void]
+											StringBuf
+											add:(x : add.T) -> Void
+									[Binop:String]
+										[Binop:String]
+											[Const:String] "  @doc \"Extracts value from "
+											+
+											[Local optionName(15015):String:String]
+										+
+										[Const:String] " variant, returns {:ok, value} or :error\"\n"
+								[Call:Void]
+									[Field:(x : String) -> Void]
+										[Local result(15002):StringBuf:StringBuf]
+										[FInstance:(x : String) -> Void]
+											StringBuf
+											add:(x : add.T) -> Void
+									[Binop:String]
+										[Binop:String]
+											[Const:String] "  @spec get_"
+											+
+											[Local optionName(15015):String:String]
+										+
+										[Const:String] "_value(t()) :: {:ok, "
+								[If:Void]
+									[Binop:Bool]
+										[Field:Int]
+											[Field:Array<reflaxe.data.EnumOptionArg>]
+												[Local option(15014):reflaxe.data.EnumOptionData:reflaxe.data.EnumOptionData]
+												[FInstance:Array<reflaxe.data.EnumOptionArg>]
+													reflaxe.data.EnumOptionData
+													args:Array<reflaxe.data.EnumOptionArg>
+											[FInstance:Int]
+												Array<reflaxe.data.EnumOptionArg>
+												length:Int
+										==
+										[Const:Int] 1
+									[Then:Void] [Block:Void]
+										[Var haxeType(15016):String]
+											[Call:String]
+												[Field:(arg : Dynamic) -> String]
+													[Const:reflaxe.elixir.helpers.EnumCompiler] this
+													[FInstance:(arg : Dynamic) -> String]
+														reflaxe.elixir.helpers.EnumCompiler
+														getArgType:(arg : Dynamic) -> String
+												[Array:reflaxe.data.EnumOptionArg]
+													[Field:Array<reflaxe.data.EnumOptionArg>]
+														[Local option(15014):reflaxe.data.EnumOptionData:reflaxe.data.EnumOptionData]
+														[FInstance:Array<reflaxe.data.EnumOptionArg>]
+															reflaxe.data.EnumOptionData
+															args:Array<reflaxe.data.EnumOptionArg>
+													[Const:Int] 0
+										[Var elixirType(15017):String]
+											[Call:String]
+												[Field:(haxeType : String, ?context : Null<reflaxe.elixir.TypeContext>) -> String]
+													[Field:reflaxe.elixir.ElixirTyper]
+														[Const:reflaxe.elixir.helpers.EnumCompiler] this
+														[FInstance:reflaxe.elixir.ElixirTyper]
+															reflaxe.elixir.helpers.EnumCompiler
+															typer:reflaxe.elixir.ElixirTyper
+													[FInstance:(haxeType : String, ?context : Null<reflaxe.elixir.TypeContext>) -> String]
+														reflaxe.elixir.ElixirTyper
+														compileType:(haxeType : String, ?context : Null<reflaxe.elixir.TypeContext>) -> String
+												[Local haxeType(15016):String:String]
+												[Const:Null<reflaxe.elixir.TypeContext>] null
+										[Call:Void]
+											[Field:(x : String) -> Void]
+												[Local result(15002):StringBuf:StringBuf]
+												[FInstance:(x : String) -> Void]
+													StringBuf
+													add:(x : add.T) -> Void
+											[Binop:String]
+												[Const:String] ""
+												+
+												[Local elixirType(15017):String:String]
+									[Else:Void] [Block:Void]
+										[Var argTypes(15018):Array<String>] [ArrayDecl:Array<String>]
+										[Block:Void]
+											[Var `(15022):Int] [Const:Int] 0
+											[Var `(15023):Array<reflaxe.data.EnumOptionArg>]
+												[Field:Array<reflaxe.data.EnumOptionArg>]
+													[Local option(15014):reflaxe.data.EnumOptionData:reflaxe.data.EnumOptionData]
+													[FInstance:Array<reflaxe.data.EnumOptionArg>]
+														reflaxe.data.EnumOptionData
+														args:Array<reflaxe.data.EnumOptionArg>
+											[While:Void]
+												[Binop:Bool]
+													[Local `(15022):Int:Int]
+													<
+													[Field:Int]
+														[Local `(15023):Array<reflaxe.data.EnumOptionArg>:Array<reflaxe.data.EnumOptionArg>]
+														[FInstance:Int]
+															Array<reflaxe.data.EnumOptionArg>
+															length:Int
+												[Block:Void]
+													[Var arg(15019):reflaxe.data.EnumOptionArg]
+														[Array:reflaxe.data.EnumOptionArg]
+															[Local `(15023):Array<reflaxe.data.EnumOptionArg>:Array<reflaxe.data.EnumOptionArg>]
+															[Local `(15022):Int:Int]
+													[Unop:Int]
+														++
+														Prefix
+														[Local `(15022):Int:Int]
+													[Var haxeType(15020):String]
+														[Call:String]
+															[Field:(arg : Dynamic) -> String]
+																[Const:reflaxe.elixir.helpers.EnumCompiler] this
+																[FInstance:(arg : Dynamic) -> String]
+																	reflaxe.elixir.helpers.EnumCompiler
+																	getArgType:(arg : Dynamic) -> String
+															[Local arg(15019):reflaxe.data.EnumOptionArg:reflaxe.data.EnumOptionArg]
+													[Var elixirType(15021):String]
+														[Call:String]
+															[Field:(haxeType : String, ?context : Null<reflaxe.elixir.TypeContext>) -> String]
+																[Field:reflaxe.elixir.ElixirTyper]
+																	[Const:reflaxe.elixir.helpers.EnumCompiler] this
+																	[FInstance:reflaxe.elixir.ElixirTyper]
+																		reflaxe.elixir.helpers.EnumCompiler
+																		typer:reflaxe.elixir.ElixirTyper
+																[FInstance:(haxeType : String, ?context : Null<reflaxe.elixir.TypeContext>) -> String]
+																	reflaxe.elixir.ElixirTyper
+																	compileType:(haxeType : String, ?context : Null<reflaxe.elixir.TypeContext>) -> String
+															[Local haxeType(15020):String:String]
+															[Const:Null<reflaxe.elixir.TypeContext>] null
+													[Call:Int]
+														[Field:(x : String) -> Int]
+															[Local argTypes(15018):Array<String>:Array<String>]
+															[FInstance:(x : String) -> Int]
+																Array<String>
+																push:(x : Array.T) -> Int
+														[Local elixirType(15021):String:String]
+										[Call:Void]
+											[Field:(x : String) -> Void]
+												[Local result(15002):StringBuf:StringBuf]
+												[FInstance:(x : String) -> Void]
+													StringBuf
+													add:(x : add.T) -> Void
+											[Binop:String]
+												[Binop:String]
+													[Const:String] "{"
+													+
+													[Call:String]
+														[Field:(sep : String) -> String]
+															[Local argTypes(15018):Array<String>:Array<String>]
+															[FInstance:(sep : String) -> String]
+																Array<String>
+																join:(sep : String) -> String
+														[Const:String] ", "
+												+
+												[Const:String] "}"
+								[Call:Void]
+									[Field:(x : String) -> Void]
+										[Local result(15002):StringBuf:StringBuf]
+										[FInstance:(x : String) -> Void]
+											StringBuf
+											add:(x : add.T) -> Void
+									[Const:String] "} | :error\n"
+								[If:Void]
+									[Binop:Bool]
+										[Local isOptionLike(15003):Bool:Bool]
+										&&
+										[Binop:Bool]
+											[Local adtConfig(15004):Null<Null<{ typeName : String, moduleName : String, constructors : Map<String, reflaxe.elixir.helpers.ADTConstructorConfig> }>>:Null<Null<{ typeName : String, moduleName : String, constructors : Map<String, reflaxe.elixir.helpers.ADTConstructorConfig> }>>]
+											!=
+											[Const:Null<Null<{ typeName : String, moduleName : String, constructors : Map<String, reflaxe.elixir.helpers.ADTConstructorConfig> }>>] null
+									[Then:Void] [Block:Void]
+										[Var constructorConfig(15028):Null<reflaxe.elixir.helpers.ADTConstructorConfig>]
+											[Block:Null<reflaxe.elixir.helpers.ADTConstructorConfig>]
+												[Var this(15026):haxe.IMap<String, reflaxe.elixir.helpers.ADTConstructorConfig>]
+													[Field:Map<String, reflaxe.elixir.helpers.ADTConstructorConfig>]
+														[Local adtConfig(15004):Null<Null<{ typeName : String, moduleName : String, constructors : Map<String, reflaxe.elixir.helpers.ADTConstructorConfig> }>>:Null<Null<{ typeName : String, moduleName : String, constructors : Map<String, reflaxe.elixir.helpers.ADTConstructorConfig> }>>]
+														[FAnon:Map<String, reflaxe.elixir.helpers.ADTConstructorConfig>] constructors:Map<String, reflaxe.elixir.helpers.ADTConstructorConfig>
+												[Call:Null<reflaxe.elixir.helpers.ADTConstructorConfig>]
+													[Field:(key : String) -> Null<reflaxe.elixir.helpers.ADTConstructorConfig>]
+														[Cast:haxe.ds.StringMap<reflaxe.elixir.helpers.ADTConstructorConfig>] [Local this(15026):haxe.IMap<String, reflaxe.elixir.helpers.ADTConstructorConfig>:haxe.IMap<String, reflaxe.elixir.helpers.ADTConstructorConfig>]
+														[FInstance:(key : String) -> Null<reflaxe.elixir.helpers.ADTConstructorConfig>]
+															haxe.ds.StringMap<reflaxe.elixir.helpers.ADTConstructorConfig>
+															get:(key : String) -> Null<haxe.ds.StringMap.T>
+													[Local optionName(15015):String:String]
+										[If:Void]
+											[Binop:Bool]
+												[Binop:Bool]
+													[Local constructorConfig(15028):Null<reflaxe.elixir.helpers.ADTConstructorConfig>:Null<reflaxe.elixir.helpers.ADTConstructorConfig>]
+													!=
+													[Const:Null<reflaxe.elixir.helpers.ADTConstructorConfig>] null
+												&&
+												[Unop:Bool]
+													!
+													Prefix
+													[Field:Bool]
+														[Local constructorConfig(15028):Null<reflaxe.elixir.helpers.ADTConstructorConfig>:Null<reflaxe.elixir.helpers.ADTConstructorConfig>]
+														[FAnon:Bool] isAtom:Bool
+											[Then:Void] [Block:Void]
+												[If:Void]
+													[Binop:Bool]
+														[Field:Int]
+															[Field:Array<reflaxe.data.EnumOptionArg>]
+																[Local option(15014):reflaxe.data.EnumOptionData:reflaxe.data.EnumOptionData]
+																[FInstance:Array<reflaxe.data.EnumOptionArg>]
+																	reflaxe.data.EnumOptionData
+																	args:Array<reflaxe.data.EnumOptionArg>
+															[FInstance:Int]
+																Array<reflaxe.data.EnumOptionArg>
+																length:Int
+														==
+														[Const:Int] 1
+													[Then:Void] [Block:Void]
+														[Var pattern(15029):String]
+															[Call:String]
+																[Field:(s : String, sub : String, by : String) -> String]
+																	[TypeExpr StringTools:{ Statics StringTools }]
+																	[FStatic:(s : String, sub : String, by : String) -> String]
+																		StringTools
+																		replace:(s : String, sub : String, by : String) -> String
+																[Field:String]
+																	[Local constructorConfig(15028):Null<reflaxe.elixir.helpers.ADTConstructorConfig>:Null<reflaxe.elixir.helpers.ADTConstructorConfig>]
+																	[FAnon:String] elixirPattern:String
+																[Const:String] "%s"
+																[Const:String] "value"
+														[Call:Void]
+															[Field:(x : String) -> Void]
+																[Local result(15002):StringBuf:StringBuf]
+																[FInstance:(x : String) -> Void]
+																	StringBuf
+																	add:(x : add.T) -> Void
+															[Binop:String]
+																[Binop:String]
+																	[Binop:String]
+																		[Binop:String]
+																			[Const:String] "  def get_"
+																			+
+																			[Local optionName(15015):String:String]
+																		+
+																		[Const:String] "_value("
+																	+
+																	[Local pattern(15029):String:String]
+																+
+																[Const:String] "), do: {:ok, value}\n"
+													[Else:Void] [Block:Void]
+														[Var argPattern(15030):Array<String>] [ArrayDecl:Array<String>]
+														[Block:Void]
+															[Var `(15032):Int] [Const:Int] 0
+															[Var `(15033):Int]
+																[Field:Int]
+																	[Field:Array<reflaxe.data.EnumOptionArg>]
+																		[Local option(15014):reflaxe.data.EnumOptionData:reflaxe.data.EnumOptionData]
+																		[FInstance:Array<reflaxe.data.EnumOptionArg>]
+																			reflaxe.data.EnumOptionData
+																			args:Array<reflaxe.data.EnumOptionArg>
+																	[FInstance:Int]
+																		Array<reflaxe.data.EnumOptionArg>
+																		length:Int
+															[While:Void]
+																[Binop:Bool]
+																	[Local `(15032):Int:Int]
+																	<
+																	[Local `(15033):Int:Int]
+																[Block:Int]
+																	[Var i(15031):Int]
+																		[Unop:Int]
+																			++
+																			Postfix
+																			[Local `(15032):Int:Int]
+																	[Call:Int]
+																		[Field:(x : String) -> Int]
+																			[Local argPattern(15030):Array<String>:Array<String>]
+																			[FInstance:(x : String) -> Int]
+																				Array<String>
+																				push:(x : Array.T) -> Int
+																		[Binop:String]
+																			[Const:String] "arg"
+																			+
+																			[Local i(15031):Int:Int]
+														[Var pattern(15034):String]
+															[Call:String]
+																[Field:(s : String, sub : String, by : String) -> String]
+																	[TypeExpr StringTools:{ Statics StringTools }]
+																	[FStatic:(s : String, sub : String, by : String) -> String]
+																		StringTools
+																		replace:(s : String, sub : String, by : String) -> String
+																[Field:String]
+																	[Local constructorConfig(15028):Null<reflaxe.elixir.helpers.ADTConstructorConfig>:Null<reflaxe.elixir.helpers.ADTConstructorConfig>]
+																	[FAnon:String] elixirPattern:String
+																[Const:String] "%s"
+																[Call:String]
+																	[Field:(sep : String) -> String]
+																		[Local argPattern(15030):Array<String>:Array<String>]
+																		[FInstance:(sep : String) -> String]
+																			Array<String>
+																			join:(sep : String) -> String
+																	[Const:String] ", "
+														[Call:Void]
+															[Field:(x : String) -> Void]
+																[Local result(15002):StringBuf:StringBuf]
+																[FInstance:(x : String) -> Void]
+																	StringBuf
+																	add:(x : add.T) -> Void
+															[Binop:String]
+																[Binop:String]
+																	[Binop:String]
+																		[Binop:String]
+																			[Binop:String]
+																				[Binop:String]
+																					[Const:String] "  def get_"
+																					+
+																					[Local optionName(15015):String:String]
+																				+
+																				[Const:String] "_value("
+																			+
+																			[Local pattern(15034):String:String]
+																		+
+																		[Const:String] "), do: {:ok, {"
+																	+
+																	[Call:String]
+																		[Field:(sep : String) -> String]
+																			[Local argPattern(15030):Array<String>:Array<String>]
+																			[FInstance:(sep : String) -> String]
+																				Array<String>
+																				join:(sep : String) -> String
+																		[Const:String] ", "
+																+
+																[Const:String] "}}\n"
+											[Else:Void] [Block:Void]
+												[If:Void]
+													[Binop:Bool]
+														[Field:Int]
+															[Field:Array<reflaxe.data.EnumOptionArg>]
+																[Local option(15014):reflaxe.data.EnumOptionData:reflaxe.data.EnumOptionData]
+																[FInstance:Array<reflaxe.data.EnumOptionArg>]
+																	reflaxe.data.EnumOptionData
+																	args:Array<reflaxe.data.EnumOptionArg>
+															[FInstance:Int]
+																Array<reflaxe.data.EnumOptionArg>
+																length:Int
+														==
+														[Const:Int] 1
+													[Then:Void] [Block:Void]
+														[Call:Void]
+															[Field:(x : String) -> Void]
+																[Local result(15002):StringBuf:StringBuf]
+																[FInstance:(x : String) -> Void]
+																	StringBuf
+																	add:(x : add.T) -> Void
+															[Binop:String]
+																[Binop:String]
+																	[Binop:String]
+																		[Binop:String]
+																			[Const:String] "  def get_"
+																			+
+																			[Local optionName(15015):String:String]
+																		+
+																		[Const:String] "_value({:"
+																	+
+																	[Local optionName(15015):String:String]
+																+
+																[Const:String] ", value}), do: {:ok, value}\n"
+													[Else:Void] [Block:Void]
+														[Var argPattern(15035):Array<String>] [ArrayDecl:Array<String>]
+														[Block:Void]
+															[Var `(15037):Int] [Const:Int] 0
+															[Var `(15038):Int]
+																[Field:Int]
+																	[Field:Array<reflaxe.data.EnumOptionArg>]
+																		[Local option(15014):reflaxe.data.EnumOptionData:reflaxe.data.EnumOptionData]
+																		[FInstance:Array<reflaxe.data.EnumOptionArg>]
+																			reflaxe.data.EnumOptionData
+																			args:Array<reflaxe.data.EnumOptionArg>
+																	[FInstance:Int]
+																		Array<reflaxe.data.EnumOptionArg>
+																		length:Int
+															[While:Void]
+																[Binop:Bool]
+																	[Local `(15037):Int:Int]
+																	<
+																	[Local `(15038):Int:Int]
+																[Block:Int]
+																	[Var i(15036):Int]
+																		[Unop:Int]
+																			++
+																			Postfix
+																			[Local `(15037):Int:Int]
+																	[Call:Int]
+																		[Field:(x : String) -> Int]
+																			[Local argPattern(15035):Array<String>:Array<String>]
+																			[FInstance:(x : String) -> Int]
+																				Array<String>
+																				push:(x : Array.T) -> Int
+																		[Binop:String]
+																			[Const:String] "arg"
+																			+
+																			[Local i(15036):Int:Int]
+														[Call:Void]
+															[Field:(x : String) -> Void]
+																[Local result(15002):StringBuf:StringBuf]
+																[FInstance:(x : String) -> Void]
+																	StringBuf
+																	add:(x : add.T) -> Void
+															[Binop:String]
+																[Binop:String]
+																	[Binop:String]
+																		[Binop:String]
+																			[Binop:String]
+																				[Binop:String]
+																					[Binop:String]
+																						[Binop:String]
+																							[Const:String] "  def get_"
+																							+
+																							[Local optionName(15015):String:String]
+																						+
+																						[Const:String] "_value({:"
+																					+
+																					[Local optionName(15015):String:String]
+																				+
+																				[Const:String] ", "
+																			+
+																			[Call:String]
+																				[Field:(sep : String) -> String]
+																					[Local argPattern(15035):Array<String>:Array<String>]
+																					[FInstance:(sep : String) -> String]
+																						Array<String>
+																						join:(sep : String) -> String
+																				[Const:String] ", "
+																		+
+																		[Const:String] "}), do: {:ok, {"
+																	+
+																	[Call:String]
+																		[Field:(sep : String) -> String]
+																			[Local argPattern(15035):Array<String>:Array<String>]
+																			[FInstance:(sep : String) -> String]
+																				Array<String>
+																				join:(sep : String) -> String
+																		[Const:String] ", "
+																+
+																[Const:String] "}}\n"
+									[Else:Void] [Block:Void]
+										[If:Void]
+											[Binop:Bool]
+												[Field:Int]
+													[Field:Array<reflaxe.data.EnumOptionArg>]
+														[Local option(15014):reflaxe.data.EnumOptionData:reflaxe.data.EnumOptionData]
+														[FInstance:Array<reflaxe.data.EnumOptionArg>]
+															reflaxe.data.EnumOptionData
+															args:Array<reflaxe.data.EnumOptionArg>
+													[FInstance:Int]
+														Array<reflaxe.data.EnumOptionArg>
+														length:Int
+												==
+												[Const:Int] 1
+											[Then:Void] [Block:Void]
+												[Call:Void]
+													[Field:(x : String) -> Void]
+														[Local result(15002):StringBuf:StringBuf]
+														[FInstance:(x : String) -> Void]
+															StringBuf
+															add:(x : add.T) -> Void
+													[Binop:String]
+														[Binop:String]
+															[Binop:String]
+																[Binop:String]
+																	[Const:String] "  def get_"
+																	+
+																	[Local optionName(15015):String:String]
+																+
+																[Const:String] "_value({:"
+															+
+															[Local optionName(15015):String:String]
+														+
+														[Const:String] ", value}), do: {:ok, value}\n"
+											[Else:Void] [Block:Void]
+												[Var argPattern(15039):Array<String>] [ArrayDecl:Array<String>]
+												[Block:Void]
+													[Var `(15041):Int] [Const:Int] 0
+													[Var `(15042):Int]
+														[Field:Int]
+															[Field:Array<reflaxe.data.EnumOptionArg>]
+																[Local option(15014):reflaxe.data.EnumOptionData:reflaxe.data.EnumOptionData]
+																[FInstance:Array<reflaxe.data.EnumOptionArg>]
+																	reflaxe.data.EnumOptionData
+																	args:Array<reflaxe.data.EnumOptionArg>
+															[FInstance:Int]
+																Array<reflaxe.data.EnumOptionArg>
+																length:Int
+													[While:Void]
+														[Binop:Bool]
+															[Local `(15041):Int:Int]
+															<
+															[Local `(15042):Int:Int]
+														[Block:Int]
+															[Var i(15040):Int]
+																[Unop:Int]
+																	++
+																	Postfix
+																	[Local `(15041):Int:Int]
+															[Call:Int]
+																[Field:(x : String) -> Int]
+																	[Local argPattern(15039):Array<String>:Array<String>]
+																	[FInstance:(x : String) -> Int]
+																		Array<String>
+																		push:(x : Array.T) -> Int
+																[Binop:String]
+																	[Const:String] "arg"
+																	+
+																	[Local i(15040):Int:Int]
+												[Call:Void]
+													[Field:(x : String) -> Void]
+														[Local result(15002):StringBuf:StringBuf]
+														[FInstance:(x : String) -> Void]
+															StringBuf
+															add:(x : add.T) -> Void
+													[Binop:String]
+														[Binop:String]
+															[Binop:String]
+																[Binop:String]
+																	[Binop:String]
+																		[Binop:String]
+																			[Binop:String]
+																				[Binop:String]
+																					[Const:String] "  def get_"
+																					+
+																					[Local optionName(15015):String:String]
+																				+
+																				[Const:String] "_value({:"
+																			+
+																			[Local optionName(15015):String:String]
+																		+
+																		[Const:String] ", "
+																	+
+																	[Call:String]
+																		[Field:(sep : String) -> String]
+																			[Local argPattern(15039):Array<String>:Array<String>]
+																			[FInstance:(sep : String) -> String]
+																				Array<String>
+																				join:(sep : String) -> String
+																		[Const:String] ", "
+																+
+																[Const:String] "}), do: {:ok, {"
+															+
+															[Call:String]
+																[Field:(sep : String) -> String]
+																	[Local argPattern(15039):Array<String>:Array<String>]
+																	[FInstance:(sep : String) -> String]
+																		Array<String>
+																		join:(sep : String) -> String
+																[Const:String] ", "
+														+
+														[Const:String] "}}\n"
+								[Call:Void]
+									[Field:(x : String) -> Void]
+										[Local result(15002):StringBuf:StringBuf]
+										[FInstance:(x : String) -> Void]
+											StringBuf
+											add:(x : add.T) -> Void
+									[Binop:String]
+										[Binop:String]
+											[Const:String] "  def get_"
+											+
+											[Local optionName(15015):String:String]
+										+
+										[Const:String] "_value(_), do: :error\n\n"
+			[Return:Dynamic]
+				[Call:String]
+					[Field:() -> String]
+						[Local result(15002):StringBuf:StringBuf]
+						[FInstance:() -> String]
+							StringBuf
+							toString:() -> String
+
+	function getArgType[Function:(arg : Dynamic) -> String]
+		[Arg:Dynamic] [Local arg(14944):Dynamic]
+		[Block:Dynamic]
+			[If:Void]
+				[Binop:Bool]
+					[Field:Dynamic]
+						[Local arg(14944):Dynamic:Dynamic]
+						[FDynamic:Dynamic] t
+					!=
+					[Const:Dynamic] null
+				[Then:Dynamic] [Block:Dynamic]
+					[Return:Dynamic]
+						[Field:Dynamic]
+							[Local arg(14944):Dynamic:Dynamic]
+							[FDynamic:Dynamic] t
+			[Return:Dynamic] [Const:String] "term()"
+}

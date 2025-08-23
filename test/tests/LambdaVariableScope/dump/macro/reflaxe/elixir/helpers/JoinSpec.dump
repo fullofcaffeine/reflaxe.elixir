@@ -1,0 +1,1 @@
+typedef reflaxe.elixir.helpers.JoinSpec = { type : String, schema : String, onCondition : String, ?isLateral : Null<Bool>, bindings : Array<String>, alias : String }

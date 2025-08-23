@@ -1,0 +1,1 @@
+typedef haxe.display.Position = { line : Int, character : Int }

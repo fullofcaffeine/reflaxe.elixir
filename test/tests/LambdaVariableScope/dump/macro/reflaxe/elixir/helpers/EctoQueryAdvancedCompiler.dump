@@ -1,0 +1,1691 @@
+class reflaxe.elixir.helpers.EctoQueryAdvancedCompiler {
+
+	@:value({ targetBinding : "q" })
+	public static function compileSubquery[Function:(subqueryExpr : String, ?targetBinding : String) -> String]
+		[Arg:String] [Local subqueryExpr(25396):String]
+		[Arg:String]
+			[Local targetBinding(25397):String]
+			[Const:String] "q"
+		[Block:Dynamic]
+			[Var cleanedExpr(25398):String]
+				[Call:String]
+					[Field:(s : String, sub : String, by : String) -> String]
+						[TypeExpr StringTools:{ Statics StringTools }]
+						[FStatic:(s : String, sub : String, by : String) -> String]
+							StringTools
+							replace:(s : String, sub : String, by : String) -> String
+					[Local subqueryExpr(25396):String:String]
+					[Const:String] "subquery(from "
+					[Const:String] "subquery(from "
+			[Return:Dynamic]
+				[Binop:String]
+					[Binop:String]
+						[Const:String] "subquery("
+						+
+						[Local cleanedExpr(25398):String:String]
+					+
+					[Const:String] ")"
+
+	@:value({ isRecursive : false })
+	public static function compileCTE[Function:(cteName : String, cteQuery : String, ?isRecursive : Bool) -> String]
+		[Arg:String] [Local cteName(25399):String]
+		[Arg:String] [Local cteQuery(25400):String]
+		[Arg:Bool]
+			[Local isRecursive(25401):Bool]
+			[Const:Bool] false
+		[Block:Dynamic]
+			[Var recursiveModifier(25402):String]
+				[If:String]
+					[Local isRecursive(25401):Bool:Bool]
+					[Then:String] [Block:String] [Const:String] ", recursive: true"
+					[Else:String] [Block:String] [Const:String] ""
+			[Return:Dynamic]
+				[Binop:String]
+					[Binop:String]
+						[Binop:String]
+							[Binop:String]
+								[Binop:String]
+									[Binop:String]
+										[Const:String] "with_cte(\""
+										+
+										[Local cteName(25399):String:String]
+									+
+									[Const:String] "\", as: ^("
+								+
+								[Local cteQuery(25400):String:String]
+							+
+							[Const:String] ")"
+						+
+						[Local recursiveModifier(25402):String:String]
+					+
+					[Const:String] ")"
+
+	public static function compileWindowFunction[Function:(functionName : String, partitionBy : Array<String>, orderBy : Array<{ field : String, direction : String }>) -> String]
+		[Arg:String] [Local functionName(25403):String]
+		[Arg:Array<String>] [Local partitionBy(25404):Array<String>]
+		[Arg:Array<{ field : String, direction : String }>] [Local orderBy(25405):Array<{ field : String, direction : String }>]
+		[Block:Dynamic]
+			[Var partitionClause(25415):String]
+				[If:String]
+					[Binop:Bool]
+						[Field:Int]
+							[Local partitionBy(25404):Array<String>:Array<String>]
+							[FInstance:Int]
+								Array<String>
+								length:Int
+						>
+						[Const:Int] 0
+					[Then:String] [Block:String]
+						[Binop:String]
+							[Binop:String]
+								[Const:String] "partition_by: ["
+								+
+								[Call:String]
+									[Field:(sep : String) -> String]
+										[Block:Array<String>]
+											[Var `(25410):Array<String>] [ArrayDecl:Array<String>]
+											[Block:Void]
+												[Var `(25411):Int] [Const:Int] 0
+												[Var `(25412):Array<String>] [Local partitionBy(25404):Array<String>:Array<String>]
+												[While:Void]
+													[Binop:Bool]
+														[Local `(25411):Int:Int]
+														<
+														[Field:Int]
+															[Local `(25412):Array<String>:Array<String>]
+															[FInstance:Int]
+																Array<String>
+																length:Int
+													[Block:Void]
+														[Var v(25413):String]
+															[Array:String]
+																[Local `(25412):Array<String>:Array<String>]
+																[Local `(25411):Int:Int]
+														[Unop:Int]
+															++
+															Prefix
+															[Local `(25411):Int:Int]
+														[Call:Int]
+															[Field:(x : String) -> Int]
+																[Local `(25410):Array<String>:Array<String>]
+																[FInstance:(x : String) -> Int]
+																	Array<String>
+																	push:(x : Array.T) -> Int
+															[Call:String]
+																[Function:(f : String) -> String]
+																	[Arg:String] [Local f(25414):String]
+																	[Block:Dynamic]
+																		[Return:Dynamic]
+																			[Binop:String]
+																				[Const:String] ":"
+																				+
+																				[Local f(25414):String:String]
+																[Local v(25413):String:String]
+											[Local `(25410):Array<String>:Array<String>]
+										[FInstance:(sep : String) -> String]
+											Array<String>
+											join:(sep : String) -> String
+									[Const:String] ", "
+							+
+							[Const:String] "]"
+					[Else:String] [Block:String] [Const:String] ""
+			[Var orderClause(25425):String]
+				[If:String]
+					[Binop:Bool]
+						[Field:Int]
+							[Local orderBy(25405):Array<{ field : String, direction : String }>:Array<{ field : String, direction : String }>]
+							[FInstance:Int]
+								Array<{ field : String, direction : String }>
+								length:Int
+						>
+						[Const:Int] 0
+					[Then:String] [Block:String]
+						[Binop:String]
+							[Binop:String]
+								[Const:String] "order_by: ["
+								+
+								[Call:String]
+									[Field:(sep : String) -> String]
+										[Block:Array<String>]
+											[Var `(25420):Array<String>] [ArrayDecl:Array<String>]
+											[Block:Void]
+												[Var `(25421):Int] [Const:Int] 0
+												[Var `(25422):Array<{ field : String, direction : String }>] [Local orderBy(25405):Array<{ field : String, direction : String }>:Array<{ field : String, direction : String }>]
+												[While:Void]
+													[Binop:Bool]
+														[Local `(25421):Int:Int]
+														<
+														[Field:Int]
+															[Local `(25422):Array<{ field : String, direction : String }>:Array<{ field : String, direction : String }>]
+															[FInstance:Int]
+																Array<{ field : String, direction : String }>
+																length:Int
+													[Block:Void]
+														[Var v(25423):{ field : String, direction : String }]
+															[Array:{ field : String, direction : String }]
+																[Local `(25422):Array<{ field : String, direction : String }>:Array<{ field : String, direction : String }>]
+																[Local `(25421):Int:Int]
+														[Unop:Int]
+															++
+															Prefix
+															[Local `(25421):Int:Int]
+														[Call:Int]
+															[Field:(x : String) -> Int]
+																[Local `(25420):Array<String>:Array<String>]
+																[FInstance:(x : String) -> Int]
+																	Array<String>
+																	push:(x : Array.T) -> Int
+															[Call:String]
+																[Function:(o : { field : String, direction : String }) -> String]
+																	[Arg:{ field : String, direction : String }] [Local o(25424):{ field : String, direction : String }]
+																	[Block:Dynamic]
+																		[Return:Dynamic]
+																			[Binop:String]
+																				[Binop:String]
+																					[Binop:String]
+																						[Const:String] ""
+																						+
+																						[Field:String]
+																							[Local o(25424):{ field : String, direction : String }:{ field : String, direction : String }]
+																							[FAnon:String] direction:String
+																					+
+																					[Const:String] ": :"
+																				+
+																				[Field:String]
+																					[Local o(25424):{ field : String, direction : String }:{ field : String, direction : String }]
+																					[FAnon:String] field:String
+																[Local v(25423):{ field : String, direction : String }:{ field : String, direction : String }]
+											[Local `(25420):Array<String>:Array<String>]
+										[FInstance:(sep : String) -> String]
+											Array<String>
+											join:(sep : String) -> String
+									[Const:String] ", "
+							+
+							[Const:String] "]"
+					[Else:String] [Block:String] [Const:String] ""
+			[Var windowOptions(25435):String]
+				[Call:String]
+					[Field:(sep : String) -> String]
+						[Block:Array<String>]
+							[Var `(25430):Array<String>] [ArrayDecl:Array<String>]
+							[Block:Void]
+								[Var `(25431):Int] [Const:Int] 0
+								[Var `(25432):Array<String>]
+									[ArrayDecl:Array<String>]
+										[Local partitionClause(25415):String:String]
+										[Local orderClause(25425):String:String]
+								[While:Void]
+									[Binop:Bool]
+										[Local `(25431):Int:Int]
+										<
+										[Field:Int]
+											[Local `(25432):Array<String>:Array<String>]
+											[FInstance:Int]
+												Array<String>
+												length:Int
+									[Block:Void]
+										[Var v(25433):String]
+											[Array:String]
+												[Local `(25432):Array<String>:Array<String>]
+												[Local `(25431):Int:Int]
+										[Unop:Int]
+											++
+											Prefix
+											[Local `(25431):Int:Int]
+										[If:Void]
+											[Call:Bool]
+												[Function:(s : String) -> Bool]
+													[Arg:String] [Local s(25434):String]
+													[Block:Dynamic]
+														[Return:Dynamic]
+															[Binop:Bool]
+																[Field:Int]
+																	[Local s(25434):String:String]
+																	[FInstance:Int]
+																		String
+																		length:Int
+																>
+																[Const:Int] 0
+												[Local v(25433):String:String]
+											[Then:Int] [Block:Int]
+												[Call:Int]
+													[Field:(x : String) -> Int]
+														[Local `(25430):Array<String>:Array<String>]
+														[FInstance:(x : String) -> Int]
+															Array<String>
+															push:(x : Array.T) -> Int
+													[Local v(25433):String:String]
+							[Local `(25430):Array<String>:Array<String>]
+						[FInstance:(sep : String) -> String]
+							Array<String>
+							join:(sep : String) -> String
+					[Const:String] ", "
+			[Return:Dynamic]
+				[Binop:String]
+					[Binop:String]
+						[Binop:String]
+							[Binop:String]
+								[Const:String] "over("
+								+
+								[Local functionName(25403):String:String]
+							+
+							[Const:String] "(), "
+						+
+						[Local windowOptions(25435):String:String]
+					+
+					[Const:String] ")"
+
+	@:value({ isLateral : false })
+	public static function compileComplexJoin[Function:(joinType : String, bindings : Array<String>, schema : String, alias : String, onCondition : String, ?isLateral : Bool) -> String]
+		[Arg:String] [Local joinType(25436):String]
+		[Arg:Array<String>] [Local bindings(25437):Array<String>]
+		[Arg:String] [Local schema(25438):String]
+		[Arg:String] [Local alias(25439):String]
+		[Arg:String] [Local onCondition(25440):String]
+		[Arg:Bool]
+			[Local isLateral(25441):Bool]
+			[Const:Bool] false
+		[Block:Dynamic]
+			[Var lateralModifier(25442):String]
+				[If:String]
+					[Local isLateral(25441):Bool:Bool]
+					[Then:String] [Block:String] [Const:String] "_lateral"
+					[Else:String] [Block:String] [Const:String] ""
+			[Var bindingStr(25443):String]
+				[Call:String]
+					[Field:(sep : String) -> String]
+						[Local bindings(25437):Array<String>:Array<String>]
+						[FInstance:(sep : String) -> String]
+							Array<String>
+							join:(sep : String) -> String
+					[Const:String] ", "
+			[Return:Dynamic]
+				[Binop:String]
+					[Binop:String]
+						[Binop:String]
+							[Binop:String]
+								[Binop:String]
+									[Binop:String]
+										[Binop:String]
+											[Binop:String]
+												[Binop:String]
+													[Binop:String]
+														[Binop:String]
+															[Binop:String]
+																[Const:String] "join"
+																+
+																[Local lateralModifier(25442):String:String]
+															+
+															[Const:String] "(:"
+														+
+														[Local joinType(25436):String:String]
+													+
+													[Const:String] ", ["
+												+
+												[Local bindingStr(25443):String:String]
+											+
+											[Const:String] "], "
+										+
+										[Local alias(25439):String:String]
+									+
+									[Const:String] " in "
+								+
+								[Local schema(25438):String:String]
+							+
+							[Const:String] ", on: "
+						+
+						[Local onCondition(25440):String:String]
+					+
+					[Const:String] ")"
+
+	public static function compileMultiTransaction[Function:(operations : Array<reflaxe.elixir.helpers.MultiOperation>) -> String]
+		[Arg:Array<reflaxe.elixir.helpers.MultiOperation>] [Local operations(25444):Array<reflaxe.elixir.helpers.MultiOperation>]
+		[Block:Dynamic]
+			[Var operationStrings(25445):Array<String>] [ArrayDecl:Array<String>]
+			[Block:Void]
+				[Var `(25449):Int] [Const:Int] 0
+				[While:Void]
+					[Binop:Bool]
+						[Local `(25449):Int:Int]
+						<
+						[Field:Int]
+							[Local operations(25444):Array<reflaxe.elixir.helpers.MultiOperation>:Array<reflaxe.elixir.helpers.MultiOperation>]
+							[FInstance:Int]
+								Array<reflaxe.elixir.helpers.MultiOperation>
+								length:Int
+					[Block:Void]
+						[Var op(25446):reflaxe.elixir.helpers.MultiOperation]
+							[Array:reflaxe.elixir.helpers.MultiOperation]
+								[Local operations(25444):Array<reflaxe.elixir.helpers.MultiOperation>:Array<reflaxe.elixir.helpers.MultiOperation>]
+								[Local `(25449):Int:Int]
+						[Unop:Int]
+							++
+							Prefix
+							[Local `(25449):Int:Int]
+						[Meta:Void]
+							:ast(switch (op.type) {
+	case "insert":
+		operationStrings.push("Multi.insert(:${op.name}, ${op.changeset})");	
+	case "update":
+		operationStrings.push("Multi.update(:${op.name}, ${op.changeset})");	
+	case "delete":
+		operationStrings.push("Multi.delete(:${op.name}, ${op.changeset})");	
+	case "run":
+		operationStrings.push("Multi.run(:${op.name}, ${op.functionCode})");	
+	case "update_all":
+		operationStrings.push("Multi.update_all(:${op.name}, ${op.query}, ${op.updates})");	
+	case "delete_all":
+		operationStrings.push("Multi.delete_all(:${op.name}, ${op.query})");	
+	default:
+		operationStrings.push("Multi.${op.type}(:${op.name}, ${op.params})");	
+})
+							[Block:Void]
+								[Var `(25448):String]
+									[Field:String]
+										[Local op(25446):reflaxe.elixir.helpers.MultiOperation:reflaxe.elixir.helpers.MultiOperation]
+										[FAnon:String] type:String
+								[Switch:Void]
+									[Local `(25448):String:String]
+									[Case:Int]
+										[Const:String] "delete"
+										[Block:Int]
+											[Block:Int]
+												[Call:Int]
+													[Field:(x : String) -> Int]
+														[Local operationStrings(25445):Array<String>:Array<String>]
+														[FInstance:(x : String) -> Int]
+															Array<String>
+															push:(x : Array.T) -> Int
+													[Binop:String]
+														[Binop:String]
+															[Binop:String]
+																[Binop:String]
+																	[Const:String] "Multi.delete(:"
+																	+
+																	[Field:String]
+																		[Local op(25446):reflaxe.elixir.helpers.MultiOperation:reflaxe.elixir.helpers.MultiOperation]
+																		[FAnon:String] name:String
+																+
+																[Const:String] ", "
+															+
+															[Field:Null<String>]
+																[Local op(25446):reflaxe.elixir.helpers.MultiOperation:reflaxe.elixir.helpers.MultiOperation]
+																[FAnon:Null<String>] changeset:Null<String>
+														+
+														[Const:String] ")"
+									[Case:Int]
+										[Const:String] "delete_all"
+										[Block:Int]
+											[Block:Int]
+												[Call:Int]
+													[Field:(x : String) -> Int]
+														[Local operationStrings(25445):Array<String>:Array<String>]
+														[FInstance:(x : String) -> Int]
+															Array<String>
+															push:(x : Array.T) -> Int
+													[Binop:String]
+														[Binop:String]
+															[Binop:String]
+																[Binop:String]
+																	[Const:String] "Multi.delete_all(:"
+																	+
+																	[Field:String]
+																		[Local op(25446):reflaxe.elixir.helpers.MultiOperation:reflaxe.elixir.helpers.MultiOperation]
+																		[FAnon:String] name:String
+																+
+																[Const:String] ", "
+															+
+															[Field:Null<String>]
+																[Local op(25446):reflaxe.elixir.helpers.MultiOperation:reflaxe.elixir.helpers.MultiOperation]
+																[FAnon:Null<String>] query:Null<String>
+														+
+														[Const:String] ")"
+									[Case:Int]
+										[Const:String] "insert"
+										[Block:Int]
+											[Block:Int]
+												[Call:Int]
+													[Field:(x : String) -> Int]
+														[Local operationStrings(25445):Array<String>:Array<String>]
+														[FInstance:(x : String) -> Int]
+															Array<String>
+															push:(x : Array.T) -> Int
+													[Binop:String]
+														[Binop:String]
+															[Binop:String]
+																[Binop:String]
+																	[Const:String] "Multi.insert(:"
+																	+
+																	[Field:String]
+																		[Local op(25446):reflaxe.elixir.helpers.MultiOperation:reflaxe.elixir.helpers.MultiOperation]
+																		[FAnon:String] name:String
+																+
+																[Const:String] ", "
+															+
+															[Field:Null<String>]
+																[Local op(25446):reflaxe.elixir.helpers.MultiOperation:reflaxe.elixir.helpers.MultiOperation]
+																[FAnon:Null<String>] changeset:Null<String>
+														+
+														[Const:String] ")"
+									[Case:Int]
+										[Const:String] "run"
+										[Block:Int]
+											[Block:Int]
+												[Call:Int]
+													[Field:(x : String) -> Int]
+														[Local operationStrings(25445):Array<String>:Array<String>]
+														[FInstance:(x : String) -> Int]
+															Array<String>
+															push:(x : Array.T) -> Int
+													[Binop:String]
+														[Binop:String]
+															[Binop:String]
+																[Binop:String]
+																	[Const:String] "Multi.run(:"
+																	+
+																	[Field:String]
+																		[Local op(25446):reflaxe.elixir.helpers.MultiOperation:reflaxe.elixir.helpers.MultiOperation]
+																		[FAnon:String] name:String
+																+
+																[Const:String] ", "
+															+
+															[Field:Null<String>]
+																[Local op(25446):reflaxe.elixir.helpers.MultiOperation:reflaxe.elixir.helpers.MultiOperation]
+																[FAnon:Null<String>] functionCode:Null<String>
+														+
+														[Const:String] ")"
+									[Case:Int]
+										[Const:String] "update"
+										[Block:Int]
+											[Block:Int]
+												[Call:Int]
+													[Field:(x : String) -> Int]
+														[Local operationStrings(25445):Array<String>:Array<String>]
+														[FInstance:(x : String) -> Int]
+															Array<String>
+															push:(x : Array.T) -> Int
+													[Binop:String]
+														[Binop:String]
+															[Binop:String]
+																[Binop:String]
+																	[Const:String] "Multi.update(:"
+																	+
+																	[Field:String]
+																		[Local op(25446):reflaxe.elixir.helpers.MultiOperation:reflaxe.elixir.helpers.MultiOperation]
+																		[FAnon:String] name:String
+																+
+																[Const:String] ", "
+															+
+															[Field:Null<String>]
+																[Local op(25446):reflaxe.elixir.helpers.MultiOperation:reflaxe.elixir.helpers.MultiOperation]
+																[FAnon:Null<String>] changeset:Null<String>
+														+
+														[Const:String] ")"
+									[Case:Int]
+										[Const:String] "update_all"
+										[Block:Int]
+											[Block:Int]
+												[Call:Int]
+													[Field:(x : String) -> Int]
+														[Local operationStrings(25445):Array<String>:Array<String>]
+														[FInstance:(x : String) -> Int]
+															Array<String>
+															push:(x : Array.T) -> Int
+													[Binop:String]
+														[Binop:String]
+															[Binop:String]
+																[Binop:String]
+																	[Binop:String]
+																		[Binop:String]
+																			[Const:String] "Multi.update_all(:"
+																			+
+																			[Field:String]
+																				[Local op(25446):reflaxe.elixir.helpers.MultiOperation:reflaxe.elixir.helpers.MultiOperation]
+																				[FAnon:String] name:String
+																		+
+																		[Const:String] ", "
+																	+
+																	[Field:Null<String>]
+																		[Local op(25446):reflaxe.elixir.helpers.MultiOperation:reflaxe.elixir.helpers.MultiOperation]
+																		[FAnon:Null<String>] query:Null<String>
+																+
+																[Const:String] ", "
+															+
+															[Field:Null<String>]
+																[Local op(25446):reflaxe.elixir.helpers.MultiOperation:reflaxe.elixir.helpers.MultiOperation]
+																[FAnon:Null<String>] updates:Null<String>
+														+
+														[Const:String] ")"
+									[Default:Int]
+										[Block:Int]
+											[Call:Int]
+												[Field:(x : String) -> Int]
+													[Local operationStrings(25445):Array<String>:Array<String>]
+													[FInstance:(x : String) -> Int]
+														Array<String>
+														push:(x : Array.T) -> Int
+												[Binop:String]
+													[Binop:String]
+														[Binop:String]
+															[Binop:String]
+																[Binop:String]
+																	[Binop:String]
+																		[Const:String] "Multi."
+																		+
+																		[Field:String]
+																			[Local op(25446):reflaxe.elixir.helpers.MultiOperation:reflaxe.elixir.helpers.MultiOperation]
+																			[FAnon:String] type:String
+																	+
+																	[Const:String] "(:"
+																+
+																[Field:String]
+																	[Local op(25446):reflaxe.elixir.helpers.MultiOperation:reflaxe.elixir.helpers.MultiOperation]
+																	[FAnon:String] name:String
+															+
+															[Const:String] ", "
+														+
+														[Field:Null<String>]
+															[Local op(25446):reflaxe.elixir.helpers.MultiOperation:reflaxe.elixir.helpers.MultiOperation]
+															[FAnon:Null<String>] params:Null<String>
+													+
+													[Const:String] ")"
+			[Return:Dynamic]
+				[Binop:String]
+					[Const:String] "Multi.new()\n|> "
+					+
+					[Call:String]
+						[Field:(sep : String) -> String]
+							[Local operationStrings(25445):Array<String>:Array<String>]
+							[FInstance:(sep : String) -> String]
+								Array<String>
+								join:(sep : String) -> String
+						[Const:String] "\n|> "
+
+	public static function compileAdvancedAggregation[Function:(aggregations : Array<reflaxe.elixir.helpers.AggregationInfo>, groupBy : Array<String>, having : String) -> String]
+		[Arg:Array<reflaxe.elixir.helpers.AggregationInfo>] [Local aggregations(25450):Array<reflaxe.elixir.helpers.AggregationInfo>]
+		[Arg:Array<String>] [Local groupBy(25451):Array<String>]
+		[Arg:String] [Local having(25452):String]
+		[Block:Dynamic]
+			[Var aggStrings(25462):Array<String>]
+				[Block:Array<String>]
+					[Var `(25457):Array<String>] [ArrayDecl:Array<String>]
+					[Block:Void]
+						[Var `(25458):Int] [Const:Int] 0
+						[Var `(25459):Array<reflaxe.elixir.helpers.AggregationInfo>] [Local aggregations(25450):Array<reflaxe.elixir.helpers.AggregationInfo>:Array<reflaxe.elixir.helpers.AggregationInfo>]
+						[While:Void]
+							[Binop:Bool]
+								[Local `(25458):Int:Int]
+								<
+								[Field:Int]
+									[Local `(25459):Array<reflaxe.elixir.helpers.AggregationInfo>:Array<reflaxe.elixir.helpers.AggregationInfo>]
+									[FInstance:Int]
+										Array<reflaxe.elixir.helpers.AggregationInfo>
+										length:Int
+							[Block:Void]
+								[Var v(25460):reflaxe.elixir.helpers.AggregationInfo]
+									[Array:reflaxe.elixir.helpers.AggregationInfo]
+										[Local `(25459):Array<reflaxe.elixir.helpers.AggregationInfo>:Array<reflaxe.elixir.helpers.AggregationInfo>]
+										[Local `(25458):Int:Int]
+								[Unop:Int]
+									++
+									Prefix
+									[Local `(25458):Int:Int]
+								[Call:Int]
+									[Field:(x : String) -> Int]
+										[Local `(25457):Array<String>:Array<String>]
+										[FInstance:(x : String) -> Int]
+											Array<String>
+											push:(x : Array.T) -> Int
+									[Call:String]
+										[Function:(agg : reflaxe.elixir.helpers.AggregationInfo) -> String]
+											[Arg:reflaxe.elixir.helpers.AggregationInfo] [Local agg(25461):reflaxe.elixir.helpers.AggregationInfo]
+											[Block:Dynamic]
+												[Return:Dynamic]
+													[Binop:String]
+														[Binop:String]
+															[Binop:String]
+																[Binop:String]
+																	[Binop:String]
+																		[Binop:String]
+																			[Const:String] ""
+																			+
+																			[Field:String]
+																				[Local agg(25461):reflaxe.elixir.helpers.AggregationInfo:reflaxe.elixir.helpers.AggregationInfo]
+																				[FAnon:String] alias:String
+																		+
+																		[Const:String] ": "
+																	+
+																	[Field:String]
+																		[Local agg(25461):reflaxe.elixir.helpers.AggregationInfo:reflaxe.elixir.helpers.AggregationInfo]
+																		[FAnon:String] functionName:String
+																+
+																[Const:String] "("
+															+
+															[Field:String]
+																[Local agg(25461):reflaxe.elixir.helpers.AggregationInfo:reflaxe.elixir.helpers.AggregationInfo]
+																[FAnon:String] field:String
+														+
+														[Const:String] ")"
+										[Local v(25460):reflaxe.elixir.helpers.AggregationInfo:reflaxe.elixir.helpers.AggregationInfo]
+					[Local `(25457):Array<String>:Array<String>]
+			[Var groupByClause(25472):String]
+				[Binop:String]
+					[Binop:String]
+						[Const:String] "group_by([q], ["
+						+
+						[Call:String]
+							[Field:(sep : String) -> String]
+								[Block:Array<String>]
+									[Var `(25467):Array<String>] [ArrayDecl:Array<String>]
+									[Block:Void]
+										[Var `(25468):Int] [Const:Int] 0
+										[Var `(25469):Array<String>] [Local groupBy(25451):Array<String>:Array<String>]
+										[While:Void]
+											[Binop:Bool]
+												[Local `(25468):Int:Int]
+												<
+												[Field:Int]
+													[Local `(25469):Array<String>:Array<String>]
+													[FInstance:Int]
+														Array<String>
+														length:Int
+											[Block:Void]
+												[Var v(25470):String]
+													[Array:String]
+														[Local `(25469):Array<String>:Array<String>]
+														[Local `(25468):Int:Int]
+												[Unop:Int]
+													++
+													Prefix
+													[Local `(25468):Int:Int]
+												[Call:Int]
+													[Field:(x : String) -> Int]
+														[Local `(25467):Array<String>:Array<String>]
+														[FInstance:(x : String) -> Int]
+															Array<String>
+															push:(x : Array.T) -> Int
+													[Call:String]
+														[Function:(f : String) -> String]
+															[Arg:String] [Local f(25471):String]
+															[Block:Dynamic]
+																[Return:Dynamic]
+																	[Binop:String]
+																		[Const:String] "q."
+																		+
+																		[Local f(25471):String:String]
+														[Local v(25470):String:String]
+									[Local `(25467):Array<String>:Array<String>]
+								[FInstance:(sep : String) -> String]
+									Array<String>
+									join:(sep : String) -> String
+							[Const:String] ", "
+					+
+					[Const:String] "])"
+			[Var havingClause(25473):String]
+				[If:String]
+					[Binop:Bool]
+						[Field:Int]
+							[Local having(25452):String:String]
+							[FInstance:Int]
+								String
+								length:Int
+						>
+						[Const:Int] 0
+					[Then:String] [Block:String]
+						[Binop:String]
+							[Binop:String]
+								[Const:String] "having([q], "
+								+
+								[Local having(25452):String:String]
+							+
+							[Const:String] ")"
+					[Else:String] [Block:String] [Const:String] ""
+			[Var selectClause(25474):String]
+				[Binop:String]
+					[Binop:String]
+						[Const:String] "select([q], %{"
+						+
+						[Call:String]
+							[Field:(sep : String) -> String]
+								[Local aggStrings(25462):Array<String>:Array<String>]
+								[FInstance:(sep : String) -> String]
+									Array<String>
+									join:(sep : String) -> String
+							[Const:String] ", "
+					+
+					[Const:String] "})"
+			[Var clauses(25484):Array<String>]
+				[Block:Array<String>]
+					[Var `(25479):Array<String>] [ArrayDecl:Array<String>]
+					[Block:Void]
+						[Var `(25480):Int] [Const:Int] 0
+						[Var `(25481):Array<String>]
+							[ArrayDecl:Array<String>]
+								[Local groupByClause(25472):String:String]
+								[Local havingClause(25473):String:String]
+								[Local selectClause(25474):String:String]
+						[While:Void]
+							[Binop:Bool]
+								[Local `(25480):Int:Int]
+								<
+								[Field:Int]
+									[Local `(25481):Array<String>:Array<String>]
+									[FInstance:Int]
+										Array<String>
+										length:Int
+							[Block:Void]
+								[Var v(25482):String]
+									[Array:String]
+										[Local `(25481):Array<String>:Array<String>]
+										[Local `(25480):Int:Int]
+								[Unop:Int]
+									++
+									Prefix
+									[Local `(25480):Int:Int]
+								[If:Void]
+									[Call:Bool]
+										[Function:(s : String) -> Bool]
+											[Arg:String] [Local s(25483):String]
+											[Block:Dynamic]
+												[Return:Dynamic]
+													[Binop:Bool]
+														[Field:Int]
+															[Local s(25483):String:String]
+															[FInstance:Int]
+																String
+																length:Int
+														>
+														[Const:Int] 0
+										[Local v(25482):String:String]
+									[Then:Int] [Block:Int]
+										[Call:Int]
+											[Field:(x : String) -> Int]
+												[Local `(25479):Array<String>:Array<String>]
+												[FInstance:(x : String) -> Int]
+													Array<String>
+													push:(x : Array.T) -> Int
+											[Local v(25482):String:String]
+					[Local `(25479):Array<String>:Array<String>]
+			[Return:Dynamic]
+				[Call:String]
+					[Field:(sep : String) -> String]
+						[Local clauses(25484):Array<String>:Array<String>]
+						[FInstance:(sep : String) -> String]
+							Array<String>
+							join:(sep : String) -> String
+					[Const:String] "\n|> "
+
+	public static function compileFragment[Function:(sql : String, params : Array<String>) -> String]
+		[Arg:String] [Local sql(25485):String]
+		[Arg:Array<String>] [Local params(25486):Array<String>]
+		[Block:Dynamic]
+			[Var paramPlaceholders(25496):String]
+				[Call:String]
+					[Field:(sep : String) -> String]
+						[Block:Array<String>]
+							[Var `(25491):Array<String>] [ArrayDecl:Array<String>]
+							[Block:Void]
+								[Var `(25492):Int] [Const:Int] 0
+								[Var `(25493):Array<String>] [Local params(25486):Array<String>:Array<String>]
+								[While:Void]
+									[Binop:Bool]
+										[Local `(25492):Int:Int]
+										<
+										[Field:Int]
+											[Local `(25493):Array<String>:Array<String>]
+											[FInstance:Int]
+												Array<String>
+												length:Int
+									[Block:Void]
+										[Var v(25494):String]
+											[Array:String]
+												[Local `(25493):Array<String>:Array<String>]
+												[Local `(25492):Int:Int]
+										[Unop:Int]
+											++
+											Prefix
+											[Local `(25492):Int:Int]
+										[Call:Int]
+											[Field:(x : String) -> Int]
+												[Local `(25491):Array<String>:Array<String>]
+												[FInstance:(x : String) -> Int]
+													Array<String>
+													push:(x : Array.T) -> Int
+											[Call:String]
+												[Function:(p : String) -> String]
+													[Arg:String] [Local p(25495):String]
+													[Block:Dynamic]
+														[Return:Dynamic]
+															[Binop:String]
+																[Const:String] ""
+																+
+																[Local p(25495):String:String]
+												[Local v(25494):String:String]
+							[Local `(25491):Array<String>:Array<String>]
+						[FInstance:(sep : String) -> String]
+							Array<String>
+							join:(sep : String) -> String
+					[Const:String] ", "
+			[Return:Dynamic]
+				[Binop:String]
+					[Binop:String]
+						[Binop:String]
+							[Binop:String]
+								[Const:String] "fragment(\""
+								+
+								[Local sql(25485):String:String]
+							+
+							[Const:String] "\", "
+						+
+						[Local paramPlaceholders(25496):String:String]
+					+
+					[Const:String] ")"
+
+	public static function compilePreload[Function:(associations : Array<reflaxe.elixir.helpers.PreloadInfo>) -> String]
+		[Arg:Array<reflaxe.elixir.helpers.PreloadInfo>] [Local associations(25497):Array<reflaxe.elixir.helpers.PreloadInfo>]
+		[Block:Dynamic]
+			[Var preloadParts(25498):Array<String>] [ArrayDecl:Array<String>]
+			[Block:Void]
+				[Var `(25510):Int] [Const:Int] 0
+				[While:Void]
+					[Binop:Bool]
+						[Local `(25510):Int:Int]
+						<
+						[Field:Int]
+							[Local associations(25497):Array<reflaxe.elixir.helpers.PreloadInfo>:Array<reflaxe.elixir.helpers.PreloadInfo>]
+							[FInstance:Int]
+								Array<reflaxe.elixir.helpers.PreloadInfo>
+								length:Int
+					[Block:Void]
+						[Var assoc(25499):reflaxe.elixir.helpers.PreloadInfo]
+							[Array:reflaxe.elixir.helpers.PreloadInfo]
+								[Local associations(25497):Array<reflaxe.elixir.helpers.PreloadInfo>:Array<reflaxe.elixir.helpers.PreloadInfo>]
+								[Local `(25510):Int:Int]
+						[Unop:Int]
+							++
+							Prefix
+							[Local `(25510):Int:Int]
+						[If:Void]
+							[Binop:Bool]
+								[Binop:Bool]
+									[Field:Null<Array<{ name : String, children : Array<String> }>>]
+										[Local assoc(25499):reflaxe.elixir.helpers.PreloadInfo:reflaxe.elixir.helpers.PreloadInfo]
+										[FAnon:Null<Array<{ name : String, children : Array<String> }>>] nested:Null<Array<{ name : String, children : Array<String> }>>
+									!=
+									[Const:Null<Array<{ name : String, children : Array<String> }>>] null
+								&&
+								[Binop:Bool]
+									[Field:Int]
+										[Field:Null<Array<{ name : String, children : Array<String> }>>]
+											[Local assoc(25499):reflaxe.elixir.helpers.PreloadInfo:reflaxe.elixir.helpers.PreloadInfo]
+											[FAnon:Null<Array<{ name : String, children : Array<String> }>>] nested:Null<Array<{ name : String, children : Array<String> }>>
+										[FInstance:Int]
+											Array<{ name : String, children : Array<String> }>
+											length:Int
+									>
+									[Const:Int] 0
+							[Then:Int] [Block:Int]
+								[Var nestedPreloads(25509):Array<String>]
+									[Block:Array<String>]
+										[Var _this(25502):Null<Array<{ name : String, children : Array<String> }>>]
+											[Field:Null<Array<{ name : String, children : Array<String> }>>]
+												[Local assoc(25499):reflaxe.elixir.helpers.PreloadInfo:reflaxe.elixir.helpers.PreloadInfo]
+												[FAnon:Null<Array<{ name : String, children : Array<String> }>>] nested:Null<Array<{ name : String, children : Array<String> }>>
+										[Block:Array<String>]
+											[Var `(25504):Array<String>] [ArrayDecl:Array<String>]
+											[Block:Void]
+												[Var `(25505):Int] [Const:Int] 0
+												[Var `(25506):Array<{ name : String, children : Array<String> }>] [Local _this(25502):Null<Array<{ name : String, children : Array<String> }>>:Array<{ name : String, children : Array<String> }>]
+												[While:Void]
+													[Binop:Bool]
+														[Local `(25505):Int:Int]
+														<
+														[Field:Int]
+															[Local `(25506):Array<{ name : String, children : Array<String> }>:Array<{ name : String, children : Array<String> }>]
+															[FInstance:Int]
+																Array<{ name : String, children : Array<String> }>
+																length:Int
+													[Block:Void]
+														[Var v(25507):{ name : String, children : Array<String> }]
+															[Array:{ name : String, children : Array<String> }]
+																[Local `(25506):Array<{ name : String, children : Array<String> }>:Array<{ name : String, children : Array<String> }>]
+																[Local `(25505):Int:Int]
+														[Unop:Int]
+															++
+															Prefix
+															[Local `(25505):Int:Int]
+														[Call:Int]
+															[Field:(x : String) -> Int]
+																[Local `(25504):Array<String>:Array<String>]
+																[FInstance:(x : String) -> Int]
+																	Array<String>
+																	push:(x : Array.T) -> Int
+															[Call:String]
+																[Function:(n : { name : String, children : Array<String> }) -> String]
+																	[Arg:{ name : String, children : Array<String> }] [Local n(25508):{ name : String, children : Array<String> }]
+																	[Block:Dynamic]
+																		[Return:Dynamic]
+																			[Binop:String]
+																				[Binop:String]
+																					[Binop:String]
+																						[Binop:String]
+																							[Const:String] ""
+																							+
+																							[Field:String]
+																								[Local n(25508):{ name : String, children : Array<String> }:{ name : String, children : Array<String> }]
+																								[FAnon:String] name:String
+																						+
+																						[Const:String] ": ["
+																					+
+																					[Call:String]
+																						[Field:(sep : String) -> String]
+																							[Field:Array<String>]
+																								[Local n(25508):{ name : String, children : Array<String> }:{ name : String, children : Array<String> }]
+																								[FAnon:Array<String>] children:Array<String>
+																							[FInstance:(sep : String) -> String]
+																								Array<String>
+																								join:(sep : String) -> String
+																						[Const:String] ", "
+																				+
+																				[Const:String] "]"
+																[Local v(25507):{ name : String, children : Array<String> }:{ name : String, children : Array<String> }]
+											[Local `(25504):Array<String>:Array<String>]
+								[Call:Int]
+									[Field:(x : String) -> Int]
+										[Local preloadParts(25498):Array<String>:Array<String>]
+										[FInstance:(x : String) -> Int]
+											Array<String>
+											push:(x : Array.T) -> Int
+									[Binop:String]
+										[Binop:String]
+											[Binop:String]
+												[Binop:String]
+													[Const:String] ""
+													+
+													[Field:String]
+														[Local assoc(25499):reflaxe.elixir.helpers.PreloadInfo:reflaxe.elixir.helpers.PreloadInfo]
+														[FAnon:String] name:String
+												+
+												[Const:String] ": ["
+											+
+											[Call:String]
+												[Field:(sep : String) -> String]
+													[Local nestedPreloads(25509):Array<String>:Array<String>]
+													[FInstance:(sep : String) -> String]
+														Array<String>
+														join:(sep : String) -> String
+												[Const:String] ", "
+										+
+										[Const:String] "]"
+							[Else:Int] [Block:Int]
+								[Call:Int]
+									[Field:(x : String) -> Int]
+										[Local preloadParts(25498):Array<String>:Array<String>]
+										[FInstance:(x : String) -> Int]
+											Array<String>
+											push:(x : Array.T) -> Int
+									[Binop:String]
+										[Const:String] ":"
+										+
+										[Field:String]
+											[Local assoc(25499):reflaxe.elixir.helpers.PreloadInfo:reflaxe.elixir.helpers.PreloadInfo]
+											[FAnon:String] name:String
+			[Return:Dynamic]
+				[Binop:String]
+					[Binop:String]
+						[Const:String] "preload(["
+						+
+						[Call:String]
+							[Field:(sep : String) -> String]
+								[Local preloadParts(25498):Array<String>:Array<String>]
+								[FInstance:(sep : String) -> String]
+									Array<String>
+									join:(sep : String) -> String
+							[Const:String] ", "
+					+
+					[Const:String] "])"
+
+	public static function compileComplexQuery[Function:(querySpec : reflaxe.elixir.helpers.ComplexQuerySpec) -> String]
+		[Arg:reflaxe.elixir.helpers.ComplexQuerySpec] [Local querySpec(25511):reflaxe.elixir.helpers.ComplexQuerySpec]
+		[Block:Dynamic]
+			[Var parts(25512):Array<String>] [ArrayDecl:Array<String>]
+			[Call:Int]
+				[Field:(x : String) -> Int]
+					[Local parts(25512):Array<String>:Array<String>]
+					[FInstance:(x : String) -> Int]
+						Array<String>
+						push:(x : Array.T) -> Int
+				[Binop:String]
+					[Binop:String]
+						[Binop:String]
+							[Binop:String]
+								[Const:String] "from "
+								+
+								[Field:String]
+									[Local querySpec(25511):reflaxe.elixir.helpers.ComplexQuerySpec:reflaxe.elixir.helpers.ComplexQuerySpec]
+									[FAnon:String] binding:String
+							+
+							[Const:String] " in "
+						+
+						[Field:String]
+							[Local querySpec(25511):reflaxe.elixir.helpers.ComplexQuerySpec:reflaxe.elixir.helpers.ComplexQuerySpec]
+							[FAnon:String] schema:String
+					+
+					[If:String]
+						[Binop:Bool]
+							[Field:Null<String>]
+								[Local querySpec(25511):reflaxe.elixir.helpers.ComplexQuerySpec:reflaxe.elixir.helpers.ComplexQuerySpec]
+								[FAnon:Null<String>] asClause:Null<String>
+							!=
+							[Const:Null<String>] null
+						[Then:String] [Block:String]
+							[Binop:String]
+								[Const:String] ", as: :"
+								+
+								[Field:Null<String>]
+									[Local querySpec(25511):reflaxe.elixir.helpers.ComplexQuerySpec:reflaxe.elixir.helpers.ComplexQuerySpec]
+									[FAnon:Null<String>] asClause:Null<String>
+						[Else:String] [Block:String] [Const:String] ""
+			[Block:Void]
+				[Var `(25514):Int] [Const:Int] 0
+				[Var `(25515):Array<reflaxe.elixir.helpers.JoinSpec>]
+					[Field:Array<reflaxe.elixir.helpers.JoinSpec>]
+						[Local querySpec(25511):reflaxe.elixir.helpers.ComplexQuerySpec:reflaxe.elixir.helpers.ComplexQuerySpec]
+						[FAnon:Array<reflaxe.elixir.helpers.JoinSpec>] joins:Array<reflaxe.elixir.helpers.JoinSpec>
+				[While:Void]
+					[Binop:Bool]
+						[Local `(25514):Int:Int]
+						<
+						[Field:Int]
+							[Local `(25515):Array<reflaxe.elixir.helpers.JoinSpec>:Array<reflaxe.elixir.helpers.JoinSpec>]
+							[FInstance:Int]
+								Array<reflaxe.elixir.helpers.JoinSpec>
+								length:Int
+					[Block:Void]
+						[Var join(25513):reflaxe.elixir.helpers.JoinSpec]
+							[Array:reflaxe.elixir.helpers.JoinSpec]
+								[Local `(25515):Array<reflaxe.elixir.helpers.JoinSpec>:Array<reflaxe.elixir.helpers.JoinSpec>]
+								[Local `(25514):Int:Int]
+						[Unop:Int]
+							++
+							Prefix
+							[Local `(25514):Int:Int]
+						[Call:Int]
+							[Field:(x : String) -> Int]
+								[Local parts(25512):Array<String>:Array<String>]
+								[FInstance:(x : String) -> Int]
+									Array<String>
+									push:(x : Array.T) -> Int
+							[Call:String]
+								[Field:(joinType : String, bindings : Array<String>, schema : String, alias : String, onCondition : String, ?isLateral : Bool) -> String]
+									[TypeExpr reflaxe.elixir.helpers.EctoQueryAdvancedCompiler:Class<reflaxe.elixir.helpers.EctoQueryAdvancedCompiler>]
+									[FStatic:(joinType : String, bindings : Array<String>, schema : String, alias : String, onCondition : String, ?isLateral : Bool) -> String]
+										reflaxe.elixir.helpers.EctoQueryAdvancedCompiler
+										compileComplexJoin:(joinType : String, bindings : Array<String>, schema : String, alias : String, onCondition : String, ?isLateral : Bool) -> String
+								[Field:String]
+									[Local join(25513):reflaxe.elixir.helpers.JoinSpec:reflaxe.elixir.helpers.JoinSpec]
+									[FAnon:String] type:String
+								[Field:Array<String>]
+									[Local join(25513):reflaxe.elixir.helpers.JoinSpec:reflaxe.elixir.helpers.JoinSpec]
+									[FAnon:Array<String>] bindings:Array<String>
+								[Field:String]
+									[Local join(25513):reflaxe.elixir.helpers.JoinSpec:reflaxe.elixir.helpers.JoinSpec]
+									[FAnon:String] schema:String
+								[Field:String]
+									[Local join(25513):reflaxe.elixir.helpers.JoinSpec:reflaxe.elixir.helpers.JoinSpec]
+									[FAnon:String] alias:String
+								[Field:String]
+									[Local join(25513):reflaxe.elixir.helpers.JoinSpec:reflaxe.elixir.helpers.JoinSpec]
+									[FAnon:String] onCondition:String
+								[Field:Null<Bool>]
+									[Local join(25513):reflaxe.elixir.helpers.JoinSpec:reflaxe.elixir.helpers.JoinSpec]
+									[FAnon:Null<Bool>] isLateral:Null<Bool>
+			[If:Void]
+				[Binop:Bool]
+					[Field:Int]
+						[Field:Array<String>]
+							[Local querySpec(25511):reflaxe.elixir.helpers.ComplexQuerySpec:reflaxe.elixir.helpers.ComplexQuerySpec]
+							[FAnon:Array<String>] whereConditions:Array<String>
+						[FInstance:Int]
+							Array<String>
+							length:Int
+					>
+					[Const:Int] 0
+				[Then:Int] [Block:Int]
+					[Call:Int]
+						[Field:(x : String) -> Int]
+							[Local parts(25512):Array<String>:Array<String>]
+							[FInstance:(x : String) -> Int]
+								Array<String>
+								push:(x : Array.T) -> Int
+						[Binop:String]
+							[Binop:String]
+								[Binop:String]
+									[Binop:String]
+										[Const:String] "where(["
+										+
+										[Field:String]
+											[Local querySpec(25511):reflaxe.elixir.helpers.ComplexQuerySpec:reflaxe.elixir.helpers.ComplexQuerySpec]
+											[FAnon:String] binding:String
+									+
+									[Const:String] "], "
+								+
+								[Call:String]
+									[Field:(sep : String) -> String]
+										[Field:Array<String>]
+											[Local querySpec(25511):reflaxe.elixir.helpers.ComplexQuerySpec:reflaxe.elixir.helpers.ComplexQuerySpec]
+											[FAnon:Array<String>] whereConditions:Array<String>
+										[FInstance:(sep : String) -> String]
+											Array<String>
+											join:(sep : String) -> String
+									[Const:String] " and "
+							+
+							[Const:String] ")"
+			[If:Void]
+				[Binop:Bool]
+					[Field:Int]
+						[Field:Array<String>]
+							[Local querySpec(25511):reflaxe.elixir.helpers.ComplexQuerySpec:reflaxe.elixir.helpers.ComplexQuerySpec]
+							[FAnon:Array<String>] groupBy:Array<String>
+						[FInstance:Int]
+							Array<String>
+							length:Int
+					>
+					[Const:Int] 0
+				[Then:Void] [Block:Void]
+					[Call:Int]
+						[Field:(x : String) -> Int]
+							[Local parts(25512):Array<String>:Array<String>]
+							[FInstance:(x : String) -> Int]
+								Array<String>
+								push:(x : Array.T) -> Int
+						[Binop:String]
+							[Binop:String]
+								[Binop:String]
+									[Binop:String]
+										[Const:String] "group_by(["
+										+
+										[Field:String]
+											[Local querySpec(25511):reflaxe.elixir.helpers.ComplexQuerySpec:reflaxe.elixir.helpers.ComplexQuerySpec]
+											[FAnon:String] binding:String
+									+
+									[Const:String] "], ["
+								+
+								[Call:String]
+									[Field:(sep : String) -> String]
+										[Field:Array<String>]
+											[Local querySpec(25511):reflaxe.elixir.helpers.ComplexQuerySpec:reflaxe.elixir.helpers.ComplexQuerySpec]
+											[FAnon:Array<String>] groupBy:Array<String>
+										[FInstance:(sep : String) -> String]
+											Array<String>
+											join:(sep : String) -> String
+									[Const:String] ", "
+							+
+							[Const:String] "])"
+					[If:Void]
+						[Binop:Bool]
+							[Field:Null<String>]
+								[Local querySpec(25511):reflaxe.elixir.helpers.ComplexQuerySpec:reflaxe.elixir.helpers.ComplexQuerySpec]
+								[FAnon:Null<String>] having:Null<String>
+							!=
+							[Const:Null<String>] null
+						[Then:Int] [Block:Int]
+							[Call:Int]
+								[Field:(x : String) -> Int]
+									[Local parts(25512):Array<String>:Array<String>]
+									[FInstance:(x : String) -> Int]
+										Array<String>
+										push:(x : Array.T) -> Int
+								[Binop:String]
+									[Binop:String]
+										[Binop:String]
+											[Binop:String]
+												[Const:String] "having(["
+												+
+												[Field:String]
+													[Local querySpec(25511):reflaxe.elixir.helpers.ComplexQuerySpec:reflaxe.elixir.helpers.ComplexQuerySpec]
+													[FAnon:String] binding:String
+											+
+											[Const:String] "], "
+										+
+										[Field:Null<String>]
+											[Local querySpec(25511):reflaxe.elixir.helpers.ComplexQuerySpec:reflaxe.elixir.helpers.ComplexQuerySpec]
+											[FAnon:Null<String>] having:Null<String>
+									+
+									[Const:String] ")"
+			[If:Void]
+				[Binop:Bool]
+					[Field:Int]
+						[Field:Array<{ field : String, direction : String }>]
+							[Local querySpec(25511):reflaxe.elixir.helpers.ComplexQuerySpec:reflaxe.elixir.helpers.ComplexQuerySpec]
+							[FAnon:Array<{ field : String, direction : String }>] orderBy:Array<{ field : String, direction : String }>
+						[FInstance:Int]
+							Array<{ field : String, direction : String }>
+							length:Int
+					>
+					[Const:Int] 0
+				[Then:Int] [Block:Int]
+					[Var orderClauses(25525):Array<String>]
+						[Block:Array<String>]
+							[Var _this(25518):Array<{ field : String, direction : String }>]
+								[Field:Array<{ field : String, direction : String }>]
+									[Local querySpec(25511):reflaxe.elixir.helpers.ComplexQuerySpec:reflaxe.elixir.helpers.ComplexQuerySpec]
+									[FAnon:Array<{ field : String, direction : String }>] orderBy:Array<{ field : String, direction : String }>
+							[Block:Array<String>]
+								[Var `(25520):Array<String>] [ArrayDecl:Array<String>]
+								[Block:Void]
+									[Var `(25521):Int] [Const:Int] 0
+									[Var `(25522):Array<{ field : String, direction : String }>] [Local _this(25518):Array<{ field : String, direction : String }>:Array<{ field : String, direction : String }>]
+									[While:Void]
+										[Binop:Bool]
+											[Local `(25521):Int:Int]
+											<
+											[Field:Int]
+												[Local `(25522):Array<{ field : String, direction : String }>:Array<{ field : String, direction : String }>]
+												[FInstance:Int]
+													Array<{ field : String, direction : String }>
+													length:Int
+										[Block:Void]
+											[Var v(25523):{ field : String, direction : String }]
+												[Array:{ field : String, direction : String }]
+													[Local `(25522):Array<{ field : String, direction : String }>:Array<{ field : String, direction : String }>]
+													[Local `(25521):Int:Int]
+											[Unop:Int]
+												++
+												Prefix
+												[Local `(25521):Int:Int]
+											[Call:Int]
+												[Field:(x : String) -> Int]
+													[Local `(25520):Array<String>:Array<String>]
+													[FInstance:(x : String) -> Int]
+														Array<String>
+														push:(x : Array.T) -> Int
+												[Call:String]
+													[Function:(o : { field : String, direction : String }) -> String]
+														[Arg:{ field : String, direction : String }] [Local o(25524):{ field : String, direction : String }]
+														[Block:Dynamic]
+															[Return:Dynamic]
+																[Binop:String]
+																	[Binop:String]
+																		[Binop:String]
+																			[Const:String] ""
+																			+
+																			[Field:String]
+																				[Local o(25524):{ field : String, direction : String }:{ field : String, direction : String }]
+																				[FAnon:String] direction:String
+																		+
+																		[Const:String] ": "
+																	+
+																	[Field:String]
+																		[Local o(25524):{ field : String, direction : String }:{ field : String, direction : String }]
+																		[FAnon:String] field:String
+													[Local v(25523):{ field : String, direction : String }:{ field : String, direction : String }]
+								[Local `(25520):Array<String>:Array<String>]
+					[Call:Int]
+						[Field:(x : String) -> Int]
+							[Local parts(25512):Array<String>:Array<String>]
+							[FInstance:(x : String) -> Int]
+								Array<String>
+								push:(x : Array.T) -> Int
+						[Binop:String]
+							[Binop:String]
+								[Binop:String]
+									[Binop:String]
+										[Const:String] "order_by(["
+										+
+										[Field:String]
+											[Local querySpec(25511):reflaxe.elixir.helpers.ComplexQuerySpec:reflaxe.elixir.helpers.ComplexQuerySpec]
+											[FAnon:String] binding:String
+									+
+									[Const:String] "], ["
+								+
+								[Call:String]
+									[Field:(sep : String) -> String]
+										[Local orderClauses(25525):Array<String>:Array<String>]
+										[FInstance:(sep : String) -> String]
+											Array<String>
+											join:(sep : String) -> String
+									[Const:String] ", "
+							+
+							[Const:String] "])"
+			[If:Void]
+				[Binop:Bool]
+					[Field:Null<Int>]
+						[Local querySpec(25511):reflaxe.elixir.helpers.ComplexQuerySpec:reflaxe.elixir.helpers.ComplexQuerySpec]
+						[FAnon:Null<Int>] limit:Null<Int>
+					!=
+					[Const:Null<Int>] null
+				[Then:Int] [Block:Int]
+					[Call:Int]
+						[Field:(x : String) -> Int]
+							[Local parts(25512):Array<String>:Array<String>]
+							[FInstance:(x : String) -> Int]
+								Array<String>
+								push:(x : Array.T) -> Int
+						[Binop:String]
+							[Binop:String]
+								[Const:String] "limit("
+								+
+								[Field:Null<Int>]
+									[Local querySpec(25511):reflaxe.elixir.helpers.ComplexQuerySpec:reflaxe.elixir.helpers.ComplexQuerySpec]
+									[FAnon:Null<Int>] limit:Null<Int>
+							+
+							[Const:String] ")"
+			[If:Void]
+				[Binop:Bool]
+					[Field:Null<Int>]
+						[Local querySpec(25511):reflaxe.elixir.helpers.ComplexQuerySpec:reflaxe.elixir.helpers.ComplexQuerySpec]
+						[FAnon:Null<Int>] offset:Null<Int>
+					!=
+					[Const:Null<Int>] null
+				[Then:Int] [Block:Int]
+					[Call:Int]
+						[Field:(x : String) -> Int]
+							[Local parts(25512):Array<String>:Array<String>]
+							[FInstance:(x : String) -> Int]
+								Array<String>
+								push:(x : Array.T) -> Int
+						[Binop:String]
+							[Binop:String]
+								[Const:String] "offset("
+								+
+								[Field:Null<Int>]
+									[Local querySpec(25511):reflaxe.elixir.helpers.ComplexQuerySpec:reflaxe.elixir.helpers.ComplexQuerySpec]
+									[FAnon:Null<Int>] offset:Null<Int>
+							+
+							[Const:String] ")"
+			[If:Void]
+				[Binop:Bool]
+					[Field:Int]
+						[Field:Array<reflaxe.elixir.helpers.PreloadInfo>]
+							[Local querySpec(25511):reflaxe.elixir.helpers.ComplexQuerySpec:reflaxe.elixir.helpers.ComplexQuerySpec]
+							[FAnon:Array<reflaxe.elixir.helpers.PreloadInfo>] preloads:Array<reflaxe.elixir.helpers.PreloadInfo>
+						[FInstance:Int]
+							Array<reflaxe.elixir.helpers.PreloadInfo>
+							length:Int
+					>
+					[Const:Int] 0
+				[Then:Int] [Block:Int]
+					[Call:Int]
+						[Field:(x : String) -> Int]
+							[Local parts(25512):Array<String>:Array<String>]
+							[FInstance:(x : String) -> Int]
+								Array<String>
+								push:(x : Array.T) -> Int
+						[Call:String]
+							[Field:(associations : Array<reflaxe.elixir.helpers.PreloadInfo>) -> String]
+								[TypeExpr reflaxe.elixir.helpers.EctoQueryAdvancedCompiler:Class<reflaxe.elixir.helpers.EctoQueryAdvancedCompiler>]
+								[FStatic:(associations : Array<reflaxe.elixir.helpers.PreloadInfo>) -> String]
+									reflaxe.elixir.helpers.EctoQueryAdvancedCompiler
+									compilePreload:(associations : Array<reflaxe.elixir.helpers.PreloadInfo>) -> String
+							[Field:Array<reflaxe.elixir.helpers.PreloadInfo>]
+								[Local querySpec(25511):reflaxe.elixir.helpers.ComplexQuerySpec:reflaxe.elixir.helpers.ComplexQuerySpec]
+								[FAnon:Array<reflaxe.elixir.helpers.PreloadInfo>] preloads:Array<reflaxe.elixir.helpers.PreloadInfo>
+			[If:Void]
+				[Binop:Bool]
+					[Field:Null<String>]
+						[Local querySpec(25511):reflaxe.elixir.helpers.ComplexQuerySpec:reflaxe.elixir.helpers.ComplexQuerySpec]
+						[FAnon:Null<String>] selectClause:Null<String>
+					!=
+					[Const:Null<String>] null
+				[Then:Int] [Block:Int]
+					[Call:Int]
+						[Field:(x : String) -> Int]
+							[Local parts(25512):Array<String>:Array<String>]
+							[FInstance:(x : String) -> Int]
+								Array<String>
+								push:(x : Array.T) -> Int
+						[Binop:String]
+							[Binop:String]
+								[Binop:String]
+									[Binop:String]
+										[Const:String] "select(["
+										+
+										[Field:String]
+											[Local querySpec(25511):reflaxe.elixir.helpers.ComplexQuerySpec:reflaxe.elixir.helpers.ComplexQuerySpec]
+											[FAnon:String] binding:String
+									+
+									[Const:String] "], "
+								+
+								[Field:Null<String>]
+									[Local querySpec(25511):reflaxe.elixir.helpers.ComplexQuerySpec:reflaxe.elixir.helpers.ComplexQuerySpec]
+									[FAnon:Null<String>] selectClause:Null<String>
+							+
+							[Const:String] ")"
+			[Return:Dynamic]
+				[Call:String]
+					[Field:(sep : String) -> String]
+						[Local parts(25512):Array<String>:Array<String>]
+						[FInstance:(sep : String) -> String]
+							Array<String>
+							join:(sep : String) -> String
+					[Const:String] "\n|> "
+
+	public static function generateAdvancedQueryModule[Function:(className : String, functions : Array<reflaxe.elixir.helpers.AdvancedQueryFunction>) -> String]
+		[Arg:String] [Local className(25526):String]
+		[Arg:Array<reflaxe.elixir.helpers.AdvancedQueryFunction>] [Local functions(25527):Array<reflaxe.elixir.helpers.AdvancedQueryFunction>]
+		[Block:Dynamic]
+			[Var moduleName(25528):String] [Local className(25526):String:String]
+			[Var functionDefs(25529):Array<String>] [ArrayDecl:Array<String>]
+			[Block:Void]
+				[Var `(25534):Int] [Const:Int] 0
+				[While:Void]
+					[Binop:Bool]
+						[Local `(25534):Int:Int]
+						<
+						[Field:Int]
+							[Local functions(25527):Array<reflaxe.elixir.helpers.AdvancedQueryFunction>:Array<reflaxe.elixir.helpers.AdvancedQueryFunction>]
+							[FInstance:Int]
+								Array<reflaxe.elixir.helpers.AdvancedQueryFunction>
+								length:Int
+					[Block:Void]
+						[Var func(25530):reflaxe.elixir.helpers.AdvancedQueryFunction]
+							[Array:reflaxe.elixir.helpers.AdvancedQueryFunction]
+								[Local functions(25527):Array<reflaxe.elixir.helpers.AdvancedQueryFunction>:Array<reflaxe.elixir.helpers.AdvancedQueryFunction>]
+								[Local `(25534):Int:Int]
+						[Unop:Int]
+							++
+							Prefix
+							[Local `(25534):Int:Int]
+						[Var returnValue(25533):String]
+							[Meta:String]
+								:ast(switch (func.queryType) {
+	case "subquery":
+		compileSubquery(func.queryBody);	
+	case "cte":
+		compileCTE(func.name, func.queryBody);	
+	case "window":
+		func.queryBody;	
+	case "complex_join":
+		func.queryBody;	
+	case "multi":
+		func.queryBody;	
+	case "aggregation":
+		func.queryBody;	
+	case "fragment":
+		func.queryBody;	
+	case "preload":
+		func.queryBody;	
+	default:
+		func.queryBody;	
+})
+								[Block:String]
+									[Var `(25532):String]
+										[Field:String]
+											[Local func(25530):reflaxe.elixir.helpers.AdvancedQueryFunction:reflaxe.elixir.helpers.AdvancedQueryFunction]
+											[FAnon:String] queryType:String
+									[Switch:String]
+										[Local `(25532):String:String]
+										[Case:String]
+											[Const:String] "aggregation"
+											[Block:String]
+												[Block:String]
+													[Field:String]
+														[Local func(25530):reflaxe.elixir.helpers.AdvancedQueryFunction:reflaxe.elixir.helpers.AdvancedQueryFunction]
+														[FAnon:String] queryBody:String
+										[Case:String]
+											[Const:String] "complex_join"
+											[Block:String]
+												[Block:String]
+													[Field:String]
+														[Local func(25530):reflaxe.elixir.helpers.AdvancedQueryFunction:reflaxe.elixir.helpers.AdvancedQueryFunction]
+														[FAnon:String] queryBody:String
+										[Case:String]
+											[Const:String] "cte"
+											[Block:String]
+												[Block:String]
+													[Call:String]
+														[Field:(cteName : String, cteQuery : String, ?isRecursive : Bool) -> String]
+															[TypeExpr reflaxe.elixir.helpers.EctoQueryAdvancedCompiler:Class<reflaxe.elixir.helpers.EctoQueryAdvancedCompiler>]
+															[FStatic:(cteName : String, cteQuery : String, ?isRecursive : Bool) -> String]
+																reflaxe.elixir.helpers.EctoQueryAdvancedCompiler
+																compileCTE:(cteName : String, cteQuery : String, ?isRecursive : Bool) -> String
+														[Field:String]
+															[Local func(25530):reflaxe.elixir.helpers.AdvancedQueryFunction:reflaxe.elixir.helpers.AdvancedQueryFunction]
+															[FAnon:String] name:String
+														[Field:String]
+															[Local func(25530):reflaxe.elixir.helpers.AdvancedQueryFunction:reflaxe.elixir.helpers.AdvancedQueryFunction]
+															[FAnon:String] queryBody:String
+														[Const:Null<Bool>] null
+										[Case:String]
+											[Const:String] "fragment"
+											[Block:String]
+												[Block:String]
+													[Field:String]
+														[Local func(25530):reflaxe.elixir.helpers.AdvancedQueryFunction:reflaxe.elixir.helpers.AdvancedQueryFunction]
+														[FAnon:String] queryBody:String
+										[Case:String]
+											[Const:String] "multi"
+											[Block:String]
+												[Block:String]
+													[Field:String]
+														[Local func(25530):reflaxe.elixir.helpers.AdvancedQueryFunction:reflaxe.elixir.helpers.AdvancedQueryFunction]
+														[FAnon:String] queryBody:String
+										[Case:String]
+											[Const:String] "preload"
+											[Block:String]
+												[Block:String]
+													[Field:String]
+														[Local func(25530):reflaxe.elixir.helpers.AdvancedQueryFunction:reflaxe.elixir.helpers.AdvancedQueryFunction]
+														[FAnon:String] queryBody:String
+										[Case:String]
+											[Const:String] "subquery"
+											[Block:String]
+												[Block:String]
+													[Call:String]
+														[Field:(subqueryExpr : String, ?targetBinding : String) -> String]
+															[TypeExpr reflaxe.elixir.helpers.EctoQueryAdvancedCompiler:Class<reflaxe.elixir.helpers.EctoQueryAdvancedCompiler>]
+															[FStatic:(subqueryExpr : String, ?targetBinding : String) -> String]
+																reflaxe.elixir.helpers.EctoQueryAdvancedCompiler
+																compileSubquery:(subqueryExpr : String, ?targetBinding : String) -> String
+														[Field:String]
+															[Local func(25530):reflaxe.elixir.helpers.AdvancedQueryFunction:reflaxe.elixir.helpers.AdvancedQueryFunction]
+															[FAnon:String] queryBody:String
+														[Const:Null<String>] null
+										[Case:String]
+											[Const:String] "window"
+											[Block:String]
+												[Block:String]
+													[Field:String]
+														[Local func(25530):reflaxe.elixir.helpers.AdvancedQueryFunction:reflaxe.elixir.helpers.AdvancedQueryFunction]
+														[FAnon:String] queryBody:String
+										[Default:String]
+											[Block:String]
+												[Field:String]
+													[Local func(25530):reflaxe.elixir.helpers.AdvancedQueryFunction:reflaxe.elixir.helpers.AdvancedQueryFunction]
+													[FAnon:String] queryBody:String
+						[Call:Int]
+							[Field:(x : String) -> Int]
+								[Local functionDefs(25529):Array<String>:Array<String>]
+								[FInstance:(x : String) -> Int]
+									Array<String>
+									push:(x : Array.T) -> Int
+							[Binop:String]
+								[Binop:String]
+									[Binop:String]
+										[Binop:String]
+											[Binop:String]
+												[Const:String] "  @doc \"\"\"\n"
+												+
+												[Binop:String]
+													[Binop:String]
+														[Const:String] "  "
+														+
+														[Field:String]
+															[Local func(25530):reflaxe.elixir.helpers.AdvancedQueryFunction:reflaxe.elixir.helpers.AdvancedQueryFunction]
+															[FAnon:String] description:String
+													+
+													[Const:String] "\n"
+											+
+											[Const:String] "  \"\"\"\n"
+										+
+										[Binop:String]
+											[Binop:String]
+												[Const:String] "  def "
+												+
+												[Field:String]
+													[Local func(25530):reflaxe.elixir.helpers.AdvancedQueryFunction:reflaxe.elixir.helpers.AdvancedQueryFunction]
+													[FAnon:String] name:String
+											+
+											[Const:String] "() do\n"
+									+
+									[Binop:String]
+										[Binop:String]
+											[Const:String] "    "
+											+
+											[Local returnValue(25533):String:String]
+										+
+										[Const:String] "\n"
+								+
+								[Const:String] "  end"
+			[Return:Dynamic]
+				[Binop:String]
+					[Binop:String]
+						[Binop:String]
+							[Binop:String]
+								[Binop:String]
+									[Binop:String]
+										[Binop:String]
+											[Binop:String]
+												[Binop:String]
+													[Binop:String]
+														[Binop:String]
+															[Binop:String]
+																[Binop:String]
+																	[Binop:String]
+																		[Const:String] "defmodule "
+																		+
+																		[Local moduleName(25528):String:String]
+																	+
+																	[Const:String] " do\n"
+																+
+																[Const:String] "  @moduledoc \"\"\"\n"
+															+
+															[Const:String] "  Advanced Ecto query functions generated from Haxe\n"
+														+
+														[Const:String] "  \n"
+													+
+													[Const:String] "  Provides sophisticated query patterns including subqueries,\n"
+												+
+												[Const:String] "  CTEs, window functions, and complex joins with type safety.\n"
+											+
+											[Const:String] "  \"\"\"\n"
+										+
+										[Const:String] "  \n"
+									+
+									[Const:String] "  import Ecto.Query\n"
+								+
+								[Const:String] "  alias Ecto.Multi\n"
+							+
+							[Const:String] "  \n"
+						+
+						[Call:String]
+							[Field:(sep : String) -> String]
+								[Local functionDefs(25529):Array<String>:Array<String>]
+								[FInstance:(sep : String) -> String]
+									Array<String>
+									join:(sep : String) -> String
+							[Const:String] "\n\n"
+					+
+					[Const:String] "\nend"
+}

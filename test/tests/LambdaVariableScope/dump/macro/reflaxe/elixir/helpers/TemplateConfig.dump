@@ -1,0 +1,1 @@
+typedef reflaxe.elixir.helpers.TemplateConfig = { templateFile : Null<String> }

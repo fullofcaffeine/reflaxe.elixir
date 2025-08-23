@@ -1,0 +1,1747 @@
+@:nullSafety(Off)
+class reflaxe.elixir.helpers.TempVariableOptimizer {
+
+	public function new[Function:(compiler : reflaxe.elixir.ElixirCompiler) -> Void]
+		[Arg:reflaxe.elixir.ElixirCompiler] [Local compiler(32909):reflaxe.elixir.ElixirCompiler]
+		[Block:reflaxe.elixir.ElixirCompiler]
+			[Binop:reflaxe.elixir.ElixirCompiler]
+				[Field:reflaxe.elixir.ElixirCompiler]
+					[Const:reflaxe.elixir.helpers.TempVariableOptimizer] this
+					[FInstance:reflaxe.elixir.ElixirCompiler]
+						reflaxe.elixir.helpers.TempVariableOptimizer
+						compiler:reflaxe.elixir.ElixirCompiler
+				=
+				[Local compiler(32909):reflaxe.elixir.ElixirCompiler:reflaxe.elixir.ElixirCompiler]
+
+	var compiler:reflaxe.elixir.ElixirCompiler;
+
+	public function detectTempVariablePattern[Function:(expressions : Array<haxe.macro.TypedExpr>) -> Null<String>]
+		[Arg:Array<haxe.macro.TypedExpr>] [Local expressions(32910):Array<haxe.macro.TypedExpr>]
+		[Block:Dynamic]
+			[If:Void]
+				[Binop:Bool]
+					[Field:Int]
+						[Local expressions(32910):Array<haxe.macro.TypedExpr>:Array<haxe.macro.TypedExpr>]
+						[FInstance:Int]
+							Array<haxe.macro.TypedExpr>
+							length:Int
+					<
+					[Const:Int] 3
+				[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [Const:Null<String>] null
+			[Var first(32911):haxe.macro.TypedExpr]
+				[Array:haxe.macro.TypedExpr]
+					[Local expressions(32910):Array<haxe.macro.TypedExpr>:Array<haxe.macro.TypedExpr>]
+					[Const:Int] 0
+			[Var last(32912):haxe.macro.TypedExpr]
+				[Array:haxe.macro.TypedExpr]
+					[Local expressions(32910):Array<haxe.macro.TypedExpr>:Array<haxe.macro.TypedExpr>]
+					[Binop:Int]
+						[Field:Int]
+							[Local expressions(32910):Array<haxe.macro.TypedExpr>:Array<haxe.macro.TypedExpr>]
+							[FInstance:Int]
+								Array<haxe.macro.TypedExpr>
+								length:Int
+						-
+						[Const:Int] 1
+			[Var tempVarName(32913):String] [Const:String] null
+			[Meta:Void]
+				:ast(switch (first.expr) {
+	case TVar(tvar, expr):
+		var varName = compiler.getOriginalVarName(tvar);
+		if ((varName.indexOf("temp_") == 0 || varName.indexOf("temp") == 0) && (expr == null || isNilExpression(expr))) {
+			tempVarName = varName;
+		} else {
+			return null;
+		};	
+	case _:
+		return null;	
+})
+				[Block:Void]
+					[Var `(32927):haxe.macro.TypedExprDef]
+						[Field:haxe.macro.TypedExprDef]
+							[Local first(32911):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+							[FAnon:haxe.macro.TypedExprDef] expr:haxe.macro.TypedExprDef
+					[If:Void]
+						[Binop:Bool]
+							[EnumIndex:Int] [Local `(32927):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+							==
+							[Const:Int] 13
+						[Then:Void] [Block:Void]
+							[Var `(32928):haxe.macro.TVar]
+								[EnumParameter:haxe.macro.TVar]
+									[Local `(32927):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+									TVar
+									0
+							[Var `(32929):Null<haxe.macro.TypedExpr>]
+								[EnumParameter:Null<haxe.macro.TypedExpr>]
+									[Local `(32927):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+									TVar
+									1
+							[Block:Void]
+								[Var tvar(32930):haxe.macro.TVar] [Local `(32928):haxe.macro.TVar:haxe.macro.TVar]
+								[Var expr(32931):Null<haxe.macro.TypedExpr>] [Local `(32929):Null<haxe.macro.TypedExpr>:Null<haxe.macro.TypedExpr>]
+								[Block:Void]
+									[Var varName(32932):String]
+										[Call:String]
+											[Field:(v : haxe.macro.TVar) -> String]
+												[Field:reflaxe.elixir.ElixirCompiler]
+													[Const:reflaxe.elixir.helpers.TempVariableOptimizer] this
+													[FInstance:reflaxe.elixir.ElixirCompiler]
+														reflaxe.elixir.helpers.TempVariableOptimizer
+														compiler:reflaxe.elixir.ElixirCompiler
+												[FInstance:(v : haxe.macro.TVar) -> String]
+													reflaxe.elixir.ElixirCompiler
+													getOriginalVarName:(v : haxe.macro.TVar) -> String
+											[Local tvar(32930):haxe.macro.TVar:haxe.macro.TVar]
+									[If:Void]
+										[Binop:Bool]
+											[Parenthesis:Bool]
+												[Binop:Bool]
+													[Binop:Bool]
+														[Call:Int]
+															[Field:(str : String, ?startIndex : Null<Int>) -> Int]
+																[Local varName(32932):String:String]
+																[FInstance:(str : String, ?startIndex : Null<Int>) -> Int]
+																	String
+																	indexOf:(str : String, ?startIndex : Null<Int>) -> Int
+															[Const:String] "temp_"
+															[Const:Null<Int>] null
+														==
+														[Const:Int] 0
+													||
+													[Binop:Bool]
+														[Call:Int]
+															[Field:(str : String, ?startIndex : Null<Int>) -> Int]
+																[Local varName(32932):String:String]
+																[FInstance:(str : String, ?startIndex : Null<Int>) -> Int]
+																	String
+																	indexOf:(str : String, ?startIndex : Null<Int>) -> Int
+															[Const:String] "temp"
+															[Const:Null<Int>] null
+														==
+														[Const:Int] 0
+											&&
+											[Parenthesis:Bool]
+												[Binop:Bool]
+													[Binop:Bool]
+														[Local expr(32931):Null<haxe.macro.TypedExpr>:Null<haxe.macro.TypedExpr>]
+														==
+														[Const:Null<haxe.macro.TypedExpr>] null
+													||
+													[Call:Bool]
+														[Field:(expr : haxe.macro.TypedExpr) -> Bool]
+															[Const:reflaxe.elixir.helpers.TempVariableOptimizer] this
+															[FInstance:(expr : haxe.macro.TypedExpr) -> Bool]
+																reflaxe.elixir.helpers.TempVariableOptimizer
+																isNilExpression:(expr : haxe.macro.TypedExpr) -> Bool
+														[Local expr(32931):Null<haxe.macro.TypedExpr>:Null<haxe.macro.TypedExpr>]
+										[Then:String] [Block:String]
+											[Binop:String]
+												[Local tempVarName(32913):String:String]
+												=
+												[Local varName(32932):String:String]
+										[Else:Dynamic] [Block:Dynamic] [Return:Dynamic] [Const:Null<String>] null
+						[Else:Dynamic] [Block:Dynamic] [Return:Dynamic] [Const:Null<String>] null
+			[Var lastVarName(32933):String] [Const:String] null
+			[Meta:Void]
+				:ast(switch (last.expr) {
+	case TLocal(v):
+		lastVarName = compiler.getOriginalVarName(v);	
+	case TReturn(expr):
+		switch (expr.expr) {
+			case TLocal(v):
+				lastVarName = compiler.getOriginalVarName(v);			
+			case _:
+		};	
+	case _:
+})
+				[Block:Void]
+					[Var `(32945):haxe.macro.TypedExprDef]
+						[Field:haxe.macro.TypedExprDef]
+							[Local last(32912):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+							[FAnon:haxe.macro.TypedExprDef] expr:haxe.macro.TypedExprDef
+					[Switch:Void]
+						[EnumIndex:Int] [Local `(32945):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+						[Case:String]
+							[Const:Int] 1
+							[Block:String]
+								[Var `(32946):haxe.macro.TVar]
+									[EnumParameter:haxe.macro.TVar]
+										[Local `(32945):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+										TLocal
+										0
+								[Block:String]
+									[Var v(32947):haxe.macro.TVar] [Local `(32946):haxe.macro.TVar:haxe.macro.TVar]
+									[Block:String]
+										[Binop:String]
+											[Local lastVarName(32933):String:String]
+											=
+											[Call:String]
+												[Field:(v : haxe.macro.TVar) -> String]
+													[Field:reflaxe.elixir.ElixirCompiler]
+														[Const:reflaxe.elixir.helpers.TempVariableOptimizer] this
+														[FInstance:reflaxe.elixir.ElixirCompiler]
+															reflaxe.elixir.helpers.TempVariableOptimizer
+															compiler:reflaxe.elixir.ElixirCompiler
+													[FInstance:(v : haxe.macro.TVar) -> String]
+														reflaxe.elixir.ElixirCompiler
+														getOriginalVarName:(v : haxe.macro.TVar) -> String
+												[Local v(32947):haxe.macro.TVar:haxe.macro.TVar]
+						[Case:Void]
+							[Const:Int] 20
+							[Block:Void]
+								[Var `(32948):Null<haxe.macro.TypedExpr>]
+									[EnumParameter:Null<haxe.macro.TypedExpr>]
+										[Local `(32945):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+										TReturn
+										0
+								[Block:Void]
+									[Var expr(32949):Null<haxe.macro.TypedExpr>] [Local `(32948):Null<haxe.macro.TypedExpr>:Null<haxe.macro.TypedExpr>]
+									[Block:Void]
+										[Meta:Void]
+											:ast(switch (expr.expr) {
+	case TLocal(v):
+		lastVarName = compiler.getOriginalVarName(v);	
+	case _:
+})
+											[Block:Void]
+												[Var `(32950):haxe.macro.TypedExprDef]
+													[Field:haxe.macro.TypedExprDef]
+														[Local expr(32949):Null<haxe.macro.TypedExpr>:Null<haxe.macro.TypedExpr>]
+														[FAnon:haxe.macro.TypedExprDef] expr:haxe.macro.TypedExprDef
+												[If:Void]
+													[Binop:Bool]
+														[EnumIndex:Int] [Local `(32950):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+														==
+														[Const:Int] 1
+													[Then:String] [Block:String]
+														[Var `(32951):haxe.macro.TVar]
+															[EnumParameter:haxe.macro.TVar]
+																[Local `(32950):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+																TLocal
+																0
+														[Block:String]
+															[Var v(32952):haxe.macro.TVar] [Local `(32951):haxe.macro.TVar:haxe.macro.TVar]
+															[Block:String]
+																[Binop:String]
+																	[Local lastVarName(32933):String:String]
+																	=
+																	[Call:String]
+																		[Field:(v : haxe.macro.TVar) -> String]
+																			[Field:reflaxe.elixir.ElixirCompiler]
+																				[Const:reflaxe.elixir.helpers.TempVariableOptimizer] this
+																				[FInstance:reflaxe.elixir.ElixirCompiler]
+																					reflaxe.elixir.helpers.TempVariableOptimizer
+																					compiler:reflaxe.elixir.ElixirCompiler
+																			[FInstance:(v : haxe.macro.TVar) -> String]
+																				reflaxe.elixir.ElixirCompiler
+																				getOriginalVarName:(v : haxe.macro.TVar) -> String
+																		[Local v(32952):haxe.macro.TVar:haxe.macro.TVar]
+													[Else:Void] [Block:Void]
+						[Default:Void] [Block:Void]
+			[If:Void]
+				[Binop:Bool]
+					[Local lastVarName(32933):String:String]
+					==
+					[Local tempVarName(32913):String:String]
+				[Then:Void] [Block:Void]
+					[Block:Void]
+						[Var `(32968):Int] [Const:Int] 1
+						[Var `(32969):Int]
+							[Binop:Int]
+								[Field:Int]
+									[Local expressions(32910):Array<haxe.macro.TypedExpr>:Array<haxe.macro.TypedExpr>]
+									[FInstance:Int]
+										Array<haxe.macro.TypedExpr>
+										length:Int
+								-
+								[Const:Int] 1
+						[While:Void]
+							[Binop:Bool]
+								[Local `(32968):Int:Int]
+								<
+								[Local `(32969):Int:Int]
+							[Block:Void]
+								[Var i(32953):Int]
+									[Unop:Int]
+										++
+										Postfix
+										[Local `(32968):Int:Int]
+								[Meta:Void]
+									:ast(switch (expressions[i].expr) {
+	case TSwitch(_, _, _):
+		return tempVarName;	
+	case TIf(_, _, _):
+		return tempVarName;	
+	case _:
+})
+									[Block:Void]
+										[Var `(32961):haxe.macro.TypedExprDef]
+											[Field:haxe.macro.TypedExprDef]
+												[Array:haxe.macro.TypedExpr]
+													[Local expressions(32910):Array<haxe.macro.TypedExpr>:Array<haxe.macro.TypedExpr>]
+													[Local i(32953):Int:Int]
+												[FAnon:haxe.macro.TypedExprDef] expr:haxe.macro.TypedExprDef
+										[Switch:Void]
+											[EnumIndex:Int] [Local `(32961):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+											[Case:Dynamic]
+												[Const:Int] 16
+												[Block:Dynamic]
+													[Var `(32962):haxe.macro.TypedExpr]
+														[EnumParameter:haxe.macro.TypedExpr]
+															[Local `(32961):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+															TIf
+															0
+													[Var `(32963):haxe.macro.TypedExpr]
+														[EnumParameter:haxe.macro.TypedExpr]
+															[Local `(32961):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+															TIf
+															1
+													[Var `(32964):Null<haxe.macro.TypedExpr>]
+														[EnumParameter:Null<haxe.macro.TypedExpr>]
+															[Local `(32961):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+															TIf
+															2
+													[Block:Dynamic] [Return:Dynamic] [Local tempVarName(32913):String:String]
+											[Case:Dynamic]
+												[Const:Int] 18
+												[Block:Dynamic]
+													[Var `(32965):haxe.macro.TypedExpr]
+														[EnumParameter:haxe.macro.TypedExpr]
+															[Local `(32961):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+															TSwitch
+															0
+													[Var `(32966):Array<{ values : Array<haxe.macro.TypedExpr>, expr : haxe.macro.TypedExpr }>]
+														[EnumParameter:Array<{ values : Array<haxe.macro.TypedExpr>, expr : haxe.macro.TypedExpr }>]
+															[Local `(32961):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+															TSwitch
+															1
+													[Var `(32967):Null<haxe.macro.TypedExpr>]
+														[EnumParameter:Null<haxe.macro.TypedExpr>]
+															[Local `(32961):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+															TSwitch
+															2
+													[Block:Dynamic] [Return:Dynamic] [Local tempVarName(32913):String:String]
+											[Default:Void] [Block:Void]
+			[Return:Dynamic] [Const:Null<String>] null
+
+	public function optimizeTempVariablePattern[Function:(tempVarName : String, expressions : Array<haxe.macro.TypedExpr>) -> String]
+		[Arg:String] [Local tempVarName(32970):String]
+		[Arg:Array<haxe.macro.TypedExpr>] [Local expressions(32971):Array<haxe.macro.TypedExpr>]
+		[Block:Dynamic]
+			[Block:Void]
+				[Var `(33041):Int] [Const:Int] 1
+				[Var `(33042):Int]
+					[Binop:Int]
+						[Field:Int]
+							[Local expressions(32971):Array<haxe.macro.TypedExpr>:Array<haxe.macro.TypedExpr>]
+							[FInstance:Int]
+								Array<haxe.macro.TypedExpr>
+								length:Int
+						-
+						[Const:Int] 1
+				[While:Void]
+					[Binop:Bool]
+						[Local `(33041):Int:Int]
+						<
+						[Local `(33042):Int:Int]
+					[Block:Void]
+						[Var i(32972):Int]
+							[Unop:Int]
+								++
+								Postfix
+								[Local `(33041):Int:Int]
+						[Meta:Void]
+							:ast(switch (expressions[i].expr) {
+	case TSwitch(switchExpr, cases, defaultExpr):
+		var originalCaseArmContext = compiler.isCompilingCaseArm;
+		compiler.isCompilingCaseArm = true;
+		var result = compiler.compileSwitchExpression(switchExpr, cases, defaultExpr);
+		compiler.isCompilingCaseArm = originalCaseArmContext;
+		return result;	
+	case TIf(condition, thenExpr, elseExpr):
+		var conditionCompiled = compiler.compileExpression(condition);
+		var thenValue = extractValueFromTempAssignment(thenExpr, tempVarName);
+		var elseValue = extractValueFromTempAssignment(elseExpr, tempVarName);
+		if (thenValue != null && elseValue != null) {
+			return "if (${conditionCompiled}), do: ${thenValue}, else: ${elseValue}";
+		} else {
+			var originalCaseArmContext = compiler.isCompilingCaseArm;
+			compiler.isCompilingCaseArm = true;
+			var compiledIf = compiler.compileExpression(expressions[i]);
+			var result = "${tempVarName} = nil\n${compiledIf}";
+			compiler.isCompilingCaseArm = originalCaseArmContext;
+			return result;
+		};	
+	case _:
+})
+							[Block:Void]
+								[Var `(33020):haxe.macro.TypedExprDef]
+									[Field:haxe.macro.TypedExprDef]
+										[Array:haxe.macro.TypedExpr]
+											[Local expressions(32971):Array<haxe.macro.TypedExpr>:Array<haxe.macro.TypedExpr>]
+											[Local i(32972):Int:Int]
+										[FAnon:haxe.macro.TypedExprDef] expr:haxe.macro.TypedExprDef
+								[Switch:Void]
+									[EnumIndex:Int] [Local `(33020):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+									[Case:Void]
+										[Const:Int] 16
+										[Block:Void]
+											[Var `(33021):haxe.macro.TypedExpr]
+												[EnumParameter:haxe.macro.TypedExpr]
+													[Local `(33020):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+													TIf
+													0
+											[Var `(33022):haxe.macro.TypedExpr]
+												[EnumParameter:haxe.macro.TypedExpr]
+													[Local `(33020):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+													TIf
+													1
+											[Var `(33023):Null<haxe.macro.TypedExpr>]
+												[EnumParameter:Null<haxe.macro.TypedExpr>]
+													[Local `(33020):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+													TIf
+													2
+											[Block:Void]
+												[Var condition(33024):haxe.macro.TypedExpr] [Local `(33021):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+												[Var thenExpr(33025):haxe.macro.TypedExpr] [Local `(33022):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+												[Var elseExpr(33026):Null<haxe.macro.TypedExpr>] [Local `(33023):Null<haxe.macro.TypedExpr>:Null<haxe.macro.TypedExpr>]
+												[Block:Void]
+													[Var conditionCompiled(33027):Null<String>]
+														[Call:Null<String>]
+															[Field:(expr : haxe.macro.TypedExpr, ?topLevel : Bool) -> Null<String>]
+																[Field:reflaxe.elixir.ElixirCompiler]
+																	[Const:reflaxe.elixir.helpers.TempVariableOptimizer] this
+																	[FInstance:reflaxe.elixir.ElixirCompiler]
+																		reflaxe.elixir.helpers.TempVariableOptimizer
+																		compiler:reflaxe.elixir.ElixirCompiler
+																[FInstance:(expr : haxe.macro.TypedExpr, ?topLevel : Bool) -> Null<String>]
+																	reflaxe.elixir.ElixirCompiler
+																	compileExpression:(expr : haxe.macro.TypedExpr, ?topLevel : Bool) -> Null<String>
+															[Local condition(33024):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+															[Const:Null<Bool>] null
+													[Var thenValue(33028):Null<String>]
+														[Call:Null<String>]
+															[Field:(expr : haxe.macro.TypedExpr, tempVarName : String) -> Null<String>]
+																[Const:reflaxe.elixir.helpers.TempVariableOptimizer] this
+																[FInstance:(expr : haxe.macro.TypedExpr, tempVarName : String) -> Null<String>]
+																	reflaxe.elixir.helpers.TempVariableOptimizer
+																	extractValueFromTempAssignment:(expr : haxe.macro.TypedExpr, tempVarName : String) -> Null<String>
+															[Local thenExpr(33025):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+															[Local tempVarName(32970):String:String]
+													[Var elseValue(33029):Null<String>]
+														[Call:Null<String>]
+															[Field:(expr : haxe.macro.TypedExpr, tempVarName : String) -> Null<String>]
+																[Const:reflaxe.elixir.helpers.TempVariableOptimizer] this
+																[FInstance:(expr : haxe.macro.TypedExpr, tempVarName : String) -> Null<String>]
+																	reflaxe.elixir.helpers.TempVariableOptimizer
+																	extractValueFromTempAssignment:(expr : haxe.macro.TypedExpr, tempVarName : String) -> Null<String>
+															[Local elseExpr(33026):Null<haxe.macro.TypedExpr>:Null<haxe.macro.TypedExpr>]
+															[Local tempVarName(32970):String:String]
+													[If:Void]
+														[Binop:Bool]
+															[Binop:Bool]
+																[Local thenValue(33028):Null<String>:Null<String>]
+																!=
+																[Const:Null<String>] null
+															&&
+															[Binop:Bool]
+																[Local elseValue(33029):Null<String>:Null<String>]
+																!=
+																[Const:Null<String>] null
+														[Then:Dynamic] [Block:Dynamic]
+															[Return:Dynamic]
+																[Binop:String]
+																	[Binop:String]
+																		[Binop:String]
+																			[Binop:String]
+																				[Binop:String]
+																					[Const:String] "if ("
+																					+
+																					[Local conditionCompiled(33027):Null<String>:Null<String>]
+																				+
+																				[Const:String] "), do: "
+																			+
+																			[Local thenValue(33028):Null<String>:Null<String>]
+																		+
+																		[Const:String] ", else: "
+																	+
+																	[Local elseValue(33029):Null<String>:Null<String>]
+														[Else:Dynamic] [Block:Dynamic]
+															[Var originalCaseArmContext(33030):Bool]
+																[Field:Bool]
+																	[Field:reflaxe.elixir.ElixirCompiler]
+																		[Const:reflaxe.elixir.helpers.TempVariableOptimizer] this
+																		[FInstance:reflaxe.elixir.ElixirCompiler]
+																			reflaxe.elixir.helpers.TempVariableOptimizer
+																			compiler:reflaxe.elixir.ElixirCompiler
+																	[FInstance:Bool]
+																		reflaxe.elixir.ElixirCompiler
+																		isCompilingCaseArm:Bool
+															[Binop:Bool]
+																[Field:Bool]
+																	[Field:reflaxe.elixir.ElixirCompiler]
+																		[Const:reflaxe.elixir.helpers.TempVariableOptimizer] this
+																		[FInstance:reflaxe.elixir.ElixirCompiler]
+																			reflaxe.elixir.helpers.TempVariableOptimizer
+																			compiler:reflaxe.elixir.ElixirCompiler
+																	[FInstance:Bool]
+																		reflaxe.elixir.ElixirCompiler
+																		isCompilingCaseArm:Bool
+																=
+																[Const:Bool] true
+															[Var compiledIf(33031):Null<String>]
+																[Call:Null<String>]
+																	[Field:(expr : haxe.macro.TypedExpr, ?topLevel : Bool) -> Null<String>]
+																		[Field:reflaxe.elixir.ElixirCompiler]
+																			[Const:reflaxe.elixir.helpers.TempVariableOptimizer] this
+																			[FInstance:reflaxe.elixir.ElixirCompiler]
+																				reflaxe.elixir.helpers.TempVariableOptimizer
+																				compiler:reflaxe.elixir.ElixirCompiler
+																		[FInstance:(expr : haxe.macro.TypedExpr, ?topLevel : Bool) -> Null<String>]
+																			reflaxe.elixir.ElixirCompiler
+																			compileExpression:(expr : haxe.macro.TypedExpr, ?topLevel : Bool) -> Null<String>
+																	[Array:haxe.macro.TypedExpr]
+																		[Local expressions(32971):Array<haxe.macro.TypedExpr>:Array<haxe.macro.TypedExpr>]
+																		[Local i(32972):Int:Int]
+																	[Const:Null<Bool>] null
+															[Var result(33032):String]
+																[Binop:String]
+																	[Binop:String]
+																		[Binop:String]
+																			[Const:String] ""
+																			+
+																			[Local tempVarName(32970):String:String]
+																		+
+																		[Const:String] " = nil\n"
+																	+
+																	[Local compiledIf(33031):Null<String>:Null<String>]
+															[Binop:Bool]
+																[Field:Bool]
+																	[Field:reflaxe.elixir.ElixirCompiler]
+																		[Const:reflaxe.elixir.helpers.TempVariableOptimizer] this
+																		[FInstance:reflaxe.elixir.ElixirCompiler]
+																			reflaxe.elixir.helpers.TempVariableOptimizer
+																			compiler:reflaxe.elixir.ElixirCompiler
+																	[FInstance:Bool]
+																		reflaxe.elixir.ElixirCompiler
+																		isCompilingCaseArm:Bool
+																=
+																[Local originalCaseArmContext(33030):Bool:Bool]
+															[Return:Dynamic] [Local result(33032):String:String]
+									[Case:Dynamic]
+										[Const:Int] 18
+										[Block:Dynamic]
+											[Var `(33033):haxe.macro.TypedExpr]
+												[EnumParameter:haxe.macro.TypedExpr]
+													[Local `(33020):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+													TSwitch
+													0
+											[Var `(33034):Array<{ values : Array<haxe.macro.TypedExpr>, expr : haxe.macro.TypedExpr }>]
+												[EnumParameter:Array<{ values : Array<haxe.macro.TypedExpr>, expr : haxe.macro.TypedExpr }>]
+													[Local `(33020):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+													TSwitch
+													1
+											[Var `(33035):Null<haxe.macro.TypedExpr>]
+												[EnumParameter:Null<haxe.macro.TypedExpr>]
+													[Local `(33020):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+													TSwitch
+													2
+											[Block:Dynamic]
+												[Var switchExpr(33036):haxe.macro.TypedExpr] [Local `(33033):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+												[Var cases(33037):Array<{ values : Array<haxe.macro.TypedExpr>, expr : haxe.macro.TypedExpr }>] [Local `(33034):Array<{ values : Array<haxe.macro.TypedExpr>, expr : haxe.macro.TypedExpr }>:Array<{ values : Array<haxe.macro.TypedExpr>, expr : haxe.macro.TypedExpr }>]
+												[Var defaultExpr(33038):Null<haxe.macro.TypedExpr>] [Local `(33035):Null<haxe.macro.TypedExpr>:Null<haxe.macro.TypedExpr>]
+												[Block:Dynamic]
+													[Var originalCaseArmContext(33039):Bool]
+														[Field:Bool]
+															[Field:reflaxe.elixir.ElixirCompiler]
+																[Const:reflaxe.elixir.helpers.TempVariableOptimizer] this
+																[FInstance:reflaxe.elixir.ElixirCompiler]
+																	reflaxe.elixir.helpers.TempVariableOptimizer
+																	compiler:reflaxe.elixir.ElixirCompiler
+															[FInstance:Bool]
+																reflaxe.elixir.ElixirCompiler
+																isCompilingCaseArm:Bool
+													[Binop:Bool]
+														[Field:Bool]
+															[Field:reflaxe.elixir.ElixirCompiler]
+																[Const:reflaxe.elixir.helpers.TempVariableOptimizer] this
+																[FInstance:reflaxe.elixir.ElixirCompiler]
+																	reflaxe.elixir.helpers.TempVariableOptimizer
+																	compiler:reflaxe.elixir.ElixirCompiler
+															[FInstance:Bool]
+																reflaxe.elixir.ElixirCompiler
+																isCompilingCaseArm:Bool
+														=
+														[Const:Bool] true
+													[Var result(33040):String]
+														[Call:String]
+															[Field:(switchExpr : haxe.macro.TypedExpr, cases : Array<{ values : Array<haxe.macro.TypedExpr>, expr : haxe.macro.TypedExpr }>, defaultExpr : Null<haxe.macro.TypedExpr>) -> String]
+																[Field:reflaxe.elixir.ElixirCompiler]
+																	[Const:reflaxe.elixir.helpers.TempVariableOptimizer] this
+																	[FInstance:reflaxe.elixir.ElixirCompiler]
+																		reflaxe.elixir.helpers.TempVariableOptimizer
+																		compiler:reflaxe.elixir.ElixirCompiler
+																[FInstance:(switchExpr : haxe.macro.TypedExpr, cases : Array<{ values : Array<haxe.macro.TypedExpr>, expr : haxe.macro.TypedExpr }>, defaultExpr : Null<haxe.macro.TypedExpr>) -> String]
+																	reflaxe.elixir.ElixirCompiler
+																	compileSwitchExpression:(switchExpr : haxe.macro.TypedExpr, cases : Array<{ values : Array<haxe.macro.TypedExpr>, expr : haxe.macro.TypedExpr }>, defaultExpr : Null<haxe.macro.TypedExpr>) -> String
+															[Local switchExpr(33036):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+															[Local cases(33037):Array<{ values : Array<haxe.macro.TypedExpr>, expr : haxe.macro.TypedExpr }>:Array<{ values : Array<haxe.macro.TypedExpr>, expr : haxe.macro.TypedExpr }>]
+															[Local defaultExpr(33038):Null<haxe.macro.TypedExpr>:Null<haxe.macro.TypedExpr>]
+													[Binop:Bool]
+														[Field:Bool]
+															[Field:reflaxe.elixir.ElixirCompiler]
+																[Const:reflaxe.elixir.helpers.TempVariableOptimizer] this
+																[FInstance:reflaxe.elixir.ElixirCompiler]
+																	reflaxe.elixir.helpers.TempVariableOptimizer
+																	compiler:reflaxe.elixir.ElixirCompiler
+															[FInstance:Bool]
+																reflaxe.elixir.ElixirCompiler
+																isCompilingCaseArm:Bool
+														=
+														[Local originalCaseArmContext(33039):Bool:Bool]
+													[Return:Dynamic] [Local result(33040):String:String]
+									[Default:Void] [Block:Void]
+			[Var compiledStatements(33043):Array<Null<String>>] [ArrayDecl:Array<Null<String>>]
+			[Block:Void]
+				[Var `(33046):Int] [Const:Int] 0
+				[While:Void]
+					[Binop:Bool]
+						[Local `(33046):Int:Int]
+						<
+						[Field:Int]
+							[Local expressions(32971):Array<haxe.macro.TypedExpr>:Array<haxe.macro.TypedExpr>]
+							[FInstance:Int]
+								Array<haxe.macro.TypedExpr>
+								length:Int
+					[Block:Void]
+						[Var expr(33044):haxe.macro.TypedExpr]
+							[Array:haxe.macro.TypedExpr]
+								[Local expressions(32971):Array<haxe.macro.TypedExpr>:Array<haxe.macro.TypedExpr>]
+								[Local `(33046):Int:Int]
+						[Unop:Int]
+							++
+							Prefix
+							[Local `(33046):Int:Int]
+						[Var compiled(33045):Null<String>]
+							[Call:Null<String>]
+								[Field:(expr : haxe.macro.TypedExpr, ?topLevel : Bool) -> Null<String>]
+									[Field:reflaxe.elixir.ElixirCompiler]
+										[Const:reflaxe.elixir.helpers.TempVariableOptimizer] this
+										[FInstance:reflaxe.elixir.ElixirCompiler]
+											reflaxe.elixir.helpers.TempVariableOptimizer
+											compiler:reflaxe.elixir.ElixirCompiler
+									[FInstance:(expr : haxe.macro.TypedExpr, ?topLevel : Bool) -> Null<String>]
+										reflaxe.elixir.ElixirCompiler
+										compileExpression:(expr : haxe.macro.TypedExpr, ?topLevel : Bool) -> Null<String>
+								[Local expr(33044):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+								[Const:Null<Bool>] null
+						[If:Void]
+							[Binop:Bool]
+								[Binop:Bool]
+									[Local compiled(33045):Null<String>:Null<String>]
+									!=
+									[Const:Null<String>] null
+								&&
+								[Binop:Bool]
+									[Field:Int]
+										[Local compiled(33045):Null<String>:Null<String>]
+										[FInstance:Int]
+											String
+											length:Int
+									>
+									[Const:Int] 0
+							[Then:Int] [Block:Int]
+								[Call:Int]
+									[Field:(x : Null<String>) -> Int]
+										[Local compiledStatements(33043):Array<Null<String>>:Array<Null<String>>]
+										[FInstance:(x : Null<String>) -> Int]
+											Array<Null<String>>
+											push:(x : Array.T) -> Int
+									[Local compiled(33045):Null<String>:Null<String>]
+			[Var result(33047):String]
+				[Call:String]
+					[Field:(sep : String) -> String]
+						[Local compiledStatements(33043):Array<Null<String>>:Array<Null<String>>]
+						[FInstance:(sep : String) -> String]
+							Array<Null<String>>
+							join:(sep : String) -> String
+					[Const:String] "\n"
+			[If:Void]
+				[Binop:Bool]
+					[Local tempVarName(32970):String:String]
+					!=
+					[Const:String] null
+				[Then:String] [Block:String]
+					[Binop:String]
+						[Local result(33047):String:String]
+						=
+						[Call:String]
+							[Field:(code : String, tempVarName : String) -> String]
+								[Const:reflaxe.elixir.helpers.TempVariableOptimizer] this
+								[FInstance:(code : String, tempVarName : String) -> String]
+									reflaxe.elixir.helpers.TempVariableOptimizer
+									fixTempVariableScoping:(code : String, tempVarName : String) -> String
+							[Local result(33047):String:String]
+							[Local tempVarName(32970):String:String]
+			[Return:Dynamic] [Local result(33047):String:String]
+
+	public function fixTempVariableScoping[Function:(code : String, tempVarName : String) -> String]
+		[Arg:String] [Local code(33048):String]
+		[Arg:String] [Local tempVarName(33049):String]
+		[Block:Dynamic]
+			[Var lines(33050):Array<String>]
+				[Call:Array<String>]
+					[Field:(delimiter : String) -> Array<String>]
+						[Local code(33048):String:String]
+						[FInstance:(delimiter : String) -> Array<String>]
+							String
+							split:(delimiter : String) -> Array<String>
+					[Const:String] "\n"
+			[Var fixedLines(33051):Array<String>] [ArrayDecl:Array<String>]
+			[Var i(33052):Int] [Const:Int] 0
+			[While:Void]
+				[Binop:Bool]
+					[Local i(33052):Int:Int]
+					<
+					[Field:Int]
+						[Local lines(33050):Array<String>:Array<String>]
+						[FInstance:Int]
+							Array<String>
+							length:Int
+				[Block:Int]
+					[Var line(33053):String]
+						[Array:String]
+							[Local lines(33050):Array<String>:Array<String>]
+							[Local i(33052):Int:Int]
+					[If:Void]
+						[Binop:Bool]
+							[Binop:Bool]
+								[Call:Int]
+									[Field:(str : String, ?startIndex : Null<Int>) -> Int]
+										[Local line(33053):String:String]
+										[FInstance:(str : String, ?startIndex : Null<Int>) -> Int]
+											String
+											indexOf:(str : String, ?startIndex : Null<Int>) -> Int
+									[Const:String] "if ("
+									[Const:Null<Int>] null
+								==
+								[Const:Int] 0
+							&&
+							[Binop:Bool]
+								[Call:Int]
+									[Field:(str : String, ?startIndex : Null<Int>) -> Int]
+										[Local line(33053):String:String]
+										[FInstance:(str : String, ?startIndex : Null<Int>) -> Int]
+											String
+											indexOf:(str : String, ?startIndex : Null<Int>) -> Int
+									[Binop:String]
+										[Binop:String]
+											[Const:String] ", do: "
+											+
+											[Local tempVarName(33049):String:String]
+										+
+										[Const:String] " ="
+									[Const:Null<Int>] null
+								>
+								[Const:Int] 0
+						[Then:Void] [Block:Void]
+							[If:Void]
+								[Binop:Bool]
+									[Binop:Int]
+										[Local i(33052):Int:Int]
+										+
+										[Const:Int] 1
+									<
+									[Field:Int]
+										[Local lines(33050):Array<String>:Array<String>]
+										[FInstance:Int]
+											Array<String>
+											length:Int
+								[Then:Void] [Block:Void]
+									[Var nextLine(33054):String]
+										[Array:String]
+											[Local lines(33050):Array<String>:Array<String>]
+											[Binop:Int]
+												[Local i(33052):Int:Int]
+												+
+												[Const:Int] 1
+									[Var pattern(33055):EReg]
+										[New:EReg]
+											EReg
+											[Const:String] "^(\\w+)\\s*=\\s*${tempVarName}\\s*$"
+											[Const:String] ""
+									[If:Void]
+										[Call:Bool]
+											[Field:(s : String) -> Bool]
+												[Local pattern(33055):EReg:EReg]
+												[FInstance:(s : String) -> Bool]
+													EReg
+													match:(s : String) -> Bool
+											[Local nextLine(33054):String:String]
+										[Then:Dynamic] [Block:Dynamic]
+											[Var targetVar(33056):String]
+												[Call:String]
+													[Field:(n : Int) -> String]
+														[Local pattern(33055):EReg:EReg]
+														[FInstance:(n : Int) -> String]
+															EReg
+															matched:(n : Int) -> String
+													[Const:Int] 1
+											[Var transformedLine(33057):String]
+												[Call:String]
+													[Field:(s : String, sub : String, by : String) -> String]
+														[TypeExpr StringTools:{ Statics StringTools }]
+														[FStatic:(s : String, sub : String, by : String) -> String]
+															StringTools
+															replace:(s : String, sub : String, by : String) -> String
+													[Call:String]
+														[Field:(s : String, sub : String, by : String) -> String]
+															[TypeExpr StringTools:{ Statics StringTools }]
+															[FStatic:(s : String, sub : String, by : String) -> String]
+																StringTools
+																replace:(s : String, sub : String, by : String) -> String
+														[Local line(33053):String:String]
+														[Binop:String]
+															[Binop:String]
+																[Const:String] ", do: "
+																+
+																[Local tempVarName(33049):String:String]
+															+
+															[Const:String] " ="
+														[Const:String] ", do:"
+													[Binop:String]
+														[Binop:String]
+															[Const:String] ", else: "
+															+
+															[Local tempVarName(33049):String:String]
+														+
+														[Const:String] " ="
+													[Const:String] ", else:"
+											[Call:Int]
+												[Field:(x : String) -> Int]
+													[Local fixedLines(33051):Array<String>:Array<String>]
+													[FInstance:(x : String) -> Int]
+														Array<String>
+														push:(x : Array.T) -> Int
+												[Binop:String]
+													[Binop:String]
+														[Binop:String]
+															[Const:String] ""
+															+
+															[Local targetVar(33056):String:String]
+														+
+														[Const:String] " = "
+													+
+													[Local transformedLine(33057):String:String]
+											[Binop:Int]
+												[Local i(33052):Int:Int]
+												+=
+												[Const:Int] 2
+											[Continue:Dynamic]
+					[Call:Int]
+						[Field:(x : String) -> Int]
+							[Local fixedLines(33051):Array<String>:Array<String>]
+							[FInstance:(x : String) -> Int]
+								Array<String>
+								push:(x : Array.T) -> Int
+						[Local line(33053):String:String]
+					[Unop:Int]
+						++
+						Postfix
+						[Local i(33052):Int:Int]
+			[Return:Dynamic]
+				[Call:String]
+					[Field:(sep : String) -> String]
+						[Local fixedLines(33051):Array<String>:Array<String>]
+						[FInstance:(sep : String) -> String]
+							Array<String>
+							join:(sep : String) -> String
+					[Const:String] "\n"
+
+	public function detectTempVariableAssignmentPattern[Function:(ifBranch : haxe.macro.TypedExpr, elseBranch : Null<haxe.macro.TypedExpr>) -> Null<{ varName : String }>]
+		[Arg:haxe.macro.TypedExpr] [Local ifBranch(33058):haxe.macro.TypedExpr]
+		[Arg:Null<haxe.macro.TypedExpr>] [Local elseBranch(33059):Null<haxe.macro.TypedExpr>]
+		[Block:Dynamic]
+			[Var thenVarName(33080):Null<String>]
+				[Call:Null<String>]
+					[Field:(expr : haxe.macro.TypedExpr) -> Null<String>]
+						[Const:reflaxe.elixir.helpers.TempVariableOptimizer] this
+						[FInstance:(expr : haxe.macro.TypedExpr) -> Null<String>]
+							reflaxe.elixir.helpers.TempVariableOptimizer
+							extractAssignmentVariable:(expr : haxe.macro.TypedExpr) -> Null<String>
+					[Local ifBranch(33058):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+			[Var elseVarName(33081):Null<Null<String>>]
+				[If:Null<String>]
+					[Binop:Bool]
+						[Local elseBranch(33059):Null<haxe.macro.TypedExpr>:Null<haxe.macro.TypedExpr>]
+						!=
+						[Const:Null<haxe.macro.TypedExpr>] null
+					[Then:Null<String>] [Block:Null<String>]
+						[Call:Null<String>]
+							[Field:(expr : haxe.macro.TypedExpr) -> Null<String>]
+								[Const:reflaxe.elixir.helpers.TempVariableOptimizer] this
+								[FInstance:(expr : haxe.macro.TypedExpr) -> Null<String>]
+									reflaxe.elixir.helpers.TempVariableOptimizer
+									extractAssignmentVariable:(expr : haxe.macro.TypedExpr) -> Null<String>
+							[Local elseBranch(33059):Null<haxe.macro.TypedExpr>:Null<haxe.macro.TypedExpr>]
+					[Else:Null<Null<String>>] [Block:Null<Null<String>>] [Const:Null<Null<String>>] null
+			[If:Void]
+				[Binop:Bool]
+					[Binop:Bool]
+						[Local thenVarName(33080):Null<String>:Null<String>]
+						!=
+						[Const:Null<String>] null
+					&&
+					[Parenthesis:Bool]
+						[Binop:Bool]
+							[Binop:Bool]
+								[Local elseVarName(33081):Null<Null<String>>:Null<Null<String>>]
+								==
+								[Const:Null<Null<String>>] null
+							||
+							[Binop:Bool]
+								[Local thenVarName(33080):Null<String>:Null<String>]
+								==
+								[Local elseVarName(33081):Null<Null<String>>:Null<Null<String>>]
+				[Then:Void] [Block:Void]
+					[If:Void]
+						[Binop:Bool]
+							[Binop:Bool]
+								[Call:Int]
+									[Field:(str : String, ?startIndex : Null<Int>) -> Int]
+										[Local thenVarName(33080):Null<String>:Null<String>]
+										[FInstance:(str : String, ?startIndex : Null<Int>) -> Int]
+											String
+											indexOf:(str : String, ?startIndex : Null<Int>) -> Int
+									[Const:String] "temp_"
+									[Const:Null<Int>] null
+								==
+								[Const:Int] 0
+							||
+							[Binop:Bool]
+								[Call:Int]
+									[Field:(str : String, ?startIndex : Null<Int>) -> Int]
+										[Local thenVarName(33080):Null<String>:Null<String>]
+										[FInstance:(str : String, ?startIndex : Null<Int>) -> Int]
+											String
+											indexOf:(str : String, ?startIndex : Null<Int>) -> Int
+									[Const:String] "temp"
+									[Const:Null<Int>] null
+								==
+								[Const:Int] 0
+						[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [ObjectDecl:{ varName : Null<String> }] varName: [Local thenVarName(33080):Null<String>:Null<String>]
+			[Return:Dynamic] [Const:Null<{ varName : String }>] null
+
+	public function detectTempVariableAssignmentSequence[Function:(expressions : Array<haxe.macro.TypedExpr>) -> Null<{ tempVar : String, targetVar : String, ifIndex : Int, assignIndex : Int }>]
+		[Arg:Array<haxe.macro.TypedExpr>] [Local expressions(33082):Array<haxe.macro.TypedExpr>]
+		[Block:Dynamic]
+			[Block:Void]
+				[Var `(33135):Int] [Const:Int] 0
+				[Var `(33136):Int]
+					[Field:Int]
+						[Local expressions(33082):Array<haxe.macro.TypedExpr>:Array<haxe.macro.TypedExpr>]
+						[FInstance:Int]
+							Array<haxe.macro.TypedExpr>
+							length:Int
+				[While:Void]
+					[Binop:Bool]
+						[Local `(33135):Int:Int]
+						<
+						[Local `(33136):Int:Int]
+					[Block:Void]
+						[Var i(33083):Int]
+							[Unop:Int]
+								++
+								Postfix
+								[Local `(33135):Int:Int]
+						[Meta:Void]
+							:ast(switch (expressions[i].expr) {
+	case TIf(_, ifBranch, elseBranch):
+		var tempVarPattern = detectTempVariableAssignmentPattern(ifBranch, elseBranch);
+		if (tempVarPattern != null) {
+			for (j  in  (i + 1) ... expressions.length) {
+				switch (expressions[j].expr) {
+					case TBinop(OpAssign, targetExpr, sourceExpr):
+						var targetVar = extractVariableNameFromExpr(targetExpr);
+						var sourceVar = extractVariableNameFromExpr(sourceExpr);
+						if (sourceVar == tempVarPattern.varName && targetVar != null) {
+							return { ifIndex : i, assignIndex : j, tempVar : tempVarPattern.varName, targetVar : targetVar };
+						};					
+					case _:
+				};
+			};
+		};	
+	case _:
+})
+							[Block:Void]
+								[Var `(33117):haxe.macro.TypedExprDef]
+									[Field:haxe.macro.TypedExprDef]
+										[Array:haxe.macro.TypedExpr]
+											[Local expressions(33082):Array<haxe.macro.TypedExpr>:Array<haxe.macro.TypedExpr>]
+											[Local i(33083):Int:Int]
+										[FAnon:haxe.macro.TypedExprDef] expr:haxe.macro.TypedExprDef
+								[If:Void]
+									[Binop:Bool]
+										[EnumIndex:Int] [Local `(33117):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+										==
+										[Const:Int] 16
+									[Then:Void] [Block:Void]
+										[Var `(33118):haxe.macro.TypedExpr]
+											[EnumParameter:haxe.macro.TypedExpr]
+												[Local `(33117):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+												TIf
+												0
+										[Var `(33119):haxe.macro.TypedExpr]
+											[EnumParameter:haxe.macro.TypedExpr]
+												[Local `(33117):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+												TIf
+												1
+										[Var `(33120):Null<haxe.macro.TypedExpr>]
+											[EnumParameter:Null<haxe.macro.TypedExpr>]
+												[Local `(33117):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+												TIf
+												2
+										[Block:Void]
+											[Var ifBranch(33121):haxe.macro.TypedExpr] [Local `(33119):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+											[Var elseBranch(33122):Null<haxe.macro.TypedExpr>] [Local `(33120):Null<haxe.macro.TypedExpr>:Null<haxe.macro.TypedExpr>]
+											[Block:Void]
+												[Var tempVarPattern(33123):Null<{ varName : String }>]
+													[Call:Null<{ varName : String }>]
+														[Field:(ifBranch : haxe.macro.TypedExpr, elseBranch : Null<haxe.macro.TypedExpr>) -> Null<{ varName : String }>]
+															[Const:reflaxe.elixir.helpers.TempVariableOptimizer] this
+															[FInstance:(ifBranch : haxe.macro.TypedExpr, elseBranch : Null<haxe.macro.TypedExpr>) -> Null<{ varName : String }>]
+																reflaxe.elixir.helpers.TempVariableOptimizer
+																detectTempVariableAssignmentPattern:(ifBranch : haxe.macro.TypedExpr, elseBranch : Null<haxe.macro.TypedExpr>) -> Null<{ varName : String }>
+														[Local ifBranch(33121):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+														[Local elseBranch(33122):Null<haxe.macro.TypedExpr>:Null<haxe.macro.TypedExpr>]
+												[If:Void]
+													[Binop:Bool]
+														[Local tempVarPattern(33123):Null<{ varName : String }>:Null<{ varName : String }>]
+														!=
+														[Const:Null<{ varName : String }>] null
+													[Then:Void] [Block:Void]
+														[Block:Void]
+															[Var `(33124):Int]
+																[Parenthesis:Int]
+																	[Binop:Int]
+																		[Local i(33083):Int:Int]
+																		+
+																		[Const:Int] 1
+															[Var `(33125):Int]
+																[Field:Int]
+																	[Local expressions(33082):Array<haxe.macro.TypedExpr>:Array<haxe.macro.TypedExpr>]
+																	[FInstance:Int]
+																		Array<haxe.macro.TypedExpr>
+																		length:Int
+															[While:Void]
+																[Binop:Bool]
+																	[Local `(33124):Int:Int]
+																	<
+																	[Local `(33125):Int:Int]
+																[Block:Void]
+																	[Var j(33126):Int]
+																		[Unop:Int]
+																			++
+																			Postfix
+																			[Local `(33124):Int:Int]
+																	[Meta:Void]
+																		:ast(switch (expressions[j].expr) {
+	case TBinop(OpAssign, targetExpr, sourceExpr):
+		var targetVar = extractVariableNameFromExpr(targetExpr);
+		var sourceVar = extractVariableNameFromExpr(sourceExpr);
+		if (sourceVar == tempVarPattern.varName && targetVar != null) {
+			return { ifIndex : i, assignIndex : j, tempVar : tempVarPattern.varName, targetVar : targetVar };
+		};	
+	case _:
+})
+																		[Block:Void]
+																			[Var `(33127):haxe.macro.TypedExprDef]
+																				[Field:haxe.macro.TypedExprDef]
+																					[Array:haxe.macro.TypedExpr]
+																						[Local expressions(33082):Array<haxe.macro.TypedExpr>:Array<haxe.macro.TypedExpr>]
+																						[Local j(33126):Int:Int]
+																					[FAnon:haxe.macro.TypedExprDef] expr:haxe.macro.TypedExprDef
+																			[If:Void]
+																				[Binop:Bool]
+																					[EnumIndex:Int] [Local `(33127):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+																					==
+																					[Const:Int] 3
+																				[Then:Void] [Block:Void]
+																					[Var `(33128):haxe.macro.Binop]
+																						[EnumParameter:haxe.macro.Binop]
+																							[Local `(33127):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+																							TBinop
+																							0
+																					[Var `(33129):haxe.macro.TypedExpr]
+																						[EnumParameter:haxe.macro.TypedExpr]
+																							[Local `(33127):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+																							TBinop
+																							1
+																					[Var `(33130):haxe.macro.TypedExpr]
+																						[EnumParameter:haxe.macro.TypedExpr]
+																							[Local `(33127):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+																							TBinop
+																							2
+																					[If:Void]
+																						[Binop:Bool]
+																							[EnumIndex:Int] [Local `(33128):haxe.macro.Binop:haxe.macro.Binop]
+																							==
+																							[Const:Int] 4
+																						[Then:Void] [Block:Void]
+																							[Block:Void]
+																								[Var targetExpr(33131):haxe.macro.TypedExpr] [Local `(33129):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+																								[Var sourceExpr(33132):haxe.macro.TypedExpr] [Local `(33130):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+																								[Block:Void]
+																									[Var targetVar(33133):Null<String>]
+																										[Call:Null<String>]
+																											[Field:(expr : haxe.macro.TypedExpr) -> Null<String>]
+																												[Const:reflaxe.elixir.helpers.TempVariableOptimizer] this
+																												[FInstance:(expr : haxe.macro.TypedExpr) -> Null<String>]
+																													reflaxe.elixir.helpers.TempVariableOptimizer
+																													extractVariableNameFromExpr:(expr : haxe.macro.TypedExpr) -> Null<String>
+																											[Local targetExpr(33131):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+																									[Var sourceVar(33134):Null<String>]
+																										[Call:Null<String>]
+																											[Field:(expr : haxe.macro.TypedExpr) -> Null<String>]
+																												[Const:reflaxe.elixir.helpers.TempVariableOptimizer] this
+																												[FInstance:(expr : haxe.macro.TypedExpr) -> Null<String>]
+																													reflaxe.elixir.helpers.TempVariableOptimizer
+																													extractVariableNameFromExpr:(expr : haxe.macro.TypedExpr) -> Null<String>
+																											[Local sourceExpr(33132):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+																									[If:Void]
+																										[Binop:Bool]
+																											[Binop:Bool]
+																												[Local sourceVar(33134):Null<String>:Null<String>]
+																												==
+																												[Field:String]
+																													[Local tempVarPattern(33123):Null<{ varName : String }>:Null<{ varName : String }>]
+																													[FAnon:String] varName:String
+																											&&
+																											[Binop:Bool]
+																												[Local targetVar(33133):Null<String>:Null<String>]
+																												!=
+																												[Const:Null<String>] null
+																										[Then:Dynamic] [Block:Dynamic]
+																											[Return:Dynamic]
+																												[ObjectDecl:{ tempVar : String, targetVar : Null<String>, ifIndex : Int, assignIndex : Int }]
+																													ifIndex: [Local i(33083):Int:Int]
+																													assignIndex: [Local j(33126):Int:Int]
+																													tempVar: [Field:String]
+																														[Local tempVarPattern(33123):Null<{ varName : String }>:Null<{ varName : String }>]
+																														[FAnon:String] varName:String
+																													targetVar: [Local targetVar(33133):Null<String>:Null<String>]
+																						[Else:Void] [Block:Void]
+																				[Else:Void] [Block:Void]
+									[Else:Void] [Block:Void]
+			[Return:Dynamic] [Const:Null<{ tempVar : String, targetVar : String, ifIndex : Int, assignIndex : Int }>] null
+
+	public function optimizeTempVariableAssignmentSequence[Function:(sequence : { tempVar : String, targetVar : String, ifIndex : Int, assignIndex : Int }, expressions : Array<haxe.macro.TypedExpr>) -> String]
+		[Arg:{ tempVar : String, targetVar : String, ifIndex : Int, assignIndex : Int }] [Local sequence(33137):{ tempVar : String, targetVar : String, ifIndex : Int, assignIndex : Int }]
+		[Arg:Array<haxe.macro.TypedExpr>] [Local expressions(33138):Array<haxe.macro.TypedExpr>]
+		[Block:Dynamic]
+			[Var compiledStatements(33139):Array<String>] [ArrayDecl:Array<String>]
+			[Block:Void]
+				[Var `(33168):Int] [Const:Int] 0
+				[Var `(33169):Int]
+					[Field:Int]
+						[Local expressions(33138):Array<haxe.macro.TypedExpr>:Array<haxe.macro.TypedExpr>]
+						[FInstance:Int]
+							Array<haxe.macro.TypedExpr>
+							length:Int
+				[While:Void]
+					[Binop:Bool]
+						[Local `(33168):Int:Int]
+						<
+						[Local `(33169):Int:Int]
+					[Block:Void]
+						[Var i(33140):Int]
+							[Unop:Int]
+								++
+								Postfix
+								[Local `(33168):Int:Int]
+						[If:Void]
+							[Binop:Bool]
+								[Local i(33140):Int:Int]
+								==
+								[Field:Int]
+									[Local sequence(33137):{ tempVar : String, targetVar : String, ifIndex : Int, assignIndex : Int }:{ tempVar : String, targetVar : String, ifIndex : Int, assignIndex : Int }]
+									[FAnon:Int] ifIndex:Int
+							[Then:Void] [Block:Void]
+								[Meta:Void]
+									:ast(switch (expressions[i].expr) {
+	case TIf(condition, ifBranch, elseBranch):
+		var conditionCompiled = compiler.compileExpression(condition);
+		var thenValue = extractValueFromTempAssignment(ifBranch, sequence.tempVar);
+		var elseValue = elseBranch != null ? extractValueFromTempAssignment(elseBranch, sequence.tempVar) : "nil";
+		if (thenValue != null && elseValue != null) {
+			var optimizedIf = "${sequence.targetVar} = if (${conditionCompiled}), do: ${thenValue}, else: ${elseValue}";
+			compiledStatements.push(optimizedIf);
+		} else {
+			var compiled = compiler.compileExpression(expressions[i]);
+			if (compiled != null && compiled.length > 0) {
+				compiledStatements.push(compiled);
+			};
+		};	
+	case _:
+		var compiled = compiler.compileExpression(expressions[i]);
+		if (compiled != null && compiled.length > 0) {
+			compiledStatements.push(compiled);
+		};	
+})
+									[Block:Void]
+										[Var `(33154):haxe.macro.TypedExprDef]
+											[Field:haxe.macro.TypedExprDef]
+												[Array:haxe.macro.TypedExpr]
+													[Local expressions(33138):Array<haxe.macro.TypedExpr>:Array<haxe.macro.TypedExpr>]
+													[Local i(33140):Int:Int]
+												[FAnon:haxe.macro.TypedExprDef] expr:haxe.macro.TypedExprDef
+										[If:Void]
+											[Binop:Bool]
+												[EnumIndex:Int] [Local `(33154):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+												==
+												[Const:Int] 16
+											[Then:Void] [Block:Void]
+												[Var `(33155):haxe.macro.TypedExpr]
+													[EnumParameter:haxe.macro.TypedExpr]
+														[Local `(33154):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+														TIf
+														0
+												[Var `(33156):haxe.macro.TypedExpr]
+													[EnumParameter:haxe.macro.TypedExpr]
+														[Local `(33154):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+														TIf
+														1
+												[Var `(33157):Null<haxe.macro.TypedExpr>]
+													[EnumParameter:Null<haxe.macro.TypedExpr>]
+														[Local `(33154):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+														TIf
+														2
+												[Block:Void]
+													[Var condition(33158):haxe.macro.TypedExpr] [Local `(33155):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+													[Var ifBranch(33159):haxe.macro.TypedExpr] [Local `(33156):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+													[Var elseBranch(33160):Null<haxe.macro.TypedExpr>] [Local `(33157):Null<haxe.macro.TypedExpr>:Null<haxe.macro.TypedExpr>]
+													[Block:Void]
+														[Var conditionCompiled(33161):Null<String>]
+															[Call:Null<String>]
+																[Field:(expr : haxe.macro.TypedExpr, ?topLevel : Bool) -> Null<String>]
+																	[Field:reflaxe.elixir.ElixirCompiler]
+																		[Const:reflaxe.elixir.helpers.TempVariableOptimizer] this
+																		[FInstance:reflaxe.elixir.ElixirCompiler]
+																			reflaxe.elixir.helpers.TempVariableOptimizer
+																			compiler:reflaxe.elixir.ElixirCompiler
+																	[FInstance:(expr : haxe.macro.TypedExpr, ?topLevel : Bool) -> Null<String>]
+																		reflaxe.elixir.ElixirCompiler
+																		compileExpression:(expr : haxe.macro.TypedExpr, ?topLevel : Bool) -> Null<String>
+																[Local condition(33158):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+																[Const:Null<Bool>] null
+														[Var thenValue(33162):Null<String>]
+															[Call:Null<String>]
+																[Field:(expr : haxe.macro.TypedExpr, tempVarName : String) -> Null<String>]
+																	[Const:reflaxe.elixir.helpers.TempVariableOptimizer] this
+																	[FInstance:(expr : haxe.macro.TypedExpr, tempVarName : String) -> Null<String>]
+																		reflaxe.elixir.helpers.TempVariableOptimizer
+																		extractValueFromTempAssignment:(expr : haxe.macro.TypedExpr, tempVarName : String) -> Null<String>
+																[Local ifBranch(33159):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+																[Field:String]
+																	[Local sequence(33137):{ tempVar : String, targetVar : String, ifIndex : Int, assignIndex : Int }:{ tempVar : String, targetVar : String, ifIndex : Int, assignIndex : Int }]
+																	[FAnon:String] tempVar:String
+														[Var elseValue(33163):Null<String>]
+															[If:Null<String>]
+																[Binop:Bool]
+																	[Local elseBranch(33160):Null<haxe.macro.TypedExpr>:Null<haxe.macro.TypedExpr>]
+																	!=
+																	[Const:Null<haxe.macro.TypedExpr>] null
+																[Then:Null<String>] [Block:Null<String>]
+																	[Call:Null<String>]
+																		[Field:(expr : haxe.macro.TypedExpr, tempVarName : String) -> Null<String>]
+																			[Const:reflaxe.elixir.helpers.TempVariableOptimizer] this
+																			[FInstance:(expr : haxe.macro.TypedExpr, tempVarName : String) -> Null<String>]
+																				reflaxe.elixir.helpers.TempVariableOptimizer
+																				extractValueFromTempAssignment:(expr : haxe.macro.TypedExpr, tempVarName : String) -> Null<String>
+																		[Local elseBranch(33160):Null<haxe.macro.TypedExpr>:Null<haxe.macro.TypedExpr>]
+																		[Field:String]
+																			[Local sequence(33137):{ tempVar : String, targetVar : String, ifIndex : Int, assignIndex : Int }:{ tempVar : String, targetVar : String, ifIndex : Int, assignIndex : Int }]
+																			[FAnon:String] tempVar:String
+																[Else:String] [Block:String] [Const:String] "nil"
+														[If:Void]
+															[Binop:Bool]
+																[Binop:Bool]
+																	[Local thenValue(33162):Null<String>:Null<String>]
+																	!=
+																	[Const:Null<String>] null
+																&&
+																[Binop:Bool]
+																	[Local elseValue(33163):Null<String>:Null<String>]
+																	!=
+																	[Const:Null<String>] null
+															[Then:Int] [Block:Int]
+																[Var optimizedIf(33164):String]
+																	[Binop:String]
+																		[Binop:String]
+																			[Binop:String]
+																				[Binop:String]
+																					[Binop:String]
+																						[Binop:String]
+																							[Binop:String]
+																								[Const:String] ""
+																								+
+																								[Field:String]
+																									[Local sequence(33137):{ tempVar : String, targetVar : String, ifIndex : Int, assignIndex : Int }:{ tempVar : String, targetVar : String, ifIndex : Int, assignIndex : Int }]
+																									[FAnon:String] targetVar:String
+																							+
+																							[Const:String] " = if ("
+																						+
+																						[Local conditionCompiled(33161):Null<String>:Null<String>]
+																					+
+																					[Const:String] "), do: "
+																				+
+																				[Local thenValue(33162):Null<String>:Null<String>]
+																			+
+																			[Const:String] ", else: "
+																		+
+																		[Local elseValue(33163):Null<String>:Null<String>]
+																[Call:Int]
+																	[Field:(x : String) -> Int]
+																		[Local compiledStatements(33139):Array<String>:Array<String>]
+																		[FInstance:(x : String) -> Int]
+																			Array<String>
+																			push:(x : Array.T) -> Int
+																	[Local optimizedIf(33164):String:String]
+															[Else:Void] [Block:Void]
+																[Var compiled(33165):Null<String>]
+																	[Call:Null<String>]
+																		[Field:(expr : haxe.macro.TypedExpr, ?topLevel : Bool) -> Null<String>]
+																			[Field:reflaxe.elixir.ElixirCompiler]
+																				[Const:reflaxe.elixir.helpers.TempVariableOptimizer] this
+																				[FInstance:reflaxe.elixir.ElixirCompiler]
+																					reflaxe.elixir.helpers.TempVariableOptimizer
+																					compiler:reflaxe.elixir.ElixirCompiler
+																			[FInstance:(expr : haxe.macro.TypedExpr, ?topLevel : Bool) -> Null<String>]
+																				reflaxe.elixir.ElixirCompiler
+																				compileExpression:(expr : haxe.macro.TypedExpr, ?topLevel : Bool) -> Null<String>
+																		[Array:haxe.macro.TypedExpr]
+																			[Local expressions(33138):Array<haxe.macro.TypedExpr>:Array<haxe.macro.TypedExpr>]
+																			[Local i(33140):Int:Int]
+																		[Const:Null<Bool>] null
+																[If:Void]
+																	[Binop:Bool]
+																		[Binop:Bool]
+																			[Local compiled(33165):Null<String>:Null<String>]
+																			!=
+																			[Const:Null<String>] null
+																		&&
+																		[Binop:Bool]
+																			[Field:Int]
+																				[Local compiled(33165):Null<String>:Null<String>]
+																				[FInstance:Int]
+																					String
+																					length:Int
+																			>
+																			[Const:Int] 0
+																	[Then:Int] [Block:Int]
+																		[Call:Int]
+																			[Field:(x : String) -> Int]
+																				[Local compiledStatements(33139):Array<String>:Array<String>]
+																				[FInstance:(x : String) -> Int]
+																					Array<String>
+																					push:(x : Array.T) -> Int
+																			[Local compiled(33165):Null<String>:Null<String>]
+											[Else:Void] [Block:Void]
+												[Var compiled(33166):Null<String>]
+													[Call:Null<String>]
+														[Field:(expr : haxe.macro.TypedExpr, ?topLevel : Bool) -> Null<String>]
+															[Field:reflaxe.elixir.ElixirCompiler]
+																[Const:reflaxe.elixir.helpers.TempVariableOptimizer] this
+																[FInstance:reflaxe.elixir.ElixirCompiler]
+																	reflaxe.elixir.helpers.TempVariableOptimizer
+																	compiler:reflaxe.elixir.ElixirCompiler
+															[FInstance:(expr : haxe.macro.TypedExpr, ?topLevel : Bool) -> Null<String>]
+																reflaxe.elixir.ElixirCompiler
+																compileExpression:(expr : haxe.macro.TypedExpr, ?topLevel : Bool) -> Null<String>
+														[Array:haxe.macro.TypedExpr]
+															[Local expressions(33138):Array<haxe.macro.TypedExpr>:Array<haxe.macro.TypedExpr>]
+															[Local i(33140):Int:Int]
+														[Const:Null<Bool>] null
+												[If:Void]
+													[Binop:Bool]
+														[Binop:Bool]
+															[Local compiled(33166):Null<String>:Null<String>]
+															!=
+															[Const:Null<String>] null
+														&&
+														[Binop:Bool]
+															[Field:Int]
+																[Local compiled(33166):Null<String>:Null<String>]
+																[FInstance:Int]
+																	String
+																	length:Int
+															>
+															[Const:Int] 0
+													[Then:Int] [Block:Int]
+														[Call:Int]
+															[Field:(x : String) -> Int]
+																[Local compiledStatements(33139):Array<String>:Array<String>]
+																[FInstance:(x : String) -> Int]
+																	Array<String>
+																	push:(x : Array.T) -> Int
+															[Local compiled(33166):Null<String>:Null<String>]
+							[Else:Void] [Block:Void]
+								[If:Void]
+									[Binop:Bool]
+										[Local i(33140):Int:Int]
+										==
+										[Field:Int]
+											[Local sequence(33137):{ tempVar : String, targetVar : String, ifIndex : Int, assignIndex : Int }:{ tempVar : String, targetVar : String, ifIndex : Int, assignIndex : Int }]
+											[FAnon:Int] assignIndex:Int
+									[Then:Dynamic] [Block:Dynamic] [Continue:Dynamic]
+									[Else:Void] [Block:Void]
+										[Var compiled(33167):Null<String>]
+											[Call:Null<String>]
+												[Field:(expr : haxe.macro.TypedExpr, ?topLevel : Bool) -> Null<String>]
+													[Field:reflaxe.elixir.ElixirCompiler]
+														[Const:reflaxe.elixir.helpers.TempVariableOptimizer] this
+														[FInstance:reflaxe.elixir.ElixirCompiler]
+															reflaxe.elixir.helpers.TempVariableOptimizer
+															compiler:reflaxe.elixir.ElixirCompiler
+													[FInstance:(expr : haxe.macro.TypedExpr, ?topLevel : Bool) -> Null<String>]
+														reflaxe.elixir.ElixirCompiler
+														compileExpression:(expr : haxe.macro.TypedExpr, ?topLevel : Bool) -> Null<String>
+												[Array:haxe.macro.TypedExpr]
+													[Local expressions(33138):Array<haxe.macro.TypedExpr>:Array<haxe.macro.TypedExpr>]
+													[Local i(33140):Int:Int]
+												[Const:Null<Bool>] null
+										[If:Void]
+											[Binop:Bool]
+												[Binop:Bool]
+													[Local compiled(33167):Null<String>:Null<String>]
+													!=
+													[Const:Null<String>] null
+												&&
+												[Binop:Bool]
+													[Field:Int]
+														[Local compiled(33167):Null<String>:Null<String>]
+														[FInstance:Int]
+															String
+															length:Int
+													>
+													[Const:Int] 0
+											[Then:Int] [Block:Int]
+												[Call:Int]
+													[Field:(x : String) -> Int]
+														[Local compiledStatements(33139):Array<String>:Array<String>]
+														[FInstance:(x : String) -> Int]
+															Array<String>
+															push:(x : Array.T) -> Int
+													[Local compiled(33167):Null<String>:Null<String>]
+			[Return:Dynamic]
+				[Call:String]
+					[Field:(sep : String) -> String]
+						[Local compiledStatements(33139):Array<String>:Array<String>]
+						[FInstance:(sep : String) -> String]
+							Array<String>
+							join:(sep : String) -> String
+					[Const:String] "\n"
+
+	function extractValueFromTempAssignment[Function:(expr : haxe.macro.TypedExpr, tempVarName : String) -> Null<String>]
+		[Arg:haxe.macro.TypedExpr] [Local expr(32982):haxe.macro.TypedExpr]
+		[Arg:String] [Local tempVarName(32983):String]
+		[Block:Dynamic]
+			[Meta:Void]
+				:ast(switch (expr.expr) {
+	case TBinop(OpAssign, left, right):
+		switch (left.expr) {
+			case TLocal(v):
+				var varName = compiler.getOriginalVarName(v);
+				if (varName == tempVarName) {
+					return compiler.compileExpression(right);
+				};			
+			case _:
+		};	
+	case _:
+})
+				[Block:Void]
+					[Var `(32998):haxe.macro.TypedExprDef]
+						[Field:haxe.macro.TypedExprDef]
+							[Local expr(32982):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+							[FAnon:haxe.macro.TypedExprDef] expr:haxe.macro.TypedExprDef
+					[If:Void]
+						[Binop:Bool]
+							[EnumIndex:Int] [Local `(32998):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+							==
+							[Const:Int] 3
+						[Then:Void] [Block:Void]
+							[Var `(32999):haxe.macro.Binop]
+								[EnumParameter:haxe.macro.Binop]
+									[Local `(32998):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+									TBinop
+									0
+							[Var `(33000):haxe.macro.TypedExpr]
+								[EnumParameter:haxe.macro.TypedExpr]
+									[Local `(32998):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+									TBinop
+									1
+							[Var `(33001):haxe.macro.TypedExpr]
+								[EnumParameter:haxe.macro.TypedExpr]
+									[Local `(32998):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+									TBinop
+									2
+							[If:Void]
+								[Binop:Bool]
+									[EnumIndex:Int] [Local `(32999):haxe.macro.Binop:haxe.macro.Binop]
+									==
+									[Const:Int] 4
+								[Then:Void] [Block:Void]
+									[Block:Void]
+										[Var left(33002):haxe.macro.TypedExpr] [Local `(33000):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+										[Var right(33003):haxe.macro.TypedExpr] [Local `(33001):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+										[Block:Void]
+											[Meta:Void]
+												:ast(switch (left.expr) {
+	case TLocal(v):
+		var varName = compiler.getOriginalVarName(v);
+		if (varName == tempVarName) {
+			return compiler.compileExpression(right);
+		};	
+	case _:
+})
+												[Block:Void]
+													[Var `(33004):haxe.macro.TypedExprDef]
+														[Field:haxe.macro.TypedExprDef]
+															[Local left(33002):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+															[FAnon:haxe.macro.TypedExprDef] expr:haxe.macro.TypedExprDef
+													[If:Void]
+														[Binop:Bool]
+															[EnumIndex:Int] [Local `(33004):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+															==
+															[Const:Int] 1
+														[Then:Void] [Block:Void]
+															[Var `(33005):haxe.macro.TVar]
+																[EnumParameter:haxe.macro.TVar]
+																	[Local `(33004):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+																	TLocal
+																	0
+															[Block:Void]
+																[Var v(33006):haxe.macro.TVar] [Local `(33005):haxe.macro.TVar:haxe.macro.TVar]
+																[Block:Void]
+																	[Var varName(33007):String]
+																		[Call:String]
+																			[Field:(v : haxe.macro.TVar) -> String]
+																				[Field:reflaxe.elixir.ElixirCompiler]
+																					[Const:reflaxe.elixir.helpers.TempVariableOptimizer] this
+																					[FInstance:reflaxe.elixir.ElixirCompiler]
+																						reflaxe.elixir.helpers.TempVariableOptimizer
+																						compiler:reflaxe.elixir.ElixirCompiler
+																				[FInstance:(v : haxe.macro.TVar) -> String]
+																					reflaxe.elixir.ElixirCompiler
+																					getOriginalVarName:(v : haxe.macro.TVar) -> String
+																			[Local v(33006):haxe.macro.TVar:haxe.macro.TVar]
+																	[If:Void]
+																		[Binop:Bool]
+																			[Local varName(33007):String:String]
+																			==
+																			[Local tempVarName(32983):String:String]
+																		[Then:Dynamic] [Block:Dynamic]
+																			[Return:Dynamic]
+																				[Call:Null<String>]
+																					[Field:(expr : haxe.macro.TypedExpr, ?topLevel : Bool) -> Null<String>]
+																						[Field:reflaxe.elixir.ElixirCompiler]
+																							[Const:reflaxe.elixir.helpers.TempVariableOptimizer] this
+																							[FInstance:reflaxe.elixir.ElixirCompiler]
+																								reflaxe.elixir.helpers.TempVariableOptimizer
+																								compiler:reflaxe.elixir.ElixirCompiler
+																						[FInstance:(expr : haxe.macro.TypedExpr, ?topLevel : Bool) -> Null<String>]
+																							reflaxe.elixir.ElixirCompiler
+																							compileExpression:(expr : haxe.macro.TypedExpr, ?topLevel : Bool) -> Null<String>
+																					[Local right(33003):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+																					[Const:Null<Bool>] null
+														[Else:Void] [Block:Void]
+								[Else:Void] [Block:Void]
+						[Else:Void] [Block:Void]
+			[Return:Dynamic] [Const:Null<String>] null
+
+	function extractAssignmentVariable[Function:(expr : haxe.macro.TypedExpr) -> Null<String>]
+		[Arg:haxe.macro.TypedExpr] [Local expr(33060):haxe.macro.TypedExpr]
+		[Block:Dynamic]
+			[Meta:Void]
+				:ast(switch (expr.expr) {
+	case TBinop(OpAssign, left, _):
+		switch (left.expr) {
+			case TLocal(v):
+				return compiler.getOriginalVarName(v);			
+			case _:
+		};	
+	case _:
+})
+				[Block:Void]
+					[Var `(33072):haxe.macro.TypedExprDef]
+						[Field:haxe.macro.TypedExprDef]
+							[Local expr(33060):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+							[FAnon:haxe.macro.TypedExprDef] expr:haxe.macro.TypedExprDef
+					[If:Void]
+						[Binop:Bool]
+							[EnumIndex:Int] [Local `(33072):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+							==
+							[Const:Int] 3
+						[Then:Void] [Block:Void]
+							[Var `(33073):haxe.macro.Binop]
+								[EnumParameter:haxe.macro.Binop]
+									[Local `(33072):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+									TBinop
+									0
+							[Var `(33074):haxe.macro.TypedExpr]
+								[EnumParameter:haxe.macro.TypedExpr]
+									[Local `(33072):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+									TBinop
+									1
+							[Var `(33075):haxe.macro.TypedExpr]
+								[EnumParameter:haxe.macro.TypedExpr]
+									[Local `(33072):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+									TBinop
+									2
+							[If:Void]
+								[Binop:Bool]
+									[EnumIndex:Int] [Local `(33073):haxe.macro.Binop:haxe.macro.Binop]
+									==
+									[Const:Int] 4
+								[Then:Void] [Block:Void]
+									[Block:Void]
+										[Var left(33076):haxe.macro.TypedExpr] [Local `(33074):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+										[Block:Void]
+											[Meta:Void]
+												:ast(switch (left.expr) {
+	case TLocal(v):
+		return compiler.getOriginalVarName(v);	
+	case _:
+})
+												[Block:Void]
+													[Var `(33077):haxe.macro.TypedExprDef]
+														[Field:haxe.macro.TypedExprDef]
+															[Local left(33076):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+															[FAnon:haxe.macro.TypedExprDef] expr:haxe.macro.TypedExprDef
+													[If:Void]
+														[Binop:Bool]
+															[EnumIndex:Int] [Local `(33077):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+															==
+															[Const:Int] 1
+														[Then:Dynamic] [Block:Dynamic]
+															[Var `(33078):haxe.macro.TVar]
+																[EnumParameter:haxe.macro.TVar]
+																	[Local `(33077):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+																	TLocal
+																	0
+															[Block:Dynamic]
+																[Var v(33079):haxe.macro.TVar] [Local `(33078):haxe.macro.TVar:haxe.macro.TVar]
+																[Block:Dynamic]
+																	[Return:Dynamic]
+																		[Call:String]
+																			[Field:(v : haxe.macro.TVar) -> String]
+																				[Field:reflaxe.elixir.ElixirCompiler]
+																					[Const:reflaxe.elixir.helpers.TempVariableOptimizer] this
+																					[FInstance:reflaxe.elixir.ElixirCompiler]
+																						reflaxe.elixir.helpers.TempVariableOptimizer
+																						compiler:reflaxe.elixir.ElixirCompiler
+																				[FInstance:(v : haxe.macro.TVar) -> String]
+																					reflaxe.elixir.ElixirCompiler
+																					getOriginalVarName:(v : haxe.macro.TVar) -> String
+																			[Local v(33079):haxe.macro.TVar:haxe.macro.TVar]
+														[Else:Void] [Block:Void]
+								[Else:Void] [Block:Void]
+						[Else:Void] [Block:Void]
+			[Return:Dynamic] [Const:Null<String>] null
+
+	function extractVariableNameFromExpr[Function:(expr : haxe.macro.TypedExpr) -> Null<String>]
+		[Arg:haxe.macro.TypedExpr] [Local expr(33090):haxe.macro.TypedExpr]
+		[Block:Dynamic]
+			[Meta:Void]
+				:ast(switch (expr.expr) {
+	case TLocal(v):
+		return compiler.getOriginalVarName(v);	
+	case _:
+})
+				[Block:Void]
+					[Var `(33094):haxe.macro.TypedExprDef]
+						[Field:haxe.macro.TypedExprDef]
+							[Local expr(33090):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+							[FAnon:haxe.macro.TypedExprDef] expr:haxe.macro.TypedExprDef
+					[If:Void]
+						[Binop:Bool]
+							[EnumIndex:Int] [Local `(33094):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+							==
+							[Const:Int] 1
+						[Then:Dynamic] [Block:Dynamic]
+							[Var `(33095):haxe.macro.TVar]
+								[EnumParameter:haxe.macro.TVar]
+									[Local `(33094):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+									TLocal
+									0
+							[Block:Dynamic]
+								[Var v(33096):haxe.macro.TVar] [Local `(33095):haxe.macro.TVar:haxe.macro.TVar]
+								[Block:Dynamic]
+									[Return:Dynamic]
+										[Call:String]
+											[Field:(v : haxe.macro.TVar) -> String]
+												[Field:reflaxe.elixir.ElixirCompiler]
+													[Const:reflaxe.elixir.helpers.TempVariableOptimizer] this
+													[FInstance:reflaxe.elixir.ElixirCompiler]
+														reflaxe.elixir.helpers.TempVariableOptimizer
+														compiler:reflaxe.elixir.ElixirCompiler
+												[FInstance:(v : haxe.macro.TVar) -> String]
+													reflaxe.elixir.ElixirCompiler
+													getOriginalVarName:(v : haxe.macro.TVar) -> String
+											[Local v(33096):haxe.macro.TVar:haxe.macro.TVar]
+						[Else:Void] [Block:Void]
+			[Return:Dynamic] [Const:Null<String>] null
+
+	function isNilExpression[Function:(expr : haxe.macro.TypedExpr) -> Bool]
+		[Arg:haxe.macro.TypedExpr] [Local expr(32917):haxe.macro.TypedExpr]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Meta:Bool]
+					:ast(switch (expr.expr) {
+	case TConst(TNull):
+		true;	
+	case TConst(TString("")):
+		true;	
+	case _:
+		false;	
+})
+					[Block:Bool]
+						[Var `(32921):haxe.macro.TypedExprDef]
+							[Field:haxe.macro.TypedExprDef]
+								[Local expr(32917):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+								[FAnon:haxe.macro.TypedExprDef] expr:haxe.macro.TypedExprDef
+						[If:Bool]
+							[Binop:Bool]
+								[EnumIndex:Int] [Local `(32921):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+								==
+								[Const:Int] 0
+							[Then:Bool] [Block:Bool]
+								[Var `(32922):haxe.macro.TConstant]
+									[EnumParameter:haxe.macro.TConstant]
+										[Local `(32921):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+										TConst
+										0
+								[Switch:Bool]
+									[EnumIndex:Int] [Local `(32922):haxe.macro.TConstant:haxe.macro.TConstant]
+									[Case:Bool]
+										[Const:Int] 2
+										[Block:Bool]
+											[Var `(32923):String]
+												[EnumParameter:String]
+													[Local `(32922):haxe.macro.TConstant:haxe.macro.TConstant]
+													TString
+													0
+											[If:Bool]
+												[Binop:Bool]
+													[Local `(32923):String:String]
+													==
+													[Const:String] ""
+												[Then:Bool] [Block:Bool] [Block:Bool] [Const:Bool] true
+												[Else:Bool] [Block:Bool] [Const:Bool] false
+									[Case:Bool]
+										[Const:Int] 4
+										[Block:Bool] [Block:Bool] [Const:Bool] true
+									[Default:Bool] [Block:Bool] [Const:Bool] false
+							[Else:Bool] [Block:Bool] [Const:Bool] false
+}

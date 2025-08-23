@@ -1,0 +1,1 @@
+typedef reflaxe.elixir.helpers.ComponentSlot = { required : Bool, name : String }

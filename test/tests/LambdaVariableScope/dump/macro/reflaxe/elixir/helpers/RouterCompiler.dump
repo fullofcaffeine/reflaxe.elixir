@@ -1,0 +1,2618 @@
+@:nullSafety(Off)
+class reflaxe.elixir.helpers.RouterCompiler {
+
+	public static function isControllerClassType[Function:(classType : haxe.macro.ClassType) -> Bool]
+		[Arg:haxe.macro.ClassType] [Local classType(15111):haxe.macro.ClassType]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Call:Bool]
+					[Field:(name : String) -> Bool]
+						[Field:haxe.macro.MetaAccess]
+							[Local classType(15111):haxe.macro.ClassType:haxe.macro.ClassType]
+							[FAnon:haxe.macro.MetaAccess] meta:haxe.macro.MetaAccess
+						[FAnon:(name : String) -> Bool] has:(name : String) -> Bool
+					[Const:String] ":controller"
+
+	public static function isRouterClassType[Function:(classType : haxe.macro.ClassType) -> Bool]
+		[Arg:haxe.macro.ClassType] [Local classType(15147):haxe.macro.ClassType]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Call:Bool]
+					[Field:(name : String) -> Bool]
+						[Field:haxe.macro.MetaAccess]
+							[Local classType(15147):haxe.macro.ClassType:haxe.macro.ClassType]
+							[FAnon:haxe.macro.MetaAccess] meta:haxe.macro.MetaAccess
+						[FAnon:(name : String) -> Bool] has:(name : String) -> Bool
+					[Const:String] ":router"
+
+	public static function compileController[Function:(classType : haxe.macro.ClassType) -> String]
+		[Arg:haxe.macro.ClassType] [Local classType(15115):haxe.macro.ClassType]
+		[Block:Dynamic]
+			[Var className(15116):String]
+				[Field:String]
+					[Local classType(15115):haxe.macro.ClassType:haxe.macro.ClassType]
+					[FAnon:String] name:String
+			[Var fields(15117):Array<haxe.macro.ClassField>]
+				[Call:Array<haxe.macro.ClassField>]
+					[Field:() -> Array<haxe.macro.ClassField>]
+						[Field:haxe.macro.Ref<Array<haxe.macro.ClassField>>]
+							[Local classType(15115):haxe.macro.ClassType:haxe.macro.ClassType]
+							[FAnon:haxe.macro.Ref<Array<haxe.macro.ClassField>>] fields:haxe.macro.Ref<Array<haxe.macro.ClassField>>
+						[FAnon:() -> Array<haxe.macro.ClassField>] get:() -> Array<haxe.macro.ClassField>
+			[Var output(15118):StringBuf] [New:StringBuf] StringBuf
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local output(15118):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Binop:String]
+					[Binop:String]
+						[Const:String] "defmodule "
+						+
+						[Local className(15116):String:String]
+					+
+					[Const:String] " do\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local output(15118):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "  use Phoenix.Controller\n\n"
+			[Block:Void]
+				[Var `(15146):Int] [Const:Int] 0
+				[While:Void]
+					[Binop:Bool]
+						[Local `(15146):Int:Int]
+						<
+						[Field:Int]
+							[Local fields(15117):Array<haxe.macro.ClassField>:Array<haxe.macro.ClassField>]
+							[FInstance:Int]
+								Array<haxe.macro.ClassField>
+								length:Int
+					[Block:Void]
+						[Var field(15119):haxe.macro.ClassField]
+							[Array:haxe.macro.ClassField]
+								[Local fields(15117):Array<haxe.macro.ClassField>:Array<haxe.macro.ClassField>]
+								[Local `(15146):Int:Int]
+						[Unop:Int]
+							++
+							Prefix
+							[Local `(15146):Int:Int]
+						[If:Void]
+							[Block:Bool]
+								[Var `(15122):haxe.macro.FieldKind]
+									[Field:haxe.macro.FieldKind]
+										[Local field(15119):haxe.macro.ClassField:haxe.macro.ClassField]
+										[FAnon:haxe.macro.FieldKind] kind:haxe.macro.FieldKind
+								[If:Bool]
+									[Binop:Bool]
+										[EnumIndex:Int] [Local `(15122):haxe.macro.FieldKind:haxe.macro.FieldKind]
+										==
+										[Const:Int] 1
+									[Then:Bool] [Block:Bool]
+										[Var `(15123):haxe.macro.MethodKind]
+											[EnumParameter:haxe.macro.MethodKind]
+												[Local `(15122):haxe.macro.FieldKind:haxe.macro.FieldKind]
+												FMethod
+												0
+										[Const:Bool] true
+									[Else:Bool] [Const:Bool] false
+							[Then:Void] [Block:Void]
+								[Var actionCode(15145):String]
+									[Call:String]
+										[Field:(field : haxe.macro.ClassField) -> String]
+											[TypeExpr reflaxe.elixir.helpers.RouterCompiler:Class<reflaxe.elixir.helpers.RouterCompiler>]
+											[FStatic:(field : haxe.macro.ClassField) -> String]
+												reflaxe.elixir.helpers.RouterCompiler
+												compileControllerAction:(field : haxe.macro.ClassField) -> String
+										[Local field(15119):haxe.macro.ClassField:haxe.macro.ClassField]
+								[Call:Void]
+									[Field:(x : String) -> Void]
+										[Local output(15118):StringBuf:StringBuf]
+										[FInstance:(x : String) -> Void]
+											StringBuf
+											add:(x : add.T) -> Void
+									[Local actionCode(15145):String:String]
+								[Call:Void]
+									[Field:(x : String) -> Void]
+										[Local output(15118):StringBuf:StringBuf]
+										[FInstance:(x : String) -> Void]
+											StringBuf
+											add:(x : add.T) -> Void
+									[Const:String] "\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local output(15118):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "end\n"
+			[Return:Dynamic]
+				[Call:String]
+					[Field:() -> String]
+						[Local output(15118):StringBuf:StringBuf]
+						[FInstance:() -> String]
+							StringBuf
+							toString:() -> String
+
+	public static function compileRouter[Function:(classType : haxe.macro.ClassType) -> String]
+		[Arg:haxe.macro.ClassType] [Local classType(15151):haxe.macro.ClassType]
+		[Block:Dynamic]
+			[Var className(15152):String]
+				[Field:String]
+					[Local classType(15151):haxe.macro.ClassType:haxe.macro.ClassType]
+					[FAnon:String] name:String
+			[Var fields(15153):Array<haxe.macro.ClassField>]
+				[Call:Array<haxe.macro.ClassField>]
+					[Field:() -> Array<haxe.macro.ClassField>]
+						[Field:haxe.macro.Ref<Array<haxe.macro.ClassField>>]
+							[Local classType(15151):haxe.macro.ClassType:haxe.macro.ClassType]
+							[FAnon:haxe.macro.Ref<Array<haxe.macro.ClassField>>] fields:haxe.macro.Ref<Array<haxe.macro.ClassField>>
+						[FAnon:() -> Array<haxe.macro.ClassField>] get:() -> Array<haxe.macro.ClassField>
+			[Var appName(15171):String]
+				[Call:String]
+					[Field:(classType : haxe.macro.ClassType) -> String]
+						[TypeExpr reflaxe.elixir.helpers.AnnotationSystem:Class<reflaxe.elixir.helpers.AnnotationSystem>]
+						[FStatic:(classType : haxe.macro.ClassType) -> String]
+							reflaxe.elixir.helpers.AnnotationSystem
+							getEffectiveAppName:(classType : haxe.macro.ClassType) -> String
+					[Local classType(15151):haxe.macro.ClassType:haxe.macro.ClassType]
+			[Var webModuleName(15172):String]
+				[Binop:String]
+					[Local appName(15171):String:String]
+					+
+					[Const:String] "Web.Router"
+			[Var webModuleScope(15173):String]
+				[Binop:String]
+					[Local appName(15171):String:String]
+					+
+					[Const:String] "Web"
+			[Var output(15174):StringBuf] [New:StringBuf] StringBuf
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local output(15174):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Binop:String]
+					[Binop:String]
+						[Const:String] "defmodule "
+						+
+						[Local webModuleName(15172):String:String]
+					+
+					[Const:String] " do\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local output(15174):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Binop:String]
+					[Binop:String]
+						[Const:String] "  use "
+						+
+						[Local webModuleScope(15173):String:String]
+					+
+					[Const:String] ", :router\n\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local output(15174):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Call:String]
+					[Field:(classType : haxe.macro.ClassType, appName : String) -> String]
+						[TypeExpr reflaxe.elixir.helpers.RouterCompiler:Class<reflaxe.elixir.helpers.RouterCompiler>]
+						[FStatic:(classType : haxe.macro.ClassType, appName : String) -> String]
+							reflaxe.elixir.helpers.RouterCompiler
+							generatePipelineDefinitions:(classType : haxe.macro.ClassType, appName : String) -> String
+					[Local classType(15151):haxe.macro.ClassType:haxe.macro.ClassType]
+					[Local appName(15171):String:String]
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local output(15174):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Call:String]
+					[Field:(classType : haxe.macro.ClassType, fields : Array<haxe.macro.ClassField>, webModuleScope : String, appName : String) -> String]
+						[TypeExpr reflaxe.elixir.helpers.RouterCompiler:Class<reflaxe.elixir.helpers.RouterCompiler>]
+						[FStatic:(classType : haxe.macro.ClassType, fields : Array<haxe.macro.ClassField>, webModuleScope : String, appName : String) -> String]
+							reflaxe.elixir.helpers.RouterCompiler
+							generateRouteScopes:(classType : haxe.macro.ClassType, fields : Array<haxe.macro.ClassField>, webModuleScope : String, appName : String) -> String
+					[Local classType(15151):haxe.macro.ClassType:haxe.macro.ClassType]
+					[Local fields(15153):Array<haxe.macro.ClassField>:Array<haxe.macro.ClassField>]
+					[Local webModuleScope(15173):String:String]
+					[Local appName(15171):String:String]
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local output(15174):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "end\n"
+			[Return:Dynamic]
+				[Call:String]
+					[Field:() -> String]
+						[Local output(15174):StringBuf:StringBuf]
+						[FInstance:() -> String]
+							StringBuf
+							toString:() -> String
+
+	static function generatePipelineDefinitions[Function:(classType : haxe.macro.ClassType, appName : String) -> String]
+		[Arg:haxe.macro.ClassType] [Local classType(15175):haxe.macro.ClassType]
+		[Arg:String] [Local appName(15176):String]
+		[Block:Dynamic]
+			[Var output(15177):StringBuf] [New:StringBuf] StringBuf
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local output(15177):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "  pipeline :browser do\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local output(15177):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "    plug :accepts, [\"html\"]\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local output(15177):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "    plug :fetch_session\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local output(15177):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "    plug :fetch_live_flash\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local output(15177):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Binop:String]
+					[Binop:String]
+						[Const:String] "    plug :put_root_layout, html: {"
+						+
+						[Local appName(15176):String:String]
+					+
+					[Const:String] "Web.Layouts, :root}\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local output(15177):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "    plug :protect_from_forgery\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local output(15177):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "    plug :put_secure_browser_headers\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local output(15177):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "  end\n\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local output(15177):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "  pipeline :api do\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local output(15177):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "    plug :accepts, [\"json\"]\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local output(15177):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "  end\n\n"
+			[If:Void]
+				[Call:Bool]
+					[Field:(name : String) -> Bool]
+						[Field:haxe.macro.MetaAccess]
+							[Local classType(15175):haxe.macro.ClassType:haxe.macro.ClassType]
+							[FAnon:haxe.macro.MetaAccess] meta:haxe.macro.MetaAccess
+						[FAnon:(name : String) -> Bool] has:(name : String) -> Bool
+					[Const:String] ":pipeline"
+				[Then:Void] [Block:Void]
+					[Call:Void]
+						[Field:(x : String) -> Void]
+							[Local output(15177):StringBuf:StringBuf]
+							[FInstance:(x : String) -> Void]
+								StringBuf
+								add:(x : add.T) -> Void
+						[Const:String] "  # Custom pipelines will be generated here\n\n"
+			[Return:Dynamic]
+				[Call:String]
+					[Field:() -> String]
+						[Local output(15177):StringBuf:StringBuf]
+						[FInstance:() -> String]
+							StringBuf
+							toString:() -> String
+
+	static function generateRouteScopes[Function:(classType : haxe.macro.ClassType, fields : Array<haxe.macro.ClassField>, webModuleScope : String, appName : String) -> String]
+		[Arg:haxe.macro.ClassType] [Local classType(15178):haxe.macro.ClassType]
+		[Arg:Array<haxe.macro.ClassField>] [Local fields(15179):Array<haxe.macro.ClassField>]
+		[Arg:String] [Local webModuleScope(15180):String]
+		[Arg:String] [Local appName(15181):String]
+		[Block:Dynamic]
+			[Var output(15182):StringBuf] [New:StringBuf] StringBuf
+			[Var routeData(15345):{ devRoutes : Array<String>, browserRoutes : Array<String>, apiRoutes : Array<String> }]
+				[Call:{ devRoutes : Array<String>, browserRoutes : Array<String>, apiRoutes : Array<String> }]
+					[Field:(classType : haxe.macro.ClassType, webModuleScope : String) -> { devRoutes : Array<String>, browserRoutes : Array<String>, apiRoutes : Array<String> }]
+						[TypeExpr reflaxe.elixir.helpers.RouterCompiler:Class<reflaxe.elixir.helpers.RouterCompiler>]
+						[FStatic:(classType : haxe.macro.ClassType, webModuleScope : String) -> { devRoutes : Array<String>, browserRoutes : Array<String>, apiRoutes : Array<String> }]
+							reflaxe.elixir.helpers.RouterCompiler
+							generateScopeAwareRoutes:(classType : haxe.macro.ClassType, webModuleScope : String) -> { devRoutes : Array<String>, browserRoutes : Array<String>, apiRoutes : Array<String> }
+					[Local classType(15178):haxe.macro.ClassType:haxe.macro.ClassType]
+					[Local webModuleScope(15180):String:String]
+			[Var browserRoutes(15346):Array<String>]
+				[Field:Array<String>]
+					[Local routeData(15345):{ devRoutes : Array<String>, browserRoutes : Array<String>, apiRoutes : Array<String> }:{ devRoutes : Array<String>, browserRoutes : Array<String>, apiRoutes : Array<String> }]
+					[FAnon:Array<String>] browserRoutes:Array<String>
+			[Var apiRoutes(15347):Array<String>]
+				[Field:Array<String>]
+					[Local routeData(15345):{ devRoutes : Array<String>, browserRoutes : Array<String>, apiRoutes : Array<String> }:{ devRoutes : Array<String>, browserRoutes : Array<String>, apiRoutes : Array<String> }]
+					[FAnon:Array<String>] apiRoutes:Array<String>
+			[Var devRoutes(15348):Array<String>]
+				[Field:Array<String>]
+					[Local routeData(15345):{ devRoutes : Array<String>, browserRoutes : Array<String>, apiRoutes : Array<String> }:{ devRoutes : Array<String>, browserRoutes : Array<String>, apiRoutes : Array<String> }]
+					[FAnon:Array<String>] devRoutes:Array<String>
+			[If:Void]
+				[Binop:Bool]
+					[Field:Int]
+						[Local browserRoutes(15346):Array<String>:Array<String>]
+						[FInstance:Int]
+							Array<String>
+							length:Int
+					>
+					[Const:Int] 0
+				[Then:Void] [Block:Void]
+					[Call:Void]
+						[Field:(x : String) -> Void]
+							[Local output(15182):StringBuf:StringBuf]
+							[FInstance:(x : String) -> Void]
+								StringBuf
+								add:(x : add.T) -> Void
+						[Binop:String]
+							[Binop:String]
+								[Const:String] "  scope \"/\", "
+								+
+								[Local webModuleScope(15180):String:String]
+							+
+							[Const:String] " do\n"
+					[Call:Void]
+						[Field:(x : String) -> Void]
+							[Local output(15182):StringBuf:StringBuf]
+							[FInstance:(x : String) -> Void]
+								StringBuf
+								add:(x : add.T) -> Void
+						[Const:String] "    pipe_through :browser\n\n"
+					[Block:Void]
+						[Var `(15350):Int] [Const:Int] 0
+						[While:Void]
+							[Binop:Bool]
+								[Local `(15350):Int:Int]
+								<
+								[Field:Int]
+									[Local browserRoutes(15346):Array<String>:Array<String>]
+									[FInstance:Int]
+										Array<String>
+										length:Int
+							[Block:Void]
+								[Var route(15349):String]
+									[Array:String]
+										[Local browserRoutes(15346):Array<String>:Array<String>]
+										[Local `(15350):Int:Int]
+								[Unop:Int]
+									++
+									Prefix
+									[Local `(15350):Int:Int]
+								[Call:Void]
+									[Field:(x : String) -> Void]
+										[Local output(15182):StringBuf:StringBuf]
+										[FInstance:(x : String) -> Void]
+											StringBuf
+											add:(x : add.T) -> Void
+									[Binop:String]
+										[Binop:String]
+											[Const:String] "    "
+											+
+											[Local route(15349):String:String]
+										+
+										[Const:String] "\n"
+					[Call:Void]
+						[Field:(x : String) -> Void]
+							[Local output(15182):StringBuf:StringBuf]
+							[FInstance:(x : String) -> Void]
+								StringBuf
+								add:(x : add.T) -> Void
+						[Const:String] "  end\n\n"
+			[If:Void]
+				[Binop:Bool]
+					[Field:Int]
+						[Local devRoutes(15348):Array<String>:Array<String>]
+						[FInstance:Int]
+							Array<String>
+							length:Int
+					>
+					[Const:Int] 0
+				[Then:Void] [Block:Void]
+					[Call:Void]
+						[Field:(x : String) -> Void]
+							[Local output(15182):StringBuf:StringBuf]
+							[FInstance:(x : String) -> Void]
+								StringBuf
+								add:(x : add.T) -> Void
+						[Const:String] "  # Enable LiveDashboard in development\n"
+					[Var appAtom(15351):String]
+						[Call:String]
+							[Field:(camelCase : String) -> String]
+								[TypeExpr reflaxe.elixir.helpers.NamingHelper:Class<reflaxe.elixir.helpers.NamingHelper>]
+								[FStatic:(camelCase : String) -> String]
+									reflaxe.elixir.helpers.NamingHelper
+									toSnakeCase:(camelCase : String) -> String
+							[Local appName(15181):String:String]
+					[Call:Void]
+						[Field:(x : String) -> Void]
+							[Local output(15182):StringBuf:StringBuf]
+							[FInstance:(x : String) -> Void]
+								StringBuf
+								add:(x : add.T) -> Void
+						[Binop:String]
+							[Binop:String]
+								[Const:String] "  if Application.compile_env(:"
+								+
+								[Local appAtom(15351):String:String]
+							+
+							[Const:String] ", :dev_routes) do\n"
+					[Call:Void]
+						[Field:(x : String) -> Void]
+							[Local output(15182):StringBuf:StringBuf]
+							[FInstance:(x : String) -> Void]
+								StringBuf
+								add:(x : add.T) -> Void
+						[Const:String] "    import Phoenix.LiveDashboard.Router\n\n"
+					[Call:Void]
+						[Field:(x : String) -> Void]
+							[Local output(15182):StringBuf:StringBuf]
+							[FInstance:(x : String) -> Void]
+								StringBuf
+								add:(x : add.T) -> Void
+						[Const:String] "    scope \"/dev\" do\n"
+					[Call:Void]
+						[Field:(x : String) -> Void]
+							[Local output(15182):StringBuf:StringBuf]
+							[FInstance:(x : String) -> Void]
+								StringBuf
+								add:(x : add.T) -> Void
+						[Const:String] "      pipe_through :browser\n\n"
+					[Block:Void]
+						[Var `(15353):Int] [Const:Int] 0
+						[While:Void]
+							[Binop:Bool]
+								[Local `(15353):Int:Int]
+								<
+								[Field:Int]
+									[Local devRoutes(15348):Array<String>:Array<String>]
+									[FInstance:Int]
+										Array<String>
+										length:Int
+							[Block:Void]
+								[Var route(15352):String]
+									[Array:String]
+										[Local devRoutes(15348):Array<String>:Array<String>]
+										[Local `(15353):Int:Int]
+								[Unop:Int]
+									++
+									Prefix
+									[Local `(15353):Int:Int]
+								[Call:Void]
+									[Field:(x : String) -> Void]
+										[Local output(15182):StringBuf:StringBuf]
+										[FInstance:(x : String) -> Void]
+											StringBuf
+											add:(x : add.T) -> Void
+									[Binop:String]
+										[Binop:String]
+											[Const:String] "      "
+											+
+											[Local route(15352):String:String]
+										+
+										[Const:String] "\n"
+					[Call:Void]
+						[Field:(x : String) -> Void]
+							[Local output(15182):StringBuf:StringBuf]
+							[FInstance:(x : String) -> Void]
+								StringBuf
+								add:(x : add.T) -> Void
+						[Const:String] "    end\n"
+					[Call:Void]
+						[Field:(x : String) -> Void]
+							[Local output(15182):StringBuf:StringBuf]
+							[FInstance:(x : String) -> Void]
+								StringBuf
+								add:(x : add.T) -> Void
+						[Const:String] "  end\n"
+			[Return:Dynamic]
+				[Call:String]
+					[Field:() -> String]
+						[Local output(15182):StringBuf:StringBuf]
+						[FInstance:() -> String]
+							StringBuf
+							toString:() -> String
+
+	static function generateIncludedControllerRoutes[Function:(classType : haxe.macro.ClassType) -> String]
+		[Arg:haxe.macro.ClassType] [Local classType(25306):haxe.macro.ClassType]
+		[Block:Dynamic]
+			[Var output(25307):StringBuf] [New:StringBuf] StringBuf
+			[If:Void]
+				[Binop:Bool]
+					[Field:String]
+						[Local classType(25306):haxe.macro.ClassType:haxe.macro.ClassType]
+						[FAnon:String] name:String
+					==
+					[Const:String] "AppRouter"
+				[Then:Void] [Block:Void]
+					[Call:Void]
+						[Field:(x : String) -> Void]
+							[Local output(25307):StringBuf:StringBuf]
+							[FInstance:(x : String) -> Void]
+								StringBuf
+								add:(x : add.T) -> Void
+						[Const:String] "    get \"/\", PageController, :home\n"
+					[Call:Void]
+						[Field:(x : String) -> Void]
+							[Local output(25307):StringBuf:StringBuf]
+							[FInstance:(x : String) -> Void]
+								StringBuf
+								add:(x : add.T) -> Void
+						[Const:String] "    resources \"/users\", UserController\n"
+					[Call:Void]
+						[Field:(x : String) -> Void]
+							[Local output(25307):StringBuf:StringBuf]
+							[FInstance:(x : String) -> Void]
+								StringBuf
+								add:(x : add.T) -> Void
+						[Const:String] "    resources \"/posts\", PostController\n"
+			[Return:Dynamic]
+				[Call:String]
+					[Field:() -> String]
+						[Local output(25307):StringBuf:StringBuf]
+						[FInstance:() -> String]
+							StringBuf
+							toString:() -> String
+
+	static function generateScopeAwareRoutes[Function:(classType : haxe.macro.ClassType, webModuleScope : String) -> { devRoutes : Array<String>, browserRoutes : Array<String>, apiRoutes : Array<String> }]
+		[Arg:haxe.macro.ClassType] [Local classType(15183):haxe.macro.ClassType]
+		[Arg:String] [Local webModuleScope(15184):String]
+		[Block:Dynamic]
+			[Var browserRoutes(15185):Array<String>] [ArrayDecl:Array<String>]
+			[Var apiRoutes(15186):Array<String>] [ArrayDecl:Array<String>]
+			[Var devRoutes(15187):Array<String>] [ArrayDecl:Array<String>]
+			[Var fields(15188):Array<haxe.macro.ClassField>]
+				[Call:Array<haxe.macro.ClassField>]
+					[Field:() -> Array<haxe.macro.ClassField>]
+						[Field:haxe.macro.Ref<Array<haxe.macro.ClassField>>]
+							[Local classType(15183):haxe.macro.ClassType:haxe.macro.ClassType]
+							[FAnon:haxe.macro.Ref<Array<haxe.macro.ClassField>>] fields:haxe.macro.Ref<Array<haxe.macro.ClassField>>
+						[FAnon:() -> Array<haxe.macro.ClassField>] get:() -> Array<haxe.macro.ClassField>
+			[Var statics(15189):Array<haxe.macro.ClassField>]
+				[Call:Array<haxe.macro.ClassField>]
+					[Field:() -> Array<haxe.macro.ClassField>]
+						[Field:haxe.macro.Ref<Array<haxe.macro.ClassField>>]
+							[Local classType(15183):haxe.macro.ClassType:haxe.macro.ClassType]
+							[FAnon:haxe.macro.Ref<Array<haxe.macro.ClassField>>] statics:haxe.macro.Ref<Array<haxe.macro.ClassField>>
+						[FAnon:() -> Array<haxe.macro.ClassField>] get:() -> Array<haxe.macro.ClassField>
+			[Var allFields(15190):Array<haxe.macro.ClassField>]
+				[Call:Array<haxe.macro.ClassField>]
+					[Field:(a : Array<haxe.macro.ClassField>) -> Array<haxe.macro.ClassField>]
+						[Local fields(15188):Array<haxe.macro.ClassField>:Array<haxe.macro.ClassField>]
+						[FInstance:(a : Array<haxe.macro.ClassField>) -> Array<haxe.macro.ClassField>]
+							Array<haxe.macro.ClassField>
+							concat:(a : Array<Array.T>) -> Array<Array.T>
+					[Local statics(15189):Array<haxe.macro.ClassField>:Array<haxe.macro.ClassField>]
+			[Block:Void]
+				[Var `(15344):Int] [Const:Int] 0
+				[While:Void]
+					[Binop:Bool]
+						[Local `(15344):Int:Int]
+						<
+						[Field:Int]
+							[Local allFields(15190):Array<haxe.macro.ClassField>:Array<haxe.macro.ClassField>]
+							[FInstance:Int]
+								Array<haxe.macro.ClassField>
+								length:Int
+					[Block:Void]
+						[Var field(15191):haxe.macro.ClassField]
+							[Array:haxe.macro.ClassField]
+								[Local allFields(15190):Array<haxe.macro.ClassField>:Array<haxe.macro.ClassField>]
+								[Local `(15344):Int:Int]
+						[Unop:Int]
+							++
+							Prefix
+							[Local `(15344):Int:Int]
+						[If:Void]
+							[Block:Bool]
+								[Var `(15194):haxe.macro.FieldKind]
+									[Field:haxe.macro.FieldKind]
+										[Local field(15191):haxe.macro.ClassField:haxe.macro.ClassField]
+										[FAnon:haxe.macro.FieldKind] kind:haxe.macro.FieldKind
+								[If:Bool]
+									[Binop:Bool]
+										[EnumIndex:Int] [Local `(15194):haxe.macro.FieldKind:haxe.macro.FieldKind]
+										==
+										[Const:Int] 1
+									[Then:Bool] [Block:Bool]
+										[Var `(15195):haxe.macro.MethodKind]
+											[EnumParameter:haxe.macro.MethodKind]
+												[Local `(15194):haxe.macro.FieldKind:haxe.macro.FieldKind]
+												FMethod
+												0
+										[Const:Bool] true
+									[Else:Bool] [Const:Bool] false
+							[Then:Void] [Block:Void]
+								[Var routeAnnotation(15316):Null<reflaxe.elixir.helpers.RouteInfo>]
+									[Call:Null<reflaxe.elixir.helpers.RouteInfo>]
+										[Field:(field : haxe.macro.ClassField) -> Null<reflaxe.elixir.helpers.RouteInfo>]
+											[TypeExpr reflaxe.elixir.helpers.RouterCompiler:Class<reflaxe.elixir.helpers.RouterCompiler>]
+											[FStatic:(field : haxe.macro.ClassField) -> Null<reflaxe.elixir.helpers.RouteInfo>]
+												reflaxe.elixir.helpers.RouterCompiler
+												extractRouteAnnotation:(field : haxe.macro.ClassField) -> Null<reflaxe.elixir.helpers.RouteInfo>
+										[Local field(15191):haxe.macro.ClassField:haxe.macro.ClassField]
+								[If:Void]
+									[Binop:Bool]
+										[Local routeAnnotation(15316):Null<reflaxe.elixir.helpers.RouteInfo>:Null<reflaxe.elixir.helpers.RouteInfo>]
+										!=
+										[Const:Null<reflaxe.elixir.helpers.RouteInfo>] null
+									[Then:Void] [Block:Void]
+										[Var controllerName(15317):Null<String>]
+											[If:Null<String>]
+												[Binop:Bool]
+													[Field:Null<String>]
+														[Local routeAnnotation(15316):Null<reflaxe.elixir.helpers.RouteInfo>:Null<reflaxe.elixir.helpers.RouteInfo>]
+														[FAnon:Null<String>] controller:Null<String>
+													!=
+													[Const:Null<String>] null
+												[Then:Null<String>] [Block:Null<String>]
+													[Field:Null<String>]
+														[Local routeAnnotation(15316):Null<reflaxe.elixir.helpers.RouteInfo>:Null<reflaxe.elixir.helpers.RouteInfo>]
+														[FAnon:Null<String>] controller:Null<String>
+												[Else:String] [Block:String] [Const:String] "DefaultController"
+										[Var route(15318):String]
+										[If:Void]
+											[Binop:Bool]
+												[Field:String]
+													[Local routeAnnotation(15316):Null<reflaxe.elixir.helpers.RouteInfo>:Null<reflaxe.elixir.helpers.RouteInfo>]
+													[FAnon:String] method:String
+												==
+												[Const:String] "LIVE_DASHBOARD"
+											[Then:Int] [Block:Int]
+												[Binop:String]
+													[Local route(15318):String:String]
+													=
+													[Call:String]
+														[Field:(controllerName : String, actionName : String, route : reflaxe.elixir.helpers.RouteInfo, ?scopePrefix : Null<String>) -> String]
+															[TypeExpr reflaxe.elixir.helpers.RouterCompiler:Class<reflaxe.elixir.helpers.RouterCompiler>]
+															[FStatic:(controllerName : String, actionName : String, route : reflaxe.elixir.helpers.RouteInfo, ?scopePrefix : Null<String>) -> String]
+																reflaxe.elixir.helpers.RouterCompiler
+																generateRouteFromAnnotation:(controllerName : String, actionName : String, route : reflaxe.elixir.helpers.RouteInfo, ?scopePrefix : Null<String>) -> String
+														[Local controllerName(15317):Null<String>:Null<String>]
+														[Field:String]
+															[Local field(15191):haxe.macro.ClassField:haxe.macro.ClassField]
+															[FAnon:String] name:String
+														[Local routeAnnotation(15316):Null<reflaxe.elixir.helpers.RouteInfo>:Null<reflaxe.elixir.helpers.RouteInfo>]
+														[Const:Null<String>] null
+												[Call:Int]
+													[Field:(x : String) -> Int]
+														[Local devRoutes(15187):Array<String>:Array<String>]
+														[FInstance:(x : String) -> Int]
+															Array<String>
+															push:(x : Array.T) -> Int
+													[Local route(15318):String:String]
+											[Else:Void] [Block:Void]
+												[If:Void]
+													[Binop:Bool]
+														[Binop:Bool]
+															[Field:String]
+																[Local routeAnnotation(15316):Null<reflaxe.elixir.helpers.RouteInfo>:Null<reflaxe.elixir.helpers.RouteInfo>]
+																[FAnon:String] method:String
+															==
+															[Const:String] "LIVE"
+														||
+														[Binop:Bool]
+															[Field:String]
+																[Local routeAnnotation(15316):Null<reflaxe.elixir.helpers.RouteInfo>:Null<reflaxe.elixir.helpers.RouteInfo>]
+																[FAnon:String] method:String
+															==
+															[Const:String] "GET"
+													[Then:Int] [Block:Int]
+														[Binop:String]
+															[Local route(15318):String:String]
+															=
+															[Call:String]
+																[Field:(controllerName : String, actionName : String, route : reflaxe.elixir.helpers.RouteInfo, ?scopePrefix : Null<String>) -> String]
+																	[TypeExpr reflaxe.elixir.helpers.RouterCompiler:Class<reflaxe.elixir.helpers.RouterCompiler>]
+																	[FStatic:(controllerName : String, actionName : String, route : reflaxe.elixir.helpers.RouteInfo, ?scopePrefix : Null<String>) -> String]
+																		reflaxe.elixir.helpers.RouterCompiler
+																		generateRouteFromAnnotation:(controllerName : String, actionName : String, route : reflaxe.elixir.helpers.RouteInfo, ?scopePrefix : Null<String>) -> String
+																[Local controllerName(15317):Null<String>:Null<String>]
+																[Field:String]
+																	[Local field(15191):haxe.macro.ClassField:haxe.macro.ClassField]
+																	[FAnon:String] name:String
+																[Local routeAnnotation(15316):Null<reflaxe.elixir.helpers.RouteInfo>:Null<reflaxe.elixir.helpers.RouteInfo>]
+																[Local webModuleScope(15184):String:String]
+														[Call:Int]
+															[Field:(x : String) -> Int]
+																[Local browserRoutes(15185):Array<String>:Array<String>]
+																[FInstance:(x : String) -> Int]
+																	Array<String>
+																	push:(x : Array.T) -> Int
+															[Local route(15318):String:String]
+													[Else:Int] [Block:Int]
+														[Binop:String]
+															[Local route(15318):String:String]
+															=
+															[Call:String]
+																[Field:(controllerName : String, actionName : String, route : reflaxe.elixir.helpers.RouteInfo, ?scopePrefix : Null<String>) -> String]
+																	[TypeExpr reflaxe.elixir.helpers.RouterCompiler:Class<reflaxe.elixir.helpers.RouterCompiler>]
+																	[FStatic:(controllerName : String, actionName : String, route : reflaxe.elixir.helpers.RouteInfo, ?scopePrefix : Null<String>) -> String]
+																		reflaxe.elixir.helpers.RouterCompiler
+																		generateRouteFromAnnotation:(controllerName : String, actionName : String, route : reflaxe.elixir.helpers.RouteInfo, ?scopePrefix : Null<String>) -> String
+																[Local controllerName(15317):Null<String>:Null<String>]
+																[Field:String]
+																	[Local field(15191):haxe.macro.ClassField:haxe.macro.ClassField]
+																	[FAnon:String] name:String
+																[Local routeAnnotation(15316):Null<reflaxe.elixir.helpers.RouteInfo>:Null<reflaxe.elixir.helpers.RouteInfo>]
+																[Const:Null<String>] null
+														[Call:Int]
+															[Field:(x : String) -> Int]
+																[Local apiRoutes(15186):Array<String>:Array<String>]
+																[FInstance:(x : String) -> Int]
+																	Array<String>
+																	push:(x : Array.T) -> Int
+															[Local route(15318):String:String]
+			[Return:Dynamic]
+				[ObjectDecl:{ devRoutes : Array<String>, browserRoutes : Array<String>, apiRoutes : Array<String> }]
+					browserRoutes: [Local browserRoutes(15185):Array<String>:Array<String>]
+					apiRoutes: [Local apiRoutes(15186):Array<String>:Array<String>]
+					devRoutes: [Local devRoutes(15187):Array<String>:Array<String>]
+
+	public static function generateRoutes[Function:(classType : haxe.macro.ClassType) -> Array<String>]
+		[Arg:haxe.macro.ClassType] [Local classType(25308):haxe.macro.ClassType]
+		[Block:Dynamic]
+			[Var routes(25309):Array<String>] [ArrayDecl:Array<String>]
+			[Var fields(25310):Array<haxe.macro.ClassField>]
+				[Call:Array<haxe.macro.ClassField>]
+					[Field:() -> Array<haxe.macro.ClassField>]
+						[Field:haxe.macro.Ref<Array<haxe.macro.ClassField>>]
+							[Local classType(25308):haxe.macro.ClassType:haxe.macro.ClassType]
+							[FAnon:haxe.macro.Ref<Array<haxe.macro.ClassField>>] fields:haxe.macro.Ref<Array<haxe.macro.ClassField>>
+						[FAnon:() -> Array<haxe.macro.ClassField>] get:() -> Array<haxe.macro.ClassField>
+			[Var statics(25311):Array<haxe.macro.ClassField>]
+				[Call:Array<haxe.macro.ClassField>]
+					[Field:() -> Array<haxe.macro.ClassField>]
+						[Field:haxe.macro.Ref<Array<haxe.macro.ClassField>>]
+							[Local classType(25308):haxe.macro.ClassType:haxe.macro.ClassType]
+							[FAnon:haxe.macro.Ref<Array<haxe.macro.ClassField>>] statics:haxe.macro.Ref<Array<haxe.macro.ClassField>>
+						[FAnon:() -> Array<haxe.macro.ClassField>] get:() -> Array<haxe.macro.ClassField>
+			[Var allFields(25312):Array<haxe.macro.ClassField>]
+				[Call:Array<haxe.macro.ClassField>]
+					[Field:(a : Array<haxe.macro.ClassField>) -> Array<haxe.macro.ClassField>]
+						[Local fields(25310):Array<haxe.macro.ClassField>:Array<haxe.macro.ClassField>]
+						[FInstance:(a : Array<haxe.macro.ClassField>) -> Array<haxe.macro.ClassField>]
+							Array<haxe.macro.ClassField>
+							concat:(a : Array<Array.T>) -> Array<Array.T>
+					[Local statics(25311):Array<haxe.macro.ClassField>:Array<haxe.macro.ClassField>]
+			[Block:Void]
+				[Var `(25321):Int] [Const:Int] 0
+				[While:Void]
+					[Binop:Bool]
+						[Local `(25321):Int:Int]
+						<
+						[Field:Int]
+							[Local allFields(25312):Array<haxe.macro.ClassField>:Array<haxe.macro.ClassField>]
+							[FInstance:Int]
+								Array<haxe.macro.ClassField>
+								length:Int
+					[Block:Void]
+						[Var field(25313):haxe.macro.ClassField]
+							[Array:haxe.macro.ClassField]
+								[Local allFields(25312):Array<haxe.macro.ClassField>:Array<haxe.macro.ClassField>]
+								[Local `(25321):Int:Int]
+						[Unop:Int]
+							++
+							Prefix
+							[Local `(25321):Int:Int]
+						[If:Void]
+							[Block:Bool]
+								[Var `(25316):haxe.macro.FieldKind]
+									[Field:haxe.macro.FieldKind]
+										[Local field(25313):haxe.macro.ClassField:haxe.macro.ClassField]
+										[FAnon:haxe.macro.FieldKind] kind:haxe.macro.FieldKind
+								[If:Bool]
+									[Binop:Bool]
+										[EnumIndex:Int] [Local `(25316):haxe.macro.FieldKind:haxe.macro.FieldKind]
+										==
+										[Const:Int] 1
+									[Then:Bool] [Block:Bool]
+										[Var `(25317):haxe.macro.MethodKind]
+											[EnumParameter:haxe.macro.MethodKind]
+												[Local `(25316):haxe.macro.FieldKind:haxe.macro.FieldKind]
+												FMethod
+												0
+										[Const:Bool] true
+									[Else:Bool] [Const:Bool] false
+							[Then:Void] [Block:Void]
+								[Var routeAnnotation(25318):Null<reflaxe.elixir.helpers.RouteInfo>]
+									[Call:Null<reflaxe.elixir.helpers.RouteInfo>]
+										[Field:(field : haxe.macro.ClassField) -> Null<reflaxe.elixir.helpers.RouteInfo>]
+											[TypeExpr reflaxe.elixir.helpers.RouterCompiler:Class<reflaxe.elixir.helpers.RouterCompiler>]
+											[FStatic:(field : haxe.macro.ClassField) -> Null<reflaxe.elixir.helpers.RouteInfo>]
+												reflaxe.elixir.helpers.RouterCompiler
+												extractRouteAnnotation:(field : haxe.macro.ClassField) -> Null<reflaxe.elixir.helpers.RouteInfo>
+										[Local field(25313):haxe.macro.ClassField:haxe.macro.ClassField]
+								[If:Void]
+									[Binop:Bool]
+										[Local routeAnnotation(25318):Null<reflaxe.elixir.helpers.RouteInfo>:Null<reflaxe.elixir.helpers.RouteInfo>]
+										!=
+										[Const:Null<reflaxe.elixir.helpers.RouteInfo>] null
+									[Then:Int] [Block:Int]
+										[Var controllerName(25319):Null<String>]
+											[If:Null<String>]
+												[Binop:Bool]
+													[Field:Null<String>]
+														[Local routeAnnotation(25318):Null<reflaxe.elixir.helpers.RouteInfo>:Null<reflaxe.elixir.helpers.RouteInfo>]
+														[FAnon:Null<String>] controller:Null<String>
+													!=
+													[Const:Null<String>] null
+												[Then:Null<String>] [Block:Null<String>]
+													[Field:Null<String>]
+														[Local routeAnnotation(25318):Null<reflaxe.elixir.helpers.RouteInfo>:Null<reflaxe.elixir.helpers.RouteInfo>]
+														[FAnon:Null<String>] controller:Null<String>
+												[Else:String] [Block:String] [Const:String] "DefaultController"
+										[Var route(25320):String]
+											[Call:String]
+												[Field:(controllerName : String, actionName : String, route : reflaxe.elixir.helpers.RouteInfo, ?scopePrefix : Null<String>) -> String]
+													[TypeExpr reflaxe.elixir.helpers.RouterCompiler:Class<reflaxe.elixir.helpers.RouterCompiler>]
+													[FStatic:(controllerName : String, actionName : String, route : reflaxe.elixir.helpers.RouteInfo, ?scopePrefix : Null<String>) -> String]
+														reflaxe.elixir.helpers.RouterCompiler
+														generateRouteFromAnnotation:(controllerName : String, actionName : String, route : reflaxe.elixir.helpers.RouteInfo, ?scopePrefix : Null<String>) -> String
+												[Local controllerName(25319):Null<String>:Null<String>]
+												[Field:String]
+													[Local field(25313):haxe.macro.ClassField:haxe.macro.ClassField]
+													[FAnon:String] name:String
+												[Local routeAnnotation(25318):Null<reflaxe.elixir.helpers.RouteInfo>:Null<reflaxe.elixir.helpers.RouteInfo>]
+												[Const:Null<String>] null
+										[Call:Int]
+											[Field:(x : String) -> Int]
+												[Local routes(25309):Array<String>:Array<String>]
+												[FInstance:(x : String) -> Int]
+													Array<String>
+													push:(x : Array.T) -> Int
+											[Local route(25320):String:String]
+			[Return:Dynamic] [Local routes(25309):Array<String>:Array<String>]
+
+	public static function generateResourceRoutes[Function:(classType : haxe.macro.ClassType) -> String]
+		[Arg:haxe.macro.ClassType] [Local classType(25322):haxe.macro.ClassType]
+		[Block:Dynamic]
+			[If:Void]
+				[Call:Bool]
+					[Field:(name : String) -> Bool]
+						[Field:haxe.macro.MetaAccess]
+							[Local classType(25322):haxe.macro.ClassType:haxe.macro.ClassType]
+							[FAnon:haxe.macro.MetaAccess] meta:haxe.macro.MetaAccess
+						[FAnon:(name : String) -> Bool] has:(name : String) -> Bool
+					[Const:String] ":resources"
+				[Then:Dynamic] [Block:Dynamic]
+					[Var resourceName(25324):String]
+						[Call:String]
+							[Field:(classType : haxe.macro.ClassType) -> String]
+								[TypeExpr reflaxe.elixir.helpers.RouterCompiler:Class<reflaxe.elixir.helpers.RouterCompiler>]
+								[FStatic:(classType : haxe.macro.ClassType) -> String]
+									reflaxe.elixir.helpers.RouterCompiler
+									extractResourceName:(classType : haxe.macro.ClassType) -> String
+							[Local classType(25322):haxe.macro.ClassType:haxe.macro.ClassType]
+					[Return:Dynamic]
+						[Binop:String]
+							[Binop:String]
+								[Binop:String]
+									[Const:String] "resources \"/"
+									+
+									[Local resourceName(25324):String:String]
+								+
+								[Const:String] "\", "
+							+
+							[Field:String]
+								[Local classType(25322):haxe.macro.ClassType:haxe.macro.ClassType]
+								[FAnon:String] name:String
+			[Return:Dynamic] [Const:String] ""
+
+	public static function validateRouteParameters[Function:(field : haxe.macro.ClassField, route : reflaxe.elixir.helpers.RouteInfo) -> Array<String>]
+		[Arg:haxe.macro.ClassField] [Local field(25325):haxe.macro.ClassField]
+		[Arg:reflaxe.elixir.helpers.RouteInfo] [Local route(25326):reflaxe.elixir.helpers.RouteInfo]
+		[Block:Dynamic]
+			[Var errors(25327):Array<String>] [ArrayDecl:Array<String>]
+			[Var pathParams(25332):Array<String>]
+				[Call:Array<String>]
+					[Field:(path : String) -> Array<String>]
+						[TypeExpr reflaxe.elixir.helpers.RouterCompiler:Class<reflaxe.elixir.helpers.RouterCompiler>]
+						[FStatic:(path : String) -> Array<String>]
+							reflaxe.elixir.helpers.RouterCompiler
+							extractPathParameters:(path : String) -> Array<String>
+					[Field:String]
+						[Local route(25326):reflaxe.elixir.helpers.RouteInfo:reflaxe.elixir.helpers.RouteInfo]
+						[FAnon:String] path:String
+			[Var functionParams(25358):Array<{ type : haxe.macro.Type, name : String }>]
+				[Call:Array<{ type : haxe.macro.Type, name : String }>]
+					[Field:(field : haxe.macro.ClassField) -> Array<{ type : haxe.macro.Type, name : String }>]
+						[TypeExpr reflaxe.elixir.helpers.RouterCompiler:Class<reflaxe.elixir.helpers.RouterCompiler>]
+						[FStatic:(field : haxe.macro.ClassField) -> Array<{ type : haxe.macro.Type, name : String }>]
+							reflaxe.elixir.helpers.RouterCompiler
+							getFunctionParameters:(field : haxe.macro.ClassField) -> Array<{ type : haxe.macro.Type, name : String }>
+					[Local field(25325):haxe.macro.ClassField:haxe.macro.ClassField]
+			[Block:Void]
+				[Var `(25363):Int] [Const:Int] 0
+				[While:Void]
+					[Binop:Bool]
+						[Local `(25363):Int:Int]
+						<
+						[Field:Int]
+							[Local pathParams(25332):Array<String>:Array<String>]
+							[FInstance:Int]
+								Array<String>
+								length:Int
+					[Block:Void]
+						[Var pathParam(25359):String]
+							[Array:String]
+								[Local pathParams(25332):Array<String>:Array<String>]
+								[Local `(25363):Int:Int]
+						[Unop:Int]
+							++
+							Prefix
+							[Local `(25363):Int:Int]
+						[Var found(25360):Bool] [Const:Bool] false
+						[Block:Void]
+							[Var `(25362):Int] [Const:Int] 0
+							[While:Void]
+								[Binop:Bool]
+									[Local `(25362):Int:Int]
+									<
+									[Field:Int]
+										[Local functionParams(25358):Array<{ type : haxe.macro.Type, name : String }>:Array<{ type : haxe.macro.Type, name : String }>]
+										[FInstance:Int]
+											Array<{ type : haxe.macro.Type, name : String }>
+											length:Int
+								[Block:Void]
+									[Var funcParam(25361):{ type : haxe.macro.Type, name : String }]
+										[Array:{ type : haxe.macro.Type, name : String }]
+											[Local functionParams(25358):Array<{ type : haxe.macro.Type, name : String }>:Array<{ type : haxe.macro.Type, name : String }>]
+											[Local `(25362):Int:Int]
+									[Unop:Int]
+										++
+										Prefix
+										[Local `(25362):Int:Int]
+									[If:Void]
+										[Binop:Bool]
+											[Field:String]
+												[Local funcParam(25361):{ type : haxe.macro.Type, name : String }:{ type : haxe.macro.Type, name : String }]
+												[FAnon:String] name:String
+											==
+											[Local pathParam(25359):String:String]
+										[Then:Dynamic] [Block:Dynamic]
+											[Binop:Bool]
+												[Local found(25360):Bool:Bool]
+												=
+												[Const:Bool] true
+											[Break:Dynamic]
+						[If:Void]
+							[Unop:Bool]
+								!
+								Prefix
+								[Local found(25360):Bool:Bool]
+							[Then:Int] [Block:Int]
+								[Call:Int]
+									[Field:(x : String) -> Int]
+										[Local errors(25327):Array<String>:Array<String>]
+										[FInstance:(x : String) -> Int]
+											Array<String>
+											push:(x : Array.T) -> Int
+									[Binop:String]
+										[Binop:String]
+											[Const:String] "Path parameter \""
+											+
+											[Local pathParam(25359):String:String]
+										+
+										[Const:String] "\" not found in function signature"
+			[Return:Dynamic] [Local errors(25327):Array<String>:Array<String>]
+
+	public static function generateRouteHelpers[Function:(classType : haxe.macro.ClassType) -> Array<String>]
+		[Arg:haxe.macro.ClassType] [Local classType(25364):haxe.macro.ClassType]
+		[Block:Dynamic]
+			[Var helpers(25365):Array<String>] [ArrayDecl:Array<String>]
+			[Var fields(25366):Array<haxe.macro.ClassField>]
+				[Call:Array<haxe.macro.ClassField>]
+					[Field:() -> Array<haxe.macro.ClassField>]
+						[Field:haxe.macro.Ref<Array<haxe.macro.ClassField>>]
+							[Local classType(25364):haxe.macro.ClassType:haxe.macro.ClassType]
+							[FAnon:haxe.macro.Ref<Array<haxe.macro.ClassField>>] fields:haxe.macro.Ref<Array<haxe.macro.ClassField>>
+						[FAnon:() -> Array<haxe.macro.ClassField>] get:() -> Array<haxe.macro.ClassField>
+			[Block:Void]
+				[Var `(25380):Int] [Const:Int] 0
+				[While:Void]
+					[Binop:Bool]
+						[Local `(25380):Int:Int]
+						<
+						[Field:Int]
+							[Local fields(25366):Array<haxe.macro.ClassField>:Array<haxe.macro.ClassField>]
+							[FInstance:Int]
+								Array<haxe.macro.ClassField>
+								length:Int
+					[Block:Void]
+						[Var field(25367):haxe.macro.ClassField]
+							[Array:haxe.macro.ClassField]
+								[Local fields(25366):Array<haxe.macro.ClassField>:Array<haxe.macro.ClassField>]
+								[Local `(25380):Int:Int]
+						[Unop:Int]
+							++
+							Prefix
+							[Local `(25380):Int:Int]
+						[If:Void]
+							[Block:Bool]
+								[Var `(25370):haxe.macro.FieldKind]
+									[Field:haxe.macro.FieldKind]
+										[Local field(25367):haxe.macro.ClassField:haxe.macro.ClassField]
+										[FAnon:haxe.macro.FieldKind] kind:haxe.macro.FieldKind
+								[If:Bool]
+									[Binop:Bool]
+										[EnumIndex:Int] [Local `(25370):haxe.macro.FieldKind:haxe.macro.FieldKind]
+										==
+										[Const:Int] 1
+									[Then:Bool] [Block:Bool]
+										[Var `(25371):haxe.macro.MethodKind]
+											[EnumParameter:haxe.macro.MethodKind]
+												[Local `(25370):haxe.macro.FieldKind:haxe.macro.FieldKind]
+												FMethod
+												0
+										[Const:Bool] true
+									[Else:Bool] [Const:Bool] false
+							[Then:Void] [Block:Void]
+								[Var routeAnnotation(25372):Null<reflaxe.elixir.helpers.RouteInfo>]
+									[Call:Null<reflaxe.elixir.helpers.RouteInfo>]
+										[Field:(field : haxe.macro.ClassField) -> Null<reflaxe.elixir.helpers.RouteInfo>]
+											[TypeExpr reflaxe.elixir.helpers.RouterCompiler:Class<reflaxe.elixir.helpers.RouterCompiler>]
+											[FStatic:(field : haxe.macro.ClassField) -> Null<reflaxe.elixir.helpers.RouteInfo>]
+												reflaxe.elixir.helpers.RouterCompiler
+												extractRouteAnnotation:(field : haxe.macro.ClassField) -> Null<reflaxe.elixir.helpers.RouteInfo>
+										[Local field(25367):haxe.macro.ClassField:haxe.macro.ClassField]
+								[If:Void]
+									[Binop:Bool]
+										[Local routeAnnotation(25372):Null<reflaxe.elixir.helpers.RouteInfo>:Null<reflaxe.elixir.helpers.RouteInfo>]
+										!=
+										[Const:Null<reflaxe.elixir.helpers.RouteInfo>] null
+									[Then:Int] [Block:Int]
+										[Var helper(25379):String]
+											[Call:String]
+												[Field:(controllerName : String, actionName : String, route : reflaxe.elixir.helpers.RouteInfo) -> String]
+													[TypeExpr reflaxe.elixir.helpers.RouterCompiler:Class<reflaxe.elixir.helpers.RouterCompiler>]
+													[FStatic:(controllerName : String, actionName : String, route : reflaxe.elixir.helpers.RouteInfo) -> String]
+														reflaxe.elixir.helpers.RouterCompiler
+														generateRouteHelper:(controllerName : String, actionName : String, route : reflaxe.elixir.helpers.RouteInfo) -> String
+												[Field:String]
+													[Local classType(25364):haxe.macro.ClassType:haxe.macro.ClassType]
+													[FAnon:String] name:String
+												[Field:String]
+													[Local field(25367):haxe.macro.ClassField:haxe.macro.ClassField]
+													[FAnon:String] name:String
+												[Local routeAnnotation(25372):Null<reflaxe.elixir.helpers.RouteInfo>:Null<reflaxe.elixir.helpers.RouteInfo>]
+										[Call:Int]
+											[Field:(x : String) -> Int]
+												[Local helpers(25365):Array<String>:Array<String>]
+												[FInstance:(x : String) -> Int]
+													Array<String>
+													push:(x : Array.T) -> Int
+											[Local helper(25379):String:String]
+			[Return:Dynamic] [Local helpers(25365):Array<String>:Array<String>]
+
+	public static function integratePipelineSystem[Function:(classType : haxe.macro.ClassType) -> String]
+		[Arg:haxe.macro.ClassType] [Local classType(25381):haxe.macro.ClassType]
+		[Block:Dynamic]
+			[Var pipelines(25382):Array<String>] [ArrayDecl:Array<String>]
+			[If:Void]
+				[Call:Bool]
+					[Field:(name : String) -> Bool]
+						[Field:haxe.macro.MetaAccess]
+							[Local classType(25381):haxe.macro.ClassType:haxe.macro.ClassType]
+							[FAnon:haxe.macro.MetaAccess] meta:haxe.macro.MetaAccess
+						[FAnon:(name : String) -> Bool] has:(name : String) -> Bool
+					[Const:String] ":pipe_through"
+				[Then:Int] [Block:Int]
+					[Var pipelineData(25383):Array<haxe.macro.MetadataEntry>]
+						[Call:Array<haxe.macro.MetadataEntry>]
+							[Field:(name : String) -> Array<haxe.macro.MetadataEntry>]
+								[Field:haxe.macro.MetaAccess]
+									[Local classType(25381):haxe.macro.ClassType:haxe.macro.ClassType]
+									[FAnon:haxe.macro.MetaAccess] meta:haxe.macro.MetaAccess
+								[FAnon:(name : String) -> Array<haxe.macro.MetadataEntry>] extract:(name : String) -> Array<haxe.macro.MetadataEntry>
+							[Const:String] ":pipe_through"
+					[Call:Int]
+						[Field:(x : String) -> Int]
+							[Local pipelines(25382):Array<String>:Array<String>]
+							[FInstance:(x : String) -> Int]
+								Array<String>
+								push:(x : Array.T) -> Int
+						[Const:String] "pipe_through [:browser, :auth]"
+			[Return:Dynamic]
+				[Call:String]
+					[Field:(sep : String) -> String]
+						[Local pipelines(25382):Array<String>:Array<String>]
+						[FInstance:(sep : String) -> String]
+							Array<String>
+							join:(sep : String) -> String
+					[Const:String] "\n"
+
+	static function compileControllerAction[Function:(field : haxe.macro.ClassField) -> String]
+		[Arg:haxe.macro.ClassField] [Local field(15124):haxe.macro.ClassField]
+		[Block:Dynamic]
+			[Var actionName(15125):String]
+				[Call:String]
+					[Field:(camelCase : String) -> String]
+						[TypeExpr reflaxe.elixir.helpers.NamingHelper:Class<reflaxe.elixir.helpers.NamingHelper>]
+						[FStatic:(camelCase : String) -> String]
+							reflaxe.elixir.helpers.NamingHelper
+							toSnakeCase:(camelCase : String) -> String
+					[Field:String]
+						[Local field(15124):haxe.macro.ClassField:haxe.macro.ClassField]
+						[FAnon:String] name:String
+			[Var params(15143):String]
+				[Call:String]
+					[Field:(field : haxe.macro.ClassField) -> String]
+						[TypeExpr reflaxe.elixir.helpers.RouterCompiler:Class<reflaxe.elixir.helpers.RouterCompiler>]
+						[FStatic:(field : haxe.macro.ClassField) -> String]
+							reflaxe.elixir.helpers.RouterCompiler
+							generateActionParameters:(field : haxe.macro.ClassField) -> String
+					[Local field(15124):haxe.macro.ClassField:haxe.macro.ClassField]
+			[Var output(15144):StringBuf] [New:StringBuf] StringBuf
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local output(15144):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Binop:String]
+					[Binop:String]
+						[Binop:String]
+							[Binop:String]
+								[Const:String] "  def "
+								+
+								[Local actionName(15125):String:String]
+							+
+							[Const:String] "("
+						+
+						[Local params(15143):String:String]
+					+
+					[Const:String] ") do\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local output(15144):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "    # Generated controller action\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local output(15144):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "    conn\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local output(15144):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "    |> put_status(200)\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local output(15144):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Binop:String]
+					[Binop:String]
+						[Const:String] "    |> json(%{message: \"Action "
+						+
+						[Local actionName(15125):String:String]
+					+
+					[Const:String] " executed\"})\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local output(15144):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "  end\n"
+			[Return:Dynamic]
+				[Call:String]
+					[Field:() -> String]
+						[Local output(15144):StringBuf:StringBuf]
+						[FInstance:() -> String]
+							StringBuf
+							toString:() -> String
+
+	static function extractRouteAnnotation[Function:(field : haxe.macro.ClassField) -> Null<reflaxe.elixir.helpers.RouteInfo>]
+		[Arg:haxe.macro.ClassField] [Local field(15196):haxe.macro.ClassField]
+		[Block:Dynamic]
+			[If:Void]
+				[Call:Bool]
+					[Field:(name : String) -> Bool]
+						[Field:haxe.macro.MetaAccess]
+							[Local field(15196):haxe.macro.ClassField:haxe.macro.ClassField]
+							[FAnon:haxe.macro.MetaAccess] meta:haxe.macro.MetaAccess
+						[FAnon:(name : String) -> Bool] has:(name : String) -> Bool
+					[Const:String] ":route"
+				[Then:Dynamic] [Block:Dynamic]
+					[Var routeMetadata(15197):Array<haxe.macro.MetadataEntry>]
+						[Call:Array<haxe.macro.MetadataEntry>]
+							[Field:(name : String) -> Array<haxe.macro.MetadataEntry>]
+								[Field:haxe.macro.MetaAccess]
+									[Local field(15196):haxe.macro.ClassField:haxe.macro.ClassField]
+									[FAnon:haxe.macro.MetaAccess] meta:haxe.macro.MetaAccess
+								[FAnon:(name : String) -> Array<haxe.macro.MetadataEntry>] extract:(name : String) -> Array<haxe.macro.MetadataEntry>
+							[Const:String] ":route"
+					[If:Void]
+						[Binop:Bool]
+							[Binop:Bool]
+								[Binop:Bool]
+									[Field:Int]
+										[Local routeMetadata(15197):Array<haxe.macro.MetadataEntry>:Array<haxe.macro.MetadataEntry>]
+										[FInstance:Int]
+											Array<haxe.macro.MetadataEntry>
+											length:Int
+									>
+									[Const:Int] 0
+								&&
+								[Binop:Bool]
+									[Field:Null<Array<haxe.macro.Expr>>]
+										[Array:haxe.macro.MetadataEntry]
+											[Local routeMetadata(15197):Array<haxe.macro.MetadataEntry>:Array<haxe.macro.MetadataEntry>]
+											[Const:Int] 0
+										[FAnon:Null<Array<haxe.macro.Expr>>] params:Null<Array<haxe.macro.Expr>>
+									!=
+									[Const:Null<Array<haxe.macro.Expr>>] null
+							&&
+							[Binop:Bool]
+								[Field:Int]
+									[Field:Null<Array<haxe.macro.Expr>>]
+										[Array:haxe.macro.MetadataEntry]
+											[Local routeMetadata(15197):Array<haxe.macro.MetadataEntry>:Array<haxe.macro.MetadataEntry>]
+											[Const:Int] 0
+										[FAnon:Null<Array<haxe.macro.Expr>>] params:Null<Array<haxe.macro.Expr>>
+									[FInstance:Int]
+										Array<haxe.macro.Expr>
+										length:Int
+								>
+								[Const:Int] 0
+						[Then:Void] [Block:Void]
+							[Var routeData(15313):Null<reflaxe.elixir.helpers.RouteInfo>]
+								[Call:Null<reflaxe.elixir.helpers.RouteInfo>]
+									[Field:(expr : haxe.macro.Expr) -> Null<reflaxe.elixir.helpers.RouteInfo>]
+										[TypeExpr reflaxe.elixir.helpers.RouterCompiler:Class<reflaxe.elixir.helpers.RouterCompiler>]
+										[FStatic:(expr : haxe.macro.Expr) -> Null<reflaxe.elixir.helpers.RouteInfo>]
+											reflaxe.elixir.helpers.RouterCompiler
+											parseRouteMetadata:(expr : haxe.macro.Expr) -> Null<reflaxe.elixir.helpers.RouteInfo>
+									[Array:haxe.macro.Expr]
+										[Field:Null<Array<haxe.macro.Expr>>]
+											[Array:haxe.macro.MetadataEntry]
+												[Local routeMetadata(15197):Array<haxe.macro.MetadataEntry>:Array<haxe.macro.MetadataEntry>]
+												[Const:Int] 0
+											[FAnon:Null<Array<haxe.macro.Expr>>] params:Null<Array<haxe.macro.Expr>>
+										[Const:Int] 0
+							[If:Void]
+								[Binop:Bool]
+									[Local routeData(15313):Null<reflaxe.elixir.helpers.RouteInfo>:Null<reflaxe.elixir.helpers.RouteInfo>]
+									!=
+									[Const:Null<reflaxe.elixir.helpers.RouteInfo>] null
+								[Then:Dynamic] [Block:Dynamic]
+									[Return:Dynamic]
+										[ObjectDecl:{ path : String, metrics : Null<String>, method : String, controller : Null<String>, as : Null<String>, action : String }]
+											method: [Field:String]
+												[Local routeData(15313):Null<reflaxe.elixir.helpers.RouteInfo>:Null<reflaxe.elixir.helpers.RouteInfo>]
+												[FAnon:String] method:String
+											path: [Field:String]
+												[Local routeData(15313):Null<reflaxe.elixir.helpers.RouteInfo>:Null<reflaxe.elixir.helpers.RouteInfo>]
+												[FAnon:String] path:String
+											controller: [Field:Null<String>]
+												[Local routeData(15313):Null<reflaxe.elixir.helpers.RouteInfo>:Null<reflaxe.elixir.helpers.RouteInfo>]
+												[FAnon:Null<String>] controller:Null<String>
+											action: [Field:String]
+												[Local field(15196):haxe.macro.ClassField:haxe.macro.ClassField]
+												[FAnon:String] name:String
+											as: [Field:Null<String>]
+												[Local routeData(15313):Null<reflaxe.elixir.helpers.RouteInfo>:Null<reflaxe.elixir.helpers.RouteInfo>]
+												[FAnon:Null<String>] as:Null<String>
+											metrics: [Field:Null<String>]
+												[Local routeData(15313):Null<reflaxe.elixir.helpers.RouteInfo>:Null<reflaxe.elixir.helpers.RouteInfo>]
+												[FAnon:Null<String>] metrics:Null<String>
+					[Var method(15314):String]
+						[If:String]
+							[Binop:Bool]
+								[Field:String]
+									[Local field(15196):haxe.macro.ClassField:haxe.macro.ClassField]
+									[FAnon:String] name:String
+								==
+								[Const:String] "index"
+							[Then:String] [Block:String] [Const:String] "GET"
+							[Else:String] [Block:String]
+								[If:String]
+									[Binop:Bool]
+										[Field:String]
+											[Local field(15196):haxe.macro.ClassField:haxe.macro.ClassField]
+											[FAnon:String] name:String
+										==
+										[Const:String] "create"
+									[Then:String] [Block:String] [Const:String] "POST"
+									[Else:String] [Block:String]
+										[If:String]
+											[Binop:Bool]
+												[Field:String]
+													[Local field(15196):haxe.macro.ClassField:haxe.macro.ClassField]
+													[FAnon:String] name:String
+												==
+												[Const:String] "update"
+											[Then:String] [Block:String] [Const:String] "PUT"
+											[Else:String] [Block:String]
+												[If:String]
+													[Binop:Bool]
+														[Field:String]
+															[Local field(15196):haxe.macro.ClassField:haxe.macro.ClassField]
+															[FAnon:String] name:String
+														==
+														[Const:String] "delete"
+													[Then:String] [Block:String] [Const:String] "DELETE"
+													[Else:String] [Block:String] [Const:String] "GET"
+					[Var path(15315):String]
+						[If:String]
+							[Binop:Bool]
+								[Field:String]
+									[Local field(15196):haxe.macro.ClassField:haxe.macro.ClassField]
+									[FAnon:String] name:String
+								==
+								[Const:String] "index"
+							[Then:String] [Block:String] [Const:String] "/"
+							[Else:String] [Block:String]
+								[If:String]
+									[Binop:Bool]
+										[Field:String]
+											[Local field(15196):haxe.macro.ClassField:haxe.macro.ClassField]
+											[FAnon:String] name:String
+										==
+										[Const:String] "show"
+									[Then:String] [Block:String] [Const:String] "/:id"
+									[Else:String] [Block:String]
+										[If:String]
+											[Binop:Bool]
+												[Field:String]
+													[Local field(15196):haxe.macro.ClassField:haxe.macro.ClassField]
+													[FAnon:String] name:String
+												==
+												[Const:String] "create"
+											[Then:String] [Block:String] [Const:String] "/"
+											[Else:String] [Block:String]
+												[If:String]
+													[Binop:Bool]
+														[Field:String]
+															[Local field(15196):haxe.macro.ClassField:haxe.macro.ClassField]
+															[FAnon:String] name:String
+														==
+														[Const:String] "update"
+													[Then:String] [Block:String] [Const:String] "/:id"
+													[Else:String] [Block:String]
+														[If:String]
+															[Binop:Bool]
+																[Field:String]
+																	[Local field(15196):haxe.macro.ClassField:haxe.macro.ClassField]
+																	[FAnon:String] name:String
+																==
+																[Const:String] "delete"
+															[Then:String] [Block:String] [Const:String] "/:id"
+															[Else:String] [Block:String]
+																[Binop:String]
+																	[Const:String] "/"
+																	+
+																	[Field:String]
+																		[Local field(15196):haxe.macro.ClassField:haxe.macro.ClassField]
+																		[FAnon:String] name:String
+					[Return:Dynamic]
+						[ObjectDecl:{ path : String, metrics : Null<String>, method : String, controller : Null<String>, as : Null<String>, action : String }]
+							method: [Local method(15314):String:String]
+							path: [Local path(15315):String:String]
+							controller: [Const:Null<String>] null
+							action: [Field:String]
+								[Local field(15196):haxe.macro.ClassField:haxe.macro.ClassField]
+								[FAnon:String] name:String
+							as: [Const:Null<String>] null
+							metrics: [Const:Null<String>] null
+			[Return:Dynamic] [Const:Null<reflaxe.elixir.helpers.RouteInfo>] null
+
+	static function generateRouteFromAnnotation[Function:(controllerName : String, actionName : String, route : reflaxe.elixir.helpers.RouteInfo, ?scopePrefix : Null<String>) -> String]
+		[Arg:String] [Local controllerName(15319):String]
+		[Arg:String] [Local actionName(15320):String]
+		[Arg:reflaxe.elixir.helpers.RouteInfo] [Local route(15321):reflaxe.elixir.helpers.RouteInfo]
+		[Arg:Null<String>]
+			[Local scopePrefix(15322):Null<String>]
+			[Const:Null<String>] null
+		[Block:Dynamic]
+			[Var controller(15323):Null<String>]
+				[If:Null<String>]
+					[Binop:Bool]
+						[Field:Null<String>]
+							[Local route(15321):reflaxe.elixir.helpers.RouteInfo:reflaxe.elixir.helpers.RouteInfo]
+							[FAnon:Null<String>] controller:Null<String>
+						!=
+						[Const:Null<String>] null
+					[Then:Null<String>] [Block:Null<String>]
+						[Field:Null<String>]
+							[Local route(15321):reflaxe.elixir.helpers.RouteInfo:reflaxe.elixir.helpers.RouteInfo]
+							[FAnon:Null<String>] controller:Null<String>
+					[Else:String] [Block:String] [Local controllerName(15319):String:String]
+			[Binop:Null<String>]
+				[Local controller(15323):Null<String>:Null<String>]
+				=
+				[Call:String]
+					[Field:(controllerName : String, ?scopePrefix : Null<String>) -> String]
+						[TypeExpr reflaxe.elixir.helpers.RouterCompiler:Class<reflaxe.elixir.helpers.RouterCompiler>]
+						[FStatic:(controllerName : String, ?scopePrefix : Null<String>) -> String]
+							reflaxe.elixir.helpers.RouterCompiler
+							resolveControllerModuleName:(controllerName : String, ?scopePrefix : Null<String>) -> String
+					[Local controller(15323):Null<String>:Null<String>]
+					[Local scopePrefix(15322):Null<String>:Null<String>]
+			[Return:Dynamic]
+				[Meta:String]
+					:ast(switch (route.method) {
+	case "LIVE":
+		"live \"${route.path}\", ${controller}, :${route.action}";	
+	case "LIVE_DASHBOARD":
+		var metricsParam = route.metrics != null ? ", metrics: ${route.metrics}" : "";
+		"live_dashboard \"${route.path}\"${metricsParam}";	
+	default:
+		var method = route.method.toLowerCase();
+		"${method} \"${route.path}\", ${controller}, :${route.action}";	
+})
+					[Block:String]
+						[Var `(15341):String]
+							[Field:String]
+								[Local route(15321):reflaxe.elixir.helpers.RouteInfo:reflaxe.elixir.helpers.RouteInfo]
+								[FAnon:String] method:String
+						[Switch:String]
+							[Local `(15341):String:String]
+							[Case:String]
+								[Const:String] "LIVE"
+								[Block:String]
+									[Block:String]
+										[Binop:String]
+											[Binop:String]
+												[Binop:String]
+													[Binop:String]
+														[Binop:String]
+															[Const:String] "live \""
+															+
+															[Field:String]
+																[Local route(15321):reflaxe.elixir.helpers.RouteInfo:reflaxe.elixir.helpers.RouteInfo]
+																[FAnon:String] path:String
+														+
+														[Const:String] "\", "
+													+
+													[Local controller(15323):Null<String>:Null<String>]
+												+
+												[Const:String] ", :"
+											+
+											[Field:String]
+												[Local route(15321):reflaxe.elixir.helpers.RouteInfo:reflaxe.elixir.helpers.RouteInfo]
+												[FAnon:String] action:String
+							[Case:String]
+								[Const:String] "LIVE_DASHBOARD"
+								[Block:String]
+									[Block:String]
+										[Var metricsParam(15342):String]
+											[If:String]
+												[Binop:Bool]
+													[Field:Null<String>]
+														[Local route(15321):reflaxe.elixir.helpers.RouteInfo:reflaxe.elixir.helpers.RouteInfo]
+														[FAnon:Null<String>] metrics:Null<String>
+													!=
+													[Const:Null<String>] null
+												[Then:String] [Block:String]
+													[Binop:String]
+														[Const:String] ", metrics: "
+														+
+														[Field:Null<String>]
+															[Local route(15321):reflaxe.elixir.helpers.RouteInfo:reflaxe.elixir.helpers.RouteInfo]
+															[FAnon:Null<String>] metrics:Null<String>
+												[Else:String] [Block:String] [Const:String] ""
+										[Binop:String]
+											[Binop:String]
+												[Binop:String]
+													[Const:String] "live_dashboard \""
+													+
+													[Field:String]
+														[Local route(15321):reflaxe.elixir.helpers.RouteInfo:reflaxe.elixir.helpers.RouteInfo]
+														[FAnon:String] path:String
+												+
+												[Const:String] "\""
+											+
+											[Local metricsParam(15342):String:String]
+							[Default:String]
+								[Block:String]
+									[Var method(15343):String]
+										[Call:String]
+											[Field:() -> String]
+												[Field:String]
+													[Local route(15321):reflaxe.elixir.helpers.RouteInfo:reflaxe.elixir.helpers.RouteInfo]
+													[FAnon:String] method:String
+												[FInstance:() -> String]
+													String
+													toLowerCase:() -> String
+									[Binop:String]
+										[Binop:String]
+											[Binop:String]
+												[Binop:String]
+													[Binop:String]
+														[Binop:String]
+															[Binop:String]
+																[Const:String] ""
+																+
+																[Local method(15343):String:String]
+															+
+															[Const:String] " \""
+														+
+														[Field:String]
+															[Local route(15321):reflaxe.elixir.helpers.RouteInfo:reflaxe.elixir.helpers.RouteInfo]
+															[FAnon:String] path:String
+													+
+													[Const:String] "\", "
+												+
+												[Local controller(15323):Null<String>:Null<String>]
+											+
+											[Const:String] ", :"
+										+
+										[Field:String]
+											[Local route(15321):reflaxe.elixir.helpers.RouteInfo:reflaxe.elixir.helpers.RouteInfo]
+											[FAnon:String] action:String
+
+	static function resolveControllerModuleName[Function:(controllerName : String, ?scopePrefix : Null<String>) -> String]
+		[Arg:String] [Local controllerName(15324):String]
+		[Arg:Null<String>]
+			[Local scopePrefix(15325):Null<String>]
+			[Const:Null<String>] null
+		[Block:Dynamic]
+			[If:Void]
+				[Binop:Bool]
+					[Binop:Bool]
+						[Local controllerName(15324):String:String]
+						==
+						[Const:String] null
+					||
+					[Binop:Bool]
+						[Local controllerName(15324):String:String]
+						==
+						[Const:String] ""
+				[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [Local controllerName(15324):String:String]
+			[Var fullModuleName(15326):String]
+			[Try:Void]
+				[Block:Void]
+					[Var controllerType(15327):haxe.macro.Type]
+						[Call:haxe.macro.Type]
+							[Field:(name : String) -> haxe.macro.Type]
+								[TypeExpr haxe.macro.Context:Class<haxe.macro.Context>]
+								[FStatic:(name : String) -> haxe.macro.Type]
+									haxe.macro.Context
+									getType:(name : String) -> haxe.macro.Type
+							[Local controllerName(15324):String:String]
+					[Meta:Void]
+						:ast(switch (controllerType) {
+	case TInst(ref, _):
+		var classType = ref.get();
+		fullModuleName = classType.getNameOrNative();	
+	case _:
+		fullModuleName = controllerName;	
+})
+						[If:Void]
+							[Binop:Bool]
+								[EnumIndex:Int] [Local controllerType(15327):haxe.macro.Type:haxe.macro.Type]
+								==
+								[Const:Int] 2
+							[Then:String] [Block:String]
+								[Var `(15332):haxe.macro.Ref<haxe.macro.ClassType>]
+									[EnumParameter:haxe.macro.Ref<haxe.macro.ClassType>]
+										[Local controllerType(15327):haxe.macro.Type:haxe.macro.Type]
+										TInst
+										0
+								[Var `(15333):Array<haxe.macro.Type>]
+									[EnumParameter:Array<haxe.macro.Type>]
+										[Local controllerType(15327):haxe.macro.Type:haxe.macro.Type]
+										TInst
+										1
+								[Block:String]
+									[Var ref(15334):haxe.macro.Ref<haxe.macro.ClassType>] [Local `(15332):haxe.macro.Ref<haxe.macro.ClassType>:haxe.macro.Ref<haxe.macro.ClassType>]
+									[Block:String]
+										[Var classType(15335):haxe.macro.ClassType]
+											[Call:haxe.macro.ClassType]
+												[Field:() -> haxe.macro.ClassType]
+													[Local ref(15334):haxe.macro.Ref<haxe.macro.ClassType>:haxe.macro.Ref<haxe.macro.ClassType>]
+													[FAnon:() -> haxe.macro.ClassType] get:() -> haxe.macro.ClassType
+										[Binop:String]
+											[Local fullModuleName(15326):String:String]
+											=
+											[Call:String]
+												[Field:(v : reflaxe.helpers.NameAndMeta) -> String]
+													[TypeExpr reflaxe.helpers.NameMetaHelper:{ Statics reflaxe.helpers.NameMetaHelper }]
+													[FStatic:(v : reflaxe.helpers.NameAndMeta) -> String]
+														reflaxe.helpers.NameMetaHelper
+														getNameOrNative:(v : reflaxe.helpers.NameAndMeta) -> String
+												[Local classType(15335):haxe.macro.ClassType:haxe.macro.ClassType]
+							[Else:String] [Block:String]
+								[Binop:String]
+									[Local fullModuleName(15326):String:String]
+									=
+									[Local controllerName(15324):String:String]
+				Catch [Local `(34294):Dynamic]
+					[Block:Void]
+						[Block:Void]
+						[Block:Void]
+						[If:Void]
+							[Const:Bool] true
+							[Then:String] [Block:String]
+								[Block:Void]
+								[Block:String]
+									[Var parts(15337):Array<String>]
+										[Call:Array<String>]
+											[Field:(delimiter : String) -> Array<String>]
+												[Local controllerName(15324):String:String]
+												[FInstance:(delimiter : String) -> Array<String>]
+													String
+													split:(delimiter : String) -> Array<String>
+											[Const:String] "."
+									[Binop:String]
+										[Local fullModuleName(15326):String:String]
+										=
+										[Array:String]
+											[Local parts(15337):Array<String>:Array<String>]
+											[Binop:Int]
+												[Field:Int]
+													[Local parts(15337):Array<String>:Array<String>]
+													[FInstance:Int]
+														Array<String>
+														length:Int
+												-
+												[Const:Int] 1
+							[Else:Unknown<85>] [Throw:Unknown<85>] [Local `(34294):Dynamic:Dynamic]
+			[If:Void]
+				[Binop:Bool]
+					[Binop:Bool]
+						[Local scopePrefix(15325):Null<String>:Null<String>]
+						!=
+						[Const:Null<String>] null
+					&&
+					[Call:Bool]
+						[Field:(s : String, start : String) -> Bool]
+							[TypeExpr StringTools:{ Statics StringTools }]
+							[FStatic:(s : String, start : String) -> Bool]
+								StringTools
+								startsWith:(s : String, start : String) -> Bool
+						[Local fullModuleName(15326):String:String]
+						[Binop:String]
+							[Local scopePrefix(15325):Null<String>:Null<String>]
+							+
+							[Const:String] "."
+				[Then:Dynamic] [Block:Dynamic]
+					[Return:Dynamic]
+						[Call:String]
+							[Field:(startIndex : Int, ?endIndex : Null<Int>) -> String]
+								[Local fullModuleName(15326):String:String]
+								[FInstance:(startIndex : Int, ?endIndex : Null<Int>) -> String]
+									String
+									substring:(startIndex : Int, ?endIndex : Null<Int>) -> String
+							[Binop:Int]
+								[Field:Int]
+									[Local scopePrefix(15325):Null<String>:Null<String>]
+									[FInstance:Int]
+										String
+										length:Int
+								+
+								[Const:Int] 1
+							[Const:Null<Int>] null
+			[Return:Dynamic] [Local fullModuleName(15326):String:String]
+
+	static function extractResourceName[Function:(classType : haxe.macro.ClassType) -> String]
+		[Arg:haxe.macro.ClassType] [Local classType(25323):haxe.macro.ClassType]
+		[Block:Dynamic]
+			[If:Void]
+				[Call:Bool]
+					[Field:(name : String) -> Bool]
+						[Field:haxe.macro.MetaAccess]
+							[Local classType(25323):haxe.macro.ClassType:haxe.macro.ClassType]
+							[FAnon:haxe.macro.MetaAccess] meta:haxe.macro.MetaAccess
+						[FAnon:(name : String) -> Bool] has:(name : String) -> Bool
+					[Const:String] ":resources"
+				[Then:Dynamic] [Block:Dynamic]
+					[Return:Dynamic]
+						[Call:String]
+							[Field:(camelCase : String) -> String]
+								[TypeExpr reflaxe.elixir.helpers.NamingHelper:Class<reflaxe.elixir.helpers.NamingHelper>]
+								[FStatic:(camelCase : String) -> String]
+									reflaxe.elixir.helpers.NamingHelper
+									toSnakeCase:(camelCase : String) -> String
+							[Call:String]
+								[Field:(s : String, sub : String, by : String) -> String]
+									[TypeExpr StringTools:{ Statics StringTools }]
+									[FStatic:(s : String, sub : String, by : String) -> String]
+										StringTools
+										replace:(s : String, sub : String, by : String) -> String
+								[Field:String]
+									[Local classType(25323):haxe.macro.ClassType:haxe.macro.ClassType]
+									[FAnon:String] name:String
+								[Const:String] "Controller"
+								[Const:String] ""
+			[Return:Dynamic] [Const:String] "resource"
+
+	static function extractPathParameters[Function:(path : String) -> Array<String>]
+		[Arg:String] [Local path(25328):String]
+		[Block:Dynamic]
+			[Var params(25329):Array<String>] [ArrayDecl:Array<String>]
+			[Var paramRegex(25330):EReg]
+				[New:EReg]
+					EReg
+					[Const:String] ":([a-zA-Z_][a-zA-Z0-9_]*)"
+					[Const:String] "g"
+			[Var pos(25331):Int] [Const:Int] 0
+			[While:Void]
+				[Call:Bool]
+					[Field:(s : String, pos : Int, ?len : Int) -> Bool]
+						[Local paramRegex(25330):EReg:EReg]
+						[FInstance:(s : String, pos : Int, ?len : Int) -> Bool]
+							EReg
+							matchSub:(s : String, pos : Int, ?len : Int) -> Bool
+					[Local path(25328):String:String]
+					[Local pos(25331):Int:Int]
+					[Const:Null<Int>] null
+				[Block:Int]
+					[Call:Int]
+						[Field:(x : String) -> Int]
+							[Local params(25329):Array<String>:Array<String>]
+							[FInstance:(x : String) -> Int]
+								Array<String>
+								push:(x : Array.T) -> Int
+						[Call:String]
+							[Field:(n : Int) -> String]
+								[Local paramRegex(25330):EReg:EReg]
+								[FInstance:(n : Int) -> String]
+									EReg
+									matched:(n : Int) -> String
+							[Const:Int] 1
+					[Binop:Int]
+						[Local pos(25331):Int:Int]
+						=
+						[Binop:Int]
+							[Field:Int]
+								[Call:{ pos : Int, len : Int }]
+									[Field:() -> { pos : Int, len : Int }]
+										[Local paramRegex(25330):EReg:EReg]
+										[FInstance:() -> { pos : Int, len : Int }]
+											EReg
+											matchedPos:() -> { pos : Int, len : Int }
+								[FAnon:Int] pos:Int
+							+
+							[Field:Int]
+								[Call:{ pos : Int, len : Int }]
+									[Field:() -> { pos : Int, len : Int }]
+										[Local paramRegex(25330):EReg:EReg]
+										[FInstance:() -> { pos : Int, len : Int }]
+											EReg
+											matchedPos:() -> { pos : Int, len : Int }
+								[FAnon:Int] len:Int
+			[Return:Dynamic] [Local params(25329):Array<String>:Array<String>]
+
+	static function getFunctionParameters[Function:(field : haxe.macro.ClassField) -> Array<{ type : haxe.macro.Type, name : String }>]
+		[Arg:haxe.macro.ClassField] [Local field(25333):haxe.macro.ClassField]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Meta:Array<{ type : haxe.macro.Type, name : String }>]
+					:ast(switch (field.type) {
+	case TFun(args, ret):
+		args.map(function(arg) ->  @:implicitReturn return { name : arg.name, type : arg.t });	
+	default:
+		[];	
+})
+					[Block:Array<{ type : haxe.macro.Type, name : String }>]
+						[Var `(25348):haxe.macro.Type]
+							[Field:haxe.macro.Type]
+								[Local field(25333):haxe.macro.ClassField:haxe.macro.ClassField]
+								[FAnon:haxe.macro.Type] type:haxe.macro.Type
+						[If:Array<{ type : haxe.macro.Type, name : String }>]
+							[Binop:Bool]
+								[EnumIndex:Int] [Local `(25348):haxe.macro.Type:haxe.macro.Type]
+								==
+								[Const:Int] 4
+							[Then:Array<{ type : haxe.macro.Type, name : String }>] [Block:Array<{ type : haxe.macro.Type, name : String }>]
+								[Var `(25349):Array<{ t : haxe.macro.Type, opt : Bool, name : String }>]
+									[EnumParameter:Array<{ t : haxe.macro.Type, opt : Bool, name : String }>]
+										[Local `(25348):haxe.macro.Type:haxe.macro.Type]
+										TFun
+										0
+								[Var `(25350):haxe.macro.Type]
+									[EnumParameter:haxe.macro.Type]
+										[Local `(25348):haxe.macro.Type:haxe.macro.Type]
+										TFun
+										1
+								[Block:Array<{ type : haxe.macro.Type, name : String }>]
+									[Var args(25351):Array<{ t : haxe.macro.Type, opt : Bool, name : String }>] [Local `(25349):Array<{ t : haxe.macro.Type, opt : Bool, name : String }>:Array<{ t : haxe.macro.Type, opt : Bool, name : String }>]
+									[Var ret(25352):haxe.macro.Type] [Local `(25350):haxe.macro.Type:haxe.macro.Type]
+									[Block:Array<{ type : haxe.macro.Type, name : String }>]
+										[Block:Array<{ type : haxe.macro.Type, name : String }>]
+											[Var `(25353):Array<{ type : haxe.macro.Type, name : String }>] [ArrayDecl:Array<{ type : haxe.macro.Type, name : String }>]
+											[Block:Void]
+												[Var `(25354):Int] [Const:Int] 0
+												[Var `(25355):Array<{ t : haxe.macro.Type, opt : Bool, name : String }>] [Local args(25351):Array<{ t : haxe.macro.Type, opt : Bool, name : String }>:Array<{ t : haxe.macro.Type, opt : Bool, name : String }>]
+												[While:Void]
+													[Binop:Bool]
+														[Local `(25354):Int:Int]
+														<
+														[Field:Int]
+															[Local `(25355):Array<{ t : haxe.macro.Type, opt : Bool, name : String }>:Array<{ t : haxe.macro.Type, opt : Bool, name : String }>]
+															[FInstance:Int]
+																Array<{ t : haxe.macro.Type, opt : Bool, name : String }>
+																length:Int
+													[Block:Void]
+														[Var v(25356):{ t : haxe.macro.Type, opt : Bool, name : String }]
+															[Array:{ t : haxe.macro.Type, opt : Bool, name : String }]
+																[Local `(25355):Array<{ t : haxe.macro.Type, opt : Bool, name : String }>:Array<{ t : haxe.macro.Type, opt : Bool, name : String }>]
+																[Local `(25354):Int:Int]
+														[Unop:Int]
+															++
+															Prefix
+															[Local `(25354):Int:Int]
+														[Call:Int]
+															[Field:(x : { type : haxe.macro.Type, name : String }) -> Int]
+																[Local `(25353):Array<{ type : haxe.macro.Type, name : String }>:Array<{ type : haxe.macro.Type, name : String }>]
+																[FInstance:(x : { type : haxe.macro.Type, name : String }) -> Int]
+																	Array<{ type : haxe.macro.Type, name : String }>
+																	push:(x : Array.T) -> Int
+															[Call:{ type : haxe.macro.Type, name : String }]
+																[Function:(arg : { t : haxe.macro.Type, opt : Bool, name : String }) -> { type : haxe.macro.Type, name : String }]
+																	[Arg:{ t : haxe.macro.Type, opt : Bool, name : String }] [Local arg(25357):{ t : haxe.macro.Type, opt : Bool, name : String }]
+																	[Block:Dynamic]
+																		[Return:Dynamic]
+																			[ObjectDecl:{ type : haxe.macro.Type, name : String }]
+																				name: [Field:String]
+																					[Local arg(25357):{ t : haxe.macro.Type, opt : Bool, name : String }:{ t : haxe.macro.Type, opt : Bool, name : String }]
+																					[FAnon:String] name:String
+																				type: [Field:haxe.macro.Type]
+																					[Local arg(25357):{ t : haxe.macro.Type, opt : Bool, name : String }:{ t : haxe.macro.Type, opt : Bool, name : String }]
+																					[FAnon:haxe.macro.Type] t:haxe.macro.Type
+																[Local v(25356):{ t : haxe.macro.Type, opt : Bool, name : String }:{ t : haxe.macro.Type, opt : Bool, name : String }]
+											[Local `(25353):Array<{ type : haxe.macro.Type, name : String }>:Array<{ type : haxe.macro.Type, name : String }>]
+							[Else:Array<{ type : haxe.macro.Type, name : String }>] [Block:Array<{ type : haxe.macro.Type, name : String }>] [ArrayDecl:Array<{ type : haxe.macro.Type, name : String }>]
+
+	static function generateActionParameters[Function:(field : haxe.macro.ClassField) -> String]
+		[Arg:haxe.macro.ClassField] [Local field(15126):haxe.macro.ClassField]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Meta:String]
+					:ast(switch (field.type) {
+	case TFun(args, ret):
+		["conn"].concat([for (arg  in  args) arg.name]).join(", ");	
+	default:
+		"conn";	
+})
+					[Block:String]
+						[Var `(15135):haxe.macro.Type]
+							[Field:haxe.macro.Type]
+								[Local field(15126):haxe.macro.ClassField:haxe.macro.ClassField]
+								[FAnon:haxe.macro.Type] type:haxe.macro.Type
+						[If:String]
+							[Binop:Bool]
+								[EnumIndex:Int] [Local `(15135):haxe.macro.Type:haxe.macro.Type]
+								==
+								[Const:Int] 4
+							[Then:String] [Block:String]
+								[Var `(15136):Array<{ t : haxe.macro.Type, opt : Bool, name : String }>]
+									[EnumParameter:Array<{ t : haxe.macro.Type, opt : Bool, name : String }>]
+										[Local `(15135):haxe.macro.Type:haxe.macro.Type]
+										TFun
+										0
+								[Var `(15137):haxe.macro.Type]
+									[EnumParameter:haxe.macro.Type]
+										[Local `(15135):haxe.macro.Type:haxe.macro.Type]
+										TFun
+										1
+								[Block:String]
+									[Var args(15138):Array<{ t : haxe.macro.Type, opt : Bool, name : String }>] [Local `(15136):Array<{ t : haxe.macro.Type, opt : Bool, name : String }>:Array<{ t : haxe.macro.Type, opt : Bool, name : String }>]
+									[Var ret(15139):haxe.macro.Type] [Local `(15137):haxe.macro.Type:haxe.macro.Type]
+									[Block:String]
+										[Call:String]
+											[Field:(sep : String) -> String]
+												[Call:Array<String>]
+													[Field:(a : Array<String>) -> Array<String>]
+														[ArrayDecl:Array<String>] [Const:String] "conn"
+														[FInstance:(a : Array<String>) -> Array<String>]
+															Array<String>
+															concat:(a : Array<Array.T>) -> Array<Array.T>
+													[Block:Array<String>]
+														[Var `(15140):Array<String>] [ArrayDecl:Array<String>]
+														[Block:Void]
+															[Var `(15141):Int] [Const:Int] 0
+															[While:Void]
+																[Binop:Bool]
+																	[Local `(15141):Int:Int]
+																	<
+																	[Field:Int]
+																		[Local args(15138):Array<{ t : haxe.macro.Type, opt : Bool, name : String }>:Array<{ t : haxe.macro.Type, opt : Bool, name : String }>]
+																		[FInstance:Int]
+																			Array<{ t : haxe.macro.Type, opt : Bool, name : String }>
+																			length:Int
+																[Block:Void]
+																	[Var arg(15142):{ t : haxe.macro.Type, opt : Bool, name : String }]
+																		[Array:{ t : haxe.macro.Type, opt : Bool, name : String }]
+																			[Local args(15138):Array<{ t : haxe.macro.Type, opt : Bool, name : String }>:Array<{ t : haxe.macro.Type, opt : Bool, name : String }>]
+																			[Local `(15141):Int:Int]
+																	[Unop:Int]
+																		++
+																		Prefix
+																		[Local `(15141):Int:Int]
+																	[Call:Int]
+																		[Field:(x : String) -> Int]
+																			[Local `(15140):Array<String>:Array<String>]
+																			[FInstance:(x : String) -> Int]
+																				Array<String>
+																				push:(x : Array.T) -> Int
+																		[Field:String]
+																			[Local arg(15142):{ t : haxe.macro.Type, opt : Bool, name : String }:{ t : haxe.macro.Type, opt : Bool, name : String }]
+																			[FAnon:String] name:String
+														[Local `(15140):Array<String>:Array<String>]
+												[FInstance:(sep : String) -> String]
+													Array<String>
+													join:(sep : String) -> String
+											[Const:String] ", "
+							[Else:String] [Block:String] [Const:String] "conn"
+
+	static function generateRouteHelper[Function:(controllerName : String, actionName : String, route : reflaxe.elixir.helpers.RouteInfo) -> String]
+		[Arg:String] [Local controllerName(25373):String]
+		[Arg:String] [Local actionName(25374):String]
+		[Arg:reflaxe.elixir.helpers.RouteInfo] [Local route(25375):reflaxe.elixir.helpers.RouteInfo]
+		[Block:Dynamic]
+			[Var helperName(25376):String]
+				[Binop:String]
+					[Binop:String]
+						[Binop:String]
+							[Binop:String]
+								[Const:String] ""
+								+
+								[Call:String]
+									[Field:(camelCase : String) -> String]
+										[TypeExpr reflaxe.elixir.helpers.NamingHelper:Class<reflaxe.elixir.helpers.NamingHelper>]
+										[FStatic:(camelCase : String) -> String]
+											reflaxe.elixir.helpers.NamingHelper
+											toSnakeCase:(camelCase : String) -> String
+									[Local controllerName(25373):String:String]
+							+
+							[Const:String] "_"
+						+
+						[Local actionName(25374):String:String]
+					+
+					[Const:String] "_path"
+			[Var pathParams(25377):Array<String>]
+				[Call:Array<String>]
+					[Field:(path : String) -> Array<String>]
+						[TypeExpr reflaxe.elixir.helpers.RouterCompiler:Class<reflaxe.elixir.helpers.RouterCompiler>]
+						[FStatic:(path : String) -> Array<String>]
+							reflaxe.elixir.helpers.RouterCompiler
+							extractPathParameters:(path : String) -> Array<String>
+					[Field:String]
+						[Local route(25375):reflaxe.elixir.helpers.RouteInfo:reflaxe.elixir.helpers.RouteInfo]
+						[FAnon:String] path:String
+			[Var params(25378):String]
+				[Call:String]
+					[Field:(sep : String) -> String]
+						[Call:Array<String>]
+							[Field:(a : Array<String>) -> Array<String>]
+								[ArrayDecl:Array<String>]
+									[Const:String] "conn"
+									[Const:String] ":${actionName}"
+								[FInstance:(a : Array<String>) -> Array<String>]
+									Array<String>
+									concat:(a : Array<Array.T>) -> Array<Array.T>
+							[Local pathParams(25377):Array<String>:Array<String>]
+						[FInstance:(sep : String) -> String]
+							Array<String>
+							join:(sep : String) -> String
+					[Const:String] ", "
+			[Return:Dynamic]
+				[Binop:String]
+					[Binop:String]
+						[Binop:String]
+							[Binop:String]
+								[Const:String] "# "
+								+
+								[Local helperName(25376):String:String]
+							+
+							[Const:String] "("
+						+
+						[Local params(25378):String:String]
+					+
+					[Const:String] ")"
+
+	public static function batchCompileRoutes[Function:(classTypes : Array<haxe.macro.ClassType>) -> Map<String, Array<String>>]
+		[Arg:Array<haxe.macro.ClassType>] [Local classTypes(25384):Array<haxe.macro.ClassType>]
+		[Block:Dynamic]
+			[Var startTime(25385):Float]
+				[Call:Float]
+					[Field:() -> Float]
+						[TypeExpr Sys:Class<Sys>]
+						[FStatic:() -> Float]
+							Sys
+							time:() -> Float
+			[Var results(25386):haxe.ds.Map<String, Array<String>>]
+				[Block:haxe.ds.StringMap<Array<String>>]
+					[Block:Void]
+					[New:haxe.ds.StringMap<Array<String>>] haxe.ds.StringMap<Array<String>>
+			[Block:Void]
+				[Var `(25394):Int] [Const:Int] 0
+				[While:Void]
+					[Binop:Bool]
+						[Local `(25394):Int:Int]
+						<
+						[Field:Int]
+							[Local classTypes(25384):Array<haxe.macro.ClassType>:Array<haxe.macro.ClassType>]
+							[FInstance:Int]
+								Array<haxe.macro.ClassType>
+								length:Int
+					[Block:Void]
+						[Var classType(25387):haxe.macro.ClassType]
+							[Array:haxe.macro.ClassType]
+								[Local classTypes(25384):Array<haxe.macro.ClassType>:Array<haxe.macro.ClassType>]
+								[Local `(25394):Int:Int]
+						[Unop:Int]
+							++
+							Prefix
+							[Local `(25394):Int:Int]
+						[If:Void]
+							[Call:Bool]
+								[Field:(classType : haxe.macro.ClassType) -> Bool]
+									[TypeExpr reflaxe.elixir.helpers.RouterCompiler:Class<reflaxe.elixir.helpers.RouterCompiler>]
+									[FStatic:(classType : haxe.macro.ClassType) -> Bool]
+										reflaxe.elixir.helpers.RouterCompiler
+										isControllerClassType:(classType : haxe.macro.ClassType) -> Bool
+								[Local classType(25387):haxe.macro.ClassType:haxe.macro.ClassType]
+							[Then:Void] [Block:Void]
+								[Var routes(25388):Array<String>]
+									[Call:Array<String>]
+										[Field:(classType : haxe.macro.ClassType) -> Array<String>]
+											[TypeExpr reflaxe.elixir.helpers.RouterCompiler:Class<reflaxe.elixir.helpers.RouterCompiler>]
+											[FStatic:(classType : haxe.macro.ClassType) -> Array<String>]
+												reflaxe.elixir.helpers.RouterCompiler
+												generateRoutes:(classType : haxe.macro.ClassType) -> Array<String>
+										[Local classType(25387):haxe.macro.ClassType:haxe.macro.ClassType]
+								[Block:Void]
+									[Var key(25392):String]
+										[Field:String]
+											[Local classType(25387):haxe.macro.ClassType:haxe.macro.ClassType]
+											[FAnon:String] name:String
+									[Call:Void]
+										[Field:(key : String, value : Array<String>) -> Void]
+											[Local results(25386):haxe.ds.Map<String, Array<String>>:haxe.ds.StringMap<Array<String>>]
+											[FInstance:(key : String, value : Array<String>) -> Void]
+												haxe.ds.StringMap<Array<String>>
+												set:(key : String, value : haxe.ds.StringMap.T) -> Void
+										[Local key(25392):String:String]
+										[Local routes(25388):Array<String>:Array<String>]
+			[Var totalTime(25395):Float]
+				[Binop:Float]
+					[Call:Float]
+						[Field:() -> Float]
+							[TypeExpr Sys:Class<Sys>]
+							[FStatic:() -> Float]
+								Sys
+								time:() -> Float
+					-
+					[Local startTime(25385):Float:Float]
+			[If:Void]
+				[Binop:Bool]
+					[Local totalTime(25395):Float:Float]
+					>
+					[Const:Float] 0.015
+				[Then:Void] [Block:Void]
+					[Call:Void]
+						[Field:(v : Dynamic, ?infos : Null<haxe.PosInfos>) -> Void]
+							[TypeExpr haxe.Log:Class<haxe.Log>]
+							[FStatic:(v : Dynamic, ?infos : Null<haxe.PosInfos>) -> Void]
+								haxe.Log
+								trace:(v : Dynamic, ?infos : Null<haxe.PosInfos>) -> Void
+						[Binop:String]
+							[Binop:String]
+								[Const:String] "WARNING: Route compilation took "
+								+
+								[Binop:Float]
+									[Local totalTime(25395):Float:Float]
+									*
+									[Const:Int] 1000
+							+
+							[Const:String] "ms, exceeding 15ms target"
+						[ObjectDecl:{ methodName : String, lineNumber : Int, fileName : String, ?customParams : Null<Array<Dynamic>>, className : String }]
+							fileName: [Const:String] "../../../src/reflaxe/elixir/helpers/RouterCompiler.hx"
+							lineNumber: [Const:Int] 536
+							className: [Const:String] "reflaxe.elixir.helpers.RouterCompiler"
+							methodName: [Const:String] "batchCompileRoutes"
+			[Return:Dynamic] [Local results(25386):haxe.ds.Map<String, Array<String>>:haxe.ds.Map<String, Array<String>>]
+
+	static function parseRouteMetadata[Function:(expr : haxe.macro.Expr) -> Null<reflaxe.elixir.helpers.RouteInfo>]
+		[Arg:haxe.macro.Expr] [Local expr(15198):haxe.macro.Expr]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Meta:Null<reflaxe.elixir.helpers.RouteInfo>]
+					:ast(switch (expr.expr) {
+	case EObjectDecl(fields):
+		var method = "GET";
+		var path = "/";
+		var as = null;
+		var controller = null;
+		var metrics = null;
+		for (field  in  fields) {
+			switch (field.field) {
+				case "method":
+					if (field.expr.expr.match(EConst(CString(_)))) {
+						method = extractStringFromExpr(field.expr);
+					};				
+				case "path":
+					if (field.expr.expr.match(EConst(CString(_)))) {
+						path = extractStringFromExpr(field.expr);
+					};				
+				case "controller":
+					if (field.expr.expr.match(EConst(CString(_)))) {
+						controller = extractStringFromExpr(field.expr);
+					};				
+				case "as":
+					if (field.expr.expr.match(EConst(CString(_)))) {
+						as = extractStringFromExpr(field.expr);
+					};				
+				case "metrics":
+					if (field.expr.expr.match(EConst(CString(_)))) {
+						metrics = extractStringFromExpr(field.expr);
+					};				
+			};
+		};
+		{ method : method, path : path, controller : controller, action : "", as : as, metrics : metrics };	
+	default:
+		null;	
+})
+					[Block:Null<reflaxe.elixir.helpers.RouteInfo>]
+						[Var `(15282):haxe.macro.ExprDef]
+							[Field:haxe.macro.ExprDef]
+								[Local expr(15198):haxe.macro.Expr:haxe.macro.Expr]
+								[FAnon:haxe.macro.ExprDef] expr:haxe.macro.ExprDef
+						[If:Null<reflaxe.elixir.helpers.RouteInfo>]
+							[Binop:Bool]
+								[EnumIndex:Int] [Local `(15282):haxe.macro.ExprDef:haxe.macro.ExprDef]
+								==
+								[Const:Int] 5
+							[Then:{ path : String, metrics : Null<String>, method : String, controller : Null<String>, as : Null<String>, action : String }] [Block:{ path : String, metrics : Null<String>, method : String, controller : Null<String>, as : Null<String>, action : String }]
+								[Var `(15283):Array<haxe.macro.ObjectField>]
+									[EnumParameter:Array<haxe.macro.ObjectField>]
+										[Local `(15282):haxe.macro.ExprDef:haxe.macro.ExprDef]
+										EObjectDecl
+										0
+								[Block:{ path : String, metrics : Null<String>, method : String, controller : Null<String>, as : Null<String>, action : String }]
+									[Var fields(15284):Array<haxe.macro.ObjectField>] [Local `(15283):Array<haxe.macro.ObjectField>:Array<haxe.macro.ObjectField>]
+									[Block:{ path : String, metrics : Null<String>, method : String, controller : Null<String>, as : Null<String>, action : String }]
+										[Var method(15285):String] [Const:String] "GET"
+										[Var path(15286):String] [Const:String] "/"
+										[Var as(15287):Null<String>] [Const:Null<String>] null
+										[Var controller(15288):Null<String>] [Const:Null<String>] null
+										[Var metrics(15289):Null<String>] [Const:Null<String>] null
+										[Block:Void]
+											[Var `(15290):Int] [Const:Int] 0
+											[While:Void]
+												[Binop:Bool]
+													[Local `(15290):Int:Int]
+													<
+													[Field:Int]
+														[Local fields(15284):Array<haxe.macro.ObjectField>:Array<haxe.macro.ObjectField>]
+														[FInstance:Int]
+															Array<haxe.macro.ObjectField>
+															length:Int
+												[Block:Void]
+													[Var field(15291):haxe.macro.ObjectField]
+														[Array:haxe.macro.ObjectField]
+															[Local fields(15284):Array<haxe.macro.ObjectField>:Array<haxe.macro.ObjectField>]
+															[Local `(15290):Int:Int]
+													[Unop:Int]
+														++
+														Prefix
+														[Local `(15290):Int:Int]
+													[Meta:Void]
+														:ast(switch (field.field) {
+	case "method":
+		if (field.expr.expr.match(EConst(CString(_)))) {
+			method = extractStringFromExpr(field.expr);
+		};	
+	case "path":
+		if (field.expr.expr.match(EConst(CString(_)))) {
+			path = extractStringFromExpr(field.expr);
+		};	
+	case "controller":
+		if (field.expr.expr.match(EConst(CString(_)))) {
+			controller = extractStringFromExpr(field.expr);
+		};	
+	case "as":
+		if (field.expr.expr.match(EConst(CString(_)))) {
+			as = extractStringFromExpr(field.expr);
+		};	
+	case "metrics":
+		if (field.expr.expr.match(EConst(CString(_)))) {
+			metrics = extractStringFromExpr(field.expr);
+		};	
+})
+														[Block:Void]
+															[Var `(15292):String]
+																[Field:String]
+																	[Local field(15291):haxe.macro.ObjectField:haxe.macro.ObjectField]
+																	[FAnon:String] field:String
+															[Switch:Void]
+																[Local `(15292):String:String]
+																[Case:Void]
+																	[Const:String] "as"
+																	[Block:Void]
+																		[Block:Void]
+																			[If:Void]
+																				[Block:Bool]
+																					[Var `(15293):haxe.macro.ExprDef]
+																						[Field:haxe.macro.ExprDef]
+																							[Field:haxe.macro.Expr]
+																								[Local field(15291):haxe.macro.ObjectField:haxe.macro.ObjectField]
+																								[FAnon:haxe.macro.Expr] expr:haxe.macro.Expr
+																							[FAnon:haxe.macro.ExprDef] expr:haxe.macro.ExprDef
+																					[If:Bool]
+																						[Binop:Bool]
+																							[EnumIndex:Int] [Local `(15293):haxe.macro.ExprDef:haxe.macro.ExprDef]
+																							==
+																							[Const:Int] 0
+																						[Then:Bool] [Block:Bool]
+																							[Var `(15294):haxe.macro.Constant]
+																								[EnumParameter:haxe.macro.Constant]
+																									[Local `(15293):haxe.macro.ExprDef:haxe.macro.ExprDef]
+																									EConst
+																									0
+																							[If:Bool]
+																								[Binop:Bool]
+																									[EnumIndex:Int] [Local `(15294):haxe.macro.Constant:haxe.macro.Constant]
+																									==
+																									[Const:Int] 2
+																								[Then:Bool] [Block:Bool]
+																									[Var `(15295):String]
+																										[EnumParameter:String]
+																											[Local `(15294):haxe.macro.Constant:haxe.macro.Constant]
+																											CString
+																											0
+																									[Var `(15296):Null<haxe.macro.StringLiteralKind>]
+																										[EnumParameter:Null<haxe.macro.StringLiteralKind>]
+																											[Local `(15294):haxe.macro.Constant:haxe.macro.Constant]
+																											CString
+																											1
+																									[Const:Bool] true
+																								[Else:Bool] [Const:Bool] false
+																						[Else:Bool] [Const:Bool] false
+																				[Then:Null<String>] [Block:Null<String>]
+																					[Binop:Null<String>]
+																						[Local as(15287):Null<String>:Null<String>]
+																						=
+																						[Call:String]
+																							[Field:(expr : haxe.macro.Expr) -> String]
+																								[TypeExpr reflaxe.elixir.helpers.RouterCompiler:Class<reflaxe.elixir.helpers.RouterCompiler>]
+																								[FStatic:(expr : haxe.macro.Expr) -> String]
+																									reflaxe.elixir.helpers.RouterCompiler
+																									extractStringFromExpr:(expr : haxe.macro.Expr) -> String
+																							[Field:haxe.macro.Expr]
+																								[Local field(15291):haxe.macro.ObjectField:haxe.macro.ObjectField]
+																								[FAnon:haxe.macro.Expr] expr:haxe.macro.Expr
+																[Case:Void]
+																	[Const:String] "controller"
+																	[Block:Void]
+																		[Block:Void]
+																			[If:Void]
+																				[Block:Bool]
+																					[Var `(15297):haxe.macro.ExprDef]
+																						[Field:haxe.macro.ExprDef]
+																							[Field:haxe.macro.Expr]
+																								[Local field(15291):haxe.macro.ObjectField:haxe.macro.ObjectField]
+																								[FAnon:haxe.macro.Expr] expr:haxe.macro.Expr
+																							[FAnon:haxe.macro.ExprDef] expr:haxe.macro.ExprDef
+																					[If:Bool]
+																						[Binop:Bool]
+																							[EnumIndex:Int] [Local `(15297):haxe.macro.ExprDef:haxe.macro.ExprDef]
+																							==
+																							[Const:Int] 0
+																						[Then:Bool] [Block:Bool]
+																							[Var `(15298):haxe.macro.Constant]
+																								[EnumParameter:haxe.macro.Constant]
+																									[Local `(15297):haxe.macro.ExprDef:haxe.macro.ExprDef]
+																									EConst
+																									0
+																							[If:Bool]
+																								[Binop:Bool]
+																									[EnumIndex:Int] [Local `(15298):haxe.macro.Constant:haxe.macro.Constant]
+																									==
+																									[Const:Int] 2
+																								[Then:Bool] [Block:Bool]
+																									[Var `(15299):String]
+																										[EnumParameter:String]
+																											[Local `(15298):haxe.macro.Constant:haxe.macro.Constant]
+																											CString
+																											0
+																									[Var `(15300):Null<haxe.macro.StringLiteralKind>]
+																										[EnumParameter:Null<haxe.macro.StringLiteralKind>]
+																											[Local `(15298):haxe.macro.Constant:haxe.macro.Constant]
+																											CString
+																											1
+																									[Const:Bool] true
+																								[Else:Bool] [Const:Bool] false
+																						[Else:Bool] [Const:Bool] false
+																				[Then:Null<String>] [Block:Null<String>]
+																					[Binop:Null<String>]
+																						[Local controller(15288):Null<String>:Null<String>]
+																						=
+																						[Call:String]
+																							[Field:(expr : haxe.macro.Expr) -> String]
+																								[TypeExpr reflaxe.elixir.helpers.RouterCompiler:Class<reflaxe.elixir.helpers.RouterCompiler>]
+																								[FStatic:(expr : haxe.macro.Expr) -> String]
+																									reflaxe.elixir.helpers.RouterCompiler
+																									extractStringFromExpr:(expr : haxe.macro.Expr) -> String
+																							[Field:haxe.macro.Expr]
+																								[Local field(15291):haxe.macro.ObjectField:haxe.macro.ObjectField]
+																								[FAnon:haxe.macro.Expr] expr:haxe.macro.Expr
+																[Case:Void]
+																	[Const:String] "method"
+																	[Block:Void]
+																		[Block:Void]
+																			[If:Void]
+																				[Block:Bool]
+																					[Var `(15301):haxe.macro.ExprDef]
+																						[Field:haxe.macro.ExprDef]
+																							[Field:haxe.macro.Expr]
+																								[Local field(15291):haxe.macro.ObjectField:haxe.macro.ObjectField]
+																								[FAnon:haxe.macro.Expr] expr:haxe.macro.Expr
+																							[FAnon:haxe.macro.ExprDef] expr:haxe.macro.ExprDef
+																					[If:Bool]
+																						[Binop:Bool]
+																							[EnumIndex:Int] [Local `(15301):haxe.macro.ExprDef:haxe.macro.ExprDef]
+																							==
+																							[Const:Int] 0
+																						[Then:Bool] [Block:Bool]
+																							[Var `(15302):haxe.macro.Constant]
+																								[EnumParameter:haxe.macro.Constant]
+																									[Local `(15301):haxe.macro.ExprDef:haxe.macro.ExprDef]
+																									EConst
+																									0
+																							[If:Bool]
+																								[Binop:Bool]
+																									[EnumIndex:Int] [Local `(15302):haxe.macro.Constant:haxe.macro.Constant]
+																									==
+																									[Const:Int] 2
+																								[Then:Bool] [Block:Bool]
+																									[Var `(15303):String]
+																										[EnumParameter:String]
+																											[Local `(15302):haxe.macro.Constant:haxe.macro.Constant]
+																											CString
+																											0
+																									[Var `(15304):Null<haxe.macro.StringLiteralKind>]
+																										[EnumParameter:Null<haxe.macro.StringLiteralKind>]
+																											[Local `(15302):haxe.macro.Constant:haxe.macro.Constant]
+																											CString
+																											1
+																									[Const:Bool] true
+																								[Else:Bool] [Const:Bool] false
+																						[Else:Bool] [Const:Bool] false
+																				[Then:String] [Block:String]
+																					[Binop:String]
+																						[Local method(15285):String:String]
+																						=
+																						[Call:String]
+																							[Field:(expr : haxe.macro.Expr) -> String]
+																								[TypeExpr reflaxe.elixir.helpers.RouterCompiler:Class<reflaxe.elixir.helpers.RouterCompiler>]
+																								[FStatic:(expr : haxe.macro.Expr) -> String]
+																									reflaxe.elixir.helpers.RouterCompiler
+																									extractStringFromExpr:(expr : haxe.macro.Expr) -> String
+																							[Field:haxe.macro.Expr]
+																								[Local field(15291):haxe.macro.ObjectField:haxe.macro.ObjectField]
+																								[FAnon:haxe.macro.Expr] expr:haxe.macro.Expr
+																[Case:Void]
+																	[Const:String] "metrics"
+																	[Block:Void]
+																		[Block:Void]
+																			[If:Void]
+																				[Block:Bool]
+																					[Var `(15305):haxe.macro.ExprDef]
+																						[Field:haxe.macro.ExprDef]
+																							[Field:haxe.macro.Expr]
+																								[Local field(15291):haxe.macro.ObjectField:haxe.macro.ObjectField]
+																								[FAnon:haxe.macro.Expr] expr:haxe.macro.Expr
+																							[FAnon:haxe.macro.ExprDef] expr:haxe.macro.ExprDef
+																					[If:Bool]
+																						[Binop:Bool]
+																							[EnumIndex:Int] [Local `(15305):haxe.macro.ExprDef:haxe.macro.ExprDef]
+																							==
+																							[Const:Int] 0
+																						[Then:Bool] [Block:Bool]
+																							[Var `(15306):haxe.macro.Constant]
+																								[EnumParameter:haxe.macro.Constant]
+																									[Local `(15305):haxe.macro.ExprDef:haxe.macro.ExprDef]
+																									EConst
+																									0
+																							[If:Bool]
+																								[Binop:Bool]
+																									[EnumIndex:Int] [Local `(15306):haxe.macro.Constant:haxe.macro.Constant]
+																									==
+																									[Const:Int] 2
+																								[Then:Bool] [Block:Bool]
+																									[Var `(15307):String]
+																										[EnumParameter:String]
+																											[Local `(15306):haxe.macro.Constant:haxe.macro.Constant]
+																											CString
+																											0
+																									[Var `(15308):Null<haxe.macro.StringLiteralKind>]
+																										[EnumParameter:Null<haxe.macro.StringLiteralKind>]
+																											[Local `(15306):haxe.macro.Constant:haxe.macro.Constant]
+																											CString
+																											1
+																									[Const:Bool] true
+																								[Else:Bool] [Const:Bool] false
+																						[Else:Bool] [Const:Bool] false
+																				[Then:Null<String>] [Block:Null<String>]
+																					[Binop:Null<String>]
+																						[Local metrics(15289):Null<String>:Null<String>]
+																						=
+																						[Call:String]
+																							[Field:(expr : haxe.macro.Expr) -> String]
+																								[TypeExpr reflaxe.elixir.helpers.RouterCompiler:Class<reflaxe.elixir.helpers.RouterCompiler>]
+																								[FStatic:(expr : haxe.macro.Expr) -> String]
+																									reflaxe.elixir.helpers.RouterCompiler
+																									extractStringFromExpr:(expr : haxe.macro.Expr) -> String
+																							[Field:haxe.macro.Expr]
+																								[Local field(15291):haxe.macro.ObjectField:haxe.macro.ObjectField]
+																								[FAnon:haxe.macro.Expr] expr:haxe.macro.Expr
+																[Case:Void]
+																	[Const:String] "path"
+																	[Block:Void]
+																		[Block:Void]
+																			[If:Void]
+																				[Block:Bool]
+																					[Var `(15309):haxe.macro.ExprDef]
+																						[Field:haxe.macro.ExprDef]
+																							[Field:haxe.macro.Expr]
+																								[Local field(15291):haxe.macro.ObjectField:haxe.macro.ObjectField]
+																								[FAnon:haxe.macro.Expr] expr:haxe.macro.Expr
+																							[FAnon:haxe.macro.ExprDef] expr:haxe.macro.ExprDef
+																					[If:Bool]
+																						[Binop:Bool]
+																							[EnumIndex:Int] [Local `(15309):haxe.macro.ExprDef:haxe.macro.ExprDef]
+																							==
+																							[Const:Int] 0
+																						[Then:Bool] [Block:Bool]
+																							[Var `(15310):haxe.macro.Constant]
+																								[EnumParameter:haxe.macro.Constant]
+																									[Local `(15309):haxe.macro.ExprDef:haxe.macro.ExprDef]
+																									EConst
+																									0
+																							[If:Bool]
+																								[Binop:Bool]
+																									[EnumIndex:Int] [Local `(15310):haxe.macro.Constant:haxe.macro.Constant]
+																									==
+																									[Const:Int] 2
+																								[Then:Bool] [Block:Bool]
+																									[Var `(15311):String]
+																										[EnumParameter:String]
+																											[Local `(15310):haxe.macro.Constant:haxe.macro.Constant]
+																											CString
+																											0
+																									[Var `(15312):Null<haxe.macro.StringLiteralKind>]
+																										[EnumParameter:Null<haxe.macro.StringLiteralKind>]
+																											[Local `(15310):haxe.macro.Constant:haxe.macro.Constant]
+																											CString
+																											1
+																									[Const:Bool] true
+																								[Else:Bool] [Const:Bool] false
+																						[Else:Bool] [Const:Bool] false
+																				[Then:String] [Block:String]
+																					[Binop:String]
+																						[Local path(15286):String:String]
+																						=
+																						[Call:String]
+																							[Field:(expr : haxe.macro.Expr) -> String]
+																								[TypeExpr reflaxe.elixir.helpers.RouterCompiler:Class<reflaxe.elixir.helpers.RouterCompiler>]
+																								[FStatic:(expr : haxe.macro.Expr) -> String]
+																									reflaxe.elixir.helpers.RouterCompiler
+																									extractStringFromExpr:(expr : haxe.macro.Expr) -> String
+																							[Field:haxe.macro.Expr]
+																								[Local field(15291):haxe.macro.ObjectField:haxe.macro.ObjectField]
+																								[FAnon:haxe.macro.Expr] expr:haxe.macro.Expr
+										[ObjectDecl:{ path : String, metrics : Null<String>, method : String, controller : Null<String>, as : Null<String>, action : String }]
+											method: [Local method(15285):String:String]
+											path: [Local path(15286):String:String]
+											controller: [Local controller(15288):Null<String>:Null<String>]
+											action: [Const:String] ""
+											as: [Local as(15287):Null<String>:Null<String>]
+											metrics: [Local metrics(15289):Null<String>:Null<String>]
+							[Else:Null<reflaxe.elixir.helpers.RouteInfo>] [Block:Null<reflaxe.elixir.helpers.RouteInfo>] [Const:Null<reflaxe.elixir.helpers.RouteInfo>] null
+
+	static function extractStringFromExpr[Function:(expr : haxe.macro.Expr) -> String]
+		[Arg:haxe.macro.Expr] [Local expr(15214):haxe.macro.Expr]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Meta:String]
+					:ast(switch (expr.expr) {
+	case EConst(CString(s)):
+		s;	
+	default:
+		"";	
+})
+					[Block:String]
+						[Var `(15220):haxe.macro.ExprDef]
+							[Field:haxe.macro.ExprDef]
+								[Local expr(15214):haxe.macro.Expr:haxe.macro.Expr]
+								[FAnon:haxe.macro.ExprDef] expr:haxe.macro.ExprDef
+						[If:String]
+							[Binop:Bool]
+								[EnumIndex:Int] [Local `(15220):haxe.macro.ExprDef:haxe.macro.ExprDef]
+								==
+								[Const:Int] 0
+							[Then:String] [Block:String]
+								[Var `(15221):haxe.macro.Constant]
+									[EnumParameter:haxe.macro.Constant]
+										[Local `(15220):haxe.macro.ExprDef:haxe.macro.ExprDef]
+										EConst
+										0
+								[If:String]
+									[Binop:Bool]
+										[EnumIndex:Int] [Local `(15221):haxe.macro.Constant:haxe.macro.Constant]
+										==
+										[Const:Int] 2
+									[Then:String] [Block:String]
+										[Var `(15222):String]
+											[EnumParameter:String]
+												[Local `(15221):haxe.macro.Constant:haxe.macro.Constant]
+												CString
+												0
+										[Var `(15223):Null<haxe.macro.StringLiteralKind>]
+											[EnumParameter:Null<haxe.macro.StringLiteralKind>]
+												[Local `(15221):haxe.macro.Constant:haxe.macro.Constant]
+												CString
+												1
+										[Block:String]
+											[Var s(15224):String] [Local `(15222):String:String]
+											[Block:String] [Local s(15224):String:String]
+									[Else:String] [Block:String] [Const:String] ""
+							[Else:String] [Block:String] [Const:String] ""
+}

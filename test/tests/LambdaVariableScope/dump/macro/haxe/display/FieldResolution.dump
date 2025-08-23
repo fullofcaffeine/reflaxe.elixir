@@ -1,0 +1,1 @@
+typedef haxe.display.FieldResolution = { qualifier : String, isQualified : Bool }

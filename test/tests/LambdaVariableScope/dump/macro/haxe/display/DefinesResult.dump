@@ -1,0 +1,1 @@
+typedef haxe.display.DefinesResult = haxe.display.Response<Array<haxe.display.Define>>

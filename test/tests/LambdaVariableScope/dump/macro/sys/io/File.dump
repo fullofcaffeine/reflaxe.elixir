@@ -1,0 +1,66 @@
+@:coreApi
+class sys.io.File {
+
+	public static function getContent
+
+	public static function saveContent
+
+	public static function getBytes
+
+	public static function saveBytes
+
+	@:value({ binary : true })
+	public static function read
+
+	@:value({ binary : true })
+	public static function write
+
+	@:value({ binary : true })
+	public static function append
+
+	@:value({ binary : true })
+	public static function update
+
+	public static function copy[Function:(srcPath : String, dstPath : String) -> Void]
+		[Arg:String] [Local srcPath(2509):String]
+		[Arg:String] [Local dstPath(2510):String]
+		[Block:Void]
+			[Var s(2511):sys.io.FileInput]
+				[Call:sys.io.FileInput]
+					[Field:(path : String, ?binary : Bool) -> sys.io.FileInput]
+						[TypeExpr sys.io.File:Class<sys.io.File>]
+						[FStatic:(path : String, ?binary : Bool) -> sys.io.FileInput]
+							sys.io.File
+							read:(path : String, ?binary : Bool) -> sys.io.FileInput
+					[Local srcPath(2509):String:String]
+					[Const:Bool] true
+			[Var d(2512):sys.io.FileOutput]
+				[Call:sys.io.FileOutput]
+					[Field:(path : String, ?binary : Bool) -> sys.io.FileOutput]
+						[TypeExpr sys.io.File:Class<sys.io.File>]
+						[FStatic:(path : String, ?binary : Bool) -> sys.io.FileOutput]
+							sys.io.File
+							write:(path : String, ?binary : Bool) -> sys.io.FileOutput
+					[Local dstPath(2510):String:String]
+					[Const:Bool] true
+			[Call:Void]
+				[Field:(i : haxe.io.Input, ?bufsize : Null<Int>) -> Void]
+					[Local d(2512):sys.io.FileOutput:sys.io.FileOutput]
+					[FInstance:(i : haxe.io.Input, ?bufsize : Null<Int>) -> Void]
+						haxe.io.Output
+						writeInput:(i : haxe.io.Input, ?bufsize : Null<Int>) -> Void
+				[Local s(2511):sys.io.FileInput:sys.io.FileInput]
+				[Const:Null<Int>] null
+			[Call:Void]
+				[Field:() -> Void]
+					[Local s(2511):sys.io.FileInput:sys.io.FileInput]
+					[FInstance:() -> Void]
+						sys.io.FileInput
+						close:() -> Void
+			[Call:Void]
+				[Field:() -> Void]
+					[Local d(2512):sys.io.FileOutput:sys.io.FileOutput]
+					[FInstance:() -> Void]
+						sys.io.FileOutput
+						close:() -> Void
+}

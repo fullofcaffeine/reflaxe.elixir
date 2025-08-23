@@ -1,0 +1,463 @@
+@:nullSafety(Off)
+class reflaxe.elixir.helpers.LiveViewCompiler {
+
+	public function new[Function:(compiler : reflaxe.elixir.ElixirCompiler) -> Void]
+		[Arg:reflaxe.elixir.ElixirCompiler] [Local compiler(29288):reflaxe.elixir.ElixirCompiler]
+		[Block:reflaxe.elixir.ElixirCompiler]
+			[Binop:reflaxe.elixir.ElixirCompiler]
+				[Field:reflaxe.elixir.ElixirCompiler]
+					[Const:reflaxe.elixir.helpers.LiveViewCompiler] this
+					[FInstance:reflaxe.elixir.ElixirCompiler]
+						reflaxe.elixir.helpers.LiveViewCompiler
+						compiler:reflaxe.elixir.ElixirCompiler
+				=
+				[Local compiler(29288):reflaxe.elixir.ElixirCompiler:reflaxe.elixir.ElixirCompiler]
+
+	var compiler:reflaxe.elixir.ElixirCompiler;
+
+	public function compileLiveViewClass[Function:(classType : haxe.macro.ClassType, varFields : Array<Dynamic>, funcFields : Array<Dynamic>) -> String]
+		[Arg:haxe.macro.ClassType] [Local classType(29289):haxe.macro.ClassType]
+		[Arg:Array<Dynamic>] [Local varFields(29290):Array<Dynamic>]
+		[Arg:Array<Dynamic>] [Local funcFields(29291):Array<Dynamic>]
+		[Block:Dynamic]
+			[Var moduleName(29292):String]
+				[Call:String]
+					[Field:(haxeName : String) -> String]
+						[TypeExpr reflaxe.elixir.helpers.NamingHelper:Class<reflaxe.elixir.helpers.NamingHelper>]
+						[FStatic:(haxeName : String) -> String]
+							reflaxe.elixir.helpers.NamingHelper
+							getElixirModuleName:(haxeName : String) -> String
+					[Field:String]
+						[Local classType(29289):haxe.macro.ClassType:haxe.macro.ClassType]
+						[FAnon:String] name:String
+			[Var appName(29296):String]
+				[Call:String]
+					[Field:(moduleName : String) -> String]
+						[Const:reflaxe.elixir.helpers.LiveViewCompiler] this
+						[FInstance:(moduleName : String) -> String]
+							reflaxe.elixir.helpers.LiveViewCompiler
+							extractAppName:(moduleName : String) -> String
+					[Local moduleName(29292):String:String]
+			[Var result(29297):String]
+				[Binop:String]
+					[Binop:String]
+						[Const:String] "defmodule "
+						+
+						[Local moduleName(29292):String:String]
+					+
+					[Const:String] " do\n"
+			[Binop:String]
+				[Local result(29297):String:String]
+				+=
+				[Binop:String]
+					[Binop:String]
+						[Const:String] "  use "
+						+
+						[Local appName(29296):String:String]
+					+
+					[Const:String] "Web, :live_view\n\n"
+			[If:Void]
+				[Call:Bool]
+					[Field:(funcFields : Array<Dynamic>) -> Bool]
+						[Const:reflaxe.elixir.helpers.LiveViewCompiler] this
+						[FInstance:(funcFields : Array<Dynamic>) -> Bool]
+							reflaxe.elixir.helpers.LiveViewCompiler
+							needsCoreComponents:(funcFields : Array<Dynamic>) -> Bool
+					[Local funcFields(29291):Array<Dynamic>:Array<Dynamic>]
+				[Then:String] [Block:String]
+					[Binop:String]
+						[Local result(29297):String:String]
+						+=
+						[Binop:String]
+							[Binop:String]
+								[Const:String] "  alias "
+								+
+								[Local appName(29296):String:String]
+							+
+							[Const:String] "Web.CoreComponents\n\n"
+			[Binop:String]
+				[Local result(29297):String:String]
+				+=
+				[Call:String]
+					[Field:(funcFields : Array<Dynamic>) -> String]
+						[Const:reflaxe.elixir.helpers.LiveViewCompiler] this
+						[FInstance:(funcFields : Array<Dynamic>) -> String]
+							reflaxe.elixir.helpers.LiveViewCompiler
+							compileLiveViewCallbacks:(funcFields : Array<Dynamic>) -> String
+					[Local funcFields(29291):Array<Dynamic>:Array<Dynamic>]
+			[Block:Void]
+				[Var `(29313):Int] [Const:Int] 0
+				[While:Void]
+					[Binop:Bool]
+						[Local `(29313):Int:Int]
+						<
+						[Field:Int]
+							[Local funcFields(29291):Array<Dynamic>:Array<Dynamic>]
+							[FInstance:Int]
+								Array<Dynamic>
+								length:Int
+					[Block:Void]
+						[Var funcField(29311):Dynamic]
+							[Array:Dynamic]
+								[Local funcFields(29291):Array<Dynamic>:Array<Dynamic>]
+								[Local `(29313):Int:Int]
+						[Unop:Int]
+							++
+							Prefix
+							[Local `(29313):Int:Int]
+						[If:Void]
+							[Unop:Bool]
+								!
+								Prefix
+								[Call:Bool]
+									[Field:(name : String) -> Bool]
+										[Const:reflaxe.elixir.helpers.LiveViewCompiler] this
+										[FInstance:(name : String) -> Bool]
+											reflaxe.elixir.helpers.LiveViewCompiler
+											isLiveViewCallback:(name : String) -> Bool
+									[Field:Dynamic]
+										[Local funcField(29311):Dynamic:Dynamic]
+										[FDynamic:Dynamic] name
+							[Then:String] [Block:String]
+								[Binop:String]
+									[Local result(29297):String:String]
+									+=
+									[Binop:String]
+										[Call:String]
+											[Field:(funcField : reflaxe.data.ClassFuncData, ?isStatic : Bool) -> String]
+												[Field:reflaxe.elixir.ElixirCompiler]
+													[Const:reflaxe.elixir.helpers.LiveViewCompiler] this
+													[FInstance:reflaxe.elixir.ElixirCompiler]
+														reflaxe.elixir.helpers.LiveViewCompiler
+														compiler:reflaxe.elixir.ElixirCompiler
+												[FInstance:(funcField : reflaxe.data.ClassFuncData, ?isStatic : Bool) -> String]
+													reflaxe.elixir.ElixirCompiler
+													compileFunction:(funcField : reflaxe.data.ClassFuncData, ?isStatic : Bool) -> String
+											[Local funcField(29311):Dynamic:Dynamic]
+											[Const:Bool] true
+										+
+										[Const:String] "\n"
+			[Binop:String]
+				[Local result(29297):String:String]
+				+=
+				[Const:String] "end\n"
+			[Return:Dynamic] [Local result(29297):String:String]
+
+	function extractAppName[Function:(moduleName : String) -> String]
+		[Arg:String] [Local moduleName(29293):String]
+		[Block:Dynamic]
+			[Var parts(29294):Array<String>]
+				[Call:Array<String>]
+					[Field:(delimiter : String) -> Array<String>]
+						[Local moduleName(29293):String:String]
+						[FInstance:(delimiter : String) -> Array<String>]
+							String
+							split:(delimiter : String) -> Array<String>
+					[Const:String] "."
+			[If:Void]
+				[Binop:Bool]
+					[Field:Int]
+						[Local parts(29294):Array<String>:Array<String>]
+						[FInstance:Int]
+							Array<String>
+							length:Int
+					>
+					[Const:Int] 0
+				[Then:Void] [Block:Void]
+					[Var webPart(29295):String]
+						[Array:String]
+							[Local parts(29294):Array<String>:Array<String>]
+							[Const:Int] 0
+					[If:Void]
+						[Call:Bool]
+							[Field:(s : String, end : String) -> Bool]
+								[TypeExpr StringTools:{ Statics StringTools }]
+								[FStatic:(s : String, end : String) -> Bool]
+									StringTools
+									endsWith:(s : String, end : String) -> Bool
+							[Local webPart(29295):String:String]
+							[Const:String] "Web"
+						[Then:Dynamic] [Block:Dynamic]
+							[Return:Dynamic]
+								[Call:String]
+									[Field:(startIndex : Int, ?endIndex : Null<Int>) -> String]
+										[Local webPart(29295):String:String]
+										[FInstance:(startIndex : Int, ?endIndex : Null<Int>) -> String]
+											String
+											substring:(startIndex : Int, ?endIndex : Null<Int>) -> String
+									[Const:Int] 0
+									[Binop:Int]
+										[Field:Int]
+											[Local webPart(29295):String:String]
+											[FInstance:Int]
+												String
+												length:Int
+										-
+										[Const:Int] 3
+			[Return:Dynamic] [Const:String] "App"
+
+	function needsCoreComponents[Function:(funcFields : Array<Dynamic>) -> Bool]
+		[Arg:Array<Dynamic>] [Local funcFields(29298):Array<Dynamic>]
+		[Block:Dynamic]
+			[Block:Void]
+				[Var `(29300):Int] [Const:Int] 0
+				[While:Void]
+					[Binop:Bool]
+						[Local `(29300):Int:Int]
+						<
+						[Field:Int]
+							[Local funcFields(29298):Array<Dynamic>:Array<Dynamic>]
+							[FInstance:Int]
+								Array<Dynamic>
+								length:Int
+					[Block:Void]
+						[Var funcField(29299):Dynamic]
+							[Array:Dynamic]
+								[Local funcFields(29298):Array<Dynamic>:Array<Dynamic>]
+								[Local `(29300):Int:Int]
+						[Unop:Int]
+							++
+							Prefix
+							[Local `(29300):Int:Int]
+						[If:Void]
+							[Binop:Bool]
+								[Field:Dynamic]
+									[Local funcField(29299):Dynamic:Dynamic]
+									[FDynamic:Dynamic] name
+								==
+								[Const:String] "render"
+							[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [Const:Bool] true
+			[Return:Dynamic] [Const:Bool] false
+
+	function compileLiveViewCallbacks[Function:(funcFields : Array<Dynamic>) -> String]
+		[Arg:Array<Dynamic>] [Local funcFields(29301):Array<Dynamic>]
+		[Block:Dynamic]
+			[Var result(29302):String] [Const:String] ""
+			[Var callbacks(29303):Array<String>]
+				[ArrayDecl:Array<String>]
+					[Const:String] "mount"
+					[Const:String] "render"
+					[Const:String] "handle_event"
+					[Const:String] "handle_info"
+					[Const:String] "handle_params"
+			[Block:Void]
+				[Var `(29310):Int] [Const:Int] 0
+				[While:Void]
+					[Binop:Bool]
+						[Local `(29310):Int:Int]
+						<
+						[Field:Int]
+							[Local callbacks(29303):Array<String>:Array<String>]
+							[FInstance:Int]
+								Array<String>
+								length:Int
+					[Block:Void]
+						[Var callbackName(29304):String]
+							[Array:String]
+								[Local callbacks(29303):Array<String>:Array<String>]
+								[Local `(29310):Int:Int]
+						[Unop:Int]
+							++
+							Prefix
+							[Local `(29310):Int:Int]
+						[Block:Void]
+							[Var `(29309):Int] [Const:Int] 0
+							[While:Void]
+								[Binop:Bool]
+									[Local `(29309):Int:Int]
+									<
+									[Field:Int]
+										[Local funcFields(29301):Array<Dynamic>:Array<Dynamic>]
+										[FInstance:Int]
+											Array<Dynamic>
+											length:Int
+								[Block:Void]
+									[Var funcField(29305):Dynamic]
+										[Array:Dynamic]
+											[Local funcFields(29301):Array<Dynamic>:Array<Dynamic>]
+											[Local `(29309):Int:Int]
+									[Unop:Int]
+										++
+										Prefix
+										[Local `(29309):Int:Int]
+									[If:Void]
+										[Binop:Bool]
+											[Field:Dynamic]
+												[Local funcField(29305):Dynamic:Dynamic]
+												[FDynamic:Dynamic] name
+											==
+											[Local callbackName(29304):String:String]
+										[Then:String] [Block:String]
+											[Binop:String]
+												[Local result(29302):String:String]
+												+=
+												[Binop:String]
+													[Call:String]
+														[Field:(funcField : Dynamic, callbackName : String) -> String]
+															[Const:reflaxe.elixir.helpers.LiveViewCompiler] this
+															[FInstance:(funcField : Dynamic, callbackName : String) -> String]
+																reflaxe.elixir.helpers.LiveViewCompiler
+																compileLiveViewCallback:(funcField : Dynamic, callbackName : String) -> String
+														[Local funcField(29305):Dynamic:Dynamic]
+														[Local callbackName(29304):String:String]
+													+
+													[Const:String] "\n"
+			[Return:Dynamic] [Local result(29302):String:String]
+
+	function compileLiveViewCallback[Function:(funcField : Dynamic, callbackName : String) -> String]
+		[Arg:Dynamic] [Local funcField(29306):Dynamic]
+		[Arg:String] [Local callbackName(29307):String]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Meta:String]
+					:ast(switch (callbackName) {
+	case "mount":
+		compiler.compileFunction(funcField, true);	
+	case "render":
+		compileRenderFunction(funcField);	
+	case "handle_event":
+		compiler.compileFunction(funcField, true);	
+	case "handle_info":
+		compiler.compileFunction(funcField, true);	
+	case "handle_params":
+		compiler.compileFunction(funcField, true);	
+	default:
+		compiler.compileFunction(funcField, true);	
+})
+					[Switch:String]
+						[Local callbackName(29307):String:String]
+						[Case:String]
+							[Const:String] "handle_event"
+							[Block:String]
+								[Block:String]
+									[Call:String]
+										[Field:(funcField : reflaxe.data.ClassFuncData, ?isStatic : Bool) -> String]
+											[Field:reflaxe.elixir.ElixirCompiler]
+												[Const:reflaxe.elixir.helpers.LiveViewCompiler] this
+												[FInstance:reflaxe.elixir.ElixirCompiler]
+													reflaxe.elixir.helpers.LiveViewCompiler
+													compiler:reflaxe.elixir.ElixirCompiler
+											[FInstance:(funcField : reflaxe.data.ClassFuncData, ?isStatic : Bool) -> String]
+												reflaxe.elixir.ElixirCompiler
+												compileFunction:(funcField : reflaxe.data.ClassFuncData, ?isStatic : Bool) -> String
+										[Local funcField(29306):Dynamic:Dynamic]
+										[Const:Bool] true
+						[Case:String]
+							[Const:String] "handle_info"
+							[Block:String]
+								[Block:String]
+									[Call:String]
+										[Field:(funcField : reflaxe.data.ClassFuncData, ?isStatic : Bool) -> String]
+											[Field:reflaxe.elixir.ElixirCompiler]
+												[Const:reflaxe.elixir.helpers.LiveViewCompiler] this
+												[FInstance:reflaxe.elixir.ElixirCompiler]
+													reflaxe.elixir.helpers.LiveViewCompiler
+													compiler:reflaxe.elixir.ElixirCompiler
+											[FInstance:(funcField : reflaxe.data.ClassFuncData, ?isStatic : Bool) -> String]
+												reflaxe.elixir.ElixirCompiler
+												compileFunction:(funcField : reflaxe.data.ClassFuncData, ?isStatic : Bool) -> String
+										[Local funcField(29306):Dynamic:Dynamic]
+										[Const:Bool] true
+						[Case:String]
+							[Const:String] "handle_params"
+							[Block:String]
+								[Block:String]
+									[Call:String]
+										[Field:(funcField : reflaxe.data.ClassFuncData, ?isStatic : Bool) -> String]
+											[Field:reflaxe.elixir.ElixirCompiler]
+												[Const:reflaxe.elixir.helpers.LiveViewCompiler] this
+												[FInstance:reflaxe.elixir.ElixirCompiler]
+													reflaxe.elixir.helpers.LiveViewCompiler
+													compiler:reflaxe.elixir.ElixirCompiler
+											[FInstance:(funcField : reflaxe.data.ClassFuncData, ?isStatic : Bool) -> String]
+												reflaxe.elixir.ElixirCompiler
+												compileFunction:(funcField : reflaxe.data.ClassFuncData, ?isStatic : Bool) -> String
+										[Local funcField(29306):Dynamic:Dynamic]
+										[Const:Bool] true
+						[Case:String]
+							[Const:String] "mount"
+							[Block:String]
+								[Block:String]
+									[Call:String]
+										[Field:(funcField : reflaxe.data.ClassFuncData, ?isStatic : Bool) -> String]
+											[Field:reflaxe.elixir.ElixirCompiler]
+												[Const:reflaxe.elixir.helpers.LiveViewCompiler] this
+												[FInstance:reflaxe.elixir.ElixirCompiler]
+													reflaxe.elixir.helpers.LiveViewCompiler
+													compiler:reflaxe.elixir.ElixirCompiler
+											[FInstance:(funcField : reflaxe.data.ClassFuncData, ?isStatic : Bool) -> String]
+												reflaxe.elixir.ElixirCompiler
+												compileFunction:(funcField : reflaxe.data.ClassFuncData, ?isStatic : Bool) -> String
+										[Local funcField(29306):Dynamic:Dynamic]
+										[Const:Bool] true
+						[Case:String]
+							[Const:String] "render"
+							[Block:String]
+								[Block:String]
+									[Call:String]
+										[Field:(funcField : Dynamic) -> String]
+											[Const:reflaxe.elixir.helpers.LiveViewCompiler] this
+											[FInstance:(funcField : Dynamic) -> String]
+												reflaxe.elixir.helpers.LiveViewCompiler
+												compileRenderFunction:(funcField : Dynamic) -> String
+										[Local funcField(29306):Dynamic:Dynamic]
+						[Default:String]
+							[Block:String]
+								[Call:String]
+									[Field:(funcField : reflaxe.data.ClassFuncData, ?isStatic : Bool) -> String]
+										[Field:reflaxe.elixir.ElixirCompiler]
+											[Const:reflaxe.elixir.helpers.LiveViewCompiler] this
+											[FInstance:reflaxe.elixir.ElixirCompiler]
+												reflaxe.elixir.helpers.LiveViewCompiler
+												compiler:reflaxe.elixir.ElixirCompiler
+										[FInstance:(funcField : reflaxe.data.ClassFuncData, ?isStatic : Bool) -> String]
+											reflaxe.elixir.ElixirCompiler
+											compileFunction:(funcField : reflaxe.data.ClassFuncData, ?isStatic : Bool) -> String
+									[Local funcField(29306):Dynamic:Dynamic]
+									[Const:Bool] true
+
+	function compileRenderFunction[Function:(funcField : Dynamic) -> String]
+		[Arg:Dynamic] [Local funcField(29308):Dynamic]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Call:String]
+					[Field:(funcField : reflaxe.data.ClassFuncData, ?isStatic : Bool) -> String]
+						[Field:reflaxe.elixir.ElixirCompiler]
+							[Const:reflaxe.elixir.helpers.LiveViewCompiler] this
+							[FInstance:reflaxe.elixir.ElixirCompiler]
+								reflaxe.elixir.helpers.LiveViewCompiler
+								compiler:reflaxe.elixir.ElixirCompiler
+						[FInstance:(funcField : reflaxe.data.ClassFuncData, ?isStatic : Bool) -> String]
+							reflaxe.elixir.ElixirCompiler
+							compileFunction:(funcField : reflaxe.data.ClassFuncData, ?isStatic : Bool) -> String
+					[Local funcField(29308):Dynamic:Dynamic]
+					[Const:Bool] true
+
+	function isLiveViewCallback[Function:(name : String) -> Bool]
+		[Arg:String] [Local name(29312):String]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Meta:Bool]
+					:ast(switch (name) {
+	case "mount", "render", "handle_event", "handle_info", "handle_params":
+		true;	
+	case "terminate", "update":
+		true;	
+	default:
+		false;	
+})
+					[Switch:Bool]
+						[Local name(29312):String:String]
+						[Case:Bool]
+							[Const:String] "handle_event"
+							[Const:String] "handle_info"
+							[Const:String] "handle_params"
+							[Const:String] "mount"
+							[Const:String] "render"
+							[Block:Bool] [Block:Bool] [Const:Bool] true
+						[Case:Bool]
+							[Const:String] "terminate"
+							[Const:String] "update"
+							[Block:Bool] [Block:Bool] [Const:Bool] true
+						[Default:Bool] [Block:Bool] [Const:Bool] false
+}

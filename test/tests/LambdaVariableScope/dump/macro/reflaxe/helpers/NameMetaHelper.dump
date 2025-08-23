@@ -1,0 +1,361 @@
+class reflaxe.helpers.NameMetaHelper {
+
+	@:value([])
+	static var nativeNameOverrides:Map<String, String> = [Block:haxe.ds.StringMap<String>]
+		[Block:Void]
+		[New:haxe.ds.StringMap<String>] haxe.ds.StringMap<String>;
+
+	public static function hasMeta[Function:(v : reflaxe.helpers.NameAndMeta, metaName : String) -> Bool]
+		[Arg:reflaxe.helpers.NameAndMeta] [Local v(7624):reflaxe.helpers.NameAndMeta]
+		[Arg:String] [Local metaName(7625):String]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Binop:Bool]
+					[Binop:Bool]
+						[Binop:Bool]
+							[Field:Null<haxe.macro.MetaAccess>]
+								[Local v(7624):reflaxe.helpers.NameAndMeta:reflaxe.helpers.NameAndMeta]
+								[FAnon:Null<haxe.macro.MetaAccess>] meta:Null<haxe.macro.MetaAccess>
+							!=
+							[Const:Null<haxe.macro.MetaAccess>] null
+						&&
+						[Binop:Bool]
+							[Field:(name : String) -> Bool]
+								[Field:Null<haxe.macro.MetaAccess>]
+									[Local v(7624):reflaxe.helpers.NameAndMeta:reflaxe.helpers.NameAndMeta]
+									[FAnon:Null<haxe.macro.MetaAccess>] meta:Null<haxe.macro.MetaAccess>
+								[FClosure:(name : String) -> Bool]
+									None
+									has:(name : String) -> Bool
+							!=
+							[Const:(name : String) -> Bool] null
+					&&
+					[Call:Bool]
+						[Field:(name : String) -> Bool]
+							[Field:Null<haxe.macro.MetaAccess>]
+								[Local v(7624):reflaxe.helpers.NameAndMeta:reflaxe.helpers.NameAndMeta]
+								[FAnon:Null<haxe.macro.MetaAccess>] meta:Null<haxe.macro.MetaAccess>
+							[FAnon:(name : String) -> Bool] has:(name : String) -> Bool
+						[Local metaName(7625):String:String]
+
+	public static function getNameOrMeta[Function:(v : reflaxe.helpers.NameAndMeta, metaName : String) -> String]
+		[Arg:reflaxe.helpers.NameAndMeta] [Local v(7626):reflaxe.helpers.NameAndMeta]
+		[Arg:String] [Local metaName(7627):String]
+		[Block:Dynamic]
+			[If:Void]
+				[Call:Bool]
+					[Field:(v : reflaxe.helpers.NameAndMeta, metaName : String) -> Bool]
+						[TypeExpr reflaxe.helpers.NameMetaHelper:Class<reflaxe.helpers.NameMetaHelper>]
+						[FStatic:(v : reflaxe.helpers.NameAndMeta, metaName : String) -> Bool]
+							reflaxe.helpers.NameMetaHelper
+							hasMeta:(v : reflaxe.helpers.NameAndMeta, metaName : String) -> Bool
+					[Local v(7626):reflaxe.helpers.NameAndMeta:reflaxe.helpers.NameAndMeta]
+					[Local metaName(7627):String:String]
+				[Then:Void] [Block:Void]
+					[Var result(7628):Null<String>]
+						[Call:Null<String>]
+							[Field:(metaAccess : Null<haxe.macro.MetaAccess>, metaName : String, ?index : Int) -> Null<String>]
+								[TypeExpr reflaxe.helpers.NullableMetaAccessHelper:{ Statics reflaxe.helpers.NullableMetaAccessHelper }]
+								[FStatic:(metaAccess : Null<haxe.macro.MetaAccess>, metaName : String, ?index : Int) -> Null<String>]
+									reflaxe.helpers.NullableMetaAccessHelper
+									extractStringFromFirstMeta:(metaAccess : Null<haxe.macro.MetaAccess>, metaName : String, ?index : Int) -> Null<String>
+							[Field:Null<haxe.macro.MetaAccess>]
+								[Local v(7626):reflaxe.helpers.NameAndMeta:reflaxe.helpers.NameAndMeta]
+								[FAnon:Null<haxe.macro.MetaAccess>] meta:Null<haxe.macro.MetaAccess>
+							[Local metaName(7627):String:String]
+							[Const:Null<Int>] null
+					[If:Void]
+						[Binop:Bool]
+							[Local result(7628):Null<String>:Null<String>]
+							!=
+							[Const:Null<String>] null
+						[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [Local result(7628):Null<String>:Null<String>]
+			[Return:Dynamic]
+				[Field:String]
+					[Local v(7626):reflaxe.helpers.NameAndMeta:reflaxe.helpers.NameAndMeta]
+					[FAnon:String] name:String
+
+	public static function getNameOrNative[Function:(v : reflaxe.helpers.NameAndMeta) -> String]
+		[Arg:reflaxe.helpers.NameAndMeta] [Local v(7629):reflaxe.helpers.NameAndMeta]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Call:String]
+					[Field:(v : reflaxe.helpers.NameAndMeta, metaName : String) -> String]
+						[TypeExpr reflaxe.helpers.NameMetaHelper:Class<reflaxe.helpers.NameMetaHelper>]
+						[FStatic:(v : reflaxe.helpers.NameAndMeta, metaName : String) -> String]
+							reflaxe.helpers.NameMetaHelper
+							getNameOrMeta:(v : reflaxe.helpers.NameAndMeta, metaName : String) -> String
+					[Local v(7629):reflaxe.helpers.NameAndMeta:reflaxe.helpers.NameAndMeta]
+					[Const:String] ":native"
+
+	public static function getNameOrNativeName[Function:(v : reflaxe.helpers.NameAndMeta) -> String]
+		[Arg:reflaxe.helpers.NameAndMeta] [Local v(7630):reflaxe.helpers.NameAndMeta]
+		[Block:Dynamic]
+			[If:Void]
+				[Call:Bool]
+					[Field:(v : reflaxe.helpers.NameAndMeta, metaName : String) -> Bool]
+						[TypeExpr reflaxe.helpers.NameMetaHelper:Class<reflaxe.helpers.NameMetaHelper>]
+						[FStatic:(v : reflaxe.helpers.NameAndMeta, metaName : String) -> Bool]
+							reflaxe.helpers.NameMetaHelper
+							hasMeta:(v : reflaxe.helpers.NameAndMeta, metaName : String) -> Bool
+					[Local v(7630):reflaxe.helpers.NameAndMeta:reflaxe.helpers.NameAndMeta]
+					[Const:String] ":nativeName"
+				[Then:Void] [Block:Void]
+					[Var result(7631):Null<Array<Dynamic>>]
+						[Call:Null<Array<Dynamic>>]
+							[Field:(metaAccess : Null<haxe.macro.MetaAccess>, metaName : String) -> Null<Array<Dynamic>>]
+								[TypeExpr reflaxe.helpers.NullableMetaAccessHelper:{ Statics reflaxe.helpers.NullableMetaAccessHelper }]
+								[FStatic:(metaAccess : Null<haxe.macro.MetaAccess>, metaName : String) -> Null<Array<Dynamic>>]
+									reflaxe.helpers.NullableMetaAccessHelper
+									extractParamsFromFirstMeta:(metaAccess : Null<haxe.macro.MetaAccess>, metaName : String) -> Null<Array<Dynamic>>
+							[Field:Null<haxe.macro.MetaAccess>]
+								[Local v(7630):reflaxe.helpers.NameAndMeta:reflaxe.helpers.NameAndMeta]
+								[FAnon:Null<haxe.macro.MetaAccess>] meta:Null<haxe.macro.MetaAccess>
+							[Const:String] ":nativeName"
+					[If:Void]
+						[Binop:Bool]
+							[Binop:Bool]
+								[Local result(7631):Null<Array<Dynamic>>:Null<Array<Dynamic>>]
+								!=
+								[Const:Null<Array<Dynamic>>] null
+							&&
+							[Binop:Bool]
+								[Field:Int]
+									[Local result(7631):Null<Array<Dynamic>>:Null<Array<Dynamic>>]
+									[FInstance:Int]
+										Array<Dynamic>
+										length:Int
+								>
+								[Const:Int] 1
+						[Then:Void] [Block:Void]
+							[Var id(7632):String]
+								[Array:Dynamic]
+									[Local result(7631):Null<Array<Dynamic>>:Null<Array<Dynamic>>]
+									[Const:Int] 1
+							[If:Void]
+								[Block:Bool]
+									[Var this(7635):haxe.IMap<String, String>]
+										[Field:Map<String, String>]
+											[TypeExpr reflaxe.helpers.NameMetaHelper:Class<reflaxe.helpers.NameMetaHelper>]
+											[FStatic:Map<String, String>]
+												reflaxe.helpers.NameMetaHelper
+												nativeNameOverrides:Map<String, String>
+									[Call:Bool]
+										[Field:(key : String) -> Bool]
+											[Cast:haxe.ds.StringMap<String>] [Local this(7635):haxe.IMap<String, String>:haxe.IMap<String, String>]
+											[FInstance:(key : String) -> Bool]
+												haxe.ds.StringMap<String>
+												exists:(key : String) -> Bool
+										[Local id(7632):String:String]
+								[Then:Dynamic] [Block:Dynamic]
+									[Return:Dynamic]
+										[Block:String]
+											[Var maybe(7643):Null<String>]
+												[Block:Null<String>]
+													[Var this(7639):haxe.IMap<String, String>]
+														[Field:Map<String, String>]
+															[TypeExpr reflaxe.helpers.NameMetaHelper:Class<reflaxe.helpers.NameMetaHelper>]
+															[FStatic:Map<String, String>]
+																reflaxe.helpers.NameMetaHelper
+																nativeNameOverrides:Map<String, String>
+													[Call:Null<String>]
+														[Field:(key : String) -> Null<String>]
+															[Cast:haxe.ds.StringMap<String>] [Local this(7639):haxe.IMap<String, String>:haxe.IMap<String, String>]
+															[FInstance:(key : String) -> Null<String>]
+																haxe.ds.StringMap<String>
+																get:(key : String) -> Null<haxe.ds.StringMap.T>
+														[Local id(7632):String:String]
+											[Cast:String]
+												[Block:Dynamic]
+													[If:Void]
+														[Binop:Bool]
+															[Local maybe(7643):Null<String>:Null<String>]
+															==
+															[Const:Null<String>] null
+														[Then:Dynamic] [Block:Dynamic] [Throw:Dynamic] [Const:String] "Trusted on null value."
+													[Meta:Dynamic]
+														:nullSafety(Off)
+														[Local maybe(7643):Null<String>:Null<String>]
+			[Return:Dynamic]
+				[Call:String]
+					[Field:(v : reflaxe.helpers.NameAndMeta, metaName : String) -> String]
+						[TypeExpr reflaxe.helpers.NameMetaHelper:Class<reflaxe.helpers.NameMetaHelper>]
+						[FStatic:(v : reflaxe.helpers.NameAndMeta, metaName : String) -> String]
+							reflaxe.helpers.NameMetaHelper
+							getNameOrMeta:(v : reflaxe.helpers.NameAndMeta, metaName : String) -> String
+					[Local v(7630):reflaxe.helpers.NameAndMeta:reflaxe.helpers.NameAndMeta]
+					[Const:String] ":nativeName"
+
+	public static function getFieldAccessNameMeta[Function:(fa : haxe.macro.FieldAccess) -> reflaxe.helpers.NameAndMeta]
+		[Arg:haxe.macro.FieldAccess] [Local fa(7644):haxe.macro.FieldAccess]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Meta:reflaxe.helpers.NameAndMeta]
+					:ast(switch (fa) {
+	case FInstance(_, _, classFieldRef):
+		classFieldRef.get();	
+	case FStatic(_, classFieldRef):
+		classFieldRef.get();	
+	case FAnon(classFieldRef):
+		classFieldRef.get();	
+	case FClosure(_, classFieldRef):
+		classFieldRef.get();	
+	case FEnum(_, enumField):
+		enumField;	
+	case FDynamic(s):
+		{ name : s, meta : null };	
+})
+					[Switch:reflaxe.helpers.NameAndMeta]
+						[Meta:Int]
+							:exhaustive
+							[EnumIndex:Int] [Local fa(7644):haxe.macro.FieldAccess:haxe.macro.FieldAccess]
+						[Case:haxe.macro.ClassField]
+							[Const:Int] 0
+							[Block:haxe.macro.ClassField]
+								[Var `(7662):haxe.macro.Ref<haxe.macro.ClassType>]
+									[EnumParameter:haxe.macro.Ref<haxe.macro.ClassType>]
+										[Local fa(7644):haxe.macro.FieldAccess:haxe.macro.FieldAccess]
+										FInstance
+										0
+								[Var `(7663):Array<haxe.macro.Type>]
+									[EnumParameter:Array<haxe.macro.Type>]
+										[Local fa(7644):haxe.macro.FieldAccess:haxe.macro.FieldAccess]
+										FInstance
+										1
+								[Var `(7664):haxe.macro.Ref<haxe.macro.ClassField>]
+									[EnumParameter:haxe.macro.Ref<haxe.macro.ClassField>]
+										[Local fa(7644):haxe.macro.FieldAccess:haxe.macro.FieldAccess]
+										FInstance
+										2
+								[Block:haxe.macro.ClassField]
+									[Var classFieldRef(7665):haxe.macro.Ref<haxe.macro.ClassField>] [Local `(7664):haxe.macro.Ref<haxe.macro.ClassField>:haxe.macro.Ref<haxe.macro.ClassField>]
+									[Block:haxe.macro.ClassField]
+										[Call:haxe.macro.ClassField]
+											[Field:() -> haxe.macro.ClassField]
+												[Local classFieldRef(7665):haxe.macro.Ref<haxe.macro.ClassField>:haxe.macro.Ref<haxe.macro.ClassField>]
+												[FAnon:() -> haxe.macro.ClassField] get:() -> haxe.macro.ClassField
+						[Case:haxe.macro.ClassField]
+							[Const:Int] 1
+							[Block:haxe.macro.ClassField]
+								[Var `(7666):haxe.macro.Ref<haxe.macro.ClassType>]
+									[EnumParameter:haxe.macro.Ref<haxe.macro.ClassType>]
+										[Local fa(7644):haxe.macro.FieldAccess:haxe.macro.FieldAccess]
+										FStatic
+										0
+								[Var `(7667):haxe.macro.Ref<haxe.macro.ClassField>]
+									[EnumParameter:haxe.macro.Ref<haxe.macro.ClassField>]
+										[Local fa(7644):haxe.macro.FieldAccess:haxe.macro.FieldAccess]
+										FStatic
+										1
+								[Block:haxe.macro.ClassField]
+									[Var classFieldRef(7668):haxe.macro.Ref<haxe.macro.ClassField>] [Local `(7667):haxe.macro.Ref<haxe.macro.ClassField>:haxe.macro.Ref<haxe.macro.ClassField>]
+									[Block:haxe.macro.ClassField]
+										[Call:haxe.macro.ClassField]
+											[Field:() -> haxe.macro.ClassField]
+												[Local classFieldRef(7668):haxe.macro.Ref<haxe.macro.ClassField>:haxe.macro.Ref<haxe.macro.ClassField>]
+												[FAnon:() -> haxe.macro.ClassField] get:() -> haxe.macro.ClassField
+						[Case:haxe.macro.ClassField]
+							[Const:Int] 2
+							[Block:haxe.macro.ClassField]
+								[Var `(7669):haxe.macro.Ref<haxe.macro.ClassField>]
+									[EnumParameter:haxe.macro.Ref<haxe.macro.ClassField>]
+										[Local fa(7644):haxe.macro.FieldAccess:haxe.macro.FieldAccess]
+										FAnon
+										0
+								[Block:haxe.macro.ClassField]
+									[Var classFieldRef(7670):haxe.macro.Ref<haxe.macro.ClassField>] [Local `(7669):haxe.macro.Ref<haxe.macro.ClassField>:haxe.macro.Ref<haxe.macro.ClassField>]
+									[Block:haxe.macro.ClassField]
+										[Call:haxe.macro.ClassField]
+											[Field:() -> haxe.macro.ClassField]
+												[Local classFieldRef(7670):haxe.macro.Ref<haxe.macro.ClassField>:haxe.macro.Ref<haxe.macro.ClassField>]
+												[FAnon:() -> haxe.macro.ClassField] get:() -> haxe.macro.ClassField
+						[Case:{ name : String, meta : Null<haxe.macro.MetaAccess> }]
+							[Const:Int] 3
+							[Block:{ name : String, meta : Null<haxe.macro.MetaAccess> }]
+								[Var `(7671):String]
+									[EnumParameter:String]
+										[Local fa(7644):haxe.macro.FieldAccess:haxe.macro.FieldAccess]
+										FDynamic
+										0
+								[Block:{ name : String, meta : Null<haxe.macro.MetaAccess> }]
+									[Var s(7672):String] [Local `(7671):String:String]
+									[Block:{ name : String, meta : Null<haxe.macro.MetaAccess> }]
+										[ObjectDecl:{ name : String, meta : Null<haxe.macro.MetaAccess> }]
+											name: [Local s(7672):String:String]
+											meta: [Const:Null<haxe.macro.MetaAccess>] null
+						[Case:haxe.macro.ClassField]
+							[Const:Int] 4
+							[Block:haxe.macro.ClassField]
+								[Var `(7673):Null<{ params : Array<haxe.macro.Type>, c : haxe.macro.Ref<haxe.macro.ClassType> }>]
+									[EnumParameter:Null<{ params : Array<haxe.macro.Type>, c : haxe.macro.Ref<haxe.macro.ClassType> }>]
+										[Local fa(7644):haxe.macro.FieldAccess:haxe.macro.FieldAccess]
+										FClosure
+										0
+								[Var `(7674):haxe.macro.Ref<haxe.macro.ClassField>]
+									[EnumParameter:haxe.macro.Ref<haxe.macro.ClassField>]
+										[Local fa(7644):haxe.macro.FieldAccess:haxe.macro.FieldAccess]
+										FClosure
+										1
+								[Block:haxe.macro.ClassField]
+									[Var classFieldRef(7675):haxe.macro.Ref<haxe.macro.ClassField>] [Local `(7674):haxe.macro.Ref<haxe.macro.ClassField>:haxe.macro.Ref<haxe.macro.ClassField>]
+									[Block:haxe.macro.ClassField]
+										[Call:haxe.macro.ClassField]
+											[Field:() -> haxe.macro.ClassField]
+												[Local classFieldRef(7675):haxe.macro.Ref<haxe.macro.ClassField>:haxe.macro.Ref<haxe.macro.ClassField>]
+												[FAnon:() -> haxe.macro.ClassField] get:() -> haxe.macro.ClassField
+						[Case:haxe.macro.EnumField]
+							[Const:Int] 5
+							[Block:haxe.macro.EnumField]
+								[Var `(7676):haxe.macro.Ref<haxe.macro.EnumType>]
+									[EnumParameter:haxe.macro.Ref<haxe.macro.EnumType>]
+										[Local fa(7644):haxe.macro.FieldAccess:haxe.macro.FieldAccess]
+										FEnum
+										0
+								[Var `(7677):haxe.macro.EnumField]
+									[EnumParameter:haxe.macro.EnumField]
+										[Local fa(7644):haxe.macro.FieldAccess:haxe.macro.FieldAccess]
+										FEnum
+										1
+								[Block:haxe.macro.EnumField]
+									[Var enumField(7678):haxe.macro.EnumField] [Local `(7677):haxe.macro.EnumField:haxe.macro.EnumField]
+									[Block:haxe.macro.EnumField] [Local enumField(7678):haxe.macro.EnumField:haxe.macro.EnumField]
+
+	public static function setNativeNameOverride[Function:(id : String, overrideValue : String) -> Void]
+		[Arg:String] [Local id(7679):String]
+		[Arg:String] [Local overrideValue(7680):String]
+		[Block:Void]
+			[Block:Void]
+				[Var this(7683):haxe.IMap<String, String>]
+					[Field:Map<String, String>]
+						[TypeExpr reflaxe.helpers.NameMetaHelper:Class<reflaxe.helpers.NameMetaHelper>]
+						[FStatic:Map<String, String>]
+							reflaxe.helpers.NameMetaHelper
+							nativeNameOverrides:Map<String, String>
+				[Call:Void]
+					[Field:(key : String, value : String) -> Void]
+						[Cast:haxe.ds.StringMap<String>] [Local this(7683):haxe.IMap<String, String>:haxe.IMap<String, String>]
+						[FInstance:(key : String, value : String) -> Void]
+							haxe.ds.StringMap<String>
+							set:(key : String, value : haxe.ds.StringMap.T) -> Void
+					[Local id(7679):String:String]
+					[Local overrideValue(7680):String:String]
+
+	public static function getNativeNameOverride[Function:(id : String) -> Null<String>]
+		[Arg:String] [Local id(7686):String]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Block:Null<String>]
+					[Var this(7689):haxe.IMap<String, String>]
+						[Field:Map<String, String>]
+							[TypeExpr reflaxe.helpers.NameMetaHelper:Class<reflaxe.helpers.NameMetaHelper>]
+							[FStatic:Map<String, String>]
+								reflaxe.helpers.NameMetaHelper
+								nativeNameOverrides:Map<String, String>
+					[Call:Null<String>]
+						[Field:(key : String) -> Null<String>]
+							[Cast:haxe.ds.StringMap<String>] [Local this(7689):haxe.IMap<String, String>:haxe.IMap<String, String>]
+							[FInstance:(key : String) -> Null<String>]
+								haxe.ds.StringMap<String>
+								get:(key : String) -> Null<haxe.ds.StringMap.T>
+						[Local id(7686):String:String]
+}

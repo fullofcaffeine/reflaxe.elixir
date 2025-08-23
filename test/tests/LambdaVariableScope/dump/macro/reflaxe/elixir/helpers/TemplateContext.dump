@@ -1,0 +1,49 @@
+class reflaxe.elixir.helpers.TemplateContext {
+
+	public function new[Function:() -> Void]
+		[Block:Void]
+			[Binop:Int]
+				[Field:Int]
+					[Const:reflaxe.elixir.helpers.TemplateContext] this
+					[FInstance:Int]
+						reflaxe.elixir.helpers.TemplateContext
+						depth:Int
+				=
+				[Const:Int] 0
+			[Binop:Bool]
+				[Field:Bool]
+					[Const:reflaxe.elixir.helpers.TemplateContext] this
+					[FInstance:Bool]
+						reflaxe.elixir.helpers.TemplateContext
+						isInAttributeValue:Bool
+				=
+				[Const:Bool] false
+			[Binop:Bool]
+				[Field:Bool]
+					[Const:reflaxe.elixir.helpers.TemplateContext] this
+					[FInstance:Bool]
+						reflaxe.elixir.helpers.TemplateContext
+						isInComponent:Bool
+				=
+				[Const:Bool] false
+			[Binop:Bool]
+				[Field:Bool]
+					[Const:reflaxe.elixir.helpers.TemplateContext] this
+					[FInstance:Bool]
+						reflaxe.elixir.helpers.TemplateContext
+						isInLiveView:Bool
+				=
+				[Const:Bool] false
+
+	@:value(false)
+	public var isInLiveView:Bool;
+
+	@:value(false)
+	public var isInComponent:Bool;
+
+	@:value(false)
+	public var isInAttributeValue:Bool;
+
+	@:value(0)
+	public var depth:Int;
+}
