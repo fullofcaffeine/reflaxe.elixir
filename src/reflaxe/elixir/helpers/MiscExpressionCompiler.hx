@@ -104,21 +104,105 @@ class MiscExpressionCompiler {
     /**
      * Compile TParenthesis parentheses expressions
      * 
-     * WHY: Parentheses need to be preserved for expression precedence
+     * WHY: Parentheses should only be added when necessary for operator precedence or clarity.
+     *      Excessive parentheses make generated Elixir code hard to read and unidiomatic.
+     * 
+     * WHAT: Smart parenthesization that analyzes the inner expression type to determine
+     *       if parentheses are actually needed in the Elixir output.
+     * 
+     * HOW:
+     * 1. Compile the inner expression
+     * 2. Analyze if the expression needs parentheses based on context
+     * 3. Only add parentheses when they improve readability or are required for precedence
      * 
      * @param e The inner expression
-     * @return Compiled Elixir expression with parentheses
+     * @return Compiled Elixir expression with smart parenthesization
      */
     public function compileParenthesesExpression(e: TypedExpr): String {
         #if debug_misc_expression_compiler
-        trace("[XRay MiscExpressionCompiler] PARENTHESES COMPILATION START");
+        trace("[XRay MiscExpressionCompiler] SMART PARENTHESES COMPILATION START");
         #end
         
         var inner = compiler.compileExpression(e);
-        var result = '(${inner})';
+        
+        // SMART PARENTHESIZATION: Only add parentheses when they're actually needed
+        var needsParentheses = switch (e.expr) {
+            // Simple expressions don't need parentheses
+            case TLocal(_) | TConst(_) | TField(_, _):
+                #if debug_misc_expression_compiler
+                trace("[XRay MiscExpressionCompiler] ✓ SIMPLE EXPRESSION - skipping parentheses");
+                #end
+                false;
+                
+            // Function calls don't need parentheses unless in complex contexts
+            case TCall(_, _):
+                #if debug_misc_expression_compiler
+                trace("[XRay MiscExpressionCompiler] ✓ FUNCTION CALL - skipping parentheses");
+                #end
+                false;
+                
+            // Case expressions are self-delimiting, don't need outer parentheses
+            case TSwitch(_, _, _):
+                #if debug_misc_expression_compiler
+                trace("[XRay MiscExpressionCompiler] ✓ CASE EXPRESSION - skipping parentheses");
+                #end
+                false;
+                
+            // Block expressions are self-delimiting
+            case TBlock(_):
+                #if debug_misc_expression_compiler
+                trace("[XRay MiscExpressionCompiler] ✓ BLOCK EXPRESSION - skipping parentheses");
+                #end
+                false;
+                
+            // Array literals are self-delimiting
+            case TArrayDecl(_):
+                #if debug_misc_expression_compiler
+                trace("[XRay MiscExpressionCompiler] ✓ ARRAY LITERAL - skipping parentheses");
+                #end
+                false;
+                
+            // Object literals are self-delimiting
+            case TObjectDecl(_):
+                #if debug_misc_expression_compiler
+                trace("[XRay MiscExpressionCompiler] ✓ OBJECT LITERAL - skipping parentheses");
+                #end
+                false;
+                
+            // Binary operations might need parentheses for precedence
+            case TBinop(_, _, _):
+                #if debug_misc_expression_compiler
+                trace("[XRay MiscExpressionCompiler] ⚠️ BINARY OPERATION - checking if parentheses needed");
+                #end
+                // For now, be conservative and keep them for binary operations
+                // TODO: More sophisticated precedence analysis
+                true;
+                
+            // Complex expressions might need parentheses
+            case TIf(_, _, _) | TFor(_, _, _) | TWhile(_, _, _) | TTry(_, _):
+                #if debug_misc_expression_compiler
+                trace("[XRay MiscExpressionCompiler] ⚠️ COMPLEX EXPRESSION - keeping parentheses");
+                #end
+                true;
+                
+            // Default: be conservative and keep parentheses for unknown expression types
+            case _:
+                #if debug_misc_expression_compiler
+                trace("[XRay MiscExpressionCompiler] ? UNKNOWN EXPRESSION TYPE - keeping parentheses for safety");
+                trace('[XRay MiscExpressionCompiler] Expression type: ${Type.enumConstructor(e.expr)}');
+                #end
+                true;
+        };
+        
+        var result = if (needsParentheses) {
+            '(${inner})';
+        } else {
+            inner;
+        };
         
         #if debug_misc_expression_compiler
-        trace('[XRay MiscExpressionCompiler] Parentheses result: ${result}');
+        trace('[XRay MiscExpressionCompiler] Smart parentheses result: ${result}');
+        trace("[XRay MiscExpressionCompiler] SMART PARENTHESES COMPILATION END");
         #end
         
         return result;
