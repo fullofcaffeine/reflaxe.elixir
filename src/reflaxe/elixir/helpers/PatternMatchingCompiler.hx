@@ -88,6 +88,15 @@ class PatternMatchingCompiler {
         trace('[PatternMatchingCompiler] Number of cases: ${cases.length}');
         #end
         
+        // CRITICAL FIX: Detect TSwitch(TEnumIndex(expr)) pattern for direct Result/Option compilation
+        // This prevents double-nested case expressions by bypassing EnumIntrospectionCompiler
+        if (isSwitchOnEnumIndex(switchExpr)) {
+            #if debug_pattern_matching
+            trace("[PatternMatchingCompiler] ✓ DETECTED TSwitch(TEnumIndex) - direct compilation");
+            #end
+            return compileSwitchOnEnumIndexDirectly(switchExpr, cases, defaultExpr, context);
+        }
+        
         // Check if this is a with statement pattern
         if (shouldUseWithStatement(switchExpr, cases)) {
             #if debug_pattern_matching
@@ -1331,6 +1340,166 @@ class PatternMatchingCompiler {
             default:
                 false;
         };
+    }
+    
+    /**
+     * Detect TSwitch(TEnumIndex(expr)) patterns that create double-nested case expressions
+     * 
+     * WHY: TEnumIndex expressions get compiled independently by EnumIntrospectionCompiler,
+     *      creating inner case statements. When TSwitch then switches on these results,
+     *      we get double-nested patterns like: case (case g do {:ok, _} -> 0; ... end) do
+     * 
+     * WHAT: Detect TEnumIndex expressions within switch expressions for direct compilation
+     * 
+     * HOW: Check if the switch expression is a TEnumIndex of a Result/Option type
+     * 
+     * @param switchExpr The expression being switched on
+     * @return True if this is a TSwitch(TEnumIndex) pattern
+     */
+    private function isSwitchOnEnumIndex(switchExpr: TypedExpr): Bool {
+        #if debug_pattern_matching
+        trace('[PatternMatchingCompiler] Checking for TEnumIndex pattern in switch expression');
+        trace('[PatternMatchingCompiler] Switch expr type: ${switchExpr.expr}');
+        #end
+        
+        switch (switchExpr.expr) {
+            case TEnumIndex(innerExpr):
+                #if debug_pattern_matching
+                trace('[PatternMatchingCompiler] ✓ Found TEnumIndex pattern!');
+                trace('[PatternMatchingCompiler] Inner expr type: ${innerExpr.t}');
+                #end
+                
+                // Check if the inner expression is a Result or Option type
+                switch (innerExpr.t) {
+                    case TEnum(enumRef, _):
+                        var enumType = enumRef.get();
+                        var isResultOrOption = (enumType.name == "Result" || enumType.name == "Option");
+                        #if debug_pattern_matching
+                        trace('[PatternMatchingCompiler] Enum type: ${enumType.name}, is Result/Option: ${isResultOrOption}');
+                        #end
+                        return isResultOrOption;
+                    case _:
+                        #if debug_pattern_matching
+                        trace('[PatternMatchingCompiler] Inner expr is not enum type');
+                        #end
+                        return false;
+                }
+            case _:
+                #if debug_pattern_matching
+                trace('[PatternMatchingCompiler] Not a TEnumIndex pattern');
+                #end
+                return false;
+        }
+    }
+    
+    /**
+     * Compile TSwitch(TEnumIndex(expr)) directly to clean case statement
+     * 
+     * WHY: Bypass EnumIntrospectionCompiler to prevent double-nested case expressions
+     * 
+     * WHAT: Generate direct pattern matching for Result/Option types instead of
+     *       switching on enum index integers
+     * 
+     * HOW: Extract the inner expression from TEnumIndex and generate direct patterns
+     * 
+     * @param switchExpr The TEnumIndex expression being switched on
+     * @param cases The switch cases (should be integer patterns)
+     * @param defaultExpr Default case expression
+     * @param context Function context for parameter mapping
+     * @return Clean Elixir case statement
+     */
+    private function compileSwitchOnEnumIndexDirectly(
+        switchExpr: TypedExpr, 
+        cases: Array<{values: Array<TypedExpr>, expr: TypedExpr}>, 
+        defaultExpr: Null<TypedExpr>,
+        ?context: reflaxe.elixir.helpers.ControlFlowCompiler.FunctionContext
+    ): String {
+        #if debug_pattern_matching
+        trace("[PatternMatchingCompiler] ✓ DIRECT TSwitch(TEnumIndex) COMPILATION START");
+        #end
+        
+        // Extract the inner expression from TEnumIndex
+        var innerExpr = switch (switchExpr.expr) {
+            case TEnumIndex(expr): expr;
+            case _: 
+                #if debug_pattern_matching
+                trace("[PatternMatchingCompiler] ❌ ERROR: Not a TEnumIndex expression");
+                #end
+                return compileStandardCase(switchExpr, cases, defaultExpr, context);
+        };
+        
+        // Determine the enum type
+        var enumType = switch (innerExpr.t) {
+            case TEnum(enumRef, _): enumRef.get();
+            case _: 
+                #if debug_pattern_matching
+                trace("[PatternMatchingCompiler] ❌ ERROR: Inner expression is not enum type");
+                #end
+                return compileStandardCase(switchExpr, cases, defaultExpr, context);
+        };
+        
+        #if debug_pattern_matching
+        trace('[PatternMatchingCompiler] Enum type: ${enumType.name}');
+        #end
+        
+        // Clean variable mapping for g parameter
+        var savedGMapping: Null<String> = null;
+        if (compiler.currentFunctionParameterMap.exists("g")) {
+            savedGMapping = compiler.currentFunctionParameterMap.get("g");
+            compiler.currentFunctionParameterMap.remove("g");
+            #if debug_pattern_matching
+            trace('[PatternMatchingCompiler] Temporarily removed g mapping: g -> ${savedGMapping}');
+            #end
+        }
+        
+        // Compile the inner expression directly (should be variable like "g")
+        var innerExprStr = compiler.compileExpression(innerExpr);
+        
+        // Restore g mapping if it wasn't a counter variable
+        if (savedGMapping != null && !StringTools.endsWith(savedGMapping, "_counter")) {
+            compiler.currentFunctionParameterMap.set("g", savedGMapping);
+        }
+        
+        #if debug_pattern_matching
+        trace('[PatternMatchingCompiler] Inner expression compiled to: ${innerExprStr}');
+        #end
+        
+        // Generate direct patterns based on enum type
+        var caseStrings: Array<String> = [];
+        
+        for (caseData in cases) {
+            for (value in caseData.values) {
+                var pattern = switch (value.expr) {
+                    case TConst(TInt(0)): // Ok/Some constructor
+                        if (enumType.name == "Result") "{:ok, _}" else "{:ok, _}";
+                    case TConst(TInt(1)): // Error/None constructor  
+                        if (enumType.name == "Result") "{:error, _}" else ":error";
+                    case _: "_"; // Catch-all
+                };
+                
+                var body = compilePatternBody(caseData.expr, context);
+                caseStrings.push('  ${pattern} -> ${body}');
+                
+                #if debug_pattern_matching
+                trace('[PatternMatchingCompiler] Generated direct pattern: ${pattern} -> [body]');
+                #end
+            }
+        }
+        
+        // Add default case if present
+        if (defaultExpr != null) {
+            var defaultBody = compilePatternBody(defaultExpr, context);
+            caseStrings.push('  _ -> ${defaultBody}');
+        }
+        
+        var result = 'case ${innerExprStr} do\n${caseStrings.join("\n")}\nend';
+        
+        #if debug_pattern_matching
+        trace("[PatternMatchingCompiler] ✓ DIRECT TSwitch(TEnumIndex) COMPILATION END");
+        trace('[PatternMatchingCompiler] Generated clean case: ${result.substring(0, 100)}...');
+        #end
+        
+        return result;
     }
 }
 
