@@ -130,7 +130,18 @@ defmodule Flash do
           (
           g_counter = 0
           g = Reflect.fields(changeset_errors)
-          Enum.filter(g1, fn item -> Std.is_of_type(item_errors, Array) end)
+          Enum.each(g_counter, fn field -> 
+      field_errors = Reflect.field(changeset_errors, field)
+      if Std.is_of_type(field_errors, Array) do
+          (
+          g_counter = 0
+          g = field_errors
+          Enum.map(g_counter, fn error -> "" <> field <> ": " <> Std.string(&Flash.error/3) end)
+        )
+        else
+          errors ++ ["" <> field <> ": " <> field_errors]
+        end
+    end)
         )
         end
           errors

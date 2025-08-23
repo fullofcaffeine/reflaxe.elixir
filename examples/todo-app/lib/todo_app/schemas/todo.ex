@@ -83,7 +83,7 @@ defmodule Todo do
     params = Haxe.Ds.StringMap.new()
     g_array = []
     g_counter = 0
-    Enum.map(temp_array, fn item -> ChangesetValue.string_itemalue(item) end)
+    Enum.map(temp_array, fn v -> ChangesetValue.string_value(v) end)
     value = ChangesetValue.array_value(g_counter)
     params.set("tags", value)
     Todo.changeset(todo, params)

@@ -21,7 +21,7 @@ defmodule UserLive do
   @doc "Generated from Haxe handle_event"
   def handle_event(event, params, socket) do
     temp_result = nil
-    case (event) do
+    case event do
       "cancel" -> temp_result = __MODULE__.handle_cancel(socket)
       "delete_user" -> temp_result = __MODULE__.handle_delete_user(params, socket)
       "edit_user" -> temp_result = __MODULE__.handle_edit_user(params, socket)
@@ -65,7 +65,7 @@ defmodule UserLive do
     temp_result = nil
     (
           g = temp_struct.status
-          case (g_counter) do
+          case g_counter do
       "error" -> temp_result = %{"status" => "noreply", "socket" => UserLive.assign(socket, "changeset", temp_struct.changeset)}
       "ok" -> (
           users = Users.list_users()
@@ -250,7 +250,7 @@ defmodule UserLive do
   @doc "Generated from Haxe getStatusClass"
   def get_status_class(active) do
     temp_result = nil
-    if (active) do
+    if active do
           temp_result = "status active"
         else
           temp_result = "status inactive"
@@ -262,7 +262,7 @@ defmodule UserLive do
   @doc "Generated from Haxe getStatusText"
   def get_status_text(active) do
     temp_result = nil
-    if (active) do
+    if active do
           temp_result = "Active"
         else
           temp_result = "Inactive"
