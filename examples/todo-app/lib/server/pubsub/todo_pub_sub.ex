@@ -100,13 +100,17 @@ defmodule TodoPubSub do
           temp_result = nil
           (
           g = msg.type
-          case (g_counter) do
+          case g_counter do
       "bulk_update" -> if ((msg.action != nil)) do
           (
           bulk_action = TodoPubSub.parse_bulk_action(msg.action)
-          case (case bulk_action do {:ok, _} -> 0; :error -> 1; _ -> -1 end) do
-      {0, action} -> temp_result = Option.some(TodoPubSubMessage.bulk_update(action))
-      1 -> temp_result = :error
+          case bulkAction do
+      {:ok, _} -> (
+          g = elem(bulk_action, 1)
+          action = g_counter
+          temp_result = Option.some(TodoPubSubMessage.bulk_update(action))
+        )
+      :error -> temp_result = :error
     end
         )
         else
@@ -115,9 +119,13 @@ defmodule TodoPubSub do
       "system_alert" -> if (((msg.message != nil) && (msg.level != nil))) do
           (
           alert_level = TodoPubSub.parse_alert_level(msg.level)
-          case (case alert_level do {:ok, _} -> 0; :error -> 1; _ -> -1 end) do
-      {0, level} -> temp_result = Option.some(TodoPubSubMessage.system_alert(msg.message, level))
-      1 -> temp_result = :error
+          case alertLevel do
+      {:ok, _} -> (
+          g = elem(alert_level, 1)
+          level = g_counter
+          temp_result = Option.some(TodoPubSubMessage.system_alert(msg.message, level))
+        )
+      :error -> temp_result = :error
     end
         )
         else
@@ -185,7 +193,7 @@ defmodule TodoPubSub do
   def parse_bulk_action(action) do
     (
           temp_result = nil
-          case (action) do
+          case action do
       "add_tag" -> temp_result = Option.some(BulkOperationType.add_tag(""))
       "complete_all" -> temp_result = Option.some(:complete_all)
       "delete_completed" -> temp_result = Option.some(:delete_completed)
@@ -223,7 +231,7 @@ defmodule TodoPubSub do
   def parse_alert_level(level) do
     (
           temp_result = nil
-          case (level) do
+          case level do
       "critical" -> temp_result = Option.some(:critical)
       "error" -> temp_result = Option.some(:error)
       "info" -> temp_result = Option.some(:info)

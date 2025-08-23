@@ -23,21 +23,9 @@ defmodule Log do
           (
           g_counter = 0
           g = infos.custom_params
-          v2 = nil
-    g = nil
-    str = nil
-    loop_helper = fn loop_fn, {v2, g, str} ->
-      if ((g_counter < g_counter.length)) do
-        v = Enum.at(g_counter, g_counter)
-        g = g + 1
-        str = str + ", " <> Std.string(v)
-        loop_fn.(loop_fn, {v2, g, str})
-      else
-        {v2, g, str}
-      end
-    end
-
-    {v2, g, str} = loop_helper.(loop_helper, {v2, g, str})
+          Enum.each(g_counter, fn v2 -> 
+      str = str <> ", " <> Std.string(v)
+    end)
         )
         end
           pstr <> ": " <> str

@@ -65,12 +65,12 @@ defmodule JsonPrinter do
         end
           (
           g = Type.typeof(v)
-          case (elem(g_counter, 0)) do
+          case (elem(g, 0)) do
       0 -> struct = %{struct.buf | b: "null"}
       1 -> struct = %{struct.buf | b: Std.string(v)}
       2 -> (
           temp_string = nil
-          if (Math.is_finite(v)) do
+          if Math.is_finite(v) do
           temp_string = Std.string(v)
         else
           temp_string = "null"
@@ -103,10 +103,10 @@ defmodule JsonPrinter do
             else
               struct.nind + 1
             end
-        if (struct.pretty) do
+        if struct.pretty do
               struct = %{struct.buf | b: "\n"}
             end
-        if (struct.pretty) do
+        if struct.pretty do
               (
               v = StringTools.lpad("", struct.indent, (struct.nind * struct.indent.length))
               struct = %{struct.buf | b: Std.string(v)}
@@ -116,10 +116,10 @@ defmodule JsonPrinter do
         if ((i == last)) do
               (
               struct.nind - 1
-              if (struct.pretty) do
+              if struct.pretty do
               struct = %{struct.buf | b: "\n"}
             end
-              if (struct.pretty) do
+              if struct.pretty do
               (
               v = StringTools.lpad("", struct.indent, (struct.nind * struct.indent.length))
               struct = %{struct.buf | b: Std.string(v)}
@@ -143,7 +143,7 @@ defmodule JsonPrinter do
           k = v.keys()
           k3 = nil
     loop_helper = fn loop_fn, {k3} ->
-      if (k.has_next()) do
+      if k.has_next() do
         k = k.next()
         Reflect.set_field(o, k, v.get(k))
         loop_fn.(loop_fn, {k3})
@@ -210,10 +210,10 @@ defmodule JsonPrinter do
         i = g_counter + 1
         f = Enum.at(fields, i)
         value = Reflect.field(v, f)
-        if (Reflect.is_function_(value)) do
+        if Reflect.is_function_(value) do
               throw(:continue)
             end
-        if (empty) do
+        if empty do
               (
               struct.nind + 1
               empty = false
@@ -221,10 +221,10 @@ defmodule JsonPrinter do
             else
               struct = %{struct.buf | b: ","}
             end
-        if (struct.pretty) do
+        if struct.pretty do
               struct = %{struct.buf | b: "\n"}
             end
-        if (struct.pretty) do
+        if struct.pretty do
               (
               v = StringTools.lpad("", struct.indent, (struct.nind * struct.indent.length))
               struct = %{struct.buf | b: Std.string(v)}
@@ -232,7 +232,7 @@ defmodule JsonPrinter do
             end
         struct.quote_(f)
         struct = %{struct.buf | b: ":"}
-        if (struct.pretty) do
+        if struct.pretty do
               struct = %{struct.buf | b: " "}
             end
         struct.write(f, value)
@@ -246,10 +246,10 @@ defmodule JsonPrinter do
     if (not empty) do
           (
           struct.nind - 1
-          if (struct.pretty) do
+          if struct.pretty do
           struct = %{struct.buf | b: "\n"}
         end
-          if (struct.pretty) do
+          if struct.pretty do
           (
           v = StringTools.lpad("", struct.indent, (struct.nind * struct.indent.length))
           struct = %{struct.buf | b: Std.string(v)}
@@ -278,7 +278,7 @@ defmodule JsonPrinter do
         index = i + 1
         temp_number = s.cca(index)
         c = temp_number
-        case (c) do
+        case c do
           8 -> struct = %{struct.buf | b: "\\b"}
           9 -> struct = %{struct.buf | b: "\\t"}
           10 -> struct = %{struct.buf | b: "\\n"}

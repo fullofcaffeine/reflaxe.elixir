@@ -252,7 +252,11 @@ defmodule TypeSafeConversions do
     (
           count = 0
           g_counter = 0
-          Enum.filter(todos, fn item -> item.completed end)
+          Enum.each(todos, fn todo -> 
+      if todo.completed do
+          count + 1
+        end
+    end)
           count
         )
   end
