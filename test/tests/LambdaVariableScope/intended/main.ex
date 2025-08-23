@@ -23,7 +23,7 @@ defmodule Main do
           g_array = []
           (
           g_counter = 0
-          Enum.filter(items, fn item -> item != target_item end)
+          Enum.filter(items, fn v -> ((v != target_item)) end)
         )
           temp_array = g_counter
         )
@@ -34,7 +34,7 @@ defmodule Main do
           g_array = []
           (
           g_counter = 0
-          Enum.filter(todos, fn item -> item.id != id end)
+          Enum.filter(todos, fn v -> ((v.id != id)) end)
         )
           temp_array1 = g_counter
         )
@@ -50,7 +50,7 @@ defmodule Main do
           g_array = []
           (
           g_counter = 0
-          Enum.map(numbers, fn item -> item * multiplier end)
+          Enum.map(numbers, fn v -> (v * multiplier) end)
         )
           temp_array = g_counter
         )
@@ -60,7 +60,7 @@ defmodule Main do
           g_array = []
           (
           g_counter = 0
-          Enum.map(numbers, fn item -> prefix <> Std.string(item) end)
+          Enum.map(numbers, fn v -> prefix <> Std.string(v) end)
         )
           temp_array1 = g_counter
         )
@@ -74,7 +74,15 @@ defmodule Main do
           threshold = 3
           g_array = []
           g_counter = 0
-          Enum.map(data, fn arr -> Enum.filter(arr, fn val -> val > threshold end) end)
+          Enum.each(data, fn v -> 
+      temp_array1 = nil
+      g_array = []
+      g_counter = 0
+      g = v
+      Enum.filter(g_counter, fn v2 -> ((v > threshold)) end)
+      temp_array1 = g_counter
+      g_counter ++ [temp_array1]
+    end)
         )
   end
 
@@ -91,7 +99,7 @@ defmodule Main do
           g_array = []
           (
           g_counter = 0
-          Enum.filter(items, fn item -> item != exclude_item end)
+          Enum.filter(items, fn v -> ((v != exclude_item)) end)
         )
           temp_array1 = g_counter
         )
@@ -99,7 +107,7 @@ defmodule Main do
           g_array = []
           (
           g_counter = 0
-          Enum.map(temp_array1, fn item -> prefix <> item <> suffix end)
+          Enum.map(temp_array1, fn v -> prefix <> v <> suffix end)
         )
           temp_array = g_counter
         )
