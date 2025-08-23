@@ -1619,7 +1619,7 @@ end)';
         #end
         
         // Generate appropriate Enum function based on pattern
-        var result = generateEnumFunction(bodyPattern, conditionInfo);
+        var result = generateEnumFunction(bodyPattern, conditionInfo, ebody);
         
         #if debug_loops
         trace('[XRay Loops] ✓ GENERATED IDIOMATIC ENUM FUNCTION');
@@ -3276,10 +3276,114 @@ end)';
     }
     
     /**
+     * Extract loop body operations excluding variable declaration and increment
+     * 
+     * WHY: Loop bodies contain setup/teardown operations that shouldn't be in Enum functions
+     * WHAT: Filters out variable declaration and increment, keeps actual operations
+     * HOW: Scans TBlock expressions and excludes setup/teardown patterns
+     * 
+     * @param ebody The loop body expression
+     * @param itemVar The item variable name to exclude from declaration
+     * @param indexVar The index variable name to exclude from increment
+     * @return Array of operations to include in Enum function body
+     */
+    private function extractLoopBodyOperations(ebody: TypedExpr, itemVar: String, indexVar: String): Array<TypedExpr> {
+        var operations: Array<TypedExpr> = [];
+        
+        switch(ebody.expr) {
+            case TBlock(exprs):
+                for (expr in exprs) {
+                    switch(expr.expr) {
+                        // Skip variable declaration that creates the item variable
+                        case TVar(tvar, init) if (CompilerUtilities.toElixirVarName(tvar) == itemVar):
+                            continue;
+                            
+                        // Skip index increment operations (_g1++)
+                        case TUnop(OpIncrement, _, e):
+                            switch(e.expr) {
+                                case TLocal(v) if (CompilerUtilities.toElixirVarName(v) == indexVar):
+                                    continue;
+                                case _:
+                                    operations.push(expr);
+                            }
+                            
+                        // Skip assignments to index variable (_g1 = _g1 + 1)
+                        case TBinop(OpAssign, target, value):
+                            switch(target.expr) {
+                                case TLocal(v) if (CompilerUtilities.toElixirVarName(v) == indexVar):
+                                    continue;
+                                case _:
+                                    operations.push(expr);
+                            }
+                            
+                        // Include all other operations
+                        case _:
+                            operations.push(expr);
+                    }
+                }
+                
+            case _:
+                // If not a block, include the entire expression
+                operations.push(ebody);
+        }
+        
+        return operations;
+    }
+    
+    /**
+     * Substitute variable references at AST level for proper compilation
+     * 
+     * WHY: String-based substitution doesn't handle nested expressions correctly
+     * WHAT: Recursively replaces TLocal references with new variable names
+     * HOW: Pattern matches TLocal nodes and creates new ones with substituted names
+     * 
+     * @param expr The expression to process
+     * @param oldVarName Old variable name to replace
+     * @param newVarName New variable name to use
+     * @return Expression with substituted variable references
+     */
+    private function substituteVariableInExpr(expr: TypedExpr, oldVarName: String, newVarName: String): TypedExpr {
+        // Create a copy of the expression with substituted variables
+        var newExpr = switch(expr.expr) {
+            case TLocal(v) if (CompilerUtilities.toElixirVarName(v) == oldVarName):
+                // Replace with reference to lambda parameter
+                // Note: This is a simplified approach - may need TIdent or different handling
+                expr; // Keep original for now, will be handled at string level
+                
+            case TBlock(exprs):
+                var newExprs = exprs.map(e -> substituteVariableInExpr(e, oldVarName, newVarName));
+                {expr: TBlock(newExprs), t: expr.t, pos: expr.pos};
+                
+            case TIf(cond, thenExpr, elseExpr):
+                var newCond = substituteVariableInExpr(cond, oldVarName, newVarName);
+                var newThen = substituteVariableInExpr(thenExpr, oldVarName, newVarName);
+                var newElse = elseExpr != null ? substituteVariableInExpr(elseExpr, oldVarName, newVarName) : null;
+                {expr: TIf(newCond, newThen, newElse), t: expr.t, pos: expr.pos};
+                
+            case TBinop(op, e1, e2):
+                var newE1 = substituteVariableInExpr(e1, oldVarName, newVarName);
+                var newE2 = substituteVariableInExpr(e2, oldVarName, newVarName);
+                {expr: TBinop(op, newE1, newE2), t: expr.t, pos: expr.pos};
+                
+            case TCall(e, args):
+                var newE = substituteVariableInExpr(e, oldVarName, newVarName);
+                var newArgs = args.map(a -> substituteVariableInExpr(a, oldVarName, newVarName));
+                {expr: TCall(newE, newArgs), t: expr.t, pos: expr.pos};
+                
+            case _:
+                // For other expression types, return as-is
+                expr;
+        };
+        
+        return newExpr;
+    }
+    
+    /**
      * Generate idiomatic Enum function from detected pattern
      * 
      * @param pattern The detected pattern information
      * @param conditionInfo The loop condition information
+     * @param ebody The original loop body for operation extraction
      * @return Generated Elixir code
      */
     private function generateEnumFunction(pattern: {
@@ -3289,7 +3393,7 @@ end)';
         sourceArray: TypedExpr,
         transformation: TypedExpr,
         condition: TypedExpr
-    }, conditionInfo: {indexVar: String, arrayVar: String}): String {
+    }, conditionInfo: {indexVar: String, arrayVar: String}, ebody: TypedExpr): String {
         #if debug_loops
         trace('[XRay EnumGen] GENERATING ENUM FUNCTION');
         trace('[XRay EnumGen] - Pattern type: ${pattern.type}');
@@ -3332,11 +3436,37 @@ end)';
                 trace('[XRay EnumGen] ✓ GENERATING EACH with item var: ${itemVarName}');
                 #end
                 
-                // For "each" pattern, we need to compile the loop body with proper variable substitution
-                // The body compilation requires access to the original while body to extract operations
+                // Extract operations from loop body (excluding setup/teardown)
+                var operations = extractLoopBodyOperations(ebody, itemVarName, conditionInfo.indexVar);
+                
+                #if debug_loops
+                trace('[XRay EnumGen] - Extracted ${operations.length} operations from loop body');
+                #end
+                
+                // Compile each operation with proper variable substitution
+                var compiledOperations: Array<String> = [];
+                for (operation in operations) {
+                    var compiledOp = compiler.compileExpression(operation);
+                    
+                    // Apply string-based variable substitution for array access patterns
+                    // Replace array[index] patterns with lambda parameter name
+                    compiledOp = StringTools.replace(compiledOp, '${conditionInfo.arrayVar}[${conditionInfo.indexVar}]', itemVarName);
+                    compiledOp = StringTools.replace(compiledOp, 'Enum.at(${conditionInfo.arrayVar}, ${conditionInfo.indexVar})', itemVarName);
+                    
+                    // NOTE: Removed direct variable replacement to prevent corrupting other words
+                    // The specific array access patterns above should handle necessary substitutions
+                    
+                    #if debug_loops
+                    trace('[XRay EnumGen] - Compiled operation: ${compiledOp}');
+                    #end
+                    
+                    compiledOperations.push(compiledOp);
+                }
+                
+                // Generate the final Enum.each with compiled operations
+                var bodyContent = compiledOperations.length > 0 ? compiledOperations.join("\n  ") : "nil";
                 var result = 'Enum.each(${arrayExpr}, fn ${itemVarName} -> 
-  # TODO: Compile actual loop body operations here
-  # For now, generating correct function signature
+  ${bodyContent}
 end)';
                 
                 #if debug_loops
