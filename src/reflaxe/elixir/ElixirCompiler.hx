@@ -30,7 +30,6 @@ import reflaxe.elixir.helpers.PipelineOptimizer.PipelinePattern;
 import reflaxe.elixir.helpers.ImportOptimizer;
 import reflaxe.elixir.helpers.MapCompiler;
 import reflaxe.elixir.helpers.TemplateCompiler;
-import reflaxe.elixir.helpers.ArrayOperationPreprocessor;
 import reflaxe.elixir.helpers.SchemaCompiler;
 import reflaxe.elixir.helpers.ProtocolCompiler;
 import reflaxe.elixir.helpers.BehaviorCompiler;

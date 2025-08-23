@@ -204,6 +204,11 @@ class WhileLoopCompiler {
      * @return Generated Elixir code for the while loop
      */
     public function compileWhileLoop(econd: TypedExpr, ebody: TypedExpr, normalWhile: Bool): String {
+        // TEMPORARY DEBUG: Check if we're getting any array operations
+        var condStr = compiler.compileExpression(econd);
+        if (condStr.indexOf("length") >= 0) {
+            trace('[DEBUG WHILE] Found length in WhileLoopCompiler: ${condStr}');
+        }
         #if debug_patterns
         DebugHelper.debugPattern("Y combinator generation", "While loop compilation", 'normalWhile: $normalWhile');
         #end

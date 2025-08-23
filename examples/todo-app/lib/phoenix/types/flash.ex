@@ -130,24 +130,38 @@ defmodule Flash do
           (
           g_counter = 0
           g = Reflect.fields(changeset_errors)
-          while_loop(fn -> ((g < g.length)) end, fn -> (
-          field = Enum.at(g, g)
-          g + 1
-          field_errors = Reflect.field(changeset_errors, field)
-          if (Std.is_of_type(field_errors, Array)) do
-          (
-          g_counter = 0
-          g = field_errors
-          while_loop(fn -> ((g < g.length)) end, fn -> (
-          error = Enum.at(g, g)
-          g + 1
-          errors ++ ["" <> field <> ": " <> Std.string(&Flash.error/3)]
-        ) end)
-        )
-        else
-          errors ++ ["" <> field <> ": " <> field_errors]
+          loop_helper = fn loop_fn, {field, g, field_errors, g2, g3} ->
+      if ((g_counter < g_counter.length)) do
+        field = Enum.at(g_counter, g_counter)
+        g = g + 1
+        field_errors = Reflect.field(changeset_errors, field)
+        if (Std.is_of_type(field_errors, Array)) do
+              (
+              g_counter = 0
+              g = field_errors
+              loop_helper = fn loop_fn, {error, g2} ->
+          if ((g_counter < g_counter.length)) do
+            error = Enum.at(g_counter, g_counter)
+            g2 = g2 + 1
+            errors ++ ["" <> field <> ": " <> Std.string(&Flash.error/3)]
+            loop_fn.(loop_fn, {error, g2})
+          else
+            {error, g2}
+          end
         end
-        ) end)
+
+        {error, g2} = loop_helper.(loop_helper, {error, g2})
+            )
+            else
+              errors ++ ["" <> field <> ": " <> field_errors]
+            end
+        loop_fn.(loop_fn, {field, g, field_errors, g2, g3})
+      else
+        {field, g, field_errors, g2, g3}
+      end
+    end
+
+    {field, g, field_errors, g2, g3} = loop_helper.(loop_helper, {field, g, field_errors, g2, g3})
         )
         end
           errors
