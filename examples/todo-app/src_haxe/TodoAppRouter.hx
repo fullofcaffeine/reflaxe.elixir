@@ -78,15 +78,6 @@ import reflaxe.elixir.macros.HttpMethod;
         action: "delete"
     },
     
-    // Test invalid controller (should show warning)
-    {
-        name: "testInvalid", 
-        method: HttpMethod.GET, 
-        path: "/test", 
-        controller: "NonExistentController", 
-        action: "nonExistentAction"
-    },
-    
     // LiveDashboard with enum
     {
         name: "dashboard", 

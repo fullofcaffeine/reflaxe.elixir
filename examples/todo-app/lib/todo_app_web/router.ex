@@ -22,7 +22,6 @@ defmodule TodoAppWeb.Router do
     live "/todos/:id", TodoLive, :todosShow
     live "/todos/:id/edit", TodoLive, :todosEdit
     get "/api/users", UserController, :apiUsers
-    get "/test", NonExistentController, :testInvalid
   end
 
   # Enable LiveDashboard in development
