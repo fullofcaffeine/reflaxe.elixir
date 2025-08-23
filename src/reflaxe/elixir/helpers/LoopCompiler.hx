@@ -1405,6 +1405,12 @@ end)';
      * @since 1.0.0
      */
     public function compileWhileLoop(econd: TypedExpr, ebody: TypedExpr, normalWhile: Bool): String {
+        // TEMPORARY DEBUG: Check if we're getting any array operations
+        var condStr = compiler.compileExpression(econd);
+        if (condStr.indexOf("length") >= 0) {
+            trace('[DEBUG ARRAY] Found length in condition: ${condStr}');
+        }
+        
         #if debug_loops
         trace('[XRay Loops] ═══════════════════════════════════════════════════');
         trace('[XRay Loops] WHILE LOOP COMPILATION START');

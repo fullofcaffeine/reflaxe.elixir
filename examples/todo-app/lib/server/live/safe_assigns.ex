@@ -110,13 +110,20 @@ defmodule SafeAssigns do
     (
           count = 0
           g_counter = 0
-          while_loop(fn -> ((g < todos.length)) end, fn -> (
-          todo = Enum.at(todos, g)
-          g + 1
-          if (todo.completed) do
-          count + 1
-        end
-        ) end)
+          loop_helper = fn loop_fn, {todo, g, count} ->
+      if ((g_counter < todos.length)) do
+        todo = Enum.at(todos, g_counter)
+        g = g + 1
+        if (todo.completed) do
+              count + 1
+            end
+        loop_fn.(loop_fn, {todo, g, count})
+      else
+        {todo, g, count}
+      end
+    end
+
+    {todo, g, count} = loop_helper.(loop_helper, {todo, g, count})
           count
         )
   end
@@ -130,13 +137,20 @@ defmodule SafeAssigns do
     (
           count = 0
           g_counter = 0
-          while_loop(fn -> ((g < todos.length)) end, fn -> (
-          todo = Enum.at(todos, g)
-          g + 1
-          if (not todo.completed) do
-          count + 1
-        end
-        ) end)
+          loop_helper = fn loop_fn, {todo, g, count} ->
+      if ((g_counter < todos.length)) do
+        todo = Enum.at(todos, g_counter)
+        g = g + 1
+        if (not todo.completed) do
+              count + 1
+            end
+        loop_fn.(loop_fn, {todo, g, count})
+      else
+        {todo, g, count}
+      end
+    end
+
+    {todo, g, count} = loop_helper.(loop_helper, {todo, g, count})
           count
         )
   end

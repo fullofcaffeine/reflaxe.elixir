@@ -145,20 +145,7 @@ class ControlFlowCompiler {
             return "nil";
         }
         
-        // Check for desugared array operation pattern (filter/map)
-        
-        var arrayOpPattern = detectDesugarredArrayOperation(el);
-        if (arrayOpPattern != null) {
-            #if debug_control_flow_compiler
-            trace("[XRay ControlFlowCompiler] ✓ DESUGARED ARRAY OPERATION DETECTED");
-            trace('[XRay ControlFlowCompiler] Pattern type: ${arrayOpPattern.type}');
-            #end
-            return arrayOpPattern.code;
-        }
-        
-        #if debug_control_flow_compiler
-        trace("[XRay ControlFlowCompiler] No desugared array operation pattern detected");
-        #end
+        // Process TBlock expressions normally
         
         // Compile each expression in the block with sequential field assignment analysis
         var statements = [];
@@ -814,33 +801,34 @@ class ControlFlowCompiler {
         // Check second element: TBlock with while loop
         var sourceArray: TypedExpr = null;
         var whileLoop: TypedExpr = null;
+        var indexVar: String = null;
+        
         switch(el[1].expr) {
             case TBlock(innerExprs):
                 #if debug_array_desugaring
                 trace('[ControlFlowCompiler] Found TBlock with ${innerExprs.length} inner expressions');
                 #end
                 if (innerExprs.length >= 2) {
-                // Look for TVar _g2 = source_array
-                for (expr in innerExprs) {
-                    switch(expr.expr) {
-                        case TVar(tvar, init) if (init != null):
-                            var varName = CompilerUtilities.toElixirVarName(tvar);
-                            // _g2 typically holds the source array
-                            if (varName.indexOf("_g") == 0 && varName != accumulatorVar) {
-                                // Check if it's not a simple value (0 for index)
+                    // Find index variable and while loop
+                    for (expr in innerExprs) {
+                        switch(expr.expr) {
+                            case TVar(tvar, init) if (init != null):
+                                // This should be index variable initialization (g1 = 0)
                                 switch(init.expr) {
                                     case TConst(TInt(0)):
-                                        // This is the index variable, skip
+                                        indexVar = CompilerUtilities.toElixirVarName(tvar);
                                     case _:
-                                        sourceArray = init;
+                                        // Skip other variable types
                                 }
-                            }
-                        case TWhile(econd, ebody, normalWhile):
-                            whileLoop = expr;
-                        case _:
+                            case TWhile(econd, ebody, normalWhile):
+                                whileLoop = expr;
+                                // Extract source array from while condition
+                                sourceArray = extractSourceArrayFromCondition(econd, indexVar);
+                            case _:
+                                // Skip other expressions
+                        }
                     }
                 }
-                } // Close the if (innerExprs.length >= 2) block
             case _:
                 return null;
         }
@@ -884,6 +872,40 @@ class ControlFlowCompiler {
         if (code == null) return null;
         
         return {type: patternType.type, code: code};
+    }
+    
+    /**
+     * Extract source array from while loop condition
+     * 
+     * WHY: The source array isn't a separate TVar - it's embedded in condition like (g1 < items.length)
+     * WHAT: Analyzes TBinop condition to extract the array being iterated
+     * HOW: Looks for pattern index < array.length and extracts array
+     */
+    private function extractSourceArrayFromCondition(condition: TypedExpr, indexVar: String): Null<TypedExpr> {
+        switch(condition.expr) {
+            case TBinop(OpLt, indexExpr, lengthExpr):
+                // Expected pattern: indexVar < sourceArray.length
+                switch(indexExpr.expr) {
+                    case TLocal(indexVarRef):
+                        var condIndexVar = CompilerUtilities.toElixirVarName(indexVarRef);
+                        if (condIndexVar == indexVar) {
+                            // Found matching index variable, extract array from length expression
+                            switch(lengthExpr.expr) {
+                                case TField(arrayExpr, field):
+                                    // Check if this is accessing the length field
+                                    // Use string representation as fallback since field access varies
+                                    var fieldStr = compiler.compileExpression(lengthExpr);
+                                    if (fieldStr != null && fieldStr.indexOf(".length") >= 0) {
+                                        return arrayExpr; // This is our source array!
+                                    }
+                                case _:
+                            }
+                        }
+                    case _:
+                }
+            case _:
+        }
+        return null;
     }
     
     /**

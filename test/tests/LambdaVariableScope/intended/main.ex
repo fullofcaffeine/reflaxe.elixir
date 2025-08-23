@@ -23,13 +23,20 @@ defmodule Main do
           g_array = []
           (
           g_counter = 0
-          while_loop(fn -> ((g_counter < items.length)) end, fn -> (
-          v = Enum.at(items, g_counter)
-          g_counter + 1
-          if ((v != target_item)) do
-          g_counter ++ [v]
-        end
-        ) end)
+          loop_helper = fn loop_fn, {v, g1} ->
+      if ((g_counter < items.length)) do
+        v = Enum.at(items, g_counter)
+        g1 = g1 + 1
+        if ((v != target_item)) do
+              g_counter ++ [v]
+            end
+        loop_fn.(loop_fn, {v, g1})
+      else
+        {v, g1}
+      end
+    end
+
+    {v, g1} = loop_helper.(loop_helper, {v, g1})
         )
           temp_array = g_counter
         )
@@ -40,13 +47,20 @@ defmodule Main do
           g_array = []
           (
           g_counter = 0
-          while_loop(fn -> ((g_counter < todos.length)) end, fn -> (
-          v = Enum.at(todos, g_counter)
-          g_counter + 1
-          if ((v.id != id)) do
-          g_counter ++ [v]
-        end
-        ) end)
+          loop_helper = fn loop_fn, {v, g1} ->
+      if ((g_counter < todos.length)) do
+        v = Enum.at(todos, g_counter)
+        g1 = g1 + 1
+        if ((v.id != id)) do
+              g_counter ++ [v]
+            end
+        loop_fn.(loop_fn, {v, g1})
+      else
+        {v, g1}
+      end
+    end
+
+    {v, g1} = loop_helper.(loop_helper, {v, g1})
         )
           temp_array1 = g_counter
         )
@@ -62,11 +76,18 @@ defmodule Main do
           g_array = []
           (
           g_counter = 0
-          while_loop(fn -> ((g_counter < numbers.length)) end, fn -> (
-          v = Enum.at(numbers, g_counter)
-          g_counter + 1
-          g_counter ++ [(v * multiplier)]
-        ) end)
+          loop_helper = fn loop_fn, {v, g1} ->
+      if ((g_counter < numbers.length)) do
+        v = Enum.at(numbers, g_counter)
+        g1 = g1 + 1
+        g_counter ++ [(v * multiplier)]
+        loop_fn.(loop_fn, {v, g1})
+      else
+        {v, g1}
+      end
+    end
+
+    {v, g1} = loop_helper.(loop_helper, {v, g1})
         )
           temp_array = g_counter
         )
@@ -76,11 +97,18 @@ defmodule Main do
           g_array = []
           (
           g_counter = 0
-          while_loop(fn -> ((g_counter < numbers.length)) end, fn -> (
-          v = Enum.at(numbers, g_counter)
-          g_counter + 1
-          g_counter ++ [prefix <> Std.string(v)]
-        ) end)
+          loop_helper = fn loop_fn, {v, g1} ->
+      if ((g_counter < numbers.length)) do
+        v = Enum.at(numbers, g_counter)
+        g1 = g1 + 1
+        g_counter ++ [prefix <> Std.string(v)]
+        loop_fn.(loop_fn, {v, g1})
+      else
+        {v, g1}
+      end
+    end
+
+    {v, g1} = loop_helper.(loop_helper, {v, g1})
         )
           temp_array1 = g_counter
         )
@@ -94,21 +122,37 @@ defmodule Main do
           threshold = 3
           g_array = []
           g_counter = 0
-          while_loop(fn -> ((g_counter < data.length)) end, fn -> v = Enum.at(data, g_counter)
-    g_counter + 1
-    temp_array1 = nil
-    g_array = []
-    g_counter = 0
-    g = v
-    while_loop(fn -> ((g_counter < g_counter.length)) end, fn -> (
-          v = Enum.at(g_counter, g_counter)
-          g_counter + 1
-          if ((v > threshold)) do
-          g_counter ++ [v]
+          loop_helper = fn loop_fn, {v, g1, temp_array1, g3, g4, g5} ->
+      if ((g_counter < data.length)) do
+        v = Enum.at(data, g_counter)
+        g1 = g1 + 1
+        temp_array1 = nil
+        g_array = []
+        g_counter = 0
+        g = v
+        loop_helper = fn loop_fn, {v2, g4} ->
+          if ((g_counter < g_counter.length)) do
+            v = Enum.at(g_counter, g_counter)
+            g4 = g4 + 1
+            if ((v > threshold)) do
+                  g_counter ++ [v]
+                end
+            loop_fn.(loop_fn, {v2, g4})
+          else
+            {v2, g4}
+          end
         end
-        ) end)
-    temp_array1 = g_counter
-    g_counter ++ [temp_array1] end)
+
+        {v2, g4} = loop_helper.(loop_helper, {v2, g4})
+        temp_array1 = g_counter
+        g_counter ++ [temp_array1]
+        loop_fn.(loop_fn, {v, g1, temp_array1, g3, g4, g5})
+      else
+        {v, g1, temp_array1, g3, g4, g5}
+      end
+    end
+
+    {v, g1, temp_array1, g3, g4, g5} = loop_helper.(loop_helper, {v, g1, temp_array1, g3, g4, g5})
         )
   end
 
@@ -125,13 +169,20 @@ defmodule Main do
           g_array = []
           (
           g_counter = 0
-          while_loop(fn -> ((g_counter < items.length)) end, fn -> (
-          v = Enum.at(items, g_counter)
-          g_counter + 1
-          if ((v != exclude_item)) do
-          g_counter ++ [v]
-        end
-        ) end)
+          loop_helper = fn loop_fn, {v, g1} ->
+      if ((g_counter < items.length)) do
+        v = Enum.at(items, g_counter)
+        g1 = g1 + 1
+        if ((v != exclude_item)) do
+              g_counter ++ [v]
+            end
+        loop_fn.(loop_fn, {v, g1})
+      else
+        {v, g1}
+      end
+    end
+
+    {v, g1} = loop_helper.(loop_helper, {v, g1})
         )
           temp_array1 = g_counter
         )
@@ -139,11 +190,18 @@ defmodule Main do
           g_array = []
           (
           g_counter = 0
-          while_loop(fn -> ((g_counter < temp_array1.length)) end, fn -> (
-          v = Enum.at(temp_array1, g_counter)
-          g_counter + 1
-          g_counter ++ [prefix <> v <> suffix]
-        ) end)
+          loop_helper = fn loop_fn, {v, g1} ->
+      if ((g_counter < temp_array1.length)) do
+        v = Enum.at(temp_array1, g_counter)
+        g1 = g1 + 1
+        g_counter ++ [prefix <> v <> suffix]
+        loop_fn.(loop_fn, {v, g1})
+      else
+        {v, g1}
+      end
+    end
+
+    {v, g1} = loop_helper.(loop_helper, {v, g1})
         )
           temp_array = g_counter
         )
