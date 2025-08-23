@@ -104,6 +104,23 @@ class VariableCompiler {
         // Get the original variable name (before Haxe's renaming for shadowing avoidance)
         var originalName = getOriginalVarName(v);
         
+        // CRITICAL DEBUG: Trace exactly what mapping exists for 'g'
+        if (originalName == "g") {
+            trace('[XRay VariableCompiler] ✓ Compiling TLocal for g variable');
+            if (compiler.currentFunctionParameterMap.exists("g")) {
+                var mapping = compiler.currentFunctionParameterMap.get("g");
+                trace('[XRay VariableCompiler] WARNING: Found existing mapping g -> ${mapping}');
+                if (StringTools.endsWith(mapping, "_counter")) {
+                    trace('[XRay VariableCompiler] ⚠️ CRITICAL: g is incorrectly mapped to ${mapping}!');
+                    trace('[XRay VariableCompiler] Stack trace would be helpful here to find source');
+                    // Don't use the incorrect mapping
+                    return "g";
+                }
+            } else {
+                trace('[XRay VariableCompiler] No mapping found for g (good!)');
+            }
+        }
+        
         #if debug_variable_compiler
         trace('[XRay VariableCompiler] Original name: ${originalName}');
         #end
@@ -136,26 +153,31 @@ class VariableCompiler {
          * HOW: Look up in currentFunctionParameterMap first, then inline context
          */
         // Check parameter mapping first (for function parameters)
-        #if debug_variable_compiler
         trace('[XRay VariableCompiler] Checking parameter mapping for: ${originalName}');
         trace('[XRay VariableCompiler] Parameter map has: ${[for (k in compiler.currentFunctionParameterMap.keys()) k].join(", ")}');
-        #end
+        // Special debug for camelCase variables
+        if (originalName == "bulkAction" || originalName == "alertLevel") {
+            trace('[XRay VariableCompiler] ⚠️ Looking for camelCase variable ${originalName} in parameter map');
+            for (key in compiler.currentFunctionParameterMap.keys()) {
+                trace('[XRay VariableCompiler]   Map contains: ${key} -> ${compiler.currentFunctionParameterMap.get(key)}');
+            }
+        }
         
         var mappedName = compiler.currentFunctionParameterMap.get(originalName);
         if (mappedName != null) {
-            #if debug_variable_compiler
             trace('[XRay VariableCompiler] ✓ PARAMETER MAPPING: ${originalName} -> ${mappedName}');
+            #if debug_variable_compiler
+            trace('[XRay VariableCompiler] Found in parameter map');
             #end
             
             // CRITICAL FIX: Don't map 'g' to 'g_counter' in any context - it's always wrong
             // The 'g' variable is used for enum parameter extraction, never for loop counters
             if (originalName == "g" && StringTools.endsWith(mappedName, "_counter")) {
                 // This mapping is ALWAYS incorrect - 'g' is for enum extraction, not loops
-                #if debug_variable_compiler
-                trace('[XRay VariableCompiler] ⚠️ BLOCKING incorrect g -> ${mappedName} mapping');
-                trace('[XRay VariableCompiler] isInEnumExtraction flag: ${compiler.isInEnumExtraction}');
-                #end
-                // Don't use the incorrect mapping, fall through to normal name handling
+                trace('[XRay VariableCompiler] ⚠️ BLOCKING incorrect g -> ${mappedName} mapping in TLocal');
+                trace('[XRay VariableCompiler] Returning "g" directly instead of ${mappedName}');
+                // Don't use the incorrect mapping - return 'g' directly
+                return "g";
             } else {
                 return mappedName;
             }
@@ -238,6 +260,11 @@ class VariableCompiler {
             #end
             compiler.globalStructParameterMap.get("_this");
         } else {
+            // Debug for camelCase variables
+            if (originalName == "bulkAction" || originalName == "alertLevel") {
+                trace('[XRay VariableCompiler] ⚠️ CAMELCASE VARIABLE DETECTED: ${originalName}');
+                trace('[XRay VariableCompiler] No mapping found, converting to snake_case');
+            }
             NamingHelper.toSnakeCase(originalName);
         }
         
@@ -368,7 +395,10 @@ class VariableCompiler {
                 }
                 
                 // Track the renaming for consistent usage later
-                if (originalName != originalNameBeforeRename) {
+                // CRITICAL FIX: Only track renames for _g variables, not plain 'g' variables
+                // The plain 'g' variable is used in multiple contexts (counter AND array) in desugared loops
+                // and tracking it globally causes variable name collisions
+                if (originalName != originalNameBeforeRename && originalNameBeforeRename != "g") {
                     if (compiler.variableRenameMap == null) {
                         compiler.variableRenameMap = new Map<String, String>();
                     }
@@ -389,6 +419,15 @@ class VariableCompiler {
          */
         // Check if there's a parameter mapping for this variable
         var mappedName = compiler.currentFunctionParameterMap.get(originalName);
+        
+        // CRITICAL FIX: Never use g_counter mapping for plain 'g' variables
+        // The 'g' variable is used for switch expression values, not loop counters
+        if (originalName == "g" && mappedName != null && StringTools.endsWith(mappedName, "_counter")) {
+            trace('[XRay VariableCompiler] ⚠️ BLOCKING incorrect g -> ${mappedName} mapping in TVar declaration');
+            trace('[XRay VariableCompiler] Ignoring mapping and using original name "g"');
+            mappedName = null; // Force to use original name
+        }
+        
         if (mappedName != null) {
             #if debug_variable_compiler
             trace('[XRay VariableCompiler] ✓ TVAR PARAMETER MAPPING: ${originalName} -> ${mappedName}');
@@ -449,6 +488,24 @@ class VariableCompiler {
         }
         
         var varName = preserveUnderscore ? originalName : NamingHelper.toSnakeCase(originalName);
+        
+        // CRITICAL FIX: Track ALL variable name transformations (not just underscore removal)
+        // When toSnakeCase converts:
+        // - '_g' to 'g' (underscore removal)
+        // - 'bulkAction' to 'bulk_action' (camelCase to snake_case)
+        // - 'alertLevel' to 'alert_level' (camelCase to snake_case)
+        // We MUST track these mappings so TLocal references can find the correct variable
+        if (originalName != varName) {
+            // Track this mapping in the parameter map (which is checked first)
+            if (!compiler.currentFunctionParameterMap.exists(originalName)) {
+                compiler.currentFunctionParameterMap.set(originalName, varName);
+                trace('[XRay VariableCompiler] ✓ TRACKED VARIABLE NAME TRANSFORMATION: ${originalName} -> ${varName}');
+                // Special debug for problematic variables
+                if (originalName == "bulkAction" || originalName == "alertLevel") {
+                    trace('[XRay VariableCompiler] ⚠️ SPECIAL: Tracked camelCase mapping for ${originalName}');
+                }
+            }
+        }
         
         // CRITICAL FIX: Check if this variable is being assigned from TLocal(g) which might be an enum extraction
         if (expr != null && compiler.enumExtractionVars != null && compiler.enumExtractionVars.length > 0) {

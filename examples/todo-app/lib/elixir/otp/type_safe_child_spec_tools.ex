@@ -55,7 +55,7 @@ defmodule TypeSafeChildSpecTools do
           (
           g_counter = 0
           g = Reflect.fields(config)
-          Enum.each(g_counter, fn field -> 
+          Enum.each(g, fn field -> 
       Reflect.set_field(endpoint_config, field, Reflect.field(config, field))
     end)
         )
