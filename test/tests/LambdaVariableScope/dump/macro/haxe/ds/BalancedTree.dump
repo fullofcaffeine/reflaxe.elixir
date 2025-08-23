@@ -1,0 +1,1159 @@
+class haxe.ds.BalancedTree<K, V> implements haxe.IMap<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V> {
+
+	public function new[Function:() -> Void] [Block:Void]
+
+	var root:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>;
+
+	public function set[Function:(key : haxe.ds.BalancedTree.K, value : haxe.ds.BalancedTree.V) -> Void]
+		[Arg:haxe.ds.BalancedTree.K] [Local key(63):haxe.ds.BalancedTree.K]
+		[Arg:haxe.ds.BalancedTree.V] [Local value(64):haxe.ds.BalancedTree.V]
+		[Block:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+			[Binop:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+				[Field:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+					[Const:haxe.ds.BalancedTree<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>] this
+					[FInstance:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+						haxe.ds.BalancedTree<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>
+						root:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>
+				=
+				[Call:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+					[Field:(k : haxe.ds.BalancedTree.K, v : haxe.ds.BalancedTree.V, node : haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>) -> haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+						[Const:haxe.ds.BalancedTree<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>] this
+						[FInstance:(k : haxe.ds.BalancedTree.K, v : haxe.ds.BalancedTree.V, node : haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>) -> haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+							haxe.ds.BalancedTree<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>
+							setLoop:(k : haxe.ds.BalancedTree.K, v : haxe.ds.BalancedTree.V, node : haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>) -> haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>
+					[Local key(63):haxe.ds.BalancedTree.K:haxe.ds.BalancedTree.K]
+					[Local value(64):haxe.ds.BalancedTree.V:haxe.ds.BalancedTree.V]
+					[Field:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+						[Const:haxe.ds.BalancedTree<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>] this
+						[FInstance:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+							haxe.ds.BalancedTree<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>
+							root:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>
+
+	public function get[Function:(key : haxe.ds.BalancedTree.K) -> Null<haxe.ds.BalancedTree.V>]
+		[Arg:haxe.ds.BalancedTree.K] [Local key(6):haxe.ds.BalancedTree.K]
+		[Block:Dynamic]
+			[Var node(7):haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+				[Field:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+					[Const:haxe.ds.BalancedTree<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>] this
+					[FInstance:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+						haxe.ds.BalancedTree<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>
+						root:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>
+			[While:Void]
+				[Binop:Bool]
+					[Local node(7):haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+					!=
+					[Const:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>] null
+				[Block:Void]
+					[Var c(8):Int]
+						[Call:Int]
+							[Field:(k1 : haxe.ds.BalancedTree.K, k2 : haxe.ds.BalancedTree.K) -> Int]
+								[Const:haxe.ds.BalancedTree<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>] this
+								[FInstance:(k1 : haxe.ds.BalancedTree.K, k2 : haxe.ds.BalancedTree.K) -> Int]
+									haxe.ds.BalancedTree<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>
+									compare:(k1 : haxe.ds.BalancedTree.K, k2 : haxe.ds.BalancedTree.K) -> Int
+							[Local key(6):haxe.ds.BalancedTree.K:haxe.ds.BalancedTree.K]
+							[Field:haxe.ds.BalancedTree.K]
+								[Local node(7):haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+								[FInstance:haxe.ds.BalancedTree.K]
+									haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>
+									key:haxe.ds.TreeNode.K
+					[If:Void]
+						[Binop:Bool]
+							[Local c(8):Int:Int]
+							==
+							[Const:Int] 0
+						[Then:Dynamic] [Block:Dynamic]
+							[Return:Dynamic]
+								[Field:haxe.ds.BalancedTree.V]
+									[Local node(7):haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+									[FInstance:haxe.ds.BalancedTree.V]
+										haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>
+										value:haxe.ds.TreeNode.V
+					[If:Void]
+						[Binop:Bool]
+							[Local c(8):Int:Int]
+							<
+							[Const:Int] 0
+						[Then:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>] [Block:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+							[Binop:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+								[Local node(7):haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+								=
+								[Field:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+									[Local node(7):haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+									[FInstance:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+										haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>
+										left:haxe.ds.TreeNode<haxe.ds.TreeNode.K, haxe.ds.TreeNode.V>
+						[Else:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>] [Block:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+							[Binop:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+								[Local node(7):haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+								=
+								[Field:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+									[Local node(7):haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+									[FInstance:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+										haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>
+										right:haxe.ds.TreeNode<haxe.ds.TreeNode.K, haxe.ds.TreeNode.V>
+			[Return:Dynamic] [Const:Null<haxe.ds.BalancedTree.V>] null
+
+	public function remove[Function:(key : haxe.ds.BalancedTree.K) -> Bool]
+		[Arg:haxe.ds.BalancedTree.K] [Local key(22):haxe.ds.BalancedTree.K]
+		[Block:Void]
+			[Try:Void]
+				[Block:Dynamic]
+					[Binop:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+						[Field:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+							[Const:haxe.ds.BalancedTree<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>] this
+							[FInstance:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+								haxe.ds.BalancedTree<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>
+								root:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>
+						=
+						[Call:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+							[Field:(k : haxe.ds.BalancedTree.K, node : haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>) -> haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+								[Const:haxe.ds.BalancedTree<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>] this
+								[FInstance:(k : haxe.ds.BalancedTree.K, node : haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>) -> haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+									haxe.ds.BalancedTree<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>
+									removeLoop:(k : haxe.ds.BalancedTree.K, node : haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>) -> haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>
+							[Local key(22):haxe.ds.BalancedTree.K:haxe.ds.BalancedTree.K]
+							[Field:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+								[Const:haxe.ds.BalancedTree<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>] this
+								[FInstance:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+									haxe.ds.BalancedTree<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>
+									root:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>
+					[Return:Dynamic] [Const:Bool] true
+				Catch [Local e(62):String] [Block:Dynamic] [Return:Dynamic] [Const:Bool] false
+				Catch [Local `(5345):haxe.ValueException]
+					[If:Void]
+						[Call:Bool]
+							[Field:(v : Dynamic, t : Dynamic) -> Bool]
+								[TypeExpr Std:{ Statics Std }]
+								[FStatic:(v : Dynamic, t : Dynamic) -> Bool]
+									Std
+									isOfType:(v : Dynamic, t : Dynamic) -> Bool
+							[Field:Any]
+								[Local `(5345):haxe.ValueException:haxe.ValueException]
+								[FInstance:Any]
+									haxe.ValueException
+									value:Any
+							[TypeExpr String:String]
+						[Then:Dynamic] [Block:Dynamic]
+							[Block:Void]
+							[Block:Dynamic] [Return:Dynamic] [Const:Bool] false
+						[Else:Dynamic] [Throw:Dynamic] [Local `(5345):haxe.ValueException:haxe.ValueException]
+
+	public function exists[Function:(key : haxe.ds.BalancedTree.K) -> Bool]
+		[Arg:haxe.ds.BalancedTree.K] [Local key(1):haxe.ds.BalancedTree.K]
+		[Block:Dynamic]
+			[Var node(2):haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+				[Field:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+					[Const:haxe.ds.BalancedTree<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>] this
+					[FInstance:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+						haxe.ds.BalancedTree<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>
+						root:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>
+			[While:Void]
+				[Binop:Bool]
+					[Local node(2):haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+					!=
+					[Const:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>] null
+				[Block:Void]
+					[Var c(5):Int]
+						[Call:Int]
+							[Field:(k1 : haxe.ds.BalancedTree.K, k2 : haxe.ds.BalancedTree.K) -> Int]
+								[Const:haxe.ds.BalancedTree<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>] this
+								[FInstance:(k1 : haxe.ds.BalancedTree.K, k2 : haxe.ds.BalancedTree.K) -> Int]
+									haxe.ds.BalancedTree<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>
+									compare:(k1 : haxe.ds.BalancedTree.K, k2 : haxe.ds.BalancedTree.K) -> Int
+							[Local key(1):haxe.ds.BalancedTree.K:haxe.ds.BalancedTree.K]
+							[Field:haxe.ds.BalancedTree.K]
+								[Local node(2):haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+								[FInstance:haxe.ds.BalancedTree.K]
+									haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>
+									key:haxe.ds.TreeNode.K
+					[If:Void]
+						[Binop:Bool]
+							[Local c(5):Int:Int]
+							==
+							[Const:Int] 0
+						[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [Const:Bool] true
+						[Else:Void] [Block:Void]
+							[If:Void]
+								[Binop:Bool]
+									[Local c(5):Int:Int]
+									<
+									[Const:Int] 0
+								[Then:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>] [Block:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+									[Binop:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+										[Local node(2):haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+										=
+										[Field:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+											[Local node(2):haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+											[FInstance:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+												haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>
+												left:haxe.ds.TreeNode<haxe.ds.TreeNode.K, haxe.ds.TreeNode.V>
+								[Else:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>] [Block:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+									[Binop:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+										[Local node(2):haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+										=
+										[Field:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+											[Local node(2):haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+											[FInstance:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+												haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>
+												right:haxe.ds.TreeNode<haxe.ds.TreeNode.K, haxe.ds.TreeNode.V>
+			[Return:Dynamic] [Const:Bool] false
+
+	public function iterator[Function:() -> Iterator<haxe.ds.BalancedTree.V>]
+		[Block:Dynamic]
+			[Var ret(9):Array<haxe.ds.BalancedTree.V>] [ArrayDecl:Array<haxe.ds.BalancedTree.V>]
+			[Call:Void]
+				[Field:(node : haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>, acc : Array<haxe.ds.BalancedTree.V>) -> Void]
+					[TypeExpr haxe.ds.BalancedTree:Class<haxe.ds.BalancedTree>]
+					[FStatic:(node : haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>, acc : Array<haxe.ds.BalancedTree.V>) -> Void]
+						haxe.ds.BalancedTree
+						iteratorLoop:(node : haxe.ds.TreeNode<iteratorLoop.K, iteratorLoop.V>, acc : Array<iteratorLoop.V>) -> Void
+				[Field:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+					[Const:haxe.ds.BalancedTree<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>] this
+					[FInstance:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+						haxe.ds.BalancedTree<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>
+						root:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>
+				[Local ret(9):Array<haxe.ds.BalancedTree.V>:Array<haxe.ds.BalancedTree.V>]
+			[Return:Dynamic]
+				[New:haxe.iterators.ArrayIterator<haxe.ds.BalancedTree.V>]
+					haxe.iterators.ArrayIterator<haxe.ds.BalancedTree.V>
+					[Local ret(9):Array<haxe.ds.BalancedTree.V>:Array<haxe.ds.BalancedTree.V>]
+
+	@:runtime
+	public inline function keyValueIterator[Function:() -> KeyValueIterator<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[New:haxe.iterators.MapKeyValueIterator<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+					haxe.iterators.MapKeyValueIterator<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>
+					[Const:haxe.ds.BalancedTree<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>] this
+
+	public function keys[Function:() -> Iterator<haxe.ds.BalancedTree.K>]
+		[Block:Dynamic]
+			[Var ret(17):Array<haxe.ds.BalancedTree.K>] [ArrayDecl:Array<haxe.ds.BalancedTree.K>]
+			[Call:Void]
+				[Field:(node : haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>, acc : Array<haxe.ds.BalancedTree.K>) -> Void]
+					[Const:haxe.ds.BalancedTree<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>] this
+					[FInstance:(node : haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>, acc : Array<haxe.ds.BalancedTree.K>) -> Void]
+						haxe.ds.BalancedTree<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>
+						keysLoop:(node : haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>, acc : Array<haxe.ds.BalancedTree.K>) -> Void
+				[Field:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+					[Const:haxe.ds.BalancedTree<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>] this
+					[FInstance:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+						haxe.ds.BalancedTree<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>
+						root:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>
+				[Local ret(17):Array<haxe.ds.BalancedTree.K>:Array<haxe.ds.BalancedTree.K>]
+			[Return:Dynamic]
+				[New:haxe.iterators.ArrayIterator<haxe.ds.BalancedTree.K>]
+					haxe.iterators.ArrayIterator<haxe.ds.BalancedTree.K>
+					[Local ret(17):Array<haxe.ds.BalancedTree.K>:Array<haxe.ds.BalancedTree.K>]
+
+	public function copy[Function:() -> haxe.ds.BalancedTree<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+		[Block:Dynamic]
+			[Var copied(317):haxe.ds.BalancedTree<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>] [New:haxe.ds.BalancedTree<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>] haxe.ds.BalancedTree<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>
+			[Binop:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+				[Field:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+					[Local copied(317):haxe.ds.BalancedTree<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>:haxe.ds.BalancedTree<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+					[FInstance:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+						haxe.ds.BalancedTree<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>
+						root:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>
+				=
+				[Field:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+					[Const:haxe.ds.BalancedTree<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>] this
+					[FInstance:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+						haxe.ds.BalancedTree<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>
+						root:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>
+			[Return:Dynamic] [Local copied(317):haxe.ds.BalancedTree<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>:haxe.ds.BalancedTree<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+
+	function setLoop[Function:(k : haxe.ds.BalancedTree.K, v : haxe.ds.BalancedTree.V, node : haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>) -> haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+		[Arg:haxe.ds.BalancedTree.K] [Local k(65):haxe.ds.BalancedTree.K]
+		[Arg:haxe.ds.BalancedTree.V] [Local v(66):haxe.ds.BalancedTree.V]
+		[Arg:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>] [Local node(67):haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+		[Block:Dynamic]
+			[If:Void]
+				[Binop:Bool]
+					[Local node(67):haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+					==
+					[Const:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>] null
+				[Then:Dynamic] [Block:Dynamic]
+					[Return:Dynamic]
+						[New:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+							haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>
+							[Const:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>] null
+							[Local k(65):haxe.ds.BalancedTree.K:haxe.ds.BalancedTree.K]
+							[Local v(66):haxe.ds.BalancedTree.V:haxe.ds.BalancedTree.V]
+							[Const:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>] null
+							[Const:Null<Int>] null
+			[Var c(68):Int]
+				[Call:Int]
+					[Field:(k1 : haxe.ds.BalancedTree.K, k2 : haxe.ds.BalancedTree.K) -> Int]
+						[Const:haxe.ds.BalancedTree<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>] this
+						[FInstance:(k1 : haxe.ds.BalancedTree.K, k2 : haxe.ds.BalancedTree.K) -> Int]
+							haxe.ds.BalancedTree<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>
+							compare:(k1 : haxe.ds.BalancedTree.K, k2 : haxe.ds.BalancedTree.K) -> Int
+					[Local k(65):haxe.ds.BalancedTree.K:haxe.ds.BalancedTree.K]
+					[Field:haxe.ds.BalancedTree.K]
+						[Local node(67):haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+						[FInstance:haxe.ds.BalancedTree.K]
+							haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>
+							key:haxe.ds.TreeNode.K
+			[Return:Dynamic]
+				[If:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+					[Binop:Bool]
+						[Local c(68):Int:Int]
+						==
+						[Const:Int] 0
+					[Then:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>] [Block:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+						[New:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+							haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>
+							[Field:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+								[Local node(67):haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+								[FInstance:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+									haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>
+									left:haxe.ds.TreeNode<haxe.ds.TreeNode.K, haxe.ds.TreeNode.V>
+							[Local k(65):haxe.ds.BalancedTree.K:haxe.ds.BalancedTree.K]
+							[Local v(66):haxe.ds.BalancedTree.V:haxe.ds.BalancedTree.V]
+							[Field:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+								[Local node(67):haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+								[FInstance:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+									haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>
+									right:haxe.ds.TreeNode<haxe.ds.TreeNode.K, haxe.ds.TreeNode.V>
+							[If:Int]
+								[Binop:Bool]
+									[Local node(67):haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+									==
+									[Const:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>] null
+								[Then:Int] [Block:Int] [Const:Int] 0
+								[Else:Int] [Block:Int]
+									[Field:Int]
+										[Local node(67):haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+										[FInstance:Int]
+											haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>
+											_height:Int
+					[Else:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>] [Block:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+						[If:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+							[Binop:Bool]
+								[Local c(68):Int:Int]
+								<
+								[Const:Int] 0
+							[Then:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>] [Block:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+								[Var nl(71):haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+									[Call:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+										[Field:(k : haxe.ds.BalancedTree.K, v : haxe.ds.BalancedTree.V, node : haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>) -> haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+											[Const:haxe.ds.BalancedTree<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>] this
+											[FInstance:(k : haxe.ds.BalancedTree.K, v : haxe.ds.BalancedTree.V, node : haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>) -> haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+												haxe.ds.BalancedTree<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>
+												setLoop:(k : haxe.ds.BalancedTree.K, v : haxe.ds.BalancedTree.V, node : haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>) -> haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>
+										[Local k(65):haxe.ds.BalancedTree.K:haxe.ds.BalancedTree.K]
+										[Local v(66):haxe.ds.BalancedTree.V:haxe.ds.BalancedTree.V]
+										[Field:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+											[Local node(67):haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+											[FInstance:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+												haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>
+												left:haxe.ds.TreeNode<haxe.ds.TreeNode.K, haxe.ds.TreeNode.V>
+								[Call:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+									[Field:(l : haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>, k : haxe.ds.BalancedTree.K, v : haxe.ds.BalancedTree.V, r : haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>) -> haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+										[Const:haxe.ds.BalancedTree<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>] this
+										[FInstance:(l : haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>, k : haxe.ds.BalancedTree.K, v : haxe.ds.BalancedTree.V, r : haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>) -> haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+											haxe.ds.BalancedTree<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>
+											balance:(l : haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>, k : haxe.ds.BalancedTree.K, v : haxe.ds.BalancedTree.V, r : haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>) -> haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>
+									[Local nl(71):haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+									[Field:haxe.ds.BalancedTree.K]
+										[Local node(67):haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+										[FInstance:haxe.ds.BalancedTree.K]
+											haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>
+											key:haxe.ds.TreeNode.K
+									[Field:haxe.ds.BalancedTree.V]
+										[Local node(67):haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+										[FInstance:haxe.ds.BalancedTree.V]
+											haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>
+											value:haxe.ds.TreeNode.V
+									[Field:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+										[Local node(67):haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+										[FInstance:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+											haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>
+											right:haxe.ds.TreeNode<haxe.ds.TreeNode.K, haxe.ds.TreeNode.V>
+							[Else:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>] [Block:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+								[Var nr(72):haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+									[Call:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+										[Field:(k : haxe.ds.BalancedTree.K, v : haxe.ds.BalancedTree.V, node : haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>) -> haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+											[Const:haxe.ds.BalancedTree<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>] this
+											[FInstance:(k : haxe.ds.BalancedTree.K, v : haxe.ds.BalancedTree.V, node : haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>) -> haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+												haxe.ds.BalancedTree<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>
+												setLoop:(k : haxe.ds.BalancedTree.K, v : haxe.ds.BalancedTree.V, node : haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>) -> haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>
+										[Local k(65):haxe.ds.BalancedTree.K:haxe.ds.BalancedTree.K]
+										[Local v(66):haxe.ds.BalancedTree.V:haxe.ds.BalancedTree.V]
+										[Field:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+											[Local node(67):haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+											[FInstance:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+												haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>
+												right:haxe.ds.TreeNode<haxe.ds.TreeNode.K, haxe.ds.TreeNode.V>
+								[Call:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+									[Field:(l : haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>, k : haxe.ds.BalancedTree.K, v : haxe.ds.BalancedTree.V, r : haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>) -> haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+										[Const:haxe.ds.BalancedTree<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>] this
+										[FInstance:(l : haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>, k : haxe.ds.BalancedTree.K, v : haxe.ds.BalancedTree.V, r : haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>) -> haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+											haxe.ds.BalancedTree<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>
+											balance:(l : haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>, k : haxe.ds.BalancedTree.K, v : haxe.ds.BalancedTree.V, r : haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>) -> haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>
+									[Field:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+										[Local node(67):haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+										[FInstance:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+											haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>
+											left:haxe.ds.TreeNode<haxe.ds.TreeNode.K, haxe.ds.TreeNode.V>
+									[Field:haxe.ds.BalancedTree.K]
+										[Local node(67):haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+										[FInstance:haxe.ds.BalancedTree.K]
+											haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>
+											key:haxe.ds.TreeNode.K
+									[Field:haxe.ds.BalancedTree.V]
+										[Local node(67):haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+										[FInstance:haxe.ds.BalancedTree.V]
+											haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>
+											value:haxe.ds.TreeNode.V
+									[Local nr(72):haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+
+	function removeLoop[Function:(k : haxe.ds.BalancedTree.K, node : haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>) -> haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+		[Arg:haxe.ds.BalancedTree.K] [Local k(23):haxe.ds.BalancedTree.K]
+		[Arg:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>] [Local node(24):haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+		[Block:Dynamic]
+			[If:Void]
+				[Binop:Bool]
+					[Local node(24):haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+					==
+					[Const:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>] null
+				[Then:Dynamic] [Block:Dynamic] [Throw:Dynamic] [Const:String] "Not_found"
+			[Var c(25):Int]
+				[Call:Int]
+					[Field:(k1 : haxe.ds.BalancedTree.K, k2 : haxe.ds.BalancedTree.K) -> Int]
+						[Const:haxe.ds.BalancedTree<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>] this
+						[FInstance:(k1 : haxe.ds.BalancedTree.K, k2 : haxe.ds.BalancedTree.K) -> Int]
+							haxe.ds.BalancedTree<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>
+							compare:(k1 : haxe.ds.BalancedTree.K, k2 : haxe.ds.BalancedTree.K) -> Int
+					[Local k(23):haxe.ds.BalancedTree.K:haxe.ds.BalancedTree.K]
+					[Field:haxe.ds.BalancedTree.K]
+						[Local node(24):haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+						[FInstance:haxe.ds.BalancedTree.K]
+							haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>
+							key:haxe.ds.TreeNode.K
+			[Return:Dynamic]
+				[If:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+					[Binop:Bool]
+						[Local c(25):Int:Int]
+						==
+						[Const:Int] 0
+					[Then:Null<haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>>] [Block:Null<haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>>]
+						[Call:Null<haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>>]
+							[Field:(t1 : Null<haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>>, t2 : Null<haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>>) -> Null<haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>>]
+								[Const:haxe.ds.BalancedTree<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>] this
+								[FInstance:(t1 : Null<haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>>, t2 : Null<haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>>) -> Null<haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>>]
+									haxe.ds.BalancedTree<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>
+									merge:(t1 : Null<haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>>, t2 : Null<haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>>) -> Null<haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>>
+							[Field:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+								[Local node(24):haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+								[FInstance:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+									haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>
+									left:haxe.ds.TreeNode<haxe.ds.TreeNode.K, haxe.ds.TreeNode.V>
+							[Field:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+								[Local node(24):haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+								[FInstance:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+									haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>
+									right:haxe.ds.TreeNode<haxe.ds.TreeNode.K, haxe.ds.TreeNode.V>
+					[Else:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>] [Block:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+						[If:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+							[Binop:Bool]
+								[Local c(25):Int:Int]
+								<
+								[Const:Int] 0
+							[Then:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>] [Block:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+								[Call:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+									[Field:(l : haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>, k : haxe.ds.BalancedTree.K, v : haxe.ds.BalancedTree.V, r : haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>) -> haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+										[Const:haxe.ds.BalancedTree<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>] this
+										[FInstance:(l : haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>, k : haxe.ds.BalancedTree.K, v : haxe.ds.BalancedTree.V, r : haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>) -> haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+											haxe.ds.BalancedTree<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>
+											balance:(l : haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>, k : haxe.ds.BalancedTree.K, v : haxe.ds.BalancedTree.V, r : haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>) -> haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>
+									[Call:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+										[Field:(k : haxe.ds.BalancedTree.K, node : haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>) -> haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+											[Const:haxe.ds.BalancedTree<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>] this
+											[FInstance:(k : haxe.ds.BalancedTree.K, node : haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>) -> haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+												haxe.ds.BalancedTree<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>
+												removeLoop:(k : haxe.ds.BalancedTree.K, node : haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>) -> haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>
+										[Local k(23):haxe.ds.BalancedTree.K:haxe.ds.BalancedTree.K]
+										[Field:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+											[Local node(24):haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+											[FInstance:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+												haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>
+												left:haxe.ds.TreeNode<haxe.ds.TreeNode.K, haxe.ds.TreeNode.V>
+									[Field:haxe.ds.BalancedTree.K]
+										[Local node(24):haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+										[FInstance:haxe.ds.BalancedTree.K]
+											haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>
+											key:haxe.ds.TreeNode.K
+									[Field:haxe.ds.BalancedTree.V]
+										[Local node(24):haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+										[FInstance:haxe.ds.BalancedTree.V]
+											haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>
+											value:haxe.ds.TreeNode.V
+									[Field:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+										[Local node(24):haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+										[FInstance:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+											haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>
+											right:haxe.ds.TreeNode<haxe.ds.TreeNode.K, haxe.ds.TreeNode.V>
+							[Else:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>] [Block:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+								[Call:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+									[Field:(l : haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>, k : haxe.ds.BalancedTree.K, v : haxe.ds.BalancedTree.V, r : haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>) -> haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+										[Const:haxe.ds.BalancedTree<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>] this
+										[FInstance:(l : haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>, k : haxe.ds.BalancedTree.K, v : haxe.ds.BalancedTree.V, r : haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>) -> haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+											haxe.ds.BalancedTree<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>
+											balance:(l : haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>, k : haxe.ds.BalancedTree.K, v : haxe.ds.BalancedTree.V, r : haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>) -> haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>
+									[Field:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+										[Local node(24):haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+										[FInstance:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+											haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>
+											left:haxe.ds.TreeNode<haxe.ds.TreeNode.K, haxe.ds.TreeNode.V>
+									[Field:haxe.ds.BalancedTree.K]
+										[Local node(24):haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+										[FInstance:haxe.ds.BalancedTree.K]
+											haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>
+											key:haxe.ds.TreeNode.K
+									[Field:haxe.ds.BalancedTree.V]
+										[Local node(24):haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+										[FInstance:haxe.ds.BalancedTree.V]
+											haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>
+											value:haxe.ds.TreeNode.V
+									[Call:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+										[Field:(k : haxe.ds.BalancedTree.K, node : haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>) -> haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+											[Const:haxe.ds.BalancedTree<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>] this
+											[FInstance:(k : haxe.ds.BalancedTree.K, node : haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>) -> haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+												haxe.ds.BalancedTree<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>
+												removeLoop:(k : haxe.ds.BalancedTree.K, node : haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>) -> haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>
+										[Local k(23):haxe.ds.BalancedTree.K:haxe.ds.BalancedTree.K]
+										[Field:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+											[Local node(24):haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+											[FInstance:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+												haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>
+												right:haxe.ds.TreeNode<haxe.ds.TreeNode.K, haxe.ds.TreeNode.V>
+
+	function keysLoop[Function:(node : haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>, acc : Array<haxe.ds.BalancedTree.K>) -> Void]
+		[Arg:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>] [Local node(18):haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+		[Arg:Array<haxe.ds.BalancedTree.K>] [Local acc(19):Array<haxe.ds.BalancedTree.K>]
+		[Block:Void]
+			[If:Void]
+				[Binop:Bool]
+					[Local node(18):haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+					!=
+					[Const:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>] null
+				[Then:Void] [Block:Void]
+					[Call:Void]
+						[Field:(node : haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>, acc : Array<haxe.ds.BalancedTree.K>) -> Void]
+							[Const:haxe.ds.BalancedTree<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>] this
+							[FInstance:(node : haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>, acc : Array<haxe.ds.BalancedTree.K>) -> Void]
+								haxe.ds.BalancedTree<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>
+								keysLoop:(node : haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>, acc : Array<haxe.ds.BalancedTree.K>) -> Void
+						[Field:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+							[Local node(18):haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+							[FInstance:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+								haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>
+								left:haxe.ds.TreeNode<haxe.ds.TreeNode.K, haxe.ds.TreeNode.V>
+						[Local acc(19):Array<haxe.ds.BalancedTree.K>:Array<haxe.ds.BalancedTree.K>]
+					[Call:Int]
+						[Field:(x : haxe.ds.BalancedTree.K) -> Int]
+							[Local acc(19):Array<haxe.ds.BalancedTree.K>:Array<haxe.ds.BalancedTree.K>]
+							[FInstance:(x : haxe.ds.BalancedTree.K) -> Int]
+								Array<haxe.ds.BalancedTree.K>
+								push:(x : Array.T) -> Int
+						[Field:haxe.ds.BalancedTree.K]
+							[Local node(18):haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+							[FInstance:haxe.ds.BalancedTree.K]
+								haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>
+								key:haxe.ds.TreeNode.K
+					[Call:Void]
+						[Field:(node : haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>, acc : Array<haxe.ds.BalancedTree.K>) -> Void]
+							[Const:haxe.ds.BalancedTree<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>] this
+							[FInstance:(node : haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>, acc : Array<haxe.ds.BalancedTree.K>) -> Void]
+								haxe.ds.BalancedTree<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>
+								keysLoop:(node : haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>, acc : Array<haxe.ds.BalancedTree.K>) -> Void
+						[Field:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+							[Local node(18):haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+							[FInstance:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+								haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>
+								right:haxe.ds.TreeNode<haxe.ds.TreeNode.K, haxe.ds.TreeNode.V>
+						[Local acc(19):Array<haxe.ds.BalancedTree.K>:Array<haxe.ds.BalancedTree.K>]
+
+	function merge[Function:(t1 : Null<haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>>, t2 : Null<haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>>) -> Null<haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>>]
+		[Arg:Null<haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>>] [Local t1(26):Null<haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>>]
+		[Arg:Null<haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>>] [Local t2(27):Null<haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>>]
+		[Block:Dynamic]
+			[If:Void]
+				[Binop:Bool]
+					[Local t1(26):Null<haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>>:Null<haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>>]
+					==
+					[Const:Null<haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>>] null
+				[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [Local t2(27):Null<haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>>:Null<haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>>]
+			[If:Void]
+				[Binop:Bool]
+					[Local t2(27):Null<haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>>:Null<haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>>]
+					==
+					[Const:Null<haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>>] null
+				[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [Local t1(26):Null<haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>>:Null<haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>>]
+			[Var t(29):haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+				[Call:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+					[Field:(t : haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>) -> haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+						[Const:haxe.ds.BalancedTree<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>] this
+						[FInstance:(t : haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>) -> haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+							haxe.ds.BalancedTree<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>
+							minBinding:(t : haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>) -> haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>
+					[Local t2(27):Null<haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>>:Null<haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>>]
+			[Return:Dynamic]
+				[Call:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+					[Field:(l : haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>, k : haxe.ds.BalancedTree.K, v : haxe.ds.BalancedTree.V, r : haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>) -> haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+						[Const:haxe.ds.BalancedTree<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>] this
+						[FInstance:(l : haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>, k : haxe.ds.BalancedTree.K, v : haxe.ds.BalancedTree.V, r : haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>) -> haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+							haxe.ds.BalancedTree<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>
+							balance:(l : haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>, k : haxe.ds.BalancedTree.K, v : haxe.ds.BalancedTree.V, r : haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>) -> haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>
+					[Local t1(26):Null<haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>>:Null<haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>>]
+					[Field:haxe.ds.BalancedTree.K]
+						[Local t(29):haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+						[FInstance:haxe.ds.BalancedTree.K]
+							haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>
+							key:haxe.ds.TreeNode.K
+					[Field:haxe.ds.BalancedTree.V]
+						[Local t(29):haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+						[FInstance:haxe.ds.BalancedTree.V]
+							haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>
+							value:haxe.ds.TreeNode.V
+					[Call:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+						[Field:(t : haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>) -> haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+							[Const:haxe.ds.BalancedTree<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>] this
+							[FInstance:(t : haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>) -> haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+								haxe.ds.BalancedTree<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>
+								removeMinBinding:(t : haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>) -> haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>
+						[Local t2(27):Null<haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>>:Null<haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>>]
+
+	function minBinding[Function:(t : haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>) -> haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+		[Arg:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>] [Local t(28):haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[If:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+					[Binop:Bool]
+						[Local t(28):haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+						==
+						[Const:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>] null
+					[Then:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>] [Block:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>] [Throw:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>] [Const:String] "Not_found"
+					[Else:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>] [Block:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+						[If:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+							[Binop:Bool]
+								[Field:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+									[Local t(28):haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+									[FInstance:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+										haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>
+										left:haxe.ds.TreeNode<haxe.ds.TreeNode.K, haxe.ds.TreeNode.V>
+								==
+								[Const:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>] null
+							[Then:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>] [Block:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>] [Local t(28):haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+							[Else:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>] [Block:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+								[Call:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+									[Field:(t : haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>) -> haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+										[Const:haxe.ds.BalancedTree<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>] this
+										[FInstance:(t : haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>) -> haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+											haxe.ds.BalancedTree<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>
+											minBinding:(t : haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>) -> haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>
+									[Field:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+										[Local t(28):haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+										[FInstance:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+											haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>
+											left:haxe.ds.TreeNode<haxe.ds.TreeNode.K, haxe.ds.TreeNode.V>
+
+	function removeMinBinding[Function:(t : haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>) -> haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+		[Arg:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>] [Local t(61):haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[If:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+					[Binop:Bool]
+						[Field:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+							[Local t(61):haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+							[FInstance:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+								haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>
+								left:haxe.ds.TreeNode<haxe.ds.TreeNode.K, haxe.ds.TreeNode.V>
+						==
+						[Const:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>] null
+					[Then:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>] [Block:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+						[Field:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+							[Local t(61):haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+							[FInstance:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+								haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>
+								right:haxe.ds.TreeNode<haxe.ds.TreeNode.K, haxe.ds.TreeNode.V>
+					[Else:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>] [Block:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+						[Call:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+							[Field:(l : haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>, k : haxe.ds.BalancedTree.K, v : haxe.ds.BalancedTree.V, r : haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>) -> haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+								[Const:haxe.ds.BalancedTree<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>] this
+								[FInstance:(l : haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>, k : haxe.ds.BalancedTree.K, v : haxe.ds.BalancedTree.V, r : haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>) -> haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+									haxe.ds.BalancedTree<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>
+									balance:(l : haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>, k : haxe.ds.BalancedTree.K, v : haxe.ds.BalancedTree.V, r : haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>) -> haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>
+							[Call:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+								[Field:(t : haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>) -> haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+									[Const:haxe.ds.BalancedTree<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>] this
+									[FInstance:(t : haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>) -> haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+										haxe.ds.BalancedTree<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>
+										removeMinBinding:(t : haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>) -> haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>
+								[Field:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+									[Local t(61):haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+									[FInstance:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+										haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>
+										left:haxe.ds.TreeNode<haxe.ds.TreeNode.K, haxe.ds.TreeNode.V>
+							[Field:haxe.ds.BalancedTree.K]
+								[Local t(61):haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+								[FInstance:haxe.ds.BalancedTree.K]
+									haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>
+									key:haxe.ds.TreeNode.K
+							[Field:haxe.ds.BalancedTree.V]
+								[Local t(61):haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+								[FInstance:haxe.ds.BalancedTree.V]
+									haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>
+									value:haxe.ds.TreeNode.V
+							[Field:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+								[Local t(61):haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+								[FInstance:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+									haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>
+									right:haxe.ds.TreeNode<haxe.ds.TreeNode.K, haxe.ds.TreeNode.V>
+
+	function balance[Function:(l : haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>, k : haxe.ds.BalancedTree.K, v : haxe.ds.BalancedTree.V, r : haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>) -> haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+		[Arg:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>] [Local l(30):haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+		[Arg:haxe.ds.BalancedTree.K] [Local k(31):haxe.ds.BalancedTree.K]
+		[Arg:haxe.ds.BalancedTree.V] [Local v(32):haxe.ds.BalancedTree.V]
+		[Arg:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>] [Local r(33):haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+		[Block:Dynamic]
+			[Var hl(36):Int]
+				[If:Int]
+					[Binop:Bool]
+						[Local l(30):haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+						==
+						[Const:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>] null
+					[Then:Int] [Block:Int] [Const:Int] 0
+					[Else:Int] [Block:Int]
+						[Field:Int]
+							[Local l(30):haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+							[FInstance:Int]
+								haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>
+								_height:Int
+			[Var hr(39):Int]
+				[If:Int]
+					[Binop:Bool]
+						[Local r(33):haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+						==
+						[Const:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>] null
+					[Then:Int] [Block:Int] [Const:Int] 0
+					[Else:Int] [Block:Int]
+						[Field:Int]
+							[Local r(33):haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+							[FInstance:Int]
+								haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>
+								_height:Int
+			[Return:Dynamic]
+				[If:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+					[Binop:Bool]
+						[Local hl(36):Int:Int]
+						>
+						[Binop:Int]
+							[Local hr(39):Int:Int]
+							+
+							[Const:Int] 2
+					[Then:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>] [Block:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+						[If:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+							[Binop:Bool]
+								[Block:Int]
+									[Var _this(41):haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+										[Field:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+											[Local l(30):haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+											[FInstance:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+												haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>
+												left:haxe.ds.TreeNode<haxe.ds.TreeNode.K, haxe.ds.TreeNode.V>
+									[If:Int]
+										[Binop:Bool]
+											[Local _this(41):haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+											==
+											[Const:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>] null
+										[Then:Int] [Block:Int] [Const:Int] 0
+										[Else:Int] [Block:Int]
+											[Field:Int]
+												[Local _this(41):haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+												[FInstance:Int]
+													haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>
+													_height:Int
+								>=
+								[Block:Int]
+									[Var _this(43):haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+										[Field:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+											[Local l(30):haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+											[FInstance:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+												haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>
+												right:haxe.ds.TreeNode<haxe.ds.TreeNode.K, haxe.ds.TreeNode.V>
+									[If:Int]
+										[Binop:Bool]
+											[Local _this(43):haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+											==
+											[Const:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>] null
+										[Then:Int] [Block:Int] [Const:Int] 0
+										[Else:Int] [Block:Int]
+											[Field:Int]
+												[Local _this(43):haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+												[FInstance:Int]
+													haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>
+													_height:Int
+							[Then:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>] [Block:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+								[New:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+									haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>
+									[Field:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+										[Local l(30):haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+										[FInstance:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+											haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>
+											left:haxe.ds.TreeNode<haxe.ds.TreeNode.K, haxe.ds.TreeNode.V>
+									[Field:haxe.ds.BalancedTree.K]
+										[Local l(30):haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+										[FInstance:haxe.ds.BalancedTree.K]
+											haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>
+											key:haxe.ds.TreeNode.K
+									[Field:haxe.ds.BalancedTree.V]
+										[Local l(30):haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+										[FInstance:haxe.ds.BalancedTree.V]
+											haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>
+											value:haxe.ds.TreeNode.V
+									[New:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+										haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>
+										[Field:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+											[Local l(30):haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+											[FInstance:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+												haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>
+												right:haxe.ds.TreeNode<haxe.ds.TreeNode.K, haxe.ds.TreeNode.V>
+										[Local k(31):haxe.ds.BalancedTree.K:haxe.ds.BalancedTree.K]
+										[Local v(32):haxe.ds.BalancedTree.V:haxe.ds.BalancedTree.V]
+										[Local r(33):haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+										[Const:Null<Int>] null
+									[Const:Null<Int>] null
+							[Else:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>] [Block:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+								[New:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+									haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>
+									[New:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+										haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>
+										[Field:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+											[Local l(30):haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+											[FInstance:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+												haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>
+												left:haxe.ds.TreeNode<haxe.ds.TreeNode.K, haxe.ds.TreeNode.V>
+										[Field:haxe.ds.BalancedTree.K]
+											[Local l(30):haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+											[FInstance:haxe.ds.BalancedTree.K]
+												haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>
+												key:haxe.ds.TreeNode.K
+										[Field:haxe.ds.BalancedTree.V]
+											[Local l(30):haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+											[FInstance:haxe.ds.BalancedTree.V]
+												haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>
+												value:haxe.ds.TreeNode.V
+										[Field:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+											[Field:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+												[Local l(30):haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+												[FInstance:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+													haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>
+													right:haxe.ds.TreeNode<haxe.ds.TreeNode.K, haxe.ds.TreeNode.V>
+											[FInstance:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+												haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>
+												left:haxe.ds.TreeNode<haxe.ds.TreeNode.K, haxe.ds.TreeNode.V>
+										[Const:Null<Int>] null
+									[Field:haxe.ds.BalancedTree.K]
+										[Field:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+											[Local l(30):haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+											[FInstance:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+												haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>
+												right:haxe.ds.TreeNode<haxe.ds.TreeNode.K, haxe.ds.TreeNode.V>
+										[FInstance:haxe.ds.BalancedTree.K]
+											haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>
+											key:haxe.ds.TreeNode.K
+									[Field:haxe.ds.BalancedTree.V]
+										[Field:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+											[Local l(30):haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+											[FInstance:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+												haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>
+												right:haxe.ds.TreeNode<haxe.ds.TreeNode.K, haxe.ds.TreeNode.V>
+										[FInstance:haxe.ds.BalancedTree.V]
+											haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>
+											value:haxe.ds.TreeNode.V
+									[New:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+										haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>
+										[Field:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+											[Field:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+												[Local l(30):haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+												[FInstance:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+													haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>
+													right:haxe.ds.TreeNode<haxe.ds.TreeNode.K, haxe.ds.TreeNode.V>
+											[FInstance:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+												haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>
+												right:haxe.ds.TreeNode<haxe.ds.TreeNode.K, haxe.ds.TreeNode.V>
+										[Local k(31):haxe.ds.BalancedTree.K:haxe.ds.BalancedTree.K]
+										[Local v(32):haxe.ds.BalancedTree.V:haxe.ds.BalancedTree.V]
+										[Local r(33):haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+										[Const:Null<Int>] null
+									[Const:Null<Int>] null
+					[Else:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>] [Block:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+						[If:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+							[Binop:Bool]
+								[Local hr(39):Int:Int]
+								>
+								[Binop:Int]
+									[Local hl(36):Int:Int]
+									+
+									[Const:Int] 2
+							[Then:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>] [Block:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+								[If:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+									[Binop:Bool]
+										[Block:Int]
+											[Var _this(58):haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+												[Field:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+													[Local r(33):haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+													[FInstance:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+														haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>
+														right:haxe.ds.TreeNode<haxe.ds.TreeNode.K, haxe.ds.TreeNode.V>
+											[If:Int]
+												[Binop:Bool]
+													[Local _this(58):haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+													==
+													[Const:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>] null
+												[Then:Int] [Block:Int] [Const:Int] 0
+												[Else:Int] [Block:Int]
+													[Field:Int]
+														[Local _this(58):haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+														[FInstance:Int]
+															haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>
+															_height:Int
+										>
+										[Block:Int]
+											[Var _this(60):haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+												[Field:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+													[Local r(33):haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+													[FInstance:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+														haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>
+														left:haxe.ds.TreeNode<haxe.ds.TreeNode.K, haxe.ds.TreeNode.V>
+											[If:Int]
+												[Binop:Bool]
+													[Local _this(60):haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+													==
+													[Const:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>] null
+												[Then:Int] [Block:Int] [Const:Int] 0
+												[Else:Int] [Block:Int]
+													[Field:Int]
+														[Local _this(60):haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+														[FInstance:Int]
+															haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>
+															_height:Int
+									[Then:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>] [Block:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+										[New:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+											haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>
+											[New:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+												haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>
+												[Local l(30):haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+												[Local k(31):haxe.ds.BalancedTree.K:haxe.ds.BalancedTree.K]
+												[Local v(32):haxe.ds.BalancedTree.V:haxe.ds.BalancedTree.V]
+												[Field:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+													[Local r(33):haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+													[FInstance:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+														haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>
+														left:haxe.ds.TreeNode<haxe.ds.TreeNode.K, haxe.ds.TreeNode.V>
+												[Const:Null<Int>] null
+											[Field:haxe.ds.BalancedTree.K]
+												[Local r(33):haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+												[FInstance:haxe.ds.BalancedTree.K]
+													haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>
+													key:haxe.ds.TreeNode.K
+											[Field:haxe.ds.BalancedTree.V]
+												[Local r(33):haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+												[FInstance:haxe.ds.BalancedTree.V]
+													haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>
+													value:haxe.ds.TreeNode.V
+											[Field:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+												[Local r(33):haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+												[FInstance:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+													haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>
+													right:haxe.ds.TreeNode<haxe.ds.TreeNode.K, haxe.ds.TreeNode.V>
+											[Const:Null<Int>] null
+									[Else:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>] [Block:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+										[New:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+											haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>
+											[New:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+												haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>
+												[Local l(30):haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+												[Local k(31):haxe.ds.BalancedTree.K:haxe.ds.BalancedTree.K]
+												[Local v(32):haxe.ds.BalancedTree.V:haxe.ds.BalancedTree.V]
+												[Field:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+													[Field:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+														[Local r(33):haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+														[FInstance:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+															haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>
+															left:haxe.ds.TreeNode<haxe.ds.TreeNode.K, haxe.ds.TreeNode.V>
+													[FInstance:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+														haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>
+														left:haxe.ds.TreeNode<haxe.ds.TreeNode.K, haxe.ds.TreeNode.V>
+												[Const:Null<Int>] null
+											[Field:haxe.ds.BalancedTree.K]
+												[Field:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+													[Local r(33):haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+													[FInstance:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+														haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>
+														left:haxe.ds.TreeNode<haxe.ds.TreeNode.K, haxe.ds.TreeNode.V>
+												[FInstance:haxe.ds.BalancedTree.K]
+													haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>
+													key:haxe.ds.TreeNode.K
+											[Field:haxe.ds.BalancedTree.V]
+												[Field:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+													[Local r(33):haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+													[FInstance:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+														haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>
+														left:haxe.ds.TreeNode<haxe.ds.TreeNode.K, haxe.ds.TreeNode.V>
+												[FInstance:haxe.ds.BalancedTree.V]
+													haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>
+													value:haxe.ds.TreeNode.V
+											[New:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+												haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>
+												[Field:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+													[Field:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+														[Local r(33):haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+														[FInstance:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+															haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>
+															left:haxe.ds.TreeNode<haxe.ds.TreeNode.K, haxe.ds.TreeNode.V>
+													[FInstance:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+														haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>
+														right:haxe.ds.TreeNode<haxe.ds.TreeNode.K, haxe.ds.TreeNode.V>
+												[Field:haxe.ds.BalancedTree.K]
+													[Local r(33):haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+													[FInstance:haxe.ds.BalancedTree.K]
+														haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>
+														key:haxe.ds.TreeNode.K
+												[Field:haxe.ds.BalancedTree.V]
+													[Local r(33):haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+													[FInstance:haxe.ds.BalancedTree.V]
+														haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>
+														value:haxe.ds.TreeNode.V
+												[Field:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+													[Local r(33):haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+													[FInstance:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+														haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>
+														right:haxe.ds.TreeNode<haxe.ds.TreeNode.K, haxe.ds.TreeNode.V>
+												[Const:Null<Int>] null
+											[Const:Null<Int>] null
+							[Else:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>] [Block:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+								[New:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+									haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>
+									[Local l(30):haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+									[Local k(31):haxe.ds.BalancedTree.K:haxe.ds.BalancedTree.K]
+									[Local v(32):haxe.ds.BalancedTree.V:haxe.ds.BalancedTree.V]
+									[Local r(33):haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+									[Binop:Int]
+										[Parenthesis:Int]
+											[If:Int]
+												[Binop:Bool]
+													[Local hl(36):Int:Int]
+													>
+													[Local hr(39):Int:Int]
+												[Then:Int] [Block:Int] [Local hl(36):Int:Int]
+												[Else:Int] [Block:Int] [Local hr(39):Int:Int]
+										+
+										[Const:Int] 1
+
+	function compare[Function:(k1 : haxe.ds.BalancedTree.K, k2 : haxe.ds.BalancedTree.K) -> Int]
+		[Arg:haxe.ds.BalancedTree.K] [Local k1(3):haxe.ds.BalancedTree.K]
+		[Arg:haxe.ds.BalancedTree.K] [Local k2(4):haxe.ds.BalancedTree.K]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Call:Int]
+					[Field:(a : haxe.ds.BalancedTree.K, b : haxe.ds.BalancedTree.K) -> Int]
+						[TypeExpr Reflect:Class<Reflect>]
+						[FStatic:(a : haxe.ds.BalancedTree.K, b : haxe.ds.BalancedTree.K) -> Int]
+							Reflect
+							compare:(a : compare.T, b : compare.T) -> Int
+					[Local k1(3):haxe.ds.BalancedTree.K:haxe.ds.BalancedTree.K]
+					[Local k2(4):haxe.ds.BalancedTree.K:haxe.ds.BalancedTree.K]
+
+	public function toString[Function:() -> String]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[If:String]
+					[Binop:Bool]
+						[Field:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+							[Const:haxe.ds.BalancedTree<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>] this
+							[FInstance:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+								haxe.ds.BalancedTree<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>
+								root:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>
+						==
+						[Const:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>] null
+					[Then:String] [Block:String] [Const:String] "[]"
+					[Else:String] [Block:String]
+						[Binop:String]
+							[Binop:String]
+								[Const:String] "["
+								+
+								[Call:String]
+									[Field:() -> String]
+										[Field:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+											[Const:haxe.ds.BalancedTree<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>] this
+											[FInstance:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+												haxe.ds.BalancedTree<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>
+												root:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>
+										[FInstance:() -> String]
+											haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>
+											toString:() -> String
+							+
+							[Const:String] "]"
+
+	public function clear[Function:() -> Void]
+		[Block:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+			[Binop:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+				[Field:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+					[Const:haxe.ds.BalancedTree<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>] this
+					[FInstance:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>]
+						haxe.ds.BalancedTree<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>
+						root:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>
+				=
+				[Const:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>] null
+
+	static function iteratorLoop<K, V>[Function:(node : haxe.ds.TreeNode<iteratorLoop.K, iteratorLoop.V>, acc : Array<iteratorLoop.V>) -> Void]
+		[Arg:haxe.ds.TreeNode<iteratorLoop.K, iteratorLoop.V>] [Local node(10):haxe.ds.TreeNode<iteratorLoop.K, iteratorLoop.V>]
+		[Arg:Array<iteratorLoop.V>] [Local acc(11):Array<iteratorLoop.V>]
+		[Block:Void]
+			[If:Void]
+				[Binop:Bool]
+					[Local node(10):haxe.ds.TreeNode<iteratorLoop.K, iteratorLoop.V>:haxe.ds.TreeNode<iteratorLoop.K, iteratorLoop.V>]
+					!=
+					[Const:haxe.ds.TreeNode<iteratorLoop.K, iteratorLoop.V>] null
+				[Then:Void] [Block:Void]
+					[Call:Void]
+						[Field:(node : haxe.ds.TreeNode<iteratorLoop.K, iteratorLoop.V>, acc : Array<iteratorLoop.V>) -> Void]
+							[TypeExpr haxe.ds.BalancedTree:Class<haxe.ds.BalancedTree>]
+							[FStatic:(node : haxe.ds.TreeNode<iteratorLoop.K, iteratorLoop.V>, acc : Array<iteratorLoop.V>) -> Void]
+								haxe.ds.BalancedTree
+								iteratorLoop:(node : haxe.ds.TreeNode<iteratorLoop.K, iteratorLoop.V>, acc : Array<iteratorLoop.V>) -> Void
+						[Field:haxe.ds.TreeNode<iteratorLoop.K, iteratorLoop.V>]
+							[Local node(10):haxe.ds.TreeNode<iteratorLoop.K, iteratorLoop.V>:haxe.ds.TreeNode<iteratorLoop.K, iteratorLoop.V>]
+							[FInstance:haxe.ds.TreeNode<iteratorLoop.K, iteratorLoop.V>]
+								haxe.ds.TreeNode<iteratorLoop.K, iteratorLoop.V>
+								left:haxe.ds.TreeNode<haxe.ds.TreeNode.K, haxe.ds.TreeNode.V>
+						[Local acc(11):Array<iteratorLoop.V>:Array<iteratorLoop.V>]
+					[Call:Int]
+						[Field:(x : iteratorLoop.V) -> Int]
+							[Local acc(11):Array<iteratorLoop.V>:Array<iteratorLoop.V>]
+							[FInstance:(x : iteratorLoop.V) -> Int]
+								Array<iteratorLoop.V>
+								push:(x : Array.T) -> Int
+						[Field:iteratorLoop.V]
+							[Local node(10):haxe.ds.TreeNode<iteratorLoop.K, iteratorLoop.V>:haxe.ds.TreeNode<iteratorLoop.K, iteratorLoop.V>]
+							[FInstance:iteratorLoop.V]
+								haxe.ds.TreeNode<iteratorLoop.K, iteratorLoop.V>
+								value:haxe.ds.TreeNode.V
+					[Call:Void]
+						[Field:(node : haxe.ds.TreeNode<iteratorLoop.K, iteratorLoop.V>, acc : Array<iteratorLoop.V>) -> Void]
+							[TypeExpr haxe.ds.BalancedTree:Class<haxe.ds.BalancedTree>]
+							[FStatic:(node : haxe.ds.TreeNode<iteratorLoop.K, iteratorLoop.V>, acc : Array<iteratorLoop.V>) -> Void]
+								haxe.ds.BalancedTree
+								iteratorLoop:(node : haxe.ds.TreeNode<iteratorLoop.K, iteratorLoop.V>, acc : Array<iteratorLoop.V>) -> Void
+						[Field:haxe.ds.TreeNode<iteratorLoop.K, iteratorLoop.V>]
+							[Local node(10):haxe.ds.TreeNode<iteratorLoop.K, iteratorLoop.V>:haxe.ds.TreeNode<iteratorLoop.K, iteratorLoop.V>]
+							[FInstance:haxe.ds.TreeNode<iteratorLoop.K, iteratorLoop.V>]
+								haxe.ds.TreeNode<iteratorLoop.K, iteratorLoop.V>
+								right:haxe.ds.TreeNode<haxe.ds.TreeNode.K, haxe.ds.TreeNode.V>
+						[Local acc(11):Array<iteratorLoop.V>:Array<iteratorLoop.V>]
+}

@@ -218,6 +218,9 @@ class ElixirCompiler extends DirectToStringCompiler {
     private var isCompilingAbstractMethod: Bool = false;
     public var isCompilingCaseArm: Bool = false;
     
+    // Track when we're inside enum parameter extraction to prevent incorrect variable mappings
+    public var isInEnumExtraction: Bool = false;
+    
     // Current class context for app name resolution and other class-specific operations
     public var currentClassType: Null<ClassType> = null;
     

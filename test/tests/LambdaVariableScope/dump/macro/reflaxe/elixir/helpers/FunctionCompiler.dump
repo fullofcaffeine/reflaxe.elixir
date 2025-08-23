@@ -1,0 +1,308 @@
+@:nullSafety(Off)
+class reflaxe.elixir.helpers.FunctionCompiler {
+
+	public function new[Function:(compiler : reflaxe.elixir.ElixirCompiler) -> Void]
+		[Arg:reflaxe.elixir.ElixirCompiler] [Local compiler(26211):reflaxe.elixir.ElixirCompiler]
+		[Block:reflaxe.elixir.ElixirCompiler]
+			[Binop:reflaxe.elixir.ElixirCompiler]
+				[Field:reflaxe.elixir.ElixirCompiler]
+					[Const:reflaxe.elixir.helpers.FunctionCompiler] this
+					[FInstance:reflaxe.elixir.ElixirCompiler]
+						reflaxe.elixir.helpers.FunctionCompiler
+						compiler:reflaxe.elixir.ElixirCompiler
+				=
+				[Local compiler(26211):reflaxe.elixir.ElixirCompiler:reflaxe.elixir.ElixirCompiler]
+
+	var compiler:reflaxe.elixir.ElixirCompiler;
+
+	@:value({ isStatic : false })
+	public function compileFunction[Function:(funcField : reflaxe.data.ClassFuncData, ?isStatic : Bool) -> String]
+		[Arg:reflaxe.data.ClassFuncData] [Local funcField(25125):reflaxe.data.ClassFuncData]
+		[Arg:Bool]
+			[Local isStatic(25126):Bool]
+			[Const:Bool] false
+		[Block:Dynamic]
+			[Var funcName(25127):String]
+				[Call:String]
+					[Field:(haxeName : String) -> String]
+						[TypeExpr reflaxe.elixir.helpers.NamingHelper:Class<reflaxe.elixir.helpers.NamingHelper>]
+						[FStatic:(haxeName : String) -> String]
+							reflaxe.elixir.helpers.NamingHelper
+							getElixirFunctionName:(haxeName : String) -> String
+					[Field:String]
+						[Field:haxe.macro.ClassField]
+							[Local funcField(25125):reflaxe.data.ClassFuncData:reflaxe.data.ClassFuncData]
+							[FInstance:haxe.macro.ClassField]
+								reflaxe.data.ClassFuncData
+								field:haxe.macro.ClassField
+						[FAnon:String] name:String
+			[Var paramStr(25128):String] [Const:String] ""
+			[Var liveViewParams(25129):Null<String>]
+				[Call:Null<String>]
+					[Field:(funcName : String) -> Null<String>]
+						[TypeExpr reflaxe.elixir.LiveViewCompiler:Class<reflaxe.elixir.LiveViewCompiler>]
+						[FStatic:(funcName : String) -> Null<String>]
+							reflaxe.elixir.LiveViewCompiler
+							getLiveViewCallbackParams:(funcName : String) -> Null<String>
+					[Local funcName(25127):String:String]
+			[If:Void]
+				[Binop:Bool]
+					[Local liveViewParams(25129):Null<String>:Null<String>]
+					!=
+					[Const:Null<String>] null
+				[Then:String] [Block:String]
+					[Binop:String]
+						[Local paramStr(25128):String:String]
+						=
+						[Local liveViewParams(25129):Null<String>:Null<String>]
+				[Else:String] [Block:String]
+					[Var params(25130):Array<String>] [ArrayDecl:Array<String>]
+					[Block:Void]
+						[Var `(25135):Int] [Const:Int] 0
+						[Var `(25136):Int]
+							[Field:Int]
+								[Field:Array<reflaxe.data.ClassFuncArg>]
+									[Local funcField(25125):reflaxe.data.ClassFuncData:reflaxe.data.ClassFuncData]
+									[FInstance:Array<reflaxe.data.ClassFuncArg>]
+										reflaxe.data.ClassFuncData
+										args:Array<reflaxe.data.ClassFuncArg>
+								[FInstance:Int]
+									Array<reflaxe.data.ClassFuncArg>
+									length:Int
+						[While:Void]
+							[Binop:Bool]
+								[Local `(25135):Int:Int]
+								<
+								[Local `(25136):Int:Int]
+							[Block:Int]
+								[Var i(25131):Int]
+									[Unop:Int]
+										++
+										Postfix
+										[Local `(25135):Int:Int]
+								[Var arg(25132):reflaxe.data.ClassFuncArg]
+									[Array:reflaxe.data.ClassFuncArg]
+										[Field:Array<reflaxe.data.ClassFuncArg>]
+											[Local funcField(25125):reflaxe.data.ClassFuncData:reflaxe.data.ClassFuncData]
+											[FInstance:Array<reflaxe.data.ClassFuncArg>]
+												reflaxe.data.ClassFuncData
+												args:Array<reflaxe.data.ClassFuncArg>
+										[Local i(25131):Int:Int]
+								[Var originalName(25133):String]
+									[If:String]
+										[Binop:Bool]
+											[Field:Null<haxe.macro.TVar>]
+												[Local arg(25132):reflaxe.data.ClassFuncArg:reflaxe.data.ClassFuncArg]
+												[FInstance:Null<haxe.macro.TVar>]
+													reflaxe.data.ClassFuncArg
+													tvar:Null<haxe.macro.TVar>
+											!=
+											[Const:Null<haxe.macro.TVar>] null
+										[Then:String] [Block:String]
+											[Field:String]
+												[Field:Null<haxe.macro.TVar>]
+													[Local arg(25132):reflaxe.data.ClassFuncArg:reflaxe.data.ClassFuncArg]
+													[FInstance:Null<haxe.macro.TVar>]
+														reflaxe.data.ClassFuncArg
+														tvar:Null<haxe.macro.TVar>
+												[FAnon:String] name:String
+										[Else:String] [Block:String]
+											[Call:String]
+												[Field:() -> String]
+													[Local arg(25132):reflaxe.data.ClassFuncArg:reflaxe.data.ClassFuncArg]
+													[FInstance:() -> String]
+														reflaxe.data.ClassFuncArg
+														getName:() -> String
+								[Var paramName(25134):String]
+									[Call:String]
+										[Field:(camelCase : String) -> String]
+											[TypeExpr reflaxe.elixir.helpers.NamingHelper:Class<reflaxe.elixir.helpers.NamingHelper>]
+											[FStatic:(camelCase : String) -> String]
+												reflaxe.elixir.helpers.NamingHelper
+												toSnakeCase:(camelCase : String) -> String
+										[Local originalName(25133):String:String]
+								[Call:Int]
+									[Field:(x : String) -> Int]
+										[Local params(25130):Array<String>:Array<String>]
+										[FInstance:(x : String) -> Int]
+											Array<String>
+											push:(x : Array.T) -> Int
+									[Local paramName(25134):String:String]
+					[Binop:String]
+						[Local paramStr(25128):String:String]
+						=
+						[Call:String]
+							[Field:(sep : String) -> String]
+								[Local params(25130):Array<String>:Array<String>]
+								[FInstance:(sep : String) -> String]
+									Array<String>
+									join:(sep : String) -> String
+							[Const:String] ", "
+			[Var result(25137):String]
+				[Binop:String]
+					[Binop:String]
+						[Const:String] "  @doc \"Generated from Haxe "
+						+
+						[Field:String]
+							[Field:haxe.macro.ClassField]
+								[Local funcField(25125):reflaxe.data.ClassFuncData:reflaxe.data.ClassFuncData]
+								[FInstance:haxe.macro.ClassField]
+									reflaxe.data.ClassFuncData
+									field:haxe.macro.ClassField
+							[FAnon:String] name:String
+					+
+					[Const:String] "\"\n"
+			[Binop:String]
+				[Local result(25137):String:String]
+				+=
+				[Binop:String]
+					[Binop:String]
+						[Binop:String]
+							[Binop:String]
+								[Const:String] "  def "
+								+
+								[Local funcName(25127):String:String]
+							+
+							[Const:String] "("
+						+
+						[Local paramStr(25128):String:String]
+					+
+					[Const:String] ") do\n"
+			[If:Void]
+				[Binop:Bool]
+					[Field:Null<haxe.macro.TypedExpr>]
+						[Local funcField(25125):reflaxe.data.ClassFuncData:reflaxe.data.ClassFuncData]
+						[FInstance:Null<haxe.macro.TypedExpr>]
+							reflaxe.data.ClassFuncData
+							expr:Null<haxe.macro.TypedExpr>
+					!=
+					[Const:Null<haxe.macro.TypedExpr>] null
+				[Then:Void] [Block:Void]
+					[Var compiledBody(25138):Null<String>]
+						[Call:Null<String>]
+							[Field:(expr : haxe.macro.TypedExpr, topLevel : Bool) -> Null<String>]
+								[Field:reflaxe.elixir.ElixirCompiler]
+									[Const:reflaxe.elixir.helpers.FunctionCompiler] this
+									[FInstance:reflaxe.elixir.ElixirCompiler]
+										reflaxe.elixir.helpers.FunctionCompiler
+										compiler:reflaxe.elixir.ElixirCompiler
+								[FInstance:(expr : haxe.macro.TypedExpr, topLevel : Bool) -> Null<String>]
+									reflaxe.elixir.ElixirCompiler
+									compileExpressionImpl:(expr : haxe.macro.TypedExpr, topLevel : Bool) -> Null<String>
+							[Field:Null<haxe.macro.TypedExpr>]
+								[Local funcField(25125):reflaxe.data.ClassFuncData:reflaxe.data.ClassFuncData]
+								[FInstance:Null<haxe.macro.TypedExpr>]
+									reflaxe.data.ClassFuncData
+									expr:Null<haxe.macro.TypedExpr>
+							[Const:Bool] true
+					[If:Void]
+						[Binop:Bool]
+							[Binop:Bool]
+								[Local compiledBody(25138):Null<String>:Null<String>]
+								!=
+								[Const:Null<String>] null
+							&&
+							[Binop:Bool]
+								[Call:String]
+									[Field:(s : String) -> String]
+										[TypeExpr StringTools:{ Statics StringTools }]
+										[FStatic:(s : String) -> String]
+											StringTools
+											trim:(s : String) -> String
+									[Local compiledBody(25138):Null<String>:Null<String>]
+								!=
+								[Const:String] ""
+						[Then:String] [Block:String]
+							[Var indentedBody(25148):String]
+								[Call:String]
+									[Field:(sep : String) -> String]
+										[Block:Array<String>]
+											[Var _this(25141):Array<String>]
+												[Call:Array<String>]
+													[Field:(delimiter : String) -> Array<String>]
+														[Local compiledBody(25138):Null<String>:Null<String>]
+														[FInstance:(delimiter : String) -> Array<String>]
+															String
+															split:(delimiter : String) -> Array<String>
+													[Const:String] "\n"
+											[Block:Array<String>]
+												[Var `(25143):Array<String>] [ArrayDecl:Array<String>]
+												[Block:Void]
+													[Var `(25144):Int] [Const:Int] 0
+													[Var `(25145):Array<String>] [Local _this(25141):Array<String>:Array<String>]
+													[While:Void]
+														[Binop:Bool]
+															[Local `(25144):Int:Int]
+															<
+															[Field:Int]
+																[Local `(25145):Array<String>:Array<String>]
+																[FInstance:Int]
+																	Array<String>
+																	length:Int
+														[Block:Void]
+															[Var v(25146):String]
+																[Array:String]
+																	[Local `(25145):Array<String>:Array<String>]
+																	[Local `(25144):Int:Int]
+															[Unop:Int]
+																++
+																Prefix
+																[Local `(25144):Int:Int]
+															[Call:Int]
+																[Field:(x : String) -> Int]
+																	[Local `(25143):Array<String>:Array<String>]
+																	[FInstance:(x : String) -> Int]
+																		Array<String>
+																		push:(x : Array.T) -> Int
+																[Call:String]
+																	[Function:(line : String) -> String]
+																		[Arg:String] [Local line(25147):String]
+																		[Block:Dynamic]
+																			[Return:Dynamic]
+																				[If:String]
+																					[Parenthesis:Bool]
+																						[Binop:Bool]
+																							[Field:Int]
+																								[Local line(25147):String:String]
+																								[FInstance:Int]
+																									String
+																									length:Int
+																							>
+																							[Const:Int] 0
+																					[Then:String] [Binop:String]
+																						[Const:String] "    "
+																						+
+																						[Local line(25147):String:String]
+																					[Else:String] [Local line(25147):String:String]
+																	[Local v(25146):String:String]
+												[Local `(25143):Array<String>:Array<String>]
+										[FInstance:(sep : String) -> String]
+											Array<String>
+											join:(sep : String) -> String
+									[Const:String] "\n"
+							[Binop:String]
+								[Local result(25137):String:String]
+								+=
+								[Binop:String]
+									[Binop:String]
+										[Const:String] ""
+										+
+										[Local indentedBody(25148):String:String]
+									+
+									[Const:String] "\n"
+						[Else:String] [Block:String]
+							[Binop:String]
+								[Local result(25137):String:String]
+								+=
+								[Const:String] "    nil\n"
+				[Else:String] [Block:String]
+					[Binop:String]
+						[Local result(25137):String:String]
+						+=
+						[Const:String] "    nil\n"
+			[Binop:String]
+				[Local result(25137):String:String]
+				+=
+				[Const:String] "  end\n\n"
+			[Return:Dynamic] [Local result(25137):String:String]
+}

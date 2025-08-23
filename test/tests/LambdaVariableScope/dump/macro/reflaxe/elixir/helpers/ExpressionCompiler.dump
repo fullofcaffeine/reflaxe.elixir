@@ -1,0 +1,507 @@
+@:nullSafety(Off)
+class reflaxe.elixir.helpers.ExpressionCompiler {
+
+	@:value({ parameterMap : null, isInLoopContext : false })
+	static function createCompilationContext[Function:(?isInLoopContext : Bool, ?parameterMap : Null<Map<String, String>>) -> reflaxe.elixir.helpers.CompilationContext]
+		[Arg:Bool]
+			[Local isInLoopContext(22192):Bool]
+			[Const:Bool] false
+		[Arg:Null<Map<String, String>>]
+			[Local parameterMap(22193):Null<Map<String, String>>]
+			[Const:Null<Map<String, String>>] null
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[ObjectDecl:{ isInLoopContext : Bool, currentParameterMap : Map<String, String> }]
+					isInLoopContext: [Local isInLoopContext(22192):Bool:Bool]
+					currentParameterMap: [If:Map<String, String>]
+						[Binop:Bool]
+							[Local parameterMap(22193):Null<Map<String, String>>:Null<Map<String, String>>]
+							!=
+							[Const:Null<Map<String, String>>] null
+						[Then:Null<Map<String, String>>] [Block:Null<Map<String, String>>] [Local parameterMap(22193):Null<Map<String, String>>:Null<Map<String, String>>]
+						[Else:haxe.ds.Map<String, String>] [Block:haxe.ds.Map<String, String>]
+							[Block:haxe.ds.StringMap<String>]
+								[Block:Void]
+								[New:haxe.ds.StringMap<String>] haxe.ds.StringMap<String>
+
+	@:value({ defaultParamName : "item" })
+	public static function compileLambdaWithContext[Function:(compiler : Dynamic, func : haxe.macro.TFunc, ?defaultParamName : String) -> reflaxe.elixir.helpers.LambdaResult]
+		[Arg:Dynamic] [Local compiler(22185):Dynamic]
+		[Arg:haxe.macro.TFunc] [Local func(22186):haxe.macro.TFunc]
+		[Arg:String]
+			[Local defaultParamName(22187):String]
+			[Const:String] "item"
+		[Block:Dynamic]
+			[Var paramName(22190):String]
+				[If:String]
+					[Binop:Bool]
+						[Field:Int]
+							[Field:Array<{ value : Null<haxe.macro.TypedExpr>, v : haxe.macro.TVar }>]
+								[Local func(22186):haxe.macro.TFunc:haxe.macro.TFunc]
+								[FAnon:Array<{ value : Null<haxe.macro.TypedExpr>, v : haxe.macro.TVar }>] args:Array<{ value : Null<haxe.macro.TypedExpr>, v : haxe.macro.TVar }>
+							[FInstance:Int]
+								Array<{ value : Null<haxe.macro.TypedExpr>, v : haxe.macro.TVar }>
+								length:Int
+						>
+						[Const:Int] 0
+					[Then:String] [Block:String]
+						[Call:String]
+							[Field:(camelCase : String) -> String]
+								[TypeExpr reflaxe.elixir.helpers.NamingHelper:Class<reflaxe.elixir.helpers.NamingHelper>]
+								[FStatic:(camelCase : String) -> String]
+									reflaxe.elixir.helpers.NamingHelper
+									toSnakeCase:(camelCase : String) -> String
+							[Call:String]
+								[Field:(compiler : Dynamic, v : haxe.macro.TVar) -> String]
+									[TypeExpr reflaxe.elixir.helpers.ExpressionCompiler:Class<reflaxe.elixir.helpers.ExpressionCompiler>]
+									[FStatic:(compiler : Dynamic, v : haxe.macro.TVar) -> String]
+										reflaxe.elixir.helpers.ExpressionCompiler
+										getOriginalVarName:(compiler : Dynamic, v : haxe.macro.TVar) -> String
+								[Local compiler(22185):Dynamic:Dynamic]
+								[Field:haxe.macro.TVar]
+									[Array:{ value : Null<haxe.macro.TypedExpr>, v : haxe.macro.TVar }]
+										[Field:Array<{ value : Null<haxe.macro.TypedExpr>, v : haxe.macro.TVar }>]
+											[Local func(22186):haxe.macro.TFunc:haxe.macro.TFunc]
+											[FAnon:Array<{ value : Null<haxe.macro.TypedExpr>, v : haxe.macro.TVar }>] args:Array<{ value : Null<haxe.macro.TypedExpr>, v : haxe.macro.TVar }>
+										[Const:Int] 0
+									[FAnon:haxe.macro.TVar] v:haxe.macro.TVar
+					[Else:String] [Block:String] [Local defaultParamName(22187):String:String]
+			[Var paramTVar(22191):Null<Null<haxe.macro.TVar>>]
+				[If:Null<haxe.macro.TVar>]
+					[Binop:Bool]
+						[Field:Int]
+							[Field:Array<{ value : Null<haxe.macro.TypedExpr>, v : haxe.macro.TVar }>]
+								[Local func(22186):haxe.macro.TFunc:haxe.macro.TFunc]
+								[FAnon:Array<{ value : Null<haxe.macro.TypedExpr>, v : haxe.macro.TVar }>] args:Array<{ value : Null<haxe.macro.TypedExpr>, v : haxe.macro.TVar }>
+							[FInstance:Int]
+								Array<{ value : Null<haxe.macro.TypedExpr>, v : haxe.macro.TVar }>
+								length:Int
+						>
+						[Const:Int] 0
+					[Then:haxe.macro.TVar] [Block:haxe.macro.TVar]
+						[Field:haxe.macro.TVar]
+							[Array:{ value : Null<haxe.macro.TypedExpr>, v : haxe.macro.TVar }]
+								[Field:Array<{ value : Null<haxe.macro.TypedExpr>, v : haxe.macro.TVar }>]
+									[Local func(22186):haxe.macro.TFunc:haxe.macro.TFunc]
+									[FAnon:Array<{ value : Null<haxe.macro.TypedExpr>, v : haxe.macro.TVar }>] args:Array<{ value : Null<haxe.macro.TypedExpr>, v : haxe.macro.TVar }>
+								[Const:Int] 0
+							[FAnon:haxe.macro.TVar] v:haxe.macro.TVar
+					[Else:Null<Null<haxe.macro.TVar>>] [Block:Null<Null<haxe.macro.TVar>>] [Const:Null<Null<haxe.macro.TVar>>] null
+			[Var context(22194):reflaxe.elixir.helpers.CompilationContext]
+				[Call:reflaxe.elixir.helpers.CompilationContext]
+					[Field:(?isInLoopContext : Bool, ?parameterMap : Null<Map<String, String>>) -> reflaxe.elixir.helpers.CompilationContext]
+						[TypeExpr reflaxe.elixir.helpers.ExpressionCompiler:Class<reflaxe.elixir.helpers.ExpressionCompiler>]
+						[FStatic:(?isInLoopContext : Bool, ?parameterMap : Null<Map<String, String>>) -> reflaxe.elixir.helpers.CompilationContext]
+							reflaxe.elixir.helpers.ExpressionCompiler
+							createCompilationContext:(?isInLoopContext : Bool, ?parameterMap : Null<Map<String, String>>) -> reflaxe.elixir.helpers.CompilationContext
+					[Const:Bool] true
+					[Const:Null<Map<String, String>>] null
+			[Var body(22211):String]
+				[Call:String]
+					[Field:(compiler : Dynamic, context : reflaxe.elixir.helpers.CompilationContext, compilationFn : (() -> String)) -> String]
+						[TypeExpr reflaxe.elixir.helpers.ExpressionCompiler:Class<reflaxe.elixir.helpers.ExpressionCompiler>]
+						[FStatic:(compiler : Dynamic, context : reflaxe.elixir.helpers.CompilationContext, compilationFn : (() -> String)) -> String]
+							reflaxe.elixir.helpers.ExpressionCompiler
+							withContext:(compiler : Dynamic, context : reflaxe.elixir.helpers.CompilationContext, compilationFn : (() -> withContext.T)) -> withContext.T
+					[Local compiler(22185):Dynamic:Dynamic]
+					[Local context(22194):reflaxe.elixir.helpers.CompilationContext:reflaxe.elixir.helpers.CompilationContext]
+					[Function:() -> String]
+						[Return:Dynamic]
+							[Block:String]
+								[If:String]
+									[Binop:Bool]
+										[Local paramTVar(22191):Null<Null<haxe.macro.TVar>>:Null<Null<haxe.macro.TVar>>]
+										!=
+										[Const:Null<Null<haxe.macro.TVar>>] null
+									[Then:String] [Block:String]
+										[Call:Void]
+											[Field:(v : Dynamic, ?infos : Null<haxe.PosInfos>) -> Void]
+												[TypeExpr haxe.Log:Class<haxe.Log>]
+												[FStatic:(v : Dynamic, ?infos : Null<haxe.PosInfos>) -> Void]
+													haxe.Log
+													trace:(v : Dynamic, ?infos : Null<haxe.PosInfos>) -> Void
+											[Binop:String]
+												[Binop:String]
+													[Binop:String]
+														[Binop:String]
+															[Binop:String]
+																[Const:String] "ExpressionCompiler: Substituting "
+																+
+																[Field:String]
+																	[Local paramTVar(22191):Null<Null<haxe.macro.TVar>>:Null<Null<haxe.macro.TVar>>]
+																	[FAnon:String] name:String
+															+
+															[Const:String] " (id: "
+														+
+														[Field:Int]
+															[Local paramTVar(22191):Null<Null<haxe.macro.TVar>>:Null<Null<haxe.macro.TVar>>]
+															[FAnon:Int] id:Int
+													+
+													[Const:String] ") with "
+												+
+												[Local paramName(22190):String:String]
+											[ObjectDecl:{ methodName : String, lineNumber : Int, fileName : String, ?customParams : Null<Array<Dynamic>>, className : String }]
+												fileName: [Const:String] "../../../src/reflaxe/elixir/helpers/ExpressionCompiler.hx"
+												lineNumber: [Const:Int] 120
+												className: [Const:String] "reflaxe.elixir.helpers.ExpressionCompiler"
+												methodName: [Const:String] "compileLambdaWithContext"
+										[Var result(22210):String]
+											[Call:Dynamic]
+												[Field:Dynamic]
+													[Local compiler(22185):Dynamic:Dynamic]
+													[FDynamic:Dynamic] compileExpressionWithTVarSubstitution
+												[Field:haxe.macro.TypedExpr]
+													[Local func(22186):haxe.macro.TFunc:haxe.macro.TFunc]
+													[FAnon:haxe.macro.TypedExpr] expr:haxe.macro.TypedExpr
+												[Local paramTVar(22191):Null<Null<haxe.macro.TVar>>:Null<Null<haxe.macro.TVar>>]
+												[Local paramName(22190):String:String]
+										[Call:Void]
+											[Field:(v : Dynamic, ?infos : Null<haxe.PosInfos>) -> Void]
+												[TypeExpr haxe.Log:Class<haxe.Log>]
+												[FStatic:(v : Dynamic, ?infos : Null<haxe.PosInfos>) -> Void]
+													haxe.Log
+													trace:(v : Dynamic, ?infos : Null<haxe.PosInfos>) -> Void
+											[Binop:String]
+												[Const:String] "ExpressionCompiler: Substitution result: "
+												+
+												[Local result(22210):String:String]
+											[ObjectDecl:{ methodName : String, lineNumber : Int, fileName : String, ?customParams : Null<Array<Dynamic>>, className : String }]
+												fileName: [Const:String] "../../../src/reflaxe/elixir/helpers/ExpressionCompiler.hx"
+												lineNumber: [Const:Int] 122
+												className: [Const:String] "reflaxe.elixir.helpers.ExpressionCompiler"
+												methodName: [Const:String] "compileLambdaWithContext"
+										[Return:String] [Local result(22210):String:String]
+									[Else:String] [Block:String]
+										[Return:String]
+											[Call:Dynamic]
+												[Field:Dynamic]
+													[Local compiler(22185):Dynamic:Dynamic]
+													[FDynamic:Dynamic] compileExpression
+												[Field:haxe.macro.TypedExpr]
+													[Local func(22186):haxe.macro.TFunc:haxe.macro.TFunc]
+													[FAnon:haxe.macro.TypedExpr] expr:haxe.macro.TypedExpr
+			[Return:Dynamic]
+				[ObjectDecl:{ paramName : String, body : String }]
+					paramName: [Local paramName(22190):String:String]
+					body: [Local body(22211):String:String]
+
+	@:value({ param2Default : "item", param1Default : "acc" })
+	public static function compileTwoParamLambdaWithContext[Function:(compiler : Dynamic, func : haxe.macro.TFunc, ?param1Default : String, ?param2Default : String) -> reflaxe.elixir.helpers.TwoParamLambdaResult]
+		[Arg:Dynamic] [Local compiler(27026):Dynamic]
+		[Arg:haxe.macro.TFunc] [Local func(27027):haxe.macro.TFunc]
+		[Arg:String]
+			[Local param1Default(27028):String]
+			[Const:String] "acc"
+		[Arg:String]
+			[Local param2Default(27029):String]
+			[Const:String] "item"
+		[Block:Dynamic]
+			[Var param1(27030):String]
+				[If:String]
+					[Binop:Bool]
+						[Field:Int]
+							[Field:Array<{ value : Null<haxe.macro.TypedExpr>, v : haxe.macro.TVar }>]
+								[Local func(27027):haxe.macro.TFunc:haxe.macro.TFunc]
+								[FAnon:Array<{ value : Null<haxe.macro.TypedExpr>, v : haxe.macro.TVar }>] args:Array<{ value : Null<haxe.macro.TypedExpr>, v : haxe.macro.TVar }>
+							[FInstance:Int]
+								Array<{ value : Null<haxe.macro.TypedExpr>, v : haxe.macro.TVar }>
+								length:Int
+						>
+						[Const:Int] 0
+					[Then:String] [Block:String]
+						[Call:String]
+							[Field:(camelCase : String) -> String]
+								[TypeExpr reflaxe.elixir.helpers.NamingHelper:Class<reflaxe.elixir.helpers.NamingHelper>]
+								[FStatic:(camelCase : String) -> String]
+									reflaxe.elixir.helpers.NamingHelper
+									toSnakeCase:(camelCase : String) -> String
+							[Call:String]
+								[Field:(compiler : Dynamic, v : haxe.macro.TVar) -> String]
+									[TypeExpr reflaxe.elixir.helpers.ExpressionCompiler:Class<reflaxe.elixir.helpers.ExpressionCompiler>]
+									[FStatic:(compiler : Dynamic, v : haxe.macro.TVar) -> String]
+										reflaxe.elixir.helpers.ExpressionCompiler
+										getOriginalVarName:(compiler : Dynamic, v : haxe.macro.TVar) -> String
+								[Local compiler(27026):Dynamic:Dynamic]
+								[Field:haxe.macro.TVar]
+									[Array:{ value : Null<haxe.macro.TypedExpr>, v : haxe.macro.TVar }]
+										[Field:Array<{ value : Null<haxe.macro.TypedExpr>, v : haxe.macro.TVar }>]
+											[Local func(27027):haxe.macro.TFunc:haxe.macro.TFunc]
+											[FAnon:Array<{ value : Null<haxe.macro.TypedExpr>, v : haxe.macro.TVar }>] args:Array<{ value : Null<haxe.macro.TypedExpr>, v : haxe.macro.TVar }>
+										[Const:Int] 0
+									[FAnon:haxe.macro.TVar] v:haxe.macro.TVar
+					[Else:String] [Block:String] [Local param1Default(27028):String:String]
+			[Var param2(27031):String]
+				[If:String]
+					[Binop:Bool]
+						[Field:Int]
+							[Field:Array<{ value : Null<haxe.macro.TypedExpr>, v : haxe.macro.TVar }>]
+								[Local func(27027):haxe.macro.TFunc:haxe.macro.TFunc]
+								[FAnon:Array<{ value : Null<haxe.macro.TypedExpr>, v : haxe.macro.TVar }>] args:Array<{ value : Null<haxe.macro.TypedExpr>, v : haxe.macro.TVar }>
+							[FInstance:Int]
+								Array<{ value : Null<haxe.macro.TypedExpr>, v : haxe.macro.TVar }>
+								length:Int
+						>
+						[Const:Int] 1
+					[Then:String] [Block:String]
+						[Call:String]
+							[Field:(camelCase : String) -> String]
+								[TypeExpr reflaxe.elixir.helpers.NamingHelper:Class<reflaxe.elixir.helpers.NamingHelper>]
+								[FStatic:(camelCase : String) -> String]
+									reflaxe.elixir.helpers.NamingHelper
+									toSnakeCase:(camelCase : String) -> String
+							[Call:String]
+								[Field:(compiler : Dynamic, v : haxe.macro.TVar) -> String]
+									[TypeExpr reflaxe.elixir.helpers.ExpressionCompiler:Class<reflaxe.elixir.helpers.ExpressionCompiler>]
+									[FStatic:(compiler : Dynamic, v : haxe.macro.TVar) -> String]
+										reflaxe.elixir.helpers.ExpressionCompiler
+										getOriginalVarName:(compiler : Dynamic, v : haxe.macro.TVar) -> String
+								[Local compiler(27026):Dynamic:Dynamic]
+								[Field:haxe.macro.TVar]
+									[Array:{ value : Null<haxe.macro.TypedExpr>, v : haxe.macro.TVar }]
+										[Field:Array<{ value : Null<haxe.macro.TypedExpr>, v : haxe.macro.TVar }>]
+											[Local func(27027):haxe.macro.TFunc:haxe.macro.TFunc]
+											[FAnon:Array<{ value : Null<haxe.macro.TypedExpr>, v : haxe.macro.TVar }>] args:Array<{ value : Null<haxe.macro.TypedExpr>, v : haxe.macro.TVar }>
+										[Const:Int] 1
+									[FAnon:haxe.macro.TVar] v:haxe.macro.TVar
+					[Else:String] [Block:String] [Local param2Default(27029):String:String]
+			[Var param1TVar(27032):Null<Null<haxe.macro.TVar>>]
+				[If:Null<haxe.macro.TVar>]
+					[Binop:Bool]
+						[Field:Int]
+							[Field:Array<{ value : Null<haxe.macro.TypedExpr>, v : haxe.macro.TVar }>]
+								[Local func(27027):haxe.macro.TFunc:haxe.macro.TFunc]
+								[FAnon:Array<{ value : Null<haxe.macro.TypedExpr>, v : haxe.macro.TVar }>] args:Array<{ value : Null<haxe.macro.TypedExpr>, v : haxe.macro.TVar }>
+							[FInstance:Int]
+								Array<{ value : Null<haxe.macro.TypedExpr>, v : haxe.macro.TVar }>
+								length:Int
+						>
+						[Const:Int] 0
+					[Then:haxe.macro.TVar] [Block:haxe.macro.TVar]
+						[Field:haxe.macro.TVar]
+							[Array:{ value : Null<haxe.macro.TypedExpr>, v : haxe.macro.TVar }]
+								[Field:Array<{ value : Null<haxe.macro.TypedExpr>, v : haxe.macro.TVar }>]
+									[Local func(27027):haxe.macro.TFunc:haxe.macro.TFunc]
+									[FAnon:Array<{ value : Null<haxe.macro.TypedExpr>, v : haxe.macro.TVar }>] args:Array<{ value : Null<haxe.macro.TypedExpr>, v : haxe.macro.TVar }>
+								[Const:Int] 0
+							[FAnon:haxe.macro.TVar] v:haxe.macro.TVar
+					[Else:Null<Null<haxe.macro.TVar>>] [Block:Null<Null<haxe.macro.TVar>>] [Const:Null<Null<haxe.macro.TVar>>] null
+			[Var param2TVar(27033):Null<Null<haxe.macro.TVar>>]
+				[If:Null<haxe.macro.TVar>]
+					[Binop:Bool]
+						[Field:Int]
+							[Field:Array<{ value : Null<haxe.macro.TypedExpr>, v : haxe.macro.TVar }>]
+								[Local func(27027):haxe.macro.TFunc:haxe.macro.TFunc]
+								[FAnon:Array<{ value : Null<haxe.macro.TypedExpr>, v : haxe.macro.TVar }>] args:Array<{ value : Null<haxe.macro.TypedExpr>, v : haxe.macro.TVar }>
+							[FInstance:Int]
+								Array<{ value : Null<haxe.macro.TypedExpr>, v : haxe.macro.TVar }>
+								length:Int
+						>
+						[Const:Int] 1
+					[Then:haxe.macro.TVar] [Block:haxe.macro.TVar]
+						[Field:haxe.macro.TVar]
+							[Array:{ value : Null<haxe.macro.TypedExpr>, v : haxe.macro.TVar }]
+								[Field:Array<{ value : Null<haxe.macro.TypedExpr>, v : haxe.macro.TVar }>]
+									[Local func(27027):haxe.macro.TFunc:haxe.macro.TFunc]
+									[FAnon:Array<{ value : Null<haxe.macro.TypedExpr>, v : haxe.macro.TVar }>] args:Array<{ value : Null<haxe.macro.TypedExpr>, v : haxe.macro.TVar }>
+								[Const:Int] 1
+							[FAnon:haxe.macro.TVar] v:haxe.macro.TVar
+					[Else:Null<Null<haxe.macro.TVar>>] [Block:Null<Null<haxe.macro.TVar>>] [Const:Null<Null<haxe.macro.TVar>>] null
+			[Var context(27034):reflaxe.elixir.helpers.CompilationContext]
+				[Call:reflaxe.elixir.helpers.CompilationContext]
+					[Field:(?isInLoopContext : Bool, ?parameterMap : Null<Map<String, String>>) -> reflaxe.elixir.helpers.CompilationContext]
+						[TypeExpr reflaxe.elixir.helpers.ExpressionCompiler:Class<reflaxe.elixir.helpers.ExpressionCompiler>]
+						[FStatic:(?isInLoopContext : Bool, ?parameterMap : Null<Map<String, String>>) -> reflaxe.elixir.helpers.CompilationContext]
+							reflaxe.elixir.helpers.ExpressionCompiler
+							createCompilationContext:(?isInLoopContext : Bool, ?parameterMap : Null<Map<String, String>>) -> reflaxe.elixir.helpers.CompilationContext
+					[Const:Bool] true
+					[Const:Null<Map<String, String>>] null
+			[Var body(27036):String]
+				[Call:String]
+					[Field:(compiler : Dynamic, context : reflaxe.elixir.helpers.CompilationContext, compilationFn : (() -> String)) -> String]
+						[TypeExpr reflaxe.elixir.helpers.ExpressionCompiler:Class<reflaxe.elixir.helpers.ExpressionCompiler>]
+						[FStatic:(compiler : Dynamic, context : reflaxe.elixir.helpers.CompilationContext, compilationFn : (() -> String)) -> String]
+							reflaxe.elixir.helpers.ExpressionCompiler
+							withContext:(compiler : Dynamic, context : reflaxe.elixir.helpers.CompilationContext, compilationFn : (() -> withContext.T)) -> withContext.T
+					[Local compiler(27026):Dynamic:Dynamic]
+					[Local context(27034):reflaxe.elixir.helpers.CompilationContext:reflaxe.elixir.helpers.CompilationContext]
+					[Function:() -> String]
+						[Return:Dynamic]
+							[Block:String]
+								[Var tempExpr(27035):haxe.macro.TypedExpr]
+									[Field:haxe.macro.TypedExpr]
+										[Local func(27027):haxe.macro.TFunc:haxe.macro.TFunc]
+										[FAnon:haxe.macro.TypedExpr] expr:haxe.macro.TypedExpr
+								[If:Void]
+									[Binop:Bool]
+										[Local param1TVar(27032):Null<Null<haxe.macro.TVar>>:Null<Null<haxe.macro.TVar>>]
+										!=
+										[Const:Null<Null<haxe.macro.TVar>>] null
+									[Then:haxe.macro.TypedExpr] [Block:haxe.macro.TypedExpr]
+										[Binop:haxe.macro.TypedExpr]
+											[Local tempExpr(27035):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+											=
+											[Call:Dynamic]
+												[Field:Dynamic]
+													[Local compiler(27026):Dynamic:Dynamic]
+													[FDynamic:Dynamic] compileExpressionWithTVarSubstitution
+												[Local tempExpr(27035):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+												[Local param1TVar(27032):Null<Null<haxe.macro.TVar>>:Null<Null<haxe.macro.TVar>>]
+												[Local param1(27030):String:String]
+								[If:Void]
+									[Binop:Bool]
+										[Local param2TVar(27033):Null<Null<haxe.macro.TVar>>:Null<Null<haxe.macro.TVar>>]
+										!=
+										[Const:Null<Null<haxe.macro.TVar>>] null
+									[Then:haxe.macro.TypedExpr] [Block:haxe.macro.TypedExpr]
+										[Binop:haxe.macro.TypedExpr]
+											[Local tempExpr(27035):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+											=
+											[Call:Dynamic]
+												[Field:Dynamic]
+													[Local compiler(27026):Dynamic:Dynamic]
+													[FDynamic:Dynamic] compileExpressionWithTVarSubstitution
+												[Local tempExpr(27035):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+												[Local param2TVar(27033):Null<Null<haxe.macro.TVar>>:Null<Null<haxe.macro.TVar>>]
+												[Local param2(27031):String:String]
+								[Return:String]
+									[Call:Dynamic]
+										[Field:Dynamic]
+											[Local compiler(27026):Dynamic:Dynamic]
+											[FDynamic:Dynamic] compileExpression
+										[Local tempExpr(27035):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+			[Return:Dynamic]
+				[ObjectDecl:{ param2 : String, param1 : String, body : String }]
+					param1: [Local param1(27030):String:String]
+					param2: [Local param2(27031):String:String]
+					body: [Local body(27036):String:String]
+
+	public static function withContext<T>[Function:(compiler : Dynamic, context : reflaxe.elixir.helpers.CompilationContext, compilationFn : (() -> withContext.T)) -> withContext.T]
+		[Arg:Dynamic] [Local compiler(22195):Dynamic]
+		[Arg:reflaxe.elixir.helpers.CompilationContext] [Local context(22196):reflaxe.elixir.helpers.CompilationContext]
+		[Arg:() -> withContext.T] [Local compilationFn(22197):() -> withContext.T]
+		[Block:Void]
+			[Var previousLoopContext(22198):Unknown<37>]
+				[Field:Dynamic]
+					[Local compiler(22195):Dynamic:Dynamic]
+					[FDynamic:Dynamic] isInLoopContext
+			[Var previousParameterMap(22199):Unknown<38>]
+				[Field:Dynamic]
+					[Local compiler(22195):Dynamic:Dynamic]
+					[FDynamic:Dynamic] currentFunctionParameterMap
+			[Binop:Dynamic]
+				[Field:Dynamic]
+					[Local compiler(22195):Dynamic:Dynamic]
+					[FDynamic:Dynamic] isInLoopContext
+				=
+				[Field:Bool]
+					[Local context(22196):reflaxe.elixir.helpers.CompilationContext:reflaxe.elixir.helpers.CompilationContext]
+					[FAnon:Bool] isInLoopContext:Bool
+			[For:Void]
+				[Local key(22203):String]
+				[Block:Iterator<String>]
+					[Var this(22202):haxe.IMap<String, String>]
+						[Field:Map<String, String>]
+							[Local context(22196):reflaxe.elixir.helpers.CompilationContext:reflaxe.elixir.helpers.CompilationContext]
+							[FAnon:Map<String, String>] currentParameterMap:Map<String, String>
+					[Call:Iterator<String>]
+						[Field:() -> Iterator<String>]
+							[Cast:haxe.ds.StringMap<String>] [Local this(22202):haxe.IMap<String, String>:haxe.IMap<String, String>]
+							[FInstance:() -> Iterator<String>]
+								haxe.ds.StringMap<String>
+								keys:() -> Iterator<String>
+				[Block:Dynamic]
+					[Call:Dynamic]
+						[Field:Dynamic]
+							[Field:Dynamic]
+								[Local compiler(22195):Dynamic:Dynamic]
+								[FDynamic:Dynamic] currentFunctionParameterMap
+							[FDynamic:Dynamic] set
+						[Local key(22203):String:String]
+						[Block:Null<String>]
+							[Var this(22206):haxe.IMap<String, String>]
+								[Field:Map<String, String>]
+									[Local context(22196):reflaxe.elixir.helpers.CompilationContext:reflaxe.elixir.helpers.CompilationContext]
+									[FAnon:Map<String, String>] currentParameterMap:Map<String, String>
+							[Call:Null<String>]
+								[Field:(key : String) -> Null<String>]
+									[Cast:haxe.ds.StringMap<String>] [Local this(22206):haxe.IMap<String, String>:haxe.IMap<String, String>]
+									[FInstance:(key : String) -> Null<String>]
+										haxe.ds.StringMap<String>
+										get:(key : String) -> Null<haxe.ds.StringMap.T>
+								[Local key(22203):String:String]
+			[Try:Void]
+				[Block:Dynamic]
+					[Var result(22208):withContext.T] [Call:withContext.T] [Local compilationFn(22197):() -> withContext.T:() -> withContext.T]
+					[Binop:Dynamic]
+						[Field:Dynamic]
+							[Local compiler(22195):Dynamic:Dynamic]
+							[FDynamic:Dynamic] isInLoopContext
+						=
+						[Local previousLoopContext(22198):Unknown<37>:Unknown<37>]
+					[Binop:Dynamic]
+						[Field:Dynamic]
+							[Local compiler(22195):Dynamic:Dynamic]
+							[FDynamic:Dynamic] currentFunctionParameterMap
+						=
+						[Local previousParameterMap(22199):Unknown<38>:Unknown<38>]
+					[Return:Dynamic] [Local result(22208):withContext.T:withContext.T]
+				Catch [Local `(34236):Dynamic]
+					[Block:Void]
+						[Block:Void]
+						[Block:Void]
+						[If:Void]
+							[Const:Bool] true
+							[Then:Dynamic] [Block:Dynamic]
+								[Var e(22209):Dynamic] [Local `(34236):Dynamic:Dynamic]
+								[Block:Dynamic]
+									[Binop:Dynamic]
+										[Field:Dynamic]
+											[Local compiler(22195):Dynamic:Dynamic]
+											[FDynamic:Dynamic] isInLoopContext
+										=
+										[Local previousLoopContext(22198):Unknown<37>:Unknown<37>]
+									[Binop:Dynamic]
+										[Field:Dynamic]
+											[Local compiler(22195):Dynamic:Dynamic]
+											[FDynamic:Dynamic] currentFunctionParameterMap
+										=
+										[Local previousParameterMap(22199):Unknown<38>:Unknown<38>]
+									[Throw:Dynamic] [Local e(22209):Dynamic:Dynamic]
+							[Else:Unknown<39>] [Throw:Unknown<39>] [Local `(34236):Dynamic:Dynamic]
+
+	public static function createLoopContext[Function:() -> reflaxe.elixir.helpers.CompilationContext]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Call:reflaxe.elixir.helpers.CompilationContext]
+					[Field:(?isInLoopContext : Bool, ?parameterMap : Null<Map<String, String>>) -> reflaxe.elixir.helpers.CompilationContext]
+						[TypeExpr reflaxe.elixir.helpers.ExpressionCompiler:Class<reflaxe.elixir.helpers.ExpressionCompiler>]
+						[FStatic:(?isInLoopContext : Bool, ?parameterMap : Null<Map<String, String>>) -> reflaxe.elixir.helpers.CompilationContext]
+							reflaxe.elixir.helpers.ExpressionCompiler
+							createCompilationContext:(?isInLoopContext : Bool, ?parameterMap : Null<Map<String, String>>) -> reflaxe.elixir.helpers.CompilationContext
+					[Const:Bool] true
+					[Const:Null<Map<String, String>>] null
+
+	public static function createFunctionContext[Function:(parameterMap : Map<String, String>) -> reflaxe.elixir.helpers.CompilationContext]
+		[Arg:Map<String, String>] [Local parameterMap(27037):Map<String, String>]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Call:reflaxe.elixir.helpers.CompilationContext]
+					[Field:(?isInLoopContext : Bool, ?parameterMap : Null<Map<String, String>>) -> reflaxe.elixir.helpers.CompilationContext]
+						[TypeExpr reflaxe.elixir.helpers.ExpressionCompiler:Class<reflaxe.elixir.helpers.ExpressionCompiler>]
+						[FStatic:(?isInLoopContext : Bool, ?parameterMap : Null<Map<String, String>>) -> reflaxe.elixir.helpers.CompilationContext]
+							reflaxe.elixir.helpers.ExpressionCompiler
+							createCompilationContext:(?isInLoopContext : Bool, ?parameterMap : Null<Map<String, String>>) -> reflaxe.elixir.helpers.CompilationContext
+					[Const:Bool] false
+					[Local parameterMap(27037):Map<String, String>:Map<String, String>]
+
+	static function getOriginalVarName[Function:(compiler : Dynamic, v : haxe.macro.TVar) -> String]
+		[Arg:Dynamic] [Local compiler(22188):Dynamic]
+		[Arg:haxe.macro.TVar] [Local v(22189):haxe.macro.TVar]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Call:Dynamic]
+					[Field:Dynamic]
+						[Local compiler(22188):Dynamic:Dynamic]
+						[FDynamic:Dynamic] getOriginalVarName
+					[Local v(22189):haxe.macro.TVar:haxe.macro.TVar]
+}

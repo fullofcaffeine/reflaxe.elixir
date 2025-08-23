@@ -1,0 +1,2 @@
+@:enum
+abstract haxe.macro.NullSafetyMode to String {}

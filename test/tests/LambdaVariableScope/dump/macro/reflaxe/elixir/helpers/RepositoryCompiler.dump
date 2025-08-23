@@ -1,0 +1,1400 @@
+class reflaxe.elixir.helpers.RepositoryCompiler {
+
+	public static function compileRepoCall[Function:(method : String, args : Array<String>, ?schemaName : Null<String>) -> String]
+		[Arg:String] [Local method(25865):String]
+		[Arg:Array<String>] [Local args(25866):Array<String>]
+		[Arg:Null<String>]
+			[Local schemaName(25867):Null<String>]
+			[Const:Null<String>] null
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Meta:String]
+					:ast(switch (method) {
+	case "all":
+		compileRepoAll(args, schemaName);	
+	case "get":
+		compileRepoGet(args, schemaName, false);	
+	case "get!":
+		compileRepoGet(args, schemaName, true);	
+	case "insert":
+		compileRepoInsert(args, schemaName);	
+	case "update":
+		compileRepoUpdate(args, schemaName);	
+	case "delete":
+		compileRepoDelete(args, schemaName);	
+	case "preload":
+		compileRepoPreload(args, schemaName);	
+	case "one":
+		compileRepoOne(args, schemaName);	
+	case "aggregate":
+		compileRepoAggregate(args, schemaName);	
+	default:
+		compileGenericRepoCall(method, args);	
+})
+					[Switch:String]
+						[Local method(25865):String:String]
+						[Case:String]
+							[Const:String] "aggregate"
+							[Block:String]
+								[Block:String]
+									[Call:String]
+										[Field:(args : Array<String>, schemaName : String) -> String]
+											[TypeExpr reflaxe.elixir.helpers.RepositoryCompiler:Class<reflaxe.elixir.helpers.RepositoryCompiler>]
+											[FStatic:(args : Array<String>, schemaName : String) -> String]
+												reflaxe.elixir.helpers.RepositoryCompiler
+												compileRepoAggregate:(args : Array<String>, schemaName : String) -> String
+										[Local args(25866):Array<String>:Array<String>]
+										[Local schemaName(25867):Null<String>:Null<String>]
+						[Case:String]
+							[Const:String] "all"
+							[Block:String]
+								[Block:String]
+									[Call:String]
+										[Field:(args : Array<String>, schemaName : String) -> String]
+											[TypeExpr reflaxe.elixir.helpers.RepositoryCompiler:Class<reflaxe.elixir.helpers.RepositoryCompiler>]
+											[FStatic:(args : Array<String>, schemaName : String) -> String]
+												reflaxe.elixir.helpers.RepositoryCompiler
+												compileRepoAll:(args : Array<String>, schemaName : String) -> String
+										[Local args(25866):Array<String>:Array<String>]
+										[Local schemaName(25867):Null<String>:Null<String>]
+						[Case:String]
+							[Const:String] "delete"
+							[Block:String]
+								[Block:String]
+									[Call:String]
+										[Field:(args : Array<String>, schemaName : String) -> String]
+											[TypeExpr reflaxe.elixir.helpers.RepositoryCompiler:Class<reflaxe.elixir.helpers.RepositoryCompiler>]
+											[FStatic:(args : Array<String>, schemaName : String) -> String]
+												reflaxe.elixir.helpers.RepositoryCompiler
+												compileRepoDelete:(args : Array<String>, schemaName : String) -> String
+										[Local args(25866):Array<String>:Array<String>]
+										[Local schemaName(25867):Null<String>:Null<String>]
+						[Case:String]
+							[Const:String] "get"
+							[Block:String]
+								[Block:String]
+									[Call:String]
+										[Field:(args : Array<String>, schemaName : String, raiseOnNotFound : Bool) -> String]
+											[TypeExpr reflaxe.elixir.helpers.RepositoryCompiler:Class<reflaxe.elixir.helpers.RepositoryCompiler>]
+											[FStatic:(args : Array<String>, schemaName : String, raiseOnNotFound : Bool) -> String]
+												reflaxe.elixir.helpers.RepositoryCompiler
+												compileRepoGet:(args : Array<String>, schemaName : String, raiseOnNotFound : Bool) -> String
+										[Local args(25866):Array<String>:Array<String>]
+										[Local schemaName(25867):Null<String>:Null<String>]
+										[Const:Bool] false
+						[Case:String]
+							[Const:String] "get!"
+							[Block:String]
+								[Block:String]
+									[Call:String]
+										[Field:(args : Array<String>, schemaName : String, raiseOnNotFound : Bool) -> String]
+											[TypeExpr reflaxe.elixir.helpers.RepositoryCompiler:Class<reflaxe.elixir.helpers.RepositoryCompiler>]
+											[FStatic:(args : Array<String>, schemaName : String, raiseOnNotFound : Bool) -> String]
+												reflaxe.elixir.helpers.RepositoryCompiler
+												compileRepoGet:(args : Array<String>, schemaName : String, raiseOnNotFound : Bool) -> String
+										[Local args(25866):Array<String>:Array<String>]
+										[Local schemaName(25867):Null<String>:Null<String>]
+										[Const:Bool] true
+						[Case:String]
+							[Const:String] "insert"
+							[Block:String]
+								[Block:String]
+									[Call:String]
+										[Field:(args : Array<String>, schemaName : String) -> String]
+											[TypeExpr reflaxe.elixir.helpers.RepositoryCompiler:Class<reflaxe.elixir.helpers.RepositoryCompiler>]
+											[FStatic:(args : Array<String>, schemaName : String) -> String]
+												reflaxe.elixir.helpers.RepositoryCompiler
+												compileRepoInsert:(args : Array<String>, schemaName : String) -> String
+										[Local args(25866):Array<String>:Array<String>]
+										[Local schemaName(25867):Null<String>:Null<String>]
+						[Case:String]
+							[Const:String] "one"
+							[Block:String]
+								[Block:String]
+									[Call:String]
+										[Field:(args : Array<String>, schemaName : String) -> String]
+											[TypeExpr reflaxe.elixir.helpers.RepositoryCompiler:Class<reflaxe.elixir.helpers.RepositoryCompiler>]
+											[FStatic:(args : Array<String>, schemaName : String) -> String]
+												reflaxe.elixir.helpers.RepositoryCompiler
+												compileRepoOne:(args : Array<String>, schemaName : String) -> String
+										[Local args(25866):Array<String>:Array<String>]
+										[Local schemaName(25867):Null<String>:Null<String>]
+						[Case:String]
+							[Const:String] "preload"
+							[Block:String]
+								[Block:String]
+									[Call:String]
+										[Field:(args : Array<String>, schemaName : String) -> String]
+											[TypeExpr reflaxe.elixir.helpers.RepositoryCompiler:Class<reflaxe.elixir.helpers.RepositoryCompiler>]
+											[FStatic:(args : Array<String>, schemaName : String) -> String]
+												reflaxe.elixir.helpers.RepositoryCompiler
+												compileRepoPreload:(args : Array<String>, schemaName : String) -> String
+										[Local args(25866):Array<String>:Array<String>]
+										[Local schemaName(25867):Null<String>:Null<String>]
+						[Case:String]
+							[Const:String] "update"
+							[Block:String]
+								[Block:String]
+									[Call:String]
+										[Field:(args : Array<String>, schemaName : String) -> String]
+											[TypeExpr reflaxe.elixir.helpers.RepositoryCompiler:Class<reflaxe.elixir.helpers.RepositoryCompiler>]
+											[FStatic:(args : Array<String>, schemaName : String) -> String]
+												reflaxe.elixir.helpers.RepositoryCompiler
+												compileRepoUpdate:(args : Array<String>, schemaName : String) -> String
+										[Local args(25866):Array<String>:Array<String>]
+										[Local schemaName(25867):Null<String>:Null<String>]
+						[Default:String]
+							[Block:String]
+								[Call:String]
+									[Field:(method : String, args : Array<String>) -> String]
+										[TypeExpr reflaxe.elixir.helpers.RepositoryCompiler:Class<reflaxe.elixir.helpers.RepositoryCompiler>]
+										[FStatic:(method : String, args : Array<String>) -> String]
+											reflaxe.elixir.helpers.RepositoryCompiler
+											compileGenericRepoCall:(method : String, args : Array<String>) -> String
+									[Local method(25865):String:String]
+									[Local args(25866):Array<String>:Array<String>]
+
+	static function compileRepoAll[Function:(args : Array<String>, schemaName : String) -> String]
+		[Arg:Array<String>] [Local args(25868):Array<String>]
+		[Arg:String] [Local schemaName(25869):String]
+		[Block:Void]
+			[If:Void]
+				[Binop:Bool]
+					[Field:Int]
+						[Local args(25868):Array<String>:Array<String>]
+						[FInstance:Int]
+							Array<String>
+							length:Int
+					==
+					[Const:Int] 0
+				[Then:Dynamic] [Block:Dynamic]
+					[Return:Dynamic]
+						[Binop:String]
+							[Binop:String]
+								[Const:String] "Repo.all("
+								+
+								[Local schemaName(25869):String:String]
+							+
+							[Const:String] ")"
+				[Else:Void] [Block:Void]
+					[If:Void]
+						[Binop:Bool]
+							[Field:Int]
+								[Local args(25868):Array<String>:Array<String>]
+								[FInstance:Int]
+									Array<String>
+									length:Int
+							==
+							[Const:Int] 1
+						[Then:Dynamic] [Block:Dynamic]
+							[Return:Dynamic]
+								[Binop:String]
+									[Binop:String]
+										[Const:String] "Repo.all("
+										+
+										[Array:String]
+											[Local args(25868):Array<String>:Array<String>]
+											[Const:Int] 0
+									+
+									[Const:String] ")"
+						[Else:Dynamic] [Block:Dynamic]
+							[Return:Dynamic]
+								[Binop:String]
+									[Binop:String]
+										[Const:String] "Repo.all("
+										+
+										[Call:String]
+											[Field:(sep : String) -> String]
+												[Local args(25868):Array<String>:Array<String>]
+												[FInstance:(sep : String) -> String]
+													Array<String>
+													join:(sep : String) -> String
+											[Const:String] ", "
+									+
+									[Const:String] ")"
+
+	static function compileRepoGet[Function:(args : Array<String>, schemaName : String, raiseOnNotFound : Bool) -> String]
+		[Arg:Array<String>] [Local args(25870):Array<String>]
+		[Arg:String] [Local schemaName(25871):String]
+		[Arg:Bool] [Local raiseOnNotFound(25872):Bool]
+		[Block:Void]
+			[Var methodName(25873):String]
+				[If:String]
+					[Local raiseOnNotFound(25872):Bool:Bool]
+					[Then:String] [Block:String] [Const:String] "get!"
+					[Else:String] [Block:String] [Const:String] "get"
+			[If:Void]
+				[Binop:Bool]
+					[Field:Int]
+						[Local args(25870):Array<String>:Array<String>]
+						[FInstance:Int]
+							Array<String>
+							length:Int
+					>=
+					[Const:Int] 2
+				[Then:Dynamic] [Block:Dynamic]
+					[Return:Dynamic]
+						[Binop:String]
+							[Binop:String]
+								[Binop:String]
+									[Binop:String]
+										[Const:String] "Repo."
+										+
+										[Local methodName(25873):String:String]
+									+
+									[Const:String] "("
+								+
+								[Call:String]
+									[Field:(sep : String) -> String]
+										[Local args(25870):Array<String>:Array<String>]
+										[FInstance:(sep : String) -> String]
+											Array<String>
+											join:(sep : String) -> String
+									[Const:String] ", "
+							+
+							[Const:String] ")"
+				[Else:Void] [Block:Void]
+					[If:Void]
+						[Binop:Bool]
+							[Binop:Bool]
+								[Field:Int]
+									[Local args(25870):Array<String>:Array<String>]
+									[FInstance:Int]
+										Array<String>
+										length:Int
+								==
+								[Const:Int] 1
+							&&
+							[Binop:Bool]
+								[Local schemaName(25871):String:String]
+								!=
+								[Const:String] null
+						[Then:Dynamic] [Block:Dynamic]
+							[Return:Dynamic]
+								[Binop:String]
+									[Binop:String]
+										[Binop:String]
+											[Binop:String]
+												[Binop:String]
+													[Binop:String]
+														[Const:String] "Repo."
+														+
+														[Local methodName(25873):String:String]
+													+
+													[Const:String] "("
+												+
+												[Local schemaName(25871):String:String]
+											+
+											[Const:String] ", "
+										+
+										[Array:String]
+											[Local args(25870):Array<String>:Array<String>]
+											[Const:Int] 0
+									+
+									[Const:String] ")"
+						[Else:Dynamic] [Block:Dynamic]
+							[Return:Dynamic]
+								[Binop:String]
+									[Binop:String]
+										[Binop:String]
+											[Binop:String]
+												[Const:String] "Repo."
+												+
+												[Local methodName(25873):String:String]
+											+
+											[Const:String] "("
+										+
+										[Call:String]
+											[Field:(sep : String) -> String]
+												[Local args(25870):Array<String>:Array<String>]
+												[FInstance:(sep : String) -> String]
+													Array<String>
+													join:(sep : String) -> String
+											[Const:String] ", "
+									+
+									[Const:String] ")"
+
+	static function compileRepoInsert[Function:(args : Array<String>, schemaName : String) -> String]
+		[Arg:Array<String>] [Local args(25874):Array<String>]
+		[Arg:String] [Local schemaName(25875):String]
+		[Block:Void]
+			[If:Void]
+				[Binop:Bool]
+					[Field:Int]
+						[Local args(25874):Array<String>:Array<String>]
+						[FInstance:Int]
+							Array<String>
+							length:Int
+					>=
+					[Const:Int] 1
+				[Then:Dynamic] [Block:Dynamic]
+					[Return:Dynamic]
+						[Binop:String]
+							[Binop:String]
+								[Const:String] "Repo.insert("
+								+
+								[Call:String]
+									[Field:(sep : String) -> String]
+										[Local args(25874):Array<String>:Array<String>]
+										[FInstance:(sep : String) -> String]
+											Array<String>
+											join:(sep : String) -> String
+									[Const:String] ", "
+							+
+							[Const:String] ")"
+				[Else:Dynamic] [Block:Dynamic]
+					[Return:Dynamic]
+						[Binop:String]
+							[Binop:String]
+								[Const:String] "Repo.insert(%"
+								+
+								[Local schemaName(25875):String:String]
+							+
+							[Const:String] "{})"
+
+	static function compileRepoUpdate[Function:(args : Array<String>, schemaName : String) -> String]
+		[Arg:Array<String>] [Local args(25876):Array<String>]
+		[Arg:String] [Local schemaName(25877):String]
+		[Block:Void]
+			[If:Void]
+				[Binop:Bool]
+					[Field:Int]
+						[Local args(25876):Array<String>:Array<String>]
+						[FInstance:Int]
+							Array<String>
+							length:Int
+					>=
+					[Const:Int] 1
+				[Then:Dynamic] [Block:Dynamic]
+					[Return:Dynamic]
+						[Binop:String]
+							[Binop:String]
+								[Const:String] "Repo.update("
+								+
+								[Call:String]
+									[Field:(sep : String) -> String]
+										[Local args(25876):Array<String>:Array<String>]
+										[FInstance:(sep : String) -> String]
+											Array<String>
+											join:(sep : String) -> String
+									[Const:String] ", "
+							+
+							[Const:String] ")"
+				[Else:Dynamic] [Block:Dynamic] [Return:Dynamic] [Const:String] "Repo.update(changeset)"
+
+	static function compileRepoDelete[Function:(args : Array<String>, schemaName : String) -> String]
+		[Arg:Array<String>] [Local args(25878):Array<String>]
+		[Arg:String] [Local schemaName(25879):String]
+		[Block:Void]
+			[If:Void]
+				[Binop:Bool]
+					[Field:Int]
+						[Local args(25878):Array<String>:Array<String>]
+						[FInstance:Int]
+							Array<String>
+							length:Int
+					>=
+					[Const:Int] 1
+				[Then:Dynamic] [Block:Dynamic]
+					[Return:Dynamic]
+						[Binop:String]
+							[Binop:String]
+								[Const:String] "Repo.delete("
+								+
+								[Call:String]
+									[Field:(sep : String) -> String]
+										[Local args(25878):Array<String>:Array<String>]
+										[FInstance:(sep : String) -> String]
+											Array<String>
+											join:(sep : String) -> String
+									[Const:String] ", "
+							+
+							[Const:String] ")"
+				[Else:Dynamic] [Block:Dynamic] [Return:Dynamic] [Const:String] "Repo.delete(struct)"
+
+	static function compileRepoPreload[Function:(args : Array<String>, schemaName : String) -> String]
+		[Arg:Array<String>] [Local args(25880):Array<String>]
+		[Arg:String] [Local schemaName(25881):String]
+		[Block:Void]
+			[If:Void]
+				[Binop:Bool]
+					[Field:Int]
+						[Local args(25880):Array<String>:Array<String>]
+						[FInstance:Int]
+							Array<String>
+							length:Int
+					>=
+					[Const:Int] 2
+				[Then:Dynamic] [Block:Dynamic]
+					[Return:Dynamic]
+						[Binop:String]
+							[Binop:String]
+								[Const:String] "Repo.preload("
+								+
+								[Call:String]
+									[Field:(sep : String) -> String]
+										[Local args(25880):Array<String>:Array<String>]
+										[FInstance:(sep : String) -> String]
+											Array<String>
+											join:(sep : String) -> String
+									[Const:String] ", "
+							+
+							[Const:String] ")"
+				[Else:Void] [Block:Void]
+					[If:Void]
+						[Binop:Bool]
+							[Field:Int]
+								[Local args(25880):Array<String>:Array<String>]
+								[FInstance:Int]
+									Array<String>
+									length:Int
+							==
+							[Const:Int] 1
+						[Then:Dynamic] [Block:Dynamic]
+							[Return:Dynamic]
+								[Binop:String]
+									[Binop:String]
+										[Const:String] "Repo.preload("
+										+
+										[Array:String]
+											[Local args(25880):Array<String>:Array<String>]
+											[Const:Int] 0
+									+
+									[Const:String] ", [])"
+						[Else:Dynamic] [Block:Dynamic] [Return:Dynamic] [Const:String] "Repo.preload(struct, [])"
+
+	static function compileRepoOne[Function:(args : Array<String>, schemaName : String) -> String]
+		[Arg:Array<String>] [Local args(25882):Array<String>]
+		[Arg:String] [Local schemaName(25883):String]
+		[Block:Void]
+			[If:Void]
+				[Binop:Bool]
+					[Field:Int]
+						[Local args(25882):Array<String>:Array<String>]
+						[FInstance:Int]
+							Array<String>
+							length:Int
+					>=
+					[Const:Int] 1
+				[Then:Dynamic] [Block:Dynamic]
+					[Return:Dynamic]
+						[Binop:String]
+							[Binop:String]
+								[Const:String] "Repo.one("
+								+
+								[Call:String]
+									[Field:(sep : String) -> String]
+										[Local args(25882):Array<String>:Array<String>]
+										[FInstance:(sep : String) -> String]
+											Array<String>
+											join:(sep : String) -> String
+									[Const:String] ", "
+							+
+							[Const:String] ")"
+				[Else:Dynamic] [Block:Dynamic] [Return:Dynamic] [Const:String] "Repo.one(query)"
+
+	static function compileRepoAggregate[Function:(args : Array<String>, schemaName : String) -> String]
+		[Arg:Array<String>] [Local args(25884):Array<String>]
+		[Arg:String] [Local schemaName(25885):String]
+		[Block:Void]
+			[If:Void]
+				[Binop:Bool]
+					[Field:Int]
+						[Local args(25884):Array<String>:Array<String>]
+						[FInstance:Int]
+							Array<String>
+							length:Int
+					>=
+					[Const:Int] 2
+				[Then:Dynamic] [Block:Dynamic]
+					[Return:Dynamic]
+						[Binop:String]
+							[Binop:String]
+								[Const:String] "Repo.aggregate("
+								+
+								[Call:String]
+									[Field:(sep : String) -> String]
+										[Local args(25884):Array<String>:Array<String>]
+										[FInstance:(sep : String) -> String]
+											Array<String>
+											join:(sep : String) -> String
+									[Const:String] ", "
+							+
+							[Const:String] ")"
+				[Else:Dynamic] [Block:Dynamic] [Return:Dynamic] [Const:String] "Repo.aggregate(query, :count)"
+
+	static function compileGenericRepoCall[Function:(method : String, args : Array<String>) -> String]
+		[Arg:String] [Local method(25886):String]
+		[Arg:Array<String>] [Local args(25887):Array<String>]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Binop:String]
+					[Binop:String]
+						[Binop:String]
+							[Binop:String]
+								[Const:String] "Repo."
+								+
+								[Local method(25886):String:String]
+							+
+							[Const:String] "("
+						+
+						[Call:String]
+							[Field:(sep : String) -> String]
+								[Local args(25887):Array<String>:Array<String>]
+								[FInstance:(sep : String) -> String]
+									Array<String>
+									join:(sep : String) -> String
+							[Const:String] ", "
+					+
+					[Const:String] ")"
+
+	public static function generateRepositoryContext[Function:(schemaName : String) -> String]
+		[Arg:String] [Local schemaName(25888):String]
+		[Block:Dynamic]
+			[Var schema(25889):Null<reflaxe.elixir.schema.SchemaInfo>]
+				[Call:Null<reflaxe.elixir.schema.SchemaInfo>]
+					[Field:(schemaName : String) -> Null<reflaxe.elixir.schema.SchemaInfo>]
+						[TypeExpr reflaxe.elixir.schema.SchemaIntrospection:Class<reflaxe.elixir.schema.SchemaIntrospection>]
+						[FStatic:(schemaName : String) -> Null<reflaxe.elixir.schema.SchemaInfo>]
+							reflaxe.elixir.schema.SchemaIntrospection
+							getSchemaInfo:(schemaName : String) -> Null<reflaxe.elixir.schema.SchemaInfo>
+					[Local schemaName(25888):String:String]
+			[If:Void]
+				[Binop:Bool]
+					[Local schema(25889):Null<reflaxe.elixir.schema.SchemaInfo>:Null<reflaxe.elixir.schema.SchemaInfo>]
+					==
+					[Const:Null<reflaxe.elixir.schema.SchemaInfo>] null
+				[Then:Dynamic] [Block:Dynamic]
+					[Return:Dynamic]
+						[Call:String]
+							[Field:(schemaName : String) -> String]
+								[TypeExpr reflaxe.elixir.helpers.RepositoryCompiler:Class<reflaxe.elixir.helpers.RepositoryCompiler>]
+								[FStatic:(schemaName : String) -> String]
+									reflaxe.elixir.helpers.RepositoryCompiler
+									generateGenericRepository:(schemaName : String) -> String
+							[Local schemaName(25888):String:String]
+			[Var moduleName(25892):String]
+				[Binop:String]
+					[Binop:String]
+						[Const:String] ""
+						+
+						[Local schemaName(25888):String:String]
+					+
+					[Const:String] "s"
+			[Var tableName(25893):String]
+				[Field:String]
+					[Local schema(25889):Null<reflaxe.elixir.schema.SchemaInfo>:Null<reflaxe.elixir.schema.SchemaInfo>]
+					[FAnon:String] tableName:String
+			[Var primaryKey(25894):String]
+				[Field:String]
+					[Local schema(25889):Null<reflaxe.elixir.schema.SchemaInfo>:Null<reflaxe.elixir.schema.SchemaInfo>]
+					[FAnon:String] primaryKey:String
+			[Return:Dynamic]
+				[Binop:String]
+					[Binop:String]
+						[Binop:String]
+							[Binop:String]
+								[Binop:String]
+									[Binop:String]
+										[Binop:String]
+											[Binop:String]
+												[Binop:String]
+													[Binop:String]
+														[Binop:String]
+															[Binop:String]
+																[Binop:String]
+																	[Binop:String]
+																		[Binop:String]
+																			[Binop:String]
+																				[Binop:String]
+																					[Binop:String]
+																						[Binop:String]
+																							[Binop:String]
+																								[Binop:String]
+																									[Binop:String]
+																										[Binop:String]
+																											[Binop:String]
+																												[Binop:String]
+																													[Binop:String]
+																														[Binop:String]
+																															[Binop:String]
+																																[Binop:String]
+																																	[Binop:String]
+																																		[Binop:String]
+																																			[Binop:String]
+																																				[Binop:String]
+																																					[Binop:String]
+																																						[Binop:String]
+																																							[Binop:String]
+																																								[Binop:String]
+																																									[Binop:String]
+																																										[Binop:String]
+																																											[Binop:String]
+																																												[Binop:String]
+																																													[Binop:String]
+																																														[Binop:String]
+																																															[Binop:String]
+																																																[Binop:String]
+																																																	[Binop:String]
+																																																		[Binop:String]
+																																																			[Binop:String]
+																																																				[Binop:String]
+																																																					[Binop:String]
+																																																						[Binop:String]
+																																																							[Binop:String]
+																																																								[Binop:String]
+																																																									[Binop:String]
+																																																										[Binop:String]
+																																																											[Binop:String]
+																																																												[Binop:String]
+																																																													[Binop:String]
+																																																														[Binop:String]
+																																																															[Binop:String]
+																																																																[Binop:String]
+																																																																	[Binop:String]
+																																																																		[Binop:String]
+																																																																			[Binop:String]
+																																																																				[Binop:String]
+																																																																					[Binop:String]
+																																																																						[Binop:String]
+																																																																							[Binop:String]
+																																																																								[Binop:String]
+																																																																									[Binop:String]
+																																																																										[Const:String] "defmodule "
+																																																																										+
+																																																																										[Local moduleName(25892):String:String]
+																																																																									+
+																																																																									[Const:String] " do\n  @moduledoc \"\"\"\n  Repository functions for "
+																																																																								+
+																																																																								[Local schemaName(25888):String:String]
+																																																																							+
+																																																																							[Const:String] " schema.\n  Generated from Haxe source with compile-time type validation.\n  \"\"\"\n  \n  import Ecto.Query, warn: false\n  alias MyApp.Repo\n  alias MyApp."
+																																																																						+
+																																																																						[Local schemaName(25888):String:String]
+																																																																					+
+																																																																					[Const:String] "\n  \n  @doc \"\"\"\n  Returns the list of "
+																																																																				+
+																																																																				[Local tableName(25893):String:String]
+																																																																			+
+																																																																			[Const:String] ".\n  \"\"\"\n  def list_"
+																																																																		+
+																																																																		[Local tableName(25893):String:String]
+																																																																	+
+																																																																	[Const:String] "() do\n    Repo.all("
+																																																																+
+																																																																[Local schemaName(25888):String:String]
+																																																															+
+																																																															[Const:String] ")\n  end\n  \n  @doc \"\"\"\n  Gets a single "
+																																																														+
+																																																														[Call:String]
+																																																															[Field:() -> String]
+																																																																[Local schemaName(25888):String:String]
+																																																																[FInstance:() -> String]
+																																																																	String
+																																																																	toLowerCase:() -> String
+																																																													+
+																																																													[Const:String] ".\n  Raises `Ecto.NoResultsError` if the "
+																																																												+
+																																																												[Local schemaName(25888):String:String]
+																																																											+
+																																																											[Const:String] " does not exist.\n  \"\"\"\n  def get_"
+																																																										+
+																																																										[Call:String]
+																																																											[Field:() -> String]
+																																																												[Local schemaName(25888):String:String]
+																																																												[FInstance:() -> String]
+																																																													String
+																																																													toLowerCase:() -> String
+																																																									+
+																																																									[Const:String] "!(id) do\n    Repo.get!("
+																																																								+
+																																																								[Local schemaName(25888):String:String]
+																																																							+
+																																																							[Const:String] ", id)\n  end\n  \n  @doc \"\"\"\n  Gets a single "
+																																																						+
+																																																						[Call:String]
+																																																							[Field:() -> String]
+																																																								[Local schemaName(25888):String:String]
+																																																								[FInstance:() -> String]
+																																																									String
+																																																									toLowerCase:() -> String
+																																																					+
+																																																					[Const:String] ".\n  Returns `nil` if the "
+																																																				+
+																																																				[Local schemaName(25888):String:String]
+																																																			+
+																																																			[Const:String] " does not exist.\n  \"\"\"\n  def get_"
+																																																		+
+																																																		[Call:String]
+																																																			[Field:() -> String]
+																																																				[Local schemaName(25888):String:String]
+																																																				[FInstance:() -> String]
+																																																					String
+																																																					toLowerCase:() -> String
+																																																	+
+																																																	[Const:String] "(id) do\n    Repo.get("
+																																																+
+																																																[Local schemaName(25888):String:String]
+																																															+
+																																															[Const:String] ", id)\n  end\n  \n  @doc \"\"\"\n  Creates a "
+																																														+
+																																														[Call:String]
+																																															[Field:() -> String]
+																																																[Local schemaName(25888):String:String]
+																																																[FInstance:() -> String]
+																																																	String
+																																																	toLowerCase:() -> String
+																																													+
+																																													[Const:String] ".\n  \"\"\"\n  def create_"
+																																												+
+																																												[Call:String]
+																																													[Field:() -> String]
+																																														[Local schemaName(25888):String:String]
+																																														[FInstance:() -> String]
+																																															String
+																																															toLowerCase:() -> String
+																																											+
+																																											[Const:String] "(attrs \\\\ %{}) do\n    %"
+																																										+
+																																										[Local schemaName(25888):String:String]
+																																									+
+																																									[Const:String] "{}\n    |> "
+																																								+
+																																								[Local schemaName(25888):String:String]
+																																							+
+																																							[Const:String] ".changeset(attrs)\n    |> Repo.insert()\n  end\n  \n  @doc \"\"\"\n  Updates a "
+																																						+
+																																						[Call:String]
+																																							[Field:() -> String]
+																																								[Local schemaName(25888):String:String]
+																																								[FInstance:() -> String]
+																																									String
+																																									toLowerCase:() -> String
+																																					+
+																																					[Const:String] ".\n  \"\"\"\n  def update_"
+																																				+
+																																				[Call:String]
+																																					[Field:() -> String]
+																																						[Local schemaName(25888):String:String]
+																																						[FInstance:() -> String]
+																																							String
+																																							toLowerCase:() -> String
+																																			+
+																																			[Const:String] "(%"
+																																		+
+																																		[Local schemaName(25888):String:String]
+																																	+
+																																	[Const:String] "{} = "
+																																+
+																																[Call:String]
+																																	[Field:() -> String]
+																																		[Local schemaName(25888):String:String]
+																																		[FInstance:() -> String]
+																																			String
+																																			toLowerCase:() -> String
+																															+
+																															[Const:String] ", attrs) do\n    "
+																														+
+																														[Call:String]
+																															[Field:() -> String]
+																																[Local schemaName(25888):String:String]
+																																[FInstance:() -> String]
+																																	String
+																																	toLowerCase:() -> String
+																													+
+																													[Const:String] "\n    |> "
+																												+
+																												[Local schemaName(25888):String:String]
+																											+
+																											[Const:String] ".changeset(attrs)\n    |> Repo.update()\n  end\n  \n  @doc \"\"\"\n  Deletes a "
+																										+
+																										[Local schemaName(25888):String:String]
+																									+
+																									[Const:String] ".\n  \"\"\"\n  def delete_"
+																								+
+																								[Call:String]
+																									[Field:() -> String]
+																										[Local schemaName(25888):String:String]
+																										[FInstance:() -> String]
+																											String
+																											toLowerCase:() -> String
+																							+
+																							[Const:String] "(%"
+																						+
+																						[Local schemaName(25888):String:String]
+																					+
+																					[Const:String] "{} = "
+																				+
+																				[Call:String]
+																					[Field:() -> String]
+																						[Local schemaName(25888):String:String]
+																						[FInstance:() -> String]
+																							String
+																							toLowerCase:() -> String
+																			+
+																			[Const:String] ") do\n    Repo.delete("
+																		+
+																		[Call:String]
+																			[Field:() -> String]
+																				[Local schemaName(25888):String:String]
+																				[FInstance:() -> String]
+																					String
+																					toLowerCase:() -> String
+																	+
+																	[Const:String] ")\n  end\n  \n  @doc \"\"\"\n  Returns an `%Ecto.Changeset{}` for tracking "
+																+
+																[Call:String]
+																	[Field:() -> String]
+																		[Local schemaName(25888):String:String]
+																		[FInstance:() -> String]
+																			String
+																			toLowerCase:() -> String
+															+
+															[Const:String] " changes.\n  \"\"\"\n  def change_"
+														+
+														[Call:String]
+															[Field:() -> String]
+																[Local schemaName(25888):String:String]
+																[FInstance:() -> String]
+																	String
+																	toLowerCase:() -> String
+													+
+													[Const:String] "(%"
+												+
+												[Local schemaName(25888):String:String]
+											+
+											[Const:String] "{} = "
+										+
+										[Call:String]
+											[Field:() -> String]
+												[Local schemaName(25888):String:String]
+												[FInstance:() -> String]
+													String
+													toLowerCase:() -> String
+									+
+									[Const:String] ", attrs \\\\ %{}) do\n    "
+								+
+								[Local schemaName(25888):String:String]
+							+
+							[Const:String] ".changeset("
+						+
+						[Call:String]
+							[Field:() -> String]
+								[Local schemaName(25888):String:String]
+								[FInstance:() -> String]
+									String
+									toLowerCase:() -> String
+					+
+					[Const:String] ", attrs)\n  end"
+
+	static function generateGenericRepository[Function:(schemaName : String) -> String]
+		[Arg:String] [Local schemaName(25890):String]
+		[Block:Dynamic]
+			[Var tableName(25891):String]
+				[Binop:String]
+					[Call:String]
+						[Field:() -> String]
+							[Local schemaName(25890):String:String]
+							[FInstance:() -> String]
+								String
+								toLowerCase:() -> String
+					+
+					[Const:String] "s"
+			[Return:Dynamic]
+				[Binop:String]
+					[Binop:String]
+						[Binop:String]
+							[Binop:String]
+								[Binop:String]
+									[Binop:String]
+										[Binop:String]
+											[Binop:String]
+												[Binop:String]
+													[Binop:String]
+														[Binop:String]
+															[Binop:String]
+																[Binop:String]
+																	[Binop:String]
+																		[Binop:String]
+																			[Binop:String]
+																				[Const:String] "defmodule "
+																				+
+																				[Local schemaName(25890):String:String]
+																			+
+																			[Const:String] "Repository do\n  @moduledoc \"\"\"\n  Repository functions for "
+																		+
+																		[Local schemaName(25890):String:String]
+																	+
+																	[Const:String] ".\n  Generic implementation without schema introspection.\n  \"\"\"\n  \n  import Ecto.Query\n  alias MyApp.Repo\n  \n  def all() do\n    Repo.all("
+																+
+																[Local schemaName(25890):String:String]
+															+
+															[Const:String] ")\n  end\n  \n  def get(id) do\n    Repo.get("
+														+
+														[Local schemaName(25890):String:String]
+													+
+													[Const:String] ", id)\n  end\n  \n  def get!(id) do\n    Repo.get!("
+												+
+												[Local schemaName(25890):String:String]
+											+
+											[Const:String] ", id)\n  end\n  \n  def insert(attrs) do\n    %"
+										+
+										[Local schemaName(25890):String:String]
+									+
+									[Const:String] "{}\n    |> "
+								+
+								[Local schemaName(25890):String:String]
+							+
+							[Const:String] ".changeset(attrs)\n    |> Repo.insert()\n  end\n  \n  def update(struct, attrs) do\n    struct\n    |> "
+						+
+						[Local schemaName(25890):String:String]
+					+
+					[Const:String] ".changeset(attrs)\n    |> Repo.update()\n  end\n  \n  def delete(struct) do\n    Repo.delete(struct)\n  end\nend"
+
+	public static function validateRepositoryOperation[Function:(operation : String, schemaName : String, args : Array<String>) -> Array<String>]
+		[Arg:String] [Local operation(25895):String]
+		[Arg:String] [Local schemaName(25896):String]
+		[Arg:Array<String>] [Local args(25897):Array<String>]
+		[Block:Dynamic]
+			[Var errors(25898):Array<String>] [ArrayDecl:Array<String>]
+			[If:Void]
+				[Unop:Bool]
+					!
+					Prefix
+					[Call:Bool]
+						[Field:(schemaName : String) -> Bool]
+							[TypeExpr reflaxe.elixir.schema.SchemaIntrospection:Class<reflaxe.elixir.schema.SchemaIntrospection>]
+							[FStatic:(schemaName : String) -> Bool]
+								reflaxe.elixir.schema.SchemaIntrospection
+								schemaExists:(schemaName : String) -> Bool
+						[Local schemaName(25896):String:String]
+				[Then:Int] [Block:Int]
+					[Call:Int]
+						[Field:(x : String) -> Int]
+							[Local errors(25898):Array<String>:Array<String>]
+							[FInstance:(x : String) -> Int]
+								Array<String>
+								push:(x : Array.T) -> Int
+						[Binop:String]
+							[Binop:String]
+								[Const:String] "Schema \""
+								+
+								[Local schemaName(25896):String:String]
+							+
+							[Const:String] "\" not found in schema registry"
+			[Meta:Void]
+				:ast(switch (operation) {
+	case "get", "get!":
+		if (args.length < 1) {
+			errors.push("${operation} requires at least 1 argument (id)");
+		};	
+	case "insert", "update":
+		if (args.length < 1) {
+			errors.push("${operation} requires at least 1 argument (changeset)");
+		};	
+	case "delete":
+		if (args.length < 1) {
+			errors.push("delete requires at least 1 argument (struct)");
+		};	
+	case "preload":
+		if (args.length < 2) {
+			errors.push("preload requires at least 2 arguments (struct, associations)");
+		};	
+})
+				[Switch:Void]
+					[Local operation(25895):String:String]
+					[Case:Void]
+						[Const:String] "delete"
+						[Block:Void]
+							[Block:Void]
+								[If:Void]
+									[Binop:Bool]
+										[Field:Int]
+											[Local args(25897):Array<String>:Array<String>]
+											[FInstance:Int]
+												Array<String>
+												length:Int
+										<
+										[Const:Int] 1
+									[Then:Int] [Block:Int]
+										[Call:Int]
+											[Field:(x : String) -> Int]
+												[Local errors(25898):Array<String>:Array<String>]
+												[FInstance:(x : String) -> Int]
+													Array<String>
+													push:(x : Array.T) -> Int
+											[Const:String] "delete requires at least 1 argument (struct)"
+					[Case:Void]
+						[Const:String] "get"
+						[Const:String] "get!"
+						[Block:Void]
+							[Block:Void]
+								[If:Void]
+									[Binop:Bool]
+										[Field:Int]
+											[Local args(25897):Array<String>:Array<String>]
+											[FInstance:Int]
+												Array<String>
+												length:Int
+										<
+										[Const:Int] 1
+									[Then:Int] [Block:Int]
+										[Call:Int]
+											[Field:(x : String) -> Int]
+												[Local errors(25898):Array<String>:Array<String>]
+												[FInstance:(x : String) -> Int]
+													Array<String>
+													push:(x : Array.T) -> Int
+											[Binop:String]
+												[Binop:String]
+													[Const:String] ""
+													+
+													[Local operation(25895):String:String]
+												+
+												[Const:String] " requires at least 1 argument (id)"
+					[Case:Void]
+						[Const:String] "preload"
+						[Block:Void]
+							[Block:Void]
+								[If:Void]
+									[Binop:Bool]
+										[Field:Int]
+											[Local args(25897):Array<String>:Array<String>]
+											[FInstance:Int]
+												Array<String>
+												length:Int
+										<
+										[Const:Int] 2
+									[Then:Int] [Block:Int]
+										[Call:Int]
+											[Field:(x : String) -> Int]
+												[Local errors(25898):Array<String>:Array<String>]
+												[FInstance:(x : String) -> Int]
+													Array<String>
+													push:(x : Array.T) -> Int
+											[Const:String] "preload requires at least 2 arguments (struct, associations)"
+					[Case:Void]
+						[Const:String] "insert"
+						[Const:String] "update"
+						[Block:Void]
+							[Block:Void]
+								[If:Void]
+									[Binop:Bool]
+										[Field:Int]
+											[Local args(25897):Array<String>:Array<String>]
+											[FInstance:Int]
+												Array<String>
+												length:Int
+										<
+										[Const:Int] 1
+									[Then:Int] [Block:Int]
+										[Call:Int]
+											[Field:(x : String) -> Int]
+												[Local errors(25898):Array<String>:Array<String>]
+												[FInstance:(x : String) -> Int]
+													Array<String>
+													push:(x : Array.T) -> Int
+											[Binop:String]
+												[Binop:String]
+													[Const:String] ""
+													+
+													[Local operation(25895):String:String]
+												+
+												[Const:String] " requires at least 1 argument (changeset)"
+			[Return:Dynamic] [Local errors(25898):Array<String>:Array<String>]
+
+	@:value({ errorVar : "changeset", successVar : "result" })
+	public static function generateErrorHandling[Function:(operation : String, ?successVar : String, ?errorVar : String) -> String]
+		[Arg:String] [Local operation(25899):String]
+		[Arg:String]
+			[Local successVar(25900):String]
+			[Const:String] "result"
+		[Arg:String]
+			[Local errorVar(25901):String]
+			[Const:String] "changeset"
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Meta:String]
+					:ast(switch (operation) {
+	case "insert", "update":
+		"case ${operation}_result do\n  {:ok, ${successVar}} ->\n    {:ok, ${successVar}}\n  {:error, ${errorVar}} ->\n    {:error, ${errorVar}}\nend";	
+	case "delete":
+		"case ${operation}_result do\n  {:ok, ${successVar}} ->\n    {:ok, ${successVar}}\n  {:error, ${errorVar}} ->\n    {:error, ${errorVar}}\nend";	
+	case "get", "get!", "all", "one":
+		"${successVar}";	
+	default:
+		"result";	
+})
+					[Switch:String]
+						[Local operation(25899):String:String]
+						[Case:String]
+							[Const:String] "delete"
+							[Block:String]
+								[Block:String]
+									[Binop:String]
+										[Binop:String]
+											[Binop:String]
+												[Binop:String]
+													[Binop:String]
+														[Binop:String]
+															[Binop:String]
+																[Binop:String]
+																	[Binop:String]
+																		[Binop:String]
+																			[Const:String] "case "
+																			+
+																			[Local operation(25899):String:String]
+																		+
+																		[Const:String] "_result do\n  {:ok, "
+																	+
+																	[Local successVar(25900):String:String]
+																+
+																[Const:String] "} ->\n    {:ok, "
+															+
+															[Local successVar(25900):String:String]
+														+
+														[Const:String] "}\n  {:error, "
+													+
+													[Local errorVar(25901):String:String]
+												+
+												[Const:String] "} ->\n    {:error, "
+											+
+											[Local errorVar(25901):String:String]
+										+
+										[Const:String] "}\nend"
+						[Case:String]
+							[Const:String] "all"
+							[Const:String] "get"
+							[Const:String] "get!"
+							[Const:String] "one"
+							[Block:String]
+								[Block:String]
+									[Binop:String]
+										[Const:String] ""
+										+
+										[Local successVar(25900):String:String]
+						[Case:String]
+							[Const:String] "insert"
+							[Const:String] "update"
+							[Block:String]
+								[Block:String]
+									[Binop:String]
+										[Binop:String]
+											[Binop:String]
+												[Binop:String]
+													[Binop:String]
+														[Binop:String]
+															[Binop:String]
+																[Binop:String]
+																	[Binop:String]
+																		[Binop:String]
+																			[Const:String] "case "
+																			+
+																			[Local operation(25899):String:String]
+																		+
+																		[Const:String] "_result do\n  {:ok, "
+																	+
+																	[Local successVar(25900):String:String]
+																+
+																[Const:String] "} ->\n    {:ok, "
+															+
+															[Local successVar(25900):String:String]
+														+
+														[Const:String] "}\n  {:error, "
+													+
+													[Local errorVar(25901):String:String]
+												+
+												[Const:String] "} ->\n    {:error, "
+											+
+											[Local errorVar(25901):String:String]
+										+
+										[Const:String] "}\nend"
+						[Default:String] [Block:String] [Const:String] "result"
+
+	public static function returnsErrorTuple[Function:(operation : String) -> Bool]
+		[Arg:String] [Local operation(25902):String]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Call:Bool]
+					[Field:(x : String) -> Bool]
+						[ArrayDecl:Array<String>]
+							[Const:String] "insert"
+							[Const:String] "update"
+							[Const:String] "delete"
+						[FInstance:(x : String) -> Bool]
+							Array<String>
+							contains:(x : Array.T) -> Bool
+					[Local operation(25902):String:String]
+
+	public static function getOperationReturnType[Function:(operation : String, schemaName : String) -> String]
+		[Arg:String] [Local operation(25903):String]
+		[Arg:String] [Local schemaName(25904):String]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Meta:String]
+					:ast(switch (operation) {
+	case "all":
+		"[${schemaName}]";	
+	case "get":
+		"${schemaName} | nil";	
+	case "get!":
+		"${schemaName}";	
+	case "insert", "update":
+		"{:ok, ${schemaName}} | {:error, Ecto.Changeset.t()}";	
+	case "delete":
+		"{:ok, ${schemaName}} | {:error, Ecto.Changeset.t()}";	
+	case "one":
+		"${schemaName} | nil";	
+	case "preload":
+		"${schemaName}";	
+	case "aggregate":
+		"term()";	
+	default:
+		"term()";	
+})
+					[Switch:String]
+						[Local operation(25903):String:String]
+						[Case:String]
+							[Const:String] "aggregate"
+							[Block:String] [Block:String] [Const:String] "term()"
+						[Case:String]
+							[Const:String] "all"
+							[Block:String]
+								[Block:String]
+									[Binop:String]
+										[Binop:String]
+											[Const:String] "["
+											+
+											[Local schemaName(25904):String:String]
+										+
+										[Const:String] "]"
+						[Case:String]
+							[Const:String] "delete"
+							[Block:String]
+								[Block:String]
+									[Binop:String]
+										[Binop:String]
+											[Const:String] "{:ok, "
+											+
+											[Local schemaName(25904):String:String]
+										+
+										[Const:String] "} | {:error, Ecto.Changeset.t()}"
+						[Case:String]
+							[Const:String] "get"
+							[Block:String]
+								[Block:String]
+									[Binop:String]
+										[Binop:String]
+											[Const:String] ""
+											+
+											[Local schemaName(25904):String:String]
+										+
+										[Const:String] " | nil"
+						[Case:String]
+							[Const:String] "get!"
+							[Block:String]
+								[Block:String]
+									[Binop:String]
+										[Const:String] ""
+										+
+										[Local schemaName(25904):String:String]
+						[Case:String]
+							[Const:String] "one"
+							[Block:String]
+								[Block:String]
+									[Binop:String]
+										[Binop:String]
+											[Const:String] ""
+											+
+											[Local schemaName(25904):String:String]
+										+
+										[Const:String] " | nil"
+						[Case:String]
+							[Const:String] "preload"
+							[Block:String]
+								[Block:String]
+									[Binop:String]
+										[Const:String] ""
+										+
+										[Local schemaName(25904):String:String]
+						[Case:String]
+							[Const:String] "insert"
+							[Const:String] "update"
+							[Block:String]
+								[Block:String]
+									[Binop:String]
+										[Binop:String]
+											[Const:String] "{:ok, "
+											+
+											[Local schemaName(25904):String:String]
+										+
+										[Const:String] "} | {:error, Ecto.Changeset.t()}"
+						[Default:String] [Block:String] [Const:String] "term()"
+
+	public static function generateFullRepository[Function:(className : String, schemaName : String) -> String]
+		[Arg:String] [Local className(25905):String]
+		[Arg:String] [Local schemaName(25906):String]
+		[Block:Dynamic]
+			[Var repositoryFunctions(25907):String]
+				[Call:String]
+					[Field:(schemaName : String) -> String]
+						[TypeExpr reflaxe.elixir.helpers.RepositoryCompiler:Class<reflaxe.elixir.helpers.RepositoryCompiler>]
+						[FStatic:(schemaName : String) -> String]
+							reflaxe.elixir.helpers.RepositoryCompiler
+							generateRepositoryContext:(schemaName : String) -> String
+					[Local schemaName(25906):String:String]
+			[Return:Dynamic]
+				[Binop:String]
+					[Binop:String]
+						[Binop:String]
+							[Binop:String]
+								[Binop:String]
+									[Binop:String]
+										[Binop:String]
+											[Binop:String]
+												[Binop:String]
+													[Binop:String]
+														[Binop:String]
+															[Binop:String]
+																[Binop:String]
+																	[Binop:String]
+																		[Const:String] "defmodule "
+																		+
+																		[Local className(25905):String:String]
+																	+
+																	[Const:String] " do\n  @moduledoc \"\"\"\n  Generated repository module for "
+																+
+																[Local schemaName(25906):String:String]
+															+
+															[Const:String] " operations.\n  Provides type-safe CRUD operations with proper error handling.\n  \"\"\"\n  \n  "
+														+
+														[Local repositoryFunctions(25907):String:String]
+													+
+													[Const:String] "\n  \n  @doc \"\"\"\n  List "
+												+
+												[Call:String]
+													[Field:() -> String]
+														[Local schemaName(25906):String:String]
+														[FInstance:() -> String]
+															String
+															toLowerCase:() -> String
+											+
+											[Const:String] "s with optional filters\n  \"\"\"\n  def list_with_filters(filters \\\\ %{}) do\n    query = from(s in "
+										+
+										[Local schemaName(25906):String:String]
+									+
+									[Const:String] ")\n    \n    query =\n      Enum.reduce(filters, query, fn {key, value}, acc ->\n        case key do\n          :active -> where(acc, [s], s.active == ^value)\n          :name -> where(acc, [s], ilike(s.name, ^\"%#{value}%\"))\n          :email -> where(acc, [s], s.email == ^value)\n          _ -> acc\n        end\n      end)\n    \n    Repo.all(query)\n  end\n  \n  @doc \"\"\"\n  Count total records\n  \"\"\"\n  def count() do\n    Repo.aggregate("
+								+
+								[Local schemaName(25906):String:String]
+							+
+							[Const:String] ", :count)\n  end\n  \n  @doc \"\"\"\n  Check if record exists\n  \"\"\"\n  def exists?(id) do\n    case get_"
+						+
+						[Call:String]
+							[Field:() -> String]
+								[Local schemaName(25906):String:String]
+								[FInstance:() -> String]
+									String
+									toLowerCase:() -> String
+					+
+					[Const:String] "(id) do\n      nil -> false\n      _ -> true\n    end\n  end\nend"
+}

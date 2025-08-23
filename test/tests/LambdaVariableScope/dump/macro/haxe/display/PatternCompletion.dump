@@ -1,0 +1,1 @@
+typedef haxe.display.PatternCompletion<T> = { isOutermostPattern : Bool, ?expectedTypeFollowed : Null<haxe.display.JsonType<haxe.display.PatternCompletion.T>>, ?expectedType : Null<haxe.display.JsonType<haxe.display.PatternCompletion.T>>, ?compatibleTypes : Null<Array<haxe.display.JsonType<Dynamic>>> }

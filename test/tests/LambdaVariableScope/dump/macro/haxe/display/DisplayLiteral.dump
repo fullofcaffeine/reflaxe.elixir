@@ -1,0 +1,1 @@
+typedef haxe.display.DisplayLiteral<T> = { name : String }

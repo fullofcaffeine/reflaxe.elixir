@@ -1,0 +1,2 @@
+@:enum
+abstract reflaxe.compiler.TypeUsageLevel from Int to Int {}

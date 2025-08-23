@@ -1,0 +1,1378 @@
+class haxe.macro.Context {
+
+	@:value({ depth : 0 })
+	public static function error[Function:(msg : String, pos : haxe.macro.Position, ?depth : Null<Int>) -> Dynamic]
+		[Arg:String] [Local msg(1868):String]
+		[Arg:haxe.macro.Position] [Local pos(1869):haxe.macro.Position]
+		[Arg:Null<Int>]
+			[Local depth(1870):Null<Int>]
+			[Const:Int] 0
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Call:Dynamic]
+					[Call:Dynamic]
+						[Field:(f : String, nargs : Int) -> Dynamic]
+							[TypeExpr haxe.macro.Context:Class<haxe.macro.Context>]
+							[FStatic:(f : String, nargs : Int) -> Dynamic]
+								haxe.macro.Context
+								load:(f : String, nargs : Int) -> Dynamic
+						[Const:String] "error"
+						[Const:Int] 2
+					[Local msg(1868):String:String]
+					[Local pos(1869):haxe.macro.Position:haxe.macro.Position]
+					[Local depth(1870):Null<Int>:Null<Int>]
+
+	@:value({ depth : 0 })
+	public static function fatalError[Function:(msg : String, pos : haxe.macro.Position, ?depth : Null<Int>) -> Dynamic]
+		[Arg:String] [Local msg(1871):String]
+		[Arg:haxe.macro.Position] [Local pos(1872):haxe.macro.Position]
+		[Arg:Null<Int>]
+			[Local depth(1873):Null<Int>]
+			[Const:Int] 0
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Call:Dynamic]
+					[Call:Dynamic]
+						[Field:(f : String, nargs : Int) -> Dynamic]
+							[TypeExpr haxe.macro.Context:Class<haxe.macro.Context>]
+							[FStatic:(f : String, nargs : Int) -> Dynamic]
+								haxe.macro.Context
+								load:(f : String, nargs : Int) -> Dynamic
+						[Const:String] "fatal_error"
+						[Const:Int] 2
+					[Local msg(1871):String:String]
+					[Local pos(1872):haxe.macro.Position:haxe.macro.Position]
+					[Local depth(1873):Null<Int>:Null<Int>]
+
+	@:value({ depth : 0 })
+	public static function reportError[Function:(msg : String, pos : haxe.macro.Position, ?depth : Null<Int>) -> Void]
+		[Arg:String] [Local msg(1874):String]
+		[Arg:haxe.macro.Position] [Local pos(1875):haxe.macro.Position]
+		[Arg:Null<Int>]
+			[Local depth(1876):Null<Int>]
+			[Const:Int] 0
+		[Block:Dynamic]
+			[Call:Dynamic]
+				[Call:Dynamic]
+					[Field:(f : String, nargs : Int) -> Dynamic]
+						[TypeExpr haxe.macro.Context:Class<haxe.macro.Context>]
+						[FStatic:(f : String, nargs : Int) -> Dynamic]
+							haxe.macro.Context
+							load:(f : String, nargs : Int) -> Dynamic
+					[Const:String] "report_error"
+					[Const:Int] 2
+				[Local msg(1874):String:String]
+				[Local pos(1875):haxe.macro.Position:haxe.macro.Position]
+				[Local depth(1876):Null<Int>:Null<Int>]
+
+	@:value({ depth : 0 })
+	public static function warning[Function:(msg : String, pos : haxe.macro.Position, ?depth : Null<Int>) -> Void]
+		[Arg:String] [Local msg(1877):String]
+		[Arg:haxe.macro.Position] [Local pos(1878):haxe.macro.Position]
+		[Arg:Null<Int>]
+			[Local depth(1879):Null<Int>]
+			[Const:Int] 0
+		[Block:Dynamic]
+			[Call:Dynamic]
+				[Call:Dynamic]
+					[Field:(f : String, nargs : Int) -> Dynamic]
+						[TypeExpr haxe.macro.Context:Class<haxe.macro.Context>]
+						[FStatic:(f : String, nargs : Int) -> Dynamic]
+							haxe.macro.Context
+							load:(f : String, nargs : Int) -> Dynamic
+					[Const:String] "warning"
+					[Const:Int] 2
+				[Local msg(1877):String:String]
+				[Local pos(1878):haxe.macro.Position:haxe.macro.Position]
+				[Local depth(1879):Null<Int>:Null<Int>]
+
+	@:value({ depth : 0 })
+	public static function info[Function:(msg : String, pos : haxe.macro.Position, ?depth : Null<Int>) -> Void]
+		[Arg:String] [Local msg(1880):String]
+		[Arg:haxe.macro.Position] [Local pos(1881):haxe.macro.Position]
+		[Arg:Null<Int>]
+			[Local depth(1882):Null<Int>]
+			[Const:Int] 0
+		[Block:Dynamic]
+			[Call:Dynamic]
+				[Call:Dynamic]
+					[Field:(f : String, nargs : Int) -> Dynamic]
+						[TypeExpr haxe.macro.Context:Class<haxe.macro.Context>]
+						[FStatic:(f : String, nargs : Int) -> Dynamic]
+							haxe.macro.Context
+							load:(f : String, nargs : Int) -> Dynamic
+					[Const:String] "info"
+					[Const:Int] 2
+				[Local msg(1880):String:String]
+				[Local pos(1881):haxe.macro.Position:haxe.macro.Position]
+				[Local depth(1882):Null<Int>:Null<Int>]
+
+	public static function getMessages[Function:() -> Array<haxe.macro.Message>]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Call:Dynamic]
+					[Call:Dynamic]
+						[Field:(f : String, nargs : Int) -> Dynamic]
+							[TypeExpr haxe.macro.Context:Class<haxe.macro.Context>]
+							[FStatic:(f : String, nargs : Int) -> Dynamic]
+								haxe.macro.Context
+								load:(f : String, nargs : Int) -> Dynamic
+						[Const:String] "get_messages"
+						[Const:Int] 0
+
+	public static function filterMessages[Function:(predicate : (haxe.macro.Message -> Bool)) -> Void]
+		[Arg:haxe.macro.Message -> Bool] [Local predicate(1883):haxe.macro.Message -> Bool]
+		[Block:Dynamic]
+			[Call:Dynamic]
+				[Call:Dynamic]
+					[Field:(f : String, nargs : Int) -> Dynamic]
+						[TypeExpr haxe.macro.Context:Class<haxe.macro.Context>]
+						[FStatic:(f : String, nargs : Int) -> Dynamic]
+							haxe.macro.Context
+							load:(f : String, nargs : Int) -> Dynamic
+					[Const:String] "filter_messages"
+					[Const:Int] 1
+				[Local predicate(1883):haxe.macro.Message -> Bool:haxe.macro.Message -> Bool]
+
+	public static function initMacrosDone[Function:() -> Bool]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Call:Dynamic]
+					[Call:Dynamic]
+						[Field:(f : String, nargs : Int) -> Dynamic]
+							[TypeExpr haxe.macro.Context:Class<haxe.macro.Context>]
+							[FStatic:(f : String, nargs : Int) -> Dynamic]
+								haxe.macro.Context
+								load:(f : String, nargs : Int) -> Dynamic
+						[Const:String] "init_macros_done"
+						[Const:Int] 0
+
+	public static function resolvePath[Function:(file : String) -> String]
+		[Arg:String] [Local file(1884):String]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Call:Dynamic]
+					[Call:Dynamic]
+						[Field:(f : String, nargs : Int) -> Dynamic]
+							[TypeExpr haxe.macro.Context:Class<haxe.macro.Context>]
+							[FStatic:(f : String, nargs : Int) -> Dynamic]
+								haxe.macro.Context
+								load:(f : String, nargs : Int) -> Dynamic
+						[Const:String] "resolve_path"
+						[Const:Int] 1
+					[Local file(1884):String:String]
+
+	public static function getClassPath[Function:() -> Array<String>]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Call:Dynamic]
+					[Call:Dynamic]
+						[Field:(f : String, nargs : Int) -> Dynamic]
+							[TypeExpr haxe.macro.Context:Class<haxe.macro.Context>]
+							[FStatic:(f : String, nargs : Int) -> Dynamic]
+								haxe.macro.Context
+								load:(f : String, nargs : Int) -> Dynamic
+						[Const:String] "class_path"
+						[Const:Int] 0
+
+	public static function containsDisplayPosition[Function:(pos : haxe.macro.Position) -> Bool]
+		[Arg:haxe.macro.Position] [Local pos(1885):haxe.macro.Position]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Call:Dynamic]
+					[Call:Dynamic]
+						[Field:(f : String, nargs : Int) -> Dynamic]
+							[TypeExpr haxe.macro.Context:Class<haxe.macro.Context>]
+							[FStatic:(f : String, nargs : Int) -> Dynamic]
+								haxe.macro.Context
+								load:(f : String, nargs : Int) -> Dynamic
+						[Const:String] "contains_display_position"
+						[Const:Int] 1
+					[Local pos(1885):haxe.macro.Position:haxe.macro.Position]
+
+	public static function getDisplayMode[Function:() -> haxe.macro.DisplayMode]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Call:Dynamic]
+					[Call:Dynamic]
+						[Field:(f : String, nargs : Int) -> Dynamic]
+							[TypeExpr haxe.macro.Context:Class<haxe.macro.Context>]
+							[FStatic:(f : String, nargs : Int) -> Dynamic]
+								haxe.macro.Context
+								load:(f : String, nargs : Int) -> Dynamic
+						[Const:String] "get_display_mode"
+						[Const:Int] 0
+
+	public static function currentPos[Function:() -> haxe.macro.Position]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Call:Dynamic]
+					[Call:Dynamic]
+						[Field:(f : String, nargs : Int) -> Dynamic]
+							[TypeExpr haxe.macro.Context:Class<haxe.macro.Context>]
+							[FStatic:(f : String, nargs : Int) -> Dynamic]
+								haxe.macro.Context
+								load:(f : String, nargs : Int) -> Dynamic
+						[Const:String] "current_pos"
+						[Const:Int] 0
+
+	public static function getMacroStack[Function:() -> Array<haxe.macro.Position>]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Call:Dynamic]
+					[Call:Dynamic]
+						[Field:(f : String, nargs : Int) -> Dynamic]
+							[TypeExpr haxe.macro.Context:Class<haxe.macro.Context>]
+							[FStatic:(f : String, nargs : Int) -> Dynamic]
+								haxe.macro.Context
+								load:(f : String, nargs : Int) -> Dynamic
+						[Const:String] "get_macro_stack"
+						[Const:Int] 0
+
+	public static function getExpectedType[Function:() -> Null<haxe.macro.Type>]
+		[Block:Dynamic]
+			[Call:Void]
+				[Field:(?includeSuggestion : Bool) -> Void]
+					[TypeExpr haxe.macro.Context:Class<haxe.macro.Context>]
+					[FStatic:(?includeSuggestion : Bool) -> Void]
+						haxe.macro.Context
+						assertInitMacrosDone:(?includeSuggestion : Bool) -> Void
+				[Const:Bool] false
+			[Return:Dynamic]
+				[Call:Dynamic]
+					[Call:Dynamic]
+						[Field:(f : String, nargs : Int) -> Dynamic]
+							[TypeExpr haxe.macro.Context:Class<haxe.macro.Context>]
+							[FStatic:(f : String, nargs : Int) -> Dynamic]
+								haxe.macro.Context
+								load:(f : String, nargs : Int) -> Dynamic
+						[Const:String] "get_expected_type"
+						[Const:Int] 0
+
+	public static function getCallArguments[Function:() -> Null<Array<haxe.macro.Expr>>]
+		[Block:Dynamic]
+			[Call:Void]
+				[Field:(?includeSuggestion : Bool) -> Void]
+					[TypeExpr haxe.macro.Context:Class<haxe.macro.Context>]
+					[FStatic:(?includeSuggestion : Bool) -> Void]
+						haxe.macro.Context
+						assertInitMacrosDone:(?includeSuggestion : Bool) -> Void
+				[Const:Bool] false
+			[Return:Dynamic]
+				[Call:Dynamic]
+					[Call:Dynamic]
+						[Field:(f : String, nargs : Int) -> Dynamic]
+							[TypeExpr haxe.macro.Context:Class<haxe.macro.Context>]
+							[FStatic:(f : String, nargs : Int) -> Dynamic]
+								haxe.macro.Context
+								load:(f : String, nargs : Int) -> Dynamic
+						[Const:String] "get_call_arguments"
+						[Const:Int] 0
+
+	public static function getLocalClass[Function:() -> Null<haxe.macro.Ref<haxe.macro.ClassType>>]
+		[Block:Dynamic]
+			[Call:Void]
+				[Field:(?includeSuggestion : Bool) -> Void]
+					[TypeExpr haxe.macro.Context:Class<haxe.macro.Context>]
+					[FStatic:(?includeSuggestion : Bool) -> Void]
+						haxe.macro.Context
+						assertInitMacrosDone:(?includeSuggestion : Bool) -> Void
+				[Const:Bool] false
+			[Var l(1887):haxe.macro.Type]
+				[Call:Dynamic]
+					[Call:Dynamic]
+						[Field:(f : String, nargs : Int) -> Dynamic]
+							[TypeExpr haxe.macro.Context:Class<haxe.macro.Context>]
+							[FStatic:(f : String, nargs : Int) -> Dynamic]
+								haxe.macro.Context
+								load:(f : String, nargs : Int) -> Dynamic
+						[Const:String] "get_local_type"
+						[Const:Int] 0
+			[If:Void]
+				[Binop:Bool]
+					[Local l(1887):haxe.macro.Type:haxe.macro.Type]
+					==
+					[Const:haxe.macro.Type] null
+				[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [Const:Null<haxe.macro.Ref<haxe.macro.ClassType>>] null
+			[Return:Dynamic]
+				[Meta:Null<haxe.macro.Ref<haxe.macro.ClassType>>]
+					:ast(switch (l) {
+	case TInst(c, _):
+		c;	
+	default:
+		null;	
+})
+					[If:Null<haxe.macro.Ref<haxe.macro.ClassType>>]
+						[Binop:Bool]
+							[EnumIndex:Int] [Local l(1887):haxe.macro.Type:haxe.macro.Type]
+							==
+							[Const:Int] 2
+						[Then:haxe.macro.Ref<haxe.macro.ClassType>] [Block:haxe.macro.Ref<haxe.macro.ClassType>]
+							[Var `(1891):haxe.macro.Ref<haxe.macro.ClassType>]
+								[EnumParameter:haxe.macro.Ref<haxe.macro.ClassType>]
+									[Local l(1887):haxe.macro.Type:haxe.macro.Type]
+									TInst
+									0
+							[Var `(1892):Array<haxe.macro.Type>]
+								[EnumParameter:Array<haxe.macro.Type>]
+									[Local l(1887):haxe.macro.Type:haxe.macro.Type]
+									TInst
+									1
+							[Block:haxe.macro.Ref<haxe.macro.ClassType>]
+								[Var c(1893):haxe.macro.Ref<haxe.macro.ClassType>] [Local `(1891):haxe.macro.Ref<haxe.macro.ClassType>:haxe.macro.Ref<haxe.macro.ClassType>]
+								[Block:haxe.macro.Ref<haxe.macro.ClassType>] [Local c(1893):haxe.macro.Ref<haxe.macro.ClassType>:haxe.macro.Ref<haxe.macro.ClassType>]
+						[Else:Null<haxe.macro.Ref<haxe.macro.ClassType>>] [Block:Null<haxe.macro.Ref<haxe.macro.ClassType>>] [Const:Null<haxe.macro.Ref<haxe.macro.ClassType>>] null
+
+	public static function getLocalModule[Function:() -> String]
+		[Block:Dynamic]
+			[Call:Void]
+				[Field:(?includeSuggestion : Bool) -> Void]
+					[TypeExpr haxe.macro.Context:Class<haxe.macro.Context>]
+					[FStatic:(?includeSuggestion : Bool) -> Void]
+						haxe.macro.Context
+						assertInitMacrosDone:(?includeSuggestion : Bool) -> Void
+				[Const:Bool] false
+			[Return:Dynamic]
+				[Call:Dynamic]
+					[Call:Dynamic]
+						[Field:(f : String, nargs : Int) -> Dynamic]
+							[TypeExpr haxe.macro.Context:Class<haxe.macro.Context>]
+							[FStatic:(f : String, nargs : Int) -> Dynamic]
+								haxe.macro.Context
+								load:(f : String, nargs : Int) -> Dynamic
+						[Const:String] "get_local_module"
+						[Const:Int] 0
+
+	public static function getLocalType[Function:() -> Null<haxe.macro.Type>]
+		[Block:Dynamic]
+			[Call:Void]
+				[Field:(?includeSuggestion : Bool) -> Void]
+					[TypeExpr haxe.macro.Context:Class<haxe.macro.Context>]
+					[FStatic:(?includeSuggestion : Bool) -> Void]
+						haxe.macro.Context
+						assertInitMacrosDone:(?includeSuggestion : Bool) -> Void
+				[Const:Bool] false
+			[Return:Dynamic]
+				[Call:Dynamic]
+					[Call:Dynamic]
+						[Field:(f : String, nargs : Int) -> Dynamic]
+							[TypeExpr haxe.macro.Context:Class<haxe.macro.Context>]
+							[FStatic:(f : String, nargs : Int) -> Dynamic]
+								haxe.macro.Context
+								load:(f : String, nargs : Int) -> Dynamic
+						[Const:String] "get_local_type"
+						[Const:Int] 0
+
+	public static function getLocalMethod[Function:() -> Null<String>]
+		[Block:Dynamic]
+			[Call:Void]
+				[Field:(?includeSuggestion : Bool) -> Void]
+					[TypeExpr haxe.macro.Context:Class<haxe.macro.Context>]
+					[FStatic:(?includeSuggestion : Bool) -> Void]
+						haxe.macro.Context
+						assertInitMacrosDone:(?includeSuggestion : Bool) -> Void
+				[Const:Bool] false
+			[Return:Dynamic]
+				[Call:Dynamic]
+					[Call:Dynamic]
+						[Field:(f : String, nargs : Int) -> Dynamic]
+							[TypeExpr haxe.macro.Context:Class<haxe.macro.Context>]
+							[FStatic:(f : String, nargs : Int) -> Dynamic]
+								haxe.macro.Context
+								load:(f : String, nargs : Int) -> Dynamic
+						[Const:String] "get_local_method"
+						[Const:Int] 0
+
+	public static function getLocalUsing[Function:() -> Array<haxe.macro.Ref<haxe.macro.ClassType>>]
+		[Block:Dynamic]
+			[Call:Void]
+				[Field:(?includeSuggestion : Bool) -> Void]
+					[TypeExpr haxe.macro.Context:Class<haxe.macro.Context>]
+					[FStatic:(?includeSuggestion : Bool) -> Void]
+						haxe.macro.Context
+						assertInitMacrosDone:(?includeSuggestion : Bool) -> Void
+				[Const:Bool] false
+			[Return:Dynamic]
+				[Call:Dynamic]
+					[Call:Dynamic]
+						[Field:(f : String, nargs : Int) -> Dynamic]
+							[TypeExpr haxe.macro.Context:Class<haxe.macro.Context>]
+							[FStatic:(f : String, nargs : Int) -> Dynamic]
+								haxe.macro.Context
+								load:(f : String, nargs : Int) -> Dynamic
+						[Const:String] "get_local_using"
+						[Const:Int] 0
+
+	public static function getLocalImports[Function:() -> Array<haxe.macro.ImportExpr>]
+		[Block:Dynamic]
+			[Call:Void]
+				[Field:(?includeSuggestion : Bool) -> Void]
+					[TypeExpr haxe.macro.Context:Class<haxe.macro.Context>]
+					[FStatic:(?includeSuggestion : Bool) -> Void]
+						haxe.macro.Context
+						assertInitMacrosDone:(?includeSuggestion : Bool) -> Void
+				[Const:Bool] false
+			[Return:Dynamic]
+				[Call:Dynamic]
+					[Call:Dynamic]
+						[Field:(f : String, nargs : Int) -> Dynamic]
+							[TypeExpr haxe.macro.Context:Class<haxe.macro.Context>]
+							[FStatic:(f : String, nargs : Int) -> Dynamic]
+								haxe.macro.Context
+								load:(f : String, nargs : Int) -> Dynamic
+						[Const:String] "get_local_imports"
+						[Const:Int] 0
+
+	@:deprecated("Use Context.getLocalTVars() instead")
+	public static function getLocalVars[Function:() -> Map<String, haxe.macro.Type>]
+		[Block:Dynamic]
+			[Call:Void]
+				[Field:(?includeSuggestion : Bool) -> Void]
+					[TypeExpr haxe.macro.Context:Class<haxe.macro.Context>]
+					[FStatic:(?includeSuggestion : Bool) -> Void]
+						haxe.macro.Context
+						assertInitMacrosDone:(?includeSuggestion : Bool) -> Void
+				[Const:Bool] false
+			[Return:Dynamic]
+				[Call:Dynamic]
+					[Call:Dynamic]
+						[Field:(f : String, nargs : Int) -> Dynamic]
+							[TypeExpr haxe.macro.Context:Class<haxe.macro.Context>]
+							[FStatic:(f : String, nargs : Int) -> Dynamic]
+								haxe.macro.Context
+								load:(f : String, nargs : Int) -> Dynamic
+						[Const:String] "local_vars"
+						[Const:Int] 1
+					[Const:Bool] false
+
+	public static function getLocalTVars[Function:() -> Map<String, haxe.macro.TVar>]
+		[Block:Dynamic]
+			[Call:Void]
+				[Field:(?includeSuggestion : Bool) -> Void]
+					[TypeExpr haxe.macro.Context:Class<haxe.macro.Context>]
+					[FStatic:(?includeSuggestion : Bool) -> Void]
+						haxe.macro.Context
+						assertInitMacrosDone:(?includeSuggestion : Bool) -> Void
+				[Const:Bool] false
+			[Return:Dynamic]
+				[Call:Dynamic]
+					[Call:Dynamic]
+						[Field:(f : String, nargs : Int) -> Dynamic]
+							[TypeExpr haxe.macro.Context:Class<haxe.macro.Context>]
+							[FStatic:(f : String, nargs : Int) -> Dynamic]
+								haxe.macro.Context
+								load:(f : String, nargs : Int) -> Dynamic
+						[Const:String] "local_vars"
+						[Const:Int] 1
+					[Const:Bool] true
+
+	public static function defined[Function:(s : String) -> Bool]
+		[Arg:String] [Local s(1894):String]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Call:Dynamic]
+					[Call:Dynamic]
+						[Field:(f : String, nargs : Int) -> Dynamic]
+							[TypeExpr haxe.macro.Context:Class<haxe.macro.Context>]
+							[FStatic:(f : String, nargs : Int) -> Dynamic]
+								haxe.macro.Context
+								load:(f : String, nargs : Int) -> Dynamic
+						[Const:String] "defined"
+						[Const:Int] 1
+					[Local s(1894):String:String]
+
+	public static function definedValue[Function:(key : String) -> String]
+		[Arg:String] [Local key(428):String]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Call:Dynamic]
+					[Call:Dynamic]
+						[Field:(f : String, nargs : Int) -> Dynamic]
+							[TypeExpr haxe.macro.Context:Class<haxe.macro.Context>]
+							[FStatic:(f : String, nargs : Int) -> Dynamic]
+								haxe.macro.Context
+								load:(f : String, nargs : Int) -> Dynamic
+						[Const:String] "defined_value"
+						[Const:Int] 1
+					[Local key(428):String:String]
+
+	public static function getDefines[Function:() -> Map<String, String>]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Call:Dynamic]
+					[Call:Dynamic]
+						[Field:(f : String, nargs : Int) -> Dynamic]
+							[TypeExpr haxe.macro.Context:Class<haxe.macro.Context>]
+							[FStatic:(f : String, nargs : Int) -> Dynamic]
+								haxe.macro.Context
+								load:(f : String, nargs : Int) -> Dynamic
+						[Const:String] "get_defines"
+						[Const:Int] 0
+
+	public static function getType[Function:(name : String) -> haxe.macro.Type]
+		[Arg:String] [Local name(1895):String]
+		[Block:Dynamic]
+			[Call:Void]
+				[Field:(?includeSuggestion : Bool) -> Void]
+					[TypeExpr haxe.macro.Context:Class<haxe.macro.Context>]
+					[FStatic:(?includeSuggestion : Bool) -> Void]
+						haxe.macro.Context
+						assertInitMacrosDone:(?includeSuggestion : Bool) -> Void
+				[Const:Null<Bool>] null
+			[Return:Dynamic]
+				[Call:Dynamic]
+					[Call:Dynamic]
+						[Field:(f : String, nargs : Int) -> Dynamic]
+							[TypeExpr haxe.macro.Context:Class<haxe.macro.Context>]
+							[FStatic:(f : String, nargs : Int) -> Dynamic]
+								haxe.macro.Context
+								load:(f : String, nargs : Int) -> Dynamic
+						[Const:String] "get_type"
+						[Const:Int] 1
+					[Local name(1895):String:String]
+
+	public static function getModule[Function:(name : String) -> Array<haxe.macro.Type>]
+		[Arg:String] [Local name(1896):String]
+		[Block:Dynamic]
+			[Call:Void]
+				[Field:(?includeSuggestion : Bool) -> Void]
+					[TypeExpr haxe.macro.Context:Class<haxe.macro.Context>]
+					[FStatic:(?includeSuggestion : Bool) -> Void]
+						haxe.macro.Context
+						assertInitMacrosDone:(?includeSuggestion : Bool) -> Void
+				[Const:Null<Bool>] null
+			[Return:Dynamic]
+				[Call:Dynamic]
+					[Call:Dynamic]
+						[Field:(f : String, nargs : Int) -> Dynamic]
+							[TypeExpr haxe.macro.Context:Class<haxe.macro.Context>]
+							[FStatic:(f : String, nargs : Int) -> Dynamic]
+								haxe.macro.Context
+								load:(f : String, nargs : Int) -> Dynamic
+						[Const:String] "get_module"
+						[Const:Int] 1
+					[Local name(1896):String:String]
+
+	public static function getMainExpr[Function:() -> Null<haxe.macro.TypedExpr>]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Call:Dynamic]
+					[Call:Dynamic]
+						[Field:(f : String, nargs : Int) -> Dynamic]
+							[TypeExpr haxe.macro.Context:Class<haxe.macro.Context>]
+							[FStatic:(f : String, nargs : Int) -> Dynamic]
+								haxe.macro.Context
+								load:(f : String, nargs : Int) -> Dynamic
+						[Const:String] "get_main_expr"
+						[Const:Int] 0
+
+	public static function getAllModuleTypes[Function:() -> Array<haxe.macro.ModuleType>]
+		[Block:Dynamic]
+			[Call:Void]
+				[Field:(?includeSuggestion : Bool) -> Void]
+					[TypeExpr haxe.macro.Context:Class<haxe.macro.Context>]
+					[FStatic:(?includeSuggestion : Bool) -> Void]
+						haxe.macro.Context
+						assertInitMacrosDone:(?includeSuggestion : Bool) -> Void
+				[Const:Null<Bool>] null
+			[Return:Dynamic]
+				[Call:Dynamic]
+					[Call:Dynamic]
+						[Field:(f : String, nargs : Int) -> Dynamic]
+							[TypeExpr haxe.macro.Context:Class<haxe.macro.Context>]
+							[FStatic:(f : String, nargs : Int) -> Dynamic]
+								haxe.macro.Context
+								load:(f : String, nargs : Int) -> Dynamic
+						[Const:String] "get_module_types"
+						[Const:Int] 0
+
+	public static function parse[Function:(expr : String, pos : haxe.macro.Position) -> haxe.macro.Expr]
+		[Arg:String] [Local expr(1897):String]
+		[Arg:haxe.macro.Position] [Local pos(1898):haxe.macro.Position]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Call:Dynamic]
+					[Call:Dynamic]
+						[Field:(f : String, nargs : Int) -> Dynamic]
+							[TypeExpr haxe.macro.Context:Class<haxe.macro.Context>]
+							[FStatic:(f : String, nargs : Int) -> Dynamic]
+								haxe.macro.Context
+								load:(f : String, nargs : Int) -> Dynamic
+						[Const:String] "do_parse"
+						[Const:Int] 3
+					[Local expr(1897):String:String]
+					[Local pos(1898):haxe.macro.Position:haxe.macro.Position]
+					[Const:Bool] false
+
+	public static function parseInlineString[Function:(expr : String, pos : haxe.macro.Position) -> haxe.macro.Expr]
+		[Arg:String] [Local expr(1899):String]
+		[Arg:haxe.macro.Position] [Local pos(1900):haxe.macro.Position]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Call:Dynamic]
+					[Call:Dynamic]
+						[Field:(f : String, nargs : Int) -> Dynamic]
+							[TypeExpr haxe.macro.Context:Class<haxe.macro.Context>]
+							[FStatic:(f : String, nargs : Int) -> Dynamic]
+								haxe.macro.Context
+								load:(f : String, nargs : Int) -> Dynamic
+						[Const:String] "do_parse"
+						[Const:Int] 3
+					[Local expr(1899):String:String]
+					[Local pos(1900):haxe.macro.Position:haxe.macro.Position]
+					[Const:Bool] true
+
+	public static function makeExpr[Function:(v : Dynamic, pos : haxe.macro.Position) -> haxe.macro.Expr]
+		[Arg:Dynamic] [Local v(424):Dynamic]
+		[Arg:haxe.macro.Position] [Local pos(425):haxe.macro.Position]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Call:Dynamic]
+					[Call:Dynamic]
+						[Field:(f : String, nargs : Int) -> Dynamic]
+							[TypeExpr haxe.macro.Context:Class<haxe.macro.Context>]
+							[FStatic:(f : String, nargs : Int) -> Dynamic]
+								haxe.macro.Context
+								load:(f : String, nargs : Int) -> Dynamic
+						[Const:String] "make_expr"
+						[Const:Int] 2
+					[Local v(424):Dynamic:Dynamic]
+					[Local pos(425):haxe.macro.Position:haxe.macro.Position]
+
+	public static function signature[Function:(v : Dynamic) -> String]
+		[Arg:Dynamic] [Local v(1901):Dynamic]
+		[Block:Dynamic]
+			[Call:Void]
+				[Field:(?includeSuggestion : Bool) -> Void]
+					[TypeExpr haxe.macro.Context:Class<haxe.macro.Context>]
+					[FStatic:(?includeSuggestion : Bool) -> Void]
+						haxe.macro.Context
+						assertInitMacrosDone:(?includeSuggestion : Bool) -> Void
+				[Const:Bool] false
+			[Return:Dynamic]
+				[Call:Dynamic]
+					[Call:Dynamic]
+						[Field:(f : String, nargs : Int) -> Dynamic]
+							[TypeExpr haxe.macro.Context:Class<haxe.macro.Context>]
+							[FStatic:(f : String, nargs : Int) -> Dynamic]
+								haxe.macro.Context
+								load:(f : String, nargs : Int) -> Dynamic
+						[Const:String] "signature"
+						[Const:Int] 1
+					[Local v(1901):Dynamic:Dynamic]
+
+	@:value({ persistent : true })
+	public static function onGenerate[Function:(callback : (Array<haxe.macro.Type> -> Void), ?persistent : Bool) -> Void]
+		[Arg:Array<haxe.macro.Type> -> Void] [Local callback(1902):Array<haxe.macro.Type> -> Void]
+		[Arg:Bool]
+			[Local persistent(1903):Bool]
+			[Const:Bool] true
+		[Block:Dynamic]
+			[Call:Dynamic]
+				[Call:Dynamic]
+					[Field:(f : String, nargs : Int) -> Dynamic]
+						[TypeExpr haxe.macro.Context:Class<haxe.macro.Context>]
+						[FStatic:(f : String, nargs : Int) -> Dynamic]
+							haxe.macro.Context
+							load:(f : String, nargs : Int) -> Dynamic
+					[Const:String] "on_generate"
+					[Const:Int] 2
+				[Local callback(1902):Array<haxe.macro.Type> -> Void:Array<haxe.macro.Type> -> Void]
+				[Local persistent(1903):Bool:Bool]
+
+	public static function onAfterGenerate[Function:(callback : (() -> Void)) -> Void]
+		[Arg:() -> Void] [Local callback(1904):() -> Void]
+		[Block:Dynamic]
+			[Call:Dynamic]
+				[Call:Dynamic]
+					[Field:(f : String, nargs : Int) -> Dynamic]
+						[TypeExpr haxe.macro.Context:Class<haxe.macro.Context>]
+						[FStatic:(f : String, nargs : Int) -> Dynamic]
+							haxe.macro.Context
+							load:(f : String, nargs : Int) -> Dynamic
+					[Const:String] "on_after_generate"
+					[Const:Int] 1
+				[Local callback(1904):() -> Void:() -> Void]
+
+	public static function onAfterTyping[Function:(callback : (Array<haxe.macro.ModuleType> -> Void)) -> Void]
+		[Arg:Array<haxe.macro.ModuleType> -> Void] [Local callback(1905):Array<haxe.macro.ModuleType> -> Void]
+		[Block:Dynamic]
+			[Call:Dynamic]
+				[Call:Dynamic]
+					[Field:(f : String, nargs : Int) -> Dynamic]
+						[TypeExpr haxe.macro.Context:Class<haxe.macro.Context>]
+						[FStatic:(f : String, nargs : Int) -> Dynamic]
+							haxe.macro.Context
+							load:(f : String, nargs : Int) -> Dynamic
+					[Const:String] "on_after_typing"
+					[Const:Int] 1
+				[Local callback(1905):Array<haxe.macro.ModuleType> -> Void:Array<haxe.macro.ModuleType> -> Void]
+
+	public static function onAfterInitMacros[Function:(callback : (() -> Void)) -> Void]
+		[Arg:() -> Void] [Local callback(1906):() -> Void]
+		[Block:Void]
+			[If:Void]
+				[Call:Bool]
+					[Field:() -> Bool]
+						[TypeExpr haxe.macro.Context:Class<haxe.macro.Context>]
+						[FStatic:() -> Bool]
+							haxe.macro.Context
+							initMacrosDone:() -> Bool
+				[Then:Void] [Block:Void] [Call:Void] [Local callback(1906):() -> Void:() -> Void]
+				[Else:Dynamic] [Block:Dynamic]
+					[Call:Dynamic]
+						[Call:Dynamic]
+							[Field:(f : String, nargs : Int) -> Dynamic]
+								[TypeExpr haxe.macro.Context:Class<haxe.macro.Context>]
+								[FStatic:(f : String, nargs : Int) -> Dynamic]
+									haxe.macro.Context
+									load:(f : String, nargs : Int) -> Dynamic
+							[Const:String] "on_after_init_macros"
+							[Const:Int] 1
+						[Local callback(1906):() -> Void:() -> Void]
+
+	public static function onTypeNotFound[Function:(callback : (String -> haxe.macro.TypeDefinition)) -> Void]
+		[Arg:String -> haxe.macro.TypeDefinition] [Local callback(1907):String -> haxe.macro.TypeDefinition]
+		[Block:Dynamic]
+			[Call:Dynamic]
+				[Call:Dynamic]
+					[Field:(f : String, nargs : Int) -> Dynamic]
+						[TypeExpr haxe.macro.Context:Class<haxe.macro.Context>]
+						[FStatic:(f : String, nargs : Int) -> Dynamic]
+							haxe.macro.Context
+							load:(f : String, nargs : Int) -> Dynamic
+					[Const:String] "on_type_not_found"
+					[Const:Int] 1
+				[Local callback(1907):String -> haxe.macro.TypeDefinition:String -> haxe.macro.TypeDefinition]
+
+	public static function typeof[Function:(e : haxe.macro.Expr) -> haxe.macro.Type]
+		[Arg:haxe.macro.Expr] [Local e(1908):haxe.macro.Expr]
+		[Block:Dynamic]
+			[Call:Void]
+				[Field:(?includeSuggestion : Bool) -> Void]
+					[TypeExpr haxe.macro.Context:Class<haxe.macro.Context>]
+					[FStatic:(?includeSuggestion : Bool) -> Void]
+						haxe.macro.Context
+						assertInitMacrosDone:(?includeSuggestion : Bool) -> Void
+				[Const:Null<Bool>] null
+			[Return:Dynamic]
+				[Call:Dynamic]
+					[Call:Dynamic]
+						[Field:(f : String, nargs : Int) -> Dynamic]
+							[TypeExpr haxe.macro.Context:Class<haxe.macro.Context>]
+							[FStatic:(f : String, nargs : Int) -> Dynamic]
+								haxe.macro.Context
+								load:(f : String, nargs : Int) -> Dynamic
+						[Const:String] "typeof"
+						[Const:Int] 1
+					[Local e(1908):haxe.macro.Expr:haxe.macro.Expr]
+
+	public static function typeExpr[Function:(e : haxe.macro.Expr) -> haxe.macro.TypedExpr]
+		[Arg:haxe.macro.Expr] [Local e(1909):haxe.macro.Expr]
+		[Block:Dynamic]
+			[Call:Void]
+				[Field:(?includeSuggestion : Bool) -> Void]
+					[TypeExpr haxe.macro.Context:Class<haxe.macro.Context>]
+					[FStatic:(?includeSuggestion : Bool) -> Void]
+						haxe.macro.Context
+						assertInitMacrosDone:(?includeSuggestion : Bool) -> Void
+				[Const:Null<Bool>] null
+			[Return:Dynamic]
+				[Call:Dynamic]
+					[Call:Dynamic]
+						[Field:(f : String, nargs : Int) -> Dynamic]
+							[TypeExpr haxe.macro.Context:Class<haxe.macro.Context>]
+							[FStatic:(f : String, nargs : Int) -> Dynamic]
+								haxe.macro.Context
+								load:(f : String, nargs : Int) -> Dynamic
+						[Const:String] "type_expr"
+						[Const:Int] 1
+					[Local e(1909):haxe.macro.Expr:haxe.macro.Expr]
+
+	public static function resolveType[Function:(t : haxe.macro.ComplexType, p : haxe.macro.Position) -> haxe.macro.Type]
+		[Arg:haxe.macro.ComplexType] [Local t(1910):haxe.macro.ComplexType]
+		[Arg:haxe.macro.Position] [Local p(1911):haxe.macro.Position]
+		[Block:Dynamic]
+			[Call:Void]
+				[Field:(?includeSuggestion : Bool) -> Void]
+					[TypeExpr haxe.macro.Context:Class<haxe.macro.Context>]
+					[FStatic:(?includeSuggestion : Bool) -> Void]
+						haxe.macro.Context
+						assertInitMacrosDone:(?includeSuggestion : Bool) -> Void
+				[Const:Null<Bool>] null
+			[Return:Dynamic]
+				[Call:Dynamic]
+					[Call:Dynamic]
+						[Field:(f : String, nargs : Int) -> Dynamic]
+							[TypeExpr haxe.macro.Context:Class<haxe.macro.Context>]
+							[FStatic:(f : String, nargs : Int) -> Dynamic]
+								haxe.macro.Context
+								load:(f : String, nargs : Int) -> Dynamic
+						[Const:String] "resolve_type"
+						[Const:Int] 2
+					[Local t(1910):haxe.macro.ComplexType:haxe.macro.ComplexType]
+					[Local p(1911):haxe.macro.Position:haxe.macro.Position]
+
+	public static function toComplexType[Function:(t : haxe.macro.Type) -> Null<haxe.macro.ComplexType>]
+		[Arg:haxe.macro.Type] [Local t(1912):haxe.macro.Type]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Call:Dynamic]
+					[Call:Dynamic]
+						[Field:(f : String, nargs : Int) -> Dynamic]
+							[TypeExpr haxe.macro.Context:Class<haxe.macro.Context>]
+							[FStatic:(f : String, nargs : Int) -> Dynamic]
+								haxe.macro.Context
+								load:(f : String, nargs : Int) -> Dynamic
+						[Const:String] "to_complex_type"
+						[Const:Int] 1
+					[Local t(1912):haxe.macro.Type:haxe.macro.Type]
+
+	public static function unify[Function:(t1 : haxe.macro.Type, t2 : haxe.macro.Type) -> Bool]
+		[Arg:haxe.macro.Type] [Local t1(1913):haxe.macro.Type]
+		[Arg:haxe.macro.Type] [Local t2(1914):haxe.macro.Type]
+		[Block:Dynamic]
+			[Call:Void]
+				[Field:(?includeSuggestion : Bool) -> Void]
+					[TypeExpr haxe.macro.Context:Class<haxe.macro.Context>]
+					[FStatic:(?includeSuggestion : Bool) -> Void]
+						haxe.macro.Context
+						assertInitMacrosDone:(?includeSuggestion : Bool) -> Void
+				[Const:Null<Bool>] null
+			[Return:Dynamic]
+				[Call:Dynamic]
+					[Call:Dynamic]
+						[Field:(f : String, nargs : Int) -> Dynamic]
+							[TypeExpr haxe.macro.Context:Class<haxe.macro.Context>]
+							[FStatic:(f : String, nargs : Int) -> Dynamic]
+								haxe.macro.Context
+								load:(f : String, nargs : Int) -> Dynamic
+						[Const:String] "unify"
+						[Const:Int] 2
+					[Local t1(1913):haxe.macro.Type:haxe.macro.Type]
+					[Local t2(1914):haxe.macro.Type:haxe.macro.Type]
+
+	public static function follow[Function:(t : haxe.macro.Type, ?once : Null<Bool>) -> haxe.macro.Type]
+		[Arg:haxe.macro.Type] [Local t(1915):haxe.macro.Type]
+		[Arg:Null<Bool>]
+			[Local once(1916):Null<Bool>]
+			[Const:Null<Bool>] null
+		[Block:Dynamic]
+			[Call:Void]
+				[Field:(?includeSuggestion : Bool) -> Void]
+					[TypeExpr haxe.macro.Context:Class<haxe.macro.Context>]
+					[FStatic:(?includeSuggestion : Bool) -> Void]
+						haxe.macro.Context
+						assertInitMacrosDone:(?includeSuggestion : Bool) -> Void
+				[Const:Null<Bool>] null
+			[Return:Dynamic]
+				[Call:Dynamic]
+					[Call:Dynamic]
+						[Field:(f : String, nargs : Int) -> Dynamic]
+							[TypeExpr haxe.macro.Context:Class<haxe.macro.Context>]
+							[FStatic:(f : String, nargs : Int) -> Dynamic]
+								haxe.macro.Context
+								load:(f : String, nargs : Int) -> Dynamic
+						[Const:String] "follow"
+						[Const:Int] 2
+					[Local t(1915):haxe.macro.Type:haxe.macro.Type]
+					[Local once(1916):Null<Bool>:Null<Bool>]
+
+	@:value({ once : false })
+	public static function followWithAbstracts[Function:(t : haxe.macro.Type, ?once : Bool) -> haxe.macro.Type]
+		[Arg:haxe.macro.Type] [Local t(1917):haxe.macro.Type]
+		[Arg:Bool]
+			[Local once(1918):Bool]
+			[Const:Bool] false
+		[Block:Dynamic]
+			[Call:Void]
+				[Field:(?includeSuggestion : Bool) -> Void]
+					[TypeExpr haxe.macro.Context:Class<haxe.macro.Context>]
+					[FStatic:(?includeSuggestion : Bool) -> Void]
+						haxe.macro.Context
+						assertInitMacrosDone:(?includeSuggestion : Bool) -> Void
+				[Const:Null<Bool>] null
+			[Return:Dynamic]
+				[Call:Dynamic]
+					[Call:Dynamic]
+						[Field:(f : String, nargs : Int) -> Dynamic]
+							[TypeExpr haxe.macro.Context:Class<haxe.macro.Context>]
+							[FStatic:(f : String, nargs : Int) -> Dynamic]
+								haxe.macro.Context
+								load:(f : String, nargs : Int) -> Dynamic
+						[Const:String] "follow_with_abstracts"
+						[Const:Int] 2
+					[Local t(1917):haxe.macro.Type:haxe.macro.Type]
+					[Local once(1918):Bool:Bool]
+
+	public static function getPosInfos[Function:(p : haxe.macro.Position) -> { min : Int, max : Int, file : String }]
+		[Arg:haxe.macro.Position] [Local p(1919):haxe.macro.Position]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Call:Dynamic]
+					[Call:Dynamic]
+						[Field:(f : String, nargs : Int) -> Dynamic]
+							[TypeExpr haxe.macro.Context:Class<haxe.macro.Context>]
+							[FStatic:(f : String, nargs : Int) -> Dynamic]
+								haxe.macro.Context
+								load:(f : String, nargs : Int) -> Dynamic
+						[Const:String] "get_pos_infos"
+						[Const:Int] 1
+					[Local p(1919):haxe.macro.Position:haxe.macro.Position]
+
+	public static function makePosition[Function:(inf : { min : Int, max : Int, file : String }) -> haxe.macro.Position]
+		[Arg:{ min : Int, max : Int, file : String }] [Local inf(1920):{ min : Int, max : Int, file : String }]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Call:Dynamic]
+					[Call:Dynamic]
+						[Field:(f : String, nargs : Int) -> Dynamic]
+							[TypeExpr haxe.macro.Context:Class<haxe.macro.Context>]
+							[FStatic:(f : String, nargs : Int) -> Dynamic]
+								haxe.macro.Context
+								load:(f : String, nargs : Int) -> Dynamic
+						[Const:String] "make_position"
+						[Const:Int] 3
+					[Field:Int]
+						[Local inf(1920):{ min : Int, max : Int, file : String }:{ min : Int, max : Int, file : String }]
+						[FAnon:Int] min:Int
+					[Field:Int]
+						[Local inf(1920):{ min : Int, max : Int, file : String }:{ min : Int, max : Int, file : String }]
+						[FAnon:Int] max:Int
+					[Field:String]
+						[Local inf(1920):{ min : Int, max : Int, file : String }:{ min : Int, max : Int, file : String }]
+						[FAnon:String] file:String
+
+	public static function getResources[Function:() -> Map<String, haxe.io.Bytes>]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Call:Dynamic]
+					[Call:Dynamic]
+						[Field:(f : String, nargs : Int) -> Dynamic]
+							[TypeExpr haxe.macro.Context:Class<haxe.macro.Context>]
+							[FStatic:(f : String, nargs : Int) -> Dynamic]
+								haxe.macro.Context
+								load:(f : String, nargs : Int) -> Dynamic
+						[Const:String] "get_resources"
+						[Const:Int] 0
+
+	public static function addResource[Function:(name : String, data : haxe.io.Bytes) -> Void]
+		[Arg:String] [Local name(1921):String]
+		[Arg:haxe.io.Bytes] [Local data(1922):haxe.io.Bytes]
+		[Block:Dynamic]
+			[Call:Dynamic]
+				[Call:Dynamic]
+					[Field:(f : String, nargs : Int) -> Dynamic]
+						[TypeExpr haxe.macro.Context:Class<haxe.macro.Context>]
+						[FStatic:(f : String, nargs : Int) -> Dynamic]
+							haxe.macro.Context
+							load:(f : String, nargs : Int) -> Dynamic
+					[Const:String] "add_resource"
+					[Const:Int] 2
+				[Local name(1921):String:String]
+				[Local data(1922):haxe.io.Bytes:haxe.io.Bytes]
+
+	public static function getBuildFields[Function:() -> Array<haxe.macro.Field>]
+		[Block:Dynamic]
+			[Call:Void]
+				[Field:(?includeSuggestion : Bool) -> Void]
+					[TypeExpr haxe.macro.Context:Class<haxe.macro.Context>]
+					[FStatic:(?includeSuggestion : Bool) -> Void]
+						haxe.macro.Context
+						assertInitMacrosDone:(?includeSuggestion : Bool) -> Void
+				[Const:Bool] false
+			[Return:Dynamic]
+				[Call:Dynamic]
+					[Call:Dynamic]
+						[Field:(f : String, nargs : Int) -> Dynamic]
+							[TypeExpr haxe.macro.Context:Class<haxe.macro.Context>]
+							[FStatic:(f : String, nargs : Int) -> Dynamic]
+								haxe.macro.Context
+								load:(f : String, nargs : Int) -> Dynamic
+						[Const:String] "get_build_fields"
+						[Const:Int] 0
+
+	public static function defineType[Function:(t : haxe.macro.TypeDefinition, ?moduleDependency : Null<String>) -> Void]
+		[Arg:haxe.macro.TypeDefinition] [Local t(1923):haxe.macro.TypeDefinition]
+		[Arg:Null<String>]
+			[Local moduleDependency(1924):Null<String>]
+			[Const:Null<String>] null
+		[Block:Dynamic]
+			[Call:Void]
+				[Field:(?includeSuggestion : Bool) -> Void]
+					[TypeExpr haxe.macro.Context:Class<haxe.macro.Context>]
+					[FStatic:(?includeSuggestion : Bool) -> Void]
+						haxe.macro.Context
+						assertInitMacrosDone:(?includeSuggestion : Bool) -> Void
+				[Const:Null<Bool>] null
+			[Call:Dynamic]
+				[Call:Dynamic]
+					[Field:(f : String, nargs : Int) -> Dynamic]
+						[TypeExpr haxe.macro.Context:Class<haxe.macro.Context>]
+						[FStatic:(f : String, nargs : Int) -> Dynamic]
+							haxe.macro.Context
+							load:(f : String, nargs : Int) -> Dynamic
+					[Const:String] "define_type"
+					[Const:Int] 2
+				[Local t(1923):haxe.macro.TypeDefinition:haxe.macro.TypeDefinition]
+				[Local moduleDependency(1924):Null<String>:Null<String>]
+
+	public static function makeMonomorph[Function:() -> haxe.macro.Type]
+		[Block:Dynamic]
+			[Call:Void]
+				[Field:(?includeSuggestion : Bool) -> Void]
+					[TypeExpr haxe.macro.Context:Class<haxe.macro.Context>]
+					[FStatic:(?includeSuggestion : Bool) -> Void]
+						haxe.macro.Context
+						assertInitMacrosDone:(?includeSuggestion : Bool) -> Void
+				[Const:Null<Bool>] null
+			[Return:Dynamic]
+				[Call:Dynamic]
+					[Call:Dynamic]
+						[Field:(f : String, nargs : Int) -> Dynamic]
+							[TypeExpr haxe.macro.Context:Class<haxe.macro.Context>]
+							[FStatic:(f : String, nargs : Int) -> Dynamic]
+								haxe.macro.Context
+								load:(f : String, nargs : Int) -> Dynamic
+						[Const:String] "make_monomorph"
+						[Const:Int] 0
+
+	public static function defineModule[Function:(modulePath : String, types : Array<haxe.macro.TypeDefinition>, ?imports : Null<Array<haxe.macro.ImportExpr>>, ?usings : Null<Array<haxe.macro.TypePath>>) -> Void]
+		[Arg:String] [Local modulePath(1925):String]
+		[Arg:Array<haxe.macro.TypeDefinition>] [Local types(1926):Array<haxe.macro.TypeDefinition>]
+		[Arg:Null<Array<haxe.macro.ImportExpr>>]
+			[Local imports(1927):Null<Array<haxe.macro.ImportExpr>>]
+			[Const:Null<Array<haxe.macro.ImportExpr>>] null
+		[Arg:Null<Array<haxe.macro.TypePath>>]
+			[Local usings(1928):Null<Array<haxe.macro.TypePath>>]
+			[Const:Null<Array<haxe.macro.TypePath>>] null
+		[Block:Dynamic]
+			[If:Void]
+				[Binop:Bool]
+					[Local imports(1927):Null<Array<haxe.macro.ImportExpr>>:Null<Array<haxe.macro.ImportExpr>>]
+					==
+					[Const:Null<Array<haxe.macro.ImportExpr>>] null
+				[Then:Null<Array<haxe.macro.ImportExpr>>] [Block:Null<Array<haxe.macro.ImportExpr>>]
+					[Binop:Null<Array<haxe.macro.ImportExpr>>]
+						[Local imports(1927):Null<Array<haxe.macro.ImportExpr>>:Null<Array<haxe.macro.ImportExpr>>]
+						=
+						[ArrayDecl:Array<haxe.macro.ImportExpr>]
+			[If:Void]
+				[Binop:Bool]
+					[Local usings(1928):Null<Array<haxe.macro.TypePath>>:Null<Array<haxe.macro.TypePath>>]
+					==
+					[Const:Null<Array<haxe.macro.TypePath>>] null
+				[Then:Null<Array<haxe.macro.TypePath>>] [Block:Null<Array<haxe.macro.TypePath>>]
+					[Binop:Null<Array<haxe.macro.TypePath>>]
+						[Local usings(1928):Null<Array<haxe.macro.TypePath>>:Null<Array<haxe.macro.TypePath>>]
+						=
+						[ArrayDecl:Array<haxe.macro.TypePath>]
+			[Call:Void]
+				[Field:(?includeSuggestion : Bool) -> Void]
+					[TypeExpr haxe.macro.Context:Class<haxe.macro.Context>]
+					[FStatic:(?includeSuggestion : Bool) -> Void]
+						haxe.macro.Context
+						assertInitMacrosDone:(?includeSuggestion : Bool) -> Void
+				[Const:Null<Bool>] null
+			[Call:Dynamic]
+				[Call:Dynamic]
+					[Field:(f : String, nargs : Int) -> Dynamic]
+						[TypeExpr haxe.macro.Context:Class<haxe.macro.Context>]
+						[FStatic:(f : String, nargs : Int) -> Dynamic]
+							haxe.macro.Context
+							load:(f : String, nargs : Int) -> Dynamic
+					[Const:String] "define_module"
+					[Const:Int] 4
+				[Local modulePath(1925):String:String]
+				[Local types(1926):Array<haxe.macro.TypeDefinition>:Array<haxe.macro.TypeDefinition>]
+				[Local imports(1927):Null<Array<haxe.macro.ImportExpr>>:Null<Array<haxe.macro.ImportExpr>>]
+				[Local usings(1928):Null<Array<haxe.macro.TypePath>>:Null<Array<haxe.macro.TypePath>>]
+
+	public static function getTypedExpr[Function:(t : haxe.macro.TypedExpr) -> haxe.macro.Expr]
+		[Arg:haxe.macro.TypedExpr] [Local t(1929):haxe.macro.TypedExpr]
+		[Block:Dynamic]
+			[Call:Void]
+				[Field:(?includeSuggestion : Bool) -> Void]
+					[TypeExpr haxe.macro.Context:Class<haxe.macro.Context>]
+					[FStatic:(?includeSuggestion : Bool) -> Void]
+						haxe.macro.Context
+						assertInitMacrosDone:(?includeSuggestion : Bool) -> Void
+				[Const:Null<Bool>] null
+			[Return:Dynamic]
+				[Call:Dynamic]
+					[Call:Dynamic]
+						[Field:(f : String, nargs : Int) -> Dynamic]
+							[TypeExpr haxe.macro.Context:Class<haxe.macro.Context>]
+							[FStatic:(f : String, nargs : Int) -> Dynamic]
+								haxe.macro.Context
+								load:(f : String, nargs : Int) -> Dynamic
+						[Const:String] "get_typed_expr"
+						[Const:Int] 1
+					[Local t(1929):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+
+	public static function storeTypedExpr[Function:(t : haxe.macro.TypedExpr) -> haxe.macro.Expr]
+		[Arg:haxe.macro.TypedExpr] [Local t(1930):haxe.macro.TypedExpr]
+		[Block:Dynamic]
+			[Call:Void]
+				[Field:(?includeSuggestion : Bool) -> Void]
+					[TypeExpr haxe.macro.Context:Class<haxe.macro.Context>]
+					[FStatic:(?includeSuggestion : Bool) -> Void]
+						haxe.macro.Context
+						assertInitMacrosDone:(?includeSuggestion : Bool) -> Void
+				[Const:Null<Bool>] null
+			[Return:Dynamic]
+				[Call:Dynamic]
+					[Call:Dynamic]
+						[Field:(f : String, nargs : Int) -> Dynamic]
+							[TypeExpr haxe.macro.Context:Class<haxe.macro.Context>]
+							[FStatic:(f : String, nargs : Int) -> Dynamic]
+								haxe.macro.Context
+								load:(f : String, nargs : Int) -> Dynamic
+						[Const:String] "store_typed_expr"
+						[Const:Int] 1
+					[Local t(1930):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+
+	public static function storeExpr[Function:(e : haxe.macro.Expr) -> haxe.macro.Expr]
+		[Arg:haxe.macro.Expr] [Local e(1931):haxe.macro.Expr]
+		[Block:Dynamic]
+			[Call:Void]
+				[Field:(?includeSuggestion : Bool) -> Void]
+					[TypeExpr haxe.macro.Context:Class<haxe.macro.Context>]
+					[FStatic:(?includeSuggestion : Bool) -> Void]
+						haxe.macro.Context
+						assertInitMacrosDone:(?includeSuggestion : Bool) -> Void
+				[Const:Null<Bool>] null
+			[Return:Dynamic]
+				[Call:Dynamic]
+					[Call:Dynamic]
+						[Field:(f : String, nargs : Int) -> Dynamic]
+							[TypeExpr haxe.macro.Context:Class<haxe.macro.Context>]
+							[FStatic:(f : String, nargs : Int) -> Dynamic]
+								haxe.macro.Context
+								load:(f : String, nargs : Int) -> Dynamic
+						[Const:String] "store_expr"
+						[Const:Int] 1
+					[Local e(1931):haxe.macro.Expr:haxe.macro.Expr]
+
+	public static function typeAndStoreExpr[Function:(e : haxe.macro.Expr) -> { type : haxe.macro.Ref<haxe.macro.Type>, expr : haxe.macro.Expr }]
+		[Arg:haxe.macro.Expr] [Local e(1932):haxe.macro.Expr]
+		[Block:Dynamic]
+			[Call:Void]
+				[Field:(?includeSuggestion : Bool) -> Void]
+					[TypeExpr haxe.macro.Context:Class<haxe.macro.Context>]
+					[FStatic:(?includeSuggestion : Bool) -> Void]
+						haxe.macro.Context
+						assertInitMacrosDone:(?includeSuggestion : Bool) -> Void
+				[Const:Null<Bool>] null
+			[Return:Dynamic]
+				[Call:Dynamic]
+					[Call:Dynamic]
+						[Field:(f : String, nargs : Int) -> Dynamic]
+							[TypeExpr haxe.macro.Context:Class<haxe.macro.Context>]
+							[FStatic:(f : String, nargs : Int) -> Dynamic]
+								haxe.macro.Context
+								load:(f : String, nargs : Int) -> Dynamic
+						[Const:String] "type_and_store_expr"
+						[Const:Int] 1
+					[Local e(1932):haxe.macro.Expr:haxe.macro.Expr]
+
+	public static function registerModuleDependency[Function:(modulePath : String, externFile : String) -> Void]
+		[Arg:String] [Local modulePath(1933):String]
+		[Arg:String] [Local externFile(1934):String]
+		[Block:Void]
+			[Call:Void]
+				[Field:(callback : (() -> Void)) -> Void]
+					[TypeExpr haxe.macro.Context:Class<haxe.macro.Context>]
+					[FStatic:(callback : (() -> Void)) -> Void]
+						haxe.macro.Context
+						onAfterInitMacros:(callback : (() -> Void)) -> Void
+				[Function:() -> Void]
+					[Call:Dynamic]
+						[Call:Dynamic]
+							[Field:(f : String, nargs : Int) -> Dynamic]
+								[TypeExpr haxe.macro.Context:Class<haxe.macro.Context>]
+								[FStatic:(f : String, nargs : Int) -> Dynamic]
+									haxe.macro.Context
+									load:(f : String, nargs : Int) -> Dynamic
+							[Const:String] "register_module_dependency"
+							[Const:Int] 2
+						[Local modulePath(1933):String:String]
+						[Local externFile(1934):String:String]
+
+	public static function timer[Function:(id : String) -> (() -> Void)]
+		[Arg:String] [Local id(1935):String]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Call:Dynamic]
+					[Call:Dynamic]
+						[Field:(f : String, nargs : Int) -> Dynamic]
+							[TypeExpr haxe.macro.Context:Class<haxe.macro.Context>]
+							[FStatic:(f : String, nargs : Int) -> Dynamic]
+								haxe.macro.Context
+								load:(f : String, nargs : Int) -> Dynamic
+						[Const:String] "timer"
+						[Const:Int] 1
+					[Local id(1935):String:String]
+
+	public static function withImports<X>[Function:(imports : Array<String>, usings : Array<String>, code : (() -> withImports.X)) -> withImports.X]
+		[Arg:Array<String>] [Local imports(1936):Array<String>]
+		[Arg:Array<String>] [Local usings(1937):Array<String>]
+		[Arg:() -> withImports.X] [Local code(1938):() -> withImports.X]
+		[Block:Dynamic]
+			[Call:Void]
+				[Field:(?includeSuggestion : Bool) -> Void]
+					[TypeExpr haxe.macro.Context:Class<haxe.macro.Context>]
+					[FStatic:(?includeSuggestion : Bool) -> Void]
+						haxe.macro.Context
+						assertInitMacrosDone:(?includeSuggestion : Bool) -> Void
+				[Const:Null<Bool>] null
+			[Return:Dynamic]
+				[Call:Dynamic]
+					[Call:Dynamic]
+						[Field:(f : String, nargs : Int) -> Dynamic]
+							[TypeExpr haxe.macro.Context:Class<haxe.macro.Context>]
+							[FStatic:(f : String, nargs : Int) -> Dynamic]
+								haxe.macro.Context
+								load:(f : String, nargs : Int) -> Dynamic
+						[Const:String] "with_imports"
+						[Const:Int] 3
+					[Local imports(1936):Array<String>:Array<String>]
+					[Local usings(1937):Array<String>:Array<String>]
+					[Local code(1938):() -> withImports.X:() -> withImports.X]
+
+	public static function withOptions<X>[Function:(options : { ?allowTransform : Null<Bool>, ?allowInlining : Null<Bool> }, code : (() -> withOptions.X)) -> withOptions.X]
+		[Arg:{ ?allowTransform : Null<Bool>, ?allowInlining : Null<Bool> }] [Local options(1939):{ ?allowTransform : Null<Bool>, ?allowInlining : Null<Bool> }]
+		[Arg:() -> withOptions.X] [Local code(1940):() -> withOptions.X]
+		[Block:Dynamic]
+			[Call:Void]
+				[Field:(?includeSuggestion : Bool) -> Void]
+					[TypeExpr haxe.macro.Context:Class<haxe.macro.Context>]
+					[FStatic:(?includeSuggestion : Bool) -> Void]
+						haxe.macro.Context
+						assertInitMacrosDone:(?includeSuggestion : Bool) -> Void
+				[Const:Null<Bool>] null
+			[Return:Dynamic]
+				[Call:Dynamic]
+					[Call:Dynamic]
+						[Field:(f : String, nargs : Int) -> Dynamic]
+							[TypeExpr haxe.macro.Context:Class<haxe.macro.Context>]
+							[FStatic:(f : String, nargs : Int) -> Dynamic]
+								haxe.macro.Context
+								load:(f : String, nargs : Int) -> Dynamic
+						[Const:String] "with_options"
+						[Const:Int] 2
+					[Local options(1939):{ ?allowTransform : Null<Bool>, ?allowInlining : Null<Bool> }:{ ?allowTransform : Null<Bool>, ?allowInlining : Null<Bool> }]
+					[Local code(1940):() -> withOptions.X:() -> withOptions.X]
+
+	@:deprecated
+	public static function registerModuleReuseCall[Function:(modulePath : String, macroCall : String) -> Void]
+		[Arg:String] [Local modulePath(1941):String]
+		[Arg:String] [Local macroCall(1942):String]
+		[Block:Dynamic] [Throw:Dynamic] [Const:String] "This method is no longer supported. See https://github.com/HaxeFoundation/haxe/issues/5746"
+
+	@:deprecated
+	public static function onMacroContextReused[Function:(callb : (() -> Bool)) -> Void]
+		[Arg:() -> Bool] [Local callb(1943):() -> Bool]
+		[Block:Dynamic] [Throw:Dynamic] [Const:String] "This method is no longer supported. See https://github.com/HaxeFoundation/haxe/issues/5746"
+
+	@:allow(haxe.macro.TypeTools) @:allow(haxe.macro.MacroStringTools) @:allow(haxe.macro.TypedExprTools) @:allow(haxe.macro.PositionTools)
+	static function load[Function:(f : String, nargs : Int) -> Dynamic]
+		[Arg:String] [Local f(426):String]
+		[Arg:Int] [Local nargs(427):Int]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Call:Dynamic]
+					[Field:(s : String) -> Dynamic]
+						[TypeExpr eval.vm.Context:Class<eval.vm.Context>]
+						[FStatic:(s : String) -> Dynamic]
+							eval.vm.Context
+							callMacroApi:(s : String) -> Dynamic
+					[Local f(426):String:String]
+
+	static function includeFile[Function:(file : String, position : String) -> Void]
+		[Arg:String] [Local file(1944):String]
+		[Arg:String] [Local position(1945):String]
+		[Block:Dynamic]
+			[Call:Dynamic]
+				[Call:Dynamic]
+					[Field:(f : String, nargs : Int) -> Dynamic]
+						[TypeExpr haxe.macro.Context:Class<haxe.macro.Context>]
+						[FStatic:(f : String, nargs : Int) -> Dynamic]
+							haxe.macro.Context
+							load:(f : String, nargs : Int) -> Dynamic
+					[Const:String] "include_file"
+					[Const:Int] 2
+				[Local file(1944):String:String]
+				[Local position(1945):String:String]
+
+	static function sExpr[Function:(e : haxe.macro.TypedExpr, pretty : Bool) -> String]
+		[Arg:haxe.macro.TypedExpr] [Local e(1946):haxe.macro.TypedExpr]
+		[Arg:Bool] [Local pretty(1947):Bool]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Call:Dynamic]
+					[Call:Dynamic]
+						[Field:(f : String, nargs : Int) -> Dynamic]
+							[TypeExpr haxe.macro.Context:Class<haxe.macro.Context>]
+							[FStatic:(f : String, nargs : Int) -> Dynamic]
+								haxe.macro.Context
+								load:(f : String, nargs : Int) -> Dynamic
+						[Const:String] "s_expr"
+						[Const:Int] 2
+					[Local e(1946):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+					[Local pretty(1947):Bool:Bool]
+
+	@:allow(haxe.macro.Compiler)
+	static function assertInitMacro[Function:() -> Void]
+		[Block:Void]
+			[If:Void]
+				[Call:Bool]
+					[Field:() -> Bool]
+						[TypeExpr haxe.macro.Context:Class<haxe.macro.Context>]
+						[FStatic:() -> Bool]
+							haxe.macro.Context
+							initMacrosDone:() -> Bool
+				[Then:Void] [Block:Void]
+					[Var stack(1948):Array<haxe.macro.Position>]
+						[Call:Array<haxe.macro.Position>]
+							[Field:() -> Array<haxe.macro.Position>]
+								[TypeExpr haxe.macro.Context:Class<haxe.macro.Context>]
+								[FStatic:() -> Array<haxe.macro.Position>]
+									haxe.macro.Context
+									getMacroStack:() -> Array<haxe.macro.Position>
+					[Call:Void]
+						[Field:(msg : String, pos : haxe.macro.Position, ?depth : Null<Int>) -> Void]
+							[TypeExpr haxe.macro.Context:Class<haxe.macro.Context>]
+							[FStatic:(msg : String, pos : haxe.macro.Position, ?depth : Null<Int>) -> Void]
+								haxe.macro.Context
+								warning:(msg : String, pos : haxe.macro.Position, ?depth : Null<Int>) -> Void
+						[Const:String] "This API should only be used from initialization macros."
+						[If:haxe.macro.Position]
+							[Binop:Bool]
+								[Field:Int]
+									[Local stack(1948):Array<haxe.macro.Position>:Array<haxe.macro.Position>]
+									[FInstance:Int]
+										Array<haxe.macro.Position>
+										length:Int
+								>
+								[Const:Int] 2
+							[Then:haxe.macro.Position] [Block:haxe.macro.Position]
+								[Array:haxe.macro.Position]
+									[Local stack(1948):Array<haxe.macro.Position>:Array<haxe.macro.Position>]
+									[Const:Int] 2
+							[Else:haxe.macro.Position] [Block:haxe.macro.Position]
+								[Call:haxe.macro.Position]
+									[Field:() -> haxe.macro.Position]
+										[TypeExpr haxe.macro.Context:Class<haxe.macro.Context>]
+										[FStatic:() -> haxe.macro.Position]
+											haxe.macro.Context
+											currentPos:() -> haxe.macro.Position
+						[Const:Null<Int>] null
+
+	@:value({ includeSuggestion : true }) @:allow(haxe.macro.Compiler)
+	static function assertInitMacrosDone[Function:(?includeSuggestion : Bool) -> Void]
+		[Arg:Bool]
+			[Local includeSuggestion(1886):Bool]
+			[Const:Bool] true
+		[Block:Void]
+}

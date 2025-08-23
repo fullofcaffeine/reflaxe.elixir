@@ -203,6 +203,26 @@ class EnumIntrospectionCompiler {
         
         // Extract a parameter from an enum constructor
         // Used when accessing constructor arguments in pattern matching or introspection
+        
+        // Set flag to indicate we're in enum extraction context
+        // This prevents incorrect 'g' -> 'g_counter' mappings from being applied
+        var wasInEnumExtraction = compiler.isInEnumExtraction;
+        compiler.isInEnumExtraction = true;
+        
+        // CRITICAL FIX: Temporarily remove any incorrect 'g' -> 'g_counter' mapping
+        // This mapping is incorrect for enum extraction where 'g' is the extracted parameter
+        var savedGMapping = null;
+        if (compiler.currentFunctionParameterMap.exists("g")) {
+            savedGMapping = compiler.currentFunctionParameterMap.get("g");
+            if (StringTools.endsWith(savedGMapping, "_counter")) {
+                // This is definitely wrong for enum extraction
+                compiler.currentFunctionParameterMap.remove("g");
+                trace('[XRay EnumIntrospectionCompiler] REMOVED incorrect g -> ${savedGMapping} mapping');
+            } else {
+                savedGMapping = null; // Don't restore if it wasn't a counter mapping
+            }
+        }
+        
         var enumExpr = compiler.compileExpression(e);
         
         #if debug_enum_introspection_compiler
@@ -279,6 +299,14 @@ class EnumIntrospectionCompiler {
         trace('[XRay EnumIntrospectionCompiler] Generated parameter expression: ${result}');
         trace("[XRay EnumIntrospectionCompiler] ENUM PARAMETER COMPILATION END");
         #end
+        
+        // Restore the saved mapping if we temporarily removed it
+        if (savedGMapping != null) {
+            compiler.currentFunctionParameterMap.set("g", savedGMapping);
+        }
+        
+        // Restore the enum extraction flag
+        compiler.isInEnumExtraction = wasInEnumExtraction;
         
         return result;
     }

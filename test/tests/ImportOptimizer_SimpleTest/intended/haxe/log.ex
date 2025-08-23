@@ -23,11 +23,18 @@ defmodule Log do
           (
           g_counter = 0
           g = infos.custom_params
-          while_loop(fn -> ((g < g.length)) end, fn -> (
-          v = Enum.at(g, g)
-          g + 1
-          str = str <> ", " <> Std.string(v)
-        ) end)
+          loop_helper = fn loop_fn, {v2, g, str} ->
+      if ((g_counter < g_counter.length)) do
+        v = Enum.at(g_counter, g_counter)
+        g = g + 1
+        str = str + ", " <> Std.string(v)
+        loop_fn.(loop_fn, {v2, g, str})
+      else
+        {v2, g, str}
+      end
+    end
+
+    {v2, g, str} = loop_helper.(loop_helper, {v2, g, str})
         )
         end
           pstr <> ": " <> str
@@ -58,6 +65,30 @@ defmodule Log do
           str = Log.format_output(v, infos)
           Sys.println(str)
         )
+  end
+
+
+  # While loop helper functions
+  # Generated automatically for tail-recursive loop patterns
+
+  @doc false
+  defp while_loop(condition_fn, body_fn) do
+    if condition_fn.() do
+      body_fn.()
+      while_loop(condition_fn, body_fn)
+    else
+      nil
+    end
+  end
+
+  @doc false
+  defp do_while_loop(body_fn, condition_fn) do
+    body_fn.()
+    if condition_fn.() do
+      do_while_loop(body_fn, condition_fn)
+    else
+      nil
+    end
   end
 
 end

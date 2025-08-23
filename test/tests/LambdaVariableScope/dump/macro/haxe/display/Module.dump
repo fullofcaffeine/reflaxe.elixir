@@ -1,0 +1,1 @@
+typedef haxe.display.Module = { path : haxe.display.JsonModulePath }

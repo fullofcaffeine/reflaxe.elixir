@@ -1,0 +1,382 @@
+class reflaxe.elixir.helpers.TemplateCompiler {
+
+	public static function isTemplateClassType[Function:(classType : haxe.macro.ClassType) -> Bool]
+		[Arg:haxe.macro.ClassType] [Local classType(15725):haxe.macro.ClassType]
+		[Block:Dynamic]
+			[If:Void]
+				[Binop:Bool]
+					[Local classType(15725):haxe.macro.ClassType:haxe.macro.ClassType]
+					==
+					[Const:haxe.macro.ClassType] null
+				[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [Const:Bool] false
+			[Return:Dynamic]
+				[Call:Bool]
+					[Field:(name : String) -> Bool]
+						[Field:haxe.macro.MetaAccess]
+							[Local classType(15725):haxe.macro.ClassType:haxe.macro.ClassType]
+							[FAnon:haxe.macro.MetaAccess] meta:haxe.macro.MetaAccess
+						[FAnon:(name : String) -> Bool] has:(name : String) -> Bool
+					[Const:String] ":template"
+
+	public static function getTemplateConfig[Function:(classType : haxe.macro.ClassType) -> reflaxe.elixir.helpers.TemplateConfig]
+		[Arg:haxe.macro.ClassType] [Local classType(15730):haxe.macro.ClassType]
+		[Block:Dynamic]
+			[If:Void]
+				[Unop:Bool]
+					!
+					Prefix
+					[Call:Bool]
+						[Field:(name : String) -> Bool]
+							[Field:haxe.macro.MetaAccess]
+								[Local classType(15730):haxe.macro.ClassType:haxe.macro.ClassType]
+								[FAnon:haxe.macro.MetaAccess] meta:haxe.macro.MetaAccess
+							[FAnon:(name : String) -> Bool] has:(name : String) -> Bool
+						[Const:String] ":template"
+				[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [ObjectDecl:{ templateFile : Null<String> }] templateFile: [Const:Null<String>] null
+			[Var meta(15731):haxe.macro.MetadataEntry]
+				[Array:haxe.macro.MetadataEntry]
+					[Call:Array<haxe.macro.MetadataEntry>]
+						[Field:(name : String) -> Array<haxe.macro.MetadataEntry>]
+							[Field:haxe.macro.MetaAccess]
+								[Local classType(15730):haxe.macro.ClassType:haxe.macro.ClassType]
+								[FAnon:haxe.macro.MetaAccess] meta:haxe.macro.MetaAccess
+							[FAnon:(name : String) -> Array<haxe.macro.MetadataEntry>] extract:(name : String) -> Array<haxe.macro.MetadataEntry>
+						[Const:String] ":template"
+					[Const:Int] 0
+			[Var templateFile(15732):Null<String>] [Const:Null<String>] null
+			[If:Void]
+				[Binop:Bool]
+					[Binop:Bool]
+						[Field:Null<Array<haxe.macro.Expr>>]
+							[Local meta(15731):haxe.macro.MetadataEntry:haxe.macro.MetadataEntry]
+							[FAnon:Null<Array<haxe.macro.Expr>>] params:Null<Array<haxe.macro.Expr>>
+						!=
+						[Const:Null<Array<haxe.macro.Expr>>] null
+					&&
+					[Binop:Bool]
+						[Field:Int]
+							[Field:Null<Array<haxe.macro.Expr>>]
+								[Local meta(15731):haxe.macro.MetadataEntry:haxe.macro.MetadataEntry]
+								[FAnon:Null<Array<haxe.macro.Expr>>] params:Null<Array<haxe.macro.Expr>>
+							[FInstance:Int]
+								Array<haxe.macro.Expr>
+								length:Int
+						>
+						[Const:Int] 0
+				[Then:Void] [Block:Void]
+					[Meta:Void]
+						:ast(switch (meta.params[0].expr) {
+	case EConst(CString(s, _)):
+		templateFile = s;	
+	case _:
+})
+						[Block:Void]
+							[Var `(15738):haxe.macro.ExprDef]
+								[Field:haxe.macro.ExprDef]
+									[Array:haxe.macro.Expr]
+										[Field:Null<Array<haxe.macro.Expr>>]
+											[Local meta(15731):haxe.macro.MetadataEntry:haxe.macro.MetadataEntry]
+											[FAnon:Null<Array<haxe.macro.Expr>>] params:Null<Array<haxe.macro.Expr>>
+										[Const:Int] 0
+									[FAnon:haxe.macro.ExprDef] expr:haxe.macro.ExprDef
+							[If:Void]
+								[Binop:Bool]
+									[EnumIndex:Int] [Local `(15738):haxe.macro.ExprDef:haxe.macro.ExprDef]
+									==
+									[Const:Int] 0
+								[Then:Void] [Block:Void]
+									[Var `(15739):haxe.macro.Constant]
+										[EnumParameter:haxe.macro.Constant]
+											[Local `(15738):haxe.macro.ExprDef:haxe.macro.ExprDef]
+											EConst
+											0
+									[If:Void]
+										[Binop:Bool]
+											[EnumIndex:Int] [Local `(15739):haxe.macro.Constant:haxe.macro.Constant]
+											==
+											[Const:Int] 2
+										[Then:Null<String>] [Block:Null<String>]
+											[Var `(15740):String]
+												[EnumParameter:String]
+													[Local `(15739):haxe.macro.Constant:haxe.macro.Constant]
+													CString
+													0
+											[Var `(15741):Null<haxe.macro.StringLiteralKind>]
+												[EnumParameter:Null<haxe.macro.StringLiteralKind>]
+													[Local `(15739):haxe.macro.Constant:haxe.macro.Constant]
+													CString
+													1
+											[Block:Null<String>]
+												[Var s(15742):String] [Local `(15740):String:String]
+												[Block:Null<String>]
+													[Binop:Null<String>]
+														[Local templateFile(15732):Null<String>:Null<String>]
+														=
+														[Local s(15742):String:String]
+										[Else:Void] [Block:Void]
+								[Else:Void] [Block:Void]
+			[Return:Dynamic] [ObjectDecl:{ templateFile : Null<String> }] templateFile: [Local templateFile(15732):Null<String>:Null<String>]
+
+	public static function compileFullTemplate[Function:(className : String, config : reflaxe.elixir.helpers.TemplateConfig) -> String]
+		[Arg:String] [Local className(15744):String]
+		[Arg:reflaxe.elixir.helpers.TemplateConfig] [Local config(15745):reflaxe.elixir.helpers.TemplateConfig]
+		[Block:Dynamic]
+			[Var moduleName(15746):String]
+				[Call:String]
+					[Field:(haxeName : String) -> String]
+						[TypeExpr reflaxe.elixir.helpers.NamingHelper:Class<reflaxe.elixir.helpers.NamingHelper>]
+						[FStatic:(haxeName : String) -> String]
+							reflaxe.elixir.helpers.NamingHelper
+							getElixirModuleName:(haxeName : String) -> String
+					[Local className(15744):String:String]
+			[Var templateFile(15747):Null<String>]
+				[If:Null<String>]
+					[Binop:Bool]
+						[Field:Null<String>]
+							[Local config(15745):reflaxe.elixir.helpers.TemplateConfig:reflaxe.elixir.helpers.TemplateConfig]
+							[FAnon:Null<String>] templateFile:Null<String>
+						!=
+						[Const:Null<String>] null
+					[Then:Null<String>] [Block:Null<String>]
+						[Field:Null<String>]
+							[Local config(15745):reflaxe.elixir.helpers.TemplateConfig:reflaxe.elixir.helpers.TemplateConfig]
+							[FAnon:Null<String>] templateFile:Null<String>
+					[Else:String] [Block:String]
+						[Binop:String]
+							[Binop:String]
+								[Const:String] ""
+								+
+								[Call:String]
+									[Field:(camelCase : String) -> String]
+										[TypeExpr reflaxe.elixir.helpers.NamingHelper:Class<reflaxe.elixir.helpers.NamingHelper>]
+										[FStatic:(camelCase : String) -> String]
+											reflaxe.elixir.helpers.NamingHelper
+											toSnakeCase:(camelCase : String) -> String
+									[Local className(15744):String:String]
+							+
+							[Const:String] ".html.heex"
+			[Var result(15748):String]
+				[Binop:String]
+					[Binop:String]
+						[Const:String] "defmodule "
+						+
+						[Local moduleName(15746):String:String]
+					+
+					[Const:String] " do\n"
+			[Binop:String]
+				[Local result(15748):String:String]
+				+=
+				[Const:String] "  @moduledoc \"\"\"\n"
+			[Binop:String]
+				[Local result(15748):String:String]
+				+=
+				[Const:String] "  Phoenix HEEx template module generated from Haxe @:template class\n"
+			[Binop:String]
+				[Local result(15748):String:String]
+				+=
+				[Binop:String]
+					[Binop:String]
+						[Const:String] "  Template file: "
+						+
+						[Local templateFile(15747):Null<String>:Null<String>]
+					+
+					[Const:String] "\n"
+			[Binop:String]
+				[Local result(15748):String:String]
+				+=
+				[Const:String] "  \"\"\"\n\n"
+			[Binop:String]
+				[Local result(15748):String:String]
+				+=
+				[Const:String] "  use Phoenix.Component\n"
+			[Binop:String]
+				[Local result(15748):String:String]
+				+=
+				[Const:String] "  import Phoenix.HTML\n"
+			[Binop:String]
+				[Local result(15748):String:String]
+				+=
+				[Const:String] "  import Phoenix.HTML.Form\n\n"
+			[Binop:String]
+				[Local result(15748):String:String]
+				+=
+				[Const:String] "  @doc \"\"\"\n"
+			[Binop:String]
+				[Local result(15748):String:String]
+				+=
+				[Binop:String]
+					[Binop:String]
+						[Const:String] "  Renders the "
+						+
+						[Local templateFile(15747):Null<String>:Null<String>]
+					+
+					[Const:String] " template with the provided assigns\n"
+			[Binop:String]
+				[Local result(15748):String:String]
+				+=
+				[Const:String] "  \"\"\"\n"
+			[Binop:String]
+				[Local result(15748):String:String]
+				+=
+				[Const:String] "  def render(assigns) do\n"
+			[Binop:String]
+				[Local result(15748):String:String]
+				+=
+				[Const:String] "    ~H\"\"\"\n"
+			[Binop:String]
+				[Local result(15748):String:String]
+				+=
+				[Const:String] "    <!-- Template content will be processed by hxx() function -->\n"
+			[Binop:String]
+				[Local result(15748):String:String]
+				+=
+				[Const:String] "    <div class=\"haxe-template\">\n"
+			[Binop:String]
+				[Local result(15748):String:String]
+				+=
+				[Const:String] "      <%= assigns[:content] || \"Template content\" %>\n"
+			[Binop:String]
+				[Local result(15748):String:String]
+				+=
+				[Const:String] "    </div>\n"
+			[Binop:String]
+				[Local result(15748):String:String]
+				+=
+				[Const:String] "    \"\"\"\n"
+			[Binop:String]
+				[Local result(15748):String:String]
+				+=
+				[Const:String] "  end\n\n"
+			[Binop:String]
+				[Local result(15748):String:String]
+				+=
+				[Const:String] "  @doc \"\"\"\n"
+			[Binop:String]
+				[Local result(15748):String:String]
+				+=
+				[Const:String] "  Template string processor - converts Haxe template strings to HEEx\n"
+			[Binop:String]
+				[Local result(15748):String:String]
+				+=
+				[Const:String] "  \"\"\"\n"
+			[Binop:String]
+				[Local result(15748):String:String]
+				+=
+				[Const:String] "  def process_template_string(template_str) do\n"
+			[Binop:String]
+				[Local result(15748):String:String]
+				+=
+				[Const:String] "    # Process template string interpolations and convert to HEEx syntax\n"
+			[Binop:String]
+				[Local result(15748):String:String]
+				+=
+				[Const:String] "    template_str\n"
+			[Binop:String]
+				[Local result(15748):String:String]
+				+=
+				[Const:String] "    |> String.replace(~r/\\$\\{([^}]+)\\}/, \"<%= \\\\1 %>\")\n"
+			[Binop:String]
+				[Local result(15748):String:String]
+				+=
+				[Const:String] "    |> String.replace(~r/<\\.([^>]+)>/, \"<.\\\\1>\")\n"
+			[Binop:String]
+				[Local result(15748):String:String]
+				+=
+				[Const:String] "  end\n\n"
+			[Binop:String]
+				[Local result(15748):String:String]
+				+=
+				[Const:String] "end\n"
+			[Return:Dynamic] [Local result(15748):String:String]
+
+	public static function generateHxxFunction[Function:() -> String]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Binop:String]
+					[Binop:String]
+						[Binop:String]
+							[Binop:String]
+								[Binop:String]
+									[Binop:String]
+										[Binop:String]
+											[Binop:String]
+												[Const:String] "macro function hxx(templateStr: Expr): Expr {\n"
+												+
+												[Const:String] "    return switch (templateStr.expr) {\n"
+											+
+											[Const:String] "        case EConst(CString(s, _)):\n"
+										+
+										[Const:String] "            var processed = processTemplateString(s);\n"
+									+
+									[Const:String] "            macro $v{processed};\n"
+								+
+								[Const:String] "        case _:\n"
+							+
+							[Const:String] "            Context.error(\"hxx() expects a string literal\", templateStr.pos);\n"
+						+
+						[Const:String] "    }\n"
+					+
+					[Const:String] "}"
+
+	static function processTemplateString[Function:(template : String) -> String]
+		[Arg:String] [Local template(25043):String]
+		[Block:Dynamic]
+			[Var processed(25044):String] [Local template(25043):String:String]
+			[Binop:String]
+				[Local processed(25044):String:String]
+				=
+				[Call:String]
+					[Field:(s : String, by : String) -> String]
+						[New:EReg]
+							EReg
+							[Const:String] "\\\\$\\\\{([^}]+)\\\\}"
+							[Const:String] "g"
+						[FInstance:(s : String, by : String) -> String]
+							EReg
+							replace:(s : String, by : String) -> String
+					[Local processed(25044):String:String]
+					[Const:String] "#{$1}"
+			[Binop:String]
+				[Local processed(25044):String:String]
+				=
+				[Call:String]
+					[Field:(template : String) -> String]
+						[TypeExpr reflaxe.elixir.helpers.TemplateCompiler:Class<reflaxe.elixir.helpers.TemplateCompiler>]
+						[FStatic:(template : String) -> String]
+							reflaxe.elixir.helpers.TemplateCompiler
+							processConditionals:(template : String) -> String
+					[Local processed(25044):String:String]
+			[Binop:String]
+				[Local processed(25044):String:String]
+				=
+				[Call:String]
+					[Field:(template : String) -> String]
+						[TypeExpr reflaxe.elixir.helpers.TemplateCompiler:Class<reflaxe.elixir.helpers.TemplateCompiler>]
+						[FStatic:(template : String) -> String]
+							reflaxe.elixir.helpers.TemplateCompiler
+							processLoops:(template : String) -> String
+					[Local processed(25044):String:String]
+			[Return:Dynamic] [Local processed(25044):String:String]
+
+	static function processConditionals[Function:(template : String) -> String]
+		[Arg:String] [Local template(25045):String]
+		[Block:Dynamic]
+			[Var ternaryPattern(25046):EReg]
+				[New:EReg]
+					EReg
+					[Const:String] "\\\\#\\\\{([^?]+)\\\\?([^:]+):([^}]+)\\\\}"
+					[Const:String] "g"
+			[Return:Dynamic]
+				[Call:String]
+					[Field:(s : String, by : String) -> String]
+						[Local ternaryPattern(25046):EReg:EReg]
+						[FInstance:(s : String, by : String) -> String]
+							EReg
+							replace:(s : String, by : String) -> String
+					[Local template(25045):String:String]
+					[Const:String] "<%= if $1, do: $2, else: $3 %>"
+
+	static function processLoops[Function:(template : String) -> String]
+		[Arg:String] [Local template(25047):String]
+		[Block:Dynamic] [Return:Dynamic] [Local template(25047):String:String]
+}

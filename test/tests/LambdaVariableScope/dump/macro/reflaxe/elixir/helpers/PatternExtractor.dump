@@ -1,0 +1,1081 @@
+class reflaxe.elixir.helpers.PatternExtractor {
+
+	@:value(new Map())
+	static var patterns:Map<String, reflaxe.elixir.helpers.Pattern> = [Block:haxe.ds.StringMap<reflaxe.elixir.helpers.Pattern>]
+		[Block:Void]
+		[New:haxe.ds.StringMap<reflaxe.elixir.helpers.Pattern>] haxe.ds.StringMap<reflaxe.elixir.helpers.Pattern>;
+
+	@:value([])
+	static var antiPatterns:Array<reflaxe.elixir.helpers.AntiPattern> = [ArrayDecl:Array<reflaxe.elixir.helpers.AntiPattern>];
+
+	public static function analyzeCode[Function:(expr : haxe.macro.TypedExpr, context : String) -> Void]
+		[Arg:haxe.macro.TypedExpr] [Local expr(26732):haxe.macro.TypedExpr]
+		[Arg:String] [Local context(26733):String]
+		[Block:Void]
+			[Meta:Void]
+				:ast(switch (expr.expr) {
+	case TCall(e, args):
+		analyzeFunctionCall(e, args, context);	
+	case TNew(c, _, args):
+		analyzeConstructor(c, args, context);	
+	case TMeta(m, e):
+		analyzeMetadata(m, e, context);	
+	case TFunction(f):
+		analyzeFunction(f, context);	
+	case _:
+})
+				[Block:Void]
+					[Var `(26829):haxe.macro.TypedExprDef]
+						[Field:haxe.macro.TypedExprDef]
+							[Local expr(26732):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+							[FAnon:haxe.macro.TypedExprDef] expr:haxe.macro.TypedExprDef
+					[Switch:Void]
+						[EnumIndex:Int] [Local `(26829):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+						[Case:Void]
+							[Const:Int] 9
+							[Block:Void]
+								[Var `(26830):haxe.macro.TypedExpr]
+									[EnumParameter:haxe.macro.TypedExpr]
+										[Local `(26829):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+										TCall
+										0
+								[Var `(26831):Array<haxe.macro.TypedExpr>]
+									[EnumParameter:Array<haxe.macro.TypedExpr>]
+										[Local `(26829):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+										TCall
+										1
+								[Block:Void]
+									[Var e(26832):haxe.macro.TypedExpr] [Local `(26830):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+									[Var args(26833):Array<haxe.macro.TypedExpr>] [Local `(26831):Array<haxe.macro.TypedExpr>:Array<haxe.macro.TypedExpr>]
+									[Block:Void]
+										[Call:Void]
+											[Field:(e : haxe.macro.TypedExpr, args : Array<haxe.macro.TypedExpr>, context : String) -> Void]
+												[TypeExpr reflaxe.elixir.helpers.PatternExtractor:Class<reflaxe.elixir.helpers.PatternExtractor>]
+												[FStatic:(e : haxe.macro.TypedExpr, args : Array<haxe.macro.TypedExpr>, context : String) -> Void]
+													reflaxe.elixir.helpers.PatternExtractor
+													analyzeFunctionCall:(e : haxe.macro.TypedExpr, args : Array<haxe.macro.TypedExpr>, context : String) -> Void
+											[Local e(26832):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+											[Local args(26833):Array<haxe.macro.TypedExpr>:Array<haxe.macro.TypedExpr>]
+											[Local context(26733):String:String]
+						[Case:Void]
+							[Const:Int] 10
+							[Block:Void]
+								[Var `(26834):haxe.macro.Ref<haxe.macro.ClassType>]
+									[EnumParameter:haxe.macro.Ref<haxe.macro.ClassType>]
+										[Local `(26829):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+										TNew
+										0
+								[Var `(26835):Array<haxe.macro.Type>]
+									[EnumParameter:Array<haxe.macro.Type>]
+										[Local `(26829):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+										TNew
+										1
+								[Var `(26836):Array<haxe.macro.TypedExpr>]
+									[EnumParameter:Array<haxe.macro.TypedExpr>]
+										[Local `(26829):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+										TNew
+										2
+								[Block:Void]
+									[Var c(26837):haxe.macro.Ref<haxe.macro.ClassType>] [Local `(26834):haxe.macro.Ref<haxe.macro.ClassType>:haxe.macro.Ref<haxe.macro.ClassType>]
+									[Var args(26838):Array<haxe.macro.TypedExpr>] [Local `(26836):Array<haxe.macro.TypedExpr>:Array<haxe.macro.TypedExpr>]
+									[Block:Void]
+										[Call:Void]
+											[Field:(c : haxe.macro.Ref<haxe.macro.ClassType>, args : Array<haxe.macro.TypedExpr>, context : String) -> Void]
+												[TypeExpr reflaxe.elixir.helpers.PatternExtractor:Class<reflaxe.elixir.helpers.PatternExtractor>]
+												[FStatic:(c : haxe.macro.Ref<haxe.macro.ClassType>, args : Array<haxe.macro.TypedExpr>, context : String) -> Void]
+													reflaxe.elixir.helpers.PatternExtractor
+													analyzeConstructor:(c : haxe.macro.Ref<haxe.macro.ClassType>, args : Array<haxe.macro.TypedExpr>, context : String) -> Void
+											[Local c(26837):haxe.macro.Ref<haxe.macro.ClassType>:haxe.macro.Ref<haxe.macro.ClassType>]
+											[Local args(26838):Array<haxe.macro.TypedExpr>:Array<haxe.macro.TypedExpr>]
+											[Local context(26733):String:String]
+						[Case:Void]
+							[Const:Int] 12
+							[Block:Void]
+								[Var `(26839):haxe.macro.TFunc]
+									[EnumParameter:haxe.macro.TFunc]
+										[Local `(26829):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+										TFunction
+										0
+								[Block:Void]
+									[Var f(26840):haxe.macro.TFunc] [Local `(26839):haxe.macro.TFunc:haxe.macro.TFunc]
+									[Block:Void]
+										[Call:Void]
+											[Field:(f : haxe.macro.TFunc, context : String) -> Void]
+												[TypeExpr reflaxe.elixir.helpers.PatternExtractor:Class<reflaxe.elixir.helpers.PatternExtractor>]
+												[FStatic:(f : haxe.macro.TFunc, context : String) -> Void]
+													reflaxe.elixir.helpers.PatternExtractor
+													analyzeFunction:(f : haxe.macro.TFunc, context : String) -> Void
+											[Local f(26840):haxe.macro.TFunc:haxe.macro.TFunc]
+											[Local context(26733):String:String]
+						[Case:Void]
+							[Const:Int] 25
+							[Block:Void]
+								[Var `(26841):haxe.macro.MetadataEntry]
+									[EnumParameter:haxe.macro.MetadataEntry]
+										[Local `(26829):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+										TMeta
+										0
+								[Var `(26842):haxe.macro.TypedExpr]
+									[EnumParameter:haxe.macro.TypedExpr]
+										[Local `(26829):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+										TMeta
+										1
+								[Block:Void]
+									[Var m(26843):haxe.macro.MetadataEntry] [Local `(26841):haxe.macro.MetadataEntry:haxe.macro.MetadataEntry]
+									[Var e(26844):haxe.macro.TypedExpr] [Local `(26842):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+									[Block:Void]
+										[Call:Void]
+											[Field:(m : haxe.macro.MetadataEntry, e : haxe.macro.TypedExpr, context : String) -> Void]
+												[TypeExpr reflaxe.elixir.helpers.PatternExtractor:Class<reflaxe.elixir.helpers.PatternExtractor>]
+												[FStatic:(m : haxe.macro.MetadataEntry, e : haxe.macro.TypedExpr, context : String) -> Void]
+													reflaxe.elixir.helpers.PatternExtractor
+													analyzeMetadata:(m : haxe.macro.MetadataEntry, e : haxe.macro.TypedExpr, context : String) -> Void
+											[Local m(26843):haxe.macro.MetadataEntry:haxe.macro.MetadataEntry]
+											[Local e(26844):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+											[Local context(26733):String:String]
+						[Default:Void] [Block:Void]
+			[Call:Void]
+				[Field:(e : haxe.macro.TypedExpr, f : (haxe.macro.TypedExpr -> Void)) -> Void]
+					[TypeExpr haxe.macro.TypedExprTools:Class<haxe.macro.TypedExprTools>]
+					[FStatic:(e : haxe.macro.TypedExpr, f : (haxe.macro.TypedExpr -> Void)) -> Void]
+						haxe.macro.TypedExprTools
+						iter:(e : haxe.macro.TypedExpr, f : (haxe.macro.TypedExpr -> Void)) -> Void
+				[Local expr(26732):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+				[Function:(e : haxe.macro.TypedExpr) -> Void]
+					[Arg:haxe.macro.TypedExpr] [Local e(26845):haxe.macro.TypedExpr]
+					[Call:Void]
+						[Field:(expr : haxe.macro.TypedExpr, context : String) -> Void]
+							[TypeExpr reflaxe.elixir.helpers.PatternExtractor:Class<reflaxe.elixir.helpers.PatternExtractor>]
+							[FStatic:(expr : haxe.macro.TypedExpr, context : String) -> Void]
+								reflaxe.elixir.helpers.PatternExtractor
+								analyzeCode:(expr : haxe.macro.TypedExpr, context : String) -> Void
+						[Local e(26845):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+						[Local context(26733):String:String]
+
+	static function analyzeFunctionCall[Function:(e : haxe.macro.TypedExpr, args : Array<haxe.macro.TypedExpr>, context : String) -> Void]
+		[Arg:haxe.macro.TypedExpr] [Local e(26736):haxe.macro.TypedExpr]
+		[Arg:Array<haxe.macro.TypedExpr>] [Local args(26737):Array<haxe.macro.TypedExpr>]
+		[Arg:String] [Local context(26738):String]
+		[Block:Void]
+			[Meta:Void]
+				:ast(switch (e.expr) {
+	case TField(_, FStatic(c, cf)):
+		var className = c.get().name;
+		var methodName = cf.get().name;
+		if (className == "Socket" && methodName == "assign") {
+			registerPattern("socket-assign", "Socket State Management", "Managing state in LiveView components using socket.assign", "socket.assign(${extractArgPattern(args)})", context);
+		};
+		if (className == "Repo" && methodName == "insert") {
+			registerPattern("repo-insert", "Database Insert", "Inserting records using Ecto.Repo", "Repo.insert(changeset)", context);
+		};	
+	case _:
+})
+				[Block:Void]
+					[Var `(26768):haxe.macro.TypedExprDef]
+						[Field:haxe.macro.TypedExprDef]
+							[Local e(26736):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+							[FAnon:haxe.macro.TypedExprDef] expr:haxe.macro.TypedExprDef
+					[If:Void]
+						[Binop:Bool]
+							[EnumIndex:Int] [Local `(26768):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+							==
+							[Const:Int] 4
+						[Then:Void] [Block:Void]
+							[Var `(26769):haxe.macro.TypedExpr]
+								[EnumParameter:haxe.macro.TypedExpr]
+									[Local `(26768):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+									TField
+									0
+							[Var `(26770):haxe.macro.FieldAccess]
+								[EnumParameter:haxe.macro.FieldAccess]
+									[Local `(26768):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+									TField
+									1
+							[If:Void]
+								[Binop:Bool]
+									[EnumIndex:Int] [Local `(26770):haxe.macro.FieldAccess:haxe.macro.FieldAccess]
+									==
+									[Const:Int] 1
+								[Then:Void] [Block:Void]
+									[Var `(26771):haxe.macro.Ref<haxe.macro.ClassType>]
+										[EnumParameter:haxe.macro.Ref<haxe.macro.ClassType>]
+											[Local `(26770):haxe.macro.FieldAccess:haxe.macro.FieldAccess]
+											FStatic
+											0
+									[Var `(26772):haxe.macro.Ref<haxe.macro.ClassField>]
+										[EnumParameter:haxe.macro.Ref<haxe.macro.ClassField>]
+											[Local `(26770):haxe.macro.FieldAccess:haxe.macro.FieldAccess]
+											FStatic
+											1
+									[Block:Void]
+										[Var c(26773):haxe.macro.Ref<haxe.macro.ClassType>] [Local `(26771):haxe.macro.Ref<haxe.macro.ClassType>:haxe.macro.Ref<haxe.macro.ClassType>]
+										[Var cf(26774):haxe.macro.Ref<haxe.macro.ClassField>] [Local `(26772):haxe.macro.Ref<haxe.macro.ClassField>:haxe.macro.Ref<haxe.macro.ClassField>]
+										[Block:Void]
+											[Var className(26775):String]
+												[Field:String]
+													[Call:haxe.macro.ClassType]
+														[Field:() -> haxe.macro.ClassType]
+															[Local c(26773):haxe.macro.Ref<haxe.macro.ClassType>:haxe.macro.Ref<haxe.macro.ClassType>]
+															[FAnon:() -> haxe.macro.ClassType] get:() -> haxe.macro.ClassType
+													[FAnon:String] name:String
+											[Var methodName(26776):String]
+												[Field:String]
+													[Call:haxe.macro.ClassField]
+														[Field:() -> haxe.macro.ClassField]
+															[Local cf(26774):haxe.macro.Ref<haxe.macro.ClassField>:haxe.macro.Ref<haxe.macro.ClassField>]
+															[FAnon:() -> haxe.macro.ClassField] get:() -> haxe.macro.ClassField
+													[FAnon:String] name:String
+											[If:Void]
+												[Binop:Bool]
+													[Binop:Bool]
+														[Local className(26775):String:String]
+														==
+														[Const:String] "Socket"
+													&&
+													[Binop:Bool]
+														[Local methodName(26776):String:String]
+														==
+														[Const:String] "assign"
+												[Then:Void] [Block:Void]
+													[Call:Void]
+														[Field:(id : String, name : String, description : String, code : String, context : String) -> Void]
+															[TypeExpr reflaxe.elixir.helpers.PatternExtractor:Class<reflaxe.elixir.helpers.PatternExtractor>]
+															[FStatic:(id : String, name : String, description : String, code : String, context : String) -> Void]
+																reflaxe.elixir.helpers.PatternExtractor
+																registerPattern:(id : String, name : String, description : String, code : String, context : String) -> Void
+														[Const:String] "socket-assign"
+														[Const:String] "Socket State Management"
+														[Const:String] "Managing state in LiveView components using socket.assign"
+														[Binop:String]
+															[Binop:String]
+																[Const:String] "socket.assign("
+																+
+																[Call:String]
+																	[Field:(args : Array<haxe.macro.TypedExpr>) -> String]
+																		[TypeExpr reflaxe.elixir.helpers.PatternExtractor:Class<reflaxe.elixir.helpers.PatternExtractor>]
+																		[FStatic:(args : Array<haxe.macro.TypedExpr>) -> String]
+																			reflaxe.elixir.helpers.PatternExtractor
+																			extractArgPattern:(args : Array<haxe.macro.TypedExpr>) -> String
+																	[Local args(26737):Array<haxe.macro.TypedExpr>:Array<haxe.macro.TypedExpr>]
+															+
+															[Const:String] ")"
+														[Local context(26738):String:String]
+											[If:Void]
+												[Binop:Bool]
+													[Binop:Bool]
+														[Local className(26775):String:String]
+														==
+														[Const:String] "Repo"
+													&&
+													[Binop:Bool]
+														[Local methodName(26776):String:String]
+														==
+														[Const:String] "insert"
+												[Then:Void] [Block:Void]
+													[Call:Void]
+														[Field:(id : String, name : String, description : String, code : String, context : String) -> Void]
+															[TypeExpr reflaxe.elixir.helpers.PatternExtractor:Class<reflaxe.elixir.helpers.PatternExtractor>]
+															[FStatic:(id : String, name : String, description : String, code : String, context : String) -> Void]
+																reflaxe.elixir.helpers.PatternExtractor
+																registerPattern:(id : String, name : String, description : String, code : String, context : String) -> Void
+														[Const:String] "repo-insert"
+														[Const:String] "Database Insert"
+														[Const:String] "Inserting records using Ecto.Repo"
+														[Const:String] "Repo.insert(changeset)"
+														[Local context(26738):String:String]
+								[Else:Void] [Block:Void]
+						[Else:Void] [Block:Void]
+
+	static function analyzeConstructor[Function:(c : haxe.macro.Ref<haxe.macro.ClassType>, args : Array<haxe.macro.TypedExpr>, context : String) -> Void]
+		[Arg:haxe.macro.Ref<haxe.macro.ClassType>] [Local c(26779):haxe.macro.Ref<haxe.macro.ClassType>]
+		[Arg:Array<haxe.macro.TypedExpr>] [Local args(26780):Array<haxe.macro.TypedExpr>]
+		[Arg:String] [Local context(26781):String]
+		[Block:Void]
+			[Var classRef(26782):haxe.macro.ClassType]
+				[Call:haxe.macro.ClassType]
+					[Field:() -> haxe.macro.ClassType]
+						[Local c(26779):haxe.macro.Ref<haxe.macro.ClassType>:haxe.macro.Ref<haxe.macro.ClassType>]
+						[FAnon:() -> haxe.macro.ClassType] get:() -> haxe.macro.ClassType
+			[If:Void]
+				[Call:Bool]
+					[Field:(name : String) -> Bool]
+						[Field:haxe.macro.MetaAccess]
+							[Local classRef(26782):haxe.macro.ClassType:haxe.macro.ClassType]
+							[FAnon:haxe.macro.MetaAccess] meta:haxe.macro.MetaAccess
+						[FAnon:(name : String) -> Bool] has:(name : String) -> Bool
+					[Const:String] ":genserver"
+				[Then:Void] [Block:Void]
+					[Call:Void]
+						[Field:(id : String, name : String, description : String, code : String, context : String) -> Void]
+							[TypeExpr reflaxe.elixir.helpers.PatternExtractor:Class<reflaxe.elixir.helpers.PatternExtractor>]
+							[FStatic:(id : String, name : String, description : String, code : String, context : String) -> Void]
+								reflaxe.elixir.helpers.PatternExtractor
+								registerPattern:(id : String, name : String, description : String, code : String, context : String) -> Void
+						[Const:String] "genserver-init"
+						[Const:String] "GenServer Initialization"
+						[Const:String] "Starting a GenServer process"
+						[Binop:String]
+							[Binop:String]
+								[Binop:String]
+									[Binop:String]
+										[Const:String] "new "
+										+
+										[Field:String]
+											[Local classRef(26782):haxe.macro.ClassType:haxe.macro.ClassType]
+											[FAnon:String] name:String
+									+
+									[Const:String] "("
+								+
+								[Call:String]
+									[Field:(args : Array<haxe.macro.TypedExpr>) -> String]
+										[TypeExpr reflaxe.elixir.helpers.PatternExtractor:Class<reflaxe.elixir.helpers.PatternExtractor>]
+										[FStatic:(args : Array<haxe.macro.TypedExpr>) -> String]
+											reflaxe.elixir.helpers.PatternExtractor
+											extractArgPattern:(args : Array<haxe.macro.TypedExpr>) -> String
+									[Local args(26780):Array<haxe.macro.TypedExpr>:Array<haxe.macro.TypedExpr>]
+							+
+							[Const:String] ")"
+						[Local context(26781):String:String]
+
+	static function analyzeMetadata[Function:(m : haxe.macro.MetadataEntry, e : haxe.macro.TypedExpr, context : String) -> Void]
+		[Arg:haxe.macro.MetadataEntry] [Local m(26785):haxe.macro.MetadataEntry]
+		[Arg:haxe.macro.TypedExpr] [Local e(26786):haxe.macro.TypedExpr]
+		[Arg:String] [Local context(26787):String]
+		[Block:Void]
+			[Meta:Void]
+				:ast(switch (m.name) {
+	case ":liveview":
+		registerPattern("liveview-component", "LiveView Component", "Defining Phoenix LiveView components", getLiveViewPattern(e), context);	
+	case ":schema":
+		registerPattern("ecto-schema", "Ecto Schema Definition", "Defining database schemas with Ecto", getSchemaPattern(e), context);	
+	case ":changeset":
+		registerPattern("ecto-changeset", "Changeset Validation", "Validating data with Ecto changesets", getChangesetPattern(e), context);	
+})
+				[Block:Void]
+					[Var `(26792):String]
+						[Field:String]
+							[Local m(26785):haxe.macro.MetadataEntry:haxe.macro.MetadataEntry]
+							[FAnon:String] name:String
+					[Switch:Void]
+						[Local `(26792):String:String]
+						[Case:Void]
+							[Const:String] ":changeset"
+							[Block:Void]
+								[Block:Void]
+									[Call:Void]
+										[Field:(id : String, name : String, description : String, code : String, context : String) -> Void]
+											[TypeExpr reflaxe.elixir.helpers.PatternExtractor:Class<reflaxe.elixir.helpers.PatternExtractor>]
+											[FStatic:(id : String, name : String, description : String, code : String, context : String) -> Void]
+												reflaxe.elixir.helpers.PatternExtractor
+												registerPattern:(id : String, name : String, description : String, code : String, context : String) -> Void
+										[Const:String] "ecto-changeset"
+										[Const:String] "Changeset Validation"
+										[Const:String] "Validating data with Ecto changesets"
+										[Call:String]
+											[Field:(e : haxe.macro.TypedExpr) -> String]
+												[TypeExpr reflaxe.elixir.helpers.PatternExtractor:Class<reflaxe.elixir.helpers.PatternExtractor>]
+												[FStatic:(e : haxe.macro.TypedExpr) -> String]
+													reflaxe.elixir.helpers.PatternExtractor
+													getChangesetPattern:(e : haxe.macro.TypedExpr) -> String
+											[Local e(26786):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+										[Local context(26787):String:String]
+						[Case:Void]
+							[Const:String] ":liveview"
+							[Block:Void]
+								[Block:Void]
+									[Call:Void]
+										[Field:(id : String, name : String, description : String, code : String, context : String) -> Void]
+											[TypeExpr reflaxe.elixir.helpers.PatternExtractor:Class<reflaxe.elixir.helpers.PatternExtractor>]
+											[FStatic:(id : String, name : String, description : String, code : String, context : String) -> Void]
+												reflaxe.elixir.helpers.PatternExtractor
+												registerPattern:(id : String, name : String, description : String, code : String, context : String) -> Void
+										[Const:String] "liveview-component"
+										[Const:String] "LiveView Component"
+										[Const:String] "Defining Phoenix LiveView components"
+										[Call:String]
+											[Field:(e : haxe.macro.TypedExpr) -> String]
+												[TypeExpr reflaxe.elixir.helpers.PatternExtractor:Class<reflaxe.elixir.helpers.PatternExtractor>]
+												[FStatic:(e : haxe.macro.TypedExpr) -> String]
+													reflaxe.elixir.helpers.PatternExtractor
+													getLiveViewPattern:(e : haxe.macro.TypedExpr) -> String
+											[Local e(26786):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+										[Local context(26787):String:String]
+						[Case:Void]
+							[Const:String] ":schema"
+							[Block:Void]
+								[Block:Void]
+									[Call:Void]
+										[Field:(id : String, name : String, description : String, code : String, context : String) -> Void]
+											[TypeExpr reflaxe.elixir.helpers.PatternExtractor:Class<reflaxe.elixir.helpers.PatternExtractor>]
+											[FStatic:(id : String, name : String, description : String, code : String, context : String) -> Void]
+												reflaxe.elixir.helpers.PatternExtractor
+												registerPattern:(id : String, name : String, description : String, code : String, context : String) -> Void
+										[Const:String] "ecto-schema"
+										[Const:String] "Ecto Schema Definition"
+										[Const:String] "Defining database schemas with Ecto"
+										[Call:String]
+											[Field:(e : haxe.macro.TypedExpr) -> String]
+												[TypeExpr reflaxe.elixir.helpers.PatternExtractor:Class<reflaxe.elixir.helpers.PatternExtractor>]
+												[FStatic:(e : haxe.macro.TypedExpr) -> String]
+													reflaxe.elixir.helpers.PatternExtractor
+													getSchemaPattern:(e : haxe.macro.TypedExpr) -> String
+											[Local e(26786):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+										[Local context(26787):String:String]
+
+	static function analyzeFunction[Function:(f : haxe.macro.TFunc, context : String) -> Void]
+		[Arg:haxe.macro.TFunc] [Local f(26794):haxe.macro.TFunc]
+		[Arg:String] [Local context(26795):String]
+		[Block:Void]
+			[If:Void]
+				[Call:Bool]
+					[Field:(e : haxe.macro.TypedExpr) -> Bool]
+						[TypeExpr reflaxe.elixir.helpers.PatternExtractor:Class<reflaxe.elixir.helpers.PatternExtractor>]
+						[FStatic:(e : haxe.macro.TypedExpr) -> Bool]
+							reflaxe.elixir.helpers.PatternExtractor
+							hasPatternMatching:(e : haxe.macro.TypedExpr) -> Bool
+					[Field:haxe.macro.TypedExpr]
+						[Local f(26794):haxe.macro.TFunc:haxe.macro.TFunc]
+						[FAnon:haxe.macro.TypedExpr] expr:haxe.macro.TypedExpr
+				[Then:Void] [Block:Void]
+					[Call:Void]
+						[Field:(id : String, name : String, description : String, code : String, context : String) -> Void]
+							[TypeExpr reflaxe.elixir.helpers.PatternExtractor:Class<reflaxe.elixir.helpers.PatternExtractor>]
+							[FStatic:(id : String, name : String, description : String, code : String, context : String) -> Void]
+								reflaxe.elixir.helpers.PatternExtractor
+								registerPattern:(id : String, name : String, description : String, code : String, context : String) -> Void
+						[Const:String] "pattern-matching"
+						[Const:String] "Pattern Matching"
+						[Const:String] "Using pattern matching in function bodies"
+						[Call:String]
+							[Field:(f : haxe.macro.TFunc) -> String]
+								[TypeExpr reflaxe.elixir.helpers.PatternExtractor:Class<reflaxe.elixir.helpers.PatternExtractor>]
+								[FStatic:(f : haxe.macro.TFunc) -> String]
+									reflaxe.elixir.helpers.PatternExtractor
+									getPatternMatchingExample:(f : haxe.macro.TFunc) -> String
+							[Local f(26794):haxe.macro.TFunc:haxe.macro.TFunc]
+						[Local context(26795):String:String]
+			[If:Void]
+				[Call:Bool]
+					[Field:(e : haxe.macro.TypedExpr) -> Bool]
+						[TypeExpr reflaxe.elixir.helpers.PatternExtractor:Class<reflaxe.elixir.helpers.PatternExtractor>]
+						[FStatic:(e : haxe.macro.TypedExpr) -> Bool]
+							reflaxe.elixir.helpers.PatternExtractor
+							hasErrorHandling:(e : haxe.macro.TypedExpr) -> Bool
+					[Field:haxe.macro.TypedExpr]
+						[Local f(26794):haxe.macro.TFunc:haxe.macro.TFunc]
+						[FAnon:haxe.macro.TypedExpr] expr:haxe.macro.TypedExpr
+				[Then:Void] [Block:Void]
+					[Call:Void]
+						[Field:(id : String, name : String, description : String, code : String, context : String) -> Void]
+							[TypeExpr reflaxe.elixir.helpers.PatternExtractor:Class<reflaxe.elixir.helpers.PatternExtractor>]
+							[FStatic:(id : String, name : String, description : String, code : String, context : String) -> Void]
+								reflaxe.elixir.helpers.PatternExtractor
+								registerPattern:(id : String, name : String, description : String, code : String, context : String) -> Void
+						[Const:String] "error-handling"
+						[Const:String] "Error Handling"
+						[Const:String] "Handling errors with ok/error tuples"
+						[Call:String]
+							[Field:(f : haxe.macro.TFunc) -> String]
+								[TypeExpr reflaxe.elixir.helpers.PatternExtractor:Class<reflaxe.elixir.helpers.PatternExtractor>]
+								[FStatic:(f : haxe.macro.TFunc) -> String]
+									reflaxe.elixir.helpers.PatternExtractor
+									getErrorHandlingExample:(f : haxe.macro.TFunc) -> String
+							[Local f(26794):haxe.macro.TFunc:haxe.macro.TFunc]
+						[Local context(26795):String:String]
+
+	static function registerPattern[Function:(id : String, name : String, description : String, code : String, context : String) -> Void]
+		[Arg:String] [Local id(26743):String]
+		[Arg:String] [Local name(26744):String]
+		[Arg:String] [Local description(26745):String]
+		[Arg:String] [Local code(26746):String]
+		[Arg:String] [Local context(26747):String]
+		[Block:Void]
+			[If:Void]
+				[Unop:Bool]
+					!
+					Prefix
+					[Block:Bool]
+						[Var this(26750):haxe.IMap<String, reflaxe.elixir.helpers.Pattern>]
+							[Field:Map<String, reflaxe.elixir.helpers.Pattern>]
+								[TypeExpr reflaxe.elixir.helpers.PatternExtractor:Class<reflaxe.elixir.helpers.PatternExtractor>]
+								[FStatic:Map<String, reflaxe.elixir.helpers.Pattern>]
+									reflaxe.elixir.helpers.PatternExtractor
+									patterns:Map<String, reflaxe.elixir.helpers.Pattern>
+						[Call:Bool]
+							[Field:(key : String) -> Bool]
+								[Cast:haxe.ds.StringMap<reflaxe.elixir.helpers.Pattern>] [Local this(26750):haxe.IMap<String, reflaxe.elixir.helpers.Pattern>:haxe.IMap<String, reflaxe.elixir.helpers.Pattern>]
+								[FInstance:(key : String) -> Bool]
+									haxe.ds.StringMap<reflaxe.elixir.helpers.Pattern>
+									exists:(key : String) -> Bool
+							[Local id(26743):String:String]
+				[Then:Void] [Block:Void]
+					[Block:Void]
+						[Var this(26754):haxe.IMap<String, reflaxe.elixir.helpers.Pattern>]
+							[Field:Map<String, reflaxe.elixir.helpers.Pattern>]
+								[TypeExpr reflaxe.elixir.helpers.PatternExtractor:Class<reflaxe.elixir.helpers.PatternExtractor>]
+								[FStatic:Map<String, reflaxe.elixir.helpers.Pattern>]
+									reflaxe.elixir.helpers.PatternExtractor
+									patterns:Map<String, reflaxe.elixir.helpers.Pattern>
+						[Call:Void]
+							[Field:(key : String, value : reflaxe.elixir.helpers.Pattern) -> Void]
+								[Cast:haxe.ds.StringMap<reflaxe.elixir.helpers.Pattern>] [Local this(26754):haxe.IMap<String, reflaxe.elixir.helpers.Pattern>:haxe.IMap<String, reflaxe.elixir.helpers.Pattern>]
+								[FInstance:(key : String, value : reflaxe.elixir.helpers.Pattern) -> Void]
+									haxe.ds.StringMap<reflaxe.elixir.helpers.Pattern>
+									set:(key : String, value : haxe.ds.StringMap.T) -> Void
+							[Local id(26743):String:String]
+							[ObjectDecl:{ name : String, id : String, frequency : Int, examples : Array<String>, description : String, code : String }]
+								id: [Local id(26743):String:String]
+								name: [Local name(26744):String:String]
+								description: [Local description(26745):String:String]
+								code: [Local code(26746):String:String]
+								examples: [ArrayDecl:Array<String>] [Local context(26747):String:String]
+								frequency: [Const:Int] 1
+				[Else:Int] [Block:Int]
+					[Var pattern(26761):Null<reflaxe.elixir.helpers.Pattern>]
+						[Block:Null<reflaxe.elixir.helpers.Pattern>]
+							[Var this(26759):haxe.IMap<String, reflaxe.elixir.helpers.Pattern>]
+								[Field:Map<String, reflaxe.elixir.helpers.Pattern>]
+									[TypeExpr reflaxe.elixir.helpers.PatternExtractor:Class<reflaxe.elixir.helpers.PatternExtractor>]
+									[FStatic:Map<String, reflaxe.elixir.helpers.Pattern>]
+										reflaxe.elixir.helpers.PatternExtractor
+										patterns:Map<String, reflaxe.elixir.helpers.Pattern>
+							[Call:Null<reflaxe.elixir.helpers.Pattern>]
+								[Field:(key : String) -> Null<reflaxe.elixir.helpers.Pattern>]
+									[Cast:haxe.ds.StringMap<reflaxe.elixir.helpers.Pattern>] [Local this(26759):haxe.IMap<String, reflaxe.elixir.helpers.Pattern>:haxe.IMap<String, reflaxe.elixir.helpers.Pattern>]
+									[FInstance:(key : String) -> Null<reflaxe.elixir.helpers.Pattern>]
+										haxe.ds.StringMap<reflaxe.elixir.helpers.Pattern>
+										get:(key : String) -> Null<haxe.ds.StringMap.T>
+								[Local id(26743):String:String]
+					[If:Void]
+						[Binop:Bool]
+							[Call:Int]
+								[Field:(x : String, ?fromIndex : Null<Int>) -> Int]
+									[Field:Array<String>]
+										[Local pattern(26761):Null<reflaxe.elixir.helpers.Pattern>:Null<reflaxe.elixir.helpers.Pattern>]
+										[FAnon:Array<String>] examples:Array<String>
+									[FInstance:(x : String, ?fromIndex : Null<Int>) -> Int]
+										Array<String>
+										indexOf:(x : Array.T, ?fromIndex : Null<Int>) -> Int
+								[Local context(26747):String:String]
+								[Const:Null<Int>] null
+							==
+							[Const:Int] -1
+						[Then:Int] [Block:Int]
+							[Call:Int]
+								[Field:(x : String) -> Int]
+									[Field:Array<String>]
+										[Local pattern(26761):Null<reflaxe.elixir.helpers.Pattern>:Null<reflaxe.elixir.helpers.Pattern>]
+										[FAnon:Array<String>] examples:Array<String>
+									[FInstance:(x : String) -> Int]
+										Array<String>
+										push:(x : Array.T) -> Int
+								[Local context(26747):String:String]
+					[Unop:Int]
+						++
+						Postfix
+						[Field:Int]
+							[Local pattern(26761):Null<reflaxe.elixir.helpers.Pattern>:Null<reflaxe.elixir.helpers.Pattern>]
+							[FAnon:Int] frequency:Int
+
+	public static function registerAntiPattern[Function:(name : String, description : String, badCode : String, goodCode : String) -> Void]
+		[Arg:String] [Local name(26846):String]
+		[Arg:String] [Local description(26847):String]
+		[Arg:String] [Local badCode(26848):String]
+		[Arg:String] [Local goodCode(26849):String]
+		[Block:Int]
+			[Call:Int]
+				[Field:(x : reflaxe.elixir.helpers.AntiPattern) -> Int]
+					[Field:Array<reflaxe.elixir.helpers.AntiPattern>]
+						[TypeExpr reflaxe.elixir.helpers.PatternExtractor:Class<reflaxe.elixir.helpers.PatternExtractor>]
+						[FStatic:Array<reflaxe.elixir.helpers.AntiPattern>]
+							reflaxe.elixir.helpers.PatternExtractor
+							antiPatterns:Array<reflaxe.elixir.helpers.AntiPattern>
+					[FInstance:(x : reflaxe.elixir.helpers.AntiPattern) -> Int]
+						Array<reflaxe.elixir.helpers.AntiPattern>
+						push:(x : Array.T) -> Int
+				[ObjectDecl:{ name : String, goodCode : String, description : String, badCode : String }]
+					name: [Local name(26846):String:String]
+					description: [Local description(26847):String:String]
+					badCode: [Local badCode(26848):String:String]
+					goodCode: [Local goodCode(26849):String:String]
+
+	public static function generatePatternDocs[Function:(outputDir : String) -> Void]
+		[Arg:String] [Local outputDir(26850):String]
+		[Block:Void]
+			[Var content(26851):StringBuf] [New:StringBuf] StringBuf
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local content(26851):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "# Reflaxe.Elixir Patterns\n\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local content(26851):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "*Auto-extracted from example projects*\n\n"
+			[Var sortedPatterns(26858):Array<reflaxe.elixir.helpers.Pattern>]
+				[Block:Array<reflaxe.elixir.helpers.Pattern>]
+					[Var `(26852):Array<reflaxe.elixir.helpers.Pattern>] [ArrayDecl:Array<reflaxe.elixir.helpers.Pattern>]
+					[For:Void]
+						[Local p(26857):reflaxe.elixir.helpers.Pattern]
+						[Block:Iterator<reflaxe.elixir.helpers.Pattern>]
+							[Var this(26856):haxe.IMap<String, reflaxe.elixir.helpers.Pattern>]
+								[Field:Map<String, reflaxe.elixir.helpers.Pattern>]
+									[TypeExpr reflaxe.elixir.helpers.PatternExtractor:Class<reflaxe.elixir.helpers.PatternExtractor>]
+									[FStatic:Map<String, reflaxe.elixir.helpers.Pattern>]
+										reflaxe.elixir.helpers.PatternExtractor
+										patterns:Map<String, reflaxe.elixir.helpers.Pattern>
+							[Call:Iterator<reflaxe.elixir.helpers.Pattern>]
+								[Field:() -> Iterator<reflaxe.elixir.helpers.Pattern>]
+									[Cast:haxe.ds.StringMap<reflaxe.elixir.helpers.Pattern>] [Local this(26856):haxe.IMap<String, reflaxe.elixir.helpers.Pattern>:haxe.IMap<String, reflaxe.elixir.helpers.Pattern>]
+									[FInstance:() -> Iterator<reflaxe.elixir.helpers.Pattern>]
+										haxe.ds.StringMap<reflaxe.elixir.helpers.Pattern>
+										iterator:() -> Iterator<haxe.ds.StringMap.T>
+						[Block:Int]
+							[Call:Int]
+								[Field:(x : reflaxe.elixir.helpers.Pattern) -> Int]
+									[Local `(26852):Array<reflaxe.elixir.helpers.Pattern>:Array<reflaxe.elixir.helpers.Pattern>]
+									[FInstance:(x : reflaxe.elixir.helpers.Pattern) -> Int]
+										Array<reflaxe.elixir.helpers.Pattern>
+										push:(x : Array.T) -> Int
+								[Local p(26857):reflaxe.elixir.helpers.Pattern:reflaxe.elixir.helpers.Pattern]
+					[Local `(26852):Array<reflaxe.elixir.helpers.Pattern>:Array<reflaxe.elixir.helpers.Pattern>]
+			[Call:Void]
+				[Field:(f : ((reflaxe.elixir.helpers.Pattern, reflaxe.elixir.helpers.Pattern) -> Int)) -> Void]
+					[Local sortedPatterns(26858):Array<reflaxe.elixir.helpers.Pattern>:Array<reflaxe.elixir.helpers.Pattern>]
+					[FInstance:(f : ((reflaxe.elixir.helpers.Pattern, reflaxe.elixir.helpers.Pattern) -> Int)) -> Void]
+						Array<reflaxe.elixir.helpers.Pattern>
+						sort:(f : ((Array.T, Array.T) -> Int)) -> Void
+				[Function:(a : reflaxe.elixir.helpers.Pattern, b : reflaxe.elixir.helpers.Pattern) -> Int]
+					[Arg:reflaxe.elixir.helpers.Pattern] [Local a(26859):reflaxe.elixir.helpers.Pattern]
+					[Arg:reflaxe.elixir.helpers.Pattern] [Local b(26860):reflaxe.elixir.helpers.Pattern]
+					[Return:Dynamic]
+						[Binop:Int]
+							[Field:Int]
+								[Local b(26860):reflaxe.elixir.helpers.Pattern:reflaxe.elixir.helpers.Pattern]
+								[FAnon:Int] frequency:Int
+							-
+							[Field:Int]
+								[Local a(26859):reflaxe.elixir.helpers.Pattern:reflaxe.elixir.helpers.Pattern]
+								[FAnon:Int] frequency:Int
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local content(26851):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "## Most Common Patterns\n\n"
+			[Var count(26861):Int] [Const:Int] 0
+			[Block:Void]
+				[Var `(26863):Int] [Const:Int] 0
+				[While:Void]
+					[Binop:Bool]
+						[Local `(26863):Int:Int]
+						<
+						[Field:Int]
+							[Local sortedPatterns(26858):Array<reflaxe.elixir.helpers.Pattern>:Array<reflaxe.elixir.helpers.Pattern>]
+							[FInstance:Int]
+								Array<reflaxe.elixir.helpers.Pattern>
+								length:Int
+					[Block:Void]
+						[Var pattern(26862):reflaxe.elixir.helpers.Pattern]
+							[Array:reflaxe.elixir.helpers.Pattern]
+								[Local sortedPatterns(26858):Array<reflaxe.elixir.helpers.Pattern>:Array<reflaxe.elixir.helpers.Pattern>]
+								[Local `(26863):Int:Int]
+						[Unop:Int]
+							++
+							Prefix
+							[Local `(26863):Int:Int]
+						[If:Void]
+							[Binop:Bool]
+								[Unop:Int]
+									++
+									Postfix
+									[Local count(26861):Int:Int]
+								>=
+								[Const:Int] 10
+							[Then:Dynamic] [Block:Dynamic] [Break:Dynamic]
+						[Call:Void]
+							[Field:(x : String) -> Void]
+								[Local content(26851):StringBuf:StringBuf]
+								[FInstance:(x : String) -> Void]
+									StringBuf
+									add:(x : add.T) -> Void
+							[Binop:String]
+								[Binop:String]
+									[Const:String] "### "
+									+
+									[Field:String]
+										[Local pattern(26862):reflaxe.elixir.helpers.Pattern:reflaxe.elixir.helpers.Pattern]
+										[FAnon:String] name:String
+								+
+								[Const:String] "\n\n"
+						[Call:Void]
+							[Field:(x : String) -> Void]
+								[Local content(26851):StringBuf:StringBuf]
+								[FInstance:(x : String) -> Void]
+									StringBuf
+									add:(x : add.T) -> Void
+							[Binop:String]
+								[Binop:String]
+									[Const:String] ""
+									+
+									[Field:String]
+										[Local pattern(26862):reflaxe.elixir.helpers.Pattern:reflaxe.elixir.helpers.Pattern]
+										[FAnon:String] description:String
+								+
+								[Const:String] "\n\n"
+						[Call:Void]
+							[Field:(x : String) -> Void]
+								[Local content(26851):StringBuf:StringBuf]
+								[FInstance:(x : String) -> Void]
+									StringBuf
+									add:(x : add.T) -> Void
+							[Binop:String]
+								[Binop:String]
+									[Const:String] "**Usage:** Found "
+									+
+									[Field:Int]
+										[Local pattern(26862):reflaxe.elixir.helpers.Pattern:reflaxe.elixir.helpers.Pattern]
+										[FAnon:Int] frequency:Int
+								+
+								[Const:String] " times\n\n"
+						[Call:Void]
+							[Field:(x : String) -> Void]
+								[Local content(26851):StringBuf:StringBuf]
+								[FInstance:(x : String) -> Void]
+									StringBuf
+									add:(x : add.T) -> Void
+							[Binop:String]
+								[Binop:String]
+									[Const:String] "```haxe\n"
+									+
+									[Field:String]
+										[Local pattern(26862):reflaxe.elixir.helpers.Pattern:reflaxe.elixir.helpers.Pattern]
+										[FAnon:String] code:String
+								+
+								[Const:String] "\n```\n\n"
+						[Call:Void]
+							[Field:(x : String) -> Void]
+								[Local content(26851):StringBuf:StringBuf]
+								[FInstance:(x : String) -> Void]
+									StringBuf
+									add:(x : add.T) -> Void
+							[Binop:String]
+								[Binop:String]
+									[Const:String] "**Examples:** "
+									+
+									[Call:String]
+										[Field:(sep : String) -> String]
+											[Call:Array<String>]
+												[Field:(pos : Int, ?end : Null<Int>) -> Array<String>]
+													[Field:Array<String>]
+														[Local pattern(26862):reflaxe.elixir.helpers.Pattern:reflaxe.elixir.helpers.Pattern]
+														[FAnon:Array<String>] examples:Array<String>
+													[FInstance:(pos : Int, ?end : Null<Int>) -> Array<String>]
+														Array<String>
+														slice:(pos : Int, ?end : Null<Int>) -> Array<Array.T>
+												[Const:Int] 0
+												[Const:Int] 3
+											[FInstance:(sep : String) -> String]
+												Array<String>
+												join:(sep : String) -> String
+										[Const:String] ", "
+								+
+								[Const:String] "\n\n"
+			[If:Void]
+				[Binop:Bool]
+					[Field:Int]
+						[Field:Array<reflaxe.elixir.helpers.AntiPattern>]
+							[TypeExpr reflaxe.elixir.helpers.PatternExtractor:Class<reflaxe.elixir.helpers.PatternExtractor>]
+							[FStatic:Array<reflaxe.elixir.helpers.AntiPattern>]
+								reflaxe.elixir.helpers.PatternExtractor
+								antiPatterns:Array<reflaxe.elixir.helpers.AntiPattern>
+						[FInstance:Int]
+							Array<reflaxe.elixir.helpers.AntiPattern>
+							length:Int
+					>
+					[Const:Int] 0
+				[Then:Void] [Block:Void]
+					[Call:Void]
+						[Field:(x : String) -> Void]
+							[Local content(26851):StringBuf:StringBuf]
+							[FInstance:(x : String) -> Void]
+								StringBuf
+								add:(x : add.T) -> Void
+						[Const:String] "## Anti-Patterns to Avoid\n\n"
+					[Block:Void]
+						[Var `(26865):Int] [Const:Int] 0
+						[Var `(26866):Array<reflaxe.elixir.helpers.AntiPattern>]
+							[Field:Array<reflaxe.elixir.helpers.AntiPattern>]
+								[TypeExpr reflaxe.elixir.helpers.PatternExtractor:Class<reflaxe.elixir.helpers.PatternExtractor>]
+								[FStatic:Array<reflaxe.elixir.helpers.AntiPattern>]
+									reflaxe.elixir.helpers.PatternExtractor
+									antiPatterns:Array<reflaxe.elixir.helpers.AntiPattern>
+						[While:Void]
+							[Binop:Bool]
+								[Local `(26865):Int:Int]
+								<
+								[Field:Int]
+									[Local `(26866):Array<reflaxe.elixir.helpers.AntiPattern>:Array<reflaxe.elixir.helpers.AntiPattern>]
+									[FInstance:Int]
+										Array<reflaxe.elixir.helpers.AntiPattern>
+										length:Int
+							[Block:Void]
+								[Var anti(26864):reflaxe.elixir.helpers.AntiPattern]
+									[Array:reflaxe.elixir.helpers.AntiPattern]
+										[Local `(26866):Array<reflaxe.elixir.helpers.AntiPattern>:Array<reflaxe.elixir.helpers.AntiPattern>]
+										[Local `(26865):Int:Int]
+								[Unop:Int]
+									++
+									Prefix
+									[Local `(26865):Int:Int]
+								[Call:Void]
+									[Field:(x : String) -> Void]
+										[Local content(26851):StringBuf:StringBuf]
+										[FInstance:(x : String) -> Void]
+											StringBuf
+											add:(x : add.T) -> Void
+									[Binop:String]
+										[Binop:String]
+											[Const:String] "### "
+											+
+											[Field:String]
+												[Local anti(26864):reflaxe.elixir.helpers.AntiPattern:reflaxe.elixir.helpers.AntiPattern]
+												[FAnon:String] name:String
+										+
+										[Const:String] "\n\n"
+								[Call:Void]
+									[Field:(x : String) -> Void]
+										[Local content(26851):StringBuf:StringBuf]
+										[FInstance:(x : String) -> Void]
+											StringBuf
+											add:(x : add.T) -> Void
+									[Binop:String]
+										[Binop:String]
+											[Const:String] ""
+											+
+											[Field:String]
+												[Local anti(26864):reflaxe.elixir.helpers.AntiPattern:reflaxe.elixir.helpers.AntiPattern]
+												[FAnon:String] description:String
+										+
+										[Const:String] "\n\n"
+								[Call:Void]
+									[Field:(x : String) -> Void]
+										[Local content(26851):StringBuf:StringBuf]
+										[FInstance:(x : String) -> Void]
+											StringBuf
+											add:(x : add.T) -> Void
+									[Const:String] "**❌ Bad:**\n"
+								[Call:Void]
+									[Field:(x : String) -> Void]
+										[Local content(26851):StringBuf:StringBuf]
+										[FInstance:(x : String) -> Void]
+											StringBuf
+											add:(x : add.T) -> Void
+									[Binop:String]
+										[Binop:String]
+											[Const:String] "```haxe\n"
+											+
+											[Field:String]
+												[Local anti(26864):reflaxe.elixir.helpers.AntiPattern:reflaxe.elixir.helpers.AntiPattern]
+												[FAnon:String] badCode:String
+										+
+										[Const:String] "\n```\n\n"
+								[Call:Void]
+									[Field:(x : String) -> Void]
+										[Local content(26851):StringBuf:StringBuf]
+										[FInstance:(x : String) -> Void]
+											StringBuf
+											add:(x : add.T) -> Void
+									[Const:String] "**✅ Good:**\n"
+								[Call:Void]
+									[Field:(x : String) -> Void]
+										[Local content(26851):StringBuf:StringBuf]
+										[FInstance:(x : String) -> Void]
+											StringBuf
+											add:(x : add.T) -> Void
+									[Binop:String]
+										[Binop:String]
+											[Const:String] "```haxe\n"
+											+
+											[Field:String]
+												[Local anti(26864):reflaxe.elixir.helpers.AntiPattern:reflaxe.elixir.helpers.AntiPattern]
+												[FAnon:String] goodCode:String
+										+
+										[Const:String] "\n```\n\n"
+			[Call:Void]
+				[Field:(path : String, content : String) -> Void]
+					[TypeExpr sys.io.File:Class<sys.io.File>]
+					[FStatic:(path : String, content : String) -> Void]
+						sys.io.File
+						saveContent:(path : String, content : String) -> Void
+				[Binop:String]
+					[Binop:String]
+						[Const:String] ""
+						+
+						[Local outputDir(26850):String:String]
+					+
+					[Const:String] "/PATTERNS.md"
+				[Call:String]
+					[Field:() -> String]
+						[Local content(26851):StringBuf:StringBuf]
+						[FInstance:() -> String]
+							StringBuf
+							toString:() -> String
+
+	static function extractArgPattern[Function:(args : Array<haxe.macro.TypedExpr>) -> String]
+		[Arg:Array<haxe.macro.TypedExpr>] [Local args(26762):Array<haxe.macro.TypedExpr>]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[If:String]
+					[Binop:Bool]
+						[Field:Int]
+							[Local args(26762):Array<haxe.macro.TypedExpr>:Array<haxe.macro.TypedExpr>]
+							[FInstance:Int]
+								Array<haxe.macro.TypedExpr>
+								length:Int
+						>
+						[Const:Int] 0
+					[Then:String] [Block:String] [Const:String] "..."
+					[Else:String] [Block:String] [Const:String] ""
+
+	static function getLiveViewPattern[Function:(e : haxe.macro.TypedExpr) -> String]
+		[Arg:haxe.macro.TypedExpr] [Local e(26788):haxe.macro.TypedExpr]
+		[Block:Dynamic] [Return:Dynamic] [Const:String] "@:liveview\nclass MyLive {\n    // LiveView implementation\n}"
+
+	static function getSchemaPattern[Function:(e : haxe.macro.TypedExpr) -> String]
+		[Arg:haxe.macro.TypedExpr] [Local e(26789):haxe.macro.TypedExpr]
+		[Block:Dynamic] [Return:Dynamic] [Const:String] "@:schema\nclass User {\n    public var id:Int;\n    public var name:String;\n}"
+
+	static function getChangesetPattern[Function:(e : haxe.macro.TypedExpr) -> String]
+		[Arg:haxe.macro.TypedExpr] [Local e(26790):haxe.macro.TypedExpr]
+		[Block:Dynamic] [Return:Dynamic] [Const:String] "@:changeset\npublic static function changeset(struct, params) {\n    // Validation logic\n}"
+
+	static function hasPatternMatching[Function:(e : haxe.macro.TypedExpr) -> Bool]
+		[Arg:haxe.macro.TypedExpr] [Local e(26796):haxe.macro.TypedExpr]
+		[Block:Dynamic]
+			[Var found(26797):Array<Bool>] [ArrayDecl:Array<Bool>] [Const:Bool] false
+			[Call:Void]
+				[Field:(e : haxe.macro.TypedExpr, f : (haxe.macro.TypedExpr -> Void)) -> Void]
+					[TypeExpr haxe.macro.TypedExprTools:Class<haxe.macro.TypedExprTools>]
+					[FStatic:(e : haxe.macro.TypedExpr, f : (haxe.macro.TypedExpr -> Void)) -> Void]
+						haxe.macro.TypedExprTools
+						iter:(e : haxe.macro.TypedExpr, f : (haxe.macro.TypedExpr -> Void)) -> Void
+				[Local e(26796):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+				[Function:(expr : haxe.macro.TypedExpr) -> Void]
+					[Arg:haxe.macro.TypedExpr] [Local expr(26798):haxe.macro.TypedExpr]
+					[Block:Void]
+						[Meta:Void]
+							:ast(switch (expr.expr) {
+	case TSwitch(_, _, _):
+		found = true;	
+	case _:
+})
+							[Block:Void]
+								[Var `(26803):haxe.macro.TypedExprDef]
+									[Field:haxe.macro.TypedExprDef]
+										[Local expr(26798):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+										[FAnon:haxe.macro.TypedExprDef] expr:haxe.macro.TypedExprDef
+								[If:Void]
+									[Binop:Bool]
+										[EnumIndex:Int] [Local `(26803):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+										==
+										[Const:Int] 18
+									[Then:Bool] [Block:Bool]
+										[Var `(26804):haxe.macro.TypedExpr]
+											[EnumParameter:haxe.macro.TypedExpr]
+												[Local `(26803):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+												TSwitch
+												0
+										[Var `(26805):Array<{ values : Array<haxe.macro.TypedExpr>, expr : haxe.macro.TypedExpr }>]
+											[EnumParameter:Array<{ values : Array<haxe.macro.TypedExpr>, expr : haxe.macro.TypedExpr }>]
+												[Local `(26803):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+												TSwitch
+												1
+										[Var `(26806):Null<haxe.macro.TypedExpr>]
+											[EnumParameter:Null<haxe.macro.TypedExpr>]
+												[Local `(26803):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+												TSwitch
+												2
+										[Block:Bool]
+											[Binop:Bool]
+												[Array:Bool]
+													[Local found(26797):Array<Bool>:Array<Bool>]
+													[Const:Int] 0
+												=
+												[Const:Bool] true
+									[Else:Void] [Block:Void]
+			[Return:Dynamic]
+				[Array:Bool]
+					[Local found(26797):Array<Bool>:Array<Bool>]
+					[Const:Int] 0
+
+	static function hasErrorHandling[Function:(e : haxe.macro.TypedExpr) -> Bool]
+		[Arg:haxe.macro.TypedExpr] [Local e(26808):haxe.macro.TypedExpr]
+		[Block:Dynamic]
+			[Var found(26809):Array<Bool>] [ArrayDecl:Array<Bool>] [Const:Bool] false
+			[Call:Void]
+				[Field:(e : haxe.macro.TypedExpr, f : (haxe.macro.TypedExpr -> Void)) -> Void]
+					[TypeExpr haxe.macro.TypedExprTools:Class<haxe.macro.TypedExprTools>]
+					[FStatic:(e : haxe.macro.TypedExpr, f : (haxe.macro.TypedExpr -> Void)) -> Void]
+						haxe.macro.TypedExprTools
+						iter:(e : haxe.macro.TypedExpr, f : (haxe.macro.TypedExpr -> Void)) -> Void
+				[Local e(26808):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+				[Function:(expr : haxe.macro.TypedExpr) -> Void]
+					[Arg:haxe.macro.TypedExpr] [Local expr(26810):haxe.macro.TypedExpr]
+					[Block:Void]
+						[Meta:Void]
+							:ast(switch (expr.expr) {
+	case TCall(e, _):
+		found = true;	
+	case _:
+})
+							[Block:Void]
+								[Var `(26815):haxe.macro.TypedExprDef]
+									[Field:haxe.macro.TypedExprDef]
+										[Local expr(26810):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+										[FAnon:haxe.macro.TypedExprDef] expr:haxe.macro.TypedExprDef
+								[If:Void]
+									[Binop:Bool]
+										[EnumIndex:Int] [Local `(26815):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+										==
+										[Const:Int] 9
+									[Then:Bool] [Block:Bool]
+										[Var `(26816):haxe.macro.TypedExpr]
+											[EnumParameter:haxe.macro.TypedExpr]
+												[Local `(26815):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+												TCall
+												0
+										[Var `(26817):Array<haxe.macro.TypedExpr>]
+											[EnumParameter:Array<haxe.macro.TypedExpr>]
+												[Local `(26815):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+												TCall
+												1
+										[Block:Bool]
+											[Var e(26818):haxe.macro.TypedExpr] [Local `(26816):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+											[Block:Bool]
+												[Binop:Bool]
+													[Array:Bool]
+														[Local found(26809):Array<Bool>:Array<Bool>]
+														[Const:Int] 0
+													=
+													[Const:Bool] true
+									[Else:Void] [Block:Void]
+			[Return:Dynamic]
+				[Array:Bool]
+					[Local found(26809):Array<Bool>:Array<Bool>]
+					[Const:Int] 0
+
+	static function getPatternMatchingExample[Function:(f : haxe.macro.TFunc) -> String]
+		[Arg:haxe.macro.TFunc] [Local f(26807):haxe.macro.TFunc]
+		[Block:Dynamic] [Return:Dynamic] [Const:String] "switch(result) {\n    case {ok: value}: handleSuccess(value);\n    case {error: reason}: handleError(reason);\n}"
+
+	static function getErrorHandlingExample[Function:(f : haxe.macro.TFunc) -> String]
+		[Arg:haxe.macro.TFunc] [Local f(26819):haxe.macro.TFunc]
+		[Block:Dynamic] [Return:Dynamic] [Const:String] "try {\n    performOperation();\n} catch(e:Dynamic) {\n    handleError(e);\n}"
+}

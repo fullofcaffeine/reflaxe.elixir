@@ -1,0 +1,1 @@
+typedef haxe.display.CompletionMode<T> = { kind : haxe.display.CompletionModeKind<haxe.display.CompletionMode.T>, ?args : Null<haxe.display.CompletionMode.T> }

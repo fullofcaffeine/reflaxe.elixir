@@ -1,0 +1,1055 @@
+class reflaxe.helpers.NullableMetaAccessHelper {
+
+	public static function maybeHas[Function:(m : Null<haxe.macro.MetaAccess>, name : String) -> Bool]
+		[Arg:Null<haxe.macro.MetaAccess>] [Local m(5512):Null<haxe.macro.MetaAccess>]
+		[Arg:String] [Local name(5513):String]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Binop:Bool]
+					[Binop:Bool]
+						[Binop:Bool]
+							[Local m(5512):Null<haxe.macro.MetaAccess>:Null<haxe.macro.MetaAccess>]
+							!=
+							[Const:Null<haxe.macro.MetaAccess>] null
+						&&
+						[Binop:Bool]
+							[Field:(name : String) -> Bool]
+								[Local m(5512):Null<haxe.macro.MetaAccess>:Null<haxe.macro.MetaAccess>]
+								[FClosure:(name : String) -> Bool]
+									None
+									has:(name : String) -> Bool
+							!=
+							[Const:(name : String) -> Bool] null
+					&&
+					[Call:Bool]
+						[Field:(name : String) -> Bool]
+							[Local m(5512):Null<haxe.macro.MetaAccess>:Null<haxe.macro.MetaAccess>]
+							[FAnon:(name : String) -> Bool] has:(name : String) -> Bool
+						[Local name(5513):String:String]
+
+	public static function maybeExtract[Function:(m : Null<haxe.macro.MetaAccess>, name : String) -> Array<haxe.macro.MetadataEntry>]
+		[Arg:Null<haxe.macro.MetaAccess>] [Local m(5514):Null<haxe.macro.MetaAccess>]
+		[Arg:String] [Local name(5515):String]
+		[Block:Dynamic]
+			[If:Void]
+				[Binop:Bool]
+					[Binop:Bool]
+						[Local m(5514):Null<haxe.macro.MetaAccess>:Null<haxe.macro.MetaAccess>]
+						==
+						[Const:Null<haxe.macro.MetaAccess>] null
+					||
+					[Binop:Bool]
+						[Field:(name : String) -> Array<haxe.macro.MetadataEntry>]
+							[Local m(5514):Null<haxe.macro.MetaAccess>:Null<haxe.macro.MetaAccess>]
+							[FClosure:(name : String) -> Array<haxe.macro.MetadataEntry>]
+								None
+								extract:(name : String) -> Array<haxe.macro.MetadataEntry>
+						==
+						[Const:(name : String) -> Array<haxe.macro.MetadataEntry>] null
+				[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [ArrayDecl:Array<haxe.macro.MetadataEntry>]
+			[Return:Dynamic]
+				[Call:Array<haxe.macro.MetadataEntry>]
+					[Field:(name : String) -> Array<haxe.macro.MetadataEntry>]
+						[Local m(5514):Null<haxe.macro.MetaAccess>:Null<haxe.macro.MetaAccess>]
+						[FAnon:(name : String) -> Array<haxe.macro.MetadataEntry>] extract:(name : String) -> Array<haxe.macro.MetadataEntry>
+					[Local name(5515):String:String]
+
+	public static function maybeGet[Function:(m : Null<haxe.macro.MetaAccess>) -> haxe.macro.Metadata]
+		[Arg:Null<haxe.macro.MetaAccess>] [Local m(5516):Null<haxe.macro.MetaAccess>]
+		[Block:Dynamic]
+			[If:Void]
+				[Binop:Bool]
+					[Binop:Bool]
+						[Local m(5516):Null<haxe.macro.MetaAccess>:Null<haxe.macro.MetaAccess>]
+						==
+						[Const:Null<haxe.macro.MetaAccess>] null
+					||
+					[Binop:Bool]
+						[Field:(name : String) -> Array<haxe.macro.MetadataEntry>]
+							[Local m(5516):Null<haxe.macro.MetaAccess>:Null<haxe.macro.MetaAccess>]
+							[FClosure:(name : String) -> Array<haxe.macro.MetadataEntry>]
+								None
+								extract:(name : String) -> Array<haxe.macro.MetadataEntry>
+						==
+						[Const:(name : String) -> Array<haxe.macro.MetadataEntry>] null
+				[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [ArrayDecl:Array<haxe.macro.MetadataEntry>]
+			[Return:Dynamic]
+				[Call:haxe.macro.Metadata]
+					[Field:() -> haxe.macro.Metadata]
+						[Local m(5516):Null<haxe.macro.MetaAccess>:Null<haxe.macro.MetaAccess>]
+						[FAnon:() -> haxe.macro.Metadata] get:() -> haxe.macro.Metadata
+
+	public static function maybeAdd[Function:(m : Null<haxe.macro.MetaAccess>, name : String, params : Array<haxe.macro.Expr>, pos : haxe.macro.Position) -> Void]
+		[Arg:Null<haxe.macro.MetaAccess>] [Local m(5517):Null<haxe.macro.MetaAccess>]
+		[Arg:String] [Local name(5518):String]
+		[Arg:Array<haxe.macro.Expr>] [Local params(5519):Array<haxe.macro.Expr>]
+		[Arg:haxe.macro.Position] [Local pos(5520):haxe.macro.Position]
+		[Block:Void]
+			[If:Void]
+				[Binop:Bool]
+					[Binop:Bool]
+						[Local m(5517):Null<haxe.macro.MetaAccess>:Null<haxe.macro.MetaAccess>]
+						!=
+						[Const:Null<haxe.macro.MetaAccess>] null
+					&&
+					[Binop:Bool]
+						[Field:(name : String, params : Array<haxe.macro.Expr>, pos : haxe.macro.Position) -> Void]
+							[Local m(5517):Null<haxe.macro.MetaAccess>:Null<haxe.macro.MetaAccess>]
+							[FClosure:(name : String, params : Array<haxe.macro.Expr>, pos : haxe.macro.Position) -> Void]
+								None
+								add:(name : String, params : Array<haxe.macro.Expr>, pos : haxe.macro.Position) -> Void
+						!=
+						[Const:(name : String, params : Array<haxe.macro.Expr>, pos : haxe.macro.Position) -> Void] null
+				[Then:Void] [Block:Void]
+					[Call:Void]
+						[Field:(name : String, params : Array<haxe.macro.Expr>, pos : haxe.macro.Position) -> Void]
+							[Local m(5517):Null<haxe.macro.MetaAccess>:Null<haxe.macro.MetaAccess>]
+							[FAnon:(name : String, params : Array<haxe.macro.Expr>, pos : haxe.macro.Position) -> Void] add:(name : String, params : Array<haxe.macro.Expr>, pos : haxe.macro.Position) -> Void
+						[Local name(5518):String:String]
+						[Local params(5519):Array<haxe.macro.Expr>:Array<haxe.macro.Expr>]
+						[Local pos(5520):haxe.macro.Position:haxe.macro.Position]
+
+	public static function getFirstPosition[Function:(m : Null<haxe.macro.MetaAccess>, name : String) -> Null<haxe.macro.Position>]
+		[Arg:Null<haxe.macro.MetaAccess>] [Local m(5521):Null<haxe.macro.MetaAccess>]
+		[Arg:String] [Local name(5522):String]
+		[Block:Dynamic]
+			[Var entries(5523):Array<haxe.macro.MetadataEntry>]
+				[Call:Array<haxe.macro.MetadataEntry>]
+					[Field:(m : Null<haxe.macro.MetaAccess>, name : String) -> Array<haxe.macro.MetadataEntry>]
+						[TypeExpr reflaxe.helpers.NullableMetaAccessHelper:Class<reflaxe.helpers.NullableMetaAccessHelper>]
+						[FStatic:(m : Null<haxe.macro.MetaAccess>, name : String) -> Array<haxe.macro.MetadataEntry>]
+							reflaxe.helpers.NullableMetaAccessHelper
+							maybeExtract:(m : Null<haxe.macro.MetaAccess>, name : String) -> Array<haxe.macro.MetadataEntry>
+					[Local m(5521):Null<haxe.macro.MetaAccess>:Null<haxe.macro.MetaAccess>]
+					[Local name(5522):String:String]
+			[Return:Dynamic]
+				[If:Null<haxe.macro.Position>]
+					[Binop:Bool]
+						[Field:Int]
+							[Local entries(5523):Array<haxe.macro.MetadataEntry>:Array<haxe.macro.MetadataEntry>]
+							[FInstance:Int]
+								Array<haxe.macro.MetadataEntry>
+								length:Int
+						>
+						[Const:Int] 0
+					[Then:haxe.macro.Position] [Block:haxe.macro.Position]
+						[Field:haxe.macro.Position]
+							[Array:haxe.macro.MetadataEntry]
+								[Local entries(5523):Array<haxe.macro.MetadataEntry>:Array<haxe.macro.MetadataEntry>]
+								[Const:Int] 0
+							[FAnon:haxe.macro.Position] pos:haxe.macro.Position
+					[Else:Null<haxe.macro.Position>] [Block:Null<haxe.macro.Position>] [Const:Null<haxe.macro.Position>] null
+
+	@:value({ allowMultiParam : true })
+	public static function extractNativeMeta[Function:(metaAccess : Null<haxe.macro.MetaAccess>, ?allowMultiParam : Bool) -> Null<Array<String>>]
+		[Arg:Null<haxe.macro.MetaAccess>] [Local metaAccess(5524):Null<haxe.macro.MetaAccess>]
+		[Arg:Bool]
+			[Local allowMultiParam(5525):Bool]
+			[Const:Bool] true
+		[Block:Dynamic]
+			[If:Void]
+				[Binop:Bool]
+					[Binop:Bool]
+						[Local metaAccess(5524):Null<haxe.macro.MetaAccess>:Null<haxe.macro.MetaAccess>]
+						==
+						[Const:Null<haxe.macro.MetaAccess>] null
+					||
+					[Binop:Bool]
+						[Field:(name : String) -> Array<haxe.macro.MetadataEntry>]
+							[Local metaAccess(5524):Null<haxe.macro.MetaAccess>:Null<haxe.macro.MetaAccess>]
+							[FClosure:(name : String) -> Array<haxe.macro.MetadataEntry>]
+								None
+								extract:(name : String) -> Array<haxe.macro.MetadataEntry>
+						==
+						[Const:(name : String) -> Array<haxe.macro.MetadataEntry>] null
+				[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [Const:Null<Array<String>>] null
+			[Var result(5526):Array<String>] [ArrayDecl:Array<String>]
+			[Var meta(5527):Array<haxe.macro.MetadataEntry>]
+				[Call:Array<haxe.macro.MetadataEntry>]
+					[Field:(name : String) -> Array<haxe.macro.MetadataEntry>]
+						[Local metaAccess(5524):Null<haxe.macro.MetaAccess>:Null<haxe.macro.MetaAccess>]
+						[FAnon:(name : String) -> Array<haxe.macro.MetadataEntry>] extract:(name : String) -> Array<haxe.macro.MetadataEntry>
+					[Const:String] ":meta"
+			[Block:Void]
+				[Var `(6180):Int] [Const:Int] 0
+				[While:Void]
+					[Binop:Bool]
+						[Local `(6180):Int:Int]
+						<
+						[Field:Int]
+							[Local meta(5527):Array<haxe.macro.MetadataEntry>:Array<haxe.macro.MetadataEntry>]
+							[FInstance:Int]
+								Array<haxe.macro.MetadataEntry>
+								length:Int
+					[Block:Void]
+						[Var m(5528):haxe.macro.MetadataEntry]
+							[Array:haxe.macro.MetadataEntry]
+								[Local meta(5527):Array<haxe.macro.MetadataEntry>:Array<haxe.macro.MetadataEntry>]
+								[Local `(6180):Int:Int]
+						[Unop:Int]
+							++
+							Prefix
+							[Local `(6180):Int:Int]
+						[If:Void]
+							[Binop:Bool]
+								[Binop:Bool]
+									[Field:Null<Array<haxe.macro.Expr>>]
+										[Local m(5528):haxe.macro.MetadataEntry:haxe.macro.MetadataEntry]
+										[FAnon:Null<Array<haxe.macro.Expr>>] params:Null<Array<haxe.macro.Expr>>
+									==
+									[Const:Null<Array<haxe.macro.Expr>>] null
+								||
+								[Binop:Bool]
+									[Field:Int]
+										[Field:Null<Array<haxe.macro.Expr>>]
+											[Local m(5528):haxe.macro.MetadataEntry:haxe.macro.MetadataEntry]
+											[FAnon:Null<Array<haxe.macro.Expr>>] params:Null<Array<haxe.macro.Expr>>
+										[FInstance:Int]
+											Array<haxe.macro.Expr>
+											length:Int
+									==
+									[Const:Int] 0
+							[Then:Dynamic] [Block:Dynamic]
+								[Call:Dynamic]
+									[Field:(msg : String, pos : haxe.macro.Position, ?depth : Null<Int>) -> Dynamic]
+										[TypeExpr haxe.macro.Context:Class<haxe.macro.Context>]
+										[FStatic:(msg : String, pos : haxe.macro.Position, ?depth : Null<Int>) -> Dynamic]
+											haxe.macro.Context
+											error:(msg : String, pos : haxe.macro.Position, ?depth : Null<Int>) -> Dynamic
+									[Const:String] "Native meta expression expected as parameter."
+									[Field:haxe.macro.Position]
+										[Local m(5528):haxe.macro.MetadataEntry:haxe.macro.MetadataEntry]
+										[FAnon:haxe.macro.Position] pos:haxe.macro.Position
+									[Const:Null<Int>] null
+								[Return:Dynamic] [Const:Null<Array<String>>] null
+						[If:Void]
+							[Binop:Bool]
+								[Unop:Bool]
+									!
+									Prefix
+									[Local allowMultiParam(5525):Bool:Bool]
+								&&
+								[Binop:Bool]
+									[Field:Int]
+										[Field:Null<Array<haxe.macro.Expr>>]
+											[Local m(5528):haxe.macro.MetadataEntry:haxe.macro.MetadataEntry]
+											[FAnon:Null<Array<haxe.macro.Expr>>] params:Null<Array<haxe.macro.Expr>>
+										[FInstance:Int]
+											Array<haxe.macro.Expr>
+											length:Int
+									>
+									[Const:Int] 1
+							[Then:Dynamic] [Block:Dynamic]
+								[Call:Dynamic]
+									[Field:(msg : String, pos : haxe.macro.Position, ?depth : Null<Int>) -> Dynamic]
+										[TypeExpr haxe.macro.Context:Class<haxe.macro.Context>]
+										[FStatic:(msg : String, pos : haxe.macro.Position, ?depth : Null<Int>) -> Dynamic]
+											haxe.macro.Context
+											error:(msg : String, pos : haxe.macro.Position, ?depth : Null<Int>) -> Dynamic
+									[Const:String] "Only one expression should be supplied for native meta."
+									[Field:haxe.macro.Position]
+										[Local m(5528):haxe.macro.MetadataEntry:haxe.macro.MetadataEntry]
+										[FAnon:haxe.macro.Position] pos:haxe.macro.Position
+									[Const:Null<Int>] null
+								[Return:Dynamic] [Const:Null<Array<String>>] null
+						[Block:Void]
+							[Var `(6178):Int] [Const:Int] 0
+							[Var `(6179):Null<Array<haxe.macro.Expr>>]
+								[Field:Null<Array<haxe.macro.Expr>>]
+									[Local m(5528):haxe.macro.MetadataEntry:haxe.macro.MetadataEntry]
+									[FAnon:Null<Array<haxe.macro.Expr>>] params:Null<Array<haxe.macro.Expr>>
+							[While:Void]
+								[Binop:Bool]
+									[Local `(6178):Int:Int]
+									<
+									[Field:Int]
+										[Local `(6179):Null<Array<haxe.macro.Expr>>:Null<Array<haxe.macro.Expr>>]
+										[FInstance:Int]
+											Array<haxe.macro.Expr>
+											length:Int
+								[Block:Void]
+									[Var param(5529):haxe.macro.Expr]
+										[Array:haxe.macro.Expr]
+											[Local `(6179):Null<Array<haxe.macro.Expr>>:Null<Array<haxe.macro.Expr>>]
+											[Local `(6178):Int:Int]
+									[Unop:Int]
+										++
+										Prefix
+										[Local `(6178):Int:Int]
+									[Call:Int]
+										[Field:(x : String) -> Int]
+											[Local result(5526):Array<String>:Array<String>]
+											[FInstance:(x : String) -> Int]
+												Array<String>
+												push:(x : Array.T) -> Int
+										[Call:String]
+											[Field:(e : haxe.macro.Expr) -> String]
+												[TypeExpr haxe.macro.ExprTools:Class<haxe.macro.ExprTools>]
+												[FStatic:(e : haxe.macro.Expr) -> String]
+													haxe.macro.ExprTools
+													toString:(e : haxe.macro.Expr) -> String
+											[Local param(5529):haxe.macro.Expr:haxe.macro.Expr]
+			[Return:Dynamic] [Local result(5526):Array<String>:Array<String>]
+
+	public static function extractExpressionsFromFirstMeta[Function:(metaAccess : Null<haxe.macro.MetaAccess>, metaName : String) -> Null<Array<haxe.macro.Expr>>]
+		[Arg:Null<haxe.macro.MetaAccess>] [Local metaAccess(7437):Null<haxe.macro.MetaAccess>]
+		[Arg:String] [Local metaName(7438):String]
+		[Block:Dynamic]
+			[If:Void]
+				[Binop:Bool]
+					[Local metaAccess(7437):Null<haxe.macro.MetaAccess>:Null<haxe.macro.MetaAccess>]
+					!=
+					[Const:Null<haxe.macro.MetaAccess>] null
+				[Then:Void] [Block:Void]
+					[Var entries(7439):Array<haxe.macro.MetadataEntry>]
+						[Call:Array<haxe.macro.MetadataEntry>]
+							[Field:(name : String) -> Array<haxe.macro.MetadataEntry>]
+								[Local metaAccess(7437):Null<haxe.macro.MetaAccess>:Null<haxe.macro.MetaAccess>]
+								[FAnon:(name : String) -> Array<haxe.macro.MetadataEntry>] extract:(name : String) -> Array<haxe.macro.MetadataEntry>
+							[Local metaName(7438):String:String]
+					[If:Void]
+						[Binop:Bool]
+							[Field:Int]
+								[Local entries(7439):Array<haxe.macro.MetadataEntry>:Array<haxe.macro.MetadataEntry>]
+								[FInstance:Int]
+									Array<haxe.macro.MetadataEntry>
+									length:Int
+							>
+							[Const:Int] 0
+						[Then:Dynamic] [Block:Dynamic]
+							[Return:Dynamic]
+								[Field:Null<Array<haxe.macro.Expr>>]
+									[Array:haxe.macro.MetadataEntry]
+										[Local entries(7439):Array<haxe.macro.MetadataEntry>:Array<haxe.macro.MetadataEntry>]
+										[Const:Int] 0
+									[FAnon:Null<Array<haxe.macro.Expr>>] params:Null<Array<haxe.macro.Expr>>
+			[Return:Dynamic] [Const:Null<Array<haxe.macro.Expr>>] null
+
+	@:value({ index : 0 })
+	public static function extractStringFromFirstMeta[Function:(metaAccess : Null<haxe.macro.MetaAccess>, metaName : String, ?index : Int) -> Null<String>]
+		[Arg:Null<haxe.macro.MetaAccess>] [Local metaAccess(7440):Null<haxe.macro.MetaAccess>]
+		[Arg:String] [Local metaName(7441):String]
+		[Arg:Int]
+			[Local index(7442):Int]
+			[Const:Int] 0
+		[Block:Dynamic]
+			[Var result(7486):Null<Dynamic>]
+				[Call:Null<Dynamic>]
+					[Field:(metaAccess : Null<haxe.macro.MetaAccess>, metaName : String, ?index : Int) -> Null<Dynamic>]
+						[TypeExpr reflaxe.helpers.NullableMetaAccessHelper:Class<reflaxe.helpers.NullableMetaAccessHelper>]
+						[FStatic:(metaAccess : Null<haxe.macro.MetaAccess>, metaName : String, ?index : Int) -> Null<Dynamic>]
+							reflaxe.helpers.NullableMetaAccessHelper
+							extractPrimtiveFromFirstMeta:(metaAccess : Null<haxe.macro.MetaAccess>, metaName : String, ?index : Int) -> Null<Dynamic>
+					[Local metaAccess(7440):Null<haxe.macro.MetaAccess>:Null<haxe.macro.MetaAccess>]
+					[Local metaName(7441):String:String]
+					[Local index(7442):Int:Int]
+			[Return:Dynamic]
+				[If:Null<String>]
+					[Binop:Bool]
+						[Binop:Bool]
+							[Local result(7486):Null<Dynamic>:Null<Dynamic>]
+							!=
+							[Const:Null<Dynamic>] null
+						&&
+						[Call:Bool]
+							[Field:(d : Dynamic) -> Bool]
+								[TypeExpr reflaxe.helpers.DynamicHelper:{ Statics reflaxe.helpers.DynamicHelper }]
+								[FStatic:(d : Dynamic) -> Bool]
+									reflaxe.helpers.DynamicHelper
+									isString:(d : Dynamic) -> Bool
+							[Local result(7486):Null<Dynamic>:Null<Dynamic>]
+					[Then:Null<Dynamic>] [Block:Null<Dynamic>] [Local result(7486):Null<Dynamic>:Null<Dynamic>]
+					[Else:Null<String>] [Block:Null<String>] [Const:Null<String>] null
+
+	@:value({ index : 0 })
+	public static function extractPrimtiveFromFirstMeta[Function:(metaAccess : Null<haxe.macro.MetaAccess>, metaName : String, ?index : Int) -> Null<Dynamic>]
+		[Arg:Null<haxe.macro.MetaAccess>] [Local metaAccess(7443):Null<haxe.macro.MetaAccess>]
+		[Arg:String] [Local metaName(7444):String]
+		[Arg:Int]
+			[Local index(7445):Int]
+			[Const:Int] 0
+		[Block:Dynamic]
+			[If:Void]
+				[Binop:Bool]
+					[Local metaAccess(7443):Null<haxe.macro.MetaAccess>:Null<haxe.macro.MetaAccess>]
+					==
+					[Const:Null<haxe.macro.MetaAccess>] null
+				[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [Const:Null<Dynamic>] null
+			[Var metaList(7446):Array<haxe.macro.MetadataEntry>]
+				[Call:Array<haxe.macro.MetadataEntry>]
+					[Field:(m : Null<haxe.macro.MetaAccess>, name : String) -> Array<haxe.macro.MetadataEntry>]
+						[TypeExpr reflaxe.helpers.NullableMetaAccessHelper:Class<reflaxe.helpers.NullableMetaAccessHelper>]
+						[FStatic:(m : Null<haxe.macro.MetaAccess>, name : String) -> Array<haxe.macro.MetadataEntry>]
+							reflaxe.helpers.NullableMetaAccessHelper
+							maybeExtract:(m : Null<haxe.macro.MetaAccess>, name : String) -> Array<haxe.macro.MetadataEntry>
+					[Local metaAccess(7443):Null<haxe.macro.MetaAccess>:Null<haxe.macro.MetaAccess>]
+					[Local metaName(7444):String:String]
+			[Block:Void]
+				[Var `(7485):Int] [Const:Int] 0
+				[While:Void]
+					[Binop:Bool]
+						[Local `(7485):Int:Int]
+						<
+						[Field:Int]
+							[Local metaList(7446):Array<haxe.macro.MetadataEntry>:Array<haxe.macro.MetadataEntry>]
+							[FInstance:Int]
+								Array<haxe.macro.MetadataEntry>
+								length:Int
+					[Block:Void]
+						[Var m(7447):haxe.macro.MetadataEntry]
+							[Array:haxe.macro.MetadataEntry]
+								[Local metaList(7446):Array<haxe.macro.MetadataEntry>:Array<haxe.macro.MetadataEntry>]
+								[Local `(7485):Int:Int]
+						[Unop:Int]
+							++
+							Prefix
+							[Local `(7485):Int:Int]
+						[Var result(7484):Null<Dynamic>]
+							[Call:Null<Dynamic>]
+								[Field:(entry : haxe.macro.MetadataEntry, ?index : Int) -> Null<Dynamic>]
+									[TypeExpr reflaxe.helpers.NullableMetaAccessHelper:Class<reflaxe.helpers.NullableMetaAccessHelper>]
+									[FStatic:(entry : haxe.macro.MetadataEntry, ?index : Int) -> Null<Dynamic>]
+										reflaxe.helpers.NullableMetaAccessHelper
+										extractPrimitiveFromEntry:(entry : haxe.macro.MetadataEntry, ?index : Int) -> Null<Dynamic>
+								[Local m(7447):haxe.macro.MetadataEntry:haxe.macro.MetadataEntry]
+								[Local index(7445):Int:Int]
+						[If:Void]
+							[Binop:Bool]
+								[Local result(7484):Null<Dynamic>:Null<Dynamic>]
+								!=
+								[Const:Null<Dynamic>] null
+							[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [Local result(7484):Null<Dynamic>:Null<Dynamic>]
+			[Return:Dynamic] [Const:Null<Dynamic>] null
+
+	@:value({ index : 0 })
+	public static function extractStringFromAllMeta[Function:(metaAccess : Null<haxe.macro.MetaAccess>, metaName : String, ?index : Int) -> Array<String>]
+		[Arg:Null<haxe.macro.MetaAccess>] [Local metaAccess(7487):Null<haxe.macro.MetaAccess>]
+		[Arg:String] [Local metaName(7488):String]
+		[Arg:Int]
+			[Local index(7489):Int]
+			[Const:Int] 0
+		[Block:Dynamic]
+			[Var primitives(7498):Array<Dynamic>]
+				[Call:Array<Dynamic>]
+					[Field:(metaAccess : Null<haxe.macro.MetaAccess>, metaName : String, ?index : Int) -> Array<Dynamic>]
+						[TypeExpr reflaxe.helpers.NullableMetaAccessHelper:Class<reflaxe.helpers.NullableMetaAccessHelper>]
+						[FStatic:(metaAccess : Null<haxe.macro.MetaAccess>, metaName : String, ?index : Int) -> Array<Dynamic>]
+							reflaxe.helpers.NullableMetaAccessHelper
+							extractPrimtiveFromAllMeta:(metaAccess : Null<haxe.macro.MetaAccess>, metaName : String, ?index : Int) -> Array<Dynamic>
+					[Local metaAccess(7487):Null<haxe.macro.MetaAccess>:Null<haxe.macro.MetaAccess>]
+					[Local metaName(7488):String:String]
+					[Local index(7489):Int:Int]
+			[Var result(7499):Array<String>] [ArrayDecl:Array<String>]
+			[Block:Void]
+				[Var `(7501):Int] [Const:Int] 0
+				[While:Void]
+					[Binop:Bool]
+						[Local `(7501):Int:Int]
+						<
+						[Field:Int]
+							[Local primitives(7498):Array<Dynamic>:Array<Dynamic>]
+							[FInstance:Int]
+								Array<Dynamic>
+								length:Int
+					[Block:Void]
+						[Var obj(7500):Dynamic]
+							[Array:Dynamic]
+								[Local primitives(7498):Array<Dynamic>:Array<Dynamic>]
+								[Local `(7501):Int:Int]
+						[Unop:Int]
+							++
+							Prefix
+							[Local `(7501):Int:Int]
+						[If:Void]
+							[Binop:Bool]
+								[Binop:Bool]
+									[Local obj(7500):Dynamic:Dynamic]
+									!=
+									[Const:Dynamic] null
+								&&
+								[Call:Bool]
+									[Field:(d : Dynamic) -> Bool]
+										[TypeExpr reflaxe.helpers.DynamicHelper:{ Statics reflaxe.helpers.DynamicHelper }]
+										[FStatic:(d : Dynamic) -> Bool]
+											reflaxe.helpers.DynamicHelper
+											isString:(d : Dynamic) -> Bool
+									[Local obj(7500):Dynamic:Dynamic]
+							[Then:Int] [Block:Int]
+								[Call:Int]
+									[Field:(x : String) -> Int]
+										[Local result(7499):Array<String>:Array<String>]
+										[FInstance:(x : String) -> Int]
+											Array<String>
+											push:(x : Array.T) -> Int
+									[Local obj(7500):Dynamic:Dynamic]
+			[Return:Dynamic] [Local result(7499):Array<String>:Array<String>]
+
+	@:value({ index : 0 })
+	public static function extractPrimtiveFromAllMeta[Function:(metaAccess : Null<haxe.macro.MetaAccess>, metaName : String, ?index : Int) -> Array<Dynamic>]
+		[Arg:Null<haxe.macro.MetaAccess>] [Local metaAccess(7490):Null<haxe.macro.MetaAccess>]
+		[Arg:String] [Local metaName(7491):String]
+		[Arg:Int]
+			[Local index(7492):Int]
+			[Const:Int] 0
+		[Block:Dynamic]
+			[If:Void]
+				[Binop:Bool]
+					[Local metaAccess(7490):Null<haxe.macro.MetaAccess>:Null<haxe.macro.MetaAccess>]
+					==
+					[Const:Null<haxe.macro.MetaAccess>] null
+				[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [ArrayDecl:Array<Dynamic>]
+			[Var result(7493):Array<Dynamic>] [ArrayDecl:Array<Dynamic>]
+			[Var metaList(7494):Array<haxe.macro.MetadataEntry>]
+				[Call:Array<haxe.macro.MetadataEntry>]
+					[Field:(m : Null<haxe.macro.MetaAccess>, name : String) -> Array<haxe.macro.MetadataEntry>]
+						[TypeExpr reflaxe.helpers.NullableMetaAccessHelper:Class<reflaxe.helpers.NullableMetaAccessHelper>]
+						[FStatic:(m : Null<haxe.macro.MetaAccess>, name : String) -> Array<haxe.macro.MetadataEntry>]
+							reflaxe.helpers.NullableMetaAccessHelper
+							maybeExtract:(m : Null<haxe.macro.MetaAccess>, name : String) -> Array<haxe.macro.MetadataEntry>
+					[Local metaAccess(7490):Null<haxe.macro.MetaAccess>:Null<haxe.macro.MetaAccess>]
+					[Local metaName(7491):String:String]
+			[Block:Void]
+				[Var `(7497):Int] [Const:Int] 0
+				[While:Void]
+					[Binop:Bool]
+						[Local `(7497):Int:Int]
+						<
+						[Field:Int]
+							[Local metaList(7494):Array<haxe.macro.MetadataEntry>:Array<haxe.macro.MetadataEntry>]
+							[FInstance:Int]
+								Array<haxe.macro.MetadataEntry>
+								length:Int
+					[Block:Void]
+						[Var m(7495):haxe.macro.MetadataEntry]
+							[Array:haxe.macro.MetadataEntry]
+								[Local metaList(7494):Array<haxe.macro.MetadataEntry>:Array<haxe.macro.MetadataEntry>]
+								[Local `(7497):Int:Int]
+						[Unop:Int]
+							++
+							Prefix
+							[Local `(7497):Int:Int]
+						[Var prim(7496):Null<Dynamic>]
+							[Call:Null<Dynamic>]
+								[Field:(entry : haxe.macro.MetadataEntry, ?index : Int) -> Null<Dynamic>]
+									[TypeExpr reflaxe.helpers.NullableMetaAccessHelper:Class<reflaxe.helpers.NullableMetaAccessHelper>]
+									[FStatic:(entry : haxe.macro.MetadataEntry, ?index : Int) -> Null<Dynamic>]
+										reflaxe.helpers.NullableMetaAccessHelper
+										extractPrimitiveFromEntry:(entry : haxe.macro.MetadataEntry, ?index : Int) -> Null<Dynamic>
+								[Local m(7495):haxe.macro.MetadataEntry:haxe.macro.MetadataEntry]
+								[Local index(7492):Int:Int]
+						[If:Void]
+							[Binop:Bool]
+								[Local prim(7496):Null<Dynamic>:Null<Dynamic>]
+								!=
+								[Const:Null<Dynamic>] null
+							[Then:Int] [Block:Int]
+								[Call:Int]
+									[Field:(x : Dynamic) -> Int]
+										[Local result(7493):Array<Dynamic>:Array<Dynamic>]
+										[FInstance:(x : Dynamic) -> Int]
+											Array<Dynamic>
+											push:(x : Array.T) -> Int
+									[Local prim(7496):Null<Dynamic>:Null<Dynamic>]
+			[Return:Dynamic] [Local result(7493):Array<Dynamic>:Array<Dynamic>]
+
+	public static function extractParamsFromFirstMeta[Function:(metaAccess : Null<haxe.macro.MetaAccess>, metaName : String) -> Null<Array<Dynamic>>]
+		[Arg:Null<haxe.macro.MetaAccess>] [Local metaAccess(7502):Null<haxe.macro.MetaAccess>]
+		[Arg:String] [Local metaName(7503):String]
+		[Block:Dynamic]
+			[If:Void]
+				[Binop:Bool]
+					[Local metaAccess(7502):Null<haxe.macro.MetaAccess>:Null<haxe.macro.MetaAccess>]
+					==
+					[Const:Null<haxe.macro.MetaAccess>] null
+				[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [Const:Null<Array<Dynamic>>] null
+			[Var metaList(7504):Array<haxe.macro.MetadataEntry>]
+				[Call:Array<haxe.macro.MetadataEntry>]
+					[Field:(m : Null<haxe.macro.MetaAccess>, name : String) -> Array<haxe.macro.MetadataEntry>]
+						[TypeExpr reflaxe.helpers.NullableMetaAccessHelper:Class<reflaxe.helpers.NullableMetaAccessHelper>]
+						[FStatic:(m : Null<haxe.macro.MetaAccess>, name : String) -> Array<haxe.macro.MetadataEntry>]
+							reflaxe.helpers.NullableMetaAccessHelper
+							maybeExtract:(m : Null<haxe.macro.MetaAccess>, name : String) -> Array<haxe.macro.MetadataEntry>
+					[Local metaAccess(7502):Null<haxe.macro.MetaAccess>:Null<haxe.macro.MetaAccess>]
+					[Local metaName(7503):String:String]
+			[If:Void]
+				[Binop:Bool]
+					[Field:Int]
+						[Local metaList(7504):Array<haxe.macro.MetadataEntry>:Array<haxe.macro.MetadataEntry>]
+						[FInstance:Int]
+							Array<haxe.macro.MetadataEntry>
+							length:Int
+					>
+					[Const:Int] 0
+				[Then:Dynamic] [Block:Dynamic]
+					[Var result(7505):Array<Null<Dynamic>>] [ArrayDecl:Array<Null<Dynamic>>]
+					[Var m(7506):haxe.macro.MetadataEntry]
+						[Array:haxe.macro.MetadataEntry]
+							[Local metaList(7504):Array<haxe.macro.MetadataEntry>:Array<haxe.macro.MetadataEntry>]
+							[Const:Int] 0
+					[If:Void]
+						[Binop:Bool]
+							[Field:Null<Array<haxe.macro.Expr>>]
+								[Local m(7506):haxe.macro.MetadataEntry:haxe.macro.MetadataEntry]
+								[FAnon:Null<Array<haxe.macro.Expr>>] params:Null<Array<haxe.macro.Expr>>
+							!=
+							[Const:Null<Array<haxe.macro.Expr>>] null
+						[Then:Void] [Block:Void]
+							[Block:Void]
+								[Var `(7508):Int] [Const:Int] 0
+								[Var `(7509):Int]
+									[Field:Int]
+										[Field:Null<Array<haxe.macro.Expr>>]
+											[Local m(7506):haxe.macro.MetadataEntry:haxe.macro.MetadataEntry]
+											[FAnon:Null<Array<haxe.macro.Expr>>] params:Null<Array<haxe.macro.Expr>>
+										[FInstance:Int]
+											Array<haxe.macro.Expr>
+											length:Int
+								[While:Void]
+									[Binop:Bool]
+										[Local `(7508):Int:Int]
+										<
+										[Local `(7509):Int:Int]
+									[Block:Int]
+										[Var i(7507):Int]
+											[Unop:Int]
+												++
+												Postfix
+												[Local `(7508):Int:Int]
+										[Call:Int]
+											[Field:(x : Null<Dynamic>) -> Int]
+												[Local result(7505):Array<Null<Dynamic>>:Array<Null<Dynamic>>]
+												[FInstance:(x : Null<Dynamic>) -> Int]
+													Array<Null<Dynamic>>
+													push:(x : Array.T) -> Int
+											[Call:Null<Dynamic>]
+												[Field:(entry : haxe.macro.MetadataEntry, ?index : Int) -> Null<Dynamic>]
+													[TypeExpr reflaxe.helpers.NullableMetaAccessHelper:Class<reflaxe.helpers.NullableMetaAccessHelper>]
+													[FStatic:(entry : haxe.macro.MetadataEntry, ?index : Int) -> Null<Dynamic>]
+														reflaxe.helpers.NullableMetaAccessHelper
+														extractPrimitiveFromEntry:(entry : haxe.macro.MetadataEntry, ?index : Int) -> Null<Dynamic>
+												[Local m(7506):haxe.macro.MetadataEntry:haxe.macro.MetadataEntry]
+												[Local i(7507):Int:Int]
+					[Return:Dynamic] [Local result(7505):Array<Null<Dynamic>>:Array<Null<Dynamic>>]
+			[Return:Dynamic] [Const:Null<Array<Dynamic>>] null
+
+	public static function extractParamsFromAllMeta[Function:(metaAccess : Null<haxe.macro.MetaAccess>, metaName : String) -> Array<Array<Dynamic>>]
+		[Arg:Null<haxe.macro.MetaAccess>] [Local metaAccess(7510):Null<haxe.macro.MetaAccess>]
+		[Arg:String] [Local metaName(7511):String]
+		[Block:Dynamic]
+			[If:Void]
+				[Binop:Bool]
+					[Local metaAccess(7510):Null<haxe.macro.MetaAccess>:Null<haxe.macro.MetaAccess>]
+					==
+					[Const:Null<haxe.macro.MetaAccess>] null
+				[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [ArrayDecl:Array<Array<Dynamic>>]
+			[Var metaList(7512):Array<haxe.macro.MetadataEntry>]
+				[Call:Array<haxe.macro.MetadataEntry>]
+					[Field:(m : Null<haxe.macro.MetaAccess>, name : String) -> Array<haxe.macro.MetadataEntry>]
+						[TypeExpr reflaxe.helpers.NullableMetaAccessHelper:Class<reflaxe.helpers.NullableMetaAccessHelper>]
+						[FStatic:(m : Null<haxe.macro.MetaAccess>, name : String) -> Array<haxe.macro.MetadataEntry>]
+							reflaxe.helpers.NullableMetaAccessHelper
+							maybeExtract:(m : Null<haxe.macro.MetaAccess>, name : String) -> Array<haxe.macro.MetadataEntry>
+					[Local metaAccess(7510):Null<haxe.macro.MetaAccess>:Null<haxe.macro.MetaAccess>]
+					[Local metaName(7511):String:String]
+			[Var result(7513):Array<Array<Dynamic>>] [ArrayDecl:Array<Array<Dynamic>>]
+			[Block:Void]
+				[Var `(7520):Int] [Const:Int] 0
+				[While:Void]
+					[Binop:Bool]
+						[Local `(7520):Int:Int]
+						<
+						[Field:Int]
+							[Local metaList(7512):Array<haxe.macro.MetadataEntry>:Array<haxe.macro.MetadataEntry>]
+							[FInstance:Int]
+								Array<haxe.macro.MetadataEntry>
+								length:Int
+					[Block:Void]
+						[Var m(7514):haxe.macro.MetadataEntry]
+							[Array:haxe.macro.MetadataEntry]
+								[Local metaList(7512):Array<haxe.macro.MetadataEntry>:Array<haxe.macro.MetadataEntry>]
+								[Local `(7520):Int:Int]
+						[Unop:Int]
+							++
+							Prefix
+							[Local `(7520):Int:Int]
+						[Var params(7515):Array<Dynamic>] [ArrayDecl:Array<Dynamic>]
+						[If:Void]
+							[Binop:Bool]
+								[Field:Null<Array<haxe.macro.Expr>>]
+									[Local m(7514):haxe.macro.MetadataEntry:haxe.macro.MetadataEntry]
+									[FAnon:Null<Array<haxe.macro.Expr>>] params:Null<Array<haxe.macro.Expr>>
+								!=
+								[Const:Null<Array<haxe.macro.Expr>>] null
+							[Then:Void] [Block:Void]
+								[Block:Void]
+									[Var `(7518):Int] [Const:Int] 0
+									[Var `(7519):Int]
+										[Field:Int]
+											[Field:Null<Array<haxe.macro.Expr>>]
+												[Local m(7514):haxe.macro.MetadataEntry:haxe.macro.MetadataEntry]
+												[FAnon:Null<Array<haxe.macro.Expr>>] params:Null<Array<haxe.macro.Expr>>
+											[FInstance:Int]
+												Array<haxe.macro.Expr>
+												length:Int
+									[While:Void]
+										[Binop:Bool]
+											[Local `(7518):Int:Int]
+											<
+											[Local `(7519):Int:Int]
+										[Block:Void]
+											[Var i(7516):Int]
+												[Unop:Int]
+													++
+													Postfix
+													[Local `(7518):Int:Int]
+											[Var prim(7517):Null<Dynamic>]
+												[Call:Null<Dynamic>]
+													[Field:(entry : haxe.macro.MetadataEntry, ?index : Int) -> Null<Dynamic>]
+														[TypeExpr reflaxe.helpers.NullableMetaAccessHelper:Class<reflaxe.helpers.NullableMetaAccessHelper>]
+														[FStatic:(entry : haxe.macro.MetadataEntry, ?index : Int) -> Null<Dynamic>]
+															reflaxe.helpers.NullableMetaAccessHelper
+															extractPrimitiveFromEntry:(entry : haxe.macro.MetadataEntry, ?index : Int) -> Null<Dynamic>
+													[Local m(7514):haxe.macro.MetadataEntry:haxe.macro.MetadataEntry]
+													[Local i(7516):Int:Int]
+											[If:Void]
+												[Binop:Bool]
+													[Local prim(7517):Null<Dynamic>:Null<Dynamic>]
+													!=
+													[Const:Null<Dynamic>] null
+												[Then:Int] [Block:Int]
+													[Call:Int]
+														[Field:(x : Dynamic) -> Int]
+															[Local params(7515):Array<Dynamic>:Array<Dynamic>]
+															[FInstance:(x : Dynamic) -> Int]
+																Array<Dynamic>
+																push:(x : Array.T) -> Int
+														[Local prim(7517):Null<Dynamic>:Null<Dynamic>]
+						[Call:Int]
+							[Field:(x : Array<Dynamic>) -> Int]
+								[Local result(7513):Array<Array<Dynamic>>:Array<Array<Dynamic>>]
+								[FInstance:(x : Array<Dynamic>) -> Int]
+									Array<Array<Dynamic>>
+									push:(x : Array.T) -> Int
+							[Local params(7515):Array<Dynamic>:Array<Dynamic>]
+			[Return:Dynamic] [Local result(7513):Array<Array<Dynamic>>:Array<Array<Dynamic>>]
+
+	@:value({ index : 0 })
+	static function extractPrimitiveFromEntry[Function:(entry : haxe.macro.MetadataEntry, ?index : Int) -> Null<Dynamic>]
+		[Arg:haxe.macro.MetadataEntry] [Local entry(7448):haxe.macro.MetadataEntry]
+		[Arg:Int]
+			[Local index(7449):Int]
+			[Const:Int] 0
+		[Block:Dynamic]
+			[If:Void]
+				[Binop:Bool]
+					[Field:Null<Array<haxe.macro.Expr>>]
+						[Local entry(7448):haxe.macro.MetadataEntry:haxe.macro.MetadataEntry]
+						[FAnon:Null<Array<haxe.macro.Expr>>] params:Null<Array<haxe.macro.Expr>>
+					==
+					[Const:Null<Array<haxe.macro.Expr>>] null
+				[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [Const:Null<Dynamic>] null
+			[Return:Dynamic]
+				[If:Null<Dynamic>]
+					[Binop:Bool]
+						[Field:Int]
+							[Field:Null<Array<haxe.macro.Expr>>]
+								[Local entry(7448):haxe.macro.MetadataEntry:haxe.macro.MetadataEntry]
+								[FAnon:Null<Array<haxe.macro.Expr>>] params:Null<Array<haxe.macro.Expr>>
+							[FInstance:Int]
+								Array<haxe.macro.Expr>
+								length:Int
+						>
+						[Local index(7449):Int:Int]
+					[Then:Null<Dynamic>] [Block:Null<Dynamic>]
+						[Meta:Null<Dynamic>]
+							:ast(switch (entry.params[index].expr) {
+	case EConst(CInt(v)):
+		Std.string(v);	
+	case EConst(CFloat(f)):
+		Std.string(f);	
+	case EConst(CString(s, _)):
+		s;	
+	case EConst(CIdent(s)):
+		{
+			if (s == "true") true else if (s == "false") false else s;
+		};	
+	case EConst(CRegexp(r, opt)):
+		"/" + r + "/" + opt;	
+	case _:
+		null;	
+})
+							[Block:Null<Dynamic>]
+								[Var `(7467):haxe.macro.ExprDef]
+									[Field:haxe.macro.ExprDef]
+										[Array:haxe.macro.Expr]
+											[Field:Null<Array<haxe.macro.Expr>>]
+												[Local entry(7448):haxe.macro.MetadataEntry:haxe.macro.MetadataEntry]
+												[FAnon:Null<Array<haxe.macro.Expr>>] params:Null<Array<haxe.macro.Expr>>
+											[Local index(7449):Int:Int]
+										[FAnon:haxe.macro.ExprDef] expr:haxe.macro.ExprDef
+								[If:Null<Dynamic>]
+									[Binop:Bool]
+										[EnumIndex:Int] [Local `(7467):haxe.macro.ExprDef:haxe.macro.ExprDef]
+										==
+										[Const:Int] 0
+									[Then:Null<Dynamic>] [Block:Null<Dynamic>]
+										[Var `(7468):haxe.macro.Constant]
+											[EnumParameter:haxe.macro.Constant]
+												[Local `(7467):haxe.macro.ExprDef:haxe.macro.ExprDef]
+												EConst
+												0
+										[Switch:Null<Dynamic>]
+											[Meta:Int]
+												:exhaustive
+												[EnumIndex:Int] [Local `(7468):haxe.macro.Constant:haxe.macro.Constant]
+											[Case:String]
+												[Const:Int] 0
+												[Block:String]
+													[Var `(7469):String]
+														[EnumParameter:String]
+															[Local `(7468):haxe.macro.Constant:haxe.macro.Constant]
+															CInt
+															0
+													[Var `(7470):Null<String>]
+														[EnumParameter:Null<String>]
+															[Local `(7468):haxe.macro.Constant:haxe.macro.Constant]
+															CInt
+															1
+													[Block:String]
+														[Var v(7471):String] [Local `(7469):String:String]
+														[Block:String]
+															[Call:String]
+																[Field:(s : Dynamic) -> String]
+																	[TypeExpr Std:Class<Std>]
+																	[FStatic:(s : Dynamic) -> String]
+																		Std
+																		string:(s : Dynamic) -> String
+																[Local v(7471):String:String]
+											[Case:String]
+												[Const:Int] 1
+												[Block:String]
+													[Var `(7472):String]
+														[EnumParameter:String]
+															[Local `(7468):haxe.macro.Constant:haxe.macro.Constant]
+															CFloat
+															0
+													[Var `(7473):Null<String>]
+														[EnumParameter:Null<String>]
+															[Local `(7468):haxe.macro.Constant:haxe.macro.Constant]
+															CFloat
+															1
+													[Block:String]
+														[Var f(7474):String] [Local `(7472):String:String]
+														[Block:String]
+															[Call:String]
+																[Field:(s : Dynamic) -> String]
+																	[TypeExpr Std:Class<Std>]
+																	[FStatic:(s : Dynamic) -> String]
+																		Std
+																		string:(s : Dynamic) -> String
+																[Local f(7474):String:String]
+											[Case:String]
+												[Const:Int] 2
+												[Block:String]
+													[Var `(7475):String]
+														[EnumParameter:String]
+															[Local `(7468):haxe.macro.Constant:haxe.macro.Constant]
+															CString
+															0
+													[Var `(7476):Null<haxe.macro.StringLiteralKind>]
+														[EnumParameter:Null<haxe.macro.StringLiteralKind>]
+															[Local `(7468):haxe.macro.Constant:haxe.macro.Constant]
+															CString
+															1
+													[Block:String]
+														[Var s(7477):String] [Local `(7475):String:String]
+														[Block:String] [Local s(7477):String:String]
+											[Case:Null<Dynamic>]
+												[Const:Int] 3
+												[Block:Null<Dynamic>]
+													[Var `(7478):String]
+														[EnumParameter:String]
+															[Local `(7468):haxe.macro.Constant:haxe.macro.Constant]
+															CIdent
+															0
+													[Block:Null<Dynamic>]
+														[Var s(7479):String] [Local `(7478):String:String]
+														[Block:Null<Dynamic>]
+															[Block:Null<Dynamic>]
+																[If:Null<Dynamic>]
+																	[Binop:Bool]
+																		[Local s(7479):String:String]
+																		==
+																		[Const:String] "true"
+																	[Then:Bool] [Block:Bool] [Const:Bool] true
+																	[Else:Null<Dynamic>] [Block:Null<Dynamic>]
+																		[If:Null<Dynamic>]
+																			[Binop:Bool]
+																				[Local s(7479):String:String]
+																				==
+																				[Const:String] "false"
+																			[Then:Bool] [Block:Bool] [Const:Bool] false
+																			[Else:String] [Block:String] [Local s(7479):String:String]
+											[Case:String]
+												[Const:Int] 4
+												[Block:String]
+													[Var `(7480):String]
+														[EnumParameter:String]
+															[Local `(7468):haxe.macro.Constant:haxe.macro.Constant]
+															CRegexp
+															0
+													[Var `(7481):String]
+														[EnumParameter:String]
+															[Local `(7468):haxe.macro.Constant:haxe.macro.Constant]
+															CRegexp
+															1
+													[Block:String]
+														[Var r(7482):String] [Local `(7480):String:String]
+														[Var opt(7483):String] [Local `(7481):String:String]
+														[Block:String]
+															[Binop:String]
+																[Binop:String]
+																	[Binop:String]
+																		[Const:String] "/"
+																		+
+																		[Local r(7482):String:String]
+																	+
+																	[Const:String] "/"
+																+
+																[Local opt(7483):String:String]
+									[Else:Null<Dynamic>] [Block:Null<Dynamic>] [Const:Null<Dynamic>] null
+					[Else:Null<Dynamic>] [Block:Null<Dynamic>] [Const:Null<Dynamic>] null
+
+	@:value({ index : 0 })
+	static function extractIdentifierFromEntry[Function:(entry : haxe.macro.MetadataEntry, ?index : Int) -> Null<Dynamic>]
+		[Arg:haxe.macro.MetadataEntry] [Local entry(7521):haxe.macro.MetadataEntry]
+		[Arg:Int]
+			[Local index(7522):Int]
+			[Const:Int] 0
+		[Block:Dynamic]
+			[If:Void]
+				[Binop:Bool]
+					[Field:Null<Array<haxe.macro.Expr>>]
+						[Local entry(7521):haxe.macro.MetadataEntry:haxe.macro.MetadataEntry]
+						[FAnon:Null<Array<haxe.macro.Expr>>] params:Null<Array<haxe.macro.Expr>>
+					==
+					[Const:Null<Array<haxe.macro.Expr>>] null
+				[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [Const:Null<Dynamic>] null
+			[Return:Dynamic]
+				[If:Null<Dynamic>]
+					[Binop:Bool]
+						[Field:Int]
+							[Field:Null<Array<haxe.macro.Expr>>]
+								[Local entry(7521):haxe.macro.MetadataEntry:haxe.macro.MetadataEntry]
+								[FAnon:Null<Array<haxe.macro.Expr>>] params:Null<Array<haxe.macro.Expr>>
+							[FInstance:Int]
+								Array<haxe.macro.Expr>
+								length:Int
+						>
+						[Local index(7522):Int:Int]
+					[Then:Null<Dynamic>] [Block:Null<Dynamic>]
+						[Meta:Null<Dynamic>]
+							:ast(switch (entry.params[index].expr) {
+	case EConst(CIdent(s)):
+		s;	
+	case _:
+		null;	
+})
+							[Block:Null<Dynamic>]
+								[Var `(7527):haxe.macro.ExprDef]
+									[Field:haxe.macro.ExprDef]
+										[Array:haxe.macro.Expr]
+											[Field:Null<Array<haxe.macro.Expr>>]
+												[Local entry(7521):haxe.macro.MetadataEntry:haxe.macro.MetadataEntry]
+												[FAnon:Null<Array<haxe.macro.Expr>>] params:Null<Array<haxe.macro.Expr>>
+											[Local index(7522):Int:Int]
+										[FAnon:haxe.macro.ExprDef] expr:haxe.macro.ExprDef
+								[If:Null<Dynamic>]
+									[Binop:Bool]
+										[EnumIndex:Int] [Local `(7527):haxe.macro.ExprDef:haxe.macro.ExprDef]
+										==
+										[Const:Int] 0
+									[Then:Null<Dynamic>] [Block:Null<Dynamic>]
+										[Var `(7528):haxe.macro.Constant]
+											[EnumParameter:haxe.macro.Constant]
+												[Local `(7527):haxe.macro.ExprDef:haxe.macro.ExprDef]
+												EConst
+												0
+										[If:Null<Dynamic>]
+											[Binop:Bool]
+												[EnumIndex:Int] [Local `(7528):haxe.macro.Constant:haxe.macro.Constant]
+												==
+												[Const:Int] 3
+											[Then:String] [Block:String]
+												[Var `(7529):String]
+													[EnumParameter:String]
+														[Local `(7528):haxe.macro.Constant:haxe.macro.Constant]
+														CIdent
+														0
+												[Block:String]
+													[Var s(7530):String] [Local `(7529):String:String]
+													[Block:String] [Local s(7530):String:String]
+											[Else:Null<Dynamic>] [Block:Null<Dynamic>] [Const:Null<Dynamic>] null
+									[Else:Null<Dynamic>] [Block:Null<Dynamic>] [Const:Null<Dynamic>] null
+					[Else:Null<Dynamic>] [Block:Null<Dynamic>] [Const:Null<Dynamic>] null
+
+	@:value({ index : 0 })
+	public static function extractIdentifierFromFirstMeta[Function:(metaAccess : Null<haxe.macro.MetaAccess>, metaName : String, ?index : Int) -> Null<String>]
+		[Arg:Null<haxe.macro.MetaAccess>] [Local metaAccess(7531):Null<haxe.macro.MetaAccess>]
+		[Arg:String] [Local metaName(7532):String]
+		[Arg:Int]
+			[Local index(7533):Int]
+			[Const:Int] 0
+		[Block:Dynamic]
+			[If:Void]
+				[Binop:Bool]
+					[Local metaAccess(7531):Null<haxe.macro.MetaAccess>:Null<haxe.macro.MetaAccess>]
+					==
+					[Const:Null<haxe.macro.MetaAccess>] null
+				[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [Const:Null<String>] null
+			[Var metaList(7534):Array<haxe.macro.MetadataEntry>]
+				[Call:Array<haxe.macro.MetadataEntry>]
+					[Field:(m : Null<haxe.macro.MetaAccess>, name : String) -> Array<haxe.macro.MetadataEntry>]
+						[TypeExpr reflaxe.helpers.NullableMetaAccessHelper:Class<reflaxe.helpers.NullableMetaAccessHelper>]
+						[FStatic:(m : Null<haxe.macro.MetaAccess>, name : String) -> Array<haxe.macro.MetadataEntry>]
+							reflaxe.helpers.NullableMetaAccessHelper
+							maybeExtract:(m : Null<haxe.macro.MetaAccess>, name : String) -> Array<haxe.macro.MetadataEntry>
+					[Local metaAccess(7531):Null<haxe.macro.MetaAccess>:Null<haxe.macro.MetaAccess>]
+					[Local metaName(7532):String:String]
+			[Block:Void]
+				[Var `(7537):Int] [Const:Int] 0
+				[While:Void]
+					[Binop:Bool]
+						[Local `(7537):Int:Int]
+						<
+						[Field:Int]
+							[Local metaList(7534):Array<haxe.macro.MetadataEntry>:Array<haxe.macro.MetadataEntry>]
+							[FInstance:Int]
+								Array<haxe.macro.MetadataEntry>
+								length:Int
+					[Block:Void]
+						[Var m(7535):haxe.macro.MetadataEntry]
+							[Array:haxe.macro.MetadataEntry]
+								[Local metaList(7534):Array<haxe.macro.MetadataEntry>:Array<haxe.macro.MetadataEntry>]
+								[Local `(7537):Int:Int]
+						[Unop:Int]
+							++
+							Prefix
+							[Local `(7537):Int:Int]
+						[Var result(7536):Null<Dynamic>]
+							[Call:Null<Dynamic>]
+								[Field:(entry : haxe.macro.MetadataEntry, ?index : Int) -> Null<Dynamic>]
+									[TypeExpr reflaxe.helpers.NullableMetaAccessHelper:Class<reflaxe.helpers.NullableMetaAccessHelper>]
+									[FStatic:(entry : haxe.macro.MetadataEntry, ?index : Int) -> Null<Dynamic>]
+										reflaxe.helpers.NullableMetaAccessHelper
+										extractIdentifierFromEntry:(entry : haxe.macro.MetadataEntry, ?index : Int) -> Null<Dynamic>
+								[Local m(7535):haxe.macro.MetadataEntry:haxe.macro.MetadataEntry]
+								[Local index(7533):Int:Int]
+						[If:Void]
+							[Binop:Bool]
+								[Local result(7536):Null<Dynamic>:Null<Dynamic>]
+								!=
+								[Const:Null<Dynamic>] null
+							[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [Local result(7536):Null<Dynamic>:Null<Dynamic>]
+			[Return:Dynamic] [Const:Null<String>] null
+}

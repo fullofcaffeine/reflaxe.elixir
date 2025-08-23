@@ -1,0 +1,25 @@
+extern class haxe.ds.StringMap<T> implements haxe.IMap<String, haxe.ds.StringMap.T> {
+
+	function new():Void;
+
+	function set(key:String, value:haxe.ds.StringMap.T):Void;
+
+	function get(key:String):Null<haxe.ds.StringMap.T>;
+
+	function exists(key:String):Bool;
+
+	function remove(key:String):Bool;
+
+	function keys():Iterator<String>;
+
+	function iterator():Iterator<haxe.ds.StringMap.T>;
+
+	@:runtime
+	inline function keyValueIterator():KeyValueIterator<String, haxe.ds.StringMap.T>;
+
+	function copy():haxe.ds.StringMap<haxe.ds.StringMap.T>;
+
+	function toString():String;
+
+	function clear():Void;
+}

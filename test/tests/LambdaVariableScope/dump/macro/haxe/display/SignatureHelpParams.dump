@@ -1,0 +1,1 @@
+typedef haxe.display.SignatureHelpParams = { wasAutoTriggered : Bool, offset : Int, file : haxe.display.FsPath, ?contents : Null<String> }

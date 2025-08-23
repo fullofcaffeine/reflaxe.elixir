@@ -1,0 +1,347 @@
+class reflaxe.GenericCompiler<CompiledClassType, CompiledEnumType, CompiledExpressionType, CompiledTypedefType = { }, CompiledAbstractType = { }> extends reflaxe.BaseCompiler {
+
+	public function new[Function:() -> Void]
+		[Block:Void]
+			[Binop:reflaxe.CompiledCollection<reflaxe.GenericCompiler.CompiledAbstractType>]
+				[Field:reflaxe.CompiledCollection<reflaxe.GenericCompiler.CompiledAbstractType>]
+					[Const:reflaxe.GenericCompiler<reflaxe.GenericCompiler.CompiledClassType, reflaxe.GenericCompiler.CompiledEnumType, reflaxe.GenericCompiler.CompiledExpressionType, reflaxe.GenericCompiler.CompiledTypedefType, reflaxe.GenericCompiler.CompiledAbstractType>] this
+					[FInstance:reflaxe.CompiledCollection<reflaxe.GenericCompiler.CompiledAbstractType>]
+						reflaxe.GenericCompiler<reflaxe.GenericCompiler.CompiledClassType, reflaxe.GenericCompiler.CompiledEnumType, reflaxe.GenericCompiler.CompiledExpressionType, reflaxe.GenericCompiler.CompiledTypedefType, reflaxe.GenericCompiler.CompiledAbstractType>
+						abstracts:reflaxe.CompiledCollection<reflaxe.GenericCompiler.CompiledAbstractType>
+				=
+				[ArrayDecl:Array<reflaxe.output.DataAndFileInfo<reflaxe.GenericCompiler.CompiledAbstractType>>]
+			[Binop:reflaxe.CompiledCollection<reflaxe.GenericCompiler.CompiledTypedefType>]
+				[Field:reflaxe.CompiledCollection<reflaxe.GenericCompiler.CompiledTypedefType>]
+					[Const:reflaxe.GenericCompiler<reflaxe.GenericCompiler.CompiledClassType, reflaxe.GenericCompiler.CompiledEnumType, reflaxe.GenericCompiler.CompiledExpressionType, reflaxe.GenericCompiler.CompiledTypedefType, reflaxe.GenericCompiler.CompiledAbstractType>] this
+					[FInstance:reflaxe.CompiledCollection<reflaxe.GenericCompiler.CompiledTypedefType>]
+						reflaxe.GenericCompiler<reflaxe.GenericCompiler.CompiledClassType, reflaxe.GenericCompiler.CompiledEnumType, reflaxe.GenericCompiler.CompiledExpressionType, reflaxe.GenericCompiler.CompiledTypedefType, reflaxe.GenericCompiler.CompiledAbstractType>
+						typedefs:reflaxe.CompiledCollection<reflaxe.GenericCompiler.CompiledTypedefType>
+				=
+				[ArrayDecl:Array<reflaxe.output.DataAndFileInfo<reflaxe.GenericCompiler.CompiledTypedefType>>]
+			[Binop:reflaxe.CompiledCollection<reflaxe.GenericCompiler.CompiledEnumType>]
+				[Field:reflaxe.CompiledCollection<reflaxe.GenericCompiler.CompiledEnumType>]
+					[Const:reflaxe.GenericCompiler<reflaxe.GenericCompiler.CompiledClassType, reflaxe.GenericCompiler.CompiledEnumType, reflaxe.GenericCompiler.CompiledExpressionType, reflaxe.GenericCompiler.CompiledTypedefType, reflaxe.GenericCompiler.CompiledAbstractType>] this
+					[FInstance:reflaxe.CompiledCollection<reflaxe.GenericCompiler.CompiledEnumType>]
+						reflaxe.GenericCompiler<reflaxe.GenericCompiler.CompiledClassType, reflaxe.GenericCompiler.CompiledEnumType, reflaxe.GenericCompiler.CompiledExpressionType, reflaxe.GenericCompiler.CompiledTypedefType, reflaxe.GenericCompiler.CompiledAbstractType>
+						enums:reflaxe.CompiledCollection<reflaxe.GenericCompiler.CompiledEnumType>
+				=
+				[ArrayDecl:Array<reflaxe.output.DataAndFileInfo<reflaxe.GenericCompiler.CompiledEnumType>>]
+			[Binop:reflaxe.CompiledCollection<reflaxe.GenericCompiler.CompiledClassType>]
+				[Field:reflaxe.CompiledCollection<reflaxe.GenericCompiler.CompiledClassType>]
+					[Const:reflaxe.GenericCompiler<reflaxe.GenericCompiler.CompiledClassType, reflaxe.GenericCompiler.CompiledEnumType, reflaxe.GenericCompiler.CompiledExpressionType, reflaxe.GenericCompiler.CompiledTypedefType, reflaxe.GenericCompiler.CompiledAbstractType>] this
+					[FInstance:reflaxe.CompiledCollection<reflaxe.GenericCompiler.CompiledClassType>]
+						reflaxe.GenericCompiler<reflaxe.GenericCompiler.CompiledClassType, reflaxe.GenericCompiler.CompiledEnumType, reflaxe.GenericCompiler.CompiledExpressionType, reflaxe.GenericCompiler.CompiledTypedefType, reflaxe.GenericCompiler.CompiledAbstractType>
+						classes:reflaxe.CompiledCollection<reflaxe.GenericCompiler.CompiledClassType>
+				=
+				[ArrayDecl:Array<reflaxe.output.DataAndFileInfo<reflaxe.GenericCompiler.CompiledClassType>>]
+			[Call:Void] [Const:reflaxe.BaseCompiler] super
+
+	public function compileClassImpl
+
+	public function compileEnumImpl
+
+	public function compileExpressionImpl
+
+	public function compileTypedefImpl[Function:(typedefType : haxe.macro.DefType) -> Null<reflaxe.GenericCompiler.CompiledTypedefType>]
+		[Arg:haxe.macro.DefType] [Local typedefType(33385):haxe.macro.DefType]
+		[Block:Dynamic] [Return:Dynamic] [Const:Null<reflaxe.GenericCompiler.CompiledTypedefType>] null
+
+	public function compileAbstractImpl[Function:(abstractType : haxe.macro.AbstractType) -> Null<reflaxe.GenericCompiler.CompiledAbstractType>]
+		[Arg:haxe.macro.AbstractType] [Local abstractType(33378):haxe.macro.AbstractType]
+		[Block:Dynamic] [Return:Dynamic] [Const:Null<reflaxe.GenericCompiler.CompiledAbstractType>] null
+
+	@:value([])
+	var classes:reflaxe.CompiledCollection<reflaxe.GenericCompiler.CompiledClassType>;
+
+	@:value([])
+	var enums:reflaxe.CompiledCollection<reflaxe.GenericCompiler.CompiledEnumType>;
+
+	@:value([])
+	var typedefs:reflaxe.CompiledCollection<reflaxe.GenericCompiler.CompiledTypedefType>;
+
+	@:value([])
+	var abstracts:reflaxe.CompiledCollection<reflaxe.GenericCompiler.CompiledAbstractType>;
+
+	function generateCompiledCollection<T>[Function:(compiledObject : generateCompiledCollection.T, baseType : haxe.macro.BaseType) -> reflaxe.output.DataAndFileInfo<generateCompiledCollection.T>]
+		[Arg:generateCompiledCollection.T] [Local compiledObject(34114):generateCompiledCollection.T]
+		[Arg:haxe.macro.BaseType] [Local baseType(34115):haxe.macro.BaseType]
+		[Block:Dynamic]
+			[Var result(34116):reflaxe.output.DataAndFileInfo<generateCompiledCollection.T>]
+				[New:reflaxe.output.DataAndFileInfo<generateCompiledCollection.T>]
+					reflaxe.output.DataAndFileInfo<generateCompiledCollection.T>
+					[Local compiledObject(34114):generateCompiledCollection.T:generateCompiledCollection.T]
+					[Local baseType(34115):haxe.macro.BaseType:haxe.macro.BaseType]
+					[Field:Null<String>]
+						[Const:reflaxe.GenericCompiler<reflaxe.GenericCompiler.CompiledClassType, reflaxe.GenericCompiler.CompiledEnumType, reflaxe.GenericCompiler.CompiledExpressionType, reflaxe.GenericCompiler.CompiledTypedefType, reflaxe.GenericCompiler.CompiledAbstractType>] this
+						[FInstance:Null<String>]
+							reflaxe.BaseCompiler
+							fileNameOverride:Null<String>
+					[Field:Null<String>]
+						[Const:reflaxe.GenericCompiler<reflaxe.GenericCompiler.CompiledClassType, reflaxe.GenericCompiler.CompiledEnumType, reflaxe.GenericCompiler.CompiledExpressionType, reflaxe.GenericCompiler.CompiledTypedefType, reflaxe.GenericCompiler.CompiledAbstractType>] this
+						[FInstance:Null<String>]
+							reflaxe.BaseCompiler
+							fileDirOverride:Null<String>
+			[Binop:Null<String>]
+				[Field:Null<String>]
+					[Const:reflaxe.GenericCompiler<reflaxe.GenericCompiler.CompiledClassType, reflaxe.GenericCompiler.CompiledEnumType, reflaxe.GenericCompiler.CompiledExpressionType, reflaxe.GenericCompiler.CompiledTypedefType, reflaxe.GenericCompiler.CompiledAbstractType>] this
+					[FInstance:Null<String>]
+						reflaxe.BaseCompiler
+						fileNameOverride:Null<String>
+				=
+				[Const:Null<String>] null
+			[Binop:Null<String>]
+				[Field:Null<String>]
+					[Const:reflaxe.GenericCompiler<reflaxe.GenericCompiler.CompiledClassType, reflaxe.GenericCompiler.CompiledEnumType, reflaxe.GenericCompiler.CompiledExpressionType, reflaxe.GenericCompiler.CompiledTypedefType, reflaxe.GenericCompiler.CompiledAbstractType>] this
+					[FInstance:Null<String>]
+						reflaxe.BaseCompiler
+						fileDirOverride:Null<String>
+				=
+				[Const:Null<String>] null
+			[Return:Dynamic] [Local result(34116):reflaxe.output.DataAndFileInfo<generateCompiledCollection.T>:reflaxe.output.DataAndFileInfo<generateCompiledCollection.T>]
+
+	public function compileClass[Function:(classType : haxe.macro.ClassType, varFields : Array<reflaxe.data.ClassVarData>, funcFields : Array<reflaxe.data.ClassFuncData>) -> Void]
+		[Arg:haxe.macro.ClassType] [Local classType(34117):haxe.macro.ClassType]
+		[Arg:Array<reflaxe.data.ClassVarData>] [Local varFields(34118):Array<reflaxe.data.ClassVarData>]
+		[Arg:Array<reflaxe.data.ClassFuncData>] [Local funcFields(34119):Array<reflaxe.data.ClassFuncData>]
+		[Block:Void]
+			[Var data(34120):Null<reflaxe.GenericCompiler.CompiledClassType>]
+				[Block:Null<reflaxe.GenericCompiler.CompiledClassType>]
+					[Call:Null<reflaxe.GenericCompiler.CompiledClassType>]
+						[Field:(classType : haxe.macro.ClassType, varFields : Array<reflaxe.data.ClassVarData>, funcFields : Array<reflaxe.data.ClassFuncData>) -> Null<reflaxe.GenericCompiler.CompiledClassType>]
+							[Const:reflaxe.GenericCompiler<reflaxe.GenericCompiler.CompiledClassType, reflaxe.GenericCompiler.CompiledEnumType, reflaxe.GenericCompiler.CompiledExpressionType, reflaxe.GenericCompiler.CompiledTypedefType, reflaxe.GenericCompiler.CompiledAbstractType>] this
+							[FInstance:(classType : haxe.macro.ClassType, varFields : Array<reflaxe.data.ClassVarData>, funcFields : Array<reflaxe.data.ClassFuncData>) -> Null<reflaxe.GenericCompiler.CompiledClassType>]
+								reflaxe.GenericCompiler<reflaxe.GenericCompiler.CompiledClassType, reflaxe.GenericCompiler.CompiledEnumType, reflaxe.GenericCompiler.CompiledExpressionType, reflaxe.GenericCompiler.CompiledTypedefType, reflaxe.GenericCompiler.CompiledAbstractType>
+								compileClassImpl:(classType : haxe.macro.ClassType, varFields : Array<reflaxe.data.ClassVarData>, funcFields : Array<reflaxe.data.ClassFuncData>) -> Null<reflaxe.GenericCompiler.CompiledClassType>
+						[Local classType(34117):haxe.macro.ClassType:haxe.macro.ClassType]
+						[Local varFields(34118):Array<reflaxe.data.ClassVarData>:Array<reflaxe.data.ClassVarData>]
+						[Local funcFields(34119):Array<reflaxe.data.ClassFuncData>:Array<reflaxe.data.ClassFuncData>]
+			[If:Void]
+				[Binop:Bool]
+					[Local data(34120):Null<reflaxe.GenericCompiler.CompiledClassType>:Null<reflaxe.GenericCompiler.CompiledClassType>]
+					!=
+					[Const:Null<reflaxe.GenericCompiler.CompiledClassType>] null
+				[Then:Int] [Block:Int]
+					[Call:Int]
+						[Field:(x : reflaxe.output.DataAndFileInfo<reflaxe.GenericCompiler.CompiledClassType>) -> Int]
+							[Field:reflaxe.CompiledCollection<reflaxe.GenericCompiler.CompiledClassType>]
+								[Const:reflaxe.GenericCompiler<reflaxe.GenericCompiler.CompiledClassType, reflaxe.GenericCompiler.CompiledEnumType, reflaxe.GenericCompiler.CompiledExpressionType, reflaxe.GenericCompiler.CompiledTypedefType, reflaxe.GenericCompiler.CompiledAbstractType>] this
+								[FInstance:reflaxe.CompiledCollection<reflaxe.GenericCompiler.CompiledClassType>]
+									reflaxe.GenericCompiler<reflaxe.GenericCompiler.CompiledClassType, reflaxe.GenericCompiler.CompiledEnumType, reflaxe.GenericCompiler.CompiledExpressionType, reflaxe.GenericCompiler.CompiledTypedefType, reflaxe.GenericCompiler.CompiledAbstractType>
+									classes:reflaxe.CompiledCollection<reflaxe.GenericCompiler.CompiledClassType>
+							[FInstance:(x : reflaxe.output.DataAndFileInfo<reflaxe.GenericCompiler.CompiledClassType>) -> Int]
+								Array<reflaxe.output.DataAndFileInfo<reflaxe.GenericCompiler.CompiledClassType>>
+								push:(x : Array.T) -> Int
+						[Call:reflaxe.output.DataAndFileInfo<reflaxe.GenericCompiler.CompiledClassType>]
+							[Field:(compiledObject : reflaxe.GenericCompiler.CompiledClassType, baseType : haxe.macro.BaseType) -> reflaxe.output.DataAndFileInfo<reflaxe.GenericCompiler.CompiledClassType>]
+								[Const:reflaxe.GenericCompiler<reflaxe.GenericCompiler.CompiledClassType, reflaxe.GenericCompiler.CompiledEnumType, reflaxe.GenericCompiler.CompiledExpressionType, reflaxe.GenericCompiler.CompiledTypedefType, reflaxe.GenericCompiler.CompiledAbstractType>] this
+								[FInstance:(compiledObject : reflaxe.GenericCompiler.CompiledClassType, baseType : haxe.macro.BaseType) -> reflaxe.output.DataAndFileInfo<reflaxe.GenericCompiler.CompiledClassType>]
+									reflaxe.GenericCompiler<reflaxe.GenericCompiler.CompiledClassType, reflaxe.GenericCompiler.CompiledEnumType, reflaxe.GenericCompiler.CompiledExpressionType, reflaxe.GenericCompiler.CompiledTypedefType, reflaxe.GenericCompiler.CompiledAbstractType>
+									generateCompiledCollection:(compiledObject : generateCompiledCollection.T, baseType : haxe.macro.BaseType) -> reflaxe.output.DataAndFileInfo<generateCompiledCollection.T>
+							[Cast:reflaxe.GenericCompiler.CompiledClassType]
+								[Cast:reflaxe.GenericCompiler.CompiledClassType]
+									[Block:Dynamic]
+										[If:Void]
+											[Binop:Bool]
+												[Local data(34120):Null<reflaxe.GenericCompiler.CompiledClassType>:Null<reflaxe.GenericCompiler.CompiledClassType>]
+												==
+												[Const:Null<reflaxe.GenericCompiler.CompiledClassType>] null
+											[Then:Dynamic] [Block:Dynamic] [Throw:Dynamic] [Const:String] "Trusted on null value."
+										[Meta:Dynamic]
+											:nullSafety(Off)
+											[Local data(34120):Null<reflaxe.GenericCompiler.CompiledClassType>:Null<reflaxe.GenericCompiler.CompiledClassType>]
+							[Local classType(34117):haxe.macro.ClassType:haxe.macro.ClassType]
+
+	public function compileEnum[Function:(enumType : haxe.macro.EnumType, options : Array<reflaxe.data.EnumOptionData>) -> Void]
+		[Arg:haxe.macro.EnumType] [Local enumType(34124):haxe.macro.EnumType]
+		[Arg:Array<reflaxe.data.EnumOptionData>] [Local options(34125):Array<reflaxe.data.EnumOptionData>]
+		[Block:Void]
+			[Var data(34126):Null<reflaxe.GenericCompiler.CompiledEnumType>]
+				[Block:Null<reflaxe.GenericCompiler.CompiledEnumType>]
+					[Call:Null<reflaxe.GenericCompiler.CompiledEnumType>]
+						[Field:(enumType : haxe.macro.EnumType, options : Array<reflaxe.data.EnumOptionData>) -> Null<reflaxe.GenericCompiler.CompiledEnumType>]
+							[Const:reflaxe.GenericCompiler<reflaxe.GenericCompiler.CompiledClassType, reflaxe.GenericCompiler.CompiledEnumType, reflaxe.GenericCompiler.CompiledExpressionType, reflaxe.GenericCompiler.CompiledTypedefType, reflaxe.GenericCompiler.CompiledAbstractType>] this
+							[FInstance:(enumType : haxe.macro.EnumType, options : Array<reflaxe.data.EnumOptionData>) -> Null<reflaxe.GenericCompiler.CompiledEnumType>]
+								reflaxe.GenericCompiler<reflaxe.GenericCompiler.CompiledClassType, reflaxe.GenericCompiler.CompiledEnumType, reflaxe.GenericCompiler.CompiledExpressionType, reflaxe.GenericCompiler.CompiledTypedefType, reflaxe.GenericCompiler.CompiledAbstractType>
+								compileEnumImpl:(enumType : haxe.macro.EnumType, options : Array<reflaxe.data.EnumOptionData>) -> Null<reflaxe.GenericCompiler.CompiledEnumType>
+						[Local enumType(34124):haxe.macro.EnumType:haxe.macro.EnumType]
+						[Local options(34125):Array<reflaxe.data.EnumOptionData>:Array<reflaxe.data.EnumOptionData>]
+			[If:Void]
+				[Binop:Bool]
+					[Local data(34126):Null<reflaxe.GenericCompiler.CompiledEnumType>:Null<reflaxe.GenericCompiler.CompiledEnumType>]
+					!=
+					[Const:Null<reflaxe.GenericCompiler.CompiledEnumType>] null
+				[Then:Int] [Block:Int]
+					[Call:Int]
+						[Field:(x : reflaxe.output.DataAndFileInfo<reflaxe.GenericCompiler.CompiledEnumType>) -> Int]
+							[Field:reflaxe.CompiledCollection<reflaxe.GenericCompiler.CompiledEnumType>]
+								[Const:reflaxe.GenericCompiler<reflaxe.GenericCompiler.CompiledClassType, reflaxe.GenericCompiler.CompiledEnumType, reflaxe.GenericCompiler.CompiledExpressionType, reflaxe.GenericCompiler.CompiledTypedefType, reflaxe.GenericCompiler.CompiledAbstractType>] this
+								[FInstance:reflaxe.CompiledCollection<reflaxe.GenericCompiler.CompiledEnumType>]
+									reflaxe.GenericCompiler<reflaxe.GenericCompiler.CompiledClassType, reflaxe.GenericCompiler.CompiledEnumType, reflaxe.GenericCompiler.CompiledExpressionType, reflaxe.GenericCompiler.CompiledTypedefType, reflaxe.GenericCompiler.CompiledAbstractType>
+									enums:reflaxe.CompiledCollection<reflaxe.GenericCompiler.CompiledEnumType>
+							[FInstance:(x : reflaxe.output.DataAndFileInfo<reflaxe.GenericCompiler.CompiledEnumType>) -> Int]
+								Array<reflaxe.output.DataAndFileInfo<reflaxe.GenericCompiler.CompiledEnumType>>
+								push:(x : Array.T) -> Int
+						[Call:reflaxe.output.DataAndFileInfo<reflaxe.GenericCompiler.CompiledEnumType>]
+							[Field:(compiledObject : reflaxe.GenericCompiler.CompiledEnumType, baseType : haxe.macro.BaseType) -> reflaxe.output.DataAndFileInfo<reflaxe.GenericCompiler.CompiledEnumType>]
+								[Const:reflaxe.GenericCompiler<reflaxe.GenericCompiler.CompiledClassType, reflaxe.GenericCompiler.CompiledEnumType, reflaxe.GenericCompiler.CompiledExpressionType, reflaxe.GenericCompiler.CompiledTypedefType, reflaxe.GenericCompiler.CompiledAbstractType>] this
+								[FInstance:(compiledObject : reflaxe.GenericCompiler.CompiledEnumType, baseType : haxe.macro.BaseType) -> reflaxe.output.DataAndFileInfo<reflaxe.GenericCompiler.CompiledEnumType>]
+									reflaxe.GenericCompiler<reflaxe.GenericCompiler.CompiledClassType, reflaxe.GenericCompiler.CompiledEnumType, reflaxe.GenericCompiler.CompiledExpressionType, reflaxe.GenericCompiler.CompiledTypedefType, reflaxe.GenericCompiler.CompiledAbstractType>
+									generateCompiledCollection:(compiledObject : generateCompiledCollection.T, baseType : haxe.macro.BaseType) -> reflaxe.output.DataAndFileInfo<generateCompiledCollection.T>
+							[Cast:reflaxe.GenericCompiler.CompiledEnumType]
+								[Cast:reflaxe.GenericCompiler.CompiledEnumType]
+									[Block:Dynamic]
+										[If:Void]
+											[Binop:Bool]
+												[Local data(34126):Null<reflaxe.GenericCompiler.CompiledEnumType>:Null<reflaxe.GenericCompiler.CompiledEnumType>]
+												==
+												[Const:Null<reflaxe.GenericCompiler.CompiledEnumType>] null
+											[Then:Dynamic] [Block:Dynamic] [Throw:Dynamic] [Const:String] "Trusted on null value."
+										[Meta:Dynamic]
+											:nullSafety(Off)
+											[Local data(34126):Null<reflaxe.GenericCompiler.CompiledEnumType>:Null<reflaxe.GenericCompiler.CompiledEnumType>]
+							[Local enumType(34124):haxe.macro.EnumType:haxe.macro.EnumType]
+
+	public function compileTypedef[Function:(typedefType : haxe.macro.DefType) -> Void]
+		[Arg:haxe.macro.DefType] [Local typedefType(34130):haxe.macro.DefType]
+		[Block:Void]
+			[Var data(34131):Null<reflaxe.GenericCompiler.CompiledTypedefType>]
+				[Block:Null<reflaxe.GenericCompiler.CompiledTypedefType>]
+					[Call:Null<reflaxe.GenericCompiler.CompiledTypedefType>]
+						[Field:(typedefType : haxe.macro.DefType) -> Null<reflaxe.GenericCompiler.CompiledTypedefType>]
+							[Const:reflaxe.GenericCompiler<reflaxe.GenericCompiler.CompiledClassType, reflaxe.GenericCompiler.CompiledEnumType, reflaxe.GenericCompiler.CompiledExpressionType, reflaxe.GenericCompiler.CompiledTypedefType, reflaxe.GenericCompiler.CompiledAbstractType>] this
+							[FInstance:(typedefType : haxe.macro.DefType) -> Null<reflaxe.GenericCompiler.CompiledTypedefType>]
+								reflaxe.GenericCompiler<reflaxe.GenericCompiler.CompiledClassType, reflaxe.GenericCompiler.CompiledEnumType, reflaxe.GenericCompiler.CompiledExpressionType, reflaxe.GenericCompiler.CompiledTypedefType, reflaxe.GenericCompiler.CompiledAbstractType>
+								compileTypedefImpl:(typedefType : haxe.macro.DefType) -> Null<reflaxe.GenericCompiler.CompiledTypedefType>
+						[Local typedefType(34130):haxe.macro.DefType:haxe.macro.DefType]
+			[If:Void]
+				[Binop:Bool]
+					[Local data(34131):Null<reflaxe.GenericCompiler.CompiledTypedefType>:Null<reflaxe.GenericCompiler.CompiledTypedefType>]
+					!=
+					[Const:Null<reflaxe.GenericCompiler.CompiledTypedefType>] null
+				[Then:Int] [Block:Int]
+					[Call:Int]
+						[Field:(x : reflaxe.output.DataAndFileInfo<reflaxe.GenericCompiler.CompiledTypedefType>) -> Int]
+							[Field:reflaxe.CompiledCollection<reflaxe.GenericCompiler.CompiledTypedefType>]
+								[Const:reflaxe.GenericCompiler<reflaxe.GenericCompiler.CompiledClassType, reflaxe.GenericCompiler.CompiledEnumType, reflaxe.GenericCompiler.CompiledExpressionType, reflaxe.GenericCompiler.CompiledTypedefType, reflaxe.GenericCompiler.CompiledAbstractType>] this
+								[FInstance:reflaxe.CompiledCollection<reflaxe.GenericCompiler.CompiledTypedefType>]
+									reflaxe.GenericCompiler<reflaxe.GenericCompiler.CompiledClassType, reflaxe.GenericCompiler.CompiledEnumType, reflaxe.GenericCompiler.CompiledExpressionType, reflaxe.GenericCompiler.CompiledTypedefType, reflaxe.GenericCompiler.CompiledAbstractType>
+									typedefs:reflaxe.CompiledCollection<reflaxe.GenericCompiler.CompiledTypedefType>
+							[FInstance:(x : reflaxe.output.DataAndFileInfo<reflaxe.GenericCompiler.CompiledTypedefType>) -> Int]
+								Array<reflaxe.output.DataAndFileInfo<reflaxe.GenericCompiler.CompiledTypedefType>>
+								push:(x : Array.T) -> Int
+						[Call:reflaxe.output.DataAndFileInfo<reflaxe.GenericCompiler.CompiledTypedefType>]
+							[Field:(compiledObject : reflaxe.GenericCompiler.CompiledTypedefType, baseType : haxe.macro.BaseType) -> reflaxe.output.DataAndFileInfo<reflaxe.GenericCompiler.CompiledTypedefType>]
+								[Const:reflaxe.GenericCompiler<reflaxe.GenericCompiler.CompiledClassType, reflaxe.GenericCompiler.CompiledEnumType, reflaxe.GenericCompiler.CompiledExpressionType, reflaxe.GenericCompiler.CompiledTypedefType, reflaxe.GenericCompiler.CompiledAbstractType>] this
+								[FInstance:(compiledObject : reflaxe.GenericCompiler.CompiledTypedefType, baseType : haxe.macro.BaseType) -> reflaxe.output.DataAndFileInfo<reflaxe.GenericCompiler.CompiledTypedefType>]
+									reflaxe.GenericCompiler<reflaxe.GenericCompiler.CompiledClassType, reflaxe.GenericCompiler.CompiledEnumType, reflaxe.GenericCompiler.CompiledExpressionType, reflaxe.GenericCompiler.CompiledTypedefType, reflaxe.GenericCompiler.CompiledAbstractType>
+									generateCompiledCollection:(compiledObject : generateCompiledCollection.T, baseType : haxe.macro.BaseType) -> reflaxe.output.DataAndFileInfo<generateCompiledCollection.T>
+							[Cast:reflaxe.GenericCompiler.CompiledTypedefType]
+								[Cast:reflaxe.GenericCompiler.CompiledTypedefType]
+									[Block:Dynamic]
+										[If:Void]
+											[Binop:Bool]
+												[Local data(34131):Null<reflaxe.GenericCompiler.CompiledTypedefType>:Null<reflaxe.GenericCompiler.CompiledTypedefType>]
+												==
+												[Const:Null<reflaxe.GenericCompiler.CompiledTypedefType>] null
+											[Then:Dynamic] [Block:Dynamic] [Throw:Dynamic] [Const:String] "Trusted on null value."
+										[Meta:Dynamic]
+											:nullSafety(Off)
+											[Local data(34131):Null<reflaxe.GenericCompiler.CompiledTypedefType>:Null<reflaxe.GenericCompiler.CompiledTypedefType>]
+							[Local typedefType(34130):haxe.macro.DefType:haxe.macro.DefType]
+
+	public function compileAbstract[Function:(abstractType : haxe.macro.AbstractType) -> Void]
+		[Arg:haxe.macro.AbstractType] [Local abstractType(34135):haxe.macro.AbstractType]
+		[Block:Void]
+			[Var data(34136):Null<reflaxe.GenericCompiler.CompiledAbstractType>]
+				[Block:Null<reflaxe.GenericCompiler.CompiledAbstractType>]
+					[Call:Null<reflaxe.GenericCompiler.CompiledAbstractType>]
+						[Field:(abstractType : haxe.macro.AbstractType) -> Null<reflaxe.GenericCompiler.CompiledAbstractType>]
+							[Const:reflaxe.GenericCompiler<reflaxe.GenericCompiler.CompiledClassType, reflaxe.GenericCompiler.CompiledEnumType, reflaxe.GenericCompiler.CompiledExpressionType, reflaxe.GenericCompiler.CompiledTypedefType, reflaxe.GenericCompiler.CompiledAbstractType>] this
+							[FInstance:(abstractType : haxe.macro.AbstractType) -> Null<reflaxe.GenericCompiler.CompiledAbstractType>]
+								reflaxe.GenericCompiler<reflaxe.GenericCompiler.CompiledClassType, reflaxe.GenericCompiler.CompiledEnumType, reflaxe.GenericCompiler.CompiledExpressionType, reflaxe.GenericCompiler.CompiledTypedefType, reflaxe.GenericCompiler.CompiledAbstractType>
+								compileAbstractImpl:(abstractType : haxe.macro.AbstractType) -> Null<reflaxe.GenericCompiler.CompiledAbstractType>
+						[Local abstractType(34135):haxe.macro.AbstractType:haxe.macro.AbstractType]
+			[If:Void]
+				[Binop:Bool]
+					[Local data(34136):Null<reflaxe.GenericCompiler.CompiledAbstractType>:Null<reflaxe.GenericCompiler.CompiledAbstractType>]
+					!=
+					[Const:Null<reflaxe.GenericCompiler.CompiledAbstractType>] null
+				[Then:Int] [Block:Int]
+					[Call:Int]
+						[Field:(x : reflaxe.output.DataAndFileInfo<reflaxe.GenericCompiler.CompiledAbstractType>) -> Int]
+							[Field:reflaxe.CompiledCollection<reflaxe.GenericCompiler.CompiledAbstractType>]
+								[Const:reflaxe.GenericCompiler<reflaxe.GenericCompiler.CompiledClassType, reflaxe.GenericCompiler.CompiledEnumType, reflaxe.GenericCompiler.CompiledExpressionType, reflaxe.GenericCompiler.CompiledTypedefType, reflaxe.GenericCompiler.CompiledAbstractType>] this
+								[FInstance:reflaxe.CompiledCollection<reflaxe.GenericCompiler.CompiledAbstractType>]
+									reflaxe.GenericCompiler<reflaxe.GenericCompiler.CompiledClassType, reflaxe.GenericCompiler.CompiledEnumType, reflaxe.GenericCompiler.CompiledExpressionType, reflaxe.GenericCompiler.CompiledTypedefType, reflaxe.GenericCompiler.CompiledAbstractType>
+									abstracts:reflaxe.CompiledCollection<reflaxe.GenericCompiler.CompiledAbstractType>
+							[FInstance:(x : reflaxe.output.DataAndFileInfo<reflaxe.GenericCompiler.CompiledAbstractType>) -> Int]
+								Array<reflaxe.output.DataAndFileInfo<reflaxe.GenericCompiler.CompiledAbstractType>>
+								push:(x : Array.T) -> Int
+						[Call:reflaxe.output.DataAndFileInfo<reflaxe.GenericCompiler.CompiledAbstractType>]
+							[Field:(compiledObject : reflaxe.GenericCompiler.CompiledAbstractType, baseType : haxe.macro.BaseType) -> reflaxe.output.DataAndFileInfo<reflaxe.GenericCompiler.CompiledAbstractType>]
+								[Const:reflaxe.GenericCompiler<reflaxe.GenericCompiler.CompiledClassType, reflaxe.GenericCompiler.CompiledEnumType, reflaxe.GenericCompiler.CompiledExpressionType, reflaxe.GenericCompiler.CompiledTypedefType, reflaxe.GenericCompiler.CompiledAbstractType>] this
+								[FInstance:(compiledObject : reflaxe.GenericCompiler.CompiledAbstractType, baseType : haxe.macro.BaseType) -> reflaxe.output.DataAndFileInfo<reflaxe.GenericCompiler.CompiledAbstractType>]
+									reflaxe.GenericCompiler<reflaxe.GenericCompiler.CompiledClassType, reflaxe.GenericCompiler.CompiledEnumType, reflaxe.GenericCompiler.CompiledExpressionType, reflaxe.GenericCompiler.CompiledTypedefType, reflaxe.GenericCompiler.CompiledAbstractType>
+									generateCompiledCollection:(compiledObject : generateCompiledCollection.T, baseType : haxe.macro.BaseType) -> reflaxe.output.DataAndFileInfo<generateCompiledCollection.T>
+							[Cast:reflaxe.GenericCompiler.CompiledAbstractType]
+								[Cast:reflaxe.GenericCompiler.CompiledAbstractType]
+									[Block:Dynamic]
+										[If:Void]
+											[Binop:Bool]
+												[Local data(34136):Null<reflaxe.GenericCompiler.CompiledAbstractType>:Null<reflaxe.GenericCompiler.CompiledAbstractType>]
+												==
+												[Const:Null<reflaxe.GenericCompiler.CompiledAbstractType>] null
+											[Then:Dynamic] [Block:Dynamic] [Throw:Dynamic] [Const:String] "Trusted on null value."
+										[Meta:Dynamic]
+											:nullSafety(Off)
+											[Local data(34136):Null<reflaxe.GenericCompiler.CompiledAbstractType>:Null<reflaxe.GenericCompiler.CompiledAbstractType>]
+							[Local abstractType(34135):haxe.macro.AbstractType:haxe.macro.AbstractType]
+
+	@:value({ topLevel : false })
+	public function compileExpression[Function:(expr : haxe.macro.TypedExpr, ?topLevel : Bool) -> Null<reflaxe.GenericCompiler.CompiledExpressionType>]
+		[Arg:haxe.macro.TypedExpr] [Local expr(14359):haxe.macro.TypedExpr]
+		[Arg:Bool]
+			[Local topLevel(14360):Bool]
+			[Const:Bool] false
+		[Block:Dynamic]
+			[Var result(14361):Null<reflaxe.GenericCompiler.CompiledExpressionType>]
+				[Call:Null<reflaxe.GenericCompiler.CompiledExpressionType>]
+					[Field:(expr : haxe.macro.TypedExpr, topLevel : Bool) -> Null<reflaxe.GenericCompiler.CompiledExpressionType>]
+						[Const:reflaxe.GenericCompiler<reflaxe.GenericCompiler.CompiledClassType, reflaxe.GenericCompiler.CompiledEnumType, reflaxe.GenericCompiler.CompiledExpressionType, reflaxe.GenericCompiler.CompiledTypedefType, reflaxe.GenericCompiler.CompiledAbstractType>] this
+						[FInstance:(expr : haxe.macro.TypedExpr, topLevel : Bool) -> Null<reflaxe.GenericCompiler.CompiledExpressionType>]
+							reflaxe.GenericCompiler<reflaxe.GenericCompiler.CompiledClassType, reflaxe.GenericCompiler.CompiledEnumType, reflaxe.GenericCompiler.CompiledExpressionType, reflaxe.GenericCompiler.CompiledTypedefType, reflaxe.GenericCompiler.CompiledAbstractType>
+							compileExpressionImpl:(expr : haxe.macro.TypedExpr, topLevel : Bool) -> Null<reflaxe.GenericCompiler.CompiledExpressionType>
+					[Local expr(14359):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+					[Local topLevel(14360):Bool:Bool]
+			[Return:Dynamic] [Local result(14361):Null<reflaxe.GenericCompiler.CompiledExpressionType>:Null<reflaxe.GenericCompiler.CompiledExpressionType>]
+
+	public function compileExpressionOrError[Function:(expr : haxe.macro.TypedExpr) -> reflaxe.GenericCompiler.CompiledExpressionType]
+		[Arg:haxe.macro.TypedExpr] [Local expr(34040):haxe.macro.TypedExpr]
+		[Block:Dynamic]
+			[Var result(34041):Null<reflaxe.GenericCompiler.CompiledExpressionType>]
+				[Call:Null<reflaxe.GenericCompiler.CompiledExpressionType>]
+					[Field:(expr : haxe.macro.TypedExpr, ?topLevel : Bool) -> Null<reflaxe.GenericCompiler.CompiledExpressionType>]
+						[Const:reflaxe.GenericCompiler<reflaxe.GenericCompiler.CompiledClassType, reflaxe.GenericCompiler.CompiledEnumType, reflaxe.GenericCompiler.CompiledExpressionType, reflaxe.GenericCompiler.CompiledTypedefType, reflaxe.GenericCompiler.CompiledAbstractType>] this
+						[FInstance:(expr : haxe.macro.TypedExpr, ?topLevel : Bool) -> Null<reflaxe.GenericCompiler.CompiledExpressionType>]
+							reflaxe.GenericCompiler<reflaxe.GenericCompiler.CompiledClassType, reflaxe.GenericCompiler.CompiledEnumType, reflaxe.GenericCompiler.CompiledExpressionType, reflaxe.GenericCompiler.CompiledTypedefType, reflaxe.GenericCompiler.CompiledAbstractType>
+							compileExpression:(expr : haxe.macro.TypedExpr, ?topLevel : Bool) -> Null<reflaxe.GenericCompiler.CompiledExpressionType>
+					[Local expr(34040):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+					[Const:Bool] false
+			[If:Void]
+				[Binop:Bool]
+					[Local result(34041):Null<reflaxe.GenericCompiler.CompiledExpressionType>:Null<reflaxe.GenericCompiler.CompiledExpressionType>]
+					==
+					[Const:Null<reflaxe.GenericCompiler.CompiledExpressionType>] null
+				[Then:Dynamic] [Block:Dynamic]
+					[Return:Dynamic]
+						[Call:reflaxe.GenericCompiler.CompiledExpressionType]
+							[Field:(pos : haxe.macro.Position) -> reflaxe.GenericCompiler.CompiledExpressionType]
+								[Const:reflaxe.GenericCompiler<reflaxe.GenericCompiler.CompiledClassType, reflaxe.GenericCompiler.CompiledEnumType, reflaxe.GenericCompiler.CompiledExpressionType, reflaxe.GenericCompiler.CompiledTypedefType, reflaxe.GenericCompiler.CompiledAbstractType>] this
+								[FInstance:(pos : haxe.macro.Position) -> reflaxe.GenericCompiler.CompiledExpressionType]
+									reflaxe.BaseCompiler
+									onExpressionUnsuccessful:(pos : haxe.macro.Position) -> reflaxe.GenericCompiler.CompiledExpressionType
+							[Field:haxe.macro.Position]
+								[Local expr(34040):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+								[FAnon:haxe.macro.Position] pos:haxe.macro.Position
+			[Return:Dynamic] [Local result(34041):Null<reflaxe.GenericCompiler.CompiledExpressionType>:Null<reflaxe.GenericCompiler.CompiledExpressionType>]
+}

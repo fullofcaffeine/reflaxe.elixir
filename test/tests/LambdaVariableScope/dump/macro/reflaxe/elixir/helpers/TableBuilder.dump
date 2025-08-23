@@ -1,0 +1,655 @@
+class reflaxe.elixir.helpers.TableBuilder {
+
+	public function new[Function:(tableName : String) -> Void]
+		[Arg:String] [Local tableName(16901):String]
+		[Block:Void]
+			[Binop:Array<String>]
+				[Field:Array<String>]
+					[Const:reflaxe.elixir.helpers.TableBuilder] this
+					[FInstance:Array<String>]
+						reflaxe.elixir.helpers.TableBuilder
+						constraints:Array<String>
+				=
+				[ArrayDecl:Array<String>]
+			[Binop:Array<String>]
+				[Field:Array<String>]
+					[Const:reflaxe.elixir.helpers.TableBuilder] this
+					[FInstance:Array<String>]
+						reflaxe.elixir.helpers.TableBuilder
+						indexes:Array<String>
+				=
+				[ArrayDecl:Array<String>]
+			[Binop:Array<String>]
+				[Field:Array<String>]
+					[Const:reflaxe.elixir.helpers.TableBuilder] this
+					[FInstance:Array<String>]
+						reflaxe.elixir.helpers.TableBuilder
+						columns:Array<String>
+				=
+				[ArrayDecl:Array<String>]
+			[Binop:Bool]
+				[Field:Bool]
+					[Const:reflaxe.elixir.helpers.TableBuilder] this
+					[FInstance:Bool]
+						reflaxe.elixir.helpers.TableBuilder
+						hasTimestamps:Bool
+				=
+				[Const:Bool] false
+			[Binop:Bool]
+				[Field:Bool]
+					[Const:reflaxe.elixir.helpers.TableBuilder] this
+					[FInstance:Bool]
+						reflaxe.elixir.helpers.TableBuilder
+						hasIdColumn:Bool
+				=
+				[Const:Bool] false
+			[Binop:String]
+				[Field:String]
+					[Const:reflaxe.elixir.helpers.TableBuilder] this
+					[FInstance:String]
+						reflaxe.elixir.helpers.TableBuilder
+						tableName:String
+				=
+				[Local tableName(16901):String:String]
+
+	public var tableName(default,null):String;
+
+	@:value(false)
+	public var hasIdColumn(default,null):Bool;
+
+	@:value(false)
+	public var hasTimestamps(default,null):Bool;
+
+	@:value([])
+	var columns:Array<String>;
+
+	@:value([])
+	var indexes:Array<String>;
+
+	@:value([])
+	var constraints:Array<String>;
+
+	public function addColumn[Function:(name : String, dataType : String, ?options : Null<Dynamic>) -> reflaxe.elixir.helpers.TableBuilder]
+		[Arg:String] [Local name(16944):String]
+		[Arg:String] [Local dataType(16945):String]
+		[Arg:Null<Dynamic>]
+			[Local options(16946):Null<Dynamic>]
+			[Const:Null<Dynamic>] null
+		[Block:Dynamic]
+			[If:Void]
+				[Binop:Bool]
+					[Local name(16944):String:String]
+					==
+					[Const:String] "id"
+				[Then:Bool] [Block:Bool]
+					[Binop:Bool]
+						[Field:Bool]
+							[Const:reflaxe.elixir.helpers.TableBuilder] this
+							[FInstance:Bool]
+								reflaxe.elixir.helpers.TableBuilder
+								hasIdColumn:Bool
+						=
+						[Const:Bool] true
+			[If:Void]
+				[Binop:Bool]
+					[Binop:Bool]
+						[Local name(16944):String:String]
+						==
+						[Const:String] "inserted_at"
+					||
+					[Binop:Bool]
+						[Local name(16944):String:String]
+						==
+						[Const:String] "updated_at"
+				[Then:Bool] [Block:Bool]
+					[Binop:Bool]
+						[Field:Bool]
+							[Const:reflaxe.elixir.helpers.TableBuilder] this
+							[FInstance:Bool]
+								reflaxe.elixir.helpers.TableBuilder
+								hasTimestamps:Bool
+						=
+						[Const:Bool] true
+			[Var optionsStr(16947):String] [Const:String] ""
+			[If:Void]
+				[Binop:Bool]
+					[Local options(16946):Null<Dynamic>:Null<Dynamic>]
+					!=
+					[Const:Null<Dynamic>] null
+				[Then:Void] [Block:Void]
+					[Var opts(16948):Array<String>] [ArrayDecl:Array<String>]
+					[Var fields(16949):Array<String>]
+						[Call:Array<String>]
+							[Field:(o : Dynamic) -> Array<String>]
+								[TypeExpr Reflect:Class<Reflect>]
+								[FStatic:(o : Dynamic) -> Array<String>]
+									Reflect
+									fields:(o : Dynamic) -> Array<String>
+							[Local options(16946):Null<Dynamic>:Null<Dynamic>]
+					[Block:Void]
+						[Var `(16953):Int] [Const:Int] 0
+						[While:Void]
+							[Binop:Bool]
+								[Local `(16953):Int:Int]
+								<
+								[Field:Int]
+									[Local fields(16949):Array<String>:Array<String>]
+									[FInstance:Int]
+										Array<String>
+										length:Int
+							[Block:Void]
+								[Var field(16950):String]
+									[Array:String]
+										[Local fields(16949):Array<String>:Array<String>]
+										[Local `(16953):Int:Int]
+								[Unop:Int]
+									++
+									Prefix
+									[Local `(16953):Int:Int]
+								[Var value(16951):String]
+									[Call:Dynamic]
+										[Field:(o : Dynamic, field : String) -> Dynamic]
+											[TypeExpr Reflect:Class<Reflect>]
+											[FStatic:(o : Dynamic, field : String) -> Dynamic]
+												Reflect
+												field:(o : Dynamic, field : String) -> Dynamic
+										[Local options(16946):Null<Dynamic>:Null<Dynamic>]
+										[Local field(16950):String:String]
+								[Var optName(16952):String]
+									[Meta:String]
+										:ast(switch (field) {
+	case "null":
+		"null";	
+	case "default":
+		"default";	
+	case "primaryKey":
+		"primary_key";	
+	default:
+		field;	
+})
+										[Switch:String]
+											[Local field(16950):String:String]
+											[Case:String]
+												[Const:String] "default"
+												[Block:String] [Block:String] [Const:String] "default"
+											[Case:String]
+												[Const:String] "null"
+												[Block:String] [Block:String] [Const:String] "null"
+											[Case:String]
+												[Const:String] "primaryKey"
+												[Block:String] [Block:String] [Const:String] "primary_key"
+											[Default:String] [Block:String] [Local field(16950):String:String]
+								[If:Void]
+									[Call:Bool]
+										[Field:(v : Dynamic, t : Dynamic) -> Bool]
+											[TypeExpr Std:Class<Std>]
+											[FStatic:(v : Dynamic, t : Dynamic) -> Bool]
+												Std
+												isOfType:(v : Dynamic, t : Dynamic) -> Bool
+										[Local value(16951):String:String]
+										[TypeExpr String:Class<String>]
+									[Then:Int] [Block:Int]
+										[Call:Int]
+											[Field:(x : String) -> Int]
+												[Local opts(16948):Array<String>:Array<String>]
+												[FInstance:(x : String) -> Int]
+													Array<String>
+													push:(x : Array.T) -> Int
+											[Binop:String]
+												[Binop:String]
+													[Binop:String]
+														[Binop:String]
+															[Const:String] ""
+															+
+															[Local optName(16952):String:String]
+														+
+														[Const:String] ": \""
+													+
+													[Local value(16951):String:String]
+												+
+												[Const:String] "\""
+									[Else:Void] [Block:Void]
+										[If:Void]
+											[Call:Bool]
+												[Field:(v : Dynamic, t : Dynamic) -> Bool]
+													[TypeExpr Std:Class<Std>]
+													[FStatic:(v : Dynamic, t : Dynamic) -> Bool]
+														Std
+														isOfType:(v : Dynamic, t : Dynamic) -> Bool
+												[Local value(16951):String:String]
+												[TypeExpr Bool:Abstract<Bool>]
+											[Then:Int] [Block:Int]
+												[Call:Int]
+													[Field:(x : String) -> Int]
+														[Local opts(16948):Array<String>:Array<String>]
+														[FInstance:(x : String) -> Int]
+															Array<String>
+															push:(x : Array.T) -> Int
+													[Binop:String]
+														[Binop:String]
+															[Binop:String]
+																[Const:String] ""
+																+
+																[Local optName(16952):String:String]
+															+
+															[Const:String] ": "
+														+
+														[Local value(16951):String:String]
+											[Else:Int] [Block:Int]
+												[Call:Int]
+													[Field:(x : String) -> Int]
+														[Local opts(16948):Array<String>:Array<String>]
+														[FInstance:(x : String) -> Int]
+															Array<String>
+															push:(x : Array.T) -> Int
+													[Binop:String]
+														[Binop:String]
+															[Binop:String]
+																[Const:String] ""
+																+
+																[Local optName(16952):String:String]
+															+
+															[Const:String] ": "
+														+
+														[Local value(16951):String:String]
+					[If:Void]
+						[Binop:Bool]
+							[Field:Int]
+								[Local opts(16948):Array<String>:Array<String>]
+								[FInstance:Int]
+									Array<String>
+									length:Int
+							>
+							[Const:Int] 0
+						[Then:String] [Block:String]
+							[Binop:String]
+								[Local optionsStr(16947):String:String]
+								=
+								[Binop:String]
+									[Const:String] ", "
+									+
+									[Call:String]
+										[Field:(sep : String) -> String]
+											[Local opts(16948):Array<String>:Array<String>]
+											[FInstance:(sep : String) -> String]
+												Array<String>
+												join:(sep : String) -> String
+										[Const:String] ", "
+			[Call:Int]
+				[Field:(x : String) -> Int]
+					[Field:Array<String>]
+						[Const:reflaxe.elixir.helpers.TableBuilder] this
+						[FInstance:Array<String>]
+							reflaxe.elixir.helpers.TableBuilder
+							columns:Array<String>
+					[FInstance:(x : String) -> Int]
+						Array<String>
+						push:(x : Array.T) -> Int
+				[Binop:String]
+					[Binop:String]
+						[Binop:String]
+							[Binop:String]
+								[Const:String] "add :"
+								+
+								[Local name(16944):String:String]
+							+
+							[Const:String] ", :"
+						+
+						[Local dataType(16945):String:String]
+					+
+					[Local optionsStr(16947):String:String]
+			[Return:Dynamic] [Const:reflaxe.elixir.helpers.TableBuilder] this
+
+	public function addIndex[Function:(columnNames : Array<String>, ?options : Null<Dynamic>) -> reflaxe.elixir.helpers.TableBuilder]
+		[Arg:Array<String>] [Local columnNames(16954):Array<String>]
+		[Arg:Null<Dynamic>]
+			[Local options(16955):Null<Dynamic>]
+			[Const:Null<Dynamic>] null
+		[Block:Dynamic]
+			[Var columnList(16965):String]
+				[Call:String]
+					[Field:(sep : String) -> String]
+						[Block:Array<String>]
+							[Var `(16960):Array<String>] [ArrayDecl:Array<String>]
+							[Block:Void]
+								[Var `(16961):Int] [Const:Int] 0
+								[Var `(16962):Array<String>] [Local columnNames(16954):Array<String>:Array<String>]
+								[While:Void]
+									[Binop:Bool]
+										[Local `(16961):Int:Int]
+										<
+										[Field:Int]
+											[Local `(16962):Array<String>:Array<String>]
+											[FInstance:Int]
+												Array<String>
+												length:Int
+									[Block:Void]
+										[Var v(16963):String]
+											[Array:String]
+												[Local `(16962):Array<String>:Array<String>]
+												[Local `(16961):Int:Int]
+										[Unop:Int]
+											++
+											Prefix
+											[Local `(16961):Int:Int]
+										[Call:Int]
+											[Field:(x : String) -> Int]
+												[Local `(16960):Array<String>:Array<String>]
+												[FInstance:(x : String) -> Int]
+													Array<String>
+													push:(x : Array.T) -> Int
+											[Call:String]
+												[Function:(col : String) -> String]
+													[Arg:String] [Local col(16964):String]
+													[Block:Dynamic]
+														[Return:Dynamic]
+															[Binop:String]
+																[Const:String] ":"
+																+
+																[Local col(16964):String:String]
+												[Local v(16963):String:String]
+							[Local `(16960):Array<String>:Array<String>]
+						[FInstance:(sep : String) -> String]
+							Array<String>
+							join:(sep : String) -> String
+					[Const:String] ", "
+			[If:Void]
+				[Binop:Bool]
+					[Binop:Bool]
+						[Binop:Bool]
+							[Local options(16955):Null<Dynamic>:Null<Dynamic>]
+							!=
+							[Const:Null<Dynamic>] null
+						&&
+						[Call:Bool]
+							[Field:(o : Dynamic, field : String) -> Bool]
+								[TypeExpr Reflect:Class<Reflect>]
+								[FStatic:(o : Dynamic, field : String) -> Bool]
+									Reflect
+									hasField:(o : Dynamic, field : String) -> Bool
+							[Local options(16955):Null<Dynamic>:Null<Dynamic>]
+							[Const:String] "unique"
+					&&
+					[Binop:Bool]
+						[Call:Dynamic]
+							[Field:(o : Dynamic, field : String) -> Dynamic]
+								[TypeExpr Reflect:Class<Reflect>]
+								[FStatic:(o : Dynamic, field : String) -> Dynamic]
+									Reflect
+									field:(o : Dynamic, field : String) -> Dynamic
+							[Local options(16955):Null<Dynamic>:Null<Dynamic>]
+							[Const:String] "unique"
+						==
+						[Const:Bool] true
+				[Then:Int] [Block:Int]
+					[Call:Int]
+						[Field:(x : String) -> Int]
+							[Field:Array<String>]
+								[Const:reflaxe.elixir.helpers.TableBuilder] this
+								[FInstance:Array<String>]
+									reflaxe.elixir.helpers.TableBuilder
+									indexes:Array<String>
+							[FInstance:(x : String) -> Int]
+								Array<String>
+								push:(x : Array.T) -> Int
+						[Binop:String]
+							[Binop:String]
+								[Binop:String]
+									[Binop:String]
+										[Const:String] "create unique_index(:"
+										+
+										[Field:String]
+											[Const:reflaxe.elixir.helpers.TableBuilder] this
+											[FInstance:String]
+												reflaxe.elixir.helpers.TableBuilder
+												tableName:String
+									+
+									[Const:String] ", ["
+								+
+								[Local columnList(16965):String:String]
+							+
+							[Const:String] "])"
+				[Else:Int] [Block:Int]
+					[Call:Int]
+						[Field:(x : String) -> Int]
+							[Field:Array<String>]
+								[Const:reflaxe.elixir.helpers.TableBuilder] this
+								[FInstance:Array<String>]
+									reflaxe.elixir.helpers.TableBuilder
+									indexes:Array<String>
+							[FInstance:(x : String) -> Int]
+								Array<String>
+								push:(x : Array.T) -> Int
+						[Binop:String]
+							[Binop:String]
+								[Binop:String]
+									[Binop:String]
+										[Const:String] "create index(:"
+										+
+										[Field:String]
+											[Const:reflaxe.elixir.helpers.TableBuilder] this
+											[FInstance:String]
+												reflaxe.elixir.helpers.TableBuilder
+												tableName:String
+									+
+									[Const:String] ", ["
+								+
+								[Local columnList(16965):String:String]
+							+
+							[Const:String] "])"
+			[Return:Dynamic] [Const:reflaxe.elixir.helpers.TableBuilder] this
+
+	@:value({ referencedColumn : "id" })
+	public function addForeignKey[Function:(columnName : String, referencedTable : String, ?referencedColumn : String) -> reflaxe.elixir.helpers.TableBuilder]
+		[Arg:String] [Local columnName(16966):String]
+		[Arg:String] [Local referencedTable(16967):String]
+		[Arg:String]
+			[Local referencedColumn(16968):String]
+			[Const:String] "id"
+		[Block:Dynamic]
+			[Var newColumns(16969):Array<String>] [ArrayDecl:Array<String>]
+			[Var found(16970):Bool] [Const:Bool] false
+			[Block:Void]
+				[Var `(16972):Int] [Const:Int] 0
+				[Var `(16973):Array<String>]
+					[Field:Array<String>]
+						[Const:reflaxe.elixir.helpers.TableBuilder] this
+						[FInstance:Array<String>]
+							reflaxe.elixir.helpers.TableBuilder
+							columns:Array<String>
+				[While:Void]
+					[Binop:Bool]
+						[Local `(16972):Int:Int]
+						<
+						[Field:Int]
+							[Local `(16973):Array<String>:Array<String>]
+							[FInstance:Int]
+								Array<String>
+								length:Int
+					[Block:Void]
+						[Var column(16971):String]
+							[Array:String]
+								[Local `(16973):Array<String>:Array<String>]
+								[Local `(16972):Int:Int]
+						[Unop:Int]
+							++
+							Prefix
+							[Local `(16972):Int:Int]
+						[If:Void]
+							[Binop:Bool]
+								[Call:Int]
+									[Field:(str : String, ?startIndex : Null<Int>) -> Int]
+										[Local column(16971):String:String]
+										[FInstance:(str : String, ?startIndex : Null<Int>) -> Int]
+											String
+											indexOf:(str : String, ?startIndex : Null<Int>) -> Int
+									[Binop:String]
+										[Binop:String]
+											[Const:String] ":"
+											+
+											[Local columnName(16966):String:String]
+										+
+										[Const:String] ","
+									[Const:Null<Int>] null
+								!=
+								[Const:Int] -1
+							[Then:Bool] [Block:Bool]
+								[Call:Int]
+									[Field:(x : String) -> Int]
+										[Local newColumns(16969):Array<String>:Array<String>]
+										[FInstance:(x : String) -> Int]
+											Array<String>
+											push:(x : Array.T) -> Int
+									[Binop:String]
+										[Binop:String]
+											[Binop:String]
+												[Binop:String]
+													[Binop:String]
+														[Binop:String]
+															[Const:String] "add :"
+															+
+															[Local columnName(16966):String:String]
+														+
+														[Const:String] ", references(:"
+													+
+													[Local referencedTable(16967):String:String]
+												+
+												[Const:String] ", column: :"
+											+
+											[Local referencedColumn(16968):String:String]
+										+
+										[Const:String] ")"
+								[Binop:Bool]
+									[Local found(16970):Bool:Bool]
+									=
+									[Const:Bool] true
+							[Else:Int] [Block:Int]
+								[Call:Int]
+									[Field:(x : String) -> Int]
+										[Local newColumns(16969):Array<String>:Array<String>]
+										[FInstance:(x : String) -> Int]
+											Array<String>
+											push:(x : Array.T) -> Int
+									[Local column(16971):String:String]
+			[If:Void]
+				[Unop:Bool]
+					!
+					Prefix
+					[Local found(16970):Bool:Bool]
+				[Then:Int] [Block:Int]
+					[Call:Int]
+						[Field:(x : String) -> Int]
+							[Local newColumns(16969):Array<String>:Array<String>]
+							[FInstance:(x : String) -> Int]
+								Array<String>
+								push:(x : Array.T) -> Int
+						[Binop:String]
+							[Binop:String]
+								[Binop:String]
+									[Binop:String]
+										[Binop:String]
+											[Binop:String]
+												[Const:String] "add :"
+												+
+												[Local columnName(16966):String:String]
+											+
+											[Const:String] ", references(:"
+										+
+										[Local referencedTable(16967):String:String]
+									+
+									[Const:String] ", column: :"
+								+
+								[Local referencedColumn(16968):String:String]
+							+
+							[Const:String] ")"
+			[Binop:Array<String>]
+				[Field:Array<String>]
+					[Const:reflaxe.elixir.helpers.TableBuilder] this
+					[FInstance:Array<String>]
+						reflaxe.elixir.helpers.TableBuilder
+						columns:Array<String>
+				=
+				[Local newColumns(16969):Array<String>:Array<String>]
+			[Return:Dynamic] [Const:reflaxe.elixir.helpers.TableBuilder] this
+
+	public function addCheckConstraint[Function:(condition : String, constraintName : String) -> reflaxe.elixir.helpers.TableBuilder]
+		[Arg:String] [Local condition(16974):String]
+		[Arg:String] [Local constraintName(16975):String]
+		[Block:Dynamic]
+			[Call:Int]
+				[Field:(x : String) -> Int]
+					[Field:Array<String>]
+						[Const:reflaxe.elixir.helpers.TableBuilder] this
+						[FInstance:Array<String>]
+							reflaxe.elixir.helpers.TableBuilder
+							constraints:Array<String>
+					[FInstance:(x : String) -> Int]
+						Array<String>
+						push:(x : Array.T) -> Int
+				[Binop:String]
+					[Binop:String]
+						[Binop:String]
+							[Binop:String]
+								[Binop:String]
+									[Binop:String]
+										[Const:String] "create constraint(:"
+										+
+										[Field:String]
+											[Const:reflaxe.elixir.helpers.TableBuilder] this
+											[FInstance:String]
+												reflaxe.elixir.helpers.TableBuilder
+												tableName:String
+									+
+									[Const:String] ", :"
+								+
+								[Local constraintName(16975):String:String]
+							+
+							[Const:String] ", check: \""
+						+
+						[Local condition(16974):String:String]
+					+
+					[Const:String] "\")"
+			[Return:Dynamic] [Const:reflaxe.elixir.helpers.TableBuilder] this
+
+	public function getColumnDefinitions[Function:() -> Array<String>]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Call:Array<String>]
+					[Field:() -> Array<String>]
+						[Field:Array<String>]
+							[Const:reflaxe.elixir.helpers.TableBuilder] this
+							[FInstance:Array<String>]
+								reflaxe.elixir.helpers.TableBuilder
+								columns:Array<String>
+						[FInstance:() -> Array<String>]
+							Array<String>
+							copy:() -> Array<Array.T>
+
+	public function getIndexDefinitions[Function:() -> Array<String>]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Call:Array<String>]
+					[Field:() -> Array<String>]
+						[Field:Array<String>]
+							[Const:reflaxe.elixir.helpers.TableBuilder] this
+							[FInstance:Array<String>]
+								reflaxe.elixir.helpers.TableBuilder
+								indexes:Array<String>
+						[FInstance:() -> Array<String>]
+							Array<String>
+							copy:() -> Array<Array.T>
+
+	public function getConstraintDefinitions[Function:() -> Array<String>]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Call:Array<String>]
+					[Field:() -> Array<String>]
+						[Field:Array<String>]
+							[Const:reflaxe.elixir.helpers.TableBuilder] this
+							[FInstance:Array<String>]
+								reflaxe.elixir.helpers.TableBuilder
+								constraints:Array<String>
+						[FInstance:() -> Array<String>]
+							Array<String>
+							copy:() -> Array<Array.T>
+}

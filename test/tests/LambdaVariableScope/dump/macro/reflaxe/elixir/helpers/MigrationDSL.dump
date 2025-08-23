@@ -1,0 +1,2413 @@
+class reflaxe.elixir.helpers.MigrationDSL {
+
+	static function sanitizeIdentifier[Function:(identifier : String) -> String]
+		[Arg:String] [Local identifier(16832):String]
+		[Block:Dynamic]
+			[If:Void]
+				[Binop:Bool]
+					[Binop:Bool]
+						[Local identifier(16832):String:String]
+						==
+						[Const:String] null
+					||
+					[Binop:Bool]
+						[Local identifier(16832):String:String]
+						==
+						[Const:String] ""
+				[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [Const:String] "unnamed"
+			[Var sanitized(16833):String] [Local identifier(16832):String:String]
+			[Binop:String]
+				[Local sanitized(16833):String:String]
+				=
+				[Call:String]
+					[Field:(sep : String) -> String]
+						[Call:Array<String>]
+							[Field:(delimiter : String) -> Array<String>]
+								[Local sanitized(16833):String:String]
+								[FInstance:(delimiter : String) -> Array<String>]
+									String
+									split:(delimiter : String) -> Array<String>
+							[Const:String] "';"
+						[FInstance:(sep : String) -> String]
+							Array<String>
+							join:(sep : String) -> String
+					[Const:String] ""
+			[Binop:String]
+				[Local sanitized(16833):String:String]
+				=
+				[Call:String]
+					[Field:(sep : String) -> String]
+						[Call:Array<String>]
+							[Field:(delimiter : String) -> Array<String>]
+								[Local sanitized(16833):String:String]
+								[FInstance:(delimiter : String) -> Array<String>]
+									String
+									split:(delimiter : String) -> Array<String>
+							[Const:String] "--"
+						[FInstance:(sep : String) -> String]
+							Array<String>
+							join:(sep : String) -> String
+					[Const:String] ""
+			[Binop:String]
+				[Local sanitized(16833):String:String]
+				=
+				[Call:String]
+					[Field:(sep : String) -> String]
+						[Call:Array<String>]
+							[Field:(delimiter : String) -> Array<String>]
+								[Local sanitized(16833):String:String]
+								[FInstance:(delimiter : String) -> Array<String>]
+									String
+									split:(delimiter : String) -> Array<String>
+							[Const:String] "DROP"
+						[FInstance:(sep : String) -> String]
+							Array<String>
+							join:(sep : String) -> String
+					[Const:String] ""
+			[Binop:String]
+				[Local sanitized(16833):String:String]
+				=
+				[Call:String]
+					[Field:(sep : String) -> String]
+						[Call:Array<String>]
+							[Field:(delimiter : String) -> Array<String>]
+								[Local sanitized(16833):String:String]
+								[FInstance:(delimiter : String) -> Array<String>]
+									String
+									split:(delimiter : String) -> Array<String>
+							[Const:String] "System."
+						[FInstance:(sep : String) -> String]
+							Array<String>
+							join:(sep : String) -> String
+					[Const:String] ""
+			[Binop:String]
+				[Local sanitized(16833):String:String]
+				=
+				[Call:String]
+					[Field:(sep : String) -> String]
+						[Call:Array<String>]
+							[Field:(delimiter : String) -> Array<String>]
+								[Local sanitized(16833):String:String]
+								[FInstance:(delimiter : String) -> Array<String>]
+									String
+									split:(delimiter : String) -> Array<String>
+							[Const:String] "/*"
+						[FInstance:(sep : String) -> String]
+							Array<String>
+							join:(sep : String) -> String
+					[Const:String] ""
+			[Binop:String]
+				[Local sanitized(16833):String:String]
+				=
+				[Call:String]
+					[Field:(sep : String) -> String]
+						[Call:Array<String>]
+							[Field:(delimiter : String) -> Array<String>]
+								[Local sanitized(16833):String:String]
+								[FInstance:(delimiter : String) -> Array<String>]
+									String
+									split:(delimiter : String) -> Array<String>
+							[Const:String] "*/"
+						[FInstance:(sep : String) -> String]
+							Array<String>
+							join:(sep : String) -> String
+					[Const:String] ""
+			[Var clean(16834):String] [Const:String] ""
+			[Block:Void]
+				[Var `(16837):Int] [Const:Int] 0
+				[Var `(16838):Int]
+					[Field:Int]
+						[Local sanitized(16833):String:String]
+						[FInstance:Int]
+							String
+							length:Int
+				[While:Void]
+					[Binop:Bool]
+						[Local `(16837):Int:Int]
+						<
+						[Local `(16838):Int:Int]
+					[Block:Void]
+						[Var i(16835):Int]
+							[Unop:Int]
+								++
+								Postfix
+								[Local `(16837):Int:Int]
+						[Var c(16836):String]
+							[Call:String]
+								[Field:(index : Int) -> String]
+									[Local sanitized(16833):String:String]
+									[FInstance:(index : Int) -> String]
+										String
+										charAt:(index : Int) -> String
+								[Local i(16835):Int:Int]
+						[If:Void]
+							[Binop:Bool]
+								[Binop:Bool]
+									[Binop:Bool]
+										[Parenthesis:Bool]
+											[Binop:Bool]
+												[Binop:Bool]
+													[Local c(16836):String:String]
+													>=
+													[Const:String] "a"
+												&&
+												[Binop:Bool]
+													[Local c(16836):String:String]
+													<=
+													[Const:String] "z"
+										||
+										[Parenthesis:Bool]
+											[Binop:Bool]
+												[Binop:Bool]
+													[Local c(16836):String:String]
+													>=
+													[Const:String] "A"
+												&&
+												[Binop:Bool]
+													[Local c(16836):String:String]
+													<=
+													[Const:String] "Z"
+									||
+									[Parenthesis:Bool]
+										[Binop:Bool]
+											[Binop:Bool]
+												[Local c(16836):String:String]
+												>=
+												[Const:String] "0"
+											&&
+											[Binop:Bool]
+												[Local c(16836):String:String]
+												<=
+												[Const:String] "9"
+								||
+								[Binop:Bool]
+									[Local c(16836):String:String]
+									==
+									[Const:String] "_"
+							[Then:String] [Block:String]
+								[Binop:String]
+									[Local clean(16834):String:String]
+									+=
+									[Call:String]
+										[Field:() -> String]
+											[Local c(16836):String:String]
+											[FInstance:() -> String]
+												String
+												toLowerCase:() -> String
+			[Return:Dynamic]
+				[If:String]
+					[Binop:Bool]
+						[Field:Int]
+							[Local clean(16834):String:String]
+							[FInstance:Int]
+								String
+								length:Int
+						>
+						[Const:Int] 0
+					[Then:String] [Block:String] [Local clean(16834):String:String]
+					[Else:String] [Block:String] [Const:String] "sanitized"
+
+	public static function isMigrationClass[Function:(className : String) -> Bool]
+		[Arg:String] [Local className(16839):String]
+		[Block:Dynamic]
+			[If:Void]
+				[Binop:Bool]
+					[Binop:Bool]
+						[Local className(16839):String:String]
+						==
+						[Const:String] null
+					||
+					[Binop:Bool]
+						[Local className(16839):String:String]
+						==
+						[Const:String] ""
+				[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [Const:Bool] false
+			[Return:Dynamic]
+				[Binop:Bool]
+					[Binop:Bool]
+						[Binop:Bool]
+							[Binop:Bool]
+								[Call:Int]
+									[Field:(str : String, ?startIndex : Null<Int>) -> Int]
+										[Local className(16839):String:String]
+										[FInstance:(str : String, ?startIndex : Null<Int>) -> Int]
+											String
+											indexOf:(str : String, ?startIndex : Null<Int>) -> Int
+									[Const:String] "Migration"
+									[Const:Null<Int>] null
+								!=
+								[Const:Int] -1
+							||
+							[Binop:Bool]
+								[Call:Int]
+									[Field:(str : String, ?startIndex : Null<Int>) -> Int]
+										[Local className(16839):String:String]
+										[FInstance:(str : String, ?startIndex : Null<Int>) -> Int]
+											String
+											indexOf:(str : String, ?startIndex : Null<Int>) -> Int
+									[Const:String] "Create"
+									[Const:Null<Int>] null
+								!=
+								[Const:Int] -1
+						||
+						[Binop:Bool]
+							[Call:Int]
+								[Field:(str : String, ?startIndex : Null<Int>) -> Int]
+									[Local className(16839):String:String]
+									[FInstance:(str : String, ?startIndex : Null<Int>) -> Int]
+										String
+										indexOf:(str : String, ?startIndex : Null<Int>) -> Int
+								[Const:String] "Alter"
+								[Const:Null<Int>] null
+							!=
+							[Const:Int] -1
+					||
+					[Binop:Bool]
+						[Call:Int]
+							[Field:(str : String, ?startIndex : Null<Int>) -> Int]
+								[Local className(16839):String:String]
+								[FInstance:(str : String, ?startIndex : Null<Int>) -> Int]
+									String
+									indexOf:(str : String, ?startIndex : Null<Int>) -> Int
+							[Const:String] "Drop"
+							[Const:Null<Int>] null
+						!=
+						[Const:Int] -1
+
+	public static function isMigrationClassType[Function:(classType : Dynamic) -> Bool]
+		[Arg:Dynamic] [Local classType(15636):Dynamic]
+		[Block:Dynamic] [Return:Dynamic] [Const:Bool] true
+
+	public static function getMigrationConfig[Function:(classType : haxe.macro.ClassType) -> Dynamic]
+		[Arg:haxe.macro.ClassType] [Local classType(15641):haxe.macro.ClassType]
+		[Block:Dynamic]
+			[If:Void]
+				[Unop:Bool]
+					!
+					Prefix
+					[Call:Bool]
+						[Field:(name : String) -> Bool]
+							[Field:haxe.macro.MetaAccess]
+								[Local classType(15641):haxe.macro.ClassType:haxe.macro.ClassType]
+								[FAnon:haxe.macro.MetaAccess] meta:haxe.macro.MetaAccess
+							[FAnon:(name : String) -> Bool] has:(name : String) -> Bool
+						[Const:String] ":migration"
+				[Then:Dynamic] [Block:Dynamic]
+					[Return:Dynamic]
+						[ObjectDecl:{ timestamp : String, table : String }]
+							table: [Const:String] "default_table"
+							timestamp: [Call:String]
+								[Field:() -> String]
+									[TypeExpr reflaxe.elixir.helpers.MigrationDSL:Class<reflaxe.elixir.helpers.MigrationDSL>]
+									[FStatic:() -> String]
+										reflaxe.elixir.helpers.MigrationDSL
+										generateTimestamp:() -> String
+			[Var meta(15649):haxe.macro.MetadataEntry]
+				[Array:haxe.macro.MetadataEntry]
+					[Call:Array<haxe.macro.MetadataEntry>]
+						[Field:(name : String) -> Array<haxe.macro.MetadataEntry>]
+							[Field:haxe.macro.MetaAccess]
+								[Local classType(15641):haxe.macro.ClassType:haxe.macro.ClassType]
+								[FAnon:haxe.macro.MetaAccess] meta:haxe.macro.MetaAccess
+							[FAnon:(name : String) -> Array<haxe.macro.MetadataEntry>] extract:(name : String) -> Array<haxe.macro.MetadataEntry>
+						[Const:String] ":migration"
+					[Const:Int] 0
+			[Var tableName(15650):String] [Const:String] "default_table"
+			[If:Void]
+				[Binop:Bool]
+					[Binop:Bool]
+						[Field:Null<Array<haxe.macro.Expr>>]
+							[Local meta(15649):haxe.macro.MetadataEntry:haxe.macro.MetadataEntry]
+							[FAnon:Null<Array<haxe.macro.Expr>>] params:Null<Array<haxe.macro.Expr>>
+						!=
+						[Const:Null<Array<haxe.macro.Expr>>] null
+					&&
+					[Binop:Bool]
+						[Field:Int]
+							[Field:Null<Array<haxe.macro.Expr>>]
+								[Local meta(15649):haxe.macro.MetadataEntry:haxe.macro.MetadataEntry]
+								[FAnon:Null<Array<haxe.macro.Expr>>] params:Null<Array<haxe.macro.Expr>>
+							[FInstance:Int]
+								Array<haxe.macro.Expr>
+								length:Int
+						>
+						[Const:Int] 0
+				[Then:Void] [Block:Void]
+					[Meta:Void]
+						:ast(switch (meta.params[0].expr) {
+	case EConst(CString(s, _)):
+		tableName = s;	
+	case EObjectDecl(fields):
+		for (field  in  fields) {
+			if (field.field == "table") {
+				switch (field.expr.expr) {
+					case EConst(CString(s, _)):
+						tableName = s;					
+					case _:
+				};
+			};
+		};	
+	case _:
+		tableName = extractTableNameFromClassName(classType.name);	
+})
+						[Block:Void]
+							[Var `(15678):haxe.macro.ExprDef]
+								[Field:haxe.macro.ExprDef]
+									[Array:haxe.macro.Expr]
+										[Field:Null<Array<haxe.macro.Expr>>]
+											[Local meta(15649):haxe.macro.MetadataEntry:haxe.macro.MetadataEntry]
+											[FAnon:Null<Array<haxe.macro.Expr>>] params:Null<Array<haxe.macro.Expr>>
+										[Const:Int] 0
+									[FAnon:haxe.macro.ExprDef] expr:haxe.macro.ExprDef
+							[Switch:Void]
+								[EnumIndex:Int] [Local `(15678):haxe.macro.ExprDef:haxe.macro.ExprDef]
+								[Case:Void]
+									[Const:Int] 0
+									[Block:Void]
+										[Var `(15679):haxe.macro.Constant]
+											[EnumParameter:haxe.macro.Constant]
+												[Local `(15678):haxe.macro.ExprDef:haxe.macro.ExprDef]
+												EConst
+												0
+										[If:Void]
+											[Binop:Bool]
+												[EnumIndex:Int] [Local `(15679):haxe.macro.Constant:haxe.macro.Constant]
+												==
+												[Const:Int] 2
+											[Then:String] [Block:String]
+												[Var `(15680):String]
+													[EnumParameter:String]
+														[Local `(15679):haxe.macro.Constant:haxe.macro.Constant]
+														CString
+														0
+												[Var `(15681):Null<haxe.macro.StringLiteralKind>]
+													[EnumParameter:Null<haxe.macro.StringLiteralKind>]
+														[Local `(15679):haxe.macro.Constant:haxe.macro.Constant]
+														CString
+														1
+												[Block:String]
+													[Var s(15682):String] [Local `(15680):String:String]
+													[Block:String]
+														[Binop:String]
+															[Local tableName(15650):String:String]
+															=
+															[Local s(15682):String:String]
+											[Else:String] [Block:String]
+												[Binop:String]
+													[Local tableName(15650):String:String]
+													=
+													[Call:String]
+														[Field:(className : String) -> String]
+															[TypeExpr reflaxe.elixir.helpers.MigrationDSL:Class<reflaxe.elixir.helpers.MigrationDSL>]
+															[FStatic:(className : String) -> String]
+																reflaxe.elixir.helpers.MigrationDSL
+																extractTableNameFromClassName:(className : String) -> String
+														[Field:String]
+															[Local classType(15641):haxe.macro.ClassType:haxe.macro.ClassType]
+															[FAnon:String] name:String
+								[Case:Void]
+									[Const:Int] 5
+									[Block:Void]
+										[Var `(15683):Array<haxe.macro.ObjectField>]
+											[EnumParameter:Array<haxe.macro.ObjectField>]
+												[Local `(15678):haxe.macro.ExprDef:haxe.macro.ExprDef]
+												EObjectDecl
+												0
+										[Block:Void]
+											[Var fields(15684):Array<haxe.macro.ObjectField>] [Local `(15683):Array<haxe.macro.ObjectField>:Array<haxe.macro.ObjectField>]
+											[Block:Void]
+												[Block:Void]
+													[Var `(15685):Int] [Const:Int] 0
+													[While:Void]
+														[Binop:Bool]
+															[Local `(15685):Int:Int]
+															<
+															[Field:Int]
+																[Local fields(15684):Array<haxe.macro.ObjectField>:Array<haxe.macro.ObjectField>]
+																[FInstance:Int]
+																	Array<haxe.macro.ObjectField>
+																	length:Int
+														[Block:Void]
+															[Var field(15686):haxe.macro.ObjectField]
+																[Array:haxe.macro.ObjectField]
+																	[Local fields(15684):Array<haxe.macro.ObjectField>:Array<haxe.macro.ObjectField>]
+																	[Local `(15685):Int:Int]
+															[Unop:Int]
+																++
+																Prefix
+																[Local `(15685):Int:Int]
+															[If:Void]
+																[Binop:Bool]
+																	[Field:String]
+																		[Local field(15686):haxe.macro.ObjectField:haxe.macro.ObjectField]
+																		[FAnon:String] field:String
+																	==
+																	[Const:String] "table"
+																[Then:Void] [Block:Void]
+																	[Meta:Void]
+																		:ast(switch (field.expr.expr) {
+	case EConst(CString(s, _)):
+		tableName = s;	
+	case _:
+})
+																		[Block:Void]
+																			[Var `(15687):haxe.macro.ExprDef]
+																				[Field:haxe.macro.ExprDef]
+																					[Field:haxe.macro.Expr]
+																						[Local field(15686):haxe.macro.ObjectField:haxe.macro.ObjectField]
+																						[FAnon:haxe.macro.Expr] expr:haxe.macro.Expr
+																					[FAnon:haxe.macro.ExprDef] expr:haxe.macro.ExprDef
+																			[If:Void]
+																				[Binop:Bool]
+																					[EnumIndex:Int] [Local `(15687):haxe.macro.ExprDef:haxe.macro.ExprDef]
+																					==
+																					[Const:Int] 0
+																				[Then:Void] [Block:Void]
+																					[Var `(15688):haxe.macro.Constant]
+																						[EnumParameter:haxe.macro.Constant]
+																							[Local `(15687):haxe.macro.ExprDef:haxe.macro.ExprDef]
+																							EConst
+																							0
+																					[If:Void]
+																						[Binop:Bool]
+																							[EnumIndex:Int] [Local `(15688):haxe.macro.Constant:haxe.macro.Constant]
+																							==
+																							[Const:Int] 2
+																						[Then:String] [Block:String]
+																							[Var `(15689):String]
+																								[EnumParameter:String]
+																									[Local `(15688):haxe.macro.Constant:haxe.macro.Constant]
+																									CString
+																									0
+																							[Var `(15690):Null<haxe.macro.StringLiteralKind>]
+																								[EnumParameter:Null<haxe.macro.StringLiteralKind>]
+																									[Local `(15688):haxe.macro.Constant:haxe.macro.Constant]
+																									CString
+																									1
+																							[Block:String]
+																								[Var s(15691):String] [Local `(15689):String:String]
+																								[Block:String]
+																									[Binop:String]
+																										[Local tableName(15650):String:String]
+																										=
+																										[Local s(15691):String:String]
+																						[Else:Void] [Block:Void]
+																				[Else:Void] [Block:Void]
+								[Default:String]
+									[Block:String]
+										[Binop:String]
+											[Local tableName(15650):String:String]
+											=
+											[Call:String]
+												[Field:(className : String) -> String]
+													[TypeExpr reflaxe.elixir.helpers.MigrationDSL:Class<reflaxe.elixir.helpers.MigrationDSL>]
+													[FStatic:(className : String) -> String]
+														reflaxe.elixir.helpers.MigrationDSL
+														extractTableNameFromClassName:(className : String) -> String
+												[Field:String]
+													[Local classType(15641):haxe.macro.ClassType:haxe.macro.ClassType]
+													[FAnon:String] name:String
+				[Else:String] [Block:String]
+					[Binop:String]
+						[Local tableName(15650):String:String]
+						=
+						[Call:String]
+							[Field:(className : String) -> String]
+								[TypeExpr reflaxe.elixir.helpers.MigrationDSL:Class<reflaxe.elixir.helpers.MigrationDSL>]
+								[FStatic:(className : String) -> String]
+									reflaxe.elixir.helpers.MigrationDSL
+									extractTableNameFromClassName:(className : String) -> String
+							[Field:String]
+								[Local classType(15641):haxe.macro.ClassType:haxe.macro.ClassType]
+								[FAnon:String] name:String
+			[Return:Dynamic]
+				[ObjectDecl:{ timestamp : String, table : String }]
+					table: [Local tableName(15650):String:String]
+					timestamp: [Call:String]
+						[Field:() -> String]
+							[TypeExpr reflaxe.elixir.helpers.MigrationDSL:Class<reflaxe.elixir.helpers.MigrationDSL>]
+							[FStatic:() -> String]
+								reflaxe.elixir.helpers.MigrationDSL
+								generateTimestamp:() -> String
+
+	static function extractTableNameFromClassName[Function:(className : String) -> String]
+		[Arg:String] [Local className(15665):String]
+		[Block:Dynamic]
+			[Var tableName(15666):String] [Local className(15665):String:String]
+			[Binop:String]
+				[Local tableName(15666):String:String]
+				=
+				[Call:String]
+					[Field:(s : String, sub : String, by : String) -> String]
+						[TypeExpr StringTools:{ Statics StringTools }]
+						[FStatic:(s : String, sub : String, by : String) -> String]
+							StringTools
+							replace:(s : String, sub : String, by : String) -> String
+					[Local tableName(15666):String:String]
+					[Const:String] "Create"
+					[Const:String] ""
+			[Binop:String]
+				[Local tableName(15666):String:String]
+				=
+				[Call:String]
+					[Field:(s : String, sub : String, by : String) -> String]
+						[TypeExpr StringTools:{ Statics StringTools }]
+						[FStatic:(s : String, sub : String, by : String) -> String]
+							StringTools
+							replace:(s : String, sub : String, by : String) -> String
+					[Local tableName(15666):String:String]
+					[Const:String] "Alter"
+					[Const:String] ""
+			[Binop:String]
+				[Local tableName(15666):String:String]
+				=
+				[Call:String]
+					[Field:(s : String, sub : String, by : String) -> String]
+						[TypeExpr StringTools:{ Statics StringTools }]
+						[FStatic:(s : String, sub : String, by : String) -> String]
+							StringTools
+							replace:(s : String, sub : String, by : String) -> String
+					[Local tableName(15666):String:String]
+					[Const:String] "Drop"
+					[Const:String] ""
+			[Binop:String]
+				[Local tableName(15666):String:String]
+				=
+				[Call:String]
+					[Field:(s : String, sub : String, by : String) -> String]
+						[TypeExpr StringTools:{ Statics StringTools }]
+						[FStatic:(s : String, sub : String, by : String) -> String]
+							StringTools
+							replace:(s : String, sub : String, by : String) -> String
+					[Local tableName(15666):String:String]
+					[Const:String] "Add"
+					[Const:String] ""
+			[Binop:String]
+				[Local tableName(15666):String:String]
+				=
+				[Call:String]
+					[Field:(s : String, sub : String, by : String) -> String]
+						[TypeExpr StringTools:{ Statics StringTools }]
+						[FStatic:(s : String, sub : String, by : String) -> String]
+							StringTools
+							replace:(s : String, sub : String, by : String) -> String
+					[Local tableName(15666):String:String]
+					[Const:String] "Remove"
+					[Const:String] ""
+			[Binop:String]
+				[Local tableName(15666):String:String]
+				=
+				[Call:String]
+					[Field:(s : String, sub : String, by : String) -> String]
+						[TypeExpr StringTools:{ Statics StringTools }]
+						[FStatic:(s : String, sub : String, by : String) -> String]
+							StringTools
+							replace:(s : String, sub : String, by : String) -> String
+					[Local tableName(15666):String:String]
+					[Const:String] "Table"
+					[Const:String] ""
+			[Binop:String]
+				[Local tableName(15666):String:String]
+				=
+				[Call:String]
+					[Field:(s : String, sub : String, by : String) -> String]
+						[TypeExpr StringTools:{ Statics StringTools }]
+						[FStatic:(s : String, sub : String, by : String) -> String]
+							StringTools
+							replace:(s : String, sub : String, by : String) -> String
+					[Local tableName(15666):String:String]
+					[Const:String] "Migration"
+					[Const:String] ""
+			[Return:Dynamic]
+				[Call:String]
+					[Field:(input : String) -> String]
+						[TypeExpr reflaxe.elixir.helpers.MigrationDSL:Class<reflaxe.elixir.helpers.MigrationDSL>]
+						[FStatic:(input : String) -> String]
+							reflaxe.elixir.helpers.MigrationDSL
+							camelCaseToSnakeCase:(input : String) -> String
+					[Local tableName(15666):String:String]
+
+	public static function compileTableCreation[Function:(tableName : String, columns : Array<String>) -> String]
+		[Arg:String] [Local tableName(15709):String]
+		[Arg:Array<String>] [Local columns(15710):Array<String>]
+		[Block:Dynamic]
+			[Var columnDefs(15711):Array<String>] [New:Array<String>] Array<String>
+			[Block:Void]
+				[Var `(15716):Int] [Const:Int] 0
+				[While:Void]
+					[Binop:Bool]
+						[Local `(15716):Int:Int]
+						<
+						[Field:Int]
+							[Local columns(15710):Array<String>:Array<String>]
+							[FInstance:Int]
+								Array<String>
+								length:Int
+					[Block:Void]
+						[Var column(15712):String]
+							[Array:String]
+								[Local columns(15710):Array<String>:Array<String>]
+								[Local `(15716):Int:Int]
+						[Unop:Int]
+							++
+							Prefix
+							[Local `(15716):Int:Int]
+						[Var parts(15713):Array<String>]
+							[Call:Array<String>]
+								[Field:(delimiter : String) -> Array<String>]
+									[Local column(15712):String:String]
+									[FInstance:(delimiter : String) -> Array<String>]
+										String
+										split:(delimiter : String) -> Array<String>
+								[Const:String] ":"
+						[Var name(15714):String]
+							[Array:String]
+								[Local parts(15713):Array<String>:Array<String>]
+								[Const:Int] 0
+						[Var type(15715):String]
+							[If:String]
+								[Binop:Bool]
+									[Field:Int]
+										[Local parts(15713):Array<String>:Array<String>]
+										[FInstance:Int]
+											Array<String>
+											length:Int
+									>
+									[Const:Int] 1
+								[Then:String] [Block:String]
+									[Array:String]
+										[Local parts(15713):Array<String>:Array<String>]
+										[Const:Int] 1
+								[Else:String] [Block:String] [Const:String] "string"
+						[Call:Int]
+							[Field:(x : String) -> Int]
+								[Local columnDefs(15711):Array<String>:Array<String>]
+								[FInstance:(x : String) -> Int]
+									Array<String>
+									push:(x : Array.T) -> Int
+							[Binop:String]
+								[Binop:String]
+									[Binop:String]
+										[Const:String] "      add :"
+										+
+										[Local name(15714):String:String]
+									+
+									[Const:String] ", :"
+								+
+								[Local type(15715):String:String]
+			[Return:Dynamic]
+				[Binop:String]
+					[Binop:String]
+						[Binop:String]
+							[Binop:String]
+								[Binop:String]
+									[Binop:String]
+										[Const:String] "create table(:"
+										+
+										[Local tableName(15709):String:String]
+									+
+									[Const:String] ") do\n"
+								+
+								[Call:String]
+									[Field:(sep : String) -> String]
+										[Local columnDefs(15711):Array<String>:Array<String>]
+										[FInstance:(sep : String) -> String]
+											Array<String>
+											join:(sep : String) -> String
+									[Const:String] "\n"
+							+
+							[Const:String] "\n"
+						+
+						[Const:String] "      timestamps()\n"
+					+
+					[Const:String] "    end"
+
+	public static function generateMigrationModule[Function:(className : String) -> String]
+		[Arg:String] [Local className(16840):String]
+		[Block:Dynamic]
+			[Var moduleName(16841):String] [Local className(16840):String:String]
+			[Return:Dynamic]
+				[Binop:String]
+					[Binop:String]
+						[Binop:String]
+							[Binop:String]
+								[Binop:String]
+									[Binop:String]
+										[Binop:String]
+											[Binop:String]
+												[Binop:String]
+													[Binop:String]
+														[Binop:String]
+															[Binop:String]
+																[Binop:String]
+																	[Binop:String]
+																		[Binop:String]
+																			[Binop:String]
+																				[Binop:String]
+																					[Binop:String]
+																						[Binop:String]
+																							[Binop:String]
+																								[Binop:String]
+																									[Binop:String]
+																										[Binop:String]
+																											[Binop:String]
+																												[Binop:String]
+																													[Binop:String]
+																														[Binop:String]
+																															[Binop:String]
+																																[Binop:String]
+																																	[Binop:String]
+																																		[Binop:String]
+																																			[Binop:String]
+																																				[Const:String] "defmodule "
+																																				+
+																																				[Local moduleName(16841):String:String]
+																																			+
+																																			[Const:String] " do\n"
+																																		+
+																																		[Const:String] "  @moduledoc \"\"\"\n"
+																																	+
+																																	[Binop:String]
+																																		[Binop:String]
+																																			[Const:String] "  Generated from Haxe @:migration class: "
+																																			+
+																																			[Local className(16840):String:String]
+																																		+
+																																		[Const:String] "\n"
+																																+
+																																[Const:String] "  \n"
+																															+
+																															[Const:String] "  This migration module was automatically generated from a Haxe source file\n"
+																														+
+																														[Const:String] "  as part of the Reflaxe.Elixir compilation pipeline.\n"
+																													+
+																													[Const:String] "  \"\"\"\n"
+																												+
+																												[Const:String] "  \n"
+																											+
+																											[Const:String] "  use Ecto.Migration\n"
+																										+
+																										[Const:String] "  \n"
+																									+
+																									[Const:String] "  @doc \"\"\"\n"
+																								+
+																								[Const:String] "  Run the migration\n"
+																							+
+																							[Const:String] "  \"\"\"\n"
+																						+
+																						[Const:String] "  def change do\n"
+																					+
+																					[Const:String] "    # Migration operations go here\n"
+																				+
+																				[Const:String] "  end\n"
+																			+
+																			[Const:String] "  \n"
+																		+
+																		[Const:String] "  @doc \"\"\"\n"
+																	+
+																	[Const:String] "  Run the migration up\n"
+																+
+																[Const:String] "  \"\"\"\n"
+															+
+															[Const:String] "  def up do\n"
+														+
+														[Const:String] "    # Up migration operations\n"
+													+
+													[Const:String] "  end\n"
+												+
+												[Const:String] "  \n"
+											+
+											[Const:String] "  @doc \"\"\"\n"
+										+
+										[Const:String] "  Run the migration down (rollback)\n"
+									+
+									[Const:String] "  \"\"\"\n"
+								+
+								[Const:String] "  def down do\n"
+							+
+							[Const:String] "    # Down migration operations\n"
+						+
+						[Const:String] "  end\n"
+					+
+					[Const:String] "end"
+
+	public static function compileIndexCreation[Function:(tableName : String, fields : Array<String>, options : String) -> String]
+		[Arg:String] [Local tableName(16842):String]
+		[Arg:Array<String>] [Local fields(16843):Array<String>]
+		[Arg:String] [Local options(16844):String]
+		[Block:Void]
+			[Var fieldList(16854):String]
+				[Call:String]
+					[Field:(sep : String) -> String]
+						[Block:Array<String>]
+							[Var `(16849):Array<String>] [ArrayDecl:Array<String>]
+							[Block:Void]
+								[Var `(16850):Int] [Const:Int] 0
+								[Var `(16851):Array<String>] [Local fields(16843):Array<String>:Array<String>]
+								[While:Void]
+									[Binop:Bool]
+										[Local `(16850):Int:Int]
+										<
+										[Field:Int]
+											[Local `(16851):Array<String>:Array<String>]
+											[FInstance:Int]
+												Array<String>
+												length:Int
+									[Block:Void]
+										[Var v(16852):String]
+											[Array:String]
+												[Local `(16851):Array<String>:Array<String>]
+												[Local `(16850):Int:Int]
+										[Unop:Int]
+											++
+											Prefix
+											[Local `(16850):Int:Int]
+										[Call:Int]
+											[Field:(x : String) -> Int]
+												[Local `(16849):Array<String>:Array<String>]
+												[FInstance:(x : String) -> Int]
+													Array<String>
+													push:(x : Array.T) -> Int
+											[Call:String]
+												[Function:(field : String) -> String]
+													[Arg:String] [Local field(16853):String]
+													[Block:Dynamic]
+														[Return:Dynamic]
+															[Binop:String]
+																[Const:String] ":"
+																+
+																[Local field(16853):String:String]
+												[Local v(16852):String:String]
+							[Local `(16849):Array<String>:Array<String>]
+						[FInstance:(sep : String) -> String]
+							Array<String>
+							join:(sep : String) -> String
+					[Const:String] ", "
+			[If:Void]
+				[Binop:Bool]
+					[Call:Int]
+						[Field:(str : String, ?startIndex : Null<Int>) -> Int]
+							[Local options(16844):String:String]
+							[FInstance:(str : String, ?startIndex : Null<Int>) -> Int]
+								String
+								indexOf:(str : String, ?startIndex : Null<Int>) -> Int
+						[Const:String] "unique"
+						[Const:Null<Int>] null
+					!=
+					[Const:Int] -1
+				[Then:Dynamic] [Block:Dynamic]
+					[Return:Dynamic]
+						[Binop:String]
+							[Binop:String]
+								[Binop:String]
+									[Binop:String]
+										[Const:String] "create unique_index(:"
+										+
+										[Local tableName(16842):String:String]
+									+
+									[Const:String] ", ["
+								+
+								[Local fieldList(16854):String:String]
+							+
+							[Const:String] "])"
+				[Else:Dynamic] [Block:Dynamic]
+					[Return:Dynamic]
+						[Binop:String]
+							[Binop:String]
+								[Binop:String]
+									[Binop:String]
+										[Const:String] "create index(:"
+										+
+										[Local tableName(16842):String:String]
+									+
+									[Const:String] ", ["
+								+
+								[Local fieldList(16854):String:String]
+							+
+							[Const:String] "])"
+
+	public static function generateIndexesForTable[Function:(tableName : String, columns : Array<Dynamic>) -> String]
+		[Arg:String] [Local tableName(15718):String]
+		[Arg:Array<Dynamic>] [Local columns(15719):Array<Dynamic>]
+		[Block:Dynamic]
+			[Var indexes(15720):Array<String>] [ArrayDecl:Array<String>]
+			[Var columnNames(15721):Array<String>] [ArrayDecl:Array<String>]
+			[Block:Void]
+				[Var `(15723):Int] [Const:Int] 0
+				[While:Void]
+					[Binop:Bool]
+						[Local `(15723):Int:Int]
+						<
+						[Field:Int]
+							[Local columns(15719):Array<Dynamic>:Array<Dynamic>]
+							[FInstance:Int]
+								Array<Dynamic>
+								length:Int
+					[Block:Void]
+						[Var column(15722):Dynamic]
+							[Array:Dynamic]
+								[Local columns(15719):Array<Dynamic>:Array<Dynamic>]
+								[Local `(15723):Int:Int]
+						[Unop:Int]
+							++
+							Prefix
+							[Local `(15723):Int:Int]
+						[If:Void]
+							[Binop:Bool]
+								[Field:Dynamic]
+									[Local column(15722):Dynamic:Dynamic]
+									[FDynamic:Dynamic] name
+								!=
+								[Const:Dynamic] null
+							[Then:Int] [Block:Int]
+								[Call:Int]
+									[Field:(x : String) -> Int]
+										[Local columnNames(15721):Array<String>:Array<String>]
+										[FInstance:(x : String) -> Int]
+											Array<String>
+											push:(x : Array.T) -> Int
+									[Field:Dynamic]
+										[Local column(15722):Dynamic:Dynamic]
+										[FDynamic:Dynamic] name
+			[If:Void]
+				[Binop:Bool]
+					[Call:Int]
+						[Field:(x : String, ?fromIndex : Null<Int>) -> Int]
+							[Local columnNames(15721):Array<String>:Array<String>]
+							[FInstance:(x : String, ?fromIndex : Null<Int>) -> Int]
+								Array<String>
+								indexOf:(x : Array.T, ?fromIndex : Null<Int>) -> Int
+						[Const:String] "email"
+						[Const:Null<Int>] null
+					!=
+					[Const:Int] -1
+				[Then:Int] [Block:Int]
+					[Call:Int]
+						[Field:(x : String) -> Int]
+							[Local indexes(15720):Array<String>:Array<String>]
+							[FInstance:(x : String) -> Int]
+								Array<String>
+								push:(x : Array.T) -> Int
+						[Binop:String]
+							[Binop:String]
+								[Const:String] "create unique_index(:"
+								+
+								[Local tableName(15718):String:String]
+							+
+							[Const:String] ", [:email])"
+			[If:Void]
+				[Binop:Bool]
+					[Call:Int]
+						[Field:(x : String, ?fromIndex : Null<Int>) -> Int]
+							[Local columnNames(15721):Array<String>:Array<String>]
+							[FInstance:(x : String, ?fromIndex : Null<Int>) -> Int]
+								Array<String>
+								indexOf:(x : Array.T, ?fromIndex : Null<Int>) -> Int
+						[Const:String] "user_id"
+						[Const:Null<Int>] null
+					!=
+					[Const:Int] -1
+				[Then:Int] [Block:Int]
+					[Call:Int]
+						[Field:(x : String) -> Int]
+							[Local indexes(15720):Array<String>:Array<String>]
+							[FInstance:(x : String) -> Int]
+								Array<String>
+								push:(x : Array.T) -> Int
+						[Binop:String]
+							[Binop:String]
+								[Const:String] "create index(:"
+								+
+								[Local tableName(15718):String:String]
+							+
+							[Const:String] ", [:user_id])"
+			[If:Void]
+				[Binop:Bool]
+					[Call:Int]
+						[Field:(x : String, ?fromIndex : Null<Int>) -> Int]
+							[Local columnNames(15721):Array<String>:Array<String>]
+							[FInstance:(x : String, ?fromIndex : Null<Int>) -> Int]
+								Array<String>
+								indexOf:(x : Array.T, ?fromIndex : Null<Int>) -> Int
+						[Const:String] "slug"
+						[Const:Null<Int>] null
+					!=
+					[Const:Int] -1
+				[Then:Int] [Block:Int]
+					[Call:Int]
+						[Field:(x : String) -> Int]
+							[Local indexes(15720):Array<String>:Array<String>]
+							[FInstance:(x : String) -> Int]
+								Array<String>
+								push:(x : Array.T) -> Int
+						[Binop:String]
+							[Binop:String]
+								[Const:String] "create unique_index(:"
+								+
+								[Local tableName(15718):String:String]
+							+
+							[Const:String] ", [:slug])"
+			[If:Void]
+				[Binop:Bool]
+					[Field:Int]
+						[Local indexes(15720):Array<String>:Array<String>]
+						[FInstance:Int]
+							Array<String>
+							length:Int
+					==
+					[Const:Int] 0
+				[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [Const:String] "# No indexes needed for this table"
+			[Return:Dynamic]
+				[Call:String]
+					[Field:(sep : String) -> String]
+						[Local indexes(15720):Array<String>:Array<String>]
+						[FInstance:(sep : String) -> String]
+							Array<String>
+							join:(sep : String) -> String
+					[Const:String] "\n    "
+
+	public static function compileTableDrop[Function:(tableName : String) -> String]
+		[Arg:String] [Local tableName(16855):String]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Binop:String]
+					[Binop:String]
+						[Const:String] "drop table(:"
+						+
+						[Local tableName(16855):String:String]
+					+
+					[Const:String] ")"
+
+	public static function compileColumnModification[Function:(tableName : String, columnName : String, modification : String) -> String]
+		[Arg:String] [Local tableName(16856):String]
+		[Arg:String] [Local columnName(16857):String]
+		[Arg:String] [Local modification(16858):String]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Binop:String]
+					[Binop:String]
+						[Binop:String]
+							[Binop:String]
+								[Const:String] "alter table(:"
+								+
+								[Local tableName(16856):String:String]
+							+
+							[Const:String] ") do\n"
+						+
+						[Binop:String]
+							[Binop:String]
+								[Binop:String]
+									[Binop:String]
+										[Const:String] "  modify :"
+										+
+										[Local columnName(16857):String:String]
+									+
+									[Const:String] ", :string, "
+								+
+								[Local modification(16858):String:String]
+							+
+							[Const:String] "\n"
+					+
+					[Const:String] "end"
+
+	public static function compileFullMigration[Function:(migrationData : Dynamic) -> String]
+		[Arg:Dynamic] [Local migrationData(15704):Dynamic]
+		[Block:Dynamic]
+			[Var className(15705):String]
+				[Field:Dynamic]
+					[Local migrationData(15704):Dynamic:Dynamic]
+					[FDynamic:Dynamic] className
+			[Var tableName(15706):String]
+				[Field:Dynamic]
+					[Local migrationData(15704):Dynamic:Dynamic]
+					[FDynamic:Dynamic] tableName
+			[Var columns(15707):Array<String>]
+				[Field:Dynamic]
+					[Local migrationData(15704):Dynamic:Dynamic]
+					[FDynamic:Dynamic] columns
+			[Var moduleName(15708):String]
+				[Binop:String]
+					[Const:String] "Repo.Migrations."
+					+
+					[Local className(15705):String:String]
+			[Var tableCreation(15717):String]
+				[Call:String]
+					[Field:(tableName : String, columns : Array<String>) -> String]
+						[TypeExpr reflaxe.elixir.helpers.MigrationDSL:Class<reflaxe.elixir.helpers.MigrationDSL>]
+						[FStatic:(tableName : String, columns : Array<String>) -> String]
+							reflaxe.elixir.helpers.MigrationDSL
+							compileTableCreation:(tableName : String, columns : Array<String>) -> String
+					[Local tableName(15706):String:String]
+					[Local columns(15707):Array<String>:Array<String>]
+			[Var indexCreation(15724):String]
+				[Call:String]
+					[Field:(tableName : String, columns : Array<Dynamic>) -> String]
+						[TypeExpr reflaxe.elixir.helpers.MigrationDSL:Class<reflaxe.elixir.helpers.MigrationDSL>]
+						[FStatic:(tableName : String, columns : Array<Dynamic>) -> String]
+							reflaxe.elixir.helpers.MigrationDSL
+							generateIndexesForTable:(tableName : String, columns : Array<Dynamic>) -> String
+					[Local tableName(15706):String:String]
+					[Local columns(15707):Array<String>:Array<String>]
+			[Return:Dynamic]
+				[Binop:String]
+					[Binop:String]
+						[Binop:String]
+							[Binop:String]
+								[Binop:String]
+									[Binop:String]
+										[Binop:String]
+											[Binop:String]
+												[Binop:String]
+													[Binop:String]
+														[Binop:String]
+															[Binop:String]
+																[Binop:String]
+																	[Binop:String]
+																		[Binop:String]
+																			[Binop:String]
+																				[Binop:String]
+																					[Binop:String]
+																						[Binop:String]
+																							[Binop:String]
+																								[Binop:String]
+																									[Binop:String]
+																										[Binop:String]
+																											[Binop:String]
+																												[Binop:String]
+																													[Binop:String]
+																														[Binop:String]
+																															[Const:String] "defmodule "
+																															+
+																															[Local moduleName(15708):String:String]
+																														+
+																														[Const:String] " do\n"
+																													+
+																													[Const:String] "  @moduledoc \"\"\"\n"
+																												+
+																												[Binop:String]
+																													[Binop:String]
+																														[Const:String] "  Generated migration for "
+																														+
+																														[Local tableName(15706):String:String]
+																													+
+																													[Const:String] " table\n"
+																											+
+																											[Const:String] "  \n"
+																										+
+																										[Binop:String]
+																											[Binop:String]
+																												[Const:String] "  Creates "
+																												+
+																												[Local tableName(15706):String:String]
+																											+
+																											[Const:String] " table with proper schema and indexes\n"
+																									+
+																									[Const:String] "  following Ecto migration patterns with compile-time validation.\n"
+																								+
+																								[Const:String] "  \"\"\"\n"
+																							+
+																							[Const:String] "  \n"
+																						+
+																						[Const:String] "  use Ecto.Migration\n"
+																					+
+																					[Const:String] "  \n"
+																				+
+																				[Const:String] "  @doc \"\"\"\n"
+																			+
+																			[Binop:String]
+																				[Binop:String]
+																					[Const:String] "  Run the migration - creates "
+																					+
+																					[Local tableName(15706):String:String]
+																				+
+																				[Const:String] " table\n"
+																		+
+																		[Const:String] "  \"\"\"\n"
+																	+
+																	[Const:String] "  def change do\n"
+																+
+																[Binop:String]
+																	[Binop:String]
+																		[Const:String] "    "
+																		+
+																		[Local tableCreation(15717):String:String]
+																	+
+																	[Const:String] "\n"
+															+
+															[Const:String] "    \n"
+														+
+														[Binop:String]
+															[Binop:String]
+																[Const:String] "    "
+																+
+																[Local indexCreation(15724):String:String]
+															+
+															[Const:String] "\n"
+													+
+													[Const:String] "  end\n"
+												+
+												[Const:String] "  \n"
+											+
+											[Const:String] "  @doc \"\"\"\n"
+										+
+										[Binop:String]
+											[Binop:String]
+												[Const:String] "  Rollback migration - drops "
+												+
+												[Local tableName(15706):String:String]
+											+
+											[Const:String] " table\n"
+									+
+									[Const:String] "  \"\"\"\n"
+								+
+								[Const:String] "  def down do\n"
+							+
+							[Binop:String]
+								[Binop:String]
+									[Const:String] "    drop table(:"
+									+
+									[Local tableName(15706):String:String]
+								+
+								[Const:String] ")\n"
+						+
+						[Const:String] "  end\n"
+					+
+					[Const:String] "end"
+
+	public static function generateMigrationFilename[Function:(migrationName : String, timestamp : String) -> String]
+		[Arg:String] [Local migrationName(16859):String]
+		[Arg:String] [Local timestamp(16860):String]
+		[Block:Dynamic]
+			[Var snakeCaseName(16861):String]
+				[Call:String]
+					[Field:(input : String) -> String]
+						[TypeExpr reflaxe.elixir.helpers.MigrationDSL:Class<reflaxe.elixir.helpers.MigrationDSL>]
+						[FStatic:(input : String) -> String]
+							reflaxe.elixir.helpers.MigrationDSL
+							camelCaseToSnakeCase:(input : String) -> String
+					[Local migrationName(16859):String:String]
+			[Return:Dynamic]
+				[Binop:String]
+					[Binop:String]
+						[Binop:String]
+							[Binop:String]
+								[Const:String] ""
+								+
+								[Local timestamp(16860):String:String]
+							+
+							[Const:String] "_"
+						+
+						[Local snakeCaseName(16861):String:String]
+					+
+					[Const:String] ".exs"
+
+	public static function generateMigrationFilePath[Function:(migrationName : String, timestamp : String) -> String]
+		[Arg:String] [Local migrationName(16862):String]
+		[Arg:String] [Local timestamp(16863):String]
+		[Block:Dynamic]
+			[Var filename(16864):String]
+				[Call:String]
+					[Field:(migrationName : String, timestamp : String) -> String]
+						[TypeExpr reflaxe.elixir.helpers.MigrationDSL:Class<reflaxe.elixir.helpers.MigrationDSL>]
+						[FStatic:(migrationName : String, timestamp : String) -> String]
+							reflaxe.elixir.helpers.MigrationDSL
+							generateMigrationFilename:(migrationName : String, timestamp : String) -> String
+					[Local migrationName(16862):String:String]
+					[Local timestamp(16863):String:String]
+			[Return:Dynamic]
+				[Binop:String]
+					[Const:String] "priv/repo/migrations/"
+					+
+					[Local filename(16864):String:String]
+
+	public static function camelCaseToSnakeCase[Function:(input : String) -> String]
+		[Arg:String] [Local input(15667):String]
+		[Block:Dynamic]
+			[Var result(15668):String] [Const:String] ""
+			[Block:Void]
+				[Var `(15671):Int] [Const:Int] 0
+				[Var `(15672):Int]
+					[Field:Int]
+						[Local input(15667):String:String]
+						[FInstance:Int]
+							String
+							length:Int
+				[While:Void]
+					[Binop:Bool]
+						[Local `(15671):Int:Int]
+						<
+						[Local `(15672):Int:Int]
+					[Block:String]
+						[Var i(15669):Int]
+							[Unop:Int]
+								++
+								Postfix
+								[Local `(15671):Int:Int]
+						[Var char(15670):String]
+							[Call:String]
+								[Field:(index : Int) -> String]
+									[Local input(15667):String:String]
+									[FInstance:(index : Int) -> String]
+										String
+										charAt:(index : Int) -> String
+								[Local i(15669):Int:Int]
+						[If:Void]
+							[Binop:Bool]
+								[Binop:Bool]
+									[Binop:Bool]
+										[Local i(15669):Int:Int]
+										>
+										[Const:Int] 0
+									&&
+									[Binop:Bool]
+										[Local char(15670):String:String]
+										>=
+										[Const:String] "A"
+								&&
+								[Binop:Bool]
+									[Local char(15670):String:String]
+									<=
+									[Const:String] "Z"
+							[Then:String] [Block:String]
+								[Binop:String]
+									[Local result(15668):String:String]
+									+=
+									[Const:String] "_"
+						[Binop:String]
+							[Local result(15668):String:String]
+							+=
+							[Call:String]
+								[Field:() -> String]
+									[Local char(15670):String:String]
+									[FInstance:() -> String]
+										String
+										toLowerCase:() -> String
+			[Return:Dynamic] [Local result(15668):String:String]
+
+	@:value({ options : "" })
+	public static function generateAddColumn[Function:(tableName : String, columnName : String, dataType : String, ?options : String) -> String]
+		[Arg:String] [Local tableName(16865):String]
+		[Arg:String] [Local columnName(16866):String]
+		[Arg:String] [Local dataType(16867):String]
+		[Arg:String]
+			[Local options(16868):String]
+			[Const:String] ""
+		[Block:Dynamic]
+			[Var safeTable(16869):String]
+				[Call:String]
+					[Field:(identifier : String) -> String]
+						[TypeExpr reflaxe.elixir.helpers.MigrationDSL:Class<reflaxe.elixir.helpers.MigrationDSL>]
+						[FStatic:(identifier : String) -> String]
+							reflaxe.elixir.helpers.MigrationDSL
+							sanitizeIdentifier:(identifier : String) -> String
+					[Local tableName(16865):String:String]
+			[Var safeColumn(16870):String]
+				[Call:String]
+					[Field:(identifier : String) -> String]
+						[TypeExpr reflaxe.elixir.helpers.MigrationDSL:Class<reflaxe.elixir.helpers.MigrationDSL>]
+						[FStatic:(identifier : String) -> String]
+							reflaxe.elixir.helpers.MigrationDSL
+							sanitizeIdentifier:(identifier : String) -> String
+					[Local columnName(16866):String:String]
+			[Var safeType(16871):String]
+				[Call:String]
+					[Field:(identifier : String) -> String]
+						[TypeExpr reflaxe.elixir.helpers.MigrationDSL:Class<reflaxe.elixir.helpers.MigrationDSL>]
+						[FStatic:(identifier : String) -> String]
+							reflaxe.elixir.helpers.MigrationDSL
+							sanitizeIdentifier:(identifier : String) -> String
+					[Local dataType(16867):String:String]
+			[Var addStatement(16872):String]
+				[If:String]
+					[Binop:Bool]
+						[Local options(16868):String:String]
+						!=
+						[Const:String] ""
+					[Then:String] [Block:String]
+						[Binop:String]
+							[Binop:String]
+								[Binop:String]
+									[Binop:String]
+										[Binop:String]
+											[Const:String] "add :"
+											+
+											[Local safeColumn(16870):String:String]
+										+
+										[Const:String] ", :"
+									+
+									[Local safeType(16871):String:String]
+								+
+								[Const:String] ", "
+							+
+							[Local options(16868):String:String]
+					[Else:String] [Block:String]
+						[Binop:String]
+							[Binop:String]
+								[Binop:String]
+									[Const:String] "add :"
+									+
+									[Local safeColumn(16870):String:String]
+								+
+								[Const:String] ", :"
+							+
+							[Local safeType(16871):String:String]
+			[Return:Dynamic]
+				[Binop:String]
+					[Binop:String]
+						[Binop:String]
+							[Binop:String]
+								[Const:String] "alter table(:"
+								+
+								[Local safeTable(16869):String:String]
+							+
+							[Const:String] ") do\n  "
+						+
+						[Local addStatement(16872):String:String]
+					+
+					[Const:String] "\nend"
+
+	public static function generateDropColumn[Function:(tableName : String, columnName : String) -> String]
+		[Arg:String] [Local tableName(16873):String]
+		[Arg:String] [Local columnName(16874):String]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Binop:String]
+					[Const:String] "remove :"
+					+
+					[Local columnName(16874):String:String]
+
+	@:value({ referencedColumn : "id" })
+	public static function generateForeignKey[Function:(tableName : String, columnName : String, referencedTable : String, ?referencedColumn : String) -> String]
+		[Arg:String] [Local tableName(16875):String]
+		[Arg:String] [Local columnName(16876):String]
+		[Arg:String] [Local referencedTable(16877):String]
+		[Arg:String]
+			[Local referencedColumn(16878):String]
+			[Const:String] "id"
+		[Block:Dynamic]
+			[Var safeTable(16879):String]
+				[Call:String]
+					[Field:(identifier : String) -> String]
+						[TypeExpr reflaxe.elixir.helpers.MigrationDSL:Class<reflaxe.elixir.helpers.MigrationDSL>]
+						[FStatic:(identifier : String) -> String]
+							reflaxe.elixir.helpers.MigrationDSL
+							sanitizeIdentifier:(identifier : String) -> String
+					[Local tableName(16875):String:String]
+			[Var safeColumn(16880):String]
+				[Call:String]
+					[Field:(identifier : String) -> String]
+						[TypeExpr reflaxe.elixir.helpers.MigrationDSL:Class<reflaxe.elixir.helpers.MigrationDSL>]
+						[FStatic:(identifier : String) -> String]
+							reflaxe.elixir.helpers.MigrationDSL
+							sanitizeIdentifier:(identifier : String) -> String
+					[Local columnName(16876):String:String]
+			[Var safeRefTable(16881):String]
+				[Call:String]
+					[Field:(identifier : String) -> String]
+						[TypeExpr reflaxe.elixir.helpers.MigrationDSL:Class<reflaxe.elixir.helpers.MigrationDSL>]
+						[FStatic:(identifier : String) -> String]
+							reflaxe.elixir.helpers.MigrationDSL
+							sanitizeIdentifier:(identifier : String) -> String
+					[Local referencedTable(16877):String:String]
+			[Var safeRefColumn(16882):String]
+				[Call:String]
+					[Field:(identifier : String) -> String]
+						[TypeExpr reflaxe.elixir.helpers.MigrationDSL:Class<reflaxe.elixir.helpers.MigrationDSL>]
+						[FStatic:(identifier : String) -> String]
+							reflaxe.elixir.helpers.MigrationDSL
+							sanitizeIdentifier:(identifier : String) -> String
+					[Local referencedColumn(16878):String:String]
+			[Var fkStatement(16883):String]
+				[Binop:String]
+					[Binop:String]
+						[Binop:String]
+							[Binop:String]
+								[Binop:String]
+									[Binop:String]
+										[Const:String] "add :"
+										+
+										[Local safeColumn(16880):String:String]
+									+
+									[Const:String] ", references(:"
+								+
+								[Local safeRefTable(16881):String:String]
+							+
+							[Const:String] ", column: :"
+						+
+						[Local safeRefColumn(16882):String:String]
+					+
+					[Const:String] ")"
+			[Return:Dynamic]
+				[Binop:String]
+					[Binop:String]
+						[Binop:String]
+							[Binop:String]
+								[Const:String] "alter table(:"
+								+
+								[Local safeTable(16879):String:String]
+							+
+							[Const:String] ") do\n  "
+						+
+						[Local fkStatement(16883):String:String]
+					+
+					[Const:String] "\nend"
+
+	public static function generateConstraint[Function:(tableName : String, constraintName : String, constraintType : String, definition : String) -> String]
+		[Arg:String] [Local tableName(16884):String]
+		[Arg:String] [Local constraintName(16885):String]
+		[Arg:String] [Local constraintType(16886):String]
+		[Arg:String] [Local definition(16887):String]
+		[Block:Dynamic]
+			[Var safeTable(16888):String]
+				[Call:String]
+					[Field:(identifier : String) -> String]
+						[TypeExpr reflaxe.elixir.helpers.MigrationDSL:Class<reflaxe.elixir.helpers.MigrationDSL>]
+						[FStatic:(identifier : String) -> String]
+							reflaxe.elixir.helpers.MigrationDSL
+							sanitizeIdentifier:(identifier : String) -> String
+					[Local tableName(16884):String:String]
+			[Var safeName(16889):String]
+				[Call:String]
+					[Field:(identifier : String) -> String]
+						[TypeExpr reflaxe.elixir.helpers.MigrationDSL:Class<reflaxe.elixir.helpers.MigrationDSL>]
+						[FStatic:(identifier : String) -> String]
+							reflaxe.elixir.helpers.MigrationDSL
+							sanitizeIdentifier:(identifier : String) -> String
+					[Local constraintName(16885):String:String]
+			[Return:Dynamic]
+				[Binop:String]
+					[Binop:String]
+						[Binop:String]
+							[Binop:String]
+								[Binop:String]
+									[Binop:String]
+										[Binop:String]
+											[Binop:String]
+												[Const:String] "create constraint(:"
+												+
+												[Local safeTable(16888):String:String]
+											+
+											[Const:String] ", :"
+										+
+										[Local safeName(16889):String:String]
+									+
+									[Const:String] ", "
+								+
+								[Local constraintType(16886):String:String]
+							+
+							[Const:String] ": \""
+						+
+						[Local definition(16887):String:String]
+					+
+					[Const:String] "\")"
+
+	public static function compileBatchMigrations[Function:(migrations : Array<Dynamic>) -> String]
+		[Arg:Array<Dynamic>] [Local migrations(16890):Array<Dynamic>]
+		[Block:Dynamic]
+			[Var compiledMigrations(16891):Array<String>] [New:Array<String>] Array<String>
+			[Block:Void]
+				[Var `(16893):Int] [Const:Int] 0
+				[While:Void]
+					[Binop:Bool]
+						[Local `(16893):Int:Int]
+						<
+						[Field:Int]
+							[Local migrations(16890):Array<Dynamic>:Array<Dynamic>]
+							[FInstance:Int]
+								Array<Dynamic>
+								length:Int
+					[Block:Void]
+						[Var migration(16892):Dynamic]
+							[Array:Dynamic]
+								[Local migrations(16890):Array<Dynamic>:Array<Dynamic>]
+								[Local `(16893):Int:Int]
+						[Unop:Int]
+							++
+							Prefix
+							[Local `(16893):Int:Int]
+						[Call:Int]
+							[Field:(x : String) -> Int]
+								[Local compiledMigrations(16891):Array<String>:Array<String>]
+								[FInstance:(x : String) -> Int]
+									Array<String>
+									push:(x : Array.T) -> Int
+							[Call:String]
+								[Field:(migrationData : Dynamic) -> String]
+									[TypeExpr reflaxe.elixir.helpers.MigrationDSL:Class<reflaxe.elixir.helpers.MigrationDSL>]
+									[FStatic:(migrationData : Dynamic) -> String]
+										reflaxe.elixir.helpers.MigrationDSL
+										compileFullMigration:(migrationData : Dynamic) -> String
+								[Local migration(16892):Dynamic:Dynamic]
+			[Return:Dynamic]
+				[Call:String]
+					[Field:(sep : String) -> String]
+						[Local compiledMigrations(16891):Array<String>:Array<String>]
+						[FInstance:(sep : String) -> String]
+							Array<String>
+							join:(sep : String) -> String
+					[Const:String] "\n\n"
+
+	public static function generateDataMigration[Function:(migrationName : String, upCode : String, downCode : String) -> String]
+		[Arg:String] [Local migrationName(16894):String]
+		[Arg:String] [Local upCode(16895):String]
+		[Arg:String] [Local downCode(16896):String]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Binop:String]
+					[Binop:String]
+						[Binop:String]
+							[Binop:String]
+								[Binop:String]
+									[Binop:String]
+										[Binop:String]
+											[Binop:String]
+												[Binop:String]
+													[Binop:String]
+														[Binop:String]
+															[Binop:String]
+																[Const:String] "defmodule Repo.Migrations."
+																+
+																[Local migrationName(16894):String:String]
+															+
+															[Const:String] " do\n"
+														+
+														[Const:String] "  use Ecto.Migration\n"
+													+
+													[Const:String] "  \n"
+												+
+												[Const:String] "  def up do\n"
+											+
+											[Binop:String]
+												[Binop:String]
+													[Const:String] "    "
+													+
+													[Local upCode(16895):String:String]
+												+
+												[Const:String] "\n"
+										+
+										[Const:String] "  end\n"
+									+
+									[Const:String] "  \n"
+								+
+								[Const:String] "  def down do\n"
+							+
+							[Binop:String]
+								[Binop:String]
+									[Const:String] "    "
+									+
+									[Local downCode(16896):String:String]
+								+
+								[Const:String] "\n"
+						+
+						[Const:String] "  end\n"
+					+
+					[Const:String] "end"
+
+	public static function validateMigrationAgainstSchema[Function:(migrationData : Dynamic, existingTables : Array<String>) -> Bool]
+		[Arg:Dynamic] [Local migrationData(16897):Dynamic]
+		[Arg:Array<String>] [Local existingTables(16898):Array<String>]
+		[Block:Dynamic] [Return:Dynamic] [Const:Bool] true
+
+	public static function generateTimestamp[Function:() -> String]
+		[Block:Dynamic]
+			[Var date(15642):Date]
+				[Call:Date]
+					[Field:() -> Date]
+						[TypeExpr Date:Class<Date>]
+						[FStatic:() -> Date]
+							Date
+							now:() -> Date
+			[Var year(15643):String]
+				[Call:String]
+					[Field:(s : Dynamic) -> String]
+						[TypeExpr Std:Class<Std>]
+						[FStatic:(s : Dynamic) -> String]
+							Std
+							string:(s : Dynamic) -> String
+					[Call:Int]
+						[Field:() -> Int]
+							[Local date(15642):Date:Date]
+							[FInstance:() -> Int]
+								Date
+								getFullYear:() -> Int
+			[Var month(15644):String]
+				[Call:String]
+					[Field:(s : String, c : String, l : Int) -> String]
+						[TypeExpr StringTools:Class<StringTools>]
+						[FStatic:(s : String, c : String, l : Int) -> String]
+							StringTools
+							lpad:(s : String, c : String, l : Int) -> String
+					[Call:String]
+						[Field:(s : Dynamic) -> String]
+							[TypeExpr Std:Class<Std>]
+							[FStatic:(s : Dynamic) -> String]
+								Std
+								string:(s : Dynamic) -> String
+						[Binop:Int]
+							[Call:Int]
+								[Field:() -> Int]
+									[Local date(15642):Date:Date]
+									[FInstance:() -> Int]
+										Date
+										getMonth:() -> Int
+							+
+							[Const:Int] 1
+					[Const:String] "0"
+					[Const:Int] 2
+			[Var day(15645):String]
+				[Call:String]
+					[Field:(s : String, c : String, l : Int) -> String]
+						[TypeExpr StringTools:Class<StringTools>]
+						[FStatic:(s : String, c : String, l : Int) -> String]
+							StringTools
+							lpad:(s : String, c : String, l : Int) -> String
+					[Call:String]
+						[Field:(s : Dynamic) -> String]
+							[TypeExpr Std:Class<Std>]
+							[FStatic:(s : Dynamic) -> String]
+								Std
+								string:(s : Dynamic) -> String
+						[Call:Int]
+							[Field:() -> Int]
+								[Local date(15642):Date:Date]
+								[FInstance:() -> Int]
+									Date
+									getDate:() -> Int
+					[Const:String] "0"
+					[Const:Int] 2
+			[Var hour(15646):String]
+				[Call:String]
+					[Field:(s : String, c : String, l : Int) -> String]
+						[TypeExpr StringTools:Class<StringTools>]
+						[FStatic:(s : String, c : String, l : Int) -> String]
+							StringTools
+							lpad:(s : String, c : String, l : Int) -> String
+					[Call:String]
+						[Field:(s : Dynamic) -> String]
+							[TypeExpr Std:Class<Std>]
+							[FStatic:(s : Dynamic) -> String]
+								Std
+								string:(s : Dynamic) -> String
+						[Call:Int]
+							[Field:() -> Int]
+								[Local date(15642):Date:Date]
+								[FInstance:() -> Int]
+									Date
+									getHours:() -> Int
+					[Const:String] "0"
+					[Const:Int] 2
+			[Var minute(15647):String]
+				[Call:String]
+					[Field:(s : String, c : String, l : Int) -> String]
+						[TypeExpr StringTools:Class<StringTools>]
+						[FStatic:(s : String, c : String, l : Int) -> String]
+							StringTools
+							lpad:(s : String, c : String, l : Int) -> String
+					[Call:String]
+						[Field:(s : Dynamic) -> String]
+							[TypeExpr Std:Class<Std>]
+							[FStatic:(s : Dynamic) -> String]
+								Std
+								string:(s : Dynamic) -> String
+						[Call:Int]
+							[Field:() -> Int]
+								[Local date(15642):Date:Date]
+								[FInstance:() -> Int]
+									Date
+									getMinutes:() -> Int
+					[Const:String] "0"
+					[Const:Int] 2
+			[Var second(15648):String]
+				[Call:String]
+					[Field:(s : String, c : String, l : Int) -> String]
+						[TypeExpr StringTools:Class<StringTools>]
+						[FStatic:(s : String, c : String, l : Int) -> String]
+							StringTools
+							lpad:(s : String, c : String, l : Int) -> String
+					[Call:String]
+						[Field:(s : Dynamic) -> String]
+							[TypeExpr Std:Class<Std>]
+							[FStatic:(s : Dynamic) -> String]
+								Std
+								string:(s : Dynamic) -> String
+						[Call:Int]
+							[Field:() -> Int]
+								[Local date(15642):Date:Date]
+								[FInstance:() -> Int]
+									Date
+									getSeconds:() -> Int
+					[Const:String] "0"
+					[Const:Int] 2
+			[Return:Dynamic]
+				[Binop:String]
+					[Binop:String]
+						[Binop:String]
+							[Binop:String]
+								[Binop:String]
+									[Binop:String]
+										[Const:String] ""
+										+
+										[Local year(15643):String:String]
+									+
+									[Local month(15644):String:String]
+								+
+								[Local day(15645):String:String]
+							+
+							[Local hour(15646):String:String]
+						+
+						[Local minute(15647):String:String]
+					+
+					[Local second(15648):String:String]
+
+	public static function createTable[Function:(tableName : String, callback : (reflaxe.elixir.helpers.TableBuilder -> Void)) -> String]
+		[Arg:String] [Local tableName(16899):String]
+		[Arg:reflaxe.elixir.helpers.TableBuilder -> Void] [Local callback(16900):reflaxe.elixir.helpers.TableBuilder -> Void]
+		[Block:Dynamic]
+			[Var builder(16902):reflaxe.elixir.helpers.TableBuilder]
+				[New:reflaxe.elixir.helpers.TableBuilder]
+					reflaxe.elixir.helpers.TableBuilder
+					[Local tableName(16899):String:String]
+			[Call:Void]
+				[Local callback(16900):reflaxe.elixir.helpers.TableBuilder -> Void:reflaxe.elixir.helpers.TableBuilder -> Void]
+				[Local builder(16902):reflaxe.elixir.helpers.TableBuilder:reflaxe.elixir.helpers.TableBuilder]
+			[Var columnDefs(16903):Array<String>]
+				[Call:Array<String>]
+					[Field:() -> Array<String>]
+						[Local builder(16902):reflaxe.elixir.helpers.TableBuilder:reflaxe.elixir.helpers.TableBuilder]
+						[FInstance:() -> Array<String>]
+							reflaxe.elixir.helpers.TableBuilder
+							getColumnDefinitions:() -> Array<String>
+			[Var indexDefs(16904):Array<String>]
+				[Call:Array<String>]
+					[Field:() -> Array<String>]
+						[Local builder(16902):reflaxe.elixir.helpers.TableBuilder:reflaxe.elixir.helpers.TableBuilder]
+						[FInstance:() -> Array<String>]
+							reflaxe.elixir.helpers.TableBuilder
+							getIndexDefinitions:() -> Array<String>
+			[Var constraintDefs(16905):Array<String>]
+				[Call:Array<String>]
+					[Field:() -> Array<String>]
+						[Local builder(16902):reflaxe.elixir.helpers.TableBuilder:reflaxe.elixir.helpers.TableBuilder]
+						[FInstance:() -> Array<String>]
+							reflaxe.elixir.helpers.TableBuilder
+							getConstraintDefinitions:() -> Array<String>
+			[Var result(16906):String]
+				[Binop:String]
+					[Binop:String]
+						[Const:String] "create table(:"
+						+
+						[Local tableName(16899):String:String]
+					+
+					[Const:String] ") do\n"
+			[If:Void]
+				[Unop:Bool]
+					!
+					Prefix
+					[Field:Bool]
+						[Local builder(16902):reflaxe.elixir.helpers.TableBuilder:reflaxe.elixir.helpers.TableBuilder]
+						[FInstance:Bool]
+							reflaxe.elixir.helpers.TableBuilder
+							hasIdColumn:Bool
+				[Then:String] [Block:String]
+					[Binop:String]
+						[Local result(16906):String:String]
+						+=
+						[Const:String] "      add :id, :serial, primary_key: true\n"
+			[Block:Void]
+				[Var `(16908):Int] [Const:Int] 0
+				[While:Void]
+					[Binop:Bool]
+						[Local `(16908):Int:Int]
+						<
+						[Field:Int]
+							[Local columnDefs(16903):Array<String>:Array<String>]
+							[FInstance:Int]
+								Array<String>
+								length:Int
+					[Block:Void]
+						[Var columnDef(16907):String]
+							[Array:String]
+								[Local columnDefs(16903):Array<String>:Array<String>]
+								[Local `(16908):Int:Int]
+						[Unop:Int]
+							++
+							Prefix
+							[Local `(16908):Int:Int]
+						[Binop:String]
+							[Local result(16906):String:String]
+							+=
+							[Binop:String]
+								[Binop:String]
+									[Const:String] "      "
+									+
+									[Local columnDef(16907):String:String]
+								+
+								[Const:String] "\n"
+			[If:Void]
+				[Unop:Bool]
+					!
+					Prefix
+					[Field:Bool]
+						[Local builder(16902):reflaxe.elixir.helpers.TableBuilder:reflaxe.elixir.helpers.TableBuilder]
+						[FInstance:Bool]
+							reflaxe.elixir.helpers.TableBuilder
+							hasTimestamps:Bool
+				[Then:String] [Block:String]
+					[Binop:String]
+						[Local result(16906):String:String]
+						+=
+						[Const:String] "      timestamps()\n"
+			[Binop:String]
+				[Local result(16906):String:String]
+				+=
+				[Const:String] "    end"
+			[If:Void]
+				[Binop:Bool]
+					[Field:Int]
+						[Local indexDefs(16904):Array<String>:Array<String>]
+						[FInstance:Int]
+							Array<String>
+							length:Int
+					>
+					[Const:Int] 0
+				[Then:Void] [Block:Void]
+					[Binop:String]
+						[Local result(16906):String:String]
+						+=
+						[Const:String] "\n\n"
+					[Block:Void]
+						[Var `(16910):Int] [Const:Int] 0
+						[While:Void]
+							[Binop:Bool]
+								[Local `(16910):Int:Int]
+								<
+								[Field:Int]
+									[Local indexDefs(16904):Array<String>:Array<String>]
+									[FInstance:Int]
+										Array<String>
+										length:Int
+							[Block:Void]
+								[Var indexDef(16909):String]
+									[Array:String]
+										[Local indexDefs(16904):Array<String>:Array<String>]
+										[Local `(16910):Int:Int]
+								[Unop:Int]
+									++
+									Prefix
+									[Local `(16910):Int:Int]
+								[Binop:String]
+									[Local result(16906):String:String]
+									+=
+									[Binop:String]
+										[Binop:String]
+											[Const:String] "    "
+											+
+											[Local indexDef(16909):String:String]
+										+
+										[Const:String] "\n"
+			[If:Void]
+				[Binop:Bool]
+					[Field:Int]
+						[Local constraintDefs(16905):Array<String>:Array<String>]
+						[FInstance:Int]
+							Array<String>
+							length:Int
+					>
+					[Const:Int] 0
+				[Then:Void] [Block:Void]
+					[Binop:String]
+						[Local result(16906):String:String]
+						+=
+						[Const:String] "\n\n"
+					[Block:Void]
+						[Var `(16912):Int] [Const:Int] 0
+						[While:Void]
+							[Binop:Bool]
+								[Local `(16912):Int:Int]
+								<
+								[Field:Int]
+									[Local constraintDefs(16905):Array<String>:Array<String>]
+									[FInstance:Int]
+										Array<String>
+										length:Int
+							[Block:Void]
+								[Var constraintDef(16911):String]
+									[Array:String]
+										[Local constraintDefs(16905):Array<String>:Array<String>]
+										[Local `(16912):Int:Int]
+								[Unop:Int]
+									++
+									Prefix
+									[Local `(16912):Int:Int]
+								[Binop:String]
+									[Local result(16906):String:String]
+									+=
+									[Binop:String]
+										[Binop:String]
+											[Const:String] "    "
+											+
+											[Local constraintDef(16911):String:String]
+										+
+										[Const:String] "\n"
+			[Return:Dynamic] [Local result(16906):String:String]
+
+	public static function dropTable[Function:(tableName : String) -> String]
+		[Arg:String] [Local tableName(16913):String]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Binop:String]
+					[Binop:String]
+						[Const:String] "drop table(:"
+						+
+						[Local tableName(16913):String:String]
+					+
+					[Const:String] ")"
+
+	public static function addColumn[Function:(tableName : String, columnName : String, dataType : String, ?options : Null<Dynamic>) -> String]
+		[Arg:String] [Local tableName(16914):String]
+		[Arg:String] [Local columnName(16915):String]
+		[Arg:String] [Local dataType(16916):String]
+		[Arg:Null<Dynamic>]
+			[Local options(16917):Null<Dynamic>]
+			[Const:Null<Dynamic>] null
+		[Block:Dynamic]
+			[Var optionsStr(16918):String] [Const:String] ""
+			[If:Void]
+				[Binop:Bool]
+					[Local options(16917):Null<Dynamic>:Null<Dynamic>]
+					!=
+					[Const:Null<Dynamic>] null
+				[Then:Void] [Block:Void]
+					[Var opts(16919):Array<String>] [ArrayDecl:Array<String>]
+					[Var fields(16920):Array<String>]
+						[Call:Array<String>]
+							[Field:(o : Dynamic) -> Array<String>]
+								[TypeExpr Reflect:Class<Reflect>]
+								[FStatic:(o : Dynamic) -> Array<String>]
+									Reflect
+									fields:(o : Dynamic) -> Array<String>
+							[Local options(16917):Null<Dynamic>:Null<Dynamic>]
+					[Block:Void]
+						[Var `(16923):Int] [Const:Int] 0
+						[While:Void]
+							[Binop:Bool]
+								[Local `(16923):Int:Int]
+								<
+								[Field:Int]
+									[Local fields(16920):Array<String>:Array<String>]
+									[FInstance:Int]
+										Array<String>
+										length:Int
+							[Block:Void]
+								[Var field(16921):String]
+									[Array:String]
+										[Local fields(16920):Array<String>:Array<String>]
+										[Local `(16923):Int:Int]
+								[Unop:Int]
+									++
+									Prefix
+									[Local `(16923):Int:Int]
+								[Var value(16922):String]
+									[Call:Dynamic]
+										[Field:(o : Dynamic, field : String) -> Dynamic]
+											[TypeExpr Reflect:Class<Reflect>]
+											[FStatic:(o : Dynamic, field : String) -> Dynamic]
+												Reflect
+												field:(o : Dynamic, field : String) -> Dynamic
+										[Local options(16917):Null<Dynamic>:Null<Dynamic>]
+										[Local field(16921):String:String]
+								[If:Void]
+									[Call:Bool]
+										[Field:(v : Dynamic, t : Dynamic) -> Bool]
+											[TypeExpr Std:Class<Std>]
+											[FStatic:(v : Dynamic, t : Dynamic) -> Bool]
+												Std
+												isOfType:(v : Dynamic, t : Dynamic) -> Bool
+										[Local value(16922):String:String]
+										[TypeExpr String:Class<String>]
+									[Then:Int] [Block:Int]
+										[Call:Int]
+											[Field:(x : String) -> Int]
+												[Local opts(16919):Array<String>:Array<String>]
+												[FInstance:(x : String) -> Int]
+													Array<String>
+													push:(x : Array.T) -> Int
+											[Binop:String]
+												[Binop:String]
+													[Binop:String]
+														[Binop:String]
+															[Const:String] ""
+															+
+															[Local field(16921):String:String]
+														+
+														[Const:String] ": \""
+													+
+													[Local value(16922):String:String]
+												+
+												[Const:String] "\""
+									[Else:Void] [Block:Void]
+										[If:Void]
+											[Call:Bool]
+												[Field:(v : Dynamic, t : Dynamic) -> Bool]
+													[TypeExpr Std:Class<Std>]
+													[FStatic:(v : Dynamic, t : Dynamic) -> Bool]
+														Std
+														isOfType:(v : Dynamic, t : Dynamic) -> Bool
+												[Local value(16922):String:String]
+												[TypeExpr Bool:Abstract<Bool>]
+											[Then:Int] [Block:Int]
+												[Call:Int]
+													[Field:(x : String) -> Int]
+														[Local opts(16919):Array<String>:Array<String>]
+														[FInstance:(x : String) -> Int]
+															Array<String>
+															push:(x : Array.T) -> Int
+													[Binop:String]
+														[Binop:String]
+															[Binop:String]
+																[Const:String] ""
+																+
+																[Local field(16921):String:String]
+															+
+															[Const:String] ": "
+														+
+														[Local value(16922):String:String]
+											[Else:Int] [Block:Int]
+												[Call:Int]
+													[Field:(x : String) -> Int]
+														[Local opts(16919):Array<String>:Array<String>]
+														[FInstance:(x : String) -> Int]
+															Array<String>
+															push:(x : Array.T) -> Int
+													[Binop:String]
+														[Binop:String]
+															[Binop:String]
+																[Const:String] ""
+																+
+																[Local field(16921):String:String]
+															+
+															[Const:String] ": "
+														+
+														[Local value(16922):String:String]
+					[If:Void]
+						[Binop:Bool]
+							[Field:Int]
+								[Local opts(16919):Array<String>:Array<String>]
+								[FInstance:Int]
+									Array<String>
+									length:Int
+							>
+							[Const:Int] 0
+						[Then:String] [Block:String]
+							[Binop:String]
+								[Local optionsStr(16918):String:String]
+								=
+								[Binop:String]
+									[Const:String] ", "
+									+
+									[Call:String]
+										[Field:(sep : String) -> String]
+											[Local opts(16919):Array<String>:Array<String>]
+											[FInstance:(sep : String) -> String]
+												Array<String>
+												join:(sep : String) -> String
+										[Const:String] ", "
+			[Return:Dynamic]
+				[Binop:String]
+					[Binop:String]
+						[Binop:String]
+							[Binop:String]
+								[Binop:String]
+									[Binop:String]
+										[Binop:String]
+											[Const:String] "alter table(:"
+											+
+											[Local tableName(16914):String:String]
+										+
+										[Const:String] ") do\n      add :"
+									+
+									[Local columnName(16915):String:String]
+								+
+								[Const:String] ", :"
+							+
+							[Local dataType(16916):String:String]
+						+
+						[Local optionsStr(16918):String:String]
+					+
+					[Const:String] "\n    end"
+
+	public static function addIndex[Function:(tableName : String, columns : Array<String>, ?options : Null<Dynamic>) -> String]
+		[Arg:String] [Local tableName(16924):String]
+		[Arg:Array<String>] [Local columns(16925):Array<String>]
+		[Arg:Null<Dynamic>]
+			[Local options(16926):Null<Dynamic>]
+			[Const:Null<Dynamic>] null
+		[Block:Void]
+			[Var columnList(16936):String]
+				[Call:String]
+					[Field:(sep : String) -> String]
+						[Block:Array<String>]
+							[Var `(16931):Array<String>] [ArrayDecl:Array<String>]
+							[Block:Void]
+								[Var `(16932):Int] [Const:Int] 0
+								[Var `(16933):Array<String>] [Local columns(16925):Array<String>:Array<String>]
+								[While:Void]
+									[Binop:Bool]
+										[Local `(16932):Int:Int]
+										<
+										[Field:Int]
+											[Local `(16933):Array<String>:Array<String>]
+											[FInstance:Int]
+												Array<String>
+												length:Int
+									[Block:Void]
+										[Var v(16934):String]
+											[Array:String]
+												[Local `(16933):Array<String>:Array<String>]
+												[Local `(16932):Int:Int]
+										[Unop:Int]
+											++
+											Prefix
+											[Local `(16932):Int:Int]
+										[Call:Int]
+											[Field:(x : String) -> Int]
+												[Local `(16931):Array<String>:Array<String>]
+												[FInstance:(x : String) -> Int]
+													Array<String>
+													push:(x : Array.T) -> Int
+											[Call:String]
+												[Function:(col : String) -> String]
+													[Arg:String] [Local col(16935):String]
+													[Block:Dynamic]
+														[Return:Dynamic]
+															[Binop:String]
+																[Const:String] ":"
+																+
+																[Local col(16935):String:String]
+												[Local v(16934):String:String]
+							[Local `(16931):Array<String>:Array<String>]
+						[FInstance:(sep : String) -> String]
+							Array<String>
+							join:(sep : String) -> String
+					[Const:String] ", "
+			[If:Void]
+				[Binop:Bool]
+					[Binop:Bool]
+						[Binop:Bool]
+							[Local options(16926):Null<Dynamic>:Null<Dynamic>]
+							!=
+							[Const:Null<Dynamic>] null
+						&&
+						[Call:Bool]
+							[Field:(o : Dynamic, field : String) -> Bool]
+								[TypeExpr Reflect:Class<Reflect>]
+								[FStatic:(o : Dynamic, field : String) -> Bool]
+									Reflect
+									hasField:(o : Dynamic, field : String) -> Bool
+							[Local options(16926):Null<Dynamic>:Null<Dynamic>]
+							[Const:String] "unique"
+					&&
+					[Binop:Bool]
+						[Call:Dynamic]
+							[Field:(o : Dynamic, field : String) -> Dynamic]
+								[TypeExpr Reflect:Class<Reflect>]
+								[FStatic:(o : Dynamic, field : String) -> Dynamic]
+									Reflect
+									field:(o : Dynamic, field : String) -> Dynamic
+							[Local options(16926):Null<Dynamic>:Null<Dynamic>]
+							[Const:String] "unique"
+						==
+						[Const:Bool] true
+				[Then:Dynamic] [Block:Dynamic]
+					[Return:Dynamic]
+						[Binop:String]
+							[Binop:String]
+								[Binop:String]
+									[Binop:String]
+										[Const:String] "create unique_index(:"
+										+
+										[Local tableName(16924):String:String]
+									+
+									[Const:String] ", ["
+								+
+								[Local columnList(16936):String:String]
+							+
+							[Const:String] "])"
+				[Else:Dynamic] [Block:Dynamic]
+					[Return:Dynamic]
+						[Binop:String]
+							[Binop:String]
+								[Binop:String]
+									[Binop:String]
+										[Const:String] "create index(:"
+										+
+										[Local tableName(16924):String:String]
+									+
+									[Const:String] ", ["
+								+
+								[Local columnList(16936):String:String]
+							+
+							[Const:String] "])"
+
+	@:value({ referencedColumn : "id" })
+	public static function addForeignKey[Function:(tableName : String, columnName : String, referencedTable : String, ?referencedColumn : String) -> String]
+		[Arg:String] [Local tableName(16937):String]
+		[Arg:String] [Local columnName(16938):String]
+		[Arg:String] [Local referencedTable(16939):String]
+		[Arg:String]
+			[Local referencedColumn(16940):String]
+			[Const:String] "id"
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Binop:String]
+					[Binop:String]
+						[Binop:String]
+							[Binop:String]
+								[Binop:String]
+									[Binop:String]
+										[Binop:String]
+											[Binop:String]
+												[Const:String] "alter table(:"
+												+
+												[Local tableName(16937):String:String]
+											+
+											[Const:String] ") do\n      modify :"
+										+
+										[Local columnName(16938):String:String]
+									+
+									[Const:String] ", references(:"
+								+
+								[Local referencedTable(16939):String:String]
+							+
+							[Const:String] ", column: :"
+						+
+						[Local referencedColumn(16940):String:String]
+					+
+					[Const:String] ")\n    end"
+
+	public static function addCheckConstraint[Function:(tableName : String, condition : String, constraintName : String) -> String]
+		[Arg:String] [Local tableName(16941):String]
+		[Arg:String] [Local condition(16942):String]
+		[Arg:String] [Local constraintName(16943):String]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Binop:String]
+					[Binop:String]
+						[Binop:String]
+							[Binop:String]
+								[Binop:String]
+									[Binop:String]
+										[Const:String] "create constraint(:"
+										+
+										[Local tableName(16941):String:String]
+									+
+									[Const:String] ", :"
+								+
+								[Local constraintName(16943):String:String]
+							+
+							[Const:String] ", check: \""
+						+
+						[Local condition(16942):String:String]
+					+
+					[Const:String] "\")"
+}

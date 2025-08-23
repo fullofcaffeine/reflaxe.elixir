@@ -1,0 +1,1 @@
+typedef haxe.display.JsonAbstractBinop = { op : haxe.display.JsonBinop<Dynamic>, field : haxe.display.JsonClassFieldReference }

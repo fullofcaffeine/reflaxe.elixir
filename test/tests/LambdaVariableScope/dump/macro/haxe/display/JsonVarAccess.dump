@@ -1,0 +1,1 @@
+typedef haxe.display.JsonVarAccess<T> = { kind : haxe.display.JsonVarAccessKind<haxe.display.JsonVarAccess.T>, args : haxe.display.JsonVarAccess.T }

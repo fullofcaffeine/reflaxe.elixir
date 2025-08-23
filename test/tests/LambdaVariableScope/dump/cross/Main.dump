@@ -1,0 +1,394 @@
+@:used
+class Main {
+
+	public static function main[Function:() -> Void]
+		[Block:Void]
+			[Call:Void]
+				[Field:() -> Void]
+					[TypeExpr Main:Class<Main>]
+					[FStatic:() -> Void]
+						Main
+						testArrayFilterWithOuterVariable:() -> Void
+			[Call:Void]
+				[Field:() -> Void]
+					[TypeExpr Main:Class<Main>]
+					[FStatic:() -> Void]
+						Main
+						testArrayMapWithOuterVariable:() -> Void
+			[Call:Void]
+				[Field:() -> Void]
+					[TypeExpr Main:Class<Main>]
+					[FStatic:() -> Void]
+						Main
+						testNestedArrayOperations:() -> Void
+			[Call:Void]
+				[Field:() -> Void]
+					[TypeExpr Main:Class<Main>]
+					[FStatic:() -> Void]
+						Main
+						testMultipleOuterVariables:() -> Void
+
+	static function testArrayFilterWithOuterVariable[Function:() -> Void]
+		[Block:Void]
+			[Var items(34606):Array<String>]
+				[ArrayDecl:Array<String>]
+					[Const:String] "apple"
+					[Const:String] "banana"
+					[Const:String] "cherry"
+			[Var targetItem(34607):String] [Const:String] "banana"
+			[Var filtered(34617):Array<String>]
+				[Block:Array<String>]
+					[Var _g(34612):Array<String>] [ArrayDecl:Array<String>]
+					[Block:Void]
+						[Var _g1(34613):Int] [Const:Int] 0
+						[Var _g2(34614):Array<String>] [Local items(34606):Array<String>:Array<String>]
+						[While:Void]
+							[Parenthesis:Bool]
+								[Binop:Bool]
+									[Local _g1(34613):Int:Int]
+									<
+									[Field:Int]
+										[Local _g2(34614):Array<String>:Array<String>]
+										[FInstance:Int]
+											Array<String>
+											length:Int
+							[Block:Void]
+								[Var v(34615):String]
+									[Array:String]
+										[Local _g2(34614):Array<String>:Array<String>]
+										[Local _g1(34613):Int:Int]
+								[Unop:Int]
+									++
+									Prefix
+									[Local _g1(34613):Int:Int]
+								[If:Void]
+									[Parenthesis:Bool]
+										[Binop:Bool]
+											[Local v(34615):String:String]
+											!=
+											[Local targetItem(34607):String:String]
+									[Then:Int] [Call:Int]
+										[Field:(x : String) -> Int]
+											[Local _g(34612):Array<String>:Array<String>]
+											[FInstance:(x : String) -> Int]
+												Array<String>
+												push:(x : Array.T) -> Int
+										[Local v(34615):String:String]
+					[Local _g(34612):Array<String>:Array<String>]
+			[Var todos(34618):Array<{ name : String, id : Int }>]
+				[ArrayDecl:Array<{ name : String, id : Int }>]
+					[ObjectDecl:{ name : String, id : Int }]
+						id: [Const:Int] 1
+						name: [Const:String] "first"
+					[ObjectDecl:{ name : String, id : Int }]
+						id: [Const:Int] 2
+						name: [Const:String] "second"
+			[Var id(34619):Int] [Const:Int] 2
+			[Var filteredTodos(34629):Array<{ name : String, id : Int }>]
+				[Block:Array<{ name : String, id : Int }>]
+					[Var _g(34624):Array<{ name : String, id : Int }>] [ArrayDecl:Array<{ name : String, id : Int }>]
+					[Block:Void]
+						[Var _g1(34625):Int] [Const:Int] 0
+						[Var _g2(34626):Array<{ name : String, id : Int }>] [Local todos(34618):Array<{ name : String, id : Int }>:Array<{ name : String, id : Int }>]
+						[While:Void]
+							[Parenthesis:Bool]
+								[Binop:Bool]
+									[Local _g1(34625):Int:Int]
+									<
+									[Field:Int]
+										[Local _g2(34626):Array<{ name : String, id : Int }>:Array<{ name : String, id : Int }>]
+										[FInstance:Int]
+											Array<{ name : String, id : Int }>
+											length:Int
+							[Block:Void]
+								[Var v(34627):{ name : String, id : Int }]
+									[Array:{ name : String, id : Int }]
+										[Local _g2(34626):Array<{ name : String, id : Int }>:Array<{ name : String, id : Int }>]
+										[Local _g1(34625):Int:Int]
+								[Unop:Int]
+									++
+									Prefix
+									[Local _g1(34625):Int:Int]
+								[If:Void]
+									[Parenthesis:Bool]
+										[Binop:Bool]
+											[Field:Int]
+												[Local v(34627):{ name : String, id : Int }:{ name : String, id : Int }]
+												[FAnon:Int] id:Int
+											!=
+											[Local id(34619):Int:Int]
+									[Then:Int] [Call:Int]
+										[Field:(x : { name : String, id : Int }) -> Int]
+											[Local _g(34624):Array<{ name : String, id : Int }>:Array<{ name : String, id : Int }>]
+											[FInstance:(x : { name : String, id : Int }) -> Int]
+												Array<{ name : String, id : Int }>
+												push:(x : Array.T) -> Int
+										[Local v(34627):{ name : String, id : Int }:{ name : String, id : Int }]
+					[Local _g(34624):Array<{ name : String, id : Int }>:Array<{ name : String, id : Int }>]
+
+	static function testArrayMapWithOuterVariable[Function:() -> Void]
+		[Block:Void]
+			[Var numbers(34630):Array<Int>]
+				[ArrayDecl:Array<Int>]
+					[Const:Int] 1
+					[Const:Int] 2
+					[Const:Int] 3
+					[Const:Int] 4
+					[Const:Int] 5
+			[Var multiplier(34631):Int] [Const:Int] 3
+			[Var mapped(34641):Array<Int>]
+				[Block:Array<Int>]
+					[Var _g(34636):Array<Int>] [ArrayDecl:Array<Int>]
+					[Block:Void]
+						[Var _g1(34637):Int] [Const:Int] 0
+						[Var _g2(34638):Array<Int>] [Local numbers(34630):Array<Int>:Array<Int>]
+						[While:Void]
+							[Parenthesis:Bool]
+								[Binop:Bool]
+									[Local _g1(34637):Int:Int]
+									<
+									[Field:Int]
+										[Local _g2(34638):Array<Int>:Array<Int>]
+										[FInstance:Int]
+											Array<Int>
+											length:Int
+							[Block:Void]
+								[Var v(34639):Int]
+									[Array:Int]
+										[Local _g2(34638):Array<Int>:Array<Int>]
+										[Local _g1(34637):Int:Int]
+								[Unop:Int]
+									++
+									Prefix
+									[Local _g1(34637):Int:Int]
+								[Call:Int]
+									[Field:(x : Int) -> Int]
+										[Local _g(34636):Array<Int>:Array<Int>]
+										[FInstance:(x : Int) -> Int]
+											Array<Int>
+											push:(x : Array.T) -> Int
+									[Binop:Int]
+										[Local v(34639):Int:Int]
+										*
+										[Local multiplier(34631):Int:Int]
+					[Local _g(34636):Array<Int>:Array<Int>]
+			[Var prefix(34642):String] [Const:String] "Item: "
+			[Var prefixed(34652):Array<String>]
+				[Block:Array<String>]
+					[Var _g(34647):Array<String>] [ArrayDecl:Array<String>]
+					[Block:Void]
+						[Var _g1(34648):Int] [Const:Int] 0
+						[Var _g2(34649):Array<Int>] [Local numbers(34630):Array<Int>:Array<Int>]
+						[While:Void]
+							[Parenthesis:Bool]
+								[Binop:Bool]
+									[Local _g1(34648):Int:Int]
+									<
+									[Field:Int]
+										[Local _g2(34649):Array<Int>:Array<Int>]
+										[FInstance:Int]
+											Array<Int>
+											length:Int
+							[Block:Void]
+								[Var v(34650):Int]
+									[Array:Int]
+										[Local _g2(34649):Array<Int>:Array<Int>]
+										[Local _g1(34648):Int:Int]
+								[Unop:Int]
+									++
+									Prefix
+									[Local _g1(34648):Int:Int]
+								[Call:Int]
+									[Field:(x : String) -> Int]
+										[Local _g(34647):Array<String>:Array<String>]
+										[FInstance:(x : String) -> Int]
+											Array<String>
+											push:(x : Array.T) -> Int
+									[Binop:String]
+										[Local prefix(34642):String:String]
+										+
+										[Call:String]
+											[Field:(s : Dynamic) -> String]
+												[TypeExpr Std:Class<Std>]
+												[FStatic:(s : Dynamic) -> String]
+													Std
+													string:(s : Dynamic) -> String
+											[Local v(34650):Int:Int]
+					[Local _g(34647):Array<String>:Array<String>]
+
+	static function testNestedArrayOperations[Function:() -> Void]
+		[Block:Void]
+			[Var data(34653):Array<Array<Int>>]
+				[ArrayDecl:Array<Array<Int>>]
+					[ArrayDecl:Array<Int>]
+						[Const:Int] 1
+						[Const:Int] 2
+					[ArrayDecl:Array<Int>]
+						[Const:Int] 3
+						[Const:Int] 4
+					[ArrayDecl:Array<Int>]
+						[Const:Int] 5
+						[Const:Int] 6
+			[Var threshold(34654):Int] [Const:Int] 3
+			[Var processed(34680):Array<Array<Int>>]
+				[Block:Array<Array<Int>>]
+					[Var _g(34671):Array<Array<Int>>] [ArrayDecl:Array<Array<Int>>]
+					[Block:Void]
+						[Var _g1(34672):Int] [Const:Int] 0
+						[Var _g2(34673):Array<Array<Int>>] [Local data(34653):Array<Array<Int>>:Array<Array<Int>>]
+						[While:Void]
+							[Parenthesis:Bool]
+								[Binop:Bool]
+									[Local _g1(34672):Int:Int]
+									<
+									[Field:Int]
+										[Local _g2(34673):Array<Array<Int>>:Array<Array<Int>>]
+										[FInstance:Int]
+											Array<Array<Int>>
+											length:Int
+							[Block:Void]
+								[Var v(34674):Array<Int>]
+									[Array:Array<Int>]
+										[Local _g2(34673):Array<Array<Int>>:Array<Array<Int>>]
+										[Local _g1(34672):Int:Int]
+								[Unop:Int]
+									++
+									Prefix
+									[Local _g1(34672):Int:Int]
+								[Call:Int]
+									[Field:(x : Array<Int>) -> Int]
+										[Local _g(34671):Array<Array<Int>>:Array<Array<Int>>]
+										[FInstance:(x : Array<Int>) -> Int]
+											Array<Array<Int>>
+											push:(x : Array.T) -> Int
+									[Block:Array<Int>]
+										[Var _g(34753):Array<Int>] [ArrayDecl:Array<Int>]
+										[Block:Void]
+											[Var _g1(34754):Int] [Const:Int] 0
+											[Var _g2(34755):Array<Int>] [Local v(34674):Array<Int>:Array<Int>]
+											[While:Void]
+												[Parenthesis:Bool]
+													[Binop:Bool]
+														[Local _g1(34754):Int:Int]
+														<
+														[Field:Int]
+															[Local _g2(34755):Array<Int>:Array<Int>]
+															[FInstance:Int]
+																Array<Int>
+																length:Int
+												[Block:Void]
+													[Var v(34756):Int]
+														[Array:Int]
+															[Local _g2(34755):Array<Int>:Array<Int>]
+															[Local _g1(34754):Int:Int]
+													[Unop:Int]
+														++
+														Prefix
+														[Local _g1(34754):Int:Int]
+													[If:Void]
+														[Parenthesis:Bool]
+															[Binop:Bool]
+																[Local v(34756):Int:Int]
+																>
+																[Local threshold(34654):Int:Int]
+														[Then:Int] [Call:Int]
+															[Field:(x : Int) -> Int]
+																[Local _g(34753):Array<Int>:Array<Int>]
+																[FInstance:(x : Int) -> Int]
+																	Array<Int>
+																	push:(x : Array.T) -> Int
+															[Local v(34756):Int:Int]
+										[Local _g(34753):Array<Int>:Array<Int>]
+					[Local _g(34671):Array<Array<Int>>:Array<Array<Int>>]
+
+	static function testMultipleOuterVariables[Function:() -> Void]
+		[Block:Void]
+			[Var items(34681):Array<String>]
+				[ArrayDecl:Array<String>]
+					[Const:String] "a"
+					[Const:String] "b"
+					[Const:String] "c"
+					[Const:String] "d"
+			[Var prefix(34682):String] [Const:String] "prefix_"
+			[Var suffix(34683):String] [Const:String] "_suffix"
+			[Var excludeItem(34684):String] [Const:String] "b"
+			[Var result(34703):Array<String>]
+				[Block:Array<String>]
+					[Var _this(34696):Array<String>]
+						[Block:Array<String>]
+							[Var _g(34689):Array<String>] [ArrayDecl:Array<String>]
+							[Block:Void]
+								[Var _g1(34690):Int] [Const:Int] 0
+								[Var _g2(34691):Array<String>] [Local items(34681):Array<String>:Array<String>]
+								[While:Void]
+									[Parenthesis:Bool]
+										[Binop:Bool]
+											[Local _g1(34690):Int:Int]
+											<
+											[Field:Int]
+												[Local _g2(34691):Array<String>:Array<String>]
+												[FInstance:Int]
+													Array<String>
+													length:Int
+									[Block:Void]
+										[Var v(34692):String]
+											[Array:String]
+												[Local _g2(34691):Array<String>:Array<String>]
+												[Local _g1(34690):Int:Int]
+										[Unop:Int]
+											++
+											Prefix
+											[Local _g1(34690):Int:Int]
+										[If:Void]
+											[Parenthesis:Bool]
+												[Binop:Bool]
+													[Local v(34692):String:String]
+													!=
+													[Local excludeItem(34684):String:String]
+											[Then:Int] [Call:Int]
+												[Field:(x : String) -> Int]
+													[Local _g(34689):Array<String>:Array<String>]
+													[FInstance:(x : String) -> Int]
+														Array<String>
+														push:(x : Array.T) -> Int
+												[Local v(34692):String:String]
+							[Local _g(34689):Array<String>:Array<String>]
+					[Block:Array<String>]
+						[Var _g(34698):Array<String>] [ArrayDecl:Array<String>]
+						[Block:Void]
+							[Var _g1(34699):Int] [Const:Int] 0
+							[Var _g2(34700):Array<String>] [Local _this(34696):Array<String>:Array<String>]
+							[While:Void]
+								[Parenthesis:Bool]
+									[Binop:Bool]
+										[Local _g1(34699):Int:Int]
+										<
+										[Field:Int]
+											[Local _g2(34700):Array<String>:Array<String>]
+											[FInstance:Int]
+												Array<String>
+												length:Int
+								[Block:Void]
+									[Var v(34701):String]
+										[Array:String]
+											[Local _g2(34700):Array<String>:Array<String>]
+											[Local _g1(34699):Int:Int]
+									[Unop:Int]
+										++
+										Prefix
+										[Local _g1(34699):Int:Int]
+									[Call:Int]
+										[Field:(x : String) -> Int]
+											[Local _g(34698):Array<String>:Array<String>]
+											[FInstance:(x : String) -> Int]
+												Array<String>
+												push:(x : Array.T) -> Int
+										[Binop:String]
+											[Binop:String]
+												[Local prefix(34682):String:String]
+												+
+												[Local v(34701):String:String]
+											+
+											[Local suffix(34683):String:String]
+						[Local _g(34698):Array<String>:Array<String>]
+}

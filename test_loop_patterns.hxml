@@ -1,0 +1,8 @@
+-cp std
+-cp src
+-lib reflaxe
+--macro reflaxe.elixir.CompilerInit.Start()
+-D elixir_output=test_output
+-D debug_loops
+-D debug_enum_patterns
+TestLoopPatterns

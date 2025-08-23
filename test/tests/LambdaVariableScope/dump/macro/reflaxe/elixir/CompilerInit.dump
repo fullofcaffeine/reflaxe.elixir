@@ -1,0 +1,54 @@
+class reflaxe.elixir.CompilerInit {
+
+	public static function Start[Function:() -> Void]
+		[Block:Void]
+			[Call:Void]
+				[Field:(callback : (() -> Void)) -> Void]
+					[TypeExpr haxe.macro.Context:Class<haxe.macro.Context>]
+					[FStatic:(callback : (() -> Void)) -> Void]
+						haxe.macro.Context
+						onAfterInitMacros:(callback : (() -> Void)) -> Void
+				[Field:() -> Void]
+					[TypeExpr reflaxe.elixir.CompilerInit:Class<reflaxe.elixir.CompilerInit>]
+					[FStatic:() -> Void]
+						reflaxe.elixir.CompilerInit
+						Begin:() -> Void
+
+	public static function Begin[Function:() -> Void]
+		[Block:Void]
+			[Call:Void]
+				[Field:(compiler : reflaxe.BaseCompiler, ?options : Null<reflaxe.BaseCompilerOptions>) -> Void]
+					[TypeExpr reflaxe.ReflectCompiler:Class<reflaxe.ReflectCompiler>]
+					[FStatic:(compiler : reflaxe.BaseCompiler, ?options : Null<reflaxe.BaseCompilerOptions>) -> Void]
+						reflaxe.ReflectCompiler
+						AddCompiler:(compiler : reflaxe.BaseCompiler, ?options : Null<reflaxe.BaseCompilerOptions>) -> Void
+				[New:reflaxe.elixir.ElixirCompiler] reflaxe.elixir.ElixirCompiler
+				[Block:reflaxe.BaseCompilerOptions]
+					[New:reflaxe.BaseCompilerOptions]
+						reflaxe.BaseCompilerOptions
+						[Const:Null<Null<Array<reflaxe.preprocessors.ExpressionPreprocessor>>>] null
+						[Field:reflaxe.BaseCompilerFileOutputType]
+							[TypeExpr reflaxe.BaseCompilerFileOutputType:Enum<reflaxe.BaseCompilerFileOutputType>]
+							[FEnum:reflaxe.BaseCompilerFileOutputType]
+								reflaxe.BaseCompilerFileOutputType
+								FilePerModule
+						[Const:String] ".ex"
+						[Const:String] "elixir_output"
+						[Const:Null<String>] null
+						[ArrayDecl:Array<String>]
+						[Const:Null<Array<String>>] null
+						[Const:String] "__elixir__"
+						[Const:Null<Bool>] null
+						[Const:Null<Bool>] null
+						[Const:Null<Bool>] null
+						[Const:Null<Array<String>>] null
+						[Const:Null<Bool>] null
+						[Const:Null<Bool>] null
+						[Const:Null<Bool>] null
+						[Cast:Null<Bool>] [Const:Bool] false
+						[Const:Null<Bool>] null
+						[Const:Null<Bool>] null
+						[Const:Null<Bool>] null
+						[Const:Null<Null<String>>] null
+						[Const:Null<Array<{ paramTypes : Null<Array<reflaxe.MetaArgumentType>>, meta : haxe.macro.MetadataDescription, disallowMultiple : Bool, compileFunc : Null<(haxe.macro.MetadataEntry, Array<String>) -> Null<String>> }>>] null
+}

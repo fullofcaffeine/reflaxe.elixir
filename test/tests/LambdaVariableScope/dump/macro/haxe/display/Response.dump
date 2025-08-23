@@ -1,0 +1,1 @@
+typedef haxe.display.Response<T> = { ?timestamp : Null<Float>, ?timers : Null<haxe.display.Timer>, ?result : Null<haxe.display.Response.T> }

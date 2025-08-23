@@ -1,0 +1,1749 @@
+class reflaxe.elixir.schema.SchemaIntrospection {
+
+	@:value(new Map<String,SchemaInfo>())
+	static var schemaCache:haxe.ds.Map<String, reflaxe.elixir.schema.SchemaInfo> = [Block:haxe.ds.StringMap<reflaxe.elixir.schema.SchemaInfo>]
+		[Block:Void]
+		[New:haxe.ds.StringMap<reflaxe.elixir.schema.SchemaInfo>] haxe.ds.StringMap<reflaxe.elixir.schema.SchemaInfo>;
+
+	public static function getSchemaFields[Function:(schemaName : String) -> Map<String, reflaxe.elixir.schema.FieldInfo>]
+		[Arg:String] [Local schemaName(25535):String]
+		[Block:Dynamic]
+			[Var schema(25819):Null<reflaxe.elixir.schema.SchemaInfo>]
+				[Call:Null<reflaxe.elixir.schema.SchemaInfo>]
+					[Field:(schemaName : String) -> Null<reflaxe.elixir.schema.SchemaInfo>]
+						[TypeExpr reflaxe.elixir.schema.SchemaIntrospection:Class<reflaxe.elixir.schema.SchemaIntrospection>]
+						[FStatic:(schemaName : String) -> Null<reflaxe.elixir.schema.SchemaInfo>]
+							reflaxe.elixir.schema.SchemaIntrospection
+							getSchemaInfo:(schemaName : String) -> Null<reflaxe.elixir.schema.SchemaInfo>
+					[Local schemaName(25535):String:String]
+			[Return:Dynamic]
+				[If:Map<String, reflaxe.elixir.schema.FieldInfo>]
+					[Binop:Bool]
+						[Local schema(25819):Null<reflaxe.elixir.schema.SchemaInfo>:Null<reflaxe.elixir.schema.SchemaInfo>]
+						!=
+						[Const:Null<reflaxe.elixir.schema.SchemaInfo>] null
+					[Then:Map<String, reflaxe.elixir.schema.FieldInfo>] [Block:Map<String, reflaxe.elixir.schema.FieldInfo>]
+						[Field:Map<String, reflaxe.elixir.schema.FieldInfo>]
+							[Local schema(25819):Null<reflaxe.elixir.schema.SchemaInfo>:Null<reflaxe.elixir.schema.SchemaInfo>]
+							[FAnon:Map<String, reflaxe.elixir.schema.FieldInfo>] fields:Map<String, reflaxe.elixir.schema.FieldInfo>
+					[Else:haxe.ds.Map<String, reflaxe.elixir.schema.FieldInfo>] [Block:haxe.ds.Map<String, reflaxe.elixir.schema.FieldInfo>]
+						[Block:haxe.ds.StringMap<reflaxe.elixir.schema.FieldInfo>]
+							[Block:Void]
+							[New:haxe.ds.StringMap<reflaxe.elixir.schema.FieldInfo>] haxe.ds.StringMap<reflaxe.elixir.schema.FieldInfo>
+
+	public static function schemaExists[Function:(schemaName : String) -> Bool]
+		[Arg:String] [Local schemaName(25820):String]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Binop:Bool]
+					[Call:Null<reflaxe.elixir.schema.SchemaInfo>]
+						[Field:(schemaName : String) -> Null<reflaxe.elixir.schema.SchemaInfo>]
+							[TypeExpr reflaxe.elixir.schema.SchemaIntrospection:Class<reflaxe.elixir.schema.SchemaIntrospection>]
+							[FStatic:(schemaName : String) -> Null<reflaxe.elixir.schema.SchemaInfo>]
+								reflaxe.elixir.schema.SchemaIntrospection
+								getSchemaInfo:(schemaName : String) -> Null<reflaxe.elixir.schema.SchemaInfo>
+						[Local schemaName(25820):String:String]
+					!=
+					[Const:Null<reflaxe.elixir.schema.SchemaInfo>] null
+
+	public static function hasField[Function:(schemaName : String, fieldName : String) -> Bool]
+		[Arg:String] [Local schemaName(25821):String]
+		[Arg:String] [Local fieldName(25822):String]
+		[Block:Dynamic]
+			[Var schema(25823):Null<reflaxe.elixir.schema.SchemaInfo>]
+				[Call:Null<reflaxe.elixir.schema.SchemaInfo>]
+					[Field:(schemaName : String) -> Null<reflaxe.elixir.schema.SchemaInfo>]
+						[TypeExpr reflaxe.elixir.schema.SchemaIntrospection:Class<reflaxe.elixir.schema.SchemaIntrospection>]
+						[FStatic:(schemaName : String) -> Null<reflaxe.elixir.schema.SchemaInfo>]
+							reflaxe.elixir.schema.SchemaIntrospection
+							getSchemaInfo:(schemaName : String) -> Null<reflaxe.elixir.schema.SchemaInfo>
+					[Local schemaName(25821):String:String]
+			[Return:Dynamic]
+				[Binop:Bool]
+					[Binop:Bool]
+						[Local schema(25823):Null<reflaxe.elixir.schema.SchemaInfo>:Null<reflaxe.elixir.schema.SchemaInfo>]
+						!=
+						[Const:Null<reflaxe.elixir.schema.SchemaInfo>] null
+					&&
+					[Block:Bool]
+						[Var this(25826):haxe.IMap<String, reflaxe.elixir.schema.FieldInfo>]
+							[Field:Map<String, reflaxe.elixir.schema.FieldInfo>]
+								[Local schema(25823):Null<reflaxe.elixir.schema.SchemaInfo>:Null<reflaxe.elixir.schema.SchemaInfo>]
+								[FAnon:Map<String, reflaxe.elixir.schema.FieldInfo>] fields:Map<String, reflaxe.elixir.schema.FieldInfo>
+						[Call:Bool]
+							[Field:(key : String) -> Bool]
+								[Cast:haxe.ds.StringMap<reflaxe.elixir.schema.FieldInfo>] [Local this(25826):haxe.IMap<String, reflaxe.elixir.schema.FieldInfo>:haxe.IMap<String, reflaxe.elixir.schema.FieldInfo>]
+								[FInstance:(key : String) -> Bool]
+									haxe.ds.StringMap<reflaxe.elixir.schema.FieldInfo>
+									exists:(key : String) -> Bool
+							[Local fieldName(25822):String:String]
+
+	public static function getFieldType[Function:(schemaName : String, fieldName : String) -> String]
+		[Arg:String] [Local schemaName(25828):String]
+		[Arg:String] [Local fieldName(25829):String]
+		[Block:Dynamic]
+			[Var schema(25830):Null<reflaxe.elixir.schema.SchemaInfo>]
+				[Call:Null<reflaxe.elixir.schema.SchemaInfo>]
+					[Field:(schemaName : String) -> Null<reflaxe.elixir.schema.SchemaInfo>]
+						[TypeExpr reflaxe.elixir.schema.SchemaIntrospection:Class<reflaxe.elixir.schema.SchemaIntrospection>]
+						[FStatic:(schemaName : String) -> Null<reflaxe.elixir.schema.SchemaInfo>]
+							reflaxe.elixir.schema.SchemaIntrospection
+							getSchemaInfo:(schemaName : String) -> Null<reflaxe.elixir.schema.SchemaInfo>
+					[Local schemaName(25828):String:String]
+			[If:Void]
+				[Binop:Bool]
+					[Binop:Bool]
+						[Local schema(25830):Null<reflaxe.elixir.schema.SchemaInfo>:Null<reflaxe.elixir.schema.SchemaInfo>]
+						!=
+						[Const:Null<reflaxe.elixir.schema.SchemaInfo>] null
+					&&
+					[Block:Bool]
+						[Var this(25833):haxe.IMap<String, reflaxe.elixir.schema.FieldInfo>]
+							[Field:Map<String, reflaxe.elixir.schema.FieldInfo>]
+								[Local schema(25830):Null<reflaxe.elixir.schema.SchemaInfo>:Null<reflaxe.elixir.schema.SchemaInfo>]
+								[FAnon:Map<String, reflaxe.elixir.schema.FieldInfo>] fields:Map<String, reflaxe.elixir.schema.FieldInfo>
+						[Call:Bool]
+							[Field:(key : String) -> Bool]
+								[Cast:haxe.ds.StringMap<reflaxe.elixir.schema.FieldInfo>] [Local this(25833):haxe.IMap<String, reflaxe.elixir.schema.FieldInfo>:haxe.IMap<String, reflaxe.elixir.schema.FieldInfo>]
+								[FInstance:(key : String) -> Bool]
+									haxe.ds.StringMap<reflaxe.elixir.schema.FieldInfo>
+									exists:(key : String) -> Bool
+							[Local fieldName(25829):String:String]
+				[Then:Void] [Block:Void]
+					[Var field(25839):Null<reflaxe.elixir.schema.FieldInfo>]
+						[Block:Null<reflaxe.elixir.schema.FieldInfo>]
+							[Var this(25837):haxe.IMap<String, reflaxe.elixir.schema.FieldInfo>]
+								[Field:Map<String, reflaxe.elixir.schema.FieldInfo>]
+									[Local schema(25830):Null<reflaxe.elixir.schema.SchemaInfo>:Null<reflaxe.elixir.schema.SchemaInfo>]
+									[FAnon:Map<String, reflaxe.elixir.schema.FieldInfo>] fields:Map<String, reflaxe.elixir.schema.FieldInfo>
+							[Call:Null<reflaxe.elixir.schema.FieldInfo>]
+								[Field:(key : String) -> Null<reflaxe.elixir.schema.FieldInfo>]
+									[Cast:haxe.ds.StringMap<reflaxe.elixir.schema.FieldInfo>] [Local this(25837):haxe.IMap<String, reflaxe.elixir.schema.FieldInfo>:haxe.IMap<String, reflaxe.elixir.schema.FieldInfo>]
+									[FInstance:(key : String) -> Null<reflaxe.elixir.schema.FieldInfo>]
+										haxe.ds.StringMap<reflaxe.elixir.schema.FieldInfo>
+										get:(key : String) -> Null<haxe.ds.StringMap.T>
+								[Local fieldName(25829):String:String]
+					[If:Void]
+						[Binop:Bool]
+							[Local field(25839):Null<reflaxe.elixir.schema.FieldInfo>:Null<reflaxe.elixir.schema.FieldInfo>]
+							!=
+							[Const:Null<reflaxe.elixir.schema.FieldInfo>] null
+						[Then:Dynamic] [Block:Dynamic]
+							[Return:Dynamic]
+								[Field:String]
+									[Local field(25839):Null<reflaxe.elixir.schema.FieldInfo>:Null<reflaxe.elixir.schema.FieldInfo>]
+									[FAnon:String] type:String
+			[Return:Dynamic] [Const:String] "unknown"
+
+	public static function hasAssociation[Function:(schemaName : String, associationName : String) -> Bool]
+		[Arg:String] [Local schemaName(25840):String]
+		[Arg:String] [Local associationName(25841):String]
+		[Block:Dynamic]
+			[Var schema(25842):Null<reflaxe.elixir.schema.SchemaInfo>]
+				[Call:Null<reflaxe.elixir.schema.SchemaInfo>]
+					[Field:(schemaName : String) -> Null<reflaxe.elixir.schema.SchemaInfo>]
+						[TypeExpr reflaxe.elixir.schema.SchemaIntrospection:Class<reflaxe.elixir.schema.SchemaIntrospection>]
+						[FStatic:(schemaName : String) -> Null<reflaxe.elixir.schema.SchemaInfo>]
+							reflaxe.elixir.schema.SchemaIntrospection
+							getSchemaInfo:(schemaName : String) -> Null<reflaxe.elixir.schema.SchemaInfo>
+					[Local schemaName(25840):String:String]
+			[Return:Dynamic]
+				[Binop:Bool]
+					[Binop:Bool]
+						[Local schema(25842):Null<reflaxe.elixir.schema.SchemaInfo>:Null<reflaxe.elixir.schema.SchemaInfo>]
+						!=
+						[Const:Null<reflaxe.elixir.schema.SchemaInfo>] null
+					&&
+					[Block:Bool]
+						[Var this(25845):haxe.IMap<String, reflaxe.elixir.schema.AssociationInfo>]
+							[Field:Map<String, reflaxe.elixir.schema.AssociationInfo>]
+								[Local schema(25842):Null<reflaxe.elixir.schema.SchemaInfo>:Null<reflaxe.elixir.schema.SchemaInfo>]
+								[FAnon:Map<String, reflaxe.elixir.schema.AssociationInfo>] associations:Map<String, reflaxe.elixir.schema.AssociationInfo>
+						[Call:Bool]
+							[Field:(key : String) -> Bool]
+								[Cast:haxe.ds.StringMap<reflaxe.elixir.schema.AssociationInfo>] [Local this(25845):haxe.IMap<String, reflaxe.elixir.schema.AssociationInfo>:haxe.IMap<String, reflaxe.elixir.schema.AssociationInfo>]
+								[FInstance:(key : String) -> Bool]
+									haxe.ds.StringMap<reflaxe.elixir.schema.AssociationInfo>
+									exists:(key : String) -> Bool
+							[Local associationName(25841):String:String]
+
+	public static function getAssociation[Function:(schemaName : String, associationName : String) -> Null<reflaxe.elixir.schema.AssociationInfo>]
+		[Arg:String] [Local schemaName(25847):String]
+		[Arg:String] [Local associationName(25848):String]
+		[Block:Dynamic]
+			[Var schema(25849):Null<reflaxe.elixir.schema.SchemaInfo>]
+				[Call:Null<reflaxe.elixir.schema.SchemaInfo>]
+					[Field:(schemaName : String) -> Null<reflaxe.elixir.schema.SchemaInfo>]
+						[TypeExpr reflaxe.elixir.schema.SchemaIntrospection:Class<reflaxe.elixir.schema.SchemaIntrospection>]
+						[FStatic:(schemaName : String) -> Null<reflaxe.elixir.schema.SchemaInfo>]
+							reflaxe.elixir.schema.SchemaIntrospection
+							getSchemaInfo:(schemaName : String) -> Null<reflaxe.elixir.schema.SchemaInfo>
+					[Local schemaName(25847):String:String]
+			[If:Void]
+				[Binop:Bool]
+					[Binop:Bool]
+						[Local schema(25849):Null<reflaxe.elixir.schema.SchemaInfo>:Null<reflaxe.elixir.schema.SchemaInfo>]
+						!=
+						[Const:Null<reflaxe.elixir.schema.SchemaInfo>] null
+					&&
+					[Block:Bool]
+						[Var this(25852):haxe.IMap<String, reflaxe.elixir.schema.AssociationInfo>]
+							[Field:Map<String, reflaxe.elixir.schema.AssociationInfo>]
+								[Local schema(25849):Null<reflaxe.elixir.schema.SchemaInfo>:Null<reflaxe.elixir.schema.SchemaInfo>]
+								[FAnon:Map<String, reflaxe.elixir.schema.AssociationInfo>] associations:Map<String, reflaxe.elixir.schema.AssociationInfo>
+						[Call:Bool]
+							[Field:(key : String) -> Bool]
+								[Cast:haxe.ds.StringMap<reflaxe.elixir.schema.AssociationInfo>] [Local this(25852):haxe.IMap<String, reflaxe.elixir.schema.AssociationInfo>:haxe.IMap<String, reflaxe.elixir.schema.AssociationInfo>]
+								[FInstance:(key : String) -> Bool]
+									haxe.ds.StringMap<reflaxe.elixir.schema.AssociationInfo>
+									exists:(key : String) -> Bool
+							[Local associationName(25848):String:String]
+				[Then:Dynamic] [Block:Dynamic]
+					[Return:Dynamic]
+						[Block:Null<reflaxe.elixir.schema.AssociationInfo>]
+							[Var this(25856):haxe.IMap<String, reflaxe.elixir.schema.AssociationInfo>]
+								[Field:Map<String, reflaxe.elixir.schema.AssociationInfo>]
+									[Local schema(25849):Null<reflaxe.elixir.schema.SchemaInfo>:Null<reflaxe.elixir.schema.SchemaInfo>]
+									[FAnon:Map<String, reflaxe.elixir.schema.AssociationInfo>] associations:Map<String, reflaxe.elixir.schema.AssociationInfo>
+							[Call:Null<reflaxe.elixir.schema.AssociationInfo>]
+								[Field:(key : String) -> Null<reflaxe.elixir.schema.AssociationInfo>]
+									[Cast:haxe.ds.StringMap<reflaxe.elixir.schema.AssociationInfo>] [Local this(25856):haxe.IMap<String, reflaxe.elixir.schema.AssociationInfo>:haxe.IMap<String, reflaxe.elixir.schema.AssociationInfo>]
+									[FInstance:(key : String) -> Null<reflaxe.elixir.schema.AssociationInfo>]
+										haxe.ds.StringMap<reflaxe.elixir.schema.AssociationInfo>
+										get:(key : String) -> Null<haxe.ds.StringMap.T>
+								[Local associationName(25848):String:String]
+			[Return:Dynamic] [Const:Null<reflaxe.elixir.schema.AssociationInfo>] null
+
+	public static function getSchemaInfo[Function:(schemaName : String) -> Null<reflaxe.elixir.schema.SchemaInfo>]
+		[Arg:String] [Local schemaName(25536):String]
+		[Block:Dynamic]
+			[If:Void]
+				[Block:Bool]
+					[Var this(25539):haxe.IMap<String, reflaxe.elixir.schema.SchemaInfo>]
+						[Field:haxe.ds.Map<String, reflaxe.elixir.schema.SchemaInfo>]
+							[TypeExpr reflaxe.elixir.schema.SchemaIntrospection:Class<reflaxe.elixir.schema.SchemaIntrospection>]
+							[FStatic:haxe.ds.Map<String, reflaxe.elixir.schema.SchemaInfo>]
+								reflaxe.elixir.schema.SchemaIntrospection
+								schemaCache:haxe.ds.Map<String, reflaxe.elixir.schema.SchemaInfo>
+					[Call:Bool]
+						[Field:(key : String) -> Bool]
+							[Cast:haxe.ds.StringMap<reflaxe.elixir.schema.SchemaInfo>] [Local this(25539):haxe.IMap<String, reflaxe.elixir.schema.SchemaInfo>:haxe.IMap<String, reflaxe.elixir.schema.SchemaInfo>]
+							[FInstance:(key : String) -> Bool]
+								haxe.ds.StringMap<reflaxe.elixir.schema.SchemaInfo>
+								exists:(key : String) -> Bool
+						[Local schemaName(25536):String:String]
+				[Then:Dynamic] [Block:Dynamic]
+					[Return:Dynamic]
+						[Block:Null<reflaxe.elixir.schema.SchemaInfo>]
+							[Var this(25543):haxe.IMap<String, reflaxe.elixir.schema.SchemaInfo>]
+								[Field:haxe.ds.Map<String, reflaxe.elixir.schema.SchemaInfo>]
+									[TypeExpr reflaxe.elixir.schema.SchemaIntrospection:Class<reflaxe.elixir.schema.SchemaIntrospection>]
+									[FStatic:haxe.ds.Map<String, reflaxe.elixir.schema.SchemaInfo>]
+										reflaxe.elixir.schema.SchemaIntrospection
+										schemaCache:haxe.ds.Map<String, reflaxe.elixir.schema.SchemaInfo>
+							[Call:Null<reflaxe.elixir.schema.SchemaInfo>]
+								[Field:(key : String) -> Null<reflaxe.elixir.schema.SchemaInfo>]
+									[Cast:haxe.ds.StringMap<reflaxe.elixir.schema.SchemaInfo>] [Local this(25543):haxe.IMap<String, reflaxe.elixir.schema.SchemaInfo>:haxe.IMap<String, reflaxe.elixir.schema.SchemaInfo>]
+									[FInstance:(key : String) -> Null<reflaxe.elixir.schema.SchemaInfo>]
+										haxe.ds.StringMap<reflaxe.elixir.schema.SchemaInfo>
+										get:(key : String) -> Null<haxe.ds.StringMap.T>
+								[Local schemaName(25536):String:String]
+			[Var schema(25813):Null<reflaxe.elixir.schema.SchemaInfo>]
+				[Call:Null<reflaxe.elixir.schema.SchemaInfo>]
+					[Field:(schemaName : String) -> Null<reflaxe.elixir.schema.SchemaInfo>]
+						[TypeExpr reflaxe.elixir.schema.SchemaIntrospection:Class<reflaxe.elixir.schema.SchemaIntrospection>]
+						[FStatic:(schemaName : String) -> Null<reflaxe.elixir.schema.SchemaInfo>]
+							reflaxe.elixir.schema.SchemaIntrospection
+							parseSchemaFromSource:(schemaName : String) -> Null<reflaxe.elixir.schema.SchemaInfo>
+					[Local schemaName(25536):String:String]
+			[If:Void]
+				[Binop:Bool]
+					[Local schema(25813):Null<reflaxe.elixir.schema.SchemaInfo>:Null<reflaxe.elixir.schema.SchemaInfo>]
+					!=
+					[Const:Null<reflaxe.elixir.schema.SchemaInfo>] null
+				[Then:Void] [Block:Void]
+					[Block:Void]
+						[Var this(25816):haxe.IMap<String, reflaxe.elixir.schema.SchemaInfo>]
+							[Field:haxe.ds.Map<String, reflaxe.elixir.schema.SchemaInfo>]
+								[TypeExpr reflaxe.elixir.schema.SchemaIntrospection:Class<reflaxe.elixir.schema.SchemaIntrospection>]
+								[FStatic:haxe.ds.Map<String, reflaxe.elixir.schema.SchemaInfo>]
+									reflaxe.elixir.schema.SchemaIntrospection
+									schemaCache:haxe.ds.Map<String, reflaxe.elixir.schema.SchemaInfo>
+						[Call:Void]
+							[Field:(key : String, value : reflaxe.elixir.schema.SchemaInfo) -> Void]
+								[Cast:haxe.ds.StringMap<reflaxe.elixir.schema.SchemaInfo>] [Local this(25816):haxe.IMap<String, reflaxe.elixir.schema.SchemaInfo>:haxe.IMap<String, reflaxe.elixir.schema.SchemaInfo>]
+								[FInstance:(key : String, value : reflaxe.elixir.schema.SchemaInfo) -> Void]
+									haxe.ds.StringMap<reflaxe.elixir.schema.SchemaInfo>
+									set:(key : String, value : haxe.ds.StringMap.T) -> Void
+							[Local schemaName(25536):String:String]
+							[Local schema(25813):Null<reflaxe.elixir.schema.SchemaInfo>:Null<reflaxe.elixir.schema.SchemaInfo>]
+			[Return:Dynamic] [Local schema(25813):Null<reflaxe.elixir.schema.SchemaInfo>:Null<reflaxe.elixir.schema.SchemaInfo>]
+
+	static function parseSchemaFromSource[Function:(schemaName : String) -> Null<reflaxe.elixir.schema.SchemaInfo>]
+		[Arg:String] [Local schemaName(25545):String]
+		[Block:Dynamic]
+			[Var haxeSchema(25575):Null<reflaxe.elixir.schema.SchemaInfo>]
+				[Call:Null<reflaxe.elixir.schema.SchemaInfo>]
+					[Field:(schemaName : String) -> Null<reflaxe.elixir.schema.SchemaInfo>]
+						[TypeExpr reflaxe.elixir.schema.SchemaIntrospection:Class<reflaxe.elixir.schema.SchemaIntrospection>]
+						[FStatic:(schemaName : String) -> Null<reflaxe.elixir.schema.SchemaInfo>]
+							reflaxe.elixir.schema.SchemaIntrospection
+							parseHaxeSchemaAnnotations:(schemaName : String) -> Null<reflaxe.elixir.schema.SchemaInfo>
+					[Local schemaName(25545):String:String]
+			[If:Void]
+				[Binop:Bool]
+					[Local haxeSchema(25575):Null<reflaxe.elixir.schema.SchemaInfo>:Null<reflaxe.elixir.schema.SchemaInfo>]
+					!=
+					[Const:Null<reflaxe.elixir.schema.SchemaInfo>] null
+				[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [Local haxeSchema(25575):Null<reflaxe.elixir.schema.SchemaInfo>:Null<reflaxe.elixir.schema.SchemaInfo>]
+			[Var elixirSchema(25653):Null<reflaxe.elixir.schema.SchemaInfo>]
+				[Call:Null<reflaxe.elixir.schema.SchemaInfo>]
+					[Field:(schemaName : String) -> Null<reflaxe.elixir.schema.SchemaInfo>]
+						[TypeExpr reflaxe.elixir.schema.SchemaIntrospection:Class<reflaxe.elixir.schema.SchemaIntrospection>]
+						[FStatic:(schemaName : String) -> Null<reflaxe.elixir.schema.SchemaInfo>]
+							reflaxe.elixir.schema.SchemaIntrospection
+							parseElixirSchemaFile:(schemaName : String) -> Null<reflaxe.elixir.schema.SchemaInfo>
+					[Local schemaName(25545):String:String]
+			[If:Void]
+				[Binop:Bool]
+					[Local elixirSchema(25653):Null<reflaxe.elixir.schema.SchemaInfo>:Null<reflaxe.elixir.schema.SchemaInfo>]
+					!=
+					[Const:Null<reflaxe.elixir.schema.SchemaInfo>] null
+				[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [Local elixirSchema(25653):Null<reflaxe.elixir.schema.SchemaInfo>:Null<reflaxe.elixir.schema.SchemaInfo>]
+			[Return:Dynamic]
+				[Call:Null<reflaxe.elixir.schema.SchemaInfo>]
+					[Field:(schemaName : String) -> Null<reflaxe.elixir.schema.SchemaInfo>]
+						[TypeExpr reflaxe.elixir.schema.SchemaIntrospection:Class<reflaxe.elixir.schema.SchemaIntrospection>]
+						[FStatic:(schemaName : String) -> Null<reflaxe.elixir.schema.SchemaInfo>]
+							reflaxe.elixir.schema.SchemaIntrospection
+							getPredefinedSchema:(schemaName : String) -> Null<reflaxe.elixir.schema.SchemaInfo>
+					[Local schemaName(25545):String:String]
+
+	static function parseHaxeSchemaAnnotations[Function:(schemaName : String) -> Null<reflaxe.elixir.schema.SchemaInfo>]
+		[Arg:String] [Local schemaName(25546):String]
+		[Block:Dynamic]
+			[Var type(25549):Null<haxe.macro.Type>]
+				[Call:Null<haxe.macro.Type>]
+					[Field:(schemaName : String) -> Null<haxe.macro.Type>]
+						[TypeExpr reflaxe.elixir.schema.SchemaIntrospection:Class<reflaxe.elixir.schema.SchemaIntrospection>]
+						[FStatic:(schemaName : String) -> Null<haxe.macro.Type>]
+							reflaxe.elixir.schema.SchemaIntrospection
+							getHaxeSchemaType:(schemaName : String) -> Null<haxe.macro.Type>
+					[Local schemaName(25546):String:String]
+			[If:Void]
+				[Binop:Bool]
+					[Local type(25549):Null<haxe.macro.Type>:Null<haxe.macro.Type>]
+					==
+					[Const:Null<haxe.macro.Type>] null
+				[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [Const:Null<reflaxe.elixir.schema.SchemaInfo>] null
+			[Var fields(25550):haxe.ds.Map<String, reflaxe.elixir.schema.FieldInfo>]
+				[Block:haxe.ds.StringMap<reflaxe.elixir.schema.FieldInfo>]
+					[Block:Void]
+					[New:haxe.ds.StringMap<reflaxe.elixir.schema.FieldInfo>] haxe.ds.StringMap<reflaxe.elixir.schema.FieldInfo>
+			[Var associations(25551):haxe.ds.Map<String, reflaxe.elixir.schema.AssociationInfo>]
+				[Block:haxe.ds.StringMap<reflaxe.elixir.schema.AssociationInfo>]
+					[Block:Void]
+					[New:haxe.ds.StringMap<reflaxe.elixir.schema.AssociationInfo>] haxe.ds.StringMap<reflaxe.elixir.schema.AssociationInfo>
+			[Meta:Void]
+				:ast(switch (type) {
+	case TInst(t, _):
+		var classType = t.get();
+		for (field  in  classType.fields.get()) {
+			var fieldInfo = parseFieldFromHaxe(field);
+			if (fieldInfo != null) {
+				fields.set(fieldInfo.name, fieldInfo);
+			};
+		};	
+	case _:
+})
+				[If:Void]
+					[Binop:Bool]
+						[Local type(25549):Null<haxe.macro.Type>:Null<haxe.macro.Type>]
+						==
+						[Const:Null<haxe.macro.Type>] null
+					[Then:Void] [Block:Void]
+					[Else:Void] [If:Void]
+						[Binop:Bool]
+							[EnumIndex:Int] [Local type(25549):Null<haxe.macro.Type>:Null<haxe.macro.Type>]
+							==
+							[Const:Int] 2
+						[Then:Void] [Block:Void]
+							[Var `(25566):haxe.macro.Ref<haxe.macro.ClassType>]
+								[EnumParameter:haxe.macro.Ref<haxe.macro.ClassType>]
+									[Local type(25549):Null<haxe.macro.Type>:Null<haxe.macro.Type>]
+									TInst
+									0
+							[Var `(25567):Array<haxe.macro.Type>]
+								[EnumParameter:Array<haxe.macro.Type>]
+									[Local type(25549):Null<haxe.macro.Type>:Null<haxe.macro.Type>]
+									TInst
+									1
+							[Block:Void]
+								[Var t(25568):haxe.macro.Ref<haxe.macro.ClassType>] [Local `(25566):haxe.macro.Ref<haxe.macro.ClassType>:haxe.macro.Ref<haxe.macro.ClassType>]
+								[Block:Void]
+									[Var classType(25569):haxe.macro.ClassType]
+										[Call:haxe.macro.ClassType]
+											[Field:() -> haxe.macro.ClassType]
+												[Local t(25568):haxe.macro.Ref<haxe.macro.ClassType>:haxe.macro.Ref<haxe.macro.ClassType>]
+												[FAnon:() -> haxe.macro.ClassType] get:() -> haxe.macro.ClassType
+									[Block:Void]
+										[Var `(25570):Int] [Const:Int] 0
+										[Var `(25571):Array<haxe.macro.ClassField>]
+											[Call:Array<haxe.macro.ClassField>]
+												[Field:() -> Array<haxe.macro.ClassField>]
+													[Field:haxe.macro.Ref<Array<haxe.macro.ClassField>>]
+														[Local classType(25569):haxe.macro.ClassType:haxe.macro.ClassType]
+														[FAnon:haxe.macro.Ref<Array<haxe.macro.ClassField>>] fields:haxe.macro.Ref<Array<haxe.macro.ClassField>>
+													[FAnon:() -> Array<haxe.macro.ClassField>] get:() -> Array<haxe.macro.ClassField>
+										[While:Void]
+											[Binop:Bool]
+												[Local `(25570):Int:Int]
+												<
+												[Field:Int]
+													[Local `(25571):Array<haxe.macro.ClassField>:Array<haxe.macro.ClassField>]
+													[FInstance:Int]
+														Array<haxe.macro.ClassField>
+														length:Int
+											[Block:Void]
+												[Var field(25572):haxe.macro.ClassField]
+													[Array:haxe.macro.ClassField]
+														[Local `(25571):Array<haxe.macro.ClassField>:Array<haxe.macro.ClassField>]
+														[Local `(25570):Int:Int]
+												[Unop:Int]
+													++
+													Prefix
+													[Local `(25570):Int:Int]
+												[Var fieldInfo(25573):Null<reflaxe.elixir.schema.FieldInfo>]
+													[Call:Null<reflaxe.elixir.schema.FieldInfo>]
+														[Field:(field : haxe.macro.ClassField) -> Null<reflaxe.elixir.schema.FieldInfo>]
+															[TypeExpr reflaxe.elixir.schema.SchemaIntrospection:Class<reflaxe.elixir.schema.SchemaIntrospection>]
+															[FStatic:(field : haxe.macro.ClassField) -> Null<reflaxe.elixir.schema.FieldInfo>]
+																reflaxe.elixir.schema.SchemaIntrospection
+																parseFieldFromHaxe:(field : haxe.macro.ClassField) -> Null<reflaxe.elixir.schema.FieldInfo>
+														[Local field(25572):haxe.macro.ClassField:haxe.macro.ClassField]
+												[If:Void]
+													[Binop:Bool]
+														[Local fieldInfo(25573):Null<reflaxe.elixir.schema.FieldInfo>:Null<reflaxe.elixir.schema.FieldInfo>]
+														!=
+														[Const:Null<reflaxe.elixir.schema.FieldInfo>] null
+													[Then:Void] [Block:Void]
+														[Block:Void]
+															[Var key(25574):String]
+																[Field:String]
+																	[Local fieldInfo(25573):Null<reflaxe.elixir.schema.FieldInfo>:Null<reflaxe.elixir.schema.FieldInfo>]
+																	[FAnon:String] name:String
+															[Call:Void]
+																[Field:(key : String, value : reflaxe.elixir.schema.FieldInfo) -> Void]
+																	[Local fields(25550):haxe.ds.Map<String, reflaxe.elixir.schema.FieldInfo>:haxe.ds.StringMap<reflaxe.elixir.schema.FieldInfo>]
+																	[FInstance:(key : String, value : reflaxe.elixir.schema.FieldInfo) -> Void]
+																		haxe.ds.StringMap<reflaxe.elixir.schema.FieldInfo>
+																		set:(key : String, value : haxe.ds.StringMap.T) -> Void
+																[Local key(25574):String:String]
+																[Local fieldInfo(25573):Null<reflaxe.elixir.schema.FieldInfo>:Null<reflaxe.elixir.schema.FieldInfo>]
+						[Else:Void] [Block:Void]
+			[Return:Dynamic]
+				[ObjectDecl:{ tableName : String, primaryKey : String, name : String, fields : haxe.ds.Map<String, reflaxe.elixir.schema.FieldInfo>, associations : haxe.ds.Map<String, reflaxe.elixir.schema.AssociationInfo> }]
+					name: [Local schemaName(25546):String:String]
+					fields: [Local fields(25550):haxe.ds.Map<String, reflaxe.elixir.schema.FieldInfo>:haxe.ds.Map<String, reflaxe.elixir.schema.FieldInfo>]
+					associations: [Local associations(25551):haxe.ds.Map<String, reflaxe.elixir.schema.AssociationInfo>:haxe.ds.Map<String, reflaxe.elixir.schema.AssociationInfo>]
+					tableName: [Binop:String]
+						[Call:String]
+							[Field:() -> String]
+								[Local schemaName(25546):String:String]
+								[FInstance:() -> String]
+									String
+									toLowerCase:() -> String
+						+
+						[Const:String] "s"
+					primaryKey: [Const:String] "id"
+
+	static function parseElixirSchemaFile[Function:(schemaName : String) -> Null<reflaxe.elixir.schema.SchemaInfo>]
+		[Arg:String] [Local schemaName(25576):String]
+		[Block:Dynamic]
+			[Var schemaPath(25581):Null<String>]
+				[Call:Null<String>]
+					[Field:(schemaName : String) -> Null<String>]
+						[TypeExpr reflaxe.elixir.schema.SchemaIntrospection:Class<reflaxe.elixir.schema.SchemaIntrospection>]
+						[FStatic:(schemaName : String) -> Null<String>]
+							reflaxe.elixir.schema.SchemaIntrospection
+							findElixirSchemaFile:(schemaName : String) -> Null<String>
+					[Local schemaName(25576):String:String]
+			[If:Void]
+				[Binop:Bool]
+					[Binop:Bool]
+						[Local schemaPath(25581):Null<String>:Null<String>]
+						==
+						[Const:Null<String>] null
+					||
+					[Unop:Bool]
+						!
+						Prefix
+						[Call:Bool]
+							[Field:(path : String) -> Bool]
+								[TypeExpr sys.FileSystem:Class<sys.FileSystem>]
+								[FStatic:(path : String) -> Bool]
+									sys.FileSystem
+									exists:(path : String) -> Bool
+							[Local schemaPath(25581):Null<String>:Null<String>]
+				[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [Const:Null<reflaxe.elixir.schema.SchemaInfo>] null
+			[Var content(25582):String]
+				[Call:String]
+					[Field:(path : String) -> String]
+						[TypeExpr sys.io.File:Class<sys.io.File>]
+						[FStatic:(path : String) -> String]
+							sys.io.File
+							getContent:(path : String) -> String
+					[Local schemaPath(25581):Null<String>:Null<String>]
+			[Return:Dynamic]
+				[Call:Null<reflaxe.elixir.schema.SchemaInfo>]
+					[Field:(content : String, schemaName : String) -> Null<reflaxe.elixir.schema.SchemaInfo>]
+						[TypeExpr reflaxe.elixir.schema.SchemaIntrospection:Class<reflaxe.elixir.schema.SchemaIntrospection>]
+						[FStatic:(content : String, schemaName : String) -> Null<reflaxe.elixir.schema.SchemaInfo>]
+							reflaxe.elixir.schema.SchemaIntrospection
+							parseElixirSchemaContent:(content : String, schemaName : String) -> Null<reflaxe.elixir.schema.SchemaInfo>
+					[Local content(25582):String:String]
+					[Local schemaName(25576):String:String]
+
+	static function findElixirSchemaFile[Function:(schemaName : String) -> Null<String>]
+		[Arg:String] [Local schemaName(25577):String]
+		[Block:Dynamic]
+			[Var possiblePaths(25578):Array<String>]
+				[ArrayDecl:Array<String>]
+					[Binop:String]
+						[Binop:String]
+							[Const:String] "lib/myapp/schemas/"
+							+
+							[Call:String]
+								[Field:() -> String]
+									[Local schemaName(25577):String:String]
+									[FInstance:() -> String]
+										String
+										toLowerCase:() -> String
+						+
+						[Const:String] ".ex"
+					[Binop:String]
+						[Binop:String]
+							[Const:String] "lib/schemas/"
+							+
+							[Call:String]
+								[Field:() -> String]
+									[Local schemaName(25577):String:String]
+									[FInstance:() -> String]
+										String
+										toLowerCase:() -> String
+						+
+						[Const:String] ".ex"
+					[Binop:String]
+						[Binop:String]
+							[Const:String] "lib/"
+							+
+							[Call:String]
+								[Field:() -> String]
+									[Local schemaName(25577):String:String]
+									[FInstance:() -> String]
+										String
+										toLowerCase:() -> String
+						+
+						[Const:String] ".ex"
+					[Binop:String]
+						[Binop:String]
+							[Const:String] "priv/schemas/"
+							+
+							[Call:String]
+								[Field:() -> String]
+									[Local schemaName(25577):String:String]
+									[FInstance:() -> String]
+										String
+										toLowerCase:() -> String
+						+
+						[Const:String] ".ex"
+			[Block:Void]
+				[Var `(25580):Int] [Const:Int] 0
+				[While:Void]
+					[Binop:Bool]
+						[Local `(25580):Int:Int]
+						<
+						[Field:Int]
+							[Local possiblePaths(25578):Array<String>:Array<String>]
+							[FInstance:Int]
+								Array<String>
+								length:Int
+					[Block:Void]
+						[Var path(25579):String]
+							[Array:String]
+								[Local possiblePaths(25578):Array<String>:Array<String>]
+								[Local `(25580):Int:Int]
+						[Unop:Int]
+							++
+							Prefix
+							[Local `(25580):Int:Int]
+						[If:Void]
+							[Call:Bool]
+								[Field:(path : String) -> Bool]
+									[TypeExpr sys.FileSystem:Class<sys.FileSystem>]
+									[FStatic:(path : String) -> Bool]
+										sys.FileSystem
+										exists:(path : String) -> Bool
+								[Local path(25579):String:String]
+							[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [Local path(25579):String:String]
+			[Return:Dynamic] [Const:Null<String>] null
+
+	static function parseElixirSchemaContent[Function:(content : String, schemaName : String) -> Null<reflaxe.elixir.schema.SchemaInfo>]
+		[Arg:String] [Local content(25583):String]
+		[Arg:String] [Local schemaName(25584):String]
+		[Block:Dynamic]
+			[Var fields(25585):haxe.ds.Map<String, reflaxe.elixir.schema.FieldInfo>]
+				[Block:haxe.ds.StringMap<reflaxe.elixir.schema.FieldInfo>]
+					[Block:Void]
+					[New:haxe.ds.StringMap<reflaxe.elixir.schema.FieldInfo>] haxe.ds.StringMap<reflaxe.elixir.schema.FieldInfo>
+			[Var associations(25586):haxe.ds.Map<String, reflaxe.elixir.schema.AssociationInfo>]
+				[Block:haxe.ds.StringMap<reflaxe.elixir.schema.AssociationInfo>]
+					[Block:Void]
+					[New:haxe.ds.StringMap<reflaxe.elixir.schema.AssociationInfo>] haxe.ds.StringMap<reflaxe.elixir.schema.AssociationInfo>
+			[Var tableName(25587):String]
+				[Binop:String]
+					[Call:String]
+						[Field:() -> String]
+							[Local schemaName(25584):String:String]
+							[FInstance:() -> String]
+								String
+								toLowerCase:() -> String
+					+
+					[Const:String] "s"
+			[Var primaryKey(25588):String] [Const:String] "id"
+			[Var schemaPattern(25589):EReg]
+				[New:EReg]
+					EReg
+					[Const:String] "schema\\s+\"([^\"]+)\"\\s+do([\\s\\S]*?)end"
+					[Const:String] ""
+			[If:Void]
+				[Call:Bool]
+					[Field:(s : String) -> Bool]
+						[Local schemaPattern(25589):EReg:EReg]
+						[FInstance:(s : String) -> Bool]
+							EReg
+							match:(s : String) -> Bool
+					[Local content(25583):String:String]
+				[Then:Void] [Block:Void]
+					[Binop:String]
+						[Local tableName(25587):String:String]
+						=
+						[Call:String]
+							[Field:(n : Int) -> String]
+								[Local schemaPattern(25589):EReg:EReg]
+								[FInstance:(n : Int) -> String]
+									EReg
+									matched:(n : Int) -> String
+							[Const:Int] 1
+					[Var schemaBlock(25590):String]
+						[Call:String]
+							[Field:(n : Int) -> String]
+								[Local schemaPattern(25589):EReg:EReg]
+								[FInstance:(n : Int) -> String]
+									EReg
+									matched:(n : Int) -> String
+							[Const:Int] 2
+					[Var fieldPattern(25591):EReg]
+						[New:EReg]
+							EReg
+							[Const:String] "field\\s+:([a-z_]+),\\s+:([a-z_]+)(?:,\\s*(.*))?"
+							[Const:String] "g"
+					[While:Void]
+						[Call:Bool]
+							[Field:(s : String) -> Bool]
+								[Local fieldPattern(25591):EReg:EReg]
+								[FInstance:(s : String) -> Bool]
+									EReg
+									match:(s : String) -> Bool
+							[Local schemaBlock(25590):String:String]
+						[Block:Void]
+							[Var fieldName(25592):String]
+								[Call:String]
+									[Field:(n : Int) -> String]
+										[Local fieldPattern(25591):EReg:EReg]
+										[FInstance:(n : Int) -> String]
+											EReg
+											matched:(n : Int) -> String
+									[Const:Int] 1
+							[Var fieldType(25593):String]
+								[Call:String]
+									[Field:(n : Int) -> String]
+										[Local fieldPattern(25591):EReg:EReg]
+										[FInstance:(n : Int) -> String]
+											EReg
+											matched:(n : Int) -> String
+									[Const:Int] 2
+							[Var options(25594):String]
+								[Call:String]
+									[Field:(n : Int) -> String]
+										[Local fieldPattern(25591):EReg:EReg]
+										[FInstance:(n : Int) -> String]
+											EReg
+											matched:(n : Int) -> String
+									[Const:Int] 3
+							[Var nullable(25599):Bool]
+								[Binop:Bool]
+									[Binop:Bool]
+										[Local options(25594):String:String]
+										!=
+										[Const:String] null
+									&&
+									[Binop:Bool]
+										[Call:Int]
+											[Field:(str : String, ?startIndex : Null<Int>) -> Int]
+												[Local options(25594):String:String]
+												[FInstance:(str : String, ?startIndex : Null<Int>) -> Int]
+													String
+													indexOf:(str : String, ?startIndex : Null<Int>) -> Int
+											[Const:String] "null: true"
+											[Const:Null<Int>] null
+										!=
+										[Const:Int] -1
+							[Var indexed(25604):Bool]
+								[Binop:Bool]
+									[Binop:Bool]
+										[Local options(25594):String:String]
+										!=
+										[Const:String] null
+									&&
+									[Binop:Bool]
+										[Call:Int]
+											[Field:(str : String, ?startIndex : Null<Int>) -> Int]
+												[Local options(25594):String:String]
+												[FInstance:(str : String, ?startIndex : Null<Int>) -> Int]
+													String
+													indexOf:(str : String, ?startIndex : Null<Int>) -> Int
+											[Const:String] "index: true"
+											[Const:Null<Int>] null
+										!=
+										[Const:Int] -1
+							[Block:Void]
+								[Var value(25610):reflaxe.elixir.schema.FieldInfo]
+									[ObjectDecl:{ type : String, nullable : Bool, name : String, indexed : Bool, defaultValue : Dynamic }]
+										name: [Local fieldName(25592):String:String]
+										type: [Call:String]
+											[Field:(elixirType : String) -> String]
+												[TypeExpr reflaxe.elixir.schema.SchemaIntrospection:Class<reflaxe.elixir.schema.SchemaIntrospection>]
+												[FStatic:(elixirType : String) -> String]
+													reflaxe.elixir.schema.SchemaIntrospection
+													mapElixirTypeToHaxe:(elixirType : String) -> String
+											[Local fieldType(25593):String:String]
+										nullable: [Local nullable(25599):Bool:Bool]
+										defaultValue: [Const:Dynamic] null
+										indexed: [Local indexed(25604):Bool:Bool]
+								[Call:Void]
+									[Field:(key : String, value : reflaxe.elixir.schema.FieldInfo) -> Void]
+										[Local fields(25585):haxe.ds.Map<String, reflaxe.elixir.schema.FieldInfo>:haxe.ds.StringMap<reflaxe.elixir.schema.FieldInfo>]
+										[FInstance:(key : String, value : reflaxe.elixir.schema.FieldInfo) -> Void]
+											haxe.ds.StringMap<reflaxe.elixir.schema.FieldInfo>
+											set:(key : String, value : haxe.ds.StringMap.T) -> Void
+									[Local fieldName(25592):String:String]
+									[Local value(25610):reflaxe.elixir.schema.FieldInfo:reflaxe.elixir.schema.FieldInfo]
+					[Var assocPatterns(25611):Array<EReg>]
+						[ArrayDecl:Array<EReg>]
+							[New:EReg]
+								EReg
+								[Const:String] "has_one\\s+:([a-z_]+),\\s+([A-Za-z.]+)(?:,\\s*(.*))?"
+								[Const:String] "g"
+							[New:EReg]
+								EReg
+								[Const:String] "has_many\\s+:([a-z_]+),\\s+([A-Za-z.]+)(?:,\\s*(.*))?"
+								[Const:String] "g"
+							[New:EReg]
+								EReg
+								[Const:String] "belongs_to\\s+:([a-z_]+),\\s+([A-Za-z.]+)(?:,\\s*(.*))?"
+								[Const:String] "g"
+							[New:EReg]
+								EReg
+								[Const:String] "many_to_many\\s+:([a-z_]+),\\s+([A-Za-z.]+)(?:,\\s*(.*))?"
+								[Const:String] "g"
+					[Block:Void]
+						[Var `(25638):Int] [Const:Int] 0
+						[While:Void]
+							[Binop:Bool]
+								[Local `(25638):Int:Int]
+								<
+								[Field:Int]
+									[Local assocPatterns(25611):Array<EReg>:Array<EReg>]
+									[FInstance:Int]
+										Array<EReg>
+										length:Int
+							[Block:Void]
+								[Var pattern(25612):EReg]
+									[Array:EReg]
+										[Local assocPatterns(25611):Array<EReg>:Array<EReg>]
+										[Local `(25638):Int:Int]
+								[Unop:Int]
+									++
+									Prefix
+									[Local `(25638):Int:Int]
+								[While:Void]
+									[Call:Bool]
+										[Field:(s : String) -> Bool]
+											[Local pattern(25612):EReg:EReg]
+											[FInstance:(s : String) -> Bool]
+												EReg
+												match:(s : String) -> Bool
+										[Local schemaBlock(25590):String:String]
+									[Block:Void]
+										[Var assocName(25613):String]
+											[Call:String]
+												[Field:(n : Int) -> String]
+													[Local pattern(25612):EReg:EReg]
+													[FInstance:(n : Int) -> String]
+														EReg
+														matched:(n : Int) -> String
+												[Const:Int] 1
+										[Var assocSchema(25614):String]
+											[Call:String]
+												[Field:(n : Int) -> String]
+													[Local pattern(25612):EReg:EReg]
+													[FInstance:(n : Int) -> String]
+														EReg
+														matched:(n : Int) -> String
+												[Const:Int] 2
+										[Var options(25615):String]
+											[Call:String]
+												[Field:(n : Int) -> String]
+													[Local pattern(25612):EReg:EReg]
+													[FInstance:(n : Int) -> String]
+														EReg
+														matched:(n : Int) -> String
+												[Const:Int] 3
+										[Var assocType(25617):String]
+											[Call:String]
+												[Field:(pattern : EReg) -> String]
+													[TypeExpr reflaxe.elixir.schema.SchemaIntrospection:Class<reflaxe.elixir.schema.SchemaIntrospection>]
+													[FStatic:(pattern : EReg) -> String]
+														reflaxe.elixir.schema.SchemaIntrospection
+														getAssociationType:(pattern : EReg) -> String
+												[Local pattern(25612):EReg:EReg]
+										[Var foreignKey(25626):String]
+											[Call:String]
+												[Field:(options : String, assocType : String, assocName : String) -> String]
+													[TypeExpr reflaxe.elixir.schema.SchemaIntrospection:Class<reflaxe.elixir.schema.SchemaIntrospection>]
+													[FStatic:(options : String, assocType : String, assocName : String) -> String]
+														reflaxe.elixir.schema.SchemaIntrospection
+														extractForeignKey:(options : String, assocType : String, assocName : String) -> String
+												[Local options(25615):String:String]
+												[Local assocType(25617):String:String]
+												[Local assocName(25613):String:String]
+										[Block:Void]
+											[Var value(25637):reflaxe.elixir.schema.AssociationInfo]
+												[ObjectDecl:{ type : String, throughAssociation : Null<String>, schema : String, name : String, foreignKey : String }]
+													name: [Local assocName(25613):String:String]
+													type: [Local assocType(25617):String:String]
+													schema: [Local assocSchema(25614):String:String]
+													foreignKey: [Local foreignKey(25626):String:String]
+													throughAssociation: [Call:Null<String>]
+														[Field:(options : String) -> Null<String>]
+															[TypeExpr reflaxe.elixir.schema.SchemaIntrospection:Class<reflaxe.elixir.schema.SchemaIntrospection>]
+															[FStatic:(options : String) -> Null<String>]
+																reflaxe.elixir.schema.SchemaIntrospection
+																extractThroughAssociation:(options : String) -> Null<String>
+														[Local options(25615):String:String]
+											[Call:Void]
+												[Field:(key : String, value : reflaxe.elixir.schema.AssociationInfo) -> Void]
+													[Local associations(25586):haxe.ds.Map<String, reflaxe.elixir.schema.AssociationInfo>:haxe.ds.StringMap<reflaxe.elixir.schema.AssociationInfo>]
+													[FInstance:(key : String, value : reflaxe.elixir.schema.AssociationInfo) -> Void]
+														haxe.ds.StringMap<reflaxe.elixir.schema.AssociationInfo>
+														set:(key : String, value : haxe.ds.StringMap.T) -> Void
+												[Local assocName(25613):String:String]
+												[Local value(25637):reflaxe.elixir.schema.AssociationInfo:reflaxe.elixir.schema.AssociationInfo]
+			[If:Void]
+				[Binop:Bool]
+					[Call:Int]
+						[Field:(str : String, ?startIndex : Null<Int>) -> Int]
+							[Local content(25583):String:String]
+							[FInstance:(str : String, ?startIndex : Null<Int>) -> Int]
+								String
+								indexOf:(str : String, ?startIndex : Null<Int>) -> Int
+						[Const:String] "timestamps()"
+						[Const:Null<Int>] null
+					!=
+					[Const:Int] -1
+				[Then:Void] [Block:Void]
+					[Block:Void]
+						[Call:Void]
+							[Field:(key : String, value : reflaxe.elixir.schema.FieldInfo) -> Void]
+								[Local fields(25585):haxe.ds.Map<String, reflaxe.elixir.schema.FieldInfo>:haxe.ds.StringMap<reflaxe.elixir.schema.FieldInfo>]
+								[FInstance:(key : String, value : reflaxe.elixir.schema.FieldInfo) -> Void]
+									haxe.ds.StringMap<reflaxe.elixir.schema.FieldInfo>
+									set:(key : String, value : haxe.ds.StringMap.T) -> Void
+							[Const:String] "inserted_at"
+							[ObjectDecl:{ type : String, nullable : Bool, name : String, indexed : Bool, defaultValue : Dynamic }]
+								name: [Const:String] "inserted_at"
+								type: [Const:String] "NaiveDateTime"
+								nullable: [Const:Bool] false
+								defaultValue: [Const:Dynamic] null
+								indexed: [Const:Bool] false
+					[Block:Void]
+						[Call:Void]
+							[Field:(key : String, value : reflaxe.elixir.schema.FieldInfo) -> Void]
+								[Local fields(25585):haxe.ds.Map<String, reflaxe.elixir.schema.FieldInfo>:haxe.ds.StringMap<reflaxe.elixir.schema.FieldInfo>]
+								[FInstance:(key : String, value : reflaxe.elixir.schema.FieldInfo) -> Void]
+									haxe.ds.StringMap<reflaxe.elixir.schema.FieldInfo>
+									set:(key : String, value : haxe.ds.StringMap.T) -> Void
+							[Const:String] "updated_at"
+							[ObjectDecl:{ type : String, nullable : Bool, name : String, indexed : Bool, defaultValue : Dynamic }]
+								name: [Const:String] "updated_at"
+								type: [Const:String] "NaiveDateTime"
+								nullable: [Const:Bool] false
+								defaultValue: [Const:Dynamic] null
+								indexed: [Const:Bool] false
+			[Return:Dynamic]
+				[ObjectDecl:{ tableName : String, primaryKey : String, name : String, fields : haxe.ds.Map<String, reflaxe.elixir.schema.FieldInfo>, associations : haxe.ds.Map<String, reflaxe.elixir.schema.AssociationInfo> }]
+					name: [Local schemaName(25584):String:String]
+					fields: [Local fields(25585):haxe.ds.Map<String, reflaxe.elixir.schema.FieldInfo>:haxe.ds.Map<String, reflaxe.elixir.schema.FieldInfo>]
+					associations: [Local associations(25586):haxe.ds.Map<String, reflaxe.elixir.schema.AssociationInfo>:haxe.ds.Map<String, reflaxe.elixir.schema.AssociationInfo>]
+					tableName: [Local tableName(25587):String:String]
+					primaryKey: [Local primaryKey(25588):String:String]
+
+	static function getPredefinedSchema[Function:(schemaName : String) -> Null<reflaxe.elixir.schema.SchemaInfo>]
+		[Arg:String] [Local schemaName(25654):String]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Meta:Null<reflaxe.elixir.schema.SchemaInfo>]
+					:ast(switch (schemaName) {
+	case "User":
+		createUserSchema();	
+	case "Post":
+		createPostSchema();	
+	case "Comment":
+		createCommentSchema();	
+	default:
+		createGenericSchema(schemaName);	
+})
+					[Switch:Null<reflaxe.elixir.schema.SchemaInfo>]
+						[Local schemaName(25654):String:String]
+						[Case:reflaxe.elixir.schema.SchemaInfo]
+							[Const:String] "Comment"
+							[Block:reflaxe.elixir.schema.SchemaInfo]
+								[Block:reflaxe.elixir.schema.SchemaInfo]
+									[Call:reflaxe.elixir.schema.SchemaInfo]
+										[Field:() -> reflaxe.elixir.schema.SchemaInfo]
+											[TypeExpr reflaxe.elixir.schema.SchemaIntrospection:Class<reflaxe.elixir.schema.SchemaIntrospection>]
+											[FStatic:() -> reflaxe.elixir.schema.SchemaInfo]
+												reflaxe.elixir.schema.SchemaIntrospection
+												createCommentSchema:() -> reflaxe.elixir.schema.SchemaInfo
+						[Case:reflaxe.elixir.schema.SchemaInfo]
+							[Const:String] "Post"
+							[Block:reflaxe.elixir.schema.SchemaInfo]
+								[Block:reflaxe.elixir.schema.SchemaInfo]
+									[Call:reflaxe.elixir.schema.SchemaInfo]
+										[Field:() -> reflaxe.elixir.schema.SchemaInfo]
+											[TypeExpr reflaxe.elixir.schema.SchemaIntrospection:Class<reflaxe.elixir.schema.SchemaIntrospection>]
+											[FStatic:() -> reflaxe.elixir.schema.SchemaInfo]
+												reflaxe.elixir.schema.SchemaIntrospection
+												createPostSchema:() -> reflaxe.elixir.schema.SchemaInfo
+						[Case:reflaxe.elixir.schema.SchemaInfo]
+							[Const:String] "User"
+							[Block:reflaxe.elixir.schema.SchemaInfo]
+								[Block:reflaxe.elixir.schema.SchemaInfo]
+									[Call:reflaxe.elixir.schema.SchemaInfo]
+										[Field:() -> reflaxe.elixir.schema.SchemaInfo]
+											[TypeExpr reflaxe.elixir.schema.SchemaIntrospection:Class<reflaxe.elixir.schema.SchemaIntrospection>]
+											[FStatic:() -> reflaxe.elixir.schema.SchemaInfo]
+												reflaxe.elixir.schema.SchemaIntrospection
+												createUserSchema:() -> reflaxe.elixir.schema.SchemaInfo
+						[Default:Null<reflaxe.elixir.schema.SchemaInfo>]
+							[Block:Null<reflaxe.elixir.schema.SchemaInfo>]
+								[Call:Null<reflaxe.elixir.schema.SchemaInfo>]
+									[Field:(schemaName : String) -> Null<reflaxe.elixir.schema.SchemaInfo>]
+										[TypeExpr reflaxe.elixir.schema.SchemaIntrospection:Class<reflaxe.elixir.schema.SchemaIntrospection>]
+										[FStatic:(schemaName : String) -> Null<reflaxe.elixir.schema.SchemaInfo>]
+											reflaxe.elixir.schema.SchemaIntrospection
+											createGenericSchema:(schemaName : String) -> Null<reflaxe.elixir.schema.SchemaInfo>
+									[Local schemaName(25654):String:String]
+
+	static function createUserSchema[Function:() -> reflaxe.elixir.schema.SchemaInfo]
+		[Block:Dynamic]
+			[Var fields(25655):haxe.ds.Map<String, reflaxe.elixir.schema.FieldInfo>]
+				[Block:haxe.ds.StringMap<reflaxe.elixir.schema.FieldInfo>]
+					[Block:Void]
+					[New:haxe.ds.StringMap<reflaxe.elixir.schema.FieldInfo>] haxe.ds.StringMap<reflaxe.elixir.schema.FieldInfo>
+			[Block:Void]
+				[Call:Void]
+					[Field:(key : String, value : reflaxe.elixir.schema.FieldInfo) -> Void]
+						[Local fields(25655):haxe.ds.Map<String, reflaxe.elixir.schema.FieldInfo>:haxe.ds.StringMap<reflaxe.elixir.schema.FieldInfo>]
+						[FInstance:(key : String, value : reflaxe.elixir.schema.FieldInfo) -> Void]
+							haxe.ds.StringMap<reflaxe.elixir.schema.FieldInfo>
+							set:(key : String, value : haxe.ds.StringMap.T) -> Void
+					[Const:String] "id"
+					[ObjectDecl:{ type : String, nullable : Bool, name : String, indexed : Bool, defaultValue : Dynamic }]
+						name: [Const:String] "id"
+						type: [Const:String] "Int"
+						nullable: [Const:Bool] false
+						defaultValue: [Const:Dynamic] null
+						indexed: [Const:Bool] true
+			[Block:Void]
+				[Call:Void]
+					[Field:(key : String, value : reflaxe.elixir.schema.FieldInfo) -> Void]
+						[Local fields(25655):haxe.ds.Map<String, reflaxe.elixir.schema.FieldInfo>:haxe.ds.StringMap<reflaxe.elixir.schema.FieldInfo>]
+						[FInstance:(key : String, value : reflaxe.elixir.schema.FieldInfo) -> Void]
+							haxe.ds.StringMap<reflaxe.elixir.schema.FieldInfo>
+							set:(key : String, value : haxe.ds.StringMap.T) -> Void
+					[Const:String] "name"
+					[ObjectDecl:{ type : String, nullable : Bool, name : String, indexed : Bool, defaultValue : Dynamic }]
+						name: [Const:String] "name"
+						type: [Const:String] "String"
+						nullable: [Const:Bool] false
+						defaultValue: [Const:Dynamic] null
+						indexed: [Const:Bool] false
+			[Block:Void]
+				[Call:Void]
+					[Field:(key : String, value : reflaxe.elixir.schema.FieldInfo) -> Void]
+						[Local fields(25655):haxe.ds.Map<String, reflaxe.elixir.schema.FieldInfo>:haxe.ds.StringMap<reflaxe.elixir.schema.FieldInfo>]
+						[FInstance:(key : String, value : reflaxe.elixir.schema.FieldInfo) -> Void]
+							haxe.ds.StringMap<reflaxe.elixir.schema.FieldInfo>
+							set:(key : String, value : haxe.ds.StringMap.T) -> Void
+					[Const:String] "email"
+					[ObjectDecl:{ type : String, nullable : Bool, name : String, indexed : Bool, defaultValue : Dynamic }]
+						name: [Const:String] "email"
+						type: [Const:String] "String"
+						nullable: [Const:Bool] false
+						defaultValue: [Const:Dynamic] null
+						indexed: [Const:Bool] true
+			[Block:Void]
+				[Call:Void]
+					[Field:(key : String, value : reflaxe.elixir.schema.FieldInfo) -> Void]
+						[Local fields(25655):haxe.ds.Map<String, reflaxe.elixir.schema.FieldInfo>:haxe.ds.StringMap<reflaxe.elixir.schema.FieldInfo>]
+						[FInstance:(key : String, value : reflaxe.elixir.schema.FieldInfo) -> Void]
+							haxe.ds.StringMap<reflaxe.elixir.schema.FieldInfo>
+							set:(key : String, value : haxe.ds.StringMap.T) -> Void
+					[Const:String] "age"
+					[ObjectDecl:{ type : String, nullable : Bool, name : String, indexed : Bool, defaultValue : Dynamic }]
+						name: [Const:String] "age"
+						type: [Const:String] "Int"
+						nullable: [Const:Bool] true
+						defaultValue: [Const:Dynamic] null
+						indexed: [Const:Bool] false
+			[Block:Void]
+				[Call:Void]
+					[Field:(key : String, value : reflaxe.elixir.schema.FieldInfo) -> Void]
+						[Local fields(25655):haxe.ds.Map<String, reflaxe.elixir.schema.FieldInfo>:haxe.ds.StringMap<reflaxe.elixir.schema.FieldInfo>]
+						[FInstance:(key : String, value : reflaxe.elixir.schema.FieldInfo) -> Void]
+							haxe.ds.StringMap<reflaxe.elixir.schema.FieldInfo>
+							set:(key : String, value : haxe.ds.StringMap.T) -> Void
+					[Const:String] "active"
+					[ObjectDecl:{ type : String, nullable : Bool, name : String, indexed : Bool, defaultValue : Dynamic }]
+						name: [Const:String] "active"
+						type: [Const:String] "Bool"
+						nullable: [Const:Bool] false
+						defaultValue: [Cast:Dynamic] [Const:Bool] true
+						indexed: [Const:Bool] false
+			[Block:Void]
+				[Call:Void]
+					[Field:(key : String, value : reflaxe.elixir.schema.FieldInfo) -> Void]
+						[Local fields(25655):haxe.ds.Map<String, reflaxe.elixir.schema.FieldInfo>:haxe.ds.StringMap<reflaxe.elixir.schema.FieldInfo>]
+						[FInstance:(key : String, value : reflaxe.elixir.schema.FieldInfo) -> Void]
+							haxe.ds.StringMap<reflaxe.elixir.schema.FieldInfo>
+							set:(key : String, value : haxe.ds.StringMap.T) -> Void
+					[Const:String] "inserted_at"
+					[ObjectDecl:{ type : String, nullable : Bool, name : String, indexed : Bool, defaultValue : Dynamic }]
+						name: [Const:String] "inserted_at"
+						type: [Const:String] "NaiveDateTime"
+						nullable: [Const:Bool] false
+						defaultValue: [Const:Dynamic] null
+						indexed: [Const:Bool] false
+			[Block:Void]
+				[Call:Void]
+					[Field:(key : String, value : reflaxe.elixir.schema.FieldInfo) -> Void]
+						[Local fields(25655):haxe.ds.Map<String, reflaxe.elixir.schema.FieldInfo>:haxe.ds.StringMap<reflaxe.elixir.schema.FieldInfo>]
+						[FInstance:(key : String, value : reflaxe.elixir.schema.FieldInfo) -> Void]
+							haxe.ds.StringMap<reflaxe.elixir.schema.FieldInfo>
+							set:(key : String, value : haxe.ds.StringMap.T) -> Void
+					[Const:String] "updated_at"
+					[ObjectDecl:{ type : String, nullable : Bool, name : String, indexed : Bool, defaultValue : Dynamic }]
+						name: [Const:String] "updated_at"
+						type: [Const:String] "NaiveDateTime"
+						nullable: [Const:Bool] false
+						defaultValue: [Const:Dynamic] null
+						indexed: [Const:Bool] false
+			[Var associations(25691):haxe.ds.Map<String, reflaxe.elixir.schema.AssociationInfo>]
+				[Block:haxe.ds.StringMap<reflaxe.elixir.schema.AssociationInfo>]
+					[Block:Void]
+					[New:haxe.ds.StringMap<reflaxe.elixir.schema.AssociationInfo>] haxe.ds.StringMap<reflaxe.elixir.schema.AssociationInfo>
+			[Block:Void]
+				[Call:Void]
+					[Field:(key : String, value : reflaxe.elixir.schema.AssociationInfo) -> Void]
+						[Local associations(25691):haxe.ds.Map<String, reflaxe.elixir.schema.AssociationInfo>:haxe.ds.StringMap<reflaxe.elixir.schema.AssociationInfo>]
+						[FInstance:(key : String, value : reflaxe.elixir.schema.AssociationInfo) -> Void]
+							haxe.ds.StringMap<reflaxe.elixir.schema.AssociationInfo>
+							set:(key : String, value : haxe.ds.StringMap.T) -> Void
+					[Const:String] "posts"
+					[ObjectDecl:{ type : String, throughAssociation : Null<String>, schema : String, name : String, foreignKey : String }]
+						name: [Const:String] "posts"
+						type: [Const:String] "has_many"
+						schema: [Const:String] "Post"
+						foreignKey: [Const:String] "user_id"
+						throughAssociation: [Const:Null<String>] null
+			[Block:Void]
+				[Call:Void]
+					[Field:(key : String, value : reflaxe.elixir.schema.AssociationInfo) -> Void]
+						[Local associations(25691):haxe.ds.Map<String, reflaxe.elixir.schema.AssociationInfo>:haxe.ds.StringMap<reflaxe.elixir.schema.AssociationInfo>]
+						[FInstance:(key : String, value : reflaxe.elixir.schema.AssociationInfo) -> Void]
+							haxe.ds.StringMap<reflaxe.elixir.schema.AssociationInfo>
+							set:(key : String, value : haxe.ds.StringMap.T) -> Void
+					[Const:String] "comments"
+					[ObjectDecl:{ type : String, throughAssociation : Null<String>, schema : String, name : String, foreignKey : String }]
+						name: [Const:String] "comments"
+						type: [Const:String] "has_many"
+						schema: [Const:String] "Comment"
+						foreignKey: [Const:String] "user_id"
+						throughAssociation: [Const:Null<String>] null
+			[Return:Dynamic]
+				[ObjectDecl:{ tableName : String, primaryKey : String, name : String, fields : haxe.ds.Map<String, reflaxe.elixir.schema.FieldInfo>, associations : haxe.ds.Map<String, reflaxe.elixir.schema.AssociationInfo> }]
+					name: [Const:String] "User"
+					fields: [Local fields(25655):haxe.ds.Map<String, reflaxe.elixir.schema.FieldInfo>:haxe.ds.Map<String, reflaxe.elixir.schema.FieldInfo>]
+					associations: [Local associations(25691):haxe.ds.Map<String, reflaxe.elixir.schema.AssociationInfo>:haxe.ds.Map<String, reflaxe.elixir.schema.AssociationInfo>]
+					tableName: [Const:String] "users"
+					primaryKey: [Const:String] "id"
+
+	static function createPostSchema[Function:() -> reflaxe.elixir.schema.SchemaInfo]
+		[Block:Dynamic]
+			[Var fields(25702):haxe.ds.Map<String, reflaxe.elixir.schema.FieldInfo>]
+				[Block:haxe.ds.StringMap<reflaxe.elixir.schema.FieldInfo>]
+					[Block:Void]
+					[New:haxe.ds.StringMap<reflaxe.elixir.schema.FieldInfo>] haxe.ds.StringMap<reflaxe.elixir.schema.FieldInfo>
+			[Block:Void]
+				[Call:Void]
+					[Field:(key : String, value : reflaxe.elixir.schema.FieldInfo) -> Void]
+						[Local fields(25702):haxe.ds.Map<String, reflaxe.elixir.schema.FieldInfo>:haxe.ds.StringMap<reflaxe.elixir.schema.FieldInfo>]
+						[FInstance:(key : String, value : reflaxe.elixir.schema.FieldInfo) -> Void]
+							haxe.ds.StringMap<reflaxe.elixir.schema.FieldInfo>
+							set:(key : String, value : haxe.ds.StringMap.T) -> Void
+					[Const:String] "id"
+					[ObjectDecl:{ type : String, nullable : Bool, name : String, indexed : Bool, defaultValue : Dynamic }]
+						name: [Const:String] "id"
+						type: [Const:String] "Int"
+						nullable: [Const:Bool] false
+						defaultValue: [Const:Dynamic] null
+						indexed: [Const:Bool] true
+			[Block:Void]
+				[Call:Void]
+					[Field:(key : String, value : reflaxe.elixir.schema.FieldInfo) -> Void]
+						[Local fields(25702):haxe.ds.Map<String, reflaxe.elixir.schema.FieldInfo>:haxe.ds.StringMap<reflaxe.elixir.schema.FieldInfo>]
+						[FInstance:(key : String, value : reflaxe.elixir.schema.FieldInfo) -> Void]
+							haxe.ds.StringMap<reflaxe.elixir.schema.FieldInfo>
+							set:(key : String, value : haxe.ds.StringMap.T) -> Void
+					[Const:String] "title"
+					[ObjectDecl:{ type : String, nullable : Bool, name : String, indexed : Bool, defaultValue : Dynamic }]
+						name: [Const:String] "title"
+						type: [Const:String] "String"
+						nullable: [Const:Bool] false
+						defaultValue: [Const:Dynamic] null
+						indexed: [Const:Bool] false
+			[Block:Void]
+				[Call:Void]
+					[Field:(key : String, value : reflaxe.elixir.schema.FieldInfo) -> Void]
+						[Local fields(25702):haxe.ds.Map<String, reflaxe.elixir.schema.FieldInfo>:haxe.ds.StringMap<reflaxe.elixir.schema.FieldInfo>]
+						[FInstance:(key : String, value : reflaxe.elixir.schema.FieldInfo) -> Void]
+							haxe.ds.StringMap<reflaxe.elixir.schema.FieldInfo>
+							set:(key : String, value : haxe.ds.StringMap.T) -> Void
+					[Const:String] "body"
+					[ObjectDecl:{ type : String, nullable : Bool, name : String, indexed : Bool, defaultValue : Dynamic }]
+						name: [Const:String] "body"
+						type: [Const:String] "String"
+						nullable: [Const:Bool] true
+						defaultValue: [Const:Dynamic] null
+						indexed: [Const:Bool] false
+			[Block:Void]
+				[Call:Void]
+					[Field:(key : String, value : reflaxe.elixir.schema.FieldInfo) -> Void]
+						[Local fields(25702):haxe.ds.Map<String, reflaxe.elixir.schema.FieldInfo>:haxe.ds.StringMap<reflaxe.elixir.schema.FieldInfo>]
+						[FInstance:(key : String, value : reflaxe.elixir.schema.FieldInfo) -> Void]
+							haxe.ds.StringMap<reflaxe.elixir.schema.FieldInfo>
+							set:(key : String, value : haxe.ds.StringMap.T) -> Void
+					[Const:String] "user_id"
+					[ObjectDecl:{ type : String, nullable : Bool, name : String, indexed : Bool, defaultValue : Dynamic }]
+						name: [Const:String] "user_id"
+						type: [Const:String] "Int"
+						nullable: [Const:Bool] false
+						defaultValue: [Const:Dynamic] null
+						indexed: [Const:Bool] true
+			[Block:Void]
+				[Call:Void]
+					[Field:(key : String, value : reflaxe.elixir.schema.FieldInfo) -> Void]
+						[Local fields(25702):haxe.ds.Map<String, reflaxe.elixir.schema.FieldInfo>:haxe.ds.StringMap<reflaxe.elixir.schema.FieldInfo>]
+						[FInstance:(key : String, value : reflaxe.elixir.schema.FieldInfo) -> Void]
+							haxe.ds.StringMap<reflaxe.elixir.schema.FieldInfo>
+							set:(key : String, value : haxe.ds.StringMap.T) -> Void
+					[Const:String] "published"
+					[ObjectDecl:{ type : String, nullable : Bool, name : String, indexed : Bool, defaultValue : Dynamic }]
+						name: [Const:String] "published"
+						type: [Const:String] "Bool"
+						nullable: [Const:Bool] false
+						defaultValue: [Cast:Dynamic] [Const:Bool] false
+						indexed: [Const:Bool] true
+			[Block:Void]
+				[Call:Void]
+					[Field:(key : String, value : reflaxe.elixir.schema.FieldInfo) -> Void]
+						[Local fields(25702):haxe.ds.Map<String, reflaxe.elixir.schema.FieldInfo>:haxe.ds.StringMap<reflaxe.elixir.schema.FieldInfo>]
+						[FInstance:(key : String, value : reflaxe.elixir.schema.FieldInfo) -> Void]
+							haxe.ds.StringMap<reflaxe.elixir.schema.FieldInfo>
+							set:(key : String, value : haxe.ds.StringMap.T) -> Void
+					[Const:String] "inserted_at"
+					[ObjectDecl:{ type : String, nullable : Bool, name : String, indexed : Bool, defaultValue : Dynamic }]
+						name: [Const:String] "inserted_at"
+						type: [Const:String] "NaiveDateTime"
+						nullable: [Const:Bool] false
+						defaultValue: [Const:Dynamic] null
+						indexed: [Const:Bool] false
+			[Block:Void]
+				[Call:Void]
+					[Field:(key : String, value : reflaxe.elixir.schema.FieldInfo) -> Void]
+						[Local fields(25702):haxe.ds.Map<String, reflaxe.elixir.schema.FieldInfo>:haxe.ds.StringMap<reflaxe.elixir.schema.FieldInfo>]
+						[FInstance:(key : String, value : reflaxe.elixir.schema.FieldInfo) -> Void]
+							haxe.ds.StringMap<reflaxe.elixir.schema.FieldInfo>
+							set:(key : String, value : haxe.ds.StringMap.T) -> Void
+					[Const:String] "updated_at"
+					[ObjectDecl:{ type : String, nullable : Bool, name : String, indexed : Bool, defaultValue : Dynamic }]
+						name: [Const:String] "updated_at"
+						type: [Const:String] "NaiveDateTime"
+						nullable: [Const:Bool] false
+						defaultValue: [Const:Dynamic] null
+						indexed: [Const:Bool] false
+			[Var associations(25738):haxe.ds.Map<String, reflaxe.elixir.schema.AssociationInfo>]
+				[Block:haxe.ds.StringMap<reflaxe.elixir.schema.AssociationInfo>]
+					[Block:Void]
+					[New:haxe.ds.StringMap<reflaxe.elixir.schema.AssociationInfo>] haxe.ds.StringMap<reflaxe.elixir.schema.AssociationInfo>
+			[Block:Void]
+				[Call:Void]
+					[Field:(key : String, value : reflaxe.elixir.schema.AssociationInfo) -> Void]
+						[Local associations(25738):haxe.ds.Map<String, reflaxe.elixir.schema.AssociationInfo>:haxe.ds.StringMap<reflaxe.elixir.schema.AssociationInfo>]
+						[FInstance:(key : String, value : reflaxe.elixir.schema.AssociationInfo) -> Void]
+							haxe.ds.StringMap<reflaxe.elixir.schema.AssociationInfo>
+							set:(key : String, value : haxe.ds.StringMap.T) -> Void
+					[Const:String] "user"
+					[ObjectDecl:{ type : String, throughAssociation : Null<String>, schema : String, name : String, foreignKey : String }]
+						name: [Const:String] "user"
+						type: [Const:String] "belongs_to"
+						schema: [Const:String] "User"
+						foreignKey: [Const:String] "user_id"
+						throughAssociation: [Const:Null<String>] null
+			[Block:Void]
+				[Call:Void]
+					[Field:(key : String, value : reflaxe.elixir.schema.AssociationInfo) -> Void]
+						[Local associations(25738):haxe.ds.Map<String, reflaxe.elixir.schema.AssociationInfo>:haxe.ds.StringMap<reflaxe.elixir.schema.AssociationInfo>]
+						[FInstance:(key : String, value : reflaxe.elixir.schema.AssociationInfo) -> Void]
+							haxe.ds.StringMap<reflaxe.elixir.schema.AssociationInfo>
+							set:(key : String, value : haxe.ds.StringMap.T) -> Void
+					[Const:String] "comments"
+					[ObjectDecl:{ type : String, throughAssociation : Null<String>, schema : String, name : String, foreignKey : String }]
+						name: [Const:String] "comments"
+						type: [Const:String] "has_many"
+						schema: [Const:String] "Comment"
+						foreignKey: [Const:String] "post_id"
+						throughAssociation: [Const:Null<String>] null
+			[Return:Dynamic]
+				[ObjectDecl:{ tableName : String, primaryKey : String, name : String, fields : haxe.ds.Map<String, reflaxe.elixir.schema.FieldInfo>, associations : haxe.ds.Map<String, reflaxe.elixir.schema.AssociationInfo> }]
+					name: [Const:String] "Post"
+					fields: [Local fields(25702):haxe.ds.Map<String, reflaxe.elixir.schema.FieldInfo>:haxe.ds.Map<String, reflaxe.elixir.schema.FieldInfo>]
+					associations: [Local associations(25738):haxe.ds.Map<String, reflaxe.elixir.schema.AssociationInfo>:haxe.ds.Map<String, reflaxe.elixir.schema.AssociationInfo>]
+					tableName: [Const:String] "posts"
+					primaryKey: [Const:String] "id"
+
+	static function createCommentSchema[Function:() -> reflaxe.elixir.schema.SchemaInfo]
+		[Block:Dynamic]
+			[Var fields(25749):haxe.ds.Map<String, reflaxe.elixir.schema.FieldInfo>]
+				[Block:haxe.ds.StringMap<reflaxe.elixir.schema.FieldInfo>]
+					[Block:Void]
+					[New:haxe.ds.StringMap<reflaxe.elixir.schema.FieldInfo>] haxe.ds.StringMap<reflaxe.elixir.schema.FieldInfo>
+			[Block:Void]
+				[Call:Void]
+					[Field:(key : String, value : reflaxe.elixir.schema.FieldInfo) -> Void]
+						[Local fields(25749):haxe.ds.Map<String, reflaxe.elixir.schema.FieldInfo>:haxe.ds.StringMap<reflaxe.elixir.schema.FieldInfo>]
+						[FInstance:(key : String, value : reflaxe.elixir.schema.FieldInfo) -> Void]
+							haxe.ds.StringMap<reflaxe.elixir.schema.FieldInfo>
+							set:(key : String, value : haxe.ds.StringMap.T) -> Void
+					[Const:String] "id"
+					[ObjectDecl:{ type : String, nullable : Bool, name : String, indexed : Bool, defaultValue : Dynamic }]
+						name: [Const:String] "id"
+						type: [Const:String] "Int"
+						nullable: [Const:Bool] false
+						defaultValue: [Const:Dynamic] null
+						indexed: [Const:Bool] true
+			[Block:Void]
+				[Call:Void]
+					[Field:(key : String, value : reflaxe.elixir.schema.FieldInfo) -> Void]
+						[Local fields(25749):haxe.ds.Map<String, reflaxe.elixir.schema.FieldInfo>:haxe.ds.StringMap<reflaxe.elixir.schema.FieldInfo>]
+						[FInstance:(key : String, value : reflaxe.elixir.schema.FieldInfo) -> Void]
+							haxe.ds.StringMap<reflaxe.elixir.schema.FieldInfo>
+							set:(key : String, value : haxe.ds.StringMap.T) -> Void
+					[Const:String] "content"
+					[ObjectDecl:{ type : String, nullable : Bool, name : String, indexed : Bool, defaultValue : Dynamic }]
+						name: [Const:String] "content"
+						type: [Const:String] "String"
+						nullable: [Const:Bool] false
+						defaultValue: [Const:Dynamic] null
+						indexed: [Const:Bool] false
+			[Block:Void]
+				[Call:Void]
+					[Field:(key : String, value : reflaxe.elixir.schema.FieldInfo) -> Void]
+						[Local fields(25749):haxe.ds.Map<String, reflaxe.elixir.schema.FieldInfo>:haxe.ds.StringMap<reflaxe.elixir.schema.FieldInfo>]
+						[FInstance:(key : String, value : reflaxe.elixir.schema.FieldInfo) -> Void]
+							haxe.ds.StringMap<reflaxe.elixir.schema.FieldInfo>
+							set:(key : String, value : haxe.ds.StringMap.T) -> Void
+					[Const:String] "user_id"
+					[ObjectDecl:{ type : String, nullable : Bool, name : String, indexed : Bool, defaultValue : Dynamic }]
+						name: [Const:String] "user_id"
+						type: [Const:String] "Int"
+						nullable: [Const:Bool] false
+						defaultValue: [Const:Dynamic] null
+						indexed: [Const:Bool] true
+			[Block:Void]
+				[Call:Void]
+					[Field:(key : String, value : reflaxe.elixir.schema.FieldInfo) -> Void]
+						[Local fields(25749):haxe.ds.Map<String, reflaxe.elixir.schema.FieldInfo>:haxe.ds.StringMap<reflaxe.elixir.schema.FieldInfo>]
+						[FInstance:(key : String, value : reflaxe.elixir.schema.FieldInfo) -> Void]
+							haxe.ds.StringMap<reflaxe.elixir.schema.FieldInfo>
+							set:(key : String, value : haxe.ds.StringMap.T) -> Void
+					[Const:String] "post_id"
+					[ObjectDecl:{ type : String, nullable : Bool, name : String, indexed : Bool, defaultValue : Dynamic }]
+						name: [Const:String] "post_id"
+						type: [Const:String] "Int"
+						nullable: [Const:Bool] false
+						defaultValue: [Const:Dynamic] null
+						indexed: [Const:Bool] true
+			[Block:Void]
+				[Call:Void]
+					[Field:(key : String, value : reflaxe.elixir.schema.FieldInfo) -> Void]
+						[Local fields(25749):haxe.ds.Map<String, reflaxe.elixir.schema.FieldInfo>:haxe.ds.StringMap<reflaxe.elixir.schema.FieldInfo>]
+						[FInstance:(key : String, value : reflaxe.elixir.schema.FieldInfo) -> Void]
+							haxe.ds.StringMap<reflaxe.elixir.schema.FieldInfo>
+							set:(key : String, value : haxe.ds.StringMap.T) -> Void
+					[Const:String] "inserted_at"
+					[ObjectDecl:{ type : String, nullable : Bool, name : String, indexed : Bool, defaultValue : Dynamic }]
+						name: [Const:String] "inserted_at"
+						type: [Const:String] "NaiveDateTime"
+						nullable: [Const:Bool] false
+						defaultValue: [Const:Dynamic] null
+						indexed: [Const:Bool] false
+			[Block:Void]
+				[Call:Void]
+					[Field:(key : String, value : reflaxe.elixir.schema.FieldInfo) -> Void]
+						[Local fields(25749):haxe.ds.Map<String, reflaxe.elixir.schema.FieldInfo>:haxe.ds.StringMap<reflaxe.elixir.schema.FieldInfo>]
+						[FInstance:(key : String, value : reflaxe.elixir.schema.FieldInfo) -> Void]
+							haxe.ds.StringMap<reflaxe.elixir.schema.FieldInfo>
+							set:(key : String, value : haxe.ds.StringMap.T) -> Void
+					[Const:String] "updated_at"
+					[ObjectDecl:{ type : String, nullable : Bool, name : String, indexed : Bool, defaultValue : Dynamic }]
+						name: [Const:String] "updated_at"
+						type: [Const:String] "NaiveDateTime"
+						nullable: [Const:Bool] false
+						defaultValue: [Const:Dynamic] null
+						indexed: [Const:Bool] false
+			[Var associations(25780):haxe.ds.Map<String, reflaxe.elixir.schema.AssociationInfo>]
+				[Block:haxe.ds.StringMap<reflaxe.elixir.schema.AssociationInfo>]
+					[Block:Void]
+					[New:haxe.ds.StringMap<reflaxe.elixir.schema.AssociationInfo>] haxe.ds.StringMap<reflaxe.elixir.schema.AssociationInfo>
+			[Block:Void]
+				[Call:Void]
+					[Field:(key : String, value : reflaxe.elixir.schema.AssociationInfo) -> Void]
+						[Local associations(25780):haxe.ds.Map<String, reflaxe.elixir.schema.AssociationInfo>:haxe.ds.StringMap<reflaxe.elixir.schema.AssociationInfo>]
+						[FInstance:(key : String, value : reflaxe.elixir.schema.AssociationInfo) -> Void]
+							haxe.ds.StringMap<reflaxe.elixir.schema.AssociationInfo>
+							set:(key : String, value : haxe.ds.StringMap.T) -> Void
+					[Const:String] "user"
+					[ObjectDecl:{ type : String, throughAssociation : Null<String>, schema : String, name : String, foreignKey : String }]
+						name: [Const:String] "user"
+						type: [Const:String] "belongs_to"
+						schema: [Const:String] "User"
+						foreignKey: [Const:String] "user_id"
+						throughAssociation: [Const:Null<String>] null
+			[Block:Void]
+				[Call:Void]
+					[Field:(key : String, value : reflaxe.elixir.schema.AssociationInfo) -> Void]
+						[Local associations(25780):haxe.ds.Map<String, reflaxe.elixir.schema.AssociationInfo>:haxe.ds.StringMap<reflaxe.elixir.schema.AssociationInfo>]
+						[FInstance:(key : String, value : reflaxe.elixir.schema.AssociationInfo) -> Void]
+							haxe.ds.StringMap<reflaxe.elixir.schema.AssociationInfo>
+							set:(key : String, value : haxe.ds.StringMap.T) -> Void
+					[Const:String] "post"
+					[ObjectDecl:{ type : String, throughAssociation : Null<String>, schema : String, name : String, foreignKey : String }]
+						name: [Const:String] "post"
+						type: [Const:String] "belongs_to"
+						schema: [Const:String] "Post"
+						foreignKey: [Const:String] "post_id"
+						throughAssociation: [Const:Null<String>] null
+			[Return:Dynamic]
+				[ObjectDecl:{ tableName : String, primaryKey : String, name : String, fields : haxe.ds.Map<String, reflaxe.elixir.schema.FieldInfo>, associations : haxe.ds.Map<String, reflaxe.elixir.schema.AssociationInfo> }]
+					name: [Const:String] "Comment"
+					fields: [Local fields(25749):haxe.ds.Map<String, reflaxe.elixir.schema.FieldInfo>:haxe.ds.Map<String, reflaxe.elixir.schema.FieldInfo>]
+					associations: [Local associations(25780):haxe.ds.Map<String, reflaxe.elixir.schema.AssociationInfo>:haxe.ds.Map<String, reflaxe.elixir.schema.AssociationInfo>]
+					tableName: [Const:String] "comments"
+					primaryKey: [Const:String] "id"
+
+	static function createGenericSchema[Function:(schemaName : String) -> Null<reflaxe.elixir.schema.SchemaInfo>]
+		[Arg:String] [Local schemaName(25791):String]
+		[Block:Dynamic]
+			[If:Void]
+				[Unop:Bool]
+					!
+					Prefix
+					[Call:Bool]
+						[Field:(x : String) -> Bool]
+							[ArrayDecl:Array<String>]
+								[Const:String] "User"
+								[Const:String] "Post"
+								[Const:String] "Comment"
+							[FInstance:(x : String) -> Bool]
+								Array<String>
+								contains:(x : Array.T) -> Bool
+						[Local schemaName(25791):String:String]
+				[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [Const:Null<reflaxe.elixir.schema.SchemaInfo>] null
+			[Var fields(25792):haxe.ds.Map<String, reflaxe.elixir.schema.FieldInfo>]
+				[Block:haxe.ds.StringMap<reflaxe.elixir.schema.FieldInfo>]
+					[Block:Void]
+					[New:haxe.ds.StringMap<reflaxe.elixir.schema.FieldInfo>] haxe.ds.StringMap<reflaxe.elixir.schema.FieldInfo>
+			[Block:Void]
+				[Call:Void]
+					[Field:(key : String, value : reflaxe.elixir.schema.FieldInfo) -> Void]
+						[Local fields(25792):haxe.ds.Map<String, reflaxe.elixir.schema.FieldInfo>:haxe.ds.StringMap<reflaxe.elixir.schema.FieldInfo>]
+						[FInstance:(key : String, value : reflaxe.elixir.schema.FieldInfo) -> Void]
+							haxe.ds.StringMap<reflaxe.elixir.schema.FieldInfo>
+							set:(key : String, value : haxe.ds.StringMap.T) -> Void
+					[Const:String] "id"
+					[ObjectDecl:{ type : String, nullable : Bool, name : String, indexed : Bool, defaultValue : Dynamic }]
+						name: [Const:String] "id"
+						type: [Const:String] "Int"
+						nullable: [Const:Bool] false
+						defaultValue: [Const:Dynamic] null
+						indexed: [Const:Bool] true
+			[Block:Void]
+				[Call:Void]
+					[Field:(key : String, value : reflaxe.elixir.schema.FieldInfo) -> Void]
+						[Local fields(25792):haxe.ds.Map<String, reflaxe.elixir.schema.FieldInfo>:haxe.ds.StringMap<reflaxe.elixir.schema.FieldInfo>]
+						[FInstance:(key : String, value : reflaxe.elixir.schema.FieldInfo) -> Void]
+							haxe.ds.StringMap<reflaxe.elixir.schema.FieldInfo>
+							set:(key : String, value : haxe.ds.StringMap.T) -> Void
+					[Const:String] "name"
+					[ObjectDecl:{ type : String, nullable : Bool, name : String, indexed : Bool, defaultValue : Dynamic }]
+						name: [Const:String] "name"
+						type: [Const:String] "String"
+						nullable: [Const:Bool] true
+						defaultValue: [Const:Dynamic] null
+						indexed: [Const:Bool] false
+			[Block:Void]
+				[Call:Void]
+					[Field:(key : String, value : reflaxe.elixir.schema.FieldInfo) -> Void]
+						[Local fields(25792):haxe.ds.Map<String, reflaxe.elixir.schema.FieldInfo>:haxe.ds.StringMap<reflaxe.elixir.schema.FieldInfo>]
+						[FInstance:(key : String, value : reflaxe.elixir.schema.FieldInfo) -> Void]
+							haxe.ds.StringMap<reflaxe.elixir.schema.FieldInfo>
+							set:(key : String, value : haxe.ds.StringMap.T) -> Void
+					[Const:String] "inserted_at"
+					[ObjectDecl:{ type : String, nullable : Bool, name : String, indexed : Bool, defaultValue : Dynamic }]
+						name: [Const:String] "inserted_at"
+						type: [Const:String] "NaiveDateTime"
+						nullable: [Const:Bool] false
+						defaultValue: [Const:Dynamic] null
+						indexed: [Const:Bool] false
+			[Block:Void]
+				[Call:Void]
+					[Field:(key : String, value : reflaxe.elixir.schema.FieldInfo) -> Void]
+						[Local fields(25792):haxe.ds.Map<String, reflaxe.elixir.schema.FieldInfo>:haxe.ds.StringMap<reflaxe.elixir.schema.FieldInfo>]
+						[FInstance:(key : String, value : reflaxe.elixir.schema.FieldInfo) -> Void]
+							haxe.ds.StringMap<reflaxe.elixir.schema.FieldInfo>
+							set:(key : String, value : haxe.ds.StringMap.T) -> Void
+					[Const:String] "updated_at"
+					[ObjectDecl:{ type : String, nullable : Bool, name : String, indexed : Bool, defaultValue : Dynamic }]
+						name: [Const:String] "updated_at"
+						type: [Const:String] "NaiveDateTime"
+						nullable: [Const:Bool] false
+						defaultValue: [Const:Dynamic] null
+						indexed: [Const:Bool] false
+			[Return:Dynamic]
+				[ObjectDecl:{ tableName : String, primaryKey : String, name : String, fields : haxe.ds.Map<String, reflaxe.elixir.schema.FieldInfo>, associations : haxe.ds.Map<String, reflaxe.elixir.schema.AssociationInfo> }]
+					name: [Local schemaName(25791):String:String]
+					fields: [Local fields(25792):haxe.ds.Map<String, reflaxe.elixir.schema.FieldInfo>:haxe.ds.Map<String, reflaxe.elixir.schema.FieldInfo>]
+					associations: [Block:haxe.ds.StringMap<reflaxe.elixir.schema.AssociationInfo>]
+						[Block:Void]
+						[New:haxe.ds.StringMap<reflaxe.elixir.schema.AssociationInfo>] haxe.ds.StringMap<reflaxe.elixir.schema.AssociationInfo>
+					tableName: [Binop:String]
+						[Call:String]
+							[Field:() -> String]
+								[Local schemaName(25791):String:String]
+								[FInstance:() -> String]
+									String
+									toLowerCase:() -> String
+						+
+						[Const:String] "s"
+					primaryKey: [Const:String] "id"
+
+	static function getHaxeSchemaType[Function:(schemaName : String) -> Null<haxe.macro.Type>]
+		[Arg:String] [Local schemaName(25547):String]
+		[Block:Void]
+			[Try:Void]
+				[Block:Dynamic]
+					[Return:Dynamic]
+						[Call:haxe.macro.Type]
+							[Field:(t : haxe.macro.ComplexType, p : haxe.macro.Position) -> haxe.macro.Type]
+								[TypeExpr haxe.macro.Context:Class<haxe.macro.Context>]
+								[FStatic:(t : haxe.macro.ComplexType, p : haxe.macro.Position) -> haxe.macro.Type]
+									haxe.macro.Context
+									resolveType:(t : haxe.macro.ComplexType, p : haxe.macro.Position) -> haxe.macro.Type
+							[Call:haxe.macro.ComplexType]
+								[Field:(p : haxe.macro.TypePath) -> haxe.macro.ComplexType]
+									[TypeExpr haxe.macro.ComplexType:Enum<haxe.macro.ComplexType>]
+									[FEnum:(p : haxe.macro.TypePath) -> haxe.macro.ComplexType]
+										haxe.macro.ComplexType
+										TPath
+								[ObjectDecl:{ ?sub : Null<String>, ?params : Null<Array<haxe.macro.TypeParam>>, pack : Array<String>, name : String }]
+									name: [Local schemaName(25547):String:String]
+									pack: [ArrayDecl:Array<String>]
+							[Call:haxe.macro.Position]
+								[Field:() -> haxe.macro.Position]
+									[TypeExpr haxe.macro.Context:Class<haxe.macro.Context>]
+									[FStatic:() -> haxe.macro.Position]
+										haxe.macro.Context
+										currentPos:() -> haxe.macro.Position
+				Catch [Local `(34356):Dynamic]
+					[Block:Void]
+						[Block:Void]
+						[Block:Void]
+						[If:Void]
+							[Const:Bool] true
+							[Then:Dynamic] [Block:Dynamic]
+								[Block:Void]
+								[Block:Dynamic] [Return:Dynamic] [Const:Null<haxe.macro.Type>] null
+							[Else:Unknown<86>] [Throw:Unknown<86>] [Local `(34356):Dynamic:Dynamic]
+
+	static function parseFieldFromHaxe[Function:(field : haxe.macro.ClassField) -> Null<reflaxe.elixir.schema.FieldInfo>]
+		[Arg:haxe.macro.ClassField] [Local field(25555):haxe.macro.ClassField]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[ObjectDecl:{ type : String, nullable : Bool, name : String, indexed : Bool, defaultValue : Dynamic }]
+					name: [Field:String]
+						[Local field(25555):haxe.macro.ClassField:haxe.macro.ClassField]
+						[FAnon:String] name:String
+					type: [Const:String] "Dynamic"
+					nullable: [Const:Bool] true
+					defaultValue: [Const:Dynamic] null
+					indexed: [Const:Bool] false
+
+	static function parseAssociationsFromMetadata[Function:(meta : Dynamic) -> Array<reflaxe.elixir.schema.AssociationInfo>]
+		[Arg:Dynamic] [Local meta(25858):Dynamic]
+		[Block:Dynamic] [Return:Dynamic] [ArrayDecl:Array<reflaxe.elixir.schema.AssociationInfo>]
+
+	static function mapElixirTypeToHaxe[Function:(elixirType : String) -> String]
+		[Arg:String] [Local elixirType(25605):String]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Meta:String]
+					:ast(switch (elixirType) {
+	case "string":
+		"String";	
+	case "integer":
+		"Int";	
+	case "float":
+		"Float";	
+	case "boolean":
+		"Bool";	
+	case "date":
+		"Date";	
+	case "datetime", "naive_datetime":
+		"NaiveDateTime";	
+	case "decimal":
+		"Float";	
+	case "binary":
+		"String";	
+	case "text":
+		"String";	
+	default:
+		"Dynamic";	
+})
+					[Switch:String]
+						[Local elixirType(25605):String:String]
+						[Case:String]
+							[Const:String] "binary"
+							[Block:String] [Block:String] [Const:String] "String"
+						[Case:String]
+							[Const:String] "boolean"
+							[Block:String] [Block:String] [Const:String] "Bool"
+						[Case:String]
+							[Const:String] "date"
+							[Block:String] [Block:String] [Const:String] "Date"
+						[Case:String]
+							[Const:String] "decimal"
+							[Block:String] [Block:String] [Const:String] "Float"
+						[Case:String]
+							[Const:String] "float"
+							[Block:String] [Block:String] [Const:String] "Float"
+						[Case:String]
+							[Const:String] "integer"
+							[Block:String] [Block:String] [Const:String] "Int"
+						[Case:String]
+							[Const:String] "datetime"
+							[Const:String] "naive_datetime"
+							[Block:String] [Block:String] [Const:String] "NaiveDateTime"
+						[Case:String]
+							[Const:String] "string"
+							[Block:String] [Block:String] [Const:String] "String"
+						[Case:String]
+							[Const:String] "text"
+							[Block:String] [Block:String] [Const:String] "String"
+						[Default:String] [Block:String] [Const:String] "Dynamic"
+
+	static function getAssociationType[Function:(pattern : EReg) -> String]
+		[Arg:EReg] [Local pattern(25616):EReg]
+		[Block:Dynamic] [Return:Dynamic] [Const:String] "has_many"
+
+	static function extractForeignKey[Function:(options : String, assocType : String, assocName : String) -> String]
+		[Arg:String] [Local options(25618):String]
+		[Arg:String] [Local assocType(25619):String]
+		[Arg:String] [Local assocName(25620):String]
+		[Block:Dynamic]
+			[If:Void]
+				[Binop:Bool]
+					[Binop:Bool]
+						[Local options(25618):String:String]
+						!=
+						[Const:String] null
+					&&
+					[Binop:Bool]
+						[Call:Int]
+							[Field:(str : String, ?startIndex : Null<Int>) -> Int]
+								[Local options(25618):String:String]
+								[FInstance:(str : String, ?startIndex : Null<Int>) -> Int]
+									String
+									indexOf:(str : String, ?startIndex : Null<Int>) -> Int
+							[Const:String] "foreign_key:"
+							[Const:Null<Int>] null
+						!=
+						[Const:Int] -1
+				[Then:Void] [Block:Void]
+					[Var fkPattern(25625):EReg]
+						[New:EReg]
+							EReg
+							[Const:String] "foreign_key:\\s*:([a-z_]+)"
+							[Const:String] ""
+					[If:Void]
+						[Call:Bool]
+							[Field:(s : String) -> Bool]
+								[Local fkPattern(25625):EReg:EReg]
+								[FInstance:(s : String) -> Bool]
+									EReg
+									match:(s : String) -> Bool
+							[Local options(25618):String:String]
+						[Then:Dynamic] [Block:Dynamic]
+							[Return:Dynamic]
+								[Call:String]
+									[Field:(n : Int) -> String]
+										[Local fkPattern(25625):EReg:EReg]
+										[FInstance:(n : Int) -> String]
+											EReg
+											matched:(n : Int) -> String
+									[Const:Int] 1
+			[Return:Dynamic]
+				[Meta:String]
+					:ast(switch (assocType) {
+	case "belongs_to":
+		assocName + "_id";	
+	case "has_one", "has_many":
+		"id";	
+	default:
+		assocName + "_id";	
+})
+					[Switch:String]
+						[Local assocType(25619):String:String]
+						[Case:String]
+							[Const:String] "belongs_to"
+							[Block:String]
+								[Block:String]
+									[Binop:String]
+										[Local assocName(25620):String:String]
+										+
+										[Const:String] "_id"
+						[Case:String]
+							[Const:String] "has_many"
+							[Const:String] "has_one"
+							[Block:String] [Block:String] [Const:String] "id"
+						[Default:String]
+							[Block:String]
+								[Binop:String]
+									[Local assocName(25620):String:String]
+									+
+									[Const:String] "_id"
+
+	static function extractThroughAssociation[Function:(options : String) -> Null<String>]
+		[Arg:String] [Local options(25627):String]
+		[Block:Dynamic]
+			[If:Void]
+				[Binop:Bool]
+					[Binop:Bool]
+						[Local options(25627):String:String]
+						!=
+						[Const:String] null
+					&&
+					[Binop:Bool]
+						[Call:Int]
+							[Field:(str : String, ?startIndex : Null<Int>) -> Int]
+								[Local options(25627):String:String]
+								[FInstance:(str : String, ?startIndex : Null<Int>) -> Int]
+									String
+									indexOf:(str : String, ?startIndex : Null<Int>) -> Int
+							[Const:String] "through:"
+							[Const:Null<Int>] null
+						!=
+						[Const:Int] -1
+				[Then:Void] [Block:Void]
+					[Var throughPattern(25632):EReg]
+						[New:EReg]
+							EReg
+							[Const:String] "through:\\s*:([a-z_]+)"
+							[Const:String] ""
+					[If:Void]
+						[Call:Bool]
+							[Field:(s : String) -> Bool]
+								[Local throughPattern(25632):EReg:EReg]
+								[FInstance:(s : String) -> Bool]
+									EReg
+									match:(s : String) -> Bool
+							[Local options(25627):String:String]
+						[Then:Dynamic] [Block:Dynamic]
+							[Return:Dynamic]
+								[Call:String]
+									[Field:(n : Int) -> String]
+										[Local throughPattern(25632):EReg:EReg]
+										[FInstance:(n : Int) -> String]
+											EReg
+											matched:(n : Int) -> String
+									[Const:Int] 1
+			[Return:Dynamic] [Const:Null<String>] null
+
+	public static function clearCache[Function:() -> Void]
+		[Block:haxe.ds.Map<String, reflaxe.elixir.schema.SchemaInfo>]
+			[Binop:haxe.ds.Map<String, reflaxe.elixir.schema.SchemaInfo>]
+				[Field:haxe.ds.Map<String, reflaxe.elixir.schema.SchemaInfo>]
+					[TypeExpr reflaxe.elixir.schema.SchemaIntrospection:Class<reflaxe.elixir.schema.SchemaIntrospection>]
+					[FStatic:haxe.ds.Map<String, reflaxe.elixir.schema.SchemaInfo>]
+						reflaxe.elixir.schema.SchemaIntrospection
+						schemaCache:haxe.ds.Map<String, reflaxe.elixir.schema.SchemaInfo>
+				=
+				[Block:haxe.ds.StringMap<reflaxe.elixir.schema.SchemaInfo>]
+					[Block:Void]
+					[New:haxe.ds.StringMap<reflaxe.elixir.schema.SchemaInfo>] haxe.ds.StringMap<reflaxe.elixir.schema.SchemaInfo>
+
+	public static function addSchema[Function:(schema : reflaxe.elixir.schema.SchemaInfo) -> Void]
+		[Arg:reflaxe.elixir.schema.SchemaInfo] [Local schema(25859):reflaxe.elixir.schema.SchemaInfo]
+		[Block:Void]
+			[Block:Void]
+				[Var this(25862):haxe.IMap<String, reflaxe.elixir.schema.SchemaInfo>]
+					[Field:haxe.ds.Map<String, reflaxe.elixir.schema.SchemaInfo>]
+						[TypeExpr reflaxe.elixir.schema.SchemaIntrospection:Class<reflaxe.elixir.schema.SchemaIntrospection>]
+						[FStatic:haxe.ds.Map<String, reflaxe.elixir.schema.SchemaInfo>]
+							reflaxe.elixir.schema.SchemaIntrospection
+							schemaCache:haxe.ds.Map<String, reflaxe.elixir.schema.SchemaInfo>
+				[Var key(25863):String]
+					[Field:String]
+						[Local schema(25859):reflaxe.elixir.schema.SchemaInfo:reflaxe.elixir.schema.SchemaInfo]
+						[FAnon:String] name:String
+				[Call:Void]
+					[Field:(key : String, value : reflaxe.elixir.schema.SchemaInfo) -> Void]
+						[Cast:haxe.ds.StringMap<reflaxe.elixir.schema.SchemaInfo>] [Local this(25862):haxe.IMap<String, reflaxe.elixir.schema.SchemaInfo>:haxe.IMap<String, reflaxe.elixir.schema.SchemaInfo>]
+						[FInstance:(key : String, value : reflaxe.elixir.schema.SchemaInfo) -> Void]
+							haxe.ds.StringMap<reflaxe.elixir.schema.SchemaInfo>
+							set:(key : String, value : haxe.ds.StringMap.T) -> Void
+					[Local key(25863):String:String]
+					[Local schema(25859):reflaxe.elixir.schema.SchemaInfo:reflaxe.elixir.schema.SchemaInfo]
+}
