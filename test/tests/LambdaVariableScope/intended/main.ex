@@ -23,15 +23,15 @@ defmodule Main do
           g_array = []
           (
           g_counter = 0
-          while_loop(fn -> ((g < items.length)) end, fn -> (
-          v = Enum.at(items, g)
-          g + 1
+          while_loop(fn -> ((g_counter < items.length)) end, fn -> (
+          v = Enum.at(items, g_counter)
+          g_counter + 1
           if ((v != target_item)) do
-          g ++ [v]
+          g_counter ++ [v]
         end
         ) end)
         )
-          temp_array = g
+          temp_array = g_counter
         )
     todos = [%{"id" => 1, "name" => "first"}, %{"id" => 2, "name" => "second"}]
     id = 2
@@ -40,15 +40,15 @@ defmodule Main do
           g_array = []
           (
           g_counter = 0
-          while_loop(fn -> ((g < todos.length)) end, fn -> (
-          v = Enum.at(todos, g)
-          g + 1
+          while_loop(fn -> ((g_counter < todos.length)) end, fn -> (
+          v = Enum.at(todos, g_counter)
+          g_counter + 1
           if ((v.id != id)) do
-          g ++ [v]
+          g_counter ++ [v]
         end
         ) end)
         )
-          temp_array1 = g
+          temp_array1 = g_counter
         )
   end
 
@@ -62,13 +62,13 @@ defmodule Main do
           g_array = []
           (
           g_counter = 0
-          while_loop(fn -> ((g < numbers.length)) end, fn -> (
-          v = Enum.at(numbers, g)
-          g + 1
-          g ++ [(v * multiplier)]
+          while_loop(fn -> ((g_counter < numbers.length)) end, fn -> (
+          v = Enum.at(numbers, g_counter)
+          g_counter + 1
+          g_counter ++ [(v * multiplier)]
         ) end)
         )
-          temp_array = g
+          temp_array = g_counter
         )
     prefix = "Item: "
     temp_array1 = nil
@@ -76,13 +76,13 @@ defmodule Main do
           g_array = []
           (
           g_counter = 0
-          while_loop(fn -> ((g < numbers.length)) end, fn -> (
-          v = Enum.at(numbers, g)
-          g + 1
-          g ++ [prefix <> Std.string(v)]
+          while_loop(fn -> ((g_counter < numbers.length)) end, fn -> (
+          v = Enum.at(numbers, g_counter)
+          g_counter + 1
+          g_counter ++ [prefix <> Std.string(v)]
         ) end)
         )
-          temp_array1 = g
+          temp_array1 = g_counter
         )
   end
 
@@ -94,21 +94,21 @@ defmodule Main do
           threshold = 3
           g_array = []
           g_counter = 0
-          while_loop(fn -> ((g < data.length)) end, fn -> v = Enum.at(data, g)
-    g + 1
+          while_loop(fn -> ((g_counter < data.length)) end, fn -> v = Enum.at(data, g_counter)
+    g_counter + 1
     temp_array1 = nil
     g_array = []
     g_counter = 0
     g = v
-    while_loop(fn -> ((g < g.length)) end, fn -> (
-          v = Enum.at(g, g)
-          g + 1
+    while_loop(fn -> ((g_counter < g_counter.length)) end, fn -> (
+          v = Enum.at(g_counter, g_counter)
+          g_counter + 1
           if ((v > threshold)) do
-          g ++ [v]
+          g_counter ++ [v]
         end
         ) end)
-    temp_array1 = g
-    g ++ [temp_array1] end)
+    temp_array1 = g_counter
+    g_counter ++ [temp_array1] end)
         )
   end
 
@@ -125,28 +125,52 @@ defmodule Main do
           g_array = []
           (
           g_counter = 0
-          while_loop(fn -> ((g < items.length)) end, fn -> (
-          v = Enum.at(items, g)
-          g + 1
+          while_loop(fn -> ((g_counter < items.length)) end, fn -> (
+          v = Enum.at(items, g_counter)
+          g_counter + 1
           if ((v != exclude_item)) do
-          g ++ [v]
+          g_counter ++ [v]
         end
         ) end)
         )
-          temp_array1 = g
+          temp_array1 = g_counter
         )
     (
           g_array = []
           (
           g_counter = 0
-          while_loop(fn -> ((g < temp_array1.length)) end, fn -> (
-          v = Enum.at(temp_array1, g)
-          g + 1
-          g ++ [prefix <> v <> suffix]
+          while_loop(fn -> ((g_counter < temp_array1.length)) end, fn -> (
+          v = Enum.at(temp_array1, g_counter)
+          g_counter + 1
+          g_counter ++ [prefix <> v <> suffix]
         ) end)
         )
-          temp_array = g
+          temp_array = g_counter
         )
+  end
+
+
+  # While loop helper functions
+  # Generated automatically for tail-recursive loop patterns
+
+  @doc false
+  defp while_loop(condition_fn, body_fn) do
+    if condition_fn.() do
+      body_fn.()
+      while_loop(condition_fn, body_fn)
+    else
+      nil
+    end
+  end
+
+  @doc false
+  defp do_while_loop(body_fn, condition_fn) do
+    body_fn.()
+    if condition_fn.() do
+      do_while_loop(body_fn, condition_fn)
+    else
+      nil
+    end
   end
 
 end

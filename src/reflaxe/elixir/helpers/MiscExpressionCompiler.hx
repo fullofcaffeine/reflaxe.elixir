@@ -211,7 +211,18 @@ class MiscExpressionCompiler {
         trace('[XRay MiscExpressionCompiler] Metadata: ${metadata.name}');
         #end
         
-        // Compile metadata wrapper - just compile the inner expression
+        // Check for array operation metadata from our preprocessor
+        if (metadata.name.startsWith(":elixir_enum_")) {
+            var methodName = metadata.name.substring(13); // Remove ":elixir_enum_" prefix
+            
+            #if debug_misc_expression_compiler || debug_array_preprocessor
+            trace('[XRay MiscExpressionCompiler] ✓ ARRAY OPERATION DETECTED: ${methodName}');
+            #end
+            
+            return compileEnumOperation(methodName, expr);
+        }
+        
+        // Default behavior - just compile the inner expression
         var result = compiler.compileExpression(expr);
         
         #if debug_misc_expression_compiler
@@ -219,6 +230,57 @@ class MiscExpressionCompiler {
         #end
         
         return result;
+    }
+    
+    /**
+     * COMPILE ENUM OPERATION: Generate idiomatic Elixir Enum.filter/map calls
+     * 
+     * WHY: Transform preprocessed array operations into clean Elixir code
+     * WHAT: Extract array and lambda from metadata structure and generate Enum calls
+     * HOW: Parse the TBlock structure created by ArrayOperationPreprocessor
+     */
+    private function compileEnumOperation(methodName: String, expr: TypedExpr): String {
+        #if debug_misc_expression_compiler || debug_array_preprocessor
+        trace('[XRay MiscExpressionCompiler] COMPILING ENUM OPERATION: ${methodName}');
+        #end
+        
+        switch(expr.expr) {
+            case TBlock(exprs) if (exprs.length == 2):
+                var arrayExpr: Null<TypedExpr> = null;
+                var lambdaExpr: Null<TypedExpr> = null;
+                
+                // Extract array and lambda from meta-tagged expressions
+                for (e in exprs) {
+                    switch(e.expr) {
+                        case TMeta(meta, innerExpr):
+                            if (meta.name == ":enum_array") {
+                                arrayExpr = innerExpr;
+                            } else if (meta.name == ":enum_lambda") {
+                                lambdaExpr = innerExpr;
+                            }
+                        case _:
+                    }
+                }
+                
+                if (arrayExpr != null && lambdaExpr != null) {
+                    var compiledArray = compiler.compileExpression(arrayExpr);
+                    var compiledLambda = compiler.compileExpression(lambdaExpr);
+                    
+                    #if debug_misc_expression_compiler || debug_array_preprocessor
+                    trace('[XRay MiscExpressionCompiler] ✓ GENERATING IDIOMATIC ELIXIR: Enum.${methodName}(${compiledArray}, ${compiledLambda})');
+                    #end
+                    
+                    return 'Enum.${methodName}(${compiledArray}, ${compiledLambda})';
+                }
+            case _:
+        }
+        
+        // Fallback - shouldn't happen if preprocessor works correctly
+        #if debug_misc_expression_compiler || debug_array_preprocessor
+        trace('[XRay MiscExpressionCompiler] ⚠️ FALLBACK: Could not extract array/lambda, compiling normally');
+        #end
+        
+        return compiler.compileExpression(expr);
     }
     
     /**
