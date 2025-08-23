@@ -16,7 +16,7 @@ defmodule Main do
           g_array = []
           (
           g_counter = 0
-          Enum.filter(temp_right1, fn item -> item > 2 end)
+          Enum.filter(temp_right1, fn v -> ((v > 2)) end)
         )
           temp_right = g_counter
         )
@@ -25,7 +25,7 @@ defmodule Main do
           g_array = []
           (
           g_counter = 0
-          Enum.map(temp_right1, fn item -> item * 2 end)
+          Enum.map(temp_right1, fn v -> (v * 2) end)
         )
           temp_right1 = g_counter
         )

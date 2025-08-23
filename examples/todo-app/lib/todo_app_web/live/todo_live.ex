@@ -273,8 +273,13 @@ defmodule TodoLive do
     g_array = []
     g_counter = 0
     Enum.each(this, fn v -> 
-      # TODO: Compile actual loop body operations here
-      # For now, generating correct function signature
+      temp_todo = nil
+      if ((v.id == updated_todo.id)) do
+          temp_todo = updated_todo
+        else
+          temp_todo = v
+        end
+      g_counter ++ [temp_todo]
     end)
     current_assigns = socket.assigns
     complete_assigns = TypeSafeConversions.create_complete_assigns(current_assigns, g_counter)
@@ -310,8 +315,9 @@ defmodule TodoLive do
   def find_todo(id, todos) do
     g_counter = 0
     Enum.each(todos, fn todo -> 
-      # TODO: Compile actual loop body operations here
-      # For now, generating correct function signature
+      if ((todo.id == id)) do
+          todo
+        end
     end)
     nil
   end
@@ -322,8 +328,9 @@ defmodule TodoLive do
     count = 0
     g_counter = 0
     Enum.each(todos, fn todo -> 
-      # TODO: Compile actual loop body operations here
-      # For now, generating correct function signature
+      if todo.completed do
+          count + 1
+        end
     end)
     count
   end
@@ -334,8 +341,9 @@ defmodule TodoLive do
     count = 0
     g_counter = 0
     Enum.each(todos, fn todo -> 
-      # TODO: Compile actual loop body operations here
-      # For now, generating correct function signature
+      if (not todo.completed) do
+          count + 1
+        end
     end)
     count
   end
@@ -376,8 +384,26 @@ defmodule TodoLive do
     temp_array = g_counter
     g_counter = 0
     Enum.each(temp_array, fn todo -> 
-      # TODO: Compile actual loop body operations here
-      # For now, generating correct function signature
+      updated_changeset = Todo.toggle_completed(todo)
+      (
+          g = Repo.update(updated_changeset)
+          case g do
+      {:ok, _} -> (
+          elem(g, 1)
+          (
+          g_counter
+          nil
+        )
+        )
+      {:error, _} -> (
+          g = elem(g, 1)
+          (
+          reason = g_counter
+          Log.trace("Failed to complete todo " <> to_string(todo.id) <> ": " <> Std.string(reason), %{"fileName" => "src_haxe/server/live/TodoLive.hx", "lineNumber" => 446, "className" => "server.live.TodoLive", "methodName" => "complete_all_todos"})
+        )
+        )
+    end
+        )
     end)
     (
           g = Phoenix.PubSub.broadcast(TodoApp.PubSub, "todo:updates", %{"type" => "bulk_update", "action" => "complete_all"})
