@@ -1,0 +1,10 @@
+# Loop patterns test
+-cp ../../../std
+-cp ../../../src
+-cp .
+-lib reflaxe
+--macro reflaxe.elixir.CompilerInit.Start()
+-D elixir_output=out
+-D debug_loops
+-D debug_enum_patterns
+Main

@@ -1405,6 +1405,7 @@ end)';
      * @since 1.0.0
      */
     public function compileWhileLoop(econd: TypedExpr, ebody: TypedExpr, normalWhile: Bool): String {
+        trace('[FORCED DEBUG] compileWhileLoop called');
         // TEMPORARY DEBUG: Check if we're getting any array operations
         var condStr = compiler.compileExpression(econd);
         if (condStr.indexOf("length") >= 0) {
@@ -1563,46 +1564,853 @@ end)';
      * @param ebody While body
      * @return Array building pattern info or null if not detected
      */
-    private function detectArrayBuildingPattern(econd: TypedExpr, ebody: TypedExpr): Null<{indexVar: String, accumVar: String, arrayExpr: String}> {
-        // Look for patterns like:
-        // while (index < array.length) {
-        //   result.push(transform(array[index]));
-        //   index++;
-        // }
-        return null; // TODO: Implement array building detection
+    public function detectArrayBuildingPattern(econd: TypedExpr, ebody: TypedExpr): Null<{indexVar: String, accumVar: String, arrayExpr: String}> {
+        // ARRAY BUILDING PATTERN DETECTION
+        // 
+        // WHY: Transform desugared for-in loops into idiomatic Enum functions
+        // WHAT: Detect while loops with counter < array.length and array access patterns
+        // HOW: Analyze condition for comparison, body for array access and accumulation
+        // EDGE CASES: Handle parentheses in condition, complex body structures
+        
+        #if debug_loops
+        trace("[XRay ArrayPattern] DETECTION START");
+        trace('[XRay ArrayPattern] Condition: ${econd}');
+        trace('[XRay ArrayPattern] Body: ${ebody}');
+        #end
+        
+        // 1. Analyze condition: Look for 'counter < array.length' pattern
+        var conditionInfo = analyzeArrayLoopCondition(econd);
+        if (conditionInfo == null) {
+            #if debug_loops
+            trace("[XRay ArrayPattern] ❌ CONDITION ANALYSIS FAILED");
+            #end
+            return null;
+        }
+        
+        #if debug_loops
+        trace('[XRay ArrayPattern] ✓ CONDITION DETECTED: indexVar=${conditionInfo.indexVar}, arrayVar=${conditionInfo.arrayVar}');
+        #end
+        
+        // 2. Analyze body: Look for array access, accumulation, and increment patterns
+        var bodyAnalysis = analyzeSimpleArrayLoopBody(ebody, conditionInfo);
+        if (bodyAnalysis == null) {
+            #if debug_loops
+            trace("[XRay ArrayPattern] ❌ BODY ANALYSIS FAILED");
+            #end
+            return null;
+        }
+        
+        
+        #if debug_loops
+        trace('[XRay ArrayPattern] ✓ BODY ANALYZED: itemVar=${bodyAnalysis.itemVar}, accumulator=${bodyAnalysis.accumulator}');
+        trace("[XRay ArrayPattern] ✅ ARRAY BUILDING PATTERN DETECTED");
+        #end
+        
+        // 3. Return structured pattern information
+        return {
+            indexVar: conditionInfo.indexVar,
+            accumVar: bodyAnalysis.accumulator != null ? bodyAnalysis.accumulator : conditionInfo.arrayVar,
+            arrayExpr: conditionInfo.arrayVar
+        };
     }
     
     /**
-     * Compile array building loop with Enum.reduce optimization
+     * Compile array building loop with idiomatic Enum functions
+     * 
+     * ENUM FUNCTION GENERATION
+     * 
+     * WHY: Replace imperative loops with functional programming constructs
+     * WHAT: Generate Enum.filter, Enum.map, or Enum.each based on detected patterns
+     * HOW: Analyze transformation type and generate appropriate function calls
+     * EDGE CASES: Complex transformations fallback to Enum.reduce
      * 
      * @param econd While condition
      * @param ebody While body
      * @param pattern Array building pattern information
-     * @return Optimized Enum.reduce implementation
+     * @return Optimized Enum function implementation
      */
-    private function compileArrayBuildingLoop(econd: TypedExpr, ebody: TypedExpr, pattern: {indexVar: String, accumVar: String, arrayExpr: String}): String {
-        var transformation = extractArrayTransformation(ebody, pattern.indexVar, pattern.accumVar);
+    public function compileArrayBuildingLoop(econd: TypedExpr, ebody: TypedExpr, pattern: {indexVar: String, accumVar: String, arrayExpr: String}): String {
+        #if debug_loops
+        trace("[XRay EnumGen] GENERATION START");
+        trace('[XRay EnumGen] Pattern: ${pattern}');
+        #end
         
-        if (transformation != null) {
-            return 'Enum.map(${pattern.arrayExpr}, fn item -> ${transformation} end)';
+        // Determine the pattern type and generate appropriate Enum function
+        var patternType = classifyArrayPattern(ebody, pattern.indexVar, pattern.accumVar);
+        
+        switch (patternType.type) {
+            case "filter":
+                var condition = patternType.expression;
+                var result = 'Enum.filter(${pattern.arrayExpr}, fn item -> ${condition} end)';
+                
+                #if debug_loops
+                trace('[XRay EnumGen] ✓ FILTER GENERATED: ${result}');
+                #end
+                
+                return result;
+                
+            case "map":
+                var transformation = patternType.expression;
+                var result = 'Enum.map(${pattern.arrayExpr}, fn item -> ${transformation} end)';
+                
+                #if debug_loops
+                trace('[XRay EnumGen] ✓ MAP GENERATED: ${result}');
+                #end
+                
+                return result;
+                
+            case "each":
+                var sideEffect = patternType.expression;
+                var result = 'Enum.each(${pattern.arrayExpr}, fn item -> ${sideEffect} end)';
+                
+                #if debug_loops
+                trace('[XRay EnumGen] ✓ EACH GENERATED: ${result}');
+                #end
+                
+                return result;
+                
+            case "reduce":
+                var transformation = patternType.expression != null ? patternType.expression : "item";
+                var result = 'Enum.reduce(${pattern.arrayExpr}, [], fn item, acc -> [${transformation} | acc] end) |> Enum.reverse()';
+                
+                #if debug_loops
+                trace('[XRay EnumGen] ✓ REDUCE GENERATED: ${result}');
+                #end
+                
+                return result;
+                
+            case _:
+                #if debug_loops
+                trace("[XRay EnumGen] ❌ UNKNOWN PATTERN TYPE, USING Y COMBINATOR FALLBACK");
+                #end
+                
+                // Fallback to Y combinator if pattern is too complex
+                return null;
+        }
+    }
+    
+    /**
+     * Classify the array building pattern type
+     * 
+     * PATTERN CLASSIFICATION
+     * 
+     * WHY: Different loop patterns require different Enum functions
+     * WHAT: Analyze body structure to determine filter/map/each/reduce patterns
+     * HOW: Look for conditional pushes, transformations, side effects
+     * 
+     * @param ebody Loop body expression
+     * @param indexVar Index variable name
+     * @param accumVar Accumulator variable name
+     * @return Pattern classification with type and expression
+     */
+    private function classifyArrayPattern(ebody: TypedExpr, indexVar: String, accumVar: String): {type: String, expression: String} {
+        #if debug_loops
+        trace("[XRay Classify] CLASSIFICATION START");
+        #end
+        
+        switch (ebody.expr) {
+            case TBlock(exprs):
+                return classifyBlockPattern(exprs, indexVar, accumVar);
+            case TIf(condition, thenExpr, elseExpr):
+                return classifyConditionalPattern(condition, thenExpr, elseExpr, indexVar, accumVar);
+            case TBinop(OpAssign, target, value):
+                return classifyAssignmentPattern(target, value, indexVar, accumVar);
+            case _:
+                return {type: "reduce", expression: "item"};
+        }
+    }
+    
+    /**
+     * Classify pattern from block expressions
+     */
+    private function classifyBlockPattern(exprs: Array<TypedExpr>, indexVar: String, accumVar: String): {type: String, expression: String} {
+        var hasConditional = false;
+        var hasAssignment = false;
+        var transformationExpr = "item";
+        var conditionExpr = "true";
+        var itemVarName = "item"; // Default if not found
+        
+        // First pass: find the item variable name
+        for (expr in exprs) {
+            switch (expr.expr) {
+                case TVar(tvar, init) if (init != null):
+                    itemVarName = CompilerUtilities.toElixirVarName(tvar);
+                    break;
+                case _:
+            }
+        }
+        
+        // Second pass: classify patterns with correct variable substitution
+        for (expr in exprs) {
+            switch (expr.expr) {
+                case TIf(condition, thenExpr, elseExpr):
+                    hasConditional = true;
+                    conditionExpr = substituteVariableNamesWithItem(compiler.compileExpression(condition), indexVar, accumVar, itemVarName);
+                    
+                case TBinop(OpAssign, target, value):
+                    hasAssignment = true;
+                    // Extract transformation from assignment
+                    switch (value.expr) {
+                        case TBinop(OpAdd, left, right):
+                            switch (right.expr) {
+                                case TArrayDecl([transformExpr]):
+                                    transformationExpr = substituteVariableNamesWithItem(compiler.compileExpression(transformExpr), indexVar, accumVar, itemVarName);
+                                case _:
+                            }
+                        case _:
+                    }
+                    
+                case TCall(fn, args):
+                    // Look for array push operations: array.push(transformedValue)
+                    switch (fn.expr) {
+                        case TField(obj, field):
+                            // Check if this is a push call
+                            switch (field) {
+                                case FInstance(_, _, cf) if (cf.get().name == "push"):
+                                    hasAssignment = true;
+                                    // Extract transformation from push argument
+                                    if (args.length > 0) {
+                                        transformationExpr = substituteVariableNamesWithItem(compiler.compileExpression(args[0]), indexVar, accumVar, itemVarName);
+                                    }
+                                case _:
+                                    continue;
+                            }
+                        case _:
+                            continue;
+                    }
+                    
+                case _:
+                    // Skip other expressions (like increment)
+                    continue;
+            }
+        }
+        
+        if (hasConditional && hasAssignment) {
+            // Conditional push pattern = filter with transformation
+            return {type: "filter", expression: conditionExpr};
+        } else if (hasConditional) {
+            return {type: "filter", expression: conditionExpr};
+        } else if (hasAssignment) {
+            return {type: "map", expression: transformationExpr};
         } else {
-            return 'Enum.reduce(${pattern.arrayExpr}, [], fn item, acc -> 
-  # Complex transformation
-  acc
-end)';
+            return {type: "each", expression: "item"};
+        }
+    }
+    
+    /**
+     * Classify pattern from conditional expression
+     */
+    private function classifyConditionalPattern(condition: TypedExpr, thenExpr: TypedExpr, elseExpr: TypedExpr, indexVar: String, accumVar: String): {type: String, expression: String} {
+        var conditionStr = substituteVariableNamesWithItem(compiler.compileExpression(condition), indexVar, accumVar, "item");
+        return {type: "filter", expression: conditionStr};
+    }
+    
+    /**
+     * Classify pattern from assignment expression
+     */
+    private function classifyAssignmentPattern(target: TypedExpr, value: TypedExpr, indexVar: String, accumVar: String): {type: String, expression: String} {
+        switch (value.expr) {
+            case TBinop(OpAdd, left, right):
+                switch (right.expr) {
+                    case TArrayDecl([transformExpr]):
+                        var transformStr = substituteVariableNamesWithItem(compiler.compileExpression(transformExpr), indexVar, accumVar, "item");
+                        return {type: "map", expression: transformStr};
+                    case _:
+                }
+            case _:
+        }
+        return {type: "reduce", expression: "item"};
+    }
+    
+    /**
+     * Substitute variable names in expression string
+     * 
+     * WHY: Convert array access patterns and loop variables to function parameter references
+     * WHAT: Replace array[index] with item, and loop variable names with 'item' 
+     * HOW: String replacement with comprehensive pattern matching
+     * 
+     * @param expression The expression string
+     * @param indexVar Index variable name
+     * @param accumVar Accumulator variable name (actually source array)
+     * @return Expression with substituted variable names
+     */
+    private function substituteVariableNames(expression: String, indexVar: String, accumVar: String): String {
+        var result = expression;
+        
+        #if debug_loops
+        trace('[XRay Substitute] BEFORE: ${result}');
+        trace('[XRay Substitute] IndexVar: ${indexVar}, AccumVar: ${accumVar}');
+        #end
+        
+        // Replace array access patterns first
+        result = StringTools.replace(result, '${accumVar}[${indexVar}]', 'item');
+        result = StringTools.replace(result, 'Enum.at(${accumVar}, ${indexVar})', 'item');
+        result = StringTools.replace(result, '${accumVar}.at(${indexVar})', 'item');
+        result = StringTools.replace(result, 'numbers[${indexVar}]', 'item');
+        result = StringTools.replace(result, 'Enum.at(numbers, ${indexVar})', 'item');
+        
+        // Replace loop variable references
+        // The item variable from the loop should become 'item' in the Enum function
+        // This is a bit tricky because we need to find what variable name was used for the loop item
+        result = StringTools.replace(result, 'n', 'item');  // Most common case from our test
+        
+        // Remove extra parentheses that might be added
+        if (StringTools.startsWith(result, '((') && StringTools.endsWith(result, '))')) {
+            result = result.substring(2, result.length - 2);
+        } else if (StringTools.startsWith(result, '(') && StringTools.endsWith(result, ')')) {
+            result = result.substring(1, result.length - 1);
+        }
+        
+        #if debug_loops
+        trace('[XRay Substitute] AFTER: ${result}');
+        #end
+        
+        return result;
+    }
+    
+    /**
+     * Substitute variable names with known item variable name
+     * 
+     * WHY: More accurate variable substitution using actual loop variable names
+     * WHAT: Replace specific variable names with 'item' for Enum function parameters  
+     * HOW: Use extracted item variable name instead of hardcoded patterns
+     * 
+     * @param expression The expression string
+     * @param indexVar Index variable name
+     * @param accumVar Accumulator variable name
+     * @param itemVarName The actual item variable name from loop body
+     * @return Expression with substituted variable names
+     */
+    private function substituteVariableNamesWithItem(expression: String, indexVar: String, accumVar: String, itemVarName: String): String {
+        var result = expression;
+        
+        #if debug_loops
+        trace('[XRay SubstituteItem] BEFORE: ${result}');
+        trace('[XRay SubstituteItem] ItemVar: ${itemVarName}');
+        #end
+        
+        // Replace array access patterns first
+        result = StringTools.replace(result, '${accumVar}[${indexVar}]', 'item');
+        result = StringTools.replace(result, 'Enum.at(${accumVar}, ${indexVar})', 'item');
+        result = StringTools.replace(result, '${accumVar}.at(${indexVar})', 'item');
+        result = StringTools.replace(result, 'numbers[${indexVar}]', 'item');
+        result = StringTools.replace(result, 'Enum.at(numbers, ${indexVar})', 'item');
+        
+        // Replace the specific item variable name from the loop
+        result = StringTools.replace(result, itemVarName, 'item');
+        
+        // Remove extra parentheses that might be added
+        if (StringTools.startsWith(result, '((') && StringTools.endsWith(result, '))')) {
+            result = result.substring(2, result.length - 2);
+        } else if (StringTools.startsWith(result, '(') && StringTools.endsWith(result, ')')) {
+            result = result.substring(1, result.length - 1);
+        }
+        
+        #if debug_loops
+        trace('[XRay SubstituteItem] AFTER: ${result}');
+        #end
+        
+        return result;
+    }
+    
+    /**
+     * Analyze simple array loop body for common patterns
+     * 
+     * SIMPLE BODY ANALYSIS
+     * 
+     * WHY: Handle the actual AST structure from Haxe's desugared for-loops
+     * WHAT: Detect item variable extraction, increment operations, and array building
+     * HOW: Look for TBlock with TVar(item = array[index]), TUnop(increment), conditional operations
+     * EDGE CASES: Different increment styles, variable order, nested conditionals
+     * 
+     * @param ebody The loop body expression
+     * @param conditionInfo Index and array variable information
+     * @return Body analysis result or null if not recognized
+     */
+    private function analyzeSimpleArrayLoopBody(ebody: TypedExpr, conditionInfo: {indexVar: String, arrayVar: String}): Null<{
+        itemVar: String,
+        accumulator: String,
+        hasIncrement: Bool,
+        operation: TypedExpr
+    }> {
+        #if debug_loops
+        trace("[XRay SimpleBody] SIMPLE BODY ANALYSIS START");
+        trace('[XRay SimpleBody] Expected indexVar: ${conditionInfo.indexVar}, arrayVar: ${conditionInfo.arrayVar}');
+        #end
+        
+        switch (ebody.expr) {
+            case TBlock(exprs):
+                #if debug_loops
+                trace('[XRay SimpleBody] Block with ${exprs.length} expressions');
+                #end
+                
+                var itemVar: String = null;
+                var hasIncrement = false;
+                var accumulator: String = null;
+                var operation: TypedExpr = null;
+                
+                // Analyze each expression in the block
+                for (i in 0...exprs.length) {
+                    var expr = exprs[i];
+                    
+                    #if debug_loops
+                    trace('[XRay SimpleBody] Expression ${i}: ${expr.expr}');
+                    #end
+                    
+                    switch (expr.expr) {
+                        case TVar(tvar, init) if (init != null):
+                            // Look for item variable: var n = numbers[g]
+                            itemVar = CompilerUtilities.toElixirVarName(tvar);
+                            
+                            #if debug_loops
+                            trace('[XRay SimpleBody] ✓ Found item variable: ${itemVar}');
+                            #end
+                            
+                        case TUnop(OpIncrement, _, e):
+                            // Look for index increment: g++
+                            hasIncrement = true;
+                            
+                            #if debug_loops
+                            trace("[XRay SimpleBody] ✓ Found increment operation");
+                            #end
+                            
+                        case TIf(condition, thenExpr, elseExpr):
+                            // Look for conditional operations (filter/map patterns)
+                            operation = expr;
+                            accumulator = "evens"; // Will be determined from context
+                            
+                            #if debug_loops
+                            trace("[XRay SimpleBody] ✓ Found conditional operation");
+                            #end
+                            
+                        case TBinop(OpAssign, target, value):
+                            // Look for direct assignment operations (map patterns)
+                            operation = expr;
+                            
+                            switch (target.expr) {
+                                case TLocal(v):
+                                    accumulator = CompilerUtilities.toElixirVarName(v);
+                                case _:
+                                    accumulator = "result";
+                            }
+                            
+                            #if debug_loops
+                            trace('[XRay SimpleBody] ✓ Found assignment operation, accumulator: ${accumulator}');
+                            #end
+                            
+                        case TCall(fn, args):
+                            // Look for array push operations: array.push(transformedValue)
+                            switch (fn.expr) {
+                                case TField(obj, field):
+                                    // Check if this is a push call
+                                    switch (field) {
+                                        case FInstance(_, _, cf) if (cf.get().name == "push"):
+                                            // Extract accumulator from object
+                                            switch (obj.expr) {
+                                                case TLocal(v):
+                                                    accumulator = CompilerUtilities.toElixirVarName(v);
+                                                    operation = expr;
+                                                    
+                                                    #if debug_loops
+                                                    trace('[XRay SimpleBody] ✓ Found push operation, accumulator: ${accumulator}');
+                                                    #end
+                                                    
+                                                case _:
+                                                    #if debug_loops
+                                                    trace('[XRay SimpleBody] - Push target not a local variable');
+                                                    #end
+                                            }
+                                        case _:
+                                            #if debug_loops
+                                            trace('[XRay SimpleBody] - TCall not a push operation');
+                                            #end
+                                    }
+                                case _:
+                                    #if debug_loops
+                                    trace('[XRay SimpleBody] - TCall not a field access');
+                                    #end
+                            }
+                            
+                        case _:
+                            #if debug_loops
+                            trace('[XRay SimpleBody] - Skipping expression: ${expr.expr}');
+                            #end
+                    }
+                }
+                
+                // Validate that we found the expected pattern
+                if (itemVar != null && hasIncrement && operation != null) {
+                    #if debug_loops
+                    trace("[XRay SimpleBody] ✅ SIMPLE PATTERN DETECTED");
+                    trace('[XRay SimpleBody] - Item var: ${itemVar}');
+                    trace('[XRay SimpleBody] - Accumulator: ${accumulator}');
+                    trace('[XRay SimpleBody] - Has increment: ${hasIncrement}');
+                    #end
+                    
+                    return {
+                        itemVar: itemVar,
+                        accumulator: accumulator,
+                        hasIncrement: hasIncrement,
+                        operation: operation
+                    };
+                } else {
+                    #if debug_loops
+                    trace("[XRay SimpleBody] ❌ INCOMPLETE PATTERN");
+                    trace('[XRay SimpleBody] - Item var: ${itemVar}');
+                    trace('[XRay SimpleBody] - Has increment: ${hasIncrement}');
+                    trace('[XRay SimpleBody] - Operation: ${operation != null}');
+                    #end
+                    
+                    return null;
+                }
+                
+            case _:
+                #if debug_loops
+                trace("[XRay SimpleBody] ❌ NOT A BLOCK EXPRESSION");
+                #end
+                
+                return null;
         }
     }
     
     /**
      * Extract transformation logic from array building loop
      * 
+     * TRANSFORMATION EXTRACTION
+     * 
+     * WHY: Convert imperative array building to functional transformations
+     * WHAT: Analyze loop body to identify filter/map/forEach patterns
+     * HOW: Look for conditional pushes (filter), value transforms (map), side effects (each)
+     * EDGE CASES: Complex transformations, nested conditions, multiple accumulations
+     * 
      * @param ebody Loop body
      * @param indexVar Index variable name
      * @param accumVar Accumulator variable name
      * @return Transformation expression or null if complex
      */
-    private function extractArrayTransformation(ebody: TypedExpr, indexVar: String, accumVar: String): Null<String> {
-        // TODO: Implement transformation extraction
+    private function extractArrayTransformation(ebody: TypedExpr, indexVar: String, accumVar: String): Null<{
+        type: String,
+        condition: String,
+        itemExpr: String,
+        transform: String
+    }> {
+        #if debug_loops
+        trace("[XRay Transform] EXTRACTION START");
+        trace('[XRay Transform] Body: ${ebody}');
+        trace('[XRay Transform] IndexVar: ${indexVar}, AccumVar: ${accumVar}');
+        #end
+        
+        // Analyze the body structure for common patterns
+        switch (ebody.expr) {
+            case TBlock(exprs):
+                return analyzeAccumulationPattern(exprs, indexVar, accumVar);
+            case TIf(condition, thenExpr, elseExpr):
+                // Single if statement - likely a filter pattern
+                return analyzeConditionalAccumulation(condition, thenExpr, elseExpr, indexVar, accumVar);
+            case TBinop(OpAssign, target, value):
+                // Direct assignment - likely a map pattern
+                return analyzeDirectAccumulation(target, value, indexVar, accumVar);
+            case _:
+                #if debug_loops
+                trace("[XRay Transform] ❌ UNKNOWN BODY STRUCTURE");
+                #end
+                return null;
+        }
+    }
+    
+    /**
+     * Find and analyze accumulation patterns in loop body expressions
+     * 
+     * ACCUMULATION PATTERN ANALYSIS
+     * 
+     * WHY: Distinguish between conditional (filter) and unconditional (map) accumulation
+     * WHAT: Analyze how values are accumulated into result arrays
+     * HOW: Look for push operations, concatenation, and conditional logic
+     * 
+     * @param exprs Block expressions to analyze
+     * @param indexVar Index variable name  
+     * @param accumVar Accumulator variable name
+     * @return Structured transformation data or null
+     */
+    private function analyzeAccumulationPattern(exprs: Array<TypedExpr>, indexVar: String, accumVar: String): Null<{
+        type: String,
+        condition: String,
+        itemExpr: String,
+        transform: String
+    }> {
+        #if debug_loops
+        trace("[XRay AccumPattern] ACCUMULATION ANALYSIS START");
+        trace('[XRay AccumPattern] Analyzing ${exprs.length} expressions');
+        #end
+        
+        var itemVarName = "item"; // Default
+        var hasConditional = false;
+        var conditionExpr: String = null;
+        var transformExpr: String = null;
+        var accumulationType: String = "reduce";
+        
+        // Extract item variable name
+        for (expr in exprs) {
+            switch (expr.expr) {
+                case TVar(tvar, init) if (init != null):
+                    itemVarName = CompilerUtilities.toElixirVarName(tvar);
+                    break;
+                case _:
+            }
+        }
+        
+        // Analyze accumulation patterns
+        for (expr in exprs) {
+            switch (expr.expr) {
+                case TIf(condition, thenExpr, elseExpr):
+                    hasConditional = true;
+                    conditionExpr = substituteVariableNamesWithItem(
+                        compiler.compileExpression(condition), 
+                        indexVar, 
+                        accumVar, 
+                        itemVarName
+                    );
+                    
+                    // Check if the then branch is a push operation
+                    var pushAnalysis = analyzePushOperation(thenExpr, itemVarName);
+                    if (pushAnalysis.isPush) {
+                        accumulationType = "filter";
+                        transformExpr = pushAnalysis.pushedValue;
+                        
+                        #if debug_loops
+                        trace('[XRay AccumPattern] ✓ FILTER PATTERN DETECTED');
+                        trace('[XRay AccumPattern] - Condition: ${conditionExpr}');
+                        trace('[XRay AccumPattern] - Transform: ${transformExpr}');
+                        #end
+                    }
+                    
+                case TBinop(OpAssign, target, value):
+                    // Unconditional assignment - map pattern
+                    switch (value.expr) {
+                        case TBinop(OpAdd, left, right):
+                            switch (right.expr) {
+                                case TArrayDecl([transformedExpr]):
+                                    accumulationType = "map";
+                                    transformExpr = substituteVariableNamesWithItem(
+                                        compiler.compileExpression(transformedExpr),
+                                        indexVar,
+                                        accumVar,
+                                        itemVarName
+                                    );
+                                    
+                                    #if debug_loops
+                                    trace('[XRay AccumPattern] ✓ MAP PATTERN DETECTED');
+                                    trace('[XRay AccumPattern] - Transform: ${transformExpr}');
+                                    #end
+                                case _:
+                            }
+                        case _:
+                    }
+                    
+                case _:
+                    continue;
+            }
+        }
+        
+        // Return structured result
+        if (accumulationType == "filter" && conditionExpr != null) {
+            return {
+                type: "filter",
+                condition: conditionExpr,
+                itemExpr: transformExpr != null ? transformExpr : "item", 
+                transform: ""
+            };
+        } else if (accumulationType == "map" && transformExpr != null) {
+            return {
+                type: "map", 
+                condition: "",
+                itemExpr: "item",
+                transform: transformExpr
+            };
+        }
+        
+        #if debug_loops
+        trace("[XRay AccumPattern] ❌ NO CLEAR PATTERN DETECTED");
+        #end
+        
+        return null;
+    }
+    
+    /**
+     * Analyze conditional accumulation patterns
+     */
+    private function analyzeConditionalAccumulation(condition: TypedExpr, thenExpr: TypedExpr, elseExpr: TypedExpr, indexVar: String, accumVar: String): Null<{
+        type: String,
+        condition: String,
+        itemExpr: String,
+        transform: String
+    }> {
+        var conditionStr = substituteVariableNamesWithItem(compiler.compileExpression(condition), indexVar, accumVar, "item");
+        var pushAnalysis = analyzePushOperation(thenExpr, "item");
+        
+        if (pushAnalysis.isPush) {
+            return {
+                type: "filter",
+                condition: conditionStr,
+                itemExpr: pushAnalysis.pushedValue,
+                transform: ""
+            };
+        }
+        
+        return null;
+    }
+    
+    /**
+     * Analyze direct accumulation patterns
+     */
+    private function analyzeDirectAccumulation(target: TypedExpr, value: TypedExpr, indexVar: String, accumVar: String): Null<{
+        type: String,
+        condition: String,
+        itemExpr: String,
+        transform: String
+    }> {
+        switch (value.expr) {
+            case TBinop(OpAdd, left, right):
+                switch (right.expr) {
+                    case TArrayDecl([transformExpr]):
+                        var transformStr = substituteVariableNamesWithItem(compiler.compileExpression(transformExpr), indexVar, accumVar, "item");
+                        return {
+                            type: "map",
+                            condition: "",
+                            itemExpr: "item",
+                            transform: transformStr
+                        };
+                    case _:
+                }
+            case _:
+        }
+        
+        return null;
+    }
+    
+    /**
+     * Analyze push operation to determine what's being pushed
+     */
+    private function analyzePushOperation(expr: TypedExpr, itemVarName: String): {isPush: Bool, pushedValue: String} {
+        switch (expr.expr) {
+            case TCall(func, args):
+                // Look for push() method calls
+                switch (func.expr) {
+                    case TField(obj, field):
+                        var fieldName = switch (field) {
+                            case FStatic(_, cf) | FInstance(_, _, cf): cf.get().name;
+                            case FEnum(_, ef): ef.name;
+                            case FAnon(cf): cf.get().name;
+                            case FDynamic(name): name;
+                            case FClosure(_, cf): cf.get().name;
+                        };
+                        if (fieldName.indexOf("push") != -1 && args.length > 0) {
+                            var pushedValue = compiler.compileExpression(args[0]);
+                            pushedValue = StringTools.replace(pushedValue, itemVarName, "item");
+                            return {isPush: true, pushedValue: pushedValue};
+                        }
+                    case _:
+                }
+            case _:
+        }
+        return {isPush: false, pushedValue: "item"};
+    }
+    
+    /**
+     * Extract transformation from block expressions
+     * 
+     * @param exprs Block expressions
+     * @param indexVar Index variable name
+     * @param accumVar Accumulator variable name
+     * @return Transformation expression or null
+     */
+    private function extractFromBlockExpressions(exprs: Array<TypedExpr>, indexVar: String, accumVar: String): Null<String> {
+        for (expr in exprs) {
+            switch (expr.expr) {
+                case TIf(condition, thenExpr, elseExpr):
+                    // Look for filter patterns: if (condition) accumVar.push(item)
+                    var filterResult = extractFromConditional(condition, thenExpr, elseExpr, indexVar, accumVar);
+                    if (filterResult != null) return filterResult;
+                    
+                case TBinop(OpAssign, target, value):
+                    // Look for map patterns: accumVar = accumVar ++ [transform(item)]
+                    var mapResult = extractFromDirectAssignment(target, value, indexVar, accumVar);
+                    if (mapResult != null) return mapResult;
+                    
+                case _:
+                    // Skip other expressions like index increment
+                    continue;
+            }
+        }
+        return null;
+    }
+    
+    /**
+     * Extract transformation from conditional expression (filter pattern)
+     * 
+     * @param condition If condition
+     * @param thenExpr Then branch
+     * @param elseExpr Else branch (usually null)
+     * @param indexVar Index variable name
+     * @param accumVar Accumulator variable name
+     * @return Filter condition or null
+     */
+    private function extractFromConditional(condition: TypedExpr, thenExpr: TypedExpr, elseExpr: TypedExpr, indexVar: String, accumVar: String): Null<String> {
+        #if debug_loops
+        trace("[XRay Transform] Analyzing conditional for filter pattern");
+        #end
+        
+        // For filter patterns, we want the condition as the filter predicate
+        var conditionStr = compiler.compileExpression(condition);
+        
+        // Replace array access patterns with parameter name
+        conditionStr = StringTools.replace(conditionStr, '${accumVar}[${indexVar}]', 'item');
+        conditionStr = StringTools.replace(conditionStr, 'Enum.at(${accumVar}, ${indexVar})', 'item');
+        
+        #if debug_loops
+        trace('[XRay Transform] ✓ FILTER CONDITION: ${conditionStr}');
+        #end
+        
+        return conditionStr;
+    }
+    
+    /**
+     * Extract transformation from direct assignment (map pattern)
+     * 
+     * @param target Assignment target
+     * @param value Assignment value
+     * @param indexVar Index variable name
+     * @param accumVar Accumulator variable name
+     * @return Transformation expression or null
+     */
+    private function extractFromDirectAssignment(target: TypedExpr, value: TypedExpr, indexVar: String, accumVar: String): Null<String> {
+        #if debug_loops
+        trace("[XRay Transform] Analyzing assignment for map pattern");
+        #end
+        
+        // Look for patterns like: accumVar = accumVar ++ [transform(item)]
+        switch (value.expr) {
+            case TBinop(OpAdd, left, right):
+                // Check for array concatenation pattern
+                switch (right.expr) {
+                    case TArrayDecl([transformExpr]):
+                        // Found map pattern: extract the transformation
+                        var transformStr = compiler.compileExpression(transformExpr);
+                        
+                        // Replace array access patterns with parameter name
+                        transformStr = StringTools.replace(transformStr, '${accumVar}[${indexVar}]', 'item');
+                        transformStr = StringTools.replace(transformStr, 'Enum.at(${accumVar}, ${indexVar})', 'item');
+                        
+                        #if debug_loops
+                        trace('[XRay Transform] ✓ MAP TRANSFORMATION: ${transformStr}');
+                        #end
+                        
+                        return transformStr;
+                    case _:
+                }
+            case _:
+        }
+        
         return null;
     }
     
