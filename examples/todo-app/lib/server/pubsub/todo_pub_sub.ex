@@ -122,14 +122,14 @@ defmodule TodoPubSub do
           temp_result = nil
           (
           g = msg.type
-          case g_counter do
+          case g do
       "bulk_update" -> if ((msg.action != nil)) do
           (
           bulk_action = TodoPubSub.parse_bulk_action(msg.action)
-          case bulkAction do
+          case bulk_action do
       {:ok, _} -> (
           g = elem(bulk_action, 1)
-          action = g_counter
+          action = g
           temp_result = Option.some(TodoPubSubMessage.bulk_update(action))
         )
       :error -> temp_result = :error
@@ -141,10 +141,10 @@ defmodule TodoPubSub do
       "system_alert" -> if (((msg.message != nil) && (msg.level != nil))) do
           (
           alert_level = TodoPubSub.parse_alert_level(msg.level)
-          case alertLevel do
+          case alert_level do
       {:ok, _} -> (
           g = elem(alert_level, 1)
-          level = g_counter
+          level = g
           temp_result = Option.some(TodoPubSubMessage.system_alert(msg.message, level))
         )
       :error -> temp_result = :error

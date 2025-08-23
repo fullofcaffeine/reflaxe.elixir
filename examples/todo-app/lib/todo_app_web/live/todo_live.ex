@@ -9,7 +9,7 @@ defmodule TodoLive do
       {:ok, _} -> elem(g, 1)
       {:error, _} -> (
           g = elem(g, 1)
-          reason = g_counter
+          reason = g
           MountResult.error("Failed to subscribe to updates: " <> reason)
         )
     end
@@ -48,13 +48,13 @@ defmodule TodoLive do
 
   @doc "Generated from Haxe handle_info"
   def handle_info(msg, socket) do
-    temp_socket = nil
+    temp_socket
     (
           g = TodoPubSub.parse_message(msg)
           case g do
       {:ok, _} -> (
           g = elem(g, 1)
-          parsed_msg = g_counter
+          parsed_msg = g
           case (elem(parsed_msg, 0)) do
       {0, todo} -> (
           g = elem(parsed_msg, 1)
@@ -125,7 +125,7 @@ defmodule TodoLive do
           g = Repo.insert(changeset)
           case g do
       {:ok, _} -> g = elem(g, 1)
-    todo = g_counter
+    todo = g
     (
           g = TodoPubSub.broadcast(:todo_updates, TodoPubSubMessage.todo_created(todo))
           case g do
@@ -133,7 +133,7 @@ defmodule TodoLive do
       {:error, _} -> (
           g = elem(g, 1)
           (
-          reason = g_counter
+          reason = g
           Log.trace("Failed to broadcast todo creation: " <> reason, %{"fileName" => "src_haxe/server/live/TodoLive.hx", "lineNumber" => 228, "className" => "server.live.TodoLive", "methodName" => "create_new_todo"})
         )
         )
@@ -147,7 +147,7 @@ defmodule TodoLive do
       {:error, _} -> (
           g = elem(g, 1)
           (
-          reason = g_counter
+          reason = g
           LiveView.put_flash(socket, :error, "Failed to create todo: " <> Std.string(reason))
         )
         )
@@ -168,7 +168,7 @@ defmodule TodoLive do
           case g do
       {:ok, _} -> (
           g = elem(g, 1)
-          updated_todo = g_counter
+          updated_todo = g
           (
           g = TodoPubSub.broadcast(:todo_updates, TodoPubSubMessage.todo_updated(updated_todo))
           case g do
@@ -176,7 +176,7 @@ defmodule TodoLive do
       {:error, _} -> (
           g = elem(g, 1)
           (
-          reason = g_counter
+          reason = g
           Log.trace("Failed to broadcast todo update: " <> reason, %{"fileName" => "src_haxe/server/live/TodoLive.hx", "lineNumber" => 267, "className" => "server.live.TodoLive", "methodName" => "toggle_todo_status"})
         )
         )
@@ -187,7 +187,7 @@ defmodule TodoLive do
       {:error, _} -> (
           g = elem(g, 1)
           (
-          reason = g_counter
+          reason = g
           LiveView.put_flash(socket, :error, "Failed to update todo: " <> Std.string(reason))
         )
         )
@@ -207,7 +207,7 @@ defmodule TodoLive do
           case g do
       {:ok, _} -> (
           elem(g, 1)
-          g_counter
+          g
           (
           g = Phoenix.PubSub.broadcast(TodoApp.PubSub, "todo:updates", %{"type" => "todo_deleted", "id" => id})
           case g do
@@ -215,7 +215,7 @@ defmodule TodoLive do
       {:error, _} -> (
           g = elem(g, 1)
           (
-          reason = g_counter
+          reason = g
           Log.trace("Failed to broadcast todo deletion: " <> reason, %{"fileName" => "src_haxe/server/live/TodoLive.hx", "lineNumber" => 292, "className" => "server.live.TodoLive", "methodName" => "delete_todo"})
         )
         )
@@ -226,7 +226,7 @@ defmodule TodoLive do
       {:error, _} -> (
           g = elem(g, 1)
           (
-          reason = g_counter
+          reason = g
           LiveView.put_flash(socket, :error, "Failed to delete todo: " <> Std.string(reason))
         )
         )
@@ -247,7 +247,7 @@ defmodule TodoLive do
           case g do
       {:ok, _} -> (
           g = elem(g, 1)
-          updated_todo = g_counter
+          updated_todo = g
           (
           g = Phoenix.PubSub.broadcast(TodoApp.PubSub, "todo:updates", %{"type" => "todo_updated", "todo" => updated_todo})
           case g do
@@ -255,7 +255,7 @@ defmodule TodoLive do
       {:error, _} -> (
           g = elem(g, 1)
           (
-          reason = g_counter
+          reason = g
           Log.trace("Failed to broadcast todo priority update: " <> reason, %{"fileName" => "src_haxe/server/live/TodoLive.hx", "lineNumber" => 319, "className" => "server.live.TodoLive", "methodName" => "update_todo_priority"})
         )
         )
@@ -266,7 +266,7 @@ defmodule TodoLive do
       {:error, _} -> (
           g = elem(g, 1)
           (
-          reason = g_counter
+          reason = g
           LiveView.put_flash(socket, :error, "Failed to update priority: " <> Std.string(reason))
         )
         )
@@ -299,10 +299,10 @@ defmodule TodoLive do
         else
           temp_todo = v
         end
-      g_counter ++ [temp_todo]
+      g ++ [temp_todo]
     end)
     current_assigns = socket.assigns
-    complete_assigns = TypeSafeConversions.create_complete_assigns(current_assigns, g_counter)
+    complete_assigns = TypeSafeConversions.create_complete_assigns(current_assigns, g)
     LiveView.assign_multiple(socket, complete_assigns)
   end
 
@@ -312,9 +312,13 @@ defmodule TodoLive do
     this = socket.assigns.todos
     g_array = []
     g_counter = 0
-    Enum.filter(this, fn v -> ((v.id != id)) end)
+    Enum.each(this, fn v -> 
+      if ((v.id != id)) do
+          g ++ [v]
+        end
+    end)
     current_assigns = socket.assigns
-    complete_assigns = TypeSafeConversions.create_complete_assigns(current_assigns, g_counter)
+    complete_assigns = TypeSafeConversions.create_complete_assigns(current_assigns, g)
     LiveView.assign_multiple(socket, complete_assigns)
   end
 
@@ -377,8 +381,10 @@ defmodule TodoLive do
     this = tags_string.split(",")
     g_array = []
     g_counter = 0
-    Enum.map(this, fn v -> StringTools.trim(v) end)
-    g_counter
+    Enum.each(this, fn v -> 
+      g ++ [StringTools.trim(v)]
+    end)
+    g
   end
 
 
@@ -396,12 +402,16 @@ defmodule TodoLive do
 
   @doc "Generated from Haxe complete_all_todos"
   def complete_all_todos(socket) do
-    temp_array = nil
+    temp_array
     this = socket.assigns.todos
     g_array = []
     g_counter = 0
-    Enum.filter(this, fn v -> (not v.completed) end)
-    temp_array = g_counter
+    Enum.each(this, fn v -> 
+      if (not v.completed) do
+          g ++ [v]
+        end
+    end)
+    temp_array = g
     g_counter = 0
     Enum.each(temp_array, fn todo -> 
       updated_changeset = Todo.toggle_completed(todo)
@@ -411,14 +421,14 @@ defmodule TodoLive do
       {:ok, _} -> (
           elem(g, 1)
           (
-          g_counter
+          g
           nil
         )
         )
       {:error, _} -> (
           g = elem(g, 1)
           (
-          reason = g_counter
+          reason = g
           Log.trace("Failed to complete todo " <> to_string(todo.id) <> ": " <> Std.string(reason), %{"fileName" => "src_haxe/server/live/TodoLive.hx", "lineNumber" => 446, "className" => "server.live.TodoLive", "methodName" => "complete_all_todos"})
         )
         )
@@ -432,7 +442,7 @@ defmodule TodoLive do
       {:error, _} -> (
           g = elem(g, 1)
           (
-          reason = g_counter
+          reason = g
           Log.trace("Failed to broadcast bulk complete: " <> reason, %{"fileName" => "src_haxe/server/live/TodoLive.hx", "lineNumber" => 458, "className" => "server.live.TodoLive", "methodName" => "complete_all_todos"})
         )
         )
@@ -450,12 +460,16 @@ defmodule TodoLive do
 
   @doc "Generated from Haxe delete_completed_todos"
   def delete_completed_todos(socket) do
-    temp_array = nil
+    temp_array
     this = socket.assigns.todos
     g_array = []
     g_counter = 0
-    Enum.filter(this, fn v -> v.completed end)
-    temp_array = g_counter
+    Enum.each(this, fn v -> 
+      if v.completed do
+          g ++ [v]
+        end
+    end)
+    temp_array = g
     g_counter = 0
     Enum.map(temp_array, fn todo -> todo end)
     Phoenix.PubSub.broadcast(TodoApp.PubSub, "todo:updates", %{"type" => "bulk_delete", "action" => "delete_completed"})
@@ -463,8 +477,12 @@ defmodule TodoLive do
     this = socket.assigns.todos
     g_array = []
     g_counter = 0
-    Enum.filter(this, fn v -> (not v.completed) end)
-    temp_array1 = g_counter
+    Enum.each(this, fn v -> 
+      if (not v.completed) do
+          g ++ [v]
+        end
+    end)
+    temp_array1 = g
     current_assigns = socket.assigns
     complete_assigns = TypeSafeConversions.create_complete_assigns(current_assigns, temp_array1)
     %{complete_assigns | completed_todos: 0}
@@ -494,7 +512,7 @@ defmodule TodoLive do
           case g do
       {:ok, _} -> (
           g = elem(g, 1)
-          updated_todo = g_counter
+          updated_todo = g
           (
           g = TodoPubSub.broadcast(:todo_updates, TodoPubSubMessage.todo_updated(updated_todo))
           case g do
@@ -502,7 +520,7 @@ defmodule TodoLive do
       {:error, _} -> (
           g = elem(g, 1)
           (
-          reason = g_counter
+          reason = g
           Log.trace("Failed to broadcast todo save: " <> reason, %{"fileName" => "src_haxe/server/live/TodoLive.hx", "lineNumber" => 526, "className" => "server.live.TodoLive", "methodName" => "save_edited_todo"})
         )
         )
@@ -514,7 +532,7 @@ defmodule TodoLive do
       {:error, _} -> (
           g = elem(g, 1)
           (
-          reason = g_counter
+          reason = g
           LiveView.put_flash(socket, :error, "Failed to save todo: " <> Std.string(reason))
         )
         )
@@ -525,7 +543,7 @@ defmodule TodoLive do
 
   @doc "Generated from Haxe handle_bulk_update"
   def handle_bulk_update(action, socket) do
-    temp_result = nil
+    temp_result
     case (elem(action, 0)) do
       0 -> (
           updated_todos = TodoLive.load_todos(socket.assigns.current_user.id)
@@ -559,14 +577,18 @@ defmodule TodoLive do
   @doc "Generated from Haxe toggle_tag_filter"
   def toggle_tag_filter(tag, socket) do
     selected_tags = socket.assigns.selected_tags
-    temp_array = nil
+    temp_array
     if Enum.member?(selected_tags, tag) do
           (
           g_array = []
           g_counter = 0
           g = selected_tags
-          Enum.filter(g_counter, fn v -> ((v != tag)) end)
-          temp_array = g_counter
+          Enum.each(g, fn v -> 
+      if ((v != tag)) do
+          g ++ [v]
+        end
+    end)
+          temp_array = g
         )
         else
           temp_array = selected_tags ++ [tag]

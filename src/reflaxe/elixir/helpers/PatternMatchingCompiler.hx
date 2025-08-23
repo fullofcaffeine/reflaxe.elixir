@@ -633,7 +633,18 @@ class PatternMatchingCompiler {
         
         // CRITICAL FIX: Compile the switch expression directly without enum introspection
         // This avoids the inner case statement that creates double-nesting
+        // Debug what we're about to compile
+        trace('[PatternMatchingCompiler] About to compile switch expression: ${switchExpr.expr}');
+        
+        // Special check for our problematic variables
+        switch (switchExpr.expr) {
+            case TLocal(v) if (v.name == "bulkAction" || v.name == "alertLevel"):
+                trace('[PatternMatchingCompiler] ⚠️ COMPILING CAMELCASE VARIABLE: ${v.name}');
+            case _:
+        }
+        
         var exprStr = compiler.compileExpression(switchExpr);
+        trace('[PatternMatchingCompiler] Compiled switch expression to: ${exprStr}');
         
         // CRITICAL FIX: If the compiled expression contains a case statement, extract the variable
         // This handles situations where enum introspection was already applied
@@ -720,6 +731,18 @@ class PatternMatchingCompiler {
         if (defaultExpr != null) {
             var defaultBody = compilePatternBody(defaultExpr, context);
             caseStrings.push('  _ -> ${defaultBody}');
+        }
+        
+        // CRITICAL FIX: Prevent incorrect variable mapping for compiler-generated switch variables
+        // When Haxe desugars switch expressions, it creates temporary variables like 'g'.
+        // These should NOT be mapped to loop counter names like 'g_counter'.
+        // This is a direct fix to ensure the correct variable name is used.
+        if (exprStr == "g_counter" && !compiler.variableRenameMap.exists("g_counter")) {
+            // This is an incorrectly mapped variable - use the original 'g' instead
+            exprStr = "g";
+            #if debug_pattern_matching
+            trace('[PatternMatchingCompiler] WARNING: Fixed incorrect g_counter mapping to g');
+            #end
         }
         
         var result = 'case ${exprStr} do\n${caseStrings.join("\n")}\nend';

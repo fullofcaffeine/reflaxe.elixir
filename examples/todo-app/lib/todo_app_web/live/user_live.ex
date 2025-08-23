@@ -62,10 +62,10 @@ defmodule UserLive do
         else
           temp_struct = Users.update_user(__MODULE__.selected_user, user_params)
         end
-    temp_result = nil
+    temp_result
     (
           g = temp_struct.status
-          case g_counter do
+          case g do
       "error" -> temp_result = %{"status" => "noreply", "socket" => UserLive.assign(socket, "changeset", temp_struct.changeset)}
       "ok" -> (
           users = Users.list_users()
@@ -249,7 +249,7 @@ defmodule UserLive do
 
   @doc "Generated from Haxe getStatusClass"
   def get_status_class(active) do
-    temp_result = nil
+    temp_result
     if active do
           temp_result = "status active"
         else
@@ -261,7 +261,7 @@ defmodule UserLive do
 
   @doc "Generated from Haxe getStatusText"
   def get_status_text(active) do
-    temp_result = nil
+    temp_result
     if active do
           temp_result = "Active"
         else
