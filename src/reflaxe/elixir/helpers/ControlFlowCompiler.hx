@@ -747,12 +747,83 @@ class ControlFlowCompiler {
         trace('[XRay ControlFlowCompiler] Cases count: ${cases.length}');
         trace('[XRay ControlFlowCompiler] Has default: ${edef != null}');
         trace('[XRay ControlFlowCompiler] Has context: ${context != null}');
+        trace('[XRay ControlFlowCompiler] Switch expression type: ${e.expr}');
         if (context != null) {
             trace('[XRay ControlFlowCompiler] Context struct param: ${context.structParamName}');
         }
         #end
         
-        // TSwitch delegates to ElixirCompiler which handles context passing properly  
+        // CRITICAL FIX: Detect TSwitch(TEnumIndex(expr)) patterns early to prevent double-nested case expressions
+        // This must happen BEFORE the switch expression gets compiled by EnumIntrospectionCompiler
+        // Debug output removed
+        
+        // Unwrap TParenthesis and TMeta layers to find underlying TEnumIndex
+        var unwrappedExpr = e;
+        while (true) {
+            switch (unwrappedExpr.expr) {
+                case TParenthesis(innerExpr):
+                    unwrappedExpr = innerExpr;
+                case TMeta(_, innerExpr):
+                    unwrappedExpr = innerExpr;
+                case _:
+                    break;
+            }
+        }
+        
+        // Debug output removed
+        
+        #if debug_control_flow_compiler
+        trace('[XRay ControlFlowCompiler] Unwrapped expression type: ${Type.enumConstructor(unwrappedExpr.expr)}');
+        #end
+        
+        switch (unwrappedExpr.expr) {
+            case TEnumIndex(innerExpr):
+                // Found TEnumIndex in switch - check for Result/Option types
+                #if debug_control_flow_compiler
+                trace("[XRay ControlFlowCompiler] ✓ DETECTED TEnumIndex in switch - checking for Result/Option types");
+                trace('[XRay ControlFlowCompiler] Inner expression type: ${innerExpr.t}');
+                #end
+                
+                // Check if this is a Result or Option type that should be compiled directly
+                #if debug_control_flow_compiler
+                trace('[XRay ControlFlowCompiler] Checking inner expression type: ${Type.enumConstructor(innerExpr.t)}');
+                #end
+                
+                switch (innerExpr.t) {
+                    case TEnum(enumRef, _):
+                        var enumType = enumRef.get();
+                        #if debug_control_flow_compiler
+                        trace('[XRay ControlFlowCompiler] Found TEnum with name: ${enumType.name}');
+                        #end
+                        if (enumType.name == "Result" || enumType.name == "Option") {
+                            #if debug_control_flow_compiler
+                            trace('[XRay ControlFlowCompiler] ✓ FOUND ${enumType.name} TYPE - compiling direct patterns');
+                            #end
+                            
+                            // Compile directly without enum index conversion - bypass double-nesting
+                            return compileDirectResultOptionSwitch(innerExpr, enumType.name, cases, edef, context);
+                        } else {
+                            #if debug_control_flow_compiler
+                            trace('[XRay ControlFlowCompiler] TEnum type is: ${enumType.name} (not Result/Option)');
+                            #end
+                        }
+                    case _:
+                        // Not a TEnum type, use standard compilation
+                        #if debug_control_flow_compiler
+                        trace('[XRay ControlFlowCompiler] Not a TEnum type, falling through to standard compilation');
+                        #end
+                        #if debug_control_flow_compiler
+                        trace("[XRay ControlFlowCompiler] Not a TEnum type, using standard compilation");
+                        #end
+                }
+            case _:
+                // Not a TEnumIndex expression, use standard compilation
+                #if debug_control_flow_compiler
+                trace("[XRay ControlFlowCompiler] Not a TEnumIndex expression, using standard compilation");
+                #end
+        }
+        
+        // Standard compilation for non-Result/Option switches
         var result = compiler.compileSwitchExpression(e, cases, edef);
         
         #if debug_control_flow_compiler
@@ -761,6 +832,173 @@ class ControlFlowCompiler {
         #end
         
         return result;
+    }
+    
+    /**
+     * Compile Result/Option switches directly without TEnumIndex double-nesting
+     * 
+     * WHY: TEnumIndex creates double-nested case expressions like:
+     *      case (case g do {:ok, _} -> 0; {:error, _} -> 1; _ -> -1 end) do
+     *      We want clean patterns like: case g do {:ok, value} -> ...; {:error, error} -> ... end
+     * 
+     * WHAT: Bypass EnumIntrospectionCompiler and generate direct Result/Option patterns
+     * 
+     * HOW: Convert integer case patterns (0, 1) to semantic patterns ({:ok, _}, {:error, _})
+     * 
+     * @param innerExpr The expression containing the Result/Option value  
+     * @param enumTypeName "Result" or "Option"
+     * @param cases Array of switch cases with integer patterns
+     * @param edef Optional default case expression
+     * @param context Function context for parameter mapping
+     * @return Clean Elixir case statement without double-nesting
+     */
+    private function compileDirectResultOptionSwitch(
+        innerExpr: TypedExpr,
+        enumTypeName: String, 
+        cases: Array<{values: Array<TypedExpr>, expr: TypedExpr}>,
+        edef: Null<TypedExpr>,
+        ?context: FunctionContext
+    ): String {
+        #if debug_control_flow_compiler
+        trace("[XRay ControlFlowCompiler] ✓ DIRECT RESULT/OPTION COMPILATION START");
+        trace('[XRay ControlFlowCompiler] Enum type: ${enumTypeName}');
+        trace('[XRay ControlFlowCompiler] Cases to convert: ${cases.length}');
+        #end
+        
+        // Clean variable mapping for common variables like 'g' to prevent conflicts
+        var savedGMapping: Null<String> = null;
+        if (compiler.currentFunctionParameterMap.exists("g")) {
+            savedGMapping = compiler.currentFunctionParameterMap.get("g");
+            compiler.currentFunctionParameterMap.remove("g");
+            #if debug_control_flow_compiler
+            trace('[XRay ControlFlowCompiler] Temporarily removed g mapping: g -> ${savedGMapping}');
+            #end
+        }
+        
+        // Extract the variable name directly from AST to avoid contamination
+        var innerExprStr = switch (innerExpr.expr) {
+            case TLocal(localVar): 
+                // Extract variable name directly to avoid g_counter contamination
+                var rawName = localVar.name;
+                // Clean up Haxe-generated prefixes
+                var cleanName = rawName.startsWith("_g") ? "g" : rawName;
+                // Variable name extracted and cleaned
+                cleanName;
+            case _: 
+                // Fallback to regular compilation for non-local expressions
+                compiler.compileExpression(innerExpr);
+        };
+        // Final variable name extracted for case statement
+        
+        // Restore g mapping if it wasn't a counter variable
+        if (savedGMapping != null && !StringTools.endsWith(savedGMapping, "_counter")) {
+            compiler.currentFunctionParameterMap.set("g", savedGMapping);
+        }
+        
+        #if debug_control_flow_compiler
+        trace('[XRay ControlFlowCompiler] Inner expression compiled to: ${innerExprStr}');
+        #end
+        
+        // Convert integer-based cases to semantic patterns
+        var caseStrings: Array<String> = [];
+        
+        for (caseData in cases) {
+            for (value in caseData.values) {
+                var pattern = switch (value.expr) {
+                    case TConst(TInt(0)): // Success constructor (Ok/Some)
+                        if (enumTypeName == "Result") "{:ok, _}" else "{:ok, _}";
+                    case TConst(TInt(1)): // Error/None constructor
+                        if (enumTypeName == "Result") "{:error, _}" else ":error";
+                    case _: "_"; // Default/catch-all pattern
+                };
+                
+                // Compile the case body with specialized handling for Result/Option types
+                var body = compileResultOptionCaseBody(caseData.expr, innerExprStr, enumTypeName, value.expr);
+                caseStrings.push('  ${pattern} -> ${body}');
+                
+                #if debug_control_flow_compiler
+                trace('[XRay ControlFlowCompiler] Generated direct pattern: ${pattern} -> [compiled body]');
+                #end
+            }
+        }
+        
+        // Add default case if present
+        if (edef != null) {
+            var defaultBody = compiler.compileExpression(edef);
+            caseStrings.push('  _ -> ${defaultBody}');
+            #if debug_control_flow_compiler
+            trace("[XRay ControlFlowCompiler] Added default case");
+            #end
+        }
+        
+        var result = 'case ${innerExprStr} do\n${caseStrings.join("\n")}\nend';
+        
+        #if debug_control_flow_compiler
+        trace("[XRay ControlFlowCompiler] ✓ DIRECT RESULT/OPTION COMPILATION END");
+        trace('[XRay ControlFlowCompiler] Generated clean case: ${result.substring(0, 100)}...');
+        #end
+        
+        return result;
+    }
+    
+    /**
+     * Compile case body for Result/Option switches with direct value extraction
+     * 
+     * WHY: Standard expression compilation generates nested case expressions for 
+     *      TEnumParameter expressions, creating double-nested patterns. We need
+     *      direct value extraction instead.
+     * WHAT: Analyzes case body AST and generates appropriate direct value access
+     * HOW: Detects TEnumParameter patterns and replaces with direct tuple access
+     * 
+     * @param expr Case body expression (may contain TEnumParameter)
+     * @param varName Variable name being matched (e.g., "g")
+     * @param enumTypeName "Result" or "Option" for pattern-specific extraction
+     * @param caseValue The case pattern value expression (TInt(0), TInt(1), etc.)
+     */
+    function compileResultOptionCaseBody(expr: TypedExpr, varName: String, enumTypeName: String, caseValue: TypedExprDef): String {
+        #if debug_control_flow_compiler
+        trace('[XRay ControlFlowCompiler] Compiling Result/Option case body with direct extraction');
+        trace('[XRay ControlFlowCompiler] Case expression type: ${Type.enumConstructor(expr.expr)}');
+        #end
+        
+        // Analyze the case body for TEnumParameter patterns
+        return switch (expr.expr) {
+            case TEnumParameter(e, ef, index):
+                #if debug_control_flow_compiler
+                trace('[XRay ControlFlowCompiler] Found TEnumParameter - generating direct extraction');
+                trace('[XRay ControlFlowCompiler] Enum field: ${ef.name}, index: ${index}');
+                #end
+                
+                // Generate direct tuple access based on the case type
+                switch (caseValue) {
+                    case TConst(TInt(0)): // Success case - extract value from tuple
+                        if (enumTypeName == "Result") {
+                            // For {:ok, value} pattern, extract the value directly
+                            'elem(${varName}, 1)';
+                        } else {
+                            // For {:ok, value} pattern in Option, extract the value
+                            'elem(${varName}, 1)';
+                        }
+                    case TConst(TInt(1)): // Error/None case - extract error value
+                        if (enumTypeName == "Result") {
+                            // For {:error, reason} pattern, extract the error
+                            'elem(${varName}, 1)';
+                        } else {
+                            // Option None case - no value to extract
+                            'nil';
+                        }
+                    case _:
+                        // Fallback to regular compilation for complex patterns
+                        compiler.compileExpression(expr);
+                };
+                
+            case _:
+                // For non-TEnumParameter expressions, use regular compilation
+                #if debug_control_flow_compiler
+                trace('[XRay ControlFlowCompiler] Non-TEnumParameter case body - using standard compilation');
+                #end
+                compiler.compileExpression(expr);
+        };
     }
     
     /**
