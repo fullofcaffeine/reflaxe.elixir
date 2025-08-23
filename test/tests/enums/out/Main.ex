@@ -11,13 +11,7 @@ defmodule Main do
       0 -> temp_result = "red"
       1 -> temp_result = "green"
       2 -> temp_result = "blue"
-      3 -> g = elem(color, 1)
-    g = elem(color, 2)
-    g = elem(color, 3)
-    r = g
-    g = g
-    b = g
-    temp_result = "rgb(" <> to_string(r) <> ", " <> to_string(nil) <> ", " <> to_string(b) <> ")"
+      {3, r, g, b} -> temp_result = "rgb(" <> to_string(r) <> ", " <> to_string(g) <> ", " <> to_string(b) <> ")"
     end
           temp_result
         )
@@ -28,13 +22,13 @@ defmodule Main do
   def get_value(opt, default_value) do
     (
           temp_result = nil
-          case (elem(opt, 0)) do
-      0 -> (
+          case opt do
+      {:ok, _} -> (
           g = elem(opt, 1)
           v = g
           temp_result = v
         )
-      1 -> temp_result = default_value
+      :error -> temp_result = default_value
     end
           temp_result
         )
@@ -46,18 +40,8 @@ defmodule Main do
     (
           temp_result = nil
           case (elem(tree, 0)) do
-      0 -> (
-          g = elem(tree, 1)
-          value = g
-          temp_result = value
-        )
-      1 -> (
-          g = elem(tree, 1)
-          g = elem(tree, 2)
-          left = g
-          right = g
-          temp_result = (Main.tree_sum(left) + Main.tree_sum(right))
-        )
+      {0, value} -> temp_result = value
+      {1, left, right} -> temp_result = (Main.tree_sum(left) + Main.tree_sum(right))
     end
           temp_result
         )
@@ -75,21 +59,21 @@ defmodule Main do
     r = g
     g = g
     b = g
-    if ((((r > 200) && (nil < 50)) && (b < 50))) do
+    if ((((r > 200) && (g < 50)) && (b < 50))) do
           temp_result = "mostly red"
         else
           (
           r = g
           g = g
           b = g
-          if ((((nil > 200) && (r < 50)) && (b < 50))) do
+          if ((((g > 200) && (r < 50)) && (b < 50))) do
           temp_result = "mostly green"
         else
           (
           r = g
           g = g
           b = g
-          if ((((b > 200) && (r < 50)) && (nil < 50))) do
+          if ((((b > 200) && (r < 50)) && (g < 50))) do
           temp_result = "mostly blue"
         else
           (
@@ -116,34 +100,16 @@ defmodule Main do
     (
           temp_result = nil
           case (elem(t1, 0)) do
-      0 -> (
-          g = elem(t1, 1)
-          if ((elem(t2, 0) == 0)) do
-          (
-          g = elem(t2, 1)
-          v2 = g
-          v1 = g
+      0 -> if ((elem(t2, 0) == 0)) do
           temp_result = (v1 == v2)
-        )
         else
           temp_result = false
         end
-        )
-      1 -> (
-          g = elem(t1, 1)
-          g = elem(t1, 2)
-          if ((elem(t2, 0) == 1)) do
-          g = elem(t2, 1)
-    g = elem(t2, 2)
-    l2 = g
-    r2 = g
-    r1 = g
-    l1 = g
-    temp_result = (Main.compare_trees(l1, l2) && Main.compare_trees(r1, r2))
+      1 -> if ((elem(t2, 0) == 1)) do
+          temp_result = (Main.compare_trees(l1, l2) && Main.compare_trees(r1, r2))
         else
           temp_result = false
         end
-        )
     end
           temp_result
         )

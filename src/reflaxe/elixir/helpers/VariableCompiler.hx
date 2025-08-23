@@ -91,7 +91,15 @@ class VariableCompiler {
      */
     public function compileLocalVariable(v: TVar): String {
         trace("[XRay VariableCompiler] LOCAL VARIABLE COMPILATION START");
-        trace('[XRay VariableCompiler] Variable: ${v.name}');
+        trace('[XRay VariableCompiler] Variable name from TVar: ${v.name}');
+        
+        // CRITICAL DEBUG: Check if v.name is already 'g_counter'
+        if (v.name == "g_counter") {
+            trace('[XRay VariableCompiler] ⚠️ ERROR: TVar.name is already g_counter! This should never happen!');
+            trace('[XRay VariableCompiler] Attempting to fix by returning "g" instead');
+            // This is a critical error - the variable should be 'g', not 'g_counter'
+            return "g";
+        }
         
         // Get the original variable name (before Haxe's renaming for shadowing avoidance)
         var originalName = getOriginalVarName(v);
@@ -104,9 +112,18 @@ class VariableCompiler {
         // The 'g' variable is exclusively used for enum parameter extraction
         // Any mapping to g_counter is a compiler bug that causes undefined variable errors
         if (originalName == "g") {
-            #if debug_variable_compiler
-            trace('[XRay VariableCompiler] ✓ SPECIAL HANDLING for g variable - returning unmapped');
-            #end
+            // First check if there's a mapping for 'g'
+            var gMapping = compiler.currentFunctionParameterMap.get("g");
+            
+            trace('[XRay VariableCompiler] ✓ SPECIAL HANDLING for g variable');
+            trace('[XRay VariableCompiler] Current mapping for g: ${gMapping}');
+            
+            // If there's a mapping to g_counter, that's ALWAYS wrong
+            if (gMapping != null && StringTools.endsWith(gMapping, "_counter")) {
+                trace('[XRay VariableCompiler] ⚠️ BLOCKING incorrect g -> ${gMapping} mapping, returning "g" directly');
+                return "g";
+            }
+            
             // Return 'g' directly - it should never be mapped to g_counter
             return "g";
         }
@@ -334,11 +351,19 @@ class VariableCompiler {
                         trace('[XRay VariableCompiler] Renamed to: ${originalName} (array)');
                         #end
                     case TConst(TInt(0)):
-                        // This is counter initialization - use a different name
-                        originalName = originalName + "_counter";
-                        #if debug_variable_compiler
-                        trace('[XRay VariableCompiler] Renamed to: ${originalName} (counter)');
-                        #end
+                        // CRITICAL FIX: Never rename 'g' to 'g_counter' - it's used for enum handling
+                        // The 'g' variable is a special case used in switch expression desugaring
+                        if (originalName != "g") {
+                            // This is counter initialization - use a different name
+                            originalName = originalName + "_counter";
+                            #if debug_variable_compiler
+                            trace('[XRay VariableCompiler] Renamed to: ${originalName} (counter)');
+                            #end
+                        } else {
+                            #if debug_variable_compiler
+                            trace('[XRay VariableCompiler] ✓ PRESERVED g variable name (not renaming to g_counter)');
+                            #end
+                        }
                     case _:
                 }
                 
