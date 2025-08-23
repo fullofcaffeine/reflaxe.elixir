@@ -397,6 +397,15 @@ if (isPhoenixProject()) {
 - Never guess what the compiler is doing - instrument and observe
 - When debugging issues, add traces FIRST, then analyze
 
+### ⚠️ CRITICAL: No Untyped Usage in Compiler Code
+**FUNDAMENTAL RULE: NEVER use `untyped` or `Dynamic` in compiler code unless there's a very good justified reason.**
+
+- All field access must be properly typed
+- If fields are public, access them directly instead of using `untyped`
+- Document any exceptional cases where `untyped` is absolutely necessary with full justification
+- Prefer explicit typing and proper interfaces over dynamic access
+- **See**: [`docs/03-compiler-development/TYPE_SAFETY_REQUIREMENTS.md`](docs/03-compiler-development/TYPE_SAFETY_REQUIREMENTS.md) - Complete type safety standards
+
 ### ⚠️ CRITICAL: No Direct Elixir Files - Everything Through Haxe
 **FUNDAMENTAL RULE: NEVER write .ex files directly. Everything must be generated from Haxe.**
 
@@ -405,6 +414,13 @@ if (isPhoenixProject()) {
 
 ### ⚠️ CRITICAL: Type Safety and String Avoidance
 **FUNDAMENTAL RULE: Avoid strings in compiler code unless absolutely necessary.**
+
+### ⚠️ CRITICAL: No Untyped Usage
+**FUNDAMENTAL RULE: NEVER use `untyped` or `Dynamic` unless there's a very good justified reason.**
+- All field access must be properly typed
+- If fields are public, access them directly instead of using `untyped`
+- Document any exceptional cases where `untyped` is absolutely necessary
+- Prefer explicit typing and proper interfaces over dynamic access
 
 ## 🏗️ Architecture & Refactoring Guidelines
 
@@ -467,6 +483,8 @@ cd examples/todo-app && npx haxe build-server.hxml && mix compile --force
 - **Array Mutability**: Methods like `reverse()` and `sort()` don't mutate in place (Elixir lists are immutable)
 
 ## Recently Resolved Issues ✅
+- **Array Desugaring & Y Combinator Patterns**: Discovered how Haxe desugars array.filter/map into TBlock/TWhile patterns and implemented detection framework (see [`docs/03-compiler-development/ARRAY_DESUGARING_PATTERNS.md`](docs/03-compiler-development/ARRAY_DESUGARING_PATTERNS.md))
+- **Untyped Usage Violations**: Eliminated all unnecessary `untyped` usage in compiler code (VariableCompiler, OperatorCompiler, ControlFlowCompiler) for better type safety and IDE support
 - **Orphaned Enum Parameter Variables**: Fixed compilation errors from unused TEnumParameter expressions in switch cases by implementing comprehensive AST-level detection and mitigation. First Reflaxe compiler to solve this fundamental issue caused by bypassing Haxe's optimizer (see [`docs/03-compiler-development/AST_CLEANUP_PATTERNS.md`](docs/03-compiler-development/AST_CLEANUP_PATTERNS.md))
 - **Y Combinator Struct Update Patterns**: Fixed malformed inline if-else expressions with struct updates by forcing block syntax (see [`docs/03-compiler-development/Y_COMBINATOR_PATTERNS.md`](docs/03-compiler-development/Y_COMBINATOR_PATTERNS.md))
 - **Variable Substitution in Lambda Expressions**: Fixed with proper AST variable tracking

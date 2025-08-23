@@ -1469,17 +1469,73 @@ end)';
     /**
      * Try to optimize for-in patterns disguised as while loops
      * 
+     * WHY: Haxe desugars array.filter(), array.map(), etc. into while loops with a specific pattern.
+     *      We need to detect these patterns and generate idiomatic Enum functions instead.
+     * 
+     * WHAT: Detects the following desugared pattern:
+     *       - _g = [] (accumulator array)
+     *       - _g1 = 0 (index counter)
+     *       - _g2 = source_array
+     *       - while (_g1 < _g2.length) { v = _g2[_g1]; _g1++; ... }
+     * 
+     * HOW: Analyzes the while condition and body structure to identify array operations
+     * 
      * @param econd While condition
      * @param ebody While body
      * @return Optimized for-in code or null if not applicable
      */
     private function tryOptimizeForInPattern(econd: TypedExpr, ebody: TypedExpr): Null<String> {
-        // Detect patterns where while loops simulate for-in iteration
-        // This is a complex pattern analysis that would examine:
-        // 1. Index variable incrementing in condition
-        // 2. Array access patterns in body
-        // 3. Loop termination on array length
-        return null; // TODO: Implement for-in pattern detection
+        #if debug_loops
+        trace('[XRay Loops] ───────────────────────────────────────────');
+        trace('[XRay Loops] DESUGARED ARRAY PATTERN DETECTION START');
+        trace('[XRay Loops] - Analyzing while loop for array patterns...');
+        #end
+        
+        // Check if condition matches: _g1 < _g2.length
+        var conditionInfo = analyzeArrayLoopCondition(econd);
+        if (conditionInfo == null) {
+            #if debug_loops
+            trace('[XRay Loops] - Condition does not match array loop pattern');
+            trace('[XRay Loops] DESUGARED ARRAY PATTERN DETECTION END');
+            trace('[XRay Loops] ───────────────────────────────────────────');
+            #end
+            return null;
+        }
+        
+        #if debug_loops
+        trace('[XRay Loops] ✓ Array loop condition detected:');
+        trace('[XRay Loops]   - Index var: ${conditionInfo.indexVar}');
+        trace('[XRay Loops]   - Array var: ${conditionInfo.arrayVar}');
+        #end
+        
+        // Analyze body to determine operation type (filter, map, find, etc.)
+        var bodyPattern = analyzeArrayLoopBody(ebody, conditionInfo);
+        if (bodyPattern == null) {
+            #if debug_loops
+            trace('[XRay Loops] - Body does not match known array patterns');
+            trace('[XRay Loops] DESUGARED ARRAY PATTERN DETECTION END');
+            trace('[XRay Loops] ───────────────────────────────────────────');
+            #end
+            return null;
+        }
+        
+        #if debug_loops
+        trace('[XRay Loops] ✓ Array operation pattern detected:');
+        trace('[XRay Loops]   - Pattern type: ${bodyPattern.type}');
+        trace('[XRay Loops]   - Item var: ${bodyPattern.itemVar}');
+        trace('[XRay Loops]   - Accumulator: ${bodyPattern.accumulator}');
+        #end
+        
+        // Generate appropriate Enum function based on pattern
+        var result = generateEnumFunction(bodyPattern, conditionInfo);
+        
+        #if debug_loops
+        trace('[XRay Loops] ✓ GENERATED IDIOMATIC ENUM FUNCTION');
+        trace('[XRay Loops] DESUGARED ARRAY PATTERN DETECTION END');
+        trace('[XRay Loops] ───────────────────────────────────────────');
+        #end
+        
+        return result;
     }
     
     /**
@@ -1851,6 +1907,214 @@ end)';
             case _:
                 return false;
         }
+    }
+    
+    /**
+     * Analyze while loop condition for array iteration pattern
+     * 
+     * @param econd While condition expression
+     * @return Info about array loop variables or null if not a match
+     */
+    private function analyzeArrayLoopCondition(econd: TypedExpr): Null<{indexVar: String, arrayVar: String}> {
+        // Looking for pattern: _g1 < _g2.length (with parenthesis)
+        switch(econd.expr) {
+            case TParenthesis(e):
+                return analyzeArrayLoopCondition(e);
+                
+            case TBinop(OpLt, e1, e2):
+                // e1 should be index variable (like _g1)
+                // e2 should be array.length field access
+                var indexVar = switch(e1.expr) {
+                    case TLocal(v): CompilerUtilities.toElixirVarName(v);
+                    case _: null;
+                };
+                
+                if (indexVar == null) return null;
+                
+                // Check for array.length pattern
+                var arrayVar = switch(e2.expr) {
+                    case TField(arrayExpr, FInstance(_, _, cf)):
+                        if (cf.get().name == "length") {
+                            switch(arrayExpr.expr) {
+                                case TLocal(v): CompilerUtilities.toElixirVarName(v);
+                                case _: null;
+                            }
+                        } else {
+                            null;
+                        }
+                    case _: null;
+                };
+                
+                if (arrayVar == null) return null;
+                
+                return {indexVar: indexVar, arrayVar: arrayVar};
+                
+            case _:
+                return null;
+        }
+    }
+    
+    /**
+     * Analyze while loop body for array operation patterns
+     * 
+     * @param ebody While body expression
+     * @param conditionInfo Information from condition analysis
+     * @return Pattern information or null if not recognized
+     */
+    private function analyzeArrayLoopBody(ebody: TypedExpr, conditionInfo: {indexVar: String, arrayVar: String}): Null<{
+        type: String,
+        itemVar: String,
+        accumulator: String,
+        sourceArray: TypedExpr,
+        transformation: TypedExpr,
+        condition: TypedExpr
+    }> {
+        // Body should be a block with specific structure
+        switch(ebody.expr) {
+            case TBlock(exprs) if (exprs.length >= 2):
+                // First: var v = array[index]
+                var itemVar: String = null;
+                var sourceArray: TypedExpr = null;
+                
+                if (exprs.length > 0) {
+                    switch(exprs[0].expr) {
+                        case TVar(tvar, init) if (init != null):
+                            itemVar = CompilerUtilities.toElixirVarName(tvar);
+                            // Check if init is array[index]
+                            switch(init.expr) {
+                                case TArray(arr, idx):
+                                    sourceArray = arr;
+                                case _:
+                            }
+                        case _:
+                    }
+                }
+                
+                if (itemVar == null) return null;
+                
+                // Second: index++ (prefix increment)
+                var hasIncrement = false;
+                if (exprs.length > 1) {
+                    switch(exprs[1].expr) {
+                        case TUnop(OpIncrement, true, e): // prefix ++
+                            hasIncrement = true;
+                        case _:
+                    }
+                }
+                
+                if (!hasIncrement) return null;
+                
+                // Third: operation (filter/map/etc.)
+                if (exprs.length > 2) {
+                    return analyzeArrayOperation(exprs[2], itemVar, sourceArray);
+                }
+                
+            case _:
+        }
+        
+        return null;
+    }
+    
+    /**
+     * Analyze the array operation (filter, map, etc.)
+     * 
+     * @param expr The operation expression
+     * @param itemVar The loop item variable name
+     * @param sourceArray The source array expression
+     * @return Pattern information
+     */
+    private function analyzeArrayOperation(expr: TypedExpr, itemVar: String, sourceArray: TypedExpr): Null<{
+        type: String,
+        itemVar: String,
+        accumulator: String,
+        sourceArray: TypedExpr,
+        transformation: TypedExpr,
+        condition: TypedExpr
+    }> {
+        switch(expr.expr) {
+            // Filter pattern: if (condition) accumulator.push(item)
+            case TIf(cond, thenExpr, null):
+                // Check if then branch pushes to accumulator
+                switch(thenExpr.expr) {
+                    case TCall(e, [arg]):
+                        // This is a push operation
+                        return {
+                            type: "filter",
+                            itemVar: itemVar,
+                            accumulator: "_g", // TODO: extract actual accumulator name
+                            sourceArray: sourceArray,
+                            transformation: null,
+                            condition: cond
+                        };
+                    case _:
+                }
+                
+            // Map pattern: accumulator.push(transformation)
+            case TCall(e, [arg]):
+                return {
+                    type: "map",
+                    itemVar: itemVar,
+                    accumulator: "_g",
+                    sourceArray: sourceArray,
+                    transformation: arg,
+                    condition: null
+                };
+                
+            case _:
+        }
+        
+        return null;
+    }
+    
+    /**
+     * Generate idiomatic Enum function from detected pattern
+     * 
+     * @param pattern The detected pattern information
+     * @param conditionInfo The loop condition information
+     * @return Generated Elixir code
+     */
+    private function generateEnumFunction(pattern: {
+        type: String,
+        itemVar: String,
+        accumulator: String,
+        sourceArray: TypedExpr,
+        transformation: TypedExpr,
+        condition: TypedExpr
+    }, conditionInfo: {indexVar: String, arrayVar: String}): String {
+        // Compile the source array expression
+        var arrayExpr = compiler.compileExpression(pattern.sourceArray);
+        
+        switch(pattern.type) {
+            case "filter":
+                // Generate Enum.filter
+                var condition = compiler.compileExpression(pattern.condition);
+                // Need to substitute item variable in condition
+                var lambdaBody = substituteVariable(condition, pattern.itemVar, pattern.itemVar);
+                return 'Enum.filter(${arrayExpr}, fn ${pattern.itemVar} -> ${lambdaBody} end)';
+                
+            case "map":
+                // Generate Enum.map
+                var transformation = compiler.compileExpression(pattern.transformation);
+                // Need to substitute item variable in transformation
+                var lambdaBody = substituteVariable(transformation, pattern.itemVar, pattern.itemVar);
+                return 'Enum.map(${arrayExpr}, fn ${pattern.itemVar} -> ${lambdaBody} end)';
+                
+            default:
+                return null;
+        }
+    }
+    
+    /**
+     * Substitute variable names in compiled expression
+     * 
+     * @param expr Compiled expression string
+     * @param oldVar Old variable name
+     * @param newVar New variable name
+     * @return Expression with substituted variable
+     */
+    private function substituteVariable(expr: String, oldVar: String, newVar: String): String {
+        // Simple substitution for now - may need more sophisticated approach
+        return expr;
     }
     
     /**

@@ -644,4 +644,22 @@ defmodule TodoLive do
   end
 
 
+  @doc "Generated from Haxe index"
+  def index() do
+    "index"
+  end
+
+
+  @doc "Generated from Haxe show"
+  def show() do
+    "show"
+  end
+
+
+  @doc "Generated from Haxe edit"
+  def edit() do
+    "edit"
+  end
+
+
 end

@@ -30,6 +30,7 @@ import reflaxe.elixir.helpers.PipelineOptimizer.PipelinePattern;
 import reflaxe.elixir.helpers.ImportOptimizer;
 import reflaxe.elixir.helpers.MapCompiler;
 import reflaxe.elixir.helpers.TemplateCompiler;
+import reflaxe.elixir.helpers.ArrayOperationPreprocessor;
 import reflaxe.elixir.helpers.SchemaCompiler;
 import reflaxe.elixir.helpers.ProtocolCompiler;
 import reflaxe.elixir.helpers.BehaviorCompiler;
@@ -207,6 +208,10 @@ class ElixirCompiler extends DirectToStringCompiler {
     
     // Parameter mapping system for abstract type implementation methods
     public var currentFunctionParameterMap: Map<String, String> = new Map();
+    
+    // Map for tracking variable renames to ensure consistency between declaration and usage
+    // Critical for resolving _g variable collisions in desugared loops
+    public var variableRenameMap: Null<Map<String, String>> = null;
     
     // Track inline function context across multiple expressions in a block
     // Maps inline variable names (like "struct") to their assigned values (like "struct.buf")

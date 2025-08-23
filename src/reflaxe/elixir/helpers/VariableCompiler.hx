@@ -123,8 +123,8 @@ class VariableCompiler {
         }
         
         // GLOBAL FIX: Try global struct method mapping if we're compiling a struct method
-        if (originalName == "_this" && untyped compiler.isCompilingStructMethod) {
-            var globalMappedName = untyped compiler.globalStructParameterMap.get("_this");
+        if (originalName == "_this" && compiler.isCompilingStructMethod) {
+            var globalMappedName = compiler.globalStructParameterMap.get("_this");
             if (globalMappedName != null) {
                 #if debug_variable_compiler
                 trace('[XRay VariableCompiler] ✓ GLOBAL STRUCT MAPPING: ${originalName} -> ${globalMappedName}');
@@ -154,6 +154,18 @@ class VariableCompiler {
             return 'socket.assigns.${snakeCaseName}';
         }
         
+        // CRITICAL FIX: Check if this variable was renamed during declaration
+        // This ensures consistency between TVar and TLocal for _g variables
+        if (StringTools.startsWith(originalName, "_g") && compiler.variableRenameMap != null) {
+            var renamedName = compiler.variableRenameMap.get(originalName);
+            if (renamedName != null) {
+                #if debug_variable_compiler
+                trace('[XRay VariableCompiler] ✓ USING TRACKED RENAME: ${originalName} -> ${renamedName}');
+                #end
+                originalName = renamedName;
+            }
+        }
+        
         // CRITICAL ROOT CAUSE FIX: Check if this is an orphaned 'g' variable from unused enum parameter extraction
         if (originalName == "g" && isOrphanedEnumVariable(v)) {
             trace("[XRay VariableCompiler] ✓ ORPHANED ENUM VARIABLE DETECTED - ROOT CAUSE FIX");
@@ -175,12 +187,12 @@ class VariableCompiler {
             trace("[XRay VariableCompiler] ✓ PARAMETER MAPPING DETECTED");
             #end
             compiler.currentFunctionParameterMap.get(originalName);
-        } else if (originalName == "_this" && untyped compiler.isCompilingStructMethod && untyped compiler.globalStructParameterMap.exists("_this")) {
+        } else if (originalName == "_this" && compiler.isCompilingStructMethod && compiler.globalStructParameterMap.exists("_this")) {
             // GLOBAL FIX: Use global struct method mapping when local is not available
             #if debug_variable_compiler
             trace("[XRay VariableCompiler] ✓ GLOBAL STRUCT MAPPING DETECTED");
             #end
-            untyped compiler.globalStructParameterMap.get("_this");
+            compiler.globalStructParameterMap.get("_this");
         } else {
             NamingHelper.toSnakeCase(originalName);
         }
@@ -241,6 +253,7 @@ class VariableCompiler {
         // CRITICAL FIX: Detect variable name collision in desugared loops
         // When Haxe desugars map/filter, it may reuse variable names like _g
         // for both the accumulator array and the loop counter
+        var originalNameBeforeRename = originalName;
         if (StringTools.startsWith(originalName, "_g")) {
             #if debug_variable_compiler
             trace("[XRay VariableCompiler] ✓ COLLISION DETECTION FOR _g VARIABLES");
@@ -261,6 +274,17 @@ class VariableCompiler {
                         trace('[XRay VariableCompiler] Renamed to: ${originalName} (counter)');
                         #end
                     case _:
+                }
+                
+                // Track the renaming for consistent usage later
+                if (originalName != originalNameBeforeRename) {
+                    if (compiler.variableRenameMap == null) {
+                        compiler.variableRenameMap = new Map<String, String>();
+                    }
+                    compiler.variableRenameMap.set(originalNameBeforeRename, originalName);
+                    #if debug_variable_compiler
+                    trace('[XRay VariableCompiler] Tracked rename: ${originalNameBeforeRename} -> ${originalName}');
+                    #end
                 }
             }
         }
@@ -289,8 +313,8 @@ class VariableCompiler {
         }
         
         // GLOBAL FIX: Try global struct method mapping if we're compiling a struct method
-        if (originalName == "_this" && untyped compiler.isCompilingStructMethod) {
-            var globalMappedName = untyped compiler.globalStructParameterMap.get("_this");
+        if (originalName == "_this" && compiler.isCompilingStructMethod) {
+            var globalMappedName = compiler.globalStructParameterMap.get("_this");
             if (globalMappedName != null) {
                 #if debug_variable_compiler
                 trace('[XRay VariableCompiler] ✓ TVAR GLOBAL STRUCT MAPPING: ${originalName} -> ${globalMappedName}');

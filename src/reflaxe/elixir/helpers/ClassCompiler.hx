@@ -184,12 +184,20 @@ class ClassCompiler {
         }
         
         // Generate functions (both static and instance)
+        var generatedFunctions = "";
         if (funcFields != null && funcFields.length > 0) {
             if (isModule) {
-                result.add(generateModuleFunctions(funcFields));
+                generatedFunctions = generateModuleFunctions(funcFields);
             } else {
-                result.add(generateFunctions(funcFields, isStruct));
+                generatedFunctions = generateFunctions(funcFields, isStruct);
             }
+            result.add(generatedFunctions);
+        }
+        
+        // Generate while loop helper functions if needed
+        // Check both the AST and the generated code for while_loop calls
+        if (needsWhileLoopHelpers(funcFields) || generatedFunctions.indexOf("while_loop(") >= 0) {
+            result.add(generateWhileLoopHelpers());
         }
         
         result.add('end\n');
@@ -356,26 +364,35 @@ class ClassCompiler {
     
     /**
      * Generate defstruct definition
+     * 
+     * WHY: Elixir requires fields with defaults to come last in defstruct
+     * WHAT: Separate fields into two groups and order them correctly
+     * HOW: Process fields without defaults first, then fields with defaults
      */
     private function generateDefstruct(varFields: Array<ClassVarData>): String {
         var result = new StringBuf();
         result.add('  defstruct [');
         
-        var fields = [];
+        // Separate fields into two groups for proper ordering
+        var fieldsWithoutDefaults = [];
+        var fieldsWithDefaults = [];
+        
         for (field in varFields) {
             var fieldName = NamingHelper.toSnakeCase(field.field.name);
             
             // Check if field has default value
             if (field.hasDefaultValue()) {
-                // Extract default value - this is simplified
-                var defaultValue = getDefaultValue(field);
-                fields.push('${fieldName}: ${defaultValue}');
+                // Extract the actual default value from the AST
+                var defaultValue = extractActualDefaultValue(field);
+                fieldsWithDefaults.push('${fieldName}: ${defaultValue}');
             } else {
-                fields.push(':${fieldName}');
+                fieldsWithoutDefaults.push(':${fieldName}');
             }
         }
         
-        result.add(fields.join(', '));
+        // Combine fields in the correct order: without defaults first, then with defaults
+        var allFields = fieldsWithoutDefaults.concat(fieldsWithDefaults);
+        result.add(allFields.join(', '));
         result.add(']\n\n');
         
         return result.toString();
@@ -937,7 +954,7 @@ class ClassCompiler {
     }
     
     /**
-     * Extract default value for field
+     * Extract default value for field (legacy method - kept for compatibility)
      */
     private function getDefaultValue(field: ClassVarData): String {
         // Simplified - real implementation would analyze the expression
@@ -946,6 +963,47 @@ class ClassCompiler {
         return switch(fieldType) {
             case "Bool": "true";
             case "Int": "0";
+            case "Float": "0.0";
+            case "String": '""';
+            case _: "nil";
+        }
+    }
+    
+    /**
+     * Extract the actual default value from the field's AST
+     * 
+     * WHY: Need to use the actual default values from Haxe source, not generic ones
+     * WHAT: Extract and compile the default expression from the field
+     * HOW: Use ClassVarData's findDefaultExpr() to get TypedExpr, then compile it
+     */
+    private function extractActualDefaultValue(field: ClassVarData): String {
+        // Try to find the default expression from the AST
+        var defaultExpr = field.findDefaultExpr();
+        
+        if (defaultExpr != null && compiler != null) {
+            // Compile the default expression to Elixir code
+            var compiledDefault = compiler.compileExpression(defaultExpr);
+            
+            // Handle some common transformations for defstruct context
+            if (compiledDefault == "[]") {
+                // Empty array defaults need to be nil in defstruct, [] in constructor
+                return "nil";
+            }
+            
+            return compiledDefault;
+        }
+        
+        // Fallback to type-based defaults if we can't find the expression
+        var fieldType = getFieldType(field);
+        
+        // Check for array types
+        if (fieldType.indexOf("Array") >= 0) {
+            return "nil"; // Arrays default to nil in defstruct
+        }
+        
+        return switch(fieldType) {
+            case "Bool": "false";
+            case "Int": "0";  
             case "Float": "0.0";
             case "String": '""';
             case _: "nil";
@@ -1361,6 +1419,110 @@ class ClassCompiler {
             case _:
                 return false;
         }
+    }
+    
+    /**
+     * Check if any function in the class needs while loop helper functions
+     * 
+     * WHY: while_loop helper functions should only be generated when actually needed
+     * WHAT: Scan all function bodies for while_loop() calls generated by ControlFlowCompiler
+     * HOW: Check function expressions for pattern: while_loop(
+     * 
+     * @param funcFields Array of function data to analyze
+     * @return True if while loop helpers are needed
+     */
+    private function needsWhileLoopHelpers(funcFields: Array<ClassFuncData>): Bool {
+        if (funcFields == null || compiler == null) return false;
+        
+        for (func in funcFields) {
+            if (func.tfunc != null && func.tfunc.expr != null) {
+                if (containsWhileLoopCalls(func.tfunc.expr)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+    
+    /**
+     * Recursively check if expression contains while_loop() function calls
+     * 
+     * @param expr Expression to analyze
+     * @return True if contains while_loop calls
+     */
+    private function containsWhileLoopCalls(expr: haxe.macro.Type.TypedExpr): Bool {
+        if (expr == null) return false;
+        
+        // Check if this is a while loop that will generate while_loop() calls
+        switch (expr.expr) {
+            case TWhile(econd, ebody, normalWhile):
+                return true; // TWhile expressions generate while_loop calls
+            case TBlock(el):
+                for (e in el) {
+                    if (containsWhileLoopCalls(e)) return true;
+                }
+                return false;
+            case TIf(econd, eif, eelse):
+                return containsWhileLoopCalls(econd) || 
+                       containsWhileLoopCalls(eif) || 
+                       (eelse != null ? containsWhileLoopCalls(eelse) : false);
+            case TFor(v, it, expr):
+                return containsWhileLoopCalls(it) || containsWhileLoopCalls(expr);
+            case TCall(e, el):
+                if (containsWhileLoopCalls(e)) return true;
+                for (arg in el) {
+                    if (containsWhileLoopCalls(arg)) return true;
+                }
+                return false;
+            case TBinop(op, e1, e2):
+                return containsWhileLoopCalls(e1) || containsWhileLoopCalls(e2);
+            case TVar(v, expr):
+                return expr != null ? containsWhileLoopCalls(expr) : false;
+            case TReturn(expr):
+                return expr != null ? containsWhileLoopCalls(expr) : false;
+            case _:
+                return false;
+        }
+    }
+    
+    /**
+     * Generate while loop helper functions for tail-recursive loop patterns
+     * 
+     * WHY: ControlFlowCompiler generates calls to while_loop() and do_while_loop() but doesn't generate the implementations
+     * WHAT: Creates private helper functions that implement tail-recursive loop patterns
+     * HOW: Generate defp functions that use condition and body lambdas for proper tail recursion
+     * 
+     * @return String containing the helper function definitions
+     */
+    private function generateWhileLoopHelpers(): String {
+        var result = new StringBuf();
+        
+        result.add('\n  # While loop helper functions\n');
+        result.add('  # Generated automatically for tail-recursive loop patterns\n\n');
+        
+        // Standard while loop helper
+        result.add('  @doc false\n');
+        result.add('  defp while_loop(condition_fn, body_fn) do\n');
+        result.add('    if condition_fn.() do\n');
+        result.add('      body_fn.()\n');
+        result.add('      while_loop(condition_fn, body_fn)\n');
+        result.add('    else\n');
+        result.add('      nil\n');
+        result.add('    end\n');
+        result.add('  end\n\n');
+        
+        // Do-while loop helper  
+        result.add('  @doc false\n');
+        result.add('  defp do_while_loop(body_fn, condition_fn) do\n');
+        result.add('    body_fn.()\n');
+        result.add('    if condition_fn.() do\n');
+        result.add('      do_while_loop(body_fn, condition_fn)\n');
+        result.add('    else\n');
+        result.add('      nil\n');
+        result.add('    end\n');
+        result.add('  end\n\n');
+        
+        return result.toString();
     }
 }
 

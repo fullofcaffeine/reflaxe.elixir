@@ -145,6 +145,21 @@ class ControlFlowCompiler {
             return "nil";
         }
         
+        // Check for desugared array operation pattern (filter/map)
+        
+        var arrayOpPattern = detectDesugarredArrayOperation(el);
+        if (arrayOpPattern != null) {
+            #if debug_control_flow_compiler
+            trace("[XRay ControlFlowCompiler] ✓ DESUGARED ARRAY OPERATION DETECTED");
+            trace('[XRay ControlFlowCompiler] Pattern type: ${arrayOpPattern.type}');
+            #end
+            return arrayOpPattern.code;
+        }
+        
+        #if debug_control_flow_compiler
+        trace("[XRay ControlFlowCompiler] No desugared array operation pattern detected");
+        #end
+        
         // Compile each expression in the block with sequential field assignment analysis
         var statements = [];
         var i = 0;
@@ -443,9 +458,9 @@ class ControlFlowCompiler {
                         var structParam: Null<String> = null;
                         if (context != null && context.structParamName != null) {
                             structParam = context.structParamName;
-                        } else if (untyped compiler.isCompilingStructMethod && untyped compiler.globalStructParameterMap.exists("_this")) {
+                        } else if (compiler.isCompilingStructMethod && compiler.globalStructParameterMap.exists("_this")) {
                             // GLOBAL FIX: Use global mapping when local context is not available
-                            structParam = untyped compiler.globalStructParameterMap.get("_this");
+                            structParam = compiler.globalStructParameterMap.get("_this");
                         }
                         
                         #if debug_control_flow_compiler
@@ -543,9 +558,9 @@ class ControlFlowCompiler {
             // Try local context first, then global struct method mapping
             if (context != null && context.structParamName != null) {
                 varName = context.structParamName;
-            } else if (untyped compiler.isCompilingStructMethod && untyped compiler.globalStructParameterMap.exists("_this")) {
+            } else if (compiler.isCompilingStructMethod && compiler.globalStructParameterMap.exists("_this")) {
                 // GLOBAL FIX: Use global mapping when local context is not available
-                varName = untyped compiler.globalStructParameterMap.get("_this");
+                varName = compiler.globalStructParameterMap.get("_this");
             }
             #if debug_control_flow_compiler
             trace('[XRay ControlFlowCompiler] Replaced _this with ${varName}');
@@ -628,34 +643,29 @@ class ControlFlowCompiler {
     /**
      * Compile TWhile expressions to Y combinator recursive patterns
      * 
-     * WHY: While loops in functional languages require recursive patterns rather than imperative loops
+     * WHY: While loops in functional languages require recursive patterns rather than imperative loops.
+     *      Additionally, Haxe desugars array operations into while loops that should be detected
+     *      and converted to idiomatic Enum functions.
      * 
      * @param econd Loop condition expression
      * @param ebody Loop body expression
      * @param normalWhile Whether this is a normal while loop (vs do-while)
-     * @return Compiled Elixir Y combinator pattern
+     * @return Compiled Elixir code (Enum function or Y combinator pattern)
      */
     public function compileWhileLoop(econd: TypedExpr, ebody: TypedExpr, normalWhile: Bool): String {
         #if debug_control_flow_compiler
         trace("[XRay ControlFlowCompiler] WHILE COMPILATION START");
         trace('[XRay ControlFlowCompiler] Normal while: ${normalWhile}');
+        trace('[XRay ControlFlowCompiler] Delegating to LoopCompiler for pattern detection...');
         #end
         
-        // IDIOMATIC IMPLEMENTATION: Convert while loops to proper Elixir patterns
-        var condition = compiler.compileExpression(econd);
-        var body = compiler.compileExpression(ebody);
-        
-        // In Elixir, while loops are typically implemented with tail recursion
-        var result = if (normalWhile) {
-            // Standard while loop -> tail recursive function
-            'while_loop(fn -> ${condition} end, fn -> ${body} end)';
-        } else {
-            // Do-while -> different pattern
-            'do_while_loop(fn -> ${body} end, fn -> ${condition} end)';
-        };
+        // Delegate to LoopCompiler for pattern detection and optimization
+        // LoopCompiler will check for desugared array operations and generate
+        // idiomatic Enum functions when possible
+        var result = compiler.loopCompiler.compileWhileLoop(econd, ebody, normalWhile);
         
         #if debug_control_flow_compiler
-        trace('[XRay ControlFlowCompiler] Generated while: ${result != null ? result.substring(0, 100) + "..." : "null"}');
+        trace('[XRay ControlFlowCompiler] LoopCompiler result: ${result != null ? result.substring(0, 100) + "..." : "null"}');
         trace("[XRay ControlFlowCompiler] WHILE COMPILATION END");
         #end
         
@@ -738,6 +748,200 @@ class ControlFlowCompiler {
         #end
         
         return result;
+    }
+    
+    /**
+     * Detect desugared array operation patterns (filter/map)
+     * 
+     * WHY: Haxe desugars array.filter() and array.map() into TBlock with specific structure.
+     *      We need to detect this pattern and generate idiomatic Enum functions.
+     * 
+     * @param el Array of expressions in block
+     * @return Pattern info with generated code or null if not detected
+     */
+    /**
+     * Detect desugared array operation patterns in TBlock expressions
+     * 
+     * WHY: Haxe desugars array.filter/map into complex TBlock/TWhile patterns
+     * WHAT: Detects the 3-expression pattern and extracts components  
+     * HOW: Analyzes TBlock structure for accumulator, loop, and assignment
+     */
+    private function detectDesugarredArrayOperation(el: Array<TypedExpr>): Null<{type: String, code: String}> {
+        #if debug_array_desugaring
+        trace('[ControlFlowCompiler] DETECTING DESUGARED ARRAY OPERATION - ${el.length} expressions');
+        
+        // Debug: Show the pattern structure
+        for (i in 0...el.length) {
+            var expr = el[i];
+            switch(expr.expr) {
+                case TVar(v, e):
+                    var initStr = e != null ? "= " + (switch(e.expr) { case TArrayDecl([]): "[]"; case _: "other"; }) : "uninitialized";
+                    trace('[ControlFlowCompiler] [${i}] TVar ${v.name} ${initStr}');
+                case TBlock(_):
+                    trace('[ControlFlowCompiler] [${i}] TBlock');
+                case TLocal(v):
+                    trace('[ControlFlowCompiler] [${i}] TLocal ${v.name}');
+                case _:
+                    trace('[ControlFlowCompiler] [${i}] ${Type.enumConstructor(expr.expr)}');
+            }
+        }
+        #end
+        // Looking for pattern:
+        // [0] TVar _g = []  (accumulator)
+        // [1] TBlock containing:
+        //     - TVar _g1 = 0 (index)
+        //     - TVar _g2 = source_array
+        //     - TWhile(condition, body)
+        // [2] TLocal _g (return accumulator)
+        
+        if (el.length < 3) return null;
+        
+        // Check first element: TVar _g = []
+        var accumulatorVar: String = null;
+        switch(el[0].expr) {
+            case TVar(tvar, init) if (init != null):
+                // Check if initializing to empty array
+                switch(init.expr) {
+                    case TArrayDecl([]):
+                        accumulatorVar = CompilerUtilities.toElixirVarName(tvar);
+                    case _:
+                        return null;
+                }
+            case _:
+                return null;
+        }
+        
+        // Check second element: TBlock with while loop
+        var sourceArray: TypedExpr = null;
+        var whileLoop: TypedExpr = null;
+        switch(el[1].expr) {
+            case TBlock(innerExprs):
+                #if debug_array_desugaring
+                trace('[ControlFlowCompiler] Found TBlock with ${innerExprs.length} inner expressions');
+                #end
+                if (innerExprs.length >= 2) {
+                // Look for TVar _g2 = source_array
+                for (expr in innerExprs) {
+                    switch(expr.expr) {
+                        case TVar(tvar, init) if (init != null):
+                            var varName = CompilerUtilities.toElixirVarName(tvar);
+                            // _g2 typically holds the source array
+                            if (varName.indexOf("_g") == 0 && varName != accumulatorVar) {
+                                // Check if it's not a simple value (0 for index)
+                                switch(init.expr) {
+                                    case TConst(TInt(0)):
+                                        // This is the index variable, skip
+                                    case _:
+                                        sourceArray = init;
+                                }
+                            }
+                        case TWhile(econd, ebody, normalWhile):
+                            whileLoop = expr;
+                        case _:
+                    }
+                }
+                } // Close the if (innerExprs.length >= 2) block
+            case _:
+                return null;
+        }
+        
+        if (sourceArray == null || whileLoop == null) return null;
+        
+        // Check if we have the pattern components (may be in different positions)
+        // The third element varies - could be TLocal, TBinop, or something else
+        #if debug_array_desugaring
+        trace('[ControlFlowCompiler] Pattern check: accumulatorVar=${accumulatorVar}, sourceArray=${sourceArray != null}, whileLoop=${whileLoop != null}');
+        #end
+        
+        if (sourceArray == null || whileLoop == null) {
+            #if debug_array_desugaring
+            trace('[ControlFlowCompiler] Missing components, not an array operation pattern');
+            #end
+            return null;
+        }
+        
+        #if debug_array_desugaring
+        trace('[ControlFlowCompiler] ✓ FOUND ARRAY OPERATION PATTERN!');
+        #end
+        
+        // Now analyze the while loop to determine if it's filter or map
+        var patternType = analyzeWhileLoopPattern(whileLoop);
+        if (patternType == null) return null;
+        
+        // Generate idiomatic Enum function
+        var arrayExpr = compiler.compileExpression(sourceArray);
+        var code = switch(patternType.type) {
+            case "filter":
+                var condition = compiler.compileExpression(patternType.condition);
+                'Enum.filter(${arrayExpr}, fn ${patternType.itemVar} -> ${condition} end)';
+            case "map":
+                var transformation = compiler.compileExpression(patternType.transformation);
+                'Enum.map(${arrayExpr}, fn ${patternType.itemVar} -> ${transformation} end)';
+            case _:
+                null;
+        };
+        
+        if (code == null) return null;
+        
+        return {type: patternType.type, code: code};
+    }
+    
+    /**
+     * Analyze while loop to determine array operation type
+     * 
+     * @param whileExpr The while loop expression
+     * @return Pattern info or null
+     */
+    private function analyzeWhileLoopPattern(whileExpr: TypedExpr): Null<{
+        type: String,
+        itemVar: String,
+        condition: TypedExpr,
+        transformation: TypedExpr
+    }> {
+        switch(whileExpr.expr) {
+            case TWhile(econd, ebody, normalWhile):
+                // Analyze body for filter/map pattern
+                switch(ebody.expr) {
+                    case TBlock(bodyExprs) if (bodyExprs.length >= 3):
+                        // First: var v = array[index]
+                        var itemVar: String = null;
+                        if (bodyExprs.length > 0) {
+                            switch(bodyExprs[0].expr) {
+                                case TVar(tvar, init):
+                                    itemVar = CompilerUtilities.toElixirVarName(tvar);
+                                case _:
+                            }
+                        }
+                        
+                        if (itemVar == null) return null;
+                        
+                        // Third element (after increment): operation
+                        if (bodyExprs.length > 2) {
+                            switch(bodyExprs[2].expr) {
+                                // Filter pattern: if (condition) push
+                                case TIf(cond, thenExpr, null):
+                                    return {
+                                        type: "filter",
+                                        itemVar: itemVar,
+                                        condition: cond,
+                                        transformation: null
+                                    };
+                                // Map pattern: push(transformation)
+                                case TCall(e, [arg]):
+                                    return {
+                                        type: "map",
+                                        itemVar: itemVar,
+                                        condition: null,
+                                        transformation: arg
+                                    };
+                                case _:
+                            }
+                        }
+                    case _:
+                }
+            case _:
+        }
+        return null;
     }
     
     /**

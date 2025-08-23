@@ -8,7 +8,7 @@ defmodule Todo do
      * Todo schema for managing tasks
   """
 
-  defstruct [:id, :title, :description, completed: true, priority: "", :due_date, tags: nil, :user_id]
+  defstruct [:id, :title, :description, :due_date, :user_id, completed: false, priority: "medium", tags: nil]
 
   @type t() :: %__MODULE__{
     id: integer() | nil,
@@ -91,6 +91,30 @@ defmodule Todo do
     value = ChangesetValue.array_value(g)
     params.set("tags", value)
     Todo.changeset(todo, params)
+  end
+
+
+  # While loop helper functions
+  # Generated automatically for tail-recursive loop patterns
+
+  @doc false
+  defp while_loop(condition_fn, body_fn) do
+    if condition_fn.() do
+      body_fn.()
+      while_loop(condition_fn, body_fn)
+    else
+      nil
+    end
+  end
+
+  @doc false
+  defp do_while_loop(body_fn, condition_fn) do
+    body_fn.()
+    if condition_fn.() do
+      do_while_loop(body_fn, condition_fn)
+    else
+      nil
+    end
   end
 
 end

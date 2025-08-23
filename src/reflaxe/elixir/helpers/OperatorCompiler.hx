@@ -109,9 +109,9 @@ class OperatorCompiler {
                     // Try local parameter map first, then global struct method mapping
                     if (compiler.currentFunctionParameterMap.exists("_this")) {
                         compiler.currentFunctionParameterMap.get("_this");
-                    } else if (untyped compiler.isCompilingStructMethod && untyped compiler.globalStructParameterMap.exists("_this")) {
+                    } else if (compiler.isCompilingStructMethod && compiler.globalStructParameterMap.exists("_this")) {
                         // GLOBAL FIX: Use global mapping when local is not available
-                        untyped compiler.globalStructParameterMap.get("_this");
+                        compiler.globalStructParameterMap.get("_this");
                     } else {
                         compiler.compileExpression(e1);
                     }
@@ -128,9 +128,9 @@ class OperatorCompiler {
             var structParam: Null<String> = null;
             if (compiler.currentFunctionParameterMap.exists("_this")) {
                 structParam = compiler.currentFunctionParameterMap.get("_this");
-            } else if (untyped compiler.isCompilingStructMethod && untyped compiler.globalStructParameterMap.exists("_this")) {
+            } else if (compiler.isCompilingStructMethod && compiler.globalStructParameterMap.exists("_this")) {
                 // GLOBAL FIX: Use global mapping when local is not available
-                structParam = untyped compiler.globalStructParameterMap.get("_this");
+                structParam = compiler.globalStructParameterMap.get("_this");
             }
             
             if (structParam != null) {
