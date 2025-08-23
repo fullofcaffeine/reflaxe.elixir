@@ -21,16 +21,8 @@ defmodule TypeSafeChildSpecTools do
     (
           temp_result = nil
           case (elem(spec, 0)) do
-      0 -> (
-          g = elem(spec, 1)
-          name = g_counter
-          temp_result = {Phoenix.PubSub, name: name}
-        )
+      {0, name} -> temp_result = {Phoenix.PubSub, name: name}
       1 -> (
-          g = g = nil
-          (
-          config = g_counter
-          (
           repo_module = "" <> app_name <> ".Repo"
           temp_array = nil
           if ((config != nil)) do
@@ -41,15 +33,7 @@ defmodule TypeSafeChildSpecTools do
           args = temp_array
           temp_result = repo_module
         )
-        )
-        )
       2 -> (
-          g = elem(spec, 1)
-          g = elem(spec, 2)
-          (
-          port = g_counter
-          config = g_counter
-          (
           endpoint_module = "" <> app_name <> "Web.Endpoint"
           args = []
           if (((port != nil) || (config != nil))) do
@@ -62,7 +46,9 @@ defmodule TypeSafeChildSpecTools do
           (
           g_counter = 0
           g = Reflect.fields(config)
-          loop_helper = fn loop_fn, {field, g2} ->
+          field = nil
+    g2 = nil
+    loop_helper = fn loop_fn, {field, g2} ->
       if ((g_counter < g_counter.length)) do
         field = Enum.at(g_counter, g_counter)
         g2 = g2 + 1
@@ -81,13 +67,7 @@ defmodule TypeSafeChildSpecTools do
         end
           temp_result = endpoint_module
         )
-        )
-        )
       3 -> (
-          g = g = nil
-          (
-          config = g_counter
-          (
           telemetry_module = "" <> app_name <> "Web.Telemetry"
           temp_array1 = nil
           if ((config != nil)) do
@@ -98,40 +78,16 @@ defmodule TypeSafeChildSpecTools do
           args = temp_array1
           temp_result = telemetry_module
         )
-        )
-        )
       4 -> (
-          g = g = nil
-          (
-          config = g_counter
-          (
           presence_module = "" <> app_name <> ".Presence"
           temp_result = presence_module
         )
-        )
-        )
       5 -> (
-          g = elem(spec, 1)
-          g = elem(spec, 2)
-          g = elem(spec, 3)
-          g = elem(spec, 4)
-          (
-          module = g_counter
-          args = g_counter
-          restart = g_counter
-          shutdown = g_counter
-          (
           module_class = module
           module_name = Type.get_class_name(module_class)
           temp_result = %{id: module_name, start: {module_name, :start_link, [args]}, restart: restart, shutdown: shutdown}
         )
-        )
-        )
-      6 -> (
-          g = g = nil
-          spec = g_counter
-          temp_result = spec
-        )
+      {6, spec2} -> temp_result = spec
     end
           temp_result
         )
@@ -149,40 +105,13 @@ defmodule TypeSafeChildSpecTools do
     (
           temp_result = nil
           case (elem(spec, 0)) do
-      0 -> (
-          elem(spec, 1)
-          temp_result = "Phoenix.PubSub"
-        )
-      1 -> (
-          g = nil
-          temp_result = "" <> app_name <> ".Repo"
-        )
-      2 -> (
-          elem(spec, 1)
-          elem(spec, 2)
-          temp_result = "" <> app_name <> "Web.Endpoint"
-        )
-      3 -> (
-          g = nil
-          temp_result = "" <> app_name <> "Web.Telemetry"
-        )
-      4 -> (
-          g = nil
-          temp_result = "" <> app_name <> ".Presence"
-        )
-      5 -> (
-          g = elem(spec, 1)
-          elem(spec, 2)
-          elem(spec, 3)
-          elem(spec, 4)
-          module = g_counter
-          temp_result = Type.get_class_name(module)
-        )
-      6 -> (
-          g = g = nil
-          spec = g_counter
-          temp_result = spec.id
-        )
+      0 -> temp_result = "Phoenix.PubSub"
+      1 -> temp_result = "" <> app_name <> ".Repo"
+      2 -> temp_result = "" <> app_name <> "Web.Endpoint"
+      3 -> temp_result = "" <> app_name <> "Web.Telemetry"
+      4 -> temp_result = "" <> app_name <> ".Presence"
+      {5, module} -> temp_result = Type.get_class_name(module)
+      {6, spec2} -> temp_result = spec.id
     end
           temp_result
         )
@@ -199,38 +128,13 @@ defmodule TypeSafeChildSpecTools do
     (
           temp_result = nil
           case (elem(spec, 0)) do
-      0 -> (
-          elem(spec, 1)
-          temp_result = true
-        )
-      1 -> (
-          g = nil
-          temp_result = true
-        )
-      2 -> (
-          elem(spec, 1)
-          elem(spec, 2)
-          temp_result = true
-        )
-      3 -> (
-          g = nil
-          temp_result = true
-        )
-      4 -> (
-          g = nil
-          temp_result = true
-        )
-      5 -> (
-          elem(spec, 1)
-          elem(spec, 2)
-          elem(spec, 3)
-          elem(spec, 4)
-          temp_result = false
-        )
-      6 -> (
-          g = nil
-          temp_result = false
-        )
+      0 -> temp_result = true
+      1 -> temp_result = true
+      2 -> temp_result = true
+      3 -> temp_result = true
+      4 -> temp_result = true
+      5 -> temp_result = false
+      6 -> temp_result = false
     end
           temp_result
         )
@@ -247,9 +151,7 @@ defmodule TypeSafeChildSpecTools do
     (
           errors = []
           case (elem(spec, 0)) do
-      0 -> (
-          g = elem(spec, 1)
-          name = g_counter
+      {0, name} -> (
           if (((name == nil) || (name == ""))) do
           errors ++ ["PubSub name cannot be empty"]
         end
@@ -257,58 +159,20 @@ defmodule TypeSafeChildSpecTools do
           errors ++ ["PubSub name should follow 'AppName.PubSub' convention"]
         end
         )
-      1 -> (
-          g = nil
-          (
-          g_counter
-          nil
-        )
-        )
-      2 -> (
-          g = elem(spec, 1)
-          elem(spec, 2)
-          (
-          port = g_counter
-          g_counter
-          if (((port != nil) && (((port < 1) || (port > 65535))))) do
+      1 -> nil
+      2 -> if (((port != nil) && (((port < 1) || (port > 65535))))) do
           errors ++ ["Endpoint port must be between 1 and 65535"]
         end
-        )
-        )
-      3 -> (
-          g = nil
-          (
-          g_counter
-          nil
-        )
-        )
-      4 -> (
-          g = g = nil
-          (
-          config = g_counter
-          if (((config.name == nil) || (config.name == ""))) do
+      3 -> nil
+      4 -> if (((config.name == nil) || (config.name == ""))) do
           errors ++ ["Presence name is required"]
         end
-        )
-        )
-      5 -> g = elem(spec, 1)
-    elem(spec, 2)
-    elem(spec, 3)
-    elem(spec, 4)
-    module = g_counter
-    g_counter
-    g_counter
-    g_counter
-    if ((module == nil)) do
+      {5, module, args, restart, shutdown} -> if ((module == nil)) do
           errors ++ ["Custom child spec module cannot be null"]
         end
-      6 -> (
-          g = g = nil
-          spec = g_counter
-          if (((spec.id == nil) || (spec.id == ""))) do
+      {6, spec2} -> if (((spec.id == nil) || (spec.id == ""))) do
           errors ++ ["Legacy child spec id cannot be empty"]
         end
-        )
     end
           errors
         )

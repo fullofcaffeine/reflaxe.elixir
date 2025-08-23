@@ -95,11 +95,21 @@ class VariableCompiler {
         
         // Get the original variable name (before Haxe's renaming for shadowing avoidance)
         var originalName = getOriginalVarName(v);
-        trace('[XRay VariableCompiler] Original name: ${originalName}');
         
         #if debug_variable_compiler
         trace('[XRay VariableCompiler] Original name: ${originalName}');
         #end
+        
+        // CRITICAL FIX: NEVER map 'g' to anything ending with '_counter'
+        // The 'g' variable is exclusively used for enum parameter extraction
+        // Any mapping to g_counter is a compiler bug that causes undefined variable errors
+        if (originalName == "g") {
+            #if debug_variable_compiler
+            trace('[XRay VariableCompiler] ✓ SPECIAL HANDLING for g variable - returning unmapped');
+            #end
+            // Return 'g' directly - it should never be mapped to g_counter
+            return "g";
+        }
         
         /**
          * PARAMETER MAPPING CHECK
@@ -235,6 +245,7 @@ class VariableCompiler {
      * 3. Handle _this inline context management
      * 4. Generate appropriate Elixir variable assignment
      * 5. Optimize temporary variable elimination
+     * 6. CRITICAL: Skip intermediate 'g' variables for enum extraction
      * 
      * @param tvar The TVar representing the variable
      * @param expr The initialization expression (nullable)
@@ -245,7 +256,45 @@ class VariableCompiler {
         trace("[XRay VariableCompiler] VARIABLE DECLARATION COMPILATION START");
         trace('[XRay VariableCompiler] Variable: ${tvar.name}');
         trace('[XRay VariableCompiler] Has initialization: ${expr != null}');
+        if (expr != null) {
+            trace('[XRay VariableCompiler] Init expression type: ${Type.enumConstructor(expr.expr)}');
+        }
         #end
+        
+        // Debug: Always trace 'g' variables to understand the pattern
+        if (tvar.name == "g") {
+            trace('[DEBUG] Found g variable! Init expr: ${expr != null ? Type.enumConstructor(expr.expr) : "null"}');
+        }
+        
+        // CRITICAL FIX: Handle enum parameter extraction specially
+        // When we see: g = TEnumParameter(...), we need to handle multiple extractions correctly
+        if (tvar.name == "g" && expr != null) {
+            switch (expr.expr) {
+                case TEnumParameter(enumExpr, enumField, index):
+                    #if debug_variable_compiler
+                    trace("[XRay VariableCompiler] ✓ ENUM PARAMETER EXTRACTION DETECTED");
+                    trace('[XRay VariableCompiler] Enum field: ${enumField.name}, Index: ${index}');
+                    #end
+                    
+                    // Generate a unique variable name for each extraction
+                    // This prevents overwriting when there are multiple parameters
+                    var uniqueVarName = 'g_param_${index}';
+                    
+                    // Track this extraction in a list (there can be multiple)
+                    if (compiler.enumExtractionVars == null) {
+                        compiler.enumExtractionVars = [];
+                    }
+                    compiler.enumExtractionVars.push({index: index, varName: uniqueVarName});
+                    
+                    // Also keep track of the current extraction index for the next TLocal(g) reference
+                    compiler.currentEnumExtractionIndex = index;
+                    
+                    // Compile the extraction with the unique variable name
+                    var compiledExtraction = compiler.compileExpression(expr);
+                    return '${uniqueVarName} = ${compiledExtraction}';
+                case _:
+            }
+        }
         
         // Check if variable is marked as unused by optimizer
         if (tvar.meta != null && tvar.meta.has("-reflaxe.unused")) {
@@ -375,6 +424,40 @@ class VariableCompiler {
         }
         
         var varName = preserveUnderscore ? originalName : NamingHelper.toSnakeCase(originalName);
+        
+        // CRITICAL FIX: Check if this variable is being assigned from TLocal(g) which might be an enum extraction
+        if (expr != null && compiler.enumExtractionVars != null && compiler.enumExtractionVars.length > 0) {
+            switch (expr.expr) {
+                case TLocal(v) if (v.name == "g"):
+                    #if debug_variable_compiler
+                    trace("[XRay VariableCompiler] ✓ PATTERN VARIABLE ASSIGNMENT FROM g");
+                    trace('[XRay VariableCompiler] Pattern var: ${varName}');
+                    trace('[XRay VariableCompiler] Current extraction index: ${compiler.currentEnumExtractionIndex}');
+                    trace('[XRay VariableCompiler] Available extractions: ${compiler.enumExtractionVars.length}');
+                    #end
+                    
+                    // Use the extraction variables in order
+                    // The pattern variables are assigned in the same order as the extractions
+                    if (compiler.currentEnumExtractionIndex < compiler.enumExtractionVars.length) {
+                        var extractionVar = compiler.enumExtractionVars[compiler.currentEnumExtractionIndex].varName;
+                        
+                        #if debug_variable_compiler
+                        trace('[XRay VariableCompiler] Using extraction var: ${extractionVar}');
+                        #end
+                        
+                        // Move to next extraction for the next pattern variable
+                        compiler.currentEnumExtractionIndex++;
+                        return '${varName} = ${extractionVar}';
+                    } else {
+                        // Fallback if we run out of extractions
+                        #if debug_variable_compiler
+                        trace('[XRay VariableCompiler] WARNING: No more extractions available');
+                        #end
+                        return '${varName} = nil';
+                    }
+                case _:
+            }
+        }
         
         if (expr != null) {
             // Check if this is an inline expansion of _this = this.someField

@@ -72,51 +72,13 @@ defmodule TodoPubSub do
     (
           temp_struct = nil
           case (elem(message, 0)) do
-      0 -> (
-          g = elem(message, 1)
-          (
-          todo = g_counter
-          temp_struct = %{"type" => "todo_created", "todo" => todo}
-        )
-        )
-      1 -> (
-          g = elem(message, 1)
-          (
-          todo = g_counter
-          temp_struct = %{"type" => "todo_updated", "todo" => todo}
-        )
-        )
-      2 -> (
-          g = elem(message, 1)
-          id = g_counter
-          temp_struct = %{"type" => "todo_deleted", "todo_id" => id}
-        )
-      3 -> (
-          g = elem(message, 1)
-          action = g_counter
-          temp_struct = %{"type" => "bulk_update", "action" => TodoPubSub.bulk_action_to_string(action)}
-        )
-      4 -> (
-          g = elem(message, 1)
-          (
-          user_id = g_counter
-          temp_struct = %{"type" => "user_online", "user_id" => user_id}
-        )
-        )
-      5 -> (
-          g = elem(message, 1)
-          (
-          user_id = g_counter
-          temp_struct = %{"type" => "user_offline", "user_id" => user_id}
-        )
-        )
-      6 -> (
-          g = elem(message, 1)
-          g = elem(message, 2)
-          message = g_counter
-          level = g_counter
-          temp_struct = %{"type" => "system_alert", "message" => message, "level" => TodoPubSub.alert_level_to_string(level)}
-        )
+      0 -> temp_struct = %{"type" => "todo_created", "todo" => todo}
+      1 -> temp_struct = %{"type" => "todo_updated", "todo" => todo}
+      {2, id} -> temp_struct = %{"type" => "todo_deleted", "todo_id" => id}
+      {3, action} -> temp_struct = %{"type" => "bulk_update", "action" => TodoPubSub.bulk_action_to_string(action)}
+      4 -> temp_struct = %{"type" => "user_online", "user_id" => user_id}
+      5 -> temp_struct = %{"type" => "user_offline", "user_id" => user_id}
+      {6, message2, level} -> temp_struct = %{"type" => "system_alert", "message" => message, "level" => TodoPubSub.alert_level_to_string(level)}
     end
           SafePubSub.add_timestamp(temp_struct)
         )
@@ -143,11 +105,7 @@ defmodule TodoPubSub do
           (
           bulk_action = TodoPubSub.parse_bulk_action(msg.action)
           case (case bulk_action do {:ok, _} -> 0; :error -> 1; _ -> -1 end) do
-      0 -> (
-          g = case bulk_action do {:ok, value} -> value; :error -> nil; _ -> nil end
-          action = g_counter
-          temp_result = Option.some(TodoPubSubMessage.bulk_update(action))
-        )
+      {0, action} -> temp_result = Option.some(TodoPubSubMessage.bulk_update(action))
       1 -> temp_result = :error
     end
         )
@@ -158,11 +116,7 @@ defmodule TodoPubSub do
           (
           alert_level = TodoPubSub.parse_alert_level(msg.level)
           case (case alert_level do {:ok, _} -> 0; :error -> 1; _ -> -1 end) do
-      0 -> (
-          g = case alert_level do {:ok, value} -> value; :error -> nil; _ -> nil end
-          level = g_counter
-          temp_result = Option.some(TodoPubSubMessage.system_alert(msg.message, level))
-        )
+      {0, level} -> temp_result = Option.some(TodoPubSubMessage.system_alert(msg.message, level))
       1 -> temp_result = :error
     end
         )
@@ -215,25 +169,9 @@ defmodule TodoPubSub do
           case (elem(action, 0)) do
       0 -> temp_result = "complete_all"
       1 -> temp_result = "delete_completed"
-      2 -> (
-          elem(action, 1)
-          g_counter
-          temp_result = "set_priority"
-        )
-      3 -> (
-          elem(action, 1)
-          (
-          g_counter
-          temp_result = "add_tag"
-        )
-        )
-      4 -> (
-          elem(action, 1)
-          (
-          g_counter
-          temp_result = "remove_tag"
-        )
-        )
+      {2, priority} -> temp_result = "set_priority"
+      3 -> temp_result = "add_tag"
+      4 -> temp_result = "remove_tag"
     end
           temp_result
         )

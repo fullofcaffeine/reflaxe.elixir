@@ -221,6 +221,10 @@ class ElixirCompiler extends DirectToStringCompiler {
     // Track when we're inside enum parameter extraction to prevent incorrect variable mappings
     public var isInEnumExtraction: Bool = false;
     
+    // Track enum extraction variables with their indices to handle multiple parameters correctly
+    public var enumExtractionVars: Null<Array<{index: Int, varName: String}>> = null;
+    public var currentEnumExtractionIndex: Int = 0;
+    
     // Current class context for app name resolution and other class-specific operations
     public var currentClassType: Null<ClassType> = null;
     
