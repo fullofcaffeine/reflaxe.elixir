@@ -75,46 +75,46 @@ defmodule TodoPubSub do
       0 -> (
           g = elem(message, 1)
           (
-          todo = g
+          todo = g_counter
           temp_struct = %{"type" => "todo_created", "todo" => todo}
         )
         )
       1 -> (
           g = elem(message, 1)
           (
-          todo = g
+          todo = g_counter
           temp_struct = %{"type" => "todo_updated", "todo" => todo}
         )
         )
       2 -> (
           g = elem(message, 1)
-          id = g
+          id = g_counter
           temp_struct = %{"type" => "todo_deleted", "todo_id" => id}
         )
       3 -> (
           g = elem(message, 1)
-          action = g
+          action = g_counter
           temp_struct = %{"type" => "bulk_update", "action" => TodoPubSub.bulk_action_to_string(action)}
         )
       4 -> (
           g = elem(message, 1)
           (
-          user_id = g
+          user_id = g_counter
           temp_struct = %{"type" => "user_online", "user_id" => user_id}
         )
         )
       5 -> (
           g = elem(message, 1)
           (
-          user_id = g
+          user_id = g_counter
           temp_struct = %{"type" => "user_offline", "user_id" => user_id}
         )
         )
       6 -> (
           g = elem(message, 1)
           g = elem(message, 2)
-          message = g
-          level = g
+          message = g_counter
+          level = g_counter
           temp_struct = %{"type" => "system_alert", "message" => message, "level" => TodoPubSub.alert_level_to_string(level)}
         )
     end
@@ -138,14 +138,14 @@ defmodule TodoPubSub do
           temp_result = nil
           (
           g = msg.type
-          case (g) do
+          case (g_counter) do
       "bulk_update" -> if ((msg.action != nil)) do
           (
           bulk_action = TodoPubSub.parse_bulk_action(msg.action)
           case (case bulk_action do {:ok, _} -> 0; :error -> 1; _ -> -1 end) do
       0 -> (
           g = case bulk_action do {:ok, value} -> value; :error -> nil; _ -> nil end
-          action = g
+          action = g_counter
           temp_result = Option.some(TodoPubSubMessage.bulk_update(action))
         )
       1 -> temp_result = :error
@@ -160,7 +160,7 @@ defmodule TodoPubSub do
           case (case alert_level do {:ok, _} -> 0; :error -> 1; _ -> -1 end) do
       0 -> (
           g = case alert_level do {:ok, value} -> value; :error -> nil; _ -> nil end
-          level = g
+          level = g_counter
           temp_result = Option.some(TodoPubSubMessage.system_alert(msg.message, level))
         )
       1 -> temp_result = :error
@@ -217,20 +217,20 @@ defmodule TodoPubSub do
       1 -> temp_result = "delete_completed"
       2 -> (
           elem(action, 1)
-          g
+          g_counter
           temp_result = "set_priority"
         )
       3 -> (
           elem(action, 1)
           (
-          g
+          g_counter
           temp_result = "add_tag"
         )
         )
       4 -> (
           elem(action, 1)
           (
-          g
+          g_counter
           temp_result = "remove_tag"
         )
         )

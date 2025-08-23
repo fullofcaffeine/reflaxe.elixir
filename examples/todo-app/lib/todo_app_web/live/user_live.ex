@@ -65,7 +65,7 @@ defmodule UserLive do
     temp_result = nil
     (
           g = temp_struct.status
-          case (g) do
+          case (g_counter) do
       "error" -> temp_result = %{"status" => "noreply", "socket" => UserLive.assign(socket, "changeset", temp_struct.changeset)}
       "ok" -> (
           users = Users.list_users()

@@ -38,7 +38,7 @@ defmodule FlashTypeTools do
           temp_result = nil
           (
           g = str.to_lower_case()
-          case (g) do
+          case (g_counter) do
       "error" -> temp_result = :error
       "info" -> temp_result = :info
       "success" -> temp_result = :success
