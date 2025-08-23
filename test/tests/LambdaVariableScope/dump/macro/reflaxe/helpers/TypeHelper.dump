@@ -1,0 +1,3694 @@
+class reflaxe.helpers.TypeHelper {
+
+	public static function findResolvedTypeParams[Function:(t : haxe.macro.Type, cf : haxe.macro.ClassField) -> Null<Array<haxe.macro.Type>>]
+		[Arg:haxe.macro.Type] [Local t(9581):haxe.macro.Type]
+		[Arg:haxe.macro.ClassField] [Local cf(9582):haxe.macro.ClassField]
+		[Block:Dynamic]
+			[If:Void]
+				[Binop:Bool]
+					[Field:Int]
+						[Field:Array<haxe.macro.TypeParameter>]
+							[Local cf(9582):haxe.macro.ClassField:haxe.macro.ClassField]
+							[FAnon:Array<haxe.macro.TypeParameter>] params:Array<haxe.macro.TypeParameter>
+						[FInstance:Int]
+							Array<haxe.macro.TypeParameter>
+							length:Int
+					==
+					[Const:Int] 0
+				[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [ArrayDecl:Array<haxe.macro.Type>]
+			[Var result(9583):Array<Null<haxe.macro.Type>>] [ArrayDecl:Array<Null<haxe.macro.Type>>]
+			[Var paramNameIndexMap(9584):haxe.ds.Map<String, Int>]
+				[Block:haxe.ds.StringMap<Int>]
+					[Block:Void]
+					[New:haxe.ds.StringMap<Int>] haxe.ds.StringMap<Int>
+			[Block:Void]
+				[Var `(9591):Int] [Const:Int] 0
+				[Var `(9592):Int]
+					[Field:Int]
+						[Field:Array<haxe.macro.TypeParameter>]
+							[Local cf(9582):haxe.macro.ClassField:haxe.macro.ClassField]
+							[FAnon:Array<haxe.macro.TypeParameter>] params:Array<haxe.macro.TypeParameter>
+						[FInstance:Int]
+							Array<haxe.macro.TypeParameter>
+							length:Int
+				[While:Void]
+					[Binop:Bool]
+						[Local `(9591):Int:Int]
+						<
+						[Local `(9592):Int:Int]
+					[Block:Int]
+						[Var i(9585):Int]
+							[Unop:Int]
+								++
+								Postfix
+								[Local `(9591):Int:Int]
+						[Block:Void]
+							[Var key(9589):String]
+								[Field:String]
+									[Array:haxe.macro.TypeParameter]
+										[Field:Array<haxe.macro.TypeParameter>]
+											[Local cf(9582):haxe.macro.ClassField:haxe.macro.ClassField]
+											[FAnon:Array<haxe.macro.TypeParameter>] params:Array<haxe.macro.TypeParameter>
+										[Local i(9585):Int:Int]
+									[FAnon:String] name:String
+							[Call:Void]
+								[Field:(key : String, value : Int) -> Void]
+									[Local paramNameIndexMap(9584):haxe.ds.Map<String, Int>:haxe.ds.StringMap<Int>]
+									[FInstance:(key : String, value : Int) -> Void]
+										haxe.ds.StringMap<Int>
+										set:(key : String, value : haxe.ds.StringMap.T) -> Void
+								[Local key(9589):String:String]
+								[Local i(9585):Int:Int]
+						[Call:Int]
+							[Field:(x : Null<haxe.macro.Type>) -> Int]
+								[Local result(9583):Array<Null<haxe.macro.Type>>:Array<Null<haxe.macro.Type>>]
+								[FInstance:(x : Null<haxe.macro.Type>) -> Int]
+									Array<Null<haxe.macro.Type>>
+									push:(x : Array.T) -> Int
+							[Const:Null<haxe.macro.Type>] null
+			[Var resolvedTypes(9615):Map<String, haxe.macro.Type>]
+				[Call:Map<String, haxe.macro.Type>]
+					[Field:(t : haxe.macro.Type) -> Map<String, haxe.macro.Type>]
+						[TypeExpr reflaxe.helpers.TypeHelper:Class<reflaxe.helpers.TypeHelper>]
+						[FStatic:(t : haxe.macro.Type) -> Map<String, haxe.macro.Type>]
+							reflaxe.helpers.TypeHelper
+							getSubTypeList:(t : haxe.macro.Type) -> Map<String, haxe.macro.Type>
+					[Local t(9581):haxe.macro.Type:haxe.macro.Type]
+			[Var cfSubTypes(9616):Map<String, haxe.macro.Type>]
+				[Call:Map<String, haxe.macro.Type>]
+					[Field:(t : haxe.macro.Type) -> Map<String, haxe.macro.Type>]
+						[TypeExpr reflaxe.helpers.TypeHelper:Class<reflaxe.helpers.TypeHelper>]
+						[FStatic:(t : haxe.macro.Type) -> Map<String, haxe.macro.Type>]
+							reflaxe.helpers.TypeHelper
+							getSubTypeList:(t : haxe.macro.Type) -> Map<String, haxe.macro.Type>
+					[Field:haxe.macro.Type]
+						[Local cf(9582):haxe.macro.ClassField:haxe.macro.ClassField]
+						[FAnon:haxe.macro.Type] type:haxe.macro.Type
+			[Block:Void]
+				[Var `(9620):KeyValueIterator<String, haxe.macro.Type>]
+					[Cast:KeyValueIterator<String, haxe.macro.Type>]
+						[New:haxe.iterators.MapKeyValueIterator<String, haxe.macro.Type>]
+							haxe.iterators.MapKeyValueIterator<String, haxe.macro.Type>
+							[Local cfSubTypes(9616):Map<String, haxe.macro.Type>:haxe.ds.StringMap<haxe.macro.Type>]
+				[While:Void]
+					[Call:Bool]
+						[Field:() -> Bool]
+							[Local `(9620):KeyValueIterator<String, haxe.macro.Type>:KeyValueIterator<String, haxe.macro.Type>]
+							[FAnon:() -> Bool] hasNext:() -> Bool
+					[Block:Void]
+						[Var `(9621):{ value : haxe.macro.Type, key : String }]
+							[Call:{ value : haxe.macro.Type, key : String }]
+								[Field:() -> { value : haxe.macro.Type, key : String }]
+									[Local `(9620):KeyValueIterator<String, haxe.macro.Type>:KeyValueIterator<String, haxe.macro.Type>]
+									[FAnon:() -> { value : haxe.macro.Type, key : String }] next:() -> { value : haxe.macro.Type, key : String }
+						[Var key(9622):String]
+							[Field:String]
+								[Local `(9621):{ value : haxe.macro.Type, key : String }:{ value : haxe.macro.Type, key : String }]
+								[FAnon:String] key:String
+						[Var subType(9623):haxe.macro.Type]
+							[Field:haxe.macro.Type]
+								[Local `(9621):{ value : haxe.macro.Type, key : String }:{ value : haxe.macro.Type, key : String }]
+								[FAnon:haxe.macro.Type] value:haxe.macro.Type
+						[Block:Void]
+							[Var typeParamName(9639):Null<String>]
+								[Call:Null<String>]
+									[Field:(t : haxe.macro.Type) -> Null<String>]
+										[TypeExpr reflaxe.helpers.TypeHelper:Class<reflaxe.helpers.TypeHelper>]
+										[FStatic:(t : haxe.macro.Type) -> Null<String>]
+											reflaxe.helpers.TypeHelper
+											getTypeParameterName:(t : haxe.macro.Type) -> Null<String>
+									[Local subType(9623):haxe.macro.Type:haxe.macro.Type]
+							[If:Void]
+								[Binop:Bool]
+									[Binop:Bool]
+										[Local typeParamName(9639):Null<String>:Null<String>]
+										!=
+										[Const:Null<String>] null
+									&&
+									[Call:Bool]
+										[Field:(key : String) -> Bool]
+											[Local paramNameIndexMap(9584):haxe.ds.Map<String, Int>:haxe.ds.StringMap<Int>]
+											[FInstance:(key : String) -> Bool]
+												haxe.ds.StringMap<Int>
+												exists:(key : String) -> Bool
+										[Local typeParamName(9639):Null<String>:Null<String>]
+								[Then:Void] [Block:Void]
+									[Var index(9648):Null<Int>]
+										[Cast:Null<Int>]
+											[Call:Null<Int>]
+												[Field:(key : String) -> Null<Int>]
+													[Local paramNameIndexMap(9584):haxe.ds.Map<String, Int>:haxe.ds.StringMap<Int>]
+													[FInstance:(key : String) -> Null<Int>]
+														haxe.ds.StringMap<Int>
+														get:(key : String) -> Null<haxe.ds.StringMap.T>
+												[Local typeParamName(9639):Null<String>:Null<String>]
+									[If:Void]
+										[Binop:Bool]
+											[Binop:Bool]
+												[Local index(9648):Null<Int>:Null<Int>]
+												!=
+												[Const:Null<Int>] null
+											&&
+											[Binop:Bool]
+												[Array:Null<haxe.macro.Type>]
+													[Local result(9583):Array<Null<haxe.macro.Type>>:Array<Null<haxe.macro.Type>>]
+													[Local index(9648):Null<Int>:Null<Int>]
+												==
+												[Const:Null<haxe.macro.Type>] null
+										[Then:Null<haxe.macro.Type>] [Block:Null<haxe.macro.Type>]
+											[Binop:Null<haxe.macro.Type>]
+												[Array:Null<haxe.macro.Type>]
+													[Local result(9583):Array<Null<haxe.macro.Type>>:Array<Null<haxe.macro.Type>>]
+													[Local index(9648):Null<Int>:Null<Int>]
+												=
+												[Cast:Null<haxe.macro.Type>]
+													[Call:Null<haxe.macro.Type>]
+														[Field:(key : String) -> Null<haxe.macro.Type>]
+															[Local resolvedTypes(9615):Map<String, haxe.macro.Type>:haxe.ds.StringMap<haxe.macro.Type>]
+															[FInstance:(key : String) -> Null<haxe.macro.Type>]
+																haxe.ds.StringMap<haxe.macro.Type>
+																get:(key : String) -> Null<haxe.ds.StringMap.T>
+														[Local key(9622):String:String]
+			[Block:Void]
+				[Var `(9654):Int] [Const:Int] 0
+				[While:Void]
+					[Binop:Bool]
+						[Local `(9654):Int:Int]
+						<
+						[Field:Int]
+							[Local result(9583):Array<Null<haxe.macro.Type>>:Array<Null<haxe.macro.Type>>]
+							[FInstance:Int]
+								Array<Null<haxe.macro.Type>>
+								length:Int
+					[Block:Void]
+						[Var type(9653):Null<haxe.macro.Type>]
+							[Array:Null<haxe.macro.Type>]
+								[Local result(9583):Array<Null<haxe.macro.Type>>:Array<Null<haxe.macro.Type>>]
+								[Local `(9654):Int:Int]
+						[Unop:Int]
+							++
+							Prefix
+							[Local `(9654):Int:Int]
+						[If:Void]
+							[Binop:Bool]
+								[Local type(9653):Null<haxe.macro.Type>:Null<haxe.macro.Type>]
+								==
+								[Const:Null<haxe.macro.Type>] null
+							[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [Const:Null<Array<haxe.macro.Type>>] null
+			[Return:Dynamic]
+				[Cast:Array<Null<haxe.macro.Type>>]
+					[Cast:Array<Null<haxe.macro.Type>>]
+						[Block:Dynamic]
+							[If:Void]
+								[Binop:Bool]
+									[Local result(9583):Array<Null<haxe.macro.Type>>:Array<Null<haxe.macro.Type>>]
+									==
+									[Const:Null<Array<Null<haxe.macro.Type>>>] null
+								[Then:Dynamic] [Block:Dynamic] [Throw:Dynamic] [Const:String] "Trusted on null value."
+							[Meta:Dynamic]
+								:nullSafety(Off)
+								[Local result(9583):Array<Null<haxe.macro.Type>>:Array<Null<haxe.macro.Type>>]
+
+	public static function getSubTypeList[Function:(t : haxe.macro.Type) -> Map<String, haxe.macro.Type>]
+		[Arg:haxe.macro.Type] [Local t(9593):haxe.macro.Type]
+		[Block:Dynamic]
+			[Var result(9594):Map<String, haxe.macro.Type>]
+				[Block:haxe.ds.StringMap<haxe.macro.Type>]
+					[Block:Void]
+					[New:haxe.ds.StringMap<haxe.macro.Type>] haxe.ds.StringMap<haxe.macro.Type>
+			[Var index(9595):Array<Int>] [ArrayDecl:Array<Int>] [Const:Int] 0
+			[If:Void]
+				[Binop:Bool]
+					[Local t(9593):haxe.macro.Type:haxe.macro.Type]
+					==
+					[Const:haxe.macro.Type] null
+				[Then:Dynamic] [Block:Dynamic]
+					[Return:Dynamic]
+						[Block:haxe.ds.StringMap<haxe.macro.Type>]
+							[Block:Void]
+							[New:haxe.ds.StringMap<haxe.macro.Type>] haxe.ds.StringMap<haxe.macro.Type>
+			[Call:Void]
+				[Field:(t : haxe.macro.Type, f : (haxe.macro.Type -> Void)) -> Void]
+					[TypeExpr haxe.macro.TypeTools:Class<haxe.macro.TypeTools>]
+					[FStatic:(t : haxe.macro.Type, f : (haxe.macro.Type -> Void)) -> Void]
+						haxe.macro.TypeTools
+						iter:(t : haxe.macro.Type, f : (haxe.macro.Type -> Void)) -> Void
+				[Local t(9593):haxe.macro.Type:haxe.macro.Type]
+				[Function:(subType : haxe.macro.Type) -> Void]
+					[Arg:haxe.macro.Type] [Local subType(9596):haxe.macro.Type]
+					[Block:Int]
+						[If:Void]
+							[Binop:Bool]
+								[Local subType(9596):haxe.macro.Type:haxe.macro.Type]
+								!=
+								[Const:haxe.macro.Type] null
+							[Then:Void] [Block:Void]
+								[Var si(9597):String]
+									[Call:String]
+										[Field:(s : Dynamic) -> String]
+											[TypeExpr Std:Class<Std>]
+											[FStatic:(s : Dynamic) -> String]
+												Std
+												string:(s : Dynamic) -> String
+										[Array:Int]
+											[Local index(9595):Array<Int>:Array<Int>]
+											[Const:Int] 0
+								[Block:Void]
+									[Call:Void]
+										[Field:(key : String, value : haxe.macro.Type) -> Void]
+											[Local result(9594):Map<String, haxe.macro.Type>:haxe.ds.StringMap<haxe.macro.Type>]
+											[FInstance:(key : String, value : haxe.macro.Type) -> Void]
+												haxe.ds.StringMap<haxe.macro.Type>
+												set:(key : String, value : haxe.ds.StringMap.T) -> Void
+										[Local si(9597):String:String]
+										[Local subType(9596):haxe.macro.Type:haxe.macro.Type]
+								[Block:Void]
+									[Var `(9606):KeyValueIterator<String, haxe.macro.Type>]
+										[Block:KeyValueIterator<String, haxe.macro.Type>]
+											[Var this(9605):haxe.IMap<String, haxe.macro.Type>]
+												[Call:Map<String, haxe.macro.Type>]
+													[Field:(t : haxe.macro.Type) -> Map<String, haxe.macro.Type>]
+														[TypeExpr reflaxe.helpers.TypeHelper:Class<reflaxe.helpers.TypeHelper>]
+														[FStatic:(t : haxe.macro.Type) -> Map<String, haxe.macro.Type>]
+															reflaxe.helpers.TypeHelper
+															getSubTypeList:(t : haxe.macro.Type) -> Map<String, haxe.macro.Type>
+													[Local subType(9596):haxe.macro.Type:haxe.macro.Type]
+											[Cast:KeyValueIterator<String, haxe.macro.Type>]
+												[New:haxe.iterators.MapKeyValueIterator<String, haxe.macro.Type>]
+													haxe.iterators.MapKeyValueIterator<String, haxe.macro.Type>
+													[Cast:haxe.ds.StringMap<haxe.macro.Type>] [Local this(9605):haxe.IMap<String, haxe.macro.Type>:haxe.IMap<String, haxe.macro.Type>]
+									[While:Void]
+										[Call:Bool]
+											[Field:() -> Bool]
+												[Local `(9606):KeyValueIterator<String, haxe.macro.Type>:KeyValueIterator<String, haxe.macro.Type>]
+												[FAnon:() -> Bool] hasNext:() -> Bool
+										[Block:Void]
+											[Var `(9607):{ value : haxe.macro.Type, key : String }]
+												[Call:{ value : haxe.macro.Type, key : String }]
+													[Field:() -> { value : haxe.macro.Type, key : String }]
+														[Local `(9606):KeyValueIterator<String, haxe.macro.Type>:KeyValueIterator<String, haxe.macro.Type>]
+														[FAnon:() -> { value : haxe.macro.Type, key : String }] next:() -> { value : haxe.macro.Type, key : String }
+											[Var id(9608):String]
+												[Field:String]
+													[Local `(9607):{ value : haxe.macro.Type, key : String }:{ value : haxe.macro.Type, key : String }]
+													[FAnon:String] key:String
+											[Var subSubType(9609):haxe.macro.Type]
+												[Field:haxe.macro.Type]
+													[Local `(9607):{ value : haxe.macro.Type, key : String }:{ value : haxe.macro.Type, key : String }]
+													[FAnon:haxe.macro.Type] value:haxe.macro.Type
+											[Block:Void]
+												[Block:Void]
+													[Call:Void]
+														[Field:(key : String, value : haxe.macro.Type) -> Void]
+															[Local result(9594):Map<String, haxe.macro.Type>:haxe.ds.StringMap<haxe.macro.Type>]
+															[FInstance:(key : String, value : haxe.macro.Type) -> Void]
+																haxe.ds.StringMap<haxe.macro.Type>
+																set:(key : String, value : haxe.ds.StringMap.T) -> Void
+														[Binop:String]
+															[Binop:String]
+																[Local si(9597):String:String]
+																+
+																[Const:String] "_"
+															+
+															[Local id(9608):String:String]
+														[Local subSubType(9609):haxe.macro.Type:haxe.macro.Type]
+						[Unop:Int]
+							++
+							Postfix
+							[Array:Int]
+								[Local index(9595):Array<Int>:Array<Int>]
+								[Const:Int] 0
+			[Return:Dynamic] [Local result(9594):Map<String, haxe.macro.Type>:Map<String, haxe.macro.Type>]
+
+	public static function fromModuleType[Function:(t : haxe.macro.ModuleType) -> haxe.macro.Type]
+		[Arg:haxe.macro.ModuleType] [Local t(12349):haxe.macro.ModuleType]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Meta:haxe.macro.Type]
+					:ast(switch (t) {
+	case TClassDecl(c):
+		TInst(c, extractParamTypes(c.get().params));	
+	case TEnumDecl(e):
+		TEnum(e, extractParamTypes(e.get().params));	
+	case TTypeDecl(t):
+		TType(t, extractParamTypes(t.get().params));	
+	case TAbstract(a):
+		TAbstract(a, extractParamTypes(a.get().params));	
+})
+					[Switch:haxe.macro.Type]
+						[Meta:Int]
+							:exhaustive
+							[EnumIndex:Int] [Local t(12349):haxe.macro.ModuleType:haxe.macro.ModuleType]
+						[Case:haxe.macro.Type]
+							[Const:Int] 0
+							[Block:haxe.macro.Type]
+								[Var `(12368):haxe.macro.Ref<haxe.macro.ClassType>]
+									[EnumParameter:haxe.macro.Ref<haxe.macro.ClassType>]
+										[Local t(12349):haxe.macro.ModuleType:haxe.macro.ModuleType]
+										TClassDecl
+										0
+								[Block:haxe.macro.Type]
+									[Var c(12369):haxe.macro.Ref<haxe.macro.ClassType>] [Local `(12368):haxe.macro.Ref<haxe.macro.ClassType>:haxe.macro.Ref<haxe.macro.ClassType>]
+									[Block:haxe.macro.Type]
+										[Call:haxe.macro.Type]
+											[Field:(t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type>) -> haxe.macro.Type]
+												[TypeExpr haxe.macro.Type:Enum<haxe.macro.Type>]
+												[FEnum:(t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type>) -> haxe.macro.Type]
+													haxe.macro.Type
+													TInst
+											[Local c(12369):haxe.macro.Ref<haxe.macro.ClassType>:haxe.macro.Ref<haxe.macro.ClassType>]
+											[Call:Array<haxe.macro.Type>]
+												[Field:(params : Array<haxe.macro.TypeParameter>) -> Array<haxe.macro.Type>]
+													[TypeExpr reflaxe.helpers.TypeHelper:Class<reflaxe.helpers.TypeHelper>]
+													[FStatic:(params : Array<haxe.macro.TypeParameter>) -> Array<haxe.macro.Type>]
+														reflaxe.helpers.TypeHelper
+														extractParamTypes:(params : Array<haxe.macro.TypeParameter>) -> Array<haxe.macro.Type>
+												[Field:Array<haxe.macro.TypeParameter>]
+													[Call:haxe.macro.ClassType]
+														[Field:() -> haxe.macro.ClassType]
+															[Local c(12369):haxe.macro.Ref<haxe.macro.ClassType>:haxe.macro.Ref<haxe.macro.ClassType>]
+															[FAnon:() -> haxe.macro.ClassType] get:() -> haxe.macro.ClassType
+													[FAnon:Array<haxe.macro.TypeParameter>] params:Array<haxe.macro.TypeParameter>
+						[Case:haxe.macro.Type]
+							[Const:Int] 1
+							[Block:haxe.macro.Type]
+								[Var `(12370):haxe.macro.Ref<haxe.macro.EnumType>]
+									[EnumParameter:haxe.macro.Ref<haxe.macro.EnumType>]
+										[Local t(12349):haxe.macro.ModuleType:haxe.macro.ModuleType]
+										TEnumDecl
+										0
+								[Block:haxe.macro.Type]
+									[Var e(12371):haxe.macro.Ref<haxe.macro.EnumType>] [Local `(12370):haxe.macro.Ref<haxe.macro.EnumType>:haxe.macro.Ref<haxe.macro.EnumType>]
+									[Block:haxe.macro.Type]
+										[Call:haxe.macro.Type]
+											[Field:(t : haxe.macro.Ref<haxe.macro.EnumType>, params : Array<haxe.macro.Type>) -> haxe.macro.Type]
+												[TypeExpr haxe.macro.Type:Enum<haxe.macro.Type>]
+												[FEnum:(t : haxe.macro.Ref<haxe.macro.EnumType>, params : Array<haxe.macro.Type>) -> haxe.macro.Type]
+													haxe.macro.Type
+													TEnum
+											[Local e(12371):haxe.macro.Ref<haxe.macro.EnumType>:haxe.macro.Ref<haxe.macro.EnumType>]
+											[Call:Array<haxe.macro.Type>]
+												[Field:(params : Array<haxe.macro.TypeParameter>) -> Array<haxe.macro.Type>]
+													[TypeExpr reflaxe.helpers.TypeHelper:Class<reflaxe.helpers.TypeHelper>]
+													[FStatic:(params : Array<haxe.macro.TypeParameter>) -> Array<haxe.macro.Type>]
+														reflaxe.helpers.TypeHelper
+														extractParamTypes:(params : Array<haxe.macro.TypeParameter>) -> Array<haxe.macro.Type>
+												[Field:Array<haxe.macro.TypeParameter>]
+													[Call:haxe.macro.EnumType]
+														[Field:() -> haxe.macro.EnumType]
+															[Local e(12371):haxe.macro.Ref<haxe.macro.EnumType>:haxe.macro.Ref<haxe.macro.EnumType>]
+															[FAnon:() -> haxe.macro.EnumType] get:() -> haxe.macro.EnumType
+													[FAnon:Array<haxe.macro.TypeParameter>] params:Array<haxe.macro.TypeParameter>
+						[Case:haxe.macro.Type]
+							[Const:Int] 2
+							[Block:haxe.macro.Type]
+								[Var `(12372):haxe.macro.Ref<haxe.macro.DefType>]
+									[EnumParameter:haxe.macro.Ref<haxe.macro.DefType>]
+										[Local t(12349):haxe.macro.ModuleType:haxe.macro.ModuleType]
+										TTypeDecl
+										0
+								[Block:haxe.macro.Type]
+									[Var t(12373):haxe.macro.Ref<haxe.macro.DefType>] [Local `(12372):haxe.macro.Ref<haxe.macro.DefType>:haxe.macro.Ref<haxe.macro.DefType>]
+									[Block:haxe.macro.Type]
+										[Call:haxe.macro.Type]
+											[Field:(t : haxe.macro.Ref<haxe.macro.DefType>, params : Array<haxe.macro.Type>) -> haxe.macro.Type]
+												[TypeExpr haxe.macro.Type:Enum<haxe.macro.Type>]
+												[FEnum:(t : haxe.macro.Ref<haxe.macro.DefType>, params : Array<haxe.macro.Type>) -> haxe.macro.Type]
+													haxe.macro.Type
+													TType
+											[Local t(12373):haxe.macro.Ref<haxe.macro.DefType>:haxe.macro.Ref<haxe.macro.DefType>]
+											[Call:Array<haxe.macro.Type>]
+												[Field:(params : Array<haxe.macro.TypeParameter>) -> Array<haxe.macro.Type>]
+													[TypeExpr reflaxe.helpers.TypeHelper:Class<reflaxe.helpers.TypeHelper>]
+													[FStatic:(params : Array<haxe.macro.TypeParameter>) -> Array<haxe.macro.Type>]
+														reflaxe.helpers.TypeHelper
+														extractParamTypes:(params : Array<haxe.macro.TypeParameter>) -> Array<haxe.macro.Type>
+												[Field:Array<haxe.macro.TypeParameter>]
+													[Call:haxe.macro.DefType]
+														[Field:() -> haxe.macro.DefType]
+															[Local t(12373):haxe.macro.Ref<haxe.macro.DefType>:haxe.macro.Ref<haxe.macro.DefType>]
+															[FAnon:() -> haxe.macro.DefType] get:() -> haxe.macro.DefType
+													[FAnon:Array<haxe.macro.TypeParameter>] params:Array<haxe.macro.TypeParameter>
+						[Case:haxe.macro.Type]
+							[Const:Int] 3
+							[Block:haxe.macro.Type]
+								[Var `(12374):haxe.macro.Ref<haxe.macro.AbstractType>]
+									[EnumParameter:haxe.macro.Ref<haxe.macro.AbstractType>]
+										[Local t(12349):haxe.macro.ModuleType:haxe.macro.ModuleType]
+										TAbstract
+										0
+								[Block:haxe.macro.Type]
+									[Var a(12375):haxe.macro.Ref<haxe.macro.AbstractType>] [Local `(12374):haxe.macro.Ref<haxe.macro.AbstractType>:haxe.macro.Ref<haxe.macro.AbstractType>]
+									[Block:haxe.macro.Type]
+										[Call:haxe.macro.Type]
+											[Field:(t : haxe.macro.Ref<haxe.macro.AbstractType>, params : Array<haxe.macro.Type>) -> haxe.macro.Type]
+												[TypeExpr haxe.macro.Type:Enum<haxe.macro.Type>]
+												[FEnum:(t : haxe.macro.Ref<haxe.macro.AbstractType>, params : Array<haxe.macro.Type>) -> haxe.macro.Type]
+													haxe.macro.Type
+													TAbstract
+											[Local a(12375):haxe.macro.Ref<haxe.macro.AbstractType>:haxe.macro.Ref<haxe.macro.AbstractType>]
+											[Call:Array<haxe.macro.Type>]
+												[Field:(params : Array<haxe.macro.TypeParameter>) -> Array<haxe.macro.Type>]
+													[TypeExpr reflaxe.helpers.TypeHelper:Class<reflaxe.helpers.TypeHelper>]
+													[FStatic:(params : Array<haxe.macro.TypeParameter>) -> Array<haxe.macro.Type>]
+														reflaxe.helpers.TypeHelper
+														extractParamTypes:(params : Array<haxe.macro.TypeParameter>) -> Array<haxe.macro.Type>
+												[Field:Array<haxe.macro.TypeParameter>]
+													[Call:haxe.macro.AbstractType]
+														[Field:() -> haxe.macro.AbstractType]
+															[Local a(12375):haxe.macro.Ref<haxe.macro.AbstractType>:haxe.macro.Ref<haxe.macro.AbstractType>]
+															[FAnon:() -> haxe.macro.AbstractType] get:() -> haxe.macro.AbstractType
+													[FAnon:Array<haxe.macro.TypeParameter>] params:Array<haxe.macro.TypeParameter>
+
+	public static function toModuleType[Function:(t : haxe.macro.Type) -> Null<haxe.macro.ModuleType>]
+		[Arg:haxe.macro.Type] [Local t(12376):haxe.macro.Type]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Meta:Null<haxe.macro.ModuleType>]
+					:ast(switch (t) {
+	case TInst(c, _):
+		TClassDecl(c);	
+	case TEnum(e, _):
+		TEnumDecl(e);	
+	case TType(t, _):
+		TTypeDecl(t);	
+	case TAbstract(a, _):
+		TAbstract(a);	
+	case TLazy(f):
+		toModuleType(f());	
+	case TMono(t):
+		{
+			var type = t.get();
+			if (type != null) {
+				toModuleType(type);
+			} else {
+				null;
+			};
+		};	
+	case _:
+		null;	
+})
+					[Switch:Null<haxe.macro.ModuleType>]
+						[EnumIndex:Int] [Local t(12376):haxe.macro.Type:haxe.macro.Type]
+						[Case:Null<haxe.macro.ModuleType>]
+							[Const:Int] 0
+							[Block:Null<haxe.macro.ModuleType>]
+								[Var `(12394):haxe.macro.Ref<Null<haxe.macro.Type>>]
+									[EnumParameter:haxe.macro.Ref<Null<haxe.macro.Type>>]
+										[Local t(12376):haxe.macro.Type:haxe.macro.Type]
+										TMono
+										0
+								[Block:Null<haxe.macro.ModuleType>]
+									[Var t(12395):haxe.macro.Ref<Null<haxe.macro.Type>>] [Local `(12394):haxe.macro.Ref<Null<haxe.macro.Type>>:haxe.macro.Ref<Null<haxe.macro.Type>>]
+									[Block:Null<haxe.macro.ModuleType>]
+										[Block:Null<haxe.macro.ModuleType>]
+											[Var type(12396):Null<haxe.macro.Type>]
+												[Call:Null<haxe.macro.Type>]
+													[Field:() -> Null<haxe.macro.Type>]
+														[Local t(12395):haxe.macro.Ref<Null<haxe.macro.Type>>:haxe.macro.Ref<Null<haxe.macro.Type>>]
+														[FAnon:() -> Null<haxe.macro.Type>] get:() -> Null<haxe.macro.Type>
+											[If:Null<haxe.macro.ModuleType>]
+												[Binop:Bool]
+													[Local type(12396):Null<haxe.macro.Type>:Null<haxe.macro.Type>]
+													!=
+													[Const:Null<haxe.macro.Type>] null
+												[Then:Null<haxe.macro.ModuleType>] [Block:Null<haxe.macro.ModuleType>]
+													[Call:Null<haxe.macro.ModuleType>]
+														[Field:(t : haxe.macro.Type) -> Null<haxe.macro.ModuleType>]
+															[TypeExpr reflaxe.helpers.TypeHelper:Class<reflaxe.helpers.TypeHelper>]
+															[FStatic:(t : haxe.macro.Type) -> Null<haxe.macro.ModuleType>]
+																reflaxe.helpers.TypeHelper
+																toModuleType:(t : haxe.macro.Type) -> Null<haxe.macro.ModuleType>
+														[Local type(12396):Null<haxe.macro.Type>:Null<haxe.macro.Type>]
+												[Else:Null<haxe.macro.ModuleType>] [Block:Null<haxe.macro.ModuleType>] [Const:Null<haxe.macro.ModuleType>] null
+						[Case:haxe.macro.ModuleType]
+							[Const:Int] 1
+							[Block:haxe.macro.ModuleType]
+								[Var `(12397):haxe.macro.Ref<haxe.macro.EnumType>]
+									[EnumParameter:haxe.macro.Ref<haxe.macro.EnumType>]
+										[Local t(12376):haxe.macro.Type:haxe.macro.Type]
+										TEnum
+										0
+								[Var `(12398):Array<haxe.macro.Type>]
+									[EnumParameter:Array<haxe.macro.Type>]
+										[Local t(12376):haxe.macro.Type:haxe.macro.Type]
+										TEnum
+										1
+								[Block:haxe.macro.ModuleType]
+									[Var e(12399):haxe.macro.Ref<haxe.macro.EnumType>] [Local `(12397):haxe.macro.Ref<haxe.macro.EnumType>:haxe.macro.Ref<haxe.macro.EnumType>]
+									[Block:haxe.macro.ModuleType]
+										[Call:haxe.macro.ModuleType]
+											[Field:(e : haxe.macro.Ref<haxe.macro.EnumType>) -> haxe.macro.ModuleType]
+												[TypeExpr haxe.macro.ModuleType:Enum<haxe.macro.ModuleType>]
+												[FEnum:(e : haxe.macro.Ref<haxe.macro.EnumType>) -> haxe.macro.ModuleType]
+													haxe.macro.ModuleType
+													TEnumDecl
+											[Local e(12399):haxe.macro.Ref<haxe.macro.EnumType>:haxe.macro.Ref<haxe.macro.EnumType>]
+						[Case:haxe.macro.ModuleType]
+							[Const:Int] 2
+							[Block:haxe.macro.ModuleType]
+								[Var `(12400):haxe.macro.Ref<haxe.macro.ClassType>]
+									[EnumParameter:haxe.macro.Ref<haxe.macro.ClassType>]
+										[Local t(12376):haxe.macro.Type:haxe.macro.Type]
+										TInst
+										0
+								[Var `(12401):Array<haxe.macro.Type>]
+									[EnumParameter:Array<haxe.macro.Type>]
+										[Local t(12376):haxe.macro.Type:haxe.macro.Type]
+										TInst
+										1
+								[Block:haxe.macro.ModuleType]
+									[Var c(12402):haxe.macro.Ref<haxe.macro.ClassType>] [Local `(12400):haxe.macro.Ref<haxe.macro.ClassType>:haxe.macro.Ref<haxe.macro.ClassType>]
+									[Block:haxe.macro.ModuleType]
+										[Call:haxe.macro.ModuleType]
+											[Field:(c : haxe.macro.Ref<haxe.macro.ClassType>) -> haxe.macro.ModuleType]
+												[TypeExpr haxe.macro.ModuleType:Enum<haxe.macro.ModuleType>]
+												[FEnum:(c : haxe.macro.Ref<haxe.macro.ClassType>) -> haxe.macro.ModuleType]
+													haxe.macro.ModuleType
+													TClassDecl
+											[Local c(12402):haxe.macro.Ref<haxe.macro.ClassType>:haxe.macro.Ref<haxe.macro.ClassType>]
+						[Case:haxe.macro.ModuleType]
+							[Const:Int] 3
+							[Block:haxe.macro.ModuleType]
+								[Var `(12403):haxe.macro.Ref<haxe.macro.DefType>]
+									[EnumParameter:haxe.macro.Ref<haxe.macro.DefType>]
+										[Local t(12376):haxe.macro.Type:haxe.macro.Type]
+										TType
+										0
+								[Var `(12404):Array<haxe.macro.Type>]
+									[EnumParameter:Array<haxe.macro.Type>]
+										[Local t(12376):haxe.macro.Type:haxe.macro.Type]
+										TType
+										1
+								[Block:haxe.macro.ModuleType]
+									[Var t(12405):haxe.macro.Ref<haxe.macro.DefType>] [Local `(12403):haxe.macro.Ref<haxe.macro.DefType>:haxe.macro.Ref<haxe.macro.DefType>]
+									[Block:haxe.macro.ModuleType]
+										[Call:haxe.macro.ModuleType]
+											[Field:(t : haxe.macro.Ref<haxe.macro.DefType>) -> haxe.macro.ModuleType]
+												[TypeExpr haxe.macro.ModuleType:Enum<haxe.macro.ModuleType>]
+												[FEnum:(t : haxe.macro.Ref<haxe.macro.DefType>) -> haxe.macro.ModuleType]
+													haxe.macro.ModuleType
+													TTypeDecl
+											[Local t(12405):haxe.macro.Ref<haxe.macro.DefType>:haxe.macro.Ref<haxe.macro.DefType>]
+						[Case:Null<haxe.macro.ModuleType>]
+							[Const:Int] 7
+							[Block:Null<haxe.macro.ModuleType>]
+								[Var `(12406):() -> haxe.macro.Type]
+									[EnumParameter:() -> haxe.macro.Type]
+										[Local t(12376):haxe.macro.Type:haxe.macro.Type]
+										TLazy
+										0
+								[Block:Null<haxe.macro.ModuleType>]
+									[Var f(12407):() -> haxe.macro.Type] [Local `(12406):() -> haxe.macro.Type:() -> haxe.macro.Type]
+									[Block:Null<haxe.macro.ModuleType>]
+										[Call:Null<haxe.macro.ModuleType>]
+											[Field:(t : haxe.macro.Type) -> Null<haxe.macro.ModuleType>]
+												[TypeExpr reflaxe.helpers.TypeHelper:Class<reflaxe.helpers.TypeHelper>]
+												[FStatic:(t : haxe.macro.Type) -> Null<haxe.macro.ModuleType>]
+													reflaxe.helpers.TypeHelper
+													toModuleType:(t : haxe.macro.Type) -> Null<haxe.macro.ModuleType>
+											[Call:haxe.macro.Type] [Local f(12407):() -> haxe.macro.Type:() -> haxe.macro.Type]
+						[Case:haxe.macro.ModuleType]
+							[Const:Int] 8
+							[Block:haxe.macro.ModuleType]
+								[Var `(12408):haxe.macro.Ref<haxe.macro.AbstractType>]
+									[EnumParameter:haxe.macro.Ref<haxe.macro.AbstractType>]
+										[Local t(12376):haxe.macro.Type:haxe.macro.Type]
+										TAbstract
+										0
+								[Var `(12409):Array<haxe.macro.Type>]
+									[EnumParameter:Array<haxe.macro.Type>]
+										[Local t(12376):haxe.macro.Type:haxe.macro.Type]
+										TAbstract
+										1
+								[Block:haxe.macro.ModuleType]
+									[Var a(12410):haxe.macro.Ref<haxe.macro.AbstractType>] [Local `(12408):haxe.macro.Ref<haxe.macro.AbstractType>:haxe.macro.Ref<haxe.macro.AbstractType>]
+									[Block:haxe.macro.ModuleType]
+										[Call:haxe.macro.ModuleType]
+											[Field:(a : haxe.macro.Ref<haxe.macro.AbstractType>) -> haxe.macro.ModuleType]
+												[TypeExpr haxe.macro.ModuleType:Enum<haxe.macro.ModuleType>]
+												[FEnum:(a : haxe.macro.Ref<haxe.macro.AbstractType>) -> haxe.macro.ModuleType]
+													haxe.macro.ModuleType
+													TAbstract
+											[Local a(12410):haxe.macro.Ref<haxe.macro.AbstractType>:haxe.macro.Ref<haxe.macro.AbstractType>]
+						[Default:Null<haxe.macro.ModuleType>] [Block:Null<haxe.macro.ModuleType>] [Const:Null<haxe.macro.ModuleType>] null
+
+	public static function getUniqueId[Function:(t : haxe.macro.Type) -> String]
+		[Arg:haxe.macro.Type] [Local t(12444):haxe.macro.Type]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Meta:String]
+					:ast(switch (t) {
+	case TLazy(f):
+		getUniqueId(f());	
+	case TAnonymous(_) | TFun(_, _):
+		Std.string(t);	
+	case TDynamic(t):
+		{
+			if (t != null) {
+				"TD" + getUniqueId(t);
+			} else {
+				"TD_Empty";
+			};
+		};	
+	case TMono(t):
+		{
+			var type = t.get();
+			if (type != null) {
+				"TM" + getUniqueId(type);
+			} else {
+				"TM_Empty";
+			};
+		};	
+	case _:
+		{
+			var mt = toModuleType(t);
+			if (mt != null) {
+				"T" + mt.getUniqueId();
+			} else {
+				"___TYPEUNIQUEID___" + Std.string(t);
+			};
+		};	
+})
+					[Switch:String]
+						[EnumIndex:Int] [Local t(12444):haxe.macro.Type:haxe.macro.Type]
+						[Case:String]
+							[Const:Int] 0
+							[Block:String]
+								[Var `(12456):haxe.macro.Ref<Null<haxe.macro.Type>>]
+									[EnumParameter:haxe.macro.Ref<Null<haxe.macro.Type>>]
+										[Local t(12444):haxe.macro.Type:haxe.macro.Type]
+										TMono
+										0
+								[Block:String]
+									[Var t(12457):haxe.macro.Ref<Null<haxe.macro.Type>>] [Local `(12456):haxe.macro.Ref<Null<haxe.macro.Type>>:haxe.macro.Ref<Null<haxe.macro.Type>>]
+									[Block:String]
+										[Block:String]
+											[Var type(12458):Null<haxe.macro.Type>]
+												[Call:Null<haxe.macro.Type>]
+													[Field:() -> Null<haxe.macro.Type>]
+														[Local t(12457):haxe.macro.Ref<Null<haxe.macro.Type>>:haxe.macro.Ref<Null<haxe.macro.Type>>]
+														[FAnon:() -> Null<haxe.macro.Type>] get:() -> Null<haxe.macro.Type>
+											[If:String]
+												[Binop:Bool]
+													[Local type(12458):Null<haxe.macro.Type>:Null<haxe.macro.Type>]
+													!=
+													[Const:Null<haxe.macro.Type>] null
+												[Then:String] [Block:String]
+													[Binop:String]
+														[Const:String] "TM"
+														+
+														[Call:String]
+															[Field:(t : haxe.macro.Type) -> String]
+																[TypeExpr reflaxe.helpers.TypeHelper:Class<reflaxe.helpers.TypeHelper>]
+																[FStatic:(t : haxe.macro.Type) -> String]
+																	reflaxe.helpers.TypeHelper
+																	getUniqueId:(t : haxe.macro.Type) -> String
+															[Local type(12458):Null<haxe.macro.Type>:Null<haxe.macro.Type>]
+												[Else:String] [Block:String] [Const:String] "TM_Empty"
+						[Case:String]
+							[Const:Int] 4
+							[Block:String]
+								[Var `(12459):Array<{ t : haxe.macro.Type, opt : Bool, name : String }>]
+									[EnumParameter:Array<{ t : haxe.macro.Type, opt : Bool, name : String }>]
+										[Local t(12444):haxe.macro.Type:haxe.macro.Type]
+										TFun
+										0
+								[Var `(12460):haxe.macro.Type]
+									[EnumParameter:haxe.macro.Type]
+										[Local t(12444):haxe.macro.Type:haxe.macro.Type]
+										TFun
+										1
+								[Block:String]
+									[Call:String]
+										[Field:(s : Dynamic) -> String]
+											[TypeExpr Std:Class<Std>]
+											[FStatic:(s : Dynamic) -> String]
+												Std
+												string:(s : Dynamic) -> String
+										[Local t(12444):haxe.macro.Type:haxe.macro.Type]
+						[Case:String]
+							[Const:Int] 5
+							[Block:String]
+								[Var `(12461):haxe.macro.Ref<haxe.macro.AnonType>]
+									[EnumParameter:haxe.macro.Ref<haxe.macro.AnonType>]
+										[Local t(12444):haxe.macro.Type:haxe.macro.Type]
+										TAnonymous
+										0
+								[Block:String]
+									[Call:String]
+										[Field:(s : Dynamic) -> String]
+											[TypeExpr Std:Class<Std>]
+											[FStatic:(s : Dynamic) -> String]
+												Std
+												string:(s : Dynamic) -> String
+										[Local t(12444):haxe.macro.Type:haxe.macro.Type]
+						[Case:String]
+							[Const:Int] 6
+							[Block:String]
+								[Var `(12462):Null<haxe.macro.Type>]
+									[EnumParameter:Null<haxe.macro.Type>]
+										[Local t(12444):haxe.macro.Type:haxe.macro.Type]
+										TDynamic
+										0
+								[Block:String]
+									[Var t(12463):Null<haxe.macro.Type>] [Local `(12462):Null<haxe.macro.Type>:Null<haxe.macro.Type>]
+									[Block:String]
+										[Block:String]
+											[If:String]
+												[Binop:Bool]
+													[Local t(12463):Null<haxe.macro.Type>:Null<haxe.macro.Type>]
+													!=
+													[Const:Null<haxe.macro.Type>] null
+												[Then:String] [Block:String]
+													[Binop:String]
+														[Const:String] "TD"
+														+
+														[Call:String]
+															[Field:(t : haxe.macro.Type) -> String]
+																[TypeExpr reflaxe.helpers.TypeHelper:Class<reflaxe.helpers.TypeHelper>]
+																[FStatic:(t : haxe.macro.Type) -> String]
+																	reflaxe.helpers.TypeHelper
+																	getUniqueId:(t : haxe.macro.Type) -> String
+															[Local t(12463):Null<haxe.macro.Type>:Null<haxe.macro.Type>]
+												[Else:String] [Block:String] [Const:String] "TD_Empty"
+						[Case:String]
+							[Const:Int] 7
+							[Block:String]
+								[Var `(12464):() -> haxe.macro.Type]
+									[EnumParameter:() -> haxe.macro.Type]
+										[Local t(12444):haxe.macro.Type:haxe.macro.Type]
+										TLazy
+										0
+								[Block:String]
+									[Var f(12465):() -> haxe.macro.Type] [Local `(12464):() -> haxe.macro.Type:() -> haxe.macro.Type]
+									[Block:String]
+										[Call:String]
+											[Field:(t : haxe.macro.Type) -> String]
+												[TypeExpr reflaxe.helpers.TypeHelper:Class<reflaxe.helpers.TypeHelper>]
+												[FStatic:(t : haxe.macro.Type) -> String]
+													reflaxe.helpers.TypeHelper
+													getUniqueId:(t : haxe.macro.Type) -> String
+											[Call:haxe.macro.Type] [Local f(12465):() -> haxe.macro.Type:() -> haxe.macro.Type]
+						[Default:String]
+							[Block:String]
+								[Block:String]
+									[Var mt(12466):Null<haxe.macro.ModuleType>]
+										[Call:Null<haxe.macro.ModuleType>]
+											[Field:(t : haxe.macro.Type) -> Null<haxe.macro.ModuleType>]
+												[TypeExpr reflaxe.helpers.TypeHelper:Class<reflaxe.helpers.TypeHelper>]
+												[FStatic:(t : haxe.macro.Type) -> Null<haxe.macro.ModuleType>]
+													reflaxe.helpers.TypeHelper
+													toModuleType:(t : haxe.macro.Type) -> Null<haxe.macro.ModuleType>
+											[Local t(12444):haxe.macro.Type:haxe.macro.Type]
+									[If:String]
+										[Binop:Bool]
+											[Local mt(12466):Null<haxe.macro.ModuleType>:Null<haxe.macro.ModuleType>]
+											!=
+											[Const:Null<haxe.macro.ModuleType>] null
+										[Then:String] [Block:String]
+											[Binop:String]
+												[Const:String] "T"
+												+
+												[Call:String]
+													[Field:(type : haxe.macro.ModuleType) -> String]
+														[TypeExpr reflaxe.helpers.ModuleTypeHelper:{ Statics reflaxe.helpers.ModuleTypeHelper }]
+														[FStatic:(type : haxe.macro.ModuleType) -> String]
+															reflaxe.helpers.ModuleTypeHelper
+															getUniqueId:(type : haxe.macro.ModuleType) -> String
+													[Local mt(12466):Null<haxe.macro.ModuleType>:Null<haxe.macro.ModuleType>]
+										[Else:String] [Block:String]
+											[Binop:String]
+												[Const:String] "___TYPEUNIQUEID___"
+												+
+												[Call:String]
+													[Field:(s : Dynamic) -> String]
+														[TypeExpr Std:Class<Std>]
+														[FStatic:(s : Dynamic) -> String]
+															Std
+															string:(s : Dynamic) -> String
+													[Local t(12444):haxe.macro.Type:haxe.macro.Type]
+
+	public static function equals[Function:(type : haxe.macro.Type, other : haxe.macro.Type) -> Bool]
+		[Arg:haxe.macro.Type] [Local type(11237):haxe.macro.Type]
+		[Arg:haxe.macro.Type] [Local other(11238):haxe.macro.Type]
+		[Block:Dynamic]
+			[If:Void]
+				[Binop:Bool]
+					[Call:Bool]
+						[Field:(t : haxe.macro.Type) -> Bool]
+							[TypeExpr reflaxe.helpers.TypeHelper:Class<reflaxe.helpers.TypeHelper>]
+							[FStatic:(t : haxe.macro.Type) -> Bool]
+								reflaxe.helpers.TypeHelper
+								isNumberType:(t : haxe.macro.Type) -> Bool
+						[Local type(11237):haxe.macro.Type:haxe.macro.Type]
+					&&
+					[Call:Bool]
+						[Field:(t : haxe.macro.Type) -> Bool]
+							[TypeExpr reflaxe.helpers.TypeHelper:Class<reflaxe.helpers.TypeHelper>]
+							[FStatic:(t : haxe.macro.Type) -> Bool]
+								reflaxe.helpers.TypeHelper
+								isNumberType:(t : haxe.macro.Type) -> Bool
+						[Local other(11238):haxe.macro.Type:haxe.macro.Type]
+				[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [Const:Bool] true
+			[Return:Dynamic]
+				[Binop:Bool]
+					[Call:String]
+						[Field:(s : Dynamic) -> String]
+							[TypeExpr Std:Class<Std>]
+							[FStatic:(s : Dynamic) -> String]
+								Std
+								string:(s : Dynamic) -> String
+						[Local type(11237):haxe.macro.Type:haxe.macro.Type]
+					==
+					[Call:String]
+						[Field:(s : Dynamic) -> String]
+							[TypeExpr Std:Class<Std>]
+							[FStatic:(s : Dynamic) -> String]
+								Std
+								string:(s : Dynamic) -> String
+						[Local other(11238):haxe.macro.Type:haxe.macro.Type]
+
+	public static function getMeta[Function:(type : haxe.macro.Type) -> Null<haxe.macro.MetaAccess>]
+		[Arg:haxe.macro.Type] [Local type(11182):haxe.macro.Type]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Meta:Null<haxe.macro.MetaAccess>]
+					:ast(switch (type) {
+	case TInst(c, _):
+		c.get().meta;	
+	case TEnum(e, _):
+		e.get().meta;	
+	case TType(t, _):
+		t.get().meta;	
+	case TAbstract(a, _):
+		a.get().meta;	
+	case TLazy(f):
+		getMeta(f());	
+	case TMono(t):
+		{
+			var type = t.get();
+			if (type != null) {
+				getMeta(type);
+			} else {
+				null;
+			};
+		};	
+	case _:
+		null;	
+})
+					[Switch:Null<haxe.macro.MetaAccess>]
+						[EnumIndex:Int] [Local type(11182):haxe.macro.Type:haxe.macro.Type]
+						[Case:Null<haxe.macro.MetaAccess>]
+							[Const:Int] 0
+							[Block:Null<haxe.macro.MetaAccess>]
+								[Var `(11200):haxe.macro.Ref<Null<haxe.macro.Type>>]
+									[EnumParameter:haxe.macro.Ref<Null<haxe.macro.Type>>]
+										[Local type(11182):haxe.macro.Type:haxe.macro.Type]
+										TMono
+										0
+								[Block:Null<haxe.macro.MetaAccess>]
+									[Var t(11201):haxe.macro.Ref<Null<haxe.macro.Type>>] [Local `(11200):haxe.macro.Ref<Null<haxe.macro.Type>>:haxe.macro.Ref<Null<haxe.macro.Type>>]
+									[Block:Null<haxe.macro.MetaAccess>]
+										[Block:Null<haxe.macro.MetaAccess>]
+											[Var type(11202):Null<haxe.macro.Type>]
+												[Call:Null<haxe.macro.Type>]
+													[Field:() -> Null<haxe.macro.Type>]
+														[Local t(11201):haxe.macro.Ref<Null<haxe.macro.Type>>:haxe.macro.Ref<Null<haxe.macro.Type>>]
+														[FAnon:() -> Null<haxe.macro.Type>] get:() -> Null<haxe.macro.Type>
+											[If:Null<haxe.macro.MetaAccess>]
+												[Binop:Bool]
+													[Local type(11202):Null<haxe.macro.Type>:Null<haxe.macro.Type>]
+													!=
+													[Const:Null<haxe.macro.Type>] null
+												[Then:Null<haxe.macro.MetaAccess>] [Block:Null<haxe.macro.MetaAccess>]
+													[Call:Null<haxe.macro.MetaAccess>]
+														[Field:(type : haxe.macro.Type) -> Null<haxe.macro.MetaAccess>]
+															[TypeExpr reflaxe.helpers.TypeHelper:Class<reflaxe.helpers.TypeHelper>]
+															[FStatic:(type : haxe.macro.Type) -> Null<haxe.macro.MetaAccess>]
+																reflaxe.helpers.TypeHelper
+																getMeta:(type : haxe.macro.Type) -> Null<haxe.macro.MetaAccess>
+														[Local type(11202):Null<haxe.macro.Type>:Null<haxe.macro.Type>]
+												[Else:Null<haxe.macro.MetaAccess>] [Block:Null<haxe.macro.MetaAccess>] [Const:Null<haxe.macro.MetaAccess>] null
+						[Case:haxe.macro.MetaAccess]
+							[Const:Int] 1
+							[Block:haxe.macro.MetaAccess]
+								[Var `(11203):haxe.macro.Ref<haxe.macro.EnumType>]
+									[EnumParameter:haxe.macro.Ref<haxe.macro.EnumType>]
+										[Local type(11182):haxe.macro.Type:haxe.macro.Type]
+										TEnum
+										0
+								[Var `(11204):Array<haxe.macro.Type>]
+									[EnumParameter:Array<haxe.macro.Type>]
+										[Local type(11182):haxe.macro.Type:haxe.macro.Type]
+										TEnum
+										1
+								[Block:haxe.macro.MetaAccess]
+									[Var e(11205):haxe.macro.Ref<haxe.macro.EnumType>] [Local `(11203):haxe.macro.Ref<haxe.macro.EnumType>:haxe.macro.Ref<haxe.macro.EnumType>]
+									[Block:haxe.macro.MetaAccess]
+										[Field:haxe.macro.MetaAccess]
+											[Call:haxe.macro.EnumType]
+												[Field:() -> haxe.macro.EnumType]
+													[Local e(11205):haxe.macro.Ref<haxe.macro.EnumType>:haxe.macro.Ref<haxe.macro.EnumType>]
+													[FAnon:() -> haxe.macro.EnumType] get:() -> haxe.macro.EnumType
+											[FAnon:haxe.macro.MetaAccess] meta:haxe.macro.MetaAccess
+						[Case:haxe.macro.MetaAccess]
+							[Const:Int] 2
+							[Block:haxe.macro.MetaAccess]
+								[Var `(11206):haxe.macro.Ref<haxe.macro.ClassType>]
+									[EnumParameter:haxe.macro.Ref<haxe.macro.ClassType>]
+										[Local type(11182):haxe.macro.Type:haxe.macro.Type]
+										TInst
+										0
+								[Var `(11207):Array<haxe.macro.Type>]
+									[EnumParameter:Array<haxe.macro.Type>]
+										[Local type(11182):haxe.macro.Type:haxe.macro.Type]
+										TInst
+										1
+								[Block:haxe.macro.MetaAccess]
+									[Var c(11208):haxe.macro.Ref<haxe.macro.ClassType>] [Local `(11206):haxe.macro.Ref<haxe.macro.ClassType>:haxe.macro.Ref<haxe.macro.ClassType>]
+									[Block:haxe.macro.MetaAccess]
+										[Field:haxe.macro.MetaAccess]
+											[Call:haxe.macro.ClassType]
+												[Field:() -> haxe.macro.ClassType]
+													[Local c(11208):haxe.macro.Ref<haxe.macro.ClassType>:haxe.macro.Ref<haxe.macro.ClassType>]
+													[FAnon:() -> haxe.macro.ClassType] get:() -> haxe.macro.ClassType
+											[FAnon:haxe.macro.MetaAccess] meta:haxe.macro.MetaAccess
+						[Case:haxe.macro.MetaAccess]
+							[Const:Int] 3
+							[Block:haxe.macro.MetaAccess]
+								[Var `(11209):haxe.macro.Ref<haxe.macro.DefType>]
+									[EnumParameter:haxe.macro.Ref<haxe.macro.DefType>]
+										[Local type(11182):haxe.macro.Type:haxe.macro.Type]
+										TType
+										0
+								[Var `(11210):Array<haxe.macro.Type>]
+									[EnumParameter:Array<haxe.macro.Type>]
+										[Local type(11182):haxe.macro.Type:haxe.macro.Type]
+										TType
+										1
+								[Block:haxe.macro.MetaAccess]
+									[Var t(11211):haxe.macro.Ref<haxe.macro.DefType>] [Local `(11209):haxe.macro.Ref<haxe.macro.DefType>:haxe.macro.Ref<haxe.macro.DefType>]
+									[Block:haxe.macro.MetaAccess]
+										[Field:haxe.macro.MetaAccess]
+											[Call:haxe.macro.DefType]
+												[Field:() -> haxe.macro.DefType]
+													[Local t(11211):haxe.macro.Ref<haxe.macro.DefType>:haxe.macro.Ref<haxe.macro.DefType>]
+													[FAnon:() -> haxe.macro.DefType] get:() -> haxe.macro.DefType
+											[FAnon:haxe.macro.MetaAccess] meta:haxe.macro.MetaAccess
+						[Case:Null<haxe.macro.MetaAccess>]
+							[Const:Int] 7
+							[Block:Null<haxe.macro.MetaAccess>]
+								[Var `(11212):() -> haxe.macro.Type]
+									[EnumParameter:() -> haxe.macro.Type]
+										[Local type(11182):haxe.macro.Type:haxe.macro.Type]
+										TLazy
+										0
+								[Block:Null<haxe.macro.MetaAccess>]
+									[Var f(11213):() -> haxe.macro.Type] [Local `(11212):() -> haxe.macro.Type:() -> haxe.macro.Type]
+									[Block:Null<haxe.macro.MetaAccess>]
+										[Call:Null<haxe.macro.MetaAccess>]
+											[Field:(type : haxe.macro.Type) -> Null<haxe.macro.MetaAccess>]
+												[TypeExpr reflaxe.helpers.TypeHelper:Class<reflaxe.helpers.TypeHelper>]
+												[FStatic:(type : haxe.macro.Type) -> Null<haxe.macro.MetaAccess>]
+													reflaxe.helpers.TypeHelper
+													getMeta:(type : haxe.macro.Type) -> Null<haxe.macro.MetaAccess>
+											[Call:haxe.macro.Type] [Local f(11213):() -> haxe.macro.Type:() -> haxe.macro.Type]
+						[Case:haxe.macro.MetaAccess]
+							[Const:Int] 8
+							[Block:haxe.macro.MetaAccess]
+								[Var `(11214):haxe.macro.Ref<haxe.macro.AbstractType>]
+									[EnumParameter:haxe.macro.Ref<haxe.macro.AbstractType>]
+										[Local type(11182):haxe.macro.Type:haxe.macro.Type]
+										TAbstract
+										0
+								[Var `(11215):Array<haxe.macro.Type>]
+									[EnumParameter:Array<haxe.macro.Type>]
+										[Local type(11182):haxe.macro.Type:haxe.macro.Type]
+										TAbstract
+										1
+								[Block:haxe.macro.MetaAccess]
+									[Var a(11216):haxe.macro.Ref<haxe.macro.AbstractType>] [Local `(11214):haxe.macro.Ref<haxe.macro.AbstractType>:haxe.macro.Ref<haxe.macro.AbstractType>]
+									[Block:haxe.macro.MetaAccess]
+										[Field:haxe.macro.MetaAccess]
+											[Call:haxe.macro.AbstractType]
+												[Field:() -> haxe.macro.AbstractType]
+													[Local a(11216):haxe.macro.Ref<haxe.macro.AbstractType>:haxe.macro.Ref<haxe.macro.AbstractType>]
+													[FAnon:() -> haxe.macro.AbstractType] get:() -> haxe.macro.AbstractType
+											[FAnon:haxe.macro.MetaAccess] meta:haxe.macro.MetaAccess
+						[Default:Null<haxe.macro.MetaAccess>] [Block:Null<haxe.macro.MetaAccess>] [Const:Null<haxe.macro.MetaAccess>] null
+
+	public static function convertAnonToModuleType[Function:(t : haxe.macro.Type) -> Null<haxe.macro.ModuleType>]
+		[Arg:haxe.macro.Type] [Local t(12467):haxe.macro.Type]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Meta:Null<haxe.macro.ModuleType>]
+					:ast(switch (t) {
+	case TAnonymous(anonTypeRef):
+		{
+			var anonType = anonTypeRef.get();
+			switch (anonType.status) {
+				case AClassStatics(c):
+					TClassDecl(c);				
+				case AEnumStatics(e):
+					TEnumDecl(e);				
+				case AAbstractStatics(a):
+					TAbstract(a);				
+				case _:
+					null;				
+			};
+		};	
+	case _:
+		null;	
+})
+					[If:Null<haxe.macro.ModuleType>]
+						[Binop:Bool]
+							[EnumIndex:Int] [Local t(12467):haxe.macro.Type:haxe.macro.Type]
+							==
+							[Const:Int] 5
+						[Then:Null<haxe.macro.ModuleType>] [Block:Null<haxe.macro.ModuleType>]
+							[Var `(12485):haxe.macro.Ref<haxe.macro.AnonType>]
+								[EnumParameter:haxe.macro.Ref<haxe.macro.AnonType>]
+									[Local t(12467):haxe.macro.Type:haxe.macro.Type]
+									TAnonymous
+									0
+							[Block:Null<haxe.macro.ModuleType>]
+								[Var anonTypeRef(12486):haxe.macro.Ref<haxe.macro.AnonType>] [Local `(12485):haxe.macro.Ref<haxe.macro.AnonType>:haxe.macro.Ref<haxe.macro.AnonType>]
+								[Block:Null<haxe.macro.ModuleType>]
+									[Block:Null<haxe.macro.ModuleType>]
+										[Var anonType(12487):haxe.macro.AnonType]
+											[Call:haxe.macro.AnonType]
+												[Field:() -> haxe.macro.AnonType]
+													[Local anonTypeRef(12486):haxe.macro.Ref<haxe.macro.AnonType>:haxe.macro.Ref<haxe.macro.AnonType>]
+													[FAnon:() -> haxe.macro.AnonType] get:() -> haxe.macro.AnonType
+										[Meta:Null<haxe.macro.ModuleType>]
+											:ast(switch (anonType.status) {
+	case AClassStatics(c):
+		TClassDecl(c);	
+	case AEnumStatics(e):
+		TEnumDecl(e);	
+	case AAbstractStatics(a):
+		TAbstract(a);	
+	case _:
+		null;	
+})
+											[Block:Null<haxe.macro.ModuleType>]
+												[Var `(12488):haxe.macro.AnonStatus]
+													[Field:haxe.macro.AnonStatus]
+														[Local anonType(12487):haxe.macro.AnonType:haxe.macro.AnonType]
+														[FAnon:haxe.macro.AnonStatus] status:haxe.macro.AnonStatus
+												[Switch:Null<haxe.macro.ModuleType>]
+													[EnumIndex:Int] [Local `(12488):haxe.macro.AnonStatus:haxe.macro.AnonStatus]
+													[Case:haxe.macro.ModuleType]
+														[Const:Int] 4
+														[Block:haxe.macro.ModuleType]
+															[Var `(12489):haxe.macro.Ref<haxe.macro.ClassType>]
+																[EnumParameter:haxe.macro.Ref<haxe.macro.ClassType>]
+																	[Local `(12488):haxe.macro.AnonStatus:haxe.macro.AnonStatus]
+																	AClassStatics
+																	0
+															[Block:haxe.macro.ModuleType]
+																[Var c(12490):haxe.macro.Ref<haxe.macro.ClassType>] [Local `(12489):haxe.macro.Ref<haxe.macro.ClassType>:haxe.macro.Ref<haxe.macro.ClassType>]
+																[Block:haxe.macro.ModuleType]
+																	[Call:haxe.macro.ModuleType]
+																		[Field:(c : haxe.macro.Ref<haxe.macro.ClassType>) -> haxe.macro.ModuleType]
+																			[TypeExpr haxe.macro.ModuleType:Enum<haxe.macro.ModuleType>]
+																			[FEnum:(c : haxe.macro.Ref<haxe.macro.ClassType>) -> haxe.macro.ModuleType]
+																				haxe.macro.ModuleType
+																				TClassDecl
+																		[Local c(12490):haxe.macro.Ref<haxe.macro.ClassType>:haxe.macro.Ref<haxe.macro.ClassType>]
+													[Case:haxe.macro.ModuleType]
+														[Const:Int] 5
+														[Block:haxe.macro.ModuleType]
+															[Var `(12491):haxe.macro.Ref<haxe.macro.EnumType>]
+																[EnumParameter:haxe.macro.Ref<haxe.macro.EnumType>]
+																	[Local `(12488):haxe.macro.AnonStatus:haxe.macro.AnonStatus]
+																	AEnumStatics
+																	0
+															[Block:haxe.macro.ModuleType]
+																[Var e(12492):haxe.macro.Ref<haxe.macro.EnumType>] [Local `(12491):haxe.macro.Ref<haxe.macro.EnumType>:haxe.macro.Ref<haxe.macro.EnumType>]
+																[Block:haxe.macro.ModuleType]
+																	[Call:haxe.macro.ModuleType]
+																		[Field:(e : haxe.macro.Ref<haxe.macro.EnumType>) -> haxe.macro.ModuleType]
+																			[TypeExpr haxe.macro.ModuleType:Enum<haxe.macro.ModuleType>]
+																			[FEnum:(e : haxe.macro.Ref<haxe.macro.EnumType>) -> haxe.macro.ModuleType]
+																				haxe.macro.ModuleType
+																				TEnumDecl
+																		[Local e(12492):haxe.macro.Ref<haxe.macro.EnumType>:haxe.macro.Ref<haxe.macro.EnumType>]
+													[Case:haxe.macro.ModuleType]
+														[Const:Int] 6
+														[Block:haxe.macro.ModuleType]
+															[Var `(12493):haxe.macro.Ref<haxe.macro.AbstractType>]
+																[EnumParameter:haxe.macro.Ref<haxe.macro.AbstractType>]
+																	[Local `(12488):haxe.macro.AnonStatus:haxe.macro.AnonStatus]
+																	AAbstractStatics
+																	0
+															[Block:haxe.macro.ModuleType]
+																[Var a(12494):haxe.macro.Ref<haxe.macro.AbstractType>] [Local `(12493):haxe.macro.Ref<haxe.macro.AbstractType>:haxe.macro.Ref<haxe.macro.AbstractType>]
+																[Block:haxe.macro.ModuleType]
+																	[Call:haxe.macro.ModuleType]
+																		[Field:(a : haxe.macro.Ref<haxe.macro.AbstractType>) -> haxe.macro.ModuleType]
+																			[TypeExpr haxe.macro.ModuleType:Enum<haxe.macro.ModuleType>]
+																			[FEnum:(a : haxe.macro.Ref<haxe.macro.AbstractType>) -> haxe.macro.ModuleType]
+																				haxe.macro.ModuleType
+																				TAbstract
+																		[Local a(12494):haxe.macro.Ref<haxe.macro.AbstractType>:haxe.macro.Ref<haxe.macro.AbstractType>]
+													[Default:Null<haxe.macro.ModuleType>] [Block:Null<haxe.macro.ModuleType>] [Const:Null<haxe.macro.ModuleType>] null
+						[Else:Null<haxe.macro.ModuleType>] [Block:Null<haxe.macro.ModuleType>] [Const:Null<haxe.macro.ModuleType>] null
+
+	public static function getParams[Function:(t : haxe.macro.Type) -> Null<Array<haxe.macro.Type>>]
+		[Arg:haxe.macro.Type] [Local t(12495):haxe.macro.Type]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Meta:Null<Array<haxe.macro.Type>>]
+					:ast(switch (t) {
+	case TEnum(_, params) | TInst(_, params) | TType(_, params) | TAbstract(_, params):
+		params;	
+	case _:
+		null;	
+})
+					[Switch:Null<Array<haxe.macro.Type>>]
+						[EnumIndex:Int] [Local t(12495):haxe.macro.Type:haxe.macro.Type]
+						[Case:Array<haxe.macro.Type>]
+							[Const:Int] 1
+							[Block:Array<haxe.macro.Type>]
+								[Var `(12505):haxe.macro.Ref<haxe.macro.EnumType>]
+									[EnumParameter:haxe.macro.Ref<haxe.macro.EnumType>]
+										[Local t(12495):haxe.macro.Type:haxe.macro.Type]
+										TEnum
+										0
+								[Var `(12506):Array<haxe.macro.Type>]
+									[EnumParameter:Array<haxe.macro.Type>]
+										[Local t(12495):haxe.macro.Type:haxe.macro.Type]
+										TEnum
+										1
+								[Block:Array<haxe.macro.Type>]
+									[Var params(12507):Array<haxe.macro.Type>] [Local `(12506):Array<haxe.macro.Type>:Array<haxe.macro.Type>]
+									[Block:Array<haxe.macro.Type>] [Local params(12507):Array<haxe.macro.Type>:Array<haxe.macro.Type>]
+						[Case:Array<haxe.macro.Type>]
+							[Const:Int] 2
+							[Block:Array<haxe.macro.Type>]
+								[Var `(12508):haxe.macro.Ref<haxe.macro.ClassType>]
+									[EnumParameter:haxe.macro.Ref<haxe.macro.ClassType>]
+										[Local t(12495):haxe.macro.Type:haxe.macro.Type]
+										TInst
+										0
+								[Var `(12509):Array<haxe.macro.Type>]
+									[EnumParameter:Array<haxe.macro.Type>]
+										[Local t(12495):haxe.macro.Type:haxe.macro.Type]
+										TInst
+										1
+								[Block:Array<haxe.macro.Type>]
+									[Var params(12510):Array<haxe.macro.Type>] [Local `(12509):Array<haxe.macro.Type>:Array<haxe.macro.Type>]
+									[Block:Array<haxe.macro.Type>] [Local params(12510):Array<haxe.macro.Type>:Array<haxe.macro.Type>]
+						[Case:Array<haxe.macro.Type>]
+							[Const:Int] 3
+							[Block:Array<haxe.macro.Type>]
+								[Var `(12511):haxe.macro.Ref<haxe.macro.DefType>]
+									[EnumParameter:haxe.macro.Ref<haxe.macro.DefType>]
+										[Local t(12495):haxe.macro.Type:haxe.macro.Type]
+										TType
+										0
+								[Var `(12512):Array<haxe.macro.Type>]
+									[EnumParameter:Array<haxe.macro.Type>]
+										[Local t(12495):haxe.macro.Type:haxe.macro.Type]
+										TType
+										1
+								[Block:Array<haxe.macro.Type>]
+									[Var params(12513):Array<haxe.macro.Type>] [Local `(12512):Array<haxe.macro.Type>:Array<haxe.macro.Type>]
+									[Block:Array<haxe.macro.Type>] [Local params(12513):Array<haxe.macro.Type>:Array<haxe.macro.Type>]
+						[Case:Array<haxe.macro.Type>]
+							[Const:Int] 8
+							[Block:Array<haxe.macro.Type>]
+								[Var `(12514):haxe.macro.Ref<haxe.macro.AbstractType>]
+									[EnumParameter:haxe.macro.Ref<haxe.macro.AbstractType>]
+										[Local t(12495):haxe.macro.Type:haxe.macro.Type]
+										TAbstract
+										0
+								[Var `(12515):Array<haxe.macro.Type>]
+									[EnumParameter:Array<haxe.macro.Type>]
+										[Local t(12495):haxe.macro.Type:haxe.macro.Type]
+										TAbstract
+										1
+								[Block:Array<haxe.macro.Type>]
+									[Var params(12516):Array<haxe.macro.Type>] [Local `(12515):Array<haxe.macro.Type>:Array<haxe.macro.Type>]
+									[Block:Array<haxe.macro.Type>] [Local params(12516):Array<haxe.macro.Type>:Array<haxe.macro.Type>]
+						[Default:Null<Array<haxe.macro.Type>>] [Block:Null<Array<haxe.macro.Type>>] [Const:Null<Array<haxe.macro.Type>>] null
+
+	public static function withParams[Function:(t : haxe.macro.Type, params : Array<haxe.macro.Type>) -> Null<haxe.macro.Type>]
+		[Arg:haxe.macro.Type] [Local t(12517):haxe.macro.Type]
+		[Arg:Array<haxe.macro.Type>] [Local params(12518):Array<haxe.macro.Type>]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Meta:Null<haxe.macro.Type>]
+					:ast(switch (t) {
+	case TEnum(e, _):
+		TEnum(e, params);	
+	case TInst(i, _):
+		TInst(i, params);	
+	case TType(t, _):
+		TType(t, params);	
+	case TAbstract(a, _):
+		TAbstract(a, params);	
+	case _:
+		null;	
+})
+					[Switch:Null<haxe.macro.Type>]
+						[EnumIndex:Int] [Local t(12517):haxe.macro.Type:haxe.macro.Type]
+						[Case:haxe.macro.Type]
+							[Const:Int] 1
+							[Block:haxe.macro.Type]
+								[Var `(12531):haxe.macro.Ref<haxe.macro.EnumType>]
+									[EnumParameter:haxe.macro.Ref<haxe.macro.EnumType>]
+										[Local t(12517):haxe.macro.Type:haxe.macro.Type]
+										TEnum
+										0
+								[Var `(12532):Array<haxe.macro.Type>]
+									[EnumParameter:Array<haxe.macro.Type>]
+										[Local t(12517):haxe.macro.Type:haxe.macro.Type]
+										TEnum
+										1
+								[Block:haxe.macro.Type]
+									[Var e(12533):haxe.macro.Ref<haxe.macro.EnumType>] [Local `(12531):haxe.macro.Ref<haxe.macro.EnumType>:haxe.macro.Ref<haxe.macro.EnumType>]
+									[Block:haxe.macro.Type]
+										[Call:haxe.macro.Type]
+											[Field:(t : haxe.macro.Ref<haxe.macro.EnumType>, params : Array<haxe.macro.Type>) -> haxe.macro.Type]
+												[TypeExpr haxe.macro.Type:Enum<haxe.macro.Type>]
+												[FEnum:(t : haxe.macro.Ref<haxe.macro.EnumType>, params : Array<haxe.macro.Type>) -> haxe.macro.Type]
+													haxe.macro.Type
+													TEnum
+											[Local e(12533):haxe.macro.Ref<haxe.macro.EnumType>:haxe.macro.Ref<haxe.macro.EnumType>]
+											[Local params(12518):Array<haxe.macro.Type>:Array<haxe.macro.Type>]
+						[Case:haxe.macro.Type]
+							[Const:Int] 2
+							[Block:haxe.macro.Type]
+								[Var `(12534):haxe.macro.Ref<haxe.macro.ClassType>]
+									[EnumParameter:haxe.macro.Ref<haxe.macro.ClassType>]
+										[Local t(12517):haxe.macro.Type:haxe.macro.Type]
+										TInst
+										0
+								[Var `(12535):Array<haxe.macro.Type>]
+									[EnumParameter:Array<haxe.macro.Type>]
+										[Local t(12517):haxe.macro.Type:haxe.macro.Type]
+										TInst
+										1
+								[Block:haxe.macro.Type]
+									[Var i(12536):haxe.macro.Ref<haxe.macro.ClassType>] [Local `(12534):haxe.macro.Ref<haxe.macro.ClassType>:haxe.macro.Ref<haxe.macro.ClassType>]
+									[Block:haxe.macro.Type]
+										[Call:haxe.macro.Type]
+											[Field:(t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type>) -> haxe.macro.Type]
+												[TypeExpr haxe.macro.Type:Enum<haxe.macro.Type>]
+												[FEnum:(t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type>) -> haxe.macro.Type]
+													haxe.macro.Type
+													TInst
+											[Local i(12536):haxe.macro.Ref<haxe.macro.ClassType>:haxe.macro.Ref<haxe.macro.ClassType>]
+											[Local params(12518):Array<haxe.macro.Type>:Array<haxe.macro.Type>]
+						[Case:haxe.macro.Type]
+							[Const:Int] 3
+							[Block:haxe.macro.Type]
+								[Var `(12537):haxe.macro.Ref<haxe.macro.DefType>]
+									[EnumParameter:haxe.macro.Ref<haxe.macro.DefType>]
+										[Local t(12517):haxe.macro.Type:haxe.macro.Type]
+										TType
+										0
+								[Var `(12538):Array<haxe.macro.Type>]
+									[EnumParameter:Array<haxe.macro.Type>]
+										[Local t(12517):haxe.macro.Type:haxe.macro.Type]
+										TType
+										1
+								[Block:haxe.macro.Type]
+									[Var t(12539):haxe.macro.Ref<haxe.macro.DefType>] [Local `(12537):haxe.macro.Ref<haxe.macro.DefType>:haxe.macro.Ref<haxe.macro.DefType>]
+									[Block:haxe.macro.Type]
+										[Call:haxe.macro.Type]
+											[Field:(t : haxe.macro.Ref<haxe.macro.DefType>, params : Array<haxe.macro.Type>) -> haxe.macro.Type]
+												[TypeExpr haxe.macro.Type:Enum<haxe.macro.Type>]
+												[FEnum:(t : haxe.macro.Ref<haxe.macro.DefType>, params : Array<haxe.macro.Type>) -> haxe.macro.Type]
+													haxe.macro.Type
+													TType
+											[Local t(12539):haxe.macro.Ref<haxe.macro.DefType>:haxe.macro.Ref<haxe.macro.DefType>]
+											[Local params(12518):Array<haxe.macro.Type>:Array<haxe.macro.Type>]
+						[Case:haxe.macro.Type]
+							[Const:Int] 8
+							[Block:haxe.macro.Type]
+								[Var `(12540):haxe.macro.Ref<haxe.macro.AbstractType>]
+									[EnumParameter:haxe.macro.Ref<haxe.macro.AbstractType>]
+										[Local t(12517):haxe.macro.Type:haxe.macro.Type]
+										TAbstract
+										0
+								[Var `(12541):Array<haxe.macro.Type>]
+									[EnumParameter:Array<haxe.macro.Type>]
+										[Local t(12517):haxe.macro.Type:haxe.macro.Type]
+										TAbstract
+										1
+								[Block:haxe.macro.Type]
+									[Var a(12542):haxe.macro.Ref<haxe.macro.AbstractType>] [Local `(12540):haxe.macro.Ref<haxe.macro.AbstractType>:haxe.macro.Ref<haxe.macro.AbstractType>]
+									[Block:haxe.macro.Type]
+										[Call:haxe.macro.Type]
+											[Field:(t : haxe.macro.Ref<haxe.macro.AbstractType>, params : Array<haxe.macro.Type>) -> haxe.macro.Type]
+												[TypeExpr haxe.macro.Type:Enum<haxe.macro.Type>]
+												[FEnum:(t : haxe.macro.Ref<haxe.macro.AbstractType>, params : Array<haxe.macro.Type>) -> haxe.macro.Type]
+													haxe.macro.Type
+													TAbstract
+											[Local a(12542):haxe.macro.Ref<haxe.macro.AbstractType>:haxe.macro.Ref<haxe.macro.AbstractType>]
+											[Local params(12518):Array<haxe.macro.Type>:Array<haxe.macro.Type>]
+						[Default:Null<haxe.macro.Type>] [Block:Null<haxe.macro.Type>] [Const:Null<haxe.macro.Type>] null
+
+	public static function mapParams[Function:(t : haxe.macro.Type, callback : ((haxe.macro.Type, Int) -> haxe.macro.Type)) -> Null<haxe.macro.Type>]
+		[Arg:haxe.macro.Type] [Local t(12543):haxe.macro.Type]
+		[Arg:(haxe.macro.Type, Int) -> haxe.macro.Type] [Local callback(12544):(haxe.macro.Type, Int) -> haxe.macro.Type]
+		[Block:Dynamic]
+			[Var params(12545):Null<Array<haxe.macro.Type>>]
+				[Call:Null<Array<haxe.macro.Type>>]
+					[Field:(t : haxe.macro.Type) -> Null<Array<haxe.macro.Type>>]
+						[TypeExpr reflaxe.helpers.TypeHelper:Class<reflaxe.helpers.TypeHelper>]
+						[FStatic:(t : haxe.macro.Type) -> Null<Array<haxe.macro.Type>>]
+							reflaxe.helpers.TypeHelper
+							getParams:(t : haxe.macro.Type) -> Null<Array<haxe.macro.Type>>
+					[Local t(12543):haxe.macro.Type:haxe.macro.Type]
+			[If:Void]
+				[Binop:Bool]
+					[Local params(12545):Null<Array<haxe.macro.Type>>:Null<Array<haxe.macro.Type>>]
+					==
+					[Const:Null<Array<haxe.macro.Type>>] null
+				[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [Const:Null<haxe.macro.Type>] null
+			[Var newParams(12546):Array<haxe.macro.Type>] [ArrayDecl:Array<haxe.macro.Type>]
+			[Block:Void]
+				[Var `(12548):Int] [Const:Int] 0
+				[Var `(12549):Int]
+					[Field:Int]
+						[Local params(12545):Null<Array<haxe.macro.Type>>:Null<Array<haxe.macro.Type>>]
+						[FInstance:Int]
+							Array<haxe.macro.Type>
+							length:Int
+				[While:Void]
+					[Binop:Bool]
+						[Local `(12548):Int:Int]
+						<
+						[Local `(12549):Int:Int]
+					[Block:Int]
+						[Var i(12547):Int]
+							[Unop:Int]
+								++
+								Postfix
+								[Local `(12548):Int:Int]
+						[Call:Int]
+							[Field:(x : haxe.macro.Type) -> Int]
+								[Local newParams(12546):Array<haxe.macro.Type>:Array<haxe.macro.Type>]
+								[FInstance:(x : haxe.macro.Type) -> Int]
+									Array<haxe.macro.Type>
+									push:(x : Array.T) -> Int
+							[Call:haxe.macro.Type]
+								[Local callback(12544):(haxe.macro.Type, Int) -> haxe.macro.Type:(haxe.macro.Type, Int) -> haxe.macro.Type]
+								[Array:haxe.macro.Type]
+									[Local params(12545):Null<Array<haxe.macro.Type>>:Null<Array<haxe.macro.Type>>]
+									[Local i(12547):Int:Int]
+								[Local i(12547):Int:Int]
+			[Return:Dynamic]
+				[Call:Null<haxe.macro.Type>]
+					[Field:(t : haxe.macro.Type, params : Array<haxe.macro.Type>) -> Null<haxe.macro.Type>]
+						[TypeExpr reflaxe.helpers.TypeHelper:Class<reflaxe.helpers.TypeHelper>]
+						[FStatic:(t : haxe.macro.Type, params : Array<haxe.macro.Type>) -> Null<haxe.macro.Type>]
+							reflaxe.helpers.TypeHelper
+							withParams:(t : haxe.macro.Type, params : Array<haxe.macro.Type>) -> Null<haxe.macro.Type>
+					[Local t(12543):haxe.macro.Type:haxe.macro.Type]
+					[Local newParams(12546):Array<haxe.macro.Type>:Array<haxe.macro.Type>]
+
+	static function extractParamTypes[Function:(params : Array<haxe.macro.TypeParameter>) -> Array<haxe.macro.Type>]
+		[Arg:Array<haxe.macro.TypeParameter>] [Local params(12351):Array<haxe.macro.TypeParameter>]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Block:Array<haxe.macro.Type>]
+					[Var `(12356):Array<haxe.macro.Type>] [ArrayDecl:Array<haxe.macro.Type>]
+					[Block:Void]
+						[Var `(12357):Int] [Const:Int] 0
+						[Var `(12358):Array<haxe.macro.TypeParameter>] [Local params(12351):Array<haxe.macro.TypeParameter>:Array<haxe.macro.TypeParameter>]
+						[While:Void]
+							[Binop:Bool]
+								[Local `(12357):Int:Int]
+								<
+								[Field:Int]
+									[Local `(12358):Array<haxe.macro.TypeParameter>:Array<haxe.macro.TypeParameter>]
+									[FInstance:Int]
+										Array<haxe.macro.TypeParameter>
+										length:Int
+							[Block:Void]
+								[Var v(12359):haxe.macro.TypeParameter]
+									[Array:haxe.macro.TypeParameter]
+										[Local `(12358):Array<haxe.macro.TypeParameter>:Array<haxe.macro.TypeParameter>]
+										[Local `(12357):Int:Int]
+								[Unop:Int]
+									++
+									Prefix
+									[Local `(12357):Int:Int]
+								[Call:Int]
+									[Field:(x : haxe.macro.Type) -> Int]
+										[Local `(12356):Array<haxe.macro.Type>:Array<haxe.macro.Type>]
+										[FInstance:(x : haxe.macro.Type) -> Int]
+											Array<haxe.macro.Type>
+											push:(x : Array.T) -> Int
+									[Call:haxe.macro.Type]
+										[Function:(tp : haxe.macro.TypeParameter) -> haxe.macro.Type]
+											[Arg:haxe.macro.TypeParameter] [Local tp(12360):haxe.macro.TypeParameter]
+											[Block:Dynamic]
+												[Return:Dynamic]
+													[Field:haxe.macro.Type]
+														[Local tp(12360):haxe.macro.TypeParameter:haxe.macro.TypeParameter]
+														[FAnon:haxe.macro.Type] t:haxe.macro.Type
+										[Local v(12359):haxe.macro.TypeParameter:haxe.macro.TypeParameter]
+					[Local `(12356):Array<haxe.macro.Type>:Array<haxe.macro.Type>]
+
+	public static function isEnum[Function:(t : haxe.macro.Type) -> Bool]
+		[Arg:haxe.macro.Type] [Local t(12550):haxe.macro.Type]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Meta:Bool]
+					:ast(switch (t) {
+	case TEnum(_, _):
+		true;	
+	case _:
+		false;	
+})
+					[If:Bool]
+						[Binop:Bool]
+							[EnumIndex:Int] [Local t(12550):haxe.macro.Type:haxe.macro.Type]
+							==
+							[Const:Int] 1
+						[Then:Bool] [Block:Bool]
+							[Var `(12553):haxe.macro.Ref<haxe.macro.EnumType>]
+								[EnumParameter:haxe.macro.Ref<haxe.macro.EnumType>]
+									[Local t(12550):haxe.macro.Type:haxe.macro.Type]
+									TEnum
+									0
+							[Var `(12554):Array<haxe.macro.Type>]
+								[EnumParameter:Array<haxe.macro.Type>]
+									[Local t(12550):haxe.macro.Type:haxe.macro.Type]
+									TEnum
+									1
+							[Block:Bool] [Const:Bool] true
+						[Else:Bool] [Block:Bool] [Const:Bool] false
+
+	public static function isMonomorph[Function:(t : haxe.macro.Type) -> Bool]
+		[Arg:haxe.macro.Type] [Local t(12555):haxe.macro.Type]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Meta:Bool]
+					:ast(switch (t) {
+	case TMono(_):
+		true;	
+	case _:
+		false;	
+})
+					[If:Bool]
+						[Binop:Bool]
+							[EnumIndex:Int] [Local t(12555):haxe.macro.Type:haxe.macro.Type]
+							==
+							[Const:Int] 0
+						[Then:Bool] [Block:Bool]
+							[Var `(12557):haxe.macro.Ref<Null<haxe.macro.Type>>]
+								[EnumParameter:haxe.macro.Ref<Null<haxe.macro.Type>>]
+									[Local t(12555):haxe.macro.Type:haxe.macro.Type]
+									TMono
+									0
+							[Block:Bool] [Const:Bool] true
+						[Else:Bool] [Block:Bool] [Const:Bool] false
+
+	public static function isTypedef[Function:(t : haxe.macro.Type) -> Bool]
+		[Arg:haxe.macro.Type] [Local t(12558):haxe.macro.Type]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Meta:Bool]
+					:ast(switch (t) {
+	case TType(_, _):
+		true;	
+	case _:
+		false;	
+})
+					[If:Bool]
+						[Binop:Bool]
+							[EnumIndex:Int] [Local t(12558):haxe.macro.Type:haxe.macro.Type]
+							==
+							[Const:Int] 3
+						[Then:Bool] [Block:Bool]
+							[Var `(12561):haxe.macro.Ref<haxe.macro.DefType>]
+								[EnumParameter:haxe.macro.Ref<haxe.macro.DefType>]
+									[Local t(12558):haxe.macro.Type:haxe.macro.Type]
+									TType
+									0
+							[Var `(12562):Array<haxe.macro.Type>]
+								[EnumParameter:Array<haxe.macro.Type>]
+									[Local t(12558):haxe.macro.Type:haxe.macro.Type]
+									TType
+									1
+							[Block:Bool] [Const:Bool] true
+						[Else:Bool] [Block:Bool] [Const:Bool] false
+
+	public static function isAnonStruct[Function:(t : haxe.macro.Type) -> Bool]
+		[Arg:haxe.macro.Type] [Local t(12563):haxe.macro.Type]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Meta:Bool]
+					:ast(switch (t) {
+	case TAnonymous(_):
+		true;	
+	case _:
+		false;	
+})
+					[If:Bool]
+						[Binop:Bool]
+							[EnumIndex:Int] [Local t(12563):haxe.macro.Type:haxe.macro.Type]
+							==
+							[Const:Int] 5
+						[Then:Bool] [Block:Bool]
+							[Var `(12565):haxe.macro.Ref<haxe.macro.AnonType>]
+								[EnumParameter:haxe.macro.Ref<haxe.macro.AnonType>]
+									[Local t(12563):haxe.macro.Type:haxe.macro.Type]
+									TAnonymous
+									0
+							[Block:Bool] [Const:Bool] true
+						[Else:Bool] [Block:Bool] [Const:Bool] false
+
+	public static function isDynamic[Function:(t : haxe.macro.Type) -> Bool]
+		[Arg:haxe.macro.Type] [Local t(9998):haxe.macro.Type]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Meta:Bool]
+					:ast(switch (t) {
+	case TDynamic(_):
+		true;	
+	case _:
+		false;	
+})
+					[If:Bool]
+						[Binop:Bool]
+							[EnumIndex:Int] [Local t(9998):haxe.macro.Type:haxe.macro.Type]
+							==
+							[Const:Int] 6
+						[Then:Bool] [Block:Bool]
+							[Var `(10000):Null<haxe.macro.Type>]
+								[EnumParameter:Null<haxe.macro.Type>]
+									[Local t(9998):haxe.macro.Type:haxe.macro.Type]
+									TDynamic
+									0
+							[Block:Bool] [Const:Bool] true
+						[Else:Bool] [Block:Bool] [Const:Bool] false
+
+	public static function isVoid[Function:(t : haxe.macro.Type) -> Bool]
+		[Arg:haxe.macro.Type] [Local t(12566):haxe.macro.Type]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Meta:Bool]
+					:ast(switch (t) {
+	case TAbstract(absRef, []):
+		{
+			absRef.get().name == "Void";
+		};	
+	case _:
+		false;	
+})
+					[If:Bool]
+						[Binop:Bool]
+							[EnumIndex:Int] [Local t(12566):haxe.macro.Type:haxe.macro.Type]
+							==
+							[Const:Int] 8
+						[Then:Bool] [Block:Bool]
+							[Var `(12570):haxe.macro.Ref<haxe.macro.AbstractType>]
+								[EnumParameter:haxe.macro.Ref<haxe.macro.AbstractType>]
+									[Local t(12566):haxe.macro.Type:haxe.macro.Type]
+									TAbstract
+									0
+							[Var `(12571):Array<haxe.macro.Type>]
+								[EnumParameter:Array<haxe.macro.Type>]
+									[Local t(12566):haxe.macro.Type:haxe.macro.Type]
+									TAbstract
+									1
+							[If:Bool]
+								[Binop:Bool]
+									[Field:Int]
+										[Local `(12571):Array<haxe.macro.Type>:Array<haxe.macro.Type>]
+										[FInstance:Int]
+											Array<haxe.macro.Type>
+											length:Int
+									==
+									[Const:Int] 0
+								[Then:Bool] [Block:Bool]
+									[Block:Bool]
+										[Var absRef(12572):haxe.macro.Ref<haxe.macro.AbstractType>] [Local `(12570):haxe.macro.Ref<haxe.macro.AbstractType>:haxe.macro.Ref<haxe.macro.AbstractType>]
+										[Block:Bool]
+											[Block:Bool]
+												[Binop:Bool]
+													[Field:String]
+														[Call:haxe.macro.AbstractType]
+															[Field:() -> haxe.macro.AbstractType]
+																[Local absRef(12572):haxe.macro.Ref<haxe.macro.AbstractType>:haxe.macro.Ref<haxe.macro.AbstractType>]
+																[FAnon:() -> haxe.macro.AbstractType] get:() -> haxe.macro.AbstractType
+														[FAnon:String] name:String
+													==
+													[Const:String] "Void"
+								[Else:Bool] [Block:Bool] [Const:Bool] false
+						[Else:Bool] [Block:Bool] [Const:Bool] false
+
+	public static function isBool[Function:(t : haxe.macro.Type) -> Bool]
+		[Arg:haxe.macro.Type] [Local t(12573):haxe.macro.Type]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Meta:Bool]
+					:ast(switch (t) {
+	case TAbstract(_.get() => abs, []) if (abs.module == "StdTypes" && abs.name == "Bool"):
+		true;	
+	case _:
+		false;	
+})
+					[If:Bool]
+						[Binop:Bool]
+							[EnumIndex:Int] [Local t(12573):haxe.macro.Type:haxe.macro.Type]
+							==
+							[Const:Int] 8
+						[Then:Bool] [Block:Bool]
+							[Var `(12579):haxe.macro.Ref<haxe.macro.AbstractType>]
+								[EnumParameter:haxe.macro.Ref<haxe.macro.AbstractType>]
+									[Local t(12573):haxe.macro.Type:haxe.macro.Type]
+									TAbstract
+									0
+							[Var `(12580):Array<haxe.macro.Type>]
+								[EnumParameter:Array<haxe.macro.Type>]
+									[Local t(12573):haxe.macro.Type:haxe.macro.Type]
+									TAbstract
+									1
+							[If:Bool]
+								[Binop:Bool]
+									[Field:Int]
+										[Local `(12580):Array<haxe.macro.Type>:Array<haxe.macro.Type>]
+										[FInstance:Int]
+											Array<haxe.macro.Type>
+											length:Int
+									==
+									[Const:Int] 0
+								[Then:Bool] [Block:Bool]
+									[Block:Bool]
+										[Var _hx_tmp(12581):haxe.macro.AbstractType]
+										[Block:Bool]
+											[Var abs(12582):haxe.macro.AbstractType]
+												[Parenthesis:haxe.macro.AbstractType]
+													[Binop:haxe.macro.AbstractType]
+														[Local _hx_tmp(12581):haxe.macro.AbstractType:haxe.macro.AbstractType]
+														=
+														[Call:haxe.macro.AbstractType]
+															[Field:() -> haxe.macro.AbstractType]
+																[Local `(12579):haxe.macro.Ref<haxe.macro.AbstractType>:haxe.macro.Ref<haxe.macro.AbstractType>]
+																[FAnon:() -> haxe.macro.AbstractType] get:() -> haxe.macro.AbstractType
+											[If:Bool]
+												[Binop:Bool]
+													[Binop:Bool]
+														[Field:String]
+															[Local abs(12582):haxe.macro.AbstractType:haxe.macro.AbstractType]
+															[FAnon:String] module:String
+														==
+														[Const:String] "StdTypes"
+													&&
+													[Binop:Bool]
+														[Field:String]
+															[Local abs(12582):haxe.macro.AbstractType:haxe.macro.AbstractType]
+															[FAnon:String] name:String
+														==
+														[Const:String] "Bool"
+												[Then:Bool] [Block:Bool] [Const:Bool] true
+												[Else:Bool] [Block:Bool] [Const:Bool] false
+								[Else:Bool] [Block:Bool] [Const:Bool] false
+						[Else:Bool] [Block:Bool] [Const:Bool] false
+
+	public static function isInt[Function:(t : haxe.macro.Type) -> Bool]
+		[Arg:haxe.macro.Type] [Local t(12583):haxe.macro.Type]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Meta:Bool]
+					:ast(switch (t) {
+	case TAbstract(_.get() => abs, []) if (abs.module == "StdTypes" && abs.name == "Int"):
+		true;	
+	case _:
+		false;	
+})
+					[If:Bool]
+						[Binop:Bool]
+							[EnumIndex:Int] [Local t(12583):haxe.macro.Type:haxe.macro.Type]
+							==
+							[Const:Int] 8
+						[Then:Bool] [Block:Bool]
+							[Var `(12589):haxe.macro.Ref<haxe.macro.AbstractType>]
+								[EnumParameter:haxe.macro.Ref<haxe.macro.AbstractType>]
+									[Local t(12583):haxe.macro.Type:haxe.macro.Type]
+									TAbstract
+									0
+							[Var `(12590):Array<haxe.macro.Type>]
+								[EnumParameter:Array<haxe.macro.Type>]
+									[Local t(12583):haxe.macro.Type:haxe.macro.Type]
+									TAbstract
+									1
+							[If:Bool]
+								[Binop:Bool]
+									[Field:Int]
+										[Local `(12590):Array<haxe.macro.Type>:Array<haxe.macro.Type>]
+										[FInstance:Int]
+											Array<haxe.macro.Type>
+											length:Int
+									==
+									[Const:Int] 0
+								[Then:Bool] [Block:Bool]
+									[Block:Bool]
+										[Var _hx_tmp(12591):haxe.macro.AbstractType]
+										[Block:Bool]
+											[Var abs(12592):haxe.macro.AbstractType]
+												[Parenthesis:haxe.macro.AbstractType]
+													[Binop:haxe.macro.AbstractType]
+														[Local _hx_tmp(12591):haxe.macro.AbstractType:haxe.macro.AbstractType]
+														=
+														[Call:haxe.macro.AbstractType]
+															[Field:() -> haxe.macro.AbstractType]
+																[Local `(12589):haxe.macro.Ref<haxe.macro.AbstractType>:haxe.macro.Ref<haxe.macro.AbstractType>]
+																[FAnon:() -> haxe.macro.AbstractType] get:() -> haxe.macro.AbstractType
+											[If:Bool]
+												[Binop:Bool]
+													[Binop:Bool]
+														[Field:String]
+															[Local abs(12592):haxe.macro.AbstractType:haxe.macro.AbstractType]
+															[FAnon:String] module:String
+														==
+														[Const:String] "StdTypes"
+													&&
+													[Binop:Bool]
+														[Field:String]
+															[Local abs(12592):haxe.macro.AbstractType:haxe.macro.AbstractType]
+															[FAnon:String] name:String
+														==
+														[Const:String] "Int"
+												[Then:Bool] [Block:Bool] [Const:Bool] true
+												[Else:Bool] [Block:Bool] [Const:Bool] false
+								[Else:Bool] [Block:Bool] [Const:Bool] false
+						[Else:Bool] [Block:Bool] [Const:Bool] false
+
+	public static function isFloat[Function:(t : haxe.macro.Type) -> Bool]
+		[Arg:haxe.macro.Type] [Local t(12593):haxe.macro.Type]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Meta:Bool]
+					:ast(switch (t) {
+	case TAbstract(_.get() => abs, []) if (abs.module == "StdTypes" && abs.name == "Float"):
+		true;	
+	case _:
+		false;	
+})
+					[If:Bool]
+						[Binop:Bool]
+							[EnumIndex:Int] [Local t(12593):haxe.macro.Type:haxe.macro.Type]
+							==
+							[Const:Int] 8
+						[Then:Bool] [Block:Bool]
+							[Var `(12599):haxe.macro.Ref<haxe.macro.AbstractType>]
+								[EnumParameter:haxe.macro.Ref<haxe.macro.AbstractType>]
+									[Local t(12593):haxe.macro.Type:haxe.macro.Type]
+									TAbstract
+									0
+							[Var `(12600):Array<haxe.macro.Type>]
+								[EnumParameter:Array<haxe.macro.Type>]
+									[Local t(12593):haxe.macro.Type:haxe.macro.Type]
+									TAbstract
+									1
+							[If:Bool]
+								[Binop:Bool]
+									[Field:Int]
+										[Local `(12600):Array<haxe.macro.Type>:Array<haxe.macro.Type>]
+										[FInstance:Int]
+											Array<haxe.macro.Type>
+											length:Int
+									==
+									[Const:Int] 0
+								[Then:Bool] [Block:Bool]
+									[Block:Bool]
+										[Var _hx_tmp(12601):haxe.macro.AbstractType]
+										[Block:Bool]
+											[Var abs(12602):haxe.macro.AbstractType]
+												[Parenthesis:haxe.macro.AbstractType]
+													[Binop:haxe.macro.AbstractType]
+														[Local _hx_tmp(12601):haxe.macro.AbstractType:haxe.macro.AbstractType]
+														=
+														[Call:haxe.macro.AbstractType]
+															[Field:() -> haxe.macro.AbstractType]
+																[Local `(12599):haxe.macro.Ref<haxe.macro.AbstractType>:haxe.macro.Ref<haxe.macro.AbstractType>]
+																[FAnon:() -> haxe.macro.AbstractType] get:() -> haxe.macro.AbstractType
+											[If:Bool]
+												[Binop:Bool]
+													[Binop:Bool]
+														[Field:String]
+															[Local abs(12602):haxe.macro.AbstractType:haxe.macro.AbstractType]
+															[FAnon:String] module:String
+														==
+														[Const:String] "StdTypes"
+													&&
+													[Binop:Bool]
+														[Field:String]
+															[Local abs(12602):haxe.macro.AbstractType:haxe.macro.AbstractType]
+															[FAnon:String] name:String
+														==
+														[Const:String] "Float"
+												[Then:Bool] [Block:Bool] [Const:Bool] true
+												[Else:Bool] [Block:Bool] [Const:Bool] false
+								[Else:Bool] [Block:Bool] [Const:Bool] false
+						[Else:Bool] [Block:Bool] [Const:Bool] false
+
+	public static function isString[Function:(t : haxe.macro.Type) -> Bool]
+		[Arg:haxe.macro.Type] [Local t(11217):haxe.macro.Type]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Meta:Bool]
+					:ast(switch (t) {
+	case TInst(clsTypeRef, []):
+		{
+			var clsType = clsTypeRef.get();
+			var isNameString = clsType.hasMeta(":native") || clsType.name == "String";
+			isNameString && clsType.module == "String" && clsType.pack.length == 0 && clsType.hasMeta(":coreApi");
+		};	
+	case _:
+		false;	
+})
+					[If:Bool]
+						[Binop:Bool]
+							[EnumIndex:Int] [Local t(11217):haxe.macro.Type:haxe.macro.Type]
+							==
+							[Const:Int] 2
+						[Then:Bool] [Block:Bool]
+							[Var `(11223):haxe.macro.Ref<haxe.macro.ClassType>]
+								[EnumParameter:haxe.macro.Ref<haxe.macro.ClassType>]
+									[Local t(11217):haxe.macro.Type:haxe.macro.Type]
+									TInst
+									0
+							[Var `(11224):Array<haxe.macro.Type>]
+								[EnumParameter:Array<haxe.macro.Type>]
+									[Local t(11217):haxe.macro.Type:haxe.macro.Type]
+									TInst
+									1
+							[If:Bool]
+								[Binop:Bool]
+									[Field:Int]
+										[Local `(11224):Array<haxe.macro.Type>:Array<haxe.macro.Type>]
+										[FInstance:Int]
+											Array<haxe.macro.Type>
+											length:Int
+									==
+									[Const:Int] 0
+								[Then:Bool] [Block:Bool]
+									[Block:Bool]
+										[Var clsTypeRef(11225):haxe.macro.Ref<haxe.macro.ClassType>] [Local `(11223):haxe.macro.Ref<haxe.macro.ClassType>:haxe.macro.Ref<haxe.macro.ClassType>]
+										[Block:Bool]
+											[Block:Bool]
+												[Var clsType(11226):haxe.macro.ClassType]
+													[Call:haxe.macro.ClassType]
+														[Field:() -> haxe.macro.ClassType]
+															[Local clsTypeRef(11225):haxe.macro.Ref<haxe.macro.ClassType>:haxe.macro.Ref<haxe.macro.ClassType>]
+															[FAnon:() -> haxe.macro.ClassType] get:() -> haxe.macro.ClassType
+												[Var isNameString(11227):Bool]
+													[Binop:Bool]
+														[Call:Bool]
+															[Field:(v : reflaxe.helpers.NameAndMeta, metaName : String) -> Bool]
+																[TypeExpr reflaxe.helpers.NameMetaHelper:{ Statics reflaxe.helpers.NameMetaHelper }]
+																[FStatic:(v : reflaxe.helpers.NameAndMeta, metaName : String) -> Bool]
+																	reflaxe.helpers.NameMetaHelper
+																	hasMeta:(v : reflaxe.helpers.NameAndMeta, metaName : String) -> Bool
+															[Local clsType(11226):haxe.macro.ClassType:haxe.macro.ClassType]
+															[Const:String] ":native"
+														||
+														[Binop:Bool]
+															[Field:String]
+																[Local clsType(11226):haxe.macro.ClassType:haxe.macro.ClassType]
+																[FAnon:String] name:String
+															==
+															[Const:String] "String"
+												[Binop:Bool]
+													[Binop:Bool]
+														[Binop:Bool]
+															[Local isNameString(11227):Bool:Bool]
+															&&
+															[Binop:Bool]
+																[Field:String]
+																	[Local clsType(11226):haxe.macro.ClassType:haxe.macro.ClassType]
+																	[FAnon:String] module:String
+																==
+																[Const:String] "String"
+														&&
+														[Binop:Bool]
+															[Field:Int]
+																[Field:Array<String>]
+																	[Local clsType(11226):haxe.macro.ClassType:haxe.macro.ClassType]
+																	[FAnon:Array<String>] pack:Array<String>
+																[FInstance:Int]
+																	Array<String>
+																	length:Int
+															==
+															[Const:Int] 0
+													&&
+													[Call:Bool]
+														[Field:(v : reflaxe.helpers.NameAndMeta, metaName : String) -> Bool]
+															[TypeExpr reflaxe.helpers.NameMetaHelper:{ Statics reflaxe.helpers.NameMetaHelper }]
+															[FStatic:(v : reflaxe.helpers.NameAndMeta, metaName : String) -> Bool]
+																reflaxe.helpers.NameMetaHelper
+																hasMeta:(v : reflaxe.helpers.NameAndMeta, metaName : String) -> Bool
+														[Local clsType(11226):haxe.macro.ClassType:haxe.macro.ClassType]
+														[Const:String] ":coreApi"
+								[Else:Bool] [Block:Bool] [Const:Bool] false
+						[Else:Bool] [Block:Bool] [Const:Bool] false
+
+	public static function isPrimitive[Function:(t : haxe.macro.Type) -> Bool]
+		[Arg:haxe.macro.Type] [Local t(11807):haxe.macro.Type]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Meta:Bool]
+					:ast(switch (t) {
+	case TAbstract(abTypeRef, []):
+		{
+			var abType = abTypeRef.get();
+			abType.module == "StdTypes" && (abType.name == "Int" || abType.name == "Float" || abType.name == "Bool");
+		};	
+	case _:
+		false;	
+})
+					[If:Bool]
+						[Binop:Bool]
+							[EnumIndex:Int] [Local t(11807):haxe.macro.Type:haxe.macro.Type]
+							==
+							[Const:Int] 8
+						[Then:Bool] [Block:Bool]
+							[Var `(11812):haxe.macro.Ref<haxe.macro.AbstractType>]
+								[EnumParameter:haxe.macro.Ref<haxe.macro.AbstractType>]
+									[Local t(11807):haxe.macro.Type:haxe.macro.Type]
+									TAbstract
+									0
+							[Var `(11813):Array<haxe.macro.Type>]
+								[EnumParameter:Array<haxe.macro.Type>]
+									[Local t(11807):haxe.macro.Type:haxe.macro.Type]
+									TAbstract
+									1
+							[If:Bool]
+								[Binop:Bool]
+									[Field:Int]
+										[Local `(11813):Array<haxe.macro.Type>:Array<haxe.macro.Type>]
+										[FInstance:Int]
+											Array<haxe.macro.Type>
+											length:Int
+									==
+									[Const:Int] 0
+								[Then:Bool] [Block:Bool]
+									[Block:Bool]
+										[Var abTypeRef(11814):haxe.macro.Ref<haxe.macro.AbstractType>] [Local `(11812):haxe.macro.Ref<haxe.macro.AbstractType>:haxe.macro.Ref<haxe.macro.AbstractType>]
+										[Block:Bool]
+											[Block:Bool]
+												[Var abType(11815):haxe.macro.AbstractType]
+													[Call:haxe.macro.AbstractType]
+														[Field:() -> haxe.macro.AbstractType]
+															[Local abTypeRef(11814):haxe.macro.Ref<haxe.macro.AbstractType>:haxe.macro.Ref<haxe.macro.AbstractType>]
+															[FAnon:() -> haxe.macro.AbstractType] get:() -> haxe.macro.AbstractType
+												[Binop:Bool]
+													[Binop:Bool]
+														[Field:String]
+															[Local abType(11815):haxe.macro.AbstractType:haxe.macro.AbstractType]
+															[FAnon:String] module:String
+														==
+														[Const:String] "StdTypes"
+													&&
+													[Parenthesis:Bool]
+														[Binop:Bool]
+															[Binop:Bool]
+																[Binop:Bool]
+																	[Field:String]
+																		[Local abType(11815):haxe.macro.AbstractType:haxe.macro.AbstractType]
+																		[FAnon:String] name:String
+																	==
+																	[Const:String] "Int"
+																||
+																[Binop:Bool]
+																	[Field:String]
+																		[Local abType(11815):haxe.macro.AbstractType:haxe.macro.AbstractType]
+																		[FAnon:String] name:String
+																	==
+																	[Const:String] "Float"
+															||
+															[Binop:Bool]
+																[Field:String]
+																	[Local abType(11815):haxe.macro.AbstractType:haxe.macro.AbstractType]
+																	[FAnon:String] name:String
+																==
+																[Const:String] "Bool"
+								[Else:Bool] [Block:Bool] [Const:Bool] false
+						[Else:Bool] [Block:Bool] [Const:Bool] false
+
+	public static function isNumberType[Function:(t : haxe.macro.Type) -> Bool]
+		[Arg:haxe.macro.Type] [Local t(11239):haxe.macro.Type]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Meta:Bool]
+					:ast(switch (t) {
+	case TAbstract(abTypeRef, []):
+		{
+			var abType = abTypeRef.get();
+			if (abType.module == "StdTypes") {
+				(abType.name == "Int" || abType.name == "Float" || abType.name == "Single");
+			} else {
+				(abType.module == "UInt" && abType.name == "UInt");
+			};
+		};	
+	case _:
+		false;	
+})
+					[If:Bool]
+						[Binop:Bool]
+							[EnumIndex:Int] [Local t(11239):haxe.macro.Type:haxe.macro.Type]
+							==
+							[Const:Int] 8
+						[Then:Bool] [Block:Bool]
+							[Var `(11244):haxe.macro.Ref<haxe.macro.AbstractType>]
+								[EnumParameter:haxe.macro.Ref<haxe.macro.AbstractType>]
+									[Local t(11239):haxe.macro.Type:haxe.macro.Type]
+									TAbstract
+									0
+							[Var `(11245):Array<haxe.macro.Type>]
+								[EnumParameter:Array<haxe.macro.Type>]
+									[Local t(11239):haxe.macro.Type:haxe.macro.Type]
+									TAbstract
+									1
+							[If:Bool]
+								[Binop:Bool]
+									[Field:Int]
+										[Local `(11245):Array<haxe.macro.Type>:Array<haxe.macro.Type>]
+										[FInstance:Int]
+											Array<haxe.macro.Type>
+											length:Int
+									==
+									[Const:Int] 0
+								[Then:Bool] [Block:Bool]
+									[Block:Bool]
+										[Var abTypeRef(11246):haxe.macro.Ref<haxe.macro.AbstractType>] [Local `(11244):haxe.macro.Ref<haxe.macro.AbstractType>:haxe.macro.Ref<haxe.macro.AbstractType>]
+										[Block:Bool]
+											[Block:Bool]
+												[Var abType(11247):haxe.macro.AbstractType]
+													[Call:haxe.macro.AbstractType]
+														[Field:() -> haxe.macro.AbstractType]
+															[Local abTypeRef(11246):haxe.macro.Ref<haxe.macro.AbstractType>:haxe.macro.Ref<haxe.macro.AbstractType>]
+															[FAnon:() -> haxe.macro.AbstractType] get:() -> haxe.macro.AbstractType
+												[If:Bool]
+													[Binop:Bool]
+														[Field:String]
+															[Local abType(11247):haxe.macro.AbstractType:haxe.macro.AbstractType]
+															[FAnon:String] module:String
+														==
+														[Const:String] "StdTypes"
+													[Then:Bool] [Block:Bool]
+														[Parenthesis:Bool]
+															[Binop:Bool]
+																[Binop:Bool]
+																	[Binop:Bool]
+																		[Field:String]
+																			[Local abType(11247):haxe.macro.AbstractType:haxe.macro.AbstractType]
+																			[FAnon:String] name:String
+																		==
+																		[Const:String] "Int"
+																	||
+																	[Binop:Bool]
+																		[Field:String]
+																			[Local abType(11247):haxe.macro.AbstractType:haxe.macro.AbstractType]
+																			[FAnon:String] name:String
+																		==
+																		[Const:String] "Float"
+																||
+																[Binop:Bool]
+																	[Field:String]
+																		[Local abType(11247):haxe.macro.AbstractType:haxe.macro.AbstractType]
+																		[FAnon:String] name:String
+																	==
+																	[Const:String] "Single"
+													[Else:Bool] [Block:Bool]
+														[Parenthesis:Bool]
+															[Binop:Bool]
+																[Binop:Bool]
+																	[Field:String]
+																		[Local abType(11247):haxe.macro.AbstractType:haxe.macro.AbstractType]
+																		[FAnon:String] module:String
+																	==
+																	[Const:String] "UInt"
+																&&
+																[Binop:Bool]
+																	[Field:String]
+																		[Local abType(11247):haxe.macro.AbstractType:haxe.macro.AbstractType]
+																		[FAnon:String] name:String
+																	==
+																	[Const:String] "UInt"
+								[Else:Bool] [Block:Bool] [Const:Bool] false
+						[Else:Bool] [Block:Bool] [Const:Bool] false
+
+	public static function isAny[Function:(t : haxe.macro.Type) -> Bool]
+		[Arg:haxe.macro.Type] [Local t(12603):haxe.macro.Type]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Meta:Bool]
+					:ast(switch (t) {
+	case TAbstract(absRef, []):
+		{
+			absRef.get().name == "Any";
+		};	
+	case _:
+		false;	
+})
+					[If:Bool]
+						[Binop:Bool]
+							[EnumIndex:Int] [Local t(12603):haxe.macro.Type:haxe.macro.Type]
+							==
+							[Const:Int] 8
+						[Then:Bool] [Block:Bool]
+							[Var `(12607):haxe.macro.Ref<haxe.macro.AbstractType>]
+								[EnumParameter:haxe.macro.Ref<haxe.macro.AbstractType>]
+									[Local t(12603):haxe.macro.Type:haxe.macro.Type]
+									TAbstract
+									0
+							[Var `(12608):Array<haxe.macro.Type>]
+								[EnumParameter:Array<haxe.macro.Type>]
+									[Local t(12603):haxe.macro.Type:haxe.macro.Type]
+									TAbstract
+									1
+							[If:Bool]
+								[Binop:Bool]
+									[Field:Int]
+										[Local `(12608):Array<haxe.macro.Type>:Array<haxe.macro.Type>]
+										[FInstance:Int]
+											Array<haxe.macro.Type>
+											length:Int
+									==
+									[Const:Int] 0
+								[Then:Bool] [Block:Bool]
+									[Block:Bool]
+										[Var absRef(12609):haxe.macro.Ref<haxe.macro.AbstractType>] [Local `(12607):haxe.macro.Ref<haxe.macro.AbstractType>:haxe.macro.Ref<haxe.macro.AbstractType>]
+										[Block:Bool]
+											[Block:Bool]
+												[Binop:Bool]
+													[Field:String]
+														[Call:haxe.macro.AbstractType]
+															[Field:() -> haxe.macro.AbstractType]
+																[Local absRef(12609):haxe.macro.Ref<haxe.macro.AbstractType>:haxe.macro.Ref<haxe.macro.AbstractType>]
+																[FAnon:() -> haxe.macro.AbstractType] get:() -> haxe.macro.AbstractType
+														[FAnon:String] name:String
+													==
+													[Const:String] "Any"
+								[Else:Bool] [Block:Bool] [Const:Bool] false
+						[Else:Bool] [Block:Bool] [Const:Bool] false
+
+	public static function isNull[Function:(t : haxe.macro.Type) -> Bool]
+		[Arg:haxe.macro.Type] [Local t(9895):haxe.macro.Type]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Meta:Bool]
+					:ast(switch (t) {
+	case TAbstract(absRef, params) if (params.length == 1):
+		{
+			absRef.get().name == "Null";
+		};	
+	case _:
+		false;	
+})
+					[If:Bool]
+						[Binop:Bool]
+							[EnumIndex:Int] [Local t(9895):haxe.macro.Type:haxe.macro.Type]
+							==
+							[Const:Int] 8
+						[Then:Bool] [Block:Bool]
+							[Var `(9900):haxe.macro.Ref<haxe.macro.AbstractType>]
+								[EnumParameter:haxe.macro.Ref<haxe.macro.AbstractType>]
+									[Local t(9895):haxe.macro.Type:haxe.macro.Type]
+									TAbstract
+									0
+							[Var `(9901):Array<haxe.macro.Type>]
+								[EnumParameter:Array<haxe.macro.Type>]
+									[Local t(9895):haxe.macro.Type:haxe.macro.Type]
+									TAbstract
+									1
+							[Block:Bool]
+								[Var absRef(9902):haxe.macro.Ref<haxe.macro.AbstractType>] [Local `(9900):haxe.macro.Ref<haxe.macro.AbstractType>:haxe.macro.Ref<haxe.macro.AbstractType>]
+								[Var params(9903):Array<haxe.macro.Type>] [Local `(9901):Array<haxe.macro.Type>:Array<haxe.macro.Type>]
+								[If:Bool]
+									[Binop:Bool]
+										[Field:Int]
+											[Local params(9903):Array<haxe.macro.Type>:Array<haxe.macro.Type>]
+											[FInstance:Int]
+												Array<haxe.macro.Type>
+												length:Int
+										==
+										[Const:Int] 1
+									[Then:Bool] [Block:Bool]
+										[Block:Bool]
+											[Binop:Bool]
+												[Field:String]
+													[Call:haxe.macro.AbstractType]
+														[Field:() -> haxe.macro.AbstractType]
+															[Local absRef(9902):haxe.macro.Ref<haxe.macro.AbstractType>:haxe.macro.Ref<haxe.macro.AbstractType>]
+															[FAnon:() -> haxe.macro.AbstractType] get:() -> haxe.macro.AbstractType
+													[FAnon:String] name:String
+												==
+												[Const:String] "Null"
+									[Else:Bool] [Block:Bool] [Const:Bool] false
+						[Else:Bool] [Block:Bool] [Const:Bool] false
+
+	public static function isClass[Function:(t : haxe.macro.Type) -> Bool]
+		[Arg:haxe.macro.Type] [Local t(12610):haxe.macro.Type]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Binop:Bool]
+					[Call:Null<haxe.macro.ModuleType>]
+						[Field:(t : haxe.macro.Type) -> Null<haxe.macro.ModuleType>]
+							[TypeExpr reflaxe.helpers.TypeHelper:Class<reflaxe.helpers.TypeHelper>]
+							[FStatic:(t : haxe.macro.Type) -> Null<haxe.macro.ModuleType>]
+								reflaxe.helpers.TypeHelper
+								getClassParameter:(t : haxe.macro.Type) -> Null<haxe.macro.ModuleType>
+						[Local t(12610):haxe.macro.Type:haxe.macro.Type]
+					!=
+					[Const:Null<haxe.macro.ModuleType>] null
+
+	public static function isUnresolvedMonomorph[Function:(t : haxe.macro.Type) -> Bool]
+		[Arg:haxe.macro.Type] [Local t(12667):haxe.macro.Type]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Meta:Bool]
+					:ast(switch (t) {
+	case TMono(tRef):
+		{
+			return tRef.get() == null;
+		};	
+	case _:
+		false;	
+})
+					[If:Bool]
+						[Binop:Bool]
+							[EnumIndex:Int] [Local t(12667):haxe.macro.Type:haxe.macro.Type]
+							==
+							[Const:Int] 0
+						[Then:Bool] [Block:Bool]
+							[Var `(12670):haxe.macro.Ref<Null<haxe.macro.Type>>]
+								[EnumParameter:haxe.macro.Ref<Null<haxe.macro.Type>>]
+									[Local t(12667):haxe.macro.Type:haxe.macro.Type]
+									TMono
+									0
+							[Block:Bool]
+								[Var tRef(12671):haxe.macro.Ref<Null<haxe.macro.Type>>] [Local `(12670):haxe.macro.Ref<Null<haxe.macro.Type>>:haxe.macro.Ref<Null<haxe.macro.Type>>]
+								[Block:Bool]
+									[Block:Bool]
+										[Return:Bool]
+											[Binop:Bool]
+												[Call:Null<haxe.macro.Type>]
+													[Field:() -> Null<haxe.macro.Type>]
+														[Local tRef(12671):haxe.macro.Ref<Null<haxe.macro.Type>>:haxe.macro.Ref<Null<haxe.macro.Type>>]
+														[FAnon:() -> Null<haxe.macro.Type>] get:() -> Null<haxe.macro.Type>
+												==
+												[Const:Null<haxe.macro.Type>] null
+						[Else:Bool] [Block:Bool] [Const:Bool] false
+
+	public static function isTypeParameter[Function:(t : haxe.macro.Type) -> Bool]
+		[Arg:haxe.macro.Type] [Local t(12270):haxe.macro.Type]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Binop:Bool]
+					[Call:Null<String>]
+						[Field:(t : haxe.macro.Type) -> Null<String>]
+							[TypeExpr reflaxe.helpers.TypeHelper:Class<reflaxe.helpers.TypeHelper>]
+							[FStatic:(t : haxe.macro.Type) -> Null<String>]
+								reflaxe.helpers.TypeHelper
+								getTypeParameterName:(t : haxe.macro.Type) -> Null<String>
+						[Local t(12270):haxe.macro.Type:haxe.macro.Type]
+					!=
+					[Const:Null<String>] null
+
+	public static function getTypeParameterName[Function:(t : haxe.macro.Type) -> Null<String>]
+		[Arg:haxe.macro.Type] [Local t(9624):haxe.macro.Type]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Meta:Null<String>]
+					:ast(switch (t) {
+	case TInst(clsRef, params):
+		{
+			switch (clsRef.get().kind) {
+				case KTypeParameter(_):
+					clsRef.get().name;				
+				case _:
+					null;				
+			};
+		};	
+	case _:
+		null;	
+})
+					[If:Null<String>]
+						[Binop:Bool]
+							[EnumIndex:Int] [Local t(9624):haxe.macro.Type:haxe.macro.Type]
+							==
+							[Const:Int] 2
+						[Then:Null<String>] [Block:Null<String>]
+							[Var `(9633):haxe.macro.Ref<haxe.macro.ClassType>]
+								[EnumParameter:haxe.macro.Ref<haxe.macro.ClassType>]
+									[Local t(9624):haxe.macro.Type:haxe.macro.Type]
+									TInst
+									0
+							[Var `(9634):Array<haxe.macro.Type>]
+								[EnumParameter:Array<haxe.macro.Type>]
+									[Local t(9624):haxe.macro.Type:haxe.macro.Type]
+									TInst
+									1
+							[Block:Null<String>]
+								[Var clsRef(9635):haxe.macro.Ref<haxe.macro.ClassType>] [Local `(9633):haxe.macro.Ref<haxe.macro.ClassType>:haxe.macro.Ref<haxe.macro.ClassType>]
+								[Var params(9636):Array<haxe.macro.Type>] [Local `(9634):Array<haxe.macro.Type>:Array<haxe.macro.Type>]
+								[Block:Null<String>]
+									[Block:Null<String>]
+										[Meta:Null<String>]
+											:ast(switch (clsRef.get().kind) {
+	case KTypeParameter(_):
+		clsRef.get().name;	
+	case _:
+		null;	
+})
+											[Block:Null<String>]
+												[Var `(9637):haxe.macro.ClassKind]
+													[Field:haxe.macro.ClassKind]
+														[Call:haxe.macro.ClassType]
+															[Field:() -> haxe.macro.ClassType]
+																[Local clsRef(9635):haxe.macro.Ref<haxe.macro.ClassType>:haxe.macro.Ref<haxe.macro.ClassType>]
+																[FAnon:() -> haxe.macro.ClassType] get:() -> haxe.macro.ClassType
+														[FAnon:haxe.macro.ClassKind] kind:haxe.macro.ClassKind
+												[If:Null<String>]
+													[Binop:Bool]
+														[EnumIndex:Int] [Local `(9637):haxe.macro.ClassKind:haxe.macro.ClassKind]
+														==
+														[Const:Int] 1
+													[Then:String] [Block:String]
+														[Var `(9638):Array<haxe.macro.Type>]
+															[EnumParameter:Array<haxe.macro.Type>]
+																[Local `(9637):haxe.macro.ClassKind:haxe.macro.ClassKind]
+																KTypeParameter
+																0
+														[Block:String]
+															[Field:String]
+																[Call:haxe.macro.ClassType]
+																	[Field:() -> haxe.macro.ClassType]
+																		[Local clsRef(9635):haxe.macro.Ref<haxe.macro.ClassType>:haxe.macro.Ref<haxe.macro.ClassType>]
+																		[FAnon:() -> haxe.macro.ClassType] get:() -> haxe.macro.ClassType
+																[FAnon:String] name:String
+													[Else:Null<String>] [Block:Null<String>] [Const:Null<String>] null
+						[Else:Null<String>] [Block:Null<String>] [Const:Null<String>] null
+
+	public static function extractTypeParameterConstraints[Function:(t : haxe.macro.Type) -> Null<Array<haxe.macro.Type>>]
+		[Arg:haxe.macro.Type] [Local t(12672):haxe.macro.Type]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Meta:Null<Array<haxe.macro.Type>>]
+					:ast(switch (t) {
+	case TInst(clsRef, params):
+		{
+			switch (clsRef.get().kind) {
+				case KTypeParameter(constraints):
+					constraints;				
+				case _:
+					null;				
+			};
+		};	
+	case _:
+		null;	
+})
+					[If:Null<Array<haxe.macro.Type>>]
+						[Binop:Bool]
+							[EnumIndex:Int] [Local t(12672):haxe.macro.Type:haxe.macro.Type]
+							==
+							[Const:Int] 2
+						[Then:Null<Array<haxe.macro.Type>>] [Block:Null<Array<haxe.macro.Type>>]
+							[Var `(12683):haxe.macro.Ref<haxe.macro.ClassType>]
+								[EnumParameter:haxe.macro.Ref<haxe.macro.ClassType>]
+									[Local t(12672):haxe.macro.Type:haxe.macro.Type]
+									TInst
+									0
+							[Var `(12684):Array<haxe.macro.Type>]
+								[EnumParameter:Array<haxe.macro.Type>]
+									[Local t(12672):haxe.macro.Type:haxe.macro.Type]
+									TInst
+									1
+							[Block:Null<Array<haxe.macro.Type>>]
+								[Var clsRef(12685):haxe.macro.Ref<haxe.macro.ClassType>] [Local `(12683):haxe.macro.Ref<haxe.macro.ClassType>:haxe.macro.Ref<haxe.macro.ClassType>]
+								[Var params(12686):Array<haxe.macro.Type>] [Local `(12684):Array<haxe.macro.Type>:Array<haxe.macro.Type>]
+								[Block:Null<Array<haxe.macro.Type>>]
+									[Block:Null<Array<haxe.macro.Type>>]
+										[Meta:Null<Array<haxe.macro.Type>>]
+											:ast(switch (clsRef.get().kind) {
+	case KTypeParameter(constraints):
+		constraints;	
+	case _:
+		null;	
+})
+											[Block:Null<Array<haxe.macro.Type>>]
+												[Var `(12687):haxe.macro.ClassKind]
+													[Field:haxe.macro.ClassKind]
+														[Call:haxe.macro.ClassType]
+															[Field:() -> haxe.macro.ClassType]
+																[Local clsRef(12685):haxe.macro.Ref<haxe.macro.ClassType>:haxe.macro.Ref<haxe.macro.ClassType>]
+																[FAnon:() -> haxe.macro.ClassType] get:() -> haxe.macro.ClassType
+														[FAnon:haxe.macro.ClassKind] kind:haxe.macro.ClassKind
+												[If:Null<Array<haxe.macro.Type>>]
+													[Binop:Bool]
+														[EnumIndex:Int] [Local `(12687):haxe.macro.ClassKind:haxe.macro.ClassKind]
+														==
+														[Const:Int] 1
+													[Then:Array<haxe.macro.Type>] [Block:Array<haxe.macro.Type>]
+														[Var `(12688):Array<haxe.macro.Type>]
+															[EnumParameter:Array<haxe.macro.Type>]
+																[Local `(12687):haxe.macro.ClassKind:haxe.macro.ClassKind]
+																KTypeParameter
+																0
+														[Block:Array<haxe.macro.Type>]
+															[Var constraints(12689):Array<haxe.macro.Type>] [Local `(12688):Array<haxe.macro.Type>:Array<haxe.macro.Type>]
+															[Block:Array<haxe.macro.Type>] [Local constraints(12689):Array<haxe.macro.Type>:Array<haxe.macro.Type>]
+													[Else:Null<Array<haxe.macro.Type>>] [Block:Null<Array<haxe.macro.Type>>] [Const:Null<Array<haxe.macro.Type>>] null
+						[Else:Null<Array<haxe.macro.Type>>] [Block:Null<Array<haxe.macro.Type>>] [Const:Null<Array<haxe.macro.Type>>] null
+
+	public static function extractTypeParameterConstType[Function:(t : haxe.macro.Type) -> Null<haxe.macro.Type>]
+		[Arg:haxe.macro.Type] [Local t(12690):haxe.macro.Type]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Meta:Null<haxe.macro.Type>]
+					:ast(switch (t) {
+	case TInst(_.get() => { kind : KTypeParameter(constraints), meta : meta, pos : pos }, _) if (constraints.length == 1 && meta.has(":const")):
+		{
+			constraints[0];
+		};	
+	case _:
+		null;	
+})
+					[If:Null<haxe.macro.Type>]
+						[Binop:Bool]
+							[EnumIndex:Int] [Local t(12690):haxe.macro.Type:haxe.macro.Type]
+							==
+							[Const:Int] 2
+						[Then:Null<haxe.macro.Type>] [Block:Null<haxe.macro.Type>]
+							[Var `(12719):haxe.macro.Ref<haxe.macro.ClassType>]
+								[EnumParameter:haxe.macro.Ref<haxe.macro.ClassType>]
+									[Local t(12690):haxe.macro.Type:haxe.macro.Type]
+									TInst
+									0
+							[Var `(12720):Array<haxe.macro.Type>]
+								[EnumParameter:Array<haxe.macro.Type>]
+									[Local t(12690):haxe.macro.Type:haxe.macro.Type]
+									TInst
+									1
+							[Block:Null<haxe.macro.Type>]
+								[Var _hx_tmp(12721):haxe.macro.ClassType]
+								[Block:Null<haxe.macro.Type>]
+									[Var `(12722):Null<haxe.macro.Ref<haxe.macro.ClassField>>]
+										[Field:Null<haxe.macro.Ref<haxe.macro.ClassField>>]
+											[Parenthesis:haxe.macro.ClassType]
+												[Binop:haxe.macro.ClassType]
+													[Local _hx_tmp(12721):haxe.macro.ClassType:haxe.macro.ClassType]
+													=
+													[Call:haxe.macro.ClassType]
+														[Field:() -> haxe.macro.ClassType]
+															[Local `(12719):haxe.macro.Ref<haxe.macro.ClassType>:haxe.macro.Ref<haxe.macro.ClassType>]
+															[FAnon:() -> haxe.macro.ClassType] get:() -> haxe.macro.ClassType
+											[FAnon:Null<haxe.macro.Ref<haxe.macro.ClassField>>] constructor:Null<haxe.macro.Ref<haxe.macro.ClassField>>
+									[Var `(12723):Null<String>]
+										[Field:Null<String>]
+											[Local _hx_tmp(12721):haxe.macro.ClassType:haxe.macro.ClassType]
+											[FAnon:Null<String>] doc:Null<String>
+									[Var `(12724):haxe.macro.Ref<Array<haxe.macro.ClassField>>]
+										[Field:haxe.macro.Ref<Array<haxe.macro.ClassField>>]
+											[Local _hx_tmp(12721):haxe.macro.ClassType:haxe.macro.ClassType]
+											[FAnon:haxe.macro.Ref<Array<haxe.macro.ClassField>>] fields:haxe.macro.Ref<Array<haxe.macro.ClassField>>
+									[Var `(12725):Null<haxe.macro.TypedExpr>]
+										[Field:Null<haxe.macro.TypedExpr>]
+											[Local _hx_tmp(12721):haxe.macro.ClassType:haxe.macro.ClassType]
+											[FAnon:Null<haxe.macro.TypedExpr>] init:Null<haxe.macro.TypedExpr>
+									[Var `(12726):Array<{ t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type> }>]
+										[Field:Array<{ t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type> }>]
+											[Local _hx_tmp(12721):haxe.macro.ClassType:haxe.macro.ClassType]
+											[FAnon:Array<{ t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type> }>] interfaces:Array<{ t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type> }>
+									[Var `(12727):Bool]
+										[Field:Bool]
+											[Local _hx_tmp(12721):haxe.macro.ClassType:haxe.macro.ClassType]
+											[FAnon:Bool] isAbstract:Bool
+									[Var `(12728):Bool]
+										[Field:Bool]
+											[Local _hx_tmp(12721):haxe.macro.ClassType:haxe.macro.ClassType]
+											[FAnon:Bool] isExtern:Bool
+									[Var `(12729):Bool]
+										[Field:Bool]
+											[Local _hx_tmp(12721):haxe.macro.ClassType:haxe.macro.ClassType]
+											[FAnon:Bool] isFinal:Bool
+									[Var `(12730):Bool]
+										[Field:Bool]
+											[Local _hx_tmp(12721):haxe.macro.ClassType:haxe.macro.ClassType]
+											[FAnon:Bool] isInterface:Bool
+									[Var `(12731):Bool]
+										[Field:Bool]
+											[Local _hx_tmp(12721):haxe.macro.ClassType:haxe.macro.ClassType]
+											[FAnon:Bool] isPrivate:Bool
+									[Var `(12732):haxe.macro.ClassKind]
+										[Field:haxe.macro.ClassKind]
+											[Local _hx_tmp(12721):haxe.macro.ClassType:haxe.macro.ClassType]
+											[FAnon:haxe.macro.ClassKind] kind:haxe.macro.ClassKind
+									[Var `(12733):haxe.macro.MetaAccess]
+										[Field:haxe.macro.MetaAccess]
+											[Local _hx_tmp(12721):haxe.macro.ClassType:haxe.macro.ClassType]
+											[FAnon:haxe.macro.MetaAccess] meta:haxe.macro.MetaAccess
+									[Var `(12734):String]
+										[Field:String]
+											[Local _hx_tmp(12721):haxe.macro.ClassType:haxe.macro.ClassType]
+											[FAnon:String] module:String
+									[Var `(12735):String]
+										[Field:String]
+											[Local _hx_tmp(12721):haxe.macro.ClassType:haxe.macro.ClassType]
+											[FAnon:String] name:String
+									[Var `(12736):Array<haxe.macro.Ref<haxe.macro.ClassField>>]
+										[Field:Array<haxe.macro.Ref<haxe.macro.ClassField>>]
+											[Local _hx_tmp(12721):haxe.macro.ClassType:haxe.macro.ClassType]
+											[FAnon:Array<haxe.macro.Ref<haxe.macro.ClassField>>] overrides:Array<haxe.macro.Ref<haxe.macro.ClassField>>
+									[Var `(12737):Array<String>]
+										[Field:Array<String>]
+											[Local _hx_tmp(12721):haxe.macro.ClassType:haxe.macro.ClassType]
+											[FAnon:Array<String>] pack:Array<String>
+									[Var `(12738):Array<haxe.macro.TypeParameter>]
+										[Field:Array<haxe.macro.TypeParameter>]
+											[Local _hx_tmp(12721):haxe.macro.ClassType:haxe.macro.ClassType]
+											[FAnon:Array<haxe.macro.TypeParameter>] params:Array<haxe.macro.TypeParameter>
+									[Var `(12739):haxe.macro.Position]
+										[Field:haxe.macro.Position]
+											[Local _hx_tmp(12721):haxe.macro.ClassType:haxe.macro.ClassType]
+											[FAnon:haxe.macro.Position] pos:haxe.macro.Position
+									[Var `(12740):haxe.macro.Ref<Array<haxe.macro.ClassField>>]
+										[Field:haxe.macro.Ref<Array<haxe.macro.ClassField>>]
+											[Local _hx_tmp(12721):haxe.macro.ClassType:haxe.macro.ClassType]
+											[FAnon:haxe.macro.Ref<Array<haxe.macro.ClassField>>] statics:haxe.macro.Ref<Array<haxe.macro.ClassField>>
+									[Var `(12741):Null<{ t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type> }>]
+										[Field:Null<{ t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type> }>]
+											[Local _hx_tmp(12721):haxe.macro.ClassType:haxe.macro.ClassType]
+											[FAnon:Null<{ t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type> }>] superClass:Null<{ t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type> }>
+									[If:Null<haxe.macro.Type>]
+										[Binop:Bool]
+											[EnumIndex:Int] [Local `(12732):haxe.macro.ClassKind:haxe.macro.ClassKind]
+											==
+											[Const:Int] 1
+										[Then:Null<haxe.macro.Type>] [Block:Null<haxe.macro.Type>]
+											[Var `(12742):Array<haxe.macro.Type>]
+												[EnumParameter:Array<haxe.macro.Type>]
+													[Local `(12732):haxe.macro.ClassKind:haxe.macro.ClassKind]
+													KTypeParameter
+													0
+											[Block:Null<haxe.macro.Type>]
+												[Var constraints(12743):Array<haxe.macro.Type>] [Local `(12742):Array<haxe.macro.Type>:Array<haxe.macro.Type>]
+												[Var meta(12744):haxe.macro.MetaAccess] [Local `(12733):haxe.macro.MetaAccess:haxe.macro.MetaAccess]
+												[Var pos(12745):haxe.macro.Position] [Local `(12739):haxe.macro.Position:haxe.macro.Position]
+												[If:Null<haxe.macro.Type>]
+													[Binop:Bool]
+														[Binop:Bool]
+															[Field:Int]
+																[Local constraints(12743):Array<haxe.macro.Type>:Array<haxe.macro.Type>]
+																[FInstance:Int]
+																	Array<haxe.macro.Type>
+																	length:Int
+															==
+															[Const:Int] 1
+														&&
+														[Call:Bool]
+															[Field:(name : String) -> Bool]
+																[Local meta(12744):haxe.macro.MetaAccess:haxe.macro.MetaAccess]
+																[FAnon:(name : String) -> Bool] has:(name : String) -> Bool
+															[Const:String] ":const"
+													[Then:haxe.macro.Type] [Block:haxe.macro.Type]
+														[Block:haxe.macro.Type]
+															[Array:haxe.macro.Type]
+																[Local constraints(12743):Array<haxe.macro.Type>:Array<haxe.macro.Type>]
+																[Const:Int] 0
+													[Else:Null<haxe.macro.Type>] [Block:Null<haxe.macro.Type>] [Const:Null<haxe.macro.Type>] null
+										[Else:Null<haxe.macro.Type>] [Block:Null<haxe.macro.Type>] [Const:Null<haxe.macro.Type>] null
+						[Else:Null<haxe.macro.Type>] [Block:Null<haxe.macro.Type>] [Const:Null<haxe.macro.Type>] null
+
+	public static function getClassParameter[Function:(t : haxe.macro.Type) -> Null<haxe.macro.ModuleType>]
+		[Arg:haxe.macro.Type] [Local t(12611):haxe.macro.Type]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Meta:Null<haxe.macro.ModuleType>]
+					:ast(switch (t) {
+	case TAbstract(absRef, [param]):
+		{
+			var abs = absRef.get();
+			if (abs.name == "Class" && abs.module == "Class" && abs.pack.length == 0) {
+				toModuleType(param);
+			} else {
+				null;
+			};
+		};	
+	case TType(defRef, []):
+		{
+			switch (defRef.get().type) {
+				case TAnonymous(anon):
+					{
+						switch (anon.get().status) {
+							case AClassStatics(clsRef):
+								TClassDecl(clsRef);							
+							case AEnumStatics(enumRef):
+								TEnumDecl(enumRef);							
+							case AAbstractStatics(absRef):
+								TAbstract(absRef);							
+							case _:
+								null;							
+						};
+					};				
+				case _:
+					null;				
+			};
+		};	
+	case _:
+		null;	
+})
+					[Switch:Null<haxe.macro.ModuleType>]
+						[EnumIndex:Int] [Local t(12611):haxe.macro.Type:haxe.macro.Type]
+						[Case:Null<haxe.macro.ModuleType>]
+							[Const:Int] 3
+							[Block:Null<haxe.macro.ModuleType>]
+								[Var `(12648):haxe.macro.Ref<haxe.macro.DefType>]
+									[EnumParameter:haxe.macro.Ref<haxe.macro.DefType>]
+										[Local t(12611):haxe.macro.Type:haxe.macro.Type]
+										TType
+										0
+								[Var `(12649):Array<haxe.macro.Type>]
+									[EnumParameter:Array<haxe.macro.Type>]
+										[Local t(12611):haxe.macro.Type:haxe.macro.Type]
+										TType
+										1
+								[If:Null<haxe.macro.ModuleType>]
+									[Binop:Bool]
+										[Field:Int]
+											[Local `(12649):Array<haxe.macro.Type>:Array<haxe.macro.Type>]
+											[FInstance:Int]
+												Array<haxe.macro.Type>
+												length:Int
+										==
+										[Const:Int] 0
+									[Then:Null<haxe.macro.ModuleType>] [Block:Null<haxe.macro.ModuleType>]
+										[Block:Null<haxe.macro.ModuleType>]
+											[Var defRef(12650):haxe.macro.Ref<haxe.macro.DefType>] [Local `(12648):haxe.macro.Ref<haxe.macro.DefType>:haxe.macro.Ref<haxe.macro.DefType>]
+											[Block:Null<haxe.macro.ModuleType>]
+												[Block:Null<haxe.macro.ModuleType>]
+													[Meta:Null<haxe.macro.ModuleType>]
+														:ast(switch (defRef.get().type) {
+	case TAnonymous(anon):
+		{
+			switch (anon.get().status) {
+				case AClassStatics(clsRef):
+					TClassDecl(clsRef);				
+				case AEnumStatics(enumRef):
+					TEnumDecl(enumRef);				
+				case AAbstractStatics(absRef):
+					TAbstract(absRef);				
+				case _:
+					null;				
+			};
+		};	
+	case _:
+		null;	
+})
+														[Block:Null<haxe.macro.ModuleType>]
+															[Var `(12651):haxe.macro.Type]
+																[Field:haxe.macro.Type]
+																	[Call:haxe.macro.DefType]
+																		[Field:() -> haxe.macro.DefType]
+																			[Local defRef(12650):haxe.macro.Ref<haxe.macro.DefType>:haxe.macro.Ref<haxe.macro.DefType>]
+																			[FAnon:() -> haxe.macro.DefType] get:() -> haxe.macro.DefType
+																	[FAnon:haxe.macro.Type] type:haxe.macro.Type
+															[If:Null<haxe.macro.ModuleType>]
+																[Binop:Bool]
+																	[EnumIndex:Int] [Local `(12651):haxe.macro.Type:haxe.macro.Type]
+																	==
+																	[Const:Int] 5
+																[Then:Null<haxe.macro.ModuleType>] [Block:Null<haxe.macro.ModuleType>]
+																	[Var `(12652):haxe.macro.Ref<haxe.macro.AnonType>]
+																		[EnumParameter:haxe.macro.Ref<haxe.macro.AnonType>]
+																			[Local `(12651):haxe.macro.Type:haxe.macro.Type]
+																			TAnonymous
+																			0
+																	[Block:Null<haxe.macro.ModuleType>]
+																		[Var anon(12653):haxe.macro.Ref<haxe.macro.AnonType>] [Local `(12652):haxe.macro.Ref<haxe.macro.AnonType>:haxe.macro.Ref<haxe.macro.AnonType>]
+																		[Block:Null<haxe.macro.ModuleType>]
+																			[Block:Null<haxe.macro.ModuleType>]
+																				[Meta:Null<haxe.macro.ModuleType>]
+																					:ast(switch (anon.get().status) {
+	case AClassStatics(clsRef):
+		TClassDecl(clsRef);	
+	case AEnumStatics(enumRef):
+		TEnumDecl(enumRef);	
+	case AAbstractStatics(absRef):
+		TAbstract(absRef);	
+	case _:
+		null;	
+})
+																					[Block:Null<haxe.macro.ModuleType>]
+																						[Var `(12654):haxe.macro.AnonStatus]
+																							[Field:haxe.macro.AnonStatus]
+																								[Call:haxe.macro.AnonType]
+																									[Field:() -> haxe.macro.AnonType]
+																										[Local anon(12653):haxe.macro.Ref<haxe.macro.AnonType>:haxe.macro.Ref<haxe.macro.AnonType>]
+																										[FAnon:() -> haxe.macro.AnonType] get:() -> haxe.macro.AnonType
+																								[FAnon:haxe.macro.AnonStatus] status:haxe.macro.AnonStatus
+																						[Switch:Null<haxe.macro.ModuleType>]
+																							[EnumIndex:Int] [Local `(12654):haxe.macro.AnonStatus:haxe.macro.AnonStatus]
+																							[Case:haxe.macro.ModuleType]
+																								[Const:Int] 4
+																								[Block:haxe.macro.ModuleType]
+																									[Var `(12655):haxe.macro.Ref<haxe.macro.ClassType>]
+																										[EnumParameter:haxe.macro.Ref<haxe.macro.ClassType>]
+																											[Local `(12654):haxe.macro.AnonStatus:haxe.macro.AnonStatus]
+																											AClassStatics
+																											0
+																									[Block:haxe.macro.ModuleType]
+																										[Var clsRef(12656):haxe.macro.Ref<haxe.macro.ClassType>] [Local `(12655):haxe.macro.Ref<haxe.macro.ClassType>:haxe.macro.Ref<haxe.macro.ClassType>]
+																										[Block:haxe.macro.ModuleType]
+																											[Call:haxe.macro.ModuleType]
+																												[Field:(c : haxe.macro.Ref<haxe.macro.ClassType>) -> haxe.macro.ModuleType]
+																													[TypeExpr haxe.macro.ModuleType:Enum<haxe.macro.ModuleType>]
+																													[FEnum:(c : haxe.macro.Ref<haxe.macro.ClassType>) -> haxe.macro.ModuleType]
+																														haxe.macro.ModuleType
+																														TClassDecl
+																												[Local clsRef(12656):haxe.macro.Ref<haxe.macro.ClassType>:haxe.macro.Ref<haxe.macro.ClassType>]
+																							[Case:haxe.macro.ModuleType]
+																								[Const:Int] 5
+																								[Block:haxe.macro.ModuleType]
+																									[Var `(12657):haxe.macro.Ref<haxe.macro.EnumType>]
+																										[EnumParameter:haxe.macro.Ref<haxe.macro.EnumType>]
+																											[Local `(12654):haxe.macro.AnonStatus:haxe.macro.AnonStatus]
+																											AEnumStatics
+																											0
+																									[Block:haxe.macro.ModuleType]
+																										[Var enumRef(12658):haxe.macro.Ref<haxe.macro.EnumType>] [Local `(12657):haxe.macro.Ref<haxe.macro.EnumType>:haxe.macro.Ref<haxe.macro.EnumType>]
+																										[Block:haxe.macro.ModuleType]
+																											[Call:haxe.macro.ModuleType]
+																												[Field:(e : haxe.macro.Ref<haxe.macro.EnumType>) -> haxe.macro.ModuleType]
+																													[TypeExpr haxe.macro.ModuleType:Enum<haxe.macro.ModuleType>]
+																													[FEnum:(e : haxe.macro.Ref<haxe.macro.EnumType>) -> haxe.macro.ModuleType]
+																														haxe.macro.ModuleType
+																														TEnumDecl
+																												[Local enumRef(12658):haxe.macro.Ref<haxe.macro.EnumType>:haxe.macro.Ref<haxe.macro.EnumType>]
+																							[Case:haxe.macro.ModuleType]
+																								[Const:Int] 6
+																								[Block:haxe.macro.ModuleType]
+																									[Var `(12659):haxe.macro.Ref<haxe.macro.AbstractType>]
+																										[EnumParameter:haxe.macro.Ref<haxe.macro.AbstractType>]
+																											[Local `(12654):haxe.macro.AnonStatus:haxe.macro.AnonStatus]
+																											AAbstractStatics
+																											0
+																									[Block:haxe.macro.ModuleType]
+																										[Var absRef(12660):haxe.macro.Ref<haxe.macro.AbstractType>] [Local `(12659):haxe.macro.Ref<haxe.macro.AbstractType>:haxe.macro.Ref<haxe.macro.AbstractType>]
+																										[Block:haxe.macro.ModuleType]
+																											[Call:haxe.macro.ModuleType]
+																												[Field:(a : haxe.macro.Ref<haxe.macro.AbstractType>) -> haxe.macro.ModuleType]
+																													[TypeExpr haxe.macro.ModuleType:Enum<haxe.macro.ModuleType>]
+																													[FEnum:(a : haxe.macro.Ref<haxe.macro.AbstractType>) -> haxe.macro.ModuleType]
+																														haxe.macro.ModuleType
+																														TAbstract
+																												[Local absRef(12660):haxe.macro.Ref<haxe.macro.AbstractType>:haxe.macro.Ref<haxe.macro.AbstractType>]
+																							[Default:Null<haxe.macro.ModuleType>] [Block:Null<haxe.macro.ModuleType>] [Const:Null<haxe.macro.ModuleType>] null
+																[Else:Null<haxe.macro.ModuleType>] [Block:Null<haxe.macro.ModuleType>] [Const:Null<haxe.macro.ModuleType>] null
+									[Else:Null<haxe.macro.ModuleType>] [Block:Null<haxe.macro.ModuleType>] [Const:Null<haxe.macro.ModuleType>] null
+						[Case:Null<haxe.macro.ModuleType>]
+							[Const:Int] 8
+							[Block:Null<haxe.macro.ModuleType>]
+								[Var `(12661):haxe.macro.Ref<haxe.macro.AbstractType>]
+									[EnumParameter:haxe.macro.Ref<haxe.macro.AbstractType>]
+										[Local t(12611):haxe.macro.Type:haxe.macro.Type]
+										TAbstract
+										0
+								[Var `(12662):Array<haxe.macro.Type>]
+									[EnumParameter:Array<haxe.macro.Type>]
+										[Local t(12611):haxe.macro.Type:haxe.macro.Type]
+										TAbstract
+										1
+								[If:Null<haxe.macro.ModuleType>]
+									[Binop:Bool]
+										[Field:Int]
+											[Local `(12662):Array<haxe.macro.Type>:Array<haxe.macro.Type>]
+											[FInstance:Int]
+												Array<haxe.macro.Type>
+												length:Int
+										==
+										[Const:Int] 1
+									[Then:Null<haxe.macro.ModuleType>] [Block:Null<haxe.macro.ModuleType>]
+										[Var `(12663):haxe.macro.Type]
+											[Array:haxe.macro.Type]
+												[Local `(12662):Array<haxe.macro.Type>:Array<haxe.macro.Type>]
+												[Const:Int] 0
+										[Block:Null<haxe.macro.ModuleType>]
+											[Var param(12664):haxe.macro.Type] [Local `(12663):haxe.macro.Type:haxe.macro.Type]
+											[Var absRef(12665):haxe.macro.Ref<haxe.macro.AbstractType>] [Local `(12661):haxe.macro.Ref<haxe.macro.AbstractType>:haxe.macro.Ref<haxe.macro.AbstractType>]
+											[Block:Null<haxe.macro.ModuleType>]
+												[Block:Null<haxe.macro.ModuleType>]
+													[Var abs(12666):haxe.macro.AbstractType]
+														[Call:haxe.macro.AbstractType]
+															[Field:() -> haxe.macro.AbstractType]
+																[Local absRef(12665):haxe.macro.Ref<haxe.macro.AbstractType>:haxe.macro.Ref<haxe.macro.AbstractType>]
+																[FAnon:() -> haxe.macro.AbstractType] get:() -> haxe.macro.AbstractType
+													[If:Null<haxe.macro.ModuleType>]
+														[Binop:Bool]
+															[Binop:Bool]
+																[Binop:Bool]
+																	[Field:String]
+																		[Local abs(12666):haxe.macro.AbstractType:haxe.macro.AbstractType]
+																		[FAnon:String] name:String
+																	==
+																	[Const:String] "Class"
+																&&
+																[Binop:Bool]
+																	[Field:String]
+																		[Local abs(12666):haxe.macro.AbstractType:haxe.macro.AbstractType]
+																		[FAnon:String] module:String
+																	==
+																	[Const:String] "Class"
+															&&
+															[Binop:Bool]
+																[Field:Int]
+																	[Field:Array<String>]
+																		[Local abs(12666):haxe.macro.AbstractType:haxe.macro.AbstractType]
+																		[FAnon:Array<String>] pack:Array<String>
+																	[FInstance:Int]
+																		Array<String>
+																		length:Int
+																==
+																[Const:Int] 0
+														[Then:Null<haxe.macro.ModuleType>] [Block:Null<haxe.macro.ModuleType>]
+															[Call:Null<haxe.macro.ModuleType>]
+																[Field:(t : haxe.macro.Type) -> Null<haxe.macro.ModuleType>]
+																	[TypeExpr reflaxe.helpers.TypeHelper:Class<reflaxe.helpers.TypeHelper>]
+																	[FStatic:(t : haxe.macro.Type) -> Null<haxe.macro.ModuleType>]
+																		reflaxe.helpers.TypeHelper
+																		toModuleType:(t : haxe.macro.Type) -> Null<haxe.macro.ModuleType>
+																[Local param(12664):haxe.macro.Type:haxe.macro.Type]
+														[Else:Null<haxe.macro.ModuleType>] [Block:Null<haxe.macro.ModuleType>] [Const:Null<haxe.macro.ModuleType>] null
+									[Else:Null<haxe.macro.ModuleType>] [Block:Null<haxe.macro.ModuleType>] [Const:Null<haxe.macro.ModuleType>] null
+						[Default:Null<haxe.macro.ModuleType>] [Block:Null<haxe.macro.ModuleType>] [Const:Null<haxe.macro.ModuleType>] null
+
+	public static function isExprClass[Function:(t : haxe.macro.Type) -> Bool]
+		[Arg:haxe.macro.Type] [Local t(12746):haxe.macro.Type]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Meta:Bool]
+					:ast(switch (t) {
+	case TInst(_.get().isExprClass() => true, _):
+		true;	
+	case _:
+		false;	
+})
+					[If:Bool]
+						[Binop:Bool]
+							[EnumIndex:Int] [Local t(12746):haxe.macro.Type:haxe.macro.Type]
+							==
+							[Const:Int] 2
+						[Then:Bool] [Block:Bool]
+							[Var `(12751):haxe.macro.Ref<haxe.macro.ClassType>]
+								[EnumParameter:haxe.macro.Ref<haxe.macro.ClassType>]
+									[Local t(12746):haxe.macro.Type:haxe.macro.Type]
+									TInst
+									0
+							[Var `(12752):Array<haxe.macro.Type>]
+								[EnumParameter:Array<haxe.macro.Type>]
+									[Local t(12746):haxe.macro.Type:haxe.macro.Type]
+									TInst
+									1
+							[Block:Bool]
+								[Var _hx_tmp(12753):Bool]
+								[If:Bool]
+									[Binop:Bool]
+										[Parenthesis:Bool]
+											[Binop:Bool]
+												[Local _hx_tmp(12753):Bool:Bool]
+												=
+												[Call:Bool]
+													[Field:(cls : haxe.macro.ClassType) -> Bool]
+														[TypeExpr reflaxe.helpers.ClassTypeHelper:{ Statics reflaxe.helpers.ClassTypeHelper }]
+														[FStatic:(cls : haxe.macro.ClassType) -> Bool]
+															reflaxe.helpers.ClassTypeHelper
+															isExprClass:(cls : haxe.macro.ClassType) -> Bool
+													[Call:haxe.macro.ClassType]
+														[Field:() -> haxe.macro.ClassType]
+															[Local `(12751):haxe.macro.Ref<haxe.macro.ClassType>:haxe.macro.Ref<haxe.macro.ClassType>]
+															[FAnon:() -> haxe.macro.ClassType] get:() -> haxe.macro.ClassType
+										==
+										[Const:Bool] true
+									[Then:Bool] [Block:Bool] [Block:Bool] [Const:Bool] true
+									[Else:Bool] [Block:Bool] [Const:Bool] false
+						[Else:Bool] [Block:Bool] [Const:Bool] false
+
+	public static function wrapWithNull[Function:(t : haxe.macro.Type) -> haxe.macro.Type]
+		[Arg:haxe.macro.Type] [Local t(12754):haxe.macro.Type]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Meta:haxe.macro.Type]
+					:ast(switch (Context.getType("Null")) {
+	case TAbstract(abRef, _):
+		{
+			TAbstract(abRef, [t]);
+		};	
+	case _:
+		{
+			throw "Could not find Null<T>";
+		};	
+})
+					[Block:haxe.macro.Type]
+						[Var `(12759):haxe.macro.Type]
+							[Call:haxe.macro.Type]
+								[Field:(name : String) -> haxe.macro.Type]
+									[TypeExpr reflaxe.helpers.Context:Class<reflaxe.helpers.Context>]
+									[FStatic:(name : String) -> haxe.macro.Type]
+										reflaxe.helpers.Context
+										getType:(name : String) -> haxe.macro.Type
+								[Const:String] "Null"
+						[If:haxe.macro.Type]
+							[Binop:Bool]
+								[EnumIndex:Int] [Local `(12759):haxe.macro.Type:haxe.macro.Type]
+								==
+								[Const:Int] 8
+							[Then:haxe.macro.Type] [Block:haxe.macro.Type]
+								[Var `(12760):haxe.macro.Ref<haxe.macro.AbstractType>]
+									[EnumParameter:haxe.macro.Ref<haxe.macro.AbstractType>]
+										[Local `(12759):haxe.macro.Type:haxe.macro.Type]
+										TAbstract
+										0
+								[Var `(12761):Array<haxe.macro.Type>]
+									[EnumParameter:Array<haxe.macro.Type>]
+										[Local `(12759):haxe.macro.Type:haxe.macro.Type]
+										TAbstract
+										1
+								[Block:haxe.macro.Type]
+									[Var abRef(12762):haxe.macro.Ref<haxe.macro.AbstractType>] [Local `(12760):haxe.macro.Ref<haxe.macro.AbstractType>:haxe.macro.Ref<haxe.macro.AbstractType>]
+									[Block:haxe.macro.Type]
+										[Block:haxe.macro.Type]
+											[Call:haxe.macro.Type]
+												[Field:(t : haxe.macro.Ref<haxe.macro.AbstractType>, params : Array<haxe.macro.Type>) -> haxe.macro.Type]
+													[TypeExpr haxe.macro.Type:Enum<haxe.macro.Type>]
+													[FEnum:(t : haxe.macro.Ref<haxe.macro.AbstractType>, params : Array<haxe.macro.Type>) -> haxe.macro.Type]
+														haxe.macro.Type
+														TAbstract
+												[Local abRef(12762):haxe.macro.Ref<haxe.macro.AbstractType>:haxe.macro.Ref<haxe.macro.AbstractType>]
+												[ArrayDecl:Array<haxe.macro.Type>] [Local t(12754):haxe.macro.Type:haxe.macro.Type]
+							[Else:haxe.macro.Type] [Block:haxe.macro.Type] [Block:haxe.macro.Type] [Throw:haxe.macro.Type] [Const:String] "Could not find Null<T>"
+
+	public static function unwrapNullType[Function:(t : haxe.macro.Type) -> Null<haxe.macro.Type>]
+		[Arg:haxe.macro.Type] [Local t(12763):haxe.macro.Type]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Meta:Null<haxe.macro.Type>]
+					:ast(switch (t) {
+	case TAbstract(absRef, params) if (params.length == 1):
+		{
+			var abs = absRef.get();
+			if (abs.name == "Null" && abs.pack.length == 0) {
+				params[0];
+			} else {
+				null;
+			};
+		};	
+	case _:
+		null;	
+})
+					[If:Null<haxe.macro.Type>]
+						[Binop:Bool]
+							[EnumIndex:Int] [Local t(12763):haxe.macro.Type:haxe.macro.Type]
+							==
+							[Const:Int] 8
+						[Then:Null<haxe.macro.Type>] [Block:Null<haxe.macro.Type>]
+							[Var `(12769):haxe.macro.Ref<haxe.macro.AbstractType>]
+								[EnumParameter:haxe.macro.Ref<haxe.macro.AbstractType>]
+									[Local t(12763):haxe.macro.Type:haxe.macro.Type]
+									TAbstract
+									0
+							[Var `(12770):Array<haxe.macro.Type>]
+								[EnumParameter:Array<haxe.macro.Type>]
+									[Local t(12763):haxe.macro.Type:haxe.macro.Type]
+									TAbstract
+									1
+							[Block:Null<haxe.macro.Type>]
+								[Var absRef(12771):haxe.macro.Ref<haxe.macro.AbstractType>] [Local `(12769):haxe.macro.Ref<haxe.macro.AbstractType>:haxe.macro.Ref<haxe.macro.AbstractType>]
+								[Var params(12772):Array<haxe.macro.Type>] [Local `(12770):Array<haxe.macro.Type>:Array<haxe.macro.Type>]
+								[If:Null<haxe.macro.Type>]
+									[Binop:Bool]
+										[Field:Int]
+											[Local params(12772):Array<haxe.macro.Type>:Array<haxe.macro.Type>]
+											[FInstance:Int]
+												Array<haxe.macro.Type>
+												length:Int
+										==
+										[Const:Int] 1
+									[Then:Null<haxe.macro.Type>] [Block:Null<haxe.macro.Type>]
+										[Block:Null<haxe.macro.Type>]
+											[Var abs(12773):haxe.macro.AbstractType]
+												[Call:haxe.macro.AbstractType]
+													[Field:() -> haxe.macro.AbstractType]
+														[Local absRef(12771):haxe.macro.Ref<haxe.macro.AbstractType>:haxe.macro.Ref<haxe.macro.AbstractType>]
+														[FAnon:() -> haxe.macro.AbstractType] get:() -> haxe.macro.AbstractType
+											[If:Null<haxe.macro.Type>]
+												[Binop:Bool]
+													[Binop:Bool]
+														[Field:String]
+															[Local abs(12773):haxe.macro.AbstractType:haxe.macro.AbstractType]
+															[FAnon:String] name:String
+														==
+														[Const:String] "Null"
+													&&
+													[Binop:Bool]
+														[Field:Int]
+															[Field:Array<String>]
+																[Local abs(12773):haxe.macro.AbstractType:haxe.macro.AbstractType]
+																[FAnon:Array<String>] pack:Array<String>
+															[FInstance:Int]
+																Array<String>
+																length:Int
+														==
+														[Const:Int] 0
+												[Then:haxe.macro.Type] [Block:haxe.macro.Type]
+													[Array:haxe.macro.Type]
+														[Local params(12772):Array<haxe.macro.Type>:Array<haxe.macro.Type>]
+														[Const:Int] 0
+												[Else:Null<haxe.macro.Type>] [Block:Null<haxe.macro.Type>] [Const:Null<haxe.macro.Type>] null
+									[Else:Null<haxe.macro.Type>] [Block:Null<haxe.macro.Type>] [Const:Null<haxe.macro.Type>] null
+						[Else:Null<haxe.macro.Type>] [Block:Null<haxe.macro.Type>] [Const:Null<haxe.macro.Type>] null
+
+	public static function unwrapNullTypeOrSelf[Function:(t : haxe.macro.Type) -> haxe.macro.Type]
+		[Arg:haxe.macro.Type] [Local t(12774):haxe.macro.Type]
+		[Block:Dynamic]
+			[Var temp(12775):Null<haxe.macro.Type>]
+				[Call:Null<haxe.macro.Type>]
+					[Field:(t : haxe.macro.Type) -> Null<haxe.macro.Type>]
+						[TypeExpr reflaxe.helpers.TypeHelper:Class<reflaxe.helpers.TypeHelper>]
+						[FStatic:(t : haxe.macro.Type) -> Null<haxe.macro.Type>]
+							reflaxe.helpers.TypeHelper
+							unwrapNullType:(t : haxe.macro.Type) -> Null<haxe.macro.Type>
+					[Local t(12774):haxe.macro.Type:haxe.macro.Type]
+			[Return:Dynamic]
+				[If:haxe.macro.Type]
+					[Binop:Bool]
+						[Local temp(12775):Null<haxe.macro.Type>:Null<haxe.macro.Type>]
+						!=
+						[Const:Null<haxe.macro.Type>] null
+					[Then:Null<haxe.macro.Type>] [Block:Null<haxe.macro.Type>] [Local temp(12775):Null<haxe.macro.Type>:Null<haxe.macro.Type>]
+					[Else:haxe.macro.Type] [Block:haxe.macro.Type] [Local t(12774):haxe.macro.Type:haxe.macro.Type]
+
+	public static function unwrapArrayType[Function:(t : haxe.macro.Type) -> Null<haxe.macro.Type>]
+		[Arg:haxe.macro.Type] [Local t(12776):haxe.macro.Type]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Meta:Null<haxe.macro.Type>]
+					:ast(switch (t) {
+	case TInst(clsRef, params) if (params.length == 1):
+		{
+			var cls = clsRef.get();
+			if (cls.name == "Array" && cls.pack.length == 0) {
+				params[0];
+			} else {
+				null;
+			};
+		};	
+	case _:
+		null;	
+})
+					[If:Null<haxe.macro.Type>]
+						[Binop:Bool]
+							[EnumIndex:Int] [Local t(12776):haxe.macro.Type:haxe.macro.Type]
+							==
+							[Const:Int] 2
+						[Then:Null<haxe.macro.Type>] [Block:Null<haxe.macro.Type>]
+							[Var `(12782):haxe.macro.Ref<haxe.macro.ClassType>]
+								[EnumParameter:haxe.macro.Ref<haxe.macro.ClassType>]
+									[Local t(12776):haxe.macro.Type:haxe.macro.Type]
+									TInst
+									0
+							[Var `(12783):Array<haxe.macro.Type>]
+								[EnumParameter:Array<haxe.macro.Type>]
+									[Local t(12776):haxe.macro.Type:haxe.macro.Type]
+									TInst
+									1
+							[Block:Null<haxe.macro.Type>]
+								[Var clsRef(12784):haxe.macro.Ref<haxe.macro.ClassType>] [Local `(12782):haxe.macro.Ref<haxe.macro.ClassType>:haxe.macro.Ref<haxe.macro.ClassType>]
+								[Var params(12785):Array<haxe.macro.Type>] [Local `(12783):Array<haxe.macro.Type>:Array<haxe.macro.Type>]
+								[If:Null<haxe.macro.Type>]
+									[Binop:Bool]
+										[Field:Int]
+											[Local params(12785):Array<haxe.macro.Type>:Array<haxe.macro.Type>]
+											[FInstance:Int]
+												Array<haxe.macro.Type>
+												length:Int
+										==
+										[Const:Int] 1
+									[Then:Null<haxe.macro.Type>] [Block:Null<haxe.macro.Type>]
+										[Block:Null<haxe.macro.Type>]
+											[Var cls(12786):haxe.macro.ClassType]
+												[Call:haxe.macro.ClassType]
+													[Field:() -> haxe.macro.ClassType]
+														[Local clsRef(12784):haxe.macro.Ref<haxe.macro.ClassType>:haxe.macro.Ref<haxe.macro.ClassType>]
+														[FAnon:() -> haxe.macro.ClassType] get:() -> haxe.macro.ClassType
+											[If:Null<haxe.macro.Type>]
+												[Binop:Bool]
+													[Binop:Bool]
+														[Field:String]
+															[Local cls(12786):haxe.macro.ClassType:haxe.macro.ClassType]
+															[FAnon:String] name:String
+														==
+														[Const:String] "Array"
+													&&
+													[Binop:Bool]
+														[Field:Int]
+															[Field:Array<String>]
+																[Local cls(12786):haxe.macro.ClassType:haxe.macro.ClassType]
+																[FAnon:Array<String>] pack:Array<String>
+															[FInstance:Int]
+																Array<String>
+																length:Int
+														==
+														[Const:Int] 0
+												[Then:haxe.macro.Type] [Block:haxe.macro.Type]
+													[Array:haxe.macro.Type]
+														[Local params(12785):Array<haxe.macro.Type>:Array<haxe.macro.Type>]
+														[Const:Int] 0
+												[Else:Null<haxe.macro.Type>] [Block:Null<haxe.macro.Type>] [Const:Null<haxe.macro.Type>] null
+									[Else:Null<haxe.macro.Type>] [Block:Null<haxe.macro.Type>] [Const:Null<haxe.macro.Type>] null
+						[Else:Null<haxe.macro.Type>] [Block:Null<haxe.macro.Type>] [Const:Null<haxe.macro.Type>] null
+
+	public static function getTFunArgs[Function:(t : haxe.macro.Type) -> Null<Array<{ t : haxe.macro.Type, opt : Bool, name : String }>>]
+		[Arg:haxe.macro.Type] [Local t(12787):haxe.macro.Type]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Meta:Null<Array<{ t : haxe.macro.Type, opt : Bool, name : String }>>]
+					:ast(switch (t) {
+	case TFun(args, _):
+		args;	
+	case _:
+		null;	
+})
+					[If:Null<Array<{ t : haxe.macro.Type, opt : Bool, name : String }>>]
+						[Binop:Bool]
+							[EnumIndex:Int] [Local t(12787):haxe.macro.Type:haxe.macro.Type]
+							==
+							[Const:Int] 4
+						[Then:Array<{ t : haxe.macro.Type, opt : Bool, name : String }>] [Block:Array<{ t : haxe.macro.Type, opt : Bool, name : String }>]
+							[Var `(12791):Array<{ t : haxe.macro.Type, opt : Bool, name : String }>]
+								[EnumParameter:Array<{ t : haxe.macro.Type, opt : Bool, name : String }>]
+									[Local t(12787):haxe.macro.Type:haxe.macro.Type]
+									TFun
+									0
+							[Var `(12792):haxe.macro.Type]
+								[EnumParameter:haxe.macro.Type]
+									[Local t(12787):haxe.macro.Type:haxe.macro.Type]
+									TFun
+									1
+							[Block:Array<{ t : haxe.macro.Type, opt : Bool, name : String }>]
+								[Var args(12793):Array<{ t : haxe.macro.Type, opt : Bool, name : String }>] [Local `(12791):Array<{ t : haxe.macro.Type, opt : Bool, name : String }>:Array<{ t : haxe.macro.Type, opt : Bool, name : String }>]
+								[Block:Array<{ t : haxe.macro.Type, opt : Bool, name : String }>] [Local args(12793):Array<{ t : haxe.macro.Type, opt : Bool, name : String }>:Array<{ t : haxe.macro.Type, opt : Bool, name : String }>]
+						[Else:Null<Array<{ t : haxe.macro.Type, opt : Bool, name : String }>>] [Block:Null<Array<{ t : haxe.macro.Type, opt : Bool, name : String }>>] [Const:Null<Array<{ t : haxe.macro.Type, opt : Bool, name : String }>>] null
+
+	public static function getTFunReturn[Function:(t : haxe.macro.Type) -> Null<haxe.macro.Type>]
+		[Arg:haxe.macro.Type] [Local t(12261):haxe.macro.Type]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Meta:Null<haxe.macro.Type>]
+					:ast(switch (t) {
+	case TFun(_, ret):
+		ret;	
+	case _:
+		null;	
+})
+					[If:Null<haxe.macro.Type>]
+						[Binop:Bool]
+							[EnumIndex:Int] [Local t(12261):haxe.macro.Type:haxe.macro.Type]
+							==
+							[Const:Int] 4
+						[Then:haxe.macro.Type] [Block:haxe.macro.Type]
+							[Var `(12265):Array<{ t : haxe.macro.Type, opt : Bool, name : String }>]
+								[EnumParameter:Array<{ t : haxe.macro.Type, opt : Bool, name : String }>]
+									[Local t(12261):haxe.macro.Type:haxe.macro.Type]
+									TFun
+									0
+							[Var `(12266):haxe.macro.Type]
+								[EnumParameter:haxe.macro.Type]
+									[Local t(12261):haxe.macro.Type:haxe.macro.Type]
+									TFun
+									1
+							[Block:haxe.macro.Type]
+								[Var ret(12267):haxe.macro.Type] [Local `(12266):haxe.macro.Type:haxe.macro.Type]
+								[Block:haxe.macro.Type] [Local ret(12267):haxe.macro.Type:haxe.macro.Type]
+						[Else:Null<haxe.macro.Type>] [Block:Null<haxe.macro.Type>] [Const:Null<haxe.macro.Type>] null
+
+	public static function isMultitype[Function:(t : haxe.macro.Type) -> Bool]
+		[Arg:haxe.macro.Type] [Local t(12794):haxe.macro.Type]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Meta:Bool]
+					:ast(switch (t) {
+	case TType(defRef, _):
+		{
+			isMultitype(Context.follow(t));
+		};	
+	case TAbstract(absRef, _):
+		{
+			absRef.get().hasMeta(":multiType");
+		};	
+	case _:
+		false;	
+})
+					[Switch:Bool]
+						[EnumIndex:Int] [Local t(12794):haxe.macro.Type:haxe.macro.Type]
+						[Case:Bool]
+							[Const:Int] 3
+							[Block:Bool]
+								[Var `(12801):haxe.macro.Ref<haxe.macro.DefType>]
+									[EnumParameter:haxe.macro.Ref<haxe.macro.DefType>]
+										[Local t(12794):haxe.macro.Type:haxe.macro.Type]
+										TType
+										0
+								[Var `(12802):Array<haxe.macro.Type>]
+									[EnumParameter:Array<haxe.macro.Type>]
+										[Local t(12794):haxe.macro.Type:haxe.macro.Type]
+										TType
+										1
+								[Block:Bool]
+									[Var defRef(12803):haxe.macro.Ref<haxe.macro.DefType>] [Local `(12801):haxe.macro.Ref<haxe.macro.DefType>:haxe.macro.Ref<haxe.macro.DefType>]
+									[Block:Bool]
+										[Block:Bool]
+											[Call:Bool]
+												[Field:(t : haxe.macro.Type) -> Bool]
+													[TypeExpr reflaxe.helpers.TypeHelper:Class<reflaxe.helpers.TypeHelper>]
+													[FStatic:(t : haxe.macro.Type) -> Bool]
+														reflaxe.helpers.TypeHelper
+														isMultitype:(t : haxe.macro.Type) -> Bool
+												[Call:haxe.macro.Type]
+													[Field:(t : haxe.macro.Type, ?once : Null<Bool>) -> haxe.macro.Type]
+														[TypeExpr reflaxe.helpers.Context:Class<reflaxe.helpers.Context>]
+														[FStatic:(t : haxe.macro.Type, ?once : Null<Bool>) -> haxe.macro.Type]
+															reflaxe.helpers.Context
+															follow:(t : haxe.macro.Type, ?once : Null<Bool>) -> haxe.macro.Type
+													[Local t(12794):haxe.macro.Type:haxe.macro.Type]
+													[Const:Null<Bool>] null
+						[Case:Bool]
+							[Const:Int] 8
+							[Block:Bool]
+								[Var `(12804):haxe.macro.Ref<haxe.macro.AbstractType>]
+									[EnumParameter:haxe.macro.Ref<haxe.macro.AbstractType>]
+										[Local t(12794):haxe.macro.Type:haxe.macro.Type]
+										TAbstract
+										0
+								[Var `(12805):Array<haxe.macro.Type>]
+									[EnumParameter:Array<haxe.macro.Type>]
+										[Local t(12794):haxe.macro.Type:haxe.macro.Type]
+										TAbstract
+										1
+								[Block:Bool]
+									[Var absRef(12806):haxe.macro.Ref<haxe.macro.AbstractType>] [Local `(12804):haxe.macro.Ref<haxe.macro.AbstractType>:haxe.macro.Ref<haxe.macro.AbstractType>]
+									[Block:Bool]
+										[Block:Bool]
+											[Call:Bool]
+												[Field:(v : reflaxe.helpers.NameAndMeta, metaName : String) -> Bool]
+													[TypeExpr reflaxe.helpers.NameMetaHelper:{ Statics reflaxe.helpers.NameMetaHelper }]
+													[FStatic:(v : reflaxe.helpers.NameAndMeta, metaName : String) -> Bool]
+														reflaxe.helpers.NameMetaHelper
+														hasMeta:(v : reflaxe.helpers.NameAndMeta, metaName : String) -> Bool
+												[Call:haxe.macro.AbstractType]
+													[Field:() -> haxe.macro.AbstractType]
+														[Local absRef(12806):haxe.macro.Ref<haxe.macro.AbstractType>:haxe.macro.Ref<haxe.macro.AbstractType>]
+														[FAnon:() -> haxe.macro.AbstractType] get:() -> haxe.macro.AbstractType
+												[Const:String] ":multiType"
+						[Default:Bool] [Block:Bool] [Const:Bool] false
+
+	public static function isDescendantOf[Function:(t : haxe.macro.Type, superClass : haxe.macro.Type) -> Bool]
+		[Arg:haxe.macro.Type] [Local t(12807):haxe.macro.Type]
+		[Arg:haxe.macro.Type] [Local superClass(12808):haxe.macro.Type]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Binop:Bool]
+					[Call:Bool]
+						[Field:(t : haxe.macro.Type, superClass : haxe.macro.Type) -> Bool]
+							[TypeExpr reflaxe.helpers.TypeHelper:Class<reflaxe.helpers.TypeHelper>]
+							[FStatic:(t : haxe.macro.Type, superClass : haxe.macro.Type) -> Bool]
+								reflaxe.helpers.TypeHelper
+								isChildOf:(t : haxe.macro.Type, superClass : haxe.macro.Type) -> Bool
+						[Local t(12807):haxe.macro.Type:haxe.macro.Type]
+						[Local superClass(12808):haxe.macro.Type:haxe.macro.Type]
+					||
+					[Call:Bool]
+						[Field:(t : haxe.macro.Type, interfaceType : haxe.macro.Type) -> Bool]
+							[TypeExpr reflaxe.helpers.TypeHelper:Class<reflaxe.helpers.TypeHelper>]
+							[FStatic:(t : haxe.macro.Type, interfaceType : haxe.macro.Type) -> Bool]
+								reflaxe.helpers.TypeHelper
+								implementsType:(t : haxe.macro.Type, interfaceType : haxe.macro.Type) -> Bool
+						[Local t(12807):haxe.macro.Type:haxe.macro.Type]
+						[Local superClass(12808):haxe.macro.Type:haxe.macro.Type]
+
+	public static function isChildOf[Function:(t : haxe.macro.Type, superClass : haxe.macro.Type) -> Bool]
+		[Arg:haxe.macro.Type] [Local t(12809):haxe.macro.Type]
+		[Arg:haxe.macro.Type] [Local superClass(12810):haxe.macro.Type]
+		[Block:Dynamic]
+			[Var superClassType(12817):haxe.macro.Ref<haxe.macro.ClassType>]
+				[Meta:haxe.macro.Ref<haxe.macro.ClassType>]
+					:ast(switch (superClass) {
+	case TInst(clsRef, _):
+		clsRef;	
+	case _:
+		return false;	
+})
+					[If:haxe.macro.Ref<haxe.macro.ClassType>]
+						[Binop:Bool]
+							[EnumIndex:Int] [Local superClass(12810):haxe.macro.Type:haxe.macro.Type]
+							==
+							[Const:Int] 2
+						[Then:haxe.macro.Ref<haxe.macro.ClassType>] [Block:haxe.macro.Ref<haxe.macro.ClassType>]
+							[Var `(12814):haxe.macro.Ref<haxe.macro.ClassType>]
+								[EnumParameter:haxe.macro.Ref<haxe.macro.ClassType>]
+									[Local superClass(12810):haxe.macro.Type:haxe.macro.Type]
+									TInst
+									0
+							[Var `(12815):Array<haxe.macro.Type>]
+								[EnumParameter:Array<haxe.macro.Type>]
+									[Local superClass(12810):haxe.macro.Type:haxe.macro.Type]
+									TInst
+									1
+							[Block:haxe.macro.Ref<haxe.macro.ClassType>]
+								[Var clsRef(12816):haxe.macro.Ref<haxe.macro.ClassType>] [Local `(12814):haxe.macro.Ref<haxe.macro.ClassType>:haxe.macro.Ref<haxe.macro.ClassType>]
+								[Block:haxe.macro.Ref<haxe.macro.ClassType>] [Local clsRef(12816):haxe.macro.Ref<haxe.macro.ClassType>:haxe.macro.Ref<haxe.macro.ClassType>]
+						[Else:haxe.macro.Ref<haxe.macro.ClassType>] [Block:haxe.macro.Ref<haxe.macro.ClassType>] [Return:haxe.macro.Ref<haxe.macro.ClassType>] [Const:Bool] false
+			[Return:Dynamic]
+				[Meta:Bool]
+					:ast(switch (t) {
+	case TInst(clsRef, _):
+		{
+			var c = clsRef.get();
+			if (c.superClass != null) {
+				ModuleTypeHelper.equals(TClassDecl(c.superClass.t), TClassDecl(superClassType));
+			} else {
+				false;
+			};
+		};	
+	case _:
+		false;	
+})
+					[If:Bool]
+						[Binop:Bool]
+							[EnumIndex:Int] [Local t(12809):haxe.macro.Type:haxe.macro.Type]
+							==
+							[Const:Int] 2
+						[Then:Bool] [Block:Bool]
+							[Var `(12822):haxe.macro.Ref<haxe.macro.ClassType>]
+								[EnumParameter:haxe.macro.Ref<haxe.macro.ClassType>]
+									[Local t(12809):haxe.macro.Type:haxe.macro.Type]
+									TInst
+									0
+							[Var `(12823):Array<haxe.macro.Type>]
+								[EnumParameter:Array<haxe.macro.Type>]
+									[Local t(12809):haxe.macro.Type:haxe.macro.Type]
+									TInst
+									1
+							[Block:Bool]
+								[Var clsRef(12824):haxe.macro.Ref<haxe.macro.ClassType>] [Local `(12822):haxe.macro.Ref<haxe.macro.ClassType>:haxe.macro.Ref<haxe.macro.ClassType>]
+								[Block:Bool]
+									[Block:Bool]
+										[Var c(12825):haxe.macro.ClassType]
+											[Call:haxe.macro.ClassType]
+												[Field:() -> haxe.macro.ClassType]
+													[Local clsRef(12824):haxe.macro.Ref<haxe.macro.ClassType>:haxe.macro.Ref<haxe.macro.ClassType>]
+													[FAnon:() -> haxe.macro.ClassType] get:() -> haxe.macro.ClassType
+										[If:Bool]
+											[Binop:Bool]
+												[Field:Null<{ t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type> }>]
+													[Local c(12825):haxe.macro.ClassType:haxe.macro.ClassType]
+													[FAnon:Null<{ t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type> }>] superClass:Null<{ t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type> }>
+												!=
+												[Const:Null<{ t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type> }>] null
+											[Then:Bool] [Block:Bool]
+												[Call:Bool]
+													[Field:(type : Null<haxe.macro.ModuleType>, other : Null<haxe.macro.ModuleType>) -> Bool]
+														[TypeExpr reflaxe.helpers.ModuleTypeHelper:Class<reflaxe.helpers.ModuleTypeHelper>]
+														[FStatic:(type : Null<haxe.macro.ModuleType>, other : Null<haxe.macro.ModuleType>) -> Bool]
+															reflaxe.helpers.ModuleTypeHelper
+															equals:(type : Null<haxe.macro.ModuleType>, other : Null<haxe.macro.ModuleType>) -> Bool
+													[Call:haxe.macro.ModuleType]
+														[Field:(c : haxe.macro.Ref<haxe.macro.ClassType>) -> haxe.macro.ModuleType]
+															[TypeExpr haxe.macro.ModuleType:Enum<haxe.macro.ModuleType>]
+															[FEnum:(c : haxe.macro.Ref<haxe.macro.ClassType>) -> haxe.macro.ModuleType]
+																haxe.macro.ModuleType
+																TClassDecl
+														[Field:haxe.macro.Ref<haxe.macro.ClassType>]
+															[Field:Null<{ t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type> }>]
+																[Local c(12825):haxe.macro.ClassType:haxe.macro.ClassType]
+																[FAnon:Null<{ t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type> }>] superClass:Null<{ t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type> }>
+															[FAnon:haxe.macro.Ref<haxe.macro.ClassType>] t:haxe.macro.Ref<haxe.macro.ClassType>
+													[Call:haxe.macro.ModuleType]
+														[Field:(c : haxe.macro.Ref<haxe.macro.ClassType>) -> haxe.macro.ModuleType]
+															[TypeExpr haxe.macro.ModuleType:Enum<haxe.macro.ModuleType>]
+															[FEnum:(c : haxe.macro.Ref<haxe.macro.ClassType>) -> haxe.macro.ModuleType]
+																haxe.macro.ModuleType
+																TClassDecl
+														[Local superClassType(12817):haxe.macro.Ref<haxe.macro.ClassType>:haxe.macro.Ref<haxe.macro.ClassType>]
+											[Else:Bool] [Block:Bool] [Const:Bool] false
+						[Else:Bool] [Block:Bool] [Const:Bool] false
+
+	public static function implementsType[Function:(t : haxe.macro.Type, interfaceType : haxe.macro.Type) -> Bool]
+		[Arg:haxe.macro.Type] [Local t(12826):haxe.macro.Type]
+		[Arg:haxe.macro.Type] [Local interfaceType(12827):haxe.macro.Type]
+		[Block:Dynamic]
+			[Var interfaceClassType(12834):haxe.macro.Ref<haxe.macro.ClassType>]
+				[Meta:haxe.macro.Ref<haxe.macro.ClassType>]
+					:ast(switch (interfaceType) {
+	case TInst(clsRef, _):
+		clsRef;	
+	case _:
+		return false;	
+})
+					[If:haxe.macro.Ref<haxe.macro.ClassType>]
+						[Binop:Bool]
+							[EnumIndex:Int] [Local interfaceType(12827):haxe.macro.Type:haxe.macro.Type]
+							==
+							[Const:Int] 2
+						[Then:haxe.macro.Ref<haxe.macro.ClassType>] [Block:haxe.macro.Ref<haxe.macro.ClassType>]
+							[Var `(12831):haxe.macro.Ref<haxe.macro.ClassType>]
+								[EnumParameter:haxe.macro.Ref<haxe.macro.ClassType>]
+									[Local interfaceType(12827):haxe.macro.Type:haxe.macro.Type]
+									TInst
+									0
+							[Var `(12832):Array<haxe.macro.Type>]
+								[EnumParameter:Array<haxe.macro.Type>]
+									[Local interfaceType(12827):haxe.macro.Type:haxe.macro.Type]
+									TInst
+									1
+							[Block:haxe.macro.Ref<haxe.macro.ClassType>]
+								[Var clsRef(12833):haxe.macro.Ref<haxe.macro.ClassType>] [Local `(12831):haxe.macro.Ref<haxe.macro.ClassType>:haxe.macro.Ref<haxe.macro.ClassType>]
+								[Block:haxe.macro.Ref<haxe.macro.ClassType>] [Local clsRef(12833):haxe.macro.Ref<haxe.macro.ClassType>:haxe.macro.Ref<haxe.macro.ClassType>]
+						[Else:haxe.macro.Ref<haxe.macro.ClassType>] [Block:haxe.macro.Ref<haxe.macro.ClassType>] [Return:haxe.macro.Ref<haxe.macro.ClassType>] [Const:Bool] false
+			[If:Void]
+				[Unop:Bool]
+					!
+					Prefix
+					[Field:Bool]
+						[Call:haxe.macro.ClassType]
+							[Field:() -> haxe.macro.ClassType]
+								[Local interfaceClassType(12834):haxe.macro.Ref<haxe.macro.ClassType>:haxe.macro.Ref<haxe.macro.ClassType>]
+								[FAnon:() -> haxe.macro.ClassType] get:() -> haxe.macro.ClassType
+						[FAnon:Bool] isInterface:Bool
+				[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [Const:Bool] false
+			[Return:Dynamic]
+				[Meta:Bool]
+					:ast(switch (t) {
+	case TInst(clsRef, _):
+		{
+			var c = clsRef.get();
+			var result = false;
+			for (int  in  c.interfaces) {
+				if (ModuleTypeHelper.equals(TClassDecl(int.t), TClassDecl(interfaceClassType))) {
+					result = true;
+					break;
+				};
+			};
+			result;
+		};	
+	case _:
+		false;	
+})
+					[If:Bool]
+						[Binop:Bool]
+							[EnumIndex:Int] [Local t(12826):haxe.macro.Type:haxe.macro.Type]
+							==
+							[Const:Int] 2
+						[Then:Bool] [Block:Bool]
+							[Var `(12843):haxe.macro.Ref<haxe.macro.ClassType>]
+								[EnumParameter:haxe.macro.Ref<haxe.macro.ClassType>]
+									[Local t(12826):haxe.macro.Type:haxe.macro.Type]
+									TInst
+									0
+							[Var `(12844):Array<haxe.macro.Type>]
+								[EnumParameter:Array<haxe.macro.Type>]
+									[Local t(12826):haxe.macro.Type:haxe.macro.Type]
+									TInst
+									1
+							[Block:Bool]
+								[Var clsRef(12845):haxe.macro.Ref<haxe.macro.ClassType>] [Local `(12843):haxe.macro.Ref<haxe.macro.ClassType>:haxe.macro.Ref<haxe.macro.ClassType>]
+								[Block:Bool]
+									[Block:Bool]
+										[Var c(12846):haxe.macro.ClassType]
+											[Call:haxe.macro.ClassType]
+												[Field:() -> haxe.macro.ClassType]
+													[Local clsRef(12845):haxe.macro.Ref<haxe.macro.ClassType>:haxe.macro.Ref<haxe.macro.ClassType>]
+													[FAnon:() -> haxe.macro.ClassType] get:() -> haxe.macro.ClassType
+										[Var result(12847):Bool] [Const:Bool] false
+										[Block:Void]
+											[Var `(12848):Int] [Const:Int] 0
+											[Var `(12849):Array<{ t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type> }>]
+												[Field:Array<{ t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type> }>]
+													[Local c(12846):haxe.macro.ClassType:haxe.macro.ClassType]
+													[FAnon:Array<{ t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type> }>] interfaces:Array<{ t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type> }>
+											[While:Void]
+												[Binop:Bool]
+													[Local `(12848):Int:Int]
+													<
+													[Field:Int]
+														[Local `(12849):Array<{ t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type> }>:Array<{ t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type> }>]
+														[FInstance:Int]
+															Array<{ t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type> }>
+															length:Int
+												[Block:Void]
+													[Var int(12850):{ t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type> }]
+														[Array:{ t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type> }]
+															[Local `(12849):Array<{ t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type> }>:Array<{ t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type> }>]
+															[Local `(12848):Int:Int]
+													[Unop:Int]
+														++
+														Prefix
+														[Local `(12848):Int:Int]
+													[If:Void]
+														[Call:Bool]
+															[Field:(type : Null<haxe.macro.ModuleType>, other : Null<haxe.macro.ModuleType>) -> Bool]
+																[TypeExpr reflaxe.helpers.ModuleTypeHelper:Class<reflaxe.helpers.ModuleTypeHelper>]
+																[FStatic:(type : Null<haxe.macro.ModuleType>, other : Null<haxe.macro.ModuleType>) -> Bool]
+																	reflaxe.helpers.ModuleTypeHelper
+																	equals:(type : Null<haxe.macro.ModuleType>, other : Null<haxe.macro.ModuleType>) -> Bool
+															[Call:haxe.macro.ModuleType]
+																[Field:(c : haxe.macro.Ref<haxe.macro.ClassType>) -> haxe.macro.ModuleType]
+																	[TypeExpr haxe.macro.ModuleType:Enum<haxe.macro.ModuleType>]
+																	[FEnum:(c : haxe.macro.Ref<haxe.macro.ClassType>) -> haxe.macro.ModuleType]
+																		haxe.macro.ModuleType
+																		TClassDecl
+																[Field:haxe.macro.Ref<haxe.macro.ClassType>]
+																	[Local int(12850):{ t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type> }:{ t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type> }]
+																	[FAnon:haxe.macro.Ref<haxe.macro.ClassType>] t:haxe.macro.Ref<haxe.macro.ClassType>
+															[Call:haxe.macro.ModuleType]
+																[Field:(c : haxe.macro.Ref<haxe.macro.ClassType>) -> haxe.macro.ModuleType]
+																	[TypeExpr haxe.macro.ModuleType:Enum<haxe.macro.ModuleType>]
+																	[FEnum:(c : haxe.macro.Ref<haxe.macro.ClassType>) -> haxe.macro.ModuleType]
+																		haxe.macro.ModuleType
+																		TClassDecl
+																[Local interfaceClassType(12834):haxe.macro.Ref<haxe.macro.ClassType>:haxe.macro.Ref<haxe.macro.ClassType>]
+														[Then:Dynamic] [Block:Dynamic]
+															[Binop:Bool]
+																[Local result(12847):Bool:Bool]
+																=
+																[Const:Bool] true
+															[Break:Dynamic]
+										[Local result(12847):Bool:Bool]
+						[Else:Bool] [Block:Bool] [Const:Bool] false
+
+	public static function getUnderlyingType[Function:(t : haxe.macro.Type) -> Null<haxe.macro.Type>]
+		[Arg:haxe.macro.Type] [Local t(12851):haxe.macro.Type]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Meta:Null<haxe.macro.Type>]
+					:ast(switch (t) {
+	case TType(_.get() => defType, params):
+		{
+			TypeTools.applyTypeParameters(defType.type, defType.params, params);
+		};	
+	case TAbstract(_.get() => absType, params):
+		{
+			TypeTools.applyTypeParameters(absType.type, absType.params, params);
+		};	
+	case _:
+		null;	
+})
+					[Switch:Null<haxe.macro.Type>]
+						[EnumIndex:Int] [Local t(12851):haxe.macro.Type:haxe.macro.Type]
+						[Case:haxe.macro.Type]
+							[Const:Int] 3
+							[Block:haxe.macro.Type]
+								[Var `(12864):haxe.macro.Ref<haxe.macro.DefType>]
+									[EnumParameter:haxe.macro.Ref<haxe.macro.DefType>]
+										[Local t(12851):haxe.macro.Type:haxe.macro.Type]
+										TType
+										0
+								[Var `(12865):Array<haxe.macro.Type>]
+									[EnumParameter:Array<haxe.macro.Type>]
+										[Local t(12851):haxe.macro.Type:haxe.macro.Type]
+										TType
+										1
+								[Block:haxe.macro.Type]
+									[Var _hx_tmp(12866):haxe.macro.DefType]
+									[Block:haxe.macro.Type]
+										[Var defType(12867):haxe.macro.DefType]
+											[Parenthesis:haxe.macro.DefType]
+												[Binop:haxe.macro.DefType]
+													[Local _hx_tmp(12866):haxe.macro.DefType:haxe.macro.DefType]
+													=
+													[Call:haxe.macro.DefType]
+														[Field:() -> haxe.macro.DefType]
+															[Local `(12864):haxe.macro.Ref<haxe.macro.DefType>:haxe.macro.Ref<haxe.macro.DefType>]
+															[FAnon:() -> haxe.macro.DefType] get:() -> haxe.macro.DefType
+										[Var params(12868):Array<haxe.macro.Type>] [Local `(12865):Array<haxe.macro.Type>:Array<haxe.macro.Type>]
+										[Block:haxe.macro.Type]
+											[Block:haxe.macro.Type]
+												[Call:haxe.macro.Type]
+													[Field:(t : haxe.macro.Type, typeParameters : Array<haxe.macro.TypeParameter>, concreteTypes : Array<haxe.macro.Type>) -> haxe.macro.Type]
+														[TypeExpr haxe.macro.TypeTools:Class<haxe.macro.TypeTools>]
+														[FStatic:(t : haxe.macro.Type, typeParameters : Array<haxe.macro.TypeParameter>, concreteTypes : Array<haxe.macro.Type>) -> haxe.macro.Type]
+															haxe.macro.TypeTools
+															applyTypeParameters:(t : haxe.macro.Type, typeParameters : Array<haxe.macro.TypeParameter>, concreteTypes : Array<haxe.macro.Type>) -> haxe.macro.Type
+													[Field:haxe.macro.Type]
+														[Local defType(12867):haxe.macro.DefType:haxe.macro.DefType]
+														[FAnon:haxe.macro.Type] type:haxe.macro.Type
+													[Field:Array<haxe.macro.TypeParameter>]
+														[Local defType(12867):haxe.macro.DefType:haxe.macro.DefType]
+														[FAnon:Array<haxe.macro.TypeParameter>] params:Array<haxe.macro.TypeParameter>
+													[Local params(12868):Array<haxe.macro.Type>:Array<haxe.macro.Type>]
+						[Case:haxe.macro.Type]
+							[Const:Int] 8
+							[Block:haxe.macro.Type]
+								[Var `(12869):haxe.macro.Ref<haxe.macro.AbstractType>]
+									[EnumParameter:haxe.macro.Ref<haxe.macro.AbstractType>]
+										[Local t(12851):haxe.macro.Type:haxe.macro.Type]
+										TAbstract
+										0
+								[Var `(12870):Array<haxe.macro.Type>]
+									[EnumParameter:Array<haxe.macro.Type>]
+										[Local t(12851):haxe.macro.Type:haxe.macro.Type]
+										TAbstract
+										1
+								[Block:haxe.macro.Type]
+									[Var _hx_tmp(12871):haxe.macro.AbstractType]
+									[Block:haxe.macro.Type]
+										[Var absType(12872):haxe.macro.AbstractType]
+											[Parenthesis:haxe.macro.AbstractType]
+												[Binop:haxe.macro.AbstractType]
+													[Local _hx_tmp(12871):haxe.macro.AbstractType:haxe.macro.AbstractType]
+													=
+													[Call:haxe.macro.AbstractType]
+														[Field:() -> haxe.macro.AbstractType]
+															[Local `(12869):haxe.macro.Ref<haxe.macro.AbstractType>:haxe.macro.Ref<haxe.macro.AbstractType>]
+															[FAnon:() -> haxe.macro.AbstractType] get:() -> haxe.macro.AbstractType
+										[Var params(12873):Array<haxe.macro.Type>] [Local `(12870):Array<haxe.macro.Type>:Array<haxe.macro.Type>]
+										[Block:haxe.macro.Type]
+											[Block:haxe.macro.Type]
+												[Call:haxe.macro.Type]
+													[Field:(t : haxe.macro.Type, typeParameters : Array<haxe.macro.TypeParameter>, concreteTypes : Array<haxe.macro.Type>) -> haxe.macro.Type]
+														[TypeExpr haxe.macro.TypeTools:Class<haxe.macro.TypeTools>]
+														[FStatic:(t : haxe.macro.Type, typeParameters : Array<haxe.macro.TypeParameter>, concreteTypes : Array<haxe.macro.Type>) -> haxe.macro.Type]
+															haxe.macro.TypeTools
+															applyTypeParameters:(t : haxe.macro.Type, typeParameters : Array<haxe.macro.TypeParameter>, concreteTypes : Array<haxe.macro.Type>) -> haxe.macro.Type
+													[Field:haxe.macro.Type]
+														[Local absType(12872):haxe.macro.AbstractType:haxe.macro.AbstractType]
+														[FAnon:haxe.macro.Type] type:haxe.macro.Type
+													[Field:Array<haxe.macro.TypeParameter>]
+														[Local absType(12872):haxe.macro.AbstractType:haxe.macro.AbstractType]
+														[FAnon:Array<haxe.macro.TypeParameter>] params:Array<haxe.macro.TypeParameter>
+													[Local params(12873):Array<haxe.macro.Type>:Array<haxe.macro.Type>]
+						[Default:Null<haxe.macro.Type>] [Block:Null<haxe.macro.Type>] [Const:Null<haxe.macro.Type>] null
+}

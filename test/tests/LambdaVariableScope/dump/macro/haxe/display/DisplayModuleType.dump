@@ -1,0 +1,1 @@
+typedef haxe.display.DisplayModuleType = { pos : haxe.display.JsonPos, path : haxe.display.JsonTypePath, params : Array<haxe.display.DisplayModuleTypeParameter>, meta : haxe.display.JsonMetadata, kind : haxe.display.DisplayModuleTypeKind, isPrivate : Bool, isFinal : Bool, isExtern : Bool, isAbstract : Bool, doc : haxe.display.JsonDoc }

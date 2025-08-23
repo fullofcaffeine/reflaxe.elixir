@@ -1,0 +1,1 @@
+typedef haxe.display.Diagnostic<T> = { severity : haxe.display.DiagnosticSeverity, relatedInformation : Array<haxe.display.DiagnosticRelatedInformation>, range : haxe.display.Range, kind : haxe.display.DiagnosticKind<haxe.display.Diagnostic.T>, args : haxe.display.Diagnostic.T }

@@ -1,0 +1,1 @@
+typedef haxe.display.HoverResult = haxe.display.Response<Null<haxe.display.HoverDisplayItemOccurence<Dynamic>>>

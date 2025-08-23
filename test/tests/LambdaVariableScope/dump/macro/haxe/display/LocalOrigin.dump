@@ -1,0 +1,2 @@
+@:enum
+abstract haxe.display.LocalOrigin {}

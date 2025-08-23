@@ -1,0 +1,1 @@
+typedef haxe.display.JsonDoc = Null<String>

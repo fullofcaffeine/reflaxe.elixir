@@ -1,0 +1,1 @@
+typedef haxe.macro.ExceptionsConfig = { wildcardCatch : haxe.macro.TypePath, nativeThrows : Array<haxe.macro.TypePath>, nativeCatches : Array<haxe.macro.TypePath>, baseThrow : haxe.macro.TypePath, avoidWrapping : Bool }

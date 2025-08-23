@@ -1,0 +1,12 @@
+@:enum
+private class reflaxe.config._Meta.Meta_Impl_ {
+
+	@:value(cast ":reassignOnSubfieldEdit") @:impl @:enum
+	public static inline var ReassignOnSubfieldEdit:reflaxe.config.Meta = [Cast:reflaxe.config.Meta] [Const:String] ":reassignOnSubfieldEdit";
+
+	@:value(cast ":avoidTemporaries") @:impl @:enum
+	public static inline var AvoidTemporaries:reflaxe.config.Meta = [Cast:reflaxe.config.Meta] [Const:String] ":avoidTemporaries";
+
+	@:value(cast ":copyValue") @:impl @:enum
+	public static inline var CopyValue:reflaxe.config.Meta = [Cast:reflaxe.config.Meta] [Const:String] ":copyValue";
+}

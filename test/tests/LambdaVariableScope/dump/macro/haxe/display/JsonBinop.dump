@@ -1,0 +1,1 @@
+typedef haxe.display.JsonBinop<T> = { kind : haxe.display.JsonBinopKind<haxe.display.JsonBinop.T>, args : haxe.display.JsonBinop.T }

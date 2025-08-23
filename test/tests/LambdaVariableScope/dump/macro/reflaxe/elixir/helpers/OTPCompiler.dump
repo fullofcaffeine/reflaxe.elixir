@@ -1,0 +1,2834 @@
+class reflaxe.elixir.helpers.OTPCompiler {
+
+	public static function isGenServerClass[Function:(className : String) -> Bool]
+		[Arg:String] [Local className(16976):String]
+		[Block:Dynamic]
+			[If:Void]
+				[Binop:Bool]
+					[Binop:Bool]
+						[Local className(16976):String:String]
+						==
+						[Const:String] null
+					||
+					[Binop:Bool]
+						[Local className(16976):String:String]
+						==
+						[Const:String] ""
+				[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [Const:Bool] false
+			[Return:Dynamic]
+				[Binop:Bool]
+					[Binop:Bool]
+						[Binop:Bool]
+							[Call:Int]
+								[Field:(str : String, ?startIndex : Null<Int>) -> Int]
+									[Local className(16976):String:String]
+									[FInstance:(str : String, ?startIndex : Null<Int>) -> Int]
+										String
+										indexOf:(str : String, ?startIndex : Null<Int>) -> Int
+								[Const:String] "Server"
+								[Const:Null<Int>] null
+							!=
+							[Const:Int] -1
+						||
+						[Binop:Bool]
+							[Call:Int]
+								[Field:(str : String, ?startIndex : Null<Int>) -> Int]
+									[Local className(16976):String:String]
+									[FInstance:(str : String, ?startIndex : Null<Int>) -> Int]
+										String
+										indexOf:(str : String, ?startIndex : Null<Int>) -> Int
+								[Const:String] "GenServer"
+								[Const:Null<Int>] null
+							!=
+							[Const:Int] -1
+					||
+					[Binop:Bool]
+						[Call:Int]
+							[Field:(str : String, ?startIndex : Null<Int>) -> Int]
+								[Local className(16976):String:String]
+								[FInstance:(str : String, ?startIndex : Null<Int>) -> Int]
+									String
+									indexOf:(str : String, ?startIndex : Null<Int>) -> Int
+							[Const:String] "Worker"
+							[Const:Null<Int>] null
+						!=
+						[Const:Int] -1
+
+	public static function isGenServerClassType[Function:(classType : Dynamic) -> Bool]
+		[Arg:Dynamic] [Local classType(15080):Dynamic]
+		[Block:Dynamic] [Return:Dynamic] [Const:Bool] true
+
+	public static function getGenServerConfig[Function:(classType : Dynamic) -> Dynamic]
+		[Arg:Dynamic] [Local classType(15085):Dynamic]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[ObjectDecl:{ timeout : Int, name : String }]
+					name: [Const:String] "default_server"
+					timeout: [Const:Int] 5000
+
+	public static function compileInitCallback[Function:(className : String, initialState : String) -> String]
+		[Arg:String] [Local className(16977):String]
+		[Arg:String] [Local initialState(16978):String]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Binop:String]
+					[Binop:String]
+						[Const:String] "def init(_init_arg) do\n"
+						+
+						[Binop:String]
+							[Binop:String]
+								[Const:String] "    {:ok, "
+								+
+								[Local initialState(16978):String:String]
+							+
+							[Const:String] "}\n"
+					+
+					[Const:String] "  end"
+
+	public static function compileHandleCall[Function:(methodName : String, returnType : String) -> String]
+		[Arg:String] [Local methodName(16979):String]
+		[Arg:String] [Local returnType(16980):String]
+		[Block:Dynamic]
+			[Var atomicName(16981):String]
+				[Call:String]
+					[Field:(input : String) -> String]
+						[TypeExpr reflaxe.elixir.helpers.OTPCompiler:Class<reflaxe.elixir.helpers.OTPCompiler>]
+						[FStatic:(input : String) -> String]
+							reflaxe.elixir.helpers.OTPCompiler
+							camelCaseToAtomCase:(input : String) -> String
+					[Local methodName(16979):String:String]
+			[Var stateAccess(16982):String]
+				[Meta:String]
+					:ast(switch (methodName) {
+	case "getCount":
+		"state.count";	
+	case "getState":
+		"state";	
+	default:
+		"state.${atomicName.split(\"_\").join(\"\").toLowerCase()}";	
+})
+					[Switch:String]
+						[Local methodName(16979):String:String]
+						[Case:String]
+							[Const:String] "getCount"
+							[Block:String] [Block:String] [Const:String] "state.count"
+						[Case:String]
+							[Const:String] "getState"
+							[Block:String] [Block:String] [Const:String] "state"
+						[Default:String]
+							[Block:String]
+								[Binop:String]
+									[Const:String] "state."
+									+
+									[Call:String]
+										[Field:() -> String]
+											[Call:String]
+												[Field:(sep : String) -> String]
+													[Call:Array<String>]
+														[Field:(delimiter : String) -> Array<String>]
+															[Local atomicName(16981):String:String]
+															[FInstance:(delimiter : String) -> Array<String>]
+																String
+																split:(delimiter : String) -> Array<String>
+														[Const:String] "_"
+													[FInstance:(sep : String) -> String]
+														Array<String>
+														join:(sep : String) -> String
+												[Const:String] ""
+											[FInstance:() -> String]
+												String
+												toLowerCase:() -> String
+			[Return:Dynamic]
+				[Binop:String]
+					[Binop:String]
+						[Binop:String]
+							[Binop:String]
+								[Const:String] "def handle_call({:"
+								+
+								[Local atomicName(16981):String:String]
+							+
+							[Const:String] "}, _from, state) do\n"
+						+
+						[Binop:String]
+							[Binop:String]
+								[Const:String] "    {:reply, "
+								+
+								[Local stateAccess(16982):String:String]
+							+
+							[Const:String] ", state}\n"
+					+
+					[Const:String] "  end"
+
+	public static function compileHandleCast[Function:(methodName : String, stateModification : String) -> String]
+		[Arg:String] [Local methodName(16983):String]
+		[Arg:String] [Local stateModification(16984):String]
+		[Block:Dynamic]
+			[Var atomicName(16985):String]
+				[Call:String]
+					[Field:(input : String) -> String]
+						[TypeExpr reflaxe.elixir.helpers.OTPCompiler:Class<reflaxe.elixir.helpers.OTPCompiler>]
+						[FStatic:(input : String) -> String]
+							reflaxe.elixir.helpers.OTPCompiler
+							camelCaseToAtomCase:(input : String) -> String
+					[Local methodName(16983):String:String]
+			[Return:Dynamic]
+				[Binop:String]
+					[Binop:String]
+						[Binop:String]
+							[Binop:String]
+								[Binop:String]
+									[Const:String] "def handle_cast({:"
+									+
+									[Local atomicName(16985):String:String]
+								+
+								[Const:String] "}, state) do\n"
+							+
+							[Binop:String]
+								[Binop:String]
+									[Const:String] "    new_state = "
+									+
+									[Local stateModification(16984):String:String]
+								+
+								[Const:String] "\n"
+						+
+						[Const:String] "    {:noreply, new_state}\n"
+					+
+					[Const:String] "  end"
+
+	public static function generateGenServerModule[Function:(className : String) -> String]
+		[Arg:String] [Local className(16986):String]
+		[Block:Dynamic]
+			[Var moduleName(16987):String] [Local className(16986):String:String]
+			[Return:Dynamic]
+				[Binop:String]
+					[Binop:String]
+						[Binop:String]
+							[Binop:String]
+								[Binop:String]
+									[Binop:String]
+										[Binop:String]
+											[Binop:String]
+												[Binop:String]
+													[Binop:String]
+														[Binop:String]
+															[Binop:String]
+																[Binop:String]
+																	[Binop:String]
+																		[Binop:String]
+																			[Binop:String]
+																				[Binop:String]
+																					[Binop:String]
+																						[Binop:String]
+																							[Binop:String]
+																								[Binop:String]
+																									[Binop:String]
+																										[Binop:String]
+																											[Binop:String]
+																												[Binop:String]
+																													[Binop:String]
+																														[Binop:String]
+																															[Binop:String]
+																																[Binop:String]
+																																	[Binop:String]
+																																		[Binop:String]
+																																			[Binop:String]
+																																				[Binop:String]
+																																					[Binop:String]
+																																						[Binop:String]
+																																							[Binop:String]
+																																								[Binop:String]
+																																									[Binop:String]
+																																										[Binop:String]
+																																											[Binop:String]
+																																												[Const:String] "defmodule "
+																																												+
+																																												[Local moduleName(16987):String:String]
+																																											+
+																																											[Const:String] " do\n"
+																																										+
+																																										[Const:String] "  @moduledoc \"\"\"\n"
+																																									+
+																																									[Binop:String]
+																																										[Binop:String]
+																																											[Const:String] "  Generated GenServer from Haxe @:genserver class: "
+																																											+
+																																											[Local className(16986):String:String]
+																																										+
+																																										[Const:String] "\n"
+																																								+
+																																								[Const:String] "  \n"
+																																							+
+																																							[Const:String] "  Provides type-safe concurrent programming with the BEAM actor model.\n"
+																																						+
+																																						[Const:String] "  This module was automatically generated from a Haxe source file\n"
+																																					+
+																																					[Const:String] "  as part of the Reflaxe.Elixir compilation pipeline.\n"
+																																				+
+																																				[Const:String] "  \"\"\"\n"
+																																			+
+																																			[Const:String] "  \n"
+																																		+
+																																		[Const:String] "  use GenServer\n"
+																																	+
+																																	[Const:String] "  \n"
+																																+
+																																[Const:String] "  @doc \"\"\"\n"
+																															+
+																															[Const:String] "  Start the GenServer and link it to the current process\n"
+																														+
+																														[Const:String] "  \"\"\"\n"
+																													+
+																													[Const:String] "  def start_link(init_arg) do\n"
+																												+
+																												[Const:String] "    GenServer.start_link(__MODULE__, init_arg)\n"
+																											+
+																											[Const:String] "  end\n"
+																										+
+																										[Const:String] "  \n"
+																									+
+																									[Const:String] "  @doc \"\"\"\n"
+																								+
+																								[Const:String] "  Initialize GenServer state\n"
+																							+
+																							[Const:String] "  \"\"\"\n"
+																						+
+																						[Const:String] "  def init(_init_arg) do\n"
+																					+
+																					[Const:String] "    {:ok, %{}}\n"
+																				+
+																				[Const:String] "  end\n"
+																			+
+																			[Const:String] "  \n"
+																		+
+																		[Const:String] "  @doc \"\"\"\n"
+																	+
+																	[Const:String] "  Handle synchronous calls\n"
+																+
+																[Const:String] "  \"\"\"\n"
+															+
+															[Const:String] "  def handle_call(request, _from, state) do\n"
+														+
+														[Const:String] "    {:reply, :ok, state}\n"
+													+
+													[Const:String] "  end\n"
+												+
+												[Const:String] "  \n"
+											+
+											[Const:String] "  @doc \"\"\"\n"
+										+
+										[Const:String] "  Handle asynchronous casts\n"
+									+
+									[Const:String] "  \"\"\"\n"
+								+
+								[Const:String] "  def handle_cast(msg, state) do\n"
+							+
+							[Const:String] "    {:noreply, state}\n"
+						+
+						[Const:String] "  end\n"
+					+
+					[Const:String] "end"
+
+	public static function compileStateInitialization[Function:(stateType : String, initialValue : String) -> String]
+		[Arg:String] [Local stateType(16988):String]
+		[Arg:String] [Local initialValue(16989):String]
+		[Block:Dynamic]
+			[Var safeValue(16990):String] [Local initialValue(16989):String:String]
+			[If:Void]
+				[Binop:Bool]
+					[Local safeValue(16990):String:String]
+					!=
+					[Const:String] null
+				[Then:String] [Block:String]
+					[Binop:String]
+						[Local safeValue(16990):String:String]
+						=
+						[Call:String]
+							[Field:(sep : String) -> String]
+								[Call:Array<String>]
+									[Field:(delimiter : String) -> Array<String>]
+										[Local safeValue(16990):String:String]
+										[FInstance:(delimiter : String) -> Array<String>]
+											String
+											split:(delimiter : String) -> Array<String>
+									[Const:String] "System."
+								[FInstance:(sep : String) -> String]
+									Array<String>
+									join:(sep : String) -> String
+							[Const:String] ""
+					[Binop:String]
+						[Local safeValue(16990):String:String]
+						=
+						[Call:String]
+							[Field:(sep : String) -> String]
+								[Call:Array<String>]
+									[Field:(delimiter : String) -> Array<String>]
+										[Local safeValue(16990):String:String]
+										[FInstance:(delimiter : String) -> Array<String>]
+											String
+											split:(delimiter : String) -> Array<String>
+									[Const:String] "File."
+								[FInstance:(sep : String) -> String]
+									Array<String>
+									join:(sep : String) -> String
+							[Const:String] ""
+					[Binop:String]
+						[Local safeValue(16990):String:String]
+						=
+						[Call:String]
+							[Field:(sep : String) -> String]
+								[Call:Array<String>]
+									[Field:(delimiter : String) -> Array<String>]
+										[Local safeValue(16990):String:String]
+										[FInstance:(delimiter : String) -> Array<String>]
+											String
+											split:(delimiter : String) -> Array<String>
+									[Const:String] "Process."
+								[FInstance:(sep : String) -> String]
+									Array<String>
+									join:(sep : String) -> String
+							[Const:String] ""
+					[Binop:String]
+						[Local safeValue(16990):String:String]
+						=
+						[Call:String]
+							[Field:(sep : String) -> String]
+								[Call:Array<String>]
+									[Field:(delimiter : String) -> Array<String>]
+										[Local safeValue(16990):String:String]
+										[FInstance:(delimiter : String) -> Array<String>]
+											String
+											split:(delimiter : String) -> Array<String>
+									[Const:String] "Code."
+								[FInstance:(sep : String) -> String]
+									Array<String>
+									join:(sep : String) -> String
+							[Const:String] ""
+					[Binop:String]
+						[Local safeValue(16990):String:String]
+						=
+						[Call:String]
+							[Field:(sep : String) -> String]
+								[Call:Array<String>]
+									[Field:(delimiter : String) -> Array<String>]
+										[Local safeValue(16990):String:String]
+										[FInstance:(delimiter : String) -> Array<String>]
+											String
+											split:(delimiter : String) -> Array<String>
+									[Const:String] "eval("
+								[FInstance:(sep : String) -> String]
+									Array<String>
+									join:(sep : String) -> String
+							[Const:String] ""
+			[Return:Dynamic]
+				[Binop:String]
+					[Binop:String]
+						[Const:String] "{:ok, "
+						+
+						[Local safeValue(16990):String:String]
+					+
+					[Const:String] "}"
+
+	public static function compileMessagePattern[Function:(messageName : String, messageArgs : Array<String>) -> String]
+		[Arg:String] [Local messageName(16991):String]
+		[Arg:Array<String>] [Local messageArgs(16992):Array<String>]
+		[Block:Void]
+			[Var atomicName(16993):String]
+				[Call:String]
+					[Field:(input : String) -> String]
+						[TypeExpr reflaxe.elixir.helpers.OTPCompiler:Class<reflaxe.elixir.helpers.OTPCompiler>]
+						[FStatic:(input : String) -> String]
+							reflaxe.elixir.helpers.OTPCompiler
+							camelCaseToAtomCase:(input : String) -> String
+					[Local messageName(16991):String:String]
+			[If:Void]
+				[Binop:Bool]
+					[Field:Int]
+						[Local messageArgs(16992):Array<String>:Array<String>]
+						[FInstance:Int]
+							Array<String>
+							length:Int
+					==
+					[Const:Int] 0
+				[Then:Dynamic] [Block:Dynamic]
+					[Return:Dynamic]
+						[Binop:String]
+							[Const:String] ":"
+							+
+							[Local atomicName(16993):String:String]
+				[Else:Void] [Block:Void]
+					[If:Void]
+						[Binop:Bool]
+							[Field:Int]
+								[Local messageArgs(16992):Array<String>:Array<String>]
+								[FInstance:Int]
+									Array<String>
+									length:Int
+							==
+							[Const:Int] 1
+						[Then:Dynamic] [Block:Dynamic]
+							[Return:Dynamic]
+								[Binop:String]
+									[Binop:String]
+										[Binop:String]
+											[Binop:String]
+												[Const:String] "{:"
+												+
+												[Local atomicName(16993):String:String]
+											+
+											[Const:String] ", "
+										+
+										[Array:String]
+											[Local messageArgs(16992):Array<String>:Array<String>]
+											[Const:Int] 0
+									+
+									[Const:String] "}"
+						[Else:Dynamic] [Block:Dynamic]
+							[Return:Dynamic]
+								[Binop:String]
+									[Binop:String]
+										[Binop:String]
+											[Binop:String]
+												[Const:String] "{:"
+												+
+												[Local atomicName(16993):String:String]
+											+
+											[Const:String] ", "
+										+
+										[Call:String]
+											[Field:(sep : String) -> String]
+												[Local messageArgs(16992):Array<String>:Array<String>]
+												[FInstance:(sep : String) -> String]
+													Array<String>
+													join:(sep : String) -> String
+											[Const:String] ", "
+									+
+									[Const:String] "}"
+
+	public static function compileFullGenServer[Function:(genServerData : Dynamic) -> String]
+		[Arg:Dynamic] [Local genServerData(15087):Dynamic]
+		[Block:Dynamic]
+			[If:Void]
+				[Binop:Bool]
+					[Local genServerData(15087):Dynamic:Dynamic]
+					==
+					[Const:Dynamic] null
+				[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [Const:String] "defmodule NullGenServer do\n  use GenServer\nend"
+			[Var className(15088):String]
+				[If:String]
+					[Binop:Bool]
+						[Field:Dynamic]
+							[Local genServerData(15087):Dynamic:Dynamic]
+							[FDynamic:Dynamic] className
+						!=
+						[Const:Dynamic] null
+					[Then:Dynamic] [Block:Dynamic]
+						[Field:Dynamic]
+							[Local genServerData(15087):Dynamic:Dynamic]
+							[FDynamic:Dynamic] className
+					[Else:String] [Block:String] [Const:String] "DefaultGenServer"
+			[Var initialState(15089):String]
+				[If:String]
+					[Binop:Bool]
+						[Field:Dynamic]
+							[Local genServerData(15087):Dynamic:Dynamic]
+							[FDynamic:Dynamic] initialState
+						!=
+						[Const:Dynamic] null
+					[Then:Dynamic] [Block:Dynamic]
+						[Field:Dynamic]
+							[Local genServerData(15087):Dynamic:Dynamic]
+							[FDynamic:Dynamic] initialState
+					[Else:String] [Block:String] [Const:String] "%{}"
+			[Var callMethods(15090):Null<Array<Dynamic>>]
+				[Field:Dynamic]
+					[Local genServerData(15087):Dynamic:Dynamic]
+					[FDynamic:Dynamic] callMethods
+			[Var castMethods(15091):Null<Array<Dynamic>>]
+				[Field:Dynamic]
+					[Local genServerData(15087):Dynamic:Dynamic]
+					[FDynamic:Dynamic] castMethods
+			[Var moduleName(15092):String] [Local className(15088):String:String]
+			[Var result(15093):StringBuf] [New:StringBuf] StringBuf
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(15093):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Binop:String]
+					[Binop:String]
+						[Const:String] "defmodule "
+						+
+						[Local moduleName(15092):String:String]
+					+
+					[Const:String] " do\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(15093):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "  @moduledoc \"\"\"\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(15093):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Binop:String]
+					[Binop:String]
+						[Const:String] "  Generated GenServer for "
+						+
+						[Local moduleName(15092):String:String]
+					+
+					[Const:String] "\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(15093):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "  \n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(15093):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "  Provides type-safe concurrent programming with the BEAM actor model\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(15093):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "  following OTP GenServer patterns with compile-time validation.\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(15093):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "  \"\"\"\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(15093):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "  \n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(15093):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "  use GenServer\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(15093):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "  \n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(15093):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "  @doc \"\"\"\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(15093):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "  Start the GenServer - integrates with supervision trees\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(15093):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "  \"\"\"\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(15093):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "  def start_link(init_arg) do\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(15093):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "    GenServer.start_link(__MODULE__, init_arg)\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(15093):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "  end\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(15093):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "  \n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(15093):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "  @doc \"\"\"\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(15093):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "  Initialize GenServer state\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(15093):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "  \"\"\"\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(15093):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "  def init(_init_arg) do\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(15093):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Binop:String]
+					[Binop:String]
+						[Const:String] "    {:ok, "
+						+
+						[Local initialState(15089):String:String]
+					+
+					[Const:String] "}\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(15093):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "  end\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(15093):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "  \n"
+			[If:Void]
+				[Binop:Bool]
+					[Local callMethods(15090):Null<Array<Dynamic>>:Null<Array<Dynamic>>]
+					!=
+					[Const:Null<Array<Dynamic>>] null
+				[Then:Void] [Block:Void]
+					[Block:Void]
+						[Var `(15104):Int] [Const:Int] 0
+						[Var `(15105):Array<Dynamic>] [Parenthesis:Array<Dynamic>] [Cast:Array<Dynamic>] [Local callMethods(15090):Null<Array<Dynamic>>:Null<Array<Dynamic>>]
+						[While:Void]
+							[Binop:Bool]
+								[Local `(15104):Int:Int]
+								<
+								[Field:Int]
+									[Local `(15105):Array<Dynamic>:Array<Dynamic>]
+									[FInstance:Int]
+										Array<Dynamic>
+										length:Int
+							[Block:Void]
+								[Var method(15094):Dynamic]
+									[Array:Dynamic]
+										[Local `(15105):Array<Dynamic>:Array<Dynamic>]
+										[Local `(15104):Int:Int]
+								[Unop:Int]
+									++
+									Prefix
+									[Local `(15104):Int:Int]
+								[Var methodName(15095):String]
+									[If:String]
+										[Binop:Bool]
+											[Binop:Bool]
+												[Local method(15094):Dynamic:Dynamic]
+												!=
+												[Const:Dynamic] null
+											&&
+											[Binop:Bool]
+												[Field:Dynamic]
+													[Local method(15094):Dynamic:Dynamic]
+													[FDynamic:Dynamic] name
+												!=
+												[Const:Dynamic] null
+										[Then:Dynamic] [Block:Dynamic]
+											[Field:Dynamic]
+												[Local method(15094):Dynamic:Dynamic]
+												[FDynamic:Dynamic] name
+										[Else:String] [Block:String] [Const:String] "default_method"
+								[Var atomicName(15102):String]
+									[Call:String]
+										[Field:(input : String) -> String]
+											[TypeExpr reflaxe.elixir.helpers.OTPCompiler:Class<reflaxe.elixir.helpers.OTPCompiler>]
+											[FStatic:(input : String) -> String]
+												reflaxe.elixir.helpers.OTPCompiler
+												camelCaseToAtomCase:(input : String) -> String
+										[Local methodName(15095):String:String]
+								[Var stateAccess(15103):String]
+									[Meta:String]
+										:ast(switch (methodName) {
+	case "get_count":
+		"state.count";	
+	case "get_state":
+		"state";	
+	default:
+		"state.value";	
+})
+										[Switch:String]
+											[Local methodName(15095):String:String]
+											[Case:String]
+												[Const:String] "get_count"
+												[Block:String] [Block:String] [Const:String] "state.count"
+											[Case:String]
+												[Const:String] "get_state"
+												[Block:String] [Block:String] [Const:String] "state"
+											[Default:String] [Block:String] [Const:String] "state.value"
+								[Call:Void]
+									[Field:(x : String) -> Void]
+										[Local result(15093):StringBuf:StringBuf]
+										[FInstance:(x : String) -> Void]
+											StringBuf
+											add:(x : add.T) -> Void
+									[Const:String] "  @doc \"\"\"\n"
+								[Call:Void]
+									[Field:(x : String) -> Void]
+										[Local result(15093):StringBuf:StringBuf]
+										[FInstance:(x : String) -> Void]
+											StringBuf
+											add:(x : add.T) -> Void
+									[Binop:String]
+										[Binop:String]
+											[Const:String] "  Handle synchronous call: "
+											+
+											[Local methodName(15095):String:String]
+										+
+										[Const:String] "\n"
+								[Call:Void]
+									[Field:(x : String) -> Void]
+										[Local result(15093):StringBuf:StringBuf]
+										[FInstance:(x : String) -> Void]
+											StringBuf
+											add:(x : add.T) -> Void
+									[Const:String] "  \"\"\"\n"
+								[Call:Void]
+									[Field:(x : String) -> Void]
+										[Local result(15093):StringBuf:StringBuf]
+										[FInstance:(x : String) -> Void]
+											StringBuf
+											add:(x : add.T) -> Void
+									[Binop:String]
+										[Binop:String]
+											[Const:String] "  def handle_call({:"
+											+
+											[Local atomicName(15102):String:String]
+										+
+										[Const:String] "}, _from, state) do\n"
+								[Call:Void]
+									[Field:(x : String) -> Void]
+										[Local result(15093):StringBuf:StringBuf]
+										[FInstance:(x : String) -> Void]
+											StringBuf
+											add:(x : add.T) -> Void
+									[Binop:String]
+										[Binop:String]
+											[Const:String] "    {:reply, "
+											+
+											[Local stateAccess(15103):String:String]
+										+
+										[Const:String] ", state}\n"
+								[Call:Void]
+									[Field:(x : String) -> Void]
+										[Local result(15093):StringBuf:StringBuf]
+										[FInstance:(x : String) -> Void]
+											StringBuf
+											add:(x : add.T) -> Void
+									[Const:String] "  end\n"
+								[Call:Void]
+									[Field:(x : String) -> Void]
+										[Local result(15093):StringBuf:StringBuf]
+										[FInstance:(x : String) -> Void]
+											StringBuf
+											add:(x : add.T) -> Void
+									[Const:String] "  \n"
+			[If:Void]
+				[Binop:Bool]
+					[Local castMethods(15091):Null<Array<Dynamic>>:Null<Array<Dynamic>>]
+					!=
+					[Const:Null<Array<Dynamic>>] null
+				[Then:Void] [Block:Void]
+					[Block:Void]
+						[Var `(15109):Int] [Const:Int] 0
+						[Var `(15110):Array<Dynamic>] [Parenthesis:Array<Dynamic>] [Cast:Array<Dynamic>] [Local castMethods(15091):Null<Array<Dynamic>>:Null<Array<Dynamic>>]
+						[While:Void]
+							[Binop:Bool]
+								[Local `(15109):Int:Int]
+								<
+								[Field:Int]
+									[Local `(15110):Array<Dynamic>:Array<Dynamic>]
+									[FInstance:Int]
+										Array<Dynamic>
+										length:Int
+							[Block:Void]
+								[Var method(15106):Dynamic]
+									[Array:Dynamic]
+										[Local `(15110):Array<Dynamic>:Array<Dynamic>]
+										[Local `(15109):Int:Int]
+								[Unop:Int]
+									++
+									Prefix
+									[Local `(15109):Int:Int]
+								[Var methodName(15107):String]
+									[If:String]
+										[Binop:Bool]
+											[Binop:Bool]
+												[Local method(15106):Dynamic:Dynamic]
+												!=
+												[Const:Dynamic] null
+											&&
+											[Binop:Bool]
+												[Field:Dynamic]
+													[Local method(15106):Dynamic:Dynamic]
+													[FDynamic:Dynamic] name
+												!=
+												[Const:Dynamic] null
+										[Then:Dynamic] [Block:Dynamic]
+											[Field:Dynamic]
+												[Local method(15106):Dynamic:Dynamic]
+												[FDynamic:Dynamic] name
+										[Else:String] [Block:String] [Const:String] "default_cast"
+								[Var atomicName(15108):String]
+									[Call:String]
+										[Field:(input : String) -> String]
+											[TypeExpr reflaxe.elixir.helpers.OTPCompiler:Class<reflaxe.elixir.helpers.OTPCompiler>]
+											[FStatic:(input : String) -> String]
+												reflaxe.elixir.helpers.OTPCompiler
+												camelCaseToAtomCase:(input : String) -> String
+										[Local methodName(15107):String:String]
+								[Call:Void]
+									[Field:(x : String) -> Void]
+										[Local result(15093):StringBuf:StringBuf]
+										[FInstance:(x : String) -> Void]
+											StringBuf
+											add:(x : add.T) -> Void
+									[Const:String] "  @doc \"\"\"\n"
+								[Call:Void]
+									[Field:(x : String) -> Void]
+										[Local result(15093):StringBuf:StringBuf]
+										[FInstance:(x : String) -> Void]
+											StringBuf
+											add:(x : add.T) -> Void
+									[Binop:String]
+										[Binop:String]
+											[Const:String] "  Handle asynchronous cast: "
+											+
+											[Local methodName(15107):String:String]
+										+
+										[Const:String] "\n"
+								[Call:Void]
+									[Field:(x : String) -> Void]
+										[Local result(15093):StringBuf:StringBuf]
+										[FInstance:(x : String) -> Void]
+											StringBuf
+											add:(x : add.T) -> Void
+									[Const:String] "  \"\"\"\n"
+								[Call:Void]
+									[Field:(x : String) -> Void]
+										[Local result(15093):StringBuf:StringBuf]
+										[FInstance:(x : String) -> Void]
+											StringBuf
+											add:(x : add.T) -> Void
+									[Binop:String]
+										[Binop:String]
+											[Const:String] "  def handle_cast({:"
+											+
+											[Local atomicName(15108):String:String]
+										+
+										[Const:String] "}, state) do\n"
+								[Call:Void]
+									[Field:(x : String) -> Void]
+										[Local result(15093):StringBuf:StringBuf]
+										[FInstance:(x : String) -> Void]
+											StringBuf
+											add:(x : add.T) -> Void
+									[Binop:String]
+										[Binop:String]
+											[Const:String] "    new_state = %{state | value: "
+											+
+											[If:String]
+												[Binop:Bool]
+													[Binop:Bool]
+														[Local method(15106):Dynamic:Dynamic]
+														!=
+														[Const:Dynamic] null
+													&&
+													[Binop:Bool]
+														[Field:Dynamic]
+															[Local method(15106):Dynamic:Dynamic]
+															[FDynamic:Dynamic] modifies
+														!=
+														[Const:Dynamic] null
+												[Then:Dynamic] [Block:Dynamic]
+													[Field:Dynamic]
+														[Local method(15106):Dynamic:Dynamic]
+														[FDynamic:Dynamic] modifies
+												[Else:String] [Block:String] [Const:String] "nil"
+										+
+										[Const:String] "}\n"
+								[Call:Void]
+									[Field:(x : String) -> Void]
+										[Local result(15093):StringBuf:StringBuf]
+										[FInstance:(x : String) -> Void]
+											StringBuf
+											add:(x : add.T) -> Void
+									[Const:String] "    {:noreply, new_state}\n"
+								[Call:Void]
+									[Field:(x : String) -> Void]
+										[Local result(15093):StringBuf:StringBuf]
+										[FInstance:(x : String) -> Void]
+											StringBuf
+											add:(x : add.T) -> Void
+									[Const:String] "  end\n"
+								[Call:Void]
+									[Field:(x : String) -> Void]
+										[Local result(15093):StringBuf:StringBuf]
+										[FInstance:(x : String) -> Void]
+											StringBuf
+											add:(x : add.T) -> Void
+									[Const:String] "  \n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(15093):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "end"
+			[Return:Dynamic]
+				[Call:String]
+					[Field:() -> String]
+						[Local result(15093):StringBuf:StringBuf]
+						[FInstance:() -> String]
+							StringBuf
+							toString:() -> String
+
+	public static function generateChildSpec[Function:(genServerName : String) -> String]
+		[Arg:String] [Local genServerName(16994):String]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Binop:String]
+					[Binop:String]
+						[Const:String] "{"
+						+
+						[Local genServerName(16994):String:String]
+					+
+					[Const:String] ", []}"
+
+	public static function generateClientAPI[Function:(genServerName : String, methods : Array<Dynamic>) -> String]
+		[Arg:String] [Local genServerName(16995):String]
+		[Arg:Array<Dynamic>] [Local methods(16996):Array<Dynamic>]
+		[Block:Dynamic]
+			[Var result(16997):StringBuf] [New:StringBuf] StringBuf
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(16997):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "  # Client API\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(16997):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "  \n"
+			[Block:Void]
+				[Var `(17001):Int] [Const:Int] 0
+				[While:Void]
+					[Binop:Bool]
+						[Local `(17001):Int:Int]
+						<
+						[Field:Int]
+							[Local methods(16996):Array<Dynamic>:Array<Dynamic>]
+							[FInstance:Int]
+								Array<Dynamic>
+								length:Int
+					[Block:Void]
+						[Var method(16998):Dynamic]
+							[Array:Dynamic]
+								[Local methods(16996):Array<Dynamic>:Array<Dynamic>]
+								[Local `(17001):Int:Int]
+						[Unop:Int]
+							++
+							Prefix
+							[Local `(17001):Int:Int]
+						[Var methodName(16999):String]
+							[Field:Dynamic]
+								[Local method(16998):Dynamic:Dynamic]
+								[FDynamic:Dynamic] name
+						[Var isAsync(17000):Bool]
+							[Binop:Bool]
+								[Field:Dynamic]
+									[Local method(16998):Dynamic:Dynamic]
+									[FDynamic:Dynamic] async
+								==
+								[Const:Bool] true
+						[Call:Void]
+							[Field:(x : String) -> Void]
+								[Local result(16997):StringBuf:StringBuf]
+								[FInstance:(x : String) -> Void]
+									StringBuf
+									add:(x : add.T) -> Void
+							[Const:String] "  @doc \"\"\"\n"
+						[Call:Void]
+							[Field:(x : String) -> Void]
+								[Local result(16997):StringBuf:StringBuf]
+								[FInstance:(x : String) -> Void]
+									StringBuf
+									add:(x : add.T) -> Void
+							[Binop:String]
+								[Binop:String]
+									[Const:String] "  Client API for "
+									+
+									[Local methodName(16999):String:String]
+								+
+								[Const:String] "\n"
+						[Call:Void]
+							[Field:(x : String) -> Void]
+								[Local result(16997):StringBuf:StringBuf]
+								[FInstance:(x : String) -> Void]
+									StringBuf
+									add:(x : add.T) -> Void
+							[Const:String] "  \"\"\"\n"
+						[Call:Void]
+							[Field:(x : String) -> Void]
+								[Local result(16997):StringBuf:StringBuf]
+								[FInstance:(x : String) -> Void]
+									StringBuf
+									add:(x : add.T) -> Void
+							[Binop:String]
+								[Binop:String]
+									[Const:String] "  def "
+									+
+									[Local methodName(16999):String:String]
+								+
+								[Const:String] "(pid) do\n"
+						[If:Void]
+							[Local isAsync(17000):Bool:Bool]
+							[Then:Void] [Block:Void]
+								[Call:Void]
+									[Field:(x : String) -> Void]
+										[Local result(16997):StringBuf:StringBuf]
+										[FInstance:(x : String) -> Void]
+											StringBuf
+											add:(x : add.T) -> Void
+									[Binop:String]
+										[Binop:String]
+											[Const:String] "    GenServer.cast(pid, {:"
+											+
+											[Call:String]
+												[Field:(input : String) -> String]
+													[TypeExpr reflaxe.elixir.helpers.OTPCompiler:Class<reflaxe.elixir.helpers.OTPCompiler>]
+													[FStatic:(input : String) -> String]
+														reflaxe.elixir.helpers.OTPCompiler
+														camelCaseToAtomCase:(input : String) -> String
+												[Local methodName(16999):String:String]
+										+
+										[Const:String] "})\n"
+							[Else:Void] [Block:Void]
+								[Call:Void]
+									[Field:(x : String) -> Void]
+										[Local result(16997):StringBuf:StringBuf]
+										[FInstance:(x : String) -> Void]
+											StringBuf
+											add:(x : add.T) -> Void
+									[Binop:String]
+										[Binop:String]
+											[Const:String] "    GenServer.call(pid, {:"
+											+
+											[Call:String]
+												[Field:(input : String) -> String]
+													[TypeExpr reflaxe.elixir.helpers.OTPCompiler:Class<reflaxe.elixir.helpers.OTPCompiler>]
+													[FStatic:(input : String) -> String]
+														reflaxe.elixir.helpers.OTPCompiler
+														camelCaseToAtomCase:(input : String) -> String
+												[Local methodName(16999):String:String]
+										+
+										[Const:String] "})\n"
+						[Call:Void]
+							[Field:(x : String) -> Void]
+								[Local result(16997):StringBuf:StringBuf]
+								[FInstance:(x : String) -> Void]
+									StringBuf
+									add:(x : add.T) -> Void
+							[Const:String] "  end\n"
+						[Call:Void]
+							[Field:(x : String) -> Void]
+								[Local result(16997):StringBuf:StringBuf]
+								[FInstance:(x : String) -> Void]
+									StringBuf
+									add:(x : add.T) -> Void
+							[Const:String] "  \n"
+			[Return:Dynamic]
+				[Call:String]
+					[Field:() -> String]
+						[Local result(16997):StringBuf:StringBuf]
+						[FInstance:() -> String]
+							StringBuf
+							toString:() -> String
+
+	public static function camelCaseToAtomCase[Function:(input : String) -> String]
+		[Arg:String] [Local input(15096):String]
+		[Block:Dynamic]
+			[If:Void]
+				[Binop:Bool]
+					[Binop:Bool]
+						[Local input(15096):String:String]
+						==
+						[Const:String] null
+					||
+					[Binop:Bool]
+						[Local input(15096):String:String]
+						==
+						[Const:String] ""
+				[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [Const:String] "default_atom"
+			[Var result(15097):String] [Const:String] ""
+			[Block:Void]
+				[Var `(15100):Int] [Const:Int] 0
+				[Var `(15101):Int]
+					[Field:Int]
+						[Local input(15096):String:String]
+						[FInstance:Int]
+							String
+							length:Int
+				[While:Void]
+					[Binop:Bool]
+						[Local `(15100):Int:Int]
+						<
+						[Local `(15101):Int:Int]
+					[Block:String]
+						[Var i(15098):Int]
+							[Unop:Int]
+								++
+								Postfix
+								[Local `(15100):Int:Int]
+						[Var char(15099):String]
+							[Call:String]
+								[Field:(index : Int) -> String]
+									[Local input(15096):String:String]
+									[FInstance:(index : Int) -> String]
+										String
+										charAt:(index : Int) -> String
+								[Local i(15098):Int:Int]
+						[If:Void]
+							[Binop:Bool]
+								[Binop:Bool]
+									[Binop:Bool]
+										[Local i(15098):Int:Int]
+										>
+										[Const:Int] 0
+									&&
+									[Binop:Bool]
+										[Local char(15099):String:String]
+										>=
+										[Const:String] "A"
+								&&
+								[Binop:Bool]
+									[Local char(15099):String:String]
+									<=
+									[Const:String] "Z"
+							[Then:String] [Block:String]
+								[Binop:String]
+									[Local result(15097):String:String]
+									+=
+									[Const:String] "_"
+						[Binop:String]
+							[Local result(15097):String:String]
+							+=
+							[Call:String]
+								[Field:() -> String]
+									[Local char(15099):String:String]
+									[FInstance:() -> String]
+										String
+										toLowerCase:() -> String
+			[Return:Dynamic] [Local result(15097):String:String]
+
+	public static function generateTimeoutHandling[Function:(timeout : Int) -> String]
+		[Arg:Int] [Local timeout(17002):Int]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Binop:String]
+					[Binop:String]
+						[Binop:String]
+							[Const:String] "def handle_info(:timeout, state) do\n"
+							+
+							[Binop:String]
+								[Binop:String]
+									[Const:String] "    # Handle timeout after "
+									+
+									[Local timeout(17002):Int:Int]
+								+
+								[Const:String] "ms\n"
+						+
+						[Const:String] "    {:noreply, state}\n"
+					+
+					[Const:String] "  end"
+
+	public static function generateHandleInfo[Function:() -> String]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Binop:String]
+					[Binop:String]
+						[Binop:String]
+							[Const:String] "def handle_info(msg, state) do\n"
+							+
+							[Const:String] "    # Handle unexpected messages\n"
+						+
+						[Const:String] "    {:noreply, state}\n"
+					+
+					[Const:String] "  end"
+
+	public static function generateTypedMessageProtocol[Function:(serverName : String, messageTypes : Array<Dynamic>) -> String]
+		[Arg:String] [Local serverName(17003):String]
+		[Arg:Array<Dynamic>] [Local messageTypes(17004):Array<Dynamic>]
+		[Block:Dynamic]
+			[Var result(17005):StringBuf] [New:StringBuf] StringBuf
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(17005):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Binop:String]
+					[Binop:String]
+						[Const:String] "defmodule "
+						+
+						[Local serverName(17003):String:String]
+					+
+					[Const:String] ".Protocol do\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(17005):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "  @moduledoc \"\"\"\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(17005):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Binop:String]
+					[Binop:String]
+						[Const:String] "  Type specifications for "
+						+
+						[Local serverName(17003):String:String]
+					+
+					[Const:String] " messages\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(17005):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "  Provides compile-time message validation\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(17005):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "  \"\"\"\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(17005):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "  \n"
+			[Block:Void]
+				[Var `(17014):Int] [Const:Int] 0
+				[While:Void]
+					[Binop:Bool]
+						[Local `(17014):Int:Int]
+						<
+						[Field:Int]
+							[Local messageTypes(17004):Array<Dynamic>:Array<Dynamic>]
+							[FInstance:Int]
+								Array<Dynamic>
+								length:Int
+					[Block:Void]
+						[Var msgType(17006):Dynamic]
+							[Array:Dynamic]
+								[Local messageTypes(17004):Array<Dynamic>:Array<Dynamic>]
+								[Local `(17014):Int:Int]
+						[Unop:Int]
+							++
+							Prefix
+							[Local `(17014):Int:Int]
+						[Var messageName(17007):String]
+							[Field:Dynamic]
+								[Local msgType(17006):Dynamic:Dynamic]
+								[FDynamic:Dynamic] name
+						[Var params(17008):Array<String>]
+							[Field:Dynamic]
+								[Local msgType(17006):Dynamic:Dynamic]
+								[FDynamic:Dynamic] params
+						[Var returns(17009):Unknown<68>]
+							[Field:Dynamic]
+								[Local msgType(17006):Dynamic:Dynamic]
+								[FDynamic:Dynamic] returns
+						[If:Void]
+							[Binop:Bool]
+								[Field:Int]
+									[Local params(17008):Array<String>:Array<String>]
+									[FAnon:Int] length:Int
+								==
+								[Const:Int] 0
+							[Then:Void] [Block:Void]
+								[Call:Void]
+									[Field:(x : String) -> Void]
+										[Local result(17005):StringBuf:StringBuf]
+										[FInstance:(x : String) -> Void]
+											StringBuf
+											add:(x : add.T) -> Void
+									[Binop:String]
+										[Binop:String]
+											[Binop:String]
+												[Binop:String]
+													[Const:String] "  @type "
+													+
+													[Local messageName(17007):String:String]
+												+
+												[Const:String] "_message() :: {:"
+											+
+											[Call:String]
+												[Field:(input : String) -> String]
+													[TypeExpr reflaxe.elixir.helpers.OTPCompiler:Class<reflaxe.elixir.helpers.OTPCompiler>]
+													[FStatic:(input : String) -> String]
+														reflaxe.elixir.helpers.OTPCompiler
+														camelCaseToAtomCase:(input : String) -> String
+												[Local messageName(17007):String:String]
+										+
+										[Const:String] "}\n"
+							[Else:Void] [Block:Void]
+								[Var paramTypes(17010):Array<String>] [ArrayDecl:Array<String>]
+								[Block:Void]
+									[Var `(17012):Int] [Const:Int] 0
+									[Var `(17013):Array<String>] [Parenthesis:Array<String>] [Cast:Array<String>] [Local params(17008):Array<String>:Array<String>]
+									[While:Void]
+										[Binop:Bool]
+											[Local `(17012):Int:Int]
+											<
+											[Field:Int]
+												[Local `(17013):Array<String>:Array<String>]
+												[FInstance:Int]
+													Array<String>
+													length:Int
+										[Block:Void]
+											[Var param(17011):String]
+												[Array:String]
+													[Local `(17013):Array<String>:Array<String>]
+													[Local `(17012):Int:Int]
+											[Unop:Int]
+												++
+												Prefix
+												[Local `(17012):Int:Int]
+											[Meta:Void]
+												:ast(switch (param) {
+	case "Int":
+		paramTypes.push("integer()");	
+	case "String":
+		paramTypes.push("String.t()");	
+	case "Bool":
+		paramTypes.push("boolean()");	
+	default:
+		paramTypes.push("any()");	
+})
+												[Switch:Void]
+													[Local param(17011):String:String]
+													[Case:Int]
+														[Const:String] "Bool"
+														[Block:Int]
+															[Block:Int]
+																[Call:Int]
+																	[Field:(x : String) -> Int]
+																		[Local paramTypes(17010):Array<String>:Array<String>]
+																		[FInstance:(x : String) -> Int]
+																			Array<String>
+																			push:(x : Array.T) -> Int
+																	[Const:String] "boolean()"
+													[Case:Int]
+														[Const:String] "Int"
+														[Block:Int]
+															[Block:Int]
+																[Call:Int]
+																	[Field:(x : String) -> Int]
+																		[Local paramTypes(17010):Array<String>:Array<String>]
+																		[FInstance:(x : String) -> Int]
+																			Array<String>
+																			push:(x : Array.T) -> Int
+																	[Const:String] "integer()"
+													[Case:Int]
+														[Const:String] "String"
+														[Block:Int]
+															[Block:Int]
+																[Call:Int]
+																	[Field:(x : String) -> Int]
+																		[Local paramTypes(17010):Array<String>:Array<String>]
+																		[FInstance:(x : String) -> Int]
+																			Array<String>
+																			push:(x : Array.T) -> Int
+																	[Const:String] "String.t()"
+													[Default:Int]
+														[Block:Int]
+															[Call:Int]
+																[Field:(x : String) -> Int]
+																	[Local paramTypes(17010):Array<String>:Array<String>]
+																	[FInstance:(x : String) -> Int]
+																		Array<String>
+																		push:(x : Array.T) -> Int
+																[Const:String] "any()"
+								[Call:Void]
+									[Field:(x : String) -> Void]
+										[Local result(17005):StringBuf:StringBuf]
+										[FInstance:(x : String) -> Void]
+											StringBuf
+											add:(x : add.T) -> Void
+									[Binop:String]
+										[Binop:String]
+											[Binop:String]
+												[Binop:String]
+													[Binop:String]
+														[Binop:String]
+															[Binop:String]
+																[Binop:String]
+																	[Const:String] "  @type "
+																	+
+																	[Local messageName(17007):String:String]
+																+
+																[Const:String] "_message("
+															+
+															[Call:String]
+																[Field:(sep : String) -> String]
+																	[Local paramTypes(17010):Array<String>:Array<String>]
+																	[FInstance:(sep : String) -> String]
+																		Array<String>
+																		join:(sep : String) -> String
+																[Const:String] ", "
+														+
+														[Const:String] ") :: {:"
+													+
+													[Call:String]
+														[Field:(input : String) -> String]
+															[TypeExpr reflaxe.elixir.helpers.OTPCompiler:Class<reflaxe.elixir.helpers.OTPCompiler>]
+															[FStatic:(input : String) -> String]
+																reflaxe.elixir.helpers.OTPCompiler
+																camelCaseToAtomCase:(input : String) -> String
+														[Local messageName(17007):String:String]
+												+
+												[Const:String] ", "
+											+
+											[Call:String]
+												[Field:(sep : String) -> String]
+													[Local paramTypes(17010):Array<String>:Array<String>]
+													[FInstance:(sep : String) -> String]
+														Array<String>
+														join:(sep : String) -> String
+												[Const:String] ", "
+										+
+										[Const:String] "}\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(17005):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "end"
+			[Return:Dynamic]
+				[Call:String]
+					[Field:() -> String]
+						[Local result(17005):StringBuf:StringBuf]
+						[FInstance:() -> String]
+							StringBuf
+							toString:() -> String
+
+	public static function generateAdvancedChildSpec[Function:(genServerName : String, options : Dynamic) -> String]
+		[Arg:String] [Local genServerName(17015):String]
+		[Arg:Dynamic] [Local options(17016):Dynamic]
+		[Block:Dynamic]
+			[Var restart(17017):String]
+				[If:String]
+					[Binop:Bool]
+						[Field:Dynamic]
+							[Local options(17016):Dynamic:Dynamic]
+							[FDynamic:Dynamic] restart
+						!=
+						[Const:Dynamic] null
+					[Then:Dynamic] [Block:Dynamic]
+						[Field:Dynamic]
+							[Local options(17016):Dynamic:Dynamic]
+							[FDynamic:Dynamic] restart
+					[Else:String] [Block:String] [Const:String] "permanent"
+			[Var shutdown(17018):Int]
+				[If:Int]
+					[Binop:Bool]
+						[Field:Dynamic]
+							[Local options(17016):Dynamic:Dynamic]
+							[FDynamic:Dynamic] shutdown
+						!=
+						[Const:Dynamic] null
+					[Then:Dynamic] [Block:Dynamic]
+						[Field:Dynamic]
+							[Local options(17016):Dynamic:Dynamic]
+							[FDynamic:Dynamic] shutdown
+					[Else:Int] [Block:Int] [Const:Int] 5000
+			[Var type(17019):String]
+				[If:String]
+					[Binop:Bool]
+						[Field:Dynamic]
+							[Local options(17016):Dynamic:Dynamic]
+							[FDynamic:Dynamic] type
+						!=
+						[Const:Dynamic] null
+					[Then:Dynamic] [Block:Dynamic]
+						[Field:Dynamic]
+							[Local options(17016):Dynamic:Dynamic]
+							[FDynamic:Dynamic] type
+					[Else:String] [Block:String] [Const:String] "worker"
+			[Return:Dynamic]
+				[Binop:String]
+					[Binop:String]
+						[Binop:String]
+							[Binop:String]
+								[Binop:String]
+									[Binop:String]
+										[Binop:String]
+											[Binop:String]
+												[Const:String] "{"
+												+
+												[Local genServerName(17015):String:String]
+											+
+											[Const:String] ", [], restart: :"
+										+
+										[Local restart(17017):String:String]
+									+
+									[Const:String] ", shutdown: "
+								+
+								[Local shutdown(17018):Int:Int]
+							+
+							[Const:String] ", type: :"
+						+
+						[Local type(17019):String:String]
+					+
+					[Const:String] "}"
+
+	public static function compileGenServerWithTimeout[Function:(genServerData : Dynamic) -> String]
+		[Arg:Dynamic] [Local genServerData(17020):Dynamic]
+		[Block:Dynamic]
+			[Var baseModule(17021):String]
+				[Call:String]
+					[Field:(genServerData : Dynamic) -> String]
+						[TypeExpr reflaxe.elixir.helpers.OTPCompiler:Class<reflaxe.elixir.helpers.OTPCompiler>]
+						[FStatic:(genServerData : Dynamic) -> String]
+							reflaxe.elixir.helpers.OTPCompiler
+							compileFullGenServer:(genServerData : Dynamic) -> String
+					[Local genServerData(17020):Dynamic:Dynamic]
+			[Var timeout(17022):Int]
+				[If:Int]
+					[Binop:Bool]
+						[Field:Dynamic]
+							[Local genServerData(17020):Dynamic:Dynamic]
+							[FDynamic:Dynamic] timeout
+						!=
+						[Const:Dynamic] null
+					[Then:Dynamic] [Block:Dynamic]
+						[Field:Dynamic]
+							[Local genServerData(17020):Dynamic:Dynamic]
+							[FDynamic:Dynamic] timeout
+					[Else:Int] [Block:Int] [Const:Int] 5000
+			[Var hibernation(17023):Bool]
+				[Binop:Bool]
+					[Field:Dynamic]
+						[Local genServerData(17020):Dynamic:Dynamic]
+						[FDynamic:Dynamic] hibernation
+					==
+					[Const:Bool] true
+			[Var timeoutHandler(17024):String]
+				[Binop:String]
+					[Binop:String]
+						[Binop:String]
+							[Binop:String]
+								[Binop:String]
+									[Binop:String]
+										[Const:String] "\n  @doc \"\"\"\n"
+										+
+										[Const:String] "  Handle timeout messages\n"
+									+
+									[Const:String] "  \"\"\"\n"
+								+
+								[Const:String] "  def handle_info(:timeout, state) do\n"
+							+
+							[Binop:String]
+								[Binop:String]
+									[Const:String] "    # Handle timeout after "
+									+
+									[Local timeout(17022):Int:Int]
+								+
+								[Const:String] "ms\n"
+						+
+						[Const:String] "    {:noreply, state}\n"
+					+
+					[Const:String] "  end\n"
+			[Var result(17025):String]
+				[Call:String]
+					[Field:(startIndex : Int, ?endIndex : Null<Int>) -> String]
+						[Local baseModule(17021):String:String]
+						[FInstance:(startIndex : Int, ?endIndex : Null<Int>) -> String]
+							String
+							substring:(startIndex : Int, ?endIndex : Null<Int>) -> String
+					[Const:Int] 0
+					[Binop:Int]
+						[Field:Int]
+							[Local baseModule(17021):String:String]
+							[FInstance:Int]
+								String
+								length:Int
+						-
+						[Const:Int] 3
+			[Binop:String]
+				[Local result(17025):String:String]
+				+=
+				[Local timeoutHandler(17024):String:String]
+			[If:Void]
+				[Local hibernation(17023):Bool:Bool]
+				[Then:String] [Block:String]
+					[Binop:String]
+						[Local result(17025):String:String]
+						+=
+						[Const:String] "\n  # Hibernation support\n"
+					[Binop:String]
+						[Local result(17025):String:String]
+						+=
+						[Const:String] "  def handle_cast({:hibernate}, state) do\n"
+					[Binop:String]
+						[Local result(17025):String:String]
+						+=
+						[Const:String] "    {:noreply, state, :hibernate}\n"
+					[Binop:String]
+						[Local result(17025):String:String]
+						+=
+						[Const:String] "  end\n"
+			[Binop:String]
+				[Local result(17025):String:String]
+				+=
+				[Const:String] "end"
+			[Return:Dynamic] [Local result(17025):String:String]
+
+	public static function generateNamedGenServer[Function:(genServerData : Dynamic) -> String]
+		[Arg:Dynamic] [Local genServerData(17026):Dynamic]
+		[Block:Dynamic]
+			[Var className(17027):String]
+				[Field:Dynamic]
+					[Local genServerData(17026):Dynamic:Dynamic]
+					[FDynamic:Dynamic] className
+			[Var name(17028):String]
+				[Field:Dynamic]
+					[Local genServerData(17026):Dynamic:Dynamic]
+					[FDynamic:Dynamic] name
+			[Var global(17029):Bool]
+				[Binop:Bool]
+					[Field:Dynamic]
+						[Local genServerData(17026):Dynamic:Dynamic]
+						[FDynamic:Dynamic] globalRegistry
+					==
+					[Const:Bool] true
+			[Var registration(17030):String]
+				[If:String]
+					[Local global(17029):Bool:Bool]
+					[Then:String] [Block:String]
+						[Binop:String]
+							[Binop:String]
+								[Const:String] "{:global, :"
+								+
+								[Local name(17028):String:String]
+							+
+							[Const:String] "}"
+					[Else:String] [Block:String]
+						[Binop:String]
+							[Const:String] ":"
+							+
+							[Local name(17028):String:String]
+			[Return:Dynamic]
+				[Binop:String]
+					[Binop:String]
+						[Binop:String]
+							[Binop:String]
+								[Binop:String]
+									[Binop:String]
+										[Binop:String]
+											[Binop:String]
+												[Binop:String]
+													[Binop:String]
+														[Binop:String]
+															[Binop:String]
+																[Const:String] "defmodule "
+																+
+																[Local className(17027):String:String]
+															+
+															[Const:String] " do\n"
+														+
+														[Const:String] "  use GenServer\n"
+													+
+													[Const:String] "  \n"
+												+
+												[Const:String] "  def start_link(init_arg) do\n"
+											+
+											[Binop:String]
+												[Binop:String]
+													[Const:String] "    GenServer.start_link(__MODULE__, init_arg, name: "
+													+
+													[Local registration(17030):String:String]
+												+
+												[Const:String] ")\n"
+										+
+										[Const:String] "  end\n"
+									+
+									[Const:String] "  \n"
+								+
+								[Const:String] "  def init(_init_arg) do\n"
+							+
+							[Const:String] "    {:ok, %{}}\n"
+						+
+						[Const:String] "  end\n"
+					+
+					[Const:String] "end"
+
+	public static function generateTypedStateSpec[Function:(stateName : String, typedState : Dynamic) -> String]
+		[Arg:String] [Local stateName(17031):String]
+		[Arg:Dynamic] [Local typedState(17032):Dynamic]
+		[Block:Dynamic]
+			[Var fields(17033):Array<Dynamic>]
+				[Field:Dynamic]
+					[Local typedState(17032):Dynamic:Dynamic]
+					[FDynamic:Dynamic] fields
+			[Var result(17034):StringBuf] [New:StringBuf] StringBuf
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(17034):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Binop:String]
+					[Binop:String]
+						[Const:String] "defmodule "
+						+
+						[Local stateName(17031):String:String]
+					+
+					[Const:String] " do\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(17034):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "  @moduledoc \"\"\"\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(17034):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "  Typed state specification for GenServer\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(17034):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "  \"\"\"\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(17034):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "  \n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(17034):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "  defstruct ["
+			[Var fieldNames(17035):Array<String>] [ArrayDecl:Array<String>]
+			[Block:Void]
+				[Var `(17037):Int] [Const:Int] 0
+				[Var `(17038):Array<Dynamic>] [Parenthesis:Array<Dynamic>] [Cast:Array<Dynamic>] [Local fields(17033):Array<Dynamic>:Array<Dynamic>]
+				[While:Void]
+					[Binop:Bool]
+						[Local `(17037):Int:Int]
+						<
+						[Field:Int]
+							[Local `(17038):Array<Dynamic>:Array<Dynamic>]
+							[FInstance:Int]
+								Array<Dynamic>
+								length:Int
+					[Block:Void]
+						[Var field(17036):Dynamic]
+							[Array:Dynamic]
+								[Local `(17038):Array<Dynamic>:Array<Dynamic>]
+								[Local `(17037):Int:Int]
+						[Unop:Int]
+							++
+							Prefix
+							[Local `(17037):Int:Int]
+						[Call:Int]
+							[Field:(x : String) -> Int]
+								[Local fieldNames(17035):Array<String>:Array<String>]
+								[FInstance:(x : String) -> Int]
+									Array<String>
+									push:(x : Array.T) -> Int
+							[Binop:String]
+								[Binop:String]
+									[Const:String] ""
+									+
+									[Call:String]
+										[Field:(s : Dynamic) -> String]
+											[TypeExpr Std:Class<Std>]
+											[FStatic:(s : Dynamic) -> String]
+												Std
+												string:(s : Dynamic) -> String
+										[Field:Dynamic]
+											[Local field(17036):Dynamic:Dynamic]
+											[FDynamic:Dynamic] name
+								+
+								[Const:String] ": nil"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(17034):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Call:String]
+					[Field:(sep : String) -> String]
+						[Local fieldNames(17035):Array<String>:Array<String>]
+						[FInstance:(sep : String) -> String]
+							Array<String>
+							join:(sep : String) -> String
+					[Const:String] ", "
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(17034):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "]\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(17034):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "  \n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(17034):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "  @type t() :: %__MODULE__{\n"
+			[Var typeSpecs(17039):Array<String>] [ArrayDecl:Array<String>]
+			[Block:Void]
+				[Var `(17041):Int] [Const:Int] 0
+				[Var `(17042):Array<Dynamic>] [Parenthesis:Array<Dynamic>] [Cast:Array<Dynamic>] [Local fields(17033):Array<Dynamic>:Array<Dynamic>]
+				[While:Void]
+					[Binop:Bool]
+						[Local `(17041):Int:Int]
+						<
+						[Field:Int]
+							[Local `(17042):Array<Dynamic>:Array<Dynamic>]
+							[FInstance:Int]
+								Array<Dynamic>
+								length:Int
+					[Block:Void]
+						[Var field(17040):Dynamic]
+							[Array:Dynamic]
+								[Local `(17042):Array<Dynamic>:Array<Dynamic>]
+								[Local `(17041):Int:Int]
+						[Unop:Int]
+							++
+							Prefix
+							[Local `(17041):Int:Int]
+						[Call:Int]
+							[Field:(x : String) -> Int]
+								[Local typeSpecs(17039):Array<String>:Array<String>]
+								[FInstance:(x : String) -> Int]
+									Array<String>
+									push:(x : Array.T) -> Int
+							[Binop:String]
+								[Binop:String]
+									[Binop:String]
+										[Const:String] "    "
+										+
+										[Call:String]
+											[Field:(s : Dynamic) -> String]
+												[TypeExpr Std:Class<Std>]
+												[FStatic:(s : Dynamic) -> String]
+													Std
+													string:(s : Dynamic) -> String
+											[Field:Dynamic]
+												[Local field(17040):Dynamic:Dynamic]
+												[FDynamic:Dynamic] name
+									+
+									[Const:String] ": "
+								+
+								[Call:String]
+									[Field:(s : Dynamic) -> String]
+										[TypeExpr Std:Class<Std>]
+										[FStatic:(s : Dynamic) -> String]
+											Std
+											string:(s : Dynamic) -> String
+									[Field:Dynamic]
+										[Local field(17040):Dynamic:Dynamic]
+										[FDynamic:Dynamic] type
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(17034):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Call:String]
+					[Field:(sep : String) -> String]
+						[Local typeSpecs(17039):Array<String>:Array<String>]
+						[FInstance:(sep : String) -> String]
+							Array<String>
+							join:(sep : String) -> String
+					[Const:String] ",\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(17034):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "\n  }\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(17034):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "end"
+			[Return:Dynamic]
+				[Call:String]
+					[Field:() -> String]
+						[Local result(17034):StringBuf:StringBuf]
+						[FInstance:() -> String]
+							StringBuf
+							toString:() -> String
+
+	public static function generateErrorHandling[Function:(serverName : String, errorSpecs : Array<Dynamic>) -> String]
+		[Arg:String] [Local serverName(17043):String]
+		[Arg:Array<Dynamic>] [Local errorSpecs(17044):Array<Dynamic>]
+		[Block:Dynamic]
+			[Var result(17045):StringBuf] [New:StringBuf] StringBuf
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(17045):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "  # Error handling with pattern guards\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(17045):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "  def handle_call(request, _from, state) when is_integer(request) == false do\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(17045):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "    {:reply, {:error, :invalid_request}, state}\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(17045):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "  end\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(17045):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "  \n"
+			[Block:Void]
+				[Var `(17049):Int] [Const:Int] 0
+				[While:Void]
+					[Binop:Bool]
+						[Local `(17049):Int:Int]
+						<
+						[Field:Int]
+							[Local errorSpecs(17044):Array<Dynamic>:Array<Dynamic>]
+							[FInstance:Int]
+								Array<Dynamic>
+								length:Int
+					[Block:Void]
+						[Var errorSpec(17046):Dynamic]
+							[Array:Dynamic]
+								[Local errorSpecs(17044):Array<Dynamic>:Array<Dynamic>]
+								[Local `(17049):Int:Int]
+						[Unop:Int]
+							++
+							Prefix
+							[Local `(17049):Int:Int]
+						[Var error(17047):String]
+							[Field:Dynamic]
+								[Local errorSpec(17046):Dynamic:Dynamic]
+								[FDynamic:Dynamic] error
+						[Var recovery(17048):String]
+							[Field:Dynamic]
+								[Local errorSpec(17046):Dynamic:Dynamic]
+								[FDynamic:Dynamic] recovery
+						[Call:Void]
+							[Field:(x : String) -> Void]
+								[Local result(17045):StringBuf:StringBuf]
+								[FInstance:(x : String) -> Void]
+									StringBuf
+									add:(x : add.T) -> Void
+							[Binop:String]
+								[Binop:String]
+									[Const:String] "  def handle_info({:error, :"
+									+
+									[Local error(17047):String:String]
+								+
+								[Const:String] "}, state) do\n"
+						[Call:Void]
+							[Field:(x : String) -> Void]
+								[Local result(17045):StringBuf:StringBuf]
+								[FInstance:(x : String) -> Void]
+									StringBuf
+									add:(x : add.T) -> Void
+							[Binop:String]
+								[Binop:String]
+									[Const:String] "    # Recovery strategy: "
+									+
+									[Local recovery(17048):String:String]
+								+
+								[Const:String] "\n"
+						[Call:Void]
+							[Field:(x : String) -> Void]
+								[Local result(17045):StringBuf:StringBuf]
+								[FInstance:(x : String) -> Void]
+									StringBuf
+									add:(x : add.T) -> Void
+							[Binop:String]
+								[Binop:String]
+									[Const:String] "    new_state = recover_from_"
+									+
+									[Local error(17047):String:String]
+								+
+								[Const:String] "(state)\n"
+						[Call:Void]
+							[Field:(x : String) -> Void]
+								[Local result(17045):StringBuf:StringBuf]
+								[FInstance:(x : String) -> Void]
+									StringBuf
+									add:(x : add.T) -> Void
+							[Const:String] "    {:noreply, new_state}\n"
+						[Call:Void]
+							[Field:(x : String) -> Void]
+								[Local result(17045):StringBuf:StringBuf]
+								[FInstance:(x : String) -> Void]
+									StringBuf
+									add:(x : add.T) -> Void
+							[Const:String] "  end\n"
+						[Call:Void]
+							[Field:(x : String) -> Void]
+								[Local result(17045):StringBuf:StringBuf]
+								[FInstance:(x : String) -> Void]
+									StringBuf
+									add:(x : add.T) -> Void
+							[Const:String] "  \n"
+			[Return:Dynamic]
+				[Call:String]
+					[Field:() -> String]
+						[Local result(17045):StringBuf:StringBuf]
+						[FInstance:() -> String]
+							StringBuf
+							toString:() -> String
+
+	public static function compileBatchGenServers[Function:(genServers : Array<Dynamic>) -> String]
+		[Arg:Array<Dynamic>] [Local genServers(17050):Array<Dynamic>]
+		[Block:Dynamic]
+			[Var compiledServers(17051):Array<String>] [New:Array<String>] Array<String>
+			[Block:Void]
+				[Var `(17053):Int] [Const:Int] 0
+				[While:Void]
+					[Binop:Bool]
+						[Local `(17053):Int:Int]
+						<
+						[Field:Int]
+							[Local genServers(17050):Array<Dynamic>:Array<Dynamic>]
+							[FInstance:Int]
+								Array<Dynamic>
+								length:Int
+					[Block:Void]
+						[Var genServer(17052):Dynamic]
+							[Array:Dynamic]
+								[Local genServers(17050):Array<Dynamic>:Array<Dynamic>]
+								[Local `(17053):Int:Int]
+						[Unop:Int]
+							++
+							Prefix
+							[Local `(17053):Int:Int]
+						[Call:Int]
+							[Field:(x : String) -> Int]
+								[Local compiledServers(17051):Array<String>:Array<String>]
+								[FInstance:(x : String) -> Int]
+									Array<String>
+									push:(x : Array.T) -> Int
+							[Call:String]
+								[Field:(genServerData : Dynamic) -> String]
+									[TypeExpr reflaxe.elixir.helpers.OTPCompiler:Class<reflaxe.elixir.helpers.OTPCompiler>]
+									[FStatic:(genServerData : Dynamic) -> String]
+										reflaxe.elixir.helpers.OTPCompiler
+										compileFullGenServer:(genServerData : Dynamic) -> String
+								[Local genServer(17052):Dynamic:Dynamic]
+			[Return:Dynamic]
+				[Call:String]
+					[Field:(sep : String) -> String]
+						[Local compiledServers(17051):Array<String>:Array<String>]
+						[FInstance:(sep : String) -> String]
+							Array<String>
+							join:(sep : String) -> String
+					[Const:String] "\n\n"
+
+	public static function integratePatternMatching[Function:(serverName : String, messagePatterns : Array<Dynamic>) -> String]
+		[Arg:String] [Local serverName(17054):String]
+		[Arg:Array<Dynamic>] [Local messagePatterns(17055):Array<Dynamic>]
+		[Block:Dynamic]
+			[Var result(17056):StringBuf] [New:StringBuf] StringBuf
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(17056):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "  # Pattern-matched message handling\n"
+			[Block:Void]
+				[Var `(17060):Int] [Const:Int] 0
+				[While:Void]
+					[Binop:Bool]
+						[Local `(17060):Int:Int]
+						<
+						[Field:Int]
+							[Local messagePatterns(17055):Array<Dynamic>:Array<Dynamic>]
+							[FInstance:Int]
+								Array<Dynamic>
+								length:Int
+					[Block:Void]
+						[Var pattern(17057):Dynamic]
+							[Array:Dynamic]
+								[Local messagePatterns(17055):Array<Dynamic>:Array<Dynamic>]
+								[Local `(17060):Int:Int]
+						[Unop:Int]
+							++
+							Prefix
+							[Local `(17060):Int:Int]
+						[Var patternMatch(17058):String]
+							[Field:Dynamic]
+								[Local pattern(17057):Dynamic:Dynamic]
+								[FDynamic:Dynamic] pattern
+						[Var handler(17059):String]
+							[Field:Dynamic]
+								[Local pattern(17057):Dynamic:Dynamic]
+								[FDynamic:Dynamic] handler
+						[Call:Void]
+							[Field:(x : String) -> Void]
+								[Local result(17056):StringBuf:StringBuf]
+								[FInstance:(x : String) -> Void]
+									StringBuf
+									add:(x : add.T) -> Void
+							[Binop:String]
+								[Binop:String]
+									[Const:String] "  def handle_call("
+									+
+									[Local patternMatch(17058):String:String]
+								+
+								[Const:String] ", _from, state) do\n"
+						[Call:Void]
+							[Field:(x : String) -> Void]
+								[Local result(17056):StringBuf:StringBuf]
+								[FInstance:(x : String) -> Void]
+									StringBuf
+									add:(x : add.T) -> Void
+							[Binop:String]
+								[Binop:String]
+									[Const:String] "    result = "
+									+
+									[Local handler(17059):String:String]
+								+
+								[Const:String] "\n"
+						[Call:Void]
+							[Field:(x : String) -> Void]
+								[Local result(17056):StringBuf:StringBuf]
+								[FInstance:(x : String) -> Void]
+									StringBuf
+									add:(x : add.T) -> Void
+							[Const:String] "    {:reply, result, state}\n"
+						[Call:Void]
+							[Field:(x : String) -> Void]
+								[Local result(17056):StringBuf:StringBuf]
+								[FInstance:(x : String) -> Void]
+									StringBuf
+									add:(x : add.T) -> Void
+							[Const:String] "  end\n"
+						[Call:Void]
+							[Field:(x : String) -> Void]
+								[Local result(17056):StringBuf:StringBuf]
+								[FInstance:(x : String) -> Void]
+									StringBuf
+									add:(x : add.T) -> Void
+							[Const:String] "  \n"
+			[Return:Dynamic]
+				[Call:String]
+					[Field:() -> String]
+						[Local result(17056):StringBuf:StringBuf]
+						[FInstance:() -> String]
+							StringBuf
+							toString:() -> String
+
+	public static function generateSupervisorModule[Function:(supervisionTree : Dynamic) -> String]
+		[Arg:Dynamic] [Local supervisionTree(17061):Dynamic]
+		[Block:Dynamic]
+			[Var name(17062):String]
+				[Field:Dynamic]
+					[Local supervisionTree(17061):Dynamic:Dynamic]
+					[FDynamic:Dynamic] name
+			[Var strategy(17063):String]
+				[Field:Dynamic]
+					[Local supervisionTree(17061):Dynamic:Dynamic]
+					[FDynamic:Dynamic] strategy
+			[Var children(17064):Array<Dynamic>]
+				[Field:Dynamic]
+					[Local supervisionTree(17061):Dynamic:Dynamic]
+					[FDynamic:Dynamic] children
+			[Var result(17065):StringBuf] [New:StringBuf] StringBuf
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(17065):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Binop:String]
+					[Binop:String]
+						[Const:String] "defmodule "
+						+
+						[Local name(17062):String:String]
+					+
+					[Const:String] " do\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(17065):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "  use Supervisor\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(17065):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "  \n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(17065):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "  def start_link(init_arg) do\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(17065):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "    Supervisor.start_link(__MODULE__, init_arg, name: __MODULE__)\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(17065):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "  end\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(17065):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "  \n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(17065):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "  def init(_init_arg) do\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(17065):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "    children = [\n"
+			[Var childSpecs(17066):Array<String>] [ArrayDecl:Array<String>]
+			[Block:Void]
+				[Var `(17071):Int] [Const:Int] 0
+				[Var `(17072):Array<Dynamic>] [Parenthesis:Array<Dynamic>] [Cast:Array<Dynamic>] [Local children(17064):Array<Dynamic>:Array<Dynamic>]
+				[While:Void]
+					[Binop:Bool]
+						[Local `(17071):Int:Int]
+						<
+						[Field:Int]
+							[Local `(17072):Array<Dynamic>:Array<Dynamic>]
+							[FInstance:Int]
+								Array<Dynamic>
+								length:Int
+					[Block:Void]
+						[Var child(17067):Dynamic]
+							[Array:Dynamic]
+								[Local `(17072):Array<Dynamic>:Array<Dynamic>]
+								[Local `(17071):Int:Int]
+						[Unop:Int]
+							++
+							Prefix
+							[Local `(17071):Int:Int]
+						[Var module(17068):String]
+							[Field:Dynamic]
+								[Local child(17067):Dynamic:Dynamic]
+								[FDynamic:Dynamic] module
+						[Var id(17069):String]
+							[Field:Dynamic]
+								[Local child(17067):Dynamic:Dynamic]
+								[FDynamic:Dynamic] id
+						[Var args(17070):Array<Unknown<69>>]
+							[If:Array<Unknown<69>>]
+								[Binop:Bool]
+									[Field:Dynamic]
+										[Local child(17067):Dynamic:Dynamic]
+										[FDynamic:Dynamic] args
+									!=
+									[Const:Dynamic] null
+								[Then:Dynamic] [Block:Dynamic]
+									[Field:Dynamic]
+										[Local child(17067):Dynamic:Dynamic]
+										[FDynamic:Dynamic] args
+								[Else:Array<Unknown<69>>] [Block:Array<Unknown<69>>] [ArrayDecl:Array<Unknown<69>>]
+						[Call:Int]
+							[Field:(x : String) -> Int]
+								[Local childSpecs(17066):Array<String>:Array<String>]
+								[FInstance:(x : String) -> Int]
+									Array<String>
+									push:(x : Array.T) -> Int
+							[Binop:String]
+								[Binop:String]
+									[Binop:String]
+										[Binop:String]
+											[Binop:String]
+												[Binop:String]
+													[Const:String] "      {"
+													+
+													[Local module(17068):String:String]
+												+
+												[Const:String] ", "
+											+
+											[If:String]
+												[Binop:Bool]
+													[Field:Int]
+														[Local args(17070):Array<Unknown<69>>:Array<Unknown<69>>]
+														[FInstance:Int]
+															Array<Unknown<69>>
+															length:Int
+													>
+													[Const:Int] 0
+												[Then:String] [Block:String]
+													[Call:String]
+														[Field:(sep : String) -> String]
+															[Local args(17070):Array<Unknown<69>>:Array<Unknown<69>>]
+															[FInstance:(sep : String) -> String]
+																Array<Unknown<69>>
+																join:(sep : String) -> String
+														[Const:String] ", "
+												[Else:String] [Block:String] [Const:String] "[]"
+										+
+										[Const:String] ", id: :"
+									+
+									[Local id(17069):String:String]
+								+
+								[Const:String] "}"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(17065):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Call:String]
+					[Field:(sep : String) -> String]
+						[Local childSpecs(17066):Array<String>:Array<String>]
+						[FInstance:(sep : String) -> String]
+							Array<String>
+							join:(sep : String) -> String
+					[Const:String] ",\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(17065):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "\n    ]\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(17065):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "    \n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(17065):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Binop:String]
+					[Binop:String]
+						[Const:String] "    Supervisor.init(children, strategy: :"
+						+
+						[Local strategy(17063):String:String]
+					+
+					[Const:String] ")\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(17065):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "  end\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(17065):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "end"
+			[Return:Dynamic]
+				[Call:String]
+					[Field:() -> String]
+						[Local result(17065):StringBuf:StringBuf]
+						[FInstance:() -> String]
+							StringBuf
+							toString:() -> String
+
+	public static function compileGenServerWithLifecycle[Function:(genServerData : Dynamic) -> String]
+		[Arg:Dynamic] [Local genServerData(17073):Dynamic]
+		[Block:Dynamic]
+			[Var className(17074):String]
+				[Field:Dynamic]
+					[Local genServerData(17073):Dynamic:Dynamic]
+					[FDynamic:Dynamic] className
+			[Var callbacks(17075):Array<String>]
+				[Field:Dynamic]
+					[Local genServerData(17073):Dynamic:Dynamic]
+					[FDynamic:Dynamic] callbacks
+			[Var result(17076):StringBuf] [New:StringBuf] StringBuf
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(17076):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Binop:String]
+					[Binop:String]
+						[Const:String] "defmodule "
+						+
+						[Local className(17074):String:String]
+					+
+					[Const:String] " do\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(17076):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "  use GenServer\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(17076):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "  \n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(17076):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "  def start_link(init_arg) do\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(17076):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "    GenServer.start_link(__MODULE__, init_arg)\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(17076):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "  end\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(17076):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "  \n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(17076):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "  def init(_init_arg) do\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(17076):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "    {:ok, %{}}\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(17076):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "  end\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(17076):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "  \n"
+			[Block:Void]
+				[Var `(17078):Int] [Const:Int] 0
+				[Var `(17079):Array<String>] [Parenthesis:Array<String>] [Cast:Array<String>] [Local callbacks(17075):Array<String>:Array<String>]
+				[While:Void]
+					[Binop:Bool]
+						[Local `(17078):Int:Int]
+						<
+						[Field:Int]
+							[Local `(17079):Array<String>:Array<String>]
+							[FInstance:Int]
+								Array<String>
+								length:Int
+					[Block:Void]
+						[Var callback(17077):String]
+							[Array:String]
+								[Local `(17079):Array<String>:Array<String>]
+								[Local `(17078):Int:Int]
+						[Unop:Int]
+							++
+							Prefix
+							[Local `(17078):Int:Int]
+						[Meta:Void]
+							:ast(switch (callback) {
+	case "terminate":
+		result.add("  def terminate(reason, state) do\n");
+		result.add("    # Cleanup before termination\n");
+		result.add("    :ok\n");
+		result.add("  end\n");
+		result.add("  \n");	
+	case "code_change":
+		result.add("  def code_change(old_vsn, state, extra) do\n");
+		result.add("    # Handle hot code upgrades\n");
+		result.add("    {:ok, state}\n");
+		result.add("  end\n");
+		result.add("  \n");	
+	case "format_status":
+		result.add("  def format_status(opt, [pdict, state]) do\n");
+		result.add("    # Format state for debugging\n");
+		result.add("    state\n");
+		result.add("  end\n");
+		result.add("  \n");	
+})
+							[Switch:Void]
+								[Local callback(17077):String:String]
+								[Case:Void]
+									[Const:String] "code_change"
+									[Block:Void]
+										[Block:Void]
+											[Call:Void]
+												[Field:(x : String) -> Void]
+													[Local result(17076):StringBuf:StringBuf]
+													[FInstance:(x : String) -> Void]
+														StringBuf
+														add:(x : add.T) -> Void
+												[Const:String] "  def code_change(old_vsn, state, extra) do\n"
+											[Call:Void]
+												[Field:(x : String) -> Void]
+													[Local result(17076):StringBuf:StringBuf]
+													[FInstance:(x : String) -> Void]
+														StringBuf
+														add:(x : add.T) -> Void
+												[Const:String] "    # Handle hot code upgrades\n"
+											[Call:Void]
+												[Field:(x : String) -> Void]
+													[Local result(17076):StringBuf:StringBuf]
+													[FInstance:(x : String) -> Void]
+														StringBuf
+														add:(x : add.T) -> Void
+												[Const:String] "    {:ok, state}\n"
+											[Call:Void]
+												[Field:(x : String) -> Void]
+													[Local result(17076):StringBuf:StringBuf]
+													[FInstance:(x : String) -> Void]
+														StringBuf
+														add:(x : add.T) -> Void
+												[Const:String] "  end\n"
+											[Call:Void]
+												[Field:(x : String) -> Void]
+													[Local result(17076):StringBuf:StringBuf]
+													[FInstance:(x : String) -> Void]
+														StringBuf
+														add:(x : add.T) -> Void
+												[Const:String] "  \n"
+								[Case:Void]
+									[Const:String] "format_status"
+									[Block:Void]
+										[Block:Void]
+											[Call:Void]
+												[Field:(x : String) -> Void]
+													[Local result(17076):StringBuf:StringBuf]
+													[FInstance:(x : String) -> Void]
+														StringBuf
+														add:(x : add.T) -> Void
+												[Const:String] "  def format_status(opt, [pdict, state]) do\n"
+											[Call:Void]
+												[Field:(x : String) -> Void]
+													[Local result(17076):StringBuf:StringBuf]
+													[FInstance:(x : String) -> Void]
+														StringBuf
+														add:(x : add.T) -> Void
+												[Const:String] "    # Format state for debugging\n"
+											[Call:Void]
+												[Field:(x : String) -> Void]
+													[Local result(17076):StringBuf:StringBuf]
+													[FInstance:(x : String) -> Void]
+														StringBuf
+														add:(x : add.T) -> Void
+												[Const:String] "    state\n"
+											[Call:Void]
+												[Field:(x : String) -> Void]
+													[Local result(17076):StringBuf:StringBuf]
+													[FInstance:(x : String) -> Void]
+														StringBuf
+														add:(x : add.T) -> Void
+												[Const:String] "  end\n"
+											[Call:Void]
+												[Field:(x : String) -> Void]
+													[Local result(17076):StringBuf:StringBuf]
+													[FInstance:(x : String) -> Void]
+														StringBuf
+														add:(x : add.T) -> Void
+												[Const:String] "  \n"
+								[Case:Void]
+									[Const:String] "terminate"
+									[Block:Void]
+										[Block:Void]
+											[Call:Void]
+												[Field:(x : String) -> Void]
+													[Local result(17076):StringBuf:StringBuf]
+													[FInstance:(x : String) -> Void]
+														StringBuf
+														add:(x : add.T) -> Void
+												[Const:String] "  def terminate(reason, state) do\n"
+											[Call:Void]
+												[Field:(x : String) -> Void]
+													[Local result(17076):StringBuf:StringBuf]
+													[FInstance:(x : String) -> Void]
+														StringBuf
+														add:(x : add.T) -> Void
+												[Const:String] "    # Cleanup before termination\n"
+											[Call:Void]
+												[Field:(x : String) -> Void]
+													[Local result(17076):StringBuf:StringBuf]
+													[FInstance:(x : String) -> Void]
+														StringBuf
+														add:(x : add.T) -> Void
+												[Const:String] "    :ok\n"
+											[Call:Void]
+												[Field:(x : String) -> Void]
+													[Local result(17076):StringBuf:StringBuf]
+													[FInstance:(x : String) -> Void]
+														StringBuf
+														add:(x : add.T) -> Void
+												[Const:String] "  end\n"
+											[Call:Void]
+												[Field:(x : String) -> Void]
+													[Local result(17076):StringBuf:StringBuf]
+													[FInstance:(x : String) -> Void]
+														StringBuf
+														add:(x : add.T) -> Void
+												[Const:String] "  \n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(17076):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "end"
+			[Return:Dynamic]
+				[Call:String]
+					[Field:() -> String]
+						[Local result(17076):StringBuf:StringBuf]
+						[FInstance:() -> String]
+							StringBuf
+							toString:() -> String
+}

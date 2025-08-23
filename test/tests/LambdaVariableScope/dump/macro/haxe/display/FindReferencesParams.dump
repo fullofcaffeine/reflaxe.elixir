@@ -1,0 +1,1 @@
+typedef haxe.display.FindReferencesParams = { offset : Int, ?kind : Null<haxe.display.FindReferencesKind>, file : haxe.display.FsPath, ?contents : Null<String> }

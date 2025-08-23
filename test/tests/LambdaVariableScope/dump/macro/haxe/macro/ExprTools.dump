@@ -1,0 +1,2901 @@
+class haxe.macro.ExprTools {
+
+	public static function toString[Function:(e : haxe.macro.Expr) -> String]
+		[Arg:haxe.macro.Expr] [Local e(5530):haxe.macro.Expr]
+		[Return:Dynamic]
+			[Call:String]
+				[Field:(e : haxe.macro.Expr) -> String]
+					[New:haxe.macro.Printer]
+						haxe.macro.Printer
+						[Const:Null<String>] null
+					[FInstance:(e : haxe.macro.Expr) -> String]
+						haxe.macro.Printer
+						printExpr:(e : haxe.macro.Expr) -> String
+				[Local e(5530):haxe.macro.Expr:haxe.macro.Expr]
+
+	public static function iter[Function:(e : haxe.macro.Expr, f : (haxe.macro.Expr -> Void)) -> Void]
+		[Arg:haxe.macro.Expr] [Local e(6818):haxe.macro.Expr]
+		[Arg:haxe.macro.Expr -> Void] [Local f(6819):haxe.macro.Expr -> Void]
+		[Block:Void]
+			[Meta:Void]
+				:ast(switch (e.expr) {
+	case EConst(_), EContinue, EBreak:
+	case EField(e, _), EParenthesis(e), EUntyped(e), EThrow(e), EDisplay(e, _), ECheckType(e, _), EUnop(_, _, e), ECast(e, _), EIs(e, _) | EMeta(_, e):
+		f(e);	
+	case EArray(e1, e2), EWhile(e1, e2, _), EBinop(_, e1, e2), EFor(e1, e2):
+		f(e1);
+		f(e2);	
+	case EVars(vl):
+		for (v  in  vl) opt2(v.expr, f);	
+	case ETry(e, cl):
+		f(e);
+		for (c  in  cl) f(c.expr);	
+	case ETernary(e1, e2, e3) | EIf(e1, e2, e3):
+		f(e1);
+		f(e2);
+		opt2(e3, f);	
+	case EArrayDecl(el), ENew(_, el), EBlock(el):
+		ExprArrayTools.iter(el, f);	
+	case EObjectDecl(fl):
+		for (fd  in  fl) f(fd.expr);	
+	case ECall(e, el):
+		f(e);
+		ExprArrayTools.iter(el, f);	
+	case EReturn(e):
+		opt2(e, f);	
+	case EFunction(_, func):
+		for (arg  in  func.args) opt2(arg.value, f);
+		opt2(func.expr, f);	
+	case ESwitch(e, cl, edef):
+		f(e);
+		for (c  in  cl) {
+			ExprArrayTools.iter(c.values, f);
+			opt2(c.guard, f);
+			opt2(c.expr, f);
+		};
+		if (edef != null && edef.expr != null) f(edef);	
+})
+				[Block:Void]
+					[Var `(6936):haxe.macro.ExprDef]
+						[Field:haxe.macro.ExprDef]
+							[Local e(6818):haxe.macro.Expr:haxe.macro.Expr]
+							[FAnon:haxe.macro.ExprDef] expr:haxe.macro.ExprDef
+					[Switch:Void]
+						[Meta:Int]
+							:exhaustive
+							[EnumIndex:Int] [Local `(6936):haxe.macro.ExprDef:haxe.macro.ExprDef]
+						[Case:Void]
+							[Const:Int] 0
+							[Block:Void]
+								[Var `(6937):haxe.macro.Constant]
+									[EnumParameter:haxe.macro.Constant]
+										[Local `(6936):haxe.macro.ExprDef:haxe.macro.ExprDef]
+										EConst
+										0
+								[Block:Void]
+						[Case:Void]
+							[Const:Int] 1
+							[Block:Void]
+								[Var `(6938):haxe.macro.Expr]
+									[EnumParameter:haxe.macro.Expr]
+										[Local `(6936):haxe.macro.ExprDef:haxe.macro.ExprDef]
+										EArray
+										0
+								[Var `(6939):haxe.macro.Expr]
+									[EnumParameter:haxe.macro.Expr]
+										[Local `(6936):haxe.macro.ExprDef:haxe.macro.ExprDef]
+										EArray
+										1
+								[Block:Void]
+									[Var e1(6940):haxe.macro.Expr] [Local `(6938):haxe.macro.Expr:haxe.macro.Expr]
+									[Var e2(6941):haxe.macro.Expr] [Local `(6939):haxe.macro.Expr:haxe.macro.Expr]
+									[Block:Void]
+										[Call:Void]
+											[Local f(6819):haxe.macro.Expr -> Void:haxe.macro.Expr -> Void]
+											[Local e1(6940):haxe.macro.Expr:haxe.macro.Expr]
+										[Call:Void]
+											[Local f(6819):haxe.macro.Expr -> Void:haxe.macro.Expr -> Void]
+											[Local e2(6941):haxe.macro.Expr:haxe.macro.Expr]
+						[Case:Void]
+							[Const:Int] 2
+							[Block:Void]
+								[Var `(6942):haxe.macro.Binop]
+									[EnumParameter:haxe.macro.Binop]
+										[Local `(6936):haxe.macro.ExprDef:haxe.macro.ExprDef]
+										EBinop
+										0
+								[Var `(6943):haxe.macro.Expr]
+									[EnumParameter:haxe.macro.Expr]
+										[Local `(6936):haxe.macro.ExprDef:haxe.macro.ExprDef]
+										EBinop
+										1
+								[Var `(6944):haxe.macro.Expr]
+									[EnumParameter:haxe.macro.Expr]
+										[Local `(6936):haxe.macro.ExprDef:haxe.macro.ExprDef]
+										EBinop
+										2
+								[Block:Void]
+									[Var e1(6945):haxe.macro.Expr] [Local `(6943):haxe.macro.Expr:haxe.macro.Expr]
+									[Var e2(6946):haxe.macro.Expr] [Local `(6944):haxe.macro.Expr:haxe.macro.Expr]
+									[Block:Void]
+										[Call:Void]
+											[Local f(6819):haxe.macro.Expr -> Void:haxe.macro.Expr -> Void]
+											[Local e1(6945):haxe.macro.Expr:haxe.macro.Expr]
+										[Call:Void]
+											[Local f(6819):haxe.macro.Expr -> Void:haxe.macro.Expr -> Void]
+											[Local e2(6946):haxe.macro.Expr:haxe.macro.Expr]
+						[Case:Void]
+							[Const:Int] 3
+							[Block:Void]
+								[Var `(6947):haxe.macro.Expr]
+									[EnumParameter:haxe.macro.Expr]
+										[Local `(6936):haxe.macro.ExprDef:haxe.macro.ExprDef]
+										EField
+										0
+								[Var `(6948):String]
+									[EnumParameter:String]
+										[Local `(6936):haxe.macro.ExprDef:haxe.macro.ExprDef]
+										EField
+										1
+								[Var `(6949):Null<haxe.macro.EFieldKind>]
+									[EnumParameter:Null<haxe.macro.EFieldKind>]
+										[Local `(6936):haxe.macro.ExprDef:haxe.macro.ExprDef]
+										EField
+										2
+								[Block:Void]
+									[Var e(6950):haxe.macro.Expr] [Local `(6947):haxe.macro.Expr:haxe.macro.Expr]
+									[Block:Void]
+										[Call:Void]
+											[Local f(6819):haxe.macro.Expr -> Void:haxe.macro.Expr -> Void]
+											[Local e(6950):haxe.macro.Expr:haxe.macro.Expr]
+						[Case:Void]
+							[Const:Int] 4
+							[Block:Void]
+								[Var `(6951):haxe.macro.Expr]
+									[EnumParameter:haxe.macro.Expr]
+										[Local `(6936):haxe.macro.ExprDef:haxe.macro.ExprDef]
+										EParenthesis
+										0
+								[Block:Void]
+									[Var e(6952):haxe.macro.Expr] [Local `(6951):haxe.macro.Expr:haxe.macro.Expr]
+									[Block:Void]
+										[Call:Void]
+											[Local f(6819):haxe.macro.Expr -> Void:haxe.macro.Expr -> Void]
+											[Local e(6952):haxe.macro.Expr:haxe.macro.Expr]
+						[Case:Void]
+							[Const:Int] 5
+							[Block:Void]
+								[Var `(6953):Array<haxe.macro.ObjectField>]
+									[EnumParameter:Array<haxe.macro.ObjectField>]
+										[Local `(6936):haxe.macro.ExprDef:haxe.macro.ExprDef]
+										EObjectDecl
+										0
+								[Block:Void]
+									[Var fl(6954):Array<haxe.macro.ObjectField>] [Local `(6953):Array<haxe.macro.ObjectField>:Array<haxe.macro.ObjectField>]
+									[Block:Void]
+										[Block:Void]
+											[Var `(6955):Int] [Const:Int] 0
+											[While:Void]
+												[Binop:Bool]
+													[Local `(6955):Int:Int]
+													<
+													[Field:Int]
+														[Local fl(6954):Array<haxe.macro.ObjectField>:Array<haxe.macro.ObjectField>]
+														[FInstance:Int]
+															Array<haxe.macro.ObjectField>
+															length:Int
+												[Block:Void]
+													[Var fd(6956):haxe.macro.ObjectField]
+														[Array:haxe.macro.ObjectField]
+															[Local fl(6954):Array<haxe.macro.ObjectField>:Array<haxe.macro.ObjectField>]
+															[Local `(6955):Int:Int]
+													[Unop:Int]
+														++
+														Prefix
+														[Local `(6955):Int:Int]
+													[Call:Void]
+														[Local f(6819):haxe.macro.Expr -> Void:haxe.macro.Expr -> Void]
+														[Field:haxe.macro.Expr]
+															[Local fd(6956):haxe.macro.ObjectField:haxe.macro.ObjectField]
+															[FAnon:haxe.macro.Expr] expr:haxe.macro.Expr
+						[Case:Void]
+							[Const:Int] 6
+							[Block:Void]
+								[Var `(6957):Array<haxe.macro.Expr>]
+									[EnumParameter:Array<haxe.macro.Expr>]
+										[Local `(6936):haxe.macro.ExprDef:haxe.macro.ExprDef]
+										EArrayDecl
+										0
+								[Block:Void]
+									[Var el(6958):Array<haxe.macro.Expr>] [Local `(6957):Array<haxe.macro.Expr>:Array<haxe.macro.Expr>]
+									[Block:Void]
+										[Call:Void]
+											[Field:(el : Array<haxe.macro.Expr>, f : (haxe.macro.Expr -> Void)) -> Void]
+												[TypeExpr haxe.macro.ExprArrayTools:Class<haxe.macro.ExprArrayTools>]
+												[FStatic:(el : Array<haxe.macro.Expr>, f : (haxe.macro.Expr -> Void)) -> Void]
+													haxe.macro.ExprArrayTools
+													iter:(el : Array<haxe.macro.Expr>, f : (haxe.macro.Expr -> Void)) -> Void
+											[Local el(6958):Array<haxe.macro.Expr>:Array<haxe.macro.Expr>]
+											[Local f(6819):haxe.macro.Expr -> Void:haxe.macro.Expr -> Void]
+						[Case:Void]
+							[Const:Int] 7
+							[Block:Void]
+								[Var `(6959):haxe.macro.Expr]
+									[EnumParameter:haxe.macro.Expr]
+										[Local `(6936):haxe.macro.ExprDef:haxe.macro.ExprDef]
+										ECall
+										0
+								[Var `(6960):Array<haxe.macro.Expr>]
+									[EnumParameter:Array<haxe.macro.Expr>]
+										[Local `(6936):haxe.macro.ExprDef:haxe.macro.ExprDef]
+										ECall
+										1
+								[Block:Void]
+									[Var e(6961):haxe.macro.Expr] [Local `(6959):haxe.macro.Expr:haxe.macro.Expr]
+									[Var el(6962):Array<haxe.macro.Expr>] [Local `(6960):Array<haxe.macro.Expr>:Array<haxe.macro.Expr>]
+									[Block:Void]
+										[Call:Void]
+											[Local f(6819):haxe.macro.Expr -> Void:haxe.macro.Expr -> Void]
+											[Local e(6961):haxe.macro.Expr:haxe.macro.Expr]
+										[Call:Void]
+											[Field:(el : Array<haxe.macro.Expr>, f : (haxe.macro.Expr -> Void)) -> Void]
+												[TypeExpr haxe.macro.ExprArrayTools:Class<haxe.macro.ExprArrayTools>]
+												[FStatic:(el : Array<haxe.macro.Expr>, f : (haxe.macro.Expr -> Void)) -> Void]
+													haxe.macro.ExprArrayTools
+													iter:(el : Array<haxe.macro.Expr>, f : (haxe.macro.Expr -> Void)) -> Void
+											[Local el(6962):Array<haxe.macro.Expr>:Array<haxe.macro.Expr>]
+											[Local f(6819):haxe.macro.Expr -> Void:haxe.macro.Expr -> Void]
+						[Case:Void]
+							[Const:Int] 8
+							[Block:Void]
+								[Var `(6963):haxe.macro.TypePath]
+									[EnumParameter:haxe.macro.TypePath]
+										[Local `(6936):haxe.macro.ExprDef:haxe.macro.ExprDef]
+										ENew
+										0
+								[Var `(6964):Array<haxe.macro.Expr>]
+									[EnumParameter:Array<haxe.macro.Expr>]
+										[Local `(6936):haxe.macro.ExprDef:haxe.macro.ExprDef]
+										ENew
+										1
+								[Block:Void]
+									[Var el(6965):Array<haxe.macro.Expr>] [Local `(6964):Array<haxe.macro.Expr>:Array<haxe.macro.Expr>]
+									[Block:Void]
+										[Call:Void]
+											[Field:(el : Array<haxe.macro.Expr>, f : (haxe.macro.Expr -> Void)) -> Void]
+												[TypeExpr haxe.macro.ExprArrayTools:Class<haxe.macro.ExprArrayTools>]
+												[FStatic:(el : Array<haxe.macro.Expr>, f : (haxe.macro.Expr -> Void)) -> Void]
+													haxe.macro.ExprArrayTools
+													iter:(el : Array<haxe.macro.Expr>, f : (haxe.macro.Expr -> Void)) -> Void
+											[Local el(6965):Array<haxe.macro.Expr>:Array<haxe.macro.Expr>]
+											[Local f(6819):haxe.macro.Expr -> Void:haxe.macro.Expr -> Void]
+						[Case:Void]
+							[Const:Int] 9
+							[Block:Void]
+								[Var `(6966):haxe.macro.Unop]
+									[EnumParameter:haxe.macro.Unop]
+										[Local `(6936):haxe.macro.ExprDef:haxe.macro.ExprDef]
+										EUnop
+										0
+								[Var `(6967):Bool]
+									[EnumParameter:Bool]
+										[Local `(6936):haxe.macro.ExprDef:haxe.macro.ExprDef]
+										EUnop
+										1
+								[Var `(6968):haxe.macro.Expr]
+									[EnumParameter:haxe.macro.Expr]
+										[Local `(6936):haxe.macro.ExprDef:haxe.macro.ExprDef]
+										EUnop
+										2
+								[Block:Void]
+									[Var e(6969):haxe.macro.Expr] [Local `(6968):haxe.macro.Expr:haxe.macro.Expr]
+									[Block:Void]
+										[Call:Void]
+											[Local f(6819):haxe.macro.Expr -> Void:haxe.macro.Expr -> Void]
+											[Local e(6969):haxe.macro.Expr:haxe.macro.Expr]
+						[Case:Void]
+							[Const:Int] 10
+							[Block:Void]
+								[Var `(6970):Array<haxe.macro.Var>]
+									[EnumParameter:Array<haxe.macro.Var>]
+										[Local `(6936):haxe.macro.ExprDef:haxe.macro.ExprDef]
+										EVars
+										0
+								[Block:Void]
+									[Var vl(6971):Array<haxe.macro.Var>] [Local `(6970):Array<haxe.macro.Var>:Array<haxe.macro.Var>]
+									[Block:Void]
+										[Block:Void]
+											[Var `(6972):Int] [Const:Int] 0
+											[While:Void]
+												[Binop:Bool]
+													[Local `(6972):Int:Int]
+													<
+													[Field:Int]
+														[Local vl(6971):Array<haxe.macro.Var>:Array<haxe.macro.Var>]
+														[FInstance:Int]
+															Array<haxe.macro.Var>
+															length:Int
+												[Block:Void]
+													[Var v(6973):haxe.macro.Var]
+														[Array:haxe.macro.Var]
+															[Local vl(6971):Array<haxe.macro.Var>:Array<haxe.macro.Var>]
+															[Local `(6972):Int:Int]
+													[Unop:Int]
+														++
+														Prefix
+														[Local `(6972):Int:Int]
+													[Block:Void]
+														[Var e(6974):Null<haxe.macro.Expr>]
+															[Field:Null<haxe.macro.Expr>]
+																[Local v(6973):haxe.macro.Var:haxe.macro.Var]
+																[FAnon:Null<haxe.macro.Expr>] expr:Null<haxe.macro.Expr>
+														[If:Void]
+															[Binop:Bool]
+																[Local e(6974):Null<haxe.macro.Expr>:Null<haxe.macro.Expr>]
+																!=
+																[Const:Null<haxe.macro.Expr>] null
+															[Then:Void] [Block:Void]
+																[Call:Void]
+																	[Local f(6819):haxe.macro.Expr -> Void:haxe.macro.Expr -> Void]
+																	[Local e(6974):Null<haxe.macro.Expr>:Null<haxe.macro.Expr>]
+						[Case:Void]
+							[Const:Int] 11
+							[Block:Void]
+								[Var `(6975):Null<haxe.macro.FunctionKind>]
+									[EnumParameter:Null<haxe.macro.FunctionKind>]
+										[Local `(6936):haxe.macro.ExprDef:haxe.macro.ExprDef]
+										EFunction
+										0
+								[Var `(6976):haxe.macro.Function]
+									[EnumParameter:haxe.macro.Function]
+										[Local `(6936):haxe.macro.ExprDef:haxe.macro.ExprDef]
+										EFunction
+										1
+								[Block:Void]
+									[Var func(6977):haxe.macro.Function] [Local `(6976):haxe.macro.Function:haxe.macro.Function]
+									[Block:Void]
+										[Block:Void]
+											[Var `(6978):Int] [Const:Int] 0
+											[Var `(6979):Array<haxe.macro.FunctionArg>]
+												[Field:Array<haxe.macro.FunctionArg>]
+													[Local func(6977):haxe.macro.Function:haxe.macro.Function]
+													[FAnon:Array<haxe.macro.FunctionArg>] args:Array<haxe.macro.FunctionArg>
+											[While:Void]
+												[Binop:Bool]
+													[Local `(6978):Int:Int]
+													<
+													[Field:Int]
+														[Local `(6979):Array<haxe.macro.FunctionArg>:Array<haxe.macro.FunctionArg>]
+														[FInstance:Int]
+															Array<haxe.macro.FunctionArg>
+															length:Int
+												[Block:Void]
+													[Var arg(6980):haxe.macro.FunctionArg]
+														[Array:haxe.macro.FunctionArg]
+															[Local `(6979):Array<haxe.macro.FunctionArg>:Array<haxe.macro.FunctionArg>]
+															[Local `(6978):Int:Int]
+													[Unop:Int]
+														++
+														Prefix
+														[Local `(6978):Int:Int]
+													[Block:Void]
+														[Var e(6981):Null<haxe.macro.Expr>]
+															[Field:Null<haxe.macro.Expr>]
+																[Local arg(6980):haxe.macro.FunctionArg:haxe.macro.FunctionArg]
+																[FAnon:Null<haxe.macro.Expr>] value:Null<haxe.macro.Expr>
+														[If:Void]
+															[Binop:Bool]
+																[Local e(6981):Null<haxe.macro.Expr>:Null<haxe.macro.Expr>]
+																!=
+																[Const:Null<haxe.macro.Expr>] null
+															[Then:Void] [Block:Void]
+																[Call:Void]
+																	[Local f(6819):haxe.macro.Expr -> Void:haxe.macro.Expr -> Void]
+																	[Local e(6981):Null<haxe.macro.Expr>:Null<haxe.macro.Expr>]
+										[Block:Void]
+											[Var e(6982):Null<haxe.macro.Expr>]
+												[Field:Null<haxe.macro.Expr>]
+													[Local func(6977):haxe.macro.Function:haxe.macro.Function]
+													[FAnon:Null<haxe.macro.Expr>] expr:Null<haxe.macro.Expr>
+											[If:Void]
+												[Binop:Bool]
+													[Local e(6982):Null<haxe.macro.Expr>:Null<haxe.macro.Expr>]
+													!=
+													[Const:Null<haxe.macro.Expr>] null
+												[Then:Void] [Block:Void]
+													[Call:Void]
+														[Local f(6819):haxe.macro.Expr -> Void:haxe.macro.Expr -> Void]
+														[Local e(6982):Null<haxe.macro.Expr>:Null<haxe.macro.Expr>]
+						[Case:Void]
+							[Const:Int] 12
+							[Block:Void]
+								[Var `(6983):Array<haxe.macro.Expr>]
+									[EnumParameter:Array<haxe.macro.Expr>]
+										[Local `(6936):haxe.macro.ExprDef:haxe.macro.ExprDef]
+										EBlock
+										0
+								[Block:Void]
+									[Var el(6984):Array<haxe.macro.Expr>] [Local `(6983):Array<haxe.macro.Expr>:Array<haxe.macro.Expr>]
+									[Block:Void]
+										[Call:Void]
+											[Field:(el : Array<haxe.macro.Expr>, f : (haxe.macro.Expr -> Void)) -> Void]
+												[TypeExpr haxe.macro.ExprArrayTools:Class<haxe.macro.ExprArrayTools>]
+												[FStatic:(el : Array<haxe.macro.Expr>, f : (haxe.macro.Expr -> Void)) -> Void]
+													haxe.macro.ExprArrayTools
+													iter:(el : Array<haxe.macro.Expr>, f : (haxe.macro.Expr -> Void)) -> Void
+											[Local el(6984):Array<haxe.macro.Expr>:Array<haxe.macro.Expr>]
+											[Local f(6819):haxe.macro.Expr -> Void:haxe.macro.Expr -> Void]
+						[Case:Void]
+							[Const:Int] 13
+							[Block:Void]
+								[Var `(6985):haxe.macro.Expr]
+									[EnumParameter:haxe.macro.Expr]
+										[Local `(6936):haxe.macro.ExprDef:haxe.macro.ExprDef]
+										EFor
+										0
+								[Var `(6986):haxe.macro.Expr]
+									[EnumParameter:haxe.macro.Expr]
+										[Local `(6936):haxe.macro.ExprDef:haxe.macro.ExprDef]
+										EFor
+										1
+								[Block:Void]
+									[Var e1(6987):haxe.macro.Expr] [Local `(6985):haxe.macro.Expr:haxe.macro.Expr]
+									[Var e2(6988):haxe.macro.Expr] [Local `(6986):haxe.macro.Expr:haxe.macro.Expr]
+									[Block:Void]
+										[Call:Void]
+											[Local f(6819):haxe.macro.Expr -> Void:haxe.macro.Expr -> Void]
+											[Local e1(6987):haxe.macro.Expr:haxe.macro.Expr]
+										[Call:Void]
+											[Local f(6819):haxe.macro.Expr -> Void:haxe.macro.Expr -> Void]
+											[Local e2(6988):haxe.macro.Expr:haxe.macro.Expr]
+						[Case:Void]
+							[Const:Int] 14
+							[Block:Void]
+								[Var `(6989):haxe.macro.Expr]
+									[EnumParameter:haxe.macro.Expr]
+										[Local `(6936):haxe.macro.ExprDef:haxe.macro.ExprDef]
+										EIf
+										0
+								[Var `(6990):haxe.macro.Expr]
+									[EnumParameter:haxe.macro.Expr]
+										[Local `(6936):haxe.macro.ExprDef:haxe.macro.ExprDef]
+										EIf
+										1
+								[Var `(6991):Null<haxe.macro.Expr>]
+									[EnumParameter:Null<haxe.macro.Expr>]
+										[Local `(6936):haxe.macro.ExprDef:haxe.macro.ExprDef]
+										EIf
+										2
+								[Block:Void]
+									[Var e1(6992):haxe.macro.Expr] [Local `(6989):haxe.macro.Expr:haxe.macro.Expr]
+									[Var e2(6993):haxe.macro.Expr] [Local `(6990):haxe.macro.Expr:haxe.macro.Expr]
+									[Var e3(6994):haxe.macro.Expr] [Local `(6991):Null<haxe.macro.Expr>:Null<haxe.macro.Expr>]
+									[Block:Void]
+										[Call:Void]
+											[Local f(6819):haxe.macro.Expr -> Void:haxe.macro.Expr -> Void]
+											[Local e1(6992):haxe.macro.Expr:haxe.macro.Expr]
+										[Call:Void]
+											[Local f(6819):haxe.macro.Expr -> Void:haxe.macro.Expr -> Void]
+											[Local e2(6993):haxe.macro.Expr:haxe.macro.Expr]
+										[Block:Void]
+											[If:Void]
+												[Binop:Bool]
+													[Local e3(6994):haxe.macro.Expr:haxe.macro.Expr]
+													!=
+													[Const:Null<haxe.macro.Expr>] null
+												[Then:Void] [Block:Void]
+													[Call:Void]
+														[Local f(6819):haxe.macro.Expr -> Void:haxe.macro.Expr -> Void]
+														[Local e3(6994):haxe.macro.Expr:haxe.macro.Expr]
+						[Case:Void]
+							[Const:Int] 15
+							[Block:Void]
+								[Var `(6995):haxe.macro.Expr]
+									[EnumParameter:haxe.macro.Expr]
+										[Local `(6936):haxe.macro.ExprDef:haxe.macro.ExprDef]
+										EWhile
+										0
+								[Var `(6996):haxe.macro.Expr]
+									[EnumParameter:haxe.macro.Expr]
+										[Local `(6936):haxe.macro.ExprDef:haxe.macro.ExprDef]
+										EWhile
+										1
+								[Var `(6997):Bool]
+									[EnumParameter:Bool]
+										[Local `(6936):haxe.macro.ExprDef:haxe.macro.ExprDef]
+										EWhile
+										2
+								[Block:Void]
+									[Var e1(6998):haxe.macro.Expr] [Local `(6995):haxe.macro.Expr:haxe.macro.Expr]
+									[Var e2(6999):haxe.macro.Expr] [Local `(6996):haxe.macro.Expr:haxe.macro.Expr]
+									[Block:Void]
+										[Call:Void]
+											[Local f(6819):haxe.macro.Expr -> Void:haxe.macro.Expr -> Void]
+											[Local e1(6998):haxe.macro.Expr:haxe.macro.Expr]
+										[Call:Void]
+											[Local f(6819):haxe.macro.Expr -> Void:haxe.macro.Expr -> Void]
+											[Local e2(6999):haxe.macro.Expr:haxe.macro.Expr]
+						[Case:Void]
+							[Const:Int] 16
+							[Block:Void]
+								[Var `(7000):haxe.macro.Expr]
+									[EnumParameter:haxe.macro.Expr]
+										[Local `(6936):haxe.macro.ExprDef:haxe.macro.ExprDef]
+										ESwitch
+										0
+								[Var `(7001):Array<haxe.macro.Case>]
+									[EnumParameter:Array<haxe.macro.Case>]
+										[Local `(6936):haxe.macro.ExprDef:haxe.macro.ExprDef]
+										ESwitch
+										1
+								[Var `(7002):Null<haxe.macro.Expr>]
+									[EnumParameter:Null<haxe.macro.Expr>]
+										[Local `(6936):haxe.macro.ExprDef:haxe.macro.ExprDef]
+										ESwitch
+										2
+								[Block:Void]
+									[Var e(7003):haxe.macro.Expr] [Local `(7000):haxe.macro.Expr:haxe.macro.Expr]
+									[Var cl(7004):Array<haxe.macro.Case>] [Local `(7001):Array<haxe.macro.Case>:Array<haxe.macro.Case>]
+									[Var edef(7005):Null<haxe.macro.Expr>] [Local `(7002):Null<haxe.macro.Expr>:Null<haxe.macro.Expr>]
+									[Block:Void]
+										[Call:Void]
+											[Local f(6819):haxe.macro.Expr -> Void:haxe.macro.Expr -> Void]
+											[Local e(7003):haxe.macro.Expr:haxe.macro.Expr]
+										[Block:Void]
+											[Var `(7006):Int] [Const:Int] 0
+											[While:Void]
+												[Binop:Bool]
+													[Local `(7006):Int:Int]
+													<
+													[Field:Int]
+														[Local cl(7004):Array<haxe.macro.Case>:Array<haxe.macro.Case>]
+														[FInstance:Int]
+															Array<haxe.macro.Case>
+															length:Int
+												[Block:Void]
+													[Var c(7007):haxe.macro.Case]
+														[Array:haxe.macro.Case]
+															[Local cl(7004):Array<haxe.macro.Case>:Array<haxe.macro.Case>]
+															[Local `(7006):Int:Int]
+													[Unop:Int]
+														++
+														Prefix
+														[Local `(7006):Int:Int]
+													[Call:Void]
+														[Field:(el : Array<haxe.macro.Expr>, f : (haxe.macro.Expr -> Void)) -> Void]
+															[TypeExpr haxe.macro.ExprArrayTools:Class<haxe.macro.ExprArrayTools>]
+															[FStatic:(el : Array<haxe.macro.Expr>, f : (haxe.macro.Expr -> Void)) -> Void]
+																haxe.macro.ExprArrayTools
+																iter:(el : Array<haxe.macro.Expr>, f : (haxe.macro.Expr -> Void)) -> Void
+														[Field:Array<haxe.macro.Expr>]
+															[Local c(7007):haxe.macro.Case:haxe.macro.Case]
+															[FAnon:Array<haxe.macro.Expr>] values:Array<haxe.macro.Expr>
+														[Local f(6819):haxe.macro.Expr -> Void:haxe.macro.Expr -> Void]
+													[Block:Void]
+														[Var e(7008):Null<haxe.macro.Expr>]
+															[Field:Null<haxe.macro.Expr>]
+																[Local c(7007):haxe.macro.Case:haxe.macro.Case]
+																[FAnon:Null<haxe.macro.Expr>] guard:Null<haxe.macro.Expr>
+														[If:Void]
+															[Binop:Bool]
+																[Local e(7008):Null<haxe.macro.Expr>:Null<haxe.macro.Expr>]
+																!=
+																[Const:Null<haxe.macro.Expr>] null
+															[Then:Void] [Block:Void]
+																[Call:Void]
+																	[Local f(6819):haxe.macro.Expr -> Void:haxe.macro.Expr -> Void]
+																	[Local e(7008):Null<haxe.macro.Expr>:Null<haxe.macro.Expr>]
+													[Block:Void]
+														[Var e(7009):Null<haxe.macro.Expr>]
+															[Field:Null<haxe.macro.Expr>]
+																[Local c(7007):haxe.macro.Case:haxe.macro.Case]
+																[FAnon:Null<haxe.macro.Expr>] expr:Null<haxe.macro.Expr>
+														[If:Void]
+															[Binop:Bool]
+																[Local e(7009):Null<haxe.macro.Expr>:Null<haxe.macro.Expr>]
+																!=
+																[Const:Null<haxe.macro.Expr>] null
+															[Then:Void] [Block:Void]
+																[Call:Void]
+																	[Local f(6819):haxe.macro.Expr -> Void:haxe.macro.Expr -> Void]
+																	[Local e(7009):Null<haxe.macro.Expr>:Null<haxe.macro.Expr>]
+										[If:Void]
+											[Binop:Bool]
+												[Binop:Bool]
+													[Local edef(7005):Null<haxe.macro.Expr>:Null<haxe.macro.Expr>]
+													!=
+													[Const:Null<haxe.macro.Expr>] null
+												&&
+												[Binop:Bool]
+													[Field:haxe.macro.ExprDef]
+														[Local edef(7005):Null<haxe.macro.Expr>:Null<haxe.macro.Expr>]
+														[FAnon:haxe.macro.ExprDef] expr:haxe.macro.ExprDef
+													!=
+													[Const:haxe.macro.ExprDef] null
+											[Then:Void] [Block:Void]
+												[Call:Void]
+													[Local f(6819):haxe.macro.Expr -> Void:haxe.macro.Expr -> Void]
+													[Local edef(7005):Null<haxe.macro.Expr>:Null<haxe.macro.Expr>]
+						[Case:Void]
+							[Const:Int] 17
+							[Block:Void]
+								[Var `(7010):haxe.macro.Expr]
+									[EnumParameter:haxe.macro.Expr]
+										[Local `(6936):haxe.macro.ExprDef:haxe.macro.ExprDef]
+										ETry
+										0
+								[Var `(7011):Array<haxe.macro.Catch>]
+									[EnumParameter:Array<haxe.macro.Catch>]
+										[Local `(6936):haxe.macro.ExprDef:haxe.macro.ExprDef]
+										ETry
+										1
+								[Block:Void]
+									[Var e(7012):haxe.macro.Expr] [Local `(7010):haxe.macro.Expr:haxe.macro.Expr]
+									[Var cl(7013):Array<haxe.macro.Catch>] [Local `(7011):Array<haxe.macro.Catch>:Array<haxe.macro.Catch>]
+									[Block:Void]
+										[Call:Void]
+											[Local f(6819):haxe.macro.Expr -> Void:haxe.macro.Expr -> Void]
+											[Local e(7012):haxe.macro.Expr:haxe.macro.Expr]
+										[Block:Void]
+											[Var `(7014):Int] [Const:Int] 0
+											[While:Void]
+												[Binop:Bool]
+													[Local `(7014):Int:Int]
+													<
+													[Field:Int]
+														[Local cl(7013):Array<haxe.macro.Catch>:Array<haxe.macro.Catch>]
+														[FInstance:Int]
+															Array<haxe.macro.Catch>
+															length:Int
+												[Block:Void]
+													[Var c(7015):haxe.macro.Catch]
+														[Array:haxe.macro.Catch]
+															[Local cl(7013):Array<haxe.macro.Catch>:Array<haxe.macro.Catch>]
+															[Local `(7014):Int:Int]
+													[Unop:Int]
+														++
+														Prefix
+														[Local `(7014):Int:Int]
+													[Call:Void]
+														[Local f(6819):haxe.macro.Expr -> Void:haxe.macro.Expr -> Void]
+														[Field:haxe.macro.Expr]
+															[Local c(7015):haxe.macro.Catch:haxe.macro.Catch]
+															[FAnon:haxe.macro.Expr] expr:haxe.macro.Expr
+						[Case:Void]
+							[Const:Int] 18
+							[Block:Void]
+								[Var `(7016):Null<haxe.macro.Expr>]
+									[EnumParameter:Null<haxe.macro.Expr>]
+										[Local `(6936):haxe.macro.ExprDef:haxe.macro.ExprDef]
+										EReturn
+										0
+								[Block:Void]
+									[Var e(7017):Null<haxe.macro.Expr>] [Local `(7016):Null<haxe.macro.Expr>:Null<haxe.macro.Expr>]
+									[Block:Void]
+										[Block:Void]
+											[If:Void]
+												[Binop:Bool]
+													[Local e(7017):Null<haxe.macro.Expr>:Null<haxe.macro.Expr>]
+													!=
+													[Const:Null<haxe.macro.Expr>] null
+												[Then:Void] [Block:Void]
+													[Call:Void]
+														[Local f(6819):haxe.macro.Expr -> Void:haxe.macro.Expr -> Void]
+														[Local e(7017):Null<haxe.macro.Expr>:Null<haxe.macro.Expr>]
+						[Case:Void]
+							[Const:Int] 19
+							[Const:Int] 20
+							[Block:Void] [Block:Void]
+						[Case:Void]
+							[Const:Int] 21
+							[Block:Void]
+								[Var `(7018):haxe.macro.Expr]
+									[EnumParameter:haxe.macro.Expr]
+										[Local `(6936):haxe.macro.ExprDef:haxe.macro.ExprDef]
+										EUntyped
+										0
+								[Block:Void]
+									[Var e(7019):haxe.macro.Expr] [Local `(7018):haxe.macro.Expr:haxe.macro.Expr]
+									[Block:Void]
+										[Call:Void]
+											[Local f(6819):haxe.macro.Expr -> Void:haxe.macro.Expr -> Void]
+											[Local e(7019):haxe.macro.Expr:haxe.macro.Expr]
+						[Case:Void]
+							[Const:Int] 22
+							[Block:Void]
+								[Var `(7020):haxe.macro.Expr]
+									[EnumParameter:haxe.macro.Expr]
+										[Local `(6936):haxe.macro.ExprDef:haxe.macro.ExprDef]
+										EThrow
+										0
+								[Block:Void]
+									[Var e(7021):haxe.macro.Expr] [Local `(7020):haxe.macro.Expr:haxe.macro.Expr]
+									[Block:Void]
+										[Call:Void]
+											[Local f(6819):haxe.macro.Expr -> Void:haxe.macro.Expr -> Void]
+											[Local e(7021):haxe.macro.Expr:haxe.macro.Expr]
+						[Case:Void]
+							[Const:Int] 23
+							[Block:Void]
+								[Var `(7022):haxe.macro.Expr]
+									[EnumParameter:haxe.macro.Expr]
+										[Local `(6936):haxe.macro.ExprDef:haxe.macro.ExprDef]
+										ECast
+										0
+								[Var `(7023):Null<haxe.macro.ComplexType>]
+									[EnumParameter:Null<haxe.macro.ComplexType>]
+										[Local `(6936):haxe.macro.ExprDef:haxe.macro.ExprDef]
+										ECast
+										1
+								[Block:Void]
+									[Var e(7024):haxe.macro.Expr] [Local `(7022):haxe.macro.Expr:haxe.macro.Expr]
+									[Block:Void]
+										[Call:Void]
+											[Local f(6819):haxe.macro.Expr -> Void:haxe.macro.Expr -> Void]
+											[Local e(7024):haxe.macro.Expr:haxe.macro.Expr]
+						[Case:Void]
+							[Const:Int] 24
+							[Block:Void]
+								[Var `(7025):haxe.macro.Expr]
+									[EnumParameter:haxe.macro.Expr]
+										[Local `(6936):haxe.macro.ExprDef:haxe.macro.ExprDef]
+										EDisplay
+										0
+								[Var `(7026):haxe.macro.DisplayKind]
+									[EnumParameter:haxe.macro.DisplayKind]
+										[Local `(6936):haxe.macro.ExprDef:haxe.macro.ExprDef]
+										EDisplay
+										1
+								[Block:Void]
+									[Var e(7027):haxe.macro.Expr] [Local `(7025):haxe.macro.Expr:haxe.macro.Expr]
+									[Block:Void]
+										[Call:Void]
+											[Local f(6819):haxe.macro.Expr -> Void:haxe.macro.Expr -> Void]
+											[Local e(7027):haxe.macro.Expr:haxe.macro.Expr]
+						[Case:Void]
+							[Const:Int] 25
+							[Block:Void]
+								[Var `(7028):haxe.macro.Expr]
+									[EnumParameter:haxe.macro.Expr]
+										[Local `(6936):haxe.macro.ExprDef:haxe.macro.ExprDef]
+										ETernary
+										0
+								[Var `(7029):haxe.macro.Expr]
+									[EnumParameter:haxe.macro.Expr]
+										[Local `(6936):haxe.macro.ExprDef:haxe.macro.ExprDef]
+										ETernary
+										1
+								[Var `(7030):haxe.macro.Expr]
+									[EnumParameter:haxe.macro.Expr]
+										[Local `(6936):haxe.macro.ExprDef:haxe.macro.ExprDef]
+										ETernary
+										2
+								[Block:Void]
+									[Var e1(7031):haxe.macro.Expr] [Local `(7028):haxe.macro.Expr:haxe.macro.Expr]
+									[Var e2(7032):haxe.macro.Expr] [Local `(7029):haxe.macro.Expr:haxe.macro.Expr]
+									[Var e3(7033):haxe.macro.Expr] [Local `(7030):haxe.macro.Expr:haxe.macro.Expr]
+									[Block:Void]
+										[Call:Void]
+											[Local f(6819):haxe.macro.Expr -> Void:haxe.macro.Expr -> Void]
+											[Local e1(7031):haxe.macro.Expr:haxe.macro.Expr]
+										[Call:Void]
+											[Local f(6819):haxe.macro.Expr -> Void:haxe.macro.Expr -> Void]
+											[Local e2(7032):haxe.macro.Expr:haxe.macro.Expr]
+										[Block:Void]
+											[If:Void]
+												[Binop:Bool]
+													[Local e3(7033):haxe.macro.Expr:haxe.macro.Expr]
+													!=
+													[Const:Null<haxe.macro.Expr>] null
+												[Then:Void] [Block:Void]
+													[Call:Void]
+														[Local f(6819):haxe.macro.Expr -> Void:haxe.macro.Expr -> Void]
+														[Local e3(7033):haxe.macro.Expr:haxe.macro.Expr]
+						[Case:Void]
+							[Const:Int] 26
+							[Block:Void]
+								[Var `(7034):haxe.macro.Expr]
+									[EnumParameter:haxe.macro.Expr]
+										[Local `(6936):haxe.macro.ExprDef:haxe.macro.ExprDef]
+										ECheckType
+										0
+								[Var `(7035):haxe.macro.ComplexType]
+									[EnumParameter:haxe.macro.ComplexType]
+										[Local `(6936):haxe.macro.ExprDef:haxe.macro.ExprDef]
+										ECheckType
+										1
+								[Block:Void]
+									[Var e(7036):haxe.macro.Expr] [Local `(7034):haxe.macro.Expr:haxe.macro.Expr]
+									[Block:Void]
+										[Call:Void]
+											[Local f(6819):haxe.macro.Expr -> Void:haxe.macro.Expr -> Void]
+											[Local e(7036):haxe.macro.Expr:haxe.macro.Expr]
+						[Case:Void]
+							[Const:Int] 27
+							[Block:Void]
+								[Var `(7037):haxe.macro.MetadataEntry]
+									[EnumParameter:haxe.macro.MetadataEntry]
+										[Local `(6936):haxe.macro.ExprDef:haxe.macro.ExprDef]
+										EMeta
+										0
+								[Var `(7038):haxe.macro.Expr]
+									[EnumParameter:haxe.macro.Expr]
+										[Local `(6936):haxe.macro.ExprDef:haxe.macro.ExprDef]
+										EMeta
+										1
+								[Block:Void]
+									[Var e(7039):haxe.macro.Expr] [Local `(7038):haxe.macro.Expr:haxe.macro.Expr]
+									[Block:Void]
+										[Call:Void]
+											[Local f(6819):haxe.macro.Expr -> Void:haxe.macro.Expr -> Void]
+											[Local e(7039):haxe.macro.Expr:haxe.macro.Expr]
+						[Case:Void]
+							[Const:Int] 28
+							[Block:Void]
+								[Var `(7040):haxe.macro.Expr]
+									[EnumParameter:haxe.macro.Expr]
+										[Local `(6936):haxe.macro.ExprDef:haxe.macro.ExprDef]
+										EIs
+										0
+								[Var `(7041):haxe.macro.ComplexType]
+									[EnumParameter:haxe.macro.ComplexType]
+										[Local `(6936):haxe.macro.ExprDef:haxe.macro.ExprDef]
+										EIs
+										1
+								[Block:Void]
+									[Var e(7042):haxe.macro.Expr] [Local `(7040):haxe.macro.Expr:haxe.macro.Expr]
+									[Block:Void]
+										[Call:Void]
+											[Local f(6819):haxe.macro.Expr -> Void:haxe.macro.Expr -> Void]
+											[Local e(7042):haxe.macro.Expr:haxe.macro.Expr]
+
+	public static function map[Function:(e : haxe.macro.Expr, f : (haxe.macro.Expr -> haxe.macro.Expr)) -> haxe.macro.Expr]
+		[Arg:haxe.macro.Expr] [Local e(7043):haxe.macro.Expr]
+		[Arg:haxe.macro.Expr -> haxe.macro.Expr] [Local f(7044):haxe.macro.Expr -> haxe.macro.Expr]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[ObjectDecl:{ pos : haxe.macro.Position, expr : haxe.macro.ExprDef }]
+					pos: [Field:haxe.macro.Position]
+						[Local e(7043):haxe.macro.Expr:haxe.macro.Expr]
+						[FAnon:haxe.macro.Position] pos:haxe.macro.Position
+					expr: [Meta:haxe.macro.ExprDef]
+						:ast(switch (e.expr) {
+	case EConst(_):
+		e.expr;	
+	case EArray(e1, e2):
+		EArray(f(e1), f(e2));	
+	case EBinop(op, e1, e2):
+		EBinop(op, f(e1), f(e2));	
+	case EField(e, field, kind):
+		EField(f(e), field, kind);	
+	case EParenthesis(e):
+		EParenthesis(f(e));	
+	case EObjectDecl(fields):
+		var ret = [];
+		for (field  in  fields) ret.push({ field : field.field, expr : f(field.expr), quotes : field.quotes });
+		EObjectDecl(ret);	
+	case EArrayDecl(el):
+		EArrayDecl(ExprArrayTools.map(el, f));	
+	case ECall(e, params):
+		ECall(f(e), ExprArrayTools.map(params, f));	
+	case ENew(tp, params):
+		ENew(tp, ExprArrayTools.map(params, f));	
+	case EUnop(op, postFix, e):
+		EUnop(op, postFix, f(e));	
+	case EVars(vars):
+		var ret = [];
+		for (v  in  vars) {
+			var v2:Var = { name : v.name, type : v.type, expr : opt(v.expr, f) };
+			if (v.isFinal != null) v2.isFinal = v.isFinal;
+			if (v.isStatic != null) v2.isStatic = v.isStatic;
+			ret.push(v2);
+		};
+		EVars(ret);	
+	case EBlock(el):
+		EBlock(ExprArrayTools.map(el, f));	
+	case EFor(it, expr):
+		EFor(f(it), f(expr));	
+	case EIf(econd, eif, eelse):
+		EIf(f(econd), f(eif), opt(eelse, f));	
+	case EWhile(econd, e, normalWhile):
+		EWhile(f(econd), f(e), normalWhile);	
+	case EReturn(e):
+		EReturn(opt(e, f));	
+	case EUntyped(e):
+		EUntyped(f(e));	
+	case EThrow(e):
+		EThrow(f(e));	
+	case ECast(e, t):
+		ECast(f(e), t);	
+	case EIs(e, t):
+		EIs(f(e), t);	
+	case EDisplay(e, dk):
+		EDisplay(f(e), dk);	
+	case ETernary(econd, eif, eelse):
+		ETernary(f(econd), f(eif), f(eelse));	
+	case ECheckType(e, t):
+		ECheckType(f(e), t);	
+	case EContinue, EBreak:
+		e.expr;	
+	case ETry(e, catches):
+		var ret = [];
+		for (c  in  catches) ret.push({ name : c.name, type : c.type, expr : f(c.expr) });
+		ETry(f(e), ret);	
+	case ESwitch(e, cases, edef):
+		var ret = [];
+		for (c  in  cases) ret.push({ expr : opt(c.expr, f), guard : opt(c.guard, f), values : ExprArrayTools.map(c.values, f) });
+		ESwitch(f(e), ret, edef == null || edef.expr == null ? edef : f(edef));	
+	case EFunction(kind, func):
+		var ret = [];
+		for (arg  in  func.args) ret.push({ name : arg.name, opt : arg.opt, type : arg.type, value : opt(arg.value, f) });
+		EFunction(kind, { args : ret, ret : func.ret, params : func.params, expr : f(func.expr) });	
+	case EMeta(m, e):
+		EMeta(m, f(e));	
+})
+						[Block:haxe.macro.ExprDef]
+							[Var `(7197):haxe.macro.ExprDef]
+								[Field:haxe.macro.ExprDef]
+									[Local e(7043):haxe.macro.Expr:haxe.macro.Expr]
+									[FAnon:haxe.macro.ExprDef] expr:haxe.macro.ExprDef
+							[Switch:haxe.macro.ExprDef]
+								[Meta:Int]
+									:exhaustive
+									[EnumIndex:Int] [Local `(7197):haxe.macro.ExprDef:haxe.macro.ExprDef]
+								[Case:haxe.macro.ExprDef]
+									[Const:Int] 0
+									[Block:haxe.macro.ExprDef]
+										[Var `(7198):haxe.macro.Constant]
+											[EnumParameter:haxe.macro.Constant]
+												[Local `(7197):haxe.macro.ExprDef:haxe.macro.ExprDef]
+												EConst
+												0
+										[Block:haxe.macro.ExprDef]
+											[Field:haxe.macro.ExprDef]
+												[Local e(7043):haxe.macro.Expr:haxe.macro.Expr]
+												[FAnon:haxe.macro.ExprDef] expr:haxe.macro.ExprDef
+								[Case:haxe.macro.ExprDef]
+									[Const:Int] 1
+									[Block:haxe.macro.ExprDef]
+										[Var `(7199):haxe.macro.Expr]
+											[EnumParameter:haxe.macro.Expr]
+												[Local `(7197):haxe.macro.ExprDef:haxe.macro.ExprDef]
+												EArray
+												0
+										[Var `(7200):haxe.macro.Expr]
+											[EnumParameter:haxe.macro.Expr]
+												[Local `(7197):haxe.macro.ExprDef:haxe.macro.ExprDef]
+												EArray
+												1
+										[Block:haxe.macro.ExprDef]
+											[Var e1(7201):haxe.macro.Expr] [Local `(7199):haxe.macro.Expr:haxe.macro.Expr]
+											[Var e2(7202):haxe.macro.Expr] [Local `(7200):haxe.macro.Expr:haxe.macro.Expr]
+											[Block:haxe.macro.ExprDef]
+												[Call:haxe.macro.ExprDef]
+													[Field:(e1 : haxe.macro.Expr, e2 : haxe.macro.Expr) -> haxe.macro.ExprDef]
+														[TypeExpr haxe.macro.ExprDef:Enum<haxe.macro.ExprDef>]
+														[FEnum:(e1 : haxe.macro.Expr, e2 : haxe.macro.Expr) -> haxe.macro.ExprDef]
+															haxe.macro.ExprDef
+															EArray
+													[Call:haxe.macro.Expr]
+														[Local f(7044):haxe.macro.Expr -> haxe.macro.Expr:haxe.macro.Expr -> haxe.macro.Expr]
+														[Local e1(7201):haxe.macro.Expr:haxe.macro.Expr]
+													[Call:haxe.macro.Expr]
+														[Local f(7044):haxe.macro.Expr -> haxe.macro.Expr:haxe.macro.Expr -> haxe.macro.Expr]
+														[Local e2(7202):haxe.macro.Expr:haxe.macro.Expr]
+								[Case:haxe.macro.ExprDef]
+									[Const:Int] 2
+									[Block:haxe.macro.ExprDef]
+										[Var `(7203):haxe.macro.Binop]
+											[EnumParameter:haxe.macro.Binop]
+												[Local `(7197):haxe.macro.ExprDef:haxe.macro.ExprDef]
+												EBinop
+												0
+										[Var `(7204):haxe.macro.Expr]
+											[EnumParameter:haxe.macro.Expr]
+												[Local `(7197):haxe.macro.ExprDef:haxe.macro.ExprDef]
+												EBinop
+												1
+										[Var `(7205):haxe.macro.Expr]
+											[EnumParameter:haxe.macro.Expr]
+												[Local `(7197):haxe.macro.ExprDef:haxe.macro.ExprDef]
+												EBinop
+												2
+										[Block:haxe.macro.ExprDef]
+											[Var op(7206):haxe.macro.Binop] [Local `(7203):haxe.macro.Binop:haxe.macro.Binop]
+											[Var e1(7207):haxe.macro.Expr] [Local `(7204):haxe.macro.Expr:haxe.macro.Expr]
+											[Var e2(7208):haxe.macro.Expr] [Local `(7205):haxe.macro.Expr:haxe.macro.Expr]
+											[Block:haxe.macro.ExprDef]
+												[Call:haxe.macro.ExprDef]
+													[Field:(op : haxe.macro.Binop, e1 : haxe.macro.Expr, e2 : haxe.macro.Expr) -> haxe.macro.ExprDef]
+														[TypeExpr haxe.macro.ExprDef:Enum<haxe.macro.ExprDef>]
+														[FEnum:(op : haxe.macro.Binop, e1 : haxe.macro.Expr, e2 : haxe.macro.Expr) -> haxe.macro.ExprDef]
+															haxe.macro.ExprDef
+															EBinop
+													[Local op(7206):haxe.macro.Binop:haxe.macro.Binop]
+													[Call:haxe.macro.Expr]
+														[Local f(7044):haxe.macro.Expr -> haxe.macro.Expr:haxe.macro.Expr -> haxe.macro.Expr]
+														[Local e1(7207):haxe.macro.Expr:haxe.macro.Expr]
+													[Call:haxe.macro.Expr]
+														[Local f(7044):haxe.macro.Expr -> haxe.macro.Expr:haxe.macro.Expr -> haxe.macro.Expr]
+														[Local e2(7208):haxe.macro.Expr:haxe.macro.Expr]
+								[Case:haxe.macro.ExprDef]
+									[Const:Int] 3
+									[Block:haxe.macro.ExprDef]
+										[Var `(7209):haxe.macro.Expr]
+											[EnumParameter:haxe.macro.Expr]
+												[Local `(7197):haxe.macro.ExprDef:haxe.macro.ExprDef]
+												EField
+												0
+										[Var `(7210):String]
+											[EnumParameter:String]
+												[Local `(7197):haxe.macro.ExprDef:haxe.macro.ExprDef]
+												EField
+												1
+										[Var `(7211):Null<haxe.macro.EFieldKind>]
+											[EnumParameter:Null<haxe.macro.EFieldKind>]
+												[Local `(7197):haxe.macro.ExprDef:haxe.macro.ExprDef]
+												EField
+												2
+										[Block:haxe.macro.ExprDef]
+											[Var e(7212):haxe.macro.Expr] [Local `(7209):haxe.macro.Expr:haxe.macro.Expr]
+											[Var field(7213):String] [Local `(7210):String:String]
+											[Var kind(7214):Null<haxe.macro.EFieldKind>] [Local `(7211):Null<haxe.macro.EFieldKind>:Null<haxe.macro.EFieldKind>]
+											[Block:haxe.macro.ExprDef]
+												[Call:haxe.macro.ExprDef]
+													[Field:(e : haxe.macro.Expr, field : String, ?kind : Null<haxe.macro.EFieldKind>) -> haxe.macro.ExprDef]
+														[TypeExpr haxe.macro.ExprDef:Enum<haxe.macro.ExprDef>]
+														[FEnum:(e : haxe.macro.Expr, field : String, ?kind : Null<haxe.macro.EFieldKind>) -> haxe.macro.ExprDef]
+															haxe.macro.ExprDef
+															EField
+													[Call:haxe.macro.Expr]
+														[Local f(7044):haxe.macro.Expr -> haxe.macro.Expr:haxe.macro.Expr -> haxe.macro.Expr]
+														[Local e(7212):haxe.macro.Expr:haxe.macro.Expr]
+													[Local field(7213):String:String]
+													[Local kind(7214):Null<haxe.macro.EFieldKind>:Null<haxe.macro.EFieldKind>]
+								[Case:haxe.macro.ExprDef]
+									[Const:Int] 4
+									[Block:haxe.macro.ExprDef]
+										[Var `(7215):haxe.macro.Expr]
+											[EnumParameter:haxe.macro.Expr]
+												[Local `(7197):haxe.macro.ExprDef:haxe.macro.ExprDef]
+												EParenthesis
+												0
+										[Block:haxe.macro.ExprDef]
+											[Var e(7216):haxe.macro.Expr] [Local `(7215):haxe.macro.Expr:haxe.macro.Expr]
+											[Block:haxe.macro.ExprDef]
+												[Call:haxe.macro.ExprDef]
+													[Field:(e : haxe.macro.Expr) -> haxe.macro.ExprDef]
+														[TypeExpr haxe.macro.ExprDef:Enum<haxe.macro.ExprDef>]
+														[FEnum:(e : haxe.macro.Expr) -> haxe.macro.ExprDef]
+															haxe.macro.ExprDef
+															EParenthesis
+													[Call:haxe.macro.Expr]
+														[Local f(7044):haxe.macro.Expr -> haxe.macro.Expr:haxe.macro.Expr -> haxe.macro.Expr]
+														[Local e(7216):haxe.macro.Expr:haxe.macro.Expr]
+								[Case:haxe.macro.ExprDef]
+									[Const:Int] 5
+									[Block:haxe.macro.ExprDef]
+										[Var `(7217):Array<haxe.macro.ObjectField>]
+											[EnumParameter:Array<haxe.macro.ObjectField>]
+												[Local `(7197):haxe.macro.ExprDef:haxe.macro.ExprDef]
+												EObjectDecl
+												0
+										[Block:haxe.macro.ExprDef]
+											[Var fields(7218):Array<haxe.macro.ObjectField>] [Local `(7217):Array<haxe.macro.ObjectField>:Array<haxe.macro.ObjectField>]
+											[Block:haxe.macro.ExprDef]
+												[Var ret(7219):Array<{ quotes : Null<haxe.macro.QuoteStatus>, field : String, expr : haxe.macro.Expr }>] [ArrayDecl:Array<{ quotes : Null<haxe.macro.QuoteStatus>, field : String, expr : haxe.macro.Expr }>]
+												[Block:Void]
+													[Var `(7220):Int] [Const:Int] 0
+													[While:Void]
+														[Binop:Bool]
+															[Local `(7220):Int:Int]
+															<
+															[Field:Int]
+																[Local fields(7218):Array<haxe.macro.ObjectField>:Array<haxe.macro.ObjectField>]
+																[FInstance:Int]
+																	Array<haxe.macro.ObjectField>
+																	length:Int
+														[Block:Void]
+															[Var field(7221):haxe.macro.ObjectField]
+																[Array:haxe.macro.ObjectField]
+																	[Local fields(7218):Array<haxe.macro.ObjectField>:Array<haxe.macro.ObjectField>]
+																	[Local `(7220):Int:Int]
+															[Unop:Int]
+																++
+																Prefix
+																[Local `(7220):Int:Int]
+															[Call:Int]
+																[Field:(x : { quotes : Null<haxe.macro.QuoteStatus>, field : String, expr : haxe.macro.Expr }) -> Int]
+																	[Local ret(7219):Array<{ quotes : Null<haxe.macro.QuoteStatus>, field : String, expr : haxe.macro.Expr }>:Array<{ quotes : Null<haxe.macro.QuoteStatus>, field : String, expr : haxe.macro.Expr }>]
+																	[FInstance:(x : { quotes : Null<haxe.macro.QuoteStatus>, field : String, expr : haxe.macro.Expr }) -> Int]
+																		Array<{ quotes : Null<haxe.macro.QuoteStatus>, field : String, expr : haxe.macro.Expr }>
+																		push:(x : Array.T) -> Int
+																[ObjectDecl:{ quotes : Null<haxe.macro.QuoteStatus>, field : String, expr : haxe.macro.Expr }]
+																	field: [Field:String]
+																		[Local field(7221):haxe.macro.ObjectField:haxe.macro.ObjectField]
+																		[FAnon:String] field:String
+																	expr: [Call:haxe.macro.Expr]
+																		[Local f(7044):haxe.macro.Expr -> haxe.macro.Expr:haxe.macro.Expr -> haxe.macro.Expr]
+																		[Field:haxe.macro.Expr]
+																			[Local field(7221):haxe.macro.ObjectField:haxe.macro.ObjectField]
+																			[FAnon:haxe.macro.Expr] expr:haxe.macro.Expr
+																	quotes: [Field:Null<haxe.macro.QuoteStatus>]
+																		[Local field(7221):haxe.macro.ObjectField:haxe.macro.ObjectField]
+																		[FAnon:Null<haxe.macro.QuoteStatus>] quotes:Null<haxe.macro.QuoteStatus>
+												[Call:haxe.macro.ExprDef]
+													[Field:(fields : Array<haxe.macro.ObjectField>) -> haxe.macro.ExprDef]
+														[TypeExpr haxe.macro.ExprDef:Enum<haxe.macro.ExprDef>]
+														[FEnum:(fields : Array<haxe.macro.ObjectField>) -> haxe.macro.ExprDef]
+															haxe.macro.ExprDef
+															EObjectDecl
+													[Local ret(7219):Array<{ quotes : Null<haxe.macro.QuoteStatus>, field : String, expr : haxe.macro.Expr }>:Array<{ quotes : Null<haxe.macro.QuoteStatus>, field : String, expr : haxe.macro.Expr }>]
+								[Case:haxe.macro.ExprDef]
+									[Const:Int] 6
+									[Block:haxe.macro.ExprDef]
+										[Var `(7222):Array<haxe.macro.Expr>]
+											[EnumParameter:Array<haxe.macro.Expr>]
+												[Local `(7197):haxe.macro.ExprDef:haxe.macro.ExprDef]
+												EArrayDecl
+												0
+										[Block:haxe.macro.ExprDef]
+											[Var el(7223):Array<haxe.macro.Expr>] [Local `(7222):Array<haxe.macro.Expr>:Array<haxe.macro.Expr>]
+											[Block:haxe.macro.ExprDef]
+												[Call:haxe.macro.ExprDef]
+													[Field:(values : Array<haxe.macro.Expr>) -> haxe.macro.ExprDef]
+														[TypeExpr haxe.macro.ExprDef:Enum<haxe.macro.ExprDef>]
+														[FEnum:(values : Array<haxe.macro.Expr>) -> haxe.macro.ExprDef]
+															haxe.macro.ExprDef
+															EArrayDecl
+													[Call:Array<haxe.macro.Expr>]
+														[Field:(el : Array<haxe.macro.Expr>, f : (haxe.macro.Expr -> haxe.macro.Expr)) -> Array<haxe.macro.Expr>]
+															[TypeExpr haxe.macro.ExprArrayTools:Class<haxe.macro.ExprArrayTools>]
+															[FStatic:(el : Array<haxe.macro.Expr>, f : (haxe.macro.Expr -> haxe.macro.Expr)) -> Array<haxe.macro.Expr>]
+																haxe.macro.ExprArrayTools
+																map:(el : Array<haxe.macro.Expr>, f : (haxe.macro.Expr -> haxe.macro.Expr)) -> Array<haxe.macro.Expr>
+														[Local el(7223):Array<haxe.macro.Expr>:Array<haxe.macro.Expr>]
+														[Local f(7044):haxe.macro.Expr -> haxe.macro.Expr:haxe.macro.Expr -> haxe.macro.Expr]
+								[Case:haxe.macro.ExprDef]
+									[Const:Int] 7
+									[Block:haxe.macro.ExprDef]
+										[Var `(7224):haxe.macro.Expr]
+											[EnumParameter:haxe.macro.Expr]
+												[Local `(7197):haxe.macro.ExprDef:haxe.macro.ExprDef]
+												ECall
+												0
+										[Var `(7225):Array<haxe.macro.Expr>]
+											[EnumParameter:Array<haxe.macro.Expr>]
+												[Local `(7197):haxe.macro.ExprDef:haxe.macro.ExprDef]
+												ECall
+												1
+										[Block:haxe.macro.ExprDef]
+											[Var e(7226):haxe.macro.Expr] [Local `(7224):haxe.macro.Expr:haxe.macro.Expr]
+											[Var params(7227):Array<haxe.macro.Expr>] [Local `(7225):Array<haxe.macro.Expr>:Array<haxe.macro.Expr>]
+											[Block:haxe.macro.ExprDef]
+												[Call:haxe.macro.ExprDef]
+													[Field:(e : haxe.macro.Expr, params : Array<haxe.macro.Expr>) -> haxe.macro.ExprDef]
+														[TypeExpr haxe.macro.ExprDef:Enum<haxe.macro.ExprDef>]
+														[FEnum:(e : haxe.macro.Expr, params : Array<haxe.macro.Expr>) -> haxe.macro.ExprDef]
+															haxe.macro.ExprDef
+															ECall
+													[Call:haxe.macro.Expr]
+														[Local f(7044):haxe.macro.Expr -> haxe.macro.Expr:haxe.macro.Expr -> haxe.macro.Expr]
+														[Local e(7226):haxe.macro.Expr:haxe.macro.Expr]
+													[Call:Array<haxe.macro.Expr>]
+														[Field:(el : Array<haxe.macro.Expr>, f : (haxe.macro.Expr -> haxe.macro.Expr)) -> Array<haxe.macro.Expr>]
+															[TypeExpr haxe.macro.ExprArrayTools:Class<haxe.macro.ExprArrayTools>]
+															[FStatic:(el : Array<haxe.macro.Expr>, f : (haxe.macro.Expr -> haxe.macro.Expr)) -> Array<haxe.macro.Expr>]
+																haxe.macro.ExprArrayTools
+																map:(el : Array<haxe.macro.Expr>, f : (haxe.macro.Expr -> haxe.macro.Expr)) -> Array<haxe.macro.Expr>
+														[Local params(7227):Array<haxe.macro.Expr>:Array<haxe.macro.Expr>]
+														[Local f(7044):haxe.macro.Expr -> haxe.macro.Expr:haxe.macro.Expr -> haxe.macro.Expr]
+								[Case:haxe.macro.ExprDef]
+									[Const:Int] 8
+									[Block:haxe.macro.ExprDef]
+										[Var `(7228):haxe.macro.TypePath]
+											[EnumParameter:haxe.macro.TypePath]
+												[Local `(7197):haxe.macro.ExprDef:haxe.macro.ExprDef]
+												ENew
+												0
+										[Var `(7229):Array<haxe.macro.Expr>]
+											[EnumParameter:Array<haxe.macro.Expr>]
+												[Local `(7197):haxe.macro.ExprDef:haxe.macro.ExprDef]
+												ENew
+												1
+										[Block:haxe.macro.ExprDef]
+											[Var tp(7230):haxe.macro.TypePath] [Local `(7228):haxe.macro.TypePath:haxe.macro.TypePath]
+											[Var params(7231):Array<haxe.macro.Expr>] [Local `(7229):Array<haxe.macro.Expr>:Array<haxe.macro.Expr>]
+											[Block:haxe.macro.ExprDef]
+												[Call:haxe.macro.ExprDef]
+													[Field:(t : haxe.macro.TypePath, params : Array<haxe.macro.Expr>) -> haxe.macro.ExprDef]
+														[TypeExpr haxe.macro.ExprDef:Enum<haxe.macro.ExprDef>]
+														[FEnum:(t : haxe.macro.TypePath, params : Array<haxe.macro.Expr>) -> haxe.macro.ExprDef]
+															haxe.macro.ExprDef
+															ENew
+													[Local tp(7230):haxe.macro.TypePath:haxe.macro.TypePath]
+													[Call:Array<haxe.macro.Expr>]
+														[Field:(el : Array<haxe.macro.Expr>, f : (haxe.macro.Expr -> haxe.macro.Expr)) -> Array<haxe.macro.Expr>]
+															[TypeExpr haxe.macro.ExprArrayTools:Class<haxe.macro.ExprArrayTools>]
+															[FStatic:(el : Array<haxe.macro.Expr>, f : (haxe.macro.Expr -> haxe.macro.Expr)) -> Array<haxe.macro.Expr>]
+																haxe.macro.ExprArrayTools
+																map:(el : Array<haxe.macro.Expr>, f : (haxe.macro.Expr -> haxe.macro.Expr)) -> Array<haxe.macro.Expr>
+														[Local params(7231):Array<haxe.macro.Expr>:Array<haxe.macro.Expr>]
+														[Local f(7044):haxe.macro.Expr -> haxe.macro.Expr:haxe.macro.Expr -> haxe.macro.Expr]
+								[Case:haxe.macro.ExprDef]
+									[Const:Int] 9
+									[Block:haxe.macro.ExprDef]
+										[Var `(7232):haxe.macro.Unop]
+											[EnumParameter:haxe.macro.Unop]
+												[Local `(7197):haxe.macro.ExprDef:haxe.macro.ExprDef]
+												EUnop
+												0
+										[Var `(7233):Bool]
+											[EnumParameter:Bool]
+												[Local `(7197):haxe.macro.ExprDef:haxe.macro.ExprDef]
+												EUnop
+												1
+										[Var `(7234):haxe.macro.Expr]
+											[EnumParameter:haxe.macro.Expr]
+												[Local `(7197):haxe.macro.ExprDef:haxe.macro.ExprDef]
+												EUnop
+												2
+										[Block:haxe.macro.ExprDef]
+											[Var op(7235):haxe.macro.Unop] [Local `(7232):haxe.macro.Unop:haxe.macro.Unop]
+											[Var postFix(7236):Bool] [Local `(7233):Bool:Bool]
+											[Var e(7237):haxe.macro.Expr] [Local `(7234):haxe.macro.Expr:haxe.macro.Expr]
+											[Block:haxe.macro.ExprDef]
+												[Call:haxe.macro.ExprDef]
+													[Field:(op : haxe.macro.Unop, postFix : Bool, e : haxe.macro.Expr) -> haxe.macro.ExprDef]
+														[TypeExpr haxe.macro.ExprDef:Enum<haxe.macro.ExprDef>]
+														[FEnum:(op : haxe.macro.Unop, postFix : Bool, e : haxe.macro.Expr) -> haxe.macro.ExprDef]
+															haxe.macro.ExprDef
+															EUnop
+													[Local op(7235):haxe.macro.Unop:haxe.macro.Unop]
+													[Local postFix(7236):Bool:Bool]
+													[Call:haxe.macro.Expr]
+														[Local f(7044):haxe.macro.Expr -> haxe.macro.Expr:haxe.macro.Expr -> haxe.macro.Expr]
+														[Local e(7237):haxe.macro.Expr:haxe.macro.Expr]
+								[Case:haxe.macro.ExprDef]
+									[Const:Int] 10
+									[Block:haxe.macro.ExprDef]
+										[Var `(7238):Array<haxe.macro.Var>]
+											[EnumParameter:Array<haxe.macro.Var>]
+												[Local `(7197):haxe.macro.ExprDef:haxe.macro.ExprDef]
+												EVars
+												0
+										[Block:haxe.macro.ExprDef]
+											[Var vars(7239):Array<haxe.macro.Var>] [Local `(7238):Array<haxe.macro.Var>:Array<haxe.macro.Var>]
+											[Block:haxe.macro.ExprDef]
+												[Var ret(7240):Array<haxe.macro.Var>] [ArrayDecl:Array<haxe.macro.Var>]
+												[Block:Void]
+													[Var `(7241):Int] [Const:Int] 0
+													[While:Void]
+														[Binop:Bool]
+															[Local `(7241):Int:Int]
+															<
+															[Field:Int]
+																[Local vars(7239):Array<haxe.macro.Var>:Array<haxe.macro.Var>]
+																[FInstance:Int]
+																	Array<haxe.macro.Var>
+																	length:Int
+														[Block:Void]
+															[Var v(7242):haxe.macro.Var]
+																[Array:haxe.macro.Var]
+																	[Local vars(7239):Array<haxe.macro.Var>:Array<haxe.macro.Var>]
+																	[Local `(7241):Int:Int]
+															[Unop:Int]
+																++
+																Prefix
+																[Local `(7241):Int:Int]
+															[Var v2(7243):haxe.macro.Var]
+																[ObjectDecl:{ type : Null<haxe.macro.ComplexType>, ?namePos : Null<haxe.macro.Position>, name : String, ?meta : Null<haxe.macro.Metadata>, ?isStatic : Null<Bool>, ?isFinal : Null<Bool>, expr : haxe.macro.Expr }]
+																	name: [Field:String]
+																		[Local v(7242):haxe.macro.Var:haxe.macro.Var]
+																		[FAnon:String] name:String
+																	type: [Field:Null<haxe.macro.ComplexType>]
+																		[Local v(7242):haxe.macro.Var:haxe.macro.Var]
+																		[FAnon:Null<haxe.macro.ComplexType>] type:Null<haxe.macro.ComplexType>
+																	expr: [Block:haxe.macro.Expr]
+																		[Var e(7244):Null<haxe.macro.Expr>]
+																			[Field:Null<haxe.macro.Expr>]
+																				[Local v(7242):haxe.macro.Var:haxe.macro.Var]
+																				[FAnon:Null<haxe.macro.Expr>] expr:Null<haxe.macro.Expr>
+																		[If:haxe.macro.Expr]
+																			[Binop:Bool]
+																				[Local e(7244):Null<haxe.macro.Expr>:Null<haxe.macro.Expr>]
+																				==
+																				[Const:Null<haxe.macro.Expr>] null
+																			[Then:haxe.macro.Expr] [Block:haxe.macro.Expr] [Const:haxe.macro.Expr] null
+																			[Else:haxe.macro.Expr] [Block:haxe.macro.Expr]
+																				[Call:haxe.macro.Expr]
+																					[Local f(7044):haxe.macro.Expr -> haxe.macro.Expr:haxe.macro.Expr -> haxe.macro.Expr]
+																					[Local e(7244):Null<haxe.macro.Expr>:Null<haxe.macro.Expr>]
+															[If:Void]
+																[Binop:Bool]
+																	[Field:Null<Bool>]
+																		[Local v(7242):haxe.macro.Var:haxe.macro.Var]
+																		[FAnon:Null<Bool>] isFinal:Null<Bool>
+																	!=
+																	[Const:Null<Bool>] null
+																[Then:Null<Bool>] [Block:Null<Bool>]
+																	[Binop:Null<Bool>]
+																		[Field:Null<Bool>]
+																			[Local v2(7243):haxe.macro.Var:haxe.macro.Var]
+																			[FAnon:Null<Bool>] isFinal:Null<Bool>
+																		=
+																		[Field:Null<Bool>]
+																			[Local v(7242):haxe.macro.Var:haxe.macro.Var]
+																			[FAnon:Null<Bool>] isFinal:Null<Bool>
+															[If:Void]
+																[Binop:Bool]
+																	[Field:Null<Bool>]
+																		[Local v(7242):haxe.macro.Var:haxe.macro.Var]
+																		[FAnon:Null<Bool>] isStatic:Null<Bool>
+																	!=
+																	[Const:Null<Bool>] null
+																[Then:Null<Bool>] [Block:Null<Bool>]
+																	[Binop:Null<Bool>]
+																		[Field:Null<Bool>]
+																			[Local v2(7243):haxe.macro.Var:haxe.macro.Var]
+																			[FAnon:Null<Bool>] isStatic:Null<Bool>
+																		=
+																		[Field:Null<Bool>]
+																			[Local v(7242):haxe.macro.Var:haxe.macro.Var]
+																			[FAnon:Null<Bool>] isStatic:Null<Bool>
+															[Call:Int]
+																[Field:(x : haxe.macro.Var) -> Int]
+																	[Local ret(7240):Array<haxe.macro.Var>:Array<haxe.macro.Var>]
+																	[FInstance:(x : haxe.macro.Var) -> Int]
+																		Array<haxe.macro.Var>
+																		push:(x : Array.T) -> Int
+																[Local v2(7243):haxe.macro.Var:haxe.macro.Var]
+												[Call:haxe.macro.ExprDef]
+													[Field:(vars : Array<haxe.macro.Var>) -> haxe.macro.ExprDef]
+														[TypeExpr haxe.macro.ExprDef:Enum<haxe.macro.ExprDef>]
+														[FEnum:(vars : Array<haxe.macro.Var>) -> haxe.macro.ExprDef]
+															haxe.macro.ExprDef
+															EVars
+													[Local ret(7240):Array<haxe.macro.Var>:Array<haxe.macro.Var>]
+								[Case:haxe.macro.ExprDef]
+									[Const:Int] 11
+									[Block:haxe.macro.ExprDef]
+										[Var `(7245):Null<haxe.macro.FunctionKind>]
+											[EnumParameter:Null<haxe.macro.FunctionKind>]
+												[Local `(7197):haxe.macro.ExprDef:haxe.macro.ExprDef]
+												EFunction
+												0
+										[Var `(7246):haxe.macro.Function]
+											[EnumParameter:haxe.macro.Function]
+												[Local `(7197):haxe.macro.ExprDef:haxe.macro.ExprDef]
+												EFunction
+												1
+										[Block:haxe.macro.ExprDef]
+											[Var kind(7247):Null<haxe.macro.FunctionKind>] [Local `(7245):Null<haxe.macro.FunctionKind>:Null<haxe.macro.FunctionKind>]
+											[Var func(7248):haxe.macro.Function] [Local `(7246):haxe.macro.Function:haxe.macro.Function]
+											[Block:haxe.macro.ExprDef]
+												[Var ret(7249):Array<{ value : haxe.macro.Expr, type : Null<haxe.macro.ComplexType>, opt : Null<Bool>, name : String, ?meta : Null<haxe.macro.Metadata> }>] [ArrayDecl:Array<{ value : haxe.macro.Expr, type : Null<haxe.macro.ComplexType>, opt : Null<Bool>, name : String, ?meta : Null<haxe.macro.Metadata> }>]
+												[Block:Void]
+													[Var `(7250):Int] [Const:Int] 0
+													[Var `(7251):Array<haxe.macro.FunctionArg>]
+														[Field:Array<haxe.macro.FunctionArg>]
+															[Local func(7248):haxe.macro.Function:haxe.macro.Function]
+															[FAnon:Array<haxe.macro.FunctionArg>] args:Array<haxe.macro.FunctionArg>
+													[While:Void]
+														[Binop:Bool]
+															[Local `(7250):Int:Int]
+															<
+															[Field:Int]
+																[Local `(7251):Array<haxe.macro.FunctionArg>:Array<haxe.macro.FunctionArg>]
+																[FInstance:Int]
+																	Array<haxe.macro.FunctionArg>
+																	length:Int
+														[Block:Void]
+															[Var arg(7252):haxe.macro.FunctionArg]
+																[Array:haxe.macro.FunctionArg]
+																	[Local `(7251):Array<haxe.macro.FunctionArg>:Array<haxe.macro.FunctionArg>]
+																	[Local `(7250):Int:Int]
+															[Unop:Int]
+																++
+																Prefix
+																[Local `(7250):Int:Int]
+															[Call:Int]
+																[Field:(x : { value : haxe.macro.Expr, type : Null<haxe.macro.ComplexType>, opt : Null<Bool>, name : String, ?meta : Null<haxe.macro.Metadata> }) -> Int]
+																	[Local ret(7249):Array<{ value : haxe.macro.Expr, type : Null<haxe.macro.ComplexType>, opt : Null<Bool>, name : String, ?meta : Null<haxe.macro.Metadata> }>:Array<{ value : haxe.macro.Expr, type : Null<haxe.macro.ComplexType>, opt : Null<Bool>, name : String, ?meta : Null<haxe.macro.Metadata> }>]
+																	[FInstance:(x : { value : haxe.macro.Expr, type : Null<haxe.macro.ComplexType>, opt : Null<Bool>, name : String, ?meta : Null<haxe.macro.Metadata> }) -> Int]
+																		Array<{ value : haxe.macro.Expr, type : Null<haxe.macro.ComplexType>, opt : Null<Bool>, name : String, ?meta : Null<haxe.macro.Metadata> }>
+																		push:(x : Array.T) -> Int
+																[ObjectDecl:{ value : haxe.macro.Expr, type : Null<haxe.macro.ComplexType>, opt : Null<Bool>, name : String, ?meta : Null<haxe.macro.Metadata> }]
+																	name: [Field:String]
+																		[Local arg(7252):haxe.macro.FunctionArg:haxe.macro.FunctionArg]
+																		[FAnon:String] name:String
+																	opt: [Field:Null<Bool>]
+																		[Local arg(7252):haxe.macro.FunctionArg:haxe.macro.FunctionArg]
+																		[FAnon:Null<Bool>] opt:Null<Bool>
+																	type: [Field:Null<haxe.macro.ComplexType>]
+																		[Local arg(7252):haxe.macro.FunctionArg:haxe.macro.FunctionArg]
+																		[FAnon:Null<haxe.macro.ComplexType>] type:Null<haxe.macro.ComplexType>
+																	value: [Block:haxe.macro.Expr]
+																		[Var e(7253):Null<haxe.macro.Expr>]
+																			[Field:Null<haxe.macro.Expr>]
+																				[Local arg(7252):haxe.macro.FunctionArg:haxe.macro.FunctionArg]
+																				[FAnon:Null<haxe.macro.Expr>] value:Null<haxe.macro.Expr>
+																		[If:haxe.macro.Expr]
+																			[Binop:Bool]
+																				[Local e(7253):Null<haxe.macro.Expr>:Null<haxe.macro.Expr>]
+																				==
+																				[Const:Null<haxe.macro.Expr>] null
+																			[Then:haxe.macro.Expr] [Block:haxe.macro.Expr] [Const:haxe.macro.Expr] null
+																			[Else:haxe.macro.Expr] [Block:haxe.macro.Expr]
+																				[Call:haxe.macro.Expr]
+																					[Local f(7044):haxe.macro.Expr -> haxe.macro.Expr:haxe.macro.Expr -> haxe.macro.Expr]
+																					[Local e(7253):Null<haxe.macro.Expr>:Null<haxe.macro.Expr>]
+												[Call:haxe.macro.ExprDef]
+													[Field:(kind : Null<haxe.macro.FunctionKind>, f : haxe.macro.Function) -> haxe.macro.ExprDef]
+														[TypeExpr haxe.macro.ExprDef:Enum<haxe.macro.ExprDef>]
+														[FEnum:(kind : Null<haxe.macro.FunctionKind>, f : haxe.macro.Function) -> haxe.macro.ExprDef]
+															haxe.macro.ExprDef
+															EFunction
+													[Local kind(7247):Null<haxe.macro.FunctionKind>:Null<haxe.macro.FunctionKind>]
+													[ObjectDecl:{ ret : Null<haxe.macro.ComplexType>, params : Null<Array<haxe.macro.TypeParamDecl>>, expr : haxe.macro.Expr, args : Array<{ value : haxe.macro.Expr, type : Null<haxe.macro.ComplexType>, opt : Null<Bool>, name : String, ?meta : Null<haxe.macro.Metadata> }> }]
+														args: [Local ret(7249):Array<{ value : haxe.macro.Expr, type : Null<haxe.macro.ComplexType>, opt : Null<Bool>, name : String, ?meta : Null<haxe.macro.Metadata> }>:Array<{ value : haxe.macro.Expr, type : Null<haxe.macro.ComplexType>, opt : Null<Bool>, name : String, ?meta : Null<haxe.macro.Metadata> }>]
+														ret: [Field:Null<haxe.macro.ComplexType>]
+															[Local func(7248):haxe.macro.Function:haxe.macro.Function]
+															[FAnon:Null<haxe.macro.ComplexType>] ret:Null<haxe.macro.ComplexType>
+														params: [Field:Null<Array<haxe.macro.TypeParamDecl>>]
+															[Local func(7248):haxe.macro.Function:haxe.macro.Function]
+															[FAnon:Null<Array<haxe.macro.TypeParamDecl>>] params:Null<Array<haxe.macro.TypeParamDecl>>
+														expr: [Call:haxe.macro.Expr]
+															[Local f(7044):haxe.macro.Expr -> haxe.macro.Expr:haxe.macro.Expr -> haxe.macro.Expr]
+															[Field:Null<haxe.macro.Expr>]
+																[Local func(7248):haxe.macro.Function:haxe.macro.Function]
+																[FAnon:Null<haxe.macro.Expr>] expr:Null<haxe.macro.Expr>
+								[Case:haxe.macro.ExprDef]
+									[Const:Int] 12
+									[Block:haxe.macro.ExprDef]
+										[Var `(7254):Array<haxe.macro.Expr>]
+											[EnumParameter:Array<haxe.macro.Expr>]
+												[Local `(7197):haxe.macro.ExprDef:haxe.macro.ExprDef]
+												EBlock
+												0
+										[Block:haxe.macro.ExprDef]
+											[Var el(7255):Array<haxe.macro.Expr>] [Local `(7254):Array<haxe.macro.Expr>:Array<haxe.macro.Expr>]
+											[Block:haxe.macro.ExprDef]
+												[Call:haxe.macro.ExprDef]
+													[Field:(exprs : Array<haxe.macro.Expr>) -> haxe.macro.ExprDef]
+														[TypeExpr haxe.macro.ExprDef:Enum<haxe.macro.ExprDef>]
+														[FEnum:(exprs : Array<haxe.macro.Expr>) -> haxe.macro.ExprDef]
+															haxe.macro.ExprDef
+															EBlock
+													[Call:Array<haxe.macro.Expr>]
+														[Field:(el : Array<haxe.macro.Expr>, f : (haxe.macro.Expr -> haxe.macro.Expr)) -> Array<haxe.macro.Expr>]
+															[TypeExpr haxe.macro.ExprArrayTools:Class<haxe.macro.ExprArrayTools>]
+															[FStatic:(el : Array<haxe.macro.Expr>, f : (haxe.macro.Expr -> haxe.macro.Expr)) -> Array<haxe.macro.Expr>]
+																haxe.macro.ExprArrayTools
+																map:(el : Array<haxe.macro.Expr>, f : (haxe.macro.Expr -> haxe.macro.Expr)) -> Array<haxe.macro.Expr>
+														[Local el(7255):Array<haxe.macro.Expr>:Array<haxe.macro.Expr>]
+														[Local f(7044):haxe.macro.Expr -> haxe.macro.Expr:haxe.macro.Expr -> haxe.macro.Expr]
+								[Case:haxe.macro.ExprDef]
+									[Const:Int] 13
+									[Block:haxe.macro.ExprDef]
+										[Var `(7256):haxe.macro.Expr]
+											[EnumParameter:haxe.macro.Expr]
+												[Local `(7197):haxe.macro.ExprDef:haxe.macro.ExprDef]
+												EFor
+												0
+										[Var `(7257):haxe.macro.Expr]
+											[EnumParameter:haxe.macro.Expr]
+												[Local `(7197):haxe.macro.ExprDef:haxe.macro.ExprDef]
+												EFor
+												1
+										[Block:haxe.macro.ExprDef]
+											[Var it(7258):haxe.macro.Expr] [Local `(7256):haxe.macro.Expr:haxe.macro.Expr]
+											[Var expr(7259):haxe.macro.Expr] [Local `(7257):haxe.macro.Expr:haxe.macro.Expr]
+											[Block:haxe.macro.ExprDef]
+												[Call:haxe.macro.ExprDef]
+													[Field:(it : haxe.macro.Expr, expr : haxe.macro.Expr) -> haxe.macro.ExprDef]
+														[TypeExpr haxe.macro.ExprDef:Enum<haxe.macro.ExprDef>]
+														[FEnum:(it : haxe.macro.Expr, expr : haxe.macro.Expr) -> haxe.macro.ExprDef]
+															haxe.macro.ExprDef
+															EFor
+													[Call:haxe.macro.Expr]
+														[Local f(7044):haxe.macro.Expr -> haxe.macro.Expr:haxe.macro.Expr -> haxe.macro.Expr]
+														[Local it(7258):haxe.macro.Expr:haxe.macro.Expr]
+													[Call:haxe.macro.Expr]
+														[Local f(7044):haxe.macro.Expr -> haxe.macro.Expr:haxe.macro.Expr -> haxe.macro.Expr]
+														[Local expr(7259):haxe.macro.Expr:haxe.macro.Expr]
+								[Case:haxe.macro.ExprDef]
+									[Const:Int] 14
+									[Block:haxe.macro.ExprDef]
+										[Var `(7260):haxe.macro.Expr]
+											[EnumParameter:haxe.macro.Expr]
+												[Local `(7197):haxe.macro.ExprDef:haxe.macro.ExprDef]
+												EIf
+												0
+										[Var `(7261):haxe.macro.Expr]
+											[EnumParameter:haxe.macro.Expr]
+												[Local `(7197):haxe.macro.ExprDef:haxe.macro.ExprDef]
+												EIf
+												1
+										[Var `(7262):Null<haxe.macro.Expr>]
+											[EnumParameter:Null<haxe.macro.Expr>]
+												[Local `(7197):haxe.macro.ExprDef:haxe.macro.ExprDef]
+												EIf
+												2
+										[Block:haxe.macro.ExprDef]
+											[Var econd(7263):haxe.macro.Expr] [Local `(7260):haxe.macro.Expr:haxe.macro.Expr]
+											[Var eif(7264):haxe.macro.Expr] [Local `(7261):haxe.macro.Expr:haxe.macro.Expr]
+											[Var eelse(7265):Null<haxe.macro.Expr>] [Local `(7262):Null<haxe.macro.Expr>:Null<haxe.macro.Expr>]
+											[Block:haxe.macro.ExprDef]
+												[Call:haxe.macro.ExprDef]
+													[Field:(econd : haxe.macro.Expr, eif : haxe.macro.Expr, eelse : Null<haxe.macro.Expr>) -> haxe.macro.ExprDef]
+														[TypeExpr haxe.macro.ExprDef:Enum<haxe.macro.ExprDef>]
+														[FEnum:(econd : haxe.macro.Expr, eif : haxe.macro.Expr, eelse : Null<haxe.macro.Expr>) -> haxe.macro.ExprDef]
+															haxe.macro.ExprDef
+															EIf
+													[Call:haxe.macro.Expr]
+														[Local f(7044):haxe.macro.Expr -> haxe.macro.Expr:haxe.macro.Expr -> haxe.macro.Expr]
+														[Local econd(7263):haxe.macro.Expr:haxe.macro.Expr]
+													[Call:haxe.macro.Expr]
+														[Local f(7044):haxe.macro.Expr -> haxe.macro.Expr:haxe.macro.Expr -> haxe.macro.Expr]
+														[Local eif(7264):haxe.macro.Expr:haxe.macro.Expr]
+													[If:haxe.macro.Expr]
+														[Binop:Bool]
+															[Local eelse(7265):Null<haxe.macro.Expr>:Null<haxe.macro.Expr>]
+															==
+															[Const:Null<haxe.macro.Expr>] null
+														[Then:haxe.macro.Expr] [Block:haxe.macro.Expr] [Const:haxe.macro.Expr] null
+														[Else:haxe.macro.Expr] [Block:haxe.macro.Expr]
+															[Call:haxe.macro.Expr]
+																[Local f(7044):haxe.macro.Expr -> haxe.macro.Expr:haxe.macro.Expr -> haxe.macro.Expr]
+																[Local eelse(7265):Null<haxe.macro.Expr>:Null<haxe.macro.Expr>]
+								[Case:haxe.macro.ExprDef]
+									[Const:Int] 15
+									[Block:haxe.macro.ExprDef]
+										[Var `(7266):haxe.macro.Expr]
+											[EnumParameter:haxe.macro.Expr]
+												[Local `(7197):haxe.macro.ExprDef:haxe.macro.ExprDef]
+												EWhile
+												0
+										[Var `(7267):haxe.macro.Expr]
+											[EnumParameter:haxe.macro.Expr]
+												[Local `(7197):haxe.macro.ExprDef:haxe.macro.ExprDef]
+												EWhile
+												1
+										[Var `(7268):Bool]
+											[EnumParameter:Bool]
+												[Local `(7197):haxe.macro.ExprDef:haxe.macro.ExprDef]
+												EWhile
+												2
+										[Block:haxe.macro.ExprDef]
+											[Var econd(7269):haxe.macro.Expr] [Local `(7266):haxe.macro.Expr:haxe.macro.Expr]
+											[Var e(7270):haxe.macro.Expr] [Local `(7267):haxe.macro.Expr:haxe.macro.Expr]
+											[Var normalWhile(7271):Bool] [Local `(7268):Bool:Bool]
+											[Block:haxe.macro.ExprDef]
+												[Call:haxe.macro.ExprDef]
+													[Field:(econd : haxe.macro.Expr, e : haxe.macro.Expr, normalWhile : Bool) -> haxe.macro.ExprDef]
+														[TypeExpr haxe.macro.ExprDef:Enum<haxe.macro.ExprDef>]
+														[FEnum:(econd : haxe.macro.Expr, e : haxe.macro.Expr, normalWhile : Bool) -> haxe.macro.ExprDef]
+															haxe.macro.ExprDef
+															EWhile
+													[Call:haxe.macro.Expr]
+														[Local f(7044):haxe.macro.Expr -> haxe.macro.Expr:haxe.macro.Expr -> haxe.macro.Expr]
+														[Local econd(7269):haxe.macro.Expr:haxe.macro.Expr]
+													[Call:haxe.macro.Expr]
+														[Local f(7044):haxe.macro.Expr -> haxe.macro.Expr:haxe.macro.Expr -> haxe.macro.Expr]
+														[Local e(7270):haxe.macro.Expr:haxe.macro.Expr]
+													[Local normalWhile(7271):Bool:Bool]
+								[Case:haxe.macro.ExprDef]
+									[Const:Int] 16
+									[Block:haxe.macro.ExprDef]
+										[Var `(7272):haxe.macro.Expr]
+											[EnumParameter:haxe.macro.Expr]
+												[Local `(7197):haxe.macro.ExprDef:haxe.macro.ExprDef]
+												ESwitch
+												0
+										[Var `(7273):Array<haxe.macro.Case>]
+											[EnumParameter:Array<haxe.macro.Case>]
+												[Local `(7197):haxe.macro.ExprDef:haxe.macro.ExprDef]
+												ESwitch
+												1
+										[Var `(7274):Null<haxe.macro.Expr>]
+											[EnumParameter:Null<haxe.macro.Expr>]
+												[Local `(7197):haxe.macro.ExprDef:haxe.macro.ExprDef]
+												ESwitch
+												2
+										[Block:haxe.macro.ExprDef]
+											[Var e(7275):haxe.macro.Expr] [Local `(7272):haxe.macro.Expr:haxe.macro.Expr]
+											[Var cases(7276):Array<haxe.macro.Case>] [Local `(7273):Array<haxe.macro.Case>:Array<haxe.macro.Case>]
+											[Var edef(7277):Null<haxe.macro.Expr>] [Local `(7274):Null<haxe.macro.Expr>:Null<haxe.macro.Expr>]
+											[Block:haxe.macro.ExprDef]
+												[Var ret(7278):Array<{ values : Array<haxe.macro.Expr>, guard : haxe.macro.Expr, expr : haxe.macro.Expr }>] [ArrayDecl:Array<{ values : Array<haxe.macro.Expr>, guard : haxe.macro.Expr, expr : haxe.macro.Expr }>]
+												[Block:Void]
+													[Var `(7279):Int] [Const:Int] 0
+													[While:Void]
+														[Binop:Bool]
+															[Local `(7279):Int:Int]
+															<
+															[Field:Int]
+																[Local cases(7276):Array<haxe.macro.Case>:Array<haxe.macro.Case>]
+																[FInstance:Int]
+																	Array<haxe.macro.Case>
+																	length:Int
+														[Block:Void]
+															[Var c(7280):haxe.macro.Case]
+																[Array:haxe.macro.Case]
+																	[Local cases(7276):Array<haxe.macro.Case>:Array<haxe.macro.Case>]
+																	[Local `(7279):Int:Int]
+															[Unop:Int]
+																++
+																Prefix
+																[Local `(7279):Int:Int]
+															[Call:Int]
+																[Field:(x : { values : Array<haxe.macro.Expr>, guard : haxe.macro.Expr, expr : haxe.macro.Expr }) -> Int]
+																	[Local ret(7278):Array<{ values : Array<haxe.macro.Expr>, guard : haxe.macro.Expr, expr : haxe.macro.Expr }>:Array<{ values : Array<haxe.macro.Expr>, guard : haxe.macro.Expr, expr : haxe.macro.Expr }>]
+																	[FInstance:(x : { values : Array<haxe.macro.Expr>, guard : haxe.macro.Expr, expr : haxe.macro.Expr }) -> Int]
+																		Array<{ values : Array<haxe.macro.Expr>, guard : haxe.macro.Expr, expr : haxe.macro.Expr }>
+																		push:(x : Array.T) -> Int
+																[ObjectDecl:{ values : Array<haxe.macro.Expr>, guard : haxe.macro.Expr, expr : haxe.macro.Expr }]
+																	expr: [Block:haxe.macro.Expr]
+																		[Var e(7281):Null<haxe.macro.Expr>]
+																			[Field:Null<haxe.macro.Expr>]
+																				[Local c(7280):haxe.macro.Case:haxe.macro.Case]
+																				[FAnon:Null<haxe.macro.Expr>] expr:Null<haxe.macro.Expr>
+																		[If:haxe.macro.Expr]
+																			[Binop:Bool]
+																				[Local e(7281):Null<haxe.macro.Expr>:Null<haxe.macro.Expr>]
+																				==
+																				[Const:Null<haxe.macro.Expr>] null
+																			[Then:haxe.macro.Expr] [Block:haxe.macro.Expr] [Const:haxe.macro.Expr] null
+																			[Else:haxe.macro.Expr] [Block:haxe.macro.Expr]
+																				[Call:haxe.macro.Expr]
+																					[Local f(7044):haxe.macro.Expr -> haxe.macro.Expr:haxe.macro.Expr -> haxe.macro.Expr]
+																					[Local e(7281):Null<haxe.macro.Expr>:Null<haxe.macro.Expr>]
+																	guard: [Block:haxe.macro.Expr]
+																		[Var e(7282):Null<haxe.macro.Expr>]
+																			[Field:Null<haxe.macro.Expr>]
+																				[Local c(7280):haxe.macro.Case:haxe.macro.Case]
+																				[FAnon:Null<haxe.macro.Expr>] guard:Null<haxe.macro.Expr>
+																		[If:haxe.macro.Expr]
+																			[Binop:Bool]
+																				[Local e(7282):Null<haxe.macro.Expr>:Null<haxe.macro.Expr>]
+																				==
+																				[Const:Null<haxe.macro.Expr>] null
+																			[Then:haxe.macro.Expr] [Block:haxe.macro.Expr] [Const:haxe.macro.Expr] null
+																			[Else:haxe.macro.Expr] [Block:haxe.macro.Expr]
+																				[Call:haxe.macro.Expr]
+																					[Local f(7044):haxe.macro.Expr -> haxe.macro.Expr:haxe.macro.Expr -> haxe.macro.Expr]
+																					[Local e(7282):Null<haxe.macro.Expr>:Null<haxe.macro.Expr>]
+																	values: [Call:Array<haxe.macro.Expr>]
+																		[Field:(el : Array<haxe.macro.Expr>, f : (haxe.macro.Expr -> haxe.macro.Expr)) -> Array<haxe.macro.Expr>]
+																			[TypeExpr haxe.macro.ExprArrayTools:Class<haxe.macro.ExprArrayTools>]
+																			[FStatic:(el : Array<haxe.macro.Expr>, f : (haxe.macro.Expr -> haxe.macro.Expr)) -> Array<haxe.macro.Expr>]
+																				haxe.macro.ExprArrayTools
+																				map:(el : Array<haxe.macro.Expr>, f : (haxe.macro.Expr -> haxe.macro.Expr)) -> Array<haxe.macro.Expr>
+																		[Field:Array<haxe.macro.Expr>]
+																			[Local c(7280):haxe.macro.Case:haxe.macro.Case]
+																			[FAnon:Array<haxe.macro.Expr>] values:Array<haxe.macro.Expr>
+																		[Local f(7044):haxe.macro.Expr -> haxe.macro.Expr:haxe.macro.Expr -> haxe.macro.Expr]
+												[Call:haxe.macro.ExprDef]
+													[Field:(e : haxe.macro.Expr, cases : Array<haxe.macro.Case>, edef : Null<haxe.macro.Expr>) -> haxe.macro.ExprDef]
+														[TypeExpr haxe.macro.ExprDef:Enum<haxe.macro.ExprDef>]
+														[FEnum:(e : haxe.macro.Expr, cases : Array<haxe.macro.Case>, edef : Null<haxe.macro.Expr>) -> haxe.macro.ExprDef]
+															haxe.macro.ExprDef
+															ESwitch
+													[Call:haxe.macro.Expr]
+														[Local f(7044):haxe.macro.Expr -> haxe.macro.Expr:haxe.macro.Expr -> haxe.macro.Expr]
+														[Local e(7275):haxe.macro.Expr:haxe.macro.Expr]
+													[Local ret(7278):Array<{ values : Array<haxe.macro.Expr>, guard : haxe.macro.Expr, expr : haxe.macro.Expr }>:Array<{ values : Array<haxe.macro.Expr>, guard : haxe.macro.Expr, expr : haxe.macro.Expr }>]
+													[If:Null<haxe.macro.Expr>]
+														[Binop:Bool]
+															[Binop:Bool]
+																[Local edef(7277):Null<haxe.macro.Expr>:Null<haxe.macro.Expr>]
+																==
+																[Const:Null<haxe.macro.Expr>] null
+															||
+															[Binop:Bool]
+																[Field:haxe.macro.ExprDef]
+																	[Local edef(7277):Null<haxe.macro.Expr>:Null<haxe.macro.Expr>]
+																	[FAnon:haxe.macro.ExprDef] expr:haxe.macro.ExprDef
+																==
+																[Const:haxe.macro.ExprDef] null
+														[Then:Null<haxe.macro.Expr>] [Block:Null<haxe.macro.Expr>] [Local edef(7277):Null<haxe.macro.Expr>:Null<haxe.macro.Expr>]
+														[Else:haxe.macro.Expr] [Block:haxe.macro.Expr]
+															[Call:haxe.macro.Expr]
+																[Local f(7044):haxe.macro.Expr -> haxe.macro.Expr:haxe.macro.Expr -> haxe.macro.Expr]
+																[Local edef(7277):Null<haxe.macro.Expr>:Null<haxe.macro.Expr>]
+								[Case:haxe.macro.ExprDef]
+									[Const:Int] 17
+									[Block:haxe.macro.ExprDef]
+										[Var `(7283):haxe.macro.Expr]
+											[EnumParameter:haxe.macro.Expr]
+												[Local `(7197):haxe.macro.ExprDef:haxe.macro.ExprDef]
+												ETry
+												0
+										[Var `(7284):Array<haxe.macro.Catch>]
+											[EnumParameter:Array<haxe.macro.Catch>]
+												[Local `(7197):haxe.macro.ExprDef:haxe.macro.ExprDef]
+												ETry
+												1
+										[Block:haxe.macro.ExprDef]
+											[Var e(7285):haxe.macro.Expr] [Local `(7283):haxe.macro.Expr:haxe.macro.Expr]
+											[Var catches(7286):Array<haxe.macro.Catch>] [Local `(7284):Array<haxe.macro.Catch>:Array<haxe.macro.Catch>]
+											[Block:haxe.macro.ExprDef]
+												[Var ret(7287):Array<{ type : Null<haxe.macro.ComplexType>, name : String, expr : haxe.macro.Expr }>] [ArrayDecl:Array<{ type : Null<haxe.macro.ComplexType>, name : String, expr : haxe.macro.Expr }>]
+												[Block:Void]
+													[Var `(7288):Int] [Const:Int] 0
+													[While:Void]
+														[Binop:Bool]
+															[Local `(7288):Int:Int]
+															<
+															[Field:Int]
+																[Local catches(7286):Array<haxe.macro.Catch>:Array<haxe.macro.Catch>]
+																[FInstance:Int]
+																	Array<haxe.macro.Catch>
+																	length:Int
+														[Block:Void]
+															[Var c(7289):haxe.macro.Catch]
+																[Array:haxe.macro.Catch]
+																	[Local catches(7286):Array<haxe.macro.Catch>:Array<haxe.macro.Catch>]
+																	[Local `(7288):Int:Int]
+															[Unop:Int]
+																++
+																Prefix
+																[Local `(7288):Int:Int]
+															[Call:Int]
+																[Field:(x : { type : Null<haxe.macro.ComplexType>, name : String, expr : haxe.macro.Expr }) -> Int]
+																	[Local ret(7287):Array<{ type : Null<haxe.macro.ComplexType>, name : String, expr : haxe.macro.Expr }>:Array<{ type : Null<haxe.macro.ComplexType>, name : String, expr : haxe.macro.Expr }>]
+																	[FInstance:(x : { type : Null<haxe.macro.ComplexType>, name : String, expr : haxe.macro.Expr }) -> Int]
+																		Array<{ type : Null<haxe.macro.ComplexType>, name : String, expr : haxe.macro.Expr }>
+																		push:(x : Array.T) -> Int
+																[ObjectDecl:{ type : Null<haxe.macro.ComplexType>, name : String, expr : haxe.macro.Expr }]
+																	name: [Field:String]
+																		[Local c(7289):haxe.macro.Catch:haxe.macro.Catch]
+																		[FAnon:String] name:String
+																	type: [Field:Null<haxe.macro.ComplexType>]
+																		[Local c(7289):haxe.macro.Catch:haxe.macro.Catch]
+																		[FAnon:Null<haxe.macro.ComplexType>] type:Null<haxe.macro.ComplexType>
+																	expr: [Call:haxe.macro.Expr]
+																		[Local f(7044):haxe.macro.Expr -> haxe.macro.Expr:haxe.macro.Expr -> haxe.macro.Expr]
+																		[Field:haxe.macro.Expr]
+																			[Local c(7289):haxe.macro.Catch:haxe.macro.Catch]
+																			[FAnon:haxe.macro.Expr] expr:haxe.macro.Expr
+												[Call:haxe.macro.ExprDef]
+													[Field:(e : haxe.macro.Expr, catches : Array<haxe.macro.Catch>) -> haxe.macro.ExprDef]
+														[TypeExpr haxe.macro.ExprDef:Enum<haxe.macro.ExprDef>]
+														[FEnum:(e : haxe.macro.Expr, catches : Array<haxe.macro.Catch>) -> haxe.macro.ExprDef]
+															haxe.macro.ExprDef
+															ETry
+													[Call:haxe.macro.Expr]
+														[Local f(7044):haxe.macro.Expr -> haxe.macro.Expr:haxe.macro.Expr -> haxe.macro.Expr]
+														[Local e(7285):haxe.macro.Expr:haxe.macro.Expr]
+													[Local ret(7287):Array<{ type : Null<haxe.macro.ComplexType>, name : String, expr : haxe.macro.Expr }>:Array<{ type : Null<haxe.macro.ComplexType>, name : String, expr : haxe.macro.Expr }>]
+								[Case:haxe.macro.ExprDef]
+									[Const:Int] 18
+									[Block:haxe.macro.ExprDef]
+										[Var `(7290):Null<haxe.macro.Expr>]
+											[EnumParameter:Null<haxe.macro.Expr>]
+												[Local `(7197):haxe.macro.ExprDef:haxe.macro.ExprDef]
+												EReturn
+												0
+										[Block:haxe.macro.ExprDef]
+											[Var e(7291):Null<haxe.macro.Expr>] [Local `(7290):Null<haxe.macro.Expr>:Null<haxe.macro.Expr>]
+											[Block:haxe.macro.ExprDef]
+												[Call:haxe.macro.ExprDef]
+													[Field:(?e : Null<haxe.macro.Expr>) -> haxe.macro.ExprDef]
+														[TypeExpr haxe.macro.ExprDef:Enum<haxe.macro.ExprDef>]
+														[FEnum:(?e : Null<haxe.macro.Expr>) -> haxe.macro.ExprDef]
+															haxe.macro.ExprDef
+															EReturn
+													[If:haxe.macro.Expr]
+														[Binop:Bool]
+															[Local e(7291):Null<haxe.macro.Expr>:Null<haxe.macro.Expr>]
+															==
+															[Const:Null<haxe.macro.Expr>] null
+														[Then:haxe.macro.Expr] [Block:haxe.macro.Expr] [Const:haxe.macro.Expr] null
+														[Else:haxe.macro.Expr] [Block:haxe.macro.Expr]
+															[Call:haxe.macro.Expr]
+																[Local f(7044):haxe.macro.Expr -> haxe.macro.Expr:haxe.macro.Expr -> haxe.macro.Expr]
+																[Local e(7291):Null<haxe.macro.Expr>:Null<haxe.macro.Expr>]
+								[Case:haxe.macro.ExprDef]
+									[Const:Int] 19
+									[Const:Int] 20
+									[Block:haxe.macro.ExprDef]
+										[Block:haxe.macro.ExprDef]
+											[Field:haxe.macro.ExprDef]
+												[Local e(7043):haxe.macro.Expr:haxe.macro.Expr]
+												[FAnon:haxe.macro.ExprDef] expr:haxe.macro.ExprDef
+								[Case:haxe.macro.ExprDef]
+									[Const:Int] 21
+									[Block:haxe.macro.ExprDef]
+										[Var `(7292):haxe.macro.Expr]
+											[EnumParameter:haxe.macro.Expr]
+												[Local `(7197):haxe.macro.ExprDef:haxe.macro.ExprDef]
+												EUntyped
+												0
+										[Block:haxe.macro.ExprDef]
+											[Var e(7293):haxe.macro.Expr] [Local `(7292):haxe.macro.Expr:haxe.macro.Expr]
+											[Block:haxe.macro.ExprDef]
+												[Call:haxe.macro.ExprDef]
+													[Field:(e : haxe.macro.Expr) -> haxe.macro.ExprDef]
+														[TypeExpr haxe.macro.ExprDef:Enum<haxe.macro.ExprDef>]
+														[FEnum:(e : haxe.macro.Expr) -> haxe.macro.ExprDef]
+															haxe.macro.ExprDef
+															EUntyped
+													[Call:haxe.macro.Expr]
+														[Local f(7044):haxe.macro.Expr -> haxe.macro.Expr:haxe.macro.Expr -> haxe.macro.Expr]
+														[Local e(7293):haxe.macro.Expr:haxe.macro.Expr]
+								[Case:haxe.macro.ExprDef]
+									[Const:Int] 22
+									[Block:haxe.macro.ExprDef]
+										[Var `(7294):haxe.macro.Expr]
+											[EnumParameter:haxe.macro.Expr]
+												[Local `(7197):haxe.macro.ExprDef:haxe.macro.ExprDef]
+												EThrow
+												0
+										[Block:haxe.macro.ExprDef]
+											[Var e(7295):haxe.macro.Expr] [Local `(7294):haxe.macro.Expr:haxe.macro.Expr]
+											[Block:haxe.macro.ExprDef]
+												[Call:haxe.macro.ExprDef]
+													[Field:(e : haxe.macro.Expr) -> haxe.macro.ExprDef]
+														[TypeExpr haxe.macro.ExprDef:Enum<haxe.macro.ExprDef>]
+														[FEnum:(e : haxe.macro.Expr) -> haxe.macro.ExprDef]
+															haxe.macro.ExprDef
+															EThrow
+													[Call:haxe.macro.Expr]
+														[Local f(7044):haxe.macro.Expr -> haxe.macro.Expr:haxe.macro.Expr -> haxe.macro.Expr]
+														[Local e(7295):haxe.macro.Expr:haxe.macro.Expr]
+								[Case:haxe.macro.ExprDef]
+									[Const:Int] 23
+									[Block:haxe.macro.ExprDef]
+										[Var `(7296):haxe.macro.Expr]
+											[EnumParameter:haxe.macro.Expr]
+												[Local `(7197):haxe.macro.ExprDef:haxe.macro.ExprDef]
+												ECast
+												0
+										[Var `(7297):Null<haxe.macro.ComplexType>]
+											[EnumParameter:Null<haxe.macro.ComplexType>]
+												[Local `(7197):haxe.macro.ExprDef:haxe.macro.ExprDef]
+												ECast
+												1
+										[Block:haxe.macro.ExprDef]
+											[Var e(7298):haxe.macro.Expr] [Local `(7296):haxe.macro.Expr:haxe.macro.Expr]
+											[Var t(7299):Null<haxe.macro.ComplexType>] [Local `(7297):Null<haxe.macro.ComplexType>:Null<haxe.macro.ComplexType>]
+											[Block:haxe.macro.ExprDef]
+												[Call:haxe.macro.ExprDef]
+													[Field:(e : haxe.macro.Expr, t : Null<haxe.macro.ComplexType>) -> haxe.macro.ExprDef]
+														[TypeExpr haxe.macro.ExprDef:Enum<haxe.macro.ExprDef>]
+														[FEnum:(e : haxe.macro.Expr, t : Null<haxe.macro.ComplexType>) -> haxe.macro.ExprDef]
+															haxe.macro.ExprDef
+															ECast
+													[Call:haxe.macro.Expr]
+														[Local f(7044):haxe.macro.Expr -> haxe.macro.Expr:haxe.macro.Expr -> haxe.macro.Expr]
+														[Local e(7298):haxe.macro.Expr:haxe.macro.Expr]
+													[Local t(7299):Null<haxe.macro.ComplexType>:Null<haxe.macro.ComplexType>]
+								[Case:haxe.macro.ExprDef]
+									[Const:Int] 24
+									[Block:haxe.macro.ExprDef]
+										[Var `(7300):haxe.macro.Expr]
+											[EnumParameter:haxe.macro.Expr]
+												[Local `(7197):haxe.macro.ExprDef:haxe.macro.ExprDef]
+												EDisplay
+												0
+										[Var `(7301):haxe.macro.DisplayKind]
+											[EnumParameter:haxe.macro.DisplayKind]
+												[Local `(7197):haxe.macro.ExprDef:haxe.macro.ExprDef]
+												EDisplay
+												1
+										[Block:haxe.macro.ExprDef]
+											[Var e(7302):haxe.macro.Expr] [Local `(7300):haxe.macro.Expr:haxe.macro.Expr]
+											[Var dk(7303):haxe.macro.DisplayKind] [Local `(7301):haxe.macro.DisplayKind:haxe.macro.DisplayKind]
+											[Block:haxe.macro.ExprDef]
+												[Call:haxe.macro.ExprDef]
+													[Field:(e : haxe.macro.Expr, displayKind : haxe.macro.DisplayKind) -> haxe.macro.ExprDef]
+														[TypeExpr haxe.macro.ExprDef:Enum<haxe.macro.ExprDef>]
+														[FEnum:(e : haxe.macro.Expr, displayKind : haxe.macro.DisplayKind) -> haxe.macro.ExprDef]
+															haxe.macro.ExprDef
+															EDisplay
+													[Call:haxe.macro.Expr]
+														[Local f(7044):haxe.macro.Expr -> haxe.macro.Expr:haxe.macro.Expr -> haxe.macro.Expr]
+														[Local e(7302):haxe.macro.Expr:haxe.macro.Expr]
+													[Local dk(7303):haxe.macro.DisplayKind:haxe.macro.DisplayKind]
+								[Case:haxe.macro.ExprDef]
+									[Const:Int] 25
+									[Block:haxe.macro.ExprDef]
+										[Var `(7304):haxe.macro.Expr]
+											[EnumParameter:haxe.macro.Expr]
+												[Local `(7197):haxe.macro.ExprDef:haxe.macro.ExprDef]
+												ETernary
+												0
+										[Var `(7305):haxe.macro.Expr]
+											[EnumParameter:haxe.macro.Expr]
+												[Local `(7197):haxe.macro.ExprDef:haxe.macro.ExprDef]
+												ETernary
+												1
+										[Var `(7306):haxe.macro.Expr]
+											[EnumParameter:haxe.macro.Expr]
+												[Local `(7197):haxe.macro.ExprDef:haxe.macro.ExprDef]
+												ETernary
+												2
+										[Block:haxe.macro.ExprDef]
+											[Var econd(7307):haxe.macro.Expr] [Local `(7304):haxe.macro.Expr:haxe.macro.Expr]
+											[Var eif(7308):haxe.macro.Expr] [Local `(7305):haxe.macro.Expr:haxe.macro.Expr]
+											[Var eelse(7309):haxe.macro.Expr] [Local `(7306):haxe.macro.Expr:haxe.macro.Expr]
+											[Block:haxe.macro.ExprDef]
+												[Call:haxe.macro.ExprDef]
+													[Field:(econd : haxe.macro.Expr, eif : haxe.macro.Expr, eelse : haxe.macro.Expr) -> haxe.macro.ExprDef]
+														[TypeExpr haxe.macro.ExprDef:Enum<haxe.macro.ExprDef>]
+														[FEnum:(econd : haxe.macro.Expr, eif : haxe.macro.Expr, eelse : haxe.macro.Expr) -> haxe.macro.ExprDef]
+															haxe.macro.ExprDef
+															ETernary
+													[Call:haxe.macro.Expr]
+														[Local f(7044):haxe.macro.Expr -> haxe.macro.Expr:haxe.macro.Expr -> haxe.macro.Expr]
+														[Local econd(7307):haxe.macro.Expr:haxe.macro.Expr]
+													[Call:haxe.macro.Expr]
+														[Local f(7044):haxe.macro.Expr -> haxe.macro.Expr:haxe.macro.Expr -> haxe.macro.Expr]
+														[Local eif(7308):haxe.macro.Expr:haxe.macro.Expr]
+													[Call:haxe.macro.Expr]
+														[Local f(7044):haxe.macro.Expr -> haxe.macro.Expr:haxe.macro.Expr -> haxe.macro.Expr]
+														[Local eelse(7309):haxe.macro.Expr:haxe.macro.Expr]
+								[Case:haxe.macro.ExprDef]
+									[Const:Int] 26
+									[Block:haxe.macro.ExprDef]
+										[Var `(7310):haxe.macro.Expr]
+											[EnumParameter:haxe.macro.Expr]
+												[Local `(7197):haxe.macro.ExprDef:haxe.macro.ExprDef]
+												ECheckType
+												0
+										[Var `(7311):haxe.macro.ComplexType]
+											[EnumParameter:haxe.macro.ComplexType]
+												[Local `(7197):haxe.macro.ExprDef:haxe.macro.ExprDef]
+												ECheckType
+												1
+										[Block:haxe.macro.ExprDef]
+											[Var e(7312):haxe.macro.Expr] [Local `(7310):haxe.macro.Expr:haxe.macro.Expr]
+											[Var t(7313):haxe.macro.ComplexType] [Local `(7311):haxe.macro.ComplexType:haxe.macro.ComplexType]
+											[Block:haxe.macro.ExprDef]
+												[Call:haxe.macro.ExprDef]
+													[Field:(e : haxe.macro.Expr, t : haxe.macro.ComplexType) -> haxe.macro.ExprDef]
+														[TypeExpr haxe.macro.ExprDef:Enum<haxe.macro.ExprDef>]
+														[FEnum:(e : haxe.macro.Expr, t : haxe.macro.ComplexType) -> haxe.macro.ExprDef]
+															haxe.macro.ExprDef
+															ECheckType
+													[Call:haxe.macro.Expr]
+														[Local f(7044):haxe.macro.Expr -> haxe.macro.Expr:haxe.macro.Expr -> haxe.macro.Expr]
+														[Local e(7312):haxe.macro.Expr:haxe.macro.Expr]
+													[Local t(7313):haxe.macro.ComplexType:haxe.macro.ComplexType]
+								[Case:haxe.macro.ExprDef]
+									[Const:Int] 27
+									[Block:haxe.macro.ExprDef]
+										[Var `(7314):haxe.macro.MetadataEntry]
+											[EnumParameter:haxe.macro.MetadataEntry]
+												[Local `(7197):haxe.macro.ExprDef:haxe.macro.ExprDef]
+												EMeta
+												0
+										[Var `(7315):haxe.macro.Expr]
+											[EnumParameter:haxe.macro.Expr]
+												[Local `(7197):haxe.macro.ExprDef:haxe.macro.ExprDef]
+												EMeta
+												1
+										[Block:haxe.macro.ExprDef]
+											[Var m(7316):haxe.macro.MetadataEntry] [Local `(7314):haxe.macro.MetadataEntry:haxe.macro.MetadataEntry]
+											[Var e(7317):haxe.macro.Expr] [Local `(7315):haxe.macro.Expr:haxe.macro.Expr]
+											[Block:haxe.macro.ExprDef]
+												[Call:haxe.macro.ExprDef]
+													[Field:(s : haxe.macro.MetadataEntry, e : haxe.macro.Expr) -> haxe.macro.ExprDef]
+														[TypeExpr haxe.macro.ExprDef:Enum<haxe.macro.ExprDef>]
+														[FEnum:(s : haxe.macro.MetadataEntry, e : haxe.macro.Expr) -> haxe.macro.ExprDef]
+															haxe.macro.ExprDef
+															EMeta
+													[Local m(7316):haxe.macro.MetadataEntry:haxe.macro.MetadataEntry]
+													[Call:haxe.macro.Expr]
+														[Local f(7044):haxe.macro.Expr -> haxe.macro.Expr:haxe.macro.Expr -> haxe.macro.Expr]
+														[Local e(7317):haxe.macro.Expr:haxe.macro.Expr]
+								[Case:haxe.macro.ExprDef]
+									[Const:Int] 28
+									[Block:haxe.macro.ExprDef]
+										[Var `(7318):haxe.macro.Expr]
+											[EnumParameter:haxe.macro.Expr]
+												[Local `(7197):haxe.macro.ExprDef:haxe.macro.ExprDef]
+												EIs
+												0
+										[Var `(7319):haxe.macro.ComplexType]
+											[EnumParameter:haxe.macro.ComplexType]
+												[Local `(7197):haxe.macro.ExprDef:haxe.macro.ExprDef]
+												EIs
+												1
+										[Block:haxe.macro.ExprDef]
+											[Var e(7320):haxe.macro.Expr] [Local `(7318):haxe.macro.Expr:haxe.macro.Expr]
+											[Var t(7321):haxe.macro.ComplexType] [Local `(7319):haxe.macro.ComplexType:haxe.macro.ComplexType]
+											[Block:haxe.macro.ExprDef]
+												[Call:haxe.macro.ExprDef]
+													[Field:(e : haxe.macro.Expr, t : haxe.macro.ComplexType) -> haxe.macro.ExprDef]
+														[TypeExpr haxe.macro.ExprDef:Enum<haxe.macro.ExprDef>]
+														[FEnum:(e : haxe.macro.Expr, t : haxe.macro.ComplexType) -> haxe.macro.ExprDef]
+															haxe.macro.ExprDef
+															EIs
+													[Call:haxe.macro.Expr]
+														[Local f(7044):haxe.macro.Expr -> haxe.macro.Expr:haxe.macro.Expr -> haxe.macro.Expr]
+														[Local e(7320):haxe.macro.Expr:haxe.macro.Expr]
+													[Local t(7321):haxe.macro.ComplexType:haxe.macro.ComplexType]
+
+	public static function getValue[Function:(e : haxe.macro.Expr) -> Dynamic]
+		[Arg:haxe.macro.Expr] [Local e(7322):haxe.macro.Expr]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Meta:Dynamic]
+					:ast(switch (e.expr) {
+	case EConst(CInt(v)):
+		Std.parseInt(v);	
+	case EConst(CFloat(v)):
+		Std.parseFloat(v);	
+	case EConst(CString(s)):
+		s;	
+	case EConst(CIdent("true")):
+		true;	
+	case EConst(CIdent("false")):
+		false;	
+	case EConst(CIdent("null")):
+		null;	
+	case EParenthesis(e1) | EUntyped(e1) | EMeta(_, e1):
+		getValue(e1);	
+	case EObjectDecl(fields):
+		var obj = { };
+		for (field  in  fields) {
+			Reflect.setField(obj, field.field, getValue(field.expr));
+		};
+		obj;	
+	case EArrayDecl(el):
+		el.map(getValue);	
+	case EIf(econd, eif, eelse) | ETernary(econd, eif, eelse):
+		if (eelse == null) {
+			throw "If statements only have a value if the else clause is defined";
+		} else {
+			var econd:Dynamic = getValue(econd);
+			econd ? getValue(eif) : getValue(eelse);
+		};	
+	case EUnop(op, false, e1):
+		var e1:Dynamic = getValue(e1);
+		switch (op) {
+			case OpNot:
+				!e1;			
+			case OpNeg:
+				-e1;			
+			case OpNegBits:
+				~e1;			
+			case _:
+				throw "Unsupported expression: $e";			
+		};	
+	case EBinop(op, e1, e2):
+		var e1:Dynamic = getValue(e1);
+		var e2:Dynamic = getValue(e2);
+		switch (op) {
+			case OpAdd:
+				e1 + e2;			
+			case OpSub:
+				e1 - e2;			
+			case OpMult:
+				e1 * e2;			
+			case OpDiv:
+				e1 / e2;			
+			case OpMod:
+				e1 % e2;			
+			case OpEq:
+				e1 == e2;			
+			case OpNotEq:
+				e1 != e2;			
+			case OpLt:
+				e1 < e2;			
+			case OpLte:
+				e1 <= e2;			
+			case OpGt:
+				e1 > e2;			
+			case OpGte:
+				e1 >= e2;			
+			case OpOr:
+				e1 | e2;			
+			case OpAnd:
+				e1 & e2;			
+			case OpXor:
+				e1 ^ e2;			
+			case OpBoolAnd:
+				e1 && e2;			
+			case OpBoolOr:
+				e1 || e2;			
+			case OpShl:
+				e1 << e2;			
+			case OpShr:
+				e1 >> e2;			
+			case OpUShr:
+				e1 >>> e2;			
+			case _:
+				throw "Unsupported expression: $e";			
+		};	
+	case _:
+		throw "Unsupported expression: $e";	
+})
+					[Block:Dynamic]
+						[Var `(7378):haxe.macro.ExprDef]
+							[Field:haxe.macro.ExprDef]
+								[Local e(7322):haxe.macro.Expr:haxe.macro.Expr]
+								[FAnon:haxe.macro.ExprDef] expr:haxe.macro.ExprDef
+						[Switch:Dynamic]
+							[EnumIndex:Int] [Local `(7378):haxe.macro.ExprDef:haxe.macro.ExprDef]
+							[Case:Dynamic]
+								[Const:Int] 0
+								[Block:Dynamic]
+									[Var `(7379):haxe.macro.Constant]
+										[EnumParameter:haxe.macro.Constant]
+											[Local `(7378):haxe.macro.ExprDef:haxe.macro.ExprDef]
+											EConst
+											0
+									[Switch:Dynamic]
+										[EnumIndex:Int] [Local `(7379):haxe.macro.Constant:haxe.macro.Constant]
+										[Case:Null<Int>]
+											[Const:Int] 0
+											[Block:Null<Int>]
+												[Var `(7380):String]
+													[EnumParameter:String]
+														[Local `(7379):haxe.macro.Constant:haxe.macro.Constant]
+														CInt
+														0
+												[Var `(7381):Null<String>]
+													[EnumParameter:Null<String>]
+														[Local `(7379):haxe.macro.Constant:haxe.macro.Constant]
+														CInt
+														1
+												[Block:Null<Int>]
+													[Var v(7382):String] [Local `(7380):String:String]
+													[Block:Null<Int>]
+														[Call:Null<Int>]
+															[Field:(x : String) -> Null<Int>]
+																[TypeExpr Std:Class<Std>]
+																[FStatic:(x : String) -> Null<Int>]
+																	Std
+																	parseInt:(x : String) -> Null<Int>
+															[Local v(7382):String:String]
+										[Case:Float]
+											[Const:Int] 1
+											[Block:Float]
+												[Var `(7383):String]
+													[EnumParameter:String]
+														[Local `(7379):haxe.macro.Constant:haxe.macro.Constant]
+														CFloat
+														0
+												[Var `(7384):Null<String>]
+													[EnumParameter:Null<String>]
+														[Local `(7379):haxe.macro.Constant:haxe.macro.Constant]
+														CFloat
+														1
+												[Block:Float]
+													[Var v(7385):String] [Local `(7383):String:String]
+													[Block:Float]
+														[Call:Float]
+															[Field:(x : String) -> Float]
+																[TypeExpr Std:Class<Std>]
+																[FStatic:(x : String) -> Float]
+																	Std
+																	parseFloat:(x : String) -> Float
+															[Local v(7385):String:String]
+										[Case:String]
+											[Const:Int] 2
+											[Block:String]
+												[Var `(7386):String]
+													[EnumParameter:String]
+														[Local `(7379):haxe.macro.Constant:haxe.macro.Constant]
+														CString
+														0
+												[Var `(7387):Null<haxe.macro.StringLiteralKind>]
+													[EnumParameter:Null<haxe.macro.StringLiteralKind>]
+														[Local `(7379):haxe.macro.Constant:haxe.macro.Constant]
+														CString
+														1
+												[Block:String]
+													[Var s(7388):String] [Local `(7386):String:String]
+													[Block:String] [Local s(7388):String:String]
+										[Case:Dynamic]
+											[Const:Int] 3
+											[Block:Dynamic]
+												[Var `(7389):String]
+													[EnumParameter:String]
+														[Local `(7379):haxe.macro.Constant:haxe.macro.Constant]
+														CIdent
+														0
+												[Switch:Dynamic]
+													[Local `(7389):String:String]
+													[Case:Bool]
+														[Const:String] "false"
+														[Block:Bool] [Block:Bool] [Const:Bool] false
+													[Case:Dynamic]
+														[Const:String] "null"
+														[Block:Dynamic] [Block:Dynamic] [Const:Dynamic] null
+													[Case:Bool]
+														[Const:String] "true"
+														[Block:Bool] [Block:Bool] [Const:Bool] true
+													[Default:Unknown<12>]
+														[Block:Unknown<12>]
+															[Throw:Unknown<12>]
+																[Binop:String]
+																	[Const:String] "Unsupported expression: "
+																	+
+																	[Call:String]
+																		[Field:(s : Dynamic) -> String]
+																			[TypeExpr Std:Class<Std>]
+																			[FStatic:(s : Dynamic) -> String]
+																				Std
+																				string:(s : Dynamic) -> String
+																		[Local e(7322):haxe.macro.Expr:haxe.macro.Expr]
+										[Default:Unknown<12>]
+											[Block:Unknown<12>]
+												[Throw:Unknown<12>]
+													[Binop:String]
+														[Const:String] "Unsupported expression: "
+														+
+														[Call:String]
+															[Field:(s : Dynamic) -> String]
+																[TypeExpr Std:Class<Std>]
+																[FStatic:(s : Dynamic) -> String]
+																	Std
+																	string:(s : Dynamic) -> String
+															[Local e(7322):haxe.macro.Expr:haxe.macro.Expr]
+							[Case:Dynamic]
+								[Const:Int] 2
+								[Block:Dynamic]
+									[Var `(7390):haxe.macro.Binop]
+										[EnumParameter:haxe.macro.Binop]
+											[Local `(7378):haxe.macro.ExprDef:haxe.macro.ExprDef]
+											EBinop
+											0
+									[Var `(7391):haxe.macro.Expr]
+										[EnumParameter:haxe.macro.Expr]
+											[Local `(7378):haxe.macro.ExprDef:haxe.macro.ExprDef]
+											EBinop
+											1
+									[Var `(7392):haxe.macro.Expr]
+										[EnumParameter:haxe.macro.Expr]
+											[Local `(7378):haxe.macro.ExprDef:haxe.macro.ExprDef]
+											EBinop
+											2
+									[Block:Dynamic]
+										[Var op(7393):haxe.macro.Binop] [Local `(7390):haxe.macro.Binop:haxe.macro.Binop]
+										[Var e1(7394):haxe.macro.Expr] [Local `(7391):haxe.macro.Expr:haxe.macro.Expr]
+										[Var e2(7395):haxe.macro.Expr] [Local `(7392):haxe.macro.Expr:haxe.macro.Expr]
+										[Block:Dynamic]
+											[Var e1(7396):Dynamic]
+												[Call:Dynamic]
+													[Field:(e : haxe.macro.Expr) -> Dynamic]
+														[TypeExpr haxe.macro.ExprTools:Class<haxe.macro.ExprTools>]
+														[FStatic:(e : haxe.macro.Expr) -> Dynamic]
+															haxe.macro.ExprTools
+															getValue:(e : haxe.macro.Expr) -> Dynamic
+													[Local e1(7394):haxe.macro.Expr:haxe.macro.Expr]
+											[Var e2(7397):Dynamic]
+												[Call:Dynamic]
+													[Field:(e : haxe.macro.Expr) -> Dynamic]
+														[TypeExpr haxe.macro.ExprTools:Class<haxe.macro.ExprTools>]
+														[FStatic:(e : haxe.macro.Expr) -> Dynamic]
+															haxe.macro.ExprTools
+															getValue:(e : haxe.macro.Expr) -> Dynamic
+													[Local e2(7395):haxe.macro.Expr:haxe.macro.Expr]
+											[Meta:Dynamic]
+												:ast(switch (op) {
+	case OpAdd:
+		e1 + e2;	
+	case OpSub:
+		e1 - e2;	
+	case OpMult:
+		e1 * e2;	
+	case OpDiv:
+		e1 / e2;	
+	case OpMod:
+		e1 % e2;	
+	case OpEq:
+		e1 == e2;	
+	case OpNotEq:
+		e1 != e2;	
+	case OpLt:
+		e1 < e2;	
+	case OpLte:
+		e1 <= e2;	
+	case OpGt:
+		e1 > e2;	
+	case OpGte:
+		e1 >= e2;	
+	case OpOr:
+		e1 | e2;	
+	case OpAnd:
+		e1 & e2;	
+	case OpXor:
+		e1 ^ e2;	
+	case OpBoolAnd:
+		e1 && e2;	
+	case OpBoolOr:
+		e1 || e2;	
+	case OpShl:
+		e1 << e2;	
+	case OpShr:
+		e1 >> e2;	
+	case OpUShr:
+		e1 >>> e2;	
+	case _:
+		throw "Unsupported expression: $e";	
+})
+												[Switch:Dynamic]
+													[EnumIndex:Int] [Local op(7393):haxe.macro.Binop:haxe.macro.Binop]
+													[Case:Dynamic]
+														[Const:Int] 0
+														[Block:Dynamic]
+															[Block:Dynamic]
+																[Binop:Dynamic]
+																	[Local e1(7396):Dynamic:Dynamic]
+																	+
+																	[Local e2(7397):Dynamic:Dynamic]
+													[Case:Float]
+														[Const:Int] 1
+														[Block:Float]
+															[Block:Float]
+																[Binop:Float]
+																	[Local e1(7396):Dynamic:Dynamic]
+																	*
+																	[Local e2(7397):Dynamic:Dynamic]
+													[Case:Float]
+														[Const:Int] 2
+														[Block:Float]
+															[Block:Float]
+																[Binop:Float]
+																	[Local e1(7396):Dynamic:Dynamic]
+																	/
+																	[Local e2(7397):Dynamic:Dynamic]
+													[Case:Float]
+														[Const:Int] 3
+														[Block:Float]
+															[Block:Float]
+																[Binop:Float]
+																	[Local e1(7396):Dynamic:Dynamic]
+																	-
+																	[Local e2(7397):Dynamic:Dynamic]
+													[Case:Bool]
+														[Const:Int] 5
+														[Block:Bool]
+															[Block:Bool]
+																[Binop:Bool]
+																	[Local e1(7396):Dynamic:Dynamic]
+																	==
+																	[Local e2(7397):Dynamic:Dynamic]
+													[Case:Bool]
+														[Const:Int] 6
+														[Block:Bool]
+															[Block:Bool]
+																[Binop:Bool]
+																	[Local e1(7396):Dynamic:Dynamic]
+																	!=
+																	[Local e2(7397):Dynamic:Dynamic]
+													[Case:Bool]
+														[Const:Int] 7
+														[Block:Bool]
+															[Block:Bool]
+																[Binop:Bool]
+																	[Local e1(7396):Dynamic:Dynamic]
+																	>
+																	[Local e2(7397):Dynamic:Dynamic]
+													[Case:Bool]
+														[Const:Int] 8
+														[Block:Bool]
+															[Block:Bool]
+																[Binop:Bool]
+																	[Local e1(7396):Dynamic:Dynamic]
+																	>=
+																	[Local e2(7397):Dynamic:Dynamic]
+													[Case:Bool]
+														[Const:Int] 9
+														[Block:Bool]
+															[Block:Bool]
+																[Binop:Bool]
+																	[Local e1(7396):Dynamic:Dynamic]
+																	<
+																	[Local e2(7397):Dynamic:Dynamic]
+													[Case:Bool]
+														[Const:Int] 10
+														[Block:Bool]
+															[Block:Bool]
+																[Binop:Bool]
+																	[Local e1(7396):Dynamic:Dynamic]
+																	<=
+																	[Local e2(7397):Dynamic:Dynamic]
+													[Case:Int]
+														[Const:Int] 11
+														[Block:Int]
+															[Block:Int]
+																[Binop:Int]
+																	[Local e1(7396):Dynamic:Dynamic]
+																	&
+																	[Local e2(7397):Dynamic:Dynamic]
+													[Case:Int]
+														[Const:Int] 12
+														[Block:Int]
+															[Block:Int]
+																[Binop:Int]
+																	[Local e1(7396):Dynamic:Dynamic]
+																	|
+																	[Local e2(7397):Dynamic:Dynamic]
+													[Case:Int]
+														[Const:Int] 13
+														[Block:Int]
+															[Block:Int]
+																[Binop:Int]
+																	[Local e1(7396):Dynamic:Dynamic]
+																	^
+																	[Local e2(7397):Dynamic:Dynamic]
+													[Case:Bool]
+														[Const:Int] 14
+														[Block:Bool]
+															[Block:Bool]
+																[Binop:Bool]
+																	[Local e1(7396):Dynamic:Dynamic]
+																	&&
+																	[Local e2(7397):Dynamic:Dynamic]
+													[Case:Bool]
+														[Const:Int] 15
+														[Block:Bool]
+															[Block:Bool]
+																[Binop:Bool]
+																	[Local e1(7396):Dynamic:Dynamic]
+																	||
+																	[Local e2(7397):Dynamic:Dynamic]
+													[Case:Int]
+														[Const:Int] 16
+														[Block:Int]
+															[Block:Int]
+																[Binop:Int]
+																	[Local e1(7396):Dynamic:Dynamic]
+																	<<
+																	[Local e2(7397):Dynamic:Dynamic]
+													[Case:Int]
+														[Const:Int] 17
+														[Block:Int]
+															[Block:Int]
+																[Binop:Int]
+																	[Local e1(7396):Dynamic:Dynamic]
+																	>>
+																	[Local e2(7397):Dynamic:Dynamic]
+													[Case:Int]
+														[Const:Int] 18
+														[Block:Int]
+															[Block:Int]
+																[Binop:Int]
+																	[Local e1(7396):Dynamic:Dynamic]
+																	>>>
+																	[Local e2(7397):Dynamic:Dynamic]
+													[Case:Float]
+														[Const:Int] 19
+														[Block:Float]
+															[Block:Float]
+																[Binop:Float]
+																	[Local e1(7396):Dynamic:Dynamic]
+																	%
+																	[Local e2(7397):Dynamic:Dynamic]
+													[Default:Unknown<13>]
+														[Block:Unknown<13>]
+															[Throw:Unknown<13>]
+																[Binop:String]
+																	[Const:String] "Unsupported expression: "
+																	+
+																	[Call:String]
+																		[Field:(s : Dynamic) -> String]
+																			[TypeExpr Std:Class<Std>]
+																			[FStatic:(s : Dynamic) -> String]
+																				Std
+																				string:(s : Dynamic) -> String
+																		[Local e(7322):haxe.macro.Expr:haxe.macro.Expr]
+							[Case:Dynamic]
+								[Const:Int] 4
+								[Block:Dynamic]
+									[Var `(7398):haxe.macro.Expr]
+										[EnumParameter:haxe.macro.Expr]
+											[Local `(7378):haxe.macro.ExprDef:haxe.macro.ExprDef]
+											EParenthesis
+											0
+									[Block:Dynamic]
+										[Var e1(7399):haxe.macro.Expr] [Local `(7398):haxe.macro.Expr:haxe.macro.Expr]
+										[Block:Dynamic]
+											[Call:Dynamic]
+												[Field:(e : haxe.macro.Expr) -> Dynamic]
+													[TypeExpr haxe.macro.ExprTools:Class<haxe.macro.ExprTools>]
+													[FStatic:(e : haxe.macro.Expr) -> Dynamic]
+														haxe.macro.ExprTools
+														getValue:(e : haxe.macro.Expr) -> Dynamic
+												[Local e1(7399):haxe.macro.Expr:haxe.macro.Expr]
+							[Case:{ }]
+								[Const:Int] 5
+								[Block:{ }]
+									[Var `(7400):Array<haxe.macro.ObjectField>]
+										[EnumParameter:Array<haxe.macro.ObjectField>]
+											[Local `(7378):haxe.macro.ExprDef:haxe.macro.ExprDef]
+											EObjectDecl
+											0
+									[Block:{ }]
+										[Var fields(7401):Array<haxe.macro.ObjectField>] [Local `(7400):Array<haxe.macro.ObjectField>:Array<haxe.macro.ObjectField>]
+										[Block:{ }]
+											[Var obj(7402):{ }] [ObjectDecl:{ }]
+											[Block:Void]
+												[Var `(7403):Int] [Const:Int] 0
+												[While:Void]
+													[Binop:Bool]
+														[Local `(7403):Int:Int]
+														<
+														[Field:Int]
+															[Local fields(7401):Array<haxe.macro.ObjectField>:Array<haxe.macro.ObjectField>]
+															[FInstance:Int]
+																Array<haxe.macro.ObjectField>
+																length:Int
+													[Block:Void]
+														[Var field(7404):haxe.macro.ObjectField]
+															[Array:haxe.macro.ObjectField]
+																[Local fields(7401):Array<haxe.macro.ObjectField>:Array<haxe.macro.ObjectField>]
+																[Local `(7403):Int:Int]
+														[Unop:Int]
+															++
+															Prefix
+															[Local `(7403):Int:Int]
+														[Call:Void]
+															[Field:(o : Dynamic, field : String, value : Dynamic) -> Void]
+																[TypeExpr Reflect:Class<Reflect>]
+																[FStatic:(o : Dynamic, field : String, value : Dynamic) -> Void]
+																	Reflect
+																	setField:(o : Dynamic, field : String, value : Dynamic) -> Void
+															[Local obj(7402):{ }:{ }]
+															[Field:String]
+																[Local field(7404):haxe.macro.ObjectField:haxe.macro.ObjectField]
+																[FAnon:String] field:String
+															[Call:Dynamic]
+																[Field:(e : haxe.macro.Expr) -> Dynamic]
+																	[TypeExpr haxe.macro.ExprTools:Class<haxe.macro.ExprTools>]
+																	[FStatic:(e : haxe.macro.Expr) -> Dynamic]
+																		haxe.macro.ExprTools
+																		getValue:(e : haxe.macro.Expr) -> Dynamic
+																[Field:haxe.macro.Expr]
+																	[Local field(7404):haxe.macro.ObjectField:haxe.macro.ObjectField]
+																	[FAnon:haxe.macro.Expr] expr:haxe.macro.Expr
+											[Local obj(7402):{ }:{ }]
+							[Case:Array<Unknown<14>>]
+								[Const:Int] 6
+								[Block:Array<Unknown<14>>]
+									[Var `(7405):Array<haxe.macro.Expr>]
+										[EnumParameter:Array<haxe.macro.Expr>]
+											[Local `(7378):haxe.macro.ExprDef:haxe.macro.ExprDef]
+											EArrayDecl
+											0
+									[Block:Array<Unknown<14>>]
+										[Var el(7406):Array<haxe.macro.Expr>] [Local `(7405):Array<haxe.macro.Expr>:Array<haxe.macro.Expr>]
+										[Block:Array<Unknown<14>>]
+											[Block:Array<Unknown<14>>]
+												[Var f(7407):haxe.macro.Expr -> Unknown<14>]
+													[Field:(e : haxe.macro.Expr) -> Dynamic]
+														[TypeExpr haxe.macro.ExprTools:Class<haxe.macro.ExprTools>]
+														[FStatic:(e : haxe.macro.Expr) -> Dynamic]
+															haxe.macro.ExprTools
+															getValue:(e : haxe.macro.Expr) -> Dynamic
+												[Block:Array<Unknown<14>>]
+													[Var `(7408):Array<Unknown<14>>] [ArrayDecl:Array<Unknown<14>>]
+													[Block:Void]
+														[Var `(7409):Int] [Const:Int] 0
+														[Var `(7410):Array<haxe.macro.Expr>] [Local el(7406):Array<haxe.macro.Expr>:Array<haxe.macro.Expr>]
+														[While:Void]
+															[Binop:Bool]
+																[Local `(7409):Int:Int]
+																<
+																[Field:Int]
+																	[Local `(7410):Array<haxe.macro.Expr>:Array<haxe.macro.Expr>]
+																	[FInstance:Int]
+																		Array<haxe.macro.Expr>
+																		length:Int
+															[Block:Void]
+																[Var v(7411):haxe.macro.Expr]
+																	[Array:haxe.macro.Expr]
+																		[Local `(7410):Array<haxe.macro.Expr>:Array<haxe.macro.Expr>]
+																		[Local `(7409):Int:Int]
+																[Unop:Int]
+																	++
+																	Prefix
+																	[Local `(7409):Int:Int]
+																[Call:Int]
+																	[Field:(x : Unknown<14>) -> Int]
+																		[Local `(7408):Array<Unknown<14>>:Array<Unknown<14>>]
+																		[FInstance:(x : Unknown<14>) -> Int]
+																			Array<Unknown<14>>
+																			push:(x : Array.T) -> Int
+																	[Call:Unknown<14>]
+																		[Local f(7407):haxe.macro.Expr -> Unknown<14>:haxe.macro.Expr -> Unknown<14>]
+																		[Local v(7411):haxe.macro.Expr:haxe.macro.Expr]
+													[Local `(7408):Array<Unknown<14>>:Array<Unknown<14>>]
+							[Case:Dynamic]
+								[Const:Int] 9
+								[Block:Dynamic]
+									[Var `(7412):haxe.macro.Unop]
+										[EnumParameter:haxe.macro.Unop]
+											[Local `(7378):haxe.macro.ExprDef:haxe.macro.ExprDef]
+											EUnop
+											0
+									[Var `(7413):Bool]
+										[EnumParameter:Bool]
+											[Local `(7378):haxe.macro.ExprDef:haxe.macro.ExprDef]
+											EUnop
+											1
+									[Var `(7414):haxe.macro.Expr]
+										[EnumParameter:haxe.macro.Expr]
+											[Local `(7378):haxe.macro.ExprDef:haxe.macro.ExprDef]
+											EUnop
+											2
+									[If:Dynamic]
+										[Binop:Bool]
+											[Local `(7413):Bool:Bool]
+											==
+											[Const:Bool] false
+										[Then:Dynamic] [Block:Dynamic]
+											[Block:Dynamic]
+												[Var op(7415):haxe.macro.Unop] [Local `(7412):haxe.macro.Unop:haxe.macro.Unop]
+												[Var e1(7416):haxe.macro.Expr] [Local `(7414):haxe.macro.Expr:haxe.macro.Expr]
+												[Block:Dynamic]
+													[Var e1(7417):Dynamic]
+														[Call:Dynamic]
+															[Field:(e : haxe.macro.Expr) -> Dynamic]
+																[TypeExpr haxe.macro.ExprTools:Class<haxe.macro.ExprTools>]
+																[FStatic:(e : haxe.macro.Expr) -> Dynamic]
+																	haxe.macro.ExprTools
+																	getValue:(e : haxe.macro.Expr) -> Dynamic
+															[Local e1(7416):haxe.macro.Expr:haxe.macro.Expr]
+													[Meta:Dynamic]
+														:ast(switch (op) {
+	case OpNot:
+		!e1;	
+	case OpNeg:
+		-e1;	
+	case OpNegBits:
+		~e1;	
+	case _:
+		throw "Unsupported expression: $e";	
+})
+														[Switch:Dynamic]
+															[EnumIndex:Int] [Local op(7415):haxe.macro.Unop:haxe.macro.Unop]
+															[Case:Bool]
+																[Const:Int] 2
+																[Block:Bool]
+																	[Block:Bool]
+																		[Unop:Bool]
+																			!
+																			Prefix
+																			[Local e1(7417):Dynamic:Dynamic]
+															[Case:Float]
+																[Const:Int] 3
+																[Block:Float]
+																	[Block:Float]
+																		[Unop:Float]
+																			-
+																			Prefix
+																			[Local e1(7417):Dynamic:Dynamic]
+															[Case:Int]
+																[Const:Int] 4
+																[Block:Int]
+																	[Block:Int]
+																		[Unop:Int]
+																			~
+																			Prefix
+																			[Local e1(7417):Dynamic:Dynamic]
+															[Default:Unknown<15>]
+																[Block:Unknown<15>]
+																	[Throw:Unknown<15>]
+																		[Binop:String]
+																			[Const:String] "Unsupported expression: "
+																			+
+																			[Call:String]
+																				[Field:(s : Dynamic) -> String]
+																					[TypeExpr Std:Class<Std>]
+																					[FStatic:(s : Dynamic) -> String]
+																						Std
+																						string:(s : Dynamic) -> String
+																				[Local e(7322):haxe.macro.Expr:haxe.macro.Expr]
+										[Else:Unknown<12>] [Block:Unknown<12>]
+											[Throw:Unknown<12>]
+												[Binop:String]
+													[Const:String] "Unsupported expression: "
+													+
+													[Call:String]
+														[Field:(s : Dynamic) -> String]
+															[TypeExpr Std:Class<Std>]
+															[FStatic:(s : Dynamic) -> String]
+																Std
+																string:(s : Dynamic) -> String
+														[Local e(7322):haxe.macro.Expr:haxe.macro.Expr]
+							[Case:Dynamic]
+								[Const:Int] 14
+								[Block:Dynamic]
+									[Var `(7418):haxe.macro.Expr]
+										[EnumParameter:haxe.macro.Expr]
+											[Local `(7378):haxe.macro.ExprDef:haxe.macro.ExprDef]
+											EIf
+											0
+									[Var `(7419):haxe.macro.Expr]
+										[EnumParameter:haxe.macro.Expr]
+											[Local `(7378):haxe.macro.ExprDef:haxe.macro.ExprDef]
+											EIf
+											1
+									[Var `(7420):Null<haxe.macro.Expr>]
+										[EnumParameter:Null<haxe.macro.Expr>]
+											[Local `(7378):haxe.macro.ExprDef:haxe.macro.ExprDef]
+											EIf
+											2
+									[Block:Dynamic]
+										[Var econd(7421):haxe.macro.Expr] [Local `(7418):haxe.macro.Expr:haxe.macro.Expr]
+										[Var eif(7422):haxe.macro.Expr] [Local `(7419):haxe.macro.Expr:haxe.macro.Expr]
+										[Var eelse(7423):Null<haxe.macro.Expr>] [Local `(7420):Null<haxe.macro.Expr>:Null<haxe.macro.Expr>]
+										[Block:Dynamic]
+											[If:Dynamic]
+												[Binop:Bool]
+													[Local eelse(7423):Null<haxe.macro.Expr>:Null<haxe.macro.Expr>]
+													==
+													[Const:Null<haxe.macro.Expr>] null
+												[Then:Unknown<16>] [Block:Unknown<16>] [Throw:Unknown<16>] [Const:String] "If statements only have a value if the else clause is defined"
+												[Else:Dynamic] [Block:Dynamic]
+													[Var econd(7424):Dynamic]
+														[Call:Dynamic]
+															[Field:(e : haxe.macro.Expr) -> Dynamic]
+																[TypeExpr haxe.macro.ExprTools:Class<haxe.macro.ExprTools>]
+																[FStatic:(e : haxe.macro.Expr) -> Dynamic]
+																	haxe.macro.ExprTools
+																	getValue:(e : haxe.macro.Expr) -> Dynamic
+															[Local econd(7421):haxe.macro.Expr:haxe.macro.Expr]
+													[If:Dynamic]
+														[Local econd(7424):Dynamic:Dynamic]
+														[Then:Dynamic] [Block:Dynamic]
+															[Call:Dynamic]
+																[Field:(e : haxe.macro.Expr) -> Dynamic]
+																	[TypeExpr haxe.macro.ExprTools:Class<haxe.macro.ExprTools>]
+																	[FStatic:(e : haxe.macro.Expr) -> Dynamic]
+																		haxe.macro.ExprTools
+																		getValue:(e : haxe.macro.Expr) -> Dynamic
+																[Local eif(7422):haxe.macro.Expr:haxe.macro.Expr]
+														[Else:Dynamic] [Block:Dynamic]
+															[Call:Dynamic]
+																[Field:(e : haxe.macro.Expr) -> Dynamic]
+																	[TypeExpr haxe.macro.ExprTools:Class<haxe.macro.ExprTools>]
+																	[FStatic:(e : haxe.macro.Expr) -> Dynamic]
+																		haxe.macro.ExprTools
+																		getValue:(e : haxe.macro.Expr) -> Dynamic
+																[Local eelse(7423):Null<haxe.macro.Expr>:Null<haxe.macro.Expr>]
+							[Case:Dynamic]
+								[Const:Int] 21
+								[Block:Dynamic]
+									[Var `(7425):haxe.macro.Expr]
+										[EnumParameter:haxe.macro.Expr]
+											[Local `(7378):haxe.macro.ExprDef:haxe.macro.ExprDef]
+											EUntyped
+											0
+									[Block:Dynamic]
+										[Var e1(7426):haxe.macro.Expr] [Local `(7425):haxe.macro.Expr:haxe.macro.Expr]
+										[Block:Dynamic]
+											[Call:Dynamic]
+												[Field:(e : haxe.macro.Expr) -> Dynamic]
+													[TypeExpr haxe.macro.ExprTools:Class<haxe.macro.ExprTools>]
+													[FStatic:(e : haxe.macro.Expr) -> Dynamic]
+														haxe.macro.ExprTools
+														getValue:(e : haxe.macro.Expr) -> Dynamic
+												[Local e1(7426):haxe.macro.Expr:haxe.macro.Expr]
+							[Case:Dynamic]
+								[Const:Int] 25
+								[Block:Dynamic]
+									[Var `(7427):haxe.macro.Expr]
+										[EnumParameter:haxe.macro.Expr]
+											[Local `(7378):haxe.macro.ExprDef:haxe.macro.ExprDef]
+											ETernary
+											0
+									[Var `(7428):haxe.macro.Expr]
+										[EnumParameter:haxe.macro.Expr]
+											[Local `(7378):haxe.macro.ExprDef:haxe.macro.ExprDef]
+											ETernary
+											1
+									[Var `(7429):haxe.macro.Expr]
+										[EnumParameter:haxe.macro.Expr]
+											[Local `(7378):haxe.macro.ExprDef:haxe.macro.ExprDef]
+											ETernary
+											2
+									[Block:Dynamic]
+										[Var econd(7430):haxe.macro.Expr] [Local `(7427):haxe.macro.Expr:haxe.macro.Expr]
+										[Var eif(7431):haxe.macro.Expr] [Local `(7428):haxe.macro.Expr:haxe.macro.Expr]
+										[Var eelse(7432):Null<haxe.macro.Expr>] [Local `(7429):haxe.macro.Expr:haxe.macro.Expr]
+										[Block:Dynamic]
+											[If:Dynamic]
+												[Binop:Bool]
+													[Local eelse(7432):Null<haxe.macro.Expr>:Null<haxe.macro.Expr>]
+													==
+													[Const:Null<haxe.macro.Expr>] null
+												[Then:Unknown<16>] [Block:Unknown<16>] [Throw:Unknown<16>] [Const:String] "If statements only have a value if the else clause is defined"
+												[Else:Dynamic] [Block:Dynamic]
+													[Var econd(7433):Dynamic]
+														[Call:Dynamic]
+															[Field:(e : haxe.macro.Expr) -> Dynamic]
+																[TypeExpr haxe.macro.ExprTools:Class<haxe.macro.ExprTools>]
+																[FStatic:(e : haxe.macro.Expr) -> Dynamic]
+																	haxe.macro.ExprTools
+																	getValue:(e : haxe.macro.Expr) -> Dynamic
+															[Local econd(7430):haxe.macro.Expr:haxe.macro.Expr]
+													[If:Dynamic]
+														[Local econd(7433):Dynamic:Dynamic]
+														[Then:Dynamic] [Block:Dynamic]
+															[Call:Dynamic]
+																[Field:(e : haxe.macro.Expr) -> Dynamic]
+																	[TypeExpr haxe.macro.ExprTools:Class<haxe.macro.ExprTools>]
+																	[FStatic:(e : haxe.macro.Expr) -> Dynamic]
+																		haxe.macro.ExprTools
+																		getValue:(e : haxe.macro.Expr) -> Dynamic
+																[Local eif(7431):haxe.macro.Expr:haxe.macro.Expr]
+														[Else:Dynamic] [Block:Dynamic]
+															[Call:Dynamic]
+																[Field:(e : haxe.macro.Expr) -> Dynamic]
+																	[TypeExpr haxe.macro.ExprTools:Class<haxe.macro.ExprTools>]
+																	[FStatic:(e : haxe.macro.Expr) -> Dynamic]
+																		haxe.macro.ExprTools
+																		getValue:(e : haxe.macro.Expr) -> Dynamic
+																[Local eelse(7432):Null<haxe.macro.Expr>:Null<haxe.macro.Expr>]
+							[Case:Dynamic]
+								[Const:Int] 27
+								[Block:Dynamic]
+									[Var `(7434):haxe.macro.MetadataEntry]
+										[EnumParameter:haxe.macro.MetadataEntry]
+											[Local `(7378):haxe.macro.ExprDef:haxe.macro.ExprDef]
+											EMeta
+											0
+									[Var `(7435):haxe.macro.Expr]
+										[EnumParameter:haxe.macro.Expr]
+											[Local `(7378):haxe.macro.ExprDef:haxe.macro.ExprDef]
+											EMeta
+											1
+									[Block:Dynamic]
+										[Var e1(7436):haxe.macro.Expr] [Local `(7435):haxe.macro.Expr:haxe.macro.Expr]
+										[Block:Dynamic]
+											[Call:Dynamic]
+												[Field:(e : haxe.macro.Expr) -> Dynamic]
+													[TypeExpr haxe.macro.ExprTools:Class<haxe.macro.ExprTools>]
+													[FStatic:(e : haxe.macro.Expr) -> Dynamic]
+														haxe.macro.ExprTools
+														getValue:(e : haxe.macro.Expr) -> Dynamic
+												[Local e1(7436):haxe.macro.Expr:haxe.macro.Expr]
+							[Default:Unknown<12>]
+								[Block:Unknown<12>]
+									[Throw:Unknown<12>]
+										[Binop:String]
+											[Const:String] "Unsupported expression: "
+											+
+											[Call:String]
+												[Field:(s : Dynamic) -> String]
+													[TypeExpr Std:Class<Std>]
+													[FStatic:(s : Dynamic) -> String]
+														Std
+														string:(s : Dynamic) -> String
+												[Local e(7322):haxe.macro.Expr:haxe.macro.Expr]
+
+	static inline function opt[Function:(e : Null<haxe.macro.Expr>, f : (haxe.macro.Expr -> haxe.macro.Expr)) -> haxe.macro.Expr]
+		[Arg:Null<haxe.macro.Expr>] [Local e(7074):Null<haxe.macro.Expr>]
+		[Arg:haxe.macro.Expr -> haxe.macro.Expr] [Local f(7075):haxe.macro.Expr -> haxe.macro.Expr]
+		[Return:Dynamic]
+			[If:haxe.macro.Expr]
+				[Binop:Bool]
+					[Local e(7074):Null<haxe.macro.Expr>:Null<haxe.macro.Expr>]
+					==
+					[Const:Null<haxe.macro.Expr>] null
+				[Then:haxe.macro.Expr] [Block:haxe.macro.Expr] [Const:haxe.macro.Expr] null
+				[Else:haxe.macro.Expr] [Block:haxe.macro.Expr]
+					[Call:haxe.macro.Expr]
+						[Local f(7075):haxe.macro.Expr -> haxe.macro.Expr:haxe.macro.Expr -> haxe.macro.Expr]
+						[Local e(7074):Null<haxe.macro.Expr>:Null<haxe.macro.Expr>]
+
+	static inline function opt2[Function:(e : Null<haxe.macro.Expr>, f : (haxe.macro.Expr -> Void)) -> Void]
+		[Arg:Null<haxe.macro.Expr>] [Local e(6825):Null<haxe.macro.Expr>]
+		[Arg:haxe.macro.Expr -> Void] [Local f(6826):haxe.macro.Expr -> Void]
+		[If:Void]
+			[Binop:Bool]
+				[Local e(6825):Null<haxe.macro.Expr>:Null<haxe.macro.Expr>]
+				!=
+				[Const:Null<haxe.macro.Expr>] null
+			[Then:Void] [Block:Void]
+				[Call:Void]
+					[Local f(6826):haxe.macro.Expr -> Void:haxe.macro.Expr -> Void]
+					[Local e(6825):Null<haxe.macro.Expr>:Null<haxe.macro.Expr>]
+}

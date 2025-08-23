@@ -1,0 +1,18 @@
+@:enum
+private class haxe.display._Display.Literal_Impl_ {
+
+	@:value(cast "null") @:impl @:enum
+	public static inline var Null:haxe.display.Literal = [Cast:haxe.display.Literal] [Const:String] "null";
+
+	@:value(cast "true") @:impl @:enum
+	public static inline var True:haxe.display.Literal = [Cast:haxe.display.Literal] [Const:String] "true";
+
+	@:value(cast "false") @:impl @:enum
+	public static inline var False:haxe.display.Literal = [Cast:haxe.display.Literal] [Const:String] "false";
+
+	@:value(cast "this") @:impl @:enum
+	public static inline var This:haxe.display.Literal = [Cast:haxe.display.Literal] [Const:String] "this";
+
+	@:value(cast "trace") @:impl @:enum
+	public static inline var Trace:haxe.display.Literal = [Cast:haxe.display.Literal] [Const:String] "trace";
+}

@@ -1,0 +1,958 @@
+class reflaxe.elixir.SourceMapWriter {
+
+	public function new[Function:(generatedFile : String) -> Void]
+		[Arg:String] [Local generatedFile(32732):String]
+		[Block:Void]
+			[Binop:Null<haxe.macro.Position>]
+				[Field:Null<haxe.macro.Position>]
+					[Const:reflaxe.elixir.SourceMapWriter] this
+					[FInstance:Null<haxe.macro.Position>]
+						reflaxe.elixir.SourceMapWriter
+						lastMappedPos:Null<haxe.macro.Position>
+				=
+				[Const:Null<haxe.macro.Position>] null
+			[Binop:Bool]
+				[Field:Bool]
+					[Const:reflaxe.elixir.SourceMapWriter] this
+					[FInstance:Bool]
+						reflaxe.elixir.SourceMapWriter
+						printComma:Bool
+				=
+				[Const:Bool] false
+			[Binop:Int]
+				[Field:Int]
+					[Const:reflaxe.elixir.SourceMapWriter] this
+					[FInstance:Int]
+						reflaxe.elixir.SourceMapWriter
+						currentGeneratedColumn:Int
+				=
+				[Const:Int] 0
+			[Binop:Int]
+				[Field:Int]
+					[Const:reflaxe.elixir.SourceMapWriter] this
+					[FInstance:Int]
+						reflaxe.elixir.SourceMapWriter
+						lastGeneratedColumn:Int
+				=
+				[Const:Int] 0
+			[Binop:Int]
+				[Field:Int]
+					[Const:reflaxe.elixir.SourceMapWriter] this
+					[FInstance:Int]
+						reflaxe.elixir.SourceMapWriter
+						lastSourceColumn:Int
+				=
+				[Const:Int] 0
+			[Binop:Int]
+				[Field:Int]
+					[Const:reflaxe.elixir.SourceMapWriter] this
+					[FInstance:Int]
+						reflaxe.elixir.SourceMapWriter
+						lastSourceLine:Int
+				=
+				[Const:Int] 0
+			[Binop:Int]
+				[Field:Int]
+					[Const:reflaxe.elixir.SourceMapWriter] this
+					[FInstance:Int]
+						reflaxe.elixir.SourceMapWriter
+						lastSourceIndex:Int
+				=
+				[Const:Int] 0
+			[Binop:String]
+				[Field:String]
+					[Const:reflaxe.elixir.SourceMapWriter] this
+					[FInstance:String]
+						reflaxe.elixir.SourceMapWriter
+						generatedFile:String
+				=
+				[Local generatedFile(32732):String:String]
+			[Binop:StringBuf]
+				[Field:StringBuf]
+					[Const:reflaxe.elixir.SourceMapWriter] this
+					[FInstance:StringBuf]
+						reflaxe.elixir.SourceMapWriter
+						mappingsBuffer:StringBuf
+				=
+				[New:StringBuf] StringBuf
+			[Binop:Array<String>]
+				[Field:Array<String>]
+					[Const:reflaxe.elixir.SourceMapWriter] this
+					[FInstance:Array<String>]
+						reflaxe.elixir.SourceMapWriter
+						sources:Array<String>
+				=
+				[ArrayDecl:Array<String>]
+			[Binop:Map<String, Int>]
+				[Field:Map<String, Int>]
+					[Const:reflaxe.elixir.SourceMapWriter] this
+					[FInstance:Map<String, Int>]
+						reflaxe.elixir.SourceMapWriter
+						sourceIndexes:Map<String, Int>
+				=
+				[New:haxe.ds.StringMap<Int>] haxe.ds.StringMap<Int>
+
+	var generatedFile:String;
+
+	var mappingsBuffer:StringBuf;
+
+	var sources:Array<String>;
+
+	var sourceIndexes:Map<String, Int>;
+
+	@:value(0)
+	var lastSourceIndex:Int;
+
+	@:value(0)
+	var lastSourceLine:Int;
+
+	@:value(0)
+	var lastSourceColumn:Int;
+
+	@:value(0)
+	var lastGeneratedColumn:Int;
+
+	@:value(0)
+	var currentGeneratedColumn:Int;
+
+	@:value(false)
+	var printComma:Bool;
+
+	@:value(null)
+	var lastMappedPos:Null<haxe.macro.Position>;
+
+	public function mapPosition[Function:(pos : haxe.macro.Position) -> Void]
+		[Arg:haxe.macro.Position] [Local pos(32733):haxe.macro.Position]
+		[Block:Int]
+			[If:Void]
+				[Binop:Bool]
+					[Local pos(32733):haxe.macro.Position:haxe.macro.Position]
+					==
+					[Const:haxe.macro.Position] null
+				[Then:Dynamic] [Block:Dynamic] [Return:Dynamic]
+			[Binop:Null<haxe.macro.Position>]
+				[Field:Null<haxe.macro.Position>]
+					[Const:reflaxe.elixir.SourceMapWriter] this
+					[FInstance:Null<haxe.macro.Position>]
+						reflaxe.elixir.SourceMapWriter
+						lastMappedPos:Null<haxe.macro.Position>
+				=
+				[Local pos(32733):haxe.macro.Position:haxe.macro.Position]
+			[Var sourceFile(32734):String]
+				[Call:String]
+					[Field:(p : haxe.macro.Position) -> String]
+						[TypeExpr reflaxe.helpers.PositionHelper:{ Statics reflaxe.helpers.PositionHelper }]
+						[FStatic:(p : haxe.macro.Position) -> String]
+							reflaxe.helpers.PositionHelper
+							getFile:(p : haxe.macro.Position) -> String
+					[Local pos(32733):haxe.macro.Position:haxe.macro.Position]
+			[Var sourceIndex(32755):Int]
+				[Call:Int]
+					[Field:(sourceFile : String) -> Int]
+						[Const:reflaxe.elixir.SourceMapWriter] this
+						[FInstance:(sourceFile : String) -> Int]
+							reflaxe.elixir.SourceMapWriter
+							getOrCreateSourceIndex:(sourceFile : String) -> Int
+					[Local sourceFile(32734):String:String]
+			[Var sourceLine(32756):Int]
+				[Binop:Int]
+					[Call:Int]
+						[Field:(p : haxe.macro.Position) -> Int]
+							[TypeExpr reflaxe.helpers.PositionHelper:{ Statics reflaxe.helpers.PositionHelper }]
+							[FStatic:(p : haxe.macro.Position) -> Int]
+								reflaxe.helpers.PositionHelper
+								line:(p : haxe.macro.Position) -> Int
+						[Local pos(32733):haxe.macro.Position:haxe.macro.Position]
+					-
+					[Const:Int] 1
+			[Var sourceColumn(32757):Int]
+				[Call:Int]
+					[Field:(p : haxe.macro.Position) -> Int]
+						[TypeExpr reflaxe.helpers.PositionHelper:{ Statics reflaxe.helpers.PositionHelper }]
+						[FStatic:(p : haxe.macro.Position) -> Int]
+							reflaxe.helpers.PositionHelper
+							column:(p : haxe.macro.Position) -> Int
+					[Local pos(32733):haxe.macro.Position:haxe.macro.Position]
+			[If:Void]
+				[Field:Bool]
+					[Const:reflaxe.elixir.SourceMapWriter] this
+					[FInstance:Bool]
+						reflaxe.elixir.SourceMapWriter
+						printComma:Bool
+				[Then:Void] [Block:Void]
+					[Call:Void]
+						[Field:(x : String) -> Void]
+							[Field:StringBuf]
+								[Const:reflaxe.elixir.SourceMapWriter] this
+								[FInstance:StringBuf]
+									reflaxe.elixir.SourceMapWriter
+									mappingsBuffer:StringBuf
+							[FInstance:(x : String) -> Void]
+								StringBuf
+								add:(x : add.T) -> Void
+						[Const:String] ","
+				[Else:Bool] [Block:Bool]
+					[Binop:Bool]
+						[Field:Bool]
+							[Const:reflaxe.elixir.SourceMapWriter] this
+							[FInstance:Bool]
+								reflaxe.elixir.SourceMapWriter
+								printComma:Bool
+						=
+						[Const:Bool] true
+			[Call:Void]
+				[Field:(value : Int) -> Void]
+					[Const:reflaxe.elixir.SourceMapWriter] this
+					[FInstance:(value : Int) -> Void]
+						reflaxe.elixir.SourceMapWriter
+						writeVLQ:(value : Int) -> Void
+				[Binop:Int]
+					[Field:Int]
+						[Const:reflaxe.elixir.SourceMapWriter] this
+						[FInstance:Int]
+							reflaxe.elixir.SourceMapWriter
+							currentGeneratedColumn:Int
+					-
+					[Field:Int]
+						[Const:reflaxe.elixir.SourceMapWriter] this
+						[FInstance:Int]
+							reflaxe.elixir.SourceMapWriter
+							lastGeneratedColumn:Int
+			[Call:Void]
+				[Field:(value : Int) -> Void]
+					[Const:reflaxe.elixir.SourceMapWriter] this
+					[FInstance:(value : Int) -> Void]
+						reflaxe.elixir.SourceMapWriter
+						writeVLQ:(value : Int) -> Void
+				[Binop:Int]
+					[Local sourceIndex(32755):Int:Int]
+					-
+					[Field:Int]
+						[Const:reflaxe.elixir.SourceMapWriter] this
+						[FInstance:Int]
+							reflaxe.elixir.SourceMapWriter
+							lastSourceIndex:Int
+			[Call:Void]
+				[Field:(value : Int) -> Void]
+					[Const:reflaxe.elixir.SourceMapWriter] this
+					[FInstance:(value : Int) -> Void]
+						reflaxe.elixir.SourceMapWriter
+						writeVLQ:(value : Int) -> Void
+				[Binop:Int]
+					[Local sourceLine(32756):Int:Int]
+					-
+					[Field:Int]
+						[Const:reflaxe.elixir.SourceMapWriter] this
+						[FInstance:Int]
+							reflaxe.elixir.SourceMapWriter
+							lastSourceLine:Int
+			[Call:Void]
+				[Field:(value : Int) -> Void]
+					[Const:reflaxe.elixir.SourceMapWriter] this
+					[FInstance:(value : Int) -> Void]
+						reflaxe.elixir.SourceMapWriter
+						writeVLQ:(value : Int) -> Void
+				[Binop:Int]
+					[Local sourceColumn(32757):Int:Int]
+					-
+					[Field:Int]
+						[Const:reflaxe.elixir.SourceMapWriter] this
+						[FInstance:Int]
+							reflaxe.elixir.SourceMapWriter
+							lastSourceColumn:Int
+			[Binop:Int]
+				[Field:Int]
+					[Const:reflaxe.elixir.SourceMapWriter] this
+					[FInstance:Int]
+						reflaxe.elixir.SourceMapWriter
+						lastSourceIndex:Int
+				=
+				[Local sourceIndex(32755):Int:Int]
+			[Binop:Int]
+				[Field:Int]
+					[Const:reflaxe.elixir.SourceMapWriter] this
+					[FInstance:Int]
+						reflaxe.elixir.SourceMapWriter
+						lastSourceLine:Int
+				=
+				[Local sourceLine(32756):Int:Int]
+			[Binop:Int]
+				[Field:Int]
+					[Const:reflaxe.elixir.SourceMapWriter] this
+					[FInstance:Int]
+						reflaxe.elixir.SourceMapWriter
+						lastSourceColumn:Int
+				=
+				[Local sourceColumn(32757):Int:Int]
+			[Binop:Int]
+				[Field:Int]
+					[Const:reflaxe.elixir.SourceMapWriter] this
+					[FInstance:Int]
+						reflaxe.elixir.SourceMapWriter
+						lastGeneratedColumn:Int
+				=
+				[Field:Int]
+					[Const:reflaxe.elixir.SourceMapWriter] this
+					[FInstance:Int]
+						reflaxe.elixir.SourceMapWriter
+						currentGeneratedColumn:Int
+
+	public function stringWritten[Function:(str : String) -> Void]
+		[Arg:String] [Local str(32761):String]
+		[Block:Void]
+			[Var length(32762):Int]
+				[Field:Int]
+					[Local str(32761):String:String]
+					[FInstance:Int]
+						String
+						length:Int
+			[Var lastNewlineIndex(32763):Int]
+				[Call:Int]
+					[Field:(str : String, ?startIndex : Null<Int>) -> Int]
+						[Local str(32761):String:String]
+						[FInstance:(str : String, ?startIndex : Null<Int>) -> Int]
+							String
+							lastIndexOf:(str : String, ?startIndex : Null<Int>) -> Int
+					[Const:String] "\n"
+					[Const:Null<Int>] null
+			[If:Void]
+				[Binop:Bool]
+					[Local lastNewlineIndex(32763):Int:Int]
+					>=
+					[Const:Int] 0
+				[Then:Void] [Block:Void]
+					[Binop:Bool]
+						[Field:Bool]
+							[Const:reflaxe.elixir.SourceMapWriter] this
+							[FInstance:Bool]
+								reflaxe.elixir.SourceMapWriter
+								printComma:Bool
+						=
+						[Const:Bool] false
+					[Binop:Int]
+						[Field:Int]
+							[Const:reflaxe.elixir.SourceMapWriter] this
+							[FInstance:Int]
+								reflaxe.elixir.SourceMapWriter
+								currentGeneratedColumn:Int
+						=
+						[Binop:Int]
+							[Binop:Int]
+								[Local length(32762):Int:Int]
+								-
+								[Local lastNewlineIndex(32763):Int:Int]
+							-
+							[Const:Int] 1
+					[Binop:Int]
+						[Field:Int]
+							[Const:reflaxe.elixir.SourceMapWriter] this
+							[FInstance:Int]
+								reflaxe.elixir.SourceMapWriter
+								lastGeneratedColumn:Int
+						=
+						[Const:Int] 0
+					[Var newlineCount(32764):Int]
+						[Binop:Int]
+							[Field:Int]
+								[Call:Array<String>]
+									[Field:(delimiter : String) -> Array<String>]
+										[Local str(32761):String:String]
+										[FInstance:(delimiter : String) -> Array<String>]
+											String
+											split:(delimiter : String) -> Array<String>
+									[Const:String] "\n"
+								[FInstance:Int]
+									Array<String>
+									length:Int
+							-
+							[Const:Int] 1
+					[Block:Void]
+						[Var `(32766):Int] [Const:Int] 0
+						[Var `(32767):Int] [Local newlineCount(32764):Int:Int]
+						[While:Void]
+							[Binop:Bool]
+								[Local `(32766):Int:Int]
+								<
+								[Local `(32767):Int:Int]
+							[Block:Void]
+								[Var i(32765):Int]
+									[Unop:Int]
+										++
+										Postfix
+										[Local `(32766):Int:Int]
+								[Call:Void]
+									[Field:(x : String) -> Void]
+										[Field:StringBuf]
+											[Const:reflaxe.elixir.SourceMapWriter] this
+											[FInstance:StringBuf]
+												reflaxe.elixir.SourceMapWriter
+												mappingsBuffer:StringBuf
+										[FInstance:(x : String) -> Void]
+											StringBuf
+											add:(x : add.T) -> Void
+									[Const:String] ";"
+				[Else:Int] [Block:Int]
+					[Binop:Int]
+						[Field:Int]
+							[Const:reflaxe.elixir.SourceMapWriter] this
+							[FInstance:Int]
+								reflaxe.elixir.SourceMapWriter
+								currentGeneratedColumn:Int
+						+=
+						[Local length(32762):Int:Int]
+
+	public function generateSourceMap[Function:() -> String]
+		[Block:Dynamic]
+			[Var sourceMapPath(32768):String]
+				[Binop:String]
+					[Field:String]
+						[Const:reflaxe.elixir.SourceMapWriter] this
+						[FInstance:String]
+							reflaxe.elixir.SourceMapWriter
+							generatedFile:String
+					+
+					[Const:String] ".map"
+			[Var dir(32769):String]
+				[Call:String]
+					[Field:(path : String) -> String]
+						[TypeExpr haxe.io.Path:Class<haxe.io.Path>]
+						[FStatic:(path : String) -> String]
+							haxe.io.Path
+							directory:(path : String) -> String
+					[Local sourceMapPath(32768):String:String]
+			[If:Void]
+				[Binop:Bool]
+					[Binop:Bool]
+						[Local dir(32769):String:String]
+						!=
+						[Const:String] ""
+					&&
+					[Unop:Bool]
+						!
+						Prefix
+						[Call:Bool]
+							[Field:(path : String) -> Bool]
+								[TypeExpr sys.FileSystem:Class<sys.FileSystem>]
+								[FStatic:(path : String) -> Bool]
+									sys.FileSystem
+									exists:(path : String) -> Bool
+							[Local dir(32769):String:String]
+				[Then:Void] [Block:Void]
+					[Call:Void]
+						[Field:(path : String) -> Void]
+							[TypeExpr sys.FileSystem:Class<sys.FileSystem>]
+							[FStatic:(path : String) -> Void]
+								sys.FileSystem
+								createDirectory:(path : String) -> Void
+						[Local dir(32769):String:String]
+			[Var sourceMap(32772):{ version : Int, sources : Array<String>, sourceRoot : String, names : Array<Unknown<29>>, mappings : String, file : String }]
+				[ObjectDecl:{ version : Int, sources : Array<String>, sourceRoot : String, names : Array<Unknown<29>>, mappings : String, file : String }]
+					version: [Const:Int] 3
+					file: [Call:String]
+						[Field:(filePath : String) -> String]
+							[Const:reflaxe.elixir.SourceMapWriter] this
+							[FInstance:(filePath : String) -> String]
+								reflaxe.elixir.SourceMapWriter
+								extractFileName:(filePath : String) -> String
+						[Field:String]
+							[Const:reflaxe.elixir.SourceMapWriter] this
+							[FInstance:String]
+								reflaxe.elixir.SourceMapWriter
+								generatedFile:String
+					sourceRoot: [Const:String] ""
+					sources: [Field:Array<String>]
+						[Const:reflaxe.elixir.SourceMapWriter] this
+						[FInstance:Array<String>]
+							reflaxe.elixir.SourceMapWriter
+							sources:Array<String>
+					names: [ArrayDecl:Array<Unknown<29>>]
+					mappings: [Call:String]
+						[Field:() -> String]
+							[Field:StringBuf]
+								[Const:reflaxe.elixir.SourceMapWriter] this
+								[FInstance:StringBuf]
+									reflaxe.elixir.SourceMapWriter
+									mappingsBuffer:StringBuf
+							[FInstance:() -> String]
+								StringBuf
+								toString:() -> String
+			[Var sourceMapJson(32778):String]
+				[Block:String]
+					[Var replacer(32776):Null<(key : Dynamic, value : Dynamic) -> Dynamic>] [Const:Null<(key : Dynamic, value : Dynamic) -> Dynamic>] null
+					[Call:String]
+						[Field:(o : Dynamic, ?replacer : Null<(key : Dynamic, value : Dynamic) -> Dynamic>, ?space : Null<String>) -> String]
+							[TypeExpr haxe.format.JsonPrinter:Class<haxe.format.JsonPrinter>]
+							[FStatic:(o : Dynamic, ?replacer : Null<(key : Dynamic, value : Dynamic) -> Dynamic>, ?space : Null<String>) -> String]
+								haxe.format.JsonPrinter
+								print:(o : Dynamic, ?replacer : Null<(key : Dynamic, value : Dynamic) -> Dynamic>, ?space : Null<String>) -> String
+						[Cast:Dynamic] [Local sourceMap(32772):{ version : Int, sources : Array<String>, sourceRoot : String, names : Array<Unknown<29>>, mappings : String, file : String }:{ version : Int, sources : Array<String>, sourceRoot : String, names : Array<Unknown<29>>, mappings : String, file : String }]
+						[Local replacer(32776):Null<(key : Dynamic, value : Dynamic) -> Dynamic>:Null<(key : Dynamic, value : Dynamic) -> Dynamic>]
+						[Const:String] "  "
+			[Call:Void]
+				[Field:(path : String, content : String) -> Void]
+					[TypeExpr sys.io.File:Class<sys.io.File>]
+					[FStatic:(path : String, content : String) -> Void]
+						sys.io.File
+						saveContent:(path : String, content : String) -> Void
+				[Local sourceMapPath(32768):String:String]
+				[Local sourceMapJson(32778):String:String]
+			[Return:Dynamic] [Local sourceMapPath(32768):String:String]
+
+	function getOrCreateSourceIndex[Function:(sourceFile : String) -> Int]
+		[Arg:String] [Local sourceFile(32735):String]
+		[Block:Dynamic]
+			[Var normalizedPath(32740):String]
+				[Call:String]
+					[Field:(sourceFile : String) -> String]
+						[Const:reflaxe.elixir.SourceMapWriter] this
+						[FInstance:(sourceFile : String) -> String]
+							reflaxe.elixir.SourceMapWriter
+							normalizeSourcePath:(sourceFile : String) -> String
+					[Local sourceFile(32735):String:String]
+			[If:Void]
+				[Block:Bool]
+					[Var this(32743):haxe.IMap<String, Int>]
+						[Field:Map<String, Int>]
+							[Const:reflaxe.elixir.SourceMapWriter] this
+							[FInstance:Map<String, Int>]
+								reflaxe.elixir.SourceMapWriter
+								sourceIndexes:Map<String, Int>
+					[Call:Bool]
+						[Field:(key : String) -> Bool]
+							[Cast:haxe.ds.StringMap<Int>] [Local this(32743):haxe.IMap<String, Int>:haxe.IMap<String, Int>]
+							[FInstance:(key : String) -> Bool]
+								haxe.ds.StringMap<Int>
+								exists:(key : String) -> Bool
+						[Local normalizedPath(32740):String:String]
+				[Then:Dynamic] [Block:Dynamic]
+					[Return:Dynamic]
+						[Block:Null<Int>]
+							[Var this(32747):haxe.IMap<String, Int>]
+								[Field:Map<String, Int>]
+									[Const:reflaxe.elixir.SourceMapWriter] this
+									[FInstance:Map<String, Int>]
+										reflaxe.elixir.SourceMapWriter
+										sourceIndexes:Map<String, Int>
+							[Call:Null<Int>]
+								[Field:(key : String) -> Null<Int>]
+									[Cast:haxe.ds.StringMap<Int>] [Local this(32747):haxe.IMap<String, Int>:haxe.IMap<String, Int>]
+									[FInstance:(key : String) -> Null<Int>]
+										haxe.ds.StringMap<Int>
+										get:(key : String) -> Null<haxe.ds.StringMap.T>
+								[Local normalizedPath(32740):String:String]
+			[Var index(32749):Int]
+				[Field:Int]
+					[Field:Array<String>]
+						[Const:reflaxe.elixir.SourceMapWriter] this
+						[FInstance:Array<String>]
+							reflaxe.elixir.SourceMapWriter
+							sources:Array<String>
+					[FInstance:Int]
+						Array<String>
+						length:Int
+			[Call:Int]
+				[Field:(x : String) -> Int]
+					[Field:Array<String>]
+						[Const:reflaxe.elixir.SourceMapWriter] this
+						[FInstance:Array<String>]
+							reflaxe.elixir.SourceMapWriter
+							sources:Array<String>
+					[FInstance:(x : String) -> Int]
+						Array<String>
+						push:(x : Array.T) -> Int
+				[Local normalizedPath(32740):String:String]
+			[Block:Void]
+				[Var this(32752):haxe.IMap<String, Int>]
+					[Field:Map<String, Int>]
+						[Const:reflaxe.elixir.SourceMapWriter] this
+						[FInstance:Map<String, Int>]
+							reflaxe.elixir.SourceMapWriter
+							sourceIndexes:Map<String, Int>
+				[Call:Void]
+					[Field:(key : String, value : Int) -> Void]
+						[Cast:haxe.ds.StringMap<Int>] [Local this(32752):haxe.IMap<String, Int>:haxe.IMap<String, Int>]
+						[FInstance:(key : String, value : Int) -> Void]
+							haxe.ds.StringMap<Int>
+							set:(key : String, value : haxe.ds.StringMap.T) -> Void
+					[Local normalizedPath(32740):String:String]
+					[Local index(32749):Int:Int]
+			[Return:Dynamic] [Local index(32749):Int:Int]
+
+	function normalizeSourcePath[Function:(sourceFile : String) -> String]
+		[Arg:String] [Local sourceFile(32736):String]
+		[Block:Dynamic]
+			[If:Void]
+				[Binop:Bool]
+					[Call:Int]
+						[Field:(str : String, ?startIndex : Null<Int>) -> Int]
+							[Local sourceFile(32736):String:String]
+							[FInstance:(str : String, ?startIndex : Null<Int>) -> Int]
+								String
+								indexOf:(str : String, ?startIndex : Null<Int>) -> Int
+						[Const:String] "/std/"
+						[Const:Null<Int>] null
+					>=
+					[Const:Int] 0
+				[Then:Dynamic] [Block:Dynamic]
+					[Var stdIndex(32737):Int]
+						[Call:Int]
+							[Field:(str : String, ?startIndex : Null<Int>) -> Int]
+								[Local sourceFile(32736):String:String]
+								[FInstance:(str : String, ?startIndex : Null<Int>) -> Int]
+									String
+									indexOf:(str : String, ?startIndex : Null<Int>) -> Int
+							[Const:String] "/std/"
+							[Const:Null<Int>] null
+					[Return:Dynamic]
+						[Call:String]
+							[Field:(startIndex : Int, ?endIndex : Null<Int>) -> String]
+								[Local sourceFile(32736):String:String]
+								[FInstance:(startIndex : Int, ?endIndex : Null<Int>) -> String]
+									String
+									substring:(startIndex : Int, ?endIndex : Null<Int>) -> String
+							[Binop:Int]
+								[Local stdIndex(32737):Int:Int]
+								+
+								[Const:Int] 1
+							[Const:Null<Int>] null
+			[If:Void]
+				[Binop:Bool]
+					[Call:Int]
+						[Field:(str : String, ?startIndex : Null<Int>) -> Int]
+							[Local sourceFile(32736):String:String]
+							[FInstance:(str : String, ?startIndex : Null<Int>) -> Int]
+								String
+								indexOf:(str : String, ?startIndex : Null<Int>) -> Int
+						[Const:String] "/src/"
+						[Const:Null<Int>] null
+					>=
+					[Const:Int] 0
+				[Then:Dynamic] [Block:Dynamic]
+					[Var srcIndex(32738):Int]
+						[Call:Int]
+							[Field:(str : String, ?startIndex : Null<Int>) -> Int]
+								[Local sourceFile(32736):String:String]
+								[FInstance:(str : String, ?startIndex : Null<Int>) -> Int]
+									String
+									indexOf:(str : String, ?startIndex : Null<Int>) -> Int
+							[Const:String] "/src/"
+							[Const:Null<Int>] null
+					[Return:Dynamic]
+						[Call:String]
+							[Field:(startIndex : Int, ?endIndex : Null<Int>) -> String]
+								[Local sourceFile(32736):String:String]
+								[FInstance:(startIndex : Int, ?endIndex : Null<Int>) -> String]
+									String
+									substring:(startIndex : Int, ?endIndex : Null<Int>) -> String
+							[Binop:Int]
+								[Local srcIndex(32738):Int:Int]
+								+
+								[Const:Int] 1
+							[Const:Null<Int>] null
+			[Var lastSlash(32739):Int]
+				[Call:Int]
+					[Field:(str : String, ?startIndex : Null<Int>) -> Int]
+						[Local sourceFile(32736):String:String]
+						[FInstance:(str : String, ?startIndex : Null<Int>) -> Int]
+							String
+							lastIndexOf:(str : String, ?startIndex : Null<Int>) -> Int
+					[Const:String] "/"
+					[Const:Null<Int>] null
+			[If:Void]
+				[Binop:Bool]
+					[Local lastSlash(32739):Int:Int]
+					>=
+					[Const:Int] 0
+				[Then:Dynamic] [Block:Dynamic]
+					[Return:Dynamic]
+						[Call:String]
+							[Field:(startIndex : Int, ?endIndex : Null<Int>) -> String]
+								[Local sourceFile(32736):String:String]
+								[FInstance:(startIndex : Int, ?endIndex : Null<Int>) -> String]
+									String
+									substring:(startIndex : Int, ?endIndex : Null<Int>) -> String
+							[Binop:Int]
+								[Local lastSlash(32739):Int:Int]
+								+
+								[Const:Int] 1
+							[Const:Null<Int>] null
+			[Return:Dynamic] [Local sourceFile(32736):String:String]
+
+	function writeVLQ[Function:(value : Int) -> Void]
+		[Arg:Int] [Local value(32758):Int]
+		[Block:Void]
+			[Var vlq(32759):Int]
+				[If:Int]
+					[Binop:Bool]
+						[Local value(32758):Int:Int]
+						<
+						[Const:Int] 0
+					[Then:Int] [Block:Int]
+						[Binop:Int]
+							[Parenthesis:Int]
+								[Binop:Int]
+									[Parenthesis:Int]
+										[Unop:Int]
+											-
+											Prefix
+											[Local value(32758):Int:Int]
+									<<
+									[Const:Int] 1
+							|
+							[Const:Int] 1
+					[Else:Int] [Block:Int]
+						[Binop:Int]
+							[Local value(32758):Int:Int]
+							<<
+							[Const:Int] 1
+			[Do:Void]
+				[Binop:Bool]
+					[Local vlq(32759):Int:Int]
+					>
+					[Const:Int] 0
+				[Block:Void]
+					[Var digit(32760):Int]
+						[Binop:Int]
+							[Local vlq(32759):Int:Int]
+							&
+							[Const:Int] 31
+					[Binop:Int]
+						[Local vlq(32759):Int:Int]
+						>>>=
+						[Const:Int] 5
+					[If:Void]
+						[Binop:Bool]
+							[Local vlq(32759):Int:Int]
+							>
+							[Const:Int] 0
+						[Then:Int] [Block:Int]
+							[Binop:Int]
+								[Local digit(32760):Int:Int]
+								|=
+								[Const:Int] 32
+					[Call:Void]
+						[Field:(x : String) -> Void]
+							[Field:StringBuf]
+								[Const:reflaxe.elixir.SourceMapWriter] this
+								[FInstance:StringBuf]
+									reflaxe.elixir.SourceMapWriter
+									mappingsBuffer:StringBuf
+							[FInstance:(x : String) -> Void]
+								StringBuf
+								add:(x : add.T) -> Void
+						[Array:String]
+							[Field:Array<String>]
+								[TypeExpr reflaxe.elixir.SourceMapWriter:Class<reflaxe.elixir.SourceMapWriter>]
+								[FStatic:Array<String>]
+									reflaxe.elixir.SourceMapWriter
+									VLQ_CHARS:Array<String>
+							[Local digit(32760):Int:Int]
+
+	function extractFileName[Function:(filePath : String) -> String]
+		[Arg:String] [Local filePath(32770):String]
+		[Block:Dynamic]
+			[Var lastSlash(32771):Int]
+				[Call:Int]
+					[Field:(str : String, ?startIndex : Null<Int>) -> Int]
+						[Local filePath(32770):String:String]
+						[FInstance:(str : String, ?startIndex : Null<Int>) -> Int]
+							String
+							lastIndexOf:(str : String, ?startIndex : Null<Int>) -> Int
+					[Const:String] "/"
+					[Const:Null<Int>] null
+			[If:Void]
+				[Binop:Bool]
+					[Local lastSlash(32771):Int:Int]
+					>=
+					[Const:Int] 0
+				[Then:Dynamic] [Block:Dynamic]
+					[Return:Dynamic]
+						[Call:String]
+							[Field:(startIndex : Int, ?endIndex : Null<Int>) -> String]
+								[Local filePath(32770):String:String]
+								[FInstance:(startIndex : Int, ?endIndex : Null<Int>) -> String]
+									String
+									substring:(startIndex : Int, ?endIndex : Null<Int>) -> String
+							[Binop:Int]
+								[Local lastSlash(32771):Int:Int]
+								+
+								[Const:Int] 1
+							[Const:Null<Int>] null
+			[Return:Dynamic] [Local filePath(32770):String:String]
+
+	public function getDebugInfo[Function:() -> String]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Binop:String]
+					[Binop:String]
+						[Binop:String]
+							[Binop:String]
+								[Binop:String]
+									[Const:String] "SourceMapWriter Debug Info:\n"
+									+
+									[Binop:String]
+										[Binop:String]
+											[Const:String] "  Generated file: "
+											+
+											[Field:String]
+												[Const:reflaxe.elixir.SourceMapWriter] this
+												[FInstance:String]
+													reflaxe.elixir.SourceMapWriter
+													generatedFile:String
+										+
+										[Const:String] "\n"
+								+
+								[Binop:String]
+									[Binop:String]
+										[Const:String] "  Sources: "
+										+
+										[Field:Int]
+											[Field:Array<String>]
+												[Const:reflaxe.elixir.SourceMapWriter] this
+												[FInstance:Array<String>]
+													reflaxe.elixir.SourceMapWriter
+													sources:Array<String>
+											[FInstance:Int]
+												Array<String>
+												length:Int
+									+
+									[Const:String] " files\n"
+							+
+							[Binop:String]
+								[Binop:String]
+									[Const:String] "  Current position: line unknown, column "
+									+
+									[Field:Int]
+										[Const:reflaxe.elixir.SourceMapWriter] this
+										[FInstance:Int]
+											reflaxe.elixir.SourceMapWriter
+											currentGeneratedColumn:Int
+								+
+								[Const:String] "\n"
+						+
+						[Binop:String]
+							[Binop:String]
+								[Const:String] "  Last mapped: "
+								+
+								[If:String]
+									[Binop:Bool]
+										[Field:Null<haxe.macro.Position>]
+											[Const:reflaxe.elixir.SourceMapWriter] this
+											[FInstance:Null<haxe.macro.Position>]
+												reflaxe.elixir.SourceMapWriter
+												lastMappedPos:Null<haxe.macro.Position>
+										!=
+										[Const:Null<haxe.macro.Position>] null
+									[Then:String] [Block:String]
+										[Binop:String]
+											[Binop:String]
+												[Call:String]
+													[Field:(p : haxe.macro.Position) -> String]
+														[TypeExpr reflaxe.helpers.PositionHelper:{ Statics reflaxe.helpers.PositionHelper }]
+														[FStatic:(p : haxe.macro.Position) -> String]
+															reflaxe.helpers.PositionHelper
+															getFile:(p : haxe.macro.Position) -> String
+													[Field:Null<haxe.macro.Position>]
+														[Const:reflaxe.elixir.SourceMapWriter] this
+														[FInstance:Null<haxe.macro.Position>]
+															reflaxe.elixir.SourceMapWriter
+															lastMappedPos:Null<haxe.macro.Position>
+												+
+												[Const:String] ":"
+											+
+											[Call:Int]
+												[Field:(p : haxe.macro.Position) -> Int]
+													[TypeExpr reflaxe.helpers.PositionHelper:{ Statics reflaxe.helpers.PositionHelper }]
+													[FStatic:(p : haxe.macro.Position) -> Int]
+														reflaxe.helpers.PositionHelper
+														line:(p : haxe.macro.Position) -> Int
+												[Field:Null<haxe.macro.Position>]
+													[Const:reflaxe.elixir.SourceMapWriter] this
+													[FInstance:Null<haxe.macro.Position>]
+														reflaxe.elixir.SourceMapWriter
+														lastMappedPos:Null<haxe.macro.Position>
+									[Else:String] [Block:String] [Const:String] "none"
+							+
+							[Const:String] "\n"
+					+
+					[Binop:String]
+						[Const:String] "  Mappings length: "
+						+
+						[Call:Int]
+							[Field:() -> Int]
+								[Field:StringBuf]
+									[Const:reflaxe.elixir.SourceMapWriter] this
+									[FInstance:StringBuf]
+										reflaxe.elixir.SourceMapWriter
+										mappingsBuffer:StringBuf
+								[FInstance:() -> Int]
+									StringBuf
+									get_length:() -> Int
+
+	@:value(["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z", "a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "+", "/"])
+	static var VLQ_CHARS:Array<String> = [ArrayDecl:Array<String>]
+		[Const:String] "A"
+		[Const:String] "B"
+		[Const:String] "C"
+		[Const:String] "D"
+		[Const:String] "E"
+		[Const:String] "F"
+		[Const:String] "G"
+		[Const:String] "H"
+		[Const:String] "I"
+		[Const:String] "J"
+		[Const:String] "K"
+		[Const:String] "L"
+		[Const:String] "M"
+		[Const:String] "N"
+		[Const:String] "O"
+		[Const:String] "P"
+		[Const:String] "Q"
+		[Const:String] "R"
+		[Const:String] "S"
+		[Const:String] "T"
+		[Const:String] "U"
+		[Const:String] "V"
+		[Const:String] "W"
+		[Const:String] "X"
+		[Const:String] "Y"
+		[Const:String] "Z"
+		[Const:String] "a"
+		[Const:String] "b"
+		[Const:String] "c"
+		[Const:String] "d"
+		[Const:String] "e"
+		[Const:String] "f"
+		[Const:String] "g"
+		[Const:String] "h"
+		[Const:String] "i"
+		[Const:String] "j"
+		[Const:String] "k"
+		[Const:String] "l"
+		[Const:String] "m"
+		[Const:String] "n"
+		[Const:String] "o"
+		[Const:String] "p"
+		[Const:String] "q"
+		[Const:String] "r"
+		[Const:String] "s"
+		[Const:String] "t"
+		[Const:String] "u"
+		[Const:String] "v"
+		[Const:String] "w"
+		[Const:String] "x"
+		[Const:String] "y"
+		[Const:String] "z"
+		[Const:String] "0"
+		[Const:String] "1"
+		[Const:String] "2"
+		[Const:String] "3"
+		[Const:String] "4"
+		[Const:String] "5"
+		[Const:String] "6"
+		[Const:String] "7"
+		[Const:String] "8"
+		[Const:String] "9"
+		[Const:String] "+"
+		[Const:String] "/";
+}

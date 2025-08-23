@@ -1,0 +1,1 @@
+typedef reflaxe.elixir.helpers.MutabilityInfo = { returnsVoid : Bool, mutatedFields : Array<String>, isMutating : Bool, hasNestedMutations : Bool }

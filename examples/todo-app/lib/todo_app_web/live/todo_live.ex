@@ -306,24 +306,7 @@ defmodule TodoLive do
     this = socket.assigns.todos
     g_array = []
     g_counter = 0
-    loop_helper = fn loop_fn, {v, g1, temp_todo} ->
-      if ((g_counter < this.length)) do
-        v = Enum.at(this, g_counter)
-        g1 = g1 + 1
-        temp_todo = nil
-        if ((v.id == updated_todo.id)) do
-              temp_todo = updated_todo
-            else
-              temp_todo = v
-            end
-        g_counter ++ [temp_todo]
-        loop_fn.(loop_fn, {v, g1, temp_todo})
-      else
-        {v, g1, temp_todo}
-      end
-    end
-
-    {v, g1, temp_todo} = loop_helper.(loop_helper, {v, g1, temp_todo})
+    Enum.filter(this, fn item -> item.id == updated_todo.id end)
     current_assigns = socket.assigns
     complete_assigns = TypeSafeConversions.create_complete_assigns(current_assigns, g_counter)
     LiveView.assign_multiple(socket, complete_assigns)
@@ -335,20 +318,7 @@ defmodule TodoLive do
     this = socket.assigns.todos
     g_array = []
     g_counter = 0
-    loop_helper = fn loop_fn, {v, g1} ->
-      if ((g_counter < this.length)) do
-        v = Enum.at(this, g_counter)
-        g1 = g1 + 1
-        if ((v.id != id)) do
-              g_counter ++ [v]
-            end
-        loop_fn.(loop_fn, {v, g1})
-      else
-        {v, g1}
-      end
-    end
-
-    {v, g1} = loop_helper.(loop_helper, {v, g1})
+    Enum.filter(this, fn item -> item.id != id end)
     current_assigns = socket.assigns
     complete_assigns = TypeSafeConversions.create_complete_assigns(current_assigns, g_counter)
     LiveView.assign_multiple(socket, complete_assigns)
@@ -370,20 +340,7 @@ defmodule TodoLive do
   @doc "Generated from Haxe find_todo"
   def find_todo(id, todos) do
     g_counter = 0
-    loop_helper = fn loop_fn, {todo, g} ->
-      if ((g_counter < todos.length)) do
-        todo = Enum.at(todos, g_counter)
-        g = g + 1
-        if ((todo.id == id)) do
-              todo
-            end
-        loop_fn.(loop_fn, {todo, g})
-      else
-        {todo, g}
-      end
-    end
-
-    {todo, g} = loop_helper.(loop_helper, {todo, g})
+    Enum.filter(todos, fn item -> item.id == id end)
     nil
   end
 
@@ -392,20 +349,7 @@ defmodule TodoLive do
   def count_completed(todos) do
     count = 0
     g_counter = 0
-    loop_helper = fn loop_fn, {todo, g, count} ->
-      if ((g_counter < todos.length)) do
-        todo = Enum.at(todos, g_counter)
-        g = g + 1
-        if (todo.completed) do
-              count + 1
-            end
-        loop_fn.(loop_fn, {todo, g, count})
-      else
-        {todo, g, count}
-      end
-    end
-
-    {todo, g, count} = loop_helper.(loop_helper, {todo, g, count})
+    Enum.filter(todos, fn item -> item.completed end)
     count
   end
 
@@ -414,20 +358,7 @@ defmodule TodoLive do
   def count_pending(todos) do
     count = 0
     g_counter = 0
-    loop_helper = fn loop_fn, {todo, g, count} ->
-      if ((g_counter < todos.length)) do
-        todo = Enum.at(todos, g_counter)
-        g = g + 1
-        if (not todo.completed) do
-              count + 1
-            end
-        loop_fn.(loop_fn, {todo, g, count})
-      else
-        {todo, g, count}
-      end
-    end
-
-    {todo, g, count} = loop_helper.(loop_helper, {todo, g, count})
+    Enum.filter(todos, fn item -> not item.completed end)
     count
   end
 
@@ -440,18 +371,7 @@ defmodule TodoLive do
     this = tags_string.split(",")
     g_array = []
     g_counter = 0
-    loop_helper = fn loop_fn, {v, g1} ->
-      if ((g_counter < this.length)) do
-        v = Enum.at(this, g_counter)
-        g1 = g1 + 1
-        g_counter ++ [StringTools.trim(v)]
-        loop_fn.(loop_fn, {v, g1})
-      else
-        {v, g1}
-      end
-    end
-
-    {v, g1} = loop_helper.(loop_helper, {v, g1})
+    Enum.map(this, fn item -> StringTools.trim(item) end)
     g_counter
   end
 
@@ -474,20 +394,7 @@ defmodule TodoLive do
     this = socket.assigns.todos
     g_array = []
     g_counter = 0
-    loop_helper = fn loop_fn, {v, g1} ->
-      if ((g_counter < this.length)) do
-        v = Enum.at(this, g_counter)
-        g1 = g1 + 1
-        if (not v.completed) do
-              g_counter ++ [v]
-            end
-        loop_fn.(loop_fn, {v, g1})
-      else
-        {v, g1}
-      end
-    end
-
-    {v, g1} = loop_helper.(loop_helper, {v, g1})
+    Enum.filter(this, fn item -> not item.completed end)
     temp_array = g_counter
     g_counter = 0
     loop_helper = fn loop_fn, {todo, g, updated_changeset} ->
@@ -550,20 +457,7 @@ defmodule TodoLive do
     this = socket.assigns.todos
     g_array = []
     g_counter = 0
-    loop_helper = fn loop_fn, {v, g1} ->
-      if ((g_counter < this.length)) do
-        v = Enum.at(this, g_counter)
-        g1 = g1 + 1
-        if (v.completed) do
-              g_counter ++ [v]
-            end
-        loop_fn.(loop_fn, {v, g1})
-      else
-        {v, g1}
-      end
-    end
-
-    {v, g1} = loop_helper.(loop_helper, {v, g1})
+    Enum.filter(this, fn item -> item.completed end)
     temp_array = g_counter
     g_counter = 0
     loop_helper = fn loop_fn, {todo, g} ->
@@ -583,20 +477,7 @@ defmodule TodoLive do
     this = socket.assigns.todos
     g_array = []
     g_counter = 0
-    loop_helper = fn loop_fn, {v, g1} ->
-      if ((g_counter < this.length)) do
-        v = Enum.at(this, g_counter)
-        g1 = g1 + 1
-        if (not v.completed) do
-              g_counter ++ [v]
-            end
-        loop_fn.(loop_fn, {v, g1})
-      else
-        {v, g1}
-      end
-    end
-
-    {v, g1} = loop_helper.(loop_helper, {v, g1})
+    Enum.filter(this, fn item -> not item.completed end)
     temp_array1 = g_counter
     current_assigns = socket.assigns
     complete_assigns = TypeSafeConversions.create_complete_assigns(current_assigns, temp_array1)
@@ -705,20 +586,7 @@ defmodule TodoLive do
           g_array = []
           g_counter = 0
           g = selected_tags
-          loop_helper = fn loop_fn, {v, g1} ->
-      if ((g_counter < g_counter.length)) do
-        v = Enum.at(g_counter, g_counter)
-        g1 = g1 + 1
-        if ((v != tag)) do
-              g_counter ++ [v]
-            end
-        loop_fn.(loop_fn, {v, g1})
-      else
-        {v, g1}
-      end
-    end
-
-    {v, g1} = loop_helper.(loop_helper, {v, g1})
+          Enum.filter(g2, fn item -> item != tag end)
           temp_array = g_counter
         )
         else

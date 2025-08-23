@@ -119,7 +119,19 @@ class VariableCompiler {
             #if debug_variable_compiler
             trace('[XRay VariableCompiler] ✓ PARAMETER MAPPING: ${originalName} -> ${mappedName}');
             #end
-            return mappedName;
+            
+            // CRITICAL FIX: Don't map 'g' to 'g_counter' in any context - it's always wrong
+            // The 'g' variable is used for enum parameter extraction, never for loop counters
+            if (originalName == "g" && StringTools.endsWith(mappedName, "_counter")) {
+                // This mapping is ALWAYS incorrect - 'g' is for enum extraction, not loops
+                #if debug_variable_compiler
+                trace('[XRay VariableCompiler] ⚠️ BLOCKING incorrect g -> ${mappedName} mapping');
+                trace('[XRay VariableCompiler] isInEnumExtraction flag: ${compiler.isInEnumExtraction}');
+                #end
+                // Don't use the incorrect mapping, fall through to normal name handling
+            } else {
+                return mappedName;
+            }
         }
         
         // GLOBAL FIX: Try global struct method mapping if we're compiling a struct method
@@ -156,6 +168,7 @@ class VariableCompiler {
         
         // CRITICAL FIX: Check if this variable was renamed during declaration
         // This ensures consistency between TVar and TLocal for _g variables
+        // BUT DON'T apply this to plain 'g' variables used in enum extraction!
         if (StringTools.startsWith(originalName, "_g") && compiler.variableRenameMap != null) {
             var renamedName = compiler.variableRenameMap.get(originalName);
             if (renamedName != null) {
@@ -182,7 +195,11 @@ class VariableCompiler {
         }
         
         // Use parameter mapping if available (for both abstract methods and regular functions with standardized arg names)
-        var result = if (compiler.currentFunctionParameterMap.exists(originalName)) {
+        // BUT SKIP if this is a plain 'g' variable that would be mapped to a counter
+        var shouldUseParameterMapping = compiler.currentFunctionParameterMap.exists(originalName) &&
+            !(originalName == "g" && StringTools.endsWith(compiler.currentFunctionParameterMap.get(originalName), "_counter"));
+            
+        var result = if (shouldUseParameterMapping) {
             #if debug_variable_compiler
             trace("[XRay VariableCompiler] ✓ PARAMETER MAPPING DETECTED");
             #end

@@ -1,0 +1,336 @@
+@:nullSafety(Off)
+class reflaxe.elixir.helpers.PatternAnalysisCompiler {
+
+	public function new[Function:(compiler : reflaxe.elixir.ElixirCompiler) -> Void]
+		[Arg:reflaxe.elixir.ElixirCompiler] [Local compiler(33213):reflaxe.elixir.ElixirCompiler]
+		[Block:reflaxe.elixir.ElixirCompiler]
+			[Binop:reflaxe.elixir.ElixirCompiler]
+				[Field:reflaxe.elixir.ElixirCompiler]
+					[Const:reflaxe.elixir.helpers.PatternAnalysisCompiler] this
+					[FInstance:reflaxe.elixir.ElixirCompiler]
+						reflaxe.elixir.helpers.PatternAnalysisCompiler
+						compiler:reflaxe.elixir.ElixirCompiler
+				=
+				[Local compiler(33213):reflaxe.elixir.ElixirCompiler:reflaxe.elixir.ElixirCompiler]
+
+	var compiler:reflaxe.elixir.ElixirCompiler;
+
+	public function detectCoreComponentsUsage[Function:(classType : haxe.macro.ClassType, funcFields : Array<reflaxe.data.ClassFuncData>) -> Bool]
+		[Arg:haxe.macro.ClassType] [Local classType(33214):haxe.macro.ClassType]
+		[Arg:Array<reflaxe.data.ClassFuncData>] [Local funcFields(33215):Array<reflaxe.data.ClassFuncData>]
+		[Block:Dynamic]
+			[Var result(33216):Bool]
+				[Call:Bool]
+					[Field:(name : String) -> Bool]
+						[Field:haxe.macro.MetaAccess]
+							[Local classType(33214):haxe.macro.ClassType:haxe.macro.ClassType]
+							[FAnon:haxe.macro.MetaAccess] meta:haxe.macro.MetaAccess
+						[FAnon:(name : String) -> Bool] has:(name : String) -> Bool
+					[Const:String] ":liveview"
+			[Return:Dynamic] [Local result(33216):Bool:Bool]
+
+	public function analyzeRangeLoopBody[Function:(ebody : haxe.macro.TypedExpr) -> { loopVar : String, isAddition : Bool, hasSimpleAccumulator : Bool, accumulator : String }]
+		[Arg:haxe.macro.TypedExpr] [Local ebody(33217):haxe.macro.TypedExpr]
+		[Block:Dynamic]
+			[Var result(33218):{ loopVar : String, isAddition : Bool, hasSimpleAccumulator : Bool, accumulator : String }]
+				[ObjectDecl:{ loopVar : String, isAddition : Bool, hasSimpleAccumulator : Bool, accumulator : String }]
+					hasSimpleAccumulator: [Const:Bool] true
+					accumulator: [Const:String] "sum"
+					loopVar: [Const:String] "i"
+					isAddition: [Const:Bool] true
+			[Return:Dynamic] [Local result(33218):{ loopVar : String, isAddition : Bool, hasSimpleAccumulator : Bool, accumulator : String }:{ loopVar : String, isAddition : Bool, hasSimpleAccumulator : Bool, accumulator : String }]
+
+	public function detectSchemaFromArgs[Function:(args : Array<haxe.macro.TypedExpr>) -> Null<String>]
+		[Arg:Array<haxe.macro.TypedExpr>] [Local args(33219):Array<haxe.macro.TypedExpr>]
+		[Block:Dynamic]
+			[If:Void]
+				[Binop:Bool]
+					[Field:Int]
+						[Local args(33219):Array<haxe.macro.TypedExpr>:Array<haxe.macro.TypedExpr>]
+						[FInstance:Int]
+							Array<haxe.macro.TypedExpr>
+							length:Int
+					==
+					[Const:Int] 0
+				[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [Const:Null<String>] null
+			[Var firstArgType(33220):haxe.macro.Type]
+				[Field:haxe.macro.Type]
+					[Array:haxe.macro.TypedExpr]
+						[Local args(33219):Array<haxe.macro.TypedExpr>:Array<haxe.macro.TypedExpr>]
+						[Const:Int] 0
+					[FAnon:haxe.macro.Type] t:haxe.macro.Type
+			[Meta:Void]
+				:ast(switch (firstArgType) {
+	case TInst(t, _):
+		var classType = t.get();
+		if (classType.meta.has(":schema")) {
+			return classType.name;
+		};	
+	case _:
+})
+				[If:Void]
+					[Binop:Bool]
+						[EnumIndex:Int] [Local firstArgType(33220):haxe.macro.Type:haxe.macro.Type]
+						==
+						[Const:Int] 2
+					[Then:Void] [Block:Void]
+						[Var `(33225):haxe.macro.Ref<haxe.macro.ClassType>]
+							[EnumParameter:haxe.macro.Ref<haxe.macro.ClassType>]
+								[Local firstArgType(33220):haxe.macro.Type:haxe.macro.Type]
+								TInst
+								0
+						[Var `(33226):Array<haxe.macro.Type>]
+							[EnumParameter:Array<haxe.macro.Type>]
+								[Local firstArgType(33220):haxe.macro.Type:haxe.macro.Type]
+								TInst
+								1
+						[Block:Void]
+							[Var t(33227):haxe.macro.Ref<haxe.macro.ClassType>] [Local `(33225):haxe.macro.Ref<haxe.macro.ClassType>:haxe.macro.Ref<haxe.macro.ClassType>]
+							[Block:Void]
+								[Var classType(33228):haxe.macro.ClassType]
+									[Call:haxe.macro.ClassType]
+										[Field:() -> haxe.macro.ClassType]
+											[Local t(33227):haxe.macro.Ref<haxe.macro.ClassType>:haxe.macro.Ref<haxe.macro.ClassType>]
+											[FAnon:() -> haxe.macro.ClassType] get:() -> haxe.macro.ClassType
+								[If:Void]
+									[Call:Bool]
+										[Field:(name : String) -> Bool]
+											[Field:haxe.macro.MetaAccess]
+												[Local classType(33228):haxe.macro.ClassType:haxe.macro.ClassType]
+												[FAnon:haxe.macro.MetaAccess] meta:haxe.macro.MetaAccess
+											[FAnon:(name : String) -> Bool] has:(name : String) -> Bool
+										[Const:String] ":schema"
+									[Then:Dynamic] [Block:Dynamic]
+										[Return:Dynamic]
+											[Field:String]
+												[Local classType(33228):haxe.macro.ClassType:haxe.macro.ClassType]
+												[FAnon:String] name:String
+					[Else:Void] [Block:Void]
+			[Return:Dynamic] [Const:Null<String>] null
+
+	public function analyzeChildSpecStructure[Function:(compiledFields : Map<String, String>) -> String]
+		[Arg:Map<String, String>] [Local compiledFields(21500):Map<String, String>]
+		[Block:Dynamic]
+			[Var hasRestart(21505):Bool]
+				[Call:Bool]
+					[Field:(key : String) -> Bool]
+						[Local compiledFields(21500):Map<String, String>:haxe.ds.StringMap<String>]
+						[FInstance:(key : String) -> Bool]
+							haxe.ds.StringMap<String>
+							exists:(key : String) -> Bool
+					[Const:String] "restart"
+			[Var hasShutdown(21510):Bool]
+				[Call:Bool]
+					[Field:(key : String) -> Bool]
+						[Local compiledFields(21500):Map<String, String>:haxe.ds.StringMap<String>]
+						[FInstance:(key : String) -> Bool]
+							haxe.ds.StringMap<String>
+							exists:(key : String) -> Bool
+					[Const:String] "shutdown"
+			[Var hasType(21515):Bool]
+				[Call:Bool]
+					[Field:(key : String) -> Bool]
+						[Local compiledFields(21500):Map<String, String>:haxe.ds.StringMap<String>]
+						[FInstance:(key : String) -> Bool]
+							haxe.ds.StringMap<String>
+							exists:(key : String) -> Bool
+					[Const:String] "type"
+			[Var hasModules(21520):Bool]
+				[Call:Bool]
+					[Field:(key : String) -> Bool]
+						[Local compiledFields(21500):Map<String, String>:haxe.ds.StringMap<String>]
+						[FInstance:(key : String) -> Bool]
+							haxe.ds.StringMap<String>
+							exists:(key : String) -> Bool
+					[Const:String] "modules"
+			[If:Void]
+				[Binop:Bool]
+					[Binop:Bool]
+						[Binop:Bool]
+							[Local hasRestart(21505):Bool:Bool]
+							||
+							[Local hasShutdown(21510):Bool:Bool]
+						||
+						[Local hasType(21515):Bool:Bool]
+					||
+					[Local hasModules(21520):Bool:Bool]
+				[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [Const:String] "TraditionalMap"
+			[Var idField(21525):Null<String>]
+				[Cast:Null<String>]
+					[Call:Null<String>]
+						[Field:(key : String) -> Null<String>]
+							[Local compiledFields(21500):Map<String, String>:haxe.ds.StringMap<String>]
+							[FInstance:(key : String) -> Null<String>]
+								haxe.ds.StringMap<String>
+								get:(key : String) -> Null<haxe.ds.StringMap.T>
+						[Const:String] "id"
+			[Var startField(21530):Null<String>]
+				[Cast:Null<String>]
+					[Call:Null<String>]
+						[Field:(key : String) -> Null<String>]
+							[Local compiledFields(21500):Map<String, String>:haxe.ds.StringMap<String>]
+							[FInstance:(key : String) -> Null<String>]
+								haxe.ds.StringMap<String>
+								get:(key : String) -> Null<haxe.ds.StringMap.T>
+						[Const:String] "start"
+			[If:Void]
+				[Binop:Bool]
+					[Binop:Bool]
+						[Local idField(21525):Null<String>:Null<String>]
+						!=
+						[Const:Null<String>] null
+					&&
+					[Binop:Bool]
+						[Local startField(21530):Null<String>:Null<String>]
+						!=
+						[Const:Null<String>] null
+				[Then:Void] [Block:Void]
+					[If:Void]
+						[Call:Bool]
+							[Field:(startField : String) -> Bool]
+								[Const:reflaxe.elixir.helpers.PatternAnalysisCompiler] this
+								[FInstance:(startField : String) -> Bool]
+									reflaxe.elixir.helpers.PatternAnalysisCompiler
+									hasSimpleStartPattern:(startField : String) -> Bool
+							[Local startField(21530):Null<String>:Null<String>]
+						[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [Const:String] "ModernTuple"
+			[Return:Dynamic] [Const:String] "TraditionalMap"
+
+	public function hasSimpleStartPattern[Function:(startField : String) -> Bool]
+		[Arg:String] [Local startField(21531):String]
+		[Block:Dynamic]
+			[If:Void]
+				[Binop:Bool]
+					[Call:Int]
+						[Field:(str : String, ?startIndex : Null<Int>) -> Int]
+							[Local startField(21531):String:String]
+							[FInstance:(str : String, ?startIndex : Null<Int>) -> Int]
+								String
+								indexOf:(str : String, ?startIndex : Null<Int>) -> Int
+						[Const:String] ":start_link"
+						[Const:Null<Int>] null
+					>
+					[Const:Int] -1
+				[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [Const:Bool] true
+			[If:Void]
+				[Binop:Bool]
+					[Binop:Bool]
+						[Call:Int]
+							[Field:(str : String, ?startIndex : Null<Int>) -> Int]
+								[Local startField(21531):String:String]
+								[FInstance:(str : String, ?startIndex : Null<Int>) -> Int]
+									String
+									indexOf:(str : String, ?startIndex : Null<Int>) -> Int
+							[Const:String] ", []"
+							[Const:Null<Int>] null
+						>
+						[Const:Int] -1
+					||
+					[Binop:Bool]
+						[Call:Int]
+							[Field:(str : String, ?startIndex : Null<Int>) -> Int]
+								[Local startField(21531):String:String]
+								[FInstance:(str : String, ?startIndex : Null<Int>) -> Int]
+									String
+									indexOf:(str : String, ?startIndex : Null<Int>) -> Int
+							[Const:String] "[%{"
+							[Const:Null<Int>] null
+						>
+						[Const:Int] -1
+				[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [Const:Bool] true
+			[Return:Dynamic] [Const:Bool] false
+
+	public function getAssignmentVariable[Function:(expr : haxe.macro.TypedExpr) -> Null<String>]
+		[Arg:haxe.macro.TypedExpr] [Local expr(33229):haxe.macro.TypedExpr]
+		[Block:Dynamic]
+			[Var result(33251):Null<String>]
+				[Meta:Null<String>]
+					:ast(switch (expr.expr) {
+	case TBinop(OpAssign, lhs, rhs):
+		switch (lhs.expr) {
+			case TLocal(v):
+				compiler.getOriginalVarName(v);			
+			case _:
+				null;			
+		};	
+	case _:
+		null;	
+})
+					[Block:Null<String>]
+						[Var `(33242):haxe.macro.TypedExprDef]
+							[Field:haxe.macro.TypedExprDef]
+								[Local expr(33229):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+								[FAnon:haxe.macro.TypedExprDef] expr:haxe.macro.TypedExprDef
+						[If:Null<String>]
+							[Binop:Bool]
+								[EnumIndex:Int] [Local `(33242):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+								==
+								[Const:Int] 3
+							[Then:Null<String>] [Block:Null<String>]
+								[Var `(33243):haxe.macro.Binop]
+									[EnumParameter:haxe.macro.Binop]
+										[Local `(33242):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+										TBinop
+										0
+								[Var `(33244):haxe.macro.TypedExpr]
+									[EnumParameter:haxe.macro.TypedExpr]
+										[Local `(33242):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+										TBinop
+										1
+								[Var `(33245):haxe.macro.TypedExpr]
+									[EnumParameter:haxe.macro.TypedExpr]
+										[Local `(33242):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+										TBinop
+										2
+								[If:Null<String>]
+									[Binop:Bool]
+										[EnumIndex:Int] [Local `(33243):haxe.macro.Binop:haxe.macro.Binop]
+										==
+										[Const:Int] 4
+									[Then:Null<String>] [Block:Null<String>]
+										[Block:Null<String>]
+											[Var lhs(33246):haxe.macro.TypedExpr] [Local `(33244):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+											[Var rhs(33247):haxe.macro.TypedExpr] [Local `(33245):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+											[Block:Null<String>]
+												[Meta:Null<String>]
+													:ast(switch (lhs.expr) {
+	case TLocal(v):
+		compiler.getOriginalVarName(v);	
+	case _:
+		null;	
+})
+													[Block:Null<String>]
+														[Var `(33248):haxe.macro.TypedExprDef]
+															[Field:haxe.macro.TypedExprDef]
+																[Local lhs(33246):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+																[FAnon:haxe.macro.TypedExprDef] expr:haxe.macro.TypedExprDef
+														[If:Null<String>]
+															[Binop:Bool]
+																[EnumIndex:Int] [Local `(33248):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+																==
+																[Const:Int] 1
+															[Then:String] [Block:String]
+																[Var `(33249):haxe.macro.TVar]
+																	[EnumParameter:haxe.macro.TVar]
+																		[Local `(33248):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+																		TLocal
+																		0
+																[Block:String]
+																	[Var v(33250):haxe.macro.TVar] [Local `(33249):haxe.macro.TVar:haxe.macro.TVar]
+																	[Block:String]
+																		[Call:String]
+																			[Field:(v : haxe.macro.TVar) -> String]
+																				[Field:reflaxe.elixir.ElixirCompiler]
+																					[Const:reflaxe.elixir.helpers.PatternAnalysisCompiler] this
+																					[FInstance:reflaxe.elixir.ElixirCompiler]
+																						reflaxe.elixir.helpers.PatternAnalysisCompiler
+																						compiler:reflaxe.elixir.ElixirCompiler
+																				[FInstance:(v : haxe.macro.TVar) -> String]
+																					reflaxe.elixir.ElixirCompiler
+																					getOriginalVarName:(v : haxe.macro.TVar) -> String
+																			[Local v(33250):haxe.macro.TVar:haxe.macro.TVar]
+															[Else:Null<Null<String>>] [Block:Null<Null<String>>] [Const:Null<Null<String>>] null
+									[Else:Null<Null<String>>] [Block:Null<Null<String>>] [Const:Null<Null<String>>] null
+							[Else:Null<Null<String>>] [Block:Null<Null<String>>] [Const:Null<Null<String>>] null
+			[Return:Dynamic] [Local result(33251):Null<String>:Null<String>]
+}

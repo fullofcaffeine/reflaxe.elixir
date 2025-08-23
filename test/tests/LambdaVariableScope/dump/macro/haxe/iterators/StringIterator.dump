@@ -1,0 +1,70 @@
+class haxe.iterators.StringIterator {
+
+	public inline function new[Function:(s : String) -> Void]
+		[Arg:String] [Local s(1253):String]
+		[Block:Void]
+			[Binop:Int]
+				[Field:Int]
+					[Const:haxe.iterators.StringIterator] this
+					[FInstance:Int]
+						haxe.iterators.StringIterator
+						offset:Int
+				=
+				[Const:Int] 0
+			[Binop:String]
+				[Field:String]
+					[Const:haxe.iterators.StringIterator] this
+					[FInstance:String]
+						haxe.iterators.StringIterator
+						s:String
+				=
+				[Local s(1253):String:String]
+
+	@:value(0)
+	var offset:Int;
+
+	var s:String;
+
+	public inline function hasNext[Function:() -> Bool]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Binop:Bool]
+					[Field:Int]
+						[Const:haxe.iterators.StringIterator] this
+						[FInstance:Int]
+							haxe.iterators.StringIterator
+							offset:Int
+					<
+					[Field:Int]
+						[Field:String]
+							[Const:haxe.iterators.StringIterator] this
+							[FInstance:String]
+								haxe.iterators.StringIterator
+								s:String
+						[FInstance:Int]
+							String
+							length:Int
+
+	public inline function next[Function:() -> Int]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Call:Int]
+					[Field:(s : String, index : Int) -> Int]
+						[TypeExpr StringTools:Class<StringTools>]
+						[FStatic:(s : String, index : Int) -> Int]
+							StringTools
+							unsafeCodeAt:(s : String, index : Int) -> Int
+					[Field:String]
+						[Const:haxe.iterators.StringIterator] this
+						[FInstance:String]
+							haxe.iterators.StringIterator
+							s:String
+					[Unop:Int]
+						++
+						Postfix
+						[Field:Int]
+							[Const:haxe.iterators.StringIterator] this
+							[FInstance:Int]
+								haxe.iterators.StringIterator
+								offset:Int
+}

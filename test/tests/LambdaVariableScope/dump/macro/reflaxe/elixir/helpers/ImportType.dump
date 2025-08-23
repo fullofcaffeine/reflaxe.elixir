@@ -1,0 +1,6 @@
+@:flatEnum
+enum reflaxe.elixir.helpers.ImportType {
+	FullImport;
+	SelectiveImport;
+	AliasImport;
+}

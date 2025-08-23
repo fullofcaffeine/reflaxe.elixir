@@ -1,0 +1,822 @@
+class reflaxe.elixir.helpers.ChannelCompiler {
+
+	public static function compileChannel[Function:(classType : haxe.macro.ClassType, content : String) -> String]
+		[Arg:haxe.macro.ClassType] [Local classType(15357):haxe.macro.ClassType]
+		[Arg:String] [Local content(15358):String]
+		[Block:Dynamic]
+			[Var className(15359):String]
+				[Field:String]
+					[Local classType(15357):haxe.macro.ClassType:haxe.macro.ClassType]
+					[FAnon:String] name:String
+			[Var moduleName(15360):String]
+				[Call:String]
+					[Field:(haxeName : String) -> String]
+						[TypeExpr reflaxe.elixir.helpers.NamingHelper:Class<reflaxe.elixir.helpers.NamingHelper>]
+						[FStatic:(haxeName : String) -> String]
+							reflaxe.elixir.helpers.NamingHelper
+							getElixirModuleName:(haxeName : String) -> String
+					[Local className(15359):String:String]
+			[Var result(15361):StringBuf] [New:StringBuf] StringBuf
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(15361):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Binop:String]
+					[Binop:String]
+						[Const:String] "defmodule "
+						+
+						[Local moduleName(15360):String:String]
+					+
+					[Const:String] " do\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(15361):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "  use Phoenix.Channel\n\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(15361):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "  @moduledoc \"\"\"\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(15361):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Binop:String]
+					[Binop:String]
+						[Const:String] "  "
+						+
+						[Local moduleName(15360):String:String]
+					+
+					[Const:String] " channel generated from Haxe\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(15361):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "  \n"
+			[If:Void]
+				[Binop:Bool]
+					[Field:Null<String>]
+						[Local classType(15357):haxe.macro.ClassType:haxe.macro.ClassType]
+						[FAnon:Null<String>] doc:Null<String>
+					!=
+					[Const:Null<String>] null
+				[Then:Void] [Block:Void]
+					[Call:Void]
+						[Field:(x : String) -> Void]
+							[Local result(15361):StringBuf:StringBuf]
+							[FInstance:(x : String) -> Void]
+								StringBuf
+								add:(x : add.T) -> Void
+						[Binop:String]
+							[Binop:String]
+								[Const:String] "  "
+								+
+								[Field:Null<String>]
+									[Local classType(15357):haxe.macro.ClassType:haxe.macro.ClassType]
+									[FAnon:Null<String>] doc:Null<String>
+							+
+							[Const:String] "\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(15361):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "  \"\"\"\n\n"
+			[Block:Void]
+				[Var `(15398):Int] [Const:Int] 0
+				[Var `(15399):Array<haxe.macro.ClassField>]
+					[Call:Array<haxe.macro.ClassField>]
+						[Field:() -> Array<haxe.macro.ClassField>]
+							[Field:haxe.macro.Ref<Array<haxe.macro.ClassField>>]
+								[Local classType(15357):haxe.macro.ClassType:haxe.macro.ClassType]
+								[FAnon:haxe.macro.Ref<Array<haxe.macro.ClassField>>] fields:haxe.macro.Ref<Array<haxe.macro.ClassField>>
+							[FAnon:() -> Array<haxe.macro.ClassField>] get:() -> Array<haxe.macro.ClassField>
+				[While:Void]
+					[Binop:Bool]
+						[Local `(15398):Int:Int]
+						<
+						[Field:Int]
+							[Local `(15399):Array<haxe.macro.ClassField>:Array<haxe.macro.ClassField>]
+							[FInstance:Int]
+								Array<haxe.macro.ClassField>
+								length:Int
+					[Block:Void]
+						[Var field(15362):haxe.macro.ClassField]
+							[Array:haxe.macro.ClassField]
+								[Local `(15399):Array<haxe.macro.ClassField>:Array<haxe.macro.ClassField>]
+								[Local `(15398):Int:Int]
+						[Unop:Int]
+							++
+							Prefix
+							[Local `(15398):Int:Int]
+						[Meta:Void]
+							:ast(switch (field.name) {
+	case "join":
+		result.add(compileJoinCallback(field, content));	
+	case "handleIn" | "handle_in":
+		result.add(compileHandleInCallback(field, content));	
+	case "handleOut" | "handle_out":
+		result.add(compileHandleOutCallback(field, content));	
+	case "handleInfo" | "handle_info":
+		result.add(compileHandleInfoCallback(field, content));	
+	case "terminate":
+		result.add(compileTerminateCallback(field, content));	
+	default:
+		if (field.kind.match(FMethod(_))) {
+			result.add(compileRegularFunction(field, content));
+		};	
+})
+							[Block:Void]
+								[Var `(15395):String]
+									[Field:String]
+										[Local field(15362):haxe.macro.ClassField:haxe.macro.ClassField]
+										[FAnon:String] name:String
+								[Switch:Void]
+									[Local `(15395):String:String]
+									[Case:Void]
+										[Const:String] "handleIn"
+										[Const:String] "handle_in"
+										[Block:Void]
+											[Block:Void]
+												[Call:Void]
+													[Field:(x : String) -> Void]
+														[Local result(15361):StringBuf:StringBuf]
+														[FInstance:(x : String) -> Void]
+															StringBuf
+															add:(x : add.T) -> Void
+													[Call:String]
+														[Field:(field : haxe.macro.ClassField, content : String) -> String]
+															[TypeExpr reflaxe.elixir.helpers.ChannelCompiler:Class<reflaxe.elixir.helpers.ChannelCompiler>]
+															[FStatic:(field : haxe.macro.ClassField, content : String) -> String]
+																reflaxe.elixir.helpers.ChannelCompiler
+																compileHandleInCallback:(field : haxe.macro.ClassField, content : String) -> String
+														[Local field(15362):haxe.macro.ClassField:haxe.macro.ClassField]
+														[Local content(15358):String:String]
+									[Case:Void]
+										[Const:String] "handleInfo"
+										[Const:String] "handle_info"
+										[Block:Void]
+											[Block:Void]
+												[Call:Void]
+													[Field:(x : String) -> Void]
+														[Local result(15361):StringBuf:StringBuf]
+														[FInstance:(x : String) -> Void]
+															StringBuf
+															add:(x : add.T) -> Void
+													[Call:String]
+														[Field:(field : haxe.macro.ClassField, content : String) -> String]
+															[TypeExpr reflaxe.elixir.helpers.ChannelCompiler:Class<reflaxe.elixir.helpers.ChannelCompiler>]
+															[FStatic:(field : haxe.macro.ClassField, content : String) -> String]
+																reflaxe.elixir.helpers.ChannelCompiler
+																compileHandleInfoCallback:(field : haxe.macro.ClassField, content : String) -> String
+														[Local field(15362):haxe.macro.ClassField:haxe.macro.ClassField]
+														[Local content(15358):String:String]
+									[Case:Void]
+										[Const:String] "handleOut"
+										[Const:String] "handle_out"
+										[Block:Void]
+											[Block:Void]
+												[Call:Void]
+													[Field:(x : String) -> Void]
+														[Local result(15361):StringBuf:StringBuf]
+														[FInstance:(x : String) -> Void]
+															StringBuf
+															add:(x : add.T) -> Void
+													[Call:String]
+														[Field:(field : haxe.macro.ClassField, content : String) -> String]
+															[TypeExpr reflaxe.elixir.helpers.ChannelCompiler:Class<reflaxe.elixir.helpers.ChannelCompiler>]
+															[FStatic:(field : haxe.macro.ClassField, content : String) -> String]
+																reflaxe.elixir.helpers.ChannelCompiler
+																compileHandleOutCallback:(field : haxe.macro.ClassField, content : String) -> String
+														[Local field(15362):haxe.macro.ClassField:haxe.macro.ClassField]
+														[Local content(15358):String:String]
+									[Case:Void]
+										[Const:String] "join"
+										[Block:Void]
+											[Block:Void]
+												[Call:Void]
+													[Field:(x : String) -> Void]
+														[Local result(15361):StringBuf:StringBuf]
+														[FInstance:(x : String) -> Void]
+															StringBuf
+															add:(x : add.T) -> Void
+													[Call:String]
+														[Field:(field : haxe.macro.ClassField, content : String) -> String]
+															[TypeExpr reflaxe.elixir.helpers.ChannelCompiler:Class<reflaxe.elixir.helpers.ChannelCompiler>]
+															[FStatic:(field : haxe.macro.ClassField, content : String) -> String]
+																reflaxe.elixir.helpers.ChannelCompiler
+																compileJoinCallback:(field : haxe.macro.ClassField, content : String) -> String
+														[Local field(15362):haxe.macro.ClassField:haxe.macro.ClassField]
+														[Local content(15358):String:String]
+									[Case:Void]
+										[Const:String] "terminate"
+										[Block:Void]
+											[Block:Void]
+												[Call:Void]
+													[Field:(x : String) -> Void]
+														[Local result(15361):StringBuf:StringBuf]
+														[FInstance:(x : String) -> Void]
+															StringBuf
+															add:(x : add.T) -> Void
+													[Call:String]
+														[Field:(field : haxe.macro.ClassField, content : String) -> String]
+															[TypeExpr reflaxe.elixir.helpers.ChannelCompiler:Class<reflaxe.elixir.helpers.ChannelCompiler>]
+															[FStatic:(field : haxe.macro.ClassField, content : String) -> String]
+																reflaxe.elixir.helpers.ChannelCompiler
+																compileTerminateCallback:(field : haxe.macro.ClassField, content : String) -> String
+														[Local field(15362):haxe.macro.ClassField:haxe.macro.ClassField]
+														[Local content(15358):String:String]
+									[Default:Void]
+										[Block:Void]
+											[If:Void]
+												[Block:Bool]
+													[Var `(15396):haxe.macro.FieldKind]
+														[Field:haxe.macro.FieldKind]
+															[Local field(15362):haxe.macro.ClassField:haxe.macro.ClassField]
+															[FAnon:haxe.macro.FieldKind] kind:haxe.macro.FieldKind
+													[If:Bool]
+														[Binop:Bool]
+															[EnumIndex:Int] [Local `(15396):haxe.macro.FieldKind:haxe.macro.FieldKind]
+															==
+															[Const:Int] 1
+														[Then:Bool] [Block:Bool]
+															[Var `(15397):haxe.macro.MethodKind]
+																[EnumParameter:haxe.macro.MethodKind]
+																	[Local `(15396):haxe.macro.FieldKind:haxe.macro.FieldKind]
+																	FMethod
+																	0
+															[Const:Bool] true
+														[Else:Bool] [Const:Bool] false
+												[Then:Void] [Block:Void]
+													[Call:Void]
+														[Field:(x : String) -> Void]
+															[Local result(15361):StringBuf:StringBuf]
+															[FInstance:(x : String) -> Void]
+																StringBuf
+																add:(x : add.T) -> Void
+														[Call:String]
+															[Field:(field : haxe.macro.ClassField, content : String) -> String]
+																[TypeExpr reflaxe.elixir.helpers.ChannelCompiler:Class<reflaxe.elixir.helpers.ChannelCompiler>]
+																[FStatic:(field : haxe.macro.ClassField, content : String) -> String]
+																	reflaxe.elixir.helpers.ChannelCompiler
+																	compileRegularFunction:(field : haxe.macro.ClassField, content : String) -> String
+															[Local field(15362):haxe.macro.ClassField:haxe.macro.ClassField]
+															[Local content(15358):String:String]
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(15361):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "end\n"
+			[Return:Dynamic]
+				[Call:String]
+					[Field:() -> String]
+						[Local result(15361):StringBuf:StringBuf]
+						[FInstance:() -> String]
+							StringBuf
+							toString:() -> String
+
+	static function compileJoinCallback[Function:(field : haxe.macro.ClassField, content : String) -> String]
+		[Arg:haxe.macro.ClassField] [Local field(15363):haxe.macro.ClassField]
+		[Arg:String] [Local content(15364):String]
+		[Block:Dynamic]
+			[Var result(15365):StringBuf] [New:StringBuf] StringBuf
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(15365):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "  @impl true\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(15365):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "  def join(topic, payload, socket) do\n"
+			[Var functionBody(15368):Null<String>]
+				[Call:Null<String>]
+					[Field:(functionName : String, content : String) -> Null<String>]
+						[TypeExpr reflaxe.elixir.helpers.ChannelCompiler:Class<reflaxe.elixir.helpers.ChannelCompiler>]
+						[FStatic:(functionName : String, content : String) -> Null<String>]
+							reflaxe.elixir.helpers.ChannelCompiler
+							extractFunctionBody:(functionName : String, content : String) -> Null<String>
+					[Field:String]
+						[Local field(15363):haxe.macro.ClassField:haxe.macro.ClassField]
+						[FAnon:String] name:String
+					[Local content(15364):String:String]
+			[If:Void]
+				[Binop:Bool]
+					[Local functionBody(15368):Null<String>:Null<String>]
+					!=
+					[Const:Null<String>] null
+				[Then:Void] [Block:Void]
+					[Call:Void]
+						[Field:(x : String) -> Void]
+							[Local result(15365):StringBuf:StringBuf]
+							[FInstance:(x : String) -> Void]
+								StringBuf
+								add:(x : add.T) -> Void
+						[Binop:String]
+							[Binop:String]
+								[Const:String] "    "
+								+
+								[Local functionBody(15368):Null<String>:Null<String>]
+							+
+							[Const:String] "\n"
+				[Else:Void] [Block:Void]
+					[Call:Void]
+						[Field:(x : String) -> Void]
+							[Local result(15365):StringBuf:StringBuf]
+							[FInstance:(x : String) -> Void]
+								StringBuf
+								add:(x : add.T) -> Void
+						[Const:String] "    {:ok, socket}\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(15365):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "  end\n\n"
+			[Return:Dynamic]
+				[Call:String]
+					[Field:() -> String]
+						[Local result(15365):StringBuf:StringBuf]
+						[FInstance:() -> String]
+							StringBuf
+							toString:() -> String
+
+	static function compileHandleInCallback[Function:(field : haxe.macro.ClassField, content : String) -> String]
+		[Arg:haxe.macro.ClassField] [Local field(15369):haxe.macro.ClassField]
+		[Arg:String] [Local content(15370):String]
+		[Block:Dynamic]
+			[Var result(15371):StringBuf] [New:StringBuf] StringBuf
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(15371):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "  @impl true\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(15371):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "  def handle_in(event, payload, socket) do\n"
+			[Var functionBody(15372):Null<String>]
+				[Call:Null<String>]
+					[Field:(functionName : String, content : String) -> Null<String>]
+						[TypeExpr reflaxe.elixir.helpers.ChannelCompiler:Class<reflaxe.elixir.helpers.ChannelCompiler>]
+						[FStatic:(functionName : String, content : String) -> Null<String>]
+							reflaxe.elixir.helpers.ChannelCompiler
+							extractFunctionBody:(functionName : String, content : String) -> Null<String>
+					[Field:String]
+						[Local field(15369):haxe.macro.ClassField:haxe.macro.ClassField]
+						[FAnon:String] name:String
+					[Local content(15370):String:String]
+			[If:Void]
+				[Binop:Bool]
+					[Local functionBody(15372):Null<String>:Null<String>]
+					!=
+					[Const:Null<String>] null
+				[Then:Void] [Block:Void]
+					[Call:Void]
+						[Field:(x : String) -> Void]
+							[Local result(15371):StringBuf:StringBuf]
+							[FInstance:(x : String) -> Void]
+								StringBuf
+								add:(x : add.T) -> Void
+						[Binop:String]
+							[Binop:String]
+								[Const:String] "    "
+								+
+								[Local functionBody(15372):Null<String>:Null<String>]
+							+
+							[Const:String] "\n"
+				[Else:Void] [Block:Void]
+					[Call:Void]
+						[Field:(x : String) -> Void]
+							[Local result(15371):StringBuf:StringBuf]
+							[FInstance:(x : String) -> Void]
+								StringBuf
+								add:(x : add.T) -> Void
+						[Const:String] "    {:noreply, socket}\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(15371):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "  end\n\n"
+			[Return:Dynamic]
+				[Call:String]
+					[Field:() -> String]
+						[Local result(15371):StringBuf:StringBuf]
+						[FInstance:() -> String]
+							StringBuf
+							toString:() -> String
+
+	static function compileHandleOutCallback[Function:(field : haxe.macro.ClassField, content : String) -> String]
+		[Arg:haxe.macro.ClassField] [Local field(15373):haxe.macro.ClassField]
+		[Arg:String] [Local content(15374):String]
+		[Block:Dynamic]
+			[Var result(15375):StringBuf] [New:StringBuf] StringBuf
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(15375):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "  @impl true\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(15375):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "  def handle_out(event, payload, socket) do\n"
+			[Var functionBody(15376):Null<String>]
+				[Call:Null<String>]
+					[Field:(functionName : String, content : String) -> Null<String>]
+						[TypeExpr reflaxe.elixir.helpers.ChannelCompiler:Class<reflaxe.elixir.helpers.ChannelCompiler>]
+						[FStatic:(functionName : String, content : String) -> Null<String>]
+							reflaxe.elixir.helpers.ChannelCompiler
+							extractFunctionBody:(functionName : String, content : String) -> Null<String>
+					[Field:String]
+						[Local field(15373):haxe.macro.ClassField:haxe.macro.ClassField]
+						[FAnon:String] name:String
+					[Local content(15374):String:String]
+			[If:Void]
+				[Binop:Bool]
+					[Local functionBody(15376):Null<String>:Null<String>]
+					!=
+					[Const:Null<String>] null
+				[Then:Void] [Block:Void]
+					[Call:Void]
+						[Field:(x : String) -> Void]
+							[Local result(15375):StringBuf:StringBuf]
+							[FInstance:(x : String) -> Void]
+								StringBuf
+								add:(x : add.T) -> Void
+						[Binop:String]
+							[Binop:String]
+								[Const:String] "    "
+								+
+								[Local functionBody(15376):Null<String>:Null<String>]
+							+
+							[Const:String] "\n"
+				[Else:Void] [Block:Void]
+					[Call:Void]
+						[Field:(x : String) -> Void]
+							[Local result(15375):StringBuf:StringBuf]
+							[FInstance:(x : String) -> Void]
+								StringBuf
+								add:(x : add.T) -> Void
+						[Const:String] "    {:noreply, socket}\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(15375):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "  end\n\n"
+			[Return:Dynamic]
+				[Call:String]
+					[Field:() -> String]
+						[Local result(15375):StringBuf:StringBuf]
+						[FInstance:() -> String]
+							StringBuf
+							toString:() -> String
+
+	static function compileHandleInfoCallback[Function:(field : haxe.macro.ClassField, content : String) -> String]
+		[Arg:haxe.macro.ClassField] [Local field(15377):haxe.macro.ClassField]
+		[Arg:String] [Local content(15378):String]
+		[Block:Dynamic]
+			[Var result(15379):StringBuf] [New:StringBuf] StringBuf
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(15379):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "  @impl true\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(15379):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "  def handle_info(message, socket) do\n"
+			[Var functionBody(15380):Null<String>]
+				[Call:Null<String>]
+					[Field:(functionName : String, content : String) -> Null<String>]
+						[TypeExpr reflaxe.elixir.helpers.ChannelCompiler:Class<reflaxe.elixir.helpers.ChannelCompiler>]
+						[FStatic:(functionName : String, content : String) -> Null<String>]
+							reflaxe.elixir.helpers.ChannelCompiler
+							extractFunctionBody:(functionName : String, content : String) -> Null<String>
+					[Field:String]
+						[Local field(15377):haxe.macro.ClassField:haxe.macro.ClassField]
+						[FAnon:String] name:String
+					[Local content(15378):String:String]
+			[If:Void]
+				[Binop:Bool]
+					[Local functionBody(15380):Null<String>:Null<String>]
+					!=
+					[Const:Null<String>] null
+				[Then:Void] [Block:Void]
+					[Call:Void]
+						[Field:(x : String) -> Void]
+							[Local result(15379):StringBuf:StringBuf]
+							[FInstance:(x : String) -> Void]
+								StringBuf
+								add:(x : add.T) -> Void
+						[Binop:String]
+							[Binop:String]
+								[Const:String] "    "
+								+
+								[Local functionBody(15380):Null<String>:Null<String>]
+							+
+							[Const:String] "\n"
+				[Else:Void] [Block:Void]
+					[Call:Void]
+						[Field:(x : String) -> Void]
+							[Local result(15379):StringBuf:StringBuf]
+							[FInstance:(x : String) -> Void]
+								StringBuf
+								add:(x : add.T) -> Void
+						[Const:String] "    case message do\n"
+					[Call:Void]
+						[Field:(x : String) -> Void]
+							[Local result(15379):StringBuf:StringBuf]
+							[FInstance:(x : String) -> Void]
+								StringBuf
+								add:(x : add.T) -> Void
+						[Const:String] "      %Phoenix.Socket.Broadcast{event: event, payload: payload} ->\n"
+					[Call:Void]
+						[Field:(x : String) -> Void]
+							[Local result(15379):StringBuf:StringBuf]
+							[FInstance:(x : String) -> Void]
+								StringBuf
+								add:(x : add.T) -> Void
+						[Const:String] "        push(socket, event, payload)\n"
+					[Call:Void]
+						[Field:(x : String) -> Void]
+							[Local result(15379):StringBuf:StringBuf]
+							[FInstance:(x : String) -> Void]
+								StringBuf
+								add:(x : add.T) -> Void
+						[Const:String] "        {:noreply, socket}\n"
+					[Call:Void]
+						[Field:(x : String) -> Void]
+							[Local result(15379):StringBuf:StringBuf]
+							[FInstance:(x : String) -> Void]
+								StringBuf
+								add:(x : add.T) -> Void
+						[Const:String] "      _ ->\n"
+					[Call:Void]
+						[Field:(x : String) -> Void]
+							[Local result(15379):StringBuf:StringBuf]
+							[FInstance:(x : String) -> Void]
+								StringBuf
+								add:(x : add.T) -> Void
+						[Const:String] "        {:noreply, socket}\n"
+					[Call:Void]
+						[Field:(x : String) -> Void]
+							[Local result(15379):StringBuf:StringBuf]
+							[FInstance:(x : String) -> Void]
+								StringBuf
+								add:(x : add.T) -> Void
+						[Const:String] "    end\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(15379):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "  end\n\n"
+			[Return:Dynamic]
+				[Call:String]
+					[Field:() -> String]
+						[Local result(15379):StringBuf:StringBuf]
+						[FInstance:() -> String]
+							StringBuf
+							toString:() -> String
+
+	static function compileTerminateCallback[Function:(field : haxe.macro.ClassField, content : String) -> String]
+		[Arg:haxe.macro.ClassField] [Local field(15381):haxe.macro.ClassField]
+		[Arg:String] [Local content(15382):String]
+		[Block:Dynamic]
+			[Var result(15383):StringBuf] [New:StringBuf] StringBuf
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(15383):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "  @impl true\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(15383):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "  def terminate(reason, socket) do\n"
+			[Var functionBody(15384):Null<String>]
+				[Call:Null<String>]
+					[Field:(functionName : String, content : String) -> Null<String>]
+						[TypeExpr reflaxe.elixir.helpers.ChannelCompiler:Class<reflaxe.elixir.helpers.ChannelCompiler>]
+						[FStatic:(functionName : String, content : String) -> Null<String>]
+							reflaxe.elixir.helpers.ChannelCompiler
+							extractFunctionBody:(functionName : String, content : String) -> Null<String>
+					[Field:String]
+						[Local field(15381):haxe.macro.ClassField:haxe.macro.ClassField]
+						[FAnon:String] name:String
+					[Local content(15382):String:String]
+			[If:Void]
+				[Binop:Bool]
+					[Local functionBody(15384):Null<String>:Null<String>]
+					!=
+					[Const:Null<String>] null
+				[Then:Void] [Block:Void]
+					[Call:Void]
+						[Field:(x : String) -> Void]
+							[Local result(15383):StringBuf:StringBuf]
+							[FInstance:(x : String) -> Void]
+								StringBuf
+								add:(x : add.T) -> Void
+						[Binop:String]
+							[Binop:String]
+								[Const:String] "    "
+								+
+								[Local functionBody(15384):Null<String>:Null<String>]
+							+
+							[Const:String] "\n"
+				[Else:Void] [Block:Void]
+					[Call:Void]
+						[Field:(x : String) -> Void]
+							[Local result(15383):StringBuf:StringBuf]
+							[FInstance:(x : String) -> Void]
+								StringBuf
+								add:(x : add.T) -> Void
+						[Const:String] "    :ok\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(15383):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "  end\n\n"
+			[Return:Dynamic]
+				[Call:String]
+					[Field:() -> String]
+						[Local result(15383):StringBuf:StringBuf]
+						[FInstance:() -> String]
+							StringBuf
+							toString:() -> String
+
+	static function compileRegularFunction[Function:(field : haxe.macro.ClassField, content : String) -> String]
+		[Arg:haxe.macro.ClassField] [Local field(15389):haxe.macro.ClassField]
+		[Arg:String] [Local content(15390):String]
+		[Block:Dynamic]
+			[Var result(15391):StringBuf] [New:StringBuf] StringBuf
+			[Var functionName(15392):String]
+				[Call:String]
+					[Field:(camelCase : String) -> String]
+						[TypeExpr reflaxe.elixir.helpers.NamingHelper:Class<reflaxe.elixir.helpers.NamingHelper>]
+						[FStatic:(camelCase : String) -> String]
+							reflaxe.elixir.helpers.NamingHelper
+							toSnakeCase:(camelCase : String) -> String
+					[Field:String]
+						[Local field(15389):haxe.macro.ClassField:haxe.macro.ClassField]
+						[FAnon:String] name:String
+			[If:Void]
+				[Binop:Bool]
+					[Field:Null<String>]
+						[Local field(15389):haxe.macro.ClassField:haxe.macro.ClassField]
+						[FAnon:Null<String>] doc:Null<String>
+					!=
+					[Const:Null<String>] null
+				[Then:Void] [Block:Void]
+					[Call:Void]
+						[Field:(x : String) -> Void]
+							[Local result(15391):StringBuf:StringBuf]
+							[FInstance:(x : String) -> Void]
+								StringBuf
+								add:(x : add.T) -> Void
+						[Const:String] "  @doc \"\"\"\n"
+					[Call:Void]
+						[Field:(x : String) -> Void]
+							[Local result(15391):StringBuf:StringBuf]
+							[FInstance:(x : String) -> Void]
+								StringBuf
+								add:(x : add.T) -> Void
+						[Binop:String]
+							[Binop:String]
+								[Const:String] "  "
+								+
+								[Field:Null<String>]
+									[Local field(15389):haxe.macro.ClassField:haxe.macro.ClassField]
+									[FAnon:Null<String>] doc:Null<String>
+							+
+							[Const:String] "\n"
+					[Call:Void]
+						[Field:(x : String) -> Void]
+							[Local result(15391):StringBuf:StringBuf]
+							[FInstance:(x : String) -> Void]
+								StringBuf
+								add:(x : add.T) -> Void
+						[Const:String] "  \"\"\"\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(15391):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Binop:String]
+					[Binop:String]
+						[Const:String] "  def "
+						+
+						[Local functionName(15392):String:String]
+					+
+					[Const:String] "() do\n"
+			[Var functionBody(15393):Null<String>]
+				[Call:Null<String>]
+					[Field:(functionName : String, content : String) -> Null<String>]
+						[TypeExpr reflaxe.elixir.helpers.ChannelCompiler:Class<reflaxe.elixir.helpers.ChannelCompiler>]
+						[FStatic:(functionName : String, content : String) -> Null<String>]
+							reflaxe.elixir.helpers.ChannelCompiler
+							extractFunctionBody:(functionName : String, content : String) -> Null<String>
+					[Field:String]
+						[Local field(15389):haxe.macro.ClassField:haxe.macro.ClassField]
+						[FAnon:String] name:String
+					[Local content(15390):String:String]
+			[If:Void]
+				[Binop:Bool]
+					[Local functionBody(15393):Null<String>:Null<String>]
+					!=
+					[Const:Null<String>] null
+				[Then:Void] [Block:Void]
+					[Call:Void]
+						[Field:(x : String) -> Void]
+							[Local result(15391):StringBuf:StringBuf]
+							[FInstance:(x : String) -> Void]
+								StringBuf
+								add:(x : add.T) -> Void
+						[Binop:String]
+							[Binop:String]
+								[Const:String] "    "
+								+
+								[Local functionBody(15393):Null<String>:Null<String>]
+							+
+							[Const:String] "\n"
+				[Else:Void] [Block:Void]
+					[Call:Void]
+						[Field:(x : String) -> Void]
+							[Local result(15391):StringBuf:StringBuf]
+							[FInstance:(x : String) -> Void]
+								StringBuf
+								add:(x : add.T) -> Void
+						[Binop:String]
+							[Binop:String]
+								[Const:String] "    # Fallback: Channel function stub - implement "
+								+
+								[Local functionName(15392):String:String]
+							+
+							[Const:String] " in Haxe source\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(15391):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "  end\n\n"
+			[Return:Dynamic]
+				[Call:String]
+					[Field:() -> String]
+						[Local result(15391):StringBuf:StringBuf]
+						[FInstance:() -> String]
+							StringBuf
+							toString:() -> String
+
+	static function extractFunctionBody[Function:(functionName : String, content : String) -> Null<String>]
+		[Arg:String] [Local functionName(15366):String]
+		[Arg:String] [Local content(15367):String]
+		[Block:Dynamic] [Return:Dynamic] [Const:Null<String>] null
+}

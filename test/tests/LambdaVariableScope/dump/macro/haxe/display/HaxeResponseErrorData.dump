@@ -1,0 +1,1 @@
+typedef haxe.display.HaxeResponseErrorData = Array<{ severity : haxe.display.HaxeResponseErrorSeverity, message : String, ?location : Null<haxe.display.Location> }>

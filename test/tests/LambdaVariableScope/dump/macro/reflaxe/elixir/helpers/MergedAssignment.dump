@@ -1,0 +1,1 @@
+typedef reflaxe.elixir.helpers.MergedAssignment = { nextIndex : Int, compiledCode : String }

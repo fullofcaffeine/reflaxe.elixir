@@ -1,0 +1,27 @@
+@:enum
+private class haxe.display._Diagnostic.DiagnosticKind_Impl_ {
+
+	@:value(cast 0) @:impl @:enum
+	public static inline var DKUnusedImport:haxe.display.DiagnosticKind<Void> = [Cast:haxe.display.DiagnosticKind<Void>] [Const:Int] 0;
+
+	@:value(cast 1) @:impl @:enum
+	public static inline var DKUnresolvedIdentifier:haxe.display.DiagnosticKind<Array<{ name : String, kind : haxe.display.UnresolvedIdentifierSuggestion }>> = [Cast:haxe.display.DiagnosticKind<Array<{ name : String, kind : haxe.display.UnresolvedIdentifierSuggestion }>>] [Const:Int] 1;
+
+	@:value(cast 2) @:impl @:enum
+	public static inline var DKCompilerError:haxe.display.DiagnosticKind<String> = [Cast:haxe.display.DiagnosticKind<String>] [Const:Int] 2;
+
+	@:value(cast 3) @:impl @:enum
+	public static inline var DKRemovableCode:haxe.display.DiagnosticKind<{ range : haxe.display.Range, description : String }> = [Cast:haxe.display.DiagnosticKind<{ range : haxe.display.Range, description : String }>] [Const:Int] 3;
+
+	@:value(cast 4) @:impl @:enum
+	public static inline var DKParserError:haxe.display.DiagnosticKind<String> = [Cast:haxe.display.DiagnosticKind<String>] [Const:Int] 4;
+
+	@:value(cast 5) @:impl @:enum
+	public static inline var DeprecationWarning:haxe.display.DiagnosticKind<String> = [Cast:haxe.display.DiagnosticKind<String>] [Const:Int] 5;
+
+	@:value(cast 6) @:impl @:enum
+	public static inline var InactiveBlock:haxe.display.DiagnosticKind<Void> = [Cast:haxe.display.DiagnosticKind<Void>] [Const:Int] 6;
+
+	@:value(cast 7) @:impl @:enum
+	public static inline var MissingFields:haxe.display.DiagnosticKind<haxe.display.MissingFieldDiagnostics> = [Cast:haxe.display.DiagnosticKind<haxe.display.MissingFieldDiagnostics>] [Const:Int] 7;
+}

@@ -83,18 +83,7 @@ defmodule Todo do
     params = Haxe.Ds.StringMap.new()
     g_array = []
     g_counter = 0
-    loop_helper = fn loop_fn, {v, g1} ->
-      if ((g_counter < temp_array.length)) do
-        v = Enum.at(temp_array, g_counter)
-        g1 = g1 + 1
-        g_counter ++ [ChangesetValue.string_value(v)]
-        loop_fn.(loop_fn, {v, g1})
-      else
-        {v, g1}
-      end
-    end
-
-    {v, g1} = loop_helper.(loop_helper, {v, g1})
+    Enum.map(temp_array, fn item -> ChangesetValue.string_itemalue(item) end)
     value = ChangesetValue.array_value(g_counter)
     params.set("tags", value)
     Todo.changeset(todo, params)

@@ -1,0 +1,12 @@
+@:enum
+private class haxe.display._Protocol.HaxeResponseErrorSeverity_Impl_ {
+
+	@:value(cast 1) @:impl @:enum
+	public static inline var Error:haxe.display.HaxeResponseErrorSeverity = [Cast:haxe.display.HaxeResponseErrorSeverity] [Const:Int] 1;
+
+	@:value(cast 2) @:impl @:enum
+	public static inline var Warning:haxe.display.HaxeResponseErrorSeverity = [Cast:haxe.display.HaxeResponseErrorSeverity] [Const:Int] 2;
+
+	@:value(cast 3) @:impl @:enum
+	public static inline var Hint:haxe.display.HaxeResponseErrorSeverity = [Cast:haxe.display.HaxeResponseErrorSeverity] [Const:Int] 3;
+}

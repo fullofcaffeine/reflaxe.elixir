@@ -1,0 +1,7 @@
+enum haxe.macro.Constant {
+	CInt(v:String, ?s:Null<String>);
+	CFloat(f:String, ?s:Null<String>);
+	CString(s:String, ?kind:Null<haxe.macro.StringLiteralKind>);
+	CIdent(s:String);
+	CRegexp(r:String, opt:String);
+}

@@ -1275,6 +1275,10 @@ end)';
     /**
      * Extract transformation logic from loop body
      * 
+     * WHY: Need to extract the actual transformation logic from complex loop bodies
+     * WHAT: Handles nested array operations and temp variable patterns  
+     * HOW: Detects and compiles nested while loops directly instead of referencing temp vars
+     * 
      * @param blockExpr Loop body to analyze
      * @param loopVar Loop variable name
      * @return Transformation expression for Enum.map
@@ -1282,7 +1286,88 @@ end)';
     private function extractTransformationFromBody(blockExpr: TypedExpr, loopVar: String): String {
         return switch(blockExpr.expr) {
             case TBlock(exprs):
-                // Multiple statements - compile all
+                #if debug_loops
+                trace('[XRay ExtractTransform] Block with ${exprs.length} expressions');
+                for (i in 0...exprs.length) {
+                    trace('[XRay ExtractTransform]   Expr ${i}: ${Type.enumConstructor(exprs[i].expr)}');
+                }
+                #end
+                
+                // Check if this is a nested array operation pattern
+                // When we have nested lambdas, Haxe creates temp variables
+                // We need to find and inline the operation that generates them
+                
+                // First check if we have any temp_array references
+                var hasTempArrayRef = false;
+                var tempArrayName: String = null;
+                
+                for (expr in exprs) {
+                    switch (expr.expr) {
+                        case TCall(fn, args):
+                            switch (fn.expr) {
+                                case TField(obj, field):
+                                    switch (field) {
+                                        case FInstance(_, _, cf) if (cf.get().name == "push"):
+                                            if (args.length > 0) {
+                                                switch (args[0].expr) {
+                                                    case TLocal(v):
+                                                        var varName = CompilerUtilities.toElixirVarName(v);
+                                                        if (varName.indexOf("temp_array") >= 0) {
+                                                            hasTempArrayRef = true;
+                                                            tempArrayName = varName;
+                                                            #if debug_loops
+                                                            trace('[XRay ExtractTransform] Found temp array reference: ${varName}');
+                                                            #end
+                                                        }
+                                                    case _:
+                                                }
+                                            }
+                                        case _:
+                                    }
+                                case _:
+                            }
+                        case _:
+                    }
+                }
+                
+                if (hasTempArrayRef && tempArrayName != null) {
+                    #if debug_loops
+                    trace('[XRay ExtractTransform] Looking for definition of ${tempArrayName}');
+                    #end
+                    
+                    // Look for where this temp array is generated
+                    for (expr in exprs) {
+                        switch (expr.expr) {
+                            case TBlock(innerExprs):
+                                // Check if this block generates our temp array
+                                for (innerExpr in innerExprs) {
+                                    switch (innerExpr.expr) {
+                                        case TBinop(OpAssign, e1, e2):
+                                            var leftSide = compiler.compileExpression(e1);
+                                            if (leftSide == tempArrayName) {
+                                                #if debug_loops  
+                                                trace('[XRay ExtractTransform] Found assignment to ${tempArrayName}');
+                                                #end
+                                                // Found the assignment - compile the RHS
+                                                var result = compiler.compileExpression(e2);
+                                                #if debug_loops
+                                                trace('[XRay ExtractTransform] Compiled to: ${result}');
+                                                #end
+                                                return result;
+                                            }
+                                        case _:
+                                    }
+                                }
+                            case _:
+                        }
+                    }
+                    
+                    #if debug_loops
+                    trace('[XRay ExtractTransform] Could not find definition of ${tempArrayName}');
+                    #end
+                }
+                
+                // Otherwise compile all statements normally
                 var statements = [for (expr in exprs) compiler.compileExpression(expr)];
                 statements.join("\n");
                 
@@ -1706,6 +1791,8 @@ end)';
     private function classifyArrayPattern(ebody: TypedExpr, indexVar: String, accumVar: String): {type: String, expression: String} {
         #if debug_loops
         trace("[XRay Classify] CLASSIFICATION START");
+        trace('[XRay Classify] Body expr type: ${ebody.expr}');
+        trace('[XRay Classify] Index var: ${indexVar}, Accum var: ${accumVar}');
         #end
         
         switch (ebody.expr) {
@@ -1718,6 +1805,94 @@ end)';
             case _:
                 return {type: "reduce", expression: "item"};
         }
+    }
+    
+    /**
+     * Find nested array operation that generates a temporary variable
+     * 
+     * WHY: When Haxe desugars nested array operations, it creates temporary variables
+     * WHAT: Detect and compile the nested operation instead of referencing the temp var
+     * HOW: Look for while loops that generate the temp variable and compile them to Enum calls
+     */
+    private function findNestedArrayOperation(exprs: Array<TypedExpr>, tempVarName: String): Null<String> {
+        #if debug_loops
+        trace('[XRay Nested] Looking for nested operation generating ${tempVarName}');
+        trace('[XRay Nested] Total expressions to check: ${exprs.length}');
+        #end
+        
+        // The pattern in the desugared code is:
+        // 1. TVar for tempArray1 initialization  
+        // 2. TBlock containing:
+        //    - TVar for counter/array
+        //    - TWhile loop that populates the array
+        //    - TBinop assignment of result
+        // We need to find the block that generates our temp variable
+        
+        for (i in 0...exprs.length) {
+            var expr = exprs[i];
+            #if debug_loops
+            trace('[XRay Nested] Checking expression ${i}: ${Type.enumConstructor(expr.expr)}');
+            #end
+            
+            switch (expr.expr) {
+                case TBlock(blockExprs):
+                    // Check if this block assigns to our temp variable
+                    for (blockExpr in blockExprs) {
+                        switch (blockExpr.expr) {
+                            case TBinop(OpAssign, e1, e2):
+                                var leftSide = compiler.compileExpression(e1);
+                                if (leftSide == tempVarName) {
+                                    #if debug_loops
+                                    trace('[XRay Nested] Found assignment to ${tempVarName}');
+                                    #end
+                                    // Found the assignment, now look for the while loop in this block
+                                    for (innerExpr in blockExprs) {
+                                        switch (innerExpr.expr) {
+                                            case TWhile(econd, ebody, normalWhile):
+                                                #if debug_loops
+                                                trace('[XRay Nested] Found while loop in same block');
+                                                #end
+                                                // Compile this while loop
+                                                var nestedResult = compileWhileLoop(econd, ebody, normalWhile);
+                                                if (nestedResult != null && nestedResult.indexOf("Enum.") >= 0) {
+                                                    #if debug_loops
+                                                    trace('[XRay Nested] Successfully compiled nested operation: ${nestedResult}');
+                                                    #end
+                                                    return nestedResult;
+                                                }
+                                            case _:
+                                        }
+                                    }
+                                }
+                            case _:
+                        }
+                    }
+                    
+                case TWhile(econd, ebody, normalWhile):
+                    // Sometimes the nested while is at the same level
+                    // Check if the body assigns to our temp variable
+                    var bodyStr = compiler.compileExpression(ebody);
+                    if (bodyStr.indexOf(tempVarName + " =") >= 0) {
+                        #if debug_loops
+                        trace('[XRay Nested] Found while loop that assigns to ${tempVarName}');
+                        #end
+                        // Compile this while loop
+                        var nestedResult = compileWhileLoop(econd, ebody, normalWhile);
+                        if (nestedResult != null && nestedResult.indexOf("Enum.") >= 0) {
+                            #if debug_loops
+                            trace('[XRay Nested] Successfully compiled nested operation: ${nestedResult}');
+                            #end
+                            return nestedResult;
+                        }
+                    }
+                case _:
+            }
+        }
+        
+        #if debug_loops
+        trace('[XRay Nested] No nested operation found for ${tempVarName}');
+        #end
+        return null;
     }
     
     /**
@@ -1770,7 +1945,91 @@ end)';
                                     hasAssignment = true;
                                     // Extract transformation from push argument
                                     if (args.length > 0) {
-                                        transformationExpr = substituteVariableNamesWithItem(compiler.compileExpression(args[0]), indexVar, accumVar, itemVarName);
+                                        #if debug_loops
+                                        trace('[XRay Classify] Push argument expr: ${args[0].expr}');
+                                        trace('[XRay Classify] Push argument type: ${args[0].t}');
+                                        #end
+                                        
+                                        // Check if the argument is a temporary variable from nested array operation
+                                        var isNestedArrayResult = false;
+                                        switch (args[0].expr) {
+                                            case TLocal(v):
+                                                var varName = CompilerUtilities.toElixirVarName(v);
+                                                // Check if this looks like a temporary array variable
+                                                if (varName.indexOf("temp_array") >= 0) {
+                                                    #if debug_loops
+                                                    trace('[XRay Classify] Detected nested array temp variable: ${varName}');
+                                                    trace('[XRay Classify] Looking for its definition in ${exprs.length} expressions');
+                                                    #end
+                                                    
+                                                    // Look for where this temp variable is assigned
+                                                    // The pattern is: temp_array1 = (block with while loop)
+                                                    for (i in 0...exprs.length) {
+                                                        switch (exprs[i].expr) {
+                                                            case TVar(tvar, init) if (init == null):
+                                                                var thisVarName = CompilerUtilities.toElixirVarName(tvar);
+                                                                if (thisVarName == varName) {
+                                                                    #if debug_loops
+                                                                    trace('[XRay Classify] Found temp var declaration at index ${i}');
+                                                                    #end
+                                                                    // Look for the assignment in subsequent expressions
+                                                                    for (j in (i+1)...exprs.length) {
+                                                                        switch (exprs[j].expr) {
+                                                                            case TBinop(OpAssign, e1, e2):
+                                                                                var leftSide = compiler.compileExpression(e1);
+                                                                                if (leftSide == varName) {
+                                                                                    #if debug_loops
+                                                                                    trace('[XRay Classify] Found assignment to ${varName} at index ${j}');
+                                                                                    #end
+                                                                                    // e2 should be the block containing the nested operation
+                                                                                    switch (e2.expr) {
+                                                                                        case TBlock(blockExprs):
+                                                                                            // Look for while loop in this block
+                                                                                            for (blockExpr in blockExprs) {
+                                                                                                switch (blockExpr.expr) {
+                                                                                                    case TWhile(econd, ebody, normalWhile):
+                                                                                                        var nestedOp = compileWhileLoop(econd, ebody, normalWhile);
+                                                                                                        if (nestedOp != null && nestedOp.indexOf("Enum.") >= 0) {
+                                                                                                            #if debug_loops
+                                                                                                            trace('[XRay Classify] Found and compiled nested operation: ${nestedOp}');
+                                                                                                            #end
+                                                                                                            transformationExpr = nestedOp;
+                                                                                                            isNestedArrayResult = true;
+                                                                                                            break;
+                                                                                                        }
+                                                                                                    case _:
+                                                                                                }
+                                                                                            }
+                                                                                        case _:
+                                                                                            #if debug_loops
+                                                                                            trace('[XRay Classify] Assignment RHS is not a block: ${Type.enumConstructor(e2.expr)}');
+                                                                                            #end
+                                                                                    }
+                                                                                }
+                                                                            case _:
+                                                                        }
+                                                                    }
+                                                                }
+                                                            case _:
+                                                        }
+                                                    }
+                                                    
+                                                    if (!isNestedArrayResult) {
+                                                        #if debug_loops
+                                                        trace('[XRay Classify] Could not find nested operation for ${varName}');
+                                                        #end
+                                                    }
+                                                }
+                                            case _:
+                                        }
+                                        
+                                        if (!isNestedArrayResult) {
+                                            var compiledArg = compiler.compileExpression(args[0]);
+                                            #if debug_loops
+                                            trace('[XRay Classify] Compiled push argument normally: ${compiledArg}');
+                                            #end
+                                            transformationExpr = substituteVariableNamesWithItem(compiledArg, indexVar, accumVar, itemVarName);
+                                        }
                                     }
                                 case _:
                                     continue;

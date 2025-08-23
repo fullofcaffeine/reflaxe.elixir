@@ -111,6 +111,133 @@ class ControlFlowCompiler {
     }
     
     /**
+     * Try to optimize array assignment patterns where a variable is assigned an empty array
+     * and immediately followed by a loop that builds into that array
+     * 
+     * ARRAY ASSIGNMENT OPTIMIZATION
+     * 
+     * WHY: Haxe for-loops desugar into patterns like:
+     *      var evens = [];
+     *      while (g_counter < numbers.length) { evens.push(numbers[g_counter]); }
+     *      This should become: evens = Enum.filter(numbers, ...)
+     * 
+     * WHAT: Detects TVar assignment to empty array followed by array-building while loop
+     * HOW: Analyze block expressions for this specific pattern and generate direct assignment
+     * EDGE CASES: Only works for simple empty array assignments followed by loops
+     * 
+     * @param exprs Array of expressions in a TBlock
+     * @return Optimized block code or null if no optimization possible
+     */
+    private function tryOptimizeArrayAssignmentPattern(exprs: Array<TypedExpr>): Null<String> {
+        #if debug_control_flow_compiler || debug_loops
+        trace('[XRay ControlFlowCompiler] ANALYZING BLOCK FOR ARRAY ASSIGNMENT PATTERN');
+        trace('[XRay ControlFlowCompiler] - Block has ${exprs.length} expressions');
+        #end
+        
+        if (exprs.length < 2) return null;
+        
+        // Look for pattern: TVar assignment to empty array + TWhile with array building
+        for (i in 0...(exprs.length - 1)) {
+            var currentExpr = exprs[i];
+            var nextExpr = exprs[i + 1];
+            
+            // Check if current expression is a variable assignment to empty array
+            var arrayVar = extractEmptyArrayAssignment(currentExpr);
+            if (arrayVar != null) {
+                #if debug_control_flow_compiler || debug_loops
+                trace('[XRay ControlFlowCompiler] ✓ Found empty array assignment: ${arrayVar}');
+                #end
+                
+                // Check if next expression is a while loop that builds into this array
+                var loopOptimization = tryOptimizeWhileLoopWithTarget(nextExpr, arrayVar);
+                if (loopOptimization != null) {
+                    #if debug_control_flow_compiler || debug_loops
+                    trace('[XRay ControlFlowCompiler] ✓ Found matching array building loop');
+                    trace('[XRay ControlFlowCompiler] ✓ OPTIMIZATION APPLIED: ${arrayVar} = ${loopOptimization}');
+                    #end
+                    
+                    // Generate optimized assignment: arrayVar = Enum.function(...)
+                    var optimizedAssignment = '${arrayVar} = ${loopOptimization}';
+                    
+                    // Compile remaining expressions normally
+                    var remainingResults = [];
+                    remainingResults.push(optimizedAssignment);
+                    
+                    for (j in (i + 2)...exprs.length) {
+                        remainingResults.push(compiler.compileExpression(exprs[j]));
+                    }
+                    
+                    // Include expressions before the pattern
+                    var beforeResults = [];
+                    for (k in 0...i) {
+                        beforeResults.push(compiler.compileExpression(exprs[k]));
+                    }
+                    
+                    return (beforeResults.concat(remainingResults)).join("\n");
+                }
+            }
+        }
+        
+        return null; // No optimization found
+    }
+    
+    /**
+     * Extract variable name from empty array assignment (TVar to empty array)
+     * 
+     * @param expr Expression to analyze
+     * @return Variable name if it's an empty array assignment, null otherwise
+     */
+    private function extractEmptyArrayAssignment(expr: TypedExpr): Null<String> {
+        return switch (expr.expr) {
+            case TVar(v, initExpr):
+                if (initExpr != null) {
+                    switch (initExpr.expr) {
+                        case TArrayDecl([]): // Empty array literal
+                            #if debug_control_flow_compiler || debug_loops
+                            trace('[XRay ControlFlowCompiler] ✓ Empty array assignment detected: ${v.name}');
+                            #end
+                            v.name;
+                        case _: null;
+                    }
+                } else {
+                    null;
+                }
+            case _: null;
+        }
+    }
+    
+    /**
+     * Try to optimize a while loop expression with a specific target array variable
+     * 
+     * @param expr While loop expression to analyze
+     * @param targetVar Target variable name that should be built into
+     * @return Enum function call if optimization possible, null otherwise
+     */
+    private function tryOptimizeWhileLoopWithTarget(expr: TypedExpr, targetVar: String): Null<String> {
+        return switch (expr.expr) {
+            case TWhile(econd, ebody, normalWhile):
+                // Delegate to LoopCompiler for array building pattern detection
+                var loopCompiler = compiler.loopCompiler;
+                
+                #if debug_control_flow_compiler || debug_loops
+                trace('[XRay ControlFlowCompiler] Checking while loop for array building with target: ${targetVar}');
+                #end
+                
+                var arrayBuildingPattern = loopCompiler.detectArrayBuildingPattern(econd, ebody);
+                if (arrayBuildingPattern != null && arrayBuildingPattern.accumVar == targetVar) {
+                    #if debug_control_flow_compiler || debug_loops
+                    trace('[XRay ControlFlowCompiler] ✓ Array building pattern matches target variable');
+                    #end
+                    
+                    return loopCompiler.compileArrayBuildingLoop(econd, ebody, arrayBuildingPattern);
+                }
+                
+                null;
+            case _: null;
+        }
+    }
+    
+    /**
      * Compile TBlock expressions with variable collision handling and pattern optimization
      * 
      * WHY: TBlock is one of the most complex cases in the original function, handling everything
@@ -143,6 +270,15 @@ class ControlFlowCompiler {
         // BASIC IMPLEMENTATION: Handle block expressions
         if (el.length == 0) {
             return "nil";
+        }
+        
+        // Check for array assignment patterns (variable = [] followed by array building loop)
+        var arrayAssignmentOptimization = tryOptimizeArrayAssignmentPattern(el);
+        if (arrayAssignmentOptimization != null) {
+            #if debug_control_flow_compiler || debug_loops
+            trace("[XRay ControlFlowCompiler] ✓ ARRAY ASSIGNMENT OPTIMIZATION APPLIED");
+            #end
+            return arrayAssignmentOptimization;
         }
         
         // Process TBlock expressions normally

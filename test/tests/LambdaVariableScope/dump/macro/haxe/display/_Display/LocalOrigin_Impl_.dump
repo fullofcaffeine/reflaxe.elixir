@@ -1,0 +1,21 @@
+@:enum
+private class haxe.display._Display.LocalOrigin_Impl_ {
+
+	@:value(cast 0) @:impl @:enum
+	public static inline var LocalVariable:haxe.display.LocalOrigin = [Cast:haxe.display.LocalOrigin] [Const:Int] 0;
+
+	@:value(cast 1) @:impl @:enum
+	public static inline var Argument:haxe.display.LocalOrigin = [Cast:haxe.display.LocalOrigin] [Const:Int] 1;
+
+	@:value(cast 2) @:impl @:enum
+	public static inline var ForVariable:haxe.display.LocalOrigin = [Cast:haxe.display.LocalOrigin] [Const:Int] 2;
+
+	@:value(cast 3) @:impl @:enum
+	public static inline var PatternVariable:haxe.display.LocalOrigin = [Cast:haxe.display.LocalOrigin] [Const:Int] 3;
+
+	@:value(cast 4) @:impl @:enum
+	public static inline var CatchVariable:haxe.display.LocalOrigin = [Cast:haxe.display.LocalOrigin] [Const:Int] 4;
+
+	@:value(cast 5) @:impl @:enum
+	public static inline var LocalFunction:haxe.display.LocalOrigin = [Cast:haxe.display.LocalOrigin] [Const:Int] 5;
+}

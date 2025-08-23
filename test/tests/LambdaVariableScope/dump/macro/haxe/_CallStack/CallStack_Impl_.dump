@@ -1,0 +1,950 @@
+@:using(haxe.CallStack) @:allow(haxe.Exception)
+private class haxe._CallStack.CallStack_Impl_ {
+
+	public static var length(get,never):Int;
+
+	static inline function get_length[Function:(this : Array<haxe.StackItem>) -> Int]
+		[Arg:Array<haxe.StackItem>] [Local this(98):Array<haxe.StackItem>]
+		[Return:Dynamic]
+			[Field:Int]
+				[Local this(98):Array<haxe.StackItem>:Array<haxe.StackItem>]
+				[FInstance:Int]
+					Array<haxe.StackItem>
+					length:Int
+
+	public static function callStack[Function:() -> Array<haxe.StackItem>]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Block:Array<haxe.StackItem>]
+					[Var stack(103):Array<haxe.StackItem>]
+						[Call:Array<haxe.StackItem>]
+							[Field:() -> Array<haxe.StackItem>]
+								[TypeExpr haxe.NativeStackTrace:Class<haxe.NativeStackTrace>]
+								[FStatic:() -> Array<haxe.StackItem>]
+									haxe.NativeStackTrace
+									callStack:() -> Array<haxe.StackItem>
+					[If:Array<haxe.StackItem>]
+						[Binop:Bool]
+							[Const:Int] 0
+							>
+							[Const:Int] 0
+						[Then:Array<haxe.StackItem>] [Block:Array<haxe.StackItem>]
+							[Call:Array<haxe.StackItem>]
+								[Field:(pos : Int, ?end : Null<Int>) -> Array<haxe.StackItem>]
+									[Local stack(103):Array<haxe.StackItem>:Array<haxe.StackItem>]
+									[FInstance:(pos : Int, ?end : Null<Int>) -> Array<haxe.StackItem>]
+										Array<haxe.StackItem>
+										slice:(pos : Int, ?end : Null<Int>) -> Array<Array.T>
+								[Const:Int] 0
+								[Const:Null<Int>] null
+						[Else:Array<haxe.StackItem>] [Block:Array<haxe.StackItem>] [Local stack(103):Array<haxe.StackItem>:Array<haxe.StackItem>]
+
+	@:value({ fullStack : false })
+	public static function exceptionStack[Function:(?fullStack : Bool) -> Array<haxe.StackItem>]
+		[Arg:Bool]
+			[Local fullStack(106):Bool]
+			[Const:Bool] false
+		[Block:Dynamic]
+			[Var eStack(111):haxe.CallStack]
+				[Block:Array<haxe.StackItem>]
+					[Var stack(109):Array<haxe.StackItem>]
+						[Call:Array<haxe.StackItem>]
+							[Field:() -> Array<haxe.StackItem>]
+								[TypeExpr haxe.NativeStackTrace:Class<haxe.NativeStackTrace>]
+								[FStatic:() -> Array<haxe.StackItem>]
+									haxe.NativeStackTrace
+									exceptionStack:() -> Array<haxe.StackItem>
+					[If:Array<haxe.StackItem>]
+						[Binop:Bool]
+							[Const:Int] 0
+							>
+							[Const:Int] 0
+						[Then:Array<haxe.StackItem>] [Block:Array<haxe.StackItem>]
+							[Call:Array<haxe.StackItem>]
+								[Field:(pos : Int, ?end : Null<Int>) -> Array<haxe.StackItem>]
+									[Local stack(109):Array<haxe.StackItem>:Array<haxe.StackItem>]
+									[FInstance:(pos : Int, ?end : Null<Int>) -> Array<haxe.StackItem>]
+										Array<haxe.StackItem>
+										slice:(pos : Int, ?end : Null<Int>) -> Array<Array.T>
+								[Const:Int] 0
+								[Const:Null<Int>] null
+						[Else:Array<haxe.StackItem>] [Block:Array<haxe.StackItem>] [Local stack(109):Array<haxe.StackItem>:Array<haxe.StackItem>]
+			[Return:Dynamic]
+				[Block:Array<haxe.StackItem>]
+					[Var this(197):Array<haxe.StackItem>]
+						[If:haxe.CallStack]
+							[Parenthesis:Bool] [Local fullStack(106):Bool:Bool]
+							[Then:haxe.CallStack] [Local eStack(111):haxe.CallStack:haxe.CallStack]
+							[Else:haxe.CallStack] [Call:haxe.CallStack]
+								[Field:(this : Array<haxe.StackItem>, stack : haxe.CallStack) -> haxe.CallStack]
+									[TypeExpr haxe._CallStack.CallStack_Impl_:{ Statics haxe._CallStack.CallStack_Impl_ }]
+									[FStatic:(this : Array<haxe.StackItem>, stack : haxe.CallStack) -> haxe.CallStack]
+										haxe._CallStack.CallStack_Impl_
+										subtract:(this : Array<haxe.StackItem>, stack : haxe.CallStack) -> haxe.CallStack
+								[Local eStack(111):haxe.CallStack:haxe.CallStack]
+								[Call:Array<haxe.StackItem>]
+									[Field:() -> Array<haxe.StackItem>]
+										[TypeExpr haxe._CallStack.CallStack_Impl_:Abstract<haxe.CallStack>]
+										[FStatic:() -> Array<haxe.StackItem>]
+											haxe._CallStack.CallStack_Impl_
+											callStack:() -> Array<haxe.StackItem>
+					[Cast:Array<haxe.StackItem>] [Local this(197):Array<haxe.StackItem>:Array<haxe.StackItem>]
+
+	public static function toString[Function:(stack : haxe.CallStack) -> String]
+		[Arg:haxe.CallStack] [Local stack(200):haxe.CallStack]
+		[Block:Dynamic]
+			[Var b(201):StringBuf] [New:StringBuf] StringBuf
+			[Block:Void]
+				[Var `(240):Int] [Const:Int] 0
+				[Var `(241):Array<haxe.StackItem>] [Cast:Array<haxe.StackItem>] [Local stack(200):haxe.CallStack:haxe.CallStack]
+				[While:Void]
+					[Binop:Bool]
+						[Local `(240):Int:Int]
+						<
+						[Field:Int]
+							[Local `(241):Array<haxe.StackItem>:Array<haxe.StackItem>]
+							[FInstance:Int]
+								Array<haxe.StackItem>
+								length:Int
+					[Block:Void]
+						[Var s(205):haxe.StackItem]
+							[Array:haxe.StackItem]
+								[Local `(241):Array<haxe.StackItem>:Array<haxe.StackItem>]
+								[Local `(240):Int:Int]
+						[Unop:Int]
+							++
+							Prefix
+							[Local `(240):Int:Int]
+						[Call:Void]
+							[Field:(x : String) -> Void]
+								[Local b(201):StringBuf:StringBuf]
+								[FInstance:(x : String) -> Void]
+									StringBuf
+									add:(x : add.T) -> Void
+							[Const:String] "\nCalled from "
+						[Call:Void]
+							[Field:(b : StringBuf, s : haxe.StackItem) -> Void]
+								[TypeExpr haxe._CallStack.CallStack_Impl_:Abstract<haxe.CallStack>]
+								[FStatic:(b : StringBuf, s : haxe.StackItem) -> Void]
+									haxe._CallStack.CallStack_Impl_
+									itemToString:(b : StringBuf, s : haxe.StackItem) -> Void
+							[Local b(201):StringBuf:StringBuf]
+							[Local s(205):haxe.StackItem:haxe.StackItem]
+			[Return:Dynamic]
+				[Call:String]
+					[Field:() -> String]
+						[Local b(201):StringBuf:StringBuf]
+						[FInstance:() -> String]
+							StringBuf
+							toString:() -> String
+
+	public static function subtract[Function:(this : Array<haxe.StackItem>, stack : haxe.CallStack) -> haxe.CallStack]
+		[Arg:Array<haxe.StackItem>] [Local this(112):Array<haxe.StackItem>]
+		[Arg:haxe.CallStack] [Local stack(113):haxe.CallStack]
+		[Block:Dynamic]
+			[Var startIndex(114):Int] [Const:Int] -1
+			[Var i(115):Int] [Const:Int] -1
+			[While:Void]
+				[Binop:Bool]
+					[Unop:Int]
+						++
+						Prefix
+						[Local i(115):Int:Int]
+					<
+					[Field:Int]
+						[Local this(112):Array<haxe.StackItem>:Array<haxe.StackItem>]
+						[FInstance:Int]
+							Array<haxe.StackItem>
+							length:Int
+				[Block:Void]
+					[Block:Void]
+						[Var `(192):Int] [Const:Int] 0
+						[Var `(193):Int]
+							[Field:Int]
+								[Cast:Array<haxe.StackItem>] [Local stack(113):haxe.CallStack:haxe.CallStack]
+								[FInstance:Int]
+									Array<haxe.StackItem>
+									length:Int
+						[While:Void]
+							[Binop:Bool]
+								[Local `(192):Int:Int]
+								<
+								[Local `(193):Int:Int]
+							[Block:Void]
+								[Var j(119):Int]
+									[Unop:Int]
+										++
+										Postfix
+										[Local `(192):Int:Int]
+								[If:Void]
+									[Call:Bool]
+										[Field:(item1 : Null<haxe.StackItem>, item2 : Null<haxe.StackItem>) -> Bool]
+											[TypeExpr haxe._CallStack.CallStack_Impl_:Abstract<haxe.CallStack>]
+											[FStatic:(item1 : Null<haxe.StackItem>, item2 : Null<haxe.StackItem>) -> Bool]
+												haxe._CallStack.CallStack_Impl_
+												equalItems:(item1 : Null<haxe.StackItem>, item2 : Null<haxe.StackItem>) -> Bool
+										[Array:haxe.StackItem]
+											[Local this(112):Array<haxe.StackItem>:Array<haxe.StackItem>]
+											[Local i(115):Int:Int]
+										[Array:haxe.StackItem]
+											[Cast:Array<haxe.StackItem>] [Local stack(113):haxe.CallStack:haxe.CallStack]
+											[Local j(119):Int:Int]
+									[Then:Void] [Block:Void]
+										[If:Void]
+											[Binop:Bool]
+												[Local startIndex(114):Int:Int]
+												<
+												[Const:Int] 0
+											[Then:Int] [Block:Int]
+												[Binop:Int]
+													[Local startIndex(114):Int:Int]
+													=
+													[Local i(115):Int:Int]
+										[Unop:Int]
+											++
+											Prefix
+											[Local i(115):Int:Int]
+										[If:Void]
+											[Binop:Bool]
+												[Local i(115):Int:Int]
+												>=
+												[Field:Int]
+													[Local this(112):Array<haxe.StackItem>:Array<haxe.StackItem>]
+													[FInstance:Int]
+														Array<haxe.StackItem>
+														length:Int
+											[Then:Dynamic] [Block:Dynamic] [Break:Dynamic]
+									[Else:Int] [Block:Int]
+										[Binop:Int]
+											[Local startIndex(114):Int:Int]
+											=
+											[Const:Int] -1
+					[If:Void]
+						[Binop:Bool]
+							[Local startIndex(114):Int:Int]
+							>=
+							[Const:Int] 0
+						[Then:Dynamic] [Block:Dynamic] [Break:Dynamic]
+			[Return:Dynamic]
+				[If:haxe.CallStack]
+					[Binop:Bool]
+						[Local startIndex(114):Int:Int]
+						>=
+						[Const:Int] 0
+					[Then:Array<haxe.StackItem>] [Block:Array<haxe.StackItem>]
+						[Call:Array<haxe.StackItem>]
+							[Field:(pos : Int, ?end : Null<Int>) -> Array<haxe.StackItem>]
+								[Local this(112):Array<haxe.StackItem>:Array<haxe.StackItem>]
+								[FInstance:(pos : Int, ?end : Null<Int>) -> Array<haxe.StackItem>]
+									Array<haxe.StackItem>
+									slice:(pos : Int, ?end : Null<Int>) -> Array<Array.T>
+							[Const:Int] 0
+							[Local startIndex(114):Int:Int]
+					[Else:Array<haxe.StackItem>] [Block:Array<haxe.StackItem>] [Local this(112):Array<haxe.StackItem>:Array<haxe.StackItem>]
+
+	public static inline function copy[Function:(this : Array<haxe.StackItem>) -> haxe.CallStack]
+		[Arg:Array<haxe.StackItem>] [Local this(242):Array<haxe.StackItem>]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Call:Array<haxe.StackItem>]
+					[Field:() -> Array<haxe.StackItem>]
+						[Local this(242):Array<haxe.StackItem>:Array<haxe.StackItem>]
+						[FInstance:() -> Array<haxe.StackItem>]
+							Array<haxe.StackItem>
+							copy:() -> Array<Array.T>
+
+	@:arrayAccess
+	public static inline function get[Function:(this : Array<haxe.StackItem>, index : Int) -> haxe.StackItem]
+		[Arg:Array<haxe.StackItem>] [Local this(186):Array<haxe.StackItem>]
+		[Arg:Int] [Local index(187):Int]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Array:haxe.StackItem]
+					[Local this(186):Array<haxe.StackItem>:Array<haxe.StackItem>]
+					[Local index(187):Int:Int]
+
+	static inline function asArray[Function:(this : Array<haxe.StackItem>) -> Array<haxe.StackItem>]
+		[Arg:Array<haxe.StackItem>] [Local this(194):Array<haxe.StackItem>]
+		[Block:Dynamic] [Return:Dynamic] [Local this(194):Array<haxe.StackItem>:Array<haxe.StackItem>]
+
+	static function equalItems[Function:(item1 : Null<haxe.StackItem>, item2 : Null<haxe.StackItem>) -> Bool]
+		[Arg:Null<haxe.StackItem>] [Local item1(120):Null<haxe.StackItem>]
+		[Arg:Null<haxe.StackItem>] [Local item2(121):Null<haxe.StackItem>]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Meta:Bool]
+					:ast(switch ([item1, item2]) {
+	case [null, null]:
+		true;	
+	case [CFunction, CFunction]:
+		true;	
+	case [Module(m1), Module(m2)]:
+		m1 == m2;	
+	case [FilePos(item1, file1, line1, col1), FilePos(item2, file2, line2, col2)]:
+		file1 == file2 && line1 == line2 && col1 == col2 && equalItems(item1, item2);	
+	case [Method(class1, method1), Method(class2, method2)]:
+		class1 == class2 && method1 == method2;	
+	case [LocalFunction(v1), LocalFunction(v2)]:
+		v1 == v2;	
+	case _:
+		false;	
+})
+					[If:Bool]
+						[Binop:Bool]
+							[Local item1(120):Null<haxe.StackItem>:Null<haxe.StackItem>]
+							==
+							[Const:Null<haxe.StackItem>] null
+						[Then:Bool] [If:Bool]
+							[Binop:Bool]
+								[Local item2(121):Null<haxe.StackItem>:Null<haxe.StackItem>]
+								==
+								[Const:Null<haxe.StackItem>] null
+							[Then:Bool] [Block:Bool] [Const:Bool] true
+							[Else:Bool] [Block:Bool] [Const:Bool] false
+						[Else:Bool] [Switch:Bool]
+							[Meta:Int]
+								:exhaustive
+								[EnumIndex:Int] [Local item1(120):Null<haxe.StackItem>:Null<haxe.StackItem>]
+							[Case:Bool]
+								[Const:Int] 0
+								[Block:Bool]
+									[If:Bool]
+										[Binop:Bool]
+											[Local item2(121):Null<haxe.StackItem>:Null<haxe.StackItem>]
+											==
+											[Const:Null<haxe.StackItem>] null
+										[Then:Bool] [Block:Bool] [Const:Bool] false
+										[Else:Bool] [If:Bool]
+											[Binop:Bool]
+												[EnumIndex:Int] [Local item2(121):Null<haxe.StackItem>:Null<haxe.StackItem>]
+												==
+												[Const:Int] 0
+											[Then:Bool] [Block:Bool] [Block:Bool] [Const:Bool] true
+											[Else:Bool] [Block:Bool] [Const:Bool] false
+							[Case:Bool]
+								[Const:Int] 1
+								[Block:Bool]
+									[Var `(154):String]
+										[EnumParameter:String]
+											[Local item1(120):Null<haxe.StackItem>:Null<haxe.StackItem>]
+											Module
+											0
+									[If:Bool]
+										[Binop:Bool]
+											[Local item2(121):Null<haxe.StackItem>:Null<haxe.StackItem>]
+											==
+											[Const:Null<haxe.StackItem>] null
+										[Then:Bool] [Block:Bool] [Const:Bool] false
+										[Else:Bool] [If:Bool]
+											[Binop:Bool]
+												[EnumIndex:Int] [Local item2(121):Null<haxe.StackItem>:Null<haxe.StackItem>]
+												==
+												[Const:Int] 1
+											[Then:Bool] [Block:Bool]
+												[Var `(155):String]
+													[EnumParameter:String]
+														[Local item2(121):Null<haxe.StackItem>:Null<haxe.StackItem>]
+														Module
+														0
+												[Block:Bool]
+													[Var m2(156):String] [Local `(155):String:String]
+													[Var m1(157):String] [Local `(154):String:String]
+													[Block:Bool]
+														[Binop:Bool]
+															[Local m1(157):String:String]
+															==
+															[Local m2(156):String:String]
+											[Else:Bool] [Block:Bool] [Const:Bool] false
+							[Case:Bool]
+								[Const:Int] 2
+								[Block:Bool]
+									[Var `(158):Null<haxe.StackItem>]
+										[EnumParameter:Null<haxe.StackItem>]
+											[Local item1(120):Null<haxe.StackItem>:Null<haxe.StackItem>]
+											FilePos
+											0
+									[Var `(159):String]
+										[EnumParameter:String]
+											[Local item1(120):Null<haxe.StackItem>:Null<haxe.StackItem>]
+											FilePos
+											1
+									[Var `(160):Int]
+										[EnumParameter:Int]
+											[Local item1(120):Null<haxe.StackItem>:Null<haxe.StackItem>]
+											FilePos
+											2
+									[Var `(161):Null<Int>]
+										[EnumParameter:Null<Int>]
+											[Local item1(120):Null<haxe.StackItem>:Null<haxe.StackItem>]
+											FilePos
+											3
+									[If:Bool]
+										[Binop:Bool]
+											[Local item2(121):Null<haxe.StackItem>:Null<haxe.StackItem>]
+											==
+											[Const:Null<haxe.StackItem>] null
+										[Then:Bool] [Block:Bool] [Const:Bool] false
+										[Else:Bool] [If:Bool]
+											[Binop:Bool]
+												[EnumIndex:Int] [Local item2(121):Null<haxe.StackItem>:Null<haxe.StackItem>]
+												==
+												[Const:Int] 2
+											[Then:Bool] [Block:Bool]
+												[Var `(162):Null<haxe.StackItem>]
+													[EnumParameter:Null<haxe.StackItem>]
+														[Local item2(121):Null<haxe.StackItem>:Null<haxe.StackItem>]
+														FilePos
+														0
+												[Var `(163):String]
+													[EnumParameter:String]
+														[Local item2(121):Null<haxe.StackItem>:Null<haxe.StackItem>]
+														FilePos
+														1
+												[Var `(164):Int]
+													[EnumParameter:Int]
+														[Local item2(121):Null<haxe.StackItem>:Null<haxe.StackItem>]
+														FilePos
+														2
+												[Var `(165):Null<Int>]
+													[EnumParameter:Null<Int>]
+														[Local item2(121):Null<haxe.StackItem>:Null<haxe.StackItem>]
+														FilePos
+														3
+												[Block:Bool]
+													[Var item2(166):Null<haxe.StackItem>] [Local `(162):Null<haxe.StackItem>:Null<haxe.StackItem>]
+													[Var file2(167):String] [Local `(163):String:String]
+													[Var line2(168):Int] [Local `(164):Int:Int]
+													[Var col2(169):Null<Int>] [Local `(165):Null<Int>:Null<Int>]
+													[Var col1(170):Null<Int>] [Local `(161):Null<Int>:Null<Int>]
+													[Var line1(171):Int] [Local `(160):Int:Int]
+													[Var file1(172):String] [Local `(159):String:String]
+													[Var item1(173):Null<haxe.StackItem>] [Local `(158):Null<haxe.StackItem>:Null<haxe.StackItem>]
+													[Block:Bool]
+														[Binop:Bool]
+															[Binop:Bool]
+																[Binop:Bool]
+																	[Binop:Bool]
+																		[Local file1(172):String:String]
+																		==
+																		[Local file2(167):String:String]
+																	&&
+																	[Binop:Bool]
+																		[Local line1(171):Int:Int]
+																		==
+																		[Local line2(168):Int:Int]
+																&&
+																[Binop:Bool]
+																	[Local col1(170):Null<Int>:Null<Int>]
+																	==
+																	[Local col2(169):Null<Int>:Null<Int>]
+															&&
+															[Call:Bool]
+																[Field:(item1 : Null<haxe.StackItem>, item2 : Null<haxe.StackItem>) -> Bool]
+																	[TypeExpr haxe._CallStack.CallStack_Impl_:Abstract<haxe.CallStack>]
+																	[FStatic:(item1 : Null<haxe.StackItem>, item2 : Null<haxe.StackItem>) -> Bool]
+																		haxe._CallStack.CallStack_Impl_
+																		equalItems:(item1 : Null<haxe.StackItem>, item2 : Null<haxe.StackItem>) -> Bool
+																[Local item1(173):Null<haxe.StackItem>:Null<haxe.StackItem>]
+																[Local item2(166):Null<haxe.StackItem>:Null<haxe.StackItem>]
+											[Else:Bool] [Block:Bool] [Const:Bool] false
+							[Case:Bool]
+								[Const:Int] 3
+								[Block:Bool]
+									[Var `(174):Null<String>]
+										[EnumParameter:Null<String>]
+											[Local item1(120):Null<haxe.StackItem>:Null<haxe.StackItem>]
+											Method
+											0
+									[Var `(175):String]
+										[EnumParameter:String]
+											[Local item1(120):Null<haxe.StackItem>:Null<haxe.StackItem>]
+											Method
+											1
+									[If:Bool]
+										[Binop:Bool]
+											[Local item2(121):Null<haxe.StackItem>:Null<haxe.StackItem>]
+											==
+											[Const:Null<haxe.StackItem>] null
+										[Then:Bool] [Block:Bool] [Const:Bool] false
+										[Else:Bool] [If:Bool]
+											[Binop:Bool]
+												[EnumIndex:Int] [Local item2(121):Null<haxe.StackItem>:Null<haxe.StackItem>]
+												==
+												[Const:Int] 3
+											[Then:Bool] [Block:Bool]
+												[Var `(176):Null<String>]
+													[EnumParameter:Null<String>]
+														[Local item2(121):Null<haxe.StackItem>:Null<haxe.StackItem>]
+														Method
+														0
+												[Var `(177):String]
+													[EnumParameter:String]
+														[Local item2(121):Null<haxe.StackItem>:Null<haxe.StackItem>]
+														Method
+														1
+												[Block:Bool]
+													[Var class2(178):Null<String>] [Local `(176):Null<String>:Null<String>]
+													[Var method2(179):String] [Local `(177):String:String]
+													[Var method1(180):String] [Local `(175):String:String]
+													[Var class1(181):Null<String>] [Local `(174):Null<String>:Null<String>]
+													[Block:Bool]
+														[Binop:Bool]
+															[Binop:Bool]
+																[Local class1(181):Null<String>:Null<String>]
+																==
+																[Local class2(178):Null<String>:Null<String>]
+															&&
+															[Binop:Bool]
+																[Local method1(180):String:String]
+																==
+																[Local method2(179):String:String]
+											[Else:Bool] [Block:Bool] [Const:Bool] false
+							[Case:Bool]
+								[Const:Int] 4
+								[Block:Bool]
+									[Var `(182):Null<Int>]
+										[EnumParameter:Null<Int>]
+											[Local item1(120):Null<haxe.StackItem>:Null<haxe.StackItem>]
+											LocalFunction
+											0
+									[If:Bool]
+										[Binop:Bool]
+											[Local item2(121):Null<haxe.StackItem>:Null<haxe.StackItem>]
+											==
+											[Const:Null<haxe.StackItem>] null
+										[Then:Bool] [Block:Bool] [Const:Bool] false
+										[Else:Bool] [If:Bool]
+											[Binop:Bool]
+												[EnumIndex:Int] [Local item2(121):Null<haxe.StackItem>:Null<haxe.StackItem>]
+												==
+												[Const:Int] 4
+											[Then:Bool] [Block:Bool]
+												[Var `(183):Null<Int>]
+													[EnumParameter:Null<Int>]
+														[Local item2(121):Null<haxe.StackItem>:Null<haxe.StackItem>]
+														LocalFunction
+														0
+												[Block:Bool]
+													[Var v2(184):Null<Int>] [Local `(183):Null<Int>:Null<Int>]
+													[Var v1(185):Null<Int>] [Local `(182):Null<Int>:Null<Int>]
+													[Block:Bool]
+														[Binop:Bool]
+															[Local v1(185):Null<Int>:Null<Int>]
+															==
+															[Local v2(184):Null<Int>:Null<Int>]
+											[Else:Bool] [Block:Bool] [Const:Bool] false
+
+	static function exceptionToString[Function:(e : haxe.Exception) -> String]
+		[Arg:haxe.Exception] [Local e(243):haxe.Exception]
+		[Block:Dynamic]
+			[If:Void]
+				[Binop:Bool]
+					[Call:Null<haxe.Exception>]
+						[Field:() -> Null<haxe.Exception>]
+							[Local e(243):haxe.Exception:haxe.Exception]
+							[FInstance:() -> Null<haxe.Exception>]
+								haxe.Exception
+								get_previous:() -> Null<haxe.Exception>
+					==
+					[Const:Null<haxe.Exception>] null
+				[Then:Dynamic] [Block:Dynamic]
+					[Return:Dynamic]
+						[Binop:String]
+							[Binop:String]
+								[Const:String] "Exception: "
+								+
+								[Call:String]
+									[Field:() -> String]
+										[Local e(243):haxe.Exception:haxe.Exception]
+										[FInstance:() -> String]
+											haxe.Exception
+											toString:() -> String
+							+
+							[Block:String]
+								[Var tmp(251):haxe.CallStack]
+									[Call:haxe.CallStack]
+										[Field:() -> haxe.CallStack]
+											[Local e(243):haxe.Exception:haxe.Exception]
+											[FInstance:() -> haxe.CallStack]
+												haxe.Exception
+												get_stack:() -> haxe.CallStack
+								[If:String]
+									[Binop:Bool]
+										[Local tmp(251):haxe.CallStack:haxe.CallStack]
+										==
+										[Const:haxe.CallStack] null
+									[Then:String] [Const:String] "null"
+									[Else:String] [Call:String]
+										[Field:(stack : haxe.CallStack) -> String]
+											[TypeExpr haxe._CallStack.CallStack_Impl_:{ Statics haxe._CallStack.CallStack_Impl_ }]
+											[FStatic:(stack : haxe.CallStack) -> String]
+												haxe._CallStack.CallStack_Impl_
+												toString:(stack : haxe.CallStack) -> String
+										[Local tmp(251):haxe.CallStack:haxe.CallStack]
+			[Var result(252):String] [Const:String] ""
+			[Var e(253):Null<haxe.Exception>] [Local e(243):haxe.Exception:haxe.Exception]
+			[Var prev(254):Null<haxe.Exception>] [Const:Null<haxe.Exception>] null
+			[While:Void]
+				[Binop:Bool]
+					[Local e(253):Null<haxe.Exception>:Null<haxe.Exception>]
+					!=
+					[Const:Null<haxe.Exception>] null
+				[Block:Null<haxe.Exception>]
+					[If:Void]
+						[Binop:Bool]
+							[Local prev(254):Null<haxe.Exception>:Null<haxe.Exception>]
+							==
+							[Const:Null<haxe.Exception>] null
+						[Then:String] [Block:String]
+							[Binop:String]
+								[Local result(252):String:String]
+								=
+								[Binop:String]
+									[Binop:String]
+										[Binop:String]
+											[Const:String] "Exception: "
+											+
+											[Call:String]
+												[Field:() -> String]
+													[Local e(253):Null<haxe.Exception>:Null<haxe.Exception>]
+													[FInstance:() -> String]
+														haxe.Exception
+														get_message:() -> String
+										+
+										[Block:String]
+											[Var tmp(255):haxe.CallStack]
+												[Call:haxe.CallStack]
+													[Field:() -> haxe.CallStack]
+														[Local e(253):Null<haxe.Exception>:Null<haxe.Exception>]
+														[FInstance:() -> haxe.CallStack]
+															haxe.Exception
+															get_stack:() -> haxe.CallStack
+											[If:String]
+												[Binop:Bool]
+													[Local tmp(255):haxe.CallStack:haxe.CallStack]
+													==
+													[Const:haxe.CallStack] null
+												[Then:String] [Const:String] "null"
+												[Else:String] [Call:String]
+													[Field:(stack : haxe.CallStack) -> String]
+														[TypeExpr haxe._CallStack.CallStack_Impl_:{ Statics haxe._CallStack.CallStack_Impl_ }]
+														[FStatic:(stack : haxe.CallStack) -> String]
+															haxe._CallStack.CallStack_Impl_
+															toString:(stack : haxe.CallStack) -> String
+													[Local tmp(255):haxe.CallStack:haxe.CallStack]
+									+
+									[Local result(252):String:String]
+						[Else:String] [Block:String]
+							[Var prevStack(256):haxe.CallStack]
+								[Call:haxe.CallStack]
+									[Field:(this : Array<haxe.StackItem>, stack : haxe.CallStack) -> haxe.CallStack]
+										[TypeExpr haxe._CallStack.CallStack_Impl_:{ Statics haxe._CallStack.CallStack_Impl_ }]
+										[FStatic:(this : Array<haxe.StackItem>, stack : haxe.CallStack) -> haxe.CallStack]
+											haxe._CallStack.CallStack_Impl_
+											subtract:(this : Array<haxe.StackItem>, stack : haxe.CallStack) -> haxe.CallStack
+									[Call:haxe.CallStack]
+										[Field:() -> haxe.CallStack]
+											[Local e(253):Null<haxe.Exception>:Null<haxe.Exception>]
+											[FInstance:() -> haxe.CallStack]
+												haxe.Exception
+												get_stack:() -> haxe.CallStack
+									[Call:haxe.CallStack]
+										[Field:() -> haxe.CallStack]
+											[Local prev(254):Null<haxe.Exception>:Null<haxe.Exception>]
+											[FInstance:() -> haxe.CallStack]
+												haxe.Exception
+												get_stack:() -> haxe.CallStack
+							[Binop:String]
+								[Local result(252):String:String]
+								=
+								[Binop:String]
+									[Binop:String]
+										[Binop:String]
+											[Binop:String]
+												[Const:String] "Exception: "
+												+
+												[Call:String]
+													[Field:() -> String]
+														[Local e(253):Null<haxe.Exception>:Null<haxe.Exception>]
+														[FInstance:() -> String]
+															haxe.Exception
+															get_message:() -> String
+											+
+											[If:String]
+												[Binop:Bool]
+													[Local prevStack(256):haxe.CallStack:haxe.CallStack]
+													==
+													[Const:haxe.CallStack] null
+												[Then:String] [Const:String] "null"
+												[Else:String] [Call:String]
+													[Field:(stack : haxe.CallStack) -> String]
+														[TypeExpr haxe._CallStack.CallStack_Impl_:{ Statics haxe._CallStack.CallStack_Impl_ }]
+														[FStatic:(stack : haxe.CallStack) -> String]
+															haxe._CallStack.CallStack_Impl_
+															toString:(stack : haxe.CallStack) -> String
+													[Local prevStack(256):haxe.CallStack:haxe.CallStack]
+										+
+										[Const:String] "\n\nNext "
+									+
+									[Local result(252):String:String]
+					[Binop:Null<haxe.Exception>]
+						[Local prev(254):Null<haxe.Exception>:Null<haxe.Exception>]
+						=
+						[Local e(253):Null<haxe.Exception>:Null<haxe.Exception>]
+					[Binop:Null<haxe.Exception>]
+						[Local e(253):Null<haxe.Exception>:Null<haxe.Exception>]
+						=
+						[Call:Null<haxe.Exception>]
+							[Field:() -> Null<haxe.Exception>]
+								[Local e(253):Null<haxe.Exception>:Null<haxe.Exception>]
+								[FInstance:() -> Null<haxe.Exception>]
+									haxe.Exception
+									get_previous:() -> Null<haxe.Exception>
+			[Return:Dynamic] [Local result(252):String:String]
+
+	static function itemToString[Function:(b : StringBuf, s : haxe.StackItem) -> Void]
+		[Arg:StringBuf] [Local b(206):StringBuf]
+		[Arg:haxe.StackItem] [Local s(207):haxe.StackItem]
+		[Block:Void]
+			[Meta:Void]
+				:ast(switch (s) {
+	case CFunction:
+		b.add("a C function");	
+	case Module(m):
+		b.add("module ");
+		b.add(m);	
+	case FilePos(s, file, line, col):
+		if (s != null) {
+			itemToString(b, s);
+			b.add(" (");
+		};
+		b.add(file);
+		b.add(" line ");
+		b.add(line);
+		if (col != null) {
+			b.add(" column ");
+			b.add(col);
+		};
+		if (s != null) b.add(")");	
+	case Method(cname, meth):
+		b.add(cname == null ? "<unknown>" : cname);
+		b.add(".");
+		b.add(meth);	
+	case LocalFunction(n):
+		b.add("local function #");
+		b.add(n);	
+})
+				[Switch:Void]
+					[Meta:Int]
+						:exhaustive
+						[EnumIndex:Int] [Local s(207):haxe.StackItem:haxe.StackItem]
+					[Case:Void]
+						[Const:Int] 0
+						[Block:Void]
+							[Block:Void]
+								[Call:Void]
+									[Field:(x : String) -> Void]
+										[Local b(206):StringBuf:StringBuf]
+										[FInstance:(x : String) -> Void]
+											StringBuf
+											add:(x : add.T) -> Void
+									[Const:String] "a C function"
+					[Case:Void]
+						[Const:Int] 1
+						[Block:Void]
+							[Var `(224):String]
+								[EnumParameter:String]
+									[Local s(207):haxe.StackItem:haxe.StackItem]
+									Module
+									0
+							[Block:Void]
+								[Var m(225):String] [Local `(224):String:String]
+								[Block:Void]
+									[Call:Void]
+										[Field:(x : String) -> Void]
+											[Local b(206):StringBuf:StringBuf]
+											[FInstance:(x : String) -> Void]
+												StringBuf
+												add:(x : add.T) -> Void
+										[Const:String] "module "
+									[Call:Void]
+										[Field:(x : String) -> Void]
+											[Local b(206):StringBuf:StringBuf]
+											[FInstance:(x : String) -> Void]
+												StringBuf
+												add:(x : add.T) -> Void
+										[Local m(225):String:String]
+					[Case:Void]
+						[Const:Int] 2
+						[Block:Void]
+							[Var `(226):Null<haxe.StackItem>]
+								[EnumParameter:Null<haxe.StackItem>]
+									[Local s(207):haxe.StackItem:haxe.StackItem]
+									FilePos
+									0
+							[Var `(227):String]
+								[EnumParameter:String]
+									[Local s(207):haxe.StackItem:haxe.StackItem]
+									FilePos
+									1
+							[Var `(228):Int]
+								[EnumParameter:Int]
+									[Local s(207):haxe.StackItem:haxe.StackItem]
+									FilePos
+									2
+							[Var `(229):Null<Int>]
+								[EnumParameter:Null<Int>]
+									[Local s(207):haxe.StackItem:haxe.StackItem]
+									FilePos
+									3
+							[Block:Void]
+								[Var s(230):Null<haxe.StackItem>] [Local `(226):Null<haxe.StackItem>:Null<haxe.StackItem>]
+								[Var file(231):String] [Local `(227):String:String]
+								[Var line(232):Int] [Local `(228):Int:Int]
+								[Var col(233):Null<Int>] [Local `(229):Null<Int>:Null<Int>]
+								[Block:Void]
+									[If:Void]
+										[Binop:Bool]
+											[Local s(230):Null<haxe.StackItem>:Null<haxe.StackItem>]
+											!=
+											[Const:Null<haxe.StackItem>] null
+										[Then:Void] [Block:Void]
+											[Call:Void]
+												[Field:(b : StringBuf, s : haxe.StackItem) -> Void]
+													[TypeExpr haxe._CallStack.CallStack_Impl_:Abstract<haxe.CallStack>]
+													[FStatic:(b : StringBuf, s : haxe.StackItem) -> Void]
+														haxe._CallStack.CallStack_Impl_
+														itemToString:(b : StringBuf, s : haxe.StackItem) -> Void
+												[Local b(206):StringBuf:StringBuf]
+												[Local s(230):Null<haxe.StackItem>:Null<haxe.StackItem>]
+											[Call:Void]
+												[Field:(x : String) -> Void]
+													[Local b(206):StringBuf:StringBuf]
+													[FInstance:(x : String) -> Void]
+														StringBuf
+														add:(x : add.T) -> Void
+												[Const:String] " ("
+									[Call:Void]
+										[Field:(x : String) -> Void]
+											[Local b(206):StringBuf:StringBuf]
+											[FInstance:(x : String) -> Void]
+												StringBuf
+												add:(x : add.T) -> Void
+										[Local file(231):String:String]
+									[Call:Void]
+										[Field:(x : String) -> Void]
+											[Local b(206):StringBuf:StringBuf]
+											[FInstance:(x : String) -> Void]
+												StringBuf
+												add:(x : add.T) -> Void
+										[Const:String] " line "
+									[Call:Void]
+										[Field:(x : Int) -> Void]
+											[Local b(206):StringBuf:StringBuf]
+											[FInstance:(x : Int) -> Void]
+												StringBuf
+												add:(x : add.T) -> Void
+										[Local line(232):Int:Int]
+									[If:Void]
+										[Binop:Bool]
+											[Local col(233):Null<Int>:Null<Int>]
+											!=
+											[Const:Null<Int>] null
+										[Then:Void] [Block:Void]
+											[Call:Void]
+												[Field:(x : String) -> Void]
+													[Local b(206):StringBuf:StringBuf]
+													[FInstance:(x : String) -> Void]
+														StringBuf
+														add:(x : add.T) -> Void
+												[Const:String] " column "
+											[Call:Void]
+												[Field:(x : Null<Int>) -> Void]
+													[Local b(206):StringBuf:StringBuf]
+													[FInstance:(x : Null<Int>) -> Void]
+														StringBuf
+														add:(x : add.T) -> Void
+												[Local col(233):Null<Int>:Null<Int>]
+									[If:Void]
+										[Binop:Bool]
+											[Local s(230):Null<haxe.StackItem>:Null<haxe.StackItem>]
+											!=
+											[Const:Null<haxe.StackItem>] null
+										[Then:Void] [Block:Void]
+											[Call:Void]
+												[Field:(x : String) -> Void]
+													[Local b(206):StringBuf:StringBuf]
+													[FInstance:(x : String) -> Void]
+														StringBuf
+														add:(x : add.T) -> Void
+												[Const:String] ")"
+					[Case:Void]
+						[Const:Int] 3
+						[Block:Void]
+							[Var `(234):Null<String>]
+								[EnumParameter:Null<String>]
+									[Local s(207):haxe.StackItem:haxe.StackItem]
+									Method
+									0
+							[Var `(235):String]
+								[EnumParameter:String]
+									[Local s(207):haxe.StackItem:haxe.StackItem]
+									Method
+									1
+							[Block:Void]
+								[Var cname(236):Null<String>] [Local `(234):Null<String>:Null<String>]
+								[Var meth(237):String] [Local `(235):String:String]
+								[Block:Void]
+									[Call:Void]
+										[Field:(x : Null<String>) -> Void]
+											[Local b(206):StringBuf:StringBuf]
+											[FInstance:(x : Null<String>) -> Void]
+												StringBuf
+												add:(x : add.T) -> Void
+										[If:Null<String>]
+											[Binop:Bool]
+												[Local cname(236):Null<String>:Null<String>]
+												==
+												[Const:Null<String>] null
+											[Then:String] [Block:String] [Const:String] "<unknown>"
+											[Else:Null<String>] [Block:Null<String>] [Local cname(236):Null<String>:Null<String>]
+									[Call:Void]
+										[Field:(x : String) -> Void]
+											[Local b(206):StringBuf:StringBuf]
+											[FInstance:(x : String) -> Void]
+												StringBuf
+												add:(x : add.T) -> Void
+										[Const:String] "."
+									[Call:Void]
+										[Field:(x : String) -> Void]
+											[Local b(206):StringBuf:StringBuf]
+											[FInstance:(x : String) -> Void]
+												StringBuf
+												add:(x : add.T) -> Void
+										[Local meth(237):String:String]
+					[Case:Void]
+						[Const:Int] 4
+						[Block:Void]
+							[Var `(238):Null<Int>]
+								[EnumParameter:Null<Int>]
+									[Local s(207):haxe.StackItem:haxe.StackItem]
+									LocalFunction
+									0
+							[Block:Void]
+								[Var n(239):Null<Int>] [Local `(238):Null<Int>:Null<Int>]
+								[Block:Void]
+									[Call:Void]
+										[Field:(x : String) -> Void]
+											[Local b(206):StringBuf:StringBuf]
+											[FInstance:(x : String) -> Void]
+												StringBuf
+												add:(x : add.T) -> Void
+										[Const:String] "local function #"
+									[Call:Void]
+										[Field:(x : Null<Int>) -> Void]
+											[Local b(206):StringBuf:StringBuf]
+											[FInstance:(x : Null<Int>) -> Void]
+												StringBuf
+												add:(x : add.T) -> Void
+										[Local n(239):Null<Int>:Null<Int>]
+}

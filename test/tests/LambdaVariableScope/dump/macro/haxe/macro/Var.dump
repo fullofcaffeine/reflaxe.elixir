@@ -1,0 +1,1 @@
+typedef haxe.macro.Var = { ?type : Null<haxe.macro.ComplexType>, ?namePos : Null<haxe.macro.Position>, name : String, ?meta : Null<haxe.macro.Metadata>, ?isStatic : Null<Bool>, ?isFinal : Null<Bool>, ?expr : Null<haxe.macro.Expr> }

@@ -1,0 +1,1091 @@
+@:nullSafety(Off)
+class reflaxe.elixir.helpers.YCombinatorCompiler {
+
+	public function new[Function:(compiler : reflaxe.elixir.ElixirCompiler) -> Void]
+		[Arg:reflaxe.elixir.ElixirCompiler] [Local compiler(30017):reflaxe.elixir.ElixirCompiler]
+		[Block:reflaxe.elixir.ElixirCompiler]
+			[Binop:reflaxe.elixir.ElixirCompiler]
+				[Field:reflaxe.elixir.ElixirCompiler]
+					[Const:reflaxe.elixir.helpers.YCombinatorCompiler] this
+					[FInstance:reflaxe.elixir.ElixirCompiler]
+						reflaxe.elixir.helpers.YCombinatorCompiler
+						compiler:reflaxe.elixir.ElixirCompiler
+				=
+				[Local compiler(30017):reflaxe.elixir.ElixirCompiler:reflaxe.elixir.ElixirCompiler]
+
+	var compiler:reflaxe.elixir.ElixirCompiler;
+
+	public function detectYCombinatorInAST[Function:(expr : haxe.macro.TypedExpr) -> Bool]
+		[Arg:haxe.macro.TypedExpr] [Local expr(30018):haxe.macro.TypedExpr]
+		[Block:Dynamic]
+			[If:Void]
+				[Binop:Bool]
+					[Local expr(30018):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+					==
+					[Const:haxe.macro.TypedExpr] null
+				[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [Const:Bool] false
+			[Meta:Void]
+				:ast(switch (expr.expr) {
+	case TBlock(expressions):
+		for (e  in  expressions) {
+			if (detectYCombinatorInAST(e)) return true;
+		};
+		return false;	
+	case TFor(v, it, e):
+		switch (it.expr) {
+			case TCall(callExpr, args):
+				switch (callExpr.expr) {
+					case TField(obj, fieldAccess):
+						switch (fieldAccess) {
+							case FStatic(_, cf):
+								var isReflectFields = cf.get().name == "fields";
+								if (isReflectFields) trace("[Y_COMBINATOR] Found Reflect.fields pattern - will generate Y combinator");
+								return isReflectFields;							
+							case _:
+								return false;							
+						};					
+					case _:
+						return false;					
+				};			
+			case _:
+				return false;			
+		};	
+	case TWhile(_, _, true):
+		trace("[Y_COMBINATOR] Found TWhile - will generate Y combinator");
+		return true;	
+	case _:
+		return false;	
+})
+				[Block:Void]
+					[Var `(30074):haxe.macro.TypedExprDef]
+						[Field:haxe.macro.TypedExprDef]
+							[Local expr(30018):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+							[FAnon:haxe.macro.TypedExprDef] expr:haxe.macro.TypedExprDef
+					[Switch:Void]
+						[EnumIndex:Int] [Local `(30074):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+						[Case:Dynamic]
+							[Const:Int] 14
+							[Block:Dynamic]
+								[Var `(30075):Array<haxe.macro.TypedExpr>]
+									[EnumParameter:Array<haxe.macro.TypedExpr>]
+										[Local `(30074):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+										TBlock
+										0
+								[Block:Dynamic]
+									[Var expressions(30076):Array<haxe.macro.TypedExpr>] [Local `(30075):Array<haxe.macro.TypedExpr>:Array<haxe.macro.TypedExpr>]
+									[Block:Dynamic]
+										[Block:Void]
+											[Var `(30077):Int] [Const:Int] 0
+											[While:Void]
+												[Binop:Bool]
+													[Local `(30077):Int:Int]
+													<
+													[Field:Int]
+														[Local expressions(30076):Array<haxe.macro.TypedExpr>:Array<haxe.macro.TypedExpr>]
+														[FInstance:Int]
+															Array<haxe.macro.TypedExpr>
+															length:Int
+												[Block:Void]
+													[Var e(30078):haxe.macro.TypedExpr]
+														[Array:haxe.macro.TypedExpr]
+															[Local expressions(30076):Array<haxe.macro.TypedExpr>:Array<haxe.macro.TypedExpr>]
+															[Local `(30077):Int:Int]
+													[Unop:Int]
+														++
+														Prefix
+														[Local `(30077):Int:Int]
+													[If:Void]
+														[Call:Bool]
+															[Field:(expr : haxe.macro.TypedExpr) -> Bool]
+																[Const:reflaxe.elixir.helpers.YCombinatorCompiler] this
+																[FInstance:(expr : haxe.macro.TypedExpr) -> Bool]
+																	reflaxe.elixir.helpers.YCombinatorCompiler
+																	detectYCombinatorInAST:(expr : haxe.macro.TypedExpr) -> Bool
+															[Local e(30078):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+														[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [Const:Bool] true
+										[Return:Dynamic] [Const:Bool] false
+						[Case:Void]
+							[Const:Int] 15
+							[Block:Void]
+								[Var `(30079):haxe.macro.TVar]
+									[EnumParameter:haxe.macro.TVar]
+										[Local `(30074):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+										TFor
+										0
+								[Var `(30080):haxe.macro.TypedExpr]
+									[EnumParameter:haxe.macro.TypedExpr]
+										[Local `(30074):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+										TFor
+										1
+								[Var `(30081):haxe.macro.TypedExpr]
+									[EnumParameter:haxe.macro.TypedExpr]
+										[Local `(30074):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+										TFor
+										2
+								[Block:Void]
+									[Var v(30082):haxe.macro.TVar] [Local `(30079):haxe.macro.TVar:haxe.macro.TVar]
+									[Var it(30083):haxe.macro.TypedExpr] [Local `(30080):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+									[Var e(30084):haxe.macro.TypedExpr] [Local `(30081):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+									[Block:Void]
+										[Meta:Void]
+											:ast(switch (it.expr) {
+	case TCall(callExpr, args):
+		switch (callExpr.expr) {
+			case TField(obj, fieldAccess):
+				switch (fieldAccess) {
+					case FStatic(_, cf):
+						var isReflectFields = cf.get().name == "fields";
+						if (isReflectFields) trace("[Y_COMBINATOR] Found Reflect.fields pattern - will generate Y combinator");
+						return isReflectFields;					
+					case _:
+						return false;					
+				};			
+			case _:
+				return false;			
+		};	
+	case _:
+		return false;	
+})
+											[Block:Void]
+												[Var `(30085):haxe.macro.TypedExprDef]
+													[Field:haxe.macro.TypedExprDef]
+														[Local it(30083):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+														[FAnon:haxe.macro.TypedExprDef] expr:haxe.macro.TypedExprDef
+												[If:Void]
+													[Binop:Bool]
+														[EnumIndex:Int] [Local `(30085):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+														==
+														[Const:Int] 9
+													[Then:Void] [Block:Void]
+														[Var `(30086):haxe.macro.TypedExpr]
+															[EnumParameter:haxe.macro.TypedExpr]
+																[Local `(30085):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+																TCall
+																0
+														[Var `(30087):Array<haxe.macro.TypedExpr>]
+															[EnumParameter:Array<haxe.macro.TypedExpr>]
+																[Local `(30085):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+																TCall
+																1
+														[Block:Void]
+															[Var callExpr(30088):haxe.macro.TypedExpr] [Local `(30086):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+															[Var args(30089):Array<haxe.macro.TypedExpr>] [Local `(30087):Array<haxe.macro.TypedExpr>:Array<haxe.macro.TypedExpr>]
+															[Block:Void]
+																[Meta:Void]
+																	:ast(switch (callExpr.expr) {
+	case TField(obj, fieldAccess):
+		switch (fieldAccess) {
+			case FStatic(_, cf):
+				var isReflectFields = cf.get().name == "fields";
+				if (isReflectFields) trace("[Y_COMBINATOR] Found Reflect.fields pattern - will generate Y combinator");
+				return isReflectFields;			
+			case _:
+				return false;			
+		};	
+	case _:
+		return false;	
+})
+																	[Block:Void]
+																		[Var `(30090):haxe.macro.TypedExprDef]
+																			[Field:haxe.macro.TypedExprDef]
+																				[Local callExpr(30088):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+																				[FAnon:haxe.macro.TypedExprDef] expr:haxe.macro.TypedExprDef
+																		[If:Void]
+																			[Binop:Bool]
+																				[EnumIndex:Int] [Local `(30090):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+																				==
+																				[Const:Int] 4
+																			[Then:Void] [Block:Void]
+																				[Var `(30091):haxe.macro.TypedExpr]
+																					[EnumParameter:haxe.macro.TypedExpr]
+																						[Local `(30090):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+																						TField
+																						0
+																				[Var `(30092):haxe.macro.FieldAccess]
+																					[EnumParameter:haxe.macro.FieldAccess]
+																						[Local `(30090):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+																						TField
+																						1
+																				[Block:Void]
+																					[Var obj(30093):haxe.macro.TypedExpr] [Local `(30091):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+																					[Var fieldAccess(30094):haxe.macro.FieldAccess] [Local `(30092):haxe.macro.FieldAccess:haxe.macro.FieldAccess]
+																					[Block:Void]
+																						[Meta:Void]
+																							:ast(switch (fieldAccess) {
+	case FStatic(_, cf):
+		var isReflectFields = cf.get().name == "fields";
+		if (isReflectFields) trace("[Y_COMBINATOR] Found Reflect.fields pattern - will generate Y combinator");
+		return isReflectFields;	
+	case _:
+		return false;	
+})
+																							[If:Void]
+																								[Binop:Bool]
+																									[EnumIndex:Int] [Local fieldAccess(30094):haxe.macro.FieldAccess:haxe.macro.FieldAccess]
+																									==
+																									[Const:Int] 1
+																								[Then:Dynamic] [Block:Dynamic]
+																									[Var `(30095):haxe.macro.Ref<haxe.macro.ClassType>]
+																										[EnumParameter:haxe.macro.Ref<haxe.macro.ClassType>]
+																											[Local fieldAccess(30094):haxe.macro.FieldAccess:haxe.macro.FieldAccess]
+																											FStatic
+																											0
+																									[Var `(30096):haxe.macro.Ref<haxe.macro.ClassField>]
+																										[EnumParameter:haxe.macro.Ref<haxe.macro.ClassField>]
+																											[Local fieldAccess(30094):haxe.macro.FieldAccess:haxe.macro.FieldAccess]
+																											FStatic
+																											1
+																									[Block:Dynamic]
+																										[Var cf(30097):haxe.macro.Ref<haxe.macro.ClassField>] [Local `(30096):haxe.macro.Ref<haxe.macro.ClassField>:haxe.macro.Ref<haxe.macro.ClassField>]
+																										[Block:Dynamic]
+																											[Var isReflectFields(30098):Bool]
+																												[Binop:Bool]
+																													[Field:String]
+																														[Call:haxe.macro.ClassField]
+																															[Field:() -> haxe.macro.ClassField]
+																																[Local cf(30097):haxe.macro.Ref<haxe.macro.ClassField>:haxe.macro.Ref<haxe.macro.ClassField>]
+																																[FAnon:() -> haxe.macro.ClassField] get:() -> haxe.macro.ClassField
+																														[FAnon:String] name:String
+																													==
+																													[Const:String] "fields"
+																											[If:Void]
+																												[Local isReflectFields(30098):Bool:Bool]
+																												[Then:Void] [Block:Void]
+																													[Call:Void]
+																														[Field:(v : Dynamic, ?infos : Null<haxe.PosInfos>) -> Void]
+																															[TypeExpr haxe.Log:Class<haxe.Log>]
+																															[FStatic:(v : Dynamic, ?infos : Null<haxe.PosInfos>) -> Void]
+																																haxe.Log
+																																trace:(v : Dynamic, ?infos : Null<haxe.PosInfos>) -> Void
+																														[Const:String] "[Y_COMBINATOR] Found Reflect.fields pattern - will generate Y combinator"
+																														[ObjectDecl:{ methodName : String, lineNumber : Int, fileName : String, ?customParams : Null<Array<Dynamic>>, className : String }]
+																															fileName: [Const:String] "../../../src/reflaxe/elixir/helpers/YCombinatorCompiler.hx"
+																															lineNumber: [Const:Int] 172
+																															className: [Const:String] "reflaxe.elixir.helpers.YCombinatorCompiler"
+																															methodName: [Const:String] "detectYCombinatorInAST"
+																											[Return:Dynamic] [Local isReflectFields(30098):Bool:Bool]
+																								[Else:Dynamic] [Block:Dynamic] [Return:Dynamic] [Const:Bool] false
+																			[Else:Dynamic] [Block:Dynamic] [Return:Dynamic] [Const:Bool] false
+													[Else:Dynamic] [Block:Dynamic] [Return:Dynamic] [Const:Bool] false
+						[Case:Void]
+							[Const:Int] 17
+							[Block:Void]
+								[Var `(30099):haxe.macro.TypedExpr]
+									[EnumParameter:haxe.macro.TypedExpr]
+										[Local `(30074):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+										TWhile
+										0
+								[Var `(30100):haxe.macro.TypedExpr]
+									[EnumParameter:haxe.macro.TypedExpr]
+										[Local `(30074):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+										TWhile
+										1
+								[Var `(30101):Bool]
+									[EnumParameter:Bool]
+										[Local `(30074):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+										TWhile
+										2
+								[If:Void]
+									[Binop:Bool]
+										[Local `(30101):Bool:Bool]
+										==
+										[Const:Bool] true
+									[Then:Dynamic] [Block:Dynamic]
+										[Block:Dynamic]
+											[Call:Void]
+												[Field:(v : Dynamic, ?infos : Null<haxe.PosInfos>) -> Void]
+													[TypeExpr haxe.Log:Class<haxe.Log>]
+													[FStatic:(v : Dynamic, ?infos : Null<haxe.PosInfos>) -> Void]
+														haxe.Log
+														trace:(v : Dynamic, ?infos : Null<haxe.PosInfos>) -> Void
+												[Const:String] "[Y_COMBINATOR] Found TWhile - will generate Y combinator"
+												[ObjectDecl:{ methodName : String, lineNumber : Int, fileName : String, ?customParams : Null<Array<Dynamic>>, className : String }]
+													fileName: [Const:String] "../../../src/reflaxe/elixir/helpers/YCombinatorCompiler.hx"
+													lineNumber: [Const:Int] 182
+													className: [Const:String] "reflaxe.elixir.helpers.YCombinatorCompiler"
+													methodName: [Const:String] "detectYCombinatorInAST"
+											[Return:Dynamic] [Const:Bool] true
+									[Else:Dynamic] [Block:Dynamic] [Return:Dynamic] [Const:Bool] false
+						[Default:Dynamic] [Block:Dynamic] [Return:Dynamic] [Const:Bool] false
+			[Var result(30102):Bool] [Const:Bool] false
+			[If:Void]
+				[Local result(30102):Bool:Bool]
+				[Then:Void] [Block:Void]
+					[Call:Void]
+						[Field:(v : Dynamic, ?infos : Null<haxe.PosInfos>) -> Void]
+							[TypeExpr haxe.Log:Class<haxe.Log>]
+							[FStatic:(v : Dynamic, ?infos : Null<haxe.PosInfos>) -> Void]
+								haxe.Log
+								trace:(v : Dynamic, ?infos : Null<haxe.PosInfos>) -> Void
+						[Const:String] "[Y_COMBINATOR] AST detection result: Y combinator pattern detected"
+						[ObjectDecl:{ methodName : String, lineNumber : Int, fileName : String, ?customParams : Null<Array<Dynamic>>, className : String }]
+							fileName: [Const:String] "../../../src/reflaxe/elixir/helpers/YCombinatorCompiler.hx"
+							lineNumber: [Const:Int] 191
+							className: [Const:String] "reflaxe.elixir.helpers.YCombinatorCompiler"
+							methodName: [Const:String] "detectYCombinatorInAST"
+			[Return:Dynamic] [Local result(30102):Bool:Bool]
+
+	public function hasReflectFieldsPattern[Function:(expr : haxe.macro.TypedExpr) -> Bool]
+		[Arg:haxe.macro.TypedExpr] [Local expr(30103):haxe.macro.TypedExpr]
+		[Block:Void]
+			[If:Void]
+				[Binop:Bool]
+					[Local expr(30103):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+					==
+					[Const:haxe.macro.TypedExpr] null
+				[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [Const:Bool] false
+			[Meta:Void]
+				:ast(switch (expr.expr) {
+	case TFor(v, it, e):
+		switch (it.expr) {
+			case TCall(callExpr, args):
+				switch (callExpr.expr) {
+					case TField(obj, fieldAccess):
+						switch (fieldAccess) {
+							case FStatic(_, cf):
+								var methodName = cf.get().name;
+								if (methodName == "fields") {
+									trace("[Y_COMBINATOR] Reflect.fields pattern detected in TFor");
+									return true;
+								};							
+							case _:
+						};					
+					case _:
+				};			
+			case _:
+		};
+		return hasReflectFieldsPattern(e);	
+	case TBlock(expressions):
+		for (expr  in  expressions) {
+			if (hasReflectFieldsPattern(expr)) return true;
+		};
+		return false;	
+	case TWhile(cond, body, normalWhile):
+		return hasReflectFieldsPattern(cond) || hasReflectFieldsPattern(body);	
+	case TIf(cond, ifExpr, elseExpr):
+		var hasPattern = hasReflectFieldsPattern(cond) || hasReflectFieldsPattern(ifExpr);
+		if (elseExpr != null) {
+			hasPattern = hasPattern || hasReflectFieldsPattern(elseExpr);
+		};
+		return hasPattern;	
+	case _:
+		return false;	
+})
+				[Block:Void]
+					[Var `(30169):haxe.macro.TypedExprDef]
+						[Field:haxe.macro.TypedExprDef]
+							[Local expr(30103):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+							[FAnon:haxe.macro.TypedExprDef] expr:haxe.macro.TypedExprDef
+					[Switch:Void]
+						[EnumIndex:Int] [Local `(30169):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+						[Case:Dynamic]
+							[Const:Int] 14
+							[Block:Dynamic]
+								[Var `(30170):Array<haxe.macro.TypedExpr>]
+									[EnumParameter:Array<haxe.macro.TypedExpr>]
+										[Local `(30169):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+										TBlock
+										0
+								[Block:Dynamic]
+									[Var expressions(30171):Array<haxe.macro.TypedExpr>] [Local `(30170):Array<haxe.macro.TypedExpr>:Array<haxe.macro.TypedExpr>]
+									[Block:Dynamic]
+										[Block:Void]
+											[Var `(30172):Int] [Const:Int] 0
+											[While:Void]
+												[Binop:Bool]
+													[Local `(30172):Int:Int]
+													<
+													[Field:Int]
+														[Local expressions(30171):Array<haxe.macro.TypedExpr>:Array<haxe.macro.TypedExpr>]
+														[FInstance:Int]
+															Array<haxe.macro.TypedExpr>
+															length:Int
+												[Block:Void]
+													[Var expr(30173):haxe.macro.TypedExpr]
+														[Array:haxe.macro.TypedExpr]
+															[Local expressions(30171):Array<haxe.macro.TypedExpr>:Array<haxe.macro.TypedExpr>]
+															[Local `(30172):Int:Int]
+													[Unop:Int]
+														++
+														Prefix
+														[Local `(30172):Int:Int]
+													[If:Void]
+														[Call:Bool]
+															[Field:(expr : haxe.macro.TypedExpr) -> Bool]
+																[Const:reflaxe.elixir.helpers.YCombinatorCompiler] this
+																[FInstance:(expr : haxe.macro.TypedExpr) -> Bool]
+																	reflaxe.elixir.helpers.YCombinatorCompiler
+																	hasReflectFieldsPattern:(expr : haxe.macro.TypedExpr) -> Bool
+															[Local expr(30173):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+														[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [Const:Bool] true
+										[Return:Dynamic] [Const:Bool] false
+						[Case:Dynamic]
+							[Const:Int] 15
+							[Block:Dynamic]
+								[Var `(30174):haxe.macro.TVar]
+									[EnumParameter:haxe.macro.TVar]
+										[Local `(30169):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+										TFor
+										0
+								[Var `(30175):haxe.macro.TypedExpr]
+									[EnumParameter:haxe.macro.TypedExpr]
+										[Local `(30169):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+										TFor
+										1
+								[Var `(30176):haxe.macro.TypedExpr]
+									[EnumParameter:haxe.macro.TypedExpr]
+										[Local `(30169):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+										TFor
+										2
+								[Block:Dynamic]
+									[Var v(30177):haxe.macro.TVar] [Local `(30174):haxe.macro.TVar:haxe.macro.TVar]
+									[Var it(30178):haxe.macro.TypedExpr] [Local `(30175):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+									[Var e(30179):haxe.macro.TypedExpr] [Local `(30176):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+									[Block:Dynamic]
+										[Meta:Void]
+											:ast(switch (it.expr) {
+	case TCall(callExpr, args):
+		switch (callExpr.expr) {
+			case TField(obj, fieldAccess):
+				switch (fieldAccess) {
+					case FStatic(_, cf):
+						var methodName = cf.get().name;
+						if (methodName == "fields") {
+							trace("[Y_COMBINATOR] Reflect.fields pattern detected in TFor");
+							return true;
+						};					
+					case _:
+				};			
+			case _:
+		};	
+	case _:
+})
+											[Block:Void]
+												[Var `(30180):haxe.macro.TypedExprDef]
+													[Field:haxe.macro.TypedExprDef]
+														[Local it(30178):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+														[FAnon:haxe.macro.TypedExprDef] expr:haxe.macro.TypedExprDef
+												[If:Void]
+													[Binop:Bool]
+														[EnumIndex:Int] [Local `(30180):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+														==
+														[Const:Int] 9
+													[Then:Void] [Block:Void]
+														[Var `(30181):haxe.macro.TypedExpr]
+															[EnumParameter:haxe.macro.TypedExpr]
+																[Local `(30180):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+																TCall
+																0
+														[Var `(30182):Array<haxe.macro.TypedExpr>]
+															[EnumParameter:Array<haxe.macro.TypedExpr>]
+																[Local `(30180):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+																TCall
+																1
+														[Block:Void]
+															[Var callExpr(30183):haxe.macro.TypedExpr] [Local `(30181):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+															[Var args(30184):Array<haxe.macro.TypedExpr>] [Local `(30182):Array<haxe.macro.TypedExpr>:Array<haxe.macro.TypedExpr>]
+															[Block:Void]
+																[Meta:Void]
+																	:ast(switch (callExpr.expr) {
+	case TField(obj, fieldAccess):
+		switch (fieldAccess) {
+			case FStatic(_, cf):
+				var methodName = cf.get().name;
+				if (methodName == "fields") {
+					trace("[Y_COMBINATOR] Reflect.fields pattern detected in TFor");
+					return true;
+				};			
+			case _:
+		};	
+	case _:
+})
+																	[Block:Void]
+																		[Var `(30185):haxe.macro.TypedExprDef]
+																			[Field:haxe.macro.TypedExprDef]
+																				[Local callExpr(30183):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+																				[FAnon:haxe.macro.TypedExprDef] expr:haxe.macro.TypedExprDef
+																		[If:Void]
+																			[Binop:Bool]
+																				[EnumIndex:Int] [Local `(30185):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+																				==
+																				[Const:Int] 4
+																			[Then:Void] [Block:Void]
+																				[Var `(30186):haxe.macro.TypedExpr]
+																					[EnumParameter:haxe.macro.TypedExpr]
+																						[Local `(30185):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+																						TField
+																						0
+																				[Var `(30187):haxe.macro.FieldAccess]
+																					[EnumParameter:haxe.macro.FieldAccess]
+																						[Local `(30185):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+																						TField
+																						1
+																				[Block:Void]
+																					[Var obj(30188):haxe.macro.TypedExpr] [Local `(30186):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+																					[Var fieldAccess(30189):haxe.macro.FieldAccess] [Local `(30187):haxe.macro.FieldAccess:haxe.macro.FieldAccess]
+																					[Block:Void]
+																						[Meta:Void]
+																							:ast(switch (fieldAccess) {
+	case FStatic(_, cf):
+		var methodName = cf.get().name;
+		if (methodName == "fields") {
+			trace("[Y_COMBINATOR] Reflect.fields pattern detected in TFor");
+			return true;
+		};	
+	case _:
+})
+																							[If:Void]
+																								[Binop:Bool]
+																									[EnumIndex:Int] [Local fieldAccess(30189):haxe.macro.FieldAccess:haxe.macro.FieldAccess]
+																									==
+																									[Const:Int] 1
+																								[Then:Void] [Block:Void]
+																									[Var `(30190):haxe.macro.Ref<haxe.macro.ClassType>]
+																										[EnumParameter:haxe.macro.Ref<haxe.macro.ClassType>]
+																											[Local fieldAccess(30189):haxe.macro.FieldAccess:haxe.macro.FieldAccess]
+																											FStatic
+																											0
+																									[Var `(30191):haxe.macro.Ref<haxe.macro.ClassField>]
+																										[EnumParameter:haxe.macro.Ref<haxe.macro.ClassField>]
+																											[Local fieldAccess(30189):haxe.macro.FieldAccess:haxe.macro.FieldAccess]
+																											FStatic
+																											1
+																									[Block:Void]
+																										[Var cf(30192):haxe.macro.Ref<haxe.macro.ClassField>] [Local `(30191):haxe.macro.Ref<haxe.macro.ClassField>:haxe.macro.Ref<haxe.macro.ClassField>]
+																										[Block:Void]
+																											[Var methodName(30193):String]
+																												[Field:String]
+																													[Call:haxe.macro.ClassField]
+																														[Field:() -> haxe.macro.ClassField]
+																															[Local cf(30192):haxe.macro.Ref<haxe.macro.ClassField>:haxe.macro.Ref<haxe.macro.ClassField>]
+																															[FAnon:() -> haxe.macro.ClassField] get:() -> haxe.macro.ClassField
+																													[FAnon:String] name:String
+																											[If:Void]
+																												[Binop:Bool]
+																													[Local methodName(30193):String:String]
+																													==
+																													[Const:String] "fields"
+																												[Then:Dynamic] [Block:Dynamic]
+																													[Call:Void]
+																														[Field:(v : Dynamic, ?infos : Null<haxe.PosInfos>) -> Void]
+																															[TypeExpr haxe.Log:Class<haxe.Log>]
+																															[FStatic:(v : Dynamic, ?infos : Null<haxe.PosInfos>) -> Void]
+																																haxe.Log
+																																trace:(v : Dynamic, ?infos : Null<haxe.PosInfos>) -> Void
+																														[Const:String] "[Y_COMBINATOR] Reflect.fields pattern detected in TFor"
+																														[ObjectDecl:{ methodName : String, lineNumber : Int, fileName : String, ?customParams : Null<Array<Dynamic>>, className : String }]
+																															fileName: [Const:String] "../../../src/reflaxe/elixir/helpers/YCombinatorCompiler.hx"
+																															lineNumber: [Const:Int] 230
+																															className: [Const:String] "reflaxe.elixir.helpers.YCombinatorCompiler"
+																															methodName: [Const:String] "hasReflectFieldsPattern"
+																													[Return:Dynamic] [Const:Bool] true
+																								[Else:Void] [Block:Void]
+																			[Else:Void] [Block:Void]
+													[Else:Void] [Block:Void]
+										[Return:Dynamic]
+											[Call:Bool]
+												[Field:(expr : haxe.macro.TypedExpr) -> Bool]
+													[Const:reflaxe.elixir.helpers.YCombinatorCompiler] this
+													[FInstance:(expr : haxe.macro.TypedExpr) -> Bool]
+														reflaxe.elixir.helpers.YCombinatorCompiler
+														hasReflectFieldsPattern:(expr : haxe.macro.TypedExpr) -> Bool
+												[Local e(30179):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+						[Case:Dynamic]
+							[Const:Int] 16
+							[Block:Dynamic]
+								[Var `(30194):haxe.macro.TypedExpr]
+									[EnumParameter:haxe.macro.TypedExpr]
+										[Local `(30169):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+										TIf
+										0
+								[Var `(30195):haxe.macro.TypedExpr]
+									[EnumParameter:haxe.macro.TypedExpr]
+										[Local `(30169):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+										TIf
+										1
+								[Var `(30196):Null<haxe.macro.TypedExpr>]
+									[EnumParameter:Null<haxe.macro.TypedExpr>]
+										[Local `(30169):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+										TIf
+										2
+								[Block:Dynamic]
+									[Var cond(30197):haxe.macro.TypedExpr] [Local `(30194):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+									[Var ifExpr(30198):haxe.macro.TypedExpr] [Local `(30195):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+									[Var elseExpr(30199):Null<haxe.macro.TypedExpr>] [Local `(30196):Null<haxe.macro.TypedExpr>:Null<haxe.macro.TypedExpr>]
+									[Block:Dynamic]
+										[Var hasPattern(30200):Bool]
+											[Binop:Bool]
+												[Call:Bool]
+													[Field:(expr : haxe.macro.TypedExpr) -> Bool]
+														[Const:reflaxe.elixir.helpers.YCombinatorCompiler] this
+														[FInstance:(expr : haxe.macro.TypedExpr) -> Bool]
+															reflaxe.elixir.helpers.YCombinatorCompiler
+															hasReflectFieldsPattern:(expr : haxe.macro.TypedExpr) -> Bool
+													[Local cond(30197):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+												||
+												[Call:Bool]
+													[Field:(expr : haxe.macro.TypedExpr) -> Bool]
+														[Const:reflaxe.elixir.helpers.YCombinatorCompiler] this
+														[FInstance:(expr : haxe.macro.TypedExpr) -> Bool]
+															reflaxe.elixir.helpers.YCombinatorCompiler
+															hasReflectFieldsPattern:(expr : haxe.macro.TypedExpr) -> Bool
+													[Local ifExpr(30198):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+										[If:Void]
+											[Binop:Bool]
+												[Local elseExpr(30199):Null<haxe.macro.TypedExpr>:Null<haxe.macro.TypedExpr>]
+												!=
+												[Const:Null<haxe.macro.TypedExpr>] null
+											[Then:Bool] [Block:Bool]
+												[Binop:Bool]
+													[Local hasPattern(30200):Bool:Bool]
+													=
+													[Binop:Bool]
+														[Local hasPattern(30200):Bool:Bool]
+														||
+														[Call:Bool]
+															[Field:(expr : haxe.macro.TypedExpr) -> Bool]
+																[Const:reflaxe.elixir.helpers.YCombinatorCompiler] this
+																[FInstance:(expr : haxe.macro.TypedExpr) -> Bool]
+																	reflaxe.elixir.helpers.YCombinatorCompiler
+																	hasReflectFieldsPattern:(expr : haxe.macro.TypedExpr) -> Bool
+															[Local elseExpr(30199):Null<haxe.macro.TypedExpr>:Null<haxe.macro.TypedExpr>]
+										[Return:Dynamic] [Local hasPattern(30200):Bool:Bool]
+						[Case:Dynamic]
+							[Const:Int] 17
+							[Block:Dynamic]
+								[Var `(30201):haxe.macro.TypedExpr]
+									[EnumParameter:haxe.macro.TypedExpr]
+										[Local `(30169):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+										TWhile
+										0
+								[Var `(30202):haxe.macro.TypedExpr]
+									[EnumParameter:haxe.macro.TypedExpr]
+										[Local `(30169):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+										TWhile
+										1
+								[Var `(30203):Bool]
+									[EnumParameter:Bool]
+										[Local `(30169):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+										TWhile
+										2
+								[Block:Dynamic]
+									[Var cond(30204):haxe.macro.TypedExpr] [Local `(30201):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+									[Var body(30205):haxe.macro.TypedExpr] [Local `(30202):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+									[Var normalWhile(30206):Bool] [Local `(30203):Bool:Bool]
+									[Block:Dynamic]
+										[Return:Dynamic]
+											[Binop:Bool]
+												[Call:Bool]
+													[Field:(expr : haxe.macro.TypedExpr) -> Bool]
+														[Const:reflaxe.elixir.helpers.YCombinatorCompiler] this
+														[FInstance:(expr : haxe.macro.TypedExpr) -> Bool]
+															reflaxe.elixir.helpers.YCombinatorCompiler
+															hasReflectFieldsPattern:(expr : haxe.macro.TypedExpr) -> Bool
+													[Local cond(30204):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+												||
+												[Call:Bool]
+													[Field:(expr : haxe.macro.TypedExpr) -> Bool]
+														[Const:reflaxe.elixir.helpers.YCombinatorCompiler] this
+														[FInstance:(expr : haxe.macro.TypedExpr) -> Bool]
+															reflaxe.elixir.helpers.YCombinatorCompiler
+															hasReflectFieldsPattern:(expr : haxe.macro.TypedExpr) -> Bool
+													[Local body(30205):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+						[Default:Dynamic] [Block:Dynamic] [Return:Dynamic] [Const:Bool] false
+
+	public function containsYCombinatorPattern[Function:(expr : haxe.macro.TypedExpr) -> Bool]
+		[Arg:haxe.macro.TypedExpr] [Local expr(30207):haxe.macro.TypedExpr]
+		[Block:Dynamic]
+			[Var `this(30211):reflaxe.elixir.helpers.YCombinatorCompiler] [Const:reflaxe.elixir.helpers.YCombinatorCompiler] this
+			[If:Void]
+				[Binop:Bool]
+					[Local expr(30207):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+					==
+					[Const:haxe.macro.TypedExpr] null
+				[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [Const:Bool] false
+			[Return:Dynamic]
+				[Meta:Bool]
+					:ast(switch (expr.expr) {
+	case TWhile(_, _, _):
+		true;	
+	case TFor(_, it, _):
+		hasReflectFieldsPattern(expr);	
+	case TBlock(expressions):
+		expressions.exists(function(e) ->  @:implicitReturn return containsYCombinatorPattern(e));	
+	case _:
+		false;	
+})
+					[Block:Bool]
+						[Var `(30220):haxe.macro.TypedExprDef]
+							[Field:haxe.macro.TypedExprDef]
+								[Local expr(30207):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+								[FAnon:haxe.macro.TypedExprDef] expr:haxe.macro.TypedExprDef
+						[Switch:Bool]
+							[EnumIndex:Int] [Local `(30220):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+							[Case:Bool]
+								[Const:Int] 14
+								[Block:Bool]
+									[Var `(30221):Array<haxe.macro.TypedExpr>]
+										[EnumParameter:Array<haxe.macro.TypedExpr>]
+											[Local `(30220):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+											TBlock
+											0
+									[Block:Bool]
+										[Var expressions(30222):Array<haxe.macro.TypedExpr>] [Local `(30221):Array<haxe.macro.TypedExpr>:Array<haxe.macro.TypedExpr>]
+										[Block:Bool]
+											[Call:Bool]
+												[Field:(it : Iterable<haxe.macro.TypedExpr>, f : ((item : haxe.macro.TypedExpr) -> Bool)) -> Bool]
+													[TypeExpr Lambda:{ Statics Lambda }]
+													[FStatic:(it : Iterable<haxe.macro.TypedExpr>, f : ((item : haxe.macro.TypedExpr) -> Bool)) -> Bool]
+														Lambda
+														exists:(it : Iterable<exists.A>, f : ((item : exists.A) -> Bool)) -> Bool
+												[Local expressions(30222):Array<haxe.macro.TypedExpr>:Array<haxe.macro.TypedExpr>]
+												[Function:(e : haxe.macro.TypedExpr) -> Bool]
+													[Arg:haxe.macro.TypedExpr] [Local e(30223):haxe.macro.TypedExpr]
+													[Return:Dynamic]
+														[Call:Bool]
+															[Field:(expr : haxe.macro.TypedExpr) -> Bool]
+																[Local `this(30211):reflaxe.elixir.helpers.YCombinatorCompiler:reflaxe.elixir.helpers.YCombinatorCompiler]
+																[FInstance:(expr : haxe.macro.TypedExpr) -> Bool]
+																	reflaxe.elixir.helpers.YCombinatorCompiler
+																	containsYCombinatorPattern:(expr : haxe.macro.TypedExpr) -> Bool
+															[Local e(30223):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+							[Case:Bool]
+								[Const:Int] 15
+								[Block:Bool]
+									[Var `(30224):haxe.macro.TVar]
+										[EnumParameter:haxe.macro.TVar]
+											[Local `(30220):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+											TFor
+											0
+									[Var `(30225):haxe.macro.TypedExpr]
+										[EnumParameter:haxe.macro.TypedExpr]
+											[Local `(30220):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+											TFor
+											1
+									[Var `(30226):haxe.macro.TypedExpr]
+										[EnumParameter:haxe.macro.TypedExpr]
+											[Local `(30220):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+											TFor
+											2
+									[Block:Bool]
+										[Var it(30227):haxe.macro.TypedExpr] [Local `(30225):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+										[Block:Bool]
+											[Call:Bool]
+												[Field:(expr : haxe.macro.TypedExpr) -> Bool]
+													[Const:reflaxe.elixir.helpers.YCombinatorCompiler] this
+													[FInstance:(expr : haxe.macro.TypedExpr) -> Bool]
+														reflaxe.elixir.helpers.YCombinatorCompiler
+														hasReflectFieldsPattern:(expr : haxe.macro.TypedExpr) -> Bool
+												[Local expr(30207):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+							[Case:Bool]
+								[Const:Int] 17
+								[Block:Bool]
+									[Var `(30228):haxe.macro.TypedExpr]
+										[EnumParameter:haxe.macro.TypedExpr]
+											[Local `(30220):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+											TWhile
+											0
+									[Var `(30229):haxe.macro.TypedExpr]
+										[EnumParameter:haxe.macro.TypedExpr]
+											[Local `(30220):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+											TWhile
+											1
+									[Var `(30230):Bool]
+										[EnumParameter:Bool]
+											[Local `(30220):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+											TWhile
+											2
+									[Block:Bool] [Const:Bool] true
+							[Default:Bool] [Block:Bool] [Const:Bool] false
+
+	public function requiresYCombinator[Function:(expr : haxe.macro.TypedExpr) -> Bool]
+		[Arg:haxe.macro.TypedExpr] [Local expr(30231):haxe.macro.TypedExpr]
+		[Block:Dynamic]
+			[If:Void]
+				[Binop:Bool]
+					[Local expr(30231):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+					==
+					[Const:haxe.macro.TypedExpr] null
+				[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [Const:Bool] false
+			[Return:Dynamic]
+				[Meta:Bool]
+					:ast(switch (expr.expr) {
+	case TWhile(_, body, _):
+		isComplexExpression(body);	
+	case TFor(_, it, body):
+		hasReflectFieldsPattern(expr) || isComplexExpression(body);	
+	case _:
+		false;	
+})
+					[Block:Bool]
+						[Var `(30282):haxe.macro.TypedExprDef]
+							[Field:haxe.macro.TypedExprDef]
+								[Local expr(30231):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+								[FAnon:haxe.macro.TypedExprDef] expr:haxe.macro.TypedExprDef
+						[Switch:Bool]
+							[EnumIndex:Int] [Local `(30282):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+							[Case:Bool]
+								[Const:Int] 15
+								[Block:Bool]
+									[Var `(30283):haxe.macro.TVar]
+										[EnumParameter:haxe.macro.TVar]
+											[Local `(30282):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+											TFor
+											0
+									[Var `(30284):haxe.macro.TypedExpr]
+										[EnumParameter:haxe.macro.TypedExpr]
+											[Local `(30282):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+											TFor
+											1
+									[Var `(30285):haxe.macro.TypedExpr]
+										[EnumParameter:haxe.macro.TypedExpr]
+											[Local `(30282):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+											TFor
+											2
+									[Block:Bool]
+										[Var it(30286):haxe.macro.TypedExpr] [Local `(30284):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+										[Var body(30287):haxe.macro.TypedExpr] [Local `(30285):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+										[Block:Bool]
+											[Binop:Bool]
+												[Call:Bool]
+													[Field:(expr : haxe.macro.TypedExpr) -> Bool]
+														[Const:reflaxe.elixir.helpers.YCombinatorCompiler] this
+														[FInstance:(expr : haxe.macro.TypedExpr) -> Bool]
+															reflaxe.elixir.helpers.YCombinatorCompiler
+															hasReflectFieldsPattern:(expr : haxe.macro.TypedExpr) -> Bool
+													[Local expr(30231):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+												||
+												[Call:Bool]
+													[Field:(expr : haxe.macro.TypedExpr) -> Bool]
+														[Const:reflaxe.elixir.helpers.YCombinatorCompiler] this
+														[FInstance:(expr : haxe.macro.TypedExpr) -> Bool]
+															reflaxe.elixir.helpers.YCombinatorCompiler
+															isComplexExpression:(expr : haxe.macro.TypedExpr) -> Bool
+													[Local body(30287):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+							[Case:Bool]
+								[Const:Int] 17
+								[Block:Bool]
+									[Var `(30288):haxe.macro.TypedExpr]
+										[EnumParameter:haxe.macro.TypedExpr]
+											[Local `(30282):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+											TWhile
+											0
+									[Var `(30289):haxe.macro.TypedExpr]
+										[EnumParameter:haxe.macro.TypedExpr]
+											[Local `(30282):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+											TWhile
+											1
+									[Var `(30290):Bool]
+										[EnumParameter:Bool]
+											[Local `(30282):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+											TWhile
+											2
+									[Block:Bool]
+										[Var body(30291):haxe.macro.TypedExpr] [Local `(30289):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+										[Block:Bool]
+											[Call:Bool]
+												[Field:(expr : haxe.macro.TypedExpr) -> Bool]
+													[Const:reflaxe.elixir.helpers.YCombinatorCompiler] this
+													[FInstance:(expr : haxe.macro.TypedExpr) -> Bool]
+														reflaxe.elixir.helpers.YCombinatorCompiler
+														isComplexExpression:(expr : haxe.macro.TypedExpr) -> Bool
+												[Local body(30291):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+							[Default:Bool] [Block:Bool] [Const:Bool] false
+
+	function isComplexExpression[Function:(expr : haxe.macro.TypedExpr) -> Bool]
+		[Arg:haxe.macro.TypedExpr] [Local expr(30233):haxe.macro.TypedExpr]
+		[Block:Dynamic]
+			[Var `this(30236):reflaxe.elixir.helpers.YCombinatorCompiler] [Const:reflaxe.elixir.helpers.YCombinatorCompiler] this
+			[If:Void]
+				[Binop:Bool]
+					[Local expr(30233):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+					==
+					[Const:haxe.macro.TypedExpr] null
+				[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [Const:Bool] false
+			[Return:Dynamic]
+				[Meta:Bool]
+					:ast(switch (expr.expr) {
+	case TBlock(expressions):
+		expressions.length > 3 || expressions.exists(function(e) ->  @:implicitReturn return isComplexExpression(e));	
+	case TWhile(_, _, _) | TFor(_, _, _):
+		true;	
+	case TIf(_, ifExpr, elseExpr):
+		isComplexExpression(ifExpr) || (elseExpr != null && isComplexExpression(elseExpr));	
+	case TCall(_, args):
+		args.length > 2 || args.exists(function(arg) ->  @:implicitReturn return isComplexExpression(arg));	
+	case _:
+		false;	
+})
+					[Block:Bool]
+						[Var `(30254):haxe.macro.TypedExprDef]
+							[Field:haxe.macro.TypedExprDef]
+								[Local expr(30233):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+								[FAnon:haxe.macro.TypedExprDef] expr:haxe.macro.TypedExprDef
+						[Switch:Bool]
+							[EnumIndex:Int] [Local `(30254):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+							[Case:Bool]
+								[Const:Int] 9
+								[Block:Bool]
+									[Var `(30255):haxe.macro.TypedExpr]
+										[EnumParameter:haxe.macro.TypedExpr]
+											[Local `(30254):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+											TCall
+											0
+									[Var `(30256):Array<haxe.macro.TypedExpr>]
+										[EnumParameter:Array<haxe.macro.TypedExpr>]
+											[Local `(30254):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+											TCall
+											1
+									[Block:Bool]
+										[Var args(30257):Array<haxe.macro.TypedExpr>] [Local `(30256):Array<haxe.macro.TypedExpr>:Array<haxe.macro.TypedExpr>]
+										[Block:Bool]
+											[Binop:Bool]
+												[Binop:Bool]
+													[Field:Int]
+														[Local args(30257):Array<haxe.macro.TypedExpr>:Array<haxe.macro.TypedExpr>]
+														[FInstance:Int]
+															Array<haxe.macro.TypedExpr>
+															length:Int
+													>
+													[Const:Int] 2
+												||
+												[Call:Bool]
+													[Field:(it : Iterable<haxe.macro.TypedExpr>, f : ((item : haxe.macro.TypedExpr) -> Bool)) -> Bool]
+														[TypeExpr Lambda:{ Statics Lambda }]
+														[FStatic:(it : Iterable<haxe.macro.TypedExpr>, f : ((item : haxe.macro.TypedExpr) -> Bool)) -> Bool]
+															Lambda
+															exists:(it : Iterable<exists.A>, f : ((item : exists.A) -> Bool)) -> Bool
+													[Local args(30257):Array<haxe.macro.TypedExpr>:Array<haxe.macro.TypedExpr>]
+													[Function:(arg : haxe.macro.TypedExpr) -> Bool]
+														[Arg:haxe.macro.TypedExpr] [Local arg(30258):haxe.macro.TypedExpr]
+														[Return:Dynamic]
+															[Call:Bool]
+																[Field:(expr : haxe.macro.TypedExpr) -> Bool]
+																	[Local `this(30236):reflaxe.elixir.helpers.YCombinatorCompiler:reflaxe.elixir.helpers.YCombinatorCompiler]
+																	[FInstance:(expr : haxe.macro.TypedExpr) -> Bool]
+																		reflaxe.elixir.helpers.YCombinatorCompiler
+																		isComplexExpression:(expr : haxe.macro.TypedExpr) -> Bool
+																[Local arg(30258):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+							[Case:Bool]
+								[Const:Int] 14
+								[Block:Bool]
+									[Var `(30259):Array<haxe.macro.TypedExpr>]
+										[EnumParameter:Array<haxe.macro.TypedExpr>]
+											[Local `(30254):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+											TBlock
+											0
+									[Block:Bool]
+										[Var expressions(30260):Array<haxe.macro.TypedExpr>] [Local `(30259):Array<haxe.macro.TypedExpr>:Array<haxe.macro.TypedExpr>]
+										[Block:Bool]
+											[Binop:Bool]
+												[Binop:Bool]
+													[Field:Int]
+														[Local expressions(30260):Array<haxe.macro.TypedExpr>:Array<haxe.macro.TypedExpr>]
+														[FInstance:Int]
+															Array<haxe.macro.TypedExpr>
+															length:Int
+													>
+													[Const:Int] 3
+												||
+												[Call:Bool]
+													[Field:(it : Iterable<haxe.macro.TypedExpr>, f : ((item : haxe.macro.TypedExpr) -> Bool)) -> Bool]
+														[TypeExpr Lambda:{ Statics Lambda }]
+														[FStatic:(it : Iterable<haxe.macro.TypedExpr>, f : ((item : haxe.macro.TypedExpr) -> Bool)) -> Bool]
+															Lambda
+															exists:(it : Iterable<exists.A>, f : ((item : exists.A) -> Bool)) -> Bool
+													[Local expressions(30260):Array<haxe.macro.TypedExpr>:Array<haxe.macro.TypedExpr>]
+													[Function:(e : haxe.macro.TypedExpr) -> Bool]
+														[Arg:haxe.macro.TypedExpr] [Local e(30261):haxe.macro.TypedExpr]
+														[Return:Dynamic]
+															[Call:Bool]
+																[Field:(expr : haxe.macro.TypedExpr) -> Bool]
+																	[Local `this(30236):reflaxe.elixir.helpers.YCombinatorCompiler:reflaxe.elixir.helpers.YCombinatorCompiler]
+																	[FInstance:(expr : haxe.macro.TypedExpr) -> Bool]
+																		reflaxe.elixir.helpers.YCombinatorCompiler
+																		isComplexExpression:(expr : haxe.macro.TypedExpr) -> Bool
+																[Local e(30261):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+							[Case:Bool]
+								[Const:Int] 15
+								[Block:Bool]
+									[Var `(30262):haxe.macro.TVar]
+										[EnumParameter:haxe.macro.TVar]
+											[Local `(30254):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+											TFor
+											0
+									[Var `(30263):haxe.macro.TypedExpr]
+										[EnumParameter:haxe.macro.TypedExpr]
+											[Local `(30254):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+											TFor
+											1
+									[Var `(30264):haxe.macro.TypedExpr]
+										[EnumParameter:haxe.macro.TypedExpr]
+											[Local `(30254):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+											TFor
+											2
+									[Block:Bool] [Const:Bool] true
+							[Case:Bool]
+								[Const:Int] 16
+								[Block:Bool]
+									[Var `(30265):haxe.macro.TypedExpr]
+										[EnumParameter:haxe.macro.TypedExpr]
+											[Local `(30254):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+											TIf
+											0
+									[Var `(30266):haxe.macro.TypedExpr]
+										[EnumParameter:haxe.macro.TypedExpr]
+											[Local `(30254):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+											TIf
+											1
+									[Var `(30267):Null<haxe.macro.TypedExpr>]
+										[EnumParameter:Null<haxe.macro.TypedExpr>]
+											[Local `(30254):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+											TIf
+											2
+									[Block:Bool]
+										[Var ifExpr(30268):haxe.macro.TypedExpr] [Local `(30266):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+										[Var elseExpr(30269):Null<haxe.macro.TypedExpr>] [Local `(30267):Null<haxe.macro.TypedExpr>:Null<haxe.macro.TypedExpr>]
+										[Block:Bool]
+											[Binop:Bool]
+												[Call:Bool]
+													[Field:(expr : haxe.macro.TypedExpr) -> Bool]
+														[Const:reflaxe.elixir.helpers.YCombinatorCompiler] this
+														[FInstance:(expr : haxe.macro.TypedExpr) -> Bool]
+															reflaxe.elixir.helpers.YCombinatorCompiler
+															isComplexExpression:(expr : haxe.macro.TypedExpr) -> Bool
+													[Local ifExpr(30268):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+												||
+												[Parenthesis:Bool]
+													[Binop:Bool]
+														[Binop:Bool]
+															[Local elseExpr(30269):Null<haxe.macro.TypedExpr>:Null<haxe.macro.TypedExpr>]
+															!=
+															[Const:Null<haxe.macro.TypedExpr>] null
+														&&
+														[Call:Bool]
+															[Field:(expr : haxe.macro.TypedExpr) -> Bool]
+																[Const:reflaxe.elixir.helpers.YCombinatorCompiler] this
+																[FInstance:(expr : haxe.macro.TypedExpr) -> Bool]
+																	reflaxe.elixir.helpers.YCombinatorCompiler
+																	isComplexExpression:(expr : haxe.macro.TypedExpr) -> Bool
+															[Local elseExpr(30269):Null<haxe.macro.TypedExpr>:Null<haxe.macro.TypedExpr>]
+							[Case:Bool]
+								[Const:Int] 17
+								[Block:Bool]
+									[Var `(30270):haxe.macro.TypedExpr]
+										[EnumParameter:haxe.macro.TypedExpr]
+											[Local `(30254):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+											TWhile
+											0
+									[Var `(30271):haxe.macro.TypedExpr]
+										[EnumParameter:haxe.macro.TypedExpr]
+											[Local `(30254):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+											TWhile
+											1
+									[Var `(30272):Bool]
+										[EnumParameter:Bool]
+											[Local `(30254):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+											TWhile
+											2
+									[Block:Bool] [Const:Bool] true
+							[Default:Bool] [Block:Bool] [Const:Bool] false
+}

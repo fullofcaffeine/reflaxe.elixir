@@ -1,0 +1,343 @@
+class reflaxe.data.ClassVarData {
+
+	public function new[Function:(classType : haxe.macro.ClassType, field : haxe.macro.ClassField, isStatic : Bool, read : haxe.macro.VarAccess, write : haxe.macro.VarAccess) -> Void]
+		[Arg:haxe.macro.ClassType] [Local classType(8116):haxe.macro.ClassType]
+		[Arg:haxe.macro.ClassField] [Local field(8117):haxe.macro.ClassField]
+		[Arg:Bool] [Local isStatic(8118):Bool]
+		[Arg:haxe.macro.VarAccess] [Local read(8119):haxe.macro.VarAccess]
+		[Arg:haxe.macro.VarAccess] [Local write(8120):haxe.macro.VarAccess]
+		[Block:Void]
+			[Binop:haxe.macro.ClassType]
+				[Field:haxe.macro.ClassType]
+					[Const:reflaxe.data.ClassVarData] this
+					[FInstance:haxe.macro.ClassType]
+						reflaxe.data.ClassVarData
+						classType:haxe.macro.ClassType
+				=
+				[Local classType(8116):haxe.macro.ClassType:haxe.macro.ClassType]
+			[Binop:haxe.macro.ClassField]
+				[Field:haxe.macro.ClassField]
+					[Const:reflaxe.data.ClassVarData] this
+					[FInstance:haxe.macro.ClassField]
+						reflaxe.data.ClassVarData
+						field:haxe.macro.ClassField
+				=
+				[Local field(8117):haxe.macro.ClassField:haxe.macro.ClassField]
+			[Binop:Bool]
+				[Field:Bool]
+					[Const:reflaxe.data.ClassVarData] this
+					[FInstance:Bool]
+						reflaxe.data.ClassVarData
+						isStatic:Bool
+				=
+				[Local isStatic(8118):Bool:Bool]
+			[Binop:haxe.macro.VarAccess]
+				[Field:haxe.macro.VarAccess]
+					[Const:reflaxe.data.ClassVarData] this
+					[FInstance:haxe.macro.VarAccess]
+						reflaxe.data.ClassVarData
+						read:haxe.macro.VarAccess
+				=
+				[Local read(8119):haxe.macro.VarAccess:haxe.macro.VarAccess]
+			[Binop:haxe.macro.VarAccess]
+				[Field:haxe.macro.VarAccess]
+					[Const:reflaxe.data.ClassVarData] this
+					[FInstance:haxe.macro.VarAccess]
+						reflaxe.data.ClassVarData
+						write:haxe.macro.VarAccess
+				=
+				[Local write(8120):haxe.macro.VarAccess:haxe.macro.VarAccess]
+			[Call:Void]
+				[Field:() -> Void]
+					[Const:reflaxe.data.ClassVarData] this
+					[FInstance:() -> Void]
+						reflaxe.data.ClassVarData
+						findGetterAndSetter:() -> Void
+
+	public var classType(default,null):haxe.macro.ClassType;
+
+	public var field(default,null):haxe.macro.ClassField;
+
+	public var isStatic(default,null):Bool;
+
+	public var read(default,null):haxe.macro.VarAccess;
+
+	public var write(default,null):haxe.macro.VarAccess;
+
+	public var getter(default,null):Null<haxe.macro.ClassField>;
+
+	public var setter(default,null):Null<haxe.macro.ClassField>;
+
+	function findGetterAndSetter[Function:() -> Void]
+		[Block:Null<haxe.macro.ClassField>]
+			[Var `this(8125):reflaxe.data.ClassVarData] [Const:reflaxe.data.ClassVarData] this
+			[Var find(8121):(access : haxe.macro.VarAccess, prefix : String, isStatic : Bool) -> Null<haxe.macro.ClassField>]
+				[Function:(access : haxe.macro.VarAccess, prefix : String, isStatic : Bool) -> Null<haxe.macro.ClassField>]
+					[Arg:haxe.macro.VarAccess] [Local access(8122):haxe.macro.VarAccess]
+					[Arg:String] [Local prefix(8123):String]
+					[Arg:Bool] [Local isStatic(8124):Bool]
+					[Block:Dynamic]
+						[Meta:Void]
+							:ast(switch (access) {
+	case AccCall:
+		{
+			var name = prefix + field.getHaxeName();
+			for (f  in  (isStatic ? classType.statics : classType.fields).get()) {
+				if (f.getHaxeName() == name) {
+					return f;
+				};
+			};
+		};	
+	case _:
+})
+							[If:Void]
+								[Binop:Bool]
+									[EnumIndex:Int] [Local access(8122):haxe.macro.VarAccess:haxe.macro.VarAccess]
+									==
+									[Const:Int] 4
+								[Then:Void] [Block:Void]
+									[Block:Void]
+										[Block:Void]
+											[Var name(8132):String]
+												[Binop:String]
+													[Local prefix(8123):String:String]
+													+
+													[Call:String]
+														[Field:(field : haxe.macro.ClassField) -> String]
+															[TypeExpr reflaxe.helpers.ClassFieldHelper:{ Statics reflaxe.helpers.ClassFieldHelper }]
+															[FStatic:(field : haxe.macro.ClassField) -> String]
+																reflaxe.helpers.ClassFieldHelper
+																getHaxeName:(field : haxe.macro.ClassField) -> String
+														[Field:haxe.macro.ClassField]
+															[Local `this(8125):reflaxe.data.ClassVarData:reflaxe.data.ClassVarData]
+															[FInstance:haxe.macro.ClassField]
+																reflaxe.data.ClassVarData
+																field:haxe.macro.ClassField
+											[Block:Void]
+												[Var `(8133):Int] [Const:Int] 0
+												[Var `(8134):Array<haxe.macro.ClassField>]
+													[Call:Array<haxe.macro.ClassField>]
+														[Field:() -> Array<haxe.macro.ClassField>]
+															[Parenthesis:haxe.macro.Ref<Array<haxe.macro.ClassField>>]
+																[If:haxe.macro.Ref<Array<haxe.macro.ClassField>>]
+																	[Local isStatic(8124):Bool:Bool]
+																	[Then:haxe.macro.Ref<Array<haxe.macro.ClassField>>] [Block:haxe.macro.Ref<Array<haxe.macro.ClassField>>]
+																		[Field:haxe.macro.Ref<Array<haxe.macro.ClassField>>]
+																			[Field:haxe.macro.ClassType]
+																				[Local `this(8125):reflaxe.data.ClassVarData:reflaxe.data.ClassVarData]
+																				[FInstance:haxe.macro.ClassType]
+																					reflaxe.data.ClassVarData
+																					classType:haxe.macro.ClassType
+																			[FAnon:haxe.macro.Ref<Array<haxe.macro.ClassField>>] statics:haxe.macro.Ref<Array<haxe.macro.ClassField>>
+																	[Else:haxe.macro.Ref<Array<haxe.macro.ClassField>>] [Block:haxe.macro.Ref<Array<haxe.macro.ClassField>>]
+																		[Field:haxe.macro.Ref<Array<haxe.macro.ClassField>>]
+																			[Field:haxe.macro.ClassType]
+																				[Local `this(8125):reflaxe.data.ClassVarData:reflaxe.data.ClassVarData]
+																				[FInstance:haxe.macro.ClassType]
+																					reflaxe.data.ClassVarData
+																					classType:haxe.macro.ClassType
+																			[FAnon:haxe.macro.Ref<Array<haxe.macro.ClassField>>] fields:haxe.macro.Ref<Array<haxe.macro.ClassField>>
+															[FAnon:() -> Array<haxe.macro.ClassField>] get:() -> Array<haxe.macro.ClassField>
+												[While:Void]
+													[Binop:Bool]
+														[Local `(8133):Int:Int]
+														<
+														[Field:Int]
+															[Local `(8134):Array<haxe.macro.ClassField>:Array<haxe.macro.ClassField>]
+															[FInstance:Int]
+																Array<haxe.macro.ClassField>
+																length:Int
+													[Block:Void]
+														[Var f(8135):haxe.macro.ClassField]
+															[Array:haxe.macro.ClassField]
+																[Local `(8134):Array<haxe.macro.ClassField>:Array<haxe.macro.ClassField>]
+																[Local `(8133):Int:Int]
+														[Unop:Int]
+															++
+															Prefix
+															[Local `(8133):Int:Int]
+														[If:Void]
+															[Binop:Bool]
+																[Call:String]
+																	[Field:(field : haxe.macro.ClassField) -> String]
+																		[TypeExpr reflaxe.helpers.ClassFieldHelper:{ Statics reflaxe.helpers.ClassFieldHelper }]
+																		[FStatic:(field : haxe.macro.ClassField) -> String]
+																			reflaxe.helpers.ClassFieldHelper
+																			getHaxeName:(field : haxe.macro.ClassField) -> String
+																	[Local f(8135):haxe.macro.ClassField:haxe.macro.ClassField]
+																==
+																[Local name(8132):String:String]
+															[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [Local f(8135):haxe.macro.ClassField:haxe.macro.ClassField]
+								[Else:Void] [Block:Void]
+						[Return:Dynamic] [Const:Null<haxe.macro.ClassField>] null
+			[Binop:Null<haxe.macro.ClassField>]
+				[Field:Null<haxe.macro.ClassField>]
+					[Const:reflaxe.data.ClassVarData] this
+					[FInstance:Null<haxe.macro.ClassField>]
+						reflaxe.data.ClassVarData
+						getter:Null<haxe.macro.ClassField>
+				=
+				[Call:Null<haxe.macro.ClassField>]
+					[Local find(8121):(access : haxe.macro.VarAccess, prefix : String, isStatic : Bool) -> Null<haxe.macro.ClassField>:(access : haxe.macro.VarAccess, prefix : String, isStatic : Bool) -> Null<haxe.macro.ClassField>]
+					[Field:haxe.macro.VarAccess]
+						[Const:reflaxe.data.ClassVarData] this
+						[FInstance:haxe.macro.VarAccess]
+							reflaxe.data.ClassVarData
+							read:haxe.macro.VarAccess
+					[Const:String] "get_"
+					[Field:Bool]
+						[Const:reflaxe.data.ClassVarData] this
+						[FInstance:Bool]
+							reflaxe.data.ClassVarData
+							isStatic:Bool
+			[Binop:Null<haxe.macro.ClassField>]
+				[Field:Null<haxe.macro.ClassField>]
+					[Const:reflaxe.data.ClassVarData] this
+					[FInstance:Null<haxe.macro.ClassField>]
+						reflaxe.data.ClassVarData
+						setter:Null<haxe.macro.ClassField>
+				=
+				[Call:Null<haxe.macro.ClassField>]
+					[Local find(8121):(access : haxe.macro.VarAccess, prefix : String, isStatic : Bool) -> Null<haxe.macro.ClassField>:(access : haxe.macro.VarAccess, prefix : String, isStatic : Bool) -> Null<haxe.macro.ClassField>]
+					[Field:haxe.macro.VarAccess]
+						[Const:reflaxe.data.ClassVarData] this
+						[FInstance:haxe.macro.VarAccess]
+							reflaxe.data.ClassVarData
+							write:haxe.macro.VarAccess
+					[Const:String] "set_"
+					[Field:Bool]
+						[Const:reflaxe.data.ClassVarData] this
+						[FInstance:Bool]
+							reflaxe.data.ClassVarData
+							isStatic:Bool
+
+	public function hasDefaultValue[Function:() -> Bool]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Call:Bool]
+					[Field:(field : haxe.macro.ClassField) -> Bool]
+						[TypeExpr reflaxe.helpers.ClassFieldHelper:{ Statics reflaxe.helpers.ClassFieldHelper }]
+						[FStatic:(field : haxe.macro.ClassField) -> Bool]
+							reflaxe.helpers.ClassFieldHelper
+							hasDefaultValue:(field : haxe.macro.ClassField) -> Bool
+					[Field:haxe.macro.ClassField]
+						[Const:reflaxe.data.ClassVarData] this
+						[FInstance:haxe.macro.ClassField]
+							reflaxe.data.ClassVarData
+							field:haxe.macro.ClassField
+
+	public function getDefaultUntypedExpr[Function:() -> Null<haxe.macro.Expr>]
+		[Block:Dynamic]
+			[Var args(8137):Null<Array<haxe.macro.Expr>>]
+				[Call:Null<Array<haxe.macro.Expr>>]
+					[Field:(metaAccess : Null<haxe.macro.MetaAccess>, metaName : String) -> Null<Array<haxe.macro.Expr>>]
+						[TypeExpr reflaxe.helpers.NullableMetaAccessHelper:{ Statics reflaxe.helpers.NullableMetaAccessHelper }]
+						[FStatic:(metaAccess : Null<haxe.macro.MetaAccess>, metaName : String) -> Null<Array<haxe.macro.Expr>>]
+							reflaxe.helpers.NullableMetaAccessHelper
+							extractExpressionsFromFirstMeta:(metaAccess : Null<haxe.macro.MetaAccess>, metaName : String) -> Null<Array<haxe.macro.Expr>>
+					[Field:haxe.macro.MetaAccess]
+						[Field:haxe.macro.ClassField]
+							[Const:reflaxe.data.ClassVarData] this
+							[FInstance:haxe.macro.ClassField]
+								reflaxe.data.ClassVarData
+								field:haxe.macro.ClassField
+						[FAnon:haxe.macro.MetaAccess] meta:haxe.macro.MetaAccess
+					[Const:String] ":value"
+			[If:Void]
+				[Binop:Bool]
+					[Binop:Bool]
+						[Local args(8137):Null<Array<haxe.macro.Expr>>:Null<Array<haxe.macro.Expr>>]
+						!=
+						[Const:Null<Array<haxe.macro.Expr>>] null
+					&&
+					[Binop:Bool]
+						[Field:Int]
+							[Local args(8137):Null<Array<haxe.macro.Expr>>:Null<Array<haxe.macro.Expr>>]
+							[FInstance:Int]
+								Array<haxe.macro.Expr>
+								length:Int
+						==
+						[Const:Int] 1
+				[Then:Dynamic] [Block:Dynamic]
+					[Return:Dynamic]
+						[Array:haxe.macro.Expr]
+							[Local args(8137):Null<Array<haxe.macro.Expr>>:Null<Array<haxe.macro.Expr>>]
+							[Const:Int] 0
+			[Return:Dynamic] [Const:Null<haxe.macro.Expr>] null
+
+	public function findDefaultExpr[Function:() -> Null<haxe.macro.TypedExpr>]
+		[Block:Dynamic]
+			[If:Void]
+				[Call:Bool]
+					[Field:() -> Bool]
+						[Const:reflaxe.data.ClassVarData] this
+						[FInstance:() -> Bool]
+							reflaxe.data.ClassVarData
+							hasDefaultValue:() -> Bool
+				[Then:Void] [Block:Void]
+					[Var data(8224):Null<{ modifiedConstructor : haxe.macro.TypedExpr, expressions : Array<haxe.macro.TypedExpr>, assignments : Map<haxe.macro.ClassField, haxe.macro.TypedExpr> }>]
+						[Call:Null<{ modifiedConstructor : haxe.macro.TypedExpr, expressions : Array<haxe.macro.TypedExpr>, assignments : Map<haxe.macro.ClassField, haxe.macro.TypedExpr> }>]
+							[Field:(cls : haxe.macro.ClassType, ?overrideConstructorExpr : Null<haxe.macro.TypedExpr>) -> Null<{ modifiedConstructor : haxe.macro.TypedExpr, expressions : Array<haxe.macro.TypedExpr>, assignments : Map<haxe.macro.ClassField, haxe.macro.TypedExpr> }>]
+								[TypeExpr reflaxe.helpers.ClassTypeHelper:{ Statics reflaxe.helpers.ClassTypeHelper }]
+								[FStatic:(cls : haxe.macro.ClassType, ?overrideConstructorExpr : Null<haxe.macro.TypedExpr>) -> Null<{ modifiedConstructor : haxe.macro.TypedExpr, expressions : Array<haxe.macro.TypedExpr>, assignments : Map<haxe.macro.ClassField, haxe.macro.TypedExpr> }>]
+									reflaxe.helpers.ClassTypeHelper
+									extractPreconstructorFieldAssignments:(cls : haxe.macro.ClassType, ?overrideConstructorExpr : Null<haxe.macro.TypedExpr>) -> Null<{ modifiedConstructor : haxe.macro.TypedExpr, expressions : Array<haxe.macro.TypedExpr>, assignments : Map<haxe.macro.ClassField, haxe.macro.TypedExpr> }>
+							[Field:haxe.macro.ClassType]
+								[Const:reflaxe.data.ClassVarData] this
+								[FInstance:haxe.macro.ClassType]
+									reflaxe.data.ClassVarData
+									classType:haxe.macro.ClassType
+							[Const:Null<haxe.macro.TypedExpr>] null
+					[If:Void]
+						[Binop:Bool]
+							[Local data(8224):Null<{ modifiedConstructor : haxe.macro.TypedExpr, expressions : Array<haxe.macro.TypedExpr>, assignments : Map<haxe.macro.ClassField, haxe.macro.TypedExpr> }>:Null<{ modifiedConstructor : haxe.macro.TypedExpr, expressions : Array<haxe.macro.TypedExpr>, assignments : Map<haxe.macro.ClassField, haxe.macro.TypedExpr> }>]
+							!=
+							[Const:Null<{ modifiedConstructor : haxe.macro.TypedExpr, expressions : Array<haxe.macro.TypedExpr>, assignments : Map<haxe.macro.ClassField, haxe.macro.TypedExpr> }>] null
+						[Then:Void] [Block:Void]
+							[Block:Void]
+								[Var `(8228):KeyValueIterator<haxe.macro.ClassField, haxe.macro.TypedExpr>]
+									[Block:KeyValueIterator<haxe.macro.ClassField, haxe.macro.TypedExpr>]
+										[Var this(8227):haxe.IMap<haxe.macro.ClassField, haxe.macro.TypedExpr>]
+											[Field:Map<haxe.macro.ClassField, haxe.macro.TypedExpr>]
+												[Local data(8224):Null<{ modifiedConstructor : haxe.macro.TypedExpr, expressions : Array<haxe.macro.TypedExpr>, assignments : Map<haxe.macro.ClassField, haxe.macro.TypedExpr> }>:Null<{ modifiedConstructor : haxe.macro.TypedExpr, expressions : Array<haxe.macro.TypedExpr>, assignments : Map<haxe.macro.ClassField, haxe.macro.TypedExpr> }>]
+												[FAnon:Map<haxe.macro.ClassField, haxe.macro.TypedExpr>] assignments:Map<haxe.macro.ClassField, haxe.macro.TypedExpr>
+										[Cast:KeyValueIterator<{ type : haxe.macro.Type, pos : haxe.macro.Position, params : Array<haxe.macro.TypeParameter>, overloads : haxe.macro.Ref<Array<haxe.macro.ClassField>>, name : String, meta : haxe.macro.MetaAccess, kind : haxe.macro.FieldKind, isPublic : Bool, isFinal : Bool, isExtern : Bool, isAbstract : Bool, expr : () -> Null<haxe.macro.TypedExpr>, doc : Null<String> }, haxe.macro.TypedExpr>]
+											[New:haxe.iterators.MapKeyValueIterator<{ type : haxe.macro.Type, pos : haxe.macro.Position, params : Array<haxe.macro.TypeParameter>, overloads : haxe.macro.Ref<Array<haxe.macro.ClassField>>, name : String, meta : haxe.macro.MetaAccess, kind : haxe.macro.FieldKind, isPublic : Bool, isFinal : Bool, isExtern : Bool, isAbstract : Bool, expr : () -> Null<haxe.macro.TypedExpr>, doc : Null<String> }, haxe.macro.TypedExpr>]
+												haxe.iterators.MapKeyValueIterator<{ type : haxe.macro.Type, pos : haxe.macro.Position, params : Array<haxe.macro.TypeParameter>, overloads : haxe.macro.Ref<Array<haxe.macro.ClassField>>, name : String, meta : haxe.macro.MetaAccess, kind : haxe.macro.FieldKind, isPublic : Bool, isFinal : Bool, isExtern : Bool, isAbstract : Bool, expr : () -> Null<haxe.macro.TypedExpr>, doc : Null<String> }, haxe.macro.TypedExpr>
+												[Cast:haxe.ds.ObjectMap<{ type : haxe.macro.Type, pos : haxe.macro.Position, params : Array<haxe.macro.TypeParameter>, overloads : haxe.macro.Ref<Array<haxe.macro.ClassField>>, name : String, meta : haxe.macro.MetaAccess, kind : haxe.macro.FieldKind, isPublic : Bool, isFinal : Bool, isExtern : Bool, isAbstract : Bool, expr : () -> Null<haxe.macro.TypedExpr>, doc : Null<String> }, haxe.macro.TypedExpr>] [Local this(8227):haxe.IMap<haxe.macro.ClassField, haxe.macro.TypedExpr>:haxe.IMap<haxe.macro.ClassField, haxe.macro.TypedExpr>]
+								[While:Void]
+									[Call:Bool]
+										[Field:() -> Bool]
+											[Local `(8228):KeyValueIterator<haxe.macro.ClassField, haxe.macro.TypedExpr>:KeyValueIterator<haxe.macro.ClassField, haxe.macro.TypedExpr>]
+											[FAnon:() -> Bool] hasNext:() -> Bool
+									[Block:Void]
+										[Var `(8229):{ value : haxe.macro.TypedExpr, key : haxe.macro.ClassField }]
+											[Call:{ value : haxe.macro.TypedExpr, key : haxe.macro.ClassField }]
+												[Field:() -> { value : haxe.macro.TypedExpr, key : haxe.macro.ClassField }]
+													[Local `(8228):KeyValueIterator<haxe.macro.ClassField, haxe.macro.TypedExpr>:KeyValueIterator<haxe.macro.ClassField, haxe.macro.TypedExpr>]
+													[FAnon:() -> { value : haxe.macro.TypedExpr, key : haxe.macro.ClassField }] next:() -> { value : haxe.macro.TypedExpr, key : haxe.macro.ClassField }
+										[Var assignField(8230):haxe.macro.ClassField]
+											[Field:haxe.macro.ClassField]
+												[Local `(8229):{ value : haxe.macro.TypedExpr, key : haxe.macro.ClassField }:{ value : haxe.macro.TypedExpr, key : haxe.macro.ClassField }]
+												[FAnon:haxe.macro.ClassField] key:haxe.macro.ClassField
+										[Var expr(8231):haxe.macro.TypedExpr]
+											[Field:haxe.macro.TypedExpr]
+												[Local `(8229):{ value : haxe.macro.TypedExpr, key : haxe.macro.ClassField }:{ value : haxe.macro.TypedExpr, key : haxe.macro.ClassField }]
+												[FAnon:haxe.macro.TypedExpr] value:haxe.macro.TypedExpr
+										[Block:Void]
+											[If:Void]
+												[Binop:Bool]
+													[Field:String]
+														[Field:haxe.macro.ClassField]
+															[Const:reflaxe.data.ClassVarData] this
+															[FInstance:haxe.macro.ClassField]
+																reflaxe.data.ClassVarData
+																field:haxe.macro.ClassField
+														[FAnon:String] name:String
+													==
+													[Field:String]
+														[Local assignField(8230):haxe.macro.ClassField:haxe.macro.ClassField]
+														[FAnon:String] name:String
+												[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [Local expr(8231):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+			[Return:Dynamic] [Const:Null<haxe.macro.TypedExpr>] null
+}

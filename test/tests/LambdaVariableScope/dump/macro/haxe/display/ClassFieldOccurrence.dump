@@ -1,0 +1,1 @@
+typedef haxe.display.ClassFieldOccurrence<T> = { resolution : haxe.display.FieldResolution, ?origin : Null<haxe.display.ClassFieldOrigin<haxe.display.ClassFieldOccurrence.T>>, field : haxe.display.JsonClassField }

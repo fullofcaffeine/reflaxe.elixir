@@ -1,0 +1,4634 @@
+class reflaxe.elixir.helpers.PatternMatcher {
+
+	public function new[Function:() -> Void]
+		[Block:Null<reflaxe.elixir.ElixirCompiler>]
+			[Binop:Null<reflaxe.elixir.ElixirCompiler>]
+				[Field:Null<reflaxe.elixir.ElixirCompiler>]
+					[Const:reflaxe.elixir.helpers.PatternMatcher] this
+					[FInstance:Null<reflaxe.elixir.ElixirCompiler>]
+						reflaxe.elixir.helpers.PatternMatcher
+						compiler:Null<reflaxe.elixir.ElixirCompiler>
+				=
+				[Const:Null<reflaxe.elixir.ElixirCompiler>] null
+
+	@:value({ defaultExpr : null })
+	public function compileSwitchExpression[Function:(switchExpr : Dynamic, cases : Array<Dynamic>, ?defaultExpr : Null<Dynamic>) -> String]
+		[Arg:Dynamic] [Local switchExpr(23978):Dynamic]
+		[Arg:Array<Dynamic>] [Local cases(23979):Array<Dynamic>]
+		[Arg:Null<Dynamic>]
+			[Local defaultExpr(23980):Null<Dynamic>]
+			[Const:Null<Dynamic>] null
+		[Block:Dynamic]
+			[Var result(23981):StringBuf] [New:StringBuf] StringBuf
+			[Var switchValue(23984):String]
+				[Call:String]
+					[Field:(expr : Dynamic) -> String]
+						[Const:reflaxe.elixir.helpers.PatternMatcher] this
+						[FInstance:(expr : Dynamic) -> String]
+							reflaxe.elixir.helpers.PatternMatcher
+							compileExpression:(expr : Dynamic) -> String
+					[Local switchExpr(23978):Dynamic:Dynamic]
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(23981):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Binop:String]
+					[Binop:String]
+						[Const:String] "case "
+						+
+						[Local switchValue(23984):String:String]
+					+
+					[Const:String] " do\n"
+			[Block:Void]
+				[Var `(24174):Int] [Const:Int] 0
+				[Var `(24175):Array<Dynamic>] [Parenthesis:Array<Dynamic>] [Cast:Array<Dynamic>] [Local cases(23979):Array<Dynamic>:Array<Dynamic>]
+				[While:Void]
+					[Binop:Bool]
+						[Local `(24174):Int:Int]
+						<
+						[Field:Int]
+							[Local `(24175):Array<Dynamic>:Array<Dynamic>]
+							[FInstance:Int]
+								Array<Dynamic>
+								length:Int
+					[Block:Void]
+						[Var caseItem(23985):Dynamic]
+							[Array:Dynamic]
+								[Local `(24175):Array<Dynamic>:Array<Dynamic>]
+								[Local `(24174):Int:Int]
+						[Unop:Int]
+							++
+							Prefix
+							[Local `(24174):Int:Int]
+						[If:Void]
+							[Binop:Bool]
+								[Field:Dynamic]
+									[Local caseItem(23985):Dynamic:Dynamic]
+									[FDynamic:Dynamic] values
+								!=
+								[Const:Dynamic] null
+							[Then:Void] [Block:Void]
+								[Block:Void]
+									[Var `(24172):Int] [Const:Int] 0
+									[Var `(24173):Array<Dynamic>]
+										[Parenthesis:Array<Dynamic>]
+											[Cast:Array<Dynamic>]
+												[Field:Dynamic]
+													[Local caseItem(23985):Dynamic:Dynamic]
+													[FDynamic:Dynamic] values
+									[While:Void]
+										[Binop:Bool]
+											[Local `(24172):Int:Int]
+											<
+											[Field:Int]
+												[Local `(24173):Array<Dynamic>:Array<Dynamic>]
+												[FInstance:Int]
+													Array<Dynamic>
+													length:Int
+										[Block:Void]
+											[Var value(23986):Dynamic]
+												[Array:Dynamic]
+													[Local `(24173):Array<Dynamic>:Array<Dynamic>]
+													[Local `(24172):Int:Int]
+											[Unop:Int]
+												++
+												Prefix
+												[Local `(24172):Int:Int]
+											[Var pattern(24127):String]
+												[Call:String]
+													[Field:(patternExpr : Dynamic) -> String]
+														[Const:reflaxe.elixir.helpers.PatternMatcher] this
+														[FInstance:(patternExpr : Dynamic) -> String]
+															reflaxe.elixir.helpers.PatternMatcher
+															compilePattern:(patternExpr : Dynamic) -> String
+													[Local value(23986):Dynamic:Dynamic]
+											[Var guard(24146):String]
+												[Call:String]
+													[Field:(guardExpr : Dynamic) -> String]
+														[Const:reflaxe.elixir.helpers.PatternMatcher] this
+														[FInstance:(guardExpr : Dynamic) -> String]
+															reflaxe.elixir.helpers.PatternMatcher
+															compileGuard:(guardExpr : Dynamic) -> String
+													[Field:Dynamic]
+														[Local caseItem(23985):Dynamic:Dynamic]
+														[FDynamic:Dynamic] guard
+											[If:Void]
+												[Binop:Bool]
+													[Field:Null<reflaxe.elixir.ElixirCompiler>]
+														[Const:reflaxe.elixir.helpers.PatternMatcher] this
+														[FInstance:Null<reflaxe.elixir.ElixirCompiler>]
+															reflaxe.elixir.helpers.PatternMatcher
+															compiler:Null<reflaxe.elixir.ElixirCompiler>
+													!=
+													[Const:Null<reflaxe.elixir.ElixirCompiler>] null
+												[Then:Void] [Block:Void]
+													[Call:Void]
+														[Field:(inCaseArm : Bool) -> Void]
+															[Field:Null<reflaxe.elixir.ElixirCompiler>]
+																[Const:reflaxe.elixir.helpers.PatternMatcher] this
+																[FInstance:Null<reflaxe.elixir.ElixirCompiler>]
+																	reflaxe.elixir.helpers.PatternMatcher
+																	compiler:Null<reflaxe.elixir.ElixirCompiler>
+															[FInstance:(inCaseArm : Bool) -> Void]
+																reflaxe.elixir.ElixirCompiler
+																setCaseArmContext:(inCaseArm : Bool) -> Void
+														[Const:Bool] true
+											[Var caseExpr(24148):String]
+												[Call:String]
+													[Field:(expr : Dynamic) -> String]
+														[Const:reflaxe.elixir.helpers.PatternMatcher] this
+														[FInstance:(expr : Dynamic) -> String]
+															reflaxe.elixir.helpers.PatternMatcher
+															compileExpression:(expr : Dynamic) -> String
+													[Field:Dynamic]
+														[Local caseItem(23985):Dynamic:Dynamic]
+														[FDynamic:Dynamic] expr
+											[If:Void]
+												[Binop:Bool]
+													[Field:Null<reflaxe.elixir.ElixirCompiler>]
+														[Const:reflaxe.elixir.helpers.PatternMatcher] this
+														[FInstance:Null<reflaxe.elixir.ElixirCompiler>]
+															reflaxe.elixir.helpers.PatternMatcher
+															compiler:Null<reflaxe.elixir.ElixirCompiler>
+													!=
+													[Const:Null<reflaxe.elixir.ElixirCompiler>] null
+												[Then:Void] [Block:Void]
+													[Call:Void]
+														[Field:(inCaseArm : Bool) -> Void]
+															[Field:Null<reflaxe.elixir.ElixirCompiler>]
+																[Const:reflaxe.elixir.helpers.PatternMatcher] this
+																[FInstance:Null<reflaxe.elixir.ElixirCompiler>]
+																	reflaxe.elixir.helpers.PatternMatcher
+																	compiler:Null<reflaxe.elixir.ElixirCompiler>
+															[FInstance:(inCaseArm : Bool) -> Void]
+																reflaxe.elixir.ElixirCompiler
+																setCaseArmContext:(inCaseArm : Bool) -> Void
+														[Const:Bool] false
+													[Call:Void]
+														[Field:() -> Void]
+															[Field:Null<reflaxe.elixir.ElixirCompiler>]
+																[Const:reflaxe.elixir.helpers.PatternMatcher] this
+																[FInstance:Null<reflaxe.elixir.ElixirCompiler>]
+																	reflaxe.elixir.helpers.PatternMatcher
+																	compiler:Null<reflaxe.elixir.ElixirCompiler>
+															[FInstance:() -> Void]
+																reflaxe.elixir.ElixirCompiler
+																clearInlineContext:() -> Void
+											[Var lines(24149):Array<String>]
+												[Call:Array<String>]
+													[Field:(delimiter : String) -> Array<String>]
+														[Local caseExpr(24148):String:String]
+														[FInstance:(delimiter : String) -> Array<String>]
+															String
+															split:(delimiter : String) -> Array<String>
+													[Const:String] "\n"
+											[Var filteredLines(24150):Array<String>] [ArrayDecl:Array<String>]
+											[Block:Void]
+												[Var `(24159):Int] [Const:Int] 0
+												[Var `(24160):Int]
+													[Field:Int]
+														[Local lines(24149):Array<String>:Array<String>]
+														[FInstance:Int]
+															Array<String>
+															length:Int
+												[While:Void]
+													[Binop:Bool]
+														[Local `(24159):Int:Int]
+														<
+														[Local `(24160):Int:Int]
+													[Block:Int]
+														[Var i(24151):Int]
+															[Unop:Int]
+																++
+																Postfix
+																[Local `(24159):Int:Int]
+														[Var line(24152):String]
+															[Call:String]
+																[Field:(s : String) -> String]
+																	[TypeExpr StringTools:Class<StringTools>]
+																	[FStatic:(s : String) -> String]
+																		StringTools
+																		trim:(s : String) -> String
+																[Array:String]
+																	[Local lines(24149):Array<String>:Array<String>]
+																	[Local i(24151):Int:Int]
+														[If:Void]
+															[Binop:Bool]
+																[Binop:Bool]
+																	[Local line(24152):String:String]
+																	==
+																	[Const:String] "g"
+																||
+																[Call:Bool]
+																	[Field:(s : String) -> Bool]
+																		[New:EReg]
+																			EReg
+																			[Const:String] "^g\\d*$"
+																			[Const:String] ""
+																		[FInstance:(s : String) -> Bool]
+																			EReg
+																			match:(s : String) -> Bool
+																	[Local line(24152):String:String]
+															[Then:Void] [Block:Void]
+																[Var foundElemCall(24153):Bool] [Const:Bool] false
+																[Var lookbackLimit(24154):Int]
+																	[Call:Int]
+																		[Field:(x : Float) -> Int]
+																			[TypeExpr Std:Class<Std>]
+																			[FStatic:(x : Float) -> Int]
+																				Std
+																				int:(x : Float) -> Int
+																		[Call:Float]
+																			[Field:(a : Float, b : Float) -> Float]
+																				[TypeExpr Math:Class<Math>]
+																				[FStatic:(a : Float, b : Float) -> Float]
+																					Math
+																					min:(a : Float, b : Float) -> Float
+																			[Const:Int] 5
+																			[Local i(24151):Int:Int]
+																[Block:Void]
+																	[Var `(24157):Int] [Const:Int] 1
+																	[Var `(24158):Int]
+																		[Binop:Int]
+																			[Local lookbackLimit(24154):Int:Int]
+																			+
+																			[Const:Int] 1
+																	[While:Void]
+																		[Binop:Bool]
+																			[Local `(24157):Int:Int]
+																			<
+																			[Local `(24158):Int:Int]
+																		[Block:Void]
+																			[Var j(24155):Int]
+																				[Unop:Int]
+																					++
+																					Postfix
+																					[Local `(24157):Int:Int]
+																			[Var checkLine(24156):String]
+																				[Call:String]
+																					[Field:(s : String) -> String]
+																						[TypeExpr StringTools:Class<StringTools>]
+																						[FStatic:(s : String) -> String]
+																							StringTools
+																							trim:(s : String) -> String
+																					[Array:String]
+																						[Local lines(24149):Array<String>:Array<String>]
+																						[Binop:Int]
+																							[Local i(24151):Int:Int]
+																							-
+																							[Local j(24155):Int:Int]
+																			[If:Void]
+																				[Binop:Bool]
+																					[Call:Int]
+																						[Field:(str : String, ?startIndex : Null<Int>) -> Int]
+																							[Local checkLine(24156):String:String]
+																							[FInstance:(str : String, ?startIndex : Null<Int>) -> Int]
+																								String
+																								indexOf:(str : String, ?startIndex : Null<Int>) -> Int
+																						[Const:String] "elem("
+																						[Const:Null<Int>] null
+																					>=
+																					[Const:Int] 0
+																				[Then:Dynamic] [Block:Dynamic]
+																					[Binop:Bool]
+																						[Local foundElemCall(24153):Bool:Bool]
+																						=
+																						[Const:Bool] true
+																					[Break:Dynamic]
+																[If:Void]
+																	[Local foundElemCall(24153):Bool:Bool]
+																	[Then:Dynamic] [Block:Dynamic] [Continue:Dynamic]
+														[Call:Int]
+															[Field:(x : String) -> Int]
+																[Local filteredLines(24150):Array<String>:Array<String>]
+																[FInstance:(x : String) -> Int]
+																	Array<String>
+																	push:(x : Array.T) -> Int
+															[Array:String]
+																[Local lines(24149):Array<String>:Array<String>]
+																[Local i(24151):Int:Int]
+											[Binop:String]
+												[Local caseExpr(24148):String:String]
+												=
+												[Call:String]
+													[Field:(sep : String) -> String]
+														[Local filteredLines(24150):Array<String>:Array<String>]
+														[FInstance:(sep : String) -> String]
+															Array<String>
+															join:(sep : String) -> String
+													[Const:String] "\n"
+											[Var guardClause(24161):String]
+												[If:String]
+													[Parenthesis:Bool]
+														[Binop:Bool]
+															[Binop:Bool]
+																[Local guard(24146):String:String]
+																!=
+																[Const:String] null
+															&&
+															[Binop:Bool]
+																[Field:Int]
+																	[Local guard(24146):String:String]
+																	[FInstance:Int]
+																		String
+																		length:Int
+																>
+																[Const:Int] 0
+													[Then:String] [Block:String]
+														[Binop:String]
+															[Const:String] " when "
+															+
+															[Local guard(24146):String:String]
+													[Else:String] [Block:String] [Const:String] ""
+											[Call:Void]
+												[Field:(x : String) -> Void]
+													[Local result(23981):StringBuf:StringBuf]
+													[FInstance:(x : String) -> Void]
+														StringBuf
+														add:(x : add.T) -> Void
+												[Binop:String]
+													[Binop:String]
+														[Binop:String]
+															[Const:String] "  "
+															+
+															[Local pattern(24127):String:String]
+														+
+														[Local guardClause(24161):String:String]
+													+
+													[Const:String] " ->\n"
+											[Call:Void]
+												[Field:(x : String) -> Void]
+													[Local result(23981):StringBuf:StringBuf]
+													[FInstance:(x : String) -> Void]
+														StringBuf
+														add:(x : add.T) -> Void
+												[Binop:String]
+													[Binop:String]
+														[Const:String] "    "
+														+
+														[Call:String]
+															[Field:(expr : String) -> String]
+																[Const:reflaxe.elixir.helpers.PatternMatcher] this
+																[FInstance:(expr : String) -> String]
+																	reflaxe.elixir.helpers.PatternMatcher
+																	indentExpression:(expr : String) -> String
+															[Local caseExpr(24148):String:String]
+													+
+													[Const:String] "\n"
+			[If:Void]
+				[Binop:Bool]
+					[Local defaultExpr(23980):Null<Dynamic>:Null<Dynamic>]
+					!=
+					[Const:Null<Dynamic>] null
+				[Then:Void] [Block:Void]
+					[If:Void]
+						[Binop:Bool]
+							[Field:Null<reflaxe.elixir.ElixirCompiler>]
+								[Const:reflaxe.elixir.helpers.PatternMatcher] this
+								[FInstance:Null<reflaxe.elixir.ElixirCompiler>]
+									reflaxe.elixir.helpers.PatternMatcher
+									compiler:Null<reflaxe.elixir.ElixirCompiler>
+							!=
+							[Const:Null<reflaxe.elixir.ElixirCompiler>] null
+						[Then:Void] [Block:Void]
+							[Call:Void]
+								[Field:(inCaseArm : Bool) -> Void]
+									[Field:Null<reflaxe.elixir.ElixirCompiler>]
+										[Const:reflaxe.elixir.helpers.PatternMatcher] this
+										[FInstance:Null<reflaxe.elixir.ElixirCompiler>]
+											reflaxe.elixir.helpers.PatternMatcher
+											compiler:Null<reflaxe.elixir.ElixirCompiler>
+									[FInstance:(inCaseArm : Bool) -> Void]
+										reflaxe.elixir.ElixirCompiler
+										setCaseArmContext:(inCaseArm : Bool) -> Void
+								[Const:Bool] true
+					[Var defaultCode(24176):String]
+						[Call:String]
+							[Field:(expr : Dynamic) -> String]
+								[Const:reflaxe.elixir.helpers.PatternMatcher] this
+								[FInstance:(expr : Dynamic) -> String]
+									reflaxe.elixir.helpers.PatternMatcher
+									compileExpression:(expr : Dynamic) -> String
+							[Local defaultExpr(23980):Null<Dynamic>:Null<Dynamic>]
+					[If:Void]
+						[Binop:Bool]
+							[Field:Null<reflaxe.elixir.ElixirCompiler>]
+								[Const:reflaxe.elixir.helpers.PatternMatcher] this
+								[FInstance:Null<reflaxe.elixir.ElixirCompiler>]
+									reflaxe.elixir.helpers.PatternMatcher
+									compiler:Null<reflaxe.elixir.ElixirCompiler>
+							!=
+							[Const:Null<reflaxe.elixir.ElixirCompiler>] null
+						[Then:Void] [Block:Void]
+							[Call:Void]
+								[Field:(inCaseArm : Bool) -> Void]
+									[Field:Null<reflaxe.elixir.ElixirCompiler>]
+										[Const:reflaxe.elixir.helpers.PatternMatcher] this
+										[FInstance:Null<reflaxe.elixir.ElixirCompiler>]
+											reflaxe.elixir.helpers.PatternMatcher
+											compiler:Null<reflaxe.elixir.ElixirCompiler>
+									[FInstance:(inCaseArm : Bool) -> Void]
+										reflaxe.elixir.ElixirCompiler
+										setCaseArmContext:(inCaseArm : Bool) -> Void
+								[Const:Bool] false
+							[Call:Void]
+								[Field:() -> Void]
+									[Field:Null<reflaxe.elixir.ElixirCompiler>]
+										[Const:reflaxe.elixir.helpers.PatternMatcher] this
+										[FInstance:Null<reflaxe.elixir.ElixirCompiler>]
+											reflaxe.elixir.helpers.PatternMatcher
+											compiler:Null<reflaxe.elixir.ElixirCompiler>
+									[FInstance:() -> Void]
+										reflaxe.elixir.ElixirCompiler
+										clearInlineContext:() -> Void
+					[Var lines(24177):Array<String>]
+						[Call:Array<String>]
+							[Field:(delimiter : String) -> Array<String>]
+								[Local defaultCode(24176):String:String]
+								[FInstance:(delimiter : String) -> Array<String>]
+									String
+									split:(delimiter : String) -> Array<String>
+							[Const:String] "\n"
+					[Var filteredLines(24178):Array<String>] [ArrayDecl:Array<String>]
+					[Block:Void]
+						[Var `(24187):Int] [Const:Int] 0
+						[Var `(24188):Int]
+							[Field:Int]
+								[Local lines(24177):Array<String>:Array<String>]
+								[FInstance:Int]
+									Array<String>
+									length:Int
+						[While:Void]
+							[Binop:Bool]
+								[Local `(24187):Int:Int]
+								<
+								[Local `(24188):Int:Int]
+							[Block:Int]
+								[Var i(24179):Int]
+									[Unop:Int]
+										++
+										Postfix
+										[Local `(24187):Int:Int]
+								[Var line(24180):String]
+									[Call:String]
+										[Field:(s : String) -> String]
+											[TypeExpr StringTools:Class<StringTools>]
+											[FStatic:(s : String) -> String]
+												StringTools
+												trim:(s : String) -> String
+										[Array:String]
+											[Local lines(24177):Array<String>:Array<String>]
+											[Local i(24179):Int:Int]
+								[If:Void]
+									[Binop:Bool]
+										[Binop:Bool]
+											[Local line(24180):String:String]
+											==
+											[Const:String] "g"
+										||
+										[Call:Bool]
+											[Field:(s : String) -> Bool]
+												[New:EReg]
+													EReg
+													[Const:String] "^g\\d*$"
+													[Const:String] ""
+												[FInstance:(s : String) -> Bool]
+													EReg
+													match:(s : String) -> Bool
+											[Local line(24180):String:String]
+									[Then:Void] [Block:Void]
+										[Var foundElemCall(24181):Bool] [Const:Bool] false
+										[Var lookbackLimit(24182):Int]
+											[Call:Int]
+												[Field:(x : Float) -> Int]
+													[TypeExpr Std:Class<Std>]
+													[FStatic:(x : Float) -> Int]
+														Std
+														int:(x : Float) -> Int
+												[Call:Float]
+													[Field:(a : Float, b : Float) -> Float]
+														[TypeExpr Math:Class<Math>]
+														[FStatic:(a : Float, b : Float) -> Float]
+															Math
+															min:(a : Float, b : Float) -> Float
+													[Const:Int] 5
+													[Local i(24179):Int:Int]
+										[Block:Void]
+											[Var `(24185):Int] [Const:Int] 1
+											[Var `(24186):Int]
+												[Binop:Int]
+													[Local lookbackLimit(24182):Int:Int]
+													+
+													[Const:Int] 1
+											[While:Void]
+												[Binop:Bool]
+													[Local `(24185):Int:Int]
+													<
+													[Local `(24186):Int:Int]
+												[Block:Void]
+													[Var j(24183):Int]
+														[Unop:Int]
+															++
+															Postfix
+															[Local `(24185):Int:Int]
+													[Var checkLine(24184):String]
+														[Call:String]
+															[Field:(s : String) -> String]
+																[TypeExpr StringTools:Class<StringTools>]
+																[FStatic:(s : String) -> String]
+																	StringTools
+																	trim:(s : String) -> String
+															[Array:String]
+																[Local lines(24177):Array<String>:Array<String>]
+																[Binop:Int]
+																	[Local i(24179):Int:Int]
+																	-
+																	[Local j(24183):Int:Int]
+													[If:Void]
+														[Binop:Bool]
+															[Call:Int]
+																[Field:(str : String, ?startIndex : Null<Int>) -> Int]
+																	[Local checkLine(24184):String:String]
+																	[FInstance:(str : String, ?startIndex : Null<Int>) -> Int]
+																		String
+																		indexOf:(str : String, ?startIndex : Null<Int>) -> Int
+																[Const:String] "elem("
+																[Const:Null<Int>] null
+															>=
+															[Const:Int] 0
+														[Then:Dynamic] [Block:Dynamic]
+															[Binop:Bool]
+																[Local foundElemCall(24181):Bool:Bool]
+																=
+																[Const:Bool] true
+															[Break:Dynamic]
+										[If:Void]
+											[Local foundElemCall(24181):Bool:Bool]
+											[Then:Dynamic] [Block:Dynamic] [Continue:Dynamic]
+								[Call:Int]
+									[Field:(x : String) -> Int]
+										[Local filteredLines(24178):Array<String>:Array<String>]
+										[FInstance:(x : String) -> Int]
+											Array<String>
+											push:(x : Array.T) -> Int
+									[Array:String]
+										[Local lines(24177):Array<String>:Array<String>]
+										[Local i(24179):Int:Int]
+					[Binop:String]
+						[Local defaultCode(24176):String:String]
+						=
+						[Call:String]
+							[Field:(sep : String) -> String]
+								[Local filteredLines(24178):Array<String>:Array<String>]
+								[FInstance:(sep : String) -> String]
+									Array<String>
+									join:(sep : String) -> String
+							[Const:String] "\n"
+					[Call:Void]
+						[Field:(x : String) -> Void]
+							[Local result(23981):StringBuf:StringBuf]
+							[FInstance:(x : String) -> Void]
+								StringBuf
+								add:(x : add.T) -> Void
+						[Const:String] "  _ ->\n"
+					[Call:Void]
+						[Field:(x : String) -> Void]
+							[Local result(23981):StringBuf:StringBuf]
+							[FInstance:(x : String) -> Void]
+								StringBuf
+								add:(x : add.T) -> Void
+						[Binop:String]
+							[Binop:String]
+								[Const:String] "    "
+								+
+								[Call:String]
+									[Field:(expr : String) -> String]
+										[Const:reflaxe.elixir.helpers.PatternMatcher] this
+										[FInstance:(expr : String) -> String]
+											reflaxe.elixir.helpers.PatternMatcher
+											indentExpression:(expr : String) -> String
+									[Local defaultCode(24176):String:String]
+							+
+							[Const:String] "\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(23981):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "end"
+			[Return:Dynamic]
+				[Call:String]
+					[Field:() -> String]
+						[Local result(23981):StringBuf:StringBuf]
+						[FInstance:() -> String]
+							StringBuf
+							toString:() -> String
+
+	public function compilePattern[Function:(patternExpr : Dynamic) -> String]
+		[Arg:Dynamic] [Local patternExpr(23987):Dynamic]
+		[Block:Dynamic]
+			[If:Void]
+				[Binop:Bool]
+					[Local patternExpr(23987):Dynamic:Dynamic]
+					==
+					[Const:Dynamic] null
+				[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [Const:String] "_"
+			[If:Void]
+				[Call:Bool]
+					[Field:(expr : Dynamic) -> Bool]
+						[Const:reflaxe.elixir.helpers.PatternMatcher] this
+						[FInstance:(expr : Dynamic) -> Bool]
+							reflaxe.elixir.helpers.PatternMatcher
+							isBinaryPattern:(expr : Dynamic) -> Bool
+					[Local patternExpr(23987):Dynamic:Dynamic]
+				[Then:Dynamic] [Block:Dynamic]
+					[Return:Dynamic]
+						[Call:String]
+							[Field:(patternExpr : Dynamic) -> String]
+								[Const:reflaxe.elixir.helpers.PatternMatcher] this
+								[FInstance:(patternExpr : Dynamic) -> String]
+									reflaxe.elixir.helpers.PatternMatcher
+									compileBinaryPattern:(patternExpr : Dynamic) -> String
+							[Local patternExpr(23987):Dynamic:Dynamic]
+			[If:Void]
+				[Call:Bool]
+					[Field:(expr : Dynamic) -> Bool]
+						[Const:reflaxe.elixir.helpers.PatternMatcher] this
+						[FInstance:(expr : Dynamic) -> Bool]
+							reflaxe.elixir.helpers.PatternMatcher
+							isPinPattern:(expr : Dynamic) -> Bool
+					[Local patternExpr(23987):Dynamic:Dynamic]
+				[Then:Dynamic] [Block:Dynamic]
+					[Return:Dynamic]
+						[Call:String]
+							[Field:(patternExpr : Dynamic) -> String]
+								[Const:reflaxe.elixir.helpers.PatternMatcher] this
+								[FInstance:(patternExpr : Dynamic) -> String]
+									reflaxe.elixir.helpers.PatternMatcher
+									compilePinPattern:(patternExpr : Dynamic) -> String
+							[Local patternExpr(23987):Dynamic:Dynamic]
+			[Return:Dynamic]
+				[Meta:String]
+					:ast(switch (getExprType(patternExpr)) {
+	case "TCall":
+		compileEnumConstructorPattern(patternExpr);	
+	case "TField":
+		compileEnumFieldPattern(patternExpr);	
+	case "TArrayDecl":
+		compileArrayPattern(patternExpr);	
+	case "TObjectDecl":
+		compileObjectPattern(patternExpr);	
+	case "TLocal":
+		compileVariablePattern(patternExpr);	
+	case "TConst":
+		compileConstantPattern(patternExpr);	
+	case "TTuple":
+		compileTuplePattern(patternExpr);	
+	case "TWildcard":
+		"_";	
+	case _:
+		compileExpression(patternExpr);	
+})
+					[Block:String]
+						[Var `(24126):String]
+							[Call:String]
+								[Field:(expr : Dynamic) -> String]
+									[Const:reflaxe.elixir.helpers.PatternMatcher] this
+									[FInstance:(expr : Dynamic) -> String]
+										reflaxe.elixir.helpers.PatternMatcher
+										getExprType:(expr : Dynamic) -> String
+								[Local patternExpr(23987):Dynamic:Dynamic]
+						[Switch:String]
+							[Local `(24126):String:String]
+							[Case:String]
+								[Const:String] "TArrayDecl"
+								[Block:String]
+									[Block:String]
+										[Call:String]
+											[Field:(patternExpr : Dynamic) -> String]
+												[Const:reflaxe.elixir.helpers.PatternMatcher] this
+												[FInstance:(patternExpr : Dynamic) -> String]
+													reflaxe.elixir.helpers.PatternMatcher
+													compileArrayPattern:(patternExpr : Dynamic) -> String
+											[Local patternExpr(23987):Dynamic:Dynamic]
+							[Case:String]
+								[Const:String] "TCall"
+								[Block:String]
+									[Block:String]
+										[Call:String]
+											[Field:(patternExpr : Dynamic) -> String]
+												[Const:reflaxe.elixir.helpers.PatternMatcher] this
+												[FInstance:(patternExpr : Dynamic) -> String]
+													reflaxe.elixir.helpers.PatternMatcher
+													compileEnumConstructorPattern:(patternExpr : Dynamic) -> String
+											[Local patternExpr(23987):Dynamic:Dynamic]
+							[Case:String]
+								[Const:String] "TConst"
+								[Block:String]
+									[Block:String]
+										[Call:String]
+											[Field:(patternExpr : Dynamic) -> String]
+												[Const:reflaxe.elixir.helpers.PatternMatcher] this
+												[FInstance:(patternExpr : Dynamic) -> String]
+													reflaxe.elixir.helpers.PatternMatcher
+													compileConstantPattern:(patternExpr : Dynamic) -> String
+											[Local patternExpr(23987):Dynamic:Dynamic]
+							[Case:String]
+								[Const:String] "TField"
+								[Block:String]
+									[Block:String]
+										[Call:String]
+											[Field:(patternExpr : Dynamic) -> String]
+												[Const:reflaxe.elixir.helpers.PatternMatcher] this
+												[FInstance:(patternExpr : Dynamic) -> String]
+													reflaxe.elixir.helpers.PatternMatcher
+													compileEnumFieldPattern:(patternExpr : Dynamic) -> String
+											[Local patternExpr(23987):Dynamic:Dynamic]
+							[Case:String]
+								[Const:String] "TLocal"
+								[Block:String]
+									[Block:String]
+										[Call:String]
+											[Field:(patternExpr : Dynamic) -> String]
+												[Const:reflaxe.elixir.helpers.PatternMatcher] this
+												[FInstance:(patternExpr : Dynamic) -> String]
+													reflaxe.elixir.helpers.PatternMatcher
+													compileVariablePattern:(patternExpr : Dynamic) -> String
+											[Local patternExpr(23987):Dynamic:Dynamic]
+							[Case:String]
+								[Const:String] "TObjectDecl"
+								[Block:String]
+									[Block:String]
+										[Call:String]
+											[Field:(patternExpr : Dynamic) -> String]
+												[Const:reflaxe.elixir.helpers.PatternMatcher] this
+												[FInstance:(patternExpr : Dynamic) -> String]
+													reflaxe.elixir.helpers.PatternMatcher
+													compileObjectPattern:(patternExpr : Dynamic) -> String
+											[Local patternExpr(23987):Dynamic:Dynamic]
+							[Case:String]
+								[Const:String] "TTuple"
+								[Block:String]
+									[Block:String]
+										[Call:String]
+											[Field:(patternExpr : Dynamic) -> String]
+												[Const:reflaxe.elixir.helpers.PatternMatcher] this
+												[FInstance:(patternExpr : Dynamic) -> String]
+													reflaxe.elixir.helpers.PatternMatcher
+													compileTuplePattern:(patternExpr : Dynamic) -> String
+											[Local patternExpr(23987):Dynamic:Dynamic]
+							[Case:String]
+								[Const:String] "TWildcard"
+								[Block:String] [Block:String] [Const:String] "_"
+							[Default:String]
+								[Block:String]
+									[Call:String]
+										[Field:(expr : Dynamic) -> String]
+											[Const:reflaxe.elixir.helpers.PatternMatcher] this
+											[FInstance:(expr : Dynamic) -> String]
+												reflaxe.elixir.helpers.PatternMatcher
+												compileExpression:(expr : Dynamic) -> String
+										[Local patternExpr(23987):Dynamic:Dynamic]
+
+	function compileEnumConstructorPattern[Function:(patternExpr : Dynamic) -> String]
+		[Arg:Dynamic] [Local patternExpr(24055):Dynamic]
+		[Block:Dynamic]
+			[Var call(24056):{ el : Null<Array<Dynamic>>, e : Null<{ fa : Null<{ name : Null<String> }> }> }]
+				[Field:Dynamic]
+					[Local patternExpr(24055):Dynamic:Dynamic]
+					[FDynamic:Dynamic] expr
+			[If:Void]
+				[Binop:Bool]
+					[Binop:Bool]
+						[Field:Null<{ fa : Null<{ name : Null<String> }> }>]
+							[Local call(24056):{ el : Null<Array<Dynamic>>, e : Null<{ fa : Null<{ name : Null<String> }> }> }:{ el : Null<Array<Dynamic>>, e : Null<{ fa : Null<{ name : Null<String> }> }> }]
+							[FAnon:Null<{ fa : Null<{ name : Null<String> }> }>] e:Null<{ fa : Null<{ name : Null<String> }> }>
+						!=
+						[Const:Null<{ fa : Null<{ name : Null<String> }> }>] null
+					&&
+					[Binop:Bool]
+						[Call:String]
+							[Field:(expr : Dynamic) -> String]
+								[Const:reflaxe.elixir.helpers.PatternMatcher] this
+								[FInstance:(expr : Dynamic) -> String]
+									reflaxe.elixir.helpers.PatternMatcher
+									getExprType:(expr : Dynamic) -> String
+							[Field:Null<{ fa : Null<{ name : Null<String> }> }>]
+								[Local call(24056):{ el : Null<Array<Dynamic>>, e : Null<{ fa : Null<{ name : Null<String> }> }> }:{ el : Null<Array<Dynamic>>, e : Null<{ fa : Null<{ name : Null<String> }> }> }]
+								[FAnon:Null<{ fa : Null<{ name : Null<String> }> }>] e:Null<{ fa : Null<{ name : Null<String> }> }>
+						==
+						[Const:String] "TField"
+				[Then:Void] [Block:Void]
+					[Var field(24057):Null<{ fa : Null<{ name : Null<String> }> }>]
+						[Field:Null<{ fa : Null<{ name : Null<String> }> }>]
+							[Local call(24056):{ el : Null<Array<Dynamic>>, e : Null<{ fa : Null<{ name : Null<String> }> }> }:{ el : Null<Array<Dynamic>>, e : Null<{ fa : Null<{ name : Null<String> }> }> }]
+							[FAnon:Null<{ fa : Null<{ name : Null<String> }> }>] e:Null<{ fa : Null<{ name : Null<String> }> }>
+					[Var enumField(24058):Null<{ name : Null<String> }>]
+						[Field:Null<{ name : Null<String> }>]
+							[Local field(24057):Null<{ fa : Null<{ name : Null<String> }> }>:Null<{ fa : Null<{ name : Null<String> }> }>]
+							[FAnon:Null<{ name : Null<String> }>] fa:Null<{ name : Null<String> }>
+					[If:Void]
+						[Binop:Bool]
+							[Binop:Bool]
+								[Local enumField(24058):Null<{ name : Null<String> }>:Null<{ name : Null<String> }>]
+								!=
+								[Const:Null<{ name : Null<String> }>] null
+							&&
+							[Binop:Bool]
+								[Field:Null<String>]
+									[Local enumField(24058):Null<{ name : Null<String> }>:Null<{ name : Null<String> }>]
+									[FAnon:Null<String>] name:Null<String>
+								!=
+								[Const:Null<String>] null
+						[Then:Void] [Block:Void]
+							[Var fieldName(24059):String]
+								[Call:String]
+									[Field:(camelCase : String) -> String]
+										[TypeExpr reflaxe.elixir.helpers.NamingHelper:Class<reflaxe.elixir.helpers.NamingHelper>]
+										[FStatic:(camelCase : String) -> String]
+											reflaxe.elixir.helpers.NamingHelper
+											toSnakeCase:(camelCase : String) -> String
+									[Field:Null<String>]
+										[Local enumField(24058):Null<{ name : Null<String> }>:Null<{ name : Null<String> }>]
+										[FAnon:Null<String>] name:Null<String>
+							[If:Void]
+								[Binop:Bool]
+									[Binop:Bool]
+										[Field:Null<Array<Dynamic>>]
+											[Local call(24056):{ el : Null<Array<Dynamic>>, e : Null<{ fa : Null<{ name : Null<String> }> }> }:{ el : Null<Array<Dynamic>>, e : Null<{ fa : Null<{ name : Null<String> }> }> }]
+											[FAnon:Null<Array<Dynamic>>] el:Null<Array<Dynamic>>
+										!=
+										[Const:Null<Array<Dynamic>>] null
+									&&
+									[Binop:Bool]
+										[Field:Int]
+											[Field:Null<Array<Dynamic>>]
+												[Local call(24056):{ el : Null<Array<Dynamic>>, e : Null<{ fa : Null<{ name : Null<String> }> }> }:{ el : Null<Array<Dynamic>>, e : Null<{ fa : Null<{ name : Null<String> }> }> }]
+												[FAnon:Null<Array<Dynamic>>] el:Null<Array<Dynamic>>
+											[FAnon:Int] length:Int
+										>
+										[Const:Int] 0
+								[Then:Dynamic] [Block:Dynamic]
+									[Var args(24060):Array<String>] [ArrayDecl:Array<String>]
+									[Block:Void]
+										[Var `(24062):Int] [Const:Int] 0
+										[Var `(24063):Array<Dynamic>]
+											[Parenthesis:Array<Dynamic>]
+												[Cast:Array<Dynamic>]
+													[Field:Null<Array<Dynamic>>]
+														[Local call(24056):{ el : Null<Array<Dynamic>>, e : Null<{ fa : Null<{ name : Null<String> }> }> }:{ el : Null<Array<Dynamic>>, e : Null<{ fa : Null<{ name : Null<String> }> }> }]
+														[FAnon:Null<Array<Dynamic>>] el:Null<Array<Dynamic>>
+										[While:Void]
+											[Binop:Bool]
+												[Local `(24062):Int:Int]
+												<
+												[Field:Int]
+													[Local `(24063):Array<Dynamic>:Array<Dynamic>]
+													[FInstance:Int]
+														Array<Dynamic>
+														length:Int
+											[Block:Void]
+												[Var arg(24061):Dynamic]
+													[Array:Dynamic]
+														[Local `(24063):Array<Dynamic>:Array<Dynamic>]
+														[Local `(24062):Int:Int]
+												[Unop:Int]
+													++
+													Prefix
+													[Local `(24062):Int:Int]
+												[Call:Int]
+													[Field:(x : String) -> Int]
+														[Local args(24060):Array<String>:Array<String>]
+														[FInstance:(x : String) -> Int]
+															Array<String>
+															push:(x : Array.T) -> Int
+													[Call:String]
+														[Field:(patternExpr : Dynamic) -> String]
+															[Const:reflaxe.elixir.helpers.PatternMatcher] this
+															[FInstance:(patternExpr : Dynamic) -> String]
+																reflaxe.elixir.helpers.PatternMatcher
+																compilePattern:(patternExpr : Dynamic) -> String
+														[Local arg(24061):Dynamic:Dynamic]
+									[Return:Dynamic]
+										[Binop:String]
+											[Binop:String]
+												[Binop:String]
+													[Binop:String]
+														[Const:String] "{:"
+														+
+														[Local fieldName(24059):String:String]
+													+
+													[Const:String] ", "
+												+
+												[Call:String]
+													[Field:(sep : String) -> String]
+														[Local args(24060):Array<String>:Array<String>]
+														[FInstance:(sep : String) -> String]
+															Array<String>
+															join:(sep : String) -> String
+													[Const:String] ", "
+											+
+											[Const:String] "}"
+								[Else:Dynamic] [Block:Dynamic]
+									[Return:Dynamic]
+										[Binop:String]
+											[Const:String] ":"
+											+
+											[Local fieldName(24059):String:String]
+			[Return:Dynamic] [Const:String] "_"
+
+	function compileEnumFieldPattern[Function:(patternExpr : Dynamic) -> String]
+		[Arg:Dynamic] [Local patternExpr(24064):Dynamic]
+		[Block:Dynamic]
+			[Var field(24065):{ fa : Null<{ name : Null<String> }> }]
+				[Field:Dynamic]
+					[Local patternExpr(24064):Dynamic:Dynamic]
+					[FDynamic:Dynamic] expr
+			[If:Void]
+				[Binop:Bool]
+					[Binop:Bool]
+						[Field:Null<{ name : Null<String> }>]
+							[Local field(24065):{ fa : Null<{ name : Null<String> }> }:{ fa : Null<{ name : Null<String> }> }]
+							[FAnon:Null<{ name : Null<String> }>] fa:Null<{ name : Null<String> }>
+						!=
+						[Const:Null<{ name : Null<String> }>] null
+					&&
+					[Binop:Bool]
+						[Field:Null<String>]
+							[Field:Null<{ name : Null<String> }>]
+								[Local field(24065):{ fa : Null<{ name : Null<String> }> }:{ fa : Null<{ name : Null<String> }> }]
+								[FAnon:Null<{ name : Null<String> }>] fa:Null<{ name : Null<String> }>
+							[FAnon:Null<String>] name:Null<String>
+						!=
+						[Const:Null<String>] null
+				[Then:Dynamic] [Block:Dynamic]
+					[Var fieldName(24066):String]
+						[Call:String]
+							[Field:(camelCase : String) -> String]
+								[TypeExpr reflaxe.elixir.helpers.NamingHelper:Class<reflaxe.elixir.helpers.NamingHelper>]
+								[FStatic:(camelCase : String) -> String]
+									reflaxe.elixir.helpers.NamingHelper
+									toSnakeCase:(camelCase : String) -> String
+							[Field:Null<String>]
+								[Field:Null<{ name : Null<String> }>]
+									[Local field(24065):{ fa : Null<{ name : Null<String> }> }:{ fa : Null<{ name : Null<String> }> }]
+									[FAnon:Null<{ name : Null<String> }>] fa:Null<{ name : Null<String> }>
+								[FAnon:Null<String>] name:Null<String>
+					[Return:Dynamic]
+						[Binop:String]
+							[Const:String] ":"
+							+
+							[Local fieldName(24066):String:String]
+			[Return:Dynamic] [Const:String] "_"
+
+	function compileArrayPattern[Function:(patternExpr : Dynamic) -> String]
+		[Arg:Dynamic] [Local patternExpr(24067):Dynamic]
+		[Block:Dynamic]
+			[Var arr(24068):{ el : Null<Array<Dynamic>> }]
+				[Field:Dynamic]
+					[Local patternExpr(24067):Dynamic:Dynamic]
+					[FDynamic:Dynamic] expr
+			[If:Void]
+				[Binop:Bool]
+					[Field:Null<Array<Dynamic>>]
+						[Local arr(24068):{ el : Null<Array<Dynamic>> }:{ el : Null<Array<Dynamic>> }]
+						[FAnon:Null<Array<Dynamic>>] el:Null<Array<Dynamic>>
+					!=
+					[Const:Null<Array<Dynamic>>] null
+				[Then:Void] [Block:Void]
+					[Var elements(24069):Array<String>] [ArrayDecl:Array<String>]
+					[Var restElement(24070):Null<String>] [Const:Null<String>] null
+					[Var hasRestPattern(24071):Bool] [Const:Bool] false
+					[Block:Void]
+						[Var `(24075):Int] [Const:Int] 0
+						[Var `(24076):Int]
+							[Field:Int]
+								[Parenthesis:Array<Dynamic>]
+									[Cast:Array<Dynamic>]
+										[Field:Null<Array<Dynamic>>]
+											[Local arr(24068):{ el : Null<Array<Dynamic>> }:{ el : Null<Array<Dynamic>> }]
+											[FAnon:Null<Array<Dynamic>>] el:Null<Array<Dynamic>>
+								[FInstance:Int]
+									Array<Dynamic>
+									length:Int
+						[While:Void]
+							[Binop:Bool]
+								[Local `(24075):Int:Int]
+								<
+								[Local `(24076):Int:Int]
+							[Block:Void]
+								[Var i(24072):Int]
+									[Unop:Int]
+										++
+										Postfix
+										[Local `(24075):Int:Int]
+								[Var element(24073):Unknown<70>]
+									[Array:Dynamic]
+										[Parenthesis:Array<Dynamic>]
+											[Cast:Array<Dynamic>]
+												[Field:Null<Array<Dynamic>>]
+													[Local arr(24068):{ el : Null<Array<Dynamic>> }:{ el : Null<Array<Dynamic>> }]
+													[FAnon:Null<Array<Dynamic>>] el:Null<Array<Dynamic>>
+										[Local i(24072):Int:Int]
+								[If:Void]
+									[Binop:Bool]
+										[Call:Bool]
+											[Field:(expr : Dynamic) -> Bool]
+												[Const:reflaxe.elixir.helpers.PatternMatcher] this
+												[FInstance:(expr : Dynamic) -> Bool]
+													reflaxe.elixir.helpers.PatternMatcher
+													isRestPattern:(expr : Dynamic) -> Bool
+											[Local element(24073):Unknown<70>:Unknown<70>]
+										||
+										[Call:Bool]
+											[Field:(expr : Dynamic) -> Bool]
+												[Const:reflaxe.elixir.helpers.PatternMatcher] this
+												[FInstance:(expr : Dynamic) -> Bool]
+													reflaxe.elixir.helpers.PatternMatcher
+													isTailPattern:(expr : Dynamic) -> Bool
+											[Local element(24073):Unknown<70>:Unknown<70>]
+									[Then:Null<String>] [Block:Null<String>]
+										[Binop:Bool]
+											[Local hasRestPattern(24071):Bool:Bool]
+											=
+											[Const:Bool] true
+										[Binop:Null<String>]
+											[Local restElement(24070):Null<String>:Null<String>]
+											=
+											[Call:String]
+												[Field:(patternExpr : Dynamic) -> String]
+													[Const:reflaxe.elixir.helpers.PatternMatcher] this
+													[FInstance:(patternExpr : Dynamic) -> String]
+														reflaxe.elixir.helpers.PatternMatcher
+														compilePattern:(patternExpr : Dynamic) -> String
+												[Call:Dynamic]
+													[Field:(expr : Dynamic) -> Dynamic]
+														[Const:reflaxe.elixir.helpers.PatternMatcher] this
+														[FInstance:(expr : Dynamic) -> Dynamic]
+															reflaxe.elixir.helpers.PatternMatcher
+															extractRestVariable:(expr : Dynamic) -> Dynamic
+													[Local element(24073):Unknown<70>:Unknown<70>]
+									[Else:Void] [Block:Void]
+										[If:Void]
+											[Unop:Bool]
+												!
+												Prefix
+												[Local hasRestPattern(24071):Bool:Bool]
+											[Then:Int] [Block:Int]
+												[Call:Int]
+													[Field:(x : String) -> Int]
+														[Local elements(24069):Array<String>:Array<String>]
+														[FInstance:(x : String) -> Int]
+															Array<String>
+															push:(x : Array.T) -> Int
+													[Call:String]
+														[Field:(patternExpr : Dynamic) -> String]
+															[Const:reflaxe.elixir.helpers.PatternMatcher] this
+															[FInstance:(patternExpr : Dynamic) -> String]
+																reflaxe.elixir.helpers.PatternMatcher
+																compilePattern:(patternExpr : Dynamic) -> String
+														[Local element(24073):Unknown<70>:Unknown<70>]
+											[Else:Void] [Block:Void]
+												[Call:Void]
+													[Field:(v : Dynamic, ?infos : Null<haxe.PosInfos>) -> Void]
+														[TypeExpr haxe.Log:Class<haxe.Log>]
+														[FStatic:(v : Dynamic, ?infos : Null<haxe.PosInfos>) -> Void]
+															haxe.Log
+															trace:(v : Dynamic, ?infos : Null<haxe.PosInfos>) -> Void
+													[Const:String] "Warning: Elements after rest pattern are not supported in Elixir"
+													[ObjectDecl:{ methodName : String, lineNumber : Int, fileName : String, ?customParams : Null<Array<Dynamic>>, className : String }]
+														fileName: [Const:String] "../../../src/reflaxe/elixir/helpers/PatternMatcher.hx"
+														lineNumber: [Const:Int] 290
+														className: [Const:String] "reflaxe.elixir.helpers.PatternMatcher"
+														methodName: [Const:String] "compileArrayPattern"
+					[If:Void]
+						[Binop:Bool]
+							[Local restElement(24070):Null<String>:Null<String>]
+							!=
+							[Const:Null<String>] null
+						[Then:Void] [Block:Void]
+							[If:Void]
+								[Binop:Bool]
+									[Field:Int]
+										[Local elements(24069):Array<String>:Array<String>]
+										[FInstance:Int]
+											Array<String>
+											length:Int
+									>
+									[Const:Int] 0
+								[Then:Dynamic] [Block:Dynamic]
+									[Return:Dynamic]
+										[Binop:String]
+											[Binop:String]
+												[Binop:String]
+													[Binop:String]
+														[Const:String] "["
+														+
+														[Call:String]
+															[Field:(sep : String) -> String]
+																[Local elements(24069):Array<String>:Array<String>]
+																[FInstance:(sep : String) -> String]
+																	Array<String>
+																	join:(sep : String) -> String
+															[Const:String] ", "
+													+
+													[Const:String] " | "
+												+
+												[Local restElement(24070):Null<String>:Null<String>]
+											+
+											[Const:String] "]"
+								[Else:Dynamic] [Block:Dynamic] [Return:Dynamic] [Local restElement(24070):Null<String>:Null<String>]
+						[Else:Void] [Block:Void]
+							[If:Void]
+								[Binop:Bool]
+									[Field:Int]
+										[Local elements(24069):Array<String>:Array<String>]
+										[FInstance:Int]
+											Array<String>
+											length:Int
+									>
+									[Const:Int] 0
+								[Then:Dynamic] [Block:Dynamic]
+									[Return:Dynamic]
+										[Binop:String]
+											[Binop:String]
+												[Const:String] "["
+												+
+												[Call:String]
+													[Field:(sep : String) -> String]
+														[Local elements(24069):Array<String>:Array<String>]
+														[FInstance:(sep : String) -> String]
+															Array<String>
+															join:(sep : String) -> String
+													[Const:String] ", "
+											+
+											[Const:String] "]"
+			[Return:Dynamic] [Const:String] "[]"
+
+	function compileObjectPattern[Function:(patternExpr : Dynamic) -> String]
+		[Arg:Dynamic] [Local patternExpr(24077):Dynamic]
+		[Block:Dynamic]
+			[Var obj(24078):{ fields : Null<Array<Dynamic>> }]
+				[Field:Dynamic]
+					[Local patternExpr(24077):Dynamic:Dynamic]
+					[FDynamic:Dynamic] expr
+			[If:Void]
+				[Binop:Bool]
+					[Field:Null<Array<Dynamic>>]
+						[Local obj(24078):{ fields : Null<Array<Dynamic>> }:{ fields : Null<Array<Dynamic>> }]
+						[FAnon:Null<Array<Dynamic>>] fields:Null<Array<Dynamic>>
+					!=
+					[Const:Null<Array<Dynamic>>] null
+				[Then:Void] [Block:Void]
+					[Var fields(24079):Array<String>] [ArrayDecl:Array<String>]
+					[Block:Void]
+						[Var `(24084):Int] [Const:Int] 0
+						[Var `(24085):Array<Dynamic>]
+							[Parenthesis:Array<Dynamic>]
+								[Cast:Array<Dynamic>]
+									[Field:Null<Array<Dynamic>>]
+										[Local obj(24078):{ fields : Null<Array<Dynamic>> }:{ fields : Null<Array<Dynamic>> }]
+										[FAnon:Null<Array<Dynamic>>] fields:Null<Array<Dynamic>>
+						[While:Void]
+							[Binop:Bool]
+								[Local `(24084):Int:Int]
+								<
+								[Field:Int]
+									[Local `(24085):Array<Dynamic>:Array<Dynamic>]
+									[FInstance:Int]
+										Array<Dynamic>
+										length:Int
+							[Block:Void]
+								[Var field(24080):Dynamic]
+									[Array:Dynamic]
+										[Local `(24085):Array<Dynamic>:Array<Dynamic>]
+										[Local `(24084):Int:Int]
+								[Unop:Int]
+									++
+									Prefix
+									[Local `(24084):Int:Int]
+								[Var fieldName(24081):String]
+									[Field:Dynamic]
+										[Local field(24080):Dynamic:Dynamic]
+										[FDynamic:Dynamic] name
+								[Var fieldValue(24082):String]
+									[Call:String]
+										[Field:(patternExpr : Dynamic) -> String]
+											[Const:reflaxe.elixir.helpers.PatternMatcher] this
+											[FInstance:(patternExpr : Dynamic) -> String]
+												reflaxe.elixir.helpers.PatternMatcher
+												compilePattern:(patternExpr : Dynamic) -> String
+										[Field:Dynamic]
+											[Local field(24080):Dynamic:Dynamic]
+											[FDynamic:Dynamic] expr
+								[Var elixirFieldName(24083):String]
+									[Call:String]
+										[Field:(camelCase : String) -> String]
+											[TypeExpr reflaxe.elixir.helpers.NamingHelper:Class<reflaxe.elixir.helpers.NamingHelper>]
+											[FStatic:(camelCase : String) -> String]
+												reflaxe.elixir.helpers.NamingHelper
+												toSnakeCase:(camelCase : String) -> String
+										[Local fieldName(24081):String:String]
+								[Call:Int]
+									[Field:(x : String) -> Int]
+										[Local fields(24079):Array<String>:Array<String>]
+										[FInstance:(x : String) -> Int]
+											Array<String>
+											push:(x : Array.T) -> Int
+									[Binop:String]
+										[Binop:String]
+											[Binop:String]
+												[Const:String] ""
+												+
+												[Local elixirFieldName(24083):String:String]
+											+
+											[Const:String] ": "
+										+
+										[Local fieldValue(24082):String:String]
+					[If:Void]
+						[Binop:Bool]
+							[Field:Dynamic]
+								[Local patternExpr(24077):Dynamic:Dynamic]
+								[FDynamic:Dynamic] structType
+							!=
+							[Const:Dynamic] null
+						[Then:Dynamic] [Block:Dynamic]
+							[Var structName(24086):String]
+								[Call:String]
+									[Field:(haxeName : String) -> String]
+										[TypeExpr reflaxe.elixir.helpers.NamingHelper:Class<reflaxe.elixir.helpers.NamingHelper>]
+										[FStatic:(haxeName : String) -> String]
+											reflaxe.elixir.helpers.NamingHelper
+											getElixirModuleName:(haxeName : String) -> String
+									[Field:Dynamic]
+										[Local patternExpr(24077):Dynamic:Dynamic]
+										[FDynamic:Dynamic] structType
+							[Return:Dynamic]
+								[Binop:String]
+									[Binop:String]
+										[Binop:String]
+											[Binop:String]
+												[Const:String] "%"
+												+
+												[Local structName(24086):String:String]
+											+
+											[Const:String] "{"
+										+
+										[Call:String]
+											[Field:(sep : String) -> String]
+												[Local fields(24079):Array<String>:Array<String>]
+												[FInstance:(sep : String) -> String]
+													Array<String>
+													join:(sep : String) -> String
+											[Const:String] ", "
+									+
+									[Const:String] "}"
+						[Else:Dynamic] [Block:Dynamic]
+							[Return:Dynamic]
+								[Binop:String]
+									[Binop:String]
+										[Const:String] "%{"
+										+
+										[Call:String]
+											[Field:(sep : String) -> String]
+												[Local fields(24079):Array<String>:Array<String>]
+												[FInstance:(sep : String) -> String]
+													Array<String>
+													join:(sep : String) -> String
+											[Const:String] ", "
+									+
+									[Const:String] "}"
+			[Return:Dynamic] [Const:String] "%{}"
+
+	function compileVariablePattern[Function:(patternExpr : Dynamic) -> String]
+		[Arg:Dynamic] [Local patternExpr(24007):Dynamic]
+		[Block:Dynamic]
+			[Var local(24008):{ v : Null<{ name : Null<String> }> }]
+				[Field:Dynamic]
+					[Local patternExpr(24007):Dynamic:Dynamic]
+					[FDynamic:Dynamic] expr
+			[If:Void]
+				[Binop:Bool]
+					[Binop:Bool]
+						[Field:Null<{ name : Null<String> }>]
+							[Local local(24008):{ v : Null<{ name : Null<String> }> }:{ v : Null<{ name : Null<String> }> }]
+							[FAnon:Null<{ name : Null<String> }>] v:Null<{ name : Null<String> }>
+						!=
+						[Const:Null<{ name : Null<String> }>] null
+					&&
+					[Binop:Bool]
+						[Field:Null<String>]
+							[Field:Null<{ name : Null<String> }>]
+								[Local local(24008):{ v : Null<{ name : Null<String> }> }:{ v : Null<{ name : Null<String> }> }]
+								[FAnon:Null<{ name : Null<String> }>] v:Null<{ name : Null<String> }>
+							[FAnon:Null<String>] name:Null<String>
+						!=
+						[Const:Null<String>] null
+				[Then:Dynamic] [Block:Dynamic]
+					[Return:Dynamic]
+						[Call:String]
+							[Field:(camelCase : String) -> String]
+								[TypeExpr reflaxe.elixir.helpers.NamingHelper:Class<reflaxe.elixir.helpers.NamingHelper>]
+								[FStatic:(camelCase : String) -> String]
+									reflaxe.elixir.helpers.NamingHelper
+									toSnakeCase:(camelCase : String) -> String
+							[Field:Null<String>]
+								[Field:Null<{ name : Null<String> }>]
+									[Local local(24008):{ v : Null<{ name : Null<String> }> }:{ v : Null<{ name : Null<String> }> }]
+									[FAnon:Null<{ name : Null<String> }>] v:Null<{ name : Null<String> }>
+								[FAnon:Null<String>] name:Null<String>
+			[Return:Dynamic] [Const:String] "_"
+
+	function compileConstantPattern[Function:(patternExpr : Dynamic) -> String]
+		[Arg:Dynamic] [Local patternExpr(24087):Dynamic]
+		[Block:Dynamic]
+			[Var const(24088):haxe.macro.Constant]
+				[Field:Dynamic]
+					[Local patternExpr(24087):Dynamic:Dynamic]
+					[FDynamic:Dynamic] expr
+			[Return:Dynamic]
+				[Meta:String]
+					:ast(switch (const) {
+	case CInt(v, _):
+		v;	
+	case CFloat(f, _):
+		f;	
+	case CString(s, _):
+		"\"${s}\"";	
+	case CIdent(s):
+		s;	
+	case CRegexp(r, opt):
+		"~r/${r}/${opt}";	
+	case _:
+		"nil";	
+})
+					[Switch:String]
+						[Meta:Int]
+							:exhaustive
+							[EnumIndex:Int] [Local const(24088):haxe.macro.Constant:haxe.macro.Constant]
+						[Case:String]
+							[Const:Int] 0
+							[Block:String]
+								[Var `(24104):String]
+									[EnumParameter:String]
+										[Local const(24088):haxe.macro.Constant:haxe.macro.Constant]
+										CInt
+										0
+								[Var `(24105):Null<String>]
+									[EnumParameter:Null<String>]
+										[Local const(24088):haxe.macro.Constant:haxe.macro.Constant]
+										CInt
+										1
+								[Block:String]
+									[Var v(24106):String] [Local `(24104):String:String]
+									[Block:String] [Local v(24106):String:String]
+						[Case:String]
+							[Const:Int] 1
+							[Block:String]
+								[Var `(24107):String]
+									[EnumParameter:String]
+										[Local const(24088):haxe.macro.Constant:haxe.macro.Constant]
+										CFloat
+										0
+								[Var `(24108):Null<String>]
+									[EnumParameter:Null<String>]
+										[Local const(24088):haxe.macro.Constant:haxe.macro.Constant]
+										CFloat
+										1
+								[Block:String]
+									[Var f(24109):String] [Local `(24107):String:String]
+									[Block:String] [Local f(24109):String:String]
+						[Case:String]
+							[Const:Int] 2
+							[Block:String]
+								[Var `(24110):String]
+									[EnumParameter:String]
+										[Local const(24088):haxe.macro.Constant:haxe.macro.Constant]
+										CString
+										0
+								[Var `(24111):Null<haxe.macro.StringLiteralKind>]
+									[EnumParameter:Null<haxe.macro.StringLiteralKind>]
+										[Local const(24088):haxe.macro.Constant:haxe.macro.Constant]
+										CString
+										1
+								[Block:String]
+									[Var s(24112):String] [Local `(24110):String:String]
+									[Block:String]
+										[Binop:String]
+											[Binop:String]
+												[Const:String] "\""
+												+
+												[Local s(24112):String:String]
+											+
+											[Const:String] "\""
+						[Case:String]
+							[Const:Int] 3
+							[Block:String]
+								[Var `(24113):String]
+									[EnumParameter:String]
+										[Local const(24088):haxe.macro.Constant:haxe.macro.Constant]
+										CIdent
+										0
+								[Block:String]
+									[Var s(24114):String] [Local `(24113):String:String]
+									[Block:String] [Local s(24114):String:String]
+						[Case:String]
+							[Const:Int] 4
+							[Block:String]
+								[Var `(24115):String]
+									[EnumParameter:String]
+										[Local const(24088):haxe.macro.Constant:haxe.macro.Constant]
+										CRegexp
+										0
+								[Var `(24116):String]
+									[EnumParameter:String]
+										[Local const(24088):haxe.macro.Constant:haxe.macro.Constant]
+										CRegexp
+										1
+								[Block:String]
+									[Var r(24117):String] [Local `(24115):String:String]
+									[Var opt(24118):String] [Local `(24116):String:String]
+									[Block:String]
+										[Binop:String]
+											[Binop:String]
+												[Binop:String]
+													[Const:String] "~r/"
+													+
+													[Local r(24117):String:String]
+												+
+												[Const:String] "/"
+											+
+											[Local opt(24118):String:String]
+
+	function compileTuplePattern[Function:(patternExpr : Dynamic) -> String]
+		[Arg:Dynamic] [Local patternExpr(24119):Dynamic]
+		[Block:Dynamic]
+			[Var tuple(24120):{ el : Null<Array<Dynamic>> }]
+				[Field:Dynamic]
+					[Local patternExpr(24119):Dynamic:Dynamic]
+					[FDynamic:Dynamic] expr
+			[If:Void]
+				[Binop:Bool]
+					[Field:Null<Array<Dynamic>>]
+						[Local tuple(24120):{ el : Null<Array<Dynamic>> }:{ el : Null<Array<Dynamic>> }]
+						[FAnon:Null<Array<Dynamic>>] el:Null<Array<Dynamic>>
+					!=
+					[Const:Null<Array<Dynamic>>] null
+				[Then:Dynamic] [Block:Dynamic]
+					[Var elements(24121):Array<String>] [ArrayDecl:Array<String>]
+					[Block:Void]
+						[Var `(24123):Int] [Const:Int] 0
+						[Var `(24124):Array<Dynamic>]
+							[Parenthesis:Array<Dynamic>]
+								[Cast:Array<Dynamic>]
+									[Field:Null<Array<Dynamic>>]
+										[Local tuple(24120):{ el : Null<Array<Dynamic>> }:{ el : Null<Array<Dynamic>> }]
+										[FAnon:Null<Array<Dynamic>>] el:Null<Array<Dynamic>>
+						[While:Void]
+							[Binop:Bool]
+								[Local `(24123):Int:Int]
+								<
+								[Field:Int]
+									[Local `(24124):Array<Dynamic>:Array<Dynamic>]
+									[FInstance:Int]
+										Array<Dynamic>
+										length:Int
+							[Block:Void]
+								[Var element(24122):Dynamic]
+									[Array:Dynamic]
+										[Local `(24124):Array<Dynamic>:Array<Dynamic>]
+										[Local `(24123):Int:Int]
+								[Unop:Int]
+									++
+									Prefix
+									[Local `(24123):Int:Int]
+								[Call:Int]
+									[Field:(x : String) -> Int]
+										[Local elements(24121):Array<String>:Array<String>]
+										[FInstance:(x : String) -> Int]
+											Array<String>
+											push:(x : Array.T) -> Int
+									[Call:String]
+										[Field:(patternExpr : Dynamic) -> String]
+											[Const:reflaxe.elixir.helpers.PatternMatcher] this
+											[FInstance:(patternExpr : Dynamic) -> String]
+												reflaxe.elixir.helpers.PatternMatcher
+												compilePattern:(patternExpr : Dynamic) -> String
+										[Local element(24122):Dynamic:Dynamic]
+					[Return:Dynamic]
+						[Binop:String]
+							[Binop:String]
+								[Const:String] "{"
+								+
+								[Call:String]
+									[Field:(sep : String) -> String]
+										[Local elements(24121):Array<String>:Array<String>]
+										[FInstance:(sep : String) -> String]
+											Array<String>
+											join:(sep : String) -> String
+									[Const:String] ", "
+							+
+							[Const:String] "}"
+			[Return:Dynamic] [Const:String] "{}"
+
+	public function compileGuard[Function:(guardExpr : Dynamic) -> String]
+		[Arg:Dynamic] [Local guardExpr(24128):Dynamic]
+		[Block:Dynamic]
+			[If:Void]
+				[Binop:Bool]
+					[Local guardExpr(24128):Dynamic:Dynamic]
+					==
+					[Const:Dynamic] null
+				[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [Const:String] ""
+			[Return:Dynamic]
+				[Meta:String]
+					:ast(switch (getExprType(guardExpr)) {
+	case "TBinop":
+		compileBinaryGuard(guardExpr);	
+	case "TCall":
+		compileFunctionGuard(guardExpr);	
+	case "TLocal":
+		compileVariableGuard(guardExpr);	
+	case _:
+		compileExpression(guardExpr);	
+})
+					[Block:String]
+						[Var `(24145):String]
+							[Call:String]
+								[Field:(expr : Dynamic) -> String]
+									[Const:reflaxe.elixir.helpers.PatternMatcher] this
+									[FInstance:(expr : Dynamic) -> String]
+										reflaxe.elixir.helpers.PatternMatcher
+										getExprType:(expr : Dynamic) -> String
+								[Local guardExpr(24128):Dynamic:Dynamic]
+						[Switch:String]
+							[Local `(24145):String:String]
+							[Case:String]
+								[Const:String] "TBinop"
+								[Block:String]
+									[Block:String]
+										[Call:String]
+											[Field:(guardExpr : Dynamic) -> String]
+												[Const:reflaxe.elixir.helpers.PatternMatcher] this
+												[FInstance:(guardExpr : Dynamic) -> String]
+													reflaxe.elixir.helpers.PatternMatcher
+													compileBinaryGuard:(guardExpr : Dynamic) -> String
+											[Local guardExpr(24128):Dynamic:Dynamic]
+							[Case:String]
+								[Const:String] "TCall"
+								[Block:String]
+									[Block:String]
+										[Call:String]
+											[Field:(guardExpr : Dynamic) -> String]
+												[Const:reflaxe.elixir.helpers.PatternMatcher] this
+												[FInstance:(guardExpr : Dynamic) -> String]
+													reflaxe.elixir.helpers.PatternMatcher
+													compileFunctionGuard:(guardExpr : Dynamic) -> String
+											[Local guardExpr(24128):Dynamic:Dynamic]
+							[Case:String]
+								[Const:String] "TLocal"
+								[Block:String]
+									[Block:String]
+										[Call:String]
+											[Field:(guardExpr : Dynamic) -> String]
+												[Const:reflaxe.elixir.helpers.PatternMatcher] this
+												[FInstance:(guardExpr : Dynamic) -> String]
+													reflaxe.elixir.helpers.PatternMatcher
+													compileVariableGuard:(guardExpr : Dynamic) -> String
+											[Local guardExpr(24128):Dynamic:Dynamic]
+							[Default:String]
+								[Block:String]
+									[Call:String]
+										[Field:(expr : Dynamic) -> String]
+											[Const:reflaxe.elixir.helpers.PatternMatcher] this
+											[FInstance:(expr : Dynamic) -> String]
+												reflaxe.elixir.helpers.PatternMatcher
+												compileExpression:(expr : Dynamic) -> String
+										[Local guardExpr(24128):Dynamic:Dynamic]
+
+	function compileBinaryGuard[Function:(guardExpr : Dynamic) -> String]
+		[Arg:Dynamic] [Local guardExpr(24129):Dynamic]
+		[Block:Dynamic]
+			[Var binop(24130):{ op : String, e2 : Unknown<72>, e1 : Unknown<71> }]
+				[Field:Dynamic]
+					[Local guardExpr(24129):Dynamic:Dynamic]
+					[FDynamic:Dynamic] expr
+			[Var left(24131):String]
+				[Call:String]
+					[Field:(expr : Dynamic) -> String]
+						[Const:reflaxe.elixir.helpers.PatternMatcher] this
+						[FInstance:(expr : Dynamic) -> String]
+							reflaxe.elixir.helpers.PatternMatcher
+							compileExpression:(expr : Dynamic) -> String
+					[Field:Unknown<71>]
+						[Local binop(24130):{ op : String, e2 : Unknown<72>, e1 : Unknown<71> }:{ op : String, e2 : Unknown<72>, e1 : Unknown<71> }]
+						[FAnon:Unknown<71>] e1:Unknown<71>
+			[Var right(24132):String]
+				[Call:String]
+					[Field:(expr : Dynamic) -> String]
+						[Const:reflaxe.elixir.helpers.PatternMatcher] this
+						[FInstance:(expr : Dynamic) -> String]
+							reflaxe.elixir.helpers.PatternMatcher
+							compileExpression:(expr : Dynamic) -> String
+					[Field:Unknown<72>]
+						[Local binop(24130):{ op : String, e2 : Unknown<72>, e1 : Unknown<71> }:{ op : String, e2 : Unknown<72>, e1 : Unknown<71> }]
+						[FAnon:Unknown<72>] e2:Unknown<72>
+			[Var op(24134):String]
+				[Call:String]
+					[Field:(op : String) -> String]
+						[Const:reflaxe.elixir.helpers.PatternMatcher] this
+						[FInstance:(op : String) -> String]
+							reflaxe.elixir.helpers.PatternMatcher
+							convertGuardOperator:(op : String) -> String
+					[Field:String]
+						[Local binop(24130):{ op : String, e2 : Unknown<72>, e1 : Unknown<71> }:{ op : String, e2 : Unknown<72>, e1 : Unknown<71> }]
+						[FAnon:String] op:String
+			[Return:Dynamic]
+				[Binop:String]
+					[Binop:String]
+						[Binop:String]
+							[Binop:String]
+								[Binop:String]
+									[Const:String] ""
+									+
+									[Local left(24131):String:String]
+								+
+								[Const:String] " "
+							+
+							[Local op(24134):String:String]
+						+
+						[Const:String] " "
+					+
+					[Local right(24132):String:String]
+
+	function compileFunctionGuard[Function:(guardExpr : Dynamic) -> String]
+		[Arg:Dynamic] [Local guardExpr(24135):Dynamic]
+		[Block:Dynamic]
+			[Var call(24136):{ el : Null<Array<Dynamic>>, e : Unknown<73> }]
+				[Field:Dynamic]
+					[Local guardExpr(24135):Dynamic:Dynamic]
+					[FDynamic:Dynamic] expr
+			[Var funcName(24137):String]
+				[Call:String]
+					[Field:(expr : Dynamic) -> String]
+						[Const:reflaxe.elixir.helpers.PatternMatcher] this
+						[FInstance:(expr : Dynamic) -> String]
+							reflaxe.elixir.helpers.PatternMatcher
+							getFunctionName:(expr : Dynamic) -> String
+					[Field:Unknown<73>]
+						[Local call(24136):{ el : Null<Array<Dynamic>>, e : Unknown<73> }:{ el : Null<Array<Dynamic>>, e : Unknown<73> }]
+						[FAnon:Unknown<73>] e:Unknown<73>
+			[Var args(24138):Array<String>] [ArrayDecl:Array<String>]
+			[If:Void]
+				[Binop:Bool]
+					[Field:Null<Array<Dynamic>>]
+						[Local call(24136):{ el : Null<Array<Dynamic>>, e : Unknown<73> }:{ el : Null<Array<Dynamic>>, e : Unknown<73> }]
+						[FAnon:Null<Array<Dynamic>>] el:Null<Array<Dynamic>>
+					!=
+					[Const:Null<Array<Dynamic>>] null
+				[Then:Void] [Block:Void]
+					[Block:Void]
+						[Var `(24140):Int] [Const:Int] 0
+						[Var `(24141):Array<Dynamic>]
+							[Parenthesis:Array<Dynamic>]
+								[Cast:Array<Dynamic>]
+									[Field:Null<Array<Dynamic>>]
+										[Local call(24136):{ el : Null<Array<Dynamic>>, e : Unknown<73> }:{ el : Null<Array<Dynamic>>, e : Unknown<73> }]
+										[FAnon:Null<Array<Dynamic>>] el:Null<Array<Dynamic>>
+						[While:Void]
+							[Binop:Bool]
+								[Local `(24140):Int:Int]
+								<
+								[Field:Int]
+									[Local `(24141):Array<Dynamic>:Array<Dynamic>]
+									[FInstance:Int]
+										Array<Dynamic>
+										length:Int
+							[Block:Void]
+								[Var arg(24139):Dynamic]
+									[Array:Dynamic]
+										[Local `(24141):Array<Dynamic>:Array<Dynamic>]
+										[Local `(24140):Int:Int]
+								[Unop:Int]
+									++
+									Prefix
+									[Local `(24140):Int:Int]
+								[Call:Int]
+									[Field:(x : String) -> Int]
+										[Local args(24138):Array<String>:Array<String>]
+										[FInstance:(x : String) -> Int]
+											Array<String>
+											push:(x : Array.T) -> Int
+									[Call:String]
+										[Field:(expr : Dynamic) -> String]
+											[Const:reflaxe.elixir.helpers.PatternMatcher] this
+											[FInstance:(expr : Dynamic) -> String]
+												reflaxe.elixir.helpers.PatternMatcher
+												compileExpression:(expr : Dynamic) -> String
+										[Local arg(24139):Dynamic:Dynamic]
+			[Var elixirFuncName(24142):String]
+				[Call:String]
+					[Field:(haxeName : String) -> String]
+						[TypeExpr reflaxe.elixir.helpers.NamingHelper:Class<reflaxe.elixir.helpers.NamingHelper>]
+						[FStatic:(haxeName : String) -> String]
+							reflaxe.elixir.helpers.NamingHelper
+							getElixirFunctionName:(haxeName : String) -> String
+					[Local funcName(24137):String:String]
+			[Return:Dynamic]
+				[Binop:String]
+					[Binop:String]
+						[Binop:String]
+							[Binop:String]
+								[Const:String] ""
+								+
+								[Local elixirFuncName(24142):String:String]
+							+
+							[Const:String] "("
+						+
+						[Call:String]
+							[Field:(sep : String) -> String]
+								[Local args(24138):Array<String>:Array<String>]
+								[FInstance:(sep : String) -> String]
+									Array<String>
+									join:(sep : String) -> String
+							[Const:String] ", "
+					+
+					[Const:String] ")"
+
+	function compileVariableGuard[Function:(guardExpr : Dynamic) -> String]
+		[Arg:Dynamic] [Local guardExpr(24143):Dynamic]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Call:String]
+					[Field:(patternExpr : Dynamic) -> String]
+						[Const:reflaxe.elixir.helpers.PatternMatcher] this
+						[FInstance:(patternExpr : Dynamic) -> String]
+							reflaxe.elixir.helpers.PatternMatcher
+							compileVariablePattern:(patternExpr : Dynamic) -> String
+					[Local guardExpr(24143):Dynamic:Dynamic]
+
+	function convertGuardOperator[Function:(op : String) -> String]
+		[Arg:String] [Local op(24133):String]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Meta:String]
+					:ast(switch (op) {
+	case "==":
+		"==";	
+	case "!=":
+		"!=";	
+	case ">":
+		">";	
+	case "<":
+		"<";	
+	case ">=":
+		">=";	
+	case "<=":
+		"<=";	
+	case "&&":
+		"and";	
+	case "||":
+		"or";	
+	case "!":
+		"not";	
+	case _:
+		op;	
+})
+					[Switch:String]
+						[Local op(24133):String:String]
+						[Case:String]
+							[Const:String] "!"
+							[Block:String] [Block:String] [Const:String] "not"
+						[Case:String]
+							[Const:String] "!="
+							[Block:String] [Block:String] [Const:String] "!="
+						[Case:String]
+							[Const:String] "&&"
+							[Block:String] [Block:String] [Const:String] "and"
+						[Case:String]
+							[Const:String] "<"
+							[Block:String] [Block:String] [Const:String] "<"
+						[Case:String]
+							[Const:String] "<="
+							[Block:String] [Block:String] [Const:String] "<="
+						[Case:String]
+							[Const:String] "=="
+							[Block:String] [Block:String] [Const:String] "=="
+						[Case:String]
+							[Const:String] ">"
+							[Block:String] [Block:String] [Const:String] ">"
+						[Case:String]
+							[Const:String] ">="
+							[Block:String] [Block:String] [Const:String] ">="
+						[Case:String]
+							[Const:String] "||"
+							[Block:String] [Block:String] [Const:String] "or"
+						[Default:String] [Block:String] [Local op(24133):String:String]
+
+	function getExprType[Function:(expr : Dynamic) -> String]
+		[Arg:Dynamic] [Local expr(23989):Dynamic]
+		[Block:Dynamic]
+			[If:Void]
+				[Binop:Bool]
+					[Binop:Bool]
+						[Local expr(23989):Dynamic:Dynamic]
+						==
+						[Const:Dynamic] null
+					||
+					[Binop:Bool]
+						[Field:Dynamic]
+							[Local expr(23989):Dynamic:Dynamic]
+							[FDynamic:Dynamic] expr
+						==
+						[Const:Dynamic] null
+				[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [Const:String] "null"
+			[Return:Dynamic]
+				[Call:String]
+					[Field:(c : Class<Dynamic>) -> String]
+						[TypeExpr Type:Class<Type>]
+						[FStatic:(c : Class<Dynamic>) -> String]
+							Type
+							getClassName:(c : Class<Dynamic>) -> String
+					[Call:Class<Unknown<74>>]
+						[Field:(o : Unknown<74>) -> Class<Unknown<74>>]
+							[TypeExpr Type:Class<Type>]
+							[FStatic:(o : Unknown<74>) -> Class<Unknown<74>>]
+								Type
+								getClass:(o : getClass.T) -> Class<getClass.T>
+						[Field:Dynamic]
+							[Local expr(23989):Dynamic:Dynamic]
+							[FDynamic:Dynamic] expr
+
+	function isRestPattern[Function:(expr : Dynamic) -> Bool]
+		[Arg:Dynamic] [Local expr(24022):Dynamic]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Binop:Bool]
+					[Binop:Bool]
+						[Local expr(24022):Dynamic:Dynamic]
+						!=
+						[Const:Dynamic] null
+					&&
+					[Binop:Bool]
+						[Field:Dynamic]
+							[Local expr(24022):Dynamic:Dynamic]
+							[FDynamic:Dynamic] isRest
+						==
+						[Const:Bool] true
+
+	function isTailPattern[Function:(expr : Dynamic) -> Bool]
+		[Arg:Dynamic] [Local expr(24074):Dynamic]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Binop:Bool]
+					[Binop:Bool]
+						[Local expr(24074):Dynamic:Dynamic]
+						!=
+						[Const:Dynamic] null
+					&&
+					[Parenthesis:Bool]
+						[Binop:Bool]
+							[Binop:Bool]
+								[Field:Dynamic]
+									[Local expr(24074):Dynamic:Dynamic]
+									[FDynamic:Dynamic] isTail
+								==
+								[Const:Bool] true
+							||
+							[Binop:Bool]
+								[Field:Dynamic]
+									[Local expr(24074):Dynamic:Dynamic]
+									[FDynamic:Dynamic] isRest
+								==
+								[Const:Bool] true
+
+	function extractRestVariable[Function:(expr : Dynamic) -> Dynamic]
+		[Arg:Dynamic] [Local expr(24023):Dynamic]
+		[Block:Dynamic]
+			[If:Void]
+				[Binop:Bool]
+					[Binop:Bool]
+						[Local expr(24023):Dynamic:Dynamic]
+						!=
+						[Const:Dynamic] null
+					&&
+					[Binop:Bool]
+						[Field:Dynamic]
+							[Local expr(24023):Dynamic:Dynamic]
+							[FDynamic:Dynamic] restVar
+						!=
+						[Const:Dynamic] null
+				[Then:Dynamic] [Block:Dynamic]
+					[Return:Dynamic]
+						[Field:Dynamic]
+							[Local expr(24023):Dynamic:Dynamic]
+							[FDynamic:Dynamic] restVar
+			[Return:Dynamic] [Local expr(24023):Dynamic:Dynamic]
+
+	function getFunctionName[Function:(expr : Dynamic) -> String]
+		[Arg:Dynamic] [Local expr(23992):Dynamic]
+		[Block:Dynamic]
+			[If:Void]
+				[Binop:Bool]
+					[Local expr(23992):Dynamic:Dynamic]
+					==
+					[Const:Dynamic] null
+				[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [Const:String] "unknown"
+			[Return:Dynamic] [Const:String] "func"
+
+	function isBinaryPattern[Function:(expr : Dynamic) -> Bool]
+		[Arg:Dynamic] [Local expr(23988):Dynamic]
+		[Block:Dynamic]
+			[If:Void]
+				[Binop:Bool]
+					[Local expr(23988):Dynamic:Dynamic]
+					==
+					[Const:Dynamic] null
+				[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [Const:Bool] false
+			[If:Void]
+				[Binop:Bool]
+					[Field:Dynamic]
+						[Local expr(23988):Dynamic:Dynamic]
+						[FDynamic:Dynamic] isBinary
+					==
+					[Const:Bool] true
+				[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [Const:Bool] true
+			[If:Void]
+				[Binop:Bool]
+					[Call:String]
+						[Field:(expr : Dynamic) -> String]
+							[Const:reflaxe.elixir.helpers.PatternMatcher] this
+							[FInstance:(expr : Dynamic) -> String]
+								reflaxe.elixir.helpers.PatternMatcher
+								getExprType:(expr : Dynamic) -> String
+						[Local expr(23988):Dynamic:Dynamic]
+					==
+					[Const:String] "TCall"
+				[Then:Void] [Block:Void]
+					[Var call(23990):{ e : Null<{ isBinaryConstructor : Bool }> }]
+						[Field:Dynamic]
+							[Local expr(23988):Dynamic:Dynamic]
+							[FDynamic:Dynamic] expr
+					[If:Void]
+						[Binop:Bool]
+							[Field:Null<{ isBinaryConstructor : Bool }>]
+								[Local call(23990):{ e : Null<{ isBinaryConstructor : Bool }> }:{ e : Null<{ isBinaryConstructor : Bool }> }]
+								[FAnon:Null<{ isBinaryConstructor : Bool }>] e:Null<{ isBinaryConstructor : Bool }>
+							!=
+							[Const:Null<{ isBinaryConstructor : Bool }>] null
+						[Then:Void] [Block:Void]
+							[Var funcExpr(23991):Null<{ isBinaryConstructor : Bool }>]
+								[Field:Null<{ isBinaryConstructor : Bool }>]
+									[Local call(23990):{ e : Null<{ isBinaryConstructor : Bool }> }:{ e : Null<{ isBinaryConstructor : Bool }> }]
+									[FAnon:Null<{ isBinaryConstructor : Bool }>] e:Null<{ isBinaryConstructor : Bool }>
+							[If:Void]
+								[Binop:Bool]
+									[Field:Bool]
+										[Local funcExpr(23991):Null<{ isBinaryConstructor : Bool }>:Null<{ isBinaryConstructor : Bool }>]
+										[FAnon:Bool] isBinaryConstructor:Bool
+									==
+									[Const:Bool] true
+								[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [Const:Bool] true
+							[Var funcName(23993):String]
+								[Call:String]
+									[Field:(expr : Dynamic) -> String]
+										[Const:reflaxe.elixir.helpers.PatternMatcher] this
+										[FInstance:(expr : Dynamic) -> String]
+											reflaxe.elixir.helpers.PatternMatcher
+											getFunctionName:(expr : Dynamic) -> String
+									[Field:Null<{ isBinaryConstructor : Bool }>]
+										[Local call(23990):{ e : Null<{ isBinaryConstructor : Bool }> }:{ e : Null<{ isBinaryConstructor : Bool }> }]
+										[FAnon:Null<{ isBinaryConstructor : Bool }>] e:Null<{ isBinaryConstructor : Bool }>
+							[If:Void]
+								[Binop:Bool]
+									[Binop:Bool]
+										[Binop:Bool]
+											[Local funcName(23993):String:String]
+											==
+											[Const:String] "binary"
+										||
+										[Binop:Bool]
+											[Local funcName(23993):String:String]
+											==
+											[Const:String] "bytes"
+									||
+									[Binop:Bool]
+										[Local funcName(23993):String:String]
+										==
+										[Const:String] "bitstring"
+								[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [Const:Bool] true
+			[If:Void]
+				[Binop:Bool]
+					[Call:String]
+						[Field:(expr : Dynamic) -> String]
+							[Const:reflaxe.elixir.helpers.PatternMatcher] this
+							[FInstance:(expr : Dynamic) -> String]
+								reflaxe.elixir.helpers.PatternMatcher
+								getExprType:(expr : Dynamic) -> String
+						[Local expr(23988):Dynamic:Dynamic]
+					==
+					[Const:String] "TConst"
+				[Then:Void] [Block:Void]
+					[Var constExpr(23994):Null<Unknown<75>>]
+						[Field:Dynamic]
+							[Local expr(23988):Dynamic:Dynamic]
+							[FDynamic:Dynamic] expr
+					[If:Void]
+						[Binop:Bool]
+							[Binop:Bool]
+								[Local constExpr(23994):Null<Unknown<75>>:Null<Unknown<75>>]
+								!=
+								[Const:Null<Unknown<75>>] null
+							&&
+							[Binop:Bool]
+								[Field:Dynamic]
+									[Local expr(23988):Dynamic:Dynamic]
+									[FDynamic:Dynamic] binaryPattern
+								==
+								[Const:Bool] true
+						[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [Const:Bool] true
+			[If:Void]
+				[Binop:Bool]
+					[Call:String]
+						[Field:(expr : Dynamic) -> String]
+							[Const:reflaxe.elixir.helpers.PatternMatcher] this
+							[FInstance:(expr : Dynamic) -> String]
+								reflaxe.elixir.helpers.PatternMatcher
+								getExprType:(expr : Dynamic) -> String
+						[Local expr(23988):Dynamic:Dynamic]
+					==
+					[Const:String] "TArrayDecl"
+				[Then:Void] [Block:Void]
+					[Var arr(23995):{ isBinarySegments : Bool }]
+						[Field:Dynamic]
+							[Local expr(23988):Dynamic:Dynamic]
+							[FDynamic:Dynamic] expr
+					[If:Void]
+						[Binop:Bool]
+							[Field:Bool]
+								[Local arr(23995):{ isBinarySegments : Bool }:{ isBinarySegments : Bool }]
+								[FAnon:Bool] isBinarySegments:Bool
+							==
+							[Const:Bool] true
+						[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [Const:Bool] true
+			[Return:Dynamic] [Const:Bool] false
+
+	function compileBinaryPattern[Function:(patternExpr : Dynamic) -> String]
+		[Arg:Dynamic] [Local patternExpr(23996):Dynamic]
+		[Block:Dynamic]
+			[Var result(23997):StringBuf] [New:StringBuf] StringBuf
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(23997):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "<<"
+			[Var segments(23998):Array<String>] [ArrayDecl:Array<String>]
+			[If:Void]
+				[Binop:Bool]
+					[Field:Dynamic]
+						[Local patternExpr(23996):Dynamic:Dynamic]
+						[FDynamic:Dynamic] segments
+					!=
+					[Const:Dynamic] null
+				[Then:Void] [Block:Void]
+					[Block:Void]
+						[Var `(24010):Int] [Const:Int] 0
+						[Var `(24011):Array<Dynamic>]
+							[Parenthesis:Array<Dynamic>]
+								[Cast:Array<Dynamic>]
+									[Field:Dynamic]
+										[Local patternExpr(23996):Dynamic:Dynamic]
+										[FDynamic:Dynamic] segments
+						[While:Void]
+							[Binop:Bool]
+								[Local `(24010):Int:Int]
+								<
+								[Field:Int]
+									[Local `(24011):Array<Dynamic>:Array<Dynamic>]
+									[FInstance:Int]
+										Array<Dynamic>
+										length:Int
+							[Block:Void]
+								[Var segment(23999):Dynamic]
+									[Array:Dynamic]
+										[Local `(24011):Array<Dynamic>:Array<Dynamic>]
+										[Local `(24010):Int:Int]
+								[Unop:Int]
+									++
+									Prefix
+									[Local `(24010):Int:Int]
+								[Call:Int]
+									[Field:(x : String) -> Int]
+										[Local segments(23998):Array<String>:Array<String>]
+										[FInstance:(x : String) -> Int]
+											Array<String>
+											push:(x : Array.T) -> Int
+									[Call:String]
+										[Field:(segment : Dynamic) -> String]
+											[Const:reflaxe.elixir.helpers.PatternMatcher] this
+											[FInstance:(segment : Dynamic) -> String]
+												reflaxe.elixir.helpers.PatternMatcher
+												compileBinarySegment:(segment : Dynamic) -> String
+										[Local segment(23999):Dynamic:Dynamic]
+				[Else:Void] [Block:Void]
+					[If:Void]
+						[Binop:Bool]
+							[Call:String]
+								[Field:(expr : Dynamic) -> String]
+									[Const:reflaxe.elixir.helpers.PatternMatcher] this
+									[FInstance:(expr : Dynamic) -> String]
+										reflaxe.elixir.helpers.PatternMatcher
+										getExprType:(expr : Dynamic) -> String
+								[Local patternExpr(23996):Dynamic:Dynamic]
+							==
+							[Const:String] "TCall"
+						[Then:Void] [Block:Void]
+							[Var call(24012):{ el : Null<Array<Dynamic>> }]
+								[Field:Dynamic]
+									[Local patternExpr(23996):Dynamic:Dynamic]
+									[FDynamic:Dynamic] expr
+							[If:Void]
+								[Binop:Bool]
+									[Field:Null<Array<Dynamic>>]
+										[Local call(24012):{ el : Null<Array<Dynamic>> }:{ el : Null<Array<Dynamic>> }]
+										[FAnon:Null<Array<Dynamic>>] el:Null<Array<Dynamic>>
+									!=
+									[Const:Null<Array<Dynamic>>] null
+								[Then:Void] [Block:Void]
+									[Block:Void]
+										[Var `(24016):Int] [Const:Int] 0
+										[Var `(24017):Array<Dynamic>]
+											[Parenthesis:Array<Dynamic>]
+												[Cast:Array<Dynamic>]
+													[Field:Null<Array<Dynamic>>]
+														[Local call(24012):{ el : Null<Array<Dynamic>> }:{ el : Null<Array<Dynamic>> }]
+														[FAnon:Null<Array<Dynamic>>] el:Null<Array<Dynamic>>
+										[While:Void]
+											[Binop:Bool]
+												[Local `(24016):Int:Int]
+												<
+												[Field:Int]
+													[Local `(24017):Array<Dynamic>:Array<Dynamic>]
+													[FInstance:Int]
+														Array<Dynamic>
+														length:Int
+											[Block:Void]
+												[Var arg(24013):Dynamic]
+													[Array:Dynamic]
+														[Local `(24017):Array<Dynamic>:Array<Dynamic>]
+														[Local `(24016):Int:Int]
+												[Unop:Int]
+													++
+													Prefix
+													[Local `(24016):Int:Int]
+												[Call:Int]
+													[Field:(x : String) -> Int]
+														[Local segments(23998):Array<String>:Array<String>]
+														[FInstance:(x : String) -> Int]
+															Array<String>
+															push:(x : Array.T) -> Int
+													[Call:String]
+														[Field:(arg : Dynamic) -> String]
+															[Const:reflaxe.elixir.helpers.PatternMatcher] this
+															[FInstance:(arg : Dynamic) -> String]
+																reflaxe.elixir.helpers.PatternMatcher
+																compileBinarySegmentFromArg:(arg : Dynamic) -> String
+														[Local arg(24013):Dynamic:Dynamic]
+						[Else:Void] [Block:Void]
+							[If:Void]
+								[Binop:Bool]
+									[Call:String]
+										[Field:(expr : Dynamic) -> String]
+											[Const:reflaxe.elixir.helpers.PatternMatcher] this
+											[FInstance:(expr : Dynamic) -> String]
+												reflaxe.elixir.helpers.PatternMatcher
+												getExprType:(expr : Dynamic) -> String
+										[Local patternExpr(23996):Dynamic:Dynamic]
+									==
+									[Const:String] "TArrayDecl"
+								[Then:Void] [Block:Void]
+									[Var arr(24018):{ el : Null<Array<Dynamic>> }]
+										[Field:Dynamic]
+											[Local patternExpr(23996):Dynamic:Dynamic]
+											[FDynamic:Dynamic] expr
+									[If:Void]
+										[Binop:Bool]
+											[Field:Null<Array<Dynamic>>]
+												[Local arr(24018):{ el : Null<Array<Dynamic>> }:{ el : Null<Array<Dynamic>> }]
+												[FAnon:Null<Array<Dynamic>>] el:Null<Array<Dynamic>>
+											!=
+											[Const:Null<Array<Dynamic>>] null
+										[Then:Void] [Block:Void]
+											[Var elements(24019):Array<Dynamic>]
+												[Parenthesis:Array<Dynamic>]
+													[Cast:Array<Dynamic>]
+														[Field:Null<Array<Dynamic>>]
+															[Local arr(24018):{ el : Null<Array<Dynamic>> }:{ el : Null<Array<Dynamic>> }]
+															[FAnon:Null<Array<Dynamic>>] el:Null<Array<Dynamic>>
+											[Block:Void]
+												[Var `(24027):Int] [Const:Int] 0
+												[Var `(24028):Int]
+													[Field:Int]
+														[Local elements(24019):Array<Dynamic>:Array<Dynamic>]
+														[FInstance:Int]
+															Array<Dynamic>
+															length:Int
+												[While:Void]
+													[Binop:Bool]
+														[Local `(24027):Int:Int]
+														<
+														[Local `(24028):Int:Int]
+													[Block:Void]
+														[Var i(24020):Int]
+															[Unop:Int]
+																++
+																Postfix
+																[Local `(24027):Int:Int]
+														[Var element(24021):Unknown<76>]
+															[Array:Dynamic]
+																[Local elements(24019):Array<Dynamic>:Array<Dynamic>]
+																[Local i(24020):Int:Int]
+														[If:Void]
+															[Binop:Bool]
+																[Binop:Bool]
+																	[Local i(24020):Int:Int]
+																	==
+																	[Binop:Int]
+																		[Field:Int]
+																			[Local elements(24019):Array<Dynamic>:Array<Dynamic>]
+																			[FInstance:Int]
+																				Array<Dynamic>
+																				length:Int
+																		-
+																		[Const:Int] 1
+																&&
+																[Call:Bool]
+																	[Field:(expr : Dynamic) -> Bool]
+																		[Const:reflaxe.elixir.helpers.PatternMatcher] this
+																		[FInstance:(expr : Dynamic) -> Bool]
+																			reflaxe.elixir.helpers.PatternMatcher
+																			isRestPattern:(expr : Dynamic) -> Bool
+																	[Local element(24021):Unknown<76>:Unknown<76>]
+															[Then:Int] [Block:Int]
+																[Var restVar(24024):Unknown<77>]
+																	[Call:Dynamic]
+																		[Field:(expr : Dynamic) -> Dynamic]
+																			[Const:reflaxe.elixir.helpers.PatternMatcher] this
+																			[FInstance:(expr : Dynamic) -> Dynamic]
+																				reflaxe.elixir.helpers.PatternMatcher
+																				extractRestVariable:(expr : Dynamic) -> Dynamic
+																		[Local element(24021):Unknown<76>:Unknown<76>]
+																[Var restPattern(24025):String]
+																	[Call:String]
+																		[Field:(patternExpr : Dynamic) -> String]
+																			[Const:reflaxe.elixir.helpers.PatternMatcher] this
+																			[FInstance:(patternExpr : Dynamic) -> String]
+																				reflaxe.elixir.helpers.PatternMatcher
+																				compilePattern:(patternExpr : Dynamic) -> String
+																		[Local restVar(24024):Unknown<77>:Unknown<77>]
+																[Call:Int]
+																	[Field:(x : String) -> Int]
+																		[Local segments(23998):Array<String>:Array<String>]
+																		[FInstance:(x : String) -> Int]
+																			Array<String>
+																			push:(x : Array.T) -> Int
+																	[Binop:String]
+																		[Local restPattern(24025):String:String]
+																		+
+																		[Const:String] "::binary"
+															[Else:Void] [Block:Void]
+																[Var pattern(24026):String]
+																	[Call:String]
+																		[Field:(patternExpr : Dynamic) -> String]
+																			[Const:reflaxe.elixir.helpers.PatternMatcher] this
+																			[FInstance:(patternExpr : Dynamic) -> String]
+																				reflaxe.elixir.helpers.PatternMatcher
+																				compilePattern:(patternExpr : Dynamic) -> String
+																		[Local element(24021):Unknown<76>:Unknown<76>]
+																[If:Void]
+																	[Binop:Bool]
+																		[Local pattern(24026):String:String]
+																		==
+																		[Const:String] "_"
+																	[Then:Int] [Block:Int]
+																		[Call:Int]
+																			[Field:(x : String) -> Int]
+																				[Local segments(23998):Array<String>:Array<String>]
+																				[FInstance:(x : String) -> Int]
+																					Array<String>
+																					push:(x : Array.T) -> Int
+																			[Const:String] "_::8"
+																	[Else:Int] [Block:Int]
+																		[Call:Int]
+																			[Field:(x : String) -> Int]
+																				[Local segments(23998):Array<String>:Array<String>]
+																				[FInstance:(x : String) -> Int]
+																					Array<String>
+																					push:(x : Array.T) -> Int
+																			[Binop:String]
+																				[Local pattern(24026):String:String]
+																				+
+																				[Const:String] "::8"
+								[Else:Void] [Block:Void]
+									[If:Void]
+										[Binop:Bool]
+											[Call:String]
+												[Field:(expr : Dynamic) -> String]
+													[Const:reflaxe.elixir.helpers.PatternMatcher] this
+													[FInstance:(expr : Dynamic) -> String]
+														reflaxe.elixir.helpers.PatternMatcher
+														getExprType:(expr : Dynamic) -> String
+												[Local patternExpr(23996):Dynamic:Dynamic]
+											==
+											[Const:String] "TConst"
+										[Then:Void] [Block:Void]
+											[Var constExpr(24029):Null<haxe.macro.Constant>]
+												[Field:Dynamic]
+													[Local patternExpr(23996):Dynamic:Dynamic]
+													[FDynamic:Dynamic] expr
+											[If:Void]
+												[Binop:Bool]
+													[Local constExpr(24029):Null<haxe.macro.Constant>:Null<haxe.macro.Constant>]
+													!=
+													[Const:Null<haxe.macro.Constant>] null
+												[Then:Void] [Block:Void]
+													[Meta:Void]
+														:ast(switch (constExpr) {
+	case CString(s, _):
+		segments.push("\"" + s + "\"");	
+	case _:
+		segments.push("_::binary");	
+})
+														[If:Void]
+															[Binop:Bool]
+																[Local constExpr(24029):Null<haxe.macro.Constant>:Null<haxe.macro.Constant>]
+																==
+																[Const:Null<haxe.macro.Constant>] null
+															[Then:Int] [Block:Int]
+																[Call:Int]
+																	[Field:(x : String) -> Int]
+																		[Local segments(23998):Array<String>:Array<String>]
+																		[FInstance:(x : String) -> Int]
+																			Array<String>
+																			push:(x : Array.T) -> Int
+																	[Const:String] "_::binary"
+															[Else:Void] [If:Void]
+																[Binop:Bool]
+																	[EnumIndex:Int] [Local constExpr(24029):Null<haxe.macro.Constant>:Null<haxe.macro.Constant>]
+																	==
+																	[Const:Int] 2
+																[Then:Int] [Block:Int]
+																	[Var `(24033):String]
+																		[EnumParameter:String]
+																			[Local constExpr(24029):Null<haxe.macro.Constant>:Null<haxe.macro.Constant>]
+																			CString
+																			0
+																	[Var `(24034):Null<haxe.macro.StringLiteralKind>]
+																		[EnumParameter:Null<haxe.macro.StringLiteralKind>]
+																			[Local constExpr(24029):Null<haxe.macro.Constant>:Null<haxe.macro.Constant>]
+																			CString
+																			1
+																	[Block:Int]
+																		[Var s(24035):String] [Local `(24033):String:String]
+																		[Block:Int]
+																			[Call:Int]
+																				[Field:(x : String) -> Int]
+																					[Local segments(23998):Array<String>:Array<String>]
+																					[FInstance:(x : String) -> Int]
+																						Array<String>
+																						push:(x : Array.T) -> Int
+																				[Binop:String]
+																					[Binop:String]
+																						[Const:String] "\""
+																						+
+																						[Local s(24035):String:String]
+																					+
+																					[Const:String] "\""
+																[Else:Int] [Block:Int]
+																	[Call:Int]
+																		[Field:(x : String) -> Int]
+																			[Local segments(23998):Array<String>:Array<String>]
+																			[FInstance:(x : String) -> Int]
+																				Array<String>
+																				push:(x : Array.T) -> Int
+																		[Const:String] "_::binary"
+										[Else:Void] [Block:Void]
+											[Var pattern(24036):String]
+												[Call:String]
+													[Field:(patternExpr : Dynamic) -> String]
+														[Const:reflaxe.elixir.helpers.PatternMatcher] this
+														[FInstance:(patternExpr : Dynamic) -> String]
+															reflaxe.elixir.helpers.PatternMatcher
+															compilePattern:(patternExpr : Dynamic) -> String
+													[Local patternExpr(23996):Dynamic:Dynamic]
+											[If:Void]
+												[Binop:Bool]
+													[Local pattern(24036):String:String]
+													!=
+													[Const:String] "_"
+												[Then:Int] [Block:Int]
+													[Call:Int]
+														[Field:(x : String) -> Int]
+															[Local segments(23998):Array<String>:Array<String>]
+															[FInstance:(x : String) -> Int]
+																Array<String>
+																push:(x : Array.T) -> Int
+														[Binop:String]
+															[Local pattern(24036):String:String]
+															+
+															[Const:String] "::binary"
+												[Else:Int] [Block:Int]
+													[Call:Int]
+														[Field:(x : String) -> Int]
+															[Local segments(23998):Array<String>:Array<String>]
+															[FInstance:(x : String) -> Int]
+																Array<String>
+																push:(x : Array.T) -> Int
+														[Const:String] "_::binary"
+			[If:Void]
+				[Binop:Bool]
+					[Field:Int]
+						[Local segments(23998):Array<String>:Array<String>]
+						[FInstance:Int]
+							Array<String>
+							length:Int
+					==
+					[Const:Int] 0
+				[Then:Int] [Block:Int]
+					[Call:Int]
+						[Field:(x : String) -> Int]
+							[Local segments(23998):Array<String>:Array<String>]
+							[FInstance:(x : String) -> Int]
+								Array<String>
+								push:(x : Array.T) -> Int
+						[Const:String] "_::binary"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(23997):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Call:String]
+					[Field:(sep : String) -> String]
+						[Local segments(23998):Array<String>:Array<String>]
+						[FInstance:(sep : String) -> String]
+							Array<String>
+							join:(sep : String) -> String
+					[Const:String] ", "
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(23997):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] ">>"
+			[Return:Dynamic]
+				[Call:String]
+					[Field:() -> String]
+						[Local result(23997):StringBuf:StringBuf]
+						[FInstance:() -> String]
+							StringBuf
+							toString:() -> String
+
+	function compileBinarySegment[Function:(segment : Dynamic) -> String]
+		[Arg:Dynamic] [Local segment(24000):Dynamic]
+		[Block:Void]
+			[If:Void]
+				[Binop:Bool]
+					[Local segment(24000):Dynamic:Dynamic]
+					==
+					[Const:Dynamic] null
+				[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [Const:String] "_::8"
+			[Var varName(24001):String] [Const:String] "_"
+			[Var size(24002):String] [Const:String] ""
+			[Var type(24003):String] [Const:String] "integer"
+			[Var signedness(24004):String] [Const:String] ""
+			[Var endianness(24005):String] [Const:String] ""
+			[Var unit(24006):String] [Const:String] ""
+			[If:Void]
+				[Binop:Bool]
+					[Field:Dynamic]
+						[Local segment(24000):Dynamic:Dynamic]
+						[FDynamic:Dynamic] variable
+					!=
+					[Const:Dynamic] null
+				[Then:String] [Block:String]
+					[Binop:String]
+						[Local varName(24001):String:String]
+						=
+						[Call:String]
+							[Field:(patternExpr : Dynamic) -> String]
+								[Const:reflaxe.elixir.helpers.PatternMatcher] this
+								[FInstance:(patternExpr : Dynamic) -> String]
+									reflaxe.elixir.helpers.PatternMatcher
+									compilePattern:(patternExpr : Dynamic) -> String
+							[Field:Dynamic]
+								[Local segment(24000):Dynamic:Dynamic]
+								[FDynamic:Dynamic] variable
+				[Else:Void] [Block:Void]
+					[If:Void]
+						[Binop:Bool]
+							[Field:Dynamic]
+								[Local segment(24000):Dynamic:Dynamic]
+								[FDynamic:Dynamic] name
+							!=
+							[Const:Dynamic] null
+						[Then:String] [Block:String]
+							[Binop:String]
+								[Local varName(24001):String:String]
+								=
+								[Call:String]
+									[Field:(camelCase : String) -> String]
+										[TypeExpr reflaxe.elixir.helpers.NamingHelper:Class<reflaxe.elixir.helpers.NamingHelper>]
+										[FStatic:(camelCase : String) -> String]
+											reflaxe.elixir.helpers.NamingHelper
+											toSnakeCase:(camelCase : String) -> String
+									[Field:Dynamic]
+										[Local segment(24000):Dynamic:Dynamic]
+										[FDynamic:Dynamic] name
+						[Else:Void] [Block:Void]
+							[If:Void]
+								[Binop:Bool]
+									[Call:String]
+										[Field:(expr : Dynamic) -> String]
+											[Const:reflaxe.elixir.helpers.PatternMatcher] this
+											[FInstance:(expr : Dynamic) -> String]
+												reflaxe.elixir.helpers.PatternMatcher
+												getExprType:(expr : Dynamic) -> String
+										[Local segment(24000):Dynamic:Dynamic]
+									==
+									[Const:String] "TLocal"
+								[Then:String] [Block:String]
+									[Binop:String]
+										[Local varName(24001):String:String]
+										=
+										[Call:String]
+											[Field:(patternExpr : Dynamic) -> String]
+												[Const:reflaxe.elixir.helpers.PatternMatcher] this
+												[FInstance:(patternExpr : Dynamic) -> String]
+													reflaxe.elixir.helpers.PatternMatcher
+													compileVariablePattern:(patternExpr : Dynamic) -> String
+											[Local segment(24000):Dynamic:Dynamic]
+			[If:Void]
+				[Binop:Bool]
+					[Field:Dynamic]
+						[Local segment(24000):Dynamic:Dynamic]
+						[FDynamic:Dynamic] size
+					!=
+					[Const:Dynamic] null
+				[Then:Void] [Block:Void]
+					[If:Void]
+						[Call:Bool]
+							[Field:(v : Dynamic, t : Dynamic) -> Bool]
+								[TypeExpr Std:Class<Std>]
+								[FStatic:(v : Dynamic, t : Dynamic) -> Bool]
+									Std
+									isOfType:(v : Dynamic, t : Dynamic) -> Bool
+							[Field:Dynamic]
+								[Local segment(24000):Dynamic:Dynamic]
+								[FDynamic:Dynamic] size
+							[TypeExpr Int:Abstract<Int>]
+						[Then:String] [Block:String]
+							[Binop:String]
+								[Local size(24002):String:String]
+								=
+								[Binop:String]
+									[Const:String] "::"
+									+
+									[Call:String]
+										[Field:(s : Dynamic) -> String]
+											[TypeExpr Std:Class<Std>]
+											[FStatic:(s : Dynamic) -> String]
+												Std
+												string:(s : Dynamic) -> String
+										[Field:Dynamic]
+											[Local segment(24000):Dynamic:Dynamic]
+											[FDynamic:Dynamic] size
+						[Else:String] [Block:String]
+							[Binop:String]
+								[Local size(24002):String:String]
+								=
+								[Binop:String]
+									[Const:String] "::"
+									+
+									[Call:String]
+										[Field:(expr : Dynamic) -> String]
+											[Const:reflaxe.elixir.helpers.PatternMatcher] this
+											[FInstance:(expr : Dynamic) -> String]
+												reflaxe.elixir.helpers.PatternMatcher
+												compileExpression:(expr : Dynamic) -> String
+										[Field:Dynamic]
+											[Local segment(24000):Dynamic:Dynamic]
+											[FDynamic:Dynamic] size
+			[If:Void]
+				[Binop:Bool]
+					[Field:Dynamic]
+						[Local segment(24000):Dynamic:Dynamic]
+						[FDynamic:Dynamic] type
+					!=
+					[Const:Dynamic] null
+				[Then:String] [Block:String]
+					[Binop:String]
+						[Local type(24003):String:String]
+						=
+						[Field:Dynamic]
+							[Local segment(24000):Dynamic:Dynamic]
+							[FDynamic:Dynamic] type
+				[Else:Void] [Block:Void]
+					[If:Void]
+						[Binop:Bool]
+							[Field:Dynamic]
+								[Local segment(24000):Dynamic:Dynamic]
+								[FDynamic:Dynamic] binaryType
+							!=
+							[Const:Dynamic] null
+						[Then:String] [Block:String]
+							[Binop:String]
+								[Local type(24003):String:String]
+								=
+								[Field:Dynamic]
+									[Local segment(24000):Dynamic:Dynamic]
+									[FDynamic:Dynamic] binaryType
+			[If:Void]
+				[Binop:Bool]
+					[Field:Dynamic]
+						[Local segment(24000):Dynamic:Dynamic]
+						[FDynamic:Dynamic] signed
+					==
+					[Const:Bool] true
+				[Then:String] [Block:String]
+					[Binop:String]
+						[Local signedness(24004):String:String]
+						=
+						[Const:String] "-signed"
+				[Else:Void] [Block:Void]
+					[If:Void]
+						[Binop:Bool]
+							[Field:Dynamic]
+								[Local segment(24000):Dynamic:Dynamic]
+								[FDynamic:Dynamic] unsigned
+							==
+							[Const:Bool] true
+						[Then:String] [Block:String]
+							[Binop:String]
+								[Local signedness(24004):String:String]
+								=
+								[Const:String] "-unsigned"
+			[If:Void]
+				[Binop:Bool]
+					[Field:Dynamic]
+						[Local segment(24000):Dynamic:Dynamic]
+						[FDynamic:Dynamic] big
+					==
+					[Const:Bool] true
+				[Then:String] [Block:String]
+					[Binop:String]
+						[Local endianness(24005):String:String]
+						=
+						[Const:String] "-big"
+				[Else:Void] [Block:Void]
+					[If:Void]
+						[Binop:Bool]
+							[Field:Dynamic]
+								[Local segment(24000):Dynamic:Dynamic]
+								[FDynamic:Dynamic] little
+							==
+							[Const:Bool] true
+						[Then:String] [Block:String]
+							[Binop:String]
+								[Local endianness(24005):String:String]
+								=
+								[Const:String] "-little"
+			[If:Void]
+				[Binop:Bool]
+					[Field:Dynamic]
+						[Local segment(24000):Dynamic:Dynamic]
+						[FDynamic:Dynamic] unit
+					!=
+					[Const:Dynamic] null
+				[Then:String] [Block:String]
+					[Binop:String]
+						[Local unit(24006):String:String]
+						=
+						[Binop:String]
+							[Binop:String]
+								[Const:String] "-unit("
+								+
+								[Call:String]
+									[Field:(s : Dynamic) -> String]
+										[TypeExpr Std:Class<Std>]
+										[FStatic:(s : Dynamic) -> String]
+											Std
+											string:(s : Dynamic) -> String
+									[Field:Dynamic]
+										[Local segment(24000):Dynamic:Dynamic]
+										[FDynamic:Dynamic] unit
+							+
+							[Const:String] ")"
+			[Var typeSpec(24009):String]
+				[Binop:String]
+					[Binop:String]
+						[Binop:String]
+							[Local type(24003):String:String]
+							+
+							[Local signedness(24004):String:String]
+						+
+						[Local endianness(24005):String:String]
+					+
+					[Local unit(24006):String:String]
+			[If:Void]
+				[Binop:Bool]
+					[Local size(24002):String:String]
+					!=
+					[Const:String] ""
+				[Then:Dynamic] [Block:Dynamic]
+					[Return:Dynamic]
+						[Binop:String]
+							[Binop:String]
+								[Binop:String]
+									[Binop:String]
+										[Const:String] ""
+										+
+										[Local varName(24001):String:String]
+									+
+									[Local size(24002):String:String]
+								+
+								[Const:String] "-"
+							+
+							[Local typeSpec(24009):String:String]
+				[Else:Void] [Block:Void]
+					[If:Void]
+						[Binop:Bool]
+							[Local type(24003):String:String]
+							==
+							[Const:String] "binary"
+						[Then:Dynamic] [Block:Dynamic]
+							[Return:Dynamic]
+								[Binop:String]
+									[Binop:String]
+										[Const:String] ""
+										+
+										[Local varName(24001):String:String]
+									+
+									[Const:String] "::binary"
+						[Else:Void] [Block:Void]
+							[If:Void]
+								[Binop:Bool]
+									[Local type(24003):String:String]
+									==
+									[Const:String] "utf8"
+								[Then:Dynamic] [Block:Dynamic]
+									[Return:Dynamic]
+										[Binop:String]
+											[Binop:String]
+												[Const:String] ""
+												+
+												[Local varName(24001):String:String]
+											+
+											[Const:String] "::utf8"
+								[Else:Void] [Block:Void]
+									[If:Void]
+										[Binop:Bool]
+											[Local type(24003):String:String]
+											==
+											[Const:String] "float"
+										[Then:Dynamic] [Block:Dynamic]
+											[Return:Dynamic]
+												[Binop:String]
+													[Binop:String]
+														[Const:String] ""
+														+
+														[Local varName(24001):String:String]
+													+
+													[Const:String] "::float"
+										[Else:Dynamic] [Block:Dynamic]
+											[Return:Dynamic]
+												[Binop:String]
+													[Binop:String]
+														[Binop:String]
+															[Const:String] ""
+															+
+															[Local varName(24001):String:String]
+														+
+														[Const:String] "::"
+													+
+													[Local typeSpec(24009):String:String]
+
+	function compileBinarySegmentFromArg[Function:(arg : Dynamic) -> String]
+		[Arg:Dynamic] [Local arg(24014):Dynamic]
+		[Block:Void]
+			[If:Void]
+				[Binop:Bool]
+					[Local arg(24014):Dynamic:Dynamic]
+					==
+					[Const:Dynamic] null
+				[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [Const:String] "_::8"
+			[If:Void]
+				[Binop:Bool]
+					[Field:Dynamic]
+						[Local arg(24014):Dynamic:Dynamic]
+						[FDynamic:Dynamic] segmentSpec
+					!=
+					[Const:Dynamic] null
+				[Then:Dynamic] [Block:Dynamic]
+					[Return:Dynamic]
+						[Call:String]
+							[Field:(segment : Dynamic) -> String]
+								[Const:reflaxe.elixir.helpers.PatternMatcher] this
+								[FInstance:(segment : Dynamic) -> String]
+									reflaxe.elixir.helpers.PatternMatcher
+									compileBinarySegment:(segment : Dynamic) -> String
+							[Field:Dynamic]
+								[Local arg(24014):Dynamic:Dynamic]
+								[FDynamic:Dynamic] segmentSpec
+			[Var pattern(24015):String]
+				[Call:String]
+					[Field:(patternExpr : Dynamic) -> String]
+						[Const:reflaxe.elixir.helpers.PatternMatcher] this
+						[FInstance:(patternExpr : Dynamic) -> String]
+							reflaxe.elixir.helpers.PatternMatcher
+							compilePattern:(patternExpr : Dynamic) -> String
+					[Local arg(24014):Dynamic:Dynamic]
+			[If:Void]
+				[Binop:Bool]
+					[Local pattern(24015):String:String]
+					==
+					[Const:String] "_"
+				[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [Const:String] "_::8"
+				[Else:Dynamic] [Block:Dynamic]
+					[Return:Dynamic]
+						[Binop:String]
+							[Local pattern(24015):String:String]
+							+
+							[Const:String] "::8"
+
+	function isPinPattern[Function:(expr : Dynamic) -> Bool]
+		[Arg:Dynamic] [Local expr(24037):Dynamic]
+		[Block:Dynamic]
+			[If:Void]
+				[Binop:Bool]
+					[Local expr(24037):Dynamic:Dynamic]
+					==
+					[Const:Dynamic] null
+				[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [Const:Bool] false
+			[If:Void]
+				[Binop:Bool]
+					[Field:Dynamic]
+						[Local expr(24037):Dynamic:Dynamic]
+						[FDynamic:Dynamic] isPin
+					==
+					[Const:Bool] true
+				[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [Const:Bool] true
+			[If:Void]
+				[Binop:Bool]
+					[Field:Dynamic]
+						[Local expr(24037):Dynamic:Dynamic]
+						[FDynamic:Dynamic] pinned
+					==
+					[Const:Bool] true
+				[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [Const:Bool] true
+			[If:Void]
+				[Binop:Bool]
+					[Call:String]
+						[Field:(expr : Dynamic) -> String]
+							[Const:reflaxe.elixir.helpers.PatternMatcher] this
+							[FInstance:(expr : Dynamic) -> String]
+								reflaxe.elixir.helpers.PatternMatcher
+								getExprType:(expr : Dynamic) -> String
+						[Local expr(24037):Dynamic:Dynamic]
+					==
+					[Const:String] "TLocal"
+				[Then:Void] [Block:Void]
+					[Var local(24038):{ v : Null<{ name : Null<{ charAt : Int -> String }> }> }]
+						[Field:Dynamic]
+							[Local expr(24037):Dynamic:Dynamic]
+							[FDynamic:Dynamic] expr
+					[If:Void]
+						[Binop:Bool]
+							[Binop:Bool]
+								[Field:Null<{ name : Null<{ charAt : Int -> String }> }>]
+									[Local local(24038):{ v : Null<{ name : Null<{ charAt : Int -> String }> }> }:{ v : Null<{ name : Null<{ charAt : Int -> String }> }> }]
+									[FAnon:Null<{ name : Null<{ charAt : Int -> String }> }>] v:Null<{ name : Null<{ charAt : Int -> String }> }>
+								!=
+								[Const:Null<{ name : Null<{ charAt : Int -> String }> }>] null
+							&&
+							[Binop:Bool]
+								[Field:Null<{ charAt : Int -> String }>]
+									[Field:Null<{ name : Null<{ charAt : Int -> String }> }>]
+										[Local local(24038):{ v : Null<{ name : Null<{ charAt : Int -> String }> }> }:{ v : Null<{ name : Null<{ charAt : Int -> String }> }> }]
+										[FAnon:Null<{ name : Null<{ charAt : Int -> String }> }>] v:Null<{ name : Null<{ charAt : Int -> String }> }>
+									[FAnon:Null<{ charAt : Int -> String }>] name:Null<{ charAt : Int -> String }>
+								!=
+								[Const:Null<{ charAt : Int -> String }>] null
+						[Then:Dynamic] [Block:Dynamic]
+							[Var name(24039):Null<{ charAt : Int -> String }>]
+								[Field:Null<{ charAt : Int -> String }>]
+									[Field:Null<{ name : Null<{ charAt : Int -> String }> }>]
+										[Local local(24038):{ v : Null<{ name : Null<{ charAt : Int -> String }> }> }:{ v : Null<{ name : Null<{ charAt : Int -> String }> }> }]
+										[FAnon:Null<{ name : Null<{ charAt : Int -> String }> }>] v:Null<{ name : Null<{ charAt : Int -> String }> }>
+									[FAnon:Null<{ charAt : Int -> String }>] name:Null<{ charAt : Int -> String }>
+							[Return:Dynamic]
+								[Binop:Bool]
+									[Call:String]
+										[Field:Int -> String]
+											[Local name(24039):Null<{ charAt : Int -> String }>:Null<{ charAt : Int -> String }>]
+											[FAnon:Int -> String] charAt:Int -> String
+										[Const:Int] 0
+									==
+									[Const:String] "^"
+			[If:Void]
+				[Binop:Bool]
+					[Call:String]
+						[Field:(expr : Dynamic) -> String]
+							[Const:reflaxe.elixir.helpers.PatternMatcher] this
+							[FInstance:(expr : Dynamic) -> String]
+								reflaxe.elixir.helpers.PatternMatcher
+								getExprType:(expr : Dynamic) -> String
+						[Local expr(24037):Dynamic:Dynamic]
+					==
+					[Const:String] "TUnop"
+				[Then:Void] [Block:Void]
+					[Var unop(24040):{ prefix : Bool, op : String }]
+						[Field:Dynamic]
+							[Local expr(24037):Dynamic:Dynamic]
+							[FDynamic:Dynamic] expr
+					[If:Void]
+						[Binop:Bool]
+							[Binop:Bool]
+								[Field:String]
+									[Local unop(24040):{ prefix : Bool, op : String }:{ prefix : Bool, op : String }]
+									[FAnon:String] op:String
+								==
+								[Const:String] "OpNeg"
+							&&
+							[Binop:Bool]
+								[Field:Bool]
+									[Local unop(24040):{ prefix : Bool, op : String }:{ prefix : Bool, op : String }]
+									[FAnon:Bool] prefix:Bool
+								==
+								[Const:Bool] true
+						[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [Const:Bool] true
+			[If:Void]
+				[Binop:Bool]
+					[Call:String]
+						[Field:(expr : Dynamic) -> String]
+							[Const:reflaxe.elixir.helpers.PatternMatcher] this
+							[FInstance:(expr : Dynamic) -> String]
+								reflaxe.elixir.helpers.PatternMatcher
+								getExprType:(expr : Dynamic) -> String
+						[Local expr(24037):Dynamic:Dynamic]
+					==
+					[Const:String] "TField"
+				[Then:Void] [Block:Void]
+					[Var field(24041):{ e : Null<Unknown<78>> }]
+						[Field:Dynamic]
+							[Local expr(24037):Dynamic:Dynamic]
+							[FDynamic:Dynamic] expr
+					[If:Void]
+						[Binop:Bool]
+							[Field:Null<Unknown<78>>]
+								[Local field(24041):{ e : Null<Unknown<78>> }:{ e : Null<Unknown<78>> }]
+								[FAnon:Null<Unknown<78>>] e:Null<Unknown<78>>
+							!=
+							[Const:Null<Unknown<78>>] null
+						[Then:Dynamic] [Block:Dynamic]
+							[Return:Dynamic]
+								[Call:Bool]
+									[Field:(expr : Dynamic) -> Bool]
+										[Const:reflaxe.elixir.helpers.PatternMatcher] this
+										[FInstance:(expr : Dynamic) -> Bool]
+											reflaxe.elixir.helpers.PatternMatcher
+											isPinPattern:(expr : Dynamic) -> Bool
+									[Field:Null<Unknown<78>>]
+										[Local field(24041):{ e : Null<Unknown<78>> }:{ e : Null<Unknown<78>> }]
+										[FAnon:Null<Unknown<78>>] e:Null<Unknown<78>>
+			[If:Void]
+				[Binop:Bool]
+					[Call:String]
+						[Field:(expr : Dynamic) -> String]
+							[Const:reflaxe.elixir.helpers.PatternMatcher] this
+							[FInstance:(expr : Dynamic) -> String]
+								reflaxe.elixir.helpers.PatternMatcher
+								getExprType:(expr : Dynamic) -> String
+						[Local expr(24037):Dynamic:Dynamic]
+					==
+					[Const:String] "TArray"
+				[Then:Void] [Block:Void]
+					[Var arrayAccess(24042):{ e1 : Null<Unknown<79>> }]
+						[Field:Dynamic]
+							[Local expr(24037):Dynamic:Dynamic]
+							[FDynamic:Dynamic] expr
+					[If:Void]
+						[Binop:Bool]
+							[Field:Null<Unknown<79>>]
+								[Local arrayAccess(24042):{ e1 : Null<Unknown<79>> }:{ e1 : Null<Unknown<79>> }]
+								[FAnon:Null<Unknown<79>>] e1:Null<Unknown<79>>
+							!=
+							[Const:Null<Unknown<79>>] null
+						[Then:Dynamic] [Block:Dynamic]
+							[Return:Dynamic]
+								[Call:Bool]
+									[Field:(expr : Dynamic) -> Bool]
+										[Const:reflaxe.elixir.helpers.PatternMatcher] this
+										[FInstance:(expr : Dynamic) -> Bool]
+											reflaxe.elixir.helpers.PatternMatcher
+											isPinPattern:(expr : Dynamic) -> Bool
+									[Field:Null<Unknown<79>>]
+										[Local arrayAccess(24042):{ e1 : Null<Unknown<79>> }:{ e1 : Null<Unknown<79>> }]
+										[FAnon:Null<Unknown<79>>] e1:Null<Unknown<79>>
+			[Return:Dynamic] [Const:Bool] false
+
+	function compilePinPattern[Function:(patternExpr : Dynamic) -> String]
+		[Arg:Dynamic] [Local patternExpr(24043):Dynamic]
+		[Block:Void]
+			[Var varName(24044):String] [Const:String] ""
+			[If:Void]
+				[Binop:Bool]
+					[Call:String]
+						[Field:(expr : Dynamic) -> String]
+							[Const:reflaxe.elixir.helpers.PatternMatcher] this
+							[FInstance:(expr : Dynamic) -> String]
+								reflaxe.elixir.helpers.PatternMatcher
+								getExprType:(expr : Dynamic) -> String
+						[Local patternExpr(24043):Dynamic:Dynamic]
+					==
+					[Const:String] "TLocal"
+				[Then:Void] [Block:Void]
+					[Var local(24045):{ v : Null<{ name : Null<String> }> }]
+						[Field:Dynamic]
+							[Local patternExpr(24043):Dynamic:Dynamic]
+							[FDynamic:Dynamic] expr
+					[If:Void]
+						[Binop:Bool]
+							[Binop:Bool]
+								[Field:Null<{ name : Null<String> }>]
+									[Local local(24045):{ v : Null<{ name : Null<String> }> }:{ v : Null<{ name : Null<String> }> }]
+									[FAnon:Null<{ name : Null<String> }>] v:Null<{ name : Null<String> }>
+								!=
+								[Const:Null<{ name : Null<String> }>] null
+							&&
+							[Binop:Bool]
+								[Field:Null<String>]
+									[Field:Null<{ name : Null<String> }>]
+										[Local local(24045):{ v : Null<{ name : Null<String> }> }:{ v : Null<{ name : Null<String> }> }]
+										[FAnon:Null<{ name : Null<String> }>] v:Null<{ name : Null<String> }>
+									[FAnon:Null<String>] name:Null<String>
+								!=
+								[Const:Null<String>] null
+						[Then:Void] [Block:Void]
+							[Binop:String]
+								[Local varName(24044):String:String]
+								=
+								[Call:String]
+									[Field:(camelCase : String) -> String]
+										[TypeExpr reflaxe.elixir.helpers.NamingHelper:Class<reflaxe.elixir.helpers.NamingHelper>]
+										[FStatic:(camelCase : String) -> String]
+											reflaxe.elixir.helpers.NamingHelper
+											toSnakeCase:(camelCase : String) -> String
+									[Field:Null<String>]
+										[Field:Null<{ name : Null<String> }>]
+											[Local local(24045):{ v : Null<{ name : Null<String> }> }:{ v : Null<{ name : Null<String> }> }]
+											[FAnon:Null<{ name : Null<String> }>] v:Null<{ name : Null<String> }>
+										[FAnon:Null<String>] name:Null<String>
+							[If:Void]
+								[Binop:Bool]
+									[Call:String]
+										[Field:(index : Int) -> String]
+											[Local varName(24044):String:String]
+											[FInstance:(index : Int) -> String]
+												String
+												charAt:(index : Int) -> String
+										[Const:Int] 0
+									==
+									[Const:String] "^"
+								[Then:String] [Block:String]
+									[Binop:String]
+										[Local varName(24044):String:String]
+										=
+										[Call:String]
+											[Field:(pos : Int, ?len : Null<Int>) -> String]
+												[Local varName(24044):String:String]
+												[FInstance:(pos : Int, ?len : Null<Int>) -> String]
+													String
+													substr:(pos : Int, ?len : Null<Int>) -> String
+											[Const:Int] 1
+											[Const:Null<Int>] null
+				[Else:Void] [Block:Void]
+					[If:Void]
+						[Binop:Bool]
+							[Call:String]
+								[Field:(expr : Dynamic) -> String]
+									[Const:reflaxe.elixir.helpers.PatternMatcher] this
+									[FInstance:(expr : Dynamic) -> String]
+										reflaxe.elixir.helpers.PatternMatcher
+										getExprType:(expr : Dynamic) -> String
+								[Local patternExpr(24043):Dynamic:Dynamic]
+							==
+							[Const:String] "TUnop"
+						[Then:Void] [Block:Void]
+							[Var unop(24046):{ e : Null<Unknown<83>> }]
+								[Field:Dynamic]
+									[Local patternExpr(24043):Dynamic:Dynamic]
+									[FDynamic:Dynamic] expr
+							[If:Void]
+								[Binop:Bool]
+									[Field:Null<Unknown<83>>]
+										[Local unop(24046):{ e : Null<Unknown<83>> }:{ e : Null<Unknown<83>> }]
+										[FAnon:Null<Unknown<83>>] e:Null<Unknown<83>>
+									!=
+									[Const:Null<Unknown<83>>] null
+								[Then:Void] [Block:Void]
+									[Var innerPattern(24047):String]
+										[Call:String]
+											[Field:(patternExpr : Dynamic) -> String]
+												[Const:reflaxe.elixir.helpers.PatternMatcher] this
+												[FInstance:(patternExpr : Dynamic) -> String]
+													reflaxe.elixir.helpers.PatternMatcher
+													compilePattern:(patternExpr : Dynamic) -> String
+											[Field:Null<Unknown<83>>]
+												[Local unop(24046):{ e : Null<Unknown<83>> }:{ e : Null<Unknown<83>> }]
+												[FAnon:Null<Unknown<83>>] e:Null<Unknown<83>>
+									[If:Void]
+										[Binop:Bool]
+											[Call:String]
+												[Field:(index : Int) -> String]
+													[Local innerPattern(24047):String:String]
+													[FInstance:(index : Int) -> String]
+														String
+														charAt:(index : Int) -> String
+												[Const:Int] 0
+											==
+											[Const:String] "^"
+										[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [Local innerPattern(24047):String:String]
+										[Else:Dynamic] [Block:Dynamic]
+											[Return:Dynamic]
+												[Binop:String]
+													[Const:String] "^"
+													+
+													[Local innerPattern(24047):String:String]
+						[Else:Void] [Block:Void]
+							[If:Void]
+								[Binop:Bool]
+									[Call:String]
+										[Field:(expr : Dynamic) -> String]
+											[Const:reflaxe.elixir.helpers.PatternMatcher] this
+											[FInstance:(expr : Dynamic) -> String]
+												reflaxe.elixir.helpers.PatternMatcher
+												getExprType:(expr : Dynamic) -> String
+										[Local patternExpr(24043):Dynamic:Dynamic]
+									==
+									[Const:String] "TField"
+								[Then:Void] [Block:Void]
+									[Var field(24048):{ fa : Null<{ name : String }>, e : Null<Unknown<82>> }]
+										[Field:Dynamic]
+											[Local patternExpr(24043):Dynamic:Dynamic]
+											[FDynamic:Dynamic] expr
+									[If:Void]
+										[Binop:Bool]
+											[Binop:Bool]
+												[Field:Null<Unknown<82>>]
+													[Local field(24048):{ fa : Null<{ name : String }>, e : Null<Unknown<82>> }:{ fa : Null<{ name : String }>, e : Null<Unknown<82>> }]
+													[FAnon:Null<Unknown<82>>] e:Null<Unknown<82>>
+												!=
+												[Const:Null<Unknown<82>>] null
+											&&
+											[Binop:Bool]
+												[Field:Null<{ name : String }>]
+													[Local field(24048):{ fa : Null<{ name : String }>, e : Null<Unknown<82>> }:{ fa : Null<{ name : String }>, e : Null<Unknown<82>> }]
+													[FAnon:Null<{ name : String }>] fa:Null<{ name : String }>
+												!=
+												[Const:Null<{ name : String }>] null
+										[Then:Void] [Block:Void]
+											[Var baseExpr(24049):String]
+												[Call:String]
+													[Field:(patternExpr : Dynamic) -> String]
+														[Const:reflaxe.elixir.helpers.PatternMatcher] this
+														[FInstance:(patternExpr : Dynamic) -> String]
+															reflaxe.elixir.helpers.PatternMatcher
+															compilePattern:(patternExpr : Dynamic) -> String
+													[Field:Null<Unknown<82>>]
+														[Local field(24048):{ fa : Null<{ name : String }>, e : Null<Unknown<82>> }:{ fa : Null<{ name : String }>, e : Null<Unknown<82>> }]
+														[FAnon:Null<Unknown<82>>] e:Null<Unknown<82>>
+											[Var fieldName(24050):String]
+												[Call:String]
+													[Field:(camelCase : String) -> String]
+														[TypeExpr reflaxe.elixir.helpers.NamingHelper:Class<reflaxe.elixir.helpers.NamingHelper>]
+														[FStatic:(camelCase : String) -> String]
+															reflaxe.elixir.helpers.NamingHelper
+															toSnakeCase:(camelCase : String) -> String
+													[Field:String]
+														[Field:Null<{ name : String }>]
+															[Local field(24048):{ fa : Null<{ name : String }>, e : Null<Unknown<82>> }:{ fa : Null<{ name : String }>, e : Null<Unknown<82>> }]
+															[FAnon:Null<{ name : String }>] fa:Null<{ name : String }>
+														[FAnon:String] name:String
+											[If:Void]
+												[Binop:Bool]
+													[Call:String]
+														[Field:(index : Int) -> String]
+															[Local baseExpr(24049):String:String]
+															[FInstance:(index : Int) -> String]
+																String
+																charAt:(index : Int) -> String
+														[Const:Int] 0
+													==
+													[Const:String] "^"
+												[Then:Dynamic] [Block:Dynamic]
+													[Return:Dynamic]
+														[Binop:String]
+															[Binop:String]
+																[Binop:String]
+																	[Const:String] ""
+																	+
+																	[Local baseExpr(24049):String:String]
+																+
+																[Const:String] "."
+															+
+															[Local fieldName(24050):String:String]
+												[Else:Dynamic] [Block:Dynamic]
+													[Return:Dynamic]
+														[Binop:String]
+															[Binop:String]
+																[Binop:String]
+																	[Const:String] "^"
+																	+
+																	[Local baseExpr(24049):String:String]
+																+
+																[Const:String] "."
+															+
+															[Local fieldName(24050):String:String]
+								[Else:Void] [Block:Void]
+									[If:Void]
+										[Binop:Bool]
+											[Call:String]
+												[Field:(expr : Dynamic) -> String]
+													[Const:reflaxe.elixir.helpers.PatternMatcher] this
+													[FInstance:(expr : Dynamic) -> String]
+														reflaxe.elixir.helpers.PatternMatcher
+														getExprType:(expr : Dynamic) -> String
+												[Local patternExpr(24043):Dynamic:Dynamic]
+											==
+											[Const:String] "TArray"
+										[Then:Void] [Block:Void]
+											[Var arrayAccess(24051):{ e2 : Null<Unknown<81>>, e1 : Null<Unknown<80>> }]
+												[Field:Dynamic]
+													[Local patternExpr(24043):Dynamic:Dynamic]
+													[FDynamic:Dynamic] expr
+											[If:Void]
+												[Binop:Bool]
+													[Binop:Bool]
+														[Field:Null<Unknown<80>>]
+															[Local arrayAccess(24051):{ e2 : Null<Unknown<81>>, e1 : Null<Unknown<80>> }:{ e2 : Null<Unknown<81>>, e1 : Null<Unknown<80>> }]
+															[FAnon:Null<Unknown<80>>] e1:Null<Unknown<80>>
+														!=
+														[Const:Null<Unknown<80>>] null
+													&&
+													[Binop:Bool]
+														[Field:Null<Unknown<81>>]
+															[Local arrayAccess(24051):{ e2 : Null<Unknown<81>>, e1 : Null<Unknown<80>> }:{ e2 : Null<Unknown<81>>, e1 : Null<Unknown<80>> }]
+															[FAnon:Null<Unknown<81>>] e2:Null<Unknown<81>>
+														!=
+														[Const:Null<Unknown<81>>] null
+												[Then:Dynamic] [Block:Dynamic]
+													[Var arrayExpr(24052):String]
+														[Call:String]
+															[Field:(patternExpr : Dynamic) -> String]
+																[Const:reflaxe.elixir.helpers.PatternMatcher] this
+																[FInstance:(patternExpr : Dynamic) -> String]
+																	reflaxe.elixir.helpers.PatternMatcher
+																	compilePattern:(patternExpr : Dynamic) -> String
+															[Field:Null<Unknown<80>>]
+																[Local arrayAccess(24051):{ e2 : Null<Unknown<81>>, e1 : Null<Unknown<80>> }:{ e2 : Null<Unknown<81>>, e1 : Null<Unknown<80>> }]
+																[FAnon:Null<Unknown<80>>] e1:Null<Unknown<80>>
+													[Var indexExpr(24053):String]
+														[Call:String]
+															[Field:(expr : Dynamic) -> String]
+																[Const:reflaxe.elixir.helpers.PatternMatcher] this
+																[FInstance:(expr : Dynamic) -> String]
+																	reflaxe.elixir.helpers.PatternMatcher
+																	compileExpression:(expr : Dynamic) -> String
+															[Field:Null<Unknown<81>>]
+																[Local arrayAccess(24051):{ e2 : Null<Unknown<81>>, e1 : Null<Unknown<80>> }:{ e2 : Null<Unknown<81>>, e1 : Null<Unknown<80>> }]
+																[FAnon:Null<Unknown<81>>] e2:Null<Unknown<81>>
+													[Return:Dynamic]
+														[Binop:String]
+															[Binop:String]
+																[Binop:String]
+																	[Binop:String]
+																		[Const:String] "^"
+																		+
+																		[Local arrayExpr(24052):String:String]
+																	+
+																	[Const:String] "["
+																+
+																[Local indexExpr(24053):String:String]
+															+
+															[Const:String] "]"
+										[Else:Void] [Block:Void]
+											[Var pattern(24054):String]
+												[Call:String]
+													[Field:(patternExpr : Dynamic) -> String]
+														[Const:reflaxe.elixir.helpers.PatternMatcher] this
+														[FInstance:(patternExpr : Dynamic) -> String]
+															reflaxe.elixir.helpers.PatternMatcher
+															compilePattern:(patternExpr : Dynamic) -> String
+													[Local patternExpr(24043):Dynamic:Dynamic]
+											[If:Void]
+												[Binop:Bool]
+													[Binop:Bool]
+														[Local pattern(24054):String:String]
+														!=
+														[Const:String] "_"
+													&&
+													[Binop:Bool]
+														[Call:String]
+															[Field:(index : Int) -> String]
+																[Local pattern(24054):String:String]
+																[FInstance:(index : Int) -> String]
+																	String
+																	charAt:(index : Int) -> String
+															[Const:Int] 0
+														!=
+														[Const:String] "^"
+												[Then:Dynamic] [Block:Dynamic]
+													[Return:Dynamic]
+														[Binop:String]
+															[Const:String] "^"
+															+
+															[Local pattern(24054):String:String]
+												[Else:Dynamic] [Block:Dynamic] [Return:Dynamic] [Local pattern(24054):String:String]
+			[If:Void]
+				[Binop:Bool]
+					[Local varName(24044):String:String]
+					!=
+					[Const:String] ""
+				[Then:Dynamic] [Block:Dynamic]
+					[Return:Dynamic]
+						[Binop:String]
+							[Const:String] "^"
+							+
+							[Local varName(24044):String:String]
+				[Else:Dynamic] [Block:Dynamic] [Return:Dynamic] [Const:String] "^_"
+
+	@:value(null)
+	var compiler:Null<reflaxe.elixir.ElixirCompiler>;
+
+	public function setCompiler[Function:(compiler : reflaxe.elixir.ElixirCompiler) -> Void]
+		[Arg:reflaxe.elixir.ElixirCompiler] [Local compiler(24189):reflaxe.elixir.ElixirCompiler]
+		[Block:Null<reflaxe.elixir.ElixirCompiler>]
+			[Binop:Null<reflaxe.elixir.ElixirCompiler>]
+				[Field:Null<reflaxe.elixir.ElixirCompiler>]
+					[Const:reflaxe.elixir.helpers.PatternMatcher] this
+					[FInstance:Null<reflaxe.elixir.ElixirCompiler>]
+						reflaxe.elixir.helpers.PatternMatcher
+						compiler:Null<reflaxe.elixir.ElixirCompiler>
+				=
+				[Local compiler(24189):reflaxe.elixir.ElixirCompiler:reflaxe.elixir.ElixirCompiler]
+
+	function compileExpression[Function:(expr : Dynamic) -> String]
+		[Arg:Dynamic] [Local expr(23982):Dynamic]
+		[Block:Dynamic]
+			[If:Void]
+				[Binop:Bool]
+					[Local expr(23982):Dynamic:Dynamic]
+					==
+					[Const:Dynamic] null
+				[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [Const:String] "nil"
+			[If:Void]
+				[Binop:Bool]
+					[Field:Null<reflaxe.elixir.ElixirCompiler>]
+						[Const:reflaxe.elixir.helpers.PatternMatcher] this
+						[FInstance:Null<reflaxe.elixir.ElixirCompiler>]
+							reflaxe.elixir.helpers.PatternMatcher
+							compiler:Null<reflaxe.elixir.ElixirCompiler>
+					!=
+					[Const:Null<reflaxe.elixir.ElixirCompiler>] null
+				[Then:Dynamic] [Block:Dynamic]
+					[Var result(23983):Null<String>]
+						[Call:Null<String>]
+							[Field:(expr : haxe.macro.TypedExpr, ?topLevel : Bool) -> Null<String>]
+								[Field:Null<reflaxe.elixir.ElixirCompiler>]
+									[Const:reflaxe.elixir.helpers.PatternMatcher] this
+									[FInstance:Null<reflaxe.elixir.ElixirCompiler>]
+										reflaxe.elixir.helpers.PatternMatcher
+										compiler:Null<reflaxe.elixir.ElixirCompiler>
+								[FInstance:(expr : haxe.macro.TypedExpr, ?topLevel : Bool) -> Null<String>]
+									reflaxe.elixir.ElixirCompiler
+									compileExpression:(expr : haxe.macro.TypedExpr, ?topLevel : Bool) -> Null<String>
+							[Local expr(23982):Dynamic:Dynamic]
+							[Const:Null<Bool>] null
+					[Return:Dynamic]
+						[If:String]
+							[Binop:Bool]
+								[Local result(23983):Null<String>:Null<String>]
+								!=
+								[Const:Null<String>] null
+							[Then:Null<String>] [Block:Null<String>] [Local result(23983):Null<String>:Null<String>]
+							[Else:String] [Block:String] [Const:String] "nil"
+			[Return:Dynamic] [Const:String] "expr"
+
+	function indentExpression[Function:(expr : String) -> String]
+		[Arg:String] [Local expr(24162):String]
+		[Block:Dynamic]
+			[If:Void]
+				[Binop:Bool]
+					[Local expr(24162):String:String]
+					==
+					[Const:String] null
+				[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [Const:String] ""
+			[Return:Dynamic]
+				[Call:String]
+					[Field:(sep : String) -> String]
+						[Block:Array<String>]
+							[Var _this(24165):Array<String>]
+								[Call:Array<String>]
+									[Field:(delimiter : String) -> Array<String>]
+										[Local expr(24162):String:String]
+										[FInstance:(delimiter : String) -> Array<String>]
+											String
+											split:(delimiter : String) -> Array<String>
+									[Const:String] "\n"
+							[Block:Array<String>]
+								[Var `(24167):Array<String>] [ArrayDecl:Array<String>]
+								[Block:Void]
+									[Var `(24168):Int] [Const:Int] 0
+									[Var `(24169):Array<String>] [Local _this(24165):Array<String>:Array<String>]
+									[While:Void]
+										[Binop:Bool]
+											[Local `(24168):Int:Int]
+											<
+											[Field:Int]
+												[Local `(24169):Array<String>:Array<String>]
+												[FInstance:Int]
+													Array<String>
+													length:Int
+										[Block:Void]
+											[Var v(24170):String]
+												[Array:String]
+													[Local `(24169):Array<String>:Array<String>]
+													[Local `(24168):Int:Int]
+											[Unop:Int]
+												++
+												Prefix
+												[Local `(24168):Int:Int]
+											[Call:Int]
+												[Field:(x : String) -> Int]
+													[Local `(24167):Array<String>:Array<String>]
+													[FInstance:(x : String) -> Int]
+														Array<String>
+														push:(x : Array.T) -> Int
+												[Call:String]
+													[Function:(line : String) -> String]
+														[Arg:String] [Local line(24171):String]
+														[Block:Dynamic]
+															[Return:Dynamic]
+																[If:String]
+																	[Parenthesis:Bool]
+																		[Binop:Bool]
+																			[Field:Int]
+																				[Local line(24171):String:String]
+																				[FInstance:Int]
+																					String
+																					length:Int
+																			>
+																			[Const:Int] 0
+																	[Then:String] [Local line(24171):String:String]
+																	[Else:String] [Const:String] ""
+													[Local v(24170):String:String]
+								[Local `(24167):Array<String>:Array<String>]
+						[FInstance:(sep : String) -> String]
+							Array<String>
+							join:(sep : String) -> String
+					[Const:String] "\n    "
+
+	@:value({ defaultExpr : null })
+	public function validatePatternExhaustiveness[Function:(switchExpr : Dynamic, cases : Array<Dynamic>, ?defaultExpr : Null<Dynamic>) -> Array<String>]
+		[Arg:Dynamic] [Local switchExpr(24190):Dynamic]
+		[Arg:Array<Dynamic>] [Local cases(24191):Array<Dynamic>]
+		[Arg:Null<Dynamic>]
+			[Local defaultExpr(24192):Null<Dynamic>]
+			[Const:Null<Dynamic>] null
+		[Block:Dynamic]
+			[Var warnings(24193):Array<String>] [ArrayDecl:Array<String>]
+			[Var switchType(24195):Null<{ name : String }>]
+				[Call:Dynamic]
+					[Field:(expr : Dynamic) -> Dynamic]
+						[Const:reflaxe.elixir.helpers.PatternMatcher] this
+						[FInstance:(expr : Dynamic) -> Dynamic]
+							reflaxe.elixir.helpers.PatternMatcher
+							getSwitchExpressionType:(expr : Dynamic) -> Dynamic
+					[Local switchExpr(24190):Dynamic:Dynamic]
+			[If:Void]
+				[Binop:Bool]
+					[Local switchType(24195):Null<{ name : String }>:Null<{ name : String }>]
+					==
+					[Const:Null<{ name : String }>] null
+				[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [Local warnings(24193):Array<String>:Array<String>]
+			[Return:Dynamic]
+				[Meta:Array<String>]
+					:ast(switch (switchType.name) {
+	case "Bool":
+		validateBooleanExhaustiveness(cases, defaultExpr, warnings);	
+	case "Enum":
+		validateEnumExhaustiveness(switchType, cases, defaultExpr, warnings);	
+	case "Int":
+		validateIntegerExhaustiveness(cases, defaultExpr, warnings);	
+	case "String":
+		validateStringExhaustiveness(cases, defaultExpr, warnings);	
+	case "Array":
+		validateArrayExhaustiveness(cases, defaultExpr, warnings);	
+	case _:
+		if (defaultExpr == null && !hasWildcardCase(cases)) {
+			warnings.push("Non-exhaustive pattern match for type ${switchType.name}: missing default case");
+		};
+		warnings;	
+})
+					[Block:Array<String>]
+						[Var `(24283):String]
+							[Field:String]
+								[Local switchType(24195):Null<{ name : String }>:Null<{ name : String }>]
+								[FAnon:String] name:String
+						[Switch:Array<String>]
+							[Local `(24283):String:String]
+							[Case:Array<String>]
+								[Const:String] "Array"
+								[Block:Array<String>]
+									[Block:Array<String>]
+										[Call:Array<String>]
+											[Field:(cases : Array<Dynamic>, defaultExpr : Dynamic, warnings : Array<String>) -> Array<String>]
+												[Const:reflaxe.elixir.helpers.PatternMatcher] this
+												[FInstance:(cases : Array<Dynamic>, defaultExpr : Dynamic, warnings : Array<String>) -> Array<String>]
+													reflaxe.elixir.helpers.PatternMatcher
+													validateArrayExhaustiveness:(cases : Array<Dynamic>, defaultExpr : Dynamic, warnings : Array<String>) -> Array<String>
+											[Local cases(24191):Array<Dynamic>:Array<Dynamic>]
+											[Local defaultExpr(24192):Null<Dynamic>:Null<Dynamic>]
+											[Local warnings(24193):Array<String>:Array<String>]
+							[Case:Array<String>]
+								[Const:String] "Bool"
+								[Block:Array<String>]
+									[Block:Array<String>]
+										[Call:Array<String>]
+											[Field:(cases : Array<Dynamic>, defaultExpr : Dynamic, warnings : Array<String>) -> Array<String>]
+												[Const:reflaxe.elixir.helpers.PatternMatcher] this
+												[FInstance:(cases : Array<Dynamic>, defaultExpr : Dynamic, warnings : Array<String>) -> Array<String>]
+													reflaxe.elixir.helpers.PatternMatcher
+													validateBooleanExhaustiveness:(cases : Array<Dynamic>, defaultExpr : Dynamic, warnings : Array<String>) -> Array<String>
+											[Local cases(24191):Array<Dynamic>:Array<Dynamic>]
+											[Local defaultExpr(24192):Null<Dynamic>:Null<Dynamic>]
+											[Local warnings(24193):Array<String>:Array<String>]
+							[Case:Array<String>]
+								[Const:String] "Enum"
+								[Block:Array<String>]
+									[Block:Array<String>]
+										[Call:Array<String>]
+											[Field:(enumType : Dynamic, cases : Array<Dynamic>, defaultExpr : Dynamic, warnings : Array<String>) -> Array<String>]
+												[Const:reflaxe.elixir.helpers.PatternMatcher] this
+												[FInstance:(enumType : Dynamic, cases : Array<Dynamic>, defaultExpr : Dynamic, warnings : Array<String>) -> Array<String>]
+													reflaxe.elixir.helpers.PatternMatcher
+													validateEnumExhaustiveness:(enumType : Dynamic, cases : Array<Dynamic>, defaultExpr : Dynamic, warnings : Array<String>) -> Array<String>
+											[Local switchType(24195):Null<{ name : String }>:Null<{ name : String }>]
+											[Local cases(24191):Array<Dynamic>:Array<Dynamic>]
+											[Local defaultExpr(24192):Null<Dynamic>:Null<Dynamic>]
+											[Local warnings(24193):Array<String>:Array<String>]
+							[Case:Array<String>]
+								[Const:String] "Int"
+								[Block:Array<String>]
+									[Block:Array<String>]
+										[Call:Array<String>]
+											[Field:(cases : Array<Dynamic>, defaultExpr : Dynamic, warnings : Array<String>) -> Array<String>]
+												[Const:reflaxe.elixir.helpers.PatternMatcher] this
+												[FInstance:(cases : Array<Dynamic>, defaultExpr : Dynamic, warnings : Array<String>) -> Array<String>]
+													reflaxe.elixir.helpers.PatternMatcher
+													validateIntegerExhaustiveness:(cases : Array<Dynamic>, defaultExpr : Dynamic, warnings : Array<String>) -> Array<String>
+											[Local cases(24191):Array<Dynamic>:Array<Dynamic>]
+											[Local defaultExpr(24192):Null<Dynamic>:Null<Dynamic>]
+											[Local warnings(24193):Array<String>:Array<String>]
+							[Case:Array<String>]
+								[Const:String] "String"
+								[Block:Array<String>]
+									[Block:Array<String>]
+										[Call:Array<String>]
+											[Field:(cases : Array<Dynamic>, defaultExpr : Dynamic, warnings : Array<String>) -> Array<String>]
+												[Const:reflaxe.elixir.helpers.PatternMatcher] this
+												[FInstance:(cases : Array<Dynamic>, defaultExpr : Dynamic, warnings : Array<String>) -> Array<String>]
+													reflaxe.elixir.helpers.PatternMatcher
+													validateStringExhaustiveness:(cases : Array<Dynamic>, defaultExpr : Dynamic, warnings : Array<String>) -> Array<String>
+											[Local cases(24191):Array<Dynamic>:Array<Dynamic>]
+											[Local defaultExpr(24192):Null<Dynamic>:Null<Dynamic>]
+											[Local warnings(24193):Array<String>:Array<String>]
+							[Default:Array<String>]
+								[Block:Array<String>]
+									[If:Void]
+										[Binop:Bool]
+											[Binop:Bool]
+												[Local defaultExpr(24192):Null<Dynamic>:Null<Dynamic>]
+												==
+												[Const:Null<Dynamic>] null
+											&&
+											[Unop:Bool]
+												!
+												Prefix
+												[Call:Bool]
+													[Field:(cases : Array<Dynamic>) -> Bool]
+														[Const:reflaxe.elixir.helpers.PatternMatcher] this
+														[FInstance:(cases : Array<Dynamic>) -> Bool]
+															reflaxe.elixir.helpers.PatternMatcher
+															hasWildcardCase:(cases : Array<Dynamic>) -> Bool
+													[Local cases(24191):Array<Dynamic>:Array<Dynamic>]
+										[Then:Int] [Block:Int]
+											[Call:Int]
+												[Field:(x : String) -> Int]
+													[Local warnings(24193):Array<String>:Array<String>]
+													[FInstance:(x : String) -> Int]
+														Array<String>
+														push:(x : Array.T) -> Int
+												[Binop:String]
+													[Binop:String]
+														[Const:String] "Non-exhaustive pattern match for type "
+														+
+														[Field:String]
+															[Local switchType(24195):Null<{ name : String }>:Null<{ name : String }>]
+															[FAnon:String] name:String
+													+
+													[Const:String] ": missing default case"
+									[Local warnings(24193):Array<String>:Array<String>]
+
+	function validateBooleanExhaustiveness[Function:(cases : Array<Dynamic>, defaultExpr : Dynamic, warnings : Array<String>) -> Array<String>]
+		[Arg:Array<Dynamic>] [Local cases(24196):Array<Dynamic>]
+		[Arg:Dynamic] [Local defaultExpr(24197):Dynamic]
+		[Arg:Array<String>] [Local warnings(24198):Array<String>]
+		[Block:Dynamic]
+			[Var hasTrueCase(24199):Bool] [Const:Bool] false
+			[Var hasFalseCase(24200):Bool] [Const:Bool] false
+			[Var hasWildcard(24210):Bool]
+				[Call:Bool]
+					[Field:(cases : Array<Dynamic>) -> Bool]
+						[Const:reflaxe.elixir.helpers.PatternMatcher] this
+						[FInstance:(cases : Array<Dynamic>) -> Bool]
+							reflaxe.elixir.helpers.PatternMatcher
+							hasWildcardCase:(cases : Array<Dynamic>) -> Bool
+					[Local cases(24196):Array<Dynamic>:Array<Dynamic>]
+			[Block:Void]
+				[Var `(24220):Int] [Const:Int] 0
+				[While:Void]
+					[Binop:Bool]
+						[Local `(24220):Int:Int]
+						<
+						[Field:Int]
+							[Local cases(24196):Array<Dynamic>:Array<Dynamic>]
+							[FInstance:Int]
+								Array<Dynamic>
+								length:Int
+					[Block:Void]
+						[Var caseItem(24211):Dynamic]
+							[Array:Dynamic]
+								[Local cases(24196):Array<Dynamic>:Array<Dynamic>]
+								[Local `(24220):Int:Int]
+						[Unop:Int]
+							++
+							Prefix
+							[Local `(24220):Int:Int]
+						[If:Void]
+							[Binop:Bool]
+								[Field:Dynamic]
+									[Local caseItem(24211):Dynamic:Dynamic]
+									[FDynamic:Dynamic] values
+								!=
+								[Const:Dynamic] null
+							[Then:Void] [Block:Void]
+								[Block:Void]
+									[Var `(24218):Int] [Const:Int] 0
+									[Var `(24219):Array<Dynamic>]
+										[Parenthesis:Array<Dynamic>]
+											[Cast:Array<Dynamic>]
+												[Field:Dynamic]
+													[Local caseItem(24211):Dynamic:Dynamic]
+													[FDynamic:Dynamic] values
+									[While:Void]
+										[Binop:Bool]
+											[Local `(24218):Int:Int]
+											<
+											[Field:Int]
+												[Local `(24219):Array<Dynamic>:Array<Dynamic>]
+												[FInstance:Int]
+													Array<Dynamic>
+													length:Int
+										[Block:Void]
+											[Var value(24212):Dynamic]
+												[Array:Dynamic]
+													[Local `(24219):Array<Dynamic>:Array<Dynamic>]
+													[Local `(24218):Int:Int]
+											[Unop:Int]
+												++
+												Prefix
+												[Local `(24218):Int:Int]
+											[If:Void]
+												[Call:Bool]
+													[Field:(value : Dynamic, expected : Bool) -> Bool]
+														[Const:reflaxe.elixir.helpers.PatternMatcher] this
+														[FInstance:(value : Dynamic, expected : Bool) -> Bool]
+															reflaxe.elixir.helpers.PatternMatcher
+															isBooleanConstant:(value : Dynamic, expected : Bool) -> Bool
+													[Local value(24212):Dynamic:Dynamic]
+													[Const:Bool] true
+												[Then:Bool] [Block:Bool]
+													[Binop:Bool]
+														[Local hasTrueCase(24199):Bool:Bool]
+														=
+														[Const:Bool] true
+											[If:Void]
+												[Call:Bool]
+													[Field:(value : Dynamic, expected : Bool) -> Bool]
+														[Const:reflaxe.elixir.helpers.PatternMatcher] this
+														[FInstance:(value : Dynamic, expected : Bool) -> Bool]
+															reflaxe.elixir.helpers.PatternMatcher
+															isBooleanConstant:(value : Dynamic, expected : Bool) -> Bool
+													[Local value(24212):Dynamic:Dynamic]
+													[Const:Bool] false
+												[Then:Bool] [Block:Bool]
+													[Binop:Bool]
+														[Local hasFalseCase(24200):Bool:Bool]
+														=
+														[Const:Bool] true
+			[If:Void]
+				[Binop:Bool]
+					[Binop:Bool]
+						[Local defaultExpr(24197):Dynamic:Dynamic]
+						==
+						[Const:Dynamic] null
+					&&
+					[Unop:Bool]
+						!
+						Prefix
+						[Local hasWildcard(24210):Bool:Bool]
+				[Then:Void] [Block:Void]
+					[If:Void]
+						[Unop:Bool]
+							!
+							Prefix
+							[Local hasTrueCase(24199):Bool:Bool]
+						[Then:Int] [Block:Int]
+							[Call:Int]
+								[Field:(x : String) -> Int]
+									[Local warnings(24198):Array<String>:Array<String>]
+									[FInstance:(x : String) -> Int]
+										Array<String>
+										push:(x : Array.T) -> Int
+								[Const:String] "Non-exhaustive boolean pattern: missing case for 'true'"
+					[If:Void]
+						[Unop:Bool]
+							!
+							Prefix
+							[Local hasFalseCase(24200):Bool:Bool]
+						[Then:Int] [Block:Int]
+							[Call:Int]
+								[Field:(x : String) -> Int]
+									[Local warnings(24198):Array<String>:Array<String>]
+									[FInstance:(x : String) -> Int]
+										Array<String>
+										push:(x : Array.T) -> Int
+								[Const:String] "Non-exhaustive boolean pattern: missing case for 'false'"
+			[Return:Dynamic] [Local warnings(24198):Array<String>:Array<String>]
+
+	function validateEnumExhaustiveness[Function:(enumType : Dynamic, cases : Array<Dynamic>, defaultExpr : Dynamic, warnings : Array<String>) -> Array<String>]
+		[Arg:Dynamic] [Local enumType(24221):Dynamic]
+		[Arg:Array<Dynamic>] [Local cases(24222):Array<Dynamic>]
+		[Arg:Dynamic] [Local defaultExpr(24223):Dynamic]
+		[Arg:Array<String>] [Local warnings(24224):Array<String>]
+		[Block:Dynamic]
+			[If:Void]
+				[Binop:Bool]
+					[Field:Dynamic]
+						[Local enumType(24221):Dynamic:Dynamic]
+						[FDynamic:Dynamic] constructors
+					==
+					[Const:Dynamic] null
+				[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [Local warnings(24224):Array<String>:Array<String>]
+			[Var coveredConstructors(24225):haxe.ds.Map<String, Bool>]
+				[Block:haxe.ds.StringMap<Bool>]
+					[Block:Void]
+					[New:haxe.ds.StringMap<Bool>] haxe.ds.StringMap<Bool>
+			[Var hasWildcard(24226):Bool]
+				[Call:Bool]
+					[Field:(cases : Array<Dynamic>) -> Bool]
+						[Const:reflaxe.elixir.helpers.PatternMatcher] this
+						[FInstance:(cases : Array<Dynamic>) -> Bool]
+							reflaxe.elixir.helpers.PatternMatcher
+							hasWildcardCase:(cases : Array<Dynamic>) -> Bool
+					[Local cases(24222):Array<Dynamic>:Array<Dynamic>]
+			[Block:Void]
+				[Var `(24238):Int] [Const:Int] 0
+				[While:Void]
+					[Binop:Bool]
+						[Local `(24238):Int:Int]
+						<
+						[Field:Int]
+							[Local cases(24222):Array<Dynamic>:Array<Dynamic>]
+							[FInstance:Int]
+								Array<Dynamic>
+								length:Int
+					[Block:Void]
+						[Var caseItem(24227):Dynamic]
+							[Array:Dynamic]
+								[Local cases(24222):Array<Dynamic>:Array<Dynamic>]
+								[Local `(24238):Int:Int]
+						[Unop:Int]
+							++
+							Prefix
+							[Local `(24238):Int:Int]
+						[If:Void]
+							[Binop:Bool]
+								[Field:Dynamic]
+									[Local caseItem(24227):Dynamic:Dynamic]
+									[FDynamic:Dynamic] values
+								!=
+								[Const:Dynamic] null
+							[Then:Void] [Block:Void]
+								[Block:Void]
+									[Var `(24236):Int] [Const:Int] 0
+									[Var `(24237):Array<Dynamic>]
+										[Parenthesis:Array<Dynamic>]
+											[Cast:Array<Dynamic>]
+												[Field:Dynamic]
+													[Local caseItem(24227):Dynamic:Dynamic]
+													[FDynamic:Dynamic] values
+									[While:Void]
+										[Binop:Bool]
+											[Local `(24236):Int:Int]
+											<
+											[Field:Int]
+												[Local `(24237):Array<Dynamic>:Array<Dynamic>]
+												[FInstance:Int]
+													Array<Dynamic>
+													length:Int
+										[Block:Void]
+											[Var value(24228):Dynamic]
+												[Array:Dynamic]
+													[Local `(24237):Array<Dynamic>:Array<Dynamic>]
+													[Local `(24236):Int:Int]
+											[Unop:Int]
+												++
+												Prefix
+												[Local `(24236):Int:Int]
+											[Var constructorName(24230):String]
+												[Call:String]
+													[Field:(value : Dynamic) -> String]
+														[Const:reflaxe.elixir.helpers.PatternMatcher] this
+														[FInstance:(value : Dynamic) -> String]
+															reflaxe.elixir.helpers.PatternMatcher
+															getEnumConstructorName:(value : Dynamic) -> String
+													[Local value(24228):Dynamic:Dynamic]
+											[If:Void]
+												[Binop:Bool]
+													[Local constructorName(24230):String:String]
+													!=
+													[Const:String] null
+												[Then:Void] [Block:Void]
+													[Block:Void]
+														[Call:Void]
+															[Field:(key : String, value : Bool) -> Void]
+																[Local coveredConstructors(24225):haxe.ds.Map<String, Bool>:haxe.ds.StringMap<Bool>]
+																[FInstance:(key : String, value : Bool) -> Void]
+																	haxe.ds.StringMap<Bool>
+																	set:(key : String, value : haxe.ds.StringMap.T) -> Void
+															[Local constructorName(24230):String:String]
+															[Const:Bool] true
+			[If:Void]
+				[Binop:Bool]
+					[Binop:Bool]
+						[Local defaultExpr(24223):Dynamic:Dynamic]
+						==
+						[Const:Dynamic] null
+					&&
+					[Unop:Bool]
+						!
+						Prefix
+						[Local hasWildcard(24226):Bool:Bool]
+				[Then:Void] [Block:Void]
+					[Block:Void]
+						[Var `(24245):Int] [Const:Int] 0
+						[Var `(24246):Array<Dynamic>]
+							[Parenthesis:Array<Dynamic>]
+								[Cast:Array<Dynamic>]
+									[Field:Dynamic]
+										[Local enumType(24221):Dynamic:Dynamic]
+										[FDynamic:Dynamic] constructors
+						[While:Void]
+							[Binop:Bool]
+								[Local `(24245):Int:Int]
+								<
+								[Field:Int]
+									[Local `(24246):Array<Dynamic>:Array<Dynamic>]
+									[FInstance:Int]
+										Array<Dynamic>
+										length:Int
+							[Block:Void]
+								[Var constructor(24239):Dynamic]
+									[Array:Dynamic]
+										[Local `(24246):Array<Dynamic>:Array<Dynamic>]
+										[Local `(24245):Int:Int]
+								[Unop:Int]
+									++
+									Prefix
+									[Local `(24245):Int:Int]
+								[Var constructorName(24240):String]
+									[Field:Dynamic]
+										[Local constructor(24239):Dynamic:Dynamic]
+										[FDynamic:Dynamic] name
+								[If:Void]
+									[Unop:Bool]
+										!
+										Prefix
+										[Call:Bool]
+											[Field:(key : String) -> Bool]
+												[Local coveredConstructors(24225):haxe.ds.Map<String, Bool>:haxe.ds.StringMap<Bool>]
+												[FInstance:(key : String) -> Bool]
+													haxe.ds.StringMap<Bool>
+													exists:(key : String) -> Bool
+											[Local constructorName(24240):String:String]
+									[Then:Int] [Block:Int]
+										[Call:Int]
+											[Field:(x : String) -> Int]
+												[Local warnings(24224):Array<String>:Array<String>]
+												[FInstance:(x : String) -> Int]
+													Array<String>
+													push:(x : Array.T) -> Int
+											[Binop:String]
+												[Binop:String]
+													[Const:String] "Non-exhaustive enum pattern: missing case for constructor \""
+													+
+													[Local constructorName(24240):String:String]
+												+
+												[Const:String] "\""
+			[Return:Dynamic] [Local warnings(24224):Array<String>:Array<String>]
+
+	function validateIntegerExhaustiveness[Function:(cases : Array<Dynamic>, defaultExpr : Dynamic, warnings : Array<String>) -> Array<String>]
+		[Arg:Array<Dynamic>] [Local cases(24247):Array<Dynamic>]
+		[Arg:Dynamic] [Local defaultExpr(24248):Dynamic]
+		[Arg:Array<String>] [Local warnings(24249):Array<String>]
+		[Block:Dynamic]
+			[Var hasWildcard(24250):Bool]
+				[Call:Bool]
+					[Field:(cases : Array<Dynamic>) -> Bool]
+						[Const:reflaxe.elixir.helpers.PatternMatcher] this
+						[FInstance:(cases : Array<Dynamic>) -> Bool]
+							reflaxe.elixir.helpers.PatternMatcher
+							hasWildcardCase:(cases : Array<Dynamic>) -> Bool
+					[Local cases(24247):Array<Dynamic>:Array<Dynamic>]
+			[Var hasGuardCases(24254):Bool]
+				[Call:Bool]
+					[Field:(cases : Array<Dynamic>) -> Bool]
+						[Const:reflaxe.elixir.helpers.PatternMatcher] this
+						[FInstance:(cases : Array<Dynamic>) -> Bool]
+							reflaxe.elixir.helpers.PatternMatcher
+							hasGuardCases:(cases : Array<Dynamic>) -> Bool
+					[Local cases(24247):Array<Dynamic>:Array<Dynamic>]
+			[If:Void]
+				[Binop:Bool]
+					[Binop:Bool]
+						[Binop:Bool]
+							[Local defaultExpr(24248):Dynamic:Dynamic]
+							==
+							[Const:Dynamic] null
+						&&
+						[Unop:Bool]
+							!
+							Prefix
+							[Local hasWildcard(24250):Bool:Bool]
+					&&
+					[Unop:Bool]
+						!
+						Prefix
+						[Call:Bool]
+							[Field:(cases : Array<Dynamic>) -> Bool]
+								[Const:reflaxe.elixir.helpers.PatternMatcher] this
+								[FInstance:(cases : Array<Dynamic>) -> Bool]
+									reflaxe.elixir.helpers.PatternMatcher
+									hasCompleteGuardCoverage:(cases : Array<Dynamic>) -> Bool
+							[Local cases(24247):Array<Dynamic>:Array<Dynamic>]
+				[Then:Int] [Block:Int]
+					[Call:Int]
+						[Field:(x : String) -> Int]
+							[Local warnings(24249):Array<String>:Array<String>]
+							[FInstance:(x : String) -> Int]
+								Array<String>
+								push:(x : Array.T) -> Int
+						[Const:String] "Non-exhaustive integer pattern: infinite possible values require default case or complete guard coverage"
+			[Return:Dynamic] [Local warnings(24249):Array<String>:Array<String>]
+
+	function validateStringExhaustiveness[Function:(cases : Array<Dynamic>, defaultExpr : Dynamic, warnings : Array<String>) -> Array<String>]
+		[Arg:Array<Dynamic>] [Local cases(24256):Array<Dynamic>]
+		[Arg:Dynamic] [Local defaultExpr(24257):Dynamic]
+		[Arg:Array<String>] [Local warnings(24258):Array<String>]
+		[Block:Dynamic]
+			[Var hasWildcard(24259):Bool]
+				[Call:Bool]
+					[Field:(cases : Array<Dynamic>) -> Bool]
+						[Const:reflaxe.elixir.helpers.PatternMatcher] this
+						[FInstance:(cases : Array<Dynamic>) -> Bool]
+							reflaxe.elixir.helpers.PatternMatcher
+							hasWildcardCase:(cases : Array<Dynamic>) -> Bool
+					[Local cases(24256):Array<Dynamic>:Array<Dynamic>]
+			[If:Void]
+				[Binop:Bool]
+					[Binop:Bool]
+						[Local defaultExpr(24257):Dynamic:Dynamic]
+						==
+						[Const:Dynamic] null
+					&&
+					[Unop:Bool]
+						!
+						Prefix
+						[Local hasWildcard(24259):Bool:Bool]
+				[Then:Int] [Block:Int]
+					[Call:Int]
+						[Field:(x : String) -> Int]
+							[Local warnings(24258):Array<String>:Array<String>]
+							[FInstance:(x : String) -> Int]
+								Array<String>
+								push:(x : Array.T) -> Int
+						[Const:String] "Non-exhaustive string pattern: infinite possible values require default case"
+			[Return:Dynamic] [Local warnings(24258):Array<String>:Array<String>]
+
+	function validateArrayExhaustiveness[Function:(cases : Array<Dynamic>, defaultExpr : Dynamic, warnings : Array<String>) -> Array<String>]
+		[Arg:Array<Dynamic>] [Local cases(24260):Array<Dynamic>]
+		[Arg:Dynamic] [Local defaultExpr(24261):Dynamic]
+		[Arg:Array<String>] [Local warnings(24262):Array<String>]
+		[Block:Dynamic]
+			[Var hasWildcard(24263):Bool]
+				[Call:Bool]
+					[Field:(cases : Array<Dynamic>) -> Bool]
+						[Const:reflaxe.elixir.helpers.PatternMatcher] this
+						[FInstance:(cases : Array<Dynamic>) -> Bool]
+							reflaxe.elixir.helpers.PatternMatcher
+							hasWildcardCase:(cases : Array<Dynamic>) -> Bool
+					[Local cases(24260):Array<Dynamic>:Array<Dynamic>]
+			[Var hasEmptyCase(24264):Bool] [Const:Bool] false
+			[Var maxFixedLength(24265):Int] [Const:Int] 0
+			[Var hasVariableLength(24266):Bool] [Const:Bool] false
+			[Block:Void]
+				[Var `(24281):Int] [Const:Int] 0
+				[While:Void]
+					[Binop:Bool]
+						[Local `(24281):Int:Int]
+						<
+						[Field:Int]
+							[Local cases(24260):Array<Dynamic>:Array<Dynamic>]
+							[FInstance:Int]
+								Array<Dynamic>
+								length:Int
+					[Block:Void]
+						[Var caseItem(24267):Dynamic]
+							[Array:Dynamic]
+								[Local cases(24260):Array<Dynamic>:Array<Dynamic>]
+								[Local `(24281):Int:Int]
+						[Unop:Int]
+							++
+							Prefix
+							[Local `(24281):Int:Int]
+						[If:Void]
+							[Binop:Bool]
+								[Field:Dynamic]
+									[Local caseItem(24267):Dynamic:Dynamic]
+									[FDynamic:Dynamic] values
+								!=
+								[Const:Dynamic] null
+							[Then:Void] [Block:Void]
+								[Block:Void]
+									[Var `(24279):Int] [Const:Int] 0
+									[Var `(24280):Array<Dynamic>]
+										[Parenthesis:Array<Dynamic>]
+											[Cast:Array<Dynamic>]
+												[Field:Dynamic]
+													[Local caseItem(24267):Dynamic:Dynamic]
+													[FDynamic:Dynamic] values
+									[While:Void]
+										[Binop:Bool]
+											[Local `(24279):Int:Int]
+											<
+											[Field:Int]
+												[Local `(24280):Array<Dynamic>:Array<Dynamic>]
+												[FInstance:Int]
+													Array<Dynamic>
+													length:Int
+										[Block:Void]
+											[Var value(24268):Dynamic]
+												[Array:Dynamic]
+													[Local `(24280):Array<Dynamic>:Array<Dynamic>]
+													[Local `(24279):Int:Int]
+											[Unop:Int]
+												++
+												Prefix
+												[Local `(24279):Int:Int]
+											[If:Void]
+												[Call:Bool]
+													[Field:(value : Dynamic) -> Bool]
+														[Const:reflaxe.elixir.helpers.PatternMatcher] this
+														[FInstance:(value : Dynamic) -> Bool]
+															reflaxe.elixir.helpers.PatternMatcher
+															isEmptyArrayPattern:(value : Dynamic) -> Bool
+													[Local value(24268):Dynamic:Dynamic]
+												[Then:Bool] [Block:Bool]
+													[Binop:Bool]
+														[Local hasEmptyCase(24264):Bool:Bool]
+														=
+														[Const:Bool] true
+												[Else:Void] [Block:Void]
+													[Var length(24273):Int]
+														[Call:Int]
+															[Field:(value : Dynamic) -> Int]
+																[Const:reflaxe.elixir.helpers.PatternMatcher] this
+																[FInstance:(value : Dynamic) -> Int]
+																	reflaxe.elixir.helpers.PatternMatcher
+																	getArrayPatternLength:(value : Dynamic) -> Int
+															[Local value(24268):Dynamic:Dynamic]
+													[If:Void]
+														[Binop:Bool]
+															[Local length(24273):Int:Int]
+															>
+															[Local maxFixedLength(24265):Int:Int]
+														[Then:Int] [Block:Int]
+															[Binop:Int]
+																[Local maxFixedLength(24265):Int:Int]
+																=
+																[Local length(24273):Int:Int]
+													[If:Void]
+														[Call:Bool]
+															[Field:(value : Dynamic) -> Bool]
+																[Const:reflaxe.elixir.helpers.PatternMatcher] this
+																[FInstance:(value : Dynamic) -> Bool]
+																	reflaxe.elixir.helpers.PatternMatcher
+																	hasRestPattern:(value : Dynamic) -> Bool
+															[Local value(24268):Dynamic:Dynamic]
+														[Then:Bool] [Block:Bool]
+															[Binop:Bool]
+																[Local hasVariableLength(24266):Bool:Bool]
+																=
+																[Const:Bool] true
+			[If:Void]
+				[Binop:Bool]
+					[Binop:Bool]
+						[Binop:Bool]
+							[Local defaultExpr(24261):Dynamic:Dynamic]
+							==
+							[Const:Dynamic] null
+						&&
+						[Unop:Bool]
+							!
+							Prefix
+							[Local hasWildcard(24263):Bool:Bool]
+					&&
+					[Unop:Bool]
+						!
+						Prefix
+						[Local hasVariableLength(24266):Bool:Bool]
+				[Then:Int] [Block:Int]
+					[Call:Int]
+						[Field:(x : String) -> Int]
+							[Local warnings(24262):Array<String>:Array<String>]
+							[FInstance:(x : String) -> Int]
+								Array<String>
+								push:(x : Array.T) -> Int
+						[Const:String] "Non-exhaustive array pattern: arrays can have any length, consider adding rest pattern or default case"
+			[Return:Dynamic] [Local warnings(24262):Array<String>:Array<String>]
+
+	function getSwitchExpressionType[Function:(expr : Dynamic) -> Dynamic]
+		[Arg:Dynamic] [Local expr(24194):Dynamic]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[ObjectDecl:{ name : String, constructors : Null<Unknown<84>> }]
+					name: [Const:String] "Dynamic"
+					constructors: [Const:Null<Unknown<84>>] null
+
+	function hasWildcardCase[Function:(cases : Array<Dynamic>) -> Bool]
+		[Arg:Array<Dynamic>] [Local cases(24201):Array<Dynamic>]
+		[Block:Dynamic]
+			[Block:Void]
+				[Var `(24209):Int] [Const:Int] 0
+				[While:Void]
+					[Binop:Bool]
+						[Local `(24209):Int:Int]
+						<
+						[Field:Int]
+							[Local cases(24201):Array<Dynamic>:Array<Dynamic>]
+							[FInstance:Int]
+								Array<Dynamic>
+								length:Int
+					[Block:Void]
+						[Var caseItem(24202):Dynamic]
+							[Array:Dynamic]
+								[Local cases(24201):Array<Dynamic>:Array<Dynamic>]
+								[Local `(24209):Int:Int]
+						[Unop:Int]
+							++
+							Prefix
+							[Local `(24209):Int:Int]
+						[If:Void]
+							[Binop:Bool]
+								[Field:Dynamic]
+									[Local caseItem(24202):Dynamic:Dynamic]
+									[FDynamic:Dynamic] values
+								!=
+								[Const:Dynamic] null
+							[Then:Void] [Block:Void]
+								[Block:Void]
+									[Var `(24207):Int] [Const:Int] 0
+									[Var `(24208):Array<Dynamic>]
+										[Parenthesis:Array<Dynamic>]
+											[Cast:Array<Dynamic>]
+												[Field:Dynamic]
+													[Local caseItem(24202):Dynamic:Dynamic]
+													[FDynamic:Dynamic] values
+									[While:Void]
+										[Binop:Bool]
+											[Local `(24207):Int:Int]
+											<
+											[Field:Int]
+												[Local `(24208):Array<Dynamic>:Array<Dynamic>]
+												[FInstance:Int]
+													Array<Dynamic>
+													length:Int
+										[Block:Void]
+											[Var value(24203):Dynamic]
+												[Array:Dynamic]
+													[Local `(24208):Array<Dynamic>:Array<Dynamic>]
+													[Local `(24207):Int:Int]
+											[Unop:Int]
+												++
+												Prefix
+												[Local `(24207):Int:Int]
+											[If:Void]
+												[Call:Bool]
+													[Field:(value : Dynamic) -> Bool]
+														[Const:reflaxe.elixir.helpers.PatternMatcher] this
+														[FInstance:(value : Dynamic) -> Bool]
+															reflaxe.elixir.helpers.PatternMatcher
+															isWildcardPattern:(value : Dynamic) -> Bool
+													[Local value(24203):Dynamic:Dynamic]
+												[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [Const:Bool] true
+			[Return:Dynamic] [Const:Bool] false
+
+	function hasGuardCases[Function:(cases : Array<Dynamic>) -> Bool]
+		[Arg:Array<Dynamic>] [Local cases(24251):Array<Dynamic>]
+		[Block:Dynamic]
+			[Block:Void]
+				[Var `(24253):Int] [Const:Int] 0
+				[While:Void]
+					[Binop:Bool]
+						[Local `(24253):Int:Int]
+						<
+						[Field:Int]
+							[Local cases(24251):Array<Dynamic>:Array<Dynamic>]
+							[FInstance:Int]
+								Array<Dynamic>
+								length:Int
+					[Block:Void]
+						[Var caseItem(24252):Dynamic]
+							[Array:Dynamic]
+								[Local cases(24251):Array<Dynamic>:Array<Dynamic>]
+								[Local `(24253):Int:Int]
+						[Unop:Int]
+							++
+							Prefix
+							[Local `(24253):Int:Int]
+						[If:Void]
+							[Binop:Bool]
+								[Field:Dynamic]
+									[Local caseItem(24252):Dynamic:Dynamic]
+									[FDynamic:Dynamic] guard
+								!=
+								[Const:Dynamic] null
+							[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [Const:Bool] true
+			[Return:Dynamic] [Const:Bool] false
+
+	function hasCompleteGuardCoverage[Function:(cases : Array<Dynamic>) -> Bool]
+		[Arg:Array<Dynamic>] [Local cases(24255):Array<Dynamic>]
+		[Block:Dynamic] [Return:Dynamic] [Const:Bool] false
+
+	function isWildcardPattern[Function:(value : Dynamic) -> Bool]
+		[Arg:Dynamic] [Local value(24204):Dynamic]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Binop:Bool]
+					[Binop:Bool]
+						[Call:String]
+							[Field:(expr : Dynamic) -> String]
+								[Const:reflaxe.elixir.helpers.PatternMatcher] this
+								[FInstance:(expr : Dynamic) -> String]
+									reflaxe.elixir.helpers.PatternMatcher
+									getExprType:(expr : Dynamic) -> String
+							[Local value(24204):Dynamic:Dynamic]
+						==
+						[Const:String] "TWildcard"
+					||
+					[Parenthesis:Bool]
+						[Binop:Bool]
+							[Binop:Bool]
+								[Call:String]
+									[Field:(expr : Dynamic) -> String]
+										[Const:reflaxe.elixir.helpers.PatternMatcher] this
+										[FInstance:(expr : Dynamic) -> String]
+											reflaxe.elixir.helpers.PatternMatcher
+											getExprType:(expr : Dynamic) -> String
+									[Local value(24204):Dynamic:Dynamic]
+								==
+								[Const:String] "TLocal"
+							&&
+							[Binop:Bool]
+								[Call:String]
+									[Field:(value : Dynamic) -> String]
+										[Const:reflaxe.elixir.helpers.PatternMatcher] this
+										[FInstance:(value : Dynamic) -> String]
+											reflaxe.elixir.helpers.PatternMatcher
+											getVariableName:(value : Dynamic) -> String
+									[Local value(24204):Dynamic:Dynamic]
+								==
+								[Const:String] "_"
+
+	function isBooleanConstant[Function:(value : Dynamic, expected : Bool) -> Bool]
+		[Arg:Dynamic] [Local value(24213):Dynamic]
+		[Arg:Bool] [Local expected(24214):Bool]
+		[Block:Dynamic]
+			[If:Void]
+				[Binop:Bool]
+					[Call:String]
+						[Field:(expr : Dynamic) -> String]
+							[Const:reflaxe.elixir.helpers.PatternMatcher] this
+							[FInstance:(expr : Dynamic) -> String]
+								reflaxe.elixir.helpers.PatternMatcher
+								getExprType:(expr : Dynamic) -> String
+						[Local value(24213):Dynamic:Dynamic]
+					==
+					[Const:String] "TConst"
+				[Then:Void] [Block:Void]
+					[Var constExpr(24215):haxe.macro.Constant]
+						[Field:Dynamic]
+							[Local value(24213):Dynamic:Dynamic]
+							[FDynamic:Dynamic] expr
+					[Meta:Void]
+						:ast(switch (constExpr) {
+	case CIdent("true"):
+		return expected == true;	
+	case CIdent("false"):
+		return expected == false;	
+	case _:
+		return false;	
+})
+						[If:Void]
+							[Binop:Bool]
+								[EnumIndex:Int] [Local constExpr(24215):haxe.macro.Constant:haxe.macro.Constant]
+								==
+								[Const:Int] 3
+							[Then:Void] [Block:Void]
+								[Var `(24217):String]
+									[EnumParameter:String]
+										[Local constExpr(24215):haxe.macro.Constant:haxe.macro.Constant]
+										CIdent
+										0
+								[Switch:Void]
+									[Local `(24217):String:String]
+									[Case:Dynamic]
+										[Const:String] "false"
+										[Block:Dynamic]
+											[Block:Dynamic]
+												[Return:Dynamic]
+													[Binop:Bool]
+														[Local expected(24214):Bool:Bool]
+														==
+														[Const:Bool] false
+									[Case:Dynamic]
+										[Const:String] "true"
+										[Block:Dynamic]
+											[Block:Dynamic]
+												[Return:Dynamic]
+													[Binop:Bool]
+														[Local expected(24214):Bool:Bool]
+														==
+														[Const:Bool] true
+									[Default:Dynamic] [Block:Dynamic] [Return:Dynamic] [Const:Bool] false
+							[Else:Dynamic] [Block:Dynamic] [Return:Dynamic] [Const:Bool] false
+			[Return:Dynamic] [Const:Bool] false
+
+	function getEnumConstructorName[Function:(value : Dynamic) -> String]
+		[Arg:Dynamic] [Local value(24229):Dynamic]
+		[Block:Dynamic]
+			[If:Void]
+				[Binop:Bool]
+					[Binop:Bool]
+						[Call:String]
+							[Field:(expr : Dynamic) -> String]
+								[Const:reflaxe.elixir.helpers.PatternMatcher] this
+								[FInstance:(expr : Dynamic) -> String]
+									reflaxe.elixir.helpers.PatternMatcher
+									getExprType:(expr : Dynamic) -> String
+							[Local value(24229):Dynamic:Dynamic]
+						==
+						[Const:String] "TCall"
+					||
+					[Binop:Bool]
+						[Call:String]
+							[Field:(expr : Dynamic) -> String]
+								[Const:reflaxe.elixir.helpers.PatternMatcher] this
+								[FInstance:(expr : Dynamic) -> String]
+									reflaxe.elixir.helpers.PatternMatcher
+									getExprType:(expr : Dynamic) -> String
+							[Local value(24229):Dynamic:Dynamic]
+						==
+						[Const:String] "TField"
+				[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [Const:String] "EnumConstructor"
+			[Return:Dynamic] [Const:String] null
+
+	function isEmptyArrayPattern[Function:(value : Dynamic) -> Bool]
+		[Arg:Dynamic] [Local value(24269):Dynamic]
+		[Block:Dynamic]
+			[If:Void]
+				[Binop:Bool]
+					[Call:String]
+						[Field:(expr : Dynamic) -> String]
+							[Const:reflaxe.elixir.helpers.PatternMatcher] this
+							[FInstance:(expr : Dynamic) -> String]
+								reflaxe.elixir.helpers.PatternMatcher
+								getExprType:(expr : Dynamic) -> String
+						[Local value(24269):Dynamic:Dynamic]
+					==
+					[Const:String] "TArrayDecl"
+				[Then:Dynamic] [Block:Dynamic]
+					[Var arr(24270):{ el : Null<Array<Dynamic>> }]
+						[Field:Dynamic]
+							[Local value(24269):Dynamic:Dynamic]
+							[FDynamic:Dynamic] expr
+					[Return:Dynamic]
+						[Binop:Bool]
+							[Binop:Bool]
+								[Field:Null<Array<Dynamic>>]
+									[Local arr(24270):{ el : Null<Array<Dynamic>> }:{ el : Null<Array<Dynamic>> }]
+									[FAnon:Null<Array<Dynamic>>] el:Null<Array<Dynamic>>
+								==
+								[Const:Null<Array<Dynamic>>] null
+							||
+							[Binop:Bool]
+								[Field:Int]
+									[Parenthesis:Array<Dynamic>]
+										[Cast:Array<Dynamic>]
+											[Field:Null<Array<Dynamic>>]
+												[Local arr(24270):{ el : Null<Array<Dynamic>> }:{ el : Null<Array<Dynamic>> }]
+												[FAnon:Null<Array<Dynamic>>] el:Null<Array<Dynamic>>
+									[FInstance:Int]
+										Array<Dynamic>
+										length:Int
+								==
+								[Const:Int] 0
+			[Return:Dynamic] [Const:Bool] false
+
+	function getArrayPatternLength[Function:(value : Dynamic) -> Int]
+		[Arg:Dynamic] [Local value(24271):Dynamic]
+		[Block:Dynamic]
+			[If:Void]
+				[Binop:Bool]
+					[Call:String]
+						[Field:(expr : Dynamic) -> String]
+							[Const:reflaxe.elixir.helpers.PatternMatcher] this
+							[FInstance:(expr : Dynamic) -> String]
+								reflaxe.elixir.helpers.PatternMatcher
+								getExprType:(expr : Dynamic) -> String
+						[Local value(24271):Dynamic:Dynamic]
+					==
+					[Const:String] "TArrayDecl"
+				[Then:Void] [Block:Void]
+					[Var arr(24272):{ el : Null<Array<Dynamic>> }]
+						[Field:Dynamic]
+							[Local value(24271):Dynamic:Dynamic]
+							[FDynamic:Dynamic] expr
+					[If:Void]
+						[Binop:Bool]
+							[Field:Null<Array<Dynamic>>]
+								[Local arr(24272):{ el : Null<Array<Dynamic>> }:{ el : Null<Array<Dynamic>> }]
+								[FAnon:Null<Array<Dynamic>>] el:Null<Array<Dynamic>>
+							!=
+							[Const:Null<Array<Dynamic>>] null
+						[Then:Dynamic] [Block:Dynamic]
+							[Return:Dynamic]
+								[Field:Int]
+									[Parenthesis:Array<Dynamic>]
+										[Cast:Array<Dynamic>]
+											[Field:Null<Array<Dynamic>>]
+												[Local arr(24272):{ el : Null<Array<Dynamic>> }:{ el : Null<Array<Dynamic>> }]
+												[FAnon:Null<Array<Dynamic>>] el:Null<Array<Dynamic>>
+									[FInstance:Int]
+										Array<Dynamic>
+										length:Int
+			[Return:Dynamic] [Const:Int] 0
+
+	function hasRestPattern[Function:(value : Dynamic) -> Bool]
+		[Arg:Dynamic] [Local value(24274):Dynamic]
+		[Block:Dynamic]
+			[If:Void]
+				[Binop:Bool]
+					[Call:String]
+						[Field:(expr : Dynamic) -> String]
+							[Const:reflaxe.elixir.helpers.PatternMatcher] this
+							[FInstance:(expr : Dynamic) -> String]
+								reflaxe.elixir.helpers.PatternMatcher
+								getExprType:(expr : Dynamic) -> String
+						[Local value(24274):Dynamic:Dynamic]
+					==
+					[Const:String] "TArrayDecl"
+				[Then:Void] [Block:Void]
+					[Var arr(24275):{ el : Null<Array<Dynamic>> }]
+						[Field:Dynamic]
+							[Local value(24274):Dynamic:Dynamic]
+							[FDynamic:Dynamic] expr
+					[If:Void]
+						[Binop:Bool]
+							[Field:Null<Array<Dynamic>>]
+								[Local arr(24275):{ el : Null<Array<Dynamic>> }:{ el : Null<Array<Dynamic>> }]
+								[FAnon:Null<Array<Dynamic>>] el:Null<Array<Dynamic>>
+							!=
+							[Const:Null<Array<Dynamic>>] null
+						[Then:Void] [Block:Void]
+							[Block:Void]
+								[Var `(24277):Int] [Const:Int] 0
+								[Var `(24278):Array<Dynamic>]
+									[Parenthesis:Array<Dynamic>]
+										[Cast:Array<Dynamic>]
+											[Field:Null<Array<Dynamic>>]
+												[Local arr(24275):{ el : Null<Array<Dynamic>> }:{ el : Null<Array<Dynamic>> }]
+												[FAnon:Null<Array<Dynamic>>] el:Null<Array<Dynamic>>
+								[While:Void]
+									[Binop:Bool]
+										[Local `(24277):Int:Int]
+										<
+										[Field:Int]
+											[Local `(24278):Array<Dynamic>:Array<Dynamic>]
+											[FInstance:Int]
+												Array<Dynamic>
+												length:Int
+									[Block:Void]
+										[Var element(24276):Dynamic]
+											[Array:Dynamic]
+												[Local `(24278):Array<Dynamic>:Array<Dynamic>]
+												[Local `(24277):Int:Int]
+										[Unop:Int]
+											++
+											Prefix
+											[Local `(24277):Int:Int]
+										[If:Void]
+											[Call:Bool]
+												[Field:(expr : Dynamic) -> Bool]
+													[Const:reflaxe.elixir.helpers.PatternMatcher] this
+													[FInstance:(expr : Dynamic) -> Bool]
+														reflaxe.elixir.helpers.PatternMatcher
+														isRestPattern:(expr : Dynamic) -> Bool
+												[Local element(24276):Dynamic:Dynamic]
+											[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [Const:Bool] true
+			[Return:Dynamic] [Const:Bool] false
+
+	function getVariableName[Function:(value : Dynamic) -> String]
+		[Arg:Dynamic] [Local value(24205):Dynamic]
+		[Block:Dynamic]
+			[If:Void]
+				[Binop:Bool]
+					[Call:String]
+						[Field:(expr : Dynamic) -> String]
+							[Const:reflaxe.elixir.helpers.PatternMatcher] this
+							[FInstance:(expr : Dynamic) -> String]
+								reflaxe.elixir.helpers.PatternMatcher
+								getExprType:(expr : Dynamic) -> String
+						[Local value(24205):Dynamic:Dynamic]
+					==
+					[Const:String] "TLocal"
+				[Then:Void] [Block:Void]
+					[Var local(24206):{ v : Null<{ name : Null<String> }> }]
+						[Field:Dynamic]
+							[Local value(24205):Dynamic:Dynamic]
+							[FDynamic:Dynamic] expr
+					[If:Void]
+						[Binop:Bool]
+							[Binop:Bool]
+								[Field:Null<{ name : Null<String> }>]
+									[Local local(24206):{ v : Null<{ name : Null<String> }> }:{ v : Null<{ name : Null<String> }> }]
+									[FAnon:Null<{ name : Null<String> }>] v:Null<{ name : Null<String> }>
+								!=
+								[Const:Null<{ name : Null<String> }>] null
+							&&
+							[Binop:Bool]
+								[Field:Null<String>]
+									[Field:Null<{ name : Null<String> }>]
+										[Local local(24206):{ v : Null<{ name : Null<String> }> }:{ v : Null<{ name : Null<String> }> }]
+										[FAnon:Null<{ name : Null<String> }>] v:Null<{ name : Null<String> }>
+									[FAnon:Null<String>] name:Null<String>
+								!=
+								[Const:Null<String>] null
+						[Then:Dynamic] [Block:Dynamic]
+							[Return:Dynamic]
+								[Field:Null<String>]
+									[Field:Null<{ name : Null<String> }>]
+										[Local local(24206):{ v : Null<{ name : Null<String> }> }:{ v : Null<{ name : Null<String> }> }]
+										[FAnon:Null<{ name : Null<String> }>] v:Null<{ name : Null<String> }>
+									[FAnon:Null<String>] name:Null<String>
+			[Return:Dynamic] [Const:String] ""
+}

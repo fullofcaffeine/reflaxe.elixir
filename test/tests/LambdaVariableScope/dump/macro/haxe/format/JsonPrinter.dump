@@ -1,0 +1,1340 @@
+class haxe.format.JsonPrinter {
+
+	function new[Function:(replacer : ((key : Dynamic, value : Dynamic) -> Dynamic), space : String) -> Void]
+		[Arg:(key : Dynamic, value : Dynamic) -> Dynamic] [Local replacer(2681):(key : Dynamic, value : Dynamic) -> Dynamic]
+		[Arg:String] [Local space(2682):String]
+		[Block:StringBuf]
+			[Binop:(key : Dynamic, value : Dynamic) -> Dynamic]
+				[Field:(key : Dynamic, value : Dynamic) -> Dynamic]
+					[Const:haxe.format.JsonPrinter] this
+					[FInstance:(key : Dynamic, value : Dynamic) -> Dynamic]
+						haxe.format.JsonPrinter
+						replacer:(key : Dynamic, value : Dynamic) -> Dynamic
+				=
+				[Local replacer(2681):(key : Dynamic, value : Dynamic) -> Dynamic:(key : Dynamic, value : Dynamic) -> Dynamic]
+			[Binop:String]
+				[Field:String]
+					[Const:haxe.format.JsonPrinter] this
+					[FInstance:String]
+						haxe.format.JsonPrinter
+						indent:String
+				=
+				[Local space(2682):String:String]
+			[Binop:Bool]
+				[Field:Bool]
+					[Const:haxe.format.JsonPrinter] this
+					[FInstance:Bool]
+						haxe.format.JsonPrinter
+						pretty:Bool
+				=
+				[Binop:Bool]
+					[Local space(2682):String:String]
+					!=
+					[Const:String] null
+			[Binop:Int]
+				[Field:Int]
+					[Const:haxe.format.JsonPrinter] this
+					[FInstance:Int]
+						haxe.format.JsonPrinter
+						nind:Int
+				=
+				[Const:Int] 0
+			[Binop:StringBuf]
+				[Field:StringBuf]
+					[Const:haxe.format.JsonPrinter] this
+					[FInstance:StringBuf]
+						haxe.format.JsonPrinter
+						buf:StringBuf
+				=
+				[New:StringBuf] StringBuf
+
+	var buf:StringBuf;
+
+	var replacer:(key : Dynamic, value : Dynamic) -> Dynamic;
+
+	var indent:String;
+
+	var pretty:Bool;
+
+	var nind:Int;
+
+	inline function ipad[Function:() -> Void]
+		[Block:Void]
+			[If:Void]
+				[Field:Bool]
+					[Const:haxe.format.JsonPrinter] this
+					[FInstance:Bool]
+						haxe.format.JsonPrinter
+						pretty:Bool
+				[Then:Void] [Block:Void]
+					[Block:Void]
+						[Var v(2712):String]
+							[Call:String]
+								[Field:(s : String, c : String, l : Int) -> String]
+									[TypeExpr StringTools:Class<StringTools>]
+									[FStatic:(s : String, c : String, l : Int) -> String]
+										StringTools
+										lpad:(s : String, c : String, l : Int) -> String
+								[Const:String] ""
+								[Field:String]
+									[Const:haxe.format.JsonPrinter] this
+									[FInstance:String]
+										haxe.format.JsonPrinter
+										indent:String
+								[Binop:Int]
+									[Field:Int]
+										[Const:haxe.format.JsonPrinter] this
+										[FInstance:Int]
+											haxe.format.JsonPrinter
+											nind:Int
+									*
+									[Field:Int]
+										[Field:String]
+											[Const:haxe.format.JsonPrinter] this
+											[FInstance:String]
+												haxe.format.JsonPrinter
+												indent:String
+										[FInstance:Int]
+											String
+											length:Int
+						[Call:Void]
+							[Field:(x : String) -> Void]
+								[Field:StringBuf]
+									[Const:haxe.format.JsonPrinter] this
+									[FInstance:StringBuf]
+										haxe.format.JsonPrinter
+										buf:StringBuf
+								[FInstance:(x : String) -> Void]
+									StringBuf
+									add:(x : add.T) -> Void
+							[Local v(2712):String:String]
+
+	inline function newl[Function:() -> Void]
+		[Block:Void]
+			[If:Void]
+				[Field:Bool]
+					[Const:haxe.format.JsonPrinter] this
+					[FInstance:Bool]
+						haxe.format.JsonPrinter
+						pretty:Bool
+				[Then:Void] [Block:Void]
+					[Block:Void]
+						[Call:Void]
+							[Field:(c : Int) -> Void]
+								[Field:StringBuf]
+									[Const:haxe.format.JsonPrinter] this
+									[FInstance:StringBuf]
+										haxe.format.JsonPrinter
+										buf:StringBuf
+								[FInstance:(c : Int) -> Void]
+									StringBuf
+									addChar:(c : Int) -> Void
+							[Const:Int] 10
+
+	function write[Function:(k : Dynamic, v : Dynamic) -> Void]
+		[Arg:Dynamic] [Local k(2684):Dynamic]
+		[Arg:Dynamic] [Local v(2685):Dynamic]
+		[Block:Void]
+			[If:Void]
+				[Binop:Bool]
+					[Field:(key : Dynamic, value : Dynamic) -> Dynamic]
+						[Const:haxe.format.JsonPrinter] this
+						[FInstance:(key : Dynamic, value : Dynamic) -> Dynamic]
+							haxe.format.JsonPrinter
+							replacer:(key : Dynamic, value : Dynamic) -> Dynamic
+					!=
+					[Const:(key : Dynamic, value : Dynamic) -> Dynamic] null
+				[Then:Dynamic] [Block:Dynamic]
+					[Binop:Dynamic]
+						[Local v(2685):Dynamic:Dynamic]
+						=
+						[Call:Dynamic]
+							[Field:(key : Dynamic, value : Dynamic) -> Dynamic]
+								[Const:haxe.format.JsonPrinter] this
+								[FInstance:(key : Dynamic, value : Dynamic) -> Dynamic]
+									haxe.format.JsonPrinter
+									replacer:(key : Dynamic, value : Dynamic) -> Dynamic
+							[Local k(2684):Dynamic:Dynamic]
+							[Local v(2685):Dynamic:Dynamic]
+			[Meta:Void]
+				:ast(switch (Type.typeof(v)) {
+	case TUnknown:
+		add("\"???\"");	
+	case TObject:
+		objString(v);	
+	case TInt:
+		add(v);	
+	case TFloat:
+		add(Math.isFinite(v) ? Std.string(v) : "null");	
+	case TFunction:
+		add("\"<fun>\"");	
+	case TClass(c):
+		if (c == String) quote(v) else if (c == Array) {
+			var v:Array<Dynamic> = v;
+			addChar("[".code);
+			var len = v.length;
+			var last = len - 1;
+			for (i  in  0 ... len) {
+				if (i > 0) addChar(",".code) else nind++;
+				newl();
+				ipad();
+				write(i, v[i]);
+				if (i == last) {
+					nind--;
+					newl();
+					ipad();
+				};
+			};
+			addChar("]".code);
+		} else if (c == haxe.ds.StringMap) {
+			var v:haxe.ds.StringMap<Dynamic> = v;
+			var o = { };
+			for (k  in  v.keys()) Reflect.setField(o, k, v.get(k));
+			objString(o);
+		} else if (c == Date) {
+			var v:Date = v;
+			quote(v.toString());
+		} else classString(v);	
+	case TEnum(_):
+		var i = Type.enumIndex(v);
+		add(Std.string(i));	
+	case TBool:
+		add(v);	
+	case TNull:
+		add("null");	
+})
+				[Block:Void]
+					[Var `(2825):ValueType]
+						[Call:ValueType]
+							[Field:(v : Dynamic) -> ValueType]
+								[TypeExpr Type:Class<Type>]
+								[FStatic:(v : Dynamic) -> ValueType]
+									Type
+									typeof:(v : Dynamic) -> ValueType
+							[Local v(2685):Dynamic:Dynamic]
+					[Switch:Void]
+						[Meta:Int]
+							:exhaustive
+							[EnumIndex:Int] [Local `(2825):ValueType:ValueType]
+						[Case:Void]
+							[Const:Int] 0
+							[Block:Void]
+								[Block:Void]
+									[Block:Void]
+										[Call:Void]
+											[Field:(x : String) -> Void]
+												[Field:StringBuf]
+													[Const:haxe.format.JsonPrinter] this
+													[FInstance:StringBuf]
+														haxe.format.JsonPrinter
+														buf:StringBuf
+												[FInstance:(x : String) -> Void]
+													StringBuf
+													add:(x : add.T) -> Void
+											[Const:String] "null"
+						[Case:Void]
+							[Const:Int] 1
+							[Block:Void]
+								[Block:Void]
+									[Block:Void]
+										[Call:Void]
+											[Field:(x : String) -> Void]
+												[Field:StringBuf]
+													[Const:haxe.format.JsonPrinter] this
+													[FInstance:StringBuf]
+														haxe.format.JsonPrinter
+														buf:StringBuf
+												[FInstance:(x : String) -> Void]
+													StringBuf
+													add:(x : add.T) -> Void
+											[Cast:String] [Local v(2685):Dynamic:Dynamic]
+						[Case:Void]
+							[Const:Int] 2
+							[Block:Void]
+								[Block:Void]
+									[Block:Void]
+										[Var v(2826):String]
+											[If:String]
+												[Parenthesis:Bool]
+													[Call:Bool]
+														[Field:(f : Float) -> Bool]
+															[TypeExpr Math:Class<Math>]
+															[FStatic:(f : Float) -> Bool]
+																Math
+																isFinite:(f : Float) -> Bool
+														[Local v(2685):Dynamic:Dynamic]
+												[Then:String] [Call:String]
+													[Field:(s : Dynamic) -> String]
+														[TypeExpr Std:Class<Std>]
+														[FStatic:(s : Dynamic) -> String]
+															Std
+															string:(s : Dynamic) -> String
+													[Local v(2685):Dynamic:Dynamic]
+												[Else:String] [Const:String] "null"
+										[Call:Void]
+											[Field:(x : String) -> Void]
+												[Field:StringBuf]
+													[Const:haxe.format.JsonPrinter] this
+													[FInstance:StringBuf]
+														haxe.format.JsonPrinter
+														buf:StringBuf
+												[FInstance:(x : String) -> Void]
+													StringBuf
+													add:(x : add.T) -> Void
+											[Local v(2826):String:String]
+						[Case:Void]
+							[Const:Int] 3
+							[Block:Void]
+								[Block:Void]
+									[Block:Void]
+										[Call:Void]
+											[Field:(x : String) -> Void]
+												[Field:StringBuf]
+													[Const:haxe.format.JsonPrinter] this
+													[FInstance:StringBuf]
+														haxe.format.JsonPrinter
+														buf:StringBuf
+												[FInstance:(x : String) -> Void]
+													StringBuf
+													add:(x : add.T) -> Void
+											[Cast:String] [Local v(2685):Dynamic:Dynamic]
+						[Case:Void]
+							[Const:Int] 4
+							[Block:Void]
+								[Block:Void]
+									[Block:Void]
+										[Call:Void]
+											[Field:(v : Dynamic, fields : Array<String>) -> Void]
+												[Const:haxe.format.JsonPrinter] this
+												[FInstance:(v : Dynamic, fields : Array<String>) -> Void]
+													haxe.format.JsonPrinter
+													fieldsString:(v : Dynamic, fields : Array<String>) -> Void
+											[Local v(2685):Dynamic:Dynamic]
+											[Call:Array<String>]
+												[Field:(o : Dynamic) -> Array<String>]
+													[TypeExpr Reflect:Class<Reflect>]
+													[FStatic:(o : Dynamic) -> Array<String>]
+														Reflect
+														fields:(o : Dynamic) -> Array<String>
+												[Local v(2685):Dynamic:Dynamic]
+						[Case:Void]
+							[Const:Int] 5
+							[Block:Void]
+								[Block:Void]
+									[Block:Void]
+										[Call:Void]
+											[Field:(x : String) -> Void]
+												[Field:StringBuf]
+													[Const:haxe.format.JsonPrinter] this
+													[FInstance:StringBuf]
+														haxe.format.JsonPrinter
+														buf:StringBuf
+												[FInstance:(x : String) -> Void]
+													StringBuf
+													add:(x : add.T) -> Void
+											[Const:String] "\"<fun>\""
+						[Case:Void]
+							[Const:Int] 6
+							[Block:Void]
+								[Var `(2827):Class<Dynamic>]
+									[EnumParameter:Class<Dynamic>]
+										[Local `(2825):ValueType:ValueType]
+										TClass
+										0
+								[Block:Void]
+									[Var c(2828):Class<Dynamic>] [Local `(2827):Class<Dynamic>:Class<Dynamic>]
+									[Block:Void]
+										[If:Void]
+											[Binop:Bool]
+												[Local c(2828):Class<Dynamic>:Class<Dynamic>]
+												==
+												[TypeExpr String:Class<String>]
+											[Then:Void] [Block:Void]
+												[Call:Void]
+													[Field:(s : String) -> Void]
+														[Const:haxe.format.JsonPrinter] this
+														[FInstance:(s : String) -> Void]
+															haxe.format.JsonPrinter
+															quote:(s : String) -> Void
+													[Local v(2685):Dynamic:Dynamic]
+											[Else:Void] [Block:Void]
+												[If:Void]
+													[Binop:Bool]
+														[Local c(2828):Class<Dynamic>:Class<Dynamic>]
+														==
+														[TypeExpr Array:Class<Array>]
+													[Then:Void] [Block:Void]
+														[Var v(2829):Array<Dynamic>] [Local v(2685):Dynamic:Dynamic]
+														[Block:Void]
+															[Call:Void]
+																[Field:(c : Int) -> Void]
+																	[Field:StringBuf]
+																		[Const:haxe.format.JsonPrinter] this
+																		[FInstance:StringBuf]
+																			haxe.format.JsonPrinter
+																			buf:StringBuf
+																	[FInstance:(c : Int) -> Void]
+																		StringBuf
+																		addChar:(c : Int) -> Void
+																[Const:Int] 91
+														[Var len(2830):Int]
+															[Field:Int]
+																[Local v(2829):Array<Dynamic>:Array<Dynamic>]
+																[FInstance:Int]
+																	Array<Dynamic>
+																	length:Int
+														[Var last(2831):Int]
+															[Binop:Int]
+																[Local len(2830):Int:Int]
+																-
+																[Const:Int] 1
+														[Block:Void]
+															[Var `(2832):Int] [Const:Int] 0
+															[Var `(2833):Int] [Local len(2830):Int:Int]
+															[While:Void]
+																[Binop:Bool]
+																	[Local `(2832):Int:Int]
+																	<
+																	[Local `(2833):Int:Int]
+																[Block:Void]
+																	[Var i(2834):Int]
+																		[Unop:Int]
+																			++
+																			Postfix
+																			[Local `(2832):Int:Int]
+																	[If:Void]
+																		[Binop:Bool]
+																			[Local i(2834):Int:Int]
+																			>
+																			[Const:Int] 0
+																		[Then:Void] [Block:Void]
+																			[Block:Void]
+																				[Call:Void]
+																					[Field:(c : Int) -> Void]
+																						[Field:StringBuf]
+																							[Const:haxe.format.JsonPrinter] this
+																							[FInstance:StringBuf]
+																								haxe.format.JsonPrinter
+																								buf:StringBuf
+																						[FInstance:(c : Int) -> Void]
+																							StringBuf
+																							addChar:(c : Int) -> Void
+																					[Const:Int] 44
+																		[Else:Int] [Block:Int]
+																			[Unop:Int]
+																				++
+																				Postfix
+																				[Field:Int]
+																					[Const:haxe.format.JsonPrinter] this
+																					[FInstance:Int]
+																						haxe.format.JsonPrinter
+																						nind:Int
+																	[Block:Void]
+																		[If:Void]
+																			[Field:Bool]
+																				[Const:haxe.format.JsonPrinter] this
+																				[FInstance:Bool]
+																					haxe.format.JsonPrinter
+																					pretty:Bool
+																			[Then:Void] [Block:Void]
+																				[Block:Void]
+																					[Call:Void]
+																						[Field:(c : Int) -> Void]
+																							[Field:StringBuf]
+																								[Const:haxe.format.JsonPrinter] this
+																								[FInstance:StringBuf]
+																									haxe.format.JsonPrinter
+																									buf:StringBuf
+																							[FInstance:(c : Int) -> Void]
+																								StringBuf
+																								addChar:(c : Int) -> Void
+																						[Const:Int] 10
+																	[Block:Void]
+																		[If:Void]
+																			[Field:Bool]
+																				[Const:haxe.format.JsonPrinter] this
+																				[FInstance:Bool]
+																					haxe.format.JsonPrinter
+																					pretty:Bool
+																			[Then:Void] [Block:Void]
+																				[Block:Void]
+																					[Var v(2835):String]
+																						[Call:String]
+																							[Field:(s : String, c : String, l : Int) -> String]
+																								[TypeExpr StringTools:Class<StringTools>]
+																								[FStatic:(s : String, c : String, l : Int) -> String]
+																									StringTools
+																									lpad:(s : String, c : String, l : Int) -> String
+																							[Const:String] ""
+																							[Field:String]
+																								[Const:haxe.format.JsonPrinter] this
+																								[FInstance:String]
+																									haxe.format.JsonPrinter
+																									indent:String
+																							[Binop:Int]
+																								[Field:Int]
+																									[Const:haxe.format.JsonPrinter] this
+																									[FInstance:Int]
+																										haxe.format.JsonPrinter
+																										nind:Int
+																								*
+																								[Field:Int]
+																									[Field:String]
+																										[Const:haxe.format.JsonPrinter] this
+																										[FInstance:String]
+																											haxe.format.JsonPrinter
+																											indent:String
+																									[FInstance:Int]
+																										String
+																										length:Int
+																					[Call:Void]
+																						[Field:(x : String) -> Void]
+																							[Field:StringBuf]
+																								[Const:haxe.format.JsonPrinter] this
+																								[FInstance:StringBuf]
+																									haxe.format.JsonPrinter
+																									buf:StringBuf
+																							[FInstance:(x : String) -> Void]
+																								StringBuf
+																								add:(x : add.T) -> Void
+																						[Local v(2835):String:String]
+																	[Call:Void]
+																		[Field:(k : Dynamic, v : Dynamic) -> Void]
+																			[Const:haxe.format.JsonPrinter] this
+																			[FInstance:(k : Dynamic, v : Dynamic) -> Void]
+																				haxe.format.JsonPrinter
+																				write:(k : Dynamic, v : Dynamic) -> Void
+																		[Local i(2834):Int:Int]
+																		[Array:Dynamic]
+																			[Local v(2829):Array<Dynamic>:Array<Dynamic>]
+																			[Local i(2834):Int:Int]
+																	[If:Void]
+																		[Binop:Bool]
+																			[Local i(2834):Int:Int]
+																			==
+																			[Local last(2831):Int:Int]
+																		[Then:Void] [Block:Void]
+																			[Unop:Int]
+																				--
+																				Postfix
+																				[Field:Int]
+																					[Const:haxe.format.JsonPrinter] this
+																					[FInstance:Int]
+																						haxe.format.JsonPrinter
+																						nind:Int
+																			[Block:Void]
+																				[If:Void]
+																					[Field:Bool]
+																						[Const:haxe.format.JsonPrinter] this
+																						[FInstance:Bool]
+																							haxe.format.JsonPrinter
+																							pretty:Bool
+																					[Then:Void] [Block:Void]
+																						[Block:Void]
+																							[Call:Void]
+																								[Field:(c : Int) -> Void]
+																									[Field:StringBuf]
+																										[Const:haxe.format.JsonPrinter] this
+																										[FInstance:StringBuf]
+																											haxe.format.JsonPrinter
+																											buf:StringBuf
+																									[FInstance:(c : Int) -> Void]
+																										StringBuf
+																										addChar:(c : Int) -> Void
+																								[Const:Int] 10
+																			[Block:Void]
+																				[If:Void]
+																					[Field:Bool]
+																						[Const:haxe.format.JsonPrinter] this
+																						[FInstance:Bool]
+																							haxe.format.JsonPrinter
+																							pretty:Bool
+																					[Then:Void] [Block:Void]
+																						[Block:Void]
+																							[Var v(2836):String]
+																								[Call:String]
+																									[Field:(s : String, c : String, l : Int) -> String]
+																										[TypeExpr StringTools:Class<StringTools>]
+																										[FStatic:(s : String, c : String, l : Int) -> String]
+																											StringTools
+																											lpad:(s : String, c : String, l : Int) -> String
+																									[Const:String] ""
+																									[Field:String]
+																										[Const:haxe.format.JsonPrinter] this
+																										[FInstance:String]
+																											haxe.format.JsonPrinter
+																											indent:String
+																									[Binop:Int]
+																										[Field:Int]
+																											[Const:haxe.format.JsonPrinter] this
+																											[FInstance:Int]
+																												haxe.format.JsonPrinter
+																												nind:Int
+																										*
+																										[Field:Int]
+																											[Field:String]
+																												[Const:haxe.format.JsonPrinter] this
+																												[FInstance:String]
+																													haxe.format.JsonPrinter
+																													indent:String
+																											[FInstance:Int]
+																												String
+																												length:Int
+																							[Call:Void]
+																								[Field:(x : String) -> Void]
+																									[Field:StringBuf]
+																										[Const:haxe.format.JsonPrinter] this
+																										[FInstance:StringBuf]
+																											haxe.format.JsonPrinter
+																											buf:StringBuf
+																									[FInstance:(x : String) -> Void]
+																										StringBuf
+																										add:(x : add.T) -> Void
+																								[Local v(2836):String:String]
+														[Block:Void]
+															[Call:Void]
+																[Field:(c : Int) -> Void]
+																	[Field:StringBuf]
+																		[Const:haxe.format.JsonPrinter] this
+																		[FInstance:StringBuf]
+																			haxe.format.JsonPrinter
+																			buf:StringBuf
+																	[FInstance:(c : Int) -> Void]
+																		StringBuf
+																		addChar:(c : Int) -> Void
+																[Const:Int] 93
+													[Else:Void] [Block:Void]
+														[If:Void]
+															[Binop:Bool]
+																[Local c(2828):Class<Dynamic>:Class<Dynamic>]
+																==
+																[TypeExpr haxe.ds.StringMap:Class<haxe.ds.StringMap>]
+															[Then:Void] [Block:Void]
+																[Var v(2837):haxe.ds.StringMap<Dynamic>] [Local v(2685):Dynamic:Dynamic]
+																[Var o(2838):{ }] [ObjectDecl:{ }]
+																[For:Void]
+																	[Local k(2839):String]
+																	[Call:Iterator<String>]
+																		[Field:() -> Iterator<String>]
+																			[Local v(2837):haxe.ds.StringMap<Dynamic>:haxe.ds.StringMap<Dynamic>]
+																			[FInstance:() -> Iterator<String>]
+																				haxe.ds.StringMap<Dynamic>
+																				keys:() -> Iterator<String>
+																	[Block:Void]
+																		[Call:Void]
+																			[Field:(o : Dynamic, field : String, value : Dynamic) -> Void]
+																				[TypeExpr Reflect:Class<Reflect>]
+																				[FStatic:(o : Dynamic, field : String, value : Dynamic) -> Void]
+																					Reflect
+																					setField:(o : Dynamic, field : String, value : Dynamic) -> Void
+																			[Local o(2838):{ }:{ }]
+																			[Local k(2839):String:String]
+																			[Call:Null<Dynamic>]
+																				[Field:(key : String) -> Null<Dynamic>]
+																					[Local v(2837):haxe.ds.StringMap<Dynamic>:haxe.ds.StringMap<Dynamic>]
+																					[FInstance:(key : String) -> Null<Dynamic>]
+																						haxe.ds.StringMap<Dynamic>
+																						get:(key : String) -> Null<haxe.ds.StringMap.T>
+																				[Local k(2839):String:String]
+																[Block:Void]
+																	[Var v(2840):Dynamic] [Cast:Dynamic] [Local o(2838):{ }:{ }]
+																	[Call:Void]
+																		[Field:(v : Dynamic, fields : Array<String>) -> Void]
+																			[Const:haxe.format.JsonPrinter] this
+																			[FInstance:(v : Dynamic, fields : Array<String>) -> Void]
+																				haxe.format.JsonPrinter
+																				fieldsString:(v : Dynamic, fields : Array<String>) -> Void
+																		[Local v(2840):Dynamic:Dynamic]
+																		[Call:Array<String>]
+																			[Field:(o : Dynamic) -> Array<String>]
+																				[TypeExpr Reflect:Class<Reflect>]
+																				[FStatic:(o : Dynamic) -> Array<String>]
+																					Reflect
+																					fields:(o : Dynamic) -> Array<String>
+																			[Local v(2840):Dynamic:Dynamic]
+															[Else:Void] [Block:Void]
+																[If:Void]
+																	[Binop:Bool]
+																		[Local c(2828):Class<Dynamic>:Class<Dynamic>]
+																		==
+																		[TypeExpr Date:Class<Date>]
+																	[Then:Void] [Block:Void]
+																		[Var v(2841):Date] [Local v(2685):Dynamic:Dynamic]
+																		[Call:Void]
+																			[Field:(s : String) -> Void]
+																				[Const:haxe.format.JsonPrinter] this
+																				[FInstance:(s : String) -> Void]
+																					haxe.format.JsonPrinter
+																					quote:(s : String) -> Void
+																			[Call:String]
+																				[Field:() -> String]
+																					[Local v(2841):Date:Date]
+																					[FInstance:() -> String]
+																						Date
+																						toString:() -> String
+																	[Else:Void] [Block:Void]
+																		[Call:Void]
+																			[Field:(v : Dynamic) -> Void]
+																				[Const:haxe.format.JsonPrinter] this
+																				[FInstance:(v : Dynamic) -> Void]
+																					haxe.format.JsonPrinter
+																					classString:(v : Dynamic) -> Void
+																			[Local v(2685):Dynamic:Dynamic]
+						[Case:Void]
+							[Const:Int] 7
+							[Block:Void]
+								[Var `(2842):Enum<Dynamic>]
+									[EnumParameter:Enum<Dynamic>]
+										[Local `(2825):ValueType:ValueType]
+										TEnum
+										0
+								[Block:Void]
+									[Var i(2843):Int]
+										[Call:Int]
+											[Field:(e : EnumValue) -> Int]
+												[TypeExpr Type:Class<Type>]
+												[FStatic:(e : EnumValue) -> Int]
+													Type
+													enumIndex:(e : EnumValue) -> Int
+											[Local v(2685):Dynamic:Dynamic]
+									[Block:Void]
+										[Var v(2844):String]
+											[Call:String]
+												[Field:(s : Dynamic) -> String]
+													[TypeExpr Std:Class<Std>]
+													[FStatic:(s : Dynamic) -> String]
+														Std
+														string:(s : Dynamic) -> String
+												[Local i(2843):Int:Int]
+										[Call:Void]
+											[Field:(x : String) -> Void]
+												[Field:StringBuf]
+													[Const:haxe.format.JsonPrinter] this
+													[FInstance:StringBuf]
+														haxe.format.JsonPrinter
+														buf:StringBuf
+												[FInstance:(x : String) -> Void]
+													StringBuf
+													add:(x : add.T) -> Void
+											[Local v(2844):String:String]
+						[Case:Void]
+							[Const:Int] 8
+							[Block:Void]
+								[Block:Void]
+									[Block:Void]
+										[Call:Void]
+											[Field:(x : String) -> Void]
+												[Field:StringBuf]
+													[Const:haxe.format.JsonPrinter] this
+													[FInstance:StringBuf]
+														haxe.format.JsonPrinter
+														buf:StringBuf
+												[FInstance:(x : String) -> Void]
+													StringBuf
+													add:(x : add.T) -> Void
+											[Const:String] "\"???\""
+
+	inline function addChar[Function:(c : Int) -> Void]
+		[Arg:Int] [Local c(2693):Int]
+		[Block:Void]
+			[Call:Void]
+				[Field:(c : Int) -> Void]
+					[Field:StringBuf]
+						[Const:haxe.format.JsonPrinter] this
+						[FInstance:StringBuf]
+							haxe.format.JsonPrinter
+							buf:StringBuf
+					[FInstance:(c : Int) -> Void]
+						StringBuf
+						addChar:(c : Int) -> Void
+				[Local c(2693):Int:Int]
+
+	inline function add[Function:(v : String) -> Void]
+		[Arg:String] [Local v(2686):String]
+		[Block:Void]
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Field:StringBuf]
+						[Const:haxe.format.JsonPrinter] this
+						[FInstance:StringBuf]
+							haxe.format.JsonPrinter
+							buf:StringBuf
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Local v(2686):String:String]
+
+	function classString[Function:(v : Dynamic) -> Void]
+		[Arg:Dynamic] [Local v(2811):Dynamic]
+		[Block:Void]
+			[Call:Void]
+				[Field:(v : Dynamic, fields : Array<String>) -> Void]
+					[Const:haxe.format.JsonPrinter] this
+					[FInstance:(v : Dynamic, fields : Array<String>) -> Void]
+						haxe.format.JsonPrinter
+						fieldsString:(v : Dynamic, fields : Array<String>) -> Void
+				[Local v(2811):Dynamic:Dynamic]
+				[Call:Array<String>]
+					[Field:(c : Class<Dynamic>) -> Array<String>]
+						[TypeExpr Type:Class<Type>]
+						[FStatic:(c : Class<Dynamic>) -> Array<String>]
+							Type
+							getInstanceFields:(c : Class<Dynamic>) -> Array<String>
+					[Call:Class<Unknown<5>>]
+						[Field:(o : Unknown<5>) -> Class<Unknown<5>>]
+							[TypeExpr Type:Class<Type>]
+							[FStatic:(o : Unknown<5>) -> Class<Unknown<5>>]
+								Type
+								getClass:(o : getClass.T) -> Class<getClass.T>
+						[Local v(2811):Dynamic:Dynamic]
+
+	inline function objString[Function:(v : Dynamic) -> Void]
+		[Arg:Dynamic] [Local v(2690):Dynamic]
+		[Block:Void]
+			[Call:Void]
+				[Field:(v : Dynamic, fields : Array<String>) -> Void]
+					[Const:haxe.format.JsonPrinter] this
+					[FInstance:(v : Dynamic, fields : Array<String>) -> Void]
+						haxe.format.JsonPrinter
+						fieldsString:(v : Dynamic, fields : Array<String>) -> Void
+				[Local v(2690):Dynamic:Dynamic]
+				[Call:Array<String>]
+					[Field:(o : Dynamic) -> Array<String>]
+						[TypeExpr Reflect:Class<Reflect>]
+						[FStatic:(o : Dynamic) -> Array<String>]
+							Reflect
+							fields:(o : Dynamic) -> Array<String>
+					[Local v(2690):Dynamic:Dynamic]
+
+	function fieldsString[Function:(v : Dynamic, fields : Array<String>) -> Void]
+		[Arg:Dynamic] [Local v(2691):Dynamic]
+		[Arg:Array<String>] [Local fields(2692):Array<String>]
+		[Block:Void]
+			[Block:Void]
+				[Call:Void]
+					[Field:(c : Int) -> Void]
+						[Field:StringBuf]
+							[Const:haxe.format.JsonPrinter] this
+							[FInstance:StringBuf]
+								haxe.format.JsonPrinter
+								buf:StringBuf
+						[FInstance:(c : Int) -> Void]
+							StringBuf
+							addChar:(c : Int) -> Void
+					[Const:Int] 123
+			[Var len(2697):Int]
+				[Field:Int]
+					[Local fields(2692):Array<String>:Array<String>]
+					[FInstance:Int]
+						Array<String>
+						length:Int
+			[Var empty(2698):Bool] [Const:Bool] true
+			[Block:Void]
+				[Var `(2756):Int] [Const:Int] 0
+				[Var `(2757):Int] [Local len(2697):Int:Int]
+				[While:Void]
+					[Binop:Bool]
+						[Local `(2756):Int:Int]
+						<
+						[Local `(2757):Int:Int]
+					[Block:Void]
+						[Var i(2699):Int]
+							[Unop:Int]
+								++
+								Postfix
+								[Local `(2756):Int:Int]
+						[Var f(2700):String]
+							[Array:String]
+								[Local fields(2692):Array<String>:Array<String>]
+								[Local i(2699):Int:Int]
+						[Var value(2701):Unknown<6>]
+							[Call:Dynamic]
+								[Field:(o : Dynamic, field : String) -> Dynamic]
+									[TypeExpr Reflect:Class<Reflect>]
+									[FStatic:(o : Dynamic, field : String) -> Dynamic]
+										Reflect
+										field:(o : Dynamic, field : String) -> Dynamic
+								[Local v(2691):Dynamic:Dynamic]
+								[Local f(2700):String:String]
+						[If:Void]
+							[Call:Bool]
+								[Field:(f : Dynamic) -> Bool]
+									[TypeExpr Reflect:Class<Reflect>]
+									[FStatic:(f : Dynamic) -> Bool]
+										Reflect
+										isFunction:(f : Dynamic) -> Bool
+								[Local value(2701):Unknown<6>:Unknown<6>]
+							[Then:Dynamic] [Block:Dynamic] [Continue:Dynamic]
+						[If:Void]
+							[Local empty(2698):Bool:Bool]
+							[Then:Bool] [Block:Bool]
+								[Unop:Int]
+									++
+									Postfix
+									[Field:Int]
+										[Const:haxe.format.JsonPrinter] this
+										[FInstance:Int]
+											haxe.format.JsonPrinter
+											nind:Int
+								[Binop:Bool]
+									[Local empty(2698):Bool:Bool]
+									=
+									[Const:Bool] false
+							[Else:Void] [Block:Void]
+								[Block:Void]
+									[Call:Void]
+										[Field:(c : Int) -> Void]
+											[Field:StringBuf]
+												[Const:haxe.format.JsonPrinter] this
+												[FInstance:StringBuf]
+													haxe.format.JsonPrinter
+													buf:StringBuf
+											[FInstance:(c : Int) -> Void]
+												StringBuf
+												addChar:(c : Int) -> Void
+										[Const:Int] 44
+						[Block:Void]
+							[If:Void]
+								[Field:Bool]
+									[Const:haxe.format.JsonPrinter] this
+									[FInstance:Bool]
+										haxe.format.JsonPrinter
+										pretty:Bool
+								[Then:Void] [Block:Void]
+									[Block:Void]
+										[Call:Void]
+											[Field:(c : Int) -> Void]
+												[Field:StringBuf]
+													[Const:haxe.format.JsonPrinter] this
+													[FInstance:StringBuf]
+														haxe.format.JsonPrinter
+														buf:StringBuf
+												[FInstance:(c : Int) -> Void]
+													StringBuf
+													addChar:(c : Int) -> Void
+											[Const:Int] 10
+						[Block:Void]
+							[If:Void]
+								[Field:Bool]
+									[Const:haxe.format.JsonPrinter] this
+									[FInstance:Bool]
+										haxe.format.JsonPrinter
+										pretty:Bool
+								[Then:Void] [Block:Void]
+									[Block:Void]
+										[Var v(2715):String]
+											[Call:String]
+												[Field:(s : String, c : String, l : Int) -> String]
+													[TypeExpr StringTools:Class<StringTools>]
+													[FStatic:(s : String, c : String, l : Int) -> String]
+														StringTools
+														lpad:(s : String, c : String, l : Int) -> String
+												[Const:String] ""
+												[Field:String]
+													[Const:haxe.format.JsonPrinter] this
+													[FInstance:String]
+														haxe.format.JsonPrinter
+														indent:String
+												[Binop:Int]
+													[Field:Int]
+														[Const:haxe.format.JsonPrinter] this
+														[FInstance:Int]
+															haxe.format.JsonPrinter
+															nind:Int
+													*
+													[Field:Int]
+														[Field:String]
+															[Const:haxe.format.JsonPrinter] this
+															[FInstance:String]
+																haxe.format.JsonPrinter
+																indent:String
+														[FInstance:Int]
+															String
+															length:Int
+										[Call:Void]
+											[Field:(x : String) -> Void]
+												[Field:StringBuf]
+													[Const:haxe.format.JsonPrinter] this
+													[FInstance:StringBuf]
+														haxe.format.JsonPrinter
+														buf:StringBuf
+												[FInstance:(x : String) -> Void]
+													StringBuf
+													add:(x : add.T) -> Void
+											[Local v(2715):String:String]
+						[Call:Void]
+							[Field:(s : String) -> Void]
+								[Const:haxe.format.JsonPrinter] this
+								[FInstance:(s : String) -> Void]
+									haxe.format.JsonPrinter
+									quote:(s : String) -> Void
+							[Local f(2700):String:String]
+						[Block:Void]
+							[Call:Void]
+								[Field:(c : Int) -> Void]
+									[Field:StringBuf]
+										[Const:haxe.format.JsonPrinter] this
+										[FInstance:StringBuf]
+											haxe.format.JsonPrinter
+											buf:StringBuf
+									[FInstance:(c : Int) -> Void]
+										StringBuf
+										addChar:(c : Int) -> Void
+								[Const:Int] 58
+						[If:Void]
+							[Field:Bool]
+								[Const:haxe.format.JsonPrinter] this
+								[FInstance:Bool]
+									haxe.format.JsonPrinter
+									pretty:Bool
+							[Then:Void] [Block:Void]
+								[Block:Void]
+									[Call:Void]
+										[Field:(c : Int) -> Void]
+											[Field:StringBuf]
+												[Const:haxe.format.JsonPrinter] this
+												[FInstance:StringBuf]
+													haxe.format.JsonPrinter
+													buf:StringBuf
+											[FInstance:(c : Int) -> Void]
+												StringBuf
+												addChar:(c : Int) -> Void
+										[Const:Int] 32
+						[Call:Void]
+							[Field:(k : Dynamic, v : Dynamic) -> Void]
+								[Const:haxe.format.JsonPrinter] this
+								[FInstance:(k : Dynamic, v : Dynamic) -> Void]
+									haxe.format.JsonPrinter
+									write:(k : Dynamic, v : Dynamic) -> Void
+							[Local f(2700):String:String]
+							[Local value(2701):Unknown<6>:Unknown<6>]
+			[If:Void]
+				[Unop:Bool]
+					!
+					Prefix
+					[Local empty(2698):Bool:Bool]
+				[Then:Void] [Block:Void]
+					[Unop:Int]
+						--
+						Postfix
+						[Field:Int]
+							[Const:haxe.format.JsonPrinter] this
+							[FInstance:Int]
+								haxe.format.JsonPrinter
+								nind:Int
+					[Block:Void]
+						[If:Void]
+							[Field:Bool]
+								[Const:haxe.format.JsonPrinter] this
+								[FInstance:Bool]
+									haxe.format.JsonPrinter
+									pretty:Bool
+							[Then:Void] [Block:Void]
+								[Block:Void]
+									[Call:Void]
+										[Field:(c : Int) -> Void]
+											[Field:StringBuf]
+												[Const:haxe.format.JsonPrinter] this
+												[FInstance:StringBuf]
+													haxe.format.JsonPrinter
+													buf:StringBuf
+											[FInstance:(c : Int) -> Void]
+												StringBuf
+												addChar:(c : Int) -> Void
+										[Const:Int] 10
+					[Block:Void]
+						[If:Void]
+							[Field:Bool]
+								[Const:haxe.format.JsonPrinter] this
+								[FInstance:Bool]
+									haxe.format.JsonPrinter
+									pretty:Bool
+							[Then:Void] [Block:Void]
+								[Block:Void]
+									[Var v(2762):String]
+										[Call:String]
+											[Field:(s : String, c : String, l : Int) -> String]
+												[TypeExpr StringTools:Class<StringTools>]
+												[FStatic:(s : String, c : String, l : Int) -> String]
+													StringTools
+													lpad:(s : String, c : String, l : Int) -> String
+											[Const:String] ""
+											[Field:String]
+												[Const:haxe.format.JsonPrinter] this
+												[FInstance:String]
+													haxe.format.JsonPrinter
+													indent:String
+											[Binop:Int]
+												[Field:Int]
+													[Const:haxe.format.JsonPrinter] this
+													[FInstance:Int]
+														haxe.format.JsonPrinter
+														nind:Int
+												*
+												[Field:Int]
+													[Field:String]
+														[Const:haxe.format.JsonPrinter] this
+														[FInstance:String]
+															haxe.format.JsonPrinter
+															indent:String
+													[FInstance:Int]
+														String
+														length:Int
+									[Call:Void]
+										[Field:(x : String) -> Void]
+											[Field:StringBuf]
+												[Const:haxe.format.JsonPrinter] this
+												[FInstance:StringBuf]
+													haxe.format.JsonPrinter
+													buf:StringBuf
+											[FInstance:(x : String) -> Void]
+												StringBuf
+												add:(x : add.T) -> Void
+										[Local v(2762):String:String]
+			[Block:Void]
+				[Call:Void]
+					[Field:(c : Int) -> Void]
+						[Field:StringBuf]
+							[Const:haxe.format.JsonPrinter] this
+							[FInstance:StringBuf]
+								haxe.format.JsonPrinter
+								buf:StringBuf
+						[FInstance:(c : Int) -> Void]
+							StringBuf
+							addChar:(c : Int) -> Void
+					[Const:Int] 125
+
+	function quote[Function:(s : String) -> Void]
+		[Arg:String] [Local s(2716):String]
+		[Block:Void]
+			[Block:Void]
+				[Call:Void]
+					[Field:(c : Int) -> Void]
+						[Field:StringBuf]
+							[Const:haxe.format.JsonPrinter] this
+							[FInstance:StringBuf]
+								haxe.format.JsonPrinter
+								buf:StringBuf
+						[FInstance:(c : Int) -> Void]
+							StringBuf
+							addChar:(c : Int) -> Void
+					[Const:Int] 34
+			[Var i(2720):Int] [Const:Int] 0
+			[Var length(2721):Int]
+				[Field:Int]
+					[Local s(2716):String:String]
+					[FInstance:Int]
+						String
+						length:Int
+			[While:Void]
+				[Binop:Bool]
+					[Local i(2720):Int:Int]
+					<
+					[Local length(2721):Int:Int]
+				[Block:Void]
+					[Var c(2722):Int]
+						[Call:Int]
+							[Field:(s : String, index : Int) -> Int]
+								[TypeExpr StringTools:Class<StringTools>]
+								[FStatic:(s : String, index : Int) -> Int]
+									StringTools
+									unsafeCodeAt:(s : String, index : Int) -> Int
+							[Local s(2716):String:String]
+							[Unop:Int]
+								++
+								Postfix
+								[Local i(2720):Int:Int]
+					[Meta:Void]
+						:ast(switch (c) {
+	case "\"".code:
+		add("\\\"");	
+	case "\\".code:
+		add("\\\\");	
+	case "\n".code:
+		add("\\n");	
+	case "\r".code:
+		add("\\r");	
+	case "\t".code:
+		add("\\t");	
+	case 8:
+		add("\\b");	
+	case 12:
+		add("\\f");	
+	default:
+		addChar(c);	
+})
+						[Switch:Void]
+							[Local c(2722):Int:Int]
+							[Case:Void]
+								[Const:Int] 8
+								[Block:Void]
+									[Block:Void]
+										[Block:Void]
+											[Call:Void]
+												[Field:(x : String) -> Void]
+													[Field:StringBuf]
+														[Const:haxe.format.JsonPrinter] this
+														[FInstance:StringBuf]
+															haxe.format.JsonPrinter
+															buf:StringBuf
+													[FInstance:(x : String) -> Void]
+														StringBuf
+														add:(x : add.T) -> Void
+												[Const:String] "\\b"
+							[Case:Void]
+								[Const:Int] 9
+								[Block:Void]
+									[Block:Void]
+										[Block:Void]
+											[Call:Void]
+												[Field:(x : String) -> Void]
+													[Field:StringBuf]
+														[Const:haxe.format.JsonPrinter] this
+														[FInstance:StringBuf]
+															haxe.format.JsonPrinter
+															buf:StringBuf
+													[FInstance:(x : String) -> Void]
+														StringBuf
+														add:(x : add.T) -> Void
+												[Const:String] "\\t"
+							[Case:Void]
+								[Const:Int] 10
+								[Block:Void]
+									[Block:Void]
+										[Block:Void]
+											[Call:Void]
+												[Field:(x : String) -> Void]
+													[Field:StringBuf]
+														[Const:haxe.format.JsonPrinter] this
+														[FInstance:StringBuf]
+															haxe.format.JsonPrinter
+															buf:StringBuf
+													[FInstance:(x : String) -> Void]
+														StringBuf
+														add:(x : add.T) -> Void
+												[Const:String] "\\n"
+							[Case:Void]
+								[Const:Int] 12
+								[Block:Void]
+									[Block:Void]
+										[Block:Void]
+											[Call:Void]
+												[Field:(x : String) -> Void]
+													[Field:StringBuf]
+														[Const:haxe.format.JsonPrinter] this
+														[FInstance:StringBuf]
+															haxe.format.JsonPrinter
+															buf:StringBuf
+													[FInstance:(x : String) -> Void]
+														StringBuf
+														add:(x : add.T) -> Void
+												[Const:String] "\\f"
+							[Case:Void]
+								[Const:Int] 13
+								[Block:Void]
+									[Block:Void]
+										[Block:Void]
+											[Call:Void]
+												[Field:(x : String) -> Void]
+													[Field:StringBuf]
+														[Const:haxe.format.JsonPrinter] this
+														[FInstance:StringBuf]
+															haxe.format.JsonPrinter
+															buf:StringBuf
+													[FInstance:(x : String) -> Void]
+														StringBuf
+														add:(x : add.T) -> Void
+												[Const:String] "\\r"
+							[Case:Void]
+								[Const:Int] 34
+								[Block:Void]
+									[Block:Void]
+										[Block:Void]
+											[Call:Void]
+												[Field:(x : String) -> Void]
+													[Field:StringBuf]
+														[Const:haxe.format.JsonPrinter] this
+														[FInstance:StringBuf]
+															haxe.format.JsonPrinter
+															buf:StringBuf
+													[FInstance:(x : String) -> Void]
+														StringBuf
+														add:(x : add.T) -> Void
+												[Const:String] "\\\""
+							[Case:Void]
+								[Const:Int] 92
+								[Block:Void]
+									[Block:Void]
+										[Block:Void]
+											[Call:Void]
+												[Field:(x : String) -> Void]
+													[Field:StringBuf]
+														[Const:haxe.format.JsonPrinter] this
+														[FInstance:StringBuf]
+															haxe.format.JsonPrinter
+															buf:StringBuf
+													[FInstance:(x : String) -> Void]
+														StringBuf
+														add:(x : add.T) -> Void
+												[Const:String] "\\\\"
+							[Default:Void]
+								[Block:Void]
+									[Block:Void]
+										[Call:Void]
+											[Field:(c : Int) -> Void]
+												[Field:StringBuf]
+													[Const:haxe.format.JsonPrinter] this
+													[FInstance:StringBuf]
+														haxe.format.JsonPrinter
+														buf:StringBuf
+												[FInstance:(c : Int) -> Void]
+													StringBuf
+													addChar:(c : Int) -> Void
+											[Local c(2722):Int:Int]
+			[Block:Void]
+				[Call:Void]
+					[Field:(c : Int) -> Void]
+						[Field:StringBuf]
+							[Const:haxe.format.JsonPrinter] this
+							[FInstance:StringBuf]
+								haxe.format.JsonPrinter
+								buf:StringBuf
+						[FInstance:(c : Int) -> Void]
+							StringBuf
+							addChar:(c : Int) -> Void
+					[Const:Int] 34
+
+	public static function print[Function:(o : Dynamic, ?replacer : Null<(key : Dynamic, value : Dynamic) -> Dynamic>, ?space : Null<String>) -> String]
+		[Arg:Dynamic] [Local o(2678):Dynamic]
+		[Arg:Null<(key : Dynamic, value : Dynamic) -> Dynamic>]
+			[Local replacer(2679):Null<(key : Dynamic, value : Dynamic) -> Dynamic>]
+			[Const:Null<(key : Dynamic, value : Dynamic) -> Dynamic>] null
+		[Arg:Null<String>]
+			[Local space(2680):Null<String>]
+			[Const:Null<String>] null
+		[Block:Dynamic]
+			[Var printer(2683):haxe.format.JsonPrinter]
+				[New:haxe.format.JsonPrinter]
+					haxe.format.JsonPrinter
+					[Local replacer(2679):Null<(key : Dynamic, value : Dynamic) -> Dynamic>:Null<(key : Dynamic, value : Dynamic) -> Dynamic>]
+					[Local space(2680):Null<String>:Null<String>]
+			[Call:Void]
+				[Field:(k : Dynamic, v : Dynamic) -> Void]
+					[Local printer(2683):haxe.format.JsonPrinter:haxe.format.JsonPrinter]
+					[FInstance:(k : Dynamic, v : Dynamic) -> Void]
+						haxe.format.JsonPrinter
+						write:(k : Dynamic, v : Dynamic) -> Void
+				[Const:String] ""
+				[Local o(2678):Dynamic:Dynamic]
+			[Return:Dynamic]
+				[Call:String]
+					[Field:() -> String]
+						[Field:StringBuf]
+							[Local printer(2683):haxe.format.JsonPrinter:haxe.format.JsonPrinter]
+							[FInstance:StringBuf]
+								haxe.format.JsonPrinter
+								buf:StringBuf
+						[FInstance:() -> String]
+							StringBuf
+							toString:() -> String
+}

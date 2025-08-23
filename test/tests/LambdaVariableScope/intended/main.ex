@@ -23,20 +23,7 @@ defmodule Main do
           g_array = []
           (
           g_counter = 0
-          loop_helper = fn loop_fn, {v, g1} ->
-      if ((g_counter < items.length)) do
-        v = Enum.at(items, g_counter)
-        g1 = g1 + 1
-        if ((v != target_item)) do
-              g_counter ++ [v]
-            end
-        loop_fn.(loop_fn, {v, g1})
-      else
-        {v, g1}
-      end
-    end
-
-    {v, g1} = loop_helper.(loop_helper, {v, g1})
+          Enum.filter(items, fn item -> item != target_item end)
         )
           temp_array = g_counter
         )
@@ -47,20 +34,7 @@ defmodule Main do
           g_array = []
           (
           g_counter = 0
-          loop_helper = fn loop_fn, {v, g1} ->
-      if ((g_counter < todos.length)) do
-        v = Enum.at(todos, g_counter)
-        g1 = g1 + 1
-        if ((v.id != id)) do
-              g_counter ++ [v]
-            end
-        loop_fn.(loop_fn, {v, g1})
-      else
-        {v, g1}
-      end
-    end
-
-    {v, g1} = loop_helper.(loop_helper, {v, g1})
+          Enum.filter(todos, fn item -> item.id != id end)
         )
           temp_array1 = g_counter
         )
@@ -76,18 +50,7 @@ defmodule Main do
           g_array = []
           (
           g_counter = 0
-          loop_helper = fn loop_fn, {v, g1} ->
-      if ((g_counter < numbers.length)) do
-        v = Enum.at(numbers, g_counter)
-        g1 = g1 + 1
-        g_counter ++ [(v * multiplier)]
-        loop_fn.(loop_fn, {v, g1})
-      else
-        {v, g1}
-      end
-    end
-
-    {v, g1} = loop_helper.(loop_helper, {v, g1})
+          Enum.map(numbers, fn item -> item * multiplier end)
         )
           temp_array = g_counter
         )
@@ -97,18 +60,7 @@ defmodule Main do
           g_array = []
           (
           g_counter = 0
-          loop_helper = fn loop_fn, {v, g1} ->
-      if ((g_counter < numbers.length)) do
-        v = Enum.at(numbers, g_counter)
-        g1 = g1 + 1
-        g_counter ++ [prefix <> Std.string(v)]
-        loop_fn.(loop_fn, {v, g1})
-      else
-        {v, g1}
-      end
-    end
-
-    {v, g1} = loop_helper.(loop_helper, {v, g1})
+          Enum.map(numbers, fn item -> prefix <> Std.string(item) end)
         )
           temp_array1 = g_counter
         )
@@ -122,37 +74,7 @@ defmodule Main do
           threshold = 3
           g_array = []
           g_counter = 0
-          loop_helper = fn loop_fn, {v, g1, temp_array1, g3, g4, g5} ->
-      if ((g_counter < data.length)) do
-        v = Enum.at(data, g_counter)
-        g1 = g1 + 1
-        temp_array1 = nil
-        g_array = []
-        g_counter = 0
-        g = v
-        loop_helper = fn loop_fn, {v2, g4} ->
-          if ((g_counter < g_counter.length)) do
-            v = Enum.at(g_counter, g_counter)
-            g4 = g4 + 1
-            if ((v > threshold)) do
-                  g_counter ++ [v]
-                end
-            loop_fn.(loop_fn, {v2, g4})
-          else
-            {v2, g4}
-          end
-        end
-
-        {v2, g4} = loop_helper.(loop_helper, {v2, g4})
-        temp_array1 = g_counter
-        g_counter ++ [temp_array1]
-        loop_fn.(loop_fn, {v, g1, temp_array1, g3, g4, g5})
-      else
-        {v, g1, temp_array1, g3, g4, g5}
-      end
-    end
-
-    {v, g1, temp_array1, g3, g4, g5} = loop_helper.(loop_helper, {v, g1, temp_array1, g3, g4, g5})
+          Enum.map(data, fn arr -> Enum.filter(arr, fn val -> val > threshold end) end)
         )
   end
 
@@ -169,20 +91,7 @@ defmodule Main do
           g_array = []
           (
           g_counter = 0
-          loop_helper = fn loop_fn, {v, g1} ->
-      if ((g_counter < items.length)) do
-        v = Enum.at(items, g_counter)
-        g1 = g1 + 1
-        if ((v != exclude_item)) do
-              g_counter ++ [v]
-            end
-        loop_fn.(loop_fn, {v, g1})
-      else
-        {v, g1}
-      end
-    end
-
-    {v, g1} = loop_helper.(loop_helper, {v, g1})
+          Enum.filter(items, fn item -> item != exclude_item end)
         )
           temp_array1 = g_counter
         )
@@ -190,18 +99,7 @@ defmodule Main do
           g_array = []
           (
           g_counter = 0
-          loop_helper = fn loop_fn, {v, g1} ->
-      if ((g_counter < temp_array1.length)) do
-        v = Enum.at(temp_array1, g_counter)
-        g1 = g1 + 1
-        g_counter ++ [prefix <> v <> suffix]
-        loop_fn.(loop_fn, {v, g1})
-      else
-        {v, g1}
-      end
-    end
-
-    {v, g1} = loop_helper.(loop_helper, {v, g1})
+          Enum.map(temp_array1, fn item -> prefix <> item <> suffix end)
         )
           temp_array = g_counter
         )

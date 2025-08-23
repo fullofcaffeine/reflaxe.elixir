@@ -1,0 +1,24 @@
+@:enum
+private class haxe.display._Display.ClassFieldOriginKind_Impl_ {
+
+	@:value(cast 0) @:impl @:enum
+	public static inline var Self:haxe.display.ClassFieldOriginKind<haxe.display.JsonModuleType<haxe.display.ClassFieldOriginKind.T>> = [Cast:haxe.display.ClassFieldOriginKind<haxe.display.JsonModuleType<haxe.display.ClassFieldOriginKind.T>>] [Const:Int] 0;
+
+	@:value(cast 1) @:impl @:enum
+	public static inline var StaticImport:haxe.display.ClassFieldOriginKind<haxe.display.JsonModuleType<haxe.display.ClassFieldOriginKind.T>> = [Cast:haxe.display.ClassFieldOriginKind<haxe.display.JsonModuleType<haxe.display.ClassFieldOriginKind.T>>] [Const:Int] 1;
+
+	@:value(cast 2) @:impl @:enum
+	public static inline var Parent:haxe.display.ClassFieldOriginKind<haxe.display.JsonModuleType<haxe.display.ClassFieldOriginKind.T>> = [Cast:haxe.display.ClassFieldOriginKind<haxe.display.JsonModuleType<haxe.display.ClassFieldOriginKind.T>>] [Const:Int] 2;
+
+	@:value(cast 3) @:impl @:enum
+	public static inline var StaticExtension:haxe.display.ClassFieldOriginKind<haxe.display.JsonModuleType<haxe.display.ClassFieldOriginKind.T>> = [Cast:haxe.display.ClassFieldOriginKind<haxe.display.JsonModuleType<haxe.display.ClassFieldOriginKind.T>>] [Const:Int] 3;
+
+	@:value(cast 4) @:impl @:enum
+	public static inline var AnonymousStructure:haxe.display.ClassFieldOriginKind<haxe.display.JsonAnon> = [Cast:haxe.display.ClassFieldOriginKind<haxe.display.JsonAnon>] [Const:Int] 4;
+
+	@:value(cast 5) @:impl @:enum
+	public static inline var BuiltIn:haxe.display.ClassFieldOriginKind<haxe.display.NoData> = [Cast:haxe.display.ClassFieldOriginKind<haxe.display.NoData>] [Const:Int] 5;
+
+	@:value(cast 6) @:impl @:enum
+	public static inline var Unknown:haxe.display.ClassFieldOriginKind<haxe.display.NoData> = [Cast:haxe.display.ClassFieldOriginKind<haxe.display.NoData>] [Const:Int] 6;
+}

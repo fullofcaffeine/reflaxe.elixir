@@ -1,0 +1,528 @@
+class reflaxe.elixir.helpers.MapCompiler {
+
+	public static function compileMapConstructor[Function:(className : String, args : Array<String>) -> String]
+		[Arg:String] [Local className(25034):String]
+		[Arg:Array<String>] [Local args(25035):Array<String>]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Meta:String]
+					:ast(switch (className) {
+	case "Map" | "haxe.ds.StringMap" | "haxe.ds.IntMap" | "haxe.ds.ObjectMap" | "haxe.ds.EnumValueMap" | "Haxe.Ds.StringMap" | "Haxe.Ds.IntMap" | "Haxe.Ds.ObjectMap":
+		if (args.length > 0) {
+			"Map.new(${args.join(\", \")})";
+		} else {
+			"%{}";
+		};	
+	case _:
+		"${className}.new(${args.join(\", \")})";	
+})
+					[Switch:String]
+						[Local className(25034):String:String]
+						[Case:String]
+							[Const:String] "Haxe.Ds.IntMap"
+							[Const:String] "Haxe.Ds.ObjectMap"
+							[Const:String] "Haxe.Ds.StringMap"
+							[Const:String] "Map"
+							[Const:String] "haxe.ds.EnumValueMap"
+							[Const:String] "haxe.ds.IntMap"
+							[Const:String] "haxe.ds.ObjectMap"
+							[Const:String] "haxe.ds.StringMap"
+							[Block:String]
+								[Block:String]
+									[If:String]
+										[Binop:Bool]
+											[Field:Int]
+												[Local args(25035):Array<String>:Array<String>]
+												[FInstance:Int]
+													Array<String>
+													length:Int
+											>
+											[Const:Int] 0
+										[Then:String] [Block:String]
+											[Binop:String]
+												[Binop:String]
+													[Const:String] "Map.new("
+													+
+													[Call:String]
+														[Field:(sep : String) -> String]
+															[Local args(25035):Array<String>:Array<String>]
+															[FInstance:(sep : String) -> String]
+																Array<String>
+																join:(sep : String) -> String
+														[Const:String] ", "
+												+
+												[Const:String] ")"
+										[Else:String] [Block:String] [Const:String] "%{}"
+						[Default:String]
+							[Block:String]
+								[Binop:String]
+									[Binop:String]
+										[Binop:String]
+											[Binop:String]
+												[Const:String] ""
+												+
+												[Local className(25034):String:String]
+											+
+											[Const:String] ".new("
+										+
+										[Call:String]
+											[Field:(sep : String) -> String]
+												[Local args(25035):Array<String>:Array<String>]
+												[FInstance:(sep : String) -> String]
+													Array<String>
+													join:(sep : String) -> String
+											[Const:String] ", "
+									+
+									[Const:String] ")"
+
+	public static function compileMapMethod[Function:(mapExpr : String, methodName : String, args : Array<String>) -> String]
+		[Arg:String] [Local mapExpr(25036):String]
+		[Arg:String] [Local methodName(25037):String]
+		[Arg:Array<String>] [Local args(25038):Array<String>]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Meta:String]
+					:ast(switch (methodName) {
+	case "set":
+		if (args.length >= 2) {
+			"Map.put(${mapExpr}, ${args[0]}, ${args[1]})";
+		} else {
+			"${mapExpr}.set(${args.join(\", \")})";
+		};	
+	case "get":
+		if (args.length >= 1) {
+			"Map.get(${mapExpr}, ${args[0]})";
+		} else {
+			"${mapExpr}.get(${args.join(\", \")})";
+		};	
+	case "exists":
+		if (args.length >= 1) {
+			"Map.has_key?(${mapExpr}, ${args[0]})";
+		} else {
+			"${mapExpr}.exists(${args.join(\", \")})";
+		};	
+	case "remove":
+		if (args.length >= 1) {
+			"Map.delete(${mapExpr}, ${args[0]})";
+		} else {
+			"${mapExpr}.remove(${args.join(\", \")})";
+		};	
+	case "clear":
+		"%{}";	
+	case "keys":
+		"Map.keys(${mapExpr})";	
+	case "iterator":
+		"Map.values(${mapExpr})";	
+	case "copy":
+		"Map.new(${mapExpr})";	
+	case "toString":
+		"inspect(${mapExpr})";	
+	case "keyValueIterator":
+		"Map.to_list(${mapExpr})";	
+	case _:
+		"${mapExpr}.${methodName}(${args.join(\", \")})";	
+})
+					[Switch:String]
+						[Local methodName(25037):String:String]
+						[Case:String]
+							[Const:String] "clear"
+							[Block:String] [Block:String] [Const:String] "%{}"
+						[Case:String]
+							[Const:String] "copy"
+							[Block:String]
+								[Block:String]
+									[Binop:String]
+										[Binop:String]
+											[Const:String] "Map.new("
+											+
+											[Local mapExpr(25036):String:String]
+										+
+										[Const:String] ")"
+						[Case:String]
+							[Const:String] "exists"
+							[Block:String]
+								[Block:String]
+									[If:String]
+										[Binop:Bool]
+											[Field:Int]
+												[Local args(25038):Array<String>:Array<String>]
+												[FInstance:Int]
+													Array<String>
+													length:Int
+											>=
+											[Const:Int] 1
+										[Then:String] [Block:String]
+											[Binop:String]
+												[Binop:String]
+													[Binop:String]
+														[Binop:String]
+															[Const:String] "Map.has_key?("
+															+
+															[Local mapExpr(25036):String:String]
+														+
+														[Const:String] ", "
+													+
+													[Array:String]
+														[Local args(25038):Array<String>:Array<String>]
+														[Const:Int] 0
+												+
+												[Const:String] ")"
+										[Else:String] [Block:String]
+											[Binop:String]
+												[Binop:String]
+													[Binop:String]
+														[Binop:String]
+															[Const:String] ""
+															+
+															[Local mapExpr(25036):String:String]
+														+
+														[Const:String] ".exists("
+													+
+													[Call:String]
+														[Field:(sep : String) -> String]
+															[Local args(25038):Array<String>:Array<String>]
+															[FInstance:(sep : String) -> String]
+																Array<String>
+																join:(sep : String) -> String
+														[Const:String] ", "
+												+
+												[Const:String] ")"
+						[Case:String]
+							[Const:String] "get"
+							[Block:String]
+								[Block:String]
+									[If:String]
+										[Binop:Bool]
+											[Field:Int]
+												[Local args(25038):Array<String>:Array<String>]
+												[FInstance:Int]
+													Array<String>
+													length:Int
+											>=
+											[Const:Int] 1
+										[Then:String] [Block:String]
+											[Binop:String]
+												[Binop:String]
+													[Binop:String]
+														[Binop:String]
+															[Const:String] "Map.get("
+															+
+															[Local mapExpr(25036):String:String]
+														+
+														[Const:String] ", "
+													+
+													[Array:String]
+														[Local args(25038):Array<String>:Array<String>]
+														[Const:Int] 0
+												+
+												[Const:String] ")"
+										[Else:String] [Block:String]
+											[Binop:String]
+												[Binop:String]
+													[Binop:String]
+														[Binop:String]
+															[Const:String] ""
+															+
+															[Local mapExpr(25036):String:String]
+														+
+														[Const:String] ".get("
+													+
+													[Call:String]
+														[Field:(sep : String) -> String]
+															[Local args(25038):Array<String>:Array<String>]
+															[FInstance:(sep : String) -> String]
+																Array<String>
+																join:(sep : String) -> String
+														[Const:String] ", "
+												+
+												[Const:String] ")"
+						[Case:String]
+							[Const:String] "iterator"
+							[Block:String]
+								[Block:String]
+									[Binop:String]
+										[Binop:String]
+											[Const:String] "Map.values("
+											+
+											[Local mapExpr(25036):String:String]
+										+
+										[Const:String] ")"
+						[Case:String]
+							[Const:String] "keyValueIterator"
+							[Block:String]
+								[Block:String]
+									[Binop:String]
+										[Binop:String]
+											[Const:String] "Map.to_list("
+											+
+											[Local mapExpr(25036):String:String]
+										+
+										[Const:String] ")"
+						[Case:String]
+							[Const:String] "keys"
+							[Block:String]
+								[Block:String]
+									[Binop:String]
+										[Binop:String]
+											[Const:String] "Map.keys("
+											+
+											[Local mapExpr(25036):String:String]
+										+
+										[Const:String] ")"
+						[Case:String]
+							[Const:String] "remove"
+							[Block:String]
+								[Block:String]
+									[If:String]
+										[Binop:Bool]
+											[Field:Int]
+												[Local args(25038):Array<String>:Array<String>]
+												[FInstance:Int]
+													Array<String>
+													length:Int
+											>=
+											[Const:Int] 1
+										[Then:String] [Block:String]
+											[Binop:String]
+												[Binop:String]
+													[Binop:String]
+														[Binop:String]
+															[Const:String] "Map.delete("
+															+
+															[Local mapExpr(25036):String:String]
+														+
+														[Const:String] ", "
+													+
+													[Array:String]
+														[Local args(25038):Array<String>:Array<String>]
+														[Const:Int] 0
+												+
+												[Const:String] ")"
+										[Else:String] [Block:String]
+											[Binop:String]
+												[Binop:String]
+													[Binop:String]
+														[Binop:String]
+															[Const:String] ""
+															+
+															[Local mapExpr(25036):String:String]
+														+
+														[Const:String] ".remove("
+													+
+													[Call:String]
+														[Field:(sep : String) -> String]
+															[Local args(25038):Array<String>:Array<String>]
+															[FInstance:(sep : String) -> String]
+																Array<String>
+																join:(sep : String) -> String
+														[Const:String] ", "
+												+
+												[Const:String] ")"
+						[Case:String]
+							[Const:String] "set"
+							[Block:String]
+								[Block:String]
+									[If:String]
+										[Binop:Bool]
+											[Field:Int]
+												[Local args(25038):Array<String>:Array<String>]
+												[FInstance:Int]
+													Array<String>
+													length:Int
+											>=
+											[Const:Int] 2
+										[Then:String] [Block:String]
+											[Binop:String]
+												[Binop:String]
+													[Binop:String]
+														[Binop:String]
+															[Binop:String]
+																[Binop:String]
+																	[Const:String] "Map.put("
+																	+
+																	[Local mapExpr(25036):String:String]
+																+
+																[Const:String] ", "
+															+
+															[Array:String]
+																[Local args(25038):Array<String>:Array<String>]
+																[Const:Int] 0
+														+
+														[Const:String] ", "
+													+
+													[Array:String]
+														[Local args(25038):Array<String>:Array<String>]
+														[Const:Int] 1
+												+
+												[Const:String] ")"
+										[Else:String] [Block:String]
+											[Binop:String]
+												[Binop:String]
+													[Binop:String]
+														[Binop:String]
+															[Const:String] ""
+															+
+															[Local mapExpr(25036):String:String]
+														+
+														[Const:String] ".set("
+													+
+													[Call:String]
+														[Field:(sep : String) -> String]
+															[Local args(25038):Array<String>:Array<String>]
+															[FInstance:(sep : String) -> String]
+																Array<String>
+																join:(sep : String) -> String
+														[Const:String] ", "
+												+
+												[Const:String] ")"
+						[Case:String]
+							[Const:String] "toString"
+							[Block:String]
+								[Block:String]
+									[Binop:String]
+										[Binop:String]
+											[Const:String] "inspect("
+											+
+											[Local mapExpr(25036):String:String]
+										+
+										[Const:String] ")"
+						[Default:String]
+							[Block:String]
+								[Binop:String]
+									[Binop:String]
+										[Binop:String]
+											[Binop:String]
+												[Binop:String]
+													[Binop:String]
+														[Const:String] ""
+														+
+														[Local mapExpr(25036):String:String]
+													+
+													[Const:String] "."
+												+
+												[Local methodName(25037):String:String]
+											+
+											[Const:String] "("
+										+
+										[Call:String]
+											[Field:(sep : String) -> String]
+												[Local args(25038):Array<String>:Array<String>]
+												[FInstance:(sep : String) -> String]
+													Array<String>
+													join:(sep : String) -> String
+											[Const:String] ", "
+									+
+									[Const:String] ")"
+
+	public static function isMapType[Function:(className : String) -> Bool]
+		[Arg:String] [Local className(25039):String]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Meta:Bool]
+					:ast(switch (className) {
+	case "Map" | "haxe.ds.StringMap" | "haxe.ds.IntMap" | "haxe.ds.ObjectMap" | "haxe.ds.EnumValueMap" | "Haxe.Ds.StringMap" | "Haxe.Ds.IntMap" | "Haxe.Ds.ObjectMap":
+		true;	
+	case _:
+		var lowerName = className.toLowerCase();
+		lowerName.indexOf("map") >= 0 && (className.indexOf("Ds") >= 0 || className.indexOf("ds") >= 0 || className.indexOf("Map") == 0);	
+})
+					[Switch:Bool]
+						[Local className(25039):String:String]
+						[Case:Bool]
+							[Const:String] "Haxe.Ds.IntMap"
+							[Const:String] "Haxe.Ds.ObjectMap"
+							[Const:String] "Haxe.Ds.StringMap"
+							[Const:String] "Map"
+							[Const:String] "haxe.ds.EnumValueMap"
+							[Const:String] "haxe.ds.IntMap"
+							[Const:String] "haxe.ds.ObjectMap"
+							[Const:String] "haxe.ds.StringMap"
+							[Block:Bool] [Block:Bool] [Const:Bool] true
+						[Default:Bool]
+							[Block:Bool]
+								[Var lowerName(25041):String]
+									[Call:String]
+										[Field:() -> String]
+											[Local className(25039):String:String]
+											[FInstance:() -> String]
+												String
+												toLowerCase:() -> String
+								[Binop:Bool]
+									[Binop:Bool]
+										[Call:Int]
+											[Field:(str : String, ?startIndex : Null<Int>) -> Int]
+												[Local lowerName(25041):String:String]
+												[FInstance:(str : String, ?startIndex : Null<Int>) -> Int]
+													String
+													indexOf:(str : String, ?startIndex : Null<Int>) -> Int
+											[Const:String] "map"
+											[Const:Null<Int>] null
+										>=
+										[Const:Int] 0
+									&&
+									[Parenthesis:Bool]
+										[Binop:Bool]
+											[Binop:Bool]
+												[Binop:Bool]
+													[Call:Int]
+														[Field:(str : String, ?startIndex : Null<Int>) -> Int]
+															[Local className(25039):String:String]
+															[FInstance:(str : String, ?startIndex : Null<Int>) -> Int]
+																String
+																indexOf:(str : String, ?startIndex : Null<Int>) -> Int
+														[Const:String] "Ds"
+														[Const:Null<Int>] null
+													>=
+													[Const:Int] 0
+												||
+												[Binop:Bool]
+													[Call:Int]
+														[Field:(str : String, ?startIndex : Null<Int>) -> Int]
+															[Local className(25039):String:String]
+															[FInstance:(str : String, ?startIndex : Null<Int>) -> Int]
+																String
+																indexOf:(str : String, ?startIndex : Null<Int>) -> Int
+														[Const:String] "ds"
+														[Const:Null<Int>] null
+													>=
+													[Const:Int] 0
+											||
+											[Binop:Bool]
+												[Call:Int]
+													[Field:(str : String, ?startIndex : Null<Int>) -> Int]
+														[Local className(25039):String:String]
+														[FInstance:(str : String, ?startIndex : Null<Int>) -> Int]
+															String
+															indexOf:(str : String, ?startIndex : Null<Int>) -> Int
+													[Const:String] "Map"
+													[Const:Null<Int>] null
+												==
+												[Const:Int] 0
+
+	public static function isMapMethod[Function:(methodName : String) -> Bool]
+		[Arg:String] [Local methodName(25042):String]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Meta:Bool]
+					:ast(switch (methodName) {
+	case "set" | "get" | "exists" | "remove" | "clear" | "keys" | "copy" | "toString" | "iterator" | "keyValueIterator":
+		true;	
+	case _:
+		false;	
+})
+					[Switch:Bool]
+						[Local methodName(25042):String:String]
+						[Case:Bool]
+							[Const:String] "clear"
+							[Const:String] "copy"
+							[Const:String] "exists"
+							[Const:String] "get"
+							[Const:String] "iterator"
+							[Const:String] "keyValueIterator"
+							[Const:String] "keys"
+							[Const:String] "remove"
+							[Const:String] "set"
+							[Const:String] "toString"
+							[Block:Bool] [Block:Bool] [Const:Bool] true
+						[Default:Bool] [Block:Bool] [Const:Bool] false
+}

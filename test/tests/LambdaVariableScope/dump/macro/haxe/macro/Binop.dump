@@ -1,0 +1,27 @@
+enum haxe.macro.Binop {
+	OpAdd;
+	OpMult;
+	OpDiv;
+	OpSub;
+	OpAssign;
+	OpEq;
+	OpNotEq;
+	OpGt;
+	OpGte;
+	OpLt;
+	OpLte;
+	OpAnd;
+	OpOr;
+	OpXor;
+	OpBoolAnd;
+	OpBoolOr;
+	OpShl;
+	OpShr;
+	OpUShr;
+	OpMod;
+	OpAssignOp(op:haxe.macro.Binop);
+	OpInterval;
+	OpArrow;
+	OpIn;
+	OpNullCoal;
+}

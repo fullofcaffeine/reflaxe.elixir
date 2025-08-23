@@ -1,0 +1,675 @@
+class reflaxe.elixir.helpers.NamingHelper {
+
+	public static function toSnakeCase[Function:(camelCase : String) -> String]
+		[Arg:String] [Local camelCase(14414):String]
+		[Block:Dynamic]
+			[If:Void]
+				[Binop:Bool]
+					[Binop:Bool]
+						[Call:String]
+							[Field:(index : Int) -> String]
+								[Local camelCase(14414):String:String]
+								[FInstance:(index : Int) -> String]
+									String
+									charAt:(index : Int) -> String
+							[Const:Int] 0
+						==
+						[Const:String] "_"
+					&&
+					[Binop:Bool]
+						[Field:Int]
+							[Local camelCase(14414):String:String]
+							[FInstance:Int]
+								String
+								length:Int
+						>
+						[Const:Int] 1
+				[Then:String] [Block:String]
+					[Binop:String]
+						[Local camelCase(14414):String:String]
+						=
+						[Call:String]
+							[Field:(pos : Int, ?len : Null<Int>) -> String]
+								[Local camelCase(14414):String:String]
+								[FInstance:(pos : Int, ?len : Null<Int>) -> String]
+									String
+									substr:(pos : Int, ?len : Null<Int>) -> String
+							[Const:Int] 1
+							[Const:Null<Int>] null
+			[Var result(14415):String] [Const:String] ""
+			[Block:Void]
+				[Var `(14418):Int] [Const:Int] 0
+				[Var `(14419):Int]
+					[Field:Int]
+						[Local camelCase(14414):String:String]
+						[FInstance:Int]
+							String
+							length:Int
+				[While:Void]
+					[Binop:Bool]
+						[Local `(14418):Int:Int]
+						<
+						[Local `(14419):Int:Int]
+					[Block:Void]
+						[Var i(14416):Int]
+							[Unop:Int]
+								++
+								Postfix
+								[Local `(14418):Int:Int]
+						[Var char(14417):String]
+							[Call:String]
+								[Field:(index : Int) -> String]
+									[Local camelCase(14414):String:String]
+									[FInstance:(index : Int) -> String]
+										String
+										charAt:(index : Int) -> String
+								[Local i(14416):Int:Int]
+						[If:Void]
+							[Binop:Bool]
+								[Binop:Bool]
+									[Local char(14417):String:String]
+									>=
+									[Const:String] "A"
+								&&
+								[Binop:Bool]
+									[Local char(14417):String:String]
+									<=
+									[Const:String] "Z"
+							[Then:String] [Block:String]
+								[If:Void]
+									[Binop:Bool]
+										[Local i(14416):Int:Int]
+										>
+										[Const:Int] 0
+									[Then:String] [Block:String]
+										[Binop:String]
+											[Local result(14415):String:String]
+											+=
+											[Const:String] "_"
+								[Binop:String]
+									[Local result(14415):String:String]
+									+=
+									[Call:String]
+										[Field:() -> String]
+											[Local char(14417):String:String]
+											[FInstance:() -> String]
+												String
+												toLowerCase:() -> String
+							[Else:String] [Block:String]
+								[Binop:String]
+									[Local result(14415):String:String]
+									+=
+									[Local char(14417):String:String]
+			[Binop:String]
+				[Local result(14415):String:String]
+				=
+				[Call:String]
+					[Field:(name : String) -> String]
+						[TypeExpr reflaxe.elixir.helpers.NamingHelper:Class<reflaxe.elixir.helpers.NamingHelper>]
+						[FStatic:(name : String) -> String]
+							reflaxe.elixir.helpers.NamingHelper
+							escapeElixirReservedKeyword:(name : String) -> String
+					[Local result(14415):String:String]
+			[Return:Dynamic] [Local result(14415):String:String]
+
+	static function escapeElixirReservedKeyword[Function:(name : String) -> String]
+		[Arg:String] [Local name(14420):String]
+		[Block:Dynamic]
+			[Var elixirReservedKeywords(14421):Array<String>]
+				[ArrayDecl:Array<String>]
+					[Const:String] "fn"
+					[Const:String] "do"
+					[Const:String] "end"
+					[Const:String] "case"
+					[Const:String] "when"
+					[Const:String] "cond"
+					[Const:String] "if"
+					[Const:String] "unless"
+					[Const:String] "else"
+					[Const:String] "elsif"
+					[Const:String] "def"
+					[Const:String] "defp"
+					[Const:String] "defmacro"
+					[Const:String] "defmodule"
+					[Const:String] "defstruct"
+					[Const:String] "defprotocol"
+					[Const:String] "defimpl"
+					[Const:String] "and"
+					[Const:String] "or"
+					[Const:String] "not"
+					[Const:String] "in"
+					[Const:String] "true"
+					[Const:String] "false"
+					[Const:String] "nil"
+					[Const:String] "super"
+					[Const:String] "try"
+					[Const:String] "catch"
+					[Const:String] "rescue"
+					[Const:String] "after"
+					[Const:String] "receive"
+					[Const:String] "with"
+					[Const:String] "quote"
+					[Const:String] "unquote"
+					[Const:String] "for"
+					[Const:String] "import"
+					[Const:String] "require"
+					[Const:String] "alias"
+					[Const:String] "use"
+					[Const:String] "spawn"
+					[Const:String] "spawn_link"
+					[Const:String] "spawn_monitor"
+					[Const:String] "send"
+					[Const:String] "self"
+					[Const:String] "make_ref"
+					[Const:String] "node"
+					[Const:String] "nodes"
+					[Const:String] "tuple_size"
+					[Const:String] "elem"
+					[Const:String] "put_elem"
+					[Const:String] "binary_part"
+					[Const:String] "is_atom"
+					[Const:String] "is_binary"
+					[Const:String] "is_bitstring"
+					[Const:String] "is_boolean"
+					[Const:String] "is_float"
+					[Const:String] "is_function"
+					[Const:String] "is_integer"
+					[Const:String] "is_list"
+					[Const:String] "is_map"
+					[Const:String] "is_number"
+					[Const:String] "is_pid"
+					[Const:String] "is_port"
+					[Const:String] "is_reference"
+					[Const:String] "is_tuple"
+			[If:Void]
+				[Binop:Bool]
+					[Call:Int]
+						[Field:(x : String, ?fromIndex : Null<Int>) -> Int]
+							[Local elixirReservedKeywords(14421):Array<String>:Array<String>]
+							[FInstance:(x : String, ?fromIndex : Null<Int>) -> Int]
+								Array<String>
+								indexOf:(x : Array.T, ?fromIndex : Null<Int>) -> Int
+						[Local name(14420):String:String]
+						[Const:Null<Int>] null
+					>=
+					[Const:Int] 0
+				[Then:Dynamic] [Block:Dynamic]
+					[Return:Dynamic]
+						[Binop:String]
+							[Local name(14420):String:String]
+							+
+							[Const:String] "_"
+			[Return:Dynamic] [Local name(14420):String:String]
+
+	public static function toCamelCase[Function:(snakeCase : String) -> String]
+		[Arg:String] [Local snakeCase(14422):String]
+		[Block:Dynamic]
+			[Var words(14423):Array<String>]
+				[Call:Array<String>]
+					[Field:(delimiter : String) -> Array<String>]
+						[Local snakeCase(14422):String:String]
+						[FInstance:(delimiter : String) -> Array<String>]
+							String
+							split:(delimiter : String) -> Array<String>
+					[Const:String] "_"
+			[Var result(14424):String] [Const:String] ""
+			[Block:Void]
+				[Var `(14426):Int] [Const:Int] 0
+				[While:Void]
+					[Binop:Bool]
+						[Local `(14426):Int:Int]
+						<
+						[Field:Int]
+							[Local words(14423):Array<String>:Array<String>]
+							[FInstance:Int]
+								Array<String>
+								length:Int
+					[Block:Void]
+						[Var word(14425):String]
+							[Array:String]
+								[Local words(14423):Array<String>:Array<String>]
+								[Local `(14426):Int:Int]
+						[Unop:Int]
+							++
+							Prefix
+							[Local `(14426):Int:Int]
+						[If:Void]
+							[Binop:Bool]
+								[Field:Int]
+									[Local word(14425):String:String]
+									[FInstance:Int]
+										String
+										length:Int
+								>
+								[Const:Int] 0
+							[Then:String] [Block:String]
+								[Binop:String]
+									[Local result(14424):String:String]
+									+=
+									[Binop:String]
+										[Call:String]
+											[Field:() -> String]
+												[Call:String]
+													[Field:(index : Int) -> String]
+														[Local word(14425):String:String]
+														[FInstance:(index : Int) -> String]
+															String
+															charAt:(index : Int) -> String
+													[Const:Int] 0
+												[FInstance:() -> String]
+													String
+													toUpperCase:() -> String
+										+
+										[Call:String]
+											[Field:() -> String]
+												[Call:String]
+													[Field:(pos : Int, ?len : Null<Int>) -> String]
+														[Local word(14425):String:String]
+														[FInstance:(pos : Int, ?len : Null<Int>) -> String]
+															String
+															substr:(pos : Int, ?len : Null<Int>) -> String
+													[Const:Int] 1
+													[Const:Null<Int>] null
+												[FInstance:() -> String]
+													String
+													toLowerCase:() -> String
+			[Return:Dynamic] [Local result(14424):String:String]
+
+	public static function getElixirModuleName[Function:(haxeName : String) -> String]
+		[Arg:String] [Local haxeName(14427):String]
+		[Block:Dynamic]
+			[Var parts(14428):Array<String>]
+				[Call:Array<String>]
+					[Field:(delimiter : String) -> Array<String>]
+						[Local haxeName(14427):String:String]
+						[FInstance:(delimiter : String) -> Array<String>]
+							String
+							split:(delimiter : String) -> Array<String>
+					[Const:String] "."
+			[Var result(14429):Array<String>] [ArrayDecl:Array<String>]
+			[Block:Void]
+				[Var `(14433):Int] [Const:Int] 0
+				[While:Void]
+					[Binop:Bool]
+						[Local `(14433):Int:Int]
+						<
+						[Field:Int]
+							[Local parts(14428):Array<String>:Array<String>]
+							[FInstance:Int]
+								Array<String>
+								length:Int
+					[Block:Void]
+						[Var part(14430):String]
+							[Array:String]
+								[Local parts(14428):Array<String>:Array<String>]
+								[Local `(14433):Int:Int]
+						[Unop:Int]
+							++
+							Prefix
+							[Local `(14433):Int:Int]
+						[If:Void]
+							[Binop:Bool]
+								[Field:Int]
+									[Local part(14430):String:String]
+									[FInstance:Int]
+										String
+										length:Int
+								>
+								[Const:Int] 0
+							[Then:Int] [Block:Int]
+								[Var modulePart(14432):String]
+									[Call:String]
+										[Field:(name : String) -> String]
+											[TypeExpr reflaxe.elixir.helpers.NamingHelper:Class<reflaxe.elixir.helpers.NamingHelper>]
+											[FStatic:(name : String) -> String]
+												reflaxe.elixir.helpers.NamingHelper
+												sanitizeModuleName:(name : String) -> String
+										[Binop:String]
+											[Call:String]
+												[Field:() -> String]
+													[Call:String]
+														[Field:(index : Int) -> String]
+															[Local part(14430):String:String]
+															[FInstance:(index : Int) -> String]
+																String
+																charAt:(index : Int) -> String
+														[Const:Int] 0
+													[FInstance:() -> String]
+														String
+														toUpperCase:() -> String
+											+
+											[Call:String]
+												[Field:(pos : Int, ?len : Null<Int>) -> String]
+													[Local part(14430):String:String]
+													[FInstance:(pos : Int, ?len : Null<Int>) -> String]
+														String
+														substr:(pos : Int, ?len : Null<Int>) -> String
+												[Const:Int] 1
+												[Const:Null<Int>] null
+								[Call:Int]
+									[Field:(x : String) -> Int]
+										[Local result(14429):Array<String>:Array<String>]
+										[FInstance:(x : String) -> Int]
+											Array<String>
+											push:(x : Array.T) -> Int
+									[Local modulePart(14432):String:String]
+			[Return:Dynamic]
+				[Call:String]
+					[Field:(sep : String) -> String]
+						[Local result(14429):Array<String>:Array<String>]
+						[FInstance:(sep : String) -> String]
+							Array<String>
+							join:(sep : String) -> String
+					[Const:String] "."
+
+	public static function sanitizeModuleName[Function:(name : String) -> String]
+		[Arg:String] [Local name(14431):String]
+		[Block:Dynamic]
+			[While:Void]
+				[Binop:Bool]
+					[Binop:Bool]
+						[Field:Int]
+							[Local name(14431):String:String]
+							[FInstance:Int]
+								String
+								length:Int
+						>
+						[Const:Int] 0
+					&&
+					[Binop:Bool]
+						[Call:String]
+							[Field:(index : Int) -> String]
+								[Local name(14431):String:String]
+								[FInstance:(index : Int) -> String]
+									String
+									charAt:(index : Int) -> String
+							[Const:Int] 0
+						==
+						[Const:String] "_"
+				[Block:String]
+					[Binop:String]
+						[Local name(14431):String:String]
+						=
+						[Call:String]
+							[Field:(pos : Int, ?len : Null<Int>) -> String]
+								[Local name(14431):String:String]
+								[FInstance:(pos : Int, ?len : Null<Int>) -> String]
+									String
+									substr:(pos : Int, ?len : Null<Int>) -> String
+							[Const:Int] 1
+							[Const:Null<Int>] null
+			[If:Void]
+				[Binop:Bool]
+					[Binop:Bool]
+						[Binop:Bool]
+							[Field:Int]
+								[Local name(14431):String:String]
+								[FInstance:Int]
+									String
+									length:Int
+							==
+							[Const:Int] 0
+						||
+						[Binop:Bool]
+							[Call:String]
+								[Field:(index : Int) -> String]
+									[Local name(14431):String:String]
+									[FInstance:(index : Int) -> String]
+										String
+										charAt:(index : Int) -> String
+								[Const:Int] 0
+							<
+							[Const:String] "A"
+					||
+					[Binop:Bool]
+						[Call:String]
+							[Field:(index : Int) -> String]
+								[Local name(14431):String:String]
+								[FInstance:(index : Int) -> String]
+									String
+									charAt:(index : Int) -> String
+							[Const:Int] 0
+						>
+						[Const:String] "Z"
+				[Then:String] [Block:String]
+					[Binop:String]
+						[Local name(14431):String:String]
+						=
+						[Binop:String]
+							[Const:String] "Haxe"
+							+
+							[Local name(14431):String:String]
+			[Return:Dynamic] [Local name(14431):String:String]
+
+	public static function getElixirFunctionName[Function:(haxeName : String) -> String]
+		[Arg:String] [Local haxeName(14434):String]
+		[Block:Void]
+			[Var snakeName(14435):String]
+				[Call:String]
+					[Field:(camelCase : String) -> String]
+						[TypeExpr reflaxe.elixir.helpers.NamingHelper:Class<reflaxe.elixir.helpers.NamingHelper>]
+						[FStatic:(camelCase : String) -> String]
+							reflaxe.elixir.helpers.NamingHelper
+							toSnakeCase:(camelCase : String) -> String
+					[Local haxeName(14434):String:String]
+			[Meta:Void]
+				:ast(switch (snakeName) {
+	case "new":
+		return "__struct__";	
+	case "to_string":
+		return "format";	
+	default:
+		return snakeName;	
+})
+				[Switch:Void]
+					[Local snakeName(14435):String:String]
+					[Case:Dynamic]
+						[Const:String] "new"
+						[Block:Dynamic] [Block:Dynamic] [Return:Dynamic] [Const:String] "__struct__"
+					[Case:Dynamic]
+						[Const:String] "to_string"
+						[Block:Dynamic] [Block:Dynamic] [Return:Dynamic] [Const:String] "format"
+					[Default:Dynamic] [Block:Dynamic] [Return:Dynamic] [Local snakeName(14435):String:String]
+
+	@:value({ pack : null })
+	public static function getUniversalNamingRule[Function:(moduleName : String, ?pack : Null<Array<String>>) -> { fileName : String, dirPath : String }]
+		[Arg:String] [Local moduleName(14436):String]
+		[Arg:Null<Array<String>>]
+			[Local pack(14437):Null<Array<String>>]
+			[Const:Null<Array<String>>] null
+		[Block:Dynamic]
+			[Var parts(14438):Array<String>]
+				[Call:Array<String>]
+					[Field:(delimiter : String) -> Array<String>]
+						[Local moduleName(14436):String:String]
+						[FInstance:(delimiter : String) -> Array<String>]
+							String
+							split:(delimiter : String) -> Array<String>
+					[Const:String] "."
+			[Var snakeParts(14448):Array<String>]
+				[Block:Array<String>]
+					[Var `(14443):Array<String>] [ArrayDecl:Array<String>]
+					[Block:Void]
+						[Var `(14444):Int] [Const:Int] 0
+						[Var `(14445):Array<String>] [Local parts(14438):Array<String>:Array<String>]
+						[While:Void]
+							[Binop:Bool]
+								[Local `(14444):Int:Int]
+								<
+								[Field:Int]
+									[Local `(14445):Array<String>:Array<String>]
+									[FInstance:Int]
+										Array<String>
+										length:Int
+							[Block:Void]
+								[Var v(14446):String]
+									[Array:String]
+										[Local `(14445):Array<String>:Array<String>]
+										[Local `(14444):Int:Int]
+								[Unop:Int]
+									++
+									Prefix
+									[Local `(14444):Int:Int]
+								[Call:Int]
+									[Field:(x : String) -> Int]
+										[Local `(14443):Array<String>:Array<String>]
+										[FInstance:(x : String) -> Int]
+											Array<String>
+											push:(x : Array.T) -> Int
+									[Call:String]
+										[Function:(part : String) -> String]
+											[Arg:String] [Local part(14447):String]
+											[Block:Dynamic]
+												[Return:Dynamic]
+													[Call:String]
+														[Field:(camelCase : String) -> String]
+															[TypeExpr reflaxe.elixir.helpers.NamingHelper:Class<reflaxe.elixir.helpers.NamingHelper>]
+															[FStatic:(camelCase : String) -> String]
+																reflaxe.elixir.helpers.NamingHelper
+																toSnakeCase:(camelCase : String) -> String
+														[Local part(14447):String:String]
+										[Local v(14446):String:String]
+					[Local `(14443):Array<String>:Array<String>]
+			[Var fileName(14449):String]
+			[Var dirPath(14450):String]
+			[If:Void]
+				[Binop:Bool]
+					[Field:Int]
+						[Local snakeParts(14448):Array<String>:Array<String>]
+						[FInstance:Int]
+							Array<String>
+							length:Int
+					==
+					[Const:Int] 0
+				[Then:String] [Block:String]
+					[Binop:String]
+						[Local fileName(14449):String:String]
+						=
+						[Const:String] "unknown_module"
+					[Binop:String]
+						[Local dirPath(14450):String:String]
+						=
+						[Const:String] ""
+				[Else:Void] [Block:Void]
+					[If:Void]
+						[Binop:Bool]
+							[Field:Int]
+								[Local snakeParts(14448):Array<String>:Array<String>]
+								[FInstance:Int]
+									Array<String>
+									length:Int
+							>
+							[Const:Int] 1
+						[Then:String] [Block:String]
+							[Binop:String]
+								[Local fileName(14449):String:String]
+								=
+								[Call:Null<String>]
+									[Field:() -> Null<String>]
+										[Local snakeParts(14448):Array<String>:Array<String>]
+										[FInstance:() -> Null<String>]
+											Array<String>
+											pop:() -> Null<Array.T>
+							[Binop:String]
+								[Local dirPath(14450):String:String]
+								=
+								[Call:String]
+									[Field:(sep : String) -> String]
+										[Local snakeParts(14448):Array<String>:Array<String>]
+										[FInstance:(sep : String) -> String]
+											Array<String>
+											join:(sep : String) -> String
+									[Const:String] "/"
+						[Else:Void] [Block:Void]
+							[If:Void]
+								[Binop:Bool]
+									[Binop:Bool]
+										[Local pack(14437):Null<Array<String>>:Null<Array<String>>]
+										!=
+										[Const:Null<Array<String>>] null
+									&&
+									[Binop:Bool]
+										[Field:Int]
+											[Local pack(14437):Null<Array<String>>:Null<Array<String>>]
+											[FInstance:Int]
+												Array<String>
+												length:Int
+										>
+										[Const:Int] 0
+								[Then:String] [Block:String]
+									[Binop:String]
+										[Local fileName(14449):String:String]
+										=
+										[Array:String]
+											[Local snakeParts(14448):Array<String>:Array<String>]
+											[Const:Int] 0
+									[Var snakePackageParts(14460):Array<String>]
+										[Block:Array<String>]
+											[Var `(14455):Array<String>] [ArrayDecl:Array<String>]
+											[Block:Void]
+												[Var `(14456):Int] [Const:Int] 0
+												[Var `(14457):Array<String>] [Local pack(14437):Null<Array<String>>:Null<Array<String>>]
+												[While:Void]
+													[Binop:Bool]
+														[Local `(14456):Int:Int]
+														<
+														[Field:Int]
+															[Local `(14457):Array<String>:Array<String>]
+															[FInstance:Int]
+																Array<String>
+																length:Int
+													[Block:Void]
+														[Var v(14458):String]
+															[Array:String]
+																[Local `(14457):Array<String>:Array<String>]
+																[Local `(14456):Int:Int]
+														[Unop:Int]
+															++
+															Prefix
+															[Local `(14456):Int:Int]
+														[Call:Int]
+															[Field:(x : String) -> Int]
+																[Local `(14455):Array<String>:Array<String>]
+																[FInstance:(x : String) -> Int]
+																	Array<String>
+																	push:(x : Array.T) -> Int
+															[Call:String]
+																[Function:(part : String) -> String]
+																	[Arg:String] [Local part(14459):String]
+																	[Block:Dynamic]
+																		[Return:Dynamic]
+																			[Call:String]
+																				[Field:(camelCase : String) -> String]
+																					[TypeExpr reflaxe.elixir.helpers.NamingHelper:Class<reflaxe.elixir.helpers.NamingHelper>]
+																					[FStatic:(camelCase : String) -> String]
+																						reflaxe.elixir.helpers.NamingHelper
+																						toSnakeCase:(camelCase : String) -> String
+																				[Local part(14459):String:String]
+																[Local v(14458):String:String]
+											[Local `(14455):Array<String>:Array<String>]
+									[Binop:String]
+										[Local dirPath(14450):String:String]
+										=
+										[Call:String]
+											[Field:(sep : String) -> String]
+												[Local snakePackageParts(14460):Array<String>:Array<String>]
+												[FInstance:(sep : String) -> String]
+													Array<String>
+													join:(sep : String) -> String
+											[Const:String] "/"
+								[Else:String] [Block:String]
+									[Binop:String]
+										[Local fileName(14449):String:String]
+										=
+										[Array:String]
+											[Local snakeParts(14448):Array<String>:Array<String>]
+											[Const:Int] 0
+									[Binop:String]
+										[Local dirPath(14450):String:String]
+										=
+										[Const:String] ""
+			[Return:Dynamic]
+				[ObjectDecl:{ fileName : String, dirPath : String }]
+					fileName: [Local fileName(14449):String:String]
+					dirPath: [Local dirPath(14450):String:String]
+}
