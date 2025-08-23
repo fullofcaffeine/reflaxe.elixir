@@ -95,7 +95,38 @@ class EnumIntrospectionCompiler {
         
         // Get the index of an enum value - used for enum introspection
         // This is used in switch statements to determine which enum constructor is being matched
+        
+        // CRITICAL FIX: Remove 'g' mapping to prevent g -> g_counter contamination
+        // The 'g' variable should never be mapped to g_counter during enum introspection
+        var savedGMapping: Null<String> = null;
+        if (compiler.currentFunctionParameterMap.exists("g")) {
+            savedGMapping = compiler.currentFunctionParameterMap.get("g");
+            compiler.currentFunctionParameterMap.remove("g");
+            #if debug_enum_introspection_compiler
+            trace('[XRay EnumIntrospectionCompiler] Temporarily removed g mapping: g -> ${savedGMapping}');
+            #end
+        }
+        
         var enumExpr = compiler.compileExpression(e);
+        
+        // CRITICAL FIX: If the compiled expression is g_counter but the original is 'g', fix it
+        // This happens when switch expression desugaring creates 'g' variables that get incorrectly mapped
+        if (enumExpr == "g_counter") {
+            #if debug_enum_introspection_compiler
+            trace('[XRay EnumIntrospectionCompiler] ⚠️ FIXING g_counter contamination - using "g" instead');
+            #end
+            enumExpr = "g";
+        }
+        
+        // Restore the 'g' mapping if it existed (though it shouldn't for enum contexts)
+        // CRITICAL FIX: Don't restore if the mapping is to g_counter - that's always wrong
+        if (savedGMapping != null && !StringTools.endsWith(savedGMapping, "_counter")) {
+            compiler.currentFunctionParameterMap.set("g", savedGMapping);
+        } else if (savedGMapping != null) {
+            #if debug_enum_introspection_compiler
+            trace('[XRay EnumIntrospectionCompiler] ⚠️ BLOCKED restoration of incorrect g -> ${savedGMapping} mapping');
+            #end
+        }
         
         #if debug_enum_introspection_compiler
         trace('[XRay EnumIntrospectionCompiler] Enum expression: ${enumExpr}');
@@ -209,21 +240,37 @@ class EnumIntrospectionCompiler {
         var wasInEnumExtraction = compiler.isInEnumExtraction;
         compiler.isInEnumExtraction = true;
         
-        // CRITICAL FIX: Temporarily remove any incorrect 'g' -> 'g_counter' mapping
-        // This mapping is incorrect for enum extraction where 'g' is the extracted parameter
-        var savedGMapping = null;
+        // CRITICAL FIX: Remove 'g' mapping to prevent g -> g_counter contamination
+        // The 'g' variable should never be mapped to g_counter during enum parameter extraction
+        var savedGMapping: Null<String> = null;
         if (compiler.currentFunctionParameterMap.exists("g")) {
             savedGMapping = compiler.currentFunctionParameterMap.get("g");
-            if (StringTools.endsWith(savedGMapping, "_counter")) {
-                // This is definitely wrong for enum extraction
-                compiler.currentFunctionParameterMap.remove("g");
-                trace('[XRay EnumIntrospectionCompiler] REMOVED incorrect g -> ${savedGMapping} mapping');
-            } else {
-                savedGMapping = null; // Don't restore if it wasn't a counter mapping
-            }
+            compiler.currentFunctionParameterMap.remove("g");
+            #if debug_enum_introspection_compiler
+            trace('[XRay EnumIntrospectionCompiler] Temporarily removed g mapping in parameter extraction: g -> ${savedGMapping}');
+            #end
         }
         
         var enumExpr = compiler.compileExpression(e);
+        
+        // CRITICAL FIX: If the compiled expression is g_counter but the original is 'g', fix it
+        // This happens when switch expression desugaring creates 'g' variables that get incorrectly mapped
+        if (enumExpr == "g_counter") {
+            #if debug_enum_introspection_compiler
+            trace('[XRay EnumIntrospectionCompiler] ⚠️ FIXING g_counter contamination in parameter extraction - using "g" instead');
+            #end
+            enumExpr = "g";
+        }
+        
+        // Restore the 'g' mapping if it existed
+        // CRITICAL FIX: Don't restore if the mapping is to g_counter - that's always wrong
+        if (savedGMapping != null && !StringTools.endsWith(savedGMapping, "_counter")) {
+            compiler.currentFunctionParameterMap.set("g", savedGMapping);
+        } else if (savedGMapping != null) {
+            #if debug_enum_introspection_compiler
+            trace('[XRay EnumIntrospectionCompiler] ⚠️ BLOCKED restoration of incorrect g -> ${savedGMapping} mapping in parameter extraction');
+            #end
+        }
         
         #if debug_enum_introspection_compiler
         trace('[XRay EnumIntrospectionCompiler] Enum expression: ${enumExpr}');
@@ -257,9 +304,10 @@ class EnumIntrospectionCompiler {
             // Result types have a simple 2-element tuple structure: {:ok, value} or {:error, reason}
             // Both constructors have exactly one parameter at the same position
             if (index == 0) {
-                // Extract the value from either {:ok, value} or {:error, value}
-                // Uses pattern matching to safely extract from either constructor
-                'case ${enumExpr} do {:ok, value} -> value; {:error, value} -> value; _ -> nil end';
+                // CRITICAL FIX: Use direct tuple access instead of nested case expressions
+                // This prevents double-nested case patterns in switch statements
+                // Both {:ok, value} and {:error, reason} have the value at position 1
+                'elem(${enumExpr}, 1)';
             } else {
                 #if debug_enum_introspection_compiler
                 trace("[XRay EnumIntrospectionCompiler] ⚠ INVALID INDEX for Result type");
@@ -275,8 +323,11 @@ class EnumIntrospectionCompiler {
             // Option types have either {:ok, value} or :error
             // Only Some has a parameter (index 0), None has no parameters
             if (index == 0) {
-                // Extract the value from {:ok, value}, return nil for :error
-                'case ${enumExpr} do {:ok, value} -> value; :error -> nil; _ -> nil end';
+                // CRITICAL FIX: Use direct tuple access for Option types
+                // This prevents double-nested case patterns in switch statements
+                // {:ok, value} has the value at position 1, :error will cause runtime error
+                // but that's correct behavior - only Some should have parameters accessed
+                'elem(${enumExpr}, 1)';
             } else {
                 #if debug_enum_introspection_compiler
                 trace("[XRay EnumIntrospectionCompiler] ⚠ INVALID INDEX for Option type");
@@ -299,11 +350,6 @@ class EnumIntrospectionCompiler {
         trace('[XRay EnumIntrospectionCompiler] Generated parameter expression: ${result}');
         trace("[XRay EnumIntrospectionCompiler] ENUM PARAMETER COMPILATION END");
         #end
-        
-        // Restore the saved mapping if we temporarily removed it
-        if (savedGMapping != null) {
-            compiler.currentFunctionParameterMap.set("g", savedGMapping);
-        }
         
         // Restore the enum extraction flag
         compiler.isInEnumExtraction = wasInEnumExtraction;

@@ -5,9 +5,13 @@ defmodule TodoLive do
   def mount(params, session, socket) do
     (
           g = TodoPubSub.subscribe(:todo_updates)
-          case (case g_counter do {:ok, _} -> 0; {:error, _} -> 1; _ -> -1 end) do
-      0 -> nil
-      {1, reason} -> MountResult.error("Failed to subscribe to updates: " <> reason)
+          case g do
+      {:ok, _} -> elem(g, 1)
+      {:error, _} -> (
+          g = elem(g, 1)
+          reason = g_counter
+          MountResult.error("Failed to subscribe to updates: " <> reason)
+        )
     end
         )
     current_user = TodoLive.get_user_from_session(session)
@@ -21,7 +25,7 @@ defmodule TodoLive do
   @doc "Generated from Haxe handle_event"
   def handle_event(event, params, socket) do
     temp_socket = nil
-    case (event) do
+    case event do
       "bulk_complete" -> temp_socket = TodoLive.complete_all_todos(socket)
       "bulk_delete_completed" -> temp_socket = TodoLive.delete_completed_todos(socket)
       "cancel_edit" -> temp_socket = SafeAssigns.set_editing_todo(socket, nil)
@@ -47,8 +51,11 @@ defmodule TodoLive do
     temp_socket = nil
     (
           g = TodoPubSub.parse_message(msg)
-          case (case g_counter do {:ok, _} -> 0; :error -> 1; _ -> -1 end) do
-      {0, parsed_msg} -> case (elem(parsed_msg, 0)) do
+          case g do
+      {:ok, _} -> (
+          g = elem(g, 1)
+          parsed_msg = g_counter
+          case (elem(parsed_msg, 0)) do
       0 -> temp_socket = TodoLive.add_todo_to_list(todo, socket)
       1 -> temp_socket = TodoLive.update_todo_in_list(todo, socket)
       {2, id} -> temp_socket = TodoLive.remove_todo_from_list(id, socket)
@@ -67,7 +74,8 @@ defmodule TodoLive do
           temp_socket = LiveView.put_flash(socket, flash_type, message)
         )
     end
-      1 -> (
+        )
+      :error -> (
           Log.trace("Received unknown PubSub message: " <> Std.string(msg), %{"fileName" => "src_haxe/server/live/TodoLive.hx", "lineNumber" => 197, "className" => "server.live.TodoLive", "methodName" => "handle_info"})
           temp_socket = socket
         )
@@ -95,22 +103,34 @@ defmodule TodoLive do
     changeset = Todo.changeset(Server.Schemas.Todo.new(), changeset_params)
     (
           g = Repo.insert(changeset)
-          case (case g_counter do {:ok, _} -> 0; {:error, _} -> 1; _ -> -1 end) do
-      {0, todo} -> (
-          (
+          case g do
+      {:ok, _} -> g = elem(g, 1)
+    todo = g_counter
+    (
           g = TodoPubSub.broadcast(:todo_updates, TodoPubSubMessage.todo_created(todo))
-          case (case g_counter do {:ok, _} -> 0; {:error, _} -> 1; _ -> -1 end) do
-      0 -> nil
-      1 -> Log.trace("Failed to broadcast todo creation: " <> reason, %{"fileName" => "src_haxe/server/live/TodoLive.hx", "lineNumber" => 228, "className" => "server.live.TodoLive", "methodName" => "create_new_todo"})
+          case g do
+      {:ok, _} -> elem(g, 1)
+      {:error, _} -> (
+          g = elem(g, 1)
+          (
+          reason = g_counter
+          Log.trace("Failed to broadcast todo creation: " <> reason, %{"fileName" => "src_haxe/server/live/TodoLive.hx", "lineNumber" => 228, "className" => "server.live.TodoLive", "methodName" => "create_new_todo"})
+        )
+        )
     end
         )
-          todos = [todo] ++ socket.assigns.todos
-          current_assigns = socket.assigns
-          complete_assigns = TypeSafeConversions.create_complete_assigns(current_assigns, todos, nil, nil, nil, nil, false, nil, nil)
-          updated_socket = LiveView.assign_multiple(socket, complete_assigns)
-          LiveView.put_flash(updated_socket, :success, "Todo created successfully!")
+    todos = [todo] ++ socket.assigns.todos
+    current_assigns = socket.assigns
+    complete_assigns = TypeSafeConversions.create_complete_assigns(current_assigns, todos, nil, nil, nil, nil, false, nil, nil)
+    updated_socket = LiveView.assign_multiple(socket, complete_assigns)
+    LiveView.put_flash(updated_socket, :success, "Todo created successfully!")
+      {:error, _} -> (
+          g = elem(g, 1)
+          (
+          reason = g_counter
+          LiveView.put_flash(socket, :error, "Failed to create todo: " <> Std.string(reason))
         )
-      1 -> LiveView.put_flash(socket, :error, "Failed to create todo: " <> Std.string(reason))
+        )
     end
         )
   end
@@ -125,18 +145,32 @@ defmodule TodoLive do
     updated_changeset = Todo.toggle_completed(todo)
     (
           g = Repo.update(updated_changeset)
-          case (case g_counter do {:ok, _} -> 0; {:error, _} -> 1; _ -> -1 end) do
-      {0, updated_todo} -> (
+          case g do
+      {:ok, _} -> (
+          g = elem(g, 1)
+          updated_todo = g_counter
           (
           g = TodoPubSub.broadcast(:todo_updates, TodoPubSubMessage.todo_updated(updated_todo))
-          case (case g_counter do {:ok, _} -> 0; {:error, _} -> 1; _ -> -1 end) do
-      0 -> nil
-      1 -> Log.trace("Failed to broadcast todo update: " <> reason, %{"fileName" => "src_haxe/server/live/TodoLive.hx", "lineNumber" => 267, "className" => "server.live.TodoLive", "methodName" => "toggle_todo_status"})
+          case g do
+      {:ok, _} -> elem(g, 1)
+      {:error, _} -> (
+          g = elem(g, 1)
+          (
+          reason = g_counter
+          Log.trace("Failed to broadcast todo update: " <> reason, %{"fileName" => "src_haxe/server/live/TodoLive.hx", "lineNumber" => 267, "className" => "server.live.TodoLive", "methodName" => "toggle_todo_status"})
+        )
+        )
     end
         )
           TodoLive.update_todo_in_list(updated_todo, socket)
         )
-      1 -> LiveView.put_flash(socket, :error, "Failed to update todo: " <> Std.string(reason))
+      {:error, _} -> (
+          g = elem(g, 1)
+          (
+          reason = g_counter
+          LiveView.put_flash(socket, :error, "Failed to update todo: " <> Std.string(reason))
+        )
+        )
     end
         )
   end
@@ -150,18 +184,32 @@ defmodule TodoLive do
         end
     (
           g = Repo.delete(todo)
-          case (case g_counter do {:ok, _} -> 0; {:error, _} -> 1; _ -> -1 end) do
-      {0, deleted_todo} -> (
+          case g do
+      {:ok, _} -> (
+          elem(g, 1)
+          g_counter
           (
           g = Phoenix.PubSub.broadcast(TodoApp.PubSub, "todo:updates", %{"type" => "todo_deleted", "id" => id})
-          case (case g_counter do {:ok, _} -> 0; {:error, _} -> 1; _ -> -1 end) do
-      0 -> nil
-      1 -> Log.trace("Failed to broadcast todo deletion: " <> reason, %{"fileName" => "src_haxe/server/live/TodoLive.hx", "lineNumber" => 292, "className" => "server.live.TodoLive", "methodName" => "delete_todo"})
+          case g do
+      {:ok, _} -> elem(g, 1)
+      {:error, _} -> (
+          g = elem(g, 1)
+          (
+          reason = g_counter
+          Log.trace("Failed to broadcast todo deletion: " <> reason, %{"fileName" => "src_haxe/server/live/TodoLive.hx", "lineNumber" => 292, "className" => "server.live.TodoLive", "methodName" => "delete_todo"})
+        )
+        )
     end
         )
           TodoLive.remove_todo_from_list(id, socket)
         )
-      1 -> LiveView.put_flash(socket, :error, "Failed to delete todo: " <> Std.string(reason))
+      {:error, _} -> (
+          g = elem(g, 1)
+          (
+          reason = g_counter
+          LiveView.put_flash(socket, :error, "Failed to delete todo: " <> Std.string(reason))
+        )
+        )
     end
         )
   end
@@ -176,18 +224,32 @@ defmodule TodoLive do
     updated_changeset = Todo.update_priority(todo, priority)
     (
           g = Repo.update(updated_changeset)
-          case (case g_counter do {:ok, _} -> 0; {:error, _} -> 1; _ -> -1 end) do
-      {0, updated_todo} -> (
+          case g do
+      {:ok, _} -> (
+          g = elem(g, 1)
+          updated_todo = g_counter
           (
           g = Phoenix.PubSub.broadcast(TodoApp.PubSub, "todo:updates", %{"type" => "todo_updated", "todo" => updated_todo})
-          case (case g_counter do {:ok, _} -> 0; {:error, _} -> 1; _ -> -1 end) do
-      0 -> nil
-      1 -> Log.trace("Failed to broadcast todo priority update: " <> reason, %{"fileName" => "src_haxe/server/live/TodoLive.hx", "lineNumber" => 319, "className" => "server.live.TodoLive", "methodName" => "update_todo_priority"})
+          case g do
+      {:ok, _} -> elem(g, 1)
+      {:error, _} -> (
+          g = elem(g, 1)
+          (
+          reason = g_counter
+          Log.trace("Failed to broadcast todo priority update: " <> reason, %{"fileName" => "src_haxe/server/live/TodoLive.hx", "lineNumber" => 319, "className" => "server.live.TodoLive", "methodName" => "update_todo_priority"})
+        )
+        )
     end
         )
           TodoLive.update_todo_in_list(updated_todo, socket)
         )
-      1 -> LiveView.put_flash(socket, :error, "Failed to update priority: " <> Std.string(reason))
+      {:error, _} -> (
+          g = elem(g, 1)
+          (
+          reason = g_counter
+          LiveView.put_flash(socket, :error, "Failed to update priority: " <> Std.string(reason))
+        )
+        )
     end
         )
   end
@@ -210,7 +272,10 @@ defmodule TodoLive do
     this = socket.assigns.todos
     g_array = []
     g_counter = 0
-    Enum.filter(this, fn item -> item.id == updated_todo.id end)
+    Enum.each(this, fn v -> 
+      # TODO: Compile actual loop body operations here
+      # For now, generating correct function signature
+    end)
     current_assigns = socket.assigns
     complete_assigns = TypeSafeConversions.create_complete_assigns(current_assigns, g_counter)
     LiveView.assign_multiple(socket, complete_assigns)
@@ -222,7 +287,7 @@ defmodule TodoLive do
     this = socket.assigns.todos
     g_array = []
     g_counter = 0
-    Enum.filter(this, fn item -> item.id != id end)
+    Enum.filter(this, fn v -> ((v.id != id)) end)
     current_assigns = socket.assigns
     complete_assigns = TypeSafeConversions.create_complete_assigns(current_assigns, g_counter)
     LiveView.assign_multiple(socket, complete_assigns)
@@ -244,7 +309,10 @@ defmodule TodoLive do
   @doc "Generated from Haxe find_todo"
   def find_todo(id, todos) do
     g_counter = 0
-    Enum.filter(todos, fn item -> item.id == id end)
+    Enum.each(todos, fn todo -> 
+      # TODO: Compile actual loop body operations here
+      # For now, generating correct function signature
+    end)
     nil
   end
 
@@ -253,7 +321,10 @@ defmodule TodoLive do
   def count_completed(todos) do
     count = 0
     g_counter = 0
-    Enum.filter(todos, fn item -> item.completed end)
+    Enum.each(todos, fn todo -> 
+      # TODO: Compile actual loop body operations here
+      # For now, generating correct function signature
+    end)
     count
   end
 
@@ -262,7 +333,10 @@ defmodule TodoLive do
   def count_pending(todos) do
     count = 0
     g_counter = 0
-    Enum.filter(todos, fn item -> not item.completed end)
+    Enum.each(todos, fn todo -> 
+      # TODO: Compile actual loop body operations here
+      # For now, generating correct function signature
+    end)
     count
   end
 
@@ -275,7 +349,7 @@ defmodule TodoLive do
     this = tags_string.split(",")
     g_array = []
     g_counter = 0
-    Enum.map(this, fn item -> StringTools.trim(item) end)
+    Enum.map(this, fn v -> StringTools.trim(v) end)
     g_counter
   end
 
@@ -298,36 +372,24 @@ defmodule TodoLive do
     this = socket.assigns.todos
     g_array = []
     g_counter = 0
-    Enum.filter(this, fn item -> not item.completed end)
+    Enum.filter(this, fn v -> (not v.completed) end)
     temp_array = g_counter
     g_counter = 0
-    todo = nil
-    g = nil
-    updated_changeset = nil
-    loop_helper = fn loop_fn, {todo, g, updated_changeset} ->
-      if ((g_counter < temp_array.length)) do
-        todo = Enum.at(temp_array, g_counter)
-        g = g + 1
-        updated_changeset = Todo.toggle_completed(todo)
-        (
-              g = Repo.update(updated_changeset)
-              case (case g_counter do {:ok, _} -> 0; {:error, _} -> 1; _ -> -1 end) do
-          0 -> nil
-          1 -> Log.trace("Failed to complete todo " <> to_string(todo.id) <> ": " <> Std.string(reason), %{"fileName" => "src_haxe/server/live/TodoLive.hx", "lineNumber" => 446, "className" => "server.live.TodoLive", "methodName" => "complete_all_todos"})
-        end
-            )
-        loop_fn.(loop_fn, {todo, g, updated_changeset})
-      else
-        {todo, g, updated_changeset}
-      end
-    end
-
-    {todo, g, updated_changeset} = loop_helper.(loop_helper, {todo, g, updated_changeset})
+    Enum.each(temp_array, fn todo -> 
+      # TODO: Compile actual loop body operations here
+      # For now, generating correct function signature
+    end)
     (
           g = Phoenix.PubSub.broadcast(TodoApp.PubSub, "todo:updates", %{"type" => "bulk_update", "action" => "complete_all"})
-          case (case g_counter do {:ok, _} -> 0; {:error, _} -> 1; _ -> -1 end) do
-      0 -> nil
-      1 -> Log.trace("Failed to broadcast bulk complete: " <> reason, %{"fileName" => "src_haxe/server/live/TodoLive.hx", "lineNumber" => 458, "className" => "server.live.TodoLive", "methodName" => "complete_all_todos"})
+          case g do
+      {:ok, _} -> elem(g, 1)
+      {:error, _} -> (
+          g = elem(g, 1)
+          (
+          reason = g_counter
+          Log.trace("Failed to broadcast bulk complete: " <> reason, %{"fileName" => "src_haxe/server/live/TodoLive.hx", "lineNumber" => 458, "className" => "server.live.TodoLive", "methodName" => "complete_all_todos"})
+        )
+        )
     end
         )
     updated_todos = TodoLive.load_todos(socket.assigns.current_user.id)
@@ -346,29 +408,16 @@ defmodule TodoLive do
     this = socket.assigns.todos
     g_array = []
     g_counter = 0
-    Enum.filter(this, fn item -> item.completed end)
+    Enum.filter(this, fn v -> v.completed end)
     temp_array = g_counter
     g_counter = 0
-    todo = nil
-    g = nil
-    loop_helper = fn loop_fn, {todo, g} ->
-      if ((g_counter < temp_array.length)) do
-        todo = Enum.at(temp_array, g_counter)
-        g = g + 1
-        Repo.delete(todo)
-        loop_fn.(loop_fn, {todo, g})
-      else
-        {todo, g}
-      end
-    end
-
-    {todo, g} = loop_helper.(loop_helper, {todo, g})
+    Enum.map(temp_array, fn todo -> todo end)
     Phoenix.PubSub.broadcast(TodoApp.PubSub, "todo:updates", %{"type" => "bulk_delete", "action" => "delete_completed"})
     temp_array1 = nil
     this = socket.assigns.todos
     g_array = []
     g_counter = 0
-    Enum.filter(this, fn item -> not item.completed end)
+    Enum.filter(this, fn v -> (not v.completed) end)
     temp_array1 = g_counter
     current_assigns = socket.assigns
     complete_assigns = TypeSafeConversions.create_complete_assigns(current_assigns, temp_array1)
@@ -396,19 +445,33 @@ defmodule TodoLive do
     changeset = Todo.changeset(todo, changeset_params)
     (
           g = Repo.update(changeset)
-          case (case g_counter do {:ok, _} -> 0; {:error, _} -> 1; _ -> -1 end) do
-      {0, updated_todo} -> (
+          case g do
+      {:ok, _} -> (
+          g = elem(g, 1)
+          updated_todo = g_counter
           (
           g = TodoPubSub.broadcast(:todo_updates, TodoPubSubMessage.todo_updated(updated_todo))
-          case (case g_counter do {:ok, _} -> 0; {:error, _} -> 1; _ -> -1 end) do
-      0 -> nil
-      1 -> Log.trace("Failed to broadcast todo save: " <> reason, %{"fileName" => "src_haxe/server/live/TodoLive.hx", "lineNumber" => 526, "className" => "server.live.TodoLive", "methodName" => "save_edited_todo"})
+          case g do
+      {:ok, _} -> elem(g, 1)
+      {:error, _} -> (
+          g = elem(g, 1)
+          (
+          reason = g_counter
+          Log.trace("Failed to broadcast todo save: " <> reason, %{"fileName" => "src_haxe/server/live/TodoLive.hx", "lineNumber" => 526, "className" => "server.live.TodoLive", "methodName" => "save_edited_todo"})
+        )
+        )
     end
         )
           updated_socket = TodoLive.update_todo_in_list(updated_todo, socket)
           LiveView.assign(updated_socket, "editing_todo", nil)
         )
-      1 -> LiveView.put_flash(socket, :error, "Failed to save todo: " <> Std.string(reason))
+      {:error, _} -> (
+          g = elem(g, 1)
+          (
+          reason = g_counter
+          LiveView.put_flash(socket, :error, "Failed to save todo: " <> Std.string(reason))
+        )
+        )
     end
         )
   end
@@ -442,12 +505,12 @@ defmodule TodoLive do
   def toggle_tag_filter(tag, socket) do
     selected_tags = socket.assigns.selected_tags
     temp_array = nil
-    if (Enum.member?(selected_tags, tag)) do
+    if Enum.member?(selected_tags, tag) do
           (
           g_array = []
           g_counter = 0
           g = selected_tags
-          Enum.filter(g2, fn item -> item != tag end)
+          Enum.filter(g_counter, fn v -> ((v != tag)) end)
           temp_array = g_counter
         )
         else
