@@ -84,9 +84,9 @@ defmodule Todo do
     g_array = []
     g_counter = 0
     Enum.each(temp_array, fn v -> 
-       ++ [ChangesetValue.string_value(v)]
+      g_array ++ [ChangesetValue.string_value(v)]
     end)
-    value = ChangesetValue.array_value()
+    value = ChangesetValue.array_value(g_array)
     params.set("tags", value)
     Todo.changeset(todo, params)
   end

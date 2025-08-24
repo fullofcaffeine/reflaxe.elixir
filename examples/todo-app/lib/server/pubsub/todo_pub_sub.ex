@@ -75,46 +75,46 @@ defmodule TodoPubSub do
       :todo_created -> (
           g_array = _ = elem(message, 1)
           (
-          todo = 
+          todo = g_array
           temp_struct = %{"type" => "todo_created", "todo" => todo}
         )
         )
       :todo_updated -> (
           g_array = _ = elem(message, 1)
           (
-          todo = 
+          todo = g_array
           temp_struct = %{"type" => "todo_updated", "todo" => todo}
         )
         )
       :todo_deleted -> (
           g_array = _ = elem(message, 1)
-          id = 
+          id = g_array
           temp_struct = %{"type" => "todo_deleted", "todo_id" => id}
         )
       :bulk_update -> (
           g_array = _ = elem(message, 1)
-          action = 
+          action = g_array
           temp_struct = %{"type" => "bulk_update", "action" => TodoPubSub.bulk_action_to_string(action)}
         )
       :user_online -> (
           g_array = _ = elem(message, 1)
           (
-          user_id = 
+          user_id = g_array
           temp_struct = %{"type" => "user_online", "user_id" => user_id}
         )
         )
       :user_offline -> (
           g_array = _ = elem(message, 1)
           (
-          user_id = 
+          user_id = g_array
           temp_struct = %{"type" => "user_offline", "user_id" => user_id}
         )
         )
       :system_alert -> (
           g_array = _ = elem(message, 1)
           g_array = _ = elem(message, 2)
-          message = 
-          level = 
+          message = g_array
+          level = g_array
           temp_struct = %{"type" => "system_alert", "message" => message, "level" => TodoPubSub.alert_level_to_string(level)}
         )
     end
@@ -138,14 +138,14 @@ defmodule TodoPubSub do
           temp_result = nil
           (
           g_array = msg.type
-          case  do
+          case g_array do
       "bulk_update" -> if ((msg.action != nil)) do
           (
           bulk_action = TodoPubSub.parse_bulk_action(msg.action)
           case bulk_action do
       {:ok, _} -> (
           g_array = _ = elem(bulk_action, 1)
-          action = 
+          action = g_array
           temp_result = Option.some(TodoPubSubMessage.bulk_update(action))
         )
       :error -> temp_result = :error
@@ -160,7 +160,7 @@ defmodule TodoPubSub do
           case alert_level do
       {:ok, _} -> (
           g_array = _ = elem(alert_level, 1)
-          level = 
+          level = g_array
           temp_result = Option.some(TodoPubSubMessage.system_alert(msg.message, level))
         )
       :error -> temp_result = :error

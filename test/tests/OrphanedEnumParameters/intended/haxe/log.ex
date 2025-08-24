@@ -23,7 +23,7 @@ defmodule Log do
           (
           g_counter = 0
           g_array = infos.custom_params
-          Enum.each(, fn v2 -> 
+          Enum.each(g_array, fn v2 -> 
       str = str <> ", " <> Std.string(v)
     end)
         )
