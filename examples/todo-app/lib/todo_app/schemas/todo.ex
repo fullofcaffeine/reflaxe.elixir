@@ -39,13 +39,13 @@ defmodule Todo do
   @spec changeset(Todo.t(), ChangesetParams.t()) :: Ecto.Changeset.t()
   def changeset(todo, params) do
     changeset = Changeset.cast_changeset(todo, params, ["title", "description", "completed", "priority", "due_date", "tags", "user_id"])
-    &Todo.changeset/2 = Changeset.validate_required(&Todo.changeset/2, ["title", "user_id"])
-    &Todo.changeset/2 = Changeset.validate_length(&Todo.changeset/2, "title", %{"min" => 3, "max" => 200})
-    &Todo.changeset/2 = Changeset.validate_length(&Todo.changeset/2, "description", %{"max" => 1000})
+    changeset = Changeset.validate_required(changeset, ["title", "user_id"])
+    changeset = Changeset.validate_length(changeset, "title", %{"min" => 3, "max" => 200})
+    changeset = Changeset.validate_length(changeset, "description", %{"max" => 1000})
     priority_values = [ChangesetValue.string_value("low"), ChangesetValue.string_value("medium"), ChangesetValue.string_value("high")]
-    &Todo.changeset/2 = Changeset.validate_inclusion(&Todo.changeset/2, "priority", priority_values)
-    &Todo.changeset/2 = Changeset.foreign_key_constraint(&Todo.changeset/2, "user_id")
-    &Todo.changeset/2
+    changeset = Changeset.validate_inclusion(changeset, "priority", priority_values)
+    changeset = Changeset.foreign_key_constraint(changeset, "user_id")
+    changeset
   end
 
   @doc "Function toggle_completed"

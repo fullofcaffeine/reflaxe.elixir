@@ -1429,36 +1429,34 @@ class ElixirCompiler extends DirectToStringCompiler {
     /**
      * Check if a TLocal variable represents a function being passed as a reference
      * 
+     * WHY: We need to distinguish between local variables and function references
+     *      to generate proper Elixir syntax (&Module.function/arity vs variable_name)
+     * 
+     * WHAT: Determines if a TVar is actually a function reference that needs & syntax
+     * 
+     * HOW: Check if the variable's TYPE is TFun, NOT just if it shares a name with
+     *      a static method. Local variables can have the same names as methods!
+     * 
+     * CRITICAL FIX: A local variable named "changeset" is NOT a reference to
+     *               Todo.changeset just because they share a name. Only generate
+     *               function reference syntax when the variable TYPE is TFun.
+     * 
      * @param v The TVar representing the local variable
      * @param originalName The original name of the variable
      * @return true if this is a function reference, false otherwise
      */
     public function isFunctionReference(v: TVar, originalName: String): Bool {
-        // Check if the variable's type is a function type
+        // ONLY check the variable's type - don't look for static methods with same name!
+        // A local variable "changeset" is NOT a reference to a static method "changeset"
         switch (v.t) {
             case TFun(_, _):
-                // This is definitely a function type
+                // This variable's TYPE is a function - it's a function reference
+                trace('[XRay ElixirCompiler] Variable ${originalName} has TFun type - IS a function reference');
                 return true;
             case _:
-                // Check if this is a static method reference by name
-                // This handles cases where the TVar type isn't TFun but it's actually a function
-                if (currentClassType != null) {
-                    // Look for static methods in the current class
-                    var classFields = currentClassType.statics.get();
-                    for (field in classFields) {
-                        if (field.name == originalName && field.type.match(TFun(_, _))) {
-                            return true;
-                        }
-                    }
-                    
-                    // Look for instance methods (though these are less common as references)
-                    var instanceFields = currentClassType.fields.get();
-                    for (field in instanceFields) {
-                        if (field.name == originalName && field.type.match(TFun(_, _))) {
-                            return true;
-                        }
-                    }
-                }
+                // NOT a function type - it's just a regular variable
+                // Even if there's a static method with the same name, this is still just a variable!
+                trace('[XRay ElixirCompiler] Variable ${originalName} does NOT have TFun type - NOT a function reference');
                 return false;
         }
     }

@@ -137,7 +137,7 @@ defmodule Flash do
           g_counter = 0
           g = field_errors
           Enum.each(g, fn error -> 
-      errors ++ ["" <> field <> ": " <> Std.string(&Flash.error/3)]
+      errors ++ ["" <> field <> ": " <> Std.string(error)]
     end)
         )
         else

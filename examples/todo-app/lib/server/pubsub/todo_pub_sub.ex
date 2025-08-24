@@ -17,7 +17,7 @@ defmodule TodoPubSub do
   """
   @spec subscribe(TodoPubSubTopic.t()) :: Result.t()
   def subscribe(topic) do
-    SafePubSub.subscribe_with_converter(topic, &TodoPubSub.topic_to_string/1)
+    SafePubSub.subscribe_with_converter(topic, TodoPubSub.topic_to_string)
   end
 
   @doc """
@@ -29,7 +29,7 @@ defmodule TodoPubSub do
   """
   @spec broadcast(TodoPubSubTopic.t(), TodoPubSubMessage.t()) :: Result.t()
   def broadcast(topic, message) do
-    SafePubSub.broadcast_with_converters(topic, message, &TodoPubSub.topic_to_string/1, &TodoPubSub.message_to_elixir/1)
+    SafePubSub.broadcast_with_converters(topic, message, TodoPubSub.topic_to_string, TodoPubSub.message_to_elixir)
   end
 
   @doc """
@@ -43,7 +43,7 @@ defmodule TodoPubSub do
   """
   @spec parse_message(term()) :: Option.t()
   def parse_message(msg) do
-    SafePubSub.parse_with_converter(msg, &TodoPubSub.parse_message_impl/1)
+    SafePubSub.parse_with_converter(msg, TodoPubSub.parse_message_impl)
   end
 
   @doc """
