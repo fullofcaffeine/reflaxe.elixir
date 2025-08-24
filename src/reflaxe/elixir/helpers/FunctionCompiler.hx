@@ -135,17 +135,63 @@ class FunctionCompiler {
         result += '  def ${funcName}(${paramStr}) do\n';
         
         if (funcField.expr != null) {
+            // Set function context in VariableMappingManager
+            if (compiler.variableMappingManager != null) {
+                compiler.variableMappingManager.compilationContext.currentFunction = funcName;
+                #if debug_variable_mapping
+                trace('[FunctionCompiler] Set function context: ${funcName}');
+                #end
+            }
+            
             // Compile function body with topLevel = true for function bodies
             // Pipeline optimization is temporarily disabled, so use regular compilation
             var compiledBody = compiler.compileExpressionImpl(funcField.expr, true);
+            
+            // CRITICAL FIX: Generate pre-declarations AFTER body compilation
+            // WHY: Variables are only tracked DURING compilation, so we need to analyze
+            // WHAT: Extract scope-crossing variables and generate nil pre-declarations  
+            // HOW: Use post-compilation analysis to identify variables needing outer scope
+            var requiredDeclarations = [];
+            if (compiler.variableMappingManager != null) {
+                // Use the enhanced scope analysis to detect variables that need pre-declaration
+                // Pass the compiled body for fallback temp variable scanning
+                requiredDeclarations = compiler.variableMappingManager.generateAllRequiredDeclarations(compiledBody);
+                
+                // Also perform comprehensive function-level analysis
+                var functionExpressions = extractAllExpressions(funcField.expr);
+                var additionalDeclarations = compiler.variableMappingManager.generateRequiredOuterScopeDeclarations(functionExpressions);
+                
+                // Combine and deduplicate declarations
+                for (decl in additionalDeclarations) {
+                    if (requiredDeclarations.indexOf(decl) == -1) {
+                        requiredDeclarations.push(decl);
+                    }
+                }
+                
+                #if debug_variable_mapping
+                if (requiredDeclarations.length > 0) {
+                    trace('[FunctionCompiler] Post-compilation: Found ${requiredDeclarations.length} scope-crossing variables: [${requiredDeclarations.join(", ")}]');
+                }
+                #end
+            }
             
             #if debug_function_compilation
             DebugHelper.debugFunction("Body Compilation", "Regular compilation used", 'Expression type: ${funcField.expr.expr}');
             #end
             
             if (compiledBody != null && compiledBody.trim() != "") {
+                // Add pre-declarations at function start if needed
+                var bodyWithDeclarations = compiledBody;
+                if (requiredDeclarations.length > 0) {
+                    var declarationsStr = requiredDeclarations.join("\n") + "\n\n";
+                    bodyWithDeclarations = declarationsStr + compiledBody;
+                    #if debug_variable_mapping
+                    trace('[FunctionCompiler] ✓ Added ${requiredDeclarations.length} pre-declarations to function body');
+                    #end
+                }
+                
                 // Indent the function body properly
-                var indentedBody = compiledBody.split("\n").map(line -> line.length > 0 ? "    " + line : line).join("\n");
+                var indentedBody = bodyWithDeclarations.split("\n").map(line -> line.length > 0 ? "    " + line : line).join("\n");
                 result += '${indentedBody}\n';
                 #if debug_function_compilation
                 DebugHelper.debugFunction("Body Compilation", "✓ SUCCESS", 'Body length: ${compiledBody.length} chars');
@@ -171,6 +217,69 @@ class FunctionCompiler {
         #end
         
         return result;
+    }
+    
+    /**
+     * Extract all expressions from a function body for comprehensive analysis
+     * 
+     * WHY: The VariableMappingManager needs to analyze all expressions in a function
+     * to detect scope-crossing variables before compilation begins
+     * 
+     * WHAT: Recursively traverse the function expression tree to collect all sub-expressions
+     * 
+     * HOW: Pattern match on TypedExpr types and recursively collect expressions
+     * 
+     * @param expr The root expression (function body)
+     * @return Array of all expressions found in the function body
+     */
+    private function extractAllExpressions(expr: TypedExpr): Array<TypedExpr> {
+        var expressions = [expr];
+        
+        function collectExpressions(e: TypedExpr): Void {
+            switch (e.expr) {
+                case TBlock(exprs):
+                    for (subExpr in exprs) {
+                        expressions.push(subExpr);
+                        collectExpressions(subExpr);
+                    }
+                case TIf(condExpr, ifExpr, elseExpr):
+                    expressions.push(condExpr);
+                    expressions.push(ifExpr);
+                    collectExpressions(condExpr);
+                    collectExpressions(ifExpr);
+                    if (elseExpr != null) {
+                        expressions.push(elseExpr);
+                        collectExpressions(elseExpr);
+                    }
+                case TWhile(condExpr, bodyExpr, normalWhile):
+                    expressions.push(condExpr);
+                    expressions.push(bodyExpr);
+                    collectExpressions(condExpr);
+                    collectExpressions(bodyExpr);
+                case TFor(tvar, iterExpr, bodyExpr):
+                    expressions.push(iterExpr);
+                    expressions.push(bodyExpr);
+                    collectExpressions(iterExpr);
+                    collectExpressions(bodyExpr);
+                case TSwitch(switchExpr, cases, defaultCase):
+                    expressions.push(switchExpr);
+                    collectExpressions(switchExpr);
+                    for (c in cases) {
+                        expressions.push(c.expr);
+                        collectExpressions(c.expr);
+                    }
+                    if (defaultCase != null) {
+                        expressions.push(defaultCase);
+                        collectExpressions(defaultCase);
+                    }
+                default:
+                    // Simplified implementation - covers the main patterns
+                    // Other expression types (TLocal, TConst, etc.) do not need recursion
+            }
+        }
+        
+        collectExpressions(expr);
+        return expressions;
     }
 }
 

@@ -16,18 +16,24 @@ defmodule Main do
           g_array = []
           (
           g_counter = 0
-          Enum.filter(temp_right1, fn v -> ((v > 2)) end)
+          Enum.each(temp_right1, fn v -> 
+      if ((v > 2)) do
+          g_array ++ [v]
+        end
+    end)
         )
-          temp_right = g_counter
+          temp_right = g_array
         )
     temp_right1 = nil
     (
           g_array = []
           (
           g_counter = 0
-          Enum.map(temp_right1, fn v -> (v * 2) end)
+          Enum.each(temp_right1, fn v -> 
+      g_array ++ [(v * 2)]
+    end)
         )
-          temp_right1 = g_counter
+          temp_right1 = g_array
         )
     text = "hello world"
     text = StringTools.trim(text)

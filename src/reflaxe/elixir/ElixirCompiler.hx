@@ -68,6 +68,7 @@ import reflaxe.elixir.helpers.WhileLoopCompiler;
 import reflaxe.elixir.helpers.CodeFixupCompiler;
 import reflaxe.elixir.helpers.PipelineAnalyzer;
 import reflaxe.elixir.helpers.ExpressionVariantCompiler;
+import reflaxe.elixir.helpers.VariableMappingManager;
 import reflaxe.elixir.PhoenixMapper;
 import reflaxe.elixir.SourceMapWriter;
 
@@ -149,6 +150,9 @@ class ElixirCompiler extends DirectToStringCompiler {
     
     // Variable substitution and renaming compiler for centralized variable handling
     public var substitutionCompiler: reflaxe.elixir.helpers.SubstitutionCompiler;
+    
+    // Variable mapping manager for consistent Haxe compiler-generated variable handling
+    public var variableMappingManager: VariableMappingManager;
     
     // Temporary variable pattern optimization
     private var tempVariableOptimizer: reflaxe.elixir.helpers.TempVariableOptimizer;
@@ -272,6 +276,7 @@ class ElixirCompiler extends DirectToStringCompiler {
         this.reflectionCompiler = new reflaxe.elixir.helpers.ReflectionCompiler(this);
         this.arrayOptimizationCompiler = new reflaxe.elixir.helpers.ArrayOptimizationCompiler(this);
         this.substitutionCompiler = new reflaxe.elixir.helpers.SubstitutionCompiler(this);
+        this.variableMappingManager = new VariableMappingManager(this);
         this.tempVariableOptimizer = new reflaxe.elixir.helpers.TempVariableOptimizer(this);
         this.namingConventionCompiler = new reflaxe.elixir.helpers.NamingConventionCompiler(this);
         this.stateManagementCompiler = new reflaxe.elixir.helpers.StateManagementCompiler(this);
