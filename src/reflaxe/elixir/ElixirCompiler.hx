@@ -229,6 +229,28 @@ class ElixirCompiler extends DirectToStringCompiler {
     public var enumExtractionVars: Null<Array<{index: Int, varName: String}>> = null;
     public var currentEnumExtractionIndex: Int = 0;
     
+    /**
+     * Current switch case body being compiled
+     * 
+     * WHY: Used by EnumIntrospectionCompiler to perform AST analysis of case bodies
+     *      to detect orphaned enum parameter extractions. This prevents generating
+     *      unused 'g = elem(spec, N)' assignments for parameters that are never referenced.
+     * 
+     * WHAT: Contains the TypedExpr of the case body currently being processed by the compiler.
+     *       Set when entering switch case compilation, cleared when exiting.
+     * 
+     * HOW: PatternMatchingCompiler sets this field when compiling each case body,
+     *      allowing EnumIntrospectionCompiler to analyze whether extracted parameters
+     *      are actually used in the subsequent case logic.
+     * 
+     * EDGE CASES: Only valid during switch case compilation, null otherwise
+     * 
+     * ARCHITECTURAL BENEFIT: Provides AST-based orphaned parameter detection without
+     *                        hardcoding specific enum names, making the solution general
+     *                        and maintainable for any enum type.
+     */
+    public var currentSwitchCaseBody: Null<TypedExpr> = null;
+    
     // Current class context for app name resolution and other class-specific operations
     public var currentClassType: Null<ClassType> = null;
     
