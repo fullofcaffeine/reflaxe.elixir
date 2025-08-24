@@ -155,7 +155,7 @@ class ElixirCompiler extends DirectToStringCompiler {
     public var variableMappingManager: VariableMappingManager;
     
     // Temporary variable pattern optimization
-    private var tempVariableOptimizer: reflaxe.elixir.helpers.TempVariableOptimizer;
+    public var tempVariableOptimizer: reflaxe.elixir.helpers.TempVariableOptimizer;
     
     // Naming convention and file path management
     private var namingConventionCompiler: reflaxe.elixir.helpers.NamingConventionCompiler;
@@ -757,80 +757,50 @@ class ElixirCompiler extends DirectToStringCompiler {
         
         // Set framework-aware file path BEFORE compilation using Reflaxe's built-in system
         setFrameworkAwareOutputPath(classType);
-        trace('DEBUG: setFrameworkAwareOutputPath completed for ${classType.name}');
-        
         // Initialize source mapping for this class
         if (sourceMapOutputEnabled) {
-            trace('DEBUG: Starting source mapping for ${classType.name}');
             var className = classType.name;
             var actualOutputDir = this.output.outputDir != null ? this.output.outputDir : outputDirectory;
             
             // Annotation-aware file path generation for framework convention adherence
             var outputPath = PhoenixPathGenerator.generateAnnotationAwareOutputPath(classType, actualOutputDir, fileExtension);
             initSourceMapWriter(outputPath);
-            trace('DEBUG: Source mapping completed for ${classType.name}');
         }
-        trace('DEBUG: About to check ExUnit for ${classType.name}');
         
         // Check for ExUnit test classes first (before other annotations)
-        try {
-            trace('DEBUG: About to call ExUnitCompiler.isExUnitTest for ${classType.name}');
-            if (ExUnitCompiler.isExUnitTest(classType)) {
-                trace('DEBUG: ${classType.name} is an ExUnit test');
-                var result = ExUnitCompiler.compile(classType, this);
-                return result;
-            }
-            trace('DEBUG: ${classType.name} is NOT an ExUnit test, continuing');
-        } catch (e: Dynamic) {
-            trace('DEBUG: ERROR in ExUnit check for ${classType.name}: ${e}');
-            throw e;
+        if (ExUnitCompiler.isExUnitTest(classType)) {
+            var result = ExUnitCompiler.compile(classType, this);
+            return result;
         }
         
         // Use unified annotation system for detection, validation, and routing
-        trace('DEBUG: About to call AnnotationSystem.routeCompilation for ${classType.name}');
         var annotationResult = reflaxe.elixir.helpers.AnnotationSystem.routeCompilation(classType, varFields, funcFields);
-        trace('DEBUG: AnnotationSystem.routeCompilation completed for ${classType.name}');
         if (annotationResult != null) {
             return annotationResult;
         }
         
         // Check if this is a LiveView class that should use special compilation
-        trace('DEBUG: About to call AnnotationSystem.detectAnnotations for ${classType.name}');
         var annotationInfo = reflaxe.elixir.helpers.AnnotationSystem.detectAnnotations(classType);
-        trace('DEBUG: AnnotationSystem.detectAnnotations completed for ${classType.name}');
         if (annotationInfo.primaryAnnotation == ":liveview") {
             var result = compileLiveViewClass(classType, varFields, funcFields);
             return result;
         }
-        trace('DEBUG: Not a LiveView, continuing to ClassCompiler for ${classType.name}');
         
         // Use the enhanced ClassCompiler for proper struct/module generation
-        trace('DEBUG: About to create ClassCompiler for ${classType.name}');
         var classCompiler = new reflaxe.elixir.helpers.ClassCompiler(this.typer);
-        trace('DEBUG: ClassCompiler created, setting compiler for ${classType.name}');
         classCompiler.setCompiler(this);
-        trace('DEBUG: Compiler set, setting import optimizer for ${classType.name}');
         classCompiler.setImportOptimizer(importOptimizer);
-        trace('DEBUG: ClassCompiler setup complete for ${classType.name}');
         
         // Handle inheritance tracking
-        trace('DEBUG: Checking inheritance for ${classType.name}');
         if (classType.superClass != null) {
-            trace('DEBUG: ${classType.name} has superclass, adding for compilation');
             addModuleTypeForCompilation(TClassDecl(classType.superClass.t));
         }
-        trace('DEBUG: Inheritance check complete for ${classType.name}');
         
         // Handle interface tracking
-        trace('DEBUG: Checking interfaces for ${classType.name}');
         for (iface in classType.interfaces) {
             addModuleTypeForCompilation(TClassDecl(iface.t));
-        }
-        trace('DEBUG: Interface check complete for ${classType.name}');
-        
-        trace('DEBUG: About to call classCompiler.compileClass for ${classType.name}');
+        };
         var result = classCompiler.compileClass(classType, varFields, funcFields);
-        trace('DEBUG: classCompiler.compileClass completed for ${classType.name}');
         
         // Post-process to replace getAppName() calls with actual app name
         if (result != null) {
@@ -1274,11 +1244,40 @@ class ElixirCompiler extends DirectToStringCompiler {
                 // Convert field name to snake_case for static method calls
                 var fieldName = NamingHelper.toSnakeCase(classFieldRef.get().name);
                 
+                // Always trace assign_multiple calls to understand what's happening
+                if (fieldName == "assign_multiple") {
+                    trace('[FOUND assign_multiple] Class: ${cls.name}, Native: ${cls.getNameOrNative()}, Module: ${className}, isExtern: ${cls.isExtern}');
+                }
+                
+                #if debug_phoenix_liveview
+                trace('[DEBUG FStatic] Class name: ${cls.name}, isExtern: ${cls.isExtern}');
+                trace('[DEBUG FStatic] Module name: ${className}');
+                trace('[DEBUG FStatic] Field name: ${fieldName}');
+                #end
+                
                 // Special handling for Phoenix modules
                 if (cls.name == "PubSub" && cls.isExtern) {
                     // PubSub references should be fully qualified
                     className = "Phoenix.PubSub";
                     // PubSub methods don't need name mapping
+                }
+                // Special handling for Phoenix.LiveView module (check native name for generic classes)
+                else if ((cls.getNameOrNative() == "Phoenix.LiveView" || cls.name == "LiveView") && cls.isExtern) {
+                    #if debug_phoenix_liveview
+                    trace('[DEBUG Phoenix.LiveView] Detected LiveView class: ${cls.name}');
+                    trace('[DEBUG Phoenix.LiveView] Original field name: ${classFieldRef.get().name}');
+                    trace('[DEBUG Phoenix.LiveView] Snake_case field name: ${fieldName}');
+                    #end
+                    
+                    className = "Phoenix.LiveView";
+                    // Map assignMultiple to assign (Phoenix.LiveView uses assign for both single and multiple)
+                    if (fieldName == "assign_multiple") {
+                        #if debug_phoenix_liveview
+                        trace('[DEBUG Phoenix.LiveView] Mapping assign_multiple -> assign');
+                        #end
+                        fieldName = "assign";
+                    }
+                    // Other LiveView methods keep their snake_case names
                 }
                 // Special handling for StringTools extern
                 else if (cls.name == "StringTools" && cls.isExtern) {
@@ -2121,42 +2120,35 @@ class ElixirCompiler extends DirectToStringCompiler {
      * Get field name from field access
      * Handles @:native annotations on extern methods
      */
+    /**
+     * Get field name with proper @:native annotation support
+     * 
+     * WHY: @:native annotations allow library authors to specify exact Elixir names
+     * WHAT: Uses Reflaxe's standardized NameMetaHelper for consistent metadata handling
+     * HOW: Delegates to getFieldAccessNameMeta() and getNameOrNative() for proper extraction
+     * 
+     * ARCHITECTURE: This replaces manual metadata extraction with Reflaxe's standardized
+     * infrastructure, ensuring consistent handling of @:native across all field access types.
+     */
     public function getFieldName(fa: FieldAccess): String {
-        return switch (fa) {
-            case FInstance(_, _, cf) | FStatic(_, cf) | FClosure(_, cf): 
-                var field = cf.get();
-                // Check for @:native annotation on the method
-                if (field.meta != null && field.meta.has(":native")) {
-                    var nativeMeta = field.meta.extract(":native");
-                    if (nativeMeta.length > 0 && nativeMeta[0].params != null && nativeMeta[0].params.length > 0) {
-                        // Extract the native name from the annotation
-                        var nativeName = switch(nativeMeta[0].params[0].expr) {
-                            case EConst(CString(s, _)): s;
-                            default: field.name;
-                        };
-                        return nativeName;
-                    }
-                }
-                // Convert method name to snake_case for Elixir
-                return NamingHelper.toSnakeCase(field.name);
-            case FAnon(cf): 
-                var field = cf.get();
-                // Check for @:native annotation on anonymous fields too
-                if (field.meta != null && field.meta.has(":native")) {
-                    var nativeMeta = field.meta.extract(":native");
-                    if (nativeMeta.length > 0 && nativeMeta[0].params != null && nativeMeta[0].params.length > 0) {
-                        var nativeName = switch(nativeMeta[0].params[0].expr) {
-                            case EConst(CString(s, _)): s;
-                            default: field.name;
-                        };
-                        return nativeName;
-                    }
-                }
-                // Convert method name to snake_case for Elixir
-                return NamingHelper.toSnakeCase(field.name);
-            case FDynamic(s): NamingHelper.toSnakeCase(s);
-            case FEnum(_, ef): NamingHelper.toSnakeCase(ef.name);
-        };
+        #if debug_method_name_resolution
+        trace('[XRay getFieldName] Processing FieldAccess: ${fa}');
+        #end
+        
+        // Use Reflaxe's standardized helper instead of manual extraction
+        var nameMeta = NameMetaHelper.getFieldAccessNameMeta(fa);
+        var name = nameMeta.getNameOrNative();
+        
+        #if debug_method_name_resolution
+        trace('[XRay getFieldName] Field name: ${nameMeta.name}, has @:native: ${nameMeta.hasMeta(":native")}, resolved: ${name}');
+        #end
+        
+        // Convert to snake_case for Elixir if not already specified by @:native
+        return if (nameMeta.hasMeta(":native")) {
+            name; // Use exact name from @:native annotation
+        } else {
+            NamingHelper.toSnakeCase(name); // Convert to snake_case for idiomatic Elixir
+        }
     }
     
     /**

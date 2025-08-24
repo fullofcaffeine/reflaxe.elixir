@@ -17,7 +17,7 @@ defmodule TodoPubSub do
   """
   @spec subscribe(TodoPubSubTopic.t()) :: Result.t()
   def subscribe(topic) do
-    SafePubSub.subscribe_with_converter(topic, TodoPubSub.topic_to_string)
+    SafePubSub.subscribe_with_converter(topic, &TodoPubSub.topic_to_string/1)
   end
 
   @doc """
@@ -29,7 +29,7 @@ defmodule TodoPubSub do
   """
   @spec broadcast(TodoPubSubTopic.t(), TodoPubSubMessage.t()) :: Result.t()
   def broadcast(topic, message) do
-    SafePubSub.broadcast_with_converters(topic, message, TodoPubSub.topic_to_string, TodoPubSub.message_to_elixir)
+    SafePubSub.broadcast_with_converters(topic, message, &TodoPubSub.topic_to_string/1, &TodoPubSub.message_to_elixir/1)
   end
 
   @doc """
@@ -43,7 +43,7 @@ defmodule TodoPubSub do
   """
   @spec parse_message(term()) :: Option.t()
   def parse_message(msg) do
-    SafePubSub.parse_with_converter(msg, TodoPubSub.parse_message_impl)
+    SafePubSub.parse_with_converter(msg, &TodoPubSub.parse_message_impl/1)
   end
 
   @doc """
@@ -54,10 +54,10 @@ defmodule TodoPubSub do
   def topic_to_string(topic) do
     (
           temp_result = nil
-          case (elem(topic, 0)) do
-      0 -> temp_result = "todo:updates"
-      1 -> temp_result = "user:activity"
-      2 -> temp_result = "system:notifications"
+          case topic do
+      :todo_updates -> "todo:updates"
+      :user_activity -> "user:activity"
+      :system_notifications -> "system:notifications"
     end
           temp_result
         )
@@ -71,34 +71,50 @@ defmodule TodoPubSub do
   def message_to_elixir(message) do
     (
           temp_struct = nil
-          case (elem(message, 0)) do
-      {0, todo} -> (
+          case message do
+      :todo_created -> (
           g_array = elem(message, 1)
+          (
+          todo = g_array
           temp_struct = %{"type" => "todo_created", "todo" => todo}
         )
-      {1, todo} -> (
+        )
+      :todo_updated -> (
           g_array = elem(message, 1)
+          (
+          todo = g_array
           temp_struct = %{"type" => "todo_updated", "todo" => todo}
         )
-      {2, id} -> (
+        )
+      :todo_deleted -> (
           g_array = elem(message, 1)
+          id = g_array
           temp_struct = %{"type" => "todo_deleted", "todo_id" => id}
         )
-      {3, action} -> (
+      :bulk_update -> (
           g_array = elem(message, 1)
+          action = g_array
           temp_struct = %{"type" => "bulk_update", "action" => TodoPubSub.bulk_action_to_string(action)}
         )
-      {4, user_id} -> (
+      :user_online -> (
           g_array = elem(message, 1)
+          (
+          user_id = g_array
           temp_struct = %{"type" => "user_online", "user_id" => user_id}
         )
-      {5, user_id} -> (
+        )
+      :user_offline -> (
           g_array = elem(message, 1)
+          (
+          user_id = g_array
           temp_struct = %{"type" => "user_offline", "user_id" => user_id}
         )
-      {6, message2, level} -> (
+        )
+      :system_alert -> (
           g_array = elem(message, 1)
           g_array = elem(message, 2)
+          message = g_array
+          level = g_array
           temp_struct = %{"type" => "system_alert", "message" => message, "level" => TodoPubSub.alert_level_to_string(level)}
         )
     end
@@ -196,20 +212,27 @@ defmodule TodoPubSub do
   def bulk_action_to_string(action) do
     (
           temp_result = nil
-          case (elem(action, 0)) do
-      0 -> temp_result = "complete_all"
-      1 -> temp_result = "delete_completed"
-      {2, priority} -> (
+          case action do
+      :complete_all -> temp_result = "complete_all"
+      :delete_completed -> temp_result = "delete_completed"
+      :set_priority -> (
           elem(action, 1)
+          g_array
           temp_result = "set_priority"
         )
-      {3, tag} -> (
+      :add_tag -> (
           elem(action, 1)
+          (
+          g_array
           temp_result = "add_tag"
         )
-      {4, tag} -> (
+        )
+      :remove_tag -> (
           elem(action, 1)
+          (
+          g_array
           temp_result = "remove_tag"
+        )
         )
     end
           temp_result
@@ -225,12 +248,12 @@ defmodule TodoPubSub do
     (
           temp_result = nil
           case action do
-      "add_tag" -> temp_result = Option.some(BulkOperationType.add_tag(""))
-      "complete_all" -> temp_result = Option.some(:complete_all)
-      "delete_completed" -> temp_result = Option.some(:delete_completed)
-      "remove_tag" -> temp_result = Option.some(BulkOperationType.remove_tag(""))
-      "set_priority" -> temp_result = Option.some(BulkOperationType.set_priority(:medium))
-      _ -> temp_result = :error
+      "add_tag" -> Option.some(BulkOperationType.add_tag(""))
+      "complete_all" -> Option.some(:complete_all)
+      "delete_completed" -> Option.some(:delete_completed)
+      "remove_tag" -> Option.some(BulkOperationType.remove_tag(""))
+      "set_priority" -> Option.some(BulkOperationType.set_priority(:medium))
+      _ -> :error
     end
           temp_result
         )
@@ -244,11 +267,11 @@ defmodule TodoPubSub do
   def alert_level_to_string(level) do
     (
           temp_result = nil
-          case (elem(level, 0)) do
-      0 -> temp_result = "info"
-      1 -> temp_result = "warning"
-      2 -> temp_result = "error"
-      3 -> temp_result = "critical"
+          case level do
+      :info -> "info"
+      :warning -> "warning"
+      :error -> "error"
+      :critical -> "critical"
     end
           temp_result
         )
@@ -263,11 +286,11 @@ defmodule TodoPubSub do
     (
           temp_result = nil
           case level do
-      "critical" -> temp_result = Option.some(:critical)
-      "error" -> temp_result = Option.some(:error)
-      "info" -> temp_result = Option.some(:info)
-      "warning" -> temp_result = Option.some(:warning)
-      _ -> temp_result = :error
+      "critical" -> Option.some(:critical)
+      "error" -> Option.some(:error)
+      "info" -> Option.some(:info)
+      "warning" -> Option.some(:warning)
+      _ -> :error
     end
           temp_result
         )

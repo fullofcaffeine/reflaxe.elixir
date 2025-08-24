@@ -128,10 +128,13 @@ extern class LiveView<T> {
     static function assign<TAssigns>(socket: Socket<TAssigns>, key: String, value: TAssigns): Socket<TAssigns>;
     
     /**
-     * Assign multiple values to the socket
+     * Assign multiple values to the socket using a map of assigns
+     * 
+     * NOTE: This maps to Phoenix.LiveView.assign/2 with a map in Elixir
      * 
      * @param TAssigns The type of socket assigns structure
      */
+    @:native("assign")
     static function assign_multiple<TAssigns>(socket: Socket<TAssigns>, assigns: TAssigns): Socket<TAssigns>;
     
     /**

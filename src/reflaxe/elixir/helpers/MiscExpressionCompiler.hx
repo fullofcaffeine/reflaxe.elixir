@@ -82,16 +82,42 @@ class MiscExpressionCompiler {
     public function compileReturnStatement(expr: Null<TypedExpr>): String {
         #if debug_misc_expression_compiler
         trace("[XRay MiscExpressionCompiler] RETURN COMPILATION START");
+        if (expr != null) {
+            trace('[XRay MiscExpressionCompiler] Return expr type: ${expr.expr}');
+        }
         #end
         
         if (expr != null) {
-            var compiledExpr = compiler.compileExpression(expr);
-            
-            #if debug_misc_expression_compiler
-            trace('[XRay MiscExpressionCompiler] Return expression: ${compiledExpr}');
-            #end
-            
-            return compiledExpr;
+            // CRITICAL FIX: Handle TReturn(TSwitch) pattern to generate direct value-returning case
+            // This prevents temp variable shadowing in Elixir's scoped case expressions
+            switch (expr.expr) {
+                case TSwitch(switchExpr, cases, defaultExpr):
+                    #if debug_misc_expression_compiler
+                    trace("[XRay MiscExpressionCompiler] ✓ DETECTED TReturn(TSwitch) - compiling as value-returning case");
+                    #end
+                    
+                    // Mark that we're compiling a switch as a value expression
+                    var wasCompilingCaseArm = compiler.isCompilingCaseArm;
+                    compiler.isCompilingCaseArm = true;
+                    
+                    // Compile the switch directly as a value-returning expression
+                    var result = compiler.compileSwitchExpression(switchExpr, cases, defaultExpr);
+                    
+                    // Restore context
+                    compiler.isCompilingCaseArm = wasCompilingCaseArm;
+                    
+                    return result;
+                    
+                case _:
+                    // Normal return statement compilation
+                    var compiledExpr = compiler.compileExpression(expr);
+                    
+                    #if debug_misc_expression_compiler
+                    trace('[XRay MiscExpressionCompiler] Return expression: ${compiledExpr}');
+                    #end
+                    
+                    return compiledExpr;
+            }
         } else {
             #if debug_misc_expression_compiler
             trace("[XRay MiscExpressionCompiler] Empty return");
