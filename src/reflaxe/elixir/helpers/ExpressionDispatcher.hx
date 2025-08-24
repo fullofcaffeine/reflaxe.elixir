@@ -115,6 +115,8 @@ class ExpressionDispatcher {
         trace('[XRay ExpressionDispatcher] Top level: ${topLevel}');
         #end
         
+        // NOTE: Parent expression tracking removed - orphan detection moved to TBlock level
+        
         // Gradual extraction - dispatch to specialized compilers
         var result = switch (expr.expr) {
             case TConst(constant):
@@ -192,6 +194,10 @@ class ExpressionDispatcher {
             case TLocal(v):
                 #if debug_expression_dispatcher
                 trace("[XRay ExpressionDispatcher] ✓ DISPATCHING to VariableCompiler (TLocal)");
+                #end
+                #if debug_orphan_elimination
+                trace('[XRay ExpressionDispatcher] TLocal dispatch - variable: ${v.name}');
+                // NOTE: Parent tracking debug removed - orphan detection moved to TBlock level
                 #end
                 variableCompiler.compileLocalVariable(v);
                 
@@ -312,6 +318,8 @@ class ExpressionDispatcher {
         trace('[XRay ExpressionDispatcher] Generated result: ${result != null ? result.substring(0, 100) + "..." : "null"}');
         trace("[XRay ExpressionDispatcher] EXPRESSION COMPILATION END");
         #end
+        
+        // NOTE: Parent expression tracking removed - orphan detection moved to TBlock level
         
         return result;
     }

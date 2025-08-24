@@ -115,6 +115,8 @@ class ElixirCompiler extends DirectToStringCompiler {
     // Context tracking for variable substitution
     public var isInLoopContext: Bool = false;
     
+    // NOTE: Parent expression tracking removed - orphan detection moved to TBlock level
+    
     // Pattern matching and guard compilation helpers
     private var patternMatcher: reflaxe.elixir.helpers.PatternMatcher;
     private var guardCompiler: reflaxe.elixir.helpers.GuardCompiler;
