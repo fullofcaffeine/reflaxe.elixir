@@ -65,7 +65,7 @@ defmodule JsonPrinter do
         end
           (
           g_array = Type.typeof(v)
-          case g_array do
+          case  do
       :t_null -> struct = %{struct.buf | b: "null"}
       :t_int -> struct = %{struct.buf | b: Std.string(v)}
       :t_float -> (
@@ -82,8 +82,8 @@ defmodule JsonPrinter do
       :t_object -> struct.fields_string(v, Reflect.fields(v))
       :t_function -> struct = %{struct.buf | b: "\"<fun>\""}
       :t_class -> (
-          g_array = elem(g_array, 1)
-          c = g_array
+          g_array = _ = elem(, 1)
+          c = 
           if ((c == String)) do
           struct.quote_(v)
         else
@@ -99,8 +99,8 @@ defmodule JsonPrinter do
     this = nil
     v3 = nil
     loop_helper = fn loop_fn, {i, g3, this, v3} ->
-      if ((g_array < g_array)) do
-        i = g_array + 1
+      if (( < )) do
+        i =  + 1
         if ((i > 0)) do
               struct = %{struct.buf | b: ","}
             else
@@ -175,7 +175,7 @@ defmodule JsonPrinter do
         end
         )
       :t_enum -> (
-          elem(g_array, 1)
+          _ = elem(, 1)
           (
           i = Type.enum_index(v)
           (
@@ -213,8 +213,8 @@ defmodule JsonPrinter do
     this = nil
     v2 = nil
     loop_helper = fn loop_fn, {i, g, f, value, empty, this, v2} ->
-      if ((g_array < g_array)) do
-        i = g_array + 1
+      if (( < )) do
+        i =  + 1
         f = Enum.at(fields, i)
         value = Reflect.field(v, f)
         if Reflect.is_function_(value) do

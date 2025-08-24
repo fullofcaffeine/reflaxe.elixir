@@ -70,7 +70,7 @@ defmodule TodoAppWeb.UserLive do
     temp_result
     (
           g_array = temp_struct.status
-          case g_array do
+          case  do
       "error" -> temp_result = %{"status" => "noreply", "socket" => TodoAppWeb.UserLive.assign(socket, "changeset", temp_struct.changeset)}
       "ok" -> (
           users = Users.list_users()

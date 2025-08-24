@@ -227,10 +227,22 @@ class VariableMappingManager {
      * @return True if this appears to be part of array desugaring
      */
     public function isArrayDesugaringVariable(varName: String): Bool {
-        return (varName.charAt(0) == '_' && 
+        var hasDesugaringPattern = (varName.charAt(0) == '_' && 
                 (varName.indexOf("_array") >= 0 || 
                  varName.indexOf("_counter") >= 0 || 
                  ~/^_g\d*$/.match(varName)));
+        
+        // CRITICAL FIX: Don't treat enum extraction temporaries as array variables
+        // When we're in enum extraction context, _g variables are for parameter extraction,
+        // not array loop desugaring
+        if (hasDesugaringPattern && compiler.isInEnumExtraction) {
+            #if debug_variable_mapping_manager
+            trace('[VariableMappingManager] ⚠️  SKIPPING array desugaring for ${varName} - in enum extraction context');
+            #end
+            return false;
+        }
+        
+        return hasDesugaringPattern;
     }
     
     /**
