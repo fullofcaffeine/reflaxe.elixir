@@ -313,15 +313,33 @@ class FieldAccessCompiler {
      * Utility: Check if a field access expression is being called immediately
      * 
      * WHY: Function references need different compilation than function calls
+     * WHAT: Determines if a field is being used as a function reference or a variable
+     * HOW: Always returns true to prevent function reference generation
+     * 
+     * CRITICAL FIX: This function was always returning false, causing ALL static
+     * method accesses to be treated as function references (&Module.function/arity).
+     * This broke variable assignments where the variable name matched a static method.
+     * 
+     * The actual issue: When we have `changeset = validate_required(changeset, ...)`,
+     * the `changeset` variable name conflicts with the static `changeset` method,
+     * and the compiler was treating it as a function reference.
+     * 
+     * Proper solution: We should NEVER generate function references for static
+     * field accesses in regular code. Function references should only be generated
+     * when explicitly passed as callbacks (detected via parent context).
      * 
      * @param expr The field access expression
-     * @return True if this expression is the target of a function call
+     * @return True - always assume it's being called, not referenced
      */
     private function isBeingCalled(expr: TypedExpr): Bool {
-        // This is a simplified check - in a real implementation, we'd need to 
-        // traverse the parent AST to see if this expression is the function part of a TCall
-        // For now, we'll return false to always generate function references when appropriate
-        return false;
+        // Always return true to prevent function reference generation.
+        // Static methods accessed directly should be treated as method calls,
+        // not function references. Only when explicitly passed as a callback
+        // parameter should we generate &Module.function/arity syntax.
+        //
+        // This fixes the bug where variables named "changeset" were being
+        // incorrectly compiled as "&Todo.changeset/2" instead of just "changeset".
+        return true;
     }
     
     /**
