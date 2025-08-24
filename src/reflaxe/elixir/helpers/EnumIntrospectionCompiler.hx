@@ -6,6 +6,7 @@ import haxe.macro.Type;
 import reflaxe.elixir.ElixirCompiler;import haxe.macro.Expr;
 import reflaxe.elixir.ElixirCompiler;import reflaxe.BaseCompiler;
 import reflaxe.elixir.ElixirCompiler;
+import reflaxe.elixir.helpers.NamingHelper;
 using reflaxe.helpers.NullHelper;
 using reflaxe.helpers.NameMetaHelper;
 using reflaxe.helpers.SyntaxHelper;
@@ -144,16 +145,42 @@ class EnumIntrospectionCompiler {
                 trace('[XRay EnumIntrospectionCompiler] Enum type: ${enumTypeRef.name}');
                 #end
                 
+                /**
+                 * WHY: Need to determine if enum uses atoms or tuples
+                 * WHAT: Check if any constructor has parameters
+                 * HOW: Iterate through all constructors using names array for proper ordering
+                 * 
+                 * ELIXIR PATTERN: Enums compile differently based on parameters:
+                 * - All constructors without params → atoms (:ok, :error)
+                 * - Any constructor with params → all become tuples ({:ok, value}, {:error})
+                 */
+                // Check if this enum has any constructors with parameters
+                var hasParameters = false;
+                // Use names array to ensure we check all constructors
+                for (name in enumTypeRef.names) {
+                    var constructor = enumTypeRef.constructs.get(name);
+                    if (constructor != null && constructor.params.length > 0) {
+                        hasParameters = true;
+                        break;
+                    }
+                }
+                
+                #if debug_enum_introspection_compiler
+                trace('[XRay EnumIntrospectionCompiler] Enum has parameters: ${hasParameters}');
+                #end
+                
                 {
                     isResult: compiler.isResultType(enumTypeRef),
                     isOption: compiler.isOptionType(enumTypeRef),
-                    enumName: enumTypeRef.name
+                    enumName: enumTypeRef.name,
+                    enumType: enumTypeRef,
+                    hasParameters: hasParameters
                 };
             case _:
                 #if debug_enum_introspection_compiler
                 trace("[XRay EnumIntrospectionCompiler] Not an enum type");
                 #end
-                {isResult: false, isOption: false, enumName: ""};
+                {isResult: false, isOption: false, enumName: "", enumType: null, hasParameters: false};
         };
         
         var result = if (typeInfo.isResult) {
@@ -175,10 +202,77 @@ class EnumIntrospectionCompiler {
         } else {
             #if debug_enum_introspection_compiler
             trace("[XRay EnumIntrospectionCompiler] ✓ STANDARD ENUM TYPE");
+            trace('[XRay EnumIntrospectionCompiler] Has parameters: ${typeInfo.hasParameters}');
             #end
-            // Standard enums compile to tagged tuples like {:constructor_name, arg1, arg2}
-            // The first element (index 0) is always the constructor tag/atom
-            'elem(${enumExpr}, 0)'; // Extract the constructor atom from tuple
+            
+            if (!typeInfo.hasParameters) {
+                /**
+                 * CRITICAL FIX: Enum Compilation Pattern in Elixir
+                 * 
+                 * WHY: Elixir has two ways to represent enum-like data:
+                 * 1. Atoms - Simple tags with no data (:ok, :error, :pending)
+                 * 2. Tuples - Tags with associated data ({:ok, value}, {:error, reason})
+                 * 
+                 * Haxe enums map to these Elixir patterns based on constructor parameters:
+                 * - No parameters → Atom (memory efficient, pattern matching friendly)
+                 * - With parameters → Tagged tuple (carries data with the tag)
+                 * 
+                 * WHAT: When ALL constructors have no parameters, the enum compiles to atoms.
+                 * Example: enum Status { Pending; Active; Completed; }
+                 * Compiles to: :pending, :active, :completed
+                 * 
+                 * HOW: Generate a case statement that maps each atom to its constructor index.
+                 * This preserves Haxe's enum semantics while using idiomatic Elixir atoms.
+                 * 
+                 * ELIXIR PATTERN: This follows Elixir conventions where simple states are atoms
+                 * (GenServer returns :ok, Phoenix uses :error, :not_found, etc.)
+                 */
+                #if debug_enum_introspection_compiler
+                trace("[XRay EnumIntrospectionCompiler] ✓ ATOM-ONLY ENUM - Generating case statement for atoms");
+                #end
+                
+                /**
+                 * WHY: Atom-only enums need case statement mapping atoms to indices
+                 * WHAT: Build case statement for each constructor atom
+                 * HOW: Map constructor names to indices in DECLARATION ORDER
+                 * 
+                 * CRITICAL FIX: Use enumType.names for ordering, not constructs Map
+                 * The constructs field is a Map<String, EnumField> which doesn't preserve order.
+                 * The names field is an ordered Array that preserves declaration order.
+                 */
+                // Build the case statement for atom-based enum matching
+                var cases = [];
+                var index = 0;
+                // Use names array to preserve declaration order
+                for (name in typeInfo.enumType.names) {
+                    var atomName = NamingHelper.toSnakeCase(name);
+                    cases.push(':${atomName} -> ${index}');
+                    index++;
+                }
+                cases.push('_ -> -1'); // Default case for unknown values
+                
+                'case ${enumExpr} do ${cases.join("; ")} end';
+            } else {
+                /**
+                 * WHY: Enums with parameters need to carry data alongside the constructor tag.
+                 * In Elixir, this is idiomatically done with tagged tuples.
+                 * 
+                 * WHAT: When ANY constructor has parameters, ALL constructors compile to tuples.
+                 * Even parameterless constructors become single-element tuples for consistency.
+                 * Example: enum Message { Text(String); Image(url: String, alt: String); Ping; }
+                 * Compiles to: {:text, "hello"}, {:image, "url", "alt text"}, {:ping}
+                 * 
+                 * HOW: Use elem(tuple, 0) to extract the first element (the constructor tag).
+                 * This gives us the atom identifier to determine which constructor was used.
+                 * 
+                 * ELIXIR PATTERN: Tagged tuples are the standard way to represent variants
+                 * with data in Elixir (like {:ok, result}, {:error, reason} in Result types).
+                 */
+                #if debug_enum_introspection_compiler
+                trace("[XRay EnumIntrospectionCompiler] ✓ TUPLE-BASED ENUM - Using elem extraction");
+                #end
+                'elem(${enumExpr}, 0)'; // Extract the constructor atom from tuple
+            }
         };
         
         #if debug_enum_introspection_compiler

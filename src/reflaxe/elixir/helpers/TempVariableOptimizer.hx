@@ -27,11 +27,28 @@ class TempVariableOptimizer {
     }
 
     public function detectTempVariablePattern(expressions: Array<TypedExpr>): Null<String> {
-        if (expressions.length < 3) return null;
+        #if debug_temp_var
+        trace('[TempVariableOptimizer] detectTempVariablePattern called with ${expressions.length} expressions');
+        for (i in 0...expressions.length) {
+            trace('[TempVariableOptimizer] Expression $i: ${expressions[i].expr}');
+        }
+        #end
+        
+        if (expressions.length < 3) {
+            #if debug_temp_var
+            trace('[TempVariableOptimizer] Not enough expressions for pattern');
+            #end
+            return null;
+        }
         
         // Pattern: [TVar(temp, nil), TSwitch(...), TLocal(temp)]
         var first = expressions[0];
         var last = expressions[expressions.length - 1];
+        
+        #if debug_temp_var
+        trace('[TempVariableOptimizer] First expr: ${first.expr}');
+        trace('[TempVariableOptimizer] Last expr: ${last.expr}');
+        #end
         
         // Check first: temp_var = nil
         var tempVarName: String = null;
@@ -78,20 +95,46 @@ class TempVariableOptimizer {
     }
 
     public function optimizeTempVariablePattern(tempVarName: String, expressions: Array<TypedExpr>): String {
+        #if debug_temp_var
+        trace('[TempVariableOptimizer] optimizeTempVariablePattern called with tempVar: ${tempVarName}');
+        trace('[TempVariableOptimizer] Number of expressions: ${expressions.length}');
+        #end
+        
         // Find the switch expression or if expression (for ternary operators)
         for (i in 1...expressions.length - 1) {
             switch (expressions[i].expr) {
                 case TSwitch(switchExpr, cases, defaultExpr):
-                    // Transform the switch to return values directly instead of assignments
+                    #if debug_temp_var
+                    trace('[TempVariableOptimizer] Found TSwitch at index ${i}');
+                    trace('[TempVariableOptimizer] Transforming switch to return values directly...');
+                    #end
+                    
+                    // CRITICAL FIX: Transform switch cases to return values directly
+                    // instead of generating assignments to temp variables
+                    // This prevents variable shadowing in Elixir's scoped case expressions
+                    
+                    // Transform case bodies to strip temp variable assignments
+                    var optimizedCases = transformCasesToDirectReturns(cases, tempVarName);
+                    var optimizedDefault = defaultExpr != null ? 
+                        stripTempVariableAssignment(defaultExpr, tempVarName) : null;
+                    
                     var originalCaseArmContext = compiler.isCompilingCaseArm;
                     compiler.isCompilingCaseArm = true;
                     
-                    // Compile the switch expression with case arm context
-                    var result = compiler.compileSwitchExpression(switchExpr, cases, defaultExpr);
+                    // Compile the switch with optimized cases that return values directly
+                    // The ENTIRE block becomes just the switch expression returning a value
+                    var result = compiler.compileSwitchExpression(switchExpr, optimizedCases, optimizedDefault);
+                    
+                    #if debug_temp_var
+                    trace('[TempVariableOptimizer] ✓ OPTIMIZATION COMPLETE - returning pure switch expression');
+                    trace('[TempVariableOptimizer] Generated: ${result.substring(0, 100)}...');
+                    #end
                     
                     // Restore original context
                     compiler.isCompilingCaseArm = originalCaseArmContext;
                     
+                    // Return JUST the switch - it now returns the value directly
+                    // No need for temp_result = nil or return temp_result wrapper
                     return result;
                 case TIf(condition, thenExpr, elseExpr):
                     var conditionCompiled = compiler.compileExpression(condition);
@@ -308,6 +351,100 @@ class TempVariableOptimizer {
             case TConst(TNull): true;
             case TConst(TString("")): true;
             case _: false;
+        };
+    }
+    
+    /**
+     * Transform switch cases to return values directly instead of assignments
+     * 
+     * WHY: When a switch is used as an expression (temp variable pattern),
+     *      case bodies should return values directly, not assign to temp variables
+     * 
+     * WHAT: Strips assignment patterns from case bodies, leaving just the values
+     * 
+     * HOW: For each case, detect if the body is an assignment to the temp variable
+     *      and extract just the value being assigned
+     * 
+     * @param cases Original switch cases with potential assignments
+     * @param tempVarName Name of the temporary variable to strip
+     * @return Transformed cases that return values directly
+     */
+    private function transformCasesToDirectReturns(
+        cases: Array<{values: Array<TypedExpr>, expr: TypedExpr}>, 
+        tempVarName: String
+    ): Array<{values: Array<TypedExpr>, expr: TypedExpr}> {
+        var optimizedCases = [];
+        
+        for (caseData in cases) {
+            var optimizedExpr = stripTempVariableAssignment(caseData.expr, tempVarName);
+            optimizedCases.push({
+                values: caseData.values,
+                expr: optimizedExpr
+            });
+        }
+        
+        return optimizedCases;
+    }
+    
+    /**
+     * Strip temp variable assignment from an expression
+     * 
+     * WHY: Case bodies in temp variable patterns contain assignments like
+     *      `temp_result = "value"` which cause variable shadowing in Elixir
+     * 
+     * WHAT: Extracts the value being assigned, or returns the expression unchanged
+     *       if it's not an assignment to the temp variable
+     * 
+     * HOW: Pattern matches on TBinop(OpAssign) where left side is the temp variable,
+     *      returns the right side (the value) directly
+     * 
+     * @param expr Expression that might contain temp variable assignment
+     * @param tempVarName Name of the temporary variable to strip
+     * @return The value being assigned, or the original expression
+     */
+    private function stripTempVariableAssignment(expr: TypedExpr, tempVarName: String): TypedExpr {
+        return switch (expr.expr) {
+            case TBinop(OpAssign, left, right):
+                // Check if this is an assignment to our temp variable
+                switch (left.expr) {
+                    case TLocal(v):
+                        var varName = compiler.getOriginalVarName(v);
+                        if (varName == tempVarName) {
+                            // Return just the value being assigned
+                            return right;
+                        }
+                        // Not our temp variable, return original
+                        expr;
+                    case _:
+                        expr;
+                }
+            case TBlock(expressions):
+                // Handle block expressions that might contain the assignment
+                if (expressions.length == 1) {
+                    // Single expression block, recurse
+                    var optimized = stripTempVariableAssignment(expressions[0], tempVarName);
+                    if (optimized != expressions[0]) {
+                        // Create new block with optimized expression
+                        {expr: TBlock([optimized]), pos: expr.pos, t: expr.t};
+                    } else {
+                        expr;
+                    }
+                } else {
+                    // Multi-expression block, check if last one is the assignment
+                    var lastIndex = expressions.length - 1;
+                    var optimizedLast = stripTempVariableAssignment(expressions[lastIndex], tempVarName);
+                    if (optimizedLast != expressions[lastIndex]) {
+                        // Create new block with optimized last expression
+                        var newExpressions = expressions.copy();
+                        newExpressions[lastIndex] = optimizedLast;
+                        {expr: TBlock(newExpressions), pos: expr.pos, t: expr.t};
+                    } else {
+                        expr;
+                    }
+                }
+            case _:
+                // Not an assignment, return as-is
+                expr;
         };
     }
 }

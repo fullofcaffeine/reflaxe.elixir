@@ -1050,7 +1050,38 @@ class ClassCompiler {
                 #end
             }
             
-            var result = compiler.compileExpression(expr);
+            #if debug_temp_var
+            trace('[ClassCompiler] About to compile function body expression');
+            trace('[ClassCompiler] Expression type: ${expr.expr}');
+            #end
+            
+            // CRITICAL FIX: Check if function body is just a return switch
+            // This detects `return switch(...)` pattern to avoid temp variable shadowing
+            var result = switch (expr.expr) {
+                case TReturn(retExpr) if (retExpr != null):
+                    switch (retExpr.expr) {
+                        case TSwitch(switchExpr, cases, defaultExpr):
+                            #if debug_temp_var
+                            trace('[ClassCompiler] ✓ DETECTED function body is return switch - compiling as value expression');
+                            #end
+                            
+                            // Mark that we're compiling a switch as a value expression
+                            var wasCompilingCaseArm = compiler.isCompilingCaseArm;
+                            compiler.isCompilingCaseArm = true;
+                            
+                            // Compile the switch directly as a value-returning expression
+                            var switchResult = compiler.compileSwitchExpression(switchExpr, cases, defaultExpr);
+                            
+                            // Restore context
+                            compiler.isCompilingCaseArm = wasCompilingCaseArm;
+                            
+                            switchResult;
+                        case _:
+                            compiler.compileExpression(expr);
+                    }
+                case _:
+                    compiler.compileExpression(expr);
+            };
             
             #if debug_state_threading
             trace('[XRay ClassCompiler] AFTER compileExpression, BEFORE restore');

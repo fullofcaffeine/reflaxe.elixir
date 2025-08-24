@@ -95,8 +95,9 @@ class LiveViewCompiler {
         result = StringTools.replace(result, "return {ok: socket};", "{:ok, socket}");
         result = StringTools.replace(result, "return {noreply: socket};", "{:noreply, socket}");
         
-        // Convert Phoenix.LiveView.assign calls
+        // Convert Phoenix.LiveView.assign calls to Phoenix-style function calls
         result = StringTools.replace(result, "Phoenix.LiveView.assign(", "assign(");
+        result = StringTools.replace(result, "Phoenix.LiveView.assign_multiple(", "assign(");
         
         // Convert string literals to atoms where appropriate
         result = StringTools.replace(result, '"users"', ':users');

@@ -24,13 +24,13 @@ defmodule TodoAppWeb.UserLive do
 
     temp_result = nil
     case event do
-      "cancel" -> temp_result = __MODULE__.handle_cancel(socket)
-      "delete_user" -> temp_result = __MODULE__.handle_delete_user(params, socket)
-      "edit_user" -> temp_result = __MODULE__.handle_edit_user(params, socket)
-      "new_user" -> temp_result = __MODULE__.handle_new_user(params, socket)
-      "save_user" -> temp_result = __MODULE__.handle_save_user(params, socket)
-      "search" -> temp_result = __MODULE__.handle_search(params, socket)
-      _ -> temp_result = %{"status" => "noreply", "socket" => socket}
+      "cancel" -> __MODULE__.handle_cancel(socket)
+      "delete_user" -> __MODULE__.handle_delete_user(params, socket)
+      "edit_user" -> __MODULE__.handle_edit_user(params, socket)
+      "new_user" -> __MODULE__.handle_new_user(params, socket)
+      "save_user" -> __MODULE__.handle_save_user(params, socket)
+      "search" -> __MODULE__.handle_search(params, socket)
+      _ -> %{"status" => "noreply", "socket" => socket}
     end
     temp_result
   end
@@ -256,29 +256,13 @@ defmodule TodoAppWeb.UserLive do
 
   @doc "Generated from Haxe getStatusClass"
   def get_status_class(active) do
-    temp_result = nil
-
-    temp_result
-    if active do
-          temp_result = "status active"
-        else
-          temp_result = "status inactive"
-        end
-    temp_result
+    if (active), do: "status active", else: "status inactive"
   end
 
 
   @doc "Generated from Haxe getStatusText"
   def get_status_text(active) do
-    temp_result = nil
-
-    temp_result
-    if active do
-          temp_result = "Active"
-        else
-          temp_result = "Inactive"
-        end
-    temp_result
+    if (active), do: "Active", else: "Inactive"
   end
 
 

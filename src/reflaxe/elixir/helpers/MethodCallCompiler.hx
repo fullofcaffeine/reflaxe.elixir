@@ -265,6 +265,62 @@ class MethodCallCompiler {
             return compilePubSubCall(methodName, args);
         }
         
+        /*
+         * PHOENIX.LIVEVIEW.ASSIGN_MULTIPLE FIX EXPLANATION:
+         * 
+         * Problem: Generated code was calling non-existent Phoenix.LiveView.assign_multiple/2
+         * Root Cause: Haxe inline function with __elixir__() wasn't being properly inlined
+         * 
+         * Original broken implementation (inline function):
+         * ```haxe
+         * static inline function assign_multiple<TAssigns>(socket: Socket<TAssigns>, assigns: TAssigns): Socket<TAssigns> {
+         *     return untyped __elixir__("Phoenix.LiveView.assign(socket, assigns)");
+         * }
+         * ```
+         * This relied on Haxe's inlining mechanism to replace the function call with raw Elixir code,
+         * but the inlining wasn't happening properly in the compiler context.
+         * 
+         * Correct solution (extern function with @:native):
+         * ```haxe
+         * @:native("assign")
+         * static function assign_multiple<TAssigns>(socket: Socket<TAssigns>, assigns: TAssigns): Socket<TAssigns>;
+         * ```
+         * This works because:
+         * 1. MethodCallCompiler.compileStaticCall() line 230 calls compiler.getFieldName(fa)
+         * 2. ElixirCompiler.getFieldName() (lines 2158-2167) properly extracts @:native annotation
+         * 3. Generated code becomes Phoenix.LiveView.assign() instead of Phoenix.LiveView.assign_multiple()
+         * 
+         * WHY @:native works:
+         * - Static extern methods go through proper field access compilation path
+         * - getFieldName() checks for @:native metadata and extracts the native name
+         * - The compiler's existing @:native handling works correctly for static extern functions
+         * 
+         * This demonstrates the proper pattern for mapping Haxe method names to different target names:
+         * Use @:native annotations on extern functions rather than inline + __elixir__() hacks.
+         * 
+         * WHEN TO USE __elixir__() INSTEAD:
+         * The __elixir__() pattern should ONLY be used in these emergency scenarios:
+         * 1. Complex multi-line Elixir code that cannot be expressed as a single method call
+         * 2. Raw Elixir syntax that has no Haxe equivalent (e.g., complex pattern matching)
+         * 3. Temporary workarounds during development while proper externs are being written
+         * 4. Code injection that requires multiple Elixir expressions or statements
+         * 
+         * Examples where __elixir__() is appropriate:
+         * ```haxe
+         * static inline function complexPattern<T>(value: T): Result<T, String> {
+         *     return untyped __elixir__("
+         *         case value do
+         *           {:ok, result} when is_map(result) -> {:ok, result}
+         *           {:error, reason} -> {:error, to_string(reason)}
+         *           other -> {:error, \"Invalid format: #{inspect(other)}\"}
+         *         end
+         *     ");
+         * }
+         * ```
+         * 
+         * The key principle: @:native for single method mapping, __elixir__() for complex code injection.
+         */
+        
         // Detect HXX template function calls
         if (objStr == "HXX" && methodName == "hxx") {
             return compiler.compileHxxCall(args);

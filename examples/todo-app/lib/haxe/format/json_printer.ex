@@ -65,10 +65,10 @@ defmodule JsonPrinter do
         end
           (
           g_array = Type.typeof(v)
-          case (elem(g_array, 0)) do
-      0 -> struct = %{struct.buf | b: "null"}
-      1 -> struct = %{struct.buf | b: Std.string(v)}
-      2 -> (
+          case g_array do
+      :t_null -> struct = %{struct.buf | b: "null"}
+      :t_int -> struct = %{struct.buf | b: Std.string(v)}
+      :t_float -> (
           temp_string = nil
           if Math.is_finite(v) do
           temp_string = Std.string(v)
@@ -78,11 +78,12 @@ defmodule JsonPrinter do
           v = temp_string
           struct = %{struct.buf | b: Std.string(v)}
         )
-      3 -> struct = %{struct.buf | b: Std.string(v)}
-      4 -> struct.fields_string(v, Reflect.fields(v))
-      5 -> struct = %{struct.buf | b: "\"<fun>\""}
-      {6, c} -> (
+      :t_bool -> struct = %{struct.buf | b: Std.string(v)}
+      :t_object -> struct.fields_string(v, Reflect.fields(v))
+      :t_function -> struct = %{struct.buf | b: "\"<fun>\""}
+      :t_class -> (
           g_array = elem(g_array, 1)
+          c = g_array
           if ((c == String)) do
           struct.quote_(v)
         else
@@ -173,14 +174,17 @@ defmodule JsonPrinter do
         end
         end
         )
-      7 -> (
+      :t_enum -> (
+          elem(g_array, 1)
+          (
           i = Type.enum_index(v)
           (
           v = Std.string(i)
           struct = %{struct.buf | b: Std.string(v)}
         )
         )
-      8 -> struct = %{struct.buf | b: "\"???\""}
+        )
+      :t_unknown -> struct = %{struct.buf | b: "\"???\""}
     end
         )
         )

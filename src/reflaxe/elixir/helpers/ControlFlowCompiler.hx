@@ -281,6 +281,19 @@ class ControlFlowCompiler {
             return arrayAssignmentOptimization;
         }
         
+        // CRITICAL FIX: Check for temp variable optimization pattern
+        // This detects patterns like: [TVar(temp_result, nil), TSwitch(...), TLocal(temp_result)]
+        // and transforms them to return values directly from case branches
+        var tempVarPattern = compiler.tempVariableOptimizer.detectTempVariablePattern(el);
+        if (tempVarPattern != null) {
+            #if debug_control_flow_compiler
+            trace("[XRay ControlFlowCompiler] ✓ TEMP VARIABLE PATTERN DETECTED: " + tempVarPattern);
+            trace("[XRay ControlFlowCompiler] Delegating to TempVariableOptimizer for functional transformation");
+            #end
+            // Transform imperative temp variable pattern to functional case expression
+            return compiler.tempVariableOptimizer.optimizeTempVariablePattern(tempVarPattern, el);
+        }
+        
         // Process TBlock expressions normally
         
         // Compile each expression in the block with sequential field assignment analysis
@@ -795,18 +808,15 @@ class ControlFlowCompiler {
                         #if debug_control_flow_compiler
                         trace('[XRay ControlFlowCompiler] Found TEnum with name: ${enumType.name}');
                         #end
-                        if (enumType.name == "Result" || enumType.name == "Option") {
-                            #if debug_control_flow_compiler
-                            trace('[XRay ControlFlowCompiler] ✓ FOUND ${enumType.name} TYPE - compiling direct patterns');
-                            #end
-                            
-                            // Compile directly without enum index conversion - bypass double-nesting
-                            return compileDirectResultOptionSwitch(innerExpr, enumType.name, cases, edef, context);
-                        } else {
-                            #if debug_control_flow_compiler
-                            trace('[XRay ControlFlowCompiler] TEnum type is: ${enumType.name} (not Result/Option)');
-                            #end
-                        }
+                        // CRITICAL FIX: Handle ALL enum types directly to avoid double-nested case statements
+                        // This prevents the bug where the outer case has no default branch for -1
+                        #if debug_control_flow_compiler
+                        trace('[XRay ControlFlowCompiler] ✓ FOUND ${enumType.name} TYPE - compiling direct patterns');
+                        #end
+                        
+                        // Pass to PatternMatchingCompiler which now handles all enum types
+                        // The compileSwitchExpression will detect TEnumIndex and use direct compilation
+                        return compiler.compileSwitchExpression(unwrappedExpr, cases, edef);
                     case _:
                         // Not a TEnum type, use standard compilation
                         #if debug_control_flow_compiler

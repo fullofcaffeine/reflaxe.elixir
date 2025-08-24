@@ -82,6 +82,137 @@ class PatternMatchingCompiler {
         ?context: reflaxe.elixir.helpers.ControlFlowCompiler.FunctionContext
     ): String {
         
+        // CRITICAL FIX: Detect and transform temp variable pattern
+        // When Haxe generates switch expressions for return values,
+        // it creates a pattern like:
+        //   temp_result = nil
+        //   switch(expr) {
+        //     case A: temp_result = "value1"
+        //     case B: temp_result = "value2"
+        //   }
+        //   return temp_result
+        // We need to transform this to direct value returns
+        
+        var tempVarName: String = null;
+        var allCasesAssignToTempVar = true;
+        
+        #if debug_temp_var
+        trace("[PatternMatchingCompiler] ============== SWITCH COMPILATION START ==============");
+        trace('[PatternMatchingCompiler] compileSwitchExpression called');
+        trace('[PatternMatchingCompiler] Switch expr type: ${switchExpr.expr}');
+        trace('[PatternMatchingCompiler] Switch expr t type: ${switchExpr.t}');
+        trace('[PatternMatchingCompiler] Number of cases: ${cases.length}');
+        trace('[PatternMatchingCompiler] Has default: ${defaultExpr != null}');
+        #end
+        
+        // Check for temp variable assignment patterns in all cases
+        for (i in 0...cases.length) {
+            var caseData = cases[i];
+            
+            #if debug_temp_var
+            trace('[PatternMatchingCompiler] Case ${i}: ${caseData.values.length} values');
+            for (v in caseData.values) {
+                trace('[PatternMatchingCompiler]   Value: ${v.expr}');
+            }
+            #end
+            
+            // Check case body for temp variable patterns
+            switch (caseData.expr.expr) {
+                case TBinop(OpAssign, left, right):
+                    switch (left.expr) {
+                        case TLocal(v):
+                            var varName = compiler.getOriginalVarName(v);
+                            #if debug_temp_var
+                            trace('[PatternMatchingCompiler]   Case body assigns to: ${varName}');
+                            #end
+                            
+                            if (varName.indexOf("temp") == 0) {
+                                if (tempVarName == null) {
+                                    tempVarName = varName;
+                                    #if debug_temp_var
+                                    trace('[PatternMatchingCompiler]   ✓ TEMP VARIABLE ASSIGNMENT DETECTED: ${tempVarName}');
+                                    #end
+                                } else if (tempVarName != varName) {
+                                    // Different temp variables in different cases
+                                    allCasesAssignToTempVar = false;
+                                }
+                            } else {
+                                allCasesAssignToTempVar = false;
+                            }
+                        case _:
+                            allCasesAssignToTempVar = false;
+                            #if debug_temp_var
+                            trace('[PatternMatchingCompiler]   Case body assigns to non-local');
+                            #end
+                    }
+                case _:
+                    allCasesAssignToTempVar = false;
+                    #if debug_temp_var
+                    trace('[PatternMatchingCompiler]   Case body type: ${caseData.expr.expr}');
+                    #end
+            }
+        }
+        
+        // If all cases assign to the same temp variable, transform them
+        if (allCasesAssignToTempVar && tempVarName != null) {
+            #if debug_temp_var
+            trace('[PatternMatchingCompiler] ✓ ALL CASES ASSIGN TO TEMP VARIABLE: ${tempVarName}');
+            trace('[PatternMatchingCompiler] Transforming to direct value returns...');
+            #end
+            
+            // Transform case bodies to return values directly
+            var transformedCases = [];
+            for (caseData in cases) {
+                var transformedExpr = switch (caseData.expr.expr) {
+                    case TBinop(OpAssign, left, right):
+                        // Strip the assignment and return just the value
+                        right;
+                    case _:
+                        // Should not happen if allCasesAssignToTempVar is true
+                        caseData.expr;
+                };
+                
+                transformedCases.push({
+                    values: caseData.values,
+                    expr: transformedExpr
+                });
+            }
+            
+            // Transform default expression if it exists and assigns to temp var
+            var transformedDefault = if (defaultExpr != null) {
+                switch (defaultExpr.expr) {
+                    case TBinop(OpAssign, left, right):
+                        switch (left.expr) {
+                            case TLocal(v):
+                                var varName = compiler.getOriginalVarName(v);
+                                if (varName == tempVarName) {
+                                    right; // Return just the value
+                                } else {
+                                    defaultExpr;
+                                }
+                            case _:
+                                defaultExpr;
+                        }
+                    case _:
+                        defaultExpr;
+                }
+            } else {
+                null;
+            };
+            
+            // Use transformed cases and default
+            cases = transformedCases;
+            defaultExpr = transformedDefault;
+            
+            #if debug_temp_var
+            trace('[PatternMatchingCompiler] ✓ TRANSFORMATION COMPLETE');
+            #end
+        }
+        
+        #if debug_temp_var
+        trace("[PatternMatchingCompiler] ============== SWITCH COMPILATION END ==============");
+        #end
+        
         #if debug_pattern_matching
         trace("[PatternMatchingCompiler] Compiling switch expression");
         trace('[PatternMatchingCompiler] Switch expr type: ${switchExpr.t}');
@@ -1485,15 +1616,17 @@ class PatternMatchingCompiler {
                 trace('[PatternMatchingCompiler] Inner expr type: ${innerExpr.t}');
                 #end
                 
-                // Check if the inner expression is a Result or Option type
+                // Check if the inner expression is an enum type
+                // We want to handle ALL enums directly to avoid double-nested case statements
                 switch (innerExpr.t) {
                     case TEnum(enumRef, _):
                         var enumType = enumRef.get();
-                        var isResultOrOption = (enumType.name == "Result" || enumType.name == "Option");
                         #if debug_pattern_matching
-                        trace('[PatternMatchingCompiler] Enum type: ${enumType.name}, is Result/Option: ${isResultOrOption}');
+                        trace('[PatternMatchingCompiler] Enum type: ${enumType.name} - will use direct compilation');
                         #end
-                        return isResultOrOption;
+                        // Return true for ALL enum types to avoid double-nested case statements
+                        // The compileSwitchOnEnumIndexDirectly method will handle different enum types appropriately
+                        return true;
                     case _:
                         #if debug_pattern_matching
                         trace('[PatternMatchingCompiler] Inner expr is not enum type');
@@ -1583,14 +1716,55 @@ class PatternMatchingCompiler {
         // Generate direct patterns based on enum type
         var caseStrings: Array<String> = [];
         
+        // Check if this enum has parameters
+        var hasParameters = false;
+        for (name in enumType.names) {
+            var construct = enumType.constructs.get(name);
+            if (construct != null && construct.params.length > 0) {
+                hasParameters = true;
+                break;
+            }
+        }
+        
+        #if debug_pattern_matching
+        trace('[PatternMatchingCompiler] Enum ${enumType.name} has parameters: ${hasParameters}');
+        #end
+        
         for (caseData in cases) {
             for (value in caseData.values) {
                 var pattern = switch (value.expr) {
-                    case TConst(TInt(0)): // Ok/Some constructor
-                        if (enumType.name == "Result") "{:ok, _}" else "{:ok, _}";
-                    case TConst(TInt(1)): // Error/None constructor  
-                        if (enumType.name == "Result") "{:error, _}" else ":error";
-                    case _: "_"; // Catch-all
+                    case TConst(TInt(index)):
+                        // Special handling for Result/Option types
+                        if (enumType.name == "Result") {
+                            index == 0 ? "{:ok, _}" : "{:error, _}";
+                        } else if (enumType.name == "Option") {
+                            index == 0 ? "{:ok, _}" : ":error";
+                        } else if (!hasParameters) {
+                            // For enums without parameters, generate atom patterns directly
+                            // Map index to constructor name
+                            if (index >= 0 && index < enumType.names.length) {
+                                var constructorName = enumType.names[index];
+                                ':' + NamingHelper.toSnakeCase(constructorName);
+                            } else {
+                                "_"; // Fallback for out-of-bounds index
+                            }
+                        } else {
+                            // For enums with parameters, use tuple patterns
+                            if (index >= 0 && index < enumType.names.length) {
+                                var constructorName = enumType.names[index];
+                                var construct = enumType.constructs.get(constructorName);
+                                if (construct != null && construct.params.length == 0) {
+                                    // Constructor without parameters in an enum that has some with parameters
+                                    '{:' + NamingHelper.toSnakeCase(constructorName) + '}';
+                                } else {
+                                    // Constructor with parameters - use wildcard for now
+                                    '{:' + NamingHelper.toSnakeCase(constructorName) + ', _}';
+                                }
+                            } else {
+                                "_"; // Fallback
+                            }
+                        };
+                    case _: "_"; // Catch-all for non-constant patterns
                 };
                 
                 var body = compilePatternBody(caseData.expr, context);
