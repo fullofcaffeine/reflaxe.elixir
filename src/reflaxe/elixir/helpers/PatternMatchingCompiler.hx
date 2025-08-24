@@ -599,6 +599,28 @@ class PatternMatchingCompiler {
             compiler.currentEnumExtractionIndex = 0;
             
             /**
+             * PATTERN USAGE ANALYSIS: Analyze case body to find which variables are actually used
+             * 
+             * WHY: Need to identify which enum parameters from pattern destructuring are actually
+             *      referenced in the case body to prevent orphaned variable generation.
+             * 
+             * WHAT: Analyze the case body AST to find all TLocal variable references.
+             *       Pass this context to EnumIntrospectionCompiler for optimization decisions.
+             * 
+             * HOW: Use findUsedVariables() to build a map of referenced variable names,
+             *      then set compiler.patternUsageContext for EnumIntrospectionCompiler to use.
+             */
+            var usedVariables = findUsedVariables(caseData.expr);
+            compiler.patternUsageContext = usedVariables;
+            
+            #if debug_pattern_matching
+            var usedVarNames = [for (name in usedVariables.keys()) name];
+            trace('[XRay PatternMatchingCompiler] PATTERN USAGE ANALYSIS complete');
+            trace('[XRay PatternMatchingCompiler] Used variables in case body: [${usedVarNames.join(", ")}]');
+            trace('[XRay PatternMatchingCompiler] Context set for enum parameter optimization');
+            #end
+            
+            /**
              * CRITICAL CONTEXT TRACKING: Set current switch case body for orphaned parameter detection
              * 
              * WHY: EnumIntrospectionCompiler needs to analyze the case body AST to detect
@@ -617,7 +639,12 @@ class PatternMatchingCompiler {
              */
             compiler.currentSwitchCaseBody = caseData.expr;
             #if debug_pattern_matching
+            trace('[XRay PatternMatchingCompiler] =====================================');
             trace('[XRay PatternMatchingCompiler] ✓ SET switch case body context for orphaned parameter detection');
+            trace('[XRay PatternMatchingCompiler] Case body type: ${Type.enumConstructor(caseData.expr.expr)}');
+            trace('[XRay PatternMatchingCompiler] Case values count: ${caseData.values.length}');
+            trace('[XRay PatternMatchingCompiler] CONTEXT NOW AVAILABLE for enum parameter detection');
+            trace('[XRay PatternMatchingCompiler] =====================================');
             #end
             
             // No changes needed here - the fix should be in EnumIntrospectionCompiler itself
@@ -686,8 +713,10 @@ class PatternMatchingCompiler {
              *      clean state boundaries between different compilation contexts.
              */
             compiler.currentSwitchCaseBody = null;
+            compiler.patternUsageContext = null;
             #if debug_pattern_matching
             trace('[XRay PatternMatchingCompiler] ✓ CLEARED switch case body context');
+            trace('[XRay PatternMatchingCompiler] ✓ CLEARED pattern usage context');
             #end
             
             // Restore the saved mapping if we removed it
@@ -1828,6 +1857,170 @@ class PatternMatchingCompiler {
         #end
         
         return result;
+    }
+    
+    /**
+     * Find variables that are actually used in a case body expression
+     * 
+     * WHY: Enum pattern matching generates TEnumParameter extractions even when parameters 
+     *      are never used in the case body. This causes orphaned variables like g_array.
+     * 
+     * WHAT: Recursively analyze a TypedExpr AST to find all TLocal variable references.
+     *       Build a map of variable names that are actually referenced in the expression tree.
+     * 
+     * HOW: Traverse the entire AST using pattern matching on TypedExprDef variants.
+     *      For each TLocal, mark the variable name as used.
+     *      Recurse into all sub-expressions to ensure complete coverage.
+     * 
+     * @param expr The case body expression to analyze
+     * @return Map of variable names to boolean (true = used)
+     */
+    public function findUsedVariables(expr: TypedExpr): Map<String, Bool> {
+        var usedVars = new Map<String, Bool>();
+        
+        #if debug_pattern_matching
+        trace('[XRay PatternMatchingCompiler] FINDING USED VARIABLES in expression type: ${Type.enumConstructor(expr.expr)}');
+        #end
+        
+        function analyzeExpression(e: TypedExpr): Void {
+            switch (e.expr) {
+                case TLocal(v):
+                    // Direct variable reference - mark as used
+                    usedVars.set(v.name, true);
+                    #if debug_pattern_matching
+                    trace('[XRay PatternMatchingCompiler] ✓ Found variable usage: ${v.name}');
+                    #end
+                    
+                case TBlock(expressions):
+                    // Analyze all expressions in block
+                    for (subExpr in expressions) {
+                        analyzeExpression(subExpr);
+                    }
+                    
+                case TBinop(op, e1, e2):
+                    // Analyze both sides of binary operation
+                    analyzeExpression(e1);
+                    analyzeExpression(e2);
+                    
+                case TUnop(op, postFix, subExpr):
+                    // Analyze unary operation expression
+                    analyzeExpression(subExpr);
+                    
+                case TCall(func, args):
+                    // Analyze function and all arguments
+                    analyzeExpression(func);
+                    for (arg in args) {
+                        analyzeExpression(arg);
+                    }
+                    
+                case TField(subExpr, field):
+                    // Analyze field access expression
+                    analyzeExpression(subExpr);
+                    
+                case TIf(cond, ifExpr, elseExpr):
+                    // Analyze condition and both branches
+                    analyzeExpression(cond);
+                    analyzeExpression(ifExpr);
+                    if (elseExpr != null) {
+                        analyzeExpression(elseExpr);
+                    }
+                    
+                case TSwitch(switchExpr, cases, defaultExpr):
+                    // Analyze switch expression, all cases, and default
+                    analyzeExpression(switchExpr);
+                    for (caseData in cases) {
+                        for (value in caseData.values) {
+                            analyzeExpression(value);
+                        }
+                        analyzeExpression(caseData.expr);
+                    }
+                    if (defaultExpr != null) {
+                        analyzeExpression(defaultExpr);
+                    }
+                    
+                case TReturn(subExpr):
+                    // Analyze return expression
+                    if (subExpr != null) {
+                        analyzeExpression(subExpr);
+                    }
+                    
+                case TVar(v, initExpr):
+                    // Analyze variable initialization
+                    if (initExpr != null) {
+                        analyzeExpression(initExpr);
+                    }
+                    
+                case TArrayDecl(elements):
+                    // Analyze all array elements
+                    for (element in elements) {
+                        analyzeExpression(element);
+                    }
+                    
+                case TObjectDecl(fields):
+                    // Analyze all object field values
+                    for (field in fields) {
+                        analyzeExpression(field.expr);
+                    }
+                    
+                case TParenthesis(subExpr):
+                    // Analyze parenthesized expression
+                    analyzeExpression(subExpr);
+                    
+                case TMeta(meta, subExpr):
+                    // Analyze meta expression
+                    analyzeExpression(subExpr);
+                    
+                case TCast(subExpr, type):
+                    // Analyze cast expression
+                    analyzeExpression(subExpr);
+                    
+                case TWhile(cond, body, normalWhile):
+                    // Analyze while condition and body
+                    analyzeExpression(cond);
+                    analyzeExpression(body);
+                    
+                case TFor(v, iterator, body):
+                    // Analyze iterator and loop body
+                    analyzeExpression(iterator);
+                    analyzeExpression(body);
+                    
+                case TTry(tryExpr, catches):
+                    // Analyze try expression and catch blocks
+                    analyzeExpression(tryExpr);
+                    for (catchData in catches) {
+                        analyzeExpression(catchData.expr);
+                    }
+                    
+                case TEnumParameter(enumExpr, ef, index):
+                    // Analyze enum parameter expression
+                    analyzeExpression(enumExpr);
+                    
+                case TEnumIndex(enumExpr):
+                    // Analyze enum index expression
+                    analyzeExpression(enumExpr);
+                    
+                // Leaf expressions - no sub-expressions to analyze
+                case TConst(_):
+                case TTypeExpr(_):
+                case TFunction(_):
+                
+                // Other expressions - analyze recursively if they have sub-expressions
+                case _:
+                    #if debug_pattern_matching
+                    trace('[XRay PatternMatchingCompiler] ⚠️ Unhandled expression type in usage analysis: ${Type.enumConstructor(e.expr)}');
+                    #end
+            }
+        }
+        
+        // Start analysis from root expression
+        analyzeExpression(expr);
+        
+        #if debug_pattern_matching
+        var varNames = [for (name in usedVars.keys()) name];
+        trace('[XRay PatternMatchingCompiler] Used variables found: [${varNames.join(", ")}]');
+        #end
+        
+        return usedVars;
     }
 }
 

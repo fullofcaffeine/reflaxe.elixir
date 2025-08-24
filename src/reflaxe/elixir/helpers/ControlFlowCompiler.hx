@@ -316,18 +316,9 @@ class ControlFlowCompiler {
                 statements.push(mergedAssignment.compiledCode);
                 i = mergedAssignment.nextIndex;
             } else {
-                // Check for unused TEnumParameter patterns before normal compilation
-                if (isUnusedEnumParameterExpression(el, i)) {
-                    #if debug_control_flow_compiler
-                    trace('[XRay ControlFlowCompiler] ✓ SKIPPING unused TEnumParameter and following TLocal at index ${i}');
-                    #end
-                    // Skip BOTH the TEnumParameter AND the following TLocal(g) expression
-                    // The pattern is: TEnumParameter (generates 'g = elem(...)') followed by TLocal(g)
-                    i += 2;  // Skip both expressions
-                    continue;
-                }
-                
                 // Normal expression compilation
+                // Note: Orphaned TLocal expressions from unused enum parameters are handled
+                // in VariableCompiler.compileLocalVariable() by returning empty string for _g variables
                 var compiled = compiler.compileExpression(el[i], topLevel);
                 if (compiled != null && compiled.length > 0) {
                     statements.push(compiled);
@@ -816,7 +807,8 @@ class ControlFlowCompiler {
                         
                         // Pass to PatternMatchingCompiler which now handles all enum types
                         // The compileSwitchExpression will detect TEnumIndex and use direct compilation
-                        return compiler.compileSwitchExpression(unwrappedExpr, cases, edef);
+                        // CRITICAL: Pass context through to maintain state threading and pattern usage context
+                        return compiler.expressionVariantCompiler.compileSwitchExpression(unwrappedExpr, cases, edef);
                     case _:
                         // Not a TEnum type, use standard compilation
                         #if debug_control_flow_compiler
@@ -846,7 +838,8 @@ class ControlFlowCompiler {
         }
         
         // Standard compilation for non-Result/Option switches
-        var result = compiler.compileSwitchExpression(e, cases, edef);
+        // CRITICAL: Pass context through to maintain state threading and pattern usage context
+        var result = compiler.expressionVariantCompiler.compileSwitchExpression(e, cases, edef);
         
         // Don't restore the incorrect mapping
         if (savedGMapping != null) {
@@ -1439,19 +1432,29 @@ class ControlFlowCompiler {
         // The orphaned pattern specifically involves 'g' variables from loop transformations
         var hasOrphanedLocal = switch (nextExpr.expr) {
             case TLocal(tvar): 
-                // Be precise: Only 'g' variables from loop transformations are affected
-                // These are typically named: g, _g, _g_1, _g_2, etc.
+                // CRITICAL FIX: Check for both original AND transformed variable names
+                // The VariableMappingManager transforms '_g' → 'g_array' during compilation
+                // We must detect BOTH patterns to catch orphaned references
+                // 
+                // WHY: Variable transformation happens BEFORE orphan detection
+                // WHAT: Original names: g, _g, _g_1, _g_2, etc.
+                //       Transformed names: g_array, g_array_1, g_array_2, etc.
+                // HOW: Check for both patterns to ensure we catch all orphaned references
                 var isGVariable = (tvar.name == "g" || 
                                   tvar.name == "_g" || 
+                                  tvar.name == "g_array" ||           // CRITICAL: Transformed name
                                   tvar.name.startsWith("_g_") ||
-                                  tvar.name.startsWith("g_"));
+                                  tvar.name.startsWith("g_") ||
+                                  tvar.name.startsWith("g_array"));   // CRITICAL: Transformed pattern
                 
                 #if debug_control_flow_compiler
                 if (isGVariable) {
                     trace('[XRay ControlFlowCompiler] ✓ Found orphaned local variable: ${tvar.name}');
                     trace('[XRay ControlFlowCompiler] Variable ID: ${tvar.id}');
+                    trace('[XRay ControlFlowCompiler] CRITICAL: Detected transformed pattern (g_array)');
                 } else {
                     trace('[XRay ControlFlowCompiler] ❌ Local variable not orphaned pattern: ${tvar.name}');
+                    trace('[XRay ControlFlowCompiler] Variable name: ${tvar.name} does not match g/g_array patterns');
                 }
                 #end
                 isGVariable;

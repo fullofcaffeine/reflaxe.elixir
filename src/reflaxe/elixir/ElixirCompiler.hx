@@ -20,6 +20,7 @@ import reflaxe.data.EnumOptionData;
 import reflaxe.preprocessors.ExpressionPreprocessor;
 import reflaxe.preprocessors.ExpressionPreprocessor.*;
 import reflaxe.preprocessors.implementations.RemoveTemporaryVariablesImpl.RemoveTemporaryVariablesMode;
+import reflaxe.elixir.preprocessors.RemoveOrphanedEnumParametersImpl;
 import reflaxe.elixir.helpers.NamingHelper;
 import reflaxe.elixir.helpers.EnumCompiler;
 import reflaxe.elixir.helpers.ClassCompiler;
@@ -197,7 +198,7 @@ class ElixirCompiler extends DirectToStringCompiler {
     private var whileLoopCompiler: reflaxe.elixir.helpers.WhileLoopCompiler;
     
     /** Expression variant compilation for specialized expression handling patterns */
-    private var expressionVariantCompiler: reflaxe.elixir.helpers.ExpressionVariantCompiler;
+    public var expressionVariantCompiler: reflaxe.elixir.helpers.ExpressionVariantCompiler;
     
     public var expressionDispatcher: reflaxe.elixir.helpers.ExpressionDispatcher;
     
@@ -211,6 +212,11 @@ class ElixirCompiler extends DirectToStringCompiler {
     
     // Parameter mapping system for abstract type implementation methods
     public var currentFunctionParameterMap: Map<String, String> = new Map();
+    
+    // Context-aware pattern usage tracking for enum parameter optimization
+    // Tracks which pattern variables are actually used in switch case bodies
+    // to prevent generating orphaned enum parameter extractions
+    public var patternUsageContext: Null<Map<String, Bool>> = null;
     
     // Map for tracking variable renames to ensure consistency between declaration and usage
     // Critical for resolving _g variable collisions in desugared loops
@@ -906,20 +912,37 @@ class ElixirCompiler extends DirectToStringCompiler {
      * HOW: Uses the dispatcher pattern to maintain clean separation of concerns
      */
     /**
-     * Override base compileExpression to ensure ALL expression compilation goes through state threading
+     * Override compileExpression to provide target code injection and state threading
      * 
-     * WHY: The base DirectToStringCompiler has a compileExpression method that helper classes call.
-     * We need to intercept ALL these calls to apply state threading transformations consistently.
+     * WHY: DirectToStringCompiler handles __elixir__() target code injection in its compileExpression method.
+     * We must call the parent implementation first to enable __elixir__() functionality, then apply our
+     * state threading transformations for expressions that aren't injections.
      * 
-     * WHAT: Routes all expression compilation through our state threading logic before delegating
-     * to the expression dispatcher for actual compilation.
+     * WHAT: First checks for target code injection via parent, then routes remaining expressions through 
+     * our state threading logic before delegating to the expression dispatcher.
      * 
-     * HOW: Check for state threading conditions first, then delegate to expressionDispatcher.
+     * HOW: 
+     * 1. Call parent compileExpression to handle __elixir__() injections
+     * 2. If parent returns a result (injection found), return it immediately
+     * 3. Otherwise, proceed with our custom expression compilation logic
      */
     public override function compileExpression(expr: TypedExpr, topLevel: Bool = false): Null<String> {
         #if debug_state_threading
         trace('[XRay ElixirCompiler] ✓ compileExpression override called');
         #end
+        
+        // CRITICAL: Must call parent to handle __elixir__() target code injection
+        // The DirectToStringCompiler.compileExpression checks for targetCodeInjectionName
+        // and processes untyped __elixir__("code") calls before our custom logic
+        var parentResult = super.compileExpression(expr, topLevel);
+        if (parentResult != null) {
+            #if debug_state_threading
+            trace('[XRay ElixirCompiler] ✓ Target code injection processed by parent');
+            #end
+            return parentResult;
+        }
+        
+        // No injection found, proceed with our custom expression compilation
         return compileExpressionImpl(expr, topLevel);
     }
     

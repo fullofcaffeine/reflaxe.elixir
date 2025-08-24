@@ -8,6 +8,7 @@ import reflaxe.elixir.helpers.NamingHelper;
 import reflaxe.elixir.helpers.DebugHelper;
 
 using StringTools;
+using reflaxe.helpers.TypedExprHelper;
 
 /**
  * FunctionCompiler: Specialized compilation of class functions to idiomatic Elixir
@@ -144,7 +145,7 @@ class FunctionCompiler {
             }
             
             // Compile function body with topLevel = true for function bodies
-            // Pipeline optimization is temporarily disabled, so use regular compilation
+            // NOTE: Reflaxe framework handles preprocessor application automatically in compileClass()
             var compiledBody = compiler.compileExpressionImpl(funcField.expr, true);
             
             // CRITICAL FIX: Generate pre-declarations AFTER body compilation
@@ -157,7 +158,7 @@ class FunctionCompiler {
                 // Pass the compiled body for fallback temp variable scanning
                 requiredDeclarations = compiler.variableMappingManager.generateAllRequiredDeclarations(compiledBody);
                 
-                // Also perform comprehensive function-level analysis
+                // Also perform comprehensive function-level analysis using processed expression
                 var functionExpressions = extractAllExpressions(funcField.expr);
                 var additionalDeclarations = compiler.variableMappingManager.generateRequiredOuterScopeDeclarations(functionExpressions);
                 

@@ -152,9 +152,53 @@ class VariableCompiler {
          * WHAT: Check if there's a parameter mapping for this variable
          * HOW: Look up in currentFunctionParameterMap first, then inline context
          */
+        // CONTEXT-AWARE OPTIMIZATION: Check if this is a reference to an unused enum parameter
+        // When EnumIntrospectionCompiler optimizes away TEnumParameter, we also need to skip TLocal references
+        if (compiler.patternUsageContext != null && originalName == "g") {
+            // Check if this 'g' variable was determined to be unused
+            var parameterUsed = compiler.patternUsageContext.exists("g") || 
+                               compiler.patternUsageContext.exists("g_array") ||
+                               compiler.patternUsageContext.exists("priority") ||
+                               compiler.patternUsageContext.exists("tag");
+            
+            #if debug_variable_compiler
+            trace('[XRay VariableCompiler] ✓ UNUSED PARAMETER CHECK for g variable');
+            trace('[XRay VariableCompiler] Pattern usage context available: ${compiler.patternUsageContext != null}');
+            trace('[XRay VariableCompiler] Parameter g used in pattern: ${parameterUsed}');
+            #end
+            
+            if (!parameterUsed) {
+                #if debug_variable_compiler
+                trace('[XRay VariableCompiler] ✓ OPTIMIZATION: g variable unused, returning empty string');
+                #end
+                return ""; // Skip generating reference to unused variable
+            }
+        }
+        
         // Check parameter mapping first (for function parameters)
         trace('[XRay VariableCompiler] Checking parameter mapping for: ${originalName}');
         trace('[XRay VariableCompiler] Parameter map has: ${[for (k in compiler.currentFunctionParameterMap.keys()) k].join(", ")}');
+        
+        // CRITICAL FIX: Skip orphaned enum parameter references (Go compiler approach)
+        // WHY: Standalone TLocal(_g) expressions from unused enum parameters cause undefined variable errors
+        // WHAT: These variables get transformed to g_array but have no definition
+        // HOW: Skip them entirely - same as Go compiler's "skipping useless expression TLocal"
+        // 
+        // This is a UNIVERSAL fix - ALL standalone _g variables in switch contexts are orphaned
+        // They come from Haxe's enum parameter extraction when the parameter isn't used
+        // 
+        // Reference: Reflaxe.Go Compiler.hx lines 410-414:
+        // if (l.expr.match(TLocal(_))) {
+        //     return "// skipping useless expression TLocal:" + expr_str;
+        // }
+        if (originalName.charAt(0) == '_' && ~/^_g\d*$/.match(originalName)) {
+            #if debug_orphan_elimination
+            trace('[XRay VariableCompiler] ✓ ELIMINATING orphaned enum parameter reference: ${originalName}');
+            trace('[XRay VariableCompiler] Following Go compiler approach - skip useless TLocal');
+            #end
+            return ""; // Return empty string - no output for orphaned references
+        }
+        
         // Special debug for camelCase variables
         if (originalName == "bulkAction" || originalName == "alertLevel") {
             trace('[XRay VariableCompiler] ⚠️ Looking for camelCase variable ${originalName} in parameter map');
@@ -169,6 +213,14 @@ class VariableCompiler {
             #if debug_variable_compiler
             trace('[XRay VariableCompiler] Found in parameter map');
             #end
+            
+            // CRITICAL FIX: Don't apply array desugaring mappings in enum extraction context
+            // When we're extracting enum parameters, _g variables should NOT be mapped to g_array
+            if (compiler.isInEnumExtraction && originalName.charAt(0) == '_' && ~/^_g\d*$/.match(originalName)) {
+                trace('[XRay VariableCompiler] ⚠️ BLOCKING array mapping for ${originalName} in enum extraction context');
+                trace('[XRay VariableCompiler] Returning original name instead of ${mappedName}');
+                return originalName; // Use original name without array mapping
+            }
             
             // CRITICAL FIX: Don't map 'g' to 'g_counter' in any context - it's always wrong
             // The 'g' variable is used for enum parameter extraction, never for loop counters
