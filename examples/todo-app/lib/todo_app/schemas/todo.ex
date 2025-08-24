@@ -38,13 +38,13 @@ defmodule Todo do
   @doc "Function changeset"
   @spec changeset(Todo.t(), ChangesetParams.t()) :: Ecto.Changeset.t()
   def changeset(todo, params) do
-    changeset = Changeset.cast_changeset(todo, params, ["title", "description", "completed", "priority", "due_date", "tags", "user_id"])
-    changeset = Changeset.validate_required(changeset, ["title", "user_id"])
-    changeset = Changeset.validate_length(changeset, "title", %{"min" => 3, "max" => 200})
-    changeset = Changeset.validate_length(changeset, "description", %{"max" => 1000})
+    changeset = Ecto.Changeset.cast_changeset(todo, params, ["title", "description", "completed", "priority", "due_date", "tags", "user_id"])
+    changeset = Ecto.Changeset.validate_required(changeset, ["title", "user_id"])
+    changeset = Ecto.Changeset.validate_length(changeset, "title", %{"min" => 3, "max" => 200})
+    changeset = Ecto.Changeset.validate_length(changeset, "description", %{"max" => 1000})
     priority_values = [ChangesetValue.string_value("low"), ChangesetValue.string_value("medium"), ChangesetValue.string_value("high")]
-    changeset = Changeset.validate_inclusion(changeset, "priority", priority_values)
-    changeset = Changeset.foreign_key_constraint(changeset, "user_id")
+    changeset = Ecto.Changeset.validate_inclusion(changeset, "priority", priority_values)
+    changeset = Ecto.Changeset.foreign_key_constraint(changeset, "user_id")
     changeset
   end
 
@@ -83,8 +83,10 @@ defmodule Todo do
     params = Haxe.Ds.StringMap.new()
     g_array = []
     g_counter = 0
-    Enum.map(temp_array, fn v -> ChangesetValue.string_value(v) end)
-    value = ChangesetValue.array_value(g_counter)
+    Enum.each(temp_array, fn v -> 
+      g_array ++ [ChangesetValue.string_value(v)]
+    end)
+    value = ChangesetValue.array_value(g_array)
     params.set("tags", value)
     Todo.changeset(todo, params)
   end

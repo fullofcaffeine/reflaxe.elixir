@@ -31,7 +31,7 @@ defmodule SafeAssigns do
   """
   @spec set_editing_todo(Phoenix.Socket.t(), Null.t()) :: Phoenix.Socket.t()
   def set_editing_todo(socket, todo) do
-    LiveView.assign_multiple(socket, %{"editing_todo" => todo})
+    Phoenix.LiveView.assign_multiple(socket, %{"editing_todo" => todo})
   end
 
   @doc """
@@ -40,7 +40,7 @@ defmodule SafeAssigns do
   """
   @spec set_selected_tags(Phoenix.Socket.t(), Array.t()) :: Phoenix.Socket.t()
   def set_selected_tags(socket, tags) do
-    LiveView.assign_multiple(socket, %{"selected_tags" => tags})
+    Phoenix.LiveView.assign_multiple(socket, %{"selected_tags" => tags})
   end
 
   @doc """
@@ -49,7 +49,7 @@ defmodule SafeAssigns do
   """
   @spec set_filter(Phoenix.Socket.t(), String.t()) :: Phoenix.Socket.t()
   def set_filter(socket, filter) do
-    LiveView.assign_multiple(socket, %{"filter" => filter})
+    Phoenix.LiveView.assign_multiple(socket, %{"filter" => filter})
   end
 
   @doc """
@@ -58,7 +58,7 @@ defmodule SafeAssigns do
   """
   @spec set_sort_by(Phoenix.Socket.t(), String.t()) :: Phoenix.Socket.t()
   def set_sort_by(socket, sort_by) do
-    LiveView.assign_multiple(socket, %{"sort_by" => sort_by})
+    Phoenix.LiveView.assign_multiple(socket, %{"sort_by" => sort_by})
   end
 
   @doc """
@@ -67,7 +67,7 @@ defmodule SafeAssigns do
   """
   @spec set_search_query(Phoenix.Socket.t(), String.t()) :: Phoenix.Socket.t()
   def set_search_query(socket, query) do
-    LiveView.assign_multiple(socket, %{"search_query" => query})
+    Phoenix.LiveView.assign_multiple(socket, %{"search_query" => query})
   end
 
   @doc """
@@ -76,7 +76,7 @@ defmodule SafeAssigns do
   """
   @spec set_show_form(Phoenix.Socket.t(), boolean()) :: Phoenix.Socket.t()
   def set_show_form(socket, show_form) do
-    LiveView.assign_multiple(socket, %{"show_form" => show_form})
+    Phoenix.LiveView.assign_multiple(socket, %{"show_form" => show_form})
   end
 
   @doc """
@@ -88,7 +88,7 @@ defmodule SafeAssigns do
     (
           completed = SafeAssigns.count_completed(todos)
           pending = SafeAssigns.count_pending(todos)
-          LiveView.assign_multiple(socket, %{"todos" => todos, "total_todos" => todos.length, "completed_todos" => completed, "pending_todos" => pending})
+          Phoenix.LiveView.assign_multiple(socket, %{"todos" => todos, "total_todos" => todos.length, "completed_todos" => completed, "pending_todos" => pending})
         )
   end
 
@@ -98,7 +98,7 @@ defmodule SafeAssigns do
   """
   @spec set_todos(Phoenix.Socket.t(), Array.t()) :: Phoenix.Socket.t()
   def set_todos(socket, todos) do
-    LiveView.assign_multiple(socket, %{"todos" => todos})
+    Phoenix.LiveView.assign_multiple(socket, %{"todos" => todos})
   end
 
   @doc """

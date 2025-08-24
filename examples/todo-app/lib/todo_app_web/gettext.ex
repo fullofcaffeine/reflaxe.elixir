@@ -87,7 +87,7 @@ defmodule TodoAppWeb.Gettext do
   """
   @spec get_locale() :: String.t()
   def get_locale() do
-    Gettext.d_e_f_a_u_l_t__l_o_c_a_l_e
+    TodoAppWeb.Gettext.d_e_f_a_u_l_t__l_o_c_a_l_e
   end
 
   @doc """
