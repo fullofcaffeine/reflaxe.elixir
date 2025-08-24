@@ -268,6 +268,30 @@ class VariableCompiler {
             NamingHelper.toSnakeCase(originalName);
         }
         
+        /**
+         * CRITICAL FIX: Override result with VariableMappingManager if available
+         * 
+         * WHY: Multiple compiler components were independently managing variable mappings,
+         *      causing inconsistencies. The VariableMappingManager centralizes this logic
+         *      and prevents undefined variable errors from mapping conflicts.
+         *      
+         * WHAT: Apply centralized variable transformation that overrides any local mappings
+         *       to ensure consistency across all compilation phases.
+         *       
+         * HOW: Check if VariableMappingManager is available and use its transformVariableName
+         *      method to get the authoritative variable name mapping. This includes:
+         *      - Array desugaring variable mappings (_g -> g_array)
+         *      - Consistent underscore removal and snake_case conversion
+         *      - Prevention of problematic mappings (g -> g_counter)
+         */
+        if (compiler.variableMappingManager != null) {
+            var managedResult = compiler.variableMappingManager.transformVariableName(originalName);
+            #if debug_variable_compiler
+            trace("[XRay VariableCompiler] ✓ OVERRIDING with VariableMappingManager: ${result} -> ${managedResult}");
+            #end
+            result = managedResult;
+        }
+        
         #if debug_variable_compiler
         trace('[XRay VariableCompiler] Generated local variable: ${result}');
         trace("[XRay VariableCompiler] LOCAL VARIABLE COMPILATION END");
@@ -285,11 +309,12 @@ class VariableCompiler {
      * 
      * HOW:
      * 1. Check for unused variable optimization
-     * 2. Resolve variable name collisions in desugared code
-     * 3. Handle _this inline context management
-     * 4. Generate appropriate Elixir variable assignment
-     * 5. Optimize temporary variable elimination
-     * 6. CRITICAL: Skip intermediate 'g' variables for enum extraction
+     * 2. CRITICAL: Detect array desugaring patterns and use VariableMappingManager
+     * 3. Resolve variable name collisions in desugared code
+     * 4. Handle _this inline context management
+     * 5. Generate appropriate Elixir variable assignment
+     * 6. Optimize temporary variable elimination
+     * 7. CRITICAL: Skip intermediate 'g' variables for enum extraction
      * 
      * @param tvar The TVar representing the variable
      * @param expr The initialization expression (nullable)
@@ -304,6 +329,18 @@ class VariableCompiler {
             trace('[XRay VariableCompiler] Init expression type: ${Type.enumConstructor(expr.expr)}');
         }
         #end
+        
+        // CRITICAL FIX: Detect array desugaring patterns and set up proper mappings
+        // This fixes the core issue where Haxe desugars array.map() into variables like _g, _g_array, _g_counter
+        // and we need to establish the correct semantic mappings before compilation proceeds
+        if (compiler.variableMappingManager != null && compiler.variableMappingManager.isArrayDesugaringVariable(tvar.name)) {
+            var baseName = compiler.variableMappingManager.getDesugaringBaseName(tvar.name);
+            trace('[XRay VariableCompiler] ✓ ARRAY DESUGARING DETECTED: ${tvar.name} -> base: ${baseName}');
+            
+            // Set up the correct mappings for this desugaring pattern
+            compiler.variableMappingManager.setupArrayDesugatingMappings(baseName);
+            trace('[XRay VariableCompiler] ✓ Array desugaring mappings established for base: ${baseName}');
+        }
         
         // Debug: Always trace 'g' variables to understand the pattern
         if (tvar.name == "g") {

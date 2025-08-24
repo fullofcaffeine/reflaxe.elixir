@@ -22,9 +22,9 @@ defmodule Log do
           if ((infos.custom_params != nil)) do
           (
           g_counter = 0
-          g = infos.custom_params
-          Enum.each(g_counter, fn v2 -> 
-      str = str <> ", " <> Std.strinv2(v)
+          g_array = infos.custom_params
+          Enum.each(g_array, fn v2 -> 
+      str = str <> ", " <> Std.string(v)
     end)
         )
         end
