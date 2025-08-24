@@ -64,8 +64,8 @@ defmodule JsonPrinter do
           v = struct.replacer(k, v)
         end
           (
-          g = Type.typeof(v)
-          case (elem(g, 0)) do
+          g_array = Type.typeof(v)
+          case (elem(g_array, 0)) do
       0 -> struct = %{struct.buf | b: "null"}
       1 -> struct = %{struct.buf | b: Std.string(v)}
       2 -> (
@@ -82,7 +82,7 @@ defmodule JsonPrinter do
       4 -> struct.fields_string(v, Reflect.fields(v))
       5 -> struct = %{struct.buf | b: "\"<fun>\""}
       {6, c} -> (
-          g = elem(g, 1)
+          g_array = elem(g_array, 1)
           if ((c == String)) do
           struct.quote_(v)
         else
@@ -92,14 +92,14 @@ defmodule JsonPrinter do
     len = v.length
     last = (len - 1)
     g_counter = 0
-    g = len
+    g_array = len
     i = nil
     g3 = nil
     this = nil
     v3 = nil
     loop_helper = fn loop_fn, {i, g3, this, v3} ->
-      if ((g < g)) do
-        i = g + 1
+      if ((g_array < g_array)) do
+        i = g_array + 1
         if ((i > 0)) do
               struct = %{struct.buf | b: ","}
             else
@@ -200,7 +200,7 @@ defmodule JsonPrinter do
     len = fields.length
     empty = true
     g_counter = 0
-    g = len
+    g_array = len
     i = nil
     g = nil
     f = nil
@@ -209,8 +209,8 @@ defmodule JsonPrinter do
     this = nil
     v2 = nil
     loop_helper = fn loop_fn, {i, g, f, value, empty, this, v2} ->
-      if ((g < g)) do
-        i = g + 1
+      if ((g_array < g_array)) do
+        i = g_array + 1
         f = Enum.at(fields, i)
         value = Reflect.field(v, f)
         if Reflect.is_function_(value) do

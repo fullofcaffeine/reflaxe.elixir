@@ -16,7 +16,7 @@ defmodule TodoAppWeb.Gettext.ErrorMessages do
   """
   @spec required_field() :: String.t()
   def required_field() do
-    Gettext.dgettext("errors", "can't be blank")
+    TodoAppWeb.Gettext.dgettext("errors", "can't be blank")
   end
 
   @doc """
@@ -25,7 +25,7 @@ defmodule TodoAppWeb.Gettext.ErrorMessages do
   """
   @spec invalid_format() :: String.t()
   def invalid_format() do
-    Gettext.dgettext("errors", "has invalid format")
+    TodoAppWeb.Gettext.dgettext("errors", "has invalid format")
   end
 
   @doc """
@@ -37,7 +37,7 @@ defmodule TodoAppWeb.Gettext.ErrorMessages do
   def too_short(min) do
     (
           bindings = TranslationBindings_Impl_.set_int(TranslationBindings_Impl_.create(), "count", min)
-          Gettext.dgettext("errors", "should be at least %{count} character(s)", bindings)
+          TodoAppWeb.Gettext.dgettext("errors", "should be at least %{count} character(s)", bindings)
         )
   end
 
@@ -50,7 +50,7 @@ defmodule TodoAppWeb.Gettext.ErrorMessages do
   def too_long(max) do
     (
           bindings = TranslationBindings_Impl_.set_int(TranslationBindings_Impl_.create(), "count", max)
-          Gettext.dgettext("errors", "should be at most %{count} character(s)", bindings)
+          TodoAppWeb.Gettext.dgettext("errors", "should be at most %{count} character(s)", bindings)
         )
   end
 
@@ -60,7 +60,7 @@ defmodule TodoAppWeb.Gettext.ErrorMessages do
   """
   @spec not_found() :: String.t()
   def not_found() do
-    Gettext.dgettext("errors", "not found")
+    TodoAppWeb.Gettext.dgettext("errors", "not found")
   end
 
   @doc """
@@ -69,7 +69,7 @@ defmodule TodoAppWeb.Gettext.ErrorMessages do
   """
   @spec unauthorized() :: String.t()
   def unauthorized() do
-    Gettext.dgettext("errors", "unauthorized")
+    TodoAppWeb.Gettext.dgettext("errors", "unauthorized")
   end
 
 end

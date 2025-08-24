@@ -129,14 +129,14 @@ defmodule Flash do
           if ((changeset_errors != nil)) do
           (
           g_counter = 0
-          g = Reflect.fields(changeset_errors)
-          Enum.each(g, fn field -> 
+          g_array = Reflect.fields(changeset_errors)
+          Enum.each(g_array, fn field -> 
       field_errors = Reflect.field(changeset_errors, field)
       if Std.is_of_type(field_errors, Array) do
           (
           g_counter = 0
-          g = field_errors
-          Enum.each(g, fn error -> 
+          g_array = field_errors
+          Enum.each(g_array, fn error -> 
       errors ++ ["" <> field <> ": " <> Std.string(error)]
     end)
         )
