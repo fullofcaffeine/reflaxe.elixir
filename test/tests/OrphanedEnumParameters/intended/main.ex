@@ -34,7 +34,7 @@ defmodule Main do
       :created -> (
           g_array = _ = elem(msg, 1)
           (
-          content = 
+          content = g_array
           Log.trace("Created: " <> content, %{"fileName" => "Main.hx", "lineNumber" => 38, "className" => "Main", "methodName" => "testBasicEnum"})
         )
         )
@@ -42,15 +42,15 @@ defmodule Main do
           g_array = _ = elem(msg, 1)
           g_array = _ = elem(msg, 2)
           (
-          id = 
-          content = 
+          id = g_array
+          content = g_array
           Log.trace("Updated " <> to_string(id) <> ": " <> content, %{"fileName" => "Main.hx", "lineNumber" => 40, "className" => "Main", "methodName" => "testBasicEnum"})
         )
         )
       :deleted -> (
           g_array = _ = elem(msg, 1)
           (
-          id = 
+          id = g_array
           Log.trace("Deleted: " <> to_string(id), %{"fileName" => "Main.hx", "lineNumber" => 42, "className" => "Main", "methodName" => "testBasicEnum"})
         )
         )
@@ -68,20 +68,20 @@ defmodule Main do
       :move -> g_array = _ = elem(action, 1)
     g_array = _ = elem(action, 2)
     g_array = _ = elem(action, 3)
-    x = 
-    y = 
-    z = 
+    x = g_array
+    y = g_array
+    z = g_array
     Log.trace("Moving to (" <> to_string(x) <> ", " <> to_string(y) <> ", " <> to_string(z) <> ")", %{"fileName" => "Main.hx", "lineNumber" => 53, "className" => "Main", "methodName" => "testMultipleParameters"})
       :rotate -> (
           g_array = _ = elem(action, 1)
           g_array = _ = elem(action, 2)
-          angle = 
-          axis = 
+          angle = g_array
+          axis = g_array
           Log.trace("Rotating " <> to_string(angle) <> " degrees on " <> axis, %{"fileName" => "Main.hx", "lineNumber" => 55, "className" => "Main", "methodName" => "testMultipleParameters"})
         )
       :scale -> (
           g_array = _ = elem(action, 1)
-          factor = 
+          factor = g_array
           Log.trace("Scaling by " <> to_string(factor), %{"fileName" => "Main.hx", "lineNumber" => 57, "className" => "Main", "methodName" => "testMultipleParameters"})
         )
     end
@@ -124,18 +124,18 @@ defmodule Main do
       :processing -> (
           g_array = _ = elem(state, 1)
           (
-          progress = 
+          progress = g_array
           description = "Progress: " <> to_string(progress) <> "%"
         )
         )
       :complete -> (
           g_array = _ = elem(state, 1)
-          result = 
+          result = g_array
           description = "Done: " <> result
         )
       :error -> (
           g_array = _ = elem(state, 1)
-          msg = 
+          msg = g_array
           description = "Error: " <> msg
         )
     end
@@ -151,16 +151,16 @@ defmodule Main do
           case container do
       :box -> (
           g_array = _ = elem(container, 1)
-          content = 
+          content = g_array
           case content do
       :text -> (
           g_array = _ = elem(content, 1)
-          str = 
+          str = g_array
           Log.trace("Box contains text: " <> str, %{"fileName" => "Main.hx", "lineNumber" => 103, "className" => "Main", "methodName" => "testNestedEnums"})
         )
       :number -> (
           g_array = _ = elem(content, 1)
-          n = 
+          n = g_array
           Log.trace("Box contains number: " <> to_string(n), %{"fileName" => "Main.hx", "lineNumber" => 105, "className" => "Main", "methodName" => "testNestedEnums"})
         )
       :empty -> Log.trace("Box is empty", %{"fileName" => "Main.hx", "lineNumber" => 107, "className" => "Main", "methodName" => "testNestedEnums"})
@@ -168,7 +168,7 @@ defmodule Main do
         )
       :list -> (
           g_array = elem(container, 1)
-          items = 
+          items = g_array
           Log.trace("List with " <> to_string(items.length) <> " items", %{"fileName" => "Main.hx", "lineNumber" => 110, "className" => "Main", "methodName" => "testNestedEnums"})
         )
       :empty -> Log.trace("Container is empty", %{"fileName" => "Main.hx", "lineNumber" => 112, "className" => "Main", "methodName" => "testNestedEnums"})
@@ -186,8 +186,8 @@ defmodule Main do
           g_array = _ = elem(result, 1)
           g_array = _ = elem(result, 2)
           (
-          msg = 
-          code = 
+          msg = g_array
+          code = g_array
           Log.trace("Success: " <> msg <> " (code: " <> to_string(code) <> ")", %{"fileName" => "Main.hx", "lineNumber" => 121, "className" => "Main", "methodName" => "testMixedCases"})
         )
         )
@@ -199,8 +199,8 @@ defmodule Main do
           g_array = _ = elem(result, 1)
           g_array = _ = elem(result, 2)
           (
-          msg = 
-          code = 
+          msg = g_array
+          code = g_array
           Log.trace("Error: " <> msg <> " (code: " <> to_string(code) <> ")", %{"fileName" => "Main.hx", "lineNumber" => 125, "className" => "Main", "methodName" => "testMixedCases"})
         )
         )

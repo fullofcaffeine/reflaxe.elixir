@@ -179,25 +179,9 @@ class VariableCompiler {
         trace('[XRay VariableCompiler] Checking parameter mapping for: ${originalName}');
         trace('[XRay VariableCompiler] Parameter map has: ${[for (k in compiler.currentFunctionParameterMap.keys()) k].join(", ")}');
         
-        // CRITICAL FIX: Skip orphaned enum parameter references (Go compiler approach)
-        // WHY: Standalone TLocal(_g) expressions from unused enum parameters cause undefined variable errors
-        // WHAT: These variables get transformed to g_array but have no definition
-        // HOW: Skip them entirely - same as Go compiler's "skipping useless expression TLocal"
-        // 
-        // This is a UNIVERSAL fix - ALL standalone _g variables in switch contexts are orphaned
-        // They come from Haxe's enum parameter extraction when the parameter isn't used
-        // 
-        // Reference: Reflaxe.Go Compiler.hx lines 410-414:
-        // if (l.expr.match(TLocal(_))) {
-        //     return "// skipping useless expression TLocal:" + expr_str;
-        // }
-        if (originalName.charAt(0) == '_' && ~/^_g\d*$/.match(originalName)) {
-            #if debug_orphan_elimination
-            trace('[XRay VariableCompiler] ✓ ELIMINATING orphaned enum parameter reference: ${originalName}');
-            trace('[XRay VariableCompiler] Following Go compiler approach - skip useless TLocal');
-            #end
-            return ""; // Return empty string - no output for orphaned references
-        }
+        // NOTE: Orphaned TLocal(_g) expressions are now handled at the TBlock level
+        // in ControlFlowCompiler.compileBlock() using the Go compiler approach.
+        // This is more reliable than context tracking and follows proven Reflaxe patterns.
         
         // Special debug for camelCase variables
         if (originalName == "bulkAction" || originalName == "alertLevel") {

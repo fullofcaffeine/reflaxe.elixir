@@ -63,6 +63,18 @@ class ExpressionVariantCompiler {
         trace('[XRay ExpressionVariantCompiler] ✓ compileExpressionImpl called');
         #end
         
+        #if debug_orphan_elimination
+        if (expr != null) {
+            trace('[XRay ExpressionVariantCompiler] Received expr: ${Type.getClassName(Type.getClass(expr.expr))}');
+            switch (expr.expr) {
+                case TLocal(v): trace('[XRay ExpressionVariantCompiler] TLocal variable: ${v.name}');
+                case _:
+            }
+        } else {
+            trace('[XRay ExpressionVariantCompiler] Received expr: NULL - this should not happen!');
+        }
+        #end
+        
         // CRITICAL: Always check for _this mapping first, regardless of state threading status
         // This handles cases where expressions are compiled after state threading is disabled
         switch (expr.expr) {

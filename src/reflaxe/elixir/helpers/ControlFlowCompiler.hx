@@ -316,12 +316,53 @@ class ControlFlowCompiler {
                 statements.push(mergedAssignment.compiledCode);
                 i = mergedAssignment.nextIndex;
             } else {
-                // Normal expression compilation
-                // Note: Orphaned TLocal expressions from unused enum parameters are handled
-                // in VariableCompiler.compileLocalVariable() by returning empty string for _g variables
-                var compiled = compiler.compileExpression(el[i], topLevel);
-                if (compiled != null && compiled.length > 0) {
-                    statements.push(compiled);
+                // CRITICAL FIX: Skip orphaned TLocal expressions (refined Go compiler approach)
+                // WHY: Haxe's enum parameter extraction generates orphaned TLocal(_g) expressions
+                // WHAT: Check if expression is a standalone TLocal(_g) and skip it entirely
+                // HOW: Pattern match specifically on TLocal with "_g" prefix (compiler-generated temps)
+                //      Also handle snake_case converted versions (g_array, g_counter, etc.)
+                // 
+                // DIFFERENCE FROM GO COMPILER:
+                // - Go: Skips ALL standalone TLocal expressions (harmless in Go semantics)
+                // - Elixir: Only skip "_g" temps (undefined variables cause Elixir compilation errors)
+                // - Go can be broader because `variable_name;` is a no-op in Go
+                // - Elixir requires precise targeting to avoid breaking valid variable references
+                //
+                // EDGE CASES HANDLED:
+                // - Original compiler temps: _g, _g1, _g2, etc.
+                // - Snake_case converted: g_array, g_counter (from Haxe's naming conversion)
+                var shouldSkip = switch (el[i].expr) {
+                    case TLocal(v) if (v.name.charAt(0) == '_' && ~/^_g\d*$/.match(v.name)):
+                        #if debug_control_flow_compiler
+                        trace('[XRay ControlFlowCompiler] ✓ SKIPPING orphaned enum parameter (underscore): ${v.name}');
+                        #end
+                        true;
+                    case TLocal(v) if (~/^g_(array|counter)\d*$/.match(v.name)):
+                        #if debug_control_flow_compiler
+                        trace('[XRay ControlFlowCompiler] ✓ SKIPPING orphaned enum parameter (snake_case): ${v.name}');
+                        #end
+                        true;
+                    case _:
+                        false;
+                };
+                
+                if (!shouldSkip) {
+                    // Normal expression compilation
+                    var compiled = compiler.compileExpression(el[i], topLevel);
+                    if (compiled != null && compiled.length > 0) {
+                        // ADDITIONAL CHECK: Skip compiled expressions that are standalone orphaned variables
+                        // This catches cases where TLocal(_g) gets compiled to standalone "g_array"
+                        var trimmedCompiled = compiled.trim();
+                        var isOrphanedCompiled = ~/^g_(array|counter)\d*$/.match(trimmedCompiled);
+                        
+                        if (isOrphanedCompiled) {
+                            #if debug_control_flow_compiler
+                            trace('[XRay ControlFlowCompiler] ✓ SKIPPING compiled orphaned expression: ${trimmedCompiled}');
+                            #end
+                        } else {
+                            statements.push(compiled);
+                        }
+                    }
                 }
                 i++;
             }
@@ -895,21 +936,13 @@ class ControlFlowCompiler {
             #end
         }
         
-        // CRITICAL FIX: Use proper variable compilation to apply snake_case mappings
-        // Don't extract raw names - use VariableCompiler which handles:
+        // CRITICAL FIX: Use proper compilation chain to ensure parent tracking and context awareness
+        // This ensures:
         // - camelCase to snake_case conversion (bulkAction -> bulk_action)
         // - Variable name mappings from currentFunctionParameterMap
-        // - Proper handling of special variables like 'g'
-        var innerExprStr = switch (innerExpr.expr) {
-            case TLocal(localVar): 
-                // Use VariableCompiler to properly compile the variable reference
-                // This ensures camelCase variables are converted to snake_case
-                var variableCompiler = new VariableCompiler(compiler);
-                variableCompiler.compileLocalVariable(localVar);
-            case _: 
-                // Fallback to regular compilation for non-local expressions
-                compiler.compileExpression(innerExpr);
-        };
+        // - Context-aware orphan elimination for _g variables
+        // - Parent expression tracking for for-loop detection
+        var innerExprStr = compiler.compileExpression(innerExpr);
         // Final variable name extracted for case statement
         
         // Restore g mapping if it wasn't a counter variable

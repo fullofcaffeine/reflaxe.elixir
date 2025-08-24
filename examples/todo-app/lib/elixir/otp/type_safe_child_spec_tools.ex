@@ -23,13 +23,13 @@ defmodule TypeSafeChildSpecTools do
           case spec do
       {:pub_sub} -> (
           g_array = _ = elem(spec, 1)
-          name = 
+          name = g_array
           temp_result = {Phoenix.PubSub, name: name}
         )
       {:repo} -> (
           g_array = _ = elem(spec, 1)
           (
-          config = 
+          config = g_array
           (
           repo_module = "" <> app_name <> ".Repo"
           temp_array = nil
@@ -47,8 +47,8 @@ defmodule TypeSafeChildSpecTools do
           g_array = _ = elem(spec, 1)
           g_array = _ = elem(spec, 2)
           (
-          port = 
-          config = 
+          port = g_array
+          config = g_array
           (
           endpoint_module = "" <> app_name <> "Web.Endpoint"
           args = []
@@ -62,7 +62,7 @@ defmodule TypeSafeChildSpecTools do
           (
           g_counter = 0
           g_array = Reflect.fields(config)
-          Enum.each(, fn field -> 
+          Enum.each(g_array, fn field -> 
       Reflect.set_field(endpoint_config, field, Reflect.field(config, field))
     end)
         )
@@ -77,7 +77,7 @@ defmodule TypeSafeChildSpecTools do
       {:telemetry} -> (
           g_array = _ = elem(spec, 1)
           (
-          config = 
+          config = g_array
           (
           telemetry_module = "" <> app_name <> "Web.Telemetry"
           temp_array1 = nil
@@ -94,7 +94,7 @@ defmodule TypeSafeChildSpecTools do
       {:presence} -> (
           g_array = _ = elem(spec, 1)
           (
-          config = 
+          config = g_array
           (
           presence_module = "" <> app_name <> ".Presence"
           temp_result = presence_module
@@ -107,10 +107,10 @@ defmodule TypeSafeChildSpecTools do
           g_array = _ = elem(spec, 3)
           g_array = _ = elem(spec, 4)
           (
-          module = 
-          args = 
-          restart = 
-          shutdown = 
+          module = g_array
+          args = g_array
+          restart = g_array
+          shutdown = g_array
           (
           module_class = module
           module_name = Type.get_class_name(module_class)
@@ -120,7 +120,7 @@ defmodule TypeSafeChildSpecTools do
         )
       {:legacy} -> (
           g_array = _ = elem(spec, 1)
-          spec = 
+          spec = g_array
           temp_result = spec
         )
     end
@@ -166,12 +166,12 @@ defmodule TypeSafeChildSpecTools do
           _ = elem(spec, 2)
           _ = elem(spec, 3)
           _ = elem(spec, 4)
-          module = 
+          module = g_array
           temp_result = Type.get_class_name(module)
         )
       {:legacy} -> (
           g_array = _ = elem(spec, 1)
-          spec = 
+          spec = g_array
           temp_result = spec.id
         )
     end
@@ -240,7 +240,7 @@ defmodule TypeSafeChildSpecTools do
           case spec do
       {:pub_sub} -> (
           g_array = _ = elem(spec, 1)
-          name = 
+          name = g_array
           if (((name == nil) || (name == ""))) do
           errors ++ ["PubSub name cannot be empty"]
         end
@@ -252,7 +252,7 @@ defmodule TypeSafeChildSpecTools do
       {:endpoint} -> (
           g_array = _ = elem(spec, 1)
           _ = elem(spec, 2)
-          port = 
+          port = g_array
           if (((port != nil) && (((port < 1) || (port > 65535))))) do
           errors ++ ["Endpoint port must be between 1 and 65535"]
         end
@@ -260,7 +260,7 @@ defmodule TypeSafeChildSpecTools do
       {:telemetry} -> _ = elem(spec, 1)
       {:presence} -> (
           g_array = _ = elem(spec, 1)
-          config = 
+          config = g_array
           if (((config.name == nil) || (config.name == ""))) do
           errors ++ ["Presence name is required"]
         end
@@ -270,14 +270,14 @@ defmodule TypeSafeChildSpecTools do
           _ = elem(spec, 2)
           _ = elem(spec, 3)
           _ = elem(spec, 4)
-          module = 
+          module = g_array
           if ((module == nil)) do
           errors ++ ["Custom child spec module cannot be null"]
         end
         )
       {:legacy} -> (
           g_array = _ = elem(spec, 1)
-          spec = 
+          spec = g_array
           if (((spec.id == nil) || (spec.id == ""))) do
           errors ++ ["Legacy child spec id cannot be empty"]
         end
