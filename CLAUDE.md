@@ -75,6 +75,21 @@ haxe test/Test.hxml update-intended        # Accept new output
 MIX_ENV=test mix test                      # Runtime validation
 ```
 
+### Advanced Debugging
+```bash
+# Enable macro stack traces for complex compiler issues
+npx haxe build-server.hxml -D eval-stack -D debug_enum_introspection_compiler
+
+# Profile compilation performance
+npx haxe build-server.hxml -D eval-times
+
+# Maximum debug visibility for AST issues
+npx haxe build-server.hxml -D eval-stack -D debug_pattern_matching -D debug_expression_variants
+
+# Interactive debugging support
+npx haxe build-server.hxml -D eval-debugger
+```
+
 ## CLAUDE.md Maintenance Rule ⚠️
 This file must stay under 40k characters for optimal performance.
 - Keep only essential agent instructions  
@@ -172,6 +187,44 @@ return result;
 ```
 
 **Remember**: If you're adding a "cleanup" step, you're probably doing it wrong. Fix the generator, not the output.
+
+## ⚠️ CRITICAL: Use Reflaxe's Established Architecture Patterns
+
+**FUNDAMENTAL RULE: NEVER INVENT AD-HOC DETECTION SYSTEMS. USE REFLAXE'S ESTABLISHED PATTERNS.**
+
+**What counts as ad-hoc architectural deviation:**
+- ❌ **Custom detection systems** when Reflaxe provides standard solutions
+- ❌ **Hardcoded pattern matching** instead of using metadata systems
+- ❌ **Timing-dependent fixes** that rely on compilation order assumptions
+- ❌ **Context-specific workarounds** that don't scale to other use cases
+
+**The Reflaxe way:**
+- ✅ **Use Reflaxe's preprocessor system** - MarkUnusedVariablesImpl for unused variable detection
+- ✅ **Check established metadata** - Look for `-reflaxe.unused` instead of inventing detection
+- ✅ **Follow DirectToStringCompiler patterns** - Extend established base class methods
+- ✅ **Study reference implementations** - Check `/haxe.elixir.reference/reflaxe/` for patterns
+
+**LESSON LEARNED: Orphaned Variable Detection**
+When we encountered orphaned `g_array` variables:
+- ❌ **WRONG**: Invented custom `isParameterTrulyOrphaned()` detection
+- ❌ **WRONG**: Made assumptions based on compilation timing
+- ✅ **RIGHT**: Use Reflaxe's `MarkUnusedVariablesImpl` + `-reflaxe.unused` metadata
+- ✅ **RIGHT**: Check existing VariableCompiler patterns that already handle this metadata
+
+**Example of architectural alignment:**
+```haxe
+// ❌ WRONG: Ad-hoc detection
+private function isParameterTrulyOrphaned(ef: EnumField, index: Int): Bool {
+    // Custom logic based on assumptions...
+}
+
+// ✅ RIGHT: Use Reflaxe metadata system
+if (tvar.meta != null && tvar.meta.has("-reflaxe.unused")) {
+    return ""; // Skip generation - Reflaxe preprocessor marked this as unused
+}
+```
+
+**Remember**: Reflaxe is a mature framework. If you're inventing something from scratch, check if Reflaxe already provides it.
 
 ## ⚠️ CRITICAL: NO ENUM-SPECIFIC HARDCODING EVER
 

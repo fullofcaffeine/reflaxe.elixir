@@ -376,6 +376,35 @@ class ExpressionVariantCompiler {
         trace('[XRay ExpressionVariantCompiler] ✓ compileSwitchExpression called');
         #end
         
+        // CRITICAL: Pre-analyze ALL switch cases to set pattern usage context BEFORE any compilation
+        // This is the key fix for the orphaned enum parameters issue - context must be available
+        // when TEnumParameter expressions are compiled, which happens early in case processing
+        #if debug_expression_variants
+        trace('[XRay ExpressionVariantCompiler] Pre-analyzing switch cases for pattern usage context');
+        #end
+        
+        for (caseData in cases) {
+            var usedVariables = compiler.patternMatchingCompiler.findUsedVariables(caseData.expr);
+            if (usedVariables != null && Lambda.count(usedVariables) > 0) {
+                // Found variables used in at least one case - set global context
+                // This context will be available when TEnumParameter expressions are compiled
+                compiler.patternUsageContext = usedVariables;
+                #if debug_expression_variants
+                var usedVarNames = [for (name in usedVariables.keys()) name];
+                trace('[XRay ExpressionVariantCompiler] ✓ Set global pattern usage context: [${usedVarNames.join(", ")}]');
+                #end
+                break; // Only need to set context once
+            }
+        }
+        
+        // If no variables found in any case, ensure context indicates empty usage
+        if (compiler.patternUsageContext == null) {
+            compiler.patternUsageContext = new Map<String, Bool>();
+            #if debug_expression_variants
+            trace('[XRay ExpressionVariantCompiler] ✓ Set empty pattern usage context (no variables used)');
+            #end
+        }
+        
         // Create FunctionContext with struct parameter name if we're in state threading mode
         var context: Null<reflaxe.elixir.helpers.ControlFlowCompiler.FunctionContext> = null;
         
@@ -412,7 +441,16 @@ class ExpressionVariantCompiler {
             #end
         }
         
-        return compiler.patternMatchingCompiler.compileSwitchExpression(switchExpr, cases, defaultExpr, context);
+        var result = compiler.patternMatchingCompiler.compileSwitchExpression(switchExpr, cases, defaultExpr, context);
+        
+        // CRITICAL: Clear the global pattern usage context after switch compilation
+        // This prevents context pollution between different compilation units
+        compiler.patternUsageContext = null;
+        #if debug_expression_variants
+        trace('[XRay ExpressionVariantCompiler] ✓ Cleared global pattern usage context after switch compilation');
+        #end
+        
+        return result;
     }
 
     /**
