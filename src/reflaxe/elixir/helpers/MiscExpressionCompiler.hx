@@ -417,21 +417,95 @@ class MiscExpressionCompiler {
     /**
      * Compile TTypeExpr type expressions
      * 
-     * WHY: Type expressions need to resolve to proper Elixir module names
+     * WHY: Type expressions need to resolve to proper Elixir module names with @:native support
+     * 
+     * WHAT: Transforms Haxe type references to fully-qualified Elixir module names,
+     * respecting @:native annotations for framework integration (e.g., TodoLive → TodoAppWeb.TodoLive)
+     * 
+     * HOW: 
+     * 1. Check for @:native annotation first - this overrides default naming
+     * 2. Fall back to NamingHelper conversion for classes without @:native
+     * 3. Ensure proper module resolution for static method calls
      * 
      * @param moduleType The module type reference
-     * @return Compiled Elixir module name
+     * @return Compiled Elixir module name (fully-qualified when @:native exists)
      */
     public function compileTypeExpression(moduleType: ModuleType): String {
         #if debug_misc_expression_compiler
         trace("[XRay MiscExpressionCompiler] TYPE EXPRESSION COMPILATION START");
         #end
         
-        // Type expression - convert to Elixir module name
+        // Type expression - convert to Elixir module name, respecting @:native annotations
         var result = switch (moduleType) {
-            case TClassDecl(c): NamingHelper.getElixirModuleName(c.get().name);
-            case TEnumDecl(e): NamingHelper.getElixirModuleName(e.get().name);
-            case TAbstract(a): NamingHelper.getElixirModuleName(a.get().name);
+            case TClassDecl(c):
+                var classType = c.get();
+                #if debug_misc_expression_compiler
+                trace('[XRay MiscExpressionCompiler] Resolving class type: ${classType.name}');
+                #end
+                
+                // First check for @:native annotation
+                var nativeMeta = classType.meta.extract(":native");
+                if (nativeMeta.length > 0 && nativeMeta[0].params != null && nativeMeta[0].params.length > 0) {
+                    switch (nativeMeta[0].params[0].expr) {
+                        case EConst(CString(nativeName, _)):
+                            #if debug_misc_expression_compiler
+                            trace('[XRay MiscExpressionCompiler] ✓ Using @:native annotation: ${nativeName}');
+                            #end
+                            
+                            // Validate @:native format for common mistakes
+                            if (nativeName.length == 0) {
+                                haxe.macro.Context.warning('@:native annotation is empty for class ${classType.name}. Using default naming.', haxe.macro.Context.currentPos());
+                                NamingHelper.getElixirModuleName(classType.name);
+                            } else if (!~/^[A-Z][a-zA-Z0-9]*(\.[A-Z][a-zA-Z0-9]*)*$/.match(nativeName)) {
+                                haxe.macro.Context.warning('@:native("${nativeName}") does not follow Elixir module naming convention (should be like "MyApp.MyModule") for class ${classType.name}. Using as-is.', haxe.macro.Context.currentPos());
+                                nativeName;
+                            } else {
+                                nativeName;
+                            }
+                        case _:
+                            #if debug_misc_expression_compiler
+                            trace('[XRay MiscExpressionCompiler] ⚠ Invalid @:native format, falling back to default');
+                            #end
+                            haxe.macro.Context.warning('@:native parameter must be a string literal for class ${classType.name}. Example: @:native("MyApp.MyModule"). Using default naming.', haxe.macro.Context.currentPos());
+                            NamingHelper.getElixirModuleName(classType.name);
+                    }
+                } else {
+                    #if debug_misc_expression_compiler
+                    trace('[XRay MiscExpressionCompiler] ⚠ No @:native found, using default naming');
+                    #end
+                    NamingHelper.getElixirModuleName(classType.name);
+                }
+                
+            case TEnumDecl(e):
+                var enumType = e.get();
+                // Check for @:native on enums too
+                var nativeMeta = enumType.meta.extract(":native");
+                if (nativeMeta.length > 0 && nativeMeta[0].params != null && nativeMeta[0].params.length > 0) {
+                    switch (nativeMeta[0].params[0].expr) {
+                        case EConst(CString(nativeName, _)):
+                            nativeName;
+                        case _:
+                            NamingHelper.getElixirModuleName(enumType.name);
+                    }
+                } else {
+                    NamingHelper.getElixirModuleName(enumType.name);
+                }
+                
+            case TAbstract(a):
+                var abstractType = a.get();
+                // Check for @:native on abstracts too  
+                var nativeMeta = abstractType.meta.extract(":native");
+                if (nativeMeta.length > 0 && nativeMeta[0].params != null && nativeMeta[0].params.length > 0) {
+                    switch (nativeMeta[0].params[0].expr) {
+                        case EConst(CString(nativeName, _)):
+                            nativeName;
+                        case _:
+                            NamingHelper.getElixirModuleName(abstractType.name);
+                    }
+                } else {
+                    NamingHelper.getElixirModuleName(abstractType.name);
+                }
+                
             case _: "Dynamic";
         };
         
