@@ -19,7 +19,7 @@ defmodule TodoAppWeb.Gettext.UIMessages do
   def welcome(name) do
     (
           bindings = TranslationBindings_Impl_.set(TranslationBindings_Impl_.create(), "name", name)
-          Gettext.gettext("Welcome %{name}!", bindings)
+          TodoAppWeb.Gettext.gettext("Welcome %{name}!", bindings)
         )
   end
 
@@ -29,7 +29,7 @@ defmodule TodoAppWeb.Gettext.UIMessages do
   """
   @spec success() :: String.t()
   def success() do
-    Gettext.gettext("Operation completed successfully")
+    TodoAppWeb.Gettext.gettext("Operation completed successfully")
   end
 
   @doc """
@@ -38,7 +38,7 @@ defmodule TodoAppWeb.Gettext.UIMessages do
   """
   @spec loading() :: String.t()
   def loading() do
-    Gettext.gettext("Loading...")
+    TodoAppWeb.Gettext.gettext("Loading...")
   end
 
   @doc """
@@ -47,7 +47,7 @@ defmodule TodoAppWeb.Gettext.UIMessages do
   """
   @spec save() :: String.t()
   def save() do
-    Gettext.gettext("Save")
+    TodoAppWeb.Gettext.gettext("Save")
   end
 
   @doc """
@@ -56,7 +56,7 @@ defmodule TodoAppWeb.Gettext.UIMessages do
   """
   @spec cancel() :: String.t()
   def cancel() do
-    Gettext.gettext("Cancel")
+    TodoAppWeb.Gettext.gettext("Cancel")
   end
 
   @doc """
@@ -65,7 +65,7 @@ defmodule TodoAppWeb.Gettext.UIMessages do
   """
   @spec delete() :: String.t()
   def delete() do
-    Gettext.gettext("Delete")
+    TodoAppWeb.Gettext.gettext("Delete")
   end
 
   @doc """
@@ -74,7 +74,7 @@ defmodule TodoAppWeb.Gettext.UIMessages do
   """
   @spec edit() :: String.t()
   def edit() do
-    Gettext.gettext("Edit")
+    TodoAppWeb.Gettext.gettext("Edit")
   end
 
   @doc """
@@ -83,7 +83,7 @@ defmodule TodoAppWeb.Gettext.UIMessages do
   """
   @spec confirm_delete() :: String.t()
   def confirm_delete() do
-    Gettext.gettext("Are you sure you want to delete this item?")
+    TodoAppWeb.Gettext.gettext("Are you sure you want to delete this item?")
   end
 
 end
