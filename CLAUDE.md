@@ -13,6 +13,7 @@ Enable developers to **write business logic once in Haxe and deploy it anywhere*
 - **LLM Productivity Multiplier**: Provide deterministic vocabulary that reduces AI hallucinations
 - **Framework Integration Excellence**: Deep Phoenix/Ecto/OTP integration, not just language compatibility
 - **Framework-Agnostic Architecture**: Support any Elixir application pattern (Phoenix, Nerves, pure OTP) without compiler assumptions
+- **⚠️ API Faithfulness**: Follow Elixir and Phoenix APIs exactly - never invent functions that don't exist. Provide Haxe conveniences via proper overloads, not fake APIs
 - **Hand-Written Quality**: Generated code should look like it was written by an Elixir expert, not a machine
 - **Transparent Bridge Variables**: When compiler-generated variables are needed (like `g` for switch expressions), add comments explaining their purpose
 

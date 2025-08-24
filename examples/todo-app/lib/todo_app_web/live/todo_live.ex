@@ -17,7 +17,7 @@ defmodule TodoAppWeb.TodoLive do
     current_user = TodoAppWeb.TodoLive.get_user_from_session(session)
     todos = TodoAppWeb.TodoLive.load_todos(current_user.id)
     assigns = %{"todos" => todos, "filter" => "all", "sort_by" => "created", "current_user" => current_user, "editing_todo" => nil, "show_form" => false, "search_query" => "", "selected_tags" => [], "total_todos" => todos.length, "completed_todos" => TodoAppWeb.TodoLive.count_completed(todos), "pending_todos" => TodoAppWeb.TodoLive.count_pending(todos)}
-    updated_socket = Phoenix.LiveView.assign_multiple(socket, assigns)
+    updated_socket = Phoenix.LiveView.assign(socket, assigns)
     MountResult.ok(updated_socket)
   end
 
@@ -28,21 +28,21 @@ defmodule TodoAppWeb.TodoLive do
 
     temp_socket = nil
     case event do
-      "bulk_complete" -> temp_socket = TodoAppWeb.TodoLive.complete_all_todos(socket)
-      "bulk_delete_completed" -> temp_socket = TodoAppWeb.TodoLive.delete_completed_todos(socket)
-      "cancel_edit" -> temp_socket = SafeAssigns.set_editing_todo(socket, nil)
-      "create_todo" -> temp_socket = TodoAppWeb.TodoLive.create_new_todo(params, socket)
-      "delete_todo" -> temp_socket = TodoAppWeb.TodoLive.delete_todo(params.id, socket)
-      "edit_todo" -> temp_socket = TodoAppWeb.TodoLive.start_editing(params.id, socket)
-      "filter_todos" -> temp_socket = SafeAssigns.set_filter(socket, params.filter)
-      "save_todo" -> temp_socket = TodoAppWeb.TodoLive.save_edited_todo(params, socket)
-      "search_todos" -> temp_socket = SafeAssigns.set_search_query(socket, params.query)
-      "set_priority" -> temp_socket = TodoAppWeb.TodoLive.update_todo_priority(params.id, params.priority, socket)
-      "sort_todos" -> temp_socket = SafeAssigns.set_sort_by(socket, params.sort_by)
-      "toggle_form" -> temp_socket = SafeAssigns.set_show_form(socket, not socket.assigns.show_form)
-      "toggle_tag" -> temp_socket = TodoAppWeb.TodoLive.toggle_tag_filter(params.tag, socket)
-      "toggle_todo" -> temp_socket = TodoAppWeb.TodoLive.toggle_todo_status(params.id, socket)
-      _ -> temp_socket = socket
+      "bulk_complete" -> TodoAppWeb.TodoLive.complete_all_todos(socket)
+      "bulk_delete_completed" -> TodoAppWeb.TodoLive.delete_completed_todos(socket)
+      "cancel_edit" -> SafeAssigns.set_editing_todo(socket, nil)
+      "create_todo" -> TodoAppWeb.TodoLive.create_new_todo(params, socket)
+      "delete_todo" -> TodoAppWeb.TodoLive.delete_todo(params.id, socket)
+      "edit_todo" -> TodoAppWeb.TodoLive.start_editing(params.id, socket)
+      "filter_todos" -> SafeAssigns.set_filter(socket, params.filter)
+      "save_todo" -> TodoAppWeb.TodoLive.save_edited_todo(params, socket)
+      "search_todos" -> SafeAssigns.set_search_query(socket, params.query)
+      "set_priority" -> TodoAppWeb.TodoLive.update_todo_priority(params.id, params.priority, socket)
+      "sort_todos" -> SafeAssigns.set_sort_by(socket, params.sort_by)
+      "toggle_form" -> SafeAssigns.set_show_form(socket, not socket.assigns.show_form)
+      "toggle_tag" -> TodoAppWeb.TodoLive.toggle_tag_filter(params.tag, socket)
+      "toggle_todo" -> TodoAppWeb.TodoLive.toggle_todo_status(params.id, socket)
+      _ -> socket
     end
     HandleEventResult.no_reply(temp_socket)
   end
@@ -60,44 +60,58 @@ defmodule TodoAppWeb.TodoLive do
       {:ok, _} -> (
           g_array = elem(g_array, 1)
           parsed_msg = g_array
-          case (elem(parsed_msg, 0)) do
-      {0, todo} -> (
+          case parsed_msg do
+      :todo_created -> (
           g_array = elem(parsed_msg, 1)
+          (
+          todo = g_array
           temp_socket = TodoAppWeb.TodoLive.add_todo_to_list(todo, socket)
         )
-      {1, todo} -> (
+        )
+      :todo_updated -> (
           g_array = elem(parsed_msg, 1)
+          (
+          todo = g_array
           temp_socket = TodoAppWeb.TodoLive.update_todo_in_list(todo, socket)
         )
-      {2, id} -> (
+        )
+      :todo_deleted -> (
           g_array = elem(parsed_msg, 1)
+          id = g_array
           temp_socket = TodoAppWeb.TodoLive.remove_todo_from_list(id, socket)
         )
-      {3, action} -> (
+      :bulk_update -> (
           g_array = elem(parsed_msg, 1)
+          action = g_array
           temp_socket = TodoAppWeb.TodoLive.handle_bulk_update(action, socket)
         )
-      {4, user_id} -> (
+      :user_online -> (
           elem(parsed_msg, 1)
+          (
+          g_array
           temp_socket = socket
         )
-      {5, user_id} -> (
+        )
+      :user_offline -> (
           elem(parsed_msg, 1)
+          (
+          g_array
           temp_socket = socket
         )
-      {6, message, level} -> (
-          g_array = elem(parsed_msg, 1)
-          g_array = elem(parsed_msg, 2)
-          temp_flash_type = nil
-          case (elem(level, 0)) do
-      0 -> temp_flash_type = :info
-      1 -> temp_flash_type = :warning
-      2 -> temp_flash_type = :error
-      3 -> temp_flash_type = :error
+        )
+      :system_alert -> g_array = elem(parsed_msg, 1)
+    g_array = elem(parsed_msg, 2)
+    message = g_array
+    level = g_array
+    temp_flash_type = nil
+    case level do
+      :info -> :info
+      :warning -> :warning
+      :error -> :error
+      :critical -> :error
     end
-          flash_type = temp_flash_type
-          temp_socket = Phoenix.LiveView.put_flash(socket, flash_type, message)
-        )
+    flash_type = temp_flash_type
+    temp_socket = Phoenix.LiveView.put_flash(socket, flash_type, message)
     end
         )
       :error -> (
@@ -149,7 +163,7 @@ defmodule TodoAppWeb.TodoLive do
     todos = [todo] ++ socket.assigns.todos
     current_assigns = socket.assigns
     complete_assigns = TypeSafeConversions.create_complete_assigns(current_assigns, todos, nil, nil, nil, nil, false, nil, nil)
-    updated_socket = Phoenix.LiveView.assign_multiple(socket, complete_assigns)
+    updated_socket = Phoenix.LiveView.assign(socket, complete_assigns)
     Phoenix.LiveView.put_flash(updated_socket, :success, "Todo created successfully!")
       {:error, _} -> (
           g_array = elem(g_array, 1)
@@ -290,7 +304,7 @@ defmodule TodoAppWeb.TodoLive do
     todos = [todo] ++ socket.assigns.todos
     current_assigns = socket.assigns
     complete_assigns = TypeSafeConversions.create_complete_assigns(current_assigns, todos)
-    Phoenix.LiveView.assign_multiple(socket, complete_assigns)
+    Phoenix.LiveView.assign(socket, complete_assigns)
   end
 
 
@@ -312,7 +326,7 @@ defmodule TodoAppWeb.TodoLive do
     end)
     current_assigns = socket.assigns
     complete_assigns = TypeSafeConversions.create_complete_assigns(current_assigns, g_array)
-    Phoenix.LiveView.assign_multiple(socket, complete_assigns)
+    Phoenix.LiveView.assign(socket, complete_assigns)
   end
 
 
@@ -328,7 +342,7 @@ defmodule TodoAppWeb.TodoLive do
     end)
     current_assigns = socket.assigns
     complete_assigns = TypeSafeConversions.create_complete_assigns(current_assigns, g_array)
-    Phoenix.LiveView.assign_multiple(socket, complete_assigns)
+    Phoenix.LiveView.assign(socket, complete_assigns)
   end
 
 
@@ -466,7 +480,7 @@ defmodule TodoAppWeb.TodoLive do
     complete_assigns = TypeSafeConversions.create_complete_assigns(current_assigns, updated_todos)
     %{complete_assigns | completed_todos: complete_assigns.total_todos}
     %{complete_assigns | pending_todos: 0}
-    updated_socket = Phoenix.LiveView.assign_multiple(socket, complete_assigns)
+    updated_socket = Phoenix.LiveView.assign(socket, complete_assigns)
     Phoenix.LiveView.put_flash(updated_socket, :info, "All todos marked as completed!")
   end
 
@@ -505,7 +519,7 @@ defmodule TodoAppWeb.TodoLive do
     complete_assigns = TypeSafeConversions.create_complete_assigns(current_assigns, temp_array1)
     %{complete_assigns | completed_todos: 0}
     %{complete_assigns | pending_todos: temp_array1.length}
-    updated_socket = Phoenix.LiveView.assign_multiple(socket, complete_assigns)
+    updated_socket = Phoenix.LiveView.assign(socket, complete_assigns)
     Phoenix.LiveView.put_flash(updated_socket, :info, "Completed todos deleted!")
   end
 
@@ -564,30 +578,37 @@ defmodule TodoAppWeb.TodoLive do
     temp_result = nil
 
     temp_result
-    case (elem(action, 0)) do
-      0 -> (
+    case action do
+      :complete_all -> (
           updated_todos = TodoAppWeb.TodoLive.load_todos(socket.assigns.current_user.id)
           current_assigns = socket.assigns
           complete_assigns = TypeSafeConversions.create_complete_assigns(current_assigns, updated_todos)
-          temp_result = Phoenix.LiveView.assign_multiple(socket, complete_assigns)
+          temp_result = Phoenix.LiveView.assign(socket, complete_assigns)
         )
-      1 -> (
+      :delete_completed -> (
           updated_todos = TodoAppWeb.TodoLive.load_todos(socket.assigns.current_user.id)
           current_assigns = socket.assigns
           complete_assigns = TypeSafeConversions.create_complete_assigns(current_assigns, updated_todos)
-          temp_result = Phoenix.LiveView.assign_multiple(socket, complete_assigns)
+          temp_result = Phoenix.LiveView.assign(socket, complete_assigns)
         )
-      {2, priority} -> (
+      :set_priority -> (
           elem(action, 1)
+          g_array
           temp_result = socket
         )
-      {3, tag} -> (
+      :add_tag -> (
           elem(action, 1)
+          (
+          g_array
           temp_result = socket
         )
-      {4, tag} -> (
+        )
+      :remove_tag -> (
           elem(action, 1)
+          (
+          g_array
           temp_result = socket
+        )
         )
     end
     temp_result

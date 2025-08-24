@@ -16,11 +16,11 @@ defmodule FlashTypeTools do
   def format(type) do
     (
           temp_result = nil
-          case (elem(type, 0)) do
-      0 -> temp_result = "info"
-      1 -> temp_result = "success"
-      2 -> temp_result = "warning"
-      3 -> temp_result = "error"
+          case type do
+      :info -> "info"
+      :success -> "success"
+      :warning -> "warning"
+      :error -> "error"
     end
           temp_result
         )
@@ -39,11 +39,11 @@ defmodule FlashTypeTools do
           (
           g_array = str.to_lower_case()
           case g_array do
-      "error" -> temp_result = :error
-      "info" -> temp_result = :info
-      "success" -> temp_result = :success
-      "warning" -> temp_result = :warning
-      _ -> temp_result = :info
+      "error" -> :error
+      "info" -> :info
+      "success" -> :success
+      "warning" -> :warning
+      _ -> :info
     end
         )
           temp_result
@@ -61,11 +61,11 @@ defmodule FlashTypeTools do
   def get_css_class(type) do
     (
           temp_result = nil
-          case (elem(type, 0)) do
-      0 -> temp_result = "bg-blue-50 border-blue-200 text-blue-800"
-      1 -> temp_result = "bg-green-50 border-green-200 text-green-800"
-      2 -> temp_result = "bg-yellow-50 border-yellow-200 text-yellow-800"
-      3 -> temp_result = "bg-red-50 border-red-200 text-red-800"
+          case type do
+      :info -> "bg-blue-50 border-blue-200 text-blue-800"
+      :success -> "bg-green-50 border-green-200 text-green-800"
+      :warning -> "bg-yellow-50 border-yellow-200 text-yellow-800"
+      :error -> "bg-red-50 border-red-200 text-red-800"
     end
           temp_result
         )
@@ -82,11 +82,11 @@ defmodule FlashTypeTools do
   def get_icon_name(type) do
     (
           temp_result = nil
-          case (elem(type, 0)) do
-      0 -> temp_result = "information-circle"
-      1 -> temp_result = "check-circle"
-      2 -> temp_result = "exclamation-triangle"
-      3 -> temp_result = "x-circle"
+          case type do
+      :info -> "information-circle"
+      :success -> "check-circle"
+      :warning -> "exclamation-triangle"
+      :error -> "x-circle"
     end
           temp_result
         )

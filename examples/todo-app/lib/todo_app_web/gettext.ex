@@ -46,15 +46,7 @@ defmodule TodoAppWeb.Gettext do
   """
   @spec ngettext(String.t(), String.t(), integer(), Null.t()) :: String.t()
   def ngettext(msgid, msgid_plural, count, bindings) do
-    (
-          temp_result = nil
-          if ((count == 1)) do
-          temp_result = msgid
-        else
-          temp_result = msgid_plural
-        end
-          temp_result
-        )
+    if (((count == 1))), do: msgid, else: msgid_plural
   end
 
   @doc """
@@ -69,15 +61,7 @@ defmodule TodoAppWeb.Gettext do
   """
   @spec dngettext(String.t(), String.t(), String.t(), integer(), Null.t()) :: String.t()
   def dngettext(domain, msgid, msgid_plural, count, bindings) do
-    (
-          temp_result = nil
-          if ((count == 1)) do
-          temp_result = msgid
-        else
-          temp_result = msgid_plural
-        end
-          temp_result
-        )
+    if (((count == 1))), do: msgid, else: msgid_plural
   end
 
   @doc """
