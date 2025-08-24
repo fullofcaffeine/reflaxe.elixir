@@ -173,6 +173,46 @@ return result;
 
 **Remember**: If you're adding a "cleanup" step, you're probably doing it wrong. Fix the generator, not the output.
 
+## ⚠️ CRITICAL: NO ENUM-SPECIFIC HARDCODING EVER
+
+**FUNDAMENTAL RULE: NEVER HARDCODE SPECIFIC ENUM NAMES OR TYPES IN COMPILER LOGIC. ALWAYS USE GENERAL PATTERNS.**
+
+**What counts as enum-specific hardcoding:**
+- ❌ **Hardcoded enum names** like `if (ef.name == "TypeSafeChildSpec")` in compiler logic
+- ❌ **Constructor-specific switches** like `switch(ef.name) { case "Repo": ...; case "Telemetry": ...; }`
+- ❌ **Parameter index hardcoding** for specific enum constructors
+- ❌ **Type-specific workarounds** that only work for particular enum definitions
+- ❌ **Maintenance nightmares** that require updating compiler code when enums change
+
+**The correct approach:**
+- ✅ **Detect patterns, not names** - Analyze AST structure and usage patterns
+- ✅ **Context-aware detection** - Use compilation context to determine parameter usage
+- ✅ **General algorithms** - Write code that works for ANY enum with similar patterns
+- ✅ **AST analysis** - Look at actual usage in the AST, not hardcoded type assumptions
+
+**Example of wrong vs right approach:**
+```haxe
+// ❌ WRONG: Hardcoded enum-specific logic
+var orphaned = switch(ef.name) {
+    case "Repo": index == 0;      // Hardcoded!
+    case "Telemetry": index == 0; // Hardcoded!
+    case "Endpoint": index == 1;  // Hardcoded!
+    case _: false;
+};
+
+// ✅ RIGHT: General pattern detection
+var orphaned = isParameterUnusedInCurrentContext(e, ef, index);
+// Uses AST analysis to detect unused parameters regardless of enum type
+```
+
+**Why this matters:**
+- **Maintenance**: Adding new enums shouldn't require compiler changes
+- **Generalization**: The compiler should work for user-defined enums, not just stdlib
+- **Architectural integrity**: Type-specific logic belongs in type definitions, not the compiler
+- **Future-proofing**: Enum definitions will evolve - the compiler should adapt automatically
+
+**Remember**: If you're checking specific enum names in the compiler, you're creating technical debt that will break when enums change.
+
 ## ⚠️ CRITICAL: Comprehensive Documentation Rule for ALL Compiler Code
 
 **FUNDAMENTAL RULE: Every piece of compiler logic MUST include comprehensive documentation and XRay debug traces.**

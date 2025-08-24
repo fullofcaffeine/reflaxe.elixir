@@ -598,6 +598,28 @@ class PatternMatchingCompiler {
             compiler.enumExtractionVars = null;
             compiler.currentEnumExtractionIndex = 0;
             
+            /**
+             * CRITICAL CONTEXT TRACKING: Set current switch case body for orphaned parameter detection
+             * 
+             * WHY: EnumIntrospectionCompiler needs to analyze the case body AST to detect
+             *      orphaned enum parameter extractions. This prevents generating unused 
+             *      'g = elem(spec, N)' assignments for parameters that are never referenced.
+             * 
+             * WHAT: Set compiler.currentSwitchCaseBody to the case expression being compiled
+             *       so that EnumIntrospectionCompiler can perform AST analysis.
+             * 
+             * HOW: Store the case body before compilation, clear it after compilation.
+             *      This provides EnumIntrospectionCompiler with context to make intelligent
+             *      decisions about whether to generate parameter extractions.
+             * 
+             * ARCHITECTURAL BENEFIT: Enables general-purpose orphaned parameter detection
+             *                       without hardcoding specific enum names.
+             */
+            compiler.currentSwitchCaseBody = caseData.expr;
+            #if debug_pattern_matching
+            trace('[XRay PatternMatchingCompiler] ✓ SET switch case body context for orphaned parameter detection');
+            #end
+            
             // No changes needed here - the fix should be in EnumIntrospectionCompiler itself
             var savedGMapping = null;
             
@@ -651,6 +673,22 @@ class PatternMatchingCompiler {
                         compiler.compileExpression(caseData.expr);
                     }
             };
+            
+            /**
+             * CRITICAL CONTEXT CLEANUP: Clear switch case body context after compilation
+             * 
+             * WHY: Prevent context pollution and ensure currentSwitchCaseBody is only
+             *      valid during the specific case being compiled.
+             * 
+             * WHAT: Reset compiler.currentSwitchCaseBody to null after case compilation
+             * 
+             * HOW: Clear the context immediately after body compilation to maintain
+             *      clean state boundaries between different compilation contexts.
+             */
+            compiler.currentSwitchCaseBody = null;
+            #if debug_pattern_matching
+            trace('[XRay PatternMatchingCompiler] ✓ CLEARED switch case body context');
+            #end
             
             // Restore the saved mapping if we removed it
             // CRITICAL FIX: Don't restore if the mapping is to g_counter - that's always wrong

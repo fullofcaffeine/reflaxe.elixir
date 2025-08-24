@@ -415,15 +415,15 @@ class TypeSafeChildSpecTools {
                     errors.push("PubSub name should follow 'AppName.PubSub' convention");
                 }
                 
-            case Repo(config):
+            case Repo(_):
                 // Repo validation is optional since many configs are environment-specific
                 
-            case Endpoint(port, config):
+            case Endpoint(port, _):
                 if (port != null && (port < 1 || port > 65535)) {
                     errors.push("Endpoint port must be between 1 and 65535");
                 }
                 
-            case Telemetry(config):
+            case Telemetry(_):
                 // Telemetry validation is optional
                 
             case Presence(config):

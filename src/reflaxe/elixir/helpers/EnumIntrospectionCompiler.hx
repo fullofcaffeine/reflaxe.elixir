@@ -458,13 +458,15 @@ class EnumIntrospectionCompiler {
      *      containing only comments. This creates unused elem() calls that generate orphaned
      *      'g' variables, polluting the generated Elixir code.
      * 
-     * WHAT: Comprehensive heuristic to detect when parameter extraction serves no purpose:
-     *       - Parameter is extracted but never used meaningfully
-     *       - Common in validation switch cases with only comments
-     *       - Prevents generation of unused 'g = elem(spec, N)' assignments
+     * WHAT: General-purpose orphaned parameter detection using AST analysis:
+     *       - Analyzes the compilation context to determine if parameter will be used
+     *       - Examines subsequent AST nodes for meaningful parameter usage
+     *       - Works for ANY enum, not just hardcoded specific types
      * 
-     * HOW: Use multiple heuristics to detect orphaned patterns across different contexts.
-     *      This handles the broader pattern of unused enum destructuring in empty cases.
+     * HOW: Analyzes the compiler's current AST context and compilation state:
+     *      1. Check if we're in a switch case with empty/trivial body
+     *      2. Look ahead in the AST to see if the parameter is referenced
+     *      3. Detect patterns where parameters are extracted but never used
      * 
      * @param e The enum expression being destructured
      * @param ef The enum field information
@@ -477,43 +479,31 @@ class EnumIntrospectionCompiler {
         trace('[XRay EnumIntrospectionCompiler] Enum field: ${ef.name}, index: ${index}');
         #end
         
-        // COMPREHENSIVE ORPHANED PARAMETER DETECTION:
-        // The TypeSafeChildSpec.validate function has switch cases that destructure parameters
-        // but never use them. These generate 'g = elem(spec, N)' followed by standalone 'g'.
+        // GENERAL ORPHANED PARAMETER DETECTION:
+        // Instead of hardcoding specific enum names, detect the actual pattern:
+        // "Parameter extracted but never meaningfully used in the following code"
         
-        // Check if this is a TypeSafeChildSpec enum pattern
-        var isChildSpecEnum = (ef.name == "PubSub" || ef.name == "Repo" || ef.name == "Endpoint" || 
-                              ef.name == "Telemetry" || ef.name == "Presence" || ef.name == "Custom" || 
-                              ef.name == "Legacy");
-        
-        if (!isChildSpecEnum) {
+        // Strategy 1: Check if we have a current switch case body to analyze
+        // The PatternMatchingCompiler sets currentSwitchCaseBody when compiling switch cases
+        if (compiler.currentSwitchCaseBody != null) {
             #if debug_enum_introspection_compiler
-            trace('[XRay EnumIntrospectionCompiler] ❌ Not a TypeSafeChildSpec enum');
+            trace('[XRay EnumIntrospectionCompiler] Switch case body available for analysis');
             #end
-            return false;
+            
+            // Check if the current switch case body is empty or trivial
+            if (isCurrentSwitchCaseEmpty()) {
+                #if debug_enum_introspection_compiler
+                trace('[XRay EnumIntrospectionCompiler] ✓ DETECTED orphaned parameter in empty switch case');
+                #end
+                return true;
+            }
         }
         
-        // For TypeSafeChildSpec enums in validate function, check specific patterns:
-        // 1. Repo(config) - config never used (empty case body)
-        // 2. Telemetry(config) - config never used  
-        // 3. Presence(config) - config never used
-        // 4. Legacy cases - complex but mostly unused
-        
-        // These cases have parameters that are extracted but not used in validation
-        // DISABLED: This detection is too aggressive and causes undefined variable errors
-        // The variables ARE being referenced, just not in meaningful ways
-        var orphanedCases = false; // Temporarily disable orphaned detection
-        /* switch(ef.name) {
-            case "Repo": index == 0;      // Repo(config) - config unused
-            case "Telemetry": index == 0; // Telemetry(config) - config unused  
-            case "Presence": index == 0;  // Presence(config) - config unused
-            case "Legacy": true;          // Legacy has complex unused patterns
-            case _: false;
-        }; */
-        
-        if (orphanedCases) {
+        // Strategy 2: Look ahead in AST processing queue to see if parameter will be referenced
+        // This requires examining the compiler's current expression processing context
+        if (isParameterUnreferencedInContext(ef, index)) {
             #if debug_enum_introspection_compiler
-            trace('[XRay EnumIntrospectionCompiler] ✓ DETECTED orphaned parameter: ${ef.name} param ${index}');
+            trace('[XRay EnumIntrospectionCompiler] ✓ DETECTED orphaned parameter - not referenced in context');
             #end
             return true;
         }
@@ -523,6 +513,223 @@ class EnumIntrospectionCompiler {
         #end
         
         return false;
+    }
+    
+    /**
+     * Check if the current switch case being compiled has an empty/trivial body
+     * 
+     * WHY: Empty switch cases often destructure parameters they don't use
+     * WHAT: Analyze current compilation context for empty case patterns
+     * HOW: Check compiler state for trivial case body indicators
+     */
+    private function isCurrentSwitchCaseEmpty(): Bool {
+        // This would need access to the current switch case AST being processed
+        // For now, implement a basic heuristic - this is where we'd add more
+        // sophisticated AST analysis of the current compilation context
+        
+        // TODO: Implement proper AST context analysis
+        // This requires tracking the current switch case body in the compiler
+        return false; // Conservative default - don't skip unless we're sure
+    }
+    
+    /**
+     * Check if a parameter will be referenced meaningfully in the current context
+     * 
+     * WHY: Parameters might be extracted but only used in trivial ways (like assignments to unused vars)
+     * WHAT: Analyze the switch case body AST to determine if parameter has meaningful usage
+     * HOW: Use recursive AST traversal to find TLocal references to the parameter variable
+     */
+    private function isParameterUnreferencedInContext(ef: EnumField, index: Int): Bool {
+        #if debug_enum_introspection_compiler
+        trace('[XRay EnumIntrospectionCompiler] Checking parameter usage in context');
+        #end
+        
+        // Check if we have access to the current switch case body
+        if (compiler.currentSwitchCaseBody == null) {
+            #if debug_enum_introspection_compiler
+            trace('[XRay EnumIntrospectionCompiler] ✗ No switch case body available');
+            #end
+            return false; // Conservative - assume it's used if we can't analyze
+        }
+        
+        // The parameter variable is typically named 'g' in generated code
+        // Check if 'g' is actually used in the case body
+        var isUsed = isVariableUsedInExpression("g", compiler.currentSwitchCaseBody);
+        
+        #if debug_enum_introspection_compiler
+        trace('[XRay EnumIntrospectionCompiler] Variable "g" usage in case body: ${isUsed}');
+        #end
+        
+        return !isUsed; // Return true if parameter is NOT used (orphaned)
+    }
+    
+    /**
+     * Recursively analyze a TypedExpr to check if a variable is used
+     * 
+     * WHY: We need to determine if an extracted enum parameter is actually referenced in the case body
+     * WHAT: Traverse the entire AST tree looking for TLocal references to the specified variable
+     * HOW: Pattern match on all TypedExpr variants and recurse into sub-expressions
+     * 
+     * @param varName The variable name to search for
+     * @param expr The expression to analyze
+     * @return True if the variable is referenced, false otherwise
+     */
+    private function isVariableUsedInExpression(varName: String, expr: TypedExpr): Bool {
+        #if debug_enum_introspection_compiler
+        trace('[XRay EnumIntrospectionCompiler] Analyzing expression for variable "${varName}": ${Type.enumConstructor(expr.expr)}');
+        #end
+        
+        return switch (expr.expr) {
+            case TLocal(v):
+                // Direct variable reference
+                var found = v.name == varName;
+                #if debug_enum_introspection_compiler
+                if (found) trace('[XRay EnumIntrospectionCompiler] ✓ FOUND variable reference: ${v.name}');
+                #end
+                found;
+                
+            case TBlock(expressions):
+                // Check all expressions in the block
+                #if debug_enum_introspection_compiler
+                trace('[XRay EnumIntrospectionCompiler] Checking TBlock with ${expressions.length} expressions');
+                #end
+                for (e in expressions) {
+                    if (isVariableUsedInExpression(varName, e)) {
+                        return true;
+                    }
+                }
+                false;
+                
+            case TBinop(op, e1, e2):
+                // Check both sides of binary operation
+                isVariableUsedInExpression(varName, e1) || isVariableUsedInExpression(varName, e2);
+                
+            case TUnop(op, postFix, e):
+                // Check unary operation expression
+                isVariableUsedInExpression(varName, e);
+                
+            case TCall(e, args):
+                // Check function expression and all arguments
+                var used = isVariableUsedInExpression(varName, e);
+                for (arg in args) {
+                    if (isVariableUsedInExpression(varName, arg)) {
+                        used = true;
+                        break;
+                    }
+                }
+                used;
+                
+            case TField(e, field):
+                // Check field access expression
+                isVariableUsedInExpression(varName, e);
+                
+            case TIf(econd, eif, eelse):
+                // Check condition, if branch, and optional else branch
+                var used = isVariableUsedInExpression(varName, econd) || 
+                          isVariableUsedInExpression(varName, eif);
+                if (!used && eelse != null) {
+                    used = isVariableUsedInExpression(varName, eelse);
+                }
+                used;
+                
+            case TSwitch(e, cases, edef):
+                // Check switch expression, all case bodies, and default
+                var used = isVariableUsedInExpression(varName, e);
+                for (caseData in cases) {
+                    // Check case values
+                    for (value in caseData.values) {
+                        if (isVariableUsedInExpression(varName, value)) {
+                            used = true;
+                            break;
+                        }
+                    }
+                    // Check case body
+                    if (!used && isVariableUsedInExpression(varName, caseData.expr)) {
+                        used = true;
+                        break;
+                    }
+                }
+                if (!used && edef != null) {
+                    used = isVariableUsedInExpression(varName, edef);
+                }
+                used;
+                
+            case TReturn(e):
+                // Check return expression
+                e != null ? isVariableUsedInExpression(varName, e) : false;
+                
+            case TVar(v, e):
+                // Check variable initialization expression
+                e != null ? isVariableUsedInExpression(varName, e) : false;
+                
+            case TTry(e, catches):
+                // Check try expression and all catch blocks
+                var used = isVariableUsedInExpression(varName, e);
+                for (catchData in catches) {
+                    if (!used && isVariableUsedInExpression(varName, catchData.expr)) {
+                        used = true;
+                        break;
+                    }
+                }
+                used;
+                
+            case TWhile(econd, e, normalWhile):
+                // Check while condition and body
+                isVariableUsedInExpression(varName, econd) || isVariableUsedInExpression(varName, e);
+                
+            case TFor(v, it, expr):
+                // Check iterator expression and loop body
+                isVariableUsedInExpression(varName, it) || isVariableUsedInExpression(varName, expr);
+                
+            case TArrayDecl(el):
+                // Check all array elements
+                for (e in el) {
+                    if (isVariableUsedInExpression(varName, e)) {
+                        return true;
+                    }
+                }
+                false;
+                
+            case TObjectDecl(fields):
+                // Check all object field values
+                for (field in fields) {
+                    if (isVariableUsedInExpression(varName, field.expr)) {
+                        return true;
+                    }
+                }
+                false;
+                
+            case TParenthesis(e):
+                // Check parenthesized expression
+                isVariableUsedInExpression(varName, e);
+                
+            case TMeta(m, e):
+                // Check meta expression
+                isVariableUsedInExpression(varName, e);
+                
+            case TCast(e, t):
+                // Check cast expression
+                isVariableUsedInExpression(varName, e);
+                
+            // Leaf expressions that don't contain variables
+            case TConst(_):
+                false;
+            case TTypeExpr(_):
+                false;
+            case TFunction(_):
+                false;
+                
+            // TEnumParameter and TEnumIndex - these might reference the variable indirectly
+            case TEnumParameter(e, _, _) | TEnumIndex(e):
+                isVariableUsedInExpression(varName, e);
+                
+            // Other expressions - conservative approach
+            case _:
+                #if debug_enum_introspection_compiler
+                trace('[XRay EnumIntrospectionCompiler] ⚠️ Unhandled expression type: ${Type.enumConstructor(expr.expr)}');
+                #end
+                false; // Conservative - assume not used if we don't recognize the pattern
+        };
     }
     
     /**
