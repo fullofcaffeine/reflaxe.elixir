@@ -1,5 +1,5 @@
-defmodule UserLive do
-  use AppWeb, :live_view
+defmodule TodoAppWeb.UserLive do
+  use TodoAppWeb, :live_view
 
   @doc "Generated from Haxe new"
   def __struct__() do

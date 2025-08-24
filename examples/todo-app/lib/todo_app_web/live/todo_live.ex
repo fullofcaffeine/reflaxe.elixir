@@ -1,5 +1,5 @@
-defmodule TodoLive do
-  use AppWeb, :live_view
+defmodule TodoAppWeb.TodoLive do
+  use TodoAppWeb, :live_view
 
   @doc "Generated from Haxe mount"
   def mount(params, session, socket) do
