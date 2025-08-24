@@ -87,7 +87,9 @@ class LiveViewCompiler {
         trace('[LiveViewCompiler] Functions: ${funcFields.length}');
         #end
         
-        var moduleName = NamingHelper.getElixirModuleName(classType.name);
+        // CRITICAL FIX: Use getNameOrNative() to respect @:native annotations
+        // This ensures classes with @:native("TodoAppWeb.TodoLive") get the correct module name
+        var moduleName = NamingHelper.getElixirModuleName(classType.getNameOrNative());
         var appName = extractAppName(moduleName);
         
         // Generate module header
