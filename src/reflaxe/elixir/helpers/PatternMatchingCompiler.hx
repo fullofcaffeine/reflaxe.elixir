@@ -219,6 +219,7 @@ class PatternMatchingCompiler {
         trace("[PatternMatchingCompiler] ============== SWITCH COMPILATION END ==============");
         #end
         
+        
         #if debug_pattern_matching
         trace("[PatternMatchingCompiler] Compiling switch expression");
         trace('[PatternMatchingCompiler] Switch expr type: ${switchExpr.t}');
@@ -244,6 +245,8 @@ class PatternMatchingCompiler {
         
         // Check for enum type handling
         var enumType = extractEnumType(switchExpr.t);
+        
+        
         if (enumType != null) {
             #if debug_pattern_matching
             trace('[PatternMatchingCompiler] ✓ DETECTED ENUM TYPE: ${enumType.name}');
@@ -273,6 +276,23 @@ class PatternMatchingCompiler {
             #if debug_pattern_matching
             trace('[PatternMatchingCompiler] ⚠️ NO ENUM TYPE DETECTED - using standard case compilation');
             #end
+            
+            // CRITICAL FIX: Try to detect enum type from switch cases themselves
+            // Sometimes enum type isn't detected from switch expr but we can detect it from patterns
+            var inferredEnumType = inferEnumTypeFromCases(cases);
+            if (inferredEnumType != null) {
+                #if debug_pattern_matching
+                trace('[PatternMatchingCompiler] ✓ INFERRED ENUM TYPE: ${inferredEnumType.name} - forcing elem-based compilation');
+                #end
+                return compileEnumIndexSwitch(switchExpr, cases, defaultExpr, context, inferredEnumType);
+            }
+            
+            // CRITICAL FIX: Force ALL switches to use elem-based compilation by default
+            // This ensures consistent pattern generation across all enum switches
+            #if debug_pattern_matching
+            trace('[PatternMatchingCompiler] ✓ FORCING ALL SWITCHES TO USE ELEM-BASED COMPILATION');
+            #end
+            return compileEnumIndexSwitch(switchExpr, cases, defaultExpr, context, null);
         }
         
         // Standard case statement compilation
@@ -451,8 +471,24 @@ class PatternMatchingCompiler {
                         } else if (enumType.name == "Result") {
                             compileResultPattern(enumField, args);
                         } else {
-                            // Standard enum pattern
-                            compileTuplePattern(enumField.name, args);
+                            // CRITICAL FIX: Check if we're in an elem-based switch context
+                            if (currentSwitchIsElemBased) {
+                                // Generate simple integer pattern for elem-based switches
+                                var enumConstructors = [];
+                                for (name in enumType.names) {
+                                    enumConstructors.push(name);
+                                }
+                                var constructorIndex = enumConstructors.indexOf(enumField.name);
+                                if (constructorIndex >= 0) {
+                                    Std.string(constructorIndex);
+                                } else {
+                                    // Fallback to tuple pattern if index not found
+                                    compileTuplePattern(enumField.name, args);
+                                }
+                            } else {
+                                // Standard tuple pattern for non-elem-based switches
+                                compileTuplePattern(enumField.name, args);
+                            }
                         }
                         
                     default:
@@ -555,6 +591,50 @@ class PatternMatchingCompiler {
     }
     
     /**
+     * Infer enum type from switch cases by analyzing TEnumParameter patterns
+     * 
+     * WHY: Sometimes the switchExpr doesn't directly reveal the enum type (especially
+     * with complex expressions), but we can analyze the case patterns to detect enum usage
+     * 
+     * WHAT: Examines the case values for TEnumParameter expressions and extracts
+     * the enum type from the first detected enum constructor
+     * 
+     * HOW: Iterates through case values, finds TEnumParameter expressions,
+     * and returns the enum type if a consistent pattern is found
+     * 
+     * @param cases The switch case array to analyze
+     * @return The detected enum type, or null if not found
+     */
+    private function inferEnumTypeFromCases(
+        cases: Array<{values: Array<TypedExpr>, expr: TypedExpr}>
+    ): Null<EnumType> {
+        for (caseData in cases) {
+            for (valueExpr in caseData.values) {
+                switch (valueExpr.expr) {
+                    case TEnumParameter(e, ef, index):
+                        // Found an enum parameter - extract the enum type
+                        var enumType = extractEnumType(e.t);
+                        if (enumType != null) {
+                            #if debug_pattern_matching
+                            trace('[inferEnumTypeFromCases] Detected enum type: ${enumType.name}');
+                            trace('[inferEnumTypeFromCases] From constructor: ${ef.name}');
+                            #end
+                            return enumType;
+                        }
+                        
+                    default:
+                        // Continue checking other patterns
+                }
+            }
+        }
+        
+        #if debug_pattern_matching
+        trace('[inferEnumTypeFromCases] No enum type detected from case patterns');
+        #end
+        return null;
+    }
+    
+    /**
      * Compile standard case statement
      */
     private function compileStandardCase(
@@ -568,9 +648,6 @@ class PatternMatchingCompiler {
         // This determines whether patterns should be integers or tuples
         currentSwitchIsElemBased = detectElemBasedSwitch(switchExpr);
         
-        #if debug_pattern_matching
-        trace('[PatternMatchingCompiler] Switch type detected: ${currentSwitchIsElemBased ? "elem() based (integer patterns)" : "direct enum (tuple patterns)"}');
-        #end
         
         // CRITICAL FIX: Remove 'g' mapping before compiling switch expression
         // The 'g' variable should never be mapped to g_counter in switch expressions
@@ -2149,11 +2226,11 @@ class PatternMatchingCompiler {
         cases: Array<{values: Array<TypedExpr>, expr: TypedExpr}>,
         defaultExpr: Null<TypedExpr>,
         ?context: reflaxe.elixir.helpers.ControlFlowCompiler.FunctionContext,
-        enumType: EnumType
+        ?enumType: EnumType
     ): String {
         #if debug_pattern_matching
         trace('[PatternMatchingCompiler] ✓ ENUM INDEX SWITCH COMPILATION START');
-        trace('[PatternMatchingCompiler] Enum type: ${enumType.name}');
+        trace('[PatternMatchingCompiler] Enum type: ${enumType != null ? enumType.name : "null"}');
         trace('[PatternMatchingCompiler] Cases: ${cases.length}');
         #end
         
@@ -2174,8 +2251,10 @@ class PatternMatchingCompiler {
         
         // Build index mapping for enum constructors
         var enumConstructors = [];
-        for (name in enumType.names) {
-            enumConstructors.push(name);
+        if (enumType != null) {
+            for (name in enumType.names) {
+                enumConstructors.push(name);
+            }
         }
         
         for (caseData in cases) {
