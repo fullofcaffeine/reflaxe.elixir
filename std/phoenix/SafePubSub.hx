@@ -2,6 +2,8 @@ package phoenix;
 
 import haxe.ds.Option;
 import haxe.functional.Result;
+import elixir.Module;
+import elixir.Application;
 
 /**
  * Type-safe PubSub system for Phoenix applications
@@ -100,10 +102,13 @@ class SafePubSub {
         topic: T, 
         topicConverter: T -> String
     ): Result<Void, String> {
-        // CONSISTENT FIX: Direct inline operation to avoid compiler's PubSub module injection
-        // MethodCallCompiler.compilePubSubCall() would add TodoApp.PubSub as first parameter
-        // Using hardcoded parameter names since $v{} substitution isn't working reliably
-        return untyped __elixir__("Phoenix.PubSub.subscribe(Module.concat([Application.get_application(__MODULE__), \"PubSub\"]), topic_converter.(topic))");
+        // TEMPORARY: Using __elixir__() until Module.concat compilation is fixed
+        // The compiler currently treats Module as a type and concat as array operation,
+        // resulting in "Module ++ [...]" instead of "Module.concat([...])"
+        // TODO: Fix extern module static function compilation
+        var pubsubModule = untyped __elixir__("Module.concat([Application.get_application(__MODULE__), \"PubSub\"])");
+        var topicString = topicConverter(topic);
+        return phoenix.Phoenix.PubSub.subscribe(pubsubModule, topicString);
     }
     
     /**
@@ -121,10 +126,14 @@ class SafePubSub {
         topicConverter: T -> String,
         messageConverter: M -> Dynamic
     ): Result<Void, String> {
-        // CONSISTENT FIX: Direct inline operation to avoid compiler's PubSub module injection
-        // MethodCallCompiler.compilePubSubCall() would add TodoApp.PubSub as first parameter
-        // Using hardcoded parameter names since $v{} substitution isn't working reliably
-        return untyped __elixir__("Phoenix.PubSub.broadcast(Module.concat([Application.get_application(__MODULE__), \"PubSub\"]), topic_converter.(topic), message_converter.(message))");
+        // TEMPORARY: Using __elixir__() until Module.concat compilation is fixed
+        // The compiler currently treats Module as a type and concat as array operation,
+        // resulting in "Module ++ [...]" instead of "Module.concat([...])"
+        // TODO: Fix extern module static function compilation
+        var pubsubModule = untyped __elixir__("Module.concat([Application.get_application(__MODULE__), \"PubSub\"])");
+        var topicString = topicConverter(topic);
+        var messagePayload = messageConverter(message);
+        return phoenix.Phoenix.PubSub.broadcast(pubsubModule, topicString, messagePayload);
     }
     
     /**

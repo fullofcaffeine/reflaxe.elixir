@@ -391,26 +391,22 @@ class MethodCallCompiler {
      * WHY: PubSub methods need the app's PubSub module as first argument
      */
     private function compilePubSubCall(methodName: String, args: Array<TypedExpr>): String {
+        // DESIGN DECISION: Simple pass-through approach
+        // 
+        // Previously, this method auto-injected TodoApp.PubSub as the first argument,
+        // which caused issues with SafePubSub and other dynamic module resolution cases.
+        // 
+        // Now we simply pass through all arguments as-is, trusting the caller to provide
+        // the correct module reference when needed. This allows for:
+        // - SafePubSub to use Module.concat for dynamic resolution
+        // - Direct calls to provide their own module explicitly
+        // - No hardcoded assumptions about app structure
+        
+        // Simply compile all arguments and pass them through
         var compiledArgs = args.map(arg -> compiler.compileExpression(arg));
         
-        // PubSub methods need the app's PubSub module as first argument
-        var appName = compiler.getCurrentAppName();
-        var pubsubModule = appName + ".PubSub";
-        
-        return switch (methodName) {
-            case "subscribe":
-                // Phoenix.PubSub.subscribe(TodoApp.PubSub, topic)
-                "Phoenix.PubSub.subscribe(" + pubsubModule + ", " + compiledArgs.join(", ") + ")";
-            case "broadcast":
-                // Phoenix.PubSub.broadcast(TodoApp.PubSub, topic, message)
-                "Phoenix.PubSub.broadcast(" + pubsubModule + ", " + compiledArgs.join(", ") + ")";
-            case "broadcast_from":
-                // Phoenix.PubSub.broadcast_from(TodoApp.PubSub, from_pid, topic, message)
-                "Phoenix.PubSub.broadcast_from(" + pubsubModule + ", " + compiledArgs.join(", ") + ")";
-            default:
-                // Other PubSub methods
-                "Phoenix.PubSub." + methodName + "(" + pubsubModule + ", " + compiledArgs.join(", ") + ")";
-        };
+        // Direct pass-through - let the caller provide the correct module as first arg when needed
+        return "Phoenix.PubSub." + methodName + "(" + compiledArgs.join(", ") + ")";
     }
     
     /**
