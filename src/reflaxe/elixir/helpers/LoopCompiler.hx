@@ -1619,6 +1619,51 @@ end)';
         trace('[XRay Loops]   - Array var: ${conditionInfo.arrayVar}');
         #end
         
+        /**
+         * CRITICAL FIX: TVAR.ID-BASED VARIABLE MAPPING FOR LOOP DESUGARING
+         * 
+         * WHY THIS IS NEEDED:
+         * When Haxe desugars for-in loops into while loops, it creates temporary variables
+         * that often have the same base name (e.g., both named "g"). Without proper identity
+         * tracking, both variables compile to the same string name, causing collisions like:
+         * - Generated: ((g_array < g_array)) - WRONG: same name used twice
+         * - Expected: ((g_counter < g_array)) - RIGHT: distinct names for distinct variables
+         * 
+         * THE PROBLEM:
+         * The Haxe compiler generates AST with multiple TVar instances that may have identical
+         * names but different TVar.id values. String-based comparison fails because:
+         * 1. Both variables are named "g" in the AST
+         * 2. Both compile to "g" if we don't track identity
+         * 3. This causes undefined variable errors or incorrect comparisons
+         * 
+         * THE SOLUTION:
+         * We use TVar.id as the unique identifier (following Reflaxe's established patterns).
+         * By registering each TVar with a specific name mapping BEFORE compilation:
+         * 1. indexTVar (the counter) -> maps to "g_counter"
+         * 2. arrayTVar (the limit) -> maps to "g_array"
+         * 
+         * HOW IT WORKS:
+         * 1. Extract TVar objects from the loop condition (not just their names)
+         * 2. Register them in VariableCompiler's variableIdMap using TVar.id as key
+         * 3. When these variables are compiled later, VariableCompiler looks up the mapping
+         * 4. Each TVar gets its registered unique name, preventing collisions
+         * 
+         * This follows the same pattern used by Reflaxe's MarkUnusedVariablesImpl preprocessor,
+         * which also uses TVar.id for unique variable identification.
+         */
+        if (conditionInfo.indexTVar != null && conditionInfo.arrayTVar != null) {
+            compiler.variableCompiler.setupLoopDesugaringMappings(
+                conditionInfo.indexTVar,  // Counter variable -> will be mapped to "g_counter"
+                conditionInfo.arrayTVar   // Limit variable -> will be mapped to "g_array"
+            );
+            
+            #if debug_loops
+            trace('[XRay Loops] ✓ Registered loop variable mappings:');
+            trace('[XRay Loops]   - TVar.id=${conditionInfo.indexTVar.id} -> g_counter');
+            trace('[XRay Loops]   - TVar.id=${conditionInfo.arrayTVar.id} -> g_array');
+            #end
+        }
+        
         // Analyze body to determine operation type (filter, map, find, etc.)
         var bodyPattern = analyzeArrayLoopBody(ebody, conditionInfo);
         if (bodyPattern == null) {
@@ -1694,6 +1739,51 @@ end)';
         #if debug_loops
         trace('[XRay ArrayPattern] ✓ CONDITION DETECTED: indexVar=${conditionInfo.indexVar}, arrayVar=${conditionInfo.arrayVar}');
         #end
+        
+        /**
+         * CRITICAL FIX: TVAR.ID-BASED VARIABLE MAPPING FOR LOOP DESUGARING
+         * 
+         * WHY THIS IS NEEDED:
+         * When Haxe desugars for-in loops into while loops, it creates temporary variables
+         * that often have the same base name (e.g., both named "g"). Without proper identity
+         * tracking, both variables compile to the same string name, causing collisions like:
+         * - Generated: ((g_array < g_array)) - WRONG: same name used twice
+         * - Expected: ((g_counter < g_array)) - RIGHT: distinct names for distinct variables
+         * 
+         * THE PROBLEM:
+         * The Haxe compiler generates AST with multiple TVar instances that may have identical
+         * names but different TVar.id values. String-based comparison fails because:
+         * 1. Both variables are named "g" in the AST
+         * 2. Both compile to "g" if we don't track identity
+         * 3. This causes undefined variable errors or incorrect comparisons
+         * 
+         * THE SOLUTION:
+         * We use TVar.id as the unique identifier (following Reflaxe's established patterns).
+         * By registering each TVar with a specific name mapping BEFORE compilation:
+         * 1. indexTVar (the counter) -> maps to "g_counter"
+         * 2. arrayTVar (the limit) -> maps to "g_array"
+         * 
+         * HOW IT WORKS:
+         * 1. Extract TVar objects from the loop condition (not just their names)
+         * 2. Register them in VariableCompiler's variableIdMap using TVar.id as key
+         * 3. When these variables are compiled later, VariableCompiler looks up the mapping
+         * 4. Each TVar gets its registered unique name, preventing collisions
+         * 
+         * This follows the same pattern used by Reflaxe's MarkUnusedVariablesImpl preprocessor,
+         * which also uses TVar.id for unique variable identification.
+         */
+        if (conditionInfo.indexTVar != null && conditionInfo.arrayTVar != null) {
+            compiler.variableCompiler.setupLoopDesugaringMappings(
+                conditionInfo.indexTVar,  // Counter variable -> will be mapped to "g_counter"
+                conditionInfo.arrayTVar   // Limit variable -> will be mapped to "g_array"
+            );
+            
+            #if debug_loops
+            trace('[XRay ArrayPattern] ✓ Registered loop variable mappings:');
+            trace('[XRay ArrayPattern]   - TVar.id=${conditionInfo.indexTVar.id} -> g_counter');
+            trace('[XRay ArrayPattern]   - TVar.id=${conditionInfo.arrayTVar.id} -> g_array');
+            #end
+        }
         
         // 2. Analyze body: Look for array access, accumulation, and increment patterns
         var bodyAnalysis = analyzeSimpleArrayLoopBody(ebody, conditionInfo);
@@ -3466,10 +3556,22 @@ ${CompilerUtilities.indentCode(body, 6)}
     /**
      * Analyze while loop condition for array iteration pattern
      * 
+     * ENHANCED WITH TVAR TRACKING FOR PROPER VARIABLE IDENTITY
+     * 
+     * WHY: String-based variable name comparison causes collisions when multiple
+     *      variables have the same base name (e.g., both "g" variables in desugared loops).
+     *      We need to track the actual TVar objects to maintain proper identity.
+     * 
+     * WHAT: Returns both string names (for display) and TVar objects (for identity tracking)
+     *       to enable proper variable disambiguation throughout the compilation process.
+     * 
+     * HOW: Extracts TVar from TLocal expressions and passes them along with the names,
+     *      allowing the compiler to register proper TVar.id mappings.
+     * 
      * @param econd While condition expression
-     * @return Info about array loop variables or null if not a match
+     * @return Info about array loop variables including TVar references, or null if not a match
      */
-    private function analyzeArrayLoopCondition(econd: TypedExpr): Null<{indexVar: String, arrayVar: String}> {
+    private function analyzeArrayLoopCondition(econd: TypedExpr): Null<{indexVar: String, arrayVar: String, indexTVar: Null<TVar>, arrayTVar: Null<TVar>}> {
         // Looking for pattern: _g1 < _g2.length (with parenthesis)
         switch(econd.expr) {
             case TParenthesis(e):
@@ -3478,19 +3580,25 @@ ${CompilerUtilities.indentCode(body, 6)}
             case TBinop(OpLt, e1, e2):
                 // e1 should be index variable (like _g1)
                 // e2 should be array.length field access
+                var indexTVar: Null<TVar> = null;
                 var indexVar = switch(e1.expr) {
-                    case TLocal(v): CompilerUtilities.toElixirVarName(v);
+                    case TLocal(v): 
+                        indexTVar = v;  // Capture the TVar for identity tracking
+                        CompilerUtilities.toElixirVarName(v);
                     case _: null;
                 };
                 
                 if (indexVar == null) return null;
                 
                 // Check for array.length pattern
+                var arrayTVar: Null<TVar> = null;
                 var arrayVar = switch(e2.expr) {
                     case TField(arrayExpr, FInstance(_, _, cf)):
                         if (cf.get().name == "length") {
                             switch(arrayExpr.expr) {
-                                case TLocal(v): CompilerUtilities.toElixirVarName(v);
+                                case TLocal(v): 
+                                    arrayTVar = v;  // Capture the TVar for identity tracking
+                                    CompilerUtilities.toElixirVarName(v);
                                 case _: null;
                             }
                         } else {
@@ -3501,7 +3609,8 @@ ${CompilerUtilities.indentCode(body, 6)}
                 
                 if (arrayVar == null) return null;
                 
-                return {indexVar: indexVar, arrayVar: arrayVar};
+                // Return both string names and TVar objects for proper tracking
+                return {indexVar: indexVar, arrayVar: arrayVar, indexTVar: indexTVar, arrayTVar: arrayTVar};
                 
             case _:
                 return null;
@@ -3591,11 +3700,37 @@ ${CompilerUtilities.indentCode(body, 6)}
                             
                         // Look for: index++ or ++index
                         case TUnop(OpIncrement, prefix, e):
+                            /**
+                             * CHECK IF INCREMENT IS FOR THE LOOP INDEX VARIABLE
+                             * 
+                             * WHY: In desugared array loops, Haxe generates both a counter variable
+                             *      (for array index) and a limit variable (for array length).
+                             *      Both might have the same base name (e.g., "g") but different TVar.id.
+                             *      We need to verify that the increment operation is specifically
+                             *      for the counter/index variable, not any other variable.
+                             * 
+                             * WHAT: conditionInfo.indexVar contains the name of the loop counter variable
+                             *       that was extracted from the loop condition (e.g., "g_counter" from
+                             *       the condition "g_counter < g_array.length"). We check if the 
+                             *       variable being incremented matches this index variable.
+                             * 
+                             * HOW: 1. Compile the increment target expression to get its variable name
+                             *      2. Compare with the known index variable from the loop condition
+                             *      3. Only mark as increment if it matches the loop index
+                             * 
+                             * NOTE: This comparison works because the loop condition analysis
+                             *       (analyzeArrayLoopCondition) extracts the specific variable
+                             *       used as the loop counter in the condition expression.
+                             */
                             var varName = compiler.compileExpression(e);
-                            if (varName == conditionInfo.indexVar || varName == "g_counter") {
+                            if (varName == conditionInfo.indexVar) {
                                 incrementFound = true;
                                 #if debug_loops
-                                trace('[XRay ArrayBody] - Found increment for ${varName}');
+                                trace('[XRay ArrayBody] - Found increment for index variable: ${varName}');
+                                #end
+                            } else {
+                                #if debug_loops
+                                trace('[XRay ArrayBody] - Found increment for non-index variable: ${varName} (index is ${conditionInfo.indexVar})');
                                 #end
                             }
                             
