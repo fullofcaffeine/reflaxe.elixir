@@ -19,7 +19,11 @@ defmodule SafePubSub do
   """
   @spec subscribe_with_converter(T.t(), Function.t()) :: Result.t()
   def subscribe_with_converter(topic, topic_converter) do
-    Phoenix.PubSub.subscribe(Module.concat([Application.get_application(__MODULE__), "PubSub"]), topic_converter.(topic))
+    (
+          pubsub_module = Module.concat([Application.get_application(__MODULE__), "PubSub"])
+          topic_string = topic_converter.(topic)
+          Phoenix.PubSub.subscribe(pubsub_module, topic_string)
+        )
   end
 
   @doc """
@@ -33,7 +37,12 @@ defmodule SafePubSub do
   """
   @spec broadcast_with_converters(T.t(), M.t(), Function.t(), Function.t()) :: Result.t()
   def broadcast_with_converters(topic, message, topic_converter, message_converter) do
-    Phoenix.PubSub.broadcast(Module.concat([Application.get_application(__MODULE__), "PubSub"]), topic_converter.(topic), message_converter.(message))
+    (
+          pubsub_module = Module.concat([Application.get_application(__MODULE__), "PubSub"])
+          topic_string = topic_converter.(topic)
+          message_payload = message_converter.(message)
+          Phoenix.PubSub.broadcast(pubsub_module, topic_string, message_payload)
+        )
   end
 
   @doc """
