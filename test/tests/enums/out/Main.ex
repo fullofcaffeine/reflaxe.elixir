@@ -5,42 +5,55 @@ defmodule Main do
   @doc "Function color_to_string"
   @spec color_to_string(Color.t()) :: String.t()
   def color_to_string(color) do
-    case (case color do :red -> 0; :green -> 1; :blue -> 2; :r_g_b -> 3; _ -> -1 end) do
-      0 -> "red"
-      1 -> "green"
-      2 -> "blue"
-      {3, r, g, b} -> (
-          g_array = elem(color, 1)
-          g_array = elem(color, 2)
-          g_array = elem(color, 3)
-          "rgb(" <> to_string(r) <> ", " <> to_string(g) <> ", " <> to_string(b) <> ")"
-        )
+    case (elem((case color do :red -> 0; :green -> 1; :blue -> 2; :r_g_b -> 3; _ -> -1 end), 0)) do
+      0 ->
+        "red"
+      1 ->
+        "green"
+      2 ->
+        "blue"
+      3 ->
+        g_array = elem(color, 1)
+    g_array = elem(color, 2)
+    g_array = elem(color, 3)
+    r = g_array
+    g_array = g_array
+    b = g_array
+    "rgb(" <> to_string(r) <> ", " <> to_string(g) <> ", " <> to_string(b) <> ")"
     end
   end
 
   @doc "Function get_value"
   @spec get_value(Option.t(), T.t()) :: T.t()
   def get_value(opt, default_value) do
-    case (case opt do :some -> 0; :none -> 1; _ -> -1 end) do
-      {0, v} -> (
+    case (elem((case opt do :some -> 0; :none -> 1; _ -> -1 end), 0)) do
+      0 ->
+        (
           g_array = elem(opt, 1)
+          v = g_array
           v
         )
-      1 -> default_value
+      1 ->
+        default_value
     end
   end
 
   @doc "Function tree_sum"
   @spec tree_sum(Tree.t()) :: integer()
   def tree_sum(tree) do
-    case (case tree do :leaf -> 0; :node_ -> 1; _ -> -1 end) do
-      {0, value} -> (
+    case (elem((case tree do :leaf -> 0; :node_ -> 1; _ -> -1 end), 0)) do
+      0 ->
+        (
           g_array = elem(tree, 1)
+          value = g_array
           value
         )
-      {1, left, right} -> (
+      1 ->
+        (
           g_array = elem(tree, 1)
           g_array = elem(tree, 2)
+          left = g_array
+          right = g_array
           (Main.tree_sum(left) + Main.tree_sum(right))
         )
     end
@@ -49,9 +62,10 @@ defmodule Main do
   @doc "Function describe_r_g_b"
   @spec describe_r_g_b(Color.t()) :: String.t()
   def describe_r_g_b(color) do
-    tempResult = nil
+    temp_result = nil
     if ((case color do :red -> 0; :green -> 1; :blue -> 2; :r_g_b -> 3; _ -> -1 end == 3)) do
-          g_array = elem(color, 1)
+          temp_result = nil
+    g_array = elem(color, 1)
     g_array = elem(color, 2)
     g_array = elem(color, 3)
     r = g_array
@@ -60,25 +74,23 @@ defmodule Main do
     if ((((r > 200) && (g < 50)) && (b < 50))) do
           temp_result = "mostly red"
         else
-          (
-          r = g_array
-          g_array = g_array
-          b = g_array
-          if ((((g > 200) && (r < 50)) && (b < 50))) do
+          temp_result = nil
+    r = g_array
+    g_array = g_array
+    b = g_array
+    if ((((g > 200) && (r < 50)) && (b < 50))) do
           temp_result = "mostly green"
         else
-          (
-          r = g_array
-          g_array = g_array
-          b = g_array
-          if ((((b > 200) && (r < 50)) && (g < 50))) do
+          temp_result = nil
+    r = g_array
+    g_array = g_array
+    b = g_array
+    if ((((b > 200) && (r < 50)) && (g < 50))) do
           temp_result = "mostly blue"
         else
           temp_result = "mixed color"
         end
-        )
         end
-        )
         end
         else
           temp_result = "not RGB"
@@ -88,24 +100,35 @@ defmodule Main do
   @doc "Function compare_trees"
   @spec compare_trees(Tree.t(), Tree.t()) :: boolean()
   def compare_trees(t1, t2) do
-    case (case t1 do :leaf -> 0; :node_ -> 1; _ -> -1 end) do
-      {0, v1} -> (
-          g_array = elem(t1, 1)
-          if ((case t2 do :leaf -> 0; :node_ -> 1; _ -> -1 end == 0)) do
+    case (elem((case t1 do :leaf -> 0; :node_ -> 1; _ -> -1 end), 0)) do
+      0 ->
+        temp_result = nil
+    g_array = elem(t1, 1)
+    if ((case t2 do :leaf -> 0; :node_ -> 1; _ -> -1 end == 0)) do
+          (
+          g_array = elem(t2, 1)
+          v2 = g_array
+          v1 = g_array
           temp_result = (v1 == v2)
+        )
         else
           temp_result = false
         end
-        )
-      {1, l1, r1} -> (
-          g_array = elem(t1, 1)
-          g_array = elem(t1, 2)
-          if ((case t2 do :leaf -> 0; :node_ -> 1; _ -> -1 end == 1)) do
-          temp_result = (Main.compare_trees(l1, l2) && Main.compare_trees(r1, r2))
+      1 ->
+        temp_result = nil
+    g_array = elem(t1, 1)
+    g_array = elem(t1, 2)
+    if ((case t2 do :leaf -> 0; :node_ -> 1; _ -> -1 end == 1)) do
+          g_array = elem(t2, 1)
+    g_array = elem(t2, 2)
+    l2 = g_array
+    r2 = g_array
+    r1 = g_array
+    l1 = g_array
+    temp_result = (Main.compare_trees(l1, l2) && Main.compare_trees(r1, r2))
         else
           temp_result = false
         end
-        )
     end
   end
 

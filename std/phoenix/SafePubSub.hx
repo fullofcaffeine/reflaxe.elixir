@@ -100,13 +100,10 @@ class SafePubSub {
         topic: T, 
         topicConverter: T -> String
     ): Result<Void, String> {
-        var topicString = topicConverter(topic);
-        
-        // Use proper Phoenix.PubSub extern with correct argument order
-        // Use the standard Phoenix convention: AppName.PubSub
-        // Pure Haxe approach with type safety and IDE support
-        var pubsubName = elixir.Module.concat([elixir.Application.get_application(untyped __MODULE__), "PubSub"]);
-        return phoenix.Phoenix.PubSub.subscribe(pubsubName, topicString);
+        // CONSISTENT FIX: Direct inline operation to avoid compiler's PubSub module injection
+        // MethodCallCompiler.compilePubSubCall() would add TodoApp.PubSub as first parameter
+        // Using hardcoded parameter names since $v{} substitution isn't working reliably
+        return untyped __elixir__("Phoenix.PubSub.subscribe(Module.concat([Application.get_application(__MODULE__), \"PubSub\"]), topic_converter.(topic))");
     }
     
     /**
@@ -124,13 +121,10 @@ class SafePubSub {
         topicConverter: T -> String,
         messageConverter: M -> Dynamic
     ): Result<Void, String> {
-        var topicString = topicConverter(topic);
-        var messagePayload = messageConverter(message);
-        
-        // Use the standard Phoenix convention: AppName.PubSub
-        // Pure Haxe approach with type safety and IDE support
-        var pubsubName = elixir.Module.concat([elixir.Application.get_application(untyped __MODULE__), "PubSub"]);
-        return phoenix.Phoenix.PubSub.broadcast(pubsubName, topicString, messagePayload);
+        // CONSISTENT FIX: Direct inline operation to avoid compiler's PubSub module injection
+        // MethodCallCompiler.compilePubSubCall() would add TodoApp.PubSub as first parameter
+        // Using hardcoded parameter names since $v{} substitution isn't working reliably
+        return untyped __elixir__("Phoenix.PubSub.broadcast(Module.concat([Application.get_application(__MODULE__), \"PubSub\"]), topic_converter.(topic), message_converter.(message))");
     }
     
     /**

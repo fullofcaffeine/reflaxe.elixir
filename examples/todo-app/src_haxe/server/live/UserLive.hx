@@ -19,7 +19,7 @@ class UserLive {
     var showForm: Bool = false;
     
     function mount(_params: Dynamic, _session: Dynamic, socket: Dynamic): {status: String, socket: Dynamic} {
-        var users = Users.list_users();
+        var users = Users.list_users(null);
         
         return {
             status: "ok", 
@@ -97,7 +97,7 @@ class UserLive {
             
         return switch(result.status) {
             case "ok":
-                var users = Users.list_users();
+                var users = Users.list_users(null);
                 var showForm = false;
                 
                 {
@@ -127,7 +127,7 @@ class UserLive {
         var result = Users.delete_user(user);
         
         if (result.status == "ok") {
-            var users = Users.list_users();
+            var users = Users.list_users(null);
             
             return {
                 status: "noreply",
@@ -143,7 +143,7 @@ class UserLive {
         
         var users = searchTerm.length > 0 
             ? Users.search_users(searchTerm)
-            : Users.list_users();
+            : Users.list_users(null);
             
         return {
             status: "noreply",

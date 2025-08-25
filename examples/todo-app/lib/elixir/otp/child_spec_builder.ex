@@ -12,10 +12,10 @@ defmodule ChildSpecBuilder do
   """
   @spec worker(String.t(), Array.t(), Null.t()) :: ChildSpec.t()
   def worker(module, args, id) do
-    (
-          tempString = if ((id != nil)), do: id, else: module
-          %{id: if(id != nil, do: id, else: module), start: {module, :start_link, args}, restart: :permanent, shutdown: ShutdownType.timeout(5000), type: :worker, modules: [module]}
-        )
+    temp_string = nil
+
+    temp_string = if (((id != nil))), do: id, else: module
+    %{id: if(id != nil, do: id, else: module), start: {module, :start_link, args}, restart: :permanent, shutdown: ShutdownType.timeout(5000), type: :worker, modules: [module]}
   end
 
   @doc """
@@ -24,10 +24,10 @@ defmodule ChildSpecBuilder do
   """
   @spec supervisor(String.t(), Array.t(), Null.t()) :: ChildSpec.t()
   def supervisor(module, args, id) do
-    (
-          tempString = if ((id != nil)), do: id, else: module
-          %{id: if(id != nil, do: id, else: module), start: {module, :start_link, args}, restart: :permanent, shutdown: :infinity, type: :supervisor, modules: [module]}
-        )
+    temp_string = nil
+
+    temp_string = if (((id != nil))), do: id, else: module
+    %{id: if(id != nil, do: id, else: module), start: {module, :start_link, args}, restart: :permanent, shutdown: :infinity, type: :supervisor, modules: [module]}
   end
 
   @doc """

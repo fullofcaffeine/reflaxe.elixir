@@ -131,6 +131,8 @@ class ArrayMethodCompiler {
                 }
             case "push":
                 // array.push(item) → array ++ [item]
+                // NOTE: In Elixir, lists are immutable. The calling code needs to handle reassignment.
+                // TODO: Track mutation context to generate proper reassignment patterns
                 if (compiledArgs.length > 0) {
                     '${objStr} ++ [${compiledArgs[0]}]';
                 } else {

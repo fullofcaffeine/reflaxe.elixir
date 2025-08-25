@@ -52,13 +52,10 @@ defmodule TodoPubSub do
   """
   @spec topic_to_string(TodoPubSubTopic.t()) :: String.t()
   def topic_to_string(topic) do
-    case (elem((case topic do :todo_updates -> 0; :user_activity -> 1; :system_notifications -> 2; _ -> -1 end), 0)) do
-      0 ->
-        "todo:updates"
-      1 ->
-        "user:activity"
-      2 ->
-        "system:notifications"
+    case (case topic do :todo_updates -> 0; :user_activity -> 1; :system_notifications -> 2; _ -> -1 end) do
+      0 -> "todo:updates"
+      1 -> "user:activity"
+      2 -> "system:notifications"
     end
   end
 
@@ -71,35 +68,56 @@ defmodule TodoPubSub do
     (
           temp_struct = nil
           case message do
-      :todo_created -> (
+      0 -> (
+    g_array = elem(message, 1)
+    (
           todo = g_array
           temp_struct = %{"type" => "todo_created", "todo" => todo}
         )
-      :todo_updated -> (
+    )
+      1 -> (
+    g_array = elem(message, 1)
+    (
           todo = g_array
           temp_struct = %{"type" => "todo_updated", "todo" => todo}
         )
-      :todo_deleted -> (
+    )
+      2 -> (
+    g_array = elem(message, 1)
+    (
           id = g_array
           temp_struct = %{"type" => "todo_deleted", "todo_id" => id}
         )
-      :bulk_update -> (
+    )
+      3 -> (
+    g_array = elem(message, 1)
+    (
           action = g_array
           temp_struct = %{"type" => "bulk_update", "action" => TodoPubSub.bulk_action_to_string(action)}
         )
-      :user_online -> (
+    )
+      4 -> (
+    g_array = elem(message, 1)
+    (
           user_id = g_array
           temp_struct = %{"type" => "user_online", "user_id" => user_id}
         )
-      :user_offline -> (
+    )
+      5 -> (
+    g_array = elem(message, 1)
+    (
           user_id = g_array
           temp_struct = %{"type" => "user_offline", "user_id" => user_id}
         )
-      :system_alert -> (
+    )
+      6 -> (
+    g_array = elem(message, 1)
+    (
           message = g_array
           level = g_array
           temp_struct = %{"type" => "system_alert", "message" => message, "level" => TodoPubSub.alert_level_to_string(level)}
         )
+    )
     end
           SafePubSub.add_timestamp(temp_struct)
         )
@@ -119,15 +137,14 @@ defmodule TodoPubSub do
         )
         end
           temp_result = nil
-          (
-          g_array = msg.type
-          case (elem(g_array, 0)) do
+          temp_result = nil
+    g_array = msg.type
+    case (g_array) do
       _ -> (
           Log.trace(SafePubSub.create_unknown_message_error(msg.type), %{"fileName" => "src_haxe/server/pubsub/TodoPubSub.hx", "lineNumber" => 220, "className" => "server.pubsub.TodoPubSub", "methodName" => "parseMessageImpl"})
           temp_result = :error
         )
     end
-        )
           temp_result
         )
   end
@@ -138,23 +155,18 @@ defmodule TodoPubSub do
   """
   @spec bulk_action_to_string(BulkOperationType.t()) :: String.t()
   def bulk_action_to_string(action) do
-    case (elem((case action do :complete_all -> 0; :delete_completed -> 1; :set_priority -> 2; :add_tag -> 3; :remove_tag -> 4; _ -> -1 end), 0)) do
-      0 ->
-        "complete_all"
-      1 ->
-        "delete_completed"
-      2 ->
-        (
+    case (case action do :complete_all -> 0; :delete_completed -> 1; :set_priority -> 2; :add_tag -> 3; :remove_tag -> 4; _ -> -1 end) do
+      0 -> "complete_all"
+      1 -> "delete_completed"
+      {2, priority} -> (
           elem(action, 1)
           "set_priority"
         )
-      3 ->
-        (
+      {3, tag} -> (
           elem(action, 1)
           "add_tag"
         )
-      4 ->
-        (
+      {4, tag} -> (
           elem(action, 1)
           "remove_tag"
         )
@@ -167,7 +179,7 @@ defmodule TodoPubSub do
   """
   @spec parse_bulk_action(String.t()) :: Option.t()
   def parse_bulk_action(action) do
-    case (elem(action, 0)) do
+    case (action) do
       _ -> :error
     end
   end
@@ -178,15 +190,11 @@ defmodule TodoPubSub do
   """
   @spec alert_level_to_string(AlertLevel.t()) :: String.t()
   def alert_level_to_string(level) do
-    case (elem((case level do :info -> 0; :warning -> 1; :error -> 2; :critical -> 3; _ -> -1 end), 0)) do
-      0 ->
-        "info"
-      1 ->
-        "warning"
-      2 ->
-        "error"
-      3 ->
-        "critical"
+    case (case level do :info -> 0; :warning -> 1; :error -> 2; :critical -> 3; _ -> -1 end) do
+      0 -> "info"
+      1 -> "warning"
+      2 -> "error"
+      3 -> "critical"
     end
   end
 
@@ -196,7 +204,7 @@ defmodule TodoPubSub do
   """
   @spec parse_alert_level(String.t()) :: Option.t()
   def parse_alert_level(level) do
-    case (elem(level, 0)) do
+    case (level) do
       _ -> :error
     end
   end

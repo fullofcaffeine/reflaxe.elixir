@@ -295,14 +295,64 @@ class ControlFlowCompiler {
         // CRITICAL FIX: Check for temp variable optimization pattern
         // This detects patterns like: [TVar(temp_result, nil), TSwitch(...), TLocal(temp_result)]
         // and transforms them to return values directly from case branches
+        trace("[XRay ControlFlowCompiler DEBUG] Checking ${el.length} expressions for temp variable pattern...");
         var tempVarPattern = compiler.tempVariableOptimizer.detectTempVariablePattern(el);
         if (tempVarPattern != null) {
             #if debug_control_flow_compiler
             trace("[XRay ControlFlowCompiler] ✓ TEMP VARIABLE PATTERN DETECTED: " + tempVarPattern);
             trace("[XRay ControlFlowCompiler] Delegating to TempVariableOptimizer for functional transformation");
             #end
+            trace("[XRay ControlFlowCompiler DEBUG] ✓ FOUND TEMP VAR: ${tempVarPattern}");
             // Transform imperative temp variable pattern to functional case expression
             return compiler.tempVariableOptimizer.optimizeTempVariablePattern(tempVarPattern, el);
+        }
+        trace("[XRay ControlFlowCompiler DEBUG] ❌ NO TEMP VAR PATTERN");
+        
+        // CRITICAL FIX: Detect temp variables assigned inside conditional blocks without outer declarations
+        // This fixes undefined variable errors like temp_array, temp_array1 in type_safe_conversions.ex
+        var tempVarsNeedingDeclaration = new Map<String, Bool>();
+        for (expr in el) {
+            findTempVariablesInConditionals(expr, tempVarsNeedingDeclaration);
+        }
+        
+        var hasAnyTempVars = false;
+        for (k in tempVarsNeedingDeclaration.keys()) {
+            hasAnyTempVars = true;
+            break;
+        }
+        
+        if (hasAnyTempVars) {
+            trace("[XRay ControlFlowCompiler DEBUG] ✓ TEMP VARS NEEDING DECLARATIONS: " + [for (k in tempVarsNeedingDeclaration.keys()) k]);
+            
+            // CRITICAL FIX: Use LOCAL scope tracking instead of global state
+            // This prevents one function's temp variables from affecting other functions
+            var localDeclaredVars = new Map<String, Bool>();
+            
+            // Generate outer scope nil declarations for all temp variables
+            var declarations = [];
+            for (varName in tempVarsNeedingDeclaration.keys()) {
+                // Apply proper variable name transformation using the same logic as VariableCompiler
+                // This ensures consistency with how variables are referenced throughout the generated code
+                var actualVarName = compiler.variableMappingManager.transformVariableName(varName);
+                
+                // CRITICAL FIX: Check LOCAL scope only, not global shared state
+                if (!localDeclaredVars.exists(actualVarName)) {
+                    declarations.push('${actualVarName} = nil');
+                    localDeclaredVars.set(actualVarName, true);
+                    trace("[XRay ControlFlowCompiler DEBUG] ✓ DECLARED in local scope: " + actualVarName);
+                } else {
+                    trace("[XRay ControlFlowCompiler DEBUG] ✓ ALREADY DECLARED in local scope: " + actualVarName + ", skipping");
+                }
+            }
+            
+            // Compile the rest of the expressions normally
+            var results = [];
+            for (e in el) {
+                results.push(compiler.compileExpression(e));
+            }
+            
+            // Return declarations followed by the compiled expressions
+            return declarations.concat(results).join("\n");
         }
         
         // CRITICAL FIX: Check for variable declaration + ternary assignment pattern
@@ -813,6 +863,16 @@ class ControlFlowCompiler {
         // that should be compiled as inline expression to avoid scoping issues
         var shouldUseInlineForm = shouldGenerateInlineIfExpression(eif, eelse);
         
+        // CRITICAL FIX: Detect temp variable assignment pattern (JsonPrinter fix)
+        // If both branches assign the same temp variable, convert to inline
+        var tempVarAssignmentPattern = detectTempVariableAssignmentPattern(eif, eelse);
+        if (tempVarAssignmentPattern != null && !shouldUseInlineForm) {
+            #if debug_control_flow_compiler
+            trace('[XRay ControlFlowCompiler] ✓ TEMP VAR ASSIGNMENT PATTERN DETECTED: ${tempVarAssignmentPattern.variable}');
+            #end
+            shouldUseInlineForm = true;
+        }
+        
         // ADDITIONAL FIX: Force inline form for array literal ternary patterns
         // This specifically handles: config != null ? [config] : []
         var isArrayTernary = false;
@@ -853,8 +913,21 @@ class ControlFlowCompiler {
         
         var result: String;
         if (shouldUseInlineForm && elseBranch != "nil") {
-            // Generate inline if expression: if condition, do: then_value, else: else_value
-            result = 'if (${condition}), do: ${thenBranch}, else: ${elseBranch}';
+            // CRITICAL FIX: Handle temp variable assignment pattern specially
+            if (tempVarAssignmentPattern != null) {
+                // CRITICAL: Apply proper variable name transformation to ensure consistency
+                var transformedVarName = compiler.variableMappingManager.transformVariableName(tempVarAssignmentPattern.variable);
+                
+                // Generate: temp_var = if condition, do: then_value, else: else_value
+                result = '${transformedVarName} = if (${condition}), do: ${tempVarAssignmentPattern.thenValue}, else: ${tempVarAssignmentPattern.elseValue}';
+                #if debug_control_flow_compiler
+                trace('[XRay ControlFlowCompiler] ✓ GENERATED TEMP VAR INLINE ASSIGNMENT: ${result}');
+                trace('[XRay ControlFlowCompiler] ✓ VARIABLE TRANSFORMATION: ${tempVarAssignmentPattern.variable} -> ${transformedVarName}');
+                #end
+            } else {
+                // Generate inline if expression: if condition, do: then_value, else: else_value
+                result = 'if (${condition}), do: ${thenBranch}, else: ${elseBranch}';
+            }
         } else {
             // Generate block-style if-else for complex expressions
             result = if (elseBranch != "nil") {
@@ -937,6 +1010,52 @@ class ControlFlowCompiler {
             if (!isSimpleExpression(expr)) return false;
         }
         return true;
+    }
+    
+    /**
+     * CRITICAL FIX: Detect temp variable assignment pattern (JsonPrinter fix)
+     * 
+     * Detects patterns like:
+     * - if branch: temp_string = Std.string(v)  
+     * - else branch: temp_string = "null"
+     * 
+     * This should be converted to inline form to avoid scoping issues.
+     */
+    private function detectTempVariableAssignmentPattern(thenExpr: TypedExpr, elseExpr: Null<TypedExpr>): Null<{variable: String, thenValue: String, elseValue: String}> {
+        if (elseExpr == null) return null;
+        
+        // Check if both branches are simple assignments to the same temp variable
+        var thenAssignment = extractSimpleAssignment(thenExpr);
+        var elseAssignment = extractSimpleAssignment(elseExpr);
+        
+        if (thenAssignment != null && elseAssignment != null && 
+            thenAssignment.variable == elseAssignment.variable &&
+            (StringTools.startsWith(thenAssignment.variable, "temp_") || 
+             StringTools.startsWith(thenAssignment.variable, "temp"))) {
+            
+            return {
+                variable: thenAssignment.variable,
+                thenValue: thenAssignment.value,
+                elseValue: elseAssignment.value
+            };
+        }
+        
+        return null;
+    }
+    
+    /**
+     * Extract assignment information from simple assignment expressions
+     * Returns null for complex expressions
+     */
+    private function extractSimpleAssignment(expr: TypedExpr): Null<{variable: String, value: String}> {
+        return switch (expr.expr) {
+            case TBinop(OpAssign, {expr: TLocal(variable)}, valueExpr):
+                // Simple assignment to local variable
+                var value = compiler.compileExpression(valueExpr);
+                {variable: variable.name, value: value};
+            case _: 
+                null;
+        };
     }
     
     /**
@@ -2164,7 +2283,24 @@ class ControlFlowCompiler {
         
         // Generate direct assignment with inline if
         var directAssignment = 'if ${conditionStr}, do: ${thenValueStr}, else: ${elseValueStr}';
-        var result = '${pattern.varName} = ${directAssignment}';
+        
+        // CRITICAL FIX: Apply snake_case transformation to the variable name
+        // This ensures tempString becomes temp_string, maintaining consistency
+        var transformedVarName = NamingHelper.toSnakeCase(pattern.varName);
+        
+        // Track this transformation in the variableRenameMap for future references
+        if (pattern.varName != transformedVarName) {
+            if (compiler.variableRenameMap == null) {
+                compiler.variableRenameMap = new Map<String, String>();
+            }
+            compiler.variableRenameMap.set(pattern.varName, transformedVarName);
+            
+            #if debug_control_flow_compiler
+            trace('[XRay ControlFlowCompiler] Variable name transformation: ${pattern.varName} -> ${transformedVarName}');
+            #end
+        }
+        
+        var result = '${transformedVarName} = ${directAssignment}';
         
         // ARCHITECTURAL FIX: Register mappings for both temp variables and actual variables
         // This prevents later TVar assignments from generating undefined references
@@ -2241,6 +2377,103 @@ class ControlFlowCompiler {
             case _:
                 null;
         };
+    }
+    
+    /**
+     * CRITICAL FIX: Find temp variables that are assigned inside conditional blocks
+     * without proper outer scope declarations. This fixes Elixir scoping issues.
+     * 
+     * WHY: Elixir variables must be declared in an outer scope before being assigned
+     * in conditional blocks, otherwise they're "undefined variable" at usage time.
+     * 
+     * WHAT: Recursively searches through TIf expressions to find TBinop(OpAssign, TLocal(tempVar), ...)
+     * patterns where tempVar starts with "temp" and doesn't have an outer declaration.
+     * 
+     * HOW: Traverses AST looking for assignment operations inside conditional expressions,
+     * collecting all temp variable names that need outer scope declarations.
+     */
+    private function findTempVariablesInConditionals(expr: TypedExpr, tempVars: Map<String, Bool>): Void {
+        switch (expr.expr) {
+            case TIf(condition, thenExpr, elseExpr):
+                // Check assignments in both branches
+                findTempVariableAssignments(thenExpr, tempVars);
+                if (elseExpr != null) {
+                    findTempVariableAssignments(elseExpr, tempVars);
+                }
+                // Also recursively check the condition itself
+                findTempVariablesInConditionals(condition, tempVars);
+                
+            case TBlock(expressions):
+                // Recursively check all expressions in the block
+                for (e in expressions) {
+                    findTempVariablesInConditionals(e, tempVars);
+                }
+                
+            case TBinop(op, e1, e2):
+                // Recursively check binary operation operands
+                findTempVariablesInConditionals(e1, tempVars);
+                findTempVariablesInConditionals(e2, tempVars);
+                
+            case TCall(e, args):
+                // Recursively check function calls
+                findTempVariablesInConditionals(e, tempVars);
+                for (arg in args) {
+                    findTempVariablesInConditionals(arg, tempVars);
+                }
+                
+            case TSwitch(e, cases, defaultCase):
+                // Recursively check switch expressions
+                findTempVariablesInConditionals(e, tempVars);
+                for (c in cases) {
+                    findTempVariableAssignments(c.expr, tempVars);
+                }
+                if (defaultCase != null) {
+                    findTempVariableAssignments(defaultCase, tempVars);
+                }
+                
+            // Add more cases as needed for thorough traversal
+            case _:
+                // For other expression types, no action needed
+        }
+    }
+    
+    /**
+     * Helper function to find actual temp variable assignments within an expression
+     */
+    private function findTempVariableAssignments(expr: TypedExpr, tempVars: Map<String, Bool>): Void {
+        switch (expr.expr) {
+            case TBinop(OpAssign, lhsExpr, rhsExpr):
+                // Check if left-hand side is a temp variable
+                switch (lhsExpr.expr) {
+                    case TLocal(tvar):
+                        var varName = compiler.getOriginalVarName(tvar);
+                        if (varName.indexOf("temp") == 0) { // Includes "temp_", "tempArray", etc.
+                            tempVars.set(varName, true);
+                            trace("[XRay ControlFlowCompiler DEBUG] Found temp var assignment: ${varName}");
+                        }
+                    case _:
+                        // Not a simple variable assignment
+                }
+                // Also recursively check the right-hand side
+                findTempVariablesInConditionals(rhsExpr, tempVars);
+                
+            case TBlock(expressions):
+                // Recursively check all expressions in blocks
+                for (e in expressions) {
+                    findTempVariableAssignments(e, tempVars);
+                }
+                
+            case TIf(condition, thenExpr, elseExpr):
+                // Recursively check nested conditionals
+                findTempVariableAssignments(thenExpr, tempVars);
+                if (elseExpr != null) {
+                    findTempVariableAssignments(elseExpr, tempVars);
+                }
+                
+            case _:
+                // Recursively check other expression types if needed
+                findTempVariablesInConditionals(expr, tempVars);
+        }
     }
     
     /**

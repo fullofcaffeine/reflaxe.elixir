@@ -55,12 +55,16 @@ class TempVariableOptimizer {
         switch (first.expr) {
             case TVar(tvar, expr):
                 var varName = compiler.getOriginalVarName(tvar);
+                trace('[TempVariableOptimizer DEBUG] CHECKING VAR: ${varName}');
                 if ((varName.indexOf("temp_") == 0 || varName.indexOf("temp") == 0) && (expr == null || isNilExpression(expr))) {
                     tempVarName = varName;
+                    trace('[TempVariableOptimizer DEBUG] ✓ DETECTED TEMP VAR: ${varName}');
                 } else {
+                    trace('[TempVariableOptimizer DEBUG] ❌ NOT TEMP VAR: ${varName}');
                     return null;
                 }
             case _:
+                trace('[TempVariableOptimizer DEBUG] ❌ NOT TVar EXPRESSION');
                 return null;
         }
         
@@ -181,8 +185,18 @@ class TempVariableOptimizer {
                             
                             var compiledIf = compiler.compileExpression(expressions[i]);
                             
-                            // Ensure temp variable is declared properly
-                            var result = '${tempVarName} = nil\n${compiledIf}';
+                            // CRITICAL FIX: Use the transformed variable name (snake_case) not the original
+                            // The compiler's variableRenameMap tracks transformations like tempString -> temp_string
+                            var actualVarName = tempVarName;
+                            if (compiler.variableRenameMap != null) {
+                                var renamedName = compiler.variableRenameMap.get(tempVarName);
+                                if (renamedName != null) {
+                                    actualVarName = renamedName;
+                                }
+                            }
+                            
+                            // Ensure temp variable is declared properly with the correct name
+                            var result = '${actualVarName} = nil\n${compiledIf}';
                             
                             compiler.isCompilingCaseArm = originalCaseArmContext;
                             return result;
@@ -196,6 +210,44 @@ class TempVariableOptimizer {
         
         // Fallback: compile normally if pattern detection was wrong
         var compiledStatements = [];
+        
+        // CRITICAL FIX: Ensure temp variable is declared before use
+        // This fixes cases where temp variables are assigned in if-else blocks
+        // but not declared at outer scope, causing "undefined variable" errors
+        if (tempVarName != null) {
+            // Get the correct transformed variable name (snake_case)
+            var actualVarName = tempVarName;
+            if (compiler.variableRenameMap != null) {
+                var renamedName = compiler.variableRenameMap.get(tempVarName);
+                if (renamedName != null) {
+                    actualVarName = renamedName;
+                }
+            }
+            
+            // COORDINATION FIX: Initialize compiler's declared variables tracker if needed
+            if (compiler.declaredTempVariables == null) {
+                compiler.declaredTempVariables = new Map<String, Bool>();
+            }
+            
+            // Only declare temp variable if not already declared to avoid duplicates
+            if (!compiler.declaredTempVariables.exists(actualVarName)) {
+                compiledStatements.push('${actualVarName} = nil');
+                compiler.declaredTempVariables.set(actualVarName, true);
+                
+                #if debug_temp_var
+                trace('[TempVariableOptimizer] ✓ SCOPING FIX: Added ${actualVarName} = nil declaration');
+                #end
+                trace('[TempVariableOptimizer DEBUG] ✓ PROCESSED TEMP VAR: ${tempVarName} -> ${actualVarName}');
+            } else {
+                #if debug_temp_var
+                trace('[TempVariableOptimizer] ✓ ALREADY DECLARED: ${actualVarName}, skipping duplicate');
+                #end
+                trace('[TempVariableOptimizer DEBUG] ✓ SKIPPED DUPLICATE: ${tempVarName} -> ${actualVarName}');
+            }
+        } else {
+            trace('[TempVariableOptimizer DEBUG] ❌ NO TEMP VAR NAME DETECTED for TBlock');
+        }
+        
         for (expr in expressions) {
             var compiled = compiler.compileExpression(expr);
             if (compiled != null && compiled.length > 0) {

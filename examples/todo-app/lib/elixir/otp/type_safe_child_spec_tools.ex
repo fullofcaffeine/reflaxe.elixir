@@ -18,32 +18,23 @@ defmodule TypeSafeChildSpecTools do
   """
   @spec to_legacy(TypeSafeChildSpec.t(), String.t()) :: ChildSpec.t()
   def to_legacy(spec, app_name) do
-    case (elem((elem(spec, 0)), 0)) do
-      0 ->
-        (
+    case (elem(spec, 0)) do
+      {0, name} -> (
           g_array = elem(spec, 1)
-          name = g_array
           {Phoenix.PubSub, name: name}
         )
-      1 ->
-        (
-          g_array = elem(spec, 1)
-          (
-          config = g_array
-          (
-          args = if ((config != nil)), do: [config], else: []
-          repo_module = "" <> app_name <> ".Repo"
-          repo_module
-        )
-        )
-        )
-      2 ->
-        (
+      {1, config} -> temp_array = nil
+    g_array = elem(spec, 1)
+    temp_array = nil
+    temp_array = nil
+    repo_module = "" <> app_name <> ".Repo"
+
+    temp_array = if (((config != nil))), do: [config], else: []
+    args = temp_array
+    repo_module
+      {2, port, config} -> (
           g_array = elem(spec, 1)
           g_array = elem(spec, 2)
-          (
-          port = g_array
-          config = g_array
           (
           endpoint_module = "" <> app_name <> "Web.Endpoint"
           args = []
@@ -68,52 +59,35 @@ defmodule TypeSafeChildSpecTools do
           endpoint_module
         )
         )
-        )
-      3 ->
-        (
+      {3, config} -> temp_array1 = nil
+    g_array = elem(spec, 1)
+    temp_array1 = nil
+    temp_array1 = nil
+    telemetry_module = "" <> app_name <> "Web.Telemetry"
+
+    temp_array1 = if (((config != nil))), do: [config], else: []
+    args = temp_array1
+    telemetry_module
+      {4, config} -> (
           g_array = elem(spec, 1)
-          (
-          config = g_array
-          (
-          args = if ((config != nil)), do: [config], else: []
-          telemetry_module = "" <> app_name <> "Web.Telemetry"
-          telemetry_module
-        )
-        )
-        )
-      4 ->
-        (
-          g_array = elem(spec, 1)
-          (
-          config = g_array
           (
           presence_module = "" <> app_name <> ".Presence"
           presence_module
         )
         )
-        )
-      5 ->
-        (
+      {5, module, args, restart, shutdown} -> (
           g_array = elem(spec, 1)
           g_array = elem(spec, 2)
           g_array = elem(spec, 3)
           g_array = elem(spec, 4)
-          (
-          module = g_array
-          args = g_array
-          restart = g_array
-          shutdown = g_array
           (
           module_class = module
           module_name = Type.get_class_name(module_class)
           %{id: module_name, start: {module_name, :start_link, [args]}, restart: restart, shutdown: shutdown}
         )
         )
-        )
-      6 ->
-        (
+      {6, spec2} -> (
           g_array = elem(spec, 1)
-          spec = g_array
           spec
         )
     end
@@ -128,46 +102,18 @@ defmodule TypeSafeChildSpecTools do
   """
   @spec get_module_name(TypeSafeChildSpec.t(), String.t()) :: String.t()
   def get_module_name(spec, app_name) do
-    case (elem((elem(spec, 0)), 0)) do
-      0 ->
-        (
-          elem(spec, 1)
-          "Phoenix.PubSub"
-        )
-      1 ->
-        (
-          elem(spec, 1)
-          "" <> app_name <> ".Repo"
-        )
-      2 ->
-        (
-          elem(spec, 1)
-          elem(spec, 2)
-          "" <> app_name <> "Web.Endpoint"
-        )
-      3 ->
-        (
-          elem(spec, 1)
-          "" <> app_name <> "Web.Telemetry"
-        )
-      4 ->
-        (
-          elem(spec, 1)
-          "" <> app_name <> ".Presence"
-        )
-      5 ->
-        (
+    case (elem(spec, 0)) do
+      0 -> "Phoenix.PubSub"
+      1 -> "" <> app_name <> ".Repo"
+      2 -> "" <> app_name <> "Web.Endpoint"
+      3 -> "" <> app_name <> "Web.Telemetry"
+      4 -> "" <> app_name <> ".Presence"
+      {5, module} -> (
           g_array = elem(spec, 1)
-          elem(spec, 2)
-          elem(spec, 3)
-          elem(spec, 4)
-          module = g_array
           Type.get_class_name(module)
         )
-      6 ->
-        (
+      {6, spec2} -> (
           g_array = elem(spec, 1)
-          spec = g_array
           spec.id
         )
     end
@@ -181,46 +127,14 @@ defmodule TypeSafeChildSpecTools do
   """
   @spec uses_tuple_format(TypeSafeChildSpec.t()) :: boolean()
   def uses_tuple_format(spec) do
-    case (elem((elem(spec, 0)), 0)) do
-      0 ->
-        (
-          elem(spec, 1)
-          true
-        )
-      1 ->
-        (
-          elem(spec, 1)
-          true
-        )
-      2 ->
-        (
-          elem(spec, 1)
-          elem(spec, 2)
-          true
-        )
-      3 ->
-        (
-          elem(spec, 1)
-          true
-        )
-      4 ->
-        (
-          elem(spec, 1)
-          true
-        )
-      5 ->
-        (
-          elem(spec, 1)
-          elem(spec, 2)
-          elem(spec, 3)
-          elem(spec, 4)
-          false
-        )
-      6 ->
-        (
-          elem(spec, 1)
-          false
-        )
+    case (elem(spec, 0)) do
+      0 -> true
+      1 -> true
+      2 -> true
+      3 -> true
+      4 -> true
+      5 -> false
+      6 -> false
     end
   end
 
@@ -248,8 +162,11 @@ defmodule TypeSafeChildSpecTools do
         )
     )
       1 -> (
+    g_array = elem(spec, 1)
+    (
           
         )
+    )
       2 -> (
     g_array = elem(spec, 1)
     (
@@ -260,8 +177,11 @@ defmodule TypeSafeChildSpecTools do
         )
     )
       3 -> (
+    g_array = elem(spec, 1)
+    (
           
         )
+    )
       4 -> (
     g_array = elem(spec, 1)
     (

@@ -67,9 +67,10 @@ import reflaxe.elixir.helpers.YCombinatorCompiler;
 import reflaxe.elixir.helpers.PatternDetectionCompiler;
 import reflaxe.elixir.helpers.WhileLoopCompiler;
 import reflaxe.elixir.helpers.CodeFixupCompiler;
+import reflaxe.elixir.helpers.VariableCompiler;
+import reflaxe.elixir.helpers.VariableMappingManager;
 import reflaxe.elixir.helpers.PipelineAnalyzer;
 import reflaxe.elixir.helpers.ExpressionVariantCompiler;
-import reflaxe.elixir.helpers.VariableMappingManager;
 import reflaxe.elixir.PhoenixMapper;
 import reflaxe.elixir.SourceMapWriter;
 
@@ -154,8 +155,15 @@ class ElixirCompiler extends DirectToStringCompiler {
     // Variable substitution and renaming compiler for centralized variable handling
     public var substitutionCompiler: reflaxe.elixir.helpers.SubstitutionCompiler;
     
+    // Variable compilation helper for TLocal and TVar expressions
+    public var variableCompiler: reflaxe.elixir.helpers.VariableCompiler;
+    
     // Variable mapping manager for consistent Haxe compiler-generated variable handling
     public var variableMappingManager: VariableMappingManager;
+    
+    // COORDINATION: Track declared temp variables to avoid duplicate nil declarations
+    // between ControlFlowCompiler and TempVariableOptimizer
+    public var declaredTempVariables: Map<String, Bool> = null;
     
     // Temporary variable pattern optimization
     public var tempVariableOptimizer: reflaxe.elixir.helpers.TempVariableOptimizer;
@@ -234,6 +242,11 @@ class ElixirCompiler extends DirectToStringCompiler {
     public var isInEnumExtraction: Bool = false;
     
     // Track enum extraction variables with their indices to handle multiple parameters correctly
+    
+    // Track loop variable context to distinguish between counter and limit variables
+    public var loopCounterVar: String = null;  // Current loop counter variable name
+    public var loopLimitVar: String = null;    // Current loop limit variable name
+    public var isInLoopCondition: Bool = false; // Flag when compiling loop conditions
     public var enumExtractionVars: Null<Array<{index: Int, varName: String}>> = null;
     public var currentEnumExtractionIndex: Int = 0;
     
@@ -311,6 +324,7 @@ class ElixirCompiler extends DirectToStringCompiler {
         this.arrayOptimizationCompiler = new reflaxe.elixir.helpers.ArrayOptimizationCompiler(this);
         this.substitutionCompiler = new reflaxe.elixir.helpers.SubstitutionCompiler(this);
         this.variableMappingManager = new VariableMappingManager(this);
+        this.variableCompiler = new reflaxe.elixir.helpers.VariableCompiler(this);
         this.tempVariableOptimizer = new reflaxe.elixir.helpers.TempVariableOptimizer(this);
         this.namingConventionCompiler = new reflaxe.elixir.helpers.NamingConventionCompiler(this);
         this.stateManagementCompiler = new reflaxe.elixir.helpers.StateManagementCompiler(this);
@@ -1096,6 +1110,10 @@ class ElixirCompiler extends DirectToStringCompiler {
      * @return Complete Elixir function definition string
      */
     public function compileFunction(funcField: ClassFuncData, isStatic: Bool = false): String {
+        // COORDINATION: Reset temp variable declarations for each function
+        // This ensures variables from one function don't affect another
+        declaredTempVariables = null;
+        
         return functionCompiler.compileFunction(funcField, isStatic);
     }
     

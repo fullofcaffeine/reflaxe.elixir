@@ -2967,6 +2967,14 @@ end)';
             bodyCode = bodyCode.replace("elem(c, 0)", charVar); // Direct character code access
             bodyCode = bodyCode.replace("String.from_char_code(c)", "String.from_char_code(" + charVar + ")"); // Fix variable reference
             
+            // CRITICAL FIX: Replace standalone 'c' references in case statements and expressions
+            // After removing c = char_code assignments, we need to replace all c references
+            bodyCode = bodyCode.replace("case (c)", "case (" + charVar + ")"); // Case statement references
+            bodyCode = bodyCode.replace("(c)", "(" + charVar + ")"); // Parenthesized references
+            bodyCode = bodyCode.replace(" c ", " " + charVar + " "); // Standalone variable references
+            bodyCode = bodyCode.replace("\tc", "\t" + charVar); // Tab-prefixed references
+            bodyCode = bodyCode.replace("c\n", charVar + "\n"); // End-of-line references
+            
             // Remove empty lines and unnecessary parentheses from cleaned up code
             bodyCode = ~/\n\s*\n/g.replace(bodyCode, "\n"); // Multiple empty lines
             bodyCode = ~/\(\s*\n\s*\)/g.replace(bodyCode, ""); // Empty parentheses blocks
