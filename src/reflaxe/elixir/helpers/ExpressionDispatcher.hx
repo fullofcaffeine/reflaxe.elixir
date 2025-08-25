@@ -134,6 +134,33 @@ class ExpressionDispatcher {
             case TIf(econd, eif, eelse):
                 #if debug_expression_dispatcher
                 trace("[XRay ExpressionDispatcher] ✓ DISPATCHING to ControlFlowCompiler (TIf)");
+                trace("[XRay ExpressionDispatcher] TIf condition: " + Type.enumConstructor(econd.expr));
+                trace("[XRay ExpressionDispatcher] TIf then branch: " + Type.enumConstructor(eif.expr));
+                if (eelse != null) {
+                    trace("[XRay ExpressionDispatcher] TIf else branch: " + Type.enumConstructor(eelse.expr));
+                    
+                    // Check if this is an array ternary pattern that should use inline form
+                    // Handle both direct TArrayDecl and TArrayDecl inside TBinop assignment operations
+                    var isThenArray = switch(eif.expr) { 
+                        case TArrayDecl(_): true; 
+                        case TBinop(OpAssign, _, e): switch(e.expr) { case TArrayDecl(_): true; case _: false; };
+                        case _: false; 
+                    };
+                    var isElseArray = switch(eelse.expr) { 
+                        case TArrayDecl(_): true; 
+                        case TBinop(OpAssign, _, e): switch(e.expr) { case TArrayDecl(_): true; case _: false; };
+                        case _: false; 
+                    };
+                    
+                    if (isThenArray && isElseArray) {
+                        trace("[XRay ExpressionDispatcher] ⚠️ ARRAY TERNARY DETECTED IN EXPRESSION DISPATCHER!");
+                        trace("[XRay ExpressionDispatcher] This should trigger inline if generation");
+                        trace("[XRay ExpressionDispatcher] Then branch type: " + Type.enumConstructor(eif.expr));
+                        trace("[XRay ExpressionDispatcher] Else branch type: " + Type.enumConstructor(eelse.expr));
+                    }
+                } else {
+                    trace("[XRay ExpressionDispatcher] TIf else branch: null");
+                }
                 #end
                 controlFlowCompiler.compileIfExpression(econd, eif, eelse);
                 

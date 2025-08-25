@@ -20,13 +20,7 @@ defmodule TodoAppWeb.UserLive do
 
   @doc "Generated from Haxe handle_event"
   def handle_event(event, params, socket) do
-    case event do
-      "cancel" -> __MODULE__.handle_cancel(socket)
-      "delete_user" -> __MODULE__.handle_delete_user(params, socket)
-      "edit_user" -> __MODULE__.handle_edit_user(params, socket)
-      "new_user" -> __MODULE__.handle_new_user(params, socket)
-      "save_user" -> __MODULE__.handle_save_user(params, socket)
-      "search" -> __MODULE__.handle_search(params, socket)
+    case (elem(event, 0)) do
       _ -> %{status: "noreply", socket: socket}
     end
   end
@@ -66,13 +60,7 @@ defmodule TodoAppWeb.UserLive do
     temp_result = nil
     (
           g_array = temp_struct.status
-          case g_array do
-      "error" -> temp_result = %{status: "noreply", socket: TodoAppWeb.UserLive.assign(socket, "changeset", temp_struct.changeset)}
-      "ok" -> (
-          users = Users.list_users()
-          show_form = false
-          temp_result = %{status: "noreply", socket: TodoAppWeb.UserLive.assign_multiple(socket, %{users: users, showForm: show_form, selectedUser: nil, changeset: Users.change_user(nil)})}
-        )
+          case (elem(g_array, 0)) do
       _ -> temp_result = %{status: "noreply", socket: socket}
     end
         )
@@ -97,16 +85,13 @@ defmodule TodoAppWeb.UserLive do
 
   @doc "Generated from Haxe handleSearch"
   def handle_search(params, socket) do
-    temp_array = nil
-
     search_term = params.search
-    temp_array = nil
     if ((search_term.length > 0)) do
-          temp_array = Users.search_users(search_term)
+          if (((config != nil))), do: [config], else: [] = Users.search_users(search_term)
         else
-          temp_array = Users.list_users()
+          if (((config != nil))), do: [config], else: [] = Users.list_users()
         end
-    %{status: "noreply", socket: TodoAppWeb.UserLive.assign_multiple(socket, %{users: temp_array, searchTerm: search_term})}
+    %{status: "noreply", socket: TodoAppWeb.UserLive.assign_multiple(socket, %{users: if (((config != nil))), do: [config], else: [], searchTerm: search_term})}
   end
 
 

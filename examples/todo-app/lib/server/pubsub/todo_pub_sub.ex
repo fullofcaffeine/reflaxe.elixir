@@ -52,10 +52,13 @@ defmodule TodoPubSub do
   """
   @spec topic_to_string(TodoPubSubTopic.t()) :: String.t()
   def topic_to_string(topic) do
-    case (case topic do :todo_updates -> 0; :user_activity -> 1; :system_notifications -> 2; _ -> -1 end) do
-      0 -> "todo:updates"
-      1 -> "user:activity"
-      2 -> "system:notifications"
+    case (elem((case topic do :todo_updates -> 0; :user_activity -> 1; :system_notifications -> 2; _ -> -1 end), 0)) do
+      0 ->
+        "todo:updates"
+      1 ->
+        "user:activity"
+      2 ->
+        "system:notifications"
     end
   end
 
@@ -118,62 +121,7 @@ defmodule TodoPubSub do
           temp_result = nil
           (
           g_array = msg.type
-          case g_array do
-      "bulk_update" -> if ((msg.action != nil)) do
-          (
-          bulk_action = TodoPubSub.parse_bulk_action(msg.action)
-          case bulk_action do
-      {:ok, _} -> (
-          g_array = elem(bulk_action, 1)
-          action = g_array
-          temp_result = Option.some(TodoPubSubMessage.bulk_update(action))
-        )
-      :error -> temp_result = :error
-    end
-        )
-        else
-          temp_result = :error
-        end
-      "system_alert" -> if (((msg.message != nil) && (msg.level != nil))) do
-          (
-          alert_level = TodoPubSub.parse_alert_level(msg.level)
-          case alert_level do
-      {:ok, _} -> (
-          g_array = elem(alert_level, 1)
-          level = g_array
-          temp_result = Option.some(TodoPubSubMessage.system_alert(msg.message, level))
-        )
-      :error -> temp_result = :error
-    end
-        )
-        else
-          temp_result = :error
-        end
-      "todo_created" -> if ((msg.todo != nil)) do
-          temp_result = Option.some(TodoPubSubMessage.todo_created(msg.todo))
-        else
-          temp_result = :error
-        end
-      "todo_deleted" -> if ((msg.todo_id != nil)) do
-          temp_result = Option.some(TodoPubSubMessage.todo_deleted(msg.todo_id))
-        else
-          temp_result = :error
-        end
-      "todo_updated" -> if ((msg.todo != nil)) do
-          temp_result = Option.some(TodoPubSubMessage.todo_updated(msg.todo))
-        else
-          temp_result = :error
-        end
-      "user_offline" -> if ((msg.user_id != nil)) do
-          temp_result = Option.some(TodoPubSubMessage.user_offline(msg.user_id))
-        else
-          temp_result = :error
-        end
-      "user_online" -> if ((msg.user_id != nil)) do
-          temp_result = Option.some(TodoPubSubMessage.user_online(msg.user_id))
-        else
-          temp_result = :error
-        end
+          case (elem(g_array, 0)) do
       _ -> (
           Log.trace(SafePubSub.create_unknown_message_error(msg.type), %{"fileName" => "src_haxe/server/pubsub/TodoPubSub.hx", "lineNumber" => 220, "className" => "server.pubsub.TodoPubSub", "methodName" => "parseMessageImpl"})
           temp_result = :error
@@ -190,18 +138,23 @@ defmodule TodoPubSub do
   """
   @spec bulk_action_to_string(BulkOperationType.t()) :: String.t()
   def bulk_action_to_string(action) do
-    case (case action do :complete_all -> 0; :delete_completed -> 1; :set_priority -> 2; :add_tag -> 3; :remove_tag -> 4; _ -> -1 end) do
-      0 -> "complete_all"
-      1 -> "delete_completed"
-      {2, priority} -> (
+    case (elem((case action do :complete_all -> 0; :delete_completed -> 1; :set_priority -> 2; :add_tag -> 3; :remove_tag -> 4; _ -> -1 end), 0)) do
+      0 ->
+        "complete_all"
+      1 ->
+        "delete_completed"
+      2 ->
+        (
           elem(action, 1)
           "set_priority"
         )
-      {3, tag} -> (
+      3 ->
+        (
           elem(action, 1)
           "add_tag"
         )
-      {4, tag} -> (
+      4 ->
+        (
           elem(action, 1)
           "remove_tag"
         )
@@ -214,12 +167,7 @@ defmodule TodoPubSub do
   """
   @spec parse_bulk_action(String.t()) :: Option.t()
   def parse_bulk_action(action) do
-    case action do
-      "add_tag" -> Option.some(BulkOperationType.add_tag(""))
-      "complete_all" -> Option.some(:complete_all)
-      "delete_completed" -> Option.some(:delete_completed)
-      "remove_tag" -> Option.some(BulkOperationType.remove_tag(""))
-      "set_priority" -> Option.some(BulkOperationType.set_priority(:medium))
+    case (elem(action, 0)) do
       _ -> :error
     end
   end
@@ -230,11 +178,15 @@ defmodule TodoPubSub do
   """
   @spec alert_level_to_string(AlertLevel.t()) :: String.t()
   def alert_level_to_string(level) do
-    case (case level do :info -> 0; :warning -> 1; :error -> 2; :critical -> 3; _ -> -1 end) do
-      0 -> "info"
-      1 -> "warning"
-      2 -> "error"
-      3 -> "critical"
+    case (elem((case level do :info -> 0; :warning -> 1; :error -> 2; :critical -> 3; _ -> -1 end), 0)) do
+      0 ->
+        "info"
+      1 ->
+        "warning"
+      2 ->
+        "error"
+      3 ->
+        "critical"
     end
   end
 
@@ -244,11 +196,7 @@ defmodule TodoPubSub do
   """
   @spec parse_alert_level(String.t()) :: Option.t()
   def parse_alert_level(level) do
-    case level do
-      "critical" -> Option.some(:critical)
-      "error" -> Option.some(:error)
-      "info" -> Option.some(:info)
-      "warning" -> Option.some(:warning)
+    case (elem(level, 0)) do
       _ -> :error
     end
   end
