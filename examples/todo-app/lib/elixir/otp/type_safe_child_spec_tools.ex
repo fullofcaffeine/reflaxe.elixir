@@ -20,11 +20,11 @@ defmodule TypeSafeChildSpecTools do
   def to_legacy(spec, app_name) do
     case (elem(spec, 0)) do
       {0, name} -> (
-          g_array = _ = elem(spec, 1)
+          g_array = elem(spec, 1)
           {Phoenix.PubSub, name: name}
         )
       {1, config} -> (
-          g_array = _ = elem(spec, 1)
+          g_array = elem(spec, 1)
           (
           repo_module = "" <> app_name <> ".Repo"
           nil
@@ -38,8 +38,8 @@ defmodule TypeSafeChildSpecTools do
         )
         )
       {2, port, config} -> (
-          g_array = _ = elem(spec, 1)
-          g_array = _ = elem(spec, 2)
+          g_array = elem(spec, 1)
+          g_array = elem(spec, 2)
           (
           endpoint_module = "" <> app_name <> "Web.Endpoint"
           args = []
@@ -65,7 +65,7 @@ defmodule TypeSafeChildSpecTools do
         )
         )
       {3, config} -> (
-          g_array = _ = elem(spec, 1)
+          g_array = elem(spec, 1)
           (
           telemetry_module = "" <> app_name <> "Web.Telemetry"
           nil
@@ -79,17 +79,17 @@ defmodule TypeSafeChildSpecTools do
         )
         )
       {4, config} -> (
-          g_array = _ = elem(spec, 1)
+          g_array = elem(spec, 1)
           (
           presence_module = "" <> app_name <> ".Presence"
           presence_module
         )
         )
       {5, module, args, restart, shutdown} -> (
-          g_array = _ = elem(spec, 1)
-          g_array = _ = elem(spec, 2)
-          g_array = _ = elem(spec, 3)
-          g_array = _ = elem(spec, 4)
+          g_array = elem(spec, 1)
+          g_array = elem(spec, 2)
+          g_array = elem(spec, 3)
+          g_array = elem(spec, 4)
           (
           module_class = module
           module_name = Type.get_class_name(module_class)
@@ -97,7 +97,7 @@ defmodule TypeSafeChildSpecTools do
         )
         )
       {6, spec2} -> (
-          g_array = _ = elem(spec, 1)
+          g_array = elem(spec, 1)
           spec
         )
     end
@@ -119,11 +119,11 @@ defmodule TypeSafeChildSpecTools do
       3 -> "" <> app_name <> "Web.Telemetry"
       4 -> "" <> app_name <> ".Presence"
       {5, module} -> (
-          g_array = _ = elem(spec, 1)
+          g_array = elem(spec, 1)
           Type.get_class_name(module)
         )
       {6, spec2} -> (
-          g_array = _ = elem(spec, 1)
+          g_array = elem(spec, 1)
           spec.id
         )
     end
@@ -160,7 +160,6 @@ defmodule TypeSafeChildSpecTools do
           errors = []
           case spec do
       {:pub_sub} -> (
-          g_array = _ = elem(spec, 1)
           name = g_array
           if (((name == nil) || (name == ""))) do
           errors ++ ["PubSub name cannot be empty"]
@@ -169,35 +168,31 @@ defmodule TypeSafeChildSpecTools do
           errors ++ ["PubSub name should follow 'AppName.PubSub' convention"]
         end
         )
-      {:repo} -> _ = elem(spec, 1)
+      {:repo} -> (
+          
+        )
       {:endpoint} -> (
-          g_array = _ = elem(spec, 1)
-          _ = elem(spec, 2)
           port = g_array
           if (((port != nil) && (((port < 1) || (port > 65535))))) do
           errors ++ ["Endpoint port must be between 1 and 65535"]
         end
         )
-      {:telemetry} -> _ = elem(spec, 1)
+      {:telemetry} -> (
+          
+        )
       {:presence} -> (
-          g_array = _ = elem(spec, 1)
           config = g_array
           if (((config.name == nil) || (config.name == ""))) do
           errors ++ ["Presence name is required"]
         end
         )
       {:custom, _} -> (
-          g_array = _ = elem(spec, 1)
-          _ = elem(spec, 2)
-          _ = elem(spec, 3)
-          _ = elem(spec, 4)
           module = g_array
           if ((module == nil)) do
           errors ++ ["Custom child spec module cannot be null"]
         end
         )
       {:legacy} -> (
-          g_array = _ = elem(spec, 1)
           spec = g_array
           if (((spec.id == nil) || (spec.id == ""))) do
           errors ++ ["Legacy child spec id cannot be empty"]

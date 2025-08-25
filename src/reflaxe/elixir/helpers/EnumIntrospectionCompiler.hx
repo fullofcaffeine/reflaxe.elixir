@@ -313,9 +313,19 @@ class EnumIntrospectionCompiler {
         trace("[XRay EnumIntrospectionCompiler] =====================================");
         #end
         
-        // CONTEXT-AWARE OPTIMIZATION: Check if this parameter is actually used in the case body
-        // This is the primary optimization that prevents orphaned variables like g_array
-        if (compiler.patternUsageContext != null) {
+        // CRITICAL FIX: Always generate extraction for switch expressions with enum destructuring
+        // In switch expressions like "case PubSub(name):", parameters are explicitly part of the pattern
+        var isInSwitchExpression = compiler.currentSwitchCaseBody != null;
+        
+        if (isInSwitchExpression) {
+            #if debug_enum_introspection_compiler
+            trace("[XRay EnumIntrospectionCompiler] ✓ SWITCH EXPRESSION DETECTED - Parameters are explicitly used in pattern");
+            trace("[XRay EnumIntrospectionCompiler] Proceeding with extraction (switch patterns always use parameters)");
+            #end
+            // In switch expressions with explicit destructuring, parameters are ALWAYS used
+            // Skip context analysis - the mere presence in the pattern means they're used
+            
+        } else if (compiler.patternUsageContext != null) {
             #if debug_enum_introspection_compiler
             trace('[XRay EnumIntrospectionCompiler] ✓ PATTERN USAGE CONTEXT AVAILABLE');
             var contextKeys = [for (key in compiler.patternUsageContext.keys()) key];
@@ -356,11 +366,12 @@ class EnumIntrospectionCompiler {
             if (!parameterUsed) {
                 #if debug_enum_introspection_compiler
                 trace("[XRay EnumIntrospectionCompiler] ✓ CONTEXT-AWARE OPTIMIZATION - Parameter not used in case body");
-                trace("[XRay EnumIntrospectionCompiler] Using underscore pattern to explicitly ignore unused parameter");
+                trace("[XRay EnumIntrospectionCompiler] REFLAXE ARCHITECTURAL APPROACH: Skip generation entirely for unused parameters");
                 #end
-                // Generate underscore pattern for unused parameter - idiomatic Elixir for explicit ignoring
-                var enumExpr = compiler.compileExpression(e);
-                return '_ = elem(${enumExpr}, ${index + 1})'; // Explicitly ignore unused parameter
+                // ARCHITECTURAL ALIGNMENT: Follow Reflaxe's approach - return empty string for unused parameters
+                // This prevents generation of orphaned variables like 'g_array = _ = elem(...)' patterns
+                // The pattern matching will work without explicit parameter extraction
+                return ""; // Don't generate anything for unused enum parameters
             } else {
                 #if debug_enum_introspection_compiler
                 trace("[XRay EnumIntrospectionCompiler] ✓ Parameter IS used - proceeding with extraction");
