@@ -520,6 +520,16 @@ class ExpressionVariantCompiler {
                     return optimizedBlock;
                 }
                 
+                // CRITICAL FIX: Check for temp variable patterns that need scoping fixes
+                // This fixes undefined variables in if-else blocks (temp_array, temp_array1, etc.)
+                trace('[XRay ExpressionVariantCompiler] Checking for temp variable patterns in ${exprs.length} expressions...');
+                var tempVarName = compiler.tempVariableOptimizer.detectTempVariablePattern(exprs);
+                if (tempVarName != null) {
+                    trace('[XRay ExpressionVariantCompiler] ✓ TEMP VAR PATTERN DETECTED: ${tempVarName}');
+                    return compiler.tempVariableOptimizer.optimizeTempVariablePattern(tempVarName, exprs);
+                }
+                trace('[XRay ExpressionVariantCompiler] ❌ NO TEMP VAR PATTERN FOUND');
+                
                 #if debug_loops
                 trace('[XRay ExpressionVariantCompiler] No array assignment optimization - proceeding normally');
                 #end

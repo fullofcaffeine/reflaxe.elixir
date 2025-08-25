@@ -73,7 +73,9 @@ defmodule Todo do
   @doc "Function add_tag"
   @spec add_tag(Todo.t(), String.t()) :: Ecto.Changeset.t()
   def add_tag(todo, tag) do
-    tempArray = if ((todo.tags != nil)), do: todo.tags, else: []
+    temp_array = nil
+
+    temp_array = if (((todo.tags != nil))), do: todo.tags, else: []
     temp_array ++ [tag]
     params = Haxe.Ds.StringMap.new()
     g_array = []
