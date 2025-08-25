@@ -127,69 +127,24 @@ class VariableCompiler {
             return ""; // Skip generation for unused variables
         }
         
-        // PRIMARY: Check TVar.id-based mapping first (collision-free)
+        // PRIMARY: Check TVar.id-based mapping FIRST - this takes absolute priority
+        // This prevents variable collisions by using unique TVar.id as the identifier
         var idMapping = variableIdMap.get(v.id);
         if (idMapping != null) {
             #if debug_variable_compiler
             trace('[XRay VariableCompiler] ✓ FOUND TVAR.ID MAPPING: ${v.id} -> ${idMapping}');
+            trace('[XRay VariableCompiler] Using TVar.id mapping, skipping all other logic');
             #end
-            return idMapping;
+            return idMapping; // Return immediately - no further processing needed
         }
         
         // Get the original variable name (before Haxe's renaming for shadowing avoidance)
         var originalName = getOriginalVarName(v);
         
-        // CRITICAL FIX: Preserve distinct variable identities in loop contexts
-        // If this is a 'g' variable and we've seen this TVar before, use its unique identity
-        if (originalName == "g") {
-            // Use the TVar's unique identifier to ensure distinct variables stay distinct
-            var uniqueId = Std.string(v); // TVar object reference as unique identifier
-            
-            #if debug_variable_compiler
-            trace('[XRay VariableCompiler] ⚡ LOOP VARIABLE IDENTITY PRESERVATION');
-            trace('[XRay VariableCompiler] Original name: g, Unique TVar ID: ${uniqueId}');
-            #end
-            
-            // Check if we've already assigned a distinct name to this specific TVar
-            if (compiler.variableRenameMap != null && compiler.variableRenameMap.exists(uniqueId)) {
-                var distinctName = compiler.variableRenameMap.get(uniqueId);
-                #if debug_variable_compiler  
-                trace('[XRay VariableCompiler] ✓ USING CACHED DISTINCT NAME: ${distinctName}');
-                #end
-                return distinctName;
-            }
-            
-            // This is a new 'g' TVar - assign it a distinct name based on current usage
-            if (compiler.variableRenameMap == null) {
-                compiler.variableRenameMap = new Map<String, String>();
-            }
-            
-            // Count existing 'g' variables to assign sequential distinct names
-            var gVarCount = 0;
-            for (key in compiler.variableRenameMap.keys()) {
-                if (StringTools.startsWith(compiler.variableRenameMap.get(key), "g_")) {
-                    gVarCount++;
-                }
-            }
-            
-            // Assign distinct names: first 'g' TVar becomes 'g_counter', second becomes 'g_array'
-            var distinctName = if (gVarCount == 0) {
-                "g_counter";  // First distinct 'g' variable
-            } else if (gVarCount == 1) {
-                "g_array";    // Second distinct 'g' variable  
-            } else {
-                'g_${gVarCount}'; // Additional 'g' variables get sequential names
-            }
-            
-            // Cache this mapping to ensure consistency
-            compiler.variableRenameMap.set(uniqueId, distinctName);
-            
-            #if debug_variable_compiler
-            trace('[XRay VariableCompiler] ✓ ASSIGNED DISTINCT NAME: ${originalName} (${uniqueId}) -> ${distinctName}');
-            #end
-            
-            return distinctName;
-        }
+        // NOTE: The old counting logic for 'g' variables has been removed
+        // It's replaced by proper TVar.id-based mapping which is checked above
+        // If we reach here and it's a 'g' variable without a mapping, 
+        // it should be treated as a normal variable
         
         // CRITICAL FIX: Handle tempArray variables that were skipped in declaration
         // These variables were declared with null but skipped to prevent undefined references
@@ -223,46 +178,9 @@ class VariableCompiler {
             #end
         }
         
-        // CRITICAL DEBUG: Trace exactly what mapping exists for 'g'
-        if (originalName == "g") {
-            trace('[XRay VariableCompiler] ✓ Compiling TLocal for g variable');
-            if (compiler.currentFunctionParameterMap.exists("g")) {
-                var mapping = compiler.currentFunctionParameterMap.get("g");
-                trace('[XRay VariableCompiler] WARNING: Found existing mapping g -> ${mapping}');
-                if (StringTools.endsWith(mapping, "_counter")) {
-                    trace('[XRay VariableCompiler] ⚠️ CRITICAL: g is incorrectly mapped to ${mapping}!');
-                    trace('[XRay VariableCompiler] Stack trace would be helpful here to find source');
-                    // Don't use the incorrect mapping
-                    return "g";
-                }
-            } else {
-                trace('[XRay VariableCompiler] No mapping found for g (good!)');
-            }
-        }
-        
         #if debug_variable_compiler
         trace('[XRay VariableCompiler] Original name: ${originalName}');
         #end
-        
-        // CRITICAL FIX: NEVER map 'g' to anything ending with '_counter'
-        // The 'g' variable is exclusively used for enum parameter extraction
-        // Any mapping to g_counter is a compiler bug that causes undefined variable errors
-        if (originalName == "g") {
-            // First check if there's a mapping for 'g'
-            var gMapping = compiler.currentFunctionParameterMap.get("g");
-            
-            trace('[XRay VariableCompiler] ✓ SPECIAL HANDLING for g variable');
-            trace('[XRay VariableCompiler] Current mapping for g: ${gMapping}');
-            
-            // If there's a mapping to g_counter, that's ALWAYS wrong
-            if (gMapping != null && StringTools.endsWith(gMapping, "_counter")) {
-                trace('[XRay VariableCompiler] ⚠️ BLOCKING incorrect g -> ${gMapping} mapping, returning "g" directly');
-                return "g";
-            }
-            
-            // Return 'g' directly - it should never be mapped to g_counter
-            return "g";
-        }
         
         /**
          * PARAMETER MAPPING CHECK
@@ -271,29 +189,6 @@ class VariableCompiler {
          * WHAT: Check if there's a parameter mapping for this variable
          * HOW: Look up in currentFunctionParameterMap first, then inline context
          */
-        // CONTEXT-AWARE OPTIMIZATION: Check if this is a reference to an unused enum parameter
-        // When EnumIntrospectionCompiler optimizes away TEnumParameter, we also need to skip TLocal references
-        if (compiler.patternUsageContext != null && originalName == "g") {
-            // Check if this 'g' variable was determined to be unused
-            var parameterUsed = compiler.patternUsageContext.exists("g") || 
-                               compiler.patternUsageContext.exists("g_array") ||
-                               compiler.patternUsageContext.exists("priority") ||
-                               compiler.patternUsageContext.exists("tag");
-            
-            #if debug_variable_compiler
-            trace('[XRay VariableCompiler] ✓ UNUSED PARAMETER CHECK for g variable');
-            trace('[XRay VariableCompiler] Pattern usage context available: ${compiler.patternUsageContext != null}');
-            trace('[XRay VariableCompiler] Parameter g used in pattern: ${parameterUsed}');
-            #end
-            
-            if (!parameterUsed) {
-                #if debug_variable_compiler
-                trace('[XRay VariableCompiler] ✓ OPTIMIZATION: g variable unused, returning empty string');
-                #end
-                return ""; // Skip generating reference to unused variable
-            }
-        }
-        
         // Check parameter mapping first (for function parameters)
         trace('[XRay VariableCompiler] Checking parameter mapping for: ${originalName}');
         trace('[XRay VariableCompiler] Parameter map has: ${[for (k in compiler.currentFunctionParameterMap.keys()) k].join(", ")}');
