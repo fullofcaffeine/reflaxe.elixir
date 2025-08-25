@@ -32,27 +32,17 @@ defmodule Main do
           msg = Message.created("item")
           case msg do
       :created -> (
-          g_array = _ = elem(msg, 1)
-          (
           content = g_array
           Log.trace("Created: " <> content, %{"fileName" => "Main.hx", "lineNumber" => 38, "className" => "Main", "methodName" => "testBasicEnum"})
         )
-        )
       :updated -> (
-          g_array = _ = elem(msg, 1)
-          g_array = _ = elem(msg, 2)
-          (
           id = g_array
           content = g_array
           Log.trace("Updated " <> to_string(id) <> ": " <> content, %{"fileName" => "Main.hx", "lineNumber" => 40, "className" => "Main", "methodName" => "testBasicEnum"})
         )
-        )
       :deleted -> (
-          g_array = _ = elem(msg, 1)
-          (
           id = g_array
           Log.trace("Deleted: " <> to_string(id), %{"fileName" => "Main.hx", "lineNumber" => 42, "className" => "Main", "methodName" => "testBasicEnum"})
-        )
         )
       :empty -> Log.trace("Empty message", %{"fileName" => "Main.hx", "lineNumber" => 44, "className" => "Main", "methodName" => "testBasicEnum"})
     end
@@ -65,22 +55,18 @@ defmodule Main do
     (
           action = Action.move(10, 20, 30)
           case action do
-      :move -> g_array = _ = elem(action, 1)
-    g_array = _ = elem(action, 2)
-    g_array = _ = elem(action, 3)
-    x = g_array
-    y = g_array
-    z = g_array
-    Log.trace("Moving to (" <> to_string(x) <> ", " <> to_string(y) <> ", " <> to_string(z) <> ")", %{"fileName" => "Main.hx", "lineNumber" => 53, "className" => "Main", "methodName" => "testMultipleParameters"})
+      :move -> (
+          x = g_array
+          y = g_array
+          z = g_array
+          Log.trace("Moving to (" <> to_string(x) <> ", " <> to_string(y) <> ", " <> to_string(z) <> ")", %{"fileName" => "Main.hx", "lineNumber" => 53, "className" => "Main", "methodName" => "testMultipleParameters"})
+        )
       :rotate -> (
-          g_array = _ = elem(action, 1)
-          g_array = _ = elem(action, 2)
           angle = g_array
           axis = g_array
           Log.trace("Rotating " <> to_string(angle) <> " degrees on " <> axis, %{"fileName" => "Main.hx", "lineNumber" => 55, "className" => "Main", "methodName" => "testMultipleParameters"})
         )
       :scale -> (
-          g_array = _ = elem(action, 1)
           factor = g_array
           Log.trace("Scaling by " <> to_string(factor), %{"fileName" => "Main.hx", "lineNumber" => 57, "className" => "Main", "methodName" => "testMultipleParameters"})
         )
@@ -94,17 +80,11 @@ defmodule Main do
     (
           event = Event.click(100, 200)
           case event do
-      :click -> (
-          _ = elem(event, 1)
-          _ = elem(event, 2)
-          nil
+      :click -> nil
+      :hover -> nil
+      :key_press -> (
+          
         )
-      :hover -> (
-          _ = elem(event, 1)
-          _ = elem(event, 2)
-          nil
-        )
-      :key_press -> _ = elem(event, 1)
     end
           Log.trace("Empty cases handled", %{"fileName" => "Main.hx", "lineNumber" => 75, "className" => "Main", "methodName" => "testEmptyCases"})
         )
@@ -117,24 +97,16 @@ defmodule Main do
           state = State.loading(50)
           description = ""
           case state do
-      :loading -> (
-          _ = elem(state, 1)
-          nil
-        )
+      :loading -> nil
       :processing -> (
-          g_array = _ = elem(state, 1)
-          (
           progress = g_array
           description = "Progress: " <> to_string(progress) <> "%"
         )
-        )
       :complete -> (
-          g_array = _ = elem(state, 1)
           result = g_array
           description = "Done: " <> result
         )
       :error -> (
-          g_array = _ = elem(state, 1)
           msg = g_array
           description = "Error: " <> msg
         )
@@ -150,16 +122,13 @@ defmodule Main do
           container = Container.box(Content.text("Hello"))
           case container do
       :box -> (
-          g_array = _ = elem(container, 1)
           content = g_array
           case content do
       :text -> (
-          g_array = _ = elem(content, 1)
           str = g_array
           Log.trace("Box contains text: " <> str, %{"fileName" => "Main.hx", "lineNumber" => 103, "className" => "Main", "methodName" => "testNestedEnums"})
         )
       :number -> (
-          g_array = _ = elem(content, 1)
           n = g_array
           Log.trace("Box contains number: " <> to_string(n), %{"fileName" => "Main.hx", "lineNumber" => 105, "className" => "Main", "methodName" => "testNestedEnums"})
         )
@@ -183,26 +152,15 @@ defmodule Main do
           result = Result.success("Done", 42)
           case result do
       {:ok, _} -> (
-          g_array = _ = elem(result, 1)
-          g_array = _ = elem(result, 2)
-          (
           msg = g_array
           code = g_array
           Log.trace("Success: " <> msg <> " (code: " <> to_string(code) <> ")", %{"fileName" => "Main.hx", "lineNumber" => 121, "className" => "Main", "methodName" => "testMixedCases"})
         )
-        )
+      {:error, _} -> nil
       {:error, _} -> (
-          _ = elem(result, 1)
-          nil
-        )
-      {:error, _} -> (
-          g_array = _ = elem(result, 1)
-          g_array = _ = elem(result, 2)
-          (
           msg = g_array
           code = g_array
           Log.trace("Error: " <> msg <> " (code: " <> to_string(code) <> ")", %{"fileName" => "Main.hx", "lineNumber" => 125, "className" => "Main", "methodName" => "testMixedCases"})
-        )
         )
       {:error, _} -> Log.trace("Still pending...", %{"fileName" => "Main.hx", "lineNumber" => 127, "className" => "Main", "methodName" => "testMixedCases"})
     end
