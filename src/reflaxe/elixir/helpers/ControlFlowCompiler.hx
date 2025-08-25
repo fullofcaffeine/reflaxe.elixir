@@ -54,6 +54,16 @@ typedef DirectFieldAssignment = {
 };
 
 /**
+ * Variable ternary assignment pattern data
+ */
+typedef VarTernaryPattern = {
+    varName: String,           // Variable being assigned to
+    condition: TypedExpr,      // Ternary condition
+    thenValue: TypedExpr,      // Value if condition is true
+    elseValue: TypedExpr       // Value if condition is false
+};
+
+/**
  * Control Flow Compiler for Reflaxe.Elixir
  * 
  * WHY: The compileElixirExpressionInternal function contained ~600 lines of control flow compilation
@@ -129,7 +139,7 @@ class ControlFlowCompiler {
      * @return Optimized block code or null if no optimization possible
      */
     private function tryOptimizeArrayAssignmentPattern(exprs: Array<TypedExpr>): Null<String> {
-        #if debug_control_flow_compiler || debug_loops
+#if debug_control_flow_compiler
         trace('[XRay ControlFlowCompiler] ANALYZING BLOCK FOR ARRAY ASSIGNMENT PATTERN');
         trace('[XRay ControlFlowCompiler] - Block has ${exprs.length} expressions');
         #end
@@ -144,14 +154,14 @@ class ControlFlowCompiler {
             // Check if current expression is a variable assignment to empty array
             var arrayVar = extractEmptyArrayAssignment(currentExpr);
             if (arrayVar != null) {
-                #if debug_control_flow_compiler || debug_loops
+        #if debug_control_flow_compiler
                 trace('[XRay ControlFlowCompiler] ✓ Found empty array assignment: ${arrayVar}');
                 #end
                 
                 // Check if next expression is a while loop that builds into this array
                 var loopOptimization = tryOptimizeWhileLoopWithTarget(nextExpr, arrayVar);
                 if (loopOptimization != null) {
-                    #if debug_control_flow_compiler || debug_loops
+            #if debug_control_flow_compiler
                     trace('[XRay ControlFlowCompiler] ✓ Found matching array building loop');
                     trace('[XRay ControlFlowCompiler] ✓ OPTIMIZATION APPLIED: ${arrayVar} = ${loopOptimization}');
                     #end
@@ -193,7 +203,7 @@ class ControlFlowCompiler {
                 if (initExpr != null) {
                     switch (initExpr.expr) {
                         case TArrayDecl([]): // Empty array literal
-                            #if debug_control_flow_compiler || debug_loops
+                    #if debug_control_flow_compiler
                             trace('[XRay ControlFlowCompiler] ✓ Empty array assignment detected: ${v.name}');
                             #end
                             v.name;
@@ -219,13 +229,13 @@ class ControlFlowCompiler {
                 // Delegate to LoopCompiler for array building pattern detection
                 var loopCompiler = compiler.loopCompiler;
                 
-                #if debug_control_flow_compiler || debug_loops
+        #if debug_control_flow_compiler
                 trace('[XRay ControlFlowCompiler] Checking while loop for array building with target: ${targetVar}');
                 #end
                 
                 var arrayBuildingPattern = loopCompiler.detectArrayBuildingPattern(econd, ebody);
                 if (arrayBuildingPattern != null && arrayBuildingPattern.accumVar == targetVar) {
-                    #if debug_control_flow_compiler || debug_loops
+            #if debug_control_flow_compiler
                     trace('[XRay ControlFlowCompiler] ✓ Array building pattern matches target variable');
                     #end
                     
@@ -275,7 +285,7 @@ class ControlFlowCompiler {
         // Check for array assignment patterns (variable = [] followed by array building loop)
         var arrayAssignmentOptimization = tryOptimizeArrayAssignmentPattern(el);
         if (arrayAssignmentOptimization != null) {
-            #if debug_control_flow_compiler || debug_loops
+    #if debug_control_flow_compiler
             trace("[XRay ControlFlowCompiler] ✓ ARRAY ASSIGNMENT OPTIMIZATION APPLIED");
             #end
             return arrayAssignmentOptimization;
@@ -292,6 +302,18 @@ class ControlFlowCompiler {
             #end
             // Transform imperative temp variable pattern to functional case expression
             return compiler.tempVariableOptimizer.optimizeTempVariablePattern(tempVarPattern, el);
+        }
+        
+        // CRITICAL FIX: Check for variable declaration + ternary assignment pattern
+        // This detects patterns like: [TVar(args, nil), TIf(condition, assign, assign)]
+        // and transforms them to: args = if condition, do: value1, else: value2
+        var varTernaryPattern = detectVarTernaryAssignmentPattern(el);
+        if (varTernaryPattern != null) {
+            #if debug_control_flow_compiler
+            trace("[XRay ControlFlowCompiler] ✓ VAR TERNARY PATTERN DETECTED: " + varTernaryPattern.varName);
+            trace("[XRay ControlFlowCompiler] Generating direct assignment with inline if");
+            #end
+            return generateVarTernaryAssignment(varTernaryPattern, el);
         }
         
         // Process TBlock expressions normally
@@ -764,6 +786,40 @@ class ControlFlowCompiler {
         // that should be compiled as inline expression to avoid scoping issues
         var shouldUseInlineForm = shouldGenerateInlineIfExpression(eif, eelse);
         
+        // ADDITIONAL FIX: Force inline form for array literal ternary patterns
+        // This specifically handles: config != null ? [config] : []
+        var isArrayTernary = false;
+        if (!shouldUseInlineForm && eelse != null) {
+            #if debug_control_flow_compiler
+            trace('[XRay ControlFlowCompiler] Checking array literal ternary pattern...');
+            #end
+            isArrayTernary = isArrayLiteralTernaryPattern(eif, eelse);
+            #if debug_control_flow_compiler
+            trace('[XRay ControlFlowCompiler] Array literal ternary detected: ${isArrayTernary}');
+            #end
+            shouldUseInlineForm = isArrayTernary;
+        }
+        
+        // CRITICAL FIX: For array literal ternary patterns, extract just the values
+        // instead of using the full assignment expressions
+        if (isArrayTernary && eelse != null) {
+            #if debug_control_flow_compiler
+            trace('[XRay ControlFlowCompiler] ✓ ARRAY TERNARY FIX: Extracting values from assignments');
+            #end
+            
+            var thenValue = extractValueFromAssignment(eif);
+            var elseValue = extractValueFromAssignment(eelse);
+            
+            if (thenValue != null && elseValue != null) {
+                thenBranch = thenValue;
+                elseBranch = elseValue;
+                #if debug_control_flow_compiler
+                trace('[XRay ControlFlowCompiler] Extracted then value: ${thenValue}');
+                trace('[XRay ControlFlowCompiler] Extracted else value: ${elseValue}');
+                #end
+            }
+        }
+        
         #if debug_control_flow_compiler
         trace('[XRay ControlFlowCompiler] Should use inline form: ${shouldUseInlineForm}');
         #end
@@ -854,6 +910,90 @@ class ControlFlowCompiler {
             if (!isSimpleExpression(expr)) return false;
         }
         return true;
+    }
+    
+    /**
+     * Detect array literal ternary patterns that should use inline form
+     * 
+     * WHY: Patterns like `config != null ? [config] : []` generate temp variables
+     * when compiled as block-style if statements, causing undefined variable errors.
+     * 
+     * WHAT: Detects if both branches are array literals that can be safely inlined.
+     * 
+     * HOW: Checks if both then and else expressions are TArrayDecl with simple elements.
+     * 
+     * @param thenExpr The then branch expression
+     * @param elseExpr The else branch expression (non-null)
+     * @return True if this is an array literal ternary pattern
+     */
+    private function isArrayLiteralTernaryPattern(thenExpr: TypedExpr, elseExpr: TypedExpr): Bool {
+        #if debug_control_flow_compiler
+        trace('[XRay ControlFlowCompiler] Analyzing ternary pattern - then: ${Type.enumConstructor(thenExpr.expr)}, else: ${Type.enumConstructor(elseExpr.expr)}');
+        #end
+        
+        return switch ([thenExpr.expr, elseExpr.expr]) {
+            case [TArrayDecl(thenValues), TArrayDecl(elseValues)]:
+                #if debug_control_flow_compiler
+                trace('[XRay ControlFlowCompiler] Found direct array decl pattern - then: ${thenValues.length} elements, else: ${elseValues.length} elements');
+                #end
+                // Both branches are array literals
+                // Check if all elements are simple (constants, variables, etc.)
+                var allSimple = areAllSimpleExpressions(thenValues) && areAllSimpleExpressions(elseValues);
+                #if debug_control_flow_compiler
+                trace('[XRay ControlFlowCompiler] All elements simple: ${allSimple}');
+                #end
+                allSimple;
+                
+            case [TBinop(OpAssign, _, thenRight), TBinop(OpAssign, _, elseRight)]:
+                #if debug_control_flow_compiler
+                trace('[XRay ControlFlowCompiler] Found assignment pattern - checking right-hand sides');
+                trace('[XRay ControlFlowCompiler] Then RHS: ${Type.enumConstructor(thenRight.expr)}, Else RHS: ${Type.enumConstructor(elseRight.expr)}');
+                #end
+                // Both branches are assignments - check if they assign array-compatible values
+                function isArrayCompatible(expr: TypedExpr): Bool {
+                    return switch (expr.expr) {
+                        case TArrayDecl(_): true;  // Direct array literal
+                        case TIf(_, thenExpr, elseExpr) if (thenExpr != null && elseExpr != null): 
+                            // Nested ternary that might resolve to arrays
+                            isArrayCompatible(thenExpr) && isArrayCompatible(elseExpr);
+                        case _: 
+                            // Check if this is a simple array ternary like `config != null ? [config] : []`
+                            false;
+                    };
+                }
+                
+                switch ([thenRight.expr, elseRight.expr]) {
+                    case [TArrayDecl(thenValues), TArrayDecl(elseValues)]:
+                        #if debug_control_flow_compiler
+                        trace('[XRay ControlFlowCompiler] ✓ FOUND ASSIGNMENT ARRAY TERNARY PATTERN!');
+                        trace('[XRay ControlFlowCompiler] Then assigns array with ${thenValues.length} elements, else assigns array with ${elseValues.length} elements');
+                        #end
+                        // Both assignments are to array literals
+                        var allSimple = areAllSimpleExpressions(thenValues) && areAllSimpleExpressions(elseValues);
+                        #if debug_control_flow_compiler
+                        trace('[XRay ControlFlowCompiler] All elements simple: ${allSimple}');
+                        #end
+                        allSimple;
+                    case _ if (isArrayCompatible(thenRight) && isArrayCompatible(elseRight)):
+                        #if debug_control_flow_compiler
+                        trace('[XRay ControlFlowCompiler] ✓ FOUND ARRAY-COMPATIBLE TERNARY PATTERN!');
+                        trace('[XRay ControlFlowCompiler] Both branches are array-compatible');
+                        #end
+                        true;  // Accept array-compatible patterns
+                    case _:
+                        #if debug_control_flow_compiler
+                        trace('[XRay ControlFlowCompiler] Assignment pattern but not array-compatible');
+                        trace('[XRay ControlFlowCompiler] Then RHS: ${Type.enumConstructor(thenRight.expr)}, Else RHS: ${Type.enumConstructor(elseRight.expr)}');
+                        #end
+                        false;
+                }
+                
+            case _: 
+                #if debug_control_flow_compiler
+                trace('[XRay ControlFlowCompiler] Not an array literal ternary pattern');
+                #end
+                false;
+        };
     }
     
     /**
@@ -1607,6 +1747,351 @@ class ControlFlowCompiler {
         #end
         
         return isOrphaned;
+    }
+    
+    /**
+     * Detect variable declaration + ternary assignment pattern
+     * 
+     * WHY: Patterns like `var args = config != null ? [config] : [];` need special handling
+     * WHAT: Detect TVar followed by TIf with TBinop assignment operations containing arrays
+     * HOW: Look for [TVar(name, nil), TIf(condition, TBinop(assign, var, array), TBinop(assign, var, array))]
+     * 
+     * @param expressions Array of expressions in block to analyze
+     * @return VarTernaryPattern if detected, null otherwise
+     */
+    private function detectVarTernaryAssignmentPattern(expressions: Array<TypedExpr>): Null<VarTernaryPattern> {
+        if (expressions == null || expressions.length < 2) {
+            return null;
+        }
+        
+        #if debug_control_flow_compiler
+        trace("[XRay ControlFlowCompiler] Checking for var ternary pattern");
+        trace('[XRay ControlFlowCompiler] Expression count: ${expressions.length}');
+        for (i in 0...expressions.length) {
+            trace('[XRay ControlFlowCompiler] Expression ${i}: ${Type.enumConstructor(expressions[i].expr)}');
+        }
+        #end
+        
+        // ENHANCED: Try both direct assignment pattern and separate pattern
+        var directPattern = detectDirectVarTernaryPattern(expressions);
+        if (directPattern != null) {
+            return directPattern;
+        }
+        
+        // NEW: Try TypeSafeChildSpec pattern (TVar + standalone TIf + later assignment)
+        var separatePattern = detectSeparateVarTernaryPattern(expressions);
+        if (separatePattern != null) {
+            return separatePattern;
+        }
+        
+        return null;
+    }
+    
+    /**
+     * Detect direct var ternary pattern: TVar + TIf(assignments)
+     * 
+     * WHY: Original pattern for direct assignments in ternary branches
+     * WHAT: [TVar(temp, nil), TIf(cond, assign(temp, val1), assign(temp, val2))]
+     * HOW: Look for TVar followed by TIf with assignments to same variable
+     */
+    private function detectDirectVarTernaryPattern(expressions: Array<TypedExpr>): Null<VarTernaryPattern> {
+        if (expressions.length < 2) return null;
+        
+        var first = expressions[0];
+        var second = expressions[1];
+        
+        // Pattern: TVar with null initial value
+        var varName: String = switch (first.expr) {
+            case TVar(v, null): v.name;
+            case TVar(v, {expr: TConst(TNull)}): v.name; 
+            case _: null;
+        };
+        
+        if (varName == null) {
+            return null;
+        }
+        
+        // Pattern: TIf with assignment operations
+        var ternaryPattern = switch (second.expr) {
+            case TIf(condition, thenExpr, elseExpr):
+                var thenAssign = analyzeTernaryBranch(thenExpr, varName);
+                var elseAssign = analyzeTernaryBranch(elseExpr, varName);
+                
+                if (thenAssign != null && elseAssign != null) {
+                    {
+                        condition: condition,
+                        thenValue: thenAssign,
+                        elseValue: elseAssign
+                    };
+                } else {
+                    null;
+                }
+            case _: null;
+        };
+        
+        if (ternaryPattern != null) {
+            #if debug_control_flow_compiler
+            trace('[XRay ControlFlowCompiler] ✓ DIRECT VAR TERNARY PATTERN DETECTED');
+            trace('[XRay ControlFlowCompiler] Variable: ${varName}');
+            #end
+            
+            return {
+                varName: varName,
+                condition: ternaryPattern.condition,
+                thenValue: ternaryPattern.thenValue,
+                elseValue: ternaryPattern.elseValue
+            };
+        }
+        
+        return null;
+    }
+    
+    /**
+     * Detect separate var ternary pattern: TVar + standalone TIf + later assignment
+     * 
+     * WHY: TypeSafeChildSpec generates TVar(tempArray, nil) + standalone TIf + TBinop(assign, args, tempArray)
+     * WHAT: Look for temp variable followed by ternary value expression and later assignment
+     * HOW: Scan for TVar(tempX), find TIf that produces array values, find assignment using tempX
+     */
+    private function detectSeparateVarTernaryPattern(expressions: Array<TypedExpr>): Null<VarTernaryPattern> {
+        if (expressions.length < 3) return null;
+        
+        // Look for tempArray variables at start
+        var tempVarExpr: TypedExpr = null;
+        var tempVarName: String = null;
+        var tempVarIndex: Int = -1;
+        
+        for (i in 0...expressions.length) {
+            switch (expressions[i].expr) {
+                case TVar(v, null) if (StringTools.startsWith(v.name, "temp")):
+                    tempVarExpr = expressions[i];
+                    tempVarName = v.name;
+                    tempVarIndex = i;
+                    break;
+                case TVar(v, {expr: TConst(TNull)}) if (StringTools.startsWith(v.name, "temp")):
+                    tempVarExpr = expressions[i];
+                    tempVarName = v.name;
+                    tempVarIndex = i;
+                    break;
+                case _:
+            }
+        }
+        
+        if (tempVarName == null) {
+            return null;
+        }
+        
+        #if debug_control_flow_compiler
+        trace('[XRay ControlFlowCompiler] Found temp variable: ${tempVarName} at index ${tempVarIndex}');
+        #end
+        
+        // Look for standalone TIf that creates array values
+        var ternaryExpr: TypedExpr = null;
+        var ternaryIndex: Int = -1;
+        
+        for (i in (tempVarIndex + 1)...expressions.length) {
+            switch (expressions[i].expr) {
+                case TIf(condition, thenExpr, elseExpr):
+                    // Check if this is an array-compatible ternary
+                    var isArrayTernary = switch ([thenExpr.expr, elseExpr.expr]) {
+                        case [TArrayDecl(_), TArrayDecl(_)]: true;
+                        case _: false;
+                    };
+                    
+                    if (isArrayTernary) {
+                        ternaryExpr = expressions[i];
+                        ternaryIndex = i;
+                        #if debug_control_flow_compiler
+                        trace('[XRay ControlFlowCompiler] Found array ternary at index ${ternaryIndex}');
+                        #end
+                        break;
+                    }
+                case _:
+            }
+        }
+        
+        if (ternaryExpr == null) {
+            return null;
+        }
+        
+        // Look for assignment using the temp variable
+        var assignmentExpr: TypedExpr = null;
+        var finalVarName: String = null;
+        
+        for (i in (ternaryIndex + 1)...expressions.length) {
+            switch (expressions[i].expr) {
+                case TBinop(OpAssign, {expr: TLocal(finalVar)}, {expr: TLocal(tempVar)}) if (tempVar.name == tempVarName):
+                    assignmentExpr = expressions[i];
+                    finalVarName = finalVar.name;
+                    #if debug_control_flow_compiler
+                    trace('[XRay ControlFlowCompiler] Found assignment: ${finalVarName} = ${tempVarName}');
+                    #end
+                    break;
+                case _:
+            }
+        }
+        
+        if (assignmentExpr == null || finalVarName == null) {
+            return null;
+        }
+        
+        // Extract the ternary values
+        var result = switch (ternaryExpr.expr) {
+            case TIf(condition, thenExpr, elseExpr):
+                {
+                    varName: finalVarName,  // Use final variable name (args) not temp name
+                    condition: condition,
+                    thenValue: thenExpr,
+                    elseValue: elseExpr
+                };
+            case _: null;
+        };
+        
+        if (result != null) {
+            #if debug_control_flow_compiler
+            trace('[XRay ControlFlowCompiler] ✓ SEPARATE VAR TERNARY PATTERN DETECTED');
+            trace('[XRay ControlFlowCompiler] Final variable: ${result.varName}');
+            trace('[XRay ControlFlowCompiler] Temp variable: ${tempVarName}');
+            #end
+        }
+        
+        return result;
+    }
+    
+    /**
+     * Analyze a ternary branch to extract the assigned value
+     * 
+     * @param expr Branch expression (TBinop assignment)
+     * @param expectedVar Variable name being assigned to
+     * @return Assigned value expression if pattern matches, null otherwise
+     */
+    private function analyzeTernaryBranch(expr: TypedExpr, expectedVar: String): Null<TypedExpr> {
+        return switch (expr.expr) {
+            case TBinop(OpAssign, {expr: TLocal(v)}, valueExpr) if (v.name == expectedVar):
+                valueExpr;
+            case _: null;
+        };
+    }
+    
+    /**
+     * Generate direct assignment with inline if expression for var ternary pattern
+     * 
+     * WHY: Transform problematic scoped assignment to direct assignment with inline if
+     * WHAT: Generate `args = if condition, do: value1, else: value2` instead of scoped variables
+     * HOW: Compile condition and values, then format as Elixir inline if expression
+     * 
+     * @param pattern Detected var ternary pattern
+     * @param expressions Original expressions (for debugging)
+     * @return Generated Elixir code with direct assignment
+     */
+    private function generateVarTernaryAssignment(pattern: VarTernaryPattern, expressions: Array<TypedExpr>): String {
+        #if debug_control_flow_compiler
+        trace('[XRay ControlFlowCompiler] Generating direct assignment for: ${pattern.varName}');
+        #end
+        
+        // Compile the condition and values
+        var conditionStr = compiler.compileExpression(pattern.condition);
+        var thenValueStr = compiler.compileExpression(pattern.thenValue);
+        var elseValueStr = compiler.compileExpression(pattern.elseValue);
+        
+        // Generate direct assignment with inline if
+        var directAssignment = 'if ${conditionStr}, do: ${thenValueStr}, else: ${elseValueStr}';
+        var result = '${pattern.varName} = ${directAssignment}';
+        
+        // ARCHITECTURAL FIX: Register that this pattern consumes temporary variables
+        // This prevents later TVar assignments from generating undefined temp_array references
+        var tempArrayName = findTempArrayNameInPattern(expressions);
+        if (tempArrayName != null) {
+            #if debug_control_flow_compiler
+            trace('[XRay ControlFlowCompiler] Registering consumed temp variable: ${tempArrayName} -> ${pattern.varName}');
+            #end
+            
+            // Register the direct assignment for this temp variable
+            if (compiler.consumedTempVariables == null) {
+                compiler.consumedTempVariables = new Map<String, String>();
+            }
+            compiler.consumedTempVariables.set(tempArrayName, directAssignment);
+        }
+        
+        #if debug_control_flow_compiler
+        trace('[XRay ControlFlowCompiler] Generated: ${result}');
+        #end
+        
+        return result;
+    }
+    
+    /**
+     * Find temporary array variable name in pattern expressions
+     * 
+     * WHY: We need to identify which temp_array variable is being consumed by array ternary optimization
+     * WHAT: Scan expressions looking for temp_array variable names (temp_array, temp_array1, etc.)
+     * HOW: Recursively examine expressions for TLocal references to temp variables
+     * 
+     * @param expressions Expressions to search for temp array references
+     * @return Name of temp array variable, or null if not found
+     */
+    private function findTempArrayNameInPattern(expressions: Array<TypedExpr>): Null<String> {
+        for (expr in expressions) {
+            var tempArrayName = findTempArrayInExpression(expr);
+            if (tempArrayName != null) {
+                return tempArrayName;
+            }
+        }
+        return null;
+    }
+    
+    /**
+     * Recursively search for temp_array references in an expression
+     */
+    private function findTempArrayInExpression(expr: TypedExpr): Null<String> {
+        return switch (expr.expr) {
+            case TLocal(v) if (StringTools.startsWith(v.name, "temp_array")):
+                v.name;
+            case TBinop(_, e1, e2):
+                var left = findTempArrayInExpression(e1);
+                if (left != null) left else findTempArrayInExpression(e2);
+            case TBlock(exprs):
+                for (e in exprs) {
+                    var found = findTempArrayInExpression(e);
+                    if (found != null) return found;
+                }
+                null;
+            case _:
+                null;
+        };
+    }
+    
+    /**
+     * Extract value from assignment expression for array literal ternary fix
+     * 
+     * WHY: When array literal ternary patterns are detected, we need to extract
+     *      just the values being assigned, not the full assignment expressions.
+     * 
+     * WHAT: Given an assignment expression like TBinop(OpAssign, var, value),
+     *       extract and compile just the value part.
+     * 
+     * HOW: Analyze the AST to find the right-hand side of assignment operations
+     *      and compile them directly.
+     * 
+     * @param expr Expression that may contain an assignment
+     * @return Compiled value expression, or null if not an assignment
+     */
+    private function extractValueFromAssignment(expr: TypedExpr): Null<String> {
+        return switch (expr.expr) {
+            case TBinop(OpAssign, _, valueExpr):
+                // Extract and compile the value being assigned
+                #if debug_control_flow_compiler
+                trace('[XRay ControlFlowCompiler] Extracting value from assignment: ${Type.enumConstructor(valueExpr.expr)}');
+                #end
+                compiler.compileExpression(valueExpr);
+                
+            case _:
+                // Not an assignment - might be direct value
+                #if debug_control_flow_compiler
+                trace('[XRay ControlFlowCompiler] Not an assignment, compiling directly: ${Type.enumConstructor(expr.expr)}');
+                #end
+                compiler.compileExpression(expr);
+        };
     }
     
     /**
