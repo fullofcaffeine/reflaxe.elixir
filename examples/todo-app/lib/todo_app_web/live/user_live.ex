@@ -1,26 +1,17 @@
 defmodule TodoAppWeb.UserLive do
   use TodoAppWeb, :live_view
 
-  @doc "Generated from Haxe new"
-  def __struct__() do
-    %{__MODULE__ | show_form: false}
-    %{__MODULE__ | search_term: ""}
-    %{__MODULE__ | changeset: nil}
-    %{__MODULE__ | selected_user: nil}
-    %{__MODULE__ | users: []}
-  end
-
 
   @doc "Generated from Haxe mount"
   def mount(params, session, socket) do
-    users = Users.list_users()
+    users = Users.list_users(nil)
     %{status: "ok", socket: TodoAppWeb.UserLive.assign_multiple(socket, %{users: users, selectedUser: nil, changeset: Users.change_user(nil), searchTerm: "", showForm: false})}
   end
 
 
   @doc "Generated from Haxe handle_event"
   def handle_event(event, params, socket) do
-    case (elem(event, 0)) do
+    case (event) do
       _ -> %{status: "noreply", socket: socket}
     end
   end
@@ -47,17 +38,19 @@ defmodule TodoAppWeb.UserLive do
 
   @doc "Generated from Haxe handleSaveUser"
   def handle_save_user(params, socket) do
-    temp_result = nil
     temp_struct = nil
+    temp_result = nil
 
-    tempResult = if ((__MODULE__.selected_user == nil)), do: Users.create_user(user_params), else: Users.update_user(__MODULE__.selected_user, user_params)
+    temp_struct = nil
     user_params = params.user
-    (
-          g_array = temp_struct.status
-          case (elem(g_array, 0)) do
+    temp_struct = nil
+    temp_struct = if (((__MODULE__.selected_user == nil))), do: Users.create_user(user_params), else: Users.update_user(__MODULE__.selected_user, user_params)
+    temp_result = nil
+    temp_result = nil
+    g_array = temp_struct.status
+    case (g_array) do
       _ -> temp_result = %{status: "noreply", socket: socket}
     end
-        )
     temp_result
   end
 
@@ -69,7 +62,7 @@ defmodule TodoAppWeb.UserLive do
     result = Users.delete_user(user)
     if ((result.status == "ok")) do
           (
-          users = Users.list_users()
+          users = Users.list_users(nil)
           %{status: "noreply", socket: TodoAppWeb.UserLive.assign(socket, "users", users)}
         )
         end
@@ -81,12 +74,10 @@ defmodule TodoAppWeb.UserLive do
   def handle_search(params, socket) do
     temp_array = nil
 
+    temp_array = nil
     search_term = params.search
-    if ((search_term.length > 0)) do
-          temp_array = Users.search_users(search_term)
-        else
-          temp_array = Users.list_users()
-        end
+
+    temp_array = if (((search_term.length > 0))), do: Users.search_users(search_term), else: Users.list_users(nil)
     %{status: "noreply", socket: TodoAppWeb.UserLive.assign_multiple(socket, %{users: temp_array, searchTerm: search_term})}
   end
 

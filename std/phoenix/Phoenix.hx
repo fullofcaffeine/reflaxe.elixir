@@ -340,7 +340,7 @@ extern class PubSub {
      * @param topic Topic string to subscribe to
      * @return :ok on success, {:error, reason} on failure
      */
-    static function subscribe(pubsub: PubSubServer, topic: String): Result<Void, String>;
+    static function subscribe(pubsub: Dynamic, topic: String): Dynamic;
     
     /**
      * Subscribe to a topic with options
@@ -358,7 +358,7 @@ extern class PubSub {
      * @param topic Topic string to broadcast on
      * @param message Message payload to broadcast
      */
-    static function broadcast<T>(pubsub: PubSubServer, topic: String, message: T): Result<Void, String>;
+    static function broadcast<T>(pubsub: Dynamic, topic: String, message: T): Dynamic;
     
     /**
      * Broadcast with specific PubSub server

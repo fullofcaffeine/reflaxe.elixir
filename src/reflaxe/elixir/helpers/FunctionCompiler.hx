@@ -94,7 +94,18 @@ class FunctionCompiler {
      * @return Complete Elixir function definition string
      */
     public function compileFunction(funcField: ClassFuncData, isStatic: Bool = false): String {
-        var funcName = NamingHelper.getElixirFunctionName(funcField.field.name);
+        var originalFuncName = funcField.field.name;
+        
+        // CRITICAL FIX: LiveView classes should NOT have __struct__ functions
+        // Instance variables in LiveView are socket assigns, not struct fields
+        var funcName = if (originalFuncName == "new" && isLiveViewClass()) {
+            #if debug_function_compilation
+            DebugHelper.debugFunction("LiveView Constructor Skip", "Skipping __struct__ generation for LiveView class", 'Original: ${originalFuncName}');
+            #end
+            return ""; // Skip generating constructor for LiveView classes
+        } else {
+            NamingHelper.getElixirFunctionName(originalFuncName);
+        }
         
         #if debug_function_compilation
         DebugHelper.debugFunction("compileFunction", "Starting compilation", 'Function: ${funcName}, Static: ${isStatic}');
@@ -123,6 +134,16 @@ class FunctionCompiler {
                     arg.getName();
                 }
                 var paramName = NamingHelper.toSnakeCase(originalName);
+                
+                // Handle optional parameters by adding Elixir default value syntax
+                if (arg.opt) {
+                    // Optional parameters get \\ nil syntax in Elixir
+                    paramName = paramName + " \\\\ nil";
+                    #if debug_function_compilation
+                    DebugHelper.debugFunction("Optional Parameter", "Added default value", 'Param: ${paramName}');
+                    #end
+                }
+                
                 params.push(paramName);
             }
             paramStr = params.join(", ");
@@ -281,6 +302,26 @@ class FunctionCompiler {
         
         collectExpressions(expr);
         return expressions;
+    }
+    
+    /**
+     * Check if the current class being compiled is a LiveView class
+     * 
+     * WHY: LiveView classes should NOT have __struct__ functions because their
+     * instance variables are socket assigns, not struct fields.
+     * 
+     * WHAT: Detect if the current class has @:liveview annotation
+     * 
+     * HOW: Check the compiler's current class type for LiveView annotation
+     * 
+     * @return True if current class is a LiveView class
+     */
+    private function isLiveViewClass(): Bool {
+        if (compiler.currentClassType == null) return false;
+        
+        // Check for @:liveview annotation using AnnotationSystem
+        var annotationInfo = reflaxe.elixir.helpers.AnnotationSystem.detectAnnotations(compiler.currentClassType);
+        return annotationInfo.primaryAnnotation == ":liveview";
     }
 }
 

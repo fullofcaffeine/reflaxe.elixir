@@ -63,20 +63,22 @@ defmodule JsonPrinter do
           if ((struct.replacer != nil)) do
           v = struct.replacer(k, v)
         end
-          (
-          g_array = Type.typeof(v)
-          case g_array do
-      :t_null -> struct = %{struct.buf | b: "null"}
-      :t_int -> struct = %{struct.buf | b: Std.string(v)}
-      :t_float -> (
-          tempString = if Math.is_finite(v), do: Std.string(v), else: "null"
-          v = temp_string
-          struct = %{struct.buf | b: Std.string(v)}
-        )
-      :t_bool -> struct = %{struct.buf | b: Std.string(v)}
-      :t_object -> struct.fields_string(v, Reflect.fields(v))
-      :t_function -> struct = %{struct.buf | b: "\"<fun>\""}
-      :t_class -> (
+          temp_string = nil
+    g_array = Type.typeof(v)
+    case g_array do
+      0 -> struct = %{struct.buf | b: "null"}
+      1 -> struct = %{struct.buf | b: Std.string(v)}
+      2 -> temp_string = nil
+
+    temp_string = if (Math.is_finite(v)), do: Std.string(v), else: "null"
+    v = temp_string
+    struct = %{struct.buf | b: Std.string(v)}
+      3 -> struct = %{struct.buf | b: Std.string(v)}
+      4 -> struct.fields_string(v, Reflect.fields(v))
+      5 -> struct = %{struct.buf | b: "\"<fun>\""}
+      6 -> (
+    g_array = elem(g_array, 1)
+    (
           c = g_array
           if ((c == String)) do
           struct.quote_(v)
@@ -88,49 +90,56 @@ defmodule JsonPrinter do
     last = (len - 1)
     g_counter = 0
     g_array = len
-    i = nil
-    g3 = nil
-    this = nil
-    v3 = nil
-    loop_helper = fn loop_fn, {i, g3, this, v3} ->
-      if ((g_array < g_array)) do
-        i = g_array + 1
-        if ((i > 0)) do
-              struct = %{struct.buf | b: ","}
-            else
-              struct.nind + 1
-            end
-        if struct.pretty do
-              struct = %{struct.buf | b: "\n"}
-            end
-        if struct.pretty do
-              (
-              v = StringTools.lpad("", struct.indent, (struct.nind * struct.indent.length))
-              struct = %{struct.buf | b: Std.string(v)}
-            )
-            end
-        struct.write(i, Enum.at(v, i))
-        if ((i == last)) do
-              (
-              struct.nind - 1
-              if struct.pretty do
-              struct = %{struct.buf | b: "\n"}
-            end
-              if struct.pretty do
-              (
-              v = StringTools.lpad("", struct.indent, (struct.nind * struct.indent.length))
-              struct = %{struct.buf | b: Std.string(v)}
-            )
-            end
-            )
-            end
-        loop_fn.(loop_fn, {i, g3, this, v3})
-      else
-        {i, g3, this, v3}
+    (
+      # Simple module-level pattern (inline for now)
+      loop_helper = fn condition_fn, body_fn, loop_fn ->
+        if condition_fn.() do
+          body_fn.()
+          loop_fn.(condition_fn, body_fn, loop_fn)
+        else
+          nil
+        end
       end
-    end
 
-    {i, g3, this, v3} = loop_helper.(loop_helper, {i, g3, this, v3})
+      loop_helper.(
+        fn -> ((g_array < g_array)) end,
+        fn ->
+          (
+                i = g_array + 1
+                if ((i > 0)) do
+                struct = %{struct.buf | b: ","}
+              else
+                struct.nind + 1
+              end
+                if struct.pretty do
+                struct = %{struct.buf | b: "\n"}
+              end
+                if struct.pretty do
+                (
+                v = StringTools.lpad("", struct.indent, (struct.nind * struct.indent.length))
+                struct = %{struct.buf | b: Std.string(v)}
+              )
+              end
+                struct.write(i, Enum.at(v, i))
+                if ((i == last)) do
+                (
+                struct.nind - 1
+                if struct.pretty do
+                struct = %{struct.buf | b: "\n"}
+              end
+                if struct.pretty do
+                (
+                v = StringTools.lpad("", struct.indent, (struct.nind * struct.indent.length))
+                struct = %{struct.buf | b: Std.string(v)}
+              )
+              end
+              )
+              end
+              )
+        end,
+        loop_helper
+      )
+    )
     struct = %{struct.buf | b: "]"}
         else
           if ((c == StringMap)) do
@@ -138,18 +147,28 @@ defmodule JsonPrinter do
           v = v
           o = %{}
           k = v.keys()
-          k3 = nil
-    loop_helper = fn loop_fn, {k3} ->
-      if k.has_next() do
-        k = k.next()
-        Reflect.set_field(o, k, v.get(k))
-        loop_fn.(loop_fn, {k3})
-      else
-        {k3}
+          (
+      # Simple module-level pattern (inline for now)
+      loop_helper = fn condition_fn, body_fn, loop_fn ->
+        if condition_fn.() do
+          body_fn.()
+          loop_fn.(condition_fn, body_fn, loop_fn)
+        else
+          nil
+        end
       end
-    end
 
-    {k3} = loop_helper.(loop_helper, {k3})
+      loop_helper.(
+        fn -> k.has_next() end,
+        fn ->
+          (
+                k = k.next()
+                Reflect.set_field(o, k, v.get(k))
+              )
+        end,
+        loop_helper
+      )
+    )
           (
           v = o
           struct.fields_string(v, Reflect.fields(v))
@@ -168,16 +187,19 @@ defmodule JsonPrinter do
         end
         end
         )
-      :t_enum -> (
+    )
+      7 -> (
+    g_array = elem(g_array, 1)
+    (
           i = Type.enum_index(v)
           (
           v = Std.string(i)
           struct = %{struct.buf | b: Std.string(v)}
         )
         )
-      :t_unknown -> struct = %{struct.buf | b: "\"???\""}
+    )
+      8 -> struct = %{struct.buf | b: "\"???\""}
     end
-        )
         )
     struct
   end
@@ -196,51 +218,53 @@ defmodule JsonPrinter do
     empty = true
     g_counter = 0
     g_array = len
-    i = nil
-    g = nil
-    f = nil
-    value = nil
-    empty = nil
-    this = nil
-    v2 = nil
-    loop_helper = fn loop_fn, {i, g, f, value, empty, this, v2} ->
-      if ((g_array < g_array)) do
-        i = g_array + 1
-        f = Enum.at(fields, i)
-        value = Reflect.field(v, f)
-        if Reflect.is_function_(value) do
-              throw(:continue)
-            end
-        if empty do
-              (
-              struct.nind + 1
-              empty = false
-            )
-            else
-              struct = %{struct.buf | b: ","}
-            end
-        if struct.pretty do
-              struct = %{struct.buf | b: "\n"}
-            end
-        if struct.pretty do
-              (
-              v = StringTools.lpad("", struct.indent, (struct.nind * struct.indent.length))
-              struct = %{struct.buf | b: Std.string(v)}
-            )
-            end
-        struct.quote_(f)
-        struct = %{struct.buf | b: ":"}
-        if struct.pretty do
-              struct = %{struct.buf | b: " "}
-            end
-        struct.write(f, value)
-        loop_fn.(loop_fn, {i, g, f, value, empty, this, v2})
-      else
-        {i, g, f, value, empty, this, v2}
+    (
+      # Simple module-level pattern (inline for now)
+      loop_helper = fn condition_fn, body_fn, loop_fn ->
+        if condition_fn.() do
+          body_fn.()
+          loop_fn.(condition_fn, body_fn, loop_fn)
+        else
+          nil
+        end
       end
-    end
 
-    {i, g, f, value, empty, this, v2} = loop_helper.(loop_helper, {i, g, f, value, empty, this, v2})
+      loop_helper.(
+        fn -> ((g_array < g_array)) end,
+        fn ->
+          i = g_array + 1
+          f = Enum.at(fields, i)
+          value = Reflect.field(v, f)
+          if Reflect.is_function_(value) do
+                throw(:continue)
+              end
+          if empty do
+                (
+                struct.nind + 1
+                empty = false
+              )
+              else
+                struct = %{struct.buf | b: ","}
+              end
+          if struct.pretty do
+                struct = %{struct.buf | b: "\n"}
+              end
+          if struct.pretty do
+                (
+                v = StringTools.lpad("", struct.indent, (struct.nind * struct.indent.length))
+                struct = %{struct.buf | b: Std.string(v)}
+              )
+              end
+          struct.quote_(f)
+          struct = %{struct.buf | b: ":"}
+          if struct.pretty do
+                struct = %{struct.buf | b: " "}
+              end
+          struct.write(f, value)
+        end,
+        loop_helper
+      )
+    )
     if (not empty) do
           (
           struct.nind - 1
@@ -266,40 +290,28 @@ defmodule JsonPrinter do
           struct = %{struct.buf | b: "\""}
           i = 0
           length = s.length
-          temp_number = nil
-    index = nil
-    i = nil
-    c = nil
-    loop_helper = fn loop_fn, {temp_number, index, i, c} ->
-      if ((i < length)) do
-        temp_number = nil
-        index = i + 1
-        temp_number = s.cca(index)
-        c = temp_number
-        case (elem(c, 0)) do
-          8 ->
-            struct = %{struct.buf | b: "\\b"}
-          9 ->
-            struct = %{struct.buf | b: "\\t"}
-          10 ->
-            struct = %{struct.buf | b: "\\n"}
-          12 ->
-            struct = %{struct.buf | b: "\\f"}
-          13 ->
-            struct = %{struct.buf | b: "\\r"}
-          34 ->
-            struct = %{struct.buf | b: "\\\""}
-          92 ->
-            struct = %{struct.buf | b: "\\\\"}
-          _ -> struct = %{struct.buf | b: String.from_char_code(c)}
-        end
-        loop_fn.(loop_fn, {temp_number, index, i, c})
-      else
-        {temp_number, index, i, c}
+          for <<char <- s>> do
+      char_code = char
+      (
+            case (char_code) do
+        _ ->
+          struct = %{struct.buf | b: "\\b"}
+        _ ->
+          struct = %{struct.buf | b: "\\t"}
+        _ ->
+          struct = %{struct.buf | b: "\\n"}
+        _ ->
+          struct = %{struct.buf | b: "\\f"}
+        _ ->
+          struct = %{struct.buf | b: "\\r"}
+        _ ->
+          struct = %{struct.buf | b: "\\\""}
+        _ ->
+          struct = %{struct.buf | b: "\\\\"}
+        _ -> struct = %{struct.buf | b: String.from_char_code(char_code)}
       end
+          )
     end
-
-    {temp_number, index, i, c} = loop_helper.(loop_helper, {temp_number, index, i, c})
           struct = %{struct.buf | b: "\""}
         )
     struct

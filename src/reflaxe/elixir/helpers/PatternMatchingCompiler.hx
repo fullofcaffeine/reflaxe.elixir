@@ -52,6 +52,20 @@ class PatternMatchingCompiler {
     private var currentSwitchIsElemBased: Bool = false;
     
     /**
+     * CRITICAL FIX: Track enum pattern nesting level to prevent variable collision
+     * 
+     * WHY: When enum switches are nested, the same g_array variable name is reused,
+     * causing variable shadowing and potential runtime bugs.
+     * 
+     * WHAT: Counter that increments with each nested enum switch to generate
+     * unique variable names (g_array, g_array2, g_array3, etc.)
+     * 
+     * HOW: Incremented before compiling nested switches, decremented after completion.
+     * Used to generate unique parameter extraction variable names.
+     */
+    private var enumNestingLevel: Int = 0;
+    
+    /**
      * Create a new pattern matching compiler
      * 
      * @param compiler The main ElixirCompiler instance
@@ -87,6 +101,10 @@ class PatternMatchingCompiler {
         defaultExpr: Null<TypedExpr>,
         ?context: reflaxe.elixir.helpers.ControlFlowCompiler.FunctionContext
     ): String {
+        
+        // CRITICAL FIX: Track nesting level to prevent enum pattern variable collisions
+        enumNestingLevel++;
+        trace('[XRay PatternMatchingCompiler] Entering nested switch, level: ${enumNestingLevel}');
         
         // CRITICAL FIX: Detect and transform temp variable pattern
         // When Haxe generates switch expressions for return values,
@@ -238,6 +256,7 @@ class PatternMatchingCompiler {
             #if debug_pattern_matching
             trace("[PatternMatchingCompiler] ✓ DETECTED TSwitch(TEnumIndex) - direct compilation");
             #end
+            enumNestingLevel--;
             return compileSwitchOnEnumIndexDirectly(switchExpr, cases, defaultExpr, context);
         }
         
@@ -247,6 +266,7 @@ class PatternMatchingCompiler {
             #if debug_pattern_matching
             trace("[PatternMatchingCompiler] Using with statement optimization");
             #end
+            enumNestingLevel--;
             return compileWithStatement(switchExpr, cases, defaultExpr, context);
         }
         
@@ -266,11 +286,13 @@ class PatternMatchingCompiler {
                 #if debug_pattern_matching
                 trace('[PatternMatchingCompiler] → Using Option switch compilation');
                 #end
+                enumNestingLevel--;
                 return compileOptionSwitch(switchExpr, cases, defaultExpr, context);
             } else if (isResultType(enumType)) {
                 #if debug_pattern_matching
                 trace('[PatternMatchingCompiler] → Using Result switch compilation');
                 #end
+                enumNestingLevel--;
                 return compileResultSwitch(switchExpr, cases, defaultExpr, context);
             } else {
                 // CRITICAL FIX: Handle all other enum types with index-based matching
@@ -279,6 +301,7 @@ class PatternMatchingCompiler {
                 trace('[PatternMatchingCompiler] → USING INDEX-BASED MATCHING FOR ENUM: ${enumType.name}');
                 trace('[PatternMatchingCompiler] → Calling compileEnumIndexSwitch...');
                 #end
+                enumNestingLevel--;
                 return compileEnumIndexSwitch(switchExpr, cases, defaultExpr, context, enumType);
             }
         } else {
@@ -295,6 +318,7 @@ class PatternMatchingCompiler {
                 #if debug_pattern_matching
                 trace('[PatternMatchingCompiler] ✓ INFERRED ENUM TYPE: ${inferredEnumType.name} - forcing elem-based compilation');
                 #end
+                enumNestingLevel--;
                 return compileEnumIndexSwitch(switchExpr, cases, defaultExpr, context, inferredEnumType);
             }
             
@@ -304,10 +328,12 @@ class PatternMatchingCompiler {
             #if debug_pattern_matching
             trace('[PatternMatchingCompiler] ✓ FORCING ALL SWITCHES TO USE ELEM-BASED COMPILATION');
             #end
+            enumNestingLevel--;
             return compileEnumIndexSwitch(switchExpr, cases, defaultExpr, context, null);
         }
         
         // Standard case statement compilation
+        enumNestingLevel--;
         return compileStandardCase(switchExpr, cases, defaultExpr, context);
     }
     
@@ -1660,12 +1686,30 @@ class PatternMatchingCompiler {
     private function compileTuplePattern(name: String, args: Array<TypedExpr>): String {
         var atom = ':${NamingHelper.toSnakeCase(name)}';
         
+        #if debug_pattern_matching
+        trace('[PatternMatchingCompiler] compileTuplePattern called');
+        trace('[PatternMatchingCompiler]   name: ${name}');
+        trace('[PatternMatchingCompiler]   args.length: ${args.length}');
+        for (i in 0...args.length) {
+            trace('[PatternMatchingCompiler]   arg[${i}]: ${args[i].expr}');
+        }
+        #end
+        
         if (args.length == 0) {
+            #if debug_pattern_matching
+            trace('[PatternMatchingCompiler]   -> Returning atom: ${atom}');
+            #end
             return atom;
         }
         
         var argPatterns = args.map(arg -> compilePatternArgument(arg));
-        return '{${atom}, ${argPatterns.join(", ")}}';
+        var result = '{${atom}, ${argPatterns.join(", ")}}';
+        
+        #if debug_pattern_matching
+        trace('[PatternMatchingCompiler]   -> Returning tuple: ${result}');
+        #end
+        
+        return result;
     }
     
     /**
@@ -1816,10 +1860,30 @@ class PatternMatchingCompiler {
         trace('[PatternMatchingCompiler] Switch expr type: ${switchExpr.expr}');
         #end
         
-        switch (switchExpr.expr) {
+        // CRITICAL FIX: Unwrap TParenthesis and TMeta layers to find underlying TEnumIndex
+        // This is necessary because expressions like switch((topic)) are wrapped in parentheses
+        var unwrappedExpr = switchExpr;
+        while (true) {
+            switch (unwrappedExpr.expr) {
+                case TParenthesis(innerExpr):
+                    unwrappedExpr = innerExpr;
+                    #if debug_pattern_matching
+                    trace('[PatternMatchingCompiler] Unwrapped TParenthesis, now: ${unwrappedExpr.expr}');
+                    #end
+                case TMeta(_, innerExpr):
+                    unwrappedExpr = innerExpr;
+                    #if debug_pattern_matching
+                    trace('[PatternMatchingCompiler] Unwrapped TMeta, now: ${unwrappedExpr.expr}');
+                    #end
+                case _:
+                    break;
+            }
+        }
+        
+        switch (unwrappedExpr.expr) {
             case TEnumIndex(innerExpr):
                 #if debug_pattern_matching
-                trace('[PatternMatchingCompiler] ✓ Found TEnumIndex pattern!');
+                trace('[PatternMatchingCompiler] ✓ Found TEnumIndex pattern after unwrapping!');
                 trace('[PatternMatchingCompiler] Inner expr type: ${innerExpr.t}');
                 #end
                 
@@ -1842,7 +1906,7 @@ class PatternMatchingCompiler {
                 }
             case _:
                 #if debug_pattern_matching
-                trace('[PatternMatchingCompiler] Not a TEnumIndex pattern');
+                trace('[PatternMatchingCompiler] Not a TEnumIndex pattern even after unwrapping');
                 #end
                 return false;
         }
@@ -1923,23 +1987,38 @@ class PatternMatchingCompiler {
         // Generate direct patterns based on enum type
         var caseStrings: Array<String> = [];
         
-        // Check if this enum has parameters
+        // Check if this enum has parameters by analyzing the actual case patterns
+        // CRITICAL FIX: construct.params.length returns 0 incorrectly for some enums
+        // Instead, detect parameters from the case body using TEnumParameter
         var hasParameters = false;
+        var constructorHasParams = new Map<Int, Bool>(); 
+        
         #if debug_pattern_matching
-        trace('[PatternMatchingCompiler] Analyzing enum ${enumType.name} constructors:');
+        trace('[PatternMatchingCompiler] Analyzing enum ${enumType.name} - checking case bodies for parameter usage');
         #end
-        for (name in enumType.names) {
-            var construct = enumType.constructs.get(name);
-            #if debug_pattern_matching
-            trace('[PatternMatchingCompiler] Constructor ${name}: ${construct != null ? construct.params.length : "null"} parameters');
-            #end
-            if (construct != null && construct.params.length > 0) {
+        
+        // Analyze case bodies to detect if they extract enum parameters
+        for (i in 0...cases.length) {
+            var caseData = cases[i];
+            // Check if the case body contains TEnumParameter expressions
+            var usesEnumParams = containsEnumParameter(caseData.expr);
+            if (usesEnumParams) {
                 hasParameters = true;
+                for (value in caseData.values) {
+                    switch (value.expr) {
+                        case TConst(TInt(index)):
+                            constructorHasParams.set(index, true);
+                            #if debug_pattern_matching
+                            trace('[PatternMatchingCompiler] Constructor at index ${index} uses parameters (found TEnumParameter in body)');
+                            #end
+                        case _:
+                    }
+                }
             }
         }
         
-        #if debug_pattern_matching
-        trace('[PatternMatchingCompiler] Enum ${enumType.name} has parameters: ${hasParameters}');
+        #if debug_pattern_matching  
+        trace('[PatternMatchingCompiler] Enum ${enumType.name} has parameters: ${hasParameters} (detected from case bodies)');
         #end
         
         for (caseData in cases) {
@@ -1961,10 +2040,9 @@ class PatternMatchingCompiler {
                                 "_"; // Fallback for out-of-bounds index
                             }
                         } else {
-                            // CRITICAL FIX: For enums with parameters, use INTEGER PATTERNS instead of atom patterns
-                            // This ensures consistency with other compilation paths
+                            // CRITICAL FIX: For enums with parameters, use INTEGER PATTERNS
+                            // The switch is on elem(message, 0) which returns the constructor index
                             if (index >= 0 && index < enumType.names.length) {
-                                // Generate integer pattern: case (elem(expr, 0)) do index ->
                                 '${index}';
                             } else {
                                 "_"; // Fallback
@@ -1973,25 +2051,21 @@ class PatternMatchingCompiler {
                     case _: "_"; // Catch-all for non-constant patterns
                 };
                 
-                // CRITICAL FIX: Generate parameter extraction based on actual usage in case body
+                // CRITICAL FIX: Generate parameter extraction for constructors with parameters
                 var parameterExtractionStatements = "";
                 if (hasParameters) {
-                    // Scan case body for g_array references to determine if we need extraction
-                    var caseBodyStr = compilePatternBody(caseData.expr, context);
-                    var needsGArrayExtraction = caseBodyStr.indexOf("g_array") != -1;
+                    // Check if this specific constructor has parameters
+                    var constructorIndex = switch (value.expr) {
+                        case TConst(TInt(i)): i;
+                        case _: -1;
+                    };
                     
-                    if (needsGArrayExtraction) {
-                        // Generate extraction for first parameter (most common case)
-                        // All enum cases use g_array for the first meaningful parameter
-                        var elementIndex = 1; // First parameter is at index 1 (0 is constructor index)
-                        parameterExtractionStatements += 'g_array = elem(${innerExprStr}, ${elementIndex})\n';
+                    if (constructorIndex >= 0 && constructorHasParams.get(constructorIndex) == true) {
+                        // This constructor has parameters - generate extraction
+                        parameterExtractionStatements = 'g_array = elem(${innerExprStr}, 1)\n';
                         
                         #if debug_pattern_matching
-                        trace('[PatternMatchingCompiler] Case body needs g_array - generating extraction: g_array = elem(${innerExprStr}, ${elementIndex})');
-                        #end
-                    } else {
-                        #if debug_pattern_matching
-                        trace('[PatternMatchingCompiler] Case body does not reference g_array - no extraction needed');
+                        trace('[PatternMatchingCompiler] Generating parameter extraction for constructor index ${constructorIndex}');
                         #end
                     }
                 }
@@ -2028,6 +2102,76 @@ class PatternMatchingCompiler {
         #end
         
         return result;
+    }
+    
+    /**
+     * Check if an expression contains TEnumParameter extraction
+     * 
+     * WHY: We need to detect if enum constructors have parameters, but construct.params.length
+     *      sometimes returns 0 incorrectly. By checking if the case body uses TEnumParameter,
+     *      we can reliably detect parameterized constructors.
+     * 
+     * @param expr The expression to check
+     * @return True if the expression contains TEnumParameter
+     */
+    private function containsEnumParameter(expr: TypedExpr): Bool {
+        var found = false;
+        
+        function checkExpr(e: TypedExpr): Void {
+            if (found) return; // Early exit if already found
+            
+            switch (e.expr) {
+                case TEnumParameter(_, _, _):
+                    found = true;
+                    
+                case TBlock(el):
+                    for (subExpr in el) {
+                        checkExpr(subExpr);
+                    }
+                    
+                case TVar(_, init) if (init != null):
+                    checkExpr(init);
+                    
+                case TIf(cond, eif, eelse):
+                    checkExpr(cond);
+                    checkExpr(eif);
+                    if (eelse != null) checkExpr(eelse);
+                    
+                case TSwitch(e, cases, def):
+                    checkExpr(e);
+                    for (c in cases) {
+                        for (v in c.values) checkExpr(v);
+                        checkExpr(c.expr);
+                    }
+                    if (def != null) checkExpr(def);
+                    
+                case TReturn(e) if (e != null):
+                    checkExpr(e);
+                    
+                case TCall(e, args):
+                    checkExpr(e);
+                    for (arg in args) checkExpr(arg);
+                    
+                case TField(e, _):
+                    checkExpr(e);
+                    
+                case TBinop(_, e1, e2):
+                    checkExpr(e1);
+                    checkExpr(e2);
+                    
+                case TUnop(_, _, e):
+                    checkExpr(e);
+                    
+                case TParenthesis(e):
+                    checkExpr(e);
+                    
+                case _:
+                    // Other expression types don't contain TEnumParameter
+            }
+        }
+        
+        checkExpr(expr);
+        return found;
     }
     
     /**
@@ -2284,14 +2428,61 @@ class PatternMatchingCompiler {
         trace('[PatternMatchingCompiler] Cases: ${cases.length}');
         #end
         
-        // Mark this as an elem() based switch for pattern generation
-        currentSwitchIsElemBased = true;
-        
         // Compile switch expression to get the variable name
         var switchVarStr = compiler.compileExpression(switchExpr);
         
-        // Generate case(elem(switchExpr, 0)) do
-        var exprStr = 'elem(${switchVarStr}, 0)';
+        // CRITICAL FIX: Check if this enum has parameters to determine pattern type
+        // Atom-only enums should use direct pattern matching, not elem() extraction
+        var hasParameters = false;
+        var constructorHasParams = new Map<Int, Bool>(); 
+        
+        #if debug_pattern_matching
+        trace('[PatternMatchingCompiler] Analyzing enum ${enumType != null ? enumType.name : "unknown"} for parameter usage');
+        #end
+        
+        // Analyze case bodies to detect if they extract enum parameters
+        if (enumType != null) {
+            for (i in 0...cases.length) {
+                var caseData = cases[i];
+                // Check if the case body contains TEnumParameter expressions
+                var usesEnumParams = containsEnumParameter(caseData.expr);
+                if (usesEnumParams) {
+                    hasParameters = true;
+                    for (value in caseData.values) {
+                        switch (value.expr) {
+                            case TConst(TInt(index)):
+                                constructorHasParams.set(index, true);
+                                #if debug_pattern_matching
+                                trace('[PatternMatchingCompiler] Constructor at index ${index} uses parameters (found TEnumParameter in body)');
+                                #end
+                            case _:
+                        }
+                    }
+                }
+            }
+        }
+        
+        #if debug_pattern_matching  
+        trace('[PatternMatchingCompiler] Enum has parameters: ${hasParameters}');
+        #end
+        
+        // Generate appropriate switch expression based on enum type
+        var exprStr: String;
+        if (hasParameters) {
+            // Tuple-based enum: Use elem() to extract constructor index  
+            currentSwitchIsElemBased = true;
+            exprStr = 'elem(${switchVarStr}, 0)';
+            #if debug_pattern_matching
+            trace('[PatternMatchingCompiler] Using elem() extraction for tuple-based enum');
+            #end
+        } else {
+            // Atom-only enum: Use direct pattern matching on atoms
+            currentSwitchIsElemBased = false;
+            exprStr = switchVarStr;
+            #if debug_pattern_matching
+            trace('[PatternMatchingCompiler] Using direct atom matching for atom-only enum');
+            #end
+        }
         
         #if debug_pattern_matching
         trace('[PatternMatchingCompiler] Switch expression: ${exprStr}');
@@ -2345,10 +2536,42 @@ class PatternMatchingCompiler {
                 }
                 
                 if (caseIndex >= 0) {
-                    pattern = Std.string(caseIndex);
-                    #if debug_pattern_matching
-                    trace('[PatternMatchingCompiler] Generated pattern: ${pattern}');
-                    #end
+                    /**
+                     * CRITICAL FIX: Enum Pattern Generation for Atom vs Tuple Enums
+                     * 
+                     * WHY: Elixir represents enums differently based on whether constructors have parameters:
+                     * - Atom-only enums → :atom_name (memory efficient, no data payload)
+                     * - Tuple-based enums → {:atom_name, data...} (carries parameter data)
+                     * The pattern matching MUST align with this representation to avoid runtime errors.
+                     * 
+                     * WHAT: Generate appropriate Elixir patterns based on enum structure:
+                     * - hasParameters=true: Integer patterns (0, 1, 2) for elem(tuple, 0) matching
+                     * - hasParameters=false: Atom patterns (:todo_updates, :user_activity) for direct matching
+                     * 
+                     * HOW: Check hasParameters flag and generate patterns accordingly:
+                     * 1. Tuple enums: Use integer patterns that match elem() extraction results
+                     * 2. Atom enums: Convert constructor names to snake_case atoms
+                     * 3. Apply NamingHelper for consistent Elixir naming conventions
+                     */
+                    if (hasParameters) {
+                        // Tuple-based enum: Use integer patterns for elem() extraction
+                        pattern = Std.string(caseIndex);
+                        #if debug_pattern_matching
+                        trace('[PatternMatchingCompiler] Generated integer pattern: ${pattern}');
+                        #end
+                    } else {
+                        // Atom-only enum: Use atom patterns for direct matching
+                        if (enumType != null && caseIndex < enumType.names.length) {
+                            var constructorName = enumType.names[caseIndex];
+                            var atomName = NamingHelper.toSnakeCase(constructorName);
+                            pattern = ':${atomName}';
+                            #if debug_pattern_matching
+                            trace('[PatternMatchingCompiler] Generated atom pattern: ${pattern}');
+                            #end
+                        } else {
+                            pattern = "_"; // Fallback for invalid index
+                        }
+                    }
                 }
                 
                 if (pattern != null) {
@@ -2357,6 +2580,50 @@ class PatternMatchingCompiler {
                     compiler.patternUsageContext = usedVariables;
                     compiler.currentSwitchCaseBody = caseData.expr;
                     
+                    // Check if we need to generate parameter extraction for this enum constructor
+                    var parameterExtraction = "";
+                    if (enumType != null && caseIndex >= 0 && caseIndex < enumType.names.length) {
+                        var constructorName = enumType.names[caseIndex];
+                        var constructor = enumType.constructs.get(constructorName);
+                        
+                        // Check if this constructor has parameters from the original pattern
+                        // Look for TCall patterns in the case value to detect parameters
+                        var hasParameters = false;
+                        var paramNames: Array<String> = [];
+                        
+                        switch (value.expr) {
+                            case TCall(e, args):
+                                if (args.length > 0) {
+                                    hasParameters = true;
+                                    // Extract parameter names from the pattern
+                                    for (i in 0...args.length) {
+                                        switch (args[i].expr) {
+                                            case TLocal(v):
+                                                paramNames.push(NamingHelper.toSnakeCase(v.name));
+                                            case _:
+                                                // For complex patterns, generate g_array extraction
+                                                paramNames.push("g_array");
+                                        }
+                                    }
+                                }
+                            case _:
+                        }
+                        
+                        // Generate parameter extraction if needed
+                        if (hasParameters && paramNames.length > 0) {
+                            // CRITICAL FIX: Use unique variable names to prevent collision in nested switches
+                            // Generate g_array, g_array2, g_array3, etc. based on nesting level
+                            var uniqueVarName = enumNestingLevel <= 1 ? "g_array" : 'g_array${enumNestingLevel}';
+                            
+                            // Use the switch variable that we compiled earlier
+                            parameterExtraction = '${uniqueVarName} = elem(${switchVarStr}, 1)\n    ';
+                            
+                            #if debug_pattern_matching
+                            trace('[PatternMatchingCompiler] Generated parameter extraction: ${parameterExtraction}');
+                            #end
+                        }
+                    }
+                    
                     // Compile case body with pattern variable extraction
                     var body = compilePatternBody(caseData.expr, context);
                     
@@ -2364,7 +2631,32 @@ class PatternMatchingCompiler {
                     compiler.patternUsageContext = null;
                     compiler.currentSwitchCaseBody = null;
                     
-                    caseStrings.push('  ${pattern} ->\n    ${body}');
+                    // CRITICAL FIX: Check if extracted variable is actually used before generating extraction
+                    // This prevents orphaned enum extraction variables that create unused variable warnings
+                    var shouldGenerateExtraction = parameterExtraction.length > 0;
+                    if (shouldGenerateExtraction) {
+                        var uniqueVarName = enumNestingLevel <= 1 ? "g_array" : 'g_array${enumNestingLevel}';
+                        
+                        // Check if the extracted variable name appears in the compiled body
+                        if (!body.contains(uniqueVarName)) {
+                            // Variable is not used, skip extraction to avoid orphaned variables
+                            parameterExtraction = "";
+                            shouldGenerateExtraction = false;
+                            
+                            #if debug_pattern_matching
+                            trace('[PatternMatchingCompiler] ✓ SKIPPED ORPHANED EXTRACTION: ${uniqueVarName} not used in body');
+                            #end
+                        }
+                    }
+                    
+                    // Combine parameter extraction with body
+                    var fullBody = if (shouldGenerateExtraction) {
+                        '(\n    ${parameterExtraction}${body}\n  )';
+                    } else {
+                        body;
+                    };
+                    
+                    caseStrings.push('  ${pattern} ->\n    ${fullBody}');
                 }
             }
         }
