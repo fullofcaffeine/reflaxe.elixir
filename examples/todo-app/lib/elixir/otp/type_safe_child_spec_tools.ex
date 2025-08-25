@@ -31,9 +31,8 @@ defmodule TypeSafeChildSpecTools do
           (
           config = g_array
           (
+          args = if ((config != nil)), do: [config], else: []
           repo_module = "" <> app_name <> ".Repo"
-          if (((config != nil))), do: [config], else: []
-          args = if (((config != nil))), do: [config], else: []
           repo_module
         )
         )
@@ -76,9 +75,8 @@ defmodule TypeSafeChildSpecTools do
           (
           config = g_array
           (
+          args = if ((config != nil)), do: [config], else: []
           telemetry_module = "" <> app_name <> "Web.Telemetry"
-          if (((config != nil))), do: [config], else: []
-          args = if (((config != nil))), do: [config], else: []
           telemetry_module
         )
         )

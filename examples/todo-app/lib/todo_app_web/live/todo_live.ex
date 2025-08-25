@@ -92,18 +92,10 @@ defmodule TodoAppWeb.TodoLive do
 
   @doc "Generated from Haxe create_new_todo"
   def create_new_todo(params, socket) do
-    temp_right = nil
-
+    todo_params_due_date = if ((params.priority != nil)), do: params.priority, else: "medium"
     params.title
     params.description
     false
-    temp_right = nil
-    if ((params.priority != nil)) do
-          temp_right = params.priority
-        else
-          temp_right = "medium"
-        end
-    params.due_date
     TodoAppWeb.TodoLive.parse_tags(params.tags)
     socket.assigns.current_user.id
     changeset_params = TypeSafeConversions.event_params_to_changeset_params(params)
@@ -369,12 +361,17 @@ defmodule TodoAppWeb.TodoLive do
 
   @doc "Generated from Haxe get_user_from_session"
   def get_user_from_session(session) do
+    temp_number = nil
+
     tempNumber = if ((session.user_id != nil)), do: session.user_id, else: 1
+    %{id: temp_number, name: "Demo User", email: "demo@example.com", password_hash: "hashed_password", confirmed_at: nil, last_login_at: nil, active: true}
   end
 
 
   @doc "Generated from Haxe complete_all_todos"
   def complete_all_todos(socket) do
+    temp_array = nil
+
     this = socket.assigns.todos
     g_array = []
     g_counter = 0
@@ -383,9 +380,9 @@ defmodule TodoAppWeb.TodoLive do
           g_array ++ [v]
         end
     end)
-    if (((config != nil))), do: [config], else: [] = g_array
+    temp_array = g_array
     g_counter = 0
-    Enum.each(if (((config != nil))), do: [config], else: [], fn todo -> 
+    Enum.each(temp_array, fn todo -> 
       updated_changeset = Todo.toggle_completed(todo)
       (
           g_array = TodoApp.Repo.update(updated_changeset)
@@ -422,6 +419,9 @@ defmodule TodoAppWeb.TodoLive do
 
   @doc "Generated from Haxe delete_completed_todos"
   def delete_completed_todos(socket) do
+    temp_array = nil
+    temp_array1 = nil
+
     this = socket.assigns.todos
     g_array = []
     g_counter = 0
@@ -430,9 +430,9 @@ defmodule TodoAppWeb.TodoLive do
           g_array ++ [v]
         end
     end)
-    if (((config != nil))), do: [config], else: [] = g_array
+    temp_array = g_array
     g_counter = 0
-    Enum.each(if (((config != nil))), do: [config], else: [], fn todo -> 
+    Enum.each(temp_array, fn todo -> 
       TodoApp.Repo.delete(todo)
     end)
     TodoPubSub.broadcast(:todo_updates, TodoPubSubMessage.bulk_update(:delete_completed))
@@ -444,11 +444,11 @@ defmodule TodoAppWeb.TodoLive do
           g_array ++ [v]
         end
     end)
-    if (((config != nil))), do: [config], else: [] = g_array
+    temp_array1 = g_array
     current_assigns = socket.assigns
-    complete_assigns = TypeSafeConversions.create_complete_assigns(current_assigns, if (((config != nil))), do: [config], else: [])
+    complete_assigns = TypeSafeConversions.create_complete_assigns(current_assigns, temp_array1)
     %{complete_assigns | completed_todos: 0}
-    %{complete_assigns | pending_todos: if (((config != nil))), do: [config], else: [].length}
+    %{complete_assigns | pending_todos: temp_array1.length}
     updated_socket = Phoenix.LiveView.assign(socket, complete_assigns)
     Phoenix.LiveView.put_flash(updated_socket, :info, "Completed todos deleted!")
   end
@@ -539,6 +539,8 @@ defmodule TodoAppWeb.TodoLive do
 
   @doc "Generated from Haxe toggle_tag_filter"
   def toggle_tag_filter(tag, socket) do
+    temp_array = nil
+
     selected_tags = socket.assigns.selected_tags
     if Enum.member?(selected_tags, tag) do
           (
@@ -550,12 +552,12 @@ defmodule TodoAppWeb.TodoLive do
           g_array ++ [v]
         end
     end)
-          if (((config != nil))), do: [config], else: [] = g_array
+          temp_array = g_array
         )
         else
-          if (((config != nil))), do: [config], else: [] = selected_tags ++ [tag]
+          temp_array = selected_tags ++ [tag]
         end
-    SafeAssigns.set_selected_tags(socket, if (((config != nil))), do: [config], else: [])
+    SafeAssigns.set_selected_tags(socket, temp_array)
   end
 
 
