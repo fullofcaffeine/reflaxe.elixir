@@ -46,6 +46,12 @@ class PatternMatchingCompiler {
     var compiler: reflaxe.elixir.ElixirCompiler; // ElixirCompiler reference
     
     /**
+     * Track whether the current switch is based on elem() call
+     * This helps determine if patterns should be integers or tuples
+     */
+    private var currentSwitchIsElemBased: Bool = false;
+    
+    /**
      * Create a new pattern matching compiler
      * 
      * @param compiler The main ElixirCompiler instance
@@ -248,6 +254,13 @@ class PatternMatchingCompiler {
                 return compileOptionSwitch(switchExpr, cases, defaultExpr, context);
             } else if (isResultType(enumType)) {
                 return compileResultSwitch(switchExpr, cases, defaultExpr, context);
+            } else {
+                // CRITICAL FIX: Handle all other enum types with index-based matching
+                // Convert switch(enum) to case(elem(enum, 0)) with integer patterns
+                #if debug_pattern_matching
+                trace('[PatternMatchingCompiler] Using index-based matching for enum type: ${enumType.name}');
+                #end
+                return compileEnumIndexSwitch(switchExpr, cases, defaultExpr, context, enumType);
             }
         }
         
@@ -538,6 +551,14 @@ class PatternMatchingCompiler {
         defaultExpr: Null<TypedExpr>,
         ?context: reflaxe.elixir.helpers.ControlFlowCompiler.FunctionContext
     ): String {
+        
+        // CRITICAL FIX: Detect if this is an elem() based switch
+        // This determines whether patterns should be integers or tuples
+        currentSwitchIsElemBased = detectElemBasedSwitch(switchExpr);
+        
+        #if debug_pattern_matching
+        trace('[PatternMatchingCompiler] Switch type detected: ${currentSwitchIsElemBased ? "elem() based (integer patterns)" : "direct enum (tuple patterns)"}');
+        #end
         
         // CRITICAL FIX: Remove 'g' mapping before compiling switch expression
         // The 'g' variable should never be mapped to g_counter in switch expressions
@@ -1374,8 +1395,12 @@ class PatternMatchingCompiler {
                 // This is just a simple integer match (like case 3:)
                 // If we have pattern variables, this means the case body extracts enum parameters
                 // We need to generate the pattern differently
-                if (Lambda.count(patternVars) > 0) {
-                    // This is an enum constructor match with parameters
+                
+                // CRITICAL FIX: Check if this is an elem() based switch
+                // If the switch expression uses elem(expr, 0), patterns should be simple integers
+                // If the switch expression is the enum itself, patterns should be tuples
+                if (Lambda.count(patternVars) > 0 && !isElemBasedSwitch()) {
+                    // This is an enum constructor match with parameters using direct enum destructuring
                     // Generate the pattern with the extracted variables
                     var varList = [];
                     for (i in 0...Lambda.count(patternVars)) {
@@ -1386,7 +1411,7 @@ class PatternMatchingCompiler {
                         }
                     }
                     #if debug_pattern_matching
-                    trace('[XRay PatternMatchingCompiler] Generating enum pattern for index ${n}: {${n}, ${varList.join(", ")}}');
+                    trace('[XRay PatternMatchingCompiler] Generating enum tuple pattern for index ${n}: {${n}, ${varList.join(", ")}}');
                     #end
                     
                     // For integer patterns with variables, generate tuple pattern
@@ -1396,7 +1421,14 @@ class PatternMatchingCompiler {
                         Std.string(n);
                     }
                 } else {
-                    // Simple integer pattern
+                    // Simple integer pattern - either no variables or elem() based switch
+                    #if debug_pattern_matching
+                    if (Lambda.count(patternVars) > 0) {
+                        trace('[XRay PatternMatchingCompiler] Generating simple integer pattern for elem() switch: ${n}');
+                    } else {
+                        trace('[XRay PatternMatchingCompiler] Generating simple integer pattern: ${n}');
+                    }
+                    #end
                     Std.string(n);
                 }
                 
@@ -2021,6 +2053,197 @@ class PatternMatchingCompiler {
         #end
         
         return usedVars;
+    }
+    
+    /**
+     * Detect if a switch expression is based on elem() call
+     * 
+     * WHY: elem() based switches need integer patterns, not tuple patterns
+     * WHAT: Check if the switch expression contains elem(expr, 0) pattern
+     * HOW: Analyze the TypedExpr AST for TCall with elem field access
+     * 
+     * @param switchExpr The switch expression to analyze
+     * @return True if this is an elem() based switch
+     */
+    private function detectElemBasedSwitch(switchExpr: TypedExpr): Bool {
+        #if debug_pattern_matching
+        trace('[XRay PatternMatchingCompiler] detectElemBasedSwitch: analyzing ${switchExpr.expr}');
+        #end
+        
+        return switch (switchExpr.expr) {
+            case TCall(e, args):
+                // Check if this is a call to elem()
+                switch (e.expr) {
+                    case TField(_, FStatic(_, cf)) if (cf.get().name == "elem"):
+                        #if debug_pattern_matching
+                        trace('[XRay PatternMatchingCompiler] ✓ Found elem() call - this is elem() based switch');
+                        #end
+                        true;
+                    case TField(_, FEnum(_, _)):
+                        // This is enum constructor call, not elem()
+                        #if debug_pattern_matching
+                        trace('[XRay PatternMatchingCompiler] Found enum constructor call - this is direct enum switch');
+                        #end
+                        false;
+                    case _:
+                        #if debug_pattern_matching
+                        trace('[XRay PatternMatchingCompiler] Call to non-elem function');
+                        #end
+                        false;
+                }
+            case TLocal(_):
+                // Local variable - could be either type, assume direct enum
+                #if debug_pattern_matching
+                trace('[XRay PatternMatchingCompiler] Local variable - assuming direct enum switch');
+                #end
+                false;
+            case _:
+                #if debug_pattern_matching
+                trace('[XRay PatternMatchingCompiler] Other expression type - assuming direct enum switch');
+                #end
+                false;
+        };
+    }
+    
+    /**
+     * Check if the current switch is elem() based
+     * 
+     * @return True if current switch uses elem() patterns
+     */
+    private function isElemBasedSwitch(): Bool {
+        return currentSwitchIsElemBased;
+    }
+    
+    /**
+     * Compile enum switch using index-based matching
+     * 
+     * WHY: Enum switches like switch(spec) with case PubSub(name) need to compile to
+     *      case(elem(spec, 0)) do 0 -> with proper parameter extraction
+     * 
+     * WHAT: Converts direct enum destructuring to index-based matching patterns
+     * 
+     * HOW: Generate case(elem(switchExpr, 0)) do with integer patterns and 
+     *      proper enum parameter extraction in case bodies
+     * 
+     * @param switchExpr The enum expression being switched on
+     * @param cases Array of case patterns and expressions  
+     * @param defaultExpr Optional default case expression
+     * @param context Optional function context for field assignment transformation
+     * @param enumType The enum type information
+     * @return Generated Elixir case statement with index patterns
+     */
+    private function compileEnumIndexSwitch(
+        switchExpr: TypedExpr,
+        cases: Array<{values: Array<TypedExpr>, expr: TypedExpr}>,
+        defaultExpr: Null<TypedExpr>,
+        ?context: reflaxe.elixir.helpers.ControlFlowCompiler.FunctionContext,
+        enumType: EnumType
+    ): String {
+        #if debug_pattern_matching
+        trace('[PatternMatchingCompiler] ✓ ENUM INDEX SWITCH COMPILATION START');
+        trace('[PatternMatchingCompiler] Enum type: ${enumType.name}');
+        trace('[PatternMatchingCompiler] Cases: ${cases.length}');
+        #end
+        
+        // Mark this as an elem() based switch for pattern generation
+        currentSwitchIsElemBased = true;
+        
+        // Compile switch expression to get the variable name
+        var switchVarStr = compiler.compileExpression(switchExpr);
+        
+        // Generate case(elem(switchExpr, 0)) do
+        var exprStr = 'elem(${switchVarStr}, 0)';
+        
+        #if debug_pattern_matching
+        trace('[PatternMatchingCompiler] Switch expression: ${exprStr}');
+        #end
+        
+        var caseStrings: Array<String> = [];
+        
+        // Build index mapping for enum constructors
+        var enumConstructors = [];
+        for (name in enumType.names) {
+            enumConstructors.push(name);
+        }
+        
+        for (caseData in cases) {
+            #if debug_pattern_matching
+            trace('[PatternMatchingCompiler] Processing case with ${caseData.values.length} values');
+            #end
+            
+            // Extract pattern variables from case body
+            var patternVars = extractPatternVariables(caseData.expr);
+            
+            for (value in caseData.values) {
+                var pattern = null;
+                var caseIndex = -1;
+                
+                // Determine the enum constructor index
+                switch (value.expr) {
+                    case TCall(e, args):
+                        switch (e.expr) {
+                            case TField(_, FEnum(enumRef, enumField)):
+                                caseIndex = enumConstructors.indexOf(enumField.name);
+                                #if debug_pattern_matching
+                                trace('[PatternMatchingCompiler] Found enum constructor ${enumField.name} at index ${caseIndex}');
+                                #end
+                            case _:
+                                #if debug_pattern_matching
+                                trace('[PatternMatchingCompiler] TCall with non-enum field');
+                                #end
+                        }
+                    case TConst(TInt(n)):
+                        caseIndex = n;
+                        #if debug_pattern_matching
+                        trace('[PatternMatchingCompiler] Found integer pattern ${n}');
+                        #end
+                    case _:
+                        #if debug_pattern_matching
+                        trace('[PatternMatchingCompiler] Other pattern type: ${value.expr}');
+                        #end
+                }
+                
+                if (caseIndex >= 0) {
+                    pattern = Std.string(caseIndex);
+                    #if debug_pattern_matching
+                    trace('[PatternMatchingCompiler] Generated pattern: ${pattern}');
+                    #end
+                }
+                
+                if (pattern != null) {
+                    // Set up pattern usage context for enum parameter extraction
+                    var usedVariables = findUsedVariables(caseData.expr);
+                    compiler.patternUsageContext = usedVariables;
+                    compiler.currentSwitchCaseBody = caseData.expr;
+                    
+                    // Compile case body with pattern variable extraction
+                    var body = compilePatternBody(caseData.expr, context);
+                    
+                    // Clear context
+                    compiler.patternUsageContext = null;
+                    compiler.currentSwitchCaseBody = null;
+                    
+                    caseStrings.push('  ${pattern} ->\n    ${body}');
+                }
+            }
+        }
+        
+        if (defaultExpr != null) {
+            var defaultBody = compilePatternBody(defaultExpr, context);
+            caseStrings.push('  _ -> ${defaultBody}');
+        }
+        
+        // Reset the elem() based flag
+        currentSwitchIsElemBased = false;
+        
+        var result = 'case (${exprStr}) do\n${caseStrings.join("\n")}\nend';
+        
+        #if debug_pattern_matching
+        trace('[PatternMatchingCompiler] ✓ ENUM INDEX SWITCH COMPILATION END');
+        trace('[PatternMatchingCompiler] Result: ${result.substring(0, 200)}...');
+        #end
+        
+        return result;
     }
 }
 
