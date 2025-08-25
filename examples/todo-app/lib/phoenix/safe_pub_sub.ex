@@ -21,7 +21,8 @@ defmodule SafePubSub do
   def subscribe_with_converter(topic, topic_converter) do
     (
           topic_string = topic_converter.(topic)
-          Phoenix.PubSub.subscribe(TodoApp.PubSub, topic_string, %{})
+          pubsub_name = Module.concat([Application.get_application(__MODULE__), PubSub])
+          Phoenix.PubSub.subscribe(TodoApp.PubSub, pubsub_name, topic_string)
         )
   end
 
@@ -39,7 +40,8 @@ defmodule SafePubSub do
     (
           topic_string = topic_converter.(topic)
           message_payload = message_converter.(message)
-          Phoenix.PubSub.broadcast(TodoApp.PubSub, topic_string, message_payload)
+          pubsub_name = Module.concat([Application.get_application(__MODULE__), PubSub])
+          Phoenix.PubSub.broadcast(TodoApp.PubSub, pubsub_name, topic_string, message_payload)
         )
   end
 

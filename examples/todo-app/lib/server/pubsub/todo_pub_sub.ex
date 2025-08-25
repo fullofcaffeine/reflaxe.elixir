@@ -52,15 +52,11 @@ defmodule TodoPubSub do
   """
   @spec topic_to_string(TodoPubSubTopic.t()) :: String.t()
   def topic_to_string(topic) do
-    (
-          temp_result = nil
-          case topic do
-      :todo_updates -> "todo:updates"
-      :user_activity -> "user:activity"
-      :system_notifications -> "system:notifications"
+    case (case topic do :todo_updates -> 0; :user_activity -> 1; :system_notifications -> 2; _ -> -1 end) do
+      0 -> "todo:updates"
+      1 -> "user:activity"
+      2 -> "system:notifications"
     end
-          temp_result
-        )
   end
 
   @doc """
@@ -210,26 +206,22 @@ defmodule TodoPubSub do
   """
   @spec bulk_action_to_string(BulkOperationType.t()) :: String.t()
   def bulk_action_to_string(action) do
-    (
-          temp_result = nil
-          case action do
-      :complete_all -> temp_result = "complete_all"
-      :delete_completed -> temp_result = "delete_completed"
-      :set_priority -> (
+    case (case action do :complete_all -> 0; :delete_completed -> 1; :set_priority -> 2; :add_tag -> 3; :remove_tag -> 4; _ -> -1 end) do
+      0 -> "complete_all"
+      1 -> "delete_completed"
+      {2, priority} -> (
           _ = elem(action, 1)
-          temp_result = "set_priority"
+          "set_priority"
         )
-      :add_tag -> (
+      {3, tag} -> (
           _ = elem(action, 1)
-          temp_result = "add_tag"
+          "add_tag"
         )
-      :remove_tag -> (
+      {4, tag} -> (
           _ = elem(action, 1)
-          temp_result = "remove_tag"
+          "remove_tag"
         )
     end
-          temp_result
-        )
   end
 
   @doc """
@@ -238,9 +230,7 @@ defmodule TodoPubSub do
   """
   @spec parse_bulk_action(String.t()) :: Option.t()
   def parse_bulk_action(action) do
-    (
-          temp_result = nil
-          case action do
+    case action do
       "add_tag" -> Option.some(BulkOperationType.add_tag(""))
       "complete_all" -> Option.some(:complete_all)
       "delete_completed" -> Option.some(:delete_completed)
@@ -248,8 +238,6 @@ defmodule TodoPubSub do
       "set_priority" -> Option.some(BulkOperationType.set_priority(:medium))
       _ -> :error
     end
-          temp_result
-        )
   end
 
   @doc """
@@ -258,16 +246,12 @@ defmodule TodoPubSub do
   """
   @spec alert_level_to_string(AlertLevel.t()) :: String.t()
   def alert_level_to_string(level) do
-    (
-          temp_result = nil
-          case level do
-      :info -> "info"
-      :warning -> "warning"
-      :error -> "error"
-      :critical -> "critical"
+    case (case level do :info -> 0; :warning -> 1; :error -> 2; :critical -> 3; _ -> -1 end) do
+      0 -> "info"
+      1 -> "warning"
+      2 -> "error"
+      3 -> "critical"
     end
-          temp_result
-        )
   end
 
   @doc """
@@ -276,17 +260,13 @@ defmodule TodoPubSub do
   """
   @spec parse_alert_level(String.t()) :: Option.t()
   def parse_alert_level(level) do
-    (
-          temp_result = nil
-          case level do
+    case level do
       "critical" -> Option.some(:critical)
       "error" -> Option.some(:error)
       "info" -> Option.some(:info)
       "warning" -> Option.some(:warning)
       _ -> :error
     end
-          temp_result
-        )
   end
 
 end

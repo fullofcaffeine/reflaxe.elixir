@@ -101,7 +101,12 @@ class SafePubSub {
         topicConverter: T -> String
     ): Result<Void, String> {
         var topicString = topicConverter(topic);
-        return phoenix.Phoenix.PubSub.subscribe(topicString, {});
+        
+        // Use proper Phoenix.PubSub extern with correct argument order
+        // Use the standard Phoenix convention: AppName.PubSub
+        // TODO: Move this logic to pure Haxe to reduce __elixir__ injection usage
+        var pubsubName = untyped __elixir__("Module.concat([Application.get_application(__MODULE__), PubSub])");
+        return phoenix.Phoenix.PubSub.subscribe(pubsubName, topicString);
     }
     
     /**
@@ -121,7 +126,11 @@ class SafePubSub {
     ): Result<Void, String> {
         var topicString = topicConverter(topic);
         var messagePayload = messageConverter(message);
-        return phoenix.Phoenix.PubSub.broadcast(topicString, messagePayload);
+        
+        // Use the standard Phoenix convention: AppName.PubSub
+        // TODO: Move this logic to pure Haxe to reduce __elixir__ injection usage
+        var pubsubName = untyped __elixir__("Module.concat([Application.get_application(__MODULE__), PubSub])");
+        return phoenix.Phoenix.PubSub.broadcast(pubsubName, topicString, messagePayload);
     }
     
     /**
