@@ -272,8 +272,64 @@ class DataStructureCompiler {
             return isValidAtomName("name");
         }
         
+        // Check for Phoenix context via compilation context
+        // This is much more robust than hardcoding field names
+        if (isInPhoenixContext()) {
+            // Verify all field names can be atoms for Phoenix assigns
+            for (field in fields) {
+                if (!isValidAtomName(field.name)) {
+                    return false;
+                }
+            }
+            return true;
+        }
+        
         // Default to string keys for all other cases
         // This is safer and more predictable than trying to guess OTP patterns
+        return false;
+    }
+    
+    /**
+     * Check if we're currently in a Phoenix context where atom keys should be used
+     * 
+     * WHY: Phoenix LiveView assigns, Ecto changesets, and other Phoenix patterns
+     *      expect atom keys, not string keys. Rather than hardcoding field names,
+     *      we detect the compilation context.
+     * 
+     * WHAT: Detects Phoenix contexts via:
+     *       - Current class has @:liveview annotation
+     *       - Current function is mount/handle_event/handle_info
+     *       - We're compiling within Phoenix-related types
+     * 
+     * HOW: Check compilation context and metadata
+     * 
+     * @return True if in Phoenix context needing atom keys
+     */
+    private function isInPhoenixContext(): Bool {
+        // Check if current class has Phoenix annotations
+        if (compiler.currentClassType != null) {
+            // LiveView classes should use atom keys for assigns
+            if (compiler.currentClassType.meta.has(":liveview")) {
+                return true;
+            }
+            
+            // Schema classes for Ecto changesets use atom keys
+            if (compiler.currentClassType.meta.has(":schema")) {
+                return true;
+            }
+        }
+        
+        // Check if current function suggests Phoenix context
+        var currentFunctionName = compiler.variableMappingManager.compilationContext.currentFunction;
+        if (currentFunctionName != null) {
+            // LiveView lifecycle functions use atom keys
+            var liveViewFunctions = ["mount", "handle_event", "handle_info", "handle_params", "render"];
+            if (liveViewFunctions.indexOf(currentFunctionName) != -1) {
+                return true;
+            }
+        }
+        
+        // Default: not in Phoenix context
         return false;
     }
     
