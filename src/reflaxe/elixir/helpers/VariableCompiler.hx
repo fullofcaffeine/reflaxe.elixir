@@ -509,7 +509,22 @@ class VariableCompiler {
             var varName = mappedName;
             
             if (expr != null) {
+                // CRITICAL FIX: Specifically check for TEnumParameter expressions that might return empty
+                var isEnumParameter = switch(expr.expr) {
+                    case TEnumParameter(_, _, _): true;
+                    case _: false;
+                };
+                
                 var compiledExpr = compiler.compileExpression(expr);
+                
+                // Only skip assignment for TEnumParameter expressions that return empty
+                if (isEnumParameter && (compiledExpr == null || compiledExpr == "")) {
+                    #if debug_variable_compiler
+                    trace("[XRay VariableCompiler] ✓ EMPTY ENUM PARAMETER - Skipping variable assignment");
+                    #end
+                    return ""; // Don't generate anything for unused enum parameters
+                }
+                
                 return '${varName} = ${compiledExpr}';
             }
             return varName;
@@ -526,7 +541,22 @@ class VariableCompiler {
                 var varName = globalMappedName;
                 
                 if (expr != null) {
+                    // CRITICAL FIX: Specifically check for TEnumParameter expressions that might return empty
+                    var isEnumParameter = switch(expr.expr) {
+                        case TEnumParameter(_, _, _): true;
+                        case _: false;
+                    };
+                    
                     var compiledExpr = compiler.compileExpression(expr);
+                    
+                    // Only skip assignment for TEnumParameter expressions that return empty
+                    if (isEnumParameter && (compiledExpr == null || compiledExpr == "")) {
+                        #if debug_variable_compiler
+                        trace("[XRay VariableCompiler] ✓ EMPTY ENUM PARAMETER - Skipping variable assignment");
+                        #end
+                        return ""; // Don't generate anything for unused enum parameters
+                    }
+                    
                     return '${varName} = ${compiledExpr}';
                 }
                 return varName;
@@ -631,7 +661,22 @@ class VariableCompiler {
                 // Temporarily disable any existing struct context to compile the right side correctly
                 var savedContext = compiler.inlineContextMap.get("struct");
                 compiler.inlineContextMap.remove("struct");
+                
+                // CRITICAL FIX: Specifically check for TEnumParameter expressions that might return empty
+                var isEnumParameter = switch(expr.expr) {
+                    case TEnumParameter(_, _, _): true;
+                    case _: false;
+                };
+                
                 var compiledExpr = compiler.compileExpression(expr);
+                
+                // Only skip assignment for TEnumParameter expressions that return empty
+                if (isEnumParameter && (compiledExpr == null || compiledExpr == "")) {
+                    #if debug_variable_compiler
+                    trace("[XRay VariableCompiler] ✓ EMPTY ENUM PARAMETER - Skipping struct assignment");
+                    #end
+                    return ""; // Don't generate anything for unused enum parameters
+                }
                 
                 // Now set the context for future uses - mark struct as active
                 compiler.setInlineContext("struct", "active");
@@ -639,7 +684,21 @@ class VariableCompiler {
                 // Always use 'struct' for inline expansions instead of '_this'
                 return 'struct = ${compiledExpr}';
             } else {
+                // CRITICAL FIX: Specifically check for TEnumParameter expressions that might return empty
+                var isEnumParameter = switch(expr.expr) {
+                    case TEnumParameter(_, _, _): true;
+                    case _: false;
+                };
+                
                 var compiledExpr = compiler.compileExpression(expr);
+                
+                // Only skip assignment for TEnumParameter expressions that return empty
+                if (isEnumParameter && (compiledExpr == null || compiledExpr == "")) {
+                    #if debug_variable_compiler
+                    trace("[XRay VariableCompiler] ✓ EMPTY ENUM PARAMETER - Skipping variable assignment");
+                    #end
+                    return ""; // Don't generate anything for unused enum parameters
+                }
                 
                 // If this is _this and we preserved the underscore, activate inline context
                 if (originalName == "_this" && preserveUnderscore) {
