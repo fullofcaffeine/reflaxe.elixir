@@ -102,11 +102,9 @@ class SafePubSub {
         topic: T, 
         topicConverter: T -> String
     ): Result<Void, String> {
-        // TEMPORARY: Using __elixir__() until Module.concat compilation is fixed
-        // The compiler currently treats Module as a type and concat as array operation,
-        // resulting in "Module ++ [...]" instead of "Module.concat([...])"
-        // TODO: Fix extern module static function compilation
-        var pubsubModule = untyped __elixir__("Module.concat([Application.get_application(__MODULE__), \"PubSub\"])");
+        // Use proper typed Module.concat - the compiler now correctly identifies
+        // this as an extern module call, not an array operation
+        var pubsubModule = elixir.Module.concat([Application.get_application(untyped __MODULE__), "PubSub"]);
         var topicString = topicConverter(topic);
         return phoenix.Phoenix.PubSub.subscribe(pubsubModule, topicString);
     }
@@ -126,11 +124,9 @@ class SafePubSub {
         topicConverter: T -> String,
         messageConverter: M -> Dynamic
     ): Result<Void, String> {
-        // TEMPORARY: Using __elixir__() until Module.concat compilation is fixed
-        // The compiler currently treats Module as a type and concat as array operation,
-        // resulting in "Module ++ [...]" instead of "Module.concat([...])"
-        // TODO: Fix extern module static function compilation
-        var pubsubModule = untyped __elixir__("Module.concat([Application.get_application(__MODULE__), \"PubSub\"])");
+        // Use proper typed Module.concat - the compiler now correctly identifies
+        // this as an extern module call, not an array operation
+        var pubsubModule = elixir.Module.concat([Application.get_application(untyped __MODULE__), "PubSub"]);
         var topicString = topicConverter(topic);
         var messagePayload = messageConverter(message);
         return phoenix.Phoenix.PubSub.broadcast(pubsubModule, topicString, messagePayload);
