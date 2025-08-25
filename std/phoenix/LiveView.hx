@@ -34,52 +34,70 @@ extern class LiveView {
 	
 	/**
 	 * Assign single key-value pair to the socket
-	 * Maps to Phoenix.LiveView.assign/3
+	 * 
+	 * ARCHITECTURAL NOTE: This maps to Phoenix.Component.assign/3, not Phoenix.LiveView.assign/3.
+	 * Phoenix.LiveView module has no assign functions - they're implemented in Phoenix.Component
+	 * which delegates to Phoenix.LiveView.Utils.assign/3 internally.
+	 * 
+	 * The @:native annotation ensures the compiler generates:
+	 * Phoenix.Component.assign(socket, key, value) - The correct 3-argument form
 	 * 
 	 * @param socket The LiveView socket with typed assigns
-	 * @param key The assign key name
+	 * @param key The assign key name (atom keys preferred for LiveView assigns)
 	 * @param value The value to assign
 	 * @return Updated socket with new assign
 	 */
+	@:native("Phoenix.Component.assign")
 	@:overload(function<TAssigns>(socket: Socket<TAssigns>, key: String, value: Any): Socket<TAssigns> {})
 	static function assign<TAssigns>(socket: Socket<TAssigns>, key: String, value: Any): Socket<TAssigns>;
 	
 	/**
 	 * Assign multiple values to the socket using map/keyword structure
-	 * Maps to Phoenix.LiveView.assign/2
+	 * 
+	 * ARCHITECTURAL NOTE: This maps to Phoenix.Component.assign/2, not Phoenix.LiveView.assign/2.
+	 * Phoenix.LiveView module has no assign functions - they're implemented in Phoenix.Component
+	 * which delegates to Phoenix.LiveView.Utils.assign/2 internally.
 	 * 
 	 * Usage: assign(socket, %{key1: value1, key2: value2})
 	 * 
 	 * @param socket The LiveView socket with typed assigns
-	 * @param assigns Map or keyword list of assigns to merge
+	 * @param assigns Map or keyword list of assigns to merge (atom keys preferred)
 	 * @return Updated socket with new assigns
 	 */
+	@:native("Phoenix.Component.assign")
 	@:overload(function<TAssigns>(socket: Socket<TAssigns>, assigns: TAssigns): Socket<TAssigns> {})
 	static function assign<TAssigns>(socket: Socket<TAssigns>, assigns: TAssigns): Socket<TAssigns>;
 	
 	/**
 	 * Assign multiple values to the socket using map/keyword structure
 	 * 
-	 * ARCHITECTURAL NOTE: This extern function maps directly to Phoenix.LiveView.assign/2
+	 * ARCHITECTURAL NOTE: This extern function maps directly to Phoenix.Component.assign/2
 	 * during compilation via the method name mapping system in MethodCallCompiler.
 	 * This approach is more reliable than inline functions with __elixir__() injection.
 	 * 
+	 * Phoenix.LiveView module has NO assign functions. The correct API is Phoenix.Component.assign
+	 * which delegates to Phoenix.LiveView.Utils.assign internally.
+	 * 
 	 * @param socket The LiveView socket with typed assigns
-	 * @param assigns Map or keyword list of assigns to merge
+	 * @param assigns Map or keyword list of assigns to merge (atom keys preferred)
 	 * @return Updated socket with new assigns
 	 */
-	@:native("assign")
+	@:native("Phoenix.Component.assign")
 	static function assign_multiple<TAssigns>(socket: Socket<TAssigns>, assigns: TAssigns): Socket<TAssigns>;
 	
 	/**
 	 * Conditionally assign a value if not already present
-	 * Maps to Phoenix.LiveView.assign_new/3
+	 * 
+	 * ARCHITECTURAL NOTE: This maps to Phoenix.Component.assign_new/3, not Phoenix.LiveView.assign_new/3.
+	 * Phoenix.LiveView module has no assign_new functions - they're implemented in Phoenix.Component
+	 * which delegates to Phoenix.LiveView.Utils.assign_new/3 internally.
 	 * 
 	 * @param socket The LiveView socket
-	 * @param key The assign key name
+	 * @param key The assign key name (atom keys preferred for LiveView assigns)
 	 * @param defaultFunction Function that returns the default value
 	 * @return Updated socket with new assign if key was not present
 	 */
+	@:native("Phoenix.Component.assign_new")
 	static function assign_new<TAssigns, TValue>(socket: Socket<TAssigns>, key: String, defaultFunction: Void -> TValue): Socket<TAssigns>;
 	
 	/**

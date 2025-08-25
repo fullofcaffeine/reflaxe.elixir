@@ -16,7 +16,7 @@ defmodule TodoAppWeb.TodoLive do
         )
     current_user = TodoAppWeb.TodoLive.get_user_from_session(session)
     todos = TodoAppWeb.TodoLive.load_todos(current_user.id)
-    assigns = %{"todos" => todos, "filter" => "all", "sort_by" => "created", "current_user" => current_user, "editing_todo" => nil, "show_form" => false, "search_query" => "", "selected_tags" => [], "total_todos" => todos.length, "completed_todos" => TodoAppWeb.TodoLive.count_completed(todos), "pending_todos" => TodoAppWeb.TodoLive.count_pending(todos)}
+    assigns = %{todos: todos, filter: "all", sort_by: "created", current_user: current_user, editing_todo: nil, show_form: false, search_query: "", selected_tags: [], total_todos: todos.length, completed_todos: TodoAppWeb.TodoLive.count_completed(todos), pending_todos: TodoAppWeb.TodoLive.count_pending(todos)}
     updated_socket = Phoenix.LiveView.assign(socket, assigns)
     MountResult.ok(updated_socket)
   end
@@ -109,7 +109,7 @@ defmodule TodoAppWeb.TodoLive do
     end
         )
       :error -> (
-          Log.trace("Received unknown PubSub message: " <> Std.string(msg), %{"fileName" => "src_haxe/server/live/TodoLive.hx", "lineNumber" => 197, "className" => "server.live.TodoLive", "methodName" => "handle_info"})
+          Log.trace("Received unknown PubSub message: " <> Std.string(msg), %{fileName: "src_haxe/server/live/TodoLive.hx", lineNumber: 197, className: "server.live.TodoLive", methodName: "handle_info"})
           temp_socket = socket
         )
     end
@@ -149,7 +149,7 @@ defmodule TodoAppWeb.TodoLive do
           g_array = _ = elem(g_array, 1)
           (
           reason = g_array
-          Log.trace("Failed to broadcast todo creation: " <> reason, %{"fileName" => "src_haxe/server/live/TodoLive.hx", "lineNumber" => 228, "className" => "server.live.TodoLive", "methodName" => "create_new_todo"})
+          Log.trace("Failed to broadcast todo creation: " <> reason, %{fileName: "src_haxe/server/live/TodoLive.hx", lineNumber: 228, className: "server.live.TodoLive", methodName: "create_new_todo"})
         )
         )
     end
@@ -160,7 +160,7 @@ defmodule TodoAppWeb.TodoLive do
     updated_socket = Phoenix.LiveView.assign(socket, complete_assigns)
     Phoenix.LiveView.put_flash(updated_socket, :success, "Todo created successfully!")
       {:error, _} -> (
-          g_array = elem(_g, 1)
+          g_array = elem(g_array, 1)
           (
           reason = g_array
           Phoenix.LiveView.put_flash(socket, :error, "Failed to create todo: " <> Std.string(reason))
@@ -192,7 +192,7 @@ defmodule TodoAppWeb.TodoLive do
           g_array = _ = elem(g_array, 1)
           (
           reason = g_array
-          Log.trace("Failed to broadcast todo update: " <> reason, %{"fileName" => "src_haxe/server/live/TodoLive.hx", "lineNumber" => 267, "className" => "server.live.TodoLive", "methodName" => "toggle_todo_status"})
+          Log.trace("Failed to broadcast todo update: " <> reason, %{fileName: "src_haxe/server/live/TodoLive.hx", lineNumber: 267, className: "server.live.TodoLive", methodName: "toggle_todo_status"})
         )
         )
     end
@@ -200,7 +200,7 @@ defmodule TodoAppWeb.TodoLive do
           TodoAppWeb.TodoLive.update_todo_in_list(updated_todo, socket)
         )
       {:error, _} -> (
-          g_array = elem(_g, 1)
+          g_array = elem(g_array, 1)
           (
           reason = g_array
           Phoenix.LiveView.put_flash(socket, :error, "Failed to update todo: " <> Std.string(reason))
@@ -223,14 +223,14 @@ defmodule TodoAppWeb.TodoLive do
       {:ok, _} -> (
           _ = elem(g_array, 1)
           (
-          g_array = Phoenix.PubSub.broadcast(TodoApp.PubSub, "todo:updates", %{"type" => "todo_deleted", "id" => id})
+          g_array = TodoPubSub.broadcast(:todo_updates, TodoPubSubMessage.todo_deleted(id))
           case g_array do
       {:ok, _} -> _ = elem(g_array, 1)
       {:error, _} -> (
           g_array = _ = elem(g_array, 1)
           (
           reason = g_array
-          Log.trace("Failed to broadcast todo deletion: " <> reason, %{"fileName" => "src_haxe/server/live/TodoLive.hx", "lineNumber" => 292, "className" => "server.live.TodoLive", "methodName" => "delete_todo"})
+          Log.trace("Failed to broadcast todo deletion: " <> reason, %{fileName: "src_haxe/server/live/TodoLive.hx", lineNumber: 289, className: "server.live.TodoLive", methodName: "delete_todo"})
         )
         )
     end
@@ -238,7 +238,7 @@ defmodule TodoAppWeb.TodoLive do
           TodoAppWeb.TodoLive.remove_todo_from_list(id, socket)
         )
       {:error, _} -> (
-          g_array = elem(_g, 1)
+          g_array = elem(g_array, 1)
           (
           reason = g_array
           Phoenix.LiveView.put_flash(socket, :error, "Failed to delete todo: " <> Std.string(reason))
@@ -263,14 +263,14 @@ defmodule TodoAppWeb.TodoLive do
           g_array = _ = elem(g_array, 1)
           updated_todo = g_array
           (
-          g_array = Phoenix.PubSub.broadcast(TodoApp.PubSub, "todo:updates", %{"type" => "todo_updated", "todo" => updated_todo})
+          g_array = TodoPubSub.broadcast(:todo_updates, TodoPubSubMessage.todo_updated(updated_todo))
           case g_array do
       {:ok, _} -> _ = elem(g_array, 1)
       {:error, _} -> (
           g_array = _ = elem(g_array, 1)
           (
           reason = g_array
-          Log.trace("Failed to broadcast todo priority update: " <> reason, %{"fileName" => "src_haxe/server/live/TodoLive.hx", "lineNumber" => 319, "className" => "server.live.TodoLive", "methodName" => "update_todo_priority"})
+          Log.trace("Failed to broadcast todo priority update: " <> reason, %{fileName: "src_haxe/server/live/TodoLive.hx", lineNumber: 313, className: "server.live.TodoLive", methodName: "update_todo_priority"})
         )
         )
     end
@@ -278,7 +278,7 @@ defmodule TodoAppWeb.TodoLive do
           TodoAppWeb.TodoLive.update_todo_in_list(updated_todo, socket)
         )
       {:error, _} -> (
-          g_array = elem(_g, 1)
+          g_array = elem(g_array, 1)
           (
           reason = g_array
           Phoenix.LiveView.put_flash(socket, :error, "Failed to update priority: " <> Std.string(reason))
@@ -345,7 +345,7 @@ defmodule TodoAppWeb.TodoLive do
     where_conditions = Haxe.Ds.StringMap.new()
     value = QueryValue.integer(user_id)
     where_conditions.set("user_id", value)
-    conditions = %{"where" => where_conditions}
+    conditions = %{where: where_conditions}
     query = Ecto.Query.where(query, conditions)
     Enum.all?(TodoApp.Repo, query)
   end
@@ -413,7 +413,7 @@ defmodule TodoAppWeb.TodoLive do
         else
           temp_number = 1
         end
-    %{"id" => temp_number, "name" => "Demo User", "email" => "demo@example.com", "password_hash" => "hashed_password", "confirmed_at" => nil, "last_login_at" => nil, "active" => true}
+    %{id: temp_number, name: "Demo User", email: "demo@example.com", password_hash: "hashed_password", confirmed_at: nil, last_login_at: nil, active: true}
   end
 
 
@@ -445,21 +445,21 @@ defmodule TodoAppWeb.TodoLive do
           g_array = _ = elem(g_array, 1)
           (
           reason = g_array
-          Log.trace("Failed to complete todo " <> to_string(todo.id) <> ": " <> Std.string(reason), %{"fileName" => "src_haxe/server/live/TodoLive.hx", "lineNumber" => 446, "className" => "server.live.TodoLive", "methodName" => "complete_all_todos"})
+          Log.trace("Failed to complete todo " <> to_string(todo.id) <> ": " <> Std.string(reason), %{fileName: "src_haxe/server/live/TodoLive.hx", lineNumber: 440, className: "server.live.TodoLive", methodName: "complete_all_todos"})
         )
         )
     end
         )
     end)
     (
-          g_array = Phoenix.PubSub.broadcast(TodoApp.PubSub, "todo:updates", %{"type" => "bulk_update", "action" => "complete_all"})
+          g_array = TodoPubSub.broadcast(:todo_updates, TodoPubSubMessage.bulk_update(:complete_all))
           case g_array do
       {:ok, _} -> _ = elem(g_array, 1)
       {:error, _} -> (
           g_array = _ = elem(g_array, 1)
           (
           reason = g_array
-          Log.trace("Failed to broadcast bulk complete: " <> reason, %{"fileName" => "src_haxe/server/live/TodoLive.hx", "lineNumber" => 458, "className" => "server.live.TodoLive", "methodName" => "complete_all_todos"})
+          Log.trace("Failed to broadcast bulk complete: " <> reason, %{fileName: "src_haxe/server/live/TodoLive.hx", lineNumber: 449, className: "server.live.TodoLive", methodName: "complete_all_todos"})
         )
         )
     end
@@ -493,7 +493,7 @@ defmodule TodoAppWeb.TodoLive do
     Enum.each(temp_array, fn todo -> 
       TodoApp.Repo.delete(todo)
     end)
-    Phoenix.PubSub.broadcast(TodoApp.PubSub, "todo:updates", %{"type" => "bulk_delete", "action" => "delete_completed"})
+    TodoPubSub.broadcast(:todo_updates, TodoPubSubMessage.bulk_update(:delete_completed))
     temp_array1 = nil
     this = socket.assigns.todos
     g_array = []
@@ -542,7 +542,7 @@ defmodule TodoAppWeb.TodoLive do
           g_array = _ = elem(g_array, 1)
           (
           reason = g_array
-          Log.trace("Failed to broadcast todo save: " <> reason, %{"fileName" => "src_haxe/server/live/TodoLive.hx", "lineNumber" => 526, "className" => "server.live.TodoLive", "methodName" => "save_edited_todo"})
+          Log.trace("Failed to broadcast todo save: " <> reason, %{fileName: "src_haxe/server/live/TodoLive.hx", lineNumber: 514, className: "server.live.TodoLive", methodName: "save_edited_todo"})
         )
         )
     end
@@ -551,7 +551,7 @@ defmodule TodoAppWeb.TodoLive do
           Phoenix.LiveView.assign(updated_socket, "editing_todo", nil)
         )
       {:error, _} -> (
-          g_array = elem(_g, 1)
+          g_array = elem(g_array, 1)
           (
           reason = g_array
           Phoenix.LiveView.put_flash(socket, :error, "Failed to save todo: " <> Std.string(reason))
@@ -564,36 +564,32 @@ defmodule TodoAppWeb.TodoLive do
 
   @doc "Generated from Haxe handle_bulk_update"
   def handle_bulk_update(action, socket) do
-    temp_result = nil
-
-    temp_result
-    case action do
-      :complete_all -> (
+    case (case action do :complete_all -> 0; :delete_completed -> 1; :set_priority -> 2; :add_tag -> 3; :remove_tag -> 4; _ -> -1 end) do
+      0 -> (
           updated_todos = TodoAppWeb.TodoLive.load_todos(socket.assigns.current_user.id)
           current_assigns = socket.assigns
           complete_assigns = TypeSafeConversions.create_complete_assigns(current_assigns, updated_todos)
-          temp_result = Phoenix.LiveView.assign(socket, complete_assigns)
+          Phoenix.LiveView.assign(socket, complete_assigns)
         )
-      :delete_completed -> (
+      1 -> (
           updated_todos = TodoAppWeb.TodoLive.load_todos(socket.assigns.current_user.id)
           current_assigns = socket.assigns
           complete_assigns = TypeSafeConversions.create_complete_assigns(current_assigns, updated_todos)
-          temp_result = Phoenix.LiveView.assign(socket, complete_assigns)
+          Phoenix.LiveView.assign(socket, complete_assigns)
         )
-      :set_priority -> (
+      {2, priority} -> (
           _ = elem(action, 1)
-          temp_result = socket
+          socket
         )
-      :add_tag -> (
+      {3, tag} -> (
           _ = elem(action, 1)
-          temp_result = socket
+          socket
         )
-      :remove_tag -> (
+      {4, tag} -> (
           _ = elem(action, 1)
-          temp_result = socket
+          socket
         )
     end
-    temp_result
   end
 
 

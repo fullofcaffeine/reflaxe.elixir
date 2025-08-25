@@ -40,8 +40,8 @@ defmodule Todo do
   def changeset(todo, params) do
     changeset = Ecto.Changeset.cast_changeset(todo, params, ["title", "description", "completed", "priority", "due_date", "tags", "user_id"])
     changeset = Ecto.Changeset.validate_required(changeset, ["title", "user_id"])
-    changeset = Ecto.Changeset.validate_length(changeset, "title", %{"min" => 3, "max" => 200})
-    changeset = Ecto.Changeset.validate_length(changeset, "description", %{"max" => 1000})
+    changeset = Ecto.Changeset.validate_length(changeset, "title", %{min: 3, max: 200})
+    changeset = Ecto.Changeset.validate_length(changeset, "description", %{max: 1000})
     priority_values = [ChangesetValue.string_value("low"), ChangesetValue.string_value("medium"), ChangesetValue.string_value("high")]
     changeset = Ecto.Changeset.validate_inclusion(changeset, "priority", priority_values)
     changeset = Ecto.Changeset.foreign_key_constraint(changeset, "user_id")

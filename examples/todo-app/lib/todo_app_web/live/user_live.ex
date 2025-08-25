@@ -14,15 +14,12 @@ defmodule TodoAppWeb.UserLive do
   @doc "Generated from Haxe mount"
   def mount(params, session, socket) do
     users = Users.list_users()
-    %{"status" => "ok", "socket" => TodoAppWeb.UserLive.assign_multiple(socket, %{"users" => users, "selectedUser" => nil, "changeset" => Users.change_user(nil), "searchTerm" => "", "showForm" => false})}
+    %{status: "ok", socket: TodoAppWeb.UserLive.assign_multiple(socket, %{users: users, selectedUser: nil, changeset: Users.change_user(nil), searchTerm: "", showForm: false})}
   end
 
 
   @doc "Generated from Haxe handle_event"
   def handle_event(event, params, socket) do
-    temp_result = nil
-
-    temp_result = nil
     case event do
       "cancel" -> __MODULE__.handle_cancel(socket)
       "delete_user" -> __MODULE__.handle_delete_user(params, socket)
@@ -30,9 +27,8 @@ defmodule TodoAppWeb.UserLive do
       "new_user" -> __MODULE__.handle_new_user(params, socket)
       "save_user" -> __MODULE__.handle_save_user(params, socket)
       "search" -> __MODULE__.handle_search(params, socket)
-      _ -> %{"status" => "noreply", "socket" => socket}
+      _ -> %{status: "noreply", socket: socket}
     end
-    temp_result
   end
 
 
@@ -41,7 +37,7 @@ defmodule TodoAppWeb.UserLive do
     changeset = Users.change_user(nil)
     selected_user = nil
     show_form = true
-    %{"status" => "noreply", "socket" => TodoAppWeb.UserLive.assign_multiple(socket, %{"changeset" => changeset, "selectedUser" => selected_user, "showForm" => show_form})}
+    %{status: "noreply", socket: TodoAppWeb.UserLive.assign_multiple(socket, %{changeset: changeset, selectedUser: selected_user, showForm: show_form})}
   end
 
 
@@ -51,7 +47,7 @@ defmodule TodoAppWeb.UserLive do
     selected_user = Users.get_user(user_id)
     changeset = Users.change_user(selected_user)
     show_form = true
-    %{"status" => "noreply", "socket" => TodoAppWeb.UserLive.assign_multiple(socket, %{"selectedUser" => selected_user, "changeset" => changeset, "showForm" => show_form})}
+    %{status: "noreply", socket: TodoAppWeb.UserLive.assign_multiple(socket, %{selectedUser: selected_user, changeset: changeset, showForm: show_form})}
   end
 
 
@@ -67,17 +63,17 @@ defmodule TodoAppWeb.UserLive do
         else
           temp_struct = Users.update_user(__MODULE__.selected_user, user_params)
         end
-    temp_result
+    temp_result = nil
     (
           g_array = temp_struct.status
           case g_array do
-      "error" -> temp_result = %{"status" => "noreply", "socket" => TodoAppWeb.UserLive.assign(socket, "changeset", temp_struct.changeset)}
+      "error" -> temp_result = %{status: "noreply", socket: TodoAppWeb.UserLive.assign(socket, "changeset", temp_struct.changeset)}
       "ok" -> (
           users = Users.list_users()
           show_form = false
-          temp_result = %{"status" => "noreply", "socket" => TodoAppWeb.UserLive.assign_multiple(socket, %{"users" => users, "showForm" => show_form, "selectedUser" => nil, "changeset" => Users.change_user(nil)})}
+          temp_result = %{status: "noreply", socket: TodoAppWeb.UserLive.assign_multiple(socket, %{users: users, showForm: show_form, selectedUser: nil, changeset: Users.change_user(nil)})}
         )
-      _ -> temp_result = %{"status" => "noreply", "socket" => socket}
+      _ -> temp_result = %{status: "noreply", socket: socket}
     end
         )
     temp_result
@@ -92,10 +88,10 @@ defmodule TodoAppWeb.UserLive do
     if ((result.status == "ok")) do
           (
           users = Users.list_users()
-          %{"status" => "noreply", "socket" => TodoAppWeb.UserLive.assign(socket, "users", users)}
+          %{status: "noreply", socket: TodoAppWeb.UserLive.assign(socket, "users", users)}
         )
         end
-    %{"status" => "noreply", "socket" => socket}
+    %{status: "noreply", socket: socket}
   end
 
 
@@ -110,13 +106,13 @@ defmodule TodoAppWeb.UserLive do
         else
           temp_array = Users.list_users()
         end
-    %{"status" => "noreply", "socket" => TodoAppWeb.UserLive.assign_multiple(socket, %{"users" => temp_array, "searchTerm" => search_term})}
+    %{status: "noreply", socket: TodoAppWeb.UserLive.assign_multiple(socket, %{users: temp_array, searchTerm: search_term})}
   end
 
 
   @doc "Generated from Haxe handleCancel"
   def handle_cancel(socket) do
-    %{"status" => "noreply", "socket" => TodoAppWeb.UserLive.assign_multiple(socket, %{"showForm" => false, "selectedUser" => nil, "changeset" => Users.change_user(nil)})}
+    %{status: "noreply", socket: TodoAppWeb.UserLive.assign_multiple(socket, %{showForm: false, selectedUser: nil, changeset: Users.change_user(nil)})}
   end
 
 
@@ -280,7 +276,7 @@ defmodule TodoAppWeb.UserLive do
 
   @doc "Generated from Haxe main"
   def main() do
-    Log.trace("UserLive with @:liveview annotation compiled successfully!", %{"fileName" => "src_haxe/server/live/UserLive.hx", "lineNumber" => 320, "className" => "server.live.UserLive", "methodName" => "main"})
+    Log.trace("UserLive with @:liveview annotation compiled successfully!", %{fileName: "src_haxe/server/live/UserLive.hx", lineNumber: 320, className: "server.live.UserLive", methodName: "main"})
   end
 
 
