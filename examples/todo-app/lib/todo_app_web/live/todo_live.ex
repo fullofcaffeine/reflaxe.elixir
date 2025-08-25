@@ -6,9 +6,10 @@ defmodule TodoAppWeb.TodoLive do
     (
           g_array = TodoPubSub.subscribe(:todo_updates)
           case g_array do
-      {:ok, _} -> _ = elem(g_array, 1)
+      {:ok, _} -> (
+          
+        )
       {:error, _} -> (
-          g_array = _ = elem(g_array, 1)
           reason = g_array
           MountResult.error("Failed to subscribe to updates: " <> reason)
         )
@@ -58,54 +59,39 @@ defmodule TodoAppWeb.TodoLive do
           g_array = TodoPubSub.parse_message(msg)
           case g_array do
       {:ok, _} -> (
-          g_array = _ = elem(g_array, 1)
           parsed_msg = g_array
           case parsed_msg do
       :todo_created -> (
-          g_array = _ = elem(parsed_msg, 1)
-          (
           todo = g_array
           temp_socket = TodoAppWeb.TodoLive.add_todo_to_list(todo, socket)
         )
-        )
       :todo_updated -> (
-          g_array = _ = elem(parsed_msg, 1)
-          (
           todo = g_array
           temp_socket = TodoAppWeb.TodoLive.update_todo_in_list(todo, socket)
         )
-        )
       :todo_deleted -> (
-          g_array = _ = elem(parsed_msg, 1)
           id = g_array
           temp_socket = TodoAppWeb.TodoLive.remove_todo_from_list(id, socket)
         )
       :bulk_update -> (
-          g_array = _ = elem(parsed_msg, 1)
           action = g_array
           temp_socket = TodoAppWeb.TodoLive.handle_bulk_update(action, socket)
         )
-      :user_online -> (
-          _ = elem(parsed_msg, 1)
-          temp_socket = socket
-        )
-      :user_offline -> (
-          _ = elem(parsed_msg, 1)
-          temp_socket = socket
-        )
-      :system_alert -> g_array = _ = elem(parsed_msg, 1)
-    g_array = _ = elem(parsed_msg, 2)
-    message = g_array
-    level = g_array
-    temp_flash_type = nil
-    case level do
+      :user_online -> temp_socket = socket
+      :user_offline -> temp_socket = socket
+      :system_alert -> (
+          message = g_array
+          level = g_array
+          temp_flash_type = nil
+          case level do
       :info -> :info
       :warning -> :warning
       :error -> :error
       :critical -> :error
     end
-    flash_type = temp_flash_type
-    temp_socket = Phoenix.LiveView.put_flash(socket, flash_type, message)
+          flash_type = temp_flash_type
+          temp_socket = Phoenix.LiveView.put_flash(socket, flash_type, message)
+        )
     end
         )
       :error -> (
@@ -139,18 +125,16 @@ defmodule TodoAppWeb.TodoLive do
     (
           g_array = TodoApp.Repo.insert(changeset)
           case g_array do
-      {:ok, _} -> g_array = _ = elem(g_array, 1)
-    todo = g_array
+      {:ok, _} -> todo = g_array
     (
           g_array = TodoPubSub.broadcast(:todo_updates, TodoPubSubMessage.todo_created(todo))
           case g_array do
-      {:ok, _} -> _ = elem(g_array, 1)
+      {:ok, _} -> (
+          
+        )
       {:error, _} -> (
-          g_array = _ = elem(g_array, 1)
-          (
           reason = g_array
           Log.trace("Failed to broadcast todo creation: " <> reason, %{fileName: "src_haxe/server/live/TodoLive.hx", lineNumber: 228, className: "server.live.TodoLive", methodName: "create_new_todo"})
-        )
         )
     end
         )
@@ -182,18 +166,16 @@ defmodule TodoAppWeb.TodoLive do
           g_array = TodoApp.Repo.update(updated_changeset)
           case g_array do
       {:ok, _} -> (
-          g_array = _ = elem(g_array, 1)
           updated_todo = g_array
           (
           g_array = TodoPubSub.broadcast(:todo_updates, TodoPubSubMessage.todo_updated(updated_todo))
           case g_array do
-      {:ok, _} -> _ = elem(g_array, 1)
+      {:ok, _} -> (
+          
+        )
       {:error, _} -> (
-          g_array = _ = elem(g_array, 1)
-          (
           reason = g_array
           Log.trace("Failed to broadcast todo update: " <> reason, %{fileName: "src_haxe/server/live/TodoLive.hx", lineNumber: 267, className: "server.live.TodoLive", methodName: "toggle_todo_status"})
-        )
         )
     end
         )
@@ -221,17 +203,15 @@ defmodule TodoAppWeb.TodoLive do
           g_array = TodoApp.Repo.delete(todo)
           case g_array do
       {:ok, _} -> (
-          _ = elem(g_array, 1)
           (
           g_array = TodoPubSub.broadcast(:todo_updates, TodoPubSubMessage.todo_deleted(id))
           case g_array do
-      {:ok, _} -> _ = elem(g_array, 1)
+      {:ok, _} -> (
+          
+        )
       {:error, _} -> (
-          g_array = _ = elem(g_array, 1)
-          (
           reason = g_array
           Log.trace("Failed to broadcast todo deletion: " <> reason, %{fileName: "src_haxe/server/live/TodoLive.hx", lineNumber: 289, className: "server.live.TodoLive", methodName: "delete_todo"})
-        )
         )
     end
         )
@@ -260,18 +240,16 @@ defmodule TodoAppWeb.TodoLive do
           g_array = TodoApp.Repo.update(updated_changeset)
           case g_array do
       {:ok, _} -> (
-          g_array = _ = elem(g_array, 1)
           updated_todo = g_array
           (
           g_array = TodoPubSub.broadcast(:todo_updates, TodoPubSubMessage.todo_updated(updated_todo))
           case g_array do
-      {:ok, _} -> _ = elem(g_array, 1)
+      {:ok, _} -> (
+          
+        )
       {:error, _} -> (
-          g_array = _ = elem(g_array, 1)
-          (
           reason = g_array
           Log.trace("Failed to broadcast todo priority update: " <> reason, %{fileName: "src_haxe/server/live/TodoLive.hx", lineNumber: 313, className: "server.live.TodoLive", methodName: "update_todo_priority"})
-        )
         )
     end
         )
@@ -437,16 +415,10 @@ defmodule TodoAppWeb.TodoLive do
       (
           g_array = TodoApp.Repo.update(updated_changeset)
           case g_array do
-      {:ok, _} -> (
-          _ = elem(g_array, 1)
-          nil
-        )
+      {:ok, _} -> nil
       {:error, _} -> (
-          g_array = _ = elem(g_array, 1)
-          (
           reason = g_array
           Log.trace("Failed to complete todo " <> to_string(todo.id) <> ": " <> Std.string(reason), %{fileName: "src_haxe/server/live/TodoLive.hx", lineNumber: 440, className: "server.live.TodoLive", methodName: "complete_all_todos"})
-        )
         )
     end
         )
@@ -454,13 +426,12 @@ defmodule TodoAppWeb.TodoLive do
     (
           g_array = TodoPubSub.broadcast(:todo_updates, TodoPubSubMessage.bulk_update(:complete_all))
           case g_array do
-      {:ok, _} -> _ = elem(g_array, 1)
+      {:ok, _} -> (
+          
+        )
       {:error, _} -> (
-          g_array = _ = elem(g_array, 1)
-          (
           reason = g_array
           Log.trace("Failed to broadcast bulk complete: " <> reason, %{fileName: "src_haxe/server/live/TodoLive.hx", lineNumber: 449, className: "server.live.TodoLive", methodName: "complete_all_todos"})
-        )
         )
     end
         )
@@ -532,18 +503,16 @@ defmodule TodoAppWeb.TodoLive do
           g_array = TodoApp.Repo.update(changeset)
           case g_array do
       {:ok, _} -> (
-          g_array = _ = elem(g_array, 1)
           updated_todo = g_array
           (
           g_array = TodoPubSub.broadcast(:todo_updates, TodoPubSubMessage.todo_updated(updated_todo))
           case g_array do
-      {:ok, _} -> _ = elem(g_array, 1)
+      {:ok, _} -> (
+          
+        )
       {:error, _} -> (
-          g_array = _ = elem(g_array, 1)
-          (
           reason = g_array
           Log.trace("Failed to broadcast todo save: " <> reason, %{fileName: "src_haxe/server/live/TodoLive.hx", lineNumber: 514, className: "server.live.TodoLive", methodName: "save_edited_todo"})
-        )
         )
     end
         )
@@ -578,15 +547,15 @@ defmodule TodoAppWeb.TodoLive do
           Phoenix.LiveView.assign(socket, complete_assigns)
         )
       {2, priority} -> (
-          _ = elem(action, 1)
+          elem(action, 1)
           socket
         )
       {3, tag} -> (
-          _ = elem(action, 1)
+          elem(action, 1)
           socket
         )
       {4, tag} -> (
-          _ = elem(action, 1)
+          elem(action, 1)
           socket
         )
     end
