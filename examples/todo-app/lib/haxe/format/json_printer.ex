@@ -68,7 +68,11 @@ defmodule JsonPrinter do
           case g_array do
       :t_null -> struct = %{struct.buf | b: "null"}
       :t_int -> struct = %{struct.buf | b: Std.string(v)}
-      :t_float -> tempString = if Math.is_finite(v), do: Std.string(v), else: "null"
+      :t_float -> (
+          tempString = if Math.is_finite(v), do: Std.string(v), else: "null"
+          v = temp_string
+          struct = %{struct.buf | b: Std.string(v)}
+        )
       :t_bool -> struct = %{struct.buf | b: Std.string(v)}
       :t_object -> struct.fields_string(v, Reflect.fields(v))
       :t_function -> struct = %{struct.buf | b: "\"<fun>\""}

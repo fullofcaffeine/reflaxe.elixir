@@ -338,7 +338,7 @@ class ElixirCompiler extends DirectToStringCompiler {
         // These preprocessors clean up the AST before we compile it to Elixir
         options.expressionPreprocessors = [
             SanitizeEverythingIsExpression({}),                      // Convert "everything is expression" to imperative
-            RemoveTemporaryVariables(RemoveTemporaryVariablesMode.AllVariables), // Remove ALL temporary variables aggressively  
+            RemoveTemporaryVariables(RemoveTemporaryVariablesMode.AllTempVariables), // Remove only "temp" prefixed variables
             PreventRepeatVariables({}),                              // Ensure unique variable names
             RemoveSingleExpressionBlocks,                            // Simplify single-expression blocks
             RemoveConstantBoolIfs,                                   // Remove constant conditional checks

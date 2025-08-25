@@ -114,29 +114,26 @@ class VariableCompiler {
         );
         
         if (isTempArrayAccess) {
+            #if debug_variable_compiler
             trace("[XRay VariableCompiler] ⚠️ TEMP ARRAY LOCAL VARIABLE ACCESS: " + originalName);
             trace("[XRay VariableCompiler] Checking if this should be replaced with inline expression");
+            #end
             
             // Try to find a consumed temp variable mapping 
             if (compiler.consumedTempVariables != null && compiler.consumedTempVariables.exists(originalName)) {
                 var inlineExpression = compiler.consumedTempVariables.get(originalName);
+                #if debug_variable_compiler
                 trace('[XRay VariableCompiler] ✓ FOUND CONSUMED TEMP VARIABLE MAPPING: ${originalName} -> ${inlineExpression}');
+                #end
                 return inlineExpression;
             }
             
-            // If no mapping found, generate a reasonable inline expression
-            // This is a heuristic fix for the TypeSafeChildSpec pattern where temp variables
-            // are used for ternary expressions that can't be easily detected in the AST.
-            trace("[XRay VariableCompiler] ⚠️ No mapping found for temp array variable: " + originalName);
-            trace("[XRay VariableCompiler] Generating heuristic inline expression");
-            
-            // For tempArray variables in switch cases, they're typically used for
-            // config != null ? [config] : [] patterns
-            // Generate a reasonable inline expression that handles the most common case
-            return "if (((config != nil))), do: [config], else: []";
-            
-            // Note: This is a targeted fix for the TypeSafeChildSpec issue.
-            // A more general solution would require better AST pattern detection.
+            // NO FALLBACK - if no mapping exists, the variable should be generated normally
+            // The ControlFlowCompiler should have captured all ternary patterns and stored mappings
+            #if debug_variable_compiler
+            trace("[XRay VariableCompiler] No mapping found for temp array variable: " + originalName);
+            trace("[XRay VariableCompiler] Allowing normal variable generation");
+            #end
         }
         
         // CRITICAL DEBUG: Trace exactly what mapping exists for 'g'
@@ -1350,6 +1347,7 @@ class VariableCompiler {
         
         return result;
     }
+    
 }
 
 #end

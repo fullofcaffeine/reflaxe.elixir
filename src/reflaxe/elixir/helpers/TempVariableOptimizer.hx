@@ -169,7 +169,7 @@ class TempVariableOptimizer {
                         
                         // Extract actual values from temp variable assignments
                         var thenValue = extractValueFromTempAssignment(thenExpr, tempVarName);
-                        var elseValue = extractValueFromTempAssignment(elseExpr, tempVarName);
+                        var elseValue = elseExpr != null ? extractValueFromTempAssignment(elseExpr, tempVarName) : null;
                         
                         if (thenValue != null && elseValue != null) {
                             // Generate direct ternary expression without temp variables
@@ -603,6 +603,7 @@ class TempVariableOptimizer {
     }
 
     private function extractValueFromTempAssignment(expr: TypedExpr, tempVarName: String): Null<String> {
+        if (expr == null) return null;
         switch (expr.expr) {
             case TBinop(OpAssign, left, right):
                 switch (left.expr) {
