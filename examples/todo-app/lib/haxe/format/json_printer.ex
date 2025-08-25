@@ -82,7 +82,6 @@ defmodule JsonPrinter do
       :t_object -> struct.fields_string(v, Reflect.fields(v))
       :t_function -> struct = %{struct.buf | b: "\"<fun>\""}
       :t_class -> (
-          g_array = _ = elem(g_array, 1)
           c = g_array
           if ((c == String)) do
           struct.quote_(v)
@@ -175,13 +174,10 @@ defmodule JsonPrinter do
         end
         )
       :t_enum -> (
-          _ = elem(g_array, 1)
-          (
           i = Type.enum_index(v)
           (
           v = Std.string(i)
           struct = %{struct.buf | b: Std.string(v)}
-        )
         )
         )
       :t_unknown -> struct = %{struct.buf | b: "\"???\""}
