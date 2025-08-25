@@ -246,22 +246,33 @@ class PatternMatchingCompiler {
         var enumType = extractEnumType(switchExpr.t);
         if (enumType != null) {
             #if debug_pattern_matching
-            trace('[PatternMatchingCompiler] Detected enum type: ${enumType.name}');
+            trace('[PatternMatchingCompiler] ✓ DETECTED ENUM TYPE: ${enumType.name}');
             #end
             
             // Special handling for Option and Result types
             if (isOptionType(enumType)) {
+                #if debug_pattern_matching
+                trace('[PatternMatchingCompiler] → Using Option switch compilation');
+                #end
                 return compileOptionSwitch(switchExpr, cases, defaultExpr, context);
             } else if (isResultType(enumType)) {
+                #if debug_pattern_matching
+                trace('[PatternMatchingCompiler] → Using Result switch compilation');
+                #end
                 return compileResultSwitch(switchExpr, cases, defaultExpr, context);
             } else {
                 // CRITICAL FIX: Handle all other enum types with index-based matching
                 // Convert switch(enum) to case(elem(enum, 0)) with integer patterns
                 #if debug_pattern_matching
-                trace('[PatternMatchingCompiler] Using index-based matching for enum type: ${enumType.name}');
+                trace('[PatternMatchingCompiler] → USING INDEX-BASED MATCHING FOR ENUM: ${enumType.name}');
+                trace('[PatternMatchingCompiler] → Calling compileEnumIndexSwitch...');
                 #end
                 return compileEnumIndexSwitch(switchExpr, cases, defaultExpr, context, enumType);
             }
+        } else {
+            #if debug_pattern_matching
+            trace('[PatternMatchingCompiler] ⚠️ NO ENUM TYPE DETECTED - using standard case compilation');
+            #end
         }
         
         // Standard case statement compilation
@@ -517,8 +528,9 @@ class PatternMatchingCompiler {
     private function extractEnumType(type: Type): Null<EnumType> {
         return switch (type) {
             case TEnum(enumRef, _):
-                enumRef.get();
-            case TAbstract(_, _):
+                var enumType = enumRef.get();
+                enumType;
+            case TAbstract(absRef, _):
                 // Check if abstract wraps an enum
                 null; // TODO: Implement abstract enum extraction
             default:
