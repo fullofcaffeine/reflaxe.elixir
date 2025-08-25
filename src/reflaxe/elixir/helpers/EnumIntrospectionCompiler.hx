@@ -385,37 +385,46 @@ class EnumIntrospectionCompiler {
         var wasInEnumExtraction = compiler.isInEnumExtraction;
         compiler.isInEnumExtraction = true;
         
-        // CRITICAL FIX: Remove 'g' mapping to prevent g -> g_counter contamination
-        // The 'g' variable should never be mapped to g_counter during enum parameter extraction
-        var savedGMapping: Null<String> = null;
-        if (compiler.currentFunctionParameterMap.exists("g")) {
-            savedGMapping = compiler.currentFunctionParameterMap.get("g");
-            compiler.currentFunctionParameterMap.remove("g");
-            #if debug_enum_introspection_compiler
-            trace('[XRay EnumIntrospectionCompiler] Temporarily removed g mapping in parameter extraction: g -> ${savedGMapping}');
-            #end
+        // CRITICAL FIX: Handle both _g and g variable mappings correctly
+        // Save and temporarily manage problematic mappings to prevent contamination
+        var savedMappings = new Map<String, String>();
+        var mappingsToHandle = ["g", "_g", "g_array", "_g_array", "g_counter", "_g_counter"];
+        
+        for (varName in mappingsToHandle) {
+            if (compiler.currentFunctionParameterMap.exists(varName)) {
+                var mapping = compiler.currentFunctionParameterMap.get(varName);
+                savedMappings.set(varName, mapping);
+                #if debug_enum_introspection_compiler
+                trace('[XRay EnumIntrospectionCompiler] Saved mapping: ${varName} -> ${mapping}');
+                #end
+            }
         }
         
-        var enumExpr = compiler.compileExpression(e);
+        // CRITICAL FIX: Apply variable mapping manually for the enum expression
+        // This ensures _g is mapped to g_array when compiling TLocal expressions
+        var enumExpr = switch(e.expr) {
+            case TLocal(v):
+                // For TLocal variables, check mappings first
+                if (compiler.currentFunctionParameterMap.exists(v.name)) {
+                    var mapped = compiler.currentFunctionParameterMap.get(v.name);
+                    #if debug_enum_introspection_compiler
+                    trace('[XRay EnumIntrospectionCompiler] ✓ APPLYING VARIABLE MAPPING: ${v.name} -> ${mapped}');
+                    #end
+                    mapped;
+                } else {
+                    #if debug_enum_introspection_compiler
+                    trace('[XRay EnumIntrospectionCompiler] No mapping found for TLocal variable: ${v.name}');
+                    #end
+                    v.name;
+                }
+            case _:
+                // For other expressions, compile normally but apply mappings
+                compiler.compileExpression(e);
+        };
         
-        // CRITICAL FIX: If the compiled expression is g_counter but the original is 'g', fix it
-        // This happens when switch expression desugaring creates 'g' variables that get incorrectly mapped
-        if (enumExpr == "g_counter") {
-            #if debug_enum_introspection_compiler
-            trace('[XRay EnumIntrospectionCompiler] ⚠️ FIXING g_counter contamination in parameter extraction - using "g" instead');
-            #end
-            enumExpr = "g";
-        }
-        
-        // Restore the 'g' mapping if it existed
-        // CRITICAL FIX: Don't restore if the mapping is to g_counter - that's always wrong
-        if (savedGMapping != null && !StringTools.endsWith(savedGMapping, "_counter")) {
-            compiler.currentFunctionParameterMap.set("g", savedGMapping);
-        } else if (savedGMapping != null) {
-            #if debug_enum_introspection_compiler
-            trace('[XRay EnumIntrospectionCompiler] ⚠️ BLOCKED restoration of incorrect g -> ${savedGMapping} mapping in parameter extraction');
-            #end
-        }
+        #if debug_enum_introspection_compiler
+        trace('[XRay EnumIntrospectionCompiler] Final enum expression: ${enumExpr}');
+        #end
         
         #if debug_enum_introspection_compiler
         trace('[XRay EnumIntrospectionCompiler] Enum expression: ${enumExpr}');

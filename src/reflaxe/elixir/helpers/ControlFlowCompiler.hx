@@ -760,12 +760,26 @@ class ControlFlowCompiler {
         var thenBranch = compiler.compileExpression(eif);
         var elseBranch = eelse != null ? compiler.compileExpression(eelse) : "nil";
         
-        // Generate idiomatic Elixir if-else
-        var result = if (elseBranch != "nil") {
-            'if ${condition} do\n      ${thenBranch}\n    else\n      ${elseBranch}\n    end';
+        // CRITICAL FIX: Detect if this is a simple ternary-style expression
+        // that should be compiled as inline expression to avoid scoping issues
+        var shouldUseInlineForm = shouldGenerateInlineIfExpression(eif, eelse);
+        
+        #if debug_control_flow_compiler
+        trace('[XRay ControlFlowCompiler] Should use inline form: ${shouldUseInlineForm}');
+        #end
+        
+        var result: String;
+        if (shouldUseInlineForm && elseBranch != "nil") {
+            // Generate inline if expression: if condition, do: then_value, else: else_value
+            result = 'if (${condition}), do: ${thenBranch}, else: ${elseBranch}';
         } else {
-            'if ${condition} do\n      ${thenBranch}\n    end';
-        };
+            // Generate block-style if-else for complex expressions
+            result = if (elseBranch != "nil") {
+                'if ${condition} do\n      ${thenBranch}\n    else\n      ${elseBranch}\n    end';
+            } else {
+                'if ${condition} do\n      ${thenBranch}\n    end';
+            };
+        }
         
         #if debug_control_flow_compiler
         trace('[XRay ControlFlowCompiler] Generated if: ${result != null ? result.substring(0, 100) + "..." : "null"}');
@@ -773,6 +787,73 @@ class ControlFlowCompiler {
         #end
         
         return result;
+    }
+    
+    /**
+     * Determine if an if expression should be generated as inline form
+     * 
+     * WHY: Simple expressions that result in values (like ternary patterns) should
+     * be compiled as inline `if condition, do: value, else: value` to avoid variable
+     * scoping issues that occur with block-style `if do...end` statements.
+     * 
+     * WHAT: Analyzes the then and else branches to determine if they're simple enough
+     * for inline compilation.
+     * 
+     * HOW: Checks if branches are simple expressions (constants, variables, simple calls)
+     * rather than complex blocks or statements.
+     * 
+     * @param thenExpr The then branch expression
+     * @param elseExpr The else branch expression (nullable)
+     * @return True if inline form should be used
+     */
+    private function shouldGenerateInlineIfExpression(thenExpr: TypedExpr, elseExpr: Null<TypedExpr>): Bool {
+        // Must have both branches for inline form
+        if (elseExpr == null) return false;
+        
+        // Both branches should be simple expressions, not complex blocks
+        return isSimpleExpression(thenExpr) && isSimpleExpression(elseExpr);
+    }
+    
+    /**
+     * Check if an expression is simple enough for inline compilation
+     * 
+     * Simple expressions include:
+     * - Constants (TConst)
+     * - Variable references (TLocal)  
+     * - Array literals (TArrayDecl) with simple elements
+     * - Simple field access (TField)
+     * - Simple method calls (TCall) with few parameters
+     * 
+     * Complex expressions that need block form:
+     * - Block expressions (TBlock)
+     * - Nested if/switch expressions
+     * - Assignment operations (TBinop with OpAssign) - CRITICAL for variable scoping
+     * - Complex method calls or assignments
+     */
+    private function isSimpleExpression(expr: TypedExpr): Bool {
+        return switch (expr.expr) {
+            case TConst(_): true;                    // Constants: true, false, numbers, strings
+            case TLocal(_): true;                    // Variable references
+            case TArrayDecl(values):                 // Array literals - check if all elements are simple
+                values.length <= 5 && areAllSimpleExpressions(values);
+            case TField(_, _): true;                 // Simple field access
+            case TCall(_, args):                     // Simple method calls
+                args.length <= 2 && areAllSimpleExpressions(args);
+            case TBinop(OpAssign, _, _): false;      // ⚠️ CRITICAL: Assignments need block-style if for proper variable scoping
+            case TBinop(_, _, _): true;              // Non-assignment binary operations are simple
+            case TUnop(_, _, _): true;               // Unary operations are simple
+            case _: false;                           // Everything else is complex
+        };
+    }
+    
+    /**
+     * Check if all expressions in an array are simple
+     */
+    private function areAllSimpleExpressions(exprs: Array<TypedExpr>): Bool {
+        for (expr in exprs) {
+            if (!isSimpleExpression(expr)) return false;
+        }
+        return true;
     }
     
     /**

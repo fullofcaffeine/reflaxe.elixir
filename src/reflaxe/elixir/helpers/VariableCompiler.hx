@@ -198,12 +198,12 @@ class VariableCompiler {
             trace('[XRay VariableCompiler] Found in parameter map');
             #end
             
-            // CRITICAL FIX: Don't apply array desugaring mappings in enum extraction context
-            // When we're extracting enum parameters, _g variables should NOT be mapped to g_array
-            if (compiler.isInEnumExtraction && originalName.charAt(0) == '_' && ~/^_g\d*$/.match(originalName)) {
-                trace('[XRay VariableCompiler] ⚠️ BLOCKING array mapping for ${originalName} in enum extraction context');
-                trace('[XRay VariableCompiler] Returning original name instead of ${mappedName}');
-                return originalName; // Use original name without array mapping
+            // CRITICAL FIX: Always apply _g -> g_array mappings - they are needed for array desugaring
+            // The _g variables from array desugaring should be mapped to g_array regardless of context
+            if (originalName.charAt(0) == '_' && ~/^_g\d*$/.match(originalName)) {
+                trace('[XRay VariableCompiler] ✓ APPLYING array desugaring mapping for ${originalName} -> ${mappedName}');
+                // This is crucial for fixing undefined _g variable errors
+                return mappedName;
             }
             
             // CRITICAL FIX: Don't map 'g' to 'g_counter' in any context - it's always wrong
