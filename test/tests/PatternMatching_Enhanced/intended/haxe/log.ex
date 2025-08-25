@@ -22,12 +22,10 @@ defmodule Log do
           if ((infos.custom_params != nil)) do
           (
           g_counter = 0
-          g = infos.custom_params
-          while_loop(fn -> ((g < g.length)) end, fn -> (
-          v = Enum.at(g, g)
-          g + 1
-          str = str <> ", " <> Std.string(v)
-        ) end)
+          g_array = infos.custom_params
+          Enum.each(g_array, fn v2 -> 
+      str = str <> ", " <> Std.string(v)
+    end)
         )
         end
           pstr <> ": " <> str
@@ -58,6 +56,30 @@ defmodule Log do
           str = Log.format_output(v, infos)
           Sys.println(str)
         )
+  end
+
+
+  # While loop helper functions
+  # Generated automatically for tail-recursive loop patterns
+
+  @doc false
+  defp while_loop(condition_fn, body_fn) do
+    if condition_fn.() do
+      body_fn.()
+      while_loop(condition_fn, body_fn)
+    else
+      nil
+    end
+  end
+
+  @doc false
+  defp do_while_loop(body_fn, condition_fn) do
+    body_fn.()
+    if condition_fn.() do
+      do_while_loop(body_fn, condition_fn)
+    else
+      nil
+    end
   end
 
 end

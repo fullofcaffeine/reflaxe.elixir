@@ -285,6 +285,10 @@ class ElixirCompiler extends DirectToStringCompiler {
     public var isCompilingStructMethod: Bool = false;
     public var globalStructParameterMap: Map<String, String> = new Map();
     
+    // Track temporary variables consumed by array ternary optimization
+    // Maps temp_array names to their replacement direct assignments
+    public var consumedTempVariables: Null<Map<String, String>> = null;
+    
     /**
      * Constructor - Initialize the compiler with type mapping and pattern matching systems
      */

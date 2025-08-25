@@ -68,16 +68,7 @@ defmodule JsonPrinter do
           case g_array do
       :t_null -> struct = %{struct.buf | b: "null"}
       :t_int -> struct = %{struct.buf | b: Std.string(v)}
-      :t_float -> (
-          temp_string = nil
-          if Math.is_finite(v) do
-          temp_string = Std.string(v)
-        else
-          temp_string = "null"
-        end
-          v = temp_string
-          struct = %{struct.buf | b: Std.string(v)}
-        )
+      :t_float -> tempString = if Math.is_finite(v), do: Std.string(v), else: "null"
       :t_bool -> struct = %{struct.buf | b: Std.string(v)}
       :t_object -> struct.fields_string(v, Reflect.fields(v))
       :t_function -> struct = %{struct.buf | b: "\"<fun>\""}
@@ -281,14 +272,21 @@ defmodule JsonPrinter do
         index = i + 1
         temp_number = s.cca(index)
         c = temp_number
-        case c do
-          8 -> struct = %{struct.buf | b: "\\b"}
-          9 -> struct = %{struct.buf | b: "\\t"}
-          10 -> struct = %{struct.buf | b: "\\n"}
-          12 -> struct = %{struct.buf | b: "\\f"}
-          13 -> struct = %{struct.buf | b: "\\r"}
-          34 -> struct = %{struct.buf | b: "\\\""}
-          92 -> struct = %{struct.buf | b: "\\\\"}
+        case (elem(c, 0)) do
+          8 ->
+            struct = %{struct.buf | b: "\\b"}
+          9 ->
+            struct = %{struct.buf | b: "\\t"}
+          10 ->
+            struct = %{struct.buf | b: "\\n"}
+          12 ->
+            struct = %{struct.buf | b: "\\f"}
+          13 ->
+            struct = %{struct.buf | b: "\\r"}
+          34 ->
+            struct = %{struct.buf | b: "\\\""}
+          92 ->
+            struct = %{struct.buf | b: "\\\\"}
           _ -> struct = %{struct.buf | b: String.from_char_code(c)}
         end
         loop_fn.(loop_fn, {temp_number, index, i, c})

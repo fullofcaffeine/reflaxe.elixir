@@ -217,6 +217,15 @@ class TempVariableOptimizer {
     }
 
     public function fixTempVariableScoping(code: String, tempVarName: String): String {
+        // PRIORITY FIX: Handle temp_array scoping issues specifically
+        // These are caused by ternary operations like: config != null ? [config] : []
+        if (tempVarName.indexOf("temp_array") == 0) {
+            var result = fixTempArrayScopingIssues(code, tempVarName);
+            if (result != code) {
+                return result; // If we fixed something, return the fixed version
+            }
+        }
+        
         // Fix pattern: if (cond), do: temp_var = val1, else: temp_var = val2\nvar = temp_var
         // Into: var = if (cond), do: val1, else: val2
         // Also fix block-style patterns:
@@ -351,6 +360,132 @@ class TempVariableOptimizer {
             transformedCode: transformedCode,
             nextIndex: i + 1  // Skip the assignment line
         };
+    }
+    
+    /**
+     * Fix temp_array scoping issues specifically
+     * 
+     * WHY: Ternary operations like `config != null ? [config] : []` generate block-style
+     *      if statements where temp_array is assigned inside if/else branches but used outside.
+     * WHAT: Transforms these to inline if expressions to avoid scoping issues.
+     * HOW: Pattern matches the specific temp_array assignment + usage pattern and converts
+     *      block-style if to inline form.
+     */
+    private function fixTempArrayScopingIssues(code: String, tempVarName: String): String {
+        // Pattern we're looking for:
+        // if ((config != nil)) do
+        //   temp_array = [config]
+        // else
+        //   temp_array = []
+        // end
+        // args = temp_array
+        //
+        // Transform to:
+        // args = if (config != nil), do: [config], else: []
+        
+        var lines = code.split('\n');
+        var result = [];
+        var i = 0;
+        
+        while (i < lines.length) {
+            var line = StringTools.trim(lines[i]);
+            
+            // Look for if statement that assigns temp_array
+            if (line.indexOf('if ((') == 0 && line.indexOf(')) do') > 0) {
+                var fixResult = tryFixTempArrayBlock(lines, i, tempVarName);
+                if (fixResult != null) {
+                    result.push(fixResult.transformedCode);
+                    i = fixResult.nextIndex;
+                    continue;
+                }
+            }
+            
+            result.push(lines[i]);
+            i++;
+        }
+        
+        return result.join('\n');
+    }
+    
+    /**
+     * Try to fix a specific temp_array block pattern
+     */
+    private function tryFixTempArrayBlock(lines: Array<String>, startIndex: Int, tempVarName: String): Null<{transformedCode: String, nextIndex: Int}> {
+        var i = startIndex;
+        if (i >= lines.length) return null;
+        
+        var ifLine = StringTools.trim(lines[i]);
+        
+        // Extract condition from "if ((condition)) do"
+        var conditionPattern = ~/if \(\((.*?)\)\) do/;
+        if (!conditionPattern.match(ifLine)) return null;
+        var condition = conditionPattern.matched(1);
+        
+        i++; // Move past if line
+        
+        // Look for temp_array assignment in then branch
+        var thenValue: String = null;
+        while (i < lines.length && StringTools.trim(lines[i]) != "else" && StringTools.trim(lines[i]) != "end") {
+            var currentLine = StringTools.trim(lines[i]);
+            var assignPattern = new EReg('${tempVarName}\\s*=\\s*(.+)', '');
+            if (assignPattern.match(currentLine)) {
+                thenValue = assignPattern.matched(1);
+                break;
+            }
+            i++;
+        }
+        
+        if (thenValue == null) return null;
+        
+        // Skip to else branch
+        while (i < lines.length && StringTools.trim(lines[i]) != "else") {
+            i++;
+        }
+        if (i >= lines.length || StringTools.trim(lines[i]) != "else") return null;
+        
+        i++; // Move past else line
+        
+        // Look for temp_array assignment in else branch
+        var elseValue: String = null;
+        while (i < lines.length && StringTools.trim(lines[i]) != "end") {
+            var currentLine = StringTools.trim(lines[i]);
+            var assignPattern = new EReg('${tempVarName}\\s*=\\s*(.+)', '');
+            if (assignPattern.match(currentLine)) {
+                elseValue = assignPattern.matched(1);
+                break;
+            }
+            i++;
+        }
+        
+        if (elseValue == null) return null;
+        
+        // Skip to end
+        while (i < lines.length && StringTools.trim(lines[i]) != "end") {
+            i++;
+        }
+        if (i >= lines.length) return null;
+        
+        i++; // Move past end line
+        
+        // Look for the target variable assignment: args = temp_array
+        if (i < lines.length) {
+            var usageLine = StringTools.trim(lines[i]);
+            var usagePattern = new EReg('(\\w+)\\s*=\\s*${tempVarName}\\s*$', '');
+            if (usagePattern.match(usageLine)) {
+                var targetVar = usagePattern.matched(1);
+                
+                // Generate inline if expression
+                var inlineIf = 'if (${condition}), do: ${thenValue}, else: ${elseValue}';
+                var transformedCode = '${targetVar} = ${inlineIf}';
+                
+                return {
+                    transformedCode: transformedCode,
+                    nextIndex: i + 1
+                };
+            }
+        }
+        
+        return null;
     }
     
     /**
