@@ -363,7 +363,9 @@ class MethodCallCompiler {
         }
         
         // Check if this is a common array method on a Dynamic type
-        if (compiler.isArrayMethod(methodName)) {
+        // BUT don't treat static methods on extern modules as array methods
+        // This fixes Module.concat being compiled as array concatenation
+        if (compiler.isArrayMethod(methodName) && !isExternModuleCall(obj, fa)) {
             return compiler.compileArrayMethod(objStr, methodName, args);
         }
         
@@ -407,6 +409,35 @@ class MethodCallCompiler {
         
         // Direct pass-through - let the caller provide the correct module as first arg when needed
         return "Phoenix.PubSub." + methodName + "(" + compiledArgs.join(", ") + ")";
+    }
+    
+    /**
+     * Check if this is a static method call on an extern module
+     * 
+     * WHY: Extern modules like elixir.Module have methods that might share names with array methods
+     *      (e.g., Module.concat vs Array.concat) but should NOT be treated as array operations.
+     * 
+     * WHAT: Detects if the field access is on an extern class with static methods
+     * 
+     * HOW: Checks if the field access is FStatic on an extern class
+     * 
+     * EXAMPLE: 
+     * - elixir.Module.concat([...]) should NOT compile to Module ++ [...]
+     * - It should compile to Module.concat([...]) as a proper function call
+     * 
+     * @param obj The object expression being accessed
+     * @param fa The field access type
+     * @return true if this is a static call on an extern module
+     */
+    private function isExternModuleCall(obj: TypedExpr, fa: FieldAccess): Bool {
+        return switch (fa) {
+            case FStatic(classRef, _):
+                // Check if the class is an extern
+                var cls = classRef.get();
+                cls.isExtern;
+            case _:
+                false;
+        };
     }
     
     /**
