@@ -66,6 +66,9 @@ class ElixirCompiler extends DirectToStringCompiler {
 - Commit without verifying todo-app compiles
 
 ### ✅ ALWAYS Do This:
+- **Research idiomatic Elixir patterns FIRST** before translating any Haxe pattern
+- **Adapt for immutability** - Elixir is immutable, Haxe often assumes mutability
+- **Provide "Elixir way" constructs and APIs** - Allow users to write Haxe in a more Elixir-like style
 - Test ALL changes with `npm test`
 - Verify todo-app compilation after compiler changes
 - Process TypedExpr AST until the last possible moment
