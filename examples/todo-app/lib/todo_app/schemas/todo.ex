@@ -73,22 +73,7 @@ defmodule Todo do
   @doc "Function add_tag"
   @spec add_tag(Todo.t(), String.t()) :: Ecto.Changeset.t()
   def add_tag(todo, tag) do
-    temp_array = nil
-    if ((todo.tags != nil)) do
-          temp_array = todo.tags
-        else
-          temp_array = []
-        end
-    temp_array ++ [tag]
-    params = Haxe.Ds.StringMap.new()
-    g_array = []
-    g_counter = 0
-    Enum.each(temp_array, fn v -> 
-      g_array ++ [ChangesetValue.string_value(v)]
-    end)
-    value = ChangesetValue.array_value(g_array)
-    params.set("tags", value)
-    Todo.changeset(todo, params)
+    tempArray = if ((todo.tags != nil)), do: todo.tags, else: []
   end
 
 

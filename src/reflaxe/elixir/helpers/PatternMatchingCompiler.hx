@@ -102,6 +102,11 @@ class PatternMatchingCompiler {
         var tempVarName: String = null;
         var allCasesAssignToTempVar = true;
         
+        // CRITICAL DEBUG: Track switch compilation
+        Sys.println('[SWITCH_TRACKER] ===== SWITCH COMPILATION START =====');
+        Sys.println('[SWITCH_TRACKER] Switch expr type: ${Type.enumConstructor(switchExpr.expr)}');  
+        Sys.println('[SWITCH_TRACKER] Number of cases: ${cases.length}');
+        
         #if debug_temp_var
         trace("[PatternMatchingCompiler] ============== SWITCH COMPILATION START ==============");
         trace('[PatternMatchingCompiler] compileSwitchExpression called');
@@ -229,6 +234,7 @@ class PatternMatchingCompiler {
         // CRITICAL FIX: Detect TSwitch(TEnumIndex(expr)) pattern for direct Result/Option compilation
         // This prevents double-nested case expressions by bypassing EnumIntrospectionCompiler
         if (isSwitchOnEnumIndex(switchExpr)) {
+            Sys.println('[SWITCH_TRACKER] EARLY RETURN - isSwitchOnEnumIndex');
             #if debug_pattern_matching
             trace("[PatternMatchingCompiler] ✓ DETECTED TSwitch(TEnumIndex) - direct compilation");
             #end
@@ -237,6 +243,7 @@ class PatternMatchingCompiler {
         
         // Check if this is a with statement pattern
         if (shouldUseWithStatement(switchExpr, cases)) {
+            Sys.println('[SWITCH_TRACKER] EARLY RETURN - shouldUseWithStatement');
             #if debug_pattern_matching
             trace("[PatternMatchingCompiler] Using with statement optimization");
             #end
@@ -246,8 +253,10 @@ class PatternMatchingCompiler {
         // Check for enum type handling
         var enumType = extractEnumType(switchExpr.t);
         
+        Sys.println('[SWITCH_TRACKER] extractEnumType result = ${enumType != null ? enumType.name : "NULL"}');
         
         if (enumType != null) {
+            Sys.println('[SWITCH_TRACKER] ENUM TYPE DETECTED - ${enumType.name}');
             #if debug_pattern_matching
             trace('[PatternMatchingCompiler] ✓ DETECTED ENUM TYPE: ${enumType.name}');
             #end
@@ -273,6 +282,7 @@ class PatternMatchingCompiler {
                 return compileEnumIndexSwitch(switchExpr, cases, defaultExpr, context, enumType);
             }
         } else {
+            Sys.println('[SWITCH_TRACKER] NO ENUM TYPE - trying inference');
             #if debug_pattern_matching
             trace('[PatternMatchingCompiler] ⚠️ NO ENUM TYPE DETECTED - using standard case compilation');
             #end
@@ -281,12 +291,14 @@ class PatternMatchingCompiler {
             // Sometimes enum type isn't detected from switch expr but we can detect it from patterns
             var inferredEnumType = inferEnumTypeFromCases(cases);
             if (inferredEnumType != null) {
+                Sys.println('[SWITCH_TRACKER] INFERRED ENUM TYPE - ${inferredEnumType.name}');
                 #if debug_pattern_matching
                 trace('[PatternMatchingCompiler] ✓ INFERRED ENUM TYPE: ${inferredEnumType.name} - forcing elem-based compilation');
                 #end
                 return compileEnumIndexSwitch(switchExpr, cases, defaultExpr, context, inferredEnumType);
             }
             
+            Sys.println('[SWITCH_TRACKER] FORCING ELEM-BASED COMPILATION');
             // CRITICAL FIX: Force ALL switches to use elem-based compilation by default
             // This ensures consistent pattern generation across all enum switches
             #if debug_pattern_matching
@@ -643,6 +655,13 @@ class PatternMatchingCompiler {
         defaultExpr: Null<TypedExpr>,
         ?context: reflaxe.elixir.helpers.ControlFlowCompiler.FunctionContext
     ): String {
+        
+        // DEBUG: Track which functions use standard case compilation
+        Sys.println('[CRITICAL_PATH] ===== STANDARD CASE COMPILATION =====');
+        Sys.println('[CRITICAL_PATH] This function is NOT going through enum index compilation');
+        Sys.println('[CRITICAL_PATH] Switch expr: ${Type.enumConstructor(switchExpr.expr)}');
+        Sys.println('[CRITICAL_PATH] Cases: ${cases.length}');
+        Sys.println('[CRITICAL_PATH] ==========================================');
         
         // CRITICAL FIX: Detect if this is an elem() based switch
         // This determines whether patterns should be integers or tuples
@@ -1906,11 +1925,16 @@ class PatternMatchingCompiler {
         
         // Check if this enum has parameters
         var hasParameters = false;
+        #if debug_pattern_matching
+        trace('[PatternMatchingCompiler] Analyzing enum ${enumType.name} constructors:');
+        #end
         for (name in enumType.names) {
             var construct = enumType.constructs.get(name);
+            #if debug_pattern_matching
+            trace('[PatternMatchingCompiler] Constructor ${name}: ${construct != null ? construct.params.length : "null"} parameters');
+            #end
             if (construct != null && construct.params.length > 0) {
                 hasParameters = true;
-                break;
             }
         }
         
@@ -1937,17 +1961,11 @@ class PatternMatchingCompiler {
                                 "_"; // Fallback for out-of-bounds index
                             }
                         } else {
-                            // For enums with parameters, use tuple patterns
+                            // CRITICAL FIX: For enums with parameters, use INTEGER PATTERNS instead of atom patterns
+                            // This ensures consistency with other compilation paths
                             if (index >= 0 && index < enumType.names.length) {
-                                var constructorName = enumType.names[index];
-                                var construct = enumType.constructs.get(constructorName);
-                                if (construct != null && construct.params.length == 0) {
-                                    // Constructor without parameters in an enum that has some with parameters
-                                    '{:' + NamingHelper.toSnakeCase(constructorName) + '}';
-                                } else {
-                                    // Constructor with parameters - use wildcard for now
-                                    '{:' + NamingHelper.toSnakeCase(constructorName) + ', _}';
-                                }
+                                // Generate integer pattern: case (elem(expr, 0)) do index ->
+                                '${index}';
                             } else {
                                 "_"; // Fallback
                             }
@@ -1955,11 +1973,42 @@ class PatternMatchingCompiler {
                     case _: "_"; // Catch-all for non-constant patterns
                 };
                 
+                // CRITICAL FIX: Generate parameter extraction based on actual usage in case body
+                var parameterExtractionStatements = "";
+                if (hasParameters) {
+                    // Scan case body for g_array references to determine if we need extraction
+                    var caseBodyStr = compilePatternBody(caseData.expr, context);
+                    var needsGArrayExtraction = caseBodyStr.indexOf("g_array") != -1;
+                    
+                    if (needsGArrayExtraction) {
+                        // Generate extraction for first parameter (most common case)
+                        // All enum cases use g_array for the first meaningful parameter
+                        var elementIndex = 1; // First parameter is at index 1 (0 is constructor index)
+                        parameterExtractionStatements += 'g_array = elem(${innerExprStr}, ${elementIndex})\n';
+                        
+                        #if debug_pattern_matching
+                        trace('[PatternMatchingCompiler] Case body needs g_array - generating extraction: g_array = elem(${innerExprStr}, ${elementIndex})');
+                        #end
+                    } else {
+                        #if debug_pattern_matching
+                        trace('[PatternMatchingCompiler] Case body does not reference g_array - no extraction needed');
+                        #end
+                    }
+                }
+                
                 var body = compilePatternBody(caseData.expr, context);
-                caseStrings.push('  ${pattern} -> ${body}');
+                
+                // Combine parameter extraction with case body
+                var fullBody = if (parameterExtractionStatements.length > 0) {
+                    '(\n${parameterExtractionStatements}${body}\n)';
+                } else {
+                    body;
+                };
+                
+                caseStrings.push('  ${pattern} -> ${fullBody}');
                 
                 #if debug_pattern_matching
-                trace('[PatternMatchingCompiler] Generated direct pattern: ${pattern} -> [body]');
+                trace('[PatternMatchingCompiler] Generated direct pattern: ${pattern} -> [body with extraction]');
                 #end
             }
         }
@@ -1970,6 +2019,7 @@ class PatternMatchingCompiler {
             caseStrings.push('  _ -> ${defaultBody}');
         }
         
+        // Generate the standard case expression without elem() wrapping for direct enum switches
         var result = 'case ${innerExprStr} do\n${caseStrings.join("\n")}\nend';
         
         #if debug_pattern_matching
