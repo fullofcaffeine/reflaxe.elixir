@@ -282,10 +282,7 @@ class TodoLive {
 		switch (Repo.delete(todo)) {
 			case Ok(deleted_todo):
 				// Broadcast to other users using type-safe PubSub
-				switch (PubSub.broadcast("todo:updates", {
-					type: "todo_deleted",
-					id: id
-				})) {
+				switch (TodoPubSub.broadcast(TodoUpdates, TodoDeleted(id))) {
 					case Ok(_):
 						// Broadcast successful
 					case Error(reason):
@@ -309,10 +306,7 @@ class TodoLive {
 		switch (Repo.update(updated_changeset)) {
 			case Ok(updated_todo):
 				// Broadcast to other users using type-safe PubSub
-				switch (PubSub.broadcast("todo:updates", {
-					type: "todo_updated",
-					todo: updated_todo
-				})) {
+				switch (TodoPubSub.broadcast(TodoUpdates, TodoUpdated(updated_todo))) {
 					case Ok(_):
 						// Broadcast successful
 					case Error(reason):
@@ -448,10 +442,7 @@ class TodoLive {
 		}
 		
 		// Broadcast bulk update
-		switch (PubSub.broadcast("todo:updates", {
-			type: "bulk_update",
-			action: "complete_all"
-		})) {
+		switch (TodoPubSub.broadcast(TodoUpdates, BulkUpdate(CompleteAll))) {
 			case Ok(_):
 				// Broadcast successful
 			case Error(reason):
@@ -480,10 +471,7 @@ class TodoLive {
 			Repo.delete(todo);
 		}
 		
-		phoenix.Phoenix.PubSub.broadcast("todo:updates", {
-			type: "bulk_delete",
-			action: "delete_completed"
-		});
+		TodoPubSub.broadcast(TodoUpdates, BulkUpdate(DeleteCompleted));
 		
 		var remaining = socket.assigns.todos.filter(function(t) return !t.completed);
 		

@@ -324,23 +324,41 @@ extern class Socket<T> {
 
 /**
  * Phoenix.PubSub for type-safe real-time messaging
+ * 
+ * ARCHITECTURAL NOTE: These extern definitions map to the actual Phoenix.PubSub API.
+ * Phoenix.PubSub.subscribe/3 signature: subscribe(pubsub, topic, opts \\ [])
+ * Where pubsub is an atom (like TodoApp.PubSub), topic is a string, opts is a keyword list
  */
 @:native("Phoenix.PubSub")
 extern class PubSub {
     /**
      * Subscribe to a topic for real-time updates
+     * 
+     * Maps to: Phoenix.PubSub.subscribe(pubsub, topic, opts \\ [])
+     * 
+     * @param pubsub PubSub server name (atom like TodoApp.PubSub)
+     * @param topic Topic string to subscribe to
+     * @return :ok on success, {:error, reason} on failure
      */
-    static function subscribe(topic: String, options: PubSubOptions): Result<Void, String>;
+    static function subscribe(pubsub: PubSubServer, topic: String): Result<Void, String>;
     
     /**
-     * Subscribe with specific PubSub server name
+     * Subscribe to a topic with options
+     * 
+     * @param pubsub PubSub server name (atom like TodoApp.PubSub) 
+     * @param topic Topic string to subscribe to
+     * @param options Subscription options as keyword list
+     * @return :ok on success, {:error, reason} on failure
      */
-    static function subscribe_to(pubsub: PubSubServer, topic: String, options: PubSubOptions): Result<Void, String>;
+    static function subscribeWithOptions(pubsub: PubSubServer, topic: String, options: PubSubOptions): Result<Void, String>;
     
     /**
-     * Broadcast a typed message to all subscribers
+     * Broadcast a typed message to all subscribers  
+     * @param pubsub PubSub server instance (typically AppName.PubSub)
+     * @param topic Topic string to broadcast on
+     * @param message Message payload to broadcast
      */
-    static function broadcast<T>(topic: String, message: T): Result<Void, String>;
+    static function broadcast<T>(pubsub: PubSubServer, topic: String, message: T): Result<Void, String>;
     
     /**
      * Broadcast with specific PubSub server
