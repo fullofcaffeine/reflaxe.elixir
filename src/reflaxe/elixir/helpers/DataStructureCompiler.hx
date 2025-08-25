@@ -148,12 +148,30 @@ class DataStructureCompiler {
         #end
         
         var compiledFields = fields.map(f -> {
+            var compiledExpr = compiler.compileExpression(f.expr);
+            
+            // CRITICAL FIX: Wrap inline if expressions in parentheses when used as map values
+            // WHY: Inline if with keyword lists (if condition, do: value, else: value) creates
+            // invalid syntax when used directly in map literals due to Elixir's grammar rules
+            // WHAT: Detect inline if patterns and wrap them in parentheses for proper scoping
+            // HOW: Check for "if " at start and ", do:" pattern indicating inline if form
+            if (compiledExpr.indexOf("if ") == 0 && compiledExpr.indexOf(", do:") != -1) {
+                #if debug_data_structure_compiler
+                trace('[XRay DataStructureCompiler] ✓ WRAPPING inline if expression in parentheses');
+                trace('[XRay DataStructureCompiler] Before: ${compiledExpr.substring(0, 50)}...');
+                #end
+                compiledExpr = "(" + compiledExpr + ")";
+                #if debug_data_structure_compiler
+                trace('[XRay DataStructureCompiler] After: ${compiledExpr.substring(0, 50)}...');
+                #end
+            }
+            
             if (useAtoms && isValidAtomName(f.name)) {
                 // Use idiomatic colon syntax for atom keys: %{name: value}
-                f.name + ": " + compiler.compileExpression(f.expr);
+                f.name + ": " + compiledExpr;
             } else {
                 // Use arrow syntax for string keys: %{"key" => value}
-                '"' + f.name + '"' + " => " + compiler.compileExpression(f.expr);
+                '"' + f.name + '"' + " => " + compiledExpr;
             }
         });
         

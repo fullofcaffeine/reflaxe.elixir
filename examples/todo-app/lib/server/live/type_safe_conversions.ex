@@ -148,12 +148,12 @@ defmodule TypeSafeConversions do
   @spec create_complete_assigns(Null.t(), Null.t(), Null.t(), Null.t(), Null.t(), Null.t(), Null.t(), Null.t(), Null.t()) :: TodoLiveAssigns.t()
   def create_complete_assigns(base, todos, filter, sort_by, current_user, editing_todo, show_form, search_query, selected_tags) do
     if ((todos != nil)) do
-          if (((config != nil))), do: [config], else: [] = todos
+          temp_array = todos
         else
           if ((base != nil)) do
-          if (((config != nil))), do: [config], else: [] = base.todos
+          temp_array = base.todos
         else
-          if (((config != nil))), do: [config], else: [] = []
+          temp_array = []
         end
         end
     temp_string = nil
@@ -217,15 +217,15 @@ defmodule TypeSafeConversions do
         end
         end
     if ((selected_tags != nil)) do
-          if (((config != nil))), do: [config], else: [] = selected_tags
+          temp_array1 = selected_tags
         else
           if ((base != nil)) do
-          if (((config != nil))), do: [config], else: [] = base.selected_tags
+          temp_array1 = base.selected_tags
         else
-          if (((config != nil))), do: [config], else: [] = []
+          temp_array1 = []
         end
         end
-    assigns = %{"todos" => if (((config != nil))), do: [config], else: [], "filter" => temp_string, "sort_by" => temp_string1, "current_user" => temp_user, "editing_todo" => temp_maybe_todo, "show_form" => temp_bool, "search_query" => temp_string2, "selected_tags" => if (((config != nil))), do: [config], else: [], "total_todos" => 0, "completed_todos" => 0, "pending_todos" => 0}
+    assigns = %{"todos" => temp_array, "filter" => temp_string, "sort_by" => temp_string1, "current_user" => temp_user, "editing_todo" => temp_maybe_todo, "show_form" => temp_bool, "search_query" => temp_string2, "selected_tags" => temp_array1, "total_todos" => 0, "completed_todos" => 0, "pending_todos" => 0}
     %{assigns | total_todos: assigns.todos.length}
     %{assigns | completed_todos: TypeSafeConversions.count_completed(assigns.todos)}
     %{assigns | pending_todos: (assigns.total_todos - assigns.completed_todos)}
