@@ -6,8 +6,7 @@ defmodule ExistingController do
   """
 
   # Static functions
-  @doc "Function index"
-  @spec index() :: String.t()
+  @doc "Generated from Haxe index"
   def index() do
     "Existing controller index"
   end

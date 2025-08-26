@@ -6,14 +6,12 @@ defmodule LimitedController do
   """
 
   # Static functions
-  @doc "Function index"
-  @spec index() :: String.t()
+  @doc "Generated from Haxe index"
   def index() do
     "Limited controller index"
   end
 
-  @doc "Function show"
-  @spec show() :: String.t()
+  @doc "Generated from Haxe show"
   def show() do
     "Limited controller show"
   end

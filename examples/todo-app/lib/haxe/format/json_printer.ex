@@ -1,0 +1,221 @@
+defmodule JsonPrinter do
+  @moduledoc """
+    JsonPrinter struct generated from Haxe
+
+     * JsonPrinter: Simplified implementation avoiding mutable patterns
+     *
+     * WHY: The Haxe standard library JsonPrinter uses mutable StringBuf patterns
+     * that don't translate well to Elixir's immutable world. This implementation
+     * avoids those patterns by building strings functionally.
+     *
+     * WHAT: Functional implementation of JsonPrinter that generates valid Elixir
+     *
+     * HOW: Uses recursive string building without mutable state
+  """
+
+  defstruct [:replacer, :space]
+
+  @type t() :: %__MODULE__{
+    replacer: Null.t() | nil,
+    space: Null.t() | nil
+  }
+
+  @doc "Creates a new struct instance"
+  @spec new(Null.t(), Null.t()) :: t()
+  def new(arg0, arg1) do
+    %__MODULE__{
+      replacer: arg0,
+      space: arg1
+    }
+  end
+
+  @doc "Updates struct fields using a map of changes"
+  @spec update(t(), map()) :: t()
+  def update(struct, changes) when is_map(changes) do
+    Map.merge(struct, changes) |> then(&struct(__MODULE__, &1))
+  end
+
+  # Static functions
+  @doc "Generated from Haxe print"
+  def print(o, _replacer \\ nil, _space \\ nil) do
+    printer = Haxe.Format.JsonPrinter.new(replacer, space)
+
+    printer.write_value(o, "")
+  end
+
+  # Instance functions
+  @doc "Generated from Haxe writeValue"
+  def write_value(%__MODULE__{} = struct, v, key) do
+    temp_result = nil
+
+    if ((struct.replacer != nil)), do: v = struct.replacer(key, v), else: nil
+
+    if ((v == nil)) do
+      "null"
+    else
+      nil
+    end
+
+    g_array = Type.typeof(v)
+    case (case g_array do :t_null -> 0; :t_int -> 1; :t_float -> 2; :t_bool -> 3; :t_object -> 4; :t_function -> 5; :t_class -> 6; :t_enum -> 7; :t_unknown -> 8; _ -> -1 end) do
+      0 -> "null"
+      1 -> Std.string(v)
+      2 -> s = Std.string(v)
+    if ((((s == "NaN") || (s == "Infinity")) || (s == "-Infinity"))) do
+      "null"
+    else
+      nil
+    end
+    s
+      3 -> 
+    if v, do: temp_result = "true", else: temp_result = "false"
+    temp_result
+      4 -> struct.write_object(v)
+      5 -> "null"
+      {6, c} -> g_array = elem(g_array, 1)
+    class_name = Type.get_class_name(c)
+    if ((class_name == "String")) do
+      struct.quote_string(v)
+    else
+      if ((class_name == "Array")) do
+        struct.write_array(v)
+      else
+        struct.write_object(v)
+      end
+    end
+      7 -> "null"
+      8 -> "null"
+    end
+  end
+
+  @doc "Generated from Haxe writeArray"
+  def write_array(%__MODULE__{} = struct, arr) do
+    items = []
+
+    g_counter = 0
+
+    g_array = arr.length
+
+    arr
+    |> Enum.with_index()
+    |> Enum.map(fn {item, i} -> struct.write_value(item, Std.string(i)) end)
+
+    if (((struct.space != nil) && (items.length > 0))) do
+      "[\n  " <> Enum.join(items, ",\n  ") <> "\n]"
+    else
+      "[" <> Enum.join(items, ",") <> "]"
+    end
+  end
+
+  @doc "Generated from Haxe writeObject"
+  def write_object(%__MODULE__{} = struct, obj) do
+    fields = Reflect.fields(obj)
+
+    pairs = []
+
+    g_counter = 0
+
+    Enum.filter(fields, fn item -> struct.space != nil end)
+
+    if (((struct.space != nil) && (pairs.length > 0))) do
+      "{\n  " <> Enum.join(pairs, ",\n  ") <> "\n}"
+    else
+      "{" <> Enum.join(pairs, ",") <> "}"
+    end
+  end
+
+  @doc "Generated from Haxe quoteString"
+  def quote_string(%__MODULE__{} = struct, s) do
+    result = "\""
+
+    g_counter = 0
+
+    g_array = s.length
+
+    (
+      # Simple module-level pattern (inline for now)
+      loop_helper = fn condition_fn, body_fn, loop_fn ->
+        if condition_fn.() do
+          body_fn.()
+          loop_fn.(condition_fn, body_fn, loop_fn)
+        else
+          nil
+        end
+      end
+
+      loop_helper.(
+        fn -> ((g_counter < g_array)) end,
+        fn ->
+          i = g_counter + 1
+          c = s.char_code_at(i)
+          if ((c == nil)) do
+            if ((c < 32)) do
+              hex = StringTools.hex(c, 4)
+              result = result <> "\\u" <> hex
+            else
+              result = result <> s.char_at(i)
+            end
+          else
+            case (c) do
+              _ ->
+                result = result <> "\\b"
+              _ ->
+                result = result <> "\\t"
+              _ ->
+                result = result <> "\\n"
+              _ ->
+                result = result <> "\\f"
+              _ ->
+                result = result <> "\\r"
+              _ ->
+                result = result <> "\\\""
+              _ ->
+                result = result <> "\\\\"
+              _ -> if ((c < 32)) do
+              hex = StringTools.hex(c, 4)
+              result = result <> "\\u" <> hex
+            else
+              result = result <> s.char_at(i)
+            end
+            end
+          end
+        end,
+        loop_helper
+      )
+    )
+
+    result = result <> "\""
+
+    result
+  end
+
+  @doc "Generated from Haxe write"
+  def write(%__MODULE__{} = struct, k, v) do
+    struct.write_value(v, k)
+  end
+
+
+  # While loop helper functions
+  # Generated automatically for tail-recursive loop patterns
+
+  @doc false
+  defp while_loop(condition_fn, body_fn) do
+    if condition_fn.() do
+      body_fn.()
+      while_loop(condition_fn, body_fn)
+    else
+      nil
+    end
+  end
+
+  @doc false
+  defp do_while_loop(body_fn, condition_fn) do
+    body_fn.()
+    if condition_fn.() do
+      do_while_loop(body_fn, condition_fn)
+    else
+      nil
+    end
+  end
+
+end
