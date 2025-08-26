@@ -339,6 +339,14 @@ class ControlFlowCompiler {
                 if (!localDeclaredVars.exists(actualVarName)) {
                     declarations.push('${actualVarName} = nil');
                     localDeclaredVars.set(actualVarName, true);
+                    
+                    // COORDINATION FIX: Update the global tracker that VariableCompiler checks
+                    // This prevents duplicate nil initialization when TVar is compiled later
+                    if (compiler.declaredTempVariables == null) {
+                        compiler.declaredTempVariables = new Map<String, Bool>();
+                    }
+                    compiler.declaredTempVariables.set(actualVarName, true);
+                    
                     trace("[XRay ControlFlowCompiler DEBUG] ✓ DECLARED in local scope: " + actualVarName);
                 } else {
                     trace("[XRay ControlFlowCompiler DEBUG] ✓ ALREADY DECLARED in local scope: " + actualVarName + ", skipping");
@@ -474,9 +482,12 @@ class ControlFlowCompiler {
         } else {
             // CRITICAL FIX: For multi-statement blocks, always use clean formatting
             // Single expressions can stay inline, but multi-statement blocks should be clean
-            if (statements != null && statements.length == 1) {
+            if (statements == null || statements.length == 0) {
+                // FIX: Empty blocks should generate nil, not empty parentheses
+                "nil";
+            } else if (statements.length == 1) {
                 statements[0] != null ? statements[0] : "nil"; // Single expression
-            } else if (statements != null && statements.length > 6) {
+            } else if (statements.length > 6) {
                 // Large blocks (like function bodies) should use clean formatting
                 // even if topLevel=false due to calling path issues
                 statements.join("\n");
