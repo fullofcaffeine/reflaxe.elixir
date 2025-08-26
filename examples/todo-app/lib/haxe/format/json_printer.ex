@@ -36,40 +36,28 @@ defmodule JsonPrinter do
   end
 
   # Static functions
-  @doc """
-    Encodes `o`'s value and returns the resulting JSON string.
-
-    If `replacer` is given and is not null, it is used to retrieve
-    actual object to be encoded. The `replacer` function takes two parameters,
-    the key and the value being encoded. Initial key value is an empty string.
-
-    If `space` is given and is not null, the result will be pretty-printed.
-    Successive levels will be indented by this string.
-  """
-  @spec print(term(), Null.t(), Null.t()) :: String.t()
-  def print(o, _replacer, space) do
-    (
-          printer = Haxe.Format.JsonPrinter.new(replacer, space)
-          printer.write("", o)
-          printer.buf.b
-        )
+  @doc "Generated from Haxe print"
+  def print(o, _replacer \\ nil, space \\ nil) do
+    printer = Haxe.Format.JsonPrinter.new(replacer, space)
+    printer.write("", o)
+    printer.buf.b
   end
 
   # Instance functions
-  @doc "Function write"
-  @spec write(t(), term(), term()) :: t()
+  @doc "Generated from Haxe write"
   def write(%__MODULE__{} = struct, k, v) do
-    (
-          if ((struct.replacer != nil)) do
+    temp_string = nil
+
+    if ((struct.replacer != nil)) do
           v = struct.replacer(k, v)
         end
-          temp_string = nil
+    temp_string = nil
     g_array = Type.typeof(v)
     case g_array do
       0 -> struct = %{struct.buf | b: "null"}
       1 -> struct = %{struct.buf | b: Std.string(v)}
       2 -> v = temp_string
-        struct = %{struct.buf | b: Std.string(v)}
+        _this = %{_this.buf | b: Std.string(v)}
       3 -> struct = %{struct.buf | b: Std.string(v)}
       4 -> struct.fields_string(v, Reflect.fields(v))
       5 -> struct = %{struct.buf | b: "\"<fun>\""}
@@ -82,7 +70,7 @@ defmodule JsonPrinter do
         else
           if ((c == Array)) do
           v = v
-    struct = %{struct.buf | b: "["}
+    _this = %{_this.buf | b: "["}
     len = v.length
     last = (len - 1)
     g_counter = 0
@@ -93,17 +81,17 @@ defmodule JsonPrinter do
       (
             i = g_counter + 1
             if ((i > 0)) do
-            struct = %{struct.buf | b: ","}
+            _this = %{_this.buf | b: ","}
           else
             struct.nind + 1
           end
             if struct.pretty do
-            struct = %{struct.buf | b: "\n"}
+            _this = %{_this.buf | b: "\n"}
           end
             if struct.pretty do
             (
             v = StringTools.lpad("", struct.indent, (struct.nind * struct.indent.length))
-            struct = %{struct.buf | b: Std.string(v)}
+            _this = %{_this.buf | b: Std.string(v)}
           )
           end
             struct.write(i, item)
@@ -111,19 +99,19 @@ defmodule JsonPrinter do
             (
             struct.nind - 1
             if struct.pretty do
-            struct = %{struct.buf | b: "\n"}
+            _this = %{_this.buf | b: "\n"}
           end
             if struct.pretty do
             (
             v = StringTools.lpad("", struct.indent, (struct.nind * struct.indent.length))
-            struct = %{struct.buf | b: Std.string(v)}
+            _this = %{_this.buf | b: Std.string(v)}
           )
           end
           )
           end
           )
     end)
-    struct = %{struct.buf | b: "]"}
+    _this = %{_this.buf | b: "]"}
         else
           if ((c == StringMap)) do
           (
@@ -177,26 +165,22 @@ defmodule JsonPrinter do
           i = Type.enum_index(v)
           (
           v = Std.string(i)
-          struct = %{struct.buf | b: Std.string(v)}
+          _this = %{_this.buf | b: Std.string(v)}
         )
         )
     )
       8 -> struct = %{struct.buf | b: "\"???\""}
     end
-        )
-    struct
   end
 
-  @doc "Function class_string"
-  @spec class_string(t(), term()) :: nil
+  @doc "Generated from Haxe classString"
   def class_string(%__MODULE__{} = struct, v) do
     struct.fields_string(v, Type.get_instance_fields(Type.get_class(v)))
   end
 
-  @doc "Function fields_string"
-  @spec fields_string(t(), term(), Array.t()) :: t()
+  @doc "Generated from Haxe fieldsString"
   def fields_string(%__MODULE__{} = struct, v, fields) do
-    struct = %{struct.buf | b: "{"}
+    _this = %{_this.buf | b: "{"}
     len = fields.length
     empty = true
     g_counter = 0
@@ -216,21 +200,21 @@ defmodule JsonPrinter do
             empty = false
           )
           else
-            struct = %{struct.buf | b: ","}
+            _this = %{_this.buf | b: ","}
           end
       if struct.pretty do
-            struct = %{struct.buf | b: "\n"}
+            _this = %{_this.buf | b: "\n"}
           end
       if struct.pretty do
             (
             v = StringTools.lpad("", struct.indent, (struct.nind * struct.indent.length))
-            struct = %{struct.buf | b: Std.string(v)}
+            _this = %{_this.buf | b: Std.string(v)}
           )
           end
       struct.quote_(f)
-      struct = %{struct.buf | b: ":"}
+      _this = %{_this.buf | b: ":"}
       if struct.pretty do
-            struct = %{struct.buf | b: " "}
+            _this = %{_this.buf | b: " "}
           end
       struct.write(f, value)
     end)
@@ -238,28 +222,25 @@ defmodule JsonPrinter do
           (
           struct.nind - 1
           if struct.pretty do
-          struct = %{struct.buf | b: "\n"}
+          _this = %{_this.buf | b: "\n"}
         end
           if struct.pretty do
           (
           v = StringTools.lpad("", struct.indent, (struct.nind * struct.indent.length))
-          struct = %{struct.buf | b: Std.string(v)}
+          _this = %{_this.buf | b: Std.string(v)}
         )
         end
         )
         end
-    struct = %{struct.buf | b: "}"}
-    struct
+    _this = %{_this.buf | b: "}"}
   end
 
-  @doc "Function quote_"
-  @spec quote_(t(), String.t()) :: t()
+  @doc "Generated from Haxe quote"
   def quote_(%__MODULE__{} = struct, s) do
-    (
-          struct = %{struct.buf | b: "\""}
-          i = 0
-          length = s.length
-          for <<char <- s>> do
+    _this = %{_this.buf | b: "\""}
+    i = 0
+    length = s.length
+    for <<char <- s>> do
       char_code = char
       index = g_counter + 1
           case (char_code) do
@@ -280,9 +261,7 @@ defmodule JsonPrinter do
         _ -> struct = %{struct.buf | b: String.from_char_code(char_code)}
       end
     end
-          struct = %{struct.buf | b: "\""}
-        )
-    struct
+    _this = %{_this.buf | b: "\""}
   end
 
 

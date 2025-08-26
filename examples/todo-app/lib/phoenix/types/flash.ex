@@ -6,78 +6,33 @@ defmodule Flash do
   """
 
   # Static functions
-  @doc """
-    Create an info flash message
-
-    @param message Primary message text
-    @param title Optional title
-    @return FlashMessage Structured flash message
-  """
-  @spec info(String.t(), Null.t()) :: FlashMessage.t()
-  def info(message, title) do
+  @doc "Generated from Haxe info"
+  def info(message, title \\ nil) do
     %{"type" => :info, "message" => message, "title" => title, "dismissible" => true}
   end
 
-  @doc """
-    Create a success flash message
-
-    @param message Primary message text
-    @param title Optional title
-    @return FlashMessage Structured flash message
-  """
-  @spec success(String.t(), Null.t()) :: FlashMessage.t()
-  def success(message, title) do
+  @doc "Generated from Haxe success"
+  def success(message, title \\ nil) do
     %{"type" => :success, "message" => message, "title" => title, "dismissible" => true, "timeout" => 5000}
   end
 
-  @doc """
-    Create a warning flash message
-
-    @param message Primary message text
-    @param title Optional title
-    @return FlashMessage Structured flash message
-  """
-  @spec warning(String.t(), Null.t()) :: FlashMessage.t()
-  def warning(message, title) do
+  @doc "Generated from Haxe warning"
+  def warning(message, title \\ nil) do
     %{"type" => :warning, "message" => message, "title" => title, "dismissible" => true}
   end
 
-  @doc """
-    Create an error flash message
-
-    @param message Primary message text
-    @param details Optional array of error details
-    @param title Optional title
-    @return FlashMessage Structured flash message
-  """
-  @spec error(String.t(), Null.t(), Null.t()) :: FlashMessage.t()
-  def error(message, details, title) do
+  @doc "Generated from Haxe error"
+  def error(message, details \\ nil, title \\ nil) do
     %{"type" => :error, "message" => message, "details" => details, "title" => title, "dismissible" => true}
   end
 
-  @doc """
-    Create a validation error flash from changeset errors
-
-    @param message Primary message text
-    @param changeset Ecto changeset with validation errors
-    @return FlashMessage Error flash with validation details
-  """
-  @spec validation_error(String.t(), term()) :: FlashMessage.t()
+  @doc "Generated from Haxe validationError"
   def validation_error(message, changeset) do
-    (
-          errors = Flash.extract_changeset_errors(changeset)
-          %{"type" => :error, "message" => message, "details" => errors, "title" => "Validation Failed", "dismissible" => true}
-        )
+    errors = Flash.extract_changeset_errors(changeset)
+    %{"type" => :error, "message" => message, "details" => errors, "title" => "Validation Failed", "dismissible" => true}
   end
 
-  @doc """
-    Convert FlashMessage to Phoenix-compatible map
-    Used when passing flash messages to Phoenix functions
-
-    @param flash Structured flash message
-    @return Dynamic Phoenix-compatible flash map
-  """
-  @spec to_phoenix_flash(FlashMessage.t()) :: term()
+  @doc "Generated from Haxe toPhoenixFlash"
   def to_phoenix_flash(flash) do
     result = %{"type" => FlashTypeTools.to_string(flash.type), "message" => flash.message}
     if ((flash.title != nil)) do
@@ -98,35 +53,18 @@ defmodule Flash do
     result
   end
 
-  @doc """
-    Parse Phoenix flash map to structured FlashMessage
-    Used when receiving flash data from Phoenix
-
-    @param phoenixFlash Phoenix flash map
-    @return FlashMessage Structured flash message
-  """
-  @spec from_phoenix_flash(term()) :: FlashMessage.t()
+  @doc "Generated from Haxe fromPhoenixFlash"
   def from_phoenix_flash(phoenix_flash) do
-    (
-          type = FlashTypeTools.from_string(Reflect.field(phoenix_flash, "type"))
-          message = Reflect.field(phoenix_flash, "message")
-          %{"type" => type, "message" => message, "title" => Reflect.field(phoenix_flash, "title"), "details" => Reflect.field(phoenix_flash, "details"), "dismissible" => Reflect.field(phoenix_flash, "dismissible"), "timeout" => Reflect.field(phoenix_flash, "timeout"), "action" => Reflect.field(phoenix_flash, "action")}
-        )
+    type = FlashTypeTools.from_string(Reflect.field(phoenix_flash, "type"))
+    message = Reflect.field(phoenix_flash, "message")
+    %{"type" => type, "message" => message, "title" => Reflect.field(phoenix_flash, "title"), "details" => Reflect.field(phoenix_flash, "details"), "dismissible" => Reflect.field(phoenix_flash, "dismissible"), "timeout" => Reflect.field(phoenix_flash, "timeout"), "action" => Reflect.field(phoenix_flash, "action")}
   end
 
-  @doc """
-    Extract error messages from Ecto changeset
-    Helper function for validation error handling
-
-    @param changeset Ecto changeset with errors
-    @return Array<String> List of error messages
-  """
-  @spec extract_changeset_errors(term()) :: Array.t()
+  @doc "Generated from Haxe extractChangesetErrors"
   def extract_changeset_errors(changeset) do
-    (
-          errors = []
-          changeset_errors = Reflect.field(changeset, "errors")
-          if ((changeset_errors != nil)) do
+    errors = []
+    changeset_errors = Reflect.field(changeset, "errors")
+    if ((changeset_errors != nil)) do
           (
           g_counter = 0
           g_array = Reflect.fields(changeset_errors)
@@ -146,8 +84,7 @@ defmodule Flash do
     end)
         )
         end
-          errors
-        )
+    errors
   end
 
 

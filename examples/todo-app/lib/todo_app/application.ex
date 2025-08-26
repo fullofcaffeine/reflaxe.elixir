@@ -9,36 +9,22 @@ defmodule TodoApp.Application do
   """
 
   # Static functions
-  @doc """
-    Get the app name from the @:appName annotation
-    Simplified version for testing
-  """
-  @spec get_app_name() :: String.t()
+  @doc "Generated from Haxe getAppName"
   def get_app_name() do
     "TodoApp"
   end
 
-  @doc """
-    Start the application
-
-  """
-  @spec start(ApplicationStartType.t(), ApplicationArgs.t()) :: ApplicationResult.t()
+  @doc "Generated from Haxe start"
   def start(_type, _args) do
-    (
-          _app_name = "TodoApp"
-          type_safe_children = [{Phoenix.PubSub, name: TodoApp.PubSub}, TodoAppWeb.Telemetry, TodoAppWeb.Endpoint]
-          children = type_safe_children
-          opts = [strategy: :one_for_one, name: TodoApp.Supervisor]
-          supervisor_result = Supervisor.start_link(children, opts)
-          supervisor_result
-        )
+    _app_name = "TodoApp"
+    type_safe_children = [{Phoenix.PubSub, name: TodoApp.PubSub}, TodoAppWeb.Telemetry, TodoAppWeb.Endpoint]
+    children = type_safe_children
+    opts = [strategy: :one_for_one, name: TodoApp.Supervisor]
+    supervisor_result = Supervisor.start_link(children, opts)
+    supervisor_result
   end
 
-  @doc """
-    Called when application is preparing to shut down
-    State is whatever was returned from start/2
-  """
-  @spec prep_stop(term()) :: term()
+  @doc "Generated from Haxe prep_stop"
   def prep_stop(state) do
     state
   end

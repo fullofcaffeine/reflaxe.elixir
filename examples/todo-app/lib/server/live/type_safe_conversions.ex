@@ -20,16 +20,7 @@ defmodule TypeSafeConversions do
   """
 
   # Static functions
-  @doc """
-    Convert EventParams to ChangesetParams with full type safety
-
-    EventParams comes from Phoenix LiveView events with Null<String> fields.
-    ChangesetParams expects Map<String, ChangesetValue> for Ecto operations.
-
-    @param params EventParams from LiveView event handling
-    @return ChangesetParams suitable for Ecto changeset operations
-  """
-  @spec event_params_to_changeset_params(EventParams.t()) :: ChangesetParams.t()
+  @doc "Generated from Haxe eventParamsToChangesetParams"
   def event_params_to_changeset_params(params) do
     changeset_params = Haxe.Ds.StringMap.new()
     if ((params.title != nil)) do
@@ -71,38 +62,17 @@ defmodule TypeSafeConversions do
     changeset_params
   end
 
-  @doc """
-    Convert raw todo creation parameters to ChangesetParams
-
-    Used when creating new todos with structured data rather than event params.
-
-    @param title Todo title
-    @param description Todo description
-    @param priority Priority level
-    @param due_date Due date string
-    @param tags Tags string (comma-separated)
-    @param user_id User ID for ownership
-    @return Type-safe ChangesetParams
-  """
-  @spec create_todo_params(String.t(), Null.t(), String.t(), Null.t(), Null.t(), integer()) :: ChangesetParams.t()
+  @doc "Generated from Haxe createTodoParams"
   def create_todo_params(title, description, priority, due_date, tags, user_id) do
     changeset_params = Haxe.Ds.StringMap.new()
-    (
-          value = ChangesetValue.string_value(title)
-          changeset_params.set("title", value)
-        )
-    (
-          value = ChangesetValue.string_value(priority)
-          changeset_params.set("priority", value)
-        )
-    (
-          value = ChangesetValue.int_value(user_id)
-          changeset_params.set("user_id", value)
-        )
-    (
-          value = ChangesetValue.bool_value(false)
-          changeset_params.set("completed", value)
-        )
+    value = ChangesetValue.string_value(title)
+    changeset_params.set("title", value)
+    value = ChangesetValue.string_value(priority)
+    changeset_params.set("priority", value)
+    value = ChangesetValue.int_value(user_id)
+    changeset_params.set("user_id", value)
+    value = ChangesetValue.bool_value(false)
+    changeset_params.set("completed", value)
     if ((description != nil)) do
           (
           value = ChangesetValue.string_value(description)
@@ -124,29 +94,22 @@ defmodule TypeSafeConversions do
     changeset_params
   end
 
-  @doc """
-    Validate that EventParams contains required fields for todo creation
-
-    @param params EventParams from LiveView
-    @return true if all required fields are present and valid
-  """
-  @spec validate_todo_creation_params(EventParams.t()) :: boolean()
+  @doc "Generated from Haxe validateTodoCreationParams"
   def validate_todo_creation_params(params) do
     ((params.title != nil) && (params.title.length > 0))
   end
 
-  @doc """
-    Create a complete TodoLiveAssigns object with all required fields
+  @doc "Generated from Haxe createCompleteAssigns"
+  def create_complete_assigns(base \\ nil, todos \\ nil, filter \\ nil, sort_by \\ nil, current_user \\ nil, editing_todo \\ nil, show_form \\ nil, search_query \\ nil, selected_tags \\ nil) do
+    temp_string1 = nil
+    temp_user = nil
+    temp_maybe_todo = nil
+    temp_bool = nil
+    temp_string2 = nil
+    temp_array = nil
+    temp_string = nil
+    temp_array1 = nil
 
-    Instead of partial objects that fail assign_multiple, create complete
-    assigns structures with proper defaults for missing fields.
-
-    @param base Base assigns to extend (optional)
-    @param updates Fields to update
-    @return Complete TodoLiveAssigns object
-  """
-  @spec create_complete_assigns(Null.t(), Null.t(), Null.t(), Null.t(), Null.t(), Null.t(), Null.t(), Null.t(), Null.t()) :: TodoLiveAssigns.t()
-  def create_complete_assigns(base, todos, filter, sort_by, current_user, editing_todo, show_form, search_query, selected_tags) do
 
         temp_string1 = nil
         temp_user = nil
@@ -161,31 +124,21 @@ defmodule TypeSafeConversions do
         assigns
   end
 
-  @doc """
-    Create a default user for fallback scenarios
-
-  """
-  @spec create_default_user() :: User.t()
+  @doc "Generated from Haxe createDefaultUser"
   def create_default_user() do
     %{"id" => 1, "name" => "Default User", "email" => "default@example.com", "password_hash" => "default_hash", "confirmed_at" => nil, "last_login_at" => nil, "active" => true}
   end
 
-  @doc """
-    Count completed todos in array
-
-  """
-  @spec count_completed(Array.t()) :: integer()
+  @doc "Generated from Haxe countCompleted"
   def count_completed(todos) do
-    (
-          count = 0
-          g_counter = 0
-          Enum.each(g_array, fn todo -> 
+    count = 0
+    g_counter = 0
+    Enum.each(g_array, fn todo -> 
       if todo.completed do
           count + 1
         end
     end)
-          count
-        )
+    count
   end
 
 

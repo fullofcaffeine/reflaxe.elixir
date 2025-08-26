@@ -174,8 +174,8 @@ class ElixirCompiler extends DirectToStringCompiler {
     // State threading and parameter mapping management
     private var stateManagementCompiler: reflaxe.elixir.helpers.StateManagementCompiler;
     
-    // Function compilation
-    private var functionCompiler: reflaxe.elixir.helpers.FunctionCompiler;
+    // Function compilation - Public for ClassCompiler delegation (architectural fix)
+    public var functionCompiler: reflaxe.elixir.helpers.FunctionCompiler;
     
     // Array method compilation
     private var arrayMethodCompiler: reflaxe.elixir.helpers.ArrayMethodCompiler;

@@ -6,32 +6,27 @@ defmodule UserController do
   """
 
   # Static functions
-  @doc "Function index"
-  @spec index() :: String.t()
+  @doc "Generated from Haxe index"
   def index() do
     "User index"
   end
 
-  @doc "Function show"
-  @spec show() :: String.t()
+  @doc "Generated from Haxe show"
   def show() do
     "User show"
   end
 
-  @doc "Function create"
-  @spec create() :: String.t()
+  @doc "Generated from Haxe create"
   def create() do
     "User create"
   end
 
-  @doc "Function update"
-  @spec update() :: String.t()
+  @doc "Generated from Haxe update"
   def update() do
     "User update"
   end
 
-  @doc "Function delete"
-  @spec delete() :: String.t()
+  @doc "Generated from Haxe delete"
   def delete() do
     "User delete"
   end

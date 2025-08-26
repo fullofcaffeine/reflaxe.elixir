@@ -572,30 +572,20 @@ class ClassCompiler {
     }
     
     /**
-     * Generate a single function with state threading transformation for mutable methods
+     * ARCHITECTURAL DELEGATION: Delegate all function compilation to FunctionCompiler
      * 
-     * WHY: Elixir's immutable data structures require transforming mutable Haxe methods
-     * that modify struct fields into functions that return the updated struct. This enables
-     * functional state threading while preserving the imperative programming style in Haxe.
+     * WHY: Having duplicate function compilation logic in ClassCompiler and FunctionCompiler
+     * causes inconsistent behavior and maintenance burden. All function compilation should
+     * go through ONE pipeline for consistency.
      * 
-     * WHAT: Analyzes methods for field mutations and transforms them:
-     * - Detects field assignments (this.field = value)
-     * - Changes return type from void to struct type
-     * - Ensures the method returns the updated struct
-     * - Enables state threading mode in the compiler
+     * WHAT: This method now simply delegates to FunctionCompiler with appropriate parameters
+     * for instance methods and struct classes.
      * 
-     * HOW: 
-     * 1. Uses MutabilityAnalyzer to detect field mutations
-     * 2. Transforms return type to t() for mutating methods
-     * 3. Sets up parameter mapping (this -> struct)
-     * 4. Enables state threading mode during compilation
-     * 5. Ensures struct is returned at method end
+     * HOW: Convert ClassCompiler's context (isInstance, isStructClass) to FunctionCompiler's
+     * expected parameters and delegate compilation.
      * 
-     * EDGE CASES:
-     * - Methods that already return the struct type
-     * - Empty method bodies
-     * - Methods with explicit return statements
-     * - Nested field mutations (this.data.value = x)
+     * HISTORICAL NOTE: This method previously contained 200+ lines of duplicate function
+     * compilation logic. That has been moved to FunctionCompiler for single source of truth.
      * 
      * @param funcField The function data to compile
      * @param isInstance Whether this is an instance method
@@ -603,222 +593,29 @@ class ClassCompiler {
      * @return Generated Elixir function code
      */
     private function generateFunction(funcField: ClassFuncData, isInstance: Bool, isStructClass: Bool): String {
-        var result = new StringBuf();
-        var funcName = NamingHelper.getElixirFunctionName(funcField.field.name);
-        
-        /**
-         * MUTABILITY ANALYSIS
-         * 
-         * WHY: Detect which methods mutate struct fields so we can transform them
-         * WHAT: Analyze the method's AST for field assignments
-         * HOW: MutabilityAnalyzer recursively traverses the expression tree
-         */
-        var mutabilityInfo = null;
-        var shouldTransform = false;
-        if (isInstance && isStructClass && mutabilityAnalyzer != null && funcField.expr != null) {
-            mutabilityInfo = mutabilityAnalyzer.analyzeMethod(funcField.expr);
-            shouldTransform = MutabilityAnalyzer.shouldTransformMethod(mutabilityInfo, isStructClass);
+        // ARCHITECTURAL FIX: Delegate ALL function compilation to FunctionCompiler
+        // This ensures consistent parameter handling, detection, and compilation
+        if (compiler != null && compiler.functionCompiler != null) {
+            // FunctionCompiler expects isStatic (opposite of isInstance)
+            var isStatic = !isInstance;
             
-            #if debug_state_threading
-            if (currentClassName == "JsonPrinter") {
-                trace('[XRay ClassCompiler] JsonPrinter method ${funcName}:');
-                trace('[XRay ClassCompiler]   - isInstance: ${isInstance}');
-                trace('[XRay ClassCompiler]   - isStructClass: ${isStructClass}');
-                trace('[XRay ClassCompiler]   - isMutating: ${mutabilityInfo.isMutating}');
-                trace('[XRay ClassCompiler]   - mutatedFields: ${mutabilityInfo.mutatedFields}');
-                trace('[XRay ClassCompiler]   - shouldTransform: ${shouldTransform}');
-            }
-            #end
-            
-            #if debug_mutability
-            trace('[ClassCompiler] Method ${funcName} mutability analysis:');
-            trace('  - isMutating: ${mutabilityInfo.isMutating}');
-            trace('  - mutatedFields: ${mutabilityInfo.mutatedFields}');
-            trace('  - shouldTransform: ${shouldTransform}');
-            #end
-        }
-        
-        // Build parameter list
-        var params = [];
-        var paramTypes = [];
-        
-        // Instance methods take struct as first parameter
-        if (isInstance && isStructClass) {
-            params.push('%__MODULE__{} = struct');
-            paramTypes.push('t()');
-        }
-        
-        // CRITICAL: Detect unused parameters to prefix with underscore
-        var usedParams = if (funcField.expr != null && funcField.args != null) {
-            detectUsedParameters(funcField.expr, funcField.args);
+            // Pass all context to FunctionCompiler
+            return compiler.functionCompiler.compileFunction(
+                funcField,
+                isStatic,
+                isInstance,
+                isStructClass,
+                currentClassName
+            );
         } else {
-            new Map<String, Bool>(); // Empty function, all params unused
+            // Fallback if compiler not properly initialized (shouldn't happen)
+            return '  # ERROR: FunctionCompiler not available\n';
         }
-        
-        // Add regular parameters
-        if (funcField.args != null) {
-            for (i in 0...funcField.args.length) {
-                var arg = funcField.args[i];
-                // Extract the actual parameter name - try multiple sources
-                var originalName = if (arg.tvar != null) {
-                    arg.tvar.name;
-                } else if (funcField.tfunc != null && funcField.tfunc.args != null && i < funcField.tfunc.args.length) {
-                    funcField.tfunc.args[i].v.name;
-                } else {
-                    arg.getName();
-                }
-                
-                // Check if parameter is used in function body
-                var isUsed = usedParams.exists(originalName) && usedParams.get(originalName);
-                
-                // Convert to snake_case and prefix with underscore if unused
-                var paramName = NamingHelper.toSnakeCase(originalName);
-                if (!isUsed) {
-                    // Prefix with underscore to indicate intentionally unused
-                    paramName = "_" + paramName;
-                }
-                
-                params.push(paramName);
-                
-                var argType = getArgType(arg);
-                var elixirType = typer.compileType(argType);
-                paramTypes.push(elixirType);
-            }
-        }
-        
-        // Get return type
-        var returnType = getReturnType(funcField);
-        var elixirReturnType = typer.compileType(returnType);
-        
-        // Transform return type for mutable methods to return the updated struct
-        if (shouldTransform) {
-            elixirReturnType = 't()';
-        } else if (isInstance && isStructClass && returnType == classNameFromFunc(funcField)) {
-            elixirReturnType = 't()';
-        }
-        
-        // Generate function with @spec
-        var paramStr = params.join(', ');
-        var typeStr = paramTypes.join(', ');
-        
-        var docString = funcField.field.doc != null ? funcField.field.doc : 'Function ${funcName}';
-        var formattedDoc = FormatHelper.formatDoc(docString, false, 1);
-        if (formattedDoc != "") {
-            result.add(formattedDoc + '\n');
-        }
-        result.add('  @spec ${funcName}(${typeStr}) :: ${elixirReturnType}\n');
-        result.add('  def ${funcName}(${paramStr}) do\n');
-        
-        /**
-         * FUNCTION BODY COMPILATION WITH STATE THREADING
-         * 
-         * WHY: Transform mutable field assignments into immutable struct updates
-         * WHAT: Configure compiler for state threading when processing mutating methods
-         * HOW: Set up parameter mappings and enable state threading mode
-         */
-        if (funcField.expr != null) {
-            /**
-             * PARAMETER MAPPING SETUP
-             * 
-             * WHY: Haxe uses 'this' but Elixir structs use explicit parameter names
-             * WHAT: Map 'this' references to the 'struct' parameter
-             * HOW: Configure compiler's parameter mapping and inline context
-             */
-            if (isInstance && isStructClass && compiler != null) {
-                // GLOBAL FIX: Start global struct method compilation
-                compiler.startCompilingStructMethod("struct");
-                
-                // Map this -> struct for consistent variable references
-                compiler.setThisParameterMapping("struct");
-                // Replace _this variables (from Haxe desugaring) with struct
-                compiler.setInlineContext("struct", "struct");
-                // CRITICAL: Also map _this to struct for switch case transformations
-                compiler.currentFunctionParameterMap.set("_this", "struct");
-                
-                #if debug_state_threading
-                trace('[XRay ClassCompiler] ✓ SET _this → struct mapping for method: ${funcField.field.name}');
-                trace('[XRay ClassCompiler] ✓ GLOBAL struct method compilation started');
-                trace('[XRay ClassCompiler] Current map size: ${Lambda.count(compiler.currentFunctionParameterMap)}');
-                for (key in compiler.currentFunctionParameterMap.keys()) {
-                    trace('[XRay ClassCompiler] Map entry: ${key} → ${compiler.currentFunctionParameterMap.get(key)}');
-                }
-                #end
-                
-                /**
-                 * STATE THREADING MODE
-                 * 
-                 * WHY: Mutating methods need to return updated structs
-                 * WHAT: Enable transformation of field assignments
-                 * HOY: Compiler will transform this.field = value to struct = %{struct | field: value}
-                 */
-                if (shouldTransform) {
-                    compiler.enableStateThreadingMode(mutabilityInfo);
-                }
-            }
-            
-            // Compile the actual function expression
-            var compiledBody = compileExpressionForFunction(funcField.expr, funcField.args);
-            
-            
-            if (compiledBody != null && compiledBody.trim() != "") {
-                // For mutating methods, ensure we return the struct at the end
-                if (shouldTransform) {
-                    // Check if the body already returns something
-                    var trimmedBody = compiledBody.trim();
-                    if (!trimmedBody.endsWith("struct")) {
-                        // Add struct return at the end
-                        var indentedBody = compiledBody.split("\n").map(line -> line.length > 0 ? "    " + line : line).join("\n");
-                        result.add('${indentedBody}\n');
-                        result.add('    struct\n');
-                    } else {
-                        var indentedBody = compiledBody.split("\n").map(line -> line.length > 0 ? "    " + line : line).join("\n");
-                        result.add('${indentedBody}\n');
-                    }
-                } else {
-                    // Indent the function body properly
-                    var indentedBody = compiledBody.split("\n").map(line -> line.length > 0 ? "    " + line : line).join("\n");
-                    result.add('${indentedBody}\n');
-                }
-            } else {
-                // Only use default return if compilation failed/returned empty
-                // For struct update methods, return updated struct
-                if (isInstance && isStructClass && (elixirReturnType == 't()' || shouldTransform)) {
-                    result.add('    struct\n');
-                } else {
-                    result.add('    nil\n');
-                }
-            }
-        } else {
-            // No expression provided - this is a truly empty function
-            if (shouldTransform) {
-                result.add('    struct\n');
-            } else {
-                result.add('    nil\n');
-            }
-        }
-        
-        result.add('  end\n\n');
-        
-        // Clear any this parameter mapping and inline context after ALL compilation is complete
-        if (isInstance && isStructClass && compiler != null) {
-            compiler.clearThisParameterMapping();
-            compiler.clearInlineContext();
-            if (shouldTransform) {
-                compiler.disableStateThreadingMode();
-                #if debug_state_threading
-                trace('[XRay ClassCompiler] ✓ State threading cleanup completed for: ${funcField.field.name}');
-                #end
-            }
-            
-            // GLOBAL FIX: Stop global struct method compilation
-            compiler.stopCompilingStructMethod();
-            #if debug_state_threading
-            trace('[XRay ClassCompiler] ✓ GLOBAL struct method compilation stopped');
-            #end
-        }
-        
-        return result.toString();
     }
+    
+    // DELETED: 200+ lines of duplicate function compilation code that has been moved to FunctionCompiler
+    // The old generateFunction implementation was removed to enforce single source of truth
+    // All function compilation now goes through FunctionCompiler - see generateFunction above
     
     /**
      * Extract field type information with proper type name extraction
@@ -861,82 +658,33 @@ class ClassCompiler {
     
     /**
      * Generate functions for @:module classes with clean syntax
-     * Handles automatic public static addition and @:private annotations
+     * 
+     * ARCHITECTURAL FIX: Delegate to FunctionCompiler for consistency
+     * All function compilation should go through the same pipeline
      */
     private function generateModuleFunctions(funcFields: Array<ClassFuncData>): String {
-        var result = new StringBuf();
+        if (compiler == null || compiler.functionCompiler == null) {
+            return '  # ERROR: FunctionCompiler not available\n';
+        }
         
+        var result = new StringBuf();
         result.add('  # Module functions - generated with @:module syntax sugar\n\n');
         
         for (func in funcFields) {
             if (func.field.name == "new") continue; // Skip constructor
             
-            var funcName = NamingHelper.toSnakeCase(func.field.name);
-            var isPrivate = hasPrivateAnnotation(func.field);
+            // Delegate to FunctionCompiler for consistent handling
+            // Module functions are always static
+            var funcCode = compiler.functionCompiler.compileFunction(
+                func,
+                true,   // isStatic = true for module functions
+                false,  // isInstance = false  
+                false,  // isStructClass = false (modules aren't structs)
+                currentClassName
+            );
             
-            // Generate function parameters
-            var params = [];
-            var paramTypes = [];
-            
-            if (func.args != null) {
-                for (i in 0...func.args.length) {
-                    var arg = func.args[i];
-                    // Extract the actual parameter name - try multiple sources
-                    var originalName = if (arg.tvar != null) {
-                        arg.tvar.name;
-                    } else if (func.tfunc != null && func.tfunc.args != null && i < func.tfunc.args.length) {
-                        func.tfunc.args[i].v.name;
-                    } else {
-                        arg.getName();
-                    }
-                    var argName = NamingHelper.toSnakeCase(originalName);
-                    params.push(argName);
-                    
-                    var argType = getArgType(arg);
-                    var elixirType = typer.compileType(argType);
-                    paramTypes.push(elixirType);
-                }
-            }
-            
-            // Generate function with clean @:module syntax
-            var defKeyword = isPrivate ? "defp" : "def";
-            var paramStr = params.join(', ');
-            var typeStr = paramTypes.join(', ');
-            
-            // Get return type
-            var returnType = func.ret != null ? extractTypeName(func.ret) : "any()";
-            var elixirReturnType = typer.compileType(returnType);
-            
-            // Add documentation
-            var docString = func.field.doc != null ? func.field.doc : 'Function ${funcName}';
-            var formattedDoc = FormatHelper.formatDoc(docString, false, 1);
-            if (formattedDoc != "") {
-                result.add(formattedDoc + '\n');
-            }
-            
-            // Add spec only for public functions
-            if (!isPrivate) {
-                result.add('  @spec ${funcName}(${typeStr}) :: ${elixirReturnType}\n');
-            }
-            
-            result.add('  ${defKeyword} ${funcName}(${paramStr}) do\n');
-            
-            // Function body - compile the actual expression
-            if (func.expr != null) {
-                var compiledBody = compileExpressionForFunction(func.expr, func.args);
-                if (compiledBody != null && compiledBody.trim() != "") {
-                    // Indent the function body properly
-                    var indentedBody = compiledBody.split("\n").map(line -> line.length > 0 ? "    " + line : line).join("\n");
-                    result.add('${indentedBody}\n');
-                } else {
-                    // Only use nil if compilation actually failed/returned empty
-                    result.add('    nil\n');
-                }
-            } else {
-                result.add('    nil\n');
-            }
-            
-            result.add('  end\n\n');
+            result.add(funcCode);
+            result.add('\n');
         }
         
         return result.toString();
@@ -1027,105 +775,6 @@ class ClassCompiler {
         }
     }
     
-    /**
-     * Compile expression for function body with parameter mapping
-     */
-    private function compileExpressionForFunction(expr: Dynamic, args: Array<ClassFuncArg>): Null<String> {
-        if (compiler != null) {
-            /**
-             * PARAMETER MAPPING PRESERVATION
-             * 
-             * WHY: We need to preserve existing mappings like _this -> struct
-             * WHAT: Save current mappings, add function parameters, then restore
-             * HOW: Copy map before modifying, restore after compilation
-             */
-            // Save the current parameter map (includes _this -> struct mapping)
-            var savedMap = new Map<String, String>();
-            for (key in compiler.currentFunctionParameterMap.keys()) {
-                savedMap.set(key, compiler.currentFunctionParameterMap.get(key));
-            }
-            
-            #if debug_state_threading
-            trace('[XRay ClassCompiler] compileExpressionForFunction - BEFORE parameter mapping');
-            trace('[XRay ClassCompiler] Saved map size: ${Lambda.count(savedMap)}');
-            for (key in savedMap.keys()) {
-                trace('[XRay ClassCompiler] Saved: ${key} → ${savedMap.get(key)}');
-            }
-            #end
-            
-            // Always set up parameter mapping when we generate standardized arg names
-            // This ensures TLocal variables in the function body use the correct parameter names
-            if (args != null && args.length > 0) {
-                compiler.setFunctionParameterMapping(args);
-                
-                #if debug_state_threading
-                trace('[XRay ClassCompiler] AFTER setFunctionParameterMapping');
-                trace('[XRay ClassCompiler] Current map size: ${Lambda.count(compiler.currentFunctionParameterMap)}');
-                for (key in compiler.currentFunctionParameterMap.keys()) {
-                    trace('[XRay ClassCompiler] Current: ${key} → ${compiler.currentFunctionParameterMap.get(key)}');
-                }
-                #end
-            }
-            
-            #if debug_temp_var
-            trace('[ClassCompiler] About to compile function body expression');
-            trace('[ClassCompiler] Expression type: ${expr.expr}');
-            #end
-            
-            // CRITICAL FIX: Check if function body is just a return switch
-            // This detects `return switch(...)` pattern to avoid temp variable shadowing
-            var result = switch (expr.expr) {
-                case TReturn(retExpr) if (retExpr != null):
-                    switch (retExpr.expr) {
-                        case TSwitch(switchExpr, cases, defaultExpr):
-                            #if debug_temp_var
-                            trace('[ClassCompiler] ✓ DETECTED function body is return switch - compiling as value expression');
-                            #end
-                            
-                            // Mark that we're compiling a switch as a value expression
-                            var wasCompilingCaseArm = compiler.isCompilingCaseArm;
-                            compiler.isCompilingCaseArm = true;
-                            
-                            // Compile the switch directly as a value-returning expression
-                            var switchResult = compiler.compileSwitchExpression(switchExpr, cases, defaultExpr);
-                            
-                            // Restore context
-                            compiler.isCompilingCaseArm = wasCompilingCaseArm;
-                            
-                            switchResult;
-                        case _:
-                            compiler.compileExpression(expr);
-                    }
-                case _:
-                    compiler.compileExpression(expr);
-            };
-            
-            #if debug_state_threading
-            trace('[XRay ClassCompiler] AFTER compileExpression, BEFORE restore');
-            trace('[XRay ClassCompiler] Current map size: ${Lambda.count(compiler.currentFunctionParameterMap)}');
-            for (key in compiler.currentFunctionParameterMap.keys()) {
-                trace('[XRay ClassCompiler] Current: ${key} → ${compiler.currentFunctionParameterMap.get(key)}');
-            }
-            #end
-            
-            // Restore the saved parameter map instead of clearing completely
-            compiler.currentFunctionParameterMap.clear();
-            for (key in savedMap.keys()) {
-                compiler.currentFunctionParameterMap.set(key, savedMap.get(key));
-            }
-            
-            #if debug_state_threading
-            trace('[XRay ClassCompiler] AFTER restore');
-            trace('[XRay ClassCompiler] Restored map size: ${Lambda.count(compiler.currentFunctionParameterMap)}');
-            for (key in compiler.currentFunctionParameterMap.keys()) {
-                trace('[XRay ClassCompiler] Restored: ${key} → ${compiler.currentFunctionParameterMap.get(key)}');
-            }
-            #end
-            
-            return result;
-        }
-        return null;
-    }
     
     /**
      * Check if we're currently compiling an abstract implementation class
@@ -1571,145 +1220,6 @@ class ClassCompiler {
         result.add('  end\n\n');
         
         return result.toString();
-    }
-    
-    /**
-     * Detect which parameters are actually used in the function body
-     * 
-     * WHY: Unused parameters should be prefixed with underscore in Elixir
-     * to avoid compiler warnings and follow idiomatic conventions
-     * 
-     * WHAT: Recursively traverse the function expression tree to find
-     * all TLocal references to parameter variables
-     * 
-     * HOW: Pattern match on TypedExpr types and collect TLocal references
-     * that match parameter names
-     * 
-     * @param expr The function body expression
-     * @param args The function arguments to check against
-     * @return Map of parameter names to usage status (true if used)
-     */
-    private function detectUsedParameters(expr: TypedExpr, args: Array<ClassFuncArg>): Map<String, Bool> {
-        var usedParams = new Map<String, Bool>();
-        
-        // Build a set of parameter names for quick lookup
-        var paramNames = new Map<String, Bool>();
-        for (arg in args) {
-            var name = if (arg.tvar != null) {
-                arg.tvar.name;
-            } else {
-                arg.getName();
-            };
-            paramNames.set(name, true);
-            usedParams.set(name, false); // Initially mark as unused
-        }
-        
-        // Recursive function to traverse expression tree
-        function checkExpression(e: TypedExpr): Void {
-            if (e == null) return;
-            
-            switch (e.expr) {
-                case TLocal(tvar):
-                    // Check if this local variable is a parameter
-                    if (paramNames.exists(tvar.name)) {
-                        usedParams.set(tvar.name, true);
-                    }
-                    
-                case TBlock(exprs):
-                    for (subExpr in exprs) {
-                        checkExpression(subExpr);
-                    }
-                    
-                case TIf(condExpr, ifExpr, elseExpr):
-                    checkExpression(condExpr);
-                    checkExpression(ifExpr);
-                    if (elseExpr != null) checkExpression(elseExpr);
-                    
-                case TWhile(condExpr, bodyExpr, normalWhile):
-                    checkExpression(condExpr);
-                    checkExpression(bodyExpr);
-                    
-                case TFor(tvar, iterExpr, bodyExpr):
-                    checkExpression(iterExpr);
-                    checkExpression(bodyExpr);
-                    
-                case TSwitch(switchExpr, cases, defaultCase):
-                    checkExpression(switchExpr);
-                    for (c in cases) {
-                        checkExpression(c.expr);
-                    }
-                    if (defaultCase != null) checkExpression(defaultCase);
-                    
-                case TCall(e, el):
-                    checkExpression(e);
-                    for (arg in el) {
-                        checkExpression(arg);
-                    }
-                    
-                case TFunction(tfunc):
-                    // Check function body but don't include its own params
-                    if (tfunc.expr != null) {
-                        checkExpression(tfunc.expr);
-                    }
-                    
-                case TReturn(e):
-                    if (e != null) checkExpression(e);
-                    
-                case TBinop(op, e1, e2):
-                    checkExpression(e1);
-                    checkExpression(e2);
-                    
-                case TUnop(op, postFix, e):
-                    checkExpression(e);
-                    
-                case TField(e, field):
-                    checkExpression(e);
-                    
-                case TArrayDecl(values):
-                    for (v in values) {
-                        checkExpression(v);
-                    }
-                    
-                case TObjectDecl(fields):
-                    for (f in fields) {
-                        checkExpression(f.expr);
-                    }
-                    
-                case TNew(classTypeRef, params, el):
-                    for (e in el) {
-                        checkExpression(e);
-                    }
-                    
-                case TVar(tvar, expr):
-                    if (expr != null) checkExpression(expr);
-                    
-                case TParenthesis(e):
-                    checkExpression(e);
-                    
-                case TTry(e, catches):
-                    checkExpression(e);
-                    for (c in catches) {
-                        checkExpression(c.expr);
-                    }
-                    
-                case TThrow(e):
-                    checkExpression(e);
-                    
-                case TCast(e, moduleType):
-                    checkExpression(e);
-                    
-                case TMeta(metadataEntry, e):
-                    checkExpression(e);
-                    
-                default:
-                    // TConst, TTypeExpr, TBreak, TContinue, TIdent don't need recursion
-            }
-        }
-        
-        // Start the traversal
-        checkExpression(expr);
-        
-        return usedParams;
     }
 }
 
