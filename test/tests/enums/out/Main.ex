@@ -94,13 +94,13 @@ defmodule Main do
     temp_result = nil
 
     case (case t1 do :leaf -> 0; :node_ -> 1; _ -> -1 end) do
-      {0, v1} -> g_array = elem(t1, 1)
+      {0, v} -> g_array = elem(t1, 1)
     if ((case t2 do :leaf -> 0; :node_ -> 1; _ -> -1 end == 0)) do
       temp_result = (v1 == v2)
     else
       temp_result = false
     end
-      {1, l1, r1} -> g_array = elem(t1, 1)
+      {1, l, r} -> g_array = elem(t1, 1)
     g_array = elem(t1, 2)
     if ((case t2 do :leaf -> 0; :node_ -> 1; _ -> -1 end == 1)) do
       temp_result = (Main.compare_trees(l1, l2) && Main.compare_trees(r1, r2))
