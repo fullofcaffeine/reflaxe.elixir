@@ -591,9 +591,6 @@ class FunctionCompiler {
                 case TCast(e, moduleType):
                     checkExpression(e);
                     
-                case TMeta(metadataEntry, e):
-                    checkExpression(e);
-                    
                 default:
                     // TConst, TTypeExpr, TBreak, TContinue, TIdent don't need recursion
             }

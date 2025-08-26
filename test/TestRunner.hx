@@ -175,16 +175,32 @@ Examples:
 			"compile.hxml"
 		];
 		
-		// Run Haxe compiler
+		// Run Haxe compiler with timeout wrapper
 		if (ShowAllOutput) {
 			Sys.println('  Command: haxe ${args.join(" ")}');
 		}
 		
-		final process = new sys.io.Process("haxe", args);
+		// Use timeout command to prevent hanging (10 seconds per test)
+		final timeoutSeconds = 10;
+		final isUnix = (Sys.systemName() == "Mac" || Sys.systemName() == "Linux");
+		
+		// Build the command and args based on platform
+		final processCmd = isUnix ? "timeout" : "haxe";
+		final processArgs = isUnix 
+			? [Std.string(timeoutSeconds), "haxe"].concat(args)
+			: args;
+		
+		final process = new sys.io.Process(processCmd, processArgs);
 		final stdout = process.stdout.readAll().toString();
 		final stderr = process.stderr.readAll().toString();
 		final exitCode = process.exitCode();
 		process.close();
+		
+		// Check for timeout (exit code 124 on Unix)
+		if (exitCode == 124) {
+			Sys.println('  ❌ Test timed out after ${timeoutSeconds} seconds');
+			return false;
+		}
 		
 		// Restore original directory
 		Sys.setCwd(originalCwd);

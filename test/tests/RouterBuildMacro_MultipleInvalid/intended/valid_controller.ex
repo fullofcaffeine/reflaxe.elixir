@@ -6,8 +6,7 @@ defmodule ValidController do
   """
 
   # Static functions
-  @doc "Function index"
-  @spec index() :: String.t()
+  @doc "Generated from Haxe index"
   def index() do
     "Valid controller index"
   end

@@ -6,8 +6,7 @@ defmodule PartialController do
   """
 
   # Static functions
-  @doc "Function show"
-  @spec show() :: String.t()
+  @doc "Generated from Haxe show"
   def show() do
     "Partial controller show"
   end
