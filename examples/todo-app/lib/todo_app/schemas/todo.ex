@@ -38,28 +38,41 @@ defmodule Todo do
   @doc "Generated from Haxe changeset"
   def changeset(todo, params) do
     changeset = Ecto.Changeset.cast_changeset(todo, params, ["title", "description", "completed", "priority", "due_date", "tags", "user_id"])
+
     changeset = Ecto.Changeset.validate_required(changeset, ["title", "user_id"])
+
     changeset = Ecto.Changeset.validate_length(changeset, "title", %{min: 3, max: 200})
+
     changeset = Ecto.Changeset.validate_length(changeset, "description", %{max: 1000})
+
     priority_values = [ChangesetValue.string_value("low"), ChangesetValue.string_value("medium"), ChangesetValue.string_value("high")]
+
     changeset = Ecto.Changeset.validate_inclusion(changeset, "priority", priority_values)
+
     changeset = Ecto.Changeset.foreign_key_constraint(changeset, "user_id")
+
     changeset
   end
 
   @doc "Generated from Haxe toggle_completed"
   def toggle_completed(todo) do
     params = Haxe.Ds.StringMap.new()
+
     value = ChangesetValue.bool_value(not todo.completed)
+
     params.set("completed", value)
+
     Todo.changeset(todo, params)
   end
 
   @doc "Generated from Haxe update_priority"
   def update_priority(todo, _priority) do
     params = Haxe.Ds.StringMap.new()
+
     value = ChangesetValue.string_value(priority)
+
     params.set("priority", value)
+
     Todo.changeset(todo, params)
   end
 
@@ -67,16 +80,23 @@ defmodule Todo do
   def add_tag(todo, tag) do
     temp_array = nil
 
+    if ((todo.tags != nil)), do: temp_array = todo.tags, else: temp_array = []
+
     temp_array ++ [tag]
-        params = Haxe.Ds.StringMap.new()
-        g_array = []
-        g_counter = 0
-        Enum.each(g_array, fn v -> 
-      g_array ++ [ChangesetValue.string_value(v)]
-    end)
-        value = ChangesetValue.array_value(g_array)
-        params.set("tags", value)
-        Todo.changeset(todo, params)
+
+    params = Haxe.Ds.StringMap.new()
+
+    g_array = []
+
+    g_counter = 0
+
+    Enum.map(temp_array, fn item -> ChangesetValue.string_itemalue(item) end)
+
+    value = ChangesetValue.array_value(g_array)
+
+    params.set("tags", value)
+
+    Todo.changeset(todo, params)
   end
 
 

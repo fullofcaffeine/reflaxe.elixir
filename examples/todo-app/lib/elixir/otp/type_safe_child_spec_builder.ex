@@ -24,9 +24,10 @@ defmodule TypeSafeChildSpecBuilder do
     temp_number = nil
 
     temp_number = nil
-    temp_number = nil
+
     tmp = port
-    temp_number = if (((tmp != nil))), do: tmp, else: 4000
+    if ((tmp != nil)), do: temp_number = tmp, else: temp_number = 4000
+
     TodoAppWeb.Endpoint
   end
 
@@ -40,9 +41,10 @@ defmodule TypeSafeChildSpecBuilder do
     temp_string = nil
 
     temp_string = nil
-    temp_string = nil
+
     tmp = pubsub_name
-    temp_string = if (((tmp != nil))), do: tmp, else: "" <> app_name <> ".PubSub"
+    if ((tmp != nil)), do: temp_string = tmp, else: temp_string = "" <> app_name <> ".PubSub"
+
     {:presence, %{"name" => "" <> app_name <> ".Presence", "pubsub_server" => temp_string}}
   end
 

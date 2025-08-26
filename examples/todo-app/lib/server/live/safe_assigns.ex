@@ -58,7 +58,9 @@ defmodule SafeAssigns do
   @doc "Generated from Haxe updateTodosAndStats"
   def update_todos_and_stats(socket, todos) do
     completed = SafeAssigns.count_completed(todos)
+
     pending = SafeAssigns.count_pending(todos)
+
     Phoenix.LiveView.assign(socket, %{"todos" => todos, "total_todos" => todos.length, "completed_todos" => completed, "pending_todos" => pending})
   end
 
@@ -70,24 +72,22 @@ defmodule SafeAssigns do
   @doc "Generated from Haxe countCompleted"
   def count_completed(todos) do
     count = 0
+
     g_counter = 0
-    Enum.each(g_array, fn todo -> 
-      if todo.completed do
-          count + 1
-        end
-    end)
+
+    Enum.filter(todos, fn item -> item.completed end)
+
     count
   end
 
   @doc "Generated from Haxe countPending"
   def count_pending(todos) do
     count = 0
+
     g_counter = 0
-    Enum.each(g_array, fn todo -> 
-      if (not todo.completed) do
-          count + 1
-        end
-    end)
+
+    Enum.filter(todos, fn item -> not item.completed end)
+
     count
   end
 

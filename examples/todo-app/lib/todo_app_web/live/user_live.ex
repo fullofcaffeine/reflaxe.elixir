@@ -5,23 +5,33 @@ defmodule TodoAppWeb.UserLive do
   @doc "Generated from Haxe mount"
   def mount(params, session, socket) do
     users = Users.list_users(nil)
+
     %{status: "ok", socket: TodoAppWeb.UserLive.assign_multiple(socket, %{users: users, selectedUser: nil, changeset: Users.change_user(nil), searchTerm: "", showForm: false})}
   end
 
 
   @doc "Generated from Haxe handle_event"
   def handle_event(event, params, socket) do
+    temp_result = nil
+
+    temp_result = nil
+
     case (event) do
       _ -> %{status: "noreply", socket: socket}
     end
+
+    temp_result
   end
 
 
   @doc "Generated from Haxe handleNewUser"
   def handle_new_user(_params, socket) do
     changeset = Users.change_user(nil)
+
     selected_user = nil
+
     show_form = true
+
     %{status: "noreply", socket: TodoAppWeb.UserLive.assign_multiple(socket, %{changeset: changeset, selectedUser: selected_user, showForm: show_form})}
   end
 
@@ -29,9 +39,13 @@ defmodule TodoAppWeb.UserLive do
   @doc "Generated from Haxe handleEditUser"
   def handle_edit_user(params, socket) do
     user_id = params.id
+
     selected_user = Users.get_user(user_id)
+
     changeset = Users.change_user(selected_user)
+
     show_form = true
+
     %{status: "noreply", socket: TodoAppWeb.UserLive.assign_multiple(socket, %{selectedUser: selected_user, changeset: changeset, showForm: show_form})}
   end
 
@@ -41,16 +55,19 @@ defmodule TodoAppWeb.UserLive do
     temp_struct = nil
     temp_result = nil
 
-    temp_struct = nil
     user_params = params.user
 
-    temp_struct = if (((__MODULE__.selected_user == nil))), do: Users.create_user(user_params), else: Users.update_user(__MODULE__.selected_user, user_params)
+    temp_struct = nil
+
+    if ((__MODULE__.selected_user == nil)), do: temp_struct = Users.create_user(user_params), else: temp_struct = Users.update_user(__MODULE__.selected_user, user_params)
+
     temp_result = nil
-    temp_result = nil
+
     g_array = temp_struct.status
     case (g_array) do
       _ -> temp_result = %{status: "noreply", socket: socket}
     end
+
     temp_result
   end
 
@@ -58,14 +75,18 @@ defmodule TodoAppWeb.UserLive do
   @doc "Generated from Haxe handleDeleteUser"
   def handle_delete_user(params, socket) do
     user_id = params.id
+
     user = Users.get_user(user_id)
+
     result = Users.delete_user(user)
+
     if ((result.status == "ok")) do
-          (
-          users = Users.list_users(nil)
-          %{status: "noreply", socket: TodoAppWeb.UserLive.assign(socket, "users", users)}
-        )
-        end
+      users = Users.list_users(nil)
+      %{status: "noreply", socket: TodoAppWeb.UserLive.assign(socket, "users", users)}
+    else
+      nil
+    end
+
     %{status: "noreply", socket: socket}
   end
 
@@ -74,10 +95,10 @@ defmodule TodoAppWeb.UserLive do
   def handle_search(params, socket) do
     temp_array = nil
 
-    temp_array = nil
     search_term = params.search
 
-    temp_array = if (((search_term.length > 0))), do: Users.search_users(search_term), else: Users.list_users(nil)
+    if ((search_term.length > 0)), do: temp_array = Users.search_users(search_term), else: temp_array = Users.list_users(nil)
+
     %{status: "noreply", socket: TodoAppWeb.UserLive.assign_multiple(socket, %{users: temp_array, searchTerm: search_term})}
   end
 
@@ -143,6 +164,7 @@ defmodule TodoAppWeb.UserLive do
   @doc "Generated from Haxe renderUserRow"
   def render_user_row(assigns) do
     user = assigns.user
+
     ~H"""
       <tr>
       <td><%= user.name %></td>
@@ -175,8 +197,11 @@ defmodule TodoAppWeb.UserLive do
   @doc "Generated from Haxe renderUserForm"
   def render_user_form(assigns) do
     if (not assigns.show_form) do
-          ""
-        end
+      ""
+    else
+      nil
+    end
+
     ~H"""
       <div class="modal">
       <div class="modal-content">
@@ -224,13 +249,25 @@ defmodule TodoAppWeb.UserLive do
 
   @doc "Generated from Haxe getStatusClass"
   def get_status_class(active) do
-    if (active), do: "status active", else: "status inactive"
+    temp_result = nil
+
+    temp_result = nil
+
+    if active, do: temp_result = "status active", else: temp_result = "status inactive"
+
+    temp_result
   end
 
 
   @doc "Generated from Haxe getStatusText"
   def get_status_text(active) do
-    if (active), do: "Active", else: "Inactive"
+    temp_result = nil
+
+    temp_result = nil
+
+    if active, do: temp_result = "Active", else: temp_result = "Inactive"
+
+    temp_result
   end
 
 

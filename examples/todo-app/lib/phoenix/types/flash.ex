@@ -29,61 +29,70 @@ defmodule Flash do
   @doc "Generated from Haxe validationError"
   def validation_error(message, changeset) do
     errors = Flash.extract_changeset_errors(changeset)
+
     %{"type" => :error, "message" => message, "details" => errors, "title" => "Validation Failed", "dismissible" => true}
   end
 
   @doc "Generated from Haxe toPhoenixFlash"
   def to_phoenix_flash(flash) do
     result = %{"type" => FlashTypeTools.to_string(flash.type), "message" => flash.message}
+
     if ((flash.title != nil)) do
-          Reflect.set_field(result, "title", flash.title)
-        end
+      Reflect.set_field(result, "title", flash.title)
+    else
+      nil
+    end
+
     if ((flash.details != nil)) do
-          Reflect.set_field(result, "details", flash.details)
-        end
+      Reflect.set_field(result, "details", flash.details)
+    else
+      nil
+    end
+
     if ((flash.dismissible != nil)) do
-          Reflect.set_field(result, "dismissible", flash.dismissible)
-        end
+      Reflect.set_field(result, "dismissible", flash.dismissible)
+    else
+      nil
+    end
+
     if ((flash.timeout != nil)) do
-          Reflect.set_field(result, "timeout", flash.timeout)
-        end
+      Reflect.set_field(result, "timeout", flash.timeout)
+    else
+      nil
+    end
+
     if ((flash.action != nil)) do
-          Reflect.set_field(result, "action", flash.action)
-        end
+      Reflect.set_field(result, "action", flash.action)
+    else
+      nil
+    end
+
     result
   end
 
   @doc "Generated from Haxe fromPhoenixFlash"
   def from_phoenix_flash(phoenix_flash) do
     type = FlashTypeTools.from_string(Reflect.field(phoenix_flash, "type"))
+
     message = Reflect.field(phoenix_flash, "message")
+
     %{"type" => type, "message" => message, "title" => Reflect.field(phoenix_flash, "title"), "details" => Reflect.field(phoenix_flash, "details"), "dismissible" => Reflect.field(phoenix_flash, "dismissible"), "timeout" => Reflect.field(phoenix_flash, "timeout"), "action" => Reflect.field(phoenix_flash, "action")}
   end
 
   @doc "Generated from Haxe extractChangesetErrors"
   def extract_changeset_errors(changeset) do
     errors = []
+
     changeset_errors = Reflect.field(changeset, "errors")
+
     if ((changeset_errors != nil)) do
-          (
-          g_counter = 0
-          g_array = Reflect.fields(changeset_errors)
-          Enum.each(g_array, fn field -> 
-      field_errors = Reflect.field(changeset_errors, field)
-      if Std.is_of_type(field_errors, Array) do
-          (
-          g_counter = 0
-          g_array = field_errors
-          Enum.each(g_array, fn error -> 
-      errors ++ ["" <> field <> ": " <> Std.string(error)]
-    end)
-        )
-        else
-          errors ++ ["" <> field <> ": " <> field_errors]
-        end
-    end)
-        )
-        end
+      g_counter = 0
+      g_array = Reflect.fields(changeset_errors)
+      Enum.filter(g1, fn item -> Std.is_of_type(item_errors, Array) end)
+    else
+      nil
+    end
+
     errors
   end
 

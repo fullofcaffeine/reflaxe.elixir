@@ -17,10 +17,15 @@ defmodule TodoApp.Application do
   @doc "Generated from Haxe start"
   def start(_type, _args) do
     _app_name = "TodoApp"
+
     type_safe_children = [{Phoenix.PubSub, name: TodoApp.PubSub}, TodoAppWeb.Telemetry, TodoAppWeb.Endpoint]
+
     children = type_safe_children
+
     opts = [strategy: :one_for_one, name: TodoApp.Supervisor]
+
     supervisor_result = Supervisor.start_link(children, opts)
+
     supervisor_result
   end
 

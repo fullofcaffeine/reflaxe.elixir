@@ -424,6 +424,16 @@ if (isPhoenixProject()) {
 - ✅ **Generated .ex files invalid**: Fix the transpiler, don't patch files
 - ❌ **Never manually edit generated files**: They get overwritten on recompilation
 - ❌ **Don't work around compiler bugs**: Fix the root cause in transpiler source
+- ❌ **NEVER keep dead code 'just in case'**: Only keep code that's actually used
+- ❌ **No unnecessary abstraction layers**: Don't add indirection without value (e.g., routers that don't route)
+
+### Architectural Component Naming Rule
+**CRITICAL**: Name components by what they actually DO, not what you wish they did:
+- A "Router" must make routing decisions between multiple destinations
+- A "Compiler" must compile/transform code
+- A "Manager" must manage state or lifecycle
+- Pure delegation/passthrough is NOT routing, managing, or controlling
+- If you can't describe the component's value in one sentence, it shouldn't exist
 
 ## 📍 Agent Navigation Guide
 
@@ -548,6 +558,16 @@ if (isPhoenixProject()) {
 
 ### ⚠️ CRITICAL: Type Safety and String Avoidance
 **FUNDAMENTAL RULE: Avoid strings in compiler code unless absolutely necessary.**
+
+### ⚠️ CRITICAL: No Dead Code - Remove Unused Functions
+**FUNDAMENTAL RULE: NEVER keep dead code "just in case" - only keep code that's actually used.**
+- **NO keeping unused methods** for "compatibility" or "future use"
+- **NO commented-out code blocks** - use git history if you need to recover old code
+- **NO delegation methods** that just return null or empty values
+- **Delete immediately** when functionality is moved elsewhere
+- **If it's not called, delete it** - the codebase must be clean and maintainable
+- **Example of wrong approach**: Keeping detectArrayBuildingPattern() that returns null "for compatibility"
+- **Example of right approach**: Delete the method entirely when WhileLoopCompiler is removed
 
 ### ⚠️ CRITICAL: No Untyped Usage
 **FUNDAMENTAL RULE: NEVER use `untyped` or `Dynamic` unless there's a very good justified reason.**

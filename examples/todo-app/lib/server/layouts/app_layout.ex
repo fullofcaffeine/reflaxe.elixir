@@ -131,36 +131,52 @@ defmodule AppLayout do
   @doc "Generated from Haxe getUserDisplayName"
   def get_user_display_name(user) do
     if (((user != nil) && (user.name != nil))) do
-          user.name
-        end
+      user.name
+    else
+      nil
+    end
+
     "User"
   end
 
   @doc "Generated from Haxe getPageTitle"
   def get_page_title(title) do
     if ((title != nil)) do
-          title
-        end
+      title
+    else
+      nil
+    end
+
     "Todo Dashboard"
   end
 
   @doc "Generated from Haxe getLastUpdated"
   def get_last_updated(timestamp) do
     if ((timestamp != nil)) do
-          timestamp
-        end
+      timestamp
+    else
+      nil
+    end
+
     "now"
   end
 
   @doc "Generated from Haxe getInitials"
   def get_initials(name) do
     if (((name == nil) || (name == ""))) do
-          "U"
-        end
+      "U"
+    else
+      nil
+    end
+
     parts = name.split(" ")
+
     if ((parts.length >= 2)) do
-          Enum.at(parts, 0).char_at(0).to_upper_case() <> Enum.at(parts, 1).char_at(0).to_upper_case()
-        end
+      Enum.at(parts, 0).char_at(0).to_upper_case() <> Enum.at(parts, 1).char_at(0).to_upper_case()
+    else
+      nil
+    end
+
     name.char_at(0).to_upper_case()
   end
 
