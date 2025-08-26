@@ -110,7 +110,7 @@ defmodule SafeAssigns do
     (
           count = 0
           g_counter = 0
-          Enum.each(todos, fn todo -> 
+          Enum.each(g_array, fn todo -> 
       if todo.completed do
           count + 1
         end
@@ -128,7 +128,7 @@ defmodule SafeAssigns do
     (
           count = 0
           g_counter = 0
-          Enum.each(todos, fn todo -> 
+          Enum.each(g_array, fn todo -> 
       if (not todo.completed) do
           count + 1
         end

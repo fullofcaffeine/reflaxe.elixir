@@ -3578,8 +3578,7 @@ ${CompilerUtilities.indentCode(body, 6)}
                 return analyzeArrayLoopCondition(e);
                 
             case TBinop(OpLt, e1, e2):
-                // e1 should be index variable (like _g1)
-                // e2 should be array.length field access
+                // e1 should be index variable (like _g1 or _g3)
                 var indexTVar: Null<TVar> = null;
                 var indexVar = switch(e1.expr) {
                     case TLocal(v): 
@@ -3590,10 +3589,13 @@ ${CompilerUtilities.indentCode(body, 6)}
                 
                 if (indexVar == null) return null;
                 
-                // Check for array.length pattern
+                // e2 can be either:
+                // 1. array.length field access (common pattern)
+                // 2. a pre-calculated length variable (like _g1 when len = array.length was done earlier)
                 var arrayTVar: Null<TVar> = null;
                 var arrayVar = switch(e2.expr) {
                     case TField(arrayExpr, FInstance(_, _, cf)):
+                        // Pattern: _g1 < array.length
                         if (cf.get().name == "length") {
                             switch(arrayExpr.expr) {
                                 case TLocal(v): 
@@ -3604,6 +3606,12 @@ ${CompilerUtilities.indentCode(body, 6)}
                         } else {
                             null;
                         }
+                    case TLocal(v):
+                        // Pattern: _g3 < _g1 (where _g1 is a pre-calculated length)
+                        // This happens when the array length was stored in a variable earlier
+                        // Common in optimized loops like in JsonPrinter
+                        arrayTVar = v;  // This is the limit variable
+                        CompilerUtilities.toElixirVarName(v);
                     case _: null;
                 };
                 

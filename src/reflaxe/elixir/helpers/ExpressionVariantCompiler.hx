@@ -109,6 +109,23 @@ class ExpressionVariantCompiler {
                 trace('[XRay ExpressionVariantCompiler] ⚠️ Expression position: ${expr.pos}');
                 #end
                 
+            // CRITICAL FIX: Handle general TLocal variables with TVar.id mappings
+            // This ensures loop desugaring variables get their proper mapped names
+            case TLocal(v):
+                #if debug_expression_variants
+                trace('[XRay ExpressionVariantCompiler] TLocal variable reference: ${v.name} (id: ${v.id})');
+                #end
+                
+                // Use VariableCompiler's ID mapping system to resolve the variable name
+                // This handles loop desugaring mappings (g_counter, g_array) and other ID-based mappings
+                var compiledName = compiler.variableCompiler.compileVariableReference(v);
+                
+                #if debug_expression_variants
+                trace('[XRay ExpressionVariantCompiler] ✓ Variable resolved to: ${compiledName}');
+                #end
+                
+                return compiledName;
+                
             case _:
                 // Continue with normal compilation
         }
