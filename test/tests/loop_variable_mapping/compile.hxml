@@ -1,0 +1,4 @@
+--class-path .
+-m Main
+-lib reflaxe.elixir
+--dce no

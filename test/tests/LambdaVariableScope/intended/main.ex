@@ -16,53 +16,65 @@ defmodule Main do
   @doc "Function test_array_filter_with_outer_variable"
   @spec test_array_filter_with_outer_variable() :: nil
   def test_array_filter_with_outer_variable() do
-    items = ["apple", "banana", "cherry"]
-    target_item = "banana"
-    temp_array = nil
     (
+          items = ["apple", "banana", "cherry"]
+          target_item = "banana"
+          (
           g_array = []
           (
           g_counter = 0
-          Enum.filter(items, fn v -> ((v != target_item)) end)
+          Enum.each(g_array, fn v -> 
+      if ((v != target_item)) do
+          g ++ [v]
+        end
+    end)
         )
-          temp_array = g_counter
+          temp_array = g
         )
-    todos = [%{"id" => 1, "name" => "first"}, %{"id" => 2, "name" => "second"}]
-    id = 2
-    temp_array1 = nil
-    (
+          todos = [%{"id" => 1, "name" => "first"}, %{"id" => 2, "name" => "second"}]
+          id = 2
+          (
           g_array = []
           (
           g_counter = 0
-          Enum.filter(todos, fn v -> ((v.id != id)) end)
+          Enum.each(g_array, fn v -> 
+      if ((v.id != id)) do
+          g ++ [v]
+        end
+    end)
         )
-          temp_array1 = g_counter
+          temp_array1 = g
+        )
         )
   end
 
   @doc "Function test_array_map_with_outer_variable"
   @spec test_array_map_with_outer_variable() :: nil
   def test_array_map_with_outer_variable() do
-    numbers = [1, 2, 3, 4, 5]
-    multiplier = 3
-    temp_array = nil
     (
+          numbers = [1, 2, 3, 4, 5]
+          multiplier = 3
+          (
           g_array = []
           (
           g_counter = 0
-          Enum.map(numbers, fn v -> (v * multiplier) end)
+          Enum.each(g_array, fn v -> 
+      g ++ [(v * multiplier)]
+    end)
         )
-          temp_array = g_counter
+          temp_array = g
         )
-    prefix = "Item: "
-    temp_array1 = nil
-    (
+          prefix = "Item: "
+          (
           g_array = []
           (
           g_counter = 0
-          Enum.map(numbers, fn v -> prefix <> Std.string(v) end)
+          Enum.each(g_array, fn v -> 
+      g ++ [prefix <> Std.string(v)]
+    end)
         )
-          temp_array1 = g_counter
+          temp_array1 = g
+        )
         )
   end
 
@@ -74,14 +86,18 @@ defmodule Main do
           threshold = 3
           g_array = []
           g_counter = 0
-          Enum.each(data, fn v -> 
-      temp_array1 = nil
+          Enum.each(g_array, fn v -> 
+      
       g_array = []
       g_counter = 0
-      g = v
-      Enum.filter(g_counter, fn v2 -> ((v > threshold)) end)
-      temp_array1 = g_counter
-      g_counter ++ [temp_array1]
+      g_array = v
+      Enum.each(g_array, fn v2 -> 
+      if ((v > threshold)) do
+          g ++ [v]
+        end
+    end)
+      temp_array1 = g
+      g ++ [temp_array1]
     end)
         )
   end
@@ -89,27 +105,33 @@ defmodule Main do
   @doc "Function test_multiple_outer_variables"
   @spec test_multiple_outer_variables() :: nil
   def test_multiple_outer_variables() do
-    items = ["a", "b", "c", "d"]
-    prefix = "prefix_"
-    suffix = "_suffix"
-    exclude_item = "b"
-    temp_array = nil
-    temp_array1 = nil
     (
+          items = ["a", "b", "c", "d"]
+          prefix = "prefix_"
+          suffix = "_suffix"
+          exclude_item = "b"
+          (
           g_array = []
           (
           g_counter = 0
-          Enum.filter(items, fn v -> ((v != exclude_item)) end)
+          Enum.each(g_array, fn v -> 
+      if ((v != exclude_item)) do
+          g ++ [v]
+        end
+    end)
         )
-          temp_array1 = g_counter
+          temp_array1 = g
         )
-    (
+          (
           g_array = []
           (
           g_counter = 0
-          Enum.map(temp_array1, fn v -> prefix <> v <> suffix end)
+          Enum.each(g_array, fn v -> 
+      g ++ [prefix <> v <> suffix]
+    end)
         )
-          temp_array = g_counter
+          temp_array = g
+        )
         )
   end
 

@@ -16,29 +16,29 @@ defmodule Main do
           g_array = []
           (
           g_counter = 0
-          Enum.each(temp_right1, fn v -> 
+          Enum.each(g_array, fn v -> 
       if ((v > 2)) do
-          g_array ++ [v]
+          g ++ [v]
         end
     end)
         )
-          temp_right = g_array
+          temp_right = g
         )
     temp_right1 = nil
     (
           g_array = []
           (
           g_counter = 0
-          Enum.each(temp_right1, fn v -> 
-      g_array ++ [(v * 2)]
+          Enum.each(g_array, fn v -> 
+      g ++ [(v * 2)]
     end)
         )
-          temp_right1 = g_array
+          g_array = g
         )
     text = "hello world"
     text = StringTools.trim(text)
     text = StringTools.replace(text, "world", "universe")
-    Log.trace("Result: " <> Std.string(temp_right1), %{"fileName" => "Main.hx", "lineNumber" => 25, "className" => "Main", "methodName" => "main"})
+    Log.trace("Result: " <> Std.string(g_array), %{"fileName" => "Main.hx", "lineNumber" => 25, "className" => "Main", "methodName" => "main"})
     Log.trace("Text: " <> text, %{"fileName" => "Main.hx", "lineNumber" => 26, "className" => "Main", "methodName" => "main"})
   end
 
