@@ -549,8 +549,16 @@ class PatternMatchingCompiler {
     public function compilePatternArgument(expr: TypedExpr): String {
         return switch (expr.expr) {
             case TLocal(v):
-                // Pattern variable
-                NamingHelper.toSnakeCase(v.name);
+                // Pattern variable - check if marked as unused by Reflaxe preprocessor
+                var isUnused = v.meta != null && v.meta.has("-reflaxe.unused");
+                var varName = NamingHelper.toSnakeCase(v.name);
+                
+                // Prefix with underscore if unused to avoid compilation warnings
+                if (isUnused && !StringTools.startsWith(varName, "_")) {
+                    "_" + varName;
+                } else {
+                    varName;
+                }
                 
             case TConst(c):
                 // WHY: TConstant vs Constant Type Distinction in Haxe Macro System
@@ -1399,10 +1407,19 @@ class PatternMatchingCompiler {
                         case TLocal(v):
                             if (extractionVars.exists(v.name)) {
                                 var paramIndex = extractionVars.get(v.name);
+                                
+                                // Check if the variable is marked as unused by Reflaxe preprocessor
+                                var isUnused = patternVar.meta != null && patternVar.meta.has("-reflaxe.unused");
                                 var varName = NamingHelper.toSnakeCase(patternVar.name);
+                                
+                                // Prefix with underscore if unused to avoid compilation warnings
+                                if (isUnused && !StringTools.startsWith(varName, "_")) {
+                                    varName = "_" + varName;
+                                }
+                                
                                 patternVars.set(paramIndex, varName);
                                 #if debug_pattern_matching
-                                trace('[XRay PatternMatchingCompiler] ✓ Mapped param ${paramIndex} to variable: ${varName} (via ${v.name})');
+                                trace('[XRay PatternMatchingCompiler] ✓ Mapped param ${paramIndex} to variable: ${varName} (via ${v.name}, unused=${isUnused})');
                                 #end
                             }
                         case _:

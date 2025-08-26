@@ -632,16 +632,12 @@ class VariableCompiler {
         }
         
         // Check if variable is marked as unused by optimizer
-        if (tvar.meta != null && tvar.meta.has("-reflaxe.unused")) {
+        var isUnused = tvar.meta != null && tvar.meta.has("-reflaxe.unused");
+        if (isUnused) {
             #if debug_variable_compiler
-            trace("[XRay VariableCompiler] ✓ UNUSED VARIABLE OPTIMIZATION");
+            trace("[XRay VariableCompiler] ✓ VARIABLE MARKED AS UNUSED - Will prefix with underscore");
             #end
-            // Skip generating unused variables, but still evaluate expression if it has side effects
-            if (expr != null) {
-                return compiler.compileExpression(expr);
-            } else {
-                return "";  // Don't generate anything for unused variables without init
-            }
+            // Don't skip - we'll prefix with underscore below
         }
         
         // Get the original variable name (before Haxe's renaming)
@@ -865,6 +861,15 @@ class VariableCompiler {
                 // Apply the Type.typeof mapping
                 varName = "g_array";
             }
+        }
+        
+        // CRITICAL FIX: Prefix unused variables with underscore
+        // In Elixir, unused variables should be prefixed with underscore to avoid warnings
+        if (isUnused && !StringTools.startsWith(varName, "_")) {
+            varName = "_" + varName;
+            #if debug_variable_compiler
+            trace('[XRay VariableCompiler] ✓ PREFIXED UNUSED VARIABLE WITH UNDERSCORE: ${varName}');
+            #end
         }
         
         // CRITICAL FIX: Track ALL variable name transformations (not just underscore removal)
