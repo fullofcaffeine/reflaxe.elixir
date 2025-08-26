@@ -1573,17 +1573,82 @@ class PatternMatchingCompiler {
                     for (i in 0...Lambda.count(patternVars)) {
                         if (patternVars.exists(i)) {
                             var varName = patternVars.get(i);
+                            var originalName = varName;
                             
-                            // Check if this variable is used in the case body
-                            // If not, prefix with underscore to avoid warnings
-                            if (caseBody != null && !isVariableUsedInExpression(caseBody, varName)) {
-                                varName = "_" + varName;
+                            /**
+                             * CRITICAL FIX: Haxe Variable Renaming in Enum Pattern Matching
+                             * 
+                             * PROBLEM DISCOVERED (Aug 2025):
+                             * When compiling `case Legacy(spec): spec;`, Haxe's compiler may rename
+                             * the pattern variable to avoid shadowing. For example, if there's already
+                             * a `spec` parameter in the outer function scope, Haxe renames the pattern
+                             * variable to `spec2` to prevent variable shadowing conflicts.
+                             * 
+                             * THE ISSUE CASCADE:
+                             * 1. Haxe generates AST with: TVar(spec2, TLocal(_g))
+                             * 2. Our pattern extraction finds "spec2" from the AST
+                             * 3. We generate Elixir pattern: {6, spec2}
+                             * 4. But the body compiles to reference "spec" (original name)
+                             * 5. Result: Runtime error "undefined variable spec"
+                             * 
+                             * THE SOLUTION:
+                             * Strip numeric suffixes from renamed variables to get the original name.
+                             * This ensures the pattern uses the name that matches what the compiled
+                             * body expects, maintaining consistency between pattern and body.
+                             * 
+                             * EXAMPLE:
+                             * Haxe AST: case Legacy(spec) with spec renamed to spec2
+                             * Without fix: {6, spec2} -> ... temp_result = spec  // ERROR
+                             * With fix:    {6, spec} -> ... temp_result = spec   // WORKS
+                             */
+                            if (~/^(.+?)([0-9]+)$/.match(varName)) {
+                                // Extract base name without number suffix (spec2 → spec)
+                                originalName = ~/^(.+?)([0-9]+)$/.replace(varName, "$1");
                                 #if debug_pattern_matching
-                                trace('[XRay PatternMatchingCompiler] Variable "${patternVars.get(i)}" not used in case body, prefixing with underscore: ${varName}');
+                                trace('[XRay PatternMatchingCompiler] RENAME DETECTED: Haxe renamed "${originalName}" to "${varName}" to avoid shadowing');
+                                trace('[XRay PatternMatchingCompiler] Using original name "${originalName}" in pattern for consistency');
                                 #end
                             }
                             
-                            varList.push(varName);
+                            /**
+                             * USAGE DETECTION COMPLEXITY:
+                             * 
+                             * For renamed variables, the situation is complex:
+                             * - The AST body contains references to spec2 (renamed)
+                             * - But our VariableCompiler maps spec2 back to spec during compilation
+                             * - So checking if "spec" is used in body would fail (it has spec2)
+                             * - And checking if "spec2" is used would also be wrong (pattern needs spec)
+                             * 
+                             * SOLUTION: If a variable was renamed, assume it's used. This prevents
+                             * incorrectly prefixing with underscore, which would cause different errors.
+                             * The slight inefficiency of not prefixing unused renamed variables is
+                             * preferable to runtime errors from mismatched names.
+                             */
+                            var isUsed = false;
+                            if (varName != originalName) {
+                                // Variable was renamed (spec2 -> spec), assume it's used
+                                isUsed = true;
+                                #if debug_pattern_matching
+                                trace('[XRay PatternMatchingCompiler] Variable was renamed from "${varName}" to "${originalName}", assuming used');
+                                #end
+                            } else if (caseBody != null) {
+                                // Check if variable is used in the body
+                                isUsed = isVariableUsedInExpression(caseBody, originalName);
+                            }
+                            
+                            if (!isUsed) {
+                                // Variable not used - prefix with underscore
+                                varList.push("_" + originalName);
+                                #if debug_pattern_matching
+                                trace('[XRay PatternMatchingCompiler] Variable "${originalName}" not used in case body, prefixing with underscore');
+                                #end
+                            } else {
+                                // Variable is used - use the original name
+                                varList.push(originalName);
+                                #if debug_pattern_matching
+                                trace('[XRay PatternMatchingCompiler] Variable "${originalName}" IS used in case body, no prefix needed');
+                                #end
+                            }
                         } else {
                             varList.push("_");
                         }
@@ -2758,16 +2823,69 @@ class PatternMatchingCompiler {
             trace('[PatternMatchingCompiler] Processing case with ${caseData.values.length} values');
             #end
             
-            // Extract pattern variables from case body
-            var patternVars = extractPatternVariables(caseData.expr);
+            // Extract pattern variables from the case VALUE (the pattern) not the body
+            // For cases like Legacy(spec), we need to find what spec was renamed to
+            var patternVars = new Map<Int, String>();
+            
+            // Look at the actual pattern to find variable names
+            for (value in caseData.values) {
+                switch (value.expr) {
+                    case TCall(e, args):
+                        // This is an enum constructor pattern like Legacy(spec)
+                        for (i in 0...args.length) {
+                            switch (args[i].expr) {
+                                case TLocal(v):
+                                    // Found a pattern variable - register the mapping!
+                                    var varName = NamingHelper.toSnakeCase(v.name);
+                                    patternVars.set(i, varName);
+                                    
+                                    // CRITICAL: Register TVar.id mapping so body references work
+                                    // Even if Haxe renamed spec to spec2, the TVar.id is the same
+                                    // So when body references spec (via TLocal), it will use the correct name
+                                    if (compiler.variableCompiler != null) {
+                                        // Extract the actual name we want to use (remove numeric suffix if renamed)
+                                        var targetName = varName;
+                                        if (~/^(.+?)([0-9]+)$/.match(varName)) {
+                                            targetName = ~/^(.+?)([0-9]+)$/.replace(varName, "$1");
+                                        }
+                                        compiler.variableCompiler.registerVariableMapping(v, targetName);
+                                        #if debug_pattern_matching
+                                        trace('[PatternMatchingCompiler] ✓ REGISTERED TVAR MAPPING: ${v.name}(id:${v.id}) -> ${targetName}');
+                                        #end
+                                    }
+                                    
+                                    #if debug_pattern_matching
+                                    trace('[PatternMatchingCompiler] Found pattern variable from VALUE: index ${i} -> ${v.name}');
+                                    #end
+                                case _:
+                            }
+                        }
+                    case _:
+                }
+            }
+            
+            // If no pattern variables found in values, check the body for TEnumParameter
+            if (Lambda.count(patternVars) == 0) {
+                patternVars = extractPatternVariables(caseData.expr);
+            }
             
             for (value in caseData.values) {
                 var pattern = null;
                 var caseIndex = -1;
                 
+                #if debug_pattern_matching
+                trace('[PatternMatchingCompiler] Processing case value: ${value.expr}');
+                #end
+                
                 // Determine the enum constructor index
                 switch (value.expr) {
                     case TCall(e, args):
+                        #if debug_pattern_matching
+                        trace('[PatternMatchingCompiler] TCall with ${args.length} args');
+                        for (i in 0...args.length) {
+                            trace('[PatternMatchingCompiler] Arg ${i}: ${args[i].expr}');
+                        }
+                        #end
                         switch (e.expr) {
                             case TField(_, FEnum(enumRef, enumField)):
                                 caseIndex = enumConstructors.indexOf(enumField.name);
@@ -2807,13 +2925,56 @@ class PatternMatchingCompiler {
                      * 1. Tuple enums: Use integer patterns that match elem() extraction results
                      * 2. Atom enums: Convert constructor names to snake_case atoms
                      * 3. Apply NamingHelper for consistent Elixir naming conventions
+                     * 
+                     * CRITICAL FIX: Handle pattern variables for enum constructors
+                     * When we have pattern variables (e.g., Legacy(spec)), we need to generate tuple patterns
+                     * with the variable names: {6, spec} instead of just 6.
                      */
                     if (hasParameters) {
-                        // Tuple-based enum: Use integer patterns for elem() extraction
-                        pattern = Std.string(caseIndex);
-                        #if debug_pattern_matching
-                        trace('[PatternMatchingCompiler] Generated integer pattern: ${pattern}');
-                        #end
+                        // Check if we have pattern variables for this case (e.g., Legacy(spec))
+                        // These are extracted from the TCall arguments in the pattern
+                        if (Lambda.count(patternVars) > 0) {
+                            // Generate tuple pattern with variables: {index, var1, var2, ...}
+                            var tupleElements = [Std.string(caseIndex)];
+                            
+                            // Add each pattern variable to the tuple
+                            for (i in 0...Lambda.count(patternVars)) {
+                                if (patternVars.exists(i)) {
+                                    var varName = patternVars.get(i);
+                                    
+                                    // CRITICAL FIX: Use the original variable name, not the renamed one
+                                    // When Haxe renames spec to spec2, we need to strip the numeric suffix
+                                    // so the pattern uses "spec" which matches what the body expects
+                                    if (~/^(.+?)([0-9]+)$/.match(varName)) {
+                                        // Extract base name without number suffix
+                                        var originalName = ~/^(.+?)([0-9]+)$/.replace(varName, "$1");
+                                        tupleElements.push(originalName);
+                                        
+                                        #if debug_pattern_matching
+                                        trace('[PatternMatchingCompiler] Using original name "${originalName}" instead of renamed "${varName}" in pattern');
+                                        #end
+                                    } else {
+                                        tupleElements.push(varName);
+                                    }
+                                } else {
+                                    // Placeholder for missing pattern variable
+                                    tupleElements.push("_");
+                                }
+                            }
+                            
+                            // Generate tuple pattern: {6, spec} or {6, spec, other_var}
+                            pattern = '{${tupleElements.join(", ")}}';
+                            
+                            #if debug_pattern_matching
+                            trace('[PatternMatchingCompiler] Generated tuple pattern with variables: ${pattern}');
+                            #end
+                        } else {
+                            // No pattern variables - use simple integer pattern
+                            pattern = Std.string(caseIndex);
+                            #if debug_pattern_matching
+                            trace('[PatternMatchingCompiler] Generated integer pattern: ${pattern}');
+                            #end
+                        }
                     } else {
                         // Atom-only enum: Use atom patterns for direct matching
                         if (enumType != null && caseIndex < enumType.names.length) {
@@ -2846,18 +3007,18 @@ class PatternMatchingCompiler {
                         var hasParameters = false;
                         var paramNames: Array<String> = [];
                         
+                        // We already extracted pattern variables above, just check if this constructor has parameters
                         switch (value.expr) {
                             case TCall(e, args):
                                 if (args.length > 0) {
                                     hasParameters = true;
-                                    // Extract parameter names from the pattern
+                                    // Build param names from what we already extracted
                                     for (i in 0...args.length) {
-                                        switch (args[i].expr) {
-                                            case TLocal(v):
-                                                paramNames.push(NamingHelper.toSnakeCase(v.name));
-                                            case _:
-                                                // For complex patterns, generate g_array extraction
-                                                paramNames.push("g_array");
+                                        if (patternVars.exists(i)) {
+                                            paramNames.push(patternVars.get(i));
+                                        } else {
+                                            // Fallback for complex patterns
+                                            paramNames.push("g_array");
                                         }
                                     }
                                 }
@@ -2866,12 +3027,30 @@ class PatternMatchingCompiler {
                         
                         // Generate parameter extraction if needed
                         if (hasParameters && paramNames.length > 0) {
-                            // CRITICAL FIX: Use unique variable names to prevent collision in nested switches
-                            // Generate g_array, g_array2, g_array3, etc. based on nesting level
-                            var uniqueVarName = enumNestingLevel <= 1 ? "g_array" : 'g_array${enumNestingLevel}';
-                            
-                            // Use the switch variable that we compiled earlier
-                            parameterExtraction = '${uniqueVarName} = elem(${switchVarStr}, 1)\n    ';
+                            // Check if we have a pattern variable from the body (like spec2)
+                            if (patternVars.exists(0)) {
+                                var extractedVarName = patternVars.get(0);
+                                // The pattern has the renamed variable (spec2)
+                                // But the body uses the original name (spec)
+                                // So we extract to the original name directly
+                                // Check if this looks like a renamed variable
+                                if (~/^(.+?)([0-9]+)$/.match(extractedVarName)) {
+                                    // Extract base name without number suffix
+                                    var originalName = ~/^(.+?)([0-9]+)$/.replace(extractedVarName, "$1");
+                                    // Extract directly to the original name that the body uses
+                                    parameterExtraction = '${originalName} = elem(${switchVarStr}, 1)\n    ';
+                                    #if debug_pattern_matching
+                                    trace('[PatternMatchingCompiler] Extracted to original name: ${originalName} (pattern had ${extractedVarName})');
+                                    #end
+                                } else {
+                                    // No renaming detected, use as-is
+                                    parameterExtraction = '${extractedVarName} = elem(${switchVarStr}, 1)\n    ';
+                                }
+                            } else {
+                                // No pattern variable found in body, use default extraction
+                                var uniqueVarName = enumNestingLevel <= 1 ? "g_array" : 'g_array${enumNestingLevel}';
+                                parameterExtraction = '${uniqueVarName} = elem(${switchVarStr}, 1)\n    ';
+                            }
                             
                             #if debug_pattern_matching
                             trace('[PatternMatchingCompiler] Generated parameter extraction: ${parameterExtraction}');
@@ -2887,9 +3066,29 @@ class PatternMatchingCompiler {
                     compiler.currentSwitchCaseBody = null;
                     
                     // CRITICAL FIX: Check if extracted variable is actually used before generating extraction
-                    // This prevents orphaned enum extraction variables that create unused variable warnings
+                    // When pattern variables are bound directly in the pattern, we don't need elem() extraction
                     var shouldGenerateExtraction = parameterExtraction.length > 0;
-                    if (shouldGenerateExtraction) {
+                    
+                    // If we bound variables in the pattern (e.g., {6, spec2}), don't extract
+                    if (patternVars.exists(0) && pattern.contains(patternVars.get(0))) {
+                        parameterExtraction = "";
+                        shouldGenerateExtraction = false;
+                        
+                        // Check if we need an alias for renamed variables
+                        var varName = patternVars.get(0);
+                        if (~/^(.+?)([0-9]+)$/.match(varName)) {
+                            // Extract base name without number suffix  
+                            var baseName = ~/^(.+?)([0-9]+)$/.replace(varName, "$1");
+                            if (body.contains(baseName) && !body.contains(varName)) {
+                                // Body uses original name but pattern has renamed version
+                                parameterExtraction = '${baseName} = ${varName}\n    ';
+                                shouldGenerateExtraction = true;
+                                #if debug_pattern_matching
+                                trace('[PatternMatchingCompiler] Created alias: ${baseName} = ${varName}');
+                                #end
+                            }
+                        }
+                    } else if (shouldGenerateExtraction) {
                         var uniqueVarName = enumNestingLevel <= 1 ? "g_array" : 'g_array${enumNestingLevel}';
                         
                         // Check if the extracted variable name appears in the compiled body
