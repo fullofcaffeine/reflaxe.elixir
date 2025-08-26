@@ -6,18 +6,11 @@ defmodule TypeSafeChildSpecTools do
   """
 
   # Static functions
-  @doc """
-    Convert TypeSafeChildSpec to legacy ChildSpec format
-
-    This is used during the migration period when the compiler
-    still expects the old string-based format.
-
-    @param spec Type-safe child spec
-    @param appName Application name for module resolution
-    @return Legacy ChildSpec format
-  """
-  @spec to_legacy(TypeSafeChildSpec.t(), String.t()) :: ChildSpec.t()
+  @doc "Generated from Haxe toLegacy"
   def to_legacy(_spec, app_name) do
+    temp_array = nil
+    temp_array1 = nil
+
     case (elem(spec, 0)) do
       {0, name} -> (
           g_array = elem(spec, 1)
@@ -93,14 +86,7 @@ defmodule TypeSafeChildSpecTools do
     end
   end
 
-  @doc """
-    Get the module name for a type-safe child spec
-
-    @param spec Type-safe child spec
-    @param appName Application name for module resolution
-    @return Module name string
-  """
-  @spec get_module_name(TypeSafeChildSpec.t(), String.t()) :: String.t()
+  @doc "Generated from Haxe getModuleName"
   def get_module_name(_spec, app_name) do
     case (elem(spec, 0)) do
       0 -> "Phoenix.PubSub"
@@ -119,13 +105,7 @@ defmodule TypeSafeChildSpecTools do
     end
   end
 
-  @doc """
-    Check if a child spec should use modern tuple format
-
-    @param spec Type-safe child spec
-    @return True if should generate tuple format
-  """
-  @spec uses_tuple_format(TypeSafeChildSpec.t()) :: boolean()
+  @doc "Generated from Haxe usesTupleFormat"
   def uses_tuple_format(_spec) do
     case (elem(spec, 0)) do
       0 -> true
@@ -138,17 +118,10 @@ defmodule TypeSafeChildSpecTools do
     end
   end
 
-  @doc """
-    Validate a type-safe child spec configuration
-
-    @param spec Type-safe child spec to validate
-    @return Array of validation errors (empty if valid)
-  """
-  @spec validate(TypeSafeChildSpec.t()) :: Array.t()
+  @doc "Generated from Haxe validate"
   def validate(_spec) do
-    (
-          errors = []
-          case spec do
+    errors = []
+    case spec do
       0 -> (
     g_array = elem(spec, 1)
     (
@@ -209,8 +182,7 @@ defmodule TypeSafeChildSpecTools do
         )
     )
     end
-          errors
-        )
+    errors
   end
 
 end

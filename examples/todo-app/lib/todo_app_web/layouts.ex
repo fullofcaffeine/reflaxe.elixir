@@ -9,20 +9,12 @@ defmodule TodoAppWeb.Layouts do
   """
 
   # Static functions
-  @doc """
-    Root layout function
-    Called by Phoenix for rendering the main HTML document
-  """
-  @spec root(term()) :: String.t()
+  @doc "Generated from Haxe root"
   def root(assigns) do
     RootLayout.render(assigns)
   end
 
-  @doc """
-    Application layout function
-    Called by Phoenix for rendering the application wrapper
-  """
-  @spec app(term()) :: String.t()
+  @doc "Generated from Haxe app"
   def app(assigns) do
     AppLayout.render(assigns)
   end

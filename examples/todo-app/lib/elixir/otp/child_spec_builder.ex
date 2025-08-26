@@ -6,41 +6,31 @@ defmodule ChildSpecBuilder do
   """
 
   # Static functions
-  @doc """
-    Create a worker child spec
+  @doc "Generated from Haxe worker"
+  def worker(module, args, id \\ nil) do
+    temp_string = nil
 
-  """
-  @spec worker(String.t(), Array.t(), Null.t()) :: ChildSpec.t()
-  def worker(module, args, id) do
     temp_string = nil
 
     temp_string = if (((id != nil))), do: id, else: module
     %{id: if(id != nil, do: id, else: module), start: {module, :start_link, args}, restart: :permanent, shutdown: ShutdownType.timeout(5000), type: :worker, modules: [module]}
   end
 
-  @doc """
-    Create a supervisor child spec
+  @doc "Generated from Haxe supervisor"
+  def supervisor(module, args, id \\ nil) do
+    temp_string = nil
 
-  """
-  @spec supervisor(String.t(), Array.t(), Null.t()) :: ChildSpec.t()
-  def supervisor(module, args, id) do
     temp_string = nil
 
     temp_string = if (((id != nil))), do: id, else: module
     %{id: if(id != nil, do: id, else: module), start: {module, :start_link, args}, restart: :permanent, shutdown: :infinity, type: :supervisor, modules: [module]}
   end
 
-  @doc """
-    Create a temporary worker (won't be restarted)
-
-  """
-  @spec temp_worker(String.t(), Array.t(), Null.t()) :: ChildSpec.t()
-  def temp_worker(module, args, id) do
-    (
-          spec = ChildSpecBuilder.worker(module, args, id)
-          %{spec | restart: :temporary}
-          spec
-        )
+  @doc "Generated from Haxe tempWorker"
+  def temp_worker(module, args, id \\ nil) do
+    spec = ChildSpecBuilder.worker(module, args, id)
+    %{spec | restart: :temporary}
+    spec
   end
 
 end

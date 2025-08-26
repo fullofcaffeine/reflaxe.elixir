@@ -6,29 +6,17 @@ defmodule ApplicationResultTools do
   """
 
   # Static functions
-  @doc """
-    Create a successful application start result
-
-  """
-  @spec ok(T.t()) :: ApplicationResult.t()
+  @doc "Generated from Haxe ok"
   def ok(state) do
     ApplicationResult.ok(state)
   end
 
-  @doc """
-    Create an error application start result
-
-  """
-  @spec error(String.t()) :: ApplicationResult.t()
+  @doc "Generated from Haxe error"
   def error(reason) do
     ApplicationResult.error(reason)
   end
 
-  @doc """
-    Create an ignore application start result
-
-  """
-  @spec ignore() :: ApplicationResult.t()
+  @doc "Generated from Haxe ignore"
   def ignore() do
     :ignore
   end

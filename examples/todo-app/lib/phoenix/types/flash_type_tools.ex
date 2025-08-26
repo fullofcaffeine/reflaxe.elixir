@@ -6,13 +6,7 @@ defmodule FlashTypeTools do
   """
 
   # Static functions
-  @doc """
-    Convert FlashType to string for Phoenix compatibility
-
-    @param type Flash type enum value
-    @return String Phoenix-compatible string representation
-  """
-  @spec format(FlashType.t()) :: String.t()
+  @doc "Generated from Haxe toString"
   def format(_type) do
     case (case type do :info -> 0; :success -> 1; :warning -> 2; :error -> 3; _ -> -1 end) do
       0 -> "info"
@@ -22,33 +16,20 @@ defmodule FlashTypeTools do
     end
   end
 
-  @doc """
-    Parse string to FlashType
-
-    @param str String representation of flash type
-    @return FlashType Enum value, defaults to Info for unknown strings
-  """
-  @spec from_string(String.t()) :: FlashType.t()
+  @doc "Generated from Haxe fromString"
   def from_string(str) do
-    (
-          temp_result = nil
-          temp_result = nil
+    temp_result = nil
+
+    temp_result = nil
+    temp_result = nil
     g_array = str.to_lower_case()
     case (g_array) do
       _ -> :info
     end
-          temp_result
-        )
+    temp_result
   end
 
-  @doc """
-    Get CSS class for flash type
-    Standard Tailwind CSS classes for flash styling
-
-    @param type Flash type enum value
-    @return String CSS class string
-  """
-  @spec get_css_class(FlashType.t()) :: String.t()
+  @doc "Generated from Haxe getCssClass"
   def get_css_class(_type) do
     case (case type do :info -> 0; :success -> 1; :warning -> 2; :error -> 3; _ -> -1 end) do
       0 -> "bg-blue-50 border-blue-200 text-blue-800"
@@ -58,14 +39,7 @@ defmodule FlashTypeTools do
     end
   end
 
-  @doc """
-    Get icon name for flash type
-    Standard icon names for flash message display
-
-    @param type Flash type enum value
-    @return String Icon name (compatible with Heroicons or similar)
-  """
-  @spec get_icon_name(FlashType.t()) :: String.t()
+  @doc "Generated from Haxe getIconName"
   def get_icon_name(_type) do
     case (case type do :info -> 0; :success -> 1; :warning -> 2; :error -> 3; _ -> -1 end) do
       0 -> "information-circle"

@@ -9,11 +9,7 @@ defmodule AppLayout do
   """
 
   # Static functions
-  @doc """
-    Main application wrapper template
-    Includes navigation, breadcrumbs, and content area
-  """
-  @spec render(term()) :: String.t()
+  @doc "Generated from Haxe render"
   def render(assigns) do
     ~H"""
       <div class="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 dark:from-gray-900 dark:via-gray-800 dark:to-blue-900">
@@ -132,71 +128,43 @@ defmodule AppLayout do
       """
   end
 
-  @doc """
-    Get user display name with fallback
-
-  """
-  @spec get_user_display_name(Null.t()) :: String.t()
+  @doc "Generated from Haxe getUserDisplayName"
   def get_user_display_name(user) do
-    (
-          if (((user != nil) && (user.name != nil))) do
+    if (((user != nil) && (user.name != nil))) do
           user.name
         end
-          "User"
-        )
+    "User"
   end
 
-  @doc """
-    Get page title with fallback
-
-  """
-  @spec get_page_title(Null.t()) :: String.t()
+  @doc "Generated from Haxe getPageTitle"
   def get_page_title(title) do
-    (
-          if ((title != nil)) do
+    if ((title != nil)) do
           title
         end
-          "Todo Dashboard"
-        )
+    "Todo Dashboard"
   end
 
-  @doc """
-    Get last updated timestamp with fallback
-
-  """
-  @spec get_last_updated(Null.t()) :: String.t()
+  @doc "Generated from Haxe getLastUpdated"
   def get_last_updated(timestamp) do
-    (
-          if ((timestamp != nil)) do
+    if ((timestamp != nil)) do
           timestamp
         end
-          "now"
-        )
+    "now"
   end
 
-  @doc """
-    Get user initials for avatar
-
-  """
-  @spec get_initials(String.t()) :: String.t()
+  @doc "Generated from Haxe getInitials"
   def get_initials(name) do
-    (
-          if (((name == nil) || (name == ""))) do
+    if (((name == nil) || (name == ""))) do
           "U"
         end
-          parts = name.split(" ")
-          if ((parts.length >= 2)) do
+    parts = name.split(" ")
+    if ((parts.length >= 2)) do
           Enum.at(parts, 0).char_at(0).to_upper_case() <> Enum.at(parts, 1).char_at(0).to_upper_case()
         end
-          name.char_at(0).to_upper_case()
-        )
+    name.char_at(0).to_upper_case()
   end
 
-  @doc """
-    Format timestamp for display
-
-  """
-  @spec format_timestamp(String.t()) :: String.t()
+  @doc "Generated from Haxe formatTimestamp"
   def format_timestamp(timestamp) do
     timestamp
   end
