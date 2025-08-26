@@ -1578,28 +1578,87 @@ class PatternMatchingCompiler {
                             /**
                              * CRITICAL FIX: Haxe Variable Renaming in Enum Pattern Matching
                              * 
-                             * PROBLEM DISCOVERED (Aug 2025):
-                             * When compiling `case Legacy(spec): spec;`, Haxe's compiler may rename
-                             * the pattern variable to avoid shadowing. For example, if there's already
-                             * a `spec` parameter in the outer function scope, Haxe renames the pattern
-                             * variable to `spec2` to prevent variable shadowing conflicts.
+                             * === WHY DOES HAXE RENAME VARIABLES? ===
                              * 
-                             * THE ISSUE CASCADE:
-                             * 1. Haxe generates AST with: TVar(spec2, TLocal(_g))
-                             * 2. Our pattern extraction finds "spec2" from the AST
-                             * 3. We generate Elixir pattern: {6, spec2}
-                             * 4. But the body compiles to reference "spec" (original name)
-                             * 5. Result: Runtime error "undefined variable spec"
+                             * Haxe's compiler enforces variable scoping rules to prevent ambiguity.
+                             * When a pattern variable would shadow (hide) an outer scope variable,
+                             * Haxe automatically renames it by adding numeric suffixes.
                              * 
-                             * THE SOLUTION:
-                             * Strip numeric suffixes from renamed variables to get the original name.
-                             * This ensures the pattern uses the name that matches what the compiled
-                             * body expects, maintaining consistency between pattern and body.
+                             * Example scenario:
+                             * ```haxe
+                             * function toLegacy(spec: ChildSpec, action: TypeSafeChildSpec) {
+                             *     return switch(action) {
+                             *         case Legacy(spec):  // 'spec' would shadow the function parameter
+                             *             spec;           // Which 'spec'? Function param or pattern var?
+                             *     }
+                             * }
+                             * ```
                              * 
-                             * EXAMPLE:
-                             * Haxe AST: case Legacy(spec) with spec renamed to spec2
-                             * Without fix: {6, spec2} -> ... temp_result = spec  // ERROR
-                             * With fix:    {6, spec} -> ... temp_result = spec   // WORKS
+                             * Haxe solves this by renaming the pattern variable:
+                             * - Pattern variable 'spec' becomes 'spec2' in the AST
+                             * - This prevents ambiguity in scoping
+                             * 
+                             * === WHY IS THIS A PROBLEM FOR ELIXIR? ===
+                             * 
+                             * Elixir's pattern matching syntax requires EXACT variable name consistency:
+                             * 
+                             * WRONG (causes "undefined variable spec" error):
+                             * ```elixir
+                             * case action do
+                             *   {6, spec2} ->     # Pattern binds 'spec2'
+                             *     spec            # Body references 'spec' - UNDEFINED!
+                             * end
+                             * ```
+                             * 
+                             * CORRECT:
+                             * ```elixir
+                             * case action do
+                             *   {6, spec} ->      # Pattern binds 'spec'
+                             *     spec            # Body references 'spec' - WORKS!
+                             * end
+                             * ```
+                             * 
+                             * Unlike Haxe which tracks variables by ID, Elixir uses name-based binding.
+                             * If the pattern binds 'spec2' but the body uses 'spec', Elixir has no way
+                             * to know they're meant to be the same variable.
+                             * 
+                             * === THE COMPILATION FLOW ===
+                             * 
+                             * 1. HAXE SOURCE: case Legacy(spec): spec
+                             * 
+                             * 2. HAXE AST (after renaming): 
+                             *    - Pattern: TCall(Legacy, [TLocal(spec2)])  // Renamed!
+                             *    - Body: TLocal(spec2)                       // Also renamed in AST
+                             * 
+                             * 3. OUR PATTERN EXTRACTION:
+                             *    - We extract "spec2" from the pattern TLocal
+                             * 
+                             * 4. OUR VARIABLE MAPPING:
+                             *    - VariableCompiler maps spec2 → spec (strips suffix)
+                             *    - This makes the body compile to 'spec'
+                             * 
+                             * 5. THE MISMATCH:
+                             *    - Pattern: {6, spec2} (from AST name)
+                             *    - Body: spec (from VariableCompiler mapping)
+                             *    - Result: UNDEFINED VARIABLE ERROR
+                             * 
+                             * === THE SOLUTION ===
+                             * 
+                             * Strip numeric suffixes from renamed variables in pattern generation.
+                             * This ensures the pattern uses the same name the body will use after
+                             * VariableCompiler processes it.
+                             * 
+                             * Detection methods:
+                             * 1. PRIMARY: Check -reflaxe.renamed metadata (set by preprocessor)
+                             * 2. FALLBACK: Detect numeric suffix pattern (spec2 → spec)
+                             * 
+                             * === ELIXIR-SPECIFIC CONSIDERATIONS ===
+                             * 
+                             * This issue is unique to the Elixir target because:
+                             * - Elixir pattern matching binds variables by NAME
+                             * - Other targets (JS, C++, etc.) use different variable binding mechanisms
+                             * - Elixir's immutability means no variable reassignment to fix mismatches
+                             * - Pattern matching is central to Elixir idioms (unlike imperative targets)
                              */
                             if (~/^(.+?)([0-9]+)$/.match(varName)) {
                                 // Extract base name without number suffix (spec2 → spec)
@@ -1611,25 +1670,23 @@ class PatternMatchingCompiler {
                             }
                             
                             /**
-                             * USAGE DETECTION COMPLEXITY:
+                             * USAGE DETECTION:
                              * 
-                             * For renamed variables, the situation is complex:
-                             * - The AST body contains references to spec2 (renamed)
-                             * - But our VariableCompiler maps spec2 back to spec during compilation
-                             * - So checking if "spec" is used in body would fail (it has spec2)
-                             * - And checking if "spec2" is used would also be wrong (pattern needs spec)
+                             * At this point we only have variable names (strings) from patternVars.
+                             * The metadata was already checked when extracting the variables from TCall.
                              * 
-                             * SOLUTION: If a variable was renamed, assume it's used. This prevents
-                             * incorrectly prefixing with underscore, which would cause different errors.
-                             * The slight inefficiency of not prefixing unused renamed variables is
-                             * preferable to runtime errors from mismatched names.
+                             * For renamed variables (where originalName differs from varName), we assume
+                             * they're used to avoid runtime errors. The preprocessor would have marked
+                             * truly unused variables with -reflaxe.unused metadata, which we'll check
+                             * in other contexts where we have access to TVar objects.
                              */
                             var isUsed = false;
+                            
                             if (varName != originalName) {
-                                // Variable was renamed (spec2 -> spec), assume it's used
+                                // Variable was renamed (spec2 -> spec), assume it's used for safety
                                 isUsed = true;
                                 #if debug_pattern_matching
-                                trace('[XRay PatternMatchingCompiler] Variable was renamed from "${varName}" to "${originalName}", assuming used');
+                                trace('[XRay PatternMatchingCompiler] Renamed "${varName}"→"${originalName}", assuming used');
                                 #end
                             } else if (caseBody != null) {
                                 // Check if variable is used in the body
@@ -2837,17 +2894,34 @@ class PatternMatchingCompiler {
                                 case TLocal(v):
                                     // Found a pattern variable - register the mapping!
                                     var varName = NamingHelper.toSnakeCase(v.name);
-                                    patternVars.set(i, varName);
+                                    var targetName = varName; // Default: use the actual name
                                     
-                                    // CRITICAL: Register TVar.id mapping so body references work
-                                    // Even if Haxe renamed spec to spec2, the TVar.id is the same
-                                    // So when body references spec (via TLocal), it will use the correct name
-                                    if (compiler.variableCompiler != null) {
-                                        // Extract the actual name we want to use (remove numeric suffix if renamed)
-                                        var targetName = varName;
-                                        if (~/^(.+?)([0-9]+)$/.match(varName)) {
-                                            targetName = ~/^(.+?)([0-9]+)$/.replace(varName, "$1");
+                                    // CRITICAL: Check for -reflaxe.renamed metadata to get original name
+                                    if (v.meta != null && v.meta.has("-reflaxe.renamed")) {
+                                        var metaParams = v.meta.extract("-reflaxe.renamed")[0].params;
+                                        if (metaParams != null && metaParams.length > 0) {
+                                            switch (metaParams[0].expr) {
+                                                case EConst(CString(origName)):
+                                                    targetName = NamingHelper.toSnakeCase(origName);
+                                                    #if debug_pattern_matching
+                                                    trace('[PatternMatchingCompiler] METADATA: Variable "${v.name}" has -reflaxe.renamed="${origName}", using "${targetName}"');
+                                                    #end
+                                                case _:
+                                            }
                                         }
+                                    } else if (~/^(.+?)([0-9]+)$/.match(varName)) {
+                                        // Fallback: String-based detection if no metadata
+                                        targetName = ~/^(.+?)([0-9]+)$/.replace(varName, "$1");
+                                        #if debug_pattern_matching
+                                        trace('[PatternMatchingCompiler] FALLBACK: Detected renamed "${v.name}" → "${targetName}" via pattern');
+                                        #end
+                                    }
+                                    
+                                    // Store the target name (original name if renamed, actual name otherwise)
+                                    patternVars.set(i, targetName);
+                                    
+                                    // Register TVar.id mapping so body references work
+                                    if (compiler.variableCompiler != null) {
                                         compiler.variableCompiler.registerVariableMapping(v, targetName);
                                         #if debug_pattern_matching
                                         trace('[PatternMatchingCompiler] ✓ REGISTERED TVAR MAPPING: ${v.name}(id:${v.id}) -> ${targetName}');
@@ -2945,6 +3019,7 @@ class PatternMatchingCompiler {
                                     // CRITICAL FIX: Use the original variable name, not the renamed one
                                     // When Haxe renames spec to spec2, we need to strip the numeric suffix
                                     // so the pattern uses "spec" which matches what the body expects
+                                    // TODO: Use -reflaxe.renamed metadata from preprocessor for more reliable detection
                                     if (~/^(.+?)([0-9]+)$/.match(varName)) {
                                         // Extract base name without number suffix
                                         var originalName = ~/^(.+?)([0-9]+)$/.replace(varName, "$1");
