@@ -1580,9 +1580,17 @@ class PatternMatchingCompiler {
                              * 
                              * === WHY DOES HAXE RENAME VARIABLES? ===
                              * 
-                             * Haxe's compiler enforces variable scoping rules to prevent ambiguity.
-                             * When a pattern variable would shadow (hide) an outer scope variable,
-                             * Haxe automatically renames it by adding numeric suffixes.
+                             * Haxe's compiler enforces STRICT LEXICAL SCOPING to prevent variable shadowing
+                             * bugs that are common in JavaScript and other languages. Variable shadowing occurs
+                             * when an inner scope variable has the same name as an outer scope variable,
+                             * potentially leading to confusion about which variable is being referenced.
+                             * 
+                             * THE RENAMING MECHANISM:
+                             * 1. Haxe's typer phase detects naming conflicts during AST construction
+                             * 2. When a pattern variable would shadow an existing variable in scope,
+                             *    Haxe automatically renames it by appending a numeric suffix
+                             * 3. The suffix increments to ensure uniqueness (spec → spec2 → spec3, etc.)
+                             * 4. This happens BEFORE our transpiler sees the AST - it's baked into TypedExpr
                              * 
                              * Example scenario:
                              * ```haxe
@@ -1594,9 +1602,14 @@ class PatternMatchingCompiler {
                              * }
                              * ```
                              * 
-                             * Haxe solves this by renaming the pattern variable:
-                             * - Pattern variable 'spec' becomes 'spec2' in the AST
-                             * - This prevents ambiguity in scoping
+                             * What Haxe does internally:
+                             * - Detects: Pattern variable 'spec' shadows parameter 'spec'
+                             * - Renames: Pattern variable becomes 'spec2' in the TypedExpr AST
+                             * - Maintains: All references within that scope use 'spec2'
+                             * - Result: No ambiguity about which variable is referenced
+                             * 
+                             * This is a FEATURE in Haxe that prevents common scoping bugs, but
+                             * it creates challenges for our Elixir transpiler (explained below).
                              * 
                              * === WHY IS THIS A PROBLEM FOR ELIXIR? ===
                              * 
@@ -3017,8 +3030,15 @@ class PatternMatchingCompiler {
                                     var varName = patternVars.get(i);
                                     
                                     // CRITICAL FIX: Use the original variable name, not the renamed one
-                                    // When Haxe renames spec to spec2, we need to strip the numeric suffix
-                                    // so the pattern uses "spec" which matches what the body expects
+                                    // 
+                                    // WHY HAXE RENAMES: Prevents variable shadowing bugs by ensuring unique names
+                                    // within each scope. If 'spec' exists in outer scope and pattern also uses 'spec',
+                                    // Haxe renames the pattern variable to 'spec2' to maintain clear scoping.
+                                    // 
+                                    // WHY WE MUST UNDO IT: Elixir pattern matching requires the pattern and body
+                                    // to use identical variable names. If pattern binds 'spec2' but body references
+                                    // 'spec', Elixir will throw "undefined variable spec" error at runtime.
+                                    // 
                                     // TODO: Use -reflaxe.renamed metadata from preprocessor for more reliable detection
                                     if (~/^(.+?)([0-9]+)$/.match(varName)) {
                                         // Extract base name without number suffix
