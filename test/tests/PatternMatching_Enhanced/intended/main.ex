@@ -21,10 +21,13 @@ defmodule Main do
           color = :red
           temp_string = nil
           case color do
-      :red -> temp_string = "red"
-      :green -> temp_string = "green"
-      :blue -> temp_string = "blue"
-      :r_g_b -> temp_string = "custom"
+      0 -> temp_string = "red"
+      1 -> temp_string = "green"
+      2 -> temp_string = "blue"
+      3 -> (
+    g_array = elem(color, 1)
+    temp_string = "custom"
+    )
     end
           Log.trace("Simple enum result: " <> temp_string, %{"fileName" => "Main.hx", "lineNumber" => 54, "className" => "Main", "methodName" => "testSimpleEnumPattern"})
         )
@@ -35,30 +38,38 @@ defmodule Main do
   def test_complex_enum_pattern() do
     (
           color = Color.r_g_b(255, 128, 0)
-          temp_string = nil
           case color do
-      :red -> temp_string = "primary"
-      :green -> temp_string = "primary"
-      :blue -> temp_string = "primary"
-      :r_g_b -> (
-          r = g_array
-          g_array = g_array
-          b = g_array
-          if ((((r + g) + b) > 500)) do
+      0 -> temp_string = "primary"
+      1 -> temp_string = "primary"
+      2 -> temp_string = "primary"
+      3 -> (
+    g_array = elem(color, 1)
+    temp_string = nil
+
+
+
+    r = g
+    g_array = g
+    b = g
+    if ((((r + g) + b) > 500)) do
           temp_string = "bright"
         else
-          (
-          r = g_array
-          g_array = g_array
-          b = g_array
-          if ((((r + g) + b) < 100)) do
+          temp_string = nil
+    r = g
+    g_array = g
+    b = g
+    if ((((r + g) + b) < 100)) do
           temp_string = "dark"
         else
+          (
+          g
+          g
+          g
           temp_string = "medium"
-        end
         )
         end
-        )
+        end
+    )
     end
           Log.trace("Complex enum result: " <> temp_string, %{"fileName" => "Main.hx", "lineNumber" => 72, "className" => "Main", "methodName" => "testComplexEnumPattern"})
         )
@@ -69,16 +80,21 @@ defmodule Main do
   def test_result_pattern() do
     (
           result = {:ok, "success"}
-          temp_string = nil
           case result do
       {:ok, _} -> (
-          value = g_array
+    g_array = elem(result, 1)
+    (
+          value = g
           temp_string = "Got value: " <> value
         )
+    )
       {:error, _} -> (
-          error = g_array
+    g_array = elem(result, 1)
+    (
+          error = g
           temp_string = "Got error: " <> error
         )
+    )
     end
           Log.trace("Result pattern: " <> temp_string, %{"fileName" => "Main.hx", "lineNumber" => 85, "className" => "Main", "methodName" => "testResultPattern"})
         )
@@ -90,30 +106,23 @@ defmodule Main do
     (
           numbers = [1, 5, 10, 15, 20]
           g_counter = 0
-          Enum.each(numbers, fn num -> 
+          Enum.each(g_array, fn num -> 
+      
       temp_string = nil
-      (
-          n = num
-          if ((n < 5)) do
+    n = num
+    if ((n < 5)) do
           temp_string = "small"
         else
-          (
-          n = num
-          if (((n >= 5) && (n < 15))) do
+          temp_string = nil
+    n = num
+    if (((n >= 5) && (n < 15))) do
           temp_string = "medium"
         else
-          (
-          n = num
-          if ((n >= 15)) do
-          temp_string = "large"
-        else
-          temp_string = "unknown"
+          temp_string = nil
+    n = num
+    temp_string = if (((n >= 15))), do: "large", else: "unknown"
         end
-        )
         end
-        )
-        end
-        )
       category = temp_string
       Log.trace("Number " <> to_string(num) <> " is " <> category, %{"fileName" => "Main.hx", "lineNumber" => 98, "className" => "Main", "methodName" => "testGuardPatterns"})
     end)
@@ -126,42 +135,45 @@ defmodule Main do
     (
           arrays = [[], [1], [1, 2], [1, 2, 3], [1, 2, 3, 4, 5]]
           g_counter = 0
-          Enum.each(arrays, fn arr -> 
-      temp_string = nil
-      case (elem(arr.length, 0)) do
-      0 ->
+          Enum.each(g_array, fn arr -> 
+      
+      case (arr.length) do
+      _ ->
         temp_string = "empty"
-      1 ->
+      _ ->
         (
           g_array = Enum.at(arr, 0)
           (
-          x = g_array
+          x = g
           temp_string = "single: " <> to_string(x)
         )
         )
-      2 ->
+      _ ->
         (
           g_array = Enum.at(arr, 0)
           g_array = Enum.at(arr, 1)
           (
-          x = g_array
-          y = g_array
+          x = g
+          y = g
           temp_string = "pair: " <> to_string(x) <> ", " <> to_string(y)
         )
         )
-      3 ->
+      _ ->
         (
           g_array = Enum.at(arr, 0)
           g_array = Enum.at(arr, 1)
           g_array = Enum.at(arr, 2)
           (
-          x = g_array
-          y = g_array
-          z = g_array
+          x = g
+          y = g
+          z = g
           temp_string = "triple: " <> to_string(x) <> ", " <> to_string(y) <> ", " <> to_string(z)
         )
         )
-      _ -> tempString1 = if ((arr.length > 0)), do: Std.string(Enum.at(arr, 0)), else: "none"
+      _ -> temp_string1 = nil
+    temp_string1 = nil
+    temp_string1 = if (((arr.length > 0))), do: Std.string(Enum.at(arr, 0)), else: "none"
+    temp_string = "length=" <> to_string(arr.length) <> ", first=" <> temp_string1
     end
       description = temp_string
       Log.trace("Array pattern: " <> description, %{"fileName" => "Main.hx", "lineNumber" => 119, "className" => "Main", "methodName" => "testArrayPatterns"})
@@ -176,49 +188,40 @@ defmodule Main do
           point_x = 10
           point_y = 20
           temp_string = nil
-          (
-          g_array = point_x
-          g_array = point_y
-          x = g_array
-          y = g_array
-          if (((x > 0) && (y > 0))) do
+    g_array = point_x
+    g_array = point_y
+    x = g
+    y = g
+    if (((x > 0) && (y > 0))) do
           temp_string = "first"
         else
-          (
-          x = g_array
-          y = g_array
-          if (((x < 0) && (y > 0))) do
+          temp_string = nil
+    x = g
+    y = g
+    if (((x < 0) && (y > 0))) do
           temp_string = "second"
         else
-          (
-          x = g_array
-          y = g_array
-          if (((x < 0) && (y < 0))) do
+          temp_string = nil
+    x = g
+    y = g
+    if (((x < 0) && (y < 0))) do
           temp_string = "third"
         else
-          (
-          x = g_array
-          y = g_array
-          if (((x > 0) && (y < 0))) do
+          temp_string = nil
+    x = g
+    y = g
+    if (((x > 0) && (y < 0))) do
           temp_string = "fourth"
         else
-          if ((g_array == 0)) do
+          if ((g == 0)) do
           temp_string = "axis"
         else
-          if ((g_array == 0)) do
-          temp_string = "axis"
-        else
-          temp_string = "origin"
+          temp_string = if (((g == 0))), do: "axis", else: "origin"
         end
         end
         end
-        )
         end
-        )
         end
-        )
-        end
-        )
           Log.trace("Point " <> to_string(point_x) <> "," <> to_string(point_y) <> " is in " <> temp_string <> " quadrant", %{"fileName" => "Main.hx", "lineNumber" => 135, "className" => "Main", "methodName" => "testObjectPatterns"})
         )
   end

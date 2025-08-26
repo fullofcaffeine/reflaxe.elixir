@@ -969,6 +969,66 @@ class VariableCompiler {
     }
     
     /**
+     * Compile a variable reference (TLocal expression)
+     * 
+     * VARIABLE REFERENCE COMPILATION WITH ID MAPPING
+     * 
+     * WHY: When Haxe desugars loops, it creates multiple TVar instances with the same name
+     *      but different IDs. TLocal expressions reference these variables by their TVar.
+     *      To prevent variable collisions in generated code, we need to map TVar.id to
+     *      unique variable names during reference compilation.
+     * 
+     * WHAT: Compiles TLocal variable references by:
+     *       1. Checking TVar.id mappings for custom names (e.g., g_counter, g_array)
+     *       2. Applying variable name substitutions if mapped
+     *       3. Falling back to snake_case conversion of original name
+     * 
+     * HOW: Looks up the TVar.id in variableIdMap first. If a mapping exists, uses that
+     *      name. Otherwise, converts the variable name to snake_case for Elixir conventions.
+     * 
+     * EDGE CASES:
+     * - Null TVar (shouldn't happen but defensive)
+     * - Variables without mappings (normal case)
+     * - Special "this" handling (preserved from parent compiler)
+     * 
+     * @param tvar The TVar being referenced in a TLocal expression
+     * @return Compiled variable name for Elixir
+     * @since 1.0.0
+     */
+    public function compileVariableReference(tvar: TVar): String {
+        if (tvar == null) {
+            #if debug_variable_compiler
+            trace('[XRay VariableCompiler] WARNING: Null TVar in compileVariableReference');
+            #end
+            return "_";
+        }
+        
+        #if debug_variable_compiler
+        trace('[XRay VariableCompiler] VARIABLE REFERENCE COMPILATION');
+        trace('[XRay VariableCompiler] Variable: ${tvar.name} (id: ${tvar.id})');
+        trace('[XRay VariableCompiler] Checking ID mappings...');
+        trace('[XRay VariableCompiler] Available mappings: ${[for (id in variableIdMap.keys()) 'id${id}=>${variableIdMap.get(id)}']}');
+        #end
+        
+        // Check for TVar.id mapping first (highest priority)
+        if (variableIdMap.exists(tvar.id)) {
+            var mappedName = variableIdMap.get(tvar.id);
+            #if debug_variable_compiler
+            trace('[XRay VariableCompiler] ✓ Found ID mapping: ${tvar.name}(${tvar.id}) → ${mappedName}');
+            #end
+            return mappedName;
+        }
+        
+        #if debug_variable_compiler
+        trace('[XRay VariableCompiler] No ID mapping found, using standard conversion');
+        #end
+        
+        // Get original variable name and convert to snake_case
+        var originalName = getOriginalVarName(tvar);
+        return NamingHelper.toSnakeCase(originalName);
+    }
+    
+    /**
      * Get the original variable name before Haxe's internal renaming
      * Following the pattern from Reflaxe preprocessors
      * 

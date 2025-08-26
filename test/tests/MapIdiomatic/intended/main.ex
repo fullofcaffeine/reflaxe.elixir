@@ -32,16 +32,13 @@ defmodule Main do
   """
   @spec test_map_construction() :: nil
   def test_map_construction() do
+    temp_string = nil
     Log.trace("=== Map Construction ===", %{"fileName" => "Main.hx", "lineNumber" => 29, "className" => "Main", "methodName" => "testMapConstruction"})
     empty_map = Haxe.Ds.StringMap.new()
     temp_string = nil
-    if ((empty_map == nil)) do
-          temp_string = "null"
-        else
-          temp_string = empty_map.to_string()
-        end
-    Log.trace("Empty map: " <> (temp_string), %{"fileName" => "Main.hx", "lineNumber" => 33, "className" => "Main", "methodName" => "testMapConstruction"})
-    g = Haxe.Ds.StringMap.new()
+    temp_string = if (((empty_map == nil))), do: "null", else: empty_map.to_string()
+    Log.trace("Empty map: " <> temp_string, %{"fileName" => "Main.hx", "lineNumber" => 33, "className" => "Main", "methodName" => "testMapConstruction"})
+    g_array = Haxe.Ds.StringMap.new()
     g.set("key1", 1)
     g.set("key2", 2)
     Log.trace("Map construction tests complete", %{"fileName" => "Main.hx", "lineNumber" => 39, "className" => "Main", "methodName" => "testMapConstruction"})
@@ -94,22 +91,58 @@ defmodule Main do
     has_keys = false
     (
           key = map.keys()
-          while_loop(fn -> (key.has_next()) end, fn -> (
-          key.next()
-          has_keys = true
-          throw(:break)
-        ) end)
+          (
+      # Simple module-level pattern (inline for now)
+      loop_helper = fn condition_fn, body_fn, loop_fn ->
+        if condition_fn.() do
+          body_fn.()
+          loop_fn.(condition_fn, body_fn, loop_fn)
+        else
+          nil
+        end
+      end
+
+      loop_helper.(
+        fn -> key.has_next() end,
+        fn ->
+          (
+                key.next()
+                has_keys = true
+                throw(:break)
+              )
+        end,
+        loop_helper
+      )
+    )
         )
     Log.trace("Map has keys: " <> Std.string(has_keys), %{"fileName" => "Main.hx", "lineNumber" => 112, "className" => "Main", "methodName" => "testMapQueries"})
     empty_map = Haxe.Ds.StringMap.new()
     empty_has_keys = false
     (
           key = empty_map.keys()
-          while_loop(fn -> (key.has_next()) end, fn -> (
-          key.next()
-          empty_has_keys = true
-          throw(:break)
-        ) end)
+          (
+      # Simple module-level pattern (inline for now)
+      loop_helper = fn condition_fn, body_fn, loop_fn ->
+        if condition_fn.() do
+          body_fn.()
+          loop_fn.(condition_fn, body_fn, loop_fn)
+        else
+          nil
+        end
+      end
+
+      loop_helper.(
+        fn -> key.has_next() end,
+        fn ->
+          (
+                key.next()
+                empty_has_keys = true
+                throw(:break)
+              )
+        end,
+        loop_helper
+      )
+    )
         )
     Log.trace("Empty map has keys: " <> Std.string(empty_has_keys), %{"fileName" => "Main.hx", "lineNumber" => 120, "className" => "Main", "methodName" => "testMapQueries"})
   end
@@ -128,11 +161,29 @@ defmodule Main do
     Log.trace("Iterating over map:", %{"fileName" => "Main.hx", "lineNumber" => 136, "className" => "Main", "methodName" => "testMapTransformations"})
     (
           key = numbers.keys()
-          while_loop(fn -> (key.has_next()) end, fn -> (
-          key = key.next()
-          value = numbers.get(key)
-          Log.trace("  " <> key <> " => " <> to_string(value), %{"fileName" => "Main.hx", "lineNumber" => 139, "className" => "Main", "methodName" => "testMapTransformations"})
-        ) end)
+          (
+      # Simple module-level pattern (inline for now)
+      loop_helper = fn condition_fn, body_fn, loop_fn ->
+        if condition_fn.() do
+          body_fn.()
+          loop_fn.(condition_fn, body_fn, loop_fn)
+        else
+          nil
+        end
+      end
+
+      loop_helper.(
+        fn -> key.has_next() end,
+        fn ->
+          (
+                key = key.next()
+                value = numbers.get(key)
+                Log.trace("  " <> key <> " => " <> to_string(value), %{"fileName" => "Main.hx", "lineNumber" => 139, "className" => "Main", "methodName" => "testMapTransformations"})
+              )
+        end,
+        loop_helper
+      )
+    )
         )
     copied = numbers.copy()
     copied_value = copied.get("one")
@@ -143,11 +194,29 @@ defmodule Main do
     Log.trace("Int-keyed map:", %{"fileName" => "Main.hx", "lineNumber" => 154, "className" => "Main", "methodName" => "testMapTransformations"})
     (
           key = int_map.keys()
-          while_loop(fn -> (key.has_next()) end, fn -> (
-          key = key.next()
-          value = int_map.get(key)
-          Log.trace("  " <> to_string(key) <> " => " <> to_string(value), %{"fileName" => "Main.hx", "lineNumber" => 157, "className" => "Main", "methodName" => "testMapTransformations"})
-        ) end)
+          (
+      # Simple module-level pattern (inline for now)
+      loop_helper = fn condition_fn, body_fn, loop_fn ->
+        if condition_fn.() do
+          body_fn.()
+          loop_fn.(condition_fn, body_fn, loop_fn)
+        else
+          nil
+        end
+      end
+
+      loop_helper.(
+        fn -> key.has_next() end,
+        fn ->
+          (
+                key = key.next()
+                value = int_map.get(key)
+                Log.trace("  " <> to_string(key) <> " => " <> to_string(value), %{"fileName" => "Main.hx", "lineNumber" => 157, "className" => "Main", "methodName" => "testMapTransformations"})
+              )
+        end,
+        loop_helper
+      )
+    )
         )
   end
 
@@ -193,6 +262,30 @@ defmodule Main do
     final_a = result.get("a")
     final_b = result.get("b")
     Log.trace("Final values after chaining: a=" <> to_string(final_a) <> ", b=" <> to_string(final_b), %{"fileName" => "Main.hx", "lineNumber" => 212, "className" => "Main", "methodName" => "testEdgeCases"})
+  end
+
+
+  # While loop helper functions
+  # Generated automatically for tail-recursive loop patterns
+
+  @doc false
+  defp while_loop(condition_fn, body_fn) do
+    if condition_fn.() do
+      body_fn.()
+      while_loop(condition_fn, body_fn)
+    else
+      nil
+    end
+  end
+
+  @doc false
+  defp do_while_loop(body_fn, condition_fn) do
+    body_fn.()
+    if condition_fn.() do
+      do_while_loop(body_fn, condition_fn)
+    else
+      nil
+    end
   end
 
 end

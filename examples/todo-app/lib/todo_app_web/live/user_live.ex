@@ -48,7 +48,7 @@ defmodule TodoAppWeb.UserLive do
     temp_result = nil
     temp_result = nil
     g_array = temp_struct.status
-    case (g_array) do
+    case (g) do
       _ -> temp_result = %{status: "noreply", socket: socket}
     end
     temp_result
