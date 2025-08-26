@@ -6,8 +6,7 @@ defmodule Main do
   """
 
   # Static functions
-  @doc "Function main"
-  @spec main() :: nil
+  @doc "Generated from Haxe main"
   def main() do
     Log.trace("RouterBuildMacro validation test with invalid action reference", %{"fileName" => "Main.hx", "lineNumber" => 54, "className" => "Main", "methodName" => "main"})
   end
