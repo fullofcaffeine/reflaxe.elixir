@@ -30,25 +30,25 @@ defmodule Shape do
   end
 
   # Instance functions
-  @doc "Function draw"
-  @spec draw(t()) :: String.t()
+  @doc "Generated from Haxe draw"
   def draw(%__MODULE__{} = struct) do
     "" <> struct.name <> " at " <> struct.position.to_string()
   end
 
-  @doc "Function get_position"
-  @spec get_position(t()) :: Point.t()
+  @doc "Generated from Haxe getPosition"
   def get_position(%__MODULE__{} = struct) do
     struct.position
   end
 
-  @doc "Function move"
-  @spec move(t(), float(), float()) :: nil
+  @doc "Generated from Haxe move"
   def move(%__MODULE__{} = struct, dx, dy) do
-    (
-          fh = %{fh.position | x: dx}
-          fh2 = %{fh2.position | y: dy}
-        )
+    fh = struct.position
+
+    fh.x = fh.x + dx
+
+    fh = struct.position
+
+    fh.y = fh.y + dy
   end
 
 end

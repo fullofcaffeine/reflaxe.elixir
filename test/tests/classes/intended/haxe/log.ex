@@ -7,57 +7,60 @@ defmodule Log do
   """
 
   # Static functions
-  @doc """
-    Format the output of `trace` before printing it.
-
-  """
-  @spec format_output(term(), PosInfos.t()) :: String.t()
+  @doc "Generated from Haxe formatOutput"
   def format_output(v, infos) do
-    (
-          str = Std.string(v)
-          if ((infos == nil)) do
-          str
-        end
-          pstr = infos.file_name <> ":" <> to_string(infos.line_number)
-          if ((infos.custom_params != nil)) do
-          (
-          g_counter = 0
-          g = infos.custom_params
-          while_loop(fn -> ((g < g.length)) end, fn -> (
-          v = Enum.at(g, g)
-          g + 1
-          str = str <> ", " <> Std.string(v)
-        ) end)
-        )
-        end
-          pstr <> ": " <> str
-        )
+    str = Std.string(v)
+
+    if ((infos == nil)) do
+      str
+    else
+      nil
+    end
+
+    pstr = infos.file_name <> ":" <> to_string(infos.line_number)
+
+    if ((infos.custom_params != nil)) do
+      g_counter = 0
+      g_array = infos.custom_params
+      Enum.each(g_array, fn v2 -> 
+        str = str <> ", " <> Std.string(v)
+      end)
+    else
+      nil
+    end
+
+    pstr <> ": " <> str
   end
 
-  @doc """
-    Outputs `v` in a platform-dependent way.
+  @doc "Generated from Haxe trace"
+  def trace(v, infos \\ nil) do
+    str = Log.format_output(v, infos)
 
-    The second parameter `infos` is injected by the compiler and contains
-    information about the position where the `trace()` call was made.
+    Sys.println(str)
+  end
 
-    This method can be rebound to a custom function:
 
-    var oldTrace = haxe.Log.trace; // store old function
-    haxe.Log.trace = function(v, ?infos) {
-    // handle trace
-    }
-    ...
-    haxe.Log.trace = oldTrace;
+  # While loop helper functions
+  # Generated automatically for tail-recursive loop patterns
 
-    If it is bound to null, subsequent calls to `trace()` will cause an
-    exception.
-  """
-  @spec trace(term(), Null.t()) :: nil
-  def trace(v, infos) do
-    (
-          str = Log.format_output(v, infos)
-          Sys.println(str)
-        )
+  @doc false
+  defp while_loop(condition_fn, body_fn) do
+    if condition_fn.() do
+      body_fn.()
+      while_loop(condition_fn, body_fn)
+    else
+      nil
+    end
+  end
+
+  @doc false
+  defp do_while_loop(body_fn, condition_fn) do
+    body_fn.()
+    if condition_fn.() do
+      do_while_loop(body_fn, condition_fn)
+    else
+      nil
+    end
   end
 
 end

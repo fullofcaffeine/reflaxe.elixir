@@ -9,7 +9,7 @@ defmodule User do
      * Tests @:schema annotation compilation
   """
 
-  defstruct [:id, :name, :email, :age, active: true, :inserted_at, :updated_at, :posts, :organization, :organization_id]
+  defstruct [:id, :name, :email, :age, :inserted_at, :updated_at, :posts, :organization, :organization_id, active: true]
 
   @type t() :: %__MODULE__{
     id: integer() | nil,

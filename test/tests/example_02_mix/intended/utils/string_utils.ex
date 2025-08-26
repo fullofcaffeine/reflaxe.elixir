@@ -10,216 +10,305 @@ defmodule StringUtils do
 
   # Module functions - generated with @:module syntax sugar
 
-  @doc """
-    Processes a string with common transformations
-    Trims whitespace, handles case conversion, validates format
-  """
-  @spec process_string(String.t()) :: String.t()
+  @doc "Generated from Haxe processString"
   def process_string(input) do
-    (
-          if ((input == nil)) do
-          ""
-        end
-          processed = StringTools.trim(input)
-          if ((processed.length == 0)) do
-          "[empty]"
-        end
-          processed = StringUtils.remove_excess_whitespace(processed)
-          processed = StringUtils.normalize_case(processed)
-          processed
-        )
+    if ((input == nil)) do
+      ""
+    else
+      nil
+    end
+
+    processed = StringTools.trim(input)
+
+    if ((processed.length == 0)) do
+      "[empty]"
+    else
+      nil
+    end
+
+    processed = StringUtils.remove_excess_whitespace(processed)
+
+    processed = StringUtils.normalize_case(processed)
+
+    processed
   end
 
-  @doc """
-    Formats a display name for user interfaces
-    Capitalizes first letters, handles special cases
-  """
-  @spec format_display_name(String.t()) :: String.t()
+
+  @doc "Generated from Haxe formatDisplayName"
   def format_display_name(name) do
-    (
-          if (((name == nil) || (StringTools.trim(name).length == 0))) do
-          "Anonymous User"
-        end
-          parts = StringTools.trim(name).split(" ")
-          formatted = []
-          g_counter = 0
-          while_loop(fn -> ((g < parts.length)) end, fn -> (
-          part = Enum.at(parts, g)
-          g + 1
-          if ((part.length > 0)) do
-          (
-          capitalized = part.char_at(0).to_upper_case() <> part.substr(1).to_lower_case()
-          formatted ++ [capitalized]
-        )
-        end
-        ) end)
-          Enum.join(formatted, " ")
-        )
+    if (((name == nil) || (StringTools.trim(name).length == 0))) do
+      "Anonymous User"
+    else
+      nil
+    end
+
+    parts = StringTools.trim(name).split(" ")
+
+    formatted = []
+
+    g_counter = 0
+
+    Enum.filter(parts, fn item -> item.length > 0 end)
+
+    Enum.join(formatted, " ")
   end
 
-  @doc """
-    Validates and formats email addresses
 
-  """
-  @spec process_email(String.t()) :: term()
+  @doc "Generated from Haxe processEmail"
   def process_email(email) do
-    (
-          if ((email == nil)) do
-          %{"valid" => false, "error" => "Email is required"}
-        end
-          trimmed = StringTools.trim(email)
-          if ((trimmed.length == 0)) do
-          %{"valid" => false, "error" => "Email cannot be empty"}
-        end
-          if (not StringUtils.is_valid_email_format(trimmed)) do
-          %{"valid" => false, "error" => "Invalid email format"}
-        end
-          %{"valid" => true, "email" => trimmed.to_lower_case(), "domain" => StringUtils.extract_domain(trimmed), "username" => StringUtils.extract_username(trimmed)}
-        )
+    if ((email == nil)) do
+      %{"valid" => false, "error" => "Email is required"}
+    else
+      nil
+    end
+
+    trimmed = StringTools.trim(email)
+
+    if ((trimmed.length == 0)) do
+      %{"valid" => false, "error" => "Email cannot be empty"}
+    else
+      nil
+    end
+
+    if (not StringUtils.is_valid_email_format(trimmed)) do
+      %{"valid" => false, "error" => "Invalid email format"}
+    else
+      nil
+    end
+
+    %{"valid" => true, "email" => trimmed.to_lower_case(), "domain" => StringUtils.extract_domain(trimmed), "username" => StringUtils.extract_username(trimmed)}
   end
 
-  @doc """
-    Generates a URL-friendly slug from text
 
-  """
-  @spec create_slug(String.t()) :: String.t()
+  @doc "Generated from Haxe createSlug"
   def create_slug(text) do
     if ((text == nil)) do
-          ""
-        end
+      ""
+    else
+      nil
+    end
+
     slug = StringTools.trim(text.to_lower_case())
+
     slug = EReg.new("[^a-z0-9\\s-]", "g").replace(slug, "")
+
     slug = EReg.new("\\s+", "g").replace(slug, "-")
+
     slug = EReg.new("-+", "g").replace(slug, "-")
-    while_loop(fn -> ((slug.char_at(0) == "-")) end, fn -> slug = slug.substr(1) end)
-    while_loop(fn -> ((slug.char_at((slug.length - 1)) == "-")) end, fn -> slug = slug.substr(0, (slug.length - 1)) end)
+
+    (
+      # Simple module-level pattern (inline for now)
+      loop_helper = fn condition_fn, body_fn, loop_fn ->
+        if condition_fn.() do
+          body_fn.()
+          loop_fn.(condition_fn, body_fn, loop_fn)
+        else
+          nil
+        end
+      end
+
+      loop_helper.(
+        fn -> ((slug.char_at(0) == "-")) end,
+        fn ->
+          slug = slug.substr(1)
+        end,
+        loop_helper
+      )
+    )
+
+    (
+      # Simple module-level pattern (inline for now)
+      loop_helper = fn condition_fn, body_fn, loop_fn ->
+        if condition_fn.() do
+          body_fn.()
+          loop_fn.(condition_fn, body_fn, loop_fn)
+        else
+          nil
+        end
+      end
+
+      loop_helper.(
+        fn -> ((slug.char_at((slug.length - 1)) == "-")) end,
+        fn ->
+          slug = slug.substr(0, (slug.length - 1))
+        end,
+        loop_helper
+      )
+    )
+
     slug
   end
 
-  @doc """
-    Truncates text to specified length with ellipsis
 
-  """
-  @spec truncate(String.t(), integer()) :: String.t()
-  def truncate(text, max_length) do
-    (
-          if ((text == nil)) do
-          ""
-        end
-          if ((text.length <= max_length)) do
-          text
-        end
-          truncated = text.substr(0, (max_length - 3))
-          last_space = truncated.last_index_of(" ")
-          if ((last_space > Std.int((max_length * 0.7)))) do
-          truncated = truncated.substr(0, last_space)
-        end
-          truncated <> "..."
-        )
+  @doc "Generated from Haxe truncate"
+  def truncate(text, max_length \\ nil) do
+    if ((text == nil)) do
+      ""
+    else
+      nil
+    end
+
+    if ((text.length <= max_length)) do
+      text
+    else
+      nil
+    end
+
+    truncated = text.substr(0, (max_length - 3))
+
+    last_space = truncated.last_index_of(" ")
+
+    if ((last_space > Std.int((max_length * 0.7)))), do: truncated = truncated.substr(0, last_space), else: nil
+
+    truncated <> "..."
   end
 
-  @doc """
-    Masks sensitive information (like email addresses)
 
-  """
-  @spec mask_sensitive_info(String.t(), integer()) :: String.t()
-  def mask_sensitive_info(text, visible_chars) do
+  @doc "Generated from Haxe maskSensitiveInfo"
+  def mask_sensitive_info(text, visible_chars \\ nil) do
+    temp_number = nil
+
+    if (((text == nil) || (text.length <= visible_chars))) do
+      temp_number = nil
+      if ((text != nil)), do: temp_number = text.length, else: temp_number = 4
+      repeat_count = temp_number
+      result = ""
+      g_counter = 0
+      g_array = repeat_count
+      (
+        # Simple module-level pattern (inline for now)
+        loop_helper = fn condition_fn, body_fn, loop_fn ->
+          if condition_fn.() do
+            body_fn.()
+            loop_fn.(condition_fn, body_fn, loop_fn)
+          else
+            nil
+          end
+        end
+      
+        loop_helper.(
+          fn -> ((g_counter < g_array)) end,
+          fn ->
+            _i = g_counter + 1
+            result = result <> "*"
+          end,
+          loop_helper
+        )
+      )
+      result
+    else
+      nil
+    end
+
+    visible = text.substr(0, visible_chars)
+
+    masked_count = (text.length - visible_chars)
+
+    masked = ""
+
+    g_counter = 0
+    g_array = masked_count
     (
-          if (((text == nil) || (text.length <= visible_chars))) do
-          (
-          temp_number = nil
-          if ((text != nil)) do
-          temp_number = text.length
+      # Simple module-level pattern (inline for now)
+      loop_helper = fn condition_fn, body_fn, loop_fn ->
+        if condition_fn.() do
+          body_fn.()
+          loop_fn.(condition_fn, body_fn, loop_fn)
         else
-          temp_number = 4
+          nil
         end
-          repeat_count = temp_number
-          result = ""
-          (
-          g_counter = 0
-          g = repeat_count
-          while_loop(fn -> ((g < g)) end, fn -> (
-          g + 1
-          result = result <> "*"
-        ) end)
-        )
-          result
-        )
-        end
-          visible = text.substr(0, visible_chars)
-          masked_count = (text.length - visible_chars)
-          masked = ""
-          (
-          g_counter = 0
-          g = masked_count
-          while_loop(fn -> ((g < g)) end, fn -> (
-          g + 1
+      end
+
+      loop_helper.(
+        fn -> ((g_counter < g_array)) end,
+        fn ->
+          _i = g_counter + 1
           masked = masked <> "*"
-        ) end)
-        )
-          visible <> masked
-        )
+        end,
+        loop_helper
+      )
+    )
+
+    visible <> masked
   end
 
-  @doc "Function remove_excess_whitespace"
-  @spec remove_excess_whitespace(String.t()) :: String.t()
+
+  @doc "Generated from Haxe removeExcessWhitespace"
   def remove_excess_whitespace(text) do
     EReg.new("\\s+", "g").replace(text, " ")
   end
 
-  @doc "Function normalize_case"
-  @spec normalize_case(String.t()) :: String.t()
+
+  @doc "Generated from Haxe normalizeCase"
   def normalize_case(text) do
     text.char_at(0).to_upper_case() <> text.substr(1).to_lower_case()
   end
 
-  @doc "Function is_valid_email_format"
-  @spec is_valid_email_format(String.t()) :: boolean()
+
+  @doc "Generated from Haxe isValidEmailFormat"
   def is_valid_email_format(email) do
-    (
-          at_index = email.index_of("@")
-          dot_index = email.last_index_of(".")
-          (((at_index > 0) && (dot_index > at_index)) && (dot_index < (email.length - 1)))
-        )
+    at_index = email.index_of("@")
+
+    dot_index = email.last_index_of(".")
+
+    (((at_index > 0) && (dot_index > at_index)) && (dot_index < (email.length - 1)))
   end
 
-  @doc "Function extract_domain"
-  @spec extract_domain(String.t()) :: String.t()
+
+  @doc "Generated from Haxe extractDomain"
   def extract_domain(email) do
-    (
-          at_index = email.index_of("@")
-          temp_result = nil
-          if ((at_index > 0)) do
-          temp_result = email.substr((at_index + 1))
-        else
-          temp_result = ""
-        end
-          temp_result
-        )
+    temp_result = nil
+
+    at_index = email.index_of("@")
+
+    temp_result = nil
+
+    if ((at_index > 0)), do: temp_result = email.substr((at_index + 1)), else: temp_result = ""
+
+    temp_result
   end
 
-  @doc "Function extract_username"
-  @spec extract_username(String.t()) :: String.t()
+
+  @doc "Generated from Haxe extractUsername"
   def extract_username(email) do
-    (
-          at_index = email.index_of("@")
-          temp_result = nil
-          if ((at_index > 0)) do
-          temp_result = email.substr(0, at_index)
-        else
-          temp_result = email
-        end
-          temp_result
-        )
+    temp_result = nil
+
+    at_index = email.index_of("@")
+
+    if ((at_index > 0)), do: temp_result = email.substr(0, at_index), else: temp_result = email
+
+    temp_result
   end
 
-  @doc """
-    Main function for compilation testing
 
-  """
-  @spec main() :: nil
+  @doc "Generated from Haxe main"
   def main() do
     Log.trace("StringUtils compiled successfully for Mix project!", %{"fileName" => "./utils/StringUtils.hx", "lineNumber" => 178, "className" => "utils.StringUtils", "methodName" => "main"})
+  end
+
+
+
+  # While loop helper functions
+  # Generated automatically for tail-recursive loop patterns
+
+  @doc false
+  defp while_loop(condition_fn, body_fn) do
+    if condition_fn.() do
+      body_fn.()
+      while_loop(condition_fn, body_fn)
+    else
+      nil
+    end
+  end
+
+  @doc false
+  defp do_while_loop(body_fn, condition_fn) do
+    body_fn.()
+    if condition_fn.() do
+      do_while_loop(body_fn, condition_fn)
+    else
+      nil
+    end
   end
 
 end

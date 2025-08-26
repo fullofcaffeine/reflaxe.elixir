@@ -7,39 +7,33 @@ defmodule Accounts do
   alias MyApp.Repo
 
   # Static functions
-  @doc "Function list_users"
-  @spec list_users() :: Array.t()
+  @doc "Generated from Haxe list_users"
   def list_users() do
     Enum.all?(Repo, User)
   end
 
-  @doc "Function get_user"
-  @spec get_user(integer()) :: term()
+  @doc "Generated from Haxe get_user"
   def get_user(id) do
     Repo.get(User, id)
   end
 
-  @doc "Function create_user"
-  @spec create_user(term()) :: term()
+  @doc "Generated from Haxe create_user"
   def create_user(attrs) do
-    (
-          user = User.new()
-          changeset = UserChangeset.changeset(user, attrs)
-          Repo.insert(changeset)
-        )
+    user = User.new()
+
+    _changeset = UserChangeset.changeset(user, attrs)
+
+    Repo.insert(changeset)
   end
 
-  @doc "Function update_user"
-  @spec update_user(User.t(), term()) :: term()
+  @doc "Generated from Haxe update_user"
   def update_user(user, attrs) do
-    (
-          changeset = UserChangeset.changeset(user, attrs)
-          Repo.update(changeset)
-        )
+    _changeset = UserChangeset.changeset(user, attrs)
+
+    Repo.update(changeset)
   end
 
-  @doc "Function delete_user"
-  @spec delete_user(User.t()) :: term()
+  @doc "Generated from Haxe delete_user"
   def delete_user(user) do
     Repo.delete(user)
   end

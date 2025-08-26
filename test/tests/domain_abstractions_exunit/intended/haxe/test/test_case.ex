@@ -9,49 +9,23 @@ defmodule TestCase do
   """
 
   # Instance functions
-  @doc """
-    Setup method called before each test.
-    Override to provide test-specific setup.
-
-    @param context Test context (usually includes conn for web tests)
-    @return Modified context passed to test methods
-  """
-  @spec setup(t(), term()) :: t()
+  @doc "Generated from Haxe setup"
   def setup(%__MODULE__{} = struct, context) do
     context
   end
 
-  @doc """
-    Setup method called once before all tests in the module.
-    Override for expensive setup that can be shared across tests.
-
-    @param context Test context
-    @return Modified context
-  """
-  @spec setup_all(t(), term()) :: t()
+  @doc "Generated from Haxe setupAll"
   def setup_all(%__MODULE__{} = struct, context) do
     context
   end
 
-  @doc """
-    Teardown method called after each test.
-    Override to provide test-specific cleanup.
-
-    @param context Test context
-  """
-  @spec teardown(t(), term()) :: nil
-  def teardown(%__MODULE__{} = struct, context) do
+  @doc "Generated from Haxe teardown"
+  def teardown(%__MODULE__{} = struct, _context) do
     nil
   end
 
-  @doc """
-    Teardown method called once after all tests in the module.
-    Override for cleanup of shared resources.
-
-    @param context Test context
-  """
-  @spec teardown_all(t(), term()) :: nil
-  def teardown_all(%__MODULE__{} = struct, context) do
+  @doc "Generated from Haxe teardownAll"
+  def teardown_all(%__MODULE__{} = struct, _context) do
     nil
   end
 

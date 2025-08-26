@@ -17,133 +17,67 @@ defmodule ArrayTools do
   """
 
   # Static functions
-  @doc """
-    Reduces array to single value using accumulator function
-    @param array The array to reduce
-    @param func Accumulator function (acc, item) -> newAcc
-    @param initial Initial accumulator value
-    @return Final accumulated value
-  """
-  @spec reduce(Array.t(), Function.t(), U.t()) :: U.t()
+  @doc "Generated from Haxe reduce"
   def reduce(array, func, initial) do
-    __elixir__("Enum.reduce({0}, {1}, fn item, acc -> {2}.(acc, item) end)", array, initial, func)
+    Enum.reduce(array, initial, fn item, acc -> func.(acc, item) end)
   end
 
-  @doc """
-    Alias for reduce - reduces array to single value
-    @param array The array to fold
-    @param func Accumulator function (acc, item) -> newAcc
-    @param initial Initial accumulator value
-    @return Final accumulated value
-  """
-  @spec fold(Array.t(), Function.t(), U.t()) :: U.t()
+  @doc "Generated from Haxe fold"
   def fold(array, func, initial) do
     Enum.reduce(array, initial, func)
   end
 
-  @doc """
-    Finds first element matching predicate
-    @param array The array to search
-    @param predicate Test function
-    @return First matching element or null
-  """
-  @spec find(Array.t(), Function.t()) :: Null.t()
+  @doc "Generated from Haxe find"
   def find(array, predicate) do
-    __elixir__("Enum.find({0}, fn item -> {1}.(item) end)", array, predicate)
+    Enum.find(array, fn item -> predicate.(item) end)
   end
 
-  @doc """
-    Finds index of first element matching predicate
-    @param array The array to search
-    @param predicate Test function
-    @return Index of first match or -1
-  """
-  @spec find_index(Array.t(), Function.t()) :: integer()
+  @doc "Generated from Haxe findIndex"
   def find_index(array, predicate) do
-    __elixir__("case Enum.find_index({0}, fn item -> {1}.(item) end) do\n      nil -> -1\n      index -> index\n    end", array, predicate)
+    case Enum.find_index(array, fn item -> predicate.(item) end) do
+          nil -> -1
+          index -> index
+        end
   end
 
-  @doc """
-    Tests if any element matches predicate
-    @param array The array to test
-    @param predicate Test function
-    @return True if any element matches
-  """
-  @spec exists(Array.t(), Function.t()) :: boolean()
+  @doc "Generated from Haxe exists"
   def exists(array, predicate) do
-    __elixir__("Enum.any?({0}, fn item -> {1}.(item) end)", array, predicate)
+    Enum.any?(array, fn item -> predicate.(item) end)
   end
 
-  @doc """
-    Alias for exists - tests if any element matches
-
-  """
-  @spec any(Array.t(), Function.t()) :: boolean()
+  @doc "Generated from Haxe any"
   def any(array, predicate) do
     Enum.any?(array, predicate)
   end
 
-  @doc """
-    Tests if all elements match predicate
-    @param array The array to test
-    @param predicate Test function
-    @return True if all elements match
-  """
-  @spec foreach(Array.t(), Function.t()) :: boolean()
+  @doc "Generated from Haxe foreach"
   def foreach(array, predicate) do
-    __elixir__("Enum.all?({0}, fn item -> {1}.(item) end)", array, predicate)
+    Enum.all?(array, fn item -> predicate.(item) end)
   end
 
-  @doc """
-    Alias for foreach - tests if all elements match
-
-  """
-  @spec all(Array.t(), Function.t()) :: boolean()
+  @doc "Generated from Haxe all"
   def all(array, predicate) do
     Enum.all?(array, predicate)
   end
 
-  @doc """
-    Executes function for each element (side effects)
-    @param array The array to iterate
-    @param action Function to execute for each element
-  """
-  @spec for_each(Array.t(), Function.t()) :: nil
+  @doc "Generated from Haxe forEach"
   def for_each(array, action) do
     __elixir__("Enum.each({0}, fn item -> {1}.(item) end)", array, action)
   end
 
-  @doc """
-    Returns first n elements
-    @param array The source array
-    @param n Number of elements to take
-    @return New array with first n elements
-  """
-  @spec take(Array.t(), integer()) :: Array.t()
+  @doc "Generated from Haxe take"
   def take(array, n) do
-    __elixir__("Enum.take({0}, {1})", array, n)
+    Enum.take(array, n)
   end
 
-  @doc """
-    Skips first n elements
-    @param array The source array
-    @param n Number of elements to skip
-    @return New array without first n elements
-  """
-  @spec drop(Array.t(), integer()) :: Array.t()
+  @doc "Generated from Haxe drop"
   def drop(array, n) do
-    __elixir__("Enum.drop({0}, {1})", array, n)
+    Enum.drop(array, n)
   end
 
-  @doc """
-    Maps and flattens the result
-    @param array The source array
-    @param mapper Function that returns array for each element
-    @return Flattened result array
-  """
-  @spec flat_map(Array.t(), Function.t()) :: Array.t()
+  @doc "Generated from Haxe flatMap"
   def flat_map(array, mapper) do
-    __elixir__("Enum.flat_map({0}, fn item -> {1}.(item) end)", array, mapper)
+    Enum.flat_map(array, fn item -> mapper.(item) end)
   end
 
 end

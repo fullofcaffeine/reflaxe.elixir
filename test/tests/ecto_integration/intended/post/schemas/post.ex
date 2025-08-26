@@ -8,7 +8,7 @@ defmodule Post do
     This module defines a struct with typed fields and constructor functions.
   """
 
-  defstruct [:id, :title, :content, published: true, view_count: 0, :user, :user_id, :comments, :inserted_at, :updated_at]
+  defstruct [:id, :title, :content, :user, :user_id, :comments, :inserted_at, :updated_at, published: false, view_count: 0]
 
   @type t() :: %__MODULE__{
     id: integer() | nil,

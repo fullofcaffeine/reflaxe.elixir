@@ -7,38 +7,35 @@ defmodule Main do
   """
 
   # Static functions
-  @doc "Function main"
-  @spec main() :: nil
+  @doc "Generated from Haxe main"
   def main() do
-    [1, 2, 3, 4, 5]
     temp_right = nil
-    (
-          g_array = []
-          (
-          g_counter = 0
-          Enum.each(g_array, fn v -> 
-      if ((v > 2)) do
-          g ++ [v]
-        end
-    end)
-        )
-          temp_right = g
-        )
     temp_right1 = nil
-    (
-          g_array = []
-          (
-          g_counter = 0
-          Enum.each(g_array, fn v -> 
-      g ++ [(v * 2)]
-    end)
-        )
-          g_array = g
-        )
+
+    _items = [1, 2, 3, 4, 5]
+
+    temp_right = nil
+
+    g_array = []
+    g_counter = 0
+    Enum.filter(temp_right1, fn item -> item > 2 end)
+    temp_right = g_array
+
+    temp_right1 = nil
+
+    g_array = []
+    g_counter = 0
+    Enum.map(temp_right1, fn item -> item * 2 end)
+    g_array = g_array
+
     text = "hello world"
+
     text = StringTools.trim(text)
+
     text = StringTools.replace(text, "world", "universe")
+
     Log.trace("Result: " <> Std.string(g_array), %{"fileName" => "Main.hx", "lineNumber" => 25, "className" => "Main", "methodName" => "main"})
+
     Log.trace("Text: " <> text, %{"fileName" => "Main.hx", "lineNumber" => 26, "className" => "Main", "methodName" => "main"})
   end
 

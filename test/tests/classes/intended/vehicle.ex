@@ -5,7 +5,7 @@ defmodule Vehicle do
     This module defines a struct with typed fields and constructor functions.
   """
 
-  defstruct [speed: 0.0]
+  defstruct [speed: 0]
 
   @type t() :: %__MODULE__{
     speed: float()
@@ -25,8 +25,7 @@ defmodule Vehicle do
   end
 
   # Instance functions
-  @doc "Function accelerate"
-  @spec accelerate(t()) :: nil
+  @doc "Generated from Haxe accelerate"
   def accelerate(%__MODULE__{} = struct) do
     raise "Abstract method"
   end

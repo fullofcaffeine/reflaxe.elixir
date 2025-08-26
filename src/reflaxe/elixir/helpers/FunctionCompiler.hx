@@ -160,14 +160,12 @@ class FunctionCompiler {
             
             var usedParams = if (funcField.expr != null) {
                 var result = detectUsedParameters(funcField.expr, funcField.args);
-                // DEBUG: Check what was detected
-                if (funcName == "to_legacy") {
-                    trace('[FunctionCompiler] ===== FOUND to_legacy function =====');
-                    trace('[FunctionCompiler] Function args: ${[for (arg in funcField.args) arg.tvar != null ? arg.tvar.name : arg.getName()].join(", ")}');
-                    trace('[FunctionCompiler] Detected used parameters:');
-                    for (key in result.keys()) {
-                        trace('[FunctionCompiler]   ${key}: ${result.get(key)}');
-                    }
+                // DEBUG: Check what was detected for all functions with underscore potential
+                trace('[FunctionCompiler] ===== ANALYZING FUNCTION: ${funcName} =====');
+                trace('[FunctionCompiler] Function args: ${[for (arg in funcField.args) arg.tvar != null ? arg.tvar.name : arg.getName()].join(", ")}');
+                trace('[FunctionCompiler] Detected used parameters:');
+                for (key in result.keys()) {
+                    trace('[FunctionCompiler]   ${key}: ${result.get(key) ? "USED" : "UNUSED"}');
                 }
                 result;
             } else {
@@ -193,8 +191,14 @@ class FunctionCompiler {
                 if (!isUsed) {
                     // Prefix with underscore to indicate intentionally unused
                     paramName = "_" + paramName;
+                    
+                    // CRITICAL FIX: Map the original parameter name to the prefixed version
+                    // so that all TLocal references in the body use the prefixed name
+                    compiler.currentFunctionParameterMap.set(originalName, paramName);
+                    
                     #if debug_function_compilation
                     DebugHelper.debugFunction("Unused Parameter", "Prefixed with underscore", 'Param: ${paramName}');
+                    DebugHelper.debugFunction("Parameter Mapping", "Added mapping", '${originalName} -> ${paramName}');
                     #end
                 }
                 
@@ -235,8 +239,9 @@ class FunctionCompiler {
             //   
             // NOTE: This will generate Elixir warnings about using underscore-prefixed
             //       variables, but that's better than compilation errors.
-            // NO PARAMETER MAPPING NEEDED
             // 
+            // IMPLEMENTATION: The parameter mapping is added above when we detect unused
+            //                 parameters and prefix them with underscore (see line 199). 
             // WHY: Since we're NOT prefixing parameters that are actually used
             //      (like 'spec' in elem(spec, 0)), the body references can use
             //      the original unprefixed names directly.
@@ -497,6 +502,7 @@ class FunctionCompiler {
                 case TSwitch(switchExpr, cases, defaultCase):
                     // CRITICAL: The switch expression contains the parameter being matched
                     // For example: switch(spec) generates elem(spec, 0) in Elixir
+                    trace('[FunctionCompiler] TSwitch found, switchExpr type: ${switchExpr.expr}');
                     checkExpression(switchExpr);
                     for (c in cases) {
                         // Also check case patterns - they might reference parameters
@@ -562,6 +568,15 @@ class FunctionCompiler {
                     if (expr != null) checkExpression(expr);
                     
                 case TParenthesis(e):
+                    checkExpression(e);
+                    
+                case TMeta(meta, e):
+                    // Handle metadata-wrapped expressions (like :exhaustive)
+                    checkExpression(e);
+                    
+                case TEnumIndex(e):
+                    // CRITICAL: TEnumIndex contains the actual enum variable reference
+                    // For switch(spec), this will contain TLocal(spec)
                     checkExpression(e);
                     
                 case TTry(e, catches):

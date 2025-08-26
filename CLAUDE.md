@@ -16,6 +16,7 @@ Enable developers to **write business logic once in Haxe and deploy it anywhere*
 - **⚠️ API Faithfulness**: Follow Elixir and Phoenix APIs exactly - never invent functions that don't exist. Provide Haxe conveniences via proper overloads, not fake APIs
 - **Hand-Written Quality**: Generated code should look like it was written by an Elixir expert, not a machine
 - **Transparent Bridge Variables**: When compiler-generated variables are needed (like `g` for switch expressions), add comments explaining their purpose
+- **🔥 Pragmatic Stdlib Implementation**: Use `__elixir__()` for efficient native stdlib - [see Standard Library Philosophy](#standard-library-philosophy--pragmatic-native-implementation)
 
 ## 📚 Complete Documentation Index
 
@@ -42,6 +43,7 @@ Enable developers to **write business logic once in Haxe and deploy it anywhere*
 #### **Need Technical Reference?**
 → **[docs/04-api-reference/](docs/04-api-reference/)** - Technical references and API docs
 → **[docs/05-architecture/](docs/05-architecture/)** - System design documentation
+→ **[`__elixir__()` Usage](#standard-library-philosophy--pragmatic-native-implementation)** - Native Elixir code injection for stdlib
 
 #### **Troubleshooting Problems?**
 → **[docs/06-guides/troubleshooting.md](docs/06-guides/troubleshooting.md)** - Comprehensive problem solving
@@ -464,9 +466,57 @@ if (isPhoenixProject()) {
 
 **The goal**: Maximum developer flexibility with complete type safety.
 
-## Standard Library Philosophy ⚡ **DUAL-API PATTERN**
+## Standard Library Philosophy ⚡ **PRAGMATIC NATIVE IMPLEMENTATION**
 
-**Every standard library type provides BOTH cross-platform AND native APIs** - Maximum developer flexibility.
+### The `__elixir__()` Function - Available and Encouraged for Stdlib
+
+**IMPORTANT CLARIFICATION**: `__elixir__()` IS available and can be strategically used for standard library implementations.
+
+```haxe
+// ✅ AVAILABLE: Direct Elixir code injection for efficient stdlib implementation
+var result = untyped __elixir__('IO.puts("Direct Elixir code")');
+var formatted = untyped __elixir__('Jason.encode!(data)');
+```
+
+### Pragmatic Stdlib Implementation Strategy
+
+**Philosophy**: Use the right tool for the job - combine Haxe's type safety with Elixir's native efficiency.
+
+1. **Type-Safe Interface**: Haxe provides the typed API surface
+2. **Native Implementation**: Use `__elixir__()` or `@:native` for efficient Elixir implementation  
+3. **Best of Both Worlds**: Cross-platform API with idiomatic target code
+
+#### Example: StringBuf Implementation
+```haxe
+// Type-safe Haxe interface
+class StringBuf {
+    var iolist: Dynamic;
+    
+    public function new() {
+        // Use native Elixir IO lists for efficiency
+        iolist = untyped __elixir__('[]');
+    }
+    
+    public function add(x: String): Void {
+        // Native Elixir list concatenation
+        iolist = untyped __elixir__('$iolist ++ [$x]');
+    }
+    
+    public function toString(): String {
+        // Native Elixir binary conversion
+        return untyped __elixir__('IO.iodata_to_binary($iolist)');
+    }
+}
+```
+
+### Implementation Priority
+
+1. **Prefer Native Efficiency**: Use `__elixir__()` for performance-critical stdlib
+2. **Maintain Type Safety**: Wrap all native code in typed Haxe interfaces
+3. **Support All Haxe Code**: Ensure Turing completeness and full Haxe compatibility
+4. **Idiomatic Output**: Generated code should leverage target platform strengths
+
+**The Goal**: Complete Haxe standard library support with efficient, idiomatic Elixir implementations.
 
 **See**: [`docs/05-architecture/`](docs/05-architecture/) - Complete implementation guidelines
 
