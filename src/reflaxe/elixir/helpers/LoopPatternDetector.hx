@@ -224,24 +224,37 @@ class LoopPatternDetector {
      * 
      * WHY: Array access by index is common but should use Enum.with_index instead
      *      of manual index management. This generates cleaner, more idiomatic code.
+     *      CRITICAL: Haxe desugars for loops, creating temp vars like g_counter, g_array
      * 
      * WHAT: Detects loops that access arrays by index with patterns like:
-     *       - Condition: i < array.length
-     *       - Body: array[i] or array.get(i)
-     *       - Increment: i++
+     *       - Condition: i < array.length OR g_counter < g_array (desugared)
+     *       - Body: array[i], array.get(i), or Enum.at(array, i)
+     *       - Increment: i++ or i = g_counter + offset
      * 
      * @param condition While loop condition expression
      * @param body Loop body expression  
      * @return IndexedIteration pattern if detected, null otherwise
      */
-    private static function detectIndexedIteration(condition: TypedExpr, body: TypedExpr): Null<LoopPattern> {
-        #if debug_loops
-        trace('[XRay PatternDetector] - Checking for indexed array iteration...');
-        #end
+    public static function detectIndexedIteration(condition: TypedExpr, body: TypedExpr): Null<LoopPattern> {
+        // Debug: Force trace to understand flow
+        trace('[XRay PatternDetector] detectIndexedIteration called');
+        trace('[XRay PatternDetector] Condition type: ${Type.enumConstructor(condition.expr)}');
 
         // Look for array length comparison (i < array.length)
         var lengthCheck = findArrayLengthComparison(condition);
-        if (lengthCheck == null) return null;
+        
+        // Also check for desugared patterns where we have Enum.at(array, index) in body
+        if (lengthCheck == null) {
+            // Try to detect desugared pattern by looking for Enum.at in body
+            var enumAtPattern = findEnumAtPattern(body);
+            if (enumAtPattern != null) {
+                #if debug_loops
+                trace('[XRay PatternDetector] ✓ Found Enum.at pattern: ${enumAtPattern.arrayVar}[${enumAtPattern.indexVar}]');
+                #end
+                return IndexedIteration(enumAtPattern.arrayVar, enumAtPattern.indexVar);
+            }
+            return null;
+        }
 
         // Look for array access by index (array[i])
         var hasArrayAccess = findArrayAccessByIndex(body, lengthCheck.arrayVar, lengthCheck.indexVar);
@@ -503,6 +516,76 @@ class LoopPatternDetector {
         };
     }
 
+    /**
+     * Detect Enum.at patterns in desugared loops
+     * 
+     * WHY: When Haxe desugars for loops, it often generates Enum.at(array, index) patterns.
+     *      These are clear indicators of indexed iteration that should use Enum.with_index.
+     * 
+     * WHAT: Searches for Enum.at(array, index) calls in the loop body and extracts
+     *       the array and index variable names.
+     * 
+     * HOW: Recursive AST traversal looking for TCall with Enum.at pattern.
+     * 
+     * @param body Loop body to search
+     * @return Object with arrayVar and indexVar if pattern found, null otherwise
+     */
+    private static function findEnumAtPattern(body: TypedExpr): Null<{arrayVar: String, indexVar: String}> {
+        // Debug: Always trace to understand what we're looking at
+        trace('[XRay PatternDetector] - Looking for Enum.at pattern in body...');
+        trace('[XRay PatternDetector] Body expr type: ${Type.enumConstructor(body.expr)}');
+        
+        var result: {arrayVar: String, indexVar: String} = null;
+        
+        function searchExpr(expr: TypedExpr): Bool {
+            return switch(expr.expr) {
+                case TCall(func, [arrayExpr, indexExpr]):
+                    // Check if this is Enum.at
+                    switch(func.expr) {
+                        case TField(obj, FStatic(classType, cf)):
+                            if (classType.get().name == "Enum" && cf.get().name == "at") {
+                                // Extract array variable
+                                var arrayVar = switch(arrayExpr.expr) {
+                                    case TLocal(tvar): tvar.name;
+                                    case _: null;
+                                };
+                                
+                                // Extract index variable (could be direct var or expression)
+                                var indexVar = switch(indexExpr.expr) {
+                                    case TLocal(tvar): tvar.name;
+                                    case _: null;
+                                };
+                                
+                                if (arrayVar != null && indexVar != null) {
+                                    result = {arrayVar: arrayVar, indexVar: indexVar};
+                                    #if debug_loops
+                                    trace('[XRay PatternDetector] ✓ Found Enum.at(${arrayVar}, ${indexVar})');
+                                    #end
+                                    return true;
+                                }
+                            }
+                            false;
+                        case _: false;
+                    }
+                    
+                case TVar(tvar, init):
+                    // Also check variable assignments like: item = Enum.at(array, i)
+                    if (init != null) searchExpr(init) else false;
+                    
+                case TBlock(exprs):
+                    Lambda.exists(exprs, searchExpr);
+                    
+                case TBinop(_, e1, e2):
+                    searchExpr(e1) || searchExpr(e2);
+                    
+                case _: false;
+            }
+        }
+        
+        searchExpr(body);
+        return result;
+    }
+    
     /**
      * Detect array access by index patterns in loop body
      * 
