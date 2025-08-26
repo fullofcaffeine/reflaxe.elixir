@@ -53,7 +53,7 @@ class ParallelTestRunner {
     public static var NoDetails = false;
     public static var SpecificTests: Array<String> = [];
     public static var FlexiblePositions = false;
-    static var WorkerCount = 16; // Optimized worker count for performance
+    static var WorkerCount = 16; // Default 16 workers, configurable up to 32 via -j flag
     
     // Parallel execution state
     static var workers: Array<TestWorker> = [];
@@ -133,7 +133,7 @@ Performance:
         
         // Ensure worker count is reasonable
         if (WorkerCount < 1) WorkerCount = 1;
-        if (WorkerCount > 16) WorkerCount = 16; // Prevent system overload
+        if (WorkerCount > 32) WorkerCount = 32; // Increased limit for high-core systems
         
         // Parse specific tests
         for (arg in args) {
@@ -369,6 +369,7 @@ class TestWorker {
         final outputDir = ParallelTestRunner.UpdateIntended ? "intended" : "out";
         final args = [
             "-D", 'elixir_output=$outputDir',
+            "-D", 'reflaxe.dont_output_metadata_id', // Don't generate volatile id field in tests
             "compile.hxml"
         ];
         

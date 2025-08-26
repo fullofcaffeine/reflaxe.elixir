@@ -68,7 +68,7 @@ class NamingConventionCompiler {
 
     public function setUniversalOutputPath(moduleName: String, pack: Array<String> = null): Void {
         var namingRule = getUniversalNamingRule(moduleName, pack);
-        trace('Universal naming: ${moduleName} → file: ${namingRule.fileName}, dir: ${namingRule.dirPath}');
+        // Debug trace removed to avoid test output pollution
         compiler.setOutputFileName(namingRule.fileName);
         
         // CRITICAL FIX: Prevent Reflaxe framework from receiving empty directory paths
@@ -76,7 +76,7 @@ class NamingConventionCompiler {
         var safeDir = namingRule.dirPath != null && namingRule.dirPath.length > 0 ? namingRule.dirPath : ".";
         compiler.setOutputFileDir(safeDir);
         
-        trace('DEBUG: setUniversalOutputPath completed successfully for ${moduleName}');
+        // Debug trace removed to avoid test output pollution
     }
 
     public function getComprehensiveNamingRule(classType: ClassType): {fileName: String, dirPath: String} {
