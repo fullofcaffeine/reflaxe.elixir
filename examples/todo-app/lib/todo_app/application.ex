@@ -25,7 +25,7 @@ defmodule TodoApp.Application do
   @spec start(ApplicationStartType.t(), ApplicationArgs.t()) :: ApplicationResult.t()
   def start(_type, _args) do
     (
-          "TodoApp"
+          _app_name = "TodoApp"
           type_safe_children = [{Phoenix.PubSub, name: TodoApp.PubSub}, TodoAppWeb.Telemetry, TodoAppWeb.Endpoint]
           children = type_safe_children
           opts = [strategy: :one_for_one, name: TodoApp.Supervisor]

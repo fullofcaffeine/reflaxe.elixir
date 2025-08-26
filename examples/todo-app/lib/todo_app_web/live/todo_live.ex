@@ -83,11 +83,17 @@ defmodule TodoAppWeb.TodoLive do
     )
       4 -> (
     g_array = elem(parsed_msg, 1)
-    temp_socket = socket
+    (
+          _user_id = g_array
+          temp_socket = socket
+        )
     )
       5 -> (
     g_array = elem(parsed_msg, 1)
-    temp_socket = socket
+    (
+          _user_id = g_array
+          temp_socket = socket
+        )
     )
       6 -> (
     g_array = elem(parsed_msg, 1)
@@ -122,14 +128,14 @@ defmodule TodoAppWeb.TodoLive do
     temp_right = nil
 
     temp_right = nil
-    params.title
-    params.description
-    false
+    _todo_params_title = params.title
+    _todo_params_description = params.description
+    _todo_params_completed = false
 
     temp_right = if (((params.priority != nil))), do: params.priority, else: "medium"
-    params.due_date
-    TodoAppWeb.TodoLive.parse_tags(params.tags)
-    socket.assigns.current_user.id
+    _todo_params_due_date = params.due_date
+    _todo_params_tags = TodoAppWeb.TodoLive.parse_tags(params.tags)
+    _todo_params_user_id = socket.assigns.current_user.id
     changeset_params = TypeSafeConversions.event_params_to_changeset_params(params)
     changeset = Todo.changeset(Server.Schemas.Todo.new(), changeset_params)
     (
@@ -235,6 +241,7 @@ defmodule TodoAppWeb.TodoLive do
       {:ok, _} -> (
     g_array = elem(g_array, 1)
     (
+          _deleted_todo = g_array
           (
           g_array = TodoPubSub.broadcast(:todo_updates, TodoPubSubMessage.todo_deleted(id))
           case g_array do
@@ -459,7 +466,10 @@ defmodule TodoAppWeb.TodoLive do
           case g_array do
       {:ok, _} -> (
     g_array = elem(g_array, 1)
-    nil
+    (
+          _updated_todo = g_array
+          nil
+        )
     )
       {:error, _} -> (
     g_array = elem(g_array, 1)
@@ -606,16 +616,16 @@ defmodule TodoAppWeb.TodoLive do
           complete_assigns = TypeSafeConversions.create_complete_assigns(current_assigns, updated_todos)
           Phoenix.LiveView.assign(socket, complete_assigns)
         )
-      {2, priority} -> (
-          elem(action, 1)
+      {2, __priority} -> (
+          g_array = elem(action, 1)
           socket
         )
-      {3, tag} -> (
-          elem(action, 1)
+      {3, __tag} -> (
+          g_array = elem(action, 1)
           socket
         )
-      {4, tag} -> (
-          elem(action, 1)
+      {4, __tag} -> (
+          g_array = elem(action, 1)
           socket
         )
     end

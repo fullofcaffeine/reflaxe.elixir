@@ -191,6 +191,9 @@ defmodule TypeSafeChildSpecTools do
     g_array = elem(spec, 1)
     (
           module = g_array
+          _args = g_array
+          _restart = g_array
+          _shutdown = g_array
           if ((module == nil)) do
           errors ++ ["Custom child spec module cannot be null"]
         end
