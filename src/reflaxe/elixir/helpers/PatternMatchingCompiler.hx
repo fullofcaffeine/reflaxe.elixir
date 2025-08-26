@@ -748,9 +748,10 @@ class PatternMatchingCompiler {
             #end
             
             // Compile patterns with extracted variables
+            // Pass the case body for usage detection to properly prefix unused variables
             var patterns = [];
             for (value in caseData.values) {
-                patterns.push(compilePatternWithVariables(value, patternVars));
+                patterns.push(compilePatternWithVariables(value, patternVars, caseData.expr));
             }
             
             #if debug_pattern_matching
@@ -1533,9 +1534,10 @@ class PatternMatchingCompiler {
      * 
      * @param expr The pattern expression
      * @param patternVars Map of parameter index to variable name
+     * @param caseBody The case body expression for usage detection (optional)
      * @return Compiled pattern string with variables
      */
-    private function compilePatternWithVariables(expr: TypedExpr, patternVars: Map<Int, String>): String {
+    private function compilePatternWithVariables(expr: TypedExpr, patternVars: Map<Int, String>, ?caseBody: TypedExpr): String {
         #if debug_pattern_matching
         trace('[XRay PatternMatchingCompiler] compilePatternWithVariables: expr=${expr.expr}, patternVars=${patternVars}');
         #end
@@ -1555,7 +1557,18 @@ class PatternMatchingCompiler {
                     var varList = [];
                     for (i in 0...Lambda.count(patternVars)) {
                         if (patternVars.exists(i)) {
-                            varList.push(patternVars.get(i));
+                            var varName = patternVars.get(i);
+                            
+                            // Check if this variable is used in the case body
+                            // If not, prefix with underscore to avoid warnings
+                            if (caseBody != null && !isVariableUsedInExpression(caseBody, varName)) {
+                                varName = "_" + varName;
+                                #if debug_pattern_matching
+                                trace('[XRay PatternMatchingCompiler] Variable "${patternVars.get(i)}" not used in case body, prefixing with underscore: ${varName}');
+                                #end
+                            }
+                            
+                            varList.push(varName);
                         } else {
                             varList.push("_");
                         }
@@ -1621,6 +1634,56 @@ class PatternMatchingCompiler {
             default:
                 compilePattern(expr);
         };
+    }
+    
+    /**
+     * Compile enum pattern with automatic usage detection
+     * 
+     * WHY: We need to detect which pattern variables are actually used in the case body
+     * to properly prefix unused ones with underscore and avoid compilation warnings.
+     * 
+     * WHAT: Analyzes the case body for variable usage and generates patterns accordingly
+     * 
+     * HOW: For each pattern variable, checks if it's referenced in the case body expression
+     * and prefixes with underscore if unused
+     * 
+     * @param constructorName The enum constructor name
+     * @param args The constructor arguments
+     * @param caseBody The case body expression to analyze for variable usage
+     * @return Compiled pattern string with appropriate underscore prefixing
+     */
+    private function compileEnumPatternWithUsageDetection(constructorName: String, args: Array<TypedExpr>, caseBody: TypedExpr): String {
+        var atom = ':${NamingHelper.toSnakeCase(constructorName)}';
+        
+        if (args.length == 0) {
+            return atom;
+        }
+        
+        var argPatterns = [];
+        for (arg in args) {
+            var pattern = switch (arg.expr) {
+                case TLocal(v):
+                    var varName = v.name;
+                    var snakeName = NamingHelper.toSnakeCase(varName);
+                    
+                    // Check if this variable is used in the case body
+                    var isUsed = isVariableUsedInExpression(caseBody, varName);
+                    
+                    // Prefix with underscore if unused
+                    if (!isUsed && !StringTools.startsWith(snakeName, "_")) {
+                        "_" + snakeName;
+                    } else {
+                        snakeName;
+                    }
+                    
+                case _:
+                    // Non-variable patterns compile normally
+                    compilePatternArgument(arg);
+            };
+            argPatterns.push(pattern);
+        }
+        
+        return '{${atom}, ${argPatterns.join(", ")}}';
     }
     
     /**
@@ -2129,6 +2192,125 @@ class PatternMatchingCompiler {
         #end
         
         return result;
+    }
+    
+    /**
+     * Detect if a variable is used within an expression
+     * 
+     * WHY: We need to determine which pattern variables are actually used in case bodies
+     * to properly prefix unused ones with underscore and avoid compilation warnings.
+     * 
+     * WHAT: Recursively traverses the AST to find TLocal references to a specific variable
+     * 
+     * HOW: Deep traversal checking all expression types that might contain variable references
+     * 
+     * @param expr The expression to search within
+     * @param varName The variable name to search for
+     * @return True if the variable is referenced anywhere in the expression
+     */
+    private function isVariableUsedInExpression(expr: TypedExpr, varName: String): Bool {
+        if (expr == null) return false;
+        
+        return switch (expr.expr) {
+            case TLocal(v):
+                // Direct variable reference
+                v.name == varName;
+                
+            case TVar(tvar, init):
+                // Variable declaration - check initializer but not the variable itself
+                (init != null && isVariableUsedInExpression(init, varName));
+                
+            case TBlock(el):
+                // Block of expressions
+                Lambda.exists(el, e -> isVariableUsedInExpression(e, varName));
+                
+            case TIf(econd, eif, eelse):
+                // Conditional expression
+                isVariableUsedInExpression(econd, varName) ||
+                isVariableUsedInExpression(eif, varName) ||
+                (eelse != null && isVariableUsedInExpression(eelse, varName));
+                
+            case TSwitch(e, cases, def):
+                // Switch expression
+                isVariableUsedInExpression(e, varName) ||
+                Lambda.exists(cases, c -> Lambda.exists(c.values, v -> isVariableUsedInExpression(v, varName)) || 
+                                          isVariableUsedInExpression(c.expr, varName)) ||
+                (def != null && isVariableUsedInExpression(def, varName));
+                
+            case TCall(e, el):
+                // Function call
+                isVariableUsedInExpression(e, varName) ||
+                Lambda.exists(el, arg -> isVariableUsedInExpression(arg, varName));
+                
+            case TField(e, _):
+                // Field access
+                isVariableUsedInExpression(e, varName);
+                
+            case TBinop(_, e1, e2):
+                // Binary operation
+                isVariableUsedInExpression(e1, varName) ||
+                isVariableUsedInExpression(e2, varName);
+                
+            case TUnop(_, _, e):
+                // Unary operation
+                isVariableUsedInExpression(e, varName);
+                
+            case TParenthesis(e):
+                // Parenthesized expression
+                isVariableUsedInExpression(e, varName);
+                
+            case TReturn(e):
+                // Return statement
+                e != null && isVariableUsedInExpression(e, varName);
+                
+            case TArray(e1, e2):
+                // Array access
+                isVariableUsedInExpression(e1, varName) ||
+                isVariableUsedInExpression(e2, varName);
+                
+            case TArrayDecl(el):
+                // Array declaration
+                Lambda.exists(el, e -> isVariableUsedInExpression(e, varName));
+                
+            case TObjectDecl(fields):
+                // Object declaration
+                Lambda.exists(fields, f -> isVariableUsedInExpression(f.expr, varName));
+                
+            case TFunction(f):
+                // Function declaration - check body
+                f.expr != null && isVariableUsedInExpression(f.expr, varName);
+                
+            case TCast(e, _):
+                // Type cast
+                isVariableUsedInExpression(e, varName);
+                
+            case TWhile(econd, e, _):
+                // While loop
+                isVariableUsedInExpression(econd, varName) ||
+                isVariableUsedInExpression(e, varName);
+                
+            case TFor(_, iter, body):
+                // For loop
+                isVariableUsedInExpression(iter, varName) ||
+                isVariableUsedInExpression(body, varName);
+                
+            case TTry(e, catches):
+                // Try-catch
+                isVariableUsedInExpression(e, varName) ||
+                Lambda.exists(catches, c -> isVariableUsedInExpression(c.expr, varName));
+                
+            case TThrow(e):
+                // Throw statement
+                isVariableUsedInExpression(e, varName);
+                
+            case TMeta(_, e):
+                // Meta expression
+                isVariableUsedInExpression(e, varName);
+                
+            case _:
+                // Other expressions don't contain variable references
+                false;
+        };
     }
     
     /**

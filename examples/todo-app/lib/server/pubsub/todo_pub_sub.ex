@@ -158,16 +158,16 @@ defmodule TodoPubSub do
     case (case action do :complete_all -> 0; :delete_completed -> 1; :set_priority -> 2; :add_tag -> 3; :remove_tag -> 4; _ -> -1 end) do
       0 -> "complete_all"
       1 -> "delete_completed"
-      {2, priority} -> (
-          elem(action, 1)
+      {2, __priority} -> (
+          g_array = elem(action, 1)
           "set_priority"
         )
-      {3, tag} -> (
-          elem(action, 1)
+      {3, __tag} -> (
+          g_array = elem(action, 1)
           "add_tag"
         )
-      {4, tag} -> (
-          elem(action, 1)
+      {4, __tag} -> (
+          g_array = elem(action, 1)
           "remove_tag"
         )
     end
