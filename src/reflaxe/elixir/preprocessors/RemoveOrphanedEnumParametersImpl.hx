@@ -27,6 +27,11 @@ using reflaxe.helpers.TypedExprHelper;
  * 
  * HOW: Traverses TypedExpr AST looking for TVar(TEnumParameter) declarations
  *      and marks unused parameter variables with -reflaxe.unused metadata.
+ *      
+ * RENAMED VARIABLE HANDLING:
+ *      When Haxe renames variables to avoid shadowing (spec → spec2), we track
+ *      both the renamed variable AND check if the original name is referenced.
+ *      This prevents incorrectly marking renamed-but-used variables as unused.
  * 
  * ARCHITECTURAL ALIGNMENT: Follows Reflaxe's established preprocessor pattern
  *                         instead of inventing ad-hoc detection systems.
@@ -47,7 +52,8 @@ class RemoveOrphanedEnumParametersImpl {
     }
     
     var foundOrphaned: Bool = false;
-    var parameterVars: Map<Int, {tvar: TVar, used: Bool}> = [];
+    var parameterVars: Map<Int, {tvar: TVar, used: Bool, originalName: String}> = [];
+    var renamedVariableMap: Map<String, Int> = []; // Maps original names to TVar IDs
     
     /**
      * Main processing function - analyzes expressions for orphaned enum parameters
@@ -59,17 +65,46 @@ class RemoveOrphanedEnumParametersImpl {
             analyzeExpression(e);
         }
         
-        // Mark orphaned parameter variables with -reflaxe.unused metadata
+        // Mark orphaned parameter variables with metadata
         for (id => data in parameterVars) {
             if (!data.used) {
+                // Add -reflaxe.unused for truly unused variables
                 if (!data.tvar.meta.maybeHas("-reflaxe.unused")) {
                     data.tvar.meta.maybeAdd("-reflaxe.unused", [], Context.currentPos());
                     foundOrphaned = true;
+                }
+            } else {
+                // For renamed variables that ARE used, add metadata to track the relationship
+                if (isRenamedVariable(data.tvar.name)) {
+                    var originalName = extractOriginalName(data.tvar.name);
+                    if (!data.tvar.meta.maybeHas("-reflaxe.renamed")) {
+                        // Store original name in metadata for pattern matching compiler
+                        data.tvar.meta.maybeAdd("-reflaxe.renamed", [
+                            {expr: EConst(CString(originalName)), pos: Context.currentPos()}
+                        ], Context.currentPos());
+                    }
                 }
             }
         }
         
         return exprList;
+    }
+    
+    /**
+     * Check if a variable name appears to be renamed (has numeric suffix)
+     */
+    function isRenamedVariable(name: String): Bool {
+        return ~/^.+[0-9]+$/.match(name);
+    }
+    
+    /**
+     * Extract original name from renamed variable (strip numeric suffix)
+     */
+    function extractOriginalName(name: String): String {
+        if (~/^(.+?)([0-9]+)$/.match(name)) {
+            return ~/^(.+?)([0-9]+)$/.replace(name, "$1");
+        }
+        return name;
     }
     
     /**
@@ -86,7 +121,8 @@ class RemoveOrphanedEnumParametersImpl {
                 switch (maybeExpr.expr) {
                     case TEnumParameter(_, _, _):
                         // Track this as a potential orphaned parameter
-                        parameterVars.set(tvar.id, {tvar: tvar, used: false});
+                        var originalName = extractOriginalName(tvar.name);
+                        parameterVars.set(tvar.id, {tvar: tvar, used: false, originalName: originalName});
                     case _:
                 }
                 
@@ -138,7 +174,13 @@ class RemoveOrphanedEnumParametersImpl {
             case TVar(tvar, maybeExpr) if (maybeExpr != null):
                 switch (maybeExpr.expr) {
                     case TEnumParameter(_, _, _):
-                        parameterVars.set(tvar.id, {tvar: tvar, used: false});
+                        var originalName = extractOriginalName(tvar.name);
+                        parameterVars.set(tvar.id, {tvar: tvar, used: false, originalName: originalName});
+                        
+                        // If this is a renamed variable, also track the mapping
+                        if (isRenamedVariable(tvar.name)) {
+                            renamedVariableMap.set(originalName, tvar.id);
+                        }
                     case _:
                 }
             case _:
