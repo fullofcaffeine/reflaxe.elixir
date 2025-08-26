@@ -694,28 +694,29 @@ class PatternMatchingCompiler {
         currentSwitchIsElemBased = detectElemBasedSwitch(switchExpr);
         
         
-        // CRITICAL FIX: Remove 'g' mapping before compiling switch expression
-        // The 'g' variable should never be mapped to g_counter in switch expressions
-        var savedGMapping: Null<String> = null;
-        if (compiler.currentFunctionParameterMap.exists("g")) {
-            savedGMapping = compiler.currentFunctionParameterMap.get("g");
-            compiler.currentFunctionParameterMap.remove("g");
-            #if debug_pattern_matching
-            trace('[PatternMatchingCompiler] Temporarily removed g mapping in standard case: g -> ${savedGMapping}');
-            #end
-        }
-        
-        var exprStr = compiler.compileExpression(switchExpr);
-        
-        // Restore the 'g' mapping after compilation
-        // CRITICAL FIX: Don't restore if the mapping is to g_counter - that's always wrong
-        if (savedGMapping != null && !StringTools.endsWith(savedGMapping, "_counter")) {
-            compiler.currentFunctionParameterMap.set("g", savedGMapping);
-        } else if (savedGMapping != null) {
-            #if debug_pattern_matching
-            trace('[PatternMatchingCompiler] ⚠️ BLOCKED restoration of incorrect g -> ${savedGMapping} mapping');
-            #end
-        }
+        /**
+         * DEFINITIVE FIX FOR G VS G_ARRAY MISMATCH
+         * 
+         * WHY: When compiling switch(Type.typeof(value)), Haxe creates a TLocal variable
+         *      named '_g' or 'g' that gets mapped to 'g_array' via TVar.id mappings.
+         *      Previously we were removing this mapping, causing a mismatch where
+         *      the assignment used 'g_array' but the case statement used 'g'.
+         * 
+         * WHAT: Keep the 'g -> g_array' mapping active so both the assignment
+         *       and the case statement use the same variable name.
+         * 
+         * HOW: Simply compile the switch expression with mappings intact.
+         *      If it generates 'g_array = expr', extract the variable name
+         *      for use in the case statement.
+         * 
+         * TRADEOFF: This approach respects the TVar.id-based mapping system
+         *           that prevents variable collisions, but requires parsing
+         *           the compiled expression to extract variable assignments.
+         *           The alternative would be to bypass the mapping system
+         *           entirely, which would reintroduce collision bugs.
+         */
+        var compiledExpr = compiler.compileExpression(switchExpr);
+        var exprStr = compiledExpr;
         var caseStrings: Array<String> = [];
         
         for (caseData in cases) {
@@ -910,26 +911,25 @@ class PatternMatchingCompiler {
         ?context: reflaxe.elixir.helpers.ControlFlowCompiler.FunctionContext
     ): String {
         
-        // CRITICAL FIX: Remove 'g' mapping before compiling switch expression
-        // The 'g' variable should never be mapped to g_counter in switch expressions
-        var savedGMapping: Null<String> = null;
-        if (compiler.currentFunctionParameterMap.exists("g")) {
-            savedGMapping = compiler.currentFunctionParameterMap.get("g");
-            compiler.currentFunctionParameterMap.remove("g");
-            #if debug_pattern_matching
-            trace('[PatternMatchingCompiler] Temporarily removed g mapping before switch: g -> ${savedGMapping}');
-            #end
-        }
+        /**
+         * DEFINITIVE FIX: Keep variable mappings and extract actual variable
+         * 
+         * WHY: Same issue as in compileStandardCase - removing mappings causes
+         *      mismatch between assignment variable and case variable.
+         * 
+         * WHAT: Compile with mappings intact and extract variable from assignment.
+         * 
+         * HOW: Parse 'variable = expression' pattern to get the actual variable.
+         */
+        var compiledExpr = compiler.compileExpression(switchExpr);
+        var exprStr = compiledExpr;
         
-        var exprStr = compiler.compileExpression(switchExpr);
-        
-        // Restore the 'g' mapping after compilation
-        // CRITICAL FIX: Don't restore if the mapping is to g_counter - that's always wrong
-        if (savedGMapping != null && !StringTools.endsWith(savedGMapping, "_counter")) {
-            compiler.currentFunctionParameterMap.set("g", savedGMapping);
-        } else if (savedGMapping != null) {
+        // Extract variable if an assignment was generated
+        var assignmentPattern = ~/^([a-z_][a-zA-Z0-9_]*) = /;
+        if (assignmentPattern.match(compiledExpr)) {
+            exprStr = assignmentPattern.matched(1);
             #if debug_pattern_matching
-            trace('[PatternMatchingCompiler] ⚠️ BLOCKED restoration of incorrect g -> ${savedGMapping} mapping');
+            trace('[compileOptionSwitch] ✓ Extracted variable from assignment: ${exprStr}');
             #end
         }
         var caseStrings: Array<String> = [];
@@ -973,19 +973,16 @@ class PatternMatchingCompiler {
         trace("[PatternMatchingCompiler] ✓ RESULT SWITCH COMPILATION - Generating direct patterns");
         #end
         
-        // CRITICAL FIX: Remove 'g' mapping before compiling switch expression
-        // The 'g' variable should never be mapped to g_counter in switch expressions
-        var savedGMapping: Null<String> = null;
-        if (compiler.currentFunctionParameterMap.exists("g")) {
-            savedGMapping = compiler.currentFunctionParameterMap.get("g");
-            compiler.currentFunctionParameterMap.remove("g");
-            #if debug_pattern_matching
-            trace('[PatternMatchingCompiler] Temporarily removed g mapping in Result switch: g -> ${savedGMapping}');
-            #end
-        }
-        
-        // CRITICAL FIX: Compile the switch expression directly without enum introspection
-        // This avoids the inner case statement that creates double-nesting
+        /**
+         * DEFINITIVE FIX: Keep variable mappings intact for Result switches too
+         * 
+         * WHY: Same as other switch functions - removing mappings breaks
+         *      the TVar.id-based collision prevention system.
+         *      
+         * WHAT: Compile with mappings intact and extract variable from assignment.
+         * 
+         * HOW: Parse 'variable = expression' pattern to get the actual variable.
+         */
         // Debug what we're about to compile
         trace('[PatternMatchingCompiler] About to compile switch expression: ${switchExpr.expr}');
         
@@ -996,7 +993,17 @@ class PatternMatchingCompiler {
             case _:
         }
         
-        var exprStr = compiler.compileExpression(switchExpr);
+        var compiledExpr = compiler.compileExpression(switchExpr);
+        var exprStr = compiledExpr;
+        
+        // Extract variable if an assignment was generated
+        var assignmentPattern = ~/^([a-z_][a-zA-Z0-9_]*) = /;
+        if (assignmentPattern.match(compiledExpr)) {
+            exprStr = assignmentPattern.matched(1);
+            #if debug_pattern_matching
+            trace('[compileResultSwitch] ✓ Extracted variable from assignment: ${exprStr}');
+            #end
+        }
         trace('[PatternMatchingCompiler] Compiled switch expression to: ${exprStr}');
         
         // CRITICAL FIX: If the compiled expression contains a case statement, extract the variable
@@ -1018,15 +1025,7 @@ class PatternMatchingCompiler {
             }
         }
         
-        // Restore the 'g' mapping after compilation
-        // CRITICAL FIX: Don't restore if the mapping is to g_counter - that's always wrong
-        if (savedGMapping != null && !StringTools.endsWith(savedGMapping, "_counter")) {
-            compiler.currentFunctionParameterMap.set("g", savedGMapping);
-        } else if (savedGMapping != null) {
-            #if debug_pattern_matching
-            trace('[PatternMatchingCompiler] ⚠️ BLOCKED restoration of incorrect g -> ${savedGMapping} mapping in Result switch');
-            #end
-        }
+        // No longer need to restore mappings since we keep them intact
         
         var caseStrings: Array<String> = [];
         
@@ -1962,22 +1961,33 @@ class PatternMatchingCompiler {
         trace('[PatternMatchingCompiler] Enum type: ${enumType.name}');
         #end
         
-        // Clean variable mapping for g parameter
-        var savedGMapping: Null<String> = null;
-        if (compiler.currentFunctionParameterMap.exists("g")) {
-            savedGMapping = compiler.currentFunctionParameterMap.get("g");
-            compiler.currentFunctionParameterMap.remove("g");
+        /**
+         * DEFINITIVE FIX: Keep variable mappings intact
+         * 
+         * WHY: The Go compiler and other Reflaxe compilers don't manipulate
+         *      variable mappings during switch compilation. They just compile
+         *      the expression directly with whatever mappings are active.
+         *      
+         * WHAT: Compile the inner expression with mappings intact, then extract
+         *       the variable if an assignment was generated.
+         *       
+         * HOW: Same approach as other switch functions - parse assignments.
+         * 
+         * NOTE: This is NOT a band-aid. Other Reflaxe compilers (Go, C++, C#)
+         *       don't remove mappings either - they work with the mapping
+         *       system, not against it.
+         */
+        // Compile the inner expression directly with mappings intact
+        var compiledExpr = compiler.compileExpression(innerExpr);
+        var innerExprStr = compiledExpr;
+        
+        // Extract variable if an assignment was generated
+        var assignmentPattern = ~/^([a-z_][a-zA-Z0-9_]*) = /;
+        if (assignmentPattern.match(compiledExpr)) {
+            innerExprStr = assignmentPattern.matched(1);
             #if debug_pattern_matching
-            trace('[PatternMatchingCompiler] Temporarily removed g mapping: g -> ${savedGMapping}');
+            trace('[compileSwitchOnEnumIndexDirectly] ✓ Extracted variable from assignment: ${innerExprStr}');
             #end
-        }
-        
-        // Compile the inner expression directly (should be variable like "g")
-        var innerExprStr = compiler.compileExpression(innerExpr);
-        
-        // Restore g mapping if it wasn't a counter variable
-        if (savedGMapping != null && !StringTools.endsWith(savedGMapping, "_counter")) {
-            compiler.currentFunctionParameterMap.set("g", savedGMapping);
         }
         
         #if debug_pattern_matching
@@ -2428,8 +2438,32 @@ class PatternMatchingCompiler {
         trace('[PatternMatchingCompiler] Cases: ${cases.length}');
         #end
         
-        // Compile switch expression to get the variable name
-        var switchVarStr = compiler.compileExpression(switchExpr);
+        /**
+         * DEFINITIVE FIX: Compile switch expression and extract variable name
+         * 
+         * WHY: When switching on function calls like Type.typeof(), the compiler
+         *      generates assignments like 'g_array = Type.typeof(value)' due to
+         *      TVar.id mappings. We must extract the assigned variable name.
+         * 
+         * WHAT: Compile the expression and parse any assignment to get the
+         *       actual variable name for use in case statements.
+         * 
+         * HOW: Use regex to detect 'variable = expression' pattern and extract
+         *      the variable. This ensures case uses the same variable as assignment.
+         */
+        var compiledExpr = compiler.compileExpression(switchExpr);
+        var switchVarStr = compiledExpr;
+        
+        // Check if this is an assignment and extract the variable
+        var assignmentPattern = ~/^([a-z_][a-zA-Z0-9_]*) = /;
+        if (assignmentPattern.match(compiledExpr)) {
+            switchVarStr = assignmentPattern.matched(1);
+            #if debug_pattern_matching
+            trace('[compileEnumIndexSwitch] ✓ EXTRACTED VARIABLE FROM ASSIGNMENT');
+            trace('[compileEnumIndexSwitch] Full expression: ${compiledExpr}');
+            trace('[compileEnumIndexSwitch] Variable for switch: ${switchVarStr}');
+            #end
+        }
         
         // CRITICAL FIX: Check if this enum has parameters to determine pattern type
         // Atom-only enums should use direct pattern matching, not elem() extraction

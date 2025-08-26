@@ -34,7 +34,7 @@ defmodule FlashTypeTools do
           temp_result = nil
           temp_result = nil
     g_array = str.to_lower_case()
-    case (g) do
+    case (g_array) do
       _ -> :info
     end
           temp_result

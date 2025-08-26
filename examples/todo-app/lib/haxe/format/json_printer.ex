@@ -65,21 +65,18 @@ defmodule JsonPrinter do
         end
           temp_string = nil
     g_array = Type.typeof(v)
-    case g do
+    case g_array do
       0 -> struct = %{struct.buf | b: "null"}
       1 -> struct = %{struct.buf | b: Std.string(v)}
-      2 -> temp_string = nil
-
-    temp_string = if (Math.is_finite(v)), do: Std.string(v), else: "null"
-    v = temp_string
-    struct = %{struct.buf | b: Std.string(v)}
+      2 -> v = temp_string
+        struct = %{struct.buf | b: Std.string(v)}
       3 -> struct = %{struct.buf | b: Std.string(v)}
       4 -> struct.fields_string(v, Reflect.fields(v))
       5 -> struct = %{struct.buf | b: "\"<fun>\""}
       6 -> (
-    g_array = elem(g, 1)
+    g_array = elem(g_array, 1)
     (
-          c = g
+          c = g_array
           if ((c == String)) do
           struct.quote_(v)
         else
@@ -175,7 +172,7 @@ defmodule JsonPrinter do
         )
     )
       7 -> (
-    g_array = elem(g, 1)
+    g_array = elem(g_array, 1)
     (
           i = Type.enum_index(v)
           (
@@ -264,9 +261,8 @@ defmodule JsonPrinter do
           length = s.length
           for <<char <- s>> do
       char_code = char
-      (
-            index = g_counter + 1
-            case (char_code) do
+      index = g_counter + 1
+          case (char_code) do
         _ ->
           struct = %{struct.buf | b: "\\b"}
         _ ->
@@ -283,7 +279,6 @@ defmodule JsonPrinter do
           struct = %{struct.buf | b: "\\\\"}
         _ -> struct = %{struct.buf | b: String.from_char_code(char_code)}
       end
-          )
     end
           struct = %{struct.buf | b: "\""}
         )

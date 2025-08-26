@@ -514,15 +514,15 @@ if (isPhoenixProject()) {
 - **NO string replacements** like `if (x == "wrong") x = "right"` - find WHY it's wrong
 - **NO special case handling** without understanding the general pattern
 - **NO symptom patching** - trace back to where the problem originates
+- **NO quick fixes** - even if they work, refactor to fix the root cause
+- **NO fallback mechanisms** - fix the primary system instead of adding backup logic
 - **Always ask**: Why is this happening? What's the root cause?
 - **The fix must be general** - it should solve ALL similar cases, not just the one you found
 - **Example of wrong approach**: Replacing "g_counter" with "g" in output
+- **Example of wrong approach**: Adding fallback to check secondary mapping when primary fails
 - **Example of right approach**: Fix the variable mapping system that creates "g_counter" incorrectly
-- **If an ad-hoc fix is truly needed** (rare!), you MUST:
-  - Explain to the user WHY the root cause can't be fixed
-  - Document what the proper fix would be
-  - Add comprehensive comments explaining the temporary nature
-  - Create a tracking issue for the proper fix
+- **Example of right approach**: Register mappings at TVar creation time, not retroactively
+- **ZERO TOLERANCE FOR QUICK FIXES**: The user has explicitly stated they don't want quick fixes in this compiler. Always implement the proper architectural solution, even if it takes more time.
 
 ### ⚠️ CRITICAL: Debug-First Development - No Assumptions
 **FUNDAMENTAL RULE: Always rely on debug data first. If you don't see the data/AST, don't assume things.**

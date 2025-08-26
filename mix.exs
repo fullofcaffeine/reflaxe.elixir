@@ -16,7 +16,9 @@ defmodule ReflaxeElixir.MixProject do
 
   def application do
     [
-      extra_applications: [:logger, :jason]  # Only auto-start essential apps, FileSystem loaded on-demand
+      # FileSystem is intentionally NOT in extra_applications - it's loaded on-demand
+      # This keeps production deployments lightweight since file watching is only needed in dev
+      extra_applications: [:logger, :jason]
     ]
   end
 
@@ -24,6 +26,8 @@ defmodule ReflaxeElixir.MixProject do
     [
       {:jason, "~> 1.4"},
       {:ex_doc, "~> 0.32", only: :dev, runtime: false},
+      # FileSystem is optional - only needed for dev file watching functionality
+      # HaxeWatcher checks at runtime if available and provides helpful messages if not
       {:file_system, "~> 0.2", only: [:dev, :test]}
     ]
   end
