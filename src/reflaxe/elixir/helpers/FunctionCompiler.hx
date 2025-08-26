@@ -72,6 +72,8 @@ class FunctionCompiler {
      * - LiveView callback parameter override when applicable
      * - Pipeline-optimized function body compilation
      * - Appropriate indentation and formatting
+     * - Instance method handling for struct classes
+     * - State threading for mutable struct methods
      * 
      * HOW:
      * 1. Convert function name to snake_case using NamingHelper
@@ -89,11 +91,20 @@ class FunctionCompiler {
      * PIPELINE OPTIMIZATION: Multi-statement function bodies are analyzed for
      * pipeline patterns that can be compiled to idiomatic Elixir |> chains.
      * 
+     * INSTANCE METHOD HANDLING: Instance methods for struct classes need special
+     * handling - they take the struct as first parameter and may return updated
+     * struct for state threading.
+     * 
      * @param funcField The Haxe function data including name, parameters, and body
-     * @param isStatic Whether this is a static function (currently unused)
+     * @param isStatic Whether this is a static function (default: false)
+     * @param isInstance Whether this is an instance method (default: false)
+     * @param isStructClass Whether the containing class is a struct (default: false)
+     * @param className The name of the containing class for context (default: null)
      * @return Complete Elixir function definition string
      */
-    public function compileFunction(funcField: ClassFuncData, isStatic: Bool = false): String {
+    public function compileFunction(funcField: ClassFuncData, isStatic: Bool = false, 
+                                   isInstance: Bool = false, isStructClass: Bool = false,
+                                   ?className: String): String {
         var originalFuncName = funcField.field.name;
         
         // CRITICAL FIX: LiveView classes should NOT have __struct__ functions
@@ -108,7 +119,7 @@ class FunctionCompiler {
         }
         
         #if debug_function_compilation
-        DebugHelper.debugFunction("compileFunction", "Starting compilation", 'Function: ${funcName}, Static: ${isStatic}');
+        DebugHelper.debugFunction("compileFunction", "Starting compilation", 'Function: ${funcName}, Static: ${isStatic}, Instance: ${isInstance}, Struct: ${isStructClass}');
         #end
         
         // Build parameter list - check for LiveView callback override first
@@ -122,15 +133,48 @@ class FunctionCompiler {
             DebugHelper.debugFunction("LiveView Override", "Using LiveView parameters", 'Params: ${paramStr}');
             #end
         } else {
+            // Build parameter list starting with struct parameter for instance methods
+            var params = [];
+            
+            // Instance methods of struct classes take the struct as first parameter
+            if (isInstance && isStructClass) {
+                params.push('%__MODULE__{} = struct');
+                #if debug_function_compilation
+                DebugHelper.debugFunction("Struct Method", "Added struct parameter", 'First param: %__MODULE__{} = struct');
+                #end
+            }
+            
             // Use actual parameter names converted to snake_case for regular functions
             // CRITICAL: Detect unused parameters to prefix with underscore
+            // 
+            // WHY: Reflaxe's preprocessor marks parameters as unused with -reflaxe.unused,
+            //      but it doesn't recognize patterns like elem(spec, 0) as using the parameter.
+            //      Our detectUsedParameters function properly handles these patterns.
+            //      
+            // WHAT: Use our own AST traversal to detect parameter usage, which correctly
+            //       identifies parameters used in function calls like elem(spec, 0).
+            //       
+            // HOW: detectUsedParameters recursively checks all expressions including TCall
+            //      arguments to find parameter references. Only truly unused parameters
+            //      get prefixed with underscore.
+            
             var usedParams = if (funcField.expr != null) {
-                detectUsedParameters(funcField.expr, funcField.args);
+                var result = detectUsedParameters(funcField.expr, funcField.args);
+                // DEBUG: Check what was detected
+                if (funcName == "to_legacy") {
+                    trace('[FunctionCompiler] ===== FOUND to_legacy function =====');
+                    trace('[FunctionCompiler] Function args: ${[for (arg in funcField.args) arg.tvar != null ? arg.tvar.name : arg.getName()].join(", ")}');
+                    trace('[FunctionCompiler] Detected used parameters:');
+                    for (key in result.keys()) {
+                        trace('[FunctionCompiler]   ${key}: ${result.get(key)}');
+                    }
+                }
+                result;
             } else {
                 new Map<String, Bool>(); // Empty function, all params unused
             }
             
-            var params = [];
+            // Now add regular function parameters
             for (i in 0...funcField.args.length) {
                 var arg = funcField.args[i];
                 // Get the actual parameter name from tvar (consistent with setFunctionParameterMapping)
@@ -141,7 +185,7 @@ class FunctionCompiler {
                     arg.getName();
                 }
                 
-                // Check if parameter is used in function body
+                // Check if parameter is actually used in function body
                 var isUsed = usedParams.exists(originalName) && usedParams.get(originalName);
                 
                 // Convert to snake_case and prefix with underscore if unused
@@ -169,6 +213,40 @@ class FunctionCompiler {
             #if debug_function_compilation
             DebugHelper.debugFunction("Parameter Conversion", "Converted parameters", 'Params: ${paramStr}');
             #end
+            
+            // ARCHITECTURAL FIX: Handle underscore-prefixed parameters correctly
+            // 
+            // WHY: In Elixir, when a parameter is prefixed with underscore (_spec),
+            //      ALL references in the function body MUST also use the prefixed name.
+            //      Using the unprefixed name (spec) causes "undefined variable" errors.
+            //      
+            // WHAT: When we prefix a parameter with underscore in the signature,
+            //       we need to ensure all TLocal references in the body use the
+            //       prefixed name as well.
+            //       
+            // HOW: Map the original Haxe variable name to the prefixed Elixir name
+            //      so that when TLocal compiles variable references, it uses the
+            //      correct prefixed name.
+            //      
+            // EXAMPLE:
+            //   Haxe: function toLegacy(spec: TypeSafeChildSpec, appName: String)
+            //   Function signature: def to_legacy(_spec, app_name) do
+            //   Function body: case elem(_spec, 0) do  # Must use _spec, not spec
+            //   
+            // NOTE: This will generate Elixir warnings about using underscore-prefixed
+            //       variables, but that's better than compilation errors.
+            // NO PARAMETER MAPPING NEEDED
+            // 
+            // WHY: Since we're NOT prefixing parameters that are actually used
+            //      (like 'spec' in elem(spec, 0)), the body references can use
+            //      the original unprefixed names directly.
+            //      
+            // WHAT: We don't need to set up any parameter mapping here because
+            //       only truly unused parameters get prefixed, and those don't
+            //       have any references in the body anyway.
+            //       
+            // HOW: The body compilation will use the standard snake_case names
+            //      for all parameters that are actually referenced.
         }
         
         // Generate function documentation and signature
@@ -181,6 +259,22 @@ class FunctionCompiler {
                 compiler.variableMappingManager.compilationContext.currentFunction = funcName;
                 #if debug_variable_mapping
                 trace('[FunctionCompiler] Set function context: ${funcName}');
+                #end
+            }
+            
+            // ARCHITECTURAL FIX: Set up struct method context if needed
+            // WHY: Instance methods on structs need special handling for 'this' references
+            // WHAT: Map 'this' to 'struct' parameter for consistent compilation
+            // HOW: Set up parameter mapping before compiling body
+            if (isInstance && isStructClass) {
+                // Map this -> struct for instance methods
+                compiler.setThisParameterMapping("struct");
+                compiler.setInlineContext("struct", "struct");
+                // Also map _this (from Haxe desugaring) to struct
+                compiler.currentFunctionParameterMap.set("_this", "struct");
+                
+                #if debug_function_compilation
+                DebugHelper.debugFunction("Struct Method Setup", "Mapped this->struct", 'Instance method of struct class');
                 #end
             }
             
@@ -252,6 +346,19 @@ class FunctionCompiler {
             #end
         }
         result += '  end\n\n';
+        
+        // ARCHITECTURAL FIX: Clean up struct method context
+        // WHY: We need to clear mappings after each function to prevent leaking
+        // WHAT: Clear the this->struct mapping we set up earlier
+        // HOW: Reset parameter mappings and inline context
+        if (isInstance && isStructClass) {
+            compiler.clearThisParameterMapping();
+            compiler.clearInlineContext();
+            
+            #if debug_function_compilation
+            DebugHelper.debugFunction("Struct Method Cleanup", "Cleared this->struct mapping", 'Completed instance method compilation');
+            #end
+        }
         
         #if debug_function_compilation
         DebugHelper.debugFunction("compileFunction", "✓ COMPLETION", 'Generated ${result.split("\n").length} lines');
@@ -363,6 +470,7 @@ class FunctionCompiler {
                     // Check if this local variable is a parameter
                     if (paramNames.exists(tvar.name)) {
                         usedParams.set(tvar.name, true);
+                        trace('[FunctionCompiler] PARAMETER USED: ${tvar.name}');
                         #if debug_function_compilation
                         DebugHelper.debugFunction("Parameter Usage", "Found used parameter", 'Param: ${tvar.name}');
                         #end
@@ -387,13 +495,30 @@ class FunctionCompiler {
                     checkExpression(bodyExpr);
                     
                 case TSwitch(switchExpr, cases, defaultCase):
+                    // CRITICAL: The switch expression contains the parameter being matched
+                    // For example: switch(spec) generates elem(spec, 0) in Elixir
                     checkExpression(switchExpr);
                     for (c in cases) {
+                        // Also check case patterns - they might reference parameters
                         checkExpression(c.expr);
                     }
                     if (defaultCase != null) checkExpression(defaultCase);
                     
                 case TCall(e, el):
+                    /**
+                     * CRITICAL FIX: Detect parameter usage in function calls
+                     * 
+                     * WHY: Parameters used as arguments in function calls like elem(spec, 0)
+                     *      were not being detected as "used", causing incorrect underscore prefixing
+                     * 
+                     * WHAT: Check both the function expression AND all arguments for parameter references
+                     * 
+                     * HOW: Recursively traverse both the function being called and its arguments
+                     *      to find any TLocal references that match our function parameters
+                     * 
+                     * EXAMPLE: In elem(spec, 0), we need to detect that 'spec' is being used
+                     *          even though it's an argument to elem(), not a direct reference
+                     */
                     checkExpression(e);
                     for (arg in el) {
                         checkExpression(arg);

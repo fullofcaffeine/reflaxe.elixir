@@ -205,6 +205,16 @@ class VariableCompiler {
             }
         }
         
+        // DEBUG: Check what's in the parameter map for underscore parameters
+        if (originalName == "spec" || originalName == "_spec") {
+            trace('[XRay VariableCompiler] DEBUG: Looking for spec parameter mapping');
+            trace('[XRay VariableCompiler] Original name: ${originalName}');
+            trace('[XRay VariableCompiler] Parameter map keys: ${[for (k in compiler.currentFunctionParameterMap.keys()) k].join(", ")}');
+            for (key in compiler.currentFunctionParameterMap.keys()) {
+                trace('[XRay VariableCompiler]   ${key} -> ${compiler.currentFunctionParameterMap.get(key)}');
+            }
+        }
+        
         var mappedName = compiler.currentFunctionParameterMap.get(originalName);
         if (mappedName != null) {
             trace('[XRay VariableCompiler] ✓ PARAMETER MAPPING: ${originalName} -> ${mappedName}');

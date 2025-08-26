@@ -41,11 +41,7 @@ defmodule RootLayout do
   """
 
   # Static functions
-  @doc """
-    Root HTML document template
-    Includes Tailwind CSS, proper meta tags, and Phoenix LiveView setup
-  """
-  @spec render(term()) :: String.t()
+  @doc "Generated from Haxe render"
   def render(assigns) do
     ~H"""
       <!DOCTYPE html>

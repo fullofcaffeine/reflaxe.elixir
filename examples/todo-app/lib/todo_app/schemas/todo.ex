@@ -35,8 +35,7 @@ defmodule Todo do
   end
 
   # Static functions
-  @doc "Function changeset"
-  @spec changeset(Todo.t(), ChangesetParams.t()) :: Ecto.Changeset.t()
+  @doc "Generated from Haxe changeset"
   def changeset(todo, params) do
     changeset = Ecto.Changeset.cast_changeset(todo, params, ["title", "description", "completed", "priority", "due_date", "tags", "user_id"])
     changeset = Ecto.Changeset.validate_required(changeset, ["title", "user_id"])
@@ -48,31 +47,26 @@ defmodule Todo do
     changeset
   end
 
-  @doc "Function toggle_completed"
-  @spec toggle_completed(Todo.t()) :: Ecto.Changeset.t()
+  @doc "Generated from Haxe toggle_completed"
   def toggle_completed(todo) do
-    (
-          params = Haxe.Ds.StringMap.new()
-          value = ChangesetValue.bool_value(not todo.completed)
-          params.set("completed", value)
-          Todo.changeset(todo, params)
-        )
+    params = Haxe.Ds.StringMap.new()
+    value = ChangesetValue.bool_value(not todo.completed)
+    params.set("completed", value)
+    Todo.changeset(todo, params)
   end
 
-  @doc "Function update_priority"
-  @spec update_priority(Todo.t(), String.t()) :: Ecto.Changeset.t()
+  @doc "Generated from Haxe update_priority"
   def update_priority(todo, _priority) do
-    (
-          params = Haxe.Ds.StringMap.new()
-          value = ChangesetValue.string_value(priority)
-          params.set("priority", value)
-          Todo.changeset(todo, params)
-        )
+    params = Haxe.Ds.StringMap.new()
+    value = ChangesetValue.string_value(priority)
+    params.set("priority", value)
+    Todo.changeset(todo, params)
   end
 
-  @doc "Function add_tag"
-  @spec add_tag(Todo.t(), String.t()) :: Ecto.Changeset.t()
+  @doc "Generated from Haxe add_tag"
   def add_tag(todo, tag) do
+    temp_array = nil
+
     temp_array ++ [tag]
         params = Haxe.Ds.StringMap.new()
         g_array = []
