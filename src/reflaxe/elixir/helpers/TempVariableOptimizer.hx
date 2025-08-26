@@ -26,6 +26,84 @@ class TempVariableOptimizer {
         this.compiler = compiler;
     }
 
+    /**
+     * Check if a temp variable is actually used within an expression tree
+     * 
+     * WHY: Temp variables might be declared but never actually referenced
+     * WHAT: Recursively search AST to find TLocal references to the temp variable
+     * HOW: Walk the expression tree looking for TLocal with matching variable name
+     * 
+     * @param varName The temporary variable name to search for
+     * @param expr The expression tree to search within
+     * @return true if the variable is referenced, false otherwise
+     */
+    private function isTempVariableUsedInExpression(varName: String, expr: TypedExpr): Bool {
+        if (expr == null) return false;
+        
+        switch (expr.expr) {
+            case TLocal(v):
+                return compiler.getOriginalVarName(v) == varName;
+            
+            case TObjectDecl(fields):
+                // Check all field expressions
+                for (field in fields) {
+                    if (isTempVariableUsedInExpression(varName, field.expr)) {
+                        return true;
+                    }
+                }
+                return false;
+            
+            case TArrayDecl(exprs):
+                for (e in exprs) {
+                    if (isTempVariableUsedInExpression(varName, e)) {
+                        return true;
+                    }
+                }
+                return false;
+            
+            case TCall(e, el):
+                if (isTempVariableUsedInExpression(varName, e)) return true;
+                for (arg in el) {
+                    if (isTempVariableUsedInExpression(varName, arg)) return true;
+                }
+                return false;
+            
+            case TBinop(_, e1, e2):
+                return isTempVariableUsedInExpression(varName, e1) || 
+                       isTempVariableUsedInExpression(varName, e2);
+            
+            case TUnop(_, _, e):
+                return isTempVariableUsedInExpression(varName, e);
+            
+            case TField(e, _):
+                return isTempVariableUsedInExpression(varName, e);
+            
+            case TIf(econd, eif, eelse):
+                return isTempVariableUsedInExpression(varName, econd) ||
+                       isTempVariableUsedInExpression(varName, eif) ||
+                       (eelse != null && isTempVariableUsedInExpression(varName, eelse));
+            
+            case TBlock(exprs):
+                for (e in exprs) {
+                    if (isTempVariableUsedInExpression(varName, e)) return true;
+                }
+                return false;
+            
+            case TReturn(e):
+                return e != null && isTempVariableUsedInExpression(varName, e);
+            
+            case TParenthesis(e):
+                return isTempVariableUsedInExpression(varName, e);
+            
+            case TMeta(_, e):
+                return isTempVariableUsedInExpression(varName, e);
+                
+            case _:
+                // Other expression types don't contain variable references
+                return false;
+        }
+    }
+    
     public function detectTempVariablePattern(expressions: Array<TypedExpr>): Null<String> {
         #if debug_temp_var
         trace('[TempVariableOptimizer] detectTempVariablePattern called with ${expressions.length} expressions');
@@ -78,6 +156,13 @@ class TempVariableOptimizer {
                     case TLocal(v):
                         lastVarName = compiler.getOriginalVarName(v);
                     case _:
+                        // CRITICAL FIX: If TReturn contains something other than TLocal,
+                        // check if the temp variable is actually referenced anywhere
+                        if (!isTempVariableUsedInExpression(tempVarName, expr)) {
+                            // Temp variable is declared but never used - don't optimize
+                            trace('[TempVariableOptimizer DEBUG] ❌ TEMP VAR ${tempVarName} declared but not used in return expression');
+                            return null;
+                        }
                 }
             case _:
         }

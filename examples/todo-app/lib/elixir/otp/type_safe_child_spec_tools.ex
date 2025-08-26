@@ -152,7 +152,7 @@ defmodule TypeSafeChildSpecTools do
       0 -> (
     g_array = elem(spec, 1)
     (
-          name = g
+          name = g_array
           if (((name == nil) || (name == ""))) do
           errors ++ ["PubSub name cannot be empty"]
         end
@@ -168,7 +168,7 @@ defmodule TypeSafeChildSpecTools do
       2 -> (
     g_array = elem(spec, 1)
     (
-          port = g
+          port = g_array
           if (((port != nil) && (((port < 1) || (port > 65535))))) do
           errors ++ ["Endpoint port must be between 1 and 65535"]
         end
@@ -181,7 +181,7 @@ defmodule TypeSafeChildSpecTools do
       4 -> (
     g_array = elem(spec, 1)
     (
-          config = g
+          config = g_array
           if (((config.name == nil) || (config.name == ""))) do
           errors ++ ["Presence name is required"]
         end
@@ -190,10 +190,7 @@ defmodule TypeSafeChildSpecTools do
       5 -> (
     g_array = elem(spec, 1)
     (
-          module = g
-          g
-          g
-          g
+          module = g_array
           if ((module == nil)) do
           errors ++ ["Custom child spec module cannot be null"]
         end
@@ -202,7 +199,7 @@ defmodule TypeSafeChildSpecTools do
       6 -> (
     g_array = elem(spec, 1)
     (
-          spec = g
+          spec = g_array
           if (((spec.id == nil) || (spec.id == ""))) do
           errors ++ ["Legacy child spec id cannot be empty"]
         end

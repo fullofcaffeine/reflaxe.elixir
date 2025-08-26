@@ -5,8 +5,10 @@ defmodule Main do
   @doc "Function main"
   @spec main() :: nil
   def main() do
-    test = TestStruct.new()
-    test.write(nil)
+    (
+          test = TestStruct.new()
+          test.write(nil)
+        )
   end
 
 end

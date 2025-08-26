@@ -71,50 +71,50 @@ defmodule TodoPubSub do
       0 -> (
     g_array = elem(message, 1)
     (
-          todo = g
+          todo = g_array
           temp_struct = %{"type" => "todo_created", "todo" => todo}
         )
     )
       1 -> (
     g_array = elem(message, 1)
     (
-          todo = g
+          todo = g_array
           temp_struct = %{"type" => "todo_updated", "todo" => todo}
         )
     )
       2 -> (
     g_array = elem(message, 1)
     (
-          id = g
+          id = g_array
           temp_struct = %{"type" => "todo_deleted", "todo_id" => id}
         )
     )
       3 -> (
     g_array = elem(message, 1)
     (
-          action = g
+          action = g_array
           temp_struct = %{"type" => "bulk_update", "action" => TodoPubSub.bulk_action_to_string(action)}
         )
     )
       4 -> (
     g_array = elem(message, 1)
     (
-          user_id = g
+          user_id = g_array
           temp_struct = %{"type" => "user_online", "user_id" => user_id}
         )
     )
       5 -> (
     g_array = elem(message, 1)
     (
-          user_id = g
+          user_id = g_array
           temp_struct = %{"type" => "user_offline", "user_id" => user_id}
         )
     )
       6 -> (
     g_array = elem(message, 1)
     (
-          message = g
-          level = g
+          message = g_array
+          level = g_array
           temp_struct = %{"type" => "system_alert", "message" => message, "level" => TodoPubSub.alert_level_to_string(level)}
         )
     )
@@ -139,7 +139,7 @@ defmodule TodoPubSub do
           temp_result = nil
           temp_result = nil
     g_array = msg.type
-    case (g) do
+    case (g_array) do
       _ -> (
           Log.trace(SafePubSub.create_unknown_message_error(msg.type), %{"fileName" => "src_haxe/server/pubsub/TodoPubSub.hx", "lineNumber" => 220, "className" => "server.pubsub.TodoPubSub", "methodName" => "parseMessageImpl"})
           temp_result = :error
