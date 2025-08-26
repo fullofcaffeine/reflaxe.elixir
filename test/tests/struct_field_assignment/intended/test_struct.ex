@@ -21,22 +21,22 @@ defmodule TestStruct do
   @doc "Updates struct fields using a map of changes"
   @spec update(t(), map()) :: t()
   def update(struct, changes) when is_map(changes) do
-    struct |> Map.merge(changes) |> struct(__MODULE__, _1)
+    Map.merge(struct, changes) |> then(&struct(__MODULE__, &1))
   end
 
   # Instance functions
   @doc "Function write"
-  @spec write(t(), term()) :: nil
+  @spec write(t(), term()) :: t()
   def write(%__MODULE__{} = struct, value) do
-    _g = Type.typeof(value)
-    case (elem(_g, 0)) do
-      0 ->
-        %{struct | field: struct.field <> "null"}
-      1 ->
-        %{struct | field: struct.field <> Std.string(value)}
-      _ ->
-        %{struct | field: struct.field <> "other"}
+    (
+          g_array = Type.typeof(value)
+          case g_array do
+      :t_null -> struct = %{struct | field: struct.field <> "null"}
+      :t_int -> struct = %{struct | field: struct.field <> Std.string(value)}
+      _ -> struct = %{struct | field: struct.field <> "other"}
     end
+        )
+    struct
   end
 
 end

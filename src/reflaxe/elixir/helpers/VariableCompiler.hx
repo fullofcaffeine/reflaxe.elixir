@@ -409,6 +409,130 @@ class VariableCompiler {
         }
         #end
         
+        /**
+         * ARCHITECTURAL FIX: Register ID mapping at TVar creation time
+         * 
+         * WHY: When Haxe desugars switch(Type.typeof()), it creates a TVar named 'g' or '_g'
+         *      that should be mapped to 'g_array' for array operations. Previously, we only
+         *      set name-based mappings which weren't checked during TLocal compilation.
+         * 
+         * WHAT: Register the TVar.id → g_array mapping immediately when the variable is
+         *       declared, ensuring all future TLocal references use the correct name.
+         * 
+         * HOW: Check if this is a 'g' variable from switch desugaring and register the
+         *      ID mapping before any compilation happens.
+         * 
+         * @see docs/03-compiler-development/G_ARRAY_MISMATCH_ISSUE.md
+         */
+        var originalName = getOriginalVarName(tvar);
+        
+        #if debug_variable_compiler
+        trace('[XRay VariableCompiler] Checking if ${originalName} needs array mapping...');
+        trace('[XRay VariableCompiler] Has init expr: ${expr != null}');
+        if (expr != null) {
+            trace('[XRay VariableCompiler] Init expr type: ${Type.enumConstructor(expr.expr)}');
+        }
+        #end
+        
+        // SIMPLIFIED FIX: Always register ID mapping for 'g' variables
+        // The name-based mapping is already set up by VariableMappingManager
+        // We just need to ensure the ID mapping is also registered
+        if ((originalName == "g" || originalName == "_g")) {
+            // Check if there's already a name-based mapping for this variable
+            var existingMapping = compiler.currentFunctionParameterMap.get(originalName);
+            
+            if (existingMapping != null && existingMapping != originalName) {
+                #if debug_variable_compiler
+                trace('[XRay VariableCompiler] ✓ FOUND EXISTING MAPPING FOR g VARIABLE: ${originalName} → ${existingMapping}');
+                trace('[XRay VariableCompiler] REGISTERING ID MAPPING IMMEDIATELY');
+                #end
+                
+                // Register the ID mapping to ensure consistency
+                registerVariableMapping(tvar, existingMapping);
+                
+                #if debug_variable_compiler
+                trace('[XRay VariableCompiler] ✓ ID MAPPING REGISTERED: TVar.id ${tvar.id} → ${existingMapping}');
+                #end
+            }
+        }
+        
+        // Check if this is a 'g' variable that needs array mapping
+        if ((originalName == "g" || originalName == "_g") && expr != null) {
+            #if debug_variable_compiler
+            trace('[XRay VariableCompiler] This is a g variable, checking initialization pattern...');
+            #end
+            
+            // Check if the initialization involves Type.typeof or similar patterns
+            var needsArrayMapping = false;
+            switch (expr.expr) {
+                case TCall(e, args):
+                    #if debug_variable_compiler
+                    trace('[XRay VariableCompiler] TCall detected, checking if Type.typeof...');
+                    trace('[XRay VariableCompiler] Call target type: ${Type.enumConstructor(e.expr)}');
+                    #end
+                    
+                    // Check if this is a Type.typeof call
+                    switch (e.expr) {
+                        case TField(typeExpr, fa):
+                            var fieldName = switch (fa) {
+                                case FStatic(classRef, cf): 
+                                    #if debug_variable_compiler
+                                    trace('[XRay VariableCompiler] Static field: ${cf.get().name}');
+                                    #end
+                                    cf.get().name;
+                                case FDynamic(name):
+                                    #if debug_variable_compiler  
+                                    trace('[XRay VariableCompiler] Dynamic field: ${name}');
+                                    #end
+                                    name;
+                                case _: 
+                                    #if debug_variable_compiler
+                                    trace('[XRay VariableCompiler] Other field access type');
+                                    #end
+                                    "";
+                            };
+                            needsArrayMapping = (fieldName == "typeof" || fieldName == "enumIndex");
+                            #if debug_variable_compiler
+                            trace('[XRay VariableCompiler] Field name: ${fieldName}, needs mapping: ${needsArrayMapping}');
+                            #end
+                        case _: 
+                            #if debug_variable_compiler
+                            trace('[XRay VariableCompiler] Not a field access');
+                            #end
+                    }
+                case _: 
+                    #if debug_variable_compiler
+                    trace('[XRay VariableCompiler] Not a TCall, type is: ${Type.enumConstructor(expr.expr)}');
+                    #end
+            };
+            
+            if (needsArrayMapping) {
+                var mappedName = "g_array";
+                
+                #if debug_variable_compiler
+                trace('[XRay VariableCompiler] ✓ REGISTERING ID MAPPING AT CREATION: ${tvar.name}(id:${tvar.id}) → ${mappedName}');
+                #end
+                
+                // Register the ID mapping immediately
+                registerVariableMapping(tvar, mappedName);
+                
+                // Also ensure name-based mapping for compatibility
+                compiler.currentFunctionParameterMap.set(originalName, mappedName);
+                compiler.currentFunctionParameterMap.set("_g", mappedName); // Handle both forms
+                
+                // Note: We'll apply the mapped name later after varName is declared
+                
+                #if debug_variable_compiler
+                trace('[XRay VariableCompiler] ✓ Mappings registered successfully');
+                trace('[XRay VariableCompiler] ID map now has: ${[for (id in variableIdMap.keys()) 'id${id}=>${variableIdMap.get(id)}']}');
+                #end
+            } else {
+                #if debug_variable_compiler
+                trace('[XRay VariableCompiler] No array mapping needed for this g variable');
+                #end
+            }
+        }
+        
         // ARCHITECTURAL FIX: Check for direct array ternary in TVar initialization
         // Pattern: var args = config != null ? [config] : [];
         if (expr != null && StringTools.startsWith(tvar.name, "tempArray")) {
@@ -544,6 +668,13 @@ class VariableCompiler {
                         #if debug_variable_compiler
                         trace('[XRay VariableCompiler] Renamed to: ${originalName} (array)');
                         #end
+                        
+                        // CRITICAL FIX: Register the ID mapping immediately
+                        // This ensures TLocal references use the same renamed variable
+                        registerVariableMapping(tvar, originalName);
+                        #if debug_variable_compiler
+                        trace('[XRay VariableCompiler] ✓ REGISTERED ID MAPPING: TVar.id ${tvar.id} → ${originalName}');
+                        #end
                     case TConst(TInt(0)):
                         // CRITICAL FIX: Never rename 'g' to 'g_counter' - it's used for enum handling
                         // The 'g' variable is a special case used in switch expression desugaring
@@ -599,6 +730,15 @@ class VariableCompiler {
             #if debug_variable_compiler
             trace('[XRay VariableCompiler] ✓ TVAR PARAMETER MAPPING: ${originalName} -> ${mappedName}');
             #end
+            
+            // CRITICAL ARCHITECTURAL FIX: Register ID mapping when using name-based mapping
+            // This ensures TLocal references will find the same mapped name
+            registerVariableMapping(tvar, mappedName);
+            #if debug_variable_compiler
+            trace('[XRay VariableCompiler] ✓ REGISTERED ID MAPPING: TVar.id ${tvar.id} → ${mappedName}');
+            trace('[XRay VariableCompiler] This ensures TLocal will use the same name!');
+            #end
+            
             // Use the mapped name directly
             var varName = mappedName;
             
@@ -717,6 +857,15 @@ class VariableCompiler {
         }
         
         var varName = preserveUnderscore ? originalName : NamingHelper.toSnakeCase(originalName);
+        
+        // CRITICAL FIX: Apply g_array mapping if it was detected earlier
+        if ((originalName == "g" || originalName == "_g")) {
+            var existingMapping = compiler.currentFunctionParameterMap.get(originalName);
+            if (existingMapping == "g_array") {
+                // Apply the Type.typeof mapping
+                varName = "g_array";
+            }
+        }
         
         // CRITICAL FIX: Track ALL variable name transformations (not just underscore removal)
         // When toSnakeCase converts:
@@ -1019,12 +1168,23 @@ class VariableCompiler {
             return mappedName;
         }
         
+        // SIMPLE FIX: If this is a 'g' variable and we have a mapping for it, use it
+        var originalName = getOriginalVarName(tvar);
+        if (originalName == "g" || originalName == "_g") {
+            var nameMapping = compiler.currentFunctionParameterMap.get(originalName);
+            if (nameMapping == "g_array") {
+                #if debug_variable_compiler
+                trace('[XRay VariableCompiler] ✓ Found name mapping for g: ${originalName} → g_array');
+                #end
+                return "g_array";
+            }
+        }
+        
         #if debug_variable_compiler
         trace('[XRay VariableCompiler] No ID mapping found, using standard conversion');
         #end
         
         // Get original variable name and convert to snake_case
-        var originalName = getOriginalVarName(tvar);
         return NamingHelper.toSnakeCase(originalName);
     }
     

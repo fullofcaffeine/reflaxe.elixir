@@ -263,7 +263,12 @@ defmodule HaxeWatcher do
       Logger.warning("No valid directories to watch: #{inspect(state.dirs)}")
       {:error, :no_valid_directories}
     else
-      # Check if FileSystem module is available
+      # ON-DEMAND LOADING PATTERN:
+      # FileSystem is an optional dependency (only: [:dev, :test]) because:
+      # 1. File watching is only needed during development, not in production
+      # 2. Core compilation works without it - it's just a convenience feature
+      # 3. Keeps production deployments lightweight without unnecessary deps
+      # Users who want file watching must add {:file_system, "~> 0.2"} to their mix.exs
       if Code.ensure_loaded?(FileSystem) do
         case FileSystem.start_link(dirs: existing_dirs) do
           {:ok, pid} ->
