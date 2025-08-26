@@ -9,7 +9,7 @@ defmodule User do
      * Tests all core Ecto features in a single suite
   """
 
-  defstruct [:id, :name, :email, :age, active: true, :posts, :organization, :organization_id, :inserted_at, :updated_at]
+  defstruct [:id, :name, :email, :age, :posts, :organization, :organization_id, :inserted_at, :updated_at, active: true]
 
   @type t() :: %__MODULE__{
     id: integer() | nil,

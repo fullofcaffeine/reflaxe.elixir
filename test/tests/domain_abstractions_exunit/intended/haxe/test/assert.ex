@@ -29,246 +29,108 @@ defmodule Assert do
   """
 
   # Static functions
-  @doc """
-    Assert that a value is true.
-
-    @param value Value to check
-    @param message Optional failure message
-  """
-  @spec is_true(boolean(), Null.t()) :: nil
-  def is_true(value, message) do
+  @doc "Generated from Haxe isTrue"
+  def is_true(_value, _message \\ nil) do
     raise "Assert.isTrue should be compiled by ExUnitCompiler"
   end
 
-  @doc """
-    Assert that a value is false.
-
-    @param value Value to check
-    @param message Optional failure message
-  """
-  @spec is_false(boolean(), Null.t()) :: nil
-  def is_false(value, message) do
+  @doc "Generated from Haxe isFalse"
+  def is_false(_value, _message \\ nil) do
     raise "Assert.isFalse should be compiled by ExUnitCompiler"
   end
 
-  @doc """
-    Assert that two values are equal.
-    Uses Elixir's == operator for comparison.
-
-    @param expected Expected value
-    @param actual Actual value
-    @param message Optional failure message
-  """
-  @spec equals(T.t(), T.t(), Null.t()) :: nil
-  def equals(expected, actual, message) do
+  @doc "Generated from Haxe equals"
+  def equals(_expected, _actual, _message \\ nil) do
     raise "Assert.equals should be compiled by ExUnitCompiler"
   end
 
-  @doc """
-    Assert that two values are not equal.
-
-    @param expected Value that should not match
-    @param actual Actual value
-    @param message Optional failure message
-  """
-  @spec not_equals(T.t(), T.t(), Null.t()) :: nil
-  def not_equals(expected, actual, message) do
+  @doc "Generated from Haxe notEquals"
+  def not_equals(_expected, _actual, _message \\ nil) do
     raise "Assert.notEquals should be compiled by ExUnitCompiler"
   end
 
-  @doc """
-    Assert that a value is null.
-
-    @param value Value to check
-    @param message Optional failure message
-  """
-  @spec is_null(T.t(), Null.t()) :: nil
-  def is_null(value, message) do
+  @doc "Generated from Haxe isNull"
+  def is_null(_value, _message \\ nil) do
     raise "Assert.isNull should be compiled by ExUnitCompiler"
   end
 
-  @doc """
-    Assert that a value is not null.
-
-    @param value Value to check
-    @param message Optional failure message
-  """
-  @spec is_not_null(T.t(), Null.t()) :: nil
-  def is_not_null(value, message) do
+  @doc "Generated from Haxe isNotNull"
+  def is_not_null(_value, _message \\ nil) do
     raise "Assert.isNotNull should be compiled by ExUnitCompiler"
   end
 
-  @doc """
-    Assert that an Option contains a value (is Some).
-
-    @param option Option to check
-    @param message Optional failure message
-  """
-  @spec is_some(Option.t(), Null.t()) :: nil
-  def is_some(option, message) do
+  @doc "Generated from Haxe isSome"
+  def is_some(_option, _message \\ nil) do
     raise "Assert.isSome should be compiled by ExUnitCompiler"
   end
 
-  @doc """
-    Assert that an Option is empty (is None).
-
-    @param option Option to check
-    @param message Optional failure message
-  """
-  @spec is_none(Option.t(), Null.t()) :: nil
-  def is_none(option, message) do
+  @doc "Generated from Haxe isNone"
+  def is_none(_option, _message \\ nil) do
     raise "Assert.isNone should be compiled by ExUnitCompiler"
   end
 
-  @doc """
-    Assert that a Result is successful (is Ok).
-
-    @param result Result to check
-    @param message Optional failure message
-  """
-  @spec is_ok(Result.t(), Null.t()) :: nil
-  def is_ok(result, message) do
+  @doc "Generated from Haxe isOk"
+  def is_ok(_result, _message \\ nil) do
     raise "Assert.isOk should be compiled by ExUnitCompiler"
   end
 
-  @doc """
-    Assert that a Result is an error (is Error).
-
-    @param result Result to check
-    @param message Optional failure message
-  """
-  @spec is_error(Result.t(), Null.t()) :: nil
-  def is_error(result, message) do
+  @doc "Generated from Haxe isError"
+  def is_error(_result, _message \\ nil) do
     raise "Assert.isError should be compiled by ExUnitCompiler"
   end
 
-  @doc """
-    Assert that a function raises an exception.
-
-    @param fn Function to execute
-    @param exceptionType Expected exception type (optional)
-    @param message Optional failure message
-  """
-  @spec raises(Function.t(), Null.t(), Null.t()) :: nil
-  def raises(fn_, exception_type, message) do
+  @doc "Generated from Haxe raises"
+  def raises(_fn_, _exception_type \\ nil, _message \\ nil) do
     raise "Assert.raises should be compiled by ExUnitCompiler"
   end
 
-  @doc """
-    Assert that a function does not raise an exception.
-
-    @param fn Function to execute
-    @param message Optional failure message
-  """
-  @spec does_not_raise(Function.t(), Null.t()) :: nil
-  def does_not_raise(fn_, message) do
+  @doc "Generated from Haxe doesNotRaise"
+  def does_not_raise(_fn_, _message \\ nil) do
     raise "Assert.doesNotRaise should be compiled by ExUnitCompiler"
   end
 
-  @doc """
-    Assert that a collection contains an item.
-
-    @param collection Collection to search
-    @param item Item to find
-    @param message Optional failure message
-  """
-  @spec contains(Array.t(), T.t(), Null.t()) :: nil
-  def contains(collection, item, message) do
+  @doc "Generated from Haxe contains"
+  def contains(_collection, _item, _message \\ nil) do
     raise "Assert.contains should be compiled by ExUnitCompiler"
   end
 
-  @doc """
-    Assert that a string contains a substring.
-
-    @param haystack String to search in
-    @param needle Substring to find
-    @param message Optional failure message
-  """
-  @spec contains_string(String.t(), String.t(), Null.t()) :: nil
-  def contains_string(haystack, needle, message) do
+  @doc "Generated from Haxe containsString"
+  def contains_string(_haystack, _needle, _message \\ nil) do
     raise "Assert.containsString should be compiled by ExUnitCompiler"
   end
 
-  @doc """
-    Assert that a string does not contain a substring.
-
-    @param haystack String to search in
-    @param needle Substring that should not be found
-    @param message Optional failure message
-  """
-  @spec does_not_contain_string(String.t(), String.t(), Null.t()) :: nil
-  def does_not_contain_string(haystack, needle, message) do
+  @doc "Generated from Haxe doesNotContainString"
+  def does_not_contain_string(_haystack, _needle, _message \\ nil) do
     raise "Assert.doesNotContainString should be compiled by ExUnitCompiler"
   end
 
-  @doc """
-    Assert that a collection is empty.
-
-    @param collection Collection to check
-    @param message Optional failure message
-  """
-  @spec is_empty(Array.t(), Null.t()) :: nil
-  def is_empty(collection, message) do
+  @doc "Generated from Haxe isEmpty"
+  def is_empty(_collection, _message \\ nil) do
     raise "Assert.isEmpty should be compiled by ExUnitCompiler"
   end
 
-  @doc """
-    Assert that a collection is not empty.
-
-    @param collection Collection to check
-    @param message Optional failure message
-  """
-  @spec is_not_empty(Array.t(), Null.t()) :: nil
-  def is_not_empty(collection, message) do
+  @doc "Generated from Haxe isNotEmpty"
+  def is_not_empty(_collection, _message \\ nil) do
     raise "Assert.isNotEmpty should be compiled by ExUnitCompiler"
   end
 
-  @doc """
-    Assert that two floating point numbers are equal within a delta.
-
-    @param expected Expected value
-    @param actual Actual value
-    @param delta Maximum allowed difference
-    @param message Optional failure message
-  """
-  @spec in_delta(float(), float(), float(), Null.t()) :: nil
-  def in_delta(expected, actual, delta, message) do
+  @doc "Generated from Haxe inDelta"
+  def in_delta(_expected, _actual, _delta, _message \\ nil) do
     raise "Assert.inDelta should be compiled by ExUnitCompiler"
   end
 
-  @doc """
-    Force a test failure with a message.
-
-    @param message Failure message
-  """
-  @spec fail(String.t()) :: nil
-  def fail(message) do
+  @doc "Generated from Haxe fail"
+  def fail(_message) do
     raise "Assert.fail should be compiled by ExUnitCompiler"
   end
 
-  @doc """
-    Assert that a pattern matches a value.
-    Uses Elixir pattern matching for validation.
-
-    @param pattern Pattern to match against
-    @param value Value to check
-    @param message Optional failure message
-  """
-  @spec matches(T.t(), T.t(), Null.t()) :: nil
-  def matches(pattern, value, message) do
+  @doc "Generated from Haxe matches"
+  def matches(_pattern, _value, _message \\ nil) do
     raise "Assert.matches should be compiled by ExUnitCompiler"
   end
 
-  @doc """
-    Assert that a message matching the pattern was received.
-    For testing OTP processes and message passing.
-
-    @param pattern Message pattern to match
-    @param timeout Timeout in milliseconds (default: 100)
-    @param message Optional failure message
-  """
-  @spec received(term(), Null.t(), Null.t()) :: nil
-  def received(pattern, timeout, message) do
+  @doc "Generated from Haxe received"
+  def received(_pattern, _timeout \\ nil, _message \\ nil) do
     raise "Assert.received should be compiled by ExUnitCompiler"
   end
 

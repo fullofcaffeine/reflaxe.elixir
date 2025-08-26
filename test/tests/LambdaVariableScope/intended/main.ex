@@ -2,137 +2,100 @@ defmodule Main do
   @moduledoc "Main module generated from Haxe"
 
   # Static functions
-  @doc "Function main"
-  @spec main() :: nil
+  @doc "Generated from Haxe main"
   def main() do
-    (
-          Main.test_array_filter_with_outer_variable()
-          Main.test_array_map_with_outer_variable()
-          Main.test_nested_array_operations()
-          Main.test_multiple_outer_variables()
-        )
+    Main.test_array_filter_with_outer_variable()
+
+    Main.test_array_map_with_outer_variable()
+
+    Main.test_nested_array_operations()
+
+    Main.test_multiple_outer_variables()
   end
 
-  @doc "Function test_array_filter_with_outer_variable"
-  @spec test_array_filter_with_outer_variable() :: nil
+  @doc "Generated from Haxe testArrayFilterWithOuterVariable"
   def test_array_filter_with_outer_variable() do
-    (
-          items = ["apple", "banana", "cherry"]
-          target_item = "banana"
-          (
-          g_array = []
-          (
-          g_counter = 0
-          Enum.each(g_array, fn v -> 
-      if ((v != target_item)) do
-          g ++ [v]
-        end
-    end)
-        )
-          temp_array = g
-        )
-          todos = [%{"id" => 1, "name" => "first"}, %{"id" => 2, "name" => "second"}]
-          id = 2
-          (
-          g_array = []
-          (
-          g_counter = 0
-          Enum.each(g_array, fn v -> 
-      if ((v.id != id)) do
-          g ++ [v]
-        end
-    end)
-        )
-          temp_array1 = g
-        )
-        )
+    temp_array = nil
+    temp_array1 = nil
+
+    items = ["apple", "banana", "cherry"]
+
+    target_item = "banana"
+
+    g_array = []
+    g_counter = 0
+    Enum.filter(items, fn item -> item != target_item end)
+    temp_array = g_array
+
+    todos = [%{"id" => 1, "name" => "first"}, %{"id" => 2, "name" => "second"}]
+
+    id = 2
+
+    g_array = []
+    g_counter = 0
+    Enum.filter(todos, fn item -> item.id != id end)
+    temp_array1 = g_array
   end
 
-  @doc "Function test_array_map_with_outer_variable"
-  @spec test_array_map_with_outer_variable() :: nil
+  @doc "Generated from Haxe testArrayMapWithOuterVariable"
   def test_array_map_with_outer_variable() do
-    (
-          numbers = [1, 2, 3, 4, 5]
-          multiplier = 3
-          (
-          g_array = []
-          (
-          g_counter = 0
-          Enum.each(g_array, fn v -> 
-      g ++ [(v * multiplier)]
-    end)
-        )
-          temp_array = g
-        )
-          prefix = "Item: "
-          (
-          g_array = []
-          (
-          g_counter = 0
-          Enum.each(g_array, fn v -> 
-      g ++ [prefix <> Std.string(v)]
-    end)
-        )
-          temp_array1 = g
-        )
-        )
+    temp_array = nil
+    temp_array1 = nil
+
+    numbers = [1, 2, 3, 4, 5]
+
+    multiplier = 3
+
+    g_array = []
+    g_counter = 0
+    Enum.map(numbers, fn item -> item * multiplier end)
+    temp_array = g_array
+
+    prefix = "Item: "
+
+    g_array = []
+    g_counter = 0
+    Enum.map(numbers, fn item -> prefix <> Std.string(item) end)
+    temp_array1 = g_array
   end
 
-  @doc "Function test_nested_array_operations"
-  @spec test_nested_array_operations() :: nil
+  @doc "Generated from Haxe testNestedArrayOperations"
   def test_nested_array_operations() do
-    (
-          data = [[1, 2], [3, 4], [5, 6]]
-          threshold = 3
-          g_array = []
-          g_counter = 0
-          Enum.each(g_array, fn v -> 
-      
-      g_array = []
-      g_counter = 0
-      g_array = v
-      Enum.each(g_array, fn v2 -> 
-      if ((v > threshold)) do
-          g ++ [v]
-        end
-    end)
-      temp_array1 = g
-      g ++ [temp_array1]
-    end)
-        )
+    temp_array1 = nil
+
+    data = [[1, 2], [3, 4], [5, 6]]
+
+    threshold = 3
+
+    g_array = []
+
+    g_counter = 0
+
+    Enum.map(data, fn item -> temp_array1 end)
   end
 
-  @doc "Function test_multiple_outer_variables"
-  @spec test_multiple_outer_variables() :: nil
+  @doc "Generated from Haxe testMultipleOuterVariables"
   def test_multiple_outer_variables() do
-    (
-          items = ["a", "b", "c", "d"]
-          prefix = "prefix_"
-          suffix = "_suffix"
-          exclude_item = "b"
-          (
-          g_array = []
-          (
-          g_counter = 0
-          Enum.each(g_array, fn v -> 
-      if ((v != exclude_item)) do
-          g ++ [v]
-        end
-    end)
-        )
-          temp_array1 = g
-        )
-          (
-          g_array = []
-          (
-          g_counter = 0
-          Enum.each(g_array, fn v -> 
-      g ++ [prefix <> v <> suffix]
-    end)
-        )
-          temp_array = g
-        )
-        )
+    temp_array1 = nil
+    temp_array = nil
+
+    items = ["a", "b", "c", "d"]
+
+    prefix = "prefix_"
+
+    suffix = "_suffix"
+
+    exclude_item = "b"
+
+    g_array = []
+    g_counter = 0
+    Enum.filter(items, fn item -> item != exclude_item end)
+    temp_array1 = g_array
+
+    g_array = []
+    g_counter = 0
+    Enum.map(temp_array1, fn item -> prefix <> item <> suffix end)
+    temp_array = g_array
   end
 
 
