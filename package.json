@@ -40,6 +40,7 @@
     "test:core": "npx haxe test/Test.hxml test=example_01_simple && npx haxe test/Test.hxml test=basic_syntax && npx haxe test/Test.hxml test=liveview_basic",
     "test:parallel": "npx haxe test/ParallelTest.hxml",
     "test:parallel:debug": "npx haxe test/SimpleParallelTest.hxml",
+    "test:nocompile": "npx haxe test/Test.hxml nocompile",
     "test:parallel-experimental": "npm run test:parallel && npm run test:generator && npm run test:mix-parallel",
     "test:mix-parallel": "MIX_ENV=test mix deps.compile && MIX_ENV=test mix test --max-cases 4 --timeout 120000",
     "test:examples": "for dir in examples/*/; do echo \"Testing $dir\"; if [ -f \"$dir/compile-all.hxml\" ]; then (cd \"$dir\" && npx haxe compile-all.hxml) || exit 1; elif [ -f \"$dir/build.hxml\" ]; then (cd \"$dir\" && npx haxe build.hxml) || exit 1; fi; done",
