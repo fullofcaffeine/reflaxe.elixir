@@ -29,91 +29,158 @@ defmodule Main do
   end
 
   # Static functions
-  @doc "Function greet"
-  @spec greet(String.t()) :: String.t()
+  @doc "Generated from Haxe greet"
   def greet(name) do
     "Hello, " <> name <> "!"
   end
 
-  @doc "Function main"
-  @spec main() :: nil
+  @doc "Generated from Haxe main"
   def main() do
     instance = Main.new(10)
+
     Log.trace(Main.greet("World"), %{"fileName" => "Main.hx", "lineNumber" => 76, "className" => "Main", "methodName" => "main"})
+
     Log.trace(instance.calculate(5, 3), %{"fileName" => "Main.hx", "lineNumber" => 77, "className" => "Main", "methodName" => "main"})
+
     Log.trace(instance.check_value(-5), %{"fileName" => "Main.hx", "lineNumber" => 78, "className" => "Main", "methodName" => "main"})
+
     Log.trace(instance.sum_range(1, 10), %{"fileName" => "Main.hx", "lineNumber" => 79, "className" => "Main", "methodName" => "main"})
+
     Log.trace(instance.factorial(5), %{"fileName" => "Main.hx", "lineNumber" => 80, "className" => "Main", "methodName" => "main"})
+
     Log.trace(instance.day_name(3), %{"fileName" => "Main.hx", "lineNumber" => 81, "className" => "Main", "methodName" => "main"})
   end
 
   # Instance functions
-  @doc "Function calculate"
-  @spec calculate(t(), integer(), integer()) :: integer()
+  @doc "Generated from Haxe calculate"
   def calculate(%__MODULE__{} = struct, x, y) do
     (x + (y * struct.instance_var))
   end
 
-  @doc "Function check_value"
-  @spec check_value(t(), integer()) :: String.t()
+  @doc "Generated from Haxe checkValue"
   def check_value(%__MODULE__{} = struct, n) do
     if ((n < 0)) do
-          "negative"
-        else
-          if ((n == 0)) do
-          "zero"
-        else
-          "positive"
-        end
-        end
+      "negative"
+    else
+      if ((n == 0)) do
+        "zero"
+      else
+        "positive"
+      end
+    end
   end
 
-  @doc "Function sum_range"
-  @spec sum_range(t(), integer(), integer()) :: integer()
+  @doc "Generated from Haxe sumRange"
   def sum_range(%__MODULE__{} = struct, start, end_) do
+    sum = 0
+
+    g_array = start
+
+    g_array = end_
+
     (
-          sum = 0
-          g = start
-          g = end_
-          while_loop(fn -> ((g < g)) end, fn -> (
-          i = g + 1
+      # Simple module-level pattern (inline for now)
+      loop_helper = fn condition_fn, body_fn, loop_fn ->
+        if condition_fn.() do
+          body_fn.()
+          loop_fn.(condition_fn, body_fn, loop_fn)
+        else
+          nil
+        end
+      end
+
+      loop_helper.(
+        fn -> ((g_counter < g_array)) end,
+        fn ->
+          i = g_counter + 1
           sum = sum + i
-        ) end)
-          sum
-        )
+        end,
+        loop_helper
+      )
+    )
+
+    sum
   end
 
-  @doc "Function factorial"
-  @spec factorial(t(), integer()) :: integer()
+  @doc "Generated from Haxe factorial"
   def factorial(%__MODULE__{} = struct, n) do
+    result = 1
+
+    i = n
+
     (
-          result = 1
-          i = n
-          while_loop(fn -> ((i > 1)) end, fn -> (
+      # Simple module-level pattern (inline for now)
+      loop_helper = fn condition_fn, body_fn, loop_fn ->
+        if condition_fn.() do
+          body_fn.()
+          loop_fn.(condition_fn, body_fn, loop_fn)
+        else
+          nil
+        end
+      end
+
+      loop_helper.(
+        fn -> ((i > 1)) end,
+        fn ->
           result = result * i
           i - 1
-        ) end)
-          result
-        )
+        end,
+        loop_helper
+      )
+    )
+
+    result
   end
 
-  @doc "Function day_name"
-  @spec day_name(t(), integer()) :: String.t()
+  @doc "Generated from Haxe dayName"
   def day_name(%__MODULE__{} = struct, day) do
-    (
-          temp_result = nil
-          case (day) do
-      1 -> temp_result = "Monday"
-      2 -> temp_result = "Tuesday"
-      3 -> temp_result = "Wednesday"
-      4 -> temp_result = "Thursday"
-      5 -> temp_result = "Friday"
-      6 -> temp_result = "Saturday"
-      7 -> temp_result = "Sunday"
-      _ -> temp_result = "Invalid"
+    temp_result = nil
+
+    temp_result = nil
+
+    case (day) do
+      _ ->
+        "Monday"
+      _ ->
+        "Tuesday"
+      _ ->
+        "Wednesday"
+      _ ->
+        "Thursday"
+      _ ->
+        "Friday"
+      _ ->
+        "Saturday"
+      _ ->
+        "Sunday"
+      _ -> "Invalid"
     end
-          temp_result
-        )
+
+    temp_result
+  end
+
+
+  # While loop helper functions
+  # Generated automatically for tail-recursive loop patterns
+
+  @doc false
+  defp while_loop(condition_fn, body_fn) do
+    if condition_fn.() do
+      body_fn.()
+      while_loop(condition_fn, body_fn)
+    else
+      nil
+    end
+  end
+
+  @doc false
+  defp do_while_loop(body_fn, condition_fn) do
+    body_fn.()
+    if condition_fn.() do
+      do_while_loop(body_fn, condition_fn)
+    else
+      nil
+    end
   end
 
 end

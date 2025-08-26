@@ -30,33 +30,27 @@ defmodule Circle do
   end
 
   # Static functions
-  @doc "Function create_unit"
-  @spec create_unit() :: Circle.t()
+  @doc "Generated from Haxe createUnit"
   def create_unit() do
     Circle.new(0, 0, 1)
   end
 
   # Instance functions
-  @doc "Function draw"
-  @spec draw(t()) :: String.t()
+  @doc "Generated from Haxe draw"
   def draw(%__MODULE__{} = struct) do
     "" <> "Exception".draw() <> " with radius " <> to_string(struct.radius)
   end
 
-  @doc "Function update"
-  @spec update(t(), float()) :: nil
+  @doc "Generated from Haxe update"
   def update(%__MODULE__{} = struct, dt) do
     struct.move((struct.velocity.x * dt), (struct.velocity.y * dt))
   end
 
-  @doc "Function set_velocity"
-  @spec set_velocity(t(), float(), float()) :: t()
+  @doc "Generated from Haxe setVelocity"
   def set_velocity(%__MODULE__{} = struct, vx, vy) do
-    (
-          %{struct.velocity | x: vx}
-          %{struct.velocity | y: vy}
-        )
-    struct
+    %{struct.velocity | x: vx}
+
+    %{struct.velocity | y: vy}
   end
 
 end

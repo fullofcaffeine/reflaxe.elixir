@@ -3,7 +3,7 @@ defmodule Main do
 
   # Static functions
   @doc "Generated from Haxe colorToString"
-  def color_to_string(_color) do
+  def color_to_string(color) do
     temp_result = nil
 
     temp_result = nil
@@ -22,7 +22,7 @@ defmodule Main do
   end
 
   @doc "Generated from Haxe getValue"
-  def get_value(_opt, default_value) do
+  def get_value(opt, default_value) do
     temp_result = nil
 
     case (case opt do :some -> 0; :none -> 1; _ -> -1 end) do
@@ -35,7 +35,7 @@ defmodule Main do
   end
 
   @doc "Generated from Haxe treeSum"
-  def tree_sum(_tree) do
+  def tree_sum(tree) do
     temp_result = nil
 
     case (case tree do :leaf -> 0; :node_ -> 1; _ -> -1 end) do
@@ -50,7 +50,7 @@ defmodule Main do
   end
 
   @doc "Generated from Haxe describeRGB"
-  def describe_r_g_b(_color) do
+  def describe_r_g_b(color) do
     temp_result = nil
 
     if ((case color do :red -> 0; :green -> 1; :blue -> 2; :r_g_b -> 3; _ -> -1 end == 3)) do
@@ -90,7 +90,7 @@ defmodule Main do
   end
 
   @doc "Generated from Haxe compareTrees"
-  def compare_trees(_t1, _t2) do
+  def compare_trees(t1, t2) do
     temp_result = nil
 
     case (case t1 do :leaf -> 0; :node_ -> 1; _ -> -1 end) do

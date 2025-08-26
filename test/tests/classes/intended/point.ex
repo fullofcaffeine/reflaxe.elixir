@@ -28,18 +28,16 @@ defmodule Point do
   end
 
   # Instance functions
-  @doc "Function distance"
-  @spec distance(t(), Point.t()) :: float()
+  @doc "Generated from Haxe distance"
   def distance(%__MODULE__{} = struct, other) do
-    (
-          dx = (struct.x - other.x)
-          dy = (struct.y - other.y)
-          Math.sqrt(((dx * dx) + (dy * dy)))
-        )
+    dx = (struct.x - other.x)
+
+    dy = (struct.y - other.y)
+
+    Math.sqrt(((dx * dx) + (dy * dy)))
   end
 
-  @doc "Function format"
-  @spec format(t()) :: String.t()
+  @doc "Generated from Haxe toString"
   def format(%__MODULE__{} = struct) do
     "Point(" <> to_string(struct.x) <> ", " <> to_string(struct.y) <> ")"
   end

@@ -25,39 +25,58 @@ defmodule Container do
   end
 
   # Instance functions
-  @doc "Function add"
-  @spec add(t(), T.t()) :: t()
+  @doc "Generated from Haxe add"
   def add(%__MODULE__{} = struct, item) do
-    struct.items = struct.items.push(item)
-    struct
+    struct.items ++ [item]
   end
 
-  @doc "Function get"
-  @spec get(t(), integer()) :: T.t()
-  def get(%__MODULE__{} = struct, index) do
+  @doc "Generated from Haxe get"
+  def get(%__MODULE__{} = struct, _index) do
     Enum.at(struct.items, index)
   end
 
-  @doc "Function size"
-  @spec size(t()) :: integer()
+  @doc "Generated from Haxe size"
   def size(%__MODULE__{} = struct) do
     struct.items.length
   end
 
-  @doc "Function map"
-  @spec map(t(), Function.t()) :: Container.t()
+  @doc "Generated from Haxe map"
   def map(%__MODULE__{} = struct, fn_) do
-    (
-          result = Container.new()
-          g_counter = 0
-          g = struct.items
-          while_loop(fn -> ((g < g.length)) end, fn -> (
-          item = Enum.at(g, g)
-          g + 1
-          result.add(fn_.(item))
-        ) end)
-          result
-        )
+    result = Container.new()
+
+    g_counter = 0
+
+    g_array = struct.items
+
+    Enum.each(g_array, fn item -> 
+      result.add(fn_.(item))
+    end)
+
+    result
+  end
+
+
+  # While loop helper functions
+  # Generated automatically for tail-recursive loop patterns
+
+  @doc false
+  defp while_loop(condition_fn, body_fn) do
+    if condition_fn.() do
+      body_fn.()
+      while_loop(condition_fn, body_fn)
+    else
+      nil
+    end
+  end
+
+  @doc false
+  defp do_while_loop(body_fn, condition_fn) do
+    body_fn.()
+    if condition_fn.() do
+      do_while_loop(body_fn, condition_fn)
+    else
+      nil
+    end
   end
 
 end

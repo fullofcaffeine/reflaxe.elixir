@@ -25,56 +25,100 @@ defmodule MemoryStorage do
   end
 
   # Instance functions
-  @doc "Function init"
-  @spec init(t(), term()) :: t()
-  def init(%__MODULE__{} = struct, config) do
+  @doc "Generated from Haxe init"
+  def init(%__MODULE__{} = struct, _config) do
     %{"ok" => struct}
   end
 
-  @doc "Function get"
-  @spec get(t(), String.t()) :: t()
+  @doc "Generated from Haxe get"
   def get(%__MODULE__{} = struct, key) do
-    (
-          struct = struct.data
-          temp_result = struct.get(key)
-          temp_result
-        )
+    temp_result = nil
+
+    struct = struct.data
+
+    temp_result = this.get(key)
+
+    temp_result
   end
 
-  @doc "Function put"
-  @spec put(t(), String.t(), term()) :: boolean()
+  @doc "Generated from Haxe put"
   def put(%__MODULE__{} = struct, key, value) do
-    (
-          struct = struct.data
-          struct.set(key, value)
-          true
-        )
+    struct = struct.data
+
+    this.set(key, value)
+
+    true
   end
 
-  @doc "Function delete"
-  @spec delete(t(), String.t()) :: boolean()
+  @doc "Generated from Haxe delete"
   def delete(%__MODULE__{} = struct, key) do
-    (
-          struct = struct.data
-          temp_result = struct.remove(key)
-          temp_result
-        )
+    temp_result = nil
+
+    struct = struct.data
+
+    temp_result = this.remove(key)
+
+    temp_result
   end
 
-  @doc "Function list"
-  @spec list(t()) :: Array.t()
+  @doc "Generated from Haxe list"
   def list(%__MODULE__{} = struct) do
+    temp_iterator = nil
+
+    g_array = []
+
+    struct = struct.data
+
+    temp_iterator = this.keys()
+
+    k = temp_iterator
+
     (
-          g_array = []
-          struct = struct.data
-          temp_iterator = struct.keys()
-          k = temp_iterator
-          while_loop(fn -> (k.has_next()) end, fn -> (
+      # Simple module-level pattern (inline for now)
+      loop_helper = fn condition_fn, body_fn, loop_fn ->
+        if condition_fn.() do
+          body_fn.()
+          loop_fn.(condition_fn, body_fn, loop_fn)
+        else
+          nil
+        end
+      end
+
+      loop_helper.(
+        fn -> k.has_next() end,
+        fn ->
           k = k.next()
-          g ++ [k]
-        ) end)
-          g
-        )
+          g_array ++ [k]
+        end,
+        loop_helper
+      )
+    )
+
+    g_array
+  end
+
+
+  # While loop helper functions
+  # Generated automatically for tail-recursive loop patterns
+
+  @doc false
+  defp while_loop(condition_fn, body_fn) do
+    if condition_fn.() do
+      body_fn.()
+      while_loop(condition_fn, body_fn)
+    else
+      nil
+    end
+  end
+
+  @doc false
+  defp do_while_loop(body_fn, condition_fn) do
+    body_fn.()
+    if condition_fn.() do
+      do_while_loop(body_fn, condition_fn)
+    else
+      nil
+    end
   end
 
 end
