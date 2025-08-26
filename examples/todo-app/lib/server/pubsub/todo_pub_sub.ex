@@ -58,7 +58,7 @@ defmodule TodoPubSub do
     temp_struct = %{"type" => "user_online", "user_id" => user_id}
       {5, user_id} -> g_array = elem(message, 1)
     temp_struct = %{"type" => "user_offline", "user_id" => user_id}
-      {6, message2, level} -> g_array = elem(message, 1)
+      {6, message, level} -> g_array = elem(message, 1)
     g_array = elem(message, 2)
     temp_struct = %{"type" => "system_alert", "message" => message, "level" => TodoPubSub.alert_level_to_string(level)}
     end
