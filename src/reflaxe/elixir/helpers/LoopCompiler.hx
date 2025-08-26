@@ -1493,13 +1493,6 @@ end)';
      * @since 1.0.0
      */
     public function compileWhileLoop(econd: TypedExpr, ebody: TypedExpr, normalWhile: Bool): String {
-        trace('[FORCED DEBUG] compileWhileLoop called');
-        // TEMPORARY DEBUG: Check if we're getting any array operations
-        var condStr = compiler.compileExpression(econd);
-        if (condStr.indexOf("length") >= 0) {
-            trace('[DEBUG ARRAY] Found length in condition: ${condStr}');
-        }
-        
         #if debug_loops
         trace('[XRay Loops] ═══════════════════════════════════════════════════');
         trace('[XRay Loops] WHILE LOOP COMPILATION START');
@@ -1528,6 +1521,31 @@ end)';
             trace('[XRay Loops] ═══════════════════════════════════════════════════');
             #end
             return reflectOptimization;
+        }
+        
+        // Check for indexed iteration patterns first (before general array building)
+        // SIMPLE CHECK: If the body contains Enum.at, it's likely an indexed iteration
+        var bodyStr = compiler.compileExpression(ebody);
+        if (bodyStr.indexOf("Enum.at") >= 0) {
+            // Extract the array and index from the Enum.at call
+            var enumAtPattern = ~/Enum\.at\(([a-zA-Z_][a-zA-Z0-9_]*),\s*([a-zA-Z_][a-zA-Z0-9_]*)\)/;
+            if (enumAtPattern.match(bodyStr)) {
+                var arrayVar = enumAtPattern.matched(1);
+                var indexVar = enumAtPattern.matched(2);
+                
+                #if debug_loops
+                trace('[XRay Loops] ✓ ENUM.AT INDEXED ITERATION DETECTED');
+                trace('[XRay Loops] - Array: ${arrayVar}, Index: ${indexVar}');
+                #end
+                
+                var result = generateIndexedIteration(arrayVar, indexVar, bodyStr);
+                
+                #if debug_loops
+                trace('[XRay Loops] WHILE LOOP COMPILATION END');
+                trace('[XRay Loops] ═══════════════════════════════════════════════════');
+                #end
+                return result;
+            }
         }
         
         // Check for array building patterns
@@ -3261,21 +3279,55 @@ end)';
         trace('[XRay IndexedGen] Body: ${CompilerUtilities.safeSubstring(body, 100)}...');
         #end
 
+        // Detect if we're building a result array (look for accumulator ++ pattern)
+        var isMapping = body.indexOf(" ++ [") >= 0 || body.indexOf("push(") >= 0;
+        
         // Substitute array[index] patterns with 'item' in the body
         var processedBody = body;
-        processedBody = processedBody.replace('${arrayVar}[${indexVar}]', 'item');
-        processedBody = processedBody.replace('${arrayVar}.get(${indexVar})', 'item'); 
         processedBody = processedBody.replace('Enum.at(${arrayVar}, ${indexVar})', 'item');
-
-        // Generate idiomatic Elixir using Enum.with_index
-        var result = '${arrayVar}
+        processedBody = processedBody.replace('${arrayVar}[${indexVar}]', 'item');
+        processedBody = processedBody.replace('${arrayVar}.get(${indexVar})', 'item');
+        
+        // Also handle cases where index variable might be used in calculations
+        // For example: i = g_counter + 1, then we need to adjust index references
+        
+        var result: String;
+        
+        if (isMapping) {
+            // Extract the transformation from the ++ pattern
+            // Looking for pattern like: accumulator ++ [expression]
+            var transformPattern = ~/ \+\+ \[(.*?)\]/;
+            if (transformPattern.match(processedBody)) {
+                var transformation = transformPattern.matched(1);
+                
+                #if debug_loops
+                trace('[XRay IndexedGen] Detected mapping pattern with transformation: ${transformation}');
+                #end
+                
+                // Generate Enum.map with indexed items
+                result = '${arrayVar}
+|> Enum.with_index()
+|> Enum.map(fn {item, ${indexVar}} -> ${transformation} end)';
+            } else {
+                // Fallback to each if we can't extract the transformation
+                result = '${arrayVar}
 |> Enum.with_index()
 |> Enum.each(fn {item, ${indexVar}} ->
 ${CompilerUtilities.indentCode(processedBody, 2)}
 end)';
+            }
+        } else {
+            // Generate idiomatic Elixir using Enum.with_index for side effects
+            result = '${arrayVar}
+|> Enum.with_index()
+|> Enum.each(fn {item, ${indexVar}} ->
+${CompilerUtilities.indentCode(processedBody, 2)}
+end)';
+        }
 
         #if debug_loops
         trace('[XRay IndexedGen] ✓ Generated indexed iteration pattern');
+        trace('[XRay IndexedGen] Result: ${CompilerUtilities.safeSubstring(result, 200)}...');
         trace('[XRay IndexedGen] ═══════════════════════════════════════════');
         #end
 

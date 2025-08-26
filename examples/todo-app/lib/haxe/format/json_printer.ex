@@ -90,56 +90,42 @@ defmodule JsonPrinter do
     last = (len - 1)
     g_counter = 0
     g_array = len
-    (
-      # Simple module-level pattern (inline for now)
-      loop_helper = fn condition_fn, body_fn, loop_fn ->
-        if condition_fn.() do
-          body_fn.()
-          loop_fn.(condition_fn, body_fn, loop_fn)
-        else
-          nil
-        end
-      end
-
-      loop_helper.(
-        fn -> ((g_counter < g_array)) end,
-        fn ->
-          (
-                i = g_counter + 1
-                if ((i > 0)) do
-                struct = %{struct.buf | b: ","}
-              else
-                struct.nind + 1
-              end
-                if struct.pretty do
-                struct = %{struct.buf | b: "\n"}
-              end
-                if struct.pretty do
-                (
-                v = StringTools.lpad("", struct.indent, (struct.nind * struct.indent.length))
-                struct = %{struct.buf | b: Std.string(v)}
-              )
-              end
-                struct.write(i, Enum.at(v, i))
-                if ((i == last)) do
-                (
-                struct.nind - 1
-                if struct.pretty do
-                struct = %{struct.buf | b: "\n"}
-              end
-                if struct.pretty do
-                (
-                v = StringTools.lpad("", struct.indent, (struct.nind * struct.indent.length))
-                struct = %{struct.buf | b: Std.string(v)}
-              )
-              end
-              )
-              end
-              )
-        end,
-        loop_helper
-      )
-    )
+    v
+    |> Enum.with_index()
+    |> Enum.each(fn {item, i} ->
+      (
+            i = g_counter + 1
+            if ((i > 0)) do
+            struct = %{struct.buf | b: ","}
+          else
+            struct.nind + 1
+          end
+            if struct.pretty do
+            struct = %{struct.buf | b: "\n"}
+          end
+            if struct.pretty do
+            (
+            v = StringTools.lpad("", struct.indent, (struct.nind * struct.indent.length))
+            struct = %{struct.buf | b: Std.string(v)}
+          )
+          end
+            struct.write(i, item)
+            if ((i == last)) do
+            (
+            struct.nind - 1
+            if struct.pretty do
+            struct = %{struct.buf | b: "\n"}
+          end
+            if struct.pretty do
+            (
+            v = StringTools.lpad("", struct.indent, (struct.nind * struct.indent.length))
+            struct = %{struct.buf | b: Std.string(v)}
+          )
+          end
+          )
+          end
+          )
+    end)
     struct = %{struct.buf | b: "]"}
         else
           if ((c == StringMap)) do
@@ -218,53 +204,39 @@ defmodule JsonPrinter do
     empty = true
     g_counter = 0
     g_array = len
-    (
-      # Simple module-level pattern (inline for now)
-      loop_helper = fn condition_fn, body_fn, loop_fn ->
-        if condition_fn.() do
-          body_fn.()
-          loop_fn.(condition_fn, body_fn, loop_fn)
-        else
-          nil
-        end
-      end
-
-      loop_helper.(
-        fn -> ((g_counter < g_array)) end,
-        fn ->
-          i = g_counter + 1
-          f = Enum.at(fields, i)
-          value = Reflect.field(v, f)
-          if Reflect.is_function_(value) do
-                throw(:continue)
-              end
-          if empty do
-                (
-                struct.nind + 1
-                empty = false
-              )
-              else
-                struct = %{struct.buf | b: ","}
-              end
-          if struct.pretty do
-                struct = %{struct.buf | b: "\n"}
-              end
-          if struct.pretty do
-                (
-                v = StringTools.lpad("", struct.indent, (struct.nind * struct.indent.length))
-                struct = %{struct.buf | b: Std.string(v)}
-              )
-              end
-          struct.quote_(f)
-          struct = %{struct.buf | b: ":"}
-          if struct.pretty do
-                struct = %{struct.buf | b: " "}
-              end
-          struct.write(f, value)
-        end,
-        loop_helper
-      )
-    )
+    fields
+    |> Enum.with_index()
+    |> Enum.each(fn {item, i} ->
+      i = g_counter + 1
+      f = item
+      value = Reflect.field(v, f)
+      if Reflect.is_function_(value) do
+            throw(:continue)
+          end
+      if empty do
+            (
+            struct.nind + 1
+            empty = false
+          )
+          else
+            struct = %{struct.buf | b: ","}
+          end
+      if struct.pretty do
+            struct = %{struct.buf | b: "\n"}
+          end
+      if struct.pretty do
+            (
+            v = StringTools.lpad("", struct.indent, (struct.nind * struct.indent.length))
+            struct = %{struct.buf | b: Std.string(v)}
+          )
+          end
+      struct.quote_(f)
+      struct = %{struct.buf | b: ":"}
+      if struct.pretty do
+            struct = %{struct.buf | b: " "}
+          end
+      struct.write(f, value)
+    end)
     if (not empty) do
           (
           struct.nind - 1
