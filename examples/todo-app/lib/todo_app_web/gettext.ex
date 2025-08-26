@@ -22,12 +22,22 @@ defmodule TodoAppWeb.Gettext do
 
   @doc "Generated from Haxe ngettext"
   def ngettext(msgid, msgid_plural, count, _bindings \\ nil) do
-    if (((count == 1))), do: msgid, else: msgid_plural
+    temp_result = nil
+
+    temp_result = nil
+
+    if ((count == 1)), do: temp_result = msgid, else: temp_result = msgid_plural
+
+    temp_result
   end
 
   @doc "Generated from Haxe dngettext"
   def dngettext(_domain, msgid, msgid_plural, count, _bindings \\ nil) do
-    if (((count == 1))), do: msgid, else: msgid_plural
+    temp_result = nil
+
+    if ((count == 1)), do: temp_result = msgid, else: temp_result = msgid_plural
+
+    temp_result
   end
 
   @doc "Generated from Haxe get_locale"

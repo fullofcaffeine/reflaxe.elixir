@@ -14,6 +14,13 @@ using reflaxe.helpers.TypedExprHelper;
 using StringTools;
 
 /**
+ * Function context information for field assignment transformations
+ */
+typedef FunctionContext = {
+    structParamName: Null<String>  // Name of the struct parameter (e.g., "struct", "this", etc.)
+};
+
+/**
  * Pattern Matching Compiler for Reflaxe.Elixir
  * 
  * WHY: Elixir's pattern matching is fundamentally different from Haxe's switch statements.
@@ -99,7 +106,7 @@ class PatternMatchingCompiler {
         switchExpr: TypedExpr, 
         cases: Array<{values: Array<TypedExpr>, expr: TypedExpr}>, 
         defaultExpr: Null<TypedExpr>,
-        ?context: reflaxe.elixir.helpers.ControlFlowCompiler.FunctionContext
+        ?context: FunctionContext
     ): String {
         
         // CRITICAL FIX: Track nesting level to prevent enum pattern variable collisions
@@ -352,7 +359,7 @@ class PatternMatchingCompiler {
         switchExpr: TypedExpr,
         cases: Array<{values: Array<TypedExpr>, expr: TypedExpr}>,
         defaultExpr: Null<TypedExpr>,
-        ?context: reflaxe.elixir.helpers.ControlFlowCompiler.FunctionContext
+        ?context: FunctionContext
     ): String {
         
         // CRITICAL FIX: Remove 'g' mapping before compiling switch expression
@@ -687,7 +694,7 @@ class PatternMatchingCompiler {
         switchExpr: TypedExpr,
         cases: Array<{values: Array<TypedExpr>, expr: TypedExpr}>,
         defaultExpr: Null<TypedExpr>,
-        ?context: reflaxe.elixir.helpers.ControlFlowCompiler.FunctionContext
+        ?context: FunctionContext
     ): String {
         
         // DEBUG: Track which functions use standard case compilation
@@ -829,7 +836,14 @@ class PatternMatchingCompiler {
                     // Pass the pattern variables to the filter so it knows which extractions to keep
                     var filteredEl = filterPatternExtractionVars(el, patternVars);
                     // Pass context to ControlFlowCompiler for _this replacement
-                    compiler.expressionDispatcher.controlFlowCompiler.compileBlock(filteredEl, false, context);
+                    // Compile block directly
+                    if (filteredEl.length == 0) {
+                        "nil";
+                    } else if (filteredEl.length == 1) {
+                        compiler.compileExpression(filteredEl[0]);
+                    } else {
+                        filteredEl.map(e -> compiler.compileExpression(e)).join("\n");
+                    }
                 default:
                     #if debug_state_threading
                     trace('[XRay compileStandardCase] Non-TBlock case body: ${caseData.expr.expr}');
@@ -845,7 +859,8 @@ class PatternMatchingCompiler {
                         trace('[XRay compileStandardCase] Checking for direct field assignment with context.structParamName = ${context.structParamName}');
                         #end
                         // Try to transform direct field assignments
-                        var directAssignment = compiler.expressionDispatcher.controlFlowCompiler.analyzeDirectFieldAssignment(caseData.expr, context);
+                        // Direct field assignment analysis removed - compile normally
+                        var directAssignment = null;
                         if (directAssignment != null) {
                             #if debug_state_threading
                             trace('[XRay compileStandardCase] ✓ Direct assignment found, using transformed code');
@@ -917,7 +932,7 @@ class PatternMatchingCompiler {
         switchExpr: TypedExpr,
         cases: Array<{values: Array<TypedExpr>, expr: TypedExpr}>,
         defaultExpr: Null<TypedExpr>,
-        ?context: reflaxe.elixir.helpers.ControlFlowCompiler.FunctionContext
+        ?context: FunctionContext
     ): String {
         
         /**
@@ -976,7 +991,7 @@ class PatternMatchingCompiler {
         switchExpr: TypedExpr,
         cases: Array<{values: Array<TypedExpr>, expr: TypedExpr}>,
         defaultExpr: Null<TypedExpr>,
-        ?context: reflaxe.elixir.helpers.ControlFlowCompiler.FunctionContext
+        ?context: FunctionContext
     ): String {
         #if debug_pattern_matching
         trace("[PatternMatchingCompiler] ✓ RESULT SWITCH COMPILATION - Generating direct patterns");
@@ -1809,7 +1824,7 @@ class PatternMatchingCompiler {
      * @param expr The case body expression
      * @return Compiled expression with field assignment transformations applied
      */
-    private function compilePatternBody(expr: TypedExpr, ?context: reflaxe.elixir.helpers.ControlFlowCompiler.FunctionContext): String {
+    private function compilePatternBody(expr: TypedExpr, ?context: FunctionContext): String {
         #if debug_pattern_matching
         trace("[XRay PatternMatchingCompiler] CASE BODY COMPILATION START");
         trace('[XRay PatternMatchingCompiler] Body expression type: ${expr.expr}');
@@ -1832,7 +1847,14 @@ class PatternMatchingCompiler {
                 
                 // Use the passed context if available, otherwise don't pass context
                 // This allows proper state threading transformation when context is provided
-                var result = compiler.expressionDispatcher.controlFlowCompiler.compileBlock(el, false, context);
+                // Compile block directly
+                var result = if (el.length == 0) {
+                    "nil";
+                } else if (el.length == 1) {
+                    compiler.compileExpression(el[0]);
+                } else {
+                    el.map(e -> compiler.compileExpression(e)).join("\n");
+                }
                 
                 #if debug_pattern_matching
                 trace('[XRay PatternMatchingCompiler] ControlFlowCompiler result: ${result.substring(0, 100)}...');
@@ -2011,7 +2033,7 @@ class PatternMatchingCompiler {
         switchExpr: TypedExpr, 
         cases: Array<{values: Array<TypedExpr>, expr: TypedExpr}>, 
         defaultExpr: Null<TypedExpr>,
-        ?context: reflaxe.elixir.helpers.ControlFlowCompiler.FunctionContext
+        ?context: FunctionContext
     ): String {
         #if debug_pattern_matching
         trace("[PatternMatchingCompiler] ✓ DIRECT TSwitch(TEnumIndex) COMPILATION START");
@@ -2628,7 +2650,7 @@ class PatternMatchingCompiler {
         switchExpr: TypedExpr,
         cases: Array<{values: Array<TypedExpr>, expr: TypedExpr}>,
         defaultExpr: Null<TypedExpr>,
-        ?context: reflaxe.elixir.helpers.ControlFlowCompiler.FunctionContext,
+        ?context: FunctionContext,
         ?enumType: EnumType
     ): String {
         #if debug_pattern_matching

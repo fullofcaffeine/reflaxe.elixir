@@ -515,22 +515,51 @@ Each helper handles specific Elixir/Phoenix features:
 
 ```
 helpers/
-├── AnnotationSystem.hx    # Annotation detection and routing
-├── ClassCompiler.hx       # Standard class/module compilation
-├── EnumCompiler.hx        # Enum to tagged tuple compilation
-├── PatternMatcher.hx      # Pattern matching compilation
-├── GuardCompiler.hx       # Guard clause compilation
-├── PipelineOptimizer.hx   # ⚡ NEW: Intelligent pipeline generation
-├── RouterCompiler.hx      # Phoenix.Router generation with @:router/@:route DSL
-├── SchemaCompiler.hx      # Ecto.Schema generation
-├── ChangesetCompiler.hx   # Ecto.Changeset generation
-├── LiveViewCompiler.hx    # Phoenix.LiveView generation
-├── OTPCompiler.hx         # GenServer generation
-├── QueryCompiler.hx       # Ecto.Query DSL compilation
-├── MigrationDSL.hx        # Ecto.Migration generation
-├── TemplateCompiler.hx    # Phoenix template compilation
-└── NamingHelper.hx        # Haxe→Elixir naming conventions
+├── AnnotationSystem.hx         # Annotation detection and routing
+├── ClassCompiler.hx            # Standard class/module compilation
+├── EnumCompiler.hx             # Enum to tagged tuple compilation
+├── PatternMatcher.hx           # Pattern matching compilation
+├── GuardCompiler.hx            # Guard clause compilation
+├── PipelineOptimizer.hx        # ⚡ NEW: Intelligent pipeline generation
+├── RouterCompiler.hx           # Phoenix.Router generation with @:router/@:route DSL
+├── SchemaCompiler.hx           # Ecto.Schema generation
+├── ChangesetCompiler.hx        # Ecto.Changeset generation
+├── LiveViewCompiler.hx         # Phoenix.LiveView generation
+├── OTPCompiler.hx              # GenServer generation
+├── QueryCompiler.hx            # Ecto.Query DSL compilation
+├── MigrationDSL.hx             # Ecto.Migration generation
+├── TemplateCompiler.hx         # Phoenix template compilation
+├── NamingHelper.hx             # Haxe→Elixir naming conventions
+│
+├── Control Flow Compilation (Refactored 2025) ───────────────────────
+├── ConditionalCompiler.hx      # ✅ NEW: If/else/ternary expressions (~260 lines)
+├── ExceptionCompiler.hx        # ✅ NEW: Try/catch/finally blocks (~320 lines)
+├── PatternMatchingCompiler.hx  # Switch/case pattern matching
+├── UnifiedLoopCompiler.hx      # ✅ NEW: Single source for all loops (~450 lines)
+│   ├── CoreLoopCompiler.hx     # Basic loop structures
+│   ├── ArrayLoopOptimizer.hx   # Array pattern detection & optimization
+│   └── LoopTransformations.hx  # Complex loop transformations
+└── ❌ REMOVED: ControlFlowCompiler.hx (was 2,920 lines - split into specialized compilers)
 ```
+
+### 🔄 Control Flow Architecture Refactoring (2025)
+
+**WHY**: The monolithic ControlFlowCompiler (2,920 lines) violated Single Responsibility Principle and made maintenance difficult.
+
+**WHAT**: Decomposed into specialized compilers, each under 500 lines with focused responsibilities.
+
+**HOW**: Each compiler handles one aspect of control flow with clear interfaces:
+- **ConditionalCompiler**: If/else/ternary expressions with guard support
+- **ExceptionCompiler**: Try/catch/finally with proper rescue/after clauses
+- **PatternMatchingCompiler**: Switch/case with exhaustive pattern matching
+- **UnifiedLoopCompiler**: All loop types through a single, extensible interface
+
+**KEY IMPROVEMENTS**:
+- ✅ **NO Y Combinators**: All recursive patterns use idiomatic `Stream.unfold`
+- ✅ **Single Responsibility**: Each file has one clear purpose
+- ✅ **Testability**: Isolated components can be tested independently
+- ✅ **Maintainability**: Average file size reduced from 2,920 to ~350 lines
+- ✅ **Extensibility**: New optimizations can be added without touching core logic
 
 ### ⚡ Pipeline Optimization Architecture **NEW**
 

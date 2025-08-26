@@ -14,15 +14,20 @@ defmodule SupervisorOptionsBuilder do
   @doc "Generated from Haxe withStrategy"
   def with_strategy(strategy) do
     opts = SupervisorOptionsBuilder.defaults()
+
     %{opts | strategy: strategy}
+
     opts
   end
 
   @doc "Generated from Haxe withLimits"
   def with_limits(max_restarts, max_seconds) do
     opts = SupervisorOptionsBuilder.defaults()
+
     %{opts | max_restarts: max_restarts}
+
     %{opts | max_seconds: max_seconds}
+
     opts
   end
 

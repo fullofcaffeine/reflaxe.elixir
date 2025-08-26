@@ -29,7 +29,31 @@ class Main {
             }
         }
         
+        // Test variable capture in closures
+        var functions = [];
+        for (i in 0...3) {
+            functions.push(() -> i);
+        }
+        
+        // Test variable shadowing
+        var i = 100;
+        for (i in 0...3) {
+            result.push(i);
+        }
+        result.push(i); // Should be 100
+        
+        // Test complex variable reuse
+        var sum = 0;
+        for (n in array) {
+            sum += n;
+        }
+        for (n in array) {
+            sum -= n;
+        }
+        
         trace(result);
         trace(filtered);
+        trace("Functions count: " + functions.length);
+        trace("Sum after reuse: " + sum);
     }
 }
