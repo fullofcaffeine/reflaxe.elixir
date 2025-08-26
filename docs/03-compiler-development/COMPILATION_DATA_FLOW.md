@@ -95,60 +95,65 @@ var compiledBody = compileExpressionForFunction(funcField.expr, funcField.args);
 
 But `compileExpressionForFunction()` doesn't map the original parameter names to the prefixed versions!
 
-## The Architectural Flaw
+## The Architectural Flaw (NOW FIXED)
 
-### Current State (BROKEN)
+### Previous State (WAS BROKEN - Before Fix)
 ```
 detectUsedParameters() → Prefix with _ → compileExpression() 
                                             ↑
                                     Body still uses original names
 ```
 
-### Required State (FIXED)
+### Current State (FIXED - After Architectural Refactoring)
 ```
-detectUsedParameters() → Prefix with _ → Map params → compileExpression()
-                                            ↑
-                                    Body uses mapped names
+ALL Functions → ClassCompiler.generateFunction() → FunctionCompiler.compileFunction()
+                     (delegates)                        (single implementation)
+                                                              ↓
+                                            Proper parameter detection & mapping
 ```
 
-## Functions That Bypass FunctionCompiler
+## Functions Now Using Unified Pipeline (FIXED)
 
-Based on the code analysis, these types of functions bypass FunctionCompiler:
-1. **Static utility functions** (like TypeSafeChildSpecTools.toLegacy)
-2. **Module functions** (with @:module annotation)
-3. **Struct instance methods** (compiled via ClassCompiler)
-4. **Regular class static methods** (compiled via ClassCompiler)
+After the architectural refactoring, ALL function types now go through FunctionCompiler:
+1. **Static utility functions** ✅ (like TypeSafeChildSpecTools.toLegacy)
+2. **Module functions** ✅ (with @:module annotation)
+3. **Struct instance methods** ✅ (compiled via ClassCompiler delegation)
+4. **Regular class static methods** ✅ (compiled via ClassCompiler delegation)
 
-Only certain special cases seem to use FunctionCompiler directly.
+The dual-path architecture has been eliminated.
 
-## The Root Cause
+## The Root Cause (RESOLVED)
 
-The root cause is **architectural inconsistency**: 
-- Some functions go through FunctionCompiler (with proper parameter handling)
-- Most functions go through ClassCompiler.generateFunction() (with incomplete parameter handling)
-- The two paths have different parameter handling logic
-- ClassCompiler detects unused parameters but doesn't map them in the body
+The root cause **was** architectural inconsistency: 
+- Some functions went through FunctionCompiler (with proper parameter handling)
+- Most functions went through ClassCompiler.generateFunction() (with incomplete parameter handling)
+- The two paths had different parameter handling logic
+- ClassCompiler detected unused parameters but didn't map them in the body
 
-## Required Fix
+## The Implemented Fix
 
-### Option 1: Unify Under FunctionCompiler
-Make ALL function compilation go through FunctionCompiler:
+### ✅ Option 1: Unified Under FunctionCompiler (IMPLEMENTED)
+We successfully unified ALL function compilation through FunctionCompiler:
 ```haxe
-// In ClassCompiler.generateFunction()
-return functionCompiler.compileFunction(funcField, isInstance, isStructClass);
-```
-
-### Option 2: Fix ClassCompiler's Parameter Mapping
-Add parameter mapping to ClassCompiler.compileExpressionForFunction():
-```haxe
-// Map original names to prefixed names before compilation
-if (paramWasPrefixed) {
-    compiler.setParameterMapping(originalName, prefixedName);
+// In ClassCompiler.generateFunction() - NOW IMPLEMENTED
+private function generateFunction(funcField: ClassFuncData, isInstance: Bool, isStructClass: Bool): String {
+    // Delegates ALL function compilation to FunctionCompiler
+    return compiler.functionCompiler.compileFunction(
+        funcField,
+        !isInstance,  // isStatic
+        isInstance,
+        isStructClass,
+        currentClassName
+    );
 }
 ```
 
-### Option 3: Disable Underscore Prefixing (Current Workaround)
-Simply don't prefix unused parameters - generates warnings but compiles correctly.
+### Changes Made:
+1. **Enhanced FunctionCompiler** to handle all function types
+2. **Removed ~400 lines** of duplicate code from ClassCompiler
+3. **Made functionCompiler public** in ElixirCompiler for delegation
+4. **Deleted duplicate methods**: detectUsedParameters(), compileExpressionForFunction()
+5. **Updated generateModuleFunctions()** to also delegate
 
 ## Validation
 
@@ -167,9 +172,16 @@ grep "def to_legacy" lib/elixir/otp/type_safe_child_spec_tools.ex
 
 ## Conclusion
 
-The compiler has two separate function compilation paths with inconsistent parameter handling. TypeSafeChildSpecTools and similar utility classes use the ClassCompiler path, which detects unused parameters and prefixes them but doesn't update references in the function body. This architectural inconsistency must be resolved by either:
-1. Unifying all function compilation through FunctionCompiler
-2. Fixing ClassCompiler's parameter mapping
-3. Removing underscore prefixing entirely (least ideal)
+✅ **FIXED**: The compiler previously had two separate function compilation paths with inconsistent parameter handling. This architectural inconsistency has been resolved by unifying all function compilation through FunctionCompiler.
 
-The proper solution is to ensure ALL functions go through the same compilation pipeline with consistent parameter handling.
+### What Was Fixed:
+- **Eliminated dual compilation paths** - All functions now use one pipeline
+- **Removed ~400 lines of duplicate code** from ClassCompiler  
+- **Ensured consistent parameter handling** across all function types
+- **Created single source of truth** for function compilation logic
+
+### Remaining Work:
+- **Parameter usage detection** in FunctionCompiler still needs enhancement for complex expressions like `elem(param, 0)`
+- This is a detection logic issue, not an architectural problem
+
+The architectural refactoring ensures ALL functions go through the same compilation pipeline with consistent parameter handling, making the compiler more maintainable and reliable.
