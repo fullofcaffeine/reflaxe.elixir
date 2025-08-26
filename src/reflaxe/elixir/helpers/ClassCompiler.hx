@@ -648,6 +648,13 @@ class ClassCompiler {
             paramTypes.push('t()');
         }
         
+        // CRITICAL: Detect unused parameters to prefix with underscore
+        var usedParams = if (funcField.expr != null && funcField.args != null) {
+            detectUsedParameters(funcField.expr, funcField.args);
+        } else {
+            new Map<String, Bool>(); // Empty function, all params unused
+        }
+        
         // Add regular parameters
         if (funcField.args != null) {
             for (i in 0...funcField.args.length) {
@@ -660,7 +667,17 @@ class ClassCompiler {
                 } else {
                     arg.getName();
                 }
+                
+                // Check if parameter is used in function body
+                var isUsed = usedParams.exists(originalName) && usedParams.get(originalName);
+                
+                // Convert to snake_case and prefix with underscore if unused
                 var paramName = NamingHelper.toSnakeCase(originalName);
+                if (!isUsed) {
+                    // Prefix with underscore to indicate intentionally unused
+                    paramName = "_" + paramName;
+                }
+                
                 params.push(paramName);
                 
                 var argType = getArgType(arg);
@@ -1554,6 +1571,145 @@ class ClassCompiler {
         result.add('  end\n\n');
         
         return result.toString();
+    }
+    
+    /**
+     * Detect which parameters are actually used in the function body
+     * 
+     * WHY: Unused parameters should be prefixed with underscore in Elixir
+     * to avoid compiler warnings and follow idiomatic conventions
+     * 
+     * WHAT: Recursively traverse the function expression tree to find
+     * all TLocal references to parameter variables
+     * 
+     * HOW: Pattern match on TypedExpr types and collect TLocal references
+     * that match parameter names
+     * 
+     * @param expr The function body expression
+     * @param args The function arguments to check against
+     * @return Map of parameter names to usage status (true if used)
+     */
+    private function detectUsedParameters(expr: TypedExpr, args: Array<ClassFuncArg>): Map<String, Bool> {
+        var usedParams = new Map<String, Bool>();
+        
+        // Build a set of parameter names for quick lookup
+        var paramNames = new Map<String, Bool>();
+        for (arg in args) {
+            var name = if (arg.tvar != null) {
+                arg.tvar.name;
+            } else {
+                arg.getName();
+            };
+            paramNames.set(name, true);
+            usedParams.set(name, false); // Initially mark as unused
+        }
+        
+        // Recursive function to traverse expression tree
+        function checkExpression(e: TypedExpr): Void {
+            if (e == null) return;
+            
+            switch (e.expr) {
+                case TLocal(tvar):
+                    // Check if this local variable is a parameter
+                    if (paramNames.exists(tvar.name)) {
+                        usedParams.set(tvar.name, true);
+                    }
+                    
+                case TBlock(exprs):
+                    for (subExpr in exprs) {
+                        checkExpression(subExpr);
+                    }
+                    
+                case TIf(condExpr, ifExpr, elseExpr):
+                    checkExpression(condExpr);
+                    checkExpression(ifExpr);
+                    if (elseExpr != null) checkExpression(elseExpr);
+                    
+                case TWhile(condExpr, bodyExpr, normalWhile):
+                    checkExpression(condExpr);
+                    checkExpression(bodyExpr);
+                    
+                case TFor(tvar, iterExpr, bodyExpr):
+                    checkExpression(iterExpr);
+                    checkExpression(bodyExpr);
+                    
+                case TSwitch(switchExpr, cases, defaultCase):
+                    checkExpression(switchExpr);
+                    for (c in cases) {
+                        checkExpression(c.expr);
+                    }
+                    if (defaultCase != null) checkExpression(defaultCase);
+                    
+                case TCall(e, el):
+                    checkExpression(e);
+                    for (arg in el) {
+                        checkExpression(arg);
+                    }
+                    
+                case TFunction(tfunc):
+                    // Check function body but don't include its own params
+                    if (tfunc.expr != null) {
+                        checkExpression(tfunc.expr);
+                    }
+                    
+                case TReturn(e):
+                    if (e != null) checkExpression(e);
+                    
+                case TBinop(op, e1, e2):
+                    checkExpression(e1);
+                    checkExpression(e2);
+                    
+                case TUnop(op, postFix, e):
+                    checkExpression(e);
+                    
+                case TField(e, field):
+                    checkExpression(e);
+                    
+                case TArrayDecl(values):
+                    for (v in values) {
+                        checkExpression(v);
+                    }
+                    
+                case TObjectDecl(fields):
+                    for (f in fields) {
+                        checkExpression(f.expr);
+                    }
+                    
+                case TNew(classTypeRef, params, el):
+                    for (e in el) {
+                        checkExpression(e);
+                    }
+                    
+                case TVar(tvar, expr):
+                    if (expr != null) checkExpression(expr);
+                    
+                case TParenthesis(e):
+                    checkExpression(e);
+                    
+                case TTry(e, catches):
+                    checkExpression(e);
+                    for (c in catches) {
+                        checkExpression(c.expr);
+                    }
+                    
+                case TThrow(e):
+                    checkExpression(e);
+                    
+                case TCast(e, moduleType):
+                    checkExpression(e);
+                    
+                case TMeta(metadataEntry, e):
+                    checkExpression(e);
+                    
+                default:
+                    // TConst, TTypeExpr, TBreak, TContinue, TIdent don't need recursion
+            }
+        }
+        
+        // Start the traversal
+        checkExpression(expr);
+        
+        return usedParams;
     }
 }
 
