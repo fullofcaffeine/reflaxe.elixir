@@ -52,7 +52,7 @@ import reflaxe.elixir.helpers.ExpressionDispatcher;
 import reflaxe.elixir.ElixirTyper;
 import reflaxe.elixir.helpers.DebugHelper;
 import reflaxe.elixir.helpers.CompilerUtilities;
-import reflaxe.elixir.helpers.LoopCompiler;
+// Removed: LoopCompiler import - functionality moved to UnifiedLoopCompiler
 import reflaxe.elixir.helpers.PhoenixPathGenerator;
 import reflaxe.elixir.helpers.PatternMatchingCompiler;
 import reflaxe.elixir.helpers.MigrationCompiler;
@@ -63,9 +63,8 @@ import reflaxe.elixir.helpers.ReflectionCompiler;
 import reflaxe.elixir.helpers.ArrayMethodCompiler;
 import reflaxe.elixir.helpers.MapToolsCompiler;
 import reflaxe.elixir.helpers.ADTMethodCompiler;
-import reflaxe.elixir.helpers.YCombinatorCompiler;
 import reflaxe.elixir.helpers.PatternDetectionCompiler;
-import reflaxe.elixir.helpers.WhileLoopCompiler;
+// WhileLoopCompiler removed - functionality moved to UnifiedLoopCompiler
 import reflaxe.elixir.helpers.CodeFixupCompiler;
 import reflaxe.elixir.helpers.VariableCompiler;
 import reflaxe.elixir.helpers.VariableMappingManager;
@@ -125,8 +124,10 @@ class ElixirCompiler extends DirectToStringCompiler {
     // Pipeline optimization for idiomatic Elixir code generation
     private var pipelineOptimizer: reflaxe.elixir.helpers.PipelineOptimizer;
     
-    // Loop compilation and optimization helper
-    public var loopCompiler: reflaxe.elixir.helpers.LoopCompiler;
+    // Removed: loopCompiler - functionality moved to UnifiedLoopCompiler
+    
+    // Unified loop compiler - single source of truth for all loop compilation
+    public var unifiedLoopCompiler: reflaxe.elixir.helpers.UnifiedLoopCompiler;
     
     // Pattern matching compilation helper
     public var patternMatchingCompiler: reflaxe.elixir.helpers.PatternMatchingCompiler;
@@ -186,8 +187,6 @@ class ElixirCompiler extends DirectToStringCompiler {
     // ADT (Option/Result) static extension method compilation
     private var adtMethodCompiler: reflaxe.elixir.helpers.ADTMethodCompiler;
     
-    /** Y combinator pattern detection and generation utilities */
-    private var yCombinatorCompiler: reflaxe.elixir.helpers.YCombinatorCompiler;
     
     /** Pattern detection and analysis utilities */
     private var patternDetectionCompiler: reflaxe.elixir.helpers.PatternDetectionCompiler;
@@ -205,7 +204,7 @@ class ElixirCompiler extends DirectToStringCompiler {
     private var pipelineAnalyzer: reflaxe.elixir.helpers.PipelineAnalyzer;
     
     /** While loop compilation with Y combinator pattern generation */
-    private var whileLoopCompiler: reflaxe.elixir.helpers.WhileLoopCompiler;
+    // whileLoopCompiler removed - functionality moved to unifiedLoopCompiler
     
     /** Expression variant compilation for specialized expression handling patterns */
     public var expressionVariantCompiler: reflaxe.elixir.helpers.ExpressionVariantCompiler;
@@ -313,7 +312,8 @@ class ElixirCompiler extends DirectToStringCompiler {
         this.guardCompiler = new reflaxe.elixir.helpers.GuardCompiler();
         this.pipelineOptimizer = new reflaxe.elixir.helpers.PipelineOptimizer(this);
         this.importOptimizer = new reflaxe.elixir.helpers.ImportOptimizer(this);
-        this.loopCompiler = new reflaxe.elixir.helpers.LoopCompiler(this);
+        // Removed: loopCompiler instantiation - using only unifiedLoopCompiler
+        this.unifiedLoopCompiler = new reflaxe.elixir.helpers.UnifiedLoopCompiler(this);
         this.patternMatchingCompiler = new reflaxe.elixir.helpers.PatternMatchingCompiler(this);
         this.schemaCompiler = new reflaxe.elixir.helpers.SchemaCompiler(this);
         this.migrationCompiler = new reflaxe.elixir.helpers.MigrationCompiler(this);
@@ -332,13 +332,12 @@ class ElixirCompiler extends DirectToStringCompiler {
         this.arrayMethodCompiler = new reflaxe.elixir.helpers.ArrayMethodCompiler(this);
         this.mapToolsCompiler = new reflaxe.elixir.helpers.MapToolsCompiler(this);
         this.adtMethodCompiler = new reflaxe.elixir.helpers.ADTMethodCompiler(this);
-        this.yCombinatorCompiler = new reflaxe.elixir.helpers.YCombinatorCompiler(this);
         this.patternDetectionCompiler = new reflaxe.elixir.helpers.PatternDetectionCompiler(this);
         this.patternAnalysisCompiler = new reflaxe.elixir.helpers.PatternAnalysisCompiler(this);
         this.typeResolutionCompiler = new reflaxe.elixir.helpers.TypeResolutionCompiler(this);
         this.codeFixupCompiler = new reflaxe.elixir.helpers.CodeFixupCompiler(this);
         this.pipelineAnalyzer = new reflaxe.elixir.helpers.PipelineAnalyzer(this);
-        this.whileLoopCompiler = new reflaxe.elixir.helpers.WhileLoopCompiler(this);
+        // WhileLoopCompiler removed - using UnifiedLoopCompiler components
         this.expressionVariantCompiler = new reflaxe.elixir.helpers.ExpressionVariantCompiler(this);
         this.expressionDispatcher = new reflaxe.elixir.helpers.ExpressionDispatcher(this);
         
@@ -1672,7 +1671,7 @@ class ElixirCompiler extends DirectToStringCompiler {
         return patternDetectionCompiler.detectReflectFieldsPattern(econd, ebody);
     }
     private function checkForTForInExpression(expr: TypedExpr): Bool {
-        return loopCompiler.checkForTForInExpression(expr);
+        return unifiedLoopCompiler.checkForTForInExpression(expr);
     }
     
     /**
@@ -1687,7 +1686,7 @@ class ElixirCompiler extends DirectToStringCompiler {
      * 
      * WHY: Delegates to LoopCompiler for centralized loop pattern detection and analysis
      * WHAT: Wrapper function that maintains backward compatibility while delegating
-     * HOW: Simply forwards the call to loopCompiler.containsTWhileExpression()
+     * HOW: Simply forwards the call to unifiedLoopCompiler.containsTWhileExpression()
      * 
      * This function was moved to LoopCompiler as part of loop-related logic consolidation.
      * Y combinator pattern detection is core loop compilation functionality.
@@ -1696,7 +1695,7 @@ class ElixirCompiler extends DirectToStringCompiler {
      * @return True if expression contains any TWhile nodes
      */
     private function containsTWhileExpression(expr: TypedExpr): Bool {
-        return loopCompiler.containsTWhileExpression(expr);
+        return unifiedLoopCompiler.containsTWhileExpression(expr);
     }
     
     /**
@@ -1922,7 +1921,8 @@ class ElixirCompiler extends DirectToStringCompiler {
      * This handles variable collisions in desugared loop code
      */
     private function compileWhileLoopWithRenamings(econd: TypedExpr, ebody: TypedExpr, normalWhile: Bool, renamings: Map<String, String>): String {
-        return whileLoopCompiler.compileWhileLoopWithRenamings(econd, ebody, normalWhile, renamings);
+        // Delegate to UnifiedLoopCompiler's CoreLoopCompiler which has the idiomatic implementation
+        return unifiedLoopCompiler.coreLoopCompiler.compileWhileLoopWithRenamings(econd, ebody, normalWhile, renamings);
     }
     
     /**
@@ -1989,51 +1989,13 @@ class ElixirCompiler extends DirectToStringCompiler {
      * Generates proper tail-recursive patterns that handle mutable state correctly
      */
     private function compileWhileLoop(econd: TypedExpr, ebody: TypedExpr, normalWhile: Bool): String {
-        return whileLoopCompiler.compileWhileLoop(econd, ebody, normalWhile);
+        return unifiedLoopCompiler.compileWhileLoop(econd, ebody, normalWhile);
     }
     
-    /**
-     * Detect if a loop body is building an array (DELEGATED)
-     * Returns info about the pattern if detected, null otherwise
-     */
-    private function detectArrayBuildingPattern(ebody: TypedExpr): Null<{indexVar: String, accumVar: String, arrayExpr: String}> {
-        return whileLoopCompiler.detectArrayBuildingPattern(ebody);
-    }
-    
-    /**
-     * Compile an array-building loop pattern to idiomatic Elixir (DELEGATED)
-     */
-    private function compileArrayBuildingLoop(econd: TypedExpr, ebody: TypedExpr, pattern: {indexVar: String, accumVar: String, arrayExpr: String}): String {
-        return whileLoopCompiler.compileArrayBuildingLoop(econd, ebody, pattern);
-    }
-    
-    /**
-     * Extract the transformation applied to array elements (DELEGATED)
-     */
-    private function extractArrayTransformation(ebody: TypedExpr, indexVar: String, accumVar: String): Null<String> {
-        return whileLoopCompiler.extractArrayTransformation(ebody, indexVar, accumVar);
-    }
-    
-    /**
-     * Fallback generic while loop compilation (DELEGATED)
-     */
-    private function compileWhileLoopGeneric(econd: TypedExpr, ebody: TypedExpr, normalWhile: Bool): String {
-        return whileLoopCompiler.compileWhileLoopGeneric(econd, ebody, normalWhile);
-    }
-    
-    /**
-     * Extract variables that are modified within a loop body (DELEGATED)
-     */
-    private function extractModifiedVariables(expr: TypedExpr): Array<{name: String, type: String}> {
-        return whileLoopCompiler.extractModifiedVariables(expr);
-    }
-    
-    /**
-     * Transform loop body to handle mutations functionally by returning updated state
-     */
-    private function transformLoopBodyMutations(expr: TypedExpr, modifiedVars: Array<{name: String, type: String}>, normalWhile: Bool, condition: String): String {
-        return whileLoopCompiler.transformLoopBodyMutations(expr, modifiedVars, normalWhile, condition);
-    }
+    // NOTE: Loop-related methods previously delegated to WhileLoopCompiler have been removed.
+    // All loop compilation is now handled internally by UnifiedLoopCompiler and its components.
+    // Methods removed: detectArrayBuildingPattern, compileArrayBuildingLoop, extractArrayTransformation,
+    // compileWhileLoopGeneric, extractModifiedVariables, transformLoopBodyMutations
     
     /**
      * Compile expression while tracking variable mutations (DELEGATED) 
@@ -2874,7 +2836,8 @@ class ElixirCompiler extends DirectToStringCompiler {
      * @return True if this expression will generate a Y combinator
      */
     private function detectYCombinatorInAST(expr: TypedExpr): Bool {
-        return yCombinatorCompiler.detectYCombinatorInAST(expr);
+        // Y combinators are no longer used - we use idiomatic Elixir patterns
+        return false;
     }
     
     /**

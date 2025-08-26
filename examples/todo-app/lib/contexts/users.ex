@@ -30,21 +30,23 @@ defmodule Users do
   @doc "Generated from Haxe create_user"
   def create_user(attrs) do
     changeset = UserChangeset.changeset(nil, attrs)
+
     if ((changeset != nil)) do
-          %{"status" => "ok", "user" => nil}
-        else
-          %{"status" => "error", "changeset" => changeset}
-        end
+      %{"status" => "ok", "user" => nil}
+    else
+      %{"status" => "error", "changeset" => changeset}
+    end
   end
 
   @doc "Generated from Haxe update_user"
   def update_user(user, attrs) do
     changeset = UserChangeset.changeset(user, attrs)
+
     if ((changeset != nil)) do
-          %{"status" => "ok", "user" => user}
-        else
-          %{"status" => "error", "changeset" => changeset}
-        end
+      %{"status" => "ok", "user" => user}
+    else
+      %{"status" => "error", "changeset" => changeset}
+    end
   end
 
   @doc "Generated from Haxe delete_user"

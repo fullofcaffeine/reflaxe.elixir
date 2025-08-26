@@ -58,7 +58,9 @@ class ExpressionDispatcher {
     
     // Specialized compilers (will be created as we extract more functionality)
     public var literalCompiler: LiteralCompiler;
-    public var controlFlowCompiler: ControlFlowCompiler;
+    public var conditionalCompiler: ConditionalCompiler;
+    public var patternMatchingCompiler: PatternMatchingCompiler;
+    public var exceptionCompiler: ExceptionCompiler;
     var operatorCompiler: OperatorCompiler;
     // TODO: Uncomment as compilers are extracted:
     public var variableCompiler: VariableCompiler;
@@ -78,7 +80,9 @@ class ExpressionDispatcher {
         
         // Initialize specialized compilers
         this.literalCompiler = new LiteralCompiler(compiler);
-        this.controlFlowCompiler = new ControlFlowCompiler(compiler);
+        this.conditionalCompiler = new ConditionalCompiler(compiler);
+        this.patternMatchingCompiler = new PatternMatchingCompiler(compiler);
+        this.exceptionCompiler = new ExceptionCompiler(compiler);
         this.operatorCompiler = new OperatorCompiler(compiler, this.literalCompiler);
         this.methodCallCompiler = new MethodCallCompiler(compiler);
         
@@ -127,13 +131,27 @@ class ExpressionDispatcher {
                 
             case TBlock(el):
                 #if debug_expression_dispatcher
-                trace("[XRay ExpressionDispatcher] ✓ DISPATCHING to ControlFlowCompiler (TBlock)");
+                trace("[XRay ExpressionDispatcher] ✓ Compiling TBlock directly");
                 #end
-                controlFlowCompiler.compileBlock(el, topLevel, null);
+                // Simple block compilation - just compile expressions in sequence
+                if (el.length == 0) {
+                    "nil";
+                } else if (el.length == 1) {
+                    compileExpression(el[0], topLevel);
+                } else {
+                    var expressions = [];
+                    for (expr in el) {
+                        var compiled = compileExpression(expr, false);
+                        if (compiled != null && compiled.length > 0) {
+                            expressions.push(compiled);
+                        }
+                    }
+                    expressions.join(topLevel ? "\n\n" : "\n");
+                }
                 
             case TIf(econd, eif, eelse):
                 #if debug_expression_dispatcher
-                trace("[XRay ExpressionDispatcher] ✓ DISPATCHING to ControlFlowCompiler (TIf)");
+                trace("[XRay ExpressionDispatcher] ✓ DISPATCHING to ConditionalCompiler (TIf)");
                 trace("[XRay ExpressionDispatcher] TIf condition: " + Type.enumConstructor(econd.expr));
                 trace("[XRay ExpressionDispatcher] TIf then branch: " + Type.enumConstructor(eif.expr));
                 if (eelse != null) {
@@ -162,31 +180,31 @@ class ExpressionDispatcher {
                     trace("[XRay ExpressionDispatcher] TIf else branch: null");
                 }
                 #end
-                controlFlowCompiler.compileIfExpression(econd, eif, eelse);
+                conditionalCompiler.compileIfExpression(econd, eif, eelse);
                 
             case TSwitch(e, cases, edef):
                 #if debug_expression_dispatcher
-                trace("[XRay ExpressionDispatcher] ✓ DISPATCHING to ControlFlowCompiler (TSwitch)");
+                trace("[XRay ExpressionDispatcher] ✓ DISPATCHING to PatternMatchingCompiler (TSwitch)");
                 #end
-                controlFlowCompiler.compileSwitchExpression(e, cases, edef);
+                patternMatchingCompiler.compileSwitchExpression(e, cases, edef);
                 
             case TWhile(econd, ebody, normalWhile):
                 #if debug_expression_dispatcher
-                trace("[XRay ExpressionDispatcher] ✓ DISPATCHING to ControlFlowCompiler (TWhile)");
+                trace("[XRay ExpressionDispatcher] ✓ DISPATCHING to UnifiedLoopCompiler (TWhile)");
                 #end
-                controlFlowCompiler.compileWhileLoop(econd, ebody, normalWhile);
+                compiler.unifiedLoopCompiler.compileWhileLoop(econd, ebody, normalWhile);
                 
             case TFor(tvar, iterExpr, blockExpr):
                 #if debug_expression_dispatcher
-                trace("[XRay ExpressionDispatcher] ✓ DISPATCHING to ControlFlowCompiler (TFor)");
+                trace("[XRay ExpressionDispatcher] ✓ DISPATCHING to UnifiedLoopCompiler (TFor)");
                 #end
-                controlFlowCompiler.compileForLoop(tvar, iterExpr, blockExpr);
+                compiler.unifiedLoopCompiler.compileForLoop(tvar, iterExpr, blockExpr);
                 
             case TTry(e, catches):
                 #if debug_expression_dispatcher
-                trace("[XRay ExpressionDispatcher] ✓ DISPATCHING to ControlFlowCompiler (TTry)");
+                trace("[XRay ExpressionDispatcher] ✓ DISPATCHING to ExceptionCompiler (TTry)");
                 #end
-                controlFlowCompiler.compileTryExpression(e, catches);
+                exceptionCompiler.compileTryExpression(e, catches);
                 
             case TBinop(op, e1, e2):
                 #if debug_expression_dispatcher

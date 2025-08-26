@@ -23,12 +23,14 @@ defmodule TodoAppWeb.Gettext.ErrorMessages do
   @doc "Generated from Haxe too_short"
   def too_short(min) do
     bindings = TranslationBindings_Impl_.set_int(TranslationBindings_Impl_.create(), "count", min)
+
     TodoAppWeb.Gettext.dgettext("errors", "should be at least %{count} character(s)", bindings)
   end
 
   @doc "Generated from Haxe too_long"
   def too_long(max) do
     bindings = TranslationBindings_Impl_.set_int(TranslationBindings_Impl_.create(), "count", max)
+
     TodoAppWeb.Gettext.dgettext("errors", "should be at most %{count} character(s)", bindings)
   end
 

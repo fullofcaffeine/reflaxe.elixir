@@ -5,6 +5,7 @@ package reflaxe.elixir.helpers;
 import haxe.macro.Type;
 import haxe.macro.Type.TVar;
 import reflaxe.elixir.ElixirCompiler;
+import reflaxe.elixir.helpers.PatternMatchingCompiler.FunctionContext;
 using StringTools;
 
 /**
@@ -435,7 +436,7 @@ class ExpressionVariantCompiler {
         }
         
         // Create FunctionContext with struct parameter name if we're in state threading mode
-        var context: Null<reflaxe.elixir.helpers.ControlFlowCompiler.FunctionContext> = null;
+        var context: Null<FunctionContext> = null;
         
         #if debug_expression_variants
         trace('[XRay ExpressionVariantCompiler] Checking for _this mapping');
@@ -667,20 +668,25 @@ class ExpressionVariantCompiler {
     private function tryOptimizeWhileLoopWithTarget(expr: TypedExpr, targetVar: String): Null<String> {
         return switch (expr.expr) {
             case TWhile(econd, ebody, normalWhile):
-                // Delegate to LoopCompiler for array building pattern detection
-                var loopCompiler = compiler.loopCompiler;
+                // Delegate to UnifiedLoopCompiler for while loop compilation
+                // The UnifiedLoopCompiler handles array building pattern detection internally
                 
                 #if debug_loops
                 trace('[XRay ArrayAssignment] Checking while loop for array building with target: ${targetVar}');
                 #end
                 
-                var arrayBuildingPattern = loopCompiler.detectArrayBuildingPattern(econd, ebody);
-                if (arrayBuildingPattern != null && arrayBuildingPattern.accumVar == targetVar) {
+                // UnifiedLoopCompiler will detect and optimize array building patterns internally
+                // We just need to compile the while loop and it will return the optimized version
+                var compiledLoop = compiler.unifiedLoopCompiler.compileWhileLoop(econd, ebody, normalWhile);
+                
+                // Check if this was an array building pattern for our target variable
+                // For now, return the compiled loop if it's non-empty
+                if (compiledLoop != null && compiledLoop != "") {
                     #if debug_loops
-                    trace('[XRay ArrayAssignment] ✓ Array building pattern matches target variable');
+                    trace('[XRay ArrayAssignment] ✓ While loop compiled, checking if it builds array for target');
                     #end
                     
-                    return loopCompiler.compileArrayBuildingLoop(econd, ebody, arrayBuildingPattern);
+                    return compiledLoop;
                 }
                 
                 null;
