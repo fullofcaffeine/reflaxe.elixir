@@ -42,14 +42,13 @@ defmodule TypeSafeChildSpecBuilder do
   """
   @spec endpoint(String.t(), Null.t(), Null.t()) :: TypeSafeChildSpec.t()
   def endpoint(app_name, port, config) do
-    temp_number = nil
+    (
+          temp_number = nil
+          temp_number = nil
     tmp = port
-    if (tmp != nil) do
-      temp_number = tmp
-    else
-      temp_number = 4000
-    end
-    AppWeb.Endpoint
+    temp_number = if (((tmp != nil))), do: tmp, else: 4000
+          AppWeb.Endpoint
+        )
   end
 
   @doc """
@@ -73,14 +72,13 @@ defmodule TypeSafeChildSpecBuilder do
   """
   @spec presence(String.t(), Null.t()) :: TypeSafeChildSpec.t()
   def presence(app_name, pubsub_name) do
-    temp_string = nil
+    (
+          temp_string = nil
+          temp_string = nil
     tmp = pubsub_name
-    if (tmp != nil) do
-      temp_string = tmp
-    else
-      temp_string = "" <> app_name <> ".PubSub"
-    end
-    {:presence, %{"name" => "" <> app_name <> ".Presence", "pubsub_server" => temp_string}}
+    temp_string = if (((tmp != nil))), do: tmp, else: "" <> app_name <> ".PubSub"
+          {:presence, %{"name" => "" <> app_name <> ".Presence", "pubsub_server" => temp_string}}
+        )
   end
 
   @doc """
@@ -93,7 +91,7 @@ defmodule TypeSafeChildSpecBuilder do
   """
   @spec worker(Class.t(), T.t()) :: TypeSafeChildSpec.t()
   def worker(module, args) do
-    {:custom, module, args, :permanent, {:timeout, 5000}}
+    {:custom, module, args, :permanent, ShutdownType.timeout(5000)}
   end
 
   @doc """

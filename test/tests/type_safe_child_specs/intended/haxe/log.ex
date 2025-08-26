@@ -13,38 +13,23 @@ defmodule Log do
   """
   @spec format_output(term(), PosInfos.t()) :: String.t()
   def format_output(v, infos) do
-    str = Std.string(v)
-    if (infos == nil) do
-      str
-    end
-    pstr = infos.file_name <> ":" <> Integer.to_string(infos.line_number)
-    if (infos.custom_params != nil) do
-      _g_counter = 0
-      _g_1 = infos.customParams
-      (
-        loop_helper = fn loop_fn, {g_1, str} ->
-          if (g < g.length) do
-            try do
-              v = Enum.at(g, g)
-      g = g + 1
+    (
+          str = Std.string(v)
+          if ((infos == nil)) do
+          str
+        end
+          pstr = infos.file_name <> ":" <> to_string(infos.line_number)
+          if ((infos.custom_params != nil)) do
+          (
+          g_counter = 0
+          g_array = infos.custom_params
+          Enum.each(g_array, fn v2 -> 
       str = str <> ", " <> Std.string(v)
-              loop_fn.(loop_fn, {g_1, str})
-            catch
-              :break -> {g_1, str}
-              :continue -> loop_fn.(loop_fn, {g_1, str})
-            end
-          else
-            {g_1, str}
-          end
+    end)
+        )
         end
-        {g_1, str} = try do
-          loop_helper.(loop_helper, {nil, nil})
-        catch
-          :break -> {nil, nil}
-        end
-      )
-    end
-    pstr <> ": " <> str
+          pstr <> ": " <> str
+        )
   end
 
   @doc """
@@ -67,8 +52,34 @@ defmodule Log do
   """
   @spec trace(term(), Null.t()) :: nil
   def trace(v, infos) do
-    str = Log.format_output(v, infos)
-    Sys.println(str)
+    (
+          str = Log.format_output(v, infos)
+          Sys.println(str)
+        )
+  end
+
+
+  # While loop helper functions
+  # Generated automatically for tail-recursive loop patterns
+
+  @doc false
+  defp while_loop(condition_fn, body_fn) do
+    if condition_fn.() do
+      body_fn.()
+      while_loop(condition_fn, body_fn)
+    else
+      nil
+    end
+  end
+
+  @doc false
+  defp do_while_loop(body_fn, condition_fn) do
+    body_fn.()
+    if condition_fn.() do
+      do_while_loop(body_fn, condition_fn)
+    else
+      nil
+    end
   end
 
 end

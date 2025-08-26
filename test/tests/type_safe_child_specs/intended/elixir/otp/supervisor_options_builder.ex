@@ -21,9 +21,11 @@ defmodule SupervisorOptionsBuilder do
   """
   @spec with_strategy(SupervisorStrategy.t()) :: SupervisorOptions.t()
   def with_strategy(strategy) do
-    opts = SupervisorOptionsBuilder.defaults()
-    opts = %{opts | strategy: strategy}
-    opts
+    (
+          opts = SupervisorOptionsBuilder.defaults()
+          %{opts | strategy: strategy}
+          opts
+        )
   end
 
   @doc """
@@ -32,10 +34,12 @@ defmodule SupervisorOptionsBuilder do
   """
   @spec with_limits(integer(), integer()) :: SupervisorOptions.t()
   def with_limits(max_restarts, max_seconds) do
-    opts = SupervisorOptionsBuilder.defaults()
-    opts = %{opts | max_restarts: max_restarts}
-    opts = %{opts | max_seconds: max_seconds}
-    opts
+    (
+          opts = SupervisorOptionsBuilder.defaults()
+          %{opts | max_restarts: max_restarts}
+          %{opts | max_seconds: max_seconds}
+          opts
+        )
   end
 
 end

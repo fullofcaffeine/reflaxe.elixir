@@ -15,10 +15,12 @@ defmodule TestApp.Application do
   @doc "Function main"
   @spec main() :: nil
   def main() do
-    Application.test_type_safe_child_specs()
-    Application.test_child_spec_builders()
-    Application.test_complex_child_specs()
-    Application.test_application_children()
+    (
+          TestApp.Application.test_type_safe_child_specs()
+          TestApp.Application.test_child_spec_builders()
+          TestApp.Application.test_complex_child_specs()
+          TestApp.Application.test_application_children()
+        )
   end
 
   @doc """
@@ -47,11 +49,13 @@ defmodule TestApp.Application do
   """
   @spec test_child_spec_builders() :: nil
   def test_child_spec_builders() do
-    {Phoenix.PubSub, name: TestApp.PubSub}
-    App.Repo
-    AppWeb.Endpoint
-    AppWeb.Telemetry
-    Log.trace("Direct TypeSafeChildSpec test completed", %{"fileName" => "Main.hx", "lineNumber" => 78, "className" => "Main", "methodName" => "testChildSpecBuilders"})
+    (
+          {Phoenix.PubSub, name: TestApp.PubSub}
+          App.Repo
+          AppWeb.Endpoint
+          AppWeb.Telemetry
+          Log.trace("Direct TypeSafeChildSpec test completed", %{"fileName" => "Main.hx", "lineNumber" => 78, "className" => "Main", "methodName" => "testChildSpecBuilders"})
+        )
   end
 
   @doc """
@@ -62,9 +66,11 @@ defmodule TestApp.Application do
   """
   @spec test_complex_child_specs() :: nil
   def test_complex_child_specs() do
-    {:custom, MyComplexWorker, MyComplexWorker.new("complex_worker_args"), :permanent, {:timeout, 5000}}
-    {:custom, AnotherWorker, AnotherWorker.new("another_worker_args"), :transient, :infinity}
-    Log.trace("Complex TypeSafeChildSpec test completed", %{"fileName" => "Main.hx", "lineNumber" => 103, "className" => "Main", "methodName" => "testComplexChildSpecs"})
+    (
+          {:custom, MyComplexWorker, MyComplexWorker.new("complex_worker_args"), :permanent, ShutdownType.timeout(5000)}
+          {:custom, AnotherWorker, AnotherWorker.new("another_worker_args"), :transient, :infinity}
+          Log.trace("Complex TypeSafeChildSpec test completed", %{"fileName" => "Main.hx", "lineNumber" => 103, "className" => "Main", "methodName" => "testComplexChildSpecs"})
+        )
   end
 
   @doc """
@@ -80,10 +86,10 @@ defmodule TestApp.Application do
     AppWeb.Endpoint
     AppWeb.Telemetry
     {:presence, %{"name" => "TestApp.Presence", "pubsub_server" => "TestApp.PubSub"}}
-    {:custom, BackgroundWorker, BackgroundWorker.new("background_worker_args"), :permanent, {:timeout, 10000}}
+    {:custom, BackgroundWorker, BackgroundWorker.new("background_worker_args"), :permanent, ShutdownType.timeout(10000)}
     {:custom, TaskSupervisor, TaskSupervisor.new("task_supervisor_args"), :permanent, :infinity}
     {Phoenix.PubSub, name: TestApp.PubSub}
-    {:legacy, %{id: legacy_worker, start: {LegacyWorker, :start_link, [%{}]}, restart: :temporary, shutdown: {:timeout, 1000}}}
+    {:legacy, %{id: legacy_worker, start: {LegacyWorker, :start_link, [%{}]}, restart: :temporary, shutdown: ShutdownType.timeout(1000)}}
     Log.trace("Application children test completed", %{"fileName" => "Main.hx", "lineNumber" => 173, "className" => "Main", "methodName" => "testApplicationChildren"})
   end
 

@@ -18,94 +18,79 @@ defmodule TypeSafeChildSpecTools do
   """
   @spec to_legacy(TypeSafeChildSpec.t(), String.t()) :: ChildSpec.t()
   def to_legacy(spec, app_name) do
-    temp_result = nil
     case (elem(spec, 0)) do
-      0 ->
-        g = elem(spec, 1)
-        name = g
-        temp_result = {Phoenix.PubSub, name: name}
-      1 ->
-        g = elem(spec, 1)
-        config = g
-        repo_module = "" <> app_name <> ".Repo"
-        nil
-        if (config != nil) do
-          temp_array = [config]
-        else
-          temp_array = []
-        end
-        args = temp_array
-        temp_result = repo_module
-      2 ->
-        _g_1 = elem(spec, 1)
-        _g_1 = elem(spec, 2)
-        port = _g_1
-        config = _g_1
-        endpointModule = "" ++ app_name ++ "Web.Endpoint"
-        args = []
-        if (port != nil || config != nil), do: endpointConfig = %{}
-        if (port != nil), do: endpoint_config.port = port, else: nil
-        if (config != nil), do: _g_1 = 0
-        _g_1 = Reflect.fields(config)
-        (
-          loop_helper = fn loop_fn, {g_1} ->
-            if (g < g.length) do
-              try do
-                field = Enum.at(g, g)
-        g = g + 1
-        Reflect.setField(endpoint_config, field, Reflect.field(config, field))
-                loop_fn.(loop_fn, {g_1})
-              catch
-                :break -> {g_1}
-                :continue -> loop_fn.(loop_fn, {g_1})
-              end
-            else
-              {g_1}
-            end
-          end
-          {g_1} = try do
-            loop_helper.(loop_helper, {nil})
-          catch
-            :break -> {nil}
-          end
+      {0, name} -> (
+          g_array = elem(spec, 1)
+          {Phoenix.PubSub, name: name}
         )
-        args = [endpoint_config]
-        temp_result = endpoint_module
-      3 ->
-        g = elem(spec, 1)
-        config = g
-        telemetry_module = "" <> app_name <> "Web.Telemetry"
-        nil
-        if (config != nil) do
-          temp_array1 = [config]
-        else
-          temp_array1 = []
+      {1, config} -> temp_array = nil
+    g_array = elem(spec, 1)
+    temp_array = nil
+    temp_array = nil
+    repo_module = "" <> app_name <> ".Repo"
+
+    temp_array = if (((config != nil))), do: [config], else: []
+    args = temp_array
+    repo_module
+      {2, port, config} -> (
+          g_array = elem(spec, 1)
+          g_array = elem(spec, 2)
+          (
+          endpoint_module = "" <> app_name <> "Web.Endpoint"
+          args = []
+          if (((port != nil) || (config != nil))) do
+          (
+          endpoint_config = %{}
+          if ((port != nil)) do
+          %{endpoint_config | port: port}
         end
-        args = temp_array1
-        temp_result = telemetry_module
-      4 ->
-        g = elem(spec, 1)
-        config = g
-        presence_module = "" <> app_name <> ".Presence"
-        temp_result = presence_module
-      5 ->
-        _g_1 = elem(spec, 1)
-        _g_1 = elem(spec, 2)
-        _g_2 = elem(spec, 3)
-        _g_3 = elem(spec, 4)
-        module = _g_3
-        args = _g_3
-        restart = _g_3
-        shutdown = _g_3
-        moduleClass = module
-        moduleName = Type.getClassName(module_class)
-        temp_result = %{id: module_name, start: {module_name, :start_link, [args]}, restart: restart, shutdown: shutdown}
-      6 ->
-        g = elem(spec, 1)
-        spec = g
-        temp_result = spec
+          if ((config != nil)) do
+          (
+          g_counter = 0
+          g_array = Reflect.fields(config)
+          Enum.each(g_array, fn field -> 
+      Reflect.set_field(endpoint_config, field, Reflect.field(config, field))
+    end)
+        )
+        end
+          args = [endpoint_config]
+        )
+        end
+          endpoint_module
+        )
+        )
+      {3, config} -> temp_array1 = nil
+    g_array = elem(spec, 1)
+    temp_array1 = nil
+    temp_array1 = nil
+    telemetry_module = "" <> app_name <> "Web.Telemetry"
+
+    temp_array1 = if (((config != nil))), do: [config], else: []
+    args = temp_array1
+    telemetry_module
+      {4, config} -> (
+          g_array = elem(spec, 1)
+          (
+          presence_module = "" <> app_name <> ".Presence"
+          presence_module
+        )
+        )
+      {5, module, args, restart, shutdown} -> (
+          g_array = elem(spec, 1)
+          g_array = elem(spec, 2)
+          g_array = elem(spec, 3)
+          g_array = elem(spec, 4)
+          (
+          module_class = module
+          module_name = Type.get_class_name(module_class)
+          %{id: module_name, start: {module_name, :start_link, [args]}, restart: restart, shutdown: shutdown}
+        )
+        )
+      {6, spec2} -> (
+          g_array = elem(spec, 1)
+          spec
+        )
     end
-    temp_result
   end
 
   @doc """
@@ -117,37 +102,21 @@ defmodule TypeSafeChildSpecTools do
   """
   @spec get_module_name(TypeSafeChildSpec.t(), String.t()) :: String.t()
   def get_module_name(spec, app_name) do
-    temp_result = nil
     case (elem(spec, 0)) do
-      0 ->
-        elem(spec, 1)
-        temp_result = "Phoenix.PubSub"
-      1 ->
-        elem(spec, 1)
-        temp_result = "" <> app_name <> ".Repo"
-      2 ->
-        _g_1 = elem(spec, 1)
-        _g_1 = elem(spec, 2)
-        temp_result = "" ++ app_name ++ "Web.Endpoint"
-      3 ->
-        elem(spec, 1)
-        temp_result = "" <> app_name <> "Web.Telemetry"
-      4 ->
-        elem(spec, 1)
-        temp_result = "" <> app_name <> ".Presence"
-      5 ->
-        _g_1 = elem(spec, 1)
-        _g_1 = elem(spec, 2)
-        _g_2 = elem(spec, 3)
-        _g_3 = elem(spec, 4)
-        module = _g_3
-        temp_result = Type.getClassName(module)
-      6 ->
-        g = elem(spec, 1)
-        spec = g
-        temp_result = spec.id
+      0 -> "Phoenix.PubSub"
+      1 -> "" <> app_name <> ".Repo"
+      2 -> "" <> app_name <> "Web.Endpoint"
+      3 -> "" <> app_name <> "Web.Telemetry"
+      4 -> "" <> app_name <> ".Presence"
+      {5, module} -> (
+          g_array = elem(spec, 1)
+          Type.get_class_name(module)
+        )
+      {6, spec2} -> (
+          g_array = elem(spec, 1)
+          spec.id
+        )
     end
-    temp_result
   end
 
   @doc """
@@ -158,35 +127,15 @@ defmodule TypeSafeChildSpecTools do
   """
   @spec uses_tuple_format(TypeSafeChildSpec.t()) :: boolean()
   def uses_tuple_format(spec) do
-    temp_result = nil
     case (elem(spec, 0)) do
-      0 ->
-        elem(spec, 1)
-        temp_result = true
-      1 ->
-        elem(spec, 1)
-        temp_result = true
-      2 ->
-        _g_1 = elem(spec, 1)
-        _g_1 = elem(spec, 2)
-        temp_result = true
-      3 ->
-        elem(spec, 1)
-        temp_result = true
-      4 ->
-        elem(spec, 1)
-        temp_result = true
-      5 ->
-        _g_1 = elem(spec, 1)
-        _g_1 = elem(spec, 2)
-        _g_2 = elem(spec, 3)
-        _g_3 = elem(spec, 4)
-        temp_result = false
-      6 ->
-        elem(spec, 1)
-        temp_result = false
+      0 -> true
+      1 -> true
+      2 -> true
+      3 -> true
+      4 -> true
+      5 -> false
+      6 -> false
     end
-    temp_result
   end
 
   @doc """
@@ -197,53 +146,71 @@ defmodule TypeSafeChildSpecTools do
   """
   @spec validate(TypeSafeChildSpec.t()) :: Array.t()
   def validate(spec) do
-    errors = []
-    case (elem(spec, 0)) do
-      0 ->
-        g = elem(spec, 1)
-        name = g
-        if (name == nil || name == "") do
+    (
+          errors = []
+          case spec do
+      0 -> (
+    g_array = elem(spec, 1)
+    (
+          name = g
+          if (((name == nil) || (name == ""))) do
           errors ++ ["PubSub name cannot be empty"]
         end
-        if (name != nil && name.index_of(".") == -1) do
+          if (((name != nil) && (name.index_of(".") == -1))) do
           errors ++ ["PubSub name should follow 'AppName.PubSub' convention"]
         end
-      1 ->
-        elem(spec, 1)
-        nil
-      2 ->
-        _g_1 = elem(spec, 1)
-        _g_1 = elem(spec, 2)
-        port = _g_1
-        config = _g_1
-        if (port != nil && (port < 1 || port > 65535)), do: errors.push("Endpoint port must be between 1 and 65535")
-      3 ->
-        elem(spec, 1)
-        nil
-      4 ->
-        g = elem(spec, 1)
-        config = g
-        if (config.name == nil || config.name == "") do
+        )
+    )
+      1 -> (
+    g_array = elem(spec, 1)
+    nil
+    )
+      2 -> (
+    g_array = elem(spec, 1)
+    (
+          port = g
+          if (((port != nil) && (((port < 1) || (port > 65535))))) do
+          errors ++ ["Endpoint port must be between 1 and 65535"]
+        end
+        )
+    )
+      3 -> (
+    g_array = elem(spec, 1)
+    nil
+    )
+      4 -> (
+    g_array = elem(spec, 1)
+    (
+          config = g
+          if (((config.name == nil) || (config.name == ""))) do
           errors ++ ["Presence name is required"]
         end
-      5 ->
-        _g_1 = elem(spec, 1)
-        _g_1 = elem(spec, 2)
-        _g_2 = elem(spec, 3)
-        _g_3 = elem(spec, 4)
-        module = _g_3
-        args = _g_3
-        restart = _g_3
-        shutdown = _g_3
-        if (module == nil), do: errors.push("Custom child spec module cannot be null")
-      6 ->
-        g = elem(spec, 1)
-        spec = g
-        if (spec.id == nil || spec.id == "") do
+        )
+    )
+      5 -> (
+    g_array = elem(spec, 1)
+    (
+          module = g
+          g
+          g
+          g
+          if ((module == nil)) do
+          errors ++ ["Custom child spec module cannot be null"]
+        end
+        )
+    )
+      6 -> (
+    g_array = elem(spec, 1)
+    (
+          spec = g
+          if (((spec.id == nil) || (spec.id == ""))) do
           errors ++ ["Legacy child spec id cannot be empty"]
         end
+        )
+    )
     end
-    errors
+          errors
+        )
   end
 
 end
