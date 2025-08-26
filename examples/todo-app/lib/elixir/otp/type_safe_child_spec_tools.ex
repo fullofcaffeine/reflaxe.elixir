@@ -58,7 +58,7 @@ defmodule TypeSafeChildSpecTools do
     module_class = module
     module_name = Type.get_class_name(module_class)
     temp_result = %{id: module_name, start: {module_name, :start_link, [args]}, restart: restart, shutdown: shutdown}
-      {6, spec2} -> g_array = elem(spec, 1)
+      {6, spec} -> g_array = elem(spec, 1)
     temp_result = spec
     end
 
@@ -77,7 +77,7 @@ defmodule TypeSafeChildSpecTools do
       4 -> temp_result = "" <> app_name <> ".Presence"
       {5, module} -> g_array = elem(spec, 1)
     temp_result = Type.get_class_name(module)
-      {6, spec2} -> g_array = elem(spec, 1)
+      {6, spec} -> g_array = elem(spec, 1)
     temp_result = spec.id
     end
 
@@ -120,7 +120,7 @@ defmodule TypeSafeChildSpecTools do
     g_array = elem(spec, 3)
     g_array = elem(spec, 4)
     if ((module == nil)), do: errors ++ ["Custom child spec module cannot be null"], else: nil
-      {6, spec2} -> g_array = elem(spec, 1)
+      {6, spec} -> g_array = elem(spec, 1)
     if (((spec.id == nil) || (spec.id == ""))), do: errors ++ ["Legacy child spec id cannot be empty"], else: nil
     end
 
