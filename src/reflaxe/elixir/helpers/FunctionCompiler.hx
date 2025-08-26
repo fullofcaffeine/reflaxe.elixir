@@ -161,12 +161,15 @@ class FunctionCompiler {
             var usedParams = if (funcField.expr != null) {
                 var result = detectUsedParameters(funcField.expr, funcField.args);
                 // DEBUG: Check what was detected for all functions with underscore potential
+                // Debug traces removed to avoid test output pollution
+                #if debug_function_compiler
                 trace('[FunctionCompiler] ===== ANALYZING FUNCTION: ${funcName} =====');
                 trace('[FunctionCompiler] Function args: ${[for (arg in funcField.args) arg.tvar != null ? arg.tvar.name : arg.getName()].join(", ")}');
                 trace('[FunctionCompiler] Detected used parameters:');
                 for (key in result.keys()) {
                     trace('[FunctionCompiler]   ${key}: ${result.get(key) ? "USED" : "UNUSED"}');
                 }
+                #end
                 result;
             } else {
                 new Map<String, Bool>(); // Empty function, all params unused
@@ -263,7 +266,9 @@ class FunctionCompiler {
             if (compiler.variableMappingManager != null) {
                 compiler.variableMappingManager.compilationContext.currentFunction = funcName;
                 #if debug_variable_mapping
+                #if debug_function_compiler
                 trace('[FunctionCompiler] Set function context: ${funcName}');
+                #end
                 #end
             }
             
@@ -310,7 +315,9 @@ class FunctionCompiler {
                 
                 #if debug_variable_mapping
                 if (requiredDeclarations.length > 0) {
+                    #if debug_function_compiler
                     trace('[FunctionCompiler] Post-compilation: Found ${requiredDeclarations.length} scope-crossing variables: [${requiredDeclarations.join(", ")}]');
+                    #end
                 }
                 #end
             }
@@ -326,7 +333,9 @@ class FunctionCompiler {
                     var declarationsStr = requiredDeclarations.join("\n") + "\n\n";
                     bodyWithDeclarations = declarationsStr + compiledBody;
                     #if debug_variable_mapping
+                    #if debug_function_compiler
                     trace('[FunctionCompiler] ✓ Added ${requiredDeclarations.length} pre-declarations to function body');
+                    #end
                     #end
                 }
                 
@@ -475,7 +484,9 @@ class FunctionCompiler {
                     // Check if this local variable is a parameter
                     if (paramNames.exists(tvar.name)) {
                         usedParams.set(tvar.name, true);
+                        #if debug_function_compiler
                         trace('[FunctionCompiler] PARAMETER USED: ${tvar.name}');
+                        #end
                         #if debug_function_compilation
                         DebugHelper.debugFunction("Parameter Usage", "Found used parameter", 'Param: ${tvar.name}');
                         #end
@@ -502,7 +513,9 @@ class FunctionCompiler {
                 case TSwitch(switchExpr, cases, defaultCase):
                     // CRITICAL: The switch expression contains the parameter being matched
                     // For example: switch(spec) generates elem(spec, 0) in Elixir
+                    #if debug_function_compiler
                     trace('[FunctionCompiler] TSwitch found, switchExpr type: ${switchExpr.expr}');
+                    #end
                     checkExpression(switchExpr);
                     for (c in cases) {
                         // Also check case patterns - they might reference parameters

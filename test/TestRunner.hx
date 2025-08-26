@@ -27,6 +27,7 @@ class TestRunner {
 	static var NoDetails = false;
 	static var SpecificTests: Array<String> = [];
 	static var FlexiblePositions = false;
+	static var SkipCompilation = false; // Skip Elixir compilation testing (compilation is default)
 	
 	public static function main() {
 		// Parse command line arguments
@@ -42,6 +43,7 @@ class TestRunner {
 		ShowAllOutput = args.contains("show-output");
 		NoDetails = args.contains("no-details");
 		FlexiblePositions = args.contains("flexible-positions");
+		SkipCompilation = args.contains("nocompile");
 		
 		// Parse specific tests
 		for (arg in args) {
@@ -73,6 +75,7 @@ Options:
   show-output         Show compilation output even when successful
   no-details          Don't show detailed differences when output doesn't match
   flexible-positions  Strip position info from stderr comparison (less brittle tests)
+  nocompile           Skip Elixir compilation testing (compilation is default)
 
 Examples:
   haxe Test.hxml                           # Run all tests
@@ -172,6 +175,7 @@ Examples:
 		final relativeOutPath = UpdateIntended ? INTENDED_DIR : OUT_DIR;
 		final args = [
 			"-D", 'elixir_output=$relativeOutPath',
+			"-D", 'reflaxe.dont_output_metadata_id', // Don't generate volatile id field in tests
 			"compile.hxml"
 		];
 		
@@ -262,6 +266,14 @@ Examples:
 		}
 		
 		Sys.println('  ✅ Output matches intended');
+		
+		// Compile and run the generated Elixir code (unless skipped)
+		if (!SkipCompilation) {
+			if (!compileAndRunElixir(testName, outPath)) {
+				return false;
+			}
+		}
+		
 		return true;
 	}
 	
@@ -421,5 +433,116 @@ Examples:
 		
 		// If pattern doesn't match, return the line as-is
 		return line;
+	}
+	
+	/**
+	 * Compile and optionally run the generated Elixir code
+	 * This validates that the generated code is syntactically correct and can run on the BEAM VM
+	 */
+	static function compileAndRunElixir(testName: String, outputDir: String): Bool {
+		Sys.println('  🔧 Compiling Elixir code...');
+		
+		// Check if mix.exs exists in the output directory
+		final mixPath = haxe.io.Path.join([outputDir, "mix.exs"]);
+		if (!sys.FileSystem.exists(mixPath)) {
+			// Create a minimal mix.exs file for compilation
+			final mixContent = 'defmodule TestProject.MixProject do
+  use Mix.Project
+
+  def project do
+    [
+      app: :test_${testName},
+      version: "0.1.0",
+      elixir: "~> 1.14",
+      deps: []
+    ]
+  end
+
+  def application do
+    [
+      extra_applications: [:logger]
+    ]
+  end
+end
+';
+			sys.io.File.saveContent(mixPath, mixContent);
+			if (ShowAllOutput) {
+				Sys.println('    Created minimal mix.exs');
+			}
+		}
+		
+		// Save current directory and change to output directory
+		final originalCwd = Sys.getCwd();
+		Sys.setCwd(outputDir);
+		
+		// Run mix compile with timeout
+		final isUnix = (Sys.systemName() == "Mac" || Sys.systemName() == "Linux");
+		final timeoutCmd = isUnix ? "timeout" : "mix";
+		final timeoutArgs = isUnix 
+			? ["5", "mix", "compile", "--force"]
+			: ["compile", "--force"];
+		
+		final compileProcess = new sys.io.Process(timeoutCmd, timeoutArgs);
+		final compileStdout = compileProcess.stdout.readAll().toString();
+		final compileStderr = compileProcess.stderr.readAll().toString();
+		final compileExitCode = compileProcess.exitCode();
+		compileProcess.close();
+		
+		// Restore original directory
+		Sys.setCwd(originalCwd);
+		
+		// Check for timeout (exit code 124 on Unix)
+		if (compileExitCode == 124) {
+			Sys.println('  ❌ Elixir compilation timed out (5 seconds)');
+			return false;
+		}
+		
+		if (compileExitCode != 0) {
+			Sys.println('  ❌ Elixir compilation failed');
+			if (ShowAllOutput || compileStderr.length > 0) {
+				Sys.println('    Error output:');
+				for (line in compileStderr.split('\n')) {
+					if (StringTools.trim(line).length > 0) {
+						Sys.println('      $line');
+					}
+				}
+			}
+			return false;
+		}
+		
+		Sys.println('  ✅ Elixir code compiles successfully');
+		
+		// Optionally run if there's a Main.main() function
+		final mainFile = haxe.io.Path.join([outputDir, "main.ex"]);
+		if (sys.FileSystem.exists(mainFile)) {
+			final content = sys.io.File.getContent(mainFile);
+			if (content.indexOf("def main(") >= 0 || content.indexOf("def main ") >= 0) {
+				Sys.println('  🚀 Running Main.main()...');
+				
+				Sys.setCwd(outputDir);
+				final runProcess = new sys.io.Process("mix", ["run", "-e", "Main.main()"]);
+				final runStdout = runProcess.stdout.readAll().toString();
+				final runStderr = runProcess.stderr.readAll().toString();
+				final runExitCode = runProcess.exitCode();
+				runProcess.close();
+				Sys.setCwd(originalCwd);
+				
+				if (runExitCode != 0) {
+					Sys.println('  ❌ Elixir execution failed');
+					if (ShowAllOutput || runStderr.length > 0) {
+						Sys.println('    Error: $runStderr');
+					}
+					return false;
+				}
+				
+				if (ShowAllOutput && runStdout.length > 0) {
+					Sys.println('    Output: $runStdout');
+				}
+				
+				Sys.println('  ✅ Elixir code runs successfully');
+			}
+		}
+		
+		return true;
 	}
 }

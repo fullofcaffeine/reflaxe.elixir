@@ -18,31 +18,83 @@ This file contains testing-specific guidance for agents working on Reflaxe.Elixi
 ```bash
 npm test                                    # Run ALL tests (Haxe + Generator + Mix) - mandatory before commits
 npm run test:sequential                     # Same as npm test but sequential (for debugging)
+npm run test:parallel-experimental          # Experimental: parallel Haxe + parallel Mix tests
 ```
 
 #### Individual Test Categories  
 ```bash
-npm run test:quick                          # Haxe snapshot tests only (fastest)
+npm run test:quick                          # Haxe snapshot tests only (fastest, ~30s)
 npm run test:haxe                          # Same as test:quick - Haxe compilation tests
 npm run test:generator                     # Project template generation tests
 npm run test:mix                           # Elixir runtime tests (BEAM VM validation)
-npm run test:parallel                      # Parallel Haxe tests (experimental)
+npm run test:parallel                      # Parallel Haxe tests (default 16 workers)
+npm run test:mix-parallel                  # Mix tests with 4 concurrent cases
+npm run test:examples                      # Test all example projects
+npm run test:nocompile                     # Skip Elixir compilation for faster iteration
 ```
 
 #### Specific Test Operations
 ```bash
-haxe test/Test.hxml test=feature_name      # Run specific snapshot test
+haxe test/Test.hxml test=feature_name      # Run specific test (with Elixir compilation)
 haxe test/Test.hxml update-intended        # Accept new output when compiler improves
+haxe test/Test.hxml nocompile              # Skip Elixir compilation (for faster iteration)
 npm run test:update                        # Update all intended outputs
 npm run test:core                          # Run core functionality tests only
 npm run test:verify                        # Verify core functionality + cleanup
+```
+
+#### Performance Tuning
+```bash
+npx haxe test/ParallelTest.hxml -j 24      # Use 24 workers (max 32)
+npx haxe test/ParallelTest.hxml -j 32      # Maximum workers for high-core systems
 ```
 
 #### Development/Debugging
 ```bash
 npm run test:mix-fast                      # Fast Mix tests (stale only)
 npm run test:parallel:debug                # Debug parallel test issues
+npm run clean                              # Clean all output directories
+npm run clean:ex                           # Remove all generated .ex files
+npm run clean:todo                         # Clean todo-app generated files
 ```
+
+## 📋 Quick Testing Reference - When to Use What
+
+### Daily Development Workflow
+- **After small compiler changes**: `npm run test:nocompile` (~20s) - Fast output comparison only
+- **After significant changes**: `npm run test:quick` (~45s) - With Elixir compilation validation
+- **Before ANY commit**: `npm test` (~2-3min) - MANDATORY full validation
+- **After refactoring**: `npm run test:examples` - Ensure real projects still compile
+
+### Debugging Failed Tests
+- **When parallel tests fail mysteriously**: `npm run test:sequential` - Eliminates concurrency issues
+- **To test one specific feature**: `haxe test/Test.hxml test=specific_name`
+- **Parallel execution issues**: `npm run test:parallel:debug` - Simpler parallel test
+- **After fixing a bug**: Run the specific test first, then `npm test`
+
+### Performance Optimization
+- **On high-core machines (16+ cores)**: `npx haxe test/ParallelTest.hxml -j 24`
+- **Maximum speed (32+ cores)**: `npx haxe test/ParallelTest.hxml -j 32`
+- **Experimental max speed**: `npm run test:parallel-experimental` - Parallel Mix tests too
+
+### Maintenance Tasks
+- **Compiler output improved**: `npm run test:update` - Accept new intended outputs
+- **Tests leaving artifacts**: `npm run clean` - Reset all test directories
+- **Quick sanity check**: `npm run test:verify` - Core tests only
+- **Before major refactor**: `npm test && npm run test:examples` - Full baseline
+
+### Integration Testing
+- **Todo-app changes**: `cd examples/todo-app && npx haxe build-server.hxml && mix compile`
+- **Phoenix integration**: Focus on `liveview_basic`, `router`, `changeset` tests
+- **Mix runtime issues**: `npm run test:mix` - Tests actual BEAM execution
+
+### Compilation Testing (Two-Phase Validation)
+- **Default behavior**: ALL tests now compile generated Elixir with `mix compile` (like CSharp)
+- **Skip compilation**: `haxe test/Test.hxml nocompile` - For faster iteration during development
+- **What it does**: Creates minimal mix.exs, runs `mix compile`, and if Main.main() exists, executes it
+- **Timeout protection**: 5-second timeout prevents hanging on compilation issues
+- **Why default**: Catches syntax errors early, matches CSharp's testing approach
+- **Performance impact**: Adds ~1-2s per test (minimized with 5s timeout)
 
 ## 🎯 Testing Principles ⚠️ CRITICAL
 
