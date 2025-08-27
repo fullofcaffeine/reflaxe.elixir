@@ -178,7 +178,7 @@ class RemoveTemporaryVariablesImpl {
 			if(i < exprList.length - 1) {
 				switch(exprList[i].expr) {
 					case TVar(tvar, maybeExpr): {
-						if(shouldRemoveVariable(tvar, maybeExpr)) {
+						if(maybeExpr != null && shouldRemoveVariable(tvar, maybeExpr)) {
 							tvarMap.set(tvar.id, mapTypedExpr(maybeExpr.trustMe(), false));
 							hasOverload = true;
 							continue;

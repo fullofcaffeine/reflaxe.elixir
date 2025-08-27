@@ -1,8 +1,10 @@
 {
   "sourceRoot": "",
   "names": [],
-  "mappings": "",
+  "mappings": ";;;;;;;;;;;;;AA8BC",
   "version": 3,
   "file": "enum_value_map.ex",
-  "sources": []
+  "sources": [
+    "std/haxe/io/Output.hx"
+  ]
 }

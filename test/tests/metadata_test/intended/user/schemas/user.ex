@@ -1,36 +1,37 @@
 defmodule User do
-  @moduledoc """
-  Ecto schema module generated from Haxe @:schema class
-  Table: users
-  """
-
   use Ecto.Schema
   import Ecto.Changeset
 
-  @primary_key {:id, :id, autogenerate: true}
-  @derive {Phoenix.Param, key: :id}
+  @moduledoc """
+    User struct generated from Haxe
 
-  schema "users" do
-    field :name, :string
-    field :age, :integer, default: 0
-    field :balance, :decimal
-  end
-
-  @doc """
-  Changeset function for User schema
+    This module defines a struct with typed fields and constructor functions.
   """
-  def changeset(%User{} = user, attrs \\ %{}) do
-    user
-    |> cast(attrs, changeable_fields())
-    |> validate_required(required_fields())
+
+  defstruct [:name, :age, :balance]
+
+  @type t() :: %__MODULE__{
+    name: String.t() | nil,
+    age: integer() | nil,
+    balance: float() | nil
+  }
+
+  @doc "Creates a new struct with default values"
+  @spec new() :: t()
+  def new() do
+    %__MODULE__{}
   end
 
-  defp changeable_fields do
-    [:name, :age, :balance]
+  @doc "Updates struct fields using a map of changes"
+  @spec update(t(), map()) :: t()
+  def update(struct, changes) when is_map(changes) do
+    Map.merge(struct, changes) |> then(&struct(__MODULE__, &1))
   end
 
-  defp required_fields do
-    [:name]
+  # Static functions
+  @doc "Generated from Haxe main"
+  def main() do
+    Log.trace("Testing complex metadata syntax", %{fileName: "MetadataTest.hx", lineNumber: 14, className: "User", methodName: "main"})
   end
 
 end

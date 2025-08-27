@@ -119,9 +119,9 @@ defmodule Main do
       end
 
       loop_helper.(
-        fn -> ((g_array < 60)) end,
+        fn -> ((g_counter < 60)) end,
         fn ->
-          _i = g_array + 1
+          _i = g_counter + 1
           g_array ++ ["a"]
         end,
         loop_helper

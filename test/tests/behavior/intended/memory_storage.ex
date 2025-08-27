@@ -36,7 +36,7 @@ defmodule MemoryStorage do
 
     struct = struct.data
 
-    temp_result = this.get(key)
+    temp_result = Map.get(struct, key)
 
     temp_result
   end
@@ -45,7 +45,7 @@ defmodule MemoryStorage do
   def put(%__MODULE__{} = struct, key, value) do
     struct = struct.data
 
-    this.set(key, value)
+    struct = Map.put(struct, key, value)
 
     true
   end
@@ -56,7 +56,7 @@ defmodule MemoryStorage do
 
     struct = struct.data
 
-    temp_result = this.remove(key)
+    temp_result = Map.delete(struct, key)
 
     temp_result
   end
@@ -69,7 +69,7 @@ defmodule MemoryStorage do
 
     struct = struct.data
 
-    temp_iterator = this.keys()
+    temp_iterator = Map.keys(struct)
 
     k = temp_iterator
 

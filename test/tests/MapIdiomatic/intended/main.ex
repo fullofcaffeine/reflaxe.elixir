@@ -33,7 +33,7 @@ defmodule Main do
 
     Log.trace("=== Map Construction ===", %{"fileName" => "Main.hx", "lineNumber" => 29, "className" => "Main", "methodName" => "testMapConstruction"})
 
-    empty_map = Haxe.Ds.StringMap.new()
+    empty_map = StringMap.new()
 
     temp_string = nil
 
@@ -41,11 +41,11 @@ defmodule Main do
 
     Log.trace("Empty map: " <> temp_string, %{"fileName" => "Main.hx", "lineNumber" => 33, "className" => "Main", "methodName" => "testMapConstruction"})
 
-    g_array = Haxe.Ds.StringMap.new()
+    g_array = StringMap.new()
 
-    g_array.set("key1", 1)
+    g_array = Map.put(g_array, "key1", 1)
 
-    g_array.set("key2", 2)
+    g_array = Map.put(g_array, "key2", 2)
 
     Log.trace("Map construction tests complete", %{"fileName" => "Main.hx", "lineNumber" => 39, "className" => "Main", "methodName" => "testMapConstruction"})
   end
@@ -54,19 +54,19 @@ defmodule Main do
   def test_basic_map_operations() do
     Log.trace("=== Basic Map Operations ===", %{"fileName" => "Main.hx", "lineNumber" => 47, "className" => "Main", "methodName" => "testBasicMapOperations"})
 
-    map = Haxe.Ds.StringMap.new()
+    map = StringMap.new()
 
-    map.set("name", "Alice")
+    map = Map.put(map, "name", "Alice")
 
-    map.set("city", "Portland")
+    map = Map.put(map, "city", "Portland")
 
-    map.set("job", "Developer")
+    map = Map.put(map, "job", "Developer")
 
-    name = map.get("name")
+    name = Map.get(map, "name")
 
-    city = map.get("city")
+    city = Map.get(map, "city")
 
-    missing = map.get("missing")
+    missing = Map.get(map, "missing")
 
     Log.trace("Name: " <> to_string(name), %{"fileName" => "Main.hx", "lineNumber" => 61, "className" => "Main", "methodName" => "testBasicMapOperations"})
 
@@ -74,23 +74,23 @@ defmodule Main do
 
     Log.trace("Missing: " <> to_string(missing), %{"fileName" => "Main.hx", "lineNumber" => 63, "className" => "Main", "methodName" => "testBasicMapOperations"})
 
-    has_name = Enum.any?(map, "name")
+    has_name = Map.has_key?(map, "name")
 
-    has_missing = Enum.any?(map, "missing")
+    has_missing = Map.has_key?(map, "missing")
 
     Log.trace("Has name: " <> Std.string(has_name), %{"fileName" => "Main.hx", "lineNumber" => 69, "className" => "Main", "methodName" => "testBasicMapOperations"})
 
     Log.trace("Has missing: " <> Std.string(has_missing), %{"fileName" => "Main.hx", "lineNumber" => 70, "className" => "Main", "methodName" => "testBasicMapOperations"})
 
-    map.remove("job")
+    Map.delete(map, "job")
 
-    job_after_remove = map.get("job")
+    job_after_remove = Map.get(map, "job")
 
     Log.trace("Job after remove: " <> to_string(job_after_remove), %{"fileName" => "Main.hx", "lineNumber" => 75, "className" => "Main", "methodName" => "testBasicMapOperations"})
 
-    map.clear()
+    %{}
 
-    value_after_clear = map.get("name")
+    value_after_clear = Map.get(map, "name")
 
     Log.trace("Value after clear: " <> to_string(value_after_clear), %{"fileName" => "Main.hx", "lineNumber" => 82, "className" => "Main", "methodName" => "testBasicMapOperations"})
   end
@@ -99,25 +99,25 @@ defmodule Main do
   def test_map_queries() do
     Log.trace("=== Map Query Operations ===", %{"fileName" => "Main.hx", "lineNumber" => 90, "className" => "Main", "methodName" => "testMapQueries"})
 
-    map = Haxe.Ds.StringMap.new()
+    map = StringMap.new()
 
-    map.set("a", 1)
+    map = Map.put(map, "a", 1)
 
-    map.set("b", 2)
+    map = Map.put(map, "b", 2)
 
-    map.set("c", 3)
+    map = Map.put(map, "c", 3)
 
-    keys = map.keys()
+    keys = Map.keys(map)
 
     Log.trace("Keys: " <> Std.string(keys), %{"fileName" => "Main.hx", "lineNumber" => 99, "className" => "Main", "methodName" => "testMapQueries"})
 
-    values = map.iterator()
+    values = Map.values(map)
 
     Log.trace("Values iterator: " <> Std.string(values), %{"fileName" => "Main.hx", "lineNumber" => 103, "className" => "Main", "methodName" => "testMapQueries"})
 
     has_keys = false
 
-    key = map.keys()
+    key = Map.keys(map)
     (
       # Simple module-level pattern (inline for now)
       loop_helper = fn condition_fn, body_fn, loop_fn ->
@@ -142,11 +142,11 @@ defmodule Main do
 
     Log.trace("Map has keys: " <> Std.string(has_keys), %{"fileName" => "Main.hx", "lineNumber" => 112, "className" => "Main", "methodName" => "testMapQueries"})
 
-    empty_map = Haxe.Ds.StringMap.new()
+    empty_map = StringMap.new()
 
     empty_has_keys = false
 
-    key = empty_map.keys()
+    key = Map.keys(empty_map)
     (
       # Simple module-level pattern (inline for now)
       loop_helper = fn condition_fn, body_fn, loop_fn ->
@@ -176,17 +176,17 @@ defmodule Main do
   def test_map_transformations() do
     Log.trace("=== Map Transformations ===", %{"fileName" => "Main.hx", "lineNumber" => 128, "className" => "Main", "methodName" => "testMapTransformations"})
 
-    numbers = Haxe.Ds.StringMap.new()
+    numbers = StringMap.new()
 
-    numbers.set("one", 1)
+    numbers = Map.put(numbers, "one", 1)
 
-    numbers.set("two", 2)
+    numbers = Map.put(numbers, "two", 2)
 
-    numbers.set("three", 3)
+    numbers = Map.put(numbers, "three", 3)
 
     Log.trace("Iterating over map:", %{"fileName" => "Main.hx", "lineNumber" => 136, "className" => "Main", "methodName" => "testMapTransformations"})
 
-    key = numbers.keys()
+    key = Map.keys(numbers)
     (
       # Simple module-level pattern (inline for now)
       loop_helper = fn condition_fn, body_fn, loop_fn ->
@@ -202,28 +202,28 @@ defmodule Main do
         fn -> key.has_next() end,
         fn ->
           key = key.next()
-          value = numbers.get(key)
+          value = Map.get(numbers, key)
           Log.trace("  " <> key <> " => " <> to_string(value), %{"fileName" => "Main.hx", "lineNumber" => 139, "className" => "Main", "methodName" => "testMapTransformations"})
         end,
         loop_helper
       )
     )
 
-    copied = numbers.copy()
+    copied = Map.new(numbers)
 
-    copied_value = copied.get("one")
+    copied_value = Map.get(copied, "one")
 
     Log.trace("Copied map value for \"one\": " <> to_string(copied_value), %{"fileName" => "Main.hx", "lineNumber" => 147, "className" => "Main", "methodName" => "testMapTransformations"})
 
-    int_map = Haxe.Ds.IntMap.new()
+    int_map = IntMap.new()
 
-    int_map.set(1, "first")
+    int_map = Map.put(int_map, 1, "first")
 
-    int_map.set(2, "second")
+    int_map = Map.put(int_map, 2, "second")
 
     Log.trace("Int-keyed map:", %{"fileName" => "Main.hx", "lineNumber" => 154, "className" => "Main", "methodName" => "testMapTransformations"})
 
-    key = int_map.keys()
+    key = Map.keys(int_map)
     (
       # Simple module-level pattern (inline for now)
       loop_helper = fn condition_fn, body_fn, loop_fn ->
@@ -239,7 +239,7 @@ defmodule Main do
         fn -> key.has_next() end,
         fn ->
           key = key.next()
-          value = int_map.get(key)
+          value = Map.get(int_map, key)
           Log.trace("  " <> to_string(key) <> " => " <> to_string(value), %{"fileName" => "Main.hx", "lineNumber" => 157, "className" => "Main", "methodName" => "testMapTransformations"})
         end,
         loop_helper
@@ -251,23 +251,23 @@ defmodule Main do
   def test_map_utilities() do
     Log.trace("=== Map Utilities ===", %{"fileName" => "Main.hx", "lineNumber" => 165, "className" => "Main", "methodName" => "testMapUtilities"})
 
-    map = Haxe.Ds.StringMap.new()
+    map = StringMap.new()
 
-    map.set("string", "hello")
+    map = Map.put(map, "string", "hello")
 
-    map.set("number", 42)
+    map = Map.put(map, "number", 42)
 
-    map.set("boolean", true)
+    map = Map.put(map, "boolean", true)
 
     string_repr = map.to_string()
 
     Log.trace("String representation: " <> string_repr, %{"fileName" => "Main.hx", "lineNumber" => 174, "className" => "Main", "methodName" => "testMapUtilities"})
 
-    string_val = map.get("string")
+    string_val = Map.get(map, "string")
 
-    number_val = map.get("number")
+    number_val = Map.get(map, "number")
 
-    bool_val = map.get("boolean")
+    bool_val = Map.get(map, "boolean")
 
     Log.trace("String value: " <> Std.string(string_val), %{"fileName" => "Main.hx", "lineNumber" => 181, "className" => "Main", "methodName" => "testMapUtilities"})
 
@@ -280,31 +280,31 @@ defmodule Main do
   def test_edge_cases() do
     Log.trace("=== Edge Cases ===", %{"fileName" => "Main.hx", "lineNumber" => 190, "className" => "Main", "methodName" => "testEdgeCases"})
 
-    map = Haxe.Ds.StringMap.new()
+    map = StringMap.new()
 
-    map.set("", "empty string key")
+    map = Map.put(map, "", "empty string key")
 
-    empty_key_value = map.get("")
+    empty_key_value = Map.get(map, "")
 
     Log.trace("Empty string key value: " <> to_string(empty_key_value), %{"fileName" => "Main.hx", "lineNumber" => 196, "className" => "Main", "methodName" => "testEdgeCases"})
 
-    map.set("key", "first")
+    map = Map.put(map, "key", "first")
 
-    map.set("key", "second")
+    map = Map.put(map, "key", "second")
 
-    overwritten = map.get("key")
+    overwritten = Map.get(map, "key")
 
     Log.trace("Overwritten value: " <> to_string(overwritten), %{"fileName" => "Main.hx", "lineNumber" => 202, "className" => "Main", "methodName" => "testEdgeCases"})
 
-    result = Haxe.Ds.StringMap.new()
+    result = StringMap.new()
 
-    result.set("a", 1)
+    result = Map.put(result, "a", 1)
 
-    result.set("b", 2)
+    result = Map.put(result, "b", 2)
 
-    final_a = result.get("a")
+    final_a = Map.get(result, "a")
 
-    final_b = result.get("b")
+    final_b = Map.get(result, "b")
 
     Log.trace("Final values after chaining: a=" <> to_string(final_a) <> ", b=" <> to_string(final_b), %{"fileName" => "Main.hx", "lineNumber" => 212, "className" => "Main", "methodName" => "testEdgeCases"})
   end

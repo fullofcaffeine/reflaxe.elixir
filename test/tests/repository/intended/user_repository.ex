@@ -2,89 +2,51 @@ defmodule UserRepository do
   @moduledoc "UserRepository module generated from Haxe"
 
   # Static functions
-  @doc """
-    List all users - compiles to Repo.all(User)
-
-  """
-  @spec get_all_users() :: Array.t()
+  @doc "Generated from Haxe getAllUsers"
   def get_all_users() do
-    Enum.all?(Repo, User)
+    Repo.all(User)
   end
 
-  @doc """
-    Get user by ID - compiles to Repo.get!(User, id)
-
-  """
-  @spec get_user(integer()) :: User.t()
+  @doc "Generated from Haxe getUser"
   def get_user(id) do
     Repo.get(User, id)
   end
 
-  @doc """
-    Get user by ID (raises if not found) - compiles to Repo.get!(User, id)
-
-  """
-  @spec get_user_bang(integer()) :: User.t()
+  @doc "Generated from Haxe getUserBang"
   def get_user_bang(id) do
     Repo.get!(User, id)
   end
 
-  @doc """
-    Create user - compiles to Repo.insert(changeset) with error tuple handling
-
-  """
-  @spec create_user(term()) :: term()
+  @doc "Generated from Haxe createUser"
   def create_user(attrs) do
-    (
-          changeset = UserChangeset.changeset(nil, attrs)
-          Repo.insert(changeset)
-        )
+    changeset = UserChangeset.changeset(nil, attrs)
+
+    Repo.insert(changeset)
   end
 
-  @doc """
-    Update user - compiles to Repo.update(changeset) with error tuple handling
-
-  """
-  @spec update_user(User.t(), term()) :: term()
+  @doc "Generated from Haxe updateUser"
   def update_user(user, attrs) do
-    (
-          changeset = UserChangeset.changeset(user, attrs)
-          Repo.update(changeset)
-        )
+    changeset = UserChangeset.changeset(user, attrs)
+
+    Repo.update(changeset)
   end
 
-  @doc """
-    Delete user - compiles to Repo.delete(user) with error tuple handling
-
-  """
-  @spec delete_user(User.t()) :: term()
+  @doc "Generated from Haxe deleteUser"
   def delete_user(user) do
     Repo.delete(user)
   end
 
-  @doc """
-    Preload associations - compiles to Repo.preload(user, [:posts])
-
-  """
-  @spec preload_posts(User.t()) :: User.t()
+  @doc "Generated from Haxe preloadPosts"
   def preload_posts(user) do
     Repo.preload(user, ["posts"])
   end
 
-  @doc """
-    Count users - compiles to Repo.aggregate(User, :count)
-
-  """
-  @spec count_users() :: integer()
+  @doc "Generated from Haxe countUsers"
   def count_users() do
     Repo.aggregate(User, "count")
   end
 
-  @doc """
-    Get first user - compiles to Repo.one(query)
-
-  """
-  @spec get_first_user() :: User.t()
+  @doc "Generated from Haxe getFirstUser"
   def get_first_user() do
     Repo.one(User)
   end

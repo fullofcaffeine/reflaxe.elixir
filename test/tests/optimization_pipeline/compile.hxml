@@ -1,6 +1,10 @@
 -cp .
+-cp ../../../src
+-cp ../../../std
+-lib reflaxe
 -main Main
---custom-target elixir=out
+-D elixir_output=out
 -D analyzer-optimize
 # Enable DCE to see its effects
 -dce full
+--macro reflaxe.elixir.CompilerInit.Start()

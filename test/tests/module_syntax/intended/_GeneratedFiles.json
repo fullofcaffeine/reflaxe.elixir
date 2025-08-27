@@ -1,12 +1,12 @@
 {
-	"filesGenerated": [
-		"haxe/stack_item.ex",
-		"value_type.ex",
-		"user_service.ex",
-		"user_helper.ex",
-		"string_utils.ex"
-	],
-	"id": 17,
-	"wasCached": false,
-	"version": 1
+  "filesGenerated": [
+  "haxe/stack_item.ex",
+  "value_type.ex",
+  "user_service.ex",
+  "user_helper.ex",
+  "string_utils.ex"
+],
+  "id": 0,
+  "wasCached": false,
+  "version": 1
 }

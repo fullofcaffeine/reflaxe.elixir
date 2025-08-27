@@ -1,8 +1,10 @@
 {
   "sourceRoot": "",
   "names": [],
-  "mappings": "",
+  "mappings": "AA4CS,AAAA,GAAM,+CAAN,AAAA,SAAA,EAAA,MAAA;;;;;;;;;;AAIR",
   "version": 3,
   "file": "main.ex",
-  "sources": []
+  "sources": [
+    "Main.hx"
+  ]
 }

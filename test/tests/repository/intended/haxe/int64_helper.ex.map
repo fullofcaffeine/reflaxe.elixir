@@ -1,8 +1,10 @@
 {
   "sourceRoot": "",
   "names": [],
-  "mappings": "",
+  "mappings": ";;;;;;;;AAkCC,AAkbQ",
   "version": 3,
   "file": "int64_helper.ex",
-  "sources": []
+  "sources": [
+    "std/haxe/Int64.hx"
+  ]
 }

@@ -194,12 +194,12 @@ defmodule OptionTools do
     Enum.each(g_array, fn option -> 
       case (case option do {:ok, _} -> 0; :error -> 1; _ -> -1 end) do
       {0, value} -> g_array = elem(_option, 1)
-    result ++ [value]
+    _result ++ [value]
       1 -> nil
     end
     end)
 
-    result
+    _result
   end
 
   @doc "Generated from Haxe toResult"
