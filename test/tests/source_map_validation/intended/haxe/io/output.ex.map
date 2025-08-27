@@ -1,8 +1,10 @@
 {
   "sourceRoot": "",
   "names": [],
-  "mappings": "",
+  "mappings": ";;;;;;;;;;;AA2BC",
   "version": 3,
   "file": "output.ex",
-  "sources": []
+  "sources": [
+  "std/haxe/io/Eof.hx"
+]
 }

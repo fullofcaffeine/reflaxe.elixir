@@ -95,10 +95,10 @@ class OperatorCompiler {
      */
     public function compileBinaryOperation(op: Binop, e1: TypedExpr, e2: TypedExpr): String {
         #if debug_operator_compiler
-        trace("[XRay OperatorCompiler] BINARY OPERATION START");
-        trace('[XRay OperatorCompiler] Operator: ${op}');
-        trace('[XRay OperatorCompiler] Left type: ${e1.t}');
-        trace('[XRay OperatorCompiler] Right type: ${e2.t}');
+        // trace("[XRay OperatorCompiler] BINARY OPERATION START");
+        // trace('[XRay OperatorCompiler] Operator: ${op}');
+        // trace('[XRay OperatorCompiler] Left type: ${e1.t}');
+        // trace('[XRay OperatorCompiler] Right type: ${e2.t}');
         #end
         
         // BASIC IMPLEMENTATION: Handle common binary operators
@@ -197,8 +197,8 @@ class OperatorCompiler {
         };
         
         #if debug_operator_compiler
-        trace('[XRay OperatorCompiler] Generated binary op: ${result != null ? result.substring(0, 100) + "..." : "null"}');
-        trace("[XRay OperatorCompiler] BINARY OPERATION END");
+        // trace('[XRay OperatorCompiler] Generated binary op: ${result != null ? result.substring(0, 100) + "..." : "null"}');
+        // trace("[XRay OperatorCompiler] BINARY OPERATION END");
         #end
         
         return result;
@@ -223,10 +223,10 @@ class OperatorCompiler {
      */
     public function compileUnaryOperation(op: Unop, postFix: Bool, e: TypedExpr): String {
         #if debug_operator_compiler
-        trace("[XRay OperatorCompiler] UNARY OPERATION START");
-        trace('[XRay OperatorCompiler] Operator: ${op}');
-        trace('[XRay OperatorCompiler] Postfix: ${postFix}');
-        trace('[XRay OperatorCompiler] Operand type: ${e.t}');
+        // trace("[XRay OperatorCompiler] UNARY OPERATION START");
+        // trace('[XRay OperatorCompiler] Operator: ${op}');
+        // trace('[XRay OperatorCompiler] Postfix: ${postFix}');
+        // trace('[XRay OperatorCompiler] Operand type: ${e.t}');
         #end
         
         // BASIC IMPLEMENTATION: Handle common unary operators
@@ -261,8 +261,8 @@ class OperatorCompiler {
         };
         
         #if debug_operator_compiler
-        trace('[XRay OperatorCompiler] Generated unary op: ${result != null ? result.substring(0, 100) + "..." : "null"}');
-        trace("[XRay OperatorCompiler] UNARY OPERATION END");
+        // trace('[XRay OperatorCompiler] Generated unary op: ${result != null ? result.substring(0, 100) + "..." : "null"}');
+        // trace("[XRay OperatorCompiler] UNARY OPERATION END");
         #end
         
         return result;
@@ -353,8 +353,8 @@ class OperatorCompiler {
      */
     private function compileCompoundAssignment(op: Binop, e1: TypedExpr, e2: TypedExpr, left: String, right: String): String {
         #if debug_operator_compiler
-        trace("[XRay OperatorCompiler] COMPOUND ASSIGNMENT START");
-        trace('[XRay OperatorCompiler] Inner operator: ${op}');
+        // trace("[XRay OperatorCompiler] COMPOUND ASSIGNMENT START");
+        // trace('[XRay OperatorCompiler] Inner operator: ${op}');
         #end
         
         /**
@@ -411,8 +411,8 @@ class OperatorCompiler {
                         };
                         
                         #if debug_state_threading
-                        trace('[OperatorCompiler] State threading compound assignment: this.${fieldName} ${op}= value');
-                        trace('[OperatorCompiler] Transforming to: struct = %{struct | ${fieldName}: ${operation}}');
+//                         trace('[OperatorCompiler] State threading compound assignment: this.${fieldName} ${op}= value');
+//                         trace('[OperatorCompiler] Transforming to: struct = %{struct | ${fieldName}: ${operation}}');
                         #end
                         
                         // Return the struct update
@@ -447,8 +447,8 @@ class OperatorCompiler {
         var result = '${left} = ${expandedOp}';
         
         #if debug_operator_compiler
-        trace('[XRay OperatorCompiler] Generated compound assignment: ${result}');
-        trace("[XRay OperatorCompiler] COMPOUND ASSIGNMENT END");
+        // trace('[XRay OperatorCompiler] Generated compound assignment: ${result}');
+        // trace("[XRay OperatorCompiler] COMPOUND ASSIGNMENT END");
         #end
         
         return result;
@@ -588,8 +588,8 @@ class OperatorCompiler {
                  */
                 if (isStateThreading && isThisAccess) {
                     #if debug_state_threading
-                    trace('[OperatorCompiler] State threading field assignment: this.${fieldName} = value');
-                    trace('[OperatorCompiler] Transforming to: struct = %{struct | ${fieldName}: value}');
+//                     trace('[OperatorCompiler] State threading field assignment: this.${fieldName} = value');
+//                     trace('[OperatorCompiler] Transforming to: struct = %{struct | ${fieldName}: value}');
                     #end
                     
                     return 'struct = ${mapUpdate}';

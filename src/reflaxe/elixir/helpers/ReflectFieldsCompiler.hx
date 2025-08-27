@@ -66,34 +66,34 @@ class ReflectFieldsCompiler {
      */
     public function detectReflectFieldsPattern(iterExpr: TypedExpr, loopVar: String, blockExpr: TypedExpr): Null<String> {
         #if debug_reflect_fields
-        trace("[XRay ReflectFields] DETECT PATTERN START");
-        trace('[XRay ReflectFields] Loop variable: ${loopVar}');
+        // trace("[XRay ReflectFields] DETECT PATTERN START");
+        // trace('[XRay ReflectFields] Loop variable: ${loopVar}');
         #end
         
         // Check if iterating over Reflect.fields(something)
         var sourceObject = extractReflectFieldsSource(iterExpr);
         if (sourceObject == null) {
             #if debug_reflect_fields
-            trace("[XRay ReflectFields] Not a Reflect.fields pattern");
+            // trace("[XRay ReflectFields] Not a Reflect.fields pattern");
             #end
             return null;
         }
         
         #if debug_reflect_fields
-        trace('[XRay ReflectFields] ✓ DETECTED Reflect.fields(${sourceObject})');
+        // trace('[XRay ReflectFields] ✓ DETECTED Reflect.fields(${sourceObject})');
         #end
         
         // Check if the loop body is doing field copying
         var targetObject = detectFieldCopyingTarget(blockExpr, loopVar);
         if (targetObject != null) {
             #if debug_reflect_fields
-            trace('[XRay ReflectFields] ✓ FIELD COPYING PATTERN: ${sourceObject} -> ${targetObject}');
+            // trace('[XRay ReflectFields] ✓ FIELD COPYING PATTERN: ${sourceObject} -> ${targetObject}');
             #end
             return compileReflectFieldsIteration(loopVar, sourceObject, blockExpr);
         }
         
         #if debug_reflect_fields
-        trace("[XRay ReflectFields] Complex Reflect.fields pattern, needs explicit loop");
+        // trace("[XRay ReflectFields] Complex Reflect.fields pattern, needs explicit loop");
         #end
         
         return null;
@@ -132,9 +132,9 @@ class ReflectFieldsCompiler {
         
         #if debug_reflect_fields
         if (target != null) {
-            trace('[XRay ReflectFields] ✓ DETECTED field copying to: ${target}');
+            // trace('[XRay ReflectFields] ✓ DETECTED field copying to: ${target}');
         } else {
-            trace("[XRay ReflectFields] No simple field copying pattern detected");
+            // trace("[XRay ReflectFields] No simple field copying pattern detected");
         }
         #end
         
@@ -193,16 +193,16 @@ class ReflectFieldsCompiler {
      */
     public function compileReflectFieldsIteration(fieldVar: String, sourceObject: String, blockExpr: TypedExpr): String {
         #if debug_reflect_fields
-        trace("[XRay ReflectFields] COMPILE ITERATION START");
-        trace('[XRay ReflectFields] Field var: ${fieldVar}, Source: ${sourceObject}');
+        // trace("[XRay ReflectFields] COMPILE ITERATION START");
+        // trace('[XRay ReflectFields] Field var: ${fieldVar}, Source: ${sourceObject}');
         #end
         
         // Analyze what kind of transformation is being done
         var transformation = analyzeReflectFieldsTransformation(blockExpr, fieldVar, sourceObject);
         
         #if debug_reflect_fields
-        trace('[XRay ReflectFields] Transformation type: ${transformation.type}');
-        trace('[XRay ReflectFields] Target: ${transformation.target}');
+        // trace('[XRay ReflectFields] Transformation type: ${transformation.type}');
+        // trace('[XRay ReflectFields] Target: ${transformation.target}');
         #end
         
         return switch(transformation.type) {
@@ -237,7 +237,7 @@ class ReflectFieldsCompiler {
      */
     public function analyzeReflectFieldsTransformation(blockExpr: TypedExpr, fieldVar: String, sourceObject: String): {type: String, target: String} {
         #if debug_reflect_fields
-        trace("[XRay ReflectFields] ANALYZE TRANSFORMATION");
+        // trace("[XRay ReflectFields] ANALYZE TRANSFORMATION");
         #end
         
         return switch(blockExpr.expr) {
@@ -337,7 +337,7 @@ class ReflectFieldsCompiler {
         var condition = extractFieldCondition(blockExpr, fieldVar);
         
         #if debug_reflect_fields
-        trace('[XRay ReflectFields] Generating conditional copy with condition: ${condition}');
+        // trace('[XRay ReflectFields] Generating conditional copy with condition: ${condition}');
         #end
         
         return 'Map.merge(${targetObject}, ' +
@@ -357,7 +357,7 @@ class ReflectFieldsCompiler {
         var transformation = extractFieldTransformation(blockExpr, fieldVar, sourceObject);
         
         #if debug_reflect_fields
-        trace('[XRay ReflectFields] Generating transform copy with transformation: ${transformation}');
+        // trace('[XRay ReflectFields] Generating transform copy with transformation: ${transformation}');
         #end
         
         return 'Map.merge(${targetObject}, ' +
@@ -486,7 +486,7 @@ class ReflectFieldsCompiler {
         // This handles while loops that iterate over fields
         // Pattern detection would go here
         #if debug_reflect_fields
-        trace("[XRay ReflectFields] Checking for while-based Reflect.fields pattern");
+        // trace("[XRay ReflectFields] Checking for while-based Reflect.fields pattern");
         #end
         
         // For now, return null to indicate no optimization

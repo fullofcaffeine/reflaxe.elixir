@@ -118,9 +118,9 @@ class ExpressionDispatcher {
      */
     public function compileExpression(expr: TypedExpr, topLevel: Bool = false): Null<String> {
         #if debug_expression_dispatcher
-        trace("[XRay ExpressionDispatcher] EXPRESSION COMPILATION START");
-        trace('[XRay ExpressionDispatcher] Expression type: ${expr.expr}');
-        trace('[XRay ExpressionDispatcher] Top level: ${topLevel}');
+        // trace("[XRay ExpressionDispatcher] EXPRESSION COMPILATION START");
+        // trace('[XRay ExpressionDispatcher] Expression type: ${expr.expr}');
+        // trace('[XRay ExpressionDispatcher] Top level: ${topLevel}');
         #end
         
         // NOTE: Parent expression tracking removed - orphan detection moved to TBlock level
@@ -129,13 +129,13 @@ class ExpressionDispatcher {
         var result = switch (expr.expr) {
             case TConst(constant):
                 #if debug_expression_dispatcher
-                trace("[XRay ExpressionDispatcher] ✓ DISPATCHING to LiteralCompiler");
+                // trace("[XRay ExpressionDispatcher] ✓ DISPATCHING to LiteralCompiler");
                 #end
                 literalCompiler.compileConstant(constant);
                 
             case TBlock(el):
                 #if debug_expression_dispatcher
-                trace("[XRay ExpressionDispatcher] ✓ Compiling TBlock directly");
+                // trace("[XRay ExpressionDispatcher] ✓ Compiling TBlock directly");
                 #end
                 // Simple block compilation - just compile expressions in sequence
                 if (el.length == 0) {
@@ -155,11 +155,11 @@ class ExpressionDispatcher {
                 
             case TIf(econd, eif, eelse):
                 #if debug_expression_dispatcher
-                trace("[XRay ExpressionDispatcher] ✓ DISPATCHING to ConditionalCompiler (TIf)");
-                trace("[XRay ExpressionDispatcher] TIf condition: " + Type.enumConstructor(econd.expr));
-                trace("[XRay ExpressionDispatcher] TIf then branch: " + Type.enumConstructor(eif.expr));
+                // trace("[XRay ExpressionDispatcher] ✓ DISPATCHING to ConditionalCompiler (TIf)");
+                // trace("[XRay ExpressionDispatcher] TIf condition: " + Type.enumConstructor(econd.expr));
+                // trace("[XRay ExpressionDispatcher] TIf then branch: " + Type.enumConstructor(eif.expr));
                 if (eelse != null) {
-                    trace("[XRay ExpressionDispatcher] TIf else branch: " + Type.enumConstructor(eelse.expr));
+                    // trace("[XRay ExpressionDispatcher] TIf else branch: " + Type.enumConstructor(eelse.expr));
                     
                     // Check if this is an array ternary pattern that should use inline form
                     // Handle both direct TArrayDecl and TArrayDecl inside TBinop assignment operations
@@ -175,96 +175,96 @@ class ExpressionDispatcher {
                     };
                     
                     if (isThenArray && isElseArray) {
-                        trace("[XRay ExpressionDispatcher] ⚠️ ARRAY TERNARY DETECTED IN EXPRESSION DISPATCHER!");
-                        trace("[XRay ExpressionDispatcher] This should trigger inline if generation");
-                        trace("[XRay ExpressionDispatcher] Then branch type: " + Type.enumConstructor(eif.expr));
-                        trace("[XRay ExpressionDispatcher] Else branch type: " + Type.enumConstructor(eelse.expr));
+                        // trace("[XRay ExpressionDispatcher] ⚠️ ARRAY TERNARY DETECTED IN EXPRESSION DISPATCHER!");
+                        // trace("[XRay ExpressionDispatcher] This should trigger inline if generation");
+                        // trace("[XRay ExpressionDispatcher] Then branch type: " + Type.enumConstructor(eif.expr));
+                        // trace("[XRay ExpressionDispatcher] Else branch type: " + Type.enumConstructor(eelse.expr));
                     }
                 } else {
-                    trace("[XRay ExpressionDispatcher] TIf else branch: null");
+                    // trace("[XRay ExpressionDispatcher] TIf else branch: null");
                 }
                 #end
                 conditionalCompiler.compileIfExpression(econd, eif, eelse);
                 
             case TSwitch(e, cases, edef):
                 #if debug_expression_dispatcher
-                trace("[XRay ExpressionDispatcher] ✓ DISPATCHING to PatternMatchingCompiler (TSwitch)");
+                // trace("[XRay ExpressionDispatcher] ✓ DISPATCHING to PatternMatchingCompiler (TSwitch)");
                 #end
                 patternMatchingCompiler.compileSwitchExpression(e, cases, edef);
                 
             case TWhile(econd, ebody, normalWhile):
                 #if debug_expression_dispatcher
-                trace("[XRay ExpressionDispatcher] ✓ DISPATCHING to UnifiedLoopCompiler (TWhile)");
+                // trace("[XRay ExpressionDispatcher] ✓ DISPATCHING to UnifiedLoopCompiler (TWhile)");
                 #end
                 compiler.unifiedLoopCompiler.compileWhileLoop(econd, ebody, normalWhile);
                 
             case TFor(tvar, iterExpr, blockExpr):
                 #if debug_expression_dispatcher
-                trace("[XRay ExpressionDispatcher] ✓ DISPATCHING to UnifiedLoopCompiler (TFor)");
+                // trace("[XRay ExpressionDispatcher] ✓ DISPATCHING to UnifiedLoopCompiler (TFor)");
                 #end
                 compiler.unifiedLoopCompiler.compileForLoop(tvar, iterExpr, blockExpr);
                 
             case TTry(e, catches):
                 #if debug_expression_dispatcher
-                trace("[XRay ExpressionDispatcher] ✓ DISPATCHING to ExceptionCompiler (TTry)");
+                // trace("[XRay ExpressionDispatcher] ✓ DISPATCHING to ExceptionCompiler (TTry)");
                 #end
                 exceptionCompiler.compileTryExpression(e, catches);
                 
             case TBinop(op, e1, e2):
                 #if debug_expression_dispatcher
-                trace("[XRay ExpressionDispatcher] ✓ DISPATCHING to OperatorCompiler (TBinop)");
+                // trace("[XRay ExpressionDispatcher] ✓ DISPATCHING to OperatorCompiler (TBinop)");
                 #end
                 operatorCompiler.compileBinaryOperation(op, e1, e2);
                 
             case TUnop(op, postFix, e):
                 #if debug_expression_dispatcher
-                trace("[XRay ExpressionDispatcher] ✓ DISPATCHING to OperatorCompiler (TUnop)");
+                // trace("[XRay ExpressionDispatcher] ✓ DISPATCHING to OperatorCompiler (TUnop)");
                 #end
                 operatorCompiler.compileUnaryOperation(op, postFix, e);
                 
             case TArrayDecl(el):
                 #if debug_expression_dispatcher
-                trace("[XRay ExpressionDispatcher] ✓ DISPATCHING to DataStructureCompiler (TArrayDecl)");
+                // trace("[XRay ExpressionDispatcher] ✓ DISPATCHING to DataStructureCompiler (TArrayDecl)");
                 #end
                 dataStructureCompiler.compileArrayLiteral(el);
                 
             case TObjectDecl(fields):
                 #if debug_expression_dispatcher
-                trace("[XRay ExpressionDispatcher] ✓ DISPATCHING to DataStructureCompiler (TObjectDecl)");
+                // trace("[XRay ExpressionDispatcher] ✓ DISPATCHING to DataStructureCompiler (TObjectDecl)");
                 #end
                 dataStructureCompiler.compileObjectDeclaration(fields);
                 
             case TArray(e1, e2):
                 #if debug_expression_dispatcher
-                trace("[XRay ExpressionDispatcher] ✓ DISPATCHING to DataStructureCompiler (TArray)");
+                // trace("[XRay ExpressionDispatcher] ✓ DISPATCHING to DataStructureCompiler (TArray)");
                 #end
                 dataStructureCompiler.compileArrayIndexing(e1, e2);
                 
             case TLocal(v):
                 #if debug_expression_dispatcher
-                trace("[XRay ExpressionDispatcher] ✓ DISPATCHING to VariableCompiler (TLocal)");
+                // trace("[XRay ExpressionDispatcher] ✓ DISPATCHING to VariableCompiler (TLocal)");
                 #end
                 #if debug_orphan_elimination
-                trace('[XRay ExpressionDispatcher] TLocal dispatch - variable: ${v.name}');
+                // trace('[XRay ExpressionDispatcher] TLocal dispatch - variable: ${v.name}');
                 // NOTE: Parent tracking debug removed - orphan detection moved to TBlock level
                 #end
                 variableCompiler.compileLocalVariable(v);
                 
             case TVar(tvar, expr):
                 #if debug_expression_dispatcher
-                trace("[XRay ExpressionDispatcher] ✓ DISPATCHING to VariableCompiler (TVar)");
+                // trace("[XRay ExpressionDispatcher] ✓ DISPATCHING to VariableCompiler (TVar)");
                 #end
                 variableCompiler.compileVariableDeclaration(tvar, expr);
                 
             case TField(e, fa):
                 #if debug_expression_dispatcher
-                trace("[XRay ExpressionDispatcher] ✓ DISPATCHING to FieldAccessCompiler (TField)");
+                // trace("[XRay ExpressionDispatcher] ✓ DISPATCHING to FieldAccessCompiler (TField)");
                 #end
                 fieldAccessCompiler.compileFieldAccess(e, fa, expr);
                 
             case TCall(e, el):
                 #if debug_expression_dispatcher
-                trace("[XRay ExpressionDispatcher] ✓ Processing TCall");
+                // trace("[XRay ExpressionDispatcher] ✓ Processing TCall");
                 #end
                 
                 // CRITICAL FIX: Check for __elixir__ injection BEFORE delegating to MethodCallCompiler
@@ -272,7 +272,7 @@ class ExpressionDispatcher {
                 switch(e.expr) {
                     case TIdent(id) if (id == "__elixir__" && compiler.options.targetCodeInjectionName == "__elixir__"):
                         #if debug_expression_dispatcher
-                        trace("[XRay ExpressionDispatcher] ✓ Detected __elixir__ injection in TCall - letting parent handle it");
+                        // trace("[XRay ExpressionDispatcher] ✓ Detected __elixir__ injection in TCall - letting parent handle it");
                         #end
                         // Let the parent's injection detection handle this
                         // The parent (DirectToStringCompiler) will detect TCall(TIdent("__elixir__"), args)
@@ -288,86 +288,86 @@ class ExpressionDispatcher {
                 }
                 
                 #if debug_expression_dispatcher
-                trace("[XRay ExpressionDispatcher] ✓ DISPATCHING to MethodCallCompiler (TCall)");
+                // trace("[XRay ExpressionDispatcher] ✓ DISPATCHING to MethodCallCompiler (TCall)");
                 #end
                 methodCallCompiler.compileCallExpression(e, el);
                 
             case TReturn(e):
                 #if debug_expression_dispatcher
-                trace("[XRay ExpressionDispatcher] ✓ DISPATCHING to MiscExpressionCompiler (TReturn)");
+                // trace("[XRay ExpressionDispatcher] ✓ DISPATCHING to MiscExpressionCompiler (TReturn)");
                 #end
                 miscExpressionCompiler.compileReturnStatement(e);
                 
             case TParenthesis(e):
                 #if debug_expression_dispatcher
-                trace("[XRay ExpressionDispatcher] ✓ DISPATCHING to MiscExpressionCompiler (TParenthesis)");
+                // trace("[XRay ExpressionDispatcher] ✓ DISPATCHING to MiscExpressionCompiler (TParenthesis)");
                 #end
                 miscExpressionCompiler.compileParenthesesExpression(e);
                 
             case TNew(c, params, el):
                 #if debug_expression_dispatcher
-                trace("[XRay ExpressionDispatcher] ✓ DISPATCHING to MiscExpressionCompiler (TNew)");
+                // trace("[XRay ExpressionDispatcher] ✓ DISPATCHING to MiscExpressionCompiler (TNew)");
                 #end
                 miscExpressionCompiler.compileNewExpression(c, params, el);
                 
             case TFunction(func):
                 #if debug_expression_dispatcher
-                trace("[XRay ExpressionDispatcher] ✓ DISPATCHING to MiscExpressionCompiler (TFunction)");
+                // trace("[XRay ExpressionDispatcher] ✓ DISPATCHING to MiscExpressionCompiler (TFunction)");
                 #end
                 miscExpressionCompiler.compileLambdaFunction(func);
                 
             case TMeta(metadata, expr):
                 #if debug_expression_dispatcher
-                trace("[XRay ExpressionDispatcher] ✓ DISPATCHING to MiscExpressionCompiler (TMeta)");
+                // trace("[XRay ExpressionDispatcher] ✓ DISPATCHING to MiscExpressionCompiler (TMeta)");
                 #end
                 miscExpressionCompiler.compileMetadataExpression(metadata, expr);
                 
             case TThrow(e):
                 #if debug_expression_dispatcher
-                trace("[XRay ExpressionDispatcher] ✓ DISPATCHING to MiscExpressionCompiler (TThrow)");
+                // trace("[XRay ExpressionDispatcher] ✓ DISPATCHING to MiscExpressionCompiler (TThrow)");
                 #end
                 miscExpressionCompiler.compileThrowStatement(e);
                 
             case TCast(e, moduleType):
                 #if debug_expression_dispatcher
-                trace("[XRay ExpressionDispatcher] ✓ DISPATCHING to MiscExpressionCompiler (TCast)");
+                // trace("[XRay ExpressionDispatcher] ✓ DISPATCHING to MiscExpressionCompiler (TCast)");
                 #end
                 miscExpressionCompiler.compileCastExpression(e, moduleType);
                 
             case TTypeExpr(moduleType):
                 #if debug_expression_dispatcher
-                trace("[XRay ExpressionDispatcher] ✓ DISPATCHING to MiscExpressionCompiler (TTypeExpr)");
+                // trace("[XRay ExpressionDispatcher] ✓ DISPATCHING to MiscExpressionCompiler (TTypeExpr)");
                 #end
                 miscExpressionCompiler.compileTypeExpression(moduleType);
                 
             case TBreak:
                 #if debug_expression_dispatcher
-                trace("[XRay ExpressionDispatcher] ✓ DISPATCHING to MiscExpressionCompiler (TBreak)");
+                // trace("[XRay ExpressionDispatcher] ✓ DISPATCHING to MiscExpressionCompiler (TBreak)");
                 #end
                 miscExpressionCompiler.compileBreakStatement();
                 
             case TContinue:
                 #if debug_expression_dispatcher
-                trace("[XRay ExpressionDispatcher] ✓ DISPATCHING to MiscExpressionCompiler (TContinue)");
+                // trace("[XRay ExpressionDispatcher] ✓ DISPATCHING to MiscExpressionCompiler (TContinue)");
                 #end
                 miscExpressionCompiler.compileContinueStatement();
                 
             case TEnumIndex(e):
                 #if debug_expression_dispatcher
-                trace("[XRay ExpressionDispatcher] ✓ DISPATCHING to EnumIntrospectionCompiler (TEnumIndex)");
+                // trace("[XRay ExpressionDispatcher] ✓ DISPATCHING to EnumIntrospectionCompiler (TEnumIndex)");
                 #end
                 enumIntrospectionCompiler.compileEnumIndexExpression(e);
                 
             case TEnumParameter(e, ef, index):
                 #if debug_expression_dispatcher
-                trace("[XRay ExpressionDispatcher] ✓ DISPATCHING to EnumIntrospectionCompiler (TEnumParameter)");
+                // trace("[XRay ExpressionDispatcher] ✓ DISPATCHING to EnumIntrospectionCompiler (TEnumParameter)");
                 #end
                 enumIntrospectionCompiler.compileEnumParameterExpression(e, ef, index);
                 
             case _:
                 #if debug_expression_dispatcher
-                trace("[XRay ExpressionDispatcher] → UNHANDLED EXPRESSION TYPE!");
-                trace('[XRay ExpressionDispatcher] Expression type: ${expr.expr}');
+                // trace("[XRay ExpressionDispatcher] → UNHANDLED EXPRESSION TYPE!");
+                // trace('[XRay ExpressionDispatcher] Expression type: ${expr.expr}');
                 #end
                 
                 // PRODUCTION FALLBACK: Handle remaining expression types directly
@@ -381,15 +381,15 @@ class ExpressionDispatcher {
                     default:
                         // Final fallback for truly unknown expressions
                         #if debug_expression_dispatcher
-                        trace('[XRay ExpressionDispatcher] → FINAL FALLBACK for ${expr.expr}');
+                        // trace('[XRay ExpressionDispatcher] → FINAL FALLBACK for ${expr.expr}');
                         #end
                         "nil"; // Safe fallback instead of circular call
                 }
         };
         
         #if debug_expression_dispatcher
-        trace('[XRay ExpressionDispatcher] Generated result: ${result != null ? result.substring(0, 100) + "..." : "null"}');
-        trace("[XRay ExpressionDispatcher] EXPRESSION COMPILATION END");
+        // trace('[XRay ExpressionDispatcher] Generated result: ${result != null ? result.substring(0, 100) + "..." : "null"}');
+        // trace("[XRay ExpressionDispatcher] EXPRESSION COMPILATION END");
         #end
         
         // NOTE: Parent expression tracking removed - orphan detection moved to TBlock level

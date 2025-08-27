@@ -54,7 +54,7 @@ class PatternAnalysisCompiler {
      */
     public function detectCoreComponentsUsage(classType: ClassType, funcFields: Array<ClassFuncData>): Bool {
         #if debug_pattern_analysis
-        trace('[PatternAnalysisCompiler] Detecting CoreComponents usage in: ${classType.name}');
+//         trace('[PatternAnalysisCompiler] Detecting CoreComponents usage in: ${classType.name}');
         #end
         
         // For now, use a simple heuristic: all LiveView classes likely use CoreComponents
@@ -63,7 +63,7 @@ class PatternAnalysisCompiler {
         var result = classType.meta.has(":liveview");
         
         #if debug_pattern_analysis
-        trace('[PatternAnalysisCompiler] CoreComponents usage detected: ${result}');
+//         trace('[PatternAnalysisCompiler] CoreComponents usage detected: ${result}');
         #end
         
         return result;
@@ -86,7 +86,7 @@ class PatternAnalysisCompiler {
         isAddition: Bool
     } {
         #if debug_pattern_analysis
-        trace('[PatternAnalysisCompiler] Analyzing range loop body');
+//         trace('[PatternAnalysisCompiler] Analyzing range loop body');
         #end
         
         var result = {
@@ -100,7 +100,7 @@ class PatternAnalysisCompiler {
         // Most range loops are simple accumulation: for (i in start...end) { sum += i; }
         
         #if debug_pattern_analysis
-        trace('[PatternAnalysisCompiler] Range loop analysis complete: ${result}');
+//         trace('[PatternAnalysisCompiler] Range loop analysis complete: ${result}');
         #end
         
         return result;
@@ -118,7 +118,7 @@ class PatternAnalysisCompiler {
      */
     public function detectSchemaFromArgs(args: Array<TypedExpr>): Null<String> {
         #if debug_pattern_analysis
-        trace('[PatternAnalysisCompiler] Detecting schema from ${args.length} arguments');
+//         trace('[PatternAnalysisCompiler] Detecting schema from ${args.length} arguments');
         #end
         
         if (args.length == 0) return null;
@@ -131,7 +131,7 @@ class PatternAnalysisCompiler {
                 // Check if this is a schema class
                 if (classType.meta.has(":schema")) {
                     #if debug_pattern_analysis
-                    trace('[PatternAnalysisCompiler] Schema detected: ${classType.name}');
+//                     trace('[PatternAnalysisCompiler] Schema detected: ${classType.name}');
                     #end
                     return classType.name;
                 }
@@ -139,7 +139,7 @@ class PatternAnalysisCompiler {
         }
         
         #if debug_pattern_analysis
-        trace('[PatternAnalysisCompiler] No schema detected');
+//         trace('[PatternAnalysisCompiler] No schema detected');
         #end
         
         return null;
@@ -157,7 +157,7 @@ class PatternAnalysisCompiler {
      */
     public function analyzeChildSpecStructure(compiledFields: Map<String, String>): String {
         #if debug_pattern_analysis
-        trace('[PatternAnalysisCompiler] Analyzing child spec structure with ${Lambda.count(compiledFields)} fields');
+//         trace('[PatternAnalysisCompiler] Analyzing child spec structure with ${Lambda.count(compiledFields)} fields');
         #end
         
         var hasRestart = compiledFields.exists("restart");
@@ -168,7 +168,7 @@ class PatternAnalysisCompiler {
         // If we have explicit restart/shutdown configuration, use traditional map
         if (hasRestart || hasShutdown || hasType || hasModules) {
             #if debug_pattern_analysis
-            trace('[PatternAnalysisCompiler] Complex child spec detected, using traditional map');
+//             trace('[PatternAnalysisCompiler] Complex child spec detected, using traditional map');
             #end
             return "TraditionalMap";
         }
@@ -181,7 +181,7 @@ class PatternAnalysisCompiler {
             // Check if this looks like a simple start spec (suitable for tuple format)
             if (hasSimpleStartPattern(startField)) {
                 #if debug_pattern_analysis
-                trace('[PatternAnalysisCompiler] Simple child spec detected, using modern tuple');
+//                 trace('[PatternAnalysisCompiler] Simple child spec detected, using modern tuple');
                 #end
                 return "ModernTuple";
             }
@@ -189,7 +189,7 @@ class PatternAnalysisCompiler {
         
         // Default to traditional map format for safety
         #if debug_pattern_analysis
-        trace('[PatternAnalysisCompiler] Defaulting to traditional map format');
+//         trace('[PatternAnalysisCompiler] Defaulting to traditional map format');
         #end
         return "TraditionalMap";
     }
@@ -206,7 +206,7 @@ class PatternAnalysisCompiler {
      */
     public function hasSimpleStartPattern(startField: String): Bool {
         #if debug_pattern_analysis
-        trace('[PatternAnalysisCompiler] Checking start pattern: ${startField.substring(0, 50)}...');
+//         trace('[PatternAnalysisCompiler] Checking start pattern: ${startField.substring(0, 50)}...');
         #end
         
         // Look for simple start patterns like {Module, :start_link, [args]}
@@ -215,7 +215,7 @@ class PatternAnalysisCompiler {
         // Check for start_link function calls (standard OTP pattern)
         if (startField.indexOf(":start_link") > -1) {
             #if debug_pattern_analysis
-            trace('[PatternAnalysisCompiler] start_link pattern detected');
+//             trace('[PatternAnalysisCompiler] start_link pattern detected');
             #end
             return true;
         }
@@ -223,13 +223,13 @@ class PatternAnalysisCompiler {
         // Check for empty args or simple configuration args
         if (startField.indexOf(", []") > -1 || startField.indexOf("[%{") > -1) {
             #if debug_pattern_analysis
-            trace('[PatternAnalysisCompiler] Simple args pattern detected');
+//             trace('[PatternAnalysisCompiler] Simple args pattern detected');
             #end
             return true;
         }
         
         #if debug_pattern_analysis
-        trace('[PatternAnalysisCompiler] No simple start pattern detected');
+//         trace('[PatternAnalysisCompiler] No simple start pattern detected');
         #end
         return false;
     }
@@ -246,7 +246,7 @@ class PatternAnalysisCompiler {
      */
     public function getAssignmentVariable(expr: TypedExpr): Null<String> {
         #if debug_pattern_analysis
-        trace('[PatternAnalysisCompiler] Analyzing assignment pattern');
+//         trace('[PatternAnalysisCompiler] Analyzing assignment pattern');
         #end
         
         var result = switch (expr.expr) {
@@ -262,7 +262,7 @@ class PatternAnalysisCompiler {
         };
         
         #if debug_pattern_analysis
-        trace('[PatternAnalysisCompiler] Assignment variable: ${result}');
+//         trace('[PatternAnalysisCompiler] Assignment variable: ${result}');
         #end
         
         return result;

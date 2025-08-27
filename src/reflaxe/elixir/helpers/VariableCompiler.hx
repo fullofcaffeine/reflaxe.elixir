@@ -115,14 +115,14 @@ class VariableCompiler {
         variableIdMap.set(tvar.id, mappedName);
         
         #if debug_variable_compiler
-        trace('[XRay VariableCompiler] ✓ REGISTERED MAPPING: TVar.id=${tvar.id} (${tvar.name}) -> ${mappedName}');
+        // trace('[XRay VariableCompiler] ✓ REGISTERED MAPPING: TVar.id=${tvar.id} (${tvar.name}) -> ${mappedName}');
         #end
     }
     
     public function compileLocalVariable(v: TVar): String {
         #if debug_variable_compiler
-        trace("[XRay VariableCompiler] LOCAL VARIABLE COMPILATION START");
-        trace('[XRay VariableCompiler] TVar.name: ${v.name}, TVar.id: ${v.id}');
+        // trace("[XRay VariableCompiler] LOCAL VARIABLE COMPILATION START");
+        // trace('[XRay VariableCompiler] TVar.name: ${v.name}, TVar.id: ${v.id}');
         #end
         
         // CRITICAL FIX: Don't skip unused variables - they need underscore-prefixed names!
@@ -135,8 +135,8 @@ class VariableCompiler {
         var idMapping = variableIdMap.get(v.id);
         if (idMapping != null) {
             #if debug_variable_compiler
-            trace('[XRay VariableCompiler] ✓ FOUND TVAR.ID MAPPING: ${v.id} -> ${idMapping}');
-            trace('[XRay VariableCompiler] Using TVar.id mapping (may include underscore prefix)');
+            // trace('[XRay VariableCompiler] ✓ FOUND TVAR.ID MAPPING: ${v.id} -> ${idMapping}');
+            // trace('[XRay VariableCompiler] Using TVar.id mapping (may include underscore prefix)');
             #end
             return idMapping; // Return immediately - this includes underscore prefix if variable is unused
         }
@@ -147,9 +147,9 @@ class VariableCompiler {
         
         #if debug_variable_compiler
         if (originalName == "params" || snakeName == "params") {
-            trace('[XRay VariableCompiler] SPECIAL DEBUG: Checking params variable');
-            trace('[XRay VariableCompiler] Original name: ${originalName}, Snake name: ${snakeName}');
-            trace('[XRay VariableCompiler] underscorePrefixMap keys: ${[for (k in underscorePrefixMap.keys()) k].join(", ")}');
+            // trace('[XRay VariableCompiler] SPECIAL DEBUG: Checking params variable');
+            // trace('[XRay VariableCompiler] Original name: ${originalName}, Snake name: ${snakeName}');
+            // trace('[XRay VariableCompiler] underscorePrefixMap keys: ${[for (k in underscorePrefixMap.keys()) k].join(", ")}');
         }
         #end
         
@@ -158,7 +158,7 @@ class VariableCompiler {
         var prefixedName = underscorePrefixMap.get(snakeName);
         if (prefixedName != null) {
             #if debug_variable_compiler
-            trace('[XRay VariableCompiler] ✓ FOUND UNDERSCORE PREFIX MAPPING BY NAME: ${snakeName} -> ${prefixedName}');
+            // trace('[XRay VariableCompiler] ✓ FOUND UNDERSCORE PREFIX MAPPING BY NAME: ${snakeName} -> ${prefixedName}');
             #end
             return prefixedName;
         }
@@ -167,8 +167,8 @@ class VariableCompiler {
         // This shouldn't normally happen since we track all variables
         if (v.meta != null && v.meta.has("-reflaxe.unused")) {
             #if debug_variable_compiler
-            trace('[XRay VariableCompiler] ⚠️ VARIABLE MARKED AS UNUSED BUT NO MAPPING FOUND');
-            trace('[XRay VariableCompiler] Falling back to underscore-prefixed name');
+            // trace('[XRay VariableCompiler] ⚠️ VARIABLE MARKED AS UNUSED BUT NO MAPPING FOUND');
+            // trace('[XRay VariableCompiler] Falling back to underscore-prefixed name');
             #end
             // Add underscore prefix for unused variables
             if (!StringTools.startsWith(snakeName, "_")) {
@@ -193,15 +193,15 @@ class VariableCompiler {
         
         if (isTempArrayAccess) {
             #if debug_variable_compiler
-            trace("[XRay VariableCompiler] ⚠️ TEMP ARRAY LOCAL VARIABLE ACCESS: " + originalName);
-            trace("[XRay VariableCompiler] Checking if this should be replaced with inline expression");
+            // trace("[XRay VariableCompiler] ⚠️ TEMP ARRAY LOCAL VARIABLE ACCESS: " + originalName);
+            // trace("[XRay VariableCompiler] Checking if this should be replaced with inline expression");
             #end
             
             // Try to find a consumed temp variable mapping 
             if (compiler.consumedTempVariables != null && compiler.consumedTempVariables.exists(originalName)) {
                 var inlineExpression = compiler.consumedTempVariables.get(originalName);
                 #if debug_variable_compiler
-                trace('[XRay VariableCompiler] ✓ FOUND CONSUMED TEMP VARIABLE MAPPING: ${originalName} -> ${inlineExpression}');
+                // trace('[XRay VariableCompiler] ✓ FOUND CONSUMED TEMP VARIABLE MAPPING: ${originalName} -> ${inlineExpression}');
                 #end
                 return inlineExpression;
             }
@@ -209,13 +209,13 @@ class VariableCompiler {
             // NO FALLBACK - if no mapping exists, the variable should be generated normally
             // The ControlFlowCompiler should have captured all ternary patterns and stored mappings
             #if debug_variable_compiler
-            trace("[XRay VariableCompiler] No mapping found for temp array variable: " + originalName);
-            trace("[XRay VariableCompiler] Allowing normal variable generation");
+            // trace("[XRay VariableCompiler] No mapping found for temp array variable: " + originalName);
+            // trace("[XRay VariableCompiler] Allowing normal variable generation");
             #end
         }
         
         #if debug_variable_compiler
-        trace('[XRay VariableCompiler] Original name: ${originalName}');
+        // trace('[XRay VariableCompiler] Original name: ${originalName}');
         #end
         
         /**
@@ -226,8 +226,8 @@ class VariableCompiler {
          * HOW: Look up in currentFunctionParameterMap first, then inline context
          */
         // Check parameter mapping first (for function parameters)
-        trace('[XRay VariableCompiler] Checking parameter mapping for: ${originalName}');
-        trace('[XRay VariableCompiler] Parameter map has: ${[for (k in compiler.currentFunctionParameterMap.keys()) k].join(", ")}');
+        // trace('[XRay VariableCompiler] Checking parameter mapping for: ${originalName}');
+        // trace('[XRay VariableCompiler] Parameter map has: ${[for (k in compiler.currentFunctionParameterMap.keys()) k].join(", ")}');
         
         // NOTE: Orphaned TLocal(_g) expressions are now handled at the TBlock level
         // in ControlFlowCompiler.compileBlock() using the Go compiler approach.
@@ -235,33 +235,33 @@ class VariableCompiler {
         
         // Special debug for camelCase variables
         if (originalName == "bulkAction" || originalName == "alertLevel") {
-            trace('[XRay VariableCompiler] ⚠️ Looking for camelCase variable ${originalName} in parameter map');
+            // trace('[XRay VariableCompiler] ⚠️ Looking for camelCase variable ${originalName} in parameter map');
             for (key in compiler.currentFunctionParameterMap.keys()) {
-                trace('[XRay VariableCompiler]   Map contains: ${key} -> ${compiler.currentFunctionParameterMap.get(key)}');
+                // trace('[XRay VariableCompiler]   Map contains: ${key} -> ${compiler.currentFunctionParameterMap.get(key)}');
             }
         }
         
         // DEBUG: Check what's in the parameter map for underscore parameters
         if (originalName == "spec" || originalName == "_spec") {
-            trace('[XRay VariableCompiler] DEBUG: Looking for spec parameter mapping');
-            trace('[XRay VariableCompiler] Original name: ${originalName}');
-            trace('[XRay VariableCompiler] Parameter map keys: ${[for (k in compiler.currentFunctionParameterMap.keys()) k].join(", ")}');
+            // trace('[XRay VariableCompiler] DEBUG: Looking for spec parameter mapping');
+            // trace('[XRay VariableCompiler] Original name: ${originalName}');
+            // trace('[XRay VariableCompiler] Parameter map keys: ${[for (k in compiler.currentFunctionParameterMap.keys()) k].join(", ")}');
             for (key in compiler.currentFunctionParameterMap.keys()) {
-                trace('[XRay VariableCompiler]   ${key} -> ${compiler.currentFunctionParameterMap.get(key)}');
+                // trace('[XRay VariableCompiler]   ${key} -> ${compiler.currentFunctionParameterMap.get(key)}');
             }
         }
         
         var mappedName = compiler.currentFunctionParameterMap.get(originalName);
         if (mappedName != null) {
-            trace('[XRay VariableCompiler] ✓ PARAMETER MAPPING: ${originalName} -> ${mappedName}');
+            // trace('[XRay VariableCompiler] ✓ PARAMETER MAPPING: ${originalName} -> ${mappedName}');
             #if debug_variable_compiler
-            trace('[XRay VariableCompiler] Found in parameter map');
+            // trace('[XRay VariableCompiler] Found in parameter map');
             #end
             
             // CRITICAL FIX: Always apply _g -> g_array mappings - they are needed for array desugaring
             // The _g variables from array desugaring should be mapped to g_array regardless of context
             if (originalName.charAt(0) == '_' && ~/^_g\d*$/.match(originalName)) {
-                trace('[XRay VariableCompiler] ✓ APPLYING array desugaring mapping for ${originalName} -> ${mappedName}');
+                // trace('[XRay VariableCompiler] ✓ APPLYING array desugaring mapping for ${originalName} -> ${mappedName}');
                 // This is crucial for fixing undefined _g variable errors
                 return mappedName;
             }
@@ -270,8 +270,8 @@ class VariableCompiler {
             // The 'g' variable is used for enum parameter extraction, never for loop counters
             if (originalName == "g" && StringTools.endsWith(mappedName, "_counter")) {
                 // This mapping is ALWAYS incorrect - 'g' is for enum extraction, not loops
-                trace('[XRay VariableCompiler] ⚠️ BLOCKING incorrect g -> ${mappedName} mapping in TLocal');
-                trace('[XRay VariableCompiler] Returning "g" directly instead of ${mappedName}');
+                // trace('[XRay VariableCompiler] ⚠️ BLOCKING incorrect g -> ${mappedName} mapping in TLocal');
+                // trace('[XRay VariableCompiler] Returning "g" directly instead of ${mappedName}');
                 // Don't use the incorrect mapping - return 'g' directly
                 return "g";
             } else {
@@ -284,20 +284,20 @@ class VariableCompiler {
             var globalMappedName = compiler.globalStructParameterMap.get("_this");
             if (globalMappedName != null) {
                 #if debug_variable_compiler
-                trace('[XRay VariableCompiler] ✓ GLOBAL STRUCT MAPPING: ${originalName} -> ${globalMappedName}');
+                // trace('[XRay VariableCompiler] ✓ GLOBAL STRUCT MAPPING: ${originalName} -> ${globalMappedName}');
                 #end
                 return globalMappedName;
             }
         }
         
         #if debug_variable_compiler
-        trace('[XRay VariableCompiler] No parameter mapping found for: ${originalName}');
+        // trace('[XRay VariableCompiler] No parameter mapping found for: ${originalName}');
         #end
         
         // Special handling for inline context variables
         if (originalName == "_this" && compiler.hasInlineContext("struct")) {
             #if debug_variable_compiler
-            trace("[XRay VariableCompiler] ✓ INLINE STRUCT CONTEXT DETECTED");
+            // trace("[XRay VariableCompiler] ✓ INLINE STRUCT CONTEXT DETECTED");
             #end
             return "struct";
         }
@@ -305,7 +305,7 @@ class VariableCompiler {
         // Check if this is a LiveView instance variable that should use socket.assigns
         if (compiler.liveViewInstanceVars != null && compiler.liveViewInstanceVars.exists(originalName)) {
             #if debug_variable_compiler
-            trace("[XRay VariableCompiler] ✓ LIVEVIEW INSTANCE VARIABLE DETECTED");
+            // trace("[XRay VariableCompiler] ✓ LIVEVIEW INSTANCE VARIABLE DETECTED");
             #end
             var snakeCaseName = NamingHelper.toSnakeCase(originalName);
             return 'socket.assigns.${snakeCaseName}';
@@ -318,7 +318,7 @@ class VariableCompiler {
             var renamedName = compiler.variableRenameMap.get(originalName);
             if (renamedName != null) {
                 #if debug_variable_compiler
-                trace('[XRay VariableCompiler] ✓ USING TRACKED RENAME: ${originalName} -> ${renamedName}');
+                // trace('[XRay VariableCompiler] ✓ USING TRACKED RENAME: ${originalName} -> ${renamedName}');
                 #end
                 // Use the renamed variable directly
                 return renamedName;
@@ -332,7 +332,7 @@ class VariableCompiler {
             var snakeCaseName = NamingHelper.toSnakeCase(originalName);
             if (snakeCaseName != originalName) {
                 #if debug_variable_compiler
-                trace('[XRay VariableCompiler] ⚠️ TEMP VARIABLE WITHOUT MAPPING: Applying snake_case: ${originalName} -> ${snakeCaseName}');
+                // trace('[XRay VariableCompiler] ⚠️ TEMP VARIABLE WITHOUT MAPPING: Applying snake_case: ${originalName} -> ${snakeCaseName}');
                 #end
                 
                 // Track this transformation for future references
@@ -351,7 +351,7 @@ class VariableCompiler {
         // Check if this is a function reference being passed as an argument
         if (compiler.isFunctionReference(v, originalName)) {
             #if debug_variable_compiler
-            trace("[XRay VariableCompiler] ✓ FUNCTION REFERENCE DETECTED");
+            // trace("[XRay VariableCompiler] ✓ FUNCTION REFERENCE DETECTED");
             #end
             return compiler.generateFunctionReference(originalName);
         }
@@ -364,20 +364,20 @@ class VariableCompiler {
             
         var result = if (shouldUseParameterMapping) {
             #if debug_variable_compiler
-            trace("[XRay VariableCompiler] ✓ PARAMETER MAPPING DETECTED");
+            // trace("[XRay VariableCompiler] ✓ PARAMETER MAPPING DETECTED");
             #end
             compiler.currentFunctionParameterMap.get(originalName);
         } else if (originalName == "_this" && compiler.isCompilingStructMethod && compiler.globalStructParameterMap.exists("_this")) {
             // GLOBAL FIX: Use global struct method mapping when local is not available
             #if debug_variable_compiler
-            trace("[XRay VariableCompiler] ✓ GLOBAL STRUCT MAPPING DETECTED");
+            // trace("[XRay VariableCompiler] ✓ GLOBAL STRUCT MAPPING DETECTED");
             #end
             compiler.globalStructParameterMap.get("_this");
         } else {
             // Debug for camelCase variables
             if (originalName == "bulkAction" || originalName == "alertLevel") {
-                trace('[XRay VariableCompiler] ⚠️ CAMELCASE VARIABLE DETECTED: ${originalName}');
-                trace('[XRay VariableCompiler] No mapping found, converting to snake_case');
+                // trace('[XRay VariableCompiler] ⚠️ CAMELCASE VARIABLE DETECTED: ${originalName}');
+                // trace('[XRay VariableCompiler] No mapping found, converting to snake_case');
             }
             NamingHelper.toSnakeCase(originalName);
         }
@@ -401,14 +401,14 @@ class VariableCompiler {
         if (compiler.variableMappingManager != null) {
             var managedResult = compiler.variableMappingManager.transformVariableName(originalName);
             #if debug_variable_compiler
-            trace("[XRay VariableCompiler] ✓ OVERRIDING with VariableMappingManager: ${result} -> ${managedResult}");
+            // trace("[XRay VariableCompiler] ✓ OVERRIDING with VariableMappingManager: ${result} -> ${managedResult}");
             #end
             result = managedResult;
         }
         
         #if debug_variable_compiler
-        trace('[XRay VariableCompiler] Generated local variable: ${result}');
-        trace("[XRay VariableCompiler] LOCAL VARIABLE COMPILATION END");
+        // trace('[XRay VariableCompiler] Generated local variable: ${result}');
+        // trace("[XRay VariableCompiler] LOCAL VARIABLE COMPILATION END");
         #end
         
         return result;
@@ -436,21 +436,21 @@ class VariableCompiler {
      */
     public function compileVariableDeclaration(tvar: TVar, expr: Null<TypedExpr>): String {
         #if debug_variable_compiler
-        trace("[XRay VariableCompiler] VARIABLE DECLARATION COMPILATION START");
-        trace('[XRay VariableCompiler] Variable: ${tvar.name}');
-        trace('[XRay VariableCompiler] Has initialization: ${expr != null}');
+        // trace("[XRay VariableCompiler] VARIABLE DECLARATION COMPILATION START");
+        // trace('[XRay VariableCompiler] Variable: ${tvar.name}');
+        // trace('[XRay VariableCompiler] Has initialization: ${expr != null}');
         if (expr != null) {
-            trace('[XRay VariableCompiler] Init expression type: ${Type.enumConstructor(expr.expr)}');
-            trace('[XRay VariableCompiler] Full init expression: ${Std.string(expr.expr)}');
+            // trace('[XRay VariableCompiler] Init expression type: ${Type.enumConstructor(expr.expr)}');
+            // trace('[XRay VariableCompiler] Full init expression: ${Std.string(expr.expr)}');
         }
         
         // Special debug for problematic variables
         if (StringTools.contains(tvar.name, "temp_array") || StringTools.contains(tvar.name, "args")) {
-            trace("[XRay VariableCompiler] ⚠️ SPECIAL DEBUG: Processing problematic variable " + tvar.name);
+            // trace("[XRay VariableCompiler] ⚠️ SPECIAL DEBUG: Processing problematic variable " + tvar.name);
             if (expr != null) {
-                trace("[XRay VariableCompiler] ⚠️ SPECIAL DEBUG: Expression details:");
-                trace("[XRay VariableCompiler] ⚠️ SPECIAL DEBUG: - Type: " + Type.enumConstructor(expr.expr));
-                trace("[XRay VariableCompiler] ⚠️ SPECIAL DEBUG: - Full: " + Std.string(expr.expr));
+                // trace("[XRay VariableCompiler] ⚠️ SPECIAL DEBUG: Expression details:");
+                // trace("[XRay VariableCompiler] ⚠️ SPECIAL DEBUG: - Type: " + Type.enumConstructor(expr.expr));
+                // trace("[XRay VariableCompiler] ⚠️ SPECIAL DEBUG: - Full: " + Std.string(expr.expr));
             }
         }
         #end
@@ -473,10 +473,10 @@ class VariableCompiler {
         var originalName = getOriginalVarName(tvar);
         
         #if debug_variable_compiler
-        trace('[XRay VariableCompiler] Checking if ${originalName} needs array mapping...');
-        trace('[XRay VariableCompiler] Has init expr: ${expr != null}');
+        // trace('[XRay VariableCompiler] Checking if ${originalName} needs array mapping...');
+        // trace('[XRay VariableCompiler] Has init expr: ${expr != null}');
         if (expr != null) {
-            trace('[XRay VariableCompiler] Init expr type: ${Type.enumConstructor(expr.expr)}');
+            // trace('[XRay VariableCompiler] Init expr type: ${Type.enumConstructor(expr.expr)}');
         }
         #end
         
@@ -489,15 +489,15 @@ class VariableCompiler {
             
             if (existingMapping != null && existingMapping != originalName) {
                 #if debug_variable_compiler
-                trace('[XRay VariableCompiler] ✓ FOUND EXISTING MAPPING FOR g VARIABLE: ${originalName} → ${existingMapping}');
-                trace('[XRay VariableCompiler] REGISTERING ID MAPPING IMMEDIATELY');
+                // trace('[XRay VariableCompiler] ✓ FOUND EXISTING MAPPING FOR g VARIABLE: ${originalName} → ${existingMapping}');
+                // trace('[XRay VariableCompiler] REGISTERING ID MAPPING IMMEDIATELY');
                 #end
                 
                 // Register the ID mapping to ensure consistency
                 registerVariableMapping(tvar, existingMapping);
                 
                 #if debug_variable_compiler
-                trace('[XRay VariableCompiler] ✓ ID MAPPING REGISTERED: TVar.id ${tvar.id} → ${existingMapping}');
+                // trace('[XRay VariableCompiler] ✓ ID MAPPING REGISTERED: TVar.id ${tvar.id} → ${existingMapping}');
                 #end
             }
         }
@@ -505,7 +505,7 @@ class VariableCompiler {
         // Check if this is a 'g' variable that needs array mapping
         if ((originalName == "g" || originalName == "_g") && expr != null) {
             #if debug_variable_compiler
-            trace('[XRay VariableCompiler] This is a g variable, checking initialization pattern...');
+            // trace('[XRay VariableCompiler] This is a g variable, checking initialization pattern...');
             #end
             
             // Check if the initialization involves Type.typeof or similar patterns
@@ -513,8 +513,8 @@ class VariableCompiler {
             switch (expr.expr) {
                 case TCall(e, args):
                     #if debug_variable_compiler
-                    trace('[XRay VariableCompiler] TCall detected, checking if Type.typeof...');
-                    trace('[XRay VariableCompiler] Call target type: ${Type.enumConstructor(e.expr)}');
+                    // trace('[XRay VariableCompiler] TCall detected, checking if Type.typeof...');
+                    // trace('[XRay VariableCompiler] Call target type: ${Type.enumConstructor(e.expr)}');
                     #end
                     
                     // Check if this is a Type.typeof call
@@ -523,32 +523,32 @@ class VariableCompiler {
                             var fieldName = switch (fa) {
                                 case FStatic(classRef, cf): 
                                     #if debug_variable_compiler
-                                    trace('[XRay VariableCompiler] Static field: ${cf.get().name}');
+                                    // trace('[XRay VariableCompiler] Static field: ${cf.get().name}');
                                     #end
                                     cf.get().name;
                                 case FDynamic(name):
                                     #if debug_variable_compiler  
-                                    trace('[XRay VariableCompiler] Dynamic field: ${name}');
+                                    // trace('[XRay VariableCompiler] Dynamic field: ${name}');
                                     #end
                                     name;
                                 case _: 
                                     #if debug_variable_compiler
-                                    trace('[XRay VariableCompiler] Other field access type');
+                                    // trace('[XRay VariableCompiler] Other field access type');
                                     #end
                                     "";
                             };
                             needsArrayMapping = (fieldName == "typeof" || fieldName == "enumIndex");
                             #if debug_variable_compiler
-                            trace('[XRay VariableCompiler] Field name: ${fieldName}, needs mapping: ${needsArrayMapping}');
+                            // trace('[XRay VariableCompiler] Field name: ${fieldName}, needs mapping: ${needsArrayMapping}');
                             #end
                         case _: 
                             #if debug_variable_compiler
-                            trace('[XRay VariableCompiler] Not a field access');
+                            // trace('[XRay VariableCompiler] Not a field access');
                             #end
                     }
                 case _: 
                     #if debug_variable_compiler
-                    trace('[XRay VariableCompiler] Not a TCall, type is: ${Type.enumConstructor(expr.expr)}');
+                    // trace('[XRay VariableCompiler] Not a TCall, type is: ${Type.enumConstructor(expr.expr)}');
                     #end
             };
             
@@ -556,7 +556,7 @@ class VariableCompiler {
                 var mappedName = "g_array";
                 
                 #if debug_variable_compiler
-                trace('[XRay VariableCompiler] ✓ REGISTERING ID MAPPING AT CREATION: ${tvar.name}(id:${tvar.id}) → ${mappedName}');
+                // trace('[XRay VariableCompiler] ✓ REGISTERING ID MAPPING AT CREATION: ${tvar.name}(id:${tvar.id}) → ${mappedName}');
                 #end
                 
                 // Register the ID mapping immediately
@@ -569,12 +569,12 @@ class VariableCompiler {
                 // Note: We'll apply the mapped name later after varName is declared
                 
                 #if debug_variable_compiler
-                trace('[XRay VariableCompiler] ✓ Mappings registered successfully');
-                trace('[XRay VariableCompiler] ID map now has: ${[for (id in variableIdMap.keys()) 'id${id}=>${variableIdMap.get(id)}']}');
+                // trace('[XRay VariableCompiler] ✓ Mappings registered successfully');
+                // trace('[XRay VariableCompiler] ID map now has: ${[for (id in variableIdMap.keys()) 'id${id}=>${variableIdMap.get(id)}']}');
                 #end
             } else {
                 #if debug_variable_compiler
-                trace('[XRay VariableCompiler] No array mapping needed for this g variable');
+                // trace('[XRay VariableCompiler] No array mapping needed for this g variable');
                 #end
             }
         }
@@ -599,9 +599,9 @@ class VariableCompiler {
                         var directAssignment = 'if ${condStr}, do: ${thenStr}, else: ${elseStr}';
                         
                         #if debug_variable_compiler
-                        trace("[XRay VariableCompiler] ✓ DIRECT ARRAY TERNARY DETECTED!");
-                        trace('[XRay VariableCompiler] Variable: ${tvar.name}');
-                        trace('[XRay VariableCompiler] Direct assignment: ${directAssignment}');
+                        // trace("[XRay VariableCompiler] ✓ DIRECT ARRAY TERNARY DETECTED!");
+                        // trace('[XRay VariableCompiler] Variable: ${tvar.name}');
+                        // trace('[XRay VariableCompiler] Direct assignment: ${directAssignment}');
                         #end
                         
                         // Return the direct assignment, bypassing temp variable creation
@@ -617,16 +617,16 @@ class VariableCompiler {
         // and we need to establish the correct semantic mappings before compilation proceeds
         if (compiler.variableMappingManager != null && compiler.variableMappingManager.isArrayDesugaringVariable(tvar.name)) {
             var baseName = compiler.variableMappingManager.getDesugaringBaseName(tvar.name);
-            trace('[XRay VariableCompiler] ✓ ARRAY DESUGARING DETECTED: ${tvar.name} -> base: ${baseName}');
+            // trace('[XRay VariableCompiler] ✓ ARRAY DESUGARING DETECTED: ${tvar.name} -> base: ${baseName}');
             
             // Set up the correct mappings for this desugaring pattern
             compiler.variableMappingManager.setupArrayDesugatingMappings(baseName);
-            trace('[XRay VariableCompiler] ✓ Array desugaring mappings established for base: ${baseName}');
+            // trace('[XRay VariableCompiler] ✓ Array desugaring mappings established for base: ${baseName}');
         }
         
         // Debug: Always trace 'g' variables to understand the pattern
         if (tvar.name == "g") {
-            trace('[DEBUG] Found g variable! Init expr: ${expr != null ? Type.enumConstructor(expr.expr) : "null"}');
+//             trace('[DEBUG] Found g variable! Init expr: ${expr != null ? Type.enumConstructor(expr.expr) : "null"}');
         }
         
         // CRITICAL FIX: Handle enum parameter extraction specially
@@ -635,8 +635,8 @@ class VariableCompiler {
             switch (expr.expr) {
                 case TEnumParameter(enumExpr, enumField, index):
                     #if debug_variable_compiler
-                    trace("[XRay VariableCompiler] ✓ ENUM PARAMETER EXTRACTION DETECTED");
-                    trace('[XRay VariableCompiler] Enum field: ${enumField.name}, Index: ${index}');
+                    // trace("[XRay VariableCompiler] ✓ ENUM PARAMETER EXTRACTION DETECTED");
+                    // trace('[XRay VariableCompiler] Enum field: ${enumField.name}, Index: ${index}');
                     #end
                     
                     // Generate a unique variable name for each extraction
@@ -669,8 +669,8 @@ class VariableCompiler {
         );
         
         if (isTempArrayVariable) {
-            trace("[XRay VariableCompiler] ⚠️ DETECTED TEMP ARRAY WITH NULL INIT: " + tvar.name);
-            trace("[XRay VariableCompiler] This is likely part of a ternary pattern that needs special handling");
+            // trace("[XRay VariableCompiler] ⚠️ DETECTED TEMP ARRAY WITH NULL INIT: " + tvar.name);
+            // trace("[XRay VariableCompiler] This is likely part of a ternary pattern that needs special handling");
             
             // Skip generating the nil declaration - it will be handled by TLocal compilation
             // when the actual assignment happens. This prevents generating undefined variable references.
@@ -681,7 +681,7 @@ class VariableCompiler {
         var isUnused = tvar.meta != null && tvar.meta.has("-reflaxe.unused");
         if (isUnused) {
             #if debug_variable_compiler
-            trace("[XRay VariableCompiler] ✓ VARIABLE MARKED AS UNUSED - Will prefix with underscore");
+            // trace("[XRay VariableCompiler] ✓ VARIABLE MARKED AS UNUSED - Will prefix with underscore");
             #end
             // Don't skip - we'll prefix with underscore below
         }
@@ -690,7 +690,7 @@ class VariableCompiler {
         var originalName = getOriginalVarName(tvar);
         
         #if debug_variable_compiler
-        trace('[XRay VariableCompiler] Original name: ${originalName}');
+        // trace('[XRay VariableCompiler] Original name: ${originalName}');
         #end
         
         // CRITICAL FIX: Detect variable name collision in desugared loops
@@ -699,7 +699,7 @@ class VariableCompiler {
         var originalNameBeforeRename = originalName;
         if (StringTools.startsWith(originalName, "_g")) {
             #if debug_variable_compiler
-            trace("[XRay VariableCompiler] ✓ COLLISION DETECTION FOR _g VARIABLES");
+            // trace("[XRay VariableCompiler] ✓ COLLISION DETECTION FOR _g VARIABLES");
             #end
             // Check if this is an array initialization followed by integer reassignment
             if (expr != null) {
@@ -708,14 +708,14 @@ class VariableCompiler {
                         // This is array initialization - use a different name
                         originalName = originalName + "_array";
                         #if debug_variable_compiler
-                        trace('[XRay VariableCompiler] Renamed to: ${originalName} (array)');
+                        // trace('[XRay VariableCompiler] Renamed to: ${originalName} (array)');
                         #end
                         
                         // CRITICAL FIX: Register the ID mapping immediately
                         // This ensures TLocal references use the same renamed variable
                         registerVariableMapping(tvar, originalName);
                         #if debug_variable_compiler
-                        trace('[XRay VariableCompiler] ✓ REGISTERED ID MAPPING: TVar.id ${tvar.id} → ${originalName}');
+                        // trace('[XRay VariableCompiler] ✓ REGISTERED ID MAPPING: TVar.id ${tvar.id} → ${originalName}');
                         #end
                     case TConst(TInt(0)):
                         // CRITICAL FIX: Never rename 'g' to 'g_counter' - it's used for enum handling
@@ -724,11 +724,11 @@ class VariableCompiler {
                             // This is counter initialization - use a different name
                             originalName = originalName + "_counter";
                             #if debug_variable_compiler
-                            trace('[XRay VariableCompiler] Renamed to: ${originalName} (counter)');
+                            // trace('[XRay VariableCompiler] Renamed to: ${originalName} (counter)');
                             #end
                         } else {
                             #if debug_variable_compiler
-                            trace('[XRay VariableCompiler] ✓ PRESERVED g variable name (not renaming to g_counter)');
+                            // trace('[XRay VariableCompiler] ✓ PRESERVED g variable name (not renaming to g_counter)');
                             #end
                         }
                     case _:
@@ -744,7 +744,7 @@ class VariableCompiler {
                     }
                     compiler.variableRenameMap.set(originalNameBeforeRename, originalName);
                     #if debug_variable_compiler
-                    trace('[XRay VariableCompiler] Tracked rename: ${originalNameBeforeRename} -> ${originalName}');
+                    // trace('[XRay VariableCompiler] Tracked rename: ${originalNameBeforeRename} -> ${originalName}');
                     #end
                 }
             }
@@ -763,22 +763,22 @@ class VariableCompiler {
         // CRITICAL FIX: Never use g_counter mapping for plain 'g' variables
         // The 'g' variable is used for switch expression values, not loop counters
         if (originalName == "g" && mappedName != null && StringTools.endsWith(mappedName, "_counter")) {
-            trace('[XRay VariableCompiler] ⚠️ BLOCKING incorrect g -> ${mappedName} mapping in TVar declaration');
-            trace('[XRay VariableCompiler] Ignoring mapping and using original name "g"');
+            // trace('[XRay VariableCompiler] ⚠️ BLOCKING incorrect g -> ${mappedName} mapping in TVar declaration');
+            // trace('[XRay VariableCompiler] Ignoring mapping and using original name "g"');
             mappedName = null; // Force to use original name
         }
         
         if (mappedName != null) {
             #if debug_variable_compiler
-            trace('[XRay VariableCompiler] ✓ TVAR PARAMETER MAPPING: ${originalName} -> ${mappedName}');
+            // trace('[XRay VariableCompiler] ✓ TVAR PARAMETER MAPPING: ${originalName} -> ${mappedName}');
             #end
             
             // CRITICAL ARCHITECTURAL FIX: Register ID mapping when using name-based mapping
             // This ensures TLocal references will find the same mapped name
             registerVariableMapping(tvar, mappedName);
             #if debug_variable_compiler
-            trace('[XRay VariableCompiler] ✓ REGISTERED ID MAPPING: TVar.id ${tvar.id} → ${mappedName}');
-            trace('[XRay VariableCompiler] This ensures TLocal will use the same name!');
+            // trace('[XRay VariableCompiler] ✓ REGISTERED ID MAPPING: TVar.id ${tvar.id} → ${mappedName}');
+            // trace('[XRay VariableCompiler] This ensures TLocal will use the same name!');
             #end
             
             // Use the mapped name directly
@@ -788,7 +788,7 @@ class VariableCompiler {
             if (StringTools.startsWith(varName, "_") && !StringTools.startsWith(originalName, "_")) {
                 underscorePrefixMap.set(originalName, varName);
                 #if debug_variable_compiler
-                trace('[XRay VariableCompiler] ✓ TRACKED UNDERSCORE PREFIX FROM PARAMETER MAPPING: ${originalName} → ${varName}');
+                // trace('[XRay VariableCompiler] ✓ TRACKED UNDERSCORE PREFIX FROM PARAMETER MAPPING: ${originalName} → ${varName}');
                 #end
             }
             
@@ -807,8 +807,8 @@ class VariableCompiler {
                         // ALWAYS use inline form for variable initialization with ternary
                         // This ensures the variable is assigned at the correct scope level
                         #if debug_variable_compiler
-                        trace("[XRay VariableCompiler] ✓ TERNARY IN VARIABLE INIT - Using inline form");
-                        trace("[XRay VariableCompiler] Variable name: " + varName);
+                        // trace("[XRay VariableCompiler] ✓ TERNARY IN VARIABLE INIT - Using inline form");
+                        // trace("[XRay VariableCompiler] Variable name: " + varName);
                         #end
                         
                         // Generate inline if to avoid scoping issues
@@ -825,7 +825,7 @@ class VariableCompiler {
                 // Only skip assignment for TEnumParameter expressions that return empty
                 if (isEnumParameter && (compiledExpr == null || compiledExpr == "")) {
                     #if debug_variable_compiler
-                    trace("[XRay VariableCompiler] ✓ EMPTY ENUM PARAMETER - Skipping variable assignment");
+                    // trace("[XRay VariableCompiler] ✓ EMPTY ENUM PARAMETER - Skipping variable assignment");
                     #end
                     return ""; // Don't generate anything for unused enum parameters
                 }
@@ -840,7 +840,7 @@ class VariableCompiler {
             var globalMappedName = compiler.globalStructParameterMap.get("_this");
             if (globalMappedName != null) {
                 #if debug_variable_compiler
-                trace('[XRay VariableCompiler] ✓ TVAR GLOBAL STRUCT MAPPING: ${originalName} -> ${globalMappedName}');
+                // trace('[XRay VariableCompiler] ✓ TVAR GLOBAL STRUCT MAPPING: ${originalName} -> ${globalMappedName}');
                 #end
                 // Use the global mapped name directly
                 var varName = globalMappedName;
@@ -868,7 +868,7 @@ class VariableCompiler {
                     // Only skip assignment for TEnumParameter expressions that return empty
                     if (isEnumParameter && (compiledExpr == null || compiledExpr == "")) {
                         #if debug_variable_compiler
-                        trace("[XRay VariableCompiler] ✓ EMPTY ENUM PARAMETER - Skipping variable assignment");
+                        // trace("[XRay VariableCompiler] ✓ EMPTY ENUM PARAMETER - Skipping variable assignment");
                         #end
                         return ""; // Don't generate anything for unused enum parameters
                     }
@@ -883,7 +883,7 @@ class VariableCompiler {
         var preserveUnderscore = false;
         if (originalName == "_this") {
             #if debug_variable_compiler
-            trace("[XRay VariableCompiler] ✓ _THIS VARIABLE SPECIAL HANDLING");
+            // trace("[XRay VariableCompiler] ✓ _THIS VARIABLE SPECIAL HANDLING");
             #end
             // Check if this is an inline expansion of _this = this.someField
             var isInlineThisInit = switch(expr.expr) {
@@ -901,8 +901,8 @@ class VariableCompiler {
             preserveUnderscore = isInlineThisInit || hasExistingContext;
             
             #if debug_variable_compiler
-            trace('[XRay VariableCompiler] Inline init: ${isInlineThisInit}, Existing context: ${hasExistingContext}');
-            trace('[XRay VariableCompiler] Preserve underscore: ${preserveUnderscore}');
+            // trace('[XRay VariableCompiler] Inline init: ${isInlineThisInit}, Existing context: ${hasExistingContext}');
+            // trace('[XRay VariableCompiler] Preserve underscore: ${preserveUnderscore}');
             #end
         }
         
@@ -923,7 +923,7 @@ class VariableCompiler {
             var originalVarName = varName;
             varName = "_" + varName;
             #if debug_variable_compiler
-            trace('[XRay VariableCompiler] ✓ PREFIXED UNUSED VARIABLE WITH UNDERSCORE: ${varName}');
+            // trace('[XRay VariableCompiler] ✓ PREFIXED UNUSED VARIABLE WITH UNDERSCORE: ${varName}');
             #end
             
             // CRITICAL: Track that this TVar ID now maps to an underscore-prefixed name
@@ -931,14 +931,14 @@ class VariableCompiler {
             if (tvar != null && tvar.id != null) {
                 variableIdMap.set(tvar.id, varName);
                 #if debug_variable_compiler
-                trace('[XRay VariableCompiler] ✓ TRACKED UNDERSCORE PREFIX IN ID MAP: id ${tvar.id} → ${varName}');
+                // trace('[XRay VariableCompiler] ✓ TRACKED UNDERSCORE PREFIX IN ID MAP: id ${tvar.id} → ${varName}');
                 #end
             }
             
             // ALSO track by name since TVar IDs differ between declaration and reference
             underscorePrefixMap.set(originalVarName, varName);
             #if debug_variable_compiler
-            trace('[XRay VariableCompiler] ✓ TRACKED UNDERSCORE PREFIX BY NAME: ${originalVarName} → ${varName}');
+            // trace('[XRay VariableCompiler] ✓ TRACKED UNDERSCORE PREFIX BY NAME: ${originalVarName} → ${varName}');
             #end
         }
         
@@ -959,10 +959,10 @@ class VariableCompiler {
             compiler.variableRenameMap.set(originalName, varName);
             
             #if debug_variable_compiler
-            trace('[XRay VariableCompiler] ✓ TRACKED VARIABLE NAME TRANSFORMATION: ${originalName} -> ${varName}');
+            // trace('[XRay VariableCompiler] ✓ TRACKED VARIABLE NAME TRANSFORMATION: ${originalName} -> ${varName}');
             // Special debug for problematic variables
             if (originalName.indexOf("temp") == 0) {
-                trace('[XRay VariableCompiler] ⚠️ CRITICAL: Tracked temp variable mapping: ${originalName} -> ${varName}');
+                // trace('[XRay VariableCompiler] ⚠️ CRITICAL: Tracked temp variable mapping: ${originalName} -> ${varName}');
             }
             #end
         }
@@ -977,9 +977,9 @@ class VariableCompiler {
                     if (compiler.consumedTempVariables != null && compiler.consumedTempVariables.exists(snakeCaseName)) {
                         var directAssignment = compiler.consumedTempVariables.get(snakeCaseName);
                         #if debug_variable_compiler
-                        trace("[XRay VariableCompiler] ✓ ARCHITECTURAL FIX: Using consumed temp variable replacement");
-                        trace('[XRay VariableCompiler] Original: ${varName} = ${v.name} (${snakeCaseName})');
-                        trace('[XRay VariableCompiler] Replacement: ${varName} = ${directAssignment}');
+                        // trace("[XRay VariableCompiler] ✓ ARCHITECTURAL FIX: Using consumed temp variable replacement");
+                        // trace('[XRay VariableCompiler] Original: ${varName} = ${v.name} (${snakeCaseName})');
+                        // trace('[XRay VariableCompiler] Replacement: ${varName} = ${directAssignment}');
                         #end
                         
                         return '${varName} = ${directAssignment}';
@@ -994,10 +994,10 @@ class VariableCompiler {
             switch (expr.expr) {
                 case TLocal(v) if (v.name == "g"):
                     #if debug_variable_compiler
-                    trace("[XRay VariableCompiler] ✓ PATTERN VARIABLE ASSIGNMENT FROM g");
-                    trace('[XRay VariableCompiler] Pattern var: ${varName}');
-                    trace('[XRay VariableCompiler] Current extraction index: ${compiler.currentEnumExtractionIndex}');
-                    trace('[XRay VariableCompiler] Available extractions: ${compiler.enumExtractionVars.length}');
+                    // trace("[XRay VariableCompiler] ✓ PATTERN VARIABLE ASSIGNMENT FROM g");
+                    // trace('[XRay VariableCompiler] Pattern var: ${varName}');
+                    // trace('[XRay VariableCompiler] Current extraction index: ${compiler.currentEnumExtractionIndex}');
+                    // trace('[XRay VariableCompiler] Available extractions: ${compiler.enumExtractionVars.length}');
                     #end
                     
                     // Use the extraction variables in order
@@ -1006,7 +1006,7 @@ class VariableCompiler {
                         var extractionVar = compiler.enumExtractionVars[compiler.currentEnumExtractionIndex].varName;
                         
                         #if debug_variable_compiler
-                        trace('[XRay VariableCompiler] Using extraction var: ${extractionVar}');
+                        // trace('[XRay VariableCompiler] Using extraction var: ${extractionVar}');
                         #end
                         
                         // Move to next extraction for the next pattern variable
@@ -1015,7 +1015,7 @@ class VariableCompiler {
                     } else {
                         // Fallback if we run out of extractions
                         #if debug_variable_compiler
-                        trace('[XRay VariableCompiler] WARNING: No more extractions available');
+                        // trace('[XRay VariableCompiler] WARNING: No more extractions available');
                         #end
                         return '${varName} = nil';
                     }
@@ -1035,7 +1035,7 @@ class VariableCompiler {
             
             if (isInlineThisInit) {
                 #if debug_variable_compiler
-                trace("[XRay VariableCompiler] ✓ INLINE THIS INITIALIZATION");
+                // trace("[XRay VariableCompiler] ✓ INLINE THIS INITIALIZATION");
                 #end
                 // Temporarily disable any existing struct context to compile the right side correctly
                 var savedContext = compiler.inlineContextMap.get("struct");
@@ -1052,7 +1052,7 @@ class VariableCompiler {
                 // Only skip assignment for TEnumParameter expressions that return empty
                 if (isEnumParameter && (compiledExpr == null || compiledExpr == "")) {
                     #if debug_variable_compiler
-                    trace("[XRay VariableCompiler] ✓ EMPTY ENUM PARAMETER - Skipping struct assignment");
+                    // trace("[XRay VariableCompiler] ✓ EMPTY ENUM PARAMETER - Skipping struct assignment");
                     #end
                     return ""; // Don't generate anything for unused enum parameters
                 }
@@ -1077,8 +1077,8 @@ class VariableCompiler {
                         // ALWAYS use inline form for variable initialization with ternary
                         // This ensures the variable is assigned at the correct scope level
                         #if debug_variable_compiler
-                        trace("[XRay VariableCompiler] ✓ TERNARY IN VARIABLE INIT (general case) - Using inline form");
-                        trace("[XRay VariableCompiler] Variable name: " + varName);
+                        // trace("[XRay VariableCompiler] ✓ TERNARY IN VARIABLE INIT (general case) - Using inline form");
+                        // trace("[XRay VariableCompiler] Variable name: " + varName);
                         #end
                         
                         // Generate inline if to avoid scoping issues
@@ -1095,7 +1095,7 @@ class VariableCompiler {
                 // Only skip assignment for TEnumParameter expressions that return empty
                 if (isEnumParameter && (compiledExpr == null || compiledExpr == "")) {
                     #if debug_variable_compiler
-                    trace("[XRay VariableCompiler] ✓ EMPTY ENUM PARAMETER - Skipping variable assignment");
+                    // trace("[XRay VariableCompiler] ✓ EMPTY ENUM PARAMETER - Skipping variable assignment");
                     #end
                     return ""; // Don't generate anything for unused enum parameters
                 }
@@ -1103,7 +1103,7 @@ class VariableCompiler {
                 // If this is _this and we preserved the underscore, activate inline context
                 if (originalName == "_this" && preserveUnderscore) {
                     #if debug_variable_compiler
-                    trace("[XRay VariableCompiler] ✓ ACTIVATING INLINE CONTEXT");
+                    // trace("[XRay VariableCompiler] ✓ ACTIVATING INLINE CONTEXT");
                     #end
                     compiler.setInlineContext("struct", "active");
                 }
@@ -1111,7 +1111,7 @@ class VariableCompiler {
                 // In case arms, avoid temp variable assignments - return expressions directly
                 if (compiler.isCompilingCaseArm && (StringTools.startsWith(originalName, "temp_") || StringTools.startsWith(originalName, "temp"))) {
                     #if debug_variable_compiler
-                    trace("[XRay VariableCompiler] ✓ TEMPORARY VARIABLE OPTIMIZATION");
+                    // trace("[XRay VariableCompiler] ✓ TEMPORARY VARIABLE OPTIMIZATION");
                     #end
                     return compiledExpr;
                 }
@@ -1119,8 +1119,8 @@ class VariableCompiler {
                 var result = '${varName} = ${compiledExpr}';
                 
                 #if debug_variable_compiler
-                trace('[XRay VariableCompiler] Generated variable declaration: ${result}');
-                trace("[XRay VariableCompiler] VARIABLE DECLARATION COMPILATION END");
+                // trace('[XRay VariableCompiler] Generated variable declaration: ${result}');
+                // trace("[XRay VariableCompiler] VARIABLE DECLARATION COMPILATION END");
                 #end
                 
                 return result;
@@ -1129,7 +1129,7 @@ class VariableCompiler {
             // In case arms, skip temp variable nil assignments completely
             if (compiler.isCompilingCaseArm && (StringTools.startsWith(originalName, "temp_") || StringTools.startsWith(originalName, "temp"))) {
                 #if debug_variable_compiler
-                trace("[XRay VariableCompiler] ✓ TEMPORARY NIL OPTIMIZATION");
+                // trace("[XRay VariableCompiler] ✓ TEMPORARY NIL OPTIMIZATION");
                 #end
                 return "nil";
             }
@@ -1145,14 +1145,14 @@ class VariableCompiler {
                 // Check if already declared
                 if (compiler.declaredTempVariables.exists(varName)) {
                     #if debug_variable_compiler
-                    trace('[XRay VariableCompiler] ✓ ALREADY DECLARED: ${varName}, skipping duplicate');
+                    // trace('[XRay VariableCompiler] ✓ ALREADY DECLARED: ${varName}, skipping duplicate');
                     #end
                     return ""; // Return empty string to skip this declaration
                 } else {
                     // Mark as declared and proceed
                     compiler.declaredTempVariables.set(varName, true);
                     #if debug_variable_compiler
-                    trace('[XRay VariableCompiler] ✓ DECLARING: ${varName} for first time');
+                    // trace('[XRay VariableCompiler] ✓ DECLARING: ${varName} for first time');
                     #end
                 }
             }
@@ -1160,8 +1160,8 @@ class VariableCompiler {
             var result = '${varName} = nil';
             
             #if debug_variable_compiler
-            trace('[XRay VariableCompiler] Generated nil declaration: ${result}');
-            trace("[XRay VariableCompiler] VARIABLE DECLARATION COMPILATION END");
+            // trace('[XRay VariableCompiler] Generated nil declaration: ${result}');
+            // trace("[XRay VariableCompiler] VARIABLE DECLARATION COMPILATION END");
             #end
             
             return result;
@@ -1186,9 +1186,9 @@ class VariableCompiler {
         registerVariableMapping(limitVar, "g_array");
         
         #if debug_variable_compiler
-        trace('[XRay VariableCompiler] ✓ LOOP DESUGARING MAPPINGS ESTABLISHED');
-        trace('[XRay VariableCompiler] Counter: TVar.id=${counterVar.id} -> g_counter');
-        trace('[XRay VariableCompiler] Limit: TVar.id=${limitVar.id} -> g_array');
+        // trace('[XRay VariableCompiler] ✓ LOOP DESUGARING MAPPINGS ESTABLISHED');
+        // trace('[XRay VariableCompiler] Counter: TVar.id=${counterVar.id} -> g_counter');
+        // trace('[XRay VariableCompiler] Limit: TVar.id=${limitVar.id} -> g_array');
         #end
     }
     
@@ -1222,23 +1222,23 @@ class VariableCompiler {
     public function compileVariableReference(tvar: TVar): String {
         if (tvar == null) {
             #if debug_variable_compiler
-            trace('[XRay VariableCompiler] WARNING: Null TVar in compileVariableReference');
+            // trace('[XRay VariableCompiler] WARNING: Null TVar in compileVariableReference');
             #end
             return "_";
         }
         
         #if debug_variable_compiler
-        trace('[XRay VariableCompiler] VARIABLE REFERENCE COMPILATION');
-        trace('[XRay VariableCompiler] Variable: ${tvar.name} (id: ${tvar.id})');
-        trace('[XRay VariableCompiler] Checking ID mappings...');
-        trace('[XRay VariableCompiler] Available mappings: ${[for (id in variableIdMap.keys()) 'id${id}=>${variableIdMap.get(id)}']}');
+        // trace('[XRay VariableCompiler] VARIABLE REFERENCE COMPILATION');
+        // trace('[XRay VariableCompiler] Variable: ${tvar.name} (id: ${tvar.id})');
+        // trace('[XRay VariableCompiler] Checking ID mappings...');
+        // trace('[XRay VariableCompiler] Available mappings: ${[for (id in variableIdMap.keys()) 'id${id}=>${variableIdMap.get(id)}']}');
         #end
         
         // Check for TVar.id mapping first (highest priority)
         if (variableIdMap.exists(tvar.id)) {
             var mappedName = variableIdMap.get(tvar.id);
             #if debug_variable_compiler
-            trace('[XRay VariableCompiler] ✓ Found ID mapping: ${tvar.name}(${tvar.id}) → ${mappedName}');
+            // trace('[XRay VariableCompiler] ✓ Found ID mapping: ${tvar.name}(${tvar.id}) → ${mappedName}');
             #end
             return mappedName;
         }
@@ -1249,14 +1249,14 @@ class VariableCompiler {
             var nameMapping = compiler.currentFunctionParameterMap.get(originalName);
             if (nameMapping == "g_array") {
                 #if debug_variable_compiler
-                trace('[XRay VariableCompiler] ✓ Found name mapping for g: ${originalName} → g_array');
+                // trace('[XRay VariableCompiler] ✓ Found name mapping for g: ${originalName} → g_array');
                 #end
                 return "g_array";
             }
         }
         
         #if debug_variable_compiler
-        trace('[XRay VariableCompiler] No ID mapping found, checking for unused variable metadata');
+        // trace('[XRay VariableCompiler] No ID mapping found, checking for unused variable metadata');
         #end
         
         // Get original variable name and convert to snake_case
@@ -1268,7 +1268,7 @@ class VariableCompiler {
             if (!StringTools.startsWith(varName, "_")) {
                 varName = "_" + varName;
                 #if debug_variable_compiler
-                trace('[XRay VariableCompiler] ✓ Variable has -reflaxe.unused metadata, adding underscore prefix: ${varName}');
+                // trace('[XRay VariableCompiler] ✓ Variable has -reflaxe.unused metadata, adding underscore prefix: ${varName}');
                 #end
             }
         }
@@ -1286,15 +1286,15 @@ class VariableCompiler {
      */
     public function getOriginalVarName(v: TVar): String {
         #if debug_variable_compiler
-        trace("[XRay VariableCompiler] GETTING ORIGINAL VAR NAME");
-        trace('[XRay VariableCompiler] TVar.id: ${v.id}, TVar.name: ${v.name}');
+        // trace("[XRay VariableCompiler] GETTING ORIGINAL VAR NAME");
+        // trace('[XRay VariableCompiler] TVar.id: ${v.id}, TVar.name: ${v.name}');
         #end
         
         // Check if the variable has :realPath metadata (following Reflaxe pattern)
         var originalName = v.getNameOrMeta(":realPath");
         
         #if debug_variable_compiler
-        trace('[XRay VariableCompiler] Original name resolved: ${originalName}');
+        // trace('[XRay VariableCompiler] Original name resolved: ${originalName}');
         #end
         
         return originalName;
@@ -1315,16 +1315,16 @@ class VariableCompiler {
      */
     public function containsVariableReference(expr: TypedExpr, variableName: String): Bool {
         #if debug_variable_compiler
-        trace("[XRay VariableCompiler] CHECKING VARIABLE REFERENCE");
-        trace('[XRay VariableCompiler] Looking for variable: ${variableName}');
-        trace('[XRay VariableCompiler] In expression: ${expr.expr}');
+        // trace("[XRay VariableCompiler] CHECKING VARIABLE REFERENCE");
+        // trace('[XRay VariableCompiler] Looking for variable: ${variableName}');
+        // trace('[XRay VariableCompiler] In expression: ${expr.expr}');
         #end
         
         var result = switch(expr.expr) {
             case TLocal(v):
                 var found = v.name == variableName;
                 #if debug_variable_compiler
-                trace('[XRay VariableCompiler] TLocal check: ${v.name} == ${variableName} = ${found}');
+                // trace('[XRay VariableCompiler] TLocal check: ${v.name} == ${variableName} = ${found}');
                 #end
                 found;
                 
@@ -1332,7 +1332,7 @@ class VariableCompiler {
                 // Check if first argument is the target variable
                 if (args.length > 0 && containsVariableReference(args[0], variableName)) {
                     #if debug_variable_compiler
-                    trace("[XRay VariableCompiler] ✓ FOUND in first argument");
+                    // trace("[XRay VariableCompiler] ✓ FOUND in first argument");
                     #end
                     true;
                 } else {
@@ -1375,13 +1375,13 @@ class VariableCompiler {
                 
             default:
                 #if debug_variable_compiler
-                trace("[XRay VariableCompiler] No variable reference found in expression type");
+                // trace("[XRay VariableCompiler] No variable reference found in expression type");
                 #end
                 false;
         };
         
         #if debug_variable_compiler
-        trace('[XRay VariableCompiler] Final result: ${result}');
+        // trace('[XRay VariableCompiler] Final result: ${result}');
         #end
         
         return result;
@@ -1403,15 +1403,15 @@ class VariableCompiler {
      */
     public function statementTargetsVariable(stmt: TypedExpr, variableName: String): Bool {
         #if debug_variable_compiler
-        trace("[XRay VariableCompiler] STATEMENT TARGETS VARIABLE CHECK");
-        trace('[XRay VariableCompiler] Variable: ${variableName}');
-        trace('[XRay VariableCompiler] Statement: ${stmt.expr}');
+        // trace("[XRay VariableCompiler] STATEMENT TARGETS VARIABLE CHECK");
+        // trace('[XRay VariableCompiler] Variable: ${variableName}');
+        // trace('[XRay VariableCompiler] Statement: ${stmt.expr}');
         #end
         
         // Skip terminal operations - they consume the variable but aren't part of the pipeline
         if (isTerminalOperation(stmt, variableName)) {
             #if debug_variable_compiler
-            trace("[XRay VariableCompiler] ✓ TERMINAL OPERATION DETECTED - SKIPPING");
+            // trace("[XRay VariableCompiler] ✓ TERMINAL OPERATION DETECTED - SKIPPING");
             #end
             return false;
         }
@@ -1424,7 +1424,7 @@ class VariableCompiler {
                     // Check if the init expression uses the same variable
                     var found = containsVariableReference(init, variableName);
                     #if debug_variable_compiler
-                    trace('[XRay VariableCompiler] TVar pattern found: ${found}');
+                    // trace('[XRay VariableCompiler] TVar pattern found: ${found}');
                     #end
                     found;
                 } else {
@@ -1438,7 +1438,7 @@ class VariableCompiler {
                     // Check if the right side uses the same variable
                     var found = containsVariableReference(right, variableName);
                     #if debug_variable_compiler
-                    trace('[XRay VariableCompiler] TBinop assignment pattern found: ${found}');
+                    // trace('[XRay VariableCompiler] TBinop assignment pattern found: ${found}');
                     #end
                     found;
                 } else {
@@ -1450,7 +1450,7 @@ class VariableCompiler {
         };
         
         #if debug_variable_compiler
-        trace('[XRay VariableCompiler] Statement targets variable result: ${result}');
+        // trace('[XRay VariableCompiler] Statement targets variable result: ${result}');
         #end
         
         return result;
@@ -1472,8 +1472,8 @@ class VariableCompiler {
      */
     public function isTerminalOperation(stmt: TypedExpr, variableName: String): Bool {
         #if debug_variable_compiler
-        trace("[XRay VariableCompiler] TERMINAL OPERATION CHECK");
-        trace('[XRay VariableCompiler] Variable: ${variableName}');
+        // trace("[XRay VariableCompiler] TERMINAL OPERATION CHECK");
+        // trace('[XRay VariableCompiler] Variable: ${variableName}');
         #end
         
         var result = switch(stmt.expr) {
@@ -1483,7 +1483,7 @@ class VariableCompiler {
                 var terminalFunctions = ["Repo.all", "Repo.one", "Repo.get", "Repo.insert", "Repo.update", "Repo.delete"];
                 
                 #if debug_variable_compiler
-                trace('[XRay VariableCompiler] Function name: ${funcName}');
+                // trace('[XRay VariableCompiler] Function name: ${funcName}');
                 #end
                 
                 if (terminalFunctions.indexOf(funcName) >= 0) {
@@ -1491,7 +1491,7 @@ class VariableCompiler {
                     if (args.length > 0) {
                         var found = containsVariableReference(args[0], variableName);
                         #if debug_variable_compiler
-                        trace('[XRay VariableCompiler] Terminal function uses variable: ${found}');
+                        // trace('[XRay VariableCompiler] Terminal function uses variable: ${found}');
                         #end
                         found;
                     } else {
@@ -1506,7 +1506,7 @@ class VariableCompiler {
         };
         
         #if debug_variable_compiler
-        trace('[XRay VariableCompiler] Terminal operation result: ${result}');
+        // trace('[XRay VariableCompiler] Terminal operation result: ${result}');
         #end
         
         return result;
@@ -1527,8 +1527,8 @@ class VariableCompiler {
      */
     public function isTerminalOperationOnVariable(expr: TypedExpr, variableName: String): Bool {
         #if debug_variable_compiler
-        trace("[XRay VariableCompiler] TERMINAL OPERATION ON VARIABLE CHECK");
-        trace('[XRay VariableCompiler] Variable: ${variableName}');
+        // trace("[XRay VariableCompiler] TERMINAL OPERATION ON VARIABLE CHECK");
+        // trace('[XRay VariableCompiler] Variable: ${variableName}');
         #end
         
         var result = switch(expr.expr) {
@@ -1538,7 +1538,7 @@ class VariableCompiler {
                 var terminalFunctions = ["Repo.all", "Repo.one", "Repo.get", "Repo.insert", "Repo.update", "Repo.delete"];
                 
                 #if debug_variable_compiler
-                trace('[XRay VariableCompiler] Function name: ${funcName}');
+                // trace('[XRay VariableCompiler] Function name: ${funcName}');
                 #end
                 
                 if (terminalFunctions.indexOf(funcName) >= 0) {
@@ -1546,7 +1546,7 @@ class VariableCompiler {
                     if (args.length > 0) {
                         var found = containsVariableReference(args[0], variableName);
                         #if debug_variable_compiler
-                        trace('[XRay VariableCompiler] Terminal function uses variable: ${found}');
+                        // trace('[XRay VariableCompiler] Terminal function uses variable: ${found}');
                         #end
                         found;
                     } else {
@@ -1561,7 +1561,7 @@ class VariableCompiler {
         };
         
         #if debug_variable_compiler
-        trace('[XRay VariableCompiler] Terminal operation on variable result: ${result}');
+        // trace('[XRay VariableCompiler] Terminal operation on variable result: ${result}');
         #end
         
         return result;
@@ -1581,8 +1581,8 @@ class VariableCompiler {
      */
     public function extractFunctionNameFromCall(funcExpr: TypedExpr): String {
         #if debug_variable_compiler
-        trace("[XRay VariableCompiler] EXTRACTING FUNCTION NAME FROM CALL");
-        trace('[XRay VariableCompiler] Function expression: ${funcExpr.expr}');
+        // trace("[XRay VariableCompiler] EXTRACTING FUNCTION NAME FROM CALL");
+        // trace('[XRay VariableCompiler] Function expression: ${funcExpr.expr}');
         #end
         
         var result = switch(funcExpr.expr) {
@@ -1598,7 +1598,7 @@ class VariableCompiler {
                 };
                 var fullName = moduleName + "." + funcName;
                 #if debug_variable_compiler
-                trace('[XRay VariableCompiler] Module.function pattern: ${fullName}');
+                // trace('[XRay VariableCompiler] Module.function pattern: ${fullName}');
                 #end
                 fullName;
                 
@@ -1615,7 +1615,7 @@ class VariableCompiler {
                         var methodName = NamingHelper.toSnakeCase(cf.get().name);
                         var fullName = moduleName + "." + methodName;
                         #if debug_variable_compiler
-                        trace('[XRay VariableCompiler] Type.function pattern: ${fullName}');
+                        // trace('[XRay VariableCompiler] Type.function pattern: ${fullName}');
                         #end
                         fullName;
                     case FInstance(_, _, cf) | FAnon(cf) | FClosure(_, cf):
@@ -1630,7 +1630,7 @@ class VariableCompiler {
             case TLocal({name: funcName}):
                 // Simple function call
                 #if debug_variable_compiler
-                trace('[XRay VariableCompiler] Simple function: ${funcName}');
+                // trace('[XRay VariableCompiler] Simple function: ${funcName}');
                 #end
                 funcName;
                 
@@ -1645,19 +1645,19 @@ class VariableCompiler {
                         ef.name;
                 };
                 #if debug_variable_compiler
-                trace('[XRay VariableCompiler] Method call: ${funcName}');
+                // trace('[XRay VariableCompiler] Method call: ${funcName}');
                 #end
                 funcName;
                 
             default:
                 #if debug_variable_compiler
-                trace("[XRay VariableCompiler] Unknown function expression type");
+                // trace("[XRay VariableCompiler] Unknown function expression type");
                 #end
                 "";
         };
         
         #if debug_variable_compiler
-        trace('[XRay VariableCompiler] Final function name: ${result}');
+        // trace('[XRay VariableCompiler] Final function name: ${result}');
         #end
         
         return result;

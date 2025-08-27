@@ -1,0 +1,11 @@
+{
+  "sourceRoot": "",
+  "names": [],
+  "mappings": ";;;;;;;;AAqCC,AC5BA",
+  "version": 3,
+  "file": "eof.ex",
+  "sources": [
+  "std/StringTools.hx",
+  "Main.hx"
+]
+}

@@ -57,13 +57,13 @@ class MutabilityAnalyzer {
         };
         
         #if debug_mutability
-        trace("[MutabilityAnalyzer] Starting analysis of method");
+//         trace("[MutabilityAnalyzer] Starting analysis of method");
         #end
         
         analyzeMutations(expr, info);
         
         #if debug_mutability
-        trace('[MutabilityAnalyzer] Analysis complete: isMutating=${info.isMutating}, fields=${info.mutatedFields}');
+//         trace('[MutabilityAnalyzer] Analysis complete: isMutating=${info.isMutating}, fields=${info.mutatedFields}');
         #end
         
         return info;
@@ -95,7 +95,7 @@ class MutabilityAnalyzer {
                     }
                     
                     #if debug_mutability
-                    trace('[MutabilityAnalyzer] Found field mutation: ${fieldName}');
+//                     trace('[MutabilityAnalyzer] Found field mutation: ${fieldName}');
                     #end
                 }
                 

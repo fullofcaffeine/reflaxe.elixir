@@ -83,8 +83,8 @@ class LiveViewCompiler {
     ): String {
         
         #if debug_liveview
-        trace('[LiveViewCompiler] Compiling LiveView class: ${classType.name}');
-        trace('[LiveViewCompiler] Functions: ${funcFields.length}');
+//         trace('[LiveViewCompiler] Compiling LiveView class: ${classType.name}');
+//         trace('[LiveViewCompiler] Functions: ${funcFields.length}');
         #end
         
         // CRITICAL FIX: Use getNameOrNative() to respect @:native annotations
@@ -114,7 +114,7 @@ class LiveViewCompiler {
         result += 'end\n';
         
         #if debug_liveview
-        trace('[LiveViewCompiler] Generated LiveView: ${result.substring(0, 200)}...');
+//         trace('[LiveViewCompiler] Generated LiveView: ${result.substring(0, 200)}...');
         #end
         
         return result;

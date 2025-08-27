@@ -72,10 +72,10 @@ class ClassCompiler {
         
         #if debug_state_threading
         if (className == "JsonPrinter") {
-            trace('[XRay ClassCompiler] ====== JSONPRINTER ANALYSIS ======');
-            trace('[XRay ClassCompiler] hasStructMetadata: ${hasStructMetadata(classType)}');
-            trace('[XRay ClassCompiler] isInstanceClass: ${isInstanceClass(classType, varFields, funcFields)}');
-            trace('[XRay ClassCompiler] Final isStruct: ${isStruct}');
+            // trace('[XRay ClassCompiler] ====== JSONPRINTER ANALYSIS ======');
+            // trace('[XRay ClassCompiler] hasStructMetadata: ${hasStructMetadata(classType)}');
+            // trace('[XRay ClassCompiler] isInstanceClass: ${isInstanceClass(classType, varFields, funcFields)}');
+            // trace('[XRay ClassCompiler] Final isStruct: ${isStruct}');
         }
         #end
         var isModule = hasModuleMetadata(classType);

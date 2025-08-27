@@ -5,6 +5,7 @@ defmodule Main do
   @doc "Generated from Haxe main"
   def main() do
     i = 0
+
     (
       # Simple module-level pattern (inline for now)
       loop_helper = fn condition_fn, body_fn, loop_fn ->
@@ -24,7 +25,9 @@ defmodule Main do
         loop_helper
       )
     )
+
     j = 0
+
     (
       # Simple module-level pattern (inline for now)
       loop_helper = fn condition_fn, body_fn, loop_fn ->
@@ -44,7 +47,9 @@ defmodule Main do
         loop_helper
       )
     )
+
     counter = 10
+
     (
       # Simple module-level pattern (inline for now)
       loop_helper = fn condition_fn, body_fn, loop_fn ->
@@ -59,18 +64,21 @@ defmodule Main do
       loop_helper.(
         fn -> ((counter > 0)) end,
         fn ->
-          (
-                counter = counter - 2
-                if ((counter == 4)) do
-                throw(:break)
-              end
-              )
+          counter = counter - 2
+          if ((counter == 4)) do
+            throw(:break)
+          else
+            nil
+          end
         end,
         loop_helper
       )
     )
+
     k = 0
+
     evens = []
+
     (
       # Simple module-level pattern (inline for now)
       loop_helper = fn condition_fn, body_fn, loop_fn ->
@@ -85,18 +93,20 @@ defmodule Main do
       loop_helper.(
         fn -> ((k < 10)) end,
         fn ->
-          (
-                k + 1
-                if ((rem(k, 2) != 0)) do
-                throw(:continue)
-              end
-                evens ++ [k]
-              )
+          k + 1
+          if ((rem(k, 2) != 0)) do
+            throw(:continue)
+          else
+            nil
+          end
+          evens ++ [k]
         end,
         loop_helper
       )
     )
+
     count = 0
+
     (
       # Simple module-level pattern (inline for now)
       loop_helper = fn condition_fn, body_fn, loop_fn ->
@@ -111,17 +121,19 @@ defmodule Main do
       loop_helper.(
         fn -> true end,
         fn ->
-          (
-                count + 1
-                if ((count == 10)) do
-                throw(:break)
-              end
-              )
+          count + 1
+          if ((count == 10)) do
+            throw(:break)
+          else
+            nil
+          end
         end,
         loop_helper
       )
     )
+
     outer = 0
+
     (
       # Simple module-level pattern (inline for now)
       loop_helper = fn condition_fn, body_fn, loop_fn ->
@@ -136,9 +148,8 @@ defmodule Main do
       loop_helper.(
         fn -> ((outer < 3)) end,
         fn ->
+          inner = 0
           (
-                inner = 0
-                (
             # Simple module-level pattern (inline for now)
             loop_helper = fn condition_fn, body_fn, loop_fn ->
               if condition_fn.() do
@@ -152,22 +163,22 @@ defmodule Main do
             loop_helper.(
               fn -> ((inner < 2)) end,
               fn ->
-                (
-                      Log.trace("Nested: " <> to_string(outer) <> ", " <> to_string(inner), %{"fileName" => "Main.hx", "lineNumber" => 47, "className" => "Main", "methodName" => "main"})
-                      inner + 1
-                    )
+                Log.trace("Nested: " <> to_string(outer) <> ", " <> to_string(inner), %{"fileName" => "Main.hx", "lineNumber" => 47, "className" => "Main", "methodName" => "main"})
+                inner + 1
               end,
               loop_helper
             )
           )
-                outer + 1
-              )
+          outer + 1
         end,
         loop_helper
       )
     )
+
     a = 0
+
     b = 10
+
     (
       # Simple module-level pattern (inline for now)
       loop_helper = fn condition_fn, body_fn, loop_fn ->
@@ -182,15 +193,15 @@ defmodule Main do
       loop_helper.(
         fn -> (((a < 5) && (b > 5))) end,
         fn ->
-          (
-                a + 1
-                b - 1
-              )
+          a + 1
+          b - 1
         end,
         loop_helper
       )
     )
+
     x = 0
+
     (
       # Simple module-level pattern (inline for now)
       loop_helper = fn condition_fn, body_fn, loop_fn ->
@@ -205,22 +216,29 @@ defmodule Main do
       loop_helper.(
         fn -> ((x < 10)) end,
         fn ->
-          (
-                x + 1
-                if ((x == 5)) do
-                throw(:break)
-              end
-              )
+          x + 1
+          if ((x == 5)) do
+            throw(:break)
+          else
+            nil
+          end
         end,
         loop_helper
       )
     )
+
     Log.trace("Final i: " <> to_string(i), %{"fileName" => "Main.hx", "lineNumber" => 68, "className" => "Main", "methodName" => "main"})
+
     Log.trace("Final j: " <> to_string(j), %{"fileName" => "Main.hx", "lineNumber" => 69, "className" => "Main", "methodName" => "main"})
+
     Log.trace("Final counter: " <> to_string(counter), %{"fileName" => "Main.hx", "lineNumber" => 70, "className" => "Main", "methodName" => "main"})
+
     Log.trace("Evens: " <> Std.string(evens), %{"fileName" => "Main.hx", "lineNumber" => 71, "className" => "Main", "methodName" => "main"})
+
     Log.trace("Count from infinite: " <> to_string(count), %{"fileName" => "Main.hx", "lineNumber" => 72, "className" => "Main", "methodName" => "main"})
+
     Log.trace("Complex condition result: a=" <> to_string(a) <> ", b=" <> to_string(b), %{"fileName" => "Main.hx", "lineNumber" => 73, "className" => "Main", "methodName" => "main"})
+
     Log.trace("Do-while with break: x=" <> to_string(x), %{"fileName" => "Main.hx", "lineNumber" => 74, "className" => "Main", "methodName" => "main"})
   end
 

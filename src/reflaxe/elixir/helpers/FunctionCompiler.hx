@@ -163,11 +163,11 @@ class FunctionCompiler {
                 
                 #if debug_parameter_detection
                 if (funcName == "print" && className != null && className.indexOf("JsonPrinter") >= 0) {
-                    trace('[FunctionCompiler] ===== DEBUGGING JsonPrinter.print =====');
-                    trace('[FunctionCompiler] Function args: ${[for (arg in funcField.args) arg.tvar != null ? arg.tvar.name : arg.getName()].join(", ")}');
-                    trace('[FunctionCompiler] Detected used parameters:');
+//                     trace('[FunctionCompiler] ===== DEBUGGING JsonPrinter.print =====');
+//                     trace('[FunctionCompiler] Function args: ${[for (arg in funcField.args) arg.tvar != null ? arg.tvar.name : arg.getName()].join(", ")}');
+//                     trace('[FunctionCompiler] Detected used parameters:');
                     for (key in result.keys()) {
-                        trace('[FunctionCompiler]   ${key}: ${result.get(key) ? "USED" : "UNUSED"}');
+//                         trace('[FunctionCompiler]   ${key}: ${result.get(key) ? "USED" : "UNUSED"}');
                     }
                 }
                 #end
@@ -274,7 +274,7 @@ class FunctionCompiler {
                 compiler.variableMappingManager.compilationContext.currentFunction = funcName;
                 #if debug_variable_mapping
                 #if debug_function_compiler
-                trace('[FunctionCompiler] Set function context: ${funcName}');
+//                 trace('[FunctionCompiler] Set function context: ${funcName}');
                 #end
                 #end
             }
@@ -323,7 +323,7 @@ class FunctionCompiler {
                 #if debug_variable_mapping
                 if (requiredDeclarations.length > 0) {
                     #if debug_function_compiler
-                    trace('[FunctionCompiler] Post-compilation: Found ${requiredDeclarations.length} scope-crossing variables: [${requiredDeclarations.join(", ")}]');
+//                     trace('[FunctionCompiler] Post-compilation: Found ${requiredDeclarations.length} scope-crossing variables: [${requiredDeclarations.join(", ")}]');
                     #end
                 }
                 #end
@@ -341,7 +341,7 @@ class FunctionCompiler {
                     bodyWithDeclarations = declarationsStr + compiledBody;
                     #if debug_variable_mapping
                     #if debug_function_compiler
-                    trace('[FunctionCompiler] ✓ Added ${requiredDeclarations.length} pre-declarations to function body');
+//                     trace('[FunctionCompiler] ✓ Added ${requiredDeclarations.length} pre-declarations to function body');
                     #end
                     #end
                 }
@@ -482,7 +482,7 @@ class FunctionCompiler {
             usedParams.set(name, false); // Initially mark as unused
             
             #if debug_parameter_detection
-            trace('[detectUsedParameters] Added parameter to check: ${name}');
+//             trace('[detectUsedParameters] Added parameter to check: ${name}');
             #end
         }
         
@@ -496,7 +496,7 @@ class FunctionCompiler {
                     if (paramNames.exists(tvar.name)) {
                         usedParams.set(tvar.name, true);
                         #if debug_parameter_detection
-                        trace('[detectUsedParameters] PARAMETER USED: ${tvar.name}');
+//                         trace('[detectUsedParameters] PARAMETER USED: ${tvar.name}');
                         #end
                     } else {
                         // CRITICAL FIX: Handle Haxe's variable renaming for shadowing avoidance
@@ -510,13 +510,13 @@ class FunctionCompiler {
                             // This is a renamed version of a parameter!
                             usedParams.set(baseName, true);
                             #if debug_parameter_detection
-                            trace('[detectUsedParameters] RENAMED PARAMETER DETECTED: ${tvar.name} -> ${baseName}');
+//                             trace('[detectUsedParameters] RENAMED PARAMETER DETECTED: ${tvar.name} -> ${baseName}');
                             #end
                         }
                         #if debug_parameter_detection
                         else {
-                            trace('[detectUsedParameters] TLocal found but not a parameter: ${tvar.name}');
-                            trace('[detectUsedParameters] Known parameters: ${[for (k in paramNames.keys()) k].join(", ")}');
+//                             trace('[detectUsedParameters] TLocal found but not a parameter: ${tvar.name}');
+//                             trace('[detectUsedParameters] Known parameters: ${[for (k in paramNames.keys()) k].join(", ")}');
                         }
                         #end
                     }
@@ -543,7 +543,7 @@ class FunctionCompiler {
                     // CRITICAL: The switch expression contains the parameter being matched
                     // For example: switch(spec) generates elem(spec, 0) in Elixir
                     #if debug_function_compiler
-                    trace('[FunctionCompiler] TSwitch found, switchExpr type: ${switchExpr.expr}');
+//                     trace('[FunctionCompiler] TSwitch found, switchExpr type: ${switchExpr.expr}');
                     #end
                     checkExpression(switchExpr);
                     for (c in cases) {
@@ -603,9 +603,9 @@ class FunctionCompiler {
                     
                 case TNew(classTypeRef, params, el):
                     #if debug_parameter_detection
-                    trace('[detectUsedParameters] TNew found with ${el.length} arguments');
+//                     trace('[detectUsedParameters] TNew found with ${el.length} arguments');
                     for (i in 0...el.length) {
-                        trace('[detectUsedParameters] Arg ${i}: ${el[i].expr}');
+//                         trace('[detectUsedParameters] Arg ${i}: ${el[i].expr}');
                     }
                     #end
                     for (e in el) {

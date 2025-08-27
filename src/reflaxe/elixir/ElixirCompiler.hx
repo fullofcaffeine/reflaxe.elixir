@@ -963,7 +963,7 @@ class ElixirCompiler extends DirectToStringCompiler {
      */
     public override function compileExpression(expr: TypedExpr, topLevel: Bool = false): Null<String> {
         #if debug_state_threading
-        trace('[XRay ElixirCompiler] ✓ compileExpression override called');
+        // trace('[XRay ElixirCompiler] ✓ compileExpression override called');
         #end
         
         // CRITICAL: Must call parent to handle __elixir__() target code injection
@@ -975,13 +975,13 @@ class ElixirCompiler extends DirectToStringCompiler {
         // First, check if this is being called at the top level of a function body
         if (topLevel) {
             var exprName = Type.enumConstructor(expr.expr);
-            trace('[XRay Injection] Processing top-level expression: $exprName at pos ${expr.pos}');
+            // trace('[XRay Injection] Processing top-level expression: $exprName at pos ${expr.pos}');
         }
         switch(expr.expr) {
             case TCall(e, el): {
                 switch(e.expr) {
                     case TIdent(id) if (id == "__elixir__"):
-                        trace('[XRay Injection] Found direct __elixir__ call with ${el.length} args');
+                        // trace('[XRay Injection] Found direct __elixir__ call with ${el.length} args');
                         if (el.length > 0) {
                             switch(el[0].expr) {
                                 case TConst(TString(s)):
@@ -991,13 +991,13 @@ class ElixirCompiler extends DirectToStringCompiler {
                             }
                         }
                     case TField(_, fa):
-                        trace('[XRay Injection] TCall with TField, not TIdent');
+                        // trace('[XRay Injection] TCall with TField, not TIdent');
                     case _:
-                        trace('[XRay Injection] TCall with other expression type');
+                        // trace('[XRay Injection] TCall with other expression type');
                 }
             }
             case TIdent(id) if (id == "__elixir__"):
-                trace('[XRay Injection] Found bare __elixir__ identifier (not in a call!)');
+                // trace('[XRay Injection] Found bare __elixir__ identifier (not in a call!)');
             case _: // Other expressions
         }
         #end
@@ -1008,20 +1008,20 @@ class ElixirCompiler extends DirectToStringCompiler {
             case TCall(e, args):
                 switch(e.expr) {
                     case TIdent(id) if (id == "__elixir__"):
-                        trace('[XRay ElixirCompiler PRE-CHECK] Found TCall(TIdent("__elixir__"), args)');
-                        trace('[XRay ElixirCompiler PRE-CHECK] Args length: ${args.length}');
+                        // trace('[XRay ElixirCompiler PRE-CHECK] Found TCall(TIdent("__elixir__"), args)');
+                        // trace('[XRay ElixirCompiler PRE-CHECK] Args length: ${args.length}');
                         if (args.length > 0) {
                             switch(args[0].expr) {
                                 case TConst(TString(s)):
-                                    trace('[XRay ElixirCompiler PRE-CHECK] First arg is string: ${s.substr(0, 50)}...');
+                                    // trace('[XRay ElixirCompiler PRE-CHECK] First arg is string: ${s.substr(0, 50)}...');
                                 case _:
-                                    trace('[XRay ElixirCompiler PRE-CHECK] First arg is not a string constant');
+                                    // trace('[XRay ElixirCompiler PRE-CHECK] First arg is not a string constant');
                             }
                         }
                     case _:
                 }
             case TIdent(id) if (id == "__elixir__"):
-                trace('[XRay ElixirCompiler PRE-CHECK] ⚠️ Found bare TIdent("__elixir__") - void context issue!');
+                // trace('[XRay ElixirCompiler PRE-CHECK] ⚠️ Found bare TIdent("__elixir__") - void context issue!');
             case _:
         }
         #end
@@ -1030,17 +1030,17 @@ class ElixirCompiler extends DirectToStringCompiler {
         
         #if debug_elixir_injection
         if (parentResult != null) {
-            trace('[XRay ElixirCompiler] ✓ Parent returned injection result: ${parentResult.substr(0, Std.int(Math.min(parentResult.length, 100)))}...');
+            // trace('[XRay ElixirCompiler] ✓ Parent returned injection result: ${parentResult.substr(0, Std.int(Math.min(parentResult.length, 100)))}...');
         } else {
             switch(expr.expr) {
                 case TCall(e, _):
                     switch(e.expr) {
                         case TIdent(id) if (id == "__elixir__"):
-                            trace('[XRay ElixirCompiler] ⚠️ Parent returned null for __elixir__ call!');
+                            // trace('[XRay ElixirCompiler] ⚠️ Parent returned null for __elixir__ call!');
                         case _:
                     }
                 case TIdent(id) if (id == "__elixir__"):
-                    trace('[XRay ElixirCompiler] ⚠️ Parent returned null for bare __elixir__ identifier!');
+                    // trace('[XRay ElixirCompiler] ⚠️ Parent returned null for bare __elixir__ identifier!');
                 case _:
             }
         }
@@ -1153,13 +1153,13 @@ class ElixirCompiler extends DirectToStringCompiler {
         if (!sourceMapOutputEnabled) return;
         
         #if debug_source_mapping_verbose
-        trace('[SourceMapping] trackPosition called with pos: ${pos}');
+//         trace('[SourceMapping] trackPosition called with pos: ${pos}');
         #end
         
         if (currentSourceMapWriter != null && pos != null) {
             currentSourceMapWriter.mapPosition(pos);
             #if debug_source_mapping_verbose
-            trace('[SourceMapping] Position tracked successfully');
+//             trace('[SourceMapping] Position tracked successfully');
             #end
         }
     }
@@ -1483,13 +1483,13 @@ class ElixirCompiler extends DirectToStringCompiler {
                 
                 // Always trace assign_multiple calls to understand what's happening
                 if (fieldName == "assign_multiple") {
-                    trace('[FOUND assign_multiple] Class: ${cls.name}, Native: ${cls.getNameOrNative()}, Module: ${className}, isExtern: ${cls.isExtern}');
+//                     trace('[FOUND assign_multiple] Class: ${cls.name}, Native: ${cls.getNameOrNative()}, Module: ${className}, isExtern: ${cls.isExtern}');
                 }
                 
                 #if debug_phoenix_liveview
-                trace('[DEBUG FStatic] Class name: ${cls.name}, isExtern: ${cls.isExtern}');
-                trace('[DEBUG FStatic] Module name: ${className}');
-                trace('[DEBUG FStatic] Field name: ${fieldName}');
+//                 trace('[DEBUG FStatic] Class name: ${cls.name}, isExtern: ${cls.isExtern}');
+//                 trace('[DEBUG FStatic] Module name: ${className}');
+//                 trace('[DEBUG FStatic] Field name: ${fieldName}');
                 #end
                 
                 // Special handling for Phoenix modules
@@ -1501,16 +1501,16 @@ class ElixirCompiler extends DirectToStringCompiler {
                 // Special handling for Phoenix.LiveView module (check native name for generic classes)
                 else if ((cls.getNameOrNative() == "Phoenix.LiveView" || cls.name == "LiveView") && cls.isExtern) {
                     #if debug_phoenix_liveview
-                    trace('[DEBUG Phoenix.LiveView] Detected LiveView class: ${cls.name}');
-                    trace('[DEBUG Phoenix.LiveView] Original field name: ${classFieldRef.get().name}');
-                    trace('[DEBUG Phoenix.LiveView] Snake_case field name: ${fieldName}');
+//                     trace('[DEBUG Phoenix.LiveView] Detected LiveView class: ${cls.name}');
+//                     trace('[DEBUG Phoenix.LiveView] Original field name: ${classFieldRef.get().name}');
+//                     trace('[DEBUG Phoenix.LiveView] Snake_case field name: ${fieldName}');
                     #end
                     
                     className = "Phoenix.LiveView";
                     // Map assignMultiple to assign (Phoenix.LiveView uses assign for both single and multiple)
                     if (fieldName == "assign_multiple") {
                         #if debug_phoenix_liveview
-                        trace('[DEBUG Phoenix.LiveView] Mapping assign_multiple -> assign');
+//                         trace('[DEBUG Phoenix.LiveView] Mapping assign_multiple -> assign');
                         #end
                         fieldName = "assign";
                     }
@@ -1692,12 +1692,12 @@ class ElixirCompiler extends DirectToStringCompiler {
         switch (v.t) {
             case TFun(_, _):
                 // This variable's TYPE is a function - it's a function reference
-                trace('[XRay ElixirCompiler] Variable ${originalName} has TFun type - IS a function reference');
+                // trace('[XRay ElixirCompiler] Variable ${originalName} has TFun type - IS a function reference');
                 return true;
             case _:
                 // NOT a function type - it's just a regular variable
                 // Even if there's a static method with the same name, this is still just a variable!
-                trace('[XRay ElixirCompiler] Variable ${originalName} does NOT have TFun type - NOT a function reference');
+                // trace('[XRay ElixirCompiler] Variable ${originalName} does NOT have TFun type - NOT a function reference');
                 return false;
         }
     }
@@ -2332,7 +2332,7 @@ class ElixirCompiler extends DirectToStringCompiler {
      */
     public function getFieldName(fa: FieldAccess): String {
         #if debug_method_name_resolution
-        trace('[XRay getFieldName] Processing FieldAccess: ${fa}');
+        // trace('[XRay getFieldName] Processing FieldAccess: ${fa}');
         #end
         
         // Use Reflaxe's standardized helper instead of manual extraction
@@ -2340,7 +2340,7 @@ class ElixirCompiler extends DirectToStringCompiler {
         var name = nameMeta.getNameOrNative();
         
         #if debug_method_name_resolution
-        trace('[XRay getFieldName] Field name: ${nameMeta.name}, has @:native: ${nameMeta.hasMeta(":native")}, resolved: ${name}');
+        // trace('[XRay getFieldName] Field name: ${nameMeta.name}, has @:native: ${nameMeta.hasMeta(":native")}, resolved: ${name}');
         #end
         
         // Convert to snake_case for Elixir if not already specified by @:native

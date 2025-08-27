@@ -26,9 +26,8 @@ defmodule BackgroundWorker do
   end
 
   # Static functions
-  @doc "Function start_link"
-  @spec start_link(String.t()) :: term()
-  def start_link(args) do
+  @doc "Generated from Haxe start_link"
+  def start_link(_args) do
     %{"_0" => "ok", "_1" => "background_worker_pid"}
   end
 

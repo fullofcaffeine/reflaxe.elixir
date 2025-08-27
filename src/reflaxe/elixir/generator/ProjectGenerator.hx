@@ -839,7 +839,7 @@ class HelloWorld {
 		
 		// Copy foundation documentation from library
 		var libPath = getLibraryPath();
-		var sourceLLMPath = Path.join([libPath, "documentation", "llm"]);
+		var sourceLLMPath = Path.join([libPath, "docs", "10-contributing", "llm-integration"]);
 		
 		if (FileSystem.exists(sourceLLMPath)) {
 			// Copy foundation docs

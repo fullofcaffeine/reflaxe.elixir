@@ -53,7 +53,7 @@ class TypeResolutionCompiler {
      */
     public function getElixirTypeFromHaxeType(type: Type): String {
         #if debug_type_resolution
-        trace('[TypeResolutionCompiler] Resolving Haxe type to Elixir: ${type}');
+//         trace('[TypeResolutionCompiler] Resolving Haxe type to Elixir: ${type}');
         #end
         
         var result = switch (type) {
@@ -75,7 +75,7 @@ class TypeResolutionCompiler {
         };
         
         #if debug_type_resolution
-        trace('[TypeResolutionCompiler] Type resolution result: ${result}');
+//         trace('[TypeResolutionCompiler] Type resolution result: ${result}');
         #end
         
         return result;
@@ -93,7 +93,7 @@ class TypeResolutionCompiler {
      */
     public function isBuiltinAbstractType(name: String): Bool {
         #if debug_type_resolution
-        trace('[TypeResolutionCompiler] Checking if builtin abstract type: ${name}');
+//         trace('[TypeResolutionCompiler] Checking if builtin abstract type: ${name}');
         #end
         
         var result = switch (name) {
@@ -132,7 +132,7 @@ class TypeResolutionCompiler {
         };
         
         #if debug_type_resolution
-        trace('[TypeResolutionCompiler] Builtin abstract type check result: ${result}');
+//         trace('[TypeResolutionCompiler] Builtin abstract type check result: ${result}');
         #end
         
         return result;
@@ -150,7 +150,7 @@ class TypeResolutionCompiler {
      */
     public function isStandardLibraryClass(name: String): Bool {
         #if debug_type_resolution
-        trace('[TypeResolutionCompiler] Checking if standard library class: ${name}');
+//         trace('[TypeResolutionCompiler] Checking if standard library class: ${name}');
         #end
         
         var result = switch (name) {
@@ -184,7 +184,7 @@ class TypeResolutionCompiler {
         };
         
         #if debug_type_resolution
-        trace('[TypeResolutionCompiler] Standard library class check result: ${result}');
+//         trace('[TypeResolutionCompiler] Standard library class check result: ${result}');
         #end
         
         return result;
@@ -202,7 +202,7 @@ class TypeResolutionCompiler {
      */
     public function getCurrentModuleContent(abstractType: AbstractType): Null<String> {
         #if debug_type_resolution
-        trace('[TypeResolutionCompiler] Getting current module content for: ${abstractType.name}');
+//         trace('[TypeResolutionCompiler] Getting current module content for: ${abstractType.name}');
         #end
         
         // For now, return a simple placeholder
@@ -210,7 +210,7 @@ class TypeResolutionCompiler {
         var result = "";
         
         #if debug_type_resolution
-        trace('[TypeResolutionCompiler] Module content retrieved (length: ${result.length})');
+//         trace('[TypeResolutionCompiler] Module content retrieved (length: ${result.length})');
         #end
         
         return result;
@@ -229,13 +229,13 @@ class TypeResolutionCompiler {
      */
     public function addTypeDefinition(content: String, typeAlias: String): String {
         #if debug_type_resolution
-        trace('[TypeResolutionCompiler] Adding type definition: ${typeAlias}');
+//         trace('[TypeResolutionCompiler] Adding type definition: ${typeAlias}');
         #end
         
         var result = content + "\n  " + typeAlias + "\n";
         
         #if debug_type_resolution
-        trace('[TypeResolutionCompiler] Type definition added, new content length: ${result.length}');
+//         trace('[TypeResolutionCompiler] Type definition added, new content length: ${result.length}');
         #end
         
         return result;
@@ -253,14 +253,14 @@ class TypeResolutionCompiler {
      */
     public function updateCurrentModuleContent(abstractType: AbstractType, content: String): Void {
         #if debug_type_resolution
-        trace('[TypeResolutionCompiler] Updating module content for: ${abstractType.name} (length: ${content.length})');
+//         trace('[TypeResolutionCompiler] Updating module content for: ${abstractType.name} (length: ${content.length})');
         #end
         
         // For now, this is a placeholder - in a full implementation,
         // this would update the module's content in the output system
         
         #if debug_type_resolution
-        trace('[TypeResolutionCompiler] Module content update completed');
+//         trace('[TypeResolutionCompiler] Module content update completed');
         #end
     }
 
@@ -276,7 +276,7 @@ class TypeResolutionCompiler {
      */
     public function compileTypedefImpl(defType: DefType): Null<String> {
         #if debug_type_resolution
-        trace('[TypeResolutionCompiler] Ignoring typedef compilation: ${defType.name}');
+//         trace('[TypeResolutionCompiler] Ignoring typedef compilation: ${defType.name}');
         #end
         
         // Following BaseCompiler recommendation: ignore typedefs since
@@ -286,7 +286,7 @@ class TypeResolutionCompiler {
         // @typedoc/@type directives outside modules.
         
         #if debug_type_resolution
-        trace('[TypeResolutionCompiler] Typedef ignored as recommended by BaseCompiler');
+//         trace('[TypeResolutionCompiler] Typedef ignored as recommended by BaseCompiler');
         #end
         
         return null;
@@ -304,7 +304,7 @@ class TypeResolutionCompiler {
      */
     public function generateTypeAlias(abstractType: AbstractType): String {
         #if debug_type_resolution
-        trace('[TypeResolutionCompiler] Generating type alias for: ${abstractType.name}');
+//         trace('[TypeResolutionCompiler] Generating type alias for: ${abstractType.name}');
         #end
         
         // Generate basic type alias based on underlying type
@@ -312,7 +312,7 @@ class TypeResolutionCompiler {
         var result = "@type ${abstractType.name.toLowerCase()}() :: ${underlyingType}";
         
         #if debug_type_resolution
-        trace('[TypeResolutionCompiler] Generated type alias: ${result}');
+//         trace('[TypeResolutionCompiler] Generated type alias: ${result}');
         #end
         
         return result;
@@ -330,7 +330,7 @@ class TypeResolutionCompiler {
      */
     public function resolveFunctionTypeSpec(funcType: Type): String {
         #if debug_type_resolution
-        trace('[TypeResolutionCompiler] Resolving function type spec');
+//         trace('[TypeResolutionCompiler] Resolving function type spec');
         #end
         
         // Simplified function type resolution
@@ -338,7 +338,7 @@ class TypeResolutionCompiler {
         var result = "(...) :: term()";
         
         #if debug_type_resolution
-        trace('[TypeResolutionCompiler] Function type spec: ${result}');
+//         trace('[TypeResolutionCompiler] Function type spec: ${result}');
         #end
         
         return result;

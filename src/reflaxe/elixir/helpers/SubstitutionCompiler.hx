@@ -80,9 +80,9 @@ class SubstitutionCompiler {
      */
     public function compileExpressionWithTVarSubstitution(expr: TypedExpr, sourceTVar: TVar, targetVarName: String): String {
         #if debug_substitution_compiler
-        trace("[XRay SubstitutionCompiler] TVAR SUBSTITUTION START");
-        trace('[XRay SubstitutionCompiler] Source TVar: ${compiler.getOriginalVarName(sourceTVar)}');
-        trace('[XRay SubstitutionCompiler] Target name: ${targetVarName}');
+        // trace("[XRay SubstitutionCompiler] TVAR SUBSTITUTION START");
+        // trace('[XRay SubstitutionCompiler] Source TVar: ${compiler.getOriginalVarName(sourceTVar)}');
+        // trace('[XRay SubstitutionCompiler] Target name: ${targetVarName}');
         #end
         
         switch (expr.expr) {
@@ -92,7 +92,7 @@ class SubstitutionCompiler {
                 var sourceVarName = compiler.getOriginalVarName(sourceTVar);
                 
                 #if debug_substitution_compiler
-                trace('[XRay SubstitutionCompiler] Checking TLocal: ${varName} vs ${sourceVarName}');
+                // trace('[XRay SubstitutionCompiler] Checking TLocal: ${varName} vs ${sourceVarName}');
                 #end
                 
                 // TVar-based variable identification for reliable lambda parameter substitution
@@ -101,7 +101,7 @@ class SubstitutionCompiler {
                 if (v == sourceTVar) {
                     // Exact object match - this is definitely the same variable
                     #if debug_substitution_compiler
-                    trace("[XRay SubstitutionCompiler] ✓ EXACT TVAR MATCH");
+                    // trace("[XRay SubstitutionCompiler] ✓ EXACT TVAR MATCH");
                     #end
                     return targetVarName;
                 }
@@ -110,7 +110,7 @@ class SubstitutionCompiler {
                 // If both have the same original name, they're likely the same logical variable
                 if (varName == sourceVarName && varName != null && varName != "") {
                     #if debug_substitution_compiler
-                    trace("[XRay SubstitutionCompiler] ✓ NAME-BASED FALLBACK MATCH");
+                    // trace("[XRay SubstitutionCompiler] ✓ NAME-BASED FALLBACK MATCH");
                     #end
                     return targetVarName;
                 }
@@ -118,14 +118,14 @@ class SubstitutionCompiler {
                 // Use helper function for aggressive substitution as fallback
                 if (shouldSubstituteVariable(varName, null, true)) {
                     #if debug_substitution_compiler
-                    trace("[XRay SubstitutionCompiler] ✓ AGGRESSIVE PATTERN MATCH");
+                    // trace("[XRay SubstitutionCompiler] ✓ AGGRESSIVE PATTERN MATCH");
                     #end
                     return targetVarName;
                 }
                 
                 // Not a match - compile normally
                 #if debug_substitution_compiler
-                trace("[XRay SubstitutionCompiler] ✗ NO MATCH - COMPILE NORMALLY");
+                // trace("[XRay SubstitutionCompiler] ✗ NO MATCH - COMPILE NORMALLY");
                 #end
                 return compiler.compileExpression(expr);
                 
@@ -245,8 +245,8 @@ class SubstitutionCompiler {
      */
     public function compileExpressionWithSubstitution(expr: TypedExpr, sourceVar: String, targetVar: String): String {
         #if debug_substitution_compiler
-        trace("[XRay SubstitutionCompiler] STRING SUBSTITUTION START");
-        trace('[XRay SubstitutionCompiler] Source var: ${sourceVar} -> Target var: ${targetVar}');
+        // trace("[XRay SubstitutionCompiler] STRING SUBSTITUTION START");
+        // trace('[XRay SubstitutionCompiler] Source var: ${sourceVar} -> Target var: ${targetVar}');
         #end
         
         switch (expr.expr) {
@@ -255,7 +255,7 @@ class SubstitutionCompiler {
                 // Use helper function for consistent substitution logic
                 if (shouldSubstituteVariable(varName, sourceVar, false)) {
                     #if debug_substitution_compiler
-                    trace('[XRay SubstitutionCompiler] ✓ SUBSTITUTING: ${varName} -> ${targetVar}');
+                    // trace('[XRay SubstitutionCompiler] ✓ SUBSTITUTING: ${varName} -> ${targetVar}');
                     #end
                     return targetVar;
                 }
@@ -337,8 +337,8 @@ class SubstitutionCompiler {
         }
         
         #if debug_substitution_compiler
-        trace("[XRay SubstitutionCompiler] RENAMING START");
-        trace('[XRay SubstitutionCompiler] Renamings: ${[for (k => v in renamings) k + " -> " + v].join(", ")}');
+        // trace("[XRay SubstitutionCompiler] RENAMING START");
+        // trace('[XRay SubstitutionCompiler] Renamings: ${[for (k => v in renamings) k + " -> " + v].join(", ")}');
         #end
         
         switch (expr.expr) {
@@ -348,7 +348,7 @@ class SubstitutionCompiler {
                 if (renamings.exists(varName)) {
                     var newName = renamings.get(varName);
                     #if debug_substitution_compiler
-                    trace('[XRay SubstitutionCompiler] ✓ RENAMING: ${varName} -> ${newName}');
+                    // trace('[XRay SubstitutionCompiler] ✓ RENAMING: ${varName} -> ${newName}');
                     #end
                     return newName;
                 }
@@ -564,13 +564,13 @@ class SubstitutionCompiler {
         var modifiedVars = new Array<{name: String, type: String}>();
         
         #if debug_substitution_compiler
-        trace("[XRay SubstitutionCompiler] EXTRACT MODIFIED VARIABLES START");
+        // trace("[XRay SubstitutionCompiler] EXTRACT MODIFIED VARIABLES START");
         #end
         
         extractModifiedVariablesRecursive(expr, modifiedVars);
         
         #if debug_substitution_compiler
-        trace('[XRay SubstitutionCompiler] Found modified variables: ${modifiedVars.map(v -> v.name).join(", ")}');
+        // trace('[XRay SubstitutionCompiler] Found modified variables: ${modifiedVars.map(v -> v.name).join(", ")}');
         #end
         
         return modifiedVars;
@@ -683,8 +683,8 @@ class SubstitutionCompiler {
      */
     public function compileExpressionWithVarMapping(expr: TypedExpr, sourceVar: String, targetVar: String): String {
         #if debug_substitution_compiler
-        trace("[XRay SubstitutionCompiler] VAR MAPPING START");
-        trace('[XRay SubstitutionCompiler] Source var: ${sourceVar} -> Target var: ${targetVar}');
+        // trace("[XRay SubstitutionCompiler] VAR MAPPING START");
+        // trace('[XRay SubstitutionCompiler] Source var: ${sourceVar} -> Target var: ${targetVar}');
         #end
         
         // Simplified: Always use aggressive substitution for consistency
@@ -713,8 +713,8 @@ class SubstitutionCompiler {
      */
     public function compileExpressionWithAggressiveSubstitution(expr: TypedExpr, targetVar: String): String {
         #if debug_substitution_compiler
-        trace("[XRay SubstitutionCompiler] AGGRESSIVE SUBSTITUTION START");
-        trace('[XRay SubstitutionCompiler] Target var: ${targetVar}');
+        // trace("[XRay SubstitutionCompiler] AGGRESSIVE SUBSTITUTION START");
+        // trace('[XRay SubstitutionCompiler] Target var: ${targetVar}');
         #end
         
         switch (expr.expr) {
@@ -723,7 +723,7 @@ class SubstitutionCompiler {
                 // Use helper function for clean, maintainable variable substitution logic
                 if (shouldSubstituteVariable(varName, null, true)) {
                     #if debug_substitution_compiler
-                    trace('[XRay SubstitutionCompiler] ✓ AGGRESSIVE SUBSTITUTING: ${varName} -> ${targetVar}');
+                    // trace('[XRay SubstitutionCompiler] ✓ AGGRESSIVE SUBSTITUTING: ${varName} -> ${targetVar}');
                     #end
                     return targetVar;
                 }
@@ -801,8 +801,8 @@ class SubstitutionCompiler {
      */
     public function extractTransformationFromBodyWithTVar(expr: TypedExpr, sourceTVar: TVar, targetVarName: String): String {
         #if debug_substitution_compiler
-        trace("[XRay SubstitutionCompiler] EXTRACT TRANSFORMATION (TVAR) START");
-        trace('[XRay SubstitutionCompiler] Source TVar: ${compiler.getOriginalVarName(sourceTVar)} -> Target: ${targetVarName}');
+        // trace("[XRay SubstitutionCompiler] EXTRACT TRANSFORMATION (TVAR) START");
+        // trace('[XRay SubstitutionCompiler] Source TVar: ${compiler.getOriginalVarName(sourceTVar)} -> Target: ${targetVarName}');
         #end
         
         switch (expr.expr) {
@@ -872,8 +872,8 @@ class SubstitutionCompiler {
      */
     public function extractTransformationFromBody(expr: TypedExpr, sourceVar: String, targetVar: String): String {
         #if debug_substitution_compiler
-        trace("[XRay SubstitutionCompiler] EXTRACT TRANSFORMATION (STRING) START");
-        trace('[XRay SubstitutionCompiler] Source var: ${sourceVar} -> Target var: ${targetVar}');
+        // trace("[XRay SubstitutionCompiler] EXTRACT TRANSFORMATION (STRING) START");
+        // trace('[XRay SubstitutionCompiler] Source var: ${sourceVar} -> Target var: ${targetVar}');
         #end
         
         switch (expr.expr) {
@@ -940,8 +940,8 @@ class SubstitutionCompiler {
      */
     public function extractTransformationFromBodyWithAggressiveSubstitution(expr: TypedExpr, targetVar: String): String {
         #if debug_substitution_compiler
-        trace("[XRay SubstitutionCompiler] EXTRACT TRANSFORMATION (AGGRESSIVE) START");
-        trace('[XRay SubstitutionCompiler] Target var: ${targetVar}');
+        // trace("[XRay SubstitutionCompiler] EXTRACT TRANSFORMATION (AGGRESSIVE) START");
+        // trace('[XRay SubstitutionCompiler] Target var: ${targetVar}');
         #end
         
         // Simply compile the expression with aggressive substitution
