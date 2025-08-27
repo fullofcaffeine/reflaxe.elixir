@@ -58,8 +58,16 @@ class ExpressionVariantCompiler {
      * WHY: Critical entry point that handles _this parameter mapping consistently
      * WHAT: Routes expressions through state threading logic before standard compilation
      * HOW: Check _this mappings first, then delegate to expressionDispatcher
+     * 
+     * SOURCE MAP SUPPORT: Tracks expression positions when source maps are enabled.
+     * Zero overhead when disabled - early return pattern ensures no performance impact.
      */
     public function compileExpressionImpl(expr: TypedExpr, topLevel: Bool): Null<String> {
+        // PERFORMANCE: Zero-overhead position tracking - only when source maps enabled
+        if (compiler.sourceMapOutputEnabled && expr != null && expr.pos != null) {
+            compiler.trackPosition(expr.pos);
+        }
+        
         #if debug_expression_variants
         trace('[XRay ExpressionVariantCompiler] ✓ compileExpressionImpl called');
         #end
@@ -131,7 +139,14 @@ class ExpressionVariantCompiler {
                 // Continue with normal compilation
         }
         
-        return compiler.expressionDispatcher.compileExpression(expr, topLevel);
+        var result = compiler.expressionDispatcher.compileExpression(expr, topLevel);
+        
+        // PERFORMANCE: Track output only when source maps enabled
+        if (compiler.sourceMapOutputEnabled && result != null) {
+            compiler.trackOutput(result);
+        }
+        
+        return result;
     }
 
     /**
