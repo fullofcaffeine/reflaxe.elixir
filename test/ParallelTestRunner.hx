@@ -417,9 +417,27 @@ class TestWorker {
         while (attempts < maxAttempts) {
             try {
                 if (!sys.FileSystem.exists(lockFile)) {
-                    // Try to create lock file atomically
-                    sys.io.File.saveContent(lockFile, 'locked by worker ${id}');
+                    // Try to create lock file atomically with timestamp
+                    final timestamp = Std.string(haxe.Timer.stamp());
+                    sys.io.File.saveContent(lockFile, 'locked by worker ${id} at ${timestamp}');
                     return; // Successfully acquired lock
+                } else {
+                    // Check if lock is stale (older than 35 seconds - slightly more than test timeout)
+                    final content = sys.io.File.getContent(lockFile);
+                    if (content.indexOf(" at ") > -1) {
+                        final parts = content.split(" at ");
+                        if (parts.length > 1) {
+                            final lockTime = Std.parseFloat(parts[parts.length - 1]);
+                            if (!Math.isNaN(lockTime)) {
+                                final age = haxe.Timer.stamp() - lockTime;
+                                if (age > 35.0) {
+                                    // Stale lock detected - remove it
+                                    sys.FileSystem.deleteFile(lockFile);
+                                    continue; // Try to acquire again
+                                }
+                            }
+                        }
+                    }
                 }
             } catch (e: Dynamic) {
                 // Lock creation failed, someone else got it
@@ -473,6 +491,9 @@ class TestWorker {
             } catch (e: Dynamic) {
                 // Ignore cleanup errors
             }
+            
+            // CRITICAL: Release lock on timeout to prevent deadlock
+            releaseDirectoryLock();
             
             pendingResult = {
                 testName: currentTest,

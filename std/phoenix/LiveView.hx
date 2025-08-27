@@ -48,7 +48,7 @@ extern class LiveView {
 	 * @return Updated socket with new assign
 	 */
 	@:native("Phoenix.Component.assign")
-	@:overload(function<TAssigns>(socket: Socket<TAssigns>, key: String, value: Any): Socket<TAssigns> {})
+	@:overload(function<TAssigns>(socket: Socket<TAssigns>, assigns: TAssigns): Socket<TAssigns> {})
 	static function assign<TAssigns>(socket: Socket<TAssigns>, key: String, value: Any): Socket<TAssigns>;
 	
 	/**
@@ -63,10 +63,9 @@ extern class LiveView {
 	 * @param socket The LiveView socket with typed assigns
 	 * @param assigns Map or keyword list of assigns to merge (atom keys preferred)
 	 * @return Updated socket with new assigns
+	 * 
+	 * NOTE: This is an overload of the assign function above
 	 */
-	@:native("Phoenix.Component.assign")
-	@:overload(function<TAssigns>(socket: Socket<TAssigns>, assigns: TAssigns): Socket<TAssigns> {})
-	static function assign<TAssigns>(socket: Socket<TAssigns>, assigns: TAssigns): Socket<TAssigns>;
 	
 	/**
 	 * Assign multiple values to the socket using map/keyword structure
@@ -144,7 +143,7 @@ extern class LiveSocket {
 	 * @param socket - Phoenix Socket instance
 	 * @param opts - Configuration options
 	 */
-	function new(url: String, socket: Socket, ?opts: LiveSocketOptions): Void;
+	function new<T>(url: String, socket: Socket<T>, ?opts: LiveSocketOptions): Void;
 	
 	/**
 	 * Connect the LiveSocket
