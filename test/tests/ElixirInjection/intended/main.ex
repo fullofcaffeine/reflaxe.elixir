@@ -21,9 +21,9 @@ defmodule Main do
 
   @doc "Generated from Haxe testInjectionInFunction"
   def test_injection_in_function() do
-    __elixir__("Logger.info(\"Injection works in functions!\")")
+    Logger.info("Injection works in functions!")
 
-    __elixir__("IO.puts(\"Hello from function!\")")
+    IO.puts("Hello from function!")
   end
 
 end

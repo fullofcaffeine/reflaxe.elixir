@@ -1,0 +1,10 @@
+# Debug test for __elixir__() injection
+-cp ../../../std
+-cp ../../../src
+-cp .
+-lib reflaxe
+--macro reflaxe.elixir.CompilerInit.Start()
+-D elixir_output=out
+-D debug_elixir_injection
+-D debug_expression_dispatcher
+Main
