@@ -117,9 +117,9 @@ class ExpressionCompiler {
         var body = withContext(compiler, context, () -> {
             if (paramTVar != null) {
                 // Debug output to understand substitution
-                trace('ExpressionCompiler: Substituting ${paramTVar.name} (id: ${paramTVar.id}) with ${paramName}');
+                // trace('ExpressionCompiler: Substituting ${paramTVar.name} (id: ${paramTVar.id}) with ${paramName}');
                 var result = compiler.compileExpressionWithTVarSubstitution(func.expr, paramTVar, paramName);
-                trace('ExpressionCompiler: Substitution result: ${result}');
+                // trace('ExpressionCompiler: Substitution result: ${result}');
                 return result;
             } else {
                 return compiler.compileExpression(func.expr);
