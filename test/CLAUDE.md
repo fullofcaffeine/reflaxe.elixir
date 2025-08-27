@@ -1,337 +1,289 @@
-# Testing Context for Reflaxe.Elixir
+# Testing Infrastructure Documentation for Reflaxe.Elixir
 
-> **Parent Context**: See [/CLAUDE.md](/CLAUDE.md) for project-wide conventions, architecture, and core development principles
+> **Parent Context**: See [/CLAUDE.md](/CLAUDE.md) for project-wide conventions and [/docs/03-compiler-development/testing-infrastructure.md](/docs/03-compiler-development/testing-infrastructure.md) for testing principles
 
-This file contains testing-specific guidance for agents working on Reflaxe.Elixir's test infrastructure.
+## 🧪 Testing Infrastructure Overview
 
-## 🧪 Testing Architecture Overview
+The Reflaxe.Elixir testing infrastructure consists of multiple test runners and test types, each serving specific purposes in validating the compiler's functionality.
 
-### Test Types (4 Different Systems)
-1. **Snapshot Tests** (TestRunner.hx) - Compare generated Elixir against expected output
-2. **Mix Tests** (.exs files) - Validate generated code runs correctly in BEAM VM
-3. **Generator Tests** - Validate project template generation  
-4. **Integration Tests** - End-to-end compilation and execution
+## 📁 Test Directory Structure
 
-### Critical Commands
+```
+test/
+├── Test.hxml                    # Main test configuration
+├── TestRunner.hx               # Sequential test runner (reliable, slower)
+├── ParallelTest.hxml          # Parallel test configuration
+├── ParallelTestRunner.hx      # Parallel test runner (faster, has issues)
+├── TestProjectGeneratorTemplates.hxml  # Project generator tests
+└── tests/                      # Individual test cases (76 total)
+    ├── test_name/
+    │   ├── compile.hxml       # Test compilation configuration
+    │   ├── Main.hx           # Test source code
+    │   ├── intended/         # Expected output files
+    │   │   └── *.ex         # Expected Elixir files
+    │   └── out/             # Generated output (gitignored)
+    │       └── *.ex        # Generated Elixir files
+```
 
-#### Complete Test Suite
+## 🎯 Test Types
+
+### 1. Snapshot Tests (Primary Testing Method)
+- **Purpose**: Compare generated Elixir code against expected output
+- **Location**: `test/tests/*/`
+- **Validation**: Byte-for-byte comparison of generated vs intended files
+- **Count**: 76 test directories
+
+### 2. Mix Integration Tests
+- **Purpose**: Validate generated Elixir code runs correctly
+- **Location**: Project root (mix test)
+- **Validation**: Runtime behavior verification
+- **Command**: `MIX_ENV=test mix test`
+
+### 3. Project Generator Tests
+- **Purpose**: Test Mix project generation templates
+- **Location**: `test/TestProjectGeneratorTemplates.hxml`
+- **Validation**: Template generation correctness
+
+### 4. Example Integration Tests
+- **Purpose**: Full application compilation and execution
+- **Location**: `examples/todo-app/`
+- **Validation**: Real-world usage patterns
+
+## 🔧 Test Runners
+
+### Sequential Test Runner (TestRunner.hx)
+**Status**: ✅ Stable but slow
+
 ```bash
-npm test                                    # Run ALL tests (Haxe + Generator + Mix) - mandatory before commits
-npm run test:sequential                     # Same as npm test but sequential (for debugging)
-npm run test:parallel-experimental          # Experimental: parallel Haxe + parallel Mix tests
+npm run test:haxe           # Run all tests sequentially
+npx haxe test/Test.hxml     # Direct invocation
 ```
 
-#### Individual Test Categories  
+**Features**:
+- Runs tests one at a time
+- Reliable error reporting
+- Timeout protection (10 seconds per test)
+- Clear output formatting
+
+**Options**:
+- `test=name` - Run specific test
+- `update-intended` - Update expected output
+- `nocompile` - Skip Elixir compilation
+- `show-output` - Display compilation output
+
+### Parallel Test Runner (ParallelTestRunner.hx)
+**Status**: ⚠️ Has deadlock issues
+
 ```bash
-npm run test:quick                          # Haxe snapshot tests only (fastest, ~30s)
-npm run test:haxe                          # Same as test:quick - Haxe compilation tests
-npm run test:generator                     # Project template generation tests
-npm run test:mix                           # Elixir runtime tests (BEAM VM validation)
-npm run test:parallel                      # Parallel Haxe tests (default 16 workers)
-npm run test:mix-parallel                  # Mix tests with 4 concurrent cases
-npm run test:examples                      # Test all example projects
-npm run test:nocompile                     # Skip Elixir compilation for faster iteration
+npm run test:parallel       # Run tests in parallel
+npx haxe test/ParallelTest.hxml
 ```
 
-#### Specific Test Operations
+**Features**:
+- 16 concurrent workers by default
+- Work-stealing queue for load balancing
+- ~87% faster than sequential
+
+**Known Issues**:
+1. **File Lock Deadlock**: Workers can deadlock on `.parallel_lock` file
+2. **Stale Lock Detection**: Added but not fully reliable
+3. **Timeout Handling**: Doesn't always release locks properly
+4. **Progress Stalling**: Gets stuck after ~22 tests
+
+## 🐛 Current Test Infrastructure Issues
+
+### Critical Problems (As of January 2025)
+
+1. **Test Count**: Only 32/76 tests passing
+2. **Parallel Runner Hanging**: Deadlocks after processing ~22 tests
+3. **Compilation Errors**: Many tests fail due to stdlib changes
+4. **Outdated Intended Outputs**: Compiler evolution made many baselines stale
+5. **Misleading Error Messages**: "Missing compile.hxml" shown for compilation failures
+
+### Root Causes Identified
+
+1. **LiveView.hx Issues**:
+   - Missing type parameters for Socket<T>
+   - Duplicate method declarations
+   - Breaking changes in Phoenix integration
+
+2. **Lock Mechanism Flaws**:
+   - File-based locking causes deadlocks
+   - No automatic stale lock cleanup
+   - Lock not released on process timeout
+
+3. **Test Evolution Lag**:
+   - Compiler improvements not reflected in intended outputs
+   - Standard library changes breaking existing tests
+   - No automated update mechanism
+
+## 📊 Test Status Categories
+
+### ✅ Passing Tests (32/76)
+- Basic syntax tests
+- Simple compilation tests
+- Recently updated tests (arrays, router, InjectionDebug)
+
+### ❌ Failing Tests (44/76)
+- **Compilation Failures**: Tests that don't compile due to stdlib issues
+- **Output Mismatches**: Tests with outdated intended outputs
+- **Missing Baselines**: Tests without intended directories
+
+## 🔨 Common Test Operations
+
+### Running Tests
 ```bash
-haxe test/Test.hxml test=feature_name      # Run specific test (with Elixir compilation)
-haxe test/Test.hxml update-intended        # Accept new output when compiler improves
-haxe test/Test.hxml nocompile              # Skip Elixir compilation (for faster iteration)
-npm run test:update                        # Update all intended outputs
-npm run test:core                          # Run core functionality tests only
-npm run test:verify                        # Verify core functionality + cleanup
+# Full test suite (slow but reliable)
+npm run test:sequential
+
+# Parallel tests (faster but may hang)
+npm run test:parallel
+
+# Specific test
+npx haxe test/Test.hxml test=test_name
+
+# Without Elixir compilation (fast iteration)
+npx haxe test/Test.hxml test=test_name nocompile
 ```
 
-#### Performance Tuning
+### Updating Tests
 ```bash
-npx haxe test/ParallelTest.hxml -j 24      # Use 24 workers (max 32)
-npx haxe test/ParallelTest.hxml -j 32      # Maximum workers for high-core systems
-```
+# Update specific test intended output
+npx haxe test/Test.hxml test=test_name update-intended
 
-#### Development/Debugging
-```bash
-npm run test:mix-fast                      # Fast Mix tests (stale only)
-npm run test:parallel:debug                # Debug parallel test issues
-npm run clean                              # Clean all output directories
-npm run clean:ex                           # Remove all generated .ex files
-npm run clean:todo                         # Clean todo-app generated files
-```
-
-## 📋 Quick Testing Reference - When to Use What
-
-### Daily Development Workflow
-- **After small compiler changes**: `npm run test:nocompile` (~20s) - Fast output comparison only
-- **After significant changes**: `npm run test:quick` (~45s) - With Elixir compilation validation
-- **Before ANY commit**: `npm test` (~2-3min) - MANDATORY full validation
-- **After refactoring**: `npm run test:examples` - Ensure real projects still compile
-
-### Debugging Failed Tests
-- **When parallel tests fail mysteriously**: `npm run test:sequential` - Eliminates concurrency issues
-- **To test one specific feature**: `haxe test/Test.hxml test=specific_name`
-- **Parallel execution issues**: `npm run test:parallel:debug` - Simpler parallel test
-- **After fixing a bug**: Run the specific test first, then `npm test`
-
-### Performance Optimization
-- **On high-core machines (16+ cores)**: `npx haxe test/ParallelTest.hxml -j 24`
-- **Maximum speed (32+ cores)**: `npx haxe test/ParallelTest.hxml -j 32`
-- **Experimental max speed**: `npm run test:parallel-experimental` - Parallel Mix tests too
-
-### Maintenance Tasks
-- **Compiler output improved**: `npm run test:update` - Accept new intended outputs
-- **Tests leaving artifacts**: `npm run clean` - Reset all test directories
-- **Quick sanity check**: `npm run test:verify` - Core tests only
-- **Before major refactor**: `npm test && npm run test:examples` - Full baseline
-
-### Integration Testing
-- **Todo-app changes**: `cd examples/todo-app && npx haxe build-server.hxml && mix compile`
-- **Phoenix integration**: Focus on `liveview_basic`, `router`, `changeset` tests
-- **Mix runtime issues**: `npm run test:mix` - Tests actual BEAM execution
-
-### Compilation Testing (Two-Phase Validation)
-- **Default behavior**: ALL tests now compile generated Elixir with `mix compile` (like CSharp)
-- **Skip compilation**: `haxe test/Test.hxml nocompile` - For faster iteration during development
-- **What it does**: Creates minimal mix.exs, runs `mix compile` to validate syntax
-- **Timeout protection**: 5-second timeout prevents hanging on compilation issues
-- **Why default**: Catches syntax errors early, matches CSharp's testing approach
-- **Performance impact**: Adds ~1-2s per test (minimized with 5s timeout)
-- **Build artifacts**: Mix compilation creates `_build/`, `mix.exs`, etc. which are automatically excluded from snapshot comparison
-- **Exclusion list**: The following are filtered from test comparisons:
-  - `_build/` - Mix build directory
-  - `.mix/` - Mix metadata
-  - `deps/` - Dependencies
-  - `mix.exs` - Mix project file  
-  - `mix.lock` - Lock file
-  - `erl_crash.dump` - Crash dumps
-  - `*.beam` - Compiled BEAM files
-
-## 🎯 Testing Principles ⚠️ CRITICAL
-
-### ❌ NEVER Do This:
-- Modify `intended/` files manually to make tests pass
-- Remove test code to fix failures
-- Skip tests "just for a small change"
-- Ignore test failures as "unrelated"
-- Use workarounds instead of fixing root causes
-
-### ✅ ALWAYS Do This:
-- Run `npm test` after EVERY compiler modification
-- Fix the compiler source to improve output
-- Update snapshots ONLY when output legitimately improves
-- Test todo-app compilation as integration test
-- Fix ALL discovered issues, not just the primary one
-
-## 📝 Snapshot Test Methodology
-
-### Understanding Snapshot Tests
-- **Input**: Haxe source files in `test/tests/feature_name/`
-- **Process**: Compile via `compile.hxml` configuration
-- **Output**: Generated Elixir in `out/` directory
-- **Validation**: Compare against files in `intended/` directory
-
-### When to Update Snapshots
-**ONLY when the compiler legitimately improves:**
-- Better error messages
-- More idiomatic Elixir output
-- Fixed bugs that produce correct code
-- New features working as designed
-
-**NEVER update to hide problems:**
-- Compilation errors
-- Invalid Elixir syntax
-- Regression of working features
-- Workarounds for broken functionality
-
-## 🔍 Test Structure Patterns
-
-### Snapshot Test Directory Pattern
-```
-test/tests/feature_name/
-├── compile.hxml       # Compilation configuration
-├── Main.hx           # Test source code
-├── intended/         # Expected output
-│   └── main.ex      # Expected Elixir code (snake_case)
-└── out/             # Generated output (for comparison)
-```
-
-### ⚠️ CRITICAL: Snake_Case Naming Convention
-
-**ALL .ex files in intended directories MUST use snake_case naming:**
-- ✅ `main.ex` (correct) 
-- ❌ `Main.ex` (incorrect)
-- ✅ `std_types.ex` (correct)
-- ❌ `StdTypes.ex` (incorrect)
-
-**Recently Fixed (January 2025)**: Migrated 328 PascalCase intended files to snake_case to match compiler output. This resolves test failures where the compiler correctly generates snake_case but tests expected PascalCase.
-
-### Mix Test Patterns
-- Place in `test/` directory with `.exs` extension
-- Use `test_helper.ex` for common setup
-- Test that generated Elixir actually runs
-- Validate Phoenix/Ecto/OTP integrations
-
-## 🚨 Macro-Time vs Runtime Testing
-
-### CRITICAL Understanding
-**The compiler exists only at macro-time, NOT at runtime:**
-- You CANNOT unit test `ElixirCompiler` directly
-- You CANNOT instantiate compiler classes in tests
-- You MUST test the OUTPUT, not the compiler internals
-
-### Correct Testing Approach
-```haxe
-// ❌ WRONG: Cannot test compiler directly
-var compiler = new ElixirCompiler(); // ERROR: Type not found at runtime
-
-// ✅ CORRECT: Test the generated output
-// 1. Compile Haxe → Elixir
-// 2. Validate the .ex files
-// 3. Run Mix tests to ensure Elixir code works
-```
-
-## 📊 Test Integration with Development
-
-### Todo-App as Integration Benchmark
-The `examples/todo-app` serves as the **primary integration test**:
-- Tests Phoenix framework integration
-- Validates HXX template compilation  
-- Ensures router DSL functionality
-- Verifies Ecto schema generation
-- Confirms LiveView compilation
-
-**Rule**: If todo-app doesn't compile, the compiler is broken regardless of unit tests passing.
-
-### Pre-Commit Testing Protocol
-```bash
-# MANDATORY before any commit
-npm test                                    # All 180 tests must pass
-cd examples/todo-app && mix compile        # Integration validation
-```
-
-## 🏗️ Test Infrastructure Deep Dive
-
-### Test Runner Architecture
-The test suite uses multiple runners for different purposes:
-
-#### Sequential Test Runner (`TestRunner.hx`)
-- **Purpose**: Run tests one at a time with detailed output
-- **Timeout**: 10 seconds per test (prevents hangs from compilation issues)
-- **Process**: Spawns `haxe` process with `timeout` wrapper on Unix
-- **Output**: Captures stdout/stderr for validation
-- **Files**: Compares `out/` directory against `intended/` directory
-
-#### Parallel Test Runner (`ParallelTestRunner.hx`)
-- **Purpose**: Speed up test execution using worker processes
-- **Workers**: 16 concurrent workers by default
-- **Strategy**: Work-stealing queue for load balancing
-- **Performance**: ~87% improvement over sequential execution
-- **Platform**: Uses native process spawning per OS
-
-### Generated Files System
-
-#### `_GeneratedFiles.json`
-- **Generated by**: Reflaxe compiler automatically
-- **Contents**: List of all files generated during compilation
-- **Purpose**: Track what files the compiler produces
-- **Format**: JSON with file paths and metadata
-- **Note**: The `id` field increments and is ignored in comparisons
-
-#### `_GeneratedFiles.txt` (DEPRECATED)
-- **Status**: No longer generated as of January 2025
-- **Migration**: Remove from all `intended/` directories
-- **Reason**: JSON format provides better structure
-
-### File Generation Optimization
-The compiler now optimizes file generation:
-- **Only used types**: Standard library files only generated when referenced
-- **Dead code elimination**: Unused imports don't trigger file generation
-- **Result**: Smaller output, faster compilation, cleaner projects
-
-### Expected vs Actual Comparison
-
-#### Standard Output Files
-- Compare file contents exactly (after normalization)
-- Line ending normalization: `\r\n` → `\n`
-- Whitespace at end of lines is trimmed
-
-#### Stderr Validation (`expected_stderr.txt`)
-- **Purpose**: Validate compiler warnings/errors
-- **Optional**: Only checked if file exists
-- **Flexible mode**: Can strip position info for less brittle tests
-- **Usage**: For tests that verify error messages
-
-### Test Categories and Their Purpose
-
-#### Core Language Tests
-- `basic_syntax`: Fundamental Haxe→Elixir translation
-- `classes`: Class and interface compilation
-- `enums`: Algebraic data type translation
-- `arrays`: List operations and transformations
-
-#### Framework Integration Tests
-- `liveview_basic`: Phoenix LiveView compilation
-- `router`: Phoenix router DSL generation
-- `changeset`: Ecto changeset validation
-- `ecto_integration`: Database operations
-
-#### Optimization Tests
-- `temp_variable_optimization`: Temporary variable reduction
-- `unused_parameters`: Dead parameter elimination
-- `loop_patterns`: Loop-to-Enum transformation
-
-#### Pattern Matching Tests
-- `pattern_matching`: Basic switch→case compilation
-- `enhanced_patterns`: Complex pattern scenarios
-- `OrphanedEnumParameters`: Unused enum parameter handling
-
-## 🎯 Testing Anti-Patterns
-
-### Common Mistakes
-1. **Testing compiler classes directly** - They don't exist at runtime
-2. **Modifying intended files** - Fix the compiler, not the expected output
-3. **Skipping integration tests** - Unit tests alone aren't sufficient
-4. **Ignoring Mix test failures** - Generated code must actually work
-5. **Not testing with todo-app** - Missing real-world integration issues
-
-### Debugging Test Failures
-1. **Read the error carefully** - Often points to the real issue
-2. **Check recent commits** - What changed that might affect this?
-3. **Compare intended vs actual** - What's different and why?
-4. **Test manually** - Can you reproduce the issue?
-5. **Fix the root cause** - Don't patch the symptoms
-
-## 🔧 Test Maintenance Tasks
-
-### Adding a New Test
-1. Create directory: `test/tests/my_feature/`
-2. Add `compile.hxml` with compilation config
-3. Add `Main.hx` with test code
-4. Run test: `haxe test/Test.hxml test=my_feature`
-5. Review output in `out/` directory
-6. If correct: `haxe test/Test.hxml test=my_feature update-intended`
-
-### Updating Tests After Compiler Changes
-```bash
-# Update single test
-haxe test/Test.hxml test=my_feature update-intended
-
-# Update all tests (use with caution)
+# Update all intended outputs (use with caution!)
 npm run test:update
-
-# Verify updates are correct
-npm test
 ```
 
-### Dealing with Timeouts
-- **Default timeout**: 10 seconds per test
-- **Common causes**: Infinite loops in macro expansion, recursive imports
-- **Debug approach**: Run test directly with `npx haxe compile.hxml`
-- **Fix**: Usually requires fixing compiler logic, not increasing timeout
+### Debugging Tests
+```bash
+# Show compilation output
+npx haxe test/Test.hxml test=test_name show-output
+
+# Check test directly
+cd test/tests/test_name && npx haxe compile.hxml
+
+# Compare outputs manually
+diff -u test/tests/test_name/intended/ test/tests/test_name/out/
+```
+
+## 🚨 Emergency Procedures
+
+### When Parallel Tests Hang
+```bash
+# 1. Kill hanging processes
+pkill -f "haxe.*test"
+
+# 2. Remove stale lock file
+rm test/.parallel_lock
+
+# 3. Use sequential runner instead
+npm run test:sequential
+```
+
+### When Tests Report "Missing compile.hxml"
+This is usually a misleading error. The real issue is likely:
+1. Compilation failure in the test
+2. Missing test directory
+3. Current directory context issue
+
+Debug with:
+```bash
+# Check if file actually exists
+ls test/tests/test_name/compile.hxml
+
+# Try direct compilation
+cd test/tests/test_name && npx haxe compile.hxml
+```
+
+## 🎯 Test Writing Guidelines
+
+### Creating a New Test
+1. Create directory: `test/tests/my_new_test/`
+2. Add `compile.hxml`:
+```hxml
+-cp ../../../src
+-cp ../../../std
+-lib reflaxe
+-cp .
+-D elixir_output=out
+-D reflaxe_runtime
+--macro reflaxe.elixir.CompilerInit.Start()
+Main
+```
+3. Write `Main.hx` with test code
+4. Run test: `npx haxe test/Test.hxml test=my_new_test`
+5. Review output in `out/`
+6. If correct: `npx haxe test/Test.hxml test=my_new_test update-intended`
+
+### Test Naming Conventions
+- Use snake_case for test directories
+- Descriptive names indicating what's being tested
+- Group related tests with common prefixes
+
+### Test Complexity Levels
+- **Basic**: Single file, simple compilation
+- **Integration**: Multiple files, complex interactions
+- **Framework**: Phoenix/Ecto integration tests
+- **Edge Cases**: Specific bug reproductions
+
+## 🔄 Continuous Integration Considerations
+
+### Pre-Commit Checks
+```bash
+# Mandatory before any commit
+npm test                    # Must pass
+cd examples/todo-app && mix compile  # Must compile
+```
+
+### Test Performance Targets
+- Sequential: ~5 minutes for full suite
+- Parallel: ~2 minutes (when working)
+- Single test: <10 seconds
+
+## 📈 Test Infrastructure Improvement Plan
+
+### Phase 1: Stabilization (Immediate)
+- [x] Fix parallel runner timeout
+- [x] Fix LiveView compilation errors
+- [ ] Update all outdated intended outputs
+- [ ] Fix remaining compilation errors
+
+### Phase 2: Reliability (Next)
+- [ ] Replace file-based locking with better mechanism
+- [ ] Add automatic stale lock cleanup
+- [ ] Improve error reporting accuracy
+- [ ] Add test categorization
+
+### Phase 3: Performance (Future)
+- [ ] Optimize parallel execution
+- [ ] Add incremental testing
+- [ ] Implement test caching
+- [ ] Add test prioritization
+
+## 🎓 Key Learnings
+
+1. **Snapshot Testing**: Effective but requires maintenance as compiler evolves
+2. **Parallel Execution**: Tricky with file system operations and compilation
+3. **Error Messages**: Must accurately reflect actual problems
+4. **Test Evolution**: Tests must evolve with the compiler
+5. **Integration Testing**: Critical for validating real-world usage
 
 ## 📚 Related Documentation
-- [`/docs/03-compiler-development/TESTING_OVERVIEW.md`](/docs/03-compiler-development/TESTING_OVERVIEW.md) - Complete testing guide
-- [`/docs/03-compiler-development/TESTING_PRINCIPLES.md`](/docs/03-compiler-development/TESTING_PRINCIPLES.md) - Testing methodology
-- [`/docs/03-compiler-development/COMPILER_TESTING_GUIDE.md`](/docs/03-compiler-development/COMPILER_TESTING_GUIDE.md) - Compiler-specific testing
-- [`/docs/05-architecture/TESTING.md`](/docs/05-architecture/TESTING.md) - Technical infrastructure
 
-**Remember**: Testing is not separate from implementation - it IS implementation validation. Every test failure teaches us something about the system.
+- [/docs/03-compiler-development/testing-infrastructure.md](/docs/03-compiler-development/testing-infrastructure.md) - Testing principles
+- [/docs/03-compiler-development/debugging-guide.md](/docs/03-compiler-development/debugging-guide.md) - Debugging techniques
+- [/CLAUDE.md](/CLAUDE.md) - Main project context
+- [/docs/01-getting-started/development-workflow.md](/docs/01-getting-started/development-workflow.md) - Development practices
+
+## ⚠️ Critical Rules for Test Maintenance
+
+1. **Never modify intended files manually** - Always regenerate from compiler output
+2. **Test after every compiler change** - Catch regressions immediately
+3. **Update baselines only when output improves** - Don't hide problems
+4. **Fix root causes, not symptoms** - Resolve compilation errors at source
+5. **Document test purposes** - Future maintainers need context
+
+---
+
+**Remember**: The test suite is the safety net for compiler development. A broken test suite blocks all progress.
