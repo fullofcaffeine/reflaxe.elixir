@@ -51,8 +51,30 @@ test/
 
 ## 🔧 Test Runners
 
+### Make-based Parallel Test Runner (Makefile.parallel)
+**Status**: ✅ Stable and fast
+
+```bash
+npm run test:parallel              # Run all tests in parallel (default)
+npm run test:parallel test=arrays  # Run specific test
+make -f test/Makefile.parallel -j8 # Run with 8 workers
+```
+
+**Features**:
+- Uses Make's proven parallel job control (40+ years of reliability)
+- Configurable parallelism via `-j` flag (default: 4 workers)
+- Proper process management with Unix `timeout` command
+- No process accumulation or zombie issues
+- Clean summary output with pass/fail counts
+- Successfully completes all 76 tests
+
+**Implementation**:
+- Simple 106-line Makefile (vs 400+ lines of complex code)
+- Shell wrapper script for npm integration
+- No complex worker pools or file locking needed
+
 ### Sequential Test Runner (TestRunner.hx)
-**Status**: ✅ Stable but slow
+**Status**: ✅ Stable fallback option
 
 ```bash
 npm run test:haxe           # Run all tests sequentially
@@ -71,51 +93,37 @@ npx haxe test/Test.hxml     # Direct invocation
 - `nocompile` - Skip Elixir compilation
 - `show-output` - Display compilation output
 
-### Parallel Test Runner (ParallelTestRunner.hx)
-**Status**: ⚠️ Has deadlock issues
-
-```bash
-npm run test:parallel       # Run tests in parallel
-npx haxe test/ParallelTest.hxml
-```
-
-**Features**:
-- 16 concurrent workers by default
-- Work-stealing queue for load balancing
-- ~87% faster than sequential
-
-**Known Issues**:
-1. **File Lock Deadlock**: Workers can deadlock on `.parallel_lock` file
-2. **Stale Lock Detection**: Added but not fully reliable
-3. **Timeout Handling**: Doesn't always release locks properly
-4. **Progress Stalling**: Gets stuck after ~22 tests
-
 ## 🐛 Current Test Infrastructure Issues
 
-### Critical Problems (As of January 2025)
+### Status (As of August 2025)
 
-1. **Test Count**: Only 32/76 tests passing
-2. **Parallel Runner Hanging**: Deadlocks after processing ~22 tests
-3. **Compilation Errors**: Many tests fail due to stdlib changes
-4. **Outdated Intended Outputs**: Compiler evolution made many baselines stale
-5. **Misleading Error Messages**: "Missing compile.hxml" shown for compilation failures
+**Infrastructure**: ✅ FIXED - Make-based runner completes all tests without hanging
+**Test Failures**: ⚠️ Many tests have outdated intended outputs
 
-### Root Causes Identified
+### Resolved Issues
 
-1. **LiveView.hx Issues**:
-   - Missing type parameters for Socket<T>
-   - Duplicate method declarations
-   - Breaking changes in Phoenix integration
+1. **Parallel Runner Hanging**: ✅ FIXED with Make-based solution
+2. **Process Zombies**: ✅ FIXED with proper `timeout` command
+3. **File Lock Deadlocks**: ✅ FIXED by removing file locking entirely
+4. **Complex Process Management**: ✅ FIXED by using Make's built-in job control
 
-2. **Lock Mechanism Flaws**:
-   - File-based locking causes deadlocks
-   - No automatic stale lock cleanup
-   - Lock not released on process timeout
+### Remaining Issues
+
+1. **Outdated Intended Outputs**: ~71/76 tests show "Output mismatch"
+   - Compiler has evolved but test baselines haven't been updated
+   - Need to run `update-intended` to accept new output
+   
+2. **Compilation Failures**: 5 tests fail to compile
+   - elixir_injection_test
+   - enhanced_pattern_matching  
+   - loop_variable_mapping
+   - optimization_pipeline
+   - otp_supervision
 
 3. **Test Evolution Lag**:
    - Compiler improvements not reflected in intended outputs
    - Standard library changes breaking existing tests
-   - No automated update mechanism
+   - Need systematic baseline update process
 
 ## 📊 Test Status Categories
 
@@ -243,23 +251,23 @@ cd examples/todo-app && mix compile  # Must compile
 
 ## 📈 Test Infrastructure Improvement Plan
 
-### Phase 1: Stabilization (Immediate)
+### Phase 1: Infrastructure (✅ COMPLETED)
 - [x] Fix parallel runner timeout
-- [x] Fix LiveView compilation errors
+- [x] Fix process zombie issues
+- [x] Replace complex runners with Make-based solution
+- [x] Clean up all old test infrastructure
+
+### Phase 2: Test Baseline Update (Current Priority)
 - [ ] Update all outdated intended outputs
 - [ ] Fix remaining compilation errors
+- [ ] Document which tests are integration vs unit
+- [ ] Add automated baseline update CI job
 
-### Phase 2: Reliability (Next)
-- [ ] Replace file-based locking with better mechanism
-- [ ] Add automatic stale lock cleanup
-- [ ] Improve error reporting accuracy
-- [ ] Add test categorization
-
-### Phase 3: Performance (Future)
-- [ ] Optimize parallel execution
-- [ ] Add incremental testing
-- [ ] Implement test caching
-- [ ] Add test prioritization
+### Phase 3: Future Enhancements
+- [ ] Add test categorization and tagging
+- [ ] Implement incremental testing (only run affected tests)
+- [ ] Add performance benchmarking
+- [ ] Create test coverage reports
 
 ## 🎓 Key Learnings
 
