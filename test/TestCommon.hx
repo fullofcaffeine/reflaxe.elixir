@@ -11,6 +11,23 @@ using StringTools;
 class TestCommon {
     
     /**
+     * Check if a file or directory should be excluded from test comparison
+     * @param name File or directory name
+     * @return True if should be excluded
+     */
+    private static function shouldExcludeFromComparison(name: String): Bool {
+        // Exclude Mix compilation artifacts
+        return name == "_build"           // Mix build directory
+            || name == ".mix"              // Mix metadata directory
+            || name == "deps"              // Dependencies directory
+            || name == "mix.exs"           // Mix project file
+            || name == "mix.lock"          // Mix lock file
+            || name == "erl_crash.dump"    // Erlang crash dumps
+            || name == ".fetch"            // Hex fetch directory
+            || name.endsWith(".beam");     // Compiled BEAM files
+    }
+    
+    /**
      * Get all files from a directory recursively
      * @param dir Directory to scan
      * @param prefix Prefix for relative paths (optional)
@@ -21,6 +38,11 @@ class TestCommon {
         
         final files = [];
         for (item in sys.FileSystem.readDirectory(dir)) {
+            // Skip excluded files and directories
+            if (shouldExcludeFromComparison(item)) {
+                continue;
+            }
+            
             final path = haxe.io.Path.join([dir, item]);
             final relPath = prefix.length > 0 ? haxe.io.Path.join([prefix, item]) : item;
             
