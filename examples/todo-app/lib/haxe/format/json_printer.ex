@@ -37,8 +37,8 @@ defmodule JsonPrinter do
 
   # Static functions
   @doc "Generated from Haxe print"
-  def print(o, _replacer \\ nil, _space \\ nil) do
-    printer = Haxe.Format.JsonPrinter.new(replacer, space)
+  def print(o, replacer \\ nil, space \\ nil) do
+    printer = JsonPrinter.new(replacer, space)
 
     printer.write_value(o, "")
   end

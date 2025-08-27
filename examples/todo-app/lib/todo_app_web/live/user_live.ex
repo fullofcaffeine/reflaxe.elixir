@@ -78,7 +78,7 @@ defmodule TodoAppWeb.UserLive do
 
     _user = Users.get_user(user_id)
 
-    result = Users.delete_user(user)
+    result = Users.delete_user(_user)
 
     if ((result.status == "ok")) do
       users = Users.list_users(nil)

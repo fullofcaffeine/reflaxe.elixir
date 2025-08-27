@@ -16,7 +16,7 @@ defmodule TodoAppWeb.TodoLive do
 
     _assigns = %{todos: todos, filter: "all", sort_by: "created", current_user: current_user, editing_todo: nil, show_form: false, search_query: "", selected_tags: [], total_todos: todos.length, completed_todos: TodoAppWeb.TodoLive.count_completed(todos), pending_todos: TodoAppWeb.TodoLive.count_pending(todos)}
 
-    updated_socket = Phoenix.LiveView.assign(socket, assigns)
+    updated_socket = Phoenix.LiveView.assign(socket, _assigns)
 
     MountResult.ok(updated_socket)
   end
@@ -101,9 +101,9 @@ defmodule TodoAppWeb.TodoLive do
 
     changeset_params = TypeSafeConversions.event_params_to_changeset_params(params)
 
-    changeset = Todo.changeset(Server.Schemas.Todo.new(), changeset_params)
+    _changeset = Todo.changeset(Todo.new(), changeset_params)
 
-    g_array = TodoApp.Repo.insert(changeset)
+    g_array = TodoApp.Repo.insert(_changeset)
     case (case g_array do {:ok, _} -> 0; {:error, _} -> 1; _ -> -1 end) do
       {0, todo} -> g_array = elem(g_array, 1)
     g_array = TodoPubSub.broadcast(:todo_updates, TodoPubSubMessage.todo_created(todo))
@@ -263,11 +263,11 @@ defmodule TodoAppWeb.TodoLive do
   def load_todos(user_id) do
     query = Ecto.Query.from(Todo, "t")
 
-    where_conditions = Haxe.Ds.StringMap.new()
+    where_conditions = StringMap.new()
 
     _value = QueryValue.integer(user_id)
 
-    where_conditions.set("user_id", value)
+    where_conditions = Map.put(where_conditions, "user_id", _value)
 
     conditions = %{where: where_conditions}
 
@@ -447,9 +447,9 @@ defmodule TodoAppWeb.TodoLive do
 
     changeset_params = TypeSafeConversions.event_params_to_changeset_params(params)
 
-    changeset = Todo.changeset(todo, changeset_params)
+    _changeset = Todo.changeset(todo, changeset_params)
 
-    g_array = TodoApp.Repo.update(changeset)
+    g_array = TodoApp.Repo.update(_changeset)
     case (case g_array do {:ok, _} -> 0; {:error, _} -> 1; _ -> -1 end) do
       {0, updated_todo} -> g_array = elem(g_array, 1)
     g_array = TodoPubSub.broadcast(:todo_updates, TodoPubSubMessage.todo_updated(updated_todo))

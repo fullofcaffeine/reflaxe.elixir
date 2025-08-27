@@ -2283,7 +2283,39 @@ end)';
         result = StringTools.replace(result, 'Enum.at(numbers, ${indexVar})', 'item');
         
         // Replace the specific item variable name from the loop
-        result = StringTools.replace(result, itemVarName, 'item');
+        // CRITICAL: Use word boundary matching to avoid corrupting partial matches
+        // For example, if itemVarName is "t", we don't want to replace the "t" in "StringValue"
+        if (itemVarName != "item" && itemVarName.length > 0) {
+            // Only replace complete word occurrences of the variable
+            // Common patterns where the variable appears as a complete word:
+            // 1. At start: "t " or "t." or "t)" or "t,"
+            // 2. After operators: " t" or "(t" or "!t"
+            // 3. In member access: "t.field"
+            
+            // Use specific replacements for common patterns to avoid regex complexity
+            result = StringTools.replace(result, ' ${itemVarName} ', ' item ');
+            result = StringTools.replace(result, '(${itemVarName})', '(item)');
+            result = StringTools.replace(result, '(${itemVarName} ', '(item ');
+            result = StringTools.replace(result, ' ${itemVarName})', ' item)');
+            result = StringTools.replace(result, '${itemVarName}.', 'item.');
+            result = StringTools.replace(result, '!${itemVarName}', '!item');
+            result = StringTools.replace(result, '${itemVarName},', 'item,');
+            result = StringTools.replace(result, ', ${itemVarName}', ', item');
+            
+            // Handle start and end of string cases
+            if (StringTools.startsWith(result, itemVarName + ' ')) {
+                result = 'item ' + result.substring(itemVarName.length + 1);
+            }
+            if (StringTools.startsWith(result, itemVarName + '.')) {
+                result = 'item.' + result.substring(itemVarName.length + 1);
+            }
+            if (StringTools.endsWith(result, ' ' + itemVarName)) {
+                result = result.substring(0, result.length - itemVarName.length) + 'item';
+            }
+            if (result == itemVarName) {
+                result = 'item';
+            }
+        }
         
         // Remove extra parentheses that might be added
         if (StringTools.startsWith(result, '((') && StringTools.endsWith(result, '))')) {

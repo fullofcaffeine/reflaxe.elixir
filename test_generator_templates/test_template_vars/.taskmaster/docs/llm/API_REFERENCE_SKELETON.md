@@ -1,6 +1,6 @@
 # API Quick Reference for test_template_vars
 
-**Generated**: 2025-08-26 23:02:43
+**Generated**: 2025-08-27 10:58:10
 
 This reference will be populated as you build your application.
 

@@ -13,7 +13,7 @@ config :test_template_vars, TestTemplateVarsWeb.Endpoint,
   check_origin: false,
   code_reloader: true,
   debug_errors: true,
-  secret_key_base: "V6Ed4K/+1/3FJ+NMGfQ3gFUSVgdhfJyl24Wm0aDAVfga89iVsIu1I7Z2TWinctip",
+  secret_key_base: "TJxVZpttwDYSHy6N3dpqBbjHyYQyiaKg++227icaRdyXINmx+hC0+Z99Ms4sfTgw",
   watchers: [
     esbuild: {Esbuild, :install_and_run, [:test_template_vars, ~w(--sourcemap=inline --watch)]},
     tailwind: {Tailwind, :install_and_run, [:test_template_vars, ~w(--watch)]}

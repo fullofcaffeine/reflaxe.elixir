@@ -18,7 +18,7 @@ defmodule Main do
     end
 
     try do
-      raise Haxe.Exception.new("Exception object")
+      raise Exception.new("Exception object")
     rescue
       e -> Log.trace("Caught exception: " <> e.get_message(), %{"fileName" => "Main.hx", "lineNumber" => 23, "className" => "Main", "methodName" => "basicTryCatch"})
     end
@@ -33,7 +33,7 @@ defmodule Main do
         _ ->
           raise 42
         _ ->
-          raise Haxe.Exception.new("Exception error")
+          raise Exception.new("Exception error")
         _ ->
           raise %{"error" => "Object error"}
         _ -> Log.trace("No error", %{"fileName" => "Main.hx", "lineNumber" => 36, "className" => "Main", "methodName" => "multipleCatch"})
@@ -102,7 +102,7 @@ defmodule Main do
   @doc "Generated from Haxe divide"
   def divide(a, b) do
     if ((b == 0)) do
-      raise Haxe.Exception.new("Division by zero")
+      raise Exception.new("Division by zero")
     else
       nil
     end
@@ -124,7 +124,7 @@ defmodule Main do
 
   @doc "Generated from Haxe rethrowExample"
   def rethrow_example() do
-    inner_function = fn  -> raise Haxe.Exception.new("Original error") end
+    inner_function = fn  -> raise Exception.new("Original error") end
 
     middle_function = fn  -> try do
       inner_function.()
@@ -143,7 +143,7 @@ defmodule Main do
   @doc "Generated from Haxe stackTraceExample"
   def stack_trace_example() do
     try do
-      level3 = fn  -> raise Haxe.Exception.new("Deep error") end
+      level3 = fn  -> raise Exception.new("Deep error") end
       level2 = fn  -> level3.() end
       level1 = fn  -> level2.() end
       level1.()

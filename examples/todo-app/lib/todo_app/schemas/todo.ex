@@ -37,43 +37,43 @@ defmodule Todo do
   # Static functions
   @doc "Generated from Haxe changeset"
   def changeset(todo, params) do
-    changeset = Ecto.Changeset.cast_changeset(todo, params, ["title", "description", "completed", "priority", "due_date", "tags", "user_id"])
+    _changeset = Ecto.Changeset.cast_changeset(todo, params, ["title", "description", "completed", "priority", "due_date", "tags", "user_id"])
 
-    changeset = Ecto.Changeset.validate_required(changeset, ["title", "user_id"])
+    _changeset = Ecto.Changeset.validate_required(_changeset, ["title", "user_id"])
 
-    changeset = Ecto.Changeset.validate_length(changeset, "title", %{min: 3, max: 200})
+    _changeset = Ecto.Changeset.validate_length(_changeset, "title", %{min: 3, max: 200})
 
-    changeset = Ecto.Changeset.validate_length(changeset, "description", %{max: 1000})
+    _changeset = Ecto.Changeset.validate_length(_changeset, "description", %{max: 1000})
 
     priority_values = [ChangesetValue.string_value("low"), ChangesetValue.string_value("medium"), ChangesetValue.string_value("high")]
 
-    changeset = Ecto.Changeset.validate_inclusion(changeset, "priority", priority_values)
+    _changeset = Ecto.Changeset.validate_inclusion(_changeset, "priority", priority_values)
 
-    changeset = Ecto.Changeset.foreign_key_constraint(changeset, "user_id")
+    _changeset = Ecto.Changeset.foreign_key_constraint(_changeset, "user_id")
 
-    changeset
+    _changeset
   end
 
   @doc "Generated from Haxe toggle_completed"
   def toggle_completed(todo) do
-    _params = Haxe.Ds.StringMap.new()
+    _params = StringMap.new()
 
     _value = ChangesetValue.bool_value(not todo.completed)
 
-    params.set("completed", value)
+    _params = Map.put(_params, "completed", _value)
 
-    Todo.changeset(todo, params)
+    Todo.changeset(todo, _params)
   end
 
   @doc "Generated from Haxe update_priority"
-  def update_priority(todo, _priority) do
-    _params = Haxe.Ds.StringMap.new()
+  def update_priority(todo, priority) do
+    _params = StringMap.new()
 
     _value = ChangesetValue.string_value(priority)
 
-    params.set("priority", value)
+    _params = Map.put(_params, "priority", _value)
 
-    Todo.changeset(todo, params)
+    Todo.changeset(todo, _params)
   end
 
   @doc "Generated from Haxe add_tag"
@@ -84,19 +84,19 @@ defmodule Todo do
 
     temp_array ++ [tag]
 
-    _params = Haxe.Ds.StringMap.new()
+    _params = StringMap.new()
 
     g_array = []
 
     g_counter = 0
 
-    Enum.map(temp_array, fn item -> ChangesetValue.string_itemalue(item) end)
+    Enum.map(temp_array, fn item -> ChangesetValue.string_value(item) end)
 
     _value = ChangesetValue.array_value(g_array)
 
-    params.set("tags", value)
+    _params = Map.put(_params, "tags", _value)
 
-    Todo.changeset(todo, params)
+    Todo.changeset(todo, _params)
   end
 
 
