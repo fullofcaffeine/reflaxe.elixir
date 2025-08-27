@@ -69,18 +69,18 @@ class ExpressionVariantCompiler {
         }
         
         #if debug_expression_variants
-        trace('[XRay ExpressionVariantCompiler] ✓ compileExpressionImpl called');
+        // trace('[XRay ExpressionVariantCompiler] ✓ compileExpressionImpl called');
         #end
         
         #if debug_orphan_elimination
         if (expr != null) {
-            trace('[XRay ExpressionVariantCompiler] Received expr: ${Type.getClassName(Type.getClass(expr.expr))}');
+            // trace('[XRay ExpressionVariantCompiler] Received expr: ${Type.getClassName(Type.getClass(expr.expr))}');
             switch (expr.expr) {
                 case TLocal(v): trace('[XRay ExpressionVariantCompiler] TLocal variable: ${v.name}');
                 case _:
             }
         } else {
-            trace('[XRay ExpressionVariantCompiler] Received expr: NULL - this should not happen!');
+            // trace('[XRay ExpressionVariantCompiler] Received expr: NULL - this should not happen!');
         }
         #end
         
@@ -92,7 +92,7 @@ class ExpressionVariantCompiler {
                 var mappedName = compiler.currentFunctionParameterMap.get("_this");
                 if (mappedName != null) {
                     #if debug_expression_variants
-                    trace('[XRay ExpressionVariantCompiler] ✓ Local _this replacement: _this -> ${mappedName}');
+                    // trace('[XRay ExpressionVariantCompiler] ✓ Local _this replacement: _this -> ${mappedName}');
                     #end
                     return mappedName;
                 }
@@ -102,7 +102,7 @@ class ExpressionVariantCompiler {
                     var globalMappedName = compiler.globalStructParameterMap.get("_this");
                     if (globalMappedName != null) {
                         #if debug_expression_variants
-                        trace('[XRay ExpressionVariantCompiler] ✓ GLOBAL _this replacement: _this -> ${globalMappedName}');
+                        // trace('[XRay ExpressionVariantCompiler] ✓ GLOBAL _this replacement: _this -> ${globalMappedName}');
                         #end
                         return globalMappedName;
                     }
@@ -110,19 +110,19 @@ class ExpressionVariantCompiler {
                 
                 // Still no mapping found - log for debugging
                 #if debug_expression_variants
-                trace('[XRay ExpressionVariantCompiler] ⚠️ Found _this but NO MAPPING available');
-                trace('[XRay ExpressionVariantCompiler] ⚠️ State threading enabled: ${compiler.isStateThreadingEnabled()}');
-                trace('[XRay ExpressionVariantCompiler] ⚠️ Global struct method: ${compiler.isCompilingStructMethod}');
-                trace('[XRay ExpressionVariantCompiler] ⚠️ Local parameter map size: ${compiler.currentFunctionParameterMap != null ? Lambda.count(compiler.currentFunctionParameterMap) : 0}');
-                trace('[XRay ExpressionVariantCompiler] ⚠️ Global parameter map size: ${Lambda.count(compiler.globalStructParameterMap)}');
-                trace('[XRay ExpressionVariantCompiler] ⚠️ Expression position: ${expr.pos}');
+                // trace('[XRay ExpressionVariantCompiler] ⚠️ Found _this but NO MAPPING available');
+                // trace('[XRay ExpressionVariantCompiler] ⚠️ State threading enabled: ${compiler.isStateThreadingEnabled()}');
+                // trace('[XRay ExpressionVariantCompiler] ⚠️ Global struct method: ${compiler.isCompilingStructMethod}');
+                // trace('[XRay ExpressionVariantCompiler] ⚠️ Local parameter map size: ${compiler.currentFunctionParameterMap != null ? Lambda.count(compiler.currentFunctionParameterMap) : 0}');
+                // trace('[XRay ExpressionVariantCompiler] ⚠️ Global parameter map size: ${Lambda.count(compiler.globalStructParameterMap)}');
+                // trace('[XRay ExpressionVariantCompiler] ⚠️ Expression position: ${expr.pos}');
                 #end
                 
             // CRITICAL FIX: Handle general TLocal variables with TVar.id mappings
             // This ensures loop desugaring variables get their proper mapped names
             case TLocal(v):
                 #if debug_expression_variants
-                trace('[XRay ExpressionVariantCompiler] TLocal variable reference: ${v.name} (id: ${v.id})');
+                // trace('[XRay ExpressionVariantCompiler] TLocal variable reference: ${v.name} (id: ${v.id})');
                 #end
                 
                 // Use VariableCompiler's ID mapping system to resolve the variable name
@@ -130,7 +130,7 @@ class ExpressionVariantCompiler {
                 var compiledName = compiler.variableCompiler.compileVariableReference(v);
                 
                 #if debug_expression_variants
-                trace('[XRay ExpressionVariantCompiler] ✓ Variable resolved to: ${compiledName}');
+                // trace('[XRay ExpressionVariantCompiler] ✓ Variable resolved to: ${compiledName}');
                 #end
                 
                 return compiledName;
@@ -158,7 +158,7 @@ class ExpressionVariantCompiler {
      */
     public function compileExpressionWithTypeAwareness(expr: TypedExpr): String {
         #if debug_expression_variants
-        trace('[XRay ExpressionVariantCompiler] ✓ compileExpressionWithTypeAwareness called');
+        // trace('[XRay ExpressionVariantCompiler] ✓ compileExpressionWithTypeAwareness called');
         #end
         
         if (expr == null) return "nil";
@@ -231,7 +231,7 @@ class ExpressionVariantCompiler {
      */
     public function compileExpressionWithVarMapping(expr: TypedExpr, sourceVar: String, targetVar: String): String {
         #if debug_expression_variants
-        trace('[XRay ExpressionVariantCompiler] ✓ delegating to SubstitutionCompiler.compileExpressionWithVarMapping');
+        // trace('[XRay ExpressionVariantCompiler] ✓ delegating to SubstitutionCompiler.compileExpressionWithVarMapping');
         #end
         return compiler.substitutionCompiler.compileExpressionWithVarMapping(expr, sourceVar, targetVar);
     }
@@ -245,7 +245,7 @@ class ExpressionVariantCompiler {
      */
     public function compileExpressionWithAggressiveSubstitution(expr: TypedExpr, targetVar: String): String {
         #if debug_expression_variants
-        trace('[XRay ExpressionVariantCompiler] ✓ delegating to SubstitutionCompiler.compileExpressionWithAggressiveSubstitution');
+        // trace('[XRay ExpressionVariantCompiler] ✓ delegating to SubstitutionCompiler.compileExpressionWithAggressiveSubstitution');
         #end
         return compiler.substitutionCompiler.compileExpressionWithAggressiveSubstitution(expr, targetVar);
     }
@@ -259,7 +259,7 @@ class ExpressionVariantCompiler {
      */
     public function compileExpressionWithRenaming(expr: TypedExpr, renamings: Map<String, String>): String {
         #if debug_expression_variants
-        trace('[XRay ExpressionVariantCompiler] ✓ delegating to SubstitutionCompiler.compileExpressionWithRenaming');
+        // trace('[XRay ExpressionVariantCompiler] ✓ delegating to SubstitutionCompiler.compileExpressionWithRenaming');
         #end
         return compiler.substitutionCompiler.compileExpressionWithRenaming(expr, renamings);
     }
@@ -273,7 +273,7 @@ class ExpressionVariantCompiler {
      */
     public function compileExpressionWithSubstitution(expr: TypedExpr, sourceVar: String, targetVar: String): String {
         #if debug_expression_variants
-        trace('[XRay ExpressionVariantCompiler] ✓ delegating to SubstitutionCompiler.compileExpressionWithSubstitution');
+        // trace('[XRay ExpressionVariantCompiler] ✓ delegating to SubstitutionCompiler.compileExpressionWithSubstitution');
         #end
         return compiler.substitutionCompiler.compileExpressionWithSubstitution(expr, sourceVar, targetVar);
     }
@@ -287,7 +287,7 @@ class ExpressionVariantCompiler {
      */
     public function compileExpressionWithTVarSubstitution(expr: TypedExpr, sourceTVar: TVar, targetVarName: String): String {
         #if debug_expression_variants
-        trace('[XRay ExpressionVariantCompiler] ✓ compileExpressionWithTVarSubstitution called');
+        // trace('[XRay ExpressionVariantCompiler] ✓ compileExpressionWithTVarSubstitution called');
         #end
         
         switch (expr.expr) {
@@ -418,14 +418,14 @@ class ExpressionVariantCompiler {
      */
     public function compileSwitchExpression(switchExpr: TypedExpr, cases: Array<{values: Array<TypedExpr>, expr: TypedExpr}>, defaultExpr: Null<TypedExpr>): String {
         #if debug_expression_variants
-        trace('[XRay ExpressionVariantCompiler] ✓ compileSwitchExpression called');
+        // trace('[XRay ExpressionVariantCompiler] ✓ compileSwitchExpression called');
         #end
         
         // CRITICAL: Pre-analyze ALL switch cases to set pattern usage context BEFORE any compilation
         // This is the key fix for the orphaned enum parameters issue - context must be available
         // when TEnumParameter expressions are compiled, which happens early in case processing
         #if debug_expression_variants
-        trace('[XRay ExpressionVariantCompiler] Pre-analyzing switch cases for pattern usage context');
+        // trace('[XRay ExpressionVariantCompiler] Pre-analyzing switch cases for pattern usage context');
         #end
         
         for (caseData in cases) {
@@ -436,7 +436,7 @@ class ExpressionVariantCompiler {
                 compiler.patternUsageContext = usedVariables;
                 #if debug_expression_variants
                 var usedVarNames = [for (name in usedVariables.keys()) name];
-                trace('[XRay ExpressionVariantCompiler] ✓ Set global pattern usage context: [${usedVarNames.join(", ")}]');
+                // trace('[XRay ExpressionVariantCompiler] ✓ Set global pattern usage context: [${usedVarNames.join(", ")}]');
                 #end
                 break; // Only need to set context once
             }
@@ -446,7 +446,7 @@ class ExpressionVariantCompiler {
         if (compiler.patternUsageContext == null) {
             compiler.patternUsageContext = new Map<String, Bool>();
             #if debug_expression_variants
-            trace('[XRay ExpressionVariantCompiler] ✓ Set empty pattern usage context (no variables used)');
+            // trace('[XRay ExpressionVariantCompiler] ✓ Set empty pattern usage context (no variables used)');
             #end
         }
         
@@ -454,11 +454,11 @@ class ExpressionVariantCompiler {
         var context: Null<FunctionContext> = null;
         
         #if debug_expression_variants
-        trace('[XRay ExpressionVariantCompiler] Checking for _this mapping');
-        trace('[XRay ExpressionVariantCompiler] isStateThreadingEnabled: ${compiler.isStateThreadingEnabled()}');
-        trace('[XRay ExpressionVariantCompiler] currentFunctionParameterMap size: ${Lambda.count(compiler.currentFunctionParameterMap)}');
+        // trace('[XRay ExpressionVariantCompiler] Checking for _this mapping');
+        // trace('[XRay ExpressionVariantCompiler] isStateThreadingEnabled: ${compiler.isStateThreadingEnabled()}');
+        // trace('[XRay ExpressionVariantCompiler] currentFunctionParameterMap size: ${Lambda.count(compiler.currentFunctionParameterMap)}');
         for (key in compiler.currentFunctionParameterMap.keys()) {
-            trace('[XRay ExpressionVariantCompiler] Map key: ${key} -> ${compiler.currentFunctionParameterMap.get(key)}');
+            // trace('[XRay ExpressionVariantCompiler] Map key: ${key} -> ${compiler.currentFunctionParameterMap.get(key)}');
         }
         #end
         
@@ -469,8 +469,8 @@ class ExpressionVariantCompiler {
                 structParamName: structParamName
             };
             #if debug_expression_variants
-            trace('[XRay ExpressionVariantCompiler] ✓ Found _this mapping to ${structParamName}');
-            trace('[XRay ExpressionVariantCompiler] Created context with structParamName: ${structParamName}');
+            // trace('[XRay ExpressionVariantCompiler] ✓ Found _this mapping to ${structParamName}');
+            // trace('[XRay ExpressionVariantCompiler] Created context with structParamName: ${structParamName}');
             #end
         } else if (compiler.isStateThreadingEnabled()) {
             // If state threading is enabled but no _this mapping, use "struct" as default
@@ -478,11 +478,11 @@ class ExpressionVariantCompiler {
                 structParamName: "struct"
             };
             #if debug_expression_variants
-            trace('[XRay ExpressionVariantCompiler] State threading enabled but no _this mapping, using default "struct"');
+            // trace('[XRay ExpressionVariantCompiler] State threading enabled but no _this mapping, using default "struct"');
             #end
         } else {
             #if debug_expression_variants
-            trace('[XRay ExpressionVariantCompiler] ✗ No _this mapping found and state threading not enabled');
+            // trace('[XRay ExpressionVariantCompiler] ✗ No _this mapping found and state threading not enabled');
             #end
         }
         
@@ -492,7 +492,7 @@ class ExpressionVariantCompiler {
         // This prevents context pollution between different compilation units
         compiler.patternUsageContext = null;
         #if debug_expression_variants
-        trace('[XRay ExpressionVariantCompiler] ✓ Cleared global pattern usage context after switch compilation');
+        // trace('[XRay ExpressionVariantCompiler] ✓ Cleared global pattern usage context after switch compilation');
         #end
         
         return result;
@@ -507,7 +507,7 @@ class ExpressionVariantCompiler {
      */
     public function compileBlockExpressionsWithContext(expressions: Array<TypedExpr>): Array<String> {
         #if debug_expression_variants
-        trace('[XRay ExpressionVariantCompiler] ✓ compileBlockExpressionsWithContext called with ${expressions.length} expressions');
+        // trace('[XRay ExpressionVariantCompiler] ✓ compileBlockExpressionsWithContext called with ${expressions.length} expressions');
         #end
         
         var compiledStatements = [];
@@ -533,7 +533,7 @@ class ExpressionVariantCompiler {
      */
     public function compileExpressionWithMutationTracking(expr: TypedExpr, updates: Map<String, String>): String {
         #if debug_expression_variants
-        trace('[XRay ExpressionVariantCompiler] ✓ compileExpressionWithMutationTracking called');
+        // trace('[XRay ExpressionVariantCompiler] ✓ compileExpressionWithMutationTracking called');
         #end
         
         // This function was moved to WhileLoopCompiler but needs to be accessible here for backward compatibility
@@ -541,30 +541,30 @@ class ExpressionVariantCompiler {
         return switch (expr.expr) {
             case TBlock(exprs):
                 #if debug_loops
-                trace('[XRay ExpressionVariantCompiler] TBlock with ${exprs.length} expressions');
+                // trace('[XRay ExpressionVariantCompiler] TBlock with ${exprs.length} expressions');
                 #end
                 
                 // Check for variable assignment followed by array building loop pattern
                 var optimizedBlock = tryOptimizeArrayAssignmentPattern(exprs);
                 if (optimizedBlock != null) {
                     #if debug_loops
-                    trace('[XRay ExpressionVariantCompiler] ✓ Array assignment optimization applied');
+                    // trace('[XRay ExpressionVariantCompiler] ✓ Array assignment optimization applied');
                     #end
                     return optimizedBlock;
                 }
                 
                 // CRITICAL FIX: Check for temp variable patterns that need scoping fixes
                 // This fixes undefined variables in if-else blocks (temp_array, temp_array1, etc.)
-                trace('[XRay ExpressionVariantCompiler] Checking for temp variable patterns in ${exprs.length} expressions...');
+                // trace('[XRay ExpressionVariantCompiler] Checking for temp variable patterns in ${exprs.length} expressions...');
                 var tempVarName = compiler.tempVariableOptimizer.detectTempVariablePattern(exprs);
                 if (tempVarName != null) {
-                    trace('[XRay ExpressionVariantCompiler] ✓ TEMP VAR PATTERN DETECTED: ${tempVarName}');
+                    // trace('[XRay ExpressionVariantCompiler] ✓ TEMP VAR PATTERN DETECTED: ${tempVarName}');
                     return compiler.tempVariableOptimizer.optimizeTempVariablePattern(tempVarName, exprs);
                 }
-                trace('[XRay ExpressionVariantCompiler] ❌ NO TEMP VAR PATTERN FOUND');
+                // trace('[XRay ExpressionVariantCompiler] ❌ NO TEMP VAR PATTERN FOUND');
                 
                 #if debug_loops
-                trace('[XRay ExpressionVariantCompiler] No array assignment optimization - proceeding normally');
+                // trace('[XRay ExpressionVariantCompiler] No array assignment optimization - proceeding normally');
                 #end
                 
                 var results = [];
@@ -597,8 +597,8 @@ class ExpressionVariantCompiler {
      */
     private function tryOptimizeArrayAssignmentPattern(exprs: Array<TypedExpr>): Null<String> {
         #if debug_loops
-        trace('[XRay ArrayAssignment] ANALYZING BLOCK FOR ARRAY ASSIGNMENT PATTERN');
-        trace('[XRay ArrayAssignment] - Block has ${exprs.length} expressions');
+        // trace('[XRay ArrayAssignment] ANALYZING BLOCK FOR ARRAY ASSIGNMENT PATTERN');
+        // trace('[XRay ArrayAssignment] - Block has ${exprs.length} expressions');
         #end
         
         if (exprs.length < 2) return null;
@@ -612,15 +612,15 @@ class ExpressionVariantCompiler {
             var arrayVar = extractEmptyArrayAssignment(currentExpr);
             if (arrayVar != null) {
                 #if debug_loops
-                trace('[XRay ArrayAssignment] ✓ Found empty array assignment: ${arrayVar}');
+                // trace('[XRay ArrayAssignment] ✓ Found empty array assignment: ${arrayVar}');
                 #end
                 
                 // Check if next expression is a while loop that builds into this array
                 var loopOptimization = tryOptimizeWhileLoopWithTarget(nextExpr, arrayVar);
                 if (loopOptimization != null) {
                     #if debug_loops
-                    trace('[XRay ArrayAssignment] ✓ Found matching array building loop');
-                    trace('[XRay ArrayAssignment] ✓ OPTIMIZATION APPLIED: ${arrayVar} = ${loopOptimization}');
+                    // trace('[XRay ArrayAssignment] ✓ Found matching array building loop');
+                    // trace('[XRay ArrayAssignment] ✓ OPTIMIZATION APPLIED: ${arrayVar} = ${loopOptimization}');
                     #end
                     
                     // Generate optimized assignment: arrayVar = Enum.function(...)
@@ -661,7 +661,7 @@ class ExpressionVariantCompiler {
                     switch (initExpr.expr) {
                         case TArrayDecl([]): // Empty array literal
                             #if debug_loops
-                            trace('[XRay ArrayAssignment] ✓ Empty array assignment detected: ${v.name}');
+                            // trace('[XRay ArrayAssignment] ✓ Empty array assignment detected: ${v.name}');
                             #end
                             v.name;
                         case _: null;
@@ -687,7 +687,7 @@ class ExpressionVariantCompiler {
                 // The UnifiedLoopCompiler handles array building pattern detection internally
                 
                 #if debug_loops
-                trace('[XRay ArrayAssignment] Checking while loop for array building with target: ${targetVar}');
+                // trace('[XRay ArrayAssignment] Checking while loop for array building with target: ${targetVar}');
                 #end
                 
                 // UnifiedLoopCompiler will detect and optimize array building patterns internally
@@ -698,7 +698,7 @@ class ExpressionVariantCompiler {
                 // For now, return the compiled loop if it's non-empty
                 if (compiledLoop != null && compiledLoop != "") {
                     #if debug_loops
-                    trace('[XRay ArrayAssignment] ✓ While loop compiled, checking if it builds array for target');
+                    // trace('[XRay ArrayAssignment] ✓ While loop compiled, checking if it builds array for target');
                     #end
                     
                     return compiledLoop;

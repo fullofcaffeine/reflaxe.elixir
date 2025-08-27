@@ -70,8 +70,8 @@ class ReflectionCompiler {
      */
     public function detectReflectFieldsPattern(econd: TypedExpr, ebody: TypedExpr): Null<String> {
         #if debug_reflection_compiler
-        trace("[XRay ReflectionCompiler] DETECT PATTERN START");
-        trace('[XRay ReflectionCompiler] Condition: ${econd.expr}');
+        // trace("[XRay ReflectionCompiler] DETECT PATTERN START");
+        // trace('[XRay ReflectionCompiler] Condition: ${econd.expr}');
         #end
         
         // Look for patterns where we're iterating over Reflect.fields result
@@ -97,7 +97,7 @@ class ReflectionCompiler {
         sourceObject = result.sourceObject;
         
         #if debug_reflection_compiler
-        trace('[XRay ReflectionCompiler] Detected: has=${hasReflectOperations}, target=${targetObject}, source=${sourceObject}');
+        // trace('[XRay ReflectionCompiler] Detected: has=${hasReflectOperations}, target=${targetObject}, source=${sourceObject}');
         #end
         
         if (hasReflectOperations && targetObject != null && sourceObject != null) {
@@ -105,16 +105,16 @@ class ReflectionCompiler {
             var result = '${targetObject} = Map.merge(${targetObject}, ${sourceObject})';
             
             #if debug_reflection_compiler
-            trace('[XRay ReflectionCompiler] Generated: ${result}');
-            trace("[XRay ReflectionCompiler] DETECT PATTERN END");
+            // trace('[XRay ReflectionCompiler] Generated: ${result}');
+            // trace("[XRay ReflectionCompiler] DETECT PATTERN END");
             #end
             
             return result;
         }
         
         #if debug_reflection_compiler
-        trace("[XRay ReflectionCompiler] Pattern not detected");
-        trace("[XRay ReflectionCompiler] DETECT PATTERN END");
+        // trace("[XRay ReflectionCompiler] Pattern not detected");
+        // trace("[XRay ReflectionCompiler] DETECT PATTERN END");
         #end
         
         return null;
@@ -280,15 +280,15 @@ class ReflectionCompiler {
      */
     public function compileReflectFieldsIteration(fieldVar: String, sourceObject: String, blockExpr: TypedExpr): String {
         #if debug_reflection_compiler
-        trace("[XRay ReflectionCompiler] COMPILE ITERATION START");
-        trace('[XRay ReflectionCompiler] fieldVar: ${fieldVar}, sourceObject: ${sourceObject}');
+        // trace("[XRay ReflectionCompiler] COMPILE ITERATION START");
+        // trace('[XRay ReflectionCompiler] fieldVar: ${fieldVar}, sourceObject: ${sourceObject}');
         #end
         
         // Check for simple field copying pattern that can be optimized to Map.merge
         var detectedTargetObject = detectSimpleFieldCopyPattern(blockExpr, sourceObject, fieldVar);
         
         #if debug_reflection_compiler
-        trace('[XRay ReflectionCompiler] Pattern detection result: ${detectedTargetObject}');
+        // trace('[XRay ReflectionCompiler] Pattern detection result: ${detectedTargetObject}');
         #end
         
         if (detectedTargetObject != null) {
@@ -296,8 +296,8 @@ class ReflectionCompiler {
             var result = detectedTargetObject + " = Map.merge(" + detectedTargetObject + ", " + sourceObject + ")";
             
             #if debug_reflection_compiler
-            trace('[XRay ReflectionCompiler] Generated Map.merge: ${result}');
-            trace("[XRay ReflectionCompiler] COMPILE ITERATION END");
+            // trace('[XRay ReflectionCompiler] Generated Map.merge: ${result}');
+            // trace("[XRay ReflectionCompiler] COMPILE ITERATION END");
             #end
             
             return result;
@@ -310,8 +310,8 @@ class ReflectionCompiler {
                     "end)";
         
         #if debug_reflection_compiler
-        trace('[XRay ReflectionCompiler] Generated Enum.each: ${result.substring(0, 100)}...');
-        trace("[XRay ReflectionCompiler] COMPILE ITERATION END");
+        // trace('[XRay ReflectionCompiler] Generated Enum.each: ${result.substring(0, 100)}...');
+        // trace("[XRay ReflectionCompiler] COMPILE ITERATION END");
         #end
         
         return result;
@@ -336,8 +336,8 @@ class ReflectionCompiler {
      */
     private function detectSimpleFieldCopyPattern(blockExpr: TypedExpr, sourceObject: String, fieldVar: String): Null<String> {
         #if debug_reflection_compiler
-        trace("[XRay ReflectionCompiler] DETECT SIMPLE PATTERN START");
-        trace('[XRay ReflectionCompiler] Analyzing block: ${blockExpr.expr}');
+        // trace("[XRay ReflectionCompiler] DETECT SIMPLE PATTERN START");
+        // trace('[XRay ReflectionCompiler] Analyzing block: ${blockExpr.expr}');
         #end
         
         return switch (blockExpr.expr) {
@@ -346,8 +346,8 @@ class ReflectionCompiler {
                 var result = detectReflectSetFieldPattern(e, args, sourceObject, fieldVar);
                 
                 #if debug_reflection_compiler
-                trace('[XRay ReflectionCompiler] TCall pattern result: ${result}');
-                trace("[XRay ReflectionCompiler] DETECT SIMPLE PATTERN END");
+                // trace('[XRay ReflectionCompiler] TCall pattern result: ${result}');
+                // trace("[XRay ReflectionCompiler] DETECT SIMPLE PATTERN END");
                 #end
                 
                 result;
@@ -358,16 +358,16 @@ class ReflectionCompiler {
                     detectSimpleFieldCopyPattern(exprs[0], sourceObject, fieldVar);
                 } else {
                     #if debug_reflection_compiler
-                    trace('[XRay ReflectionCompiler] Complex block with ${exprs.length} expressions');
-                    trace("[XRay ReflectionCompiler] DETECT SIMPLE PATTERN END");
+                    // trace('[XRay ReflectionCompiler] Complex block with ${exprs.length} expressions');
+                    // trace("[XRay ReflectionCompiler] DETECT SIMPLE PATTERN END");
                     #end
                     null; // Complex pattern
                 }
                 
             case _:
                 #if debug_reflection_compiler
-                trace('[XRay ReflectionCompiler] Non-matching pattern: ${blockExpr.expr}');
-                trace("[XRay ReflectionCompiler] DETECT SIMPLE PATTERN END");
+                // trace('[XRay ReflectionCompiler] Non-matching pattern: ${blockExpr.expr}');
+                // trace("[XRay ReflectionCompiler] DETECT SIMPLE PATTERN END");
                 #end
                 null;
         };
@@ -532,8 +532,8 @@ class ReflectionCompiler {
      */
     public function checkForReflectFieldsInExpression(expr: TypedExpr): Bool {
         #if debug_reflection_compiler
-        trace("[XRay ReflectionCompiler] CHECK EXPRESSION START");
-        trace('[XRay ReflectionCompiler] Checking expr: ${expr.expr}');
+        // trace("[XRay ReflectionCompiler] CHECK EXPRESSION START");
+        // trace('[XRay ReflectionCompiler] Checking expr: ${expr.expr}');
         #end
         
         var hasReflectFields = false;
@@ -550,7 +550,7 @@ class ReflectionCompiler {
                                 hasReflectFields = true;
                                 
                                 #if debug_reflection_compiler
-                                trace("[XRay ReflectionCompiler] ✓ REFLECT.FIELDS FOUND");
+                                // trace("[XRay ReflectionCompiler] ✓ REFLECT.FIELDS FOUND");
                                 #end
                             }
                         case _:
@@ -594,8 +594,8 @@ class ReflectionCompiler {
         scanExpression(expr);
         
         #if debug_reflection_compiler
-        trace('[XRay ReflectionCompiler] Result: ${hasReflectFields}');
-        trace("[XRay ReflectionCompiler] CHECK EXPRESSION END");
+        // trace('[XRay ReflectionCompiler] Result: ${hasReflectFields}');
+        // trace("[XRay ReflectionCompiler] CHECK EXPRESSION END");
         #end
         
         return hasReflectFields;
@@ -615,23 +615,23 @@ class ReflectionCompiler {
      */
     public function hasReflectFieldsIteration(expressions: Array<TypedExpr>): Bool {
         #if debug_reflection_compiler
-        trace("[XRay ReflectionCompiler] CHECK EXPRESSIONS ARRAY START");
-        trace('[XRay ReflectionCompiler] Checking ${expressions.length} expressions');
+        // trace("[XRay ReflectionCompiler] CHECK EXPRESSIONS ARRAY START");
+        // trace('[XRay ReflectionCompiler] Checking ${expressions.length} expressions');
         #end
         
         for (expr in expressions) {
             if (checkForReflectFieldsInExpression(expr)) {
                 #if debug_reflection_compiler
-                trace("[XRay ReflectionCompiler] ✓ REFLECTION FOUND");
-                trace("[XRay ReflectionCompiler] CHECK EXPRESSIONS ARRAY END");
+                // trace("[XRay ReflectionCompiler] ✓ REFLECTION FOUND");
+                // trace("[XRay ReflectionCompiler] CHECK EXPRESSIONS ARRAY END");
                 #end
                 return true;
             }
         }
         
         #if debug_reflection_compiler
-        trace("[XRay ReflectionCompiler] No reflection patterns found");
-        trace("[XRay ReflectionCompiler] CHECK EXPRESSIONS ARRAY END");
+        // trace("[XRay ReflectionCompiler] No reflection patterns found");
+        // trace("[XRay ReflectionCompiler] CHECK EXPRESSIONS ARRAY END");
         #end
         
         return false;
@@ -656,8 +656,8 @@ class ReflectionCompiler {
      */
     public function transformReflectStatement(expr: TypedExpr, targetObject: String, fieldVar: String): String {
         #if debug_reflection_compiler
-        trace("[XRay ReflectionCompiler] TRANSFORM STATEMENT START");
-        trace('[XRay ReflectionCompiler] Expr: ${expr.expr}, Target: ${targetObject}, Field: ${fieldVar}');
+        // trace("[XRay ReflectionCompiler] TRANSFORM STATEMENT START");
+        // trace('[XRay ReflectionCompiler] Expr: ${expr.expr}, Target: ${targetObject}, Field: ${fieldVar}');
         #end
         
         var result = switch (expr.expr) {
@@ -719,8 +719,8 @@ class ReflectionCompiler {
         };
         
         #if debug_reflection_compiler
-        trace('[XRay ReflectionCompiler] Generated: ${result}');
-        trace("[XRay ReflectionCompiler] TRANSFORM STATEMENT END");
+        // trace('[XRay ReflectionCompiler] Generated: ${result}');
+        // trace("[XRay ReflectionCompiler] TRANSFORM STATEMENT END");
         #end
         
         return result;
@@ -742,8 +742,8 @@ class ReflectionCompiler {
      */
     public function transformReflectExpression(expr: TypedExpr, targetObject: String, fieldVar: String): String {
         #if debug_reflection_compiler
-        trace("[XRay ReflectionCompiler] TRANSFORM EXPRESSION START");
-        trace('[XRay ReflectionCompiler] Expr: ${expr.expr}');
+        // trace("[XRay ReflectionCompiler] TRANSFORM EXPRESSION START");
+        // trace('[XRay ReflectionCompiler] Expr: ${expr.expr}');
         #end
         
         var result = switch (expr.expr) {
@@ -773,8 +773,8 @@ class ReflectionCompiler {
         };
         
         #if debug_reflection_compiler
-        trace('[XRay ReflectionCompiler] Generated: ${result}');
-        trace("[XRay ReflectionCompiler] TRANSFORM EXPRESSION END");
+        // trace('[XRay ReflectionCompiler] Generated: ${result}');
+        // trace("[XRay ReflectionCompiler] TRANSFORM EXPRESSION END");
         #end
         
         return result;

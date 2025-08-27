@@ -2,13 +2,11 @@ defmodule Main do
   @moduledoc "Main module generated from Haxe"
 
   # Static functions
-  @doc "Function main"
-  @spec main() :: nil
+  @doc "Generated from Haxe main"
   def main() do
-    (
-          test = TestStruct.new()
-          test.write(nil)
-        )
+    test = TestStruct.new()
+
+    test.write(nil)
   end
 
 end

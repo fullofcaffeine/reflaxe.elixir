@@ -76,11 +76,11 @@ class PhoenixPathGenerator {
      */
     public static function generateAnnotationAwareOutputPath(classType: ClassType, outputDir: String, fileExtension: String): String {
         #if debug_phoenix_paths
-        trace('[XRay PhoenixPaths] ════════════════════════════════════════');
-        trace('[XRay PhoenixPaths] PATH GENERATION START');
-        trace('[XRay PhoenixPaths] Class: ${classType.name}');
-        trace('[XRay PhoenixPaths] Package: ${classType.pack.join(".")}');
-        trace('[XRay PhoenixPaths] Output dir: ${outputDir}');
+        // trace('[XRay PhoenixPaths] ════════════════════════════════════════');
+        // trace('[XRay PhoenixPaths] PATH GENERATION START');
+        // trace('[XRay PhoenixPaths] Class: ${classType.name}');
+        // trace('[XRay PhoenixPaths] Package: ${classType.pack.join(".")}');
+        // trace('[XRay PhoenixPaths] Output dir: ${outputDir}');
         #end
         
         var className = classType.name;
@@ -89,7 +89,7 @@ class PhoenixPathGenerator {
         var annotationInfo = AnnotationSystem.detectAnnotations(classType);
         
         #if debug_phoenix_paths
-        trace('[XRay PhoenixPaths] Primary annotation: ${annotationInfo.primaryAnnotation}');
+        // trace('[XRay PhoenixPaths] Primary annotation: ${annotationInfo.primaryAnnotation}');
         #end
         
         if (annotationInfo.primaryAnnotation == null) {
@@ -97,8 +97,8 @@ class PhoenixPathGenerator {
             var defaultPath = haxe.io.Path.join([outputDir, convertPackageToDirectoryPath(classType, fileExtension)]);
             
             #if debug_phoenix_paths
-            trace('[XRay PhoenixPaths] ✓ DEFAULT PATH: ${defaultPath}');
-            trace('[XRay PhoenixPaths] ════════════════════════════════════════');
+            // trace('[XRay PhoenixPaths] ✓ DEFAULT PATH: ${defaultPath}');
+            // trace('[XRay PhoenixPaths] ════════════════════════════════════════');
             #end
             
             return defaultPath;
@@ -123,8 +123,8 @@ class PhoenixPathGenerator {
         };
         
         #if debug_phoenix_paths
-        trace('[XRay PhoenixPaths] ✓ FRAMEWORK PATH: ${result}');
-        trace('[XRay PhoenixPaths] ════════════════════════════════════════');
+        // trace('[XRay PhoenixPaths] ✓ FRAMEWORK PATH: ${result}');
+        // trace('[XRay PhoenixPaths] ════════════════════════════════════════');
         #end
         
         return result;
@@ -157,8 +157,8 @@ class PhoenixPathGenerator {
      */
     public static function generatePhoenixRouterPath(className: String, outputDir: String, fileExtension: String): String {
         #if debug_phoenix_paths
-        trace('[XRay PhoenixPaths] ROUTER PATH GENERATION START');
-        trace('[XRay PhoenixPaths] Class name: ${className}');
+        // trace('[XRay PhoenixPaths] ROUTER PATH GENERATION START');
+        // trace('[XRay PhoenixPaths] Class name: ${className}');
         #end
         
         var appName = extractAppName(className);
@@ -166,8 +166,8 @@ class PhoenixPathGenerator {
         var result = haxe.io.Path.join([outputDir, phoenixPath]);
         
         #if debug_phoenix_paths
-        trace('[XRay PhoenixPaths] Extracted app: ${appName}');
-        trace('[XRay PhoenixPaths] ✓ ROUTER PATH: ${result}');
+        // trace('[XRay PhoenixPaths] Extracted app: ${appName}');
+        // trace('[XRay PhoenixPaths] ✓ ROUTER PATH: ${result}');
         #end
         
         return result;
@@ -200,8 +200,8 @@ class PhoenixPathGenerator {
      */
     public static function generatePhoenixLiveViewPath(className: String, outputDir: String, fileExtension: String): String {
         #if debug_phoenix_paths
-        trace('[XRay PhoenixPaths] LIVEVIEW PATH GENERATION START');
-        trace('[XRay PhoenixPaths] Class name: ${className}');
+        // trace('[XRay PhoenixPaths] LIVEVIEW PATH GENERATION START');
+        // trace('[XRay PhoenixPaths] Class name: ${className}');
         #end
         
         var appName = extractAppName(className);
@@ -210,9 +210,9 @@ class PhoenixPathGenerator {
         var result = haxe.io.Path.join([outputDir, phoenixPath]);
         
         #if debug_phoenix_paths
-        trace('[XRay PhoenixPaths] Extracted app: ${appName}');
-        trace('[XRay PhoenixPaths] LiveView name: ${liveViewName}');
-        trace('[XRay PhoenixPaths] ✓ LIVEVIEW PATH: ${result}');
+        // trace('[XRay PhoenixPaths] Extracted app: ${appName}');
+        // trace('[XRay PhoenixPaths] LiveView name: ${liveViewName}');
+        // trace('[XRay PhoenixPaths] ✓ LIVEVIEW PATH: ${result}');
         #end
         
         return result;
@@ -244,8 +244,8 @@ class PhoenixPathGenerator {
      */
     public static function generatePhoenixControllerPath(className: String, outputDir: String, fileExtension: String): String {
         #if debug_phoenix_paths
-        trace('[XRay PhoenixPaths] CONTROLLER PATH GENERATION START');
-        trace('[XRay PhoenixPaths] Class name: ${className}');
+        // trace('[XRay PhoenixPaths] CONTROLLER PATH GENERATION START');
+        // trace('[XRay PhoenixPaths] Class name: ${className}');
         #end
         
         var appName = extractAppName(className);
@@ -254,9 +254,9 @@ class PhoenixPathGenerator {
         var result = haxe.io.Path.join([outputDir, phoenixPath]);
         
         #if debug_phoenix_paths
-        trace('[XRay PhoenixPaths] Extracted app: ${appName}');
-        trace('[XRay PhoenixPaths] Controller name: ${controllerName}');
-        trace('[XRay PhoenixPaths] ✓ CONTROLLER PATH: ${result}');
+        // trace('[XRay PhoenixPaths] Extracted app: ${appName}');
+        // trace('[XRay PhoenixPaths] Controller name: ${controllerName}');
+        // trace('[XRay PhoenixPaths] ✓ CONTROLLER PATH: ${result}');
         #end
         
         return result;
@@ -289,8 +289,8 @@ class PhoenixPathGenerator {
      */
     public static function generatePhoenixSchemaPath(className: String, outputDir: String, fileExtension: String): String {
         #if debug_phoenix_paths
-        trace('[XRay PhoenixPaths] SCHEMA PATH GENERATION START');
-        trace('[XRay PhoenixPaths] Class name: ${className}');
+        // trace('[XRay PhoenixPaths] SCHEMA PATH GENERATION START');
+        // trace('[XRay PhoenixPaths] Class name: ${className}');
         #end
         
         var appName = extractAppName(className);
@@ -299,9 +299,9 @@ class PhoenixPathGenerator {
         var result = haxe.io.Path.join([outputDir, phoenixPath]);
         
         #if debug_phoenix_paths
-        trace('[XRay PhoenixPaths] Extracted app: ${appName}');
-        trace('[XRay PhoenixPaths] Schema name: ${schemaName}');
-        trace('[XRay PhoenixPaths] ✓ SCHEMA PATH: ${result}');
+        // trace('[XRay PhoenixPaths] Extracted app: ${appName}');
+        // trace('[XRay PhoenixPaths] Schema name: ${schemaName}');
+        // trace('[XRay PhoenixPaths] ✓ SCHEMA PATH: ${result}');
         #end
         
         return result;
@@ -337,8 +337,8 @@ class PhoenixPathGenerator {
      */
     public static function extractAppName(className: String): String {
         #if debug_phoenix_paths
-        trace('[XRay PhoenixPaths] APP NAME EXTRACTION START');
-        trace('[XRay PhoenixPaths] Input class name: ${className}');
+        // trace('[XRay PhoenixPaths] APP NAME EXTRACTION START');
+        // trace('[XRay PhoenixPaths] Input class name: ${className}');
         #end
         
         // First check if we can get app name from compiler defines
@@ -348,7 +348,7 @@ class PhoenixPathGenerator {
         var result = NamingHelper.toSnakeCase(definedName);
         
         #if debug_phoenix_paths
-        trace('[XRay PhoenixPaths] ✓ COMPILER DEFINED APP NAME: ${result}');
+        // trace('[XRay PhoenixPaths] ✓ COMPILER DEFINED APP NAME: ${result}');
         #end
         
         return result;
@@ -363,7 +363,7 @@ class PhoenixPathGenerator {
                                .replace("View", "");
         
         #if debug_phoenix_paths
-        trace('[XRay PhoenixPaths] After suffix removal: ${appPart}');
+        // trace('[XRay PhoenixPaths] After suffix removal: ${appPart}');
         #end
         
         // Handle special case where class name is just the suffix (e.g., "Router")
@@ -371,7 +371,7 @@ class PhoenixPathGenerator {
             appPart = "app"; // Default fallback
             
             #if debug_phoenix_paths
-            trace('[XRay PhoenixPaths] Empty after suffix removal - using fallback');
+            // trace('[XRay PhoenixPaths] Empty after suffix removal - using fallback');
             #end
         }
         
@@ -379,7 +379,7 @@ class PhoenixPathGenerator {
         var result = NamingHelper.toSnakeCase(appPart);
         
         #if debug_phoenix_paths
-        trace('[XRay PhoenixPaths] ✓ EXTRACTED APP NAME: ${result}');
+        // trace('[XRay PhoenixPaths] ✓ EXTRACTED APP NAME: ${result}');
         #end
         
         return result;
@@ -413,9 +413,9 @@ class PhoenixPathGenerator {
      */
     public static function convertPackageToDirectoryPath(classType: ClassType, fileExtension: String): String {
         #if debug_phoenix_paths
-        trace('[XRay PhoenixPaths] PACKAGE CONVERSION START');
-        trace('[XRay PhoenixPaths] Class: ${classType.name}');
-        trace('[XRay PhoenixPaths] Package parts: [${classType.pack.join(", ")}]');
+        // trace('[XRay PhoenixPaths] PACKAGE CONVERSION START');
+        // trace('[XRay PhoenixPaths] Class: ${classType.name}');
+        // trace('[XRay PhoenixPaths] Package parts: [${classType.pack.join(", ")}]');
         #end
         
         var packageParts = classType.pack;
@@ -425,7 +425,7 @@ class PhoenixPathGenerator {
         var snakeClassName = NamingHelper.toSnakeCase(className);
         
         #if debug_phoenix_paths
-        trace('[XRay PhoenixPaths] Snake case class: ${snakeClassName}');
+        // trace('[XRay PhoenixPaths] Snake case class: ${snakeClassName}');
         #end
         
         if (packageParts.length == 0) {
@@ -433,7 +433,7 @@ class PhoenixPathGenerator {
             var result = snakeClassName + fileExtension;
             
             #if debug_phoenix_paths
-            trace('[XRay PhoenixPaths] ✓ NO PACKAGE: ${result}');
+            // trace('[XRay PhoenixPaths] ✓ NO PACKAGE: ${result}');
             #end
             
             return result;
@@ -444,8 +444,8 @@ class PhoenixPathGenerator {
         var result = haxe.io.Path.join(snakePackageParts.concat([snakeClassName + fileExtension]));
         
         #if debug_phoenix_paths
-        trace('[XRay PhoenixPaths] Snake package parts: [${snakePackageParts.join(", ")}]');
-        trace('[XRay PhoenixPaths] ✓ FINAL PATH: ${result}');
+        // trace('[XRay PhoenixPaths] Snake package parts: [${snakePackageParts.join(", ")}]');
+        // trace('[XRay PhoenixPaths] ✓ FINAL PATH: ${result}');
         #end
         
         return result;

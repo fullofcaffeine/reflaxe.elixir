@@ -12,84 +12,80 @@ defmodule TestApp.Application do
   """
 
   # Static functions
-  @doc "Function main"
-  @spec main() :: nil
+  @doc "Generated from Haxe main"
   def main() do
-    (
-          TestApp.Application.test_type_safe_child_specs()
-          TestApp.Application.test_child_spec_builders()
-          TestApp.Application.test_complex_child_specs()
-          TestApp.Application.test_application_children()
-        )
+    TestApp.Application.test_type_safe_child_specs()
+
+    TestApp.Application.test_child_spec_builders()
+
+    TestApp.Application.test_complex_child_specs()
+
+    TestApp.Application.test_application_children()
   end
 
-  @doc """
-    Test basic TypeSafeChildSpec enum compilation
-
-    This tests the core TypeSafeChildSpec patterns that should compile
-    directly to their respective Elixir formats.
-  """
-  @spec test_type_safe_child_specs() :: nil
+  @doc "Generated from Haxe testTypeSafeChildSpecs"
   def test_type_safe_child_specs() do
-    {Phoenix.PubSub, name: TestApp.PubSub}
-    {Phoenix.PubSub, name: CustomName.PubSub}
-    App.Repo
-    AppWeb.Endpoint
-    AppWeb.Telemetry
-    App.Repo
-    AppWeb.Endpoint
-    {:presence, %{"name" => "TestApp.Presence", "pubsub_server" => "TestApp.PubSub"}}
+    _pubsub_children_0 = {Phoenix.PubSub, name: TestApp.PubSub}
+
+    _pubsub_children_1 = {Phoenix.PubSub, name: CustomName.PubSub}
+
+    _module_children_0 = App.Repo
+
+    _module_children_1 = AppWeb.Endpoint
+
+    _module_children_2 = AppWeb.Telemetry
+
+    _configured_children_0 = App.Repo
+
+    _configured_children_1 = AppWeb.Endpoint
+
+    _configured_children_2 = {:presence, %{"name" => "TestApp.Presence", "pubsub_server" => "TestApp.PubSub"}}
+
     Log.trace("Basic TypeSafeChildSpec compilation test completed", %{"fileName" => "Main.hx", "lineNumber" => 61, "className" => "Main", "methodName" => "testTypeSafeChildSpecs"})
   end
 
-  @doc """
-    Test TypeSafeChildSpec without builders for now
-
-    Tests direct enum usage since builders aren't implemented yet.
-  """
-  @spec test_child_spec_builders() :: nil
+  @doc "Generated from Haxe testChildSpecBuilders"
   def test_child_spec_builders() do
-    (
-          {Phoenix.PubSub, name: TestApp.PubSub}
-          App.Repo
-          AppWeb.Endpoint
-          AppWeb.Telemetry
-          Log.trace("Direct TypeSafeChildSpec test completed", %{"fileName" => "Main.hx", "lineNumber" => 78, "className" => "Main", "methodName" => "testChildSpecBuilders"})
-        )
+    _direct_children_0 = {Phoenix.PubSub, name: TestApp.PubSub}
+
+    _direct_children_1 = App.Repo
+
+    _direct_children_2 = AppWeb.Endpoint
+
+    _direct_children_3 = AppWeb.Telemetry
+
+    Log.trace("Direct TypeSafeChildSpec test completed", %{"fileName" => "Main.hx", "lineNumber" => 78, "className" => "Main", "methodName" => "testChildSpecBuilders"})
   end
 
-  @doc """
-    Test complex child specs with custom modules and configurations
-
-    Tests the Custom variant that handles arbitrary worker modules
-    with proper type safety and restart/shutdown policies.
-  """
-  @spec test_complex_child_specs() :: nil
+  @doc "Generated from Haxe testComplexChildSpecs"
   def test_complex_child_specs() do
-    (
-          {:custom, MyComplexWorker, MyComplexWorker.new("complex_worker_args"), :permanent, ShutdownType.timeout(5000)}
-          {:custom, AnotherWorker, AnotherWorker.new("another_worker_args"), :transient, :infinity}
-          Log.trace("Complex TypeSafeChildSpec test completed", %{"fileName" => "Main.hx", "lineNumber" => 103, "className" => "Main", "methodName" => "testComplexChildSpecs"})
-        )
+    _complex_children_0 = {:custom, MyComplexWorker, MyComplexWorker.new("complex_worker_args"), :permanent, ShutdownType.timeout(5000)}
+
+    _complex_children_1 = {:custom, AnotherWorker, AnotherWorker.new("another_worker_args"), :transient, :infinity}
+
+    Log.trace("Complex TypeSafeChildSpec test completed", %{"fileName" => "Main.hx", "lineNumber" => 103, "className" => "Main", "methodName" => "testComplexChildSpecs"})
   end
 
-  @doc """
-    Test complete application child specification
-
-    Tests a realistic Phoenix application setup using TypeSafeChildSpec
-    that should compile to proper modern Elixir child spec formats.
-  """
-  @spec test_application_children() :: nil
+  @doc "Generated from Haxe testApplicationChildren"
   def test_application_children() do
-    {Phoenix.PubSub, name: TestApp.PubSub}
-    App.Repo
-    AppWeb.Endpoint
-    AppWeb.Telemetry
-    {:presence, %{"name" => "TestApp.Presence", "pubsub_server" => "TestApp.PubSub"}}
-    {:custom, BackgroundWorker, BackgroundWorker.new("background_worker_args"), :permanent, ShutdownType.timeout(10000)}
-    {:custom, TaskSupervisor, TaskSupervisor.new("task_supervisor_args"), :permanent, :infinity}
-    {Phoenix.PubSub, name: TestApp.PubSub}
-    {:legacy, %{id: legacy_worker, start: {LegacyWorker, :start_link, [%{}]}, restart: :temporary, shutdown: ShutdownType.timeout(1000)}}
+    _type_safe_children_0 = {Phoenix.PubSub, name: TestApp.PubSub}
+
+    _type_safe_children_1 = App.Repo
+
+    _type_safe_children_2 = AppWeb.Endpoint
+
+    _type_safe_children_3 = AppWeb.Telemetry
+
+    _type_safe_children_4 = {:presence, %{"name" => "TestApp.Presence", "pubsub_server" => "TestApp.PubSub"}}
+
+    _type_safe_children_5 = {:custom, BackgroundWorker, BackgroundWorker.new("background_worker_args"), :permanent, ShutdownType.timeout(10000)}
+
+    _type_safe_children_6 = {:custom, TaskSupervisor, TaskSupervisor.new("task_supervisor_args"), :permanent, :infinity}
+
+    _mixed_children_0 = {Phoenix.PubSub, name: TestApp.PubSub}
+
+    _mixed_children_1 = {:legacy, %{id: legacy_worker, start: {LegacyWorker, :start_link, [%{}]}, restart: :temporary, shutdown: ShutdownType.timeout(1000)}}
+
     Log.trace("Application children test completed", %{"fileName" => "Main.hx", "lineNumber" => 173, "className" => "Main", "methodName" => "testApplicationChildren"})
   end
 

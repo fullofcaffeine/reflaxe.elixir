@@ -111,7 +111,7 @@ class PatternMatchingCompiler {
         
         // CRITICAL FIX: Track nesting level to prevent enum pattern variable collisions
         enumNestingLevel++;
-        trace('[XRay PatternMatchingCompiler] Entering nested switch, level: ${enumNestingLevel}');
+        // trace('[XRay PatternMatchingCompiler] Entering nested switch, level: ${enumNestingLevel}');
         
         // CRITICAL FIX: Detect and transform temp variable pattern
         // When Haxe generates switch expressions for return values,
@@ -133,12 +133,12 @@ class PatternMatchingCompiler {
         Sys.println('[SWITCH_TRACKER] Number of cases: ${cases.length}');
         
         #if debug_temp_var
-        trace("[PatternMatchingCompiler] ============== SWITCH COMPILATION START ==============");
-        trace('[PatternMatchingCompiler] compileSwitchExpression called');
-        trace('[PatternMatchingCompiler] Switch expr type: ${switchExpr.expr}');
-        trace('[PatternMatchingCompiler] Switch expr t type: ${switchExpr.t}');
-        trace('[PatternMatchingCompiler] Number of cases: ${cases.length}');
-        trace('[PatternMatchingCompiler] Has default: ${defaultExpr != null}');
+//         trace("[PatternMatchingCompiler] ============== SWITCH COMPILATION START ==============");
+//         trace('[PatternMatchingCompiler] compileSwitchExpression called');
+//         trace('[PatternMatchingCompiler] Switch expr type: ${switchExpr.expr}');
+//         trace('[PatternMatchingCompiler] Switch expr t type: ${switchExpr.t}');
+//         trace('[PatternMatchingCompiler] Number of cases: ${cases.length}');
+//         trace('[PatternMatchingCompiler] Has default: ${defaultExpr != null}');
         #end
         
         // Check for temp variable assignment patterns in all cases
@@ -146,9 +146,9 @@ class PatternMatchingCompiler {
             var caseData = cases[i];
             
             #if debug_temp_var
-            trace('[PatternMatchingCompiler] Case ${i}: ${caseData.values.length} values');
+//             trace('[PatternMatchingCompiler] Case ${i}: ${caseData.values.length} values');
             for (v in caseData.values) {
-                trace('[PatternMatchingCompiler]   Value: ${v.expr}');
+//                 trace('[PatternMatchingCompiler]   Value: ${v.expr}');
             }
             #end
             
@@ -159,14 +159,14 @@ class PatternMatchingCompiler {
                         case TLocal(v):
                             var varName = compiler.getOriginalVarName(v);
                             #if debug_temp_var
-                            trace('[PatternMatchingCompiler]   Case body assigns to: ${varName}');
+//                             trace('[PatternMatchingCompiler]   Case body assigns to: ${varName}');
                             #end
                             
                             if (varName.indexOf("temp") == 0) {
                                 if (tempVarName == null) {
                                     tempVarName = varName;
                                     #if debug_temp_var
-                                    trace('[PatternMatchingCompiler]   ✓ TEMP VARIABLE ASSIGNMENT DETECTED: ${tempVarName}');
+//                                     trace('[PatternMatchingCompiler]   ✓ TEMP VARIABLE ASSIGNMENT DETECTED: ${tempVarName}');
                                     #end
                                 } else if (tempVarName != varName) {
                                     // Different temp variables in different cases
@@ -178,13 +178,13 @@ class PatternMatchingCompiler {
                         case _:
                             allCasesAssignToTempVar = false;
                             #if debug_temp_var
-                            trace('[PatternMatchingCompiler]   Case body assigns to non-local');
+//                             trace('[PatternMatchingCompiler]   Case body assigns to non-local');
                             #end
                     }
                 case _:
                     allCasesAssignToTempVar = false;
                     #if debug_temp_var
-                    trace('[PatternMatchingCompiler]   Case body type: ${caseData.expr.expr}');
+//                     trace('[PatternMatchingCompiler]   Case body type: ${caseData.expr.expr}');
                     #end
             }
         }
@@ -192,8 +192,8 @@ class PatternMatchingCompiler {
         // If all cases assign to the same temp variable, transform them
         if (allCasesAssignToTempVar && tempVarName != null) {
             #if debug_temp_var
-            trace('[PatternMatchingCompiler] ✓ ALL CASES ASSIGN TO TEMP VARIABLE: ${tempVarName}');
-            trace('[PatternMatchingCompiler] Transforming to direct value returns...');
+//             trace('[PatternMatchingCompiler] ✓ ALL CASES ASSIGN TO TEMP VARIABLE: ${tempVarName}');
+//             trace('[PatternMatchingCompiler] Transforming to direct value returns...');
             #end
             
             // Transform case bodies to return values directly
@@ -241,19 +241,19 @@ class PatternMatchingCompiler {
             defaultExpr = transformedDefault;
             
             #if debug_temp_var
-            trace('[PatternMatchingCompiler] ✓ TRANSFORMATION COMPLETE');
+//             trace('[PatternMatchingCompiler] ✓ TRANSFORMATION COMPLETE');
             #end
         }
         
         #if debug_temp_var
-        trace("[PatternMatchingCompiler] ============== SWITCH COMPILATION END ==============");
+//         trace("[PatternMatchingCompiler] ============== SWITCH COMPILATION END ==============");
         #end
         
         
         #if debug_pattern_matching
-        trace("[PatternMatchingCompiler] Compiling switch expression");
-        trace('[PatternMatchingCompiler] Switch expr type: ${switchExpr.t}');
-        trace('[PatternMatchingCompiler] Number of cases: ${cases.length}');
+//         trace("[PatternMatchingCompiler] Compiling switch expression");
+//         trace('[PatternMatchingCompiler] Switch expr type: ${switchExpr.t}');
+//         trace('[PatternMatchingCompiler] Number of cases: ${cases.length}');
         #end
         
         // CRITICAL FIX: Detect TSwitch(TEnumIndex(expr)) pattern for direct Result/Option compilation
@@ -261,7 +261,7 @@ class PatternMatchingCompiler {
         if (isSwitchOnEnumIndex(switchExpr)) {
             Sys.println('[SWITCH_TRACKER] EARLY RETURN - isSwitchOnEnumIndex');
             #if debug_pattern_matching
-            trace("[PatternMatchingCompiler] ✓ DETECTED TSwitch(TEnumIndex) - direct compilation");
+//             trace("[PatternMatchingCompiler] ✓ DETECTED TSwitch(TEnumIndex) - direct compilation");
             #end
             enumNestingLevel--;
             return compileSwitchOnEnumIndexDirectly(switchExpr, cases, defaultExpr, context);
@@ -271,7 +271,7 @@ class PatternMatchingCompiler {
         if (shouldUseWithStatement(switchExpr, cases)) {
             Sys.println('[SWITCH_TRACKER] EARLY RETURN - shouldUseWithStatement');
             #if debug_pattern_matching
-            trace("[PatternMatchingCompiler] Using with statement optimization");
+//             trace("[PatternMatchingCompiler] Using with statement optimization");
             #end
             enumNestingLevel--;
             return compileWithStatement(switchExpr, cases, defaultExpr, context);
@@ -285,19 +285,19 @@ class PatternMatchingCompiler {
         if (enumType != null) {
             Sys.println('[SWITCH_TRACKER] ENUM TYPE DETECTED - ${enumType.name}');
             #if debug_pattern_matching
-            trace('[PatternMatchingCompiler] ✓ DETECTED ENUM TYPE: ${enumType.name}');
+//             trace('[PatternMatchingCompiler] ✓ DETECTED ENUM TYPE: ${enumType.name}');
             #end
             
             // Special handling for Option and Result types
             if (isOptionType(enumType)) {
                 #if debug_pattern_matching
-                trace('[PatternMatchingCompiler] → Using Option switch compilation');
+//                 trace('[PatternMatchingCompiler] → Using Option switch compilation');
                 #end
                 enumNestingLevel--;
                 return compileOptionSwitch(switchExpr, cases, defaultExpr, context);
             } else if (isResultType(enumType)) {
                 #if debug_pattern_matching
-                trace('[PatternMatchingCompiler] → Using Result switch compilation');
+//                 trace('[PatternMatchingCompiler] → Using Result switch compilation');
                 #end
                 enumNestingLevel--;
                 return compileResultSwitch(switchExpr, cases, defaultExpr, context);
@@ -305,8 +305,8 @@ class PatternMatchingCompiler {
                 // CRITICAL FIX: Handle all other enum types with index-based matching
                 // Convert switch(enum) to case(elem(enum, 0)) with integer patterns
                 #if debug_pattern_matching
-                trace('[PatternMatchingCompiler] → USING INDEX-BASED MATCHING FOR ENUM: ${enumType.name}');
-                trace('[PatternMatchingCompiler] → Calling compileEnumIndexSwitch...');
+//                 trace('[PatternMatchingCompiler] → USING INDEX-BASED MATCHING FOR ENUM: ${enumType.name}');
+//                 trace('[PatternMatchingCompiler] → Calling compileEnumIndexSwitch...');
                 #end
                 enumNestingLevel--;
                 return compileEnumIndexSwitch(switchExpr, cases, defaultExpr, context, enumType);
@@ -314,7 +314,7 @@ class PatternMatchingCompiler {
         } else {
             Sys.println('[SWITCH_TRACKER] NO ENUM TYPE - trying inference');
             #if debug_pattern_matching
-            trace('[PatternMatchingCompiler] ⚠️ NO ENUM TYPE DETECTED - using standard case compilation');
+//             trace('[PatternMatchingCompiler] ⚠️ NO ENUM TYPE DETECTED - using standard case compilation');
             #end
             
             // CRITICAL FIX: Try to detect enum type from switch cases themselves
@@ -323,7 +323,7 @@ class PatternMatchingCompiler {
             if (inferredEnumType != null) {
                 Sys.println('[SWITCH_TRACKER] INFERRED ENUM TYPE - ${inferredEnumType.name}');
                 #if debug_pattern_matching
-                trace('[PatternMatchingCompiler] ✓ INFERRED ENUM TYPE: ${inferredEnumType.name} - forcing elem-based compilation');
+//                 trace('[PatternMatchingCompiler] ✓ INFERRED ENUM TYPE: ${inferredEnumType.name} - forcing elem-based compilation');
                 #end
                 enumNestingLevel--;
                 return compileEnumIndexSwitch(switchExpr, cases, defaultExpr, context, inferredEnumType);
@@ -333,7 +333,7 @@ class PatternMatchingCompiler {
             // CRITICAL FIX: Force ALL switches to use elem-based compilation by default
             // This ensures consistent pattern generation across all enum switches
             #if debug_pattern_matching
-            trace('[PatternMatchingCompiler] ✓ FORCING ALL SWITCHES TO USE ELEM-BASED COMPILATION');
+//             trace('[PatternMatchingCompiler] ✓ FORCING ALL SWITCHES TO USE ELEM-BASED COMPILATION');
             #end
             enumNestingLevel--;
             return compileEnumIndexSwitch(switchExpr, cases, defaultExpr, context, null);
@@ -369,7 +369,7 @@ class PatternMatchingCompiler {
             savedGMapping = compiler.currentFunctionParameterMap.get("g");
             compiler.currentFunctionParameterMap.remove("g");
             #if debug_pattern_matching
-            trace('[PatternMatchingCompiler] Temporarily removed g mapping in with statement: g -> ${savedGMapping}');
+//             trace('[PatternMatchingCompiler] Temporarily removed g mapping in with statement: g -> ${savedGMapping}');
             #end
         }
         
@@ -381,7 +381,7 @@ class PatternMatchingCompiler {
             compiler.currentFunctionParameterMap.set("g", savedGMapping);
         } else if (savedGMapping != null) {
             #if debug_pattern_matching
-            trace('[PatternMatchingCompiler] ⚠️ BLOCKED restoration of incorrect g -> ${savedGMapping} mapping');
+//             trace('[PatternMatchingCompiler] ⚠️ BLOCKED restoration of incorrect g -> ${savedGMapping} mapping');
             #end
         }
         var patterns: Array<String> = [];
@@ -425,7 +425,7 @@ class PatternMatchingCompiler {
      */
     public function compileResultPattern(enumField: EnumField, args: Array<TypedExpr>): String {
         #if debug_pattern_matching
-        trace('[PatternMatchingCompiler] Compiling Result pattern: ${enumField.name}');
+//         trace('[PatternMatchingCompiler] Compiling Result pattern: ${enumField.name}');
         #end
         
         var patternStr = switch (enumField.name) {
@@ -451,7 +451,7 @@ class PatternMatchingCompiler {
         };
         
         #if debug_pattern_matching
-        trace('[PatternMatchingCompiler] Generated Result pattern: ${patternStr}');
+//         trace('[PatternMatchingCompiler] Generated Result pattern: ${patternStr}');
         #end
         
         return patternStr;
@@ -468,7 +468,7 @@ class PatternMatchingCompiler {
      */
     public function compileOptionPattern(enumField: EnumField, args: Array<TypedExpr>): String {
         #if debug_pattern_matching
-        trace('[PatternMatchingCompiler] Compiling Option pattern: ${enumField.name}');
+//         trace('[PatternMatchingCompiler] Compiling Option pattern: ${enumField.name}');
         #end
         
         var patternStr = switch (enumField.name) {
@@ -489,7 +489,7 @@ class PatternMatchingCompiler {
         };
         
         #if debug_pattern_matching
-        trace('[PatternMatchingCompiler] Generated Option pattern: ${patternStr}');
+//         trace('[PatternMatchingCompiler] Generated Option pattern: ${patternStr}');
         #end
         
         return patternStr;
@@ -669,8 +669,8 @@ class PatternMatchingCompiler {
                         var enumType = extractEnumType(e.t);
                         if (enumType != null) {
                             #if debug_pattern_matching
-                            trace('[inferEnumTypeFromCases] Detected enum type: ${enumType.name}');
-                            trace('[inferEnumTypeFromCases] From constructor: ${ef.name}');
+//                             trace('[inferEnumTypeFromCases] Detected enum type: ${enumType.name}');
+//                             trace('[inferEnumTypeFromCases] From constructor: ${ef.name}');
                             #end
                             return enumType;
                         }
@@ -682,7 +682,7 @@ class PatternMatchingCompiler {
         }
         
         #if debug_pattern_matching
-        trace('[inferEnumTypeFromCases] No enum type detected from case patterns');
+//         trace('[inferEnumTypeFromCases] No enum type detected from case patterns');
         #end
         return null;
     }
@@ -736,21 +736,21 @@ class PatternMatchingCompiler {
         
         for (caseData in cases) {
             #if debug_pattern_matching
-            trace("\n[XRay PatternMatchingCompiler] ========== PROCESSING NEW CASE ==========");
-            trace('[XRay PatternMatchingCompiler] Case values count: ${caseData.values.length}');
+            // trace("\n[XRay PatternMatchingCompiler] ========== PROCESSING NEW CASE ==========");
+            // trace('[XRay PatternMatchingCompiler] Case values count: ${caseData.values.length}');
             for (i in 0...caseData.values.length) {
-                trace('[XRay PatternMatchingCompiler] Case value ${i}: ${caseData.values[i].expr}');
+                // trace('[XRay PatternMatchingCompiler] Case value ${i}: ${caseData.values[i].expr}');
             }
-            trace('[XRay PatternMatchingCompiler] Case body type: ${caseData.expr.expr}');
+            // trace('[XRay PatternMatchingCompiler] Case body type: ${caseData.expr.expr}');
             #end
             
             // Extract pattern variables from the case body first
             var patternVars = extractPatternVariables(caseData.expr);
             
             #if debug_pattern_matching
-            trace('[XRay PatternMatchingCompiler] Pattern variables extracted: ${Lambda.count(patternVars)} vars');
+            // trace('[XRay PatternMatchingCompiler] Pattern variables extracted: ${Lambda.count(patternVars)} vars');
             for (idx in patternVars.keys()) {
-                trace('[XRay PatternMatchingCompiler]   Index ${idx}: ${patternVars.get(idx)}');
+                // trace('[XRay PatternMatchingCompiler]   Index ${idx}: ${patternVars.get(idx)}');
             }
             #end
             
@@ -762,7 +762,7 @@ class PatternMatchingCompiler {
             }
             
             #if debug_pattern_matching
-            trace('[XRay PatternMatchingCompiler] Generated patterns: ${patterns}');
+            // trace('[XRay PatternMatchingCompiler] Generated patterns: ${patterns}');
             #end
             
             // CRITICAL: Clear enum extraction tracking for each case
@@ -787,9 +787,9 @@ class PatternMatchingCompiler {
             
             #if debug_pattern_matching
             var usedVarNames = [for (name in usedVariables.keys()) name];
-            trace('[XRay PatternMatchingCompiler] PATTERN USAGE ANALYSIS complete');
-            trace('[XRay PatternMatchingCompiler] Used variables in case body: [${usedVarNames.join(", ")}]');
-            trace('[XRay PatternMatchingCompiler] Context set for enum parameter optimization');
+            // trace('[XRay PatternMatchingCompiler] PATTERN USAGE ANALYSIS complete');
+            // trace('[XRay PatternMatchingCompiler] Used variables in case body: [${usedVarNames.join(", ")}]');
+            // trace('[XRay PatternMatchingCompiler] Context set for enum parameter optimization');
             #end
             
             /**
@@ -811,12 +811,12 @@ class PatternMatchingCompiler {
              */
             compiler.currentSwitchCaseBody = caseData.expr;
             #if debug_pattern_matching
-            trace('[XRay PatternMatchingCompiler] =====================================');
-            trace('[XRay PatternMatchingCompiler] ✓ SET switch case body context for orphaned parameter detection');
-            trace('[XRay PatternMatchingCompiler] Case body type: ${Type.enumConstructor(caseData.expr.expr)}');
-            trace('[XRay PatternMatchingCompiler] Case values count: ${caseData.values.length}');
-            trace('[XRay PatternMatchingCompiler] CONTEXT NOW AVAILABLE for enum parameter detection');
-            trace('[XRay PatternMatchingCompiler] =====================================');
+            // trace('[XRay PatternMatchingCompiler] =====================================');
+            // trace('[XRay PatternMatchingCompiler] ✓ SET switch case body context for orphaned parameter detection');
+            // trace('[XRay PatternMatchingCompiler] Case body type: ${Type.enumConstructor(caseData.expr.expr)}');
+            // trace('[XRay PatternMatchingCompiler] Case values count: ${caseData.values.length}');
+            // trace('[XRay PatternMatchingCompiler] CONTEXT NOW AVAILABLE for enum parameter detection');
+            // trace('[XRay PatternMatchingCompiler] =====================================');
             #end
             
             // No changes needed here - the fix should be in EnumIntrospectionCompiler itself
@@ -826,10 +826,10 @@ class PatternMatchingCompiler {
             var body = switch (caseData.expr.expr) {
                 case TBlock(el):
                     #if debug_state_threading
-                    trace('[XRay compileStandardCase] TBlock case body with ${el.length} expressions');
-                    trace('[XRay compileStandardCase] Context: ${context != null ? "exists" : "null"}');
+                    // trace('[XRay compileStandardCase] TBlock case body with ${el.length} expressions');
+                    // trace('[XRay compileStandardCase] Context: ${context != null ? "exists" : "null"}');
                     if (context != null) {
-                        trace('[XRay compileStandardCase] structParamName: ${context.structParamName}');
+                        // trace('[XRay compileStandardCase] structParamName: ${context.structParamName}');
                     }
                     #end
                     // Filter out the TVar expressions used for pattern extraction
@@ -846,36 +846,36 @@ class PatternMatchingCompiler {
                     }
                 default:
                     #if debug_state_threading
-                    trace('[XRay compileStandardCase] Non-TBlock case body: ${caseData.expr.expr}');
-                    trace('[XRay compileStandardCase] Expression type: ${Type.enumConstructor(caseData.expr.expr)}');
-                    trace('[XRay compileStandardCase] Context: ${context != null ? "exists" : "null"}');
+                    // trace('[XRay compileStandardCase] Non-TBlock case body: ${caseData.expr.expr}');
+                    // trace('[XRay compileStandardCase] Expression type: ${Type.enumConstructor(caseData.expr.expr)}');
+                    // trace('[XRay compileStandardCase] Context: ${context != null ? "exists" : "null"}');
                     if (context != null) {
-                        trace('[XRay compileStandardCase] structParamName: ${context.structParamName}');
+                        // trace('[XRay compileStandardCase] structParamName: ${context.structParamName}');
                     }
                     #end
                     // Check if this is a direct field assignment that needs transformation
                     if (context != null && context.structParamName != null) {
                         #if debug_state_threading
-                        trace('[XRay compileStandardCase] Checking for direct field assignment with context.structParamName = ${context.structParamName}');
+                        // trace('[XRay compileStandardCase] Checking for direct field assignment with context.structParamName = ${context.structParamName}');
                         #end
                         // Try to transform direct field assignments
                         // Direct field assignment analysis removed - compile normally
                         var directAssignment = null;
                         if (directAssignment != null) {
                             #if debug_state_threading
-                            trace('[XRay compileStandardCase] ✓ Direct assignment found, using transformed code');
-                            trace('[XRay compileStandardCase] Transformed: ${directAssignment.compiledCode}');
+                            // trace('[XRay compileStandardCase] ✓ Direct assignment found, using transformed code');
+                            // trace('[XRay compileStandardCase] Transformed: ${directAssignment.compiledCode}');
                             #end
                             directAssignment.compiledCode;
                         } else {
                             #if debug_state_threading
-                            trace('[XRay compileStandardCase] ✗ No direct assignment found, using normal compilation');
+                            // trace('[XRay compileStandardCase] ✗ No direct assignment found, using normal compilation');
                             #end
                             compiler.compileExpression(caseData.expr);
                         }
                     } else {
                         #if debug_state_threading
-                        trace('[XRay compileStandardCase] ✗ No context or structParamName, using normal compilation');
+                        // trace('[XRay compileStandardCase] ✗ No context or structParamName, using normal compilation');
                         #end
                         compiler.compileExpression(caseData.expr);
                     }
@@ -895,8 +895,8 @@ class PatternMatchingCompiler {
             compiler.currentSwitchCaseBody = null;
             compiler.patternUsageContext = null;
             #if debug_pattern_matching
-            trace('[XRay PatternMatchingCompiler] ✓ CLEARED switch case body context');
-            trace('[XRay PatternMatchingCompiler] ✓ CLEARED pattern usage context');
+            // trace('[XRay PatternMatchingCompiler] ✓ CLEARED switch case body context');
+            // trace('[XRay PatternMatchingCompiler] ✓ CLEARED pattern usage context');
             #end
             
             // Restore the saved mapping if we removed it
@@ -904,11 +904,11 @@ class PatternMatchingCompiler {
             if (savedGMapping != null && !StringTools.endsWith(savedGMapping, "_counter")) {
                 compiler.currentFunctionParameterMap.set("g", savedGMapping);
                 #if debug_pattern_matching
-                trace('[XRay PatternMatchingCompiler] RESTORED g -> ${savedGMapping} mapping after case body compilation');
+                // trace('[XRay PatternMatchingCompiler] RESTORED g -> ${savedGMapping} mapping after case body compilation');
                 #end
             } else if (savedGMapping != null) {
                 #if debug_pattern_matching
-                trace('[XRay PatternMatchingCompiler] ⚠️ BLOCKED restoration of incorrect g -> ${savedGMapping} mapping after case body');
+                // trace('[XRay PatternMatchingCompiler] ⚠️ BLOCKED restoration of incorrect g -> ${savedGMapping} mapping after case body');
                 #end
             }
             
@@ -953,7 +953,7 @@ class PatternMatchingCompiler {
         if (assignmentPattern.match(compiledExpr)) {
             exprStr = assignmentPattern.matched(1);
             #if debug_pattern_matching
-            trace('[compileOptionSwitch] ✓ Extracted variable from assignment: ${exprStr}');
+//             trace('[compileOptionSwitch] ✓ Extracted variable from assignment: ${exprStr}');
             #end
         }
         var caseStrings: Array<String> = [];
@@ -994,7 +994,7 @@ class PatternMatchingCompiler {
         ?context: FunctionContext
     ): String {
         #if debug_pattern_matching
-        trace("[PatternMatchingCompiler] ✓ RESULT SWITCH COMPILATION - Generating direct patterns");
+//         trace("[PatternMatchingCompiler] ✓ RESULT SWITCH COMPILATION - Generating direct patterns");
         #end
         
         /**
@@ -1008,12 +1008,12 @@ class PatternMatchingCompiler {
          * HOW: Parse 'variable = expression' pattern to get the actual variable.
          */
         // Debug what we're about to compile
-        trace('[PatternMatchingCompiler] About to compile switch expression: ${switchExpr.expr}');
+//         trace('[PatternMatchingCompiler] About to compile switch expression: ${switchExpr.expr}');
         
         // Special check for our problematic variables
         switch (switchExpr.expr) {
             case TLocal(v) if (v.name == "bulkAction" || v.name == "alertLevel"):
-                trace('[PatternMatchingCompiler] ⚠️ COMPILING CAMELCASE VARIABLE: ${v.name}');
+//                 trace('[PatternMatchingCompiler] ⚠️ COMPILING CAMELCASE VARIABLE: ${v.name}');
             case _:
         }
         
@@ -1025,17 +1025,17 @@ class PatternMatchingCompiler {
         if (assignmentPattern.match(compiledExpr)) {
             exprStr = assignmentPattern.matched(1);
             #if debug_pattern_matching
-            trace('[compileResultSwitch] ✓ Extracted variable from assignment: ${exprStr}');
+//             trace('[compileResultSwitch] ✓ Extracted variable from assignment: ${exprStr}');
             #end
         }
-        trace('[PatternMatchingCompiler] Compiled switch expression to: ${exprStr}');
+//         trace('[PatternMatchingCompiler] Compiled switch expression to: ${exprStr}');
         
         // CRITICAL FIX: If the compiled expression contains a case statement, extract the variable
         // This handles situations where enum introspection was already applied
         if (exprStr.indexOf("case ") == 0 && exprStr.indexOf(" do ") > 0) {
             #if debug_pattern_matching
-            trace('[PatternMatchingCompiler] ⚠️ DETECTED ENUM INTROSPECTION in Result switch - extracting variable');
-            trace('[PatternMatchingCompiler] Original exprStr: ${exprStr}');
+//             trace('[PatternMatchingCompiler] ⚠️ DETECTED ENUM INTROSPECTION in Result switch - extracting variable');
+//             trace('[PatternMatchingCompiler] Original exprStr: ${exprStr}');
             #end
             
             // Extract the variable from "case g do {:ok, _} -> 0; {:error, _} -> 1; _ -> -1 end"
@@ -1044,7 +1044,7 @@ class PatternMatchingCompiler {
             if (caseStartIndex < doIndex) {
                 exprStr = exprStr.substring(caseStartIndex, doIndex);
                 #if debug_pattern_matching
-                trace('[PatternMatchingCompiler] ✓ EXTRACTED variable: ${exprStr}');
+//                 trace('[PatternMatchingCompiler] ✓ EXTRACTED variable: ${exprStr}');
                 #end
             }
         }
@@ -1057,19 +1057,19 @@ class PatternMatchingCompiler {
         for (caseData in cases) {
             for (value in caseData.values) {
                 #if debug_pattern_matching
-                trace('[PatternMatchingCompiler] Processing Result case value: ${value.expr}');
+//                 trace('[PatternMatchingCompiler] Processing Result case value: ${value.expr}');
                 #end
                 
                 var pattern = switch (value.expr) {
                     case TConst(TInt(0)):
                         #if debug_pattern_matching
-                        trace('[PatternMatchingCompiler] ✓ OK pattern (index 0)');
+//                         trace('[PatternMatchingCompiler] ✓ OK pattern (index 0)');
                         #end
                         "{:ok, _}"; // Ok constructor
                         
                     case TConst(TInt(1)):
                         #if debug_pattern_matching
-                        trace('[PatternMatchingCompiler] ✓ ERROR pattern (index 1)');
+//                         trace('[PatternMatchingCompiler] ✓ ERROR pattern (index 1)');
                         #end
                         "{:error, _}"; // Error constructor
                         
@@ -1089,7 +1089,7 @@ class PatternMatchingCompiler {
                         
                     case _:
                         #if debug_pattern_matching
-                        trace('[PatternMatchingCompiler] ✓ FALLBACK pattern compilation');
+//                         trace('[PatternMatchingCompiler] ✓ FALLBACK pattern compilation');
                         #end
                         // Fall back to regular pattern compilation
                         compileEnumPattern(value);
@@ -1099,7 +1099,7 @@ class PatternMatchingCompiler {
                 caseStrings.push('  ${pattern} -> ${body}');
                 
                 #if debug_pattern_matching
-                trace('[PatternMatchingCompiler] Generated Result case: ${pattern} -> [body]');
+//                 trace('[PatternMatchingCompiler] Generated Result case: ${pattern} -> [body]');
                 #end
             }
         }
@@ -1117,15 +1117,15 @@ class PatternMatchingCompiler {
             // This is an incorrectly mapped variable - use the original 'g' instead
             exprStr = "g";
             #if debug_pattern_matching
-            trace('[PatternMatchingCompiler] WARNING: Fixed incorrect g_counter mapping to g');
+//             trace('[PatternMatchingCompiler] WARNING: Fixed incorrect g_counter mapping to g');
             #end
         }
         
         var result = 'case ${exprStr} do\n${caseStrings.join("\n")}\nend';
         
         #if debug_pattern_matching
-        trace('[PatternMatchingCompiler] ✓ RESULT SWITCH COMPLETE');
-        trace('[PatternMatchingCompiler] Generated: ${result.substring(0, 100)}...');
+//         trace('[PatternMatchingCompiler] ✓ RESULT SWITCH COMPLETE');
+//         trace('[PatternMatchingCompiler] Generated: ${result.substring(0, 100)}...');
         #end
         
         return result;
@@ -1157,8 +1157,8 @@ class PatternMatchingCompiler {
      */
     private function filterPatternExtractionVars(el: Array<TypedExpr>, patternVars: Map<Int, String>): Array<TypedExpr> {
         #if debug_pattern_matching
-        trace("[XRay filterPatternExtractionVars] START - Processing ${el.length} expressions");
-        trace('[XRay filterPatternExtractionVars] Pattern vars count: ${Lambda.count(patternVars)}');
+        // trace("[XRay filterPatternExtractionVars] START - Processing ${el.length} expressions");
+        // trace('[XRay filterPatternExtractionVars] Pattern vars count: ${Lambda.count(patternVars)}');
         #end
         
         // Phase 1: Identify which extraction vars are actually used for patterns (not orphaned)
@@ -1182,11 +1182,11 @@ class PatternMatchingCompiler {
                                 if (patternVars.exists(index)) {
                                     usedExtractionVars.set(tvar.name, index);
                                     #if debug_pattern_matching
-                                    trace('[XRay filterPatternExtractionVars] ✓ Keeping extraction var ${tvar.name} (used for pattern param ${index})');
+                                    // trace('[XRay filterPatternExtractionVars] ✓ Keeping extraction var ${tvar.name} (used for pattern param ${index})');
                                     #end
                                 } else {
                                     #if debug_pattern_matching
-                                    trace('[XRay filterPatternExtractionVars] ✗ Marking orphaned extraction var ${tvar.name} (param ${index} not used in pattern)');
+                                    // trace('[XRay filterPatternExtractionVars] ✗ Marking orphaned extraction var ${tvar.name} (param ${index} not used in pattern)');
                                     #end
                                 }
                             case _:
@@ -1201,8 +1201,8 @@ class PatternMatchingCompiler {
         collectExtractionVarsRecursive(el, allExtractionVars);
         
         #if debug_pattern_matching
-        trace('[XRay filterPatternExtractionVars] Found extraction vars: ${[for (k in allExtractionVars.keys()) k]}');
-        trace('[XRay filterPatternExtractionVars] Used extraction vars: ${[for (k in usedExtractionVars.keys()) k]}');
+        // trace('[XRay filterPatternExtractionVars] Found extraction vars: ${[for (k in allExtractionVars.keys()) k]}');
+        // trace('[XRay filterPatternExtractionVars] Used extraction vars: ${[for (k in usedExtractionVars.keys()) k]}');
         #end
         
         // Phase 3: Filter expressions recursively, but be smart about what to remove
@@ -1215,7 +1215,7 @@ class PatternMatchingCompiler {
         }
         
         #if debug_pattern_matching
-        trace("[XRay filterPatternExtractionVars] END - Returning ${filtered.length} filtered expressions");
+        // trace("[XRay filterPatternExtractionVars] END - Returning ${filtered.length} filtered expressions");
         #end
         
         return filtered;
@@ -1240,7 +1240,7 @@ class PatternMatchingCompiler {
                     case TEnumParameter(_, _, _):
                         extractionVars.set(tvar.name, true);
                         #if debug_pattern_matching
-                        trace('[XRay collectExtractionVars] Found extraction var: ${tvar.name}');
+                        // trace('[XRay collectExtractionVars] Found extraction var: ${tvar.name}');
                         #end
                     case _:
                 }
@@ -1297,12 +1297,12 @@ class PatternMatchingCompiler {
                             // CRITICAL FIX: Only filter out enum parameter extractions that are NOT used for patterns
                             if (!usedExtractionVars.exists(tvar.name)) {
                                 #if debug_pattern_matching
-                                trace('[XRay filterExpression] Filtering out ORPHANED enum parameter extraction: ${tvar.name}');
+                                // trace('[XRay filterExpression] Filtering out ORPHANED enum parameter extraction: ${tvar.name}');
                                 #end
                                 return null; // Skip orphaned enum parameter extraction
                             } else {
                                 #if debug_pattern_matching
-                                trace('[XRay filterExpression] Keeping USED enum parameter extraction: ${tvar.name}');
+                                // trace('[XRay filterExpression] Keeping USED enum parameter extraction: ${tvar.name}');
                                 #end
                                 // Keep this extraction because it's used for pattern matching
                             }
@@ -1314,7 +1314,7 @@ class PatternMatchingCompiler {
                         case TLocal(v):
                             if (allExtractionVars.exists(v.name)) {
                                 #if debug_pattern_matching
-                                trace('[XRay filterExpression] Filtering out pattern var assignment: ${tvar.name} = ${v.name}');
+                                // trace('[XRay filterExpression] Filtering out pattern var assignment: ${tvar.name} = ${v.name}');
                                 #end
                                 return null; // Skip pattern variable assignment
                             }
@@ -1342,7 +1342,7 @@ class PatternMatchingCompiler {
             case TIf(cond, eif, eelse):
                 // Recursively filter if branches
                 #if debug_pattern_matching
-                trace("[XRay filterExpression] Processing TIf - filtering branches");
+                // trace("[XRay filterExpression] Processing TIf - filtering branches");
                 #end
                 
                 var filteredIf = filterExpressionRecursive(eif, allExtractionVars, usedExtractionVars);
@@ -1435,7 +1435,7 @@ class PatternMatchingCompiler {
                                 
                                 patternVars.set(paramIndex, varName);
                                 #if debug_pattern_matching
-                                trace('[XRay PatternMatchingCompiler] ✓ Mapped param ${paramIndex} to variable: ${varName} (via ${v.name}, unused=${isUnused})');
+                                // trace('[XRay PatternMatchingCompiler] ✓ Mapped param ${paramIndex} to variable: ${varName} (via ${v.name}, unused=${isUnused})');
                                 #end
                             }
                         case _:
@@ -1443,7 +1443,7 @@ class PatternMatchingCompiler {
                 case TBlock(el):
                     // Recurse into nested blocks
                     #if debug_pattern_matching
-                    trace('[XRay PatternMatchingCompiler] Recursing into TBlock with ${el.length} expressions');
+                    // trace('[XRay PatternMatchingCompiler] Recursing into TBlock with ${el.length} expressions');
                     #end
                     findPatternVariableAssignments(el, extractionVars, patternVars);
                 case TIf(econd, eif, eelse):
@@ -1472,13 +1472,13 @@ class PatternMatchingCompiler {
         var patternVars = new Map<Int, String>();
         
         #if debug_pattern_matching
-        trace("[XRay PatternMatchingCompiler] Extracting pattern variables from case body");
+        // trace("[XRay PatternMatchingCompiler] Extracting pattern variables from case body");
         #end
         
         switch (expr.expr) {
             case TBlock(el):
                 #if debug_pattern_matching
-                trace('[XRay PatternMatchingCompiler] Block has ${el.length} expressions');
+                // trace('[XRay PatternMatchingCompiler] Block has ${el.length} expressions');
                 for (k in 0...Std.int(Math.min(el.length, 10))) {
                     var exprStr = switch(el[k].expr) {
                         case TVar(tvar, e):
@@ -1494,7 +1494,7 @@ class PatternMatchingCompiler {
                         case _: 
                             Std.string(el[k].expr);
                     };
-                    trace('[XRay PatternMatchingCompiler] el[${k}]: ${exprStr}');
+                    // trace('[XRay PatternMatchingCompiler] el[${k}]: ${exprStr}');
                 }
                 #end
                 
@@ -1504,18 +1504,18 @@ class PatternMatchingCompiler {
                     switch (el[i].expr) {
                         case TVar(tvar, e):
                             #if debug_pattern_matching
-                            trace('[XRay PatternMatchingCompiler] Checking TVar: name="${tvar.name}", startsWith(_g)=${StringTools.startsWith(tvar.name, "_g")}, e!=null=${e != null}');
+                            // trace('[XRay PatternMatchingCompiler] Checking TVar: name="${tvar.name}", startsWith(_g)=${StringTools.startsWith(tvar.name, "_g")}, e!=null=${e != null}');
                             #end
                             if (StringTools.startsWith(tvar.name, "_g") && e != null) {
                                 switch (e.expr) {
                                     case TEnumParameter(_, enumField, index):
                                         extractionVars.set(tvar.name, index);
                                         #if debug_pattern_matching
-                                        trace('[XRay PatternMatchingCompiler] ✓ Found extraction: ${tvar.name} -> param ${index}');
+                                        // trace('[XRay PatternMatchingCompiler] ✓ Found extraction: ${tvar.name} -> param ${index}');
                                         #end
                                     case _:
                                         #if debug_pattern_matching
-                                        trace('[XRay PatternMatchingCompiler] TVar ${tvar.name} has non-TEnumParameter init: ${e.expr}');
+                                        // trace('[XRay PatternMatchingCompiler] TVar ${tvar.name} has non-TEnumParameter init: ${e.expr}');
                                         #end
                                 }
                             }
@@ -1527,14 +1527,14 @@ class PatternMatchingCompiler {
                 findPatternVariableAssignments(el, extractionVars, patternVars);
             case _:
                 #if debug_pattern_matching
-                trace('[XRay PatternMatchingCompiler] Case body is not TBlock: ${expr.expr}');
+                // trace('[XRay PatternMatchingCompiler] Case body is not TBlock: ${expr.expr}');
                 #end
         }
         
         #if debug_pattern_matching
-        trace('[XRay PatternMatchingCompiler] Extracted ${Lambda.count(patternVars)} pattern variables');
+        // trace('[XRay PatternMatchingCompiler] Extracted ${Lambda.count(patternVars)} pattern variables');
         for (key in patternVars.keys()) {
-            trace('[XRay PatternMatchingCompiler]   Param ${key}: ${patternVars.get(key)}');
+            // trace('[XRay PatternMatchingCompiler]   Param ${key}: ${patternVars.get(key)}');
         }
         #end
         
@@ -1554,7 +1554,7 @@ class PatternMatchingCompiler {
      */
     private function compilePatternWithVariables(expr: TypedExpr, patternVars: Map<Int, String>, ?caseBody: TypedExpr): String {
         #if debug_pattern_matching
-        trace('[XRay PatternMatchingCompiler] compilePatternWithVariables: expr=${expr.expr}, patternVars=${patternVars}');
+        // trace('[XRay PatternMatchingCompiler] compilePatternWithVariables: expr=${expr.expr}, patternVars=${patternVars}');
         #end
         
         return switch (expr.expr) {
@@ -1677,8 +1677,8 @@ class PatternMatchingCompiler {
                                 // Extract base name without number suffix (spec2 → spec)
                                 originalName = ~/^(.+?)([0-9]+)$/.replace(varName, "$1");
                                 #if debug_pattern_matching
-                                trace('[XRay PatternMatchingCompiler] RENAME DETECTED: Haxe renamed "${originalName}" to "${varName}" to avoid shadowing');
-                                trace('[XRay PatternMatchingCompiler] Using original name "${originalName}" in pattern for consistency');
+                                // trace('[XRay PatternMatchingCompiler] RENAME DETECTED: Haxe renamed "${originalName}" to "${varName}" to avoid shadowing');
+                                // trace('[XRay PatternMatchingCompiler] Using original name "${originalName}" in pattern for consistency');
                                 #end
                             }
                             
@@ -1699,7 +1699,7 @@ class PatternMatchingCompiler {
                                 // Variable was renamed (spec2 -> spec), assume it's used for safety
                                 isUsed = true;
                                 #if debug_pattern_matching
-                                trace('[XRay PatternMatchingCompiler] Renamed "${varName}"→"${originalName}", assuming used');
+                                // trace('[XRay PatternMatchingCompiler] Renamed "${varName}"→"${originalName}", assuming used');
                                 #end
                             } else if (caseBody != null) {
                                 // Check if variable is used in the body
@@ -1710,13 +1710,13 @@ class PatternMatchingCompiler {
                                 // Variable not used - prefix with underscore
                                 varList.push("_" + originalName);
                                 #if debug_pattern_matching
-                                trace('[XRay PatternMatchingCompiler] Variable "${originalName}" not used in case body, prefixing with underscore');
+                                // trace('[XRay PatternMatchingCompiler] Variable "${originalName}" not used in case body, prefixing with underscore');
                                 #end
                             } else {
                                 // Variable is used - use the original name
                                 varList.push(originalName);
                                 #if debug_pattern_matching
-                                trace('[XRay PatternMatchingCompiler] Variable "${originalName}" IS used in case body, no prefix needed');
+                                // trace('[XRay PatternMatchingCompiler] Variable "${originalName}" IS used in case body, no prefix needed');
                                 #end
                             }
                         } else {
@@ -1724,7 +1724,7 @@ class PatternMatchingCompiler {
                         }
                     }
                     #if debug_pattern_matching
-                    trace('[XRay PatternMatchingCompiler] Generating enum tuple pattern for index ${n}: {${n}, ${varList.join(", ")}}');
+                    // trace('[XRay PatternMatchingCompiler] Generating enum tuple pattern for index ${n}: {${n}, ${varList.join(", ")}}');
                     #end
                     
                     // For integer patterns with variables, generate tuple pattern
@@ -1737,9 +1737,9 @@ class PatternMatchingCompiler {
                     // Simple integer pattern - either no variables or elem() based switch
                     #if debug_pattern_matching
                     if (Lambda.count(patternVars) > 0) {
-                        trace('[XRay PatternMatchingCompiler] Generating simple integer pattern for elem() switch: ${n}');
+                        // trace('[XRay PatternMatchingCompiler] Generating simple integer pattern for elem() switch: ${n}');
                     } else {
-                        trace('[XRay PatternMatchingCompiler] Generating simple integer pattern: ${n}');
+                        // trace('[XRay PatternMatchingCompiler] Generating simple integer pattern: ${n}');
                     }
                     #end
                     Std.string(n);
@@ -1916,17 +1916,17 @@ class PatternMatchingCompiler {
         var atom = ':${NamingHelper.toSnakeCase(name)}';
         
         #if debug_pattern_matching
-        trace('[PatternMatchingCompiler] compileTuplePattern called');
-        trace('[PatternMatchingCompiler]   name: ${name}');
-        trace('[PatternMatchingCompiler]   args.length: ${args.length}');
+//         trace('[PatternMatchingCompiler] compileTuplePattern called');
+//         trace('[PatternMatchingCompiler]   name: ${name}');
+//         trace('[PatternMatchingCompiler]   args.length: ${args.length}');
         for (i in 0...args.length) {
-            trace('[PatternMatchingCompiler]   arg[${i}]: ${args[i].expr}');
+//             trace('[PatternMatchingCompiler]   arg[${i}]: ${args[i].expr}');
         }
         #end
         
         if (args.length == 0) {
             #if debug_pattern_matching
-            trace('[PatternMatchingCompiler]   -> Returning atom: ${atom}');
+//             trace('[PatternMatchingCompiler]   -> Returning atom: ${atom}');
             #end
             return atom;
         }
@@ -1935,7 +1935,7 @@ class PatternMatchingCompiler {
         var result = '{${atom}, ${argPatterns.join(", ")}}';
         
         #if debug_pattern_matching
-        trace('[PatternMatchingCompiler]   -> Returning tuple: ${result}');
+//         trace('[PatternMatchingCompiler]   -> Returning tuple: ${result}');
         #end
         
         return result;
@@ -1961,23 +1961,23 @@ class PatternMatchingCompiler {
      */
     private function compilePatternBody(expr: TypedExpr, ?context: FunctionContext): String {
         #if debug_pattern_matching
-        trace("[XRay PatternMatchingCompiler] CASE BODY COMPILATION START");
-        trace('[XRay PatternMatchingCompiler] Body expression type: ${expr.expr}');
-        trace('[XRay PatternMatchingCompiler] Context received: ${context != null ? "yes" : "no"}');
+        // trace("[XRay PatternMatchingCompiler] CASE BODY COMPILATION START");
+        // trace('[XRay PatternMatchingCompiler] Body expression type: ${expr.expr}');
+        // trace('[XRay PatternMatchingCompiler] Context received: ${context != null ? "yes" : "no"}');
         if (context != null && context.structParamName != null) {
-            trace('[XRay PatternMatchingCompiler] Context structParamName: ${context.structParamName}');
+            // trace('[XRay PatternMatchingCompiler] Context structParamName: ${context.structParamName}');
         }
         #end
         
         return switch (expr.expr) {
             case TBlock(el):
                 #if debug_pattern_matching
-                trace("[XRay PatternMatchingCompiler] ✓ DELEGATING TBlock to ControlFlowCompiler");
-                trace('[XRay PatternMatchingCompiler] Block has ${el.length} expressions');
+                // trace("[XRay PatternMatchingCompiler] ✓ DELEGATING TBlock to ControlFlowCompiler");
+                // trace('[XRay PatternMatchingCompiler] Block has ${el.length} expressions');
                 for (i in 0...el.length) {
-                    trace('[XRay PatternMatchingCompiler] Expression ${i}: ${el[i].expr}');
+                    // trace('[XRay PatternMatchingCompiler] Expression ${i}: ${el[i].expr}');
                 }
-                trace('[XRay PatternMatchingCompiler] Passing context to compileBlock: ${context != null ? "yes" : "no"}');
+                // trace('[XRay PatternMatchingCompiler] Passing context to compileBlock: ${context != null ? "yes" : "no"}');
                 #end
                 
                 // Use the passed context if available, otherwise don't pass context
@@ -1992,22 +1992,22 @@ class PatternMatchingCompiler {
                 }
                 
                 #if debug_pattern_matching
-                trace('[XRay PatternMatchingCompiler] ControlFlowCompiler result: ${result.substring(0, 100)}...');
+                // trace('[XRay PatternMatchingCompiler] ControlFlowCompiler result: ${result.substring(0, 100)}...');
                 #end
                 
                 result;
                 
             case TParenthesis(e):
                 #if debug_pattern_matching
-                trace("[XRay PatternMatchingCompiler] ✓ FOUND TParenthesis wrapping another expression");
-                trace('[XRay PatternMatchingCompiler] Inner expression type: ${e.expr}');
+                // trace("[XRay PatternMatchingCompiler] ✓ FOUND TParenthesis wrapping another expression");
+                // trace('[XRay PatternMatchingCompiler] Inner expression type: ${e.expr}');
                 #end
                 
                 // Recursively process the parentheses content - this might be a TBlock!
                 var result = compilePatternBody(e, context);
                 
                 #if debug_pattern_matching
-                trace('[XRay PatternMatchingCompiler] TParenthesis result: ${result.substring(0, 100)}...');
+                // trace('[XRay PatternMatchingCompiler] TParenthesis result: ${result.substring(0, 100)}...');
                 #end
                 
                 // The parentheses are already handled by the inner expression
@@ -2015,10 +2015,10 @@ class PatternMatchingCompiler {
                 
             case _:
                 #if debug_pattern_matching
-                trace("[XRay PatternMatchingCompiler] ✓ USING standard compilation for non-block");
-                trace('[XRay PatternMatchingCompiler] Context available: ${context != null}');
+                // trace("[XRay PatternMatchingCompiler] ✓ USING standard compilation for non-block");
+                // trace('[XRay PatternMatchingCompiler] Context available: ${context != null}');
                 if (context != null) {
-                    trace('[XRay PatternMatchingCompiler] structParamName: ${context.structParamName}');
+                    // trace('[XRay PatternMatchingCompiler] structParamName: ${context.structParamName}');
                 }
                 #end
                 
@@ -2031,7 +2031,7 @@ class PatternMatchingCompiler {
                     compiler.currentFunctionParameterMap.set("_this", context.structParamName);
                     
                     #if debug_pattern_matching
-                    trace('[XRay PatternMatchingCompiler] ✓ Set temporary _this mapping to: ${context.structParamName}');
+                    // trace('[XRay PatternMatchingCompiler] ✓ Set temporary _this mapping to: ${context.structParamName}');
                     #end
                 }
                 
@@ -2047,12 +2047,12 @@ class PatternMatchingCompiler {
                     }
                     
                     #if debug_pattern_matching
-                    trace('[XRay PatternMatchingCompiler] ✓ Restored original _this mapping state');
+                    // trace('[XRay PatternMatchingCompiler] ✓ Restored original _this mapping state');
                     #end
                 }
                 
                 #if debug_pattern_matching
-                trace('[XRay PatternMatchingCompiler] Standard result: ${result.substring(0, 100)}...');
+                // trace('[XRay PatternMatchingCompiler] Standard result: ${result.substring(0, 100)}...');
                 #end
                 
                 result;
@@ -2092,8 +2092,8 @@ class PatternMatchingCompiler {
      */
     private function isSwitchOnEnumIndex(switchExpr: TypedExpr): Bool {
         #if debug_pattern_matching
-        trace('[PatternMatchingCompiler] Checking for TEnumIndex pattern in switch expression');
-        trace('[PatternMatchingCompiler] Switch expr type: ${switchExpr.expr}');
+//         trace('[PatternMatchingCompiler] Checking for TEnumIndex pattern in switch expression');
+//         trace('[PatternMatchingCompiler] Switch expr type: ${switchExpr.expr}');
         #end
         
         // CRITICAL FIX: Unwrap TParenthesis and TMeta layers to find underlying TEnumIndex
@@ -2104,12 +2104,12 @@ class PatternMatchingCompiler {
                 case TParenthesis(innerExpr):
                     unwrappedExpr = innerExpr;
                     #if debug_pattern_matching
-                    trace('[PatternMatchingCompiler] Unwrapped TParenthesis, now: ${unwrappedExpr.expr}');
+//                     trace('[PatternMatchingCompiler] Unwrapped TParenthesis, now: ${unwrappedExpr.expr}');
                     #end
                 case TMeta(_, innerExpr):
                     unwrappedExpr = innerExpr;
                     #if debug_pattern_matching
-                    trace('[PatternMatchingCompiler] Unwrapped TMeta, now: ${unwrappedExpr.expr}');
+//                     trace('[PatternMatchingCompiler] Unwrapped TMeta, now: ${unwrappedExpr.expr}');
                     #end
                 case _:
                     break;
@@ -2119,8 +2119,8 @@ class PatternMatchingCompiler {
         switch (unwrappedExpr.expr) {
             case TEnumIndex(innerExpr):
                 #if debug_pattern_matching
-                trace('[PatternMatchingCompiler] ✓ Found TEnumIndex pattern after unwrapping!');
-                trace('[PatternMatchingCompiler] Inner expr type: ${innerExpr.t}');
+//                 trace('[PatternMatchingCompiler] ✓ Found TEnumIndex pattern after unwrapping!');
+//                 trace('[PatternMatchingCompiler] Inner expr type: ${innerExpr.t}');
                 #end
                 
                 // Check if the inner expression is an enum type
@@ -2129,20 +2129,20 @@ class PatternMatchingCompiler {
                     case TEnum(enumRef, _):
                         var enumType = enumRef.get();
                         #if debug_pattern_matching
-                        trace('[PatternMatchingCompiler] Enum type: ${enumType.name} - will use direct compilation');
+//                         trace('[PatternMatchingCompiler] Enum type: ${enumType.name} - will use direct compilation');
                         #end
                         // Return true for ALL enum types to avoid double-nested case statements
                         // The compileSwitchOnEnumIndexDirectly method will handle different enum types appropriately
                         return true;
                     case _:
                         #if debug_pattern_matching
-                        trace('[PatternMatchingCompiler] Inner expr is not enum type');
+//                         trace('[PatternMatchingCompiler] Inner expr is not enum type');
                         #end
                         return false;
                 }
             case _:
                 #if debug_pattern_matching
-                trace('[PatternMatchingCompiler] Not a TEnumIndex pattern even after unwrapping');
+//                 trace('[PatternMatchingCompiler] Not a TEnumIndex pattern even after unwrapping');
                 #end
                 return false;
         }
@@ -2171,7 +2171,7 @@ class PatternMatchingCompiler {
         ?context: FunctionContext
     ): String {
         #if debug_pattern_matching
-        trace("[PatternMatchingCompiler] ✓ DIRECT TSwitch(TEnumIndex) COMPILATION START");
+//         trace("[PatternMatchingCompiler] ✓ DIRECT TSwitch(TEnumIndex) COMPILATION START");
         #end
         
         // Extract the inner expression from TEnumIndex
@@ -2179,7 +2179,7 @@ class PatternMatchingCompiler {
             case TEnumIndex(expr): expr;
             case _: 
                 #if debug_pattern_matching
-                trace("[PatternMatchingCompiler] ❌ ERROR: Not a TEnumIndex expression");
+//                 trace("[PatternMatchingCompiler] ❌ ERROR: Not a TEnumIndex expression");
                 #end
                 return compileStandardCase(switchExpr, cases, defaultExpr, context);
         };
@@ -2189,13 +2189,13 @@ class PatternMatchingCompiler {
             case TEnum(enumRef, _): enumRef.get();
             case _: 
                 #if debug_pattern_matching
-                trace("[PatternMatchingCompiler] ❌ ERROR: Inner expression is not enum type");
+//                 trace("[PatternMatchingCompiler] ❌ ERROR: Inner expression is not enum type");
                 #end
                 return compileStandardCase(switchExpr, cases, defaultExpr, context);
         };
         
         #if debug_pattern_matching
-        trace('[PatternMatchingCompiler] Enum type: ${enumType.name}');
+//         trace('[PatternMatchingCompiler] Enum type: ${enumType.name}');
         #end
         
         /**
@@ -2223,12 +2223,12 @@ class PatternMatchingCompiler {
         if (assignmentPattern.match(compiledExpr)) {
             innerExprStr = assignmentPattern.matched(1);
             #if debug_pattern_matching
-            trace('[compileSwitchOnEnumIndexDirectly] ✓ Extracted variable from assignment: ${innerExprStr}');
+//             trace('[compileSwitchOnEnumIndexDirectly] ✓ Extracted variable from assignment: ${innerExprStr}');
             #end
         }
         
         #if debug_pattern_matching
-        trace('[PatternMatchingCompiler] Inner expression compiled to: ${innerExprStr}');
+//         trace('[PatternMatchingCompiler] Inner expression compiled to: ${innerExprStr}');
         #end
         
         // Generate direct patterns based on enum type
@@ -2241,7 +2241,7 @@ class PatternMatchingCompiler {
         var constructorHasParams = new Map<Int, Bool>(); 
         
         #if debug_pattern_matching
-        trace('[PatternMatchingCompiler] Analyzing enum ${enumType.name} - checking case bodies for parameter usage');
+//         trace('[PatternMatchingCompiler] Analyzing enum ${enumType.name} - checking case bodies for parameter usage');
         #end
         
         // Analyze case bodies to detect if they extract enum parameters
@@ -2256,7 +2256,7 @@ class PatternMatchingCompiler {
                         case TConst(TInt(index)):
                             constructorHasParams.set(index, true);
                             #if debug_pattern_matching
-                            trace('[PatternMatchingCompiler] Constructor at index ${index} uses parameters (found TEnumParameter in body)');
+//                             trace('[PatternMatchingCompiler] Constructor at index ${index} uses parameters (found TEnumParameter in body)');
                             #end
                         case _:
                     }
@@ -2265,7 +2265,7 @@ class PatternMatchingCompiler {
         }
         
         #if debug_pattern_matching  
-        trace('[PatternMatchingCompiler] Enum ${enumType.name} has parameters: ${hasParameters} (detected from case bodies)');
+//         trace('[PatternMatchingCompiler] Enum ${enumType.name} has parameters: ${hasParameters} (detected from case bodies)');
         #end
         
         for (caseData in cases) {
@@ -2312,7 +2312,7 @@ class PatternMatchingCompiler {
                         parameterExtractionStatements = 'g_array = elem(${innerExprStr}, 1)\n';
                         
                         #if debug_pattern_matching
-                        trace('[PatternMatchingCompiler] Generating parameter extraction for constructor index ${constructorIndex}');
+//                         trace('[PatternMatchingCompiler] Generating parameter extraction for constructor index ${constructorIndex}');
                         #end
                     }
                 }
@@ -2329,7 +2329,7 @@ class PatternMatchingCompiler {
                 caseStrings.push('  ${pattern} -> ${fullBody}');
                 
                 #if debug_pattern_matching
-                trace('[PatternMatchingCompiler] Generated direct pattern: ${pattern} -> [body with extraction]');
+//                 trace('[PatternMatchingCompiler] Generated direct pattern: ${pattern} -> [body with extraction]');
                 #end
             }
         }
@@ -2344,8 +2344,8 @@ class PatternMatchingCompiler {
         var result = 'case ${innerExprStr} do\n${caseStrings.join("\n")}\nend';
         
         #if debug_pattern_matching
-        trace("[PatternMatchingCompiler] ✓ DIRECT TSwitch(TEnumIndex) COMPILATION END");
-        trace('[PatternMatchingCompiler] Generated clean case: ${result.substring(0, 100)}...');
+//         trace("[PatternMatchingCompiler] ✓ DIRECT TSwitch(TEnumIndex) COMPILATION END");
+//         trace('[PatternMatchingCompiler] Generated clean case: ${result.substring(0, 100)}...');
         #end
         
         return result;
@@ -2560,7 +2560,7 @@ class PatternMatchingCompiler {
         var usedVars = new Map<String, Bool>();
         
         #if debug_pattern_matching
-        trace('[XRay PatternMatchingCompiler] FINDING USED VARIABLES in expression type: ${Type.enumConstructor(expr.expr)}');
+        // trace('[XRay PatternMatchingCompiler] FINDING USED VARIABLES in expression type: ${Type.enumConstructor(expr.expr)}');
         #end
         
         function analyzeExpression(e: TypedExpr): Void {
@@ -2569,7 +2569,7 @@ class PatternMatchingCompiler {
                     // Direct variable reference - mark as used
                     usedVars.set(v.name, true);
                     #if debug_pattern_matching
-                    trace('[XRay PatternMatchingCompiler] ✓ Found variable usage: ${v.name}');
+                    // trace('[XRay PatternMatchingCompiler] ✓ Found variable usage: ${v.name}');
                     #end
                     
                 case TBlock(expressions):
@@ -2688,7 +2688,7 @@ class PatternMatchingCompiler {
                 // Other expressions - analyze recursively if they have sub-expressions
                 case _:
                     #if debug_pattern_matching
-                    trace('[XRay PatternMatchingCompiler] ⚠️ Unhandled expression type in usage analysis: ${Type.enumConstructor(e.expr)}');
+                    // trace('[XRay PatternMatchingCompiler] ⚠️ Unhandled expression type in usage analysis: ${Type.enumConstructor(e.expr)}');
                     #end
             }
         }
@@ -2698,7 +2698,7 @@ class PatternMatchingCompiler {
         
         #if debug_pattern_matching
         var varNames = [for (name in usedVars.keys()) name];
-        trace('[XRay PatternMatchingCompiler] Used variables found: [${varNames.join(", ")}]');
+        // trace('[XRay PatternMatchingCompiler] Used variables found: [${varNames.join(", ")}]');
         #end
         
         return usedVars;
@@ -2716,7 +2716,7 @@ class PatternMatchingCompiler {
      */
     private function detectElemBasedSwitch(switchExpr: TypedExpr): Bool {
         #if debug_pattern_matching
-        trace('[XRay PatternMatchingCompiler] detectElemBasedSwitch: analyzing ${switchExpr.expr}');
+        // trace('[XRay PatternMatchingCompiler] detectElemBasedSwitch: analyzing ${switchExpr.expr}');
         #end
         
         return switch (switchExpr.expr) {
@@ -2725,30 +2725,30 @@ class PatternMatchingCompiler {
                 switch (e.expr) {
                     case TField(_, FStatic(_, cf)) if (cf.get().name == "elem"):
                         #if debug_pattern_matching
-                        trace('[XRay PatternMatchingCompiler] ✓ Found elem() call - this is elem() based switch');
+                        // trace('[XRay PatternMatchingCompiler] ✓ Found elem() call - this is elem() based switch');
                         #end
                         true;
                     case TField(_, FEnum(_, _)):
                         // This is enum constructor call, not elem()
                         #if debug_pattern_matching
-                        trace('[XRay PatternMatchingCompiler] Found enum constructor call - this is direct enum switch');
+                        // trace('[XRay PatternMatchingCompiler] Found enum constructor call - this is direct enum switch');
                         #end
                         false;
                     case _:
                         #if debug_pattern_matching
-                        trace('[XRay PatternMatchingCompiler] Call to non-elem function');
+                        // trace('[XRay PatternMatchingCompiler] Call to non-elem function');
                         #end
                         false;
                 }
             case TLocal(_):
                 // Local variable - could be either type, assume direct enum
                 #if debug_pattern_matching
-                trace('[XRay PatternMatchingCompiler] Local variable - assuming direct enum switch');
+                // trace('[XRay PatternMatchingCompiler] Local variable - assuming direct enum switch');
                 #end
                 false;
             case _:
                 #if debug_pattern_matching
-                trace('[XRay PatternMatchingCompiler] Other expression type - assuming direct enum switch');
+                // trace('[XRay PatternMatchingCompiler] Other expression type - assuming direct enum switch');
                 #end
                 false;
         };
@@ -2789,9 +2789,9 @@ class PatternMatchingCompiler {
         ?enumType: EnumType
     ): String {
         #if debug_pattern_matching
-        trace('[PatternMatchingCompiler] ✓ ENUM INDEX SWITCH COMPILATION START');
-        trace('[PatternMatchingCompiler] Enum type: ${enumType != null ? enumType.name : "null"}');
-        trace('[PatternMatchingCompiler] Cases: ${cases.length}');
+//         trace('[PatternMatchingCompiler] ✓ ENUM INDEX SWITCH COMPILATION START');
+//         trace('[PatternMatchingCompiler] Enum type: ${enumType != null ? enumType.name : "null"}');
+//         trace('[PatternMatchingCompiler] Cases: ${cases.length}');
         #end
         
         /**
@@ -2815,9 +2815,9 @@ class PatternMatchingCompiler {
         if (assignmentPattern.match(compiledExpr)) {
             switchVarStr = assignmentPattern.matched(1);
             #if debug_pattern_matching
-            trace('[compileEnumIndexSwitch] ✓ EXTRACTED VARIABLE FROM ASSIGNMENT');
-            trace('[compileEnumIndexSwitch] Full expression: ${compiledExpr}');
-            trace('[compileEnumIndexSwitch] Variable for switch: ${switchVarStr}');
+//             trace('[compileEnumIndexSwitch] ✓ EXTRACTED VARIABLE FROM ASSIGNMENT');
+//             trace('[compileEnumIndexSwitch] Full expression: ${compiledExpr}');
+//             trace('[compileEnumIndexSwitch] Variable for switch: ${switchVarStr}');
             #end
         }
         
@@ -2827,7 +2827,7 @@ class PatternMatchingCompiler {
         var constructorHasParams = new Map<Int, Bool>(); 
         
         #if debug_pattern_matching
-        trace('[PatternMatchingCompiler] Analyzing enum ${enumType != null ? enumType.name : "unknown"} for parameter usage');
+//         trace('[PatternMatchingCompiler] Analyzing enum ${enumType != null ? enumType.name : "unknown"} for parameter usage');
         #end
         
         // Analyze case bodies to detect if they extract enum parameters
@@ -2843,7 +2843,7 @@ class PatternMatchingCompiler {
                             case TConst(TInt(index)):
                                 constructorHasParams.set(index, true);
                                 #if debug_pattern_matching
-                                trace('[PatternMatchingCompiler] Constructor at index ${index} uses parameters (found TEnumParameter in body)');
+//                                 trace('[PatternMatchingCompiler] Constructor at index ${index} uses parameters (found TEnumParameter in body)');
                                 #end
                             case _:
                         }
@@ -2853,7 +2853,7 @@ class PatternMatchingCompiler {
         }
         
         #if debug_pattern_matching  
-        trace('[PatternMatchingCompiler] Enum has parameters: ${hasParameters}');
+//         trace('[PatternMatchingCompiler] Enum has parameters: ${hasParameters}');
         #end
         
         // Generate appropriate switch expression based on enum type
@@ -2863,19 +2863,19 @@ class PatternMatchingCompiler {
             currentSwitchIsElemBased = true;
             exprStr = 'elem(${switchVarStr}, 0)';
             #if debug_pattern_matching
-            trace('[PatternMatchingCompiler] Using elem() extraction for tuple-based enum');
+//             trace('[PatternMatchingCompiler] Using elem() extraction for tuple-based enum');
             #end
         } else {
             // Atom-only enum: Use direct pattern matching on atoms
             currentSwitchIsElemBased = false;
             exprStr = switchVarStr;
             #if debug_pattern_matching
-            trace('[PatternMatchingCompiler] Using direct atom matching for atom-only enum');
+//             trace('[PatternMatchingCompiler] Using direct atom matching for atom-only enum');
             #end
         }
         
         #if debug_pattern_matching
-        trace('[PatternMatchingCompiler] Switch expression: ${exprStr}');
+//         trace('[PatternMatchingCompiler] Switch expression: ${exprStr}');
         #end
         
         var caseStrings: Array<String> = [];
@@ -2890,7 +2890,7 @@ class PatternMatchingCompiler {
         
         for (caseData in cases) {
             #if debug_pattern_matching
-            trace('[PatternMatchingCompiler] Processing case with ${caseData.values.length} values');
+//             trace('[PatternMatchingCompiler] Processing case with ${caseData.values.length} values');
             #end
             
             // Extract pattern variables from the case VALUE (the pattern) not the body
@@ -2917,7 +2917,7 @@ class PatternMatchingCompiler {
                                                 case EConst(CString(origName)):
                                                     targetName = NamingHelper.toSnakeCase(origName);
                                                     #if debug_pattern_matching
-                                                    trace('[PatternMatchingCompiler] METADATA: Variable "${v.name}" has -reflaxe.renamed="${origName}", using "${targetName}"');
+//                                                     trace('[PatternMatchingCompiler] METADATA: Variable "${v.name}" has -reflaxe.renamed="${origName}", using "${targetName}"');
                                                     #end
                                                 case _:
                                             }
@@ -2926,7 +2926,7 @@ class PatternMatchingCompiler {
                                         // Fallback: String-based detection if no metadata
                                         targetName = ~/^(.+?)([0-9]+)$/.replace(varName, "$1");
                                         #if debug_pattern_matching
-                                        trace('[PatternMatchingCompiler] FALLBACK: Detected renamed "${v.name}" → "${targetName}" via pattern');
+//                                         trace('[PatternMatchingCompiler] FALLBACK: Detected renamed "${v.name}" → "${targetName}" via pattern');
                                         #end
                                     }
                                     
@@ -2937,12 +2937,12 @@ class PatternMatchingCompiler {
                                     if (compiler.variableCompiler != null) {
                                         compiler.variableCompiler.registerVariableMapping(v, targetName);
                                         #if debug_pattern_matching
-                                        trace('[PatternMatchingCompiler] ✓ REGISTERED TVAR MAPPING: ${v.name}(id:${v.id}) -> ${targetName}');
+//                                         trace('[PatternMatchingCompiler] ✓ REGISTERED TVAR MAPPING: ${v.name}(id:${v.id}) -> ${targetName}');
                                         #end
                                     }
                                     
                                     #if debug_pattern_matching
-                                    trace('[PatternMatchingCompiler] Found pattern variable from VALUE: index ${i} -> ${v.name}');
+//                                     trace('[PatternMatchingCompiler] Found pattern variable from VALUE: index ${i} -> ${v.name}');
                                     #end
                                 case _:
                             }
@@ -2961,37 +2961,37 @@ class PatternMatchingCompiler {
                 var caseIndex = -1;
                 
                 #if debug_pattern_matching
-                trace('[PatternMatchingCompiler] Processing case value: ${value.expr}');
+//                 trace('[PatternMatchingCompiler] Processing case value: ${value.expr}');
                 #end
                 
                 // Determine the enum constructor index
                 switch (value.expr) {
                     case TCall(e, args):
                         #if debug_pattern_matching
-                        trace('[PatternMatchingCompiler] TCall with ${args.length} args');
+//                         trace('[PatternMatchingCompiler] TCall with ${args.length} args');
                         for (i in 0...args.length) {
-                            trace('[PatternMatchingCompiler] Arg ${i}: ${args[i].expr}');
+//                             trace('[PatternMatchingCompiler] Arg ${i}: ${args[i].expr}');
                         }
                         #end
                         switch (e.expr) {
                             case TField(_, FEnum(enumRef, enumField)):
                                 caseIndex = enumConstructors.indexOf(enumField.name);
                                 #if debug_pattern_matching
-                                trace('[PatternMatchingCompiler] Found enum constructor ${enumField.name} at index ${caseIndex}');
+//                                 trace('[PatternMatchingCompiler] Found enum constructor ${enumField.name} at index ${caseIndex}');
                                 #end
                             case _:
                                 #if debug_pattern_matching
-                                trace('[PatternMatchingCompiler] TCall with non-enum field');
+//                                 trace('[PatternMatchingCompiler] TCall with non-enum field');
                                 #end
                         }
                     case TConst(TInt(n)):
                         caseIndex = n;
                         #if debug_pattern_matching
-                        trace('[PatternMatchingCompiler] Found integer pattern ${n}');
+//                         trace('[PatternMatchingCompiler] Found integer pattern ${n}');
                         #end
                     case _:
                         #if debug_pattern_matching
-                        trace('[PatternMatchingCompiler] Other pattern type: ${value.expr}');
+//                         trace('[PatternMatchingCompiler] Other pattern type: ${value.expr}');
                         #end
                 }
                 
@@ -3046,7 +3046,7 @@ class PatternMatchingCompiler {
                                         tupleElements.push(originalName);
                                         
                                         #if debug_pattern_matching
-                                        trace('[PatternMatchingCompiler] Using original name "${originalName}" instead of renamed "${varName}" in pattern');
+//                                         trace('[PatternMatchingCompiler] Using original name "${originalName}" instead of renamed "${varName}" in pattern');
                                         #end
                                     } else {
                                         tupleElements.push(varName);
@@ -3061,13 +3061,13 @@ class PatternMatchingCompiler {
                             pattern = '{${tupleElements.join(", ")}}';
                             
                             #if debug_pattern_matching
-                            trace('[PatternMatchingCompiler] Generated tuple pattern with variables: ${pattern}');
+//                             trace('[PatternMatchingCompiler] Generated tuple pattern with variables: ${pattern}');
                             #end
                         } else {
                             // No pattern variables - use simple integer pattern
                             pattern = Std.string(caseIndex);
                             #if debug_pattern_matching
-                            trace('[PatternMatchingCompiler] Generated integer pattern: ${pattern}');
+//                             trace('[PatternMatchingCompiler] Generated integer pattern: ${pattern}');
                             #end
                         }
                     } else {
@@ -3077,7 +3077,7 @@ class PatternMatchingCompiler {
                             var atomName = NamingHelper.toSnakeCase(constructorName);
                             pattern = ':${atomName}';
                             #if debug_pattern_matching
-                            trace('[PatternMatchingCompiler] Generated atom pattern: ${pattern}');
+//                             trace('[PatternMatchingCompiler] Generated atom pattern: ${pattern}');
                             #end
                         } else {
                             pattern = "_"; // Fallback for invalid index
@@ -3135,7 +3135,7 @@ class PatternMatchingCompiler {
                                     // Extract directly to the original name that the body uses
                                     parameterExtraction = '${originalName} = elem(${switchVarStr}, 1)\n    ';
                                     #if debug_pattern_matching
-                                    trace('[PatternMatchingCompiler] Extracted to original name: ${originalName} (pattern had ${extractedVarName})');
+//                                     trace('[PatternMatchingCompiler] Extracted to original name: ${originalName} (pattern had ${extractedVarName})');
                                     #end
                                 } else {
                                     // No renaming detected, use as-is
@@ -3148,7 +3148,7 @@ class PatternMatchingCompiler {
                             }
                             
                             #if debug_pattern_matching
-                            trace('[PatternMatchingCompiler] Generated parameter extraction: ${parameterExtraction}');
+//                             trace('[PatternMatchingCompiler] Generated parameter extraction: ${parameterExtraction}');
                             #end
                         }
                     }
@@ -3179,7 +3179,7 @@ class PatternMatchingCompiler {
                                 parameterExtraction = '${baseName} = ${varName}\n    ';
                                 shouldGenerateExtraction = true;
                                 #if debug_pattern_matching
-                                trace('[PatternMatchingCompiler] Created alias: ${baseName} = ${varName}');
+//                                 trace('[PatternMatchingCompiler] Created alias: ${baseName} = ${varName}');
                                 #end
                             }
                         }
@@ -3193,7 +3193,7 @@ class PatternMatchingCompiler {
                             shouldGenerateExtraction = false;
                             
                             #if debug_pattern_matching
-                            trace('[PatternMatchingCompiler] ✓ SKIPPED ORPHANED EXTRACTION: ${uniqueVarName} not used in body');
+//                             trace('[PatternMatchingCompiler] ✓ SKIPPED ORPHANED EXTRACTION: ${uniqueVarName} not used in body');
                             #end
                         }
                     }
@@ -3221,8 +3221,8 @@ class PatternMatchingCompiler {
         var result = 'case (${exprStr}) do\n${caseStrings.join("\n")}\nend';
         
         #if debug_pattern_matching
-        trace('[PatternMatchingCompiler] ✓ ENUM INDEX SWITCH COMPILATION END');
-        trace('[PatternMatchingCompiler] Result: ${result.substring(0, 200)}...');
+//         trace('[PatternMatchingCompiler] ✓ ENUM INDEX SWITCH COMPILATION END');
+//         trace('[PatternMatchingCompiler] Result: ${result.substring(0, 200)}...');
         #end
         
         return result;

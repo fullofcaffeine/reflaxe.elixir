@@ -62,7 +62,7 @@ class ConditionalCompiler {
         this.compiler = compiler;
         
         #if debug_conditional_compilation
-        trace("[ConditionalCompiler] Initialized");
+//         trace("[ConditionalCompiler] Initialized");
         #end
     }
     
@@ -80,9 +80,9 @@ class ConditionalCompiler {
      */
     public function compileIfExpression(econd: TypedExpr, eif: TypedExpr, eelse: Null<TypedExpr>): String {
         #if debug_conditional_compilation
-        trace("[ConditionalCompiler] Compiling if expression");
-        trace('[ConditionalCompiler] Condition: ${econd.expr}');
-        trace('[ConditionalCompiler] Has else: ${eelse != null}');
+//         trace("[ConditionalCompiler] Compiling if expression");
+//         trace('[ConditionalCompiler] Condition: ${econd.expr}');
+//         trace('[ConditionalCompiler] Has else: ${eelse != null}');
         #end
         
         // Compile the condition
@@ -127,7 +127,7 @@ class ConditionalCompiler {
      */
     public function compileTernaryExpression(econd: TypedExpr, eif: TypedExpr, eelse: TypedExpr): String {
         #if debug_conditional_compilation
-        trace("[ConditionalCompiler] Compiling ternary expression");
+//         trace("[ConditionalCompiler] Compiling ternary expression");
         #end
         
         var condStr = compiler.compileExpression(econd);
@@ -150,7 +150,7 @@ class ConditionalCompiler {
      */
     public function compileGuardClause(condition: TypedExpr): String {
         #if debug_conditional_compilation
-        trace("[ConditionalCompiler] Compiling guard clause");
+//         trace("[ConditionalCompiler] Compiling guard clause");
         #end
         
         // Guard clauses have restricted expressions in Elixir

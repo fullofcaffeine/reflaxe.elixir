@@ -6,40 +6,29 @@ defmodule SupervisorOptionsBuilder do
   """
 
   # Static functions
-  @doc """
-    Default supervisor options
-
-  """
-  @spec defaults() :: SupervisorOptions.t()
+  @doc "Generated from Haxe defaults"
   def defaults() do
     [strategy: :one_for_one, name: App.Supervisor]
   end
 
-  @doc """
-    Create supervisor options with custom strategy
-
-  """
-  @spec with_strategy(SupervisorStrategy.t()) :: SupervisorOptions.t()
+  @doc "Generated from Haxe withStrategy"
   def with_strategy(strategy) do
-    (
-          opts = SupervisorOptionsBuilder.defaults()
-          %{opts | strategy: strategy}
-          opts
-        )
+    opts = SupervisorOptionsBuilder.defaults()
+
+    %{opts | strategy: strategy}
+
+    opts
   end
 
-  @doc """
-    Create supervisor options with custom restart limits
-
-  """
-  @spec with_limits(integer(), integer()) :: SupervisorOptions.t()
+  @doc "Generated from Haxe withLimits"
   def with_limits(max_restarts, max_seconds) do
-    (
-          opts = SupervisorOptionsBuilder.defaults()
-          %{opts | max_restarts: max_restarts}
-          %{opts | max_seconds: max_seconds}
-          opts
-        )
+    opts = SupervisorOptionsBuilder.defaults()
+
+    %{opts | max_restarts: max_restarts}
+
+    %{opts | max_seconds: max_seconds}
+
+    opts
   end
 
 end

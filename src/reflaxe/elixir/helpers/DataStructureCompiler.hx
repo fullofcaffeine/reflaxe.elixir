@@ -88,15 +88,15 @@ class DataStructureCompiler {
      */
     public function compileArrayLiteral(el: Array<TypedExpr>): String {
         #if debug_data_structure_compiler
-        trace("[XRay DataStructureCompiler] ARRAY LITERAL COMPILATION START");
-        trace('[XRay DataStructureCompiler] Element count: ${el.length}');
+        // trace("[XRay DataStructureCompiler] ARRAY LITERAL COMPILATION START");
+        // trace('[XRay DataStructureCompiler] Element count: ${el.length}');
         #end
         
         var result = "[" + el.map(expr -> compiler.compileExpression(expr)).join(", ") + "]";
         
         #if debug_data_structure_compiler
-        trace('[XRay DataStructureCompiler] Generated array: ${result}');
-        trace("[XRay DataStructureCompiler] ARRAY LITERAL COMPILATION END");
+        // trace('[XRay DataStructureCompiler] Generated array: ${result}');
+        // trace("[XRay DataStructureCompiler] ARRAY LITERAL COMPILATION END");
         #end
         
         return result;
@@ -120,14 +120,14 @@ class DataStructureCompiler {
      */
     public function compileObjectDeclaration(fields: Array<{name: String, expr: TypedExpr}>): String {
         #if debug_data_structure_compiler
-        trace("[XRay DataStructureCompiler] OBJECT DECLARATION COMPILATION START");
-        trace('[XRay DataStructureCompiler] Field count: ${fields.length}');
+        // trace("[XRay DataStructureCompiler] OBJECT DECLARATION COMPILATION START");
+        // trace('[XRay DataStructureCompiler] Field count: ${fields.length}');
         #end
         
         // Check if this is a Supervisor child spec object
         if (isChildSpecObject(fields)) {
             #if debug_data_structure_compiler
-            trace("[XRay DataStructureCompiler] ✓ CHILD SPEC PATTERN DETECTED");
+            // trace("[XRay DataStructureCompiler] ✓ CHILD SPEC PATTERN DETECTED");
             #end
             return compileChildSpec(fields, compiler.currentClassType);
         }
@@ -135,7 +135,7 @@ class DataStructureCompiler {
         // Check if this is a Supervisor options object
         if (isSupervisorOptionsObject(fields)) {
             #if debug_data_structure_compiler
-            trace("[XRay DataStructureCompiler] ✓ SUPERVISOR OPTIONS PATTERN DETECTED");
+            // trace("[XRay DataStructureCompiler] ✓ SUPERVISOR OPTIONS PATTERN DETECTED");
             #end
             return compileSupervisorOptions(fields, compiler.currentClassType);
         }
@@ -144,7 +144,7 @@ class DataStructureCompiler {
         var useAtoms = shouldUseAtomKeys(fields);
         
         #if debug_data_structure_compiler
-        trace('[XRay DataStructureCompiler] Using atom keys: ${useAtoms}');
+        // trace('[XRay DataStructureCompiler] Using atom keys: ${useAtoms}');
         #end
         
         var compiledFields = fields.map(f -> {
@@ -157,12 +157,12 @@ class DataStructureCompiler {
             // HOW: Check for "if " at start and ", do:" pattern indicating inline if form
             if (compiledExpr.indexOf("if ") == 0 && compiledExpr.indexOf(", do:") != -1) {
                 #if debug_data_structure_compiler
-                trace('[XRay DataStructureCompiler] ✓ WRAPPING inline if expression in parentheses');
-                trace('[XRay DataStructureCompiler] Before: ${compiledExpr.substring(0, 50)}...');
+                // trace('[XRay DataStructureCompiler] ✓ WRAPPING inline if expression in parentheses');
+                // trace('[XRay DataStructureCompiler] Before: ${compiledExpr.substring(0, 50)}...');
                 #end
                 compiledExpr = "(" + compiledExpr + ")";
                 #if debug_data_structure_compiler
-                trace('[XRay DataStructureCompiler] After: ${compiledExpr.substring(0, 50)}...');
+                // trace('[XRay DataStructureCompiler] After: ${compiledExpr.substring(0, 50)}...');
                 #end
             }
             
@@ -178,8 +178,8 @@ class DataStructureCompiler {
         var result = "%{" + compiledFields.join(", ") + "}";
         
         #if debug_data_structure_compiler
-        trace('[XRay DataStructureCompiler] Generated object: ${result.substring(0, 100)}${result.length > 100 ? "..." : ""}');
-        trace("[XRay DataStructureCompiler] OBJECT DECLARATION COMPILATION END");
+        // trace('[XRay DataStructureCompiler] Generated object: ${result.substring(0, 100)}${result.length > 100 ? "..." : ""}');
+        // trace("[XRay DataStructureCompiler] OBJECT DECLARATION COMPILATION END");
         #end
         
         return result;
@@ -203,7 +203,7 @@ class DataStructureCompiler {
      */
     public function compileArrayIndexing(e1: TypedExpr, e2: TypedExpr): String {
         #if debug_data_structure_compiler
-        trace("[XRay DataStructureCompiler] ARRAY INDEXING COMPILATION START");
+        // trace("[XRay DataStructureCompiler] ARRAY INDEXING COMPILATION START");
         #end
         
         var arrayExpr = compiler.compileExpression(e1);
@@ -211,8 +211,8 @@ class DataStructureCompiler {
         var result = 'Enum.at(${arrayExpr}, ${indexExpr})';
         
         #if debug_data_structure_compiler
-        trace('[XRay DataStructureCompiler] Generated indexing: ${result}');
-        trace("[XRay DataStructureCompiler] ARRAY INDEXING COMPILATION END");
+        // trace('[XRay DataStructureCompiler] Generated indexing: ${result}');
+        // trace("[XRay DataStructureCompiler] ARRAY INDEXING COMPILATION END");
         #end
         
         return result;

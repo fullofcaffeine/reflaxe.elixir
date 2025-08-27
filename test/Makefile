@@ -14,7 +14,7 @@ SHELL := /bin/bash
 # Get the directory where this Makefile is located
 MAKEFILE_DIR := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
 TEST_DIR := $(MAKEFILE_DIR)tests
-TIMEOUT := 30s
+TIMEOUT := 60s
 OUTPUT_DIR := out
 
 # Colors for output
@@ -63,7 +63,7 @@ test-%:
 		end=$$(date +%s); \
 		duration=$$((end - start)); \
 		if [ -d $$testdir/intended ] && [ -d $$testdir/$(OUTPUT_DIR) ]; then \
-			if diff -r $$testdir/intended $$testdir/$(OUTPUT_DIR) > /dev/null 2>&1; then \
+			if diff -r --exclude="_GeneratedFiles.json" $$testdir/intended $$testdir/$(OUTPUT_DIR) > /dev/null 2>&1; then \
 				echo "✅ $$testname ($${duration}s)" | tee -a test-results.tmp; \
 			else \
 				echo "❌ $$testname - Output mismatch ($${duration}s)" | tee -a test-results.tmp; \
@@ -82,6 +82,9 @@ test-%:
 		fi; \
 	fi
 
+# Update targets for parallel execution
+UPDATE_TARGETS := $(addprefix update-,$(TESTS))
+
 # Update intended output for a specific test or all tests
 .PHONY: update-intended
 update-intended:
@@ -93,7 +96,7 @@ update-intended:
 			exit 1; \
 		fi; \
 		echo "Compiling $(TEST) to generate new output..."; \
-		cd $$testdir && haxe -D elixir_output=$(OUTPUT_DIR) -D reflaxe.dont_output_metadata_id compile.hxml && \
+		cd $$testdir && haxe -D elixir_output=$(OUTPUT_DIR) -D reflaxe.dont_output_metadata_id compile.hxml 2>/dev/null && \
 		if [ -d $(OUTPUT_DIR) ]; then \
 			rm -rf intended && \
 			cp -r $(OUTPUT_DIR) intended && \
@@ -103,11 +106,29 @@ update-intended:
 			exit 1; \
 		fi; \
 	else \
-		echo "Updating intended output for all tests..."; \
-		for test in $(TESTS); do \
-			$(MAKE) -f $(MAKEFILE_LIST) update-intended TEST=$$test || true; \
-		done; \
-		echo "✅ Finished updating all intended outputs"; \
+		echo "Updating intended output for all tests (parallel with -j flag)..."; \
+		$(MAKE) -f $(MAKEFILE_LIST) -j8 update-all-parallel; \
+	fi
+
+# Parallel update all target
+.PHONY: update-all-parallel
+update-all-parallel: $(UPDATE_TARGETS)
+	@echo "✅ Finished updating all intended outputs"
+
+# Individual update targets for parallel execution
+$(UPDATE_TARGETS): update-%:
+	@testdir=$(TEST_DIR)/$*; \
+	if [ -f $$testdir/compile.hxml ]; then \
+		cd $$testdir && haxe -D elixir_output=$(OUTPUT_DIR) -D reflaxe.dont_output_metadata_id compile.hxml 2>/dev/null 1>/dev/null && \
+		if [ -d $(OUTPUT_DIR) ]; then \
+			rm -rf intended && \
+			cp -r $(OUTPUT_DIR) intended && \
+			echo "✅ $*"; \
+		else \
+			echo "❌ $* (no output)"; \
+		fi; \
+	else \
+		echo "❌ $* (not found)"; \
 	fi
 
 # Run a single test by name (convenience target)

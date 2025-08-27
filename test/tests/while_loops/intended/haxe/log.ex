@@ -10,25 +10,32 @@ defmodule Log do
   @doc "Generated from Haxe formatOutput"
   def format_output(v, infos) do
     str = Std.string(v)
+
     if ((infos == nil)) do
-          str
-        end
+      str
+    else
+      nil
+    end
+
     pstr = infos.file_name <> ":" <> to_string(infos.line_number)
+
     if ((infos.custom_params != nil)) do
-          (
-          g_counter = 0
-          g_array = infos.custom_params
-          Enum.each(g_array, fn v2 -> 
-      str = str <> ", " <> Std.string(v)
-    end)
-        )
-        end
+      g_counter = 0
+      g_array = infos.custom_params
+      Enum.each(g_array, fn v2 -> 
+        str = str <> ", " <> Std.string(v)
+      end)
+    else
+      nil
+    end
+
     pstr <> ": " <> str
   end
 
   @doc "Generated from Haxe trace"
   def trace(v, infos \\ nil) do
     str = Log.format_output(v, infos)
+
     Sys.println(str)
   end
 

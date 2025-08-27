@@ -200,11 +200,11 @@ class XRay {
         flowStack = [];
         isInitialized = true;
         
-        trace('[XRAY:INIT] ====================================================');
-        trace('XRay Session Started: $sessionId');
+//         trace('[XRAY:INIT] ====================================================');
+        // trace('XRay Session Started: $sessionId');
         trace('Timestamp: ${Date.now().toString()}');
         trace('Debug Categories: ${getActiveCategories()}');
-        trace('[XRAY:INIT] ====================================================');
+//         trace('[XRAY:INIT] ====================================================');
         #end
     }
     
@@ -235,7 +235,7 @@ class XRay {
         flowStack.push(flow);
         
         var indent = getIndentation();
-        trace('${indent}[XRAY:FLOW_START] $flowName');
+//         trace('${indent}[XRAY:FLOW_START] $flowName');
         trace('${indent}Context: $context');
         if (metadata != null) trace('${indent}Metadata: ${Json.stringify(metadata)}');
         #end
@@ -252,13 +252,13 @@ class XRay {
     public static function endFlow(flowName: String, ?summary: Dynamic): Void {
         #if (debug_xray || debug_compiler)
         if (flowStack.length == 0) {
-            trace('[XRAY:ERROR] Attempted to end flow "$flowName" but no active flows');
+//             trace('[XRAY:ERROR] Attempted to end flow "$flowName" but no active flows');
             return;
         }
         
         var flow = flowStack.pop();
         if (flow.name != flowName) {
-            trace('[XRAY:WARNING] Flow name mismatch: expected "${flow.name}", got "$flowName"');
+//             trace('[XRAY:WARNING] Flow name mismatch: expected "${flow.name}", got "$flowName"');
         }
         
         flow.endTime = Date.now().getTime();
@@ -266,7 +266,7 @@ class XRay {
         flow.summary = summary;
         
         var indent = getIndentation();
-        trace('${indent}[XRAY:FLOW_END] $flowName');
+//         trace('${indent}[XRAY:FLOW_END] $flowName');
         trace('${indent}Duration: ${flow.duration}ms');
         if (summary != null) trace('${indent}Summary: ${Json.stringify(summary)}');
         
@@ -302,7 +302,7 @@ class XRay {
         recordEvent(categories.AST, "ast_trace", astInfo);
         
         var indent = getIndentation();
-        trace('${indent}[XRAY:AST] $context');
+//         trace('${indent}[XRAY:AST] $context');
         trace('${indent}Type: ${astInfo.type} (${astInfo.haxeType})');
         trace('${indent}Position: ${astInfo.position}');
         trace('${indent}Structure: ${astInfo.structure}');
@@ -336,7 +336,7 @@ class XRay {
         recordEvent(categories.STATEMENTS, "statement_trace", stmtInfo);
         
         var indent = getIndentation();
-        trace('${indent}[XRAY:STATEMENT] $context');
+//         trace('${indent}[XRAY:STATEMENT] $context');
         trace('${indent}Generated: ${truncateString(statement, 100)}');
         trace('${indent}Length: ${stmtInfo.length} chars, ${stmtInfo.lines} lines');
         if (metadata != null) trace('${indent}Metadata: ${Json.stringify(metadata)}');
@@ -368,10 +368,10 @@ class XRay {
         recordEvent(categories.CONCATENATION, "concatenation_trace", concatInfo);
         
         var indent = getIndentation();
-        trace('${indent}[XRAY:CONCAT] $context');
+//         trace('${indent}[XRAY:CONCAT] $context');
         trace('${indent}Statements: ${concatInfo.statementCount} (${concatInfo.totalLength} chars total)');
         for (i in 0...statements.length) {
-            trace('${indent}  [$i]: ${concatInfo.statements[i]}');
+//             trace('${indent}  [$i]: ${concatInfo.statements[i]}');
         }
         if (metadata != null) trace('${indent}Metadata: ${Json.stringify(metadata)}');
         #end
@@ -401,7 +401,7 @@ class XRay {
         recordEvent(categories.DECISIONS, "decision_recorded", decisionInfo);
         
         var indent = getIndentation();
-        trace('${indent}[XRAY:DECISION] $context');
+//         trace('${indent}[XRAY:DECISION] $context');
         trace('${indent}Decision: $decision');
         trace('${indent}Reasoning: ${Json.stringify(reasoning)}');
         #end
@@ -432,7 +432,7 @@ class XRay {
         recordEvent(categories.ERRORS, "error_recorded", errorInfo);
         
         var indent = getIndentation();
-        trace('${indent}[XRAY:ERROR] $context');
+//         trace('${indent}[XRAY:ERROR] $context');
         trace('${indent}Error: $error');
         trace('${indent}Details: ${Json.stringify(details)}');
         trace('${indent}Flow Stack: ${errorInfo.flowStack.join(" → ")}');
@@ -463,7 +463,7 @@ class XRay {
         recordEvent(categories.Y_COMBINATOR, "y_combinator_trace", yCombInfo);
         
         var indent = getIndentation();
-        trace('${indent}[XRAY:Y_COMBINATOR] $context');
+//         trace('${indent}[XRAY:Y_COMBINATOR] $context');
         trace('${indent}Pattern: $pattern');
         trace('${indent}Details: ${Json.stringify(details)}');
         #end
@@ -504,9 +504,9 @@ class XRay {
                 }
                 
                 File.saveContent(filePath, json);
-                trace('[XRAY:EXPORT] Session data exported to: $filePath');
+//                 trace('[XRAY:EXPORT] Session data exported to: $filePath');
             } catch (e: Dynamic) {
-                trace('[XRAY:ERROR] Failed to write session export: $e');
+//                 trace('[XRAY:ERROR] Failed to write session export: $e');
             }
         }
         

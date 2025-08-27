@@ -89,8 +89,8 @@ class LoopTransformations {
      */
     public function generateIndexedIteration(arrayVar: String, indexVar: String, body: String): String {
         if (DEBUG) {
-            trace('[LoopTransform] Generating indexed iteration');
-            trace('[LoopTransform] Array: ${arrayVar}, Index: ${indexVar}');
+//             trace('[LoopTransform] Generating indexed iteration');
+//             trace('[LoopTransform] Array: ${arrayVar}, Index: ${indexVar}');
         }
         
         // Detect if building result (mapping) vs side effects (each)
@@ -130,8 +130,8 @@ end)';
      */
     public function generateCharacterIteration(stringVar: String, pattern: CharIterationPattern, body: TypedExpr): String {
         if (DEBUG) {
-            trace('[LoopTransform] Generating character iteration');
-            trace('[LoopTransform] String: ${stringVar}, Method: ${pattern.method}');
+//             trace('[LoopTransform] Generating character iteration');
+//             trace('[LoopTransform] String: ${stringVar}, Method: ${pattern.method}');
         }
         
         var bodyCode = compiler.compileExpression(body);
@@ -172,8 +172,8 @@ end)';
         var helperId = getNextHelperId();
         
         if (DEBUG) {
-            trace('[LoopTransform] Generating module helper ${helperId}');
-            trace('[LoopTransform] Mutated vars: ${mutatedVars}');
+//             trace('[LoopTransform] Generating module helper ${helperId}');
+//             trace('[LoopTransform] Mutated vars: ${mutatedVars}');
         }
         
         if (mutatedVars == null || mutatedVars.length == 0) {
@@ -245,7 +245,7 @@ end)';
         analyze(expr);
         
         if (DEBUG) {
-            trace('[LoopTransform] Found ${modified.length} modified variables');
+//             trace('[LoopTransform] Found ${modified.length} modified variables');
         }
         
         return modified;

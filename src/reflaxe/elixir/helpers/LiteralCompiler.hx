@@ -84,63 +84,63 @@ class LiteralCompiler {
      */
     public function compileConstant(constant: TConstant): String {
         #if debug_literal_compiler
-        trace("[XRay LiteralCompiler] CONSTANT COMPILATION START");
-        trace('[XRay LiteralCompiler] Constant type: ${constant}');
+        // trace("[XRay LiteralCompiler] CONSTANT COMPILATION START");
+        // trace('[XRay LiteralCompiler] Constant type: ${constant}');
         #end
         
         var result = switch (constant) {
             case TInt(i): 
                 #if debug_literal_compiler
-                trace('[XRay LiteralCompiler] ✓ INTEGER LITERAL: ${i}');
+                // trace('[XRay LiteralCompiler] ✓ INTEGER LITERAL: ${i}');
                 #end
                 Std.string(i);
                 
             case TFloat(s): 
                 #if debug_literal_compiler
-                trace('[XRay LiteralCompiler] ✓ FLOAT LITERAL: ${s}');
+                // trace('[XRay LiteralCompiler] ✓ FLOAT LITERAL: ${s}');
                 #end
                 s;
                 
             case TString(s): 
                 #if debug_literal_compiler
-                trace('[XRay LiteralCompiler] ✓ STRING LITERAL: ${s.substring(0, 50)}...');
+                // trace('[XRay LiteralCompiler] ✓ STRING LITERAL: ${s.substring(0, 50)}...');
                 #end
                 compileStringLiteral(s);
                 
             case TBool(b): 
                 #if debug_literal_compiler
-                trace('[XRay LiteralCompiler] ✓ BOOLEAN LITERAL: ${b}');
+                // trace('[XRay LiteralCompiler] ✓ BOOLEAN LITERAL: ${b}');
                 #end
                 b ? "true" : "false";
                 
             case TNull: 
                 #if debug_literal_compiler
-                trace('[XRay LiteralCompiler] ✓ NULL LITERAL');
+                // trace('[XRay LiteralCompiler] ✓ NULL LITERAL');
                 #end
                 "nil";
                 
             case TThis: 
                 #if debug_literal_compiler
-                trace('[XRay LiteralCompiler] ✓ THIS REFERENCE');
+                // trace('[XRay LiteralCompiler] ✓ THIS REFERENCE');
                 #end
                 compileThisReference();
                 
             case TSuper: 
                 #if debug_literal_compiler
-                trace('[XRay LiteralCompiler] ✓ SUPER REFERENCE (mapped to Exception)');
+                // trace('[XRay LiteralCompiler] ✓ SUPER REFERENCE (mapped to Exception)');
                 #end
                 "\"Exception\""; // Elixir doesn't have super() - return base type string
                 
             case _: 
                 #if debug_literal_compiler
-                trace('[XRay LiteralCompiler] ⚠ UNKNOWN CONSTANT TYPE');
+                // trace('[XRay LiteralCompiler] ⚠ UNKNOWN CONSTANT TYPE');
                 #end
                 "nil";
         };
         
         #if debug_literal_compiler
-        trace('[XRay LiteralCompiler] Generated literal: ${result}');
-        trace("[XRay LiteralCompiler] CONSTANT COMPILATION END");
+        // trace('[XRay LiteralCompiler] Generated literal: ${result}');
+        // trace("[XRay LiteralCompiler] CONSTANT COMPILATION END");
         #end
         
         return result;
@@ -164,8 +164,8 @@ class LiteralCompiler {
      */
     public function compileStringLiteral(s: String): String {
         #if debug_literal_compiler
-        trace("[XRay LiteralCompiler] STRING ESCAPING START");
-        trace('[XRay LiteralCompiler] Raw string length: ${s.length}');
+        // trace("[XRay LiteralCompiler] STRING ESCAPING START");
+        // trace('[XRay LiteralCompiler] Raw string length: ${s.length}');
         #end
         
         // Properly escape string content for Elixir
@@ -178,8 +178,8 @@ class LiteralCompiler {
         var result = '"${escaped}"';
         
         #if debug_literal_compiler
-        trace('[XRay LiteralCompiler] Escaped string length: ${escaped.length}');
-        trace("[XRay LiteralCompiler] STRING ESCAPING END");
+        // trace('[XRay LiteralCompiler] Escaped string length: ${escaped.length}');
+        // trace("[XRay LiteralCompiler] STRING ESCAPING END");
         #end
         
         return result;
@@ -201,7 +201,7 @@ class LiteralCompiler {
      */
     private function compileThisReference(): String {
         #if debug_literal_compiler
-        trace("[XRay LiteralCompiler] THIS REFERENCE COMPILATION START");
+        // trace("[XRay LiteralCompiler] THIS REFERENCE COMPILATION START");
         #end
         
         // Check if 'this' should be mapped to a parameter (e.g., 'struct' in instance methods)
@@ -209,8 +209,8 @@ class LiteralCompiler {
         var result = mappedName != null ? mappedName : "__MODULE__"; // Default to __MODULE__ if no mapping
         
         #if debug_literal_compiler
-        trace('[XRay LiteralCompiler] This mapped to: ${result}');
-        trace("[XRay LiteralCompiler] THIS REFERENCE COMPILATION END");
+        // trace('[XRay LiteralCompiler] This mapped to: ${result}');
+        // trace("[XRay LiteralCompiler] THIS REFERENCE COMPILATION END");
         #end
         
         return result;

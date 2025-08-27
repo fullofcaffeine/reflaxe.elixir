@@ -92,7 +92,7 @@ class EnumIntrospectionCompiler {
      */
     public function compileEnumIndexExpression(e: TypedExpr): String {
         #if debug_enum_introspection_compiler
-        trace("[XRay EnumIntrospectionCompiler] ENUM INDEX COMPILATION START");
+        // trace("[XRay EnumIntrospectionCompiler] ENUM INDEX COMPILATION START");
         #end
         
         // Get the index of an enum value - used for enum introspection
@@ -105,7 +105,7 @@ class EnumIntrospectionCompiler {
             savedGMapping = compiler.currentFunctionParameterMap.get("g");
             compiler.currentFunctionParameterMap.remove("g");
             #if debug_enum_introspection_compiler
-            trace('[XRay EnumIntrospectionCompiler] Temporarily removed g mapping: g -> ${savedGMapping}');
+            // trace('[XRay EnumIntrospectionCompiler] Temporarily removed g mapping: g -> ${savedGMapping}');
             #end
         }
         
@@ -115,7 +115,7 @@ class EnumIntrospectionCompiler {
         // This happens when switch expression desugaring creates 'g' variables that get incorrectly mapped
         if (enumExpr == "g_counter") {
             #if debug_enum_introspection_compiler
-            trace('[XRay EnumIntrospectionCompiler] ⚠️ FIXING g_counter contamination - using "g" instead');
+            // trace('[XRay EnumIntrospectionCompiler] ⚠️ FIXING g_counter contamination - using "g" instead');
             #end
             enumExpr = "g";
         }
@@ -126,12 +126,12 @@ class EnumIntrospectionCompiler {
             compiler.currentFunctionParameterMap.set("g", savedGMapping);
         } else if (savedGMapping != null) {
             #if debug_enum_introspection_compiler
-            trace('[XRay EnumIntrospectionCompiler] ⚠️ BLOCKED restoration of incorrect g -> ${savedGMapping} mapping');
+            // trace('[XRay EnumIntrospectionCompiler] ⚠️ BLOCKED restoration of incorrect g -> ${savedGMapping} mapping');
             #end
         }
         
         #if debug_enum_introspection_compiler
-        trace('[XRay EnumIntrospectionCompiler] Enum expression: ${enumExpr}');
+        // trace('[XRay EnumIntrospectionCompiler] Enum expression: ${enumExpr}');
         #end
         
         // Check if this is a Result or Option type which needs special tuple-based handling
@@ -143,7 +143,7 @@ class EnumIntrospectionCompiler {
                 var enumTypeRef = enumType.get();
                 
                 #if debug_enum_introspection_compiler
-                trace('[XRay EnumIntrospectionCompiler] Enum type: ${enumTypeRef.name}');
+                // trace('[XRay EnumIntrospectionCompiler] Enum type: ${enumTypeRef.name}');
                 #end
                 
                 /**
@@ -167,7 +167,7 @@ class EnumIntrospectionCompiler {
                 }
                 
                 #if debug_enum_introspection_compiler
-                trace('[XRay EnumIntrospectionCompiler] Enum has parameters: ${hasParameters}');
+                // trace('[XRay EnumIntrospectionCompiler] Enum has parameters: ${hasParameters}');
                 #end
                 
                 {
@@ -179,14 +179,14 @@ class EnumIntrospectionCompiler {
                 };
             case _:
                 #if debug_enum_introspection_compiler
-                trace("[XRay EnumIntrospectionCompiler] Not an enum type");
+                // trace("[XRay EnumIntrospectionCompiler] Not an enum type");
                 #end
                 {isResult: false, isOption: false, enumName: "", enumType: null, hasParameters: false};
         };
         
         var result = if (typeInfo.isResult) {
             #if debug_enum_introspection_compiler
-            trace("[XRay EnumIntrospectionCompiler] ✓ RESULT TYPE DETECTED");
+            // trace("[XRay EnumIntrospectionCompiler] ✓ RESULT TYPE DETECTED");
             #end
             // Result types use tuple pattern matching to get the constructor index
             // {:ok, _} maps to index 0, {:error, _} maps to index 1
@@ -194,7 +194,7 @@ class EnumIntrospectionCompiler {
             'case ${enumExpr} do {:ok, _} -> 0; {:error, _} -> 1; _ -> -1 end';
         } else if (typeInfo.isOption) {
             #if debug_enum_introspection_compiler
-            trace("[XRay EnumIntrospectionCompiler] ✓ OPTION TYPE DETECTED");
+            // trace("[XRay EnumIntrospectionCompiler] ✓ OPTION TYPE DETECTED");
             #end
             // Option types use pattern matching to get the constructor index
             // {:ok, _} maps to index 0, :error maps to index 1
@@ -202,8 +202,8 @@ class EnumIntrospectionCompiler {
             'case ${enumExpr} do {:ok, _} -> 0; :error -> 1; _ -> -1 end';
         } else {
             #if debug_enum_introspection_compiler
-            trace("[XRay EnumIntrospectionCompiler] ✓ STANDARD ENUM TYPE");
-            trace('[XRay EnumIntrospectionCompiler] Has parameters: ${typeInfo.hasParameters}');
+            // trace("[XRay EnumIntrospectionCompiler] ✓ STANDARD ENUM TYPE");
+            // trace('[XRay EnumIntrospectionCompiler] Has parameters: ${typeInfo.hasParameters}');
             #end
             
             if (!typeInfo.hasParameters) {
@@ -229,7 +229,7 @@ class EnumIntrospectionCompiler {
                  * (GenServer returns :ok, Phoenix uses :error, :not_found, etc.)
                  */
                 #if debug_enum_introspection_compiler
-                trace("[XRay EnumIntrospectionCompiler] ✓ ATOM-ONLY ENUM - Generating case statement for atoms");
+                // trace("[XRay EnumIntrospectionCompiler] ✓ ATOM-ONLY ENUM - Generating case statement for atoms");
                 #end
                 
                 /**
@@ -272,15 +272,15 @@ class EnumIntrospectionCompiler {
                  * with data in Elixir (like {:ok, result}, {:error, reason} in Result types).
                  */
                 #if debug_enum_introspection_compiler
-                trace("[XRay EnumIntrospectionCompiler] ✓ TUPLE-BASED ENUM - Using elem extraction");
+                // trace("[XRay EnumIntrospectionCompiler] ✓ TUPLE-BASED ENUM - Using elem extraction");
                 #end
                 'elem(${enumExpr}, 0)'; // Extract the constructor atom from tuple
             }
         };
         
         #if debug_enum_introspection_compiler
-        trace('[XRay EnumIntrospectionCompiler] Generated index expression: ${result}');
-        trace("[XRay EnumIntrospectionCompiler] ENUM INDEX COMPILATION END");
+        // trace('[XRay EnumIntrospectionCompiler] Generated index expression: ${result}');
+        // trace("[XRay EnumIntrospectionCompiler] ENUM INDEX COMPILATION END");
         #end
         
         return result;
@@ -306,13 +306,13 @@ class EnumIntrospectionCompiler {
      */
     public function compileEnumParameterExpression(e: TypedExpr, ef: EnumField, index: Int): String {
         #if debug_enum_introspection_compiler
-        trace("[XRay EnumIntrospectionCompiler] =====================================");
-        trace("[XRay EnumIntrospectionCompiler] ENUM PARAMETER COMPILATION START");
-        trace("[XRay EnumIntrospectionCompiler] Enum field: " + ef.name);
-        trace('[XRay EnumIntrospectionCompiler] Parameter index: ${index}');
-        trace("[XRay EnumIntrospectionCompiler] currentSwitchCaseBody available: " + (compiler.currentSwitchCaseBody != null));
-        trace("[XRay EnumIntrospectionCompiler] patternUsageContext available: " + (compiler.patternUsageContext != null));
-        trace("[XRay EnumIntrospectionCompiler] =====================================");
+        // trace("[XRay EnumIntrospectionCompiler] =====================================");
+        // trace("[XRay EnumIntrospectionCompiler] ENUM PARAMETER COMPILATION START");
+        // trace("[XRay EnumIntrospectionCompiler] Enum field: " + ef.name);
+        // trace('[XRay EnumIntrospectionCompiler] Parameter index: ${index}');
+        // trace("[XRay EnumIntrospectionCompiler] currentSwitchCaseBody available: " + (compiler.currentSwitchCaseBody != null));
+        // trace("[XRay EnumIntrospectionCompiler] patternUsageContext available: " + (compiler.patternUsageContext != null));
+        // trace("[XRay EnumIntrospectionCompiler] =====================================");
         #end
         
         // CRITICAL FIX: Always generate extraction for switch expressions with enum destructuring
@@ -321,17 +321,17 @@ class EnumIntrospectionCompiler {
         
         if (isInSwitchExpression) {
             #if debug_enum_introspection_compiler
-            trace("[XRay EnumIntrospectionCompiler] ✓ SWITCH EXPRESSION DETECTED - Parameters are explicitly used in pattern");
-            trace("[XRay EnumIntrospectionCompiler] Proceeding with extraction (switch patterns always use parameters)");
+            // trace("[XRay EnumIntrospectionCompiler] ✓ SWITCH EXPRESSION DETECTED - Parameters are explicitly used in pattern");
+            // trace("[XRay EnumIntrospectionCompiler] Proceeding with extraction (switch patterns always use parameters)");
             #end
             // In switch expressions with explicit destructuring, parameters are ALWAYS used
             // Skip context analysis - the mere presence in the pattern means they're used
             
         } else if (compiler.patternUsageContext != null) {
             #if debug_enum_introspection_compiler
-            trace('[XRay EnumIntrospectionCompiler] ✓ PATTERN USAGE CONTEXT AVAILABLE');
+            // trace('[XRay EnumIntrospectionCompiler] ✓ PATTERN USAGE CONTEXT AVAILABLE');
             var contextKeys = [for (key in compiler.patternUsageContext.keys()) key];
-            trace('[XRay EnumIntrospectionCompiler] Context contains variables: [${contextKeys.join(", ")}]');
+            // trace('[XRay EnumIntrospectionCompiler] Context contains variables: [${contextKeys.join(", ")}]');
             #end
             
             // We have usage context from PatternMatchingCompiler
@@ -344,8 +344,8 @@ class EnumIntrospectionCompiler {
             };
             
             #if debug_enum_introspection_compiler
-            trace('[XRay EnumIntrospectionCompiler] CONTEXT-AWARE CHECK for parameter: ${paramName}');
-            trace('[XRay EnumIntrospectionCompiler] Parameter ${paramName} used in case body: ${compiler.patternUsageContext.exists(paramName)}');
+            // trace('[XRay EnumIntrospectionCompiler] CONTEXT-AWARE CHECK for parameter: ${paramName}');
+            // trace('[XRay EnumIntrospectionCompiler] Parameter ${paramName} used in case body: ${compiler.patternUsageContext.exists(paramName)}');
             #end
             
             // Check various parameter name patterns that might be used
@@ -356,19 +356,19 @@ class EnumIntrospectionCompiler {
                                compiler.patternUsageContext.exists("tag");
             
             #if debug_enum_introspection_compiler
-            trace('[XRay EnumIntrospectionCompiler] Variable usage check results:');
-            trace('[XRay EnumIntrospectionCompiler]   - ${paramName}: ${compiler.patternUsageContext.exists(paramName)}');
+            // trace('[XRay EnumIntrospectionCompiler] Variable usage check results:');
+            // trace('[XRay EnumIntrospectionCompiler]   - ${paramName}: ${compiler.patternUsageContext.exists(paramName)}');
             trace('[XRay EnumIntrospectionCompiler]   - g: ${compiler.patternUsageContext.exists("g")}'); 
-            trace('[XRay EnumIntrospectionCompiler]   - g_array: ${compiler.patternUsageContext.exists("g_array")}');
-            trace('[XRay EnumIntrospectionCompiler]   - priority: ${compiler.patternUsageContext.exists("priority")}');
-            trace('[XRay EnumIntrospectionCompiler]   - tag: ${compiler.patternUsageContext.exists("tag")}');
-            trace('[XRay EnumIntrospectionCompiler] Overall parameter used: ${parameterUsed}');
+            // trace('[XRay EnumIntrospectionCompiler]   - g_array: ${compiler.patternUsageContext.exists("g_array")}');
+            // trace('[XRay EnumIntrospectionCompiler]   - priority: ${compiler.patternUsageContext.exists("priority")}');
+            // trace('[XRay EnumIntrospectionCompiler]   - tag: ${compiler.patternUsageContext.exists("tag")}');
+            // trace('[XRay EnumIntrospectionCompiler] Overall parameter used: ${parameterUsed}');
             #end
             
             if (!parameterUsed) {
                 #if debug_enum_introspection_compiler
-                trace("[XRay EnumIntrospectionCompiler] ✓ CONTEXT-AWARE OPTIMIZATION - Parameter not used in case body");
-                trace("[XRay EnumIntrospectionCompiler] REFLAXE ARCHITECTURAL APPROACH: Skip generation entirely for unused parameters");
+                // trace("[XRay EnumIntrospectionCompiler] ✓ CONTEXT-AWARE OPTIMIZATION - Parameter not used in case body");
+                // trace("[XRay EnumIntrospectionCompiler] REFLAXE ARCHITECTURAL APPROACH: Skip generation entirely for unused parameters");
                 #end
                 // ARCHITECTURAL ALIGNMENT: Follow Reflaxe's approach - return empty string for unused parameters
                 // This prevents generation of orphaned variables like 'g_array = _ = elem(...)' patterns
@@ -376,13 +376,13 @@ class EnumIntrospectionCompiler {
                 return ""; // Don't generate anything for unused enum parameters
             } else {
                 #if debug_enum_introspection_compiler
-                trace("[XRay EnumIntrospectionCompiler] ✓ Parameter IS used - proceeding with extraction");
+                // trace("[XRay EnumIntrospectionCompiler] ✓ Parameter IS used - proceeding with extraction");
                 #end
             }
         } else {
             #if debug_enum_introspection_compiler
-            trace('[XRay EnumIntrospectionCompiler] ⚠️  NO pattern usage context available');
-            trace('[XRay EnumIntrospectionCompiler] Proceeding with extraction (conservative approach)');
+            // trace('[XRay EnumIntrospectionCompiler] ⚠️  NO pattern usage context available');
+            // trace('[XRay EnumIntrospectionCompiler] Proceeding with extraction (conservative approach)');
             #end
         }
         
@@ -408,7 +408,7 @@ class EnumIntrospectionCompiler {
                 var mapping = compiler.currentFunctionParameterMap.get(varName);
                 savedMappings.set(varName, mapping);
                 #if debug_enum_introspection_compiler
-                trace('[XRay EnumIntrospectionCompiler] Saved mapping: ${varName} -> ${mapping}');
+                // trace('[XRay EnumIntrospectionCompiler] Saved mapping: ${varName} -> ${mapping}');
                 #end
             }
         }
@@ -421,12 +421,12 @@ class EnumIntrospectionCompiler {
                 if (compiler.currentFunctionParameterMap.exists(v.name)) {
                     var mapped = compiler.currentFunctionParameterMap.get(v.name);
                     #if debug_enum_introspection_compiler
-                    trace('[XRay EnumIntrospectionCompiler] ✓ APPLYING VARIABLE MAPPING: ${v.name} -> ${mapped}');
+                    // trace('[XRay EnumIntrospectionCompiler] ✓ APPLYING VARIABLE MAPPING: ${v.name} -> ${mapped}');
                     #end
                     mapped;
                 } else {
                     #if debug_enum_introspection_compiler
-                    trace('[XRay EnumIntrospectionCompiler] No mapping found for TLocal variable: ${v.name}');
+                    // trace('[XRay EnumIntrospectionCompiler] No mapping found for TLocal variable: ${v.name}');
                     #end
                     v.name;
                 }
@@ -436,11 +436,11 @@ class EnumIntrospectionCompiler {
         };
         
         #if debug_enum_introspection_compiler
-        trace('[XRay EnumIntrospectionCompiler] Final enum expression: ${enumExpr}');
+        // trace('[XRay EnumIntrospectionCompiler] Final enum expression: ${enumExpr}');
         #end
         
         #if debug_enum_introspection_compiler
-        trace('[XRay EnumIntrospectionCompiler] Enum expression: ${enumExpr}');
+        // trace('[XRay EnumIntrospectionCompiler] Enum expression: ${enumExpr}');
         #end
         
         // Check if this is a Result or Option type which uses different tuple structure
@@ -449,7 +449,7 @@ class EnumIntrospectionCompiler {
                 var enumTypeRef = enumType.get();
                 
                 #if debug_enum_introspection_compiler
-                trace('[XRay EnumIntrospectionCompiler] Enum type: ${enumTypeRef.name}');
+                // trace('[XRay EnumIntrospectionCompiler] Enum type: ${enumTypeRef.name}');
                 #end
                 
                 {
@@ -459,14 +459,14 @@ class EnumIntrospectionCompiler {
                 };
             case _:
                 #if debug_enum_introspection_compiler
-                trace("[XRay EnumIntrospectionCompiler] Not an enum type");
+                // trace("[XRay EnumIntrospectionCompiler] Not an enum type");
                 #end
                 {isResult: false, isOption: false, enumName: ""};
         };
         
         var result = if (typeInfo.isResult) {
             #if debug_enum_introspection_compiler
-            trace("[XRay EnumIntrospectionCompiler] ✓ RESULT TYPE PARAMETER EXTRACTION");
+            // trace("[XRay EnumIntrospectionCompiler] ✓ RESULT TYPE PARAMETER EXTRACTION");
             #end
             // Result types have a simple 2-element tuple structure: {:ok, value} or {:error, reason}
             // Both constructors have exactly one parameter at the same position
@@ -477,7 +477,7 @@ class EnumIntrospectionCompiler {
                 'elem(${enumExpr}, 1)';
             } else {
                 #if debug_enum_introspection_compiler
-                trace("[XRay EnumIntrospectionCompiler] ⚠ INVALID INDEX for Result type");
+                // trace("[XRay EnumIntrospectionCompiler] ⚠ INVALID INDEX for Result type");
                 #end
                 // Result types only have one parameter, so index > 0 should not occur
                 // Return nil for safety if this happens
@@ -485,7 +485,7 @@ class EnumIntrospectionCompiler {
             }
         } else if (typeInfo.isOption) {
             #if debug_enum_introspection_compiler
-            trace("[XRay EnumIntrospectionCompiler] ✓ OPTION TYPE PARAMETER EXTRACTION");
+            // trace("[XRay EnumIntrospectionCompiler] ✓ OPTION TYPE PARAMETER EXTRACTION");
             #end
             // Option types have either {:ok, value} or :error
             // Only Some has a parameter (index 0), None has no parameters
@@ -497,7 +497,7 @@ class EnumIntrospectionCompiler {
                 'elem(${enumExpr}, 1)';
             } else {
                 #if debug_enum_introspection_compiler
-                trace("[XRay EnumIntrospectionCompiler] ⚠ INVALID INDEX for Option type");
+                // trace("[XRay EnumIntrospectionCompiler] ⚠ INVALID INDEX for Option type");
                 #end
                 // Option types only have one parameter in Some, so index > 0 should not occur
                 // Return nil for safety if this happens
@@ -505,7 +505,7 @@ class EnumIntrospectionCompiler {
             }
         } else {
             #if debug_enum_introspection_compiler
-            trace("[XRay EnumIntrospectionCompiler] ✓ STANDARD ENUM PARAMETER EXTRACTION");
+            // trace("[XRay EnumIntrospectionCompiler] ✓ STANDARD ENUM PARAMETER EXTRACTION");
             #end
             // Standard enums compile to tuples like {:constructor, param1, param2, ...}
             // Parameters start at index 1 (index 0 is the constructor tag)
@@ -514,8 +514,8 @@ class EnumIntrospectionCompiler {
         };
         
         #if debug_enum_introspection_compiler
-        trace('[XRay EnumIntrospectionCompiler] Generated parameter expression: ${result}');
-        trace("[XRay EnumIntrospectionCompiler] ENUM PARAMETER COMPILATION END");
+        // trace('[XRay EnumIntrospectionCompiler] Generated parameter expression: ${result}');
+        // trace("[XRay EnumIntrospectionCompiler] ENUM PARAMETER COMPILATION END");
         #end
         
         // Restore the enum extraction flag
@@ -548,8 +548,8 @@ class EnumIntrospectionCompiler {
      */
     private function isOrphanedParameterExtraction(e: TypedExpr, ef: EnumField, index: Int): Bool {
         #if debug_enum_introspection_compiler
-        trace('[XRay EnumIntrospectionCompiler] CHECKING for orphaned parameter extraction');
-        trace('[XRay EnumIntrospectionCompiler] Enum field: ${ef.name}, index: ${index}');
+        // trace('[XRay EnumIntrospectionCompiler] CHECKING for orphaned parameter extraction');
+        // trace('[XRay EnumIntrospectionCompiler] Enum field: ${ef.name}, index: ${index}');
         #end
         
         // GENERAL ORPHANED PARAMETER DETECTION:
@@ -560,13 +560,13 @@ class EnumIntrospectionCompiler {
         // The PatternMatchingCompiler sets currentSwitchCaseBody when compiling switch cases
         if (compiler.currentSwitchCaseBody != null) {
             #if debug_enum_introspection_compiler
-            trace('[XRay EnumIntrospectionCompiler] Switch case body available for analysis');
+            // trace('[XRay EnumIntrospectionCompiler] Switch case body available for analysis');
             #end
             
             // Check if the current switch case body is empty or trivial
             if (isCurrentSwitchCaseEmpty()) {
                 #if debug_enum_introspection_compiler
-                trace('[XRay EnumIntrospectionCompiler] ✓ DETECTED orphaned parameter in empty switch case');
+                // trace('[XRay EnumIntrospectionCompiler] ✓ DETECTED orphaned parameter in empty switch case');
                 #end
                 return true;
             }
@@ -576,13 +576,13 @@ class EnumIntrospectionCompiler {
         // This requires examining the compiler's current expression processing context
         if (isParameterUnreferencedInContext(ef, index)) {
             #if debug_enum_introspection_compiler
-            trace('[XRay EnumIntrospectionCompiler] ✓ DETECTED orphaned parameter - not referenced in context');
+            // trace('[XRay EnumIntrospectionCompiler] ✓ DETECTED orphaned parameter - not referenced in context');
             #end
             return true;
         }
         
         #if debug_enum_introspection_compiler
-        trace('[XRay EnumIntrospectionCompiler] ✓ Parameter appears to be used: ${ef.name} param ${index}');
+        // trace('[XRay EnumIntrospectionCompiler] ✓ Parameter appears to be used: ${ef.name} param ${index}');
         #end
         
         return false;
@@ -617,14 +617,14 @@ class EnumIntrospectionCompiler {
      */
     private function isParameterUnreferencedInContext(ef: EnumField, index: Int): Bool {
         #if debug_enum_introspection_compiler
-        trace('[XRay EnumIntrospectionCompiler] Checking parameter usage in context');
-        trace('[XRay EnumIntrospectionCompiler] Enum field: ${ef.name}, parameter index: ${index}');
+        // trace('[XRay EnumIntrospectionCompiler] Checking parameter usage in context');
+        // trace('[XRay EnumIntrospectionCompiler] Enum field: ${ef.name}, parameter index: ${index}');
         #end
         
         // Strategy 1: Check if we have access to the current switch case body
         if (compiler.currentSwitchCaseBody != null) {
             #if debug_enum_introspection_compiler
-            trace('[XRay EnumIntrospectionCompiler] ✓ Switch case body available - checking variable usage');
+            // trace('[XRay EnumIntrospectionCompiler] ✓ Switch case body available - checking variable usage');
             #end
             
             // Check for multiple possible variable names considering transformations
@@ -640,7 +640,7 @@ class EnumIntrospectionCompiler {
             for (varName in possibleVariableNames) {
                 if (isVariableUsedInExpression(varName, compiler.currentSwitchCaseBody)) {
                     #if debug_enum_introspection_compiler
-                    trace('[XRay EnumIntrospectionCompiler] ✓ Variable "${varName}" is used in case body');
+                    // trace('[XRay EnumIntrospectionCompiler] ✓ Variable "${varName}" is used in case body');
                     #end
                     isUsed = true;
                     break;
@@ -648,7 +648,7 @@ class EnumIntrospectionCompiler {
             }
             
             #if debug_enum_introspection_compiler
-            trace('[XRay EnumIntrospectionCompiler] Variable usage result: ${isUsed}');
+            // trace('[XRay EnumIntrospectionCompiler] Variable usage result: ${isUsed}');
             #end
             
             return !isUsed; // Return true if parameter is NOT used (orphaned)
@@ -656,9 +656,9 @@ class EnumIntrospectionCompiler {
         
         // Strategy 2: PROPER REFLAXE APPROACH - Use Reflaxe's unused variable metadata system
         #if debug_enum_introspection_compiler
-        trace('[XRay EnumIntrospectionCompiler] ⚠️  Using conservative approach when case body unavailable');
-        trace('[XRay EnumIntrospectionCompiler] Relying on Reflaxe preprocessor system to mark unused variables');
-        trace('[XRay EnumIntrospectionCompiler] TEnumParameter variables should be marked with -reflaxe.unused metadata if unused');
+        // trace('[XRay EnumIntrospectionCompiler] ⚠️  Using conservative approach when case body unavailable');
+        // trace('[XRay EnumIntrospectionCompiler] Relying on Reflaxe preprocessor system to mark unused variables');
+        // trace('[XRay EnumIntrospectionCompiler] TEnumParameter variables should be marked with -reflaxe.unused metadata if unused');
         #end
         
         // ARCHITECTURAL ALIGNMENT: Follow Reflaxe patterns instead of inventing our own
@@ -685,7 +685,7 @@ class EnumIntrospectionCompiler {
      */
     private function isVariableUsedInExpression(varName: String, expr: TypedExpr): Bool {
         #if debug_enum_introspection_compiler
-        trace('[XRay EnumIntrospectionCompiler] Analyzing expression for variable "${varName}": ${Type.enumConstructor(expr.expr)}');
+        // trace('[XRay EnumIntrospectionCompiler] Analyzing expression for variable "${varName}": ${Type.enumConstructor(expr.expr)}');
         #end
         
         return switch (expr.expr) {
@@ -700,7 +700,7 @@ class EnumIntrospectionCompiler {
             case TBlock(expressions):
                 // Check all expressions in the block
                 #if debug_enum_introspection_compiler
-                trace('[XRay EnumIntrospectionCompiler] Checking TBlock with ${expressions.length} expressions');
+                // trace('[XRay EnumIntrospectionCompiler] Checking TBlock with ${expressions.length} expressions');
                 #end
                 for (e in expressions) {
                     if (isVariableUsedInExpression(varName, e)) {
@@ -835,7 +835,7 @@ class EnumIntrospectionCompiler {
             // Other expressions - conservative approach
             case _:
                 #if debug_enum_introspection_compiler
-                trace('[XRay EnumIntrospectionCompiler] ⚠️ Unhandled expression type: ${Type.enumConstructor(expr.expr)}');
+                // trace('[XRay EnumIntrospectionCompiler] ⚠️ Unhandled expression type: ${Type.enumConstructor(expr.expr)}');
                 #end
                 false; // Conservative - assume not used if we don't recognize the pattern
         };
@@ -871,7 +871,7 @@ class EnumIntrospectionCompiler {
      */
     private function isSimpleStringCaseBody(): Bool {
         #if debug_enum_introspection_compiler
-        trace('[XRay EnumIntrospectionCompiler] Checking if current case body is simple string literal');
+        // trace('[XRay EnumIntrospectionCompiler] Checking if current case body is simple string literal');
         #end
         
         // Check if we have access to the current switch case body context
@@ -879,14 +879,14 @@ class EnumIntrospectionCompiler {
             var caseBody = compiler.currentSwitchCaseBody;
             
             #if debug_enum_introspection_compiler
-            trace('[XRay EnumIntrospectionCompiler] Case body type: ${Type.enumConstructor(caseBody.expr)}');
+            // trace('[XRay EnumIntrospectionCompiler] Case body type: ${Type.enumConstructor(caseBody.expr)}');
             #end
             
             // Check if the case body is just a string constant
             switch (caseBody.expr) {
                 case TConst(TString(s)):
                     #if debug_enum_introspection_compiler
-                    trace('[XRay EnumIntrospectionCompiler] ✓ Found simple string case: "${s}"');
+                    // trace('[XRay EnumIntrospectionCompiler] ✓ Found simple string case: "${s}"');
                     #end
                     return true;
                 case _:
@@ -894,7 +894,7 @@ class EnumIntrospectionCompiler {
         }
         
         #if debug_enum_introspection_compiler
-        trace('[XRay EnumIntrospectionCompiler] Not a simple string case');
+        // trace('[XRay EnumIntrospectionCompiler] Not a simple string case');
         #end
         
         return false;

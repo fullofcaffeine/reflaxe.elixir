@@ -743,7 +743,11 @@ cd examples/todo-app && npx haxe build-server.hxml && mix compile --force && mix
 **See**: [`docs/03-compiler-development/testing-infrastructure.md`](docs/03-compiler-development/testing-infrastructure.md) - Complete test architecture and status
 
 ## Development Resources & Reference Strategy
-- **Reference Codebase**: `/Users/fullofcaffeine/workspace/code/haxe.elixir.reference/` - Reflaxe patterns, Phoenix examples
+- **Reference Codebase**: `/Users/fullofcaffeine/workspace/code/haxe.elixir.reference/` - **CRITICAL**: Contains working Reflaxe compiler patterns, Haxe API usage examples, and Phoenix integration patterns. ALWAYS check here first for:
+  - Haxe macro API usage patterns
+  - Reflaxe compiler implementation examples  
+  - Working AST processing patterns
+  - Test infrastructure patterns
 - **Haxe API Documentation**: https://api.haxe.org/ - For type system and language features  
 - **Haxe Manual**: https://haxe.org/manual/ - **CRITICAL**: Always consult for advanced features
 - **Web Resources**: Use WebSearch and WebFetch for current documentation

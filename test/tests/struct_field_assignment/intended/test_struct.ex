@@ -25,18 +25,14 @@ defmodule TestStruct do
   end
 
   # Instance functions
-  @doc "Function write"
-  @spec write(t(), term()) :: t()
+  @doc "Generated from Haxe write"
   def write(%__MODULE__{} = struct, value) do
-    (
-          g_array = Type.typeof(value)
-          case g_array do
-      :t_null -> struct = %{struct | field: struct.field <> "null"}
-      :t_int -> struct = %{struct | field: struct.field <> Std.string(value)}
-      _ -> struct = %{struct | field: struct.field <> "other"}
+    g_array = Type.typeof(value)
+    case (case g_array do :t_null -> 0; :t_int -> 1; :t_float -> 2; :t_bool -> 3; :t_object -> 4; :t_function -> 5; :t_class -> 6; :t_enum -> 7; :t_unknown -> 8; _ -> -1 end) do
+      0 -> %{struct | field: struct.field <> "null"}
+      1 -> %{struct | field: struct.field <> Std.string(value)}
+      _ -> %{struct | field: struct.field <> "other"}
     end
-        )
-    struct
   end
 
 end

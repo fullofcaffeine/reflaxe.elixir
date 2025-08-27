@@ -64,7 +64,7 @@ class ExceptionCompiler {
         this.compiler = compiler;
         
         #if debug_exception_compilation
-        trace("[ExceptionCompiler] Initialized");
+//         trace("[ExceptionCompiler] Initialized");
         #end
     }
     
@@ -83,9 +83,9 @@ class ExceptionCompiler {
      */
     public function compileTryExpression(e: TypedExpr, catches: Array<{v: TVar, expr: TypedExpr}>, finallyExpr: Null<TypedExpr> = null): String {
         #if debug_exception_compilation
-        trace("[ExceptionCompiler] Compiling try expression");
-        trace('[ExceptionCompiler] Catches: ${catches.length}');
-        trace('[ExceptionCompiler] Has finally: ${finallyExpr != null}');
+//         trace("[ExceptionCompiler] Compiling try expression");
+//         trace('[ExceptionCompiler] Catches: ${catches.length}');
+//         trace('[ExceptionCompiler] Has finally: ${finallyExpr != null}');
         #end
         
         // Compile the try block
@@ -152,7 +152,7 @@ class ExceptionCompiler {
      */
     function compileCatchClause(v: TVar, expr: TypedExpr): {code: String, isGeneric: Bool} {
         #if debug_exception_compilation
-        trace('[ExceptionCompiler] Compiling catch clause for: ${v.name}');
+//         trace('[ExceptionCompiler] Compiling catch clause for: ${v.name}');
         #end
         
         var varName = compiler.variableCompiler.compileLocalVariable(v);
@@ -188,7 +188,7 @@ class ExceptionCompiler {
      */
     function getExceptionPattern(type: Type): {pattern: String, isGeneric: Bool} {
         #if debug_exception_compilation
-        trace('[ExceptionCompiler] Getting pattern for type: ${type}');
+//         trace('[ExceptionCompiler] Getting pattern for type: ${type}');
         #end
         
         return switch(type) {
@@ -217,7 +217,7 @@ class ExceptionCompiler {
      */
     public function compileThrowExpression(expr: TypedExpr): String {
         #if debug_exception_compilation
-        trace("[ExceptionCompiler] Compiling throw expression");
+//         trace("[ExceptionCompiler] Compiling throw expression");
         #end
         
         var exprStr = compiler.compileExpression(expr);
@@ -242,7 +242,7 @@ class ExceptionCompiler {
      */
     public function compileRethrowExpression(): String {
         #if debug_exception_compilation
-        trace("[ExceptionCompiler] Compiling rethrow expression");
+//         trace("[ExceptionCompiler] Compiling rethrow expression");
         #end
         
         // In Elixir, reraise preserves the original stacktrace
@@ -282,7 +282,7 @@ class ExceptionCompiler {
      */
     public function compileExceptionDefinition(classType: ClassType): String {
         #if debug_exception_compilation
-        trace('[ExceptionCompiler] Compiling exception definition: ${classType.name}');
+//         trace('[ExceptionCompiler] Compiling exception definition: ${classType.name}');
         #end
         
         var moduleName = classType.name;

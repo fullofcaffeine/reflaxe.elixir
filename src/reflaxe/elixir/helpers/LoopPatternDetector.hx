@@ -91,17 +91,17 @@ class LoopPatternDetector {
      */
     public static function classifyLoopPattern(condition: TypedExpr, body: TypedExpr): LoopPattern {
         #if debug_loops
-        trace('[XRay PatternDetector] ═══════════════════════════════════════════');
-        trace('[XRay PatternDetector] PATTERN CLASSIFICATION START');
-        trace('[XRay PatternDetector] - Analyzing loop for pattern recognition...');
+        // trace('[XRay PatternDetector] ═══════════════════════════════════════════');
+        // trace('[XRay PatternDetector] PATTERN CLASSIFICATION START');
+        // trace('[XRay PatternDetector] - Analyzing loop for pattern recognition...');
         #end
 
         // Priority 1: Character iteration (very specific pattern)
         var charPattern = detectCharacterIteration(condition, body);
         if (charPattern != null) {
             #if debug_loops
-            trace('[XRay PatternDetector] ✓ DETECTED: CharacterIteration');
-            trace('[XRay PatternDetector] ═══════════════════════════════════════════');
+            // trace('[XRay PatternDetector] ✓ DETECTED: CharacterIteration');
+            // trace('[XRay PatternDetector] ═══════════════════════════════════════════');
             #end
             return charPattern;
         }
@@ -110,8 +110,8 @@ class LoopPatternDetector {
         var indexPattern = detectIndexedIteration(condition, body);
         if (indexPattern != null) {
             #if debug_loops
-            trace('[XRay PatternDetector] ✓ DETECTED: IndexedIteration');
-            trace('[XRay PatternDetector] ═══════════════════════════════════════════');
+            // trace('[XRay PatternDetector] ✓ DETECTED: IndexedIteration');
+            // trace('[XRay PatternDetector] ═══════════════════════════════════════════');
             #end
             return indexPattern;
         }
@@ -120,8 +120,8 @@ class LoopPatternDetector {
         var collectionPattern = detectCollectionBuilding(condition, body);
         if (collectionPattern != null) {
             #if debug_loops
-            trace('[XRay PatternDetector] ✓ DETECTED: CollectionBuilding');
-            trace('[XRay PatternDetector] ═══════════════════════════════════════════');
+            // trace('[XRay PatternDetector] ✓ DETECTED: CollectionBuilding');
+            // trace('[XRay PatternDetector] ═══════════════════════════════════════════');
             #end
             return collectionPattern;
         }
@@ -130,8 +130,8 @@ class LoopPatternDetector {
         var accumPattern = detectAccumulation(condition, body);
         if (accumPattern != null) {
             #if debug_loops
-            trace('[XRay PatternDetector] ✓ DETECTED: Accumulation');
-            trace('[XRay PatternDetector] ═══════════════════════════════════════════');
+            // trace('[XRay PatternDetector] ✓ DETECTED: Accumulation');
+            // trace('[XRay PatternDetector] ═══════════════════════════════════════════');
             #end
             return accumPattern;
         }
@@ -140,8 +140,8 @@ class LoopPatternDetector {
         var terminationPattern = detectEarlyTermination(condition, body);
         if (terminationPattern != null) {
             #if debug_loops
-            trace('[XRay PatternDetector] ✓ DETECTED: EarlyTermination');
-            trace('[XRay PatternDetector] ═══════════════════════════════════════════');
+            // trace('[XRay PatternDetector] ✓ DETECTED: EarlyTermination');
+            // trace('[XRay PatternDetector] ═══════════════════════════════════════════');
             #end
             return terminationPattern;
         }
@@ -150,8 +150,8 @@ class LoopPatternDetector {
         var rangePattern = detectRangeIteration(condition, body);
         if (rangePattern != null) {
             #if debug_loops
-            trace('[XRay PatternDetector] ✓ DETECTED: RangeIteration');
-            trace('[XRay PatternDetector] ═══════════════════════════════════════════');
+            // trace('[XRay PatternDetector] ✓ DETECTED: RangeIteration');
+            // trace('[XRay PatternDetector] ═══════════════════════════════════════════');
             #end
             return rangePattern;
         }
@@ -160,16 +160,16 @@ class LoopPatternDetector {
         var stateMachinePattern = detectStateMachine(condition, body);
         if (stateMachinePattern != null) {
             #if debug_loops
-            trace('[XRay PatternDetector] ✓ DETECTED: StateMachine');
-            trace('[XRay PatternDetector] ═══════════════════════════════════════════');
+            // trace('[XRay PatternDetector] ✓ DETECTED: StateMachine');
+            // trace('[XRay PatternDetector] ═══════════════════════════════════════════');
             #end
             return stateMachinePattern;
         }
 
         // Fallback: Complex pattern requiring module-level helper
         #if debug_loops
-        trace('[XRay PatternDetector] ⚠️  FALLBACK: ComplexPattern (will generate module helper)');
-        trace('[XRay PatternDetector] ═══════════════════════════════════════════');
+        // trace('[XRay PatternDetector] ⚠️  FALLBACK: ComplexPattern (will generate module helper)');
+        // trace('[XRay PatternDetector] ═══════════════════════════════════════════');
         #end
         return ComplexPattern;
     }
@@ -199,7 +199,7 @@ class LoopPatternDetector {
      */
     private static function detectCharacterIteration(condition: TypedExpr, body: TypedExpr): Null<LoopPattern> {
         #if debug_loops
-        trace('[XRay PatternDetector] - Checking for character iteration pattern...');
+        // trace('[XRay PatternDetector] - Checking for character iteration pattern...');
         #end
 
         // Look for string length comparison in condition (i < s.length)
@@ -211,7 +211,7 @@ class LoopPatternDetector {
         if (charAccess == null) return null;
 
         #if debug_loops
-        trace('[XRay PatternDetector] ✓ Character iteration detected: ${lengthCheck.stringVar}[${lengthCheck.indexVar}]');
+        // trace('[XRay PatternDetector] ✓ Character iteration detected: ${lengthCheck.stringVar}[${lengthCheck.indexVar}]');
         #end
 
         return CharacterIteration(lengthCheck.stringVar, lengthCheck.indexVar);
@@ -237,8 +237,8 @@ class LoopPatternDetector {
      */
     public static function detectIndexedIteration(condition: TypedExpr, body: TypedExpr): Null<LoopPattern> {
         // Debug: Force trace to understand flow
-        trace('[XRay PatternDetector] detectIndexedIteration called');
-        trace('[XRay PatternDetector] Condition type: ${Type.enumConstructor(condition.expr)}');
+        // trace('[XRay PatternDetector] detectIndexedIteration called');
+        // trace('[XRay PatternDetector] Condition type: ${Type.enumConstructor(condition.expr)}');
 
         // Look for array length comparison (i < array.length)
         var lengthCheck = findArrayLengthComparison(condition);
@@ -249,7 +249,7 @@ class LoopPatternDetector {
             var enumAtPattern = findEnumAtPattern(body);
             if (enumAtPattern != null) {
                 #if debug_loops
-                trace('[XRay PatternDetector] ✓ Found Enum.at pattern: ${enumAtPattern.arrayVar}[${enumAtPattern.indexVar}]');
+                // trace('[XRay PatternDetector] ✓ Found Enum.at pattern: ${enumAtPattern.arrayVar}[${enumAtPattern.indexVar}]');
                 #end
                 return IndexedIteration(enumAtPattern.arrayVar, enumAtPattern.indexVar);
             }
@@ -261,7 +261,7 @@ class LoopPatternDetector {
         if (!hasArrayAccess) return null;
 
         #if debug_loops
-        trace('[XRay PatternDetector] ✓ Indexed iteration detected: ${lengthCheck.arrayVar}[${lengthCheck.indexVar}]');
+        // trace('[XRay PatternDetector] ✓ Indexed iteration detected: ${lengthCheck.arrayVar}[${lengthCheck.indexVar}]');
         #end
 
         return IndexedIteration(lengthCheck.arrayVar, lengthCheck.indexVar);
@@ -353,7 +353,7 @@ class LoopPatternDetector {
      */
     private static function findStringLengthComparison(expr: TypedExpr): Null<{stringVar: String, indexVar: String}> {
         #if debug_loops
-        trace('[XRay PatternDetector] - Analyzing for string length comparison...');
+        // trace('[XRay PatternDetector] - Analyzing for string length comparison...');
         #end
         
         return switch(expr.expr) {
@@ -378,7 +378,7 @@ class LoopPatternDetector {
                 
                 if (stringVar != null) {
                     #if debug_loops
-                    trace('[XRay PatternDetector] ✓ String length comparison: ${indexVar} < ${stringVar}.length');
+                    // trace('[XRay PatternDetector] ✓ String length comparison: ${indexVar} < ${stringVar}.length');
                     #end
                     {stringVar: stringVar, indexVar: indexVar};
                 } else {
@@ -408,7 +408,7 @@ class LoopPatternDetector {
      */
     private static function findCharacterAccess(body: TypedExpr, stringVar: String, indexVar: String): Null<Bool> {
         #if debug_loops
-        trace('[XRay PatternDetector] - Searching for character access: ${stringVar}.charAt(${indexVar}) or ${stringVar}.cca(${indexVar})');
+        // trace('[XRay PatternDetector] - Searching for character access: ${stringVar}.charAt(${indexVar}) or ${stringVar}.cca(${indexVar})');
         #end
         
         function searchExpr(expr: TypedExpr): Bool {
@@ -433,7 +433,7 @@ class LoopPatternDetector {
                                 
                                 if (objVar == stringVar && paramVar == indexVar) {
                                     #if debug_loops
-                                    trace('[XRay PatternDetector] ✓ Character access found: ${stringVar}.${methodName}(${indexVar})');
+                                    // trace('[XRay PatternDetector] ✓ Character access found: ${stringVar}.${methodName}(${indexVar})');
                                     #end
                                     return true;
                                 }
@@ -480,7 +480,7 @@ class LoopPatternDetector {
      */
     private static function findArrayLengthComparison(expr: TypedExpr): Null<{arrayVar: String, indexVar: String}> {
         #if debug_loops
-        trace('[XRay PatternDetector] - Analyzing for array length comparison...');
+        // trace('[XRay PatternDetector] - Analyzing for array length comparison...');
         #end
         
         return switch(expr.expr) {
@@ -505,7 +505,7 @@ class LoopPatternDetector {
                 
                 if (arrayVar != null) {
                     #if debug_loops
-                    trace('[XRay PatternDetector] ✓ Array length comparison: ${indexVar} < ${arrayVar}.length');
+                    // trace('[XRay PatternDetector] ✓ Array length comparison: ${indexVar} < ${arrayVar}.length');
                     #end
                     {arrayVar: arrayVar, indexVar: indexVar};
                 } else {
@@ -532,8 +532,8 @@ class LoopPatternDetector {
      */
     private static function findEnumAtPattern(body: TypedExpr): Null<{arrayVar: String, indexVar: String}> {
         // Debug: Always trace to understand what we're looking at
-        trace('[XRay PatternDetector] - Looking for Enum.at pattern in body...');
-        trace('[XRay PatternDetector] Body expr type: ${Type.enumConstructor(body.expr)}');
+        // trace('[XRay PatternDetector] - Looking for Enum.at pattern in body...');
+        // trace('[XRay PatternDetector] Body expr type: ${Type.enumConstructor(body.expr)}');
         
         var result: {arrayVar: String, indexVar: String} = null;
         
@@ -559,7 +559,7 @@ class LoopPatternDetector {
                                 if (arrayVar != null && indexVar != null) {
                                     result = {arrayVar: arrayVar, indexVar: indexVar};
                                     #if debug_loops
-                                    trace('[XRay PatternDetector] ✓ Found Enum.at(${arrayVar}, ${indexVar})');
+                                    // trace('[XRay PatternDetector] ✓ Found Enum.at(${arrayVar}, ${indexVar})');
                                     #end
                                     return true;
                                 }
@@ -605,7 +605,7 @@ class LoopPatternDetector {
      */
     private static function findArrayAccessByIndex(body: TypedExpr, arrayVar: String, indexVar: String): Bool {
         #if debug_loops
-        trace('[XRay PatternDetector] - Searching for array access: ${arrayVar}[${indexVar}] or ${arrayVar}.get(${indexVar})');
+        // trace('[XRay PatternDetector] - Searching for array access: ${arrayVar}[${indexVar}] or ${arrayVar}.get(${indexVar})');
         #end
         
         function searchExpr(expr: TypedExpr): Bool {
@@ -624,7 +624,7 @@ class LoopPatternDetector {
                     
                     if (arrVar == arrayVar && idxVar == indexVar) {
                         #if debug_loops
-                        trace('[XRay PatternDetector] ✓ Array bracket access: ${arrayVar}[${indexVar}]');
+                        // trace('[XRay PatternDetector] ✓ Array bracket access: ${arrayVar}[${indexVar}]');
                         #end
                         return true;
                     }
@@ -646,7 +646,7 @@ class LoopPatternDetector {
                             
                             if (objVar == arrayVar && paramVar == indexVar) {
                                 #if debug_loops
-                                trace('[XRay PatternDetector] ✓ Array method access: ${arrayVar}.get(${indexVar})');
+                                // trace('[XRay PatternDetector] ✓ Array method access: ${arrayVar}.get(${indexVar})');
                                 #end
                                 return true;
                             }

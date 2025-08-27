@@ -1,0 +1,11 @@
+{
+  "sourceRoot": "",
+  "names": [],
+  "mappings": "AAO4B,AAEN,AAAA,IAAI,CAAG,eACpB,GAAM,AAAA,UAAa,AAAA,+BAAnB,AAAA,SAAA,EAAA,MAAA,mGAGA,IACA,IACA;;;;;;;;kBAKA,AAAO,AAAA,AAAI,cAGyB,AAC5B,EACJ,AAAA,AAAA,AAAI,iBACJ,AAAA,GAAM,gBAAN,AAAA,SAAA,EAAA,MAAA,8PAEA,AAAA,GAAM,yBAAN,AAAA,SAAA,EAAA,MAAA;;6SAIyB,AACjB,AAAC,CAAG,CAAG,CAAG,CAAG,gBACzB,CAAA,AAAa,AACT,AAAA,GAAM,AAAA,QAAW,AAAA,2BAAjB,AAAA,SAAA,EAAA,MAAA;;;;;;IAI2B,AACjB,AAAC,CAAG,CAAG,UACP,EAAA,CACH,AADG,AACC,QAEf,GAAM,AAAA,WAAc,AAAA,GAHN,mBAGM,AAAA,GAHN,qDAGd,AAAA,SAAA,EAAA,MAAA;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;ACbR",
+  "version": 3,
+  "file": "main.ex",
+  "sources": [
+  "Main.hx",
+  "std/haxe/Int64Helper.hx"
+]
+}
