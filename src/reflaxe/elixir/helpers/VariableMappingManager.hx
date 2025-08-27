@@ -89,6 +89,9 @@ class VariableMappingManager {
         this.savedContextStates = [];
     }
     
+    // Track which base names have already been set up to prevent redundant work
+    public var setupBaseNames: Map<String, Bool> = new Map<String, Bool>();
+    
     /**
      * Set up mappings for Haxe array desugaring variables
      * 
@@ -100,6 +103,12 @@ class VariableMappingManager {
      * @param baseVarName The base variable name without underscore (e.g., "g")
      */
     public function setupArrayDesugatingMappings(baseVarName: String): Void {
+        // Guard: Skip if we've already set up mappings for this base name
+        if (setupBaseNames.exists(baseVarName)) {
+            return;
+        }
+        setupBaseNames.set(baseVarName, true);
+        
         // trace('[VariableMappingManager] Setting up array desugaring mappings for base: ${baseVarName}');
         
         // Critical fix: _g should map to g_array (the accumulator), not just g
@@ -112,7 +121,7 @@ class VariableMappingManager {
         
         // trace('[VariableMappingManager] ✓ Mappings established:');
         // trace('[VariableMappingManager] - _${baseVarName} -> ${baseVarName}_array');
-        trace('[VariableMappingManager] - _${baseVarName}_array -> ${baseVarName}_array'); 
+        // trace('[VariableMappingManager] - _${baseVarName}_array -> ${baseVarName}_array'); 
         // trace('[VariableMappingManager] - _${baseVarName}_counter -> ${baseVarName}_counter');
         // trace('[VariableMappingManager] - ${baseVarName} -> ${baseVarName}_array');
     }
