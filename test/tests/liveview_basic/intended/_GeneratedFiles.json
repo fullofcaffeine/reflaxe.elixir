@@ -1,10 +1,15 @@
 {
-	"filesGenerated": [
-		"haxe/stack_item.ex",
-		"counter_web/live/counter_live.ex",
-		"value_type.ex"
-	],
-	"id": 18,
-	"wasCached": false,
-	"version": 1
+  "filesGenerated": [
+  "phoenix/types/socket_transport.ex",
+  "phoenix/types/socket_tools.ex",
+  "haxe/stack_item.ex",
+  "haxe/iterators/dynamic_access_key_value_iterator.ex",
+  "haxe/iterators/dynamic_access_iterator.ex",
+  "haxe/i_map.ex",
+  "counter_web/live/counter_live.ex",
+  "value_type.ex"
+],
+  "id": 0,
+  "wasCached": false,
+  "version": 1
 }
