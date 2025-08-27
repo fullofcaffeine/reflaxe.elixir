@@ -62,7 +62,7 @@ defmodule ArrayTools do
 
   @doc "Generated from Haxe forEach"
   def for_each(array, action) do
-    __elixir__("Enum.each({0}, fn item -> {1}.(item) end)", array, action)
+    Enum.each(array, fn item -> action.(item) end)
   end
 
   @doc "Generated from Haxe take"
