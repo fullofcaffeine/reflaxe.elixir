@@ -1,0 +1,11 @@
+# Test position tracking helper methods
+-cp ../../../std
+-cp ../../../src
+-cp .
+-lib reflaxe
+--macro reflaxe.elixir.CompilerInit.Start()
+-D elixir_output=out
+-D source_map_enabled
+-D debug_source_mapping
+-D reflaxe_runtime
+Main

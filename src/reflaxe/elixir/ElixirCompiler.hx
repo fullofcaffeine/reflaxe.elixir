@@ -1113,6 +1113,79 @@ class ElixirCompiler extends DirectToStringCompiler {
     }
     
     /**
+     * Position tracking helper methods for source map generation
+     * 
+     * WHY: Source maps need systematic position tracking throughout compilation
+     * WHAT: Helper methods that abstract source map tracking complexity
+     * HOW: Non-invasive tracking that only activates when source mapping is enabled
+     */
+    
+    /**
+     * Track the current position in the source Haxe file
+     * 
+     * This method should be called before generating output for any AST node
+     * that has position information. It records the mapping between the current
+     * output position and the source position.
+     * 
+     * Note: This is a no-op when source mapping is disabled, ensuring zero
+     * overhead in production builds without source maps.
+     * 
+     * @param pos The position in the original Haxe source file
+     */
+    private function trackPosition(pos: Position): Void {
+        // Early return for zero overhead when source maps are disabled
+        if (!sourceMapOutputEnabled) return;
+        
+        if (currentSourceMapWriter != null && pos != null) {
+            currentSourceMapWriter.mapPosition(pos);
+        }
+    }
+    
+    /**
+     * Track output that has been written to the generated Elixir file
+     * 
+     * This method should be called after generating any output string to
+     * update the current position in the output file. The SourceMapWriter
+     * uses this to maintain accurate line and column tracking.
+     * 
+     * Note: This is a no-op when source mapping is disabled, ensuring zero
+     * overhead in production builds without source maps.
+     * 
+     * @param output The string that was written to the output
+     */
+    private function trackOutput(output: String): Void {
+        // Early return for zero overhead when source maps are disabled
+        if (!sourceMapOutputEnabled) return;
+        
+        if (currentSourceMapWriter != null && output != null) {
+            currentSourceMapWriter.stringWritten(output);
+        }
+    }
+    
+    /**
+     * Combined tracking helper for common pattern: track position then output
+     * 
+     * Many compilation methods follow the pattern of tracking source position
+     * before generating output. This helper combines both operations for
+     * convenience and consistency.
+     * 
+     * Note: Tracking is a no-op when source mapping is disabled, ensuring zero
+     * overhead in production builds without source maps.
+     * 
+     * @param pos The position in the original Haxe source file
+     * @param output The string to write to the output
+     * @return The output string (for chaining)
+     */
+    private function trackAndOutput(pos: Position, output: String): String {
+        // Only perform tracking when source maps are enabled
+        if (sourceMapOutputEnabled) {
+            trackPosition(pos);
+            trackOutput(output);
+        }
+        return output;
+    }
+    
+    /**
      * Compile typedef - Returns null to ignore typedefs as BaseCompiler recommends.
      * This prevents generating invalid StdTypes.ex files with @typedoc/@type outside modules.
      */
