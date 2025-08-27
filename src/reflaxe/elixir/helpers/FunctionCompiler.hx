@@ -160,16 +160,18 @@ class FunctionCompiler {
             
             var usedParams = if (funcField.expr != null) {
                 var result = detectUsedParameters(funcField.expr, funcField.args);
-                // DEBUG: Check what was detected for all functions with underscore potential
-                // Debug traces removed to avoid test output pollution
-                #if debug_function_compiler
-                trace('[FunctionCompiler] ===== ANALYZING FUNCTION: ${funcName} =====');
-                trace('[FunctionCompiler] Function args: ${[for (arg in funcField.args) arg.tvar != null ? arg.tvar.name : arg.getName()].join(", ")}');
-                trace('[FunctionCompiler] Detected used parameters:');
-                for (key in result.keys()) {
-                    trace('[FunctionCompiler]   ${key}: ${result.get(key) ? "USED" : "UNUSED"}');
+                
+                #if debug_parameter_detection
+                if (funcName == "print" && className != null && className.indexOf("JsonPrinter") >= 0) {
+                    trace('[FunctionCompiler] ===== DEBUGGING JsonPrinter.print =====');
+                    trace('[FunctionCompiler] Function args: ${[for (arg in funcField.args) arg.tvar != null ? arg.tvar.name : arg.getName()].join(", ")}');
+                    trace('[FunctionCompiler] Detected used parameters:');
+                    for (key in result.keys()) {
+                        trace('[FunctionCompiler]   ${key}: ${result.get(key) ? "USED" : "UNUSED"}');
+                    }
                 }
                 #end
+                
                 result;
             } else {
                 new Map<String, Bool>(); // Empty function, all params unused
@@ -191,21 +193,26 @@ class FunctionCompiler {
                 
                 // Convert to snake_case and prefix with underscore if unused
                 var paramName = NamingHelper.toSnakeCase(originalName);
+                var baseParamName = paramName; // Store the base name without default value syntax
+                
                 if (!isUsed) {
                     // Prefix with underscore to indicate intentionally unused
                     paramName = "_" + paramName;
+                    baseParamName = paramName; // Update base name with underscore
                     
                     // CRITICAL FIX: Map the original parameter name to the prefixed version
-                    // so that all TLocal references in the body use the prefixed name
-                    compiler.currentFunctionParameterMap.set(originalName, paramName);
+                    // WITHOUT the default value syntax - just the variable name
+                    compiler.currentFunctionParameterMap.set(originalName, baseParamName);
                     
                     #if debug_function_compilation
-                    DebugHelper.debugFunction("Unused Parameter", "Prefixed with underscore", 'Param: ${paramName}');
-                    DebugHelper.debugFunction("Parameter Mapping", "Added mapping", '${originalName} -> ${paramName}');
+                    DebugHelper.debugFunction("Unused Parameter", "Prefixed with underscore", 'Param: ${baseParamName}');
+                    DebugHelper.debugFunction("Parameter Mapping", "Added mapping", '${originalName} -> ${baseParamName}');
                     #end
                 }
                 
                 // Handle optional parameters by adding Elixir default value syntax
+                // IMPORTANT: This happens AFTER setting up the mapping, so the mapping
+                // contains just the variable name, not the default value syntax
                 if (arg.opt) {
                     // Optional parameters get \\ nil syntax in Elixir
                     paramName = paramName + " \\\\ nil";
@@ -473,6 +480,10 @@ class FunctionCompiler {
             };
             paramNames.set(name, true);
             usedParams.set(name, false); // Initially mark as unused
+            
+            #if debug_parameter_detection
+            trace('[detectUsedParameters] Added parameter to check: ${name}');
+            #end
         }
         
         // Recursive function to traverse expression tree
@@ -484,11 +495,29 @@ class FunctionCompiler {
                     // Check if this local variable is a parameter
                     if (paramNames.exists(tvar.name)) {
                         usedParams.set(tvar.name, true);
-                        #if debug_function_compiler
-                        trace('[FunctionCompiler] PARAMETER USED: ${tvar.name}');
+                        #if debug_parameter_detection
+                        trace('[detectUsedParameters] PARAMETER USED: ${tvar.name}');
                         #end
-                        #if debug_function_compilation
-                        DebugHelper.debugFunction("Parameter Usage", "Found used parameter", 'Param: ${tvar.name}');
+                    } else {
+                        // CRITICAL FIX: Handle Haxe's variable renaming for shadowing avoidance
+                        // When a parameter shadows another name, Haxe may rename it by adding a suffix
+                        // For example: replacer -> replacer2, space -> space2
+                        // We need to check if this is a renamed version of a parameter
+                        
+                        // Extract base name by removing trailing digits
+                        var baseName = ~/[0-9]+$/.replace(tvar.name, "");
+                        if (baseName != tvar.name && paramNames.exists(baseName)) {
+                            // This is a renamed version of a parameter!
+                            usedParams.set(baseName, true);
+                            #if debug_parameter_detection
+                            trace('[detectUsedParameters] RENAMED PARAMETER DETECTED: ${tvar.name} -> ${baseName}');
+                            #end
+                        }
+                        #if debug_parameter_detection
+                        else {
+                            trace('[detectUsedParameters] TLocal found but not a parameter: ${tvar.name}');
+                            trace('[detectUsedParameters] Known parameters: ${[for (k in paramNames.keys()) k].join(", ")}');
+                        }
                         #end
                     }
                     
@@ -573,6 +602,12 @@ class FunctionCompiler {
                     }
                     
                 case TNew(classTypeRef, params, el):
+                    #if debug_parameter_detection
+                    trace('[detectUsedParameters] TNew found with ${el.length} arguments');
+                    for (i in 0...el.length) {
+                        trace('[detectUsedParameters] Arg ${i}: ${el[i].expr}');
+                    }
+                    #end
                     for (e in el) {
                         checkExpression(e);
                     }

@@ -38,7 +38,7 @@ defmodule TypeSafeChildSpecTools do
       else
         nil
       end
-      args = [endpoint_config]
+      _args = [endpoint_config]
     else
       nil
     end

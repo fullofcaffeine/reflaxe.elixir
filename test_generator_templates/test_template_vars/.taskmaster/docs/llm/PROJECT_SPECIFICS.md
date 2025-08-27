@@ -1,7 +1,7 @@
 # Project-Specific Documentation: test_template_vars
 
 **Template Type**: phoenix  
-**Generated**: 2025-08-26 23:02:43
+**Generated**: 2025-08-27 10:58:10
 
 
 ## Phoenix Web Application

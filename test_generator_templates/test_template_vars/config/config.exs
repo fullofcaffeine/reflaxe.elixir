@@ -19,7 +19,7 @@ config :test_template_vars, TestTemplateVarsWeb.Endpoint,
     layout: false
   ],
   pubsub_server: TestTemplateVars.PubSub,
-  live_view: [signing_salt: "bdxbDeUh"]
+  live_view: [signing_salt: "WuK+JfUK"]
 
 # Configures the mailer
 #

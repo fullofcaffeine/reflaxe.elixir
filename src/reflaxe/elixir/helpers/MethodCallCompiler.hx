@@ -228,7 +228,20 @@ class MethodCallCompiler {
      */
     private function compileFieldMethodCall(obj: TypedExpr, fa: FieldAccess, args: Array<TypedExpr>): String {
         var methodName = compiler.getFieldName(fa);
+        
+        #if debug_method_call_compiler
+        switch (obj.expr) {
+            case TLocal(v):
+                trace('[XRay MethodCallCompiler] Method call on TLocal: ${v.name}, id: ${v.id}');
+            case _:
+        }
+        #end
+        
         var objStr = compiler.compileExpression(obj);
+        
+        #if debug_method_call_compiler
+        trace('[XRay MethodCallCompiler] Compiled object to: $objStr');
+        #end
         
         #if debug_state_threading
         trace('[XRay MethodCallCompiler] 🔍 Method call: ${objStr}.${methodName}() - StateThreading: ${compiler.isStateThreadingEnabled()}');
@@ -354,10 +367,103 @@ class MethodCallCompiler {
                 // Continue with normal method call handling
         }
         
-        // Check if this is an Array method call
+        // Check if this is a Map method call
         switch (obj.t) {
-            case TInst(t, _) if (t.get().name == "Array"):
-                return compiler.compileArrayMethod(objStr, methodName, args);
+            case TInst(t, _):
+                var className = t.get().name;
+                // Check for Map types (Map, StringMap, IntMap, ObjectMap)
+                if (className == "Map" || className == "StringMap" || 
+                    className == "IntMap" || className == "ObjectMap" ||
+                    className == "EnumValueMap") {
+                    // Use MapCompiler to transform the method call to idiomatic Elixir
+                    var compiledArgs = args.map(arg -> compiler.compileExpression(arg));
+                    var mapCall = MapCompiler.compileMapMethod(objStr, methodName, compiledArgs);
+                    
+                    // CRITICAL FIX: For map.set() operations, we need to reassign the map
+                    // since Elixir maps are immutable. Map.put returns a new map.
+                    if (methodName == "set" && objStr != null) {
+                        #if debug_map_compiler
+                        trace('[MapCompiler] Checking map.set reassignment for: $objStr');
+                        trace('[MapCompiler] Original obj TypedExpr type: ${obj.t}');
+                        #end
+                        
+                        // CRITICAL FIX: Check if the variable is marked as unused and needs underscore prefix
+                        // When a variable is marked as unused, it gets declared with underscore prefix
+                        // but the compiled expression might not include it, so we need to check
+                        var actualVarName = objStr;
+                        
+                        // Try to get the actual variable name with underscore if it's marked as unused
+                        switch (obj.expr) {
+                            case TLocal(v):
+                                #if debug_map_compiler
+                                trace('[MapCompiler] TLocal variable detected: ${v.name}, id: ${v.id}');
+                                trace('[MapCompiler] Checking if variable is marked as unused...');
+                                #end
+                                
+                                // Check if this variable has an ID mapping (which includes underscore prefix)
+                                if (compiler.variableCompiler != null) {
+                                    var idMapping = compiler.variableCompiler.variableIdMap.get(v.id);
+                                    if (idMapping != null) {
+                                        actualVarName = idMapping;
+                                        #if debug_map_compiler
+                                        trace('[MapCompiler] Found ID mapping: ${v.id} -> $idMapping');
+                                        #end
+                                    } else {
+                                        // Check underscore prefix map by name
+                                        var snakeName = NamingHelper.toSnakeCase(v.name);
+                                        #if debug_map_compiler
+                                        trace('[MapCompiler] Looking for underscore prefix mapping for: $snakeName');
+                                        trace('[MapCompiler] Available mappings: ${[for (k in compiler.variableCompiler.underscorePrefixMap.keys()) k].join(", ")}');
+                                        #end
+                                        var prefixedName = compiler.variableCompiler.underscorePrefixMap.get(snakeName);
+                                        if (prefixedName != null) {
+                                            actualVarName = prefixedName;
+                                            #if debug_map_compiler
+                                            trace('[MapCompiler] Found underscore prefix mapping: $snakeName -> $prefixedName');
+                                            #end
+                                        } else if (v.meta != null && v.meta.has("-reflaxe.unused")) {
+                                            // Fallback: if marked as unused but no mapping, add underscore
+                                            if (!StringTools.startsWith(actualVarName, "_")) {
+                                                actualVarName = "_" + actualVarName;
+                                            }
+                                            #if debug_map_compiler
+                                            trace('[MapCompiler] Variable marked as unused, using underscore prefix: $actualVarName');
+                                            #end
+                                        }
+                                    }
+                                }
+                            case _:
+                                // Not a simple TLocal, keep original objStr
+                        }
+                        
+                        // Check if actualVarName is a simple variable name (not a complex expression)
+                        // Simple variable pattern: starts with letter/underscore, contains only alphanumeric/underscore
+                        var isSimpleVariable = ~/^[a-z_][a-z0-9_]*$/i.match(actualVarName);
+                        
+                        #if debug_map_compiler
+                        trace('[MapCompiler] Actual variable name to use: $actualVarName');
+                        trace('[MapCompiler] Is simple variable: $isSimpleVariable');
+                        trace('[MapCompiler] Generated call: $mapCall');
+                        #end
+                        
+                        if (isSimpleVariable) {
+                            // Generate reassignment with correct variable name (including underscore if needed)
+                            // Also update the Map.put call to use the correct variable name
+                            var updatedMapCall = StringTools.replace(mapCall, '($objStr,', '($actualVarName,');
+                            var reassignment = actualVarName + " = " + updatedMapCall;
+                            #if debug_map_compiler
+                            trace('[MapCompiler] Generated reassignment: $reassignment');
+                            #end
+                            return reassignment;
+                        }
+                    }
+                    
+                    return mapCall;
+                }
+                // Check for Array type
+                if (className == "Array") {
+                    return compiler.compileArrayMethod(objStr, methodName, args);
+                }
             case _:
                 // Continue with normal method call handling
         }

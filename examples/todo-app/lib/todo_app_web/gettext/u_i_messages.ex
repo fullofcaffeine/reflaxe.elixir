@@ -14,7 +14,7 @@ defmodule TodoAppWeb.Gettext.UIMessages do
   def welcome(name) do
     _bindings = TranslationBindings_Impl_.set(TranslationBindings_Impl_.create(), "name", name)
 
-    TodoAppWeb.Gettext.gettext("Welcome %{name}!", bindings)
+    TodoAppWeb.Gettext.gettext("Welcome %{name}!", _bindings)
   end
 
   @doc "Generated from Haxe success"

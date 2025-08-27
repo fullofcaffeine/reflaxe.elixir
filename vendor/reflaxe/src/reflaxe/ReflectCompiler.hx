@@ -578,7 +578,14 @@ class ReflectCompiler {
 		if(compiler.options.enforceNullTyping) {
 			NullTypeEnforcer.modifyExpression(data.expr);
 		}
+		#if debug_preprocessor
+		trace("[XRay ReflectCompiler] Processing preprocessors for function");
+		trace("[XRay ReflectCompiler] Number of preprocessors: " + compiler.expressionPreprocessors.length);
+		#end
 		for(preprocessor in compiler.expressionPreprocessors) {
+			#if debug_preprocessor
+			trace("[XRay ReflectCompiler] Processing preprocessor: " + preprocessor);
+			#end
 			preprocessor.process(data, compiler);
 		}
 		return data;
