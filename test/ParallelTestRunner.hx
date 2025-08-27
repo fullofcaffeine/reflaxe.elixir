@@ -460,10 +460,10 @@ class TestWorker {
         if (!isRunning) return pendingResult;
         if (process == null) return null;
         
-        // Check for timeout (10 seconds per test)
+        // Check for timeout (30 seconds per test)
         // CRITICAL: Timeout approach prevents hanging processes on macOS
         final elapsed = haxe.Timer.stamp() - startTime;
-        final TIMEOUT = 10.0; // 10 seconds timeout
+        final TIMEOUT = 30.0; // 30 seconds timeout - increased to allow Elixir compilation
         
         if (elapsed > TIMEOUT) {
             // Process timed out - kill it and return failure
