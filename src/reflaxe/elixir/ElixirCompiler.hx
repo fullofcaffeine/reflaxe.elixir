@@ -953,11 +953,53 @@ class ElixirCompiler extends DirectToStringCompiler {
         // CRITICAL: Must call parent to handle __elixir__() target code injection
         // The DirectToStringCompiler.compileExpression checks for targetCodeInjectionName
         // and processes untyped __elixir__("code") calls before our custom logic
+        
+        // Debug: Check what we're receiving for potential injections
+        #if debug_elixir_injection
+        // First, check if this is being called at the top level of a function body
+        if (topLevel) {
+            trace('[XRay Injection] Processing top-level expression: ${expr.expr.getName()}');
+        }
+        switch(expr.expr) {
+            case TCall(e, el): {
+                switch(e.expr) {
+                    case TIdent(id) if (id == "__elixir__"):
+                        trace('[XRay Injection] Found direct __elixir__ call with ${el.length} args');
+                        if (el.length > 0) {
+                            switch(el[0].expr) {
+                                case TConst(TString(s)):
+                                    trace('  First arg is string: "${s.substr(0, 30)}..."');
+                                case _:
+                                    trace('  First arg is not a string constant');
+                            }
+                        }
+                    case TField(_, fa):
+                        trace('[XRay Injection] TCall with TField, not TIdent');
+                    case _:
+                        trace('[XRay Injection] TCall with other expression type');
+                }
+            }
+            case TIdent(id) if (id == "__elixir__"):
+                trace('[XRay Injection] Found bare __elixir__ identifier (not in a call!)');
+            case _: // Other expressions
+        }
+        #end
+        
         var parentResult = super.compileExpression(expr, topLevel);
+        
+        #if debug_elixir_injection
         if (parentResult != null) {
-            #if debug_state_threading
-            trace('[XRay ElixirCompiler] ✓ Target code injection processed by parent');
-            #end
+            trace('[XRay ElixirCompiler] ✓ Parent returned injection result: ${parentResult.substr(0, 50)}...');
+        } else {
+            switch(expr.expr) {
+                case TCall(e, _) if (e.expr.match(TIdent("__elixir__"))):
+                    trace('[XRay ElixirCompiler] ⚠️ Parent returned null for __elixir__ call!');
+                case _:
+            }
+        }
+        #end
+        
+        if (parentResult != null) {
             return parentResult;
         }
         

@@ -91,10 +91,19 @@ npm run clean:todo                         # Clean todo-app generated files
 ### Compilation Testing (Two-Phase Validation)
 - **Default behavior**: ALL tests now compile generated Elixir with `mix compile` (like CSharp)
 - **Skip compilation**: `haxe test/Test.hxml nocompile` - For faster iteration during development
-- **What it does**: Creates minimal mix.exs, runs `mix compile`, and if Main.main() exists, executes it
+- **What it does**: Creates minimal mix.exs, runs `mix compile` to validate syntax
 - **Timeout protection**: 5-second timeout prevents hanging on compilation issues
 - **Why default**: Catches syntax errors early, matches CSharp's testing approach
 - **Performance impact**: Adds ~1-2s per test (minimized with 5s timeout)
+- **Build artifacts**: Mix compilation creates `_build/`, `mix.exs`, etc. which are automatically excluded from snapshot comparison
+- **Exclusion list**: The following are filtered from test comparisons:
+  - `_build/` - Mix build directory
+  - `.mix/` - Mix metadata
+  - `deps/` - Dependencies
+  - `mix.exs` - Mix project file  
+  - `mix.lock` - Lock file
+  - `erl_crash.dump` - Crash dumps
+  - `*.beam` - Compiled BEAM files
 
 ## 🎯 Testing Principles ⚠️ CRITICAL
 
