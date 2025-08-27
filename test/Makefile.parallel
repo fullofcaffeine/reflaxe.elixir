@@ -9,7 +9,9 @@
 
 # Configuration
 SHELL := /bin/bash
-TEST_DIR := tests
+# Get the directory where this Makefile is located
+MAKEFILE_DIR := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
+TEST_DIR := $(MAKEFILE_DIR)tests
 TIMEOUT := 30s
 OUTPUT_DIR := out
 
