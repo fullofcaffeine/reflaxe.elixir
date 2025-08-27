@@ -215,9 +215,9 @@ class ElixirCompiler extends DirectToStringCompiler {
     private var importOptimizer: reflaxe.elixir.helpers.ImportOptimizer;
     
     // Source mapping support for debugging and LLM workflows
-    private var currentSourceMapWriter: Null<SourceMapWriter> = null;
-    private var sourceMapOutputEnabled: Bool = false;
-    private var pendingSourceMapWriters: Array<SourceMapWriter> = [];
+    public var currentSourceMapWriter: Null<SourceMapWriter> = null;
+    public var sourceMapOutputEnabled: Bool = false;
+    public var pendingSourceMapWriters: Array<SourceMapWriter> = [];
     
     // Parameter mapping system for abstract type implementation methods
     public var currentFunctionParameterMap: Map<String, String> = new Map();

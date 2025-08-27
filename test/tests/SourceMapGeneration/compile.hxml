@@ -6,4 +6,6 @@
 --macro reflaxe.elixir.CompilerInit.Start()
 -D elixir_output=out
 -D source_map_enabled
+-D debug_code_fixup
+-D reflaxe_runtime
 Main
