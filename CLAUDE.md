@@ -546,6 +546,28 @@ class StringBuf {
 
 ## Development Principles
 
+### ⚠️ CRITICAL: Create Focused Regression Tests for Every Bug Fix
+**FUNDAMENTAL RULE: Every bug fix MUST have a dedicated regression test to prevent reoccurrence.**
+
+When fixing a bug:
+1. **Create a focused test** in `test/tests/` that reproduces the exact bug scenario
+2. **Name it descriptively** (e.g., `underscore_prefix_consistency`, `orphaned_enum_parameters`)
+3. **Document the bug** in the test file's header comment with:
+   - What the bug was
+   - Why it happened
+   - What the fix does
+   - Link to relevant commits/issues
+4. **Generate intended output** after the fix is verified
+5. **Add to CI** to ensure the bug never returns
+
+**Example**: The `underscore_prefix_consistency` test ensures variables with underscore prefixes maintain consistency throughout generated code - preventing the duplicate instance bug where VariableCompiler's state wasn't shared.
+
+**Benefits**:
+- **Prevents regressions** - Bugs stay fixed forever
+- **Documents issues** - Future developers understand what went wrong
+- **Fast validation** - Run specific test to verify fix still works
+- **Confidence in refactoring** - Know immediately if changes break fixes
+
 ### ⚠️ CRITICAL: Always Check Recent Work Before Starting
 **FUNDAMENTAL RULE: Check git history and recent commits to understand what's been done and avoid repeating work.**
 - Run `git log --oneline -20` to see recent commits  
