@@ -5,6 +5,7 @@ package reflaxe.elixir.helpers;
 import haxe.macro.Type;
 import reflaxe.elixir.ElixirCompiler;
 import reflaxe.elixir.helpers.AnnotationSystem;
+import reflaxe.elixir.SourceMapWriter;
 using StringTools;
 
 /**
@@ -37,6 +38,7 @@ using StringTools;
 @:nullSafety(Off)
 class CodeFixupCompiler {
     var compiler: ElixirCompiler;
+    private var currentSourceMapWriter: Null<SourceMapWriter> = null;
 
     public function new(compiler: ElixirCompiler) {
         this.compiler = compiler;
@@ -271,12 +273,26 @@ class CodeFixupCompiler {
         trace('[CodeFixupCompiler] Initializing source map writer for: ${outputPath}');
         #end
         
-        // For now, this is a placeholder - in a full implementation,
-        // this would initialize proper source map tracking
-        
-        #if debug_code_fixup
-        trace('[CodeFixupCompiler] Source map writer initialized');
-        #end
+        // Only create source map writer if enabled via compiler flag
+        if (compiler.sourceMapOutputEnabled) {
+            currentSourceMapWriter = new SourceMapWriter(outputPath);
+            
+            // Register with compiler for position tracking during compilation
+            compiler.currentSourceMapWriter = currentSourceMapWriter;
+            
+            // Track for final output generation
+            if (compiler.pendingSourceMapWriters != null) {
+                compiler.pendingSourceMapWriters.push(currentSourceMapWriter);
+            }
+            
+            #if debug_code_fixup
+            trace('[CodeFixupCompiler] Source map writer created and registered');
+            #end
+        } else {
+            #if debug_code_fixup
+            trace('[CodeFixupCompiler] Source maps disabled, skipping initialization');
+            #end
+        }
     }
 
     /**
@@ -293,15 +309,27 @@ class CodeFixupCompiler {
         trace('[CodeFixupCompiler] Finalizing source map writer');
         #end
         
-        // For now, this is a placeholder - in a full implementation,
-        // this would finalize and return source map content
-        var result = null;
+        if (currentSourceMapWriter != null) {
+            // Generate the source map file and get its path
+            var mapPath = currentSourceMapWriter.generateSourceMap();
+            
+            #if debug_code_fixup
+            trace('[CodeFixupCompiler] Source map generated at: ${mapPath}');
+            trace('[CodeFixupCompiler] Debug info: ${currentSourceMapWriter.getDebugInfo()}');
+            #end
+            
+            // Clear the current writer reference
+            currentSourceMapWriter = null;
+            
+            // Return the path to the generated source map file
+            return mapPath;
+        }
         
         #if debug_code_fixup
-        trace('[CodeFixupCompiler] Source map finalized: ${result != null ? "generated" : "null"}');
+        trace('[CodeFixupCompiler] No source map writer active, returning null');
         #end
         
-        return result;
+        return null;
     }
 
     /**
