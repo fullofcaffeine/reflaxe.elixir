@@ -40,7 +40,6 @@
     "test:core": "npx haxe test/Test.hxml test=example_01_simple && npx haxe test/Test.hxml test=basic_syntax && npx haxe test/Test.hxml test=liveview_basic",
     "test:parallel": "./test/run-parallel.sh",
     "test:parallel:make": "make -f test/Makefile.parallel -j4",
-    "test:parallel:debug": "npx haxe test/SimpleParallelTest.hxml",
     "test:nocompile": "npx haxe test/Test.hxml nocompile",
     "test:parallel-experimental": "npm run test:parallel && npm run test:generator && npm run test:mix-parallel",
     "test:mix-parallel": "MIX_ENV=test mix deps.compile && MIX_ENV=test mix test --max-cases 4 --timeout 120000",
