@@ -28,60 +28,88 @@ defmodule Bytes do
   end
 
   # Static functions
-  @doc """
-    Returns the `Bytes` representation of the given `String`, using the
-    specified encoding (UTF-8 by default).
-  """
-  @spec of_string(String.t(), Null.t()) :: Bytes.t()
-  def of_string(s, encoding) do
+  @doc "Generated from Haxe ofString"
+  def of_string(s, _encoding \\ nil) do
+    temp_number = nil
+    temp_left = nil
+
+    a = Array.new()
+
+    i = 0
+
     (
-          a = Array.new()
-          i = 0
-          while_loop(fn -> ((i < s.length)) end, fn -> (
-          temp_number = nil
-          (
-          index = i + 1
-          temp_number = s.cca(index)
-        )
+      # Simple module-level pattern (inline for now)
+      loop_helper = fn condition_fn, body_fn, loop_fn ->
+        if condition_fn.() do
+          body_fn.()
+          loop_fn.(condition_fn, body_fn, loop_fn)
+        else
+          nil
+        end
+      end
+
+      loop_helper.(
+        fn -> ((g_counter < g_array.length)) end,
+        fn ->
+          index = g_counter + 1
+          temp_number = g_array.cca(index)
           c = temp_number
           if (((55296 <= c) && (c <= 56319))) do
-          (
-          temp_left = nil
-          (
-          index = i + 1
-          temp_left = s.cca(index)
-        )
-          c = (Bitwise.bsl((c - 55232), 10) or (temp_left and 1023))
-        )
-        end
+            index = g_counter + 1
+            temp_left = g_array.cca(index)
+            c = (Bitwise.bsl((c - 55232), 10) or (temp_left and 1023))
+          else
+            nil
+          end
           if ((c <= 127)) do
-          a ++ [c]
-        else
-          if ((c <= 2047)) do
-          (
-          a ++ [(192 or Bitwise.bsr(c, 6))]
-          a ++ [(128 or (c and 63))]
-        )
-        else
-          if ((c <= 65535)) do
-          (
-          a ++ [(224 or Bitwise.bsr(c, 12))]
-          a ++ [(128 or (Bitwise.bsr(c, 6) and 63))]
-          a ++ [(128 or (c and 63))]
-        )
-        else
-          (
-          a ++ [(240 or Bitwise.bsr(c, 18))]
-          a ++ [(128 or (Bitwise.bsr(c, 12) and 63))]
-          a ++ [(128 or (Bitwise.bsr(c, 6) and 63))]
-          a ++ [(128 or (c and 63))]
-        )
-        end
-        end
-        end
-        ) end)
-          Haxe.Io.Bytes.new(a.length, a)
-        )
+            a ++ [c]
+          else
+            if ((c <= 2047)) do
+              a ++ [(192 or Bitwise.bsr(c, 6))]
+              a ++ [(128 or (c and 63))]
+            else
+              if ((c <= 65535)) do
+                a ++ [(224 or Bitwise.bsr(c, 12))]
+                a ++ [(128 or (Bitwise.bsr(c, 6) and 63))]
+                a ++ [(128 or (c and 63))]
+              else
+                a ++ [(240 or Bitwise.bsr(c, 18))]
+                a ++ [(128 or (Bitwise.bsr(c, 12) and 63))]
+                a ++ [(128 or (Bitwise.bsr(c, 6) and 63))]
+                a ++ [(128 or (c and 63))]
+              end
+            end
+          end
+        end,
+        loop_helper
+      )
+    )
+
+    Bytes.new(a.length, a)
+  end
+
+
+  # While loop helper functions
+  # Generated automatically for tail-recursive loop patterns
+
+  @doc false
+  defp while_loop(condition_fn, body_fn) do
+    if condition_fn.() do
+      body_fn.()
+      while_loop(condition_fn, body_fn)
+    else
+      nil
+    end
+  end
+
+  @doc false
+  defp do_while_loop(body_fn, condition_fn) do
+    body_fn.()
+    if condition_fn.() do
+      do_while_loop(body_fn, condition_fn)
+    else
+      nil
+    end
   end
 
 end

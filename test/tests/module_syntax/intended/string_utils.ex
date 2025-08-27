@@ -7,16 +7,16 @@ defmodule StringUtils do
 
   # Module functions - generated with @:module syntax sugar
 
-  @doc "Function is_empty"
-  @spec is_empty(String.t()) :: boolean()
+  @doc "Generated from Haxe isEmpty"
   def is_empty(str) do
-    str == nil || str.length == 0
+    ((str == nil) || (str.length == 0))
   end
 
-  @doc "Function sanitize"
-  @spec sanitize(String.t()) :: String.t()
+
+  @doc "Generated from Haxe sanitize"
   def sanitize(str) do
     str
   end
+
 
 end

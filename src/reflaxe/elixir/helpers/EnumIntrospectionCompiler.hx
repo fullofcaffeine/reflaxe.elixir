@@ -245,10 +245,12 @@ class EnumIntrospectionCompiler {
                 var cases = [];
                 var index = 0;
                 // Use names array to preserve declaration order
-                for (name in typeInfo.enumType.names) {
-                    var atomName = NamingHelper.toSnakeCase(name);
-                    cases.push(':${atomName} -> ${index}');
-                    index++;
+                if (typeInfo.enumType != null) {
+                    for (name in typeInfo.enumType.names) {
+                        var atomName = NamingHelper.toSnakeCase(name);
+                        cases.push(':${atomName} -> ${index}');
+                        index++;
+                    }
                 }
                 cases.push('_ -> -1'); // Default case for unknown values
                 

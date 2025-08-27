@@ -1,8 +1,11 @@
 {
   "sourceRoot": "",
   "names": [],
-  "mappings": "",
+  "mappings": ";;;;AAyBC,ACDA",
   "version": 3,
   "file": "bytes.ex",
-  "sources": []
+  "sources": [
+    "std/haxe/iterators/ArrayKeyValueIterator.hx",
+    "std/haxe/io/BytesBuffer.hx"
+  ]
 }

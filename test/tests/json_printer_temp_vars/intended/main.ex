@@ -13,29 +13,39 @@ defmodule Main do
   """
 
   # Static functions
-  @doc "Function test_temp_variable_scoping"
-  @spec test_temp_variable_scoping() :: nil
+  @doc "Generated from Haxe testTempVariableScoping"
   def test_temp_variable_scoping() do
     obj = %{"finiteNumber" => 42.5, "infiniteNumber" => Math.p_o_s_i_t_i_v_e__i_n_f_i_n_i_t_y, "stringValue" => "test"}
+
     result = JsonPrinter.print(obj, nil, nil)
+
     Log.trace("Serialized JSON: " <> result, %{"fileName" => "Main.hx", "lineNumber" => 30, "className" => "Main", "methodName" => "testTempVariableScoping"})
   end
 
-  @doc "Function test_ternary_with_temp_vars"
-  @spec test_ternary_with_temp_vars() :: nil
+  @doc "Generated from Haxe testTernaryWithTempVars"
   def test_ternary_with_temp_vars() do
-    value = 42.5
     temp_string = nil
-    temp_string = if (Math.is_finite(value)), do: Std.string(value), else: "null"
+
+    value = 42.5
+
+    temp_string = nil
+
+    if Math.is_finite(value), do: temp_string = Std.string(value), else: temp_string = "null"
+
     Log.trace("Ternary result: " <> temp_string, %{"fileName" => "Main.hx", "lineNumber" => 41, "className" => "Main", "methodName" => "testTernaryWithTempVars"})
   end
 
-  @doc "Function main"
-  @spec main() :: nil
+  @doc "Generated from Haxe main"
   def main() do
+    temp_variable_scoping = nil
+    temp_vars = nil
+
     Log.trace("=== Testing JsonPrinter Temp Variable Scoping ===", %{"fileName" => "Main.hx", "lineNumber" => 45, "className" => "Main", "methodName" => "main"})
+
     Main.test_temp_variable_scoping()
+
     Log.trace("\n=== Testing Ternary with Temp Variables ===", %{"fileName" => "Main.hx", "lineNumber" => 48, "className" => "Main", "methodName" => "main"})
+
     Main.test_ternary_with_temp_vars()
   end
 

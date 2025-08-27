@@ -8,10 +8,10 @@ defmodule UserHelper do
 
   # Module functions - generated with @:module syntax sugar
 
-  @doc "Function format_name"
-  @spec format_name(String.t(), String.t()) :: String.t()
+  @doc "Generated from Haxe formatName"
   def format_name(first_name, last_name) do
     first_name <> " " <> last_name
   end
+
 
 end

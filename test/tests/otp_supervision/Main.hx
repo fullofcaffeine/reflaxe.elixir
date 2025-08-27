@@ -1,6 +1,12 @@
 package;
 
 import elixir.otp.Supervisor;
+import elixir.otp.Supervisor.SupervisorExtern;
+import elixir.otp.Supervisor.ChildSpec;
+import elixir.otp.Supervisor.SupervisorOptions;
+import elixir.otp.Supervisor.RestartType;
+import elixir.otp.Supervisor.ChildType;
+import elixir.otp.Supervisor.SupervisorStrategy;
 import elixir.Task;
 import elixir.TaskSupervisor;
 import elixir.GenServer;
@@ -27,68 +33,69 @@ class Main {
         var children = [
             {
                 id: "worker1",
-                start: {_0: "MyWorker", _1: "start_link", _2: [{name: "worker1"}]},
-                restart: "permanent",
-                type: "worker"
+                start: {module: "MyWorker", func: "start_link", args: [{name: "worker1"}]},
+                restart: RestartType.Permanent,
+                type: ChildType.Worker
             },
             {
                 id: "worker2", 
-                start: {_0: "MyWorker", _1: "start_link", _2: [{name: "worker2"}]},
-                restart: "temporary",
-                type: "worker"
+                start: {module: "MyWorker", func: "start_link", args: [{name: "worker2"}]},
+                restart: RestartType.Temporary,
+                type: ChildType.Worker
             },
             {
                 id: "sub_supervisor",
-                start: {_0: "SubSupervisor", _1: "start_link", _2: [{}]},
-                restart: "permanent", 
-                type: "supervisor"
+                start: {module: "SubSupervisor", func: "start_link", args: [{}]},
+                restart: RestartType.Permanent, 
+                type: ChildType.Supervisor
             }
         ];
         
         var options = {
-            strategy: "one_for_one",
+            strategy: SupervisorStrategy.OneForOne,
             max_restarts: 5,
             max_seconds: 10
         };
         
         // Start supervisor
-        var result = Supervisor.startLink(children, options);
+        var result = SupervisorExtern.start_link(children, options);
         if (result._0 == "ok") {
             var supervisor = result._1;
             
             // Test child management
-            var childrenList = Supervisor.whichChildren(supervisor);
-            var counts = Supervisor.countChildren(supervisor);
+            var childrenList = SupervisorExtern.which_children(supervisor);
+            var counts = SupervisorExtern.count_children(supervisor);
             
             // Test restart
-            Supervisor.restartChild(supervisor, "worker1");
+            SupervisorExtern.restart_child(supervisor, "worker1");
             
             // Test terminate
-            Supervisor.terminateChild(supervisor, "worker2");
+            SupervisorExtern.terminate_child(supervisor, "worker2");
             
             // Test delete
-            Supervisor.deleteChild(supervisor, "worker2");
+            SupervisorExtern.delete_child(supervisor, "worker2");
             
             // Test dynamic child addition
             var newChild = {
                 id: "dynamic",
-                start: {_0: "DynamicWorker", _1: "start_link", _2: [{}]},
-                restart: "transient",
-                type: "worker"
+                start: {module: "DynamicWorker", func: "start_link", args: [{}]},
+                restart: RestartType.Transient,
+                type: ChildType.Worker
             };
-            Supervisor.startChild(supervisor, newChild);
+            SupervisorExtern.start_child(supervisor, newChild);
             
             // Test supervisor stats
-            var stats = Supervisor.getStats(supervisor);
+            var stats = SupervisorExtern.count_children(supervisor);
             trace('Active workers: ${stats.workers}, Supervisors: ${stats.supervisors}');
             
             // Check if alive
-            if (Supervisor.isAlive(supervisor)) {
+            if (Process.alive(supervisor)) {
                 trace("Supervisor is running");
             }
             
             // Stop supervisor
-            Supervisor.stop(supervisor);
+            // SupervisorExtern doesn't have stop, use Process.exit
+            Process.exit(supervisor, "normal");
         }
     }
     
@@ -231,49 +238,49 @@ class Main {
         var children = [
             {
                 id: "worker1",
-                start: {_0: "Worker1", _1: "start_link", _2: [{}]},
-                restart: "permanent",
-                type: "worker"
+                start: {module: "Worker1", func: "start_link", args: [{}]},
+                restart: RestartType.Permanent,
+                type: ChildType.Worker
             },
             {
                 id: "worker2",
-                start: {_0: "Worker2", _1: "start_link", _2: [{}]},
-                restart: "temporary", 
-                type: "worker"
+                start: {module: "Worker2", func: "start_link", args: [{}]},
+                restart: RestartType.Temporary, 
+                type: ChildType.Worker
             },
             {
                 id: "worker3",
-                start: {_0: "Worker3", _1: "start_link", _2: [{}]},
-                restart: "transient",
-                type: "worker"
+                start: {module: "Worker3", func: "start_link", args: [{}]},
+                restart: RestartType.Transient,
+                type: ChildType.Worker
             }
         ];
         
         var options = {
-            strategy: "one_for_all",
+            strategy: SupervisorStrategy.OneForAll,
             max_restarts: 10,
             max_seconds: 60
         };
         
-        var result = Supervisor.startLink(children, options);
+        var result = SupervisorExtern.start_link(children, options);
         if (result._0 == "ok") {
             var supervisor = result._1;
             
             // Verify tree structure
-            var stats = Supervisor.getStats(supervisor);
+            var stats = SupervisorExtern.count_children(supervisor);
             trace('Supervisor - Workers: ${stats.workers}, Supervisors: ${stats.supervisors}');
             
             // Test child management
-            var childrenList = Supervisor.whichChildren(supervisor);
+            var childrenList = SupervisorExtern.which_children(supervisor);
             for (child in childrenList) {
                 trace('Child: ${child._0}, Type: ${child._2}');
             }
             
             // Test restart behavior
-            Supervisor.restartChild(supervisor, "worker1");
+            SupervisorExtern.restart_child(supervisor, "worker1");
             
             // Clean shutdown
-            Supervisor.stopWithReason(supervisor, "normal");
+            SupervisorExtern.terminate_child(supervisor, "normal");
         }
     }
 }

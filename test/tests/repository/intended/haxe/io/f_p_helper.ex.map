@@ -1,8 +1,10 @@
 {
   "sourceRoot": "",
   "names": [],
-  "mappings": "",
+  "mappings": ";;;;;;;;;AA4BC",
   "version": 3,
   "file": "f_p_helper.ex",
-  "sources": []
+  "sources": [
+    "std/haxe/Log.hx"
+  ]
 }
