@@ -22,46 +22,46 @@ defmodule TypeSafeConversions do
   # Static functions
   @doc "Generated from Haxe eventParamsToChangesetParams"
   def event_params_to_changeset_params(params) do
-    changeset_params = Haxe.Ds.StringMap.new()
+    changeset_params = StringMap.new()
 
     if ((params.title != nil)) do
       value = ChangesetValue.string_value(params.title)
-      changeset_params.set("title", value)
+      changeset_params = Map.put(changeset_params, "title", value)
     else
       nil
     end
 
     if ((params.description != nil)) do
       value = ChangesetValue.string_value(params.description)
-      changeset_params.set("description", value)
+      changeset_params = Map.put(changeset_params, "description", value)
     else
       nil
     end
 
     if ((params.priority != nil)) do
       value = ChangesetValue.string_value(params.priority)
-      changeset_params.set("priority", value)
+      changeset_params = Map.put(changeset_params, "priority", value)
     else
       nil
     end
 
     if ((params.due_date != nil)) do
       value = ChangesetValue.string_value(params.due_date)
-      changeset_params.set("due_date", value)
+      changeset_params = Map.put(changeset_params, "due_date", value)
     else
       nil
     end
 
     if ((params.tags != nil)) do
       value = ChangesetValue.string_value(params.tags)
-      changeset_params.set("tags", value)
+      changeset_params = Map.put(changeset_params, "tags", value)
     else
       nil
     end
 
     if ((params.completed != nil)) do
       value = ChangesetValue.bool_value(params.completed)
-      changeset_params.set("completed", value)
+      changeset_params = Map.put(changeset_params, "completed", value)
     else
       nil
     end
@@ -71,37 +71,37 @@ defmodule TypeSafeConversions do
 
   @doc "Generated from Haxe createTodoParams"
   def create_todo_params(title, description, priority, due_date, tags, user_id) do
-    changeset_params = Haxe.Ds.StringMap.new()
+    changeset_params = StringMap.new()
 
     value = ChangesetValue.string_value(title)
-    changeset_params.set("title", value)
+    changeset_params = Map.put(changeset_params, "title", value)
 
     value = ChangesetValue.string_value(priority)
-    changeset_params.set("priority", value)
+    changeset_params = Map.put(changeset_params, "priority", value)
 
     value = ChangesetValue.int_value(user_id)
-    changeset_params.set("user_id", value)
+    changeset_params = Map.put(changeset_params, "user_id", value)
 
     value = ChangesetValue.bool_value(false)
-    changeset_params.set("completed", value)
+    changeset_params = Map.put(changeset_params, "completed", value)
 
     if ((description != nil)) do
       value = ChangesetValue.string_value(description)
-      changeset_params.set("description", value)
+      changeset_params = Map.put(changeset_params, "description", value)
     else
       nil
     end
 
     if ((due_date != nil)) do
       value = ChangesetValue.string_value(due_date)
-      changeset_params.set("due_date", value)
+      changeset_params = Map.put(changeset_params, "due_date", value)
     else
       nil
     end
 
     if ((tags != nil)) do
       value = ChangesetValue.string_value(tags)
-      changeset_params.set("tags", value)
+      changeset_params = Map.put(changeset_params, "tags", value)
     else
       nil
     end

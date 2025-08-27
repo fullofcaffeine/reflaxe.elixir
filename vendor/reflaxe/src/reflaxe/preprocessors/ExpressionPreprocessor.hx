@@ -219,7 +219,14 @@ class ExpressionPreprocessorHelper {
 				data.setExprList(MarkUnusedVariablesImpl.mark(data.expr.unwrapBlock()));
 			}
 			case Custom(preprocessor): {
+				#if debug_preprocessor
+				trace("[XRay ExpressionPreprocessor] Custom preprocessor being called");
+				trace("[XRay ExpressionPreprocessor] Preprocessor type: " + Type.getClassName(Type.getClass(preprocessor)));
+				#end
 				preprocessor.process(data, compiler);
+				#if debug_preprocessor
+				trace("[XRay ExpressionPreprocessor] Custom preprocessor completed");
+				#end
 			}
 		}
 	}

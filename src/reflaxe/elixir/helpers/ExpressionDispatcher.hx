@@ -78,16 +78,20 @@ class ExpressionDispatcher {
     public function new(compiler: reflaxe.elixir.ElixirCompiler) {
         this.compiler = compiler;
         
-        // Initialize specialized compilers
+        // CRITICAL: Reuse existing instances from main compiler to maintain state consistency
+        // Using duplicate instances causes state inconsistency bugs!
+        
+        // Reuse instances that exist in main compiler
+        this.patternMatchingCompiler = compiler.patternMatchingCompiler;
+        this.methodCallCompiler = compiler.methodCallCompiler;
+        this.variableCompiler = compiler.variableCompiler;
+        
+        // Create instances that don't exist in main compiler
+        // TODO: Consider moving these to main compiler if they need shared state
         this.literalCompiler = new LiteralCompiler(compiler);
         this.conditionalCompiler = new ConditionalCompiler(compiler);
-        this.patternMatchingCompiler = new PatternMatchingCompiler(compiler);
         this.exceptionCompiler = new ExceptionCompiler(compiler);
         this.operatorCompiler = new OperatorCompiler(compiler, this.literalCompiler);
-        this.methodCallCompiler = new MethodCallCompiler(compiler);
-        
-        // TODO: Initialize other compilers as they're extracted:
-        this.variableCompiler = new VariableCompiler(compiler);
         this.dataStructureCompiler = new DataStructureCompiler(compiler);
         this.fieldAccessCompiler = new FieldAccessCompiler(compiler);
         this.miscExpressionCompiler = new MiscExpressionCompiler(compiler);

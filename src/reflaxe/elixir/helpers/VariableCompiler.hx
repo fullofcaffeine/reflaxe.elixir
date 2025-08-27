@@ -65,7 +65,13 @@ class VariableCompiler {
      * WHAT: Maps unique TVar.id (Int) to transformed variable name (String)
      * HOW: Uses TVar.id as key, eliminating possibility of name collisions
      */
-    var variableIdMap: Map<Int, String> = new Map();
+    public var variableIdMap: Map<Int, String> = new Map();
+    
+    /**
+     * Map of variable names to their underscore-prefixed versions
+     * Critical for tracking unused variables across declaration and reference
+     */
+    public var underscorePrefixMap: Map<String, String> = new Map();
     
     /**
      * Position tracking for TVar instances (for error reporting)
@@ -119,27 +125,57 @@ class VariableCompiler {
         trace('[XRay VariableCompiler] TVar.name: ${v.name}, TVar.id: ${v.id}');
         #end
         
-        // CRITICAL: Check for Reflaxe unused variable metadata first
-        if (v.meta != null && v.meta.has("-reflaxe.unused")) {
-            #if debug_variable_compiler
-            trace('[XRay VariableCompiler] ✓ VARIABLE MARKED AS UNUSED, skipping generation');
-            #end
-            return ""; // Skip generation for unused variables
-        }
+        // CRITICAL FIX: Don't skip unused variables - they need underscore-prefixed names!
+        // The old logic returned empty string for unused variables, causing invalid Elixir code
+        // where variables are declared with underscore (_params) but referenced without (params)
         
         // PRIMARY: Check TVar.id-based mapping FIRST - this takes absolute priority
         // This prevents variable collisions by using unique TVar.id as the identifier
+        // This also handles underscore-prefixed names for unused variables
         var idMapping = variableIdMap.get(v.id);
         if (idMapping != null) {
             #if debug_variable_compiler
             trace('[XRay VariableCompiler] ✓ FOUND TVAR.ID MAPPING: ${v.id} -> ${idMapping}');
-            trace('[XRay VariableCompiler] Using TVar.id mapping, skipping all other logic');
+            trace('[XRay VariableCompiler] Using TVar.id mapping (may include underscore prefix)');
             #end
-            return idMapping; // Return immediately - no further processing needed
+            return idMapping; // Return immediately - this includes underscore prefix if variable is unused
         }
         
         // Get the original variable name (before Haxe's renaming for shadowing avoidance)
         var originalName = getOriginalVarName(v);
+        var snakeName = NamingHelper.toSnakeCase(originalName);
+        
+        #if debug_variable_compiler
+        if (originalName == "params" || snakeName == "params") {
+            trace('[XRay VariableCompiler] SPECIAL DEBUG: Checking params variable');
+            trace('[XRay VariableCompiler] Original name: ${originalName}, Snake name: ${snakeName}');
+            trace('[XRay VariableCompiler] underscorePrefixMap keys: ${[for (k in underscorePrefixMap.keys()) k].join(", ")}');
+        }
+        #end
+        
+        // CHECK: Look for underscore prefix mapping by name
+        // This handles cases where TVar IDs differ between declaration and reference
+        var prefixedName = underscorePrefixMap.get(snakeName);
+        if (prefixedName != null) {
+            #if debug_variable_compiler
+            trace('[XRay VariableCompiler] ✓ FOUND UNDERSCORE PREFIX MAPPING BY NAME: ${snakeName} -> ${prefixedName}');
+            #end
+            return prefixedName;
+        }
+        
+        // FALLBACK: If no mapping found, check if variable is unused and add underscore
+        // This shouldn't normally happen since we track all variables
+        if (v.meta != null && v.meta.has("-reflaxe.unused")) {
+            #if debug_variable_compiler
+            trace('[XRay VariableCompiler] ⚠️ VARIABLE MARKED AS UNUSED BUT NO MAPPING FOUND');
+            trace('[XRay VariableCompiler] Falling back to underscore-prefixed name');
+            #end
+            // Add underscore prefix for unused variables
+            if (!StringTools.startsWith(snakeName, "_")) {
+                snakeName = "_" + snakeName;
+            }
+            return snakeName;
+        }
         
         // NOTE: The old counting logic for 'g' variables has been removed
         // It's replaced by proper TVar.id-based mapping which is checked above
@@ -748,6 +784,14 @@ class VariableCompiler {
             // Use the mapped name directly
             var varName = mappedName;
             
+            // CRITICAL: Also track underscore prefix when it comes from parameter mapping
+            if (StringTools.startsWith(varName, "_") && !StringTools.startsWith(originalName, "_")) {
+                underscorePrefixMap.set(originalName, varName);
+                #if debug_variable_compiler
+                trace('[XRay VariableCompiler] ✓ TRACKED UNDERSCORE PREFIX FROM PARAMETER MAPPING: ${originalName} → ${varName}');
+                #end
+            }
+            
             if (expr != null) {
                 // CRITICAL FIX: Specifically check for TEnumParameter expressions that might return empty
                 var isEnumParameter = switch(expr.expr) {
@@ -876,9 +920,25 @@ class VariableCompiler {
         // CRITICAL FIX: Prefix unused variables with underscore
         // In Elixir, unused variables should be prefixed with underscore to avoid warnings
         if (isUnused && !StringTools.startsWith(varName, "_")) {
+            var originalVarName = varName;
             varName = "_" + varName;
             #if debug_variable_compiler
             trace('[XRay VariableCompiler] ✓ PREFIXED UNUSED VARIABLE WITH UNDERSCORE: ${varName}');
+            #end
+            
+            // CRITICAL: Track that this TVar ID now maps to an underscore-prefixed name
+            // This ensures that when we reference the variable by TVar.id, we get the correct prefixed name
+            if (tvar != null && tvar.id != null) {
+                variableIdMap.set(tvar.id, varName);
+                #if debug_variable_compiler
+                trace('[XRay VariableCompiler] ✓ TRACKED UNDERSCORE PREFIX IN ID MAP: id ${tvar.id} → ${varName}');
+                #end
+            }
+            
+            // ALSO track by name since TVar IDs differ between declaration and reference
+            underscorePrefixMap.set(originalVarName, varName);
+            #if debug_variable_compiler
+            trace('[XRay VariableCompiler] ✓ TRACKED UNDERSCORE PREFIX BY NAME: ${originalVarName} → ${varName}');
             #end
         }
         
@@ -1196,11 +1256,24 @@ class VariableCompiler {
         }
         
         #if debug_variable_compiler
-        trace('[XRay VariableCompiler] No ID mapping found, using standard conversion');
+        trace('[XRay VariableCompiler] No ID mapping found, checking for unused variable metadata');
         #end
         
         // Get original variable name and convert to snake_case
-        return NamingHelper.toSnakeCase(originalName);
+        var varName = NamingHelper.toSnakeCase(originalName);
+        
+        // CRITICAL FIX: Check if variable has -reflaxe.unused metadata
+        // If it does, it was declared with an underscore prefix, so references must use the same prefix
+        if (tvar.meta != null && tvar.meta.has("-reflaxe.unused")) {
+            if (!StringTools.startsWith(varName, "_")) {
+                varName = "_" + varName;
+                #if debug_variable_compiler
+                trace('[XRay VariableCompiler] ✓ Variable has -reflaxe.unused metadata, adding underscore prefix: ${varName}');
+                #end
+            }
+        }
+        
+        return varName;
     }
     
     /**

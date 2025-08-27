@@ -4,7 +4,7 @@ import Config
 # you can enable the server option below.
 config :test_template_vars, TestTemplateVarsWeb.Endpoint,
   http: [ip: {127, 0, 0, 1}, port: 4002],
-  secret_key_base: "txYTOvihfJHja81bXTPyXkxVi5UxD2qenc4jvoOp0Z1GrO77fIIFSk6hMIuVt8KG",
+  secret_key_base: "NVicw50epYpwmY8liducZb+axKIghofPZHONZodmB934Ck2jdMYRlEOIcsgdmL+R",
   server: false
 
 # In test we don't send emails

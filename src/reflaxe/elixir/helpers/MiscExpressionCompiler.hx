@@ -249,26 +249,68 @@ class MiscExpressionCompiler {
         trace("[XRay MiscExpressionCompiler] NEW EXPRESSION COMPILATION START");
         #end
         
-        var className = NamingHelper.getElixirModuleName(c.toString());
+        // Use just the class name, not the full package path
+        // This matches how ClassCompiler generates module names
+        var classType = c.get();
+        var className = NamingHelper.getElixirModuleName(classType.name);
         var compiledArgs = el.map(arg -> compiler.compileExpression(arg));
         
         #if debug_misc_expression_compiler
         trace('[XRay MiscExpressionCompiler] Class: ${className}, Args: ${compiledArgs.length}');
         #end
         
+        // Check if this class has a custom new() method defined
+        var hasCustomNew = false;
+        
+        // Look for a static new() method in the class
+        for (field in classType.statics.get()) {
+            if (field.name == "new") {
+                hasCustomNew = true;
+                break;
+            }
+        }
+        
+        #if debug_misc_expression_compiler
+        trace('[XRay MiscExpressionCompiler] Has custom new(): ${hasCustomNew}');
+        #end
+        
+        // If there's a custom new() method, call it
+        if (hasCustomNew) {
+            if (compiledArgs.length > 0) {
+                var result = '${className}.new(${compiledArgs.join(", ")})';
+                
+                #if debug_misc_expression_compiler
+                trace('[XRay MiscExpressionCompiler] Custom new with args: ${result}');
+                #end
+                
+                return result;
+            } else {
+                var result = '${className}.new()';
+                
+                #if debug_misc_expression_compiler
+                trace('[XRay MiscExpressionCompiler] Custom new without args: ${result}');
+                #end
+                
+                return result;
+            }
+        }
+        
+        // For structs without custom new(), use Elixir struct literal syntax or call new()
+        // The standard library classes define new() methods, so we call them
         if (compiledArgs.length > 0) {
             var result = '${className}.new(${compiledArgs.join(", ")})';
             
             #if debug_misc_expression_compiler
-            trace('[XRay MiscExpressionCompiler] New with args: ${result}');
+            trace('[XRay MiscExpressionCompiler] Standard new with args: ${result}');
             #end
             
             return result;
         } else {
+            // For classes like JsonPrinter that define their own new(), we call it
             var result = '${className}.new()';
             
             #if debug_misc_expression_compiler
-            trace('[XRay MiscExpressionCompiler] New without args: ${result}');
+            trace('[XRay MiscExpressionCompiler] Standard new without args: ${result}');
             #end
             
             return result;

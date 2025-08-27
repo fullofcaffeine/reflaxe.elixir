@@ -35,89 +35,36 @@ defmodule Flash do
 
   @doc "Generated from Haxe toPhoenixFlash"
   def to_phoenix_flash(flash) do
-    result = %{"type" => FlashTypeTools.to_string(flash.type), "message" => flash.message}
-
-    if ((flash.title != nil)) do
-      Reflect.set_field(result, "title", flash.title)
-    else
-      nil
-    end
-
-    if ((flash.details != nil)) do
-      Reflect.set_field(result, "details", flash.details)
-    else
-      nil
-    end
-
-    if ((flash.dismissible != nil)) do
-      Reflect.set_field(result, "dismissible", flash.dismissible)
-    else
-      nil
-    end
-
-    if ((flash.timeout != nil)) do
-      Reflect.set_field(result, "timeout", flash.timeout)
-    else
-      nil
-    end
-
-    if ((flash.action != nil)) do
-      Reflect.set_field(result, "action", flash.action)
-    else
-      nil
-    end
-
-    result
+    %{"type" => FlashTypeTools.to_string(flash.type), "message" => flash.message, "title" => flash.title, "details" => flash.details, "dismissible" => flash.dismissible, "timeout" => flash.timeout, "action" => flash.action}
   end
 
   @doc "Generated from Haxe fromPhoenixFlash"
   def from_phoenix_flash(phoenix_flash) do
-    _type = FlashTypeTools.from_string(Reflect.field(phoenix_flash, "type"))
+    temp_string = nil
+    temp_string1 = nil
+    temp_bool = nil
 
-    message = Reflect.field(phoenix_flash, "message")
+    tmp = phoenix_flash.type
+    if ((tmp != nil)), do: temp_string = tmp, else: temp_string = "info"
 
-    %{"type" => type, "message" => message, "title" => Reflect.field(phoenix_flash, "title"), "details" => Reflect.field(phoenix_flash, "details"), "dismissible" => Reflect.field(phoenix_flash, "dismissible"), "timeout" => Reflect.field(phoenix_flash, "timeout"), "action" => Reflect.field(phoenix_flash, "action")}
+    flash_type = FlashTypeTools.from_string(temp_string)
+
+    temp_string1 = nil
+
+    tmp = phoenix_flash.message
+    if ((tmp != nil)), do: temp_string1 = tmp, else: temp_string1 = ""
+
+    temp_bool = nil
+
+    tmp = phoenix_flash.dismissible
+    if ((tmp != nil)), do: temp_bool = tmp, else: temp_bool = true
+
+    %{"type" => flash_type, "message" => temp_string1, "title" => phoenix_flash.title, "details" => phoenix_flash.details, "dismissible" => temp_bool, "timeout" => phoenix_flash.timeout, "action" => phoenix_flash.action}
   end
 
   @doc "Generated from Haxe extractChangesetErrors"
-  def extract_changeset_errors(changeset) do
-    errors = []
-
-    changeset_errors = Reflect.field(changeset, "errors")
-
-    if ((changeset_errors != nil)) do
-      g_counter = 0
-      g_array = Reflect.fields(changeset_errors)
-      Enum.filter(g1, fn item -> Std.is_of_type(item_errors, Array) end)
-    else
-      nil
-    end
-
-    errors
-  end
-
-
-  # While loop helper functions
-  # Generated automatically for tail-recursive loop patterns
-
-  @doc false
-  defp while_loop(condition_fn, body_fn) do
-    if condition_fn.() do
-      body_fn.()
-      while_loop(condition_fn, body_fn)
-    else
-      nil
-    end
-  end
-
-  @doc false
-  defp do_while_loop(body_fn, condition_fn) do
-    body_fn.()
-    if condition_fn.() do
-      do_while_loop(body_fn, condition_fn)
-    else
-      nil
-    end
+  def extract_changeset_errors(_changeset) do
+    []
   end
 
 end

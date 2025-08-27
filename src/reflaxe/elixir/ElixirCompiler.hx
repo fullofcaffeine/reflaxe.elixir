@@ -17,10 +17,6 @@ import reflaxe.compiler.TargetCodeInjection;
 import reflaxe.data.ClassFuncData;
 import reflaxe.data.ClassVarData;  
 import reflaxe.data.EnumOptionData;
-import reflaxe.preprocessors.ExpressionPreprocessor;
-import reflaxe.preprocessors.ExpressionPreprocessor.*;
-import reflaxe.preprocessors.implementations.RemoveTemporaryVariablesImpl.RemoveTemporaryVariablesMode;
-import reflaxe.elixir.preprocessors.RemoveOrphanedEnumParametersImpl;
 import reflaxe.elixir.helpers.NamingHelper;
 import reflaxe.elixir.helpers.EnumCompiler;
 import reflaxe.elixir.helpers.ClassCompiler;
@@ -144,8 +140,8 @@ class ElixirCompiler extends DirectToStringCompiler {
     // GenServer compilation helper
     private var genServerCompiler: reflaxe.elixir.helpers.GenServerCompiler;
     
-    // Method call compilation
-    private var methodCallCompiler: reflaxe.elixir.helpers.MethodCallCompiler;
+    // Method call compilation (public for ExpressionDispatcher access)
+    public var methodCallCompiler: reflaxe.elixir.helpers.MethodCallCompiler;
     
     // Reflection compilation
     private var reflectionCompiler: reflaxe.elixir.helpers.ReflectionCompiler;
@@ -210,6 +206,12 @@ class ElixirCompiler extends DirectToStringCompiler {
     public var expressionVariantCompiler: reflaxe.elixir.helpers.ExpressionVariantCompiler;
     
     public var expressionDispatcher: reflaxe.elixir.helpers.ExpressionDispatcher;
+    
+    /** Class compilation helper - reused to maintain state consistency */
+    private var classCompiler: reflaxe.elixir.helpers.ClassCompiler;
+    
+    /** Enum compilation helper - reused to maintain state consistency */
+    private var enumCompiler: reflaxe.elixir.helpers.EnumCompiler;
     
     // Import optimization for clean import statements
     private var importOptimizer: reflaxe.elixir.helpers.ImportOptimizer;
@@ -341,25 +343,20 @@ class ElixirCompiler extends DirectToStringCompiler {
         this.expressionVariantCompiler = new reflaxe.elixir.helpers.ExpressionVariantCompiler(this);
         this.expressionDispatcher = new reflaxe.elixir.helpers.ExpressionDispatcher(this);
         
+        // Initialize class and enum compilers (reused to maintain state consistency)
+        this.classCompiler = new reflaxe.elixir.helpers.ClassCompiler(this.typer);
+        this.enumCompiler = new reflaxe.elixir.helpers.EnumCompiler(this.typer);
+        
         // Set compiler reference for delegation
         this.patternMatcher.setCompiler(this);
+        this.classCompiler.setCompiler(this);
         
         // Enable source mapping if requested
         this.sourceMapOutputEnabled = Context.defined("source_map_enabled") || Context.defined("source-map") || Context.defined("debug");
         
-        // Configure Reflaxe 4.0 preprocessors for optimized code generation
-        // These preprocessors clean up the AST before we compile it to Elixir
-        options.expressionPreprocessors = [
-            SanitizeEverythingIsExpression({}),                      // Convert "everything is expression" to imperative
-            RemoveTemporaryVariables(RemoveTemporaryVariablesMode.AllTempVariables), // Remove only "temp" prefixed variables
-            PreventRepeatVariables({}),                              // Ensure unique variable names
-            RemoveSingleExpressionBlocks,                            // Simplify single-expression blocks
-            RemoveConstantBoolIfs,                                   // Remove constant conditional checks
-            RemoveUnnecessaryBlocks,                                 // Remove redundant blocks
-            RemoveReassignedVariableDeclarations,                    // Optimize variable declarations
-            RemoveLocalVariableAliases,                              // Remove unnecessary aliases
-            MarkUnusedVariables                                      // Mark unused variables for removal
-        ];
+        // Preprocessors are now configured in CompilerInit.hx to ensure they aren't overridden
+        // The configuration was moved because options passed to ReflectCompiler.AddCompiler
+        // override anything set in the constructor
         
         // Initialize LLM documentation generator (optional)
         if (Context.defined("generate-llm-docs")) {
@@ -843,10 +840,8 @@ class ElixirCompiler extends DirectToStringCompiler {
             return result;
         }
         
-        // Use the enhanced ClassCompiler for proper struct/module generation
-        var classCompiler = new reflaxe.elixir.helpers.ClassCompiler(this.typer);
-        classCompiler.setCompiler(this);
-        classCompiler.setImportOptimizer(importOptimizer);
+        // Use the existing ClassCompiler instance for proper state consistency
+        this.classCompiler.setImportOptimizer(importOptimizer);
         
         // Handle inheritance tracking
         if (classType.superClass != null) {
@@ -857,7 +852,7 @@ class ElixirCompiler extends DirectToStringCompiler {
         for (iface in classType.interfaces) {
             addModuleTypeForCompilation(TClassDecl(iface.t));
         };
-        var result = classCompiler.compileClass(classType, varFields, funcFields);
+        var result = this.classCompiler.compileClass(classType, varFields, funcFields);
         
         // Post-process to replace getAppName() calls with actual app name
         if (result != null) {
@@ -933,9 +928,8 @@ class ElixirCompiler extends DirectToStringCompiler {
         // Set universal output path for consistent snake_case naming
         setUniversalOutputPath(enumType.name, enumType.pack);
         
-        // Use the enhanced EnumCompiler helper for proper type integration
-        var enumCompiler = new reflaxe.elixir.helpers.EnumCompiler(this.typer);
-        var result = enumCompiler.compileEnum(enumType, options);
+        // Use the existing EnumCompiler instance for proper state consistency
+        var result = this.enumCompiler.compileEnum(enumType, options);
         
         // Track the generated output for source mapping
         if (result != null) {
