@@ -1,0 +1,24 @@
+# Dependencies
+node_modules/
+deps/
+_build/
+
+# Generated files
+lib/generated/
+
+# IDE
+.vscode/
+.idea/
+*.iml
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+
+# Environment
+.env
+.env.local
