@@ -128,9 +128,9 @@ class PatternMatchingCompiler {
         var allCasesAssignToTempVar = true;
         
         // CRITICAL DEBUG: Track switch compilation
-        Sys.println('[SWITCH_TRACKER] ===== SWITCH COMPILATION START =====');
-        Sys.println('[SWITCH_TRACKER] Switch expr type: ${Type.enumConstructor(switchExpr.expr)}');  
-        Sys.println('[SWITCH_TRACKER] Number of cases: ${cases.length}');
+        // Sys.println('[SWITCH_TRACKER] ===== SWITCH COMPILATION START =====');
+        // Sys.println('[SWITCH_TRACKER] Switch expr type: ${Type.enumConstructor(switchExpr.expr)}');  
+        // Sys.println('[SWITCH_TRACKER] Number of cases: ${cases.length}');
         
         #if debug_temp_var
 //         trace("[PatternMatchingCompiler] ============== SWITCH COMPILATION START ==============");
@@ -259,7 +259,7 @@ class PatternMatchingCompiler {
         // CRITICAL FIX: Detect TSwitch(TEnumIndex(expr)) pattern for direct Result/Option compilation
         // This prevents double-nested case expressions by bypassing EnumIntrospectionCompiler
         if (isSwitchOnEnumIndex(switchExpr)) {
-            Sys.println('[SWITCH_TRACKER] EARLY RETURN - isSwitchOnEnumIndex');
+            // Sys.println('[SWITCH_TRACKER] EARLY RETURN - isSwitchOnEnumIndex');
             #if debug_pattern_matching
 //             trace("[PatternMatchingCompiler] ✓ DETECTED TSwitch(TEnumIndex) - direct compilation");
             #end
@@ -269,7 +269,7 @@ class PatternMatchingCompiler {
         
         // Check if this is a with statement pattern
         if (shouldUseWithStatement(switchExpr, cases)) {
-            Sys.println('[SWITCH_TRACKER] EARLY RETURN - shouldUseWithStatement');
+            // Sys.println('[SWITCH_TRACKER] EARLY RETURN - shouldUseWithStatement');
             #if debug_pattern_matching
 //             trace("[PatternMatchingCompiler] Using with statement optimization");
             #end
@@ -280,10 +280,10 @@ class PatternMatchingCompiler {
         // Check for enum type handling
         var enumType = extractEnumType(switchExpr.t);
         
-        Sys.println('[SWITCH_TRACKER] extractEnumType result = ${enumType != null ? enumType.name : "NULL"}');
+        // Sys.println('[SWITCH_TRACKER] extractEnumType result = ${enumType != null ? enumType.name : "NULL"}');
         
         if (enumType != null) {
-            Sys.println('[SWITCH_TRACKER] ENUM TYPE DETECTED - ${enumType.name}');
+            // Sys.println('[SWITCH_TRACKER] ENUM TYPE DETECTED - ${enumType.name}');
             #if debug_pattern_matching
 //             trace('[PatternMatchingCompiler] ✓ DETECTED ENUM TYPE: ${enumType.name}');
             #end
@@ -312,7 +312,7 @@ class PatternMatchingCompiler {
                 return compileEnumIndexSwitch(switchExpr, cases, defaultExpr, context, enumType);
             }
         } else {
-            Sys.println('[SWITCH_TRACKER] NO ENUM TYPE - trying inference');
+            // Sys.println('[SWITCH_TRACKER] NO ENUM TYPE - trying inference');
             #if debug_pattern_matching
 //             trace('[PatternMatchingCompiler] ⚠️ NO ENUM TYPE DETECTED - using standard case compilation');
             #end
@@ -321,7 +321,7 @@ class PatternMatchingCompiler {
             // Sometimes enum type isn't detected from switch expr but we can detect it from patterns
             var inferredEnumType = inferEnumTypeFromCases(cases);
             if (inferredEnumType != null) {
-                Sys.println('[SWITCH_TRACKER] INFERRED ENUM TYPE - ${inferredEnumType.name}');
+                // Sys.println('[SWITCH_TRACKER] INFERRED ENUM TYPE - ${inferredEnumType.name}');
                 #if debug_pattern_matching
 //                 trace('[PatternMatchingCompiler] ✓ INFERRED ENUM TYPE: ${inferredEnumType.name} - forcing elem-based compilation');
                 #end
@@ -329,7 +329,7 @@ class PatternMatchingCompiler {
                 return compileEnumIndexSwitch(switchExpr, cases, defaultExpr, context, inferredEnumType);
             }
             
-            Sys.println('[SWITCH_TRACKER] FORCING ELEM-BASED COMPILATION');
+            // Sys.println('[SWITCH_TRACKER] FORCING ELEM-BASED COMPILATION');
             // CRITICAL FIX: Force ALL switches to use elem-based compilation by default
             // This ensures consistent pattern generation across all enum switches
             #if debug_pattern_matching
@@ -698,11 +698,11 @@ class PatternMatchingCompiler {
     ): String {
         
         // DEBUG: Track which functions use standard case compilation
-        Sys.println('[CRITICAL_PATH] ===== STANDARD CASE COMPILATION =====');
-        Sys.println('[CRITICAL_PATH] This function is NOT going through enum index compilation');
-        Sys.println('[CRITICAL_PATH] Switch expr: ${Type.enumConstructor(switchExpr.expr)}');
-        Sys.println('[CRITICAL_PATH] Cases: ${cases.length}');
-        Sys.println('[CRITICAL_PATH] ==========================================');
+        // Sys.println('[CRITICAL_PATH] ===== STANDARD CASE COMPILATION =====');
+        // Sys.println('[CRITICAL_PATH] This function is NOT going through enum index compilation');
+        // Sys.println('[CRITICAL_PATH] Switch expr: ${Type.enumConstructor(switchExpr.expr)}');
+        // Sys.println('[CRITICAL_PATH] Cases: ${cases.length}');
+        // Sys.println('[CRITICAL_PATH] ==========================================');
         
         // CRITICAL FIX: Detect if this is an elem() based switch
         // This determines whether patterns should be integers or tuples
