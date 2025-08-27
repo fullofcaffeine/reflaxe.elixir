@@ -1154,17 +1154,17 @@ class ElixirCompiler extends DirectToStringCompiler {
      * 
      * @param pos The position in the original Haxe source file
      */
-    private function trackPosition(pos: Position): Void {
+    public function trackPosition(pos: Position): Void {
         // Early return for zero overhead when source maps are disabled
         if (!sourceMapOutputEnabled) return;
         
-        #if debug_source_mapping
+        #if debug_source_mapping_verbose
         trace('[SourceMapping] trackPosition called with pos: ${pos}');
         #end
         
         if (currentSourceMapWriter != null && pos != null) {
             currentSourceMapWriter.mapPosition(pos);
-            #if debug_source_mapping
+            #if debug_source_mapping_verbose
             trace('[SourceMapping] Position tracked successfully');
             #end
         }
@@ -1182,7 +1182,7 @@ class ElixirCompiler extends DirectToStringCompiler {
      * 
      * @param output The string that was written to the output
      */
-    private function trackOutput(output: String): Void {
+    public function trackOutput(output: String): Void {
         // Early return for zero overhead when source maps are disabled
         if (!sourceMapOutputEnabled) return;
         

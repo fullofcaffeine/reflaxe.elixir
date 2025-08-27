@@ -7,7 +7,7 @@ defmodule TestTemplateVarsWeb.Endpoint do
   @session_options [
     store: :cookie,
     key: "_test_template_vars_key",
-    signing_salt: "UMim2CTd",
+    signing_salt: "ROXoF5Nf",
     same_site: "Lax"
   ]
 
