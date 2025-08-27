@@ -53,7 +53,7 @@ using StringTools;
 class ParallelTestRunnerNode {
     // Constants
     static final TEST_DIR = "test/tests";
-    static final WORKER_COUNT = 8;  // Reduced from 16 to avoid resource contention
+    static final WORKER_COUNT = 4;  // Reduced to 4 to avoid resource contention with compilation
     static final TIMEOUT_MS = 30000; // 30 seconds per test
     
     // Configuration flags
@@ -200,7 +200,8 @@ Examples:
             // Set up timeout handler
             final timeoutId = js.Node.setTimeout(() -> {
                 timedOut = true;
-                proc.kill();
+                // Force kill the process and all children
+                proc.kill('SIGKILL');  // Use SIGKILL for force termination
             }, TIMEOUT_MS);
             
             // Capture stdout

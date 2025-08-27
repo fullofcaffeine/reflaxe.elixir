@@ -668,7 +668,7 @@ class test_ParallelTestRunnerNode {
 			let proc = js_node_ChildProcess.spawn("haxe",args,options);
 			let timeoutId = global.setTimeout(function() {
 				timedOut = true;
-				proc.kill();
+				proc.kill("SIGKILL");
 			},test_ParallelTestRunnerNode.TIMEOUT_MS);
 			proc.stdout.on("data",function(data) {
 				stdout += data.toString();
@@ -1013,7 +1013,7 @@ if( String.fromCodePoint == null ) String.fromCodePoint = function(c) { return c
 }
 js_Boot.__toStr = ({ }).toString;
 test_ParallelTestRunnerNode.TEST_DIR = "test/tests";
-test_ParallelTestRunnerNode.WORKER_COUNT = 8;
+test_ParallelTestRunnerNode.WORKER_COUNT = 4;
 test_ParallelTestRunnerNode.TIMEOUT_MS = 30000;
 test_ParallelTestRunnerNode.updateIntended = false;
 test_ParallelTestRunnerNode.specificTests = [];
