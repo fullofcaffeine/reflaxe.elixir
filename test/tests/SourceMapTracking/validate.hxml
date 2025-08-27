@@ -1,0 +1,3 @@
+# Run validation after compilation
+--cmd node verify_mappings.js
+--cmd bash -c "if [ $(node verify_mappings.js 2>&1 | grep 'Mapping coverage' | grep -oE '[0-9]+' | head -1) -lt 50 ]; then echo 'ERROR: Mapping coverage too low'; exit 1; fi"
