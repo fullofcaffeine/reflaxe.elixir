@@ -60,17 +60,17 @@ class CompilerUtilities {
      */
     public static function indentCode(code: String, spaces: Int = 2): String {
         #if debug_utilities
-        trace('[XRay Utilities] ════════════════════════════════════════');
-        trace('[XRay Utilities] CODE INDENTATION START');
-        trace('[XRay Utilities] Input length: ${code.length} chars');
-        trace('[XRay Utilities] Spaces: ${spaces}');
-        trace('[XRay Utilities] First 50 chars: ${code.substr(0, 50)}${code.length > 50 ? "..." : ""}');
+        // trace('[XRay Utilities] ════════════════════════════════════════');
+        // trace('[XRay Utilities] CODE INDENTATION START');
+        // trace('[XRay Utilities] Input length: ${code.length} chars');
+        // trace('[XRay Utilities] Spaces: ${spaces}');
+        // trace('[XRay Utilities] First 50 chars: ${code.substr(0, 50)}${code.length > 50 ? "..." : ""}');
         #end
         
         if (code.length == 0) {
             #if debug_utilities
-            trace('[XRay Utilities] Empty input - returning as-is');
-            trace('[XRay Utilities] CODE INDENTATION END');
+            // trace('[XRay Utilities] Empty input - returning as-is');
+            // trace('[XRay Utilities] CODE INDENTATION END');
             #end
             return code;
         }
@@ -79,8 +79,8 @@ class CompilerUtilities {
         var lines = code.split("\n");
         
         #if debug_utilities
-        trace('[XRay Utilities] Split into ${lines.length} lines');
-        trace('[XRay Utilities] Indent string: "${indent}" (${spaces} spaces)');
+        // trace('[XRay Utilities] Split into ${lines.length} lines');
+        // trace('[XRay Utilities] Indent string: "${indent}" (${spaces} spaces)');
         #end
         
         var result = lines.map(line -> 
@@ -88,10 +88,10 @@ class CompilerUtilities {
         ).join("\n");
         
         #if debug_utilities
-        trace('[XRay Utilities] ✓ INDENTATION COMPLETE');
-        trace('[XRay Utilities] Result length: ${result.length} chars');
-        trace('[XRay Utilities] First 50 chars: ${result.substr(0, 50)}${result.length > 50 ? "..." : ""}');
-        trace('[XRay Utilities] ════════════════════════════════════════');
+        // trace('[XRay Utilities] ✓ INDENTATION COMPLETE');
+        // trace('[XRay Utilities] Result length: ${result.length} chars');
+        // trace('[XRay Utilities] First 50 chars: ${result.substr(0, 50)}${result.length > 50 ? "..." : ""}');
+        // trace('[XRay Utilities] ════════════════════════════════════════');
         #end
         
         return result;
@@ -124,36 +124,36 @@ class CompilerUtilities {
      */
     public static function extractFieldName(field: FieldAccess): String {
         #if debug_utilities
-        trace('[XRay Utilities] FIELD EXTRACTION START');
-        trace('[XRay Utilities] Field type: ${Type.enumConstructor(field)}');
+        // trace('[XRay Utilities] FIELD EXTRACTION START');
+        // trace('[XRay Utilities] Field type: ${Type.enumConstructor(field)}');
         #end
         
         var result = switch(field) {
             case FInstance(_, _, cf) | FStatic(_, cf) | FClosure(_, cf): 
                 #if debug_utilities
-                trace('[XRay Utilities] → Instance/Static/Closure field');
+                // trace('[XRay Utilities] → Instance/Static/Closure field');
                 #end
                 cf.get().name;
             case FAnon(cf): 
                 #if debug_utilities
-                trace('[XRay Utilities] → Anonymous field');
+                // trace('[XRay Utilities] → Anonymous field');
                 #end
                 cf.get().name;
             case FEnum(_, ef): 
                 #if debug_utilities
-                trace('[XRay Utilities] → Enum field');
+                // trace('[XRay Utilities] → Enum field');
                 #end
                 ef.name;
             case FDynamic(s): 
                 #if debug_utilities
-                trace('[XRay Utilities] → Dynamic field');
+                // trace('[XRay Utilities] → Dynamic field');
                 #end
                 s;
         };
         
         #if debug_utilities
-        trace('[XRay Utilities] ✓ EXTRACTED FIELD NAME: "${result}"');
-        trace('[XRay Utilities] FIELD EXTRACTION END');
+        // trace('[XRay Utilities] ✓ EXTRACTED FIELD NAME: "${result}"');
+        // trace('[XRay Utilities] FIELD EXTRACTION END');
         #end
         
         return result;
@@ -187,23 +187,23 @@ class CompilerUtilities {
      */
     public static function toElixirVarName(v: TVar): String {
         #if debug_utilities
-        trace('[XRay Utilities] VARIABLE CONVERSION START');
-        trace('[XRay Utilities] Input TVar: ${v.name} (id: ${v.id})');
+        // trace('[XRay Utilities] VARIABLE CONVERSION START');
+        // trace('[XRay Utilities] Input TVar: ${v.name} (id: ${v.id})');
         #end
         
         // Extract original name (this may involve parameter mapping logic)
         var originalName = v.name;
         
         #if debug_utilities
-        trace('[XRay Utilities] Original name: "${originalName}"');
+        // trace('[XRay Utilities] Original name: "${originalName}"');
         #end
         
         // Apply snake_case conversion
         var result = NamingHelper.toSnakeCase(originalName);
         
         #if debug_utilities
-        trace('[XRay Utilities] ✓ CONVERTED: "${originalName}" → "${result}"');
-        trace('[XRay Utilities] VARIABLE CONVERSION END');
+        // trace('[XRay Utilities] ✓ CONVERTED: "${originalName}" → "${result}"');
+        // trace('[XRay Utilities] VARIABLE CONVERSION END');
         #end
         
         return result;
@@ -239,20 +239,20 @@ class CompilerUtilities {
      */
     public static function safeSubstring(str: String, maxLength: Int, addEllipsis: Bool = true): String {
         #if debug_utilities
-        trace('[XRay Utilities] SAFE SUBSTRING START');
-        trace('[XRay Utilities] Input length: ${str.length}, max: ${maxLength}');
+        // trace('[XRay Utilities] SAFE SUBSTRING START');
+        // trace('[XRay Utilities] Input length: ${str.length}, max: ${maxLength}');
         #end
         
         if (str.length == 0 || maxLength <= 0) {
             #if debug_utilities
-            trace('[XRay Utilities] Empty input or invalid length - returning empty');
+            // trace('[XRay Utilities] Empty input or invalid length - returning empty');
             #end
             return "";
         }
         
         if (str.length <= maxLength) {
             #if debug_utilities
-            trace('[XRay Utilities] String shorter than limit - returning full string');
+            // trace('[XRay Utilities] String shorter than limit - returning full string');
             #end
             return str;
         }
@@ -263,8 +263,8 @@ class CompilerUtilities {
         }
         
         #if debug_utilities
-        trace('[XRay Utilities] ✓ EXTRACTED: ${result.length} chars ${addEllipsis ? "with ellipsis" : ""}');
-        trace('[XRay Utilities] SAFE SUBSTRING END');
+        // trace('[XRay Utilities] ✓ EXTRACTED: ${result.length} chars ${addEllipsis ? "with ellipsis" : ""}');
+        // trace('[XRay Utilities] SAFE SUBSTRING END');
         #end
         
         return result;
@@ -300,13 +300,13 @@ class CompilerUtilities {
      */
     public static function findFirstTLocal(expr: TypedExpr): Null<TVar> {
         #if debug_utilities
-        trace('[XRay Utilities] TLOCAL SEARCH START');
-        trace('[XRay Utilities] Expression type: ${Type.enumConstructor(expr.expr)}');
+        // trace('[XRay Utilities] TLOCAL SEARCH START');
+        // trace('[XRay Utilities] Expression type: ${Type.enumConstructor(expr.expr)}');
         #end
         
         if (expr == null) {
             #if debug_utilities
-            trace('[XRay Utilities] Null expression - returning null');
+            // trace('[XRay Utilities] Null expression - returning null');
             #end
             return null;
         }
@@ -315,11 +315,11 @@ class CompilerUtilities {
         
         #if debug_utilities
         if (result != null) {
-            trace('[XRay Utilities] ✓ FOUND TLOCAL: ${result.name} (id: ${result.id})');
+            // trace('[XRay Utilities] ✓ FOUND TLOCAL: ${result.name} (id: ${result.id})');
         } else {
-            trace('[XRay Utilities] No TLocal found in expression');
+            // trace('[XRay Utilities] No TLocal found in expression');
         }
-        trace('[XRay Utilities] TLOCAL SEARCH END');
+        // trace('[XRay Utilities] TLOCAL SEARCH END');
         #end
         
         return result;
@@ -394,15 +394,15 @@ class CompilerUtilities {
      */
     public static function containsMultipleStatements(expr: TypedExpr): Bool {
         #if debug_utilities
-        trace('[XRay Utilities] MULTI-STATEMENT CHECK START');
-        trace('[XRay Utilities] Expression: ${Type.enumConstructor(expr.expr)}');
+        // trace('[XRay Utilities] MULTI-STATEMENT CHECK START');
+        // trace('[XRay Utilities] Expression: ${Type.enumConstructor(expr.expr)}');
         #end
         
         var result = containsMultipleStatementsRecursive(expr);
         
         #if debug_utilities
-        trace('[XRay Utilities] ${result ? "✓ MULTIPLE STATEMENTS DETECTED" : "Single statement pattern"}');
-        trace('[XRay Utilities] MULTI-STATEMENT CHECK END');
+        // trace('[XRay Utilities] ${result ? "✓ MULTIPLE STATEMENTS DETECTED" : "Single statement pattern"}');
+        // trace('[XRay Utilities] MULTI-STATEMENT CHECK END');
         #end
         
         return result;

@@ -81,8 +81,8 @@ class SchemaCompiler {
     ): String {
         
         #if debug_schema
-        trace('[SchemaCompiler] Compiling schema class: ${classType.name}');
-        trace('[SchemaCompiler] Fields: ${varFields.length}, Functions: ${funcFields.length}');
+//         trace('[SchemaCompiler] Compiling schema class: ${classType.name}');
+//         trace('[SchemaCompiler] Fields: ${varFields.length}, Functions: ${funcFields.length}');
         #end
         
         var moduleName = compiler.getModuleName(classType);
@@ -112,7 +112,7 @@ class SchemaCompiler {
         result += 'end\n';
         
         #if debug_schema
-        trace('[SchemaCompiler] Generated schema module: ${result.substring(0, 200)}...');
+//         trace('[SchemaCompiler] Generated schema module: ${result.substring(0, 200)}...');
         #end
         
         return result;
@@ -140,7 +140,7 @@ class SchemaCompiler {
     ): String {
         
         #if debug_schema
-        trace('[SchemaCompiler] Compiling changeset class: ${classType.name}');
+//         trace('[SchemaCompiler] Compiling changeset class: ${classType.name}');
         #end
         
         var moduleName = compiler.getModuleName(classType);

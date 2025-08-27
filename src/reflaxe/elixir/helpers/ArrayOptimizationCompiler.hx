@@ -73,8 +73,8 @@ class ArrayOptimizationCompiler {
      */
     public function optimizeArrayLoop(arrayExpr: String, ebody: TypedExpr): String {
         #if debug_array_optimization_compiler
-        trace("[XRay ArrayOptimizationCompiler] OPTIMIZE ARRAY LOOP START");
-        trace('[XRay ArrayOptimizationCompiler] Array expr: ${arrayExpr}');
+        // trace("[XRay ArrayOptimizationCompiler] OPTIMIZE ARRAY LOOP START");
+        // trace('[XRay ArrayOptimizationCompiler] Array expr: ${arrayExpr}');
         #end
         
         var bodyAnalysis = analyzeLoopBody(ebody);
@@ -90,8 +90,8 @@ class ArrayOptimizationCompiler {
         }
         
         #if debug_array_optimization_compiler
-        trace('[XRay ArrayOptimizationCompiler] Loop variable: ${loopVar}');
-        trace('[XRay ArrayOptimizationCompiler] Pattern analysis: ${bodyAnalysis}');
+        // trace('[XRay ArrayOptimizationCompiler] Loop variable: ${loopVar}');
+        // trace('[XRay ArrayOptimizationCompiler] Pattern analysis: ${bodyAnalysis}');
         #end
         
         // Dispatch to appropriate pattern generator based on analysis
@@ -100,7 +100,7 @@ class ArrayOptimizationCompiler {
         // 1. Check if this is a find pattern (early return)
         if (bodyAnalysis.hasEarlyReturn) {
             #if debug_array_optimization_compiler
-            trace("[XRay ArrayOptimizationCompiler] ✓ EARLY RETURN PATTERN DETECTED");
+            // trace("[XRay ArrayOptimizationCompiler] ✓ EARLY RETURN PATTERN DETECTED");
             #end
             return generateEnumFindPattern(arrayExpr, loopVar, ebody);
         }
@@ -108,7 +108,7 @@ class ArrayOptimizationCompiler {
         // 2. Check for filtering pattern BEFORE mapping (filter has higher priority!)
         if (bodyAnalysis.hasFilterPattern && bodyAnalysis.conditionExpr != null) {
             #if debug_array_optimization_compiler
-            trace("[XRay ArrayOptimizationCompiler] ✓ FILTER PATTERN DETECTED");
+            // trace("[XRay ArrayOptimizationCompiler] ✓ FILTER PATTERN DETECTED");
             #end
             return generateEnumFilterPattern(arrayExpr, loopVar, bodyAnalysis.conditionExpr);
         }
@@ -116,7 +116,7 @@ class ArrayOptimizationCompiler {
         // 3. Check for mapping pattern (array transformation) - Lower priority than filtering
         if (bodyAnalysis.hasMapPattern) {
             #if debug_array_optimization_compiler
-            trace("[XRay ArrayOptimizationCompiler] ✓ MAP PATTERN DETECTED");
+            // trace("[XRay ArrayOptimizationCompiler] ✓ MAP PATTERN DETECTED");
             #end
             return generateEnumMapPattern(arrayExpr, loopVar, ebody);
         }
@@ -124,7 +124,7 @@ class ArrayOptimizationCompiler {
         // 4. Check for counting pattern (lower priority since loops may have increments)
         if (bodyAnalysis.hasCountPattern && bodyAnalysis.conditionExpr != null) {
             #if debug_array_optimization_compiler
-            trace("[XRay ArrayOptimizationCompiler] ✓ COUNT PATTERN DETECTED");
+            // trace("[XRay ArrayOptimizationCompiler] ✓ COUNT PATTERN DETECTED");
             #end
             return generateEnumCountPattern(arrayExpr, loopVar, bodyAnalysis.conditionExpr);
         }
@@ -132,7 +132,7 @@ class ArrayOptimizationCompiler {
         // 5. Check for simple numeric accumulation
         if (bodyAnalysis.hasSimpleAccumulator) {
             #if debug_array_optimization_compiler
-            trace("[XRay ArrayOptimizationCompiler] ✓ ACCUMULATOR PATTERN DETECTED");
+            // trace("[XRay ArrayOptimizationCompiler] ✓ ACCUMULATOR PATTERN DETECTED");
             #end
             return '(\n' +
                    '  {${bodyAnalysis.accumulator}} = Enum.reduce(${arrayExpr}, ${bodyAnalysis.accumulator}, fn ${loopVar}, acc ->\n' +
@@ -143,7 +143,7 @@ class ArrayOptimizationCompiler {
         
         // 6. Default to Enum.each for side effects
         #if debug_array_optimization_compiler
-        trace("[XRay ArrayOptimizationCompiler] ✓ DEFAULT EACH PATTERN");
+        // trace("[XRay ArrayOptimizationCompiler] ✓ DEFAULT EACH PATTERN");
         #end
         var transformedBody = transformComplexLoopBody(ebody);
         var result = '(\n' +
@@ -153,8 +153,8 @@ class ArrayOptimizationCompiler {
                ')';
         
         #if debug_array_optimization_compiler
-        trace('[XRay ArrayOptimizationCompiler] Generated: ${result.substring(0, 100)}...');
-        trace("[XRay ArrayOptimizationCompiler] OPTIMIZE ARRAY LOOP END");
+        // trace('[XRay ArrayOptimizationCompiler] Generated: ${result.substring(0, 100)}...');
+        // trace("[XRay ArrayOptimizationCompiler] OPTIMIZE ARRAY LOOP END");
         #end
         
         return result;
@@ -191,7 +191,7 @@ class ArrayOptimizationCompiler {
         conditionExpr: Null<TypedExpr>
     } {
         #if debug_array_optimization_compiler
-        trace("[XRay ArrayOptimizationCompiler] ANALYZE LOOP BODY START");
+        // trace("[XRay ArrayOptimizationCompiler] ANALYZE LOOP BODY START");
         #end
         
         // Default analysis result
@@ -228,8 +228,8 @@ class ArrayOptimizationCompiler {
         }
         
         #if debug_array_optimization_compiler
-        trace('[XRay ArrayOptimizationCompiler] Analysis result: ${result}');
-        trace("[XRay ArrayOptimizationCompiler] ANALYZE LOOP BODY END");
+        // trace('[XRay ArrayOptimizationCompiler] Analysis result: ${result}');
+        // trace("[XRay ArrayOptimizationCompiler] ANALYZE LOOP BODY END");
         #end
         
         return result;
@@ -250,7 +250,7 @@ class ArrayOptimizationCompiler {
      */
     public function analyzeLoopBodyAST(expr: TypedExpr, result: Dynamic): Void {
         #if debug_array_optimization_compiler
-        trace("[XRay ArrayOptimizationCompiler] ANALYZE AST NODE");
+        // trace("[XRay ArrayOptimizationCompiler] ANALYZE AST NODE");
         #end
         
         switch (expr.expr) {
@@ -283,7 +283,7 @@ class ArrayOptimizationCompiler {
                 // Check if this is a filter pattern (has push call)
                 if (checkForPush(eif)) {
                     #if debug_array_optimization_compiler
-                    trace("[XRay ArrayOptimizationCompiler] ✓ PUSH PATTERN DETECTED IN IF");
+                    // trace("[XRay ArrayOptimizationCompiler] ✓ PUSH PATTERN DETECTED IN IF");
                     #end
                     result.hasFilterPattern = true;
                     result.conditionExpr = econd;
@@ -293,7 +293,7 @@ class ArrayOptimizationCompiler {
                         case TUnop(OpIncrement, _, {expr: TLocal(v)}):
                             // Found count++ pattern (direct)
                             #if debug_array_optimization_compiler
-                            trace("[XRay ArrayOptimizationCompiler] ✓ INCREMENT PATTERN DETECTED");
+                            // trace("[XRay ArrayOptimizationCompiler] ✓ INCREMENT PATTERN DETECTED");
                             #end
                             result.hasCountPattern = true;
                             result.accumulator = compiler.getOriginalVarName(v);
@@ -335,7 +335,7 @@ class ArrayOptimizationCompiler {
                         case TArray(e1, e2):
                             // Array access - potential mapping
                             #if debug_array_optimization_compiler
-                            trace("[XRay ArrayOptimizationCompiler] ✓ ARRAY ACCESS PATTERN DETECTED");
+                            // trace("[XRay ArrayOptimizationCompiler] ✓ ARRAY ACCESS PATTERN DETECTED");
                             #end
                             result.hasMapPattern = true;
                         case _:
@@ -345,7 +345,7 @@ class ArrayOptimizationCompiler {
             case TUnop(OpIncrement, false, {expr: TLocal(v)}):
                 // Direct increment outside condition - simple counting
                 #if debug_array_optimization_compiler
-                trace("[XRay ArrayOptimizationCompiler] ✓ DIRECT INCREMENT PATTERN DETECTED");
+                // trace("[XRay ArrayOptimizationCompiler] ✓ DIRECT INCREMENT PATTERN DETECTED");
                 #end
                 result.hasCountPattern = true;
                 result.accumulator = compiler.getOriginalVarName(v);
@@ -452,7 +452,7 @@ class ArrayOptimizationCompiler {
      */
     public function generateEnumFindPattern(arrayExpr: String, loopVar: String, ebody: TypedExpr): String {
         #if debug_array_optimization_compiler
-        trace("[XRay ArrayOptimizationCompiler] GENERATE FIND PATTERN START");
+        // trace("[XRay ArrayOptimizationCompiler] GENERATE FIND PATTERN START");
         #end
         
         // Set loop context to enable aggressive variable substitution
@@ -468,8 +468,8 @@ class ArrayOptimizationCompiler {
             var result = 'Enum.find(${arrayExpr}, fn ${loopVar} -> ${condition} end)';
             
             #if debug_array_optimization_compiler
-            trace('[XRay ArrayOptimizationCompiler] Simple find: ${result}');
-            trace("[XRay ArrayOptimizationCompiler] GENERATE FIND PATTERN END");
+            // trace('[XRay ArrayOptimizationCompiler] Simple find: ${result}');
+            // trace("[XRay ArrayOptimizationCompiler] GENERATE FIND PATTERN END");
             #end
             
             return result;
@@ -486,8 +486,8 @@ class ArrayOptimizationCompiler {
         compiler.isInLoopContext = previousContext;
         
         #if debug_array_optimization_compiler
-        trace('[XRay ArrayOptimizationCompiler] Complex reduce_while: ${result.substring(0, 100)}...');
-        trace("[XRay ArrayOptimizationCompiler] GENERATE FIND PATTERN END");
+        // trace('[XRay ArrayOptimizationCompiler] Complex reduce_while: ${result.substring(0, 100)}...');
+        // trace("[XRay ArrayOptimizationCompiler] GENERATE FIND PATTERN END");
         #end
         
         return result;
@@ -602,7 +602,7 @@ class ArrayOptimizationCompiler {
      */
     public function generateEnumCountPattern(arrayExpr: String, loopVar: String, conditionExpr: TypedExpr): String {
         #if debug_array_optimization_compiler
-        trace("[XRay ArrayOptimizationCompiler] GENERATE COUNT PATTERN START");
+        // trace("[XRay ArrayOptimizationCompiler] GENERATE COUNT PATTERN START");
         #end
         
         // Convert the loop variable name to snake_case for Elixir
@@ -622,8 +622,8 @@ class ArrayOptimizationCompiler {
         var result = 'Enum.count(${arrayExpr}, fn ${targetVar} -> ${condition} end)';
         
         #if debug_array_optimization_compiler
-        trace('[XRay ArrayOptimizationCompiler] Generated count: ${result}');
-        trace("[XRay ArrayOptimizationCompiler] GENERATE COUNT PATTERN END");
+        // trace('[XRay ArrayOptimizationCompiler] Generated count: ${result}');
+        // trace("[XRay ArrayOptimizationCompiler] GENERATE COUNT PATTERN END");
         #end
         
         return result;
@@ -644,7 +644,7 @@ class ArrayOptimizationCompiler {
      */
     public function generateEnumFilterPattern(arrayExpr: String, loopVar: String, conditionExpr: TypedExpr): String {
         #if debug_array_optimization_compiler
-        trace("[XRay ArrayOptimizationCompiler] GENERATE FILTER PATTERN START");
+        // trace("[XRay ArrayOptimizationCompiler] GENERATE FILTER PATTERN START");
         #end
         
         // Convert the loop variable name to snake_case for Elixir
@@ -664,8 +664,8 @@ class ArrayOptimizationCompiler {
         var result = 'Enum.filter(${arrayExpr}, fn ${targetVar} -> ${condition} end)';
         
         #if debug_array_optimization_compiler
-        trace('[XRay ArrayOptimizationCompiler] Generated filter: ${result}');
-        trace("[XRay ArrayOptimizationCompiler] GENERATE FILTER PATTERN END");
+        // trace('[XRay ArrayOptimizationCompiler] Generated filter: ${result}');
+        // trace("[XRay ArrayOptimizationCompiler] GENERATE FILTER PATTERN END");
         #end
         
         return result;
@@ -686,7 +686,7 @@ class ArrayOptimizationCompiler {
      */
     public function generateEnumMapPattern(arrayExpr: String, loopVar: String, ebody: TypedExpr): String {
         #if debug_array_optimization_compiler
-        trace("[XRay ArrayOptimizationCompiler] GENERATE MAP PATTERN START");
+        // trace("[XRay ArrayOptimizationCompiler] GENERATE MAP PATTERN START");
         #end
         
         // Convert the loop variable name to snake_case for Elixir
@@ -706,8 +706,8 @@ class ArrayOptimizationCompiler {
         var result = 'Enum.map(${arrayExpr}, fn ${targetVar} -> ${transformation} end)';
         
         #if debug_array_optimization_compiler
-        trace('[XRay ArrayOptimizationCompiler] Generated map: ${result}');
-        trace("[XRay ArrayOptimizationCompiler] GENERATE MAP PATTERN END");
+        // trace('[XRay ArrayOptimizationCompiler] Generated map: ${result}');
+        // trace("[XRay ArrayOptimizationCompiler] GENERATE MAP PATTERN END");
         #end
         
         return result;

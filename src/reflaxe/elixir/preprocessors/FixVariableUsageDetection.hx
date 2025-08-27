@@ -57,7 +57,7 @@ class FixVariableUsageDetection extends BasePreprocessor {
 	public function new() {
 		// Initialize the preprocessor
 		#if (debug_variable_usage || debug_preprocessor)
-		trace("[XRay FixVariableUsageDetection] PREPROCESSOR INSTANTIATED - Extends BasePreprocessor");
+		// trace("[XRay FixVariableUsageDetection] PREPROCESSOR INSTANTIATED - Extends BasePreprocessor");
 		#end
 	}
 	
@@ -67,12 +67,12 @@ class FixVariableUsageDetection extends BasePreprocessor {
 	 */
 	public function process(data: ClassFuncData, compiler: BaseCompiler): Void {
 		#if (debug_variable_usage || debug_preprocessor)
-		trace("[XRay FixVariableUsageDetection] PROCESS CALLED - Override implementation");
-		trace("[XRay FixVariableUsageDetection] Processing function with expr: " + (data.expr != null));
+		// trace("[XRay FixVariableUsageDetection] PROCESS CALLED - Override implementation");
+		// trace("[XRay FixVariableUsageDetection] Processing function with expr: " + (data.expr != null));
 		#end
 		
 		#if debug_variable_usage
-		trace("[XRay FixVariableUsageDetection] STARTING USAGE DETECTION");
+		// trace("[XRay FixVariableUsageDetection] STARTING USAGE DETECTION");
 		#end
 		
 		// Get the expression list from the data
@@ -93,8 +93,8 @@ class FixVariableUsageDetection extends BasePreprocessor {
 		}
 		
 		#if debug_variable_usage
-		trace("[XRay FixVariableUsageDetection] Fixed " + fixedCount + " variables");
-		trace("[XRay FixVariableUsageDetection] COMPLETED");
+		// trace("[XRay FixVariableUsageDetection] Fixed " + fixedCount + " variables");
+		// trace("[XRay FixVariableUsageDetection] COMPLETED");
 		#end
 		
 		// No need to modify the data since we're modifying metadata in place
@@ -110,7 +110,7 @@ class FixVariableUsageDetection extends BasePreprocessor {
 				usedVars.set(tvar.id, true);
 				
 				#if debug_variable_usage
-				trace('[XRay FixVariableUsageDetection] Found TLocal usage: ${tvar.name} (id:${tvar.id})');
+				// trace('[XRay FixVariableUsageDetection] Found TLocal usage: ${tvar.name} (id:${tvar.id})');
 				#end
 				
 			case TField(obj, field):
@@ -120,7 +120,7 @@ class FixVariableUsageDetection extends BasePreprocessor {
 						usedVars.set(tvar.id, true);
 						
 						#if debug_variable_usage
-						trace('[XRay FixVariableUsageDetection] Found TField object usage: ' + tvar.name + ' (id:' + tvar.id + ') accessing field: ' + field);
+						// trace('[XRay FixVariableUsageDetection] Found TField object usage: ' + tvar.name + ' (id:' + tvar.id + ') accessing field: ' + field);
 						#end
 						
 					case _:
@@ -149,23 +149,23 @@ class FixVariableUsageDetection extends BasePreprocessor {
 		switch(te.expr) {
 			case TVar(tvar, maybeExpr):
 				#if debug_variable_usage
-				trace('[XRay FixVariableUsageDetection] Checking variable: ' + tvar.name + ' (id:' + tvar.id + ')');
+				// trace('[XRay FixVariableUsageDetection] Checking variable: ' + tvar.name + ' (id:' + tvar.id + ')');
 				if(tvar.meta != null) {
 					for(m in tvar.meta.get()) {
-						trace('[XRay FixVariableUsageDetection]   - Metadata: ' + m.name);
+						// trace('[XRay FixVariableUsageDetection]   - Metadata: ' + m.name);
 					}
 					if(tvar.meta.has("-reflaxe.unused")) {
-						trace('[XRay FixVariableUsageDetection]   ✓ Has -reflaxe.unused metadata');
+						// trace('[XRay FixVariableUsageDetection]   ✓ Has -reflaxe.unused metadata');
 					}
 				} else {
-					trace('[XRay FixVariableUsageDetection]   - No metadata');
+					// trace('[XRay FixVariableUsageDetection]   - No metadata');
 				}
 				#end
 				
 				if(usedVars.exists(tvar.id) && usedVars.get(tvar.id)) {
 					if(tvar.meta != null && tvar.meta.has("-reflaxe.unused")) {
 						#if debug_variable_usage
-						trace('[XRay FixVariableUsageDetection] Removing -reflaxe.unused from: ' + tvar.name + ' (id:' + tvar.id + ')');
+						// trace('[XRay FixVariableUsageDetection] Removing -reflaxe.unused from: ' + tvar.name + ' (id:' + tvar.id + ')');
 						#end
 						
 						tvar.meta.remove("-reflaxe.unused");
@@ -174,7 +174,7 @@ class FixVariableUsageDetection extends BasePreprocessor {
 				} else {
 					#if debug_variable_usage
 					if(tvar.meta != null && tvar.meta.has("-reflaxe.unused")) {
-						trace('[XRay FixVariableUsageDetection] Keeping -reflaxe.unused on: ' + tvar.name + ' (id:' + tvar.id + ') - not found in usedVars');
+						// trace('[XRay FixVariableUsageDetection] Keeping -reflaxe.unused on: ' + tvar.name + ' (id:' + tvar.id + ') - not found in usedVars');
 					}
 					#end
 				}

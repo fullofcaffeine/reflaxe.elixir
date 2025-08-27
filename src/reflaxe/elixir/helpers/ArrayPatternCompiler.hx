@@ -93,8 +93,8 @@ class ArrayPatternCompiler {
      */
     public function tryOptimizeArrayIteration(iterExpr: TypedExpr, loopVar: String, blockExpr: TypedExpr): Null<String> {
         #if debug_array_patterns
-        trace("[XRay ArrayPattern] TRY OPTIMIZE ARRAY ITERATION");
-        trace('[XRay ArrayPattern] Loop var: ${loopVar}');
+        // trace("[XRay ArrayPattern] TRY OPTIMIZE ARRAY ITERATION");
+        // trace('[XRay ArrayPattern] Loop var: ${loopVar}');
         #end
         
         // Extract the array expression
@@ -104,7 +104,7 @@ class ArrayPatternCompiler {
         var pattern = analyzeArrayPattern(blockExpr, loopVar);
         
         #if debug_array_patterns
-        trace('[XRay ArrayPattern] Detected pattern: ${pattern.type}');
+        // trace('[XRay ArrayPattern] Detected pattern: ${pattern.type}');
         #end
         
         return switch(pattern.type) {
@@ -229,7 +229,7 @@ class ArrayPatternCompiler {
      */
     public function generateEnumMapPattern(arrayExpr: String, loopVar: String, blockExpr: TypedExpr): String {
         #if debug_array_patterns
-        trace("[XRay ArrayPattern] GENERATING ENUM.MAP");
+        // trace("[XRay ArrayPattern] GENERATING ENUM.MAP");
         #end
         
         var transformation = extractTransformation(blockExpr, loopVar);
@@ -248,7 +248,7 @@ class ArrayPatternCompiler {
      */
     public function generateEnumFilterPattern(arrayExpr: String, loopVar: String, condition: TypedExpr): String {
         #if debug_array_patterns
-        trace("[XRay ArrayPattern] GENERATING ENUM.FILTER");
+        // trace("[XRay ArrayPattern] GENERATING ENUM.FILTER");
         #end
         
         var conditionStr = compiler.compileExpression(condition, false);
@@ -265,7 +265,7 @@ class ArrayPatternCompiler {
      */
     public function generateEnumFindPattern(arrayExpr: String, loopVar: String, blockExpr: TypedExpr): String {
         #if debug_array_patterns
-        trace("[XRay ArrayPattern] GENERATING ENUM.FIND");
+        // trace("[XRay ArrayPattern] GENERATING ENUM.FIND");
         #end
         
         var condition = extractFindCondition(blockExpr, loopVar);
@@ -282,7 +282,7 @@ class ArrayPatternCompiler {
      */
     public function generateEnumReducePattern(arrayExpr: String, loopVar: String, pattern: Dynamic): String {
         #if debug_array_patterns
-        trace("[XRay ArrayPattern] GENERATING ENUM.REDUCE");
+        // trace("[XRay ArrayPattern] GENERATING ENUM.REDUCE");
         #end
         
         var accumulator = pattern.accumulator != null ? pattern.accumulator : "acc";
@@ -303,7 +303,7 @@ class ArrayPatternCompiler {
      */
     public function generateEnumCountPattern(arrayExpr: String, loopVar: String, condition: TypedExpr): String {
         #if debug_array_patterns
-        trace("[XRay ArrayPattern] GENERATING ENUM.COUNT");
+        // trace("[XRay ArrayPattern] GENERATING ENUM.COUNT");
         #end
         
         if (condition != null) {
@@ -323,7 +323,7 @@ class ArrayPatternCompiler {
      */
     public function generateEnumEachPattern(arrayExpr: String, loopVar: String, blockExpr: TypedExpr): String {
         #if debug_array_patterns
-        trace("[XRay ArrayPattern] GENERATING ENUM.EACH");
+        // trace("[XRay ArrayPattern] GENERATING ENUM.EACH");
         #end
         
         var body = compiler.compileExpression(blockExpr, false);

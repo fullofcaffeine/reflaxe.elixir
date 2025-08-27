@@ -106,15 +106,15 @@ class TempVariableOptimizer {
     
     public function detectTempVariablePattern(expressions: Array<TypedExpr>): Null<String> {
         #if debug_temp_var
-        trace('[TempVariableOptimizer] detectTempVariablePattern called with ${expressions.length} expressions');
+//         trace('[TempVariableOptimizer] detectTempVariablePattern called with ${expressions.length} expressions');
         for (i in 0...expressions.length) {
-            trace('[TempVariableOptimizer] Expression $i: ${expressions[i].expr}');
+//             trace('[TempVariableOptimizer] Expression $i: ${expressions[i].expr}');
         }
         #end
         
         if (expressions.length < 3) {
             #if debug_temp_var
-            trace('[TempVariableOptimizer] Not enough expressions for pattern');
+//             trace('[TempVariableOptimizer] Not enough expressions for pattern');
             #end
             return null;
         }
@@ -124,8 +124,8 @@ class TempVariableOptimizer {
         var last = expressions[expressions.length - 1];
         
         #if debug_temp_var
-        trace('[TempVariableOptimizer] First expr: ${first.expr}');
-        trace('[TempVariableOptimizer] Last expr: ${last.expr}');
+//         trace('[TempVariableOptimizer] First expr: ${first.expr}');
+//         trace('[TempVariableOptimizer] Last expr: ${last.expr}');
         #end
         
         // Check first: temp_var = nil
@@ -133,16 +133,16 @@ class TempVariableOptimizer {
         switch (first.expr) {
             case TVar(tvar, expr):
                 var varName = compiler.getOriginalVarName(tvar);
-                trace('[TempVariableOptimizer DEBUG] CHECKING VAR: ${varName}');
+//                 trace('[TempVariableOptimizer DEBUG] CHECKING VAR: ${varName}');
                 if ((varName.indexOf("temp_") == 0 || varName.indexOf("temp") == 0) && (expr == null || isNilExpression(expr))) {
                     tempVarName = varName;
-                    trace('[TempVariableOptimizer DEBUG] ✓ DETECTED TEMP VAR: ${varName}');
+//                     trace('[TempVariableOptimizer DEBUG] ✓ DETECTED TEMP VAR: ${varName}');
                 } else {
-                    trace('[TempVariableOptimizer DEBUG] ❌ NOT TEMP VAR: ${varName}');
+//                     trace('[TempVariableOptimizer DEBUG] ❌ NOT TEMP VAR: ${varName}');
                     return null;
                 }
             case _:
-                trace('[TempVariableOptimizer DEBUG] ❌ NOT TVar EXPRESSION');
+//                 trace('[TempVariableOptimizer DEBUG] ❌ NOT TVar EXPRESSION');
                 return null;
         }
         
@@ -160,7 +160,7 @@ class TempVariableOptimizer {
                         // check if the temp variable is actually referenced anywhere
                         if (!isTempVariableUsedInExpression(tempVarName, expr)) {
                             // Temp variable is declared but never used - don't optimize
-                            trace('[TempVariableOptimizer DEBUG] ❌ TEMP VAR ${tempVarName} declared but not used in return expression');
+//                             trace('[TempVariableOptimizer DEBUG] ❌ TEMP VAR ${tempVarName} declared but not used in return expression');
                             return null;
                         }
                 }
@@ -180,12 +180,12 @@ class TempVariableOptimizer {
                             expr = innerExpr;
                         case TSwitch(_, _, _):
                             #if debug_temp_var
-                            trace('[TempVariableOptimizer] ✓ Found TSwitch (possibly wrapped in TMeta) - pattern detected');
+//                             trace('[TempVariableOptimizer] ✓ Found TSwitch (possibly wrapped in TMeta) - pattern detected');
                             #end
                             return tempVarName;
                         case TIf(_, _, _):
                             #if debug_temp_var
-                            trace('[TempVariableOptimizer] ✓ Found TIf (possibly wrapped in TMeta) - pattern detected');
+//                             trace('[TempVariableOptimizer] ✓ Found TIf (possibly wrapped in TMeta) - pattern detected');
                             #end
                             return tempVarName;
                         case _:
@@ -200,8 +200,8 @@ class TempVariableOptimizer {
 
     public function optimizeTempVariablePattern(tempVarName: String, expressions: Array<TypedExpr>): String {
         #if debug_temp_var
-        trace('[TempVariableOptimizer] optimizeTempVariablePattern called with tempVar: ${tempVarName}');
-        trace('[TempVariableOptimizer] Number of expressions: ${expressions.length}');
+//         trace('[TempVariableOptimizer] optimizeTempVariablePattern called with tempVar: ${tempVarName}');
+//         trace('[TempVariableOptimizer] Number of expressions: ${expressions.length}');
         #end
         
         // Find the switch expression or if expression (for ternary operators)
@@ -217,8 +217,8 @@ class TempVariableOptimizer {
                         continue;
                     case TSwitch(switchExpr, cases, defaultExpr):
                         #if debug_temp_var
-                        trace('[TempVariableOptimizer] Found TSwitch at index ${i} (unwrapped from TMeta)');
-                        trace('[TempVariableOptimizer] Transforming switch to return values directly...');
+//                         trace('[TempVariableOptimizer] Found TSwitch at index ${i} (unwrapped from TMeta)');
+//                         trace('[TempVariableOptimizer] Transforming switch to return values directly...');
                         #end
                         
                         // CRITICAL FIX: Transform switch cases to return values directly
@@ -238,8 +238,8 @@ class TempVariableOptimizer {
                         var result = compiler.compileSwitchExpression(switchExpr, optimizedCases, optimizedDefault);
                         
                         #if debug_temp_var
-                        trace('[TempVariableOptimizer] ✓ OPTIMIZATION COMPLETE - returning pure switch expression');
-                        trace('[TempVariableOptimizer] Generated: ${result.substring(0, 100)}...');
+//                         trace('[TempVariableOptimizer] ✓ OPTIMIZATION COMPLETE - returning pure switch expression');
+//                         trace('[TempVariableOptimizer] Generated: ${result.substring(0, 100)}...');
                         #end
                         
                         // Restore original context
@@ -250,8 +250,8 @@ class TempVariableOptimizer {
                         return result;
                     case TIf(condition, thenExpr, elseExpr):
                         #if debug_temp_var
-                        trace('[TempVariableOptimizer] Found TIf at index ${i} (unwrapped from TMeta)');
-                        trace('[TempVariableOptimizer] Transforming if to return values directly...');
+//                         trace('[TempVariableOptimizer] Found TIf at index ${i} (unwrapped from TMeta)');
+//                         trace('[TempVariableOptimizer] Transforming if to return values directly...');
                         #end
                         
                         var conditionCompiled = compiler.compileExpression(condition);
@@ -320,17 +320,17 @@ class TempVariableOptimizer {
                 compiler.declaredTempVariables.set(actualVarName, true);
                 
                 #if debug_temp_var
-                trace('[TempVariableOptimizer] ✓ SCOPING FIX: Added ${actualVarName} = nil declaration');
+//                 trace('[TempVariableOptimizer] ✓ SCOPING FIX: Added ${actualVarName} = nil declaration');
                 #end
-                trace('[TempVariableOptimizer DEBUG] ✓ PROCESSED TEMP VAR: ${tempVarName} -> ${actualVarName}');
+//                 trace('[TempVariableOptimizer DEBUG] ✓ PROCESSED TEMP VAR: ${tempVarName} -> ${actualVarName}');
             } else {
                 #if debug_temp_var
-                trace('[TempVariableOptimizer] ✓ ALREADY DECLARED: ${actualVarName}, skipping duplicate');
+//                 trace('[TempVariableOptimizer] ✓ ALREADY DECLARED: ${actualVarName}, skipping duplicate');
                 #end
-                trace('[TempVariableOptimizer DEBUG] ✓ SKIPPED DUPLICATE: ${tempVarName} -> ${actualVarName}');
+//                 trace('[TempVariableOptimizer DEBUG] ✓ SKIPPED DUPLICATE: ${tempVarName} -> ${actualVarName}');
             }
         } else {
-            trace('[TempVariableOptimizer DEBUG] ❌ NO TEMP VAR NAME DETECTED for TBlock');
+//             trace('[TempVariableOptimizer DEBUG] ❌ NO TEMP VAR NAME DETECTED for TBlock');
         }
         
         for (expr in expressions) {

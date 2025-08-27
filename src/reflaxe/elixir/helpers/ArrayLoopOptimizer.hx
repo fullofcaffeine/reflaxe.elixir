@@ -74,8 +74,8 @@ class ArrayLoopOptimizer {
      */
     public function detectArrayBuildingPattern(econd: TypedExpr, ebody: TypedExpr): Null<ArrayBuildingPattern> {
         if (DEBUG) {
-            trace("[ArrayOptimizer] DETECTION START");
-            trace('[ArrayOptimizer] Condition type: ${econd.expr}');
+//             trace("[ArrayOptimizer] DETECTION START");
+//             trace('[ArrayOptimizer] Condition type: ${econd.expr}');
         }
         
         // Step 1: Analyze condition for array iteration pattern
@@ -86,7 +86,7 @@ class ArrayLoopOptimizer {
         }
         
         if (DEBUG) {
-            trace('[ArrayOptimizer] Condition detected: counter=${conditionInfo.indexVar}, array=${conditionInfo.arrayVar}');
+//             trace('[ArrayOptimizer] Condition detected: counter=${conditionInfo.indexVar}, array=${conditionInfo.arrayVar}');
         }
         
         // Step 2: Register variable mappings for desugared loops
@@ -98,7 +98,7 @@ class ArrayLoopOptimizer {
             );
             
             if (DEBUG) {
-                trace('[ArrayOptimizer] Registered variable mappings for desugared loop');
+//                 trace('[ArrayOptimizer] Registered variable mappings for desugared loop');
             }
         }
         
@@ -110,7 +110,7 @@ class ArrayLoopOptimizer {
         }
         
         if (DEBUG) {
-            trace('[ArrayOptimizer] Pattern detected! Type: ${bodyInfo.patternType}');
+//             trace('[ArrayOptimizer] Pattern detected! Type: ${bodyInfo.patternType}');
         }
         
         return {
@@ -135,7 +135,7 @@ class ArrayLoopOptimizer {
      */
     public function compileArrayBuildingLoop(pattern: ArrayBuildingPattern): String {
         if (DEBUG) {
-            trace('[ArrayOptimizer] Generating ${pattern.patternType} pattern');
+//             trace('[ArrayOptimizer] Generating ${pattern.patternType} pattern');
         }
         
         return switch(pattern.patternType) {

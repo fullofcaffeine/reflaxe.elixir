@@ -1,10 +1,10 @@
 {
   "sourceRoot": "",
   "names": [],
-  "mappings": "SHOULD_HAVE_MULTIPLE_MAPPINGS_NOT_JUST_ONE",
+  "mappings": "AAU4B,AAEnB,IAGA,IAGA;;;;0BAGsC,AAE9B,EACA,EACK,AAAA,AAAI,OACjB,GAAO,AAAA,UAAS,AAAA,+BAAhB,AAAA,SAAA,EAAA,MAAA;;;;;;sJAG2C,AAE/B,AAAC,CAAG,CAAG,CAAG,CAAG,gBAGX,EAAA,CACH,AADG,AACI,QADJ,AAAA,AAKD,AACT,AAAO,AAAA,AAAA,AAAI,UAAK,6DAIpB,CACQ,AAAA,AAAO;;;;;;;;;;sDAQuB,AAC3B,gBACX,AAAS,CACT,AAAc,CACd,GAAO,AAAA,qBAAqB,AAAA,gBAAA,AAAA,oEAA5B,AAAA,SAAA,EAAA,MAAA;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;AAOR",
   "version": 3,
   "file": "main.ex",
   "sources": [
-    "Main.hx"
-  ]
+  "Main.hx"
+]
 }

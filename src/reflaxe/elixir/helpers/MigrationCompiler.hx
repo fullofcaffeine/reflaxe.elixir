@@ -81,8 +81,8 @@ class MigrationCompiler {
     ): String {
         
         #if debug_migration
-        trace('[MigrationCompiler] Compiling migration class: ${classType.name}');
-        trace('[MigrationCompiler] Functions: ${funcFields.length}');
+//         trace('[MigrationCompiler] Compiling migration class: ${classType.name}');
+//         trace('[MigrationCompiler] Functions: ${funcFields.length}');
         #end
         
         var moduleName = compiler.getModuleName(classType);
@@ -120,7 +120,7 @@ class MigrationCompiler {
         result += 'end\n';
         
         #if debug_migration
-        trace('[MigrationCompiler] Generated migration: ${result.substring(0, 200)}...');
+//         trace('[MigrationCompiler] Generated migration: ${result.substring(0, 200)}...');
         #end
         
         return result;

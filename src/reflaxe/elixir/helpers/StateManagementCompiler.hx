@@ -53,7 +53,7 @@ class StateManagementCompiler {
         compiler.stateThreadingInfo = info;
         
         #if debug_state_threading
-        trace('[StateManagementCompiler] State threading enabled for mutating method');
+//         trace('[StateManagementCompiler] State threading enabled for mutating method');
         #end
     }
 
@@ -69,7 +69,7 @@ class StateManagementCompiler {
         compiler.stateThreadingInfo = null;
         
         #if debug_state_threading
-        trace('[StateManagementCompiler] State threading disabled');
+//         trace('[StateManagementCompiler] State threading disabled');
         #end
     }
 
@@ -116,8 +116,8 @@ class StateManagementCompiler {
         compiler.currentFunctionParameterMap.set("struct", structParamName);
         
         #if (debug_parameter_mapping || debug_variable_compiler)
-        trace('[StateManagementCompiler] Set this parameter mapping to: ${structParamName}');
-        trace('[StateManagementCompiler] Parameter map now contains: ${[for (k in compiler.currentFunctionParameterMap.keys()) '${k}->${compiler.currentFunctionParameterMap.get(k)}'].join(", ")}');
+//         trace('[StateManagementCompiler] Set this parameter mapping to: ${structParamName}');
+//         trace('[StateManagementCompiler] Parameter map now contains: ${[for (k in compiler.currentFunctionParameterMap.keys()) '${k}->${compiler.currentFunctionParameterMap.get(k)}'].join(", ")}');
         #end
     }
 
@@ -134,7 +134,7 @@ class StateManagementCompiler {
         compiler.currentFunctionParameterMap.remove("struct");
         
         #if debug_parameter_mapping
-        trace('[StateManagementCompiler] Cleared this parameter mapping');
+//         trace('[StateManagementCompiler] Cleared this parameter mapping');
         #end
     }
 
@@ -154,8 +154,8 @@ class StateManagementCompiler {
         compiler.globalStructParameterMap.set("struct", structParamName);
         
         #if debug_state_threading
-        trace('[StateManagementCompiler] 🌍 GLOBAL struct method compilation started');
-        trace('[StateManagementCompiler] 🌍 Global mapping: _this -> ${structParamName}');
+//         trace('[StateManagementCompiler] 🌍 GLOBAL struct method compilation started');
+//         trace('[StateManagementCompiler] 🌍 Global mapping: _this -> ${structParamName}');
         #end
     }
 
@@ -171,7 +171,7 @@ class StateManagementCompiler {
         compiler.globalStructParameterMap.clear();
         
         #if debug_state_threading
-        trace('[StateManagementCompiler] 🌍 GLOBAL struct method compilation stopped');
+//         trace('[StateManagementCompiler] 🌍 GLOBAL struct method compilation stopped');
         #end
     }
 
@@ -189,7 +189,7 @@ class StateManagementCompiler {
         compiler.inlineContextMap.set(variableName, replacementValue);
         
         #if debug_inline_context
-        trace('[StateManagementCompiler] Set inline context: ${variableName} -> ${replacementValue}');
+//         trace('[StateManagementCompiler] Set inline context: ${variableName} -> ${replacementValue}');
         #end
     }
 
@@ -204,7 +204,7 @@ class StateManagementCompiler {
         compiler.inlineContextMap.clear();
         
         #if debug_inline_context
-        trace('[StateManagementCompiler] Cleared inline context');
+//         trace('[StateManagementCompiler] Cleared inline context');
         #end
     }
 

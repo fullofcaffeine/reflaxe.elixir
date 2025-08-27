@@ -85,7 +85,7 @@ class UnifiedLoopCompiler {
         this.legacyLoopCompiler = new LoopCompiler(compiler);
         
         #if debug_loop_compilation
-        trace("[UnifiedLoopCompiler] Initialized with core, optimizer, transformations, and legacy compiler support");
+//         trace("[UnifiedLoopCompiler] Initialized with core, optimizer, transformations, and legacy compiler support");
         #end
     }
     
@@ -101,7 +101,7 @@ class UnifiedLoopCompiler {
      */
     public function compileLoop(expr: TypedExpr): String {
         #if debug_loop_compilation
-        trace('[UnifiedLoopCompiler] Compiling loop expression: ${expr.expr}');
+//         trace('[UnifiedLoopCompiler] Compiling loop expression: ${expr.expr}');
         #end
         
         return switch(expr.expr) {
@@ -113,7 +113,7 @@ class UnifiedLoopCompiler {
                 
             default:
                 #if debug_loop_compilation
-                trace('[UnifiedLoopCompiler] WARNING: Non-loop expression passed to compileLoop');
+//                 trace('[UnifiedLoopCompiler] WARNING: Non-loop expression passed to compileLoop');
                 #end
                 "";
         }
@@ -133,7 +133,7 @@ class UnifiedLoopCompiler {
      */
     public function compileWhileLoop(econd: TypedExpr, ebody: TypedExpr, normalWhile: Bool): String {
         #if debug_loop_compilation
-        trace('[UnifiedLoopCompiler] Compiling while loop (normal: $normalWhile)');
+//         trace('[UnifiedLoopCompiler] Compiling while loop (normal: $normalWhile)');
         #end
         
         // Use new ArrayLoopOptimizer when USE_ARRAY_OPTIMIZER is defined
@@ -141,7 +141,7 @@ class UnifiedLoopCompiler {
         var arrayPattern = arrayOptimizer.detectArrayBuildingPattern(econd, ebody);
         if (arrayPattern != null) {
             #if debug_loop_compilation
-            trace('[UnifiedLoopCompiler] Detected array building pattern, optimizing with ArrayLoopOptimizer');
+//             trace('[UnifiedLoopCompiler] Detected array building pattern, optimizing with ArrayLoopOptimizer');
             #end
             return arrayOptimizer.compileArrayBuildingLoop(arrayPattern);
         }
@@ -150,7 +150,7 @@ class UnifiedLoopCompiler {
         var arrayPattern = detectArrayBuildingPattern(econd, ebody);
         if (arrayPattern != null) {
             #if debug_loop_compilation
-            trace('[UnifiedLoopCompiler] Detected array building pattern, optimizing');
+//             trace('[UnifiedLoopCompiler] Detected array building pattern, optimizing');
             #end
             return compileArrayBuildingLoop(econd, ebody, arrayPattern);
         }
@@ -159,7 +159,7 @@ class UnifiedLoopCompiler {
         // Use CoreLoopCompiler for basic loops when USE_CORE_COMPILER is defined
         #if use_core_compiler
         #if debug_loop_compilation
-        trace('[UnifiedLoopCompiler] Using CoreLoopCompiler for basic while loop');
+//         trace('[UnifiedLoopCompiler] Using CoreLoopCompiler for basic while loop');
         #end
         return coreLoopCompiler.compileBasicWhileLoop(econd, ebody, normalWhile);
         #else
@@ -182,7 +182,7 @@ class UnifiedLoopCompiler {
      */
     public function compileForLoop(tvar: TVar, iterExpr: TypedExpr, blockExpr: TypedExpr): String {
         #if debug_loop_compilation
-        trace('[UnifiedLoopCompiler] Compiling for loop over: ${iterExpr.expr}');
+//         trace('[UnifiedLoopCompiler] Compiling for loop over: ${iterExpr.expr}');
         #end
         
         // Use ArrayLoopOptimizer for array iteration patterns
@@ -191,7 +191,7 @@ class UnifiedLoopCompiler {
         var optimized = arrayOptimizer.tryOptimizeArrayIteration(iterExpr, loopVar, blockExpr);
         if (optimized != null) {
             #if debug_loop_compilation
-            trace('[UnifiedLoopCompiler] Optimized array iteration with ArrayLoopOptimizer');
+//             trace('[UnifiedLoopCompiler] Optimized array iteration with ArrayLoopOptimizer');
             #end
             return optimized;
         }
@@ -199,7 +199,7 @@ class UnifiedLoopCompiler {
         // Check for simple array transformations that can become Enum operations
         if (canOptimizeToEnum(tvar, iterExpr, blockExpr)) {
             #if debug_loop_compilation
-            trace('[UnifiedLoopCompiler] Optimizing for loop to Enum operation');
+//             trace('[UnifiedLoopCompiler] Optimizing for loop to Enum operation');
             #end
             return optimizeToEnum(tvar, iterExpr, blockExpr);
         }
@@ -208,7 +208,7 @@ class UnifiedLoopCompiler {
         // Use CoreLoopCompiler for basic loops when USE_CORE_COMPILER is defined
         #if use_core_compiler
         #if debug_loop_compilation
-        trace('[UnifiedLoopCompiler] Using CoreLoopCompiler for basic for loop');
+//         trace('[UnifiedLoopCompiler] Using CoreLoopCompiler for basic for loop');
         #end
         return coreLoopCompiler.compileBasicForLoop(tvar, iterExpr, blockExpr);
         #else

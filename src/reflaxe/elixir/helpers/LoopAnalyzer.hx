@@ -94,8 +94,8 @@ class LoopAnalyzer {
      */
     public function analyzeArrayLoopCondition(econd: TypedExpr): Null<{indexVar: String, arrayVar: String, indexTVar: Null<TVar>, arrayTVar: Null<TVar>}> {
         #if debug_loop_analyzer
-        trace("[XRay LoopAnalyzer] ANALYZE ARRAY LOOP CONDITION");
-        trace('[XRay LoopAnalyzer] Condition type: ${econd.expr}');
+        // trace("[XRay LoopAnalyzer] ANALYZE ARRAY LOOP CONDITION");
+        // trace('[XRay LoopAnalyzer] Condition type: ${econd.expr}');
         #end
         
         switch(econd.expr) {
@@ -106,8 +106,8 @@ class LoopAnalyzer {
                 
                 if (indexInfo != null && arrayInfo != null) {
                     #if debug_loop_analyzer
-                    trace('[XRay LoopAnalyzer] ✓ DETECTED: ${indexInfo.name} < ${arrayInfo.name}');
-                    trace('[XRay LoopAnalyzer] Index TVar.id: ${indexInfo.tvar?.id}, Array TVar.id: ${arrayInfo.tvar?.id}');
+                    // trace('[XRay LoopAnalyzer] ✓ DETECTED: ${indexInfo.name} < ${arrayInfo.name}');
+                    // trace('[XRay LoopAnalyzer] Index TVar.id: ${indexInfo.tvar?.id}, Array TVar.id: ${arrayInfo.tvar?.id}');
                     #end
                     
                     return {
@@ -138,7 +138,7 @@ class LoopAnalyzer {
                 
             case _:
                 #if debug_loop_analyzer
-                trace("[XRay LoopAnalyzer] Unknown condition pattern");
+                // trace("[XRay LoopAnalyzer] Unknown condition pattern");
                 #end
         }
         
@@ -181,14 +181,14 @@ class LoopAnalyzer {
      */
     public function analyzeLoopBody(blockExpr: TypedExpr): LoopBodyAnalysis {
         #if debug_loop_analyzer
-        trace("[XRay LoopAnalyzer] ANALYZE LOOP BODY");
+        // trace("[XRay LoopAnalyzer] ANALYZE LOOP BODY");
         #end
         
         var analysis = new LoopBodyAnalysis();
         analyzeLoopBodyRecursive(blockExpr, analysis);
         
         #if debug_loop_analyzer
-        trace('[XRay LoopAnalyzer] Analysis complete:');
+        // trace('[XRay LoopAnalyzer] Analysis complete:');
         trace('  - Has return: ${analysis.hasReturn}');
         trace('  - Has break: ${analysis.hasBreak}');
         trace('  - Has continue: ${analysis.hasContinue}');

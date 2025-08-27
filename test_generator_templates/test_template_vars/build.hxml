@@ -1,5 +1,0 @@
--cp src_haxe
--lib reflaxe.elixir
--D reflaxe.output=lib/generated
--D reflaxe_runtime
---main Main

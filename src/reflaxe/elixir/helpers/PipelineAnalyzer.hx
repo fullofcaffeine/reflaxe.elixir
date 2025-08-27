@@ -55,7 +55,7 @@ class PipelineAnalyzer {
      */
     public function containsVariableReference(expr: TypedExpr, variableName: String): Bool {
         #if debug_pipeline_analysis
-        trace('[PipelineAnalyzer] Checking variable reference: ${variableName} in ${expr.expr}');
+//         trace('[PipelineAnalyzer] Checking variable reference: ${variableName} in ${expr.expr}');
         #end
         
         var result = switch(expr.expr) {
@@ -93,7 +93,7 @@ class PipelineAnalyzer {
         };
         
         #if debug_pipeline_analysis
-        trace('[PipelineAnalyzer] Variable reference result: ${result}');
+//         trace('[PipelineAnalyzer] Variable reference result: ${result}');
         #end
         
         return result;
@@ -112,7 +112,7 @@ class PipelineAnalyzer {
      */
     public function getProcessedStatementIndices(statements: Array<TypedExpr>, pattern: PipelinePattern): Array<Int> {
         #if debug_pipeline_analysis
-        trace('[PipelineAnalyzer] Getting processed statement indices for variable: ${pattern.variable}');
+//         trace('[PipelineAnalyzer] Getting processed statement indices for variable: ${pattern.variable}');
         #end
         
         var processedIndices = [];
@@ -127,7 +127,7 @@ class PipelineAnalyzer {
         }
         
         #if debug_pipeline_analysis
-        trace('[PipelineAnalyzer] Found ${processedIndices.length} processed statements');
+//         trace('[PipelineAnalyzer] Found ${processedIndices.length} processed statements');
         #end
         
         return processedIndices;
@@ -146,13 +146,13 @@ class PipelineAnalyzer {
      */
     public function statementTargetsVariable(stmt: TypedExpr, variableName: String): Bool {
         #if debug_pipeline_analysis
-        trace('[PipelineAnalyzer] Checking if statement targets variable: ${variableName}');
+//         trace('[PipelineAnalyzer] Checking if statement targets variable: ${variableName}');
         #end
         
         // Skip terminal operations - they consume the variable but aren't part of the pipeline
         if (isTerminalOperation(stmt, variableName)) {
             #if debug_pipeline_analysis
-            trace('[PipelineAnalyzer] Statement is terminal operation, skipping');
+//             trace('[PipelineAnalyzer] Statement is terminal operation, skipping');
             #end
             return false;
         }
@@ -183,7 +183,7 @@ class PipelineAnalyzer {
         };
         
         #if debug_pipeline_analysis
-        trace('[PipelineAnalyzer] Statement targets variable result: ${result}');
+//         trace('[PipelineAnalyzer] Statement targets variable result: ${result}');
         #end
         
         return result;
@@ -202,7 +202,7 @@ class PipelineAnalyzer {
      */
     public function isTerminalOperation(stmt: TypedExpr, variableName: String): Bool {
         #if debug_pipeline_analysis
-        trace('[PipelineAnalyzer] Checking if terminal operation on variable: ${variableName}');
+//         trace('[PipelineAnalyzer] Checking if terminal operation on variable: ${variableName}');
         #end
         
         var result = switch(stmt.expr) {
@@ -227,7 +227,7 @@ class PipelineAnalyzer {
         };
         
         #if debug_pipeline_analysis
-        trace('[PipelineAnalyzer] Terminal operation result: ${result}');
+//         trace('[PipelineAnalyzer] Terminal operation result: ${result}');
         #end
         
         return result;
@@ -246,7 +246,7 @@ class PipelineAnalyzer {
      */
     public function isTerminalOperationOnVariable(expr: TypedExpr, variableName: String): Bool {
         #if debug_pipeline_analysis
-        trace('[PipelineAnalyzer] Checking if expression is terminal operation on variable: ${variableName}');
+//         trace('[PipelineAnalyzer] Checking if expression is terminal operation on variable: ${variableName}');
         #end
         
         var result = switch(expr.expr) {
@@ -271,7 +271,7 @@ class PipelineAnalyzer {
         };
         
         #if debug_pipeline_analysis
-        trace('[PipelineAnalyzer] Expression terminal operation result: ${result}');
+//         trace('[PipelineAnalyzer] Expression terminal operation result: ${result}');
         #end
         
         return result;
@@ -290,7 +290,7 @@ class PipelineAnalyzer {
      */
     public function extractTerminalCall(expr: TypedExpr, variableName: String): Null<String> {
         #if debug_pipeline_analysis
-        trace('[PipelineAnalyzer] Extracting terminal call for variable: ${variableName}');
+//         trace('[PipelineAnalyzer] Extracting terminal call for variable: ${variableName}');
         #end
         
         var result = switch(expr.expr) {
@@ -326,7 +326,7 @@ class PipelineAnalyzer {
         };
         
         #if debug_pipeline_analysis
-        trace('[PipelineAnalyzer] Terminal call extraction result: ${result}');
+//         trace('[PipelineAnalyzer] Terminal call extraction result: ${result}');
         #end
         
         return result;
@@ -344,7 +344,7 @@ class PipelineAnalyzer {
      */
     public function extractFunctionNameFromCall(funcExpr: TypedExpr): String {
         #if debug_pipeline_analysis
-        trace('[PipelineAnalyzer] Extracting function name from call expression');
+//         trace('[PipelineAnalyzer] Extracting function name from call expression');
         #end
         
         var result = switch(funcExpr.expr) {
@@ -398,7 +398,7 @@ class PipelineAnalyzer {
         };
         
         #if debug_pipeline_analysis
-        trace('[PipelineAnalyzer] Function name extraction result: ${result}');
+//         trace('[PipelineAnalyzer] Function name extraction result: ${result}');
         #end
         
         return result;

@@ -80,13 +80,13 @@ class DebugHelper {
     #if macro
     public static function debugForLoop(context: String, tvar: TVar, iterExpr: TypedExpr, blockExpr: TypedExpr): Void {
         #if (debug_compiler || debug_for_loops)
-        trace('[DEBUG:FOR_LOOP] ==================================================');
+//         trace('[DEBUG:FOR_LOOP] ==================================================');
         trace('Context: $context');
         trace('Variable: ${tvar.name} (${getTypeName(tvar.t)})');
         trace('Iterator: ${prettifyExpression(iterExpr)}');
         trace('Block Type: ${getExpressionTypeName(blockExpr)}');
         trace('Block Content: ${prettifyExpression(blockExpr)}');
-        trace('[DEBUG:END] ======================================================');
+//         trace('[DEBUG:END] ======================================================');
         #end
     }
     #end
@@ -103,11 +103,11 @@ class DebugHelper {
      */
     public static function debugPattern(context: String, pattern: String, result: Dynamic): Void {
         #if (debug_compiler || debug_patterns)
-        trace('[DEBUG:PATTERN] ================================================');
+//         trace('[DEBUG:PATTERN] ================================================');
         trace('Context: $context');
         trace('Pattern: $pattern');
         trace('Result: $result');
-        trace('[DEBUG:END] ====================================================');
+//         trace('[DEBUG:END] ====================================================');
         #end
     }
     
@@ -124,12 +124,12 @@ class DebugHelper {
      */
     public static function debugOptimization(optimization: String, before: String, after: String, ?reason: String): Void {
         #if (debug_compiler || debug_optimizations)
-        trace('[DEBUG:OPTIMIZATION] ==========================================');
+//         trace('[DEBUG:OPTIMIZATION] ==========================================');
         trace('Optimization: $optimization');
         trace('Before: $before');
         trace('After: $after');
         if (reason != null) trace('Reason: $reason');
-        trace('[DEBUG:END] ==============================================');
+//         trace('[DEBUG:END] ==============================================');
         #end
     }
     
@@ -146,13 +146,13 @@ class DebugHelper {
     #if macro
     public static function debugAST(context: String, expr: TypedExpr): Void {
         #if (debug_compiler || debug_ast)
-        trace('[DEBUG:AST] ===================================================');
+//         trace('[DEBUG:AST] ===================================================');
         trace('Context: $context');
         trace('Expression Type: ${getExpressionTypeName(expr)}');
         trace('Haxe Type: ${getTypeName(expr.t)}');
         trace('Position: ${expr.pos}');
         trace('Structure: ${getASTStructure(expr)}');
-        trace('[DEBUG:END] =======================================================');
+//         trace('[DEBUG:END] =======================================================');
         #end
     }
     #end
@@ -170,11 +170,11 @@ class DebugHelper {
     #if macro
     public static function debugExpression(context: String, expr: TypedExpr, result: String): Void {
         #if (debug_compiler || debug_expressions)
-        trace('[DEBUG:EXPRESSION] =============================================');
+//         trace('[DEBUG:EXPRESSION] =============================================');
         trace('Context: $context');
         trace('Input: ${prettifyExpression(expr)}');
         trace('Output: $result');
-        trace('[DEBUG:END] =================================================');
+//         trace('[DEBUG:END] =================================================');
         #end
     }
     #end
@@ -189,10 +189,10 @@ class DebugHelper {
      */
     public static function debugInfo(context: String, info: String): Void {
         #if debug_compiler
-        trace('[DEBUG:INFO] ==================================================');
+//         trace('[DEBUG:INFO] ==================================================');
         trace('Context: $context');
         trace('Info: $info');
-        trace('[DEBUG:END] ======================================================');
+//         trace('[DEBUG:END] ======================================================');
         #end
     }
     
@@ -208,11 +208,11 @@ class DebugHelper {
      */
     public static function debugYCombinator(context: String, stage: String, details: String): Void {
         #if (debug_compiler || debug_y_combinator)
-        trace('[DEBUG:Y_COMBINATOR] ==========================================');
+//         trace('[DEBUG:Y_COMBINATOR] ==========================================');
         trace('Context: $context');
         trace('Stage: $stage');
         trace('Details: $details');
-        trace('[DEBUG:END] ==============================================');
+//         trace('[DEBUG:END] ==============================================');
         #end
     }
     
@@ -229,12 +229,12 @@ class DebugHelper {
      */
     public static function debugIfExpression(context: String, decision: String, reason: String, result: String): Void {
         #if (debug_compiler || debug_if_expressions)
-        trace('[DEBUG:IF_EXPR] ===============================================');
+//         trace('[DEBUG:IF_EXPR] ===============================================');
         trace('Context: $context');
         trace('Decision: $decision');
         trace('Reason: $reason');
         trace('Result: $result');
-        trace('[DEBUG:END] ==================================================');
+//         trace('[DEBUG:END] ==================================================');
         #end
     }
     
@@ -251,12 +251,12 @@ class DebugHelper {
      */
     public static function debugInlineIf(context: String, stage: String, condition: String, result: String): Void {
         #if (debug_compiler || debug_inline_if)
-        trace('[DEBUG:INLINE_IF] ============================================');
+//         trace('[DEBUG:INLINE_IF] ============================================');
         trace('Context: $context');
         trace('Stage: $stage');
         trace('Condition: $condition');
         trace('Result: $result');
-        trace('[DEBUG:END] ==================================================');
+//         trace('[DEBUG:END] ==================================================');
         #end
     }
     
@@ -273,12 +273,12 @@ class DebugHelper {
      */
     public static function debugVariableTracking(context: String, originalName: String, renamedTo: String, reason: String): Void {
         #if (debug_compiler || debug_variable_tracking)
-        trace('[DEBUG:VAR_TRACK] =============================================');
+//         trace('[DEBUG:VAR_TRACK] =============================================');
         trace('Context: $context');
         trace('Original: $originalName');
         trace('Renamed To: $renamedTo');
         trace('Reason: $reason');
-        trace('[DEBUG:END] ===============================================');
+//         trace('[DEBUG:END] ===============================================');
         #end
         
     }

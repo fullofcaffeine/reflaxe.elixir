@@ -1,11 +1,11 @@
 {
-	"filesGenerated": [
-		"haxe/stack_item.ex",
-		"value_type.ex",
-		"test_struct.ex",
-		"main.ex"
-	],
-	"id": 81,
-	"wasCached": false,
-	"version": 1
+  "filesGenerated": [
+  "haxe/stack_item.ex",
+  "value_type.ex",
+  "test_struct.ex",
+  "main.ex"
+],
+  "id": 1,
+  "wasCached": false,
+  "version": 1
 }

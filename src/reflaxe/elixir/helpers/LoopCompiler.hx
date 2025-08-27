@@ -93,28 +93,28 @@ class LoopCompiler {
      */
     public function compileForLoop(tvar: TVar, iterExpr: TypedExpr, blockExpr: TypedExpr): String {
         #if debug_loops
-        trace('[XRay Loops] ═══════════════════════════════════════════════════');
-        trace('[XRay Loops] FOR LOOP COMPILATION START');
-        trace('[XRay Loops] - Loop variable: ${tvar.name} (id: ${tvar.id})');
-        trace('[XRay Loops] - Iteration type: ${Type.enumConstructor(iterExpr.expr)}');
-        trace('[XRay Loops] - Body type: ${Type.enumConstructor(blockExpr.expr)}');
+        // trace('[XRay Loops] ═══════════════════════════════════════════════════');
+        // trace('[XRay Loops] FOR LOOP COMPILATION START');
+        // trace('[XRay Loops] - Loop variable: ${tvar.name} (id: ${tvar.id})');
+        // trace('[XRay Loops] - Iteration type: ${Type.enumConstructor(iterExpr.expr)}');
+        // trace('[XRay Loops] - Body type: ${Type.enumConstructor(blockExpr.expr)}');
         #end
         
         var loopVar = CompilerUtilities.toElixirVarName(tvar);
         
         #if debug_loops
-        trace('[XRay Loops] - Converted loop var: "${loopVar}"');
-        trace('[XRay Loops] - Analyzing iteration target...');
+        // trace('[XRay Loops] - Converted loop var: "${loopVar}"');
+        // trace('[XRay Loops] - Analyzing iteration target...');
         #end
         
         // Detect Reflect.fields iteration pattern
         var reflectFieldsResult = detectReflectFieldsPattern(iterExpr, loopVar, blockExpr);
         if (reflectFieldsResult != null) {
             #if debug_loops
-            trace('[XRay Loops] ✓ REFLECT.FIELDS PATTERN DETECTED');
-            trace('[XRay Loops] - Delegating to Reflect.fields optimization');
-            trace('[XRay Loops] FOR LOOP COMPILATION END');
-            trace('[XRay Loops] ═══════════════════════════════════════════════════');
+            // trace('[XRay Loops] ✓ REFLECT.FIELDS PATTERN DETECTED');
+            // trace('[XRay Loops] - Delegating to Reflect.fields optimization');
+            // trace('[XRay Loops] FOR LOOP COMPILATION END');
+            // trace('[XRay Loops] ═══════════════════════════════════════════════════');
             #end
             return reflectFieldsResult;
         }
@@ -123,10 +123,10 @@ class LoopCompiler {
         var arrayOptimization = tryOptimizeArrayIteration(iterExpr, loopVar, blockExpr);
         if (arrayOptimization != null) {
             #if debug_loops
-            trace('[XRay Loops] ✓ ARRAY ITERATION PATTERN DETECTED');
-            trace('[XRay Loops] - Using Enum function optimization');
-            trace('[XRay Loops] FOR LOOP COMPILATION END');
-            trace('[XRay Loops] ═══════════════════════════════════════════════════');
+            // trace('[XRay Loops] ✓ ARRAY ITERATION PATTERN DETECTED');
+            // trace('[XRay Loops] - Using Enum function optimization');
+            // trace('[XRay Loops] FOR LOOP COMPILATION END');
+            // trace('[XRay Loops] ═══════════════════════════════════════════════════');
             #end
             return arrayOptimization;
         }
@@ -135,26 +135,26 @@ class LoopCompiler {
         var rangeOptimization = tryOptimizeRangeIteration(iterExpr, loopVar, blockExpr);
         if (rangeOptimization != null) {
             #if debug_loops
-            trace('[XRay Loops] ✓ RANGE ITERATION PATTERN DETECTED');
-            trace('[XRay Loops] - Using range optimization');
-            trace('[XRay Loops] FOR LOOP COMPILATION END');
-            trace('[XRay Loops] ═══════════════════════════════════════════════════');
+            // trace('[XRay Loops] ✓ RANGE ITERATION PATTERN DETECTED');
+            // trace('[XRay Loops] - Using range optimization');
+            // trace('[XRay Loops] FOR LOOP COMPILATION END');
+            // trace('[XRay Loops] ═══════════════════════════════════════════════════');
             #end
             return rangeOptimization;
         }
         
         #if debug_loops
-        trace('[XRay Loops] ⚠️ NO OPTIMIZATION PATTERN MATCHED');
-        trace('[XRay Loops] - Falling back to generic loop compilation');
+        // trace('[XRay Loops] ⚠️ NO OPTIMIZATION PATTERN MATCHED');
+        // trace('[XRay Loops] - Falling back to generic loop compilation');
         #end
         
         // Fall back to generic loop compilation
         var result = compileGenericForLoop(loopVar, iterExpr, blockExpr);
         
         #if debug_loops
-        trace('[XRay Loops] - Generic compilation completed');
+        // trace('[XRay Loops] - Generic compilation completed');
         trace('[XRay Loops] FOR LOOP COMPILATION END'); 
-        trace('[XRay Loops] ═══════════════════════════════════════════════════');
+        // trace('[XRay Loops] ═══════════════════════════════════════════════════');
         #end
         
         return result;
@@ -195,52 +195,52 @@ class LoopCompiler {
      */
     private function detectReflectFieldsPattern(iterExpr: TypedExpr, loopVar: String, blockExpr: TypedExpr): Null<String> {
         #if debug_reflect_fields
-        trace('[XRay ReflectFields] ═══════════════════════════════════════════');
-        trace('[XRay ReflectFields] REFLECT.FIELDS DETECTION START');
-        trace('[XRay ReflectFields] - Checking iteration expression type...');
+        // trace('[XRay ReflectFields] ═══════════════════════════════════════════');
+        // trace('[XRay ReflectFields] REFLECT.FIELDS DETECTION START');
+        // trace('[XRay ReflectFields] - Checking iteration expression type...');
         #end
         
         // Check if this is a Reflect.fields call
         var sourceObject = extractReflectFieldsSource(iterExpr);
         if (sourceObject == null) {
             #if debug_reflect_fields
-            trace('[XRay ReflectFields] - Not a Reflect.fields call');
-            trace('[XRay ReflectFields] REFLECT.FIELDS DETECTION END');
-            trace('[XRay ReflectFields] ═══════════════════════════════════════════');
+            // trace('[XRay ReflectFields] - Not a Reflect.fields call');
+            // trace('[XRay ReflectFields] REFLECT.FIELDS DETECTION END');
+            // trace('[XRay ReflectFields] ═══════════════════════════════════════════');
             #end
             return null;
         }
         
         #if debug_reflect_fields
-        trace('[XRay ReflectFields] ✓ REFLECT.FIELDS CALL DETECTED');
-        trace('[XRay ReflectFields] - Source object: ${sourceObject}');
-        trace('[XRay ReflectFields] - Analyzing loop body for field operations...');
+        // trace('[XRay ReflectFields] ✓ REFLECT.FIELDS CALL DETECTED');
+        // trace('[XRay ReflectFields] - Source object: ${sourceObject}');
+        // trace('[XRay ReflectFields] - Analyzing loop body for field operations...');
         #end
         
         // Analyze loop body for field copying patterns
         var targetObject = detectFieldCopyingTarget(blockExpr, loopVar);
         if (targetObject != null) {
             #if debug_reflect_fields
-            trace('[XRay ReflectFields] ✓ FIELD COPYING PATTERN DETECTED');
-            trace('[XRay ReflectFields] - Target object: ${targetObject}');
-            trace('[XRay ReflectFields] - Generating Map.merge optimization');
+            // trace('[XRay ReflectFields] ✓ FIELD COPYING PATTERN DETECTED');
+            // trace('[XRay ReflectFields] - Target object: ${targetObject}');
+            // trace('[XRay ReflectFields] - Generating Map.merge optimization');
             #end
             
             var result = compileReflectFieldsIteration(loopVar, sourceObject, blockExpr);
             
             #if debug_reflect_fields
-            trace('[XRay ReflectFields] → OPTIMIZATION COMPLETE');
-            trace('[XRay ReflectFields] REFLECT.FIELDS DETECTION END');
-            trace('[XRay ReflectFields] ═══════════════════════════════════════════');
+            // trace('[XRay ReflectFields] → OPTIMIZATION COMPLETE');
+            // trace('[XRay ReflectFields] REFLECT.FIELDS DETECTION END');
+            // trace('[XRay ReflectFields] ═══════════════════════════════════════════');
             #end
             
             return result;
         }
         
         #if debug_reflect_fields
-        trace('[XRay ReflectFields] - No field copying pattern found');
-        trace('[XRay ReflectFields] REFLECT.FIELDS DETECTION END');
-        trace('[XRay ReflectFields] ═══════════════════════════════════════════');
+        // trace('[XRay ReflectFields] - No field copying pattern found');
+        // trace('[XRay ReflectFields] REFLECT.FIELDS DETECTION END');
+        // trace('[XRay ReflectFields] ═══════════════════════════════════════════');
         #end
         
         return null;
@@ -342,47 +342,47 @@ class LoopCompiler {
      */
     public function compileReflectFieldsIteration(fieldVar: String, sourceObject: String, blockExpr: TypedExpr): String {
         #if debug_reflect_fields
-        trace('[XRay ReflectFields] ═══════════════════════════════════════════');
-        trace('[XRay ReflectFields] ITERATION COMPILATION START');
-        trace('[XRay ReflectFields] - Field variable: ${fieldVar}');
-        trace('[XRay ReflectFields] - Source object: ${sourceObject}');
-        trace('[XRay ReflectFields] - Analyzing transformation complexity...');
+        // trace('[XRay ReflectFields] ═══════════════════════════════════════════');
+        // trace('[XRay ReflectFields] ITERATION COMPILATION START');
+        // trace('[XRay ReflectFields] - Field variable: ${fieldVar}');
+        // trace('[XRay ReflectFields] - Source object: ${sourceObject}');
+        // trace('[XRay ReflectFields] - Analyzing transformation complexity...');
         #end
         
         // Analyze the loop body to determine transformation type
         var transformationType = analyzeReflectFieldsTransformation(blockExpr, fieldVar, sourceObject);
         
         #if debug_reflect_fields
-        trace('[XRay ReflectFields] - Transformation type: ${transformationType.type}');
-        trace('[XRay ReflectFields] - Target object: ${transformationType.target}');
+        // trace('[XRay ReflectFields] - Transformation type: ${transformationType.type}');
+        // trace('[XRay ReflectFields] - Target object: ${transformationType.target}');
         #end
         
         var result = switch(transformationType.type) {
             case "simple_copy":
                 // Direct Map.merge for simple field copying
                 #if debug_reflect_fields
-                trace('[XRay ReflectFields] → SIMPLE COPY: Using Map.merge');
+                // trace('[XRay ReflectFields] → SIMPLE COPY: Using Map.merge');
                 #end
                 'Map.merge(${transformationType.target}, ${sourceObject})';
                 
             case "conditional_copy":
                 // Enum.reduce with filtering for conditional copying
                 #if debug_reflect_fields
-                trace('[XRay ReflectFields] → CONDITIONAL COPY: Using Enum.reduce with filter');
+                // trace('[XRay ReflectFields] → CONDITIONAL COPY: Using Enum.reduce with filter');
                 #end
                 generateConditionalFieldCopy(sourceObject, transformationType.target, blockExpr, fieldVar);
                 
             case "transform_copy":
                 // Enum.reduce with transformation for field value changes
                 #if debug_reflect_fields
-                trace('[XRay ReflectFields] → TRANSFORM COPY: Using Enum.reduce with transformation');
+                // trace('[XRay ReflectFields] → TRANSFORM COPY: Using Enum.reduce with transformation');
                 #end
                 generateTransformFieldCopy(sourceObject, transformationType.target, blockExpr, fieldVar);
                 
             case "complex":
                 // Fall back to explicit iteration for complex patterns
                 #if debug_reflect_fields
-                trace('[XRay ReflectFields] → COMPLEX PATTERN: Using explicit Enum.each');
+                // trace('[XRay ReflectFields] → COMPLEX PATTERN: Using explicit Enum.each');
                 #end
                 generateExplicitFieldIteration(sourceObject, blockExpr, fieldVar);
                 
@@ -392,10 +392,10 @@ class LoopCompiler {
         };
         
         #if debug_reflect_fields
-        trace('[XRay ReflectFields] ✓ ITERATION COMPILATION COMPLETE');
-        trace('[XRay ReflectFields] - Generated code length: ${result.length} chars');
-        trace('[XRay ReflectFields] ITERATION COMPILATION END');
-        trace('[XRay ReflectFields] ═══════════════════════════════════════════');
+        // trace('[XRay ReflectFields] ✓ ITERATION COMPILATION COMPLETE');
+        // trace('[XRay ReflectFields] - Generated code length: ${result.length} chars');
+        // trace('[XRay ReflectFields] ITERATION COMPILATION END');
+        // trace('[XRay ReflectFields] ═══════════════════════════════════════════');
         #end
         
         return result;
@@ -740,83 +740,83 @@ end)';
      */
     private function tryOptimizeArrayIteration(iterExpr: TypedExpr, loopVar: String, blockExpr: TypedExpr): Null<String> {
         #if debug_enum_patterns
-        trace('[XRay EnumPatterns] ═══════════════════════════════════════════');
-        trace('[XRay EnumPatterns] ARRAY OPTIMIZATION START');
-        trace('[XRay EnumPatterns] - Loop variable: ${loopVar}');
-        trace('[XRay EnumPatterns] - Analyzing iteration expression...');
+        // trace('[XRay EnumPatterns] ═══════════════════════════════════════════');
+        // trace('[XRay EnumPatterns] ARRAY OPTIMIZATION START');
+        // trace('[XRay EnumPatterns] - Loop variable: ${loopVar}');
+        // trace('[XRay EnumPatterns] - Analyzing iteration expression...');
         #end
         
         var arrayExpr = compiler.compileExpression(iterExpr);
         
         #if debug_enum_patterns
-        trace('[XRay EnumPatterns] - Array expression: ${CompilerUtilities.safeSubstring(arrayExpr, 50)}');
-        trace('[XRay EnumPatterns] - Analyzing loop body for patterns...');
+        // trace('[XRay EnumPatterns] - Array expression: ${CompilerUtilities.safeSubstring(arrayExpr, 50)}');
+        // trace('[XRay EnumPatterns] - Analyzing loop body for patterns...');
         #end
         
         var bodyAnalysis = analyzeLoopBody(blockExpr);
         
         #if debug_enum_patterns
-        trace('[XRay EnumPatterns] - Body analysis complete:');
-        trace('[XRay EnumPatterns]   - Has mapping: ${bodyAnalysis.hasMapping}');
-        trace('[XRay EnumPatterns]   - Has filtering: ${bodyAnalysis.hasFiltering}');
-        trace('[XRay EnumPatterns]   - Has finding: ${bodyAnalysis.hasFinding}');
-        trace('[XRay EnumPatterns]   - Has counting: ${bodyAnalysis.hasCounting}');
-        trace('[XRay EnumPatterns]   - Has accumulation: ${bodyAnalysis.hasAccumulation}');
+        // trace('[XRay EnumPatterns] - Body analysis complete:');
+        // trace('[XRay EnumPatterns]   - Has mapping: ${bodyAnalysis.hasMapping}');
+        // trace('[XRay EnumPatterns]   - Has filtering: ${bodyAnalysis.hasFiltering}');
+        // trace('[XRay EnumPatterns]   - Has finding: ${bodyAnalysis.hasFinding}');
+        // trace('[XRay EnumPatterns]   - Has counting: ${bodyAnalysis.hasCounting}');
+        // trace('[XRay EnumPatterns]   - Has accumulation: ${bodyAnalysis.hasAccumulation}');
         #end
         
         // Try most specific patterns first
         if (bodyAnalysis.hasFinding) {
             #if debug_enum_patterns
-            trace('[XRay EnumPatterns] ✓ FIND PATTERN DETECTED');
+            // trace('[XRay EnumPatterns] ✓ FIND PATTERN DETECTED');
             #end
             var result = generateEnumFindPattern(arrayExpr, loopVar, blockExpr);
             #if debug_enum_patterns
-            trace('[XRay EnumPatterns] ARRAY OPTIMIZATION END');
-            trace('[XRay EnumPatterns] ═══════════════════════════════════════════');
+            // trace('[XRay EnumPatterns] ARRAY OPTIMIZATION END');
+            // trace('[XRay EnumPatterns] ═══════════════════════════════════════════');
             #end
             return result;
         }
         
         if (bodyAnalysis.hasFiltering && !bodyAnalysis.hasMapping) {
             #if debug_enum_patterns
-            trace('[XRay EnumPatterns] ✓ FILTER PATTERN DETECTED');
+            // trace('[XRay EnumPatterns] ✓ FILTER PATTERN DETECTED');
             #end
             var result = generateEnumFilterPattern(arrayExpr, loopVar, bodyAnalysis.conditionExpr);
             #if debug_enum_patterns
-            trace('[XRay EnumPatterns] ARRAY OPTIMIZATION END');
-            trace('[XRay EnumPatterns] ═══════════════════════════════════════════');
+            // trace('[XRay EnumPatterns] ARRAY OPTIMIZATION END');
+            // trace('[XRay EnumPatterns] ═══════════════════════════════════════════');
             #end
             return result;
         }
         
         if (bodyAnalysis.hasMapping && !bodyAnalysis.hasFiltering) {
             #if debug_enum_patterns
-            trace('[XRay EnumPatterns] ✓ MAP PATTERN DETECTED');
+            // trace('[XRay EnumPatterns] ✓ MAP PATTERN DETECTED');
             #end
             var result = generateEnumMapPattern(arrayExpr, loopVar, blockExpr);
             #if debug_enum_patterns
-            trace('[XRay EnumPatterns] ARRAY OPTIMIZATION END');
-            trace('[XRay EnumPatterns] ═══════════════════════════════════════════');
+            // trace('[XRay EnumPatterns] ARRAY OPTIMIZATION END');
+            // trace('[XRay EnumPatterns] ═══════════════════════════════════════════');
             #end
             return result;
         }
         
         if (bodyAnalysis.hasCounting) {
             #if debug_enum_patterns
-            trace('[XRay EnumPatterns] ✓ COUNT PATTERN DETECTED');
+            // trace('[XRay EnumPatterns] ✓ COUNT PATTERN DETECTED');
             #end
             var result = generateEnumCountPattern(arrayExpr, loopVar, bodyAnalysis.conditionExpr);
             #if debug_enum_patterns
-            trace('[XRay EnumPatterns] ARRAY OPTIMIZATION END');
-            trace('[XRay EnumPatterns] ═══════════════════════════════════════════');
+            // trace('[XRay EnumPatterns] ARRAY OPTIMIZATION END');
+            // trace('[XRay EnumPatterns] ═══════════════════════════════════════════');
             #end
             return result;
         }
         
         #if debug_enum_patterns
-        trace('[XRay EnumPatterns] - No optimization pattern matched');
-        trace('[XRay EnumPatterns] ARRAY OPTIMIZATION END');
-        trace('[XRay EnumPatterns] ═══════════════════════════════════════════');
+        // trace('[XRay EnumPatterns] - No optimization pattern matched');
+        // trace('[XRay EnumPatterns] ARRAY OPTIMIZATION END');
+        // trace('[XRay EnumPatterns] ═══════════════════════════════════════════');
         #end
         
         return null;
@@ -866,9 +866,9 @@ end)';
         targetVar: String
     } {
         #if debug_enum_patterns
-        trace('[XRay EnumPatterns] ───────────────────────────────────────────');
-        trace('[XRay EnumPatterns] LOOP BODY ANALYSIS START');
-        trace('[XRay EnumPatterns] - Body type: ${Type.enumConstructor(blockExpr.expr)}');
+        // trace('[XRay EnumPatterns] ───────────────────────────────────────────');
+        // trace('[XRay EnumPatterns] LOOP BODY ANALYSIS START');
+        // trace('[XRay EnumPatterns] - Body type: ${Type.enumConstructor(blockExpr.expr)}');
         #end
         
         var result = {
@@ -885,15 +885,15 @@ end)';
         analyzeLoopBodyAST(blockExpr, result);
         
         #if debug_enum_patterns
-        trace('[XRay EnumPatterns] - Analysis results:');
-        trace('[XRay EnumPatterns]   - Mapping: ${result.hasMapping}');
-        trace('[XRay EnumPatterns]   - Filtering: ${result.hasFiltering}');
-        trace('[XRay EnumPatterns]   - Finding: ${result.hasFinding}');
-        trace('[XRay EnumPatterns]   - Counting: ${result.hasCounting}');
-        trace('[XRay EnumPatterns]   - Accumulation: ${result.hasAccumulation}');
-        trace('[XRay EnumPatterns]   - Target variable: "${result.targetVar}"');
-        trace('[XRay EnumPatterns] LOOP BODY ANALYSIS END');
-        trace('[XRay EnumPatterns] ───────────────────────────────────────────');
+        // trace('[XRay EnumPatterns] - Analysis results:');
+        // trace('[XRay EnumPatterns]   - Mapping: ${result.hasMapping}');
+        // trace('[XRay EnumPatterns]   - Filtering: ${result.hasFiltering}');
+        // trace('[XRay EnumPatterns]   - Finding: ${result.hasFinding}');
+        // trace('[XRay EnumPatterns]   - Counting: ${result.hasCounting}');
+        // trace('[XRay EnumPatterns]   - Accumulation: ${result.hasAccumulation}');
+        // trace('[XRay EnumPatterns]   - Target variable: "${result.targetVar}"');
+        // trace('[XRay EnumPatterns] LOOP BODY ANALYSIS END');
+        // trace('[XRay EnumPatterns] ───────────────────────────────────────────');
         #end
         
         return result;
@@ -1092,16 +1092,16 @@ end)';
      */
     private function generateEnumFindPattern(arrayExpr: String, loopVar: String, blockExpr: TypedExpr): String {
         #if debug_enum_patterns
-        trace('[XRay EnumPatterns] ═══════════════════════════════════════════');
-        trace('[XRay EnumPatterns] FIND PATTERN GENERATION START');
-        trace('[XRay EnumPatterns] - Array: ${arrayExpr}');
-        trace('[XRay EnumPatterns] - Loop variable: ${loopVar}');
+        // trace('[XRay EnumPatterns] ═══════════════════════════════════════════');
+        // trace('[XRay EnumPatterns] FIND PATTERN GENERATION START');
+        // trace('[XRay EnumPatterns] - Array: ${arrayExpr}');
+        // trace('[XRay EnumPatterns] - Loop variable: ${loopVar}');
         #end
         
         var condition = extractFindCondition(blockExpr, loopVar);
         
         #if debug_enum_patterns
-        trace('[XRay EnumPatterns] - Extracted condition: ${CompilerUtilities.safeSubstring(condition, 100)}');
+        // trace('[XRay EnumPatterns] - Extracted condition: ${CompilerUtilities.safeSubstring(condition, 100)}');
         #end
         
         var result = if (condition.length > 50 || condition.indexOf("\n") >= 0) {
@@ -1115,10 +1115,10 @@ end)';
         };
         
         #if debug_enum_patterns
-        trace('[XRay EnumPatterns] ✓ FIND PATTERN GENERATED');
-        trace('[XRay EnumPatterns] - Generated code length: ${result.length} chars');
-        trace('[XRay EnumPatterns] FIND PATTERN GENERATION END');
-        trace('[XRay EnumPatterns] ═══════════════════════════════════════════');
+        // trace('[XRay EnumPatterns] ✓ FIND PATTERN GENERATED');
+        // trace('[XRay EnumPatterns] - Generated code length: ${result.length} chars');
+        // trace('[XRay EnumPatterns] FIND PATTERN GENERATION END');
+        // trace('[XRay EnumPatterns] ═══════════════════════════════════════════');
         #end
         
         return result;
@@ -1193,8 +1193,8 @@ end)';
      */
     private function generateEnumCountPattern(arrayExpr: String, loopVar: String, conditionExpr: TypedExpr): String {
         #if debug_enum_patterns
-        trace('[XRay EnumPatterns] ═══════════════════════════════════════════');
-        trace('[XRay EnumPatterns] COUNT PATTERN GENERATION START');
+        // trace('[XRay EnumPatterns] ═══════════════════════════════════════════');
+        // trace('[XRay EnumPatterns] COUNT PATTERN GENERATION START');
         #end
         
         var condition = if (conditionExpr != null) {
@@ -1206,9 +1206,9 @@ end)';
         var result = 'Enum.count(${arrayExpr}, fn ${loopVar} -> ${condition} end)';
         
         #if debug_enum_patterns
-        trace('[XRay EnumPatterns] ✓ COUNT PATTERN GENERATED');
-        trace('[XRay EnumPatterns] COUNT PATTERN GENERATION END');
-        trace('[XRay EnumPatterns] ═══════════════════════════════════════════');
+        // trace('[XRay EnumPatterns] ✓ COUNT PATTERN GENERATED');
+        // trace('[XRay EnumPatterns] COUNT PATTERN GENERATION END');
+        // trace('[XRay EnumPatterns] ═══════════════════════════════════════════');
         #end
         
         return result;
@@ -1224,17 +1224,17 @@ end)';
      */
     private function generateEnumFilterPattern(arrayExpr: String, loopVar: String, conditionExpr: TypedExpr): String {
         #if debug_enum_patterns
-        trace('[XRay EnumPatterns] ═══════════════════════════════════════════');
-        trace('[XRay EnumPatterns] FILTER PATTERN GENERATION START');
+        // trace('[XRay EnumPatterns] ═══════════════════════════════════════════');
+        // trace('[XRay EnumPatterns] FILTER PATTERN GENERATION START');
         #end
         
         var condition = compiler.compileExpression(conditionExpr);
         var result = 'Enum.filter(${arrayExpr}, fn ${loopVar} -> ${condition} end)';
         
         #if debug_enum_patterns
-        trace('[XRay EnumPatterns] ✓ FILTER PATTERN GENERATED');
-        trace('[XRay EnumPatterns] FILTER PATTERN GENERATION END');
-        trace('[XRay EnumPatterns] ═══════════════════════════════════════════');
+        // trace('[XRay EnumPatterns] ✓ FILTER PATTERN GENERATED');
+        // trace('[XRay EnumPatterns] FILTER PATTERN GENERATION END');
+        // trace('[XRay EnumPatterns] ═══════════════════════════════════════════');
         #end
         
         return result;
@@ -1250,8 +1250,8 @@ end)';
      */
     private function generateEnumMapPattern(arrayExpr: String, loopVar: String, blockExpr: TypedExpr): String {
         #if debug_enum_patterns
-        trace('[XRay EnumPatterns] ═══════════════════════════════════════════');
-        trace('[XRay EnumPatterns] MAP PATTERN GENERATION START');
+        // trace('[XRay EnumPatterns] ═══════════════════════════════════════════');
+        // trace('[XRay EnumPatterns] MAP PATTERN GENERATION START');
         #end
         
         var transformation = extractTransformationFromBody(blockExpr, loopVar);
@@ -1267,9 +1267,9 @@ end)';
         };
         
         #if debug_enum_patterns
-        trace('[XRay EnumPatterns] ✓ MAP PATTERN GENERATED');
-        trace('[XRay EnumPatterns] MAP PATTERN GENERATION END');
-        trace('[XRay EnumPatterns] ═══════════════════════════════════════════');
+        // trace('[XRay EnumPatterns] ✓ MAP PATTERN GENERATED');
+        // trace('[XRay EnumPatterns] MAP PATTERN GENERATION END');
+        // trace('[XRay EnumPatterns] ═══════════════════════════════════════════');
         #end
         
         return result;
@@ -1290,9 +1290,9 @@ end)';
         return switch(blockExpr.expr) {
             case TBlock(exprs):
                 #if debug_loops
-                trace('[XRay ExtractTransform] Block with ${exprs.length} expressions');
+                // trace('[XRay ExtractTransform] Block with ${exprs.length} expressions');
                 for (i in 0...exprs.length) {
-                    trace('[XRay ExtractTransform]   Expr ${i}: ${Type.enumConstructor(exprs[i].expr)}');
+                    // trace('[XRay ExtractTransform]   Expr ${i}: ${Type.enumConstructor(exprs[i].expr)}');
                 }
                 #end
                 
@@ -1319,7 +1319,7 @@ end)';
                                                             hasTempArrayRef = true;
                                                             tempArrayName = varName;
                                                             #if debug_loops
-                                                            trace('[XRay ExtractTransform] Found temp array reference: ${varName}');
+                                                            // trace('[XRay ExtractTransform] Found temp array reference: ${varName}');
                                                             #end
                                                         }
                                                     case _:
@@ -1335,7 +1335,7 @@ end)';
                 
                 if (hasTempArrayRef && tempArrayName != null) {
                     #if debug_loops
-                    trace('[XRay ExtractTransform] Looking for definition of ${tempArrayName}');
+                    // trace('[XRay ExtractTransform] Looking for definition of ${tempArrayName}');
                     #end
                     
                     // Look for where this temp array is generated
@@ -1349,12 +1349,12 @@ end)';
                                             var leftSide = compiler.compileExpression(e1);
                                             if (leftSide == tempArrayName) {
                                                 #if debug_loops  
-                                                trace('[XRay ExtractTransform] Found assignment to ${tempArrayName}');
+                                                // trace('[XRay ExtractTransform] Found assignment to ${tempArrayName}');
                                                 #end
                                                 // Found the assignment - compile the RHS
                                                 var result = compiler.compileExpression(e2);
                                                 #if debug_loops
-                                                trace('[XRay ExtractTransform] Compiled to: ${result}');
+                                                // trace('[XRay ExtractTransform] Compiled to: ${result}');
                                                 #end
                                                 return result;
                                             }
@@ -1366,7 +1366,7 @@ end)';
                     }
                     
                     #if debug_loops
-                    trace('[XRay ExtractTransform] Could not find definition of ${tempArrayName}');
+                    // trace('[XRay ExtractTransform] Could not find definition of ${tempArrayName}');
                     #end
                 }
                 
@@ -1494,20 +1494,20 @@ end)';
      */
     public function compileWhileLoop(econd: TypedExpr, ebody: TypedExpr, normalWhile: Bool): String {
         #if debug_loops
-        trace('[XRay Loops] ═══════════════════════════════════════════════════');
-        trace('[XRay Loops] WHILE LOOP COMPILATION START');
-        trace('[XRay Loops] - Normal while: ${normalWhile}');
-        trace('[XRay Loops] - Condition type: ${Type.enumConstructor(econd.expr)}');
-        trace('[XRay Loops] - Body type: ${Type.enumConstructor(ebody.expr)}');
+        // trace('[XRay Loops] ═══════════════════════════════════════════════════');
+        // trace('[XRay Loops] WHILE LOOP COMPILATION START');
+        // trace('[XRay Loops] - Normal while: ${normalWhile}');
+        // trace('[XRay Loops] - Condition type: ${Type.enumConstructor(econd.expr)}');
+        // trace('[XRay Loops] - Body type: ${Type.enumConstructor(ebody.expr)}');
         #end
         
         // Try to optimize for-in patterns first
         var forInOptimization = tryOptimizeForInPattern(econd, ebody);
         if (forInOptimization != null) {
             #if debug_loops
-            trace('[XRay Loops] ✓ FOR-IN PATTERN OPTIMIZATION APPLIED');
-            trace('[XRay Loops] WHILE LOOP COMPILATION END');
-            trace('[XRay Loops] ═══════════════════════════════════════════════════');
+            // trace('[XRay Loops] ✓ FOR-IN PATTERN OPTIMIZATION APPLIED');
+            // trace('[XRay Loops] WHILE LOOP COMPILATION END');
+            // trace('[XRay Loops] ═══════════════════════════════════════════════════');
             #end
             return forInOptimization;
         }
@@ -1516,9 +1516,9 @@ end)';
         var reflectOptimization = optimizeReflectFieldsLoop(econd, ebody);
         if (reflectOptimization != null) {
             #if debug_loops
-            trace('[XRay Loops] ✓ REFLECT.FIELDS OPTIMIZATION APPLIED');
-            trace('[XRay Loops] WHILE LOOP COMPILATION END');
-            trace('[XRay Loops] ═══════════════════════════════════════════════════');
+            // trace('[XRay Loops] ✓ REFLECT.FIELDS OPTIMIZATION APPLIED');
+            // trace('[XRay Loops] WHILE LOOP COMPILATION END');
+            // trace('[XRay Loops] ═══════════════════════════════════════════════════');
             #end
             return reflectOptimization;
         }
@@ -1534,15 +1534,15 @@ end)';
                 var indexVar = enumAtPattern.matched(2);
                 
                 #if debug_loops
-                trace('[XRay Loops] ✓ ENUM.AT INDEXED ITERATION DETECTED');
-                trace('[XRay Loops] - Array: ${arrayVar}, Index: ${indexVar}');
+                // trace('[XRay Loops] ✓ ENUM.AT INDEXED ITERATION DETECTED');
+                // trace('[XRay Loops] - Array: ${arrayVar}, Index: ${indexVar}');
                 #end
                 
                 var result = generateIndexedIteration(arrayVar, indexVar, bodyStr);
                 
                 #if debug_loops
-                trace('[XRay Loops] WHILE LOOP COMPILATION END');
-                trace('[XRay Loops] ═══════════════════════════════════════════════════');
+                // trace('[XRay Loops] WHILE LOOP COMPILATION END');
+                // trace('[XRay Loops] ═══════════════════════════════════════════════════');
                 #end
                 return result;
             }
@@ -1552,12 +1552,12 @@ end)';
         var arrayBuildingPattern = detectArrayBuildingPattern(econd, ebody);
         if (arrayBuildingPattern != null) {
             #if debug_loops
-            trace('[XRay Loops] ✓ ARRAY BUILDING PATTERN DETECTED');
+            // trace('[XRay Loops] ✓ ARRAY BUILDING PATTERN DETECTED');
             #end
             var result = compileArrayBuildingLoop(econd, ebody, arrayBuildingPattern);
             #if debug_loops
-            trace('[XRay Loops] WHILE LOOP COMPILATION END');
-            trace('[XRay Loops] ═══════════════════════════════════════════════════');
+            // trace('[XRay Loops] WHILE LOOP COMPILATION END');
+            // trace('[XRay Loops] ═══════════════════════════════════════════════════');
             #end
             return result;
         }
@@ -1566,30 +1566,30 @@ end)';
         var charIterationPattern = detectCharacterIterationPattern(econd, ebody);
         if (charIterationPattern != null) {
             #if debug_loops
-            trace('[XRay Loops] ✓ CHARACTER ITERATION PATTERN DETECTED');
-            trace('[XRay Loops] - Pattern: ${charIterationPattern}');
+            // trace('[XRay Loops] ✓ CHARACTER ITERATION PATTERN DETECTED');
+            // trace('[XRay Loops] - Pattern: ${charIterationPattern}');
             #end
             var result = compileCharacterIterationLoop(econd, ebody, charIterationPattern);
             #if debug_loops
-            trace('[XRay Loops] - Generated idiomatic Elixir: ${CompilerUtilities.safeSubstring(result, 100)}');
-            trace('[XRay Loops] WHILE LOOP COMPILATION END');
-            trace('[XRay Loops] ═══════════════════════════════════════════════════');
+            // trace('[XRay Loops] - Generated idiomatic Elixir: ${CompilerUtilities.safeSubstring(result, 100)}');
+            // trace('[XRay Loops] WHILE LOOP COMPILATION END');
+            // trace('[XRay Loops] ═══════════════════════════════════════════════════');
             #end
             return result;
         }
         
         #if debug_loops
-        trace('[XRay Loops] ⚠️ NO OPTIMIZATION PATTERN MATCHED');
-        trace('[XRay Loops] - Falling back to generic while loop compilation');
+        // trace('[XRay Loops] ⚠️ NO OPTIMIZATION PATTERN MATCHED');
+        // trace('[XRay Loops] - Falling back to generic while loop compilation');
         #end
         
         // Fall back to generic while loop compilation
         var result = compileWhileLoopGeneric(econd, ebody, normalWhile);
         
         #if debug_loops
-        trace('[XRay Loops] - Generic compilation completed');
-        trace('[XRay Loops] WHILE LOOP COMPILATION END');
-        trace('[XRay Loops] ═══════════════════════════════════════════════════');
+        // trace('[XRay Loops] - Generic compilation completed');
+        // trace('[XRay Loops] WHILE LOOP COMPILATION END');
+        // trace('[XRay Loops] ═══════════════════════════════════════════════════');
         #end
         
         return result;
@@ -1615,26 +1615,26 @@ end)';
      */
     private function tryOptimizeForInPattern(econd: TypedExpr, ebody: TypedExpr): Null<String> {
         #if debug_loops
-        trace('[XRay Loops] ───────────────────────────────────────────');
-        trace('[XRay Loops] DESUGARED ARRAY PATTERN DETECTION START');
-        trace('[XRay Loops] - Analyzing while loop for array patterns...');
+        // trace('[XRay Loops] ───────────────────────────────────────────');
+        // trace('[XRay Loops] DESUGARED ARRAY PATTERN DETECTION START');
+        // trace('[XRay Loops] - Analyzing while loop for array patterns...');
         #end
         
         // Check if condition matches: _g1 < _g2.length
         var conditionInfo = analyzeArrayLoopCondition(econd);
         if (conditionInfo == null) {
             #if debug_loops
-            trace('[XRay Loops] - Condition does not match array loop pattern');
-            trace('[XRay Loops] DESUGARED ARRAY PATTERN DETECTION END');
-            trace('[XRay Loops] ───────────────────────────────────────────');
+            // trace('[XRay Loops] - Condition does not match array loop pattern');
+            // trace('[XRay Loops] DESUGARED ARRAY PATTERN DETECTION END');
+            // trace('[XRay Loops] ───────────────────────────────────────────');
             #end
             return null;
         }
         
         #if debug_loops
-        trace('[XRay Loops] ✓ Array loop condition detected:');
-        trace('[XRay Loops]   - Index var: ${conditionInfo.indexVar}');
-        trace('[XRay Loops]   - Array var: ${conditionInfo.arrayVar}');
+        // trace('[XRay Loops] ✓ Array loop condition detected:');
+        // trace('[XRay Loops]   - Index var: ${conditionInfo.indexVar}');
+        // trace('[XRay Loops]   - Array var: ${conditionInfo.arrayVar}');
         #end
         
         /**
@@ -1676,9 +1676,9 @@ end)';
             );
             
             #if debug_loops
-            trace('[XRay Loops] ✓ Registered loop variable mappings:');
-            trace('[XRay Loops]   - TVar.id=${conditionInfo.indexTVar.id} -> g_counter');
-            trace('[XRay Loops]   - TVar.id=${conditionInfo.arrayTVar.id} -> g_array');
+            // trace('[XRay Loops] ✓ Registered loop variable mappings:');
+            // trace('[XRay Loops]   - TVar.id=${conditionInfo.indexTVar.id} -> g_counter');
+            // trace('[XRay Loops]   - TVar.id=${conditionInfo.arrayTVar.id} -> g_array');
             #end
         }
         
@@ -1686,27 +1686,27 @@ end)';
         var bodyPattern = analyzeArrayLoopBody(ebody, conditionInfo);
         if (bodyPattern == null) {
             #if debug_loops
-            trace('[XRay Loops] - Body does not match known array patterns');
-            trace('[XRay Loops] DESUGARED ARRAY PATTERN DETECTION END');
-            trace('[XRay Loops] ───────────────────────────────────────────');
+            // trace('[XRay Loops] - Body does not match known array patterns');
+            // trace('[XRay Loops] DESUGARED ARRAY PATTERN DETECTION END');
+            // trace('[XRay Loops] ───────────────────────────────────────────');
             #end
             return null;
         }
         
         #if debug_loops
-        trace('[XRay Loops] ✓ Array operation pattern detected:');
-        trace('[XRay Loops]   - Pattern type: ${bodyPattern.type}');
-        trace('[XRay Loops]   - Item var: ${bodyPattern.itemVar}');
-        trace('[XRay Loops]   - Accumulator: ${bodyPattern.accumulator}');
+        // trace('[XRay Loops] ✓ Array operation pattern detected:');
+        // trace('[XRay Loops]   - Pattern type: ${bodyPattern.type}');
+        // trace('[XRay Loops]   - Item var: ${bodyPattern.itemVar}');
+        // trace('[XRay Loops]   - Accumulator: ${bodyPattern.accumulator}');
         #end
         
         // Generate appropriate Enum function based on pattern
         var result = generateEnumFunction(bodyPattern, conditionInfo, ebody);
         
         #if debug_loops
-        trace('[XRay Loops] ✓ GENERATED IDIOMATIC ENUM FUNCTION');
-        trace('[XRay Loops] DESUGARED ARRAY PATTERN DETECTION END');
-        trace('[XRay Loops] ───────────────────────────────────────────');
+        // trace('[XRay Loops] ✓ GENERATED IDIOMATIC ENUM FUNCTION');
+        // trace('[XRay Loops] DESUGARED ARRAY PATTERN DETECTION END');
+        // trace('[XRay Loops] ───────────────────────────────────────────');
         #end
         
         return result;
@@ -1740,22 +1740,22 @@ end)';
         // EDGE CASES: Handle parentheses in condition, complex body structures
         
         #if debug_loops
-        trace("[XRay ArrayPattern] DETECTION START");
-        trace('[XRay ArrayPattern] Condition: ${econd}');
-        trace('[XRay ArrayPattern] Body: ${ebody}');
+        // trace("[XRay ArrayPattern] DETECTION START");
+        // trace('[XRay ArrayPattern] Condition: ${econd}');
+        // trace('[XRay ArrayPattern] Body: ${ebody}');
         #end
         
         // 1. Analyze condition: Look for 'counter < array.length' pattern
         var conditionInfo = analyzeArrayLoopCondition(econd);
         if (conditionInfo == null) {
             #if debug_loops
-            trace("[XRay ArrayPattern] ❌ CONDITION ANALYSIS FAILED");
+            // trace("[XRay ArrayPattern] ❌ CONDITION ANALYSIS FAILED");
             #end
             return null;
         }
         
         #if debug_loops
-        trace('[XRay ArrayPattern] ✓ CONDITION DETECTED: indexVar=${conditionInfo.indexVar}, arrayVar=${conditionInfo.arrayVar}');
+        // trace('[XRay ArrayPattern] ✓ CONDITION DETECTED: indexVar=${conditionInfo.indexVar}, arrayVar=${conditionInfo.arrayVar}');
         #end
         
         /**
@@ -1797,9 +1797,9 @@ end)';
             );
             
             #if debug_loops
-            trace('[XRay ArrayPattern] ✓ Registered loop variable mappings:');
-            trace('[XRay ArrayPattern]   - TVar.id=${conditionInfo.indexTVar.id} -> g_counter');
-            trace('[XRay ArrayPattern]   - TVar.id=${conditionInfo.arrayTVar.id} -> g_array');
+            // trace('[XRay ArrayPattern] ✓ Registered loop variable mappings:');
+            // trace('[XRay ArrayPattern]   - TVar.id=${conditionInfo.indexTVar.id} -> g_counter');
+            // trace('[XRay ArrayPattern]   - TVar.id=${conditionInfo.arrayTVar.id} -> g_array');
             #end
         }
         
@@ -1807,15 +1807,15 @@ end)';
         var bodyAnalysis = analyzeSimpleArrayLoopBody(ebody, conditionInfo);
         if (bodyAnalysis == null) {
             #if debug_loops
-            trace("[XRay ArrayPattern] ❌ BODY ANALYSIS FAILED");
+            // trace("[XRay ArrayPattern] ❌ BODY ANALYSIS FAILED");
             #end
             return null;
         }
         
         
         #if debug_loops
-        trace('[XRay ArrayPattern] ✓ BODY ANALYZED: itemVar=${bodyAnalysis.itemVar}, accumulator=${bodyAnalysis.accumulator}');
-        trace("[XRay ArrayPattern] ✅ ARRAY BUILDING PATTERN DETECTED");
+        // trace('[XRay ArrayPattern] ✓ BODY ANALYZED: itemVar=${bodyAnalysis.itemVar}, accumulator=${bodyAnalysis.accumulator}');
+        // trace("[XRay ArrayPattern] ✅ ARRAY BUILDING PATTERN DETECTED");
         #end
         
         // 3. Return structured pattern information
@@ -1843,8 +1843,8 @@ end)';
      */
     public function compileArrayBuildingLoop(econd: TypedExpr, ebody: TypedExpr, pattern: {indexVar: String, accumVar: String, arrayExpr: String}): String {
         #if debug_loops
-        trace("[XRay EnumGen] GENERATION START");
-        trace('[XRay EnumGen] Pattern: ${pattern}');
+        // trace("[XRay EnumGen] GENERATION START");
+        // trace('[XRay EnumGen] Pattern: ${pattern}');
         #end
         
         // Determine the pattern type and generate appropriate Enum function
@@ -1856,7 +1856,7 @@ end)';
                 var result = 'Enum.filter(${pattern.arrayExpr}, fn item -> ${condition} end)';
                 
                 #if debug_loops
-                trace('[XRay EnumGen] ✓ FILTER GENERATED: ${result}');
+                // trace('[XRay EnumGen] ✓ FILTER GENERATED: ${result}');
                 #end
                 
                 return result;
@@ -1866,7 +1866,7 @@ end)';
                 var result = 'Enum.map(${pattern.arrayExpr}, fn item -> ${transformation} end)';
                 
                 #if debug_loops
-                trace('[XRay EnumGen] ✓ MAP GENERATED: ${result}');
+                // trace('[XRay EnumGen] ✓ MAP GENERATED: ${result}');
                 #end
                 
                 return result;
@@ -1876,7 +1876,7 @@ end)';
                 var result = 'Enum.each(${pattern.arrayExpr}, fn item -> ${sideEffect} end)';
                 
                 #if debug_loops
-                trace('[XRay EnumGen] ✓ EACH GENERATED: ${result}');
+                // trace('[XRay EnumGen] ✓ EACH GENERATED: ${result}');
                 #end
                 
                 return result;
@@ -1886,14 +1886,14 @@ end)';
                 var result = 'Enum.reduce(${pattern.arrayExpr}, [], fn item, acc -> [${transformation} | acc] end) |> Enum.reverse()';
                 
                 #if debug_loops
-                trace('[XRay EnumGen] ✓ REDUCE GENERATED: ${result}');
+                // trace('[XRay EnumGen] ✓ REDUCE GENERATED: ${result}');
                 #end
                 
                 return result;
                 
             case _:
                 #if debug_loops
-                trace("[XRay EnumGen] ❌ UNKNOWN PATTERN TYPE, USING SIMPLE TAIL-RECURSIVE FALLBACK");
+                // trace("[XRay EnumGen] ❌ UNKNOWN PATTERN TYPE, USING SIMPLE TAIL-RECURSIVE FALLBACK");
                 #end
                 
                 // Fallback to simple tail recursion if pattern is too complex
@@ -1917,9 +1917,9 @@ end)';
      */
     private function classifyArrayPattern(ebody: TypedExpr, indexVar: String, accumVar: String): {type: String, expression: String} {
         #if debug_loops
-        trace("[XRay Classify] CLASSIFICATION START");
-        trace('[XRay Classify] Body expr type: ${ebody.expr}');
-        trace('[XRay Classify] Index var: ${indexVar}, Accum var: ${accumVar}');
+        // trace("[XRay Classify] CLASSIFICATION START");
+        // trace('[XRay Classify] Body expr type: ${ebody.expr}');
+        // trace('[XRay Classify] Index var: ${indexVar}, Accum var: ${accumVar}');
         #end
         
         switch (ebody.expr) {
@@ -1943,8 +1943,8 @@ end)';
      */
     private function findNestedArrayOperation(exprs: Array<TypedExpr>, tempVarName: String): Null<String> {
         #if debug_loops
-        trace('[XRay Nested] Looking for nested operation generating ${tempVarName}');
-        trace('[XRay Nested] Total expressions to check: ${exprs.length}');
+        // trace('[XRay Nested] Looking for nested operation generating ${tempVarName}');
+        // trace('[XRay Nested] Total expressions to check: ${exprs.length}');
         #end
         
         // The pattern in the desugared code is:
@@ -1958,7 +1958,7 @@ end)';
         for (i in 0...exprs.length) {
             var expr = exprs[i];
             #if debug_loops
-            trace('[XRay Nested] Checking expression ${i}: ${Type.enumConstructor(expr.expr)}');
+            // trace('[XRay Nested] Checking expression ${i}: ${Type.enumConstructor(expr.expr)}');
             #end
             
             switch (expr.expr) {
@@ -1970,20 +1970,20 @@ end)';
                                 var leftSide = compiler.compileExpression(e1);
                                 if (leftSide == tempVarName) {
                                     #if debug_loops
-                                    trace('[XRay Nested] Found assignment to ${tempVarName}');
+                                    // trace('[XRay Nested] Found assignment to ${tempVarName}');
                                     #end
                                     // Found the assignment, now look for the while loop in this block
                                     for (innerExpr in blockExprs) {
                                         switch (innerExpr.expr) {
                                             case TWhile(econd, ebody, normalWhile):
                                                 #if debug_loops
-                                                trace('[XRay Nested] Found while loop in same block');
+                                                // trace('[XRay Nested] Found while loop in same block');
                                                 #end
                                                 // Compile this while loop
                                                 var nestedResult = compileWhileLoop(econd, ebody, normalWhile);
                                                 if (nestedResult != null && nestedResult.indexOf("Enum.") >= 0) {
                                                     #if debug_loops
-                                                    trace('[XRay Nested] Successfully compiled nested operation: ${nestedResult}');
+                                                    // trace('[XRay Nested] Successfully compiled nested operation: ${nestedResult}');
                                                     #end
                                                     return nestedResult;
                                                 }
@@ -2001,13 +2001,13 @@ end)';
                     var bodyStr = compiler.compileExpression(ebody);
                     if (bodyStr.indexOf(tempVarName + " =") >= 0) {
                         #if debug_loops
-                        trace('[XRay Nested] Found while loop that assigns to ${tempVarName}');
+                        // trace('[XRay Nested] Found while loop that assigns to ${tempVarName}');
                         #end
                         // Compile this while loop
                         var nestedResult = compileWhileLoop(econd, ebody, normalWhile);
                         if (nestedResult != null && nestedResult.indexOf("Enum.") >= 0) {
                             #if debug_loops
-                            trace('[XRay Nested] Successfully compiled nested operation: ${nestedResult}');
+                            // trace('[XRay Nested] Successfully compiled nested operation: ${nestedResult}');
                             #end
                             return nestedResult;
                         }
@@ -2017,7 +2017,7 @@ end)';
         }
         
         #if debug_loops
-        trace('[XRay Nested] No nested operation found for ${tempVarName}');
+        // trace('[XRay Nested] No nested operation found for ${tempVarName}');
         #end
         return null;
     }
@@ -2073,8 +2073,8 @@ end)';
                                     // Extract transformation from push argument
                                     if (args.length > 0) {
                                         #if debug_loops
-                                        trace('[XRay Classify] Push argument expr: ${args[0].expr}');
-                                        trace('[XRay Classify] Push argument type: ${args[0].t}');
+                                        // trace('[XRay Classify] Push argument expr: ${args[0].expr}');
+                                        // trace('[XRay Classify] Push argument type: ${args[0].t}');
                                         #end
                                         
                                         // Check if the argument is a temporary variable from nested array operation
@@ -2085,8 +2085,8 @@ end)';
                                                 // Check if this looks like a temporary array variable
                                                 if (varName.indexOf("temp_array") >= 0) {
                                                     #if debug_loops
-                                                    trace('[XRay Classify] Detected nested array temp variable: ${varName}');
-                                                    trace('[XRay Classify] Looking for its definition in ${exprs.length} expressions');
+                                                    // trace('[XRay Classify] Detected nested array temp variable: ${varName}');
+                                                    // trace('[XRay Classify] Looking for its definition in ${exprs.length} expressions');
                                                     #end
                                                     
                                                     // Look for where this temp variable is assigned
@@ -2097,7 +2097,7 @@ end)';
                                                                 var thisVarName = CompilerUtilities.toElixirVarName(tvar);
                                                                 if (thisVarName == varName) {
                                                                     #if debug_loops
-                                                                    trace('[XRay Classify] Found temp var declaration at index ${i}');
+                                                                    // trace('[XRay Classify] Found temp var declaration at index ${i}');
                                                                     #end
                                                                     // Look for the assignment in subsequent expressions
                                                                     for (j in (i+1)...exprs.length) {
@@ -2106,7 +2106,7 @@ end)';
                                                                                 var leftSide = compiler.compileExpression(e1);
                                                                                 if (leftSide == varName) {
                                                                                     #if debug_loops
-                                                                                    trace('[XRay Classify] Found assignment to ${varName} at index ${j}');
+                                                                                    // trace('[XRay Classify] Found assignment to ${varName} at index ${j}');
                                                                                     #end
                                                                                     // e2 should be the block containing the nested operation
                                                                                     switch (e2.expr) {
@@ -2118,7 +2118,7 @@ end)';
                                                                                                         var nestedOp = compileWhileLoop(econd, ebody, normalWhile);
                                                                                                         if (nestedOp != null && nestedOp.indexOf("Enum.") >= 0) {
                                                                                                             #if debug_loops
-                                                                                                            trace('[XRay Classify] Found and compiled nested operation: ${nestedOp}');
+                                                                                                            // trace('[XRay Classify] Found and compiled nested operation: ${nestedOp}');
                                                                                                             #end
                                                                                                             transformationExpr = nestedOp;
                                                                                                             isNestedArrayResult = true;
@@ -2129,7 +2129,7 @@ end)';
                                                                                             }
                                                                                         case _:
                                                                                             #if debug_loops
-                                                                                            trace('[XRay Classify] Assignment RHS is not a block: ${Type.enumConstructor(e2.expr)}');
+                                                                                            // trace('[XRay Classify] Assignment RHS is not a block: ${Type.enumConstructor(e2.expr)}');
                                                                                             #end
                                                                                     }
                                                                                 }
@@ -2143,7 +2143,7 @@ end)';
                                                     
                                                     if (!isNestedArrayResult) {
                                                         #if debug_loops
-                                                        trace('[XRay Classify] Could not find nested operation for ${varName}');
+                                                        // trace('[XRay Classify] Could not find nested operation for ${varName}');
                                                         #end
                                                     }
                                                 }
@@ -2153,7 +2153,7 @@ end)';
                                         if (!isNestedArrayResult) {
                                             var compiledArg = compiler.compileExpression(args[0]);
                                             #if debug_loops
-                                            trace('[XRay Classify] Compiled push argument normally: ${compiledArg}');
+                                            // trace('[XRay Classify] Compiled push argument normally: ${compiledArg}');
                                             #end
                                             transformationExpr = substituteVariableNamesWithItem(compiledArg, indexVar, accumVar, itemVarName);
                                         }
@@ -2224,8 +2224,8 @@ end)';
         var result = expression;
         
         #if debug_loops
-        trace('[XRay Substitute] BEFORE: ${result}');
-        trace('[XRay Substitute] IndexVar: ${indexVar}, AccumVar: ${accumVar}');
+        // trace('[XRay Substitute] BEFORE: ${result}');
+        // trace('[XRay Substitute] IndexVar: ${indexVar}, AccumVar: ${accumVar}');
         #end
         
         // Replace array access patterns first
@@ -2248,7 +2248,7 @@ end)';
         }
         
         #if debug_loops
-        trace('[XRay Substitute] AFTER: ${result}');
+        // trace('[XRay Substitute] AFTER: ${result}');
         #end
         
         return result;
@@ -2271,8 +2271,8 @@ end)';
         var result = expression;
         
         #if debug_loops
-        trace('[XRay SubstituteItem] BEFORE: ${result}');
-        trace('[XRay SubstituteItem] ItemVar: ${itemVarName}');
+        // trace('[XRay SubstituteItem] BEFORE: ${result}');
+        // trace('[XRay SubstituteItem] ItemVar: ${itemVarName}');
         #end
         
         // Replace array access patterns first
@@ -2325,7 +2325,7 @@ end)';
         }
         
         #if debug_loops
-        trace('[XRay SubstituteItem] AFTER: ${result}');
+        // trace('[XRay SubstituteItem] AFTER: ${result}');
         #end
         
         return result;
@@ -2352,14 +2352,14 @@ end)';
         operation: TypedExpr
     }> {
         #if debug_loops
-        trace("[XRay SimpleBody] SIMPLE BODY ANALYSIS START");
-        trace('[XRay SimpleBody] Expected indexVar: ${conditionInfo.indexVar}, arrayVar: ${conditionInfo.arrayVar}');
+        // trace("[XRay SimpleBody] SIMPLE BODY ANALYSIS START");
+        // trace('[XRay SimpleBody] Expected indexVar: ${conditionInfo.indexVar}, arrayVar: ${conditionInfo.arrayVar}');
         #end
         
         switch (ebody.expr) {
             case TBlock(exprs):
                 #if debug_loops
-                trace('[XRay SimpleBody] Block with ${exprs.length} expressions');
+                // trace('[XRay SimpleBody] Block with ${exprs.length} expressions');
                 #end
                 
                 var itemVar: String = null;
@@ -2372,7 +2372,7 @@ end)';
                     var expr = exprs[i];
                     
                     #if debug_loops
-                    trace('[XRay SimpleBody] Expression ${i}: ${expr.expr}');
+                    // trace('[XRay SimpleBody] Expression ${i}: ${expr.expr}');
                     #end
                     
                     switch (expr.expr) {
@@ -2381,7 +2381,7 @@ end)';
                             itemVar = CompilerUtilities.toElixirVarName(tvar);
                             
                             #if debug_loops
-                            trace('[XRay SimpleBody] ✓ Found item variable: ${itemVar}');
+                            // trace('[XRay SimpleBody] ✓ Found item variable: ${itemVar}');
                             #end
                             
                         case TUnop(OpIncrement, _, e):
@@ -2389,7 +2389,7 @@ end)';
                             hasIncrement = true;
                             
                             #if debug_loops
-                            trace("[XRay SimpleBody] ✓ Found increment operation");
+                            // trace("[XRay SimpleBody] ✓ Found increment operation");
                             #end
                             
                         case TIf(condition, thenExpr, elseExpr):
@@ -2398,7 +2398,7 @@ end)';
                             accumulator = "evens"; // Will be determined from context
                             
                             #if debug_loops
-                            trace("[XRay SimpleBody] ✓ Found conditional operation");
+                            // trace("[XRay SimpleBody] ✓ Found conditional operation");
                             #end
                             
                         case TBinop(OpAssign, target, value):
@@ -2413,7 +2413,7 @@ end)';
                             }
                             
                             #if debug_loops
-                            trace('[XRay SimpleBody] ✓ Found assignment operation, accumulator: ${accumulator}');
+                            // trace('[XRay SimpleBody] ✓ Found assignment operation, accumulator: ${accumulator}');
                             #end
                             
                         case TCall(fn, args):
@@ -2430,28 +2430,28 @@ end)';
                                                     operation = expr;
                                                     
                                                     #if debug_loops
-                                                    trace('[XRay SimpleBody] ✓ Found push operation, accumulator: ${accumulator}');
+                                                    // trace('[XRay SimpleBody] ✓ Found push operation, accumulator: ${accumulator}');
                                                     #end
                                                     
                                                 case _:
                                                     #if debug_loops
-                                                    trace('[XRay SimpleBody] - Push target not a local variable');
+                                                    // trace('[XRay SimpleBody] - Push target not a local variable');
                                                     #end
                                             }
                                         case _:
                                             #if debug_loops
-                                            trace('[XRay SimpleBody] - TCall not a push operation');
+                                            // trace('[XRay SimpleBody] - TCall not a push operation');
                                             #end
                                     }
                                 case _:
                                     #if debug_loops
-                                    trace('[XRay SimpleBody] - TCall not a field access');
+                                    // trace('[XRay SimpleBody] - TCall not a field access');
                                     #end
                             }
                             
                         case _:
                             #if debug_loops
-                            trace('[XRay SimpleBody] - Skipping expression: ${expr.expr}');
+                            // trace('[XRay SimpleBody] - Skipping expression: ${expr.expr}');
                             #end
                     }
                 }
@@ -2459,10 +2459,10 @@ end)';
                 // Validate that we found the expected pattern
                 if (itemVar != null && hasIncrement && operation != null) {
                     #if debug_loops
-                    trace("[XRay SimpleBody] ✅ SIMPLE PATTERN DETECTED");
-                    trace('[XRay SimpleBody] - Item var: ${itemVar}');
-                    trace('[XRay SimpleBody] - Accumulator: ${accumulator}');
-                    trace('[XRay SimpleBody] - Has increment: ${hasIncrement}');
+                    // trace("[XRay SimpleBody] ✅ SIMPLE PATTERN DETECTED");
+                    // trace('[XRay SimpleBody] - Item var: ${itemVar}');
+                    // trace('[XRay SimpleBody] - Accumulator: ${accumulator}');
+                    // trace('[XRay SimpleBody] - Has increment: ${hasIncrement}');
                     #end
                     
                     return {
@@ -2473,10 +2473,10 @@ end)';
                     };
                 } else {
                     #if debug_loops
-                    trace("[XRay SimpleBody] ❌ INCOMPLETE PATTERN");
-                    trace('[XRay SimpleBody] - Item var: ${itemVar}');
-                    trace('[XRay SimpleBody] - Has increment: ${hasIncrement}');
-                    trace('[XRay SimpleBody] - Operation: ${operation != null}');
+                    // trace("[XRay SimpleBody] ❌ INCOMPLETE PATTERN");
+                    // trace('[XRay SimpleBody] - Item var: ${itemVar}');
+                    // trace('[XRay SimpleBody] - Has increment: ${hasIncrement}');
+                    // trace('[XRay SimpleBody] - Operation: ${operation != null}');
                     #end
                     
                     return null;
@@ -2484,7 +2484,7 @@ end)';
                 
             case _:
                 #if debug_loops
-                trace("[XRay SimpleBody] ❌ NOT A BLOCK EXPRESSION");
+                // trace("[XRay SimpleBody] ❌ NOT A BLOCK EXPRESSION");
                 #end
                 
                 return null;
@@ -2513,9 +2513,9 @@ end)';
         transform: String
     }> {
         #if debug_loops
-        trace("[XRay Transform] EXTRACTION START");
-        trace('[XRay Transform] Body: ${ebody}');
-        trace('[XRay Transform] IndexVar: ${indexVar}, AccumVar: ${accumVar}');
+        // trace("[XRay Transform] EXTRACTION START");
+        // trace('[XRay Transform] Body: ${ebody}');
+        // trace('[XRay Transform] IndexVar: ${indexVar}, AccumVar: ${accumVar}');
         #end
         
         // Analyze the body structure for common patterns
@@ -2530,7 +2530,7 @@ end)';
                 return analyzeDirectAccumulation(target, value, indexVar, accumVar);
             case _:
                 #if debug_loops
-                trace("[XRay Transform] ❌ UNKNOWN BODY STRUCTURE");
+                // trace("[XRay Transform] ❌ UNKNOWN BODY STRUCTURE");
                 #end
                 return null;
         }
@@ -2557,8 +2557,8 @@ end)';
         transform: String
     }> {
         #if debug_loops
-        trace("[XRay AccumPattern] ACCUMULATION ANALYSIS START");
-        trace('[XRay AccumPattern] Analyzing ${exprs.length} expressions');
+        // trace("[XRay AccumPattern] ACCUMULATION ANALYSIS START");
+        // trace('[XRay AccumPattern] Analyzing ${exprs.length} expressions');
         #end
         
         var itemVarName = "item"; // Default
@@ -2596,9 +2596,9 @@ end)';
                         transformExpr = pushAnalysis.pushedValue;
                         
                         #if debug_loops
-                        trace('[XRay AccumPattern] ✓ FILTER PATTERN DETECTED');
-                        trace('[XRay AccumPattern] - Condition: ${conditionExpr}');
-                        trace('[XRay AccumPattern] - Transform: ${transformExpr}');
+                        // trace('[XRay AccumPattern] ✓ FILTER PATTERN DETECTED');
+                        // trace('[XRay AccumPattern] - Condition: ${conditionExpr}');
+                        // trace('[XRay AccumPattern] - Transform: ${transformExpr}');
                         #end
                     }
                     
@@ -2617,8 +2617,8 @@ end)';
                                     );
                                     
                                     #if debug_loops
-                                    trace('[XRay AccumPattern] ✓ MAP PATTERN DETECTED');
-                                    trace('[XRay AccumPattern] - Transform: ${transformExpr}');
+                                    // trace('[XRay AccumPattern] ✓ MAP PATTERN DETECTED');
+                                    // trace('[XRay AccumPattern] - Transform: ${transformExpr}');
                                     #end
                                 case _:
                             }
@@ -2648,7 +2648,7 @@ end)';
         }
         
         #if debug_loops
-        trace("[XRay AccumPattern] ❌ NO CLEAR PATTERN DETECTED");
+        // trace("[XRay AccumPattern] ❌ NO CLEAR PATTERN DETECTED");
         #end
         
         return null;
@@ -2775,7 +2775,7 @@ end)';
      */
     private function extractFromConditional(condition: TypedExpr, thenExpr: TypedExpr, elseExpr: TypedExpr, indexVar: String, accumVar: String): Null<String> {
         #if debug_loops
-        trace("[XRay Transform] Analyzing conditional for filter pattern");
+        // trace("[XRay Transform] Analyzing conditional for filter pattern");
         #end
         
         // For filter patterns, we want the condition as the filter predicate
@@ -2786,7 +2786,7 @@ end)';
         conditionStr = StringTools.replace(conditionStr, 'Enum.at(${accumVar}, ${indexVar})', 'item');
         
         #if debug_loops
-        trace('[XRay Transform] ✓ FILTER CONDITION: ${conditionStr}');
+        // trace('[XRay Transform] ✓ FILTER CONDITION: ${conditionStr}');
         #end
         
         return conditionStr;
@@ -2803,7 +2803,7 @@ end)';
      */
     private function extractFromDirectAssignment(target: TypedExpr, value: TypedExpr, indexVar: String, accumVar: String): Null<String> {
         #if debug_loops
-        trace("[XRay Transform] Analyzing assignment for map pattern");
+        // trace("[XRay Transform] Analyzing assignment for map pattern");
         #end
         
         // Look for patterns like: accumVar = accumVar ++ [transform(item)]
@@ -2820,7 +2820,7 @@ end)';
                         transformStr = StringTools.replace(transformStr, 'Enum.at(${accumVar}, ${indexVar})', 'item');
                         
                         #if debug_loops
-                        trace('[XRay Transform] ✓ MAP TRANSFORMATION: ${transformStr}');
+                        // trace('[XRay Transform] ✓ MAP TRANSFORMATION: ${transformStr}');
                         #end
                         
                         return transformStr;
@@ -2862,8 +2862,8 @@ end)';
         hasLengthCheck: Bool
     }> {
         #if debug_loops
-        trace('[XRay CharIteration] ═══ CHARACTER ITERATION DETECTION START ═══');
-        trace('[XRay CharIteration] Condition: ${compiler.compileExpression(econd)}');
+        // trace('[XRay CharIteration] ═══ CHARACTER ITERATION DETECTION START ═══');
+        // trace('[XRay CharIteration] Condition: ${compiler.compileExpression(econd)}');
         #end
         
         // Check condition for string length comparison (i < string.length)
@@ -2887,13 +2887,13 @@ end)';
                 
                 if (indexVar == null) {
                     #if debug_loops
-                    trace('[XRay CharIteration] ❌ Index is not a local variable');
+                    // trace('[XRay CharIteration] ❌ Index is not a local variable');
                     #end
                     return null;
                 }
                 
                 #if debug_loops
-                trace('[XRay CharIteration] - IndexVar: "${indexVar}"');
+                // trace('[XRay CharIteration] - IndexVar: "${indexVar}"');
                 #end
                 
                 // Check for string.length pattern (e2 should be field access)
@@ -2909,7 +2909,7 @@ end)';
                             if (stringVar != null) {
                                 hasLengthCheck = true;
                                 #if debug_loops
-                                trace('[XRay CharIteration] ✓ DIRECT LENGTH CHECK: ${indexVar} < ${stringVar}.length');
+                                // trace('[XRay CharIteration] ✓ DIRECT LENGTH CHECK: ${indexVar} < ${stringVar}.length');
                                 #end
                             }
                         }
@@ -2923,18 +2923,18 @@ end)';
                             hasLengthCheck = true;
                             
                             #if debug_loops
-                            trace('[XRay CharIteration] ✓ PRECOMPUTED LENGTH CHECK: ${indexVar} < ${lengthVarName} (assuming s.length)');
+                            // trace('[XRay CharIteration] ✓ PRECOMPUTED LENGTH CHECK: ${indexVar} < ${lengthVarName} (assuming s.length)');
                             #end
                         }
                         
                     case _:
                         #if debug_loops
-                        trace('[XRay CharIteration] ❌ Length expression not recognized');
+                        // trace('[XRay CharIteration] ❌ Length expression not recognized');
                         #end
                 }
             case _:
                 #if debug_loops
-                trace('[XRay CharIteration] ❌ NO LENGTH CHECK PATTERN');
+                // trace('[XRay CharIteration] ❌ NO LENGTH CHECK PATTERN');
                 #end
                 return null;
         }
@@ -2955,7 +2955,7 @@ end)';
                     var initCode = compiler.compileExpression(init);
                     
                     #if debug_loops
-                    trace('[XRay CharIteration] - Checking TVar init: "${initCode}"');
+                    // trace('[XRay CharIteration] - Checking TVar init: "${initCode}"');
                     #end
                     
                     // Check for character access patterns with proper string concatenation
@@ -2975,7 +2975,7 @@ end)';
                     var assignCode = compiler.compileExpression(e2);
                     
                     #if debug_loops
-                    trace('[XRay CharIteration] - Checking assignment: "${assignCode}"');
+                    // trace('[XRay CharIteration] - Checking assignment: "${assignCode}"');
                     #end
                     
                     // Check for character access patterns with proper string concatenation
@@ -2999,17 +2999,17 @@ end)';
         
         if (accessMethod == null) {
             #if debug_loops
-            trace('[XRay CharIteration] ❌ NO CHARACTER ACCESS PATTERN FOUND');
+            // trace('[XRay CharIteration] ❌ NO CHARACTER ACCESS PATTERN FOUND');
             #end
             return null;
         }
         
         #if debug_loops
-        trace('[XRay CharIteration] ✓ CHARACTER ITERATION DETECTED');
-        trace('[XRay CharIteration] - String: ${stringVar}');
+        // trace('[XRay CharIteration] ✓ CHARACTER ITERATION DETECTED');
+        // trace('[XRay CharIteration] - String: ${stringVar}');
         trace('[XRay CharIteration] - Index: ${indexVar}');  
-        trace('[XRay CharIteration] - Access: ${accessMethod}');
-        trace('[XRay CharIteration] ═══ CHARACTER ITERATION DETECTION END ═══');
+        // trace('[XRay CharIteration] - Access: ${accessMethod}');
+        // trace('[XRay CharIteration] ═══ CHARACTER ITERATION DETECTION END ═══');
         #end
         
         return {
@@ -3077,8 +3077,8 @@ end)';
         hasLengthCheck: Bool
     }): String {
         #if debug_loops
-        trace('[XRay CharIteration] ═══ IDIOMATIC COMPILATION START ═══');
-        trace('[XRay CharIteration] Generating Elixir for ${pattern.accessMethod} pattern');
+        // trace('[XRay CharIteration] ═══ IDIOMATIC COMPILATION START ═══');
+        // trace('[XRay CharIteration] Generating Elixir for ${pattern.accessMethod} pattern');
         #end
         
         // Transform loop body to use character variable instead of index access
@@ -3089,7 +3089,7 @@ end)';
         var charVar = needsCharCode ? "char_code" : "char";
         
         #if debug_loops
-        trace('[XRay CharIteration] Body before replacement: ${CompilerUtilities.safeSubstring(bodyCode, 200)}');
+        // trace('[XRay CharIteration] Body before replacement: ${CompilerUtilities.safeSubstring(bodyCode, 200)}');
         #end
         
         // Replace character access patterns with iteration variable
@@ -3120,7 +3120,7 @@ end)';
             bodyCode = ~/\(\s*\n\s*\)/g.replace(bodyCode, ""); // Empty parentheses blocks
             
             #if debug_loops
-            trace('[XRay CharIteration] Body after replacement: ${CompilerUtilities.safeSubstring(bodyCode, 200)}');
+            // trace('[XRay CharIteration] Body after replacement: ${CompilerUtilities.safeSubstring(bodyCode, 200)}');
             #end
             
             var result = 'for <<char <- ${pattern.stringVar}>> do
@@ -3129,8 +3129,8 @@ ${CompilerUtilities.indentCode(bodyCode, 2)}
 end';
             
             #if debug_loops
-            trace('[XRay CharIteration] ✓ Generated character code iteration');
-            trace('[XRay CharIteration] ═══ IDIOMATIC COMPILATION END ═══');
+            // trace('[XRay CharIteration] ✓ Generated character code iteration');
+            // trace('[XRay CharIteration] ═══ IDIOMATIC COMPILATION END ═══');
             #end
             
             return result;
@@ -3149,8 +3149,8 @@ ${CompilerUtilities.indentCode(bodyCode, 2)}
 end)';
             
             #if debug_loops
-            trace('[XRay CharIteration] ✓ Generated character graphemes iteration');
-            trace('[XRay CharIteration] ═══ IDIOMATIC COMPILATION END ═══');
+            // trace('[XRay CharIteration] ✓ Generated character graphemes iteration');
+            // trace('[XRay CharIteration] ═══ IDIOMATIC COMPILATION END ═══');
             #end
             
             return result;
@@ -3189,29 +3189,29 @@ end)';
      */
     private function compileWhileLoopGeneric(econd: TypedExpr, ebody: TypedExpr, normalWhile: Bool): String {
         #if debug_loops
-        trace('[XRay PatternWhile] ═══ PATTERN-BASED WHILE COMPILATION START ═══');
-        trace('[XRay PatternWhile] - Analyzing loop pattern...');
+        // trace('[XRay PatternWhile] ═══ PATTERN-BASED WHILE COMPILATION START ═══');
+        // trace('[XRay PatternWhile] - Analyzing loop pattern...');
         #end
 
         // Step 1: Classify the loop pattern
         var pattern = LoopPatternDetector.classifyLoopPattern(econd, ebody);
 
         #if debug_loops
-        trace('[XRay PatternWhile] - Pattern detected: ${pattern}');
+        // trace('[XRay PatternWhile] - Pattern detected: ${pattern}');
         #end
 
         // Step 2: Generate appropriate Elixir code based on pattern
         var result = switch(pattern) {
             case IndexedIteration(arrayVar, indexVar):
                 #if debug_loops
-                trace('[XRay PatternWhile] - Using indexed iteration generator');
+                // trace('[XRay PatternWhile] - Using indexed iteration generator');
                 #end
                 var body = compiler.compileExpression(ebody);
                 generateIndexedIteration(arrayVar, indexVar, body);
 
             case CharacterIteration(stringVar, indexVar):
                 #if debug_loops
-                trace('[XRay PatternWhile] - Using character iteration generator');
+                // trace('[XRay PatternWhile] - Using character iteration generator');
                 #end
                 // Create pattern object for existing character iteration implementation
                 var charPattern = {
@@ -3224,7 +3224,7 @@ end)';
 
             case CollectionBuilding(condition, transform):
                 #if debug_loops
-                trace('[XRay PatternWhile] - Collection building pattern (TODO: implement)');
+                // trace('[XRay PatternWhile] - Collection building pattern (TODO: implement)');
                 #end
                 // TODO: Implement collection building generator
                 var condition = compiler.compileExpression(econd);
@@ -3233,7 +3233,7 @@ end)';
 
             case Accumulation(accumVar, operation):
                 #if debug_loops
-                trace('[XRay PatternWhile] - Accumulation pattern (TODO: implement)');
+                // trace('[XRay PatternWhile] - Accumulation pattern (TODO: implement)');
                 #end
                 // TODO: Implement accumulation generator  
                 var condition = compiler.compileExpression(econd);
@@ -3242,7 +3242,7 @@ end)';
 
             case ComplexPattern:
                 #if debug_loops
-                trace('[XRay PatternWhile] - Using module helper fallback for complex pattern');
+                // trace('[XRay PatternWhile] - Using module helper fallback for complex pattern');
                 #end
                 var condition = compiler.compileExpression(econd);
                 var body = compiler.compileExpression(ebody);
@@ -3250,7 +3250,7 @@ end)';
 
             case _:
                 #if debug_loops
-                trace('[XRay PatternWhile] - Using module helper fallback for unrecognized pattern');
+                // trace('[XRay PatternWhile] - Using module helper fallback for unrecognized pattern');
                 #end
                 var condition = compiler.compileExpression(econd);
                 var body = compiler.compileExpression(ebody);
@@ -3258,8 +3258,8 @@ end)';
         };
 
         #if debug_loops
-        trace('[XRay PatternWhile] - Generated code length: ${result.length} chars');
-        trace('[XRay PatternWhile] ═══ PATTERN-BASED WHILE COMPILATION END ═══');
+        // trace('[XRay PatternWhile] - Generated code length: ${result.length} chars');
+        // trace('[XRay PatternWhile] ═══ PATTERN-BASED WHILE COMPILATION END ═══');
         #end
         
         return result;
@@ -3305,10 +3305,10 @@ end)';
      */
     private function generateIndexedIteration(arrayVar: String, indexVar: String, body: String): String {
         #if debug_loops
-        trace('[XRay IndexedGen] ═══════════════════════════════════════════');
-        trace('[XRay IndexedGen] GENERATING INDEXED ITERATION');
-        trace('[XRay IndexedGen] Array: ${arrayVar}, Index: ${indexVar}');
-        trace('[XRay IndexedGen] Body: ${CompilerUtilities.safeSubstring(body, 100)}...');
+        // trace('[XRay IndexedGen] ═══════════════════════════════════════════');
+        // trace('[XRay IndexedGen] GENERATING INDEXED ITERATION');
+        // trace('[XRay IndexedGen] Array: ${arrayVar}, Index: ${indexVar}');
+        // trace('[XRay IndexedGen] Body: ${CompilerUtilities.safeSubstring(body, 100)}...');
         #end
 
         // Detect if we're building a result array (look for accumulator ++ pattern)
@@ -3333,7 +3333,7 @@ end)';
                 var transformation = transformPattern.matched(1);
                 
                 #if debug_loops
-                trace('[XRay IndexedGen] Detected mapping pattern with transformation: ${transformation}');
+                // trace('[XRay IndexedGen] Detected mapping pattern with transformation: ${transformation}');
                 #end
                 
                 // Generate Enum.map with indexed items
@@ -3358,9 +3358,9 @@ end)';
         }
 
         #if debug_loops
-        trace('[XRay IndexedGen] ✓ Generated indexed iteration pattern');
-        trace('[XRay IndexedGen] Result: ${CompilerUtilities.safeSubstring(result, 200)}...');
-        trace('[XRay IndexedGen] ═══════════════════════════════════════════');
+        // trace('[XRay IndexedGen] ✓ Generated indexed iteration pattern');
+        // trace('[XRay IndexedGen] Result: ${CompilerUtilities.safeSubstring(result, 200)}...');
+        // trace('[XRay IndexedGen] ═══════════════════════════════════════════');
         #end
 
         return result;
@@ -3387,7 +3387,7 @@ end)';
      */
     private function generateModuleHelper(condition: String, body: String, helperId: Int): String {
         #if debug_loops
-        trace('[XRay ModuleHelper] Generating module-level helper function ${helperId}');
+        // trace('[XRay ModuleHelper] Generating module-level helper function ${helperId}');
         #end
 
         // Note: In a full implementation, we'd need to track these helper functions
@@ -3732,17 +3732,17 @@ ${CompilerUtilities.indentCode(body, 6)}
         condition: TypedExpr
     }> {
         #if debug_loops
-        trace('[XRay ArrayBody] BODY ANALYSIS START');
-        trace('[XRay ArrayBody] - Body type: ${Type.enumConstructor(ebody.expr)}');
-        trace('[XRay ArrayBody] - Index var: ${conditionInfo.indexVar}');
-        trace('[XRay ArrayBody] - Array var: ${conditionInfo.arrayVar}');
+        // trace('[XRay ArrayBody] BODY ANALYSIS START');
+        // trace('[XRay ArrayBody] - Body type: ${Type.enumConstructor(ebody.expr)}');
+        // trace('[XRay ArrayBody] - Index var: ${conditionInfo.indexVar}');
+        // trace('[XRay ArrayBody] - Array var: ${conditionInfo.arrayVar}');
         #end
         
         // Body should be a block with specific structure
         switch(ebody.expr) {
             case TBlock(exprs) if (exprs.length >= 2):
                 #if debug_loops
-                trace('[XRay ArrayBody] - Block has ${exprs.length} expressions');
+                // trace('[XRay ArrayBody] - Block has ${exprs.length} expressions');
                 #end
                 
                 // Try to find variable declaration and increment pattern
@@ -3755,7 +3755,7 @@ ${CompilerUtilities.indentCode(body, 6)}
                 for (i in 0...exprs.length) {
                     var expr = exprs[i];
                     #if debug_loops
-                    trace('[XRay ArrayBody] - Expr[${i}]: ${Type.enumConstructor(expr.expr)}');
+                    // trace('[XRay ArrayBody] - Expr[${i}]: ${Type.enumConstructor(expr.expr)}');
                     #end
                     
                     switch(expr.expr) {
@@ -3764,7 +3764,7 @@ ${CompilerUtilities.indentCode(body, 6)}
                             if (itemVar == null) { // Take first variable declaration
                                 itemVar = CompilerUtilities.toElixirVarName(tvar);
                                 #if debug_loops
-                                trace('[XRay ArrayBody] - Found item variable: ${itemVar}');
+                                // trace('[XRay ArrayBody] - Found item variable: ${itemVar}');
                                 #end
                                 
                                 // Check if init is array access
@@ -3772,7 +3772,7 @@ ${CompilerUtilities.indentCode(body, 6)}
                                     case TArray(arr, idx):
                                         sourceArray = arr;
                                         #if debug_loops
-                                        trace('[XRay ArrayBody] - Found TArray access');
+                                        // trace('[XRay ArrayBody] - Found TArray access');
                                         #end
                                     case TCall(e, args):
                                         // Check for Enum.at(array, index) pattern
@@ -3780,12 +3780,12 @@ ${CompilerUtilities.indentCode(body, 6)}
                                         if (callStr == "Enum.at" && args.length == 2) {
                                             sourceArray = args[0];
                                             #if debug_loops
-                                            trace('[XRay ArrayBody] - Found Enum.at access');
+                                            // trace('[XRay ArrayBody] - Found Enum.at access');
                                             #end
                                         }
                                     case _:
                                         #if debug_loops
-                                        trace('[XRay ArrayBody] - Init is: ${Type.enumConstructor(init.expr)}');
+                                        // trace('[XRay ArrayBody] - Init is: ${Type.enumConstructor(init.expr)}');
                                         #end
                                 }
                             }
@@ -3818,11 +3818,11 @@ ${CompilerUtilities.indentCode(body, 6)}
                             if (varName == conditionInfo.indexVar) {
                                 incrementFound = true;
                                 #if debug_loops
-                                trace('[XRay ArrayBody] - Found increment for index variable: ${varName}');
+                                // trace('[XRay ArrayBody] - Found increment for index variable: ${varName}');
                                 #end
                             } else {
                                 #if debug_loops
-                                trace('[XRay ArrayBody] - Found increment for non-index variable: ${varName} (index is ${conditionInfo.indexVar})');
+                                // trace('[XRay ArrayBody] - Found increment for non-index variable: ${varName} (index is ${conditionInfo.indexVar})');
                                 #end
                             }
                             
@@ -3831,7 +3831,7 @@ ${CompilerUtilities.indentCode(body, 6)}
                             if (operationExpr == null) {
                                 operationExpr = expr;
                                 #if debug_loops
-                                trace('[XRay ArrayBody] - Found operation: ${Type.enumConstructor(expr.expr)}');
+                                // trace('[XRay ArrayBody] - Found operation: ${Type.enumConstructor(expr.expr)}');
                                 #end
                             }
                     }
@@ -3840,12 +3840,12 @@ ${CompilerUtilities.indentCode(body, 6)}
                 // ORIGINAL STRICT PATTERN: Only proceed if we have variable + increment + operation
                 if (itemVar != null && incrementFound && operationExpr != null) {
                     #if debug_loops
-                    trace('[XRay ArrayBody] ✓ CLASSIC PATTERN DETECTED - Analyzing operation...');
+                    // trace('[XRay ArrayBody] ✓ CLASSIC PATTERN DETECTED - Analyzing operation...');
                     #end
                     var result = analyzeArrayOperation(operationExpr, itemVar, sourceArray);
                     if (result != null) {
                         #if debug_loops
-                        trace('[XRay ArrayBody] ✓ CLASSIC PATTERN FULLY MATCHED');
+                        // trace('[XRay ArrayBody] ✓ CLASSIC PATTERN FULLY MATCHED');
                         #end
                         return result;
                     }
@@ -3854,9 +3854,9 @@ ${CompilerUtilities.indentCode(body, 6)}
                 // NEW SIMPLE ITERATION PATTERN: Just variable + any operations (side effects)
                 if (itemVar != null && sourceArray != null) {
                     #if debug_loops
-                    trace('[XRay ArrayBody] ✓ SIMPLE ITERATION PATTERN DETECTED');
-                    trace('[XRay ArrayBody] - Item var: ${itemVar}');
-                    trace('[XRay ArrayBody] - Source array available');
+                    // trace('[XRay ArrayBody] ✓ SIMPLE ITERATION PATTERN DETECTED');
+                    // trace('[XRay ArrayBody] - Item var: ${itemVar}');
+                    // trace('[XRay ArrayBody] - Source array available');
                     #end
                     
                     // This is a simple iteration - generate Enum.each
@@ -3871,20 +3871,20 @@ ${CompilerUtilities.indentCode(body, 6)}
                 }
                 
                 #if debug_loops
-                trace('[XRay ArrayBody] ❌ NO RECOGNIZED PATTERN');
-                trace('[XRay ArrayBody] - itemVar: ${itemVar}');
-                trace('[XRay ArrayBody] - sourceArray: ${sourceArray != null}');
-                trace('[XRay ArrayBody] - incrementFound: ${incrementFound}');
+                // trace('[XRay ArrayBody] ❌ NO RECOGNIZED PATTERN');
+                // trace('[XRay ArrayBody] - itemVar: ${itemVar}');
+                // trace('[XRay ArrayBody] - sourceArray: ${sourceArray != null}');
+                // trace('[XRay ArrayBody] - incrementFound: ${incrementFound}');
                 #end
                 
             case _:
                 #if debug_loops
-                trace('[XRay ArrayBody] ❌ BODY IS NOT A BLOCK');
+                // trace('[XRay ArrayBody] ❌ BODY IS NOT A BLOCK');
                 #end
         }
         
         #if debug_loops
-        trace('[XRay ArrayBody] BODY ANALYSIS END');
+        // trace('[XRay ArrayBody] BODY ANALYSIS END');
         #end
         
         return null;
@@ -4061,16 +4061,16 @@ ${CompilerUtilities.indentCode(body, 6)}
         condition: TypedExpr
     }, conditionInfo: {indexVar: String, arrayVar: String}, ebody: TypedExpr): String {
         #if debug_loops
-        trace('[XRay EnumGen] GENERATING ENUM FUNCTION');
-        trace('[XRay EnumGen] - Pattern type: ${pattern.type}');
-        trace('[XRay EnumGen] - Item var: ${pattern.itemVar}');
+        // trace('[XRay EnumGen] GENERATING ENUM FUNCTION');
+        // trace('[XRay EnumGen] - Pattern type: ${pattern.type}');
+        // trace('[XRay EnumGen] - Item var: ${pattern.itemVar}');
         #end
         
         // Compile the source array expression
         var arrayExpr = compiler.compileExpression(pattern.sourceArray);
         
         #if debug_loops
-        trace('[XRay EnumGen] - Source array: ${arrayExpr}');
+        // trace('[XRay EnumGen] - Source array: ${arrayExpr}');
         #end
         
         switch(pattern.type) {
@@ -4080,7 +4080,7 @@ ${CompilerUtilities.indentCode(body, 6)}
                 var lambdaBody = substituteVariable(condition, pattern.itemVar, pattern.itemVar);
                 var result = 'Enum.filter(${arrayExpr}, fn ${pattern.itemVar} -> ${lambdaBody} end)';
                 #if debug_loops
-                trace('[XRay EnumGen] ✓ GENERATED FILTER: ${result}');
+                // trace('[XRay EnumGen] ✓ GENERATED FILTER: ${result}');
                 #end
                 return result;
                 
@@ -4090,7 +4090,7 @@ ${CompilerUtilities.indentCode(body, 6)}
                 var lambdaBody = substituteVariable(transformation, pattern.itemVar, pattern.itemVar);
                 var result = 'Enum.map(${arrayExpr}, fn ${pattern.itemVar} -> ${lambdaBody} end)';
                 #if debug_loops
-                trace('[XRay EnumGen] ✓ GENERATED MAP: ${result}');
+                // trace('[XRay EnumGen] ✓ GENERATED MAP: ${result}');
                 #end
                 return result;
                 
@@ -4099,14 +4099,14 @@ ${CompilerUtilities.indentCode(body, 6)}
                 var itemVarName = pattern.itemVar != null ? pattern.itemVar : "item";
                 
                 #if debug_loops
-                trace('[XRay EnumGen] ✓ GENERATING EACH with item var: ${itemVarName}');
+                // trace('[XRay EnumGen] ✓ GENERATING EACH with item var: ${itemVarName}');
                 #end
                 
                 // Extract operations from loop body (excluding setup/teardown)
                 var operations = extractLoopBodyOperations(ebody, itemVarName, conditionInfo.indexVar);
                 
                 #if debug_loops
-                trace('[XRay EnumGen] - Extracted ${operations.length} operations from loop body');
+                // trace('[XRay EnumGen] - Extracted ${operations.length} operations from loop body');
                 #end
                 
                 // Compile each operation with proper variable substitution
@@ -4123,7 +4123,7 @@ ${CompilerUtilities.indentCode(body, 6)}
                     // The specific array access patterns above should handle necessary substitutions
                     
                     #if debug_loops
-                    trace('[XRay EnumGen] - Compiled operation: ${compiledOp}');
+                    // trace('[XRay EnumGen] - Compiled operation: ${compiledOp}');
                     #end
                     
                     compiledOperations.push(compiledOp);
@@ -4136,13 +4136,13 @@ ${CompilerUtilities.indentCode(body, 6)}
 end)';
                 
                 #if debug_loops
-                trace('[XRay EnumGen] ✓ GENERATED EACH: ${result}');
+                // trace('[XRay EnumGen] ✓ GENERATED EACH: ${result}');
                 #end
                 return result;
                 
             default:
                 #if debug_loops
-                trace('[XRay EnumGen] ❌ UNKNOWN PATTERN TYPE: ${pattern.type}');
+                // trace('[XRay EnumGen] ❌ UNKNOWN PATTERN TYPE: ${pattern.type}');
                 #end
                 return null;
         }

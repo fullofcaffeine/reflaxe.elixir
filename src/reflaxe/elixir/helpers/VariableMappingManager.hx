@@ -100,7 +100,7 @@ class VariableMappingManager {
      * @param baseVarName The base variable name without underscore (e.g., "g")
      */
     public function setupArrayDesugatingMappings(baseVarName: String): Void {
-        trace('[VariableMappingManager] Setting up array desugaring mappings for base: ${baseVarName}');
+        // trace('[VariableMappingManager] Setting up array desugaring mappings for base: ${baseVarName}');
         
         // Critical fix: _g should map to g_array (the accumulator), not just g
         compiler.currentFunctionParameterMap.set('_${baseVarName}', '${baseVarName}_array');
@@ -110,11 +110,11 @@ class VariableMappingManager {
         // Also handle the direct forms (in case underscore was already removed)
         compiler.currentFunctionParameterMap.set(baseVarName, '${baseVarName}_array');
         
-        trace('[VariableMappingManager] ✓ Mappings established:');
-        trace('[VariableMappingManager] - _${baseVarName} -> ${baseVarName}_array');
+        // trace('[VariableMappingManager] ✓ Mappings established:');
+        // trace('[VariableMappingManager] - _${baseVarName} -> ${baseVarName}_array');
         trace('[VariableMappingManager] - _${baseVarName}_array -> ${baseVarName}_array'); 
-        trace('[VariableMappingManager] - _${baseVarName}_counter -> ${baseVarName}_counter');
-        trace('[VariableMappingManager] - ${baseVarName} -> ${baseVarName}_array');
+        // trace('[VariableMappingManager] - _${baseVarName}_counter -> ${baseVarName}_counter');
+        // trace('[VariableMappingManager] - ${baseVarName} -> ${baseVarName}_array');
     }
     
     /**
@@ -135,7 +135,7 @@ class VariableMappingManager {
                 var mapping = compiler.currentFunctionParameterMap.get(varName);
                 savedState.set(varName, mapping);
                 compiler.currentFunctionParameterMap.remove(varName);
-                trace('[VariableMappingManager] Temporarily removed: ${varName} -> ${mapping}');
+                // trace('[VariableMappingManager] Temporarily removed: ${varName} -> ${mapping}');
             }
         }
         
@@ -157,9 +157,9 @@ class VariableMappingManager {
             // Only restore if it's not a problematic mapping
             if (!StringTools.endsWith(mapping, "_counter") || varName.indexOf("_counter") >= 0) {
                 compiler.currentFunctionParameterMap.set(varName, mapping);
-                trace('[VariableMappingManager] Restored: ${varName} -> ${mapping}');
+                // trace('[VariableMappingManager] Restored: ${varName} -> ${mapping}');
             } else {
-                trace('[VariableMappingManager] Skipped restoring problematic: ${varName} -> ${mapping}');
+                // trace('[VariableMappingManager] Skipped restoring problematic: ${varName} -> ${mapping}');
             }
         }
     }
@@ -175,15 +175,15 @@ class VariableMappingManager {
      * @return Transformed Elixir variable name
      */
     public function transformVariableName(haxeVarName: String): String {
-        trace('[VariableMappingManager] Transforming variable: ${haxeVarName}');
-        trace('[VariableMappingManager] Context - isCompilingCaseArm: ${compiler.isCompilingCaseArm}');
-        trace('[VariableMappingManager] Context - isInLoopContext: ${compiler.isInLoopContext}');
-        trace('[VariableMappingManager] Context - isCompilingStructMethod: ${compiler.isCompilingStructMethod}');
+        // trace('[VariableMappingManager] Transforming variable: ${haxeVarName}');
+        // trace('[VariableMappingManager] Context - isCompilingCaseArm: ${compiler.isCompilingCaseArm}');
+        // trace('[VariableMappingManager] Context - isInLoopContext: ${compiler.isInLoopContext}');
+        // trace('[VariableMappingManager] Context - isCompilingStructMethod: ${compiler.isCompilingStructMethod}');
         
         // 1. CHECK EXISTING MAPPING: Highest priority - explicit mappings
         if (compiler.currentFunctionParameterMap.exists(haxeVarName)) {
             var mapped = compiler.currentFunctionParameterMap.get(haxeVarName);
-            trace('[VariableMappingManager] Using existing mapping: ${haxeVarName} -> ${mapped}');
+            // trace('[VariableMappingManager] Using existing mapping: ${haxeVarName} -> ${mapped}');
             return mapped;
         }
         
@@ -191,27 +191,27 @@ class VariableMappingManager {
         
         // Case arm context - temporary variables might need special handling
         if (compiler.isCompilingCaseArm && isScopeCrossingVariable(haxeVarName)) {
-            trace('[VariableMappingManager] Case arm context - scope-crossing variable detected');
+            // trace('[VariableMappingManager] Case arm context - scope-crossing variable detected');
             // In case arms, we need to be more careful about variable declarations
         }
         
         // Loop context - might have different naming needs
         if (compiler.isInLoopContext && isArrayDesugaringVariable(haxeVarName)) {
             var baseName = getDesugaringBaseName(haxeVarName);
-            trace('[VariableMappingManager] Loop context + array desugaring: ${haxeVarName} -> base: ${baseName}');
+            // trace('[VariableMappingManager] Loop context + array desugaring: ${haxeVarName} -> base: ${baseName}');
             // Could potentially set up loop-specific mappings here
         }
         
         // LiveView context - socket assigns need special handling
         if (compiler.liveViewInstanceVars != null && compiler.liveViewInstanceVars.exists(haxeVarName)) {
-            trace('[VariableMappingManager] LiveView instance variable detected');
+            // trace('[VariableMappingManager] LiveView instance variable detected');
             var snakeCaseName = NamingHelper.toSnakeCase(haxeVarName);
             return 'socket.assigns.${snakeCaseName}';
         }
         
         // 3. STANDARD TRANSFORMATION: Default case
         var transformed = NamingHelper.toSnakeCase(haxeVarName);
-        trace('[VariableMappingManager] Standard transformation: ${haxeVarName} -> ${transformed}');
+        // trace('[VariableMappingManager] Standard transformation: ${haxeVarName} -> ${transformed}');
         
         return transformed;
     }
@@ -237,7 +237,7 @@ class VariableMappingManager {
         // not array loop desugaring
         if (hasDesugaringPattern && compiler.isInEnumExtraction) {
             #if debug_variable_mapping_manager
-            trace('[VariableMappingManager] ⚠️  SKIPPING array desugaring for ${varName} - in enum extraction context');
+            // trace('[VariableMappingManager] ⚠️  SKIPPING array desugaring for ${varName} - in enum extraction context');
             #end
             return false;
         }
@@ -339,7 +339,7 @@ class VariableMappingManager {
      */
     public function generateOuterScopeDeclaration(varName: String): String {
         if (isScopeCrossingVariable(varName)) {
-            trace('[VariableMappingManager] Generated outer scope declaration: ${varName} = nil');
+            // trace('[VariableMappingManager] Generated outer scope declaration: ${varName} = nil');
             return '${varName} = nil';
         }
         return "";
@@ -370,7 +370,7 @@ class VariableMappingManager {
             var declaration = generateOuterScopeDeclaration(varName);
             if (declaration != "") {
                 declarations.push(declaration);
-                trace('[VariableMappingManager] Will pre-declare scope-crossing variable: ${varName}');
+                // trace('[VariableMappingManager] Will pre-declare scope-crossing variable: ${varName}');
             }
         }
         
@@ -430,7 +430,7 @@ class VariableMappingManager {
      */
     public function enterScope(scopeType: String): Void {
         #if debug_variable_mapping
-        trace('[VariableMappingManager] ENTER_SCOPE: ${scopeType} (depth: ${compilationContext.scopeDepth})');
+        // trace('[VariableMappingManager] ENTER_SCOPE: ${scopeType} (depth: ${compilationContext.scopeDepth})');
         #end
         
         // Save current context for potential restoration
@@ -467,7 +467,7 @@ class VariableMappingManager {
      */
     public function exitScope(scopeType: String): Void {
         #if debug_variable_mapping
-        trace('[VariableMappingManager] EXIT_SCOPE: ${scopeType} (depth: ${compilationContext.scopeDepth})');
+        // trace('[VariableMappingManager] EXIT_SCOPE: ${scopeType} (depth: ${compilationContext.scopeDepth})');
         #end
         
         if (savedContextStates.length > 0) {
@@ -493,7 +493,7 @@ class VariableMappingManager {
      */
     public function trackVariableDeclaration(varName: String, transformedName: String, pos: Null<Position> = null): Void {
         #if debug_variable_mapping
-        trace('[VariableMappingManager] TRACK_DECLARATION: ${varName} -> ${transformedName} at scope depth ${compilationContext.scopeDepth}');
+        // trace('[VariableMappingManager] TRACK_DECLARATION: ${varName} -> ${transformedName} at scope depth ${compilationContext.scopeDepth}');
         #end
         
         variableDeclarations.set(varName, {
@@ -527,7 +527,7 @@ class VariableMappingManager {
             // Check if used outside declaration scope
             if (compilationContext.scopeDepth < declInfo.declaredAtScopeDepth) {
                 #if debug_variable_mapping
-                trace('[VariableMappingManager] SCOPE_CROSSING_DETECTED: ${varName} declared at depth ${declInfo.declaredAtScopeDepth}, used at depth ${compilationContext.scopeDepth}');
+                // trace('[VariableMappingManager] SCOPE_CROSSING_DETECTED: ${varName} declared at depth ${declInfo.declaredAtScopeDepth}, used at depth ${compilationContext.scopeDepth}');
                 #end
                 
                 declInfo.usedOutsideDeclarationScope = true;
@@ -547,7 +547,7 @@ class VariableMappingManager {
      */
     public function setFrameworkContext(framework: String): Void {
         #if debug_variable_mapping
-        trace('[VariableMappingManager] SET_FRAMEWORK_CONTEXT: ${framework}');
+        // trace('[VariableMappingManager] SET_FRAMEWORK_CONTEXT: ${framework}');
         #end
         
         switch (framework.toLowerCase()) {
@@ -596,7 +596,7 @@ class VariableMappingManager {
                     declarations.push(declaration);
                     processed.set(varName, true);
                     #if debug_variable_mapping
-                    trace('[VariableMappingManager] Generated declaration for tracked variable: ${varName} -> ${declInfo.transformedName}');
+                    // trace('[VariableMappingManager] Generated declaration for tracked variable: ${varName} -> ${declInfo.transformedName}');
                     #end
                 }
             }
@@ -611,7 +611,7 @@ class VariableMappingManager {
                     declarations.push(declaration);
                     processed.set(varName, true);
                     #if debug_variable_mapping
-                    trace('[VariableMappingManager] Generated declaration for pattern-detected variable: ${varName} -> ${transformedName}');
+                    // trace('[VariableMappingManager] Generated declaration for pattern-detected variable: ${varName} -> ${transformedName}');
                     #end
                 }
             }
@@ -630,7 +630,7 @@ class VariableMappingManager {
                         declarations.push(declaration);
                         processed.set(varName, true);
                         #if debug_variable_mapping
-                        trace('[VariableMappingManager] FALLBACK: Generated declaration for scanned temp variable: ${varName}');
+                        // trace('[VariableMappingManager] FALLBACK: Generated declaration for scanned temp variable: ${varName}');
                         #end
                     }
                 }
@@ -681,7 +681,7 @@ class VariableMappingManager {
         
         #if debug_variable_mapping
         if (tempVars.length > 0) {
-            trace('[VariableMappingManager] Scanned body and found ${tempVars.length} temp variables: [${tempVars.join(", ")}]');
+            // trace('[VariableMappingManager] Scanned body and found ${tempVars.length} temp variables: [${tempVars.join(", ")}]');
         }
         #end
         

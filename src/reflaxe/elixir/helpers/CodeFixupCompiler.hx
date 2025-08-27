@@ -59,7 +59,7 @@ class CodeFixupCompiler {
      */
     public function fixMalformedConditionals(code: String): String {
         #if debug_code_fixup
-        trace('[CodeFixupCompiler] Fixing malformed conditionals in code (length: ${code.length})');
+//         trace('[CodeFixupCompiler] Fixing malformed conditionals in code (length: ${code.length})');
         #end
         
         // Simple string-based fix for known malformed patterns
@@ -123,8 +123,8 @@ class CodeFixupCompiler {
         var result = fixedLines.join("\n");
         
         #if debug_code_fixup
-        trace('[CodeFixupCompiler] Fixed ${fixCount} malformed conditionals');
-        trace('[CodeFixupCompiler] Result length: ${result.length}');
+//         trace('[CodeFixupCompiler] Fixed ${fixCount} malformed conditionals');
+//         trace('[CodeFixupCompiler] Result length: ${result.length}');
         #end
         
         return result;
@@ -159,7 +159,7 @@ class CodeFixupCompiler {
      */
     public function getCurrentAppName(): String {
         #if debug_code_fixup
-        trace('[CodeFixupCompiler] Resolving current app name');
+//         trace('[CodeFixupCompiler] Resolving current app name');
         #end
         
         // Priority 1: Check compiler define (most explicit and single-source-of-truth)
@@ -169,7 +169,7 @@ class CodeFixupCompiler {
         var defineValue = haxe.macro.Context.definedValue("app_name");
         if (defineValue != null && defineValue.length > 0) {
             #if debug_code_fixup
-            trace('[CodeFixupCompiler] App name from compiler define: ${defineValue}');
+//             trace('[CodeFixupCompiler] App name from compiler define: ${defineValue}');
             #end
             return defineValue;
         }
@@ -180,7 +180,7 @@ class CodeFixupCompiler {
             var annotatedName = AnnotationSystem.getAppName(compiler.currentClassType);
             if (annotatedName != null) {
                 #if debug_code_fixup
-                trace('[CodeFixupCompiler] App name from class annotation: ${annotatedName}');
+//                 trace('[CodeFixupCompiler] App name from class annotation: ${annotatedName}');
                 #end
                 return annotatedName;
             }
@@ -190,7 +190,7 @@ class CodeFixupCompiler {
         var globalName = AnnotationSystem.getGlobalAppName();
         if (globalName != null) {
             #if debug_code_fixup
-            trace('[CodeFixupCompiler] App name from global registry: ${globalName}');
+//             trace('[CodeFixupCompiler] App name from global registry: ${globalName}');
             #end
             return globalName;
         }
@@ -200,7 +200,7 @@ class CodeFixupCompiler {
             var className = compiler.currentClassType.name;
             if (className.endsWith("App")) {
                 #if debug_code_fixup
-                trace('[CodeFixupCompiler] App name inferred from class: ${className}');
+//                 trace('[CodeFixupCompiler] App name inferred from class: ${className}');
                 #end
                 return className;
             }
@@ -208,7 +208,7 @@ class CodeFixupCompiler {
         
         // Priority 5: Ultimate fallback
         #if debug_code_fixup
-        trace('[CodeFixupCompiler] App name using fallback: App');
+//         trace('[CodeFixupCompiler] App name using fallback: App');
         #end
         return "App";
     }
@@ -228,13 +228,13 @@ class CodeFixupCompiler {
      */
     public function replaceAppNameCalls(code: String, classType: ClassType): String {
         #if debug_code_fixup
-        trace('[CodeFixupCompiler] Replacing app name calls in code (length: ${code.length})');
+//         trace('[CodeFixupCompiler] Replacing app name calls in code (length: ${code.length})');
         #end
         
         var appName = AnnotationSystem.getEffectiveAppName(classType);
         
         #if debug_code_fixup
-        trace('[CodeFixupCompiler] Using app name: ${appName}');
+//         trace('[CodeFixupCompiler] Using app name: ${appName}');
         #end
         
         var processedCode = code;
@@ -253,7 +253,7 @@ class CodeFixupCompiler {
         processedCode = ~/([A-Za-z0-9_]+)\."([^"]+)"/g.replace(processedCode, '"$2"');
         
         #if debug_code_fixup
-        trace('[CodeFixupCompiler] App name replacement complete (new length: ${processedCode.length})');
+//         trace('[CodeFixupCompiler] App name replacement complete (new length: ${processedCode.length})');
         #end
         
         return processedCode;
@@ -270,7 +270,7 @@ class CodeFixupCompiler {
      */
     public function initSourceMapWriter(outputPath: String): Void {
         #if debug_code_fixup
-        trace('[CodeFixupCompiler] Initializing source map writer for: ${outputPath}');
+//         trace('[CodeFixupCompiler] Initializing source map writer for: ${outputPath}');
         #end
         
         // Only create source map writer if enabled via compiler flag
@@ -286,11 +286,11 @@ class CodeFixupCompiler {
             }
             
             #if debug_code_fixup
-            trace('[CodeFixupCompiler] Source map writer created and registered');
+//             trace('[CodeFixupCompiler] Source map writer created and registered');
             #end
         } else {
             #if debug_code_fixup
-            trace('[CodeFixupCompiler] Source maps disabled, skipping initialization');
+//             trace('[CodeFixupCompiler] Source maps disabled, skipping initialization');
             #end
         }
     }
@@ -306,7 +306,7 @@ class CodeFixupCompiler {
      */
     public function finalizeSourceMapWriter(): Null<String> {
         #if debug_code_fixup
-        trace('[CodeFixupCompiler] Finalizing source map writer');
+//         trace('[CodeFixupCompiler] Finalizing source map writer');
         #end
         
         if (currentSourceMapWriter != null) {
@@ -314,8 +314,8 @@ class CodeFixupCompiler {
             var mapPath = currentSourceMapWriter.generateSourceMap();
             
             #if debug_code_fixup
-            trace('[CodeFixupCompiler] Source map generated at: ${mapPath}');
-            trace('[CodeFixupCompiler] Debug info: ${currentSourceMapWriter.getDebugInfo()}');
+//             trace('[CodeFixupCompiler] Source map generated at: ${mapPath}');
+//             trace('[CodeFixupCompiler] Debug info: ${currentSourceMapWriter.getDebugInfo()}');
             #end
             
             // Clear the current writer reference
@@ -326,7 +326,7 @@ class CodeFixupCompiler {
         }
         
         #if debug_code_fixup
-        trace('[CodeFixupCompiler] No source map writer active, returning null');
+//         trace('[CodeFixupCompiler] No source map writer active, returning null');
         #end
         
         return null;
@@ -344,7 +344,7 @@ class CodeFixupCompiler {
      */
     public function cleanupSyntaxArtifacts(code: String): String {
         #if debug_code_fixup
-        trace('[CodeFixupCompiler] Cleaning up syntax artifacts');
+//         trace('[CodeFixupCompiler] Cleaning up syntax artifacts');
         #end
         
         var cleanedCode = code;
@@ -357,7 +357,7 @@ class CodeFixupCompiler {
         cleanedCode = cleanedCode.replace(' <> <> ', ' <> ');
         
         #if debug_code_fixup
-        trace('[CodeFixupCompiler] Syntax cleanup complete');
+//         trace('[CodeFixupCompiler] Syntax cleanup complete');
         #end
         
         return cleanedCode;

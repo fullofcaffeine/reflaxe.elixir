@@ -1,0 +1,12 @@
+{
+  "sourceRoot": "",
+  "names": [],
+  "mappings": ";;;;;;;;;;;;;AA8BC,ACkBA,ACjBA",
+  "version": 3,
+  "file": "string_iterator_unicode.ex",
+  "sources": [
+  "std/haxe/iterators/StringIterator.hx",
+  "std/haxe/ds/Map.hx",
+  "std/haxe/io/Input.hx"
+]
+}

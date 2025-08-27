@@ -81,9 +81,9 @@ class MiscExpressionCompiler {
      */
     public function compileReturnStatement(expr: Null<TypedExpr>): String {
         #if debug_misc_expression_compiler
-        trace("[XRay MiscExpressionCompiler] RETURN COMPILATION START");
+        // trace("[XRay MiscExpressionCompiler] RETURN COMPILATION START");
         if (expr != null) {
-            trace('[XRay MiscExpressionCompiler] Return expr type: ${expr.expr}');
+            // trace('[XRay MiscExpressionCompiler] Return expr type: ${expr.expr}');
         }
         #end
         
@@ -93,7 +93,7 @@ class MiscExpressionCompiler {
             switch (expr.expr) {
                 case TSwitch(switchExpr, cases, defaultExpr):
                     #if debug_misc_expression_compiler
-                    trace("[XRay MiscExpressionCompiler] ✓ DETECTED TReturn(TSwitch) - compiling as value-returning case");
+                    // trace("[XRay MiscExpressionCompiler] ✓ DETECTED TReturn(TSwitch) - compiling as value-returning case");
                     #end
                     
                     // Mark that we're compiling a switch as a value expression
@@ -113,14 +113,14 @@ class MiscExpressionCompiler {
                     var compiledExpr = compiler.compileExpression(expr);
                     
                     #if debug_misc_expression_compiler
-                    trace('[XRay MiscExpressionCompiler] Return expression: ${compiledExpr}');
+                    // trace('[XRay MiscExpressionCompiler] Return expression: ${compiledExpr}');
                     #end
                     
                     return compiledExpr;
             }
         } else {
             #if debug_misc_expression_compiler
-            trace("[XRay MiscExpressionCompiler] Empty return");
+            // trace("[XRay MiscExpressionCompiler] Empty return");
             #end
             
             return "nil";
@@ -146,7 +146,7 @@ class MiscExpressionCompiler {
      */
     public function compileParenthesesExpression(e: TypedExpr): String {
         #if debug_misc_expression_compiler
-        trace("[XRay MiscExpressionCompiler] SMART PARENTHESES COMPILATION START");
+        // trace("[XRay MiscExpressionCompiler] SMART PARENTHESES COMPILATION START");
         #end
         
         var inner = compiler.compileExpression(e);
@@ -156,49 +156,49 @@ class MiscExpressionCompiler {
             // Simple expressions don't need parentheses
             case TLocal(_) | TConst(_) | TField(_, _):
                 #if debug_misc_expression_compiler
-                trace("[XRay MiscExpressionCompiler] ✓ SIMPLE EXPRESSION - skipping parentheses");
+                // trace("[XRay MiscExpressionCompiler] ✓ SIMPLE EXPRESSION - skipping parentheses");
                 #end
                 false;
                 
             // Function calls don't need parentheses unless in complex contexts
             case TCall(_, _):
                 #if debug_misc_expression_compiler
-                trace("[XRay MiscExpressionCompiler] ✓ FUNCTION CALL - skipping parentheses");
+                // trace("[XRay MiscExpressionCompiler] ✓ FUNCTION CALL - skipping parentheses");
                 #end
                 false;
                 
             // Case expressions are self-delimiting, don't need outer parentheses
             case TSwitch(_, _, _):
                 #if debug_misc_expression_compiler
-                trace("[XRay MiscExpressionCompiler] ✓ CASE EXPRESSION - skipping parentheses");
+                // trace("[XRay MiscExpressionCompiler] ✓ CASE EXPRESSION - skipping parentheses");
                 #end
                 false;
                 
             // Block expressions are self-delimiting
             case TBlock(_):
                 #if debug_misc_expression_compiler
-                trace("[XRay MiscExpressionCompiler] ✓ BLOCK EXPRESSION - skipping parentheses");
+                // trace("[XRay MiscExpressionCompiler] ✓ BLOCK EXPRESSION - skipping parentheses");
                 #end
                 false;
                 
             // Array literals are self-delimiting
             case TArrayDecl(_):
                 #if debug_misc_expression_compiler
-                trace("[XRay MiscExpressionCompiler] ✓ ARRAY LITERAL - skipping parentheses");
+                // trace("[XRay MiscExpressionCompiler] ✓ ARRAY LITERAL - skipping parentheses");
                 #end
                 false;
                 
             // Object literals are self-delimiting
             case TObjectDecl(_):
                 #if debug_misc_expression_compiler
-                trace("[XRay MiscExpressionCompiler] ✓ OBJECT LITERAL - skipping parentheses");
+                // trace("[XRay MiscExpressionCompiler] ✓ OBJECT LITERAL - skipping parentheses");
                 #end
                 false;
                 
             // Binary operations might need parentheses for precedence
             case TBinop(_, _, _):
                 #if debug_misc_expression_compiler
-                trace("[XRay MiscExpressionCompiler] ⚠️ BINARY OPERATION - checking if parentheses needed");
+                // trace("[XRay MiscExpressionCompiler] ⚠️ BINARY OPERATION - checking if parentheses needed");
                 #end
                 // For now, be conservative and keep them for binary operations
                 // TODO: More sophisticated precedence analysis
@@ -207,15 +207,15 @@ class MiscExpressionCompiler {
             // Complex expressions might need parentheses
             case TIf(_, _, _) | TFor(_, _, _) | TWhile(_, _, _) | TTry(_, _):
                 #if debug_misc_expression_compiler
-                trace("[XRay MiscExpressionCompiler] ⚠️ COMPLEX EXPRESSION - keeping parentheses");
+                // trace("[XRay MiscExpressionCompiler] ⚠️ COMPLEX EXPRESSION - keeping parentheses");
                 #end
                 true;
                 
             // Default: be conservative and keep parentheses for unknown expression types
             case _:
                 #if debug_misc_expression_compiler
-                trace("[XRay MiscExpressionCompiler] ? UNKNOWN EXPRESSION TYPE - keeping parentheses for safety");
-                trace('[XRay MiscExpressionCompiler] Expression type: ${Type.enumConstructor(e.expr)}');
+                // trace("[XRay MiscExpressionCompiler] ? UNKNOWN EXPRESSION TYPE - keeping parentheses for safety");
+                // trace('[XRay MiscExpressionCompiler] Expression type: ${Type.enumConstructor(e.expr)}');
                 #end
                 true;
         };
@@ -227,8 +227,8 @@ class MiscExpressionCompiler {
         };
         
         #if debug_misc_expression_compiler
-        trace('[XRay MiscExpressionCompiler] Smart parentheses result: ${result}');
-        trace("[XRay MiscExpressionCompiler] SMART PARENTHESES COMPILATION END");
+        // trace('[XRay MiscExpressionCompiler] Smart parentheses result: ${result}');
+        // trace("[XRay MiscExpressionCompiler] SMART PARENTHESES COMPILATION END");
         #end
         
         return result;
@@ -246,7 +246,7 @@ class MiscExpressionCompiler {
      */
     public function compileNewExpression(c: Ref<ClassType>, params: Array<Type>, el: Array<TypedExpr>): String {
         #if debug_misc_expression_compiler
-        trace("[XRay MiscExpressionCompiler] NEW EXPRESSION COMPILATION START");
+        // trace("[XRay MiscExpressionCompiler] NEW EXPRESSION COMPILATION START");
         #end
         
         // Use just the class name, not the full package path
@@ -256,7 +256,7 @@ class MiscExpressionCompiler {
         var compiledArgs = el.map(arg -> compiler.compileExpression(arg));
         
         #if debug_misc_expression_compiler
-        trace('[XRay MiscExpressionCompiler] Class: ${className}, Args: ${compiledArgs.length}');
+        // trace('[XRay MiscExpressionCompiler] Class: ${className}, Args: ${compiledArgs.length}');
         #end
         
         // Check if this class has a custom new() method defined
@@ -271,7 +271,7 @@ class MiscExpressionCompiler {
         }
         
         #if debug_misc_expression_compiler
-        trace('[XRay MiscExpressionCompiler] Has custom new(): ${hasCustomNew}');
+        // trace('[XRay MiscExpressionCompiler] Has custom new(): ${hasCustomNew}');
         #end
         
         // If there's a custom new() method, call it
@@ -280,7 +280,7 @@ class MiscExpressionCompiler {
                 var result = '${className}.new(${compiledArgs.join(", ")})';
                 
                 #if debug_misc_expression_compiler
-                trace('[XRay MiscExpressionCompiler] Custom new with args: ${result}');
+                // trace('[XRay MiscExpressionCompiler] Custom new with args: ${result}');
                 #end
                 
                 return result;
@@ -288,7 +288,7 @@ class MiscExpressionCompiler {
                 var result = '${className}.new()';
                 
                 #if debug_misc_expression_compiler
-                trace('[XRay MiscExpressionCompiler] Custom new without args: ${result}');
+                // trace('[XRay MiscExpressionCompiler] Custom new without args: ${result}');
                 #end
                 
                 return result;
@@ -301,7 +301,7 @@ class MiscExpressionCompiler {
             var result = '${className}.new(${compiledArgs.join(", ")})';
             
             #if debug_misc_expression_compiler
-            trace('[XRay MiscExpressionCompiler] Standard new with args: ${result}');
+            // trace('[XRay MiscExpressionCompiler] Standard new with args: ${result}');
             #end
             
             return result;
@@ -310,7 +310,7 @@ class MiscExpressionCompiler {
             var result = '${className}.new()';
             
             #if debug_misc_expression_compiler
-            trace('[XRay MiscExpressionCompiler] Standard new without args: ${result}');
+            // trace('[XRay MiscExpressionCompiler] Standard new without args: ${result}');
             #end
             
             return result;
@@ -327,8 +327,8 @@ class MiscExpressionCompiler {
      */
     public function compileLambdaFunction(func: TFunc): String {
         #if debug_misc_expression_compiler
-        trace("[XRay MiscExpressionCompiler] LAMBDA FUNCTION COMPILATION START");
-        trace('[XRay MiscExpressionCompiler] Parameters: ${func.args.length}');
+        // trace("[XRay MiscExpressionCompiler] LAMBDA FUNCTION COMPILATION START");
+        // trace('[XRay MiscExpressionCompiler] Parameters: ${func.args.length}');
         #end
         
         // Get original parameter names (before Haxe's renaming)
@@ -342,7 +342,7 @@ class MiscExpressionCompiler {
         var result = 'fn ${paramNames.join(", ")} -> ${body} end';
         
         #if debug_misc_expression_compiler
-        trace('[XRay MiscExpressionCompiler] Lambda result: ${result}');
+        // trace('[XRay MiscExpressionCompiler] Lambda result: ${result}');
         #end
         
         return result;
@@ -359,8 +359,8 @@ class MiscExpressionCompiler {
      */
     public function compileMetadataExpression(metadata: MetadataEntry, expr: TypedExpr): String {
         #if debug_misc_expression_compiler
-        trace("[XRay MiscExpressionCompiler] METADATA COMPILATION START");
-        trace('[XRay MiscExpressionCompiler] Metadata: ${metadata.name}');
+        // trace("[XRay MiscExpressionCompiler] METADATA COMPILATION START");
+        // trace('[XRay MiscExpressionCompiler] Metadata: ${metadata.name}');
         #end
         
         // Check for array operation metadata from our preprocessor
@@ -368,7 +368,7 @@ class MiscExpressionCompiler {
             var methodName = metadata.name.substring(13); // Remove ":elixir_enum_" prefix
             
             #if debug_misc_expression_compiler || debug_array_preprocessor
-            trace('[XRay MiscExpressionCompiler] ✓ ARRAY OPERATION DETECTED: ${methodName}');
+            // trace('[XRay MiscExpressionCompiler] ✓ ARRAY OPERATION DETECTED: ${methodName}');
             #end
             
             return compileEnumOperation(methodName, expr);
@@ -378,7 +378,7 @@ class MiscExpressionCompiler {
         var result = compiler.compileExpression(expr);
         
         #if debug_misc_expression_compiler
-        trace('[XRay MiscExpressionCompiler] Metadata result: ${result}');
+        // trace('[XRay MiscExpressionCompiler] Metadata result: ${result}');
         #end
         
         return result;
@@ -393,7 +393,7 @@ class MiscExpressionCompiler {
      */
     private function compileEnumOperation(methodName: String, expr: TypedExpr): String {
         #if debug_misc_expression_compiler || debug_array_preprocessor
-        trace('[XRay MiscExpressionCompiler] COMPILING ENUM OPERATION: ${methodName}');
+        // trace('[XRay MiscExpressionCompiler] COMPILING ENUM OPERATION: ${methodName}');
         #end
         
         switch(expr.expr) {
@@ -419,7 +419,7 @@ class MiscExpressionCompiler {
                     var compiledLambda = compiler.compileExpression(lambdaExpr);
                     
                     #if debug_misc_expression_compiler || debug_array_preprocessor
-                    trace('[XRay MiscExpressionCompiler] ✓ GENERATING IDIOMATIC ELIXIR: Enum.${methodName}(${compiledArray}, ${compiledLambda})');
+                    // trace('[XRay MiscExpressionCompiler] ✓ GENERATING IDIOMATIC ELIXIR: Enum.${methodName}(${compiledArray}, ${compiledLambda})');
                     #end
                     
                     return 'Enum.${methodName}(${compiledArray}, ${compiledLambda})';
@@ -429,7 +429,7 @@ class MiscExpressionCompiler {
         
         // Fallback - shouldn't happen if preprocessor works correctly
         #if debug_misc_expression_compiler || debug_array_preprocessor
-        trace('[XRay MiscExpressionCompiler] ⚠️ FALLBACK: Could not extract array/lambda, compiling normally');
+        // trace('[XRay MiscExpressionCompiler] ⚠️ FALLBACK: Could not extract array/lambda, compiling normally');
         #end
         
         return compiler.compileExpression(expr);
@@ -445,14 +445,14 @@ class MiscExpressionCompiler {
      */
     public function compileThrowStatement(expr: TypedExpr): String {
         #if debug_misc_expression_compiler
-        trace("[XRay MiscExpressionCompiler] THROW COMPILATION START");
+        // trace("[XRay MiscExpressionCompiler] THROW COMPILATION START");
         #end
         
         var throwExpr = compiler.compileExpression(expr);
         var result = 'raise ${throwExpr}';
         
         #if debug_misc_expression_compiler
-        trace('[XRay MiscExpressionCompiler] Throw result: ${result}');
+        // trace('[XRay MiscExpressionCompiler] Throw result: ${result}');
         #end
         
         return result;
@@ -469,14 +469,14 @@ class MiscExpressionCompiler {
      */
     public function compileCastExpression(expr: TypedExpr, moduleType: Null<ModuleType>): String {
         #if debug_misc_expression_compiler
-        trace("[XRay MiscExpressionCompiler] CAST COMPILATION START");
+        // trace("[XRay MiscExpressionCompiler] CAST COMPILATION START");
         #end
         
         // Simple cast - just compile the expression
         var result = compiler.compileExpression(expr);
         
         #if debug_misc_expression_compiler
-        trace('[XRay MiscExpressionCompiler] Cast result: ${result}');
+        // trace('[XRay MiscExpressionCompiler] Cast result: ${result}');
         #end
         
         return result;
@@ -500,7 +500,7 @@ class MiscExpressionCompiler {
      */
     public function compileTypeExpression(moduleType: ModuleType): String {
         #if debug_misc_expression_compiler
-        trace("[XRay MiscExpressionCompiler] TYPE EXPRESSION COMPILATION START");
+        // trace("[XRay MiscExpressionCompiler] TYPE EXPRESSION COMPILATION START");
         #end
         
         // Type expression - convert to Elixir module name, respecting @:native annotations
@@ -508,7 +508,7 @@ class MiscExpressionCompiler {
             case TClassDecl(c):
                 var classType = c.get();
                 #if debug_misc_expression_compiler
-                trace('[XRay MiscExpressionCompiler] Resolving class type: ${classType.name}');
+                // trace('[XRay MiscExpressionCompiler] Resolving class type: ${classType.name}');
                 #end
                 
                 // First check for @:native annotation
@@ -517,7 +517,7 @@ class MiscExpressionCompiler {
                     switch (nativeMeta[0].params[0].expr) {
                         case EConst(CString(nativeName, _)):
                             #if debug_misc_expression_compiler
-                            trace('[XRay MiscExpressionCompiler] ✓ Using @:native annotation: ${nativeName}');
+                            // trace('[XRay MiscExpressionCompiler] ✓ Using @:native annotation: ${nativeName}');
                             #end
                             
                             // Validate @:native format for common mistakes
@@ -532,14 +532,14 @@ class MiscExpressionCompiler {
                             }
                         case _:
                             #if debug_misc_expression_compiler
-                            trace('[XRay MiscExpressionCompiler] ⚠ Invalid @:native format, falling back to default');
+                            // trace('[XRay MiscExpressionCompiler] ⚠ Invalid @:native format, falling back to default');
                             #end
                             haxe.macro.Context.warning('@:native parameter must be a string literal for class ${classType.name}. Example: @:native("MyApp.MyModule"). Using default naming.', haxe.macro.Context.currentPos());
                             NamingHelper.getElixirModuleName(classType.name);
                     }
                 } else {
                     #if debug_misc_expression_compiler
-                    trace('[XRay MiscExpressionCompiler] ⚠ No @:native found, using default naming');
+                    // trace('[XRay MiscExpressionCompiler] ⚠ No @:native found, using default naming');
                     #end
                     NamingHelper.getElixirModuleName(classType.name);
                 }
@@ -578,7 +578,7 @@ class MiscExpressionCompiler {
         };
         
         #if debug_misc_expression_compiler
-        trace('[XRay MiscExpressionCompiler] Type expression result: ${result}');
+        // trace('[XRay MiscExpressionCompiler] Type expression result: ${result}');
         #end
         
         return result;
@@ -593,14 +593,14 @@ class MiscExpressionCompiler {
      */
     public function compileBreakStatement(): String {
         #if debug_misc_expression_compiler
-        trace("[XRay MiscExpressionCompiler] BREAK COMPILATION START");
+        // trace("[XRay MiscExpressionCompiler] BREAK COMPILATION START");
         #end
         
         // Break statement - in Elixir, we use a throw/catch pattern or early return
         var result = 'throw(:break)';
         
         #if debug_misc_expression_compiler
-        trace('[XRay MiscExpressionCompiler] Break result: ${result}');
+        // trace('[XRay MiscExpressionCompiler] Break result: ${result}');
         #end
         
         return result;
@@ -615,14 +615,14 @@ class MiscExpressionCompiler {
      */
     public function compileContinueStatement(): String {
         #if debug_misc_expression_compiler
-        trace("[XRay MiscExpressionCompiler] CONTINUE COMPILATION START");
+        // trace("[XRay MiscExpressionCompiler] CONTINUE COMPILATION START");
         #end
         
         // Continue statement - in Elixir, we use a throw/catch pattern or skip to next iteration
         var result = 'throw(:continue)';
         
         #if debug_misc_expression_compiler
-        trace('[XRay MiscExpressionCompiler] Continue result: ${result}');
+        // trace('[XRay MiscExpressionCompiler] Continue result: ${result}');
         #end
         
         return result;

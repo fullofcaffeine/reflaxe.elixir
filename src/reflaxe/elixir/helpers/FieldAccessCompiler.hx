@@ -91,8 +91,8 @@ class FieldAccessCompiler {
      */
     public function compileFieldAccess(e: TypedExpr, fa: FieldAccess, expr: TypedExpr): String {
         #if debug_field_access_compiler
-        trace("[XRay FieldAccessCompiler] FIELD ACCESS COMPILATION START");
-        trace('[XRay FieldAccessCompiler] Field access type: ${fa}');
+        // trace("[XRay FieldAccessCompiler] FIELD ACCESS COMPILATION START");
+        // trace('[XRay FieldAccessCompiler] Field access type: ${fa}');
         #end
         
         // Handle nested field access with inline context support
@@ -100,26 +100,26 @@ class FieldAccessCompiler {
         var result = switch (fa) {
             case FEnum(enumType, enumField):
                 #if debug_field_access_compiler
-                trace("[XRay FieldAccessCompiler] ✓ ENUM FIELD ACCESS DETECTED");
+                // trace("[XRay FieldAccessCompiler] ✓ ENUM FIELD ACCESS DETECTED");
                 #end
                 compileEnumFieldAccess(enumType, enumField);
                 
             case FStatic(classRef, cf):
                 #if debug_field_access_compiler
-                trace("[XRay FieldAccessCompiler] ✓ STATIC FIELD ACCESS DETECTED");
+                // trace("[XRay FieldAccessCompiler] ✓ STATIC FIELD ACCESS DETECTED");
                 #end
                 compileStaticFieldAccess(e, classRef, cf, expr);
                 
             case _:
                 #if debug_field_access_compiler
-                trace("[XRay FieldAccessCompiler] ✓ INSTANCE FIELD ACCESS DETECTED");
+                // trace("[XRay FieldAccessCompiler] ✓ INSTANCE FIELD ACCESS DETECTED");
                 #end
                 compileInstanceFieldAccess(e, fa);
         };
         
         #if debug_field_access_compiler
-        trace('[XRay FieldAccessCompiler] Generated field access: ${result}');
-        trace("[XRay FieldAccessCompiler] FIELD ACCESS COMPILATION END");
+        // trace('[XRay FieldAccessCompiler] Generated field access: ${result}');
+        // trace("[XRay FieldAccessCompiler] FIELD ACCESS COMPILATION END");
         #end
         
         return result;
@@ -136,16 +136,16 @@ class FieldAccessCompiler {
      */
     private function compileEnumFieldAccess(enumType: Ref<EnumType>, enumField: EnumField): String {
         #if debug_field_access_compiler
-        trace("[XRay FieldAccessCompiler] ENUM FIELD COMPILATION START");
-        trace('[XRay FieldAccessCompiler] Enum field: ${enumField.name}');
-        trace('[XRay FieldAccessCompiler] Parameters: ${enumField.params.length}');
+        // trace("[XRay FieldAccessCompiler] ENUM FIELD COMPILATION START");
+        // trace('[XRay FieldAccessCompiler] Enum field: ${enumField.name}');
+        // trace('[XRay FieldAccessCompiler] Parameters: ${enumField.params.length}');
         #end
         
         // Check if this is a known algebraic data type (Result, Option, etc.)
         var enumTypeRef = enumType.get();
         if (AlgebraicDataTypeCompiler.isADTType(enumTypeRef)) {
             #if debug_field_access_compiler
-            trace("[XRay FieldAccessCompiler] ✓ ADT TYPE DETECTED");
+            // trace("[XRay FieldAccessCompiler] ✓ ADT TYPE DETECTED");
             #end
             var compiled = AlgebraicDataTypeCompiler.compileADTFieldAccess(enumTypeRef, enumField);
             if (compiled != null) return compiled;
@@ -156,7 +156,7 @@ class FieldAccessCompiler {
         var constructorIndex = enumField.index;
         
         #if debug_field_access_compiler
-        trace('[XRay FieldAccessCompiler] Constructor index: ${constructorIndex}');
+        // trace('[XRay FieldAccessCompiler] Constructor index: ${constructorIndex}');
         #end
         
         // Generate proper atom representation for enum constructor
@@ -164,14 +164,14 @@ class FieldAccessCompiler {
         // Constructor with parameters: handled by TCall
         if (enumField.params.length == 0) {
             #if debug_field_access_compiler
-            trace("[XRay FieldAccessCompiler] ✓ SIMPLE CONSTRUCTOR (no parameters)");
+            // trace("[XRay FieldAccessCompiler] ✓ SIMPLE CONSTRUCTOR (no parameters)");
             #end
             // Simple constructor without parameters - use snake_case atom
             var atomName = NamingHelper.toSnakeCase(enumField.name);
             return ':${atomName}';
         } else {
             #if debug_field_access_compiler
-            trace("[XRay FieldAccessCompiler] ⚠ CONSTRUCTOR WITH PARAMETERS (should be TCall)");
+            // trace("[XRay FieldAccessCompiler] ⚠ CONSTRUCTOR WITH PARAMETERS (should be TCall)");
             #end
             // This case shouldn't happen here - constructors with params
             // should be handled by TCall, but let's handle it gracefully
@@ -194,7 +194,7 @@ class FieldAccessCompiler {
      */
     private function compileStaticFieldAccess(e: TypedExpr, classRef: Ref<ClassType>, cf: Ref<ClassField>, expr: TypedExpr): String {
         #if debug_field_access_compiler
-        trace("[XRay FieldAccessCompiler] STATIC FIELD COMPILATION START");
+        // trace("[XRay FieldAccessCompiler] STATIC FIELD COMPILATION START");
         #end
         
         // Check if this is a static method being used as a function reference
@@ -205,8 +205,8 @@ class FieldAccessCompiler {
         };
         
         #if debug_field_access_compiler
-        trace('[XRay FieldAccessCompiler] Field name: ${field.name}');
-        trace('[XRay FieldAccessCompiler] Is function: ${isFunction}');
+        // trace('[XRay FieldAccessCompiler] Field name: ${field.name}');
+        // trace('[XRay FieldAccessCompiler] Is function: ${isFunction}');
         #end
         
         // Check if this field access is being used as a function reference
@@ -214,7 +214,7 @@ class FieldAccessCompiler {
         // This happens when the field is passed as an argument to another function
         if (isFunction && !isBeingCalled(expr)) {
             #if debug_field_access_compiler
-            trace("[XRay FieldAccessCompiler] ✓ FUNCTION REFERENCE DETECTED");
+            // trace("[XRay FieldAccessCompiler] ✓ FUNCTION REFERENCE DETECTED");
             #end
             // This is a static function reference - generate Elixir function reference syntax
             var className = classRef.get().name;
@@ -227,14 +227,14 @@ class FieldAccessCompiler {
             };
             
             #if debug_field_access_compiler
-            trace('[XRay FieldAccessCompiler] Function reference: &${className}.${functionName}/${arity}');
+            // trace('[XRay FieldAccessCompiler] Function reference: &${className}.${functionName}/${arity}');
             #end
             
             // Generate function reference syntax: &Module.function/arity
             return '&${className}.${functionName}/${arity}';
         } else {
             #if debug_field_access_compiler
-            trace("[XRay FieldAccessCompiler] ✓ REGULAR STATIC FIELD ACCESS");
+            // trace("[XRay FieldAccessCompiler] ✓ REGULAR STATIC FIELD ACCESS");
             #end
             // Regular static field access or method call (will be handled by TCall)
             var baseExpr = compiler.compileExpression(e);
@@ -254,14 +254,14 @@ class FieldAccessCompiler {
      */
     private function compileInstanceFieldAccess(e: TypedExpr, fa: FieldAccess): String {
         #if debug_field_access_compiler
-        trace("[XRay FieldAccessCompiler] INSTANCE FIELD COMPILATION START");
+        // trace("[XRay FieldAccessCompiler] INSTANCE FIELD COMPILATION START");
         #end
         
         // Regular field access for non-enum, non-static fields
         var baseExpr = switch (e.expr) {
             case TConst(TThis):
                 #if debug_field_access_compiler
-                trace("[XRay FieldAccessCompiler] ✓ THIS REFERENCE DETECTED");
+                // trace("[XRay FieldAccessCompiler] ✓ THIS REFERENCE DETECTED");
                 #end
                 // Extract field name for LiveView check
                 var fieldName = switch (fa) {
@@ -271,26 +271,26 @@ class FieldAccessCompiler {
                 };
                 
                 #if debug_field_access_compiler
-                trace('[XRay FieldAccessCompiler] Field name: ${fieldName}');
+                // trace('[XRay FieldAccessCompiler] Field name: ${fieldName}');
                 #end
                 
                 // Check if this is a LiveView instance field access
                 if (compiler.liveViewInstanceVars != null && compiler.liveViewInstanceVars.exists(fieldName)) {
                     #if debug_field_access_compiler
-                    trace("[XRay FieldAccessCompiler] ✓ LIVEVIEW INSTANCE VARIABLE");
+                    // trace("[XRay FieldAccessCompiler] ✓ LIVEVIEW INSTANCE VARIABLE");
                     #end
                     var elixirFieldName = reflaxe.elixir.helpers.NamingHelper.toSnakeCase(fieldName);
                     return 'socket.assigns.${elixirFieldName}';
                 } else {
                     #if debug_field_access_compiler
-                    trace("[XRay FieldAccessCompiler] ✓ REGULAR THIS REFERENCE");
+                    // trace("[XRay FieldAccessCompiler] ✓ REGULAR THIS REFERENCE");
                     #end
                     // Use enhanced inline context resolution for non-LiveView cases
                     resolveThisReference();
                 }
             case _:
                 #if debug_field_access_compiler
-                trace("[XRay FieldAccessCompiler] ✓ REGULAR BASE EXPRESSION");
+                // trace("[XRay FieldAccessCompiler] ✓ REGULAR BASE EXPRESSION");
                 #end
                 compiler.compileExpression(e);
         };
@@ -303,7 +303,7 @@ class FieldAccessCompiler {
         var elixirFieldName = reflaxe.elixir.helpers.NamingHelper.toSnakeCase(fieldName);
         
         #if debug_field_access_compiler
-        trace('[XRay FieldAccessCompiler] Final field access: ${baseExpr}.${elixirFieldName}');
+        // trace('[XRay FieldAccessCompiler] Final field access: ${baseExpr}.${elixirFieldName}');
         #end
         
         return '${baseExpr}.${elixirFieldName}';

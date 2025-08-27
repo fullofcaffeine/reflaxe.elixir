@@ -67,8 +67,8 @@ class CoreLoopCompiler {
      */
     public function compileBasicForLoop(tvar: TVar, iterExpr: TypedExpr, blockExpr: TypedExpr): String {
         #if debug_core_loops
-        trace('[CoreLoopCompiler] Compiling basic for loop');
-        trace('[CoreLoopCompiler] Loop var: ${tvar.name}');
+//         trace('[CoreLoopCompiler] Compiling basic for loop');
+//         trace('[CoreLoopCompiler] Loop var: ${tvar.name}');
         #end
         
         var loopVar = toElixirVarName(tvar);
@@ -91,7 +91,7 @@ class CoreLoopCompiler {
         };
         
         #if debug_core_loops
-        trace('[CoreLoopCompiler] Generated: Enum.each over ${iteratorCode}');
+//         trace('[CoreLoopCompiler] Generated: Enum.each over ${iteratorCode}');
         #end
         
         return 'Enum.each(${iteratorCode}, fn ${loopVar} ->
@@ -113,7 +113,7 @@ end)';
      */
     public function compileBasicWhileLoop(econd: TypedExpr, ebody: TypedExpr, normalWhile: Bool): String {
         #if debug_core_loops
-        trace('[CoreLoopCompiler] Compiling basic while loop (normal: ${normalWhile})');
+//         trace('[CoreLoopCompiler] Compiling basic while loop (normal: ${normalWhile})');
         #end
         
         var condition = compiler.compileExpression(econd);
@@ -158,7 +158,7 @@ end)';
         var helperId = getNextHelperId();
         
         #if debug_core_loops
-        trace('[CoreLoopCompiler] Generating while helper ${helperId}');
+//         trace('[CoreLoopCompiler] Generating while helper ${helperId}');
         #end
         
         // Use Stream.unfold for idiomatic Elixir loops
@@ -188,7 +188,7 @@ end) |> Stream.run()';
         var helperId = getNextHelperId();
         
         #if debug_core_loops
-        trace('[CoreLoopCompiler] Generating do-while helper ${helperId}');
+//         trace('[CoreLoopCompiler] Generating do-while helper ${helperId}');
         #end
         
         // Execute body once, then use Stream.unfold for remaining iterations
@@ -246,7 +246,7 @@ ${indentCode(body, 6)}
      */
     public function compileBreak(): String {
         #if debug_core_loops
-        trace('[CoreLoopCompiler] Compiling break statement');
+//         trace('[CoreLoopCompiler] Compiling break statement');
         #end
         
         // In recursive functions, break is implemented as early return
@@ -265,7 +265,7 @@ ${indentCode(body, 6)}
      */
     public function compileContinue(): String {
         #if debug_core_loops
-        trace('[CoreLoopCompiler] Compiling continue statement');
+//         trace('[CoreLoopCompiler] Compiling continue statement');
         #end
         
         // Continue is implemented as immediate recursion
@@ -305,7 +305,7 @@ ${indentCode(body, 6)}
         analyze(loopBody);
         
         #if debug_core_loops
-        trace('[CoreLoopCompiler] Detected mutated variables: ${mutatedVars}');
+//         trace('[CoreLoopCompiler] Detected mutated variables: ${mutatedVars}');
         #end
         
         return mutatedVars;
@@ -327,7 +327,7 @@ ${indentCode(body, 6)}
         var helperId = getNextHelperId();
         
         #if debug_core_loops
-        trace('[CoreLoopCompiler] Generating stateful while loop with vars: ${mutatedVars}');
+//         trace('[CoreLoopCompiler] Generating stateful while loop with vars: ${mutatedVars}');
         #end
         
         if (mutatedVars.length == 0) {
@@ -443,8 +443,8 @@ ${indentCode(body, 6)}
      */
     public function compileWhileLoopWithRenamings(econd: TypedExpr, ebody: TypedExpr, normalWhile: Bool, renamings: Map<String, String>): String {
         #if debug_loops
-        trace('[XRay CoreLoop] Compiling while loop with renamings');
-        trace('[XRay CoreLoop] Renamings: ${[for (k in renamings.keys()) '$k -> ${renamings[k]}'].join(", ")}');
+        // trace('[XRay CoreLoop] Compiling while loop with renamings');
+        // trace('[XRay CoreLoop] Renamings: ${[for (k in renamings.keys()) '$k -> ${renamings[k]}'].join(", ")}');
         #end
         
         // Apply renamings during compilation

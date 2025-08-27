@@ -83,8 +83,8 @@ class GenServerCompiler {
     ): String {
         
         #if debug_genserver
-        trace('[GenServerCompiler] Compiling GenServer class: ${classType.name}');
-        trace('[GenServerCompiler] State fields: ${varFields.length}, Functions: ${funcFields.length}');
+//         trace('[GenServerCompiler] Compiling GenServer class: ${classType.name}');
+//         trace('[GenServerCompiler] State fields: ${varFields.length}, Functions: ${funcFields.length}');
         #end
         
         var moduleName = compiler.getModuleName(classType);
@@ -109,7 +109,7 @@ class GenServerCompiler {
         result += 'end\n';
         
         #if debug_genserver
-        trace('[GenServerCompiler] Generated GenServer: ${result.substring(0, 200)}...');
+//         trace('[GenServerCompiler] Generated GenServer: ${result.substring(0, 200)}...');
         #end
         
         return result;

@@ -61,26 +61,26 @@ class PatternMatcher {
                             var lookbackLimit = Std.int(Math.min(5, i)); // Look back max 5 lines
                             
                             #if debug_pattern_matching
-                            trace('[PatternMatcher DEBUG] Found potential orphaned g at line ${i}: "${line}"');
-                            trace('[PatternMatcher DEBUG] Looking back ${lookbackLimit} lines for elem() call');
+//                             trace('[PatternMatcher DEBUG] Found potential orphaned g at line ${i}: "${line}"');
+//                             trace('[PatternMatcher DEBUG] Looking back ${lookbackLimit} lines for elem() call');
                             #end
                             
                             for (j in 1...lookbackLimit + 1) {
                                 var checkLine = StringTools.trim(lines[i - j]);
                                 #if debug_pattern_matching
-                                trace('[PatternMatcher DEBUG] Checking line ${i - j}: "${checkLine}"');
+//                                 trace('[PatternMatcher DEBUG] Checking line ${i - j}: "${checkLine}"');
                                 #end
                                 if (checkLine.indexOf("elem(") >= 0) {
                                     foundElemCall = true;
                                     #if debug_pattern_matching
-                                    trace('[PatternMatcher DEBUG] ✓ Found elem() call - will skip orphaned g');
+//                                     trace('[PatternMatcher DEBUG] ✓ Found elem() call - will skip orphaned g');
                                     #end
                                     break;
                                 }
                             }
                             if (foundElemCall) {
                                 #if debug_pattern_matching
-                                trace('[PatternMatcher DEBUG] Skipping orphaned temp variable "${line}"');
+//                                 trace('[PatternMatcher DEBUG] Skipping orphaned temp variable "${line}"');
                                 #end
                                 continue; // Skip this orphaned temp variable
                             }
@@ -124,26 +124,26 @@ class PatternMatcher {
                     var lookbackLimit = Std.int(Math.min(5, i)); // Look back max 5 lines
                     
                     #if debug_pattern_matching
-                    trace('[PatternMatcher DEBUG] Found potential orphaned g at line ${i}: "${line}"');
-                    trace('[PatternMatcher DEBUG] Looking back ${lookbackLimit} lines for elem() call');
+//                     trace('[PatternMatcher DEBUG] Found potential orphaned g at line ${i}: "${line}"');
+//                     trace('[PatternMatcher DEBUG] Looking back ${lookbackLimit} lines for elem() call');
                     #end
                     
                     for (j in 1...lookbackLimit + 1) {
                         var checkLine = StringTools.trim(lines[i - j]);
                         #if debug_pattern_matching
-                        trace('[PatternMatcher DEBUG] Checking line ${i - j}: "${checkLine}"');
+//                         trace('[PatternMatcher DEBUG] Checking line ${i - j}: "${checkLine}"');
                         #end
                         if (checkLine.indexOf("elem(") >= 0) {
                             foundElemCall = true;
                             #if debug_pattern_matching
-                            trace('[PatternMatcher DEBUG] ✓ Found elem() call - will skip orphaned g');
+//                             trace('[PatternMatcher DEBUG] ✓ Found elem() call - will skip orphaned g');
                             #end
                             break;
                         }
                     }
                     if (foundElemCall) {
                         #if debug_pattern_matching
-                        trace('[PatternMatcher DEBUG] Skipping orphaned temp variable "${line}"');
+//                         trace('[PatternMatcher DEBUG] Skipping orphaned temp variable "${line}"');
                         #end
                         continue; // Skip this orphaned temp variable
                     }

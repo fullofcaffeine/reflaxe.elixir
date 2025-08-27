@@ -68,16 +68,16 @@ class MethodCallCompiler {
      */
     public function compileCallExpression(e: TypedExpr, el: Array<TypedExpr>): String {
         #if debug_method_call_compiler
-        trace("[XRay MethodCallCompiler] CALL EXPRESSION COMPILATION START");
-        trace('[XRay MethodCallCompiler] Call expression type: ${e.expr}');
-        trace('[XRay MethodCallCompiler] Arguments count: ${el.length}');
+        // trace("[XRay MethodCallCompiler] CALL EXPRESSION COMPILATION START");
+        // trace('[XRay MethodCallCompiler] Call expression type: ${e.expr}');
+        // trace('[XRay MethodCallCompiler] Arguments count: ${el.length}');
         #end
         
         // Check for special compile-time function calls
         var result = switch (e.expr) {
             case TLocal(v) if (v.name == "getAppName"):
                 #if debug_method_call_compiler
-                trace("[XRay MethodCallCompiler] ✓ COMPILE-TIME getAppName DETECTED");
+                // trace("[XRay MethodCallCompiler] ✓ COMPILE-TIME getAppName DETECTED");
                 #end
                 // Resolve app name at compile-time from @:appName annotation
                 var appName = AnnotationSystem.getEffectiveAppName(compiler.currentClassType);
@@ -85,7 +85,7 @@ class MethodCallCompiler {
                 
             case TLocal(v):
                 #if debug_method_call_compiler
-                trace("[XRay MethodCallCompiler] ✓ LOCAL FUNCTION CALL DETECTED");
+                // trace("[XRay MethodCallCompiler] ✓ LOCAL FUNCTION CALL DETECTED");
                 #end
                 // Check if this is a function parameter being called
                 // Function parameters need special syntax in Elixir: func_name.(args)
@@ -97,7 +97,7 @@ class MethodCallCompiler {
                 
                 if (isFunction) {
                     #if debug_method_call_compiler
-                    trace("[XRay MethodCallCompiler] ✓ FUNCTION PARAMETER CALL (.() syntax)");
+                    // trace("[XRay MethodCallCompiler] ✓ FUNCTION PARAMETER CALL (.() syntax)");
                     #end
                     // This is a function parameter being called - use Elixir's .() syntax
                     var functionName = NamingHelper.toSnakeCase(v.name);
@@ -110,7 +110,7 @@ class MethodCallCompiler {
                 
             case TField(obj, field):
                 #if debug_method_call_compiler
-                trace("[XRay MethodCallCompiler] ✓ FIELD METHOD CALL DETECTED");
+                // trace("[XRay MethodCallCompiler] ✓ FIELD METHOD CALL DETECTED");
                 #end
                 var fieldName = switch (field) {
                     case FInstance(_, _, cf) | FStatic(_, cf) | FClosure(_, cf): cf.get().name;
@@ -120,13 +120,13 @@ class MethodCallCompiler {
                 };
                 
                 #if debug_method_call_compiler
-                trace('[XRay MethodCallCompiler] Field name: ${fieldName}');
+                // trace('[XRay MethodCallCompiler] Field name: ${fieldName}');
                 #end
                 
                 // Check for super method calls (TField on TSuper)
                 if (obj.expr.match(TConst(TSuper)) && fieldName == "toString") {
                     #if debug_method_call_compiler
-                    trace("[XRay MethodCallCompiler] ✓ SUPER.toString() DETECTED");
+                    // trace("[XRay MethodCallCompiler] ✓ SUPER.toString() DETECTED");
                     #end
                     // Handle super.toString() specially for exception classes
                     return '"Exception"';
@@ -135,7 +135,7 @@ class MethodCallCompiler {
                 // Check for elixir.Syntax calls and transform them to __elixir__ injection
                 if (isElixirSyntaxCall(obj, fieldName)) {
                     #if debug_method_call_compiler
-                    trace("[XRay MethodCallCompiler] ✓ ELIXIR SYNTAX CALL DETECTED");
+                    // trace("[XRay MethodCallCompiler] ✓ ELIXIR SYNTAX CALL DETECTED");
                     #end
                     return compileElixirSyntaxCall(fieldName, el);
                 }
@@ -143,14 +143,14 @@ class MethodCallCompiler {
                 // Check for TypeSafeChildSpec enum constructor calls
                 if (isTypeSafeChildSpecCall(obj, fieldName)) {
                     #if debug_method_call_compiler
-                    trace("[XRay MethodCallCompiler] ✓ TYPESAFE CHILDSPEC CALL DETECTED");
+                    // trace("[XRay MethodCallCompiler] ✓ TYPESAFE CHILDSPEC CALL DETECTED");
                     #end
                     return compileTypeSafeChildSpecCall(fieldName, el);
                 }
                 
                 if (fieldName == "getAppName") {
                     #if debug_method_call_compiler
-                    trace("[XRay MethodCallCompiler] ✓ CLASS.getAppName() DETECTED");
+                    // trace("[XRay MethodCallCompiler] ✓ CLASS.getAppName() DETECTED");
                     #end
                     // Handle Class.getAppName() calls
                     var appName = AnnotationSystem.getEffectiveAppName(compiler.currentClassType);
@@ -162,15 +162,15 @@ class MethodCallCompiler {
                 
             case _:
                 #if debug_method_call_compiler
-                trace("[XRay MethodCallCompiler] ✓ STANDARD METHOD CALL");
+                // trace("[XRay MethodCallCompiler] ✓ STANDARD METHOD CALL");
                 #end
                 // Not a special function call, proceed normally
                 compileMethodCall(e, el);
         };
         
         #if debug_method_call_compiler
-        trace('[XRay MethodCallCompiler] Generated call: ${result != null ? result.substring(0, 100) + (result.length > 100 ? "..." : "") : "null"}');
-        trace("[XRay MethodCallCompiler] CALL EXPRESSION COMPILATION END");
+        // trace('[XRay MethodCallCompiler] Generated call: ${result != null ? result.substring(0, 100) + (result.length > 100 ? "..." : "") : "null"}');
+        // trace("[XRay MethodCallCompiler] CALL EXPRESSION COMPILATION END");
         #end
         
         return result;
@@ -199,8 +199,8 @@ class MethodCallCompiler {
      */
     public function compileMethodCall(e: TypedExpr, args: Array<TypedExpr>): String {
         #if debug_method_call_compiler
-        trace("[XRay MethodCallCompiler] COMPILE CALL START");
-        trace('[XRay MethodCallCompiler] Method expr: ${e.expr}');
+        // trace("[XRay MethodCallCompiler] COMPILE CALL START");
+        // trace('[XRay MethodCallCompiler] Method expr: ${e.expr}');
         #end
         
         // Check for repository operations (Repo.method calls)
@@ -214,8 +214,8 @@ class MethodCallCompiler {
         };
         
         #if debug_method_call_compiler
-        trace('[XRay MethodCallCompiler] Generated call: ${result.substring(0, 100)}...');
-        trace("[XRay MethodCallCompiler] COMPILE CALL END");
+        // trace('[XRay MethodCallCompiler] Generated call: ${result.substring(0, 100)}...');
+        // trace("[XRay MethodCallCompiler] COMPILE CALL END");
         #end
         
         return result;
@@ -232,7 +232,7 @@ class MethodCallCompiler {
         #if debug_method_call_compiler
         switch (obj.expr) {
             case TLocal(v):
-                trace('[XRay MethodCallCompiler] Method call on TLocal: ${v.name}, id: ${v.id}');
+                // trace('[XRay MethodCallCompiler] Method call on TLocal: ${v.name}, id: ${v.id}');
             case _:
         }
         #end
@@ -240,11 +240,11 @@ class MethodCallCompiler {
         var objStr = compiler.compileExpression(obj);
         
         #if debug_method_call_compiler
-        trace('[XRay MethodCallCompiler] Compiled object to: $objStr');
+        // trace('[XRay MethodCallCompiler] Compiled object to: $objStr');
         #end
         
         #if debug_state_threading
-        trace('[XRay MethodCallCompiler] 🔍 Method call: ${objStr}.${methodName}() - StateThreading: ${compiler.isStateThreadingEnabled()}');
+        // trace('[XRay MethodCallCompiler] 🔍 Method call: ${objStr}.${methodName}() - StateThreading: ${compiler.isStateThreadingEnabled()}');
         #end
         
         /**
@@ -256,7 +256,7 @@ class MethodCallCompiler {
          */
         if (compiler.isStateThreadingEnabled() && isStructMethodCall(obj, fa)) {
             #if debug_state_threading
-            trace('[XRay MethodCallCompiler] 🔧 Potential struct method call: ${objStr}.${methodName}()');
+            // trace('[XRay MethodCallCompiler] 🔧 Potential struct method call: ${objStr}.${methodName}()');
             #end
             
             // Check if this is a mutating method that should capture return value
@@ -265,7 +265,7 @@ class MethodCallCompiler {
                 var callExpression = objStr + "." + compiler.toElixirName(methodName) + "(" + compiledArgs.join(", ") + ")";
                 
                 #if debug_state_threading
-                trace('[XRay MethodCallCompiler] ✓ Transforming mutating method call: ${objStr} = ${callExpression}');
+                // trace('[XRay MethodCallCompiler] ✓ Transforming mutating method call: ${objStr} = ${callExpression}');
                 #end
                 
                 // Return the assignment form
@@ -383,8 +383,8 @@ class MethodCallCompiler {
                     // since Elixir maps are immutable. Map.put returns a new map.
                     if (methodName == "set" && objStr != null) {
                         #if debug_map_compiler
-                        trace('[MapCompiler] Checking map.set reassignment for: $objStr');
-                        trace('[MapCompiler] Original obj TypedExpr type: ${obj.t}');
+//                         trace('[MapCompiler] Checking map.set reassignment for: $objStr');
+//                         trace('[MapCompiler] Original obj TypedExpr type: ${obj.t}');
                         #end
                         
                         // CRITICAL FIX: Check if the variable is marked as unused and needs underscore prefix
@@ -396,8 +396,8 @@ class MethodCallCompiler {
                         switch (obj.expr) {
                             case TLocal(v):
                                 #if debug_map_compiler
-                                trace('[MapCompiler] TLocal variable detected: ${v.name}, id: ${v.id}');
-                                trace('[MapCompiler] Checking if variable is marked as unused...');
+//                                 trace('[MapCompiler] TLocal variable detected: ${v.name}, id: ${v.id}');
+//                                 trace('[MapCompiler] Checking if variable is marked as unused...');
                                 #end
                                 
                                 // Check if this variable has an ID mapping (which includes underscore prefix)
@@ -406,20 +406,20 @@ class MethodCallCompiler {
                                     if (idMapping != null) {
                                         actualVarName = idMapping;
                                         #if debug_map_compiler
-                                        trace('[MapCompiler] Found ID mapping: ${v.id} -> $idMapping');
+//                                         trace('[MapCompiler] Found ID mapping: ${v.id} -> $idMapping');
                                         #end
                                     } else {
                                         // Check underscore prefix map by name
                                         var snakeName = NamingHelper.toSnakeCase(v.name);
                                         #if debug_map_compiler
-                                        trace('[MapCompiler] Looking for underscore prefix mapping for: $snakeName');
-                                        trace('[MapCompiler] Available mappings: ${[for (k in compiler.variableCompiler.underscorePrefixMap.keys()) k].join(", ")}');
+//                                         trace('[MapCompiler] Looking for underscore prefix mapping for: $snakeName');
+//                                         trace('[MapCompiler] Available mappings: ${[for (k in compiler.variableCompiler.underscorePrefixMap.keys()) k].join(", ")}');
                                         #end
                                         var prefixedName = compiler.variableCompiler.underscorePrefixMap.get(snakeName);
                                         if (prefixedName != null) {
                                             actualVarName = prefixedName;
                                             #if debug_map_compiler
-                                            trace('[MapCompiler] Found underscore prefix mapping: $snakeName -> $prefixedName');
+//                                             trace('[MapCompiler] Found underscore prefix mapping: $snakeName -> $prefixedName');
                                             #end
                                         } else if (v.meta != null && v.meta.has("-reflaxe.unused")) {
                                             // Fallback: if marked as unused but no mapping, add underscore
@@ -427,7 +427,7 @@ class MethodCallCompiler {
                                                 actualVarName = "_" + actualVarName;
                                             }
                                             #if debug_map_compiler
-                                            trace('[MapCompiler] Variable marked as unused, using underscore prefix: $actualVarName');
+//                                             trace('[MapCompiler] Variable marked as unused, using underscore prefix: $actualVarName');
                                             #end
                                         }
                                     }
@@ -441,9 +441,9 @@ class MethodCallCompiler {
                         var isSimpleVariable = ~/^[a-z_][a-z0-9_]*$/i.match(actualVarName);
                         
                         #if debug_map_compiler
-                        trace('[MapCompiler] Actual variable name to use: $actualVarName');
-                        trace('[MapCompiler] Is simple variable: $isSimpleVariable');
-                        trace('[MapCompiler] Generated call: $mapCall');
+//                         trace('[MapCompiler] Actual variable name to use: $actualVarName');
+//                         trace('[MapCompiler] Is simple variable: $isSimpleVariable');
+//                         trace('[MapCompiler] Generated call: $mapCall');
                         #end
                         
                         if (isSimpleVariable) {
@@ -452,7 +452,7 @@ class MethodCallCompiler {
                             var updatedMapCall = StringTools.replace(mapCall, '($objStr,', '($actualVarName,');
                             var reassignment = actualVarName + " = " + updatedMapCall;
                             #if debug_map_compiler
-                            trace('[MapCompiler] Generated reassignment: $reassignment');
+//                             trace('[MapCompiler] Generated reassignment: $reassignment');
                             #end
                             return reassignment;
                         }
@@ -1012,7 +1012,7 @@ class MethodCallCompiler {
         for (pattern in mutatingPatterns) {
             if (methodName == pattern || methodName.indexOf(pattern) == 0) {
                 #if debug_state_threading
-                trace('[XRay MethodCallCompiler] ✓ Detected mutating method: ${methodName}');
+                // trace('[XRay MethodCallCompiler] ✓ Detected mutating method: ${methodName}');
                 #end
                 return true;
             }
