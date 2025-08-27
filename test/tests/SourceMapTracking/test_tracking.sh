@@ -170,6 +170,48 @@ fi
 # Cleanup
 rm -f compile-no-sourcemap.hxml compile-debug.hxml
 
+# Test 7: Verify mapping correctness
+echo ""
+echo -e "${CYAN}── Test 7: Mapping Correctness Test ──${NC}"
+
+if command -v node &> /dev/null && [ -f "verify_mappings.js" ]; then
+    # Run mapping verification
+    OUTPUT=$(node verify_mappings.js 2>&1)
+    
+    # Check if Main class is mapped
+    if echo "$OUTPUT" | grep -q "Main class defined at line 10"; then
+        echo -e "${GREEN}✓ Found Main class definition${NC}"
+    else
+        echo -e "${RED}✗ Main class not found in source${NC}"
+    fi
+    
+    # Check mapping coverage
+    COVERAGE=$(echo "$OUTPUT" | grep "Mapping coverage" | grep -oE "[0-9]+\.[0-9]+")
+    if [ ! -z "$COVERAGE" ]; then
+        echo -e "${YELLOW}⚠ Mapping coverage: ${COVERAGE}%${NC}"
+        if (( $(echo "$COVERAGE > 50" | bc -l) )); then
+            echo -e "${GREEN}✓ Good mapping coverage${NC}"
+        else
+            echo -e "${RED}✗ Low mapping coverage - needs improvement${NC}"
+            echo -e "${YELLOW}  Currently only tracking class definitions, not expressions${NC}"
+        fi
+    fi
+    
+    # Check if mappings point to correct lines
+    if echo "$OUTPUT" | grep -q "Points to source line: 65"; then
+        echo -e "${GREEN}✓ Calculator class mapping found (line 65)${NC}"
+    fi
+    if echo "$OUTPUT" | grep -q "Points to source line: 10"; then
+        echo -e "${GREEN}✓ Main class mapping found (line 10)${NC}"
+    else
+        echo -e "${RED}✗ Main class mapping missing${NC}"
+        echo -e "${YELLOW}  Only last class is being tracked${NC}"
+    fi
+else
+    echo -e "${YELLOW}⚠ Node.js not installed or verify script missing${NC}"
+    echo -e "${YELLOW}  Cannot verify mapping correctness${NC}"
+fi
+
 echo ""
 echo -e "${BLUE}═══════════════════════════════════════════════════${NC}"
 echo -e "${GREEN}✅ Position Tracking Test Suite Complete!${NC}"
@@ -179,4 +221,4 @@ echo "Summary:"
 echo "- Helper methods compile correctly"
 echo "- Source maps only generated when enabled"
 echo "- Zero overhead when disabled"
-echo "- Ready for position integration"
+echo "- Mappings being generated but need more granularity"
