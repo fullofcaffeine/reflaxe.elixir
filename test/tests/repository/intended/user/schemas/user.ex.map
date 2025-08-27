@@ -1,8 +1,10 @@
 {
   "sourceRoot": "",
   "names": [],
-  "mappings": "",
+  "mappings": ";;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;AA8BC",
   "version": 3,
   "file": "user.ex",
-  "sources": []
+  "sources": [
+    "Main.hx"
+  ]
 }

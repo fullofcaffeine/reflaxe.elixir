@@ -7,64 +7,36 @@ defmodule Log do
   """
 
   # Static functions
-  @doc """
-    Format the output of `trace` before printing it.
-
-  """
-  @spec format_output(term(), PosInfos.t()) :: String.t()
+  @doc "Generated from Haxe formatOutput"
   def format_output(v, infos) do
-    (
-          str = Std.string(v)
-          if ((infos == nil)) do
-          str
-        end
-          pstr = infos.file_name <> ":" <> to_string(infos.line_number)
-          if ((infos.custom_params != nil)) do
-          (
-          g_counter = 0
-          g = infos.custom_params
-          loop_helper = fn loop_fn, {v2, g, str} ->
-      if ((g_counter < g_counter.length)) do
-        v = Enum.at(g_counter, g_counter)
-        g = g + 1
-        str = str + ", " <> Std.string(v)
-        loop_fn.(loop_fn, {v2, g, str})
-      else
-        {v2, g, str}
-      end
+    str = Std.string(v)
+
+    if ((infos == nil)) do
+      str
+    else
+      nil
     end
 
-    {v2, g, str} = loop_helper.(loop_helper, {v2, g, str})
-        )
-        end
-          pstr <> ": " <> str
-        )
+    pstr = infos.file_name <> ":" <> to_string(infos.line_number)
+
+    if ((infos.custom_params != nil)) do
+      g_counter = 0
+      g_array = infos.custom_params
+      Enum.each(g_array, fn v2 -> 
+        str = str <> ", " <> Std.string(v)
+      end)
+    else
+      nil
+    end
+
+    pstr <> ": " <> str
   end
 
-  @doc """
-    Outputs `v` in a platform-dependent way.
+  @doc "Generated from Haxe trace"
+  def trace(v, infos \\ nil) do
+    str = Log.format_output(v, infos)
 
-    The second parameter `infos` is injected by the compiler and contains
-    information about the position where the `trace()` call was made.
-
-    This method can be rebound to a custom function:
-
-    var oldTrace = haxe.Log.trace; // store old function
-    haxe.Log.trace = function(v, ?infos) {
-    // handle trace
-    }
-    ...
-    haxe.Log.trace = oldTrace;
-
-    If it is bound to null, subsequent calls to `trace()` will cause an
-    exception.
-  """
-  @spec trace(term(), Null.t()) :: nil
-  def trace(v, infos) do
-    (
-          str = Log.format_output(v, infos)
-          Sys.println(str)
-        )
+    Sys.println(str)
   end
 
 

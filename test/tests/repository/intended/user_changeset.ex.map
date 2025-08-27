@@ -1,8 +1,10 @@
 {
   "sourceRoot": "",
   "names": [],
-  "mappings": "",
+  "mappings": ";;;;;;;;;;;;;;;;;;;;GAuCC",
   "version": 3,
   "file": "user_changeset.ex",
-  "sources": []
+  "sources": [
+    "Main.hx"
+  ]
 }

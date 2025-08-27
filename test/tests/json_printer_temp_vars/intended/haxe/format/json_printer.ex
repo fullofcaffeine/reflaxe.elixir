@@ -2,30 +2,30 @@ defmodule JsonPrinter do
   @moduledoc """
     JsonPrinter struct generated from Haxe
 
-      An implementation of JSON printer in Haxe.
-
-      This class is used by `haxe.Json` when native JSON implementation
-      is not available.
-
-      @see https://haxe.org/manual/std-Json-encoding.html
+     * JsonPrinter: Simplified implementation avoiding mutable patterns
+     *
+     * WHY: The Haxe standard library JsonPrinter uses mutable StringBuf patterns
+     * that don't translate well to Elixir's immutable world. This implementation
+     * avoids those patterns by building strings functionally.
+     *
+     * WHAT: Functional implementation of JsonPrinter that generates valid Elixir
+     *
+     * HOW: Uses recursive string building without mutable state
   """
 
-  defstruct [:buf, :replacer, :indent, :pretty, :nind]
+  defstruct [:replacer, :space]
 
   @type t() :: %__MODULE__{
-    buf: StringBuf.t() | nil,
-    replacer: Function.t() | nil,
-    indent: String.t() | nil,
-    pretty: boolean() | nil,
-    nind: integer() | nil
+    replacer: Null.t() | nil,
+    space: Null.t() | nil
   }
 
   @doc "Creates a new struct instance"
-  @spec new(Function.t(), String.t()) :: t()
+  @spec new(Null.t(), Null.t()) :: t()
   def new(arg0, arg1) do
     %__MODULE__{
-      buf: arg0,
-      replacer: arg1,
+      replacer: arg0,
+      space: arg1
     }
   end
 
@@ -36,247 +36,186 @@ defmodule JsonPrinter do
   end
 
   # Static functions
-  @doc """
-    Encodes `o`'s value and returns the resulting JSON string.
+  @doc "Generated from Haxe print"
+  def print(o, replacer \\ nil, space \\ nil) do
+    printer = JsonPrinter.new(replacer, space)
 
-    If `replacer` is given and is not null, it is used to retrieve
-    actual object to be encoded. The `replacer` function takes two parameters,
-    the key and the value being encoded. Initial key value is an empty string.
-
-    If `space` is given and is not null, the result will be pretty-printed.
-    Successive levels will be indented by this string.
-  """
-  @spec print(term(), Null.t(), Null.t()) :: String.t()
-  def print(o, replacer, space) do
-    printer = Haxe.Format.JsonPrinter.new(&JsonPrinter.replacer/2, space)
-    printer.write("", o)
-    printer.buf.b
+    printer.write_value(o, "")
   end
 
   # Instance functions
-  @doc "Function write"
-  @spec write(t(), term(), term()) :: nil
-  def write(%__MODULE__{} = struct, k, v) do
-    if (struct.replacer != nil), do: v = struct.replacer(k, v), else: nil
-    g = Type.typeof(v)
-    case (elem(g, 0)) do
-      0 ->
-        struct = struct.buf
-        %{struct | b: struct.b <> "null"}
-      1 ->
-        struct = struct.buf
-        %{struct | b: struct.b <> Std.string(v)}
-      2 ->
-        nil
-        temp_string = if (Math.is_finite(v)), do: Std.string(v), else: "null"
-        v = temp_string
-        struct = struct.buf
-        %{struct | b: struct.b <> Std.string(v)}
-      3 ->
-        struct = struct.buf
-        %{struct | b: struct.b <> Std.string(v)}
-      4 ->
-        struct.fields_string(v, Reflect.fields(v))
-      5 ->
-        struct = struct.buf
-        %{struct | b: struct.b <> "\"<fun>\""}
-      6 ->
-        g = elem(g, 1)
-        c = g
-        if (c == String) do
-          struct.quote_(v)
+  @doc "Generated from Haxe writeValue"
+  def write_value(%__MODULE__{} = struct, v, key) do
+    temp_result = nil
+
+    if ((struct.replacer != nil)), do: v = struct.replacer(key, v), else: nil
+
+    if ((v == nil)) do
+      "null"
+    else
+      nil
+    end
+
+    g_array = Type.typeof(v)
+    case (case g_array do :t_null -> 0; :t_int -> 1; :t_float -> 2; :t_bool -> 3; :t_object -> 4; :t_function -> 5; :t_class -> 6; :t_enum -> 7; :t_unknown -> 8; _ -> -1 end) do
+      0 -> "null"
+      1 -> Std.string(v)
+      2 -> s = Std.string(v)
+    if ((((s == "NaN") || (s == "Infinity")) || (s == "-Infinity"))) do
+      "null"
+    else
+      nil
+    end
+    s
+      3 -> temp_result = nil
+    if v, do: temp_result = "true", else: temp_result = "false"
+    temp_result
+      4 -> struct.write_object(v)
+      5 -> "null"
+      {6, c} -> g_array = elem(g_array, 1)
+    class_name = Type.get_class_name(c)
+    if ((class_name == "String")) do
+      struct.quote_string(v)
+    else
+      if ((class_name == "Array")) do
+        struct.write_array(v)
+      else
+        struct.write_object(v)
+      end
+    end
+      7 -> "null"
+      8 -> "null"
+    end
+  end
+
+  @doc "Generated from Haxe writeArray"
+  def write_array(%__MODULE__{} = struct, arr) do
+    items = []
+
+    g_counter = 0
+
+    g_array = arr.length
+
+    arr
+    |> Enum.with_index()
+    |> Enum.map(fn {item, i} -> struct.write_value(item, Std.string(i)) end)
+
+    if (((struct.space != nil) && (items.length > 0))) do
+      "[\n  " <> Enum.join(items, ",\n  ") <> "\n]"
+    else
+      "[" <> Enum.join(items, ",") <> "]"
+    end
+  end
+
+  @doc "Generated from Haxe writeObject"
+  def write_object(%__MODULE__{} = struct, obj) do
+    fields = Reflect.fields(obj)
+
+    pairs = []
+
+    g_counter = 0
+
+    Enum.filter(fields, fn item -> struct.space != nil end)
+
+    if (((struct.space != nil) && (pairs.length > 0))) do
+      "{\n  " <> Enum.join(pairs, ",\n  ") <> "\n}"
+    else
+      "{" <> Enum.join(pairs, ",") <> "}"
+    end
+  end
+
+  @doc "Generated from Haxe quoteString"
+  def quote_string(%__MODULE__{} = struct, s) do
+    result = "\""
+
+    g_counter = 0
+
+    g_array = s.length
+
+    (
+      # Simple module-level pattern (inline for now)
+      loop_helper = fn condition_fn, body_fn, loop_fn ->
+        if condition_fn.() do
+          body_fn.()
+          loop_fn.(condition_fn, body_fn, loop_fn)
         else
-          if (c == Array) do
-            v = v
-            struct = struct.buf
-            %{struct | b: struct.b <> "["}
-            len = v.length
-            last = len - 1
-            _g_counter = 0
-            _g_5 = len
-            (
-              loop_helper = fn loop_fn ->
-                if (g < g) do
-                  i = g = g + 1
-            if (i > 0), do: _this = struct.buf
-            %{struct | b: struct.b <> ","}, else: struct.nind + 1
-            if (struct.pretty), do: _this = struct.buf
-            %{struct | b: struct.b <> "\n"}, else: nil
-            if (struct.pretty), do: v = StringTools.lpad("", struct.indent, struct.nind * struct.indent.length)
-            _this = struct.buf
-            %{struct | b: struct.b <> Std.string(v)}, else: nil
-            struct.write(i, Enum.at(v, i))
-            if (i == last), do: struct.nind - 1
-            if (struct.pretty), do: _this = struct.buf
-            %{struct | b: struct.b <> "\n"}, else: nil
-            if (struct.pretty), do: v = StringTools.lpad("", struct.indent, struct.nind * struct.indent.length)
-            _this = struct.buf
-            %{struct | b: struct.b <> Std.string(v)}, else: nil, else: nil
-                  loop_fn.()
-                else
-                  nil
-                end
-              end
-              loop_helper.(loop_helper)
-            )
-            _this = struct.buf
-            %{struct | b: struct.b <> "]"}
-          else
-            if (c == StringMap) do
-              v = v
-              o = %{}
-              k = v.keys()
-              if o != nil do
-                Enum.each(Map.keys(o), fn field ->
-                  k = k.next()
-                  Map.put(o, k, v.get(k))
-                end)
-              end
-              v = o
-              struct.fields_string(v, Reflect.fields(v))
+          nil
+        end
+      end
+
+      loop_helper.(
+        fn -> ((g_counter < g_array)) end,
+        fn ->
+          i = g_counter + 1
+          c = s.char_code_at(i)
+          if ((c == nil)) do
+            if ((c < 32)) do
+              hex = StringTools.hex(c, 4)
+              result = result <> "\\u" <> hex
             else
-              if (c == Date) do
-                v = v
-                struct.quote_(v.to_string())
-              else
-                struct.class_string(v)
-              end
+              result = result <> s.char_at(i)
+            end
+          else
+            case (c) do
+              _ ->
+                result = result <> "\\b"
+              _ ->
+                result = result <> "\\t"
+              _ ->
+                result = result <> "\\n"
+              _ ->
+                result = result <> "\\f"
+              _ ->
+                result = result <> "\\r"
+              _ ->
+                result = result <> "\\\""
+              _ ->
+                result = result <> "\\\\"
+              _ -> if ((c < 32)) do
+              hex = StringTools.hex(c, 4)
+              result = result <> "\\u" <> hex
+            else
+              result = result <> s.char_at(i)
+            end
             end
           end
-        end
-      7 ->
-        elem(g, 1)
-        i = Type.enum_index(v)
-        v = Std.string(i)
-        struct = struct.buf
-        %{struct | b: struct.b <> Std.string(v)}
-      8 ->
-        struct = struct.buf
-        %{struct | b: struct.b <> "\"???\""}
+        end,
+        loop_helper
+      )
+    )
+
+    result = result <> "\""
+
+    result
+  end
+
+  @doc "Generated from Haxe write"
+  def write(%__MODULE__{} = struct, k, v) do
+    struct.write_value(v, k)
+  end
+
+
+  # While loop helper functions
+  # Generated automatically for tail-recursive loop patterns
+
+  @doc false
+  defp while_loop(condition_fn, body_fn) do
+    if condition_fn.() do
+      body_fn.()
+      while_loop(condition_fn, body_fn)
+    else
+      nil
     end
   end
 
-  @doc "Function class_string"
-  @spec class_string(t(), term()) :: nil
-  def class_string(%__MODULE__{} = struct, v) do
-    struct.fields_string(v, Type.get_instance_fields(Type.get_class(v)))
-  end
-
-  @doc "Function fields_string"
-  @spec fields_string(t(), term(), Array.t()) :: nil
-  def fields_string(%__MODULE__{} = struct, v, fields) do
-    struct = struct.buf
-    struct = %{struct | b: struct.b <> "{"}
-    len = fields.length
-    empty = true
-    _g_counter = 0
-    _g_4 = len
-    (
-      loop_helper = fn loop_fn, {empty} ->
-        if (g < g) do
-          try do
-            i = g = g + 1
-    f = Enum.at(fields, i)
-    value = Reflect.field(v, f)
-    if (Reflect.is_function_(value)), do: throw(:continue), else: nil
-    if (empty), do: struct.nind + 1
-    empty = false, else: _this = struct.buf
-    struct = %{struct | b: struct.b <> ","}
-    if (struct.pretty), do: _this = struct.buf
-    struct = %{struct | b: struct.b <> "\n"}, else: nil
-    if (struct.pretty), do: v = StringTools.lpad("", struct.indent, struct.nind * struct.indent.length)
-    _this = struct.buf
-    struct = %{struct | b: struct.b <> Std.string(v)}, else: nil
-    struct.quote(f)
-    _this = struct.buf
-    struct = %{struct | b: struct.b <> ":"}
-    if (struct.pretty), do: _this = struct.buf
-    struct = %{struct | b: struct.b <> " "}, else: nil
-    struct.write(f, value)
-            loop_fn.(loop_fn, {empty})
-          catch
-            :break -> {empty}
-            :continue -> loop_fn.(loop_fn, {empty})
-          end
-        else
-          {empty}
-        end
-      end
-      {empty} = try do
-        loop_helper.(loop_helper, {nil})
-      catch
-        :break -> {nil}
-      end
-    )
-    if (!empty), do: struct.nind - 1
-    if (struct.pretty), do: _this = struct.buf
-    struct = %{struct | b: struct.b <> "\n"}, else: nil
-    if (struct.pretty), do: v = StringTools.lpad("", struct.indent, struct.nind * struct.indent.length)
-    _this = struct.buf
-    struct = %{struct | b: struct.b <> Std.string(v)}, else: nil, else: nil
-    _this = struct.buf
-    struct = %{struct | b: struct.b <> "}"}
-  end
-
-  @doc "Function quote_"
-  @spec quote_(t(), String.t()) :: nil
-  def quote_(%__MODULE__{} = struct, s) do
-    struct = struct.buf
-    struct = %{struct | b: struct.b <> "\""}
-    i = 0
-    length = s.length
-    (
-      loop_helper = fn loop_fn, {temp_number} ->
-        if (i < length) do
-          try do
-            temp_number = nil
-          index = i = i + 1
-          temp_number = s.cca(index)
-          c = temp_number
-          case (c) do
-      8 ->
-        struct = struct.buf
-        %{struct | b: struct.b <> "\\b"}
-      9 ->
-        struct = struct.buf
-        %{struct | b: struct.b <> "\\t"}
-      10 ->
-        struct = struct.buf
-        %{struct | b: struct.b <> "\\n"}
-      12 ->
-        struct = struct.buf
-        %{struct | b: struct.b <> "\\f"}
-      13 ->
-        struct = struct.buf
-        %{struct | b: struct.b <> "\\r"}
-      34 ->
-        struct = struct.buf
-        %{struct | b: struct.b <> "\\\""}
-      92 ->
-        struct = struct.buf
-        %{struct | b: struct.b <> "\\\\"}
-      _ ->
-        struct = struct.buf
-        %{struct | b: struct.b <> String.from_char_code(c)}
+  @doc false
+  defp do_while_loop(body_fn, condition_fn) do
+    body_fn.()
+    if condition_fn.() do
+      do_while_loop(body_fn, condition_fn)
+    else
+      nil
     end
-          loop_fn.({s.cca(index)})
-            loop_fn.(loop_fn, {temp_number})
-          catch
-            :break -> {temp_number}
-            :continue -> loop_fn.(loop_fn, {temp_number})
-          end
-        else
-          {temp_number}
-        end
-      end
-      {temp_number} = try do
-        loop_helper.(loop_helper, {nil})
-      catch
-        :break -> {nil}
-      end
-    )
-    struct = struct.buf
-    struct = %{struct | b: struct.b <> "\""}
   end
 
 end

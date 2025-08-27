@@ -23,14 +23,14 @@ defmodule Accounts do
 
     _changeset = UserChangeset.changeset(user, attrs)
 
-    Repo.insert(changeset)
+    Repo.insert(_changeset)
   end
 
   @doc "Generated from Haxe update_user"
   def update_user(user, attrs) do
     _changeset = UserChangeset.changeset(user, attrs)
 
-    Repo.update(changeset)
+    Repo.update(_changeset)
   end
 
   @doc "Generated from Haxe delete_user"

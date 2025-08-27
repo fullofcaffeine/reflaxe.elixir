@@ -1,15 +1,18 @@
 {
   "filesGenerated": [
-    "haxe_CallStack.ex",
-    "type.ex",
-    "std_types.ex",
-    "enum_value.ex",
-    "enum.ex",
-    "displayable.ex",
-    "class.ex",
-    "any.ex"
-  ],
-  "id": 1,
+  "haxe/sys_tools.ex",
+  "haxe/stack_item.ex",
+  "haxe/iterators/string_iterator_unicode.ex",
+  "haxe/exceptions/pos_exception.ex",
+  "haxe/exceptions/not_implemented_exception.ex",
+  "value_type.ex",
+  "user_display.ex",
+  "user.ex",
+  "string_display.ex",
+  "int_display.ex",
+  "displayable.ex"
+],
+  "id": 0,
   "wasCached": false,
   "version": 1
 }

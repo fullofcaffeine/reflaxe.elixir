@@ -209,9 +209,146 @@ vendor/reflaxe/
         └── ... (other Reflaxe files)
 ```
 
+### 2. RemoveTemporaryVariablesImpl Null Safety Fix (Critical)
+
+**Files Modified:**
+- `src/reflaxe/preprocessors/implementations/RemoveTemporaryVariablesImpl.hx` - Line 181
+
+**Bug Description:**
+During preprocessing, the compiler throws `Uncaught exception Trusted on null value` when encountering variables declared without initialization.
+
+**Root Cause:**
+The `RemoveTemporaryVariablesImpl` preprocessor attempts to remove temporary variables as an optimization. When processing variable declarations:
+1. It checks if a variable should be removed via `shouldRemoveVariable()`
+2. If yes, it processes the initialization expression with `maybeExpr.trustMe()`
+3. **BUG**: `maybeExpr` can be null for uninitialized variables (e.g., `var x: Int;`)
+4. `trustMe()` throws an exception when called on null values
+
+**The trustMe() Function:**
+```haxe
+// From reflaxe/helpers/NullHelper.hx
+public static inline function trustMe<T>(maybe: Null<T>): T {
+    if(maybe == null) throw "Trusted on null value.";
+    return maybe;
+}
+```
+This helper converts `Null<T>` to `T` by asserting non-null at runtime.
+
+**Problem Flow:**
+1. Code contains: `var temp: String;` (no initialization)
+2. `shouldRemoveVariable(tvar, null)` returns true for mode `AllVariables`
+3. Attempts `mapTypedExpr(null.trustMe(), false)`
+4. `trustMe(null)` throws exception
+5. Compilation fails
+
+**Fix Implementation:**
+```haxe
+// Before (line 181)
+if(shouldRemoveVariable(tvar, maybeExpr)) {
+    tvarMap.set(tvar.id, mapTypedExpr(maybeExpr.trustMe(), false));
+
+// After (line 181)
+if(maybeExpr != null && shouldRemoveVariable(tvar, maybeExpr)) {
+    tvarMap.set(tvar.id, mapTypedExpr(maybeExpr.trustMe(), false));
+```
+
+**Why This Fix is Necessary:**
+- Variables without initialization are valid Haxe code
+- The optimization should skip uninitialized variables, not crash
+- This affects any code using the preprocessor with uninitialized variables
+
+**Test Case:**
+```haxe
+// This would crash without the fix:
+class Test {
+    static function main() {
+        var temp: Int;  // Uninitialized variable
+        temp = 42;
+        trace(temp);
+    }
+}
+```
+
+### 3. EnumIntrospectionCompiler Null Pointer Fix (Critical)
+
+**Files Modified:**
+- `src/reflaxe/elixir/helpers/EnumIntrospectionCompiler.hx` - Line 248
+
+**Bug Description:**
+Null pointer exception when compiling switch statements on non-enum types: `Uncaught exception field access on null`.
+
+**Root Cause:**
+The `EnumIntrospectionCompiler` generates Elixir code for enum pattern matching. When processing atom-only enums:
+1. It attempts to iterate through `typeInfo.enumType.names`
+2. **BUG**: When the type is not actually an enum, `typeInfo.enumType` is null
+3. Accessing `.names` on null causes immediate failure
+
+**Problem Flow:**
+1. Switch expression on a non-enum type (edge case in complex pattern matching)
+2. `typeInfo` is created with `enumType: null` for non-enum types (line 184)
+3. Later code assumes `enumType` is not null (line 248)
+4. Attempts `for (name in typeInfo.enumType.names)` on null
+5. Compilation fails
+
+**The TypeInfo Structure:**
+```haxe
+// Line 141-185: typeInfo creation
+var typeInfo = switch (e.t) {
+    case TEnum(enumType, _):
+        // ... enum processing ...
+        {
+            isResult: ...,
+            isOption: ...,
+            enumType: enumTypeRef,  // Valid enum reference
+            hasParameters: ...
+        };
+    case _:
+        // Non-enum types get null enumType
+        {isResult: false, isOption: false, enumType: null, hasParameters: false};
+};
+```
+
+**Fix Implementation:**
+```haxe
+// Before (line 248)
+for (name in typeInfo.enumType.names) {
+    var atomName = NamingHelper.toSnakeCase(name);
+
+// After (line 248)
+if (typeInfo.enumType != null) {
+    for (name in typeInfo.enumType.names) {
+        var atomName = NamingHelper.toSnakeCase(name);
+```
+
+**Why This Fix is Necessary:**
+- Pattern matching can occur on various types during compilation
+- The compiler should handle non-enum types gracefully
+- This prevents crashes when enum introspection is attempted on wrong types
+
+**Test Case:**
+```haxe
+// This pattern could trigger the bug:
+class Test {
+    static function process(value: Dynamic) {
+        // Complex pattern matching that triggers enum introspection
+        // on non-enum types
+        switch(value) {
+            case _: trace("handled");
+        }
+    }
+}
+```
+
+**Impact of Both Fixes:**
+- ✅ Fixes compilation failures in domain_abstractions test
+- ✅ Fixes compilation failures in enhanced_pattern_matching test  
+- ✅ Makes the compiler more robust against edge cases
+- ✅ No impact on correct code generation
+- ✅ Follows defensive programming best practices
+
 ---
 
-**Last Updated:** 2025-01-18  
+**Last Updated:** 2025-08-27  
 **Reflaxe Version:** 4.0.0-beta  
 **Commit:** 430b4187a6bf4813cf618fc3a73ccf494a2ab9f5  
 **Applied By:** reflaxe.elixir project
