@@ -1,5 +1,7 @@
 # Compiler Instance Management Architecture
 
+> **See Also**: [Haxe vs TypeScript for Compilers](haxe-vs-typescript-compilers.md) - Why Haxe's "simple" patterns are actually optimal
+
 ## Current Architecture (Direct Instantiation)
 
 The current Reflaxe.Elixir compiler uses direct instantiation with instance reuse to prevent state inconsistency bugs.
@@ -134,6 +136,19 @@ For the current state of the Reflaxe.Elixir compiler, the direct instantiation a
 3. **Not yet needed**: Codebase isn't large enough to justify container pattern
 4. **Performance**: Direct field access is faster than property getters
 5. **Pragmatic**: Solves the actual problem (state sharing) without over-engineering
+6. **Haxe-idiomatic**: Leverages Haxe's language features instead of copying TypeScript patterns
+
+### Why This Isn't "Settling for Less"
+
+Our architecture might seem simple compared to TypeScript DI patterns, but this is actually **leveraging Haxe's superiority**:
+
+- **Haxe's type system** ensures safety without runtime DI
+- **Macros** can generate any pattern we need at compile-time
+- **Properties** provide lazy initialization when needed
+- **Pattern matching** simplifies AST processing
+- **Abstract types** give us zero-cost abstractions
+
+What would require complex DI patterns in TypeScript is handled elegantly by Haxe's language features. See [Haxe vs TypeScript for Compilers](haxe-vs-typescript-compilers.md) for detailed comparison.
 
 ## When to Reconsider
 
