@@ -364,36 +364,35 @@ class TestWorker {
         isRunning = true;
         startTime = haxe.Timer.stamp();
         
-        // Use simple locking to serialize directory changes (much simpler than complex parsing)
-        final testPath = haxe.io.Path.join(["test/tests", testName]);
+        // Build test path and output directory
+        final testPath = haxe.io.Path.join([projectRoot, "test/tests", testName]);
         final outputDir = ParallelTestRunner.UpdateIntended ? "intended" : "out";
-        final args = [
-            "-D", 'elixir_output=$outputDir',
-            "-D", 'reflaxe.dont_output_metadata_id', // Don't generate volatile id field in tests
-            "compile.hxml"
-        ];
         
-        final originalCwd = Sys.getCwd(); // Declare outside try block for catch access
+        // Save current directory and change to test directory
+        final originalCwd = Sys.getCwd();
         
         try {
-            // Acquire lock, change directory, start process, restore directory, release lock
-            acquireDirectoryLock();
-            
+            // Change to test directory
             Sys.setCwd(testPath);
+            
+            // Run haxe directly with arguments
+            final args = [
+                "-D", 'elixir_output=$outputDir',
+                "-D", 'reflaxe.dont_output_metadata_id', // Don't generate volatile id field in tests
+                "compile.hxml"
+            ];
+            
+            // Create process in current directory
             process = new Process("haxe", args);
+            
+            // Restore original directory immediately after starting process
             Sys.setCwd(originalCwd);
             
-            releaseDirectoryLock();
         } catch (e: Dynamic) {
-            // Ensure process cleanup, lock release, and directory restoration
+            // Restore directory on error
+            Sys.setCwd(originalCwd);
+            // Handle process creation failure
             cleanup(); // CRITICAL: Clean up any partially created process
-            
-            try {
-                Sys.setCwd(originalCwd); // Restore original directory
-                releaseDirectoryLock();
-            } catch (cleanupError: Dynamic) {
-                // Ignore cleanup errors but ensure state is reset
-            }
             
             pendingResult = {
                 testName: testName,
@@ -405,72 +404,13 @@ class TestWorker {
         }
     }
     
-    /**
-     * Simple file-based locking to serialize directory changes.
-     * Much simpler than complex hxml parsing!
-     */
-    function acquireDirectoryLock() {
-        final lockFile = haxe.io.Path.join([projectRoot, "test", ".parallel_lock"]);
-        var attempts = 0;
-        final maxAttempts = 100; // 10 seconds max wait
-        
-        while (attempts < maxAttempts) {
-            try {
-                if (!sys.FileSystem.exists(lockFile)) {
-                    // Try to create lock file atomically with timestamp
-                    final timestamp = Std.string(haxe.Timer.stamp());
-                    sys.io.File.saveContent(lockFile, 'locked by worker ${id} at ${timestamp}');
-                    return; // Successfully acquired lock
-                } else {
-                    // Check if lock is stale (older than 35 seconds - slightly more than test timeout)
-                    final content = sys.io.File.getContent(lockFile);
-                    if (content.indexOf(" at ") > -1) {
-                        final parts = content.split(" at ");
-                        if (parts.length > 1) {
-                            final lockTime = Std.parseFloat(parts[parts.length - 1]);
-                            if (!Math.isNaN(lockTime)) {
-                                final age = haxe.Timer.stamp() - lockTime;
-                                if (age > 35.0) {
-                                    // Stale lock detected - remove it
-                                    sys.FileSystem.deleteFile(lockFile);
-                                    continue; // Try to acquire again
-                                }
-                            }
-                        }
-                    }
-                }
-            } catch (e: Dynamic) {
-                // Lock creation failed, someone else got it
-            }
-            
-            // Wait a bit and try again
-            Sys.sleep(0.1);
-            attempts++;
-        }
-        
-        throw "Failed to acquire directory lock after 10 seconds";
-    }
-    
-    /**
-     * Release the directory lock.
-     */
-    function releaseDirectoryLock() {
-        final lockFile = haxe.io.Path.join([projectRoot, "test", ".parallel_lock"]);
-        try {
-            if (sys.FileSystem.exists(lockFile)) {
-                sys.FileSystem.deleteFile(lockFile);
-            }
-        } catch (e: Dynamic) {
-            // Ignore cleanup errors
-        }
-    }
     
     /**
      * Check if test process has completed and return result.
      * 
-     * IMPORTANT: This method uses timeout-based process management instead of
-     * non-blocking exitCode(false) calls, which were unreliable on macOS and
-     * caused zombie process accumulation.
+     * IMPORTANT: This method uses non-blocking process checking with proper
+     * timeout management to prevent zombie process accumulation while avoiding
+     * blocking the main thread.
      * 
      * @return TestResult if process completed, null if still running
      */
@@ -492,9 +432,6 @@ class TestWorker {
                 // Ignore cleanup errors
             }
             
-            // CRITICAL: Release lock on timeout to prevent deadlock
-            releaseDirectoryLock();
-            
             pendingResult = {
                 testName: currentTest,
                 success: false,
@@ -506,10 +443,15 @@ class TestWorker {
             return pendingResult;
         }
         
-        // Try to get exit code - use synchronous exitCode() within try/catch
-        // FIXED: Previously used exitCode(false) which was unreliable on macOS
+        // Try to get exit code non-blocking way
+        // Use exitCode(false) with proper error handling for macOS compatibility
         try {
-            final exitCode = process.exitCode(); // Synchronous call - throws if still running
+            final exitCode = process.exitCode(false); // Non-blocking call - returns null if still running
+            
+            // If process still running, return null to check again later
+            if (exitCode == null) {
+                return null;
+            }
             
             // Process completed, collect results
             final stdout = process.stdout.readAll().toString();
@@ -546,7 +488,7 @@ class TestWorker {
             return pendingResult;
             
         } catch (e: Dynamic) {
-            // Process still running - this is expected, return null to check again later
+            // Error getting exit code - treat as still running
             return null;
         }
     }
