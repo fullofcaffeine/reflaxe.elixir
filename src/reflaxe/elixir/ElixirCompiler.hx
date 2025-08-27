@@ -958,7 +958,8 @@ class ElixirCompiler extends DirectToStringCompiler {
         #if debug_elixir_injection
         // First, check if this is being called at the top level of a function body
         if (topLevel) {
-            trace('[XRay Injection] Processing top-level expression: ${expr.expr.getName()}');
+            var exprName = Type.enumConstructor(expr.expr);
+            trace('[XRay Injection] Processing top-level expression: $exprName at pos ${expr.pos}');
         }
         switch(expr.expr) {
             case TCall(e, el): {
@@ -985,15 +986,45 @@ class ElixirCompiler extends DirectToStringCompiler {
         }
         #end
         
+        #if debug_elixir_injection
+        // Pre-check what expression we're about to send to parent
+        switch(expr.expr) {
+            case TCall(e, args):
+                switch(e.expr) {
+                    case TIdent(id) if (id == "__elixir__"):
+                        trace('[XRay ElixirCompiler PRE-CHECK] Found TCall(TIdent("__elixir__"), args)');
+                        trace('[XRay ElixirCompiler PRE-CHECK] Args length: ${args.length}');
+                        if (args.length > 0) {
+                            switch(args[0].expr) {
+                                case TConst(TString(s)):
+                                    trace('[XRay ElixirCompiler PRE-CHECK] First arg is string: ${s.substr(0, 50)}...');
+                                case _:
+                                    trace('[XRay ElixirCompiler PRE-CHECK] First arg is not a string constant');
+                            }
+                        }
+                    case _:
+                }
+            case TIdent(id) if (id == "__elixir__"):
+                trace('[XRay ElixirCompiler PRE-CHECK] ⚠️ Found bare TIdent("__elixir__") - void context issue!');
+            case _:
+        }
+        #end
+        
         var parentResult = super.compileExpression(expr, topLevel);
         
         #if debug_elixir_injection
         if (parentResult != null) {
-            trace('[XRay ElixirCompiler] ✓ Parent returned injection result: ${parentResult.substr(0, 50)}...');
+            trace('[XRay ElixirCompiler] ✓ Parent returned injection result: ${parentResult.substr(0, Std.int(Math.min(parentResult.length, 100)))}...');
         } else {
             switch(expr.expr) {
-                case TCall(e, _) if (e.expr.match(TIdent("__elixir__"))):
-                    trace('[XRay ElixirCompiler] ⚠️ Parent returned null for __elixir__ call!');
+                case TCall(e, _):
+                    switch(e.expr) {
+                        case TIdent(id) if (id == "__elixir__"):
+                            trace('[XRay ElixirCompiler] ⚠️ Parent returned null for __elixir__ call!');
+                        case _:
+                    }
+                case TIdent(id) if (id == "__elixir__"):
+                    trace('[XRay ElixirCompiler] ⚠️ Parent returned null for bare __elixir__ identifier!');
                 case _:
             }
         }

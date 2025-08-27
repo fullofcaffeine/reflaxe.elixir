@@ -260,6 +260,30 @@ class ExpressionDispatcher {
                 
             case TCall(e, el):
                 #if debug_expression_dispatcher
+                trace("[XRay ExpressionDispatcher] ✓ Processing TCall");
+                #end
+                
+                // CRITICAL FIX: Check for __elixir__ injection BEFORE delegating to MethodCallCompiler
+                // This prevents double-wrapping issue where injection is processed as regular call
+                switch(e.expr) {
+                    case TIdent(id) if (id == "__elixir__" && compiler.options.targetCodeInjectionName == "__elixir__"):
+                        #if debug_expression_dispatcher
+                        trace("[XRay ExpressionDispatcher] ✓ Detected __elixir__ injection in TCall - letting parent handle it");
+                        #end
+                        // Let the parent's injection detection handle this
+                        // The parent (DirectToStringCompiler) will detect TCall(TIdent("__elixir__"), args)
+                        // and return the properly injected code
+                        var parentResult = compiler.compileExpression(expr, topLevel);
+                        if (parentResult != null) {
+                            return parentResult;
+                        }
+                        // If parent didn't handle it (shouldn't happen), fall through
+                        
+                    case _:
+                        // Not an injection call, proceed normally
+                }
+                
+                #if debug_expression_dispatcher
                 trace("[XRay ExpressionDispatcher] ✓ DISPATCHING to MethodCallCompiler (TCall)");
                 #end
                 methodCallCompiler.compileCallExpression(e, el);
