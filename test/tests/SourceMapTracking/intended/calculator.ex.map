@@ -1,0 +1,10 @@
+{
+  "sourceRoot": "",
+  "names": [],
+  "mappings": "SHOULD_HAVE_MULTIPLE_MAPPINGS",
+  "version": 3,
+  "file": "calculator.ex",
+  "sources": [
+    "Main.hx"
+  ]
+}

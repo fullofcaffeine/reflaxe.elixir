@@ -1,0 +1,10 @@
+{
+  "sourceRoot": "",
+  "names": [],
+  "mappings": "SHOULD_HAVE_MULTIPLE_MAPPINGS_NOT_JUST_ONE",
+  "version": 3,
+  "file": "main.ex",
+  "sources": [
+    "Main.hx"
+  ]
+}
