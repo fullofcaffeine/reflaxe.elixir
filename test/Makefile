@@ -1,11 +1,13 @@
-# Parallel Test Runner using Make
-# Simple, reliable, no process management issues
+# Test Runner for Reflaxe.Elixir using Make
+# Supports both sequential and parallel execution with proven reliability
 #
 # Usage:
-#   make -f Makefile.parallel -j4        # Run with 4 parallel jobs
-#   make -f Makefile.parallel -j8        # Run with 8 parallel jobs
-#   make -f Makefile.parallel test-arrays # Run specific test
-#   make -f Makefile.parallel -j4 -k     # Continue on errors
+#   make -f Makefile            # Run all tests (default: parallel with 4 jobs)
+#   make -f Makefile -j1         # Run tests sequentially
+#   make -f Makefile -j8         # Run with 8 parallel jobs
+#   make -f Makefile test-arrays # Run specific test
+#   make -f Makefile update-intended TEST=arrays # Update intended output for specific test
+#   make -f Makefile -k          # Continue on errors
 
 # Configuration
 SHELL := /bin/bash
@@ -24,9 +26,10 @@ RESET := \033[0m
 TESTS := $(shell find $(TEST_DIR) -name compile.hxml -exec dirname {} \; | xargs -n1 basename | sort)
 TEST_TARGETS := $(addprefix test-,$(TESTS))
 
-# Default target runs all tests
+# Default target runs all tests with default parallelism
 .PHONY: all
-all: summary
+all:
+	@$(MAKE) -f $(MAKEFILE_LIST) -j4 summary
 
 # Summary target that depends on all tests
 .PHONY: summary
@@ -79,6 +82,43 @@ test-%:
 		fi; \
 	fi
 
+# Update intended output for a specific test or all tests
+.PHONY: update-intended
+update-intended:
+	@if [ -n "$(TEST)" ]; then \
+		echo "Updating intended output for test: $(TEST)"; \
+		testdir=$(TEST_DIR)/$(TEST); \
+		if [ ! -f $$testdir/compile.hxml ]; then \
+			echo "❌ Test not found: $(TEST)"; \
+			exit 1; \
+		fi; \
+		echo "Compiling $(TEST) to generate new output..."; \
+		cd $$testdir && haxe -D elixir_output=$(OUTPUT_DIR) -D reflaxe.dont_output_metadata_id compile.hxml && \
+		if [ -d $(OUTPUT_DIR) ]; then \
+			rm -rf intended && \
+			cp -r $(OUTPUT_DIR) intended && \
+			echo "✅ Updated intended output for $(TEST)"; \
+		else \
+			echo "❌ No output generated for $(TEST)"; \
+			exit 1; \
+		fi; \
+	else \
+		echo "Updating intended output for all tests..."; \
+		for test in $(TESTS); do \
+			$(MAKE) -f $(MAKEFILE_LIST) update-intended TEST=$$test || true; \
+		done; \
+		echo "✅ Finished updating all intended outputs"; \
+	fi
+
+# Run a single test by name (convenience target)
+.PHONY: single
+single:
+	@if [ -z "$(TEST)" ]; then \
+		echo "Usage: make single TEST=test_name"; \
+		exit 1; \
+	fi
+	@$(MAKE) -f $(MAKEFILE_LIST) test-$(TEST)
+
 # Clean target
 .PHONY: clean
 clean:
@@ -94,15 +134,25 @@ list:
 # Help target
 .PHONY: help
 help:
-	@echo "Parallel Test Runner for Reflaxe.Elixir"
+	@echo "Test Runner for Reflaxe.Elixir"
 	@echo ""
 	@echo "Usage:"
-	@echo "  make -f Makefile.parallel -j4        # Run all tests with 4 parallel jobs"
-	@echo "  make -f Makefile.parallel test-NAME  # Run specific test"
-	@echo "  make -f Makefile.parallel clean      # Clean output directories"
-	@echo "  make -f Makefile.parallel list       # List all available tests"
+	@echo "  make                          # Run all tests (parallel, 4 jobs)"
+	@echo "  make -j1                      # Run all tests sequentially"
+	@echo "  make -j8                      # Run with 8 parallel jobs"
+	@echo "  make test-NAME                # Run specific test"
+	@echo "  make single TEST=NAME         # Run specific test (alternative)"
+	@echo "  make update-intended TEST=NAME # Update intended output for test"
+	@echo "  make update-intended          # Update all intended outputs"
+	@echo "  make clean                    # Clean output directories"
+	@echo "  make list                     # List all available tests"
 	@echo ""
 	@echo "Options:"
-	@echo "  -j N    Run N tests in parallel"
+	@echo "  -j N    Run N tests in parallel (default: 4)"
 	@echo "  -k      Continue running tests even if some fail"
 	@echo "  -s      Silent mode (less output)"
+	@echo ""
+	@echo "Examples:"
+	@echo "  make -j1                      # Sequential execution"
+	@echo "  make test-arrays              # Run arrays test"
+	@echo "  make update-intended TEST=arrays # Update arrays baseline"

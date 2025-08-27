@@ -4,16 +4,15 @@
 
 ## 🧪 Testing Infrastructure Overview
 
-The Reflaxe.Elixir testing infrastructure consists of multiple test runners and test types, each serving specific purposes in validating the compiler's functionality.
+The Reflaxe.Elixir testing infrastructure uses a **Make-based test runner** that supports both sequential and parallel execution, providing reliable and fast testing for the compiler.
 
 ## 📁 Test Directory Structure
 
 ```
 test/
-├── Test.hxml                    # Main test configuration
-├── TestRunner.hx               # Sequential test runner (reliable, slower)
-├── ParallelTest.hxml          # Parallel test configuration
-├── ParallelTestRunner.hx      # Parallel test runner (faster, has issues)
+├── Makefile                    # Main test runner using Make
+├── Test.hxml                   # Legacy configuration (kept for reference)
+├── run-parallel.sh            # Wrapper script for backward compatibility
 ├── TestProjectGeneratorTemplates.hxml  # Project generator tests
 └── tests/                      # Individual test cases (76 total)
     ├── test_name/
@@ -51,13 +50,15 @@ test/
 
 ## 🔧 Test Runners
 
-### Make-based Parallel Test Runner (Makefile.parallel)
-**Status**: ✅ Stable and fast
+### Unified Make Test Runner
+**Status**: ✅ Production ready - Supports both sequential and parallel execution
 
 ```bash
-npm run test:parallel              # Run all tests in parallel (default)
-npm run test:parallel test=arrays  # Run specific test
-make -f test/Makefile.parallel -j8 # Run with 8 workers
+npm test                           # Run all tests (parallel by default)
+npm run test:sequential            # Run tests sequentially (-j1)
+make -C test                      # Run all tests (parallel, 4 workers)
+make -C test -j8                  # Run with 8 parallel workers
+make -C test test-arrays          # Run specific test
 ```
 
 **Features**:
@@ -73,25 +74,24 @@ make -f test/Makefile.parallel -j8 # Run with 8 workers
 - Shell wrapper script for npm integration
 - No complex worker pools or file locking needed
 
-### Sequential Test Runner (TestRunner.hx)
-**Status**: ✅ Stable fallback option
+### Available Test Commands
 
 ```bash
-npm run test:haxe           # Run all tests sequentially
-npx haxe test/Test.hxml     # Direct invocation
+# Basic operations
+make -C test                      # Run all tests (parallel)
+make -C test -j1                  # Run tests sequentially
+make -C test test-NAME            # Run specific test
+make -C test single TEST=NAME     # Alternative single test syntax
 ```
 
-**Features**:
-- Runs tests one at a time
-- Reliable error reporting
-- Timeout protection (10 seconds per test)
-- Clear output formatting
+# Update baselines
+make -C test update-intended TEST=NAME  # Update specific test
+make -C test update-intended            # Update all tests
 
-**Options**:
-- `test=name` - Run specific test
-- `update-intended` - Update expected output
-- `nocompile` - Skip Elixir compilation
-- `show-output` - Display compilation output
+# Utilities
+make -C test list                 # List all available tests
+make -C test clean                # Clean output directories
+make -C test help                 # Show help text
 
 ## 🐛 Current Test Infrastructure Issues
 
@@ -141,32 +141,33 @@ npx haxe test/Test.hxml     # Direct invocation
 
 ### Running Tests
 ```bash
-# Full test suite (slow but reliable)
-npm run test:sequential
-
-# Parallel tests (faster but may hang)
-npm run test:parallel
+# Full test suite
+npm test                          # Parallel by default
+make -C test -j1                  # Force sequential
 
 # Specific test
-npx haxe test/Test.hxml test=test_name
+make -C test test-test_name       # Direct Make invocation
+npm run test:single TEST=test_name # NPM wrapper
 
-# Without Elixir compilation (fast iteration)
-npx haxe test/Test.hxml test=test_name nocompile
+# Test with different parallelism
+make -C test -j8                  # 8 parallel workers
+make -C test -j16                 # 16 parallel workers
 ```
 
 ### Updating Tests
 ```bash
 # Update specific test intended output
-npx haxe test/Test.hxml test=test_name update-intended
+make -C test update-intended TEST=test_name
 
 # Update all intended outputs (use with caution!)
-npm run test:update
+make -C test update-intended
+npm run test:update  # NPM wrapper
 ```
 
 ### Debugging Tests
 ```bash
-# Show compilation output
-npx haxe test/Test.hxml test=test_name show-output
+# Show available tests
+make -C test list
 
 # Check test directly
 cd test/tests/test_name && npx haxe compile.hxml
@@ -182,11 +183,8 @@ diff -u test/tests/test_name/intended/ test/tests/test_name/out/
 # 1. Kill hanging processes
 pkill -f "haxe.*test"
 
-# 2. Remove stale lock file
-rm test/.parallel_lock
-
-# 3. Use sequential runner instead
-npm run test:sequential
+# 2. Use sequential mode directly
+make -C test -j1
 ```
 
 ### When Tests Report "Missing compile.hxml"
@@ -220,9 +218,9 @@ cd test/tests/test_name && npx haxe compile.hxml
 Main
 ```
 3. Write `Main.hx` with test code
-4. Run test: `npx haxe test/Test.hxml test=my_new_test`
+4. Run test: `make -C test test-my_new_test`
 5. Review output in `out/`
-6. If correct: `npx haxe test/Test.hxml test=my_new_test update-intended`
+6. If correct: `make -C test update-intended TEST=my_new_test`
 
 ### Test Naming Conventions
 - Use snake_case for test directories

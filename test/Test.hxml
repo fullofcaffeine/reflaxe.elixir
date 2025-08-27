@@ -1,11 +1,17 @@
-# Reflaxe.Elixir Test Runner Configuration
-# Based on Reflaxe.CPP and Reflaxe.CSharp testing patterns
+# Legacy Test Configuration File
+#
+# This file is kept for backward compatibility.
+# The test runner has been migrated to Make.
 #
 # Usage:
-#   haxe test/Test.hxml                    # Run all tests
-#   haxe test/Test.hxml test=liveview      # Run specific test
-#   haxe test/Test.hxml update-intended    # Update expected output
-#   haxe test/Test.hxml help               # Show help
-
--cp test
---run test.TestRunner
+#   make -C test                    # Run all tests (parallel)
+#   make -C test -j1                 # Run all tests (sequential)
+#   make -C test test-NAME           # Run specific test
+#   make -C test update-intended TEST=NAME  # Update expected output
+#   make -C test help                # Show help
+#
+# Or using npm:
+#   npm test                         # Run full test suite
+#   npm run test:sequential          # Run tests sequentially
+#   npm run test:single TEST=arrays  # Run specific test
+#   npm run test:update              # Update all intended outputs

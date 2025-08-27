@@ -161,7 +161,7 @@ result = ~/\), else: nil\n/g.replace(result, ")\n");
 ### Never Edit Generated Files
 - ❌ **Don't patch .ex files** - they get overwritten on recompilation
 - ✅ **Fix the compiler source** - make changes in `src/reflaxe/elixir/`
-- ✅ **Update snapshots when output improves** - `haxe test/Test.hxml update-intended`
+- ✅ **Update snapshots when output improves** - `make -C test update-intended TEST=name`
 
 ### Testing Requirements
 - **Every change requires full test suite** - `npm test`
