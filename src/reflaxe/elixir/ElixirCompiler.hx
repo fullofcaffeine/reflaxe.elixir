@@ -345,7 +345,7 @@ class ElixirCompiler extends DirectToStringCompiler {
         this.patternMatcher.setCompiler(this);
         
         // Enable source mapping if requested
-        this.sourceMapOutputEnabled = Context.defined("source-map") || Context.defined("debug");
+        this.sourceMapOutputEnabled = Context.defined("source_map_enabled") || Context.defined("source-map") || Context.defined("debug");
         
         // Configure Reflaxe 4.0 preprocessors for optimized code generation
         // These preprocessors clean up the AST before we compile it to Elixir
