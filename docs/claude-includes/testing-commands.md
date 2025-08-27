@@ -9,8 +9,8 @@ npm test                          # Complete test suite (mandatory before commit
 
 ### Specific Test Categories  
 ```bash
-haxe test/Test.hxml test=name              # Run specific snapshot test
-haxe test/Test.hxml update-intended        # Accept new compiler output
+make -C test test-name                     # Run specific snapshot test
+make -C test update-intended TEST=name     # Accept new compiler output
 MIX_ENV=test mix test                      # Runtime validation tests
 ```
 

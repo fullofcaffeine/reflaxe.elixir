@@ -72,8 +72,8 @@ curl http://localhost:4000        # Test application response
 
 ### Quick Testing
 ```bash
-haxe test/Test.hxml test=name              # Specific snapshot test
-haxe test/Test.hxml update-intended        # Accept new output
+make -C test test-name                     # Specific snapshot test
+make -C test update-intended TEST=name     # Accept new output
 MIX_ENV=test mix test                      # Runtime validation
 ```
 
