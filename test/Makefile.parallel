@@ -1,0 +1,106 @@
+# Parallel Test Runner using Make
+# Simple, reliable, no process management issues
+#
+# Usage:
+#   make -f Makefile.parallel -j4        # Run with 4 parallel jobs
+#   make -f Makefile.parallel -j8        # Run with 8 parallel jobs
+#   make -f Makefile.parallel test-arrays # Run specific test
+#   make -f Makefile.parallel -j4 -k     # Continue on errors
+
+# Configuration
+SHELL := /bin/bash
+TEST_DIR := tests
+TIMEOUT := 30s
+OUTPUT_DIR := out
+
+# Colors for output
+GREEN := \033[0;32m
+RED := \033[0;31m
+RESET := \033[0m
+
+# Find all test directories with compile.hxml
+TESTS := $(shell find $(TEST_DIR) -name compile.hxml -exec dirname {} \; | xargs -n1 basename | sort)
+TEST_TARGETS := $(addprefix test-,$(TESTS))
+
+# Default target runs all tests
+.PHONY: all
+all: summary
+
+# Summary target that depends on all tests
+.PHONY: summary
+summary: $(TEST_TARGETS)
+	@echo ""
+	@echo "========================================"
+	@passed=$$(grep -c "✅" test-results.tmp 2>/dev/null || echo 0); \
+	failed=$$(grep -c "❌" test-results.tmp 2>/dev/null || echo 0); \
+	total=$$((passed + failed)); \
+	echo "Test Results: $$passed/$$total passed"; \
+	if [ $$failed -gt 0 ]; then \
+		echo "$(RED)FAILED: $$failed test(s)$(RESET)"; \
+		grep "❌" test-results.tmp | sed 's/^/  /'; \
+	else \
+		echo "$(GREEN)SUCCESS: All tests passed! ✅$(RESET)"; \
+	fi; \
+	rm -f test-results.tmp
+
+# Pattern rule for running individual tests
+.PHONY: test-%
+test-%:
+	@testname=$*; \
+	testdir=$(TEST_DIR)/$$testname; \
+	if [ ! -f $$testdir/compile.hxml ]; then \
+		echo "❌ $$testname - Test directory not found" | tee -a test-results.tmp; \
+		exit 1; \
+	fi; \
+	echo "Running $$testname..."; \
+	start=$$(date +%s); \
+	if timeout $(TIMEOUT) bash -c "cd $$testdir && haxe -D elixir_output=$(OUTPUT_DIR) -D reflaxe.dont_output_metadata_id compile.hxml" > /dev/null 2>&1; then \
+		end=$$(date +%s); \
+		duration=$$((end - start)); \
+		if [ -d $$testdir/intended ] && [ -d $$testdir/$(OUTPUT_DIR) ]; then \
+			if diff -r $$testdir/intended $$testdir/$(OUTPUT_DIR) > /dev/null 2>&1; then \
+				echo "✅ $$testname ($${duration}s)" | tee -a test-results.tmp; \
+			else \
+				echo "❌ $$testname - Output mismatch ($${duration}s)" | tee -a test-results.tmp; \
+			fi; \
+		else \
+			echo "✅ $$testname ($${duration}s)" | tee -a test-results.tmp; \
+		fi; \
+	else \
+		code=$$?; \
+		end=$$(date +%s); \
+		duration=$$((end - start)); \
+		if [ $$code -eq 124 ]; then \
+			echo "❌ $$testname - Timeout after $(TIMEOUT) ($${duration}s)" | tee -a test-results.tmp; \
+		else \
+			echo "❌ $$testname - Compilation failed ($${duration}s)" | tee -a test-results.tmp; \
+		fi; \
+	fi
+
+# Clean target
+.PHONY: clean
+clean:
+	@rm -f test-results.tmp
+	@find $(TEST_DIR) -name $(OUTPUT_DIR) -type d -exec rm -rf {} + 2>/dev/null || true
+
+# List all tests
+.PHONY: list
+list:
+	@echo "Available tests:"
+	@for test in $(TESTS); do echo "  $$test"; done
+
+# Help target
+.PHONY: help
+help:
+	@echo "Parallel Test Runner for Reflaxe.Elixir"
+	@echo ""
+	@echo "Usage:"
+	@echo "  make -f Makefile.parallel -j4        # Run all tests with 4 parallel jobs"
+	@echo "  make -f Makefile.parallel test-NAME  # Run specific test"
+	@echo "  make -f Makefile.parallel clean      # Clean output directories"
+	@echo "  make -f Makefile.parallel list       # List all available tests"
+	@echo ""
+	@echo "Options:"
+	@echo "  -j N    Run N tests in parallel"
+	@echo "  -k      Continue running tests even if some fail"
+	@echo "  -s      Silent mode (less output)"
