@@ -791,6 +791,9 @@ class ElixirCompiler extends DirectToStringCompiler {
     public function compileClassImpl(classType: ClassType, varFields: Array<ClassVarData>, funcFields: Array<ClassFuncData>): Null<String> {
         if (classType == null) return null;
         
+        // Track position of class definition for source mapping
+        trackPosition(classType.pos);
+        
         // Skip standard library classes that shouldn't generate Elixir modules
         if (isStandardLibraryClass(classType.name)) {
             return null;
@@ -817,12 +820,16 @@ class ElixirCompiler extends DirectToStringCompiler {
         // Check for ExUnit test classes first (before other annotations)
         if (ExUnitCompiler.isExUnitTest(classType)) {
             var result = ExUnitCompiler.compile(classType, this);
+            if (result != null) {
+                trackOutput(result);
+            }
             return result;
         }
         
         // Use unified annotation system for detection, validation, and routing
         var annotationResult = reflaxe.elixir.helpers.AnnotationSystem.routeCompilation(classType, varFields, funcFields);
         if (annotationResult != null) {
+            trackOutput(annotationResult);
             return annotationResult;
         }
         
@@ -830,6 +837,9 @@ class ElixirCompiler extends DirectToStringCompiler {
         var annotationInfo = reflaxe.elixir.helpers.AnnotationSystem.detectAnnotations(classType);
         if (annotationInfo.primaryAnnotation == ":liveview") {
             var result = compileLiveViewClass(classType, varFields, funcFields);
+            if (result != null) {
+                trackOutput(result);
+            }
             return result;
         }
         
@@ -852,6 +862,8 @@ class ElixirCompiler extends DirectToStringCompiler {
         // Post-process to replace getAppName() calls with actual app name
         if (result != null) {
             result = replaceAppNameCalls(result, classType);
+            // Track the generated output for source mapping
+            trackOutput(result);
         }
         
         return result;
@@ -915,12 +927,22 @@ class ElixirCompiler extends DirectToStringCompiler {
     public function compileEnumImpl(enumType: EnumType, options: Array<EnumOptionData>): Null<String> {
         if (enumType == null) return null;
         
+        // Track position of enum definition for source mapping
+        trackPosition(enumType.pos);
+        
         // Set universal output path for consistent snake_case naming
         setUniversalOutputPath(enumType.name, enumType.pack);
         
         // Use the enhanced EnumCompiler helper for proper type integration
         var enumCompiler = new reflaxe.elixir.helpers.EnumCompiler(this.typer);
-        return enumCompiler.compileEnum(enumType, options);
+        var result = enumCompiler.compileEnum(enumType, options);
+        
+        // Track the generated output for source mapping
+        if (result != null) {
+            trackOutput(result);
+        }
+        
+        return result;
     }
     
     /**
@@ -1136,8 +1158,15 @@ class ElixirCompiler extends DirectToStringCompiler {
         // Early return for zero overhead when source maps are disabled
         if (!sourceMapOutputEnabled) return;
         
+        #if debug_source_mapping
+        trace('[SourceMapping] trackPosition called with pos: ${pos}');
+        #end
+        
         if (currentSourceMapWriter != null && pos != null) {
             currentSourceMapWriter.mapPosition(pos);
+            #if debug_source_mapping
+            trace('[SourceMapping] Position tracked successfully');
+            #end
         }
     }
     
