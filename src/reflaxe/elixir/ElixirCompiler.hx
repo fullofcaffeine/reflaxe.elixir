@@ -1610,6 +1610,10 @@ class ElixirCompiler extends DirectToStringCompiler {
         
         currentFunctionParameterMap.clear();
         inlineContextMap.clear(); // Reset inline context for new function
+        // Reset array desugaring tracking for new function
+        if (variableMappingManager != null && variableMappingManager.setupBaseNames != null) {
+            variableMappingManager.setupBaseNames.clear();
+        }
         isCompilingAbstractMethod = true;
         
         // Restore ALL 'this' related mappings if they existed
@@ -1811,6 +1815,10 @@ class ElixirCompiler extends DirectToStringCompiler {
      */
     public function clearFunctionParameterMapping(): Void {
         currentFunctionParameterMap.clear();
+        // Reset array desugaring tracking after function compilation
+        if (variableMappingManager != null && variableMappingManager.setupBaseNames != null) {
+            variableMappingManager.setupBaseNames.clear();
+        }
         isCompilingAbstractMethod = false;
     }
     
