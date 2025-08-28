@@ -10,23 +10,23 @@ defmodule ChildSpecBuilder do
   def worker(module, args, id \\ nil) do
     temp_string = nil
 
-    if ((_id != nil)), do: temp_string = _id, else: temp_string = module
+    if ((id != nil)), do: temp_string = id, else: temp_string = module
 
-    %{type: :worker, start: {%{"module" => module, "func" => "start_link", "args" => _args}, :start_link, []}, shutdown: ShutdownType.timeout(5000), restart: :permanent, modules: [module], id: :temp_string}
+    %{type: :worker, start: {%{"module" => module, "func" => "start_link", "args" => args}, :start_link, []}, shutdown: ShutdownType.timeout(5000), restart: :permanent, modules: [module], id: :temp_string}
   end
 
   @doc "Generated from Haxe supervisor"
   def supervisor(module, args, id \\ nil) do
     temp_string = nil
 
-    if ((_id != nil)), do: temp_string = _id, else: temp_string = module
+    if ((id != nil)), do: temp_string = id, else: temp_string = module
 
-    %{type: :supervisor, start: {%{"module" => module, "func" => "start_link", "args" => _args}, :start_link, []}, shutdown: :infinity, restart: :permanent, modules: [module], id: :temp_string}
+    %{type: :supervisor, start: {%{"module" => module, "func" => "start_link", "args" => args}, :start_link, []}, shutdown: :infinity, restart: :permanent, modules: [module], id: :temp_string}
   end
 
   @doc "Generated from Haxe tempWorker"
   def temp_worker(module, args, id \\ nil) do
-    spec = ChildSpecBuilder.worker(module, _args, _id)
+    spec = ChildSpecBuilder.worker(module, args, id)
 
     %{spec | restart: :temporary}
 

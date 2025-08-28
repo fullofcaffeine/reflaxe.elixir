@@ -14,9 +14,9 @@ defmodule TodoAppWeb.TodoLive do
 
     todos = TodoAppWeb.TodoLive.load_todos(current_user.id)
 
-    _assigns = %{todos: todos, filter: "all", sort_by: "created", current_user: current_user, editing_todo: nil, show_form: false, search_query: "", selected_tags: [], total_todos: todos.length, completed_todos: TodoAppWeb.TodoLive.count_completed(todos), pending_todos: TodoAppWeb.TodoLive.count_pending(todos)}
+    assigns = %{todos: todos, filter: "all", sort_by: "created", current_user: current_user, editing_todo: nil, show_form: false, search_query: "", selected_tags: [], total_todos: todos.length, completed_todos: TodoAppWeb.TodoLive.count_completed(todos), pending_todos: TodoAppWeb.TodoLive.count_pending(todos)}
 
-    updated_socket = Phoenix.LiveView.assign(socket, _assigns)
+    updated_socket = Phoenix.LiveView.assign(socket, assigns)
 
     MountResult.ok(updated_socket)
   end
@@ -32,17 +32,17 @@ defmodule TodoAppWeb.TodoLive do
       "bulk_complete" -> TodoAppWeb.TodoLive.complete_all_todos(socket)
       "bulk_delete_completed" -> TodoAppWeb.TodoLive.delete_completed_todos(socket)
       "cancel_edit" -> SafeAssigns.set_editing_todo(socket, nil)
-      "create_todo" -> TodoAppWeb.TodoLive.create_new_todo(_params, socket)
-      "delete_todo" -> TodoAppWeb.TodoLive.delete_todo(_params.id, socket)
-      "edit_todo" -> TodoAppWeb.TodoLive.start_editing(_params.id, socket)
-      "filter_todos" -> SafeAssigns.set_filter(socket, _params.filter)
-      "save_todo" -> TodoAppWeb.TodoLive.save_edited_todo(_params, socket)
-      "search_todos" -> SafeAssigns.set_search_query(socket, _params.query)
-      "set_priority" -> TodoAppWeb.TodoLive.update_todo_priority(_params.id, _params.priority, socket)
-      "sort_todos" -> SafeAssigns.set_sort_by(socket, _params.sort_by)
+      "create_todo" -> TodoAppWeb.TodoLive.create_new_todo(params, socket)
+      "delete_todo" -> TodoAppWeb.TodoLive.delete_todo(params.id, socket)
+      "edit_todo" -> TodoAppWeb.TodoLive.start_editing(params.id, socket)
+      "filter_todos" -> SafeAssigns.set_filter(socket, params.filter)
+      "save_todo" -> TodoAppWeb.TodoLive.save_edited_todo(params, socket)
+      "search_todos" -> SafeAssigns.set_search_query(socket, params.query)
+      "set_priority" -> TodoAppWeb.TodoLive.update_todo_priority(params.id, params.priority, socket)
+      "sort_todos" -> SafeAssigns.set_sort_by(socket, params.sort_by)
       "toggle_form" -> SafeAssigns.set_show_form(socket, not socket.assigns.show_form)
-      "toggle_tag" -> TodoAppWeb.TodoLive.toggle_tag_filter(_params.tag, socket)
-      "toggle_todo" -> TodoAppWeb.TodoLive.toggle_todo_status(_params.id, socket)
+      "toggle_tag" -> TodoAppWeb.TodoLive.toggle_tag_filter(params.tag, socket)
+      "toggle_todo" -> TodoAppWeb.TodoLive.toggle_todo_status(params.id, socket)
       _ -> socket
     end
 
@@ -62,24 +62,24 @@ defmodule TodoAppWeb.TodoLive do
       0 -> parsed_msg = elem(g_array, 1)
     case parsed_msg do
       0 -> g_param_0 = elem(parsed_msg, 1)
-    todo = g_param_0
+    todo = g_array
     temp_socket = TodoAppWeb.TodoLive.add_todo_to_list(todo, socket)
       1 -> g_param_0 = elem(parsed_msg, 1)
-    todo = g_param_0
+    todo = g_array
     temp_socket = TodoAppWeb.TodoLive.update_todo_in_list(todo, socket)
       2 -> id = elem(parsed_msg, 1)
     temp_socket = TodoAppWeb.TodoLive.remove_todo_from_list(id, socket)
       3 -> action = elem(parsed_msg, 1)
     temp_socket = TodoAppWeb.TodoLive.handle_bulk_update(action, socket)
       4 -> g_param_0 = elem(parsed_msg, 1)
-    _user_id = g_param_0
+    user_id = g_array
     temp_socket = socket
       5 -> g_param_0 = elem(parsed_msg, 1)
-    _user_id = g_param_0
+    user_id = g_array
     temp_socket = socket
       6 -> g_param_0 = elem(parsed_msg, 1)
     g_param_1 = elem(parsed_msg, 2)
-    message = g_param_1
+    message = g_array
     level = g_param_1
     temp_flash_type = nil
     case level do
@@ -103,23 +103,23 @@ defmodule TodoAppWeb.TodoLive do
   def create_new_todo(params, socket) do
     temp_right = nil
 
-    _todo_params_title = _params.title
+    _todo_params_title = params.title
 
-    _todo_params_description = _params.description
+    _todo_params_description = params.description
 
     _todo_params_completed = false
 
     temp_right = nil
 
-    if ((_params.priority != nil)), do: temp_right = _params.priority, else: temp_right = "medium"
+    if ((params.priority != nil)), do: temp_right = params.priority, else: temp_right = "medium"
 
-    _todo_params_due_date = _params.due_date
+    _todo_params_due_date = params.due_date
 
-    _todo_params_tags = TodoAppWeb.TodoLive.parse_tags(_params.tags)
+    _todo_params_tags = TodoAppWeb.TodoLive.parse_tags(params.tags)
 
     _todo_params_user_id = socket.assigns.current_user.id
 
-    changeset_params = TypeSafeConversions.event_params_to_changeset_params(_params)
+    changeset_params = TypeSafeConversions.event_params_to_changeset_params(params)
 
     _changeset = Todo.changeset(Todo.new(), changeset_params)
 
@@ -147,7 +147,7 @@ defmodule TodoAppWeb.TodoLive do
 
   @doc "Generated from Haxe toggle_todo_status"
   def toggle_todo_status(id, socket) do
-    todo = TodoAppWeb.TodoLive.find_todo(_id, socket.assigns.todos)
+    todo = TodoAppWeb.TodoLive.find_todo(id, socket.assigns.todos)
 
     if ((todo == nil)) do
       socket
@@ -177,7 +177,7 @@ defmodule TodoAppWeb.TodoLive do
 
   @doc "Generated from Haxe delete_todo"
   def delete_todo(id, socket) do
-    todo = TodoAppWeb.TodoLive.find_todo(_id, socket.assigns.todos)
+    todo = TodoAppWeb.TodoLive.find_todo(id, socket.assigns.todos)
 
     if ((todo == nil)) do
       socket
@@ -188,14 +188,14 @@ defmodule TodoAppWeb.TodoLive do
     g_array = TodoApp.Repo.delete(todo)
     case g_array do
       0 -> _deleted_todo = elem(g_array, 1)
-    g_array = TodoPubSub.broadcast(:todo_updates, TodoPubSubMessage.todo_deleted(_id))
+    g_array = TodoPubSub.broadcast(:todo_updates, TodoPubSubMessage.todo_deleted(id))
     case g_array do
       0 -> g_param_0 = elem(g_array, 1)
       1 -> g_param_0 = elem(g_array, 1)
     reason = g_param_0
     Log.trace("Failed to broadcast todo deletion: " <> reason, %{fileName: "src_haxe/server/live/TodoLive.hx", lineNumber: 289, className: "server.live.TodoLive", methodName: "delete_todo"})
     end
-    TodoAppWeb.TodoLive.remove_todo_from_list(_id, socket)
+    TodoAppWeb.TodoLive.remove_todo_from_list(id, socket)
       1 -> g_param_0 = elem(g_array, 1)
     reason = g_param_0
     Phoenix.LiveView.put_flash(socket, :error, "Failed to delete todo: " <> Std.string(reason))
@@ -205,7 +205,7 @@ defmodule TodoAppWeb.TodoLive do
 
   @doc "Generated from Haxe update_todo_priority"
   def update_todo_priority(id, priority, socket) do
-    todo = TodoAppWeb.TodoLive.find_todo(_id, socket.assigns.todos)
+    todo = TodoAppWeb.TodoLive.find_todo(id, socket.assigns.todos)
 
     if ((todo == nil)) do
       socket
@@ -292,7 +292,7 @@ defmodule TodoAppWeb.TodoLive do
       if ((g_counter < this.length)) do
             v = Enum.at(this, g_counter)
         g_counter + 1
-        g_array = if ((v.id != _id)), do: g_array ++ [v], else: g_array
+        g_array = if ((v.id != id)), do: g_array ++ [v], else: g_array
         loop.()
       end
     end).()
@@ -311,7 +311,7 @@ defmodule TodoAppWeb.TodoLive do
 
     where_conditions = StringMap.new()
 
-    _value = QueryValue.integer(_user_id)
+    _value = QueryValue.integer(user_id)
 
     where_conditions = Map.put(where_conditions, "user_id", _value)
 
@@ -331,7 +331,7 @@ defmodule TodoAppWeb.TodoLive do
       if ((g_counter < todos.length)) do
             todo = Enum.at(todos, g_counter)
         g_counter + 1
-        if ((todo.id == _id)) do
+        if ((todo.id == id)) do
           todo
         else
           nil
@@ -448,7 +448,7 @@ defmodule TodoAppWeb.TodoLive do
         g_array = TodoApp.Repo.update(updated_changeset)
         case g_array do
           0 -> g_param_0 = elem(g_array, 1)
-        _updated_todo = g_param_0
+        updated_todo = g_array
         nil
           1 -> g_param_0 = elem(g_array, 1)
         reason = g_param_0
@@ -541,7 +541,7 @@ defmodule TodoAppWeb.TodoLive do
 
   @doc "Generated from Haxe start_editing"
   def start_editing(id, socket) do
-    todo = TodoAppWeb.TodoLive.find_todo(_id, socket.assigns.todos)
+    todo = TodoAppWeb.TodoLive.find_todo(id, socket.assigns.todos)
 
     SafeAssigns.set_editing_todo(socket, todo)
   end
@@ -557,7 +557,7 @@ defmodule TodoAppWeb.TodoLive do
       nil
     end
 
-    changeset_params = TypeSafeConversions.event_params_to_changeset_params(_params)
+    changeset_params = TypeSafeConversions.event_params_to_changeset_params(params)
 
     _changeset = Todo.changeset(todo, changeset_params)
 
@@ -598,10 +598,10 @@ defmodule TodoAppWeb.TodoLive do
       2 -> _priority = elem(action, 1)
     temp_result = socket
       3 -> g_param_0 = elem(action, 1)
-    _tag = g_param_0
+    tag = g_array
     temp_result = socket
       4 -> g_param_0 = elem(action, 1)
-    _tag = g_param_0
+    tag = g_array
     temp_result = socket
     end
 
@@ -615,7 +615,7 @@ defmodule TodoAppWeb.TodoLive do
 
     selected_tags = socket.assigns.selected_tags
 
-    if Enum.member?(selected_tags, _tag) do
+    if Enum.member?(selected_tags, tag) do
       g_array = []
       g_counter = 0
       g_array = selected_tags
@@ -623,13 +623,13 @@ defmodule TodoAppWeb.TodoLive do
         if ((g_counter < g_array.length)) do
               v = Enum.at(g_array, g_counter)
           g_counter + 1
-          g_array = if ((v != _tag)), do: g_array ++ [v], else: g_array
+          g_array = if ((v != tag)), do: g_array ++ [v], else: g_array
           loop.()
         end
       end).()
       temp_array = g_array
     else
-      temp_array = selected_tags ++ [_tag]
+      temp_array = selected_tags ++ [tag]
     end
 
     SafeAssigns.set_selected_tags(socket, temp_array)

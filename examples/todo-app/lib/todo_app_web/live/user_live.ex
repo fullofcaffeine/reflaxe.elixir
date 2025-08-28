@@ -44,7 +44,7 @@ defmodule TodoAppWeb.UserLive do
 
   @doc "Generated from Haxe handleEditUser"
   def handle_edit_user(params, socket) do
-    user_id = _params.id
+    user_id = params.id
 
     selected_user = Users.get_user(user_id)
 
@@ -61,7 +61,7 @@ defmodule TodoAppWeb.UserLive do
     temp_struct = nil
     temp_result = nil
 
-    user_params = _params.user
+    user_params = params.user
 
     temp_struct = nil
 
@@ -84,11 +84,11 @@ defmodule TodoAppWeb.UserLive do
 
   @doc "Generated from Haxe handleDeleteUser"
   def handle_delete_user(params, socket) do
-    user_id = _params.id
+    user_id = params.id
 
-    _user = Users.get_user(user_id)
+    user = Users.get_user(user_id)
 
-    result = Users.delete_user(_user)
+    result = Users.delete_user(user)
 
     if ((result.status == "ok")) do
       users = Users.list_users(nil)
@@ -105,7 +105,7 @@ defmodule TodoAppWeb.UserLive do
   def handle_search(params, socket) do
     temp_array = nil
 
-    search_term = _params.search
+    search_term = params.search
 
     if ((search_term.length > 0)), do: temp_array = Users.search_users(search_term), else: temp_array = Users.list_users(nil)
 
@@ -173,7 +173,7 @@ defmodule TodoAppWeb.UserLive do
 
   @doc "Generated from Haxe renderUserRow"
   def render_user_row(assigns) do
-    _user = assigns.user
+    user = assigns.user
 
     ~H"""
       <tr>

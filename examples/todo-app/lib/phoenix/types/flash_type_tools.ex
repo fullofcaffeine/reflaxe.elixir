@@ -12,7 +12,7 @@ defmodule FlashTypeTools do
 
     temp_result = nil
 
-    case _type do
+    case type do
       :info -> "info"
       :success -> "success"
       :warning -> "warning"
@@ -42,7 +42,7 @@ defmodule FlashTypeTools do
   def get_css_class(type) do
     temp_result = nil
 
-    case _type do
+    case type do
       :info -> "bg-blue-50 border-blue-200 text-blue-800"
       :success -> "bg-green-50 border-green-200 text-green-800"
       :warning -> "bg-yellow-50 border-yellow-200 text-yellow-800"
@@ -56,7 +56,7 @@ defmodule FlashTypeTools do
   def get_icon_name(type) do
     temp_result = nil
 
-    case _type do
+    case type do
       :info -> "information-circle"
       :success -> "check-circle"
       :warning -> "exclamation-triangle"

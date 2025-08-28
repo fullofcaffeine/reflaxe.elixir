@@ -37,7 +37,7 @@ defmodule SafeAssigns do
 
   @doc "Generated from Haxe setFilter"
   def set_filter(socket, filter) do
-    Phoenix.LiveView.assign(socket, %{"filter" => _filter})
+    Phoenix.LiveView.assign(socket, %{"filter" => filter})
   end
 
   @doc "Generated from Haxe setSortBy"

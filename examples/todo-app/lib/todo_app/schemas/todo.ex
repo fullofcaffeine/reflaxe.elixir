@@ -37,7 +37,7 @@ defmodule Todo do
   # Static functions
   @doc "Generated from Haxe changeset"
   def changeset(todo, params) do
-    _changeset = Ecto.Changeset.cast_changeset(todo, _params, ["title", "description", "completed", "priority", "due_date", "tags", "user_id"])
+    _changeset = Ecto.Changeset.cast_changeset(todo, params, ["title", "description", "completed", "priority", "due_date", "tags", "user_id"])
 
     _changeset = Ecto.Changeset.validate_required(_changeset, ["title", "user_id"])
 
@@ -56,24 +56,24 @@ defmodule Todo do
 
   @doc "Generated from Haxe toggle_completed"
   def toggle_completed(todo) do
-    _params = StringMap.new()
+    params = StringMap.new()
 
     _value = ChangesetValue.bool_value(not todo.completed)
 
-    _params = Map.put(_params, "completed", _value)
+    params = Map.put(params, "completed", _value)
 
-    Todo.changeset(todo, _params)
+    Todo.changeset(todo, params)
   end
 
   @doc "Generated from Haxe update_priority"
   def update_priority(todo, priority) do
-    _params = StringMap.new()
+    params = StringMap.new()
 
     _value = ChangesetValue.string_value(priority)
 
-    _params = Map.put(_params, "priority", _value)
+    params = Map.put(params, "priority", _value)
 
-    Todo.changeset(todo, _params)
+    Todo.changeset(todo, params)
   end
 
   @doc "Generated from Haxe add_tag"
@@ -84,7 +84,7 @@ defmodule Todo do
 
     temp_array = temp_array ++ [tag]
 
-    _params = StringMap.new()
+    params = StringMap.new()
 
     g_array = []
 
@@ -101,9 +101,9 @@ defmodule Todo do
 
     _value = ChangesetValue.array_value(g_array)
 
-    _params = Map.put(_params, "tags", _value)
+    params = Map.put(params, "tags", _value)
 
-    Todo.changeset(todo, _params)
+    Todo.changeset(todo, params)
   end
 
 

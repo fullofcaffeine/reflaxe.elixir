@@ -48,7 +48,7 @@ defmodule JsonPrinter do
   def write_value(%__MODULE__{} = struct, v, key) do
     temp_result = nil
 
-    if ((struct.replacer != nil)), do: v = struct.replacer(_key, v), else: nil
+    if ((struct.replacer != nil)), do: v = struct.replacer(key, v), else: nil
 
     if ((v == nil)) do
       "null"
@@ -125,9 +125,9 @@ defmodule JsonPrinter do
             field = Enum.at(fields, g_counter)
         g_counter + 1
         _value = Reflect.field(obj, field)
-        _key = struct.quote_string(field)
+        key = struct.quote_string(field)
         val = struct.write_value(_value, field)
-        pairs = if ((struct.space != nil)), do: pairs ++ [_key <> ": " <> val], else: pairs ++ [_key <> ":" <> val]
+        pairs = if ((struct.space != nil)), do: pairs ++ [key <> ": " <> val], else: pairs ++ [key <> ":" <> val]
         loop.()
       end
     end).()
