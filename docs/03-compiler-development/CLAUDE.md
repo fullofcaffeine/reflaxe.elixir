@@ -231,6 +231,7 @@ function build(): String {
 - [AST Processing](ast-processing.md) - TypedExpr transformation guide
 - [Testing Infrastructure](testing-infrastructure.md) - Snapshot testing system
 - [Debugging Guide](debugging-guide.md) - XRay methodology details
+- [HXX Template Compilation](hxx-template-compilation.md) - Deep dive into HXX→HEEx transformation
 
 ### Reference Materials
 - [Best Practices](best-practices.md) - Development patterns and standards

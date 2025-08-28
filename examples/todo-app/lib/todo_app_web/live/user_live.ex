@@ -137,7 +137,7 @@ defmodule TodoAppWeb.UserLive do
 
 
   @doc "Generated from Haxe renderUserList"
-  def render_user_list(_assigns) do
+  def render_user_list(assigns) do
     ~H"""
       <div class="users-list">
       <table class="table">
