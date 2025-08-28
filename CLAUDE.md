@@ -806,6 +806,7 @@ cd examples/todo-app && npx haxe build-server.hxml && mix compile --force
 - **Y Combinator Struct Update Patterns**: Fixed malformed inline if-else expressions with struct updates by forcing block syntax (see [`docs/03-compiler-development/Y_COMBINATOR_PATTERNS.md`](docs/03-compiler-development/Y_COMBINATOR_PATTERNS.md))
 - **Variable Substitution in Lambda Expressions**: Fixed with proper AST variable tracking
 - **Hardcoded Application Dependencies**: Removed all hardcoded references
+- **Function Parameter Underscore Prefixing (August 2025)**: Fixed incorrect underscore prefixing of used function parameters in TypeSafeChildSpecBuilder and similar contexts. Implemented targeted priority check in VariableCompiler to ensure used parameters retain their correct names (see [`docs/03-compiler-development/FUNCTION_PARAMETER_UNDERSCORE_FIX.md`](docs/03-compiler-development/FUNCTION_PARAMETER_UNDERSCORE_FIX.md))
 
 ## Commit Standards
 **Follow [Conventional Commits](https://www.conventionalcommits.org/)**: `<type>(<scope>): <subject>`
