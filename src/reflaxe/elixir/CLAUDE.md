@@ -12,18 +12,60 @@ This file contains compiler-specific development guidance for agents working on 
 - **ElixirPrinter.hx** - AST to string conversion and formatting
 - **ElixirTyper.hx** - Type mapping between Haxe and Elixir systems
 
-### Helper Compiler Pattern
+### 📁 Complete Compiler File Structure
+
+**⚠️ CRITICAL RULE: When adding new helper compilers, ALWAYS update this tree**
+
 ```
-ElixirCompiler.hx (main orchestrator)
-├── helpers/ChangesetCompiler.hx    # @:changeset annotation processing
-├── helpers/ClassCompiler.hx        # Class and struct compilation  
-├── helpers/EnumCompiler.hx         # Enum compilation with pattern matching
-├── helpers/LiveViewCompiler.hx     # @:liveview annotation processing
-├── helpers/RouterCompiler.hx       # @:router annotation processing
-├── helpers/ProtocolCompiler.hx     # @:protocol/@:impl processing
-├── helpers/MigrationCompiler.hx    # @:migration database schema processing
-└── helpers/HxxCompiler.hx          # HXX template compilation
+src/reflaxe/elixir/
+├── ElixirCompiler.hx             # Main transpiler (MUST stay <2000 lines)
+├── ElixirPrinter.hx              # AST to string conversion
+├── ElixirTyper.hx                # Type mapping (Haxe → Elixir)
+├── CLAUDE.md                     # THIS FILE - Keep updated!
+└── helpers/                      # Specialized compilers (Single Responsibility)
+    ├── AnnotationSystem.hx       # @:annotation processing system
+    ├── ApplicationCompiler.hx   # @:application OTP app generation
+    ├── ChangesetCompiler.hx      # @:changeset Ecto validation
+    ├── ClassCompiler.hx          # Class/struct → module compilation
+    ├── CompilerUtilities.hx      # ⚡ Shared utilities (NO DUPLICATION!)
+    ├── ConditionalCompiler.hx    # Complex conditional expressions
+    ├── EnumCompiler.hx           # Enum → tagged tuples + pattern matching
+    ├── EndpointCompiler.hx       # @:endpoint Phoenix endpoint
+    ├── GenServerCompiler.hx      # @:genserver OTP behavior
+    ├── HxxCompiler.hx            # HXX → HEEx template compilation
+    ├── LiveViewCompiler.hx       # @:liveview Phoenix LiveView
+    ├── MigrationCompiler.hx      # @:migration Ecto migrations
+    ├── NamingHelper.hx           # camelCase → snake_case conversion
+    ├── OTPCompiler.hx            # OTP patterns (supervisors, child specs)
+    ├── PatternAnalysisCompiler.hx # Pattern detection and analysis
+    ├── PatternMatchingCompiler.hx # Switch/case → Elixir pattern matching
+    ├── ProtocolCompiler.hx       # @:protocol/@:impl Elixir protocols
+    ├── ReflectionCompiler.hx     # Reflect.* API implementation
+    ├── RouterCompiler.hx         # @:router Phoenix router DSL
+    ├── SchemaCompiler.hx         # @:schema Ecto models
+    ├── StringMethodCompiler.hx   # String method → Elixir String module
+    ├── TestCompiler.hx           # @:test ExUnit test generation
+    ├── UnifiedLoopCompiler.hx    # For/while loop optimization
+    └── VariableCompiler.hx       # Variable naming and tracking
 ```
+
+### 📚 Utility Guidelines - PREVENT DUPLICATION
+
+**CompilerUtilities.hx** is the SINGLE source of truth for shared functionality:
+- String manipulation (stripQuotes, stripColon)
+- Atom formatting (formatAsAtom)
+- Code indentation (indentCode)
+- Field extraction (extractFieldName)
+- Variable naming (toElixirVarName)
+- AST traversal helpers (findFirstTLocal)
+- Multi-statement detection (containsMultipleStatements)
+
+**⚠️ BEFORE ADDING ANY UTILITY FUNCTION:**
+1. Check CompilerUtilities.hx first
+2. Check if similar functionality exists
+3. If not found, ADD to CompilerUtilities, NOT to individual compilers
+4. Document with WHY/WHAT/HOW pattern
+5. Update this CLAUDE.md file
 
 ## ⚡ Critical Compilation Concepts
 

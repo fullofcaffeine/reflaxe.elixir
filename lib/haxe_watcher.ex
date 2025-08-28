@@ -269,10 +269,11 @@ defmodule HaxeWatcher do
       # 2. Core compilation works without it - it's just a convenience feature
       # 3. Keeps production deployments lightweight without unnecessary deps
       # Users who want file watching must add {:file_system, "~> 0.2"} to their mix.exs
-      if Code.ensure_loaded?(FileSystem) do
-        case FileSystem.start_link(dirs: existing_dirs) do
+      file_system_mod = :FileSystem
+      if Code.ensure_loaded?(file_system_mod) do
+        case apply(file_system_mod, :start_link, [[dirs: existing_dirs]]) do
           {:ok, pid} ->
-            FileSystem.subscribe(pid)
+            apply(file_system_mod, :subscribe, [pid])
             {:ok, pid}
             
           {:error, reason} ->
