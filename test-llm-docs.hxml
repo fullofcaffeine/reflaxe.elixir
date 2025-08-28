@@ -1,7 +1,0 @@
-# Test LLM documentation generation
--cp src  
--cp test/tests/hxx_template
--lib reflaxe.elixir
--D generate-llm-docs
--D elixir_output=test_output
-Main
