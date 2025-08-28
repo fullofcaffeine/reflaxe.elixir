@@ -1,5 +1,0 @@
--cp src
--cp test
--main integration.CompilationPipelineTest
--D reflaxe_runtime
---no-output
