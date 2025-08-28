@@ -1,1 +1,0 @@
-typedef reflaxe.elixir.helpers.AnnotationInfo = { primaryAnnotation : Null<String>, isSupported : Bool, hasConflicts : Bool, conflicts : Array<reflaxe.elixir.helpers.AnnotationConflict>, annotations : Array<String> }

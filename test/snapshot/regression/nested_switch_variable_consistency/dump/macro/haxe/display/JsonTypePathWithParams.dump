@@ -1,1 +1,0 @@
-typedef haxe.display.JsonTypePathWithParams = { path : haxe.display.JsonTypePath, params : haxe.display.JsonTypes }

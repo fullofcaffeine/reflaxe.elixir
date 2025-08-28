@@ -1,1 +1,0 @@
-typedef Iterable<T> = { iterator : () -> Iterator<Iterable.T> }

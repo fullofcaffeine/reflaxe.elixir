@@ -1,7 +1,0 @@
-@:flatEnum
-enum reflaxe.BaseCompilerFileOutputType {
-	Manual;
-	SingleFile;
-	FilePerModule;
-	FilePerClass;
-}

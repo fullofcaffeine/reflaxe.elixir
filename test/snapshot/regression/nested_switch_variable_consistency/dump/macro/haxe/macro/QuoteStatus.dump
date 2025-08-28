@@ -1,5 +1,0 @@
-@:flatEnum
-enum haxe.macro.QuoteStatus {
-	Unquoted;
-	Quoted;
-}

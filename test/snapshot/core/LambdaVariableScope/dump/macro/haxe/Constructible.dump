@@ -1,1 +1,0 @@
-abstract haxe.Constructible<T> {}

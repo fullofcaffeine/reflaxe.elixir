@@ -1,1 +1,0 @@
-typedef haxe.display.JsonEnum = { isExtern : Bool, constructors : haxe.display.JsonEnumFields }

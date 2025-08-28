@@ -1,1 +1,0 @@
-typedef haxe.display.Timer = { time : Float, ?percentTotal : Null<Float>, ?percentParent : Null<Float>, ?path : Null<String>, name : String, ?info : Null<String>, ?children : Null<Array<haxe.display.Timer>>, ?calls : Null<Int> }

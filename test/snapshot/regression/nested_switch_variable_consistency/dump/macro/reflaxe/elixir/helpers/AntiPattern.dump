@@ -1,1 +1,0 @@
-typedef reflaxe.elixir.helpers.AntiPattern = { name : String, goodCode : String, description : String, badCode : String }

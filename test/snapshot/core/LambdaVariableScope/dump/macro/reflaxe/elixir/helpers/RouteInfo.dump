@@ -1,1 +1,0 @@
-typedef reflaxe.elixir.helpers.RouteInfo = { path : String, metrics : Null<String>, method : String, controller : Null<String>, as : Null<String>, action : String }

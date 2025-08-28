@@ -1,1 +1,0 @@
-typedef reflaxe.elixir.helpers.FieldAssignmentPattern = { valueExpression : haxe.macro.TypedExpr, fieldName : String }

@@ -1,1 +1,0 @@
-typedef reflaxe.elixir.helpers.PipelineOperation = { isBuiltin : Bool, functionName : String, arguments : Array<String> }

@@ -1,1 +1,0 @@
-typedef haxe.display.CompletionResponse<T1, T2> = { ?replaceRange : Null<haxe.display.Range>, mode : haxe.display.CompletionMode<haxe.display.CompletionResponse.T2>, items : Array<haxe.display.DisplayItem<haxe.display.CompletionResponse.T1>>, ?isIncomplete : Null<Bool>, ?filterString : Null<String> }

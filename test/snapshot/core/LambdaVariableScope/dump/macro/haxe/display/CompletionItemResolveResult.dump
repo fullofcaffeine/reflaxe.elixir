@@ -1,1 +1,0 @@
-typedef haxe.display.CompletionItemResolveResult = haxe.display.Response<{ item : haxe.display.DisplayItem<Dynamic> }>

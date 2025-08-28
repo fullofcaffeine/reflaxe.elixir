@@ -1,1 +1,0 @@
-typedef haxe.display.JsonAnonStatus<T> = { kind : haxe.display.JsonAnonStatusKind<haxe.display.JsonAnonStatus.T>, args : haxe.display.JsonAnonStatus.T }

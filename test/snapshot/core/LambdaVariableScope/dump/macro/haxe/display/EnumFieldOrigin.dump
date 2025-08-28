@@ -1,1 +1,0 @@
-typedef haxe.display.EnumFieldOrigin<T> = { kind : haxe.display.EnumFieldOriginKind<haxe.display.EnumFieldOrigin.T>, ?args : Null<haxe.display.EnumFieldOrigin.T> }

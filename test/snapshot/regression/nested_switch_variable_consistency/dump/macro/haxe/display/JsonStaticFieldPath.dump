@@ -1,1 +1,0 @@
-typedef haxe.display.JsonStaticFieldPath = { typeName : String, pack : Array<String>, moduleName : String, ?importStatus : Null<haxe.display.ImportStatus>, fieldName : String }

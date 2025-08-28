@@ -1,6 +1,0 @@
-@:publicFields
-class haxe.display.Methods {
-
-	@:value(new HaxeRequestMethod<InitializeParams,InitializeResult>("initialize"))
-	public static inline var Initialize:haxe.display.HaxeRequestMethod<haxe.display.InitializeParams, haxe.display.InitializeResult> = [Cast:haxe.display.HaxeRequestMethod<haxe.display.InitializeParams, haxe.display.InitializeResult>] [Const:String] "initialize";
-}

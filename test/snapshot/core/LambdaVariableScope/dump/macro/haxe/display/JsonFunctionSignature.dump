@@ -1,1 +1,0 @@
-typedef haxe.display.JsonFunctionSignature = { ret : haxe.display.JsonType<Dynamic>, args : Array<haxe.display.JsonFunctionArgument> }

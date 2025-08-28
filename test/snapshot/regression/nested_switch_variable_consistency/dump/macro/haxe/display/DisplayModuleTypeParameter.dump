@@ -1,1 +1,0 @@
-typedef haxe.display.DisplayModuleTypeParameter = { name : String, meta : haxe.display.JsonMetadata, constraints : Array<haxe.display.JsonType<Dynamic>> }
