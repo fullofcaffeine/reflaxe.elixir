@@ -239,7 +239,7 @@ defmodule TodoAppWeb.TodoLive do
         g_counter + 1
         temp_todo = nil
         if ((v.id == updated_todo.id)), do: temp_todo = updated_todo, else: temp_todo = v
-        g_array ++ [temp_todo]
+        g_array = g_array ++ [temp_todo]
         loop.()
       end
     end).()
@@ -264,7 +264,7 @@ defmodule TodoAppWeb.TodoLive do
       if ((g_counter < this.length)) do
             v = Enum.at(this, g_counter)
         g_counter + 1
-        if ((v.id != id)), do: g_array ++ [v], else: nil
+        if ((v.id != id)), do: g_array = g_array ++ [v], else: nil
         loop.()
       end
     end).()
@@ -372,7 +372,7 @@ defmodule TodoAppWeb.TodoLive do
       if ((g_counter < this.length)) do
             v = Enum.at(this, g_counter)
         g_counter + 1
-        g_array ++ [StringTools.trim(v)]
+        g_array = g_array ++ [StringTools.trim(v)]
         loop.()
       end
     end).()
@@ -405,7 +405,7 @@ defmodule TodoAppWeb.TodoLive do
       if ((g_counter < this.length)) do
             v = Enum.at(this, g_counter)
         g_counter + 1
-        if (not v.completed), do: g_array ++ [v], else: nil
+        if (not v.completed), do: g_array = g_array ++ [v], else: nil
         loop.()
       end
     end).()
@@ -463,7 +463,7 @@ defmodule TodoAppWeb.TodoLive do
       if ((g_counter < this.length)) do
             v = Enum.at(this, g_counter)
         g_counter + 1
-        if v.completed, do: g_array ++ [v], else: nil
+        if v.completed, do: g_array = g_array ++ [v], else: nil
         loop.()
       end
     end).()
@@ -488,7 +488,7 @@ defmodule TodoAppWeb.TodoLive do
       if ((g_counter < this.length)) do
             v = Enum.at(this, g_counter)
         g_counter + 1
-        if (not v.completed), do: g_array ++ [v], else: nil
+        if (not v.completed), do: g_array = g_array ++ [v], else: nil
         loop.()
       end
     end).()
@@ -588,7 +588,7 @@ defmodule TodoAppWeb.TodoLive do
         if ((g_counter < g_array.length)) do
               v = Enum.at(g_array, g_counter)
           g_counter + 1
-          if ((v != tag)), do: g_array ++ [v], else: nil
+          if ((v != tag)), do: g_array = g_array ++ [v], else: nil
           loop.()
         end
       end).()

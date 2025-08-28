@@ -112,21 +112,21 @@ defmodule TypeSafeChildSpecTools do
 
     case (elem(spec, 0)) do
       {0, name} -> g_array = elem(spec, 1)
-    if (((name == nil) || (name == ""))), do: errors ++ ["PubSub name cannot be empty"], else: nil
-    if (((name != nil) && (name.index_of(".") == -1))), do: errors ++ ["PubSub name should follow 'AppName.PubSub' convention"], else: nil
+    if (((name == nil) || (name == ""))), do: errors = errors ++ ["PubSub name cannot be empty"], else: nil
+    if (((name != nil) && (name.index_of(".") == -1))), do: errors = errors ++ ["PubSub name should follow 'AppName.PubSub' convention"], else: nil
       1 -> nil
       {2, port} -> g_array = elem(spec, 1)
-    if (((port != nil) && (((port < 1) || (port > 65535))))), do: errors ++ ["Endpoint port must be between 1 and 65535"], else: nil
+    if (((port != nil) && (((port < 1) || (port > 65535))))), do: errors = errors ++ ["Endpoint port must be between 1 and 65535"], else: nil
       3 -> nil
       {4, config} -> g_array = elem(spec, 1)
-    if (((config.name == nil) || (config.name == ""))), do: errors ++ ["Presence name is required"], else: nil
+    if (((config.name == nil) || (config.name == ""))), do: errors = errors ++ ["Presence name is required"], else: nil
       {5, module, __args, __restart, __shutdown} -> g_array = elem(spec, 1)
     g_array = elem(spec, 2)
     g_array = elem(spec, 3)
     g_array = elem(spec, 4)
-    if ((module == nil)), do: errors ++ ["Custom child spec module cannot be null"], else: nil
+    if ((module == nil)), do: errors = errors ++ ["Custom child spec module cannot be null"], else: nil
       {6, spec} -> g_array = elem(spec, 1)
-    if (((spec.id == nil) || (spec.id == ""))), do: errors ++ ["Legacy child spec id cannot be empty"], else: nil
+    if (((spec.id == nil) || (spec.id == ""))), do: errors = errors ++ ["Legacy child spec id cannot be empty"], else: nil
     end
 
     errors
