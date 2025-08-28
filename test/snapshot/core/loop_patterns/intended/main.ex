@@ -9,12 +9,26 @@ defmodule Main do
     evens = []
 
     g_counter = 0
-    Enum.filter(numbers, fn item -> rem(item, 2) == 0 end)
+    (fn loop ->
+      if ((g_counter < numbers.length)) do
+            n = Enum.at(numbers, g_counter)
+        g_counter + 1
+        evens = if ((rem(n, 2) == 0)), do: evens ++ [n], else: evens
+        loop.()
+      end
+    end).()
 
     doubled = []
 
     g_counter = 0
-    Enum.map(numbers, fn item -> item * 2 end)
+    (fn loop ->
+      if ((g_counter < numbers.length)) do
+            n = Enum.at(numbers, g_counter)
+        g_counter + 1
+        doubled = doubled ++ [(n * 2)]
+        loop.()
+      end
+    end).()
 
     Log.trace("Evens: " <> Std.string(evens), %{"fileName" => "Main.hx", "lineNumber" => 19, "className" => "Main", "methodName" => "main"})
 

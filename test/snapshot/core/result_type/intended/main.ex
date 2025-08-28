@@ -42,10 +42,10 @@ defmodule Main do
   def handle_result(result) do
     temp_result = nil
 
-    case (case result do {:ok, _} -> 0; {:error, _} -> 1; _ -> -1 end) do
-      {0, value} -> g_array = elem(result, 1)
+    case result do
+      0 -> value = elem(result, 1)
     temp_result = "Success: " <> to_string(value)
-      {1, message} -> g_array = elem(result, 1)
+      1 -> message = elem(result, 1)
     temp_result = "Error: " <> message
     end
 
@@ -111,7 +111,14 @@ defmodule Main do
 
     g_counter = 0
 
-    Enum.map(inputs, fn item -> f.(item) end)
+    (fn loop ->
+      if ((g_counter < inputs.length)) do
+            v = Enum.at(inputs, g_counter)
+        g_counter + 1
+        g_array = g_array ++ [f.(v)]
+        loop.()
+      end
+    end).()
 
     ResultTools.sequence(g_array)
   end

@@ -33,26 +33,13 @@ defmodule Main do
 
     key = Map.keys(map)
 
-    (
-      # Simple module-level pattern (inline for now)
-      loop_helper = fn condition_fn, body_fn, loop_fn ->
-        if condition_fn.() do
-          body_fn.()
-          loop_fn.(condition_fn, body_fn, loop_fn)
-        else
-          nil
-        end
+    (fn loop ->
+      if key.has_next() do
+            key = key.next()
+        Log.trace("  " <> key <> " => " <> to_string(Map.get(map, key)), %{"fileName" => "Main.hx", "lineNumber" => 32, "className" => "Main", "methodName" => "stringMap"})
+        loop.()
       end
-
-      loop_helper.(
-        fn -> key.has_next() end,
-        fn ->
-          key = key.next()
-          Log.trace("  " <> key <> " => " <> to_string(Map.get(map, key)), %{"fileName" => "Main.hx", "lineNumber" => 32, "className" => "Main", "methodName" => "stringMap"})
-        end,
-        loop_helper
-      )
-    )
+    end).()
 
     %{}
 
@@ -60,26 +47,13 @@ defmodule Main do
 
     k = Map.keys(map)
 
-    (
-      # Simple module-level pattern (inline for now)
-      loop_helper = fn condition_fn, body_fn, loop_fn ->
-        if condition_fn.() do
-          body_fn.()
-          loop_fn.(condition_fn, body_fn, loop_fn)
-        else
-          nil
-        end
+    (fn loop ->
+      if k.has_next() do
+            k = k.next()
+        g_array = g_array ++ [k]
+        loop.()
       end
-
-      loop_helper.(
-        fn -> k.has_next() end,
-        fn ->
-          k = k.next()
-          g_array ++ [k]
-        end,
-        loop_helper
-      )
-    )
+    end).()
 
     Log.trace("After clear, keys: " <> Std.string(g_array), %{"fileName" => "Main.hx", "lineNumber" => 37, "className" => "Main", "methodName" => "stringMap"})
   end
@@ -103,73 +77,34 @@ defmodule Main do
 
     key = Map.keys(map)
 
-    (
-      # Simple module-level pattern (inline for now)
-      loop_helper = fn condition_fn, body_fn, loop_fn ->
-        if condition_fn.() do
-          body_fn.()
-          loop_fn.(condition_fn, body_fn, loop_fn)
-        else
-          nil
-        end
+    (fn loop ->
+      if key.has_next() do
+            key = key.next()
+        Log.trace("  " <> to_string(key) <> " => " <> to_string(Map.get(map, key)), %{"fileName" => "Main.hx", "lineNumber" => 51, "className" => "Main", "methodName" => "intMap"})
+        loop.()
       end
-
-      loop_helper.(
-        fn -> key.has_next() end,
-        fn ->
-          key = key.next()
-          Log.trace("  " <> to_string(key) <> " => " <> to_string(Map.get(map, key)), %{"fileName" => "Main.hx", "lineNumber" => 51, "className" => "Main", "methodName" => "intMap"})
-        end,
-        loop_helper
-      )
-    )
+    end).()
 
     g_array = []
     k = Map.keys(map)
-    (
-      # Simple module-level pattern (inline for now)
-      loop_helper = fn condition_fn, body_fn, loop_fn ->
-        if condition_fn.() do
-          body_fn.()
-          loop_fn.(condition_fn, body_fn, loop_fn)
-        else
-          nil
-        end
+    (fn loop ->
+      if k.has_next() do
+            k = k.next()
+        g_array = g_array ++ [k]
+        loop.()
       end
-
-      loop_helper.(
-        fn -> k.has_next() end,
-        fn ->
-          k = k.next()
-          g_array ++ [k]
-        end,
-        loop_helper
-      )
-    )
+    end).()
     temp_array = g_array
 
     g_array = []
     k = Map.keys(map)
-    (
-      # Simple module-level pattern (inline for now)
-      loop_helper = fn condition_fn, body_fn, loop_fn ->
-        if condition_fn.() do
-          body_fn.()
-          loop_fn.(condition_fn, body_fn, loop_fn)
-        else
-          nil
-        end
+    (fn loop ->
+      if k.has_next() do
+            k = k.next()
+        g_array = g_array ++ [Map.get(map, k)]
+        loop.()
       end
-
-      loop_helper.(
-        fn -> k.has_next() end,
-        fn ->
-          k = k.next()
-          g_array ++ [Map.get(map, k)]
-        end,
-        loop_helper
-      )
-    )
+    end).()
     temp_array1 = g_array
 
     Log.trace("Keys: " <> Std.string(temp_array), %{"fileName" => "Main.hx", "lineNumber" => 57, "className" => "Main", "methodName" => "intMap"})
@@ -215,27 +150,14 @@ defmodule Main do
 
     color = temp_map.keys()
 
-    (
-      # Simple module-level pattern (inline for now)
-      loop_helper = fn condition_fn, body_fn, loop_fn ->
-        if condition_fn.() do
-          body_fn.()
-          loop_fn.(condition_fn, body_fn, loop_fn)
-        else
-          nil
-        end
+    (fn loop ->
+      if color.has_next() do
+            color = color.next()
+        hex = StringTools.hex(temp_map.get(color), 6)
+        Log.trace("  " <> color <> " => #" <> hex, %{"fileName" => "Main.hx", "lineNumber" => 91, "className" => "Main", "methodName" => "mapLiterals"})
+        loop.()
       end
-
-      loop_helper.(
-        fn -> color.has_next() end,
-        fn ->
-          color = color.next()
-          hex = StringTools.hex(temp_map.get(color), 6)
-          Log.trace("  " <> color <> " => #" <> hex, %{"fileName" => "Main.hx", "lineNumber" => 91, "className" => "Main", "methodName" => "mapLiterals"})
-        end,
-        loop_helper
-      )
-    )
+    end).()
 
     temp_map1 = nil
 
@@ -251,26 +173,13 @@ defmodule Main do
 
     n = temp_map1.keys()
 
-    (
-      # Simple module-level pattern (inline for now)
-      loop_helper = fn condition_fn, body_fn, loop_fn ->
-        if condition_fn.() do
-          body_fn.()
-          loop_fn.(condition_fn, body_fn, loop_fn)
-        else
-          nil
-        end
+    (fn loop ->
+      if n.has_next() do
+            n = n.next()
+        Log.trace("  " <> to_string(n) <> "² = " <> to_string(temp_map1.get(n)), %{"fileName" => "Main.hx", "lineNumber" => 105, "className" => "Main", "methodName" => "mapLiterals"})
+        loop.()
       end
-
-      loop_helper.(
-        fn -> n.has_next() end,
-        fn ->
-          n = n.next()
-          Log.trace("  " <> to_string(n) <> "² = " <> to_string(temp_map1.get(n)), %{"fileName" => "Main.hx", "lineNumber" => 105, "className" => "Main", "methodName" => "mapLiterals"})
-        end,
-        loop_helper
-      )
-    )
+    end).()
   end
 
   @doc "Generated from Haxe nestedMaps"
@@ -301,48 +210,22 @@ defmodule Main do
 
     username = Map.keys(users)
 
-    (
-      # Simple module-level pattern (inline for now)
-      loop_helper = fn condition_fn, body_fn, loop_fn ->
-        if condition_fn.() do
-          body_fn.()
-          loop_fn.(condition_fn, body_fn, loop_fn)
-        else
-          nil
-        end
-      end
-
-      loop_helper.(
-        fn -> username.has_next() end,
-        fn ->
-          username = username.next()
-          user_data = Map.get(users, username)
-          Log.trace("  " <> username <> ":", %{"fileName" => "Main.hx", "lineNumber" => 131, "className" => "Main", "methodName" => "nestedMaps"})
-          field = Map.keys(user_data)
-          (
-            # Simple module-level pattern (inline for now)
-            loop_helper = fn condition_fn, body_fn, loop_fn ->
-              if condition_fn.() do
-                body_fn.()
-                loop_fn.(condition_fn, body_fn, loop_fn)
-              else
-                nil
-              end
-            end
-
-            loop_helper.(
-              fn -> field.has_next() end,
-              fn ->
+    (fn loop ->
+      if username.has_next() do
+            username = username.next()
+        user_data = Map.get(users, username)
+        Log.trace("  " <> username <> ":", %{"fileName" => "Main.hx", "lineNumber" => 131, "className" => "Main", "methodName" => "nestedMaps"})
+        field = Map.keys(user_data)
+        (fn loop ->
+          if field.has_next() do
                 field = field.next()
-                Log.trace("    " <> field <> ": " <> Std.string(Map.get(user_data, field)), %{"fileName" => "Main.hx", "lineNumber" => 133, "className" => "Main", "methodName" => "nestedMaps"})
-              end,
-              loop_helper
-            )
-          )
-        end,
-        loop_helper
-      )
-    )
+            Log.trace("    " <> field <> ": " <> Std.string(Map.get(user_data, field)), %{"fileName" => "Main.hx", "lineNumber" => 133, "className" => "Main", "methodName" => "nestedMaps"})
+            loop.()
+          end
+        end).()
+        loop.()
+      end
+    end).()
   end
 
   @doc "Generated from Haxe mapTransformations"
@@ -361,100 +244,48 @@ defmodule Main do
     doubled = StringMap.new()
 
     key = temp_map.keys()
-    (
-      # Simple module-level pattern (inline for now)
-      loop_helper = fn condition_fn, body_fn, loop_fn ->
-        if condition_fn.() do
-          body_fn.()
-          loop_fn.(condition_fn, body_fn, loop_fn)
-        else
-          nil
-        end
+    (fn loop ->
+      if key.has_next() do
+            key = key.next()
+        value = (temp_map.get(key) * 2)
+        doubled = Map.put(doubled, key, value)
+        loop.()
       end
-
-      loop_helper.(
-        fn -> key.has_next() end,
-        fn ->
-          key = key.next()
-          value = (temp_map.get(key) * 2)
-          doubled = Map.put(doubled, key, value)
-        end,
-        loop_helper
-      )
-    )
+    end).()
 
     Log.trace("Doubled values:", %{"fileName" => "Main.hx", "lineNumber" => 153, "className" => "Main", "methodName" => "mapTransformations"})
 
     key = Map.keys(doubled)
-    (
-      # Simple module-level pattern (inline for now)
-      loop_helper = fn condition_fn, body_fn, loop_fn ->
-        if condition_fn.() do
-          body_fn.()
-          loop_fn.(condition_fn, body_fn, loop_fn)
-        else
-          nil
-        end
+    (fn loop ->
+      if key.has_next() do
+            key = key.next()
+        Log.trace("  " <> key <> " => " <> to_string(Map.get(doubled, key)), %{"fileName" => "Main.hx", "lineNumber" => 155, "className" => "Main", "methodName" => "mapTransformations"})
+        loop.()
       end
-
-      loop_helper.(
-        fn -> key.has_next() end,
-        fn ->
-          key = key.next()
-          Log.trace("  " <> key <> " => " <> to_string(Map.get(doubled, key)), %{"fileName" => "Main.hx", "lineNumber" => 155, "className" => "Main", "methodName" => "mapTransformations"})
-        end,
-        loop_helper
-      )
-    )
+    end).()
 
     filtered = StringMap.new()
 
     key = temp_map.keys()
-    (
-      # Simple module-level pattern (inline for now)
-      loop_helper = fn condition_fn, body_fn, loop_fn ->
-        if condition_fn.() do
-          body_fn.()
-          loop_fn.(condition_fn, body_fn, loop_fn)
-        else
-          nil
-        end
+    (fn loop ->
+      if key.has_next() do
+            key = key.next()
+        value = temp_map.get(key)
+        if ((value > 2)), do: filtered = Map.put(filtered, key, value), else: nil
+        loop.()
       end
-
-      loop_helper.(
-        fn -> key.has_next() end,
-        fn ->
-          key = key.next()
-          value = temp_map.get(key)
-          if ((value > 2)), do: filtered = Map.put(filtered, key, value), else: nil
-        end,
-        loop_helper
-      )
-    )
+    end).()
 
     Log.trace("Filtered (value > 2):", %{"fileName" => "Main.hx", "lineNumber" => 167, "className" => "Main", "methodName" => "mapTransformations"})
 
     key = Map.keys(filtered)
-    (
-      # Simple module-level pattern (inline for now)
-      loop_helper = fn condition_fn, body_fn, loop_fn ->
-        if condition_fn.() do
-          body_fn.()
-          loop_fn.(condition_fn, body_fn, loop_fn)
-        else
-          nil
-        end
+    (fn loop ->
+      if key.has_next() do
+            key = key.next()
+        Log.trace("  " <> key <> " => " <> to_string(Map.get(filtered, key)), %{"fileName" => "Main.hx", "lineNumber" => 169, "className" => "Main", "methodName" => "mapTransformations"})
+        loop.()
       end
-
-      loop_helper.(
-        fn -> key.has_next() end,
-        fn ->
-          key = key.next()
-          Log.trace("  " <> key <> " => " <> to_string(Map.get(filtered, key)), %{"fileName" => "Main.hx", "lineNumber" => 169, "className" => "Main", "methodName" => "mapTransformations"})
-        end,
-        loop_helper
-      )
-    )
+    end).()
 
     g_array = StringMap.new()
     g_array = Map.put(g_array, "a", 1)
@@ -472,74 +303,35 @@ defmodule Main do
     merged = StringMap.new()
 
     key = temp_map1.keys()
-    (
-      # Simple module-level pattern (inline for now)
-      loop_helper = fn condition_fn, body_fn, loop_fn ->
-        if condition_fn.() do
-          body_fn.()
-          loop_fn.(condition_fn, body_fn, loop_fn)
-        else
-          nil
-        end
+    (fn loop ->
+      if key.has_next() do
+            key = key.next()
+        value = temp_map1.get(key)
+        merged = Map.put(merged, key, value)
+        loop.()
       end
-
-      loop_helper.(
-        fn -> key.has_next() end,
-        fn ->
-          key = key.next()
-          value = temp_map1.get(key)
-          merged = Map.put(merged, key, value)
-        end,
-        loop_helper
-      )
-    )
+    end).()
 
     key = temp_map2.keys()
-    (
-      # Simple module-level pattern (inline for now)
-      loop_helper = fn condition_fn, body_fn, loop_fn ->
-        if condition_fn.() do
-          body_fn.()
-          loop_fn.(condition_fn, body_fn, loop_fn)
-        else
-          nil
-        end
+    (fn loop ->
+      if key.has_next() do
+            key = key.next()
+        value = temp_map2.get(key)
+        merged = Map.put(merged, key, value)
+        loop.()
       end
-
-      loop_helper.(
-        fn -> key.has_next() end,
-        fn ->
-          key = key.next()
-          value = temp_map2.get(key)
-          merged = Map.put(merged, key, value)
-        end,
-        loop_helper
-      )
-    )
+    end).()
 
     Log.trace("Merged maps:", %{"fileName" => "Main.hx", "lineNumber" => 184, "className" => "Main", "methodName" => "mapTransformations"})
 
     key = Map.keys(merged)
-    (
-      # Simple module-level pattern (inline for now)
-      loop_helper = fn condition_fn, body_fn, loop_fn ->
-        if condition_fn.() do
-          body_fn.()
-          loop_fn.(condition_fn, body_fn, loop_fn)
-        else
-          nil
-        end
+    (fn loop ->
+      if key.has_next() do
+            key = key.next()
+        Log.trace("  " <> key <> " => " <> to_string(Map.get(merged, key)), %{"fileName" => "Main.hx", "lineNumber" => 186, "className" => "Main", "methodName" => "mapTransformations"})
+        loop.()
       end
-
-      loop_helper.(
-        fn -> key.has_next() end,
-        fn ->
-          key = key.next()
-          Log.trace("  " <> key <> " => " <> to_string(Map.get(merged, key)), %{"fileName" => "Main.hx", "lineNumber" => 186, "className" => "Main", "methodName" => "mapTransformations"})
-        end,
-        loop_helper
-      )
-    )
+    end).()
   end
 
   @doc "Generated from Haxe enumMap"
@@ -556,26 +348,13 @@ defmodule Main do
 
     color = Map.keys(map)
 
-    (
-      # Simple module-level pattern (inline for now)
-      loop_helper = fn condition_fn, body_fn, loop_fn ->
-        if condition_fn.() do
-          body_fn.()
-          loop_fn.(condition_fn, body_fn, loop_fn)
-        else
-          nil
-        end
+    (fn loop ->
+      if color.has_next() do
+            color = color.next()
+        Log.trace("  " <> Std.string(color) <> " => #" <> to_string(Map.get(map, color)), %{"fileName" => "Main.hx", "lineNumber" => 200, "className" => "Main", "methodName" => "enumMap"})
+        loop.()
       end
-
-      loop_helper.(
-        fn -> color.has_next() end,
-        fn ->
-          color = color.next()
-          Log.trace("  " <> Std.string(color) <> " => #" <> to_string(Map.get(map, color)), %{"fileName" => "Main.hx", "lineNumber" => 200, "className" => "Main", "methodName" => "enumMap"})
-        end,
-        loop_helper
-      )
-    )
+    end).()
 
     if Map.has_key?(map, :red), do: Log.trace("Red color code: #" <> to_string(Map.get(map, :red)), %{"fileName" => "Main.hx", "lineNumber" => 205, "className" => "Main", "methodName" => "enumMap"}), else: nil
   end
@@ -586,27 +365,14 @@ defmodule Main do
 
     key = Map.keys(input)
 
-    (
-      # Simple module-level pattern (inline for now)
-      loop_helper = fn condition_fn, body_fn, loop_fn ->
-        if condition_fn.() do
-          body_fn.()
-          loop_fn.(condition_fn, body_fn, loop_fn)
-        else
-          nil
-        end
+    (fn loop ->
+      if key.has_next() do
+            key = key.next()
+        value = Map.get(input, key)
+        result = Map.put(result, key, "Value: " <> to_string(value))
+        loop.()
       end
-
-      loop_helper.(
-        fn -> key.has_next() end,
-        fn ->
-          key = key.next()
-          value = Map.get(input, key)
-          result = Map.put(result, key, "Value: " <> to_string(value))
-        end,
-        loop_helper
-      )
-    )
+    end).()
 
     result
   end
@@ -655,26 +421,13 @@ defmodule Main do
 
     key = Map.keys(output)
 
-    (
-      # Simple module-level pattern (inline for now)
-      loop_helper = fn condition_fn, body_fn, loop_fn ->
-        if condition_fn.() do
-          body_fn.()
-          loop_fn.(condition_fn, body_fn, loop_fn)
-        else
-          nil
-        end
+    (fn loop ->
+      if key.has_next() do
+            key = key.next()
+        Log.trace("" <> key <> ": " <> to_string(Map.get(output, key)), %{"fileName" => "Main.hx", "lineNumber" => 245, "className" => "Main", "methodName" => "main"})
+        loop.()
       end
-
-      loop_helper.(
-        fn -> key.has_next() end,
-        fn ->
-          key = key.next()
-          Log.trace("" <> key <> ": " <> to_string(Map.get(output, key)), %{"fileName" => "Main.hx", "lineNumber" => 245, "className" => "Main", "methodName" => "main"})
-        end,
-        loop_helper
-      )
-    )
+    end).()
   end
 
 

@@ -48,7 +48,14 @@ defmodule StringUtils do
 
     g_counter = 0
 
-    Enum.filter(parts, fn item -> item.length > 0 end)
+    (fn loop ->
+      if ((g_counter < parts.length)) do
+            part = Enum.at(parts, g_counter)
+        g_counter + 1
+        formatted = if ((part.length > 0)), do: formatted ++ [capitalized], else: formatted
+        loop.()
+      end
+    end).()
 
     Enum.join(formatted, " ")
   end
@@ -96,45 +103,19 @@ defmodule StringUtils do
 
     slug = EReg.new("-+", "g").replace(slug, "-")
 
-    (
-      # Simple module-level pattern (inline for now)
-      loop_helper = fn condition_fn, body_fn, loop_fn ->
-        if condition_fn.() do
-          body_fn.()
-          loop_fn.(condition_fn, body_fn, loop_fn)
-        else
-          nil
-        end
+    (fn loop ->
+      if ((slug.char_at(0) == "-")) do
+            slug = slug.substr(1)
+        loop.()
       end
+    end).()
 
-      loop_helper.(
-        fn -> ((slug.char_at(0) == "-")) end,
-        fn ->
-          slug = slug.substr(1)
-        end,
-        loop_helper
-      )
-    )
-
-    (
-      # Simple module-level pattern (inline for now)
-      loop_helper = fn condition_fn, body_fn, loop_fn ->
-        if condition_fn.() do
-          body_fn.()
-          loop_fn.(condition_fn, body_fn, loop_fn)
-        else
-          nil
-        end
+    (fn loop ->
+      if ((slug.char_at((slug.length - 1)) == "-")) do
+            slug = slug.substr(0, (slug.length - 1))
+        loop.()
       end
-
-      loop_helper.(
-        fn -> ((slug.char_at((slug.length - 1)) == "-")) end,
-        fn ->
-          slug = slug.substr(0, (slug.length - 1))
-        end,
-        loop_helper
-      )
-    )
+    end).()
 
     slug
   end
@@ -175,26 +156,13 @@ defmodule StringUtils do
       result = ""
       g_counter = 0
       g_array = repeat_count
-      (
-        # Simple module-level pattern (inline for now)
-        loop_helper = fn condition_fn, body_fn, loop_fn ->
-          if condition_fn.() do
-            body_fn.()
-            loop_fn.(condition_fn, body_fn, loop_fn)
-          else
-            nil
-          end
+      (fn loop ->
+        if ((g_counter < g_array)) do
+              _i = g_counter + 1
+          result = result <> "*"
+          loop.()
         end
-      
-        loop_helper.(
-          fn -> ((g_counter < g_array)) end,
-          fn ->
-            _i = g_counter + 1
-            result = result <> "*"
-          end,
-          loop_helper
-        )
-      )
+      end).()
       result
     else
       nil
@@ -208,26 +176,13 @@ defmodule StringUtils do
 
     g_counter = 0
     g_array = masked_count
-    (
-      # Simple module-level pattern (inline for now)
-      loop_helper = fn condition_fn, body_fn, loop_fn ->
-        if condition_fn.() do
-          body_fn.()
-          loop_fn.(condition_fn, body_fn, loop_fn)
-        else
-          nil
-        end
+    (fn loop ->
+      if ((g_counter < g_array)) do
+            _i = g_counter + 1
+        masked = masked <> "*"
+        loop.()
       end
-
-      loop_helper.(
-        fn -> ((g_counter < g_array)) end,
-        fn ->
-          _i = g_counter + 1
-          masked = masked <> "*"
-        end,
-        loop_helper
-      )
-    )
+    end).()
 
     visible <> masked
   end

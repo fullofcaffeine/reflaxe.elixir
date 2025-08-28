@@ -29,7 +29,11 @@ defmodule BasicModule do
 
     temp_result = nil
 
-    case (operation) do
+    case operation do
+      "add" -> temp_result = (x + y)
+      "divide" -> if ((y != 0)), do: temp_result = Std.int((x / y)), else: temp_result = 0
+      "multiply" -> temp_result = (x * y)
+      "subtract" -> temp_result = (x - y)
       _ -> temp_result = 0
     end
 

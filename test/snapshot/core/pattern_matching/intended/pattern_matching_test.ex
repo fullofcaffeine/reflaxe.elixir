@@ -8,13 +8,16 @@ defmodule PatternMatchingTest do
 
     temp_result = nil
 
-    case (case color do :red -> 0; :green -> 1; :blue -> 2; :r_g_b -> 3; _ -> -1 end) do
+    case color do
       0 -> temp_result = "red"
       1 -> temp_result = "green"
       2 -> temp_result = "blue"
-      {3, r, g, b} -> g_array = elem(color, 1)
-    g_array = elem(color, 2)
-    g_array = elem(color, 3)
+      3 -> g_param_0 = elem(color, 1)
+    g_param_1 = elem(color, 2)
+    g_param_2 = elem(color, 3)
+    r = g_param_2
+    g_array = g_array
+    b = g_param_2
     temp_result = "rgb(" <> to_string(r) <> "," <> to_string(g_array) <> "," <> to_string(b) <> ")"
     end
 
@@ -25,9 +28,9 @@ defmodule PatternMatchingTest do
   def match_option(option) do
     temp_result = nil
 
-    case (case option do :none -> 0; :some -> 1; _ -> -1 end) do
+    case option do
       0 -> temp_result = "none"
-      {1, value} -> g_array = elem(option, 1)
+      1 -> value = elem(option, 1)
     temp_result = "some(" <> Std.string(value) <> ")"
     end
 
@@ -38,11 +41,9 @@ defmodule PatternMatchingTest do
   def match_int(value) do
     temp_result = nil
 
-    case (value) do
-      _ ->
-        "zero"
-      _ ->
-        "one"
+    case value do
+      0 -> "zero"
+      1 -> "one"
       _ -> n = value
     if ((n < 0)) do
       temp_result = "negative"
@@ -59,7 +60,9 @@ defmodule PatternMatchingTest do
   def match_string(str) do
     temp_result = nil
 
-    case (str) do
+    case str do
+      "" -> "empty"
+      "hello" -> "greeting"
       _ -> s = str
     if ((s.length > 10)), do: temp_result = "long", else: temp_result = "other"
     end
@@ -71,21 +74,17 @@ defmodule PatternMatchingTest do
   def match_array(arr) do
     temp_result = nil
 
-    case (arr.length) do
-      _ ->
-        temp_result = "empty"
-      _ ->
-        g_array = Enum.at(arr, 0)
+    case arr.length do
+      0 -> temp_result = "empty"
+      1 -> g_array = Enum.at(arr, 0)
     x = g_array
     temp_result = "single(" <> to_string(x) <> ")"
-      _ ->
-        g_array = Enum.at(arr, 0)
+      2 -> g_array = Enum.at(arr, 0)
     g_array = Enum.at(arr, 1)
     x = g_array
     y = g_array
     temp_result = "pair(" <> to_string(x) <> "," <> to_string(y) <> ")"
-      _ ->
-        g_array = Enum.at(arr, 0)
+      3 -> g_array = Enum.at(arr, 0)
     g_array = Enum.at(arr, 1)
     g_array = Enum.at(arr, 2)
     x = g_array
@@ -102,18 +101,25 @@ defmodule PatternMatchingTest do
   def match_nested(option) do
     temp_result = nil
 
-    case (case option do :none -> 0; :some -> 1; _ -> -1 end) do
+    case option do
       0 -> temp_result = "no color"
-      1 -> case (case g_array do :red -> 0; :green -> 1; :blue -> 2; :r_g_b -> 3; _ -> -1 end) do
+      1 -> g_param_0 = elem(option, 1)
+    case g_array do
       0 -> temp_result = "red color"
       1 -> temp_result = "green color"
       2 -> temp_result = "blue color"
-      {3, _r, _g, _b} -> g_array = elem(g_array, 1)
-    g_array = elem(g_array, 2)
-    g_array = elem(g_array, 3)
+      3 -> g_param_0 = elem(g_array, 1)
+    g_param_1 = elem(g_array, 2)
+    g_param_2 = elem(g_array, 3)
+    r = g_param_2
+    g_array = g_array
+    _b = g_param_2
     if ((r > 128)) do
       temp_result = "bright rgb"
     else
+      _r = g_param_2
+      g_array = g_array
+      _b = g_param_2
       temp_result = "dark rgb"
     end
     end

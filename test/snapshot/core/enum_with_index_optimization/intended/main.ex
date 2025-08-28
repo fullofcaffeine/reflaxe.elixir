@@ -23,9 +23,14 @@ defmodule Main do
 
     g_array = items.length
 
-    items
-    |> Enum.with_index()
-    |> Enum.map(fn {item, i} -> "" <> to_string(i) <> ": " <> item end)
+    (fn loop ->
+      if ((g_counter < g_array)) do
+            i = g_counter + 1
+        item = Enum.at(items, i)
+        results = results ++ ["" <> to_string(i) <> ": " <> item]
+        loop.()
+      end
+    end).()
 
     Log.trace(results, %{"fileName" => "Main.hx", "lineNumber" => 20, "className" => "Main", "methodName" => "testBasicIndexedIteration"})
   end
@@ -40,9 +45,13 @@ defmodule Main do
 
     g_array = items.length
 
-    items
-    |> Enum.with_index()
-    |> Enum.map(fn {item, i} -> "Item #" <> to_string(((i + 1))) <> ": " <> item end)
+    (fn loop ->
+      if ((g_counter < g_array)) do
+            i = g_counter + 1
+        indexed = indexed ++ ["Item #" <> to_string(((i + 1))) <> ": " <> Enum.at(items, i)]
+        loop.()
+      end
+    end).()
 
     indexed
   end
@@ -57,9 +66,13 @@ defmodule Main do
 
     g_array = items.length
 
-    items
-    |> Enum.with_index()
-    |> Enum.map(fn {item, i} -> item end)
+    (fn loop ->
+      if ((g_counter < g_array)) do
+            i = g_counter + 1
+        even_indexed = if ((rem(i, 2) == 0)), do: even_indexed ++ [Enum.at(items, i)], else: even_indexed
+        loop.()
+      end
+    end).()
 
     even_indexed
   end
@@ -74,12 +87,13 @@ defmodule Main do
 
     g_array = numbers.length
 
-    numbers
-    |> Enum.with_index()
-    |> Enum.each(fn {item, i} ->
-      i = g_counter + 1
-      sum = sum + (item * ((i + 1)))
-    end)
+    (fn loop ->
+      if ((g_counter < g_array)) do
+            i = g_counter + 1
+        sum = sum + (Enum.at(numbers, i) * ((i + 1)))
+        loop.()
+      end
+    end).()
 
     sum
   end

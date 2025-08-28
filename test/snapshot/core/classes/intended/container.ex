@@ -32,7 +32,7 @@ defmodule Container do
 
   @doc "Generated from Haxe get"
   def get(%__MODULE__{} = struct, _index) do
-    Enum.at(struct.items, index)
+    Enum.at(struct.items, _index)
   end
 
   @doc "Generated from Haxe size"
@@ -48,9 +48,14 @@ defmodule Container do
 
     g_array = struct.items
 
-    Enum.each(g_array, fn item -> 
-      result.add(fn_.(item))
-    end)
+    (fn loop ->
+      if ((g_counter < g_array.length)) do
+            item = Enum.at(g_array, g_counter)
+        g_counter + 1
+        result.add(fn_.(item))
+        loop.()
+      end
+    end).()
 
     result
   end

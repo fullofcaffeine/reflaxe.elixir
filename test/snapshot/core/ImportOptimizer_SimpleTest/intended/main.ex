@@ -18,15 +18,29 @@ defmodule Main do
 
     g_array = []
     g_counter = 0
-    Enum.filter(temp_right1, fn item -> item > 2 end)
+    (fn loop ->
+      if ((g_counter < temp_right1.length)) do
+            v = Enum.at(temp_right1, g_counter)
+        g_counter + 1
+        g_array = if ((v > 2)), do: g_array ++ [v], else: g_array
+        loop.()
+      end
+    end).()
     temp_right = g_array
 
     temp_right1 = nil
 
     g_array = []
     g_counter = 0
-    Enum.map(temp_right1, fn item -> item * 2 end)
-    g_array = g_array
+    (fn loop ->
+      if ((g_counter < temp_right1.length)) do
+            v = Enum.at(temp_right1, g_counter)
+        g_counter + 1
+        g_array = g_array ++ [(v * 2)]
+        loop.()
+      end
+    end).()
+    temp_right1 = g_array
 
     text = "hello world"
 
@@ -34,7 +48,7 @@ defmodule Main do
 
     text = StringTools.replace(text, "world", "universe")
 
-    Log.trace("Result: " <> Std.string(g_array), %{"fileName" => "Main.hx", "lineNumber" => 25, "className" => "Main", "methodName" => "main"})
+    Log.trace("Result: " <> Std.string(temp_right1), %{"fileName" => "Main.hx", "lineNumber" => 25, "className" => "Main", "methodName" => "main"})
 
     Log.trace("Text: " <> text, %{"fileName" => "Main.hx", "lineNumber" => 26, "className" => "Main", "methodName" => "main"})
   end

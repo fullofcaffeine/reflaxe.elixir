@@ -48,17 +48,18 @@ defmodule EnumValueMap do
 
     g_array = a1.length
 
-    a1
-    |> Enum.with_index()
-    |> Enum.each(fn {item, i} ->
-      i = g_counter + 1
-      d = struct.compare_arg(item, Enum.at(a2, i))
-      if ((d != 0)) do
-        d
-      else
-        nil
+    (fn loop ->
+      if ((g_counter < g_array)) do
+            i = g_counter + 1
+        d = struct.compare_arg(Enum.at(a1, i), Enum.at(a2, i))
+        if ((d != 0)) do
+          d
+        else
+          nil
+        end
+        loop.()
       end
-    end)
+    end).()
 
     0
   end
