@@ -1,0 +1,22 @@
+# Test-specific Reflaxe.Elixir Library Configuration
+# 
+# This configuration uses absolute paths to avoid issues with symlinks
+# and the "35-file phenomenon" while ensuring tests can access the
+# reflaxe.elixir compiler properly.
+#
+
+# Get the project root from environment variable set by test helper
+# Include the compiler source code using absolute path
+-cp $REFLAXE_ELIXIR_PROJECT_ROOT/src/
+
+# Include the Elixir standard library definitions using absolute path  
+-cp $REFLAXE_ELIXIR_PROJECT_ROOT/std/
+
+# Depend on the base Reflaxe framework
+-lib reflaxe
+
+# Define the library version
+-D reflaxe.elixir=0.1.0
+
+# Initialize the Elixir compiler
+--macro reflaxe.elixir.CompilerInit.Start()
