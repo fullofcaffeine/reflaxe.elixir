@@ -1,6 +1,0 @@
--cp ../..
--cp .
--lib reflaxe.elixir
--main loop_compilation_tests.TestRunner
--dce full
---elixir out
