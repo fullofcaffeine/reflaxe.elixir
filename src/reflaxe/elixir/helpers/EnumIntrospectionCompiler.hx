@@ -413,27 +413,9 @@ class EnumIntrospectionCompiler {
             }
         }
         
-        // CRITICAL FIX: Apply variable mapping manually for the enum expression
-        // This ensures _g is mapped to g_array when compiling TLocal expressions
-        var enumExpr = switch(e.expr) {
-            case TLocal(v):
-                // For TLocal variables, check mappings first
-                if (compiler.currentFunctionParameterMap.exists(v.name)) {
-                    var mapped = compiler.currentFunctionParameterMap.get(v.name);
-                    #if debug_enum_introspection_compiler
-                    // trace('[XRay EnumIntrospectionCompiler] ✓ APPLYING VARIABLE MAPPING: ${v.name} -> ${mapped}');
-                    #end
-                    mapped;
-                } else {
-                    #if debug_enum_introspection_compiler
-                    // trace('[XRay EnumIntrospectionCompiler] No mapping found for TLocal variable: ${v.name}');
-                    #end
-                    v.name;
-                }
-            case _:
-                // For other expressions, compile normally but apply mappings
-                compiler.compileExpression(e);
-        };
+        // CRITICAL FIX: Always properly compile the enum expression
+        // This ensures variable names are correctly mapped (e.g., parsedMsg -> parsed_msg)
+        var enumExpr = compiler.compileExpression(e);
         
         #if debug_enum_introspection_compiler
         // trace('[XRay EnumIntrospectionCompiler] Final enum expression: ${enumExpr}');
