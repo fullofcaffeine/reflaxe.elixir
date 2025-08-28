@@ -195,8 +195,15 @@ class FunctionCompiler {
                 var paramName = NamingHelper.toSnakeCase(originalName);
                 var baseParamName = paramName; // Store the base name without default value syntax
                 
-                if (!isUsed) {
+                // CRITICAL FIX: LiveView functions using HXX/~H sigil need "assigns" without underscore
+                // Even if the parameter appears unused in the function body, the ~H sigil template
+                // references assigns directly and requires it to be available without prefix
+                var usesHxxTemplate = funcField.expr != null && containsHxxCall(funcField.expr);
+                var isAssignsParam = originalName == "assigns";
+                
+                if (!isUsed && !(usesHxxTemplate && isAssignsParam)) {
                     // Prefix with underscore to indicate intentionally unused
+                    // EXCEPT for "assigns" parameter in functions that use HXX templates
                     paramName = "_" + paramName;
                     baseParamName = paramName; // Update base name with underscore
                     
@@ -668,6 +675,106 @@ class FunctionCompiler {
         // Check for @:liveview annotation using AnnotationSystem
         var annotationInfo = reflaxe.elixir.helpers.AnnotationSystem.detectAnnotations(compiler.currentClassType);
         return annotationInfo.primaryAnnotation == ":liveview";
+    }
+    
+    /**
+     * Check if an expression contains HXX.hxx() calls
+     * HXX templates compile to Phoenix HEEx format via ~H sigils
+     * This detection is critical for preserving the "assigns" parameter name
+     * 
+     * @param expr The TypedExpr to recursively check for HXX calls
+     * @return true if HXX.hxx() is found anywhere in the expression tree
+     */
+    private function containsHxxCall(expr: TypedExpr): Bool {
+        if (expr == null) return false;
+        
+        switch (expr.expr) {
+            case TCall(e, el):
+                // Check if this is a call to HXX.hxx()
+                switch (e.expr) {
+                    case TField({expr: TTypeExpr(_)}, FStatic(clsRef, cf)):
+                        // Static call like HXX.hxx()
+                        var cls = clsRef.get();
+                        if (cls.name == "HXX" && cf.get().name == "hxx") {
+                            return true;
+                        }
+                    case _:
+                }
+                
+                // Recursively check the call target and arguments
+                if (containsHxxCall(e)) return true;
+                for (arg in el) {
+                    if (containsHxxCall(arg)) return true;
+                }
+                
+            case TBlock(el):
+                // Check all expressions in block
+                for (e in el) {
+                    if (containsHxxCall(e)) return true;
+                }
+                
+            case TReturn(e):
+                // Check return expression
+                if (e != null && containsHxxCall(e)) return true;
+                
+            case TIf(econd, eif, eelse):
+                // Check all branches
+                if (containsHxxCall(econd)) return true;
+                if (containsHxxCall(eif)) return true;
+                if (eelse != null && containsHxxCall(eelse)) return true;
+                
+            case TVar(v, e):
+                // Check variable initialization
+                if (e != null && containsHxxCall(e)) return true;
+                
+            case TFunction(f):
+                // Check function body
+                if (f.expr != null && containsHxxCall(f.expr)) return true;
+                
+            case TFor(v, it, expr):
+                // Check iterator and body
+                if (containsHxxCall(it)) return true;
+                if (containsHxxCall(expr)) return true;
+                
+            case TWhile(econd, e, normalWhile):
+                // Check condition and body
+                if (containsHxxCall(econd)) return true;
+                if (containsHxxCall(e)) return true;
+                
+            case TSwitch(e, cases, edef):
+                // Check switch expression and cases
+                if (containsHxxCall(e)) return true;
+                for (c in cases) {
+                    if (c.expr != null && containsHxxCall(c.expr)) return true;
+                }
+                if (edef != null && containsHxxCall(edef)) return true;
+                
+            case TBinop(op, e1, e2):
+                // Check both operands
+                if (containsHxxCall(e1)) return true;
+                if (containsHxxCall(e2)) return true;
+                
+            case TUnop(op, postFix, e):
+                // Check operand
+                if (containsHxxCall(e)) return true;
+                
+            case TArrayDecl(el):
+                // Check array elements
+                for (e in el) {
+                    if (containsHxxCall(e)) return true;
+                }
+                
+            case TObjectDecl(fields):
+                // Check object field values  
+                for (f in fields) {
+                    if (containsHxxCall(f.expr)) return true;
+                }
+                
+            case _:
+                // Other expression types don't contain HXX calls directly
+        }
+        
+        return false;
     }
 }
 

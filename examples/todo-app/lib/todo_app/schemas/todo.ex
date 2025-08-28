@@ -82,7 +82,7 @@ defmodule Todo do
 
     if ((todo.tags != nil)), do: temp_array = todo.tags, else: temp_array = []
 
-    temp_array ++ [tag]
+    temp_array = temp_array ++ [tag]
 
     _params = StringMap.new()
 
@@ -94,7 +94,7 @@ defmodule Todo do
       if ((g_counter < temp_array.length)) do
             v = Enum.at(temp_array, g_counter)
         g_counter + 1
-        g_array ++ [ChangesetValue.string_value(v)]
+        g_array = g_array ++ [ChangesetValue.string_value(v)]
         loop.()
       end
     end).()
