@@ -687,7 +687,8 @@ class VariableCompiler {
         
         // CRITICAL FIX: Handle enum parameter extraction specially
         // When we see: g = TEnumParameter(...), we need to handle multiple extractions correctly
-        if (tvar.name == "g" && expr != null) {
+        // EXTENSION: Also handle _g2, _g3 etc. temp variables used in pattern extraction
+        if ((tvar.name == "g" || StringTools.startsWith(tvar.name, "_g")) && expr != null) {
             switch (expr.expr) {
                 case TEnumParameter(enumExpr, enumField, index):
                     #if debug_variable_compiler
