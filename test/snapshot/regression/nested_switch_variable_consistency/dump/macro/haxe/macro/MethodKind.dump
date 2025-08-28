@@ -1,0 +1,7 @@
+@:flatEnum
+enum haxe.macro.MethodKind {
+	MethNormal;
+	MethInline;
+	MethDynamic;
+	MethMacro;
+}

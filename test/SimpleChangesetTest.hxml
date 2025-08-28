@@ -1,8 +1,0 @@
-# Simple test for ChangesetCompiler
--cp ../src
--cp ../std  
--cp ../../haxe.elixir.reference/reflaxe/src
--cp .
--main test.SimpleChangesetTest
--D reflaxe_runtime
---no-output

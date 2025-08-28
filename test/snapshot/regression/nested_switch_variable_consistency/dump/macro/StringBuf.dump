@@ -1,0 +1,17 @@
+@:coreApi
+extern class StringBuf {
+
+	function new():Void;
+
+	var length(get,never):Int;
+
+	function get_length():Int;
+
+	function add<T>(x:add.T):Void;
+
+	function addChar(c:Int):Void;
+
+	function addSub(s:String, pos:Int, len:Null<Int>):Void;
+
+	function toString():String;
+}

@@ -1,0 +1,843 @@
+class reflaxe.elixir.helpers.FormatHelper {
+
+	@:value(2)
+	public static var INDENT_SIZE(default,never):Int = [Const:Int] 2;
+
+	@:value({ levels : 1 })
+	public static function indent[Function:(line : String, ?levels : Int) -> String]
+		[Arg:String] [Local line(14590):String]
+		[Arg:Int]
+			[Local levels(14591):Int]
+			[Const:Int] 1
+		[Block:Dynamic]
+			[Var spaces(14592):String] [Const:String] ""
+			[Block:Void]
+				[Var `(14594):Int] [Const:Int] 0
+				[Var `(14595):Int]
+					[Parenthesis:Int]
+						[Binop:Int]
+							[Local levels(14591):Int:Int]
+							*
+							[Field:Int]
+								[TypeExpr reflaxe.elixir.helpers.FormatHelper:Class<reflaxe.elixir.helpers.FormatHelper>]
+								[FStatic:Int]
+									reflaxe.elixir.helpers.FormatHelper
+									INDENT_SIZE:Int
+				[While:Void]
+					[Binop:Bool]
+						[Local `(14594):Int:Int]
+						<
+						[Local `(14595):Int:Int]
+					[Block:String]
+						[Var i(14593):Int]
+							[Unop:Int]
+								++
+								Postfix
+								[Local `(14594):Int:Int]
+						[Binop:String]
+							[Local spaces(14592):String:String]
+							+=
+							[Const:String] " "
+			[Return:Dynamic]
+				[Binop:String]
+					[Local spaces(14592):String:String]
+					+
+					[Local line(14590):String:String]
+
+	@:value({ levels : 1 })
+	public static function indentLines[Function:(content : String, ?levels : Int) -> String]
+		[Arg:String] [Local content(14596):String]
+		[Arg:Int]
+			[Local levels(14597):Int]
+			[Const:Int] 1
+		[Block:Dynamic]
+			[Var lines(14598):Array<String>]
+				[Call:Array<String>]
+					[Field:(delimiter : String) -> Array<String>]
+						[Local content(14596):String:String]
+						[FInstance:(delimiter : String) -> Array<String>]
+							String
+							split:(delimiter : String) -> Array<String>
+					[Const:String] "\n"
+			[Var indentedLines(14599):Array<String>] [ArrayDecl:Array<String>]
+			[Block:Void]
+				[Var `(14601):Int] [Const:Int] 0
+				[While:Void]
+					[Binop:Bool]
+						[Local `(14601):Int:Int]
+						<
+						[Field:Int]
+							[Local lines(14598):Array<String>:Array<String>]
+							[FInstance:Int]
+								Array<String>
+								length:Int
+					[Block:Void]
+						[Var line(14600):String]
+							[Array:String]
+								[Local lines(14598):Array<String>:Array<String>]
+								[Local `(14601):Int:Int]
+						[Unop:Int]
+							++
+							Prefix
+							[Local `(14601):Int:Int]
+						[If:Void]
+							[Binop:Bool]
+								[Field:Int]
+									[Call:String]
+										[Field:(s : String) -> String]
+											[TypeExpr StringTools:{ Statics StringTools }]
+											[FStatic:(s : String) -> String]
+												StringTools
+												trim:(s : String) -> String
+										[Local line(14600):String:String]
+									[FInstance:Int]
+										String
+										length:Int
+								>
+								[Const:Int] 0
+							[Then:Int] [Block:Int]
+								[Call:Int]
+									[Field:(x : String) -> Int]
+										[Local indentedLines(14599):Array<String>:Array<String>]
+										[FInstance:(x : String) -> Int]
+											Array<String>
+											push:(x : Array.T) -> Int
+									[Call:String]
+										[Field:(line : String, ?levels : Int) -> String]
+											[TypeExpr reflaxe.elixir.helpers.FormatHelper:Class<reflaxe.elixir.helpers.FormatHelper>]
+											[FStatic:(line : String, ?levels : Int) -> String]
+												reflaxe.elixir.helpers.FormatHelper
+												indent:(line : String, ?levels : Int) -> String
+										[Local line(14600):String:String]
+										[Local levels(14597):Int:Int]
+							[Else:Int] [Block:Int]
+								[Call:Int]
+									[Field:(x : String) -> Int]
+										[Local indentedLines(14599):Array<String>:Array<String>]
+										[FInstance:(x : String) -> Int]
+											Array<String>
+											push:(x : Array.T) -> Int
+									[Local line(14600):String:String]
+			[Return:Dynamic]
+				[Call:String]
+					[Field:(sep : String) -> String]
+						[Local indentedLines(14599):Array<String>:Array<String>]
+						[FInstance:(sep : String) -> String]
+							Array<String>
+							join:(sep : String) -> String
+					[Const:String] "\n"
+
+	@:value({ levels : 1, wrapInDo : true })
+	public static function formatBlock[Function:(content : String, ?wrapInDo : Bool, ?levels : Int) -> String]
+		[Arg:String] [Local content(14602):String]
+		[Arg:Bool]
+			[Local wrapInDo(14603):Bool]
+			[Const:Bool] true
+		[Arg:Int]
+			[Local levels(14604):Int]
+			[Const:Int] 1
+		[Block:Void]
+			[If:Void]
+				[Binop:Bool]
+					[Field:Int]
+						[Call:String]
+							[Field:(s : String) -> String]
+								[TypeExpr StringTools:{ Statics StringTools }]
+								[FStatic:(s : String) -> String]
+									StringTools
+									trim:(s : String) -> String
+							[Local content(14602):String:String]
+						[FInstance:Int]
+							String
+							length:Int
+					==
+					[Const:Int] 0
+				[Then:Dynamic] [Block:Dynamic]
+					[Return:Dynamic]
+						[If:String]
+							[Local wrapInDo(14603):Bool:Bool]
+							[Then:String] [Block:String]
+								[Binop:String]
+									[Binop:String]
+										[Const:String] "do\n"
+										+
+										[Call:String]
+											[Field:(line : String, ?levels : Int) -> String]
+												[TypeExpr reflaxe.elixir.helpers.FormatHelper:Class<reflaxe.elixir.helpers.FormatHelper>]
+												[FStatic:(line : String, ?levels : Int) -> String]
+													reflaxe.elixir.helpers.FormatHelper
+													indent:(line : String, ?levels : Int) -> String
+											[Const:String] "nil"
+											[Local levels(14604):Int:Int]
+									+
+									[Const:String] "\nend"
+							[Else:String] [Block:String] [Const:String] "nil"
+			[Var indentedContent(14605):String]
+				[Call:String]
+					[Field:(content : String, ?levels : Int) -> String]
+						[TypeExpr reflaxe.elixir.helpers.FormatHelper:Class<reflaxe.elixir.helpers.FormatHelper>]
+						[FStatic:(content : String, ?levels : Int) -> String]
+							reflaxe.elixir.helpers.FormatHelper
+							indentLines:(content : String, ?levels : Int) -> String
+					[Local content(14602):String:String]
+					[Local levels(14604):Int:Int]
+			[If:Void]
+				[Local wrapInDo(14603):Bool:Bool]
+				[Then:Dynamic] [Block:Dynamic]
+					[Return:Dynamic]
+						[Binop:String]
+							[Binop:String]
+								[Const:String] "do\n"
+								+
+								[Local indentedContent(14605):String:String]
+							+
+							[Const:String] "\nend"
+				[Else:Dynamic] [Block:Dynamic] [Return:Dynamic] [Local indentedContent(14605):String:String]
+
+	@:value({ multiline : false })
+	public static function formatParams[Function:(params : Array<String>, ?multiline : Bool) -> String]
+		[Arg:Array<String>] [Local params(14606):Array<String>]
+		[Arg:Bool]
+			[Local multiline(14607):Bool]
+			[Const:Bool] false
+		[Block:Void]
+			[If:Void]
+				[Binop:Bool]
+					[Field:Int]
+						[Local params(14606):Array<String>:Array<String>]
+						[FInstance:Int]
+							Array<String>
+							length:Int
+					==
+					[Const:Int] 0
+				[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [Const:String] ""
+			[If:Void]
+				[Binop:Bool]
+					[Local multiline(14607):Bool:Bool]
+					&&
+					[Binop:Bool]
+						[Field:Int]
+							[Local params(14606):Array<String>:Array<String>]
+							[FInstance:Int]
+								Array<String>
+								length:Int
+						>
+						[Const:Int] 3
+				[Then:Dynamic] [Block:Dynamic]
+					[Return:Dynamic]
+						[Binop:String]
+							[Binop:String]
+								[Const:String] "\n"
+								+
+								[Call:String]
+									[Field:(sep : String) -> String]
+										[Block:Array<String>]
+											[Var `(14612):Array<String>] [ArrayDecl:Array<String>]
+											[Block:Void]
+												[Var `(14613):Int] [Const:Int] 0
+												[Var `(14614):Array<String>] [Local params(14606):Array<String>:Array<String>]
+												[While:Void]
+													[Binop:Bool]
+														[Local `(14613):Int:Int]
+														<
+														[Field:Int]
+															[Local `(14614):Array<String>:Array<String>]
+															[FInstance:Int]
+																Array<String>
+																length:Int
+													[Block:Void]
+														[Var v(14615):String]
+															[Array:String]
+																[Local `(14614):Array<String>:Array<String>]
+																[Local `(14613):Int:Int]
+														[Unop:Int]
+															++
+															Prefix
+															[Local `(14613):Int:Int]
+														[Call:Int]
+															[Field:(x : String) -> Int]
+																[Local `(14612):Array<String>:Array<String>]
+																[FInstance:(x : String) -> Int]
+																	Array<String>
+																	push:(x : Array.T) -> Int
+															[Call:String]
+																[Function:(p : String) -> String]
+																	[Arg:String] [Local p(14616):String]
+																	[Block:Dynamic]
+																		[Return:Dynamic]
+																			[Call:String]
+																				[Field:(line : String, ?levels : Int) -> String]
+																					[TypeExpr reflaxe.elixir.helpers.FormatHelper:Class<reflaxe.elixir.helpers.FormatHelper>]
+																					[FStatic:(line : String, ?levels : Int) -> String]
+																						reflaxe.elixir.helpers.FormatHelper
+																						indent:(line : String, ?levels : Int) -> String
+																				[Local p(14616):String:String]
+																				[Const:Null<Int>] null
+																[Local v(14615):String:String]
+											[Local `(14612):Array<String>:Array<String>]
+										[FInstance:(sep : String) -> String]
+											Array<String>
+											join:(sep : String) -> String
+									[Const:String] ",\n"
+							+
+							[Const:String] "\n"
+				[Else:Dynamic] [Block:Dynamic]
+					[Return:Dynamic]
+						[Call:String]
+							[Field:(sep : String) -> String]
+								[Local params(14606):Array<String>:Array<String>]
+								[FInstance:(sep : String) -> String]
+									Array<String>
+									join:(sep : String) -> String
+							[Const:String] ", "
+
+	public static function cleanJavaDoc[Function:(docString : String) -> String]
+		[Arg:String] [Local docString(14617):String]
+		[Block:Dynamic]
+			[If:Void]
+				[Binop:Bool]
+					[Binop:Bool]
+						[Local docString(14617):String:String]
+						==
+						[Const:String] null
+					||
+					[Binop:Bool]
+						[Local docString(14617):String:String]
+						==
+						[Const:String] ""
+				[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [Const:String] ""
+			[Var lines(14618):Array<String>]
+				[Call:Array<String>]
+					[Field:(delimiter : String) -> Array<String>]
+						[Local docString(14617):String:String]
+						[FInstance:(delimiter : String) -> Array<String>]
+							String
+							split:(delimiter : String) -> Array<String>
+					[Const:String] "\n"
+			[Var cleanedLines(14619):Array<String>] [ArrayDecl:Array<String>]
+			[Var wasMultiLine(14620):Bool]
+				[Binop:Bool]
+					[Field:Int]
+						[Local lines(14618):Array<String>:Array<String>]
+						[FInstance:Int]
+							Array<String>
+							length:Int
+					>
+					[Const:Int] 1
+			[Block:Void]
+				[Var `(14624):Int] [Const:Int] 0
+				[While:Void]
+					[Binop:Bool]
+						[Local `(14624):Int:Int]
+						<
+						[Field:Int]
+							[Local lines(14618):Array<String>:Array<String>]
+							[FInstance:Int]
+								Array<String>
+								length:Int
+					[Block:Void]
+						[Var line(14621):String]
+							[Array:String]
+								[Local lines(14618):Array<String>:Array<String>]
+								[Local `(14624):Int:Int]
+						[Unop:Int]
+							++
+							Prefix
+							[Local `(14624):Int:Int]
+						[Var tabRegex(14622):EReg]
+							[New:EReg]
+								EReg
+								[Const:String] "\t"
+								[Const:String] "g"
+						[Binop:String]
+							[Local line(14621):String:String]
+							=
+							[Call:String]
+								[Field:(s : String, by : String) -> String]
+									[Local tabRegex(14622):EReg:EReg]
+									[FInstance:(s : String, by : String) -> String]
+										EReg
+										replace:(s : String, by : String) -> String
+								[Local line(14621):String:String]
+								[Const:String] "  "
+						[Var trimmed(14623):String]
+							[Call:String]
+								[Field:(s : String) -> String]
+									[TypeExpr StringTools:{ Statics StringTools }]
+									[FStatic:(s : String) -> String]
+										StringTools
+										trim:(s : String) -> String
+								[Local line(14621):String:String]
+						[If:Void]
+							[Binop:Bool]
+								[Binop:Bool]
+									[Local trimmed(14623):String:String]
+									==
+									[Const:String] "*"
+								||
+								[Binop:Bool]
+									[Local trimmed(14623):String:String]
+									==
+									[Const:String] ""
+							[Then:Dynamic] [Block:Dynamic]
+								[If:Void]
+									[Binop:Bool]
+										[Binop:Bool]
+											[Field:Int]
+												[Local cleanedLines(14619):Array<String>:Array<String>]
+												[FInstance:Int]
+													Array<String>
+													length:Int
+											>
+											[Const:Int] 0
+										&&
+										[Binop:Bool]
+											[Array:String]
+												[Local cleanedLines(14619):Array<String>:Array<String>]
+												[Binop:Int]
+													[Field:Int]
+														[Local cleanedLines(14619):Array<String>:Array<String>]
+														[FInstance:Int]
+															Array<String>
+															length:Int
+													-
+													[Const:Int] 1
+											!=
+											[Const:String] ""
+									[Then:Int] [Block:Int]
+										[Call:Int]
+											[Field:(x : String) -> Int]
+												[Local cleanedLines(14619):Array<String>:Array<String>]
+												[FInstance:(x : String) -> Int]
+													Array<String>
+													push:(x : Array.T) -> Int
+											[Const:String] ""
+								[Continue:Dynamic]
+						[If:Void]
+							[Call:Bool]
+								[Field:(s : String, start : String) -> Bool]
+									[TypeExpr StringTools:{ Statics StringTools }]
+									[FStatic:(s : String, start : String) -> Bool]
+										StringTools
+										startsWith:(s : String, start : String) -> Bool
+								[Local trimmed(14623):String:String]
+								[Const:String] "* "
+							[Then:Int] [Block:Int]
+								[Call:Int]
+									[Field:(x : String) -> Int]
+										[Local cleanedLines(14619):Array<String>:Array<String>]
+										[FInstance:(x : String) -> Int]
+											Array<String>
+											push:(x : Array.T) -> Int
+									[Call:String]
+										[Field:(pos : Int, ?len : Null<Int>) -> String]
+											[Local trimmed(14623):String:String]
+											[FInstance:(pos : Int, ?len : Null<Int>) -> String]
+												String
+												substr:(pos : Int, ?len : Null<Int>) -> String
+										[Const:Int] 2
+										[Const:Null<Int>] null
+							[Else:Void] [Block:Void]
+								[If:Void]
+									[Call:Bool]
+										[Field:(s : String, start : String) -> Bool]
+											[TypeExpr StringTools:{ Statics StringTools }]
+											[FStatic:(s : String, start : String) -> Bool]
+												StringTools
+												startsWith:(s : String, start : String) -> Bool
+										[Local trimmed(14623):String:String]
+										[Const:String] "*"
+									[Then:Int] [Block:Int]
+										[Call:Int]
+											[Field:(x : String) -> Int]
+												[Local cleanedLines(14619):Array<String>:Array<String>]
+												[FInstance:(x : String) -> Int]
+													Array<String>
+													push:(x : Array.T) -> Int
+											[Call:String]
+												[Field:(pos : Int, ?len : Null<Int>) -> String]
+													[Local trimmed(14623):String:String]
+													[FInstance:(pos : Int, ?len : Null<Int>) -> String]
+														String
+														substr:(pos : Int, ?len : Null<Int>) -> String
+												[Const:Int] 1
+												[Const:Null<Int>] null
+									[Else:Int] [Block:Int]
+										[Call:Int]
+											[Field:(x : String) -> Int]
+												[Local cleanedLines(14619):Array<String>:Array<String>]
+												[FInstance:(x : String) -> Int]
+													Array<String>
+													push:(x : Array.T) -> Int
+											[Local trimmed(14623):String:String]
+			[While:Void]
+				[Binop:Bool]
+					[Binop:Bool]
+						[Field:Int]
+							[Local cleanedLines(14619):Array<String>:Array<String>]
+							[FInstance:Int]
+								Array<String>
+								length:Int
+						>
+						[Const:Int] 0
+					&&
+					[Binop:Bool]
+						[Array:String]
+							[Local cleanedLines(14619):Array<String>:Array<String>]
+							[Binop:Int]
+								[Field:Int]
+									[Local cleanedLines(14619):Array<String>:Array<String>]
+									[FInstance:Int]
+										Array<String>
+										length:Int
+								-
+								[Const:Int] 1
+						==
+						[Const:String] ""
+				[Block:Null<String>]
+					[Call:Null<String>]
+						[Field:() -> Null<String>]
+							[Local cleanedLines(14619):Array<String>:Array<String>]
+							[FInstance:() -> Null<String>]
+								Array<String>
+								pop:() -> Null<Array.T>
+			[Var result(14625):String]
+				[Call:String]
+					[Field:(sep : String) -> String]
+						[Local cleanedLines(14619):Array<String>:Array<String>]
+						[FInstance:(sep : String) -> String]
+							Array<String>
+							join:(sep : String) -> String
+					[Const:String] "\n"
+			[If:Void]
+				[Binop:Bool]
+					[Binop:Bool]
+						[Local wasMultiLine(14620):Bool:Bool]
+						&&
+						[Unop:Bool]
+							!
+							Prefix
+							[Binop:Bool]
+								[Call:Int]
+									[Field:(str : String, ?startIndex : Null<Int>) -> Int]
+										[Local result(14625):String:String]
+										[FInstance:(str : String, ?startIndex : Null<Int>) -> Int]
+											String
+											indexOf:(str : String, ?startIndex : Null<Int>) -> Int
+									[Const:String] "\n"
+									[Const:Null<Int>] null
+								!=
+								[Const:Int] -1
+					&&
+					[Binop:Bool]
+						[Field:Int]
+							[Local result(14625):String:String]
+							[FInstance:Int]
+								String
+								length:Int
+						>
+						[Const:Int] 0
+				[Then:String] [Block:String]
+					[Binop:String]
+						[Local result(14625):String:String]
+						=
+						[Binop:String]
+							[Local result(14625):String:String]
+							+
+							[Const:String] "\n"
+			[Return:Dynamic] [Local result(14625):String:String]
+
+	@:value({ indentLevel : 1, isModuleDoc : false })
+	public static function formatDoc[Function:(docString : String, ?isModuleDoc : Bool, ?indentLevel : Int) -> String]
+		[Arg:String] [Local docString(14630):String]
+		[Arg:Bool]
+			[Local isModuleDoc(14631):Bool]
+			[Const:Bool] false
+		[Arg:Int]
+			[Local indentLevel(14632):Int]
+			[Const:Int] 1
+		[Block:Void]
+			[If:Void]
+				[Binop:Bool]
+					[Binop:Bool]
+						[Local docString(14630):String:String]
+						==
+						[Const:String] null
+					||
+					[Binop:Bool]
+						[Local docString(14630):String:String]
+						==
+						[Const:String] ""
+				[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [Const:String] ""
+			[Var cleanDoc(14633):String]
+				[Call:String]
+					[Field:(docString : String) -> String]
+						[TypeExpr reflaxe.elixir.helpers.FormatHelper:Class<reflaxe.elixir.helpers.FormatHelper>]
+						[FStatic:(docString : String) -> String]
+							reflaxe.elixir.helpers.FormatHelper
+							cleanJavaDoc:(docString : String) -> String
+					[Local docString(14630):String:String]
+			[If:Void]
+				[Binop:Bool]
+					[Local cleanDoc(14633):String:String]
+					==
+					[Const:String] ""
+				[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [Const:String] ""
+			[Binop:String]
+				[Local cleanDoc(14633):String:String]
+				=
+				[Call:String]
+					[Field:(s : String, sub : String, by : String) -> String]
+						[TypeExpr StringTools:Class<StringTools>]
+						[FStatic:(s : String, sub : String, by : String) -> String]
+							StringTools
+							replace:(s : String, sub : String, by : String) -> String
+					[Local cleanDoc(14633):String:String]
+					[Const:String] "\t"
+					[Const:String] "  "
+			[Var tabRegex(14634):EReg]
+				[New:EReg]
+					EReg
+					[Const:String] "\t"
+					[Const:String] "g"
+			[Binop:String]
+				[Local cleanDoc(14633):String:String]
+				=
+				[Call:String]
+					[Field:(s : String, by : String) -> String]
+						[Local tabRegex(14634):EReg:EReg]
+						[FInstance:(s : String, by : String) -> String]
+							EReg
+							replace:(s : String, by : String) -> String
+					[Local cleanDoc(14633):String:String]
+					[Const:String] "  "
+			[Var docType(14635):String]
+				[If:String]
+					[Local isModuleDoc(14631):Bool:Bool]
+					[Then:String] [Block:String] [Const:String] "@moduledoc"
+					[Else:String] [Block:String] [Const:String] "@doc"
+			[Var baseIndent(14636):String]
+				[Call:String]
+					[Field:(line : String, ?levels : Int) -> String]
+						[TypeExpr reflaxe.elixir.helpers.FormatHelper:Class<reflaxe.elixir.helpers.FormatHelper>]
+						[FStatic:(line : String, ?levels : Int) -> String]
+							reflaxe.elixir.helpers.FormatHelper
+							indent:(line : String, ?levels : Int) -> String
+					[Const:String] ""
+					[Local indentLevel(14632):Int:Int]
+			[If:Void]
+				[Binop:Bool]
+					[Call:Int]
+						[Field:(str : String, ?startIndex : Null<Int>) -> Int]
+							[Local cleanDoc(14633):String:String]
+							[FInstance:(str : String, ?startIndex : Null<Int>) -> Int]
+								String
+								indexOf:(str : String, ?startIndex : Null<Int>) -> Int
+						[Const:String] "\n"
+						[Const:Null<Int>] null
+					!=
+					[Const:Int] -1
+				[Then:Dynamic] [Block:Dynamic]
+					[Var lines(14641):Array<String>]
+						[Call:Array<String>]
+							[Field:(delimiter : String) -> Array<String>]
+								[Local cleanDoc(14633):String:String]
+								[FInstance:(delimiter : String) -> Array<String>]
+									String
+									split:(delimiter : String) -> Array<String>
+							[Const:String] "\n"
+					[Var formattedLines(14653):Array<String>]
+						[Block:Array<String>]
+							[Var `(14647):Array<String>] [ArrayDecl:Array<String>]
+							[Block:Void]
+								[Var `(14648):Int] [Const:Int] 0
+								[Var `(14649):Array<String>] [Local lines(14641):Array<String>:Array<String>]
+								[While:Void]
+									[Binop:Bool]
+										[Local `(14648):Int:Int]
+										<
+										[Field:Int]
+											[Local `(14649):Array<String>:Array<String>]
+											[FInstance:Int]
+												Array<String>
+												length:Int
+									[Block:Void]
+										[Var v(14650):String]
+											[Array:String]
+												[Local `(14649):Array<String>:Array<String>]
+												[Local `(14648):Int:Int]
+										[Unop:Int]
+											++
+											Prefix
+											[Local `(14648):Int:Int]
+										[Call:Int]
+											[Field:(x : String) -> Int]
+												[Local `(14647):Array<String>:Array<String>]
+												[FInstance:(x : String) -> Int]
+													Array<String>
+													push:(x : Array.T) -> Int
+											[Call:String]
+												[Function:(line : String) -> String]
+													[Arg:String] [Local line(14651):String]
+													[Block:Dynamic]
+														[Return:Dynamic]
+															[Block:String]
+																[If:Void]
+																	[Parenthesis:Bool]
+																		[Binop:Bool]
+																			[Local line(14651):String:String]
+																			==
+																			[Const:String] ""
+																	[Then:Dynamic] [Return:Dynamic] [Const:String] ""
+																[Var tabRegex(14652):EReg]
+																	[New:EReg]
+																		EReg
+																		[Const:String] "\t"
+																		[Const:String] "g"
+																[Binop:String]
+																	[Local line(14651):String:String]
+																	=
+																	[Call:String]
+																		[Field:(s : String, by : String) -> String]
+																			[Local tabRegex(14652):EReg:EReg]
+																			[FInstance:(s : String, by : String) -> String]
+																				EReg
+																				replace:(s : String, by : String) -> String
+																		[Local line(14651):String:String]
+																		[Const:String] "  "
+																[Return:String]
+																	[Binop:String]
+																		[Binop:String]
+																			[Local baseIndent(14636):String:String]
+																			+
+																			[Const:String] "  "
+																		+
+																		[Local line(14651):String:String]
+												[Local v(14650):String:String]
+							[Local `(14647):Array<String>:Array<String>]
+					[Return:Dynamic]
+						[Binop:String]
+							[Binop:String]
+								[Binop:String]
+									[Binop:String]
+										[Binop:String]
+											[Binop:String]
+												[Local baseIndent(14636):String:String]
+												+
+												[Local docType(14635):String:String]
+											+
+											[Const:String] " \"\"\"\n"
+										+
+										[Call:String]
+											[Field:(sep : String) -> String]
+												[Local formattedLines(14653):Array<String>:Array<String>]
+												[FInstance:(sep : String) -> String]
+													Array<String>
+													join:(sep : String) -> String
+											[Const:String] "\n"
+									+
+									[Const:String] "\n"
+								+
+								[Local baseIndent(14636):String:String]
+							+
+							[Const:String] "\"\"\""
+				[Else:Dynamic] [Block:Dynamic]
+					[Var escapedDoc(14654):String]
+						[Call:String]
+							[Field:(sep : String) -> String]
+								[Call:Array<String>]
+									[Field:(delimiter : String) -> Array<String>]
+										[Call:String]
+											[Field:(sep : String) -> String]
+												[Call:Array<String>]
+													[Field:(delimiter : String) -> Array<String>]
+														[Local cleanDoc(14633):String:String]
+														[FInstance:(delimiter : String) -> Array<String>]
+															String
+															split:(delimiter : String) -> Array<String>
+													[Const:String] "\""
+												[FInstance:(sep : String) -> String]
+													Array<String>
+													join:(sep : String) -> String
+											[Const:String] "\\\""
+										[FInstance:(delimiter : String) -> Array<String>]
+											String
+											split:(delimiter : String) -> Array<String>
+									[Const:String] "\\"
+								[FInstance:(sep : String) -> String]
+									Array<String>
+									join:(sep : String) -> String
+							[Const:String] "\\\\"
+					[Return:Dynamic]
+						[Binop:String]
+							[Binop:String]
+								[Binop:String]
+									[Binop:String]
+										[Local baseIndent(14636):String:String]
+										+
+										[Local docType(14635):String:String]
+									+
+									[Const:String] " \""
+								+
+								[Local escapedDoc(14654):String:String]
+							+
+							[Const:String] "\""
+
+	@:value({ indentLevel : 1 })
+	public static function formatSpec[Function:(funcName : String, paramTypes : Array<String>, returnType : String, ?indentLevel : Int) -> String]
+		[Arg:String] [Local funcName(14655):String]
+		[Arg:Array<String>] [Local paramTypes(14656):Array<String>]
+		[Arg:String] [Local returnType(14657):String]
+		[Arg:Int]
+			[Local indentLevel(14658):Int]
+			[Const:Int] 1
+		[Block:Dynamic]
+			[Var baseIndent(14659):String]
+				[Call:String]
+					[Field:(line : String, ?levels : Int) -> String]
+						[TypeExpr reflaxe.elixir.helpers.FormatHelper:Class<reflaxe.elixir.helpers.FormatHelper>]
+						[FStatic:(line : String, ?levels : Int) -> String]
+							reflaxe.elixir.helpers.FormatHelper
+							indent:(line : String, ?levels : Int) -> String
+					[Const:String] ""
+					[Local indentLevel(14658):Int:Int]
+			[Var paramStr(14660):String]
+				[If:String]
+					[Binop:Bool]
+						[Field:Int]
+							[Local paramTypes(14656):Array<String>:Array<String>]
+							[FInstance:Int]
+								Array<String>
+								length:Int
+						>
+						[Const:Int] 0
+					[Then:String] [Block:String]
+						[Call:String]
+							[Field:(sep : String) -> String]
+								[Local paramTypes(14656):Array<String>:Array<String>]
+								[FInstance:(sep : String) -> String]
+									Array<String>
+									join:(sep : String) -> String
+							[Const:String] ", "
+					[Else:String] [Block:String] [Const:String] ""
+			[Return:Dynamic]
+				[Binop:String]
+					[Local baseIndent(14659):String:String]
+					+
+					[Binop:String]
+						[Binop:String]
+							[Binop:String]
+								[Binop:String]
+									[Binop:String]
+										[Const:String] "@spec "
+										+
+										[Local funcName(14655):String:String]
+									+
+									[Const:String] "("
+								+
+								[Local paramStr(14660):String:String]
+							+
+							[Const:String] ") :: "
+						+
+						[Local returnType(14657):String:String]
+}

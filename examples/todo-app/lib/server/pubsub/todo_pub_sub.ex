@@ -30,10 +30,10 @@ defmodule TodoPubSub do
 
     temp_result = nil
 
-    case (case topic do :todo_updates -> 0; :user_activity -> 1; :system_notifications -> 2; _ -> -1 end) do
-      0 -> "todo:updates"
-      1 -> "user:activity"
-      2 -> "system:notifications"
+    case topic do
+      :todo_updates -> "todo:updates"
+      :user_activity -> "user:activity"
+      :system_notifications -> "system:notifications"
     end
 
     temp_result
@@ -45,21 +45,27 @@ defmodule TodoPubSub do
 
     temp_struct = nil
 
-    case (case message do :todo_created -> 0; :todo_updated -> 1; :todo_deleted -> 2; :bulk_update -> 3; :user_online -> 4; :user_offline -> 5; :system_alert -> 6; _ -> -1 end) do
-      {0, todo} -> g_array = elem(message, 1)
+    case message do
+      0 -> g_param_0 = elem(message, 1)
+    todo = g_param_0
     temp_struct = %{"type" => "todo_created", "todo" => todo}
-      {1, todo} -> g_array = elem(message, 1)
+      1 -> g_param_0 = elem(message, 1)
+    todo = g_param_0
     temp_struct = %{"type" => "todo_updated", "todo" => todo}
-      {2, id} -> g_array = elem(message, 1)
+      2 -> id = elem(message, 1)
     temp_struct = %{"type" => "todo_deleted", "todo_id" => id}
-      {3, action} -> g_array = elem(message, 1)
+      3 -> action = elem(message, 1)
     temp_struct = %{"type" => "bulk_update", "action" => TodoPubSub.bulk_action_to_string(action)}
-      {4, user_id} -> g_array = elem(message, 1)
-    temp_struct = %{"type" => "user_online", "user_id" => user_id}
-      {5, user_id} -> g_array = elem(message, 1)
-    temp_struct = %{"type" => "user_offline", "user_id" => user_id}
-      {6, message, level} -> g_array = elem(message, 1)
-    g_array = elem(message, 2)
+      4 -> g_param_0 = elem(message, 1)
+    user_id = g_param_0
+    temp_struct = %{"type" => "user_online", "user_id" => _user_id}
+      5 -> g_param_0 = elem(message, 1)
+    user_id = g_param_0
+    temp_struct = %{"type" => "user_offline", "user_id" => _user_id}
+      6 -> g_param_0 = elem(message, 1)
+    g_param_1 = elem(message, 2)
+    message = g_param_1
+    level = g_param_1
     temp_struct = %{"type" => "system_alert", "message" => message, "level" => TodoPubSub.alert_level_to_string(level)}
     end
 
@@ -78,7 +84,32 @@ defmodule TodoPubSub do
     end
 
     g_array = msg.type
-    case (g_array) do
+    case g_array do
+      "bulk_update" -> if ((msg.action != nil)) do
+      bulk_action = TodoPubSub.parse_bulk_action(msg.action)
+      case bulk_action do
+        0 -> action = elem(bulk_action, 1)
+      temp_result = Option.some(TodoPubSubMessage.bulk_update(action))
+        1 -> temp_result = :error
+      end
+    else
+      temp_result = :error
+    end
+      "system_alert" -> if (((msg.message != nil) && (msg.level != nil))) do
+      alert_level = TodoPubSub.parse_alert_level(msg.level)
+      case alert_level do
+        0 -> level = elem(alert_level, 1)
+      temp_result = Option.some(TodoPubSubMessage.system_alert(msg.message, level))
+        1 -> temp_result = :error
+      end
+    else
+      temp_result = :error
+    end
+      "todo_created" -> if ((msg.todo != nil)), do: temp_result = Option.some(TodoPubSubMessage.todo_created(msg.todo)), else: temp_result = :error
+      "todo_deleted" -> if ((msg.todo_id != nil)), do: temp_result = Option.some(TodoPubSubMessage.todo_deleted(msg.todo_id)), else: temp_result = :error
+      "todo_updated" -> if ((msg.todo != nil)), do: temp_result = Option.some(TodoPubSubMessage.todo_updated(msg.todo)), else: temp_result = :error
+      "user_offline" -> if ((msg.user_id != nil)), do: temp_result = Option.some(TodoPubSubMessage.user_offline(msg.user_id)), else: temp_result = :error
+      "user_online" -> if ((msg.user_id != nil)), do: temp_result = Option.some(TodoPubSubMessage.user_online(msg.user_id)), else: temp_result = :error
       _ -> Log.trace(SafePubSub.create_unknown_message_error(msg.type), %{"fileName" => "src_haxe/server/pubsub/TodoPubSub.hx", "lineNumber" => 220, "className" => "server.pubsub.TodoPubSub", "methodName" => "parseMessageImpl"})
     temp_result = :error
     end
@@ -90,14 +121,16 @@ defmodule TodoPubSub do
   def bulk_action_to_string(action) do
     temp_result = nil
 
-    case (case action do :complete_all -> 0; :delete_completed -> 1; :set_priority -> 2; :add_tag -> 3; :remove_tag -> 4; _ -> -1 end) do
+    case action do
       0 -> temp_result = "complete_all"
       1 -> temp_result = "delete_completed"
-      {2, __priority} -> g_array = elem(action, 1)
+      2 -> _priority = elem(action, 1)
     temp_result = "set_priority"
-      {3, __tag} -> g_array = elem(action, 1)
+      3 -> g_param_0 = elem(action, 1)
+    _tag = g_param_0
     temp_result = "add_tag"
-      {4, __tag} -> g_array = elem(action, 1)
+      4 -> g_param_0 = elem(action, 1)
+    _tag = g_param_0
     temp_result = "remove_tag"
     end
 
@@ -108,7 +141,12 @@ defmodule TodoPubSub do
   def parse_bulk_action(action) do
     temp_result = nil
 
-    case (action) do
+    case action do
+      "add_tag" -> Option.some(BulkOperationType.add_tag(""))
+      "complete_all" -> Option.some(:complete_all)
+      "delete_completed" -> Option.some(:delete_completed)
+      "remove_tag" -> Option.some(BulkOperationType.remove_tag(""))
+      "set_priority" -> Option.some(BulkOperationType.set_priority(:medium))
       _ -> :error
     end
 
@@ -119,11 +157,11 @@ defmodule TodoPubSub do
   def alert_level_to_string(level) do
     temp_result = nil
 
-    case (case level do :info -> 0; :warning -> 1; :error -> 2; :critical -> 3; _ -> -1 end) do
-      0 -> "info"
-      1 -> "warning"
-      2 -> "error"
-      3 -> "critical"
+    case level do
+      :info -> "info"
+      :warning -> "warning"
+      :error -> "error"
+      :critical -> "critical"
     end
 
     temp_result
@@ -133,7 +171,11 @@ defmodule TodoPubSub do
   def parse_alert_level(level) do
     temp_result = nil
 
-    case (level) do
+    case level do
+      "critical" -> Option.some(:critical)
+      "error" -> Option.some(:error)
+      "info" -> Option.some(:info)
+      "warning" -> Option.some(:warning)
       _ -> :error
     end
 

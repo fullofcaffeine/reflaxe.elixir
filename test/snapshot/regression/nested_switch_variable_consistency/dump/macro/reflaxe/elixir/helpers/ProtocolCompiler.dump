@@ -1,0 +1,1414 @@
+class reflaxe.elixir.helpers.ProtocolCompiler {
+
+	public static function isProtocolClassType[Function:(classType : haxe.macro.ClassType) -> Bool]
+		[Arg:haxe.macro.ClassType] [Local classType(15579):haxe.macro.ClassType]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Call:Bool]
+					[Field:(name : String) -> Bool]
+						[Field:haxe.macro.MetaAccess]
+							[Local classType(15579):haxe.macro.ClassType:haxe.macro.ClassType]
+							[FAnon:haxe.macro.MetaAccess] meta:haxe.macro.MetaAccess
+						[FAnon:(name : String) -> Bool] has:(name : String) -> Bool
+					[Const:String] ":protocol"
+
+	public static function isImplClassType[Function:(classType : haxe.macro.ClassType) -> Bool]
+		[Arg:haxe.macro.ClassType] [Local classType(15662):haxe.macro.ClassType]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Call:Bool]
+					[Field:(name : String) -> Bool]
+						[Field:haxe.macro.MetaAccess]
+							[Local classType(15662):haxe.macro.ClassType:haxe.macro.ClassType]
+							[FAnon:haxe.macro.MetaAccess] meta:haxe.macro.MetaAccess
+						[FAnon:(name : String) -> Bool] has:(name : String) -> Bool
+					[Const:String] ":impl"
+
+	public static function compileProtocol[Function:(classType : haxe.macro.ClassType) -> String]
+		[Arg:haxe.macro.ClassType] [Local classType(15583):haxe.macro.ClassType]
+		[Block:Dynamic]
+			[Var className(15584):String]
+				[Field:String]
+					[Local classType(15583):haxe.macro.ClassType:haxe.macro.ClassType]
+					[FAnon:String] name:String
+			[Var fields(15585):Array<haxe.macro.ClassField>]
+				[Call:Array<haxe.macro.ClassField>]
+					[Field:() -> Array<haxe.macro.ClassField>]
+						[Field:haxe.macro.Ref<Array<haxe.macro.ClassField>>]
+							[Local classType(15583):haxe.macro.ClassType:haxe.macro.ClassType]
+							[FAnon:haxe.macro.Ref<Array<haxe.macro.ClassField>>] fields:haxe.macro.Ref<Array<haxe.macro.ClassField>>
+						[FAnon:() -> Array<haxe.macro.ClassField>] get:() -> Array<haxe.macro.ClassField>
+			[Var output(15586):StringBuf] [New:StringBuf] StringBuf
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local output(15586):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Binop:String]
+					[Binop:String]
+						[Const:String] "defprotocol "
+						+
+						[Local className(15584):String:String]
+					+
+					[Const:String] " do\n"
+			[Block:Void]
+				[Var `(15661):Int] [Const:Int] 0
+				[While:Void]
+					[Binop:Bool]
+						[Local `(15661):Int:Int]
+						<
+						[Field:Int]
+							[Local fields(15585):Array<haxe.macro.ClassField>:Array<haxe.macro.ClassField>]
+							[FInstance:Int]
+								Array<haxe.macro.ClassField>
+								length:Int
+					[Block:Void]
+						[Var field(15587):haxe.macro.ClassField]
+							[Array:haxe.macro.ClassField]
+								[Local fields(15585):Array<haxe.macro.ClassField>:Array<haxe.macro.ClassField>]
+								[Local `(15661):Int:Int]
+						[Unop:Int]
+							++
+							Prefix
+							[Local `(15661):Int:Int]
+						[If:Void]
+							[Block:Bool]
+								[Var `(15590):haxe.macro.FieldKind]
+									[Field:haxe.macro.FieldKind]
+										[Local field(15587):haxe.macro.ClassField:haxe.macro.ClassField]
+										[FAnon:haxe.macro.FieldKind] kind:haxe.macro.FieldKind
+								[If:Bool]
+									[Binop:Bool]
+										[EnumIndex:Int] [Local `(15590):haxe.macro.FieldKind:haxe.macro.FieldKind]
+										==
+										[Const:Int] 1
+									[Then:Bool] [Block:Bool]
+										[Var `(15591):haxe.macro.MethodKind]
+											[EnumParameter:haxe.macro.MethodKind]
+												[Local `(15590):haxe.macro.FieldKind:haxe.macro.FieldKind]
+												FMethod
+												0
+										[Const:Bool] true
+									[Else:Bool] [Const:Bool] false
+							[Then:Void] [Block:Void]
+								[Var functionName(15592):String]
+									[Call:String]
+										[Field:(camelCase : String) -> String]
+											[TypeExpr reflaxe.elixir.helpers.NamingHelper:Class<reflaxe.elixir.helpers.NamingHelper>]
+											[FStatic:(camelCase : String) -> String]
+												reflaxe.elixir.helpers.NamingHelper
+												toSnakeCase:(camelCase : String) -> String
+										[Field:String]
+											[Local field(15587):haxe.macro.ClassField:haxe.macro.ClassField]
+											[FAnon:String] name:String
+								[Var signature(15641):String]
+									[Call:String]
+										[Field:(field : haxe.macro.ClassField) -> String]
+											[TypeExpr reflaxe.elixir.helpers.ProtocolCompiler:Class<reflaxe.elixir.helpers.ProtocolCompiler>]
+											[FStatic:(field : haxe.macro.ClassField) -> String]
+												reflaxe.elixir.helpers.ProtocolCompiler
+												generateProtocolSignature:(field : haxe.macro.ClassField) -> String
+										[Local field(15587):haxe.macro.ClassField:haxe.macro.ClassField]
+								[Call:Void]
+									[Field:(x : String) -> Void]
+										[Local output(15586):StringBuf:StringBuf]
+										[FInstance:(x : String) -> Void]
+											StringBuf
+											add:(x : add.T) -> Void
+									[Binop:String]
+										[Binop:String]
+											[Binop:String]
+												[Const:String] "  @spec "
+												+
+												[Local functionName(15592):String:String]
+											+
+											[Local signature(15641):String:String]
+										+
+										[Const:String] "\n"
+								[Call:Void]
+									[Field:(x : String) -> Void]
+										[Local output(15586):StringBuf:StringBuf]
+										[FInstance:(x : String) -> Void]
+											StringBuf
+											add:(x : add.T) -> Void
+									[Binop:String]
+										[Binop:String]
+											[Binop:String]
+												[Binop:String]
+													[Const:String] "  def "
+													+
+													[Local functionName(15592):String:String]
+												+
+												[Const:String] "("
+											+
+											[Call:String]
+												[Field:(field : haxe.macro.ClassField) -> String]
+													[TypeExpr reflaxe.elixir.helpers.ProtocolCompiler:Class<reflaxe.elixir.helpers.ProtocolCompiler>]
+													[FStatic:(field : haxe.macro.ClassField) -> String]
+														reflaxe.elixir.helpers.ProtocolCompiler
+														generateParameterList:(field : haxe.macro.ClassField) -> String
+												[Local field(15587):haxe.macro.ClassField:haxe.macro.ClassField]
+										+
+										[Const:String] ")\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local output(15586):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "end\n"
+			[Return:Dynamic]
+				[Call:String]
+					[Field:() -> String]
+						[Local output(15586):StringBuf:StringBuf]
+						[FInstance:() -> String]
+							StringBuf
+							toString:() -> String
+
+	public static function compileImplementation[Function:(classType : haxe.macro.ClassType) -> String]
+		[Arg:haxe.macro.ClassType] [Local classType(15666):haxe.macro.ClassType]
+		[Block:Dynamic]
+			[Var protocolName(15667):String] [Const:String] "UnknownProtocol"
+			[Var targetType(15668):String] [Const:String] "Any"
+			[If:Void]
+				[Call:Bool]
+					[Field:(name : String) -> Bool]
+						[Field:haxe.macro.MetaAccess]
+							[Local classType(15666):haxe.macro.ClassType:haxe.macro.ClassType]
+							[FAnon:haxe.macro.MetaAccess] meta:haxe.macro.MetaAccess
+						[FAnon:(name : String) -> Bool] has:(name : String) -> Bool
+					[Const:String] ":impl"
+				[Then:String] [Block:String]
+					[Binop:String]
+						[Local protocolName(15667):String:String]
+						=
+						[Const:String] "Drawable"
+					[Binop:String]
+						[Local targetType(15668):String:String]
+						=
+						[Const:String] "String"
+			[Var output(15669):StringBuf] [New:StringBuf] StringBuf
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local output(15669):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Binop:String]
+					[Binop:String]
+						[Binop:String]
+							[Binop:String]
+								[Const:String] "defimpl "
+								+
+								[Local protocolName(15667):String:String]
+							+
+							[Const:String] ", for: "
+						+
+						[Local targetType(15668):String:String]
+					+
+					[Const:String] " do\n"
+			[Var fields(15670):Array<haxe.macro.ClassField>]
+				[Call:Array<haxe.macro.ClassField>]
+					[Field:() -> Array<haxe.macro.ClassField>]
+						[Field:haxe.macro.Ref<Array<haxe.macro.ClassField>>]
+							[Local classType(15666):haxe.macro.ClassType:haxe.macro.ClassType]
+							[FAnon:haxe.macro.Ref<Array<haxe.macro.ClassField>>] fields:haxe.macro.Ref<Array<haxe.macro.ClassField>>
+						[FAnon:() -> Array<haxe.macro.ClassField>] get:() -> Array<haxe.macro.ClassField>
+			[Block:Void]
+				[Var `(15722):Int] [Const:Int] 0
+				[While:Void]
+					[Binop:Bool]
+						[Local `(15722):Int:Int]
+						<
+						[Field:Int]
+							[Local fields(15670):Array<haxe.macro.ClassField>:Array<haxe.macro.ClassField>]
+							[FInstance:Int]
+								Array<haxe.macro.ClassField>
+								length:Int
+					[Block:Void]
+						[Var field(15671):haxe.macro.ClassField]
+							[Array:haxe.macro.ClassField]
+								[Local fields(15670):Array<haxe.macro.ClassField>:Array<haxe.macro.ClassField>]
+								[Local `(15722):Int:Int]
+						[Unop:Int]
+							++
+							Prefix
+							[Local `(15722):Int:Int]
+						[If:Void]
+							[Block:Bool]
+								[Var `(15674):haxe.macro.FieldKind]
+									[Field:haxe.macro.FieldKind]
+										[Local field(15671):haxe.macro.ClassField:haxe.macro.ClassField]
+										[FAnon:haxe.macro.FieldKind] kind:haxe.macro.FieldKind
+								[If:Bool]
+									[Binop:Bool]
+										[EnumIndex:Int] [Local `(15674):haxe.macro.FieldKind:haxe.macro.FieldKind]
+										==
+										[Const:Int] 1
+									[Then:Bool] [Block:Bool]
+										[Var `(15675):haxe.macro.MethodKind]
+											[EnumParameter:haxe.macro.MethodKind]
+												[Local `(15674):haxe.macro.FieldKind:haxe.macro.FieldKind]
+												FMethod
+												0
+										[Const:Bool] true
+									[Else:Bool] [Const:Bool] false
+							[Then:Void] [Block:Void]
+								[Var functionName(15676):String]
+									[Call:String]
+										[Field:(camelCase : String) -> String]
+											[TypeExpr reflaxe.elixir.helpers.NamingHelper:Class<reflaxe.elixir.helpers.NamingHelper>]
+											[FStatic:(camelCase : String) -> String]
+												reflaxe.elixir.helpers.NamingHelper
+												toSnakeCase:(camelCase : String) -> String
+										[Field:String]
+											[Local field(15671):haxe.macro.ClassField:haxe.macro.ClassField]
+											[FAnon:String] name:String
+								[Var implementation(15700):String]
+									[Call:String]
+										[Field:(field : haxe.macro.ClassField, targetType : String) -> String]
+											[TypeExpr reflaxe.elixir.helpers.ProtocolCompiler:Class<reflaxe.elixir.helpers.ProtocolCompiler>]
+											[FStatic:(field : haxe.macro.ClassField, targetType : String) -> String]
+												reflaxe.elixir.helpers.ProtocolCompiler
+												generateImplementation:(field : haxe.macro.ClassField, targetType : String) -> String
+										[Local field(15671):haxe.macro.ClassField:haxe.macro.ClassField]
+										[Local targetType(15668):String:String]
+								[Call:Void]
+									[Field:(x : String) -> Void]
+										[Local output(15669):StringBuf:StringBuf]
+										[FInstance:(x : String) -> Void]
+											StringBuf
+											add:(x : add.T) -> Void
+									[Binop:String]
+										[Binop:String]
+											[Binop:String]
+												[Binop:String]
+													[Const:String] "  def "
+													+
+													[Local functionName(15676):String:String]
+												+
+												[Const:String] "(value"
+											+
+											[Call:String]
+												[Field:(field : haxe.macro.ClassField) -> String]
+													[TypeExpr reflaxe.elixir.helpers.ProtocolCompiler:Class<reflaxe.elixir.helpers.ProtocolCompiler>]
+													[FStatic:(field : haxe.macro.ClassField) -> String]
+														reflaxe.elixir.helpers.ProtocolCompiler
+														generateExtraParams:(field : haxe.macro.ClassField) -> String
+												[Local field(15671):haxe.macro.ClassField:haxe.macro.ClassField]
+										+
+										[Const:String] ") do\n"
+								[Call:Void]
+									[Field:(x : String) -> Void]
+										[Local output(15669):StringBuf:StringBuf]
+										[FInstance:(x : String) -> Void]
+											StringBuf
+											add:(x : add.T) -> Void
+									[Binop:String]
+										[Binop:String]
+											[Const:String] "    "
+											+
+											[Local implementation(15700):String:String]
+										+
+										[Const:String] "\n"
+								[Call:Void]
+									[Field:(x : String) -> Void]
+										[Local output(15669):StringBuf:StringBuf]
+										[FInstance:(x : String) -> Void]
+											StringBuf
+											add:(x : add.T) -> Void
+									[Const:String] "  end\n\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local output(15669):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "end\n"
+			[Return:Dynamic]
+				[Call:String]
+					[Field:() -> String]
+						[Local output(15669):StringBuf:StringBuf]
+						[FInstance:() -> String]
+							StringBuf
+							toString:() -> String
+
+	public static function validateImplementation[Function:(implClass : haxe.macro.ClassType, protocolClass : haxe.macro.ClassType) -> Array<String>]
+		[Arg:haxe.macro.ClassType] [Local implClass(26088):haxe.macro.ClassType]
+		[Arg:haxe.macro.ClassType] [Local protocolClass(26089):haxe.macro.ClassType]
+		[Block:Dynamic]
+			[Var errors(26090):Array<String>] [ArrayDecl:Array<String>]
+			[Var protocolMethods(26107):Array<haxe.macro.ClassField>]
+				[Call:Array<haxe.macro.ClassField>]
+					[Field:(classType : haxe.macro.ClassType) -> Array<haxe.macro.ClassField>]
+						[TypeExpr reflaxe.elixir.helpers.ProtocolCompiler:Class<reflaxe.elixir.helpers.ProtocolCompiler>]
+						[FStatic:(classType : haxe.macro.ClassType) -> Array<haxe.macro.ClassField>]
+							reflaxe.elixir.helpers.ProtocolCompiler
+							getProtocolMethods:(classType : haxe.macro.ClassType) -> Array<haxe.macro.ClassField>
+					[Local protocolClass(26089):haxe.macro.ClassType:haxe.macro.ClassType]
+			[Var implMethods(26124):Array<haxe.macro.ClassField>]
+				[Call:Array<haxe.macro.ClassField>]
+					[Field:(classType : haxe.macro.ClassType) -> Array<haxe.macro.ClassField>]
+						[TypeExpr reflaxe.elixir.helpers.ProtocolCompiler:Class<reflaxe.elixir.helpers.ProtocolCompiler>]
+						[FStatic:(classType : haxe.macro.ClassType) -> Array<haxe.macro.ClassField>]
+							reflaxe.elixir.helpers.ProtocolCompiler
+							getImplementationMethods:(classType : haxe.macro.ClassType) -> Array<haxe.macro.ClassField>
+					[Local implClass(26088):haxe.macro.ClassType:haxe.macro.ClassType]
+			[Block:Void]
+				[Var `(26151):Int] [Const:Int] 0
+				[While:Void]
+					[Binop:Bool]
+						[Local `(26151):Int:Int]
+						<
+						[Field:Int]
+							[Local protocolMethods(26107):Array<haxe.macro.ClassField>:Array<haxe.macro.ClassField>]
+							[FInstance:Int]
+								Array<haxe.macro.ClassField>
+								length:Int
+					[Block:Void]
+						[Var protocolMethod(26125):haxe.macro.ClassField]
+							[Array:haxe.macro.ClassField]
+								[Local protocolMethods(26107):Array<haxe.macro.ClassField>:Array<haxe.macro.ClassField>]
+								[Local `(26151):Int:Int]
+						[Unop:Int]
+							++
+							Prefix
+							[Local `(26151):Int:Int]
+						[Var found(26126):Bool] [Const:Bool] false
+						[Block:Void]
+							[Var `(26150):Int] [Const:Int] 0
+							[While:Void]
+								[Binop:Bool]
+									[Local `(26150):Int:Int]
+									<
+									[Field:Int]
+										[Local implMethods(26124):Array<haxe.macro.ClassField>:Array<haxe.macro.ClassField>]
+										[FInstance:Int]
+											Array<haxe.macro.ClassField>
+											length:Int
+								[Block:Void]
+									[Var implMethod(26127):haxe.macro.ClassField]
+										[Array:haxe.macro.ClassField]
+											[Local implMethods(26124):Array<haxe.macro.ClassField>:Array<haxe.macro.ClassField>]
+											[Local `(26150):Int:Int]
+									[Unop:Int]
+										++
+										Prefix
+										[Local `(26150):Int:Int]
+									[If:Void]
+										[Binop:Bool]
+											[Field:String]
+												[Local implMethod(26127):haxe.macro.ClassField:haxe.macro.ClassField]
+												[FAnon:String] name:String
+											==
+											[Field:String]
+												[Local protocolMethod(26125):haxe.macro.ClassField:haxe.macro.ClassField]
+												[FAnon:String] name:String
+										[Then:Dynamic] [Block:Dynamic]
+											[Binop:Bool]
+												[Local found(26126):Bool:Bool]
+												=
+												[Const:Bool] true
+											[If:Void]
+												[Unop:Bool]
+													!
+													Prefix
+													[Call:Bool]
+														[Field:(protocolMethod : haxe.macro.ClassField, implMethod : haxe.macro.ClassField) -> Bool]
+															[TypeExpr reflaxe.elixir.helpers.ProtocolCompiler:Class<reflaxe.elixir.helpers.ProtocolCompiler>]
+															[FStatic:(protocolMethod : haxe.macro.ClassField, implMethod : haxe.macro.ClassField) -> Bool]
+																reflaxe.elixir.helpers.ProtocolCompiler
+																isSignatureCompatible:(protocolMethod : haxe.macro.ClassField, implMethod : haxe.macro.ClassField) -> Bool
+														[Local protocolMethod(26125):haxe.macro.ClassField:haxe.macro.ClassField]
+														[Local implMethod(26127):haxe.macro.ClassField:haxe.macro.ClassField]
+												[Then:Int] [Block:Int]
+													[Call:Int]
+														[Field:(x : String) -> Int]
+															[Local errors(26090):Array<String>:Array<String>]
+															[FInstance:(x : String) -> Int]
+																Array<String>
+																push:(x : Array.T) -> Int
+														[Binop:String]
+															[Binop:String]
+																[Const:String] "Method "
+																+
+																[Field:String]
+																	[Local implMethod(26127):haxe.macro.ClassField:haxe.macro.ClassField]
+																	[FAnon:String] name:String
+															+
+															[Const:String] " signature does not match protocol"
+											[Break:Dynamic]
+						[If:Void]
+							[Unop:Bool]
+								!
+								Prefix
+								[Local found(26126):Bool:Bool]
+							[Then:Int] [Block:Int]
+								[Call:Int]
+									[Field:(x : String) -> Int]
+										[Local errors(26090):Array<String>:Array<String>]
+										[FInstance:(x : String) -> Int]
+											Array<String>
+											push:(x : Array.T) -> Int
+									[Binop:String]
+										[Const:String] "Missing implementation for protocol method: "
+										+
+										[Field:String]
+											[Local protocolMethod(26125):haxe.macro.ClassField:haxe.macro.ClassField]
+											[FAnon:String] name:String
+			[Block:Void]
+				[Var `(26156):Int] [Const:Int] 0
+				[While:Void]
+					[Binop:Bool]
+						[Local `(26156):Int:Int]
+						<
+						[Field:Int]
+							[Local implMethods(26124):Array<haxe.macro.ClassField>:Array<haxe.macro.ClassField>]
+							[FInstance:Int]
+								Array<haxe.macro.ClassField>
+								length:Int
+					[Block:Void]
+						[Var implMethod(26152):haxe.macro.ClassField]
+							[Array:haxe.macro.ClassField]
+								[Local implMethods(26124):Array<haxe.macro.ClassField>:Array<haxe.macro.ClassField>]
+								[Local `(26156):Int:Int]
+						[Unop:Int]
+							++
+							Prefix
+							[Local `(26156):Int:Int]
+						[Var found(26153):Bool] [Const:Bool] false
+						[Block:Void]
+							[Var `(26155):Int] [Const:Int] 0
+							[While:Void]
+								[Binop:Bool]
+									[Local `(26155):Int:Int]
+									<
+									[Field:Int]
+										[Local protocolMethods(26107):Array<haxe.macro.ClassField>:Array<haxe.macro.ClassField>]
+										[FInstance:Int]
+											Array<haxe.macro.ClassField>
+											length:Int
+								[Block:Void]
+									[Var protocolMethod(26154):haxe.macro.ClassField]
+										[Array:haxe.macro.ClassField]
+											[Local protocolMethods(26107):Array<haxe.macro.ClassField>:Array<haxe.macro.ClassField>]
+											[Local `(26155):Int:Int]
+									[Unop:Int]
+										++
+										Prefix
+										[Local `(26155):Int:Int]
+									[If:Void]
+										[Binop:Bool]
+											[Field:String]
+												[Local protocolMethod(26154):haxe.macro.ClassField:haxe.macro.ClassField]
+												[FAnon:String] name:String
+											==
+											[Field:String]
+												[Local implMethod(26152):haxe.macro.ClassField:haxe.macro.ClassField]
+												[FAnon:String] name:String
+										[Then:Dynamic] [Block:Dynamic]
+											[Binop:Bool]
+												[Local found(26153):Bool:Bool]
+												=
+												[Const:Bool] true
+											[Break:Dynamic]
+						[If:Void]
+							[Unop:Bool]
+								!
+								Prefix
+								[Local found(26153):Bool:Bool]
+							[Then:Void] [Block:Void]
+								[Call:Void]
+									[Field:(v : Dynamic, ?infos : Null<haxe.PosInfos>) -> Void]
+										[TypeExpr haxe.Log:Class<haxe.Log>]
+										[FStatic:(v : Dynamic, ?infos : Null<haxe.PosInfos>) -> Void]
+											haxe.Log
+											trace:(v : Dynamic, ?infos : Null<haxe.PosInfos>) -> Void
+									[Binop:String]
+										[Binop:String]
+											[Const:String] "WARNING: Implementation method "
+											+
+											[Field:String]
+												[Local implMethod(26152):haxe.macro.ClassField:haxe.macro.ClassField]
+												[FAnon:String] name:String
+										+
+										[Const:String] " not defined in protocol"
+									[ObjectDecl:{ methodName : String, lineNumber : Int, fileName : String, ?customParams : Null<Array<Dynamic>>, className : String }]
+										fileName: [Const:String] "../../../src/reflaxe/elixir/helpers/ProtocolCompiler.hx"
+										lineNumber: [Const:Int] 143
+										className: [Const:String] "reflaxe.elixir.helpers.ProtocolCompiler"
+										methodName: [Const:String] "validateImplementation"
+			[Return:Dynamic] [Local errors(26090):Array<String>:Array<String>]
+
+	public static function generateDispatch[Function:(protocolName : String, methodName : String, args : Array<String>) -> String]
+		[Arg:String] [Local protocolName(26157):String]
+		[Arg:String] [Local methodName(26158):String]
+		[Arg:Array<String>] [Local args(26159):Array<String>]
+		[Block:Dynamic]
+			[Var snakeMethod(26160):String]
+				[Call:String]
+					[Field:(camelCase : String) -> String]
+						[TypeExpr reflaxe.elixir.helpers.NamingHelper:Class<reflaxe.elixir.helpers.NamingHelper>]
+						[FStatic:(camelCase : String) -> String]
+							reflaxe.elixir.helpers.NamingHelper
+							toSnakeCase:(camelCase : String) -> String
+					[Local methodName(26158):String:String]
+			[Return:Dynamic]
+				[Binop:String]
+					[Binop:String]
+						[Binop:String]
+							[Binop:String]
+								[Binop:String]
+									[Binop:String]
+										[Const:String] ""
+										+
+										[Local protocolName(26157):String:String]
+									+
+									[Const:String] "."
+								+
+								[Local snakeMethod(26160):String:String]
+							+
+							[Const:String] "("
+						+
+						[Call:String]
+							[Field:(sep : String) -> String]
+								[Local args(26159):Array<String>:Array<String>]
+								[FInstance:(sep : String) -> String]
+									Array<String>
+									join:(sep : String) -> String
+							[Const:String] ", "
+					+
+					[Const:String] ")"
+
+	static function generateProtocolSignature[Function:(field : haxe.macro.ClassField) -> String]
+		[Arg:haxe.macro.ClassField] [Local field(15593):haxe.macro.ClassField]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Meta:String]
+					:ast(switch (field.type) {
+	case TFun(args, ret):
+		var argTypes = args.map(function(arg) ->  @:implicitReturn return "any()").join(", ");
+		var retType = mapHaxeTypeToElixir(ret);
+		"(${argTypes}) :: ${retType}";	
+	default:
+		"() :: any()";	
+})
+					[Block:String]
+						[Var `(15629):haxe.macro.Type]
+							[Field:haxe.macro.Type]
+								[Local field(15593):haxe.macro.ClassField:haxe.macro.ClassField]
+								[FAnon:haxe.macro.Type] type:haxe.macro.Type
+						[If:String]
+							[Binop:Bool]
+								[EnumIndex:Int] [Local `(15629):haxe.macro.Type:haxe.macro.Type]
+								==
+								[Const:Int] 4
+							[Then:String] [Block:String]
+								[Var `(15630):Array<{ t : haxe.macro.Type, opt : Bool, name : String }>]
+									[EnumParameter:Array<{ t : haxe.macro.Type, opt : Bool, name : String }>]
+										[Local `(15629):haxe.macro.Type:haxe.macro.Type]
+										TFun
+										0
+								[Var `(15631):haxe.macro.Type]
+									[EnumParameter:haxe.macro.Type]
+										[Local `(15629):haxe.macro.Type:haxe.macro.Type]
+										TFun
+										1
+								[Block:String]
+									[Var args(15632):Array<{ t : haxe.macro.Type, opt : Bool, name : String }>] [Local `(15630):Array<{ t : haxe.macro.Type, opt : Bool, name : String }>:Array<{ t : haxe.macro.Type, opt : Bool, name : String }>]
+									[Var ret(15633):haxe.macro.Type] [Local `(15631):haxe.macro.Type:haxe.macro.Type]
+									[Block:String]
+										[Var argTypes(15634):String]
+											[Call:String]
+												[Field:(sep : String) -> String]
+													[Block:Array<String>]
+														[Var `(15635):Array<String>] [ArrayDecl:Array<String>]
+														[Block:Void]
+															[Var `(15636):Int] [Const:Int] 0
+															[Var `(15637):Array<{ t : haxe.macro.Type, opt : Bool, name : String }>] [Local args(15632):Array<{ t : haxe.macro.Type, opt : Bool, name : String }>:Array<{ t : haxe.macro.Type, opt : Bool, name : String }>]
+															[While:Void]
+																[Binop:Bool]
+																	[Local `(15636):Int:Int]
+																	<
+																	[Field:Int]
+																		[Local `(15637):Array<{ t : haxe.macro.Type, opt : Bool, name : String }>:Array<{ t : haxe.macro.Type, opt : Bool, name : String }>]
+																		[FInstance:Int]
+																			Array<{ t : haxe.macro.Type, opt : Bool, name : String }>
+																			length:Int
+																[Block:Void]
+																	[Var v(15638):{ t : haxe.macro.Type, opt : Bool, name : String }]
+																		[Array:{ t : haxe.macro.Type, opt : Bool, name : String }]
+																			[Local `(15637):Array<{ t : haxe.macro.Type, opt : Bool, name : String }>:Array<{ t : haxe.macro.Type, opt : Bool, name : String }>]
+																			[Local `(15636):Int:Int]
+																	[Unop:Int]
+																		++
+																		Prefix
+																		[Local `(15636):Int:Int]
+																	[Call:Int]
+																		[Field:(x : String) -> Int]
+																			[Local `(15635):Array<String>:Array<String>]
+																			[FInstance:(x : String) -> Int]
+																				Array<String>
+																				push:(x : Array.T) -> Int
+																		[Call:String]
+																			[Function:(arg : { t : haxe.macro.Type, opt : Bool, name : String }) -> String]
+																				[Arg:{ t : haxe.macro.Type, opt : Bool, name : String }] [Local arg(15639):{ t : haxe.macro.Type, opt : Bool, name : String }]
+																				[Block:Dynamic] [Return:Dynamic] [Const:String] "any()"
+																			[Local v(15638):{ t : haxe.macro.Type, opt : Bool, name : String }:{ t : haxe.macro.Type, opt : Bool, name : String }]
+														[Local `(15635):Array<String>:Array<String>]
+													[FInstance:(sep : String) -> String]
+														Array<String>
+														join:(sep : String) -> String
+												[Const:String] ", "
+										[Var retType(15640):String]
+											[Call:String]
+												[Field:(type : haxe.macro.Type) -> String]
+													[TypeExpr reflaxe.elixir.helpers.ProtocolCompiler:Class<reflaxe.elixir.helpers.ProtocolCompiler>]
+													[FStatic:(type : haxe.macro.Type) -> String]
+														reflaxe.elixir.helpers.ProtocolCompiler
+														mapHaxeTypeToElixir:(type : haxe.macro.Type) -> String
+												[Local ret(15633):haxe.macro.Type:haxe.macro.Type]
+										[Binop:String]
+											[Binop:String]
+												[Binop:String]
+													[Const:String] "("
+													+
+													[Local argTypes(15634):String:String]
+												+
+												[Const:String] ") :: "
+											+
+											[Local retType(15640):String:String]
+							[Else:String] [Block:String] [Const:String] "() :: any()"
+
+	static function generateParameterList[Function:(field : haxe.macro.ClassField) -> String]
+		[Arg:haxe.macro.ClassField] [Local field(15642):haxe.macro.ClassField]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Meta:String]
+					:ast(switch (field.type) {
+	case TFun(args, ret):
+		var params = ["value"];
+		for (i  in  0 ... args.length - 1) {
+			params.push("param${i + 1}");
+		};
+		params.join(", ");	
+	default:
+		"value";	
+})
+					[Block:String]
+						[Var `(15652):haxe.macro.Type]
+							[Field:haxe.macro.Type]
+								[Local field(15642):haxe.macro.ClassField:haxe.macro.ClassField]
+								[FAnon:haxe.macro.Type] type:haxe.macro.Type
+						[If:String]
+							[Binop:Bool]
+								[EnumIndex:Int] [Local `(15652):haxe.macro.Type:haxe.macro.Type]
+								==
+								[Const:Int] 4
+							[Then:String] [Block:String]
+								[Var `(15653):Array<{ t : haxe.macro.Type, opt : Bool, name : String }>]
+									[EnumParameter:Array<{ t : haxe.macro.Type, opt : Bool, name : String }>]
+										[Local `(15652):haxe.macro.Type:haxe.macro.Type]
+										TFun
+										0
+								[Var `(15654):haxe.macro.Type]
+									[EnumParameter:haxe.macro.Type]
+										[Local `(15652):haxe.macro.Type:haxe.macro.Type]
+										TFun
+										1
+								[Block:String]
+									[Var args(15655):Array<{ t : haxe.macro.Type, opt : Bool, name : String }>] [Local `(15653):Array<{ t : haxe.macro.Type, opt : Bool, name : String }>:Array<{ t : haxe.macro.Type, opt : Bool, name : String }>]
+									[Var ret(15656):haxe.macro.Type] [Local `(15654):haxe.macro.Type:haxe.macro.Type]
+									[Block:String]
+										[Var params(15657):Array<String>] [ArrayDecl:Array<String>] [Const:String] "value"
+										[Block:Void]
+											[Var `(15658):Int] [Const:Int] 0
+											[Var `(15659):Int]
+												[Binop:Int]
+													[Field:Int]
+														[Local args(15655):Array<{ t : haxe.macro.Type, opt : Bool, name : String }>:Array<{ t : haxe.macro.Type, opt : Bool, name : String }>]
+														[FInstance:Int]
+															Array<{ t : haxe.macro.Type, opt : Bool, name : String }>
+															length:Int
+													-
+													[Const:Int] 1
+											[While:Void]
+												[Binop:Bool]
+													[Local `(15658):Int:Int]
+													<
+													[Local `(15659):Int:Int]
+												[Block:Int]
+													[Var i(15660):Int]
+														[Unop:Int]
+															++
+															Postfix
+															[Local `(15658):Int:Int]
+													[Call:Int]
+														[Field:(x : String) -> Int]
+															[Local params(15657):Array<String>:Array<String>]
+															[FInstance:(x : String) -> Int]
+																Array<String>
+																push:(x : Array.T) -> Int
+														[Binop:String]
+															[Const:String] "param"
+															+
+															[Binop:Int]
+																[Local i(15660):Int:Int]
+																+
+																[Const:Int] 1
+										[Call:String]
+											[Field:(sep : String) -> String]
+												[Local params(15657):Array<String>:Array<String>]
+												[FInstance:(sep : String) -> String]
+													Array<String>
+													join:(sep : String) -> String
+											[Const:String] ", "
+							[Else:String] [Block:String] [Const:String] "value"
+
+	static function extractProtocolName[Function:(implAnnotation : String) -> String]
+		[Arg:String] [Local implAnnotation(26161):String]
+		[Block:Dynamic]
+			[Var protocolMatch(26162):EReg]
+				[New:EReg]
+					EReg
+					[Const:String] "\\(([^,]+)"
+					[Const:String] ""
+			[If:Void]
+				[Call:Bool]
+					[Field:(s : String) -> Bool]
+						[Local protocolMatch(26162):EReg:EReg]
+						[FInstance:(s : String) -> Bool]
+							EReg
+							match:(s : String) -> Bool
+					[Local implAnnotation(26161):String:String]
+				[Then:Dynamic] [Block:Dynamic]
+					[Return:Dynamic]
+						[Call:String]
+							[Field:(s : String) -> String]
+								[TypeExpr StringTools:{ Statics StringTools }]
+								[FStatic:(s : String) -> String]
+									StringTools
+									trim:(s : String) -> String
+							[Call:String]
+								[Field:(n : Int) -> String]
+									[Local protocolMatch(26162):EReg:EReg]
+									[FInstance:(n : Int) -> String]
+										EReg
+										matched:(n : Int) -> String
+								[Const:Int] 1
+			[Return:Dynamic] [Const:String] "UnknownProtocol"
+
+	static function extractTargetType[Function:(implAnnotation : String) -> String]
+		[Arg:String] [Local implAnnotation(26163):String]
+		[Block:Dynamic]
+			[Var typeMatch(26164):EReg]
+				[New:EReg]
+					EReg
+					[Const:String] "for:\\s*([^)]+)"
+					[Const:String] ""
+			[If:Void]
+				[Call:Bool]
+					[Field:(s : String) -> Bool]
+						[Local typeMatch(26164):EReg:EReg]
+						[FInstance:(s : String) -> Bool]
+							EReg
+							match:(s : String) -> Bool
+					[Local implAnnotation(26163):String:String]
+				[Then:Dynamic] [Block:Dynamic]
+					[Var haxeType(26165):String]
+						[Call:String]
+							[Field:(s : String) -> String]
+								[TypeExpr StringTools:{ Statics StringTools }]
+								[FStatic:(s : String) -> String]
+									StringTools
+									trim:(s : String) -> String
+							[Call:String]
+								[Field:(n : Int) -> String]
+									[Local typeMatch(26164):EReg:EReg]
+									[FInstance:(n : Int) -> String]
+										EReg
+										matched:(n : Int) -> String
+								[Const:Int] 1
+					[Return:Dynamic]
+						[Call:String]
+							[Field:(typeName : String) -> String]
+								[TypeExpr reflaxe.elixir.helpers.ProtocolCompiler:Class<reflaxe.elixir.helpers.ProtocolCompiler>]
+								[FStatic:(typeName : String) -> String]
+									reflaxe.elixir.helpers.ProtocolCompiler
+									mapHaxeTypeNameToElixir:(typeName : String) -> String
+							[Local haxeType(26165):String:String]
+			[Return:Dynamic] [Const:String] "Any"
+
+	static function mapHaxeTypeToElixir[Function:(type : haxe.macro.Type) -> String]
+		[Arg:haxe.macro.Type] [Local type(15606):haxe.macro.Type]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Meta:String]
+					:ast(switch (type) {
+	case TInst(_.get().name => "String", _):
+		"String";	
+	case TAbstract(_.get().name => "Int", _):
+		"Integer";	
+	case TAbstract(_.get().name => "Float", _):
+		"Float";	
+	case TAbstract(_.get().name => "Bool", _):
+		"Boolean";	
+	case TDynamic(_):
+		"Any";	
+	default:
+		"Any";	
+})
+					[Switch:String]
+						[EnumIndex:Int] [Local type(15606):haxe.macro.Type:haxe.macro.Type]
+						[Case:String]
+							[Const:Int] 2
+							[Block:String]
+								[Var `(15618):haxe.macro.Ref<haxe.macro.ClassType>]
+									[EnumParameter:haxe.macro.Ref<haxe.macro.ClassType>]
+										[Local type(15606):haxe.macro.Type:haxe.macro.Type]
+										TInst
+										0
+								[Var `(15619):Array<haxe.macro.Type>]
+									[EnumParameter:Array<haxe.macro.Type>]
+										[Local type(15606):haxe.macro.Type:haxe.macro.Type]
+										TInst
+										1
+								[Block:String]
+									[Var _hx_tmp(15620):String]
+									[If:String]
+										[Binop:Bool]
+											[Parenthesis:String]
+												[Binop:String]
+													[Local _hx_tmp(15620):String:String]
+													=
+													[Field:String]
+														[Call:haxe.macro.ClassType]
+															[Field:() -> haxe.macro.ClassType]
+																[Local `(15618):haxe.macro.Ref<haxe.macro.ClassType>:haxe.macro.Ref<haxe.macro.ClassType>]
+																[FAnon:() -> haxe.macro.ClassType] get:() -> haxe.macro.ClassType
+														[FAnon:String] name:String
+											==
+											[Const:String] "String"
+										[Then:String] [Block:String] [Block:String] [Const:String] "String"
+										[Else:String] [Block:String] [Const:String] "Any"
+						[Case:String]
+							[Const:Int] 6
+							[Block:String]
+								[Var `(15621):Null<haxe.macro.Type>]
+									[EnumParameter:Null<haxe.macro.Type>]
+										[Local type(15606):haxe.macro.Type:haxe.macro.Type]
+										TDynamic
+										0
+								[Block:String] [Const:String] "Any"
+						[Case:String]
+							[Const:Int] 8
+							[Block:String]
+								[Var `(15622):haxe.macro.Ref<haxe.macro.AbstractType>]
+									[EnumParameter:haxe.macro.Ref<haxe.macro.AbstractType>]
+										[Local type(15606):haxe.macro.Type:haxe.macro.Type]
+										TAbstract
+										0
+								[Var `(15623):Array<haxe.macro.Type>]
+									[EnumParameter:Array<haxe.macro.Type>]
+										[Local type(15606):haxe.macro.Type:haxe.macro.Type]
+										TAbstract
+										1
+								[Block:String]
+									[Var _hx_tmp(15624):String]
+									[Switch:String]
+										[Parenthesis:String]
+											[Binop:String]
+												[Local _hx_tmp(15624):String:String]
+												=
+												[Field:String]
+													[Call:haxe.macro.AbstractType]
+														[Field:() -> haxe.macro.AbstractType]
+															[Local `(15622):haxe.macro.Ref<haxe.macro.AbstractType>:haxe.macro.Ref<haxe.macro.AbstractType>]
+															[FAnon:() -> haxe.macro.AbstractType] get:() -> haxe.macro.AbstractType
+													[FAnon:String] name:String
+										[Case:String]
+											[Const:String] "Bool"
+											[Block:String] [Block:String] [Const:String] "Boolean"
+										[Case:String]
+											[Const:String] "Float"
+											[Block:String] [Block:String] [Const:String] "Float"
+										[Case:String]
+											[Const:String] "Int"
+											[Block:String] [Block:String] [Const:String] "Integer"
+										[Default:String] [Block:String] [Const:String] "Any"
+						[Default:String] [Block:String] [Const:String] "Any"
+
+	static function mapHaxeTypeNameToElixir[Function:(typeName : String) -> String]
+		[Arg:String] [Local typeName(26166):String]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Meta:String]
+					:ast(switch (typeName) {
+	case "String":
+		"String";	
+	case "Int":
+		"Integer";	
+	case "Float":
+		"Float";	
+	case "Bool":
+		"Boolean";	
+	case "Any":
+		"Any";	
+	default:
+		typeName;	
+})
+					[Switch:String]
+						[Local typeName(26166):String:String]
+						[Case:String]
+							[Const:String] "Any"
+							[Block:String] [Block:String] [Const:String] "Any"
+						[Case:String]
+							[Const:String] "Bool"
+							[Block:String] [Block:String] [Const:String] "Boolean"
+						[Case:String]
+							[Const:String] "Float"
+							[Block:String] [Block:String] [Const:String] "Float"
+						[Case:String]
+							[Const:String] "Int"
+							[Block:String] [Block:String] [Const:String] "Integer"
+						[Case:String]
+							[Const:String] "String"
+							[Block:String] [Block:String] [Const:String] "String"
+						[Default:String] [Block:String] [Local typeName(26166):String:String]
+
+	static function generateImplementation[Function:(field : haxe.macro.ClassField, targetType : String) -> String]
+		[Arg:haxe.macro.ClassField] [Local field(15677):haxe.macro.ClassField]
+		[Arg:String] [Local targetType(15678):String]
+		[Block:Dynamic]
+			[Var methodName(15679):String]
+				[Field:String]
+					[Local field(15677):haxe.macro.ClassField:haxe.macro.ClassField]
+					[FAnon:String] name:String
+			[Return:Dynamic]
+				[Meta:String]
+					:ast(switch (field.type) {
+	case TFun(args, ret):
+		if (args.length > 1) {
+			var params = [for (i  in  1 ... args.length) "param${i}"].join(", ");
+			"value.${methodName}(${params})";
+		} else {
+			"value.${methodName}()";
+		};	
+	default:
+		"value.${methodName}()";	
+})
+					[Block:String]
+						[Var `(15690):haxe.macro.Type]
+							[Field:haxe.macro.Type]
+								[Local field(15677):haxe.macro.ClassField:haxe.macro.ClassField]
+								[FAnon:haxe.macro.Type] type:haxe.macro.Type
+						[If:String]
+							[Binop:Bool]
+								[EnumIndex:Int] [Local `(15690):haxe.macro.Type:haxe.macro.Type]
+								==
+								[Const:Int] 4
+							[Then:String] [Block:String]
+								[Var `(15691):Array<{ t : haxe.macro.Type, opt : Bool, name : String }>]
+									[EnumParameter:Array<{ t : haxe.macro.Type, opt : Bool, name : String }>]
+										[Local `(15690):haxe.macro.Type:haxe.macro.Type]
+										TFun
+										0
+								[Var `(15692):haxe.macro.Type]
+									[EnumParameter:haxe.macro.Type]
+										[Local `(15690):haxe.macro.Type:haxe.macro.Type]
+										TFun
+										1
+								[Block:String]
+									[Var args(15693):Array<{ t : haxe.macro.Type, opt : Bool, name : String }>] [Local `(15691):Array<{ t : haxe.macro.Type, opt : Bool, name : String }>:Array<{ t : haxe.macro.Type, opt : Bool, name : String }>]
+									[Var ret(15694):haxe.macro.Type] [Local `(15692):haxe.macro.Type:haxe.macro.Type]
+									[Block:String]
+										[If:String]
+											[Binop:Bool]
+												[Field:Int]
+													[Local args(15693):Array<{ t : haxe.macro.Type, opt : Bool, name : String }>:Array<{ t : haxe.macro.Type, opt : Bool, name : String }>]
+													[FInstance:Int]
+														Array<{ t : haxe.macro.Type, opt : Bool, name : String }>
+														length:Int
+												>
+												[Const:Int] 1
+											[Then:String] [Block:String]
+												[Var params(15695):String]
+													[Call:String]
+														[Field:(sep : String) -> String]
+															[Block:Array<String>]
+																[Var `(15696):Array<String>] [ArrayDecl:Array<String>]
+																[Block:Void]
+																	[Var `(15697):Int] [Const:Int] 1
+																	[Var `(15698):Int]
+																		[Field:Int]
+																			[Local args(15693):Array<{ t : haxe.macro.Type, opt : Bool, name : String }>:Array<{ t : haxe.macro.Type, opt : Bool, name : String }>]
+																			[FInstance:Int]
+																				Array<{ t : haxe.macro.Type, opt : Bool, name : String }>
+																				length:Int
+																	[While:Void]
+																		[Binop:Bool]
+																			[Local `(15697):Int:Int]
+																			<
+																			[Local `(15698):Int:Int]
+																		[Block:Int]
+																			[Var i(15699):Int]
+																				[Unop:Int]
+																					++
+																					Postfix
+																					[Local `(15697):Int:Int]
+																			[Call:Int]
+																				[Field:(x : String) -> Int]
+																					[Local `(15696):Array<String>:Array<String>]
+																					[FInstance:(x : String) -> Int]
+																						Array<String>
+																						push:(x : Array.T) -> Int
+																				[Binop:String]
+																					[Const:String] "param"
+																					+
+																					[Local i(15699):Int:Int]
+																[Local `(15696):Array<String>:Array<String>]
+															[FInstance:(sep : String) -> String]
+																Array<String>
+																join:(sep : String) -> String
+														[Const:String] ", "
+												[Binop:String]
+													[Binop:String]
+														[Binop:String]
+															[Binop:String]
+																[Const:String] "value."
+																+
+																[Local methodName(15679):String:String]
+															+
+															[Const:String] "("
+														+
+														[Local params(15695):String:String]
+													+
+													[Const:String] ")"
+											[Else:String] [Block:String]
+												[Binop:String]
+													[Binop:String]
+														[Const:String] "value."
+														+
+														[Local methodName(15679):String:String]
+													+
+													[Const:String] "()"
+							[Else:String] [Block:String]
+								[Binop:String]
+									[Binop:String]
+										[Const:String] "value."
+										+
+										[Local methodName(15679):String:String]
+									+
+									[Const:String] "()"
+
+	static function generateExtraParams[Function:(field : haxe.macro.ClassField) -> String]
+		[Arg:haxe.macro.ClassField] [Local field(15701):haxe.macro.ClassField]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Meta:String]
+					:ast(switch (field.type) {
+	case TFun(args, ret):
+		if (args.length > 1) {
+			var params = [for (i  in  1 ... args.length) ", param${i}"];
+			params.join("");
+		} else {
+			"";
+		};	
+	default:
+		"";	
+})
+					[Block:String]
+						[Var `(15712):haxe.macro.Type]
+							[Field:haxe.macro.Type]
+								[Local field(15701):haxe.macro.ClassField:haxe.macro.ClassField]
+								[FAnon:haxe.macro.Type] type:haxe.macro.Type
+						[If:String]
+							[Binop:Bool]
+								[EnumIndex:Int] [Local `(15712):haxe.macro.Type:haxe.macro.Type]
+								==
+								[Const:Int] 4
+							[Then:String] [Block:String]
+								[Var `(15713):Array<{ t : haxe.macro.Type, opt : Bool, name : String }>]
+									[EnumParameter:Array<{ t : haxe.macro.Type, opt : Bool, name : String }>]
+										[Local `(15712):haxe.macro.Type:haxe.macro.Type]
+										TFun
+										0
+								[Var `(15714):haxe.macro.Type]
+									[EnumParameter:haxe.macro.Type]
+										[Local `(15712):haxe.macro.Type:haxe.macro.Type]
+										TFun
+										1
+								[Block:String]
+									[Var args(15715):Array<{ t : haxe.macro.Type, opt : Bool, name : String }>] [Local `(15713):Array<{ t : haxe.macro.Type, opt : Bool, name : String }>:Array<{ t : haxe.macro.Type, opt : Bool, name : String }>]
+									[Var ret(15716):haxe.macro.Type] [Local `(15714):haxe.macro.Type:haxe.macro.Type]
+									[Block:String]
+										[If:String]
+											[Binop:Bool]
+												[Field:Int]
+													[Local args(15715):Array<{ t : haxe.macro.Type, opt : Bool, name : String }>:Array<{ t : haxe.macro.Type, opt : Bool, name : String }>]
+													[FInstance:Int]
+														Array<{ t : haxe.macro.Type, opt : Bool, name : String }>
+														length:Int
+												>
+												[Const:Int] 1
+											[Then:String] [Block:String]
+												[Var params(15717):Array<String>]
+													[Block:Array<String>]
+														[Var `(15718):Array<String>] [ArrayDecl:Array<String>]
+														[Block:Void]
+															[Var `(15719):Int] [Const:Int] 1
+															[Var `(15720):Int]
+																[Field:Int]
+																	[Local args(15715):Array<{ t : haxe.macro.Type, opt : Bool, name : String }>:Array<{ t : haxe.macro.Type, opt : Bool, name : String }>]
+																	[FInstance:Int]
+																		Array<{ t : haxe.macro.Type, opt : Bool, name : String }>
+																		length:Int
+															[While:Void]
+																[Binop:Bool]
+																	[Local `(15719):Int:Int]
+																	<
+																	[Local `(15720):Int:Int]
+																[Block:Int]
+																	[Var i(15721):Int]
+																		[Unop:Int]
+																			++
+																			Postfix
+																			[Local `(15719):Int:Int]
+																	[Call:Int]
+																		[Field:(x : String) -> Int]
+																			[Local `(15718):Array<String>:Array<String>]
+																			[FInstance:(x : String) -> Int]
+																				Array<String>
+																				push:(x : Array.T) -> Int
+																		[Binop:String]
+																			[Const:String] ", param"
+																			+
+																			[Local i(15721):Int:Int]
+														[Local `(15718):Array<String>:Array<String>]
+												[Call:String]
+													[Field:(sep : String) -> String]
+														[Local params(15717):Array<String>:Array<String>]
+														[FInstance:(sep : String) -> String]
+															Array<String>
+															join:(sep : String) -> String
+													[Const:String] ""
+											[Else:String] [Block:String] [Const:String] ""
+							[Else:String] [Block:String] [Const:String] ""
+
+	static function getProtocolMethods[Function:(classType : haxe.macro.ClassType) -> Array<haxe.macro.ClassField>]
+		[Arg:haxe.macro.ClassType] [Local classType(26091):haxe.macro.ClassType]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Block:Array<haxe.macro.ClassField>]
+					[Var _this(26098):Array<haxe.macro.ClassField>]
+						[Call:Array<haxe.macro.ClassField>]
+							[Field:() -> Array<haxe.macro.ClassField>]
+								[Field:haxe.macro.Ref<Array<haxe.macro.ClassField>>]
+									[Local classType(26091):haxe.macro.ClassType:haxe.macro.ClassType]
+									[FAnon:haxe.macro.Ref<Array<haxe.macro.ClassField>>] fields:haxe.macro.Ref<Array<haxe.macro.ClassField>>
+								[FAnon:() -> Array<haxe.macro.ClassField>] get:() -> Array<haxe.macro.ClassField>
+					[Block:Array<haxe.macro.ClassField>]
+						[Var `(26100):Array<haxe.macro.ClassField>] [ArrayDecl:Array<haxe.macro.ClassField>]
+						[Block:Void]
+							[Var `(26101):Int] [Const:Int] 0
+							[Var `(26102):Array<haxe.macro.ClassField>] [Local _this(26098):Array<haxe.macro.ClassField>:Array<haxe.macro.ClassField>]
+							[While:Void]
+								[Binop:Bool]
+									[Local `(26101):Int:Int]
+									<
+									[Field:Int]
+										[Local `(26102):Array<haxe.macro.ClassField>:Array<haxe.macro.ClassField>]
+										[FInstance:Int]
+											Array<haxe.macro.ClassField>
+											length:Int
+								[Block:Void]
+									[Var v(26103):haxe.macro.ClassField]
+										[Array:haxe.macro.ClassField]
+											[Local `(26102):Array<haxe.macro.ClassField>:Array<haxe.macro.ClassField>]
+											[Local `(26101):Int:Int]
+									[Unop:Int]
+										++
+										Prefix
+										[Local `(26101):Int:Int]
+									[If:Void]
+										[Call:Bool]
+											[Function:(field : haxe.macro.ClassField) -> Bool]
+												[Arg:haxe.macro.ClassField] [Local field(26104):haxe.macro.ClassField]
+												[Block:Dynamic]
+													[Return:Dynamic]
+														[Block:Bool]
+															[Var `(26105):haxe.macro.FieldKind]
+																[Field:haxe.macro.FieldKind]
+																	[Local field(26104):haxe.macro.ClassField:haxe.macro.ClassField]
+																	[FAnon:haxe.macro.FieldKind] kind:haxe.macro.FieldKind
+															[If:Bool]
+																[Parenthesis:Bool]
+																	[Binop:Bool]
+																		[EnumIndex:Int] [Local `(26105):haxe.macro.FieldKind:haxe.macro.FieldKind]
+																		==
+																		[Const:Int] 1
+																[Then:Bool] [Block:Bool]
+																	[Var `(26106):haxe.macro.MethodKind]
+																		[EnumParameter:haxe.macro.MethodKind]
+																			[Local `(26105):haxe.macro.FieldKind:haxe.macro.FieldKind]
+																			FMethod
+																			0
+																	[Const:Bool] true
+																[Else:Bool] [Const:Bool] false
+											[Local v(26103):haxe.macro.ClassField:haxe.macro.ClassField]
+										[Then:Int] [Block:Int]
+											[Call:Int]
+												[Field:(x : haxe.macro.ClassField) -> Int]
+													[Local `(26100):Array<haxe.macro.ClassField>:Array<haxe.macro.ClassField>]
+													[FInstance:(x : haxe.macro.ClassField) -> Int]
+														Array<haxe.macro.ClassField>
+														push:(x : Array.T) -> Int
+												[Local v(26103):haxe.macro.ClassField:haxe.macro.ClassField]
+						[Local `(26100):Array<haxe.macro.ClassField>:Array<haxe.macro.ClassField>]
+
+	static function getImplementationMethods[Function:(classType : haxe.macro.ClassType) -> Array<haxe.macro.ClassField>]
+		[Arg:haxe.macro.ClassType] [Local classType(26108):haxe.macro.ClassType]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Block:Array<haxe.macro.ClassField>]
+					[Var _this(26115):Array<haxe.macro.ClassField>]
+						[Call:Array<haxe.macro.ClassField>]
+							[Field:() -> Array<haxe.macro.ClassField>]
+								[Field:haxe.macro.Ref<Array<haxe.macro.ClassField>>]
+									[Local classType(26108):haxe.macro.ClassType:haxe.macro.ClassType]
+									[FAnon:haxe.macro.Ref<Array<haxe.macro.ClassField>>] fields:haxe.macro.Ref<Array<haxe.macro.ClassField>>
+								[FAnon:() -> Array<haxe.macro.ClassField>] get:() -> Array<haxe.macro.ClassField>
+					[Block:Array<haxe.macro.ClassField>]
+						[Var `(26117):Array<haxe.macro.ClassField>] [ArrayDecl:Array<haxe.macro.ClassField>]
+						[Block:Void]
+							[Var `(26118):Int] [Const:Int] 0
+							[Var `(26119):Array<haxe.macro.ClassField>] [Local _this(26115):Array<haxe.macro.ClassField>:Array<haxe.macro.ClassField>]
+							[While:Void]
+								[Binop:Bool]
+									[Local `(26118):Int:Int]
+									<
+									[Field:Int]
+										[Local `(26119):Array<haxe.macro.ClassField>:Array<haxe.macro.ClassField>]
+										[FInstance:Int]
+											Array<haxe.macro.ClassField>
+											length:Int
+								[Block:Void]
+									[Var v(26120):haxe.macro.ClassField]
+										[Array:haxe.macro.ClassField]
+											[Local `(26119):Array<haxe.macro.ClassField>:Array<haxe.macro.ClassField>]
+											[Local `(26118):Int:Int]
+									[Unop:Int]
+										++
+										Prefix
+										[Local `(26118):Int:Int]
+									[If:Void]
+										[Call:Bool]
+											[Function:(field : haxe.macro.ClassField) -> Bool]
+												[Arg:haxe.macro.ClassField] [Local field(26121):haxe.macro.ClassField]
+												[Block:Dynamic]
+													[Return:Dynamic]
+														[Block:Bool]
+															[Var `(26122):haxe.macro.FieldKind]
+																[Field:haxe.macro.FieldKind]
+																	[Local field(26121):haxe.macro.ClassField:haxe.macro.ClassField]
+																	[FAnon:haxe.macro.FieldKind] kind:haxe.macro.FieldKind
+															[If:Bool]
+																[Parenthesis:Bool]
+																	[Binop:Bool]
+																		[EnumIndex:Int] [Local `(26122):haxe.macro.FieldKind:haxe.macro.FieldKind]
+																		==
+																		[Const:Int] 1
+																[Then:Bool] [Block:Bool]
+																	[Var `(26123):haxe.macro.MethodKind]
+																		[EnumParameter:haxe.macro.MethodKind]
+																			[Local `(26122):haxe.macro.FieldKind:haxe.macro.FieldKind]
+																			FMethod
+																			0
+																	[Const:Bool] true
+																[Else:Bool] [Const:Bool] false
+											[Local v(26120):haxe.macro.ClassField:haxe.macro.ClassField]
+										[Then:Int] [Block:Int]
+											[Call:Int]
+												[Field:(x : haxe.macro.ClassField) -> Int]
+													[Local `(26117):Array<haxe.macro.ClassField>:Array<haxe.macro.ClassField>]
+													[FInstance:(x : haxe.macro.ClassField) -> Int]
+														Array<haxe.macro.ClassField>
+														push:(x : Array.T) -> Int
+												[Local v(26120):haxe.macro.ClassField:haxe.macro.ClassField]
+						[Local `(26117):Array<haxe.macro.ClassField>:Array<haxe.macro.ClassField>]
+
+	static function isSignatureCompatible[Function:(protocolMethod : haxe.macro.ClassField, implMethod : haxe.macro.ClassField) -> Bool]
+		[Arg:haxe.macro.ClassField] [Local protocolMethod(26128):haxe.macro.ClassField]
+		[Arg:haxe.macro.ClassField] [Local implMethod(26129):haxe.macro.ClassField]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Meta:Bool]
+					:ast(switch [protocolMethod.type, implMethod.type] {
+	case [TFun(pArgs, pRet), TFun(iArgs, iRet)]:
+		pArgs.length == iArgs.length;	
+	default:
+		false;	
+})
+					[Block:Bool]
+						[Var `(26140):haxe.macro.Type]
+							[Field:haxe.macro.Type]
+								[Local protocolMethod(26128):haxe.macro.ClassField:haxe.macro.ClassField]
+								[FAnon:haxe.macro.Type] type:haxe.macro.Type
+						[Var `(26141):haxe.macro.Type]
+							[Field:haxe.macro.Type]
+								[Local implMethod(26129):haxe.macro.ClassField:haxe.macro.ClassField]
+								[FAnon:haxe.macro.Type] type:haxe.macro.Type
+						[If:Bool]
+							[Binop:Bool]
+								[EnumIndex:Int] [Local `(26140):haxe.macro.Type:haxe.macro.Type]
+								==
+								[Const:Int] 4
+							[Then:Bool] [Block:Bool]
+								[Var `(26142):Array<{ t : haxe.macro.Type, opt : Bool, name : String }>]
+									[EnumParameter:Array<{ t : haxe.macro.Type, opt : Bool, name : String }>]
+										[Local `(26140):haxe.macro.Type:haxe.macro.Type]
+										TFun
+										0
+								[Var `(26143):haxe.macro.Type]
+									[EnumParameter:haxe.macro.Type]
+										[Local `(26140):haxe.macro.Type:haxe.macro.Type]
+										TFun
+										1
+								[If:Bool]
+									[Binop:Bool]
+										[EnumIndex:Int] [Local `(26141):haxe.macro.Type:haxe.macro.Type]
+										==
+										[Const:Int] 4
+									[Then:Bool] [Block:Bool]
+										[Var `(26144):Array<{ t : haxe.macro.Type, opt : Bool, name : String }>]
+											[EnumParameter:Array<{ t : haxe.macro.Type, opt : Bool, name : String }>]
+												[Local `(26141):haxe.macro.Type:haxe.macro.Type]
+												TFun
+												0
+										[Var `(26145):haxe.macro.Type]
+											[EnumParameter:haxe.macro.Type]
+												[Local `(26141):haxe.macro.Type:haxe.macro.Type]
+												TFun
+												1
+										[Block:Bool]
+											[Var iArgs(26146):Array<{ t : haxe.macro.Type, opt : Bool, name : String }>] [Local `(26144):Array<{ t : haxe.macro.Type, opt : Bool, name : String }>:Array<{ t : haxe.macro.Type, opt : Bool, name : String }>]
+											[Var iRet(26147):haxe.macro.Type] [Local `(26145):haxe.macro.Type:haxe.macro.Type]
+											[Var pRet(26148):haxe.macro.Type] [Local `(26143):haxe.macro.Type:haxe.macro.Type]
+											[Var pArgs(26149):Array<{ t : haxe.macro.Type, opt : Bool, name : String }>] [Local `(26142):Array<{ t : haxe.macro.Type, opt : Bool, name : String }>:Array<{ t : haxe.macro.Type, opt : Bool, name : String }>]
+											[Block:Bool]
+												[Binop:Bool]
+													[Field:Int]
+														[Local pArgs(26149):Array<{ t : haxe.macro.Type, opt : Bool, name : String }>:Array<{ t : haxe.macro.Type, opt : Bool, name : String }>]
+														[FInstance:Int]
+															Array<{ t : haxe.macro.Type, opt : Bool, name : String }>
+															length:Int
+													==
+													[Field:Int]
+														[Local iArgs(26146):Array<{ t : haxe.macro.Type, opt : Bool, name : String }>:Array<{ t : haxe.macro.Type, opt : Bool, name : String }>]
+														[FInstance:Int]
+															Array<{ t : haxe.macro.Type, opt : Bool, name : String }>
+															length:Int
+									[Else:Bool] [Block:Bool] [Const:Bool] false
+							[Else:Bool] [Block:Bool] [Const:Bool] false
+}

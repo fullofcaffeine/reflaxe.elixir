@@ -1,0 +1,807 @@
+class reflaxe.helpers.OperatorHelper {
+
+	public static function binopToString[Function:(op : haxe.macro.Binop) -> String]
+		[Arg:haxe.macro.Binop] [Local op(10136):haxe.macro.Binop]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Meta:String]
+					:ast(switch (op) {
+	case OpAdd:
+		"+";	
+	case OpMult:
+		"*";	
+	case OpDiv:
+		"/";	
+	case OpSub:
+		"-";	
+	case OpAssign:
+		"=";	
+	case OpEq:
+		"==";	
+	case OpNotEq:
+		"!=";	
+	case OpGt:
+		">";	
+	case OpGte:
+		">=";	
+	case OpLt:
+		"<";	
+	case OpLte:
+		"<=";	
+	case OpAnd:
+		"&";	
+	case OpOr:
+		"|";	
+	case OpXor:
+		"^";	
+	case OpBoolAnd:
+		"&&";	
+	case OpBoolOr:
+		"||";	
+	case OpShl:
+		"<<";	
+	case OpShr:
+		">>";	
+	case OpUShr:
+		">>>";	
+	case OpMod:
+		"%";	
+	case OpAssignOp(assignOp):
+		binopToString(assignOp) + "=";	
+	case OpInterval:
+		"...";	
+	case OpArrow:
+		"=>";	
+	case OpIn:
+		"in";	
+	case OpNullCoal:
+		"??";	
+})
+					[Switch:String]
+						[Meta:Int]
+							:exhaustive
+							[EnumIndex:Int] [Local op(10136):haxe.macro.Binop:haxe.macro.Binop]
+						[Case:String]
+							[Const:Int] 0
+							[Block:String] [Block:String] [Const:String] "+"
+						[Case:String]
+							[Const:Int] 1
+							[Block:String] [Block:String] [Const:String] "*"
+						[Case:String]
+							[Const:Int] 2
+							[Block:String] [Block:String] [Const:String] "/"
+						[Case:String]
+							[Const:Int] 3
+							[Block:String] [Block:String] [Const:String] "-"
+						[Case:String]
+							[Const:Int] 4
+							[Block:String] [Block:String] [Const:String] "="
+						[Case:String]
+							[Const:Int] 5
+							[Block:String] [Block:String] [Const:String] "=="
+						[Case:String]
+							[Const:Int] 6
+							[Block:String] [Block:String] [Const:String] "!="
+						[Case:String]
+							[Const:Int] 7
+							[Block:String] [Block:String] [Const:String] ">"
+						[Case:String]
+							[Const:Int] 8
+							[Block:String] [Block:String] [Const:String] ">="
+						[Case:String]
+							[Const:Int] 9
+							[Block:String] [Block:String] [Const:String] "<"
+						[Case:String]
+							[Const:Int] 10
+							[Block:String] [Block:String] [Const:String] "<="
+						[Case:String]
+							[Const:Int] 11
+							[Block:String] [Block:String] [Const:String] "&"
+						[Case:String]
+							[Const:Int] 12
+							[Block:String] [Block:String] [Const:String] "|"
+						[Case:String]
+							[Const:Int] 13
+							[Block:String] [Block:String] [Const:String] "^"
+						[Case:String]
+							[Const:Int] 14
+							[Block:String] [Block:String] [Const:String] "&&"
+						[Case:String]
+							[Const:Int] 15
+							[Block:String] [Block:String] [Const:String] "||"
+						[Case:String]
+							[Const:Int] 16
+							[Block:String] [Block:String] [Const:String] "<<"
+						[Case:String]
+							[Const:Int] 17
+							[Block:String] [Block:String] [Const:String] ">>"
+						[Case:String]
+							[Const:Int] 18
+							[Block:String] [Block:String] [Const:String] ">>>"
+						[Case:String]
+							[Const:Int] 19
+							[Block:String] [Block:String] [Const:String] "%"
+						[Case:String]
+							[Const:Int] 20
+							[Block:String]
+								[Var `(10139):haxe.macro.Binop]
+									[EnumParameter:haxe.macro.Binop]
+										[Local op(10136):haxe.macro.Binop:haxe.macro.Binop]
+										OpAssignOp
+										0
+								[Block:String]
+									[Var assignOp(10140):haxe.macro.Binop] [Local `(10139):haxe.macro.Binop:haxe.macro.Binop]
+									[Block:String]
+										[Binop:String]
+											[Call:String]
+												[Field:(op : haxe.macro.Binop) -> String]
+													[TypeExpr reflaxe.helpers.OperatorHelper:Class<reflaxe.helpers.OperatorHelper>]
+													[FStatic:(op : haxe.macro.Binop) -> String]
+														reflaxe.helpers.OperatorHelper
+														binopToString:(op : haxe.macro.Binop) -> String
+												[Local assignOp(10140):haxe.macro.Binop:haxe.macro.Binop]
+											+
+											[Const:String] "="
+						[Case:String]
+							[Const:Int] 21
+							[Block:String] [Block:String] [Const:String] "..."
+						[Case:String]
+							[Const:Int] 22
+							[Block:String] [Block:String] [Const:String] "=>"
+						[Case:String]
+							[Const:Int] 23
+							[Block:String] [Block:String] [Const:String] "in"
+						[Case:String]
+							[Const:Int] 24
+							[Block:String] [Block:String] [Const:String] "??"
+
+	public static function isEqualityCheck[Function:(op : haxe.macro.Binop) -> Bool]
+		[Arg:haxe.macro.Binop] [Local op(10141):haxe.macro.Binop]
+		[Return:Dynamic]
+			[Meta:Bool]
+				:ast(switch (op) {
+	case OpEq | OpNotEq:
+		true;	
+	case _:
+		false;	
+})
+				[Switch:Bool]
+					[EnumIndex:Int] [Local op(10141):haxe.macro.Binop:haxe.macro.Binop]
+					[Case:Bool]
+						[Const:Int] 5
+						[Const:Int] 6
+						[Block:Bool] [Block:Bool] [Const:Bool] true
+					[Default:Bool] [Block:Bool] [Const:Bool] false
+
+	public static function isAssign[Function:(op : haxe.macro.Binop) -> Bool]
+		[Arg:haxe.macro.Binop] [Local op(10142):haxe.macro.Binop]
+		[Return:Dynamic]
+			[Meta:Bool]
+				:ast(switch (op) {
+	case OpAssign | OpAssignOp(_):
+		true;	
+	case _:
+		false;	
+})
+				[Switch:Bool]
+					[EnumIndex:Int] [Local op(10142):haxe.macro.Binop:haxe.macro.Binop]
+					[Case:Bool]
+						[Const:Int] 4
+						[Block:Bool] [Block:Bool] [Const:Bool] true
+					[Case:Bool]
+						[Const:Int] 20
+						[Block:Bool]
+							[Var `(10144):haxe.macro.Binop]
+								[EnumParameter:haxe.macro.Binop]
+									[Local op(10142):haxe.macro.Binop:haxe.macro.Binop]
+									OpAssignOp
+									0
+							[Block:Bool] [Const:Bool] true
+					[Default:Bool] [Block:Bool] [Const:Bool] false
+
+	public static function isAssignDirect[Function:(op : haxe.macro.Binop) -> Bool]
+		[Arg:haxe.macro.Binop] [Local op(10145):haxe.macro.Binop]
+		[Return:Dynamic]
+			[Meta:Bool]
+				:ast(switch (op) {
+	case OpAssign:
+		true;	
+	case _:
+		false;	
+})
+				[If:Bool]
+					[Binop:Bool]
+						[EnumIndex:Int] [Local op(10145):haxe.macro.Binop:haxe.macro.Binop]
+						==
+						[Const:Int] 4
+					[Then:Bool] [Block:Bool] [Block:Bool] [Const:Bool] true
+					[Else:Bool] [Block:Bool] [Const:Bool] false
+
+	@:value({ innerOp : null })
+	public static function isAssignOp[Function:(op : haxe.macro.Binop, ?innerOp : Null<haxe.macro.Binop>) -> Bool]
+		[Arg:haxe.macro.Binop] [Local op(10146):haxe.macro.Binop]
+		[Arg:Null<haxe.macro.Binop>]
+			[Local innerOp(10147):Null<haxe.macro.Binop>]
+			[Const:Null<haxe.macro.Binop>] null
+		[Return:Dynamic]
+			[Meta:Bool]
+				:ast(switch (op) {
+	case OpAssignOp(inner) if (innerOp == null || innerOp == inner):
+		true;	
+	case _:
+		false;	
+})
+				[If:Bool]
+					[Binop:Bool]
+						[EnumIndex:Int] [Local op(10146):haxe.macro.Binop:haxe.macro.Binop]
+						==
+						[Const:Int] 20
+					[Then:Bool] [Block:Bool]
+						[Var `(10150):haxe.macro.Binop]
+							[EnumParameter:haxe.macro.Binop]
+								[Local op(10146):haxe.macro.Binop:haxe.macro.Binop]
+								OpAssignOp
+								0
+						[Block:Bool]
+							[Var inner(10151):haxe.macro.Binop] [Local `(10150):haxe.macro.Binop:haxe.macro.Binop]
+							[If:Bool]
+								[Binop:Bool]
+									[Binop:Bool]
+										[Local innerOp(10147):Null<haxe.macro.Binop>:Null<haxe.macro.Binop>]
+										==
+										[Const:Null<haxe.macro.Binop>] null
+									||
+									[Binop:Bool]
+										[Local innerOp(10147):Null<haxe.macro.Binop>:Null<haxe.macro.Binop>]
+										==
+										[Local inner(10151):haxe.macro.Binop:haxe.macro.Binop]
+								[Then:Bool] [Block:Bool] [Const:Bool] true
+								[Else:Bool] [Block:Bool] [Const:Bool] false
+					[Else:Bool] [Block:Bool] [Const:Bool] false
+
+	public static function isAddition[Function:(op : haxe.macro.Binop) -> Bool]
+		[Arg:haxe.macro.Binop] [Local op(10152):haxe.macro.Binop]
+		[Return:Dynamic]
+			[Meta:Bool]
+				:ast(switch (op) {
+	case OpAdd:
+		true;	
+	case _:
+		false;	
+})
+				[If:Bool]
+					[Binop:Bool]
+						[EnumIndex:Int] [Local op(10152):haxe.macro.Binop:haxe.macro.Binop]
+						==
+						[Const:Int] 0
+					[Then:Bool] [Block:Bool] [Block:Bool] [Const:Bool] true
+					[Else:Bool] [Block:Bool] [Const:Bool] false
+
+	public static function isSubtraction[Function:(op : haxe.macro.Binop) -> Bool]
+		[Arg:haxe.macro.Binop] [Local op(10153):haxe.macro.Binop]
+		[Return:Dynamic]
+			[Meta:Bool]
+				:ast(switch (op) {
+	case OpSub:
+		true;	
+	case _:
+		false;	
+})
+				[If:Bool]
+					[Binop:Bool]
+						[EnumIndex:Int] [Local op(10153):haxe.macro.Binop:haxe.macro.Binop]
+						==
+						[Const:Int] 3
+					[Then:Bool] [Block:Bool] [Block:Bool] [Const:Bool] true
+					[Else:Bool] [Block:Bool] [Const:Bool] false
+
+	public static function isMultiplication[Function:(op : haxe.macro.Binop) -> Bool]
+		[Arg:haxe.macro.Binop] [Local op(10154):haxe.macro.Binop]
+		[Return:Dynamic]
+			[Meta:Bool]
+				:ast(switch (op) {
+	case OpMult:
+		true;	
+	case _:
+		false;	
+})
+				[If:Bool]
+					[Binop:Bool]
+						[EnumIndex:Int] [Local op(10154):haxe.macro.Binop:haxe.macro.Binop]
+						==
+						[Const:Int] 1
+					[Then:Bool] [Block:Bool] [Block:Bool] [Const:Bool] true
+					[Else:Bool] [Block:Bool] [Const:Bool] false
+
+	public static function isDivision[Function:(op : haxe.macro.Binop) -> Bool]
+		[Arg:haxe.macro.Binop] [Local op(10155):haxe.macro.Binop]
+		[Return:Dynamic]
+			[Meta:Bool]
+				:ast(switch (op) {
+	case OpDiv:
+		true;	
+	case _:
+		false;	
+})
+				[If:Bool]
+					[Binop:Bool]
+						[EnumIndex:Int] [Local op(10155):haxe.macro.Binop:haxe.macro.Binop]
+						==
+						[Const:Int] 2
+					[Then:Bool] [Block:Bool] [Block:Bool] [Const:Bool] true
+					[Else:Bool] [Block:Bool] [Const:Bool] false
+
+	public static function isGreaterThan[Function:(op : haxe.macro.Binop) -> Bool]
+		[Arg:haxe.macro.Binop] [Local op(10156):haxe.macro.Binop]
+		[Return:Dynamic]
+			[Meta:Bool]
+				:ast(switch (op) {
+	case OpGt:
+		true;	
+	case _:
+		false;	
+})
+				[If:Bool]
+					[Binop:Bool]
+						[EnumIndex:Int] [Local op(10156):haxe.macro.Binop:haxe.macro.Binop]
+						==
+						[Const:Int] 7
+					[Then:Bool] [Block:Bool] [Block:Bool] [Const:Bool] true
+					[Else:Bool] [Block:Bool] [Const:Bool] false
+
+	public static function isGreaterThanOrEqual[Function:(op : haxe.macro.Binop) -> Bool]
+		[Arg:haxe.macro.Binop] [Local op(10157):haxe.macro.Binop]
+		[Return:Dynamic]
+			[Meta:Bool]
+				:ast(switch (op) {
+	case OpGte:
+		true;	
+	case _:
+		false;	
+})
+				[If:Bool]
+					[Binop:Bool]
+						[EnumIndex:Int] [Local op(10157):haxe.macro.Binop:haxe.macro.Binop]
+						==
+						[Const:Int] 8
+					[Then:Bool] [Block:Bool] [Block:Bool] [Const:Bool] true
+					[Else:Bool] [Block:Bool] [Const:Bool] false
+
+	public static function isLessThan[Function:(op : haxe.macro.Binop) -> Bool]
+		[Arg:haxe.macro.Binop] [Local op(10158):haxe.macro.Binop]
+		[Return:Dynamic]
+			[Meta:Bool]
+				:ast(switch (op) {
+	case OpLt:
+		true;	
+	case _:
+		false;	
+})
+				[If:Bool]
+					[Binop:Bool]
+						[EnumIndex:Int] [Local op(10158):haxe.macro.Binop:haxe.macro.Binop]
+						==
+						[Const:Int] 9
+					[Then:Bool] [Block:Bool] [Block:Bool] [Const:Bool] true
+					[Else:Bool] [Block:Bool] [Const:Bool] false
+
+	public static function isLessThanOrEqual[Function:(op : haxe.macro.Binop) -> Bool]
+		[Arg:haxe.macro.Binop] [Local op(10159):haxe.macro.Binop]
+		[Return:Dynamic]
+			[Meta:Bool]
+				:ast(switch (op) {
+	case OpLte:
+		true;	
+	case _:
+		false;	
+})
+				[If:Bool]
+					[Binop:Bool]
+						[EnumIndex:Int] [Local op(10159):haxe.macro.Binop:haxe.macro.Binop]
+						==
+						[Const:Int] 10
+					[Then:Bool] [Block:Bool] [Block:Bool] [Const:Bool] true
+					[Else:Bool] [Block:Bool] [Const:Bool] false
+
+	public static function isEquals[Function:(op : haxe.macro.Binop) -> Bool]
+		[Arg:haxe.macro.Binop] [Local op(10160):haxe.macro.Binop]
+		[Return:Dynamic]
+			[Meta:Bool]
+				:ast(switch (op) {
+	case OpEq:
+		true;	
+	case _:
+		false;	
+})
+				[If:Bool]
+					[Binop:Bool]
+						[EnumIndex:Int] [Local op(10160):haxe.macro.Binop:haxe.macro.Binop]
+						==
+						[Const:Int] 5
+					[Then:Bool] [Block:Bool] [Block:Bool] [Const:Bool] true
+					[Else:Bool] [Block:Bool] [Const:Bool] false
+
+	public static function isNotEquals[Function:(op : haxe.macro.Binop) -> Bool]
+		[Arg:haxe.macro.Binop] [Local op(10161):haxe.macro.Binop]
+		[Return:Dynamic]
+			[Meta:Bool]
+				:ast(switch (op) {
+	case OpNotEq:
+		true;	
+	case _:
+		false;	
+})
+				[If:Bool]
+					[Binop:Bool]
+						[EnumIndex:Int] [Local op(10161):haxe.macro.Binop:haxe.macro.Binop]
+						==
+						[Const:Int] 6
+					[Then:Bool] [Block:Bool] [Block:Bool] [Const:Bool] true
+					[Else:Bool] [Block:Bool] [Const:Bool] false
+
+	public static function isBoolAnd[Function:(op : haxe.macro.Binop) -> Bool]
+		[Arg:haxe.macro.Binop] [Local op(10162):haxe.macro.Binop]
+		[Return:Dynamic]
+			[Meta:Bool]
+				:ast(switch (op) {
+	case OpBoolAnd:
+		true;	
+	case _:
+		false;	
+})
+				[If:Bool]
+					[Binop:Bool]
+						[EnumIndex:Int] [Local op(10162):haxe.macro.Binop:haxe.macro.Binop]
+						==
+						[Const:Int] 14
+					[Then:Bool] [Block:Bool] [Block:Bool] [Const:Bool] true
+					[Else:Bool] [Block:Bool] [Const:Bool] false
+
+	public static function isBoolOr[Function:(op : haxe.macro.Binop) -> Bool]
+		[Arg:haxe.macro.Binop] [Local op(10163):haxe.macro.Binop]
+		[Return:Dynamic]
+			[Meta:Bool]
+				:ast(switch (op) {
+	case OpBoolOr:
+		true;	
+	case _:
+		false;	
+})
+				[If:Bool]
+					[Binop:Bool]
+						[EnumIndex:Int] [Local op(10163):haxe.macro.Binop:haxe.macro.Binop]
+						==
+						[Const:Int] 15
+					[Then:Bool] [Block:Bool] [Block:Bool] [Const:Bool] true
+					[Else:Bool] [Block:Bool] [Const:Bool] false
+
+	public static function isBitAnd[Function:(op : haxe.macro.Binop) -> Bool]
+		[Arg:haxe.macro.Binop] [Local op(10164):haxe.macro.Binop]
+		[Return:Dynamic]
+			[Meta:Bool]
+				:ast(switch (op) {
+	case OpAnd:
+		true;	
+	case _:
+		false;	
+})
+				[If:Bool]
+					[Binop:Bool]
+						[EnumIndex:Int] [Local op(10164):haxe.macro.Binop:haxe.macro.Binop]
+						==
+						[Const:Int] 11
+					[Then:Bool] [Block:Bool] [Block:Bool] [Const:Bool] true
+					[Else:Bool] [Block:Bool] [Const:Bool] false
+
+	public static function isBitOr[Function:(op : haxe.macro.Binop) -> Bool]
+		[Arg:haxe.macro.Binop] [Local op(10165):haxe.macro.Binop]
+		[Return:Dynamic]
+			[Meta:Bool]
+				:ast(switch (op) {
+	case OpOr:
+		true;	
+	case _:
+		false;	
+})
+				[If:Bool]
+					[Binop:Bool]
+						[EnumIndex:Int] [Local op(10165):haxe.macro.Binop:haxe.macro.Binop]
+						==
+						[Const:Int] 12
+					[Then:Bool] [Block:Bool] [Block:Bool] [Const:Bool] true
+					[Else:Bool] [Block:Bool] [Const:Bool] false
+
+	public static function isBitXOr[Function:(op : haxe.macro.Binop) -> Bool]
+		[Arg:haxe.macro.Binop] [Local op(10166):haxe.macro.Binop]
+		[Return:Dynamic]
+			[Meta:Bool]
+				:ast(switch (op) {
+	case OpXor:
+		true;	
+	case _:
+		false;	
+})
+				[If:Bool]
+					[Binop:Bool]
+						[EnumIndex:Int] [Local op(10166):haxe.macro.Binop:haxe.macro.Binop]
+						==
+						[Const:Int] 13
+					[Then:Bool] [Block:Bool] [Block:Bool] [Const:Bool] true
+					[Else:Bool] [Block:Bool] [Const:Bool] false
+
+	public static function isShiftLeft[Function:(op : haxe.macro.Binop) -> Bool]
+		[Arg:haxe.macro.Binop] [Local op(10167):haxe.macro.Binop]
+		[Return:Dynamic]
+			[Meta:Bool]
+				:ast(switch (op) {
+	case OpShl:
+		true;	
+	case _:
+		false;	
+})
+				[If:Bool]
+					[Binop:Bool]
+						[EnumIndex:Int] [Local op(10167):haxe.macro.Binop:haxe.macro.Binop]
+						==
+						[Const:Int] 16
+					[Then:Bool] [Block:Bool] [Block:Bool] [Const:Bool] true
+					[Else:Bool] [Block:Bool] [Const:Bool] false
+
+	public static function isShiftRight[Function:(op : haxe.macro.Binop) -> Bool]
+		[Arg:haxe.macro.Binop] [Local op(10168):haxe.macro.Binop]
+		[Return:Dynamic]
+			[Meta:Bool]
+				:ast(switch (op) {
+	case OpShr:
+		true;	
+	case _:
+		false;	
+})
+				[If:Bool]
+					[Binop:Bool]
+						[EnumIndex:Int] [Local op(10168):haxe.macro.Binop:haxe.macro.Binop]
+						==
+						[Const:Int] 17
+					[Then:Bool] [Block:Bool] [Block:Bool] [Const:Bool] true
+					[Else:Bool] [Block:Bool] [Const:Bool] false
+
+	public static function isUnsignedShiftRight[Function:(op : haxe.macro.Binop) -> Bool]
+		[Arg:haxe.macro.Binop] [Local op(10169):haxe.macro.Binop]
+		[Return:Dynamic]
+			[Meta:Bool]
+				:ast(switch (op) {
+	case OpUShr:
+		true;	
+	case _:
+		false;	
+})
+				[If:Bool]
+					[Binop:Bool]
+						[EnumIndex:Int] [Local op(10169):haxe.macro.Binop:haxe.macro.Binop]
+						==
+						[Const:Int] 18
+					[Then:Bool] [Block:Bool] [Block:Bool] [Const:Bool] true
+					[Else:Bool] [Block:Bool] [Const:Bool] false
+
+	public static function isModulus[Function:(op : haxe.macro.Binop) -> Bool]
+		[Arg:haxe.macro.Binop] [Local op(10170):haxe.macro.Binop]
+		[Return:Dynamic]
+			[Meta:Bool]
+				:ast(switch (op) {
+	case OpMod:
+		true;	
+	case _:
+		false;	
+})
+				[If:Bool]
+					[Binop:Bool]
+						[EnumIndex:Int] [Local op(10170):haxe.macro.Binop:haxe.macro.Binop]
+						==
+						[Const:Int] 19
+					[Then:Bool] [Block:Bool] [Block:Bool] [Const:Bool] true
+					[Else:Bool] [Block:Bool] [Const:Bool] false
+
+	public static function isInterval[Function:(op : haxe.macro.Binop) -> Bool]
+		[Arg:haxe.macro.Binop] [Local op(10171):haxe.macro.Binop]
+		[Return:Dynamic]
+			[Meta:Bool]
+				:ast(switch (op) {
+	case OpInterval:
+		true;	
+	case _:
+		false;	
+})
+				[If:Bool]
+					[Binop:Bool]
+						[EnumIndex:Int] [Local op(10171):haxe.macro.Binop:haxe.macro.Binop]
+						==
+						[Const:Int] 21
+					[Then:Bool] [Block:Bool] [Block:Bool] [Const:Bool] true
+					[Else:Bool] [Block:Bool] [Const:Bool] false
+
+	public static function isArrow[Function:(op : haxe.macro.Binop) -> Bool]
+		[Arg:haxe.macro.Binop] [Local op(10172):haxe.macro.Binop]
+		[Return:Dynamic]
+			[Meta:Bool]
+				:ast(switch (op) {
+	case OpArrow:
+		true;	
+	case _:
+		false;	
+})
+				[If:Bool]
+					[Binop:Bool]
+						[EnumIndex:Int] [Local op(10172):haxe.macro.Binop:haxe.macro.Binop]
+						==
+						[Const:Int] 22
+					[Then:Bool] [Block:Bool] [Block:Bool] [Const:Bool] true
+					[Else:Bool] [Block:Bool] [Const:Bool] false
+
+	public static function isIn[Function:(op : haxe.macro.Binop) -> Bool]
+		[Arg:haxe.macro.Binop] [Local op(10173):haxe.macro.Binop]
+		[Return:Dynamic]
+			[Meta:Bool]
+				:ast(switch (op) {
+	case OpIn:
+		true;	
+	case _:
+		false;	
+})
+				[If:Bool]
+					[Binop:Bool]
+						[EnumIndex:Int] [Local op(10173):haxe.macro.Binop:haxe.macro.Binop]
+						==
+						[Const:Int] 23
+					[Then:Bool] [Block:Bool] [Block:Bool] [Const:Bool] true
+					[Else:Bool] [Block:Bool] [Const:Bool] false
+
+	public static function unopToString[Function:(op : haxe.macro.Unop) -> String]
+		[Arg:haxe.macro.Unop] [Local op(10174):haxe.macro.Unop]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Meta:String]
+					:ast(switch (op) {
+	case OpIncrement:
+		"++";	
+	case OpDecrement:
+		"--";	
+	case OpNot:
+		"!";	
+	case OpNeg:
+		"-";	
+	case OpNegBits:
+		"~";	
+	case OpSpread:
+		"...";	
+})
+					[Switch:String]
+						[Meta:Int]
+							:exhaustive
+							[EnumIndex:Int] [Local op(10174):haxe.macro.Unop:haxe.macro.Unop]
+						[Case:String]
+							[Const:Int] 0
+							[Block:String] [Block:String] [Const:String] "++"
+						[Case:String]
+							[Const:Int] 1
+							[Block:String] [Block:String] [Const:String] "--"
+						[Case:String]
+							[Const:Int] 2
+							[Block:String] [Block:String] [Const:String] "!"
+						[Case:String]
+							[Const:Int] 3
+							[Block:String] [Block:String] [Const:String] "-"
+						[Case:String]
+							[Const:Int] 4
+							[Block:String] [Block:String] [Const:String] "~"
+						[Case:String]
+							[Const:Int] 5
+							[Block:String] [Block:String] [Const:String] "..."
+
+	public static function isIncrement[Function:(op : haxe.macro.Unop) -> Bool]
+		[Arg:haxe.macro.Unop] [Local op(10175):haxe.macro.Unop]
+		[Return:Dynamic]
+			[Meta:Bool]
+				:ast(switch (op) {
+	case OpIncrement:
+		true;	
+	case _:
+		false;	
+})
+				[If:Bool]
+					[Binop:Bool]
+						[EnumIndex:Int] [Local op(10175):haxe.macro.Unop:haxe.macro.Unop]
+						==
+						[Const:Int] 0
+					[Then:Bool] [Block:Bool] [Block:Bool] [Const:Bool] true
+					[Else:Bool] [Block:Bool] [Const:Bool] false
+
+	public static function isDecrement[Function:(op : haxe.macro.Unop) -> Bool]
+		[Arg:haxe.macro.Unop] [Local op(10176):haxe.macro.Unop]
+		[Return:Dynamic]
+			[Meta:Bool]
+				:ast(switch (op) {
+	case OpDecrement:
+		true;	
+	case _:
+		false;	
+})
+				[If:Bool]
+					[Binop:Bool]
+						[EnumIndex:Int] [Local op(10176):haxe.macro.Unop:haxe.macro.Unop]
+						==
+						[Const:Int] 1
+					[Then:Bool] [Block:Bool] [Block:Bool] [Const:Bool] true
+					[Else:Bool] [Block:Bool] [Const:Bool] false
+
+	public static function isBoolNot[Function:(op : haxe.macro.Unop) -> Bool]
+		[Arg:haxe.macro.Unop] [Local op(10177):haxe.macro.Unop]
+		[Return:Dynamic]
+			[Meta:Bool]
+				:ast(switch (op) {
+	case OpNot:
+		true;	
+	case _:
+		false;	
+})
+				[If:Bool]
+					[Binop:Bool]
+						[EnumIndex:Int] [Local op(10177):haxe.macro.Unop:haxe.macro.Unop]
+						==
+						[Const:Int] 2
+					[Then:Bool] [Block:Bool] [Block:Bool] [Const:Bool] true
+					[Else:Bool] [Block:Bool] [Const:Bool] false
+
+	public static function isNegative[Function:(op : haxe.macro.Unop) -> Bool]
+		[Arg:haxe.macro.Unop] [Local op(10178):haxe.macro.Unop]
+		[Return:Dynamic]
+			[Meta:Bool]
+				:ast(switch (op) {
+	case OpNeg:
+		true;	
+	case _:
+		false;	
+})
+				[If:Bool]
+					[Binop:Bool]
+						[EnumIndex:Int] [Local op(10178):haxe.macro.Unop:haxe.macro.Unop]
+						==
+						[Const:Int] 3
+					[Then:Bool] [Block:Bool] [Block:Bool] [Const:Bool] true
+					[Else:Bool] [Block:Bool] [Const:Bool] false
+
+	public static function isBitNegative[Function:(op : haxe.macro.Unop) -> Bool]
+		[Arg:haxe.macro.Unop] [Local op(10179):haxe.macro.Unop]
+		[Return:Dynamic]
+			[Meta:Bool]
+				:ast(switch (op) {
+	case OpNegBits:
+		true;	
+	case _:
+		false;	
+})
+				[If:Bool]
+					[Binop:Bool]
+						[EnumIndex:Int] [Local op(10179):haxe.macro.Unop:haxe.macro.Unop]
+						==
+						[Const:Int] 4
+					[Then:Bool] [Block:Bool] [Block:Bool] [Const:Bool] true
+					[Else:Bool] [Block:Bool] [Const:Bool] false
+
+	public static function isSpread[Function:(op : haxe.macro.Unop) -> Bool]
+		[Arg:haxe.macro.Unop] [Local op(10180):haxe.macro.Unop]
+		[Return:Dynamic]
+			[Meta:Bool]
+				:ast(switch (op) {
+	case OpSpread:
+		true;	
+	case _:
+		false;	
+})
+				[If:Bool]
+					[Binop:Bool]
+						[EnumIndex:Int] [Local op(10180):haxe.macro.Unop:haxe.macro.Unop]
+						==
+						[Const:Int] 5
+					[Then:Bool] [Block:Bool] [Block:Bool] [Const:Bool] true
+					[Else:Bool] [Block:Bool] [Const:Bool] false
+}

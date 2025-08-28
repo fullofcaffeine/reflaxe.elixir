@@ -13,7 +13,7 @@
 SHELL := /bin/bash
 # Get the directory where this Makefile is located
 MAKEFILE_DIR := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
-TEST_DIR := $(MAKEFILE_DIR)tests
+TEST_DIR := $(MAKEFILE_DIR)snapshot
 TIMEOUT := 60s
 OUTPUT_DIR := out
 
@@ -22,8 +22,8 @@ GREEN := \033[0;32m
 RED := \033[0;31m
 RESET := \033[0m
 
-# Find all test directories with compile.hxml
-TESTS := $(shell find $(TEST_DIR) -name compile.hxml -exec dirname {} \; | xargs -n1 basename | sort)
+# Find all test directories with compile.hxml recursively
+TESTS := $(shell find $(TEST_DIR) -name compile.hxml -exec dirname {} \; | sed 's|$(TEST_DIR)/||' | sort)
 TEST_TARGETS := $(addprefix test-,$(TESTS))
 
 # Default target runs all tests with default parallelism

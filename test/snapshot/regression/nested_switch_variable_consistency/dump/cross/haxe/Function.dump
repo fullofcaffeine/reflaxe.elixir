@@ -1,0 +1,2 @@
+@:callable
+abstract haxe.Function {}

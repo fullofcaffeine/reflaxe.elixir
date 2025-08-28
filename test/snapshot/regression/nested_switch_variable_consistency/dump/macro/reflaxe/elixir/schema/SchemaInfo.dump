@@ -1,0 +1,1 @@
+typedef reflaxe.elixir.schema.SchemaInfo = { tableName : String, primaryKey : String, name : String, fields : Map<String, reflaxe.elixir.schema.FieldInfo>, associations : Map<String, reflaxe.elixir.schema.AssociationInfo> }

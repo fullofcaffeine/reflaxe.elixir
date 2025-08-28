@@ -1,0 +1,2 @@
+@:allow(haxe.Exception) @:using(haxe.CallStack)
+abstract haxe.CallStack from Array<haxe.StackItem> {}

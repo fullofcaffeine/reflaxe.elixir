@@ -1,0 +1,46 @@
+@:dox(hide) @:noCompletion
+class haxe.NativeStackTrace {
+
+	@:ifFeature("haxe.NativeStackTrace.exceptionStack")
+	public static inline function saveStack[Function:(exception : Any) -> Void]
+		[Arg:Any] [Local exception(105):Any]
+		[Block:Void]
+
+	public static function callStack[Function:() -> Array<haxe.StackItem>]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Call:Array<haxe.StackItem>]
+					[Field:() -> Array<haxe.StackItem>]
+						[TypeExpr haxe.NativeStackTrace:Class<haxe.NativeStackTrace>]
+						[FStatic:() -> Array<haxe.StackItem>]
+							haxe.NativeStackTrace
+							_callStack:() -> Array<haxe.StackItem>
+
+	static function _callStack[Function:() -> Array<haxe.StackItem>] [Block:Dynamic] [Return:Dynamic] [Const:Array<haxe.StackItem>] null
+
+	public static function exceptionStack[Function:() -> Array<haxe.StackItem>] [Block:Dynamic] [Return:Dynamic] [Const:Array<haxe.StackItem>] null
+
+	@:value({ skip : 0 })
+	public static inline function toHaxe[Function:(stack : Array<haxe.StackItem>, ?skip : Int) -> Array<haxe.StackItem>]
+		[Arg:Array<haxe.StackItem>] [Local stack(99):Array<haxe.StackItem>]
+		[Arg:Int]
+			[Local skip(100):Int]
+			[Const:Int] 0
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[If:Array<haxe.StackItem>]
+					[Binop:Bool]
+						[Local skip(100):Int:Int]
+						>
+						[Const:Int] 0
+					[Then:Array<haxe.StackItem>] [Block:Array<haxe.StackItem>]
+						[Call:Array<haxe.StackItem>]
+							[Field:(pos : Int, ?end : Null<Int>) -> Array<haxe.StackItem>]
+								[Local stack(99):Array<haxe.StackItem>:Array<haxe.StackItem>]
+								[FInstance:(pos : Int, ?end : Null<Int>) -> Array<haxe.StackItem>]
+									Array<haxe.StackItem>
+									slice:(pos : Int, ?end : Null<Int>) -> Array<Array.T>
+							[Local skip(100):Int:Int]
+							[Const:Null<Int>] null
+					[Else:Array<haxe.StackItem>] [Block:Array<haxe.StackItem>] [Local stack(99):Array<haxe.StackItem>:Array<haxe.StackItem>]
+}

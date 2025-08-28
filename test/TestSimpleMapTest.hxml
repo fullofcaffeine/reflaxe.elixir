@@ -1,5 +1,0 @@
--cp /Users/fullofcaffeine/workspace/code/haxe.elixir/std
--cp /Users/fullofcaffeine/workspace/code/haxe.elixir.reference/reflaxe/src
--D reflaxe_runtime
---no-output
-elixir.SimpleMapTest

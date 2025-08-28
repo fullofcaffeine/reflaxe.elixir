@@ -1,0 +1,9 @@
+@:enum
+private class haxe.display._Diagnostic.UnresolvedIdentifierSuggestion_Impl_ {
+
+	@:value(cast 0) @:impl @:enum
+	public static inline var UISImport:haxe.display.UnresolvedIdentifierSuggestion = [Cast:haxe.display.UnresolvedIdentifierSuggestion] [Const:Int] 0;
+
+	@:value(cast 1) @:impl @:enum
+	public static inline var UISTypo:haxe.display.UnresolvedIdentifierSuggestion = [Cast:haxe.display.UnresolvedIdentifierSuggestion] [Const:Int] 1;
+}

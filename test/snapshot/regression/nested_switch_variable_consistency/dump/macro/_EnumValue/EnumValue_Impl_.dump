@@ -1,0 +1,7 @@
+private class _EnumValue.EnumValue_Impl_ {
+
+	public static function match[Function:(this : EnumValue, pattern : Dynamic) -> Bool]
+		[Arg:EnumValue] [Local this(318):EnumValue]
+		[Arg:Dynamic] [Local pattern(319):Dynamic]
+		[Block:Dynamic] [Return:Dynamic] [Const:Bool] false
+}

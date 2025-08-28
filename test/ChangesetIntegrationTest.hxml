@@ -1,8 +1,0 @@
-# Integration test for full changeset compilation pipeline
--cp /Users/fullofcaffeine/workspace/code/haxe.elixir/src
--cp /Users/fullofcaffeine/workspace/code/haxe.elixir/std
--cp /Users/fullofcaffeine/workspace/code/haxe.elixir/test
--cp /Users/fullofcaffeine/workspace/code/haxe.elixir.reference/reflaxe/src
--D reflaxe_runtime
--main test.ChangesetIntegrationTest
---interp

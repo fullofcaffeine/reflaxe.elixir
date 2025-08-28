@@ -1,0 +1,1 @@
+typedef haxe.display.DisplayItem<T> = { ?type : Null<haxe.display.JsonType<Dynamic>>, kind : haxe.display.DisplayItemKind<haxe.display.DisplayItem.T>, ?index : Null<Int>, args : haxe.display.DisplayItem.T }

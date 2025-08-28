@@ -1,0 +1,1 @@
+typedef reflaxe.elixir.helpers.Pattern = { name : String, id : String, frequency : Int, examples : Array<String>, description : String, code : String }

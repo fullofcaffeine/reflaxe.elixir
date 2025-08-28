@@ -1,0 +1,728 @@
+class reflaxe.elixir.helpers.WebModuleCompiler {
+
+	public static function isWebModuleClass[Function:(classType : haxe.macro.ClassType) -> Bool]
+		[Arg:haxe.macro.ClassType] [Local classType(16942):haxe.macro.ClassType]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Call:Bool]
+					[Field:(name : String) -> Bool]
+						[Field:haxe.macro.MetaAccess]
+							[Local classType(16942):haxe.macro.ClassType:haxe.macro.ClassType]
+							[FAnon:haxe.macro.MetaAccess] meta:haxe.macro.MetaAccess
+						[FAnon:(name : String) -> Bool] has:(name : String) -> Bool
+					[Const:String] ":phoenixWebModule"
+
+	public static function compileWebModule[Function:(classType : haxe.macro.ClassType, className : String) -> String]
+		[Arg:haxe.macro.ClassType] [Local classType(16943):haxe.macro.ClassType]
+		[Arg:String] [Local className(16944):String]
+		[Block:Dynamic]
+			[Var result(16945):StringBuf] [New:StringBuf] StringBuf
+			[Var appName(16946):String]
+				[Call:String]
+					[Field:(classType : haxe.macro.ClassType) -> String]
+						[TypeExpr reflaxe.elixir.helpers.AnnotationSystem:Class<reflaxe.elixir.helpers.AnnotationSystem>]
+						[FStatic:(classType : haxe.macro.ClassType) -> String]
+							reflaxe.elixir.helpers.AnnotationSystem
+							getEffectiveAppName:(classType : haxe.macro.ClassType) -> String
+					[Local classType(16943):haxe.macro.ClassType:haxe.macro.ClassType]
+			[Var otpApp(16947):String]
+				[Call:String]
+					[Field:() -> String]
+						[Local appName(16946):String:String]
+						[FInstance:() -> String]
+							String
+							toLowerCase:() -> String
+			[Var webModule(16948):String]
+				[Binop:String]
+					[Binop:String]
+						[Const:String] ""
+						+
+						[Local appName(16946):String:String]
+					+
+					[Const:String] "Web"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(16945):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Binop:String]
+					[Binop:String]
+						[Const:String] "defmodule "
+						+
+						[Local className(16944):String:String]
+					+
+					[Const:String] " do\n"
+			[Var docString(16949):String] [Const:String] "The entrypoint for defining your web interface, such\n"
+			[Binop:String]
+				[Local docString(16949):String:String]
+				+=
+				[Const:String] "as controllers, components, channels, and so on.\n\n"
+			[Binop:String]
+				[Local docString(16949):String:String]
+				+=
+				[Const:String] "This can be used in your application as:\n\n"
+			[Binop:String]
+				[Local docString(16949):String:String]
+				+=
+				[Binop:String]
+					[Binop:String]
+						[Const:String] "    use "
+						+
+						[Local webModule(16948):String:String]
+					+
+					[Const:String] ", :controller\n"
+			[Binop:String]
+				[Local docString(16949):String:String]
+				+=
+				[Binop:String]
+					[Binop:String]
+						[Const:String] "    use "
+						+
+						[Local webModule(16948):String:String]
+					+
+					[Const:String] ", :html\n\n"
+			[Binop:String]
+				[Local docString(16949):String:String]
+				+=
+				[Const:String] "The definitions below will be executed for every controller,\n"
+			[Binop:String]
+				[Local docString(16949):String:String]
+				+=
+				[Const:String] "component, etc, so keep them short and clean, focused\n"
+			[Binop:String]
+				[Local docString(16949):String:String]
+				+=
+				[Const:String] "on imports, uses and aliases.\n\n"
+			[Binop:String]
+				[Local docString(16949):String:String]
+				+=
+				[Const:String] "Do NOT define functions inside the quoted expressions\n"
+			[Binop:String]
+				[Local docString(16949):String:String]
+				+=
+				[Const:String] "below. Instead, define additional modules and import\n"
+			[Binop:String]
+				[Local docString(16949):String:String]
+				+=
+				[Const:String] "those modules here."
+			[If:Void]
+				[Binop:Bool]
+					[Field:Null<String>]
+						[Local classType(16943):haxe.macro.ClassType:haxe.macro.ClassType]
+						[FAnon:Null<String>] doc:Null<String>
+					!=
+					[Const:Null<String>] null
+				[Then:String] [Block:String]
+					[Binop:String]
+						[Local docString(16949):String:String]
+						=
+						[Field:Null<String>]
+							[Local classType(16943):haxe.macro.ClassType:haxe.macro.ClassType]
+							[FAnon:Null<String>] doc:Null<String>
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(16945):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Binop:String]
+					[Call:String]
+						[Field:(docString : String, ?isModuleDoc : Bool, ?indentLevel : Int) -> String]
+							[TypeExpr reflaxe.elixir.helpers.FormatHelper:Class<reflaxe.elixir.helpers.FormatHelper>]
+							[FStatic:(docString : String, ?isModuleDoc : Bool, ?indentLevel : Int) -> String]
+								reflaxe.elixir.helpers.FormatHelper
+								formatDoc:(docString : String, ?isModuleDoc : Bool, ?indentLevel : Int) -> String
+						[Local docString(16949):String:String]
+						[Const:Bool] true
+						[Const:Int] 1
+					+
+					[Const:String] "\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(16945):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "  def static_paths, do: ~w(assets fonts images favicon.ico robots.txt)\n\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(16945):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "  def router do\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(16945):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "    quote do\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(16945):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "      use Phoenix.Router, helpers: false\n\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(16945):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "      # Import common connection and controller functions to use in pipelines\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(16945):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "      import Plug.Conn\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(16945):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "      import Phoenix.Controller\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(16945):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "      import Phoenix.LiveView.Router\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(16945):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "    end\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(16945):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "  end\n\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(16945):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "  def channel do\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(16945):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "    quote do\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(16945):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "      use Phoenix.Channel\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(16945):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "    end\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(16945):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "  end\n\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(16945):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "  def controller do\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(16945):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "    quote do\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(16945):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "      use Phoenix.Controller,\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(16945):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "        formats: [:html, :json],\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(16945):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Binop:String]
+					[Binop:String]
+						[Const:String] "        layouts: [html: "
+						+
+						[Local webModule(16948):String:String]
+					+
+					[Const:String] ".Layouts]\n\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(16945):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "      import Plug.Conn\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(16945):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Binop:String]
+					[Binop:String]
+						[Const:String] "      import "
+						+
+						[Local webModule(16948):String:String]
+					+
+					[Const:String] ".Gettext\n\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(16945):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "      unquote(verified_routes())\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(16945):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "    end\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(16945):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "  end\n\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(16945):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "  def live_view do\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(16945):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "    quote do\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(16945):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "      use Phoenix.LiveView,\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(16945):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Binop:String]
+					[Binop:String]
+						[Const:String] "        layout: {"
+						+
+						[Local webModule(16948):String:String]
+					+
+					[Const:String] ".Layouts, :app}\n\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(16945):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "      unquote(html_helpers())\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(16945):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "    end\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(16945):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "  end\n\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(16945):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "  def live_component do\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(16945):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "    quote do\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(16945):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "      use Phoenix.LiveComponent\n\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(16945):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "      unquote(html_helpers())\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(16945):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "    end\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(16945):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "  end\n\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(16945):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "  def html do\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(16945):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "    quote do\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(16945):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "      use Phoenix.Component\n\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(16945):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "      # Import convenience functions from controllers\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(16945):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "      import Phoenix.Controller,\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(16945):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "        only: [get_csrf_token: 0, view_module: 1, view_template: 1]\n\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(16945):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "      # Include general helpers for rendering HTML\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(16945):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "      unquote(html_helpers())\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(16945):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "    end\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(16945):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "  end\n\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(16945):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "  defp html_helpers do\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(16945):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "    quote do\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(16945):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "      # HTML escaping functionality\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(16945):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "      import Phoenix.HTML\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(16945):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "      # Core UI components and translation functions\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(16945):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Binop:String]
+					[Binop:String]
+						[Const:String] "      import "
+						+
+						[Local webModule(16948):String:String]
+					+
+					[Const:String] ".CoreComponents\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(16945):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Binop:String]
+					[Binop:String]
+						[Const:String] "      import "
+						+
+						[Local webModule(16948):String:String]
+					+
+					[Const:String] ".Gettext\n\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(16945):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "      # Shortcut for generating JS commands\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(16945):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "      alias Phoenix.LiveView.JS\n\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(16945):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "      # Routes generation with the ~p sigil\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(16945):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "      unquote(verified_routes())\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(16945):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "    end\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(16945):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "  end\n\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(16945):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "  def verified_routes do\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(16945):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "    quote do\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(16945):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "      use Phoenix.VerifiedRoutes,\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(16945):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Binop:String]
+					[Binop:String]
+						[Const:String] "        endpoint: "
+						+
+						[Local webModule(16948):String:String]
+					+
+					[Const:String] ".Endpoint,\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(16945):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Binop:String]
+					[Binop:String]
+						[Const:String] "        router: "
+						+
+						[Local webModule(16948):String:String]
+					+
+					[Const:String] ".Router,\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(16945):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Binop:String]
+					[Binop:String]
+						[Const:String] "        statics: "
+						+
+						[Local webModule(16948):String:String]
+					+
+					[Const:String] ".static_paths()\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(16945):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "    end\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(16945):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "  end\n\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(16945):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "  @doc \"\"\"\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(16945):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "  When used, dispatch to the appropriate controller/view/etc.\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(16945):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "  \"\"\"\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(16945):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "  defmacro __using__(which) when is_atom(which) do\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(16945):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "    apply(__MODULE__, which, [])\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(16945):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "  end\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(16945):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "end"
+			[Return:Dynamic]
+				[Call:String]
+					[Field:() -> String]
+						[Local result(16945):StringBuf:StringBuf]
+						[FInstance:() -> String]
+							StringBuf
+							toString:() -> String
+}

@@ -1,0 +1,2937 @@
+class reflaxe.elixir.helpers.AnnotationSystem {
+
+	@:value(null)
+	static var globalAppNameRegistry:Null<String> = [Const:Null<String>] null;
+
+	@:value([":genserver", ":controller", ":router", ":endpoint", ":channel", ":behaviour", ":protocol", ":impl", ":repo", ":migration", ":template", ":component", ":schema", ":changeset", ":liveview", ":query", ":appName"])
+	public static var SUPPORTED_ANNOTATIONS:Array<String> = [ArrayDecl:Array<String>]
+		[Const:String] ":genserver"
+		[Const:String] ":controller"
+		[Const:String] ":router"
+		[Const:String] ":endpoint"
+		[Const:String] ":channel"
+		[Const:String] ":behaviour"
+		[Const:String] ":protocol"
+		[Const:String] ":impl"
+		[Const:String] ":repo"
+		[Const:String] ":migration"
+		[Const:String] ":template"
+		[Const:String] ":component"
+		[Const:String] ":schema"
+		[Const:String] ":changeset"
+		[Const:String] ":liveview"
+		[Const:String] ":query"
+		[Const:String] ":appName";
+
+	@:value([[":genserver", ":liveview", ":channel"], [":schema", ":changeset"], [":migration", ":schema", ":changeset"]])
+	public static var EXCLUSIVE_GROUPS:Array<Array<String>> = [ArrayDecl:Array<Array<String>>]
+		[ArrayDecl:Array<String>]
+			[Const:String] ":genserver"
+			[Const:String] ":liveview"
+			[Const:String] ":channel"
+		[ArrayDecl:Array<String>]
+			[Const:String] ":schema"
+			[Const:String] ":changeset"
+		[ArrayDecl:Array<String>]
+			[Const:String] ":migration"
+			[Const:String] ":schema"
+			[Const:String] ":changeset";
+
+	@:value([[":liveview", ":template"], [":schema", ":query"], [":changeset", ":query"], [":appName"]])
+	public static var COMPATIBLE_COMBINATIONS:Array<Array<String>> = [ArrayDecl:Array<Array<String>>]
+		[ArrayDecl:Array<String>]
+			[Const:String] ":liveview"
+			[Const:String] ":template"
+		[ArrayDecl:Array<String>]
+			[Const:String] ":schema"
+			[Const:String] ":query"
+		[ArrayDecl:Array<String>]
+			[Const:String] ":changeset"
+			[Const:String] ":query"
+		[ArrayDecl:Array<String>] [Const:String] ":appName";
+
+	public static function detectAnnotations[Function:(classType : haxe.macro.ClassType) -> reflaxe.elixir.helpers.AnnotationInfo]
+		[Arg:haxe.macro.ClassType] [Local classType(15173):haxe.macro.ClassType]
+		[Block:Dynamic]
+			[If:Void]
+				[Binop:Bool]
+					[Local classType(15173):haxe.macro.ClassType:haxe.macro.ClassType]
+					==
+					[Const:haxe.macro.ClassType] null
+				[Then:Dynamic] [Block:Dynamic]
+					[Return:Dynamic]
+						[ObjectDecl:{ primaryAnnotation : Null<String>, isSupported : Bool, hasConflicts : Bool, conflicts : Array<reflaxe.elixir.helpers.AnnotationConflict>, annotations : Array<String> }]
+							annotations: [ArrayDecl:Array<String>]
+							primaryAnnotation: [Const:Null<String>] null
+							hasConflicts: [Const:Bool] false
+							conflicts: [ArrayDecl:Array<reflaxe.elixir.helpers.AnnotationConflict>]
+							isSupported: [Const:Bool] false
+			[Var detectedAnnotations(15174):Array<String>] [ArrayDecl:Array<String>]
+			[Block:Void]
+				[Var `(15176):Int] [Const:Int] 0
+				[Var `(15177):Array<String>]
+					[Field:Array<String>]
+						[TypeExpr reflaxe.elixir.helpers.AnnotationSystem:Class<reflaxe.elixir.helpers.AnnotationSystem>]
+						[FStatic:Array<String>]
+							reflaxe.elixir.helpers.AnnotationSystem
+							SUPPORTED_ANNOTATIONS:Array<String>
+				[While:Void]
+					[Binop:Bool]
+						[Local `(15176):Int:Int]
+						<
+						[Field:Int]
+							[Local `(15177):Array<String>:Array<String>]
+							[FInstance:Int]
+								Array<String>
+								length:Int
+					[Block:Void]
+						[Var annotation(15175):String]
+							[Array:String]
+								[Local `(15177):Array<String>:Array<String>]
+								[Local `(15176):Int:Int]
+						[Unop:Int]
+							++
+							Prefix
+							[Local `(15176):Int:Int]
+						[If:Void]
+							[Call:Bool]
+								[Field:(name : String) -> Bool]
+									[Field:haxe.macro.MetaAccess]
+										[Local classType(15173):haxe.macro.ClassType:haxe.macro.ClassType]
+										[FAnon:haxe.macro.MetaAccess] meta:haxe.macro.MetaAccess
+									[FAnon:(name : String) -> Bool] has:(name : String) -> Bool
+								[Local annotation(15175):String:String]
+							[Then:Int] [Block:Int]
+								[Call:Int]
+									[Field:(x : String) -> Int]
+										[Local detectedAnnotations(15174):Array<String>:Array<String>]
+										[FInstance:(x : String) -> Int]
+											Array<String>
+											push:(x : Array.T) -> Int
+									[Local annotation(15175):String:String]
+			[Var conflicts(15196):Array<reflaxe.elixir.helpers.AnnotationConflict>]
+				[Call:Array<reflaxe.elixir.helpers.AnnotationConflict>]
+					[Field:(annotations : Array<String>) -> Array<reflaxe.elixir.helpers.AnnotationConflict>]
+						[TypeExpr reflaxe.elixir.helpers.AnnotationSystem:Class<reflaxe.elixir.helpers.AnnotationSystem>]
+						[FStatic:(annotations : Array<String>) -> Array<reflaxe.elixir.helpers.AnnotationConflict>]
+							reflaxe.elixir.helpers.AnnotationSystem
+							validateAnnotations:(annotations : Array<String>) -> Array<reflaxe.elixir.helpers.AnnotationConflict>
+					[Local detectedAnnotations(15174):Array<String>:Array<String>]
+			[Var primaryAnnotation(15201):Null<String>]
+				[Call:Null<String>]
+					[Field:(annotations : Array<String>) -> Null<String>]
+						[TypeExpr reflaxe.elixir.helpers.AnnotationSystem:Class<reflaxe.elixir.helpers.AnnotationSystem>]
+						[FStatic:(annotations : Array<String>) -> Null<String>]
+							reflaxe.elixir.helpers.AnnotationSystem
+							determinePrimaryAnnotation:(annotations : Array<String>) -> Null<String>
+					[Local detectedAnnotations(15174):Array<String>:Array<String>]
+			[Return:Dynamic]
+				[ObjectDecl:{ primaryAnnotation : Null<String>, isSupported : Bool, hasConflicts : Bool, conflicts : Array<reflaxe.elixir.helpers.AnnotationConflict>, annotations : Array<String> }]
+					annotations: [Local detectedAnnotations(15174):Array<String>:Array<String>]
+					primaryAnnotation: [Local primaryAnnotation(15201):Null<String>:Null<String>]
+					hasConflicts: [Binop:Bool]
+						[Field:Int]
+							[Local conflicts(15196):Array<reflaxe.elixir.helpers.AnnotationConflict>:Array<reflaxe.elixir.helpers.AnnotationConflict>]
+							[FInstance:Int]
+								Array<reflaxe.elixir.helpers.AnnotationConflict>
+								length:Int
+						>
+						[Const:Int] 0
+					conflicts: [Local conflicts(15196):Array<reflaxe.elixir.helpers.AnnotationConflict>:Array<reflaxe.elixir.helpers.AnnotationConflict>]
+					isSupported: [Binop:Bool]
+						[Field:Int]
+							[Local detectedAnnotations(15174):Array<String>:Array<String>]
+							[FInstance:Int]
+								Array<String>
+								length:Int
+						>
+						[Const:Int] 0
+
+	static function validateAnnotations[Function:(annotations : Array<String>) -> Array<reflaxe.elixir.helpers.AnnotationConflict>]
+		[Arg:Array<String>] [Local annotations(15178):Array<String>]
+		[Block:Dynamic]
+			[Var conflicts(15179):Array<{ type : String, message : String, conflicting : Array<String> }>] [ArrayDecl:Array<{ type : String, message : String, conflicting : Array<String> }>]
+			[Block:Void]
+				[Var `(15184):Int] [Const:Int] 0
+				[Var `(15185):Array<Array<String>>]
+					[Field:Array<Array<String>>]
+						[TypeExpr reflaxe.elixir.helpers.AnnotationSystem:Class<reflaxe.elixir.helpers.AnnotationSystem>]
+						[FStatic:Array<Array<String>>]
+							reflaxe.elixir.helpers.AnnotationSystem
+							EXCLUSIVE_GROUPS:Array<Array<String>>
+				[While:Void]
+					[Binop:Bool]
+						[Local `(15184):Int:Int]
+						<
+						[Field:Int]
+							[Local `(15185):Array<Array<String>>:Array<Array<String>>]
+							[FInstance:Int]
+								Array<Array<String>>
+								length:Int
+					[Block:Void]
+						[Var group(15180):Array<String>]
+							[Array:Array<String>]
+								[Local `(15185):Array<Array<String>>:Array<Array<String>>]
+								[Local `(15184):Int:Int]
+						[Unop:Int]
+							++
+							Prefix
+							[Local `(15184):Int:Int]
+						[Var foundInGroup(15181):Array<String>] [ArrayDecl:Array<String>]
+						[Block:Void]
+							[Var `(15183):Int] [Const:Int] 0
+							[While:Void]
+								[Binop:Bool]
+									[Local `(15183):Int:Int]
+									<
+									[Field:Int]
+										[Local annotations(15178):Array<String>:Array<String>]
+										[FInstance:Int]
+											Array<String>
+											length:Int
+								[Block:Void]
+									[Var annotation(15182):String]
+										[Array:String]
+											[Local annotations(15178):Array<String>:Array<String>]
+											[Local `(15183):Int:Int]
+									[Unop:Int]
+										++
+										Prefix
+										[Local `(15183):Int:Int]
+									[If:Void]
+										[Call:Bool]
+											[Field:(x : String) -> Bool]
+												[Local group(15180):Array<String>:Array<String>]
+												[FInstance:(x : String) -> Bool]
+													Array<String>
+													contains:(x : Array.T) -> Bool
+											[Local annotation(15182):String:String]
+										[Then:Int] [Block:Int]
+											[Call:Int]
+												[Field:(x : String) -> Int]
+													[Local foundInGroup(15181):Array<String>:Array<String>]
+													[FInstance:(x : String) -> Int]
+														Array<String>
+														push:(x : Array.T) -> Int
+												[Local annotation(15182):String:String]
+						[If:Void]
+							[Binop:Bool]
+								[Field:Int]
+									[Local foundInGroup(15181):Array<String>:Array<String>]
+									[FInstance:Int]
+										Array<String>
+										length:Int
+								>
+								[Const:Int] 1
+							[Then:Int] [Block:Int]
+								[Call:Int]
+									[Field:(x : { type : String, message : String, conflicting : Array<String> }) -> Int]
+										[Local conflicts(15179):Array<{ type : String, message : String, conflicting : Array<String> }>:Array<{ type : String, message : String, conflicting : Array<String> }>]
+										[FInstance:(x : { type : String, message : String, conflicting : Array<String> }) -> Int]
+											Array<{ type : String, message : String, conflicting : Array<String> }>
+											push:(x : Array.T) -> Int
+									[ObjectDecl:{ type : String, message : String, conflicting : Array<String> }]
+										type: [Const:String] "exclusive_group"
+										conflicting: [Local foundInGroup(15181):Array<String>:Array<String>]
+										message: [Binop:String]
+											[Binop:String]
+												[Const:String] "Annotations "
+												+
+												[Call:String]
+													[Field:(sep : String) -> String]
+														[Local foundInGroup(15181):Array<String>:Array<String>]
+														[FInstance:(sep : String) -> String]
+															Array<String>
+															join:(sep : String) -> String
+													[Const:String] ", "
+											+
+											[Const:String] " cannot be used together - they are mutually exclusive"
+			[If:Void]
+				[Binop:Bool]
+					[Field:Int]
+						[Local annotations(15178):Array<String>:Array<String>]
+						[FInstance:Int]
+							Array<String>
+							length:Int
+					>
+					[Const:Int] 1
+				[Then:Void] [Block:Void]
+					[Var hasValidCombination(15186):Bool] [Const:Bool] false
+					[If:Void]
+						[Call:Bool]
+							[Field:(x : String) -> Bool]
+								[Local annotations(15178):Array<String>:Array<String>]
+								[FInstance:(x : String) -> Bool]
+									Array<String>
+									contains:(x : Array.T) -> Bool
+							[Const:String] ":appName"
+						[Then:Bool] [Block:Bool]
+							[Binop:Bool]
+								[Local hasValidCombination(15186):Bool:Bool]
+								=
+								[Const:Bool] true
+						[Else:Void] [Block:Void]
+							[Block:Void]
+								[Var `(15191):Int] [Const:Int] 0
+								[Var `(15192):Array<Array<String>>]
+									[Field:Array<Array<String>>]
+										[TypeExpr reflaxe.elixir.helpers.AnnotationSystem:Class<reflaxe.elixir.helpers.AnnotationSystem>]
+										[FStatic:Array<Array<String>>]
+											reflaxe.elixir.helpers.AnnotationSystem
+											COMPATIBLE_COMBINATIONS:Array<Array<String>>
+								[While:Void]
+									[Binop:Bool]
+										[Local `(15191):Int:Int]
+										<
+										[Field:Int]
+											[Local `(15192):Array<Array<String>>:Array<Array<String>>]
+											[FInstance:Int]
+												Array<Array<String>>
+												length:Int
+									[Block:Void]
+										[Var combination(15187):Array<String>]
+											[Array:Array<String>]
+												[Local `(15192):Array<Array<String>>:Array<Array<String>>]
+												[Local `(15191):Int:Int]
+										[Unop:Int]
+											++
+											Prefix
+											[Local `(15191):Int:Int]
+										[Var matchesAll(15188):Bool] [Const:Bool] true
+										[Block:Void]
+											[Var `(15190):Int] [Const:Int] 0
+											[While:Void]
+												[Binop:Bool]
+													[Local `(15190):Int:Int]
+													<
+													[Field:Int]
+														[Local annotations(15178):Array<String>:Array<String>]
+														[FInstance:Int]
+															Array<String>
+															length:Int
+												[Block:Void]
+													[Var annotation(15189):String]
+														[Array:String]
+															[Local annotations(15178):Array<String>:Array<String>]
+															[Local `(15190):Int:Int]
+													[Unop:Int]
+														++
+														Prefix
+														[Local `(15190):Int:Int]
+													[If:Void]
+														[Unop:Bool]
+															!
+															Prefix
+															[Call:Bool]
+																[Field:(x : String) -> Bool]
+																	[Local combination(15187):Array<String>:Array<String>]
+																	[FInstance:(x : String) -> Bool]
+																		Array<String>
+																		contains:(x : Array.T) -> Bool
+																[Local annotation(15189):String:String]
+														[Then:Dynamic] [Block:Dynamic]
+															[Binop:Bool]
+																[Local matchesAll(15188):Bool:Bool]
+																=
+																[Const:Bool] false
+															[Break:Dynamic]
+										[If:Void]
+											[Local matchesAll(15188):Bool:Bool]
+											[Then:Dynamic] [Block:Dynamic]
+												[Binop:Bool]
+													[Local hasValidCombination(15186):Bool:Bool]
+													=
+													[Const:Bool] true
+												[Break:Dynamic]
+							[If:Void]
+								[Binop:Bool]
+									[Unop:Bool]
+										!
+										Prefix
+										[Local hasValidCombination(15186):Bool:Bool]
+									&&
+									[Binop:Bool]
+										[Field:Int]
+											[Local annotations(15178):Array<String>:Array<String>]
+											[FInstance:Int]
+												Array<String>
+												length:Int
+										==
+										[Const:Int] 2
+								[Then:Void] [Block:Void]
+									[Block:Void]
+										[Var `(15194):Int] [Const:Int] 0
+										[Var `(15195):Array<Array<String>>]
+											[Field:Array<Array<String>>]
+												[TypeExpr reflaxe.elixir.helpers.AnnotationSystem:Class<reflaxe.elixir.helpers.AnnotationSystem>]
+												[FStatic:Array<Array<String>>]
+													reflaxe.elixir.helpers.AnnotationSystem
+													COMPATIBLE_COMBINATIONS:Array<Array<String>>
+										[While:Void]
+											[Binop:Bool]
+												[Local `(15194):Int:Int]
+												<
+												[Field:Int]
+													[Local `(15195):Array<Array<String>>:Array<Array<String>>]
+													[FInstance:Int]
+														Array<Array<String>>
+														length:Int
+											[Block:Void]
+												[Var combination(15193):Array<String>]
+													[Array:Array<String>]
+														[Local `(15195):Array<Array<String>>:Array<Array<String>>]
+														[Local `(15194):Int:Int]
+												[Unop:Int]
+													++
+													Prefix
+													[Local `(15194):Int:Int]
+												[If:Void]
+													[Binop:Bool]
+														[Call:Bool]
+															[Field:(x : String) -> Bool]
+																[Local combination(15193):Array<String>:Array<String>]
+																[FInstance:(x : String) -> Bool]
+																	Array<String>
+																	contains:(x : Array.T) -> Bool
+															[Array:String]
+																[Local annotations(15178):Array<String>:Array<String>]
+																[Const:Int] 0
+														&&
+														[Call:Bool]
+															[Field:(x : String) -> Bool]
+																[Local combination(15193):Array<String>:Array<String>]
+																[FInstance:(x : String) -> Bool]
+																	Array<String>
+																	contains:(x : Array.T) -> Bool
+															[Array:String]
+																[Local annotations(15178):Array<String>:Array<String>]
+																[Const:Int] 1
+													[Then:Dynamic] [Block:Dynamic]
+														[Binop:Bool]
+															[Local hasValidCombination(15186):Bool:Bool]
+															=
+															[Const:Bool] true
+														[Break:Dynamic]
+					[If:Void]
+						[Unop:Bool]
+							!
+							Prefix
+							[Local hasValidCombination(15186):Bool:Bool]
+						[Then:Int] [Block:Int]
+							[Call:Int]
+								[Field:(x : { type : String, message : String, conflicting : Array<String> }) -> Int]
+									[Local conflicts(15179):Array<{ type : String, message : String, conflicting : Array<String> }>:Array<{ type : String, message : String, conflicting : Array<String> }>]
+									[FInstance:(x : { type : String, message : String, conflicting : Array<String> }) -> Int]
+										Array<{ type : String, message : String, conflicting : Array<String> }>
+										push:(x : Array.T) -> Int
+								[ObjectDecl:{ type : String, message : String, conflicting : Array<String> }]
+									type: [Const:String] "unsupported_combination"
+									conflicting: [Local annotations(15178):Array<String>:Array<String>]
+									message: [Binop:String]
+										[Binop:String]
+											[Const:String] "Annotation combination "
+											+
+											[Call:String]
+												[Field:(sep : String) -> String]
+													[Local annotations(15178):Array<String>:Array<String>]
+													[FInstance:(sep : String) -> String]
+														Array<String>
+														join:(sep : String) -> String
+												[Const:String] ", "
+										+
+										[Const:String] " is not supported"
+			[Return:Dynamic] [Local conflicts(15179):Array<{ type : String, message : String, conflicting : Array<String> }>:Array<{ type : String, message : String, conflicting : Array<String> }>]
+
+	static function determinePrimaryAnnotation[Function:(annotations : Array<String>) -> Null<String>]
+		[Arg:Array<String>] [Local annotations(15197):Array<String>]
+		[Block:Dynamic]
+			[Block:Void]
+				[Var `(15199):Int] [Const:Int] 0
+				[Var `(15200):Array<String>]
+					[Field:Array<String>]
+						[TypeExpr reflaxe.elixir.helpers.AnnotationSystem:Class<reflaxe.elixir.helpers.AnnotationSystem>]
+						[FStatic:Array<String>]
+							reflaxe.elixir.helpers.AnnotationSystem
+							SUPPORTED_ANNOTATIONS:Array<String>
+				[While:Void]
+					[Binop:Bool]
+						[Local `(15199):Int:Int]
+						<
+						[Field:Int]
+							[Local `(15200):Array<String>:Array<String>]
+							[FInstance:Int]
+								Array<String>
+								length:Int
+					[Block:Void]
+						[Var annotation(15198):String]
+							[Array:String]
+								[Local `(15200):Array<String>:Array<String>]
+								[Local `(15199):Int:Int]
+						[Unop:Int]
+							++
+							Prefix
+							[Local `(15199):Int:Int]
+						[If:Void]
+							[Call:Bool]
+								[Field:(x : String) -> Bool]
+									[Local annotations(15197):Array<String>:Array<String>]
+									[FInstance:(x : String) -> Bool]
+										Array<String>
+										contains:(x : Array.T) -> Bool
+								[Local annotation(15198):String:String]
+							[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [Local annotation(15198):String:String]
+			[Return:Dynamic] [Const:Null<String>] null
+
+	public static function routeCompilation[Function:(classType : haxe.macro.ClassType, varFields : Array<reflaxe.data.ClassVarData>, funcFields : Array<reflaxe.data.ClassFuncData>) -> Null<String>]
+		[Arg:haxe.macro.ClassType] [Local classType(15202):haxe.macro.ClassType]
+		[Arg:Array<reflaxe.data.ClassVarData>] [Local varFields(15203):Array<reflaxe.data.ClassVarData>]
+		[Arg:Array<reflaxe.data.ClassFuncData>] [Local funcFields(15204):Array<reflaxe.data.ClassFuncData>]
+		[Block:Dynamic]
+			[Var annotationInfo(15205):reflaxe.elixir.helpers.AnnotationInfo]
+				[Call:reflaxe.elixir.helpers.AnnotationInfo]
+					[Field:(classType : haxe.macro.ClassType) -> reflaxe.elixir.helpers.AnnotationInfo]
+						[TypeExpr reflaxe.elixir.helpers.AnnotationSystem:Class<reflaxe.elixir.helpers.AnnotationSystem>]
+						[FStatic:(classType : haxe.macro.ClassType) -> reflaxe.elixir.helpers.AnnotationInfo]
+							reflaxe.elixir.helpers.AnnotationSystem
+							detectAnnotations:(classType : haxe.macro.ClassType) -> reflaxe.elixir.helpers.AnnotationInfo
+					[Local classType(15202):haxe.macro.ClassType:haxe.macro.ClassType]
+			[If:Void]
+				[Field:Bool]
+					[Local annotationInfo(15205):reflaxe.elixir.helpers.AnnotationInfo:reflaxe.elixir.helpers.AnnotationInfo]
+					[FAnon:Bool] hasConflicts:Bool
+				[Then:Dynamic] [Block:Dynamic]
+					[Block:Void]
+						[Var `(15207):Int] [Const:Int] 0
+						[Var `(15208):Array<reflaxe.elixir.helpers.AnnotationConflict>]
+							[Field:Array<reflaxe.elixir.helpers.AnnotationConflict>]
+								[Local annotationInfo(15205):reflaxe.elixir.helpers.AnnotationInfo:reflaxe.elixir.helpers.AnnotationInfo]
+								[FAnon:Array<reflaxe.elixir.helpers.AnnotationConflict>] conflicts:Array<reflaxe.elixir.helpers.AnnotationConflict>
+						[While:Void]
+							[Binop:Bool]
+								[Local `(15207):Int:Int]
+								<
+								[Field:Int]
+									[Local `(15208):Array<reflaxe.elixir.helpers.AnnotationConflict>:Array<reflaxe.elixir.helpers.AnnotationConflict>]
+									[FInstance:Int]
+										Array<reflaxe.elixir.helpers.AnnotationConflict>
+										length:Int
+							[Block:Void]
+								[Var conflict(15206):reflaxe.elixir.helpers.AnnotationConflict]
+									[Array:reflaxe.elixir.helpers.AnnotationConflict]
+										[Local `(15208):Array<reflaxe.elixir.helpers.AnnotationConflict>:Array<reflaxe.elixir.helpers.AnnotationConflict>]
+										[Local `(15207):Int:Int]
+								[Unop:Int]
+									++
+									Prefix
+									[Local `(15207):Int:Int]
+								[Call:Void]
+									[Field:(v : Dynamic, ?infos : Null<haxe.PosInfos>) -> Void]
+										[TypeExpr haxe.Log:Class<haxe.Log>]
+										[FStatic:(v : Dynamic, ?infos : Null<haxe.PosInfos>) -> Void]
+											haxe.Log
+											trace:(v : Dynamic, ?infos : Null<haxe.PosInfos>) -> Void
+									[Binop:String]
+										[Const:String] "ERROR: "
+										+
+										[Field:String]
+											[Local conflict(15206):reflaxe.elixir.helpers.AnnotationConflict:reflaxe.elixir.helpers.AnnotationConflict]
+											[FAnon:String] message:String
+									[ObjectDecl:{ methodName : String, lineNumber : Int, fileName : String, ?customParams : Null<Array<Dynamic>>, className : String }]
+										fileName: [Const:String] "../../../src/reflaxe/elixir/helpers/AnnotationSystem.hx"
+										lineNumber: [Const:Int] 203
+										className: [Const:String] "reflaxe.elixir.helpers.AnnotationSystem"
+										methodName: [Const:String] "routeCompilation"
+					[Return:Dynamic] [Const:Null<String>] null
+			[If:Void]
+				[Binop:Bool]
+					[Field:Null<String>]
+						[Local annotationInfo(15205):reflaxe.elixir.helpers.AnnotationInfo:reflaxe.elixir.helpers.AnnotationInfo]
+						[FAnon:Null<String>] primaryAnnotation:Null<String>
+					==
+					[Const:Null<String>] null
+				[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [Const:Null<String>] null
+			[Return:Dynamic]
+				[Meta:Null<String>]
+					:ast(switch (annotationInfo.primaryAnnotation) {
+	case ":genserver":
+		null;	
+	case ":controller":
+		if (reflaxe.elixir.helpers.RouterCompiler.isControllerClassType(classType)) {
+			compileControllerClass(classType, varFields, funcFields);
+		} else {
+			trace("ERROR: " + "@:controller annotation detected but RouterCompiler validation failed");
+			null;
+		};	
+	case ":router":
+		if (reflaxe.elixir.helpers.RouterCompiler.isRouterClassType(classType)) {
+			compileRouterClass(classType, varFields, funcFields);
+		} else {
+			trace("ERROR: " + "@:router annotation detected but RouterCompiler validation failed");
+			null;
+		};	
+	case ":endpoint":
+		null;	
+	case ":channel":
+		compileChannelClass(classType, varFields, funcFields);	
+	case ":behaviour":
+		if (reflaxe.elixir.helpers.BehaviorCompiler.isBehaviorClassType(classType)) {
+			compileBehaviorClass(classType, varFields, funcFields);
+		} else {
+			trace("ERROR: " + "@:behaviour annotation detected but BehaviorCompiler validation failed");
+			null;
+		};	
+	case ":protocol":
+		if (reflaxe.elixir.helpers.ProtocolCompiler.isProtocolClassType(classType)) {
+			compileProtocolClass(classType, varFields, funcFields);
+		} else {
+			trace("ERROR: " + "@:protocol annotation detected but ProtocolCompiler validation failed");
+			null;
+		};	
+	case ":impl":
+		if (reflaxe.elixir.helpers.ProtocolCompiler.isImplClassType(classType)) {
+			compileImplClass(classType, varFields, funcFields);
+		} else {
+			trace("ERROR: " + "@:impl annotation detected but ProtocolCompiler validation failed");
+			null;
+		};	
+	case ":repo":
+		if (reflaxe.elixir.helpers.RepoCompiler.isRepoClass(classType)) {
+			compileRepoClass(classType, varFields, funcFields);
+		} else {
+			trace("ERROR: @:repo annotation detected but RepoCompiler validation failed");
+			null;
+		};	
+	case ":migration":
+		null;	
+	case ":template":
+		if (reflaxe.elixir.helpers.TemplateCompiler.isTemplateClassType(classType)) {
+			compileTemplateClass(classType, varFields, funcFields);
+		} else {
+			trace("ERROR: " + "@:template annotation detected but TemplateCompiler validation failed");
+			null;
+		};	
+	case ":component":
+		compileComponentClass(classType, varFields, funcFields);	
+	case ":schema":
+		null;	
+	case ":changeset":
+		if (reflaxe.elixir.helpers.ChangesetCompiler.isChangesetClassType(classType)) {
+			compileChangesetClass(classType, varFields, funcFields);
+		} else {
+			trace("ERROR: " + "@:changeset annotation detected but ChangesetCompiler validation failed");
+			null;
+		};	
+	case ":liveview":
+		if (reflaxe.elixir.LiveViewCompiler.isLiveViewClassType(classType)) {
+			null;
+		} else {
+			trace("ERROR: " + "@:liveview annotation detected but LiveViewCompiler validation failed");
+			null;
+		};	
+	case ":query":
+		trace("WARNING: @:query annotation is not yet implemented. Query methods will be compiled as regular functions.");
+		null;	
+	case ":appName":
+		null;	
+	default:
+		trace("ERROR: Unknown annotation: ${annotationInfo.primaryAnnotation}");
+		null;	
+})
+					[Block:Null<String>]
+						[Var `(16738):Null<String>]
+							[Field:Null<String>]
+								[Local annotationInfo(15205):reflaxe.elixir.helpers.AnnotationInfo:reflaxe.elixir.helpers.AnnotationInfo]
+								[FAnon:Null<String>] primaryAnnotation:Null<String>
+						[If:Null<String>]
+							[Binop:Bool]
+								[Local `(16738):Null<String>:Null<String>]
+								==
+								[Const:Null<String>] null
+							[Then:Null<String>] [Block:Null<String>]
+								[Call:Void]
+									[Field:(v : Dynamic, ?infos : Null<haxe.PosInfos>) -> Void]
+										[TypeExpr haxe.Log:Class<haxe.Log>]
+										[FStatic:(v : Dynamic, ?infos : Null<haxe.PosInfos>) -> Void]
+											haxe.Log
+											trace:(v : Dynamic, ?infos : Null<haxe.PosInfos>) -> Void
+									[Binop:String]
+										[Const:String] "ERROR: Unknown annotation: "
+										+
+										[Field:Null<String>]
+											[Local annotationInfo(15205):reflaxe.elixir.helpers.AnnotationInfo:reflaxe.elixir.helpers.AnnotationInfo]
+											[FAnon:Null<String>] primaryAnnotation:Null<String>
+									[ObjectDecl:{ methodName : String, lineNumber : Int, fileName : String, ?customParams : Null<Array<Dynamic>>, className : String }]
+										fileName: [Const:String] "../../../src/reflaxe/elixir/helpers/AnnotationSystem.hx"
+										lineNumber: [Const:Int] 322
+										className: [Const:String] "reflaxe.elixir.helpers.AnnotationSystem"
+										methodName: [Const:String] "routeCompilation"
+								[Const:Null<String>] null
+							[Else:Null<String>] [Switch:Null<String>]
+								[Local `(16738):Null<String>:Null<String>]
+								[Case:Null<String>]
+									[Const:String] ":appName"
+									[Block:Null<String>] [Block:Null<String>] [Const:Null<String>] null
+								[Case:Null<String>]
+									[Const:String] ":behaviour"
+									[Block:Null<String>]
+										[Block:Null<String>]
+											[If:Null<String>]
+												[Call:Bool]
+													[Field:(classType : haxe.macro.ClassType) -> Bool]
+														[TypeExpr reflaxe.elixir.helpers.BehaviorCompiler:Class<reflaxe.elixir.helpers.BehaviorCompiler>]
+														[FStatic:(classType : haxe.macro.ClassType) -> Bool]
+															reflaxe.elixir.helpers.BehaviorCompiler
+															isBehaviorClassType:(classType : haxe.macro.ClassType) -> Bool
+													[Local classType(15202):haxe.macro.ClassType:haxe.macro.ClassType]
+												[Then:String] [Block:String]
+													[Call:String]
+														[Field:(classType : haxe.macro.ClassType, varFields : Array<reflaxe.data.ClassVarData>, funcFields : Array<reflaxe.data.ClassFuncData>) -> String]
+															[TypeExpr reflaxe.elixir.helpers.AnnotationSystem:Class<reflaxe.elixir.helpers.AnnotationSystem>]
+															[FStatic:(classType : haxe.macro.ClassType, varFields : Array<reflaxe.data.ClassVarData>, funcFields : Array<reflaxe.data.ClassFuncData>) -> String]
+																reflaxe.elixir.helpers.AnnotationSystem
+																compileBehaviorClass:(classType : haxe.macro.ClassType, varFields : Array<reflaxe.data.ClassVarData>, funcFields : Array<reflaxe.data.ClassFuncData>) -> String
+														[Local classType(15202):haxe.macro.ClassType:haxe.macro.ClassType]
+														[Local varFields(15203):Array<reflaxe.data.ClassVarData>:Array<reflaxe.data.ClassVarData>]
+														[Local funcFields(15204):Array<reflaxe.data.ClassFuncData>:Array<reflaxe.data.ClassFuncData>]
+												[Else:Null<String>] [Block:Null<String>]
+													[Call:Void]
+														[Field:(v : Dynamic, ?infos : Null<haxe.PosInfos>) -> Void]
+															[TypeExpr haxe.Log:Class<haxe.Log>]
+															[FStatic:(v : Dynamic, ?infos : Null<haxe.PosInfos>) -> Void]
+																haxe.Log
+																trace:(v : Dynamic, ?infos : Null<haxe.PosInfos>) -> Void
+														[Binop:String]
+															[Const:String] "ERROR: "
+															+
+															[Const:String] "@:behaviour annotation detected but BehaviorCompiler validation failed"
+														[ObjectDecl:{ methodName : String, lineNumber : Int, fileName : String, ?customParams : Null<Array<Dynamic>>, className : String }]
+															fileName: [Const:String] "../../../src/reflaxe/elixir/helpers/AnnotationSystem.hx"
+															lineNumber: [Const:Int] 247
+															className: [Const:String] "reflaxe.elixir.helpers.AnnotationSystem"
+															methodName: [Const:String] "routeCompilation"
+													[Const:Null<String>] null
+								[Case:Null<String>]
+									[Const:String] ":changeset"
+									[Block:Null<String>]
+										[Block:Null<String>]
+											[If:Null<String>]
+												[Call:Bool]
+													[Field:(classType : Dynamic) -> Bool]
+														[TypeExpr reflaxe.elixir.helpers.ChangesetCompiler:Class<reflaxe.elixir.helpers.ChangesetCompiler>]
+														[FStatic:(classType : Dynamic) -> Bool]
+															reflaxe.elixir.helpers.ChangesetCompiler
+															isChangesetClassType:(classType : Dynamic) -> Bool
+													[Local classType(15202):haxe.macro.ClassType:haxe.macro.ClassType]
+												[Then:String] [Block:String]
+													[Call:String]
+														[Field:(classType : haxe.macro.ClassType, varFields : Array<reflaxe.data.ClassVarData>, funcFields : Array<reflaxe.data.ClassFuncData>) -> String]
+															[TypeExpr reflaxe.elixir.helpers.AnnotationSystem:Class<reflaxe.elixir.helpers.AnnotationSystem>]
+															[FStatic:(classType : haxe.macro.ClassType, varFields : Array<reflaxe.data.ClassVarData>, funcFields : Array<reflaxe.data.ClassFuncData>) -> String]
+																reflaxe.elixir.helpers.AnnotationSystem
+																compileChangesetClass:(classType : haxe.macro.ClassType, varFields : Array<reflaxe.data.ClassVarData>, funcFields : Array<reflaxe.data.ClassFuncData>) -> String
+														[Local classType(15202):haxe.macro.ClassType:haxe.macro.ClassType]
+														[Local varFields(15203):Array<reflaxe.data.ClassVarData>:Array<reflaxe.data.ClassVarData>]
+														[Local funcFields(15204):Array<reflaxe.data.ClassFuncData>:Array<reflaxe.data.ClassFuncData>]
+												[Else:Null<String>] [Block:Null<String>]
+													[Call:Void]
+														[Field:(v : Dynamic, ?infos : Null<haxe.PosInfos>) -> Void]
+															[TypeExpr haxe.Log:Class<haxe.Log>]
+															[FStatic:(v : Dynamic, ?infos : Null<haxe.PosInfos>) -> Void]
+																haxe.Log
+																trace:(v : Dynamic, ?infos : Null<haxe.PosInfos>) -> Void
+														[Binop:String]
+															[Const:String] "ERROR: "
+															+
+															[Const:String] "@:changeset annotation detected but ChangesetCompiler validation failed"
+														[ObjectDecl:{ methodName : String, lineNumber : Int, fileName : String, ?customParams : Null<Array<Dynamic>>, className : String }]
+															fileName: [Const:String] "../../../src/reflaxe/elixir/helpers/AnnotationSystem.hx"
+															lineNumber: [Const:Int] 298
+															className: [Const:String] "reflaxe.elixir.helpers.AnnotationSystem"
+															methodName: [Const:String] "routeCompilation"
+													[Const:Null<String>] null
+								[Case:String]
+									[Const:String] ":channel"
+									[Block:String]
+										[Block:String]
+											[Call:String]
+												[Field:(classType : haxe.macro.ClassType, varFields : Array<reflaxe.data.ClassVarData>, funcFields : Array<reflaxe.data.ClassFuncData>) -> String]
+													[TypeExpr reflaxe.elixir.helpers.AnnotationSystem:Class<reflaxe.elixir.helpers.AnnotationSystem>]
+													[FStatic:(classType : haxe.macro.ClassType, varFields : Array<reflaxe.data.ClassVarData>, funcFields : Array<reflaxe.data.ClassFuncData>) -> String]
+														reflaxe.elixir.helpers.AnnotationSystem
+														compileChannelClass:(classType : haxe.macro.ClassType, varFields : Array<reflaxe.data.ClassVarData>, funcFields : Array<reflaxe.data.ClassFuncData>) -> String
+												[Local classType(15202):haxe.macro.ClassType:haxe.macro.ClassType]
+												[Local varFields(15203):Array<reflaxe.data.ClassVarData>:Array<reflaxe.data.ClassVarData>]
+												[Local funcFields(15204):Array<reflaxe.data.ClassFuncData>:Array<reflaxe.data.ClassFuncData>]
+								[Case:String]
+									[Const:String] ":component"
+									[Block:String]
+										[Block:String]
+											[Call:String]
+												[Field:(classType : haxe.macro.ClassType, varFields : Array<reflaxe.data.ClassVarData>, funcFields : Array<reflaxe.data.ClassFuncData>) -> String]
+													[TypeExpr reflaxe.elixir.helpers.AnnotationSystem:Class<reflaxe.elixir.helpers.AnnotationSystem>]
+													[FStatic:(classType : haxe.macro.ClassType, varFields : Array<reflaxe.data.ClassVarData>, funcFields : Array<reflaxe.data.ClassFuncData>) -> String]
+														reflaxe.elixir.helpers.AnnotationSystem
+														compileComponentClass:(classType : haxe.macro.ClassType, varFields : Array<reflaxe.data.ClassVarData>, funcFields : Array<reflaxe.data.ClassFuncData>) -> String
+												[Local classType(15202):haxe.macro.ClassType:haxe.macro.ClassType]
+												[Local varFields(15203):Array<reflaxe.data.ClassVarData>:Array<reflaxe.data.ClassVarData>]
+												[Local funcFields(15204):Array<reflaxe.data.ClassFuncData>:Array<reflaxe.data.ClassFuncData>]
+								[Case:Null<String>]
+									[Const:String] ":controller"
+									[Block:Null<String>]
+										[Block:Null<String>]
+											[If:Null<String>]
+												[Call:Bool]
+													[Field:(classType : haxe.macro.ClassType) -> Bool]
+														[TypeExpr reflaxe.elixir.helpers.RouterCompiler:Class<reflaxe.elixir.helpers.RouterCompiler>]
+														[FStatic:(classType : haxe.macro.ClassType) -> Bool]
+															reflaxe.elixir.helpers.RouterCompiler
+															isControllerClassType:(classType : haxe.macro.ClassType) -> Bool
+													[Local classType(15202):haxe.macro.ClassType:haxe.macro.ClassType]
+												[Then:String] [Block:String]
+													[Call:String]
+														[Field:(classType : haxe.macro.ClassType, varFields : Array<reflaxe.data.ClassVarData>, funcFields : Array<reflaxe.data.ClassFuncData>) -> String]
+															[TypeExpr reflaxe.elixir.helpers.AnnotationSystem:Class<reflaxe.elixir.helpers.AnnotationSystem>]
+															[FStatic:(classType : haxe.macro.ClassType, varFields : Array<reflaxe.data.ClassVarData>, funcFields : Array<reflaxe.data.ClassFuncData>) -> String]
+																reflaxe.elixir.helpers.AnnotationSystem
+																compileControllerClass:(classType : haxe.macro.ClassType, varFields : Array<reflaxe.data.ClassVarData>, funcFields : Array<reflaxe.data.ClassFuncData>) -> String
+														[Local classType(15202):haxe.macro.ClassType:haxe.macro.ClassType]
+														[Local varFields(15203):Array<reflaxe.data.ClassVarData>:Array<reflaxe.data.ClassVarData>]
+														[Local funcFields(15204):Array<reflaxe.data.ClassFuncData>:Array<reflaxe.data.ClassFuncData>]
+												[Else:Null<String>] [Block:Null<String>]
+													[Call:Void]
+														[Field:(v : Dynamic, ?infos : Null<haxe.PosInfos>) -> Void]
+															[TypeExpr haxe.Log:Class<haxe.Log>]
+															[FStatic:(v : Dynamic, ?infos : Null<haxe.PosInfos>) -> Void]
+																haxe.Log
+																trace:(v : Dynamic, ?infos : Null<haxe.PosInfos>) -> Void
+														[Binop:String]
+															[Const:String] "ERROR: "
+															+
+															[Const:String] "@:controller annotation detected but RouterCompiler validation failed"
+														[ObjectDecl:{ methodName : String, lineNumber : Int, fileName : String, ?customParams : Null<Array<Dynamic>>, className : String }]
+															fileName: [Const:String] "../../../src/reflaxe/elixir/helpers/AnnotationSystem.hx"
+															lineNumber: [Const:Int] 223
+															className: [Const:String] "reflaxe.elixir.helpers.AnnotationSystem"
+															methodName: [Const:String] "routeCompilation"
+													[Const:Null<String>] null
+								[Case:Null<String>]
+									[Const:String] ":endpoint"
+									[Block:Null<String>] [Block:Null<String>] [Const:Null<String>] null
+								[Case:Null<String>]
+									[Const:String] ":genserver"
+									[Block:Null<String>] [Block:Null<String>] [Const:Null<String>] null
+								[Case:Null<String>]
+									[Const:String] ":impl"
+									[Block:Null<String>]
+										[Block:Null<String>]
+											[If:Null<String>]
+												[Call:Bool]
+													[Field:(classType : haxe.macro.ClassType) -> Bool]
+														[TypeExpr reflaxe.elixir.helpers.ProtocolCompiler:Class<reflaxe.elixir.helpers.ProtocolCompiler>]
+														[FStatic:(classType : haxe.macro.ClassType) -> Bool]
+															reflaxe.elixir.helpers.ProtocolCompiler
+															isImplClassType:(classType : haxe.macro.ClassType) -> Bool
+													[Local classType(15202):haxe.macro.ClassType:haxe.macro.ClassType]
+												[Then:String] [Block:String]
+													[Call:String]
+														[Field:(classType : haxe.macro.ClassType, varFields : Array<reflaxe.data.ClassVarData>, funcFields : Array<reflaxe.data.ClassFuncData>) -> String]
+															[TypeExpr reflaxe.elixir.helpers.AnnotationSystem:Class<reflaxe.elixir.helpers.AnnotationSystem>]
+															[FStatic:(classType : haxe.macro.ClassType, varFields : Array<reflaxe.data.ClassVarData>, funcFields : Array<reflaxe.data.ClassFuncData>) -> String]
+																reflaxe.elixir.helpers.AnnotationSystem
+																compileImplClass:(classType : haxe.macro.ClassType, varFields : Array<reflaxe.data.ClassVarData>, funcFields : Array<reflaxe.data.ClassFuncData>) -> String
+														[Local classType(15202):haxe.macro.ClassType:haxe.macro.ClassType]
+														[Local varFields(15203):Array<reflaxe.data.ClassVarData>:Array<reflaxe.data.ClassVarData>]
+														[Local funcFields(15204):Array<reflaxe.data.ClassFuncData>:Array<reflaxe.data.ClassFuncData>]
+												[Else:Null<String>] [Block:Null<String>]
+													[Call:Void]
+														[Field:(v : Dynamic, ?infos : Null<haxe.PosInfos>) -> Void]
+															[TypeExpr haxe.Log:Class<haxe.Log>]
+															[FStatic:(v : Dynamic, ?infos : Null<haxe.PosInfos>) -> Void]
+																haxe.Log
+																trace:(v : Dynamic, ?infos : Null<haxe.PosInfos>) -> Void
+														[Binop:String]
+															[Const:String] "ERROR: "
+															+
+															[Const:String] "@:impl annotation detected but ProtocolCompiler validation failed"
+														[ObjectDecl:{ methodName : String, lineNumber : Int, fileName : String, ?customParams : Null<Array<Dynamic>>, className : String }]
+															fileName: [Const:String] "../../../src/reflaxe/elixir/helpers/AnnotationSystem.hx"
+															lineNumber: [Const:Int] 263
+															className: [Const:String] "reflaxe.elixir.helpers.AnnotationSystem"
+															methodName: [Const:String] "routeCompilation"
+													[Const:Null<String>] null
+								[Case:Null<String>]
+									[Const:String] ":liveview"
+									[Block:Null<String>]
+										[Block:Null<String>]
+											[If:Null<String>]
+												[Call:Bool]
+													[Field:(classType : Dynamic) -> Bool]
+														[TypeExpr reflaxe.elixir.LiveViewCompiler:Class<reflaxe.elixir.LiveViewCompiler>]
+														[FStatic:(classType : Dynamic) -> Bool]
+															reflaxe.elixir.LiveViewCompiler
+															isLiveViewClassType:(classType : Dynamic) -> Bool
+													[Local classType(15202):haxe.macro.ClassType:haxe.macro.ClassType]
+												[Then:Null<String>] [Block:Null<String>] [Const:Null<String>] null
+												[Else:Null<String>] [Block:Null<String>]
+													[Call:Void]
+														[Field:(v : Dynamic, ?infos : Null<haxe.PosInfos>) -> Void]
+															[TypeExpr haxe.Log:Class<haxe.Log>]
+															[FStatic:(v : Dynamic, ?infos : Null<haxe.PosInfos>) -> Void]
+																haxe.Log
+																trace:(v : Dynamic, ?infos : Null<haxe.PosInfos>) -> Void
+														[Binop:String]
+															[Const:String] "ERROR: "
+															+
+															[Const:String] "@:liveview annotation detected but LiveViewCompiler validation failed"
+														[ObjectDecl:{ methodName : String, lineNumber : Int, fileName : String, ?customParams : Null<Array<Dynamic>>, className : String }]
+															fileName: [Const:String] "../../../src/reflaxe/elixir/helpers/AnnotationSystem.hx"
+															lineNumber: [Const:Int] 307
+															className: [Const:String] "reflaxe.elixir.helpers.AnnotationSystem"
+															methodName: [Const:String] "routeCompilation"
+													[Const:Null<String>] null
+								[Case:Null<String>]
+									[Const:String] ":migration"
+									[Block:Null<String>] [Block:Null<String>] [Const:Null<String>] null
+								[Case:Null<String>]
+									[Const:String] ":protocol"
+									[Block:Null<String>]
+										[Block:Null<String>]
+											[If:Null<String>]
+												[Call:Bool]
+													[Field:(classType : haxe.macro.ClassType) -> Bool]
+														[TypeExpr reflaxe.elixir.helpers.ProtocolCompiler:Class<reflaxe.elixir.helpers.ProtocolCompiler>]
+														[FStatic:(classType : haxe.macro.ClassType) -> Bool]
+															reflaxe.elixir.helpers.ProtocolCompiler
+															isProtocolClassType:(classType : haxe.macro.ClassType) -> Bool
+													[Local classType(15202):haxe.macro.ClassType:haxe.macro.ClassType]
+												[Then:String] [Block:String]
+													[Call:String]
+														[Field:(classType : haxe.macro.ClassType, varFields : Array<reflaxe.data.ClassVarData>, funcFields : Array<reflaxe.data.ClassFuncData>) -> String]
+															[TypeExpr reflaxe.elixir.helpers.AnnotationSystem:Class<reflaxe.elixir.helpers.AnnotationSystem>]
+															[FStatic:(classType : haxe.macro.ClassType, varFields : Array<reflaxe.data.ClassVarData>, funcFields : Array<reflaxe.data.ClassFuncData>) -> String]
+																reflaxe.elixir.helpers.AnnotationSystem
+																compileProtocolClass:(classType : haxe.macro.ClassType, varFields : Array<reflaxe.data.ClassVarData>, funcFields : Array<reflaxe.data.ClassFuncData>) -> String
+														[Local classType(15202):haxe.macro.ClassType:haxe.macro.ClassType]
+														[Local varFields(15203):Array<reflaxe.data.ClassVarData>:Array<reflaxe.data.ClassVarData>]
+														[Local funcFields(15204):Array<reflaxe.data.ClassFuncData>:Array<reflaxe.data.ClassFuncData>]
+												[Else:Null<String>] [Block:Null<String>]
+													[Call:Void]
+														[Field:(v : Dynamic, ?infos : Null<haxe.PosInfos>) -> Void]
+															[TypeExpr haxe.Log:Class<haxe.Log>]
+															[FStatic:(v : Dynamic, ?infos : Null<haxe.PosInfos>) -> Void]
+																haxe.Log
+																trace:(v : Dynamic, ?infos : Null<haxe.PosInfos>) -> Void
+														[Binop:String]
+															[Const:String] "ERROR: "
+															+
+															[Const:String] "@:protocol annotation detected but ProtocolCompiler validation failed"
+														[ObjectDecl:{ methodName : String, lineNumber : Int, fileName : String, ?customParams : Null<Array<Dynamic>>, className : String }]
+															fileName: [Const:String] "../../../src/reflaxe/elixir/helpers/AnnotationSystem.hx"
+															lineNumber: [Const:Int] 255
+															className: [Const:String] "reflaxe.elixir.helpers.AnnotationSystem"
+															methodName: [Const:String] "routeCompilation"
+													[Const:Null<String>] null
+								[Case:Null<String>]
+									[Const:String] ":query"
+									[Block:Null<String>]
+										[Block:Null<String>]
+											[Call:Void]
+												[Field:(v : Dynamic, ?infos : Null<haxe.PosInfos>) -> Void]
+													[TypeExpr haxe.Log:Class<haxe.Log>]
+													[FStatic:(v : Dynamic, ?infos : Null<haxe.PosInfos>) -> Void]
+														haxe.Log
+														trace:(v : Dynamic, ?infos : Null<haxe.PosInfos>) -> Void
+												[Const:String] "WARNING: @:query annotation is not yet implemented. Query methods will be compiled as regular functions."
+												[ObjectDecl:{ methodName : String, lineNumber : Int, fileName : String, ?customParams : Null<Array<Dynamic>>, className : String }]
+													fileName: [Const:String] "../../../src/reflaxe/elixir/helpers/AnnotationSystem.hx"
+													lineNumber: [Const:Int] 313
+													className: [Const:String] "reflaxe.elixir.helpers.AnnotationSystem"
+													methodName: [Const:String] "routeCompilation"
+											[Const:Null<String>] null
+								[Case:Null<String>]
+									[Const:String] ":repo"
+									[Block:Null<String>]
+										[Block:Null<String>]
+											[If:Null<String>]
+												[Call:Bool]
+													[Field:(classType : haxe.macro.ClassType) -> Bool]
+														[TypeExpr reflaxe.elixir.helpers.RepoCompiler:Class<reflaxe.elixir.helpers.RepoCompiler>]
+														[FStatic:(classType : haxe.macro.ClassType) -> Bool]
+															reflaxe.elixir.helpers.RepoCompiler
+															isRepoClass:(classType : haxe.macro.ClassType) -> Bool
+													[Local classType(15202):haxe.macro.ClassType:haxe.macro.ClassType]
+												[Then:String] [Block:String]
+													[Call:String]
+														[Field:(classType : haxe.macro.ClassType, varFields : Array<reflaxe.data.ClassVarData>, funcFields : Array<reflaxe.data.ClassFuncData>) -> String]
+															[TypeExpr reflaxe.elixir.helpers.AnnotationSystem:Class<reflaxe.elixir.helpers.AnnotationSystem>]
+															[FStatic:(classType : haxe.macro.ClassType, varFields : Array<reflaxe.data.ClassVarData>, funcFields : Array<reflaxe.data.ClassFuncData>) -> String]
+																reflaxe.elixir.helpers.AnnotationSystem
+																compileRepoClass:(classType : haxe.macro.ClassType, varFields : Array<reflaxe.data.ClassVarData>, funcFields : Array<reflaxe.data.ClassFuncData>) -> String
+														[Local classType(15202):haxe.macro.ClassType:haxe.macro.ClassType]
+														[Local varFields(15203):Array<reflaxe.data.ClassVarData>:Array<reflaxe.data.ClassVarData>]
+														[Local funcFields(15204):Array<reflaxe.data.ClassFuncData>:Array<reflaxe.data.ClassFuncData>]
+												[Else:Null<String>] [Block:Null<String>]
+													[Call:Void]
+														[Field:(v : Dynamic, ?infos : Null<haxe.PosInfos>) -> Void]
+															[TypeExpr haxe.Log:Class<haxe.Log>]
+															[FStatic:(v : Dynamic, ?infos : Null<haxe.PosInfos>) -> Void]
+																haxe.Log
+																trace:(v : Dynamic, ?infos : Null<haxe.PosInfos>) -> Void
+														[Const:String] "ERROR: @:repo annotation detected but RepoCompiler validation failed"
+														[ObjectDecl:{ methodName : String, lineNumber : Int, fileName : String, ?customParams : Null<Array<Dynamic>>, className : String }]
+															fileName: [Const:String] "../../../src/reflaxe/elixir/helpers/AnnotationSystem.hx"
+															lineNumber: [Const:Int] 271
+															className: [Const:String] "reflaxe.elixir.helpers.AnnotationSystem"
+															methodName: [Const:String] "routeCompilation"
+													[Const:Null<String>] null
+								[Case:Null<String>]
+									[Const:String] ":router"
+									[Block:Null<String>]
+										[Block:Null<String>]
+											[If:Null<String>]
+												[Call:Bool]
+													[Field:(classType : haxe.macro.ClassType) -> Bool]
+														[TypeExpr reflaxe.elixir.helpers.RouterCompiler:Class<reflaxe.elixir.helpers.RouterCompiler>]
+														[FStatic:(classType : haxe.macro.ClassType) -> Bool]
+															reflaxe.elixir.helpers.RouterCompiler
+															isRouterClassType:(classType : haxe.macro.ClassType) -> Bool
+													[Local classType(15202):haxe.macro.ClassType:haxe.macro.ClassType]
+												[Then:String] [Block:String]
+													[Call:String]
+														[Field:(classType : haxe.macro.ClassType, varFields : Array<reflaxe.data.ClassVarData>, funcFields : Array<reflaxe.data.ClassFuncData>) -> String]
+															[TypeExpr reflaxe.elixir.helpers.AnnotationSystem:Class<reflaxe.elixir.helpers.AnnotationSystem>]
+															[FStatic:(classType : haxe.macro.ClassType, varFields : Array<reflaxe.data.ClassVarData>, funcFields : Array<reflaxe.data.ClassFuncData>) -> String]
+																reflaxe.elixir.helpers.AnnotationSystem
+																compileRouterClass:(classType : haxe.macro.ClassType, varFields : Array<reflaxe.data.ClassVarData>, funcFields : Array<reflaxe.data.ClassFuncData>) -> String
+														[Local classType(15202):haxe.macro.ClassType:haxe.macro.ClassType]
+														[Local varFields(15203):Array<reflaxe.data.ClassVarData>:Array<reflaxe.data.ClassVarData>]
+														[Local funcFields(15204):Array<reflaxe.data.ClassFuncData>:Array<reflaxe.data.ClassFuncData>]
+												[Else:Null<String>] [Block:Null<String>]
+													[Call:Void]
+														[Field:(v : Dynamic, ?infos : Null<haxe.PosInfos>) -> Void]
+															[TypeExpr haxe.Log:Class<haxe.Log>]
+															[FStatic:(v : Dynamic, ?infos : Null<haxe.PosInfos>) -> Void]
+																haxe.Log
+																trace:(v : Dynamic, ?infos : Null<haxe.PosInfos>) -> Void
+														[Binop:String]
+															[Const:String] "ERROR: "
+															+
+															[Const:String] "@:router annotation detected but RouterCompiler validation failed"
+														[ObjectDecl:{ methodName : String, lineNumber : Int, fileName : String, ?customParams : Null<Array<Dynamic>>, className : String }]
+															fileName: [Const:String] "../../../src/reflaxe/elixir/helpers/AnnotationSystem.hx"
+															lineNumber: [Const:Int] 231
+															className: [Const:String] "reflaxe.elixir.helpers.AnnotationSystem"
+															methodName: [Const:String] "routeCompilation"
+													[Const:Null<String>] null
+								[Case:Null<String>]
+									[Const:String] ":schema"
+									[Block:Null<String>] [Block:Null<String>] [Const:Null<String>] null
+								[Case:Null<String>]
+									[Const:String] ":template"
+									[Block:Null<String>]
+										[Block:Null<String>]
+											[If:Null<String>]
+												[Call:Bool]
+													[Field:(classType : haxe.macro.ClassType) -> Bool]
+														[TypeExpr reflaxe.elixir.helpers.TemplateCompiler:Class<reflaxe.elixir.helpers.TemplateCompiler>]
+														[FStatic:(classType : haxe.macro.ClassType) -> Bool]
+															reflaxe.elixir.helpers.TemplateCompiler
+															isTemplateClassType:(classType : haxe.macro.ClassType) -> Bool
+													[Local classType(15202):haxe.macro.ClassType:haxe.macro.ClassType]
+												[Then:String] [Block:String]
+													[Call:String]
+														[Field:(classType : haxe.macro.ClassType, varFields : Array<reflaxe.data.ClassVarData>, funcFields : Array<reflaxe.data.ClassFuncData>) -> String]
+															[TypeExpr reflaxe.elixir.helpers.AnnotationSystem:Class<reflaxe.elixir.helpers.AnnotationSystem>]
+															[FStatic:(classType : haxe.macro.ClassType, varFields : Array<reflaxe.data.ClassVarData>, funcFields : Array<reflaxe.data.ClassFuncData>) -> String]
+																reflaxe.elixir.helpers.AnnotationSystem
+																compileTemplateClass:(classType : haxe.macro.ClassType, varFields : Array<reflaxe.data.ClassVarData>, funcFields : Array<reflaxe.data.ClassFuncData>) -> String
+														[Local classType(15202):haxe.macro.ClassType:haxe.macro.ClassType]
+														[Local varFields(15203):Array<reflaxe.data.ClassVarData>:Array<reflaxe.data.ClassVarData>]
+														[Local funcFields(15204):Array<reflaxe.data.ClassFuncData>:Array<reflaxe.data.ClassFuncData>]
+												[Else:Null<String>] [Block:Null<String>]
+													[Call:Void]
+														[Field:(v : Dynamic, ?infos : Null<haxe.PosInfos>) -> Void]
+															[TypeExpr haxe.Log:Class<haxe.Log>]
+															[FStatic:(v : Dynamic, ?infos : Null<haxe.PosInfos>) -> Void]
+																haxe.Log
+																trace:(v : Dynamic, ?infos : Null<haxe.PosInfos>) -> Void
+														[Binop:String]
+															[Const:String] "ERROR: "
+															+
+															[Const:String] "@:template annotation detected but TemplateCompiler validation failed"
+														[ObjectDecl:{ methodName : String, lineNumber : Int, fileName : String, ?customParams : Null<Array<Dynamic>>, className : String }]
+															fileName: [Const:String] "../../../src/reflaxe/elixir/helpers/AnnotationSystem.hx"
+															lineNumber: [Const:Int] 283
+															className: [Const:String] "reflaxe.elixir.helpers.AnnotationSystem"
+															methodName: [Const:String] "routeCompilation"
+													[Const:Null<String>] null
+								[Default:Null<String>]
+									[Block:Null<String>]
+										[Call:Void]
+											[Field:(v : Dynamic, ?infos : Null<haxe.PosInfos>) -> Void]
+												[TypeExpr haxe.Log:Class<haxe.Log>]
+												[FStatic:(v : Dynamic, ?infos : Null<haxe.PosInfos>) -> Void]
+													haxe.Log
+													trace:(v : Dynamic, ?infos : Null<haxe.PosInfos>) -> Void
+											[Binop:String]
+												[Const:String] "ERROR: Unknown annotation: "
+												+
+												[Field:Null<String>]
+													[Local annotationInfo(15205):reflaxe.elixir.helpers.AnnotationInfo:reflaxe.elixir.helpers.AnnotationInfo]
+													[FAnon:Null<String>] primaryAnnotation:Null<String>
+											[ObjectDecl:{ methodName : String, lineNumber : Int, fileName : String, ?customParams : Null<Array<Dynamic>>, className : String }]
+												fileName: [Const:String] "../../../src/reflaxe/elixir/helpers/AnnotationSystem.hx"
+												lineNumber: [Const:Int] 322
+												className: [Const:String] "reflaxe.elixir.helpers.AnnotationSystem"
+												methodName: [Const:String] "routeCompilation"
+										[Const:Null<String>] null
+
+	public static function getAppName[Function:(classType : haxe.macro.ClassType) -> Null<String>]
+		[Arg:haxe.macro.ClassType] [Local classType(15253):haxe.macro.ClassType]
+		[Block:Dynamic]
+			[If:Void]
+				[Call:Bool]
+					[Field:(name : String) -> Bool]
+						[Field:haxe.macro.MetaAccess]
+							[Local classType(15253):haxe.macro.ClassType:haxe.macro.ClassType]
+							[FAnon:haxe.macro.MetaAccess] meta:haxe.macro.MetaAccess
+						[FAnon:(name : String) -> Bool] has:(name : String) -> Bool
+					[Const:String] ":appName"
+				[Then:Void] [Block:Void]
+					[Var appNameMeta(15254):Array<haxe.macro.MetadataEntry>]
+						[Call:Array<haxe.macro.MetadataEntry>]
+							[Field:(name : String) -> Array<haxe.macro.MetadataEntry>]
+								[Field:haxe.macro.MetaAccess]
+									[Local classType(15253):haxe.macro.ClassType:haxe.macro.ClassType]
+									[FAnon:haxe.macro.MetaAccess] meta:haxe.macro.MetaAccess
+								[FAnon:(name : String) -> Array<haxe.macro.MetadataEntry>] extract:(name : String) -> Array<haxe.macro.MetadataEntry>
+							[Const:String] ":appName"
+					[If:Void]
+						[Binop:Bool]
+							[Field:Int]
+								[Local appNameMeta(15254):Array<haxe.macro.MetadataEntry>:Array<haxe.macro.MetadataEntry>]
+								[FInstance:Int]
+									Array<haxe.macro.MetadataEntry>
+									length:Int
+							>
+							[Const:Int] 0
+						[Then:Void] [Block:Void]
+							[Var params(15255):Null<Array<haxe.macro.Expr>>]
+								[Field:Null<Array<haxe.macro.Expr>>]
+									[Array:haxe.macro.MetadataEntry]
+										[Local appNameMeta(15254):Array<haxe.macro.MetadataEntry>:Array<haxe.macro.MetadataEntry>]
+										[Const:Int] 0
+									[FAnon:Null<Array<haxe.macro.Expr>>] params:Null<Array<haxe.macro.Expr>>
+							[If:Void]
+								[Binop:Bool]
+									[Binop:Bool]
+										[Local params(15255):Null<Array<haxe.macro.Expr>>:Null<Array<haxe.macro.Expr>>]
+										!=
+										[Const:Null<Array<haxe.macro.Expr>>] null
+									&&
+									[Binop:Bool]
+										[Field:Int]
+											[Local params(15255):Null<Array<haxe.macro.Expr>>:Null<Array<haxe.macro.Expr>>]
+											[FInstance:Int]
+												Array<haxe.macro.Expr>
+												length:Int
+										>
+										[Const:Int] 0
+								[Then:Void] [Block:Void]
+									[Meta:Void]
+										:ast(switch (params[0].expr) {
+	case EConst(CString(s, _)):
+		globalAppNameRegistry = s;
+		return s;	
+	default:
+		trace("WARNING: @:appName annotation must contain a string value. Example: @:appName('MyApp')");	
+})
+										[Block:Void]
+											[Var `(15261):haxe.macro.ExprDef]
+												[Field:haxe.macro.ExprDef]
+													[Array:haxe.macro.Expr]
+														[Local params(15255):Null<Array<haxe.macro.Expr>>:Null<Array<haxe.macro.Expr>>]
+														[Const:Int] 0
+													[FAnon:haxe.macro.ExprDef] expr:haxe.macro.ExprDef
+											[If:Void]
+												[Binop:Bool]
+													[EnumIndex:Int] [Local `(15261):haxe.macro.ExprDef:haxe.macro.ExprDef]
+													==
+													[Const:Int] 0
+												[Then:Void] [Block:Void]
+													[Var `(15262):haxe.macro.Constant]
+														[EnumParameter:haxe.macro.Constant]
+															[Local `(15261):haxe.macro.ExprDef:haxe.macro.ExprDef]
+															EConst
+															0
+													[If:Void]
+														[Binop:Bool]
+															[EnumIndex:Int] [Local `(15262):haxe.macro.Constant:haxe.macro.Constant]
+															==
+															[Const:Int] 2
+														[Then:Dynamic] [Block:Dynamic]
+															[Var `(15263):String]
+																[EnumParameter:String]
+																	[Local `(15262):haxe.macro.Constant:haxe.macro.Constant]
+																	CString
+																	0
+															[Var `(15264):Null<haxe.macro.StringLiteralKind>]
+																[EnumParameter:Null<haxe.macro.StringLiteralKind>]
+																	[Local `(15262):haxe.macro.Constant:haxe.macro.Constant]
+																	CString
+																	1
+															[Block:Dynamic]
+																[Var s(15265):String] [Local `(15263):String:String]
+																[Block:Dynamic]
+																	[Binop:Null<String>]
+																		[Field:Null<String>]
+																			[TypeExpr reflaxe.elixir.helpers.AnnotationSystem:Class<reflaxe.elixir.helpers.AnnotationSystem>]
+																			[FStatic:Null<String>]
+																				reflaxe.elixir.helpers.AnnotationSystem
+																				globalAppNameRegistry:Null<String>
+																		=
+																		[Local s(15265):String:String]
+																	[Return:Dynamic] [Local s(15265):String:String]
+														[Else:Void] [Block:Void]
+															[Call:Void]
+																[Field:(v : Dynamic, ?infos : Null<haxe.PosInfos>) -> Void]
+																	[TypeExpr haxe.Log:Class<haxe.Log>]
+																	[FStatic:(v : Dynamic, ?infos : Null<haxe.PosInfos>) -> Void]
+																		haxe.Log
+																		trace:(v : Dynamic, ?infos : Null<haxe.PosInfos>) -> Void
+																[Const:String] "WARNING: @:appName annotation must contain a string value. Example: @:appName('MyApp')"
+																[ObjectDecl:{ methodName : String, lineNumber : Int, fileName : String, ?customParams : Null<Array<Dynamic>>, className : String }]
+																	fileName: [Const:String] "../../../src/reflaxe/elixir/helpers/AnnotationSystem.hx"
+																	lineNumber: [Const:Int] 344
+																	className: [Const:String] "reflaxe.elixir.helpers.AnnotationSystem"
+																	methodName: [Const:String] "getAppName"
+												[Else:Void] [Block:Void]
+													[Call:Void]
+														[Field:(v : Dynamic, ?infos : Null<haxe.PosInfos>) -> Void]
+															[TypeExpr haxe.Log:Class<haxe.Log>]
+															[FStatic:(v : Dynamic, ?infos : Null<haxe.PosInfos>) -> Void]
+																haxe.Log
+																trace:(v : Dynamic, ?infos : Null<haxe.PosInfos>) -> Void
+														[Const:String] "WARNING: @:appName annotation must contain a string value. Example: @:appName('MyApp')"
+														[ObjectDecl:{ methodName : String, lineNumber : Int, fileName : String, ?customParams : Null<Array<Dynamic>>, className : String }]
+															fileName: [Const:String] "../../../src/reflaxe/elixir/helpers/AnnotationSystem.hx"
+															lineNumber: [Const:Int] 344
+															className: [Const:String] "reflaxe.elixir.helpers.AnnotationSystem"
+															methodName: [Const:String] "getAppName"
+								[Else:Void] [Block:Void]
+									[Call:Void]
+										[Field:(v : Dynamic, ?infos : Null<haxe.PosInfos>) -> Void]
+											[TypeExpr haxe.Log:Class<haxe.Log>]
+											[FStatic:(v : Dynamic, ?infos : Null<haxe.PosInfos>) -> Void]
+												haxe.Log
+												trace:(v : Dynamic, ?infos : Null<haxe.PosInfos>) -> Void
+										[Const:String] "WARNING: @:appName annotation requires a value. Example: @:appName('MyApp')"
+										[ObjectDecl:{ methodName : String, lineNumber : Int, fileName : String, ?customParams : Null<Array<Dynamic>>, className : String }]
+											fileName: [Const:String] "../../../src/reflaxe/elixir/helpers/AnnotationSystem.hx"
+											lineNumber: [Const:Int] 347
+											className: [Const:String] "reflaxe.elixir.helpers.AnnotationSystem"
+											methodName: [Const:String] "getAppName"
+			[Return:Dynamic] [Const:Null<String>] null
+
+	public static function getEffectiveAppName[Function:(classType : haxe.macro.ClassType) -> String]
+		[Arg:haxe.macro.ClassType] [Local classType(15252):haxe.macro.ClassType]
+		[Block:Dynamic]
+			[Var annotatedName(15266):Null<String>]
+				[Call:Null<String>]
+					[Field:(classType : haxe.macro.ClassType) -> Null<String>]
+						[TypeExpr reflaxe.elixir.helpers.AnnotationSystem:Class<reflaxe.elixir.helpers.AnnotationSystem>]
+						[FStatic:(classType : haxe.macro.ClassType) -> Null<String>]
+							reflaxe.elixir.helpers.AnnotationSystem
+							getAppName:(classType : haxe.macro.ClassType) -> Null<String>
+					[Local classType(15252):haxe.macro.ClassType:haxe.macro.ClassType]
+			[If:Void]
+				[Binop:Bool]
+					[Local annotatedName(15266):Null<String>:Null<String>]
+					!=
+					[Const:Null<String>] null
+				[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [Local annotatedName(15266):Null<String>:Null<String>]
+			[Var globalAppName(15267):Null<String>]
+				[Call:Null<String>]
+					[Field:() -> Null<String>]
+						[TypeExpr reflaxe.elixir.helpers.AnnotationSystem:Class<reflaxe.elixir.helpers.AnnotationSystem>]
+						[FStatic:() -> Null<String>]
+							reflaxe.elixir.helpers.AnnotationSystem
+							getGlobalAppName:() -> Null<String>
+			[If:Void]
+				[Binop:Bool]
+					[Local globalAppName(15267):Null<String>:Null<String>]
+					!=
+					[Const:Null<String>] null
+				[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [Local globalAppName(15267):Null<String>:Null<String>]
+			[Var className(15268):String]
+				[Field:String]
+					[Local classType(15252):haxe.macro.ClassType:haxe.macro.ClassType]
+					[FAnon:String] name:String
+			[If:Void]
+				[Binop:Bool]
+					[Call:Int]
+						[Field:(str : String, ?startIndex : Null<Int>) -> Int]
+							[Local className(15268):String:String]
+							[FInstance:(str : String, ?startIndex : Null<Int>) -> Int]
+								String
+								indexOf:(str : String, ?startIndex : Null<Int>) -> Int
+						[Const:String] "App"
+						[Const:Null<Int>] null
+					>
+					[Const:Int] 0
+				[Then:Dynamic] [Block:Dynamic]
+					[Return:Dynamic]
+						[Binop:String]
+							[Array:String]
+								[Call:Array<String>]
+									[Field:(delimiter : String) -> Array<String>]
+										[Local className(15268):String:String]
+										[FInstance:(delimiter : String) -> Array<String>]
+											String
+											split:(delimiter : String) -> Array<String>
+									[Const:String] "App"
+								[Const:Int] 0
+							+
+							[Const:String] "App"
+			[Return:Dynamic] [Const:String] "App"
+
+	public static function getGlobalAppName[Function:() -> Null<String>]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Field:Null<String>]
+					[TypeExpr reflaxe.elixir.helpers.AnnotationSystem:Class<reflaxe.elixir.helpers.AnnotationSystem>]
+					[FStatic:Null<String>]
+						reflaxe.elixir.helpers.AnnotationSystem
+						globalAppNameRegistry:Null<String>
+
+	public static function generateAnnotationDocs[Function:() -> String]
+		[Block:Dynamic]
+			[Var result(16841):StringBuf] [New:StringBuf] StringBuf
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(16841):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "# Reflaxe.Elixir Annotation Reference\n\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(16841):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "## Supported Annotations\n\n"
+			[Block:Void]
+				[Var `(16844):Int] [Const:Int] 0
+				[Var `(16845):Array<String>]
+					[Field:Array<String>]
+						[TypeExpr reflaxe.elixir.helpers.AnnotationSystem:Class<reflaxe.elixir.helpers.AnnotationSystem>]
+						[FStatic:Array<String>]
+							reflaxe.elixir.helpers.AnnotationSystem
+							SUPPORTED_ANNOTATIONS:Array<String>
+				[While:Void]
+					[Binop:Bool]
+						[Local `(16844):Int:Int]
+						<
+						[Field:Int]
+							[Local `(16845):Array<String>:Array<String>]
+							[FInstance:Int]
+								Array<String>
+								length:Int
+					[Block:Void]
+						[Var annotation(16842):String]
+							[Array:String]
+								[Local `(16845):Array<String>:Array<String>]
+								[Local `(16844):Int:Int]
+						[Unop:Int]
+							++
+							Prefix
+							[Local `(16844):Int:Int]
+						[Call:Void]
+							[Field:(x : String) -> Void]
+								[Local result(16841):StringBuf:StringBuf]
+								[FInstance:(x : String) -> Void]
+									StringBuf
+									add:(x : add.T) -> Void
+							[Binop:String]
+								[Binop:String]
+									[Binop:String]
+										[Binop:String]
+											[Const:String] "- **"
+											+
+											[Local annotation(16842):String:String]
+										+
+										[Const:String] "** - "
+									+
+									[Call:String]
+										[Field:(annotation : String) -> String]
+											[TypeExpr reflaxe.elixir.helpers.AnnotationSystem:Class<reflaxe.elixir.helpers.AnnotationSystem>]
+											[FStatic:(annotation : String) -> String]
+												reflaxe.elixir.helpers.AnnotationSystem
+												getAnnotationDescription:(annotation : String) -> String
+										[Local annotation(16842):String:String]
+								+
+								[Const:String] "\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(16841):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "\n## Annotation Combinations\n\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(16841):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "### Compatible Combinations:\n"
+			[Block:Void]
+				[Var `(16847):Int] [Const:Int] 0
+				[Var `(16848):Array<Array<String>>]
+					[Field:Array<Array<String>>]
+						[TypeExpr reflaxe.elixir.helpers.AnnotationSystem:Class<reflaxe.elixir.helpers.AnnotationSystem>]
+						[FStatic:Array<Array<String>>]
+							reflaxe.elixir.helpers.AnnotationSystem
+							COMPATIBLE_COMBINATIONS:Array<Array<String>>
+				[While:Void]
+					[Binop:Bool]
+						[Local `(16847):Int:Int]
+						<
+						[Field:Int]
+							[Local `(16848):Array<Array<String>>:Array<Array<String>>]
+							[FInstance:Int]
+								Array<Array<String>>
+								length:Int
+					[Block:Void]
+						[Var combination(16846):Array<String>]
+							[Array:Array<String>]
+								[Local `(16848):Array<Array<String>>:Array<Array<String>>]
+								[Local `(16847):Int:Int]
+						[Unop:Int]
+							++
+							Prefix
+							[Local `(16847):Int:Int]
+						[Call:Void]
+							[Field:(x : String) -> Void]
+								[Local result(16841):StringBuf:StringBuf]
+								[FInstance:(x : String) -> Void]
+									StringBuf
+									add:(x : add.T) -> Void
+							[Binop:String]
+								[Binop:String]
+									[Const:String] "- "
+									+
+									[Call:String]
+										[Field:(sep : String) -> String]
+											[Local combination(16846):Array<String>:Array<String>]
+											[FInstance:(sep : String) -> String]
+												Array<String>
+												join:(sep : String) -> String
+										[Const:String] " + "
+								+
+								[Const:String] "\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(16841):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "\n### Exclusive Groups (mutually exclusive):\n"
+			[Block:Void]
+				[Var `(16850):Int] [Const:Int] 0
+				[Var `(16851):Array<Array<String>>]
+					[Field:Array<Array<String>>]
+						[TypeExpr reflaxe.elixir.helpers.AnnotationSystem:Class<reflaxe.elixir.helpers.AnnotationSystem>]
+						[FStatic:Array<Array<String>>]
+							reflaxe.elixir.helpers.AnnotationSystem
+							EXCLUSIVE_GROUPS:Array<Array<String>>
+				[While:Void]
+					[Binop:Bool]
+						[Local `(16850):Int:Int]
+						<
+						[Field:Int]
+							[Local `(16851):Array<Array<String>>:Array<Array<String>>]
+							[FInstance:Int]
+								Array<Array<String>>
+								length:Int
+					[Block:Void]
+						[Var group(16849):Array<String>]
+							[Array:Array<String>]
+								[Local `(16851):Array<Array<String>>:Array<Array<String>>]
+								[Local `(16850):Int:Int]
+						[Unop:Int]
+							++
+							Prefix
+							[Local `(16850):Int:Int]
+						[Call:Void]
+							[Field:(x : String) -> Void]
+								[Local result(16841):StringBuf:StringBuf]
+								[FInstance:(x : String) -> Void]
+									StringBuf
+									add:(x : add.T) -> Void
+							[Binop:String]
+								[Binop:String]
+									[Const:String] "- "
+									+
+									[Call:String]
+										[Field:(sep : String) -> String]
+											[Local group(16849):Array<String>:Array<String>]
+											[FInstance:(sep : String) -> String]
+												Array<String>
+												join:(sep : String) -> String
+										[Const:String] " | "
+								+
+								[Const:String] " (choose one)\n"
+			[Return:Dynamic]
+				[Call:String]
+					[Field:() -> String]
+						[Local result(16841):StringBuf:StringBuf]
+						[FInstance:() -> String]
+							StringBuf
+							toString:() -> String
+
+	static function getAnnotationDescription[Function:(annotation : String) -> String]
+		[Arg:String] [Local annotation(16843):String]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Meta:String]
+					:ast(switch (annotation) {
+	case ":genserver":
+		"OTP GenServer with lifecycle callbacks";	
+	case ":router":
+		"Phoenix Router with route definitions";	
+	case ":endpoint":
+		"Phoenix Endpoint with HTTP configuration";	
+	case ":protocol":
+		"Elixir protocol for polymorphic dispatch";	
+	case ":impl":
+		"Protocol implementation for specific types";	
+	case ":migration":
+		"Ecto database migration with table operations";	
+	case ":template":
+		"Phoenix HEEx template with component integration";	
+	case ":schema":
+		"Ecto schema with field definitions and associations";	
+	case ":changeset":
+		"Ecto changeset with validation pipeline";	
+	case ":liveview":
+		"Phoenix LiveView with real-time updates";	
+	case ":component":
+		"Phoenix UI components with type-safe renders";	
+	case ":query":
+		"Ecto query DSL with type-safe operations";	
+	case ":appName":
+		"Application name configuration for module naming";	
+	default:
+		"Unknown annotation";	
+})
+					[Switch:String]
+						[Local annotation(16843):String:String]
+						[Case:String]
+							[Const:String] ":appName"
+							[Block:String] [Block:String] [Const:String] "Application name configuration for module naming"
+						[Case:String]
+							[Const:String] ":changeset"
+							[Block:String] [Block:String] [Const:String] "Ecto changeset with validation pipeline"
+						[Case:String]
+							[Const:String] ":component"
+							[Block:String] [Block:String] [Const:String] "Phoenix UI components with type-safe renders"
+						[Case:String]
+							[Const:String] ":endpoint"
+							[Block:String] [Block:String] [Const:String] "Phoenix Endpoint with HTTP configuration"
+						[Case:String]
+							[Const:String] ":genserver"
+							[Block:String] [Block:String] [Const:String] "OTP GenServer with lifecycle callbacks"
+						[Case:String]
+							[Const:String] ":impl"
+							[Block:String] [Block:String] [Const:String] "Protocol implementation for specific types"
+						[Case:String]
+							[Const:String] ":liveview"
+							[Block:String] [Block:String] [Const:String] "Phoenix LiveView with real-time updates"
+						[Case:String]
+							[Const:String] ":migration"
+							[Block:String] [Block:String] [Const:String] "Ecto database migration with table operations"
+						[Case:String]
+							[Const:String] ":protocol"
+							[Block:String] [Block:String] [Const:String] "Elixir protocol for polymorphic dispatch"
+						[Case:String]
+							[Const:String] ":query"
+							[Block:String] [Block:String] [Const:String] "Ecto query DSL with type-safe operations"
+						[Case:String]
+							[Const:String] ":router"
+							[Block:String] [Block:String] [Const:String] "Phoenix Router with route definitions"
+						[Case:String]
+							[Const:String] ":schema"
+							[Block:String] [Block:String] [Const:String] "Ecto schema with field definitions and associations"
+						[Case:String]
+							[Const:String] ":template"
+							[Block:String] [Block:String] [Const:String] "Phoenix HEEx template with component integration"
+						[Default:String] [Block:String] [Const:String] "Unknown annotation"
+
+	static function compileControllerClass[Function:(classType : haxe.macro.ClassType, varFields : Array<reflaxe.data.ClassVarData>, funcFields : Array<reflaxe.data.ClassFuncData>) -> String]
+		[Arg:haxe.macro.ClassType] [Local classType(15210):haxe.macro.ClassType]
+		[Arg:Array<reflaxe.data.ClassVarData>] [Local varFields(15211):Array<reflaxe.data.ClassVarData>]
+		[Arg:Array<reflaxe.data.ClassFuncData>] [Local funcFields(15212):Array<reflaxe.data.ClassFuncData>]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Call:String]
+					[Field:(classType : haxe.macro.ClassType) -> String]
+						[TypeExpr reflaxe.elixir.helpers.RouterCompiler:Class<reflaxe.elixir.helpers.RouterCompiler>]
+						[FStatic:(classType : haxe.macro.ClassType) -> String]
+							reflaxe.elixir.helpers.RouterCompiler
+							compileController:(classType : haxe.macro.ClassType) -> String
+					[Local classType(15210):haxe.macro.ClassType:haxe.macro.ClassType]
+
+	static function compileRouterClass[Function:(classType : haxe.macro.ClassType, varFields : Array<reflaxe.data.ClassVarData>, funcFields : Array<reflaxe.data.ClassFuncData>) -> String]
+		[Arg:haxe.macro.ClassType] [Local classType(15246):haxe.macro.ClassType]
+		[Arg:Array<reflaxe.data.ClassVarData>] [Local varFields(15247):Array<reflaxe.data.ClassVarData>]
+		[Arg:Array<reflaxe.data.ClassFuncData>] [Local funcFields(15248):Array<reflaxe.data.ClassFuncData>]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Call:String]
+					[Field:(classType : haxe.macro.ClassType) -> String]
+						[TypeExpr reflaxe.elixir.helpers.RouterCompiler:Class<reflaxe.elixir.helpers.RouterCompiler>]
+						[FStatic:(classType : haxe.macro.ClassType) -> String]
+							reflaxe.elixir.helpers.RouterCompiler
+							compileRouter:(classType : haxe.macro.ClassType) -> String
+					[Local classType(15246):haxe.macro.ClassType:haxe.macro.ClassType]
+
+	static function compileChannelClass[Function:(classType : haxe.macro.ClassType, varFields : Array<reflaxe.data.ClassVarData>, funcFields : Array<reflaxe.data.ClassFuncData>) -> String]
+		[Arg:haxe.macro.ClassType] [Local classType(15452):haxe.macro.ClassType]
+		[Arg:Array<reflaxe.data.ClassVarData>] [Local varFields(15453):Array<reflaxe.data.ClassVarData>]
+		[Arg:Array<reflaxe.data.ClassFuncData>] [Local funcFields(15454):Array<reflaxe.data.ClassFuncData>]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Call:String]
+					[Field:(classType : haxe.macro.ClassType, content : String) -> String]
+						[TypeExpr reflaxe.elixir.helpers.ChannelCompiler:Class<reflaxe.elixir.helpers.ChannelCompiler>]
+						[FStatic:(classType : haxe.macro.ClassType, content : String) -> String]
+							reflaxe.elixir.helpers.ChannelCompiler
+							compileChannel:(classType : haxe.macro.ClassType, content : String) -> String
+					[Local classType(15452):haxe.macro.ClassType:haxe.macro.ClassType]
+					[Const:String] ""
+
+	static function compileBehaviorClass[Function:(classType : haxe.macro.ClassType, varFields : Array<reflaxe.data.ClassVarData>, funcFields : Array<reflaxe.data.ClassFuncData>) -> String]
+		[Arg:haxe.macro.ClassType] [Local classType(15499):haxe.macro.ClassType]
+		[Arg:Array<reflaxe.data.ClassVarData>] [Local varFields(15500):Array<reflaxe.data.ClassVarData>]
+		[Arg:Array<reflaxe.data.ClassFuncData>] [Local funcFields(15501):Array<reflaxe.data.ClassFuncData>]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Call:String]
+					[Field:(classType : haxe.macro.ClassType) -> String]
+						[TypeExpr reflaxe.elixir.helpers.BehaviorCompiler:Class<reflaxe.elixir.helpers.BehaviorCompiler>]
+						[FStatic:(classType : haxe.macro.ClassType) -> String]
+							reflaxe.elixir.helpers.BehaviorCompiler
+							compileBehavior:(classType : haxe.macro.ClassType) -> String
+					[Local classType(15499):haxe.macro.ClassType:haxe.macro.ClassType]
+
+	static function compileProtocolClass[Function:(classType : haxe.macro.ClassType, varFields : Array<reflaxe.data.ClassVarData>, funcFields : Array<reflaxe.data.ClassFuncData>) -> String]
+		[Arg:haxe.macro.ClassType] [Local classType(15580):haxe.macro.ClassType]
+		[Arg:Array<reflaxe.data.ClassVarData>] [Local varFields(15581):Array<reflaxe.data.ClassVarData>]
+		[Arg:Array<reflaxe.data.ClassFuncData>] [Local funcFields(15582):Array<reflaxe.data.ClassFuncData>]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Call:String]
+					[Field:(classType : haxe.macro.ClassType) -> String]
+						[TypeExpr reflaxe.elixir.helpers.ProtocolCompiler:Class<reflaxe.elixir.helpers.ProtocolCompiler>]
+						[FStatic:(classType : haxe.macro.ClassType) -> String]
+							reflaxe.elixir.helpers.ProtocolCompiler
+							compileProtocol:(classType : haxe.macro.ClassType) -> String
+					[Local classType(15580):haxe.macro.ClassType:haxe.macro.ClassType]
+
+	static function compileImplClass[Function:(classType : haxe.macro.ClassType, varFields : Array<reflaxe.data.ClassVarData>, funcFields : Array<reflaxe.data.ClassFuncData>) -> String]
+		[Arg:haxe.macro.ClassType] [Local classType(15663):haxe.macro.ClassType]
+		[Arg:Array<reflaxe.data.ClassVarData>] [Local varFields(15664):Array<reflaxe.data.ClassVarData>]
+		[Arg:Array<reflaxe.data.ClassFuncData>] [Local funcFields(15665):Array<reflaxe.data.ClassFuncData>]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Call:String]
+					[Field:(classType : haxe.macro.ClassType) -> String]
+						[TypeExpr reflaxe.elixir.helpers.ProtocolCompiler:Class<reflaxe.elixir.helpers.ProtocolCompiler>]
+						[FStatic:(classType : haxe.macro.ClassType) -> String]
+							reflaxe.elixir.helpers.ProtocolCompiler
+							compileImplementation:(classType : haxe.macro.ClassType) -> String
+					[Local classType(15663):haxe.macro.ClassType:haxe.macro.ClassType]
+
+	static function compileRepoClass[Function:(classType : haxe.macro.ClassType, varFields : Array<reflaxe.data.ClassVarData>, funcFields : Array<reflaxe.data.ClassFuncData>) -> String]
+		[Arg:haxe.macro.ClassType] [Local classType(15724):haxe.macro.ClassType]
+		[Arg:Array<reflaxe.data.ClassVarData>] [Local varFields(15725):Array<reflaxe.data.ClassVarData>]
+		[Arg:Array<reflaxe.data.ClassFuncData>] [Local funcFields(15726):Array<reflaxe.data.ClassFuncData>]
+		[Block:Dynamic]
+			[Var className(15727):String]
+				[Call:String]
+					[Field:(v : reflaxe.helpers.NameAndMeta) -> String]
+						[TypeExpr reflaxe.helpers.NameMetaHelper:{ Statics reflaxe.helpers.NameMetaHelper }]
+						[FStatic:(v : reflaxe.helpers.NameAndMeta) -> String]
+							reflaxe.helpers.NameMetaHelper
+							getNameOrNative:(v : reflaxe.helpers.NameAndMeta) -> String
+					[Local classType(15724):haxe.macro.ClassType:haxe.macro.ClassType]
+			[Return:Dynamic]
+				[Call:String]
+					[Field:(classType : haxe.macro.ClassType, className : String) -> String]
+						[TypeExpr reflaxe.elixir.helpers.RepoCompiler:Class<reflaxe.elixir.helpers.RepoCompiler>]
+						[FStatic:(classType : haxe.macro.ClassType, className : String) -> String]
+							reflaxe.elixir.helpers.RepoCompiler
+							compileRepoModule:(classType : haxe.macro.ClassType, className : String) -> String
+					[Local classType(15724):haxe.macro.ClassType:haxe.macro.ClassType]
+					[Local className(15727):String:String]
+
+	static function compileMigrationClass[Function:(classType : haxe.macro.ClassType, varFields : Array<reflaxe.data.ClassVarData>, funcFields : Array<reflaxe.data.ClassFuncData>) -> String]
+		[Arg:haxe.macro.ClassType] [Local classType(16852):haxe.macro.ClassType]
+		[Arg:Array<reflaxe.data.ClassVarData>] [Local varFields(16853):Array<reflaxe.data.ClassVarData>]
+		[Arg:Array<reflaxe.data.ClassFuncData>] [Local funcFields(16854):Array<reflaxe.data.ClassFuncData>]
+		[Block:Dynamic]
+			[Var className(16855):String]
+				[Field:String]
+					[Local classType(16852):haxe.macro.ClassType:haxe.macro.ClassType]
+					[FAnon:String] name:String
+			[Var tableName(16863):String]
+				[Call:String]
+					[Field:(classType : haxe.macro.ClassType) -> String]
+						[TypeExpr reflaxe.elixir.helpers.AnnotationSystem:Class<reflaxe.elixir.helpers.AnnotationSystem>]
+						[FStatic:(classType : haxe.macro.ClassType) -> String]
+							reflaxe.elixir.helpers.AnnotationSystem
+							extractTableNameFromClass:(classType : haxe.macro.ClassType) -> String
+					[Local classType(16852):haxe.macro.ClassType:haxe.macro.ClassType]
+			[Return:Dynamic]
+				[Binop:String]
+					[Binop:String]
+						[Binop:String]
+							[Binop:String]
+								[Binop:String]
+									[Binop:String]
+										[Binop:String]
+											[Binop:String]
+												[Binop:String]
+													[Binop:String]
+														[Binop:String]
+															[Const:String] "defmodule "
+															+
+															[Local className(16855):String:String]
+														+
+														[Const:String] " do\n"
+													+
+													[Const:String] "  use Ecto.Migration\n\n"
+												+
+												[Const:String] "  def up do\n"
+											+
+											[Const:String] "    # Migration generated from @:migration annotation\n"
+										+
+										[Const:String] "    # TODO: Use proper AST-based MigrationCompiler\n"
+									+
+									[Const:String] "  end\n\n"
+								+
+								[Const:String] "  def down do\n"
+							+
+							[Const:String] "    # Rollback logic here\n"
+						+
+						[Const:String] "  end\n"
+					+
+					[Const:String] "end\n"
+
+	static function extractTableNameFromClass[Function:(classType : haxe.macro.ClassType) -> String]
+		[Arg:haxe.macro.ClassType] [Local classType(16856):haxe.macro.ClassType]
+		[Block:Dynamic]
+			[Var name(16857):String]
+				[Field:String]
+					[Local classType(16856):haxe.macro.ClassType:haxe.macro.ClassType]
+					[FAnon:String] name:String
+			[Binop:String]
+				[Local name(16857):String:String]
+				=
+				[Call:String]
+					[Field:(s : String, sub : String, by : String) -> String]
+						[TypeExpr StringTools:Class<StringTools>]
+						[FStatic:(s : String, sub : String, by : String) -> String]
+							StringTools
+							replace:(s : String, sub : String, by : String) -> String
+					[Local name(16857):String:String]
+					[Const:String] "Create"
+					[Const:String] ""
+			[Binop:String]
+				[Local name(16857):String:String]
+				=
+				[Call:String]
+					[Field:(s : String, sub : String, by : String) -> String]
+						[TypeExpr StringTools:Class<StringTools>]
+						[FStatic:(s : String, sub : String, by : String) -> String]
+							StringTools
+							replace:(s : String, sub : String, by : String) -> String
+					[Local name(16857):String:String]
+					[Const:String] "Migration"
+					[Const:String] ""
+			[Var snakeCase(16858):String] [Const:String] ""
+			[Block:Void]
+				[Var `(16861):Int] [Const:Int] 0
+				[Var `(16862):Int]
+					[Field:Int]
+						[Local name(16857):String:String]
+						[FInstance:Int]
+							String
+							length:Int
+				[While:Void]
+					[Binop:Bool]
+						[Local `(16861):Int:Int]
+						<
+						[Local `(16862):Int:Int]
+					[Block:String]
+						[Var i(16859):Int]
+							[Unop:Int]
+								++
+								Postfix
+								[Local `(16861):Int:Int]
+						[Var c(16860):String]
+							[Call:String]
+								[Field:(index : Int) -> String]
+									[Local name(16857):String:String]
+									[FInstance:(index : Int) -> String]
+										String
+										charAt:(index : Int) -> String
+								[Local i(16859):Int:Int]
+						[If:Void]
+							[Binop:Bool]
+								[Binop:Bool]
+									[Local i(16859):Int:Int]
+									>
+									[Const:Int] 0
+								&&
+								[Binop:Bool]
+									[Local c(16860):String:String]
+									==
+									[Call:String]
+										[Field:() -> String]
+											[Local c(16860):String:String]
+											[FInstance:() -> String]
+												String
+												toUpperCase:() -> String
+							[Then:String] [Block:String]
+								[Binop:String]
+									[Local snakeCase(16858):String:String]
+									+=
+									[Const:String] "_"
+						[Binop:String]
+							[Local snakeCase(16858):String:String]
+							+=
+							[Call:String]
+								[Field:() -> String]
+									[Local c(16860):String:String]
+									[FInstance:() -> String]
+										String
+										toLowerCase:() -> String
+			[Return:Dynamic]
+				[Binop:String]
+					[Local snakeCase(16858):String:String]
+					+
+					[Const:String] "s"
+
+	static function compileTemplateClass[Function:(classType : haxe.macro.ClassType, varFields : Array<reflaxe.data.ClassVarData>, funcFields : Array<reflaxe.data.ClassFuncData>) -> String]
+		[Arg:haxe.macro.ClassType] [Local classType(15735):haxe.macro.ClassType]
+		[Arg:Array<reflaxe.data.ClassVarData>] [Local varFields(15736):Array<reflaxe.data.ClassVarData>]
+		[Arg:Array<reflaxe.data.ClassFuncData>] [Local funcFields(15737):Array<reflaxe.data.ClassFuncData>]
+		[Block:Dynamic]
+			[Var className(15738):String]
+				[Field:String]
+					[Local classType(15735):haxe.macro.ClassType:haxe.macro.ClassType]
+					[FAnon:String] name:String
+			[Var config(15752):reflaxe.elixir.helpers.TemplateConfig]
+				[Call:reflaxe.elixir.helpers.TemplateConfig]
+					[Field:(classType : haxe.macro.ClassType) -> reflaxe.elixir.helpers.TemplateConfig]
+						[TypeExpr reflaxe.elixir.helpers.TemplateCompiler:Class<reflaxe.elixir.helpers.TemplateCompiler>]
+						[FStatic:(classType : haxe.macro.ClassType) -> reflaxe.elixir.helpers.TemplateConfig]
+							reflaxe.elixir.helpers.TemplateCompiler
+							getTemplateConfig:(classType : haxe.macro.ClassType) -> reflaxe.elixir.helpers.TemplateConfig
+					[Local classType(15735):haxe.macro.ClassType:haxe.macro.ClassType]
+			[Return:Dynamic]
+				[Call:String]
+					[Field:(className : String, config : reflaxe.elixir.helpers.TemplateConfig) -> String]
+						[TypeExpr reflaxe.elixir.helpers.TemplateCompiler:Class<reflaxe.elixir.helpers.TemplateCompiler>]
+						[FStatic:(className : String, config : reflaxe.elixir.helpers.TemplateConfig) -> String]
+							reflaxe.elixir.helpers.TemplateCompiler
+							compileFullTemplate:(className : String, config : reflaxe.elixir.helpers.TemplateConfig) -> String
+					[Local className(15738):String:String]
+					[Local config(15752):reflaxe.elixir.helpers.TemplateConfig:reflaxe.elixir.helpers.TemplateConfig]
+
+	static function compileComponentClass[Function:(classType : haxe.macro.ClassType, varFields : Array<reflaxe.data.ClassVarData>, funcFields : Array<reflaxe.data.ClassFuncData>) -> String]
+		[Arg:haxe.macro.ClassType] [Local classType(15758):haxe.macro.ClassType]
+		[Arg:Array<reflaxe.data.ClassVarData>] [Local varFields(15759):Array<reflaxe.data.ClassVarData>]
+		[Arg:Array<reflaxe.data.ClassFuncData>] [Local funcFields(15760):Array<reflaxe.data.ClassFuncData>]
+		[Block:Dynamic]
+			[Var className(15761):String]
+				[Field:String]
+					[Local classType(15758):haxe.macro.ClassType:haxe.macro.ClassType]
+					[FAnon:String] name:String
+			[Var moduleName(15762):String]
+				[Call:String]
+					[Field:(v : reflaxe.helpers.NameAndMeta) -> String]
+						[TypeExpr reflaxe.helpers.NameMetaHelper:{ Statics reflaxe.helpers.NameMetaHelper }]
+						[FStatic:(v : reflaxe.helpers.NameAndMeta) -> String]
+							reflaxe.helpers.NameMetaHelper
+							getNameOrNative:(v : reflaxe.helpers.NameAndMeta) -> String
+					[Local classType(15758):haxe.macro.ClassType:haxe.macro.ClassType]
+			[Var result(15763):StringBuf] [New:StringBuf] StringBuf
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(15763):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Binop:String]
+					[Binop:String]
+						[Const:String] "defmodule "
+						+
+						[Local moduleName(15762):String:String]
+					+
+					[Const:String] " do\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(15763):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "  @moduledoc \"\"\"\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(15763):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "  Core UI components for Phoenix applications.\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(15763):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "  \n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(15763):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "  Generated from Haxe CoreComponents with type safety and consistent styling.\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(15763):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "  \"\"\"\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(15763):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "  use Phoenix.Component\n\n"
+			[Block:Void]
+				[Var `(16720):Int] [Const:Int] 0
+				[While:Void]
+					[Binop:Bool]
+						[Local `(16720):Int:Int]
+						<
+						[Field:Int]
+							[Local funcFields(15760):Array<reflaxe.data.ClassFuncData>:Array<reflaxe.data.ClassFuncData>]
+							[FInstance:Int]
+								Array<reflaxe.data.ClassFuncData>
+								length:Int
+					[Block:Void]
+						[Var funcField(15764):reflaxe.data.ClassFuncData]
+							[Array:reflaxe.data.ClassFuncData]
+								[Local funcFields(15760):Array<reflaxe.data.ClassFuncData>:Array<reflaxe.data.ClassFuncData>]
+								[Local `(16720):Int:Int]
+						[Unop:Int]
+							++
+							Prefix
+							[Local `(16720):Int:Int]
+						[If:Void]
+							[Binop:Bool]
+								[Binop:Bool]
+									[Field:haxe.macro.MetaAccess]
+										[Field:haxe.macro.ClassField]
+											[Local funcField(15764):reflaxe.data.ClassFuncData:reflaxe.data.ClassFuncData]
+											[FInstance:haxe.macro.ClassField]
+												reflaxe.data.ClassFuncData
+												field:haxe.macro.ClassField
+										[FAnon:haxe.macro.MetaAccess] meta:haxe.macro.MetaAccess
+									!=
+									[Const:haxe.macro.MetaAccess] null
+								&&
+								[Call:Bool]
+									[Field:(name : String) -> Bool]
+										[Field:haxe.macro.MetaAccess]
+											[Field:haxe.macro.ClassField]
+												[Local funcField(15764):reflaxe.data.ClassFuncData:reflaxe.data.ClassFuncData]
+												[FInstance:haxe.macro.ClassField]
+													reflaxe.data.ClassFuncData
+													field:haxe.macro.ClassField
+											[FAnon:haxe.macro.MetaAccess] meta:haxe.macro.MetaAccess
+										[FAnon:(name : String) -> Bool] has:(name : String) -> Bool
+									[Const:String] ":component"
+							[Then:Void] [Block:Void]
+								[Var componentCode(16719):String]
+									[Call:String]
+										[Field:(funcField : reflaxe.data.ClassFuncData, classType : haxe.macro.ClassType) -> String]
+											[TypeExpr reflaxe.elixir.helpers.AnnotationSystem:Class<reflaxe.elixir.helpers.AnnotationSystem>]
+											[FStatic:(funcField : reflaxe.data.ClassFuncData, classType : haxe.macro.ClassType) -> String]
+												reflaxe.elixir.helpers.AnnotationSystem
+												compileComponentFunction:(funcField : reflaxe.data.ClassFuncData, classType : haxe.macro.ClassType) -> String
+										[Local funcField(15764):reflaxe.data.ClassFuncData:reflaxe.data.ClassFuncData]
+										[Local classType(15758):haxe.macro.ClassType:haxe.macro.ClassType]
+								[Call:Void]
+									[Field:(x : String) -> Void]
+										[Local result(15763):StringBuf:StringBuf]
+										[FInstance:(x : String) -> Void]
+											StringBuf
+											add:(x : add.T) -> Void
+									[Local componentCode(16719):String:String]
+								[Call:Void]
+									[Field:(x : String) -> Void]
+										[Local result(15763):StringBuf:StringBuf]
+										[FInstance:(x : String) -> Void]
+											StringBuf
+											add:(x : add.T) -> Void
+									[Const:String] "\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(15763):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "end\n"
+			[Return:Dynamic]
+				[Call:String]
+					[Field:() -> String]
+						[Local result(15763):StringBuf:StringBuf]
+						[FInstance:() -> String]
+							StringBuf
+							toString:() -> String
+
+	static function compileComponentFunction[Function:(funcField : reflaxe.data.ClassFuncData, classType : haxe.macro.ClassType) -> String]
+		[Arg:reflaxe.data.ClassFuncData] [Local funcField(15765):reflaxe.data.ClassFuncData]
+		[Arg:haxe.macro.ClassType] [Local classType(15766):haxe.macro.ClassType]
+		[Block:Dynamic]
+			[Var funcName(15767):String]
+				[Field:String]
+					[Field:haxe.macro.ClassField]
+						[Local funcField(15765):reflaxe.data.ClassFuncData:reflaxe.data.ClassFuncData]
+						[FInstance:haxe.macro.ClassField]
+							reflaxe.data.ClassFuncData
+							field:haxe.macro.ClassField
+					[FAnon:String] name:String
+			[Var result(15768):StringBuf] [New:StringBuf] StringBuf
+			[Var attributes(15834):Array<reflaxe.elixir.helpers.ComponentAttribute>]
+				[Call:Array<reflaxe.elixir.helpers.ComponentAttribute>]
+					[Field:(meta : Null<haxe.macro.MetaAccess>) -> Array<reflaxe.elixir.helpers.ComponentAttribute>]
+						[TypeExpr reflaxe.elixir.helpers.AnnotationSystem:Class<reflaxe.elixir.helpers.AnnotationSystem>]
+						[FStatic:(meta : Null<haxe.macro.MetaAccess>) -> Array<reflaxe.elixir.helpers.ComponentAttribute>]
+							reflaxe.elixir.helpers.AnnotationSystem
+							extractComponentAttributes:(meta : Null<haxe.macro.MetaAccess>) -> Array<reflaxe.elixir.helpers.ComponentAttribute>
+					[Field:haxe.macro.MetaAccess]
+						[Field:haxe.macro.ClassField]
+							[Local funcField(15765):reflaxe.data.ClassFuncData:reflaxe.data.ClassFuncData]
+							[FInstance:haxe.macro.ClassField]
+								reflaxe.data.ClassFuncData
+								field:haxe.macro.ClassField
+						[FAnon:haxe.macro.MetaAccess] meta:haxe.macro.MetaAccess
+			[Var slots(15853):Array<reflaxe.elixir.helpers.ComponentSlot>]
+				[Call:Array<reflaxe.elixir.helpers.ComponentSlot>]
+					[Field:(meta : Null<haxe.macro.MetaAccess>) -> Array<reflaxe.elixir.helpers.ComponentSlot>]
+						[TypeExpr reflaxe.elixir.helpers.AnnotationSystem:Class<reflaxe.elixir.helpers.AnnotationSystem>]
+						[FStatic:(meta : Null<haxe.macro.MetaAccess>) -> Array<reflaxe.elixir.helpers.ComponentSlot>]
+							reflaxe.elixir.helpers.AnnotationSystem
+							extractComponentSlots:(meta : Null<haxe.macro.MetaAccess>) -> Array<reflaxe.elixir.helpers.ComponentSlot>
+					[Field:haxe.macro.MetaAccess]
+						[Field:haxe.macro.ClassField]
+							[Local funcField(15765):reflaxe.data.ClassFuncData:reflaxe.data.ClassFuncData]
+							[FInstance:haxe.macro.ClassField]
+								reflaxe.data.ClassFuncData
+								field:haxe.macro.ClassField
+						[FAnon:haxe.macro.MetaAccess] meta:haxe.macro.MetaAccess
+			[Block:Void]
+				[Var `(15855):Int] [Const:Int] 0
+				[While:Void]
+					[Binop:Bool]
+						[Local `(15855):Int:Int]
+						<
+						[Field:Int]
+							[Local attributes(15834):Array<reflaxe.elixir.helpers.ComponentAttribute>:Array<reflaxe.elixir.helpers.ComponentAttribute>]
+							[FInstance:Int]
+								Array<reflaxe.elixir.helpers.ComponentAttribute>
+								length:Int
+					[Block:Void]
+						[Var attr(15854):reflaxe.elixir.helpers.ComponentAttribute]
+							[Array:reflaxe.elixir.helpers.ComponentAttribute]
+								[Local attributes(15834):Array<reflaxe.elixir.helpers.ComponentAttribute>:Array<reflaxe.elixir.helpers.ComponentAttribute>]
+								[Local `(15855):Int:Int]
+						[Unop:Int]
+							++
+							Prefix
+							[Local `(15855):Int:Int]
+						[Call:Void]
+							[Field:(x : String) -> Void]
+								[Local result(15768):StringBuf:StringBuf]
+								[FInstance:(x : String) -> Void]
+									StringBuf
+									add:(x : add.T) -> Void
+							[Binop:String]
+								[Binop:String]
+									[Binop:String]
+										[Const:String] "  attr :"
+										+
+										[Field:String]
+											[Local attr(15854):reflaxe.elixir.helpers.ComponentAttribute:reflaxe.elixir.helpers.ComponentAttribute]
+											[FAnon:String] name:String
+									+
+									[Const:String] ", :"
+								+
+								[Field:String]
+									[Local attr(15854):reflaxe.elixir.helpers.ComponentAttribute:reflaxe.elixir.helpers.ComponentAttribute]
+									[FAnon:String] type:String
+						[If:Void]
+							[Field:Bool]
+								[Local attr(15854):reflaxe.elixir.helpers.ComponentAttribute:reflaxe.elixir.helpers.ComponentAttribute]
+								[FAnon:Bool] required:Bool
+							[Then:Void] [Block:Void]
+								[Call:Void]
+									[Field:(x : String) -> Void]
+										[Local result(15768):StringBuf:StringBuf]
+										[FInstance:(x : String) -> Void]
+											StringBuf
+											add:(x : add.T) -> Void
+									[Const:String] ", required: true"
+							[Else:Void] [Block:Void]
+								[If:Void]
+									[Binop:Bool]
+										[Field:Null<String>]
+											[Local attr(15854):reflaxe.elixir.helpers.ComponentAttribute:reflaxe.elixir.helpers.ComponentAttribute]
+											[FAnon:Null<String>] defaultValue:Null<String>
+										!=
+										[Const:Null<String>] null
+									[Then:Void] [Block:Void]
+										[Call:Void]
+											[Field:(x : String) -> Void]
+												[Local result(15768):StringBuf:StringBuf]
+												[FInstance:(x : String) -> Void]
+													StringBuf
+													add:(x : add.T) -> Void
+											[Binop:String]
+												[Const:String] ", default: "
+												+
+												[Field:Null<String>]
+													[Local attr(15854):reflaxe.elixir.helpers.ComponentAttribute:reflaxe.elixir.helpers.ComponentAttribute]
+													[FAnon:Null<String>] defaultValue:Null<String>
+						[Call:Void]
+							[Field:(x : String) -> Void]
+								[Local result(15768):StringBuf:StringBuf]
+								[FInstance:(x : String) -> Void]
+									StringBuf
+									add:(x : add.T) -> Void
+							[Const:String] "\n"
+			[Block:Void]
+				[Var `(15857):Int] [Const:Int] 0
+				[While:Void]
+					[Binop:Bool]
+						[Local `(15857):Int:Int]
+						<
+						[Field:Int]
+							[Local slots(15853):Array<reflaxe.elixir.helpers.ComponentSlot>:Array<reflaxe.elixir.helpers.ComponentSlot>]
+							[FInstance:Int]
+								Array<reflaxe.elixir.helpers.ComponentSlot>
+								length:Int
+					[Block:Void]
+						[Var slot(15856):reflaxe.elixir.helpers.ComponentSlot]
+							[Array:reflaxe.elixir.helpers.ComponentSlot]
+								[Local slots(15853):Array<reflaxe.elixir.helpers.ComponentSlot>:Array<reflaxe.elixir.helpers.ComponentSlot>]
+								[Local `(15857):Int:Int]
+						[Unop:Int]
+							++
+							Prefix
+							[Local `(15857):Int:Int]
+						[Call:Void]
+							[Field:(x : String) -> Void]
+								[Local result(15768):StringBuf:StringBuf]
+								[FInstance:(x : String) -> Void]
+									StringBuf
+									add:(x : add.T) -> Void
+							[Binop:String]
+								[Const:String] "  slot :"
+								+
+								[Field:String]
+									[Local slot(15856):reflaxe.elixir.helpers.ComponentSlot:reflaxe.elixir.helpers.ComponentSlot]
+									[FAnon:String] name:String
+						[If:Void]
+							[Field:Bool]
+								[Local slot(15856):reflaxe.elixir.helpers.ComponentSlot:reflaxe.elixir.helpers.ComponentSlot]
+								[FAnon:Bool] required:Bool
+							[Then:Void] [Block:Void]
+								[Call:Void]
+									[Field:(x : String) -> Void]
+										[Local result(15768):StringBuf:StringBuf]
+										[FInstance:(x : String) -> Void]
+											StringBuf
+											add:(x : add.T) -> Void
+									[Const:String] ", required: true"
+						[Call:Void]
+							[Field:(x : String) -> Void]
+								[Local result(15768):StringBuf:StringBuf]
+								[FInstance:(x : String) -> Void]
+									StringBuf
+									add:(x : add.T) -> Void
+							[Const:String] "\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(15768):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Binop:String]
+					[Binop:String]
+						[Const:String] "  def "
+						+
+						[Local funcName(15767):String:String]
+					+
+					[Const:String] "(assigns) do\n"
+			[If:Void]
+				[Binop:Bool]
+					[Field:Null<haxe.macro.TypedExpr>]
+						[Local funcField(15765):reflaxe.data.ClassFuncData:reflaxe.data.ClassFuncData]
+						[FInstance:Null<haxe.macro.TypedExpr>]
+							reflaxe.data.ClassFuncData
+							expr:Null<haxe.macro.TypedExpr>
+					!=
+					[Const:Null<haxe.macro.TypedExpr>] null
+				[Then:Void] [Block:Void]
+					[Var hxxTemplate(16718):String]
+						[Call:String]
+							[Field:(expr : haxe.macro.TypedExpr) -> String]
+								[TypeExpr reflaxe.elixir.helpers.HxxCompiler:Class<reflaxe.elixir.helpers.HxxCompiler>]
+								[FStatic:(expr : haxe.macro.TypedExpr) -> String]
+									reflaxe.elixir.helpers.HxxCompiler
+									compileHxxTemplate:(expr : haxe.macro.TypedExpr) -> String
+							[Field:Null<haxe.macro.TypedExpr>]
+								[Local funcField(15765):reflaxe.data.ClassFuncData:reflaxe.data.ClassFuncData]
+								[FInstance:Null<haxe.macro.TypedExpr>]
+									reflaxe.data.ClassFuncData
+									expr:Null<haxe.macro.TypedExpr>
+					[Call:Void]
+						[Field:(x : String) -> Void]
+							[Local result(15768):StringBuf:StringBuf]
+							[FInstance:(x : String) -> Void]
+								StringBuf
+								add:(x : add.T) -> Void
+						[Binop:String]
+							[Binop:String]
+								[Const:String] "    "
+								+
+								[Local hxxTemplate(16718):String:String]
+							+
+							[Const:String] "\n"
+				[Else:Void] [Block:Void]
+					[Call:Void]
+						[Field:(x : String) -> Void]
+							[Local result(15768):StringBuf:StringBuf]
+							[FInstance:(x : String) -> Void]
+								StringBuf
+								add:(x : add.T) -> Void
+						[Const:String] "    ~H\"\"\"\n    <div></div>\n    \"\"\"\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(15768):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "  end\n"
+			[Return:Dynamic]
+				[Call:String]
+					[Field:() -> String]
+						[Local result(15768):StringBuf:StringBuf]
+						[FInstance:() -> String]
+							StringBuf
+							toString:() -> String
+
+	static function extractComponentAttributes[Function:(meta : Null<haxe.macro.MetaAccess>) -> Array<reflaxe.elixir.helpers.ComponentAttribute>]
+		[Arg:Null<haxe.macro.MetaAccess>] [Local meta(15769):Null<haxe.macro.MetaAccess>]
+		[Block:Dynamic]
+			[Var attributes(15770):Array<reflaxe.elixir.helpers.ComponentAttribute>] [ArrayDecl:Array<reflaxe.elixir.helpers.ComponentAttribute>]
+			[If:Void]
+				[Binop:Bool]
+					[Local meta(15769):Null<haxe.macro.MetaAccess>:Null<haxe.macro.MetaAccess>]
+					==
+					[Const:Null<haxe.macro.MetaAccess>] null
+				[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [Local attributes(15770):Array<reflaxe.elixir.helpers.ComponentAttribute>:Array<reflaxe.elixir.helpers.ComponentAttribute>]
+			[Var attrMeta(15771):Array<haxe.macro.MetadataEntry>]
+				[Call:Array<haxe.macro.MetadataEntry>]
+					[Field:(name : String) -> Array<haxe.macro.MetadataEntry>]
+						[Local meta(15769):Null<haxe.macro.MetaAccess>:Null<haxe.macro.MetaAccess>]
+						[FAnon:(name : String) -> Array<haxe.macro.MetadataEntry>] extract:(name : String) -> Array<haxe.macro.MetadataEntry>
+					[Const:String] ":attr"
+			[Block:Void]
+				[Var `(15833):Int] [Const:Int] 0
+				[While:Void]
+					[Binop:Bool]
+						[Local `(15833):Int:Int]
+						<
+						[Field:Int]
+							[Local attrMeta(15771):Array<haxe.macro.MetadataEntry>:Array<haxe.macro.MetadataEntry>]
+							[FInstance:Int]
+								Array<haxe.macro.MetadataEntry>
+								length:Int
+					[Block:Void]
+						[Var attr(15772):haxe.macro.MetadataEntry]
+							[Array:haxe.macro.MetadataEntry]
+								[Local attrMeta(15771):Array<haxe.macro.MetadataEntry>:Array<haxe.macro.MetadataEntry>]
+								[Local `(15833):Int:Int]
+						[Unop:Int]
+							++
+							Prefix
+							[Local `(15833):Int:Int]
+						[If:Void]
+							[Binop:Bool]
+								[Binop:Bool]
+									[Field:Null<Array<haxe.macro.Expr>>]
+										[Local attr(15772):haxe.macro.MetadataEntry:haxe.macro.MetadataEntry]
+										[FAnon:Null<Array<haxe.macro.Expr>>] params:Null<Array<haxe.macro.Expr>>
+									!=
+									[Const:Null<Array<haxe.macro.Expr>>] null
+								&&
+								[Binop:Bool]
+									[Field:Int]
+										[Field:Null<Array<haxe.macro.Expr>>]
+											[Local attr(15772):haxe.macro.MetadataEntry:haxe.macro.MetadataEntry]
+											[FAnon:Null<Array<haxe.macro.Expr>>] params:Null<Array<haxe.macro.Expr>>
+										[FInstance:Int]
+											Array<haxe.macro.Expr>
+											length:Int
+									>=
+									[Const:Int] 2
+							[Then:Int] [Block:Int]
+								[Var name(15784):String]
+									[Call:String]
+										[Field:(expr : haxe.macro.Expr) -> String]
+											[TypeExpr reflaxe.elixir.helpers.AnnotationSystem:Class<reflaxe.elixir.helpers.AnnotationSystem>]
+											[FStatic:(expr : haxe.macro.Expr) -> String]
+												reflaxe.elixir.helpers.AnnotationSystem
+												extractStringParam:(expr : haxe.macro.Expr) -> String
+										[Array:haxe.macro.Expr]
+											[Field:Null<Array<haxe.macro.Expr>>]
+												[Local attr(15772):haxe.macro.MetadataEntry:haxe.macro.MetadataEntry]
+												[FAnon:Null<Array<haxe.macro.Expr>>] params:Null<Array<haxe.macro.Expr>>
+											[Const:Int] 0
+								[Var type(15785):String]
+									[Call:String]
+										[Field:(expr : haxe.macro.Expr) -> String]
+											[TypeExpr reflaxe.elixir.helpers.AnnotationSystem:Class<reflaxe.elixir.helpers.AnnotationSystem>]
+											[FStatic:(expr : haxe.macro.Expr) -> String]
+												reflaxe.elixir.helpers.AnnotationSystem
+												extractStringParam:(expr : haxe.macro.Expr) -> String
+										[Array:haxe.macro.Expr]
+											[Field:Null<Array<haxe.macro.Expr>>]
+												[Local attr(15772):haxe.macro.MetadataEntry:haxe.macro.MetadataEntry]
+												[FAnon:Null<Array<haxe.macro.Expr>>] params:Null<Array<haxe.macro.Expr>>
+											[Const:Int] 1
+								[Var options(15786):Null<Null<haxe.macro.Expr>>]
+									[If:Null<haxe.macro.Expr>]
+										[Binop:Bool]
+											[Field:Int]
+												[Field:Null<Array<haxe.macro.Expr>>]
+													[Local attr(15772):haxe.macro.MetadataEntry:haxe.macro.MetadataEntry]
+													[FAnon:Null<Array<haxe.macro.Expr>>] params:Null<Array<haxe.macro.Expr>>
+												[FInstance:Int]
+													Array<haxe.macro.Expr>
+													length:Int
+											>
+											[Const:Int] 2
+										[Then:haxe.macro.Expr] [Block:haxe.macro.Expr]
+											[Array:haxe.macro.Expr]
+												[Field:Null<Array<haxe.macro.Expr>>]
+													[Local attr(15772):haxe.macro.MetadataEntry:haxe.macro.MetadataEntry]
+													[FAnon:Null<Array<haxe.macro.Expr>>] params:Null<Array<haxe.macro.Expr>>
+												[Const:Int] 2
+										[Else:Null<Null<haxe.macro.Expr>>] [Block:Null<Null<haxe.macro.Expr>>] [Const:Null<Null<haxe.macro.Expr>>] null
+								[Var attribute(15787):reflaxe.elixir.helpers.ComponentAttribute]
+									[ObjectDecl:{ type : String, required : Bool, name : String, defaultValue : Null<String> }]
+										name: [Local name(15784):String:String]
+										type: [Local type(15785):String:String]
+										required: [Const:Bool] false
+										defaultValue: [Const:Null<String>] null
+								[If:Void]
+									[Binop:Bool]
+										[Local options(15786):Null<Null<haxe.macro.Expr>>:Null<Null<haxe.macro.Expr>>]
+										!=
+										[Const:Null<Null<haxe.macro.Expr>>] null
+									[Then:Void] [Block:Void]
+										[Meta:Void]
+											:ast(switch (options.expr) {
+	case EObjectDecl(fields):
+		for (field  in  fields) {
+			switch (field.field) {
+				case "required":
+					attribute.required = extractBoolParam(field.expr);				
+				case "default":
+					attribute.defaultValue = extractValueParam(field.expr);				
+			};
+		};	
+	case _:
+})
+											[Block:Void]
+												[Var `(15827):haxe.macro.ExprDef]
+													[Field:haxe.macro.ExprDef]
+														[Local options(15786):Null<Null<haxe.macro.Expr>>:Null<Null<haxe.macro.Expr>>]
+														[FAnon:haxe.macro.ExprDef] expr:haxe.macro.ExprDef
+												[If:Void]
+													[Binop:Bool]
+														[EnumIndex:Int] [Local `(15827):haxe.macro.ExprDef:haxe.macro.ExprDef]
+														==
+														[Const:Int] 5
+													[Then:Void] [Block:Void]
+														[Var `(15828):Array<haxe.macro.ObjectField>]
+															[EnumParameter:Array<haxe.macro.ObjectField>]
+																[Local `(15827):haxe.macro.ExprDef:haxe.macro.ExprDef]
+																EObjectDecl
+																0
+														[Block:Void]
+															[Var fields(15829):Array<haxe.macro.ObjectField>] [Local `(15828):Array<haxe.macro.ObjectField>:Array<haxe.macro.ObjectField>]
+															[Block:Void]
+																[Block:Void]
+																	[Var `(15830):Int] [Const:Int] 0
+																	[While:Void]
+																		[Binop:Bool]
+																			[Local `(15830):Int:Int]
+																			<
+																			[Field:Int]
+																				[Local fields(15829):Array<haxe.macro.ObjectField>:Array<haxe.macro.ObjectField>]
+																				[FInstance:Int]
+																					Array<haxe.macro.ObjectField>
+																					length:Int
+																		[Block:Void]
+																			[Var field(15831):haxe.macro.ObjectField]
+																				[Array:haxe.macro.ObjectField]
+																					[Local fields(15829):Array<haxe.macro.ObjectField>:Array<haxe.macro.ObjectField>]
+																					[Local `(15830):Int:Int]
+																			[Unop:Int]
+																				++
+																				Prefix
+																				[Local `(15830):Int:Int]
+																			[Meta:Void]
+																				:ast(switch (field.field) {
+	case "required":
+		attribute.required = extractBoolParam(field.expr);	
+	case "default":
+		attribute.defaultValue = extractValueParam(field.expr);	
+})
+																				[Block:Void]
+																					[Var `(15832):String]
+																						[Field:String]
+																							[Local field(15831):haxe.macro.ObjectField:haxe.macro.ObjectField]
+																							[FAnon:String] field:String
+																					[Switch:Void]
+																						[Local `(15832):String:String]
+																						[Case:Null<String>]
+																							[Const:String] "default"
+																							[Block:Null<String>]
+																								[Block:Null<String>]
+																									[Binop:Null<String>]
+																										[Field:Null<String>]
+																											[Local attribute(15787):reflaxe.elixir.helpers.ComponentAttribute:reflaxe.elixir.helpers.ComponentAttribute]
+																											[FAnon:Null<String>] defaultValue:Null<String>
+																										=
+																										[Call:String]
+																											[Field:(expr : haxe.macro.Expr) -> String]
+																												[TypeExpr reflaxe.elixir.helpers.AnnotationSystem:Class<reflaxe.elixir.helpers.AnnotationSystem>]
+																												[FStatic:(expr : haxe.macro.Expr) -> String]
+																													reflaxe.elixir.helpers.AnnotationSystem
+																													extractValueParam:(expr : haxe.macro.Expr) -> String
+																											[Field:haxe.macro.Expr]
+																												[Local field(15831):haxe.macro.ObjectField:haxe.macro.ObjectField]
+																												[FAnon:haxe.macro.Expr] expr:haxe.macro.Expr
+																						[Case:Bool]
+																							[Const:String] "required"
+																							[Block:Bool]
+																								[Block:Bool]
+																									[Binop:Bool]
+																										[Field:Bool]
+																											[Local attribute(15787):reflaxe.elixir.helpers.ComponentAttribute:reflaxe.elixir.helpers.ComponentAttribute]
+																											[FAnon:Bool] required:Bool
+																										=
+																										[Call:Bool]
+																											[Field:(expr : haxe.macro.Expr) -> Bool]
+																												[TypeExpr reflaxe.elixir.helpers.AnnotationSystem:Class<reflaxe.elixir.helpers.AnnotationSystem>]
+																												[FStatic:(expr : haxe.macro.Expr) -> Bool]
+																													reflaxe.elixir.helpers.AnnotationSystem
+																													extractBoolParam:(expr : haxe.macro.Expr) -> Bool
+																											[Field:haxe.macro.Expr]
+																												[Local field(15831):haxe.macro.ObjectField:haxe.macro.ObjectField]
+																												[FAnon:haxe.macro.Expr] expr:haxe.macro.Expr
+													[Else:Void] [Block:Void]
+								[Call:Int]
+									[Field:(x : reflaxe.elixir.helpers.ComponentAttribute) -> Int]
+										[Local attributes(15770):Array<reflaxe.elixir.helpers.ComponentAttribute>:Array<reflaxe.elixir.helpers.ComponentAttribute>]
+										[FInstance:(x : reflaxe.elixir.helpers.ComponentAttribute) -> Int]
+											Array<reflaxe.elixir.helpers.ComponentAttribute>
+											push:(x : Array.T) -> Int
+									[Local attribute(15787):reflaxe.elixir.helpers.ComponentAttribute:reflaxe.elixir.helpers.ComponentAttribute]
+			[Return:Dynamic] [Local attributes(15770):Array<reflaxe.elixir.helpers.ComponentAttribute>:Array<reflaxe.elixir.helpers.ComponentAttribute>]
+
+	static function extractComponentSlots[Function:(meta : Null<haxe.macro.MetaAccess>) -> Array<reflaxe.elixir.helpers.ComponentSlot>]
+		[Arg:Null<haxe.macro.MetaAccess>] [Local meta(15835):Null<haxe.macro.MetaAccess>]
+		[Block:Dynamic]
+			[Var slots(15836):Array<reflaxe.elixir.helpers.ComponentSlot>] [ArrayDecl:Array<reflaxe.elixir.helpers.ComponentSlot>]
+			[If:Void]
+				[Binop:Bool]
+					[Local meta(15835):Null<haxe.macro.MetaAccess>:Null<haxe.macro.MetaAccess>]
+					==
+					[Const:Null<haxe.macro.MetaAccess>] null
+				[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [Local slots(15836):Array<reflaxe.elixir.helpers.ComponentSlot>:Array<reflaxe.elixir.helpers.ComponentSlot>]
+			[Var slotMeta(15837):Array<haxe.macro.MetadataEntry>]
+				[Call:Array<haxe.macro.MetadataEntry>]
+					[Field:(name : String) -> Array<haxe.macro.MetadataEntry>]
+						[Local meta(15835):Null<haxe.macro.MetaAccess>:Null<haxe.macro.MetaAccess>]
+						[FAnon:(name : String) -> Array<haxe.macro.MetadataEntry>] extract:(name : String) -> Array<haxe.macro.MetadataEntry>
+					[Const:String] ":slot"
+			[Block:Void]
+				[Var `(15852):Int] [Const:Int] 0
+				[While:Void]
+					[Binop:Bool]
+						[Local `(15852):Int:Int]
+						<
+						[Field:Int]
+							[Local slotMeta(15837):Array<haxe.macro.MetadataEntry>:Array<haxe.macro.MetadataEntry>]
+							[FInstance:Int]
+								Array<haxe.macro.MetadataEntry>
+								length:Int
+					[Block:Void]
+						[Var slot(15838):haxe.macro.MetadataEntry]
+							[Array:haxe.macro.MetadataEntry]
+								[Local slotMeta(15837):Array<haxe.macro.MetadataEntry>:Array<haxe.macro.MetadataEntry>]
+								[Local `(15852):Int:Int]
+						[Unop:Int]
+							++
+							Prefix
+							[Local `(15852):Int:Int]
+						[If:Void]
+							[Binop:Bool]
+								[Binop:Bool]
+									[Field:Null<Array<haxe.macro.Expr>>]
+										[Local slot(15838):haxe.macro.MetadataEntry:haxe.macro.MetadataEntry]
+										[FAnon:Null<Array<haxe.macro.Expr>>] params:Null<Array<haxe.macro.Expr>>
+									!=
+									[Const:Null<Array<haxe.macro.Expr>>] null
+								&&
+								[Binop:Bool]
+									[Field:Int]
+										[Field:Null<Array<haxe.macro.Expr>>]
+											[Local slot(15838):haxe.macro.MetadataEntry:haxe.macro.MetadataEntry]
+											[FAnon:Null<Array<haxe.macro.Expr>>] params:Null<Array<haxe.macro.Expr>>
+										[FInstance:Int]
+											Array<haxe.macro.Expr>
+											length:Int
+									>=
+									[Const:Int] 1
+							[Then:Int] [Block:Int]
+								[Var name(15839):String]
+									[Call:String]
+										[Field:(expr : haxe.macro.Expr) -> String]
+											[TypeExpr reflaxe.elixir.helpers.AnnotationSystem:Class<reflaxe.elixir.helpers.AnnotationSystem>]
+											[FStatic:(expr : haxe.macro.Expr) -> String]
+												reflaxe.elixir.helpers.AnnotationSystem
+												extractStringParam:(expr : haxe.macro.Expr) -> String
+										[Array:haxe.macro.Expr]
+											[Field:Null<Array<haxe.macro.Expr>>]
+												[Local slot(15838):haxe.macro.MetadataEntry:haxe.macro.MetadataEntry]
+												[FAnon:Null<Array<haxe.macro.Expr>>] params:Null<Array<haxe.macro.Expr>>
+											[Const:Int] 0
+								[Var options(15840):Null<Null<haxe.macro.Expr>>]
+									[If:Null<haxe.macro.Expr>]
+										[Binop:Bool]
+											[Field:Int]
+												[Field:Null<Array<haxe.macro.Expr>>]
+													[Local slot(15838):haxe.macro.MetadataEntry:haxe.macro.MetadataEntry]
+													[FAnon:Null<Array<haxe.macro.Expr>>] params:Null<Array<haxe.macro.Expr>>
+												[FInstance:Int]
+													Array<haxe.macro.Expr>
+													length:Int
+											>
+											[Const:Int] 1
+										[Then:haxe.macro.Expr] [Block:haxe.macro.Expr]
+											[Array:haxe.macro.Expr]
+												[Field:Null<Array<haxe.macro.Expr>>]
+													[Local slot(15838):haxe.macro.MetadataEntry:haxe.macro.MetadataEntry]
+													[FAnon:Null<Array<haxe.macro.Expr>>] params:Null<Array<haxe.macro.Expr>>
+												[Const:Int] 1
+										[Else:Null<Null<haxe.macro.Expr>>] [Block:Null<Null<haxe.macro.Expr>>] [Const:Null<Null<haxe.macro.Expr>>] null
+								[Var slotDef(15841):reflaxe.elixir.helpers.ComponentSlot]
+									[ObjectDecl:{ required : Bool, name : String }]
+										name: [Local name(15839):String:String]
+										required: [Const:Bool] false
+								[If:Void]
+									[Binop:Bool]
+										[Local options(15840):Null<Null<haxe.macro.Expr>>:Null<Null<haxe.macro.Expr>>]
+										!=
+										[Const:Null<Null<haxe.macro.Expr>>] null
+									[Then:Void] [Block:Void]
+										[Meta:Void]
+											:ast(switch (options.expr) {
+	case EObjectDecl(fields):
+		for (field  in  fields) {
+			if (field.field == "required") {
+				slotDef.required = extractBoolParam(field.expr);
+			};
+		};	
+	case _:
+})
+											[Block:Void]
+												[Var `(15847):haxe.macro.ExprDef]
+													[Field:haxe.macro.ExprDef]
+														[Local options(15840):Null<Null<haxe.macro.Expr>>:Null<Null<haxe.macro.Expr>>]
+														[FAnon:haxe.macro.ExprDef] expr:haxe.macro.ExprDef
+												[If:Void]
+													[Binop:Bool]
+														[EnumIndex:Int] [Local `(15847):haxe.macro.ExprDef:haxe.macro.ExprDef]
+														==
+														[Const:Int] 5
+													[Then:Void] [Block:Void]
+														[Var `(15848):Array<haxe.macro.ObjectField>]
+															[EnumParameter:Array<haxe.macro.ObjectField>]
+																[Local `(15847):haxe.macro.ExprDef:haxe.macro.ExprDef]
+																EObjectDecl
+																0
+														[Block:Void]
+															[Var fields(15849):Array<haxe.macro.ObjectField>] [Local `(15848):Array<haxe.macro.ObjectField>:Array<haxe.macro.ObjectField>]
+															[Block:Void]
+																[Block:Void]
+																	[Var `(15850):Int] [Const:Int] 0
+																	[While:Void]
+																		[Binop:Bool]
+																			[Local `(15850):Int:Int]
+																			<
+																			[Field:Int]
+																				[Local fields(15849):Array<haxe.macro.ObjectField>:Array<haxe.macro.ObjectField>]
+																				[FInstance:Int]
+																					Array<haxe.macro.ObjectField>
+																					length:Int
+																		[Block:Void]
+																			[Var field(15851):haxe.macro.ObjectField]
+																				[Array:haxe.macro.ObjectField]
+																					[Local fields(15849):Array<haxe.macro.ObjectField>:Array<haxe.macro.ObjectField>]
+																					[Local `(15850):Int:Int]
+																			[Unop:Int]
+																				++
+																				Prefix
+																				[Local `(15850):Int:Int]
+																			[If:Void]
+																				[Binop:Bool]
+																					[Field:String]
+																						[Local field(15851):haxe.macro.ObjectField:haxe.macro.ObjectField]
+																						[FAnon:String] field:String
+																					==
+																					[Const:String] "required"
+																				[Then:Bool] [Block:Bool]
+																					[Binop:Bool]
+																						[Field:Bool]
+																							[Local slotDef(15841):reflaxe.elixir.helpers.ComponentSlot:reflaxe.elixir.helpers.ComponentSlot]
+																							[FAnon:Bool] required:Bool
+																						=
+																						[Call:Bool]
+																							[Field:(expr : haxe.macro.Expr) -> Bool]
+																								[TypeExpr reflaxe.elixir.helpers.AnnotationSystem:Class<reflaxe.elixir.helpers.AnnotationSystem>]
+																								[FStatic:(expr : haxe.macro.Expr) -> Bool]
+																									reflaxe.elixir.helpers.AnnotationSystem
+																									extractBoolParam:(expr : haxe.macro.Expr) -> Bool
+																							[Field:haxe.macro.Expr]
+																								[Local field(15851):haxe.macro.ObjectField:haxe.macro.ObjectField]
+																								[FAnon:haxe.macro.Expr] expr:haxe.macro.Expr
+													[Else:Void] [Block:Void]
+								[Call:Int]
+									[Field:(x : reflaxe.elixir.helpers.ComponentSlot) -> Int]
+										[Local slots(15836):Array<reflaxe.elixir.helpers.ComponentSlot>:Array<reflaxe.elixir.helpers.ComponentSlot>]
+										[FInstance:(x : reflaxe.elixir.helpers.ComponentSlot) -> Int]
+											Array<reflaxe.elixir.helpers.ComponentSlot>
+											push:(x : Array.T) -> Int
+									[Local slotDef(15841):reflaxe.elixir.helpers.ComponentSlot:reflaxe.elixir.helpers.ComponentSlot]
+			[Return:Dynamic] [Local slots(15836):Array<reflaxe.elixir.helpers.ComponentSlot>:Array<reflaxe.elixir.helpers.ComponentSlot>]
+
+	static function extractStringParam[Function:(expr : haxe.macro.Expr) -> String]
+		[Arg:haxe.macro.Expr] [Local expr(15773):haxe.macro.Expr]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Meta:String]
+					:ast(switch (expr.expr) {
+	case EConst(CString(s, _)):
+		s;	
+	case _:
+		"";	
+})
+					[Block:String]
+						[Var `(15779):haxe.macro.ExprDef]
+							[Field:haxe.macro.ExprDef]
+								[Local expr(15773):haxe.macro.Expr:haxe.macro.Expr]
+								[FAnon:haxe.macro.ExprDef] expr:haxe.macro.ExprDef
+						[If:String]
+							[Binop:Bool]
+								[EnumIndex:Int] [Local `(15779):haxe.macro.ExprDef:haxe.macro.ExprDef]
+								==
+								[Const:Int] 0
+							[Then:String] [Block:String]
+								[Var `(15780):haxe.macro.Constant]
+									[EnumParameter:haxe.macro.Constant]
+										[Local `(15779):haxe.macro.ExprDef:haxe.macro.ExprDef]
+										EConst
+										0
+								[If:String]
+									[Binop:Bool]
+										[EnumIndex:Int] [Local `(15780):haxe.macro.Constant:haxe.macro.Constant]
+										==
+										[Const:Int] 2
+									[Then:String] [Block:String]
+										[Var `(15781):String]
+											[EnumParameter:String]
+												[Local `(15780):haxe.macro.Constant:haxe.macro.Constant]
+												CString
+												0
+										[Var `(15782):Null<haxe.macro.StringLiteralKind>]
+											[EnumParameter:Null<haxe.macro.StringLiteralKind>]
+												[Local `(15780):haxe.macro.Constant:haxe.macro.Constant]
+												CString
+												1
+										[Block:String]
+											[Var s(15783):String] [Local `(15781):String:String]
+											[Block:String] [Local s(15783):String:String]
+									[Else:String] [Block:String] [Const:String] ""
+							[Else:String] [Block:String] [Const:String] ""
+
+	static function extractBoolParam[Function:(expr : haxe.macro.Expr) -> Bool]
+		[Arg:haxe.macro.Expr] [Local expr(15790):haxe.macro.Expr]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Meta:Bool]
+					:ast(switch (expr.expr) {
+	case EConst(CIdent("true")):
+		true;	
+	case EConst(CIdent("false")):
+		false;	
+	case _:
+		false;	
+})
+					[Block:Bool]
+						[Var `(15794):haxe.macro.ExprDef]
+							[Field:haxe.macro.ExprDef]
+								[Local expr(15790):haxe.macro.Expr:haxe.macro.Expr]
+								[FAnon:haxe.macro.ExprDef] expr:haxe.macro.ExprDef
+						[If:Bool]
+							[Binop:Bool]
+								[EnumIndex:Int] [Local `(15794):haxe.macro.ExprDef:haxe.macro.ExprDef]
+								==
+								[Const:Int] 0
+							[Then:Bool] [Block:Bool]
+								[Var `(15795):haxe.macro.Constant]
+									[EnumParameter:haxe.macro.Constant]
+										[Local `(15794):haxe.macro.ExprDef:haxe.macro.ExprDef]
+										EConst
+										0
+								[If:Bool]
+									[Binop:Bool]
+										[EnumIndex:Int] [Local `(15795):haxe.macro.Constant:haxe.macro.Constant]
+										==
+										[Const:Int] 3
+									[Then:Bool] [Block:Bool]
+										[Var `(15796):String]
+											[EnumParameter:String]
+												[Local `(15795):haxe.macro.Constant:haxe.macro.Constant]
+												CIdent
+												0
+										[Switch:Bool]
+											[Local `(15796):String:String]
+											[Case:Bool]
+												[Const:String] "false"
+												[Block:Bool] [Block:Bool] [Const:Bool] false
+											[Case:Bool]
+												[Const:String] "true"
+												[Block:Bool] [Block:Bool] [Const:Bool] true
+											[Default:Bool] [Block:Bool] [Const:Bool] false
+									[Else:Bool] [Block:Bool] [Const:Bool] false
+							[Else:Bool] [Block:Bool] [Const:Bool] false
+
+	static function extractValueParam[Function:(expr : haxe.macro.Expr) -> String]
+		[Arg:haxe.macro.Expr] [Local expr(15797):haxe.macro.Expr]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Meta:String]
+					:ast(switch (expr.expr) {
+	case EConst(CString(s, _)):
+		"\"${s}\"";	
+	case EConst(CInt(i)):
+		Std.string(i);	
+	case EConst(CFloat(f)):
+		f;	
+	case EConst(CIdent("true")):
+		"true";	
+	case EConst(CIdent("false")):
+		"false";	
+	case EConst(CIdent("nil")):
+		"nil";	
+	case _:
+		"nil";	
+})
+					[Block:String]
+						[Var `(15810):haxe.macro.ExprDef]
+							[Field:haxe.macro.ExprDef]
+								[Local expr(15797):haxe.macro.Expr:haxe.macro.Expr]
+								[FAnon:haxe.macro.ExprDef] expr:haxe.macro.ExprDef
+						[If:String]
+							[Binop:Bool]
+								[EnumIndex:Int] [Local `(15810):haxe.macro.ExprDef:haxe.macro.ExprDef]
+								==
+								[Const:Int] 0
+							[Then:String] [Block:String]
+								[Var `(15811):haxe.macro.Constant]
+									[EnumParameter:haxe.macro.Constant]
+										[Local `(15810):haxe.macro.ExprDef:haxe.macro.ExprDef]
+										EConst
+										0
+								[Switch:String]
+									[EnumIndex:Int] [Local `(15811):haxe.macro.Constant:haxe.macro.Constant]
+									[Case:String]
+										[Const:Int] 0
+										[Block:String]
+											[Var `(15812):String]
+												[EnumParameter:String]
+													[Local `(15811):haxe.macro.Constant:haxe.macro.Constant]
+													CInt
+													0
+											[Var `(15813):Null<String>]
+												[EnumParameter:Null<String>]
+													[Local `(15811):haxe.macro.Constant:haxe.macro.Constant]
+													CInt
+													1
+											[Block:String]
+												[Var i(15814):String] [Local `(15812):String:String]
+												[Block:String]
+													[Call:String]
+														[Field:(s : Dynamic) -> String]
+															[TypeExpr Std:Class<Std>]
+															[FStatic:(s : Dynamic) -> String]
+																Std
+																string:(s : Dynamic) -> String
+														[Local i(15814):String:String]
+									[Case:String]
+										[Const:Int] 1
+										[Block:String]
+											[Var `(15815):String]
+												[EnumParameter:String]
+													[Local `(15811):haxe.macro.Constant:haxe.macro.Constant]
+													CFloat
+													0
+											[Var `(15816):Null<String>]
+												[EnumParameter:Null<String>]
+													[Local `(15811):haxe.macro.Constant:haxe.macro.Constant]
+													CFloat
+													1
+											[Block:String]
+												[Var f(15817):String] [Local `(15815):String:String]
+												[Block:String] [Local f(15817):String:String]
+									[Case:String]
+										[Const:Int] 2
+										[Block:String]
+											[Var `(15818):String]
+												[EnumParameter:String]
+													[Local `(15811):haxe.macro.Constant:haxe.macro.Constant]
+													CString
+													0
+											[Var `(15819):Null<haxe.macro.StringLiteralKind>]
+												[EnumParameter:Null<haxe.macro.StringLiteralKind>]
+													[Local `(15811):haxe.macro.Constant:haxe.macro.Constant]
+													CString
+													1
+											[Block:String]
+												[Var s(15820):String] [Local `(15818):String:String]
+												[Block:String]
+													[Binop:String]
+														[Binop:String]
+															[Const:String] "\""
+															+
+															[Local s(15820):String:String]
+														+
+														[Const:String] "\""
+									[Case:String]
+										[Const:Int] 3
+										[Block:String]
+											[Var `(15821):String]
+												[EnumParameter:String]
+													[Local `(15811):haxe.macro.Constant:haxe.macro.Constant]
+													CIdent
+													0
+											[Switch:String]
+												[Local `(15821):String:String]
+												[Case:String]
+													[Const:String] "false"
+													[Block:String] [Block:String] [Const:String] "false"
+												[Case:String]
+													[Const:String] "nil"
+													[Block:String] [Block:String] [Const:String] "nil"
+												[Case:String]
+													[Const:String] "true"
+													[Block:String] [Block:String] [Const:String] "true"
+												[Default:String] [Block:String] [Const:String] "nil"
+									[Default:String] [Block:String] [Const:String] "nil"
+							[Else:String] [Block:String] [Const:String] "nil"
+
+	static function compileChangesetClass[Function:(classType : haxe.macro.ClassType, varFields : Array<reflaxe.data.ClassVarData>, funcFields : Array<reflaxe.data.ClassFuncData>) -> String]
+		[Arg:haxe.macro.ClassType] [Local classType(16722):haxe.macro.ClassType]
+		[Arg:Array<reflaxe.data.ClassVarData>] [Local varFields(16723):Array<reflaxe.data.ClassVarData>]
+		[Arg:Array<reflaxe.data.ClassFuncData>] [Local funcFields(16724):Array<reflaxe.data.ClassFuncData>]
+		[Block:Dynamic]
+			[Var className(16725):String]
+				[Field:String]
+					[Local classType(16722):haxe.macro.ClassType:haxe.macro.ClassType]
+					[FAnon:String] name:String
+			[Var config(16732):{ schema : String }]
+				[Call:Dynamic]
+					[Field:(classType : Dynamic) -> Dynamic]
+						[TypeExpr reflaxe.elixir.helpers.ChangesetCompiler:Class<reflaxe.elixir.helpers.ChangesetCompiler>]
+						[FStatic:(classType : Dynamic) -> Dynamic]
+							reflaxe.elixir.helpers.ChangesetCompiler
+							getChangesetConfig:(classType : Dynamic) -> Dynamic
+					[Local classType(16722):haxe.macro.ClassType:haxe.macro.ClassType]
+			[Return:Dynamic]
+				[Call:String]
+					[Field:(className : String, schemaName : String) -> String]
+						[TypeExpr reflaxe.elixir.helpers.ChangesetCompiler:Class<reflaxe.elixir.helpers.ChangesetCompiler>]
+						[FStatic:(className : String, schemaName : String) -> String]
+							reflaxe.elixir.helpers.ChangesetCompiler
+							compileFullChangeset:(className : String, schemaName : String) -> String
+					[Local className(16725):String:String]
+					[Field:String]
+						[Local config(16732):{ schema : String }:{ schema : String }]
+						[FAnon:String] schema:String
+
+	static function compileLiveViewClass[Function:(classType : haxe.macro.ClassType, varFields : Array<reflaxe.data.ClassVarData>, funcFields : Array<reflaxe.data.ClassFuncData>) -> String]
+		[Arg:haxe.macro.ClassType] [Local classType(16864):haxe.macro.ClassType]
+		[Arg:Array<reflaxe.data.ClassVarData>] [Local varFields(16865):Array<reflaxe.data.ClassVarData>]
+		[Arg:Array<reflaxe.data.ClassFuncData>] [Local funcFields(16866):Array<reflaxe.data.ClassFuncData>]
+		[Block:Dynamic]
+			[Var className(16867):String]
+				[Field:String]
+					[Local classType(16864):haxe.macro.ClassType:haxe.macro.ClassType]
+					[FAnon:String] name:String
+			[Var config(16868):Unknown<28>]
+				[Call:Dynamic]
+					[Field:(classType : Dynamic) -> Dynamic]
+						[TypeExpr reflaxe.elixir.LiveViewCompiler:Class<reflaxe.elixir.LiveViewCompiler>]
+						[FStatic:(classType : Dynamic) -> Dynamic]
+							reflaxe.elixir.LiveViewCompiler
+							getLiveViewConfig:(classType : Dynamic) -> Dynamic
+					[Local classType(16864):haxe.macro.ClassType:haxe.macro.ClassType]
+			[Return:Dynamic]
+				[Call:String]
+					[Field:(className : String, config : Dynamic, ?varFields : Null<Array<reflaxe.data.ClassVarData>>, ?funcFields : Null<Array<reflaxe.data.ClassFuncData>>) -> String]
+						[TypeExpr reflaxe.elixir.LiveViewCompiler:Class<reflaxe.elixir.LiveViewCompiler>]
+						[FStatic:(className : String, config : Dynamic, ?varFields : Null<Array<reflaxe.data.ClassVarData>>, ?funcFields : Null<Array<reflaxe.data.ClassFuncData>>) -> String]
+							reflaxe.elixir.LiveViewCompiler
+							compileFullLiveView:(className : String, config : Dynamic, ?varFields : Null<Array<reflaxe.data.ClassVarData>>, ?funcFields : Null<Array<reflaxe.data.ClassFuncData>>) -> String
+					[Local className(16867):String:String]
+					[Local config(16868):Unknown<28>:Unknown<28>]
+					[Local varFields(16865):Array<reflaxe.data.ClassVarData>:Array<reflaxe.data.ClassVarData>]
+					[Local funcFields(16866):Array<reflaxe.data.ClassFuncData>:Array<reflaxe.data.ClassFuncData>]
+}
