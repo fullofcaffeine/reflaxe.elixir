@@ -63,3 +63,17 @@ compile.protocols
 # Logs
 logs/
 *.log
+
+# Ad-hoc test files in root (prevent re-accumulation)
+/test_*.hx
+/test_*.hxml
+/Test*.hx
+/Test*.hxml
+/debug_*.hx
+/*Test.hx
+/*Test.hxml
+
+# One-time scripts
+/cleanup_*.sh
+/fix_*.sh
+/update_*.sh
