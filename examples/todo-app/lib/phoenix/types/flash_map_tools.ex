@@ -15,13 +15,13 @@ defmodule FlashMapTools do
   def get_all(flash_map) do
     messages = []
 
-    if ((flash_map.info != nil)), do: messages = messages ++ [Flash.info(flash_map.info)], else: nil
+    messages = if ((flash_map.info != nil)), do: messages ++ [Flash.info(flash_map.info)], else: messages
 
-    if ((flash_map.success != nil)), do: messages = messages ++ [Flash.success(flash_map.success)], else: nil
+    messages = if ((flash_map.success != nil)), do: messages ++ [Flash.success(flash_map.success)], else: messages
 
-    if ((flash_map.warning != nil)), do: messages = messages ++ [Flash.warning(flash_map.warning)], else: nil
+    messages = if ((flash_map.warning != nil)), do: messages ++ [Flash.warning(flash_map.warning)], else: messages
 
-    if ((flash_map.error != nil)), do: messages = messages ++ [Flash.error(flash_map.error)], else: nil
+    messages = if ((flash_map.error != nil)), do: messages ++ [Flash.error(flash_map.error)], else: messages
 
     messages
   end
