@@ -8,102 +8,44 @@ import haxe.macro.TypedExprTools;
 import reflaxe.elixir.ElixirCompiler;
 
 /**
- * UnifiedLoopCompiler: Single source of truth for all loop compilation
+ * UnifiedLoopCompiler: Minimal, focused loop compilation
  * 
- * WHY: The compiler currently has THREE separate loop compilation systems (LoopCompiler at 4,235 lines,
- *      WhileLoopCompiler at 764 lines, ControlFlowCompiler at 2,929 lines) with overlapping responsibilities
- *      and circular dependencies. This creates maintenance nightmares and inconsistent behavior.
+ * WHY: Previous architecture had 10,000+ lines across 10+ files with massive duplication.
+ *      This created maintenance nightmares, bugs like g_array mismatches, and confusion.
  * 
- * WHAT: Consolidates all loop compilation (for/while/do-while) into a single, well-architected system.
- *       Handles basic loops, array patterns, iterator patterns, and complex transformations through
- *       delegated specialized components rather than a monolithic file.
+ * WHAT: Single source of truth for ALL loop compilation. Handles for/while/do-while
+ *       with clear, simple transformations. No duplication, no complex pattern detection.
  * 
- * HOW: Provides a unified entry point that analyzes loop types and delegates to appropriate optimizers.
- *      Initially wraps existing compilers for compatibility, then gradually migrates functionality
- *      into focused sub-components (CoreLoopCompiler, ArrayLoopOptimizer, etc.).
+ * HOW: Direct AST-to-Elixir transformation. Special handling for TLocal to avoid
+ *      variable mapping issues. Everything else delegates to compiler.compileExpression.
  * 
  * ARCHITECTURE BENEFITS:
- * - Single Responsibility: One clear purpose - compile all loop types
- * - Open/Closed Principle: Add new optimizers without modifying core logic
- * - Testability: Each optimizer can be tested independently
- * - Maintainability: No file exceeds 1,000 lines vs current 4,235
- * - Performance: Pattern detection happens once, not scattered
- * 
- * EDGE CASES:
- * - Nested loops with variable capture
- * - Break/continue in complex control flow
- * - Iterator patterns with side effects
- * - Mutation detection for recursive transformation
- * - Array building patterns for Enum optimization
+ * - Under 500 lines (vs 10,000+ before)
+ * - Single responsibility: compile loops
+ * - No duplicate Enum generation
+ * - Clear TLocal handling prevents g_array bugs
+ * - Testable and maintainable
  */
 @:nullSafety(Off)
 class UnifiedLoopCompiler {
     
-    /** Reference to main compiler for expression compilation and utilities */
+    /** Reference to main compiler for expression compilation */
     var compiler: ElixirCompiler;
     
     /**
-     * Core loop compiler for basic loop structures
-     */
-    public var coreLoopCompiler: CoreLoopCompiler;
-    
-    /**
-     * Array loop optimizer for detecting and transforming array patterns
-     */
-    public var arrayOptimizer: ArrayLoopOptimizer;
-    
-    /**
-     * Loop transformations for complex patterns and mutations
-     */
-    public var loopTransformations: LoopTransformations;
-    
-    /** 
-     * Legacy compiler reference for gradual migration
-     * TODO: Remove after full migration to sub-components
-     */
-    var legacyLoopCompiler: LoopCompiler;
-    
-    /**
-     * Constructor initializes the unified compiler with legacy support
-     * 
-     * @param compiler Main ElixirCompiler instance for delegation
+     * Constructor
+     * @param compiler Main ElixirCompiler instance
      */
     public function new(compiler: ElixirCompiler) {
         this.compiler = compiler;
-        
-        // Initialize core compiler for basic loop structures
-        this.coreLoopCompiler = new CoreLoopCompiler(compiler);
-        
-        // Initialize array optimizer for pattern detection
-        this.arrayOptimizer = new ArrayLoopOptimizer(compiler);
-        
-        // Initialize loop transformations for complex patterns
-        this.loopTransformations = new LoopTransformations(compiler);
-        
-        // Initialize legacy compiler for gradual migration
-        // This will be removed once all functionality is migrated
-        this.legacyLoopCompiler = new LoopCompiler(compiler);
-        
-        #if debug_loop_compilation
-//         trace("[UnifiedLoopCompiler] Initialized with core, optimizer, transformations, and legacy compiler support");
-        #end
     }
     
     /**
-     * Main entry point for all loop compilation
-     * 
-     * WHY: Provides single, consistent interface for loop compilation
-     * WHAT: Analyzes loop type and delegates to appropriate compiler
-     * HOW: Pattern matches on TypedExprDef to identify loop variant
-     * 
-     * @param expr The typed expression containing a loop
-     * @return Generated Elixir code for the loop
+     * Main entry point for loop compilation
+     * @param expr The loop expression (TFor or TWhile)
+     * @return Generated Elixir code
      */
     public function compileLoop(expr: TypedExpr): String {
-        #if debug_loop_compilation
-//         trace('[UnifiedLoopCompiler] Compiling loop expression: ${expr.expr}');
-        #end
-        
         return switch(expr.expr) {
             case TypedExprDef.TWhile(econd, ebody, normalWhile):
                 compileWhileLoop(econd, ebody, normalWhile);
@@ -112,196 +54,158 @@ class UnifiedLoopCompiler {
                 compileForLoop(tvar, iterExpr, blockExpr);
                 
             default:
-                #if debug_loop_compilation
-//                 trace('[UnifiedLoopCompiler] WARNING: Non-loop expression passed to compileLoop');
-                #end
                 "";
         }
     }
     
     /**
-     * Compiles while and do-while loops
+     * Compile for-in loops to Enum.each
      * 
-     * WHY: While loops need special handling for mutation and recursion
-     * WHAT: Transforms while/do-while into recursive functions or Enum operations
-     * HOW: Currently delegates to legacy compiler, will migrate to CoreLoopCompiler
-     * 
-     * @param econd Loop condition expression
-     * @param ebody Loop body expression
-     * @param normalWhile True for while, false for do-while
-     * @return Generated Elixir code
-     */
-    public function compileWhileLoop(econd: TypedExpr, ebody: TypedExpr, normalWhile: Bool): String {
-        #if debug_loop_compilation
-//         trace('[UnifiedLoopCompiler] Compiling while loop (normal: $normalWhile)');
-        #end
-        
-        // Use new ArrayLoopOptimizer when USE_ARRAY_OPTIMIZER is defined
-        #if use_array_optimizer
-        var arrayPattern = arrayOptimizer.detectArrayBuildingPattern(econd, ebody);
-        if (arrayPattern != null) {
-            #if debug_loop_compilation
-//             trace('[UnifiedLoopCompiler] Detected array building pattern, optimizing with ArrayLoopOptimizer');
-            #end
-            return arrayOptimizer.compileArrayBuildingLoop(arrayPattern);
-        }
-        #else
-        // Fall back to legacy detection
-        var arrayPattern = detectArrayBuildingPattern(econd, ebody);
-        if (arrayPattern != null) {
-            #if debug_loop_compilation
-//             trace('[UnifiedLoopCompiler] Detected array building pattern, optimizing');
-            #end
-            return compileArrayBuildingLoop(econd, ebody, arrayPattern);
-        }
-        #end
-        
-        // Use CoreLoopCompiler for basic loops when USE_CORE_COMPILER is defined
-        #if use_core_compiler
-        #if debug_loop_compilation
-//         trace('[UnifiedLoopCompiler] Using CoreLoopCompiler for basic while loop');
-        #end
-        return coreLoopCompiler.compileBasicWhileLoop(econd, ebody, normalWhile);
-        #else
-        // Fall back to legacy compiler
-        return legacyLoopCompiler.compileWhileLoop(econd, ebody, normalWhile);
-        #end
-    }
-    
-    /**
-     * Compiles for loops over iterators and ranges
-     * 
-     * WHY: For loops can often be optimized to Enum operations
-     * WHAT: Transforms for-in loops based on iterator type
-     * HOW: Currently delegates to legacy compiler, will migrate to CoreLoopCompiler
+     * CRITICAL: Special handling for TLocal to prevent g_array issues
      * 
      * @param tvar Loop variable
-     * @param iterExpr Iterator expression (array, range, etc.)
+     * @param iterExpr Expression being iterated
      * @param blockExpr Loop body
-     * @return Generated Elixir code
+     * @return Elixir Enum.each code
      */
     public function compileForLoop(tvar: TVar, iterExpr: TypedExpr, blockExpr: TypedExpr): String {
-        #if debug_loop_compilation
-//         trace('[UnifiedLoopCompiler] Compiling for loop over: ${iterExpr.expr}');
-        #end
+        // Convert loop variable to Elixir naming
+        var loopVar = NamingHelper.toSnakeCase(tvar.name);
         
-        // Use ArrayLoopOptimizer for array iteration patterns
-        #if use_array_optimizer
-        var loopVar = CompilerUtilities.toElixirVarName(tvar);
-        var optimized = arrayOptimizer.tryOptimizeArrayIteration(iterExpr, loopVar, blockExpr);
-        if (optimized != null) {
-            #if debug_loop_compilation
-//             trace('[UnifiedLoopCompiler] Optimized array iteration with ArrayLoopOptimizer');
-            #end
-            return optimized;
-        }
-        #else
-        // Check for simple array transformations that can become Enum operations
-        if (canOptimizeToEnum(tvar, iterExpr, blockExpr)) {
-            #if debug_loop_compilation
-//             trace('[UnifiedLoopCompiler] Optimizing for loop to Enum operation');
-            #end
-            return optimizeToEnum(tvar, iterExpr, blockExpr);
-        }
-        #end
+        // CRITICAL: Handle TLocal specially to avoid g_array mapping issues
+        var iterable = compileIterableExpr(iterExpr);
         
-        // Use CoreLoopCompiler for basic loops when USE_CORE_COMPILER is defined
-        #if use_core_compiler
-        #if debug_loop_compilation
-//         trace('[UnifiedLoopCompiler] Using CoreLoopCompiler for basic for loop');
-        #end
-        return coreLoopCompiler.compileBasicForLoop(tvar, iterExpr, blockExpr);
-        #else
-        // Fall back to legacy compiler
-        return legacyLoopCompiler.compileForLoop(tvar, iterExpr, blockExpr);
-        #end
+        // Compile loop body
+        var body = compiler.compileExpression(blockExpr);
+        
+        // Generate simple Enum.each
+        return 'Enum.each(${iterable}, fn ${loopVar} ->
+${CompilerUtilities.indentCode(body, 2)}
+end)';
     }
     
     /**
-     * Detects array building patterns in loops for optimization
+     * Compile while loops using recursive functions
      * 
-     * WHY: Common pattern that can be optimized to Enum.map/filter
-     * WHAT: Identifies loops that build arrays element by element
-     * HOW: Analyzes loop body for push operations on accumulators
-     * 
-     * TODO: Extract to ArrayLoopOptimizer
+     * @param econd Loop condition
+     * @param ebody Loop body
+     * @param normalWhile True for while, false for do-while
+     * @return Elixir recursive function
      */
-    function detectArrayBuildingPattern(econd: TypedExpr, ebody: TypedExpr): Null<{indexVar: String, accumVar: String, arrayExpr: String}> {
-        // Delegate to legacy compiler for now
-        return legacyLoopCompiler.detectArrayBuildingPattern(econd, ebody);
-    }
-    
-    /**
-     * Compiles array building loops with optimization
-     * 
-     * WHY: Direct translation creates inefficient recursive functions
-     * WHAT: Transforms array building patterns to Enum operations
-     * HOW: Uses detected pattern to generate appropriate Enum call
-     * 
-     * TODO: Extract to ArrayLoopOptimizer
-     */
-    function compileArrayBuildingLoop(econd: TypedExpr, ebody: TypedExpr, pattern: {indexVar: String, accumVar: String, arrayExpr: String}): String {
-        return legacyLoopCompiler.compileArrayBuildingLoop(econd, ebody, pattern);
-    }
-    
-    /**
-     * Checks if a for loop can be optimized to Enum operations
-     * 
-     * WHY: Functional iteration is more idiomatic in Elixir
-     * WHAT: Analyzes loop structure for optimization potential
-     * HOW: Checks for simple transformations without side effects
-     * 
-     * TODO: Extract to LoopPatternDetector
-     */
-    function canOptimizeToEnum(tvar: TVar, iterExpr: TypedExpr, blockExpr: TypedExpr): Bool {
-        // Simple heuristic for now - check if iterating over array with no break/continue
-        return switch(iterExpr.expr) {
-            case TypedExprDef.TLocal(_) | TypedExprDef.TField(_, _): 
-                !containsBreakOrContinue(blockExpr);
-            case TypedExprDef.TArrayDecl(_):
-                !containsBreakOrContinue(blockExpr);
-            default: 
-                false;
+    public function compileWhileLoop(econd: TypedExpr, ebody: TypedExpr, normalWhile: Bool): String {
+        // Check for array filter pattern: for (x in arr) if (cond) result.push(x)
+        var filterPattern = detectArrayFilterPattern(econd, ebody);
+        if (filterPattern != null) {
+            return compileFilterPattern(filterPattern);
+        }
+        
+        // Check for array map pattern: for (x in arr) result.push(transform(x))
+        var mapPattern = detectArrayMapPattern(econd, ebody);
+        if (mapPattern != null) {
+            return compileMapPattern(mapPattern);
+        }
+        
+        // Check for simple for-in pattern that Haxe desugared to while
+        var forInPattern = detectForInPattern(econd, ebody);
+        if (forInPattern != null) {
+            return compileForInPattern(forInPattern);
+        }
+        
+        // Generate simple recursive function for while loops
+        var condition = compiler.compileExpression(econd);
+        var body = compiler.compileExpression(ebody);
+        
+        if (normalWhile) {
+            // while (condition) { body }
+            return '(fn loop ->
+  if ${condition} do
+    ${CompilerUtilities.indentCode(body, 4)}
+    loop.()
+  end
+end).()';
+        } else {
+            // do { body } while (condition)
+            return '(fn loop ->
+  ${CompilerUtilities.indentCode(body, 2)}
+  if ${condition} do
+    loop.()
+  end
+end).()';
         }
     }
     
     /**
-     * Optimizes for loop to Enum operation
+     * Special handling for iterable expressions to avoid variable mapping issues
      * 
-     * WHY: Enum operations are more idiomatic and performant
-     * WHAT: Transforms for loops to Enum.map/each/filter
-     * HOW: Analyzes loop body to determine appropriate Enum function
+     * WHY: TLocal variables were being incorrectly mapped through desugaring system
+     * WHAT: Direct conversion to snake_case for simple variables
+     * HOW: Check if TLocal, convert directly, otherwise use normal compilation
      * 
-     * TODO: Extract to ArrayLoopOptimizer
+     * @param expr The iterable expression
+     * @return Compiled expression string
      */
-    function optimizeToEnum(tvar: TVar, iterExpr: TypedExpr, blockExpr: TypedExpr): String {
-        // For now, just delegate to legacy compiler
-        // This will be properly implemented in ArrayLoopOptimizer
-        return legacyLoopCompiler.compileForLoop(tvar, iterExpr, blockExpr);
+    private function compileIterableExpr(expr: TypedExpr): String {
+        return switch(expr.expr) {
+            case TLocal(v):
+                // Direct conversion for local variables - no mapping!
+                var name = v.name;
+                if (name.charAt(0) == "_") {
+                    name = name.substr(1);
+                }
+                NamingHelper.toSnakeCase(name);
+            case _:
+                // For everything else, use normal compilation
+                compiler.compileExpression(expr);
+        };
     }
     
     /**
-     * Utility to check for break/continue in expression tree
+     * Detect for-in patterns that Haxe desugared to while loops
      * 
-     * WHY: Break/continue prevent Enum optimization
-     * WHAT: Recursively searches for control flow statements
-     * HOW: Traverses TypedExpr tree looking for TBreak/TContinue
+     * Haxe transforms: for (item in array) { ... }
+     * Into: var i = 0; while (i < array.length) { var item = array[i]; ... i++; }
      * 
-     * TODO: Extract to LoopPatternDetector
+     * @param econd While condition
+     * @param ebody While body
+     * @return Pattern info if detected, null otherwise
      */
-    function containsBreakOrContinue(expr: TypedExpr): Bool {
+    private function detectForInPattern(econd: TypedExpr, ebody: TypedExpr): Null<ForInPattern> {
+        // Look for pattern: i < array.length
+        switch(econd.expr) {
+            case TBinop(OpLt, e1, e2):
+                switch(e2.expr) {
+                    case TField(arrayExpr, FInstance(_, _, cf)) if (cf.get().name == "length"):
+                        // Found array.length comparison
+                        // Check body for array access pattern
+                        if (hasArrayAccess(ebody, arrayExpr)) {
+                            return {
+                                array: arrayExpr,
+                                body: ebody
+                            };
+                        }
+                    case _:
+                }
+            case _:
+        }
+        return null;
+    }
+    
+    /**
+     * Check if expression contains array access
+     */
+    private function hasArrayAccess(expr: TypedExpr, arrayExpr: TypedExpr): Bool {
         var found = false;
         
         function check(e: TypedExpr): Void {
             if (found) return;
             
             switch(e.expr) {
-                case TypedExprDef.TBreak | TypedExprDef.TContinue:
-                    found = true;
-                case TypedExprDef.TWhile(econd, ebody, _) | TypedExprDef.TFor(_, econd, ebody):
-                    // Don't check inside nested loops - they have their own scope
-                    return;
-                default:
+                case TArray(arr, _):
+                    // Check if this is accessing our array
+                    if (exprEquals(arr, arrayExpr)) {
+                        found = true;
+                    }
+                case _:
                     TypedExprTools.iter(e, check);
             }
         }
@@ -311,26 +215,35 @@ class UnifiedLoopCompiler {
     }
     
     /**
-     * Gets statistics about current compiler state for monitoring
-     * 
-     * WHY: Track migration progress and identify remaining work
-     * WHAT: Returns counts of legacy vs new compilation paths
-     * HOW: Tracks internal counters (when implemented)
+     * Simple expression equality check
      */
-    public function getStatistics(): {legacyCalls: Int, optimizedCalls: Int} {
-        // TODO: Implement counters
-        return {legacyCalls: 0, optimizedCalls: 0};
+    private function exprEquals(e1: TypedExpr, e2: TypedExpr): Bool {
+        return switch([e1.expr, e2.expr]) {
+            case [TLocal(v1), TLocal(v2)]: v1.id == v2.id;
+            case _: false;
+        }
     }
     
     /**
-     * Utility to check if expression contains TFor loops
-     * 
-     * WHY: ElixirCompiler needs to detect loop patterns for compilation decisions
-     * WHAT: Recursively searches for TFor nodes in expression tree
-     * HOW: Traverses TypedExpr tree looking for TFor expressions
-     * 
-     * @param expr Expression to check
-     * @return True if expression contains any TFor nodes
+     * Compile detected for-in pattern to Enum.each
+     */
+    private function compileForInPattern(pattern: ForInPattern): String {
+        // Extract the array expression
+        var arrayExpr = compileIterableExpr(pattern.array);
+        
+        // For now, generate simple Enum.each
+        // TODO: Extract item variable name from body pattern
+        var body = compiler.compileExpression(pattern.body);
+        
+        return '${arrayExpr}
+|> Enum.with_index()
+|> Enum.each(fn {item, _index} ->
+${CompilerUtilities.indentCode(body, 2)}
+end)';
+    }
+    
+    /**
+     * Check if expression contains TFor loops (utility for ElixirCompiler)
      */
     public function checkForTForInExpression(expr: TypedExpr): Bool {
         if (expr == null) return false;
@@ -342,112 +255,110 @@ class UnifiedLoopCompiler {
                 for (e in exprs) {
                     if (checkForTForInExpression(e)) return true;
                 }
-                return false;
             case TIf(_, eif, eelse):
                 if (checkForTForInExpression(eif)) return true;
                 if (eelse != null && checkForTForInExpression(eelse)) return true;
-                return false;
             case _:
-                return false;
         }
+        return false;
     }
     
     /**
-     * Utility to check if expression contains TWhile loops
-     * 
-     * WHY: ElixirCompiler needs to detect while patterns for compilation strategies
-     * WHAT: Recursively searches for TWhile nodes in expression tree
-     * HOW: Deep traversal of all expression types checking for TWhile
-     * 
-     * @param expr Expression to check
-     * @return True if expression contains any TWhile nodes
+     * Check if expression contains TWhile loops (utility for ElixirCompiler)
      */
     public function containsTWhileExpression(expr: TypedExpr): Bool {
         if (expr == null) return false;
         
         switch (expr.expr) {
             case TWhile(_, _, _):
-                // Found a TWhile
                 return true;
-                
             case TBlock(exprs):
-                // Recursively check all expressions in the block
                 for (e in exprs) {
                     if (containsTWhileExpression(e)) return true;
                 }
-                return false;
-                
             case TIf(_, eif, eelse):
-                // Check both branches of if-statement
                 if (containsTWhileExpression(eif)) return true;
                 if (eelse != null && containsTWhileExpression(eelse)) return true;
-                return false;
-                
             case TFor(_, _, ebody):
-                // For loops might contain while loops in their body
                 return containsTWhileExpression(ebody);
-                
-            case TSwitch(_, cases, defaultCase):
-                // Check all switch cases
-                for (c in cases) {
-                    if (containsTWhileExpression(c.expr)) return true;
-                }
-                if (defaultCase != null && containsTWhileExpression(defaultCase)) return true;
-                return false;
-                
-            case TTry(etry, catches):
-                // Check try block
-                if (containsTWhileExpression(etry)) return true;
-                // Check catch blocks
-                for (c in catches) {
-                    if (containsTWhileExpression(c.expr)) return true;
-                }
-                return false;
-                
-            case TFunction(func):
-                // Check function body
-                return containsTWhileExpression(func.expr);
-                
-            case TCall(e, args):
-                // Check function expression and arguments
-                if (containsTWhileExpression(e)) return true;
-                for (arg in args) {
-                    if (containsTWhileExpression(arg)) return true;
-                }
-                return false;
-                
-            case TBinop(_, e1, e2):
-                // Check both operands
-                return containsTWhileExpression(e1) || containsTWhileExpression(e2);
-                
-            case TUnop(_, _, e):
-                // Check operand
-                return containsTWhileExpression(e);
-                
-            case TArray(e1, e2):
-                // Check array and index expressions
-                return containsTWhileExpression(e1) || containsTWhileExpression(e2);
-                
-            case TArrayDecl(exprs):
-                // Check all array elements
-                for (e in exprs) {
-                    if (containsTWhileExpression(e)) return true;
-                }
-                return false;
-                
-            case TField(e, _):
-                // Check field access target
-                return containsTWhileExpression(e);
-                
-            case TVar(_, init):
-                // Check variable initialization
-                return init != null ? containsTWhileExpression(init) : false;
-                
             case _:
-                // All other expression types don't contain TWhile
-                return false;
         }
+        return false;
     }
+    
+    /**
+     * Detect array filter pattern in desugared while loop
+     * 
+     * Pattern: for (x in arr) if (cond) result.push(x)
+     * Desugared: while (i < arr.length) { var x = arr[i]; if (cond) result.push(x); i++; }
+     */
+    private function detectArrayFilterPattern(econd: TypedExpr, ebody: TypedExpr): Null<FilterPattern> {
+        // TDD: Just return null for now - implement when test actually needs it
+        return null;
+    }
+    
+    /**
+     * Detect array map pattern in desugared while loop
+     * 
+     * Pattern: for (x in arr) result.push(transform(x))
+     * Desugared: while (i < arr.length) { var x = arr[i]; result.push(transform(x)); i++; }
+     */
+    private function detectArrayMapPattern(econd: TypedExpr, ebody: TypedExpr): Null<MapPattern> {
+        // TDD: Just return null for now - implement when test actually needs it
+        return null;
+    }
+    
+    /**
+     * Compile filter pattern to Enum.filter
+     */
+    private function compileFilterPattern(pattern: FilterPattern): String {
+        var arrayExpr = compileIterableExpr(pattern.array);
+        var condition = compiler.compileExpression(pattern.condition);
+        
+        return '${pattern.resultVar} = Enum.filter(${arrayExpr}, fn ${pattern.itemVar} ->
+  ${condition}
+end)';
+    }
+    
+    /**
+     * Compile map pattern to Enum.map
+     */
+    private function compileMapPattern(pattern: MapPattern): String {
+        var arrayExpr = compileIterableExpr(pattern.array);
+        var transform = compiler.compileExpression(pattern.transform);
+        
+        return '${pattern.resultVar} = Enum.map(${arrayExpr}, fn ${pattern.itemVar} ->
+  ${transform}
+end)';
+    }
+}
+
+/**
+ * Pattern info for detected for-in loops
+ */
+private typedef ForInPattern = {
+    array: TypedExpr,
+    body: TypedExpr
+}
+
+/**
+ * Pattern info for detected filter operations
+ */
+private typedef FilterPattern = {
+    array: TypedExpr,
+    itemVar: String,
+    condition: TypedExpr,
+    resultVar: String
+}
+
+/**
+ * Pattern info for detected map operations  
+ */
+private typedef MapPattern = {
+    array: TypedExpr,
+    itemVar: String,
+    transform: TypedExpr,
+    resultVar: String
 }
 
 #end
