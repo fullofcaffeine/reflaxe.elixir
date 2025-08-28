@@ -174,6 +174,21 @@ class VariableCompiler {
     }
     
     public function compileLocalVariable(v: TVar): String {
+        // DEBUG: Trace ALL variable compilations to find appName
+        if (StringTools.contains(v.name, "app") || StringTools.contains(v.name, "Name")) {
+            trace('[XRay VariableCompiler] ⚠️ COMPILING VARIABLE: ${v.name} (id: ${v.id})');
+            trace('[XRay VariableCompiler]   Current function param map keys: ${[for (k in compiler.currentFunctionParameterMap.keys()) k]}');
+            if (compiler.currentFunctionParameterMap.exists(v.name)) {
+                trace('[XRay VariableCompiler]   Found in param map: ${v.name} -> ${compiler.currentFunctionParameterMap.get(v.name)}');
+            } else {
+                trace('[XRay VariableCompiler]   NOT found in param map!');
+            }
+            trace('[XRay VariableCompiler]   variableIdMap has id ${v.id}: ${variableIdMap.exists(v.id)}');
+            if (variableIdMap.exists(v.id)) {
+                trace('[XRay VariableCompiler]   variableIdMap[${v.id}] = ${variableIdMap.get(v.id)}');
+            }
+        }
+        
         #if debug_variable_compiler
         // trace("[XRay VariableCompiler] LOCAL VARIABLE COMPILATION START");
         // trace('[XRay VariableCompiler] TVar.name: ${v.name}, TVar.id: ${v.id}');
@@ -307,8 +322,22 @@ class VariableCompiler {
             }
         }
         
+        // DEBUG: Special logging for appName parameter (including underscore variants)
+        if (originalName == "appName" || originalName == "_appName" || originalName == "_app_name" || originalName == "app_name") {
+            trace('[XRay VariableCompiler] ⚠️ Variable lookup for: ${originalName}');
+            trace('[XRay VariableCompiler]   Parameter map keys: ${[for (k in compiler.currentFunctionParameterMap.keys()) k].join(", ")}');
+            trace('[XRay VariableCompiler]   Parameter map values: ${[for (k in compiler.currentFunctionParameterMap.keys()) k + " -> " + compiler.currentFunctionParameterMap.get(k)].join(", ")}');
+        }
+        
         var mappedName = compiler.currentFunctionParameterMap.get(originalName);
         if (mappedName != null) {
+            // DEBUG: Special logging for appName parameter
+            if (originalName == "appName") {
+                trace('[XRay VariableCompiler] ✓ Found mapping: ${originalName} -> ${mappedName}');
+                trace('[XRay VariableCompiler] Returning: ${mappedName}');
+                return mappedName; // Early return for debugging
+            }
+            
             // trace('[XRay VariableCompiler] ✓ PARAMETER MAPPING: ${originalName} -> ${mappedName}');
             #if debug_variable_compiler
             // trace('[XRay VariableCompiler] Found in parameter map');
@@ -412,6 +441,26 @@ class VariableCompiler {
             return compiler.generateFunctionReference(originalName);
         }
         
+        // CRITICAL FIX: Check if this is a function parameter
+        // Function parameters should NEVER get underscore prefixes unless explicitly mapped
+        // The assumption that unmapped parameters need underscores is WRONG
+        var isFunctionParameter = false;
+        if (v.t != null) {
+            switch (v.t) {
+                case TFun(args, _):
+                    // This is a function type, check if the name matches any arg
+                    for (arg in args) {
+                        if (arg.name == originalName) {
+                            isFunctionParameter = true;
+                            break;
+                        }
+                    }
+                case _:
+                    // Not a function type, but could still be a parameter
+                    // Check if we're in a function context and this matches a known parameter pattern
+                    // Function parameters typically have specific type patterns
+            }
+        }
         
         // Use parameter mapping if available (for both abstract methods and regular functions with standardized arg names)
         // BUT SKIP if this is a plain 'g' variable that would be mapped to a counter
@@ -435,6 +484,8 @@ class VariableCompiler {
                 // trace('[XRay VariableCompiler] ⚠️ CAMELCASE VARIABLE DETECTED: ${originalName}');
                 // trace('[XRay VariableCompiler] No mapping found, converting to snake_case');
             }
+            // CRITICAL FIX: Just apply snake_case transformation, no underscore prefix
+            // Function parameters should never get underscore prefixes unless explicitly mapped
             NamingHelper.toSnakeCase(originalName);
         }
         
@@ -1300,6 +1351,7 @@ class VariableCompiler {
             return "_";
         }
         
+        
         // if (tvar.name == "parsedMsg" || tvar.name == "_parsedMsg" || tvar.name == "parsed_msg") {
         //     trace('[DEBUG VariableCompiler] CRITICAL VARIABLE: ${tvar.name} (id: ${tvar.id})');
         //     trace('[DEBUG VariableCompiler]   Has -reflaxe.unused: ${tvar.meta != null && tvar.meta.has("-reflaxe.unused")}');
@@ -1336,8 +1388,25 @@ class VariableCompiler {
         // Get original variable name and convert to snake_case
         var varName = NamingHelper.toSnakeCase(originalName);
         
-        // CRITICAL FIX: Check underscore prefix map by BOTH original and snake_case names
-        // This handles references to variables that were declared with underscore prefix
+        // TARGETED FIX: For function parameters, check if they have a mapping that doesn't 
+        // involve underscores. This prevents incorrect underscore prefixing of used parameters.
+        if (compiler.currentFunctionParameterMap.exists(originalName)) {
+            var mappedName = compiler.currentFunctionParameterMap.get(originalName);
+            // If the mapped name doesn't start with underscore, use it directly
+            // This prevents app_name from becoming _app_name when it's used in function body
+            if (!StringTools.startsWith(mappedName, "_")) {
+                return mappedName;
+            }
+        }
+        if (compiler.currentFunctionParameterMap.exists(varName)) {
+            var mappedName = compiler.currentFunctionParameterMap.get(varName);
+            // Same check for snake_case version
+            if (!StringTools.startsWith(mappedName, "_")) {
+                return mappedName;
+            }
+        }
+        
+        // Check underscore prefix map (for variables declared with underscore)
         // Check original camelCase name first
         if (underscorePrefixMap.exists(originalName)) {
             var prefixedName = underscorePrefixMap.get(originalName);
@@ -1354,23 +1423,6 @@ class VariableCompiler {
             // trace('[XRay VariableCompiler] ✓ Found underscore mapping for snake_case: ${varName} → ${prefixedName}');
             #end
             return prefixedName;
-        }
-        
-        // CRITICAL: Also check the currentFunctionParameterMap for pattern variables
-        // This handles variables extracted by outer switches that inner switches reference
-        if (compiler.currentFunctionParameterMap.exists(originalName)) {
-            var mappedName = compiler.currentFunctionParameterMap.get(originalName);
-            #if debug_variable_tracking
-            trace('[DEBUG VariableCompiler] Found in currentFunctionParameterMap: ${originalName} -> ${mappedName}');
-            #end
-            return mappedName;
-        }
-        if (compiler.currentFunctionParameterMap.exists(varName)) {
-            var mappedName = compiler.currentFunctionParameterMap.get(varName);
-            #if debug_variable_tracking
-            trace('[DEBUG VariableCompiler] Found in currentFunctionParameterMap: ${varName} -> ${mappedName}');
-            #end
-            return mappedName;
         }
         
         // Check if variable has -reflaxe.unused metadata
@@ -1408,6 +1460,7 @@ class VariableCompiler {
         #if debug_variable_compiler
         // trace('[XRay VariableCompiler] Final variable name: ${varName}');
         #end
+        
         
         return varName;
     }

@@ -232,6 +232,7 @@ function build(): String {
 - [Testing Infrastructure](testing-infrastructure.md) - Snapshot testing system
 - [Debugging Guide](debugging-guide.md) - XRay methodology details
 - [HXX Template Compilation](hxx-template-compilation.md) - Deep dive into HXX→HEEx transformation
+- [Function Parameter Underscore Fix](FUNCTION_PARAMETER_UNDERSCORE_FIX.md) - Solution for incorrect parameter prefixing
 
 ### Reference Materials
 - [Best Practices](best-practices.md) - Development patterns and standards
